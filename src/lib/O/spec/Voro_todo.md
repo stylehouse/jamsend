@@ -9,6 +9,40 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
 
 ## 0 · Handover  (rewrite this section each handover; everything below stays current)
 
+**NIGHT LOG — 2026-07-08 overnight (autonomous build; NOTHING committed, all in the working tree).**
+ Two things landed, both compile-verified via LocalGen; the pixel/eyes-on halves are staged for you.
+- **🎋 Bamboo schematica — meaning-side LANDED + compile-clean.**  `Ghost/V/Voro.g`: `Vtuff_build`
+   now branches flat vs a jointed **`%Vseg` stalk** (crown · cane · leaf · shoot) via `Vtuff_bamboo`,
+    gated by a workspace pref `Vtuff_bamboo_on()` = stash `Cyto_bamboo` (**default OFF → zero render
+     change**, so the live runner is untouched).  Plus the **first Se**: `Vtuff_se` reads the RADIO
+      (drift_focus → rampage the cane; dwelt-past → quiet the leaf), stamped live c-side each build
+       (`Vtuff_se_apply`, cache-safe).  `Cytui.svelte vtuff_rows` **flattens `%Vseg` transparently**
+        (backward-compatible — same rows, same order; carries `seg`/`se` onto each descriptor).
+         Compiled (LocalGen, `gen/V/Voro.go` rewritten); `npm run check` clean in the edited range.
+   - **OWED (eyes-on, cannot gate overnight — pixels):** (1) flip stash `Cyto_bamboo=1` and WATCH a
+      pane — with the flatten it renders identically to flat today, because (2) the *visible* joint
+       treatment (draw the notch between segments; swell cane on `d.se===2`, dim/collapse leaf on
+        `d.se===0`) is NOT built — it's a `micro_fit` change reading `d.seg`/`d.se`, staged for you.
+         The **🎋 toggle IS built** — a button on the ◈ bar (twin of ▤, `Cytui.svelte` ~2519) flips
+          stash `Cyto_bamboo` + re-renders; so: open a graph, hit 🎋, watch — best on **VoroRadioPier**
+           (its live drift gives Se something to react to).  Design: `Voro_vtuffing.md` §🎋 + #14.
+- **📻 VoroRadioPier — NEW Book LANDED + LIVE-smoke-verified (NOT recorded).**  Your "VoroRadio
+   feeding music from a Pier."  A twin of VoroRadio that keeps the green flora one UNTOUCHED: a fake
+    `%Pier,name:Crowd` streams a deterministic synthetic catalog (6 stations keyed station-as-mainkey,
+     the flora-mirror) that the SAME crush gangs into locales and the SAME `Voro_drift_tick` walks.
+      Keeps the full pick **trail** (`w.c.radio_trail`) — the down-payment on "saving the trail."
+       Registered `brand_new:1` in `wormhole/Credence/toc.snap`; `wormhole/Story/VoroRadioPier/toc.snap`
+        authored (9 beats, lie diges).  Ran live on runner `49dee9…`: all 9 beats, **all three `%see`
+         fire** (tuner-walked-the-pier / trail-kept / music-dribbled), no dup tracks, `drift,focus`
+          walking stations.  Shows "failed" ONLY on the lie diges (correct for brand_new).
+   - **OWED (yours):** watch it live + **record fixtures with eyes on** (I did NOT record — per the
+      eyes-on discipline).  TUNING to eyeball: it escalates to `level:L2, visible=21` because popped
+       stations spill their tracks loose — busy but functional; dial station/track counts or the
+        governor if it reads cluttered.  `Voro_todo.md` metaphysics + memory.
+- **Vision seeds captured** (your edge-of-sleep messages) in `Voro_vtuffing.md` §"Owner vision seeds":
+   dribble-from-edge/center (= the Pier IS the source) → swish (= #14 relaxation) → endless Travel →
+    trail + light-cone → wind fwd/back → trans-cellular filamentation.  All north-stars (eyes-on/core).
+
 **Where we are (2026-07-07).**  The Voro *parameterisation* is SETTLED: the fold ("crush") is a
  VIEWER, imposed from the toc like Cyto/Matstyle — a Book never asks to be folded.
 - `The/Opt/useVoroCyto` (renamed from crushCyto / crush_wanted / wantsCrush): Story reads it in

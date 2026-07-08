@@ -84,7 +84,10 @@ So "Trusting" is not new invention — it is the garden's membership/contact/tru
        case turned out already-safe (`Lies_send_rungo` gates on `channel_live`, the rungo is booked and
         `Reliable.g` retx's). *Still owed (deferred, needs live proof):* marking a faulty frame `%faulty` and
          **not** acking it — held back because it would retx-wedge conditionally-registered handlers
-          (`test_*`/`repli_*`/`audiochunk`/`stream_offer`). The positive template already in the tree:
+          (`test_*`/`repli_*`/`audiochunk`/`stream_offer`). A second open: `MusuReplica`'s `%Crush_Tree`
+ husk hides `body_hash`/ack from the delivery layer — decide whether a crushed husk counts as
+  "delivered" (and what its ack surface is) before re-recording `MusuReco` (`musureplica-crush`
+   memory). The positive template already in the tree:
            `LiesStore.svelte`'s stuck-read watchdog escalates+nags, and `land_good` refuses an `{error}` body.
 
 ---
@@ -482,6 +485,13 @@ Load-bearing: `LiesLies.svelte` (`Lies_self`, `Lies_channel_up` hello, `Lies_adv
          `run.c.toc_loaded`, the snapped `sub.sc.subscribed`, and the Cyto/Thangs/Keep `*_done` UI latches —
           each wants a clear-on-teardown or derive-every-tick.
 
+**Reconnect-epoch seq collision (OWED).** A reloaded runner restarts its per-Pier inseq counter LOW;
+ if the far side's window has already moved past those values, every message from the reloaded peer
+  lands as dup-dropped for ~20s. *Interim fix (SHIPPED):* `Reliable.g`'s retry-climb eventually
+   escapes the dup window. *Clean fix (OWED):* a reconnect epoch-reset — the peer announces a fresh
+    epoch tag on connect so the far side resets its window immediately (no climb delay, no silent mute).
+     See `reconnect-epoch-seq-collision` memory.
+
 ### 3.3 The `Lies%runner` UI + the `runner_ask` CLI — badges, the rack, the diagnostic ladder
 *(Folded from `Runner_network.md` (badges + ladder + CLI proof) and `Cluster_runner_handover.md` (the rack).)*
 
@@ -751,6 +761,14 @@ When the app needs to act on the **host** — restart a crashed Chrome profile, 
      error must read **"couldn't run here"** (⌛/grey), NEVER "audio delivery broken" — a no-AC runner must not
       paint a needAC Book red. `Lies_secure_audio` opens the run record only AFTER AC is granted, so *"the run
        record appeared"* IS the grant signal the CLI leans on.
+
+**needsFSA dispatch-match (twin of needAC, OWED).** A Book requiring local disk access carries a
+ `needsFSA` cap flag in Credence (the twin of `bookNeedsAC`); the dispatch-gate should route it
+  **only to LOCAL-FSA runners** and **refuse** a `method:remoteWormhole` runner outright — not smear
+   it red, just "needs local share, try another". `MusuGenerateTestsMusic` is the canonical case
+    (generates large binary fixtures to disk, blocked on a headless proxy runner). The Credence cap
+     and dispatch-routing mirror the needAC pattern; both the cap read in dispatch and the `runner_ask`
+      fail-fast path are OWED. See `needsFSA-dispatch-gate` memory.
 
 **The liveness architecture still owed** (the address+role work fixed routing but kept the beacon as the
  heartbeat): promote **per-runner ping/pong** to the liveness *source* (stamp `%Runner.last_heard`/rtt from

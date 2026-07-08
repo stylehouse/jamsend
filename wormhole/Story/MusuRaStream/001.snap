@@ -1,0 +1,7 @@
+Snap:H
+  H:MusuRaStream,Run
+    A:MusuRaStream
+      self,round	{"mung":["age"]}
+      w:MusuRaStream
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

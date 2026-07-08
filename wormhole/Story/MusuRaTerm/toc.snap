@@ -4,7 +4,7 @@ story:MusuRaTerm
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.035
+    TimeTotal:beliefs,avg=0.036
       sample=0.034,at=1783442235
       sample=0.039,at=1783442728
       sample=0.039,at=1783442903
@@ -13,6 +13,8 @@ story:MusuRaTerm
       sample=0.037,at=1783443625
       sample=0.031,at=1783447709
       sample=0.031,at=1783447728
+      sample=0.036,at=1783449306
+      sample=0.04,at=1783484762
     TimeTotal:step,avg=0.003
       sample=0.003,at=1783442235
       sample=0.003,at=1783442728
@@ -22,6 +24,8 @@ story:MusuRaTerm
       sample=0.003,at=1783443625
       sample=0.003,at=1783447709
       sample=0.003,at=1783447728
+      sample=0.003,at=1783449306
+      sample=0.003,at=1783484762
   step,dige:6ec7f473aae518b6
   step=2,dige:ccad6da6d5ad506f
   step=3,dige:06b9ed44d7f4607d

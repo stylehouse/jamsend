@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return 'bb2fe3a9a3e1d464' },
+    Ghostmeta_Ghost_M_Ra(): string { return 'ff0d1e18cbbffcc5' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -748,8 +748,13 @@ async Ra_cast_serve_want(w, pier, frame) {
     let PAGE = +(w.c.racast_page || 8)
     let from = +(h.from_idx || 0)
     if (from < 0) from = 0
-    while (from < total) {
-        let end = Math.min(from + PAGE, total)
+    // producer RATE LIMIT (the slow transcode clock — §9.3): w.c.racast_rate set ⇒ answer this ONE want
+    //  with at most `rate` segments, so a playhead consuming faster than the rate STARVES; unset ⇒ the
+    //   whole tail (MusuRaCast's byte-faithful whole-pull, unchanged — that Book never sets the flag).
+    let RATE = +(w.c.racast_rate || 0)
+    let cap = RATE > 0 ? Math.min(from + RATE, total) : total
+    while (from < cap) {
+        let end = Math.min(from + PAGE, cap)
         // concat this window's opus buffers into ONE page body; sizes[] lets B carve them back apart.
         let sizes = []
         let span = 0
@@ -941,6 +946,70 @@ Ra_term_spool(channels, per, drop) {
         s = s + 1
     }
     return mono
+},
+//#endregion
+
+//#region stream — raterm's TIME dimension, driven over the REAL wire (Radio_todo §9.3, "the time thing")
+//  MusuRaTerm proved the STATIC read (whole track, a HAND-PICKED drop set); MusuRaCast pulls a Record WHOLE
+//   (one want → the whole tail).  A real LISTEN is paced by the PLAYHEAD (owner: "grab this time thing" / "as
+//    real as possible without the other Pier being another browser tab"): the terminal primes a small buffer
+//     (the 4s at the RaTerm end), starts playing, and wants the NEXT window only as the head advances — while
+//      the caster serves at a bounded RATE (Ra_cast_serve_want's racast_rate, the slow transcode clock).  So a
+//       gap is NOT authored and NOT simulated — it EMERGES over the SAME want/serve/recv machinery MusuRaCast
+//        proved, driven ONE BEAT at a time: a segment the playhead reaches before the rate-limited caster
+//         delivered it (across the post_do wire latency) is silence.  The drop set is READ from what actually
+//          failed to arrive; the caller feeds it to the SAME Ra_term_spool + Sound_measure MusuRaTerm uses, so
+//           the emergent holes are AUDIBLE and MEASURED.  The starve is guaranteed by RATE < PLAY (the buffer
+//            drains regardless of the exact transport cadence) — that invariant is fixed, the numbers are knobs.
+
+// Ra_term_stream_open — begin a paced listen of Record `id` (`total` segs to stream): a fresh playhead at 0
+//  with a prime-buffer target and a re-want floor, kept on w.c.play (control state, never snapped — it holds
+//   the drops[] array).  A track CHANGE just re-opens on the next id — a fresh race that re-primes from zero
+//    (Radiola_skip's reset).  Knobs: prime (segs in hand before the first play), floor (re-want when the lead
+//     falls this low), play (segs consumed per beat — the playback rate; keep play > the slow rate to starve).
+Ra_term_stream_open(w, id, total, opts) {
+    let o = opts || {}
+    w.c.play = { id: id, total: total, head: 0, primed: 0, prime: +(o.prime ?? 6), floor: +(o.floor ?? 4), play: +(o.play ?? 2), inflight: -1, drops: [], plays: 0 }
+    return w.c.play
+
+},
+// Ra_term_stream_beat — ONE beat of the real paced listen.  `segs` is the mirror stream's received buffer
+//  (mirStream.c.segs — Ra_cast_recv_page fills it as rate-limited pages land).  The beat, in order:
+//   (1) WANT-AHEAD: if the contiguous lead ahead of the head has fallen to the floor and there is an un-held
+//        segment and nothing is inflight, want the next missing index (the caster answers ≤ rate; reply rides
+//         post_do — the wire latency).  ONE want per beat, so RATE (segs delivered) races PLAY (segs consumed).
+//   (2) PRIME: hold the head at 0 until `prime` segments are in hand (start with the buffer, never into a cold
+//        one), then CONSUME `play` segments — each one missing is an emergent DROP (silence; the head never
+//         waits) — and advance.  Returns { done, head } for the driver; drops accrue on w.c.play.drops.
+async Ra_term_stream_beat(w, rx, mine, theirs, segs) {
+    let p = w.c.play
+    if (!p) return { done: 1 }
+    let lead = 0
+    while (segs[p.head + lead] != null) { lead = lead + 1 }
+    if (p.inflight >= 0 && segs[p.inflight] != null) p.inflight = -1
+    if (lead <= p.floor && p.head + lead < p.total && p.inflight < 0) {
+        let miss = p.head
+        while (segs[miss] != null) { miss = miss + 1 }
+        p.inflight = miss
+        await this.Ra_cast_want(w, rx, mine, theirs, p.id, miss)
+    }
+    if (!p.primed) {
+        if (lead >= p.prime || p.head + lead >= p.total) {
+            p.primed = 1
+        } else {
+            return { done: 0, head: p.head, priming: 1 }
+        }
+    }
+    let here = p.head
+    let k = 0
+    while (k < p.play) {
+        let idx = here + k
+        if (idx < p.total && segs[idx] == null) p.drops.push(idx)
+        k = k + 1
+    }
+    p.head = here + p.play
+    p.plays = p.plays + 1
+    return { done: p.head >= p.total ? 1 : 0, head: here }
 },
 //#endregion
 

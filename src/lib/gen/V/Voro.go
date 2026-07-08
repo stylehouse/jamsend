@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return '77631a3e58d45328' },
+    Ghostmeta_Ghost_V_Voro(): string { return '597643d9e75fc63b' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
@@ -428,18 +428,28 @@ Vtuff_build(src) {
     if (!members || !members.length) return null
     let sig = members.length
     for (const m of members) sig = sig + (m.version || 0)
-    if (src.c.vtuffing && src.c.vtuffing_sig === sig) return src.c.vtuffing
+    let bamboo = this.Vtuff_bamboo_on()
+    // cache the STRUCTURE by sig+mode; the live Se emphasis re-applies each call (drift moves
+    //  without changing members, so it can't ride the sig — see Vtuff_se_apply).
+    if (src.c.vtuffing && src.c.vtuffing_sig === sig && !!src.c.vtuffing_bamboo === !!bamboo) {
+        if (bamboo) this.Vtuff_se_apply(src.c.vtuffing, src)
+        return src.c.vtuffing
+    }
     let kind = src.c.fold_kind || 'stuff'
     let root = new TheC({ c: {}, sc: { Vtuffing: 1, of: kind, n: members.length } })
     root.c.src = src
     let hook = this['Vtuff_of_' + kind]
     if (hook) {
         hook.call(this, root, members, src)
+    } else if (bamboo) {
+        this.Vtuff_bamboo(root, members, src)
+        this.Vtuff_se_apply(root, src)
     } else {
         this.Vtuff_default(root, members, src)
     }
     src.c.vtuffing = root
     src.c.vtuffing_sig = sig
+    src.c.vtuffing_bamboo = bamboo
     return root
 
 },
@@ -574,6 +584,137 @@ Vtuff_default(root, members, src) {
     dip.c.members = members
 
 },
+//#region bamboo — 🎋 the schematic gets jointed, and the fold reads its surroundings (Se)
+// ══ Vtuff_bamboo — the same distilled rows, grown into a jointed STALK ═══════════════════════════
+//  §🎋's first build.  The flat Vrow list of Vtuff_default becomes a stalk of SEGMENTS (the bamboo
+//   internodes) divided by JOINTS: crown (who it is) · cane (its members) · leaf (the shared
+//    facts|spreads) · shoot (the /*N surf handle).  A pane then reads its SHAPE at a glance — how
+//     many joints, which band is thick — before a word is read.  Each %Vseg carries a live c.se
+//      EMPHASIS (Se, below): the renderer flattens the segments (backward-compatible — the rows
+//       come out in tree order, so a Se-blind renderer loses nothing) and MAY thicken|quiet a band
+//        by its se.  Reuses the flat distiller's leaf helpers (Vtuff_keyrows into the leaf segment)
+//         so the wording logic lives in ONE place; empty bands just carry no rows.
+//  A workspace PREF (rule 4): Vtuff_bamboo_on reads the stash, absent → the flat tree, zero change.
+//   ONE switch drives everything — the renderer adapts to whatever tree Vtuff_build returns.
+Vtuff_bamboo_on() {
+    return !!(this.stashed && this.stashed.Cyto_bamboo)
+
+},
+Vtuff_bamboo(root, members, src) {
+    let kinds = {}
+    for (const m of members) kinds[Object.keys(m.sc)[0]] = 1
+    let homo = Object.keys(kinds).length === 1
+    let tag = src.c.fold_kind || Object.keys(kinds)[0]
+    let name = ''
+    if (!src.c.gang) {
+        tag = Object.keys(src.sc)[0]
+        name = this.Vtuff_name(src)
+    }
+    // crown — identity, the first joint, always present
+    let crown = root.i({ Vseg: 1, seg: 'crown', joint: 0 })
+    crown.i({ Vrow: 1, row: 'title', text: (name ? name + '  ' : '') + '×' + members.length, wgt: 2, tag: tag })
+    // cane — the members (only when there ARE member rows: a mixed big family speaks only in leaf)
+    if (homo || members.length <= 5) {
+        let cane = root.i({ Vseg: 1, seg: 'cane', joint: 1 })
+        if (homo) {
+            let r = cane.i({ Vrow: 1, row: 'list', text: '', wgt: 1 })
+            let shown = members
+            if (members.length > 25) shown = members.slice(0, 25)
+            for (const m of shown) {
+                let bsc = { Vbit: 1, text: this.Vtuff_member_bit(m), n: 1 }
+                let bsub = m.o().length
+                if (bsub) bsc.sub = bsub
+                let b = r.i(bsc)
+                b.c.member = m
+            }
+            if (members.length > shown.length) r.i({ Vbit: 1, text: '+' + (members.length - shown.length), n: 0 })
+        } else {
+            for (const m of members) {
+                let nm = this.Vtuff_name(m)
+                let mmk = Object.keys(m.sc)[0]
+                let sub = m.o().length
+                let rsc = { Vrow: 1, row: 'member', text: nm || mmk, wgt: 1 }
+                if (nm) rsc.tag = mmk
+                if (sub) rsc.sub = sub
+                let r = cane.i(rsc)
+                r.c.member = m
+                if (members.length <= 3 && sub && sub <= 3) {
+                    for (const k of m.o()) {
+                        let knm = this.Vtuff_name(k)
+                        let kmk = Object.keys(k.sc)[0]
+                        let ksc = { Vrow: 1, row: 'sub', text: knm || kmk, wgt: 1 }
+                        if (knm && kmk !== mmk) ksc.tag = kmk
+                        let ksub = k.o().length
+                        if (ksub) ksc.sub = ksub
+                        let sr = cane.i(ksc)
+                        sr.c.member = k
+                    }
+                }
+            }
+        }
+    }
+    // leaf — shared facts + spreads (reuse the flat distiller's keyrows into this segment)
+    let leaf = root.i({ Vseg: 1, seg: 'leaf', joint: 2 })
+    if (homo) {
+        this.Vtuff_keyrows(leaf, members, [Object.keys(kinds)[0], this.Vtuff_namekey(members[0])])
+    } else {
+        this.Vtuff_keyrows(leaf, members, [])
+    }
+    // shoot — the /*N surf handle, the last joint, always present
+    let shoot = root.i({ Vseg: 1, seg: 'shoot', joint: 3 })
+    let bdip = shoot.i({ Vrow: 1, row: 'dip', text: '/*' + members.length, wgt: 1 })
+    bdip.c.members = members
+
+},
+// Vtuff_world — walk c.up to the enclosing w, for Se's neighbourhood read.  Capped so a detached
+//  or mid-mint tree can't spin.
+Vtuff_world(src) {
+    let n = src
+    let i = 0
+    while (n && i < 24) {
+        if (n.sc && n.sc.w) return n
+        n = n.c.up
+        i = i + 1
+    }
+    return null
+
+},
+// Vtuff_se — SURROUNDINGS-REACTIVE emphasis: the owner's Se, "what to do given the surroundings."
+//  The FIRST Se in the geometry|pane domain (the twin of Voro_crushable, which judges a node in
+//   ISOLATION — Se widens the read to the neighbourhood).  Today it reads the RADIO: the pane the
+//    tuner is lighting (w.c.drift_focus) RAMPAGES — swell the cane (show the members) and the leaf;
+//     a pane the tuner has dwelt PAST (not in the open window while a focus lives elsewhere) QUIETS
+//      its leaf detail (0 = the renderer may collapse it).  Everything else stays neutral (1).
+//   Pure c-side reads of the drift stamps — no DOM (rule 6), no snap (rule 2) — so it re-runs off
+//    the cache every build call without churning the cached structure.  This is the seam the §🎋
+//     chain grows on: Se1 (am I lit?) → Se2 (…so which bands, and how loud) → per-segment emphasis;
+//      when chains are wanted the read widens to siblings + what's popped + what the radio lights.
+Vtuff_se(src) {
+    let e = { crown: 1, cane: 1, leaf: 1, shoot: 1 }
+    let w = this.Vtuff_world(src)
+    if (!w) return e
+    if (w.c.drift_focus === src) {
+        e.cane = 2
+        e.leaf = 2
+        return e
+    }
+    let opens = w.c.drift_opens || []
+    if (w.c.drift_focus && opens.indexOf(src) < 0) e.leaf = 0
+    return e
+
+},
+// Vtuff_se_apply — stamp the live emphasis onto the (cached) segment tree: c-side only (seg.c.se),
+//  so the structure caches while the emphasis stays live.  A no-op on a flat (non-bamboo) tree.
+Vtuff_se_apply(root, src) {
+    let e = this.Vtuff_se(src)
+    for (const seg of root.o()) {
+        if (Object.keys(seg.sc)[0] !== 'Vseg') continue
+        let k = seg.sc.seg
+        seg.c.se = e[k] == null ? 1 : e[k]
+    }
+},
+//#endregion
+
 // Vtuff_keyrows — shared facts + spreads over the members' keys, skipping every key in `skips`
 //  (when homogeneous: the family mainkey AND the naming key the list showed members by — the
 //   title|list already said them; a spread repeating either is the 'cell: Olearia ×4' then
@@ -886,6 +1027,130 @@ VoroRadio_witness(w) {
     if (w.c.radio_repool && !(w.oa({see: 'an aged locale re-ganged and re-entered the pool — attention is a cycle not a consumption'}))) w.i({see: 'an aged locale re-ganged and re-entered the pool — attention is a cycle not a consumption'})
     let hand = w.c.radio_hand || []
     if (hand.length > 0 && hand.every(x => (x.c.popped || x.c.popped_open) && !x.c.popped_auto) && !(w.oa({see: 'the hand outranks the tuner — a manual pop survived every dwell untouched'}))) w.i({see: 'the hand outranks the tuner — a manual pop survived every dwell untouched'})
+},
+//#endregion
+
+//#region pier — VoroRadioPier: the tuner drifts over MUSIC dribbled in from a (fake) Pier
+// ══ the fake music Pier — a deterministic catalog, the DRIBBLE-SOURCE the tuner walks ═══════════
+//  "VoroRadio feeding music in from a Pier" (owner), the Pier "very fake" by licence.  Structurally
+//   the flora-mirror: a %Pier holds tracks keyed STATION-as-mainkey ({Fernway:'Tide'}) exactly as
+//    the flora keys taxa genus-as-mainkey, so the SAME crush gangs same-station tracks into a locale
+//     and the SAME Voro_drift_tick walks across stations — zero new render, zero new fold policy.
+//      No transport, no audio, no wall clock: tracks are the deterministic sprinkle twin of
+//       Botany_plant (fixtures byte-stable).  The Pier is the source content flows in from (spec
+//        Voro_vtuffing.md §Owner vision seeds — dribble → swish → Travel → trail).
+Radio_stations() {
+    return ['Fernway', 'Moonlit', 'Kolter', 'Sable', 'Vireo', 'Halcyon', 'Brasswick', 'Lowfield']
+},
+Radio_titles() {
+    return ['Tide', 'Halo', 'Drift', 'Ember', 'Vellum', 'Marrow', 'Cinder', 'Fathom', 'Glass', 'Lantern', 'Pulse', 'Ridge', 'Solace', 'Wend', 'Yolk', 'Zephyr']
+},
+Radio_genres() {
+    return ['dreampop', 'krautrock', 'ambient']
+
+},
+// plant one track under the pier, keyed by its STATION (the mainkey, so a station's tracks gang);
+//  a deterministic sprinkle rides each (stable fixtures): a %year of three values (a Vtuffing
+//   SPREAD — chips), %live on ~1/3 (a presence-FACT — 'live ×N'), and a %genre the whole station
+//    agrees on (a shared FACT), so a station pane speaks like a real locale.  vfamily by genre
+//     ropes same-genre stations into one ⬡ hull.  Station stays the first key.
+Radio_track(pier, station, title) {
+    let sc = {}
+    sc[station] = title
+    let hsh = this.Voro_hash(station + '|' + title)
+    let years = ['1998', '2007', '2019']
+    sc.year = years[hsh % 3]
+    if (hsh % 3 === 0) sc.live = 1
+    let genres = this.Radio_genres()
+    sc.genre = genres[this.Voro_hash(station) % 3]
+    let tr = pier.i(sc)
+    tr.c.vfamily = 'pier:' + sc.genre
+    return tr
+
+},
+// tune k tracks of a station into the pier (the flora-mirror of VoroMitosis_found).  Offset the
+//  title index by how many the station ALREADY has, so a later dribble adds FRESH titles instead of
+//   re-planting the seed's ({station:title} would collide → a station showing the same track twice).
+Radio_station_in(pier, station, k) {
+    let titles = this.Radio_titles()
+    let si = this.Radio_stations().indexOf(station)
+    if (si < 0) si = 0
+    let have = pier.o().filter(c => Object.keys(c.sc)[0] === station).length
+    for (let t = 0; t < k; t++) this.Radio_track(pier, station, titles[(si * 3 + have + t) % titles.length])
+
+},
+// the pier itself — one dribble-source node under w
+Radio_pier(w) {
+    let p = w.o({ Pier: 1, name: 'Crowd' })[0]
+    if (!p) p = w.i({ Pier: 1, name: 'Crowd' })
+    return p
+
+},
+// the initial library: six stations open at once so ≥4 locales exist for the drift-count witness
+Radio_seed(w) {
+    let p = this.Radio_pier(w)
+    this.Radio_station_in(p, 'Fernway', 4)
+    this.Radio_station_in(p, 'Moonlit', 3)
+    this.Radio_station_in(p, 'Kolter', 4)
+    this.Radio_station_in(p, 'Sable', 3)
+    this.Radio_station_in(p, 'Vireo', 4)
+    this.Radio_station_in(p, 'Halcyon', 3)
+
+},
+// the stream keeps flowing: one more track dribbles onto a station each drift beat (deterministic
+//  by beat, so the fold GROWS under the tuner — the Pier is not a one-shot seed but a source).
+Radio_dribble(w, n) {
+    let p = this.Radio_pier(w)
+    let sts = this.Radio_stations()
+    this.Radio_station_in(p, sts[n % 6], 1)
+
+},
+// ══ VoroRadioPier — VoroRadio's music twin: the tuner PROVEN over a streamed Pier of stations ════
+//  brand_new — record LIVE with eyes on (this session compile-verified + smoke-checked it, did NOT
+//   record fixtures).  Same witness shape as VoroRadio (moving) plus two Pier-specific truths: the
+//    TRAIL was kept (the durable breadcrumb — "saving the trail") and music DRIBBLED in (the stream
+//     folded into locales).  The world MUST be named VoroRadioPier (Story_subHouse dispatches by it).
+VoroRadioPier(A, w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VoroRadioPier_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VoroRadioPier_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.Radio_seed(w)
+        if (n >= 3 && n <= 8) this.Radio_dribble(w, n)
+        if (n >= 2) this.Voro_crush_scan(w)
+        if (n >= 3 && n <= 8) {
+            let pick = await this.Voro_drift_tick(w)
+            let picks = w.c.radio_picks || []
+            if (pick) picks.push(pick)
+            w.c.radio_picks = picks
+            // saving the trail: a DURABLE breadcrumb of the WHOLE path (not just the drift_opens
+            //  window of 4) — station + track at each dwell, a down-payment on the §Owner vision.
+            let trail = w.c.radio_trail || []
+            if (pick) {
+                let mk = Object.keys(pick.sc)[0]
+                trail.push({ seq: n, station: mk, track: pick.sc[mk] })
+            }
+            w.c.radio_trail = trail
+        }
+        if (n === 9) this.VoroRadioPier_witness(w)
+    }
+
+},
+VoroRadioPier_witness(w) {
+    let picks = w.c.radio_picks || []
+    let distinct = picks.filter((p, i) => picks.indexOf(p) === i).length
+    if (picks.length >= 5 && distinct >= 4 && !(w.oa({see: 'the tuner walked the pier — six dwells lit four or more distinct stations of streamed music'}))) w.i({see: 'the tuner walked the pier — six dwells lit four or more distinct stations of streamed music'})
+    let trail = w.c.radio_trail || []
+    if (trail.length >= 5 && !(w.oa({see: 'the trail was kept — every dwell left a breadcrumb of its station and track behind the listener'}))) w.i({see: 'the trail was kept — every dwell left a breadcrumb of its station and track behind the listener'})
+    let p = w.o({ Pier: 1 })[0]
+    let ntracks = p ? p.o().length : 0
+    if (ntracks >= 12 && !(w.oa({see: 'music dribbled in from the pier — a dozen or more tracks streamed in and folded into station locales'}))) w.i({see: 'music dribbled in from the pier — a dozen or more tracks streamed in and folded into station locales'})
 },
 //#endregion
 

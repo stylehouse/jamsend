@@ -452,3 +452,227 @@ MusuRaTerm_witness(w):
     if (n === 8 && t && t.starved_gaps > t.healthy_gaps + 3 && !(oa %see:'a withheld run of segments surfaced as measured gaps — the spool starved without papering over the hole')) i %see:'a withheld run of segments surfaced as measured gaps — the spool starved without papering over the hole'
     // beat 10: the complete stock plays essentially gapless through the same spool — the gate is not vacuous.
     if (n === 10 && t && t.healthy_gaps <= 3 && t.starved_gaps > t.healthy_gaps + 3 && !(oa %see:'the complete stock played essentially gapless — the same spool that surfaced the starve runs clean when the stock is whole')) i %see:'the complete stock played essentially gapless — the same spool that surfaced the starve runs clean when the stock is whole'
+
+// ══ MusuRaStream — the FOURTH Ra* Book (Radio_todo §3.4/§9.3): a real LISTENING SESSION over the wire ═══════
+//  MusuRaCast pulls a Record WHOLE (one want → the whole tail, byte-faithful).  A real LISTEN is paced by the
+//   PLAYHEAD (owner: "grab this time thing" / "as real as possible without the other Pier being another browser
+//    tab"): the terminal primes a small buffer (the 4s at the RaTerm end), starts playing, and wants the NEXT
+//     window only as the head advances — while the caster serves at a bounded RATE (the slow transcode clock).
+//      Nothing is simulated: it is MusuRaCast's own two Piers on ONE H (DJ + Listener over a real Lake_link,
+//       Swarm-sealed), driven ONE BEAT at a time, and a gap EMERGES — a segment the playhead reaches before the
+//        rate-limited caster delivered it (across the post_do wire latency) is silence.  The drop set is READ
+//         from what actually failed to arrive, then measured through MusuRaTerm's own spool.  The starve is
+//          guaranteed by RATE < PLAY (the buffer drains whatever the exact transport cadence) — the numbers are
+//           knobs (owner: not firm) a live CHECK tunes; the SHAPE is the assertion.
+//  THE SESSION is one continuous ~40s arc — listen, hit a slow producer, CHANGE TRACK, keep listening — driven
+//   HEAD-FIRST (the phase turns on playhead position, never a pinned beat, so post_do settling can wobble the
+//    cadence without moving the claim):
+//   beat 2   SETUP  — DJ stocks TWO real opus Records (a session needs a track to change TO); the Lake_link
+//                     pair stands, the swarm + cast frame kinds arm, the handshake seeds
+//   beat 4   SEAL   — DJ mints a Music grant and the Listener redeems it over the wire; the gate goes live
+//   (flow)   TUNE   — the catalog husk crosses (both Record heads); the instant track A head lands, the paced
+//                     listen OPENS on A at the healthy rate
+//   5..∼      LISTEN — each beat pumps the wire and advances the playhead; the buffer refills just ahead of it
+//                     (gapless) until — past 60% of A — the caster rate DROPS (the slow producer) and the tail
+//                      of A STARVES (emergent holes, RATE < PLAY)
+//   ∼        SWITCH — A ends: the listen re-opens on track B and the rate is restored; a fresh buffer primes
+//   ∼        LISTEN — B streams fed to the end
+//   ∼        MEASURE— decode A and B and render each through the SAME spool with its REAL drop set: A gapless
+//                     vs A starved (the slow tail) vs B fed — the emergent time race made audible and measured
+//
+// CONVENTION (Musu*/Ra*): no Run_A_ recipe — the world MUST be named MusuRaStream (do_fn_for dispatches by
+//  w.sc.w) or the wrangle silently never fires.
+
+MusuRaStream(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuRaStream_drive,w,req
+        req%ok = 1
+
+// MusuRaStream_drive — the three skip gates (real stock + decode + WebCodecs Opus + writable share; needsFSA
+//  routes it to the local-FSA runner), then: setup once at beat 2, seal once at beat 4, and from beat 5 ONE
+//   playhead beat per step.  The wire is pumped every pass (frames settle over post_do), and MusuRaStream_flow
+//    fires the husk-cast + opens the listen the instant their preconditions hold (the crossing is not beat-pinned).
+async MusuRaStream_drive(w, req):
+    if (typeof OfflineAudioContext === 'undefined') {
+        if (!w.oa({ skipped: 'no_audio' })) w.i({ skipped: 'no_audio' })
+        return
+    }
+    if (typeof AudioEncoder === 'undefined') {
+        if (!w.oa({ skipped: 'no_webcodecs' })) w.i({ skipped: 'no_webcodecs' })
+        return
+    }
+    let nav = this.Crate_nav()
+    if (!nav || typeof nav.bin_write !== 'function') {
+        if (!w.oa({ skipped: 'no_writable_share' })) w.i({ skipped: 'no_writable_share' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuRaStream_setup(w)
+        if (n === 4) await this.MusuRaStream_seal(w)
+        if (n >= 5) await this.MusuRaStream_beat(w)
+    }
+    // pump both carriers every pass so posted frames settle within the run (the seal handshake, the husk,
+    //  and each rate-limited page ride post_do — an idle pass would strand them a beat).
+    for (const peering of w.o({ Peering: 1 })) await peering.do()
+    await this.MusuRaStream_flow(w)
+    await this.Musu_float(w)
+
+// beat 2 — stand the session: DJ stocks TWO real opus Records (Ra_stock take=2, idempotent — a session needs a
+//  track to change TO), the transport-real pair stands (one Lake_link between the two prepubs), the frame kinds
+//   arm, the handshake seeds.  A healthy producer rate and a CAP on how much of each track the session streams
+//    (a ~40s listen, not a full 78s tone).  Held by an expecting for the real encode clock.
+async MusuRaStream_setup(w):
+    w i reached:step_2
+    w.c.nav = this.Crate_nav()
+    let dj = await this.SwarmStaple_person(w, 'DJ')
+    let lis = await this.SwarmStaple_person(w, 'Listener')
+    w.c.dj_pre = dj.sc.prepub
+    w.c.lis_pre = lis.sc.prepub
+    w.c.racast_mirror_pier = lis.sc.prepub
+    w.c.rate_healthy = 4
+    w.c.racast_rate = 4
+    w.c.cap = 16
+    let link = await this.Lake_link(w, dj.sc.prepub, lis.sc.prepub)
+    w.c.tx = link[0]
+    w.c.rx = link[1]
+    this.Peeroleum_arm_whittle(w)
+    this.Swarm_arm(w)
+    this.Ra_cast_arm(w)
+    for (const peering of w.o({ Peering: 1 })) {
+        for (const pier of peering.o({ Pier: 1 })) pier.oai({ req: 'handshake' })
+    }
+    let lib = this.Ra_library(w, dj.sc.prepub)
+    w.c.racast_src = lib
+    // expecting() is NON-BLOCKING (it arms a ttlilt and returns; the stock runs off the mutex), so the
+    //  two track ids are derived LAZILY in MusuRaStream_flow once the Records have landed — reading them
+    //   here synchronously would find the library still empty.
+    await this.expecting(w, 'rastream_stock', 240, async () => { await this.Ra_stock(w, lib, w.c.nav, 'testsounds', 2) })
+    w.doai({ req: 'witness', eternal: 1 })?.(async (req) => { this.MusuRaStream_witness(w); req.sc.ok = 1 })
+
+// beat 4 — the seal over the wire: DJ mints an unbound Music offer, the Listener redeems; both ends land a
+//  %Pier with the mutual grant.  Wire the gate — the caster serves the listener only while the grant is live
+//   (the lookup re-asks every leg, so the gate is honest end to end).
+async MusuRaStream_seal(w):
+    w i reached:step_4
+    let dj = this.SwarmStaple_ident(w, 'DJ')
+    let lis = this.SwarmStaple_ident(w, 'Listener')
+    w.c.iz = await this.Swarm_mint_idzeug(w, dj, { Music: 1, genre: 'Classical' }, 'rastream_1')
+    await this.Swarm_redeem(w, lis, w.c.iz)
+    let djp = this.Swarm_peering(dj)
+    w.c.racast_allow = (peer) => { let p = djp.o({ Pier: 1, pub: peer })[0]; return !!(p && this.Swarm_pier_live(p, 'Music')) }
+
+// MusuRaStream_flow — the crossing + the tune-in, precondition-gated (post_do makes the settle beat vary):
+//  cast the catalog husk the instant the grant is live (both Record heads reach the listener — the stream
+//   totals it paces against), then OPEN the paced listen on track A the instant its mirror head has landed.
+//    Both one-shot flags on .c; the paced pull then drives from MusuRaStream_beat.
+async MusuRaStream_flow(w):
+    if (!w.c.racast_allow) return
+    let dj = this.SwarmStaple_ident(w, 'DJ')
+    if (!dj) return
+    let djp = this.Swarm_peering(dj)
+    let grantPier = djp ? djp.o({ Pier: 1, pub: w.c.lis_pre })[0] : null
+    let live = !!(grantPier && this.Swarm_pier_live(grantPier, 'Music'))
+    if (live && !w.c.cast_done) {
+        w.c.cast_done = 1
+        w.c.cast_n = await this.Ra_cast_catalog(w, w.c.tx, w.c.dj_pre, w.c.lis_pre)
+    }
+    // derive the two track ids the moment the src lib has stocked both (expecting is non-blocking, so
+    //  they appear over the beats after setup, in deterministic stock order — A first, B to change to).
+    if (!w.c.a_id) {
+        let src = w.c.racast_src
+        let srecs = src ? src.o({ Record: 1 }) : []
+        if (srecs.length >= 2) {
+            w.c.a_id = srecs[0].sc.id
+            w.c.a_total = Math.min(w.c.cap, +(srecs[0].o({ Stream: 1, name: 'opus' })[0]?.sc?.total || 0))
+            w.c.b_id = srecs[1].sc.id
+            w.c.b_total = Math.min(w.c.cap, +(srecs[1].o({ Stream: 1, name: 'opus' })[0]?.sc?.total || 0))
+        }
+    }
+    if (!w.c.a_id) return
+    let mir = w.o({ Library: 1, pier: w.c.lis_pre })[0]
+    let recA = mir ? mir.o({ Record: 1, id: w.c.a_id })[0] : null
+    let sA = recA ? recA.o({ Stream: 1, name: 'opus' })[0] : null
+    if (sA && +(sA.sc.total || 0) > 0 && !w.c.sess) {
+        w.c.sess = 1
+        this.Ra_term_stream_open(w, w.c.a_id, w.c.a_total, { prime: 6, floor: 4, play: 2 })
+    }
+
+// MusuRaStream_beat — ONE playhead beat of the paced listen (from step 5): read the mirror's received buffer
+//  for the CURRENT track and advance the head over the real want/serve/recv machinery.  The phase turns are
+//   HEAD-DRIVEN: past 60% of A the caster rate drops to 1 (the slow producer, RATE < PLAY → the tail starves);
+//    when A ends the listen re-opens on B at the restored rate; when B ends the session is measured.  drops[]
+//     on w.c.play are the real emergent holes — read at each track's end into a_drops / b_drops.
+async MusuRaStream_beat(w):
+    if (!w.c.sess) return
+    let p = w.c.play
+    if (!p) return
+    let mir = w.o({ Library: 1, pier: w.c.lis_pre })[0]
+    let rec = mir ? mir.o({ Record: 1, id: p.id })[0] : null
+    let s = rec ? rec.o({ Stream: 1, name: 'opus' })[0] : null
+    let segs = s ? (s.c.segs || []) : []
+    let r = await this.Ra_term_stream_beat(w, w.c.rx, w.c.lis_pre, w.c.dj_pre, segs)
+    if (p.id === w.c.a_id && p.head >= Math.floor(p.total * 0.6) && +(w.c.racast_rate || 0) > 1) w.c.racast_rate = 1
+    if (r.done && p.id === w.c.a_id && !w.c.switched) {
+        w.c.switched = 1
+        w.c.a_drops = p.drops.slice()
+        w.c.racast_rate = w.c.rate_healthy
+        this.Ra_term_stream_open(w, w.c.b_id, w.c.b_total, { prime: 6, floor: 4, play: 2 })
+        let sw = { switched: 1 }
+        if (p.drops.length) sw.a_dropped = p.drops.length
+        w.i(sw)
+    }
+    if (r.done && p.id === w.c.b_id && !w.c.measured) {
+        w.c.measured = 1
+        w.c.b_drops = p.drops.slice()
+        await this.MusuRaStream_measure(w)
+    }
+
+// MusuRaStream_measure — the session read: decode A and B from the stock and render each through the SAME spool
+//  MusuRaTerm uses, punched with its REAL drop set (only the streamed CAP segments).  A gapless vs A starved
+//   (the slow tail) vs B fed — the emergent time race made audible and measured, cached on w.c.stream + stamped.
+async MusuRaStream_measure(w):
+    await this.expecting(w, 'rastream_measure', 180, async () => {
+        let A = await this.Ra_term_decode(w, w.c.nav, w.c.a_id)
+        let B = await this.Ra_term_decode(w, w.c.nav, w.c.b_id)
+        if (A.fail || B.fail) { w.i({ measure_fail: A.fail || B.fail }); return }
+        let cap = w.c.cap
+        let a_per = A.per.slice(0, cap)
+        let b_per = B.per.slice(0, cap)
+        let a_len = 0
+        for (const x of a_per) a_len = a_len + x
+        let b_len = 0
+        for (const x of b_per) b_len = b_len + x
+        let a_ch = A.channels.map((c) => c.subarray(0, a_len))
+        let b_ch = B.channels.map((c) => c.subarray(0, b_len))
+        let a_drop = (w.c.a_drops || []).filter((x) => x < cap)
+        let b_drop = (w.c.b_drops || []).filter((x) => x < cap)
+        let a_gapless = this.Sound_measure(this.Ra_term_spool(a_ch, a_per, []))
+        let a_starved = this.Sound_measure(this.Ra_term_spool(a_ch, a_per, a_drop))
+        let b_stream = this.Sound_measure(this.Ra_term_spool(b_ch, b_per, b_drop))
+        w.c.stream = { cap: cap, a_drops: a_drop.length, a_gapless: a_gapless.gaps, a_starved: a_starved.gaps, b_drops: b_drop.length, b_gaps: b_stream.gaps }
+        let row = { streamed: 1, cap: cap, a_drops: a_drop.length, a_gapless: a_gapless.gaps, a_starved: a_starved.gaps, b_drops: b_drop.length, b_gaps: b_stream.gaps }
+        w.i(row)
+    })
+
+// ── the witness — %see observations reading live truth (no commas no apostrophes) ──
+//  Setup at beat 2; the session claims fire off the streamed row at WHATEVER beat the real wire settled it
+//   (>= not === : the head-driven session finishes at a variable beat, and %see is once-noticed so it lands
+//    the first beat its truth holds).  Thresholds (gapless <= 3, starved > gapless + 2) are TUNED off the
+//     first live CHECK run — the streamed row records the real gap counts so the gates can be set from them.
+MusuRaStream_witness(w):
+    let n = (this.c.run)?.c.step_n
+    let lib = w.c.racast_src
+    let recs = lib ? lib.o({ Record: 1 }) : []
+    let s = w.c.stream
+    // beat 2: two real opus Records stand at the caster — a session with a track to change TO.
+    if (n === 2 && recs.length >= 2 && recs[0].sc.real && recs[1].sc.real && !(oa %see:'two real opus Records stand at the caster — a session with stock to listen and a track to change to')) i %see:'two real opus Records stand at the caster — a session with stock to listen and a track to change to'
+    // the healthy portion of the listen played gapless — the buffer stayed ahead of the playhead over the wire.
+    if (n >= 6 && s && s.a_gapless <= 3 && !(oa %see:'the healthy portion of the listen played gapless — the buffer stayed just ahead of the playhead as it advanced over the wire')) i %see:'the healthy portion of the listen played gapless — the buffer stayed just ahead of the playhead as it advanced over the wire'
+    // the slow producer starved the SAME stream — real holes emerged when the rate fell below the playhead.
+    if (n >= 6 && s && s.a_drops > 0 && s.a_starved > s.a_gapless + 2 && !(oa %see:'the slow producer starved the same stream — real holes emerged when the rate-limited caster fell behind the playhead')) i %see:'the slow producer starved the same stream — real holes emerged when the rate-limited caster fell behind the playhead'
+    // changing the track resumed a fed stream — a fresh buffer primed over the wire and the new head stayed ahead.
+    if (n >= 6 && s && s.b_gaps <= 3 && !(oa %see:'changing the track resumed a fed stream — a fresh buffer primed over the wire and the new playhead stayed ahead')) i %see:'changing the track resumed a fed stream — a fresh buffer primed over the wire and the new playhead stayed ahead'
+    // the starve was pulled over the real wire — the holes are what the caster failed to deliver in time.
+    if (n >= 6 && s && s.a_drops > 0 && s.a_starved > s.a_gapless + 2 && s.b_gaps <= 3 && !(oa %see:'the starve was pulled over the real wire — the holes are what the rate-limited caster failed to deliver in time not a computed set')) i %see:'the starve was pulled over the real wire — the holes are what the rate-limited caster failed to deliver in time not a computed set'

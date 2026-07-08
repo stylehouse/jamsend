@@ -133,6 +133,39 @@ Renders as the **🕳 tunnel** north star above: A:Tunnel is the actor that HOST
  gently-turning drift that vision draws on the tube wall — same word, two faces (the
   render is the wall you see, A:Tunnel is the engine turning behind it).
 
+**Owner vision seeds (2026-07-08, dropped at the edge of sleep — the navigation over the endless
+ Travel).**  Six facets of ONE picture: the scape as a *living, Travel-able river of stuff* you
+  move through endlessly, with content flowing in and a scrubbable wake behind you.  They are
+   north-stars (pixel + core layout + interaction — none Book-gateable, all eyes-on), captured here
+    so the destination stays legible; a few have near-buildable seams noted.
+- **Dribble in from the edge or center.**  The *seeding/entry* policy (the open half of #10/#13):
+   a new node is BORN at a source — the container centroid, or an edge portal — and flows outward,
+    so it never starts life as an isolated viewport-giant (the runaway cell #13 chases).  A one-shot
+     seed-position hint (metaphysics #1-legal: set positions, fcose disposes), NOT a servo.  **A
+      `%Pier` is exactly such a source** — "VoroRadio feeding music from a Pier" = music dribbling in
+       from the Pier node.  (This is the concrete, watchable instance — being built now as
+        `VoroRadioPier`; the Pier IS the dribble-source.)
+- **Swished around.**  The *motion*: #14's Lloyd/relaxation, then the owned-integrator's per-tick
+   force sum.  Discrete swish = the #14 cage; continuous swish = the cage off (see §next-moves #14).
+- **Trans-cellular filamentation.**  Threads that CROSS cells — relationships drawn as filaments
+   spanning the tessellation (VoroScape's Peer-shares=edges, or a chain of Se, threading BETWEEN
+    panes rather than only reading as shared walls).  A render concept atop the cells; pairs with Se
+     chains (the filament is the wire a verdict travels).
+- **Endless Travel, saving the trail.**  The drift tuner is already an endless Travel over folds
+   (`Voro_drift_tick`, no `done` — the A:Tunnel "ambient landscape has no done").  Today it keeps a
+    WINDOW (`drift_opens`, cap 4) + `radio_picks`; "saving the trail" = a DURABLE breadcrumb of the
+     whole path (a Storyrun-grade trail record, c-side).  **Near-buildable** — a down-payment on it
+      rides the `VoroRadioPier` build (keep the full pick trail, not just the window).
+- **A light cone of stuff from the current point.**  From the Travel head, render the cone of
+   related stuff — behind (visited) and ahead (reachable/candidate), the drift's own family+sibling
+    scoring already computes the neighbourhood (`Voro_drift_tick` scoring at :860).  Visualising it
+     is the pixel step.
+- **Wind forward | back.**  Transport controls over the trail/waves — scrub the attention walk (or
+   the wave history) rewind/fast-forward.  The manual `←/→` one-wave-per-fire (#11 waitVoro) is the
+    seed; winding the TRAIL (re-focus to pick k, replay the cone) is the extension.
+Taken together these ARE the Tunnel made navigable: dribble (in) → swish (settle) → Travel (through)
+ → trail+cone (wake) → wind (scrub).  The radio is the autopilot; the human can also take the wheel.
+
 **Status & frontier.**  Parameterisation is SETTLED (2026-07-07): the projection world is
  `w:Voronoiology` (one handle across all `Book:Voro*`), and the fold is IMPOSED from above —
   `The/Opt/useVoroCyto` folds a *data* Book at snap time (twin of `useCyto`), the projection

@@ -22,6 +22,12 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 A rolling brief: the newest work sits here first, then gets baked into its home section
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 
+**STATUS 2026-07-08 — the three-verb pipeline (§3 rastock→racast→raterm) is COMPLETE and live-verified GREEN.**
+ All three `MusuRa*` Books re-recorded green under the rename (verdicts in the MusuRaTerm block below). The next
+  frontier is Pier reality (§9) — the suggested order is 9.1 real `/music` library → 9.10's spine (one real file
+   offer→pull→play) → 9.2 Shares → 9.4 multicast — and §10 Klepto (heist-at-a-Pier). Pick one and go; nothing in §3
+    is now blocking.
+
 **Won 2026-07-07 — rastock SHIPS (§3.2, live-verified).** MusuRaStock is green, ttlilt-free, and
  proven on a live runner. Three things landed with it:
  - **The `.jam` stock format** — one file per `%Record`, shaped `json-header + \n + length-
@@ -65,7 +71,7 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
   general" (a protocol-level omit like the body_hash Organ-2 mask) as an alternative to the per-Entcase
    `{TOK}` graft; UNSCOPED — touches Text encode `omit_sc`. (b) dead page-loop in `Ra_cast_send_lines` (the
     husk sender; harmless — empty bufmap) — tidy on the NEXT Ra.g touch, not a standalone compile+record.
-**RAN LIVE GREEN-IN-SUBSTANCE 2026-07-08 — MusuRaTerm (§3.4, the LAST verb); the Ra*→MusuRa* rename LANDED — all three MusuRa* Books now pending re-record.**
+**SHIPPED + LIVE-VERIFIED GREEN 2026-07-08 — MusuRaTerm (§3.4, the LAST verb); the Ra*→MusuRa* rename LANDED and all three MusuRa* Books re-recorded green.**
  The terminal that PLAYS: decode the stocked opus back to real PCM and prove honest playback. Ran clean on a live
   fsa runner (12/12 beats, no step errors) and READ THE SNAP: Cosmic C stocked (source -7.33 LUFS + a -6.67 dB
    bake = -14 exactly), decoded whole — `heard,seconds=78,segs=39,lufs=-14,healthy=0,starved=320,dropped=8`: the
@@ -101,13 +107,12 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
       `Ra_term_*`, `Ra_lufs` — NEVER `MusuRa_*` (snake). So a fully-named Book method DRIVES a short engine verb
        (`MusuRaTerm_hear` → `Ra_term_decode`), the same way the `Musu*` Books drive `Sound_*`. Consequence: MusuRaStock + MusuRaCast were green as RaStock/RaCast and the name is baked into their
       snaps (`H:RaStock`→`H:MusuRaStock`), so all three go red and re-record together.
- NEXT MOVE (human, fsa-live :9091 runner — one is up at `49dee91d61a9de64`, idle): (1) RELOAD the runner tab so
-  Creduler re-acquires the fresh `gen/Story/Radiation.go` + the renamed `wormhole/Story/MusuRa*/` tocs (LocalGen wrote
-   disk but did NOT HMR the tab; a `total:1` Prep-only run = it did not re-acquire, BOMB 2). (2) `run MusuRaStock`,
-    `run MusuRaCast`, `run MusuRaTerm` (each `--watch`), then `snap <n>`. (3) MusuRaTerm's five gates already HELD on
-     the live CHECK (`heard,seconds=78,segs=39,lufs=-14,healthy=0,starved=320`), so accept records its baseline;
-      MusuRaStock/MusuRaCast re-record their prior-green content under the new names (identical bar the `H:`/`w:` name
-       → fresh diges). (4) ACCEPT all three → GREEN; `%see` via CHECK-run + manual, NEVER CredRunner ACCEPT. UNCOMMITTED.
+ DONE 2026-07-08 (verified this session on the live runner `49dee91d61a9de64`, released after): the tab had been
+  reloaded, all three re-ran green, baselines accepted, host committed. Live verdicts — **MusuRaStock** 5/5
+   ok_pct:1 (2 entropy-caveats), **MusuRaCast** 12/12 ok_pct:1 (9 entropy-caveats), **MusuRaTerm** 12/12 ok_pct:1
+    (0 caveats — deterministic, no Wref, as designed). All five `%see` per Book are installed and recorded (Term
+     fires 2/4/6/8/10 on `heard,seconds=78,segs=39,lufs=-14,healthy=0,starved=320`). The pipeline (§3) is COMPLETE;
+      the frontier is §9 (real library) then §10 (Klepto). The two BOMBs below stay — they are durable Ra gotchas.
  BOMB 1 — DON'T `ghost-compile` an Ra SPINE-ghost change against a live editor: it HANGS. HMR-remixing
   the depended-on Ra spine into the live runtime wedges it (proven — even a trivial valid method hangs;
    only the pristine no-op hash replies). Leaf Book ghosts (Radiation.g) slip through. Use **LocalGen**
@@ -257,7 +262,7 @@ Casting is **Repli, never RPC** (the all-pervading rule): the catalog crosses as
  - **Book: `MusuRaCast`** — a sealed pair; stock stands at A; B pulls one Record whole (pages,
     sha256-verified) and tunes A's live edge; a revoked B hears nothing new.
 
-### 3.4 raterm — the terminal that plays  — ⚙ AUTHORED 2026-07-08, awaiting first live CHECK (§0)
+### 3.4 raterm — the terminal that plays  — ✓ SHIPPED 2026-07-08, live-verified GREEN (§0)
 
 The Musu cursor machinery finally earns its keep as the REAL spool: want-ahead keyed off the
  playhead (§9.3), `decodeAudioData` per 2s segment (a from-zero full-track listen may instead
@@ -277,6 +282,39 @@ The tiny aspect proofs become `Radio_lowlevel.md` material as `Ra*` goes green �
  higher-level re-draws: MusuCrowd's many-listeners claim re-proves ON racast, the spool slices
   re-prove INSIDE raterm, MusuSignal's starve gate inside MusuRaTerm. Nothing is deleted until its
    re-draw stands.
+
+### 3.6 What is REAL and what is a MOCK in the Ra Books (honest ledger)
+
+Owner asked (2026-07-08) to keep the mock boundary explicit: the `%see` claims say "real opus
+ Record", which is TRUE of the bytes but invites a misread. Precisely — **it IS real music
+  processing; only the SOURCE tones and the transport WIRE are stubbed.**
+
+**REAL (the substance — genuine audio, not a by-reference stub):**
+ - **the whole DSP path** — `OfflineAudioContext` decode → needles K-weighted LUFS meter →
+    baked gain → WebCodecs Opus encode → ~2s segments → `.jam` on real disk → `decodeAudioData`
+     back → muted Web-Audio playback. The −14 LUFS target genuinely survives the opus round trip
+      (MusuRaTerm reads it back). Real bytes, real loudness math, real codec.
+ - **storage** — real `.jam` files through the FSA-share nav (`Ra_pack`/`Ra_unpack`).
+ - **protocol** — frames, per-Pier `seq`, sha256 `body_hash` per page, fixed-stride paging,
+    husk/catalog offer, park/serve (the Repli/Peeroleum floor).
+ - **consent/crypto** — Swarm mints|verifies REAL grants; the seal is a real signature (it
+    varies → harvested into `AudibleEntropy`); a revoked peer genuinely gets silence.
+
+**MOCK (two deliberate stubs, each with a named path to real):**
+ - **the SOURCE material** — NOT `/music`. The tracks are pure-sine WAV tones synthesized in
+    `src/lib/O/LiesFunk.svelte` (`TEST_TONES` + `wav_bytes`; "Cosmic C" = a 1046.5 Hz sine, artist
+     "DJ Oscillo", 78s), written to a `testsounds` share and then really stocked. Chosen so the
+      frequency IS the label (an FFT decodes which tone played) and the loudness spread exercises
+       BOTH gain directions (Dorian D at amp 0.2 boosts up, the rest attenuate down). **This is the
+        ONE thing §9.1 makes real: point the same `Ra_stock` at real `/music` files instead of the
+         synth `testsounds`.** Everything downstream is already real. (§9.1's "Musu_synth output"
+          is this same synth source under an older name.)
+ - **the transport WIRE (MusuRaCast)** — `Lake_link` pairs two in-process ports and carries
+    `frame.buffer` BY REFERENCE: no serialization, no real loss (adversaries INJECT it), no
+     congestion, no NAT, no WebRTC datachannel. The protocol riding it is real; the carrier is
+      tame. Full ledger + the forcing function (Klepto rung 10.2 — 2+ real runners) live in §10.1.
+
+So "real opus Record" means real opus STOCK (vs a by-reference stub), not a `/music` file yet.
 
 ---
 

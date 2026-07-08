@@ -905,9 +905,9 @@
     type MicroChip = { text: string, n: number, member?: TheC, sub?: number, px?: number, py?: number }
     type MicroRow  = { text: string, kind: string, x: number, y: number, w: number, h: number, fs: number,
                        color: string | null, tag?: string, sub?: number,
-                       chips?: MicroChip[], member?: TheC, dip?: boolean }
+                       chips?: MicroChip[], member?: TheC, dip?: boolean, seg?: string, se?: number }
     type VtuffDesc = { text: string, kind: string, color?: string | null, tag?: string, sub?: number,
-                       chips?: MicroChip[], member?: TheC, dip?: boolean }
+                       chips?: MicroChip[], member?: TheC, dip?: boolean, seg?: string, se?: number }
     let vmicro       = $state<{ id: string, x: number, y: number, w: number, h: number, clip: string, rows: MicroRow[] }[]>([])
     let micro_on_ids = new Set<string>()   // hysteresis memory: which cells are swapped in
     let vtuffing_pref = $state<boolean | null>(null)
@@ -920,6 +920,18 @@
             for (const id of micro_on_ids) { const mel = overlays.get(id); if (mel) mel.style.opacity = '' }
             micro_on_ids = new Set(); vmicro = []
         } else voronoi_soon()
+    }
+
+    // 🎋 bamboo (Voro.g Vtuff_bamboo): a workspace pref, default OFF — the flat rows.  ON grows the
+    //  jointed %Vseg stalk + live Se emphasis.  Voro.g reads the SAME stash key (this.stashed.Cyto_bamboo),
+    //   so flipping here is the whole switch; the vtuffing cache re-keys on the flag and rebuilds.
+    let bamboo_pref = $state<boolean | null>(null)
+    const bamboo_on = $derived(bamboo_pref ?? false)
+    function toggle_bamboo() {
+        bamboo_pref = !bamboo_on
+        const stb = (H as any).stashed
+        if (stb) stb.Cyto_bamboo = bamboo_pref
+        voronoi_soon()
     }
 
     // one short identity line — the TS twin of Voro.g's Vtuff_ident, for the fallback
@@ -941,7 +953,7 @@
             const root = build.call(H, src)
             if (!root) return []
             const out: VtuffDesc[] = []
-            for (const r of root.o() as any[]) {
+            const row_desc = (r: any, seg?: string, se?: number): VtuffDesc => {
                 const kind = (r.sc.row as string) ?? 'fact'
                 const d: VtuffDesc = { text: String(r.sc.text ?? ''), kind }
                 if (r.sc.tag) d.tag = String(r.sc.tag)
@@ -951,7 +963,23 @@
                 if (kind === 'dip') d.dip = true
                 const bits = r.o() as any[]
                 if (bits.length) d.chips = bits.map((b: any) => ({ text: String(b.sc.text ?? ''), n: (b.sc.n as number) ?? 0, member: b.c.member, sub: b.sc.sub as number | undefined }))
-                out.push(d)
+                if (seg) d.seg = seg
+                if (se != null) d.se = se
+                return d
+            }
+            // 🎋 bamboo (Voro.g Vtuff_bamboo): the rows are wrapped in %Vseg JOINTS.  Flatten them
+            //  in tree order — a Se-blind fit loses nothing (same rows, same order as the flat
+            //   tree) — while carrying the segment name + live c.se emphasis onto each row so a
+            //    later fit can draw the joints and swell|quiet a band.  A flat (non-bamboo) tree
+            //     has no %Vseg children, so this degrades to the plain per-row path.
+            for (const r of root.o() as any[]) {
+                if (Object.keys(r.sc ?? {})[0] === 'Vseg') {
+                    const seg = String(r.sc.seg ?? '')
+                    const se = (r.c?.se ?? 1) as number
+                    for (const rr of r.o() as any[]) out.push(row_desc(rr, seg, se))
+                } else {
+                    out.push(row_desc(r))
+                }
             }
             return out
         }
@@ -2355,6 +2383,8 @@
         if (typeof stashed_b === 'boolean') brush_pref = stashed_b
         const stashed_t = (H as any).stashed?.Cyto_vtuffing
         if (typeof stashed_t === 'boolean') vtuffing_pref = stashed_t
+        const stashed_bam = (H as any).stashed?.Cyto_bamboo
+        if (typeof stashed_bam === 'boolean') bamboo_pref = stashed_bam
         const stashed_r = (H as any).stashed?.Cyto_radio
         if (stashed_r === true) { radio_pref = true; radio_timer = setInterval(radio_tick, RADIO_DWELL) }
         const stashed_tu = (H as any).stashed?.Cyto_tunnel
@@ -2486,6 +2516,8 @@
             title="gravity brush — wheel pinches|spreads the locale under the cursor (Ctrl+wheel still zooms)">🌀</button>
         <button class="v-toggle" class:on={vtuffing_on} onclick={toggle_vtuffing}
             title="vtuffing — a big-enough pane swaps its molded Stuffing for member rows fitted to the cell (off = Stuffings always)">▤</button>
+        <button class="v-toggle" class:on={bamboo_on} onclick={toggle_bamboo}
+            title="🎋 bamboo — a vtuffing pane grows a jointed stalk (crown·cane·leaf·shoot) that reacts to the radio (Se); off = flat rows">🎋</button>
         <button class="v-toggle" class:on={radio_on} onclick={toggle_radio}
             title="radio — the graph plays you: a tuner drifts attention pane to pane and opens each a little (touch anything to hold it off)">📻</button>
         <button class="v-toggle" class:on={tunnel_pref ?? false} onclick={toggle_tunnel}
