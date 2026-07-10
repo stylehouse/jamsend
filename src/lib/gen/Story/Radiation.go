@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Radiation(): string { return 'b90d24b030a62a9b' },
+    Ghostmeta_Ghost_Story_Radiation(): string { return '637eccf89e3d00a5' },
 
 // Radiation.g — the Ra* PRODUCT Books (rastock → racast → raterm; Radio_todo.md §3), in the
 //  Musuation/Swarmation mould: the file is the artifact; MusuRaStock is the first Book identity.
@@ -16,19 +16,25 @@
 //    so Ghost/M/Ra.g's pipeline spine is on H.  These Books test the PRODUCT — a low-level Musu*
 //     Book retires only when its Ra* re-draw here is green (the consolidation rule).
 //
+//  THE CHUNK-PARTICLE REBUILD (2026-07-10): the cast wire DISSOLVED into Repli — a %Record's chunks
+//   are real %Preview,seq/%Stream,seq child particles (bytes on .sc.buf, muted in the snap), the
+//    generic offer/want/park/serve machinery moves them, and the on-demand stream transcode hangs
+//     off PARKED WANTS (fork (c): demand-driven — nothing past the preview exists until asked).
+//      These Books therefore arm Repli_arm, gate with w.c.repli_allow, and drive Ra_transcode_pump.
+//
 //  MusuRaStock — a real library becomes SERVABLE STOCK, end to end (needsFSA: the stock really writes):
 //   beat 2  SURVEY — walk testsounds off the granted share; the census home (%Library,pier:DJ)
 //                    stands empty — nothing pre-stocked in the world
 //   beat 3  STOCK  — the first three tracks (three DIFFERENT source loudnesses) re-encode PREVIEW-
-//                    FIRST into loudness-uniform 2s Ogg-Opus segments (radiostock/<id>.jam caches
-//                    the preview window; the whole-track gain is measured and carded so the on-
-//                    demand continuation lands uniform) + a %Record with %Preview/%Stream heads
-//                    each (held by an expecting — real encode clock)
-//   beat 4  PROVE  — segment 0 of each read BACK off the disk → decodeAudioData (the dumb-fallback
-//                    path: if it decodes here it decodes anywhere) → the SAME meter that set the
-//                    gain reads the target loudness at ~2.00s (the EOS granule trim doing its job)
-//   beat 5  AGAIN  — a second pass finds the stock STANDING (stock.snap parses + every segment
-//                    file present) and rebuilds nothing: the idempotence that makes rastock a
+//                    FIRST: ONE continuous opus encode over the window, cut into ~2s packet chunks
+//                    that stand as %Preview,seq particles (radiostock/<id>.jam caches the same bufs;
+//                    the whole-track gain is measured and carded so the on-demand continuation lands
+//                    uniform) — held by an expecting (real encode clock)
+//   beat 4  PROVE  — chunk 0 of each read BACK off the disk → the raw-packet decoder (the same one
+//                    the terminal trusts) → the SAME meter that set the gain reads the target
+//                    loudness at ~2.00s
+//   beat 5  AGAIN  — a second pass finds the stock STANDING (the .jam parses + fmt matches + every
+//                    chunk present) and rebuilds nothing: the idempotence that makes rastock a
 //                    resumable library pass instead of a nightly re-encode
 //
 // CONVENTION (Musu*): no Run_A_ recipe — Story_subHouse stands up A:MusuRaStock/w:MusuRaStock by default.
@@ -42,7 +48,7 @@ MusuRaStock(A,w) {
 
     })
 },
-// MusuRaStock_drive — three skip gates (the Book needs decode + WebCodecs Opus encode + a writable
+// MusuRaStock_drive — three skip gates (the Book needs decode + WebCodecs Opus both ways + a writable
 //  share; needsFSA on its Credence row routes dispatch to the local-FSA runner), then one beat's
 //   setup fired once off step_n (req-local did_step, the Pere* lesson).
 async MusuRaStock_drive(w, req) {
@@ -50,7 +56,7 @@ async MusuRaStock_drive(w, req) {
         if (!w.oa({ skipped: 'no_audio' })) w.i({ skipped: 'no_audio' })
         return
     }
-    if (typeof AudioEncoder === 'undefined') {
+    if (typeof AudioEncoder === 'undefined' || typeof AudioDecoder === 'undefined') {
         if (!w.oa({ skipped: 'no_webcodecs' })) w.i({ skipped: 'no_webcodecs' })
         return
     }
@@ -83,7 +89,7 @@ async MusuRaStock_survey(w) {
     w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.MusuRaStock_witness(w); req.sc.ok = 1 })
 
 },
-// beat 3 — the stock pass, held by an expecting (decode + needles + ~35 fresh encoders per track
+// beat 3 — the stock pass, held by an expecting (decode + needles + the preview encode per track
 //  is real wall clock — and a throttled background tab stretches each meter call, so the budget
 //   carries margin; Story must not snap mid-pass).
 async MusuRaStock_stock(w) {
@@ -121,7 +127,7 @@ async MusuRaStock_pass(w, which) {
     w.i(p)
 
 },
-// MusuRaStock_proofs — segment 0 of every %Record back off the disk, all records IN PARALLEL (the
+// MusuRaStock_proofs — chunk 0 of every %Record back off the disk, all records IN PARALLEL (the
 //  throttled waits overlap instead of stacking); the %proof child rides the %Record it proves.
 async MusuRaStock_proofs(w) {
     let lib = this.Ra_library(w, 'DJ')
@@ -160,24 +166,36 @@ MusuRaStock_witness(w) {
     // beat 2: the walk gave tracks and the census home stands empty — nothing pre-stocked.
     let sv = w.o({ survey: 1 })[0]
     if (n === 2 && sv && +(sv.sc.tracks || 0) >= 3 && recs.length === 0 && !(w.oa({see: 'the share holds real tracks and the library stands empty'}))) w.i({see: 'the share holds real tracks and the library stands empty'})
-    // beat 3: three real %Records each preview-FIRST — a cached %Preview window and a %Stream head
-    //  that begins at exactly the segment after the last preview (the boundary is the mint's job).
+    // beat 3: three real %Records each preview-FIRST — the cached window standing as REAL chunk
+    //  particles (every %Preview,seq holding its bytes, head+preskip on seq 0 where the decoder
+    //   opens) and a boundary the stream side will pick up from (total past preview, NO %Stream
+    //    chunk existing yet — nothing past the preview exists until asked).
     let p1 = w.o({ stocked: 'first' })[0]
     let shape_ok = recs.length === 3
     for (const r of recs) {
-        let pv = r.o({ Preview: 1, name: 'opus' })[0]
-        let st = r.o({ Stream: 1, name: 'opus' })[0]
-        if (!(r.sc.real && pv && st && +(pv.sc.total || 0) > 0 && +(st.sc.from || -1) === +(pv.sc.total || 0) && +(st.sc.total || 0) >= +(pv.sc.total || 0))) shape_ok = false
+        let P = +(r.sc.preview || 0)
+        let T = +(r.sc.total || 0)
+        let map = this.Ra_chunk_map(r)
+        let whole = P > 0
+        let i2 = 0
+        while (i2 < P) {
+            if (map[i2] == null) whole = false
+            i2 = i2 + 1
+        }
+        let head = this.Repli_chunk_at(r, 0)
+        let headed = !!(head && head.sc.head && +(head.sc.preskip || 0) > 0)
+        let virgin = r.o({ Stream: 1 }).length === 0
+        if (!(r.sc.real && whole && headed && virgin && T >= P)) shape_ok = false
     }
     if (n === 3 && p1 && +(p1.sc.ready || 0) === 3 && !p1.sc.skipped && shape_ok && !(w.oa({see: 'three real tracks stand as loudness uniform opus stock on disk'}))) w.i({see: 'three real tracks stand as loudness uniform opus stock on disk'})
-    if (n === 3 && shape_ok && !(w.oa({see: 'every Record stands preview first — a cached window and a stream head that begins right after it'}))) w.i({see: 'every Record stands preview first — a cached window and a stream head that begins right after it'})
-    // beat 4: the read-back proof — every segment ~2.00s and ON target by the meter that set the
+    if (n === 3 && shape_ok && !(w.oa({see: 'every Record stands preview first — real chunk particles under the head and nothing past the boundary exists yet'}))) w.i({see: 'every Record stands preview first — real chunk particles under the head and nothing past the boundary exists yet'})
+    // beat 4: the read-back proof — chunk 0 decodes to ~2.00s and ON target by the meter that set the
     //  gain; and the uniformity is REAL — the tones took DIFFERENT gains yet landed together.
     let proofs = []
     for (const r of recs) { let pf = r.o({ proof: 1 })[0]; if (pf) proofs.push(pf) }
     let target = this.Ra_target_lufs(w)
     let on_target = proofs.length === 3 && proofs.every(pf => pf.sc.lufs != null && Math.abs(+(pf.sc.lufs) - target) <= 1 && Math.abs(+(pf.sc.seconds) - 2) <= 0.1)
-    if (n === 4 && on_target && !(w.oa({see: 'a stock segment read back decodes to two seconds at the target loudness'}))) w.i({see: 'a stock segment read back decodes to two seconds at the target loudness'})
+    if (n === 4 && on_target && !(w.oa({see: 'a stock chunk read back decodes to two seconds at the target loudness'}))) w.i({see: 'a stock chunk read back decodes to two seconds at the target loudness'})
     let gains = new Set()
     for (const r of recs) gains.add(r.sc.gain)
     let vals = proofs.map(pf => +(pf.sc.lufs))
@@ -190,32 +208,26 @@ MusuRaStock_witness(w) {
 
 },
 // ══ MusuRaCast — the SECOND Ra* Book (Radio_todo.md §3.3): the stock CAST to a sealed Pier ═══════════════
-//  MusuRaStock proved a real library becomes servable stock; MusuRaCast proves that stock CROSSES — as a
-//   replicated husk to a sealed peer, its Records PULLED page by page (each page one raw opus segment,
-//    sha256-verified by the transport floor), and gated all the way down: no Music grant, no husk, no
-//     bytes.  The mechanics are Ghost/M/Ra.g's #region cast (shared Ra-family software — Radiobuddies
-//      discipline: no scenario vocabulary in the shared layer); this Book only STANDS the scenario.
+//  MusuRaStock proved a real library becomes servable stock; MusuRaCast proves that stock CROSSES — the
+//   husk offered (a catalog card, chunkless), the Record PULLED page by page as REAL chunk particles
+//    (each page frame sha256-verified by the transport floor — byte identity pinned per chunk), and
+//     gated all the way down: no Music grant, no husk, no bytes.  The wire is GENERIC Repli — the only
+//      Ra verbs at the caster are the stock and the demand-driven transcode the parked wants ignite.
 //  The pair is transport-REAL (SwarmWire's seam, not the mail-drop): a Lake_link carries frames between
-//   two fixed selves, Swarm seals a mutual Music grant, and the racast_* frames ride that authenticated
-//    carrier.  The grant gate is INJECTED — w.c.racast_allow asks Swarm_pier_live per leg, so Ra.g never
-//     imports Swarm.  The AudibleEntropy Trope profile is the SECOND consumer here (Wref, never re-inline
-//      — §0) once a pulled segment is proof-decoded; v1 proves the CROSSING (byte-faithful), the decode
-//       proof is MusuRaTerm's (§3.4).
+//   two fixed selves, Swarm seals a mutual Music grant, and the repli_* frames ride that authenticated
+//    carrier.  The grant gate is INJECTED — w.c.repli_allow asks Swarm_pier_live per leg, so neither
+//     Ra.g nor Repli.g ever imports Swarm.
 //  SETTLING (the bomb): a mock send rides H.post_do, so a frame posted in beat N is not seen until N+1
-//   (memory transport-frames-post-do).  The beats below leave room for that — seal over 2→4, husk lands
-//    a beat after the cast, pages a beat after the wants.  The exact settle count is what a live CHECK
-//     run tunes; the claims (sealed / husk / whole-pull / revoked-silence) are what must hold.
-//   beat 2  STOCK   — DJ stands one real opus Record (Ra_stock, idempotent — builds or resurrects); the
-//                     Lake_link stations stand and the swarm + cast frame kinds arm; handshake seeded
-//   beat 3  SHAKE   — pump the stations: the link authenticates before any grant or cast frame
+//   (memory transport-frames-post-do).  The crossing legs are precondition-gated, NOT beat-pinned; the
+//    claims (sealed / husk / parked-demand / whole-pull byte-faithful / revoked-silence) are what hold.
+//   beat 2  STOCK   — DJ stands one real Record (preview chunks standing); stations + Repli/Swarm armed
+//   beat 3  SHAKE   — pump the stations: the link authenticates before any grant or repli frame
 //   beat 4  SEAL    — DJ mints an unbound Music Idzeug and the listener redeems it: hello→accept cross
-//                     the wire, both ends land a %Pier with the mutual Music grant
-//   beat 5  CAST    — the gate opens (a live grant), so DJ casts the catalog HUSK to the listener
-//   beat 6  PULL    — the husk landed: the listener pulls its one Record WHOLE (the cached preview
-//                     window + the continuation ASK at the segment right after the last preview)
-//   beat 7  SETTLE  — DJ serves the preview off its cache and TRANSCODES the continuation (post_do)
-//   beat 8  LANDED  — every page reconciled: the preview byte-faithful + the continuation in full
-//   beat 9  REVOKE  — DJ %NotGrants the Music; a re-cast is refused at the gate (0 cards cross)
+//                     the wire, both ends land a %Pier with the mutual Music grant; the gate wires
+//   beat 5+ FLOW    — the husk crosses; the listener pulls EVERYTHING (want-once per page): preview
+//                     pages serve instantly off the standing chunks, the boundary wants PARK — the
+//                     parked want ignites the transcode, chunks mint as it advances, parks release
+//   beat 9  REVOKE  — DJ %NotGrants the Music; a re-offer of the catalog is refused at the gate
 //   beat 10 SILENCE — the revoked listener heard nothing new — a want met with silence
 //
 // CONVENTION (Musu*/Ra*): no Run_A_ recipe — the world MUST be named MusuRaCast (do_fn_for dispatches by
@@ -228,15 +240,15 @@ MusuRaCast(A,w) {
 
     })
 },
-// MusuRaCast_drive — the same three skip gates as MusuRaStock (the Book really stocks, so it needs decode +
-//  WebCodecs Opus + a writable share; needsFSA on its Credence row routes it to the local-FSA runner),
-//   then one beat's setup fired once off step_n (req-local did_step, the Pere* lesson).
+// MusuRaCast_drive — the same three skip gates as MusuRaStock, then: setup|seal|revoke pinned to their
+//  beats, the carriers pumped every pass (frames settle over post_do), the DEMAND PUMP run every pass
+//   (parked wants → transcode advance → parks release), and the flow fired the moment preconditions hold.
 async MusuRaCast_drive(w, req) {
     if (typeof OfflineAudioContext === 'undefined') {
         if (!w.oa({ skipped: 'no_audio' })) w.i({ skipped: 'no_audio' })
         return
     }
-    if (typeof AudioEncoder === 'undefined') {
+    if (typeof AudioEncoder === 'undefined' || typeof AudioDecoder === 'undefined') {
         if (!w.oa({ skipped: 'no_webcodecs' })) w.i({ skipped: 'no_webcodecs' })
         return
     }
@@ -252,19 +264,18 @@ async MusuRaCast_drive(w, req) {
         if (n === 4) await this.MusuRaCast_seal(w)
         if (n === 9) await this.MusuRaCast_revoke(w)
     }
-    // pump both carriers every pass so posted frames settle within the run (the seal handshake, the
-    //  husk, and the pages all ride post_do — an idle pass would strand them a beat).
+    // pump both carriers every pass so posted frames settle within the run; then the demand pump —
+    //  the caster answers parked wants at the encoder's real pace and releases what the frontier covers.
     for (const peering of w.o({ Peering: 1 })) await peering.do()
-    // the crossing is precondition-gated, NOT pinned to a beat: post_do makes the settle beat
-    //  unpredictable, so fire each leg the moment its precondition holds and never again.
+    await this.Ra_transcode_pump(w)
     await this.MusuRaCast_flow(w)
     await this.Musu_float(w)
 
 },
 // beat 2 — stand the stock and the stations.  DJ's library is keyed by its own prepub (the §9.1c census
-//  convention); the mirror will be the listener's own prepub shelf, so the two never collide in the one
-//   world.  Ra_stock take=1 is enough to pull ONE Record whole; it is idempotent, so a standing .jam
-//    from a prior run resurrects instead of re-encoding.  Held by an expecting — real encode clock.
+//  convention); the mirror shelf is the listener's own prepub (w.c.repli_mirror_pier), so the two never
+//   collide in the one world.  Ra_stock take=1 is enough to pull ONE Record whole; it is idempotent, so
+//    a standing .jam from a prior run resurrects instead of re-encoding.  Held by an expecting.
 async MusuRaCast_stock(w) {
     w.i({reached: "step_2"})
     w.c.nav = this.Crate_nav()
@@ -272,21 +283,21 @@ async MusuRaCast_stock(w) {
     let lis = await this.SwarmStaple_person(w, 'Listener')
     w.c.dj_pre = dj.sc.prepub
     w.c.lis_pre = lis.sc.prepub
-    w.c.racast_mirror_pier = lis.sc.prepub
+    w.c.repli_mirror_pier = lis.sc.prepub
     // the transport-real pair: one Lake_link carries frames between the two prepubs; arm the whittle,
-    //  the swarm frame kinds, and the cast frame kinds; seed the handshake so the link authenticates
-    //   over 2→3 (SwarmWire's shape — frames settle across passes, so an early seed is deterministic).
+    //  the swarm frame kinds, and the GENERIC repli frame kinds; seed the handshake so the link
+    //   authenticates over 2→3 (SwarmWire's shape — frames settle across passes).
     let link = await this.Lake_link(w, dj.sc.prepub, lis.sc.prepub)
     w.c.tx = link[0]
     w.c.rx = link[1]
     this.Peeroleum_arm_whittle(w)
     this.Swarm_arm(w)
-    this.Ra_cast_arm(w)
+    this.Repli_arm(w)
     for (const peering of w.o({ Peering: 1 })) {
         for (const pier of peering.o({ Pier: 1 })) pier.oai({ req: 'handshake' })
     }
     let lib = this.Ra_library(w, dj.sc.prepub)
-    w.c.racast_src = lib
+    w.c.repli_src = lib
     await this.expecting(w, 'racast_stock', 180, async () => { await this.Ra_stock(w, lib, w.c.nav, 'testsounds', 1) })
     w.doai({ req: 'witness', eternal: 1 })?.(async (req) => { this.MusuRaCast_witness(w); req.sc.ok = 1 })
 
@@ -301,46 +312,62 @@ async MusuRaCast_seal(w) {
     let lis = this.SwarmStaple_ident(w, 'Listener')
     w.c.iz = await this.Swarm_mint_idzeug(w, dj, { Music: 1, genre: 'Classical' }, 'racast_1')
     await this.Swarm_redeem(w, lis, w.c.iz)
-    // wire the grant gate: the caster may serve the listener only while DJ's %Pier for it holds a live
+    // wire the consent hook: Repli serves the listener only while DJ's %Pier for it holds a live
     //  Music grant.  The arrow keeps this=H, and the lookup re-asks every leg — a later revoke shuts it.
     let djp = this.Swarm_peering(dj)
-    w.c.racast_allow = (peer) => { let p = djp.o({ Pier: 1, pub: peer })[0]; return !!(p && this.Swarm_pier_live(p, 'Music')) }
+    w.c.repli_allow = (peer) => { let p = djp.o({ Pier: 1, pub: peer })[0]; return !!(p && this.Swarm_pier_live(p, 'Music')) }
 
 },
 // MusuRaCast_flow — the crossing, robust to post_do settling: fire each leg the instant its precondition
-//  holds, once.  CAST the catalog husk the moment the grant goes live (the seal may settle a pass or a
-//   beat after MusuRaCast_seal); PULL the one Record whole the moment its husk has landed at the listener
-//    (a stream head with a segment count).  Both legs are one-shot flags on .c (control, never snapped),
-//     and Ra_cast_pull_record is want-once inside, so extra passes cost nothing.
+//  holds.  OFFER the catalog husk the moment the grant is live and the stock stands (the husk is
+//   chunkless — a card); PULL every page once the husk has landed (want-once per offset — preview
+//    offsets serve instantly, boundary offsets PARK and ride the transcode's bow wave).  The pulled
+//     row lands once the mirror holds every chunk, carrying the park|release counts the demand claim
+//      reads (the stream side existed only because wants asked for it).
 async MusuRaCast_flow(w) {
-    if (!w.c.racast_allow) return
+    if (!w.c.repli_allow) return
     let dj = this.SwarmStaple_ident(w, 'DJ')
     if (!dj) return
     let djp = this.Swarm_peering(dj)
     let grantPier = djp ? djp.o({ Pier: 1, pub: w.c.lis_pre })[0] : null
     let live = !!(grantPier && this.Swarm_pier_live(grantPier, 'Music'))
     if (live && !w.c.cast_done) {
-        w.c.cast_done = 1
-        w.c.cast_n = await this.Ra_cast_catalog(w, w.c.tx, w.c.dj_pre, w.c.lis_pre)
+        let srecs = w.c.repli_src ? w.c.repli_src.o({ Record: 1 }) : []
+        if (srecs.length >= 1) {
+            w.c.cast_done = 1
+            let n2 = 0
+            for (const rec of srecs) {
+                if (await this.Repli_offer(w, w.c.tx, w.c.dj_pre, w.c.lis_pre, rec)) n2 = n2 + 1
+            }
+            w.c.cast_n = n2
+        }
     }
     let mir = w.o({ Library: 1, pier: w.c.lis_pre })[0]
     let rec = mir ? mir.o({ Record: 1 })[0] : null
-    let s = rec ? rec.o({ Stream: 1, name: 'opus' })[0] : null
-    if (s && +(s.sc.total || 0) > 0 && !w.c.pull_done) {
-        w.c.pull_done = 1
-        await this.Ra_cast_pull_record(w, w.c.rx, w.c.lis_pre, w.c.dj_pre, rec)
+    if (rec && +(rec.sc.total || 0) > 0 && !w.c.pull_ok) {
+        let r = await this.Ra_pull_beat(w, w.c.rx, w.c.lis_pre, w.c.dj_pre, rec)
+        if (r.done) {
+            w.c.pull_ok = 1
+            let row = { pulled: 1, chunks: r.held }
+            if (w.c.repli_parked) row.parked = w.c.repli_parked
+            if (w.c.repli_unparked) row.unparked = w.c.repli_unparked
+            w.i(row)
+        }
     }
 
 },
 // beat 9 — revoke: DJ %NotGrants the Music it gave the listener (its %Pier retires at use), then proves
-//  the gate: a re-cast of the whole catalog now crosses ZERO cards.  A non-zero count would mean the
+//  the gate: a re-offer of the whole catalog now crosses ZERO cards.  A non-zero count would mean the
 //   gate leaked — stamp it so the fixture reads the breach instead of a silent green.
 async MusuRaCast_revoke(w) {
     w.i({reached: "step_9"})
     let dj = this.SwarmStaple_ident(w, 'DJ')
     let pier = this.Swarm_peering(dj).o({ Pier: 1, pub: w.c.lis_pre })[0]
     await this.Swarm_revoke(w, dj, pier, 'Music')
-    let offered = await this.Ra_cast_catalog(w, w.c.tx, w.c.dj_pre, w.c.lis_pre)
+    let offered = 0
+    for (const rec of (w.c.repli_src ? w.c.repli_src.o({ Record: 1 }) : [])) {
+        if (await this.Repli_offer(w, w.c.tx, w.c.dj_pre, w.c.lis_pre, rec)) offered = offered + 1
+    }
     w.i({ revoke_probe: 1 })
     if (offered) w.i({ revoke_offered: offered })
 
@@ -355,53 +382,73 @@ MusuRaCast_witness(w) {
     let srcRec = src ? src.o({ Record: 1 })[0] : null
     let mir = w.o({ Library: 1, pier: w.c.lis_pre })[0]
     let mirRec = mir ? mir.o({ Record: 1 })[0] : null
-    let mirStream = mirRec ? mirRec.o({ Stream: 1, name: 'opus' })[0] : null
     let djp = this.Swarm_peering(dj)
     let grantPier = djp ? djp.o({ Pier: 1, pub: w.c.lis_pre })[0] : null
     let live = !!(grantPier && this.Swarm_pier_live(grantPier, 'Music'))
     let stations = w.o({ Peering: 1 })
-    // beat 2: the caster stands a real opus Record and the two carriers wait — no grant, no cast yet.
-    if (n === 2 && srcRec && srcRec.sc.real && +(srcRec.o({ Stream: 1, name: 'opus' })[0]?.sc?.total || 0) > 0 && stations.length >= 2 && w.c.on?.racast_want && !(w.oa({see: 'the caster stands a real opus Record and two carriers wait on the spine'}))) w.i({see: 'the caster stands a real opus Record and two carriers wait on the spine'})
+    // beat 2: the caster stands a real Record whose preview is REAL chunk particles — and the two
+    //  carriers wait on the spine with the generic repli kinds armed; no grant, no cast yet.
+    let srcWhole = false
+    if (srcRec) {
+        let P = +(srcRec.sc.preview || 0)
+        let map = this.Ra_chunk_map(srcRec)
+        srcWhole = P > 0
+        let i2 = 0
+        while (i2 < P) {
+            if (map[i2] == null) srcWhole = false
+            i2 = i2 + 1
+        }
+    }
+    if (n === 2 && srcRec && srcRec.sc.real && srcWhole && +(srcRec.sc.total || 0) > +(srcRec.sc.preview || 0) && stations.length >= 2 && w.c.on?.repli_want && !(w.oa({see: 'the caster stands a real opus Record — its preview cached as real chunk particles on the shelf'}))) w.i({see: 'the caster stands a real opus Record — its preview cached as real chunk particles on the shelf'})
     // beat 4: the pair sealed over the wire — DJ holds a live Music grant for the listener.
     if (n === 4 && live && !(w.oa({see: 'the pair sealed over the wire — the caster holds a live Music grant for the listener'}))) w.i({see: 'the pair sealed over the wire — the caster holds a live Music grant for the listener'})
-    // beat 6: the catalog husk crossed — the listener has a Record head carrying its stream length.
-    //  Assert the head ARRIVED not that it is empty: MusuRaCast_flow pulls the instant the husk lands, so
-    //   the no-bytes window is gone by any fixed beat (live 2026-07-08 — got was already 39 of 39 by n=6).
-    let total = +(mirStream?.sc?.total || 0)
-    if (n === 6 && mirRec && total > 0 && !(w.oa({see: 'the listener received the catalog husk — a Record head carrying its stream length'}))) w.i({see: 'the listener received the catalog husk — a Record head carrying its stream length'})
-    // beat 8: the whole Record crossed the BOUNDARY-shaped way — the cached preview byte-faithful to
-    //  the stock (the caster promised its weight in the husk) and the continuation present in full
-    //   (transcoded on demand at the caster; sha256 held on each page or the floor dropped it).
-    let mirPrev = mirRec ? mirRec.o({ Preview: 1, name: 'opus' })[0] : null
-    let P = +(mirPrev?.sc?.total || 0)
-    let srcPrevBytes = +(srcRec?.o({ Preview: 1, name: 'opus' })[0]?.sc?.bytes || 0)
-    let mirPrevBytes = this.Ra_cast_bytes_of(mirRec, 0, P)
-    let whole = mirStream && P > 0 && total > P && +(mirPrev?.sc?.have || 0) === P && +(mirStream.sc.have || 0) === total - P && mirPrevBytes > 0 && mirPrevBytes === srcPrevBytes
-    if (n === 8 && whole && !(w.oa({see: 'the listener pulled the whole Record — the cached preview byte-faithful and the continuation transcoded across the wire'}))) w.i({see: 'the listener pulled the whole Record — the cached preview byte-faithful and the continuation transcoded across the wire'})
-    // beat 10: the grant is gone and the gate held — a re-cast crossed nothing, the listener heard silence.
-    if (n === 10 && w.oa({ revoke_probe: 1 }) && !live && !w.oa({ revoke_offered: 1 }) && !(w.oa({see: 'the revoked listener heard nothing new — a re-cast met the closed gate with silence'}))) w.i({see: 'the revoked listener heard nothing new — a re-cast met the closed gate with silence'})
+    // beat 6: the catalog husk crossed — a Record head carrying its chunk promise, no bytes rode along
+    //  (the husk is a card; whatever chunks the mirror holds by now arrived as WANTED pages).
+    if (n === 6 && mirRec && +(mirRec.sc.total || 0) > 0 && !(w.oa({see: 'the listener received the catalog husk — a Record head carrying its chunk promise'}))) w.i({see: 'the listener received the catalog husk — a Record head carrying its chunk promise'})
+    // the demand economy observed: the boundary wants PARKED (the stream side did not exist when they
+    //  asked) and RELEASED as the transcode advanced — the pulled row carries the counts.
+    let pulled = w.o({ pulled: 1 })[0]
+    if (n >= 6 && pulled && +(pulled.sc.parked || 0) > 0 && +(pulled.sc.unparked || 0) > 0 && !(w.oa({see: 'the stream chunks did not exist until asked — boundary wants parked at the frontier and released as the transcode advanced'}))) w.i({see: 'the stream chunks did not exist until asked — boundary wants parked at the frontier and released as the transcode advanced'})
+    // the whole Record crossed: every chunk particle present at the mirror and the preview
+    //  byte-faithful to the husk-promised weight (per-frame sha256 pinned each page on the way).
+    if (n >= 8 && mirRec && srcRec) {
+        let T = +(mirRec.sc.total || 0)
+        let P = +(mirRec.sc.preview || 0)
+        let map = this.Ra_chunk_map(mirRec)
+        let held = 0
+        let pbytes = 0
+        let i3 = 0
+        while (i3 < T) {
+            if (map[i3] != null) {
+                held = held + 1
+                if (i3 < P) pbytes = pbytes + map[i3].length
+            }
+            i3 = i3 + 1
+        }
+        let whole = T > P && held === T && pbytes > 0 && pbytes === +(mirRec.sc.bytes || 0) && pbytes === +(srcRec.sc.bytes || 0)
+        if (whole && !(w.oa({see: 'the listener pulled the whole Record — the preview byte-faithful and the continuation transcoded on demand'}))) w.i({see: 'the listener pulled the whole Record — the preview byte-faithful and the continuation transcoded on demand'})
+    }
+    // beat 10: the grant is gone and the gate held — a re-offer crossed nothing, the listener heard silence.
+    if (n === 10 && w.oa({ revoke_probe: 1 }) && !live && !w.oa({ revoke_offered: 1 }) && !(w.oa({see: 'the revoked listener heard nothing new — a re-offer met the closed gate with silence'}))) w.i({see: 'the revoked listener heard nothing new — a re-offer met the closed gate with silence'})
 
 },
 // ══ MusuRaTerm — the THIRD Ra* Book (Radio_todo.md §3.4): the stock PLAYED, honestly ════════════════════
 //  MusuRaStock proved a library becomes uniform servable stock; MusuRaCast proved that stock CROSSES byte-faithful.
-//   MusuRaTerm proves the last verb — the terminal DECODES the opus back to real PCM and plays it without
-//    lying: the baked -14 LUFS gain reads BACK at the target (no play-time gain node), and a spool that
-//     runs out of stock renders an HONEST hole (a measured gap) rather than papering the underrun over.
-//      The mechanics are Ghost/M/Ra.g's #region term (Ra_term_decode + Ra_term_spool — shared Ra-family
-//       software, no scenario vocabulary); the measurement reuses Ra_lufs (the meter that set the gain)
-//        and Sound_measure (MusuSignal's underrun gate).  This Book plays stock WE ACTUALLY MADE (a real
-//         rastock pass on testsounds), not a synth tone — the point of §3.4.  No transport: the crossing is
-//          MusuRaCast's proven job, so MusuRaTerm stocks locally and plays; the pulled mirror is byte-identical.
+//   MusuRaTerm proves the last verb — the terminal DECODES the chunk particles back to real PCM and plays
+//    them without lying: the baked -14 LUFS gain reads BACK at the target (no play-time gain node), and a
+//     spool that runs out of stock renders an HONEST hole (a measured gap) rather than papering it over.
+//      The terminal IS the owner here — no wire: the local play is itself the demand, so the continuation
+//       encode runs to completion in place (the same ensure|advance verbs a parked want drives at a
+//        caster) and the whole track stands as chunk particles before the measure.
 //  DETERMINISTIC snap (no AudibleEntropy Wref yet): the decode + LUFS + gap counts are pure functions of
 //   the stock, so the measurement rows are stable run-to-run.  Only if a live CHECK run shows a field
 //    wobble do we harvest it into Trope/Ra/AudibleEntropy (the MusuRaCast discipline) — do not pre-Wref.
-//   beat 2  STOCK  — stand one real opus Record (Ra_stock take=1, idempotent — builds or resurrects)
-//   beat 4  HEAR   — play across the SEAM: the cached preview off the .jam + the continuation
-//                    transcoded from the source, decoded segment by segment to PCM (held, real
-//                    decode clock); measure LUFS + render the spool healthy and starved; cache the
-//                    scalar reads on w.c.term and stamp a `heard` row
+//   beat 2  STOCK  — stand one real Record (Ra_stock take=1, idempotent — builds or resurrects)
+//   beat 4  HEAR   — the one expensive block: transcode the continuation to completion (the local
+//                    demand), decode ALL the chunk particles across the seam through the run decoder,
+//                    measure LUFS + render the spool healthy and starved; stamp a `heard` row
 //   beat 6  GAIN   — the played-back LUFS reads the baked target back (the gain survived the opus trip)
-//   beat 8  STARVE — a withheld run of segments surfaces as measured gaps — the spool did not lie
+//   beat 8  STARVE — a withheld run of chunks surfaces as measured gaps — the spool did not lie
 //   beat 10 CLEAN  — the complete stock plays essentially gapless through the SAME spool — gate not vacuous
 //
 // CONVENTION (Musu*/Ra*): no Run_A_ recipe — the world MUST be named MusuRaTerm (do_fn_for dispatches by
@@ -414,16 +461,14 @@ MusuRaTerm(A,w) {
 
     })
 },
-// MusuRaTerm_drive — the same three skip gates as MusuRaStock/MusuRaCast (it really stocks and decodes, so it needs
-//  decode + WebCodecs Opus + a writable share; needsFSA on its Credence row routes it to the local-FSA
-//   runner), then one beat's work fired once off step_n (req-local did_step).  No Peering pump — MusuRaTerm
-//    has no wire; the whole scenario is stock-then-play.
+// MusuRaTerm_drive — the same three skip gates, then one beat's work fired once off step_n (req-local
+//  did_step).  No Peering pump — MusuRaTerm has no wire; the whole scenario is stock-then-play.
 async MusuRaTerm_drive(w, req) {
     if (typeof OfflineAudioContext === 'undefined') {
         if (!w.oa({ skipped: 'no_audio' })) w.i({ skipped: 'no_audio' })
         return
     }
-    if (typeof AudioEncoder === 'undefined') {
+    if (typeof AudioEncoder === 'undefined' || typeof AudioDecoder === 'undefined') {
         if (!w.oa({ skipped: 'no_webcodecs' })) w.i({ skipped: 'no_webcodecs' })
         return
     }
@@ -441,7 +486,7 @@ async MusuRaTerm_drive(w, req) {
     await this.Musu_float(w)
 
 },
-// beat 2 — stand the stock: a real opus Record built (or resurrected) from testsounds, held by an
+// beat 2 — stand the stock: a real Record built (or resurrected) from testsounds, held by an
 //  expecting for the real encode clock.  A literal library key (no peer, no seal — MusuRaTerm has no wire).
 async MusuRaTerm_stock(w) {
     w.i({reached: "step_2"})
@@ -452,13 +497,12 @@ async MusuRaTerm_stock(w) {
     w.doai({ req: 'witness', eternal: 1 })?.(async (req) => { this.MusuRaTerm_witness(w); req.sc.ok = 1 })
 
 },
-// beat 4 — HEAR: the one expensive block, held by an expecting so the real decode + transcode clock
-//  runs.  The terminal plays ACROSS THE SEAM: the cached preview window off the .jam PLUS the
-//   continuation transcoded from the source (the terminal IS the owner here — no wire), loaded into
-//    one segment run and decoded by the SAME pulled-decode raterm uses at a mirror — then read three
-//     ways: LUFS (the whole-track gain proof, spanning the seam), the healthy spool render, and the
-//      starved render (a middle run withheld — it straddles the boundary on a default preview).
-//       Cache the SCALAR reads on w.c.term and stamp a `heard` row.  Guarded to run exactly once.
+// beat 4 — HEAR: the one expensive block, held by an expecting so the real transcode + decode clock
+//  runs.  The terminal plays ACROSS THE SEAM: the standing preview chunks PLUS the continuation the
+//   local demand transcodes to completion — decoded by the SAME run decoder a mirror uses — then read
+//    three ways: LUFS (the whole-track gain proof, spanning the seam), the healthy spool render, and
+//     the starved render (a middle run withheld — it straddles the boundary on a short preview).
+//      Cache the SCALAR reads on w.c.term and stamp a `heard` row.  Guarded to run exactly once.
 async MusuRaTerm_hear(w) {
     w.i({reached: "step_4"})
     if (w.c.term) return
@@ -466,18 +510,25 @@ async MusuRaTerm_hear(w) {
     let rec = lib ? lib.o({ Record: 1 })[0] : null
     if (!rec) return
     await this.expecting(w, 'raterm_hear', 180, async () => {
-        let bufs = await this.Ra_cast_jam(w, rec)
-        if (!bufs) { w.i({ hear_fail: 'no jam' }); return }
-        let P = bufs.length
-        let T = +(rec.o({ Stream: 1, name: 'opus' })[0]?.sc?.total || P)
-        let made = []
-        if (T > P) made = (await this.Ra_cast_transcode(w, rec, P, T - P)) || []
-        if (P + made.length < T) { w.i({ hear_fail: 'transcode short ' + made.length }); return }
-        rec.c.segs = []
-        let i = 0
-        while (i < P) { rec.c.segs[i] = bufs[i]; i = i + 1 }
-        let j = 0
-        while (j < made.length) { rec.c.segs[P + j] = made[j]; j = j + 1 }
+        let T = +(rec.sc.total || 0)
+        let P = +(rec.sc.preview || 0)
+        if (T > P) {
+            let ra = await this.Ra_transcode_ensure(w, rec)
+            if (!ra) { w.i({ hear_fail: 'no stream source' }); return }
+            let guard = 0
+            while (!ra.done && guard < 999) {
+                await this.Ra_transcode_advance(w, rec)
+                guard = guard + 1
+            }
+        }
+        let map = this.Ra_chunk_map(rec)
+        let have = 0
+        let i2 = 0
+        while (i2 < T) {
+            if (map[i2] != null) have = have + 1
+            i2 = i2 + 1
+        }
+        if (have < T) { w.i({ hear_fail: 'transcode short ' + have }); return }
         let d = await this.Ra_term_decode_pulled(w, rec, T)
         if (d.fail) { w.i({ hear_fail: d.fail }); return }
         let lufs = await this.Ra_lufs(d.channels, d.sr)
@@ -502,54 +553,50 @@ MusuRaTerm_witness(w) {
     let n = (this.c.run)?.c.step_n
     let lib = w.c.raterm_src
     let rec = lib ? lib.o({ Record: 1 })[0] : null
-    let stream = rec ? rec.o({ Stream: 1, name: 'opus' })[0] : null
-    let total = +(stream?.sc?.total || 0)
+    let total = +(rec?.sc?.total || 0)
     let t = w.c.term
     let target = this.Ra_target_lufs(w)
     let recSecs = +(rec?.sc?.seconds || 0)
-    // beat 2: a real opus Record stands, uniform and whole on the shelf.
+    // beat 2: a real Record stands, uniform and whole on the shelf.
     if (n === 2 && rec && rec.sc.real && total > 0 && !(w.oa({see: 'the terminal stands a real opus Record from the library — uniform stock whole on the shelf'}))) w.i({see: 'the terminal stands a real opus Record from the library — uniform stock whole on the shelf'})
-    // beat 4: the whole track decoded to real PCM ACROSS THE SEAM — cached preview + continuation
-    //  transcoded from the source — and the played duration matches the stocked source.
-    if (n === 4 && t && t.seconds > 0 && recSecs > 0 && Math.abs(t.seconds - recSecs) < 4 && +(t.preview || 0) > 0 && t.segs > t.preview && !(w.oa({see: 'the terminal played the cached preview and the continuation transcoded from the source — the whole track across the seam'}))) w.i({see: 'the terminal played the cached preview and the continuation transcoded from the source — the whole track across the seam'})
+    // beat 4: the whole track decoded to real PCM ACROSS THE SEAM — standing preview chunks + the
+    //  continuation the local demand transcoded — and the played duration matches the stocked source.
+    if (n === 4 && t && t.seconds > 0 && recSecs > 0 && Math.abs(t.seconds - recSecs) < 4 && +(t.preview || 0) > 0 && t.segs > t.preview && !(w.oa({see: 'the terminal played the standing preview chunks and the continuation its own demand transcoded — the whole track across the seam'}))) w.i({see: 'the terminal played the standing preview chunks and the continuation its own demand transcoded — the whole track across the seam'})
     // beat 6: the played-back loudness reads the baked target back — ONE whole-track gain, so the
     //  preview and the transcoded continuation land uniform and the seam is inaudible by level.
     if (n === 6 && t && t.lufs != null && Math.abs(t.lufs - target) < 2 && !(w.oa({see: 'the played-back audio measures at the uniform target loudness — the baked gain survived the opus round trip'}))) w.i({see: 'the played-back audio measures at the uniform target loudness — the baked gain survived the opus round trip'})
-    // beat 8: a withheld run of segments surfaced as measured gaps — an honest starve not a paper-over.
-    if (n === 8 && t && t.starved_gaps > t.healthy_gaps + 3 && !(w.oa({see: 'a withheld run of segments surfaced as measured gaps — the spool starved without papering over the hole'}))) w.i({see: 'a withheld run of segments surfaced as measured gaps — the spool starved without papering over the hole'})
+    // beat 8: a withheld run of chunks surfaced as measured gaps — an honest starve not a paper-over.
+    if (n === 8 && t && t.starved_gaps > t.healthy_gaps + 3 && !(w.oa({see: 'a withheld run of chunks surfaced as measured gaps — the spool starved without papering over the hole'}))) w.i({see: 'a withheld run of chunks surfaced as measured gaps — the spool starved without papering over the hole'})
     // beat 10: the complete stock plays essentially gapless through the same spool — the gate is not vacuous.
     if (n === 10 && t && t.healthy_gaps <= 3 && t.starved_gaps > t.healthy_gaps + 3 && !(w.oa({see: 'the complete stock played essentially gapless — the same spool that surfaced the starve runs clean when the stock is whole'}))) w.i({see: 'the complete stock played essentially gapless — the same spool that surfaced the starve runs clean when the stock is whole'})
 
 },
 // ══ MusuRaStream — the FOURTH Ra* Book (Radio_todo §3.4/§9.3): a real LISTENING SESSION over the wire ═══════
-//  THE PREVIEW ECONOMY END TO END (owner 2026-07-08: a Record is always %Preview FIRST — the parts that
-//   cache in radiostock/ — then %Stream is the track from the point right after the last preview): the husk
-//    crosses; the listener pulls the CACHED PREVIEW (one want, answered instantly off the caster's .jam) and
-//     begins playing IT; as the un-played preview tail falls to the want_left floor the STREAMING ASK latches
-//      (Radios' streamability) and the first stream want goes out at exactly the segment after the last
-//       preview; the caster answers by TRANSCODING the continuation from the SOURCE at its real pace
-//        (racast_rate — the slow transcode clock, now bounding real encoder work).  Nothing is simulated:
-//         MusuRaCast's own two Piers on ONE H (DJ + Listener over a real Lake_link, Swarm-sealed), one
-//          playhead beat per step, and the starve EMERGES when the transcode clock falls behind the playhead
-//           (RATE < PLAY).  The MEASURE decodes THE PULLED SEGMENTS (Ra_term_decode_pulled — never the local
-//            .jam): loudness and gaps are read off the bytes that actually crossed.  The fully-held preview
-//             also CACHES at the listener (Ra_term_stash → .jamsend/downloads/DJ/) — the radiostock economy
-//              standing at the far end of the wire.  Numbers are knobs (owner: not firm) a live CHECK tunes;
-//               the SHAPE — hold, ask-at-the-boundary, starve, fed switch — is the assertion.
-//  THE SESSION is one continuous arc, driven HEAD-FIRST (each phase turns on playhead position, never a
-//   pinned beat, so post_do settling can wobble the cadence without moving the claim):
-//   beat 2   SETUP  — DJ stocks TWO Records with a SHORT preview window (preview_secs=12 ⇒ 6-seg previews,
-//                     so the handoff happens INSIDE a 20-seg capped listen); wire + handshake seed
+//  THE PREVIEW ECONOMY END TO END on the chunk-particle machinery: the husk crosses; the listener opens a
+//   paced listen on track A — page wants PIPELINE inside the preview window (the ramp: first page → play
+//    on a few seconds → wants pipeline → buffer fills), the spool HOLDS at the boundary (nothing past the
+//     preview is ever asked before the ask latches — held_past probes the leak), the ask LATCHES as the
+//      un-played preview tail falls to the want_left floor, and the first stream want goes out at EXACTLY
+//       the segment after the last preview.  That want PARKS — the stream side does not exist — and the
+//        parked want ignites the caster's transcode: chunks mint at the encoder's real pace and feed the
+//         playhead PAST the boundary (~40s proving the stream feeds).  Then the OWNER ACT: hit the next
+//          track — the listen re-opens on B from seg 0, a full fresh preview→hold→ask→stream cycle on the
+//           change.  The MEASURE decodes THE PULLED CHUNK PARTICLES (never local disk): loudness and gaps
+//            read off the bytes that crossed.  The fully-held preview also CACHES at the listener
+//             (Ra_term_stash → .jamsend/downloads/DJ/) — the radiostock economy at the far end of the wire.
+//  Numbers are knobs a live CHECK tunes; the SHAPE — hold, ask-at-the-boundary, fed-past-boundary, fresh
+//   cycle on the change — is the assertion.
+//   beat 2   SETUP  — DJ stocks TWO Records with a SHORT preview window (preview_secs=12 ⇒ 6-chunk
+//                     previews, so the boundary sits INSIDE a 20-chunk capped listen); wire + handshake
 //   beat 4   SEAL   — DJ mints a Music grant and the Listener redeems it over the wire; the gate goes live
-//   (flow)   TUNE   — the catalog husk crosses; the instant track A's preview head lands, the listen OPENS
-//   5..∼     LISTEN — the preview pulls whole and plays first (the spool HOLDS at the boundary); the ask
-//                     latches at the floor; the first stream want lands at seg P; the transcoded continuation
-//                      feeds the buffer — until past 40% of A the rate DROPS (the slow producer) and the
-//                       tail of A STARVES (emergent holes, RATE < PLAY)
-//   ∼        SWITCH — A ends: the listen re-opens on track B at the restored rate; the preview stash lands
-//   ∼        MEASURE— decode the PULLED segments of A and B and render each through the SAME spool with its
-//                     REAL play-time drop set — the emergent time race made audible and measured at the
-//                      listener off the bytes that crossed
+//   (flow)   TUNE   — the catalog husk crosses; the instant track A's head lands, the listen OPENS
+//   5..∼     LISTEN — preview pages pipeline and play; HOLD at the boundary; the ask latches at the
+//                     floor; the first stream want parks at seg P and the transcode feeds the head
+//                      across the boundary on real arriving chunks
+//   ∼        HIT    — A proven fed past the boundary: the listener hits the next track; B opens from
+//                     seg 0 and runs its own whole cycle (its own hold, its own ask at its own boundary)
+//   ∼        MEASURE— decode the PULLED chunks of A and B and render each through the SAME spool with
+//                     its REAL play-time drop set — loudness read back off the bytes that crossed
 //
 // CONVENTION (Musu*/Ra*): no Run_A_ recipe — the world MUST be named MusuRaStream (do_fn_for dispatches by
 //  w.sc.w) or the wrangle silently never fires.
@@ -561,16 +608,16 @@ MusuRaStream(A,w) {
 
     })
 },
-// MusuRaStream_drive — the three skip gates (real stock + decode + WebCodecs Opus + writable share; needsFSA
-//  routes it to the local-FSA runner), then: setup once at beat 2, seal once at beat 4, and from beat 5 ONE
-//   playhead beat per step.  The wire is pumped every pass (frames settle over post_do), and MusuRaStream_flow
-//    fires the husk-cast + opens the listen the instant their preconditions hold (the crossing is not beat-pinned).
+// MusuRaStream_drive — the three skip gates, then: setup once at beat 2, seal once at beat 4, and from
+//  beat 5 ONE playhead beat per step.  The wire is pumped every pass (frames settle over post_do), the
+//   DEMAND PUMP runs every pass (parked wants → transcode → parks release), and MusuRaStream_flow fires
+//    the husk-cast + opens the listen the instant their preconditions hold (the crossing is not beat-pinned).
 async MusuRaStream_drive(w, req) {
     if (typeof OfflineAudioContext === 'undefined') {
         if (!w.oa({ skipped: 'no_audio' })) w.i({ skipped: 'no_audio' })
         return
     }
-    if (typeof AudioEncoder === 'undefined') {
+    if (typeof AudioEncoder === 'undefined' || typeof AudioDecoder === 'undefined') {
         if (!w.oa({ skipped: 'no_webcodecs' })) w.i({ skipped: 'no_webcodecs' })
         return
     }
@@ -586,18 +633,19 @@ async MusuRaStream_drive(w, req) {
         if (n === 4) await this.MusuRaStream_seal(w)
         if (n >= 5) await this.MusuRaStream_beat(w)
     }
-    // pump both carriers every pass so posted frames settle within the run (the seal handshake, the husk,
-    //  and each rate-limited page ride post_do — an idle pass would strand them a beat).
+    // pump both carriers every pass so posted frames settle within the run; then the demand pump —
+    //  the caster's transcode advances only while parked wants ask it to.
     for (const peering of w.o({ Peering: 1 })) await peering.do()
+    await this.Ra_transcode_pump(w)
     await this.MusuRaStream_flow(w)
     await this.Musu_float(w)
 
 },
-// beat 2 — stand the session: DJ stocks TWO real opus Records with a SHORT preview window (Ra_stock
-//  take=2, idempotent per-window — a session needs a track to change TO and a boundary INSIDE its cap),
-//   the transport-real pair stands (one Lake_link between the two prepubs), the frame kinds arm, the
-//    handshake seeds.  A healthy producer rate and a CAP on how much of each track the session streams
-//     (a ~40s listen, not a full 78s tone).  Held by an expecting for the real encode clock.
+// beat 2 — stand the session: DJ stocks TWO real Records with a SHORT preview window (Ra_stock take=2,
+//  idempotent per-window — a session needs a track to change TO and a boundary INSIDE its cap), the
+//   transport-real pair stands (one Lake_link between the two prepubs), the frame kinds arm, the
+//    handshake seeds.  A CAP on how much of each track the session streams (a ~40s listen, not a full
+//     78s tone).  No rate knob — the transcode paces itself off the parked demand (fork (c)).
 async MusuRaStream_setup(w) {
     w.i({reached: "step_2"})
     w.c.nav = this.Crate_nav()
@@ -606,21 +654,19 @@ async MusuRaStream_setup(w) {
     let lis = await this.SwarmStaple_person(w, 'Listener')
     w.c.dj_pre = dj.sc.prepub
     w.c.lis_pre = lis.sc.prepub
-    w.c.racast_mirror_pier = lis.sc.prepub
-    w.c.rate_healthy = 4
-    w.c.racast_rate = 4
+    w.c.repli_mirror_pier = lis.sc.prepub
     w.c.cap = 20
     let link = await this.Lake_link(w, dj.sc.prepub, lis.sc.prepub)
     w.c.tx = link[0]
     w.c.rx = link[1]
     this.Peeroleum_arm_whittle(w)
     this.Swarm_arm(w)
-    this.Ra_cast_arm(w)
+    this.Repli_arm(w)
     for (const peering of w.o({ Peering: 1 })) {
         for (const pier of peering.o({ Pier: 1 })) pier.oai({ req: 'handshake' })
     }
     let lib = this.Ra_library(w, dj.sc.prepub)
-    w.c.racast_src = lib
+    w.c.repli_src = lib
     // expecting() is NON-BLOCKING (it arms a ttlilt and returns; the stock runs off the mutex), so the
     //  two track ids are derived LAZILY in MusuRaStream_flow once the Records have landed — reading them
     //   here synchronously would find the library still empty.
@@ -629,8 +675,8 @@ async MusuRaStream_setup(w) {
 
 },
 // beat 4 — the seal over the wire: DJ mints an unbound Music offer, the Listener redeems; both ends land a
-//  %Pier with the mutual grant.  Wire the gate — the caster serves the listener only while the grant is live
-//   (the lookup re-asks every leg, so the gate is honest end to end).
+//  %Pier with the mutual grant.  Wire the consent hook — Repli serves the listener only while the grant is
+//   live (the lookup re-asks every leg, so the gate is honest end to end).
 async MusuRaStream_seal(w) {
     w.i({reached: "step_4"})
     let dj = this.SwarmStaple_ident(w, 'DJ')
@@ -638,28 +684,35 @@ async MusuRaStream_seal(w) {
     w.c.iz = await this.Swarm_mint_idzeug(w, dj, { Music: 1, genre: 'Classical' }, 'rastream_1')
     await this.Swarm_redeem(w, lis, w.c.iz)
     let djp = this.Swarm_peering(dj)
-    w.c.racast_allow = (peer) => { let p = djp.o({ Pier: 1, pub: peer })[0]; return !!(p && this.Swarm_pier_live(p, 'Music')) }
+    w.c.repli_allow = (peer) => { let p = djp.o({ Pier: 1, pub: peer })[0]; return !!(p && this.Swarm_pier_live(p, 'Music')) }
 
 },
 // MusuRaStream_flow — the crossing + the tune-in, precondition-gated (post_do makes the settle beat vary):
-//  cast the catalog husk the instant the grant is live (both Record heads reach the listener — the
-//   preview boundaries it paces against), then OPEN the paced listen on track A the instant its mirror
-//    preview head has landed.  Both one-shot flags on .c; the paced pull then drives from MusuRaStream_beat.
+//  offer BOTH husks the instant the grant is live and the stock stands (the two heads carry the preview
+//   boundaries the listen paces against), then OPEN the paced listen on track A the instant its mirror
+//    head has landed.  One-shot flags on .c; the paced pull then drives from MusuRaStream_beat.
 async MusuRaStream_flow(w) {
-    if (!w.c.racast_allow) return
+    if (!w.c.repli_allow) return
     let dj = this.SwarmStaple_ident(w, 'DJ')
     if (!dj) return
     let djp = this.Swarm_peering(dj)
     let grantPier = djp ? djp.o({ Pier: 1, pub: w.c.lis_pre })[0] : null
     let live = !!(grantPier && this.Swarm_pier_live(grantPier, 'Music'))
     if (live && !w.c.cast_done) {
-        w.c.cast_done = 1
-        w.c.cast_n = await this.Ra_cast_catalog(w, w.c.tx, w.c.dj_pre, w.c.lis_pre)
+        let srecs = w.c.repli_src ? w.c.repli_src.o({ Record: 1 }) : []
+        if (srecs.length >= 2) {
+            w.c.cast_done = 1
+            let n2 = 0
+            for (const rec of srecs) {
+                if (await this.Repli_offer(w, w.c.tx, w.c.dj_pre, w.c.lis_pre, rec)) n2 = n2 + 1
+            }
+            w.c.cast_n = n2
+        }
     }
     // derive the two track ids the moment the src lib has stocked both (expecting is non-blocking, so
     //  they appear over the beats after setup, in deterministic stock order — A first, B to change to).
     if (!w.c.a_id) {
-        let src = w.c.racast_src
+        let src = w.c.repli_src
         let srecs = src ? src.o({ Record: 1 }) : []
         if (srecs.length >= 2) {
             w.c.a_id = srecs[0].sc.id
@@ -669,20 +722,18 @@ async MusuRaStream_flow(w) {
     if (!w.c.a_id) return
     let mir = w.o({ Library: 1, pier: w.c.lis_pre })[0]
     let recA = mir ? mir.o({ Record: 1, id: w.c.a_id })[0] : null
-    let pvA = recA ? recA.o({ Preview: 1, name: 'opus' })[0] : null
-    if (pvA && +(pvA.sc.total || 0) > 0 && !w.c.sess) {
+    if (recA && +(recA.sc.preview || 0) > 0 && !w.c.sess) {
         w.c.sess = 1
-        this.Ra_term_stream_open(w, recA, { prime: 6, floor: 4, play: 2, want_left: 3, cap: w.c.cap })
+        this.Ra_term_stream_open(w, recA, { prime: 6, play: 2, want_left: 3, ahead: 6, pipeline: 3, cap: w.c.cap })
     }
 
 },
-// MusuRaStream_beat — ONE playhead beat of the paced listen (from step 5): read the mirror's received buffer
-//  for the CURRENT track and advance the head over the real want/serve/recv machinery.  The phase turns are
-//   HEAD-DRIVEN: the streamability latch and the first boundary want are OBSERVED into rows the instant they
-//    happen (the witness reads the handoff off them); past 40% of A the caster rate drops to 1 (the slow
-//     producer, RATE < PLAY → the tail starves); when A ends the listen re-opens on B at the restored rate;
-//      when B ends the session is measured.  drops[] on w.c.play are the real emergent holes — read at each
-//       track's end into a_drops / b_drops.
+// MusuRaStream_beat — ONE playhead beat of the paced listen (from step 5), over the real want/park/serve
+//  machinery.  The phase turns are HEAD-DRIVEN, observed into rows the instant they happen (the witness
+//   reads the handoff off them): the ask latching (stream_ask — with the held_past leak probe), the first
+//    want past the boundary (stream_want — seg P exactly is the claim), the head crossing the boundary on
+//     a REAL arrived chunk (fed), the preview stash, the owner act (switched — hit the next track once A
+//      is proven fed), and the measure once B has played out.
 async MusuRaStream_beat(w) {
     if (!w.c.sess) return
     let p = w.c.play
@@ -691,18 +742,18 @@ async MusuRaStream_beat(w) {
     let rec = mir ? mir.o({ Record: 1, id: p.id })[0] : null
     if (!rec) return
     let asked0 = p.asked
-    let r = await this.Ra_term_stream_beat(w, w.c.rx, w.c.lis_pre, w.c.dj_pre, rec.c.segs || [])
+    let r = await this.Ra_term_stream_beat(w, w.c.rx, w.c.lis_pre, w.c.dj_pre, rec)
     let track = p.id === w.c.a_id ? 'A' : 'B'
     // the ask observed: the moment streamability latched, stamp WHERE the head stood — the
     //  began-on-preview claim reads at_head < preview (and plays > 0) off this row.  held_past
-    //   counts mirror segments ALREADY past the boundary at ask time: a caster that leaked the
+    //   counts mirror chunks ALREADY past the boundary at ask time: a caster that leaked the
     //    continuation before it was asked reads here (the adversarial probe — absent = clean).
     if (!asked0 && p.asked) {
-        let sgs = rec.c.segs || []
+        let map = this.Ra_chunk_map(rec)
         let past = 0
         let i2 = p.preview
         while (i2 < p.total) {
-            if (sgs[i2] != null) past = past + 1
+            if (map[i2] != null) past = past + 1
             i2 = i2 + 1
         }
         let row = { stream_ask: track, preview: p.preview, at_head: +(r.head ?? p.head), plays: p.plays }
@@ -710,32 +761,55 @@ async MusuRaStream_beat(w) {
         w.i(row)
     }
     // the first want past the boundary: the continuation was asked at exactly the segment after the
-    //  last preview (a preview hole re-wanted first would read here as a lower index — an honest tell).
-    if (p.inflight >= p.preview && !w.c['want_' + p.id]) {
+    //  last preview (a lower first offset would read here as an honest tell).
+    if (p.stream_want0 != null && !w.c['want_' + p.id]) {
         w.c['want_' + p.id] = 1
-        w.i({ stream_want: p.inflight, of: track, preview: p.preview })
+        w.i({ stream_want: p.stream_want0, of: track, preview: p.preview })
+    }
+    // the boundary CROSSED on real bytes: the head passed the last preview chunk and the chunk AT the
+    //  boundary was there to play — the stream FED (a drop there would be the starve tell instead).
+    if (track === 'A' && !w.c.fed_a && p.head > p.preview) {
+        let map2 = this.Ra_chunk_map(rec)
+        if (map2[p.preview] != null && p.drops.indexOf(p.preview) < 0) {
+            w.c.fed_a = 1
+            let held2 = 0
+            let j2 = p.preview
+            while (j2 < p.total) {
+                if (map2[j2] != null) held2 = held2 + 1
+                j2 = j2 + 1
+            }
+            w.i({ fed: track, at_head: p.head, held: held2 })
+        }
     }
     // the radiostock economy at the listener: the fully-held preview caches under the caster's name
     //  (the nick names the corner — the prepub is the route, not the shelf label).
     if (!w.c.stashed && track === 'A') {
-        let pv = rec.o({ Preview: 1, name: 'opus' })[0]
-        if (pv && +(pv.sc.have || 0) === +(pv.sc.total || -1)) {
+        let map3 = this.Ra_chunk_map(rec)
+        let whole = p.preview > 0
+        let k3 = 0
+        while (k3 < p.preview) {
+            if (map3[k3] == null) whole = false
+            k3 = k3 + 1
+        }
+        if (whole) {
             w.c.stashed = 1
             let st = await this.Ra_term_stash(w, w.c.nav, rec, 'DJ')
             if (st && st.stashed) w.i({ stashed: 1, segs: st.segs, bytes: st.bytes })
             if (st && st.fail) w.i({ stash_fail: st.fail })
         }
     }
-    if (p.id === w.c.a_id && p.head >= Math.floor(p.total * 0.4) && +(w.c.racast_rate || 0) > 1) w.c.racast_rate = 1
+    // the OWNER ACT: A proven fed past the boundary (a couple of pages beyond it) — hit the next
+    //  track.  B opens from seg 0 and runs its own whole cycle; A's session read is kept for the measure.
     let recB = mir ? mir.o({ Record: 1, id: w.c.b_id })[0] : null
-    if (r.done && p.id === w.c.a_id && !w.c.switched && recB) {
+    if (track === 'A' && !w.c.switched && recB && ((w.c.fed_a && p.head >= p.preview + 4) || r.done)) {
         w.c.switched = 1
+        w.c.a_head = Math.min(p.head, p.total)
         w.c.a_drops = p.drops.slice()
-        w.c.racast_rate = w.c.rate_healthy
-        this.Ra_term_stream_open(w, recB, { prime: 6, floor: 4, play: 2, want_left: 3, cap: w.c.cap })
-        let sw = { switched: 1 }
+        this.Ra_term_stream_open(w, recB, { prime: 6, play: 2, want_left: 3, ahead: 6, pipeline: 3, cap: w.c.cap })
+        let sw = { switched: 1, at_head: w.c.a_head }
         if (p.drops.length) sw.a_dropped = p.drops.length
         w.i(sw)
+        return
     }
     if (r.done && p.id === w.c.b_id && !w.c.measured) {
         w.c.measured = 1
@@ -744,65 +818,73 @@ async MusuRaStream_beat(w) {
     }
 
 },
-// MusuRaStream_measure — the session read, off THE PULLED BYTES: decode what the mirror actually holds
-//  (Ra_term_decode_pulled — a never-arrived segment is embedded silence and a listed drop) and render
-//   through the SAME spool MusuRaTerm uses, punched with the REAL play-time drop set.  a_heard (the
-//    session as experienced — play-time holes) vs a_rest (the mirror at rest — late fills healed) vs
-//     b_heard (the fed track); the loudness reads off B's pulled render — the round-trip proof at the
-//      receiving end of the wire.  Cached on w.c.stream + stamped as the streamed row.
+// MusuRaStream_measure — the session read, off THE PULLED CHUNK PARTICLES: decode what the mirror
+//  actually holds (Ra_term_decode_pulled — a never-arrived chunk is embedded silence and a listed
+//   drop) and render through the SAME spool MusuRaTerm uses, punched with the REAL play-time drop
+//    set.  A reads to where the listener hit next (its heard portion); B reads its whole capped
+//     cycle; the loudness reads off B's pulled render — the round-trip proof at the receiving end.
+//      Cached on w.c.stream + stamped as the streamed row.
 async MusuRaStream_measure(w) {
     await this.expecting(w, 'rastream_measure', 180, async () => {
         let mir = w.o({ Library: 1, pier: w.c.lis_pre })[0]
         let recA = mir ? mir.o({ Record: 1, id: w.c.a_id })[0] : null
         let recB = mir ? mir.o({ Record: 1, id: w.c.b_id })[0] : null
         if (!recA || !recB) { w.i({ measure_fail: 'no mirror record' }); return }
-        let A = await this.Ra_term_decode_pulled(w, recA, w.c.cap)
+        let aN = Math.max(1, Math.min(+(w.c.a_head || 0), w.c.cap))
+        let A = await this.Ra_term_decode_pulled(w, recA, aN)
         let B = await this.Ra_term_decode_pulled(w, recB, w.c.cap)
         if (A.fail || B.fail) { w.i({ measure_fail: A.fail || B.fail }); return }
-        let a_drop = (w.c.a_drops || []).filter((x) => x < w.c.cap)
+        let a_drop = (w.c.a_drops || []).filter((x) => x < aN)
         let b_drop = (w.c.b_drops || []).filter((x) => x < w.c.cap)
         let a_heard = this.Sound_measure(this.Ra_term_spool(A.channels, A.per, a_drop))
-        let a_rest = this.Sound_measure(this.Ra_term_spool(A.channels, A.per, []))
         let b_heard = this.Sound_measure(this.Ra_term_spool(B.channels, B.per, b_drop))
         let lufs = await this.Ra_lufs(B.channels, B.sr)
-        w.c.stream = { cap: w.c.cap, a_drops: a_drop.length, a_heard: a_heard.gaps, a_rest: a_rest.gaps, a_held: A.held, b_drops: b_drop.length, b_heard: b_heard.gaps, b_held: B.held, lufs: lufs }
-        let row = { streamed: 1, cap: w.c.cap, a_drops: a_drop.length, a_heard: a_heard.gaps, a_rest: a_rest.gaps, b_drops: b_drop.length, b_heard: b_heard.gaps }
+        w.c.stream = { cap: w.c.cap, a_played: aN, a_drops: a_drop.length, a_heard: a_heard.gaps, a_held: A.held, b_drops: b_drop.length, b_heard: b_heard.gaps, b_held: B.held, lufs: lufs }
+        let row = { streamed: 1, cap: w.c.cap, a_played: aN, a_drops: a_drop.length, a_heard: a_heard.gaps, b_drops: b_drop.length, b_heard: b_heard.gaps }
         if (lufs != null) row.lufs = lufs
         w.i(row)
     })
 
 },
 // ── the witness — %see observations reading live truth (no commas no apostrophes) ──
-//  Setup at beat 2; the handoff claims read the observed rows (stream_ask / stream_want / stashed) from
-//   beat 5 on; the session claims fire off the streamed row at WHATEVER beat the real wire settled it
-//    (>= not === : the head-driven session finishes at a variable beat, and %see is once-noticed so it
-//     lands the first beat its truth holds).  Thresholds (heard <= 3, starved > fed + 2, LUFS ±2) are
-//      TUNED off the first live CHECK run — the streamed row records the real numbers.
+//  Setup at beat 2; the handoff claims read the observed rows (stream_ask / stream_want / fed / stashed /
+//   switched) from beat 5 on; the session claims fire off the streamed row at WHATEVER beat the real wire
+//    settled it (>= not === : the head-driven session finishes at a variable beat, and %see is once-noticed
+//     so it lands the first beat its truth holds).  Thresholds (b_heard <= 3, LUFS ±2) are TUNED off the
+//      first live CHECK run — the streamed row records the real numbers.
 MusuRaStream_witness(w) {
     let n = (this.c.run)?.c.step_n
-    let lib = w.c.racast_src
+    let lib = w.c.repli_src
     let recs = lib ? lib.o({ Record: 1 }) : []
     let s = w.c.stream
     let target = this.Ra_target_lufs(w)
-    // beat 2: two real opus Records stand at the caster — a session with a track to change TO.
-    if (n === 2 && recs.length >= 2 && recs[0].sc.real && recs[1].sc.real && !(w.oa({see: 'two real opus Records stand at the caster — a session with stock to listen and a track to change to'}))) w.i({see: 'two real opus Records stand at the caster — a session with stock to listen and a track to change to'})
+    // the session stands: two real Records at the caster — a track to change TO.  n>=2 not ===2: a
+    //  fresh-disk run REBUILDS the stock and the expecting lands the second Record past the beat-2
+    //   window (a standing-stock run resurrects inside it) — the claim is not beat-pinned.
+    if (n >= 2 && recs.length >= 2 && recs[0].sc.real && recs[1].sc.real && !(w.oa({see: 'two real opus Records stand at the caster — a session with stock to listen and a track to change to'}))) w.i({see: 'two real opus Records stand at the caster — a session with stock to listen and a track to change to'})
     // the listen began on the cached preview ALONE: when the ask latched the head had already played
-    //  real segments and still stood inside the preview window (the hold at the boundary is implicit —
-    //   no stream want exists before the ask by construction and the row pins where the ask happened).
+    //  real chunks and still stood inside the preview window — and nothing past the boundary existed
+    //   at the mirror (held_past absent: the hold is real on both sides).
     let ask = w.o({ stream_ask: 'A' })[0]
     if (n >= 5 && ask && +(ask.sc.plays || 0) > 0 && +(ask.sc.at_head || 0) > 0 && +(ask.sc.at_head) < +(ask.sc.preview || 0) && !(+(ask.sc.held_past || 0)) && !(w.oa({see: 'the listen began on the cached preview alone — the spool held at the boundary until the tail ran low'}))) w.i({see: 'the listen began on the cached preview alone — the spool held at the boundary until the tail ran low'})
     // the handoff: the first want past the boundary was EXACTLY the segment after the last preview.
     let wantA = w.o({ stream_want: 1, of: 'A' })[0]
     if (n >= 5 && wantA && +(wantA.sc.stream_want) === +(wantA.sc.preview) && !(w.oa({see: 'the streaming ask went out at exactly the segment after the last preview'}))) w.i({see: 'the streaming ask went out at exactly the segment after the last preview'})
+    // the demand fed the head across the boundary: the chunk at seg P did not exist when the session
+    //  opened — it was transcoded because a parked want asked — and the playhead crossed onto it.
+    let fed = w.o({ fed: 'A' })[0]
+    if (n >= 5 && fed && +(fed.sc.held || 0) > 0 && !(w.oa({see: 'the playhead crossed the boundary onto transcoded chunks that arrived on demand'}))) w.i({see: 'the playhead crossed the boundary onto transcoded chunks that arrived on demand'})
     // the radiostock economy at the listener: the pulled preview cached into the downloads corner.
     let st = w.o({ stashed: 1 })[0]
     if (n >= 5 && st && +(st.sc.segs || 0) > 0 && !(w.oa({see: 'the pulled preview cached into the downloads corner — the radiostock economy standing at the listener end'}))) w.i({see: 'the pulled preview cached into the downloads corner — the radiostock economy standing at the listener end'})
-    // the slow transcode clock starved the tail of A — real holes in what was heard against a fed B.
-    if (n >= 6 && s && s.a_drops > 0 && s.a_heard > s.b_heard + 2 && !(w.oa({see: 'the slow transcode clock fell behind the playhead — the tail of the stream starved with real holes'}))) w.i({see: 'the slow transcode clock fell behind the playhead — the tail of the stream starved with real holes'})
-    // the terminal decoded the PULLED bytes and the loudness reads the target back off them.
+    // the owner act: hitting the next track opened a FULL FRESH cycle — B held at its own boundary and
+    //  asked at exactly its own seg P (the change of track is a whole preview economy again from zero).
+    let wantB = w.o({ stream_want: 1, of: 'B' })[0]
+    if (n >= 6 && w.oa({ switched: 1 }) && wantB && +(wantB.sc.stream_want) === +(wantB.sc.preview) && !(w.oa({see: 'hitting the next track opened a fresh cycle — a new preview primed and its own ask went out at its own boundary'}))) w.i({see: 'hitting the next track opened a fresh cycle — a new preview primed and its own ask went out at its own boundary'})
+    // the terminal decoded the PULLED chunk particles and the loudness reads the target back off them.
     if (n >= 6 && s && s.lufs != null && Math.abs(s.lufs - target) < 2 && !(w.oa({see: 'the terminal decoded what it pulled — the loudness reads the target back from the bytes that crossed'}))) w.i({see: 'the terminal decoded what it pulled — the loudness reads the target back from the bytes that crossed'})
-    // the change of track resumed a fed stream at the healthy transcode rate.
-    if (n >= 6 && s && s.b_heard <= 3 && !(w.oa({see: 'changing the track resumed a fed stream — a fresh preview primed and the transcoder kept ahead at the healthy rate'}))) w.i({see: 'changing the track resumed a fed stream — a fresh preview primed and the transcoder kept ahead at the healthy rate'})
+    // the fed change of track played out clean: B ran its whole capped cycle with the transcoder ahead.
+    if (n >= 6 && s && s.b_heard <= 3 && !(w.oa({see: 'the next track played its capped cycle clean — the transcoder kept ahead of a fresh playhead'}))) w.i({see: 'the next track played its capped cycle clean — the transcoder kept ahead of a fresh playhead'})
 
 },
 

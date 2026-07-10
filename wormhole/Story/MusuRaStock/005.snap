@@ -8,15 +8,63 @@ Snap:H
         reached:step_2
         survey,tracks=8
         Library,pier:DJ
-          Record,id:848b336a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,src_hash:0d9cc36d
-            Stream,name:opus,total=39,sr=48000,br=128000,seg_secs=2,bytes=1290003
-            proof,seconds=2,lufs=-14.03,ms:r310 d77 l106
-          Record,id:8233c2ea,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,src_hash:9471f8fc
-            Stream,name:opus,total=38,sr=48000,br=128000,seg_secs=2,bytes=1256926
-            proof,seconds=2,lufs=-14.03,ms:r278 d32 l169
-          Record,id:4afd7f10,title:Groove G,artist:DJ Oscillo,seconds=66,lufs=-7.84,gain=-6.16,real,col,src_hash:f331bff6
-            Stream,name:opus,total=33,sr=48000,br=128000,seg_secs=2,bytes=1091541
-            proof,seconds=2,lufs=-14.02,ms:r145 d7 l127
+          Record,id:848b336a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,src_hash:0d9cc36d,sr=48000,br=128000,seg_secs=2,nch,preview=17,total=39,bytes=549743
+            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:16	{"ref":{"buf":"Uint8Array()"}}
+            proof,seconds=1.994,lufs=-14.03,ms:r96 d130 l217
+          Record,id:8233c2ea,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,src_hash:9471f8fc,sr=48000,br=128000,seg_secs=2,nch,preview=17,total=38,bytes=549743
+            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:16	{"ref":{"buf":"Uint8Array()"}}
+            proof,seconds=1.994,lufs=-14.03,ms:r102 d35 l298
+          Record,id:4afd7f10,title:Groove G,artist:DJ Oscillo,seconds=66,lufs=-7.84,gain=-6.16,real,col,src_hash:f331bff6,sr=48000,br=128000,seg_secs=2,nch,preview=17,total=33,bytes=549743
+            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:16	{"ref":{"buf":"Uint8Array()"}}
+            proof,seconds=1.994,lufs=-14.02,ms:r107 d217 l139
         req:witness,eternal,ok
         reached:step_3
         req:rastock,finished

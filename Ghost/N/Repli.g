@@ -27,6 +27,11 @@ IMPORT()
 //   PARKS as a %parked_want and is answered the moment the frontier passes it — streaming starts with the
 //    FIRST transcoded slice, never waiting for the preview set.  And a %Reco (a note about a Record — the
 //     knowledge graph around the thing) rides the SAME offer fragment as the Record it annotates.
+//  TWO PAYLOAD SUBSTRATES (2026-07-10, the chunk-particle rebuild): the original Float32 staging array
+//   (rec.c.chunks + .c.page_bytes + mirror .c.pages — MusuReplica/MusuReco) and CHUNK PARTICLES — real
+//    child particles whose bytes ride a binary .sc value (Ra's %Preview,seq/%Stream,seq).  What snaps,
+//     replicates: a chunk's presence is its fill state, on the observable plane, and the SAME offer/want/
+//      park/serve machinery moves both — no side arrays, no .c.bollocks to manage beside the protocol.
 //  PRINCIPLE (owner, 2026-07-04): this is a SINGULARITY for elegant data delivery — a landscape of ONE
 //   type (C) with clearly defined frontiers | paginations and methods of navigating them.  It is NOT a
 //    %Good and must never fold into one: %Good/req:Store is the legacy request-response RPC floor
@@ -56,18 +61,66 @@ Repli_loc_keys(keys):
     if (keys.length > 1 && ['id', 'name', 'seq', 'pier', 'kind'].includes(keys[1])) return [keys[0], keys[1]]
     return [keys[0]]
 
+// Repli_is_binary — an .sc value that is raw bytes.  The chunk-particle principle (owner 2026-07-10:
+//  WHAT SNAPS REPLICATES): a transport chunk is a REAL child particle whose bytes ride an .sc value —
+//   the snap encoder mutes it to a ~12-byte description ("Uint8Array()", objecties.ref), so presence
+//    stays on the observable plane while the weight stays off it.  NOTE the STORAGE/toc encoder is a
+//     different animal — an object .sc value is FATAL there, so a subtree carrying sc-bufs must never
+//      ride a Waft toc-persist; its disk home is its own binary format (Ra's .jam).
+Repli_is_binary(v):
+    if (typeof Uint8Array !== 'undefined' && v instanceof Uint8Array) return true
+    if (typeof ArrayBuffer !== 'undefined' && v instanceof ArrayBuffer) return true
+    return false
+
+// Repli_chunk_bytes — the (single) binary .sc value of a chunk particle, or null.  One buffer per
+//  particle is the model (a chunk IS its bytes); a second binary key would silently lose — keep one.
+Repli_chunk_bytes(node):
+    let sc = node.sc || {}
+    for (const k of Object.keys(sc)) {
+        if (this.Repli_is_binary(sc[k])) return sc[k]
+    }
+    return null
+
+// Repli_chunk_at — the chunk particle at seq s under a Record, ANY mainkey (%Preview and %Stream share
+//  ONE seq space across the boundary), located by its seq value.  seq rides as a STRING everywhere (mint
+//   and query both) so a literal query never trips the {k:1} presence wildcard.  Presence of the particle
+//    WITH its bytes IS fill state — there is no have= counter to keep honest.
+Repli_chunk_at(rec, s):
+    for (const c of rec.o({ seq: '' + s })) {
+        if (this.Repli_chunk_bytes(c) != null) return c
+    }
+    return null
+
 // Repli_lines_of — recurse a subtree, one enL line per particle.  objecties.loc names the locatory keys;
-//  objecties.op carries a non-default change intent (dupe|delete) off .c.repli_op; a particle whose bytes are
-//   staged on .c.page_bytes is a BUFFER LEAF — it gets objecties.buffer=<fresh per-Pier id> and its bytes are
-//    registered in bufmap.list to ride as a page frame.  (bufmap.tx.c.bufseq mints globally-unique buffer ids.)
-Repli_lines_of(node, d, out, bufmap):
+//  objecties.op carries a non-default change intent (dupe|delete) off .c.repli_op.  TWO buffer-leaf forms:
+//   bytes staged on .c.page_bytes (the Float32-page path — MusuReplica/MusuReco's PCM chunks), and a binary
+//    .sc value (the chunk-particle path — the bytes ARE a scalar child, objecties.bufk names the key the
+//     far side restores them to).  Either way the particle gets objecties.buffer=<fresh per-Pier id> and its
+//      bytes register in bufmap.list to ride as a page frame.  (bufmap.tx.c.bufseq mints the unique ids.)
+//   opts.husk: an OFFER is the catalog card, not the payload — skip children that carry a binary .sc value
+//    (their bytes cross only when WANTED; a mirror chunk minted bufless would lie to presence-is-fill-state).
+Repli_lines_of(node, d, out, bufmap, opts):
     let sc = node.sc || {}
     let keys = Object.keys(sc)
     let stringies = {}
-    for (const k of keys) stringies[k] = sc[k]
+    let bufk = null
+    for (const k of keys) {
+        if (this.Repli_is_binary(sc[k])) {
+            if (!bufk) bufk = k
+            continue
+        }
+        stringies[k] = sc[k]
+    }
     let objecties = {}
-    objecties.loc = (node.c && node.c.repli_loc) ? node.c.repli_loc : this.Repli_loc_keys(keys)
+    objecties.loc = (node.c && node.c.repli_loc) ? node.c.repli_loc : this.Repli_loc_keys(Object.keys(stringies))
     if (node.c && node.c.repli_op) objecties.op = node.c.repli_op
+    if (bufk) {
+        let id = (bufmap.tx.c.bufseq = (bufmap.tx.c.bufseq || 0) + 1)
+        objecties.buffer = id
+        objecties.bufk = bufk
+        let v = sc[bufk]
+        bufmap.list.push({ id: id, bytes: (v instanceof Uint8Array) ? v : new Uint8Array(v) })
+    }
     if (node.c && node.c.page_bytes) {
         let id = (bufmap.tx.c.bufseq = (bufmap.tx.c.bufseq || 0) + 1)
         objecties.buffer = id
@@ -75,15 +128,18 @@ Repli_lines_of(node, d, out, bufmap):
         node.c.page_bytes = null
     }
     out.push(this.enL({ d: d, stringies: stringies, objecties: objecties }))
-    for (const child of node.o()) this.Repli_lines_of(child, d + 1, out, bufmap)
+    for (const child of node.o()) {
+        if (opts && opts.husk && this.Repli_chunk_bytes(child) != null) continue
+        this.Repli_lines_of(child, d + 1, out, bufmap, opts)
+    }
     return out
 
 // Repli_fragment — the whole fragment for a node: { text, bufmap }.  `tx` is the sending Pier (its bufseq
-//  mints buffer ids).
-Repli_fragment(node, tx):
+//  mints buffer ids).  opts passes through to Repli_lines_of (husk: skip buffer-leaf children).
+Repli_fragment(node, tx, opts):
     let out = []
     let bufmap = { list: [], tx: tx }
-    this.Repli_lines_of(node, 0, out, bufmap)
+    this.Repli_lines_of(node, 0, out, bufmap, opts)
     return { text: out.join('\n'), bufmap: bufmap }
 
 // ─── decode: MERGE an enWaft-shaped fragment into a mirror tree (streamy upsert, not a snapshot) ───
@@ -134,7 +190,10 @@ async Repli_merge(mirrorTop, text):
             }
         }
         c.c.up = parent
-        if (objs.buffer != null) c.c.await_buffer = objs.buffer
+        if (objs.buffer != null) {
+            c.c.await_buffer = objs.buffer
+            if (objs.bufk) c.c.await_bufk = objs.bufk
+        }
         c.bump()
         stack.push({ d: parsed.d, c: c })
         touched.push(c)
@@ -178,11 +237,23 @@ async Repli_send_lines(w, tx, from, to, text, bufmap):
         this.Peeroleum_send(w, { header: { type: 'repli_page', from: from, to: to, seq: pseq, bufferid: page.id, body_hash: ph, body_len: page.bytes.length }, buffer: page.bytes })
     }
 
-// Repli_offer — communicate about a Record: ship its head (the %Record + its %Stream handle, have:0) as a
-//  repli_lines frame.  No bytes yet — the catalog card, the collection-info moment.
+// Repli_allowed — the consent hook as a question (racast_allow generalised — the Keep's seam, §9.7).
+//  Open only when no predicate is wired (a bare demo); otherwise exactly what w.c.repli_allow answers
+//   for that peer.  Asked at EVERY leg, cached nowhere — a grant revoked between two wants shuts the
+//    second one.  The Book wires a Swarm_pier_live lookup in; Repli never imports Swarm.
+Repli_allowed(w, peer):
+    if (!w.c.repli_allow) return true
+    return !!w.c.repli_allow(peer)
+
+// Repli_offer — communicate about a Record: ship its HUSK (the head + non-buffer children) as a
+//  repli_lines frame.  husk:1 skips chunk particles — their bytes cross only when WANTED, so a catalog
+//   card stays a card however much stock stands behind it.  CONSENT-GATED: a peer the hook refuses gets
+//    no card at all.  Returns did-it-cross (a revoke probe counts the falses).
 async Repli_offer(w, tx, from, to, rec):
-    let frag = this.Repli_fragment(rec, tx)
+    if (!this.Repli_allowed(w, to)) return false
+    let frag = this.Repli_fragment(rec, tx, { husk: 1 })
     await this.Repli_send_lines(w, tx, from, to, frag.text, frag.bufmap)
+    return true
 
 // Repli_retire — un-communicate about a Record: one op:delete line locates it at the mirror and removes it.
 //  The goner twin of Repli_offer — a withdrawal crosses the wire the same way an offer did.
@@ -205,15 +276,28 @@ async Repli_recommend(w, tx, from, to, rec, note, by):
     await this.Repli_offer(w, tx, from, to, rec)
     return reco
 
-// Repli_page_ready — can [from, from+PAGE) serve NOW?  Yes when the full page is transcoded; a SHORT
-//  page only at the true end of a COMPLETE record (chunks reached the promise), so the stride stays
-//   aligned while the transcoder runs and pipelined offsets never overlap.
+// Repli_page_ready — can [from, from+PAGE) serve NOW?  Yes when the full page exists; a SHORT
+//  page only at the true end of a COMPLETE record, so the stride stays aligned while the producer
+//   runs and pipelined offsets never overlap.  TWO substrates: rec.c.chunks (the Float32 staging
+//    array, promise on sc.nchunks — MusuReplica/MusuReco) and CHUNK PARTICLES (promise on sc.total;
+//     particle presence IS the frontier — nothing to count, only to see).
 Repli_page_ready(rec, from, PAGE):
-    let chunks = rec.c.chunks || []
-    let promised = +(rec.sc.nchunks || 0)
-    let complete = chunks.length >= promised
-    if (from >= chunks.length) return false
-    if (!complete && (from + PAGE) > chunks.length) return false
+    if (rec.c.chunks) {
+        let chunks = rec.c.chunks
+        let promised = +(rec.sc.nchunks || 0)
+        let complete = chunks.length >= promised
+        if (from >= chunks.length) return false
+        if (!complete && (from + PAGE) > chunks.length) return false
+        return true
+    }
+    let total = +(rec.sc.total || 0)
+    if (!(total > 0) || from >= total) return false
+    let end = Math.min(from + PAGE, total)
+    let s = from
+    while (s < end) {
+        if (!this.Repli_chunk_at(rec, s)) return false
+        s = s + 1
+    }
     return true
 
 // Repli_park_want — a want that outran the transcode frontier waits VISIBLY: a %parked_want under the
@@ -260,8 +344,10 @@ Repli_find_record(w, id):
 async Repli_serve_want(w, pier, frame):
     if (pier !== w.c.tx) return
     let h = frame.header
+    if (!this.Repli_allowed(w, h.from)) return
     let rec = this.Repli_find_record(w, h.id)
     if (!rec) return
+    if (!rec.c.chunks) { await this.Repli_serve_chunks(w, pier, h, rec); return }
     let chunks = rec.c.chunks || []
     let from = +(h.from_idx || 0)
     let PAGE = +(w.c.repli_page || 2)
@@ -291,10 +377,39 @@ async Repli_serve_want(w, pier, frame):
     let bufmap = { list: drop ? [] : [{ id: id, bytes: bytes }] }
     await this.Repli_send_lines(w, pier, h.to, h.from, out.join('\n'), bufmap)
 
+// Repli_serve_chunks — the chunk-particle serve: one FIXED-STRIDE page [from, from+PAGE) of a Record
+//  whose chunks are real child particles.  The fragment is the Record's identity line + one line per
+//   chunk — Repli_lines_of lifts each chunk's binary .sc value into the bufmap, so the page frames ride
+//    behind the lines exactly like the Float32 path (per-frame sha256 pins each chunk's byte identity).
+//     The frontier logic is IDENTICAL: a want whose page is not all present PARKS (the parked want IS
+//      the demand a producer answers — Ra's on-demand transcode hangs off it), and Repli_serve_parked
+//       releases it when the chunks appear.  rec.c.sent feeds the %Sent_Tree, as ever.
+async Repli_serve_chunks(w, pier, h, rec):
+    let from = +(h.from_idx || 0)
+    let PAGE = +(w.c.repli_page || 2)
+    let total = +(rec.sc.total || 0)
+    if (!this.Repli_page_ready(rec, from, PAGE)) {
+        if (from < total) this.Repli_park_want(w, pier, h)
+        return
+    }
+    let end = Math.min(from + PAGE, total)
+    let out = []
+    let bufmap = { list: [], tx: pier }
+    out.push(this.enL({ d: 0, stringies: { Record: 1, id: rec.sc.id }, objecties: { loc: ['Record', 'id'] } }))
+    let s = from
+    while (s < end) {
+        this.Repli_lines_of(this.Repli_chunk_at(rec, s), 1, out, bufmap)
+        s = s + 1
+    }
+    if (end > +(rec.c.sent || 0)) rec.c.sent = end
+    await this.Repli_send_lines(w, pier, h.to, h.from, out.join('\n'), bufmap)
+
 // ─── receiver (Pier B) ───
-// Repli_mirror_lib — B's growing MIRROR collection (find-or-create).
+// Repli_mirror_lib — B's growing MIRROR collection (find-or-create).  The pier key defaults to the
+//  demo's 'Crowd'; a real listener names its shelf (w.c.repli_mirror_pier — its own prepub, the
+//   census convention).
 Repli_mirror_lib(w):
-    let lib = w.oai({ Library: 1, pier: 'Crowd' })
+    let lib = w.oai({ Library: 1, pier: w.c.repli_mirror_pier || 'Crowd' })
     lib.c.up = w
     return lib
 
@@ -333,18 +448,29 @@ Repli_open_awaitbuf(w, pier, mirror, id):
     if (set) set(async (rq) => { this.Repli_awaitbuf_do(w, pier, rq) })
     if (pier.c.bufs && pier.c.bufs[id] != null) this.Repli_attach_page(w, pier, id, pier.c.bufs[id])
 
-// Repli_attach_page — attach a page's bytes to the awaiting mirror particle (as a Float32 page on .c.pages),
-//  clear the wait, and finish the holding req.
+// Repli_attach_page — attach a page's bytes to the awaiting mirror particle, clear the wait, and finish
+//  the holding req.  TWO landings: a bufk wait restores the bytes AS the named .sc value (the chunk-
+//   particle path — the mirror chunk becomes real the moment its bytes land; presence IS fill state, no
+//    got counter to ride the snap); otherwise the Float32-page path pushes onto .c.pages and ticks got.
 Repli_attach_page(w, pier, id, bytes):
     pier.c.awaiting = pier.c.awaiting || {}
     let mirror = pier.c.awaiting[id]
     if (!mirror) return
-    let pcm = this.Repli_unpack_page(bytes)
-    mirror.c.pages = mirror.c.pages || []
-    mirror.c.pages.push(pcm)
-    mirror.c.await_buffer = null
-    mirror.sc.got = (+(mirror.sc.got || 0)) + 1
-    mirror.bump()
+    if (mirror.c.await_bufk) {
+        let u8 = new Uint8Array(bytes.length)
+        u8.set(bytes)
+        mirror.sc[mirror.c.await_bufk] = u8
+        mirror.c.await_bufk = null
+        mirror.c.await_buffer = null
+        mirror.bump()
+    } else {
+        let pcm = this.Repli_unpack_page(bytes)
+        mirror.c.pages = mirror.c.pages || []
+        mirror.c.pages.push(pcm)
+        mirror.c.await_buffer = null
+        mirror.sc.got = (+(mirror.sc.got || 0)) + 1
+        mirror.bump()
+    }
     delete pier.c.awaiting[id]
     let req = pier.o({ req: 'awaitbuf', bufferid: id })[0]
     if (req) {
@@ -418,13 +544,22 @@ async Repli_sent_se(w, library, pier):
         },
         trace_fn: async (uD, n, T) => {
             let stream = n.o({ Stream: 1 })[0]
-            // the sender's truth is what it has SERVED (rec.c.sent); the mirror's is what has ARRIVED
-            //  (%Stream have) — each side's tree reads its own adjusted reality.
+            // the sender's truth is what it has SERVED (rec.c.sent); the mirror's is what has ARRIVED —
+            //  chunk particles COUNTED (presence is fill state) where the Record carries them, else the
+            //   %Stream head's have — each side's tree reads its own adjusted reality.
             let have = 0
-            if (n.c.sent != null) { have = +n.c.sent } else { have = stream ? +(stream.sc.have || 0) : 0 }
+            if (n.c.sent != null) {
+                have = +n.c.sent
+            } else {
+                let held = 0
+                for (const ch of n.o({ seq: 1 })) {
+                    if (this.Repli_chunk_bytes(ch) != null) held = held + 1
+                }
+                if (held) { have = held } else { have = stream ? +(stream.sc.have || 0) : 0 }
+            }
             let D = uD.i({ Sent: 1, id: n.sc.id, name: n.sc.title || n.sc.id,
                 have: have,
-                total: stream ? +(stream.sc.total || 0) : 0,
+                total: +(n.sc.total || (stream ? stream.sc.total : 0) || 0),
                 got: +(stream ? (stream.sc.got || 0) : 0) })
             D.c.rec = n
             n.c.Sent_D = D

@@ -22,9 +22,31 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 A rolling brief: the newest work sits here first, then gets baked into its home section
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 
-**DESIGN 2026-07-10 — REBUILD the preview economy on REAL CHUNK PARTICLES + generic Repli. NOT
- built; three FORKS open below for the human to rule before I touch load-bearing Repli.**
- The preview economy (the BUILT block just under this one) works — the owner's live MusuRaCast run
+**BUILT + LIVE-CHECKED 2026-07-10 (same day, forks all ruled — (c) demand-driven per owner) — the
+ preview economy REBUILT on REAL CHUNK PARTICLES + generic Repli.  All four MusuRa\* ran on a LIVE
+  runner same evening: EVERY %see minted (25/25 — Stock 6, Cast 6, Term 5, Stream 8) — Cast's pulled
+   row read `chunks=39 parked=12 unparked=12` (the demand economy end to end), Term read
+    `healthy=0 gaps / starved=320 / lufs=-14.03` (one-decoder continuity: PERFECTLY gapless), Stream
+     ran the whole arc (ask at head 4 inside the preview → first want seg 6 == P → fed at 8 →
+      owner-act switch at 10 → B full fresh cycle → `a_drops=0 b_heard=0 lufs=-14.03`) with IDENTICAL
+       numbers on a rebuild-run and a resurrect-run.  REMAINING: the re-record itself — reds are pure
+        fixture drift against the old-shape fixtures; owner Accepts (never CredRunner-auto).  Watch on
+         Accept: EntropyProfile Wref stands per Book already; frame-count/beat was fine live.  WHAT
+          SHIPPED:
+   Repli.g gained the three generic things below (binary `.sc` buffer leaf + `bufk` restore, husk
+    offers, `w.c.repli_allow` consent, particle-mode `page_ready`/`serve_chunks` — Float32 path
+     untouched, MusuReplica/MusuReco unaffected); Ra.g lost the WHOLE `Ra_cast_*` wire + the RFC-7845
+      Ogg mux and gained ONE-encode-per-side (`Ra_encode_open/feed/drain` + `Ra_chunk_cut` at the 2s
+       grid, u16-length-prefixed packet framing, `fmt:'pkt'` .jam bump so old stocks rebuild once) +
+        the demand-driven transcode (`Ra_transcode_ensure/advance/pump` — a PARKED want ignites it,
+         it runs to completion at the encoder's real pace; `racast_rate` is DEAD) + the chunk-map
+          terminal (`Ra_chunk_map`/`Ra_term_decode_pulled` decode RUNS through one AudioDecoder,
+           split at `head` chunks, preskip dropped there; pipelined page wants in the stream beat);
+            Radiation.g's four Books re-drawn on Repli_arm/repli_allow/Ra_transcode_pump (MusuRaStream
+             now proves fed-past-boundary then the OWNER ACT — hit next track → B runs a full fresh
+              cycle from seg 0; the engineered starve claims died with the rate flag).  LocalGen'd
+               clean (never ghost-compile Ra.g against a live editor).  The design that ruled it:**
+ The preview economy (the BUILT block just under this one) worked — the owner's live MusuRaCast run
   crossed 17 preview + 22 stream = 39 — but it hand-rolled a parallel wire (`sizes[]`/`seg0` page
    headers, `rec.c.segs`, `have=` counters) that duplicates what Repli does generically AND hides
     the payload off the observable plane (`.c.segs` is invisible without our tools). Owner's
@@ -106,12 +128,12 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
       fresh preview→ask→stream cycle on the change — owner: "hit the next track which should then
        %Stream from the start"). All four re-record (already owed).
 
- - **FORKS** — (a) RULED FLAT (owner 2026-07-10: chunks are `%Preview,seq`/`%Stream,seq` directly
+ - **FORKS** — all RULED. (a) FLAT (owner 2026-07-10: chunks are `%Preview,seq`/`%Stream,seq` directly
     under `%Record`, `head` flag on the two boundary particles — no config-head layer). (b) framing
-     (Ogg pages vs raw length-prefixed packets) DOWNGRADED to an implementation detail / follow-up,
-      not a fork. (c) STILL OPEN [LEAN: demand-driven]: the on-demand stream encode starts when the
-       first `%Stream` want PARKS and runs to completion, vs an always-running encoder the wants
-        merely catch up to — demand-driven honours "no-source ⇒ no-stream" and the honest slow clock.
+     DOWNGRADED to an implementation detail — built as raw u16-length-prefixed packets (the Ogg mux
+      deleted, per the owner's earlier "delete the RFC-7845 mux"). (c) RULED DEMAND-DRIVEN (owner
+       2026-07-10, built same day): the stream encode starts when the first `%Stream` want PARKS and
+        runs to completion — honours "no-source ⇒ no-stream" and the honest clock; no rate flag.
      Risk ledger: frame count/beat ~40 lines+pages vs today's ~10 fat frames (coalesced delivery
       holds it; `repli_page` is the relief valve; first thing a CHECK run watches); `body_hash` rows
        still pin real bytes (a Chromium libopus drift = a real re-record, not a red herring); a
@@ -126,9 +148,12 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
         `repli_allow`; (4) live edge — the chained-encode second mode + BigSoundland's tuner playing
          a real mirror.
 
-**BUILT 2026-07-10 — the PREVIEW ECONOMY (owner 2026-07-08: "Records are always Record/Preview first,
- those are the parts that cache in radiostock/, then Record/Stream involves streaming the track from the
-  point right after the last Record/Preview") — LIVE-GATE OWED, all four MusuRa\* re-record.**
+**BUILT 2026-07-10 (morning) — the PREVIEW ECONOMY — MECHANISM SUPERSEDED the same day by the
+ chunk-particle rebuild above (the ECONOMY claims below all still hold; the `Ra_cast_*` wire /
+  `rec.c.segs` / `have=` machinery this block describes is GONE — read it as the why, not the how).
+   (owner 2026-07-08: "Records are always Record/Preview first, those are the parts that cache in
+    radiostock/, then Record/Stream involves streaming the track from the point right after the last
+     Record/Preview")**
  The Record model went preview-first end to end, drawn from `src/lib/ghost/Radios.svelte` (the
   complication-enforcer: `radiopreview`→`rastream` offset+`preview_duration` contiguity, `streamability` /
    `MIN_LEFT_TO_WANT_STREAMING`, the radiostock preview cache, "don't trust leftover %stream"):

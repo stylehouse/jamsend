@@ -65,8 +65,7 @@ story:LeafFarm
     waitCyto
     useCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.197
-      sample=0.273,at=1781947585
+    TimeTotal:beliefs,avg=0.186
       sample=0.208,at=1782453888
       sample=0.207,at=1782454079
       sample=0.22,at=1782456796
@@ -76,8 +75,8 @@ story:LeafFarm
       sample=0.165,at=1783663066
       sample=0.196,at=1783663621
       sample=0.091,at=1783664169
-    TimeTotal:step,avg=0.007
-      sample=0.009,at=1781947585
+      sample=0.163,at=1783669816
+    TimeTotal:step,avg=0.006
       sample=0.007,at=1782453888
       sample=0.007,at=1782454079
       sample=0.007,at=1782456796
@@ -87,6 +86,7 @@ story:LeafFarm
       sample=0.005,at=1783663066
       sample=0.007,at=1783663621
       sample=0.003,at=1783664169
+      sample=0.005,at=1783669816
   step,dige:c60b3b661f9d8fe0
   step=2,dige:06026fe0701b3be5
   step=3,dige:9e3dab20bb8852b8
