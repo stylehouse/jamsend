@@ -22,6 +22,110 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 A rolling brief: the newest work sits here first, then gets baked into its home section
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 
+**DESIGN 2026-07-10 — REBUILD the preview economy on REAL CHUNK PARTICLES + generic Repli. NOT
+ built; three FORKS open below for the human to rule before I touch load-bearing Repli.**
+ The preview economy (the BUILT block just under this one) works — the owner's live MusuRaCast run
+  crossed 17 preview + 22 stream = 39 — but it hand-rolled a parallel wire (`sizes[]`/`seg0` page
+   headers, `rec.c.segs`, `have=` counters) that duplicates what Repli does generically AND hides
+    the payload off the observable plane (`.c.segs` is invisible without our tools). Owner's
+     verdict: *"how will Repli be generic if it has some .c.bollocks array to manage as well?"* +
+      *"I just want multiple real actual %Record/%Preview"* + *"lots of particles in snap+Cyto is
+       fine"*. So the rebuild:
+
+ - **The principle:** *what snaps, replicates.* Chunks become REAL child particles; their bytes
+    ride a `.sc` value. Verified at `src/lib/O/Text.svelte` enLine: an object/typed-array in `.sc`
+     is NOT fatal at SNAP — it routes to `objecties.ref[k] = objectify(v)`, a muted description
+      (`"Uint8Array()"`, ~12 bytes), visible on the observable plane. (CLAUDE.md's "fatal at
+       encode" is the STORAGE/toc encoder — you can't resurrect bytes from a description — NOT the
+        snap encoder. Disk home stays the `.jam`; a library subtree with sc-bufs must never ride a
+         Waft toc-persist. State this at the edit site.)
+
+ - **The shape** — the OLD flat shape (owner: "they used to get 15 %Previews and a hundred or so
+    %Streams"): chunk particles are `%Preview,seq` / `%Stream,seq` DIRECTLY under `%Record`, no
+     config-head layer:
+    ```
+    Record,id:848b,title:Cosmic C,artist:DJ,seconds=78,lufs=-7.33,gain=-6.67,sr=48000,br=128000,seg_secs=2,real
+      Preview,seq=0,head   {ref:{buf:"Uint8Array()"}}   ← opens the preview decoder
+      Preview,seq=1        …
+      …                    (17 Previews — Cyto CRUSH folds the sprawl)
+      Stream,seq=17,head   {ref:{buf}}                   ← SEPARATE encode → opens a 2nd decoder
+      Stream,seq=18        (come into being as the frontier transcodes — you WATCH them land)
+    ```
+    Global seq continues across the boundary (first `%Stream.seq` = last `%Preview.seq` + 1, the old
+     contiguity). The `head` flag (1-or-absent) marks the two boundary particles where a decoder
+      opens. `have=` DIES — particle presence IS fill state; resume-from-partial is free (want the
+       first missing seq you can see). Wear (§9.6) = delete the buf, keep the husk chunk ("was here,
+        released").
+
+ - **Cast DISSOLVES into Repli.** `Ra_cast_offer/catalog/serve_want/recv_*/tally/page_out/pull_record`
+    all DIE → Repli. Repli gains three GENERIC things (nothing Ra-specific): (1) an `.sc` binary
+     value is a buffer leaf — extend `Repli_lines_of`'s existing `.c.page_bytes` trigger to any
+      `Uint8Array`/`ArrayBuffer` `.sc` value (Float32 `.c.page_bytes` path stays for
+       MusuReplica/MusuReco); (2) a consent hook `w.c.repli_allow?.(peer)` in serve (my
+        `racast_allow` generalized — also the Keep's seam §9.7); (3) NOTHING for the frontier —
+         `Repli_page_ready`/`Repli_park_want`/`Repli_serve_parked` ALREADY model "a want that
+          outran the producer PARKS, releases as the frontier advances" (MusuReco's bow wave).
+       So the whole economy falls out of park/serve: **preview chunks pre-exist** (minted from the
+        `.jam` at stock/resurrect) → preview wants serve instantly, never park. **Stream chunks
+         don't exist until transcoded** → a stream want PARKS; the parked want IS the demand that
+          drives `Ra_transcode_advance` (decode source once, gain off the card, fresh encoder per
+           2s, mint `chunk,seq=N` with bytes); serve-parked releases as chunks appear. `racast_rate`
+            dissolves into the encoder's real pace — the starve is the playhead outrunning a parked
+             want, not a flag. The boundary needs NO server enforcement: nothing past preview
+              EXISTS until a want parks for it. (`held_past` probe stays as the witness it holds.)
+
+ - **ONE encode per side, chunks are transport slices, ONE decoder per encode** (owner 2026-07-10:
+    "one opus stream that blobs into several %Preview that hop sides and concatenate into a single
+     decoder on the other end... the %Preview->%Stream jump will have another header of course, as
+      that's a separate encode"). The preview is ONE opus encode (at stock); its bytes slice into the
+       `%Preview` particles; far side concatenates IN ORDER, feeds ONE decoder → continuous PCM, NO
+        per-chunk boundary so NO glitch (the decoder holds state across the whole preview because it
+         IS one stream). The stream is a SEPARATE encode (on-demand transcode, boundary→on) → its own
+          decoder, its own header at the `head` chunk. TWO decoders per track, reset only at the seam.
+       A chunk's `buf` is a byte-slice of the one encode at a packet boundary; keeping self-framing Ogg
+        pages vs stripping to raw length-prefixed packets is a small IMPLEMENTATION choice / clean
+         follow-up (owner's earlier "delete the RFC-7845 mux"), NOT a design fork. (Deleted from the
+          earlier draft: "fresh encoder per 2s / per-chunk independence / per-chunk decoder / glitch
+           fallback" — that solved a problem THIS model doesn't have. A single continuous LIVE-EDGE
+            encode is a later mode, orthogonal.)
+
+ - **The ramp** ("gently the first 4s then quickly more") needs no new mechanics: fixed small server
+    stride (`repli_page=2` chunks = 4s, keeps parked offsets aligned) + terminal pipelines wants up
+     to its ahead-window (old `STAY_AHEAD_OF_ACK_SEQ`). First page → play on ~4s → wants pipeline →
+      buffer fills fast. TCP slow-start worn as want-pacing, every step a chunk landing in a snap.
+
+ - **Survives:** `Ra_stock` + the `.jam` format (preview-only, whole-track LUFS/gain card — it now
+    ALSO mints the 17 preview chunk particles), `Ra_lufs`/bake, `Ra_term_stash` (pack preview chunk
+     bufs → `downloads/<friend>/`), `Ra_term_spool`/`Sound_measure`, the Book arcs, AudibleEntropy.
+   **Dies:** all `Ra_cast_*` wire, `rec.c.segs`, the Ogg mux (→ stock-legacy). `Ra_term_decode_pulled`
+    becomes "decode the chunk particles present, silence where absent" via the raw-packet decoder.
+
+ - **Book arc:** MusuRaCast = offer → preview pull → boundary ask → parked-want transcode completes
+    → per-frame `body_hash` still pins byte-identity → revoke via `repli_allow`. MusuRaStream = the
+     session, ~40s proving the stream FEEDS PAST THE BOUNDARY, **then track B from seg 0** (a full
+      fresh preview→ask→stream cycle on the change — owner: "hit the next track which should then
+       %Stream from the start"). All four re-record (already owed).
+
+ - **FORKS** — (a) RULED FLAT (owner 2026-07-10: chunks are `%Preview,seq`/`%Stream,seq` directly
+    under `%Record`, `head` flag on the two boundary particles — no config-head layer). (b) framing
+     (Ogg pages vs raw length-prefixed packets) DOWNGRADED to an implementation detail / follow-up,
+      not a fork. (c) STILL OPEN [LEAN: demand-driven]: the on-demand stream encode starts when the
+       first `%Stream` want PARKS and runs to completion, vs an always-running encoder the wants
+        merely catch up to — demand-driven honours "no-source ⇒ no-stream" and the honest slow clock.
+     Risk ledger: frame count/beat ~40 lines+pages vs today's ~10 fat frames (coalesced delivery
+      holds it; `repli_page` is the relief valve; first thing a CHECK run watches); `body_hash` rows
+       still pin real bytes (a Chromium libopus drift = a real re-record, not a red herring); a
+        missing mid-stream chunk = STALL until filled (the want machinery), decode never runs past a
+         hole.
+
+ - **Wider arc this slots into** (so next moves are visible): (1) THIS rebuild; (2) radiostock
+    fan-out for real — the listener KEEP_AHEADs *preview records across the catalog* (Radiola's
+     `req_restock` on Repli offers) so next-track is instant, the moment "most of a %Record waits on
+      the remote Pier" is true at catalog scale; (3) §9.2 Shares / §9.4 multicast gossip / §9.5
+       per-peer Sent_Tree (half-built as `Repli_sent_se`) + wear-as-cache on husks + the Keep behind
+        `repli_allow`; (4) live edge — the chained-encode second mode + BigSoundland's tuner playing
+         a real mirror.
+
 **BUILT 2026-07-10 — the PREVIEW ECONOMY (owner 2026-07-08: "Records are always Record/Preview first,
  those are the parts that cache in radiostock/, then Record/Stream involves streaming the track from the
   point right after the last Record/Preview") — LIVE-GATE OWED, all four MusuRa\* re-record.**
