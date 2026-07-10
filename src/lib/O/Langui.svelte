@@ -91,13 +91,22 @@
     //   for the departing path before saving its state.
 
     import { onDestroy, untrack } from "svelte"
-    import { EditorView, basicSetup } from "codemirror"
+    import { EditorView } from "codemirror"
     import { EditorState, StateField, StateEffect, Compartment, type Extension, type Range } from "@codemirror/state"
-    import { Decoration, type DecorationSet, keymap, ViewUpdate, ViewPlugin, WidgetType, drawSelection } from "@codemirror/view"
+    import { Decoration, type DecorationSet, ViewUpdate, ViewPlugin, WidgetType } from "@codemirror/view"
     import { indentService, indentUnit } from "@codemirror/language";
     import { foldEffect, unfoldEffect, unfoldAll, foldedRanges, codeFolding } from "@codemirror/language";
     import { defaultKeymap, indentWithTab } from "@codemirror/commands";
     import { diff_match_patch } from "diff-match-patch"
+
+    // most of basicSetup, which we remix
+    import { lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine, keymap } from '@codemirror/view';
+    import { foldGutter, indentOnInput, syntaxHighlighting, defaultHighlightStyle, bracketMatching, foldKeymap } from '@codemirror/language';
+    import { history, historyKeymap } from '@codemirror/commands';
+    import { highlightSelectionMatches, searchKeymap } from '@codemirror/search';
+    import { closeBrackets, autocompletion, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete';
+    import { lintKeymap } from '@codemirror/lint';
+
 
     import { lang, simpleLezerLinter, lang_for_path } from "$lib/O/lang/lang"
     import type { TheC } from "$lib/data/Stuff.svelte"
@@ -1575,6 +1584,39 @@
         if (initial_lang_exts.warnings?.length) {
             console.warn(`lang(${initial_lang_name}) warnings:`, initial_lang_exts.warnings)
         }
+
+
+
+        const basicSetup = [
+            // lineNumbers(),
+            highlightActiveLineGutter(),
+            highlightSpecialChars(),
+            history(),
+            foldGutter(),
+            drawSelection(),
+            dropCursor(),
+            EditorState.allowMultipleSelections.of(true),
+            indentOnInput(),
+            syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+            bracketMatching(),
+            closeBrackets(),
+            autocompletion(),
+            rectangularSelection(),
+            crosshairCursor(),
+            highlightActiveLine(),
+            highlightSelectionMatches(),
+            keymap.of([
+                ...closeBracketsKeymap,
+                ...defaultKeymap,
+                ...searchKeymap,
+                ...historyKeymap,
+                ...foldKeymap,
+                ...completionKeymap,
+                ...lintKeymap
+            ])
+        ];
+
+
 
         // Build extensions once; reused by all EditorStates on this view.
         editorExtensions = [
