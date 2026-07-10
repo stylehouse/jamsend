@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return '91c88bec3d9f91fe' },
+    Ghostmeta_Ghost_V_Voro(): string { return 'cff44b5ae83d5b8e' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
@@ -142,7 +142,18 @@ Voro_report(w, stats) {
     for (const f of census.cells) {
         let row = { cell: f.label, kind: f.kind, n: '' + f.n }
         if (f.pop) row.pop = '' + f.pop
-        rw.i(row)
+        let rowC = rw.i(row)
+        // the pane's own WORDS, transcribed under its cell row: Vtuff_build's free C** (the
+        //  tree the renderer fits into the cell polygon) copied into the report, so the snap
+        //   explains the layout OBLIQUELY — what each pane says and how its rows spread, never
+        //    where a pixel sits.  A pane whose story changes now diffs, beat to beat.
+        //     (⚠ the tree follows Vtuff_bamboo_on(), a per-tab stash pref — flipping 🎋 on a
+        //      RECORDING tab would bake %Vseg stalks into fixtures; fine while it defaults off,
+        //       revisit when bamboo graduates to a real mode.)
+        if (f.src) {
+            let vt = this.Vtuff_build(f.src)
+            if (vt) this.Voro_vtuff_transcribe(rowC, vt)
+        }
     }
     for (const mk of Object.keys(census.bare)) {
         let b = census.bare[mk]
@@ -150,6 +161,37 @@ Voro_report(w, stats) {
         if (b.pop) row.pop = '' + b.pop
         rw.i(row)
     }
+
+},
+// Voro_vtuff_transcribe — copy a Vtuffing tree (a FREE C** no snap can reach) into the report
+//  world as SNAPPED rows.  Only sc crosses (the live c.se emphasis and c.member handles stay
+//   c-side where they belong); the mainkey rides untouched; every other number is stringified
+//    (a bare 1 would collapse to the boolean sentinel and a Vbit's 0 would vanish); strings
+//     shed commas (a comma inside a value would shear the snap line) and empty strings say
+//      nothing so they don't ride at all.
+Voro_vtuff_transcribe(host, vt) {
+    let sc = {}
+    let keys = Object.keys(vt.sc)
+    for (const k of keys) {
+        let v = vt.sc[k]
+        if (k === keys[0]) {
+            sc[k] = v
+            continue
+        }
+        if (typeof v === 'number') {
+            sc[k] = '' + v
+            continue
+        }
+        if (typeof v === 'string') {
+            if (!v.length) continue
+            sc[k] = v.split(',').join(' ')
+            continue
+        }
+        sc[k] = v
+    }
+    let row = host.i(sc)
+    for (const k of vt.o()) this.Voro_vtuff_transcribe(row, k)
+    return row
 
 },
 // Voro_report_walk — gather Voro_report's census on the same cut the Cyto walk makes.  A fold
@@ -174,7 +216,7 @@ Voro_report_walk(node, census, d) {
             let pop = 0
             let members = c.c.gang || c.o()
             for (const m of members) if (m.c.popped) pop = pop + 1
-            census.cells.push({ label: label, kind: c.c.gang ? 'gang' : 'pane', n: c.c.fold_n || c.o().length, pop: pop })
+            census.cells.push({ label: label, kind: c.c.gang ? 'gang' : 'pane', n: c.c.fold_n || c.o().length, pop: pop, src: c })
             continue
         }
         if (c.o().length > 0) {
@@ -636,10 +678,14 @@ Vtuff_default(root, members, src) {
 //       come out in tree order, so a Se-blind renderer loses nothing) and MAY thicken|quiet a band
 //        by its se.  Reuses the flat distiller's leaf helpers (Vtuff_keyrows into the leaf segment)
 //         so the wording logic lives in ONE place; empty bands just carry no rows.
-//  A workspace PREF (rule 4): Vtuff_bamboo_on reads the stash, absent → the flat tree, zero change.
-//   ONE switch drives everything — the renderer adapts to whatever tree Vtuff_build returns.
+//  SHELVED (owner 2026-07-11): the crown|cane|leaf|shoot vocabulary landed overnight and never
+//   earned the owner's eyes — "I don't know anything about" it — and its stash read had become a
+//    ZOMBIE (the 🎋 button died in the Cytui rollback, so a stale Cyto_bamboo=1 kept dressing
+//     every tree in %Vseg with no way to turn it off — and the census transcript, hence FIXTURES,
+//      followed the tab).  Hard false until bamboo v2: hierarchy expressed as sub-cells|sub-graph
+//       (the owner's redirect), not text stalks.  The machinery below keeps; this gate is the lab door.
 Vtuff_bamboo_on() {
-    return !!(this.stashed && this.stashed.Cyto_bamboo)
+    return false
 
 },
 Vtuff_bamboo(root, members, src) {

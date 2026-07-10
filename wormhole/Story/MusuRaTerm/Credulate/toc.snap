@@ -3,36 +3,36 @@ Credulate,of_Book:MusuRaTerm
   GhostInclude:Ghost_N_Reliable,dige:48e8948c7d8da3ed
   GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
   GhostInclude:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-  GhostInclude:Ghost_N_Repli,dige:72b53f01eb18f4a9
+  GhostInclude:Ghost_N_Repli,dige:792b0a842d938f44
   GhostInclude:Ghost_Story_Peregrination,dige:b33cab6322ef6320
   GhostInclude:Ghost_M_Radiola,dige:8786e42c3f3d4c97
   GhostInclude:Ghost_M_Sound,dige:f7dbcd82c50033cc
   GhostInclude:Ghost_M_Crate,dige:c05f526599e015af
   GhostInclude:Ghost_M_Mixer,dige:d5597b5a4132d7f3
   GhostInclude:Ghost_M_Mesh,dige:286eb98843f6e7f9
-  GhostInclude:Ghost_M_Ra,dige:c785ada31553a9ca
+  GhostInclude:Ghost_M_Ra,dige:1af0b0ab7964f012
   GhostInclude:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
-  GhostInclude:Ghost_Story_Radiation,dige:d6934f28b74fba0b
+  GhostInclude:Ghost_Story_Radiation,dige:da9814a8256d4ece
   GhostInclude:Ghost_S_Swarm,dige:a5980d5d4830e92b
   GhostInclude:Ghost_Story_Swarmation,dige:424a77682127f2ba
-  GhostInclude:Ghost_V_Voro,dige:91c88bec3d9f91fe
+  GhostInclude:Ghost_V_Voro,dige:cff44b5ae83d5b8e
   GhostInclude:Ghost_Story_Voronation,dige:8d83abaa8c00b7d3
-  last_ok,at=1783688966.147,ok_pct
+  last_ok,at=1783697284.639,ok_pct
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-    uses:Ghost_N_Repli,dige:72b53f01eb18f4a9
+    uses:Ghost_N_Repli,dige:792b0a842d938f44
     uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
     uses:Ghost_M_Radiola,dige:8786e42c3f3d4c97
     uses:Ghost_M_Sound,dige:f7dbcd82c50033cc
     uses:Ghost_M_Crate,dige:c05f526599e015af
     uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
-    uses:Ghost_M_Ra,dige:c785ada31553a9ca
+    uses:Ghost_M_Ra,dige:1af0b0ab7964f012
     uses:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
-    uses:Ghost_Story_Radiation,dige:d6934f28b74fba0b
+    uses:Ghost_Story_Radiation,dige:da9814a8256d4ece
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
-    uses:Ghost_V_Voro,dige:91c88bec3d9f91fe
+    uses:Ghost_V_Voro,dige:cff44b5ae83d5b8e
     uses:Ghost_Story_Voronation,dige:8d83abaa8c00b7d3

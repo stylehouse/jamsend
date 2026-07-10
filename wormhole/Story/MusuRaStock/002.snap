@@ -6,7 +6,10 @@ Snap:H
         self,round=2	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
+        Account,of:DJ
+          Identity:c012850d69de1318,prepub:c012850d69de1318,friendly:DJ
+            Peering,name:c012850d69de1318,friendly:DJ
         survey,tracks=8
-        Library,pier:DJ
+        Library,pier:c012850d69de1318
         req:witness,eternal,ok
         see:the share holds real tracks and the library stands empty

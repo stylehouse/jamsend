@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return 'c785ada31553a9ca' },
+    Ghostmeta_Ghost_M_Ra(): string { return '1af0b0ab7964f012' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -87,6 +87,70 @@ Ra_bitrate() {
 // Ra_peak_ceiling — -1 dBFS as linear amplitude: the true-peak guard on a BAKED up-gain.
 Ra_peak_ceiling() {
     return 0.891
+
+},
+// Ra_keep_ahead — how many NEXT records the listener keeps preview-warm ACROSS the catalog (the old
+//  machine's KEEP_AHEAD=5 chase reborn as want-pacing — Radio_todo §0 "restock fan-out"): while one
+//   track plays, the fan-out pre-pulls the PREVIEWS of this many others so the next track starts
+//    instantly off warm chunks.  A pacing knob like prime|play|ahead (a Book pins w.sc.keep_ahead),
+//     never a boundary — the fan-out clamps to each record's preview window by construction.
+Ra_keep_ahead(w) {
+    return +(w?.sc?.keep_ahead ?? 4)
+},
+//#endregion
+
+//#region entropy — the ONE randomness seam: a radio is SUPPOSED to be random, a Book must be able to pin it
+//  The old machine seeded a global M.prng from crypto once at radiostock init and nothing could ever
+//   steer it.  Here the state is PER-WORLD (w.c.prng, runtime-only), with three verbs: crypto seeds it
+//    lazily on first use (the live default — every boot rolls fresh), Ra_seed REPLACES it from a string
+//     (the Book's determinism — same seed, same session), and Ra_entropy STIRS live values in WITHOUT
+//      replacing it (user gestures, wire timings, whatever the app wants the dial to feel) — so a live
+//       instance can be handed real entropy mid-flight and a Book can prove the stir moves the dial.
+
+// Ra_entropy — ensure the state (crypto-lazy) and fold any given values in, xor-multiply per word.
+//  Returns the live state array.  Call with no vals = just the ensure (Ra_rand's path).
+Ra_entropy(w, vals) {
+    if (!w.c.prng) w.c.prng = [...crypto.getRandomValues(new Uint32Array(4))]
+    let st = w.c.prng
+    let i = 0
+    for (const v of (vals || [])) {
+        st[i & 3] = (st[i & 3] ^ Math.imul(+v || 0, 2654435761)) >>> 0
+        i = i + 1
+    }
+    return st
+
+},
+// Ra_seed — the Book's pin: REPLACE the world's PRNG state from a seed string, deterministically.
+Ra_seed(w, seed) {
+    let st = [1, 2, 3, 4]
+    let s = String(seed || '')
+    let i = 0
+    while (i < s.length) {
+        st[i & 3] = Math.imul(st[i & 3] ^ s.charCodeAt(i), 2654435761) >>> 0
+        i = i + 1
+    }
+    w.c.prng = st
+    return st
+
+},
+// Ra_rand — a whole number 0..n-1 off the world's PRNG (the Agency prandle step, worn per-w so worlds
+//  never share a dial).  This is what a radio calls to pick; everything above decides what it feels.
+Ra_rand(w, n) {
+    let st = this.Ra_entropy(w)
+    let a = st[0]
+    let b = st[1]
+    let c = st[2]
+    let d = st[3]
+    let t = b << 9
+    c = c ^ a
+    d = d ^ b
+    b = b ^ c
+    a = a ^ d
+    c = c ^ t
+    d = (d << 11) | (d >>> 21)
+    w.c.prng = [a, b, c, d]
+    let r = (Math.imul(b, 5) >>> 0) / 4294967296
+    return Math.floor(r * n)
 },
 //#endregion
 
@@ -387,9 +451,11 @@ Ra_stock_dir() {
 //    json|text, never audio.  The three name fields (ruled 2026-07-10):
 //     ts   — mint time (Date.now): newest wins, older twins are GC fodder — timestamps exist so the
 //             old ones can be DELETED, not so they can be kept.
-//     pub  — the OWNING Peering's pier key (a prepub in the wired Books, a literal shelf key in the
-//             wire-less ones): many Piers share one .jamsend in tests, and each filters the shelf
-//              for its own pub, so they never confuse each other's stock.
+//     pub  — the OWNING Peering's PREPUB, always (standardised 2026-07-11; the wire-less Books mint
+//             a deterministic identity for their shelf key rather than a literal): many Piers share
+//              one .jamsend in tests, and each filters the shelf for its own pub, so they never
+//               confuse each other's stock — and a shelf file names its owner by the same address
+//                the wire routes on, never by a nickname.
 //     enid — CONTENT identity, sha256 over the whole source's bytes (first 16 hex): it contains no
 //             pub and no path, so a record is never locked to the Pier or the location that found
 //              it, and a re-render (same path, new bytes) is honestly a NEW record.
@@ -733,14 +799,18 @@ async Ra_stock_gc(nav, pub, enid, base, path) {
 
 },
 // Ra_stock — the pass over a collection: walk the source, stock the first `take` tracks (take
-//  absent|0 = all), count built|stood|skipped.  lib.sc.stocking rides while the pass runs (a
-//   timed-out snap mid-pass then TELLS ITS STORY — N wanted, the %Record rows so far — instead of
-//    a bare hold; the gen_testsounds lesson).  Serial per track — decode+encode is CPU, and one
-//     track's PCM at a time keeps the memory story flat.
-async Ra_stock(w, lib, nav, src_base, take) {
-    // MIGRATION (2026-07-10, the <id>.jam → <ts>-<pub>-<enid>.jamsend_radiostock bump): old .jam
-    //  stocks are invisible to the pub-filtered scan — dead weight forever.  Sweep them once per
-    //   world; delete this block when no share carries .jam stocks anymore.
+//  absent|0 = all) starting at sorted-walk offset `from` (absent|0 = the top — a multi-Pier Book
+//   deals each source a DISJOINT slice of the one testsounds shelf), count built|stood|skipped.
+//    lib.sc.stocking rides while the pass runs (a timed-out snap mid-pass then TELLS ITS STORY —
+//     N wanted, the %Record rows so far — instead of a bare hold; the gen_testsounds lesson).
+//      Serial per track — decode+encode is CPU, and one track's PCM at a time keeps the memory
+//       story flat.
+async Ra_stock(w, lib, nav, src_base, take, from) {
+    // MIGRATION (2026-07-10, the <id>.jam → <ts>-<pub>-<enid>.jamsend_radiostock bump; extended
+    //  2026-07-11, the pub-is-a-prepub standardisation): old .jam stocks are invisible to the
+    //   pub-filtered scan, and stocks keyed by the retired LITERAL shelf keys ('DJ',
+    //    'raterm.player') are invisible to the prepub-keyed Books now — dead weight forever
+    //     either way.  Sweep them once per world; delete this block when no share carries them.
     if (!w.c.ra_swept) {
         w.c.ra_swept = 1
         let dl = await nav.dir_at(this.Ra_stock_dir())
@@ -749,6 +819,8 @@ async Ra_stock(w, lib, nav, src_base, take) {
             let legacy = []
             for (const f of dl.files) {
                 if (f.name.endsWith('.jam')) legacy.push(f.name)
+                let p = this.Ra_stock_parse(f.name)
+                if (p && (p.pub === 'DJ' || p.pub === 'raterm.player')) legacy.push(f.name)
             }
             for (const nm of legacy) {
                 try {
@@ -759,6 +831,7 @@ async Ra_stock(w, lib, nav, src_base, take) {
         }
     }
     let paths = await this.Crate_nav_paths(nav, src_base)
+    if (from > 0) paths = paths.slice(from)
     if (take > 0) paths = paths.slice(0, take)
     lib.sc.stocking = paths.length
     let built = 0
@@ -984,22 +1057,30 @@ async Ra_transcode_advance(w, rec) {
 // Ra_transcode_pump — the demand loop the caster runs each pass: every Record a %parked_want waits on
 //  gets its stream encode ensured + advanced, then Repli_serve_parked releases whatever the frontier
 //   now covers.  The whole economy falls out of park/serve: preview chunks pre-exist (never park);
-//    stream chunks don't exist until THIS pump answers the parked demand.
+//    stream chunks don't exist until THIS pump answers the parked demand.  EVERY caster in the world
+//     pumps — the legacy single w.c.tx and each Repli_register_caster'd Pier, each against its OWN
+//      shelf (Repli_src_for), so a multi-source world's transcoders answer their own parked wants.
 async Ra_transcode_pump(w) {
-    let pier = w.c.tx
-    if (!pier) return
-    let seen = {}
-    for (const p of pier.o({ parked_want: 1 })) {
-        let id = p.sc.id
-        if (seen[id]) continue
-        seen[id] = 1
-        let rec = this.Repli_find_record(w, id)
-        if (!rec) continue
-        let ra = await this.Ra_transcode_ensure(w, rec)
-        if (!ra) continue
-        await this.Ra_transcode_advance(w, rec)
+    let piers = []
+    if (w.c.tx) piers.push(w.c.tx)
+    for (const cp of (w.c.repli_casters || [])) {
+        if (!piers.includes(cp)) piers.push(cp)
     }
-    await this.Repli_serve_parked(w, pier)
+    for (const pier of piers) {
+        let lib = this.Repli_src_for(w, pier)
+        let seen = {}
+        for (const p of pier.o({ parked_want: 1 })) {
+            let id = p.sc.id
+            if (seen[id]) continue
+            seen[id] = 1
+            let rec = this.Repli_find_record(w, id, lib)
+            if (!rec) continue
+            let ra = await this.Ra_transcode_ensure(w, rec)
+            if (!ra) continue
+            await this.Ra_transcode_advance(w, rec)
+        }
+        await this.Repli_serve_parked(w, pier)
+    }
 },
 //#endregion
 
@@ -1169,6 +1250,104 @@ async Ra_pull_beat(w, rx, mine, theirs, rec) {
         off = off + PAGE
     }
     return { done: held >= total ? 1 : 0, held: held }
+
+},
+// Ra_restock_beat — the KEEP_AHEAD fan-out ACROSS the catalog (Radiola's req_restock redrawn on Repli
+//  offers — Radio_todo §0): while one track plays, keep the PREVIEWS of the next Ra_keep_ahead records
+//   warm so the next track starts instantly, whoever it comes from.  The candidates are the mirror's
+//    catalog in order, rotated to start right after the playing record; each one's missing preview
+//     pages are wanted ONCE (the shared w.c.ra_wanted cursor), addressed by the record's OWN source
+//      breadcrumb (rec.c.rx / rec.c.from — a multi-source catalog fans wants across every wire it
+//       arrived on).  CLAMPED to each record's preview window by construction: a prefetch never asks
+//        past the boundary, so it can never park a want or ignite a transcode — the free window is
+//         the only thing kept warm, exactly the radiostock economy at the listener's end.  `budget`
+//          caps the wants sent per beat (default 4) so the fan-out shares the wire with the live
+//           listen instead of flooding it — the gentle ramp, worn at the catalog scale.
+//            Returns { warm, want, of } — previews whole, wants sent this beat, candidates considered.
+async Ra_restock_beat(w, mirror, budget) {
+    let B = +(budget || 4)
+    let K = this.Ra_keep_ahead(w)
+    let recs = mirror ? mirror.o({ Record: 1 }) : []
+    if (!recs.length) return { warm: 0, want: 0, of: 0 }
+    let playing = w.c.play ? w.c.play.id : null
+    let PAGE = +(w.c.repli_page || 2)
+    w.c.ra_wanted = w.c.ra_wanted || {}
+    let at = 0
+    let i = 0
+    while (i < recs.length) {
+        if (recs[i].sc.id === playing) at = i + 1
+        i = i + 1
+    }
+    let warm = 0
+    let want = 0
+    let considered = 0
+    let k = 0
+    while (k < recs.length && considered < K) {
+        let rec = recs[(at + k) % recs.length]
+        k = k + 1
+        if (rec.sc.id === playing) continue
+        if (w.c.ra_source_live && rec.c.from && !w.c.ra_source_live(rec.c.from)) continue
+        let P = Math.min(+(rec.sc.preview || 0), +(rec.sc.total || 0))
+        if (!(P > 0)) continue
+        considered = considered + 1
+        let map = this.Ra_chunk_map(rec)
+        let whole = true
+        let off = 0
+        while (off < P) {
+            if (map[off] == null) {
+                whole = false
+                let key = rec.sc.id + ':' + off
+                if (want < B && !w.c.ra_wanted[key] && rec.c.rx && rec.c.from && w.c.repli_mirror_pier) {
+                    w.c.ra_wanted[key] = 1
+                    await this.Repli_want_next(w, rec.c.rx, w.c.repli_mirror_pier, rec.c.from, rec.sc.id, 'opus', off)
+                    want = want + 1
+                }
+            }
+            off = off + PAGE
+        }
+        if (whole) {
+            let s = 0
+            while (s < P) {
+                if (map[s] == null) whole = false
+                s = s + 1
+            }
+        }
+        if (whole) warm = warm + 1
+    }
+    return { warm: warm, want: want, of: considered }
+
+},
+// Ra_dial_next — the DIAL turn: pick the next record to play off the mirror catalog.  Never the
+//  playing one, only records whose preview stands promised, and only from sources still ONLINE —
+//   the w.c.ra_source_live hook says what presence means (the Book|app wires grants + carriers +
+//    last-heard; unwired = everyone counts).  The same hook gates the restock fan-out above, so a
+//     dark Pier neither warms nor wins.  Picking:
+//      opts.id       — the DELIBERATE pick (the owner chose a specific record; honored when it
+//                       passes the same gates — the "we might pick one at some point" seam);
+//      opts.skip_src — exclude one source (the chase-to-the-OTHER-Pier move);
+//      otherwise     — the entropy dial (Ra_rand: crypto-live, Book-seedable, live-stirrable).
+//       Candidates sort by id so the dial's domain never wobbles run to run.  null = nothing to
+//        turn to (every other source dark or unstocked) — the caller keeps playing what it has.
+Ra_dial_next(w, mirror, opts) {
+    let o = opts || {}
+    let playing = w.c.play ? w.c.play.id : null
+    let recs = mirror ? mirror.o({ Record: 1 }) : []
+    let cands = []
+    for (const rec of recs) {
+        if (rec.sc.id === playing) continue
+        if (!(+(rec.sc.preview || 0) > 0)) continue
+        if (o.skip_src && rec.c.from === o.skip_src) continue
+        if (w.c.ra_source_live && !w.c.ra_source_live(rec.c.from)) continue
+        cands.push(rec)
+    }
+    cands.sort((x, y) => (x.sc.id < y.sc.id ? -1 : 1))
+    if (!cands.length) return null
+    if (o.id) {
+        for (const rec of cands) {
+            if (rec.sc.id === o.id) return rec
+        }
+    }
+    return cands[this.Ra_rand(w, cands.length)]
 },
 //#endregion
 

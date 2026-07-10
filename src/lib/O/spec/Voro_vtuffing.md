@@ -213,6 +213,52 @@ The owner, verbatim: *"when we get more bamboo schematica going on to make the t
       is lighting — a context-aware fold.  **Not built** — the hook is a neighbourhood pass
        feeding the crushable verdict.
 
+#### The language critique (2026-07-11) — what the redesign must fix
+
+The owner read the panes against the raw graph and named the failure precisely.  Without
+ vtuffing a track reads as the stho|IOpath idiom — `Artist,name:Palegold/Track,title:Ingot,year:…`
+  — the visual language the whole system speaks.  Via vtuffing it collapsed to
+   *"%Palegold,year:2007,live or some crap"*: **it has made C/C into one single C space**, and
+    *"the way it gives me so little clue about what's a key or a value … is pretty wonky"*.
+     So the redesigned Vtuffing text must:
+
+1. **Keep the C/C path visible.**  A member row is a *path*, not a soup — the parent's
+    identity and the member's identity are different Cs and must read as levels (the
+     bamboo joints ARE this: crown · cane · leaf map to the path).  Never fuse a parent's
+      name with a child's sc into one flat row.
+2. **Keys and values are different substances.**  Style them apart (the mainkey already
+    gets the kind-badge treatment — extend the same care to key vs value inside a row).
+3. **`:` when necessary — just like Stuffing.**  The separator carries the key|value
+    grammar; dropping it is what made rows unreadable.
+4. **Multiplicity markers are operators, not words.**  `×2` and `/*3` currently wear the
+    same style as keys and values; they are *glyphs of the fold* and want their own quiet
+     distinct face (the lilac `/*N` sub-glyph was right — apply the principle everywhere).
+
+The current renderer *"is going for generic"* — fine as scaffolding, but the redesign
+ rides the bamboo pass: get through the bulk of the specified pipeline first, then reshape
+  the row grammar to meet 1–4.  (Same session: the 📻 radio and 🕳 tunnel v1 toggles were
+   SHELVED (`Cytui.svelte` `DRIFT_MODES_ON`) — the tunnel never let the tessellation settle;
+    both come back reimagined as their own endeavour grown out of Voro, not toggles inside it.)
+
+#### Bamboo v2 — the redirect (2026-07-11): sub-cells and sub-graph, not text stalks
+
+The crown|cane|leaf|shoot stalk never earned the owner's eyes and got the honest verdict —
+ *"I don't know anything about"* it.  SHELVED: `Vtuff_bamboo_on()` is hard false (Voro.g; the
+  stash read had become a zombie — the 🎋 button died in the Cytui rollback while a stale
+   `Cyto_bamboo=1` kept dressing every tree in `%Vseg`, census transcript and fixtures included).
+    The owner's redirect sets the real course:
+
+- **The pane face is the REAL Stuffing** — *"pretty much exactly like Stuffing but taking up
+   the right amount of space"*.  No hand-rolled twin: the `vtuff_rows`/`micro_fit` row engine
+    (*"skinny and mean"*) is demoted to an opt-in inspection face (▤ default-off, session-local);
+     the molded live Stuffing is the face, and paint_final now clamps its transform to the cell's
+      true capacity (the old `fit ≥ 0.5` floor + the 260×200 gather-cap were the chronic clip).
+- **Hierarchy is expressed structurally** — *"the Artist/Track hierarchy must be expressed, I
+   suppose as sub-cells, and sub-graph"*.  A folded container's children become cells WITHIN its
+    cell (recursive tessellation), or a small sub-graph seated inside the pane — the C/C path made
+     of space itself, which also retires critique #1's flattened row soup at the root.  Not built;
+      this is the 🎋 v2 frontier.
+
 ### 🔊 Quiet ↔ rampage — a throttle on the fold's thinking
 
 The owner, verbatim: *"have some way to quiet or rampage its thinking sometimes."*  The

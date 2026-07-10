@@ -22,314 +22,87 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 A rolling brief: the newest work sits here first, then gets baked into its home section
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 
-**BUILT + LIVE-CHECKED 2026-07-10 (late) — FOUR OWNER RULINGS folded in on top of the chunk-particle
- rebuild (all four Books re-ran on the live runner after: EVERY %see minted, now 24/24 — Stock 6,
-  Cast 6, Term 5, Stream 7):**
- - **`Ra_preview_secs` is a PRODUCT CONSTANT now — 32, hard-coded, no `w` param** ("a huge constant,
-    not something a Book decides"). NOT 33: the boundary must sit on the want-page grid (seg 2s ×
-     PAGE 2 ⇒ multiples of 4s) or P is odd, the pre-ask clamp strands the tail chunk and "first
-      stream want == seg P exactly" is unmintable (the even want-stride never visits an odd P).
-       MusuRaStream's 12s Book-window died with the knob; its cycle just runs longer inside the same
-        40 steps (live: ask@head14, want=16==P, fed@18, switch@20, `a_drops=0 b_heard=0 lufs=-14.01`).
- - **Radiostock files are `<ts>-<pub>-<enid>.jamsend_radiostock`** (awkward extension on purpose —
-    nothing in `.jamsend/` may read as media). `ts` = mint time, so old ones can be DELETED (newest
-     wins; `Ra_stock_find` GCs older twins in passing, `Ra_stock_gc` also drops superseded renders of
-      the same path after a build). `pub` = the OWNING Peering's pier key — many Piers share one
-       `.jamsend` in tests and each filters for its own (`Ra_stock_ls`). `enid` = **sha256 over the
-        whole source bytes, first 16 hex** — content identity, no pub, no path: a record is never
-         locked to the Pier or location that found it ("we pull in entire tracks and dige them").
-          `Ra_id` (path-djb2) and `Ra_bytes_hash`/`src_hash` are DEAD — the id IS the content hash.
-           A one-shot MIGRATION sweep in `Ra_stock` deletes legacy `*.jam` stocks (remove the block
-            when shares are clean).
- - **NO friend-download cache** — `Ra_term_stash` + `.jamsend/downloads/<friend>/` DELETED (reverses
-    §9.1b's downloads corner): pulled chunks are EPHEMERA; a Peering keeps radiostock of its OWN
-     collection only, for the speedy run-around; actually moving music is a later economy — this is
-      just listening. (The Stream Book's stash row + its %see died with it: 24 sees, was 25.)
- - **The DEAD-SOURCE RULE** — a radiostock whose source can't be found anymore can never make up its
-    %Stream, so it is litter: `Ra_source_pcm` drops the file (`rec.c.card_file`, remembered at
-     `Ra_card` load) and returns null; a later pass re-stocks what the collection now holds.
- DONE 2026-07-11: the re-record of all four LANDED — Stock/Cast/Term by the owner, Stream via
-  `runner_ask accept` (7/7 %see pre-pinned and confirmed present after — the drop-hazard didn't bite);
-   verify re-runs ALL GREEN: Stock 5/5, Cast 12/12, Term 12/12 **caveat:0**, Stream 40/40. The caveat
-    signature is now understood: a Book that SEALS shows permanent benign ≈ on exactly the
-     AudibleEntropy-grafted fields (Pier `since:` / Grant `time:`+`sign:` / Edge `at:` — tol:any
-      TOLERATES change, it does not canonicalize, so re-runs always ≈ there); Term seals nothing ⇒ 0.
- PRESKIP now has its one coherent statement in the code — the
-   `Ra_encode_open` comment (it is the opus encoder's convergence ramp the decoder drops at each fresh
-    open, 312@48k; it WOULD ride OpusHead bytes 10-11 but we deleted the container, so we carry it on
-     the card + the two head chunks; NOT a time offset — time-into-track is seq × seg_secs).
+**2026-07-11 (later) — the proto-VILLAGE: multi-caster Repli + KEEP_AHEAD + the entropy seam +
+ skip-by-who-is-online.**
+ The restock fan-out (the "natural next" below) landed, and it landed SOCIAL: the new Book
+  **MusuRaChase** (Radiation.g — the FIFTH Ra* Book, 15 `%see`; Credence row needsFSA+needMusic,
+   brand_new; toc seeded 56 lie steps) is MusuRaStream grown into a little village.  Uno and Duo
+    each stock a DISJOINT testsounds slice (`Ra_stock` grew a `from` offset) on their own
+     prepub-keyed radiostock; each GENERATES a single-use Idzeug and the Listener REDEEMS both over
+      two Lake_links — the real front door, never a promotion shortcut — and the mutual Music grant
+       gates every Radio leg.  The listen runs on Uno track A while `Ra_restock_beat` keeps every
+        OTHER preview warm across BOTH wires; the dial CHASES to a Duo record (instant start on the
+         warm preview, continuation from the SECOND caster's demand-driven transcode); then the
+          VILLAGE EVENT — Uno goes DARK (its carrier falls; the presence hook `w.c.ra_source_live`
+           = grants + carriers turns false) and the owner SKIPS the playing track mid-cycle:
+            `Ra_dial_next` turns the dial ONLY among sources still online, so the pick is forced to
+             Duo's remaining record — a track can always be skipped, and the next one comes from
+              whoever is really there.  `Ra_dial_next(w, mirror, opts)` is the ONE dial verb:
+               opts.skip_src (chase to the other Pier), opts.id (the later "pick one deliberately"
+                seam), else the seeded|stirred entropy dial; the same presence hook gates the
+                 restock fan-out, so a dark Pier neither warms nor wins.
 
-**BUILT + LIVE-CHECKED 2026-07-10 (same day, forks all ruled — (c) demand-driven per owner) — the
- preview economy REBUILT on REAL CHUNK PARTICLES + generic Repli.  All four MusuRa\* ran on a LIVE
-  runner same evening: EVERY %see minted (25/25 — Stock 6, Cast 6, Term 5, Stream 8) — Cast's pulled
-   row read `chunks=39 parked=12 unparked=12` (the demand economy end to end), Term read
-    `healthy=0 gaps / starved=320 / lufs=-14.03` (one-decoder continuity: PERFECTLY gapless), Stream
-     ran the whole arc (ask at head 4 inside the preview → first want seg 6 == P → fed at 8 →
-      owner-act switch at 10 → B full fresh cycle → `a_drops=0 b_heard=0 lufs=-14.03`) with IDENTICAL
-       numbers on a rebuild-run and a resurrect-run.  Re-record DONE 2026-07-11 (see the block above).
-        WHAT SHIPPED:
-   Repli.g gained the three generic things below (binary `.sc` buffer leaf + `bufk` restore, husk
-    offers, `w.c.repli_allow` consent, particle-mode `page_ready`/`serve_chunks` — Float32 path
-     untouched, MusuReplica/MusuReco unaffected); Ra.g lost the WHOLE `Ra_cast_*` wire + the RFC-7845
-      Ogg mux and gained ONE-encode-per-side (`Ra_encode_open/feed/drain` + `Ra_chunk_cut` at the 2s
-       grid, u16-length-prefixed packet framing, `fmt:'pkt'` .jam bump so old stocks rebuild once) +
-        the demand-driven transcode (`Ra_transcode_ensure/advance/pump` — a PARKED want ignites it,
-         it runs to completion at the encoder's real pace; `racast_rate` is DEAD) + the chunk-map
-          terminal (`Ra_chunk_map`/`Ra_term_decode_pulled` decode RUNS through one AudioDecoder,
-           split at `head` chunks, preskip dropped there; pipelined page wants in the stream beat);
-            Radiation.g's four Books re-drawn on Repli_arm/repli_allow/Ra_transcode_pump (MusuRaStream
-             now proves fed-past-boundary then the OWNER ACT — hit next track → B runs a full fresh
-              cycle from seg 0; the engineered starve claims died with the rate flag).  LocalGen'd
-               clean (never ghost-compile Ra.g against a live editor).  The design that ruled it:**
- The preview economy (the BUILT block just under this one) worked — the owner's live MusuRaCast run
-  crossed 17 preview + 22 stream = 39 — but it hand-rolled a parallel wire (`sizes[]`/`seg0` page
-   headers, `rec.c.segs`, `have=` counters) that duplicates what Repli does generically AND hides
-    the payload off the observable plane (`.c.segs` is invisible without our tools). Owner's
-     verdict: *"how will Repli be generic if it has some .c.bollocks array to manage as well?"* +
-      *"I just want multiple real actual %Record/%Preview"* + *"lots of particles in snap+Cyto is
-       fine"*. So the rebuild:
+ **What changed in the engines (all backwards-compatible; the four old Books re-ran green
+  first — Cast 12/12 ≈9, Stream 40/40 ≈37, signatures untouched):**
+ - **Repli is multi-caster now** (Repli.g): `Repli_register_caster(w, pier, lib)` /
+    `Repli_register_rx(w, pier)` + `Repli_src_for`/`Repli_rx_ok` replace the single `w.c.tx`/`w.c.rx`
+     identity guards (those remain the legacy default).  The consent hook grew a second argument —
+      `w.c.repli_allow(peer, at)`, `at` = the SERVING prepub — so ONE hook answers per-relationship
+       (Uno revoking silences Uno's legs and leaves Duo casting).  Mirror %Records get `.c.from`/`.c.rx`
+        source breadcrumbs at `Repli_recv_lines` (runtime-only, nothing snaps): the wire follows the
+         track.  `Ra_transcode_pump` now serves EVERY registered caster off its own shelf.
+ - **The entropy seam** (Ra.g `//#region entropy`): `Ra_rand(w, n)` picks off a per-w PRNG that
+    crypto-seeds lazily (the live default), `Ra_seed(w, str)` REPLACES the state (a Book pins the whole
+     dial), and `Ra_entropy(w, vals)` STIRS live values in — the way to inject entropy into instances
+      that are supposed to be random, without a Book losing determinism.  MusuRaChase probes it mid-run:
+       the same pinned state picks differently after a fixed stir, and the fixture reads both picks.
+ - **KEEP_AHEAD** = `Ra_keep_ahead(w)` (default 4; `w.sc.keep_ahead` pins) — records-ahead ACROSS the
+    catalog; `Ra_restock_beat(w, mirror, budget)` wants the missing preview pages of the next K records
+     (want-once, budgeted per beat so it shares the wire, CLAMPED to each preview window — a prefetch
+      can never park a want or ignite a transcode).
+ - **radiostock pub is a PREPUB, always** (standardised 2026-07-11): MusuRaStock/MusuRaTerm mint
+    deterministic identities for their shelf keys — the `'DJ'`/`'raterm.player'` literals retired, and
+     the one-time `Ra_stock` sweep now drops old literal-key files in passing.
 
- - **The principle:** *what snaps, replicates.* Chunks become REAL child particles; their bytes
-    ride a `.sc` value. Verified at `src/lib/O/Text.svelte` enLine: an object/typed-array in `.sc`
-     is NOT fatal at SNAP — it routes to `objecties.ref[k] = objectify(v)`, a muted description
-      (`"Uint8Array()"`, ~12 bytes), visible on the observable plane. (CLAUDE.md's "fatal at
-       encode" is the STORAGE/toc encoder — you can't resurrect bytes from a description — NOT the
-        snap encoder. Disk home stays the `.jam`; a library subtree with sc-bufs must never ride a
-         Waft toc-persist. State this at the edit site.)
+ **Lifecycle verdict (owner asked: is the old coming-and-going worth keeping?).**  The old
+  Radios/Directory lifecycle (random `load_random_records` + FIFO `whittle_stock` + setTimeout magic)
+   does NOT come back.  In the new economy the shelf IS one's own collection — no count-bound whittle;
+    GC is newest-ts twin supersession + the dead-source drop, both standing (§1.4) — and the listener
+     side holds NO cache at all (pulled chunks are ephemera), so ITS coming-and-going is pure
+      want-pacing: the session window + the restock fan-out.  The KEEP_AHEAD chase was the old
+       machine's last live idea; it now rides Repli offers.  Nothing else there is owed a re-draw.
 
- - **The shape** — the OLD flat shape (owner: "they used to get 15 %Previews and a hundred or so
-    %Streams"): chunk particles are `%Preview,seq` / `%Stream,seq` DIRECTLY under `%Record`, no
-     config-head layer:
-    ```
-    Record,id:848b,title:Cosmic C,artist:DJ,seconds=78,lufs=-7.33,gain=-6.67,sr=48000,br=128000,seg_secs=2,real
-      Preview,seq=0,head   {ref:{buf:"Uint8Array()"}}   ← opens the preview decoder
-      Preview,seq=1        …
-      …                    (17 Previews — Cyto CRUSH folds the sprawl)
-      Stream,seq=17,head   {ref:{buf}}                   ← SEPARATE encode → opens a 2nd decoder
-      Stream,seq=18        (come into being as the frontier transcodes — you WATCH them land)
-    ```
-    Global seq continues across the boundary (first `%Stream.seq` = last `%Preview.seq` + 1, the old
-     contiguity). The `head` flag (1-or-absent) marks the two boundary particles where a decoder
-      opens. `have=` DIES — particle presence IS fill state; resume-from-partial is free (want the
-       first missing seq you can see). Wear (§9.6) = delete the buf, keep the husk chunk ("was here,
-        released").
+ **Verification state + next moves:**
+ - MusuRaStock re-recorded 5/5 green on the prepub shelf key.  MusuRaTerm re-record and the
+    MusuRaChase first CHECK run are IN FLIGHT this session — if you are the next fork: MusuRaChase is
+     seeded (56 lie steps + the AudibleEntropy Wref) and registered (Credence + Ality), and needs a
+      RUNNER TAB RELOAD before its first dispatch (the total:1 bomb, §2 — and the seeded toc is
+       UNTRACKED: a premature dispatch clobbers it; re-seed from the loop in the session notes);
+        then a CHECK run tunes the thresholds (warm >= 6 at chase AND at skip, b_heard <= 3, LUFS ±2)
+         and the accept follows the %see pre-pin discipline (§1.5 — 15 Chase sentences).  Expect a
+          new benign ≈ signature (TWO seals graft double the AudibleEntropy fields).  Float32-path
+           compat (MusuReplica/MusuReco re-run) is also still owed.
+ - **real `/music`** (§9.1) — point `Ra_stock` at the real library; the ONE mock §3.6 names.
+ - **Klepto rung 10.2** (§10) — 2+ real runners; kills the tame in-process wire, the OTHER mock.
+ - **§9.2 Shares / §9.4 multicast live edge / §9.5 Sent_Tree** — the live edge is a THIRD encode
+    mode (chained, no seek — §1.2's orthogonal cousin); Sent_Se is half-built.
 
- - **Cast DISSOLVES into Repli.** `Ra_cast_offer/catalog/serve_want/recv_*/tally/page_out/pull_record`
-    all DIE → Repli. Repli gains three GENERIC things (nothing Ra-specific): (1) an `.sc` binary
-     value is a buffer leaf — extend `Repli_lines_of`'s existing `.c.page_bytes` trigger to any
-      `Uint8Array`/`ArrayBuffer` `.sc` value (Float32 `.c.page_bytes` path stays for
-       MusuReplica/MusuReco); (2) a consent hook `w.c.repli_allow?.(peer)` in serve (my
-        `racast_allow` generalized — also the Keep's seam §9.7); (3) NOTHING for the frontier —
-         `Repli_page_ready`/`Repli_park_want`/`Repli_serve_parked` ALREADY model "a want that
-          outran the producer PARKS, releases as the frontier advances" (MusuReco's bow wave).
-       So the whole economy falls out of park/serve: **preview chunks pre-exist** (minted from the
-        `.jam` at stock/resurrect) → preview wants serve instantly, never park. **Stream chunks
-         don't exist until transcoded** → a stream want PARKS; the parked want IS the demand that
-          drives `Ra_transcode_advance` (decode source once, gain off the card, fresh encoder per
-           2s, mint `chunk,seq=N` with bytes); serve-parked releases as chunks appear. `racast_rate`
-            dissolves into the encoder's real pace — the starve is the playhead outrunning a parked
-             want, not a flag. The boundary needs NO server enforcement: nothing past preview
-              EXISTS until a want parks for it. (`held_past` probe stays as the witness it holds.)
+**2026-07-11 — the chunk-particle machine STANDS; nothing in the pipeline is owed.**
+ The design is distilled at **§1.1–§1.5** (read those first — they are the machine as it IS).
+  All four `MusuRa*` are live-green and re-recorded: Stock 5/5, Cast 12/12, Term 12/12 (≈0,
+   deterministic), Stream 40/40. The arc that got here, one line: the preview economy was first
+    built as a hand-rolled wire (`rec.c.segs`, `have=` counters) → owner overruled ("how will
+     Repli be generic with some .c.bollocks array to manage?") → rebuilt same day on REAL chunk
+      particles + generic Repli → four owner rulings folded (preview CONST 32, radiostock
+       `<ts>-<pub>-<enid>`, no friend cache, dead-source drop) → re-recorded 2026-07-11.
+        Session-level history lives in git (`d26ce069` "Ra Repli", `4add5244`), not here.
 
- - **ONE encode per side, chunks are transport slices, ONE decoder per encode** (owner 2026-07-10:
-    "one opus stream that blobs into several %Preview that hop sides and concatenate into a single
-     decoder on the other end... the %Preview->%Stream jump will have another header of course, as
-      that's a separate encode"). The preview is ONE opus encode (at stock); its bytes slice into the
-       `%Preview` particles; far side concatenates IN ORDER, feeds ONE decoder → continuous PCM, NO
-        per-chunk boundary so NO glitch (the decoder holds state across the whole preview because it
-         IS one stream). The stream is a SEPARATE encode (on-demand transcode, boundary→on) → its own
-          decoder, its own header at the `head` chunk. TWO decoders per track, reset only at the seam.
-       A chunk's `buf` is a byte-slice of the one encode at a packet boundary; keeping self-framing Ogg
-        pages vs stripping to raw length-prefixed packets is a small IMPLEMENTATION choice / clean
-         follow-up (owner's earlier "delete the RFC-7845 mux"), NOT a design fork. (Deleted from the
-          earlier draft: "fresh encoder per 2s / per-chunk independence / per-chunk decoder / glitch
-           fallback" — that solved a problem THIS model doesn't have. A single continuous LIVE-EDGE
-            encode is a later mode, orthogonal.)
-
- - **The ramp** ("gently the first 4s then quickly more") needs no new mechanics: fixed small server
-    stride (`repli_page=2` chunks = 4s, keeps parked offsets aligned) + terminal pipelines wants up
-     to its ahead-window (old `STAY_AHEAD_OF_ACK_SEQ`). First page → play on ~4s → wants pipeline →
-      buffer fills fast. TCP slow-start worn as want-pacing, every step a chunk landing in a snap.
-
- - **Survives:** `Ra_stock` + the `.jam` format (preview-only, whole-track LUFS/gain card — it now
-    ALSO mints the 17 preview chunk particles), `Ra_lufs`/bake, `Ra_term_stash` (pack preview chunk
-     bufs → `downloads/<friend>/`), `Ra_term_spool`/`Sound_measure`, the Book arcs, AudibleEntropy.
-   **Dies:** all `Ra_cast_*` wire, `rec.c.segs`, the Ogg mux (→ stock-legacy). `Ra_term_decode_pulled`
-    becomes "decode the chunk particles present, silence where absent" via the raw-packet decoder.
-
- - **Book arc:** MusuRaCast = offer → preview pull → boundary ask → parked-want transcode completes
-    → per-frame `body_hash` still pins byte-identity → revoke via `repli_allow`. MusuRaStream = the
-     session, ~40s proving the stream FEEDS PAST THE BOUNDARY, **then track B from seg 0** (a full
-      fresh preview→ask→stream cycle on the change — owner: "hit the next track which should then
-       %Stream from the start"). All four re-record (already owed).
-
- - **FORKS** — all RULED. (a) FLAT (owner 2026-07-10: chunks are `%Preview,seq`/`%Stream,seq` directly
-    under `%Record`, `head` flag on the two boundary particles — no config-head layer). (b) framing
-     DOWNGRADED to an implementation detail — built as raw u16-length-prefixed packets (the Ogg mux
-      deleted, per the owner's earlier "delete the RFC-7845 mux"). (c) RULED DEMAND-DRIVEN (owner
-       2026-07-10, built same day): the stream encode starts when the first `%Stream` want PARKS and
-        runs to completion — honours "no-source ⇒ no-stream" and the honest clock; no rate flag.
-     Risk ledger: frame count/beat ~40 lines+pages vs today's ~10 fat frames (coalesced delivery
-      holds it; `repli_page` is the relief valve; first thing a CHECK run watches); `body_hash` rows
-       still pin real bytes (a Chromium libopus drift = a real re-record, not a red herring); a
-        missing mid-stream chunk = STALL until filled (the want machinery), decode never runs past a
-         hole.
-
- - **Wider arc this slots into** (so next moves are visible): (1) THIS rebuild; (2) radiostock
-    fan-out for real — the listener KEEP_AHEADs *preview records across the catalog* (Radiola's
-     `req_restock` on Repli offers) so next-track is instant, the moment "most of a %Record waits on
-      the remote Pier" is true at catalog scale; (3) §9.2 Shares / §9.4 multicast gossip / §9.5
-       per-peer Sent_Tree (half-built as `Repli_sent_se`) + wear-as-cache on husks + the Keep behind
-        `repli_allow`; (4) live edge — the chained-encode second mode + BigSoundland's tuner playing
-         a real mirror.
-
-**BUILT 2026-07-10 (morning) — the PREVIEW ECONOMY — MECHANISM SUPERSEDED the same day by the
- chunk-particle rebuild above (the ECONOMY claims below all still hold; the `Ra_cast_*` wire /
-  `rec.c.segs` / `have=` machinery this block describes is GONE — read it as the why, not the how).
-   (owner 2026-07-08: "Records are always Record/Preview first, those are the parts that cache in
-    radiostock/, then Record/Stream involves streaming the track from the point right after the last
-     Record/Preview")**
- The Record model went preview-first end to end, drawn from `src/lib/ghost/Radios.svelte` (the
-  complication-enforcer: `radiopreview`→`rastream` offset+`preview_duration` contiguity, `streamability` /
-   `MIN_LEFT_TO_WANT_STREAMING`, the radiostock preview cache, "don't trust leftover %stream"):
- - **stock** — `radiostock/<id>.jam` now holds ONLY the preview window (`Ra_preview_secs`, default 33s ⇒
-    17 segs; the header gains `total` + `preview_secs` + `base`, and standing REQUIRES them — old
-     whole-track cards rebuild once). The %Record mints `%Preview,name:opus` (total|bytes — the cached
-      part) + `%Stream,name:opus` (**from == the preview's total** — the continuation head, no bytes: its
-       segments do not exist yet). LUFS/gain stay WHOLE-track so the seam is loudness-uniform. Standing
-        also checks the WINDOW (`preview_secs`), so Books with different windows stay deterministic
-         against each other (MusuRaStream shrinks to 12s; the others keep 33).
- - **cast** — `Ra_cast_serve_want` honours THE BOUNDARY: a preview want pages the cached window off the
-    .jam and STOPS at it; a want AT|PAST the boundary IS the streaming ask, answered by **on-demand
-     transcode from the SOURCE** (`Ra_cast_transcode`: source PCM once per Record with the card's gain
-      baked, fresh encoder per 2s seg on the SAME boundaries, cached on `rec.c.stream_segs`) — so
-       `racast_rate` now bounds REAL encoder work: the slow transcode clock is honest, and no-source ⇒
-        no-stream (the rapiracy economy). Mirror pages land in `rec.c.segs` (ONE index space across the
-         boundary); `Ra_cast_tally` keeps `%Preview.have`/`%Stream.have` legible. `Ra_cast_pull_record`
-          = want 0 + want P. The dead page-loop in `Ra_cast_send_lines` is tidied (lines only).
- - **term** — `Ra_term_stream_open/beat` got the handoff: want-ahead CLAMPS to the preview window until
-    the un-played preview tail ≤ `want_left` (22s ⇒ 11 segs default), then the ask latches (never
-     un-asks) and the first stream want is exactly seg P. A fully-held preview HOLDS at the boundary
-      (Radios' preview-and-HOLD, emerging). **`Ra_term_decode_pulled`** decodes WHAT THE MIRROR HOLDS
-       (missing seg = embedded silence + a listed drop) — the terminal finally decodes the PULLED bytes,
-        never the local .jam (the owner's direct question — it did not, now it does). `Ra_term_stash`
-         caches a fully-held preview to `.jamsend/downloads/<friend>/<id>.jam` (§9.1b) with a read-back
-          proof.
- - **Books** — MusuRaStock asserts the preview-first mint shape (+1 %see); MusuRaCast's whole-pull =
-    preview byte-faithful vs the husk-promised `%Preview.bytes` + continuation present in full;
-     MusuRaTerm plays ACROSS THE SEAM (cached preview + locally-transcoded continuation through
-      `Ra_term_decode_pulled` — LUFS spans the seam); MusuRaStream is the flagship session: preview in →
-       HOLD → ask at the floor → stream want at seg P (observed into `stream_ask`/`stream_want` rows) →
-        slow transcode clock starves the tail (rate→1 past 40%) → switch → measure ON THE PULLED BYTES
-         (`a_heard` vs `a_rest` vs `b_heard` + LUFS off B's pulled render) + the preview stash row.
-          Seven %see. Knobs: preview_secs=12 (P=6), cap=20, prime6/floor4/play2/want_left3, rate 4→1.
- **OWED:** a live runner (all three registry keys were dead beacons this session — needs a human tab on
-  `:9091`, then `runner_ask run <Book> --watch --runner=<prefix>`), CHECK-run knob tuning on MusuRaStream
-   (the starve window), then re-record all four (they share the Record shape; accept order free, but
-    pre-pin the %see set per Book — `grep -aoE "%see:'[^']*'" Ghost/Story/Radiation.g`). Gens are
-     current on disk via LocalGen (spine-BOMB honoured — no ghost-compile of Ra.g against a live editor).
-
-**STATUS 2026-07-08 — the three-verb pipeline (§3 rastock→racast→raterm) is COMPLETE and live-verified GREEN.**
- All three `MusuRa*` Books re-recorded green under the rename (verdicts in the MusuRaTerm block below). The next
-  frontier is Pier reality (§9) — the suggested order is 9.1 real `/music` library → 9.10's spine (one real file
-   offer→pull→play) → 9.2 Shares → 9.4 multicast — and §10 Klepto (heist-at-a-Pier). Pick one and go; nothing in §3
-    is now blocking.
-
-**Won 2026-07-07 — rastock SHIPS (§3.2, live-verified).** MusuRaStock is green, ttlilt-free, and
- proven on a live runner. Three things landed with it:
- - **The `.jam` stock format** — one file per `%Record`, shaped `json-header + \n + length-
-    prefixed buffers` (`Ra_pack`/`Ra_unpack`). Nothing in `.jamsend/` may LOOK like media (it
-     lives inside the user's library dir), so a json header + no audio magic replaces the old
-      `radiostock/<id>/*.opus` + `stock.snap` spread. Buffers are still ogg-opus blobs for now →
-       swapping them for raw Opus packets (delete the RFC-7845 mux) is a clean follow-up.
- - **-14 LUFS uniform, baked** — a src-hash freshness guard (`Ra_bytes_hash`) killed a stale
-    cache that had been serving old gains; stock now re-reads whenever source content changes.
- - **`Waft:Trope/Ra/AudibleEntropy`** — a SHARED entropy profile grafting the `%proof` line's
-    `ms:r{}d{}l{}` wall-clock noise (`tol:any` on r/d/l only; `seconds`+`lufs` stay literal so a
-     real loudness regression still diffs). MusuRaStock Wref's it. ONE consumer today; the moment
-      MusuRaCast/MusuRaTerm prove a pulled/played segment they are the SECOND → Wref it, do NOT re-inline
-       (owner called this recurrence 2026-07-07).
-
-**Won 2026-07-08 — MusuRaCast SHIPS (§3.3, live-verified GREEN).** The middle verb stands. On a live fsa
- runner: DJ stocked a REAL 39-segment opus Record (Cosmic C, 78s, 1290003 bytes), sealed a mutual Music
-  grant, cast the husk; the listener PULLED THE WHOLE RECORD byte-faithful (`have=39 got=39 total=39`);
-   a revoke shut the gate (silence). All five `%see` fire at 2/4/6/8/10; fixtures accepted → GREEN. Three
-    refinements landed on top of the first working run:
-  - **Batched pull (the perf rework).** The naïve pull flooded the belief queue — ~39 `racast_want` + ~78
-     line/page frames = ~120 todos, a ~15s beat. Now ONE `racast_want` draws the whole tail and the server
-      strides it in `PAGE=8`-segment `racast_page` frames (1 husk-`racast_lines` + ~5 pages for 39 segs).
-       Each page carves `frame.buffer` by a header `sizes[]` into `.c.segs[seg]` by TRUE index (sparse-safe);
-        `have=got=` count of non-null segs. `self,round` fell 59→17. Knob: `w.c.racast_page`.
-  - **Entropy: HARVESTED, not pinned.** The Swarm seal stamps wall-clock into `since`/`at`/`time` + a
-     signature `sign`. I proposed pinning `w.sc.now`; owner OVERRODE — there is no clock system to base that
-      on, so the pin is DROPPED. Instead the seal-field noise is harvested into `Waft:Trope/Ra/AudibleEntropy`
-       (Entcases graft `since`/`at`/`time` `tol:any`; a `{TOK}` swallows `sign` — the crypto is tested
-        separately). MusuRaCast Wref's the SAME profile (line 6 of its `toc.snap`) — the SECOND consumer, exactly
-         as §3.2 predicted; do NOT re-inline. In a diff these show `Dif:change,spay:graft` = tolerated, green.
-  - **beat-6 `%see` FIXED** — it asserted `got===0` (empty husk), but `MusuRaCast_flow` pulls the INSTANT the
-     husk lands, so by n=6 `got` was already 39. Now asserts the head ARRIVED (`total>0`).
- Artifacts: **`Ghost/M/Ra.g` `#region cast`** (shared cast mechanics, reuses Repli's byte-agnostic parts —
-  `Repli_fragment`/`Repli_merge` + Peeroleum sha256 — and owns ONLY the opus page path, NOT the Float32
-   `Repli_pack_chunks`/`unpack_page`; grant gate injected via `w.c.racast_allow` so Ra imports no Swarm);
-    **`Ghost/Story/Radiation.g` `MusuRaCast` Book**; `wormhole/Story/MusuRaCast/toc.snap` (12 steps + the Wref);
-     `wormhole/Trope/Ra/AudibleEntropy/toc.snap` (the harvested seal Entcases); Credence entry. Both gens on
-      disk via LocalGen / `ghost-compile`. UNCOMMITTED (host reviews the diff).
- LOOSE ENDS (small): (a) **general `sign` snap-omit** — owner floated "ignore the signature in snap in
-  general" (a protocol-level omit like the body_hash Organ-2 mask) as an alternative to the per-Entcase
-   `{TOK}` graft; UNSCOPED — touches Text encode `omit_sc`. (b) dead page-loop in `Ra_cast_send_lines` (the
-    husk sender; harmless — empty bufmap) — tidy on the NEXT Ra.g touch, not a standalone compile+record.
-**SHIPPED + LIVE-VERIFIED GREEN 2026-07-08 — MusuRaTerm (§3.4, the LAST verb); the Ra*→MusuRa* rename LANDED and all three MusuRa* Books re-recorded green.**
- The terminal that PLAYS: decode the stocked opus back to real PCM and prove honest playback. Ran clean on a live
-  fsa runner (12/12 beats, no step errors) and READ THE SNAP: Cosmic C stocked (source -7.33 LUFS + a -6.67 dB
-   bake = -14 exactly), decoded whole — `heard,seconds=78,segs=39,lufs=-14,healthy=0,starved=320,dropped=8`: the
-    played-back LUFS reads the -14 target BACK (baked gain survived the opus round trip), zero phantom gaps on the
-     whole track, and withholding 8 middle segments surfaced as 320 gap-windows (16s / 50ms). ALL FIVE `%see` fired
-      at 2/4/6/8/10; every threshold guess held first try; the numbers are deterministic (no Wref, as designed).
-       Steps read red ONLY for want of an accepted baseline (the seed diges). Design calls:
- - **Two generic primitives in `Ghost/M/Ra.g` `#region term`** (append, ~lines 809-880): `Ra_term_decode(w,
-    nav, id)` reads `<id>.jam` and `decodeAudioData`s EVERY 2s opus segment (the `Ra_proof` per-segment carve),
-     concatenating per channel into one continuous track → `{channels, sr, seconds, segs, per}`; `Ra_term_spool(
-      channels, per, drop)` downmixes to mono and PUNCHES the `drop` segment indices to SILENCE — the honest
-       hole. No new analysis: measurement REUSES `Ra_lufs` (the meter that set the gain) + `Sound_measure`
-        (`Ghost/M/Sound.g` — MusuSignal's underrun `gaps` gate). Radiobuddies discipline: no scenario words.
- - **`Ghost/Story/Radiation.g` `MusuRaTerm` Book** — NO transport (crossing is MusuRaCast's proven job; MusuRaTerm stocks
-    locally via `Ra_stock` take=1 and plays — the pulled mirror is byte-identical). Beats: 2 STOCK, 4 HEAR
-     (one held `expecting`: decode + LUFS + healthy/starved spool renders, cache scalars on `w.c.term`, stamp
-      a `heard` row), then witness-only 6 GAIN / 8 STARVE / 10 CLEAN. Five `%see`.
- - **The claims** (`MusuRaTerm_witness`): (2) a real opus Record stands; (4) decoded seconds ≈ stocked source (±4);
-    (6) played-back LUFS within ±2 of the -14 target = *the baked gain survived the opus round trip*; (8)
-     `starved_gaps > healthy_gaps + 3` = *the spool starved without papering over the hole* (a ~1/5 middle run
-      withheld); (10) `healthy_gaps <= 3 && starved > healthy + 3` = the same spool runs clean when whole (the
-       MusuSignal not-vacuous guard, redrawn on real stock).
- - **DETERMINISTIC snap, NO AudibleEntropy Wref** (departs from the §3.2 prediction on purpose): decode + LUFS
-    + gaps are pure functions of the stock, so the `heard` row is stable run-to-run. The wall-clock `ms` is
-     deliberately NOT stamped. Only if the live CHECK shows a field wobble do we harvest it (the MusuRaCast way) —
-      do not pre-Wref. `wormhole/Story/MusuRaTerm/toc.snap` seeded (12 `seedNN` step lines, NO EntropyProfile);
-       Credence `of_Book:MusuRaTerm,needsFSA:1` registered under `What:mostly` (the renamed home).
- **THE RENAME (2026-07-08, owner call).** The Ra* Book SUITE is stemmed under Musu*: `RaStock`→`MusuRaStock`,
-  `RaCast`→`MusuRaCast`, `RaTerm`→`MusuRaTerm` (Book identity + world name + `<Book>_*` fns + `wormhole/Story/<Book>/`
-   dirs + Credence rows all done; gen rebuilt via LocalGen). **THE NAMING RULE (owner, 2026-07-08):**
-    test-specific Book code is FULLY-NAMED with the long prefix — `MusuRaTerm_witness()`, `MusuRaStock_stock()`,
-     `MusuRaCast_seal()`; the shared/common ENGINE in `Ghost/M/Ra.g` stays SHORT `Ra_*` — `Ra_stock`, `Ra_cast_*`,
-      `Ra_term_*`, `Ra_lufs` — NEVER `MusuRa_*` (snake). So a fully-named Book method DRIVES a short engine verb
-       (`MusuRaTerm_hear` → `Ra_term_decode`), the same way the `Musu*` Books drive `Sound_*`. Consequence: MusuRaStock + MusuRaCast were green as RaStock/RaCast and the name is baked into their
-      snaps (`H:RaStock`→`H:MusuRaStock`), so all three go red and re-record together.
- DONE 2026-07-08 (verified this session on the live runner `49dee91d61a9de64`, released after): the tab had been
-  reloaded, all three re-ran green, baselines accepted, host committed. Live verdicts — **MusuRaStock** 5/5
-   ok_pct:1 (2 entropy-caveats), **MusuRaCast** 12/12 ok_pct:1 (9 entropy-caveats), **MusuRaTerm** 12/12 ok_pct:1
-    (0 caveats — deterministic, no Wref, as designed). All five `%see` per Book are installed and recorded (Term
-     fires 2/4/6/8/10 on `heard,seconds=78,segs=39,lufs=-14,healthy=0,starved=320`). The pipeline (§3) is COMPLETE;
-      the frontier is §9 (real library) then §10 (Klepto). The two BOMBs below stay — they are durable Ra gotchas.
- BOMB 1 — DON'T `ghost-compile` an Ra SPINE-ghost change against a live editor: it HANGS. HMR-remixing
-  the depended-on Ra spine into the live runtime wedges it (proven — even a trivial valid method hangs;
-   only the pristine no-op hash replies). Leaf Book ghosts (Radiation.g) slip through. Use **LocalGen**
-    for spine `.g` edits: `GFILES='Ghost/M/Ra.g' CHECK=1 npx vitest run -c scripts/Story_cli.vitest.config.mjs
-     scripts/LocalGen.spec.ts` (browserless, no HMR; drop `CHECK=1` to write the gen). That built `gen/M/Ra.go`.
- BOMB 2 — a brand-new Book runs Prep-only (`total:1`): the runner runs the Book it ACQUIRED AT BOOT and
-  CLOBBERS a mid-session disk `toc.snap` seed. So seed `wormhole/Story/MusuRaCast/toc.snap` with ~10
-   `step,dige:lieN` lines, THEN RELOAD the runner so Creduler re-acquires it → the beats fire. (Same trap
-    for any NEW Book, incl. MusuRaTerm.) Endpoints confirmed live: source `Library,pier:dj.prepub` + mirror
-     `pier:lis.prepub` both hold the same Record; sealed `%Pier` routing + `w.c.tx`=`link[0]` all worked.
+ **Bombs a fresh fork must hold** (durable homes: §2 wiring bombs, §1.5 Book discipline):
+  LocalGen for spine `.g` edits, never ghost-compile Ra.g against a live editor (§2);
+   new Book = seed the toc THEN reload the runner + register in Credence (§2);
+    always `--runner=<prefix>`; pre-pin the `%see` set before any accept and confirm after (§1.5);
+     sealing Books show PERMANENT benign ≈ on grafted seal fields — do not chase caveat:0 (§1.5);
+      the host commits mid-session — re-check the tree after HEAD moves.
 
 ---
 
@@ -352,6 +125,102 @@ The end state is not "port every line." It is: the *interesting* behaviours of m
  each lifted into a runnable, watchable, witnessed simulation on the new machine — and the
   old `Radios.svelte` left to do only the irreducibly-real part (transcode bytes, push them
    over WebRTC) if anything at all.
+
+### 1.1 The record on the observable plane
+
+*What snaps, replicates.* A `%Record`'s chunks are REAL child particles, flat under it —
+ no config-head layer — and the bytes ride `.sc.buf`, which the snap encoder MUTES to a
+  visible description (`ref:{buf:"Uint8Array()"}`), never hides:
+
+```
+Record,id:<enid16>,title,artist,seconds,lufs,gain,sr,br,seg_secs,preskip…
+  Preview,seq=0,head     {ref:{buf}}    ← opens the preview decoder
+  Preview,seq=1 … 15                    (preview = 32s ⇒ 16 chunks; Cyto CRUSH folds the sprawl)
+  Stream,seq=16,head     {ref:{buf}}    ← a SEPARATE encode; opens the second decoder
+  Stream,seq=17 …                       (come into being as the frontier transcodes — watchable)
+```
+
+- Global `seq` continues across the boundary: the first `%Stream.seq` = the last `%Preview.seq`+1.
+- **Particle presence IS fill state** — no `have=` counters; resume-from-partial = want the first
+   missing seq you can see. Wear (§9.6) = drop the buf, keep the husk ("was here, released").
+- `Ra_preview_secs` is a **product constant, 32** — not a knob, not 33: the boundary must sit on
+   the want-page grid (2s segs × PAGE 2 ⇒ multiples of 4s) or the even stride never visits an odd
+    P and "first stream want == P" is unmintable.
+- Binary `.sc` is snap-visible and wire-replicable but must NEVER ride a Waft toc-persist (the
+   storage encoder rightly errors on refs) — the disk home is the radiostock file (§1.4); stream
+    chunks have no disk home at all, by design.
+
+### 1.2 One encode per side of the boundary
+
+The preview is ONE opus encode, made at stock time; its bytes slice into the `%Preview`
+ particles at the 2s packet grid; the far side concatenates them IN ORDER into ONE
+  `AudioDecoder` → continuous PCM, gapless, because it IS one stream. The `%Stream` side is a
+   SEPARATE on-demand encode (boundary→end) with its own `head` — a second decoder. Two decoders
+    per track, reset only at the seam. A chunk is a transport slice, not an encode unit.
+ - Framing: raw u16-length-prefixed opus packets inside each buf — the RFC-7845 Ogg mux is
+    deleted (WebCodecs opus needs only `{codec,sampleRate,numberOfChannels}`).
+ - **Preskip** has ONE canonical statement, the `Ra_encode_open` comment: the encoder's
+    convergence ramp (312@48k) dropped at each fresh decoder open; carried on the card + the two
+     `head` chunks because we deleted the container. NOT a time offset — time-into-track is
+      seq × seg_secs.
+ - The LIVE edge (§9.4, later) is a THIRD mode: one chained continuous encode you join and
+    follow — no seek, no independence. Orthogonal; don't fold it into this model.
+
+### 1.3 The pull is Repli; the economy is park/serve
+
+Ra owns NO wire. Repli carries chunks with three GENERIC gains (nothing Ra-shaped in them):
+ a binary `.sc` value is a buffer leaf (bytes ride a page frame, `bufk` restores the key);
+  husk offers; a consent hook `w.c.repli_allow?.(peer)` in serve — the Keep's seam (§9.7).
+   The Float32 `.c.page_bytes` path stands untouched (MusuReplica/MusuReco).
+ The whole preview→stream economy falls out of Repli's park machinery, no boundary
+  enforcement anywhere:
+ - **Preview chunks pre-exist** (minted from radiostock) → their wants serve instantly.
+ - **Stream chunks do not exist until transcoded** → a stream want PARKS, and the parked want
+    IS the demand that ignites `Ra_transcode_*` — the encode runs to completion at the encoder's
+     REAL pace, `Repli_serve_parked` releasing chunks as they appear. No rate flag (`racast_rate`
+      is dead); a starve is the honest race of playhead vs frontier. No source ⇒ no stream.
+ - **The ramp** ("gently the first 4s, then quickly more") is want-pacing, not mechanism: fixed
+    small server stride (PAGE=2 chunks) + the terminal pipelining wants up to its ahead-window.
+ - The terminal decodes WHAT CROSSED (`Ra_term_decode_pulled` off the mirror particles, silence
+    where absent) — never local stock. Pulled chunks are EPHEMERA: no friend-download cache;
+     radiostock is for one's OWN collection; actually moving music is a later economy.
+
+### 1.4 Radiostock on disk
+
+One file per Record: **`<ts>-<pub>-<enid>.jamsend_radiostock`** — preview window only,
+ json header + length-prefixed bufs, deliberately nothing that reads as media (it lives in the
+  user's library dir).
+ - `enid` = sha256 of the WHOLE source bytes, first 16 hex — content identity, never locked to
+    the pub or path that found it. (`Ra_id` path-hash and `src_hash` are dead.)
+ - `ts` = mint time, so newest wins: `Ra_stock_find` GCs older twins in passing; `Ra_stock_gc`
+    drops superseded renders. `pub` = the owning Peering's pier key — many Piers share one
+     `.jamsend` in tests, each filters its own (`Ra_stock_ls`).
+ - **Dead-source rule**: a stock whose source is gone can never make up its %Stream — litter;
+    `Ra_source_pcm` deletes it and a later pass re-stocks what the collection now holds.
+ - LUFS/gain stay WHOLE-track on the card (target −14, −1 dBFS ceiling) so the preview→stream
+    seam is loudness-uniform.
+
+### 1.5 The Books that gate it (and their discipline)
+
+Five Books in `Ghost/Story/Radiation.g` (24 + Chase's 15 `%see`) — re-record any time the Record shape moves:
+ - **MusuRaStock** (5 steps) — mint shape + idempotent re-pass; **MusuRaCast** (12) — offer →
+    preview pull → boundary ask → parked-want transcode → revoke via `repli_allow`, `body_hash`
+     pins byte identity; **MusuRaTerm** (12) — local decode honesty (gain survives the round
+      trip, starve surfaces, clean run clean), fully deterministic; **MusuRaStream** (40) — THE
+       session: ramp in, hold at the boundary, ask == P exactly, fed past the boundary on demand,
+        then the owner-act track change → B runs a full fresh cycle from seg 0; **MusuRaChase**
+         (~56, brand-new) — the proto-VILLAGE: two source Piers sealed by real Idzeug redeems,
+          the grant gating per-relationship, the KEEP_AHEAD fan-out warming previews across both
+           wires, the entropy-seeded dial chasing to the other Pier for a warm instant start —
+            then one source goes DARK and a mid-cycle SKIP turns the dial among the online only.
+ - **Caveat signature (permanent, understood 2026-07-11):** a Book that SEALS shows benign ≈ on
+    exactly the `AudibleEntropy`-grafted fields (Pier `since:`, Grant `time:`+`sign:`, Edge
+     `at:`) every re-run — `tol:any` tolerates, it does not canonicalize. Stream ≈37, Cast ≈9,
+      Stock ≈2, Term ≈0. Do not chase caveat:0; each Book's count is its stable signature.
+ - **Accept discipline:** `runner_ask accept` only (never CredRunner-auto for %see Books);
+    pre-pin the set (`grep -aoE "%see:'[^']*'" Ghost/Story/Radiation.g`), confirm every sentence
+     present after. Immediate redispatch after an accept can hit the engaged begun-wedge —
+      `release`, wait ~8s, redispatch; no tab reload needed.
 
 ---
 
@@ -386,12 +255,25 @@ Names mirror the `Pere*`/`N`/`Net/Easy` family so the parallel reads at a glance
      is the one unavoidable touch *outside* `Ghost/M/`; it is deferred to the human and listed
       as the next move (§7). Until then nothing in `Ghost/M/*` is live; the source is inert.
 
-**BOMB — ghost-compile needs a live editor.** There is no standalone `.g→.go` CLI.
- `npm run ghost-compile -- <file.g>` signs a ticket to the in-app editor on `:9091`, which
-  force-loads the dock, compiles, writes `src/lib/gen/<cluster>/<File>.go`, and HMRs it.
-   `Ghost/M/Radiola.g → src/lib/gen/M/Radiola.go`; `Ghost/Story/Musuation.g →
-    src/lib/gen/Story/Musuation.go`. `scripts/LakeRace.*` exercises an *already-compiled*
-     spine headless — it is not a compiler. So: author here, compile in the browser.
+**BOMB — ghost-compile needs a live editor, and HANGS on a SPINE ghost.** There is no
+ standalone `.g→.go` CLI. `npm run ghost-compile -- <file.g>` signs a ticket to the in-app
+  editor on `:9091`, which force-loads the dock, compiles, writes
+   `src/lib/gen/<cluster>/<File>.go`, and HMRs it. But HMR-remixing a DEPENDED-ON spine ghost
+    (Ra.g — proven, even a trivial method) wedges the live runtime: spine edits go through
+     **LocalGen** instead — `GFILES='Ghost/M/Ra.g' [CHECK=1] npx vitest run -c
+      scripts/Story_cli.vitest.config.mjs scripts/LocalGen.spec.ts` (browserless, writes the
+       gen; space-separated GFILES for several). Leaf Book ghosts (Radiation.g) compile live fine.
+
+**BOMB — a brand-new Book runs Prep-only (`total:1`).** The runner runs the Book it ACQUIRED
+ AT BOOT and clobbers a mid-session disk `toc.snap` seed: seed
+  `wormhole/Story/<Book>/toc.snap` with ~N `step,dige:lieN` lines FIRST, then reload the runner
+   tab so Creduler re-acquires it — and register the Book in `Waft:Credence` (unlisted =
+    invisible on the board).
+
+**THE NAMING RULE (owner 2026-07-08).** Book-specific code is FULLY-NAMED with the long prefix
+ (`MusuRaTerm_witness`, `MusuRaCast_seal`); the shared engine stays SHORT `Ra_*` (`Ra_stock`,
+  `Ra_term_*`) — never `MusuRa_*` on an engine verb. A fully-named Book method drives a short
+   engine verb, the same way the `Musu*` Books drive `Sound_*`.
 
 **BOMB — don't bump outside the cluster.** Cyto and Matstyle auto-discover by mainkey
  (`cyto_scan` + `cytyle_classify`; Matstyle autovivifies a `matstyle:<key>`), so new
@@ -425,7 +307,13 @@ Safari/WebKit refuses Ogg|WebM Opus — and **Chrome-on-iOS IS WebKit** (Apple m
  - **WebRTC** — Opus is mandatory in RTP and Safari decodes it there; a live racast leg over a
     PeerJS track reaches an iPhone today.
 
-### 3.2 rastock — uniform stock from the library  — ✓ SHIPPED 2026-07-07 (§0)
+### 3.2 rastock — uniform stock from the library  — ✓ SHIPPED 2026-07-07
+
+*[2026-07-10 supersede: the ~2s unit survives as the CHUNK GRID, but each side of the boundary
+ is now ONE continuous encode — no per-segment encoder reset (§1.2); random access is per-SIDE
+  (preview from 0, stream from P), not per-segment. And chunks ARE particles (§1.1) — the
+   "snap bulk" fear below was overruled by the owner. The codec choice, LUFS decisions, and the
+    stock pass all stand.]*
 
 The stock is the library made SERVABLE: loudness-uniform, seekable, chunked, snap-described.
  Even from `.opus` sources we RE-ENCODE — the transport unit is the **nice little ~2s frame**
@@ -459,7 +347,7 @@ The stock is the library made SERVABLE: loudness-uniform, seekable, chunked, sna
     produced segment on the muted AC and the measured loudness lands within tolerance of
      TARGET; a second run is idempotent (stock already standing is recognized, not rebuilt).
 
-### 3.3 racast — the stock cast to Piers  — ✓ SHIPPED 2026-07-08 (§0)
+### 3.3 racast — the stock cast to Piers  — ✓ SHIPPED 2026-07-08
 
 Casting is **Repli, never RPC** (the all-pervading rule): the catalog crosses as a replicated
  husk to sealed Piers (the §9.1c re-draw — MusuGot territory), Records cross as Repli pages on
@@ -469,12 +357,12 @@ Casting is **Repli, never RPC** (the all-pervading rule): the catalog crosses as
  - **Book: `MusuRaCast`** — a sealed pair; stock stands at A; B pulls one Record whole (pages,
     sha256-verified) and tunes A's live edge; a revoked B hears nothing new.
 
-### 3.4 raterm — the terminal that plays  — ✓ SHIPPED 2026-07-08, live-verified GREEN (§0)
+### 3.4 raterm — the terminal that plays  — ✓ SHIPPED 2026-07-08, live-verified GREEN
 
 The Musu cursor machinery finally earns its keep as the REAL spool: want-ahead keyed off the
- playhead (§9.3), `decodeAudioData` per 2s segment (a from-zero full-track listen may instead
-  ride one continuous WebCodecs decode — the §3.3 live-edge tool pointed at a whole track),
-   the uniform gain already baked, crossfade at track joins (MusuMix's deck math). Faces: BigSoundland + the Voro radio tuner as the dial.
+ playhead (§9.3), one `AudioDecoder` per encode side split at the `head` chunks (§1.2),
+  the uniform gain already baked, crossfade at track joins (MusuMix's deck math). Faces:
+   BigSoundland + the Voro radio tuner as the dial.
  - **the ISP-oppression warning [owner 2026-07-07]**: when Piers cannot WebRTC (CGNAT, blocked
     UDP, symmetric NAT) and traffic falls back to the relay, SAY SO — a Brink badge + a face
      line: *"your ISP is likely oppressing direct peer connections — you are riding the shared
@@ -501,10 +389,10 @@ Owner asked (2026-07-08) to keep the mock boundary explicit: the `%see` claims s
     baked gain → WebCodecs Opus encode → ~2s segments → `.jam` on real disk → `decodeAudioData`
      back → muted Web-Audio playback. The −14 LUFS target genuinely survives the opus round trip
       (MusuRaTerm reads it back). Real bytes, real loudness math, real codec.
- - **the transcode clock (2026-07-10)** — a stream want is answered by ENCODING the continuation
-    from the source on demand (`Ra_cast_transcode`); `racast_rate` bounds real encoder work per
-     want, so the MusuRaStream starve is a genuine producer-vs-playhead race. (The *rate NUMBER* is
-      still a knob — a real deployment's rate is whatever the CPU affords — but the work is real.)
+ - **the transcode clock (2026-07-10, redrawn same day)** — a stream want PARKS and IGNITES the
+    on-demand encode from source (`Ra_transcode_*`, §1.3), which runs to completion at the
+     encoder's REAL pace — no rate knob at all (`racast_rate` is dead); the MusuRaStream race is
+      a genuine producer-vs-playhead race.
  - **the terminal's substrate (2026-07-10)** — measurement decodes the PULLED segments
     (`Ra_term_decode_pulled` off the mirror), never the local stock: loudness and gaps are read
      from the bytes that crossed the wire.
@@ -617,8 +505,9 @@ The replication protocol is real (Repli_* + the Se, §6/MusuReplica — live-gre
    `Ra_term_stream_beat` wants ahead of the playhead, clamped to the %Preview window until the
     streamability latch, then streams from right after the last preview while `Ra_cast_serve_want`
      transcodes the continuation from the source at `racast_rate` (§0 — replication rate = listening
-      rate against a real transcode clock; MusuRaStream is the Book). Remaining from this idea:
-       keep_ahead across RECORDS (the next-track prefetch — radiostock fan-out at the session layer).
+      rate against a real transcode clock; MusuRaStream is the Book). The remaining half — keep_ahead
+       across RECORDS (the next-track prefetch) — landed 2026-07-11 as `Ra_restock_beat` +
+        `Ra_keep_ahead` (§0), proven multi-source in MusuRaChase.
 
 **9.4 Catalog gossip over multicast.** Offers today are unicast `to:'Crowd'`; the relay already fans
  out `to:@channel` topics (Peeroleum multicast, PereProof step 29). An offer published once to

@@ -10,7 +10,7 @@ import { Selection } from "$lib/mostly/Selection.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return '72b53f01eb18f4a9' },
+    Ghostmeta_Ghost_N_Repli(): string { return '792b0a842d938f44' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -262,9 +262,43 @@ async Repli_send_lines(w, tx, from, to, text, bufmap) {
 //  Open only when no predicate is wired (a bare demo); otherwise exactly what w.c.repli_allow answers
 //   for that peer.  Asked at EVERY leg, cached nowhere — a grant revoked between two wants shuts the
 //    second one.  The Book wires a Swarm_pier_live lookup in; Repli never imports Swarm.
-Repli_allowed(w, peer) {
+//  `at` names the SERVING side (its prepub — frame.header.to at a serve, `from` at an offer): a
+//   multi-caster world holds one hook that must answer per-relationship (Uno's grant for the listener
+//    is not Duo's), so the question carries WHO is being asked, not only who asks.  Single-pair hooks
+//     ignore the extra argument unchanged.
+Repli_allowed(w, peer, at) {
     if (!w.c.repli_allow) return true
-    return !!w.c.repli_allow(peer)
+    return !!w.c.repli_allow(peer, at)
+
+},
+// Repli_register_caster — enroll one serving Pier with the library it casts FROM (multi-caster worlds;
+//  the single-pair w.c.tx + w.c.repli_src wiring stays the legacy default).  All runtime refs on .c —
+//   never snapped, never encoded.
+Repli_register_caster(w, pier, lib) {
+    pier.c.repli_src = lib
+    w.c.repli_casters = w.c.repli_casters || []
+    if (!w.c.repli_casters.includes(pier)) w.c.repli_casters.push(pier)
+
+},
+// Repli_register_rx — enroll one receiving Pier (the mirror side of one wire).  A listener chasing N
+//  sources holds N rx Piers, all landing into the ONE mirror library (w.c.repli_mirror_pier).
+Repli_register_rx(w, pier) {
+    pier.c.repli_rx = 1
+
+},
+// Repli_src_for — the library an arriving Pier serves from: its registration, else the legacy
+//  single-pair pair (pier IS w.c.tx ⇒ w.c.repli_src).  null = this Pier serves nothing — the same
+//   silence the old `pier !== w.c.tx` guard bought, kept so a want landing at a listener stays unanswered.
+Repli_src_for(w, pier) {
+    if (pier && pier.c.repli_src) return pier.c.repli_src
+    if (pier && w.c.tx === pier) return w.c.repli_src
+    return null
+
+},
+// Repli_rx_ok — is this Pier a registered receiving end (or the legacy w.c.rx)?  The recv guards ask it.
+Repli_rx_ok(w, pier) {
+    if (pier === w.c.rx) return true
+    return !!(pier && pier.c.repli_rx)
 
 },
 // Repli_offer — communicate about a Record: ship its HUSK (the head + non-buffer children) as a
@@ -272,7 +306,7 @@ Repli_allowed(w, peer) {
 //   card stays a card however much stock stands behind it.  CONSENT-GATED: a peer the hook refuses gets
 //    no card at all.  Returns did-it-cross (a revoke probe counts the falses).
 async Repli_offer(w, tx, from, to, rec) {
-    if (!this.Repli_allowed(w, to)) return false
+    if (!this.Repli_allowed(w, to, from)) return false
     let frag = this.Repli_fragment(rec, tx, { husk: 1 })
     await this.Repli_send_lines(w, tx, from, to, frag.text, frag.bufmap)
     return true
@@ -348,8 +382,9 @@ Repli_park_want(w, pier, h) {
 async Repli_serve_parked(w, pier) {
     if (!pier) return
     let PAGE = +(w.c.repli_page || 2)
+    let lib = this.Repli_src_for(w, pier)
     for (const p of pier.o({ parked_want: 1 })) {
-        let rec = this.Repli_find_record(w, p.sc.id)
+        let rec = this.Repli_find_record(w, p.sc.id, lib)
         if (!rec || !this.Repli_page_ready(rec, +(p.sc.from_idx), PAGE)) continue
         await this.Repli_serve_want(w, pier, { header: { id: p.sc.id, stream: p.sc.stream, from_idx: +(p.sc.from_idx), from: p.c.reply_to, to: p.c.reply_from } })
         w.c.repli_unparked = (w.c.repli_unparked || 0) + 1
@@ -357,11 +392,12 @@ async Repli_serve_parked(w, pier) {
     }
 
 },
-// Repli_find_record — locate a source Record by id in A's library.
-Repli_find_record(w, id) {
-    let lib = w.c.repli_src
-    if (!lib) return null
-    return lib.o({ Record: 1, id: id })[0]
+// Repli_find_record — locate a source Record by id: in the given library, or the legacy single-pair
+//  w.c.repli_src when none is passed (a multi-caster caller resolves the shelf via Repli_src_for first).
+Repli_find_record(w, id, lib) {
+    let l = lib || w.c.repli_src
+    if (!l) return null
+    return l.o({ Record: 1, id: id })[0]
 
 },
 // Repli_serve_want — A got a `want id/stream/from_idx`: take the page [from_idx, from_idx+PAGE) of the
@@ -371,10 +407,11 @@ Repli_find_record(w, id) {
 //     PAGE is a knob (w.c.repli_page, default 2 chunks); a want the transcode frontier hasn't reached
 //      PARKS rather than fails (see Repli_page_ready / Repli_park_want).
 async Repli_serve_want(w, pier, frame) {
-    if (pier !== w.c.tx) return
+    let lib = this.Repli_src_for(w, pier)
+    if (!lib) return
     let h = frame.header
-    if (!this.Repli_allowed(w, h.from)) return
-    let rec = this.Repli_find_record(w, h.id)
+    if (!this.Repli_allowed(w, h.from, h.to)) return
+    let rec = this.Repli_find_record(w, h.id, lib)
     if (!rec) return
     if (!rec.c.chunks) { await this.Repli_serve_chunks(w, pier, h, rec); return }
     let chunks = rec.c.chunks || []
@@ -448,12 +485,19 @@ Repli_mirror_lib(w) {
 // Repli_recv_lines — B got a repli_lines frame: decode + merge into the mirror; for every merged particle that
 //  referenced objecties.buffer, open a holding %req:awaitbuf under the Pier (the extra unemit processing).
 async Repli_recv_lines(w, pier, frame) {
-    if (pier !== w.c.rx) return
+    if (!this.Repli_rx_ok(w, pier)) return
     let text = new TextDecoder().decode(frame.buffer)
     let lib = this.Repli_mirror_lib(w)
     let touched = await this.Repli_merge(lib, text)
     for (const c of touched) {
         if (c.c.await_buffer != null) this.Repli_open_awaitbuf(w, pier, c, c.c.await_buffer)
+        // the SOURCE breadcrumb (runtime-only, .c never snaps): which Pier this mirror Record came
+        //  through and whose shelf it lives on — the multi-source pull addresses its wants by these
+        //   (rec.c.rx to ride, rec.c.from to ask), and the chase knows which source a track is FROM.
+        if (c.sc && c.sc.Record) {
+            c.c.from = frame.header.from
+            c.c.rx = pier
+        }
     }
     w.c.repli_tick = (w.c.repli_tick || 0) + 1
 
@@ -461,7 +505,7 @@ async Repli_recv_lines(w, pier, frame) {
 // Repli_recv_page — B got a repli_page frame (bytes already sha256-verified by req_unemit): stash by bufferid
 //  and reconcile against any mirror particle waiting on it.
 Repli_recv_page(w, pier, frame) {
-    if (pier !== w.c.rx) return
+    if (!this.Repli_rx_ok(w, pier)) return
     let id = frame.header.bufferid
     pier.c.bufs = pier.c.bufs || {}
     pier.c.bufs[id] = frame.buffer
@@ -541,7 +585,9 @@ async Repli_want_next(w, rx, from, to, id, stream, fromIdx) {
 
 },
 // Repli_arm — register the three handlers (both directions share w.c.on, so each disambiguates by which Pier
-//  the frame arrived at: A serves wants at w.c.tx; B receives lines/pages at w.c.rx).
+//  the frame arrived at: a want serves where Repli_src_for finds a shelf — w.c.tx or a registered caster;
+//   lines/pages land where Repli_rx_ok says receiver — w.c.rx or a registered rx.  N casters and N wires
+//    into one listener therefore coexist in one w; an unregistered Pier stays silent on both sides).
 async Repli_arm(w) {
     this.Peeroleum_on(w, 'repli_want', async (cw, pier, frame) => { await this.Repli_serve_want(w, pier, frame); return true })
     this.Peeroleum_on(w, 'repli_lines', async (cw, pier, frame) => { await this.Repli_recv_lines(w, pier, frame); return true })

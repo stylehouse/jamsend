@@ -9,25 +9,53 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
 
 ## 0 · Handover  (rewrite this section each handover; everything below stays current)
 
-**FRONTIER 2026-07-10 — the render pipeline gets EYES + hands (in the working tree, live-verify OWED).**
- The owner regrouped: Book-drives → `Ghost/Story/Voronation.g` (Voro.g = engine only), the Musu
-  knowledge map → `wormhole/Ghost/Music/Ality`.  This round built, all compile-clean, ALL gated on
-   ONE thing — **a runner tab reload** (Cytui must remount to stash `cy`):
-- **📸 the pixel loop CLOSED** — `scripts/runner_shot.mjs` + `op:'shot'` (LiesFunk) + cy stashed on
-   `top_House.c` (Cytui onMount): a headless session can finally SEE the canvas.  Run Book → shot →
-    look.  The render-faults gauntlet is now mostly remote (`Voro_render_faults_todo.md` §gauntlet).
-- **F1 render-gate FIXED** (Cytui `apply()` tail): a wave that arms the voronoi / reaches ≥2 seeds /
-   is absolute (a seek — the F4 path) now fires `reposition_overlays()+voronoi_soon()` — exactly what
-    the manual ◈ off+on did.  Expect F1+F4+F6-render to move together.
-- **F7 diagonal satan detect+cure** (Cytui `diag_check`): post-settle spread ratio < 0.1 ⇒ free
-   relayout (randomize on a stubborn repeat, rests after 3).  Tally on every shot reply (`♒ ×N`).
-- **`w:Voronoiology` expanded** (owner un-hid it + "feel free to expand"): generic census — `%cell`
-   row per intended pane (kind/n/pop), `%bare` rows, `cells:N` head — for ANY world (was Botany-locked).
-    Report world GRAPHS now.  ⚠ every Voro* fixture shifts → **re-record owed** (live runner, my start).
-- **NEXT MOVES:** (1) tab reload → `runner_shot.mjs` smoke → shot-gauntlet VoroClinic/VoroScape/
-   VoroRadioPier (F1/F6/F7 verdicts by png); (2) re-record the Voro fleet; (3) F3 (paint_final
-    content-diff — kill the flash) then F2 (settle-aware cadence), both now shot-assisted; (4) the
-     staged 🎋 `micro_fit` visible joints.
+**FRONTIER 2026-07-11 — the bisect landed; the fold contract is re-sealed; next is 🎋.**
+ The owner ran the bisect on the drag/morph regression: commit `4add5244` ROLLED BACK Cytui (+ part
+  of Cyto) and the regression died with it — the other tests look great again.  The rolled-back WIP
+   (telemetry ring, F1 render-gate, F7 diagonal-satan, the yoink-free waitVoro queue, the `cy` stash
+    that closed the pixel loop) is PARKED at `/tmp/Cytui.wip.svelte` + `/tmp/Cyto.wip.svelte` —
+     cherry-pick a piece WITH EYES ON if wanted, never re-land wholesale.  `runner_shot.mjs` +
+      `op:'shot'/'why'` (LiesFunk) SURVIVED, but their Cytui half didn't, so the pixel loop is open
+       again until that half is rebuilt.  What the rollback also tore — and this session re-sealed:
+- **The c-side fold contract RESTORED (Cyto.svelte, in the working tree).**  The rollback kept the
+   crusher (all stamps c-side, Voro.g:28) but dropped the render side of "the same cut": descent no
+    longer stopped on `c.stuff` (→ every folded Artist's Tracks leaked into the graph as free nodes —
+     the owner's "Tracks all over the place"), `c.represented` gang members double-drew, `%Opt` config
+      graphed, and ◈'s `e_Cyto_crush` handler was gone (silent elvis no-op).  All five seams restored
+       verbatim.  Live-verified model-side (VoroScape 6/6 on `3c5238…`, census `cells:5 folded:16`);
+        pixel eyes-on owed after a tab reload.
+- **📻🕳 SHELVED** (`Cytui.svelte` `DRIFT_MODES_ON=false` — rack idiom): the tunnel never let the
+   tessellation settle; owner wants both reimagined as their own endeavour grown out of Voro.  Buttons
+    and stash-restore gated, machinery kept; one flag re-opens the lab.
+- **waitVoro dwell +2s** (`Cyto.svelte` `DWELL_MS` in `e_Cyto_animation_request`): every waitCyto
+   Book now breathes 2s per step after the layout leg — "the other tests look great, could slow down".
+- **The Vtuffing language critique is now spec** — `Voro_vtuffing.md` §🎋 "The language critique":
+   C/C path visible, keys ≠ values, `:` grammar like Stuffing, ×N and /*N styled as operators.  It is
+    the requirements list for the redesign that rides the bamboo pass.
+- **The census now carries each pane's WORDS** (owner ask, live-verified on `3c5238…`): every
+   `cell:` row in `w:Voronoiology` holds its transcribed `%Vtuffing` tree (`Voro_vtuff_transcribe`,
+    Voro.g — sc only, numbers stringified, commas shed) — the snap explains the layout obliquely,
+     and a pane's story diffs beat to beat.  ⚠ the tree follows `Vtuff_bamboo_on()` (stash
+      `Cyto_bamboo`, per-tab): DECIDE the bamboo default before re-recording, or fixtures bake
+       whichever mode the recording tab had.
+- **📸 shot rails re-armed** (the `cy` stash cherry-picked back into Cytui onMount): `runner_shot`
+   answers again.  Learned: shots are REFUSED while a run's engagement is held — release first;
+    and `cy.png()` carries ONLY the cy canvas — cells (SVG) and Stuffings (HTML) are invisible in
+     it, so a shot shows the raw graph under the glass (still good for F7-diagonal + node census;
+      the pane-content instrument is the census transcript above).
+- **The owner's go-forth round (later same session):** ≥2-seed floor GONE (`voronoi_layout`:
+   a lone seed owns the whole frame — cells from the first mount); the pane face is the REAL
+    Stuffing again (▤ row engine demoted: default-off + session-local; the `fit ≥ 0.5` floor and
+     the gather-cap lie were the chronic clip — paint_final now clamps to the cell's true capacity);
+      crown|cane bamboo SHELVED (`Vtuff_bamboo_on()` hard false — it was a zombie stash with no
+       button; census transcripts and fixtures now always flat).  Bamboo v2 = sub-cells|sub-graph
+        (`Voro_vtuffing.md` §🎋 v2 — the owner's redirect).  ⚠ ALL THREE runner tabs wedged under
+         the session's HMR volleys — every live verify past the transcript proof is gated on reloads.
+- **NEXT MOVES:** (1) tab reloads, then eyes-on: fold seal (no bare Tracks), one-pane-one-cell from
+   beat 2, molded Stuffings that fit, uniform pane drag (the Moonlit|Fernway|Riverine three-way split
+    should die with the ▤ demotion — if Riverine STILL renders as a plain node on a fresh run, that's
+     a real stamp-order fault: report it); (2) re-record the Voro fleet (fixtures owed: census + flat
+      Vtuffing transcript); (3) **🎋 v2**: sub-cells|sub-graph inside panes.
 
 **NIGHT LOG — 2026-07-08 overnight (autonomous build; NOTHING committed, all in the working tree).**
  Two things landed, both compile-verified via LocalGen; the pixel/eyes-on halves are staged for you.

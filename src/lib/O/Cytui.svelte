@@ -899,12 +899,16 @@
                        chips?: MicroChip[], member?: TheC, dip?: boolean }
     let vmicro       = $state<{ id: string, x: number, y: number, w: number, h: number, clip: string, rows: MicroRow[] }[]>([])
     let micro_on_ids = new Set<string>()   // hysteresis memory: which cells are swapped in
+    // ▤ DEMOTED to an opt-in inspection face (owner 2026-07-11: the row engine is a
+    //  hand-rolled Stuffing-lookalike — "skinny and mean" — and panes should read as the
+    //   REAL Stuffing at the right size; the fit clamp in paint_final is that size).
+    //    Default OFF and session-local now: no stash restore or write, so an old
+    //     Cyto_vtuffing=true from the play days can't resurrect the rows.  The real
+    //      successor is hierarchy as sub-cells|sub-graph (Voro_vtuffing.md §🎋 v2).
     let vtuffing_pref = $state<boolean | null>(null)
-    const vtuffing_on = $derived(vtuffing_pref ?? true)
+    const vtuffing_on = $derived(vtuffing_pref ?? false)
     function toggle_vtuffing() {
         vtuffing_pref = !vtuffing_on
-        const stv = (H as any).stashed
-        if (stv) stv.Cyto_vtuffing = vtuffing_pref
         if (!vtuffing_on) {
             for (const id of micro_on_ids) { const mel = overlays.get(id); if (mel) mel.style.opacity = '' }
             micro_on_ids = new Set(); vmicro = []
@@ -1397,7 +1401,11 @@
             const hh = Math.max(30 + lift * 0.6, (child?.offsetHeight ?? node.renderedHeight()) / 2)
             seeds.push({ id, x: p.x, y: p.y, hw: Math.min(hw, 260), hh: Math.min(hh, 200), node })
         }
-        if (seeds.length < 2) return null
+        // no two-seed floor (owner: "just add more invisible nodes, sheesh") — and no phantom
+        //  needed either: a lone seed simply meets no cutters in the loop below, so its poly
+        //   stays the whole frame and the first pane owns the canvas from its first mount.
+        //    Cells from the very first beat, not after some threshold of company.
+        if (!seeds.length) return null
         if (tunnel_on) tube_project(seeds, W, HH)   // 🕳 one remap, everything downstream follows
 
         // ── the rack, SHELVED ─────────────────────────────────────────────────
@@ -1540,7 +1548,12 @@
                 const denom = box_support(nx, ny, s.hw, s.hh, T11, T12, T22, T21)
                 if (denom > 1e-6) smax = Math.min(smax, room / denom)
             }
-            const fit = Math.max(0.5, smax * 0.92)
+            // no half-size floor: the old Math.max(0.5, …) forced a Stuffing to at least
+            //  half its natural size even in a cell that couldn't hold it — the guaranteed
+            //   clip the owner kept seeing.  Slightly small beats cut-off words; 0.18 is
+            //    only the dust guard.  (paint_final clamps again with the TRUE content box —
+            //     s.hw/s.hh here are the capped gather-time dims, which lie for big content.)
+            const fit = Math.max(0.18, smax * 0.92)
 
             cells.push({ id: s.id, seed: { x: s.x, y: s.y }, inset, acx, acy,
                 color: cell_color(s.id, s.node), node: s.node,
@@ -1782,8 +1795,18 @@
                         child.style.maxWidth = `${targ}px`
                         wrap_applied.set(c.id, targ)
                     }
-                    const a  = (c.fit * c.T11).toFixed(3), b12 = (c.fit * c.T12).toFixed(3)
-                    const b21 = (c.fit * c.T21).toFixed(3), d2 = (c.fit * c.T22).toFixed(3)
+                    // the RIGHT amount of space (owner): never paint a Stuffing bigger than
+                    //  its cell can hold.  c.fit was computed from the seed's gather-time
+                    //   content box, which is CAPPED (260×200) — big content lies to it.
+                    //    Re-clamp with the child's TRUE current box under the same support
+                    //     formula: the transformed content must fit the cell's bbox on both
+                    //      axes.  The polygon clipPath still trims corners; words survive.
+                    const chw = (child.offsetWidth || 1) / 2, chh = (child.offsetHeight || 1) / 2
+                    const fx = (bw / 2) / Math.max(1e-6, box_support(1, 0, chw, chh, c.T11, c.T12, c.T22, c.T21))
+                    const fy = (bh / 2) / Math.max(1e-6, box_support(0, 1, chw, chh, c.T11, c.T12, c.T22, c.T21))
+                    const fit = Math.min(c.fit, fx, fy)
+                    const a  = (fit * c.T11).toFixed(3), b12 = (fit * c.T12).toFixed(3)
+                    const b21 = (fit * c.T21).toFixed(3), d2 = (fit * c.T22).toFixed(3)
                     const tx = c.acx - (bx + bw / 2), ty = c.acy - (by + bh / 2)
                     // CSS matrix(a,b,c,d) is column-major: x' = a·x + c·y, y' = b·x + d·y
                     child.style.transform = `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px)`
@@ -2336,8 +2359,7 @@
         if (typeof stashed_f === 'boolean') families_pref = stashed_f
         const stashed_b = (H as any).stashed?.Cyto_gravity_brush
         if (typeof stashed_b === 'boolean') brush_pref = stashed_b
-        const stashed_t = (H as any).stashed?.Cyto_vtuffing
-        if (typeof stashed_t === 'boolean') vtuffing_pref = stashed_t
+        // (no Cyto_vtuffing restore — ▤ is session-local while the row engine is demoted)
         if (DRIFT_MODES_ON) {   // shelved: a stashed true from the play days must not resurrect the drift
             const stashed_r = (H as any).stashed?.Cyto_radio
             if (stashed_r === true) { radio_pref = true; radio_timer = setInterval(radio_tick, RADIO_DWELL) }
@@ -2389,6 +2411,12 @@
                 },
             ],
         })
+
+        // stash the live cytoscape handle where a GHOST can reach it — scripts/runner_shot.mjs asks
+        //  Lies_runner_ask_recv (op:'shot') for cy.png() so a headless caller can finally SEE the
+        //   rendered power-diagram: the one fault class no snap carries (pixels never round-trip a
+        //    fixture).  top_House.c.cy is per-tab + never snapped (a live object belongs only in .c).
+        try { (H.top_House().c as any).cy = cy } catch { /* no House root yet — a shot just reports none */ }
 
         // ── overlay visibility gating ────────────────────────────────
         // Every motion — a node drag, a background pan, a scroll-to-zoom,

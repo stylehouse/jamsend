@@ -6,7 +6,10 @@ Snap:H
         self,round=7	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
-        Library,pier:raterm.player
+        Account,of:Player
+          Identity:ab7a75d43d20fdf2,prepub:ab7a75d43d20fdf2,friendly:Player
+            Peering,name:ab7a75d43d20fdf2,friendly:Player
+        Library,pier:ab7a75d43d20fdf2
           Record,id:af99e3b3efe5661a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
             Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}

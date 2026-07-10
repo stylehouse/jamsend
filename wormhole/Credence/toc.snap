@@ -23,6 +23,7 @@ Waft:Credence
       Funkcion:Storying,of_Book:MusuRaCast,needsFSA:1,needMusic:1
       Funkcion:Storying,of_Book:MusuRaTerm,needsFSA:1,needMusic:1
       Funkcion:Storying,of_Book:MusuRaStream,needsFSA:1,needMusic:1,born:2026-07-08
+      Funkcion:Storying,of_Book:MusuRaChase,needsFSA:1,needMusic:1,born:2026-07-11,brand_new:1
       Funkcion:Storying,of_Book:MusuReco,needMusic:1
       What:replication,desc:paginated C** replication of a music library across two Piers
         Funkcion:Storying,of_Book:MusuBounce,needMusic:1

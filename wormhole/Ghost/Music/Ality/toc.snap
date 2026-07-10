@@ -23,6 +23,7 @@ Waft:Ghost/Music/Ality,active
     Funkcion:Storying,of_Book:MusuRaCast
     Funkcion:Storying,of_Book:MusuRaTerm
     Funkcion:Storying,of_Book:MusuRaStream
+    Funkcion:Storying,of_Book:MusuRaChase
   What:the pipeline — rastock → racast → raterm (Radio_todo §3 — the product itself)
     What:the stock pass (Ghost/M/Ra.g — needles LUFS → baked gain → 2s Opus segments → Ogg mux → disk)
       Doc:Ghost/M/Ra.g

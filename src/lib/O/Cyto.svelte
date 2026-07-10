@@ -1387,7 +1387,7 @@
         //   morph (and the eye) want an unrushed beat on every step, so a watched
         //    run reads as a story, not a flipbook.  The dwell is the pace knob.
         const dur = ((w.sc.grawave_duration as number) ?? 0.3) * 1000
-        const DWELL_MS = 2000
+        const DWELL_MS = 750
         setTimeout(() => {
             if (client && w.c.wants_animation_done) {
                 this.i_elvistwo(w, client, 'Cyto_animation_done', { story_step })
