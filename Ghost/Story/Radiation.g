@@ -120,7 +120,7 @@ async MusuRaStock_proofs(w):
 async MusuRaStock_proof_one(w, rec):
     let got = null
     try {
-        got = await this.Ra_proof(w.c.nav, rec.sc.id, 0)
+        got = await this.Ra_proof(w.c.nav, 'DJ', rec.sc.id, 0)
     } catch (er) {
         rec.i({ proof: 1, fail: ('threw ' + String(er)).replace(/[,:]/g, ' ').slice(0, 90) })
         return
@@ -545,12 +545,12 @@ MusuRaTerm_witness(w):
 //         playhead PAST the boundary (~40s proving the stream feeds).  Then the OWNER ACT: hit the next
 //          track — the listen re-opens on B from seg 0, a full fresh preview→hold→ask→stream cycle on the
 //           change.  The MEASURE decodes THE PULLED CHUNK PARTICLES (never local disk): loudness and gaps
-//            read off the bytes that crossed.  The fully-held preview also CACHES at the listener
-//             (Ra_term_stash → .jamsend/downloads/DJ/) — the radiostock economy at the far end of the wire.
+//            read off the bytes that crossed.  Pulled chunks are EPHEMERA (rule of 2026-07-10): nothing
+//             caches at the listener — a Peering's radiostock shelf is its own stock only.
 //  Numbers are knobs a live CHECK tunes; the SHAPE — hold, ask-at-the-boundary, fed-past-boundary, fresh
 //   cycle on the change — is the assertion.
-//   beat 2   SETUP  — DJ stocks TWO Records with a SHORT preview window (preview_secs=12 ⇒ 6-chunk
-//                     previews, so the boundary sits INSIDE a 20-chunk capped listen); wire + handshake
+//   beat 2   SETUP  — DJ stocks TWO Records (the product window: 32s ⇒ 16-chunk previews, so the
+//                     boundary sits INSIDE a 20-chunk capped listen); wire + handshake
 //   beat 4   SEAL   — DJ mints a Music grant and the Listener redeems it over the wire; the gate goes live
 //   (flow)   TUNE   — the catalog husk crosses; the instant track A's head lands, the listen OPENS
 //   5..∼     LISTEN — preview pages pipeline and play; HOLD at the boundary; the ask latches at the
@@ -601,15 +601,15 @@ async MusuRaStream_drive(w, req):
     await this.MusuRaStream_flow(w)
     await this.Musu_float(w)
 
-// beat 2 — stand the session: DJ stocks TWO real Records with a SHORT preview window (Ra_stock take=2,
-//  idempotent per-window — a session needs a track to change TO and a boundary INSIDE its cap), the
-//   transport-real pair stands (one Lake_link between the two prepubs), the frame kinds arm, the
-//    handshake seeds.  A CAP on how much of each track the session streams (a ~40s listen, not a full
-//     78s tone).  No rate knob — the transcode paces itself off the parked demand (fork (c)).
+// beat 2 — stand the session: DJ stocks TWO real Records (Ra_stock take=2, idempotent — a session
+//  needs a track to change TO; the product preview window puts the boundary at seg 16, INSIDE the
+//   20-chunk cap), the transport-real pair stands (one Lake_link between the two prepubs), the frame
+//    kinds arm, the handshake seeds.  A CAP on how much of each track the session streams (a ~40s
+//     listen, not a full 78s tone).  No rate knob — the transcode paces itself off the parked demand
+//      (fork (c)).
 async MusuRaStream_setup(w):
     w i reached:step_2
     w.c.nav = this.Crate_nav()
-    w.sc.preview_secs = 12
     let dj = await this.SwarmStaple_person(w, 'DJ')
     let lis = await this.SwarmStaple_person(w, 'Listener')
     w.c.dj_pre = dj.sc.prepub
@@ -689,7 +689,7 @@ async MusuRaStream_flow(w):
 //  machinery.  The phase turns are HEAD-DRIVEN, observed into rows the instant they happen (the witness
 //   reads the handoff off them): the ask latching (stream_ask — with the held_past leak probe), the first
 //    want past the boundary (stream_want — seg P exactly is the claim), the head crossing the boundary on
-//     a REAL arrived chunk (fed), the preview stash, the owner act (switched — hit the next track once A
+//     a REAL arrived chunk (fed), the owner act (switched — hit the next track once A
 //      is proven fed), and the measure once B has played out.
 async MusuRaStream_beat(w):
     if (!w.c.sess) return
@@ -736,23 +736,6 @@ async MusuRaStream_beat(w):
                 j2 = j2 + 1
             }
             w.i({ fed: track, at_head: p.head, held: held2 })
-        }
-    }
-    // the radiostock economy at the listener: the fully-held preview caches under the caster's name
-    //  (the nick names the corner — the prepub is the route, not the shelf label).
-    if (!w.c.stashed && track === 'A') {
-        let map3 = this.Ra_chunk_map(rec)
-        let whole = p.preview > 0
-        let k3 = 0
-        while (k3 < p.preview) {
-            if (map3[k3] == null) whole = false
-            k3 = k3 + 1
-        }
-        if (whole) {
-            w.c.stashed = 1
-            let st = await this.Ra_term_stash(w, w.c.nav, rec, 'DJ')
-            if (st && st.stashed) w.i({ stashed: 1, segs: st.segs, bytes: st.bytes })
-            if (st && st.fail) w.i({ stash_fail: st.fail })
         }
     }
     // the OWNER ACT: A proven fed past the boundary (a couple of pages beyond it) — hit the next
@@ -802,7 +785,7 @@ async MusuRaStream_measure(w):
     })
 
 // ── the witness — %see observations reading live truth (no commas no apostrophes) ──
-//  Setup at beat 2; the handoff claims read the observed rows (stream_ask / stream_want / fed / stashed /
+//  Setup at beat 2; the handoff claims read the observed rows (stream_ask / stream_want / fed /
 //   switched) from beat 5 on; the session claims fire off the streamed row at WHATEVER beat the real wire
 //    settled it (>= not === : the head-driven session finishes at a variable beat, and %see is once-noticed
 //     so it lands the first beat its truth holds).  Thresholds (b_heard <= 3, LUFS ±2) are TUNED off the
@@ -829,9 +812,6 @@ MusuRaStream_witness(w):
     //  opened — it was transcoded because a parked want asked — and the playhead crossed onto it.
     let fed = w.o({ fed: 'A' })[0]
     if (n >= 5 && fed && +(fed.sc.held || 0) > 0 && !(oa %see:'the playhead crossed the boundary onto transcoded chunks that arrived on demand')) i %see:'the playhead crossed the boundary onto transcoded chunks that arrived on demand'
-    // the radiostock economy at the listener: the pulled preview cached into the downloads corner.
-    let st = w.o({ stashed: 1 })[0]
-    if (n >= 5 && st && +(st.sc.segs || 0) > 0 && !(oa %see:'the pulled preview cached into the downloads corner — the radiostock economy standing at the listener end')) i %see:'the pulled preview cached into the downloads corner — the radiostock economy standing at the listener end'
     // the owner act: hitting the next track opened a FULL FRESH cycle — B held at its own boundary and
     //  asked at exactly its own seg P (the change of track is a whole preview economy again from zero).
     let wantB = w.o({ stream_want: 1, of: 'B' })[0]

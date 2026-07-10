@@ -18,4 +18,10 @@ Snap:H
           Share,track:Root
           Share,track:Echo
       w:Voronoiology,dontGraph
-        Voro,beat=6,level:L0,visible=7,gangs=0,folded:8,count:4
+        Voro,beat=6,level:L0,visible=7,cells:4,gangs=0,folded:8,count:4
+        cell:Artist,kind:pane,n:2
+        cell:Artist,kind:pane,n:2
+        cell:Artist,kind:pane,n:1
+        cell:Peer,kind:pane,n:3
+        bare:self,n:2
+        bare:req,n:1

@@ -6,4 +6,6 @@ Snap:H
         self,round	{"mung":["age"]}
         req:wrangle,eternal,ok
       w:Voronoiology,dontGraph
-        Voro,beat,level:L0,visible=3,gangs=0,folded:0,count:0
+        Voro,beat,level:L0,visible=3,cells:0,gangs=0,folded:0,count:0
+        bare:self,n:2
+        bare:req,n:1

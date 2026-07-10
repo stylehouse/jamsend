@@ -22,6 +22,38 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 A rolling brief: the newest work sits here first, then gets baked into its home section
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 
+**BUILT + LIVE-CHECKED 2026-07-10 (late) — FOUR OWNER RULINGS folded in on top of the chunk-particle
+ rebuild (all four Books re-ran on the live runner after: EVERY %see minted, now 24/24 — Stock 6,
+  Cast 6, Term 5, Stream 7):**
+ - **`Ra_preview_secs` is a PRODUCT CONSTANT now — 32, hard-coded, no `w` param** ("a huge constant,
+    not something a Book decides"). NOT 33: the boundary must sit on the want-page grid (seg 2s ×
+     PAGE 2 ⇒ multiples of 4s) or P is odd, the pre-ask clamp strands the tail chunk and "first
+      stream want == seg P exactly" is unmintable (the even want-stride never visits an odd P).
+       MusuRaStream's 12s Book-window died with the knob; its cycle just runs longer inside the same
+        40 steps (live: ask@head14, want=16==P, fed@18, switch@20, `a_drops=0 b_heard=0 lufs=-14.01`).
+ - **Radiostock files are `<ts>-<pub>-<enid>.jamsend_radiostock`** (awkward extension on purpose —
+    nothing in `.jamsend/` may read as media). `ts` = mint time, so old ones can be DELETED (newest
+     wins; `Ra_stock_find` GCs older twins in passing, `Ra_stock_gc` also drops superseded renders of
+      the same path after a build). `pub` = the OWNING Peering's pier key — many Piers share one
+       `.jamsend` in tests and each filters for its own (`Ra_stock_ls`). `enid` = **sha256 over the
+        whole source bytes, first 16 hex** — content identity, no pub, no path: a record is never
+         locked to the Pier or location that found it ("we pull in entire tracks and dige them").
+          `Ra_id` (path-djb2) and `Ra_bytes_hash`/`src_hash` are DEAD — the id IS the content hash.
+           A one-shot MIGRATION sweep in `Ra_stock` deletes legacy `*.jam` stocks (remove the block
+            when shares are clean).
+ - **NO friend-download cache** — `Ra_term_stash` + `.jamsend/downloads/<friend>/` DELETED (reverses
+    §9.1b's downloads corner): pulled chunks are EPHEMERA; a Peering keeps radiostock of its OWN
+     collection only, for the speedy run-around; actually moving music is a later economy — this is
+      just listening. (The Stream Book's stash row + its %see died with it: 24 sees, was 25.)
+ - **The DEAD-SOURCE RULE** — a radiostock whose source can't be found anymore can never make up its
+    %Stream, so it is litter: `Ra_source_pcm` drops the file (`rec.c.card_file`, remembered at
+     `Ra_card` load) and returns null; a later pass re-stocks what the collection now holds.
+ REMAINING: the re-record of all four (owner Accepts — reds are pure drift: 16-hex enids, `preview=16`
+  not 17, no `src_hash`, no stash rows). PRESKIP now has its one coherent statement in the code — the
+   `Ra_encode_open` comment (it is the opus encoder's convergence ramp the decoder drops at each fresh
+    open, 312@48k; it WOULD ride OpusHead bytes 10-11 but we deleted the container, so we carry it on
+     the card + the two head chunks; NOT a time offset — time-into-track is seq × seg_secs).
+
 **BUILT + LIVE-CHECKED 2026-07-10 (same day, forks all ruled — (c) demand-driven per owner) — the
  preview economy REBUILT on REAL CHUNK PARTICLES + generic Repli.  All four MusuRa\* ran on a LIVE
   runner same evening: EVERY %see minted (25/25 — Stock 6, Cast 6, Term 5, Stream 8) — Cast's pulled

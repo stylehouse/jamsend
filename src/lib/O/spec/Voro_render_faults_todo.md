@@ -40,10 +40,14 @@ Every claim is tagged **[V]** = I read the code and verified, or **[S]** = suspe
    ratio < 0.1 ⇒ degenerate line ⇒ auto free-relayout (escalates to randomize on a stubborn repeat,
     rests after 3).  Tally rides `top_House.c.cy_diag_cures` and comes back on every `shot` reply —
      the satan is now REMOTELY detectable.
-- **`w:Voronoiology` enrichment BUILT** (owner licensed it by un-hiding the world 2026-07-09):
-   generic census — `%cell` row per intended pane (kind/n/pop), `%bare` row per unfolded-leaf mainkey,
-    `cells:` total on the head row.  Report world also GRAPHS now.  ⚠ shared-fixture change:
-     every Voro* Book re-records (world line loses `dontGraph`, rows change shape).
+- **`w:Voronoiology` enrichment BUILT**: generic census — `%cell` row per intended pane (kind/n/pop),
+   `%bare` row per unfolded-leaf mainkey, `cells:` total on the head row.  ⚠ shared-fixture change:
+    every Voro* Book re-records (the census rows are new).  **The world SNAPS but is kept OUT of the
+     Cyto graph layout** — it's our processing/debug C**, process-noise not data (owner, 2026-07-10:
+      "that's gotta be kept out of the graph layout").  `%dontGraph` STAYS on the world line (a
+       `Voro_report` re-set, corrected from an earlier mistaken strip) and `cytyle_classify` now skips
+        a `dontGraph` world + its whole subtree, so enriching it can't clutter the data graph.  Snapping
+         is orthogonal (the separate `%dontSnapVoronoiology` is what would hide it from fixtures).
 - **RENDER TELEMETRY BUILT** (owner: "an over-time data dump of what's processing the graph into cells…
    a less minimal w:Voronoiology").  The catch it forced into the open: render processing is RENDER-side,
     so it can NEVER be the snapped w:Voronoiology (metaphysics #2).  So it's the **Cyto twin of reactap**
@@ -58,6 +62,46 @@ Every claim is tagged **[V]** = I read the code and verified, or **[S]** = suspe
       residual `!method: Voronoiology` (an inert report world, no drive method by design) is now
        `V.beliefs`-gated in Housing (was the only ungated one).  Lesson: after a .g regroup, recompile
         EVERY moved .g; the render telemetry's `wave stuff:0` catches the husk faster than the console.
+
+### 0.1 · "Does the crush need to complexify?" — the observability answer
+
+The owner asked, adversarially, whether this algorithm really won't need to grow more sophisticated —
+ whether the crush is *done*.  This turn is the answer, and it's not the one either of us reached for.
+
+I built a "generic census" — `Voro_report` walking the crushed tree, emitting one `%cell` row per pane
+ the crush intends — confident that the thing under doubt was *the model's mirror*.  It narrated an empty
+  world.  Not because the census was wrong (it was correct), but because the real fault was **upstream in
+   the gen**: a stale partial `Voronation.go` meant the Book never drove, so the crush ran on nothing, so
+    the census dutifully reported `cells:0 bare:self`.  Every layer was truthful; the whole read as
+     nonsense.  **A sound instrument pointed at a corpse is indistinguishable from a broken instrument.**
+
+That is the load-bearing epistemics, and it's why the answer to "is the crush done?" was *unaskable*
+ before this turn: from a single snap you cannot separate the three states that matter —
+- the crush **ran and produced nothing** (a genuine algorithm gap — the case that would justify complexifying),
+- the crush **never ran** (upstream/gen fault — the stale-gen husk),
+- the **report itself is wrong**.
+All three snap the same near-empty world.  The census can't tell them apart because the question isn't
+ about a *state*, it's about a *process over time* — model → layout → seed → morph → settle → re-morph.
+  And that process is **render-side, which never snaps** (metaphysics #2).  The census is model-side and
+   single-beat; the entire dynamic half of the machine was dark to fixtures *by construction*.  No amount
+    of census sophistication reaches it — you cannot snap your way to it.
+
+So the render telemetry isn't a nicety; it's the flashlight for the half that can't snap.  It's the Cyto
+ twin of reactap for exactly the reason reactap exists: an over-time, render-side, never-snapped signal
+  that only a live tab can produce.  `wave stuff:0` every beat is the empty-world tell — it separates
+   "the pipeline is churning but yielding no cells" (algorithm) from "nothing is arriving" (upstream) at
+    a glance.  On the first `--why` poll it would have screamed *husk* and saved the census's blushes.
+
+**The answer to the adversarial question, then, is neither "done" nor "it needs feature X."**  It's that
+ the crush's sufficiency is now an **empirical** question I can finally ask — and that complexification
+  must be *earned by the film strip, not guessed*.  Each catalog fault is a candidate "maybe it needs to
+   be smarter," and each now has a signature in the strip: morphs firing but `cells:0` ⇒ the **gate**
+    traps data (F1/F6), not the algorithm; morphs never firing ⇒ **upstream**; cells landing on a line ⇒
+     **F7**, a layout degeneracy, not a crush one.  A future "the crush must complexify" claim now has to
+      first produce a strip where the crush *ran, celled, and celled wrong* — otherwise it's the
+       empty-world illusion again, a confident report on a dead pipeline.  The turn's real deliverable is
+        that the debate has a referee.  It extends this repo's one law — *don't trust a green you can't
+         see* — from the snap layer (fixtures, the headless-ban) to the render layer, the last dark half.
 
 **Auto-checkability, honestly:** render pixels can NEVER be Book-gated (metaphysics #2 — nothing
  render-side snaps).  But the CRUSH INTENT is fully snappable (`w:Voronoiology`).  The plan (§Auto-check)

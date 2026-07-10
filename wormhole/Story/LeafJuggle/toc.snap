@@ -31,10 +31,7 @@ story:LeafJuggle
     For
     useCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.095
-      sample=0.102,at=1781080187
-      sample=0.117,at=1781080236
-      sample=0.127,at=1781080259
+    TimeTotal:beliefs,avg=0.076
       sample=0.127,at=1781080271
       sample=0.111,at=1781946981
       sample=0.103,at=1781947511
@@ -42,6 +39,9 @@ story:LeafJuggle
       sample=0.069,at=1782359229
       sample=0.052,at=1783109201
       sample=0.042,at=1783367052
+      sample=0.05,at=1783676552
+      sample=0.05,at=1783676591
+      sample=0.05,at=1783676619
     TimeTotal:step,avg=0.004
       sample=0.006,at=1781946981
       sample=0.005,at=1781947511
@@ -49,23 +49,26 @@ story:LeafJuggle
       sample=0.004,at=1782359229
       sample=0.003,at=1783109201
       sample=0.002,at=1783367052
-  step,dige:8680104b4a50971e
+      sample=0.003,at=1783676552
+      sample=0.003,at=1783676591
+      sample=0.003,at=1783676619
+  step,dige:ee1a0e02a7782102
   step=2,dige:f43c222f04298ad2
   step=3,dige:9f51ff7a4aa6f48f
   step=4,dige:54d4d7ac5f1b34e5
   step=5,dige:1e9bfe397ff5babf
     note,oddity:leaf not in hand
-  step=6,dige:180463459ffff043
-  step=7,dige:e7edf498f3ff1494
-  step=8,dige:134009408997ed1a
-  step=9,dige:b855bcf71ec9b0ea
-  step=10,dige:77f61ec9182f8dd0
-  step=11,dige:f0cf85c4e725863b
-  step=12,dige:e35c335a39c3e900
-  step=13,dige:fa30d401ba6758cc
-  step=14,dige:3c9350c15e6dc0ab
-  step=15,dige:b91fc4070d130d72
-  step=16,dige:b8681548e1e575ca
-  step=17,dige:d1eb12296a59c1cb
-  step=18,dige:630526740b7566e8
-  step=19,dige:5d28a52976bdc980
+  step=6,dige:a523a224965a6fd7
+  step=7,dige:8efa70ee83ba7fc9
+  step=8,dige:e445f3158d4295aa
+  step=9,dige:a99b30ed6f1b0603
+  step=10,dige:f761a679183b9c9d
+  step=11,dige:321963cb920dad82
+  step=12,dige:785e21f57bd2df99
+  step=13,dige:72381e2fd1f5a725
+  step=14,dige:ebb90af02a352208
+  step=15,dige:e46d332012dd8f91
+  step=16,dige:a6070b8a48984f7f
+  step=17,dige:c070987ec2e82208
+  step=18,dige:37ba415b72159984
+  step=19,dige:75f8d796e5c261dc

@@ -25,11 +25,14 @@
 //    with a -1 dBFS peak ceiling: an up-gain that would clip caps at the ceiling (capped:1 — that
 //     track sits honestly quieter).  The gain is WHOLE-TRACK, so the on-demand continuation lands
 //      loudness-uniform across the seam by construction.
-//  ON DISK (the app's private '.jamsend/' corner of the share):  radiostock/<id>.jam — ONE non-media
-//   file per record: a one-line JSON header (the resurrection card), a '\n', then the preview chunk
-//    bufs back to back.  It opens as json, never as audio, so a media indexer ignores it.  The disk
-//     home of the bytes is THIS file — the sc-bufs on particles are the live working set (a subtree
-//      carrying sc-bufs must never ride a Waft toc-persist; the storage encoder is fatal on objects).
+//  ON DISK (the app's private '.jamsend/' corner of the share):  radiostock/<ts>-<pub>-<enid>.jamsend_radiostock —
+//   ONE non-media file per record: a one-line JSON header (the resurrection card), a '\n', then the
+//    preview chunk bufs back to back.  It opens as json, never as audio, so a media indexer ignores it.
+//     The disk home of the bytes is THIS file — the sc-bufs on particles are the live working set (a
+//      subtree carrying sc-bufs must never ride a Waft toc-persist; the storage encoder is fatal on
+//       objects).  A Peering's shelf is its OWN stock only — pulled chunks from friends are ephemera
+//        (the radiostock exists for the speedy run-around-the-collection, not for keeping music;
+//         actually moving music is a later economy — this is just listening).
 //  THE PREVIEW ECONOMY (owner 2026-07-08): a Record is always %Preview FIRST — the leading
 //   Ra_preview_secs window pre-encodes and CACHES in radiostock/ — and %Stream is the continuation
 //    from the segment right after the last preview, transcoded from the SOURCE on demand and NEVER
@@ -49,12 +52,16 @@ Ra_target_lufs(w):
 Ra_seg_secs():
     return 2
 
-// Ra_preview_secs — how much of every track is the free PREVIEW (Radios.svelte's PREVIEW_DURATION=33):
-//  the leading window that pre-encodes into radiostock/ and fans out cheaply ahead of listening; the
-//   %Stream continuation picks up at the segment right after its last one.  Read off w so a Book can
-//    shrink it for a tight session.
-Ra_preview_secs(w):
-    return +(w?.sc?.preview_secs ?? 33)
+// Ra_preview_secs — how much of every track is the free PREVIEW: the leading window that pre-encodes
+//  into radiostock/ and fans out cheaply ahead of listening; the %Stream continuation picks up at the
+//   segment right after its last one.  A PRODUCT CONSTANT, not a Book knob (ruled 2026-07-10 — a Book
+//    tunes pace with prime|play|ahead|cap, never the boundary; every stock on a shelf then shares one
+//     window and stands for every world).  32 not Radios' 33: the boundary MUST sit on the want-page
+//      grid (seg_secs 2 × PAGE 2 ⇒ multiples of 4s) — an odd P strands the odd preview tail chunk
+//       behind the pre-ask clamp AND makes "first stream want = seg P exactly" unmintable (the want
+//        stride only visits even seqs).
+Ra_preview_secs():
+    return 32
 
 // Ra_bitrate — Opus bits per second.  128k is transparent-adjacent for stereo music; the tones the
 //  Book stocks are mono and simply spend less.
@@ -157,9 +164,16 @@ Ra_opus_samples(p):
 
 // Ra_encode_open — open ONE continuous opus encode (an encode per SIDE of the boundary: the preview
 //  at stock, the continuation at transcode — never per chunk; the chunks are transport slices of this
-//   one stream, which is why the far decoder plays across them with no reset and no glitch).  The
-//    encoder's preskip is parsed off its own OpusHead when it offers one (meta.decoderConfig) — the
-//     head chunk carries it so the decoder knows how much convergence to drop.
+//   one stream, which is why the far decoder plays across them with no reset and no glitch).
+// PRESKIP, stated once: an opus encoder's first ~6.5ms of output is convergence ramp-up, not signal —
+//  a decoder must decode AND DROP that many samples (312 at 48k) wherever it opens fresh.  It is an
+//   ENCODER property, never a position: NOT seconds-into-the-track (that is seq × seg_secs), and it
+//    reads the same on every head chunk because every encode here is configured the same.  In normal
+//     Ogg-Opus it rides the container's OpusHead header (LE u16 at bytes 10-11) — we DELETED the
+//      container (raw length-prefixed packets), so we lift it off the OpusHead the encoder offers
+//       once (meta.decoderConfig.description, parsed below) and carry it ourselves: on the stock
+//        card, and on the sc of each chunk where a decoder opens fresh (%Preview,seq:0 and the
+//         boundary %Stream head — TWO encodes, so two heads, same number).
 Ra_encode_open(nch, br):
     if (typeof AudioEncoder === 'undefined') return null
     let st = { nch: nch, packets: [], acc: [], accs: 0, fed: 0, preskip: 312, bad: null, enc: null }
@@ -336,39 +350,115 @@ async Ra_decode_packets(packets, nch, skip):
 Ra_stock_dir():
     return '.jamsend/radiostock'
 
-// Ra_stock_name — ONE file per record, <id>.jam, NOT one per chunk.  '.jamsend/' lives INSIDE the
-//  user's music library, so nothing here may read as media: a scanner keys on extension + a magic
-//   sniff, and a .jam that opens with '{' is json|text, never audio.  The preview (card + every
-//    chunk buf) rides this single file, each buf addressable by the sizes[] in its header.
-Ra_stock_name(id):
-    return id + '.jam'
+// Ra_stock_name — ONE file per record, <ts>-<pub>-<enid>.jamsend_radiostock, NOT one per chunk.
+//  '.jamsend/' lives INSIDE the user's music library, so nothing here may read as media: the
+//   deliberately awkward extension defeats any scanner's guess, and a file that opens with '{' is
+//    json|text, never audio.  The three name fields (ruled 2026-07-10):
+//     ts   — mint time (Date.now): newest wins, older twins are GC fodder — timestamps exist so the
+//             old ones can be DELETED, not so they can be kept.
+//     pub  — the OWNING Peering's pier key (a prepub in the wired Books, a literal shelf key in the
+//             wire-less ones): many Piers share one .jamsend in tests, and each filters the shelf
+//              for its own pub, so they never confuse each other's stock.
+//     enid — CONTENT identity, sha256 over the whole source's bytes (first 16 hex): it contains no
+//             pub and no path, so a record is never locked to the Pier or the location that found
+//              it, and a re-render (same path, new bytes) is honestly a NEW record.
+//  The preview (card + every chunk buf) rides this single file, each buf addressable by the sizes[]
+//   in its header.
+Ra_stock_name(ts, pub, enid):
+    return ts + '-' + pub + '-' + enid + '.jamsend_radiostock'
 
-// Ra_id — a stable id from the source path (djb2 hex): the stock dir's name, the %Record's id,
-//  the same across every pass and boot.
-Ra_id(path):
-    let h = 5381
+// Ra_stock_parse — the name read back: {ts, pub, enid, name} | null.  First-dash|last-dash split,
+//  never a naive split('-') — nothing promises a future pub carries no dash; ts is pure digits and
+//   a sha256-hex enid never dashes, so the outermost cuts are the safe ones.
+Ra_stock_parse(name):
+    let ext = '.jamsend_radiostock'
+    if (!name.endsWith(ext)) return null
+    let core = name.slice(0, name.length - ext.length)
+    let a = core.indexOf('-')
+    let b = core.lastIndexOf('-')
+    if (a < 1 || b <= a + 1) return null
+    let ts = +core.slice(0, a)
+    if (!(ts > 0)) return null
+    let pub = core.slice(a + 1, b)
+    let enid = core.slice(b + 1)
+    if (!pub || !enid) return null
+    return { ts: ts, pub: pub, enid: enid, name: name }
+
+// Ra_enid — the content identity: sha256 over the WHOLE source's raw bytes, first 16 hex chars
+//  (64 bits — plenty against accident in a music library, and it reads at a glance in a snap
+//   line the way an 8-hex id used to).  Whole-file on purpose: the identity must move with the
+//    bytes ("we pull in entire tracks and dige them" — owner, 2026-07-10); the read was already
+//     paid, the digest is cheap beside the decode.
+async Ra_enid(raw):
+    let d = await crypto.subtle.digest('SHA-256', raw)
+    let b = new Uint8Array(d)
+    let hex = ''
     let i = 0
-    while (i < path.length) {
-        h = (((h << 5) + h) ^ path.charCodeAt(i)) >>> 0
+    while (i < 8) {
+        hex = hex + b[i].toString(16).padStart(2, '0')
         i = i + 1
     }
-    return h.toString(16).padStart(8, '0')
+    return hex
 
-// Ra_bytes_hash — a content fingerprint (djb2 over the raw source bytes): the freshness oracle a
-//  path-derived Ra_id can't be.  A re-render keeps its filename (its id) but not its bytes, so this
-//   hash rides the stock card; a standing stock whose source hash still matches skips the decode +
-//    encode, a mismatch rebuilds.  Full-file for correctness (I/O, not the CPU that matters);
-//     a real library would window it or lean on a nav-level size|mtime stat.
-Ra_bytes_hash(buf):
-    let b = new Uint8Array(buf)
-    let h = 5381
-    let i = 0
-    let n = b.length
-    while (i < n) {
-        h = (((h << 5) + h) ^ b[i]) >>> 0
-        i = i + 1
+// Ra_stock_ls — THIS Peering's shelf: every parseable radiostock name under Ra_stock_dir whose pub
+//  matches, newest first.  Foreign pubs and unparseable names pass silently — the many-Pier-on-one-
+//   .jamsend situation is normal, not an error.
+async Ra_stock_ls(nav, pub):
+    let dl = await nav.dir_at(this.Ra_stock_dir())
+    if (!dl) return []
+    await dl.expand()
+    let out = []
+    for (const f of dl.files) {
+        let p = this.Ra_stock_parse(f.name)
+        if (p && p.pub === pub) out.push(p)
     }
-    return h.toString(16).padStart(8, '0')
+    out.sort((x, y) => y.ts - x.ts)
+    return out
+
+// Ra_stock_drop — delete one radiostock file (GC + the dead-source rule); re-expand so the cached
+//  listing stays honest.  A nav that can't delete (the remote proxy) just leaves the litter.
+async Ra_stock_drop(nav, name):
+    let dl = await nav.dir_at(this.Ra_stock_dir())
+    if (!dl || typeof dl.deleteEntry !== 'function') return
+    try {
+        await dl.deleteEntry(name)
+    } catch (er) {}
+    await dl.expand()
+
+// Ra_stock_find — the newest standing file for (pub, enid), GC'ing any strictly-older twins on the
+//  way past (a rebuild writes a fresh ts; the superseded file's only purpose left is to be deleted).
+async Ra_stock_find(nav, pub, enid):
+    let mine = (await this.Ra_stock_ls(nav, pub)).filter((p) => p.enid === enid)
+    if (!mine.length) return null
+    for (const old of mine.slice(1)) await this.Ra_stock_drop(nav, old.name)
+    return mine[0]
+
+// Ra_stock_peek — the card line only (~600 bytes of JSON before the first '\n'): read_range where
+//  the nav can seek, whole-file where it can't.  For the GC's is-this-my-path question — never pay
+//   a full read per shelf file just to ask it.
+async Ra_stock_peek(nav, name):
+    let buf = null
+    try {
+        if (nav.read_range) {
+            let got = await nav.read_range(this.Ra_stock_dir(), name, 0, 4096)
+            buf = got ? got.buffer : null
+        } else {
+            buf = await nav.bin_read(this.Ra_stock_dir(), name)
+        }
+    } catch (er) {
+        return null
+    }
+    if (!buf) return null
+    let bytes = new Uint8Array(buf)
+    let nl = bytes.indexOf(10)
+    if (nl < 0) return null
+    let card = null
+    try {
+        card = JSON.parse(new TextDecoder().decode(bytes.subarray(0, nl)))
+    } catch (er) {
+        return null
+    }
+    return card
 
 // Ra_library — the census-convention home (%Library,pier:<whose> — a KEY, not a nickname): the
 //  same shape Swarm_music_census counts, so a stocked library is a countable shelf with no adapter.
@@ -419,15 +509,18 @@ Ra_unpack(raw):
     }
     return { info: info, bufs: bufs, end: off }
 
-// Ra_stock_standing — the idempotence probe: this track already stocked?  Truth lives ON DISK (a
-//  fresh boot has no particles): the <id>.jam parses AND its body reaches exactly where the header's
-//   sizes[] promise.  fmt:'pkt' is the chunk-particle format bump — an old ogg-segment .jam (or a
-//    wiped | short | interrupted one) reads as not-standing and rebuilds; never trust a stale card.
-//     Returns { info, bufs } (the resurrect needs the chunk bytes, and the file was just read) | null.
-async Ra_stock_standing(nav, id):
+// Ra_stock_standing — the idempotence probe: this content already stocked on THIS Peering's shelf?
+//  Truth lives ON DISK (a fresh boot has no particles): the newest (pub, enid) file parses AND its
+//   body reaches exactly where the header's sizes[] promise.  fmt:'pkt' is the chunk-particle format
+//    bump — a wiped | short | interrupted file reads as not-standing and rebuilds; never trust a
+//     stale card.  Returns { info, bufs, name } (the resurrect needs the chunk bytes, and the file
+//      was just read) | null.
+async Ra_stock_standing(nav, pub, enid):
+    let hit = await this.Ra_stock_find(nav, pub, enid)
+    if (!hit) return null
     let raw = null
     try {
-        raw = await nav.bin_read(this.Ra_stock_dir(), this.Ra_stock_name(id))
+        raw = await nav.bin_read(this.Ra_stock_dir(), hit.name)
     } catch (er) {
         return null
     }
@@ -440,7 +533,7 @@ async Ra_stock_standing(nav, id):
     if (!(+info.total > 0)) return null
     if (un.end > raw.byteLength) return null
     if (un.bufs.length !== +info.segs) return null
-    return { info: info, bufs: un.bufs }
+    return { info: info, bufs: un.bufs, name: hit.name }
 
 // Ra_record_from — mint|refresh the %Record + its %Preview,seq CHUNK PARTICLES from a stock card —
 //  the ONE minting spot whether the card came from a fresh build or a standing .jam.  The head
@@ -461,11 +554,11 @@ Ra_record_from(lib, info, bufs):
     rec.sc.gain = +info.gain
     if (+(info.capped || 0)) rec.sc.capped = 1
     rec.sc.real = 1
-    // origin breadcrumbs on the portable %Record: col (one FSA per Pier ⇒ 1 — the share identity a
-    //  future multi-share world widens without a card migration) + the content hash it re-finds by.
-    //   The full origin path stays in the .jam card (local, and comma-hazardous as a snapped sc key).
+    // origin breadcrumb on the portable %Record: col (one FSA per Pier ⇒ 1 — the share identity a
+    //  future multi-share world widens without a card migration).  The id IS the content hash now,
+    //   so no separate src_hash rides; the full origin path stays in the radiostock card (local, and
+    //    comma-hazardous as a snapped sc key).
     if (info.col != null && info.col !== '') rec.sc.col = +info.col
-    if (info.src_hash) rec.sc.src_hash = info.src_hash
     rec.sc.sr = 48000
     rec.sc.br = +info.br
     rec.sc.seg_secs = +info.seg_secs
@@ -496,30 +589,31 @@ Ra_record_from(lib, info, bufs):
     return rec
 
 // Ra_stock_one — the whole pass for ONE track: standing & fresh? resurrect and stand aside.  Else
-//  read → decode → measure the WHOLE track → bake the gain → ONE continuous opus encode over the
-//   PREVIEW window, cut into ~2s packet-framed chunks → pack the card + those chunks into the one
-//    non-media <id>.jam in a single shot → %Record + %Preview,seq particles.  The gain is whole-track
-//     so the on-demand continuation (Ra_transcode_*, the same card gain) lands uniform across the seam.
-//      Returns {stood:1}|{built:1}|null (unreadable/undecodable — the caller counts it skipped).
+//  read → digest → decode → measure the WHOLE track → bake the gain → ONE continuous opus encode over
+//   the PREVIEW window, cut into ~2s packet-framed chunks → pack the card + those chunks into the one
+//    non-media radiostock file in a single shot → %Record + %Preview,seq particles.  The gain is
+//     whole-track so the on-demand continuation (Ra_transcode_*, the same card gain) lands uniform
+//      across the seam.  Returns {stood:1}|{built:1}|null (unreadable/undecodable — the caller counts
+//       it skipped).
 async Ra_stock_one(w, lib, nav, src_base, path):
-    let id = this.Ra_id(path)
+    let pub = lib.sc.pier
     // — read the source ONCE, up front —
-    // its bytes are BOTH the freshness oracle (a re-render keeps its name→id but not its hash) and the
-    //  raw material the rebuild reuses, so a changed source is never a double read.
+    // its bytes ARE the identity (enid = sha256 of the whole track), so freshness needs no separate
+    //  oracle: same bytes find their standing file by name; changed bytes are a NEW enid, find
+    //   nothing, and rebuild — the raw material is already in hand either way.
     let parts = (src_base + '/' + path).split('/').filter(Boolean)
     let fname = parts.pop()
     let raw = await nav.bin_read(parts.join('/'), fname)
     if (!raw) return null
     let src_size = raw.byteLength
-    let src_hash = this.Ra_bytes_hash(raw)
-    // — standing AND still matching the source AND cut to THIS world's preview window? resurrect from
-    //    disk and skip the whole decode+encode.  The window check keeps Books deterministic against
-    //     each other: a world that shrinks preview_secs must not inherit another world's boundary
-    //      (run-order nondeterminism); a same-shape pass still stands aside, so idempotence holds. —
-    let stand = await this.Ra_stock_standing(nav, id)
-    if (stand && stand.info.src_hash === src_hash && +(stand.info.preview_secs || 0) === this.Ra_preview_secs(w)) {
+    let enid = await this.Ra_enid(raw)
+    // — standing AND cut to the product preview window? resurrect from disk and skip the whole
+    //    decode+encode.  The window check retires cards from before the constant (a 12s-window
+    //     stock must not resurrect a wrong boundary); one rebuild heals them. —
+    let stand = await this.Ra_stock_standing(nav, pub, enid)
+    if (stand && +(stand.info.preview_secs || 0) === this.Ra_preview_secs()) {
         this.Ra_record_from(lib, stand.info, stand.bufs)
-        return { stood: 1, id: id }
+        return { stood: 1, id: enid }
     }
     // — decode ONCE (OfflineAudioContext resamples to 48k, no user gesture needed) —
     let ctx = new OfflineAudioContext(1, 1, 48000)
@@ -546,7 +640,7 @@ async Ra_stock_one(w, lib, nav, src_base, path):
     let SEG = this.Ra_seg_secs() * 48000
     let total = channels[0].length
     let segs = Math.ceil(total / SEG)
-    let P = Math.min(segs, Math.ceil(this.Ra_preview_secs(w) / this.Ra_seg_secs()))
+    let P = Math.min(segs, Math.ceil(this.Ra_preview_secs() / this.Ra_seg_secs()))
     let st = this.Ra_encode_open(nch, this.Ra_bitrate())
     if (!st) return null
     let end = Math.min(total, P * SEG)
@@ -564,11 +658,34 @@ async Ra_stock_one(w, lib, nav, src_base, path):
     // — build the card (Ra_pack fills its sizes[] from the chunks) and write the ONE .jam in a single
     //    shot.  segs = what THIS file holds (the preview); total = the whole track's chunk count —
     let meta = this.Crate_meta_from_path(path)
-    let info = { fmt: 'pkt', id: id, path: path, base: src_base, col: 1, src_size: src_size, src_hash: src_hash, title: meta.title, artist: meta.artist, album: meta.album, seconds: +decoded.duration.toFixed(2), lufs: lufs, gain: gain.db, capped: gain.capped, segs: P, total: segs, preview_secs: this.Ra_preview_secs(w), sr: 48000, br: this.Ra_bitrate(), seg_secs: this.Ra_seg_secs(), nch: nch, preskip: st.preskip, target: this.Ra_target_lufs(w) }
-    await nav.bin_write(this.Ra_stock_dir(), this.Ra_stock_name(id), this.Ra_pack(info, bufs))
+    let info = { fmt: 'pkt', id: enid, path: path, base: src_base, col: 1, src_size: src_size, title: meta.title, artist: meta.artist, album: meta.album, seconds: +decoded.duration.toFixed(2), lufs: lufs, gain: gain.db, capped: gain.capped, segs: P, total: segs, preview_secs: this.Ra_preview_secs(), sr: 48000, br: this.Ra_bitrate(), seg_secs: this.Ra_seg_secs(), nch: nch, preskip: st.preskip, target: this.Ra_target_lufs(w) }
+    await nav.bin_write(this.Ra_stock_dir(), this.Ra_stock_name(Date.now(), pub, enid), this.Ra_pack(info, bufs))
+    // — the write supersedes: older twins of this enid and any stale render of this PATH (same file,
+    //    different bytes, so a different enid) are litter now — sweep this Peering's shelf —
+    await this.Ra_stock_gc(nav, pub, enid, src_base, path)
     // — mint|refresh the %Record from that same card (build path and resurrect path share Ra_record_from) —
     this.Ra_record_from(lib, info, bufs)
-    return { built: 1, id: id }
+    return { built: 1, id: enid }
+
+// Ra_stock_gc — the after-a-build sweep of ONE Peering's shelf: (1) this enid's strictly-older
+//  twins drop (newest wins — that is what the leading timestamp is FOR); (2) any same-pub stock
+//   whose card claims THIS source path under a DIFFERENT enid is a superseded render (the source's
+//    bytes moved on and its enid moved with them) — peek its card line and drop it.  Foreign pubs
+//     are never touched.
+async Ra_stock_gc(nav, pub, enid, base, path):
+    let all = await this.Ra_stock_ls(nav, pub)
+    let newest = 0
+    for (const p of all) {
+        if (p.enid === enid && p.ts > newest) newest = p.ts
+    }
+    for (const p of all) {
+        if (p.enid === enid) {
+            if (p.ts < newest) await this.Ra_stock_drop(nav, p.name)
+            continue
+        }
+        let card = await this.Ra_stock_peek(nav, p.name)
+        if (card && card.path === path && (card.base || '') === (base || '')) await this.Ra_stock_drop(nav, p.name)
+    }
 
 // Ra_stock — the pass over a collection: walk the source, stock the first `take` tracks (take
 //  absent|0 = all), count built|stood|skipped.  lib.sc.stocking rides while the pass runs (a
@@ -576,6 +693,26 @@ async Ra_stock_one(w, lib, nav, src_base, path):
 //    a bare hold; the gen_testsounds lesson).  Serial per track — decode+encode is CPU, and one
 //     track's PCM at a time keeps the memory story flat.
 async Ra_stock(w, lib, nav, src_base, take):
+    // MIGRATION (2026-07-10, the <id>.jam → <ts>-<pub>-<enid>.jamsend_radiostock bump): old .jam
+    //  stocks are invisible to the pub-filtered scan — dead weight forever.  Sweep them once per
+    //   world; delete this block when no share carries .jam stocks anymore.
+    if (!w.c.ra_swept) {
+        w.c.ra_swept = 1
+        let dl = await nav.dir_at(this.Ra_stock_dir())
+        if (dl && typeof dl.deleteEntry === 'function') {
+            await dl.expand()
+            let legacy = []
+            for (const f of dl.files) {
+                if (f.name.endsWith('.jam')) legacy.push(f.name)
+            }
+            for (const nm of legacy) {
+                try {
+                    await dl.deleteEntry(nm)
+                } catch (er) {}
+            }
+            if (legacy.length) await dl.expand()
+        }
+    }
     let paths = await this.Crate_nav_paths(nav, src_base)
     if (take > 0) paths = paths.slice(0, take)
     lib.sc.stocking = paths.length
@@ -598,13 +735,16 @@ async Ra_stock(w, lib, nav, src_base, take):
 //    reason into the snap where it can be read).  Every stage rides a 25s race — a true HANG names
 //     its stage instead of bleeding the ttlilt budget (25s not 8: a background-throttled tab
 //      legitimately stretches a stage to ~30s of timer-clamped wall clock).
-async Ra_proof(nav, id, s):
+async Ra_proof(nav, pub, id, s):
     let race = (p, tag) => Promise.race([p, new Promise((res) => setTimeout(() => res({ hung: tag }), 25000))])
     let t0 = Date.now()
-    let raw = await race(nav.bin_read(this.Ra_stock_dir(), this.Ra_stock_name(id)), 'bin_read')
+    let hit = await race(this.Ra_stock_find(nav, pub, id), 'find')
+    if (hit && hit.hung) return { fail: 'hang find' }
+    if (!hit) return { fail: 'no stock file for ' + pub + ' ' + id }
+    let raw = await race(nav.bin_read(this.Ra_stock_dir(), hit.name), 'bin_read')
     let t1 = Date.now()
     if (raw && raw.hung) return { fail: 'hang bin_read r' + (t1 - t0) }
-    if (!raw || !raw.byteLength) return { fail: 'no bytes ' + this.Ra_stock_dir() + '/' + this.Ra_stock_name(id) }
+    if (!raw || !raw.byteLength) return { fail: 'no bytes ' + this.Ra_stock_dir() + '/' + hit.name }
     let un = this.Ra_unpack(raw)
     if (!un || !un.bufs[s]) return { fail: 'no chunk ' + s }
     let packets = this.Ra_chunk_packets(un.bufs[s])
@@ -631,16 +771,27 @@ async Ra_proof(nav, id, s):
 //        belief passes can watch them).  No source (moved|deleted) ⇒ no stream — the parked wants
 //         simply stall: the old rapiracy economy, now a plain absence of supply.
 
-// Ra_card — the .jam card read once per Record (rec.c.card): the transcode needs the source path|base
-//  (they stay OFF the snapped head — comma-hazardous and local) and the resurrection scalars ride the
-//   head already.
+// Ra_card — the radiostock card read once per Record (rec.c.card): the transcode needs the source
+//  path|base (they stay OFF the snapped head — comma-hazardous and local) and the resurrection
+//   scalars ride the head already.  The file re-finds by (pub, enid) — pub off the Record's own
+//    shelf (rec.c.up, the %Library whose pier key owns the stock); the read filename is remembered
+//     on rec.c.card_file so the dead-source rule can drop exactly the file it loaded.
 async Ra_card(w, rec):
     if (rec.c.card) return rec.c.card
     let nav = w.c.ra_nav || this.Crate_nav()
     if (!nav) return null
+    let pub = rec.c.up?.sc?.pier
+    if (!pub) return null
+    let hit = null
+    try {
+        hit = await this.Ra_stock_find(nav, pub, rec.sc.id)
+    } catch (er) {
+        return null
+    }
+    if (!hit) return null
     let raw = null
     try {
-        raw = await nav.bin_read(this.Ra_stock_dir(), this.Ra_stock_name(rec.sc.id))
+        raw = await nav.bin_read(this.Ra_stock_dir(), hit.name)
     } catch (er) {
         return null
     }
@@ -648,11 +799,14 @@ async Ra_card(w, rec):
     let un = this.Ra_unpack(raw)
     if (!un) return null
     rec.c.card = un.info
+    rec.c.card_file = hit.name
     return un.info
 
 // Ra_source_pcm — decode the SOURCE once per Record (rec.c.pcm) with the CARD's whole-track gain baked
 //  in — the same gain the preview got, so the seam is loudness-uniform by construction.  null when the
-//   source is gone: no source, no stream.
+//   source is gone: no source, no stream — and the DEAD-SOURCE RULE (owner, 2026-07-10): a radiostock
+//    whose source can no longer be found can never make up its %Stream, so it is not stock anymore, it
+//     is litter — drop the file; a later pass re-stocks whatever the collection now holds.
 async Ra_source_pcm(w, rec):
     if (rec.c.pcm) return rec.c.pcm
     let card = await this.Ra_card(w, rec)
@@ -665,9 +819,16 @@ async Ra_source_pcm(w, rec):
     try {
         raw = await nav.bin_read(parts.join('/'), fname)
     } catch (er) {
+        raw = null
+    }
+    if (!raw || !raw.byteLength) {
+        if (rec.c.card_file) {
+            await this.Ra_stock_drop(nav, rec.c.card_file)
+            rec.c.card = null
+            rec.c.card_file = null
+        }
         return null
     }
-    if (!raw || !raw.byteLength) return null
     let ctx = new OfflineAudioContext(1, 1, 48000)
     let decoded = null
     try {
@@ -893,39 +1054,9 @@ async Ra_term_decode_pulled(w, rec, limit):
     let channels = R ? [L, R] : [L]
     return { channels: channels, sr: sr, seconds: +(off / sr).toFixed(3), segs: T, per: per, drops: drops, held: held }
 
-// Ra_term_stash — the terminal CACHES a fully-held preview: pack the pulled chunk particles [0..P)
-//  into the same .jam wire (a resurrection card whose segs == the preview — exactly the shape
-//   Ra_stock makes) under .jamsend/downloads/<friend>/ (§9.1b: received music lands in the friend's
-//    corner, so what came from whom stays legible on plain disk and one friendship wipes with one
-//     rm).  Only a WHOLE preview stashes (a partial card would lie); proven by its own read-back.
-async Ra_term_stash(w, nav, rec, friend):
-    let P = +(rec.sc.preview || 0)
-    if (!(P > 0)) return null
-    let map = this.Ra_chunk_map(rec)
-    let bufs = []
-    let i = 0
-    while (i < P) {
-        if (map[i] == null) return null
-        bufs.push(map[i])
-        i = i + 1
-    }
-    let head = this.Repli_chunk_at(rec, 0)
-    let info = { fmt: 'pkt', id: rec.sc.id, of: friend, title: rec.sc.title, artist: rec.sc.artist, seconds: +(rec.sc.seconds || 0), gain: +(rec.sc.gain || 0), segs: P, total: +(rec.sc.total || P), sr: 48000, br: +(rec.sc.br || this.Ra_bitrate()), seg_secs: +(rec.sc.seg_secs || this.Ra_seg_secs()), nch: +(rec.sc.nch || 1), preskip: +(head?.sc?.preskip || 312) }
-    if (rec.sc.lufs != null) info.lufs = +rec.sc.lufs
-    if (rec.sc.src_hash) info.src_hash = rec.sc.src_hash
-    let dir = '.jamsend/downloads/' + friend
-    await nav.bin_write(dir, this.Ra_stock_name(rec.sc.id), this.Ra_pack(info, bufs))
-    let raw = null
-    try {
-        raw = await nav.bin_read(dir, this.Ra_stock_name(rec.sc.id))
-    } catch (er) {
-        return { fail: 'stash readback' }
-    }
-    let un = raw ? this.Ra_unpack(raw) : null
-    if (!un || un.bufs.length !== P) return { fail: 'stash readback' }
-    let bytes = 0
-    for (const b of un.bufs) bytes = bytes + b.length
-    return { stashed: 1, segs: P, bytes: bytes }
+// NO friend-download cache (rule of 2026-07-10, killing the old Ra_term_stash): pulled chunks are
+//  EPHEMERA — a Peering's radiostock shelf is its OWN stock only, kept for the speedy run-around-
+//   the-collection; actually moving music between Peerings is a later economy.  This is just listening.
 
 // Ra_term_spool — the playhead render: downmix the channels to one mono line (the underrun gate is level,
 //  not stereo image), then PUNCH each chunk index in `drop` to silence — the spool's honest hole where

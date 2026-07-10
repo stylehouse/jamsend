@@ -93,12 +93,12 @@ Voro_report(w, stats):
     let rname = 'Voronoiology'
     let rw = A.o({ w: rname })[0]
     if (!rw) rw = A.i({ w: rname })
-    // the report GRAPHS now (owner un-hid it 2026-07-09) — watching the crush's WORKING as a live
-    //  pane beside the data beats a snap-only trace.  It had ridden %dontGraph as "process noise";
-    //   heal the stamp off both sides so a world minted before the un-hide surfaces too.  (Books
-    //    that snap w:Voronoiology LOSE the dontGraph on their world line — re-record picks it up.)
-    if (rw.sc.dontGraph) delete rw.sc.dontGraph
-    delete rw.c.dontGraph
+    // w:Voronoiology is our processing/debugging C** — it SNAPS (the census rides every Book's
+    //  fixture, so the crush INTENT is auto-checkable) but must NEVER enter the Cyto graph layout;
+    //   it is process-noise, not data.  %dontGraph is that marker, and cytyle_classify skips a
+    //    dontGraph world (and its whole subtree) so this debug pane can't clutter the data graph.
+    //     Enriching the world is what made the old leak visible — so keep the flag ON, don't drop it.
+    rw.sc.dontGraph = 1
     for (const c of rw.o().slice()) c.drop(c)
     w.c.report_beat = (w.c.report_beat || 0) + 1
     // the census — GENERIC now (was Botany-locked: a music world's stations|Artists never made a

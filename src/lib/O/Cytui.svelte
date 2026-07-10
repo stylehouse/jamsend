@@ -49,10 +49,6 @@
     let status          = $state('no graph')
     let grawave_dur     = $state(0.3)
     let last_tick       = -1
-    // the engine we last laid the graph out with — so a real ENGINE switch relayouts
-    //  but an $effect re-establishment (HMR) does not.  Plain let (not $state): out of
-    //   the dependency set, and null-safe either way HMR leaves it (see the effect below).
-    let laid_out_engine: string | null = null
     let seek_warning = $state<string | null>(null)
 
     // Overlay state lives in the //#region overlays block further down
@@ -79,7 +75,6 @@
         if (!waves.length || tick === last_tick) return
         if (!cy) return
         last_tick = tick
-        laid_out_engine ??= layout_name   // prime on the first real wave, so an ENGINE switch is seen
 
         // drain the queue — each wave gets enqueued in order
         gn.sc.waves = []
@@ -100,16 +95,10 @@
             + ` · ⏱${dur}s`
     })
     $effect(() => {
-        if (!layout_name || last_tick < 0 || !cy) return
-        // relayout only on a real ENGINE switch, never on effect re-establishment — a
-        //  bare (un-pinned) relayout lets fcose repack the disconnected components into a
-        //   diagonal, and an $effect re-runs on HMR, so hot-reloading Cytui used to
-        //    reshuffle the whole graph.  laid_out_engine (primed on the first wave)
-        //     remembers the engine; null (a fresh / HMR-reset state) just re-primes and
-        //      never relayouts.
-        if (laid_out_engine !== null && layout_name !== laid_out_engine)
-            relayout(400)   // re-run current graph through the new engine
-        laid_out_engine = layout_name
+        if (layout_name && last_tick >= 0) {
+            // re-run current graph through the new engine
+            if (cy) relayout(400)
+        }
     })
 
     // ── NON_ANIM ──────────────────────────────────────────────────────────────
@@ -328,36 +317,6 @@
     // stuff-overlays mount a LIVE Stuffing component into the node's overlay div.
     //  track the mounted instance so we can unmount it when the node leaves the graph.
     let stuff_mounts: Map<string, { app: any, ro?: ResizeObserver }> = new Map()
-
-    // ── render telemetry: the over-time story of model→cells ───────────────────────
-    //  Owner: "an over-time (since the last state-shaking-out-Cyto-layout()) data dump of
-    //   what's processing the graph into cells and how all that's going — a less minimal
-    //    w:Voronoiology."  The catch: this is RENDER-side, so it can NEVER be that snapped
-    //     world (metaphysics #2 — nothing render-side snaps; pixels don't round-trip a
-    //      fixture).  So it's the Cyto TWIN OF REACTAP: a bounded ring of what the pipeline
-    //       did, surfaced over the runner_ask rails (op:'why'/'shot'), never a C node.
-    //        Mirrored onto top_House.c.cy_render (a live object → .c only) on each push.
-    type RLog = { t: number, ev: string, [k: string]: any }
-    let render_log: RLog[] = []
-    let last_settle_t = 0            // performance.now() of the last layoutstop — the "since last shake-out" mark
-    const RENDER_LOG_MAX = 48
-    function vlog(ev: string, extra: Record<string, any> = {}) {
-        render_log.push({ t: Math.round(performance.now()), ev, ...extra })
-        while (render_log.length > RENDER_LOG_MAX) render_log.shift()
-        try { (H.top_House().c as any).cy_render = render_snapshot() } catch { /* best-effort mirror */ }
-    }
-    function render_snapshot() {
-        const now = performance.now()
-        const base = last_settle_t ? Math.round(last_settle_t) : 0
-        return {
-            voronoi_on, saw_stuffy, voronoi_pref,       // the gate + its inputs
-            seeds: stuff_mounts.size, cells: vcells.length, nodes: cy ? cy.nodes().length : 0,
-            since_settle_ms: last_settle_t ? Math.round(now - last_settle_t) : null,
-            diag_cures,
-            // each event's dt = ms since the last layout settle (negative = before it)
-            log: render_log.map(r => ({ ...r, dt: base ? r.t - base : null })),
-        }
-    }
     // Background color per node id — used when updating so we don't
     // re-read the node style on every tick
     let overlay_bgs: Map<string, string> = new Map()
@@ -935,9 +894,9 @@
     type MicroChip = { text: string, n: number, member?: TheC, sub?: number, px?: number, py?: number }
     type MicroRow  = { text: string, kind: string, x: number, y: number, w: number, h: number, fs: number,
                        color: string | null, tag?: string, sub?: number,
-                       chips?: MicroChip[], member?: TheC, dip?: boolean, seg?: string, se?: number }
+                       chips?: MicroChip[], member?: TheC, dip?: boolean }
     type VtuffDesc = { text: string, kind: string, color?: string | null, tag?: string, sub?: number,
-                       chips?: MicroChip[], member?: TheC, dip?: boolean, seg?: string, se?: number }
+                       chips?: MicroChip[], member?: TheC, dip?: boolean }
     let vmicro       = $state<{ id: string, x: number, y: number, w: number, h: number, clip: string, rows: MicroRow[] }[]>([])
     let micro_on_ids = new Set<string>()   // hysteresis memory: which cells are swapped in
     let vtuffing_pref = $state<boolean | null>(null)
@@ -950,18 +909,6 @@
             for (const id of micro_on_ids) { const mel = overlays.get(id); if (mel) mel.style.opacity = '' }
             micro_on_ids = new Set(); vmicro = []
         } else voronoi_soon()
-    }
-
-    // 🎋 bamboo (Voro.g Vtuff_bamboo): a workspace pref, default OFF — the flat rows.  ON grows the
-    //  jointed %Vseg stalk + live Se emphasis.  Voro.g reads the SAME stash key (this.stashed.Cyto_bamboo),
-    //   so flipping here is the whole switch; the vtuffing cache re-keys on the flag and rebuilds.
-    let bamboo_pref = $state<boolean | null>(null)
-    const bamboo_on = $derived(bamboo_pref ?? false)
-    function toggle_bamboo() {
-        bamboo_pref = !bamboo_on
-        const stb = (H as any).stashed
-        if (stb) stb.Cyto_bamboo = bamboo_pref
-        voronoi_soon()
     }
 
     // one short identity line — the TS twin of Voro.g's Vtuff_ident, for the fallback
@@ -983,7 +930,7 @@
             const root = build.call(H, src)
             if (!root) return []
             const out: VtuffDesc[] = []
-            const row_desc = (r: any, seg?: string, se?: number): VtuffDesc => {
+            for (const r of root.o() as any[]) {
                 const kind = (r.sc.row as string) ?? 'fact'
                 const d: VtuffDesc = { text: String(r.sc.text ?? ''), kind }
                 if (r.sc.tag) d.tag = String(r.sc.tag)
@@ -993,23 +940,7 @@
                 if (kind === 'dip') d.dip = true
                 const bits = r.o() as any[]
                 if (bits.length) d.chips = bits.map((b: any) => ({ text: String(b.sc.text ?? ''), n: (b.sc.n as number) ?? 0, member: b.c.member, sub: b.sc.sub as number | undefined }))
-                if (seg) d.seg = seg
-                if (se != null) d.se = se
-                return d
-            }
-            // 🎋 bamboo (Voro.g Vtuff_bamboo): the rows are wrapped in %Vseg JOINTS.  Flatten them
-            //  in tree order — a Se-blind fit loses nothing (same rows, same order as the flat
-            //   tree) — while carrying the segment name + live c.se emphasis onto each row so a
-            //    later fit can draw the joints and swell|quiet a band.  A flat (non-bamboo) tree
-            //     has no %Vseg children, so this degrades to the plain per-row path.
-            for (const r of root.o() as any[]) {
-                if (Object.keys(r.sc ?? {})[0] === 'Vseg') {
-                    const seg = String(r.sc.seg ?? '')
-                    const se = (r.c?.se ?? 1) as number
-                    for (const rr of r.o() as any[]) out.push(row_desc(rr, seg, se))
-                } else {
-                    out.push(row_desc(r))
-                }
+                out.push(d)
             }
             return out
         }
@@ -1299,66 +1230,54 @@
         voronoi_timer = setTimeout(() => { voronoi_timer = null; morph_voronoi() }, 80)
     }
 
-    // ── the come-and-go snake (Voro_vtuffing.md next-moves #10) ──────────────────
-    //  Free (edgeless) leaves — the "randomer simpler C": witness %see claims and any
-    //   other standalone leaf — grid-jitter under fcose (mutual repulsion is the only
-    //    force on them, so they shuffle in a twitchy lattice and the cells riding them
-    //     never sit still).  Worse, a LATE edgeless add arrives as a fresh DISCONNECTED
-    //      component and fcose's packer throws away the grown rosette to re-pack the whole
-    //       board into a diagonal.
-    //  The cure (was a per-parent flower of radial star-hubs; generalised now): thread
-    //   EVERY loose leaf onto ONE shared snake — a chain of MEANINGLESS (layout-only,
-    //    never-snapped) edges, ordered so same-parent leaves sit adjacent (fewest cross-
-    //     wall seams).  Each leaf then always has a neighbour, so a newcomer splices onto
-    //      the chain next to an ALREADY-PINNED member (apply()'s fresh_ids pins) and settles
-    //       LOCALLY instead of re-tumbling everything — "come+go with something else for
-    //        stability."  A departure splices out the same way.
-    //  Pure cytoscape scaffold: never in C**, never snapped, invisible (the `.nucleus-edge`
-    //   style), and skipped by both the tessellator (paint_final's e.data('nucleus') guard)
-    //    and the rack — exactly as the flower spokes were.
-    //  Open knobs, decide with eyes on the first build: (a) the snake stands alone in a
-    //   low-density corner (fcose packs a small component there for free) vs tethers into
-    //    the main cluster — add a hub head (the legacy `.nucleus` node style is still here)
-    //     wired once to the graph; (b) if the cross-wall chain seams visibly drag compounds
-    //      together, chain per-parent instead of one shared snake (re-group by pid).
-    const SNAKE_MIN = 2  // a chain needs a neighbour to splice to, so a truly lone leaf (count 1)
-                         //  just floats — genuinely not a jitter case, and the fresh_ids pins keep
-                         //   it from re-packing the board.  "no threshold" (owner) means we don't
-                         //    gate a PAIR off: two %see thread fine.  (Was NUC_MIN — a star seated
-                         //     even a single child; a snake can't.)
-    const is_nucleus = (node: any) => !!node.data('nucleus')   // legacy hub guard; no hubs today,
-                                                               //  kept for the tether knob (a)
+    // ── flower-wireframe nuclei ──────────────────────────────────────────────
+    //  orderless siblings (no edges among them) grid-jitter under fcose: nothing
+    //  but mutual repulsion holds them, so they shuffle in a twitchy lattice and
+    //  the cells riding them never sit still.  The cure is a radial singularity —
+    //  a hidden hub per parent that every free child star-edges to, so the sim
+    //  seats them as petals around a centre (a flower wireframe that voronois into
+    //  a clean rosette).  Pure cytoscape scaffold: never in C**, never snapped,
+    //  invisible, and skipped by both the tessellator and the rack.
+    const NUC_MIN = 1   // no threshold (owner: "it's okay if there's just one of them") — even a
+                        //  lone edgeless child gets seated on a hub instead of floating.  The full
+                        //   come-and-go snake backbone (Voro_vtuffing.md next-moves #10) is the plan;
+                        //    this is its threshold half.
+    const is_nucleus = (node: any) => !!node.data('nucleus')
 
-    function install_snake() {
+    function install_nuclei() {
         if (!cy) return
         cy.elements('.nucleus, .nucleus-edge').remove()   // wipe last generation
         if (!voronoi_on) return
-        // gather truly free (edgeless) real nodes — anything already wired keeps its own
-        //  structure and stays off the snake
-        const loose: any[] = []
+        // gather truly free (edgeless) real nodes, grouped by their parent — those
+        //  are the orderless ones; anything already wired keeps its own structure
+        const groups = new Map<string, any[]>()
         cy.nodes().forEach((node: any) => {
             if (node.isParent() || is_nucleus(node) || node.degree(false) > 0) return
-            loose.push(node)
+            const pid = node.parent().id() || ''
+            if (!groups.has(pid)) groups.set(pid, [])
+            groups.get(pid)!.push(node)
         })
-        if (loose.length < SNAKE_MIN) return
-        // stable order: same-parent leaves adjacent (minimise cross-wall seams), then by id
-        //  so an existing leaf keeps the same neighbour wave-to-wave — that stability is what
-        //   lets the fresh_ids pins localise a splice.
-        loose.sort((a: any, b: any) => {
-            const pa = a.parent().id() || '', pb = b.parent().id() || ''
-            return pa === pb ? a.id().localeCompare(b.id()) : pa.localeCompare(pb)
-        })
-        // meaningless edge length grows with the endpoints' boxes so big Stuffings don't cram
-        //  (leaves keep the tight 70), matching the old petal radius
-        const box = (n: any) => {
-            const child = overlays.get(n.id())?.firstElementChild as HTMLElement | null
-            return child ? 55 + 0.5 * Math.hypot(child.offsetWidth, child.offsetHeight) : 70
-        }
-        for (let i = 0; i + 1 < loose.length; i++) {
-            const a = loose[i], b = loose[i + 1]
-            cy.add({ group: 'edges', classes: 'nucleus-edge',
-                data: { id: `snake:${a.id()}>${b.id()}`, source: a.id(), target: b.id(),
-                        ideal_length: Math.round(Math.max(box(a), box(b))), nucleus: 1 } })
+        for (const [pid, kids] of groups) {
+            if (kids.length < NUC_MIN) continue
+            const nid = `nuc:${pid || '__root__'}`
+            const data: any = { id: nid, nucleus: 1, label: '' }
+            if (pid) data.parent = pid
+            const hub = cy.add({ group: 'nodes', classes: 'nucleus', data })
+            // seat the hub at the group's centroid so the petals fold in, not lurch
+            let cx = 0, cyy = 0
+            for (const k of kids) { const p = k.position(); cx += p.x; cyy += p.y }
+            hub.position({ x: cx / kids.length, y: cyy / kids.length })
+            for (const k of kids) {
+                // petal radius grows with the chunk's own box so big Stuffings sit
+                //  clear of the hub instead of cramming (leaves keep the tight 70)
+                const child = overlays.get(k.id())?.firstElementChild as HTMLElement | null
+                const r = child
+                    ? 55 + 0.5 * Math.hypot(child.offsetWidth, child.offsetHeight)
+                    : 70
+                cy.add({ group: 'edges', classes: 'nucleus-edge',
+                    data: { id: `${nid}>${k.id()}`, source: nid, target: k.id(),
+                            ideal_length: Math.round(r), nucleus: 1 } })
+            }
         }
     }
 
@@ -1378,7 +1297,7 @@
             crush_imposed = false
             H.i_elvisto('Cyto/Cyto', 'Cyto_crush', {})   // absence = off (snapped-boolean rule)
         }
-        install_snake()               // thread (on) or dissolve (off) the loose-leaf snake
+        install_nuclei()              // grow (on) or dissolve (off) the flower hubs
         relayout(300)                 // let the sim re-settle around / without them
         proper_sync()                 // properCellable's default follows the mode
         if (voronoi_pref) { reposition_overlays(); morph_voronoi() }
@@ -1984,14 +1903,10 @@
         if (dragging) return   // live-drag owns the repaint; don't fight it
         const L = voronoi_layout()
         if (!L) {
-            // the conversion FAILED this call — why (the F1 diagnosis, live): armed?  enough seeds?
-            vlog('morph✗', { von: voronoi_on ? 1 : 0, seeds: stuff_mounts.size,
-                             need: voronoi_on ? (stuff_mounts.size < 2 ? '<2 seeds' : 'layout null') : 'not armed' })
             if (vcells.length || vtips.length) clear_voronoi()
             settle_overlay_show()
             return
         }
-        vlog('morph', { seeds: stuff_mounts.size, cells: L.cells.length })
         vregion_w = L.CW
 
         const targets = new Map<string, {x:number,y:number}[]>()
@@ -2087,16 +2002,6 @@
         rush_animations()
         animations = _C({ animations: 1, started_at: performance.now() / 1000 })
         const ms = Math.round(dur * 1000)
-        // F1 (render-gate): remember the arm state BEFORE this wave — if the wave flips it
-        //  (first crushed chunk) or seeds the tessellator past its minimum, step 7 re-fires
-        //   the morph the way the manual ◈ toggle does (the off+on that "fixed" it by hand).
-        const was_voro_on = voronoi_on
-        const prev_seeds  = stuff_mounts.size
-        // telemetry: the wave's shape — a `stuff:0` wave every beat IS an empty world
-        //  (the seed never fired: the F6/VoroScape-is-just-self tell, now legible here)
-        vlog('wave', { up: wave.o({ upsert: 1 }).length, rm: wave.o({ remove: 1 }).length,
-                       stuff: (wave.o({ upsert: 1 }) as TheC[]).filter(n => n.sc.overlay_kind === 'stuff').length,
-                       abs: wave.sc.absolute ? 1 : 0, von: voronoi_on ? 1 : 0, seeds: prev_seeds })
         let length = wave.o({ upsert: 1 }).length
         // node ids BORN this wave — so a purely-additive wave can PIN the already-settled
         //  graph and let fcose place only the newcomers (see the layout step below): a late
@@ -2192,7 +2097,7 @@
             if (overlay_kind === 'stuff') {
                 // c.stuffy exists ONLY under the %crushCyto-gated crusher — a crushed
                 //  world auto-arms the voronoi render (voronoi_pref still overrides)
-                if ((src as any)?.c?.stuffy) { if (!saw_stuffy) vlog('armed', { id }); saw_stuffy = true }
+                if ((src as any)?.c?.stuffy) saw_stuffy = true
                 proper_mounted.delete(id)    // wave-owned now; toggling proper off must not strip it
                 create_stuff_overlay(id, src, overlay_bg, !!nd.sc.overlay_self)
                 // a mounted gang rep whose gang GREW: rebuild the mirror in place
@@ -2283,7 +2188,7 @@
         if (wave.o({ upsert:      1 }).length
          || wave.o({ remove:      1 }).length
          || wave.o({ edge_upsert: 1 }).length) {
-            install_snake()    // (re)thread the loose leaves so a newcomer splices in local
+            install_nuclei()   // (re)seat the flower hubs so the sim settles radial
             // PURELY-ADDITIVE wave (nothing removed) with a grown graph already on screen:
             //  pin the settled nodes so the newcomers tuck in without re-tumbling everything.
             //   The first wave (flora born) is all-fresh → nothing to pin → full free layout.
@@ -2300,19 +2205,6 @@
             // no layout needed — bring overlays back now instead of waiting
             // for a layoutstop that will never fire
             show_overlays_soon()
-        }
-
-        // F1 — the auto-arm's missing morph.  When a wave ARMS the voronoi (saw_stuffy flipped
-        //  during step 3), first hands voronoi_layout its ≥2 seeds, or REBUILT the whole board
-        //   (an absolute wave — a seek — remounts every overlay: the F4 path), NOTHING used to
-        //    re-fire the morph — the render gate stayed shut and the cells sat undrawn until a
-        //     manual ◈ off+on ran reposition+morph (the tell this whole fault hung on).  Fire that
-        //      same sequence here; voronoi_soon debounces into the layout settle, so it draws over
-        //       the fresh positions, not the stale ones.
-        if (voronoi_on && (!was_voro_on || wave.sc.absolute || (prev_seeds < 2 && stuff_mounts.size >= 2))) {
-            vlog('remorph', { why: !was_voro_on ? 'armed' : wave.sc.absolute ? 'absolute' : 'seeds≥2', seeds: stuff_mounts.size })
-            reposition_overlays()
-            voronoi_soon()
         }
     }
     let constraints = {}
@@ -2335,58 +2227,52 @@
     //   - compound pre-sizing: emit phantom children at target parent before migration
     //     so fcose sees correct compound bbox from the start
 
-    // ── wave cadence: animate every wave, and WAIT for the voronoi morph ──────────
-    //  A batch of waves (Lang emits them faster than we read — Cyto.svelte queues them)
-    //   used to be COLLAPSED: the first wave animated, the rest were yoinked to their
-    //    end state at dur=0.  Manual ←/→ stepping sends one wave per fire, never batched,
-    //     so it always looked great — the tell that the batch-collapse, not the animation
-    //      itself, was the fault.
-    //  Now each wave plays in full and the next one WAITS for it: animCyto (the wave's
-    //   cyto layout) runs, then animVoro (the voronoi morph) takes the stage, and only
-    //    after the morph has had time to reach its settled paint does the next wave run.
-    //     The old advance timer paid for the layout (dur) ONLY, so the next wave's
-    //      hide_overlays_now cut the morph short and no coherent division ever played.
+    const YOINK_MS = 50
+
     let wave_queue: TheC[] = []
     let anim_busy   = false
-    // flood safety-valve: never let the animation lag reality by more than this — beyond
-    //  it, fast-forward the oldest excess at dur=0 (a normal play-through stays well under
-    //   and animates every wave).
-    const MAX_ANIM_BACKLOG = 24
-    const BURST_DUR = 0.16    // brisk per-wave layout while a batch drains (vs the rest dur)
+    let anim_end_at = 0
 
     function enqueue(wave: TheC) {
-        wave_queue.push(wave)
-        while (wave_queue.length > MAX_ANIM_BACKLOG) apply(wave_queue.shift()!, 0)
-        if (!anim_busy) process_queue()
+        const now = Date.now()
+        if (anim_busy && now < anim_end_at - YOINK_MS) {
+            // a wave is mid-flight — yoink all elements to their end state
+            cy.elements().stop(true, true)  // jumps to animation end-values
+            lay?.stop()
+            // drain anything already queued at dur=0 so state is consistent
+            while (wave_queue.length) apply(wave_queue.shift()!, 0)
+            anim_busy = false
+            // small pause so cytoscape commits the jumped positions
+            wave_queue.push(wave)
+            setTimeout(process_queue, YOINK_MS)
+        } else {
+            wave_queue.push(wave)
+            if (!anim_busy) process_queue()
+        }
     }
 
     function process_queue() {
         if (!wave_queue.length) { anim_busy = false; return }
         const wave = wave_queue.shift()!
-        const dur = wave_queue.length ? BURST_DUR : ((wave.sc.duration as number) ?? 0.3)
-        anim_busy = true
+        // if more waves are already waiting, drain at 25fps
+        const dur = wave_queue.length ? 0.04 : ((wave.sc.duration as number) ?? 0.3)
+        anim_busy   = true
+        anim_end_at = Date.now() + dur * 1000
         apply(wave, dur)
-        // waitVoro: pay for the WHOLE animation before the next wave — the layout tween
-        //  (dur), then the overlay-settle debounce + the voronoi morph — so animVoro plays
-        //   out instead of being cut short.  voronoi off → just the layout + a hair.
-        const pad = dur * 1000 + (voronoi_on ? OVERLAY_QUIET_MS + MORPH_MS + 80 : 40)
-        setTimeout(process_queue, pad)
+        setTimeout(process_queue, dur * 1000 + 20)
     }
 
 
     // ── layout ────────────────────────────────────────────────────────────────
 
     let lay: any
-    function relayout(animMs = 300, pins: any[] | null = null, randomize = false) {
+    function relayout(animMs = 300, pins: any[] | null = null) {
         lay?.stop()
         const common = {
             animate:                     animMs > 0,
             animationDuration:           animMs,
             nodeDimensionsIncludeLabels: true,
-            // randomize only on a diag_check escalation — a free re-lay that fell straight
-            //  back onto the balanced line needs its symmetry broken, everyone else keeps
-            //   their grown positions
-            randomize,
+            randomize:                   false,
         }
         // fixedNodeConstraint pins already-settled nodes (apply() passes them on a purely-
         //  additive wave) so a late node-add can't re-tumble the grown layout; a manual ⟳
@@ -2398,10 +2284,10 @@
                 idealEdgeLength: (e: any) => e.data('ideal_length') ?? 80,
                 edgeElasticity:  0.45, nodeRepulsion: () => 4000,
                 ...constraints, ...pinCons }
-            // airy field: with the snake on, the loose leaves are threaded (not free-
-            //  repelling) but the cells still want room — so we push out with stronger
-            //   repulsion, wider separation and relaxed gravity, and the board breathes
-            //    into an airy field you can zoom into instead of a crowded knot.
+            // radial smudge: with the flower on, the nuclei pull orderless nodes
+            //  INTO a central hub — so we push back with stronger repulsion, wider
+            //   separation and relaxed gravity, and the rosette breathes outward
+            //    into an airy centre you can zoom into instead of a crowded knot.
             if (voronoi_on) {
                 opts.nodeRepulsion  = () => 9000
                 opts.nodeSeparation = 60
@@ -2431,61 +2317,6 @@
         try { lay.run() } catch (e) { console.warn('layout error', e) }
     }
 
-    // ── the diagonal satan: detect + layout() away ────────────────────────────────
-    //  fcose sometimes settles the WHOLE board onto one line — a degenerate equilibrium
-    //   ("it seems perfectly balanced": every force cancels ALONG the line, so nothing
-    //    ever pushes a node off it).  The fresh_ids pins PREVENT the classic trigger
-    //     (a late disconnected add re-packing the board) but a collapse that forms
-    //      anyway used to just sit there until a manual ⟳.  The owner's observation IS
-    //       the cure: a free relayout doesn't disrupt a healthy board but breaks the
-    //        balanced line — so detect it and run one.
-    //  Detection: principal-axis spread ratio of the real nodes' positions (2×2
-    //   covariance eigenvalues).  √(minor/major) ~0 = a line, ~1 = a disc; a healthy
-    //    rosette sits well above 0.25, a satan well below 0.1.
-    let diag_cures  = 0     // total auto-cures this mount — stashed on top_House.c so op:'shot' can report it
-    let diag_streak = 0     // consecutive still-diagonal settles — a cure that doesn't take escalates, then rests
-    function diagonal_ratio(): number | null {
-        if (!cy) return null
-        const pts: {x:number,y:number}[] = []
-        cy.nodes().forEach((n: any) => {
-            if (n.isParent() || is_nucleus(n)) return
-            pts.push(n.position())
-        })
-        if (pts.length < 6) return null   // a tiny board lines up legitimately
-        let mx = 0, my = 0
-        for (const p of pts) { mx += p.x; my += p.y }
-        mx /= pts.length; my /= pts.length
-        let xx = 0, yy = 0, xy = 0
-        for (const p of pts) { const dx = p.x - mx, dy = p.y - my; xx += dx*dx; yy += dy*dy; xy += dx*dy }
-        const tr = xx + yy, det = xx*yy - xy*xy
-        const disc  = Math.sqrt(Math.max(0, tr*tr/4 - det))
-        const major = tr/2 + disc
-        if (major <= 0) return null
-        return Math.sqrt(Math.max(0, tr/2 - disc) / major)
-    }
-    let diag_timer: ReturnType<typeof setTimeout> | null = null
-    function diag_check_soon() {
-        if (diag_timer) clearTimeout(diag_timer)
-        // past the wave queue's settle pad, so a draining batch is judged at rest, not mid-tween
-        diag_timer = setTimeout(diag_check, 1200)
-    }
-    function diag_check() {
-        diag_timer = null
-        if (!cy || dragging || anim_busy || wave_queue.length) { diag_check_soon(); return }
-        const r = diagonal_ratio()
-        if (r === null) return
-        if (r > 0.1) { diag_streak = 0; return }   // healthy (or healed) — re-arm the escalation
-        diag_streak++
-        if (diag_streak > 3) return   // three cures didn't take — stop thrashing; next wave re-arms via the streak reset
-        diag_cures++
-        try { (H.top_House().c as any).cy_diag_cures = diag_cures } catch { /* report is best-effort */ }
-        vlog('diag_cure', { ratio: +r.toFixed(3), streak: diag_streak, randomize: diag_streak > 1 ? 1 : 0 })
-        console.warn(`♒ diagonal satan (spread ratio ${r.toFixed(3)}, n=${cy.nodes().length}) — free relayout, cure #${diag_cures}${diag_streak > 1 ? ` (streak ${diag_streak}: randomize)` : ''}`)
-        // first cure = the owner's manual ⟳ (free, unpinned); a repeat means the free re-lay
-        //  fell straight back into the same balanced line — toss positions to break the symmetry.
-        relayout(400, null, diag_streak > 1)
-    }
-
     // ── cytoscape init ────────────────────────────────────────────────────────
     onMount(() => {
         const stashed_v = (H as any).stashed?.Cyto_voronoi
@@ -2498,8 +2329,6 @@
         if (typeof stashed_b === 'boolean') brush_pref = stashed_b
         const stashed_t = (H as any).stashed?.Cyto_vtuffing
         if (typeof stashed_t === 'boolean') vtuffing_pref = stashed_t
-        const stashed_bam = (H as any).stashed?.Cyto_bamboo
-        if (typeof stashed_bam === 'boolean') bamboo_pref = stashed_bam
         const stashed_r = (H as any).stashed?.Cyto_radio
         if (stashed_r === true) { radio_pref = true; radio_timer = setInterval(radio_tick, RADIO_DWELL) }
         const stashed_tu = (H as any).stashed?.Cyto_tunnel
@@ -2563,20 +2392,7 @@
         // touching the dial: any motion that isn't the radio's own glide holds the tuner off
         cy.on('grab pan zoom', () => { if (!radio_gliding) radio_hold_until = Date.now() + 15000 })
         cy.on('layoutstart', () => start_live_layout())
-        cy.on('layoutstop',  () => {
-            stop_live_layout(); show_overlays_soon()
-            // the "state-shaking-out layout()" the owner named as the telemetry epoch: stamp it,
-            //  and log the settle geometry (ratio ~0 = the diagonal satan; the morph fires next,
-            //   via show_overlays_soon's OVERLAY_QUIET_MS debounce → its own 'morph' entry)
-            last_settle_t = performance.now()
-            vlog('settle', { ratio: +(diagonal_ratio() ?? -1).toFixed(3), nodes: cy.nodes().length, seeds: stuff_mounts.size })
-            diag_check_soon()
-        })
-        // stash the live cytoscape handle where a GHOST can reach it — scripts/runner_shot.mjs asks
-        //  Lies_runner_ask_recv (op:'shot') for cy.png() so a headless caller can finally SEE the
-        //   rendered power-diagram: the one fault class no snap carries (pixels never round-trip a
-        //    fixture).  top_House.c.cy is per-tab + never snapped (a live object belongs only in .c).
-        try { (H.top_House().c as any).cy = cy } catch { /* no House root yet — a shot just reports none */ }
+        cy.on('layoutstop',  () => { stop_live_layout(); show_overlays_soon() })
         // ── click-to-identify ─────────────────────────────────────────────────
         // Tap any node or edge to log its id / parent / data / style. Useful for
         // finding mystery greys (which are usually n particles falling through
@@ -2621,7 +2437,6 @@
             lay?.stop()
             if (radio_timer) { clearInterval(radio_timer); radio_timer = null }
             clear_all_overlays()
-            try { const top = H.top_House?.(); if (top && (top.c as any).cy === cy) delete (top.c as any).cy } catch { /* nothing to unstash */ }
             cy?.destroy()
         }
     })
@@ -2645,8 +2460,6 @@
             title="gravity brush — wheel pinches|spreads the locale under the cursor (Ctrl+wheel still zooms)">🌀</button>
         <button class="v-toggle" class:on={vtuffing_on} onclick={toggle_vtuffing}
             title="vtuffing — a big-enough pane swaps its molded Stuffing for member rows fitted to the cell (off = Stuffings always)">▤</button>
-        <button class="v-toggle" class:on={bamboo_on} onclick={toggle_bamboo}
-            title="🎋 bamboo — a vtuffing pane grows a jointed stalk (crown·cane·leaf·shoot) that reacts to the radio (Se); off = flat rows">🎋</button>
         <button class="v-toggle" class:on={radio_on} onclick={toggle_radio}
             title="radio — the graph plays you: a tuner drifts attention pane to pane and opens each a little (touch anything to hold it off)">📻</button>
         <button class="v-toggle" class:on={tunnel_pref ?? false} onclick={toggle_tunnel}

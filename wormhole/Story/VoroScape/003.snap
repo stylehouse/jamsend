@@ -19,4 +19,11 @@ Snap:H
           Share,track:Echo
         see:a friend arrives and shares — every share is an edge onto a real track — the shelf becomes a graph
       w:Voronoiology,dontGraph
-        Voro,beat=3,level:L0,visible=8,gangs=0,folded:8,count:4
+        Voro,beat=3,level:L0,visible=8,cells:4,gangs=0,folded:8,count:4
+        cell:Artist,kind:pane,n:2
+        cell:Artist,kind:pane,n:2
+        cell:Artist,kind:pane,n:1
+        cell:Peer,kind:pane,n:3
+        bare:self,n:2
+        bare:req,n:1
+        bare:see,n:1

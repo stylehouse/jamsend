@@ -65,57 +65,57 @@ story:LeafFarm
     waitCyto
     useCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.186
-      sample=0.208,at=1782453888
-      sample=0.207,at=1782454079
-      sample=0.22,at=1782456796
-      sample=0.29,at=1782457020
-      sample=0.136,at=1783108570
-      sample=0.187,at=1783399746
+    TimeTotal:beliefs,avg=0.127
       sample=0.165,at=1783663066
       sample=0.196,at=1783663621
       sample=0.091,at=1783664169
       sample=0.163,at=1783669816
-    TimeTotal:step,avg=0.006
-      sample=0.007,at=1782453888
-      sample=0.007,at=1782454079
-      sample=0.007,at=1782456796
-      sample=0.01,at=1782457020
-      sample=0.005,at=1783108570
-      sample=0.006,at=1783399746
+      sample=0.12,at=1783675927
+      sample=0.095,at=1783676000
+      sample=0.095,at=1783676027
+      sample=0.118,at=1783676074
+      sample=0.118,at=1783676436
+      sample=0.109,at=1783676526
+    TimeTotal:step,avg=0.004
       sample=0.005,at=1783663066
       sample=0.007,at=1783663621
       sample=0.003,at=1783664169
       sample=0.005,at=1783669816
+      sample=0.004,at=1783675927
+      sample=0.003,at=1783676000
+      sample=0.003,at=1783676027
+      sample=0.004,at=1783676074
+      sample=0.004,at=1783676436
+      sample=0.004,at=1783676526
   step,dige:c60b3b661f9d8fe0
   step=2,dige:06026fe0701b3be5
   step=3,dige:9e3dab20bb8852b8
   step=4,dige:7e40546f3da3c02e
-  step=5,dige:16c441d0f436b17d
-  step=6,dige:f0a93d2fa2b72459
-  step=7,dige:5e67e377f7e36c61
-  step=8,dige:d9be1f3a9031b27c
-  step=9,dige:2f1972915ebf7633
-  step=10,dige:8b33cb9d2d0097e0
-  step=11,dige:bce71527e37901dc
-  step=12,dige:93990ccb936ca26a
-  step=13,dige:9b59ae7f58cf6f5d
-  step=14,dige:1383d787f9724b63
-  step=15,dige:59a18db2c8617429
-  step=16,dige:04031d5725395ebc
-  step=17,dige:50f527b4e0f467af
-  step=18,dige:94e8e9cc5b4aba43
-  step=19,dige:11e8b2fe0abc2254
+  step=5,dige:53ba38ff6033a4a4
+  step=6,dige:65242cd1a49a8dee
+  step=7,dige:59dcdc1667720a22
+  step=8,dige:c34bd605fba6d1ac
+  step=9,dige:82b5868bb4bbdeab
+  step=10,dige:5d2ace6346e7db42
+  step=11,dige:aff5202307f40c7c
+  step=12,dige:874412ce647e3865
+  step=13,dige:4f91848cdaa4ff7a
+  step=14,dige:7a8e5bc02c43d2f5
+  step=15,dige:b6f2ce716db27772
+  step=16,dige:e60c29aead96d9fc
+  step=17,dige:41dd82e68b48fc6b
+  step=18,dige:ee8e3e6953369c66
+  step=19,dige:135386ed39d063aa
     note,that:leaf_2_0 is about to get harvested
-  step=20,dige:4093212123af78df
+  step=20,dige:83f0482496d83e04
     note,that:leaf_2_0 emerges again
-  step=21,dige:d275f3fbccc58301
-  step=22,dige:5c5a2e903aa6c7de
-  step=23,dige:c0ff80e1415a41e0
-  step=24,dige:461ddcbf4dbed4f2
-  step=25,dige:72535c9d14251577
-  step=26,dige:97b6d3336ac909ed
-  step=27,dige:8d9f23cac16fb122
-  step=28,dige:921438bbfdce5a9b
-  step=29,dige:9403f7d29c1b1aac
-  step=30,dige:13bf63d90a63ba44
+  step=21,dige:5b83521ff9e4082d
+  step=22,dige:a56c076ccb0a2d8f
+  step=23,dige:39e5695d71851be8
+  step=24,dige:c0c8ac71083c23ec
+  step=25,dige:2e4f826c475bc61a
+  step=26,dige:d5189e18078dad9b
+  step=27,dige:bc02a220b10bce0e
+  step=28,dige:00bbd92c8fe2e73f
+  step=29,dige:028eb4c6628a653d
+  step=30,dige:2d20f438ec62c345

@@ -33,30 +33,30 @@ story:VoroScape
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.02
-      sample=0.019,at=1783444109
-      sample=0.017,at=1783488306
-      sample=0.011,at=1783659421
-      sample=0.012,at=1783659504
-      sample=0.011,at=1783659542
-      sample=0.023,at=1783660610
       sample=0.024,at=1783660631
       sample=0.035,at=1783661260
       sample=0.022,at=1783661564
       sample=0.022,at=1783662987
+      sample=0.012,at=1783676657
+      sample=0.01,at=1783676715
+      sample=0.025,at=1783676989
+      sample=0.015,at=1783678298
+      sample=0.015,at=1783681524
+      sample=0.022,at=1783681594
     TimeTotal:step,avg=0.003
-      sample=0.003,at=1783444109
-      sample=0.003,at=1783488306
-      sample=0.002,at=1783659421
-      sample=0.002,at=1783659504
-      sample=0.002,at=1783659542
-      sample=0.004,at=1783660610
       sample=0.004,at=1783660631
       sample=0.006,at=1783661260
       sample=0.004,at=1783661564
       sample=0.004,at=1783662987
-  step,dige:0a179ff73e141778
-  step=2,dige:1c5abd622877469d
-  step=3,dige:d948bb44195814ac
-  step=4,dige:5f145a14986da73e
-  step=5,dige:73baedc5c666ff5c
-  step=6,dige:22e90ee815867b29
+      sample=0.002,at=1783676657
+      sample=0.002,at=1783676715
+      sample=0.004,at=1783676989
+      sample=0.002,at=1783678298
+      sample=0.002,at=1783681524
+      sample=0.004,at=1783681594
+  step,dige:7bacff04ebc0cec5
+  step=2,dige:943627cc968091ab
+  step=3,dige:54f9990c2de17b13
+  step=4,dige:c284a36058228f96
+  step=5,dige:9de451275785c9c2
+  step=6,dige:47b6e6451c4c1912

@@ -19,10 +19,10 @@ Waft:Credence
     Funkcion:StoryTimes
     What:mostly,desc:the stuff we mostly do as jamsend the music app — the rastock racast raterm pipeline on real tracks
       Funkcion:Storying,of_Book:MusuGenerateTestsMusic,needsFSA:1,unusual:test-data-seeding
-      Funkcion:Storying,of_Book:MusuRaStock,needsFSA:1
-      Funkcion:Storying,of_Book:MusuRaCast,needsFSA:1
-      Funkcion:Storying,of_Book:MusuRaTerm,needsFSA:1
-      Funkcion:Storying,of_Book:MusuRaStream,needsFSA:1,born:2026-07-08
+      Funkcion:Storying,of_Book:MusuRaStock,needsFSA:1,needMusic:1
+      Funkcion:Storying,of_Book:MusuRaCast,needsFSA:1,needMusic:1
+      Funkcion:Storying,of_Book:MusuRaTerm,needsFSA:1,needMusic:1
+      Funkcion:Storying,of_Book:MusuRaStream,needsFSA:1,needMusic:1,born:2026-07-08
       Funkcion:Storying,of_Book:MusuReco,needMusic:1
       What:replication,desc:paginated C** replication of a music library across two Piers
         Funkcion:Storying,of_Book:MusuBounce,needMusic:1

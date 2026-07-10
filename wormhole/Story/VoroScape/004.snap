@@ -22,4 +22,12 @@ Snap:H
           Share,track:Halo
         see:two friends share one track — it lights up as a hub — its pane claims more room while a deep cut stays a sliver
       w:Voronoiology,dontGraph
-        Voro,beat=4,level:L0,visible=9,gangs=0,folded:10,count:5
+        Voro,beat=4,level:L0,visible=9,cells:5,gangs=0,folded:10,count:5
+        cell:Artist,kind:pane,n:2
+        cell:Artist,kind:pane,n:2
+        cell:Artist,kind:pane,n:1
+        cell:Peer,kind:pane,n:3
+        cell:Peer,kind:pane,n:2
+        bare:self,n:2
+        bare:req,n:1
+        bare:see,n:1

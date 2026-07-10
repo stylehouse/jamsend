@@ -32,6 +32,8 @@ story:VoroMitosis
       style:background-color,v:#b12f4a
     matstyle:Voro
       style:background-color,v:#29d638
+    matstyle:bare
+      style:background-color,v:#8259c5
   Plan
   Opt
     waitCyto
@@ -40,9 +42,7 @@ story:VoroMitosis
     For
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.078
-      sample=0.064,at=1783424871
-      sample=0.065,at=1783428837
+    TimeTotal:beliefs,avg=0.075
       sample=0.06,at=1783430721
       sample=0.092,at=1783430839
       sample=0.061,at=1783431039
@@ -51,9 +51,9 @@ story:VoroMitosis
       sample=0.127,at=1783431097
       sample=0.127,at=1783431123
       sample=0.06,at=1783438615
+      sample=0.059,at=1783676641
+      sample=0.039,at=1783676703
     TimeTotal:step,avg=0.007
-      sample=0.006,at=1783424871
-      sample=0.006,at=1783428837
       sample=0.005,at=1783430721
       sample=0.008,at=1783430839
       sample=0.006,at=1783431039
@@ -62,6 +62,8 @@ story:VoroMitosis
       sample=0.012,at=1783431097
       sample=0.012,at=1783431123
       sample=0.005,at=1783438615
+      sample=0.005,at=1783676641
+      sample=0.004,at=1783676703
   step,dige:9eb579214a9df3ce
   step=2,dige:eef35e515d979cd4
   step=3,dige:ad2683e574097822
