@@ -476,22 +476,22 @@ VoroMitosis_witness(w):
     if (names.length && ganged.length === names.length && !(oa %see:'the loose flora ganged itself by genus — one representative pane each and no container ever modelled')) i %see:'the loose flora ganged itself by genus — one representative pane each and no container ever modelled'
 //#endregion
 
-//#region scape — VoroScape: the GRAPH OF MUSIC rendered as voronoi stained glass
-// ══ VoroScape — a music library becomes a graph when friends share it, and the crush folds it to glass ══
-//  The music twin of VoroMitosis (which watched abstract flora divide).  Here the cells are MUSIC and the
-//   edges are SOCIAL: %Artist panes hold their %Track songs; %Peer panes each %Share tracks from the
-//    library — and a share is an EDGE from a friend onto a real track.  A track many friends share is a
-//     HUB: its pane claims more room (the power-diagram weight the voronoi reads off a big node).  A track
-//      nobody shares is a sliver; a deep cut nobody touches goes dark.  So the stained glass is not a flat
-//       shelf — some panes blaze (the hits), some are slivers (the deep cuts), and the light moves live as
-//        friends come and go.  Like VoroMitosis: cells live DIRECTLY under w (the crusher folds any content
-//         container, so an umbrella would swallow the whole scape as ONE chunk); crush armed c-side (no opt,
-//          nothing modelled), no transport, no audio, count-driven determinism — runs anywhere a runner does.
-//   beat 2  the library stands — three artists and their five tracks — a shelf, no friends, no light yet
-//   beat 3  a friend (Bo) arrives and shares — every share is an edge onto a REAL track — a graph is born
-//   beat 4  a second friend (Ada) shares the same track — it lights up as a HUB (weight 2) above the singles
-//   beat 5  Ada leaves — the hub cools LIVE (2 -> 1) and a track she alone lit goes dark (1 -> 0)
-//   beat 6  the crush folds every artist and friend into one stuffed pane — the graph arms as stained glass
+//#region scape — VoroScape: the MUSIC LIBRARY rendered as voronoi stained glass
+// ══ VoroScape — a music library GROWS and the crush folds it to glass ══
+//  The music twin of VoroMitosis (which watched abstract flora divide).  Here the cells are MUSIC:
+//   %Artist panes hold their %Track songs, and the shelf grows LIVE — catalogs deepen (a pane thickens
+//    in place) and new artists arrive (a new pane splits into the glass — mitosis's echo).  A pane's
+//     weight is its track count: a deep catalog claims more room in the diagram, a two-track newcomer
+//      is a sliver.  (The social layer — %Peer panes sharing tracks as edges — was cut 2026-07-10:
+//       owner wants pure library glass here; edges belong to the Radio Books.)  Like VoroMitosis:
+//        cells live DIRECTLY under w (the crusher folds any content container, so an umbrella would
+//         swallow the whole scape as ONE chunk); crush armed c-side (no opt, nothing modelled), no
+//          transport, no audio, count-driven determinism — runs anywhere a runner does.
+//   beat 2  the library stands — three artists and their five tracks — a thin shelf of glass
+//   beat 3  the catalogs deepen — five new tracks land across the SAME three panes — no new cells
+//   beat 4  a new artist (Riverine) arrives with a catalog of three — a fourth pane splits in
+//   beat 5  the shelf fills out — a fifth artist (Palegold) plus a straggler — sixteen tracks
+//   beat 6  the crush folds every artist into a stuffed pane — the library arms as stained glass
 VoroScape(A,w):
     w oai %req:wrangle,eternal
         await &VoroScape_drive,w,req
@@ -502,16 +502,16 @@ async VoroScape_drive(w, req):
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) this.VoroScape_library(w)
-        if (n === 3) this.VoroScape_peer(w, 'Bo', ['Tide', 'Root', 'Echo'])
-        if (n === 4) this.VoroScape_peer(w, 'Ada', ['Tide', 'Halo'])
-        if (n === 5) this.VoroScape_leave(w, 'Ada')
+        if (n === 3) this.VoroScape_deepen(w)
+        if (n === 4) this.VoroScape_arrive(w, 'Riverine', ['Delta', 'Silt', 'Eddy'])
+        if (n === 5) this.VoroScape_fill(w)
     }
     this.VoroScape_witness(w)
     await this.VoroScape_order(w)
 
 // beat 2 — the library: three artists, each an %Artist pane holding its %Track songs (five in all).  The
 //  crushable rule folds any container with children, so each artist becomes one voronoi pane; the tracks
-//   ride inside it (a pane's interior).  No peers yet — a shelf, not a graph.
+//   ride inside it (a pane's interior).  A thin shelf — the growth beats thicken it.
 VoroScape_library(w):
     let moon = w.i({ Artist: 1, name: 'Moonlit' })
     this.VoroScape_track(moon, 'Tide')
@@ -534,38 +534,39 @@ VoroScape_track(artist, title):
     if (hsh % 3 === 0) sc.remaster = 1
     artist.i(sc)
 
-// a friend joins and shares tracks off the library — each %Share is an EDGE from the %Peer pane onto a
-//  track by its title.  (A share names a track; VoroScape_dangling proves it names a REAL one.)
-VoroScape_peer(w, name, tracks):
-    let p = w.i({ Peer: 1, name: name })
-    for (const t of tracks) p.i({ Share: 1, track: t })
-    return p
+// beat 3 — the catalogs deepen: five new tracks land across the SAME three panes.  No new cells —
+//  a pane's weight is its track count, so the existing glass visibly thickens in place.
+VoroScape_deepen(w):
+    let moon = this.VoroScape_artist(w, 'Moonlit')
+    this.VoroScape_track(moon, 'Drift')
+    this.VoroScape_track(moon, 'Neon')
+    let fern = this.VoroScape_artist(w, 'Fernway')
+    this.VoroScape_track(fern, 'Moss')
+    let vox = this.VoroScape_artist(w, 'Voxhall')
+    this.VoroScape_track(vox, 'Static')
+    this.VoroScape_track(vox, 'Choir')
 
-// a friend leaves — their pane drops out and their shares go with it (apoptosis, VoroMitosis's death twin):
-//  a track they alone shared goes dark, a hub they helped light cools by one.
-VoroScape_leave(w, name):
-    let p = w.o({ Peer: 1 }).find(x => x.sc.name === name)
-    if (p) p.drop(p)
+// a new artist arrives with a whole catalog — a NEW pane splits into the glass (mitosis's echo).
+VoroScape_arrive(w, name, titles):
+    let a = w.i({ Artist: 1, name: name })
+    for (const t of titles) this.VoroScape_track(a, t)
+    return a
 
-// every track title in the library (walk the artists' panes).
-VoroScape_titles(w):
-    let titles = []
-    for (const a of w.o({ Artist: 1 })) for (const t of a.o({ Track: 1 })) titles.push(t.sc.title)
-    return titles
+// beat 5 — the shelf fills out: a fifth artist lands and a straggler track joins Fernway (growth is
+//  not always tidy — a pane can gain one song while a whole newcomer arrives beside it).
+VoroScape_fill(w):
+    this.VoroScape_arrive(w, 'Palegold', ['Ingot', 'Gleam'])
+    let fern = this.VoroScape_artist(w, 'Fernway')
+    this.VoroScape_track(fern, 'Bloom')
 
-// a share that names no real track is a DANGLING pane — a bug in the graph.  Zero is the health check.
-VoroScape_dangling(w):
-    let titles = this.VoroScape_titles(w)
-    let bad = 0
-    for (const p of w.o({ Peer: 1 })) for (const s of p.o({ Share: 1 })) if (!titles.includes(s.sc.track)) bad = bad + 1
-    return bad
+// an artist pane by name (the growth beats and the witness both address panes this way).
+VoroScape_artist(w, name):
+    return w.o({ Artist: 1 }).find(x => x.sc.name === name)
 
-// the HUB weight of a track: how many distinct friends share it.  This is the power-diagram weight the
-//  voronoi reads off the pane's rendered size — a hit blazes, a deep cut is a sliver, zero is dark.
-VoroScape_hub(w, title):
-    let count = 0
-    for (const p of w.o({ Peer: 1 })) if (p.o({ Share: 1 }).some(s => s.sc.track === title)) count = count + 1
-    return count
+// the track count of a named artist — the pane's WEIGHT, what the voronoi reads off its size.
+VoroScape_count(w, name):
+    let a = this.VoroScape_artist(w, name)
+    return a ? a.o({ Track: 1 }).length : 0
 
 // ── the witness — each %see is a per-beat OBSERVATION gated to its step (n === K) reading the LIVE truth
 //  of that beat, so it appears once and DROPS as the story moves on.  The drop IS the signal: beat 4's
@@ -576,17 +577,16 @@ VoroScape_witness(w):
     let artists = w.o({ Artist: 1 })
     let tracks = []
     for (const a of artists) for (const t of a.o({ Track: 1 })) tracks.push(t)
-    let peers = w.o({ Peer: 1 })
-    // beat 2: the library stands — three artists, five tracks, no friends: a shelf with no light through it.
-    if (n === 2 && artists.length === 3 && tracks.length === 5 && !peers.length && !(oa %see:'the library stands — three artists and five tracks — a shelf of glass with no light through it yet')) i %see:'the library stands — three artists and five tracks — a shelf of glass with no light through it yet'
-    // beat 3: a friend shares — every share edges onto a REAL track (no dangling) — the shelf is now a graph.
-    if (n === 3 && peers.length === 1 && this.VoroScape_dangling(w) === 0 && this.VoroScape_hub(w, 'Tide') === 1 && !(oa %see:'a friend arrives and shares — every share is an edge onto a real track — the shelf becomes a graph')) i %see:'a friend arrives and shares — every share is an edge onto a real track — the shelf becomes a graph'
-    // beat 4: two friends on one track — it lights up as a HUB (weight 2) above the singles and the deep cut.
-    if (n === 4 && peers.length === 2 && this.VoroScape_hub(w, 'Tide') === 2 && this.VoroScape_hub(w, 'Root') === 1 && this.VoroScape_hub(w, 'Frond') === 0 && !(oa %see:'two friends share one track — it lights up as a hub — its pane claims more room while a deep cut stays a sliver')) i %see:'two friends share one track — it lights up as a hub — its pane claims more room while a deep cut stays a sliver'
-    // beat 5: a friend leaves — the hub cools LIVE (2 -> 1) and a track she alone lit goes dark (1 -> 0).
-    if (n === 5 && peers.length === 1 && this.VoroScape_hub(w, 'Tide') === 1 && this.VoroScape_hub(w, 'Halo') === 0 && !(oa %see:'a friend leaves and the hub cools — the shared track drops to one and a track only she lit goes dark')) i %see:'a friend leaves and the hub cools — the shared track drops to one and a track only she lit goes dark'
+    // beat 2: the library stands — three artists, five tracks: a thin shelf of glass.
+    if (n === 2 && artists.length === 3 && tracks.length === 5 && !(oa %see:'the library stands — three artists and five tracks — a shelf of glass with no light through it yet')) i %see:'the library stands — three artists and five tracks — a shelf of glass with no light through it yet'
+    // beat 3: the catalogs deepen — 5 -> 10 tracks across the SAME three panes (Moonlit now four deep).
+    if (n === 3 && artists.length === 3 && tracks.length === 10 && this.VoroScape_count(w, 'Moonlit') === 4 && !(oa %see:'the catalogs deepen — five new tracks land across the same three panes — the glass thickens in place')) i %see:'the catalogs deepen — five new tracks land across the same three panes — the glass thickens in place'
+    // beat 4: a fourth pane splits into the glass — a whole newcomer catalog beside the elders.
+    if (n === 4 && artists.length === 4 && tracks.length === 13 && this.VoroScape_count(w, 'Riverine') === 3 && !(oa %see:'a new artist arrives with a catalog of three — a fourth pane splits into the glass')) i %see:'a new artist arrives with a catalog of three — a fourth pane splits into the glass'
+    // beat 5: the shelf fills out — a fifth artist plus Fernway's straggler: 16 tracks across 5 panes.
+    if (n === 5 && artists.length === 5 && tracks.length === 16 && this.VoroScape_count(w, 'Palegold') === 2 && this.VoroScape_count(w, 'Fernway') === 4 && !(oa %see:'the shelf fills out — five artists and sixteen tracks — every pane heavy with song and ready to crush')) i %see:'the shelf fills out — five artists and sixteen tracks — every pane heavy with song and ready to crush'
     // the fold is IMPOSED by Story (%useVoroCyto) and self-reports in w:Voronoiology — VoroScape asserts
-    //  only its own music-graph truths (hubs, dangling, apoptosis), never the fold.  See fig.1 in Story.
+    //  only its own library truths (counts, arrivals, growth), never the fold.  See fig.1 in Story.
 
 // float A:VoroScape to the front of H/* so the Run snap stays readable (MusuSkip_order's twin).
 async VoroScape_order(w):

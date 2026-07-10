@@ -7,7 +7,7 @@ Snap:H
         req:wrangle,eternal,ok
         reached:step_2
         Library,pier:raterm.player
-          Record,id:848b336a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,src_hash:0d9cc36d,sr=48000,br=128000,seg_secs=2,nch,preview=17,total=39,bytes=549743
+          Record,id:af99e3b3efe5661a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
             Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
@@ -24,6 +24,5 @@ Snap:H
             Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:16	{"ref":{"buf":"Uint8Array()"}}
         req:raterm_stock,finished
         req:witness,eternal,ok

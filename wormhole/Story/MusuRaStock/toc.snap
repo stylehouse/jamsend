@@ -5,9 +5,7 @@ story:MusuRaStock
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=0.05
-      sample=0.039,at=1783447694
-      sample=0.05,at=1783448138
+    TimeTotal:beliefs,avg=0.047
       sample=0.033,at=1783659949
       sample=0.054,at=1783665810
       sample=0.053,at=1783669772
@@ -16,9 +14,9 @@ story:MusuRaStock
       sample=0.052,at=1783673203
       sample=0.055,at=1783673776
       sample=0.044,at=1783676791
+      sample=0.031,at=1783682592
+      sample=0.031,at=1783682613
     TimeTotal:step,avg=0.01
-      sample=0.008,at=1783447694
-      sample=0.01,at=1783448138
       sample=0.007,at=1783659949
       sample=0.011,at=1783665810
       sample=0.011,at=1783669772
@@ -27,9 +25,11 @@ story:MusuRaStock
       sample=0.01,at=1783673203
       sample=0.011,at=1783673776
       sample=0.009,at=1783676791
+      sample=0.006,at=1783682592
+      sample=0.006,at=1783682613
   EntropyArrest
   step,dige:bbb9ed187ff5244a
   step=2,dige:ab9e39a3e006f95c
-  step=3,dige:e3f7d5f1d5f83e88
-  step=4,dige:566e1322050d65da
-  step=5,dige:f5c07a9b84e95a2d
+  step=3,dige:fdd1e33ca1cf9432
+  step=4,dige:8132630b41a2df85
+  step=5,dige:aa466fb335565f52

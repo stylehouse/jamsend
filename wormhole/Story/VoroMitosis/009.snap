@@ -78,11 +78,17 @@ Snap:H
         Podocarpus:serrata,woodystem,habit:tree
         Podocarpus:robusta,woodystem,habit:vine
       w:Voronoiology,dontGraph
-        Voro,beat=8,level:L1,visible=14,gangs=7,folded:4,count:4
-        row:Coprosma,n=7,fold:gang,rep:rhamnoides,of=7
-        row:Veronica,n=9,fold:gang,rep:linearis,of=8
-        row:Metrosideros,n=7,fold:gang,rep:propinqua,of=7
-        row:Kunzea,n=12,fold:gang,rep:lucida,of=11
-        row:Leptospermum,n=10,fold:gang,rep:colensoi,of=9
-        row:Pittosporum,n=8,fold:gang,rep:divaricata,of=7
-        row:Podocarpus,n=7,fold:gang,rep:robusta,of=7
+        Voro,beat=8,level:L1,visible=14,cells:11,gangs=7,folded:4,count:4
+        cell:Veronica robusta,kind:pane,n:1
+        cell:Kunzea grandifolia,kind:pane,n:1
+        cell:Kunzea,kind:gang,n:11
+        cell:Coprosma,kind:gang,n:7
+        cell:Veronica,kind:gang,n:8
+        cell:Metrosideros,kind:gang,n:7
+        cell:Leptospermum lucida,kind:pane,n:1
+        cell:Leptospermum,kind:gang,n:9
+        cell:Pittosporum crassifolius,kind:pane,n:1
+        cell:Pittosporum,kind:gang,n:7
+        cell:Podocarpus,kind:gang,n:7
+        bare:self,n:2
+        bare:req,n:1

@@ -20,6 +20,11 @@ Snap:H
           Veronica:lucida var. prostrata,habit:tree
         Veronica:tenuifolium,woodystem,habit:shrub
       w:Voronoiology,dontGraph
-        Voro,beat,level:L0,visible=11,gangs=0,folded:6,count:3
-        row:Coprosma,n=5,fold:loose,cells=2
-        row:Veronica,n=3,fold:loose,cells
+        Voro,beat,level:L0,visible=11,cells:3,gangs=0,folded:6,count:3
+        cell:Coprosma propinqua,kind:pane,n:2
+        cell:Coprosma grandifolia,kind:pane,n:2
+        cell:Veronica lucida,kind:pane,n:2
+        bare:self,n:2
+        bare:req,n:1
+        bare:Coprosma,n:3
+        bare:Veronica,n:2

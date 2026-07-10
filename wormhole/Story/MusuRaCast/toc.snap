@@ -5,9 +5,7 @@ story:MusuRaCast
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=1.301
-      sample=0.265,at=1783443784
-      sample=0.327,at=1783447021
+    TimeTotal:beliefs,avg=1.585
       sample=0.327,at=1783447672
       sample=0.25,at=1783449283
       sample=2.268,at=1783660296
@@ -16,9 +14,9 @@ story:MusuRaCast
       sample=2.128,at=1783673428
       sample=2.08,at=1783673805
       sample=1.408,at=1783676852
-    TimeTotal:step,avg=0.108
-      sample=0.022,at=1783443784
-      sample=0.027,at=1783447021
+      sample=1.717,at=1783682660
+      sample=1.717,at=1783682762
+    TimeTotal:step,avg=0.132
       sample=0.027,at=1783447672
       sample=0.021,at=1783449283
       sample=0.189,at=1783660296
@@ -27,15 +25,17 @@ story:MusuRaCast
       sample=0.177,at=1783673428
       sample=0.173,at=1783673805
       sample=0.117,at=1783676852
+      sample=0.143,at=1783682660
+      sample=0.143,at=1783682762
   step,dige:0a066e0d16fc5e0e
-  step=2,dige:c500ff22a7b416b2
-  step=3,dige:b07f08fad3332b1b
-  step=4,dige:2bf7fca9331d1dc2
-  step=5,dige:113584e7c220bff3
-  step=6,dige:21beb319795528a3
-  step=7,dige:6ec16f519a92bd12
-  step=8,dige:4bea87aed109385b
-  step=9,dige:703ac870905a99ae
-  step=10,dige:72c778e7d2f098f1
-  step=11,dige:8e10811243c1b4ca
-  step=12,dige:d13f5a3e7b4da313
+  step=2,dige:7759cff8778224cf
+  step=3,dige:ba649732d9722f50
+  step=4,dige:771a5e57290e5f13
+  step=5,dige:290c84598b21dfb4
+  step=6,dige:4a889e7039c5e8f4
+  step=7,dige:47c6d237f16b9ec3
+  step=8,dige:141dda7d5357933d
+  step=9,dige:26cd760c4fd7b944
+  step=10,dige:ceda4cf81b033dbc
+  step=11,dige:a0fb984ede13aeff
+  step=12,dige:e5f7f53b279f0d13

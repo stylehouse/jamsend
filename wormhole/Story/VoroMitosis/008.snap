@@ -65,10 +65,15 @@ Snap:H
         Pittosporum:rhamnoides,habit:vine
         Pittosporum:grandifolia,woodystem,habit:vine
       w:Voronoiology,dontGraph
-        Voro,beat=7,level:L1,visible=12,gangs=6,folded:3,count:3
-        row:Coprosma,n=5,fold:gang,rep:rhamnoides,of=5
-        row:Veronica,n=7,fold:gang,rep:robusta,of=7
-        row:Metrosideros,n=12,fold:gang,rep:propinqua,of=11
-        row:Kunzea,n=10,fold:gang,rep:lucida,of=9
-        row:Leptospermum,n=8,fold:gang,rep:colensoi,of=7
-        row:Pittosporum,n=6,fold:gang,rep:crassifolius,of=6
+        Voro,beat=7,level:L1,visible=12,cells:9,gangs=6,folded:3,count:3
+        cell:Metrosideros robusta,kind:pane,n:1
+        cell:Metrosideros,kind:gang,n:11
+        cell:Veronica,kind:gang,n:7
+        cell:Kunzea grandifolia,kind:pane,n:1
+        cell:Kunzea,kind:gang,n:9
+        cell:Coprosma,kind:gang,n:5
+        cell:Leptospermum lucida,kind:pane,n:1
+        cell:Leptospermum,kind:gang,n:7
+        cell:Pittosporum,kind:gang,n:6
+        bare:self,n:2
+        bare:req,n:1

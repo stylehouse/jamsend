@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=5	{"mung":["age"]}
+      self,round=6	{"mung":["age"]}
       w:VoroMitosis
-        self,round=5	{"mung":["age"]}
+        self,round=6	{"mung":["age"]}
         req:wrangle,eternal,ok
         Coprosma:robusta,habit:vine
           Coprosma:robusta subsp. australis
@@ -26,6 +26,13 @@ Snap:H
         Veronica:tenax
         Veronica:crassifolius,habit:tree
       w:Voronoiology,dontGraph
-        Voro,beat=2,level:L0,visible=15,gangs=0,folded:8,count:5
-        row:Coprosma,n=7,fold:loose,cells=3
-        row:Veronica,n=5,fold:loose,cells=2
+        Voro,beat=2,level:L0,visible=15,cells:5,gangs=0,folded:8,count:5
+        cell:Coprosma robusta,kind:pane,n:1
+        cell:Coprosma propinqua,kind:pane,n:2
+        cell:Coprosma grandifolia,kind:pane,n:2
+        cell:Veronica grandifolia,kind:pane,n:1
+        cell:Veronica lucida,kind:pane,n:2
+        bare:self,n:2
+        bare:req,n:1
+        bare:Coprosma,n:4
+        bare:Veronica,n:3
