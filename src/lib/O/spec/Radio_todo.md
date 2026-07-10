@@ -48,8 +48,13 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  - **The DEAD-SOURCE RULE** — a radiostock whose source can't be found anymore can never make up its
     %Stream, so it is litter: `Ra_source_pcm` drops the file (`rec.c.card_file`, remembered at
      `Ra_card` load) and returns null; a later pass re-stocks what the collection now holds.
- REMAINING: the re-record of all four (owner Accepts — reds are pure drift: 16-hex enids, `preview=16`
-  not 17, no `src_hash`, no stash rows). PRESKIP now has its one coherent statement in the code — the
+ DONE 2026-07-11: the re-record of all four LANDED — Stock/Cast/Term by the owner, Stream via
+  `runner_ask accept` (7/7 %see pre-pinned and confirmed present after — the drop-hazard didn't bite);
+   verify re-runs ALL GREEN: Stock 5/5, Cast 12/12, Term 12/12 **caveat:0**, Stream 40/40. The caveat
+    signature is now understood: a Book that SEALS shows permanent benign ≈ on exactly the
+     AudibleEntropy-grafted fields (Pier `since:` / Grant `time:`+`sign:` / Edge `at:` — tol:any
+      TOLERATES change, it does not canonicalize, so re-runs always ≈ there); Term seals nothing ⇒ 0.
+ PRESKIP now has its one coherent statement in the code — the
    `Ra_encode_open` comment (it is the opus encoder's convergence ramp the decoder drops at each fresh
     open, 312@48k; it WOULD ride OpusHead bytes 10-11 but we deleted the container, so we carry it on
      the card + the two head chunks; NOT a time offset — time-into-track is seq × seg_secs).
@@ -61,10 +66,8 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
     `healthy=0 gaps / starved=320 / lufs=-14.03` (one-decoder continuity: PERFECTLY gapless), Stream
      ran the whole arc (ask at head 4 inside the preview → first want seg 6 == P → fed at 8 →
       owner-act switch at 10 → B full fresh cycle → `a_drops=0 b_heard=0 lufs=-14.03`) with IDENTICAL
-       numbers on a rebuild-run and a resurrect-run.  REMAINING: the re-record itself — reds are pure
-        fixture drift against the old-shape fixtures; owner Accepts (never CredRunner-auto).  Watch on
-         Accept: EntropyProfile Wref stands per Book already; frame-count/beat was fine live.  WHAT
-          SHIPPED:
+       numbers on a rebuild-run and a resurrect-run.  Re-record DONE 2026-07-11 (see the block above).
+        WHAT SHIPPED:
    Repli.g gained the three generic things below (binary `.sc` buffer leaf + `bufk` restore, husk
     offers, `w.c.repli_allow` consent, particle-mode `page_ready`/`serve_chunks` — Float32 path
      untouched, MusuReplica/MusuReco unaffected); Ra.g lost the WHOLE `Ra_cast_*` wire + the RFC-7845

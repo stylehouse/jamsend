@@ -1,30 +1,30 @@
 Snap:H
   H:MusuRaStream,Run
     A:MusuRaStream
-      self,round=77	{"mung":["age"]}
+      self,round=100	{"mung":["age"]}
       w:MusuRaStream
-        self,round=77	{"mung":["age"]}
+        self,round=100	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Account,of:DJ
           Identity:c012850d69de1318,prepub:c012850d69de1318,friendly:DJ
             Peering,name:c012850d69de1318,friendly:DJ
               Idzeug:rastream_1,to:Music,genre:Classical,spent
-              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783487347
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783688464
                 Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1783487347,sign:20661a8e2204f61f85bb1a976174fc27eaa81a935910a9b6ae1d05df984315ecfbfe9d54c7cced1ad3a8ff339fccf5b7b447c59714fb3fa39c3a40b860226a03,genre:Classical
-                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783487347,sign:74e7e9266e8ea976c9c5e221947e25f95ade3b5be28d97f71c86bb68e7eab9357b77e48e968eec417dccc206fac78eafeb1acc2e5cf8f81c02bce951fc657c0f,genre:Classical
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1783688464,sign:cc922eb8ff39a2417f71cff109b6c04aa83433b78823c50e9610f5e195e27a02a7090539cdf319c959d3d3cc7f396c791baa941e6258e4de6e2433baded20d00,genre:Classical
+                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783688464,sign:7b327667354471af9c74d85122d26b534e285dd5bd30d74ef6010df4a840c5c931c6b6c635cecc648f550c568fe8cda771c0ed0997913cb5ef91898e2c2eda03,genre:Classical
             SocialGraph
-              Edge,a:c012850d69de1318,b:b317b9a776e39d30,at:1783487347
+              Edge,a:c012850d69de1318,b:b317b9a776e39d30,at:1783688464
         Account,of:Listener
           Identity:b317b9a776e39d30,prepub:b317b9a776e39d30,friendly:Listener
             Peering,name:b317b9a776e39d30,friendly:Listener
-              Pier,pub:c012850d69de1318,friendly:DJ,since:1783487347
+              Pier,pub:c012850d69de1318,friendly:DJ,since:1783688464
                 Peering,name:c012850d69de1318,friendly:DJ,pub:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535
-                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783487347,sign:74e7e9266e8ea976c9c5e221947e25f95ade3b5be28d97f71c86bb68e7eab9357b77e48e968eec417dccc206fac78eafeb1acc2e5cf8f81c02bce951fc657c0f,genre:Classical
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1783487347,sign:20661a8e2204f61f85bb1a976174fc27eaa81a935910a9b6ae1d05df984315ecfbfe9d54c7cced1ad3a8ff339fccf5b7b447c59714fb3fa39c3a40b860226a03,genre:Classical
+                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783688464,sign:7b327667354471af9c74d85122d26b534e285dd5bd30d74ef6010df4a840c5c931c6b6c635cecc648f550c568fe8cda771c0ed0997913cb5ef91898e2c2eda03,genre:Classical
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1783688464,sign:cc922eb8ff39a2417f71cff109b6c04aa83433b78823c50e9610f5e195e27a02a7090539cdf319c959d3d3cc7f396c791baa941e6258e4de6e2433baded20d00,genre:Classical
             SocialGraph
-              Edge,a:b317b9a776e39d30,b:c012850d69de1318,at:1783487347
+              Edge,a:b317b9a776e39d30,b:c012850d69de1318,at:1783688464
         Peering,name:c012850d69de1318,req=2,ok
           Pier,pub:b317b9a776e39d30,req=2,ok
             req:handshake,finished
@@ -41,38 +41,48 @@ Snap:H
                 heard
             outbox
               recent
-                emit,type:hello,seq
-                emit=2,type:trust,seq=2
-                emit=3,type:pier_accept,seq=3
-                emit=4,type:racast_lines,seq=4
-                emit=5,type:racast_lines,seq=5
-                emit=6,type:racast_page,seq=6
-                emit=7,type:racast_page,seq=7
-                emit=8,type:racast_page,seq=8
-                emit=9,type:racast_page,seq=9
-                emit=10,type:racast_page,seq=10
-                emit=11,type:racast_page,seq=11
-                emit=12,type:racast_page,seq=12
-                emit=13,type:racast_page,seq=13
-                emit=14,type:racast_page,seq=14
-                emit=15,type:racast_page,seq=15
-                emit=16,type:racast_page,seq=16
+                emit=46,type:repli_page,seq=46
+                emit=47,type:repli_page,seq=47
+                emit=48,type:repli_lines,seq=48
+                emit=49,type:repli_page,seq=49
+                emit=50,type:repli_page,seq=50
+                emit=51,type:repli_lines,seq=51
+                emit=52,type:repli_page,seq=52
+                emit=53,type:repli_page,seq=53
+                emit=54,type:repli_lines,seq=54
+                emit=55,type:repli_page,seq=55
+                emit=56,type:repli_page,seq=56
+                emit=57,type:repli_lines,seq=57
+                emit=58,type:repli_page,seq=58
+                emit=59,type:repli_page,seq=59
+                emit=60,type:repli_lines,seq=60
+                emit=61,type:repli_page,seq=61
+                emit=62,type:repli_page,seq=62
+                emit=63,type:repli_lines,seq=63
+                emit=64,type:repli_page,seq=64
+                emit=65,type:repli_page,seq=65
             inbox
               recent
-                unemit,type:hello,seq
-                unemit=2,type:trust,seq=2
-                unemit=3,type:pier_hello,seq=3
-                unemit=4,type:racast_want,seq=4
-                unemit=5,type:racast_want,seq=5
-                unemit=6,type:racast_want,seq=6
-                unemit=7,type:racast_want,seq=7
-                unemit=8,type:racast_want,seq=8
-                unemit=9,type:racast_want,seq=9
-                unemit=10,type:racast_want,seq=10
-                unemit=11,type:racast_want,seq=11
-                unemit=12,type:racast_want,seq=12
-                unemit=13,type:racast_want,seq=13
-                unemit=14,type:racast_want,seq=14
+                unemit=4,type:repli_want,seq=4
+                unemit=5,type:repli_want,seq=5
+                unemit=6,type:repli_want,seq=6
+                unemit=7,type:repli_want,seq=7
+                unemit=8,type:repli_want,seq=8
+                unemit=9,type:repli_want,seq=9
+                unemit=10,type:repli_want,seq=10
+                unemit=11,type:repli_want,seq=11
+                unemit=12,type:repli_want,seq=12
+                unemit=13,type:repli_want,seq=13
+                unemit=14,type:repli_want,seq=14
+                unemit=15,type:repli_want,seq=15
+                unemit=16,type:repli_want,seq=16
+                unemit=17,type:repli_want,seq=17
+                unemit=18,type:repli_want,seq=18
+                unemit=19,type:repli_want,seq=19
+                unemit=20,type:repli_want,seq=20
+                unemit=21,type:repli_want,seq=21
+                unemit=22,type:repli_want,seq=22
+                unemit=23,type:repli_want,seq=23
             Ud,pubkey:b317b9a776e39d30
           active_transport,type:mock,open
         Peering,name:b317b9a776e39d30,req=3,ok
@@ -91,57 +101,191 @@ Snap:H
                 heard
             outbox
               recent
-                emit,type:hello,seq
-                emit=2,type:trust,seq=2
-                emit=3,type:pier_hello,seq=3
-                emit=4,type:racast_want,seq=4
-                emit=5,type:racast_want,seq=5
-                emit=6,type:racast_want,seq=6
-                emit=7,type:racast_want,seq=7
-                emit=8,type:racast_want,seq=8
-                emit=9,type:racast_want,seq=9
-                emit=10,type:racast_want,seq=10
-                emit=11,type:racast_want,seq=11
-                emit=12,type:racast_want,seq=12
-                emit=13,type:racast_want,seq=13
-                emit=14,type:racast_want,seq=14
+                emit=4,type:repli_want,seq=4
+                emit=5,type:repli_want,seq=5
+                emit=6,type:repli_want,seq=6
+                emit=7,type:repli_want,seq=7
+                emit=8,type:repli_want,seq=8
+                emit=9,type:repli_want,seq=9
+                emit=10,type:repli_want,seq=10
+                emit=11,type:repli_want,seq=11
+                emit=12,type:repli_want,seq=12
+                emit=13,type:repli_want,seq=13
+                emit=14,type:repli_want,seq=14
+                emit=15,type:repli_want,seq=15
+                emit=16,type:repli_want,seq=16
+                emit=17,type:repli_want,seq=17
+                emit=18,type:repli_want,seq=18
+                emit=19,type:repli_want,seq=19
+                emit=20,type:repli_want,seq=20
+                emit=21,type:repli_want,seq=21
+                emit=22,type:repli_want,seq=22
+                emit=23,type:repli_want,seq=23
             inbox
               recent
-                unemit,type:hello,seq
-                unemit=2,type:trust,seq=2
-                unemit=3,type:pier_accept,seq=3
-                unemit=4,type:racast_lines,seq=4
-                unemit=5,type:racast_lines,seq=5
-                unemit=6,type:racast_page,seq=6
-                unemit=7,type:racast_page,seq=7
-                unemit=8,type:racast_page,seq=8
-                unemit=9,type:racast_page,seq=9
-                unemit=10,type:racast_page,seq=10
-                unemit=11,type:racast_page,seq=11
-                unemit=12,type:racast_page,seq=12
-                unemit=13,type:racast_page,seq=13
-                unemit=14,type:racast_page,seq=14
-                unemit=15,type:racast_page,seq=15
-                unemit=16,type:racast_page,seq=16
+                unemit=46,type:repli_page,seq=46
+                unemit=47,type:repli_page,seq=47
+                unemit=48,type:repli_lines,seq=48
+                unemit=49,type:repli_page,seq=49
+                unemit=50,type:repli_page,seq=50
+                unemit=51,type:repli_lines,seq=51
+                unemit=52,type:repli_page,seq=52
+                unemit=53,type:repli_page,seq=53
+                unemit=54,type:repli_lines,seq=54
+                unemit=55,type:repli_page,seq=55
+                unemit=56,type:repli_page,seq=56
+                unemit=57,type:repli_lines,seq=57
+                unemit=58,type:repli_page,seq=58
+                unemit=59,type:repli_page,seq=59
+                unemit=60,type:repli_lines,seq=60
+                unemit=61,type:repli_page,seq=61
+                unemit=62,type:repli_page,seq=62
+                unemit=63,type:repli_lines,seq=63
+                unemit=64,type:repli_page,seq=64
+                unemit=65,type:repli_page,seq=65
             Ud,pubkey:c012850d69de1318
+            req:awaitbuf,bufferid,landed,finished
+            req:awaitbuf,bufferid=2,landed,finished
+            req:awaitbuf,bufferid=3,landed,finished
+            req:awaitbuf,bufferid=4,landed,finished
+            req:awaitbuf,bufferid=5,landed,finished
+            req:awaitbuf,bufferid=6,landed,finished
+            req:awaitbuf,bufferid=7,landed,finished
+            req:awaitbuf,bufferid=8,landed,finished
+            req:awaitbuf,bufferid=9,landed,finished
+            req:awaitbuf,bufferid=10,landed,finished
+            req:awaitbuf,bufferid=11,landed,finished
+            req:awaitbuf,bufferid=12,landed,finished
+            req:awaitbuf,bufferid=13,landed,finished
+            req:awaitbuf,bufferid=14,landed,finished
+            req:awaitbuf,bufferid=15,landed,finished
+            req:awaitbuf,bufferid=16,landed,finished
+            req:awaitbuf,bufferid=17,landed,finished
+            req:awaitbuf,bufferid=18,landed,finished
+            req:awaitbuf,bufferid=19,landed,finished
+            req:awaitbuf,bufferid=20,landed,finished
+            req:awaitbuf,bufferid=21,landed,finished
+            req:awaitbuf,bufferid=22,landed,finished
+            req:awaitbuf,bufferid=23,landed,finished
+            req:awaitbuf,bufferid=24,landed,finished
+            req:awaitbuf,bufferid=25,landed,finished
+            req:awaitbuf,bufferid=26,landed,finished
+            req:awaitbuf,bufferid=27,landed,finished
+            req:awaitbuf,bufferid=28,landed,finished
+            req:awaitbuf,bufferid=29,landed,finished
+            req:awaitbuf,bufferid=30,landed,finished
+            req:awaitbuf,bufferid=31,landed,finished
+            req:awaitbuf,bufferid=32,landed,finished
+            req:awaitbuf,bufferid=33,landed,finished
+            req:awaitbuf,bufferid=34,landed,finished
+            req:awaitbuf,bufferid=35,landed,finished
+            req:awaitbuf,bufferid=36,landed,finished
+            req:awaitbuf,bufferid=37,landed,finished
+            req:awaitbuf,bufferid=38,landed,finished
+            req:awaitbuf,bufferid=39,landed,finished
+            req:awaitbuf,bufferid=40,landed,finished
           active_transport,type:mock,open
         Library,pier:c012850d69de1318
-          Record,id:848b336a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,src_hash:0d9cc36d
-            Stream,name:opus,total=39,sr=48000,br=128000,seg_secs=2,bytes=1290003
-          Record,id:8233c2ea,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,src_hash:9471f8fc
-            Stream,name:opus,total=38,sr=48000,br=128000,seg_secs=2,bytes=1256926
+          Record,id:af99e3b3efe5661a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
+            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:16,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:17	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:18	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:19	{"ref":{"buf":"Uint8Array()"}}
+          Record,id:cec642f34f501315,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
+            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:16,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:17	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:18	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:19	{"ref":{"buf":"Uint8Array()"}}
         req:rastream_stock,finished
         req:witness,eternal,ok
         reached:step_4
         Library,pier:b317b9a776e39d30
-          Record,id:848b336a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,src_hash:0d9cc36d
-            Stream,name:opus,total=39,sr=48000,br=128000,seg_secs=2,bytes=1290003,have=19,got=19
-          Record,id:8233c2ea,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,src_hash:9471f8fc
-            Stream,name:opus,total=38,sr=48000,br=128000,seg_secs=2,bytes=1256926,have=16,got=16
-        switched,a_dropped
+          Record,id:af99e3b3efe5661a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
+            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:16,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:17	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:18	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:19	{"ref":{"buf":"Uint8Array()"}}
+          Record,id:cec642f34f501315,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
+            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:16,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:17	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:18	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:19	{"ref":{"buf":"Uint8Array()"}}
+        stream_ask:A,preview=16,at_head=14,plays=8
+        stream_want=16,of:A,preview=16
+        fed:A,at_head=18,held=4
+        switched,at_head=20
+        stream_ask:B,preview=16,at_head=14,plays=8
+        stream_want=16,of:B,preview=16
         req:rastream_measure,finished
-        streamed,cap=16,a_drops,a_gapless=0,a_starved=40,b_drops=0,b_gaps=0
-        see:the healthy portion of the listen played gapless — the buffer stayed just ahead of the playhead as it advanced over the wire
-        see:the slow producer starved the same stream — real holes emerged when the rate-limited caster fell behind the playhead
-        see:changing the track resumed a fed stream — a fresh buffer primed over the wire and the new playhead stayed ahead
-        see:the starve was pulled over the real wire — the holes are what the rate-limited caster failed to deliver in time not a computed set
+        streamed,cap=20,a_played=20,a_drops=0,a_heard=0,b_drops=0,b_heard=0,lufs=-14.01
+        see:two real opus Records stand at the caster — a session with stock to listen and a track to change to
+        see:the listen began on the cached preview alone — the spool held at the boundary until the tail ran low
+        see:the streaming ask went out at exactly the segment after the last preview
+        see:the playhead crossed the boundary onto transcoded chunks that arrived on demand
+        see:hitting the next track opened a fresh cycle — a new preview primed and its own ask went out at its own boundary
+        see:the terminal decoded what it pulled — the loudness reads the target back from the bytes that crossed
+        see:the next track played its capped cycle clean — the transcoder kept ahead of a fresh playhead

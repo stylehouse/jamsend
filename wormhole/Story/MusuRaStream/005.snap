@@ -1,30 +1,30 @@
 Snap:H
   H:MusuRaStream,Run
     A:MusuRaStream
-      self,round=16	{"mung":["age"]}
+      self,round=18	{"mung":["age"]}
       w:MusuRaStream
-        self,round=16	{"mung":["age"]}
+        self,round=18	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Account,of:DJ
           Identity:c012850d69de1318,prepub:c012850d69de1318,friendly:DJ
             Peering,name:c012850d69de1318,friendly:DJ
               Idzeug:rastream_1,to:Music,genre:Classical,spent
-              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783487347
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783688464
                 Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1783487347,sign:20661a8e2204f61f85bb1a976174fc27eaa81a935910a9b6ae1d05df984315ecfbfe9d54c7cced1ad3a8ff339fccf5b7b447c59714fb3fa39c3a40b860226a03,genre:Classical
-                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783487347,sign:74e7e9266e8ea976c9c5e221947e25f95ade3b5be28d97f71c86bb68e7eab9357b77e48e968eec417dccc206fac78eafeb1acc2e5cf8f81c02bce951fc657c0f,genre:Classical
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1783688464,sign:cc922eb8ff39a2417f71cff109b6c04aa83433b78823c50e9610f5e195e27a02a7090539cdf319c959d3d3cc7f396c791baa941e6258e4de6e2433baded20d00,genre:Classical
+                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783688464,sign:7b327667354471af9c74d85122d26b534e285dd5bd30d74ef6010df4a840c5c931c6b6c635cecc648f550c568fe8cda771c0ed0997913cb5ef91898e2c2eda03,genre:Classical
             SocialGraph
-              Edge,a:c012850d69de1318,b:b317b9a776e39d30,at:1783487347
+              Edge,a:c012850d69de1318,b:b317b9a776e39d30,at:1783688464
         Account,of:Listener
           Identity:b317b9a776e39d30,prepub:b317b9a776e39d30,friendly:Listener
             Peering,name:b317b9a776e39d30,friendly:Listener
-              Pier,pub:c012850d69de1318,friendly:DJ,since:1783487347
+              Pier,pub:c012850d69de1318,friendly:DJ,since:1783688464
                 Peering,name:c012850d69de1318,friendly:DJ,pub:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535
-                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783487347,sign:74e7e9266e8ea976c9c5e221947e25f95ade3b5be28d97f71c86bb68e7eab9357b77e48e968eec417dccc206fac78eafeb1acc2e5cf8f81c02bce951fc657c0f,genre:Classical
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1783487347,sign:20661a8e2204f61f85bb1a976174fc27eaa81a935910a9b6ae1d05df984315ecfbfe9d54c7cced1ad3a8ff339fccf5b7b447c59714fb3fa39c3a40b860226a03,genre:Classical
+                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783688464,sign:7b327667354471af9c74d85122d26b534e285dd5bd30d74ef6010df4a840c5c931c6b6c635cecc648f550c568fe8cda771c0ed0997913cb5ef91898e2c2eda03,genre:Classical
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1783688464,sign:cc922eb8ff39a2417f71cff109b6c04aa83433b78823c50e9610f5e195e27a02a7090539cdf319c959d3d3cc7f396c791baa941e6258e4de6e2433baded20d00,genre:Classical
             SocialGraph
-              Edge,a:b317b9a776e39d30,b:c012850d69de1318,at:1783487347
+              Edge,a:b317b9a776e39d30,b:c012850d69de1318,at:1783688464
         Peering,name:c012850d69de1318,req=2,ok
           Pier,pub:b317b9a776e39d30,req=2,ok
             req:handshake,finished
@@ -44,15 +44,25 @@ Snap:H
                 emit,type:hello,seq
                 emit=2,type:trust,seq=2
                 emit=3,type:pier_accept,seq=3
-                emit=4,type:racast_lines,seq=4
-                emit=5,type:racast_lines,seq=5
-              emit=6,type:racast_page,seq=6,sent,body_hash:5f832923532d33dd907c6dff49a493d0b21eb32cb2974f73c900ede2b94748aa,body_len=132308,acked
+                emit=4,type:repli_lines,seq=4
+                emit=5,type:repli_lines,seq=5
+              emit=6,type:repli_lines,seq=6,sent,body_hash:b00cc432b8ec4afdf9f12c86eb71e99b49fcd1515a96c725697901b5d585d720,body_len=199,acked
+              emit=7,type:repli_page,seq=7,sent,body_hash:d7670bb6b5890d1dce029dd41907e0138d9493cd95bef2d585d5c43e868cb48a,body_len=32620,acked
+              emit=8,type:repli_page,seq=8,sent,body_hash:e65c375c25e4e63033d7d5cc696a0690f8f3bdef9ea544bc60f67d1f09b3ea13,body_len=32300,acked
+              emit=9,type:repli_lines,seq=9,sent,body_hash:6b098e6901affde4b90f9ca05be0292012c3d501da1ed939a1818bad9e47fa58,body_len=182,acked
+              emit=10,type:repli_page,seq=10,sent,body_hash:15dff9e6005161dbc8b83fb564aa64055b12d1196356f6b1b27e143feb42ec5c,body_len=32300,acked
+              emit=11,type:repli_page,seq=11,sent,body_hash:1b68ad5d804219206d39bb4067d65be121701ed9b617ddc3ff3a7b41dc4d11ed,body_len=32300,acked
+              emit=12,type:repli_lines,seq=12,sent,body_hash:bee1702f79ffb339df4efe907452a02475759ebc462350f0e8482ff061617cb5,body_len=182,acked
+              emit=13,type:repli_page,seq=13,sent,body_hash:e68466355bbbdbfd92126ee1d40a103426b1382177f0ea01f34e0ca791e08ee7,body_len=32300,acked
+              emit=14,type:repli_page,seq=14,sent,body_hash:e82de324f79463c98b60893e52943469f0080fd7f7b999bce430faf4f8675c25,body_len=32300,acked
             inbox
               recent
                 unemit,type:hello,seq
                 unemit=2,type:trust,seq=2
                 unemit=3,type:pier_hello,seq=3
-              req:unemit,seq=4,type:racast_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:racast_want,finished
+              req:unemit,seq=4,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
+              req:unemit,seq=5,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
+              req:unemit,seq=6,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
             Ud,pubkey:b317b9a776e39d30
           active_transport,type:mock,open
         Peering,name:b317b9a776e39d30,req=3,ok
@@ -74,27 +84,78 @@ Snap:H
                 emit,type:hello,seq
                 emit=2,type:trust,seq=2
                 emit=3,type:pier_hello,seq=3
-              emit=4,type:racast_want,seq=4,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
+              emit=4,type:repli_want,seq=4,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
+              emit=5,type:repli_want,seq=5,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
+              emit=6,type:repli_want,seq=6,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
             inbox
               recent
                 unemit,type:hello,seq
                 unemit=2,type:trust,seq=2
                 unemit=3,type:pier_accept,seq=3
-                unemit=4,type:racast_lines,seq=4
-                unemit=5,type:racast_lines,seq=5
-              req:unemit,seq=6,type:racast_page,body_hash:5f832923532d33dd907c6dff49a493d0b21eb32cb2974f73c900ede2b94748aa,body_len=132308,done,to:racast_page,finished
+                unemit=4,type:repli_lines,seq=4
+                unemit=5,type:repli_lines,seq=5
+              req:unemit,seq=6,type:repli_lines,body_hash:b00cc432b8ec4afdf9f12c86eb71e99b49fcd1515a96c725697901b5d585d720,body_len=199,done,to:repli_lines,finished
+              req:unemit,seq=7,type:repli_page,body_hash:d7670bb6b5890d1dce029dd41907e0138d9493cd95bef2d585d5c43e868cb48a,body_len=32620,done,to:repli_page,finished
+              req:unemit,seq=8,type:repli_page,body_hash:e65c375c25e4e63033d7d5cc696a0690f8f3bdef9ea544bc60f67d1f09b3ea13,body_len=32300,done,to:repli_page,finished
+              req:unemit,seq=9,type:repli_lines,body_hash:6b098e6901affde4b90f9ca05be0292012c3d501da1ed939a1818bad9e47fa58,body_len=182,done,to:repli_lines,finished
+              req:unemit,seq=10,type:repli_page,body_hash:15dff9e6005161dbc8b83fb564aa64055b12d1196356f6b1b27e143feb42ec5c,body_len=32300,done,to:repli_page,finished
+              req:unemit,seq=11,type:repli_page,body_hash:1b68ad5d804219206d39bb4067d65be121701ed9b617ddc3ff3a7b41dc4d11ed,body_len=32300,done,to:repli_page,finished
+              req:unemit,seq=12,type:repli_lines,body_hash:bee1702f79ffb339df4efe907452a02475759ebc462350f0e8482ff061617cb5,body_len=182,done,to:repli_lines,finished
+              req:unemit,seq=13,type:repli_page,body_hash:e68466355bbbdbfd92126ee1d40a103426b1382177f0ea01f34e0ca791e08ee7,body_len=32300,done,to:repli_page,finished
+              req:unemit,seq=14,type:repli_page,body_hash:e82de324f79463c98b60893e52943469f0080fd7f7b999bce430faf4f8675c25,body_len=32300,done,to:repli_page,finished
             Ud,pubkey:c012850d69de1318
+            req:awaitbuf,bufferid,landed,finished
+            req:awaitbuf,bufferid=2,landed,finished
+            req:awaitbuf,bufferid=3,landed,finished
+            req:awaitbuf,bufferid=4,landed,finished
+            req:awaitbuf,bufferid=5,landed,finished
+            req:awaitbuf,bufferid=6,landed,finished
           active_transport,type:mock,open
         Library,pier:c012850d69de1318
-          Record,id:848b336a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,src_hash:0d9cc36d
-            Stream,name:opus,total=39,sr=48000,br=128000,seg_secs=2,bytes=1290003
-          Record,id:8233c2ea,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,src_hash:9471f8fc
-            Stream,name:opus,total=38,sr=48000,br=128000,seg_secs=2,bytes=1256926
+          Record,id:af99e3b3efe5661a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
+            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
+          Record,id:cec642f34f501315,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
+            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
         req:rastream_stock,finished
         req:witness,eternal,ok
         reached:step_4
         Library,pier:b317b9a776e39d30
-          Record,id:848b336a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,src_hash:0d9cc36d
-            Stream,name:opus,total=39,sr=48000,br=128000,seg_secs=2,bytes=1290003,have=4,got=4
-          Record,id:8233c2ea,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,src_hash:9471f8fc
-            Stream,name:opus,total=38,sr=48000,br=128000,seg_secs=2,bytes=1256926
+          Record,id:af99e3b3efe5661a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
+            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
+          Record,id:cec642f34f501315,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
+        see:two real opus Records stand at the caster — a session with stock to listen and a track to change to

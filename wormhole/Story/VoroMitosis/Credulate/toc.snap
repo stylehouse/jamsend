@@ -16,8 +16,8 @@ Credulate,of_Book:VoroMitosis
   GhostInclude:Ghost_S_Swarm,dige:a5980d5d4830e92b
   GhostInclude:Ghost_Story_Swarmation,dige:424a77682127f2ba
   GhostInclude:Ghost_V_Voro,dige:91c88bec3d9f91fe
-  GhostInclude:Ghost_Story_Voronation,dige:a499ddee9abc6dca
-  last_ok,at=1783682002.671,ok_pct
+  GhostInclude:Ghost_Story_Voronation,dige:8d83abaa8c00b7d3
+  last_ok,at=1783689720.632,ok_pct
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -35,4 +35,4 @@ Credulate,of_Book:VoroMitosis
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
     uses:Ghost_V_Voro,dige:91c88bec3d9f91fe
-    uses:Ghost_Story_Voronation,dige:a499ddee9abc6dca
+    uses:Ghost_Story_Voronation,dige:8d83abaa8c00b7d3
