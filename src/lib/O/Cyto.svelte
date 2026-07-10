@@ -177,6 +177,31 @@
         ;(this as House).o({ watched: 'graph' })[0]?.bump_version()
     },
 
+    // ── e_Cyto_crush ─────────────────────────────────────────────────────
+    // The ◈ imposition (Cytui's bar button, on a world whose Book never opted %crushCyto):
+    //  arm c.crush_wanted on the scan root and re-scan — cyto_update_wave then runs the Voro
+    //   crusher before every scan while the flag rides, and dropping it strips the stamps.
+    //    All view, all c-side: the luxury layer lands on ANY graph without touching what its
+    //     Story snaps.  Needs Voro.g on H (CREDULER_GHOSTS — so runners); elsewhere it logs
+    //      and stands down, leaving the render to draw whatever chunks already exist.
+    async e_Cyto_crush(A: TheC, w: TheC, e: TheC) {
+        const H = this as House
+        const scan = w.c.Scannable as TheC | undefined
+        if (!scan) return
+        if (e?.sc.on) {
+            if (typeof (H as any).Voro_crush_scan !== 'function')
+                return console.log('◈ crush unavailable — Voro.g is not loaded on this House (runner spine only)')
+            scan.c.crush_wanted = 1
+        } else {
+            delete scan.c.crush_wanted
+            ;(H as any).Voro_crush_clear?.(scan)
+        }
+        // force a fresh scan + an absolute wave past the same-step guard so the (un)fold shows now
+        const last = w.c.last_step_n as number | undefined
+        delete w.c.last_step_n
+        await this.cyto_update_wave(w, last ?? 1, true)
+    },
+
 //#region cyto_update_wave
     async cyto_update_wave(w: TheC, incoming_step_n?: number, absolute = false): Promise<boolean> {
         const H    = this as House
@@ -194,6 +219,9 @@
 
         // TRIGGER 1: new step from client → scan + archive
         if (incoming_step_n !== undefined && !same_step_n || !w.c.supports_seek) {
+            // ◈ imposition: a crush the VIEW asked for (e_Cyto_crush), not the Book — re-stamp
+            //  before each scan so newborn particles fold too.  c-side only; no snap sees it.
+            if (scan.c.crush_wanted) (H as any).Voro_crush_scan?.(scan)
             const topC = await this.cyto_scan(w, scan)
             await this.cyto_assign_ids(w, topC)
             await this.cyto_scan_refs(w, topC)
@@ -474,10 +502,13 @@
                 }
 
                 // a stuffed container FOLDS: this node hosts the Stuffing overlay (the ×N groups) and
-                //  the walk stops here — its subtree stays out of the graph.  cyto_folded (c-side,
-                //   never snapped) is the live graph's own stamp that the fold really happened — a Book
-                //    can witness it, where %stuff alone only proves a crusher stamped intent.
-                if (n.sc.stuff != null) {
+                //  the walk stops here — its subtree stays out of the graph.  Two fold stamps: snapped
+                //   sc.stuff (the classic hand-placed chunk — Machinery peeks, stuff_of) and c-side
+                //    c.stuff (the Voro crusher, Ghost/V/Voro.g — a view stamp no snap ever sees; drop
+                //     it and every folded Artist's Tracks leak back into the graph as free nodes).
+                //      cyto_folded (c-side, never snapped) is the live graph's own receipt that the fold
+                //       really happened — a Book can witness it, where a stamp alone only proves intent.
+                if (n.sc.stuff != null || n.c.stuff) {
                     T.sc.no_further = 'stuffed'
                     n.c.cyto_folded = Se.c.tick
                 }
@@ -624,7 +655,18 @@
             || s.wave_data || s.refs || s.snap_node || s.snap_root
             || s.housed || s.run || s.Se || s.inst || s.began_wanting
             || s.CytoStep || s.CytoWave || s.tracing || s.Dip
+            // %Opt is settings scaffolding (e.g. the %crushCyto opt a Book pushes
+            //  into w at settingoff, or MusuReplica's kept opt) — config, never
+            //   flora.  The crusher already ignores it; the view hides it too, so
+            //    the graph reads as pure data.  skip drops its config-leaf subtree.
+            || s.Opt
             || s.snapshot || s.cyto_edge_root || s.cyto_z) return 'skip'
+        // a REPRESENTED gang member (c.represented — c-side, only the Voro
+        //  crusher's Voro_gang_fold ever stamps it): its row already shows in
+        //   its gang's representative pane (the rep carries c.gang), so drawing
+        //    the member too would double it.  A world the crusher never touched
+        //     carries no stamp — inert everywhere else.
+        if (n.c?.represented) return 'skip'
         // cyto_fold: a grouping container for constraints/edges. Walked through
         // (so its cyto_cons / cyto_edge children are still emitted), but nothing
         // is drawn for the fold itself. mode:'cyto_fold' is the explicit marker
@@ -1340,14 +1382,17 @@
         if (client && w.c.wants_wave_done) {
             this.i_elvistwo(w, client, 'Cyto_wave_done', { story_step })
         }
-        // Animation plays for grawave_duration. After that, the motion is
-        // visually complete and the client can proceed to its next step.
+        // Animation plays for grawave_duration, then a real dwell before the client
+        //  advances (waitVoro): the layout leg is only the first act — the voronoi
+        //   morph (and the eye) want an unrushed beat on every step, so a watched
+        //    run reads as a story, not a flipbook.  The dwell is the pace knob.
         const dur = ((w.sc.grawave_duration as number) ?? 0.3) * 1000
+        const DWELL_MS = 2000
         setTimeout(() => {
             if (client && w.c.wants_animation_done) {
                 this.i_elvistwo(w, client, 'Cyto_animation_done', { story_step })
             }
-        }, dur + 100)
+        }, dur + DWELL_MS + 100)
     }
 
 //#endregion

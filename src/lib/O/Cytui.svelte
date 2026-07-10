@@ -1069,13 +1069,22 @@
         pop.call(H, src, member)
     }
 
+    // ── 📻🕳 SHELVED: both drift modes are OFF ────────────────────────────────
+    //  The tunnel never lets the tessellation settle (every radio dwell re-projects the
+    //   walls), and both v1s were toggles bolted INSIDE the scape when they want to be
+    //    their own artistic endeavour grown OUT of it — the owner parks them until that
+    //     reimagining (spec/Voro_vtuffing.md north stars).  Like the rack: machinery kept
+    //      behind the flag, buttons and stash-restore gated, so nothing can arm them and
+    //       one flag re-opens the lab.
+    const DRIFT_MODES_ON = false as boolean
+
     // ── 📻 the radio: attention as a supplied service (north star — spec/Voro_vtuffing.md) ──
     //  The .g tuner (Voro_drift_tick) ages the trail shut, picks the next locale, opens it a
     //   little; here we keep the dwell clock and GLIDE the camera onto whatever it returns.
     //    Touching the dial (grab|pan|zoom that isn't our own glide) holds the tuner off for
     //     15s — the listener's hand always outranks the program director.
     let radio_pref = $state<boolean | null>(null)
-    const radio_on = $derived(radio_pref ?? false)
+    const radio_on = $derived(DRIFT_MODES_ON && (radio_pref ?? false))
     let radio_timer: ReturnType<typeof setInterval> | null = null
     let radio_gliding = false
     let radio_hold_until = 0
@@ -1121,7 +1130,7 @@
     //          the tube IS the tuner's dwell (the §North stars coupling).  cy itself stays 2D:
     //           this is a VIEW of the same layout, not a second layout space.
     let tunnel_pref = $state<boolean | null>(null)
-    const tunnel_on = $derived(voronoi_on && (tunnel_pref ?? false))
+    const tunnel_on = $derived(DRIFT_MODES_ON && voronoi_on && (tunnel_pref ?? false))
     let tunnel_phase = 0                       // camera z as a wrap-around phase [0,1), radio-advanced
     function toggle_tunnel() {
         tunnel_pref = !(tunnel_pref ?? false)
@@ -2329,10 +2338,12 @@
         if (typeof stashed_b === 'boolean') brush_pref = stashed_b
         const stashed_t = (H as any).stashed?.Cyto_vtuffing
         if (typeof stashed_t === 'boolean') vtuffing_pref = stashed_t
-        const stashed_r = (H as any).stashed?.Cyto_radio
-        if (stashed_r === true) { radio_pref = true; radio_timer = setInterval(radio_tick, RADIO_DWELL) }
-        const stashed_tu = (H as any).stashed?.Cyto_tunnel
-        if (typeof stashed_tu === 'boolean') tunnel_pref = stashed_tu
+        if (DRIFT_MODES_ON) {   // shelved: a stashed true from the play days must not resurrect the drift
+            const stashed_r = (H as any).stashed?.Cyto_radio
+            if (stashed_r === true) { radio_pref = true; radio_timer = setInterval(radio_tick, RADIO_DWELL) }
+            const stashed_tu = (H as any).stashed?.Cyto_tunnel
+            if (typeof stashed_tu === 'boolean') tunnel_pref = stashed_tu
+        }
         cy = cytoscape({
             container,
             // a livelier wheel: the default 1 needs a whole spin to move; the
@@ -2460,10 +2471,12 @@
             title="gravity brush — wheel pinches|spreads the locale under the cursor (Ctrl+wheel still zooms)">🌀</button>
         <button class="v-toggle" class:on={vtuffing_on} onclick={toggle_vtuffing}
             title="vtuffing — a big-enough pane swaps its molded Stuffing for member rows fitted to the cell (off = Stuffings always)">▤</button>
-        <button class="v-toggle" class:on={radio_on} onclick={toggle_radio}
-            title="radio — the graph plays you: a tuner drifts attention pane to pane and opens each a little (touch anything to hold it off)">📻</button>
-        <button class="v-toggle" class:on={tunnel_pref ?? false} onclick={toggle_tunnel}
-            title="tunnel — the tessellation drifts down a tube: solidity takes the left wall, the opening reads as a C, and radio dwells advance the drift">🕳</button>
+        {#if DRIFT_MODES_ON}
+            <button class="v-toggle" class:on={radio_on} onclick={toggle_radio}
+                title="radio — the graph plays you: a tuner drifts attention pane to pane and opens each a little (touch anything to hold it off)">📻</button>
+            <button class="v-toggle" class:on={tunnel_pref ?? false} onclick={toggle_tunnel}
+                title="tunnel — the tessellation drifts down a tube: solidity takes the left wall, the opening reads as a C, and radio dwells advance the drift">🕳</button>
+        {/if}
         <span class="cytui-vx" title="taller — double the graph height (50vh ↔ 100vh), then re-fit">
             <Vexpandy bind:expanded={tall} />
         </span>
