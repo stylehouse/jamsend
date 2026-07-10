@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return 'ddec70462c78a815' },
+    Ghostmeta_Ghost_V_Voro(): string { return 'd250d4c0fc8c6956' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
@@ -91,11 +91,12 @@ Voro_crush_pass(w, level) {
 //    NEXT to it in w:Voronoiology (one fixed name across all Book:Voro*), rewritten each crush
 //     beat.  So every Story step now DIFFS
 //     and the model Cyto renders is finally legible in the snap: the governor level, the
-//      visible count, per-genus whether it folded to a gang or scattered loose (the owner's
-//       "why are some Pittosporum non-cells" — level-dependent ganging, now readable), which
-//        panes the radio popped, and the drift focus.  A sibling world is NOT in the flora
-//         world's subtree, so cyto_scan never renders it — it is SNAP-ONLY, the seed of Story's
-//          future separable snap channels (capture certain A/w on their own layer, trace always
+//      visible count, every pane the crush INTENDS (%cell rows — gang or folded container, the
+//       owner's "why are some Pittosporum non-cells" now readable for ANY world, not just flora),
+//        the unfolded leaves (%bare rows), which panes the radio popped, and the drift focus.
+//         Since 2026-07-09 the report world also GRAPHS (the owner un-hid it) — a live pane of
+//          the crush's working beside the data; it remains the seed of Story's future separable
+//           snap channels (capture certain A/w on their own layer, trace always
 //           on).  NO gate: whenever the fold runs (imposed or inline) it self-reports here.  Story
 //            decides RECORDING not building — it prunes w:Voronoiology from the snap for a Book with
 //             %dontSnapVoronoiology (MusuReplica keeps its replication fixture clean); the ◈ button
@@ -105,43 +106,84 @@ Voro_report(w, stats) {
     if (!A || !w.sc.w) return null
     let rname = 'Voronoiology'
     let rw = A.o({ w: rname })[0]
-    if (!rw) rw = A.i({ w: rname, dontGraph: 1 })
-    // %dontGraph — the self-report is process-trace NOISE, not data: keep it OUT of the live graph
-    //  (Cyto's cytyle_classify skips a dontGraph node AND its subtree).  Snapped (sc, set at mint) so
-    //   it SURVIVES encode|decode and is legible in the snap; also re-stamped c-side each beat so a
-    //    world minted before this landed is covered too.  (Books that snap w:Voronoiology gain a
-    //     dontGraph:1 on the world line — re-record picks it up.)
-    rw.c.dontGraph = 1
+    if (!rw) rw = A.i({ w: rname })
+    // the report GRAPHS now (owner un-hid it 2026-07-09) — watching the crush's WORKING as a live
+    //  pane beside the data beats a snap-only trace.  It had ridden %dontGraph as "process noise";
+    //   heal the stamp off both sides so a world minted before the un-hide surfaces too.  (Books
+    //    that snap w:Voronoiology LOSE the dontGraph on their world line — re-record picks it up.)
+    if (rw.sc.dontGraph) delete rw.sc.dontGraph
+    delete rw.c.dontGraph
     for (const c of rw.o().slice()) c.drop(c)
     w.c.report_beat = (w.c.report_beat || 0) + 1
+    // the census — GENERIC now (was Botany-locked: a music world's stations|Artists never made a
+    //  row, so the report went terse exactly where it was needed).  Walk the fold stamps the crush
+    //   just laid down: one %cell row per pane it INTENDS this beat.  That's the render-debt gauge —
+    //    every row here should be a pane on the canvas; a render showing fewer is trapping data
+    //     behind the glass (the VoroScape fault, now legible in ANY Voro world).
+    let census = { cells: [], bare: {} }
+    this.Voro_report_walk(w, census, 0)
+    let pops = 0
+    for (const f of census.cells) pops = pops + f.pop
     // level as 'L0'|'L1'|'L2' — a bare numeric 1 would snap as the boolean sentinel (collapse
-    //  to a flag) and 0 would VANISH, so the governor level must ride as a string to stay legible.
-    rw.i({ Voro: 1, beat: w.c.report_beat, level: 'L' + stats.level, visible: stats.visible, gangs: stats.gangs, folded: '' + stats.folded, count: '' + stats.count })
+    //  to a flag) and 0 would VANISH, so the governor level must ride as a string to stay legible
+    //   (counts that can hit 1|0 ride stringified for the same reason).
+    let head = { Voro: 1, beat: w.c.report_beat, level: 'L' + stats.level, visible: stats.visible, cells: '' + census.cells.length, gangs: stats.gangs, folded: '' + stats.folded, count: '' + stats.count }
+    if (pops) head.pop = '' + pops
+    rw.i(head)
     if (w.c.drift_focus) {
         let f = w.c.drift_focus
         let fk = Object.keys(f.sc)[0]
         rw.i({ drift: 1, focus: fk + ' ' + f.sc[fk], opens: (w.c.drift_opens || []).length })
     }
-    // one row per genus present, in the fixed Botany order (deterministic): the fold verdict
-    //  the crush reached this beat — a gang (n folded behind a rep) or loose (each its own
-    //   node|cell), plus how many the radio has popped out right now.
-    for (const g of this.Botany_genera()) {
-        let members = w.o().filter(c => Object.keys(c.sc)[0] === g)
-        if (!members.length) continue
-        let rep = members.find(m => m.c.stuff && m.c.gang)
-        let pop = members.filter(m => m.c.popped).length
-        let row = { row: g, n: members.length }
-        if (rep) {
-            row.fold = 'gang'
-            row.rep = rep.sc[g]
-            row.of = rep.c.fold_n
-        } else {
-            row.fold = 'loose'
-            let cells = members.filter(m => m.c.stuff).length
-            if (cells) row.cells = cells
-        }
-        if (pop) row.pop = pop
+    // the intended panes: kind = pane (a folded container) | gang (loose leaves elected behind a
+    //  rep); n = members folded in; pop = members surfed out right now.  Then one %bare row per
+    //   mainkey of UNFOLDED visible leaves — legitimate data standing as plain nodes (a fat bare
+    //    row at level 0 is usually just pre-escalation; one that persists is a fold-policy gap).
+    for (const f of census.cells) {
+        let row = { cell: f.label, kind: f.kind, n: '' + f.n }
+        if (f.pop) row.pop = '' + f.pop
         rw.i(row)
+    }
+    for (const mk of Object.keys(census.bare)) {
+        let b = census.bare[mk]
+        let row = { bare: mk, n: '' + b.n }
+        if (b.pop) row.pop = '' + b.pop
+        rw.i(row)
+    }
+
+},
+// Voro_report_walk — gather Voro_report's census on the same cut the Cyto walk makes.  A fold
+//  stamp (c.stuff) is a pane — count it, do NOT descend (folded here = folded on the canvas); a
+//   represented member is already inside its rep's pane; anything else with children is walked-
+//    through structure; a leaf left standing is bare.  Popped members tally per-pane (a gang's
+//     popped ride its c.gang list, a folded container's its children) and a popped LONER —
+//      crush_walk lets it stand alone — tallies on its mainkey's bare row.
+Voro_report_walk(node, census, d) {
+    if (d > 8) return
+    for (const c of node.o()) {
+        if (c.c.represented) continue
+        let mk = Object.keys(c.sc)[0]
+        if (mk === 'Opt') continue
+        if (c.c.stuff) {
+            let label = mk
+            if (c.c.gang) {
+                label = c.c.fold_kind || mk
+            } else if (c.sc[mk] && c.sc[mk] !== 1) {
+                label = mk + ' ' + c.sc[mk]
+            }
+            let pop = 0
+            let members = c.c.gang || c.o()
+            for (const m of members) if (m.c.popped) pop = pop + 1
+            census.cells.push({ label: label, kind: c.c.gang ? 'gang' : 'pane', n: c.c.fold_n || c.o().length, pop: pop })
+            continue
+        }
+        if (c.o().length > 0) {
+            this.Voro_report_walk(c, census, d + 1)
+            continue
+        }
+        if (!census.bare[mk]) census.bare[mk] = { n: 0, pop: 0 }
+        census.bare[mk].n = census.bare[mk].n + 1
+        if (c.c.popped) census.bare[mk].pop = census.bare[mk].pop + 1
     }
 
 },

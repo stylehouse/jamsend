@@ -19,7 +19,10 @@ Waft:Ghost/Music/Ality,active
     Funkcion:Storying,of_Book:MusuConceal
     Funkcion:Storying,of_Book:MusuBounce
     Funkcion:Storying,of_Book:MusuReplica
-    Funkcion:Storying,of_Book:RaStock
+    Funkcion:Storying,of_Book:MusuRaStock
+    Funkcion:Storying,of_Book:MusuRaCast
+    Funkcion:Storying,of_Book:MusuRaTerm
+    Funkcion:Storying,of_Book:MusuRaStream
   What:the pipeline — rastock → racast → raterm (Radio_todo §3 — the product itself)
     What:the stock pass (Ghost/M/Ra.g — needles LUFS → baked gain → 2s Opus segments → Ogg mux → disk)
       Doc:Ghost/M/Ra.g
@@ -31,12 +34,27 @@ Waft:Ghost/Music/Ality,active
       Point,method:Ra_ogg_opus
       Point,method:Ra_stock_standing
       Point,method:Ra_proof
-    What:RaStock (the Book — survey / stock / prove / again)
+    What:MusuRaStock (the Book — survey / stock / prove / again)
       Doc:Ghost/Story/Radiation.g
-      Point,method:RaStock_drive
-      Point,method:RaStock_pass
-      Point,method:RaStock_proofs
-      Point,method:RaStock_witness
+      Point,method:MusuRaStock_drive
+      Point,method:MusuRaStock_pass
+      Point,method:MusuRaStock_proofs
+      Point,method:MusuRaStock_witness
+    What:the preview economy — %Preview caches in radiostock/ and %Stream continues right after it
+      Doc:Ghost/M/Ra.g
+      Point,method:Ra_preview_secs
+      Point,method:Ra_record_from
+      Point,method:Ra_cast_transcode
+      Point,method:Ra_cast_serve_want
+      Point,method:Ra_term_stream_beat
+      Point,method:Ra_term_decode_pulled
+      Point,method:Ra_term_stash
+      Doc:Ghost/Story/Radiation.g
+      Point,method:MusuRaStream_beat
+      Point,method:MusuRaStream_measure
+      Doc:src/lib/ghost/Radios.svelte
+      Point,text:radiopreview
+      Point,text:want_streaming
   What:the machine
     What:1 the spool
       Doc:Ghost/M/Radiola.g

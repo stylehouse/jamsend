@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return 'ff0d1e18cbbffcc5' },
+    Ghostmeta_Ghost_M_Ra(): string { return '8cf5058704e3501f' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -34,9 +34,16 @@
 //    re-mints the %Record from it without a decode), a '\n', then the 2s opus buffers back to back.
 //     It opens as json, never as audio, so a media indexer walking the library ignores it.  The
 //      SOURCE collection stays untouched — nothing of ours litters it (§9.1b).
+//  THE PREVIEW ECONOMY (the Radios.svelte enforcement, owner 2026-07-08): a Record is always
+//   %Preview FIRST — the leading Ra_preview_secs window is what pre-encodes and CACHES in
+//    radiostock/ (the .jam holds ONLY those segments; hundreds of previews are cheap disk) — and
+//     %Stream is the continuation FROM THE SEGMENT RIGHT AFTER THE LAST PREVIEW, transcoded from
+//      the SOURCE on demand at the caster (the honest slow-transcode clock) and NEVER cached: no
+//       source, no stream — the old machine's rapiracy check, kept as an economy not a relic.
 //  IN THE WORLD:  %Library,pier:<whose> (the census convention — a key, not a nickname) holding
-//   %Record,id (title|artist|seconds|lufs|gain|real) each with %Stream,name:opus (total|sr|br|
-//    seg_secs|bytes).  Per-segment particles would be snap bulk: the FILES are the chunk rows.
+//   %Record,id (title|artist|seconds|lufs|gain|real) each with %Preview,name:opus (total|bytes —
+//    the cached part) + %Stream,name:opus (from|total — the continuation head; from == the
+//     preview's total).  Per-segment particles would be snap bulk: the FILES are the chunk rows.
 
 //#region knobs
 // Ra_target_lufs — the ONE loudness constant (Radio_todo §3.2, decided 2026-07-07): -14 LUFS, the
@@ -49,6 +56,14 @@ Ra_target_lufs(w) {
 // Ra_seg_secs — the transport unit: the nice little ~2s frame (independently decodable).
 Ra_seg_secs() {
     return 2
+
+},
+// Ra_preview_secs — how much of every track is the free PREVIEW (Radios.svelte's PREVIEW_DURATION=33):
+//  the leading window that pre-encodes into radiostock/ and fans out cheaply ahead of listening; the
+//   %Stream continuation picks up at the segment right after its last one.  Read off w so a Book can
+//    shrink it for a tight session.
+Ra_preview_secs(w) {
+    return +(w?.sc?.preview_secs ?? 33)
 
 },
 // Ra_bitrate — Opus bits per second.  128k is transparent-adjacent for stereo music; the tones the
@@ -456,6 +471,9 @@ async Ra_stock_standing(nav, id) {
     if (!un) return null
     let info = un.info
     if (!info.id || !(+info.segs > 0)) return null
+    // the preview-first format bump: a card that does not know the whole track's segment count is
+    //  the old whole-track layout — rebuild it into the preview economy rather than trust it.
+    if (!(+info.total > 0)) return null
     // a complete file ends exactly where the last buffer ends; a short body (un.end past EOF) or a
     //  buffer-count that misses the promised segs means an interrupted write — rebuild.
     if (un.end > raw.byteLength) return null
@@ -463,8 +481,10 @@ async Ra_stock_standing(nav, id) {
     return info
 
 },
-// Ra_record_from — mint|refresh the %Record (+ its %Stream,name:opus) from a stock info card —
-//  the ONE minting spot whether the info came from a fresh build or a standing .jam header.
+// Ra_record_from — mint|refresh the %Record (+ its %Preview and %Stream heads) from a stock info
+//  card — the ONE minting spot whether the info came from a fresh build or a standing .jam header.
+//   info.segs = the buffers the .jam holds (the preview); info.total = the whole track's segment
+//    count; the %Stream head starts exactly where the preview ends (from == the preview's total).
 Ra_record_from(lib, info) {
     let rec = lib.oai({ Record: 1, id: info.id })
     rec.c.up = lib
@@ -481,27 +501,39 @@ Ra_record_from(lib, info) {
     //   The full origin path stays in the sidecar (local, and comma-hazardous as a snapped sc key).
     if (info.col != null && info.col !== '') rec.sc.col = +info.col
     if (info.src_hash) rec.sc.src_hash = info.src_hash
-    let stream = rec.oai({ Stream: 1, name: 'opus' })
-    stream.c.up = rec
-    stream.sc.total = +info.segs
-    stream.sc.sr = 48000
-    stream.sc.br = +info.br
-    stream.sc.seg_secs = +info.seg_secs
+    // the PREVIEW head — the cached part: exactly the segments the .jam holds, with their byte weight.
+    let prev = rec.oai({ Preview: 1, name: 'opus' })
+    prev.c.up = rec
+    prev.sc.total = +info.segs
+    prev.sc.sr = 48000
+    prev.sc.br = +info.br
+    prev.sc.seg_secs = +info.seg_secs
     let bytes = 0
     // info.sizes is the per-buffer length array from the .jam header (build and resurrect both hand
-    //  it in) — the stream's byte weight is just their sum.
+    //  it in) — the preview's byte weight is just their sum.
     if (info.sizes) {
         for (const sz of info.sizes) bytes = bytes + (+sz || 0)
     }
-    if (bytes) stream.sc.bytes = bytes
+    if (bytes) prev.sc.bytes = bytes
+    // the STREAM head — the continuation: FROM the segment right after the last preview, TO the
+    //  track's end.  No bytes — its segments do not exist yet (transcoded on demand, never cached).
+    let stream = rec.oai({ Stream: 1, name: 'opus' })
+    stream.c.up = rec
+    stream.sc.from = +info.segs
+    stream.sc.total = +(info.total ?? info.segs)
+    stream.sc.sr = 48000
+    stream.sc.br = +info.br
+    stream.sc.seg_secs = +info.seg_secs
     rec.bump()
     return rec
 
 },
 // Ra_stock_one — the whole pass for ONE track: standing & fresh? resurrect and stand aside.  Else
-//  read → decode → measure → bake the gain → cut into 2s opus buffers → pack the card + every buffer
-//   into the one non-media <id>.jam and write it in a single shot → %Record.
-//    Returns {stood:1}|{built:1}|null (unreadable/undecodable — the caller counts it skipped).
+//  read → decode → measure the WHOLE track → bake the gain → cut the PREVIEW window into 2s opus
+//   buffers → pack the card + those buffers into the one non-media <id>.jam and write it in a single
+//    shot → %Record (+%Preview/%Stream heads).  The gain is whole-track so the on-demand continuation
+//     (Ra_cast_transcode applies the same card gain) lands loudness-uniform across the seam.
+//      Returns {stood:1}|{built:1}|null (unreadable/undecodable — the caller counts it skipped).
 async Ra_stock_one(w, lib, nav, src_base, path) {
     let id = this.Ra_id(path)
     // — read the source ONCE, up front —
@@ -513,9 +545,12 @@ async Ra_stock_one(w, lib, nav, src_base, path) {
     if (!raw) return null
     let src_size = raw.byteLength
     let src_hash = this.Ra_bytes_hash(raw)
-    // — standing AND still matching the source? resurrect from disk and skip the whole decode+encode —
+    // — standing AND still matching the source AND cut to THIS world's preview window? resurrect from
+    //    disk and skip the whole decode+encode.  The window check keeps Books deterministic against
+    //     each other: a world that shrinks preview_secs must not inherit another world's boundary
+    //      (run-order nondeterminism); a same-shape pass still stands aside, so idempotence holds. —
     let stand = await this.Ra_stock_standing(nav, id)
-    if (stand && stand.src_hash === src_hash) {
+    if (stand && stand.src_hash === src_hash && +(stand.preview_secs || 0) === this.Ra_preview_secs(w)) {
         this.Ra_record_from(lib, stand)
         return { stood: 1, id: id }
     }
@@ -539,13 +574,16 @@ async Ra_stock_one(w, lib, nav, src_base, path) {
     let lufs = await this.Ra_lufs(channels, 48000)
     let gain = this.Ra_gain_for(w, lufs, this.Ra_peak(channels))
     this.Ra_bake(channels, gain.linear)
-    // — cut at 2s boundaries; each cut gets its OWN fresh encoder (segment independence) → an opus buffer —
+    // — cut at 2s boundaries; each cut gets its OWN fresh encoder (segment independence) → an opus buffer.
+    //    ONLY the preview window encodes here: the .jam caches the %Preview parts, the continuation
+    //     stays in the source until a listener streams it (Ra_cast_transcode, the same boundaries) —
     let SEG = this.Ra_seg_secs() * 48000
     let total = channels[0].length
     let segs = Math.ceil(total / SEG)
+    let P = Math.min(segs, Math.ceil(this.Ra_preview_secs(w) / this.Ra_seg_secs()))
     let bufs = []
     let s = 0
-    while (s < segs) {
+    while (s < P) {
         let from = s * SEG
         let to = Math.min(total, from + SEG)
         let enc = await this.Ra_encode_opus(channels, from, to, this.Ra_bitrate())
@@ -555,9 +593,10 @@ async Ra_stock_one(w, lib, nav, src_base, path) {
         bufs.push(ogg)
         s = s + 1
     }
-    // — build the card (Ra_pack fills its sizes[] from the buffers) and write the ONE .jam in a single shot —
+    // — build the card (Ra_pack fills its sizes[] from the buffers) and write the ONE .jam in a single
+    //    shot.  segs = what THIS file holds (the preview); total = the whole track's segment count —
     let meta = this.Crate_meta_from_path(path)
-    let info = { id: id, path: path, col: 1, src_size: src_size, src_hash: src_hash, title: meta.title, artist: meta.artist, album: meta.album, seconds: +decoded.duration.toFixed(2), lufs: lufs, gain: gain.db, capped: gain.capped, segs: segs, sr: 48000, br: this.Ra_bitrate(), seg_secs: this.Ra_seg_secs(), target: this.Ra_target_lufs(w) }
+    let info = { id: id, path: path, base: src_base, col: 1, src_size: src_size, src_hash: src_hash, title: meta.title, artist: meta.artist, album: meta.album, seconds: +decoded.duration.toFixed(2), lufs: lufs, gain: gain.db, capped: gain.capped, segs: P, total: segs, preview_secs: this.Ra_preview_secs(w), sr: 48000, br: this.Ra_bitrate(), seg_secs: this.Ra_seg_secs(), target: this.Ra_target_lufs(w) }
     await nav.bin_write(this.Ra_stock_dir(), this.Ra_stock_name(id), this.Ra_pack(info, bufs))
     // — mint|refresh the %Record from that same card (build path and resurrect path share Ra_record_from) —
     this.Ra_record_from(lib, info)
@@ -644,8 +683,11 @@ async Ra_proof(nav, id, s) {
 //     false mid-stream → its next want is met with silence — 'a revoked B hears nothing new' falls out.
 //  ENDPOINTS ride w.c.tx (the caster) / w.c.rx (the listener) — the same two-Pier seam Repli's Books
 //   stand.  The Book seals them (a Swarm pair, or a loopback); the mechanics don't care which carrier.
-//    A page is one whole segment: the stock ALREADY stands on disk, so there is no transcode frontier
-//     to outrun (no parking, unlike Repli) — every want is answerable the instant it arrives.
+//    THE BOUNDARY (the preview economy): a want inside the preview window is answered instantly off
+//     the cached .jam and STOPS at the boundary; a want AT|PAST the boundary is the streaming ask —
+//      answered by transcoding the continuation from the SOURCE on demand (Ra_cast_transcode), at
+//       most racast_rate segments per want: the transcode frontier is REAL here, and a playhead can
+//        genuinely outrun it (raterm's starve is that race, not a simulation of one).
 
 // Ra_cast_allowed — the grant gate as a question.  Open only when no predicate is wired (a bare demo);
 //  otherwise exactly what w.c.racast_allow answers for that peer name.  Asked at EVERY leg, cached
@@ -664,19 +706,15 @@ Ra_cast_mirror(w) {
     return lib
 
 },
-// Ra_cast_send_lines — emit a racast_lines frame (enWaft text, sha256-verified body) + one racast_page
-//  frame per staged buffer (objecties.buffer=id ↔ header.bufferid=id).  Repli_send_lines' twin, RETYPED
-//   racast_* so a cast world and a repli world never cross-wire on the shared Peeroleum_on dispatch.
-async Ra_cast_send_lines(w, tx, from, to, text, bufmap) {
+// Ra_cast_send_lines — emit a racast_lines frame (enWaft text, sha256-verified body).  Repli_send_lines'
+//  twin, RETYPED racast_* so a cast world and a repli world never cross-wire on the shared Peeroleum_on
+//   dispatch.  LINES ONLY: a husk carries no buffers — pages travel as header-addressed racast_page
+//    frames (Ra_cast_page_out), never beside the lines.
+async Ra_cast_send_lines(w, tx, from, to, text) {
     let body = new TextEncoder().encode(text)
     let bh = await this.Peeroleum_body_digest(body)
     let seq = this.Pier_next_seq(tx)
     this.Peeroleum_send(w, { header: { type: 'racast_lines', from: from, to: to, seq: seq, body_hash: bh, body_len: body.length }, buffer: body })
-    for (const page of (bufmap.list || [])) {
-        let ph = await this.Peeroleum_body_digest(page.bytes)
-        let pseq = this.Pier_next_seq(tx)
-        this.Peeroleum_send(w, { header: { type: 'racast_page', from: from, to: to, seq: pseq, bufferid: page.id, body_hash: ph, body_len: page.bytes.length }, buffer: page.bytes })
-    }
 
 },
 // Ra_cast_offer — communicate about a stocked Record: ship its head (the %Record + its %Stream,name:opus
@@ -686,7 +724,7 @@ async Ra_cast_send_lines(w, tx, from, to, text, bufmap) {
 async Ra_cast_offer(w, tx, from, to, rec) {
     if (!this.Ra_cast_allowed(w, to)) return false
     let frag = this.Repli_fragment(rec, tx)
-    await this.Ra_cast_send_lines(w, tx, from, to, frag.text, frag.bufmap)
+    await this.Ra_cast_send_lines(w, tx, from, to, frag.text)
     return true
 
 },
@@ -703,10 +741,10 @@ async Ra_cast_catalog(w, tx, from, to) {
     return n
 
 },
-// Ra_cast_jam — the caster's page SOURCE: the Record's opus segments off its <id>.jam, read ONCE and
-//  cached on rec.c (a whole-Record cast reads the file once, pages it many times).  null if the stock
-//   is gone or a partial | old-.opus-layout file won't unpack — the caster then serves that Record
-//    nothing (Ra_unpack is the same carve Ra_proof and Ra_stock_standing trust).
+// Ra_cast_jam — the caster's PREVIEW page source: the Record's cached opus segments off its <id>.jam,
+//  read ONCE and cached on rec.c (a whole-preview cast reads the file once, pages it many times).
+//   null if the stock is gone or a partial | old-layout file won't unpack — the caster then serves
+//    that Record nothing (Ra_unpack is the same carve Ra_proof and Ra_stock_standing trust).
 async Ra_cast_jam(w, rec) {
     if (rec.c.jam_bufs) return rec.c.jam_bufs
     let nav = w.c.racast_nav || this.Crate_nav()
@@ -725,16 +763,107 @@ async Ra_cast_jam(w, rec) {
     return un.bufs
 
 },
-// Ra_cast_serve_want — A got a `want id/from_idx`: page out the whole tail [from_idx..end] of the
-//  Record's .jam in FIXED-STRIDE frames of PAGE segments each (w.c.racast_page, default 8).  Each frame
-//   is a LEAN racast_page — header names the record + first seg index + the per-segment sizes + the
-//    promised total; body is those PAGE opus buffers back to back (RAW — decoded only at the terminal).
-//     ONE want fans out to ceil(N/PAGE) frames, NOT a round trip per segment: a 39-seg track is ~5
-//      frames, not 39 wants + 78 lines|page frames flooding the belief queue (the old 120-todo, 15s beat).
-//       GATED on the asking peer: refused ⇒ served nothing (the want dies unanswered — no grant no bytes).
-//        The husk (Ra_cast_offer) already carried the %Record + %Stream head, so pages need NO lines —
-//         they are bulk bytes addressed by header, OFF the enWaft-merge path (the per-page merge was the
-//          real cost).
+// Ra_cast_transcode — the STREAM side's page source: transcode segments [from..from+n) from the
+//  SOURCE on demand — the real slow-transcode clock (Radios' rastream MediaRecorder loop reborn).
+//   The source decodes ONCE per Record (rec.c.pcm) with the CARD's whole-track gain baked in — the
+//    same gain the preview got, so the seam is loudness-uniform by construction.  Each segment then
+//     encodes with a FRESH encoder on the SAME 2s boundaries as the stock pass (segment k is segment
+//      k whichever pass made it) and caches on rec.c.stream_segs, so a re-want re-serves without
+//       re-encoding.  No source (moved|deleted) → null: NO STREAM — the old machine's rapiracy
+//        economy (a preview outlives its source; the continuation cannot).
+async Ra_cast_transcode(w, rec, from, n) {
+    let info = rec.c.jam_info
+    if (!info) {
+        await this.Ra_cast_jam(w, rec)
+        info = rec.c.jam_info
+    }
+    if (!info || !info.path) return null
+    let total = +(info.total || 0)
+    if (!(total > 0) || from >= total) return null
+    if (!rec.c.pcm) {
+        let nav = w.c.racast_nav || this.Crate_nav()
+        if (!nav) return null
+        let parts = ((info.base ? info.base + '/' : '') + info.path).split('/').filter(Boolean)
+        let fname = parts.pop()
+        let raw = null
+        try {
+            raw = await nav.bin_read(parts.join('/'), fname)
+        } catch (er) {
+            return null
+        }
+        if (!raw || !raw.byteLength) return null
+        let ctx = new OfflineAudioContext(1, 1, 48000)
+        let decoded = null
+        try {
+            decoded = await ctx.decodeAudioData(raw)
+        } catch (er) {
+            return null
+        }
+        let nch = Math.min(2, decoded.numberOfChannels)
+        let channels = []
+        let ch = 0
+        while (ch < nch) {
+            channels.push(decoded.getChannelData(ch))
+            ch = ch + 1
+        }
+        this.Ra_bake(channels, Math.pow(10, (+info.gain || 0) / 20))
+        rec.c.pcm = channels
+    }
+    rec.c.stream_segs = rec.c.stream_segs || {}
+    let SEG = this.Ra_seg_secs() * 48000
+    let len = rec.c.pcm[0].length
+    let out = []
+    let s = from
+    let end = Math.min(total, from + n)
+    while (s < end) {
+        let buf = rec.c.stream_segs[s]
+        if (buf == null) {
+            let a = s * SEG
+            let b = Math.min(len, a + SEG)
+            if (a >= b) return out
+            let enc = await this.Ra_encode_opus(rec.c.pcm, a, b, +(info.br || this.Ra_bitrate()))
+            if (!enc) return out
+            buf = this.Ra_ogg_opus(enc, b - a)
+            if (!buf) return out
+            rec.c.stream_segs[s] = buf
+        }
+        out.push(buf)
+        s = s + 1
+    }
+    return out
+
+},
+// Ra_cast_page_out — stride a run of opus buffers into FIXED-STRIDE racast_page frames of PAGE
+//  segments each (w.c.racast_page, default 8) starting at true index seg0.  Each frame is LEAN —
+//   header names the record + first seg index + per-segment sizes + the promised total; body is
+//    those buffers back to back (RAW — decoded only at the terminal).  ONE want fans out to
+//     ceil(N/PAGE) frames, NOT a round trip per segment (the old 120-todo, 15s-beat lesson).
+async Ra_cast_page_out(w, pier, h, seg0, total, list) {
+    let PAGE = +(w.c.racast_page || 8)
+    let k = 0
+    while (k < list.length) {
+        let end = Math.min(k + PAGE, list.length)
+        let sizes = []
+        let span = 0
+        let i = k
+        while (i < end) { sizes.push(list[i].byteLength); span = span + list[i].byteLength; i = i + 1 }
+        let bytes = new Uint8Array(span)
+        let off = 0
+        i = k
+        while (i < end) { bytes.set(list[i], off); off = off + list[i].byteLength; i = i + 1 }
+        await this.Ra_cast_send_page(w, pier, h.to, h.from, h.id, seg0 + k, total, sizes, bytes)
+        k = end
+    }
+
+},
+// Ra_cast_serve_want — A got a `want id/from_idx`.  The serve honours THE BOUNDARY: a want inside
+//  the preview window pages the cached window [from..P) straight off the .jam — cheap bytes, no
+//   clock — and STOPS at the boundary (the continuation is only ever streamed to a peer who ASKS).
+//    A want AT|PAST the boundary IS the ask (Radios' want_streaming worn as a pull): the caster
+//     transcodes the continuation from the SOURCE at its real pace — racast_rate caps the segments
+//      this ONE want is answered with (the slow transcode clock a playhead can outrun); unset ⇒ the
+//       whole tail in one sitting (a whole-pull, MusuRaCast's shape).  GATED on the asking peer:
+//        refused ⇒ served nothing (the want dies unanswered — no grant no bytes).
 async Ra_cast_serve_want(w, pier, frame) {
     if (pier !== w.c.tx) return
     let h = frame.header
@@ -744,29 +873,19 @@ async Ra_cast_serve_want(w, pier, frame) {
     if (!rec) return
     let bufs = await this.Ra_cast_jam(w, rec)
     if (!bufs) return
-    let total = bufs.length
-    let PAGE = +(w.c.racast_page || 8)
+    let P = bufs.length
+    let total = +((rec.c.jam_info || {}).total || P)
     let from = +(h.from_idx || 0)
     if (from < 0) from = 0
-    // producer RATE LIMIT (the slow transcode clock — §9.3): w.c.racast_rate set ⇒ answer this ONE want
-    //  with at most `rate` segments, so a playhead consuming faster than the rate STARVES; unset ⇒ the
-    //   whole tail (MusuRaCast's byte-faithful whole-pull, unchanged — that Book never sets the flag).
+    if (from < P) {
+        await this.Ra_cast_page_out(w, pier, h, from, total, bufs.slice(from, P))
+        return
+    }
     let RATE = +(w.c.racast_rate || 0)
     let cap = RATE > 0 ? Math.min(from + RATE, total) : total
-    while (from < cap) {
-        let end = Math.min(from + PAGE, cap)
-        // concat this window's opus buffers into ONE page body; sizes[] lets B carve them back apart.
-        let sizes = []
-        let span = 0
-        let i = from
-        while (i < end) { sizes.push(bufs[i].byteLength); span = span + bufs[i].byteLength; i = i + 1 }
-        let bytes = new Uint8Array(span)
-        let off = 0
-        i = from
-        while (i < end) { bytes.set(bufs[i], off); off = off + bufs[i].byteLength; i = i + 1 }
-        await this.Ra_cast_send_page(w, pier, h.to, h.from, rec.sc.id, from, total, sizes, bytes)
-        from = end
-    }
+    let made = await this.Ra_cast_transcode(w, rec, from, cap - from)
+    if (!made || !made.length) return
+    await this.Ra_cast_page_out(w, pier, h, from, total, made)
 
 },
 // Ra_cast_send_page — one racast_page frame: the header ADDRESSES the record + first seg + per-seg sizes
@@ -785,15 +904,20 @@ async Ra_cast_want(w, rx, from, to, id, fromIdx) {
     this.Peeroleum_send(w, { header: { type: 'racast_want', from: from, to: to, id: id, from_idx: fromIdx, seq: seq, body_hash: bh, body_len: body.length }, buffer: body })
 
 },
-// Ra_cast_pull_record — B pulls ONE Record WHOLE with a SINGLE want (from 0); the sender strides the
-//  whole tail into paged frames, so B asks ONCE per record — no per-segment want storm.  Want-once off a
-//   per-record flag, so extra belief passes never re-ask.  (A resume from a partial mirror would want
-//    from the first missing seg; whole-record v1 always wants from 0.)
-async Ra_cast_pull_record(w, rx, from, to, id) {
+// Ra_cast_pull_record — B pulls ONE Record WHOLE with TWO wants: the preview window (from 0 — the
+//  serve pages the cached window and STOPS at the boundary) and the continuation ASK (from the
+//   segment right after the last preview — the streaming request itself).  Want-once off a
+//    per-record flag, so extra belief passes never re-ask.  (A resume from a partial mirror would
+//     want from the first missing seg; whole-record v1 always asks for everything.)
+async Ra_cast_pull_record(w, rx, from, to, rec) {
     w.c.racast_wanted = w.c.racast_wanted || {}
+    let id = rec.sc.id
     if (w.c.racast_wanted[id]) return
     w.c.racast_wanted[id] = 1
+    let P = +(rec.o({ Preview: 1, name: 'opus' })[0]?.sc?.total || 0)
+    let T = +(rec.o({ Stream: 1, name: 'opus' })[0]?.sc?.total || P)
     await this.Ra_cast_want(w, rx, from, to, id, 0)
+    if (T > P) await this.Ra_cast_want(w, rx, from, to, id, P)
 
 },
 // ─── receiver (Pier B) ───
@@ -808,19 +932,19 @@ async Ra_cast_recv_lines(w, pier, frame) {
 
 },
 // Ra_cast_recv_page — B got a racast_page frame (bytes sha256-verified by the unemit floor): carve its
-//  body into the PAGE opus segments by header.sizes and drop each RAW into the mirror %Stream's .c.segs
-//   at its TRUE index (idempotent by index — a repeat or a reorder can neither double-count nor clobber).
-//    have|got track the segments actually held.  If the husk has not landed (no mirror Record) the page is
-//     dropped — the pull only wants on a fresh record, so in practice the husk always precedes its pages.
+//  body into the PAGE opus segments by header.sizes and drop each RAW into the mirror RECORD's .c.segs
+//   at its TRUE index (ONE index space 0..total across the preview|stream boundary; idempotent by
+//    index — a repeat or a reorder can neither double-count nor clobber).  The tally then tells the
+//     snap how much of the cached part vs the continuation is held.  If the husk has not landed (no
+//      mirror Record) the page is dropped — the pull only wants on a fresh record, so in practice the
+//       husk always precedes its pages.
 Ra_cast_recv_page(w, pier, frame) {
     if (pier !== w.c.rx) return
     let h = frame.header
     let lib = this.Ra_cast_mirror(w)
     let rec = lib.o({ Record: 1, id: h.id })[0]
     if (!rec) return
-    let s = rec.o({ Stream: 1, name: 'opus' })[0]
-    if (!s) return
-    s.c.segs = s.c.segs || []
+    rec.c.segs = rec.c.segs || []
     let body = frame.buffer
     let sizes = h.sizes || []
     let off = 0
@@ -828,28 +952,53 @@ Ra_cast_recv_page(w, pier, frame) {
     while (k < sizes.length) {
         let sz = +sizes[k]
         let seg = +(h.seg0 || 0) + k
-        if (s.c.segs[seg] == null) {
+        if (rec.c.segs[seg] == null) {
             let u8 = new Uint8Array(sz)
             u8.set(body.subarray(off, off + sz))
-            s.c.segs[seg] = u8
+            rec.c.segs[seg] = u8
         }
         off = off + sz
         k = k + 1
     }
-    let have = 0
-    for (const x of s.c.segs) { if (x != null) have = have + 1 }
-    s.sc.have = have
-    s.sc.got = have
-    s.bump()
+    this.Ra_cast_tally(rec)
+    rec.bump()
 
 },
-// Ra_cast_bytes_of — the mirror's held byte weight: sum of its kept opus segments.  The byte-faithful
-//  check compares it to the husk-carried %Stream.bytes (what the caster promised the whole track weighs).
-Ra_cast_bytes_of(rec) {
-    let s = rec ? rec.o({ Stream: 1, name: 'opus' })[0] : null
-    if (!s || !s.c.segs) return 0
+// Ra_cast_tally — refresh the mirror's have counts off rec.c.segs: %Preview counts its window
+//  [0..from), %Stream counts [from..total) — the snap reads how much of each side of the boundary
+//   is actually held.  Zero stays absent (the snapped-boolean discipline; counts only grow).
+Ra_cast_tally(rec) {
+    let prev = rec.o({ Preview: 1, name: 'opus' })[0]
+    let stream = rec.o({ Stream: 1, name: 'opus' })[0]
+    let segs = rec.c.segs || []
+    let P = +(prev?.sc?.total || 0)
+    let T = +(stream?.sc?.total || P)
+    let hp = 0
+    let hs = 0
+    let i = 0
+    while (i < T) {
+        if (segs[i] != null) {
+            if (i < P) { hp = hp + 1 } else { hs = hs + 1 }
+        }
+        i = i + 1
+    }
+    if (prev && hp) prev.sc.have = hp
+    if (stream && hs) stream.sc.have = hs
+
+},
+// Ra_cast_bytes_of — the mirror's held byte weight over a window [from..to): sum of kept segments.
+//  The preview byte-faithful check compares [0..P) to the husk-carried %Preview.bytes (what the
+//   caster's cache promised); the continuation has no promised weight (it did not exist yet).
+Ra_cast_bytes_of(rec, from, to) {
+    if (!rec || !rec.c.segs) return 0
     let n = 0
-    for (const seg of s.c.segs) { if (seg != null) n = n + seg.length }
+    let i = +(from || 0)
+    let end = (to == null) ? rec.c.segs.length : +to
+    while (i < end) {
+        let seg = rec.c.segs[i]
+        if (seg != null) n = n + seg.length
+        i = i + 1
+    }
     return n
 
 },
@@ -873,9 +1022,10 @@ async Ra_cast_arm(w) {
 //         needles meter that set the gain) and Sound_measure (the underrun gate MusuSignal proved) — so
 //          raterm adds no analysis of its own, it points the proven tools at stock we actually made.
 
-// Ra_term_decode — read <id>.jam and decode EVERY 2s opus segment (each a standalone blob — the Ra_proof
-//  carve, sliced to its own ArrayBuffer so decodeAudioData never detaches the whole .jam) to PCM, then
-//   concatenate per channel into one continuous track: the from-zero full listen.  Returns
+// Ra_term_decode — read <id>.jam and decode EVERY cached opus segment (each a standalone blob — the
+//  Ra_proof carve, sliced to its own ArrayBuffer so decodeAudioData never detaches the whole .jam) to
+//   PCM, then concatenate per channel: the from-zero listen of the CACHED PREVIEW (the .jam holds the
+//    preview parts; a pulled continuation decodes via Ra_term_decode_pulled instead).  Returns
 //    { channels, sr, seconds, segs, per, ms } | { fail } — per[] is each segment's sample length, so the
 //     spool locates a boundary without re-decoding.  Each stage rides the 25s race (a throttled tab
 //      stretches a decode; a true hang NAMES its segment instead of bleeding the ttlilt budget — the
@@ -920,6 +1070,102 @@ async Ra_term_decode(w, nav, id) {
     return { channels: channels, sr: sr, seconds: +(total / sr).toFixed(3), segs: un.bufs.length, per: per, ms: 'd' + (Date.now() - t1) }
 
 },
+// Ra_term_decode_pulled — the terminal decodes WHAT IT PULLED: every held segment of the mirror's
+//  rec.c.segs [0..limit) to PCM (the same standalone-blob carve, sliced so decodeAudioData never
+//   detaches), a MISSING segment contributing its nominal 2s span of SILENCE and its index to
+//    drops[] — the spool's honest hole read off the wire's ACTUAL delivery, never off local disk.
+//     This is raterm's real substrate: the loudness and the gaps are measured on the bytes that
+//      crossed, so a caster that starved the stream is audible AT THE LISTENER.  Returns
+//       { channels, sr, seconds, segs, per, drops, held } | { fail }.
+async Ra_term_decode_pulled(w, rec, limit) {
+    let race = (p, tag) => Promise.race([p, new Promise((res) => setTimeout(() => res({ hung: tag }), 25000))])
+    let segs = rec.c.segs || []
+    let T = +(limit || segs.length)
+    if (!(T > 0)) return { fail: 'nothing pulled' }
+    let sr = 48000
+    let SEG = this.Ra_seg_secs() * sr
+    let out = []
+    let per = []
+    let drops = []
+    let held = 0
+    let nch = 1
+    let s = 0
+    while (s < T) {
+        let seg = segs[s]
+        if (seg == null) {
+            drops.push(s)
+            out.push(null)
+            per.push(SEG)
+        } else {
+            let ab = seg.buffer.slice(seg.byteOffset, seg.byteOffset + seg.byteLength)
+            let ctx = new OfflineAudioContext(1, 1, sr)
+            let got = await race(ctx.decodeAudioData(ab).then((d) => ({ d: d })).catch((er) => ({ er: er })), 'decode')
+            if (got.hung) return { fail: 'hang decode seg' + s }
+            if (got.er) return { fail: ('decode seg' + s + ' ' + String(got.er)).replace(/[,:]/g, ' ').slice(0, 80) }
+            let d = got.d
+            if (d.numberOfChannels > 1) nch = 2
+            out.push({ L: d.getChannelData(0).slice(), R: d.numberOfChannels > 1 ? d.getChannelData(1).slice() : null, n: d.length })
+            per.push(d.length)
+            held = held + 1
+        }
+        s = s + 1
+    }
+    let total = 0
+    for (const p of per) total = total + p
+    let L = new Float32Array(total)
+    let R = nch > 1 ? new Float32Array(total) : null
+    let off = 0
+    let k = 0
+    while (k < out.length) {
+        let sb = out[k]
+        if (sb) {
+            L.set(sb.L, off)
+            if (R) R.set(sb.R || sb.L, off)
+        }
+        off = off + per[k]
+        k = k + 1
+    }
+    let channels = R ? [L, R] : [L]
+    return { channels: channels, sr: sr, seconds: +(total / sr).toFixed(3), segs: T, per: per, drops: drops, held: held }
+
+},
+// Ra_term_stash — the terminal CACHES a fully-held preview: pack the pulled window [0..P) into the
+//  same .jam wire (a resurrection card whose segs == the preview — exactly the shape Ra_stock makes)
+//   under .jamsend/downloads/<friend>/ (§9.1b: received music lands in the friend's corner, so what
+//    came from whom stays legible on plain disk and one friendship wipes with one rm).  Only a WHOLE
+//     preview stashes (a partial card would lie); the write is proven by its own read-back carve.
+//      This is 'the parts that cache in radiostock/' arriving at the OTHER end of the wire.
+async Ra_term_stash(w, nav, rec, friend) {
+    let prev = rec.o({ Preview: 1, name: 'opus' })[0]
+    let stream = rec.o({ Stream: 1, name: 'opus' })[0]
+    let P = +(prev?.sc?.total || 0)
+    if (!(P > 0)) return null
+    let segs = rec.c.segs || []
+    let bufs = []
+    let i = 0
+    while (i < P) {
+        if (segs[i] == null) return null
+        bufs.push(segs[i])
+        i = i + 1
+    }
+    let info = { id: rec.sc.id, of: friend, title: rec.sc.title, artist: rec.sc.artist, seconds: +(rec.sc.seconds || 0), gain: +(rec.sc.gain || 0), segs: P, total: +(stream?.sc?.total || P), sr: 48000, br: +(prev?.sc?.br || this.Ra_bitrate()), seg_secs: +(prev?.sc?.seg_secs || this.Ra_seg_secs()) }
+    if (rec.sc.lufs != null) info.lufs = +rec.sc.lufs
+    if (rec.sc.src_hash) info.src_hash = rec.sc.src_hash
+    let dir = '.jamsend/downloads/' + friend
+    await nav.bin_write(dir, this.Ra_stock_name(rec.sc.id), this.Ra_pack(info, bufs))
+    let raw = null
+    try {
+        raw = await nav.bin_read(dir, this.Ra_stock_name(rec.sc.id))
+    } catch (er) {
+        return { fail: 'stash readback' }
+    }
+    let un = raw ? this.Ra_unpack(raw) : null
+    if (!un || un.bufs.length !== P) return { fail: 'stash readback' }
+    let bytes = 0
+    for (const b of un.bufs) bytes = bytes + b.length
+    return { stashed: 1, segs: P, bytes: bytes }
+
+},
 // Ra_term_spool — the playhead render: downmix the channels to one mono line (the underrun gate is level,
 //  not stereo image), then PUNCH each segment index in `drop` to silence — the spool's honest hole where
 //   a starved supply left nothing to play.  Returns the rendered mono Float32; the caller runs it through
@@ -950,8 +1196,8 @@ Ra_term_spool(channels, per, drop) {
 //#endregion
 
 //#region stream — raterm's TIME dimension, driven over the REAL wire (Radio_todo §9.3, "the time thing")
-//  MusuRaTerm proved the STATIC read (whole track, a HAND-PICKED drop set); MusuRaCast pulls a Record WHOLE
-//   (one want → the whole tail).  A real LISTEN is paced by the PLAYHEAD (owner: "grab this time thing" / "as
+//  MusuRaTerm proved the STATIC read (a HAND-PICKED drop set); MusuRaCast pulls a Record WHOLE (the preview
+//   window + the continuation ask).  A real LISTEN is paced by the PLAYHEAD (owner: "grab this time thing" / "as
 //    real as possible without the other Pier being another browser tab"): the terminal primes a small buffer
 //     (the 4s at the RaTerm end), starts playing, and wants the NEXT window only as the head advances — while
 //      the caster serves at a bounded RATE (Ra_cast_serve_want's racast_rate, the slow transcode clock).  So a
@@ -962,39 +1208,58 @@ Ra_term_spool(channels, per, drop) {
 //           the emergent holes are AUDIBLE and MEASURED.  The starve is guaranteed by RATE < PLAY (the buffer
 //            drains regardless of the exact transport cadence) — that invariant is fixed, the numbers are knobs.
 
-// Ra_term_stream_open — begin a paced listen of Record `id` (`total` segs to stream): a fresh playhead at 0
-//  with a prime-buffer target and a re-want floor, kept on w.c.play (control state, never snapped — it holds
-//   the drops[] array).  A track CHANGE just re-opens on the next id — a fresh race that re-primes from zero
-//    (Radiola_skip's reset).  Knobs: prime (segs in hand before the first play), floor (re-want when the lead
-//     falls this low), play (segs consumed per beat — the playback rate; keep play > the slow rate to starve).
-Ra_term_stream_open(w, id, total, opts) {
+// Ra_term_stream_open — begin a paced listen of a mirror %Record: a fresh playhead at 0 with a
+//  prime-buffer target and a re-want floor, kept on w.c.play (control state, never snapped — it holds
+//   the drops[] array).  The boundary rides along: p.preview = the %Preview's total, and the want-ahead
+//    below CLAMPS there until streamability arms — the listen begins on the cached part alone.  A track
+//     CHANGE just re-opens on the next Record — a fresh race that re-primes from zero (Radiola_skip's
+//      reset).  Knobs: prime (segs in hand before the first play), floor (re-want when the lead falls
+//       this low), play (segs consumed per beat — the playback rate; keep play > the slow transcode rate
+//        to starve), want_left (arm the streaming ask when this little un-played preview remains —
+//         Radios' MIN_LEFT_TO_WANT_STREAMING=22s ⇒ 11 two-second segments), cap (Book-shortens the track).
+Ra_term_stream_open(w, rec, opts) {
     let o = opts || {}
-    w.c.play = { id: id, total: total, head: 0, primed: 0, prime: +(o.prime ?? 6), floor: +(o.floor ?? 4), play: +(o.play ?? 2), inflight: -1, drops: [], plays: 0 }
+    let P = +(rec.o({ Preview: 1, name: 'opus' })[0]?.sc?.total || 0)
+    let T = +(rec.o({ Stream: 1, name: 'opus' })[0]?.sc?.total || P)
+    let total = (+(o.cap || 0) > 0) ? Math.min(+o.cap, T) : T
+    w.c.play = { id: rec.sc.id, total: total, preview: Math.min(P, total), head: 0, primed: 0, prime: +(o.prime ?? 6), floor: +(o.floor ?? 4), play: +(o.play ?? 2), want_left: +(o.want_left ?? 11), asked: 0, inflight: -1, drops: [], plays: 0 }
     return w.c.play
 
 },
-// Ra_term_stream_beat — ONE beat of the real paced listen.  `segs` is the mirror stream's received buffer
-//  (mirStream.c.segs — Ra_cast_recv_page fills it as rate-limited pages land).  The beat, in order:
-//   (1) WANT-AHEAD: if the contiguous lead ahead of the head has fallen to the floor and there is an un-held
-//        segment and nothing is inflight, want the next missing index (the caster answers ≤ rate; reply rides
-//         post_do — the wire latency).  ONE want per beat, so RATE (segs delivered) races PLAY (segs consumed).
-//   (2) PRIME: hold the head at 0 until `prime` segments are in hand (start with the buffer, never into a cold
-//        one), then CONSUME `play` segments — each one missing is an emergent DROP (silence; the head never
-//         waits) — and advance.  Returns { done, head } for the driver; drops accrue on w.c.play.drops.
+// Ra_term_stream_beat — ONE beat of the real paced listen.  `segs` is the mirror's received buffer
+//  (rec.c.segs — Ra_cast_recv_page fills it as pages land).  The beat, in order:
+//   (1) STREAMABILITY: the ask latches ONCE — the moment the un-played remainder of the preview window
+//        falls to the want_left floor (Radios' streamability; it never un-asks).  Until then the
+//         want-ahead is CLAMPED to the preview window, so the FIRST stream want is exactly the segment
+//          right after the last preview (the first missing index once the window is whole) — and a
+//           fully-held preview simply HOLDS at the boundary (Radios' preview-and-HOLD beat, emerging).
+//   (2) WANT-AHEAD: if the contiguous lead ahead of the head has fallen to the floor and there is an
+//        un-held segment inside the allowed window and nothing is inflight, want the next missing index
+//         (the caster answers ≤ its transcode rate; the reply rides post_do — the wire latency).  ONE
+//          want per beat, so RATE (segs transcoded) races PLAY (segs consumed).
+//   (3) PRIME then CONSUME: hold the head at 0 until `prime` segments are in hand, then consume `play`
+//        segments — each one missing is an emergent DROP (silence; the head never waits) — and advance.
+//         Returns { done, head } for the driver; drops accrue on w.c.play.drops.
 async Ra_term_stream_beat(w, rx, mine, theirs, segs) {
     let p = w.c.play
     if (!p) return { done: 1 }
     let lead = 0
     while (segs[p.head + lead] != null) { lead = lead + 1 }
     if (p.inflight >= 0 && segs[p.inflight] != null) p.inflight = -1
-    if (lead <= p.floor && p.head + lead < p.total && p.inflight < 0) {
+    if (!p.asked && p.preview < p.total && (p.preview - p.head) <= p.want_left) p.asked = 1
+    let limit = p.asked ? p.total : p.preview
+    if (lead <= p.floor && p.head + lead < limit && p.inflight < 0) {
         let miss = p.head
         while (segs[miss] != null) { miss = miss + 1 }
-        p.inflight = miss
-        await this.Ra_cast_want(w, rx, mine, theirs, p.id, miss)
+        if (miss < limit) {
+            p.inflight = miss
+            await this.Ra_cast_want(w, rx, mine, theirs, p.id, miss)
+        }
     }
     if (!p.primed) {
-        if (lead >= p.prime || p.head + lead >= p.total) {
+        // primed on `prime` segs in hand — or on the WHOLE allowed window (a preview smaller than
+        //  the prime target must still start playing; there is nothing more to wait for yet).
+        if (lead >= p.prime || p.head + lead >= limit) {
             p.primed = 1
         } else {
             return { done: 0, head: p.head, priming: 1 }

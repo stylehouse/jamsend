@@ -28,6 +28,37 @@ Every claim is tagged **[V]** = I read the code and verified, or **[S]** = suspe
 **Fix order (highest leverage first):** F1 (the render-gate race — one fix likely also cures F4 and the
  VoroScape "behind glass") → F3 (rebuild-all flashing) → F2 (settle timing).  See each below.
 
+**STATUS 2026-07-10 — the loop is closing.**  Built this round, ALL awaiting a live-tab verify (the
+ runner tab must be RELOADED once so Cytui remounts + the cy stash lands):
+- **📸 `scripts/runner_shot.mjs`** — the pixel loop CLOSED: `op:'shot'` on the runner_ask rails returns
+   `cy.png()` of the live canvas, so the render checklist below is now REMOTELY runnable (run Book →
+    shot → look).  Owner's "maybe I should get you a remote cli… take screenshot of the canvas".
+- **F1 fix BUILT** (Cytui `apply()` tail): when a wave arms the voronoi (`saw_stuffy` flip) or first
+   reaches ≥2 seeds, it now fires `reposition_overlays()` + `voronoi_soon()` — the exact sequence the
+    manual ◈ off+on ran.  Expect F1, F4 and F6's render side to move together.
+- **F7 (diagonal satan) detect+cure BUILT** (Cytui `diag_check`): post-settle principal-axis spread
+   ratio < 0.1 ⇒ degenerate line ⇒ auto free-relayout (escalates to randomize on a stubborn repeat,
+    rests after 3).  Tally rides `top_House.c.cy_diag_cures` and comes back on every `shot` reply —
+     the satan is now REMOTELY detectable.
+- **`w:Voronoiology` enrichment BUILT** (owner licensed it by un-hiding the world 2026-07-09):
+   generic census — `%cell` row per intended pane (kind/n/pop), `%bare` row per unfolded-leaf mainkey,
+    `cells:` total on the head row.  Report world also GRAPHS now.  ⚠ shared-fixture change:
+     every Voro* Book re-records (world line loses `dontGraph`, rows change shape).
+- **RENDER TELEMETRY BUILT** (owner: "an over-time data dump of what's processing the graph into cells…
+   a less minimal w:Voronoiology").  The catch it forced into the open: render processing is RENDER-side,
+    so it can NEVER be the snapped w:Voronoiology (metaphysics #2).  So it's the **Cyto twin of reactap**
+     — a bounded ring (Cytui `vlog`: wave / armed / remorph / morph / settle / diag, each stamped `dt` ms
+      from the last layout settle) surfaced over the runner_ask rails: `op:'why'` + on every `shot` reply.
+       `node scripts/runner_shot.mjs --why` prints the gate (voronoi_on/seeds/cells) + the film strip.
+        A `wave stuff:0` every beat = an empty world (see below).
+- **STALE-GEN BUG FOUND + FIXED** — the "w:VoroScape is just self" snap + the `!method: VoroScape`
+   console flood were ONE bug: the regroup committed a PARTIAL `gen/Story/Voronation.go` (185 lines for a
+    606-line source — no VoroScape/VoroClinic/Botany_plant), so the runner loaded a Voronation ghost
+     missing VoroScape → the Book never drove → empty husk.  Recompiled → 675-line complete gen.  The
+      residual `!method: Voronoiology` (an inert report world, no drive method by design) is now
+       `V.beliefs`-gated in Housing (was the only ungated one).  Lesson: after a .g regroup, recompile
+        EVERY moved .g; the render telemetry's `wave stuff:0` catches the husk faster than the console.
+
 **Auto-checkability, honestly:** render pixels can NEVER be Book-gated (metaphysics #2 — nothing
  render-side snaps).  But the CRUSH INTENT is fully snappable (`w:Voronoiology`).  The plan (§Auto-check)
   is: (a) enrich `w:Voronoiology` so the snap says *what the crush intended to cell* (per-fold kind/n/
@@ -101,6 +132,23 @@ Every claim is tagged **[V]** = I read the code and verified, or **[S]** = suspe
 - **Auto-checkable?** Partially — the crush footprint per step IS in `w:Voronoiology`; a Book can assert
    the fold count is stable across a seek.  The render fallback is eyes-on.
 
+### F7 — the diagonal satan: the whole board collapses onto one line  *(fcose degenerate equilibrium)*
+- **Owner (2026-07-08):** "VoroClinic animates full-on-one-thing violently, finally collapses in the
+   diagonal satan, which we should be able to detect and delineate (because it seems perfectly balanced
+    and doesn't disrupt when we layout()) and layout() away."
+- **Chain [V for the mechanism class]:** fcose settles into a 1-D line — a symmetric saddle: every force
+   cancels ALONG the line so nothing pushes a node off it.  The `fresh_ids` pins (the earlier "de-diagonal
+    from lone adds" fix) prevent the classic *trigger* (late disconnected adds re-packing the board) but
+     don't cure a collapse that forms anyway; it sat until a manual ⟳.
+- **FIXED (built 2026-07-10, verify live):** `diag_check` on every layout settle — covariance
+   minor/major spread ratio (√): ~0 = line, ~1 = disc, healthy rosette > 0.25, gate at 0.1.  Cure =
+    the owner's own observation, a free `relayout()`; a repeat escalates to `randomize` (break the
+     symmetry); 3 failed cures rest until the board changes.  Guarded off drags and mid-batch.
+- **Auto-checkable? YES — the exception in this catalog:** geometry is readable off `cy` without
+   snapping anything.  `diag_cures` rides every `shot` reply (`♒` in the CLI line); a Book-run-then-shot
+    showing `diag_cures:0` = the satan never appeared; >0 = appeared AND was cured (eyes confirm the
+     cure took).
+
 ### F6 — VoroScape data "trapped behind the glass" (only see+req cell)  *(ROOT-A, render-side)*
 - **Owner:** the snap shows 3 Artists / 5 Tracks + `folded:5,count:3`, "yet only see and req are cells…
    all that legitimate data is just nodes trapped behind the glass."
@@ -131,11 +179,13 @@ Every claim is tagged **[V]** = I read the code and verified, or **[S]** = suspe
 
 ## Auto-check plan (serving "check they're not happening automatedly… w:Voronoiology a bit more")
 
-1. **Enrich `w:Voronoiology`** (`Voro_report`, Voro.g) to report the render-INTENT, not just totals:
-    per fold — `kind`, `n`, and `would_seed:1` (this chunk is a cell candidate); plus a top line
-     `would_cell:N` = count of cell-candidate chunks.  Then the snap SAYS "the crush wants N cells here."
-      *(Shared-fixture change — re-records every `Book:Voro*` + any `useVoroCyto` Book.  PROPOSE, don't
-       do unilaterally — owner call.)*
+1. **Enrich `w:Voronoiology` — BUILT 2026-07-10** (`Voro_report`/`Voro_report_walk`, Voro.g; owner
+    licensed by un-hiding the world + "feel free to expand it").  The census is GENERIC now (was
+     Botany-locked — a music world's stations|Artists never made a row): one `%cell` row per pane the
+      crush intends (`kind:pane|gang`, `n`, `pop`), one `%bare` row per unfolded-leaf mainkey, and
+       `cells:N` on the head row — the snap SAYS "the crush wants N cells here"; a canvas showing fewer
+        is render debt, F6 made legible in ANY world.  *(Shared-fixture change — every `Book:Voro*` +
+         `useVoroCyto` Book re-records; owed on the next live-runner session.)*
 2. **A diagnostic Book `VoroClinic` — BUILT + live-verified 2026-07-08** (`Ghost/V/Voro.g`, brand_new
     in Credence).  Stands up two folded libraries + a noisy gang, runs the crush, and asserts three
      crush invariants with `%see` — ALL FIRE GREEN on the live runner: (1) a container of four folds to
@@ -147,13 +197,16 @@ Every claim is tagged **[V]** = I read the code and verified, or **[S]** = suspe
 3. **The render realisation stays the §Eyes-on gauntlet** (below) — a fixed manual checklist, because
     metaphysics #2 forbids the render from snapping.
 
-## Eyes-on gauntlet (the render checklist that can't be automated)
-Run on a live tab (`?B=VoroScape`, `?B=VoroRadioPier`), per fix:
-- [ ] cells appear on FIRST load without a ◈ toggle (F1)
-- [ ] a data Book's folds each show a cell, not behind-glass (F6)
-- [ ] auto play-through settles between beats like manual seeking does (F2)
-- [ ] an unchanged cell does NOT re-pop each beat; a NEW track visibly arrives (F3)
-- [ ] seeking ←/→ keeps the cell/Stuffing classification stable (F4)
+## The gauntlet (now mostly SHOT-runnable — was eyes-only)
+`runner_shot.mjs` closed the pixel loop: run a Book, `node scripts/runner_shot.mjs shots/<name>.png`,
+ LOOK at the png.  Still-frames catch F1/F6/F7 and the F4 end-states; MOTION quality (F2 pacing,
+  F3 flashing) stays genuinely eyes-on — a still can't see a flash.
+- [ ] cells appear on FIRST load without a ◈ toggle (F1) — 📸 shot after `run <Book>`
+- [ ] a data Book's folds each show a cell, not behind-glass (F6) — 📸 count panes vs the snap's `cells:N`
+- [ ] no diagonal satan, or cured (F7) — 📸 `♒` tally on the shot line + the png isn't a line
+- [ ] seeking ←/→ keeps the cell/Stuffing classification stable (F4) — 📸 shot at n, n-1, n again
+- [ ] auto play-through settles between beats like manual seeking does (F2) — 👁 eyes-on
+- [ ] an unchanged cell does NOT re-pop each beat; a NEW track visibly arrives (F3) — 👁 eyes-on
 
 ## Anchors touched while diagnosing (verify if drifted)
 `Cytui.svelte`: `voronoi_layout` 1416-1442 · `voronoi_on`/`saw_stuffy` 734 · `toggle_voronoi` 1337-1356 ·

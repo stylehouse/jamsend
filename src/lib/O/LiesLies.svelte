@@ -73,6 +73,7 @@
         'Ghost/Story/Swarmation.g',     // the Swarm* tests — SwarmStaple; more pile on here
 
         'Ghost/V/Voro.g',               // the Vis lens — the crush fold policy (Musu drives + ◈ imposition call it)
+        'Ghost/Story/Voronation.g',
     ]
 
     // ── RUNNER_FACETS — a runner's advertised self-state, as ONE ordered list ──────────────────────

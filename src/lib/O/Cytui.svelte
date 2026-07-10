@@ -328,6 +328,36 @@
     // stuff-overlays mount a LIVE Stuffing component into the node's overlay div.
     //  track the mounted instance so we can unmount it when the node leaves the graph.
     let stuff_mounts: Map<string, { app: any, ro?: ResizeObserver }> = new Map()
+
+    // ── render telemetry: the over-time story of model→cells ───────────────────────
+    //  Owner: "an over-time (since the last state-shaking-out-Cyto-layout()) data dump of
+    //   what's processing the graph into cells and how all that's going — a less minimal
+    //    w:Voronoiology."  The catch: this is RENDER-side, so it can NEVER be that snapped
+    //     world (metaphysics #2 — nothing render-side snaps; pixels don't round-trip a
+    //      fixture).  So it's the Cyto TWIN OF REACTAP: a bounded ring of what the pipeline
+    //       did, surfaced over the runner_ask rails (op:'why'/'shot'), never a C node.
+    //        Mirrored onto top_House.c.cy_render (a live object → .c only) on each push.
+    type RLog = { t: number, ev: string, [k: string]: any }
+    let render_log: RLog[] = []
+    let last_settle_t = 0            // performance.now() of the last layoutstop — the "since last shake-out" mark
+    const RENDER_LOG_MAX = 48
+    function vlog(ev: string, extra: Record<string, any> = {}) {
+        render_log.push({ t: Math.round(performance.now()), ev, ...extra })
+        while (render_log.length > RENDER_LOG_MAX) render_log.shift()
+        try { (H.top_House().c as any).cy_render = render_snapshot() } catch { /* best-effort mirror */ }
+    }
+    function render_snapshot() {
+        const now = performance.now()
+        const base = last_settle_t ? Math.round(last_settle_t) : 0
+        return {
+            voronoi_on, saw_stuffy, voronoi_pref,       // the gate + its inputs
+            seeds: stuff_mounts.size, cells: vcells.length, nodes: cy ? cy.nodes().length : 0,
+            since_settle_ms: last_settle_t ? Math.round(now - last_settle_t) : null,
+            diag_cures,
+            // each event's dt = ms since the last layout settle (negative = before it)
+            log: render_log.map(r => ({ ...r, dt: base ? r.t - base : null })),
+        }
+    }
     // Background color per node id — used when updating so we don't
     // re-read the node style on every tick
     let overlay_bgs: Map<string, string> = new Map()
@@ -1954,10 +1984,14 @@
         if (dragging) return   // live-drag owns the repaint; don't fight it
         const L = voronoi_layout()
         if (!L) {
+            // the conversion FAILED this call — why (the F1 diagnosis, live): armed?  enough seeds?
+            vlog('morph✗', { von: voronoi_on ? 1 : 0, seeds: stuff_mounts.size,
+                             need: voronoi_on ? (stuff_mounts.size < 2 ? '<2 seeds' : 'layout null') : 'not armed' })
             if (vcells.length || vtips.length) clear_voronoi()
             settle_overlay_show()
             return
         }
+        vlog('morph', { seeds: stuff_mounts.size, cells: L.cells.length })
         vregion_w = L.CW
 
         const targets = new Map<string, {x:number,y:number}[]>()
@@ -2053,6 +2087,16 @@
         rush_animations()
         animations = _C({ animations: 1, started_at: performance.now() / 1000 })
         const ms = Math.round(dur * 1000)
+        // F1 (render-gate): remember the arm state BEFORE this wave — if the wave flips it
+        //  (first crushed chunk) or seeds the tessellator past its minimum, step 7 re-fires
+        //   the morph the way the manual ◈ toggle does (the off+on that "fixed" it by hand).
+        const was_voro_on = voronoi_on
+        const prev_seeds  = stuff_mounts.size
+        // telemetry: the wave's shape — a `stuff:0` wave every beat IS an empty world
+        //  (the seed never fired: the F6/VoroScape-is-just-self tell, now legible here)
+        vlog('wave', { up: wave.o({ upsert: 1 }).length, rm: wave.o({ remove: 1 }).length,
+                       stuff: (wave.o({ upsert: 1 }) as TheC[]).filter(n => n.sc.overlay_kind === 'stuff').length,
+                       abs: wave.sc.absolute ? 1 : 0, von: voronoi_on ? 1 : 0, seeds: prev_seeds })
         let length = wave.o({ upsert: 1 }).length
         // node ids BORN this wave — so a purely-additive wave can PIN the already-settled
         //  graph and let fcose place only the newcomers (see the layout step below): a late
@@ -2148,7 +2192,7 @@
             if (overlay_kind === 'stuff') {
                 // c.stuffy exists ONLY under the %crushCyto-gated crusher — a crushed
                 //  world auto-arms the voronoi render (voronoi_pref still overrides)
-                if ((src as any)?.c?.stuffy) saw_stuffy = true
+                if ((src as any)?.c?.stuffy) { if (!saw_stuffy) vlog('armed', { id }); saw_stuffy = true }
                 proper_mounted.delete(id)    // wave-owned now; toggling proper off must not strip it
                 create_stuff_overlay(id, src, overlay_bg, !!nd.sc.overlay_self)
                 // a mounted gang rep whose gang GREW: rebuild the mirror in place
@@ -2257,6 +2301,19 @@
             // for a layoutstop that will never fire
             show_overlays_soon()
         }
+
+        // F1 — the auto-arm's missing morph.  When a wave ARMS the voronoi (saw_stuffy flipped
+        //  during step 3), first hands voronoi_layout its ≥2 seeds, or REBUILT the whole board
+        //   (an absolute wave — a seek — remounts every overlay: the F4 path), NOTHING used to
+        //    re-fire the morph — the render gate stayed shut and the cells sat undrawn until a
+        //     manual ◈ off+on ran reposition+morph (the tell this whole fault hung on).  Fire that
+        //      same sequence here; voronoi_soon debounces into the layout settle, so it draws over
+        //       the fresh positions, not the stale ones.
+        if (voronoi_on && (!was_voro_on || wave.sc.absolute || (prev_seeds < 2 && stuff_mounts.size >= 2))) {
+            vlog('remorph', { why: !was_voro_on ? 'armed' : wave.sc.absolute ? 'absolute' : 'seeds≥2', seeds: stuff_mounts.size })
+            reposition_overlays()
+            voronoi_soon()
+        }
     }
     let constraints = {}
 
@@ -2320,13 +2377,16 @@
     // ── layout ────────────────────────────────────────────────────────────────
 
     let lay: any
-    function relayout(animMs = 300, pins: any[] | null = null) {
+    function relayout(animMs = 300, pins: any[] | null = null, randomize = false) {
         lay?.stop()
         const common = {
             animate:                     animMs > 0,
             animationDuration:           animMs,
             nodeDimensionsIncludeLabels: true,
-            randomize:                   false,
+            // randomize only on a diag_check escalation — a free re-lay that fell straight
+            //  back onto the balanced line needs its symmetry broken, everyone else keeps
+            //   their grown positions
+            randomize,
         }
         // fixedNodeConstraint pins already-settled nodes (apply() passes them on a purely-
         //  additive wave) so a late node-add can't re-tumble the grown layout; a manual ⟳
@@ -2369,6 +2429,61 @@
             cy.on('layoutstop', on_stop)
         }
         try { lay.run() } catch (e) { console.warn('layout error', e) }
+    }
+
+    // ── the diagonal satan: detect + layout() away ────────────────────────────────
+    //  fcose sometimes settles the WHOLE board onto one line — a degenerate equilibrium
+    //   ("it seems perfectly balanced": every force cancels ALONG the line, so nothing
+    //    ever pushes a node off it).  The fresh_ids pins PREVENT the classic trigger
+    //     (a late disconnected add re-packing the board) but a collapse that forms
+    //      anyway used to just sit there until a manual ⟳.  The owner's observation IS
+    //       the cure: a free relayout doesn't disrupt a healthy board but breaks the
+    //        balanced line — so detect it and run one.
+    //  Detection: principal-axis spread ratio of the real nodes' positions (2×2
+    //   covariance eigenvalues).  √(minor/major) ~0 = a line, ~1 = a disc; a healthy
+    //    rosette sits well above 0.25, a satan well below 0.1.
+    let diag_cures  = 0     // total auto-cures this mount — stashed on top_House.c so op:'shot' can report it
+    let diag_streak = 0     // consecutive still-diagonal settles — a cure that doesn't take escalates, then rests
+    function diagonal_ratio(): number | null {
+        if (!cy) return null
+        const pts: {x:number,y:number}[] = []
+        cy.nodes().forEach((n: any) => {
+            if (n.isParent() || is_nucleus(n)) return
+            pts.push(n.position())
+        })
+        if (pts.length < 6) return null   // a tiny board lines up legitimately
+        let mx = 0, my = 0
+        for (const p of pts) { mx += p.x; my += p.y }
+        mx /= pts.length; my /= pts.length
+        let xx = 0, yy = 0, xy = 0
+        for (const p of pts) { const dx = p.x - mx, dy = p.y - my; xx += dx*dx; yy += dy*dy; xy += dx*dy }
+        const tr = xx + yy, det = xx*yy - xy*xy
+        const disc  = Math.sqrt(Math.max(0, tr*tr/4 - det))
+        const major = tr/2 + disc
+        if (major <= 0) return null
+        return Math.sqrt(Math.max(0, tr/2 - disc) / major)
+    }
+    let diag_timer: ReturnType<typeof setTimeout> | null = null
+    function diag_check_soon() {
+        if (diag_timer) clearTimeout(diag_timer)
+        // past the wave queue's settle pad, so a draining batch is judged at rest, not mid-tween
+        diag_timer = setTimeout(diag_check, 1200)
+    }
+    function diag_check() {
+        diag_timer = null
+        if (!cy || dragging || anim_busy || wave_queue.length) { diag_check_soon(); return }
+        const r = diagonal_ratio()
+        if (r === null) return
+        if (r > 0.1) { diag_streak = 0; return }   // healthy (or healed) — re-arm the escalation
+        diag_streak++
+        if (diag_streak > 3) return   // three cures didn't take — stop thrashing; next wave re-arms via the streak reset
+        diag_cures++
+        try { (H.top_House().c as any).cy_diag_cures = diag_cures } catch { /* report is best-effort */ }
+        vlog('diag_cure', { ratio: +r.toFixed(3), streak: diag_streak, randomize: diag_streak > 1 ? 1 : 0 })
+        console.warn(`♒ diagonal satan (spread ratio ${r.toFixed(3)}, n=${cy.nodes().length}) — free relayout, cure #${diag_cures}${diag_streak > 1 ? ` (streak ${diag_streak}: randomize)` : ''}`)
+        // first cure = the owner's manual ⟳ (free, unpinned); a repeat means the free re-lay
+        //  fell straight back into the same balanced line — toss positions to break the symmetry.
+        relayout(400, null, diag_streak > 1)
     }
 
     // ── cytoscape init ────────────────────────────────────────────────────────
@@ -2448,7 +2563,15 @@
         // touching the dial: any motion that isn't the radio's own glide holds the tuner off
         cy.on('grab pan zoom', () => { if (!radio_gliding) radio_hold_until = Date.now() + 15000 })
         cy.on('layoutstart', () => start_live_layout())
-        cy.on('layoutstop',  () => { stop_live_layout(); show_overlays_soon() })
+        cy.on('layoutstop',  () => {
+            stop_live_layout(); show_overlays_soon()
+            // the "state-shaking-out layout()" the owner named as the telemetry epoch: stamp it,
+            //  and log the settle geometry (ratio ~0 = the diagonal satan; the morph fires next,
+            //   via show_overlays_soon's OVERLAY_QUIET_MS debounce → its own 'morph' entry)
+            last_settle_t = performance.now()
+            vlog('settle', { ratio: +(diagonal_ratio() ?? -1).toFixed(3), nodes: cy.nodes().length, seeds: stuff_mounts.size })
+            diag_check_soon()
+        })
         // stash the live cytoscape handle where a GHOST can reach it — scripts/runner_shot.mjs asks
         //  Lies_runner_ask_recv (op:'shot') for cy.png() so a headless caller can finally SEE the
         //   rendered power-diagram: the one fault class no snap carries (pixels never round-trip a

@@ -9,6 +9,26 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
 
 ## 0 · Handover  (rewrite this section each handover; everything below stays current)
 
+**FRONTIER 2026-07-10 — the render pipeline gets EYES + hands (in the working tree, live-verify OWED).**
+ The owner regrouped: Book-drives → `Ghost/Story/Voronation.g` (Voro.g = engine only), the Musu
+  knowledge map → `wormhole/Ghost/Music/Ality`.  This round built, all compile-clean, ALL gated on
+   ONE thing — **a runner tab reload** (Cytui must remount to stash `cy`):
+- **📸 the pixel loop CLOSED** — `scripts/runner_shot.mjs` + `op:'shot'` (LiesFunk) + cy stashed on
+   `top_House.c` (Cytui onMount): a headless session can finally SEE the canvas.  Run Book → shot →
+    look.  The render-faults gauntlet is now mostly remote (`Voro_render_faults_todo.md` §gauntlet).
+- **F1 render-gate FIXED** (Cytui `apply()` tail): a wave that arms the voronoi / reaches ≥2 seeds /
+   is absolute (a seek — the F4 path) now fires `reposition_overlays()+voronoi_soon()` — exactly what
+    the manual ◈ off+on did.  Expect F1+F4+F6-render to move together.
+- **F7 diagonal satan detect+cure** (Cytui `diag_check`): post-settle spread ratio < 0.1 ⇒ free
+   relayout (randomize on a stubborn repeat, rests after 3).  Tally on every shot reply (`♒ ×N`).
+- **`w:Voronoiology` expanded** (owner un-hid it + "feel free to expand"): generic census — `%cell`
+   row per intended pane (kind/n/pop), `%bare` rows, `cells:N` head — for ANY world (was Botany-locked).
+    Report world GRAPHS now.  ⚠ every Voro* fixture shifts → **re-record owed** (live runner, my start).
+- **NEXT MOVES:** (1) tab reload → `runner_shot.mjs` smoke → shot-gauntlet VoroClinic/VoroScape/
+   VoroRadioPier (F1/F6/F7 verdicts by png); (2) re-record the Voro fleet; (3) F3 (paint_final
+    content-diff — kill the flash) then F2 (settle-aware cadence), both now shot-assisted; (4) the
+     staged 🎋 `micro_fit` visible joints.
+
 **NIGHT LOG — 2026-07-08 overnight (autonomous build; NOTHING committed, all in the working tree).**
  Two things landed, both compile-verified via LocalGen; the pixel/eyes-on halves are staged for you.
 - **🎋 Bamboo schematica — meaning-side LANDED + compile-clean.**  `Ghost/V/Voro.g`: `Vtuff_build`

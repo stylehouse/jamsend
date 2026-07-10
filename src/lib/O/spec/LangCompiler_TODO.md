@@ -49,6 +49,11 @@ The editor's compile (driven by `npm run ghost-compile`) runs the translator + s
 
 ## Open
 
+- `class Whateverer extends Suchness` and block indent a class body, anywhere around other H methods
+    to be put outside eatfunc() in the .go
+
+- `rw i Voro,visible:${stats.}` -> `rw i Voro,visible:${stats.visible}` -> ...
+
 - `waft%equip|boring|dontSnap` -> `(waft?.sc.equip || waft?.sc.boring || waft?.sc.dontSnap)`
 
 - **post-IOing element accessor — `o req:handshake 0` / `-1` / ranges.** A query (`o`/`oa`/…) returns a

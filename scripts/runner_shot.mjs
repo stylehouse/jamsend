@@ -9,9 +9,16 @@
 //  Rides the runner_ask/runner_ack corr rails (ask.op:'shot') so the relay needs NO change — it already
 //   corr-remembers runner_ask asks and routes the {control:'runner_ack'} reply straight back here.
 //
+//  Every shot ALSO prints the render telemetry (the "film strip" beside the frame): the over-time
+//   story of what the pipeline did to turn the model into cells — wave / armed / remorph / morph /
+//    settle / diag events since the last layout settle, plus the live gate (voronoi_on, seeds, cells).
+//     `--why` skips the png and prints ONLY that (cheap, pollable).  It's the Cyto twin of reactap —
+//      render-side, so it can never be a snapped world (metaphysics #2); this is its home.
+//
 //  Usage:
-//    node scripts/runner_shot.mjs                     # /tmp/runner_shot.png, full graph extent, last-courted runner
+//    node scripts/runner_shot.mjs                     # /tmp/runner_shot.png + telemetry, full extent, last runner
 //    node scripts/runner_shot.mjs shots/voro.png      # a named outfile
+//    node scripts/runner_shot.mjs --why               # telemetry ONLY (no png) — what's processing into cells
 //    node scripts/runner_shot.mjs --viewport          # only what's on screen (default is the full extent)
 //    node scripts/runner_shot.mjs --scale=2           # 2x pixels (sharper + bigger)
 //    node scripts/runner_shot.mjs --w=1200            # cap maxWidth (px)
@@ -40,11 +47,29 @@ const stamp  = Date.now()
 const corr   = `shot-${stamp}`
 const addr   = `runshot-${stamp}`   // ephemeral — the reply comes back corr-routed, not by addr
 
-const ask = { op: 'shot', full: !flags.has('--viewport') }
+const why = flags.has('--why')                          // telemetry only — no png
+const ask = why ? { op: 'why' } : { op: 'shot', full: !flags.has('--viewport') }
 if (kv.scale) ask.scale = Number(kv.scale)
 if (kv.w)     ask.maxWidth = Number(kv.w)
 if (kv.h)     ask.maxHeight = Number(kv.h)
 if (kv.bg)    ask.bg = kv.bg
+
+// print the render telemetry (the over-time model→cells story) — shared by `shot` (rides r.render)
+//  and `--why` (the whole reply IS it).  dt = ms from the last layout settle (the epoch the owner named).
+function printRender(cr) {
+    if (!cr) { console.log('  (no render telemetry — reload the runner tab so Cytui remounts)'); return }
+    const sy = (b) => b == null ? '?' : b ? 'yes' : 'no'
+    console.log(`render gate: voronoi_on=${sy(cr.voronoi_on)} saw_stuffy=${sy(cr.saw_stuffy)} pref=${cr.voronoi_pref == null ? 'auto' : sy(cr.voronoi_pref)}`)
+    console.log(`   now: seeds=${cr.seeds} cells=${cr.cells} nodes=${cr.nodes}${cr.since_settle_ms != null ? ` · ${cr.since_settle_ms}ms since last settle` : ''}${cr.diag_cures ? ` · ♒ diag cured ×${cr.diag_cures}` : ''}`)
+    if (cr.cells === 0 && cr.seeds >= 2) console.log('   ⚠ ≥2 seeds but 0 cells — the render gate is trapping data (F1/F6)')
+    if (cr.saw_stuffy === false) console.log('   ⓘ never armed (saw_stuffy=no) — no crushed chunks reached the render (empty world, or the seed never fired)')
+    console.log('   log (dt ms from last settle):')
+    for (const e of cr.log ?? []) {
+        const { t, ev, dt, ...rest } = e
+        const kv = Object.entries(rest).map(([k, v]) => `${k}:${v}`).join(' ')
+        console.log(`     ${String(dt == null ? '·' : (dt >= 0 ? '+' + dt : dt)).padStart(6)}  ${ev.padEnd(9)} ${kv}`)
+    }
+}
 
 const ws = new WebSocket(`${WS_URL}?addr=${encodeURIComponent(addr)}`)
 ws.on('error', (e) => { console.error(`✗ relay ${WS_URL}: ${String(e?.code ?? e?.message ?? e)}`); process.exit(1) })
@@ -65,12 +90,14 @@ const reply = await new Promise((resolve) => {
 try { ws.close() } catch { /* already closing */ }
 
 if (reply.control !== 'runner_ack' || reply.ok === false) {
-    console.error(`✗ shot: ${reply.error ?? reply.result?.error ?? 'failed'}`)
+    console.error(`✗ ${ask.op}: ${reply.error ?? reply.result?.error ?? 'failed'}`)
     process.exit(1)
 }
 const r = reply.result || {}
+if (why) { printRender(r); process.exit(0) }   // the whole reply IS the telemetry
 if (!r.png) { console.error(`✗ shot: runner returned no png (${JSON.stringify(r)})`); process.exit(1) }
 const buf = Buffer.from(r.png, 'base64')
 writeFileSync(out, buf)
-console.log(`📸 ${out} — ${(buf.length / 1024).toFixed(0)}KB · canvas ${r.w}×${r.h}${r.full ? ' (full extent)' : ' (viewport)'} · ${r.nodes} nodes ${r.edges} edges`)
+console.log(`📸 ${out} — ${(buf.length / 1024).toFixed(0)}KB · canvas ${r.w}×${r.h}${r.full ? ' (full extent)' : ' (viewport)'} · ${r.nodes} nodes ${r.edges} edges${r.diag_cures ? ` · ♒ diagonal satan cured ×${r.diag_cures}` : ''}`)
+printRender(r.render)
 process.exit(0)

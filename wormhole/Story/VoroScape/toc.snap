@@ -20,6 +20,10 @@ story:VoroScape
       style:background-color,v:#534ed0
     matstyle:Voro
       style:background-color,v:#a34b1f
+    matstyle:bare
+      style:background-color,v:#3aa67e
+    matstyle:cell
+      style:background-color,v:#bd36c9
   Plan
   Opt
     waitCyto
@@ -28,28 +32,28 @@ story:VoroScape
     dontSnapCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.018
-      sample=0.016,at=1783433663
-      sample=0.017,at=1783439363
-      sample=0.014,at=1783442014
-      sample=0.016,at=1783442026
-      sample=0.016,at=1783442036
-      sample=0.016,at=1783442112
-      sample=0.016,at=1783442560
-      sample=0.03,at=1783443351
+    TimeTotal:beliefs,avg=0.02
       sample=0.019,at=1783444109
       sample=0.017,at=1783488306
+      sample=0.011,at=1783659421
+      sample=0.012,at=1783659504
+      sample=0.011,at=1783659542
+      sample=0.023,at=1783660610
+      sample=0.024,at=1783660631
+      sample=0.035,at=1783661260
+      sample=0.022,at=1783661564
+      sample=0.022,at=1783662987
     TimeTotal:step,avg=0.003
-      sample=0.003,at=1783433663
-      sample=0.003,at=1783439363
-      sample=0.002,at=1783442014
-      sample=0.003,at=1783442026
-      sample=0.003,at=1783442036
-      sample=0.003,at=1783442112
-      sample=0.003,at=1783442560
-      sample=0.005,at=1783443351
       sample=0.003,at=1783444109
       sample=0.003,at=1783488306
+      sample=0.002,at=1783659421
+      sample=0.002,at=1783659504
+      sample=0.002,at=1783659542
+      sample=0.004,at=1783660610
+      sample=0.004,at=1783660631
+      sample=0.006,at=1783661260
+      sample=0.004,at=1783661564
+      sample=0.004,at=1783662987
   step,dige:0a179ff73e141778
   step=2,dige:1c5abd622877469d
   step=3,dige:d948bb44195814ac

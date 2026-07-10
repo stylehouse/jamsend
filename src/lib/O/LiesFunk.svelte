@@ -2213,8 +2213,19 @@ await M.eatfunc({
                     else {
                         const a = ask as any   // shot-only knobs, off the typed ask
                         const png = cy.png({ output: 'base64', bg: a.bg ?? '#111', full: a.full !== false, scale: a.scale ?? 1, maxWidth: a.maxWidth ?? 1600, maxHeight: a.maxHeight })
-                        result = { png, full: a.full !== false, w: cy.width(), h: cy.height(), nodes: cy.nodes().length, edges: cy.edges().length }
+                        result = { png, full: a.full !== false, w: cy.width(), h: cy.height(), nodes: cy.nodes().length, edges: cy.edges().length,
+                            diag_cures: ((H.top_House().c as any).cy_diag_cures as number) ?? 0,   // the diagonal-satan tally (Cytui diag_check) — >0 = it appeared and was auto-cured
+                            render: ((H.top_House().c as any).cy_render as any) ?? null }            // the over-time model→cells telemetry (Cytui vlog) — the film strip beside the frame
                     }
+                } else if (op === 'why') {
+                    // the render pipeline's over-time story (scripts/runner_shot.mjs --why): what turned
+                    //  the model into cells since the last layout settle — the gate + its inputs + a ring
+                    //   of wave/armed/remorph/morph/settle/diag events.  Render-side telemetry (NEVER
+                    //    snapped — metaphysics #2), the Cyto twin of reactap; mirrored on top_House.c by
+                    //     Cytui's vlog.  A `stuff:0` wave every beat = an empty world (the seed never fired).
+                    const cr = (H.top_House().c as any).cy_render
+                    if (!cr) { ok = false; result = { error: 'no render telemetry — is a useCyto Book mounted + the tab reloaded since this landed?' } }
+                    else result = cr
                 } else { ok = false; result = { error: `unknown op ${op}` } }
             } catch (e) { ok = false; result = { error: String((e as Error).message) } }
             const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any

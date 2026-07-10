@@ -22,6 +22,49 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 A rolling brief: the newest work sits here first, then gets baked into its home section
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 
+**BUILT 2026-07-10 — the PREVIEW ECONOMY (owner 2026-07-08: "Records are always Record/Preview first,
+ those are the parts that cache in radiostock/, then Record/Stream involves streaming the track from the
+  point right after the last Record/Preview") — LIVE-GATE OWED, all four MusuRa\* re-record.**
+ The Record model went preview-first end to end, drawn from `src/lib/ghost/Radios.svelte` (the
+  complication-enforcer: `radiopreview`→`rastream` offset+`preview_duration` contiguity, `streamability` /
+   `MIN_LEFT_TO_WANT_STREAMING`, the radiostock preview cache, "don't trust leftover %stream"):
+ - **stock** — `radiostock/<id>.jam` now holds ONLY the preview window (`Ra_preview_secs`, default 33s ⇒
+    17 segs; the header gains `total` + `preview_secs` + `base`, and standing REQUIRES them — old
+     whole-track cards rebuild once). The %Record mints `%Preview,name:opus` (total|bytes — the cached
+      part) + `%Stream,name:opus` (**from == the preview's total** — the continuation head, no bytes: its
+       segments do not exist yet). LUFS/gain stay WHOLE-track so the seam is loudness-uniform. Standing
+        also checks the WINDOW (`preview_secs`), so Books with different windows stay deterministic
+         against each other (MusuRaStream shrinks to 12s; the others keep 33).
+ - **cast** — `Ra_cast_serve_want` honours THE BOUNDARY: a preview want pages the cached window off the
+    .jam and STOPS at it; a want AT|PAST the boundary IS the streaming ask, answered by **on-demand
+     transcode from the SOURCE** (`Ra_cast_transcode`: source PCM once per Record with the card's gain
+      baked, fresh encoder per 2s seg on the SAME boundaries, cached on `rec.c.stream_segs`) — so
+       `racast_rate` now bounds REAL encoder work: the slow transcode clock is honest, and no-source ⇒
+        no-stream (the rapiracy economy). Mirror pages land in `rec.c.segs` (ONE index space across the
+         boundary); `Ra_cast_tally` keeps `%Preview.have`/`%Stream.have` legible. `Ra_cast_pull_record`
+          = want 0 + want P. The dead page-loop in `Ra_cast_send_lines` is tidied (lines only).
+ - **term** — `Ra_term_stream_open/beat` got the handoff: want-ahead CLAMPS to the preview window until
+    the un-played preview tail ≤ `want_left` (22s ⇒ 11 segs default), then the ask latches (never
+     un-asks) and the first stream want is exactly seg P. A fully-held preview HOLDS at the boundary
+      (Radios' preview-and-HOLD, emerging). **`Ra_term_decode_pulled`** decodes WHAT THE MIRROR HOLDS
+       (missing seg = embedded silence + a listed drop) — the terminal finally decodes the PULLED bytes,
+        never the local .jam (the owner's direct question — it did not, now it does). `Ra_term_stash`
+         caches a fully-held preview to `.jamsend/downloads/<friend>/<id>.jam` (§9.1b) with a read-back
+          proof.
+ - **Books** — MusuRaStock asserts the preview-first mint shape (+1 %see); MusuRaCast's whole-pull =
+    preview byte-faithful vs the husk-promised `%Preview.bytes` + continuation present in full;
+     MusuRaTerm plays ACROSS THE SEAM (cached preview + locally-transcoded continuation through
+      `Ra_term_decode_pulled` — LUFS spans the seam); MusuRaStream is the flagship session: preview in →
+       HOLD → ask at the floor → stream want at seg P (observed into `stream_ask`/`stream_want` rows) →
+        slow transcode clock starves the tail (rate→1 past 40%) → switch → measure ON THE PULLED BYTES
+         (`a_heard` vs `a_rest` vs `b_heard` + LUFS off B's pulled render) + the preview stash row.
+          Seven %see. Knobs: preview_secs=12 (P=6), cap=20, prime6/floor4/play2/want_left3, rate 4→1.
+ **OWED:** a live runner (all three registry keys were dead beacons this session — needs a human tab on
+  `:9091`, then `runner_ask run <Book> --watch --runner=<prefix>`), CHECK-run knob tuning on MusuRaStream
+   (the starve window), then re-record all four (they share the Record shape; accept order free, but
+    pre-pin the %see set per Book — `grep -aoE "%see:'[^']*'" Ghost/Story/Radiation.g`). Gens are
+     current on disk via LocalGen (spine-BOMB honoured — no ghost-compile of Ra.g against a live editor).
+
 **STATUS 2026-07-08 — the three-verb pipeline (§3 rastock→racast→raterm) is COMPLETE and live-verified GREEN.**
  All three `MusuRa*` Books re-recorded green under the rename (verdicts in the MusuRaTerm block below). The next
   frontier is Pier reality (§9) — the suggested order is 9.1 real `/music` library → 9.10's spine (one real file
@@ -294,6 +337,13 @@ Owner asked (2026-07-08) to keep the mock boundary explicit: the `%see` claims s
     baked gain → WebCodecs Opus encode → ~2s segments → `.jam` on real disk → `decodeAudioData`
      back → muted Web-Audio playback. The −14 LUFS target genuinely survives the opus round trip
       (MusuRaTerm reads it back). Real bytes, real loudness math, real codec.
+ - **the transcode clock (2026-07-10)** — a stream want is answered by ENCODING the continuation
+    from the source on demand (`Ra_cast_transcode`); `racast_rate` bounds real encoder work per
+     want, so the MusuRaStream starve is a genuine producer-vs-playhead race. (The *rate NUMBER* is
+      still a knob — a real deployment's rate is whatever the CPU affords — but the work is real.)
+ - **the terminal's substrate (2026-07-10)** — measurement decodes the PULLED segments
+    (`Ra_term_decode_pulled` off the mirror), never the local stock: loudness and gaps are read
+     from the bytes that crossed the wire.
  - **storage** — real `.jam` files through the FSA-share nav (`Ra_pack`/`Ra_unpack`).
  - **protocol** — frames, per-Pier `seq`, sha256 `body_hash` per page, fixed-stride paging,
     husk/catalog offer, park/serve (the Repli/Peeroleum floor).
@@ -397,11 +447,14 @@ The replication protocol is real (Repli_* + the Se, §6/MusuReplica — live-gre
      the selected stuff replicates for free — the mirror sees `genre/artist/album/track`, not a flat
       pile.
 
-**9.3 The pull rides the playhead.** MusuReplica pulls on a beat loop; a real listener pulls because
- they are LISTENING. Radiola already has the exact shape — `req_streamability` arms `%want:stream`
-  when the un-played tail drops to the `want_left` floor — so the want-cursor should key off the
-   playhead + keep_ahead, making replication rate = listening rate (the anti-hoard: you fetch what
-    you play, plus a safe margin — the same live-edge margin MusuEdge holds).
+**9.3 The pull rides the playhead. [BUILT 2026-07-10 — the Ra machine]** MusuReplica pulls on a beat
+ loop; a real listener pulls because they are LISTENING. Radiola modelled the shape
+  (`req_streamability` arms `%want:stream` at the `want_left` floor); the REAL machine now runs it:
+   `Ra_term_stream_beat` wants ahead of the playhead, clamped to the %Preview window until the
+    streamability latch, then streams from right after the last preview while `Ra_cast_serve_want`
+     transcodes the continuation from the source at `racast_rate` (§0 — replication rate = listening
+      rate against a real transcode clock; MusuRaStream is the Book). Remaining from this idea:
+       keep_ahead across RECORDS (the next-track prefetch — radiostock fan-out at the session layer).
 
 **9.4 Catalog gossip over multicast.** Offers today are unicast `to:'Crowd'`; the relay already fans
  out `to:@channel` topics (Peeroleum multicast, PereProof step 29). An offer published once to
