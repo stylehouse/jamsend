@@ -1,0 +1,568 @@
+Snap:H
+  H:MusuRaChase,Run
+    A:MusuRaChase
+      self,round=158	{"mung":["age"]}
+      w:MusuRaChase,keep_ahead=3
+        self,round=158	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Uno
+          Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
+            Peering,name:4e09f34f5a6ab900,friendly:Uno
+              Idzeug:rachase_u,to:Music,genre:Chase,spent
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783714059
+                Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783714059,sign:8d6c4b67df0bcff0862a4b1f3cc1486e7ff8f26a6f6f424f6f432b3d2e3f83fd3eacc8bfcf4ad89bc37476897de520ef7aaa319dfa4121c54fc04387fb551a0a,genre:Chase
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783714059,sign:3095315f5b6f7872c03f684356d38c96a4c80a4e3366db421d892968d123d9ba3c1276c531576bae95323ba98b3c388d8259b73e6affceb08c211fe039717502,genre:Chase
+            SocialGraph
+              Edge,a:4e09f34f5a6ab900,b:b317b9a776e39d30,at:1783714059
+        Account,of:Duo
+          Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
+            Peering,name:be0dab3303037ad2,friendly:Duo
+              Idzeug:rachase_d,to:Music,genre:Chase,spent
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783714059
+                Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783714059,sign:20d256b1e9022231ce7ceb428dab4b5b225dbc80ea860c2dab017f6defb8b82624cc2212227a7f891d276d8c67eb2cd413a5917954de88b177e392f17131e806,genre:Chase
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783714059,sign:37603db7d2c1a40deba5c378c55bb9be2148a6a2b53fba94035436fa88bbe632e73451ccecfa1f30770fa9ff63e86d7bdfe1c3c3425df25954172699c6a8ba06,genre:Chase
+            SocialGraph
+              Edge,a:be0dab3303037ad2,b:b317b9a776e39d30,at:1783714059
+        Account,of:Listener
+          Identity:b317b9a776e39d30,prepub:b317b9a776e39d30,friendly:Listener
+            Peering,name:b317b9a776e39d30,friendly:Listener
+              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783714059
+                Peering,name:4e09f34f5a6ab900,friendly:Uno,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783714059,sign:3095315f5b6f7872c03f684356d38c96a4c80a4e3366db421d892968d123d9ba3c1276c531576bae95323ba98b3c388d8259b73e6affceb08c211fe039717502,genre:Chase
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783714059,sign:8d6c4b67df0bcff0862a4b1f3cc1486e7ff8f26a6f6f424f6f432b3d2e3f83fd3eacc8bfcf4ad89bc37476897de520ef7aaa319dfa4121c54fc04387fb551a0a,genre:Chase
+              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783714059
+                Peering,name:be0dab3303037ad2,friendly:Duo,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783714059,sign:37603db7d2c1a40deba5c378c55bb9be2148a6a2b53fba94035436fa88bbe632e73451ccecfa1f30770fa9ff63e86d7bdfe1c3c3425df25954172699c6a8ba06,genre:Chase
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783714059,sign:20d256b1e9022231ce7ceb428dab4b5b225dbc80ea860c2dab017f6defb8b82624cc2212227a7f891d276d8c67eb2cd413a5917954de88b177e392f17131e806,genre:Chase
+            SocialGraph
+              Edge,a:b317b9a776e39d30,b:4e09f34f5a6ab900,at:1783714059
+              Edge,a:b317b9a776e39d30,b:be0dab3303037ad2,at:1783714059
+        Peering,name:4e09f34f5a6ab900,req=2,ok
+          Pier,pub:b317b9a776e39d30,req=2,ok
+            req:handshake,finished
+              req:said_hello,maz=4,finished
+              req:heard_hello,maz=3,finished
+              req:said_trust,maz=2,finished
+              req:heard_trust,finished
+            protocol
+              hello
+                said,seq,acked
+                heard,pubkey:b317b9a776e39d30
+              trust
+                said,seq=2,acked
+                heard
+            outbox
+              recent
+                emit=40,type:repli_page,seq=40
+                emit=41,type:repli_page,seq=41
+                emit=42,type:repli_lines,seq=42
+                emit=43,type:repli_page,seq=43
+                emit=44,type:repli_page,seq=44
+                emit=45,type:repli_lines,seq=45
+                emit=46,type:repli_page,seq=46
+                emit=47,type:repli_page,seq=47
+                emit=48,type:repli_lines,seq=48
+                emit=49,type:repli_page,seq=49
+                emit=50,type:repli_page,seq=50
+                emit=51,type:repli_lines,seq=51
+                emit=52,type:repli_page,seq=52
+                emit=53,type:repli_page,seq=53
+                emit=54,type:repli_lines,seq=54
+                emit=55,type:repli_page,seq=55
+                emit=56,type:repli_page,seq=56
+                emit=57,type:repli_lines,seq=57
+                emit=58,type:repli_page,seq=58
+                emit=59,type:repli_page,seq=59
+            inbox
+              recent
+                unemit=2,type:trust,seq=2
+                unemit=3,type:pier_hello,seq=3
+                unemit=4,type:repli_want,seq=4
+                unemit=5,type:repli_want,seq=5
+                unemit=6,type:repli_want,seq=6
+                unemit=7,type:repli_want,seq=7
+                unemit=8,type:repli_want,seq=8
+                unemit=9,type:repli_want,seq=9
+                unemit=10,type:repli_want,seq=10
+                unemit=11,type:repli_want,seq=11
+                unemit=12,type:repli_want,seq=12
+                unemit=13,type:repli_want,seq=13
+                unemit=14,type:repli_want,seq=14
+                unemit=15,type:repli_want,seq=15
+                unemit=16,type:repli_want,seq=16
+                unemit=17,type:repli_want,seq=17
+                unemit=18,type:repli_want,seq=18
+                unemit=19,type:repli_want,seq=19
+                unemit=20,type:repli_want,seq=20
+                unemit=21,type:repli_want,seq=21
+            Ud,pubkey:b317b9a776e39d30
+          active_transport,type:mock
+        Peering,name:b317b9a776e39d30,req=3,ok
+          Pier,pub:4e09f34f5a6ab900,req=2,ok
+            req:handshake,finished
+              req:said_hello,maz=4,finished
+              req:heard_hello,maz=3,finished
+              req:said_trust,maz=2,finished
+              req:heard_trust,finished
+            protocol
+              hello
+                said,seq,acked
+                heard,pubkey:4e09f34f5a6ab900
+              trust
+                said,seq=2,acked
+                heard
+            outbox
+              recent
+                emit=2,type:trust,seq=2
+                emit=3,type:pier_hello,seq=3
+                emit=4,type:repli_want,seq=4
+                emit=5,type:repli_want,seq=5
+                emit=6,type:repli_want,seq=6
+                emit=7,type:repli_want,seq=7
+                emit=8,type:repli_want,seq=8
+                emit=9,type:repli_want,seq=9
+                emit=10,type:repli_want,seq=10
+                emit=11,type:repli_want,seq=11
+                emit=12,type:repli_want,seq=12
+                emit=13,type:repli_want,seq=13
+                emit=14,type:repli_want,seq=14
+                emit=15,type:repli_want,seq=15
+                emit=16,type:repli_want,seq=16
+                emit=17,type:repli_want,seq=17
+                emit=18,type:repli_want,seq=18
+                emit=19,type:repli_want,seq=19
+                emit=20,type:repli_want,seq=20
+                emit=21,type:repli_want,seq=21
+            inbox
+              recent
+                unemit=40,type:repli_page,seq=40
+                unemit=41,type:repli_page,seq=41
+                unemit=42,type:repli_lines,seq=42
+                unemit=43,type:repli_page,seq=43
+                unemit=44,type:repli_page,seq=44
+                unemit=45,type:repli_lines,seq=45
+                unemit=46,type:repli_page,seq=46
+                unemit=47,type:repli_page,seq=47
+                unemit=48,type:repli_lines,seq=48
+                unemit=49,type:repli_page,seq=49
+                unemit=50,type:repli_page,seq=50
+                unemit=51,type:repli_lines,seq=51
+                unemit=52,type:repli_page,seq=52
+                unemit=53,type:repli_page,seq=53
+                unemit=54,type:repli_lines,seq=54
+                unemit=55,type:repli_page,seq=55
+                unemit=56,type:repli_page,seq=56
+                unemit=57,type:repli_lines,seq=57
+                unemit=58,type:repli_page,seq=58
+                unemit=59,type:repli_page,seq=59
+            Ud,pubkey:4e09f34f5a6ab900
+            req:awaitbuf,bufferid,landed,finished
+            req:awaitbuf,bufferid=2,landed,finished
+            req:awaitbuf,bufferid=3,landed,finished
+            req:awaitbuf,bufferid=4,landed,finished
+            req:awaitbuf,bufferid=5,landed,finished
+            req:awaitbuf,bufferid=6,landed,finished
+            req:awaitbuf,bufferid=7,landed,finished
+            req:awaitbuf,bufferid=8,landed,finished
+            req:awaitbuf,bufferid=9,landed,finished
+            req:awaitbuf,bufferid=10,landed,finished
+            req:awaitbuf,bufferid=11,landed,finished
+            req:awaitbuf,bufferid=12,landed,finished
+            req:awaitbuf,bufferid=13,landed,finished
+            req:awaitbuf,bufferid=14,landed,finished
+            req:awaitbuf,bufferid=15,landed,finished
+            req:awaitbuf,bufferid=16,landed,finished
+            req:awaitbuf,bufferid=17,landed,finished
+            req:awaitbuf,bufferid=18,landed,finished
+            req:awaitbuf,bufferid=19,landed,finished
+            req:awaitbuf,bufferid=20,landed,finished
+            req:awaitbuf,bufferid=21,landed,finished
+            req:awaitbuf,bufferid=22,landed,finished
+            req:awaitbuf,bufferid=23,landed,finished
+            req:awaitbuf,bufferid=24,landed,finished
+            req:awaitbuf,bufferid=25,landed,finished
+            req:awaitbuf,bufferid=26,landed,finished
+            req:awaitbuf,bufferid=27,landed,finished
+            req:awaitbuf,bufferid=28,landed,finished
+            req:awaitbuf,bufferid=29,landed,finished
+            req:awaitbuf,bufferid=30,landed,finished
+            req:awaitbuf,bufferid=31,landed,finished
+            req:awaitbuf,bufferid=32,landed,finished
+            req:awaitbuf,bufferid=33,landed,finished
+            req:awaitbuf,bufferid=34,landed,finished
+            req:awaitbuf,bufferid=35,landed,finished
+            req:awaitbuf,bufferid=36,landed,finished
+          active_transport,type:mock,open
+          Pier,pub:be0dab3303037ad2,req=3,ok
+            req:handshake,finished
+              req:said_hello,maz=4,finished
+              req:heard_hello,maz=3,finished
+              req:said_trust,maz=2,finished
+              req:heard_trust,finished
+            protocol
+              hello
+                said,seq,acked
+                heard,pubkey:be0dab3303037ad2
+              trust
+                said,seq=2,acked
+                heard
+            outbox
+              recent
+                emit=17,type:repli_want,seq=17
+                emit=18,type:repli_want,seq=18
+                emit=19,type:repli_want,seq=19
+                emit=20,type:repli_want,seq=20
+                emit=21,type:repli_want,seq=21
+                emit=22,type:repli_want,seq=22
+                emit=23,type:repli_want,seq=23
+                emit=24,type:repli_want,seq=24
+                emit=25,type:repli_want,seq=25
+                emit=26,type:repli_want,seq=26
+                emit=27,type:repli_want,seq=27
+                emit=28,type:repli_want,seq=28
+                emit=29,type:repli_want,seq=29
+                emit=30,type:repli_want,seq=30
+                emit=31,type:repli_want,seq=31
+                emit=32,type:repli_want,seq=32
+                emit=33,type:repli_want,seq=33
+                emit=34,type:repli_want,seq=34
+                emit=35,type:repli_want,seq=35
+                emit=36,type:repli_want,seq=36
+            inbox
+              recent
+                unemit=85,type:repli_page,seq=85
+                unemit=86,type:repli_page,seq=86
+                unemit=87,type:repli_lines,seq=87
+                unemit=88,type:repli_page,seq=88
+                unemit=89,type:repli_page,seq=89
+                unemit=90,type:repli_lines,seq=90
+                unemit=91,type:repli_page,seq=91
+                unemit=92,type:repli_page,seq=92
+                unemit=93,type:repli_lines,seq=93
+                unemit=94,type:repli_page,seq=94
+                unemit=95,type:repli_page,seq=95
+                unemit=96,type:repli_lines,seq=96
+                unemit=97,type:repli_page,seq=97
+                unemit=98,type:repli_page,seq=98
+                unemit=99,type:repli_lines,seq=99
+                unemit=100,type:repli_page,seq=100
+                unemit=101,type:repli_page,seq=101
+                unemit=102,type:repli_lines,seq=102
+                unemit=103,type:repli_page,seq=103
+                unemit=104,type:repli_page,seq=104
+            Ud,pubkey:be0dab3303037ad2
+            req:awaitbuf,bufferid,landed,finished
+            req:awaitbuf,bufferid=2,landed,finished
+            req:awaitbuf,bufferid=3,landed,finished
+            req:awaitbuf,bufferid=4,landed,finished
+            req:awaitbuf,bufferid=5,landed,finished
+            req:awaitbuf,bufferid=6,landed,finished
+            req:awaitbuf,bufferid=7,landed,finished
+            req:awaitbuf,bufferid=8,landed,finished
+            req:awaitbuf,bufferid=9,landed,finished
+            req:awaitbuf,bufferid=10,landed,finished
+            req:awaitbuf,bufferid=11,landed,finished
+            req:awaitbuf,bufferid=12,landed,finished
+            req:awaitbuf,bufferid=13,landed,finished
+            req:awaitbuf,bufferid=14,landed,finished
+            req:awaitbuf,bufferid=15,landed,finished
+            req:awaitbuf,bufferid=16,landed,finished
+            req:awaitbuf,bufferid=17,landed,finished
+            req:awaitbuf,bufferid=18,landed,finished
+            req:awaitbuf,bufferid=19,landed,finished
+            req:awaitbuf,bufferid=20,landed,finished
+            req:awaitbuf,bufferid=21,landed,finished
+            req:awaitbuf,bufferid=22,landed,finished
+            req:awaitbuf,bufferid=23,landed,finished
+            req:awaitbuf,bufferid=24,landed,finished
+            req:awaitbuf,bufferid=25,landed,finished
+            req:awaitbuf,bufferid=26,landed,finished
+            req:awaitbuf,bufferid=27,landed,finished
+            req:awaitbuf,bufferid=28,landed,finished
+            req:awaitbuf,bufferid=29,landed,finished
+            req:awaitbuf,bufferid=30,landed,finished
+            req:awaitbuf,bufferid=31,landed,finished
+            req:awaitbuf,bufferid=32,landed,finished
+            req:awaitbuf,bufferid=33,landed,finished
+            req:awaitbuf,bufferid=34,landed,finished
+            req:awaitbuf,bufferid=35,landed,finished
+            req:awaitbuf,bufferid=36,landed,finished
+            req:awaitbuf,bufferid=37,landed,finished
+            req:awaitbuf,bufferid=38,landed,finished
+            req:awaitbuf,bufferid=39,landed,finished
+            req:awaitbuf,bufferid=40,landed,finished
+            req:awaitbuf,bufferid=41,landed,finished
+            req:awaitbuf,bufferid=42,landed,finished
+            req:awaitbuf,bufferid=43,landed,finished
+            req:awaitbuf,bufferid=44,landed,finished
+            req:awaitbuf,bufferid=45,landed,finished
+            req:awaitbuf,bufferid=46,landed,finished
+            req:awaitbuf,bufferid=47,landed,finished
+            req:awaitbuf,bufferid=48,landed,finished
+            req:awaitbuf,bufferid=49,landed,finished
+            req:awaitbuf,bufferid=50,landed,finished
+            req:awaitbuf,bufferid=51,landed,finished
+            req:awaitbuf,bufferid=52,landed,finished
+            req:awaitbuf,bufferid=53,landed,finished
+            req:awaitbuf,bufferid=54,landed,finished
+            req:awaitbuf,bufferid=55,landed,finished
+            req:awaitbuf,bufferid=56,landed,finished
+            req:awaitbuf,bufferid=57,landed,finished
+            req:awaitbuf,bufferid=58,landed,finished
+            req:awaitbuf,bufferid=59,landed,finished
+            req:awaitbuf,bufferid=60,landed,finished
+            req:awaitbuf,bufferid=61,landed,finished
+            req:awaitbuf,bufferid=62,landed,finished
+            req:awaitbuf,bufferid=63,landed,finished
+            req:awaitbuf,bufferid=64,landed,finished
+            req:awaitbuf,bufferid=65,landed,finished
+            req:awaitbuf,bufferid=66,landed,finished
+          active_transport,type:mock,open
+        Peering,name:be0dab3303037ad2,req=4,ok
+          Pier,pub:b317b9a776e39d30,req=2,ok
+            req:handshake,finished
+              req:said_hello,maz=4,finished
+              req:heard_hello,maz=3,finished
+              req:said_trust,maz=2,finished
+              req:heard_trust,finished
+            protocol
+              hello
+                said,seq,acked
+                heard,pubkey:b317b9a776e39d30
+              trust
+                said,seq=2,acked
+                heard
+            outbox
+              recent
+                emit=85,type:repli_page,seq=85
+                emit=86,type:repli_page,seq=86
+                emit=87,type:repli_lines,seq=87
+                emit=88,type:repli_page,seq=88
+                emit=89,type:repli_page,seq=89
+                emit=90,type:repli_lines,seq=90
+                emit=91,type:repli_page,seq=91
+                emit=92,type:repli_page,seq=92
+                emit=93,type:repli_lines,seq=93
+                emit=94,type:repli_page,seq=94
+                emit=95,type:repli_page,seq=95
+                emit=96,type:repli_lines,seq=96
+                emit=97,type:repli_page,seq=97
+                emit=98,type:repli_page,seq=98
+                emit=99,type:repli_lines,seq=99
+                emit=100,type:repli_page,seq=100
+                emit=101,type:repli_page,seq=101
+                emit=102,type:repli_lines,seq=102
+                emit=103,type:repli_page,seq=103
+                emit=104,type:repli_page,seq=104
+            inbox
+              recent
+                unemit=17,type:repli_want,seq=17
+                unemit=18,type:repli_want,seq=18
+                unemit=19,type:repli_want,seq=19
+                unemit=20,type:repli_want,seq=20
+                unemit=21,type:repli_want,seq=21
+                unemit=22,type:repli_want,seq=22
+                unemit=23,type:repli_want,seq=23
+                unemit=24,type:repli_want,seq=24
+                unemit=25,type:repli_want,seq=25
+                unemit=26,type:repli_want,seq=26
+                unemit=27,type:repli_want,seq=27
+                unemit=28,type:repli_want,seq=28
+                unemit=29,type:repli_want,seq=29
+                unemit=30,type:repli_want,seq=30
+                unemit=31,type:repli_want,seq=31
+                unemit=32,type:repli_want,seq=32
+                unemit=33,type:repli_want,seq=33
+                unemit=34,type:repli_want,seq=34
+                unemit=35,type:repli_want,seq=35
+                unemit=36,type:repli_want,seq=36
+            Ud,pubkey:b317b9a776e39d30
+          active_transport,type:mock,open
+        Library,pier:4e09f34f5a6ab900
+          Record,id:af99e3b3efe5661a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.35,gain=-6.65,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
+            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:16,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:17	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:18	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:19	{"ref":{"buf":"Uint8Array()"}}
+          Record,id:cec642f34f501315,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
+            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
+        Library,pier:be0dab3303037ad2
+          Record,id:8e6fc6abdf3a262c,title:Groove G,artist:DJ Oscillo,seconds=66,lufs=-7.84,gain=-6.16,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=33,bytes=517443
+            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:16,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:17	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:18	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:19	{"ref":{"buf":"Uint8Array()"}}
+          Record,id:f60c57424cac2e10,title:Echo E,artist:Fourier Four,seconds=60,lufs=-6.61,gain=-7.39,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=30,bytes=517443
+            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
+        req:rachase_stock,finished
+        req:witness,eternal,ok
+        reached:step_4
+        Library,pier:b317b9a776e39d30
+          Record,id:af99e3b3efe5661a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.35,gain=-6.65,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
+            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:16,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:17	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:18	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:19	{"ref":{"buf":"Uint8Array()"}}
+          Record,id:cec642f34f501315,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
+            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
+          Record,id:8e6fc6abdf3a262c,title:Groove G,artist:DJ Oscillo,seconds=66,lufs=-7.84,gain=-6.16,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=33,bytes=517443
+            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:16,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:17	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:18	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:19	{"ref":{"buf":"Uint8Array()"}}
+          Record,id:f60c57424cac2e10,title:Echo E,artist:Fourier Four,seconds=60,lufs=-6.61,gain=-7.39,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=30,bytes=517443
+            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
+        entropy_probe,pick_a=452670,pick_b=660366,moved
+        restocked,warm=3,of=3
+        stream_ask:A,preview=16,at_head=14,plays=8
+        stream_want=16,of:A,preview=16
+        fed:A,at_head=18,held=4
+        chased,at_head=20,warm=16
+        darkened
+        skip:B,at_head=10,warm=16
+        stream_ask:C,preview=16,at_head=14,plays=8
+        stream_want=16,of:C,preview=16
+        req:rachase_measure,finished
+        streamed,cap=20,a_played=20,a_drops=0,a_heard=0,b_drops=0,b_heard=0,lufs=-14
+        see:two source Piers stand with real opus stock — different tracks on each shelf
+        see:the listener redeemed an invite from each source — both pairs sealed with live Music grants
+        see:the catalog merged at the mirror — husks from both sources carry their chunk promises
+        see:the chase began on the cached preview alone — the spool held at the first boundary until the tail ran low
+        see:the first streaming ask went out at exactly the segment after the last preview
+        see:the playhead crossed the first boundary onto chunks transcoded on demand
+        see:the fan-out kept every other preview warm across both sources while the first track played
+        see:injected entropy moved the dial — the same seeded state picks differently after the stir
+        see:the dial chased to the other Pier — a record from the second source opened on its warm preview
+        see:a source Pier went dark mid-session — the presence read turned false while the other stayed live
+        see:a playing track was skipped mid-cycle — the dial abandoned it and the next began at once on a warm preview
+        see:the skip passed over the dark Pier — the next track came from the source still online
+        see:the last track asked at its own boundary — a fresh preview economy at every turn of the dial
+        see:the terminal decoded the chase — the loudness reads the target back from the bytes that crossed
+        see:the final track played its capped cycle clean — the online transcoder kept ahead of a fresh playhead

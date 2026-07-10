@@ -256,8 +256,41 @@ The crown|cane|leaf|shoot stalk never earned the owner's eyes and got the honest
 - **Hierarchy is expressed structurally** — *"the Artist/Track hierarchy must be expressed, I
    suppose as sub-cells, and sub-graph"*.  A folded container's children become cells WITHIN its
     cell (recursive tessellation), or a small sub-graph seated inside the pane — the C/C path made
-     of space itself, which also retires critique #1's flattened row soup at the root.  Not built;
-      this is the 🎋 v2 frontier.
+     of space itself, which also retires critique #1's flattened row soup at the root.
+
+#### 🎋 v2 first slice — the ▦ sub-graph (BUILT 2026-07-11, eyes-on owed)
+
+The owner made it concrete: *"sub-graphs, for all of Artist\*\* with sub-voronois to each k and v
+ and whatever they've been combined into, and the ×2 and so on like annotations|superscripts,
+  which we can click to expand the graph, later when the graph is bigger."*  Built in Cytui as the
+   ▦ layer (default ON, `Cyto_subgraph` stash; ▤ keeps per-pane priority when manually on):
+
+- **A pane tessellates ITSELF.**  `subgraph_build` reads the same cached Vtuff tree, turns the
+   rows into sub-seed items — a fact `k: v` is one combined cell, a spread contributes its KEY
+    cell plus one cell per value chip, list chips and member|sub rows are the members — and cuts
+     them with the SAME phi-spiral seeding + half-plane power walls as the parent scape, clipped
+      to the pane polygon.  The pane is a scape in miniature; one geometry idiom all the way down.
+- **Multiplicities are superscripts, never cells.**  `×N` (a shared value's count) and `/*N`
+   (children to dig) ride as small raised lilac tspans on their owner's label; the pane's own
+    count superscripts its HEADLINE (the title row renders as a map-region label at the cell top,
+     the `/*N` dip as the corner glyph).  Critique #4 satisfied structurally.
+- **Keys wear the tint and their `:`, values stay plain** — the Stuffing's own idiom (critiques
+   #2+#3).  The mainkey rides as the small type-tag, as everywhere.
+- **Click-to-expand is the surf.**  A member label (and the corner `/*N`) clicks through to
+   `Vtuff_pop` — the sub-cell pops out into the real graph.  Only labels take the pointer
+    (the layer is pointer-events:none), so pane drag survives.  The owner's *"later when the
+     graph is bigger"* deepening — sub-sub-voronois, expand-in-place — stays open.
+- **Gates.**  A pane subdivides only when it says ≥2 things and has room (√area ≥ 88px);
+   otherwise the molded Stuffing stays the face.  Sub-cells past 16 fold into one `+K` cell
+    (no silent caps).  The dimmed-Stuffing crossfade is ▤'s, shared.
+
+Census side (same session): `Voro_vtuff_transcribe` stopped dumping `%Vbit` leaves — *"only the
+ higher structures I want … as long as we don't lose one"* — every row keeps its `bits:N` count
+  so a chip appearing|vanishing still moves the diff.  And the owner's genericity probe ("there's
+   no %title told of anywhere now?") holds: the ONLY places 'title' is spelled are `row:title`
+    (the headline row-KIND, not a data key) and the generic naming-preference list
+     `['name','title','text','nick','label']` shared by Vtuff_ident|name|namekey — no data key is
+      special anywhere in the pipeline.
 
 ### 🔊 Quiet ↔ rampage — a throttle on the fold's thinking
 

@@ -1127,6 +1127,22 @@
             //   when the runner's think quiesces — an idle runner that only pings would otherwise vanish
             //    from the editor's roster.  Runner-only + ~15s self-throttled inside Lies_advertise.
             ;(H as any).Lies_advertise(w)
+            // editor: the mirror gap of the advertise note above — beacons PARK off-think
+            //  (Lies_advertise_recv / Lies_pong touch only w.c.beacons) and only the IN-think
+            //   Lies_runner_roster folds them to the snapped %Runner rows, so an IDLE editor's
+            //    think-quiesce froze the roster while the channel stayed live: the rack decayed to
+            //     "● connected — no identity / ◍ channel live · beacons stale" and dispatch held on
+            //      "runners known but none live yet" over perfect transport.  This is the missing
+            //       trickle: a beacon newer than the last fold WAKES a think (a wake, not a hold —
+            //        nothing here needs to gate a snap).  Self-quenching: the fold stamps
+            //         last_roster_fold, so steady state costs ~one think per beacon batch (~15s),
+            //          and a silent grid costs nothing.
+            if (H.Lies_role(w) === 'editor') {
+                const fold = Number(w.c.last_roster_fold ?? 0)
+                const beacons = (w.c.beacons ?? {}) as Record<string, any>
+                for (const k in beacons)
+                    if (Number(beacons[k]?.last_heard ?? 0) > fold) { H.i_elvisto(w, 'think'); break }
+            }
             if (w.c.last_ping && now - (w.c.last_ping as number) < 6000) return
             w.c.last_ping = now
             H.Lies_ping(w)
@@ -1355,6 +1371,7 @@
             const H = this as House
             if (H.Lies_role(w) !== 'editor') return
             const now = Date.now()
+            w.c.last_roster_fold = now   // quenches the keepalive's beacon-newer-than-fold think nudge
             const beacons = (w.c.beacons ?? {}) as Record<string, { last_heard: number, pub?: string, ready?: boolean, book?: string, engaged?: string, ac?: boolean, fsa?: boolean }>
             let changed = false
             // a beacon from a never-seen runner NAMES it in the durable registry (role:runner).

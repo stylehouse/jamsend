@@ -8,22 +8,42 @@ Snap:H
         Artist,name:Moonlit
           Track,title:Tide,year:1998,remaster
           Track,title:Halo,year:2007
+          Track,title:Drift,year:1998,live,remaster
+          Track,title:Neon,year:2019,live
         Artist,name:Fernway
           Track,title:Root,year:2019,live
           Track,title:Frond,year:1998,remaster
+          Track,title:Moss,year:1998,remaster
         Artist,name:Voxhall
           Track,title:Echo,year:2007,live
-        Peer,name:Bo
-          Share,track:Tide
-          Share,track:Root
-          Share,track:Echo
-        see:a friend arrives and shares — every share is an edge onto a real track — the shelf becomes a graph
+          Track,title:Static,year:2007
+          Track,title:Choir,year:2007
+        see:the catalogs deepen — five new tracks land across the same three panes — the glass thickens in place
       w:Voronoiology,dontGraph
-        Voro,beat=3,level:L0,visible=8,cells:4,gangs=0,folded:8,count:4
-        cell:Artist,kind:pane,n:2
-        cell:Artist,kind:pane,n:2
-        cell:Artist,kind:pane,n:1
-        cell:Peer,kind:pane,n:3
+        Voro,beat=3,level:L0,visible=7,cells:3,gangs=0,folded:10,count:3
+        cell:Artist,kind:pane,n:4
+          Vtuffing,of:Track,n:4
+            Vrow,row:title,text:Moonlit  ×4,wgt:2,tag:Artist
+            Vrow,row:list,wgt:1,bits:4
+            Vrow,row:spread,text:year,wgt:1,bits:3
+            Vrow,row:fact,text:remaster ×2,wgt:1
+            Vrow,row:fact,text:live ×2,wgt:1
+            Vrow,row:dip,text:/*4,wgt:1
+        cell:Artist,kind:pane,n:3
+          Vtuffing,of:Track,n:3
+            Vrow,row:title,text:Fernway  ×3,wgt:2,tag:Artist
+            Vrow,row:list,wgt:1,bits:3
+            Vrow,row:spread,text:year,wgt:1,bits:2
+            Vrow,row:fact,text:live ×1,wgt:1
+            Vrow,row:fact,text:remaster ×2,wgt:1
+            Vrow,row:dip,text:/*3,wgt:1
+        cell:Artist,kind:pane,n:3
+          Vtuffing,of:Track,n:3
+            Vrow,row:title,text:Voxhall  ×3,wgt:2,tag:Artist
+            Vrow,row:list,wgt:1,bits:3
+            Vrow,row:fact,text:year: 2007,wgt:1
+            Vrow,row:fact,text:live ×1,wgt:1
+            Vrow,row:dip,text:/*3,wgt:1
         bare:self,n:2
         bare:req,n:1
         bare:see,n:1

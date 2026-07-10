@@ -154,6 +154,9 @@ Voro_report(w, stats):
 //    (a bare 1 would collapse to the boolean sentinel and a Vbit's 0 would vanish); strings
 //     shed commas (a comma inside a value would shear the snap line) and empty strings say
 //      nothing so they don't ride at all.
+//  The %Vbit LEAVES don't cross (owner: "only the higher structures I want — as long as we
+//   don't lose one"): a list row's chips are per-member noise the census doesn't need, but the
+//    row that carried them says bits:N, so a chip appearing|vanishing still moves the diff.
 Voro_vtuff_transcribe(host, vt):
     let sc = {}
     let keys = Object.keys(vt.sc)
@@ -174,8 +177,15 @@ Voro_vtuff_transcribe(host, vt):
         }
         sc[k] = v
     }
+    let kids = vt.o()
+    let bits = 0
+    for (const k of kids) if (Object.keys(k.sc)[0] === 'Vbit') bits = bits + 1
+    if (bits) sc.bits = '' + bits
     let row = host.i(sc)
-    for (const k of vt.o()) this.Voro_vtuff_transcribe(row, k)
+    for (const k of kids) {
+        if (Object.keys(k.sc)[0] === 'Vbit') continue
+        this.Voro_vtuff_transcribe(row, k)
+    }
     return row
 
 // Voro_report_walk — gather Voro_report's census on the same cut the Cyto walk makes.  A fold

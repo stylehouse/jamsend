@@ -8,26 +8,54 @@ Snap:H
         Artist,name:Moonlit
           Track,title:Tide,year:1998,remaster
           Track,title:Halo,year:2007
+          Track,title:Drift,year:1998,live,remaster
+          Track,title:Neon,year:2019,live
         Artist,name:Fernway
           Track,title:Root,year:2019,live
           Track,title:Frond,year:1998,remaster
+          Track,title:Moss,year:1998,remaster
         Artist,name:Voxhall
           Track,title:Echo,year:2007,live
-        Peer,name:Bo
-          Share,track:Tide
-          Share,track:Root
-          Share,track:Echo
-        Peer,name:Ada
-          Share,track:Tide
-          Share,track:Halo
-        see:two friends share one track — it lights up as a hub — its pane claims more room while a deep cut stays a sliver
+          Track,title:Static,year:2007
+          Track,title:Choir,year:2007
+        Artist,name:Riverine
+          Track,title:Delta,year:1998,remaster
+          Track,title:Silt,year:1998,live,remaster
+          Track,title:Eddy,year:2019,live
+        see:a new artist arrives with a catalog of three — a fourth pane splits into the glass
       w:Voronoiology,dontGraph
-        Voro,beat=4,level:L0,visible=9,cells:5,gangs=0,folded:10,count:5
-        cell:Artist,kind:pane,n:2
-        cell:Artist,kind:pane,n:2
-        cell:Artist,kind:pane,n:1
-        cell:Peer,kind:pane,n:3
-        cell:Peer,kind:pane,n:2
+        Voro,beat=4,level:L0,visible=8,cells:4,gangs=0,folded:13,count:4
+        cell:Artist,kind:pane,n:4
+          Vtuffing,of:Track,n:4
+            Vrow,row:title,text:Moonlit  ×4,wgt:2,tag:Artist
+            Vrow,row:list,wgt:1,bits:4
+            Vrow,row:spread,text:year,wgt:1,bits:3
+            Vrow,row:fact,text:remaster ×2,wgt:1
+            Vrow,row:fact,text:live ×2,wgt:1
+            Vrow,row:dip,text:/*4,wgt:1
+        cell:Artist,kind:pane,n:3
+          Vtuffing,of:Track,n:3
+            Vrow,row:title,text:Fernway  ×3,wgt:2,tag:Artist
+            Vrow,row:list,wgt:1,bits:3
+            Vrow,row:spread,text:year,wgt:1,bits:2
+            Vrow,row:fact,text:live ×1,wgt:1
+            Vrow,row:fact,text:remaster ×2,wgt:1
+            Vrow,row:dip,text:/*3,wgt:1
+        cell:Artist,kind:pane,n:3
+          Vtuffing,of:Track,n:3
+            Vrow,row:title,text:Voxhall  ×3,wgt:2,tag:Artist
+            Vrow,row:list,wgt:1,bits:3
+            Vrow,row:fact,text:year: 2007,wgt:1
+            Vrow,row:fact,text:live ×1,wgt:1
+            Vrow,row:dip,text:/*3,wgt:1
+        cell:Artist,kind:pane,n:3
+          Vtuffing,of:Track,n:3
+            Vrow,row:title,text:Riverine  ×3,wgt:2,tag:Artist
+            Vrow,row:list,wgt:1,bits:3
+            Vrow,row:spread,text:year,wgt:1,bits:2
+            Vrow,row:fact,text:remaster ×2,wgt:1
+            Vrow,row:fact,text:live ×2,wgt:1
+            Vrow,row:dip,text:/*3,wgt:1
         bare:self,n:2
         bare:req,n:1
         bare:see,n:1

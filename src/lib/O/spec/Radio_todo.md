@@ -22,6 +22,44 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 A rolling brief: the newest work sits here first, then gets baked into its home section
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 
+**2026-07-11 (night) — MusuRaChase FIRST-LIT + RECORDED; the whole family green.**
+ The CHECK run (all 56 steps, real audio, ~4min) needed NO threshold tuning — every gate passed
+  with slack: `chased,at_head=20,warm=16` and `skip:B,at_head=10,warm=16` (gate ≥6),
+   `b_heard=0` (gate ≤3, zero drops), decoded `lufs=-14` dead on target. Accepted with the
+    %see pre-pin discipline: all 15 Chase sentences survived into the fixtures (verified against
+     the pre-pinned set — none fuzz-swallowed). Verify re-runs 56/56 green twice (≈53/≈54 —
+      the predicted two-seal AudibleEntropy signature; the ±1 is round= wobble). The owed
+       float32-compat runs also green: MusuReplica 14/14 (≈10), MusuReco 11/11 (≈3).
+ **Adversarial audit (agent + one live sabotage).** The live probe: gate the chase %see on
+  `warm >= 99` (Radiation.g:1232 via LocalGen) → the run went RED from exactly step 15 (its landing
+   step), then green again on revert — the Book catches its own regression, and a LocalGen disk
+    write DOES hot-load into live tabs.  The audit's structural verdict: NO see or marker sits in a
+     fuzz-tolerated zone (the ≈53 come entirely from `since:`/`time:`/`sign:`/`round` churn on
+      society lines), and a missing/moved line is never swallowable (positional line-zip; length
+       mismatch = hard red).  The REAL weakness class: presence gates already satisfied (or never
+        challenged) by the time the fixtures were cut — four named slips: (1) `Ra_keep_ahead`'s
+         `w.sc.keep_ahead` pin is untested (catalog-minus-playing == the pin, the clamp never
+          bites); (2) the restock fan-out's `ra_source_live` gate is dead weight post-dark (every
+           preview already whole — deleting it changes nothing); (3) `repli_allow` never refuses
+            during a Chase run (consent enforcement rides MusuRaCast's revoke arm alone); (4) the
+             chase pick's cross-Pier-ness is enforced by the pinned PRNG, not an assertion
+              (deleting the `skip_src` gate can slip if the pinned rand re-picks the same record).
+   One-line upgrades (owed, cheap): stamp `src` on the `chased` row; stamp candidate-count on the
+    `skip` row; a post-dark `fanout_dark,of=N` row; pin `keep_ahead=2` (below catalog-1) so the
+     clamp bites; a mid-run revoke variant so `repli_allow` refuses at least once in-Book.
+ Operational lessons of the night (memory: frozen-boot-empty-first-run, editor-think-quiesce-decay):
+  a tab that froze right after boot runs its FIRST dispatched Book with EMPTY steps (Creduler
+   acquire incomplete — step 1 green, rest red, no `reached:step_N`; self-heals on thaw, so burn
+    a cheap green Book first), and the editor's "● connected — no identity / beacons stale" +
+     held become_book = idle think-quiesce freezing the in-think roster fold, NOT a transport
+      failure (beacons park unfolded on `w.c.beacons`; any think heals; a beacon-driven keepalive
+       nudge is BUILT in LiesLies, live-proven over 20 idle minutes).  A SECOND, harder disease
+        showed at 09:11: a brief system freeze thaw-WEDGED the editor's belief loop permanently
+         (pings alive, thinks dead, no self-heal in 13 min; both runners survived the same freeze)
+          — editor-only in-think path, needs the tab console; the wedged tab is a live specimen,
+           root-cause in DevTools BEFORE reloading.  Full trail in memory
+            editor-think-quiesce-decay.
+
 **2026-07-11 (later) — the proto-VILLAGE: multi-caster Repli + KEEP_AHEAD + the entropy seam +
  skip-by-who-is-online.**
  The restock fan-out (the "natural next" below) landed, and it landed SOCIAL: the new Book

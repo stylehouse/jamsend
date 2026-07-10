@@ -51,11 +51,37 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
        button; census transcripts and fixtures now always flat).  Bamboo v2 = sub-cells|sub-graph
         (`Voro_vtuffing.md` §🎋 v2 — the owner's redirect).  ⚠ ALL THREE runner tabs wedged under
          the session's HMR volleys — every live verify past the transcript proof is gated on reloads.
-- **NEXT MOVES:** (1) tab reloads, then eyes-on: fold seal (no bare Tracks), one-pane-one-cell from
-   beat 2, molded Stuffings that fit, uniform pane drag (the Moonlit|Fernway|Riverine three-way split
-    should die with the ▤ demotion — if Riverine STILL renders as a plain node on a fresh run, that's
-     a real stamp-order fault: report it); (2) re-record the Voro fleet (fixtures owed: census + flat
-      Vtuffing transcript); (3) **🎋 v2**: sub-cells|sub-graph inside panes.
+- **The onward round (2026-07-11, after the owner's eyes-on: "currently it seems lovely!"):**
+  - **Census transcript trimmed to the higher structures** (owner: *"avoid dumping out all the Vbit …
+     as long as we don't lose one"*): `Voro_vtuff_transcribe` skips `%Vbit` leaves; each chip-carrying
+      row says `bits:N` instead, so the accounting still diffs.  Gen recompiled (LocalGen).
+       **VoroScape re-recorded LIVE on `3c5238…`** (check → snap-inspected the exact intended shape →
+        `accept` over the wire): fixtures 002–006 now current-canon (library→deepen→Riverine→fill
+         steps + flat transcript), all four `%see` roster-checked recorded, zero `Vbit` anywhere.
+          ⚠ the green CONFIRM re-run never recorded — the runner tab vanished mid-watch (flock was
+           churning); one clean re-run still owed.  VoroMitosis|VoroRadio fixtures carry NO transcript
+            rows yet (pre-expansion) — their long-owed re-records will bake the flat shape when run.
+  - **Genericity probe answered** (owner: *"there's no %title told of anywhere now? be generic"*):
+     correct and by design — `title` is only ever `row:title` (the headline row-KIND) and one entry in
+      the generic naming-preference list `['name','title','text','nick','label']`; the Track key never
+       shows because the member list already displays members BY their naming key (the namekey skip).
+  - **🎋 v2 FIRST SLICE BUILT — the ▦ sub-graph** (owner: *"sub-graphs, for all of Artist** with
+     sub-voronois to each k and v and whatever they've been combined into, and the ×2 and so on like
+      annotations|superscripts, which we can click to expand the graph, later"*).  Cytui: every
+       fold|gang pane with room (√area ≥ 88) tessellates ITSELF — sub-cells per key|value|member off
+        the cached Vtuff tree, same phi-spiral + power-wall geometry as the parent scape, clipped to
+         the pane; ×N and /*N as lilac SUPERSCRIPTS; keys tinted with `:`, values plain; the pane's
+          name as a headline, /*N in the corner; member labels + corner click through to `Vtuff_pop`.
+           Default ON (`Cyto_subgraph` stash, ▦ button beside ▤; ▤ keeps per-pane priority).  The
+            dimmed molded Stuffing underneath is the fallback face for slivers.  Design record:
+             `Voro_vtuffing.md` §"🎋 v2 first slice".  **Eyes-on owed — nothing snapped changes.**
+- **NEXT MOVES:** (1) eyes-on ▦: sub-cells legible? keys-vs-values read? superscripts right? click a
+   member label — it should pop out into the graph; (2) one clean VoroScape re-run to confirm green
+    on the new fixtures; then VoroMitosis|VoroRadio checks → accepts (their transcripts bake flat);
+     (3) leftover eyes-on from the go-forth round: fold seal, one-pane-one-cell from beat 2, molded
+      fit, uniform drag (Riverine-as-plain-node on a FRESH run = real stamp-order fault: report it);
+       (4) 🎋 v2 deepening: sub-sub-voronois (a member's own children), expand-in-place when the
+        graph is bigger, morph-stable sub-walls.
 
 **NIGHT LOG — 2026-07-08 overnight (autonomous build; NOTHING committed, all in the working tree).**
  Two things landed, both compile-verified via LocalGen; the pixel/eyes-on halves are staged for you.

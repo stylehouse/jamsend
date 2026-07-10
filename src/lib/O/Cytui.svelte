@@ -1073,6 +1073,165 @@
         pop.call(H, src, member)
     }
 
+    // ── ▦ the sub-graph: a pane's face as SUB-CELLS (bamboo v2's first slice) ──
+    //  The owner's redirect made concrete — "sub-voronois to each k and v and whatever
+    //   they've been combined into": a fold pane tessellates ITSELF.  One sub-cell per
+    //    key its members share (fact) or spread over, per value (the spread's chips, a
+    //     shared value keeping its count), per member — seeded on the same phi spiral
+    //      and cut by the same half-plane power walls as the parent scape, so the pane
+    //       is a scape in miniature.  Multiplicities never own a cell: ×N and the /*N
+    //        dig ride as SUPERSCRIPT annotations (a member label clicked is the surf —
+    //         Vtuff_pop, the seed of click-to-expand "later when the graph is bigger").
+    //          The pane's molded Stuffing dims underneath (the ▤ crossfade) and its
+    //           name stays on top as the pane HEADLINE, count superscripted.  Keys wear
+    //            the kind tint and their ':', values stay plain — the Stuffing's own
+    //             idiom, so k vs v reads at a glance (the language critique).
+    type VSubCell = { id: string, d: string, x: number, y: number, fs: number,
+                      tag?: string, key?: string, val?: string, sup?: string, subn?: number,
+                      member?: TheC }
+    type VSubPane = { id: string, clipid: string, clip: string, color: string, tint: string,
+                      cells: VSubCell[],
+                      title?: { x: number, y: number, tag?: string, name: string, sup: string },
+                      dip?: { x: number, y: number, text: string } }
+    let vsubs = $state<VSubPane[]>([])
+    let sub_on_ids = new Set<string>()   // panes whose Stuffing is dimmed under sub-cells
+    let subgraph_pref = $state<boolean | null>(null)
+    const subgraph_on  = $derived(subgraph_pref ?? true)
+    function toggle_subgraph() {
+        subgraph_pref = !subgraph_on
+        const sts = (H as any).stashed
+        if (sts) sts.Cyto_subgraph = subgraph_pref
+        if (!subgraph_pref) {
+            for (const id of sub_on_ids) if (!micro_on_ids.has(id)) {
+                const mel = overlays.get(id); if (mel) mel.style.opacity = ''
+            }
+            sub_on_ids = new Set(); vsubs = []
+        } else voronoi_soon()
+    }
+    const dom_id = (s: string) => s.replace(/[^a-zA-Z0-9_-]/g, '_')
+
+    // rows → sub-seed items.  title and dip stay pane-level (headline|corner); a fact
+    //  'k: v' is one combined cell; a spread contributes its KEY cell plus one cell per
+    //   value chip (×n riding as the superscript); list chips and member|sub rows are
+    //    the members themselves.  No silent caps: past 16 the tail folds into one '+K'.
+    type VSubItem = { tag?: string, key?: string, val?: string, sup?: string, subn?: number,
+                      member?: TheC, hw: number, hh: number }
+    function subgraph_items(descs: VtuffDesc[]): VSubItem[] {
+        const items: VSubItem[] = []
+        const push = (it: Partial<VSubItem>) => {
+            const len = (it.key?.length ?? 0) + (it.val?.length ?? 0)
+                      + (it.tag ? it.tag.length * 0.7 : 0) + (it.sup ? 2 : 0)
+            items.push({ ...it, hw: Math.max(14, len * 2.8), hh: 6 } as VSubItem)
+        }
+        for (const d of descs) {
+            if (d.kind === 'title' || d.dip) continue
+            if (d.kind === 'fact') {
+                const i = d.text.indexOf(': ')
+                if (i > 0) push({ key: d.text.slice(0, i), val: d.text.slice(i + 2) })
+                else push({ val: d.text })
+            } else if (d.kind === 'spread') {
+                push({ key: d.text })
+                for (const ch of d.chips ?? [])
+                    push({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined,
+                           member: ch.member, subn: ch.sub })
+            } else if (d.kind === 'list') {
+                for (const ch of d.chips ?? [])
+                    push({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined,
+                           member: ch.member, subn: ch.sub })
+            } else {   // member | sub
+                push({ val: d.text, tag: d.tag, member: d.member, subn: d.sub })
+            }
+        }
+        if (items.length > 16) {
+            const cut = items.length - 15
+            items.length = 15
+            push({ val: `+${cut}` })
+        }
+        return items
+    }
+
+    // one pane's sub-tessellation: Vogel spiral seeds around the area centroid (pulled
+    //  inside via the chord — the cells are convex), power walls sized by each label's
+    //   text box, gutter inset, label font fitted to the sub-cell's own chord.
+    function subgraph_build(c: VCell, descs: VtuffDesc[], tint: string): VSubPane | null {
+        const items = subgraph_items(descs)
+        if (items.length < 2) return null   // one k|v is exactly what the Stuffing already says
+        let A2 = 0
+        for (let i = 0; i < c.inset.length; i++) {
+            const p = c.inset[i], q = c.inset[(i + 1) % c.inset.length]
+            A2 += p.x * q.y - q.x * p.y
+        }
+        const area = Math.abs(A2) / 2
+        if (Math.sqrt(area) < 88) return null   // too small to subdivide — keep the molded Stuffing
+        const xs = c.inset.map(p => p.x), ys = c.inset.map(p => p.y)
+        const bx = Math.min(...xs), by = Math.min(...ys)
+        const bw = Math.max(...xs) - bx, bh = Math.max(...ys) - by
+        const R = Math.sqrt(area / Math.PI) * 0.72
+        const GA = Math.PI * (3 - Math.sqrt(5))
+        const pts = items.map((it, k) => {
+            const rr = R * Math.sqrt((k + 0.5) / items.length)
+            let x = c.acx + Math.cos(k * GA) * rr, y = c.acy + Math.sin(k * GA) * rr * 0.8
+            for (let g = 0; g < 5; g++) {
+                const ch = poly_chord(c.inset, y)
+                if (ch && x > ch[0] + 4 && x < ch[1] - 4) break
+                x = c.acx + (x - c.acx) * 0.7; y = c.acy + (y - c.acy) * 0.7
+            }
+            return { x, y }
+        })
+        const cells: VSubCell[] = []
+        for (let i = 0; i < items.length; i++) {
+            let poly: {x:number,y:number}[] = c.inset
+            for (let j = 0; j < items.length; j++) {
+                if (j === i) continue
+                const dx = pts[j].x - pts[i].x, dy = pts[j].y - pts[i].y
+                const d = Math.hypot(dx, dy)
+                if (d < 0.5) continue
+                const ux = dx / d, uy = dy / d
+                const ri = 3 + 0.4 * box_support(ux, uy, items[i].hw, items[i].hh)
+                const rj = 3 + 0.4 * box_support(ux, uy, items[j].hw, items[j].hh)
+                const t = (d * d + ri * ri - rj * rj) / (2 * d)
+                poly = clip_halfplane(poly, { x: pts[i].x + ux * t, y: pts[i].y + uy * t },
+                                      { x: ux, y: uy })
+                if (poly.length < 3) break
+            }
+            if (poly.length < 3) continue   // crowded out this beat — the +K|dip still tells the count
+            const vmx = poly.reduce((a, p) => a + p.x, 0) / poly.length
+            const vmy = poly.reduce((a, p) => a + p.y, 0) / poly.length
+            const GAP = 2
+            const inset = poly.map(p => {
+                const dx = p.x - vmx, dy = p.y - vmy, dd = Math.hypot(dx, dy)
+                const k = dd > GAP ? 1 - GAP / dd : 0
+                return { x: vmx + dx * k, y: vmy + dy * k }
+            })
+            const it = items[i]
+            const ch = poly_chord(inset, vmy)
+            const len = (it.key?.length ?? 0) + (it.val?.length ?? 0)
+                      + (it.tag ? it.tag.length * 0.7 : 0) + (it.sup ? 2 : 0) + (it.key && it.val ? 2 : 1)
+            const room = ch ? ch[1] - ch[0] - 8 : 40
+            const fs = Math.max(6.5, Math.min(10.5, room * 0.92 / (0.62 * Math.max(3, len))))
+            cells.push({ id: `${c.id}·s${i}`, d: poly_d(inset),
+                x: vmx, y: vmy + fs * 0.35, fs,
+                tag: it.tag, key: it.key, val: it.val, sup: it.sup, subn: it.subn,
+                member: it.member })
+        }
+        if (cells.length < 2) return null
+        const pane: VSubPane = { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`,
+            clip: poly_d(c.inset), color: c.color, tint, cells }
+        const td = descs.find(d => d.kind === 'title')
+        if (td) {
+            const m = /^(.*?)\s*×(\d+)$/.exec(td.text)
+            const cht = poly_chord(c.inset, by + 14)
+            if (cht) pane.title = { x: (cht[0] + cht[1]) / 2, y: by + 17, tag: td.tag,
+                name: m ? m[1] : td.text, sup: m ? `×${m[2]}` : '' }
+        }
+        const dd = descs.find(d => d.dip)
+        if (dd) {
+            const chd = poly_chord(c.inset, by + bh - 12)
+            if (chd) pane.dip = { x: chd[1] - 8, y: by + bh - 8, text: dd.text }
+        }
+        return pane
+    }
+
     // ── 📻🕳 SHELVED: both drift modes are OFF ────────────────────────────────
     //  The tunnel never lets the tessellation settle (every radio dwell re-projects the
     //   walls), and both v1s were toggles bolted INSIDE the scape when they want to be
@@ -1914,6 +2073,41 @@
             vmicro = []
         }
 
+        // ── ▦ the sub-graph pass: every fold|gang pane big enough tessellates itself ──
+        //  runs AFTER the ▤ swap so an inspection ▤ keeps priority per pane; a pane too
+        //   small (or saying just one thing) keeps its molded Stuffing.  Both cadences,
+        //    like ▤ — the tree is cached .g-side and the geometry is the same closed
+        //     math as the parent scape, so sub-cells track a drag live.
+        if (subgraph_on && voronoi_on) {
+            const subs: VSubPane[] = []
+            const next = new Set<string>()
+            for (const c of L.cells) {
+                if (micro_on_ids.has(c.id)) continue
+                const src = node_src.get(c.id) as any
+                if (!src?.c?.gang && !src?.c?.stuff) continue
+                const descs = vtuff_rows(src)
+                if (!descs.length) continue
+                const tint = kind_tint(src?.c?.fold_kind ?? (src?.sc && Object.keys(src.sc)[0])) ?? '#9ab'
+                const pane = subgraph_build(c, descs, tint)
+                if (!pane) continue
+                next.add(c.id)
+                subs.push(pane)
+            }
+            for (const id of next) { const mel = overlays.get(id); if (mel) mel.style.opacity = '0' }
+            for (const id of sub_on_ids) if (!next.has(id) && !micro_on_ids.has(id)) {
+                const mel = overlays.get(id); if (mel) mel.style.opacity = ''
+            }
+            sub_on_ids = next
+            vsubs = subs
+            for (const cc of cells) if (next.has(cc.id)) cc.swapped = true
+        } else if (sub_on_ids.size || vsubs.length) {
+            for (const id of sub_on_ids) if (!micro_on_ids.has(id)) {
+                const mel = overlays.get(id); if (mel) mel.style.opacity = ''
+            }
+            sub_on_ids = new Set()
+            vsubs = []
+        }
+
         // a seed whose cell got swallowed falls back to plain node-centering
         for (const s of L.seeds) {
             if (cell_by_id.has(s.id)) continue
@@ -1978,6 +2172,7 @@
 
         cancelAnimationFrame(morph_raf)
         vtips = []   // tips re-arrive with the settled walls
+        vsubs = []   // sub-cells too — stale walls mid-tween would lie
         const t0 = performance.now()
         const frame = (now: number) => {
             const k = Math.min(1, (now - t0) / MORPH_MS)
@@ -2012,8 +2207,11 @@
         vtips = []
         vfams = []
         vmicro = []
+        vsubs = []
         for (const id of micro_on_ids) { const mel = overlays.get(id); if (mel) mel.style.opacity = '' }
         micro_on_ids.clear()
+        for (const id of sub_on_ids) { const mel = overlays.get(id); if (mel) mel.style.opacity = '' }
+        sub_on_ids.clear()
         shown_pts.clear()
         shown_color.clear()
         wrap_applied.clear()
@@ -2360,6 +2558,8 @@
         const stashed_b = (H as any).stashed?.Cyto_gravity_brush
         if (typeof stashed_b === 'boolean') brush_pref = stashed_b
         // (no Cyto_vtuffing restore — ▤ is session-local while the row engine is demoted)
+        const stashed_sg = (H as any).stashed?.Cyto_subgraph
+        if (typeof stashed_sg === 'boolean') subgraph_pref = stashed_sg
         if (DRIFT_MODES_ON) {   // shelved: a stashed true from the play days must not resurrect the drift
             const stashed_r = (H as any).stashed?.Cyto_radio
             if (stashed_r === true) { radio_pref = true; radio_timer = setInterval(radio_tick, RADIO_DWELL) }
@@ -2499,6 +2699,8 @@
             title="gravity brush — wheel pinches|spreads the locale under the cursor (Ctrl+wheel still zooms)">🌀</button>
         <button class="v-toggle" class:on={vtuffing_on} onclick={toggle_vtuffing}
             title="vtuffing — a big-enough pane swaps its molded Stuffing for member rows fitted to the cell (off = Stuffings always)">▤</button>
+        <button class="v-toggle" class:on={subgraph_on} onclick={toggle_subgraph}
+            title="sub-graph — a pane tessellates itself: one sub-cell per key|value its members share or spread, ×N as superscripts, the /*N corner digs (off = molded Stuffings)">▦</button>
         {#if DRIFT_MODES_ON}
             <button class="v-toggle" class:on={radio_on} onclick={toggle_radio}
                 title="radio — the graph plays you: a tuner drifts attention pane to pane and opens each a little (touch anything to hold it off)">📻</button>
@@ -2569,6 +2771,44 @@
                 {#each vtips as tip (tip.id)}
                     <circle cx={tip.x} cy={tip.y} r="2.4"
                         fill={tip.color} fill-opacity="0.95" />
+                {/each}
+                <!-- ▦ sub-graph: each pane a scape in miniature — sub-cell walls in the
+                     pane's own hue, labels fitted per sub-cell (keys tinted with their
+                     ':', values plain, ×N and /*N as superscripts), the pane's name as
+                     a headline and its /*N dig in the corner.  Clipped to the pane
+                     polygon so nothing leaks through a wall.  A member label is the
+                     surf (Vtuff_pop) — the seed of click-to-expand. -->
+                {#each vsubs as sp (sp.id)}
+                    <clipPath id={sp.clipid}><path d={sp.clip} /></clipPath>
+                    <g class="cytui-subgraph" clip-path={`url(#${sp.clipid})`}>
+                        {#each sp.cells as scell (scell.id)}
+                            <path class="vsub-wall" d={scell.d} stroke={sp.color} fill={sp.color} />
+                            <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions, a11y_interactive_supports_focus -->
+                            <text class="vsub-label" class:hot={scell.member != null}
+                                  x={scell.x.toFixed(1)} y={scell.y.toFixed(1)}
+                                  font-size={scell.fs.toFixed(1)} text-anchor="middle"
+                                  role={scell.member ? 'button' : undefined}
+                                  onclick={scell.member ? () => micro_click(sp.id, scell.member) : undefined}>
+                                {#if scell.tag}<tspan class="vsub-tag">{scell.tag} </tspan>{/if}
+                                {#if scell.key}<tspan class="vsub-k" fill={sp.tint}>{scell.key}:</tspan>{/if}
+                                {#if scell.val}<tspan class="vsub-v">{scell.key ? ' ' : ''}{scell.val}</tspan>{/if}
+                                {#if scell.sup}<tspan class="vsub-sup" dy="-0.45em">{scell.sup}</tspan>{/if}
+                                {#if scell.subn}<tspan class="vsub-sup vsub-dig" dy={scell.sup ? '0' : '-0.45em'}>/*{scell.subn}</tspan>{/if}
+                            </text>
+                        {/each}
+                        {#if sp.title}
+                            <text class="vsub-title" x={sp.title.x.toFixed(1)} y={sp.title.y.toFixed(1)}
+                                  text-anchor="middle" fill={sp.tint}>
+                                {#if sp.title.tag}<tspan class="vsub-tag">{sp.title.tag} </tspan>{/if}{sp.title.name}{#if sp.title.sup}<tspan class="vsub-sup" dy="-0.45em">{sp.title.sup}</tspan>{/if}
+                            </text>
+                        {/if}
+                        {#if sp.dip}
+                            <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions, a11y_interactive_supports_focus -->
+                            <text class="vsub-dip" x={sp.dip.x.toFixed(1)} y={sp.dip.y.toFixed(1)}
+                                  text-anchor="end" role="button"
+                                  onclick={() => micro_click(sp.id)}>{sp.dip.text}</text>
+                        {/if}
+                    </g>
                 {/each}
             {/if}
         </svg>
@@ -2694,6 +2934,29 @@
     fill: #070707;
     opacity: 0.5;
 }
+/* ▦ sub-graph: walls thinner and softer than the pane strokes so the hierarchy
+   reads — pane wall loud, sub-wall quiet.  Labels are the pane's words: keys
+   tinted (fill inline, per-pane), values plain, superscripts small and lilac
+   like the ▤ dig glyph.  Only member labels and the dip take the pointer
+   (pointer-events:none rules the layer) so pane drag survives. */
+.cytui-subgraph .vsub-wall {
+    fill-opacity: 0.05;
+    stroke-opacity: 0.32; stroke-width: 0.8;
+    stroke-dasharray: 1 2.5; stroke-linejoin: round;
+}
+.cytui-subgraph text { user-select: none; }
+.cytui-subgraph .vsub-label { fill: #c9c9c9; }
+.cytui-subgraph .vsub-label.hot { pointer-events: all; cursor: pointer; }
+.cytui-subgraph .vsub-label.hot:hover { fill: #fff; }
+.cytui-subgraph .vsub-tag { fill: #667788; font-size: 72%; }
+.cytui-subgraph .vsub-v { fill: #cfcfcf; }
+.cytui-subgraph .vsub-sup { fill: #b0a4dc; font-size: 68%; }
+.cytui-subgraph .vsub-title { font-size: 11px; opacity: 0.92; }
+.cytui-subgraph .vsub-dip {
+    fill: #8a7fc0; font-size: 10px;
+    pointer-events: all; cursor: pointer;
+}
+.cytui-subgraph .vsub-dip:hover { fill: #b0a4dc; }
 .cytui-bar button.v-toggle.on {
     color: #7ab0d4;
     border-color: #2a3a4a;

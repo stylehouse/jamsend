@@ -1,0 +1,7 @@
+Snap:H
+  H:MusuRaChase,Run
+    A:MusuRaChase
+      self,round	{"mung":["age"]}
+      w:MusuRaChase
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok
