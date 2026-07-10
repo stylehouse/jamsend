@@ -2226,6 +2226,34 @@ await M.eatfunc({
                     const cr = (H.top_House().c as any).cy_render
                     if (!cr) { ok = false; result = { error: 'no render telemetry — is a useCyto Book mounted + the tab reloaded since this landed?' } }
                     else result = cr
+                } else if (op === 'svg') {
+                    // the GLASS itself (scripts/runner_shot.mjs --svg): serialize the voronoi SVG layer —
+                    //  cells, tuple regions, sub-graph labels — the layer cy.png() can never carry (it
+                    //   captures only the cy canvas).  The component's scoped CSS is baked in (every rule
+                    //    mentioning a cytui-/vsub- selector rides an embedded style block, and the svelte
+                    //     scoping classes travel on the elements), xmlns + explicit size added, so the
+                    //      file stands alone in a viewer — AND the text stays TEXT, so a headless caller
+                    //       can grep geometry + labels instead of eyeballing pixels.
+                    const el = Array.from(document.querySelectorAll('svg.cytui-voronoi'))
+                        .sort((a, b) => b.childElementCount - a.childElementCount)[0] as SVGSVGElement | undefined
+                    if (!el || !el.childElementCount) { ok = false; result = { error: 'no populated .cytui-voronoi svg — is a useCyto Book mounted with ◈ armed?' } }
+                    else {
+                        let css = ''
+                        for (const sh of Array.from(document.styleSheets)) {
+                            let rules: CSSRuleList | undefined
+                            try { rules = sh.cssRules } catch { continue }   // cross-origin sheet — none of ours
+                            for (const r of Array.from(rules ?? []))
+                                if (/cytui-voronoi|cytui-veil|cytui-subgraph|vsub-/.test((r as CSSStyleRule).selectorText ?? '')) css += r.cssText + '\n'
+                        }
+                        const wpx = Math.round(el.clientWidth || el.getBoundingClientRect().width)
+                        const hpx = Math.round(el.clientHeight || el.getBoundingClientRect().height)
+                        const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="${el.getAttribute('class') ?? ''}"`
+                            + ` width="${wpx}" height="${hpx}" viewBox="0 0 ${wpx} ${hpx}"`
+                            + ` style="background:#070707;font-family:ui-monospace,monospace;font-size:11px">`
+                            + `<style>${css}</style>${el.innerHTML}</svg>`
+                        result = { svg, w: wpx, h: hpx,
+                            paths: el.querySelectorAll('path').length, labels: el.querySelectorAll('text').length }
+                    }
                 } else { ok = false; result = { error: `unknown op ${op}` } }
             } catch (e) { ok = false; result = { error: String((e as Error).message) } }
             const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any

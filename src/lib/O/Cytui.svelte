@@ -1089,9 +1089,11 @@
     type VSubCell = { id: string, d: string, x: number, y: number, fs: number,
                       tag?: string, key?: string, val?: string, sup?: string, subn?: number,
                       member?: TheC }
+    type VSubGroup = { id: string, d: string, hue: string, boundary?: boolean,
+                       label?: { x: number, y: number, fs: number, text: string, sup?: string } }
     type VSubPane = { id: string, clipid: string, clip: string, color: string, tint: string,
-                      cells: VSubCell[],
-                      title?: { x: number, y: number, tag?: string, name: string, sup: string },
+                      groups: VSubGroup[], cells: VSubCell[],
+                      title?: { x: number, y: number, fs: number, tag?: string, name: string, sup: string },
                       dip?: { x: number, y: number, text: string } }
     let vsubs = $state<VSubPane[]>([])
     let sub_on_ids = new Set<string>()   // panes whose Stuffing is dimmed under sub-cells
@@ -1110,52 +1112,124 @@
     }
     const dom_id = (s: string) => s.replace(/[^a-zA-Z0-9_-]/g, '_')
 
-    // rows → sub-seed items.  title and dip stay pane-level (headline|corner); a fact
-    //  'k: v' is one combined cell; a spread contributes its KEY cell plus one cell per
-    //   value chip (×n riding as the superscript); list chips and member|sub rows are
-    //    the members themselves.  No silent caps: past 16 the tail folds into one '+K'.
-    type VSubItem = { tag?: string, key?: string, val?: string, sup?: string, subn?: number,
-                      member?: TheC, hw: number, hh: number }
-    function subgraph_items(descs: VtuffDesc[]): VSubItem[] {
-        const items: VSubItem[] = []
-        const push = (it: Partial<VSubItem>) => {
-            const len = (it.key?.length ?? 0) + (it.val?.length ?? 0)
-                      + (it.tag ? it.tag.length * 0.7 : 0) + (it.sup ? 2 : 0)
-            items.push({ ...it, hw: Math.max(14, len * 2.8), hh: 6 } as VSubItem)
+    // rows → TUPLE groups (owner: "they need to start taking on tuple geometry … I can't
+    //  tell which v the year|habit k are connected to").  A keyed row is a GROUP — the key
+    //   labels a REGION and its values live inside it: a spread ('year' + chips) is a
+    //    many-leaf group, a fact ('year: 2007') a one-leaf group, a presence fact
+    //     ('remaster ×2') a leaf-less key group wearing its count.  The members are one
+    //      group labeled by their KIND ('Track') — that wall IS the Artist/Track boundary
+    //       made visible.  No silent caps: past 12 leaves a group folds the tail to '+K'.
+    type VSubLeaf  = { tag?: string, val?: string, sup?: string, subn?: number,
+                       member?: TheC, hw: number, hh: number }
+    type VSubTuple = { key?: string, kind?: string, sup?: string, leaves: VSubLeaf[] }
+    function subgraph_tuples(descs: VtuffDesc[], kind: string | undefined): VSubTuple[] {
+        const groups: VSubTuple[] = []
+        const leaf = (it: Partial<VSubLeaf>): VSubLeaf => {
+            const len = (it.val?.length ?? 0) + (it.tag ? it.tag.length * 0.7 : 0) + (it.sup ? 2 : 0)
+            return { ...it, hw: Math.max(14, len * 2.8), hh: 6 } as VSubLeaf
         }
+        const members: VSubTuple = { kind, leaves: [] }
         for (const d of descs) {
             if (d.kind === 'title' || d.dip) continue
             if (d.kind === 'fact') {
                 const i = d.text.indexOf(': ')
-                if (i > 0) push({ key: d.text.slice(0, i), val: d.text.slice(i + 2) })
-                else push({ val: d.text })
+                if (i > 0) { groups.push({ key: d.text.slice(0, i), leaves: [leaf({ val: d.text.slice(i + 2) })] }); continue }
+                const m = /^(.+?)\s*×(\d+)$/.exec(d.text)   // presence key counted: 'remaster ×2'
+                if (m) { groups.push({ key: m[1], sup: `×${m[2]}`, leaves: [] }); continue }
+                groups.push({ key: d.text, leaves: [] })
             } else if (d.kind === 'spread') {
-                push({ key: d.text })
-                for (const ch of d.chips ?? [])
-                    push({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined,
-                           member: ch.member, subn: ch.sub })
+                groups.push({ key: d.text, leaves: (d.chips ?? []).map(ch =>
+                    leaf({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined, member: ch.member, subn: ch.sub })) })
             } else if (d.kind === 'list') {
                 for (const ch of d.chips ?? [])
-                    push({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined,
-                           member: ch.member, subn: ch.sub })
+                    members.leaves.push(leaf({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined,
+                                               member: ch.member, subn: ch.sub }))
             } else {   // member | sub
-                push({ val: d.text, tag: d.tag, member: d.member, subn: d.sub })
+                members.leaves.push(leaf({ val: d.text, tag: d.tag, member: d.member, subn: d.sub }))
             }
         }
-        if (items.length > 16) {
-            const cut = items.length - 15
-            items.length = 15
-            push({ val: `+${cut}` })
+        for (const g of [members, ...groups]) if (g.leaves.length > 12) {
+            const cut = g.leaves.length - 11
+            g.leaves.length = 11
+            g.leaves.push(leaf({ val: `+${cut}` }))
         }
-        return items
+        return members.leaves.length ? [members, ...groups] : groups
     }
 
-    // one pane's sub-tessellation: Vogel spiral seeds around the area centroid (pulled
-    //  inside via the chord — the cells are convex), power walls sized by each label's
-    //   text box, gutter inset, label font fitted to the sub-cell's own chord.
-    function subgraph_build(c: VCell, descs: VtuffDesc[], tint: string): VSubPane | null {
-        const items = subgraph_items(descs)
-        if (items.length < 2) return null   // one k|v is exactly what the Stuffing already says
+    // the VEIN hue: one golden-angle slot per KEY NAME, global across panes — 'year' wears
+    //  the same colour in every pane it appears in, so a key reads as a vein racing around
+    //   the whole scape (owner: "a vein of Years I can see racing around").  The same slot
+    //    also fixes the group's COMPASS ANGLE inside its pane, so the vein aligns spatially.
+    const vein_slot = new Map<string, number>()
+    let vein_seq = 0
+    function vein_of(key: string): { hue: number, ang: number } {
+        if (!vein_slot.has(key)) vein_slot.set(key, vein_seq++)
+        const h = (vein_slot.get(key)! * 137.508) % 360
+        return { hue: Math.round(h), ang: h * Math.PI / 180 }
+    }
+
+    // the widest chord in a horizontal band of a convex polygon — where a label breathes.
+    //  Fixes the owner's "Artist:Palegold shoved into a corner": the naive top chord of a
+    //   slant-walled cell is a sliver; sampling the band finds the room.
+    function wide_chord(poly: {x:number,y:number}[], y0: number, y1: number, samples = 7) {
+        let best: { x0: number, x1: number, y: number, w: number } | null = null
+        for (let i = 0; i < samples; i++) {
+            const y = y0 + (y1 - y0) * (samples === 1 ? 0.5 : i / (samples - 1))
+            const ch = poly_chord(poly, y)
+            if (ch && (!best || ch[1] - ch[0] > best.w)) best = { x0: ch[0], x1: ch[1], y, w: ch[1] - ch[0] }
+        }
+        return best
+    }
+
+    // Wes-Wilson the text into the cell: the font takes ALL the room its polygon offers
+    //  (chord width vs text length, capped by the cell's own height) instead of a timid
+    //   fixed size — the owner's "threading this text into max rendering".
+    function fill_fs(poly: {x:number,y:number}[], cy2: number, len: number,
+                     lo: number, hi: number): number {
+        const ch = poly_chord(poly, cy2)
+        const ys = poly.map(p => p.y)
+        const ph = Math.max(...ys) - Math.min(...ys)
+        const room = ch ? ch[1] - ch[0] - 6 : 40
+        return Math.max(lo, Math.min(hi, room * 0.88 / (0.62 * Math.max(2, len)), ph * 0.5))
+    }
+
+    // shared power-cut: tessellate a convex polygon by weighted seeds (the parent scape's
+    //  wall math, reused at every level of the tuple recursion).  Returns null slots for
+    //   crowded-out seeds.
+    function power_cells(poly0: {x:number,y:number}[], pts: {x:number,y:number}[],
+                         radii: number[], gap: number): ({x:number,y:number}[] | null)[] {
+        return pts.map((p, i) => {
+            let poly: {x:number,y:number}[] = poly0
+            for (let j = 0; j < pts.length; j++) {
+                if (j === i) continue
+                const dx = pts[j].x - p.x, dy = pts[j].y - p.y
+                const d = Math.hypot(dx, dy)
+                if (d < 0.5) continue
+                const ux = dx / d, uy = dy / d
+                const t = (d * d + radii[i] * radii[i] - radii[j] * radii[j]) / (2 * d)
+                poly = clip_halfplane(poly, { x: p.x + ux * t, y: p.y + uy * t }, { x: ux, y: uy })
+                if (poly.length < 3) return null
+            }
+            if (poly.length < 3) return null
+            const vmx = poly.reduce((a, q) => a + q.x, 0) / poly.length
+            const vmy = poly.reduce((a, q) => a + q.y, 0) / poly.length
+            return poly.map(q => {
+                const dx = q.x - vmx, dy = q.y - vmy, dd = Math.hypot(dx, dy)
+                const k = dd > gap ? 1 - gap / dd : 0
+                return { x: vmx + dx * k, y: vmy + dy * k }
+            })
+        })
+    }
+
+    // one pane's TUPLE tessellation, two levels deep: the pane divides into one region per
+    //  tuple (members seeded at the centre, each key at its vein's compass angle — so the
+    //   'year' region sits the same way in every pane), then each region's values divide IT.
+    //    The key labels its region once from the region's widest band; leaves swell to fill.
+    function subgraph_build(c: VCell, descs: VtuffDesc[], tint: string,
+                            kind: string | undefined): VSubPane | null {
+        const tuples = subgraph_tuples(descs, kind)
+        const total = tuples.reduce((s, g) => s + 1 + g.leaves.length, 0)
+        if (total < 2) return null   // one k|v is exactly what the Stuffing already says
         let A2 = 0
         for (let i = 0; i < c.inset.length; i++) {
             const p = c.inset[i], q = c.inset[(i + 1) % c.inset.length]
@@ -1166,63 +1240,96 @@
         const xs = c.inset.map(p => p.x), ys = c.inset.map(p => p.y)
         const bx = Math.min(...xs), by = Math.min(...ys)
         const bw = Math.max(...xs) - bx, bh = Math.max(...ys) - by
-        const R = Math.sqrt(area / Math.PI) * 0.72
-        const GA = Math.PI * (3 - Math.sqrt(5))
-        const pts = items.map((it, k) => {
-            const rr = R * Math.sqrt((k + 0.5) / items.length)
-            let x = c.acx + Math.cos(k * GA) * rr, y = c.acy + Math.sin(k * GA) * rr * 0.8
-            for (let g = 0; g < 5; g++) {
+        const R = Math.sqrt(area / Math.PI)
+        // group seeds: members central, keys at their vein angle; pull inside via the chord
+        const gpts = tuples.map((g, gi) => {
+            let x = c.acx, y = c.acy
+            if (g.key != null) {
+                const v = vein_of(g.key)
+                x = c.acx + Math.cos(v.ang) * R * 0.62
+                y = c.acy + Math.sin(v.ang) * R * 0.62 * 0.8
+            } else if (gi > 0) { x = c.acx + 6 * gi; y = c.acy }
+            for (let t = 0; t < 5; t++) {
                 const ch = poly_chord(c.inset, y)
                 if (ch && x > ch[0] + 4 && x < ch[1] - 4) break
                 x = c.acx + (x - c.acx) * 0.7; y = c.acy + (y - c.acy) * 0.7
             }
             return { x, y }
         })
+        const gscale = (g: VSubTuple) =>
+            Math.sqrt(g.leaves.reduce((s, l) => s + (l.hw * 2) * (l.hh * 2.4), 140)
+                      + (g.kind ? 260 : 0))
+        const gradii = tuples.map(g => 6 + 0.55 * gscale(g))
+        const gpolys = power_cells(c.inset, gpts, gradii, 2.5)
+        const groups: VSubGroup[] = []
         const cells: VSubCell[] = []
-        for (let i = 0; i < items.length; i++) {
-            let poly: {x:number,y:number}[] = c.inset
-            for (let j = 0; j < items.length; j++) {
-                if (j === i) continue
-                const dx = pts[j].x - pts[i].x, dy = pts[j].y - pts[i].y
-                const d = Math.hypot(dx, dy)
-                if (d < 0.5) continue
-                const ux = dx / d, uy = dy / d
-                const ri = 3 + 0.4 * box_support(ux, uy, items[i].hw, items[i].hh)
-                const rj = 3 + 0.4 * box_support(ux, uy, items[j].hw, items[j].hh)
-                const t = (d * d + ri * ri - rj * rj) / (2 * d)
-                poly = clip_halfplane(poly, { x: pts[i].x + ux * t, y: pts[i].y + uy * t },
-                                      { x: ux, y: uy })
-                if (poly.length < 3) break
+        tuples.forEach((g, gi) => {
+            const gpoly = gpolys[gi]
+            if (!gpoly) return   // crowded out this beat — the dip still tells the count
+            const hue = g.key != null ? `hsl(${vein_of(g.key).hue}, 52%, 60%)`
+                                      : (kind_tint(g.kind) ?? tint)
+            const gys = gpoly.map(p => p.y)
+            const gy0 = Math.min(...gys), gh = Math.max(...gys) - gy0
+            const grp: VSubGroup = { id: `${c.id}·g${gi}`, d: poly_d(gpoly), hue,
+                                     boundary: g.kind != null }
+            const ltext = g.key ?? g.kind ?? ''
+            if (ltext) {
+                const band = wide_chord(gpoly, gy0 + gh * 0.08, gy0 + gh * 0.4, 5)
+                if (band && band.w > 24) {
+                    // ':' only when values follow (critique #3 — the colon IS the k→v grammar;
+                    //  a presence key like 'remaster' has no v, so no colon)
+                    const colon = g.key != null && g.leaves.length > 0
+                    const fs = Math.max(7, Math.min(13,
+                        band.w * 0.8 / (0.62 * (ltext.length + (colon ? 1 : 0) + (g.sup ? 2 : 0)))))
+                    grp.label = { x: (band.x0 + band.x1) / 2, y: band.y + fs * 0.35, fs,
+                                  text: colon ? `${ltext}:` : ltext, sup: g.sup }
+                }
             }
-            if (poly.length < 3) continue   // crowded out this beat — the +K|dip still tells the count
-            const vmx = poly.reduce((a, p) => a + p.x, 0) / poly.length
-            const vmy = poly.reduce((a, p) => a + p.y, 0) / poly.length
-            const GAP = 2
-            const inset = poly.map(p => {
-                const dx = p.x - vmx, dy = p.y - vmy, dd = Math.hypot(dx, dy)
-                const k = dd > GAP ? 1 - GAP / dd : 0
-                return { x: vmx + dx * k, y: vmy + dy * k }
+            groups.push(grp)
+            if (!g.leaves.length) return
+            // leaves tessellate the group region, seeded on a phi spiral under the label band
+            const gcx = gpoly.reduce((a, p) => a + p.x, 0) / gpoly.length
+            const gcy = gpoly.reduce((a, p) => a + p.y, 0) / gpoly.length + (grp.label ? gh * 0.08 : 0)
+            const gR = Math.sqrt(Math.abs(gh) * (wide_chord(gpoly, gcy, gcy, 1)?.w ?? gh) / Math.PI) * 0.6
+            const GA = Math.PI * (3 - Math.sqrt(5))
+            const lpts = g.leaves.map((l, k) => {
+                const rr = gR * Math.sqrt((k + 0.5) / g.leaves.length)
+                let x = gcx + Math.cos(k * GA) * rr, y = gcy + Math.sin(k * GA) * rr * 0.8
+                for (let t = 0; t < 5; t++) {
+                    const ch = poly_chord(gpoly, y)
+                    if (ch && x > ch[0] + 3 && x < ch[1] - 3) break
+                    x = gcx + (x - gcx) * 0.7; y = gcy + (y - gcy) * 0.7
+                }
+                return { x, y }
             })
-            const it = items[i]
-            const ch = poly_chord(inset, vmy)
-            const len = (it.key?.length ?? 0) + (it.val?.length ?? 0)
-                      + (it.tag ? it.tag.length * 0.7 : 0) + (it.sup ? 2 : 0) + (it.key && it.val ? 2 : 1)
-            const room = ch ? ch[1] - ch[0] - 8 : 40
-            const fs = Math.max(6.5, Math.min(10.5, room * 0.92 / (0.62 * Math.max(3, len))))
-            cells.push({ id: `${c.id}·s${i}`, d: poly_d(inset),
-                x: vmx, y: vmy + fs * 0.35, fs,
-                tag: it.tag, key: it.key, val: it.val, sup: it.sup, subn: it.subn,
-                member: it.member })
-        }
-        if (cells.length < 2) return null
+            const lradii = g.leaves.map(l => 3 + 0.4 * Math.hypot(l.hw, l.hh))
+            const lpolys = power_cells(gpoly, lpts, lradii, 1.8)
+            g.leaves.forEach((l, li) => {
+                const lpoly = lpolys[li]
+                if (!lpoly) return
+                const lmx = lpoly.reduce((a, p) => a + p.x, 0) / lpoly.length
+                const lmy = lpoly.reduce((a, p) => a + p.y, 0) / lpoly.length
+                const len = (l.val?.length ?? 0) + (l.tag ? l.tag.length * 0.7 : 0) + (l.sup ? 2 : 0)
+                const fs = fill_fs(lpoly, lmy, len, 7, 30)
+                cells.push({ id: `${c.id}·g${gi}·l${li}`, d: poly_d(lpoly),
+                    x: lmx, y: lmy + fs * 0.35, fs,
+                    tag: l.tag, val: l.val, sup: l.sup, subn: l.subn, member: l.member })
+            })
+        })
+        if (!groups.length) return null
         const pane: VSubPane = { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`,
-            clip: poly_d(c.inset), color: c.color, tint, cells }
+            clip: poly_d(c.inset), color: c.color, tint, groups, cells }
         const td = descs.find(d => d.kind === 'title')
         if (td) {
             const m = /^(.*?)\s*×(\d+)$/.exec(td.text)
-            const cht = poly_chord(c.inset, by + 14)
-            if (cht) pane.title = { x: (cht[0] + cht[1]) / 2, y: by + 17, tag: td.tag,
-                name: m ? m[1] : td.text, sup: m ? `×${m[2]}` : '' }
+            const name = m ? m[1] : td.text
+            const band = wide_chord(c.inset, by + bh * 0.05, by + bh * 0.34)
+            if (band) {
+                const tlen = name.length + (td.tag ? td.tag.length * 0.7 : 0) + 2
+                const fs = Math.max(9, Math.min(19, band.w * 0.8 / (0.62 * Math.max(4, tlen))))
+                pane.title = { x: (band.x0 + band.x1) / 2, y: band.y + fs * 0.35, fs,
+                    tag: td.tag, name, sup: m ? `×${m[2]}` : '' }
+            }
         }
         const dd = descs.find(d => d.dip)
         if (dd) {
@@ -2087,8 +2194,9 @@
                 if (!src?.c?.gang && !src?.c?.stuff) continue
                 const descs = vtuff_rows(src)
                 if (!descs.length) continue
-                const tint = kind_tint(src?.c?.fold_kind ?? (src?.sc && Object.keys(src.sc)[0])) ?? '#9ab'
-                const pane = subgraph_build(c, descs, tint)
+                const fkind = (src?.c?.fold_kind ?? (src?.sc && Object.keys(src.sc)[0])) as string | undefined
+                const tint = kind_tint(fkind) ?? '#9ab'
+                const pane = subgraph_build(c, descs, tint, fkind)
                 if (!pane) continue
                 next.add(c.id)
                 subs.push(pane)
@@ -2781,6 +2889,14 @@
                 {#each vsubs as sp (sp.id)}
                     <clipPath id={sp.clipid}><path d={sp.clip} /></clipPath>
                     <g class="cytui-subgraph" clip-path={`url(#${sp.clipid})`}>
+                        <!-- tuple regions first: the key's VEIN hue fills its region faintly
+                             (the same hue in every pane — 'year' races around the scape) and
+                             the members region wears its KIND — that wall is the Artist/Track
+                             boundary.  Leaf walls ride above, thinner, in the pane's colour. -->
+                        {#each sp.groups as g (g.id)}
+                            <path class="vsub-gwall" class:boundary={g.boundary}
+                                  d={g.d} stroke={g.hue} fill={g.hue} />
+                        {/each}
                         {#each sp.cells as scell (scell.id)}
                             <path class="vsub-wall" d={scell.d} stroke={sp.color} fill={sp.color} />
                             <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions, a11y_interactive_supports_focus -->
@@ -2790,15 +2906,23 @@
                                   role={scell.member ? 'button' : undefined}
                                   onclick={scell.member ? () => micro_click(sp.id, scell.member) : undefined}>
                                 {#if scell.tag}<tspan class="vsub-tag">{scell.tag} </tspan>{/if}
-                                {#if scell.key}<tspan class="vsub-k" fill={sp.tint}>{scell.key}:</tspan>{/if}
-                                {#if scell.val}<tspan class="vsub-v">{scell.key ? ' ' : ''}{scell.val}</tspan>{/if}
+                                {#if scell.val}<tspan class="vsub-v">{scell.val}</tspan>{/if}
                                 {#if scell.sup}<tspan class="vsub-sup" dy="-0.45em">{scell.sup}</tspan>{/if}
                                 {#if scell.subn}<tspan class="vsub-sup vsub-dig" dy={scell.sup ? '0' : '-0.45em'}>/*{scell.subn}</tspan>{/if}
                             </text>
                         {/each}
+                        <!-- each tuple's key said ONCE, from its region's widest band -->
+                        {#each sp.groups as g (g.id + '·k')}
+                            {#if g.label}
+                                <text class="vsub-gkey" x={g.label.x.toFixed(1)} y={g.label.y.toFixed(1)}
+                                      font-size={g.label.fs.toFixed(1)} text-anchor="middle" fill={g.hue}>
+                                    {g.label.text}{#if g.label.sup}<tspan class="vsub-sup" dy="-0.45em">{g.label.sup}</tspan>{/if}
+                                </text>
+                            {/if}
+                        {/each}
                         {#if sp.title}
                             <text class="vsub-title" x={sp.title.x.toFixed(1)} y={sp.title.y.toFixed(1)}
-                                  text-anchor="middle" fill={sp.tint}>
+                                  font-size={sp.title.fs.toFixed(1)} text-anchor="middle" fill={sp.tint}>
                                 {#if sp.title.tag}<tspan class="vsub-tag">{sp.title.tag} </tspan>{/if}{sp.title.name}{#if sp.title.sup}<tspan class="vsub-sup" dy="-0.45em">{sp.title.sup}</tspan>{/if}
                             </text>
                         {/if}
@@ -2940,9 +3064,22 @@
    like the ▤ dig glyph.  Only member labels and the dip take the pointer
    (pointer-events:none rules the layer) so pane drag survives. */
 .cytui-subgraph .vsub-wall {
-    fill-opacity: 0.05;
-    stroke-opacity: 0.32; stroke-width: 0.8;
+    fill-opacity: 0.04;
+    stroke-opacity: 0.3; stroke-width: 0.7;
     stroke-dasharray: 1 2.5; stroke-linejoin: round;
+}
+/* the tuple region: the key's vein hue as a faint body + a firmer wall than the
+   leaves — hierarchy reads pane > tuple > leaf by stroke weight alone.  The
+   members region (.boundary) is the Artist/Track wall: solid, a touch louder. */
+.cytui-subgraph .vsub-gwall {
+    fill-opacity: 0.07;
+    stroke-opacity: 0.45; stroke-width: 1;
+    stroke-dasharray: 3 2; stroke-linejoin: round;
+}
+.cytui-subgraph .vsub-gwall.boundary {
+    fill-opacity: 0.05;
+    stroke-opacity: 0.55; stroke-width: 1.4;
+    stroke-dasharray: none;
 }
 .cytui-subgraph text { user-select: none; }
 .cytui-subgraph .vsub-label { fill: #c9c9c9; }
@@ -2951,7 +3088,8 @@
 .cytui-subgraph .vsub-tag { fill: #667788; font-size: 72%; }
 .cytui-subgraph .vsub-v { fill: #cfcfcf; }
 .cytui-subgraph .vsub-sup { fill: #b0a4dc; font-size: 68%; }
-.cytui-subgraph .vsub-title { font-size: 11px; opacity: 0.92; }
+.cytui-subgraph .vsub-gkey { opacity: 0.95; }
+.cytui-subgraph .vsub-title { opacity: 0.92; }
 .cytui-subgraph .vsub-dip {
     fill: #8a7fc0; font-size: 10px;
     pointer-events: all; cursor: pointer;

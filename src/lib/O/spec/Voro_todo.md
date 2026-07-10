@@ -75,13 +75,25 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
            Default ON (`Cyto_subgraph` stash, ▦ button beside ▤; ▤ keeps per-pane priority).  The
             dimmed molded Stuffing underneath is the fallback face for slivers.  Design record:
              `Voro_vtuffing.md` §"🎋 v2 first slice".  **Eyes-on owed — nothing snapped changes.**
-- **NEXT MOVES:** (1) eyes-on ▦: sub-cells legible? keys-vs-values read? superscripts right? click a
-   member label — it should pop out into the graph; (2) one clean VoroScape re-run to confirm green
-    on the new fixtures; then VoroMitosis|VoroRadio checks → accepts (their transcripts bake flat);
-     (3) leftover eyes-on from the go-forth round: fold seal, one-pane-one-cell from beat 2, molded
-      fit, uniform drag (Riverine-as-plain-node on a FRESH run = real stamp-order fault: report it);
-       (4) 🎋 v2 deepening: sub-sub-voronois (a member's own children), expand-in-place when the
-        graph is bigger, morph-stable sub-walls.
+- **The tuple round (same day, owner: "subcells are nice! but they need to start taking on tuple
+   geometry in there and across them"):** the flat cut became a TWO-LEVEL cut — every keyed row is
+    a REGION (key labels it once, values tessellate inside it), the members are a KIND-labeled
+     region whose solid wall IS the Artist/Track boundary, `vein_of(key)` gives each key name one
+      global golden-angle slot = its hue AND compass bearing in every pane (the "vein of Years
+       racing around" — shot-verified identical hsl + bearing across all 5 panes), labels
+        Wes-Wilson to fill their polygons (`fill_fs`, fs 7–30 live), and the pane headline sits on
+         its widest band (`wide_chord` — no more Palegold-in-a-corner).  **🩻 `runner_shot.mjs
+          --svg`** (op:'svg', LiesFunk) ships the live glass layer standalone with CSS baked in —
+           the pane-content instrument at last; note `--runner=` on runner_shot passes a RAW relay
+            addr (use the sticky: court via runner_ask first).  VoroScape GREEN 6/6 on the
+             committed fixtures (the owed confirm run).  49dee9 wedged (release lands, asks still
+              refuse — needs its tab reloaded); 3c5238 healthy and did all of the above.
+- **NEXT MOVES:** (1) eyes-on the tuple glass: regions legible? veins racing? boundary reads? fs
+   7–30 swings wild-good or wild-bad? member label click still pops; (2) VoroMitosis|VoroRadio
+    checks → accepts (their transcripts bake flat); (3) leftover eyes-on: fold seal, one-pane-one-
+     cell from beat 2, molded fit, uniform drag (Riverine-as-plain-node on a FRESH run = real
+      stamp-order fault); (4) 🎋 v2 deepening: sub-sub-voronois (a member's own children),
+       expand-in-place, morph-stable sub-walls, label-vs-leaf collision easing.
 
 **NIGHT LOG — 2026-07-08 overnight (autonomous build; NOTHING committed, all in the working tree).**
  Two things landed, both compile-verified via LocalGen; the pixel/eyes-on halves are staged for you.

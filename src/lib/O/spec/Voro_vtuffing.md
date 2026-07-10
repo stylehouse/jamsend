@@ -292,6 +292,36 @@ Census side (same session): `Voro_vtuff_transcribe` stopped dumping `%Vbit` leav
      `['name','title','text','nick','label']` shared by Vtuff_ident|name|namekey — no data key is
       special anywhere in the pipeline.
 
+#### 🎋 v2 second pass — TUPLE geometry + the veins (2026-07-11, same day)
+
+The owner, on the first slice: *"they need to start taking on tuple geometry in there and across
+ them … I can't tell which v the year|habit k are connected to"*, *"a vein of 'Years' I can see
+  racing around"*, *"no visual indication of the Artist/Track boundary"*, *"Artist:Palegold is
+   shoved into a corner"*, and *"the Wes-Wilson-like threading this text into max rendering"*.
+    All five landed as a rework of the flat item cut into a TWO-LEVEL cut (`subgraph_tuples` +
+     `power_cells`, the wall math factored and reused at every level):
+
+- **In-pane tuples.**  A keyed row is a REGION: the key labels it once (from its widest band —
+   `wide_chord`, which also un-cornered the pane headline) and its values tessellate INSIDE it.
+    A spread = many-leaf region, a fact = one-leaf, a presence fact ('remaster ×2') = a leaf-less
+     key region wearing its count.  Which v belongs to which k is now a containment fact.
+- **Cross-pane veins.**  `vein_of(key)`: one golden-angle slot per KEY NAME, global — the slot is
+   BOTH the hue and the compass angle of that key's region in every pane.  'year' is the same
+    colour at the same bearing everywhere, so it reads as a vein racing around the scape.
+     (Verified in the first `--svg` shot: year=hsl(0) east, live=hsl(138), remaster=hsl(275),
+      identical across all five panes.)
+- **The Artist/Track boundary.**  The members are one region labeled by their KIND ('Track',
+   kind-tinted), its wall solid and a touch louder (`.vsub-gwall.boundary`) — the type boundary
+    is now a drawn wall, not an inference.
+- **Wes Wilson.**  `fill_fs`: every label takes all the room its polygon offers (chord÷length,
+   capped by cell height) — fs ranges ~7–30 in the live shot; a big shared value ('2007 ×30px')
+    shouts, a crowded sliver whispers.  Crowding IS the size signal.
+- **🩻 the SVG shot rail.**  `runner_shot.mjs --svg` (op:'svg', LiesFunk): serializes the live
+   `.cytui-voronoi` layer with the scoped CSS baked in — a standalone .svg AND greppable
+    geometry, the instrument cy.png() could never be (it only carries the canvas).  This is how
+     this pass was verified headlessly; the owner's grant: "runners are free to take shots of
+      the svg."
+
 ### 🔊 Quiet ↔ rampage — a throttle on the fold's thinking
 
 The owner, verbatim: *"have some way to quiet or rampage its thinking sometimes."*  The

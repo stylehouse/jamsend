@@ -19,6 +19,10 @@
 //    node scripts/runner_shot.mjs                     # /tmp/runner_shot.png + telemetry, full extent, last runner
 //    node scripts/runner_shot.mjs shots/voro.png      # a named outfile
 //    node scripts/runner_shot.mjs --why               # telemetry ONLY (no png) — what's processing into cells
+//    node scripts/runner_shot.mjs --svg               # the GLASS: the voronoi SVG layer itself (cells, tuple
+//                                                       #  regions, labels — everything cy.png() can't see), scoped
+//                                                        #  CSS baked in, saved standalone (/tmp/runner_shot.svg);
+//                                                         #  text stays text, so it also greps
 //    node scripts/runner_shot.mjs --viewport          # only what's on screen (default is the full extent)
 //    node scripts/runner_shot.mjs --scale=2           # 2x pixels (sharper + bigger)
 //    node scripts/runner_shot.mjs --w=1200            # cap maxWidth (px)
@@ -48,7 +52,8 @@ const corr   = `shot-${stamp}`
 const addr   = `runshot-${stamp}`   // ephemeral — the reply comes back corr-routed, not by addr
 
 const why = flags.has('--why')                          // telemetry only — no png
-const ask = why ? { op: 'why' } : { op: 'shot', full: !flags.has('--viewport') }
+const svg = flags.has('--svg')                          // the voronoi SVG layer, standalone
+const ask = why ? { op: 'why' } : svg ? { op: 'svg' } : { op: 'shot', full: !flags.has('--viewport') }
 if (kv.scale) ask.scale = Number(kv.scale)
 if (kv.w)     ask.maxWidth = Number(kv.w)
 if (kv.h)     ask.maxHeight = Number(kv.h)
@@ -95,6 +100,13 @@ if (reply.control !== 'runner_ack' || reply.ok === false) {
 }
 const r = reply.result || {}
 if (why) { printRender(r); process.exit(0) }   // the whole reply IS the telemetry
+if (svg) {
+    if (!r.svg) { console.error(`✗ svg: runner returned no svg (${JSON.stringify(r)})`); process.exit(1) }
+    const svgout = out.endsWith('.png') ? '/tmp/runner_shot.svg' : out
+    writeFileSync(svgout, r.svg)
+    console.log(`🩻 ${svgout} — ${(r.svg.length / 1024).toFixed(0)}KB · ${r.w}×${r.h} · ${r.paths} paths ${r.labels} labels`)
+    process.exit(0)
+}
 if (!r.png) { console.error(`✗ shot: runner returned no png (${JSON.stringify(r)})`); process.exit(1) }
 const buf = Buffer.from(r.png, 'base64')
 writeFileSync(out, buf)
