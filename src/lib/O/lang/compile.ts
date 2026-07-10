@@ -75,6 +75,27 @@ export function ghost_dige_of(source_dige: string): string {
     return `${source_dige}~${LANG_COMPILER_VERSION}`
 }
 
+// ghost_ledger_of — the GhostLedger VERSION identity: a single dige over the WHOLE sorted set of
+//  {ghost name → ghost_dige}.  This is the one version token a Book run (become_book) pins and a
+//   runner want|haves — coarser than a per-ghost dige on purpose: a Book pulls in many ghosts, and
+//    you want ONE handle for "the entire ghost world as the editor last compiled it", not N.  The
+//     canonical `vset` string is exactly the identity CreduFunk already journals (name@dige, sorted,
+//      '|'-joined); we RETURN it too so the sole producer of that string lives here and the two can
+//       never drift.  The hash is a sync FNV-1a over two lanes (ample for a version id, NOT security)
+//        so the editor's per-tick journal stays synchronous; the `L<count>-` prefix keeps it legible
+//         and makes an empty/!-count set obvious at a glance.
+export function ghost_ledger_of(entries: { name: string, dige: string }[]): { dige: string, vset: string } {
+    const vset = entries.map(e => `${e.name}@${e.dige}`).sort().join('|')
+    let h1 = 0x811c9dc5, h2 = (0x811c9dc5 ^ 0x9e3779b9) >>> 0
+    for (let i = 0; i < vset.length; i++) {
+        const c = vset.charCodeAt(i)
+        h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0
+        h2 = Math.imul(h2 ^ (c + 0x100), 0x01000193) >>> 0
+    }
+    const hex = (n: number) => (n >>> 0).toString(16).padStart(8, '0')
+    return { dige: `L${entries.length}-${hex(h1)}${hex(h2)}`, vset }
+}
+
 export const LANG_COMPILE = {
 //#region collect
 

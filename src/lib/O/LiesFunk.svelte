@@ -1829,10 +1829,12 @@ await M.eatfunc({
         Lies_send_become_book(w: TheC, book: string, to?: string, needAC = false, needsFSA = false): boolean {
             const H = this as House
             if (!H.Lies_is_editor(w) || !H.Lies_channel_live(w)) return false
+            const pins   = H.Lies_ledger_pins(w)   // the editor's recompiled drift-surface, pinned INLINE so the gate never waits on the (Phase C) whole-ledger push
+            const ledger = pins.length ? { ledger_dige: H.Lies_ledger_head(w), pins } : {}
             const caps = { ...(needAC ? { needAC: 1 } : {}), ...(needsFSA ? { needsFSA: 1 } : {}) }   // capability facets carried to the runner
             if (to) {
                 if (!H.Lies_runner_pier(w, to)) return false
-                ;(H as any).Peeroleum_send_to(w, to, 'become_book', { book, ...caps })
+                ;(H as any).Peeroleum_send_to(w, to, 'become_book', { book, ...caps, ...ledger })
                 // light the ☎ on this runner's rack slot — a job in flight, awaiting its ack.  Cleared when
                 //  the runner advertises a `book` (it picked up + started → ▶), in Lies_advertise_recv.
                 const r = w.oai({ Runner: to }) as TheC          // snapped now (1:1 with the registry); the ☎ rides off-snap
@@ -1843,7 +1845,7 @@ await M.eatfunc({
             }
             const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
             if (!pier) return false
-            ;(H as any).Peeroleum_send_consumer(w, 'become_book', { book, ...caps })
+            ;(H as any).Peeroleum_send_consumer(w, 'become_book', { book, ...caps, ...ledger })
             H.tlog(`📤 become_book → runner: ${book}`)
             return true
         },
@@ -1872,7 +1874,7 @@ await M.eatfunc({
             const book = frame?.book as string | undefined
             if (!book) return false
             H.tlog(`📥 become_book recv: ${book}`)
-            H.Lies_become_book_drive(w, book, !!frame?.needAC, !!frame?.needsFSA)
+            H.Lies_become_book_drive(w, book, !!frame?.needAC, !!frame?.needsFSA, frame?.ledger_dige, frame?.pins)
             return true
         },
 
@@ -1883,7 +1885,7 @@ await M.eatfunc({
         //  land here).  When the authority says this Book needAC (from Waft:Credence), SECURE the real
         //   voice FIRST — before the run begins — so the AC-wait is never inside a step's clock.  Then
         //    open the durable run-record, stash awaiting_verdict{book}, and resetStory onto it.
-        async Lies_become_book_drive(w: TheC, book: string, needAC = false, needsFSA = false) {
+        async Lies_become_book_drive(w: TheC, book: string, needAC = false, needsFSA = false, ledger_dige?: string, pins?: { name: string, dige: string }[]) {
             const H = this as House
             // the needsFSA gate (FIRST — a proxy-only runner can secure nothing usefully): a disk-heavy Book
             //  must run on a LOCAL FSA share, never the remoteWormhole proxy (each read/write there crosses a
@@ -1913,11 +1915,64 @@ await M.eatfunc({
                     return
                 }
             }
+            // the VERSION GATE — HOLD (pre-run, before any step clock) until this runner has every ghost the
+            //  editor pinned live; else refuse cleanly with a named Ghost_version_ledger_timeout.  A stale
+            //   runner can no longer give a silent green — it catches up (pushed gen lands) or reddens.
+            if (!(await H.Lies_ledger_secure(w, book, ledger_dige, pins))) return
             w.c.awaiting_verdict = { book }
             H.Lies_runner_begin(w, book)   // open the durable run-record (the become_book twin of rungo)
             H.top_House().i_elvisto('Auto/Auto', 'resetStory', { Book: book })
             H.Lies_runner_phase(w, 'story_begun', { book })   // blip: Run kicked (Book sweep / cell click)
             H.tlog(`🎬 become_book drive → ${book}`)
+        },
+
+        // Lies_ledger_secure — the PRE-RUN VERSION gate (become_book's twin of Lies_secure_audio).  The
+        //  editor pinned the ghost versions this Book must run against (INLINE on the frame — robust, no
+        //   dependence on the whole-ledger push); HOLD here, BEFORE the run-record opens so no step clock
+        //    is ticking, until every pin is LIVE on this runner (Lies_ledger_check empty).  Met at once (or
+        //     nothing pinned — a no-edit editor / legacy frame) → true, run now.  Behind → sit + poll while
+        //      the pushed gen lands (Vite HMR / rungo → Ghost_version_checkin), self-reporting up the Brink.
+        //       Lapse → a named Storyproblem: report a FAILED run_result (Ghost_version_ledger_timeout) so
+        //        runner_ask goes red WITH the reason, + raise the editor Brink errand.  Never a stale green.
+        async Lies_ledger_secure(w: TheC, book: string, ledger_dige?: string, pins?: { name: string, dige: string }[]): Promise<boolean> {
+            const H = this as House
+            // resolve the pins to gate on: INLINE (an editor become_book) → else the pushed replica HEAD, so a
+            //  runner_ask run (which carries none of its own) still self-checks its live ghosts against the
+            //   editor's head over the cheap CLI — the whole no-VNC point.
+            if (!pins?.length) {
+                const rep = (w.c as any).ledger_replica as { head?: string, versions?: any[] } | undefined
+                if (rep?.head) {
+                    const hv = (rep.versions ?? []).find(v => v.dige === rep.head)
+                    if (hv) { pins = hv.pins as { name: string, dige: string }[]; ledger_dige = rep.head }
+                }
+            }
+            // a referenced version we cannot resolve AT ALL (thin frame + no matching replica version) — the
+            //  "super weird, shouldn't happen" case: fail LOUD with a distinct fatal, never a silent run.
+            if (ledger_dige && !pins?.length) {
+                H.Lies_runner_phase(w, 'ledger_missing', { book })
+                H.Lies_report_result(w, { book, ok: false, errors: [`Ghost_version_ledger_missing — ledger ${String(ledger_dige).slice(0, 12)} carries no pins and no matching replica version on this runner`] })
+                H.tlog(`✗ become_book ${book} — Ghost_version_ledger_missing: ${String(ledger_dige).slice(0, 12)}`)
+                return false
+            }
+            if (!ledger_dige || !pins?.length) return true   // nothing pinned → nothing to gate
+            let unmet = H.Lies_ledger_check(pins)
+            if (!unmet.length) return true
+            H.Lies_runner_phase(w, 'awaiting_ledger', { book })
+            H.Upkeep_errand(`ledger:${book}`, { kind: 'version', label: `${book} — ${unmet.length} ghost(s) behind`, phase: 'running' }); H.Lies_upkeep(w)
+            const deadline = Date.now() + 20000
+            while (Date.now() < deadline) {
+                await new Promise(r => setTimeout(r, 200))
+                unmet = H.Lies_ledger_check(pins)
+                if (!unmet.length) break
+            }
+            const ok = unmet.length === 0
+            H.Upkeep_errand(`ledger:${book}`, { kind: 'version', label: book, phase: ok ? 'ok' : 'failed' }); H.Lies_upkeep(w)
+            if (ok) { H.Lies_runner_phase(w, 'ledger_secured', { book }); return true }
+            const behind = unmet.map(p => `${String(p.name).split('/').pop()} live=${String(p.live ?? 'none').slice(0, 8)}≠${String(p.dige).slice(0, 8)}`).join(', ')
+            H.Lies_runner_phase(w, 'ledger_timeout', { book })
+            H.Lies_report_result(w, { book, ok: false, errors: [`Ghost_version_ledger_timeout — runner behind on ${unmet.length} ghost(s): ${behind}`] })
+            H.tlog(`⌛ become_book ${book} — Ghost_version_ledger_timeout: ${behind}`)
+            return false
         },
 
         // Lies_secure_audio — the PRE-RUN AC gate.  Surfaces the request two ways (the user's split):

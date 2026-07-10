@@ -1,5 +1,6 @@
 <script module lang="ts">
     import type { TheC } from "$lib/data/Stuff.svelte"
+    import { ghost_ledger_of } from "$lib/O/lang/compile"
 
     // credufunk_run — a Funkcion kind's run; Lies pumps it centrally each tick.
     //   holds Storying cells — the Books flying past it.
@@ -22,6 +23,8 @@
         const versions = (H.Cred_ghost_versions() as { name: string; dige: string }[]) ?? []
         const vset = versions.map(v => `${v.name}@${v.dige}`).sort().join("|")   // version-set identity
         const at   = Date.now()
+
+        credufunk_ledger(funk, H, ww, at)   // editor-centralised GhostLedger mint (pins the recompiled Codebit set)
 
         for (const cell of funk.o({ Funkcion: "Storying" }) as TheC[]) {
             const book = cell.sc.of_Book as string | undefined
@@ -50,6 +53,46 @@
         cred.sc.finished_at = at
         cred.bump_version()
         coh.bump_version(); funk.bump_version()
+    }
+
+    // credufunk_ledger — mint the editor's authoritative GhostLedger version for its RECOMPILED set.
+    //  A Ledger version PINS {dock path → shipped ghost_dige} over the editor's req:Codebit children —
+    //   exactly the docks it has compiled this session, i.e. the ONLY drift surface: an un-recompiled
+    //    ghost is byte-identical committed-disk on editor and runner, so it can never be stale and is
+    //     deliberately NOT pinned (a fresh editor with no edits pins nothing → every Book fires).  The
+    //      editor's own Lies_ghost_get is stale (it rides pinned_stable), so the pins MUST come from the
+    //       Codebit's ghost_dige, which is what a runner's Lies_ghost_get returns once it loads that gen.
+    //   Editor-centralised — the sole authoritative minter; a runner has no Credence and learns versions
+    //    only via the (Phase B) ledger stream.  Monotonic seq (runner uses it to tell behind→timeout from
+    //     absent→fatal).  Appended only when the set moves (head guard) → one entry per real change.  Pins
+    //      reuse the %GhostInclude,dige shape verbatim so the ledger maps onto whatever reads includes.
+    function credufunk_ledger(funk: TheC, H: any, ww: TheC, at: number): void {
+        if (H.Lies_is_editor && !H.Lies_is_editor(ww)) return   // authoritative mint is editor-only
+        if (typeof H.Lies_ledger_pins !== "function") return
+        const entries = H.Lies_ledger_pins(ww) as { name: string; dige: string }[]   // the recompiled Codebit set (single source)
+        const { dige: ledger_dige, vset } = ghost_ledger_of(entries)
+        const led = funk.oai({ GhostLedger: 1 })
+        if (led.sc.head === ledger_dige) return                 // set unchanged → no new version
+        const seq = Number(led.sc.next_seq ?? 0)
+        const ver = led.i({ Ledger: ledger_dige, seq, at, vset })
+        for (const e of entries) ver.i({ GhostInclude: e.name, dige: e.dige })
+        led.sc.head     = ledger_dige
+        led.sc.next_seq = seq + 1
+        // whittle to a bounded recent window (keep newest by seq)
+        const keep = 64
+        const all  = (led.o({ Ledger: 1 }) as TheC[]).sort((a, b) => Number(a.sc.seq) - Number(b.sc.seq))
+        for (const old of all.slice(0, Math.max(0, all.length - keep))) led.drop(old)
+        led.bump_version(); funk.bump_version()
+        // refresh the WHOLESALE export (head + every kept version's pins) and push it now.  The funk is in
+        //  hand HERE, so serialising needs no fragile walk to re-find the ledger particle; the editor ships
+        //   the whole thing (never a delta) and a per-runner head-guard keeps the broadcast cheap.
+        const versions = (led.o({ Ledger: 1 }) as TheC[]).map(v => ({
+            dige: v.sc.Ledger as string,
+            seq:  Number(v.sc.seq),
+            pins: (v.o({ GhostInclude: 1 }) as TheC[]).map(p => ({ name: p.sc.GhostInclude as string, dige: p.sc.dige as string })),
+        }))
+        ;(ww.c as any).ledger_export = { head: ledger_dige, versions }
+        if (typeof H.Lies_ledger_broadcast === "function") H.Lies_ledger_broadcast(ww)
     }
 </script>
 

@@ -42,6 +42,7 @@
     //  can't import a .ts) — see runner_liveness.mjs.  Was three inline literals that could drift.
     import { SLUGGISH_MS, DEAD_MS, LIVE_MS, PIER_CULL_MS } from "$lib/O/runner_liveness.mjs"
     import { sockcap_lines, sockcap_count, SOCKCAP_BOOT } from "$lib/O/sockcap"   // TEMP: relay-socket dump
+    import { ghost_ledger_of } from "$lib/O/lang/compile"   // GhostLedger version identity (become_book version-gate)
 
     let { M } = $props()
 
@@ -376,6 +377,7 @@
             if (role === 'runner') {
                 on('rungo',       (cw, _p, fr) => H.Lies_rungo_recv(cw, fr))
                 on('become_book', (cw, _p, fr) => H.Lies_become_book_recv(cw, fr))
+                on('ghost_ledger',(cw, _p, fr) => { H.Lies_ledger_recv(cw, fr); return true })   // editor→runner: the whole GhostLedger, replacing the runner's replica wholesale
                 // runner_ask: an addr-less CLI (scripts/runner_ask.mjs) asks the LIVE runner to RUN a
                 //  Book or EXAMINE state.  The reply is a {control:runner_ack,corr} frame the relay
                 //   routes back by corr — NOT a Peeroleum envelope (the CLI is no peer), same as the
@@ -838,6 +840,69 @@
         Lies_ghost_get(path: string): string | undefined {
             const H = this as House
             return (H as any)[H.Lang_ghostmeta_name(path)]?.() as string | undefined
+        },
+
+        // Lies_ledger_pins — the editor's RECOMPILED set as {name:path, dige:ghost_dige}, read off the
+        //  req:Codebit children of req:Cortex.  This is the DRIFT SURFACE a Book run is version-gated on:
+        //   only docks the editor compiled this session can differ from what a runner loaded — an
+        //    un-recompiled ghost is byte-identical committed-disk on both sides, so it's deliberately
+        //     absent here (an unedited editor pins nothing → nothing to gate).  Pins carry the editor's
+        //      SHIPPED ghost_dige (== a runner's Lies_ghost_get once it loads that gen); the editor's own
+        //       Lies_ghost_get is stale (pinned_stable), so pins MUST come from the Codebit, never from it.
+        Lies_ledger_pins(w: TheC): { name: string, dige: string }[] {
+            const cortex = w.o({ req: 'Cortex' })[0] as TheC | undefined
+            if (!cortex) return []
+            return (cortex.o({ req: 'Codebit' }) as TheC[])
+                .filter(cb => cb.sc.path && cb.sc.ghost_dige)
+                .map(cb => ({ name: cb.sc.path as string, dige: cb.sc.ghost_dige as string }))
+        },
+
+        // Lies_ledger_head — the ONE version token for the editor's current recompiled set: an aggregate
+        //  dige over Lies_ledger_pins.  become_book stamps this (with the pins) so a runner can want|have
+        //   it; pure fn of the pins, so editor + runner agree the instant every pinned gen is loaded.
+        Lies_ledger_head(w: TheC): string {
+            const H = this as House
+            return ghost_ledger_of(H.Lies_ledger_pins(w)).dige
+        },
+
+        // Lies_ledger_check — the RUNNER's want|have over an inbound pin set: each pinned dock's LIVE
+        //  version (Lies_ghost_get) must equal the editor's shipped dige.  Returns the UNMET pins (empty
+        //   = all met = safe to run).  A pin never loaded reads undefined ≠ dige → unmet, so the gate
+        //    HOLDS until the gen lands (or times out) — never a silent stale run.
+        Lies_ledger_check(pins: { name: string, dige: string }[]): { name: string, dige: string, live?: string }[] {
+            const H = this as House
+            return (pins ?? []).map(p => ({ ...p, live: H.Lies_ghost_get(p.name) }))
+                               .filter(p => p.live !== p.dige)
+        },
+
+        // Lies_ledger_broadcast — editor push: ship the WHOLE current GhostLedger export (w.c.ledger_export,
+        //  refreshed on each mint by credufunk_ledger) to every live runner, wholesale — never a delta.  A
+        //   per-runner head-guard (r.c.ledger_pushed) skips a runner already holding this head, so calling it
+        //    every roster tick is cheap; a freshly-live runner (guard undefined) catches up right here.
+        Lies_ledger_broadcast(w: TheC) {
+            const H = this as House
+            if (!H.Lies_is_editor(w)) return
+            const exp = (w.c as any).ledger_export as { head?: string } | undefined
+            if (!exp?.head) return
+            for (const r of w.o({ Runner: 1 }) as TheC[]) {
+                const pub = String(r.sc.Runner)
+                if (!/^[0-9a-f]{16}$/.test(pub)) continue
+                if (r.c.ledger_pushed === exp.head) continue        // already holds this head
+                if (!(H as any).Lies_runner_pier(w, pub)) continue
+                ;(H as any).Peeroleum_send_to(w, pub, 'ghost_ledger', exp)
+                r.c.ledger_pushed = exp.head
+            }
+        },
+
+        // Lies_ledger_recv — runner side: REPLACE the whole ledger replica with the pushed export.  Wholesale
+        //  (the editor never sends increments), so a plain assign is correct — no merge.  The replica's head
+        //   version supplies pins for a runner_ask-initiated run (which carries none of its own), so even a
+        //    bare CLI run self-checks its live ghosts against the editor's head — the no-VNC staleness surface.
+        Lies_ledger_recv(w: TheC, frame: any) {
+            const H = this as House
+            if (!frame?.head) return
+            ;(w.c as any).ledger_replica = { head: frame.head as string, versions: (frame.versions ?? []) as any[] }
+            H.tlog(`📥 ghost_ledger recv: head=${String(frame.head).slice(0, 12)} (${(frame.versions ?? []).length} ver)`)
         },
 
         // Lies_ghost_set — the SET half: enrol a dock's gen .go in watched:UIs so Otro mounts it
@@ -1487,6 +1552,7 @@
             if (changed) w.bump_version()
             H.Lies_drain_runs(w)    // a freed runner may release a held (exhausted-queue) job — drive in-think
             H.Lies_drain_rungo(w)   // a now-live runner takes a rungo HELD through the post-reconnect fold lag
+            H.Lies_ledger_broadcast(w)   // and catches up the whole GhostLedger (per-runner head-guard → no-op if already current)
         },
 
         // Lies_favoured_runner — the C1 lookup: which runner is reserved as THIS client's?  Scan the
