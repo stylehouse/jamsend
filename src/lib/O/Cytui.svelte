@@ -344,6 +344,30 @@
             log: render_log.map(r => ({ ...r, dt: base ? r.t - base : null })),
         }
     }
+
+    // F2 — the render's "I've LANDED" signal for the Story Run.  The takeTurns handshake
+    //  used to release the Run on a FIXED timer (grawave + dwell); a flood/morph step still
+    //   mid-settle got the next wave shoved in — panes re-mounting Stuffing-first, the
+    //    end-of-morph blink, "step 3 shows Stuffings before vtuffings + takes extra time".
+    //   Now the render stamps the applied step here the moment it is truly at rest — morph
+    //    done, no flood 2nd pass owed, not mid diagonal-satan cure — and Cyto's
+    //     e_Cyto_animation_request awaits THIS stamp (floored at the dwell, hard-ceiling'd so
+    //      it can never wedge the Run) instead of the blind timer.
+    //   applied_step is keyed off wave.sc.step_n (the story_step the wave already carries), so
+    //    a stamp of cy_settled===story_step means "the render for exactly that step landed".
+    //   live .c only, NEVER snapped (metaphysics #2) — a render-side signal like cy_render, so
+    //    fixtures don't move.
+    let applied_step: number | null = null   // step_n of the wave the render is currently seating
+    let flood_pending = false                 // a flood's 2nd free relayout is owed — not settled yet
+    function mark_settled() {
+        if (applied_step == null) return
+        if (dragging || anim_busy || wave_queue.length) return   // still churning waves / motion
+        if (flood_pending) return                                // the 2nd free pass hasn't landed
+        if (diag_streak > 0) return                              // mid diagonal-satan cure — not a rest
+        try { (H.top_House().c as any).cy_settled = applied_step } catch { /* best-effort */ }
+        vlog('landed', { step: applied_step })
+    }
+
     // Background color per node id — used when updating so we don't
     // re-read the node style on every tick
     let overlay_bgs: Map<string, string> = new Map()
@@ -497,6 +521,7 @@
             } else {
                 if (vcells.length) clear_voronoi()
                 overlay_container.classList.remove('overlays-hidden')
+                mark_settled()   // no-voronoi graph: layoutstop→reveal IS the rest (F2)
             }
         }, OVERLAY_QUIET_MS)
     }
@@ -2341,6 +2366,7 @@
                              need: voronoi_on ? (stuff_mounts.size < 2 ? '<2 seeds' : 'layout null') : 'not armed' })
             if (vcells.length || vtips.length) clear_voronoi()
             settle_overlay_show()
+            mark_settled()   // even an empty/degenerate render has "landed" — don't hang the Run (F2)
             return
         }
         vlog('morph', { seeds: stuff_mounts.size, cells: L.cells.length })
@@ -2379,7 +2405,7 @@
             }
             if (!still) break
         }
-        if (still) { for (const c of L.cells) shown_pts.set(c.id, targets.get(c.id)!); paint_final(L); settle_overlay_show(); return }
+        if (still) { for (const c of L.cells) shown_pts.set(c.id, targets.get(c.id)!); paint_final(L); settle_overlay_show(); mark_settled(); return }
 
         cancelAnimationFrame(morph_raf)
         vtips = []   // tips re-arrive with the settled walls
@@ -2407,6 +2433,7 @@
                 for (const dc of dying) { shown_pts.delete(dc.id); shown_color.delete(dc.id) }
                 paint_final(L)
                 settle_overlay_show()
+                mark_settled()   // morph tween complete — the render has landed (F2)
             }
         }
         morph_raf = requestAnimationFrame(frame)
@@ -2440,6 +2467,12 @@
         rush_animations()
         animations = _C({ animations: 1, started_at: performance.now() / 1000 })
         const ms = Math.round(dur * 1000)
+        // F2 — the story_step this wave paints (rides on wave.sc.step_n, stamped in
+        //  cyto_update_wave).  mark_settled stamps it as cy_settled once the render lands,
+        //   and e_Cyto_animation_request awaits that.  Coerce defensively — an elvis-borne
+        //    step can arrive as a string; a non-number would silently never match.
+        const applied = Number(wave.sc.step_n)
+        if (Number.isFinite(applied)) applied_step = applied
         // telemetry: the wave's shape — a `stuff:0` wave every beat IS an empty world
         //  (the seed never fired: the F6/VoroScape-is-just-self tell, now legible here)
         vlog('wave', { up: wave.o({ upsert: 1 }).length, rm: wave.o({ remove: 1 }).length,
@@ -2651,10 +2684,18 @@
                     pins = settled.map((n: any) => ({ nodeId: n.id(), position: { x: n.position('x'), y: n.position('y') } }))
             }
             relayout(ms, pins)
-            if (flood) {
+            if (flood && ms > 0) {
+                // a 2nd free pass is OWED — hold the Run's settle (F2) until it lands, so the
+                //  Run can't advance on the half-heap the first pass leaves.  Cleared on the
+                //   2nd relayout's layoutstop; the morph after that then marks settled.
+                //  (ms>0 only: a dur=0 yoink apply never animates → no layoutstop to clear on.)
+                flood_pending = true
                 vlog('flood', { fresh: fresh_ids.size, settled: settled_real.length })
                 cy.one('layoutstop', () =>
-                    setTimeout(() => relayout(Math.max(ms, 300)), 80))
+                    setTimeout(() => {
+                        cy.one('layoutstop', () => { flood_pending = false })
+                        relayout(Math.max(ms, 300))
+                    }, 80))
             }
         } else {
             // no layout needed — bring overlays back now instead of waiting
@@ -2815,7 +2856,7 @@
         if (!cy || dragging || anim_busy || wave_queue.length) { diag_check_soon(); return }
         const r = diagonal_ratio()
         if (r === null) return
-        if (r > 0.1) { diag_streak = 0; return }   // healthy (or healed) — re-arm the escalation
+        if (r > 0.1) { diag_streak = 0; mark_settled(); return }   // healthy (or healed) — re-arm the escalation, and a healed board is a rest (F2)
         diag_streak++
         if (diag_streak > 3) return   // three cures didn't take — stop thrashing; next wave re-arms via the streak reset
         diag_cures++

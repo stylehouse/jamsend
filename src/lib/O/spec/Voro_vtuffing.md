@@ -238,10 +238,150 @@ This is also the first real citizen of the human's **`Selection.process()`** nor
 - **The hooks** — additive: one `Voro_se(c)` consult at the top of `Voro_crushable` / `_swarmable`;
    `Voro_gang_min` takes the neighbourhood density.  No verdict rewritten — each gains one surroundings read.
 
-**First buildable slice** (isolated, provable): just `hold`-on-radio — a container the tuner is
- lighting refuses to fold.  ~3 lines, exactly `Vtuff_se`'s radio read moved to the fold gate, testable
-  as a `%see` in a Book (a lit container stays a hub while its neighbour folds).  Grade DESIGN-FIRST;
-   build when a runner is free (crush = `.g`, needs ghost-compile + a live verify).
+**The first slice is `hold`-on-radio** — a container the tuner is lighting refuses to fold.  But how
+ the neighbourhood is *held* matters more than the one verdict, and the mature model below settles it:
+  `hold`-on-radio is Slice 1 there, standing on a real sphere rather than a per-src radio peek.
+
+#### Se as a `%Seem` — the mature model (LiesEnd), 2026-07-12
+
+The human pointed at how the editor's Understanding already does this: **`%Seem`** in `LangHold`
+ (LiesEnd) — *"a more mature take that lost relevance to the mission."*  It is the missing shape for
+  Se, and it folds two of the human's standing complaints into one move.
+
+**What a `%Seem` is.**  A particle carrying its own `Selection()`, a match|trace shape, and walk
+ hooks.  `Se.process({ n, trace_fn, traced_fn, resolved_fn, … })` walks a source tree `n**` and mints
+  a PARALLEL mirror — the **D-sphere** — one D node per source child, wired `C.c.D = D; D.c.C = C`.
+   The mirror is built through `resolve()`, so each walk PAIRS this-time against last-time: survivors
+    keep their D (and their history, `bD`), departures surface as `goners`, arrivals as `neus`.  It is
+     not a report you rebuild — it is a structure with identity that REACTS to its source.  Cyto stands
+      on exactly this (`Cyto.svelte:369`); so does the editor's Understanding.  It is the human's
+       `Selection.process()` north star, already load-bearing in two organs.
+
+**Why it is the right home for the crush.**  Map today's crush onto it:
+
+| today — isolated verdict, smeared flags | as a `%Seem` |
+| --- | --- |
+| `Voro_crushable`\|`_swarmable(c)` judge a node in isolation | `traced_fn(D, bD, C, T)` fires AFTER the sibling layer `N` resolves — the verdict reads its neighbours + its own history for free.  **That IS Se proper.** |
+| six flags on every source particle — `c.stuff` `c.stuffy` `c.fold_kind` `c.fold_n` `c.gang` `c.represented`, wiped + restamped each pass | the fold descriptors live on the **fold node** (its D).  The source keeps ONE ref, `c.fold` → its node — the way `_Seem_CDUsive` keeps `c.D`. |
+| `Voro_report` rebuilds `w:Voronoiology` from scratch every beat | the fold-sphere already IS the census — read it; `goners`\|`neus` say what changed since last crush, no re-walk. |
+
+Both original gripes — *"too much scattered `C.c.*`"* and *"you're not making large enough concepts"* —
+ are the same gap: the fold has no home of its own, so it smears across the particles it folds.  The
+  Seem gives it one.  And the neighbourhood-read the whole §🎋 chain wants stops being a bolted-on
+   sibling walk — it is simply where `traced_fn` already stands.
+
+**The reflux, made legible.**  This is the mission tie too.  The fold-sphere is a second tree that
+ mirrors the first and reacts to it — the C data model explaining ITSELF in the glass: particles, and
+  the awareness spheres the system grows beside them, the exact primitive the editor thinks with.  The
+   plaything that explains the data model is not decoration bolted onto the crush; it is the crush
+    wearing the model's own joinery.
+
+**Staged — isolation first** (the core-change discipline: the green crush ships; do not rip it out on a
+ maybe).  Grow the Seem beside it:
+
+- **Slice 0 — the read-only mirror.**  Stand a `%Seem:fold` up ALONGSIDE the live crush, walking the
+   same candidates, minting the fold-sphere but changing NO verdict.  Prove (a Book `%see`) it
+    reproduces the same folds the isolated pass stamps, and that each node's D can see its siblings +
+     `bD`.  Zero risk to the census — the sphere is inert.  This is the isolation proof.
+- **Slice 1 — one verdict consults it.**  `hold`-on-radio, now reading the sphere (siblings + what the
+   tuner lights) instead of a per-src peek.
+- **Slice 2 — the flags come home.**  Migrate the six descriptors onto the fold node; the source drops
+   to `c.fold`.  `Voro_unstamp` becomes "drop the node," not "erase six keys."
+- **End state — the crush IS a Seem, and `Voro_report` reads the sphere.**
+
+**Status: DESIGN.**  Build Slice 0 when a runner is free (crush = `.g` → ghost-compile → live verify;
+ never mid-run).  Nothing here justifies touching the isolated verdicts until Slice 0 proves the mirror
+  green.
+
+#### Se — the grasp (the next stretch, 2026-07-12)
+
+The Se stops being a verdict-helper and becomes a THING you hold.  `i_Se('scape')` mints
+ `%Se:scape,Selection:Selection()` (oai find-or-create), and that Selection traces every `C%*` it can
+  reach into a sphere of `D%the_*` nodes — Cyto's exact move.  The reduced grip IS our model of the
+   source: not a copy, a **grasp**.
+
+**It is reductionist — `the_` and `the_very_`.**
+- every source property it traces lands as `D%the_<prop>` — plainly, "the source has this".
+- the ones that carry the meaning get weight: `D%the_very_<prop>` — the identity, the loud fact, the
+   span that stands for twenty values.  The grasp keeps these bright and lets the rest stay folded
+    until asked.  A grasp is allowed to be lossy; that is the point of a grasp.
+
+**Grasp first, dump more on demand.**
+- the initial grasp is what we dump into the render model — enough to draw the pane, no more.
+- click a `/*3` open and the Se dumps MORE: it deepens its trace of that subtree and the fresh
+   `D%the_*` flow into the model.  Expansion is the grasp reaching harder where you are looking — not
+    the renderer unhiding something it pre-computed and sat on.
+- un-compress rides the same nerve: a `×4` value chip that will not sit legibly (see fit, below) gets
+   spread back to its values.  The grasp reads the SPACE as part of the surroundings.
+
+**Surroundings is two things at once — neighbours AND fit.**
+- the *fold* read (the `%Seem` note above): siblings + history — should this container fold at all.
+- the *text* read: the pixels — does this sit at **≥ 14pt** in the cell it was handed?  If not, the Se
+   stretches it up: fewer rows, larger type, un-compress or defer the overflow to a `/*N` handle, until
+    it does.  **14pt is a hard floor** — text under it is not legible, so a grasp that lands there is
+     failing its one job.
+- this is the first VISIBLE gift of Se — the human's *"big text stretch-ups"*: panes that grow their
+   type to a readable size and shed what will not fit, instead of cramming six point font edge to edge.
+    It ships without touching a single crush verdict — pure render-side reading of "does it fit".
+
+**The HUD — where are we, and how to get back.**
+- a path readout of where the view sits: the container chain we have descended|expanded into, shown
+   plainly so the picture is never a mystery.
+- collapse the trivial root: if EVERYTHING lives inside one `w:Something`, that lone world is noise —
+   the HUD (and the model) leave it out and start the path where it actually branches.
+- expanding is a move, so it has an undo: **Ctrl-Z**, or edit the HUD path by hand, walks back out to a
+   prior grasp.  (This also names a live loose end — the unexplained square not quite fitting the
+    viewport is the top-level container drawn as a cell; the HUD should OWN that frame so it reads as a
+     deliberate "you are here", not a stray box the layout forgot.)
+
+**The far horizon — beyond cytoscape.**  Once the grasp is trustworthy the Se model is enough to draw
+ from directly: leave the cytoscape instance behind and sync a *pristine layout canvas* off the Se — an
+  as-yet-unthought-of Se-derived layout.  We hold the most prior art here (`Selection.process` is the
+   most-built joinery in the system).  Aspirational, gated on confidence — NOT now.  Its pilot already
+    has a home: "own the tick" in **§ The next moves #14** — the first feedback we cannot run *through*
+     fcose is the seam where our own canvas begins.
+
+**What it saves us from — the census storm** (the case that named it, a VoroMitosis Step:9 diff).
+ `Voro_report` DROPS the whole `w:Voronoiology` census every beat (`drop` all, then re-walk) and
+  `Voro_report_walk` pushes cells into a flat array in VOLATILE walk order.  So a step where the source
+   gains|loses a handful of taxa produced a ~200-line diff: gangs torn down and re-added because the
+    walk reordered them, every `Vrow` re-emitting because a count slid `×9`→`×11`, a pane swapping
+     family and cascading.  **None of that is the data — it is the report having no identity.**  The
+      grasp fixes it at the source: resolve the folds into the census keyed by what each cell IS
+       (family + tree-anchor), stable emission order, fields updated in place, drop ONLY genuine goners.
+        The storm collapses to the real news — a taxon born (`+`), one dying (`-`), a count sliding (one
+         `change`) — and the diff finally READS as the mitosis, not the churn.
+- **Bonus, and it matters:** an identity-stable snap needs far less entropy fuzz-tolerance — and that
+   fuzz today silently swallows real regressions (a dropped `%see` inside the `≈`).  Killing the churn
+    at its source lets us tighten the fuzz, which un-hides the bugs it was hiding.
+- **Isolation-safe** (the census is `dontGraph` debug, no render|crush verdict touched) — but it MOVES
+   fixtures by design, so it lands with a re-record on a live runner, never mid-run.
+
+**The single root — the census storm AND the render's vanish|re-pop are ONE bug** (both threads landed
+ here, 2026-07-12; render side = `Voro_render_faults_todo.md` F3+F8).  The crush re-derives its folds
+  from scratch every beat — `Voro_unstamp` wipes, `Voro_stamp_fold` re-stamps, gang reps re-elected — so
+   a fold|gang has NO identity across beats.  Everything keyed on it then churns:
+- **downstream in the render:** the Cyto scan's `resolve` chain (Se1 → `scan_id` → Se2 → `cyto_id`,
+   `Cyto.svelte:961`) can't pair this beat's node to last beat's D, so `Dip_assign` hands out a FRESH
+    `cyto_id` — the old id has no target (VANISH, F8), the new id has no prior shape (RE-POP, F3).  One
+     churn, two symptoms.
+- **downstream in the snap:** the drop+rebuild census → the ~200-line storm above.
+
+So it is ONE fix: a persistent fold-sphere resolved beat-to-beat — the grasp — anchored to a **durable
+ source identity** (the container it folds under + family, NOT the volatile rep the crush re-elects).
+  Folds keep identity → `cyto_id` goes linear (F8|F3 dissolve) → the census stops churning.  One
+   structure, three fixes.
+
+**Why `w:Voronoiology` is the home** (the human's key, 2026-07-12).  The snap runs AFTER Cyto+Voro, and
+ `w:Voronoiology` is a real snapped world (`dontGraph`, but it *snaps*) that Voro already fills with its
+  state from inside the Cyto pass.  So the grasp — the persistent, resolved fold-sphere — LIVES there:
+   snapped (identity becomes a gate-able artifact, not ephemeral `.c`) AND persistent (so it resolves
+    across beats).  This dissolves the old metaphysics worry — *"nothing render-side snaps"* still holds:
+     the grasp is not render-side, it is the MODEL, and the model was always allowed to snap.
+- **The shared gate** (the render thread's, handed over, and ours): assert `cyto_id` is stable across a
+   step for a particle known to persist — readable off the **CytoStep archive**, model-side, no pixels.
+    The very same invariant proves the census stopped churning AND the cells stopped vanishing.  One
+     gate for the whole identity root.
 
 #### The language critique (2026-07-11) — what the redesign must fix
 
@@ -288,176 +428,9 @@ The crown|cane|leaf|shoot stalk never earned the owner's eyes and got the honest
     cell (recursive tessellation), or a small sub-graph seated inside the pane — the C/C path made
      of space itself, which also retires critique #1's flattened row soup at the root.
 
-#### 🎋 v2 first slice — the ▦ sub-graph (BUILT 2026-07-11, eyes-on owed)
-
-The owner made it concrete: *"sub-graphs, for all of Artist\*\* with sub-voronois to each k and v
- and whatever they've been combined into, and the ×2 and so on like annotations|superscripts,
-  which we can click to expand the graph, later when the graph is bigger."*  Built in Cytui as the
-   ▦ layer (default ON, `Cyto_subgraph` stash; ▤ keeps per-pane priority when manually on):
-
-- **A pane tessellates ITSELF.**  `subgraph_build` reads the same cached Vtuff tree, turns the
-   rows into sub-seed items — a fact `k: v` is one combined cell, a spread contributes its KEY
-    cell plus one cell per value chip, list chips and member|sub rows are the members — and cuts
-     them with the SAME phi-spiral seeding + half-plane power walls as the parent scape, clipped
-      to the pane polygon.  The pane is a scape in miniature; one geometry idiom all the way down.
-- **Multiplicities are superscripts, never cells.**  `×N` (a shared value's count) and `/*N`
-   (children to dig) ride as small raised lilac tspans on their owner's label; the pane's own
-    count superscripts its HEADLINE (the title row renders as a map-region label at the cell top,
-     the `/*N` dip as the corner glyph).  Critique #4 satisfied structurally.
-- **Keys wear the tint and their `:`, values stay plain** — the Stuffing's own idiom (critiques
-   #2+#3).  The mainkey rides as the small type-tag, as everywhere.
-- **Click-to-expand is the surf.**  A member label (and the corner `/*N`) clicks through to
-   `Vtuff_pop` — the sub-cell pops out into the real graph.  Only labels take the pointer
-    (the layer is pointer-events:none), so pane drag survives.  The owner's *"later when the
-     graph is bigger"* deepening — sub-sub-voronois, expand-in-place — stays open.
-- **Gates.**  A pane subdivides only when it says ≥2 things and has room (√area ≥ 88px);
-   otherwise the molded Stuffing stays the face.  Sub-cells past 16 fold into one `+K` cell
-    (no silent caps).  The dimmed-Stuffing crossfade is ▤'s, shared.
-
-Census side (same session): `Voro_vtuff_transcribe` stopped dumping `%Vbit` leaves — *"only the
- higher structures I want … as long as we don't lose one"* — every row keeps its `bits:N` count
-  so a chip appearing|vanishing still moves the diff.  And the owner's genericity probe ("there's
-   no %title told of anywhere now?") holds: the ONLY places 'title' is spelled are `row:title`
-    (the headline row-KIND, not a data key) and the generic naming-preference list
-     `['name','title','text','nick','label']` shared by Vtuff_ident|name|namekey — no data key is
-      special anywhere in the pipeline.
-
-#### 🎋 v2 second pass — TUPLE geometry + the veins (2026-07-11, same day)
-
-The owner, on the first slice: *"they need to start taking on tuple geometry in there and across
- them … I can't tell which v the year|habit k are connected to"*, *"a vein of 'Years' I can see
-  racing around"*, *"no visual indication of the Artist/Track boundary"*, *"Artist:Palegold is
-   shoved into a corner"*, and *"the Wes-Wilson-like threading this text into max rendering"*.
-    All five landed as a rework of the flat item cut into a TWO-LEVEL cut (`subgraph_tuples` +
-     `power_cells`, the wall math factored and reused at every level):
-
-- **In-pane tuples.**  A keyed row is a REGION: the key labels it once (from its widest band —
-   `wide_chord`, which also un-cornered the pane headline) and its values tessellate INSIDE it.
-    A spread = many-leaf region, a fact = one-leaf, a presence fact ('remaster ×2') = a leaf-less
-     key region wearing its count.  Which v belongs to which k is now a containment fact.
-- **Cross-pane veins.**  `vein_of(key)`: one golden-angle slot per KEY NAME, global — the slot is
-   BOTH the hue and the compass angle of that key's region in every pane.  'year' is the same
-    colour at the same bearing everywhere, so it reads as a vein racing around the scape.
-     (Verified in the first `--svg` shot: year=hsl(0) east, live=hsl(138), remaster=hsl(275),
-      identical across all five panes.)
-- **The Artist/Track boundary.**  The members are one region labeled by their KIND ('Track',
-   kind-tinted), its wall solid and a touch louder (`.vsub-gwall.boundary`) — the type boundary
-    is now a drawn wall, not an inference.
-- **Wes Wilson.**  `fill_fs`: every label takes all the room its polygon offers (chord÷length,
-   capped by cell height) — fs ranges ~7–30 in the live shot; a big shared value ('2007 ×30px')
-    shouts, a crowded sliver whispers.  Crowding IS the size signal.
-- **🩻 the SVG shot rail.**  `runner_shot.mjs --svg` (op:'svg', LiesFunk): serializes the live
-   `.cytui-voronoi` layer with the scoped CSS baked in — a standalone .svg AND greppable
-    geometry, the instrument cy.png() could never be (it only carries the canvas).  This is how
-     this pass was verified headlessly; the owner's grant: "runners are free to take shots of
-      the svg."
-
-#### 🎋 v2 third pass — the NUCLEUS + the Stuffing grammar (2026-07-11, same day again)
-
-The owner, on the tuple glass: *"a little more structure within each cell, so I can tell what is
- going on with them... mainly just the Artist:Riverine must be part of the subcells... in such a
-  way as to clue that they are all linked to it... and if possible, communicate visually as
-   Stuffing does"* — plus the presentation bug: *"fix how the C Artist(,name):Riverine is
-    presented without any indication of that name key. like Stuffing, it's explicit about what's
-     a key or value."*
-
-- **The NUCLEUS.**  The fold source stopped being a floating headline and became a CELL of its
-   own glass: seeded at the pane centre with a radius from its words alone (an identity plate,
-    not a data region), wall solid in the pane's kind tint (`.vsub-nwall`).  Every tuple region —
-     members now included — takes its vein's compass bearing instead (`vein_of(kind)` for the
-      members, so 'Track' sits the same corner in every pane exactly as 'year' does).
-- **The SPOKES.**  From the nucleus to each region's centroid, a quiet dashed strand in the
-   region's own hue (`.vsub-spoke`, drawn under the walls) — the "all linked to it" clue drawn,
-    not inferred.  Verified in the shot: spoke hues = exactly the four region hues per pane.
-- **The Stuffing grammar, spoken in SVG.**  One rule-set, level-invariant (it recurses when
-   sub-sub-voronois come): mainkey = kind-tint badge; non-main key = its vein hue; **colon =
-    Stuffing's lilac rgb(228,163,245), present iff a value follows** (its own tspan now, the k→v
-     grammar mark); value = plain bright; ×N = Stuffing's violet rgb(156,140,217) sup; **the
-      shining green % rgb(83,255,15) marks every poppable C** (member leaves — Stuffing's is_C
-       glyph, now the surf affordance).  Member leaf tags wear their member's kind tint too.
-- **The namekey made explicit.**  Vtuff title rows carry `nk:<namekey>` (Voro.g `Vtuff_default`
-   + bamboo crown + the Cytui TS fallback twin), so the nucleus reads `Artist name: Riverine ×3`
-    — and a mainkey-valued source reads `cell: Kunzea` (nk === tag → the tag takes the colon).
-     `nk` rides the census transcript into fixtures; VoroScape re-recorded (the diff was purely
-      `+nk:name` on every title row).  'name' is a key like any other: it wears a vein hue
-       (hsl 53 in the shot, the same in every nucleus).
-
-#### 🎋 v2 sixth pass — the glass hides NOTHING + hierarchy flows radially (2026-07-11, latest)
-Owner verdict, next session: *"this is nice … nice and gem-looking with the w/C%Track in the
- center of each cell, surrounded by its organs like a cell-wall around its nucleus."*  So this
-  face is **the GEM** — and per *"it'd be nice to save these modes we're evolving through"*, ALL
-   the faces are now saved: `voro_modes/README.md` (per-pass commit anchors + live SVG shots;
-    the gem = `06_radial_gem.svg`).
-The owner's corrections on the fifth pass, all landed in one rebuild:
-- **Show everything, be totally generic.** *"data must be correctly presented. it may be folded
-   away, but that fold must be annotated and expandable … I want all ugly bits of eg %req
-    included, no hiding stuff, no knowing about the data."*  A LONER now tessellates its whole
-     `sc` exactly like a fold: mainkey statement = nucleus, every other sc key = a keyed region
-      (`req: wrangle` + `eternal` + `ok`).  Whatever any pane can't fit THIS beat — crowded-out
-       regions, lost leaves, degraded slivers — is COUNTED and rides a **`+N` fold mark**
-        (`vsub-hid`, corner) — annotated, one day a door, never a silent drop.
-- **No `%` in the render.**  % prefixes a KEY in the house notation; the glass wore it on
-   VALUES.  Gone entirely (glyph + CSS); the poppable cue is the hot dotted underline.
-- **Radial hierarchy — "the %Track C at the center, and all the tracks around the outside".**
-   A pane's layout is now BY RANK: the source's own statement holds the CENTRE (its cell
-    weight floors at 0.34·R, so the most important statement is never the smallest text —
-     meaning hierarchy = visual hierarchy), keyed facts belt the middle at their vein
-      bearings, and each member seeds ON THE RIM walking from the kind's own bearing.  A
-       per-pane **radial gradient** (transparent core → kind hue at the rim) washes the member
-        cells — the asymmetric clue for which way the slope of hierarchy flows.  The kind is
-         engraved ONCE on the rim at its bearing (`Track ×4`) — the same compass point in
-          every pane.
-- **Alignment of meanings.**  A one-value region says its whole statement as a unit
-   (`year: 2007`) — never a floating key and an orphan number; values sort numeric-aware so
-    `1998 · 2007 · 2019` reads in order everywhere; in many-value regions the KEY is a seed
-     like its values (a reserved sub-cell at the region's crown — key/value overlap impossible
-      by construction).
-- **Wes-Wilson stretchy text.**  Every value tspan carries a `textLength` aimed at its chord
-   (clamped 0.9–1.45× natural, `spacingAndGlyphs`) — the words stretch to their walls.
-- **One statement engine.**  Every text on the glass is a `VStat` — [badge]·[key]·[lilac
-   :]·[value]·[×N]·[/*N] — fitted by `fit_stat` (band chord → fs search → greedy wrap →
-    per-line stretch) and rendered by the ONE `vstat` snippet; `fit_ident` is the identity
-     ladder (full head → tag-only → bare value: `Artist name: Fernway` in a sliver becomes
-      `Artist: Fernway` then `Fernway`, never `Artist name: …`).  The old four text renderers,
-       `nucleus_only`, `fill_fs`, and the members-as-a-region boundary are deleted into it.
- Live-proven (VoroScape 6/6 c0 + the full fleet green): the req pane speaks `req: wrangle`
-  fs20 stretched + both presence facts; ZERO text collisions in the final glass; Fernway (the
-   cramped pane) reads `Artist : Fernway ×4` + an honest `+3`.  The radial rule is the
-    RECURSION RULE: a popped member's own pane repeats it one level down — that's the next
-     layer of graphics ("cells within the cells").
-
-#### 🎋 v2 fifth pass — the glass has NO stragglers: the nucleus-only pane (2026-07-11, later)
-The owner: *"why do some things always become Stuffing? I want them all [glass] if it's that
- mode."*  (The fifth pass's closing worry — loners dropping `eternal,ok` — was REJECTED by the
-  owner and closed by the sixth pass above: loners show everything now.)  The answer to the why: the ▦ pass dressed only fold STRUCTURE (things with
-  `c.gang`/`c.stuff`), plus two comfort gates ("one k|v is what the Stuffing already says",
-   "√area < 88 too small to subdivide") — everything else fell through to the older molded-
-    Stuffing face.  That reason EXPIRED with the nucleus round: the grammar speaks a single
-     particle.  So now ONE ladder, no fallbacks between modes: a fold with room gets full glass
-      (nucleus + regions + spokes + members); a loner, a one-fact fold, a crowded-out or
-       too-small pane DEGRADES to the **nucleus-only pane** — the whole cell is one grammar
-        statement (badge · namekey · lilac colon · value · ×N), the value word-wrapped into
-         chord-fitted lines (`nucleus_only` in Cytui; a `%see` sentence Wes-Wilsons its whole
-          pane).  Only a hairline that can't carry a word keeps its Stuffing — never blank
-           glass.  ▦ off stays all-molded-Stuffings: two pure faces, one per mode.
- Live-proven: step 1 of VoroScape = a single pane reading `req: wrangle`; mid-flood a pane
-  reads the full `see: the library stands — …` sentence wrapped; final glass = 6 nuclei.
-   Loners drop their non-main sc keys (`eternal,ok` doesn't ride the statement) — eyes-on
-    whether that loss ever matters; the Vtuffing could grow fact rows for loners if so.
-
-#### 🎋 v2 fourth pass — ONE face: the ▤ row engine deleted (2026-07-11, the pipeline round)
-The demoted ▤ face (micro_fit's chord-fitted row cards — the hand-rolled Stuffing-lookalike,
- "skinny and mean") is DELETED from Cytui: the grammar face above superseded it, and a demoted
-  second face kept resurfacing through the toggles as the pre-grammar look (the owner: "the crappy
-   little button looking k|v|annotation ambiguous labels… I don't see how that can exist without
-    pretty crap code").  What remains is ONE rule: a fold|gang pane speaks the ▦ grammar; a pane
-     with nothing to tessellate (a sliver, a bare loner like the beat-wrangler req) wears its REAL
-      molded Stuffing.  `vtuff_rows` (the Vtuff-tree normaliser) survives as the ▦ pass's only
-       feeder; `micro_click` survives as the Vtuff_pop surf.  Same round, the fold now lands
-        BEFORE the scan (`Voro_crush_worlds`, armed by the useVoroCyto commission) so newborns
-         wave already-folded — the flooding-step "nodes but not cells" beat and the seek-archive
-          replays of it are gone (`Voro_render_faults_todo.md` §STATUS 2026-07-11 for the full
-           mechanism + the VoroClinic fixture that photographs the fix).
+> The ▦ sub-graph was built over six passes on 2026-07-11; the living statement is the redirect
+>  above plus the committed gem (`voro_modes/`, commit 063fb214).  The pass-by-pass build log is
+>   kept verbatim in **§ Relics** at the foot of this doc — freetext knowledge, not current truth.
 
 ### 🔊 Quiet ↔ rampage — a throttle on the fold's thinking
 
@@ -855,3 +828,183 @@ Captured from the live-tab review, in the owner's words + the intended behaviour
       **Vtuffing**, because Vtuffing needs a fold WITH MEMBERS to lay into the cell and a lone see/req has none.
        So the missing cells are really **missing folds** — open thread: why VoroScape's imposed crush produces no
         gangs.  (Vtuffing, the occlusion-free successor to the molded Stuffing, is the near frontier — see §🎋.)
+
+
+## Relics — superseded working-notes, kept for the freetext
+
+Not current truth; the living statement is above.  These are the dated pass-by-pass notes the doc
+ grew through — kept because the *reasoning* in them (why a face was tried, what the eyes said, what
+  got deleted) is knowledge even when the face itself was let go.  Mine them; never cite them as spec.
+
+### 🎋 v2 — the ▦ sub-graph, pass by pass (2026-07-11)
+
+#### 🎋 v2 first slice — the ▦ sub-graph (BUILT 2026-07-11, eyes-on owed)
+
+The owner made it concrete: *"sub-graphs, for all of Artist\*\* with sub-voronois to each k and v
+ and whatever they've been combined into, and the ×2 and so on like annotations|superscripts,
+  which we can click to expand the graph, later when the graph is bigger."*  Built in Cytui as the
+   ▦ layer (default ON, `Cyto_subgraph` stash; ▤ keeps per-pane priority when manually on):
+
+- **A pane tessellates ITSELF.**  `subgraph_build` reads the same cached Vtuff tree, turns the
+   rows into sub-seed items — a fact `k: v` is one combined cell, a spread contributes its KEY
+    cell plus one cell per value chip, list chips and member|sub rows are the members — and cuts
+     them with the SAME phi-spiral seeding + half-plane power walls as the parent scape, clipped
+      to the pane polygon.  The pane is a scape in miniature; one geometry idiom all the way down.
+- **Multiplicities are superscripts, never cells.**  `×N` (a shared value's count) and `/*N`
+   (children to dig) ride as small raised lilac tspans on their owner's label; the pane's own
+    count superscripts its HEADLINE (the title row renders as a map-region label at the cell top,
+     the `/*N` dip as the corner glyph).  Critique #4 satisfied structurally.
+- **Keys wear the tint and their `:`, values stay plain** — the Stuffing's own idiom (critiques
+   #2+#3).  The mainkey rides as the small type-tag, as everywhere.
+- **Click-to-expand is the surf.**  A member label (and the corner `/*N`) clicks through to
+   `Vtuff_pop` — the sub-cell pops out into the real graph.  Only labels take the pointer
+    (the layer is pointer-events:none), so pane drag survives.  The owner's *"later when the
+     graph is bigger"* deepening — sub-sub-voronois, expand-in-place — stays open.
+- **Gates.**  A pane subdivides only when it says ≥2 things and has room (√area ≥ 88px);
+   otherwise the molded Stuffing stays the face.  Sub-cells past 16 fold into one `+K` cell
+    (no silent caps).  The dimmed-Stuffing crossfade is ▤'s, shared.
+
+Census side (same session): `Voro_vtuff_transcribe` stopped dumping `%Vbit` leaves — *"only the
+ higher structures I want … as long as we don't lose one"* — every row keeps its `bits:N` count
+  so a chip appearing|vanishing still moves the diff.  And the owner's genericity probe ("there's
+   no %title told of anywhere now?") holds: the ONLY places 'title' is spelled are `row:title`
+    (the headline row-KIND, not a data key) and the generic naming-preference list
+     `['name','title','text','nick','label']` shared by Vtuff_ident|name|namekey — no data key is
+      special anywhere in the pipeline.
+
+#### 🎋 v2 second pass — TUPLE geometry + the veins (2026-07-11, same day)
+
+The owner, on the first slice: *"they need to start taking on tuple geometry in there and across
+ them … I can't tell which v the year|habit k are connected to"*, *"a vein of 'Years' I can see
+  racing around"*, *"no visual indication of the Artist/Track boundary"*, *"Artist:Palegold is
+   shoved into a corner"*, and *"the Wes-Wilson-like threading this text into max rendering"*.
+    All five landed as a rework of the flat item cut into a TWO-LEVEL cut (`subgraph_tuples` +
+     `power_cells`, the wall math factored and reused at every level):
+
+- **In-pane tuples.**  A keyed row is a REGION: the key labels it once (from its widest band —
+   `wide_chord`, which also un-cornered the pane headline) and its values tessellate INSIDE it.
+    A spread = many-leaf region, a fact = one-leaf, a presence fact ('remaster ×2') = a leaf-less
+     key region wearing its count.  Which v belongs to which k is now a containment fact.
+- **Cross-pane veins.**  `vein_of(key)`: one golden-angle slot per KEY NAME, global — the slot is
+   BOTH the hue and the compass angle of that key's region in every pane.  'year' is the same
+    colour at the same bearing everywhere, so it reads as a vein racing around the scape.
+     (Verified in the first `--svg` shot: year=hsl(0) east, live=hsl(138), remaster=hsl(275),
+      identical across all five panes.)
+- **The Artist/Track boundary.**  The members are one region labeled by their KIND ('Track',
+   kind-tinted), its wall solid and a touch louder (`.vsub-gwall.boundary`) — the type boundary
+    is now a drawn wall, not an inference.
+- **Wes Wilson.**  `fill_fs`: every label takes all the room its polygon offers (chord÷length,
+   capped by cell height) — fs ranges ~7–30 in the live shot; a big shared value ('2007 ×30px')
+    shouts, a crowded sliver whispers.  Crowding IS the size signal.
+- **🩻 the SVG shot rail.**  `runner_shot.mjs --svg` (op:'svg', LiesFunk): serializes the live
+   `.cytui-voronoi` layer with the scoped CSS baked in — a standalone .svg AND greppable
+    geometry, the instrument cy.png() could never be (it only carries the canvas).  This is how
+     this pass was verified headlessly; the owner's grant: "runners are free to take shots of
+      the svg."
+
+#### 🎋 v2 third pass — the NUCLEUS + the Stuffing grammar (2026-07-11, same day again)
+
+The owner, on the tuple glass: *"a little more structure within each cell, so I can tell what is
+ going on with them... mainly just the Artist:Riverine must be part of the subcells... in such a
+  way as to clue that they are all linked to it... and if possible, communicate visually as
+   Stuffing does"* — plus the presentation bug: *"fix how the C Artist(,name):Riverine is
+    presented without any indication of that name key. like Stuffing, it's explicit about what's
+     a key or value."*
+
+- **The NUCLEUS.**  The fold source stopped being a floating headline and became a CELL of its
+   own glass: seeded at the pane centre with a radius from its words alone (an identity plate,
+    not a data region), wall solid in the pane's kind tint (`.vsub-nwall`).  Every tuple region —
+     members now included — takes its vein's compass bearing instead (`vein_of(kind)` for the
+      members, so 'Track' sits the same corner in every pane exactly as 'year' does).
+- **The SPOKES.**  From the nucleus to each region's centroid, a quiet dashed strand in the
+   region's own hue (`.vsub-spoke`, drawn under the walls) — the "all linked to it" clue drawn,
+    not inferred.  Verified in the shot: spoke hues = exactly the four region hues per pane.
+- **The Stuffing grammar, spoken in SVG.**  One rule-set, level-invariant (it recurses when
+   sub-sub-voronois come): mainkey = kind-tint badge; non-main key = its vein hue; **colon =
+    Stuffing's lilac rgb(228,163,245), present iff a value follows** (its own tspan now, the k→v
+     grammar mark); value = plain bright; ×N = Stuffing's violet rgb(156,140,217) sup; **the
+      shining green % rgb(83,255,15) marks every poppable C** (member leaves — Stuffing's is_C
+       glyph, now the surf affordance).  Member leaf tags wear their member's kind tint too.
+- **The namekey made explicit.**  Vtuff title rows carry `nk:<namekey>` (Voro.g `Vtuff_default`
+   + bamboo crown + the Cytui TS fallback twin), so the nucleus reads `Artist name: Riverine ×3`
+    — and a mainkey-valued source reads `cell: Kunzea` (nk === tag → the tag takes the colon).
+     `nk` rides the census transcript into fixtures; VoroScape re-recorded (the diff was purely
+      `+nk:name` on every title row).  'name' is a key like any other: it wears a vein hue
+       (hsl 53 in the shot, the same in every nucleus).
+
+#### 🎋 v2 sixth pass — the glass hides NOTHING + hierarchy flows radially (2026-07-11, latest)
+Owner verdict, next session: *"this is nice … nice and gem-looking with the w/C%Track in the
+ center of each cell, surrounded by its organs like a cell-wall around its nucleus."*  So this
+  face is **the GEM** — and per *"it'd be nice to save these modes we're evolving through"*, ALL
+   the faces are now saved: `voro_modes/README.md` (per-pass commit anchors + live SVG shots;
+    the gem = `06_radial_gem.svg`).
+The owner's corrections on the fifth pass, all landed in one rebuild:
+- **Show everything, be totally generic.** *"data must be correctly presented. it may be folded
+   away, but that fold must be annotated and expandable … I want all ugly bits of eg %req
+    included, no hiding stuff, no knowing about the data."*  A LONER now tessellates its whole
+     `sc` exactly like a fold: mainkey statement = nucleus, every other sc key = a keyed region
+      (`req: wrangle` + `eternal` + `ok`).  Whatever any pane can't fit THIS beat — crowded-out
+       regions, lost leaves, degraded slivers — is COUNTED and rides a **`+N` fold mark**
+        (`vsub-hid`, corner) — annotated, one day a door, never a silent drop.
+- **No `%` in the render.**  % prefixes a KEY in the house notation; the glass wore it on
+   VALUES.  Gone entirely (glyph + CSS); the poppable cue is the hot dotted underline.
+- **Radial hierarchy — "the %Track C at the center, and all the tracks around the outside".**
+   A pane's layout is now BY RANK: the source's own statement holds the CENTRE (its cell
+    weight floors at 0.34·R, so the most important statement is never the smallest text —
+     meaning hierarchy = visual hierarchy), keyed facts belt the middle at their vein
+      bearings, and each member seeds ON THE RIM walking from the kind's own bearing.  A
+       per-pane **radial gradient** (transparent core → kind hue at the rim) washes the member
+        cells — the asymmetric clue for which way the slope of hierarchy flows.  The kind is
+         engraved ONCE on the rim at its bearing (`Track ×4`) — the same compass point in
+          every pane.
+- **Alignment of meanings.**  A one-value region says its whole statement as a unit
+   (`year: 2007`) — never a floating key and an orphan number; values sort numeric-aware so
+    `1998 · 2007 · 2019` reads in order everywhere; in many-value regions the KEY is a seed
+     like its values (a reserved sub-cell at the region's crown — key/value overlap impossible
+      by construction).
+- **Wes-Wilson stretchy text.**  Every value tspan carries a `textLength` aimed at its chord
+   (clamped 0.9–1.45× natural, `spacingAndGlyphs`) — the words stretch to their walls.
+- **One statement engine.**  Every text on the glass is a `VStat` — [badge]·[key]·[lilac
+   :]·[value]·[×N]·[/*N] — fitted by `fit_stat` (band chord → fs search → greedy wrap →
+    per-line stretch) and rendered by the ONE `vstat` snippet; `fit_ident` is the identity
+     ladder (full head → tag-only → bare value: `Artist name: Fernway` in a sliver becomes
+      `Artist: Fernway` then `Fernway`, never `Artist name: …`).  The old four text renderers,
+       `nucleus_only`, `fill_fs`, and the members-as-a-region boundary are deleted into it.
+ Live-proven (VoroScape 6/6 c0 + the full fleet green): the req pane speaks `req: wrangle`
+  fs20 stretched + both presence facts; ZERO text collisions in the final glass; Fernway (the
+   cramped pane) reads `Artist : Fernway ×4` + an honest `+3`.  The radial rule is the
+    RECURSION RULE: a popped member's own pane repeats it one level down — that's the next
+     layer of graphics ("cells within the cells").
+
+#### 🎋 v2 fifth pass — the glass has NO stragglers: the nucleus-only pane (2026-07-11, later)
+The owner: *"why do some things always become Stuffing? I want them all [glass] if it's that
+ mode."*  (The fifth pass's closing worry — loners dropping `eternal,ok` — was REJECTED by the
+  owner and closed by the sixth pass above: loners show everything now.)  The answer to the why: the ▦ pass dressed only fold STRUCTURE (things with
+  `c.gang`/`c.stuff`), plus two comfort gates ("one k|v is what the Stuffing already says",
+   "√area < 88 too small to subdivide") — everything else fell through to the older molded-
+    Stuffing face.  That reason EXPIRED with the nucleus round: the grammar speaks a single
+     particle.  So now ONE ladder, no fallbacks between modes: a fold with room gets full glass
+      (nucleus + regions + spokes + members); a loner, a one-fact fold, a crowded-out or
+       too-small pane DEGRADES to the **nucleus-only pane** — the whole cell is one grammar
+        statement (badge · namekey · lilac colon · value · ×N), the value word-wrapped into
+         chord-fitted lines (`nucleus_only` in Cytui; a `%see` sentence Wes-Wilsons its whole
+          pane).  Only a hairline that can't carry a word keeps its Stuffing — never blank
+           glass.  ▦ off stays all-molded-Stuffings: two pure faces, one per mode.
+ Live-proven: step 1 of VoroScape = a single pane reading `req: wrangle`; mid-flood a pane
+  reads the full `see: the library stands — …` sentence wrapped; final glass = 6 nuclei.
+   Loners drop their non-main sc keys (`eternal,ok` doesn't ride the statement) — eyes-on
+    whether that loss ever matters; the Vtuffing could grow fact rows for loners if so.
+
+#### 🎋 v2 fourth pass — ONE face: the ▤ row engine deleted (2026-07-11, the pipeline round)
+The demoted ▤ face (micro_fit's chord-fitted row cards — the hand-rolled Stuffing-lookalike,
+ "skinny and mean") is DELETED from Cytui: the grammar face above superseded it, and a demoted
+  second face kept resurfacing through the toggles as the pre-grammar look (the owner: "the crappy
+   little button looking k|v|annotation ambiguous labels… I don't see how that can exist without
+    pretty crap code").  What remains is ONE rule: a fold|gang pane speaks the ▦ grammar; a pane
+     with nothing to tessellate (a sliver, a bare loner like the beat-wrangler req) wears its REAL
+      molded Stuffing.  `vtuff_rows` (the Vtuff-tree normaliser) survives as the ▦ pass's only
+       feeder; `micro_click` survives as the Vtuff_pop surf.  Same round, the fold now lands
+        BEFORE the scan (`Voro_crush_worlds`, armed by the useVoroCyto commission) so newborns
+         wave already-folded — the flooding-step "nodes but not cells" beat and the seek-archive
+          replays of it are gone (`Voro_render_faults_todo.md` §STATUS 2026-07-11 for the full
+           mechanism + the VoroClinic fixture that photographs the fix).

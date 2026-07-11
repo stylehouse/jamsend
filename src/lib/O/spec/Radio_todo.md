@@ -22,6 +22,21 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 A rolling brief: the newest work sits here first, then gets baked into its home section
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 
+**2026-07-12 — MusuHeist paced + design/test-split + swept both ends; live-gate STILL owed.** Three
+ fixes on rung 1's Book after the owner watched it run: (1) PACING — the phase machine advances ONE EDGE
+  PER SNAP (gated on `step_n` / `w.c.acted_step`); a self-advancing machine drained the whole heist into
+   one 22s snap, or a nondeterministic 1-vs-15 spread. `expecting()`/ttlilt is the OTHER tool (hold one
+    snap for the slow census disk-walk, off the mutex) — not the pacer. (2) The %testing SPLIT — every
+     test observation now hangs under `w/%testing` (the `heisted:<nick>` node + `on_disk` monitoring,
+      census/sealed/newlyadded_shape/denied/flattened, the 10 %see); the design (Piers/Grants/Libraries/
+       %Heist) stays clean on `w`, and `Ghost/M/Heist.g` is now the PURE engine — it stamps NO test
+        markers on the world (that was the non-deterministic `heist_land_fail` bug). (3) start + END
+         sweep, files-only + snap-invisible (the repo never keeps WAV bytes; `.jamsend` gitignored). Book
+          is 30 steps now. Metadata is FILENAME-derived — the test tones carry no tags. **The full
+           what's-real map + the `<` unbuilt roadmap is now §10.2** (supersedes the "BUILD STATUS" bullet
+            below, which is pre-pacing). Live-gate owed: reload the tab (a dead FSA dir handle in
+             `WormholeNav._cache` poisons landings), CHECK -> accept -> green x2, adversarial probe.
+
 **2026-07-11 (day) — the HEIST design decided (owner Q&A): the rest of Radio+Piracy is an
  rsync job creator.** Prior art re-read on owner's pointer: `src/lib/ghost/Pirating.svelte`
   (heist req → local-dir prep BEFORE the wire → spool → resume-by-rematching) and its merge
@@ -710,3 +725,85 @@ The PROTOCOL is real — frames, seq, inseq/retransmit, sha256 `body_hash` per p
        real seq gaps (the inseq baseline bug was real networking pain). So: real protocol, tame
         wire; the WebRTC datachannel path the streaming app uses is untested by any Book. Rung 2
          above is the designated forcing function.
+
+### 10.2 The heist as built — rung 1's edge, and the `<` unbuilt (map, 2026-07-12)
+
+Rung 1 (loopback) is BUILT and live-gate-pending: `Ghost/M/Heist.g` (the pure engine) + `Ghost/Story/Heistation.g`
+ (Book **MusuHeist**). This is the honest map of where the real machine STOPS — read it as the roadmap.
+  Legend: **`<`** marks an unbuilt edge — the `// <` lack-of-development mark, carried into prose.
+
+**What's real (the built spine), walked in order:**
+
+- **Divided census off ONE shared disk.** Real files under `testsounds/` walked into `%Record` cards, each
+   with `%Body,seq` chunks holding the ORIGINAL bytes (`body_hash` = full sha256). An artist whittle (Uno:
+    The Sines + DJ Oscillo; Duo: Fourier Four) makes each Pier seem to hold different music — the dedup trap
+     dissolved. The census DISCOVERS (walks whatever's there), so it is already a rolling filesystem cursor,
+      not a fixed six.
+- **The seal.** One `Idzeug` redeem grants the pair a mutual Music grant; every wire leg is gated live by
+   `w.c.repli_allow -> Swarm_pier_live` (real Swarm crypto + handshake, so a revoke shuts the legs).
+- **Three jobs — uno, duo, reuno — paced ONE EDGE PER SNAP** (`acted_step` on `step_n`). Offer casts the
+   source catalog (klepto v1, no match); each husk is dedup-checked at the door by catalog identity, the rest
+    pulled at heist rate; a record whose every chunk arrived LANDS.
+- **Landing straight into the collection, byte-faithful.** Assemble the pulled chunks, re-hash, verify against
+   `body_hash` (a mismatch tallies `job.sc.breached` and lands nothing), `bin_write` under a genre dir, then
+    catalogue the landed card at ITS OWN path (never the source's) — which is what makes the next heist's dedup
+     notice it.
+- **Probation + deny.** `.jamsend/.../newlyadded` logs `<seq> <feeling> <entry>`, never a source; `love`
+   graduates in place, `drop` = deny = delete the file off disk + retire the card.
+- **Flatten-off.** The `%Heist` (+ its `%filing` decisions) and the quarantine mirror delete; collections +
+   `newlyadded` remain and neither says who gave what.
+- **Design/test split.** The machine is first-class on `w` (Peerings/Piers/Grants/Idzeug/Libraries/%Record/
+   %Body/%Heist/mirror); every test observation hangs under `w/%testing` (the `heisted:<nick>` node with its
+    `on_disk` monitoring, `census`/`sealed`/`newlyadded_shape`/`denied`/`flattened`, the 10 `%see`). Snap reads
+     as machine-left, opinion-right.
+- **Determinism + hygiene.** The engine stamps NO test markers on the world (a transient FSA hiccup no longer
+   leaves a permanent marker). The marrauding namespace `.jamsend/test-marrauding-of-bookrun/<nick>` is swept
+    files-only at BOTH start and end (`.jamsend` is gitignored; the repo never keeps WAV bytes; dirs persist
+     empty so the next run's FSA handle cache is not poisoned).
+- **The wire is loopback** (`Lake_link`, see §10.1): real protocol, mock carrier.
+
+**The edge — what's `<` unbuilt:**
+
+- `<` **Metadata from tags.** Artist/title/album come from the FILENAME (`Crate_meta_from_path` splits
+   `Artist - Title.ext` / `Artist/Album/NN Title`). Nothing reads a container tag, and the test tones carry
+    none. Real path: read RIFF `INFO`/ID3 where present, fall back to filename — or filename-first with tags as
+     an override.
+- `<` **A real `$artist/$album/$track` landing tree.** Landings file under `<seeded-prefix>-<genre>/`
+   (the `4t-...` you saw — a placeholder so a test can't collide with real curation). The real destination is the
+    tag/name-derived hierarchy.
+- `<` **Similarity / format-upgrade dedup.** `Heist_held` matches EXACT artist+title only. "Same track,
+   better format (to flac)" and fuzzy-title matching are ungrown; v1 skips an exact hold and re-offers the rest.
+- `<` **Single-track mode — the listening session.** play -> skip -> decide-to-download-THIS-one (no folder
+   structure), from both ends. Today it is bulk-catalog klepto (offer everything, pull everything unheld). Needs
+    a "listen" surface, not just the klepto sweep.
+- `<` **Merge into an existing tree + "you already have these."** `reuno` proves catalog dedup skips a
+   whole held catalog, but there is no merge INTO a pre-existing real directory structure, and no surfacing to
+    the user of what they already hold on a second heist from an artist.
+- `<` **The directory-listing confirmable.** A `$artist/$album/$track` listing shown as the heist BEGINS,
+   and found again as it RESUMES — the look-before-you-commit — is unbuilt.
+- `<` **Repointable mid-heist.** Change the destination hierarchy of an in-progress heist and have its
+   checksums still pass. The landing path is computed once at land time; there is no re-anchoring.
+- `<` **Stream-to-disk.** `Heist_land` assembles the whole file in memory (`Uint8Array(size)` + `set`)
+   then writes once. Streaming each `%Body` to a growing file offset as it lands drops the memory high-water AND
+    clears the `req:awaitbuf` pile-up (the "hundreds of lines of waste / 22s step").
+- `<` **Remembered-denials tombstone.** A dropped identity re-offers on a later heist — catalog dedup only
+   skips what is HELD. The `%UnGrant` negative-fact shape wants reusing.
+- `<` **The FSA reload caveat.** A dead directory handle in `WormholeNav._cache` (a `mkdirp` walking a
+   stale entry) throws `NotFoundError` on landing. Files-only sweeps stop the Book CAUSING it, but a pre-poisoned
+    tab needs a reload; the real fix is a `bin_write` self-heal (bust `_cache` + re-`mkdirp` on `NotFoundError`)
+     — core nav, unbuilt.
+- `<` **The real wire (rung 2+).** Loopback mock today; the cohort rung (§10 rung 2) is the forcing
+   function, then the cafe tree (rung 3).
+
+**Proposed roadmap** (the order I'd sort the `<` — pending your read):
+
+1. `<` **stream-to-disk** — bounded, and it pays off the awaitbuf waste + memory high-water.
+2. `<` **metadata**: filename-first + tag override, and the real `$artist/$album/$track` landing tree
+    (retires the `4t-` prefix).
+3. `<` **merge-into-existing** + "already have" surfacing + the directory-listing confirmable — these
+    three are one feature: a real library tree the heist reconciles against.
+4. `<` **single-track play/skip/decide** session.
+5. `<` **repointable** mid-heist.
+6. `<` **remembered-denials tombstone**; `<` **similarity / format-upgrade**.
+7. `<` **FSA `bin_write` self-heal** (or accept reload-per-session).
+8. **rung 2 (cohort)** — the wire's forcing function (§10 rung 2).

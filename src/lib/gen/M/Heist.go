@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '994d173b7aba4963' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'e732425e10d7e6af' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -165,9 +165,12 @@ async Heist_beat(w, rx, mine, theirs, job, own_lib, mir, nav, mardir) {
             try {
                 await this.Heist_land(w, nav, job, own_lib, mir, rec, mardir)
             } catch (er) {
-                // a land that throws would silently re-fire every pass (the record never drops) —
-                //  stamp WHY once so the snap reads the fault instead of a stuck quarantine.
-                if (!w.oa({ heist_land_fail: 1 })) w.i({ heist_land_fail: 1, why: ('' + (er && er.message || er)).slice(0, 80) })
+                // a land throw (e.g. a transient FSA NotFound off a stale dir handle) leaves the record
+                //  in the mirror so the NEXT beat retries — the engine stamps NOTHING on the world tree.
+                //   A permanent w-marker on a transient hiccup was the non-deterministic-fixture bug; the
+                //    reason parks on the job's .c for a live inspect, and a genuinely dead handle surfaces
+                //     honestly as husks that never drain (the Book reads it as a stuck quarantine).
+                job.c.last_land_why = '' + (er && er.message || er)
             }
         }
     }
@@ -191,8 +194,10 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
     while (s < total) { bytes.set(map[s], at); at = at + map[s].length; s = s + 1 }
     let hash = await this.Heist_hash(bytes)
     if (hash !== rec.sc.body_hash) {
+        // a byte-mismatch: the job tallies its OWN breach (design state on the %Heist); the record stays
+        //  in the mirror.  The Book reads job.sc.breached into its %testing observation — the engine never
+        //   stamps the world tree, so design stays clean of test opinion.
         job.sc.breached = +(job.sc.breached || 0) + 1
-        w.i({ heist_breach: 1, id: rec.sc.id })
         return
     }
     let genre = this.Heist_filing_for(job, rec.sc.artist)

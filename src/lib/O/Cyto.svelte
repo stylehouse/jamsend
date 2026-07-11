@@ -1388,17 +1388,38 @@
         if (client && w.c.wants_wave_done) {
             this.i_elvistwo(w, client, 'Cyto_wave_done', { story_step })
         }
-        // Animation plays for grawave_duration, then a real dwell before the client
-        //  advances (waitVoro): the layout leg is only the first act — the voronoi
-        //   morph (and the eye) want an unrushed beat on every step, so a watched
-        //    run reads as a story, not a flipbook.  The dwell is the pace knob.
-        const dur = ((w.sc.grawave_duration as number) ?? 0.3) * 1000
+        // F2 — advance on the render's REAL settle, floored at the dwell, not a blind timer.
+        //  The layout leg is only the first act: the voronoi morph, a flood's 2nd relayout and
+        //   the overlay reveal each run on their OWN clock, and the old fixed `grawave + dwell`
+        //    could fire animation_done mid-morph — the Run shoved the next wave in while panes
+        //     were still Stuffing-first (the end-of-morph blink; "step 3 shows Stuffings before
+        //      vtuffings + takes extra time").  Cytui now stamps top_House.c.cy_settled=step_n
+        //       when the render truly lands (mark_settled: morph done, no flood owed, not mid
+        //        diag-cure); we wait for THAT, but:
+        //   - FLOOR at the dwell (waitVoro): a calm step that settles fast still gets its
+        //      unrushed beat, so a watched run reads as a story, not a flipbook — the dwell
+        //       stays the pace knob, just as a floor now, not the gate.
+        //   - hard CEILING: if the render never stamps (a bug, or no wave was pushed), advance
+        //      anyway — a stuck render can never wedge the Run.
+        //  cy_settled is live .c (never snapped, metaphysics #2), so fixtures don't move.
+        const dur      = ((w.sc.grawave_duration as number) ?? 0.3) * 1000
         const DWELL_MS = 750
-        setTimeout(() => {
-            if (client && w.c.wants_animation_done) {
-                this.i_elvistwo(w, client, 'Cyto_animation_done', { story_step })
+        const FLOOR_MS = dur + DWELL_MS
+        const CEIL_MS  = dur + DWELL_MS + 3000
+        const want     = Number(story_step)
+        const t0       = performance.now()
+        const fire_when_settled = () => {
+            const settled = ((this as House).top_House().c as any).cy_settled === want
+            const elapsed = performance.now() - t0
+            if ((settled && elapsed >= FLOOR_MS) || elapsed >= CEIL_MS) {
+                if (client && w.c.wants_animation_done) {
+                    this.i_elvistwo(w, client, 'Cyto_animation_done', { story_step })
+                }
+                return
             }
-        }, dur + DWELL_MS + 100)
+            setTimeout(fire_when_settled, 40)
+        }
+        setTimeout(fire_when_settled, 40)
     }
 
 //#endregion

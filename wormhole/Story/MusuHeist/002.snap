@@ -5,7 +5,10 @@ Snap:H
       w:MusuHeist
         self,round=7	{"mung":["age"]}
         req:wrangle,eternal,ok
-        reached:step_2
+        testing
+          reached:step_2
+          censused,uno=6,duo=2
+          see:two collections stand divided on one shared disk — each Pier holds only its own artists as whole original bytes
         Account,of:Uno
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
@@ -106,5 +109,3 @@ Snap:H
             Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
         req:heist_census,finished
         req:witness,eternal,ok
-        censused,uno=6,duo=2
-        see:two collections stand divided on one shared disk — each Pier holds only its own artists as whole original bytes

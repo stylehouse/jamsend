@@ -1,30 +1,46 @@
 Snap:H
   H:MusuHeist,Run
     A:MusuHeist
-      self,round=27	{"mung":["age"]}
+      self,round=30	{"mung":["age"]}
       w:MusuHeist
-        self,round=27	{"mung":["age"]}
+        self,round=30	{"mung":["age"]}
         req:wrangle,eternal,ok
-        reached:step_2
+        testing
+          reached:step_2
+          censused,uno=6,duo=2
+          see:two collections stand divided on one shared disk — each Pier holds only its own artists as whole original bytes
+          reached:seal
+          sealed
+          reached:job_uno
+          see:the pair sealed over the wire — a mutual Music grant gates the heist both ways
+          see:a heist job stands pointed at the pier — its filing decisions pinned before any byte crossed
+          offered:uno,n=2
+          heisted:uno,landed=2,faithful=2
+            on_disk:4t-mathrock/Fourier Four - Echo E.wav,bytes=960044
+            on_disk:4t-mathrock/Fourier Four - Query E.wav,bytes=1088044
+          reached:job_duo
+          see:the heist landed straight into the collection — every file byte-faithful to its source hash on the disk
+          see:the landing filed by category — each track under the genre its filing named
+          offered:duo,n=8
         Account,of:Uno
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
               Idzeug:heist_1,to:Music,genre:Heist,spent
-              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783777896
+              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783779475
                 Peering,name:be0dab3303037ad2,friendly:Duo,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783777896,sign:d152c2a12731ae8fbdac8f61b122e2f19167cd2228ac1a2869a29febaf48d98f63fe58688700d5f2a70645af574f0b93e44bdf83fae6b22b4ba40042f5ec900b,genre:Heist
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783777896,sign:15d658d8417791c5c51664c03cdcb5a95e4aa68502c5d7b11881d8351458cf27bb7f43ef6f313e07e2b2bbbeca96af7829ffd32db5ab7207651ff8b04089e60e,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783779475,sign:7a9dacb9517af46e82b1b39aacf579740cd0b6c419947fc37d1586b74a5c990d7f133e931eb21e19b4f70f8fda385dfde49cf512f22d96a8ba649eb0e72f4b02,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783779475,sign:47c9eead54ee83edddd99a79ebe230f73f409129f10303bd268b1ab7583a0fda4e15c49a029aacad6f31711f6d9e4ba8be9acf5052e1be6424579058b595a00a,genre:Heist
             SocialGraph
-              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1783777896
+              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1783779475
         Account,of:Duo
           Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
             Peering,name:be0dab3303037ad2,friendly:Duo
-              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783777896
+              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783779475
                 Peering,name:4e09f34f5a6ab900,friendly:Uno,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783777896,sign:15d658d8417791c5c51664c03cdcb5a95e4aa68502c5d7b11881d8351458cf27bb7f43ef6f313e07e2b2bbbeca96af7829ffd32db5ab7207651ff8b04089e60e,genre:Heist
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783777896,sign:d152c2a12731ae8fbdac8f61b122e2f19167cd2228ac1a2869a29febaf48d98f63fe58688700d5f2a70645af574f0b93e44bdf83fae6b22b4ba40042f5ec900b,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783779475,sign:47c9eead54ee83edddd99a79ebe230f73f409129f10303bd268b1ab7583a0fda4e15c49a029aacad6f31711f6d9e4ba8be9acf5052e1be6424579058b595a00a,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783779475,sign:7a9dacb9517af46e82b1b39aacf579740cd0b6c419947fc37d1586b74a5c990d7f133e931eb21e19b4f70f8fda385dfde49cf512f22d96a8ba649eb0e72f4b02,genre:Heist
             SocialGraph
-              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1783777896
+              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1783779475
         Peering,name:4e09f34f5a6ab900,req=2,ok
           Pier,pub:be0dab3303037ad2,req=2,ok
             req:handshake,finished
@@ -49,6 +65,14 @@ Snap:H
                 emit=6,type:repli_want,seq=6
                 emit=7,type:repli_want,seq=7
                 emit=8,type:repli_want,seq=8
+              emit=9,type:repli_lines,seq=9,sent,body_hash:21d3d4f968f2ad4f66e4f7cccd9c1e78b8c1190f407bd58343c60a46b1938986,body_len=219,acked
+              emit=10,type:repli_lines,seq=10,sent,body_hash:116bda404b8a6bc2ddeae1a872fdc4a6b63ed3bad4c6bbbe96202ea9a59fe613,body_len=219,acked
+              emit=11,type:repli_lines,seq=11,sent,body_hash:f7b5e94db5dbc13365ad465958d7f34aeaf41d666d16bbd40413b30fcb2fa212,body_len=219,acked
+              emit=12,type:repli_lines,seq=12,sent,body_hash:395b2a18561701e3668793a2594b51226a43dfdedf42c9ad2c884be8d5cb632e,body_len=213,acked
+              emit=13,type:repli_lines,seq=13,sent,body_hash:bf4b4b7182fea47b7f4d87180e704d4468fca39818016ee7e94aa6e64d382881,body_len=213,acked
+              emit=14,type:repli_lines,seq=14,sent,body_hash:775b67f960019515a5e47b352cbe59594b6d692dec5b90be6971ef62c45931ba,body_len=217,acked
+              emit=15,type:repli_lines,seq=15,sent,body_hash:ed68140c0f054b84872882248d396d9e0adbe632b86960744ac59918c113a424,body_len=222,acked
+              emit=16,type:repli_lines,seq=16,sent,body_hash:d277f1e8da1b0a90ee4a9638d57be3367ae26fb8af76379b54e16d3bc07c5a97,body_len=225,acked
             inbox
               recent
                 unemit,type:hello,seq
@@ -126,6 +150,14 @@ Snap:H
                 unemit=6,type:repli_want,seq=6
                 unemit=7,type:repli_want,seq=7
                 unemit=8,type:repli_want,seq=8
+              req:unemit,seq=9,type:repli_lines,body_hash:21d3d4f968f2ad4f66e4f7cccd9c1e78b8c1190f407bd58343c60a46b1938986,body_len=219,done,to:repli_lines,finished
+              req:unemit,seq=10,type:repli_lines,body_hash:116bda404b8a6bc2ddeae1a872fdc4a6b63ed3bad4c6bbbe96202ea9a59fe613,body_len=219,done,to:repli_lines,finished
+              req:unemit,seq=11,type:repli_lines,body_hash:f7b5e94db5dbc13365ad465958d7f34aeaf41d666d16bbd40413b30fcb2fa212,body_len=219,done,to:repli_lines,finished
+              req:unemit,seq=12,type:repli_lines,body_hash:395b2a18561701e3668793a2594b51226a43dfdedf42c9ad2c884be8d5cb632e,body_len=213,done,to:repli_lines,finished
+              req:unemit,seq=13,type:repli_lines,body_hash:bf4b4b7182fea47b7f4d87180e704d4468fca39818016ee7e94aa6e64d382881,body_len=213,done,to:repli_lines,finished
+              req:unemit,seq=14,type:repli_lines,body_hash:775b67f960019515a5e47b352cbe59594b6d692dec5b90be6971ef62c45931ba,body_len=217,done,to:repli_lines,finished
+              req:unemit,seq=15,type:repli_lines,body_hash:ed68140c0f054b84872882248d396d9e0adbe632b86960744ac59918c113a424,body_len=222,done,to:repli_lines,finished
+              req:unemit,seq=16,type:repli_lines,body_hash:d277f1e8da1b0a90ee4a9638d57be3367ae26fb8af76379b54e16d3bc07c5a97,body_len=225,done,to:repli_lines,finished
             Ud,pubkey:4e09f34f5a6ab900
           active_transport,type:mock,open
         Library,pier:4e09f34f5a6ab900
@@ -164,6 +196,8 @@ Snap:H
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
+          Record,id:f60c57424cac2e10,title:Echo E,artist:Fourier Four,path:4t-mathrock/Fourier Four - Echo E.wav,ext:wav,bytes=960044,body_hash:f60c57424cac2e10046b99ea9708fbf9271c97aab0b75790ee82a7508f0c7d7a
+          Record,id:890df9ef629ed87b,title:Query E,artist:Fourier Four,path:4t-mathrock/Fourier Four - Query E.wav,ext:wav,bytes=1088044,body_hash:890df9ef629ed87bff51e2a21ad321aa9945ea3a7a8619bffebf2a6c704f38f1
         Library,pier:be0dab3303037ad2
           Record,id:f60c57424cac2e10,title:Echo E,artist:Fourier Four,path:Fourier Four - Echo E.wav,ext:wav,bytes=960044,body_hash:f60c57424cac2e10046b99ea9708fbf9271c97aab0b75790ee82a7508f0c7d7a,total=4
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
@@ -178,26 +212,16 @@ Snap:H
             Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
         req:heist_census,finished
         req:witness,eternal,ok
-        censused,uno=6,duo=2
-        reached:seal
-        sealed
-        reached:job_uno
-        Heist,at:be0dab3303037ad2,disbelieve_directories
-          filing,artist:Fourier Four,genre:4t-mathrock
-        offered:uno,n=2
         Library,pier:4e09f34f5a6ab900.heist
-          Record,id:f60c57424cac2e10,title:Echo E,artist:Fourier Four,path:Fourier Four - Echo E.wav,ext:wav,bytes=960044,body_hash:f60c57424cac2e10046b99ea9708fbf9271c97aab0b75790ee82a7508f0c7d7a,total=4
-            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:890df9ef629ed87b,title:Query E,artist:Fourier Four,path:Fourier Four - Query E.wav,ext:wav,bytes=1088044,body_hash:890df9ef629ed87bff51e2a21ad321aa9945ea3a7a8619bffebf2a6c704f38f1,total=5
-            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
-        heist_land_fail,why:A requested file or directory could not be found at the time an operation was pr
-        see:two collections stand divided on one shared disk — each Pier holds only its own artists as whole original bytes
-        see:the pair sealed over the wire — a mutual Music grant gates the heist both ways
-        see:a heist job stands pointed at the pier — its filing decisions pinned before any byte crossed
+        Heist,at:4e09f34f5a6ab900,disbelieve_directories
+          filing,artist:The Sines,genre:4t-chillwave
+          filing,artist:DJ Oscillo,genre:4t-bangers
+        Library,pier:be0dab3303037ad2.heist
+          Record,id:af99e3b3efe5661a,title:Cosmic C,artist:DJ Oscillo,path:DJ Oscillo - Cosmic C.wav,ext:wav,bytes=1248044,body_hash:af99e3b3efe5661ab2b32ceb82ce5fa90c42ed1d32613fdc4bcd73827abfa8b9,total=5
+          Record,id:cec642f34f501315,title:Dorian D,artist:DJ Oscillo,path:DJ Oscillo - Dorian D.wav,ext:wav,bytes=1216044,body_hash:cec642f34f50131579e3e195c6a90ebedbb737f4adbee847ae80eee804b041ca,total=5
+          Record,id:8e6fc6abdf3a262c,title:Groove G,artist:DJ Oscillo,path:DJ Oscillo - Groove G.wav,ext:wav,bytes=1056044,body_hash:8e6fc6abdf3a262c09097dd3559a8aa3d3f337959548deeba8d636ef86f4966d,total=5
+          Record,id:d2db2a78bd02c395,title:Deep A,artist:The Sines,path:The Sines - Deep A.wav,ext:wav,bytes=1152044,body_hash:d2db2a78bd02c395eafbc2c82ca4a04863888c72829838b8f26cc1c97747d023,total=5
+          Record,id:d9ce0459eaa4514c,title:High A,artist:The Sines,path:The Sines - High A.wav,ext:wav,bytes=1280044,body_hash:d9ce0459eaa4514c1d46524c711235f97c8a52192c7b6d1bb314b491eefb3d9a,total=5
+          Record,id:6d85855a70adc5c2,title:Middle A,artist:The Sines,path:The Sines - Middle A.wav,ext:wav,bytes=1024044,body_hash:6d85855a70adc5c28445522dc6976935d8a3a90234c52d3b4f28a54c3ab7a4ee,total=4
+          Record,id:f60c57424cac2e10,title:Echo E,artist:Fourier Four,path:4t-mathrock/Fourier Four - Echo E.wav,ext:wav,bytes=960044,body_hash:f60c57424cac2e10046b99ea9708fbf9271c97aab0b75790ee82a7508f0c7d7a
+          Record,id:890df9ef629ed87b,title:Query E,artist:Fourier Four,path:4t-mathrock/Fourier Four - Query E.wav,ext:wav,bytes=1088044,body_hash:890df9ef629ed87bff51e2a21ad321aa9945ea3a7a8619bffebf2a6c704f38f1

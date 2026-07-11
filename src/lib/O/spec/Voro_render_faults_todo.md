@@ -27,6 +27,21 @@ Every claim is tagged **[V]** = I read the code and verified, or **[S]** = suspe
 
 **Fix order (highest leverage first):** F1 (the render-gate race — one fix likely also cures F4 and the
  VoroScape "behind glass") → F3 (rebuild-all flashing) → F2 (settle timing).  See each below.
+ **F1, F6, F2 are BUILT.  F3 was REDIAGNOSED (2026-07-12): it is NOT a paint_final bug** (the template is
+  already id-keyed) **but the same identity-churn root as the new F8 (cells vanish/re-pop because `cyto_id`
+   isn't linear across steps) — owned by the identity/`resolve` thread, not this catalog.**  F4/F7 ride
+    F1's gate + F7's cure and are eyes-on-confirmable.  So: no independent render build is left standing —
+     the remaining visible fault (vanish + re-pop) is upstream, in identity linearity.
+
+**STATUS 2026-07-12 — F2 landed: the Run advances on the real settle now, not a blind timer.**
+ The render tail finally feeds the pacing.  Cytui stamps `top_House.c.cy_settled = step_n` at the true
+  morph-rest (guarded by no-flood-owed + not-mid-diag-cure), and `e_Cyto_animation_request` waits for it
+   floored at the dwell, hard-ceiling'd.  `--why` proves it live: `landed step:N` before every next
+    `wave`.  VoroMitosis 11/11 c10 ×3 + VoroScape 6/6 c0, fixtures unmoved (`.c`, not a `%key`).  The
+     *blink-is-gone* verdict stays eyes-on (metaphysics #2).  **Next is NOT a render build** — chasing F3
+      down showed the remaining visible fault (cells vanish + re-pop mid-animation) is **F8: `cyto_id`
+       churn / identity non-linearity**, upstream in `resolve`, handled in another thread.  When that
+        lands, re-verify vanish+re-pop are gone; only THEN weigh a distinct arrival animation.
 
 **STATUS 2026-07-11 — ROOT-A closed at the true root; a rollback ate two instruments.**
 - **F6 + the flooding-step lag FIXED — crush now runs BEFORE the scan.**  The mechanism, finally
@@ -174,7 +189,31 @@ So the render telemetry isn't a nicety; it's the flashlight for the half that ca
    `would_seed:N` (chunks the render WOULD cell); a Book asserts N≥2 for a data Book, and if the render
     then shows 0 cells, the fault is localised to the gate.
 
-### F2 — the Run advances on a fixed timer, not the render's real settle  *(timing — HAND-OFF READY 2026-07-12)*
+### F2 — the Run advances on a fixed timer, not the render's real settle  *(timing — BUILT + live-verified 2026-07-12)*
+
+**BUILT 2026-07-12 — the Run now advances on the render's REAL settle, floored at the dwell.**  The
+ seam was exactly as diagnosed below.  What landed:
+- **Cytui stamps `top_House.c.cy_settled = wave.sc.step_n`** the moment the render for that step is truly
+   at rest — a new `mark_settled()` called from every morph-rest point (`morph_voronoi`'s three exits +
+    the non-voronoi `show_overlays_soon` reveal + the diag heal).  It gates on *morph done AND no flood
+     2nd-pass owed (`flood_pending`, set when the flood queues its 2nd relayout, cleared on that
+      relayout's layoutstop) AND `diag_streak===0` (not mid diagonal-satan cure)* — the exact "I've
+       landed" condition below.  Keyed off `step_n` (already on every wave, Cyto.svelte:245), so a stamp
+        means "the render for *this* step landed."  Live `.c`, never snapped (metaphysics #2).
+- **`e_Cyto_animation_request` (Cyto.svelte) awaits that stamp** instead of the bare `grawave+dwell`
+   timer: `max(real-settle, dwell)` with a hard **ceiling** (`dur+DWELL+3000`) so a render that never
+    stamps can't wedge the Run.  The dwell stays as a FLOOR — a calm step keeps its unrushed beat.
+- **Live-verified** (per §0 laws, never headless): the `--why` film strip now shows a `landed step:N`
+   event that lands BEFORE the next `wave` on every step (the win the diagnosis predicted — wave→landed
+    ≈1.2s, then advance; no more advancing mid-morph).  VoroMitosis 11/11 c10 ×3 + VoroScape 6/6 c0,
+     robustly green across re-runs (the timing-fix gate).  **Fixtures did NOT move**: zero VoroMitosis
+      `NNN.snap` changes, toc diff = TimeSpool wobble only (`cy_settled` is `.c`, never a `%key`).
+- **Still eyes-on-owed** (metaphysics #2 — a still can't see motion): the *blink is gone* judgement.  The
+   strip proves the Run waits for the landing; only a human watching confirms the pane no longer shows
+    Stuffing-first.  F3 (the paint_final `vsubs` wholesale rebuild) is the remaining half of the blink —
+     unbuilt; see below.
+
+--- *(the original diagnosis, kept — it's the map if F2 ever regresses)* ---
 
 A self-contained slice for a fresh agent.  Diagnosed to the exact seam this turn; the crush already
  obeys the runtime, the render tail does not.
@@ -217,16 +256,53 @@ A self-contained slice for a fresh agent.  Diagnosed to the exact seam this turn
 - **Auto-checkable?** No (pixels/timing) — eyes-on; the `--why` film strip confirms the win: the last
    morph/settle event's `dt` should land BEFORE the next wave, not after `animation_done`.
 
-### F3 — cells flash / re-pop when nothing changed; can't tell a NEW node arriving  *(ROOT-B)*
+### F3 — cells flash / re-pop when nothing changed; can't tell a NEW node arriving  *(REDIAGNOSED 2026-07-12 → F8, the identity root)*
 - **Owner:** "everything acts like it's changing (cells flash like they're popping into existence when
    they're just sitting there)… hard to tell that a new track is coming in."
-- **Chain [S]:** `paint_final()` rebuilds `vcells[]`/`vmicro[]` wholesale each call; no per-cell content
-   diff, so every cell re-mounts/re-animates.  A genuinely-new arrival is drowned in the universal
-    re-pop.
-- **Fix:** diff cells; animate ONLY changed/new ones (and make "new" legibly distinct — a distinct
-   arrival animation vs the settle jitter).  This directly serves the owner's "dribble in from a Pier"
-    vision — a new track should visibly *arrive*, not be lost in noise.
-- **Auto-checkable?** No (pixels) — eyes-on.
+- **The [S] chain was WRONG — verified 2026-07-12.**  ROOT-B blamed `paint_final()`'s wholesale
+   `vcells[]` rebuild ("no content diff → every cell re-mounts").  But the template is **already keyed by
+    id** (`{#each vcells as cell (cell.id)}` Cytui:3083; same for vtips/vfams/vsubs) — Svelte reconciles
+     by key, so a cell whose id PERSISTS is updated in place, never re-mounted, no matter how many fresh
+      arrays `paint_final` assigns.  A `paint_final` content-diff would therefore fix **nothing**.  This
+       is a §0.1 illusion caught in the act: a confident render-layer report on a defect that lives a
+        layer up.
+- **The real chain [V]:** the "pop" is `morph_voronoi` **birthing** — a cell whose `cyto_id` is NOT in
+   `shown_pts` grows from its seed point (Cytui:2393-2396 BIRTH branch); one already there MORPHS from its
+    prior shape.  So a cell re-pops **iff its id changed** — i.e. the SAME identity churn as the vanish
+     (F8).  When `resolve` can't link a particle to its prior `cyto_id`, it dies under the old id (vanish)
+      AND births under the new (re-pop): one root, two symptoms.
+- **Fix:** NOT here — it's **F8 / the identity thread**.  Once `cyto_id` is linear across steps, a
+   persisting cell keeps its key → morphs smoothly → the re-pop dissolves with the vanish.  DON'T build a
+    `paint_final` diff (a non-fix that would collide with the identity work).  Re-assess any residual
+     re-pop only AFTER F8 lands; only THEN is "make a genuinely-new arrival legibly distinct" (the
+      dribble-in-from-a-Pier vision) a real, separable render task.
+- **Auto-checkable?** The id-stability IS snappable off the archive (does a persisting particle keep its
+   `cyto_id` step-to-step?) — that's the F8 gate, model-side.  The pixels stay eyes-on.
+
+### F8 — cells VANISH mid-animation: the same entity dies + re-borns instead of morphing  *(identity linearity — ANOTHER THREAD 2026-07-12)*
+- **The human (2026-07-12):** the vanishing problem "is exactly when cells are doing their vanishing
+   animation… which doesn't really account properly for identity linearity or reidentity or
+    `TheC.resolve()` — we're working on that in another thread."
+- **Chain [V for the render seam, the root is upstream]:** `morph_voronoi` decides death purely on id
+   presence — "a shown cell with no target shrinks to its own middle" (Cytui:2390-2396).  A cell's key is
+    its `cyto_id = Dip_assign('cytoid', D)` (Cyto.svelte:961); Dip_assign **allocates a FRESH identity**
+     when a particle's `D%*` trace is "ambiguous to `Stuff.resolve()`" (Cyto.svelte:438-439, in-code
+      note).  So a persisting entity whose trace doesn't resolve back gets a new `cyto_id` each scan →
+       old id has no target (DEATH/vanish) + new id has no `shown_pts` prev (BIRTH/re-pop = F3).
+- **Why the render can't fix it:** the morph has no way to know a "death" is really a re-id — that
+   linkage IS `resolve`/identity-linearity, upstream of Cyto.  A render-side heuristic (e.g. only vanish
+    when the cyto NODE was actually removed, not merely re-keyed) is a palliative; the true fix is linear
+     identity so the id never churns.  **Owned by the identity/resolve thread — not this catalog.**
+- **The fix's home (the identity thread):** designed in `Voro_vtuffing.md §🎋 "Se — the grasp"` — a
+   persistent fold-sphere resolved beat-to-beat, anchored to a durable source identity (container +
+    family, not the volatile rep), living in `w:Voronoiology` (snapped, so `cyto_id` linearity is
+     gate-able there).  The census storm in that doc is the SAME root, downstream in the snap instead of
+      the render; the crush re-deriving its folds from scratch each beat is *why* resolve goes ambiguous.
+- **F2 is orthogonal:** F2 fixed *when the Run advances* (it now waits for the morph — including the
+   death tween — to land); it does not and cannot stop a spurious death from being queued.
+- **Auto-checkable? YES, model-side:** assert `cyto_id` stability across a step for a particle known to
+   persist (readable off the CytoStep archive, no pixels).  That invariant is the F8 gate; the smooth-
+    morph *look* stays eyes-on.
 
 ### F4 — seeking backward → ⅔ Stuffings; seeking forward → breaks cells, all Stuffing  *(ROOT-A)*
 - **Owner:** "seeking backwards produces 2/3rds Stuffings, seeking forwards breaks cell rendering and
@@ -311,8 +387,10 @@ A self-contained slice for a fresh agent.  Diagnosed to the exact seam this turn
 - [ ] a data Book's folds each show a cell, not behind-glass (F6) — 📸 count panes vs the snap's `cells:N`
 - [ ] no diagonal satan, or cured (F7) — 📸 `♒` tally on the shot line + the png isn't a line
 - [ ] seeking ←/→ keeps the cell/Stuffing classification stable (F4) — 📸 shot at n, n-1, n again
-- [ ] auto play-through settles between beats like manual seeking does (F2) — 👁 eyes-on
-- [ ] an unchanged cell does NOT re-pop each beat; a NEW track visibly arrives (F3) — 👁 eyes-on
+- [~] auto play-through settles between beats like manual seeking does (F2) — 📊 `--why` PROVES the Run
+   waits for `landed step:N` before the next `wave` (built 2026-07-12); 👁 the unrushed *feel* stays eyes-on
+- [ ] an unchanged cell does NOT re-pop or vanish each beat; a NEW track visibly arrives (F3=F8, identity
+   linearity) — 📊 assert `cyto_id` stable across a step (model-side, off the archive) + 👁 the smooth morph
 
 ## Anchors touched while diagnosing (verify if drifted)
 `Cytui.svelte`: `voronoi_layout` 1416-1442 · `voronoi_on`/`saw_stuffy` 734 · `toggle_voronoi` 1337-1356 ·
