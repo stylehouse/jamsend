@@ -623,15 +623,16 @@ When the app needs to act on the **host** — restart a crashed Chrome profile, 
    handle is the **fragile** thing (3.4): it lives in browser memory, **dies on every Chrome restart**,
     and **needs a human to re-grant** — fine where a human sits (the editor), fatal for a daemonised runner.
 
-**The split to build (robustly, and tested):** abstract Wormhole's filesystem IO behind two backends,
- chosen by role:
+**The split (BUILT 2026-07-01 — see "BUILT" below; this is the design rationale, kept, not a to-do):**
+ abstract Wormhole's filesystem IO behind backends, chosen by role:
 - **FSA backend** — the directory handle, **banished to user-facing Chromes only** (where `Lies%editor`
-   runs and a human can click *Allow*). Interactive, fragile, human-present.
-- **Network backend** — a **repository-IO service on the remote host** (an "ftp server" loosely — but a
-   browser can't open a raw FTP socket, so in practice WebDAV / SFTP-behind-a-proxy / a bespoke ws|http
-    file service: the `gen_write`/`ghost_update` disk-write precedent generalised to *full* repo IO). The
-     daemonised runner uses this: **no in-browser handle, survives restart, no human**. This is the
-      robust path the flock needs.
+   runs and a human can click *Allow*). Interactive, fragile, human-present. **Built.**
+- **Network backend** — repo IO served **over the relay by the editor** (`method:remoteWormhole`, the
+   `gen_write`/`ghost_update` disk-write precedent generalised to *full* grant-gated repo IO). The
+    daemonised runner uses this: **no in-browser handle, survives restart, no human at the runner**. This
+     is the robust path the flock needs, and it is **built** (the editor-proxy variant — a granted runner
+      reads/writes *through* the editor). The one piece still **owed** is the *editor-less* standalone host
+       file service (§below, "the editor-less robustness upgrade") — for a flock with no editor present.
 
 **All runners open the repo at Wormhole's `/`** — one shared root — so the filesystem no longer
  distinguishes one runner from another (in a local-disk world the *opened directory* was itself the

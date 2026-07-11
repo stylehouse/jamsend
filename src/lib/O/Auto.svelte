@@ -57,6 +57,7 @@
     import { Idento }       from "$lib/Y.svelte"
     import { prepubOf }     from "$lib/p2p/cluster_trust"
     import { cluster_name } from "$lib/cluster_name"
+    import { SoundSystem }  from "$lib/p2p/ftp/Audio.svelte"
 
     const DEFAULT_BOOKS = ['LeafJuggle', 'LeafFarm', 'StuffFlipping', 'LakeSurfer']
     const HEAD = 'Present'
@@ -259,6 +260,84 @@
 
 //#endregion
 
+//#region keep-awake — the tab-liveness AC (both roles)
+    // The whole "relay went quiet" failure class is a BACKGROUNDED tab the browser throttles/discards:
+    //  its JS event loop slows to ~1/min, so the app-level ping/advertise stops getting DONE while the
+    //   low-level ws ping/pong keeps ponging — the socket looks alive, the app is asleep (the half-open
+    //    relay).  The cure is to flag the tab "playing media" (SoundSystem.keep_awake's silent gain-0
+    //     osc), which Chrome exempts from BOTH throttle and discard.  This used to be runner-only, but the
+    //      EDITOR is a background tab too whenever a human drives from the CLI — so it wants it just as much.
+    //   The fragile link is the AC GRANT: keep_awake can only pin onto an already-resumed context, and a
+    //    context only resumes inside a user gesture.  A booted runner nobody "taps to unmute" never gets
+    //     one.  So we tumble the AC into being on ANY page interaction, and drop a self-clearing "keep
+    //      awake" action on Mundo whose disappearance is the proof the AC landed.
+
+    keep_awake_gat(this: House) {
+        const top = this.top_House()
+        let gat = (top.c as any).musu_gat
+        if (!gat && typeof AudioContext !== 'undefined') { gat = new SoundSystem({}); (top.c as any).musu_gat = gat }
+        return gat
+    },
+
+    // keep_awake_acquire — called from a user gesture (the Mundo button, or any-interaction tumble).
+    //  Resume/create the AC (only possible inside a gesture), then pin the silent keep-awake source and
+    //   nudge the runner re-advertise.  Safe to call cold (no-op until a gesture actually unlocks it).
+    async keep_awake_acquire(this: House) {
+        const H = this
+        const gat = (H as any).keep_awake_gat()
+        if (!gat) return
+        try {
+            if (!gat.AC) await gat.init()             // create + resume (needs the gesture we're inside)
+            else if (!gat.AC_ready) await gat.AC_OK() // resume an existing suspended context
+        } catch (e) { console.warn('keep_awake acquire failed', e) }
+        if (gat.AC_ready) {
+            gat.keep_awake()
+            ;(H as any).Lies_ac_nudge?.()             // runner: re-advertise ac:1 THIS beat
+            // We're in the gesture handler, OFF-tick — drop the Mundo button HERE and shoot a feebly_ponder
+            //  at the top House so it vanishes at once, not on the next Auto tick (reactivity_docs: a tree
+            //   change served outside a think needs a wake to flush the render; .c edits never move vers).
+            if (H.c.keep_awake_shown) {
+                await H.oai_enroll(H, { watched: 'actions' }).rm({ action: 1, role: 'keep_awake' })
+                H.c.keep_awake_shown = false
+            }
+            ;(H as any).feebly_ponder?.()
+        }
+    },
+
+    // keep_awake_tick — run every Auto tick (all roles).  Installs the any-interaction unlock once, keeps
+    //  the silent source pinned once the AC is live, and toggles the Mundo "keep awake" button so its
+    //   presence == "AC not yet acquired" and its disappearance == "tab is now kept awake".
+    async keep_awake_tick(this: House, w: TheC) {
+        const H = this
+        const gat = (H as any).keep_awake_gat()
+
+        // any-interaction unlock: a click/key/touch ANYWHERE tumbles the AC into being, so a runner nobody
+        //  explicitly "taps to unmute" still warms.  Installed once per tab; self-removes once acquired.
+        if (!H.c.ac_hooked && typeof window !== 'undefined' && window.addEventListener) {
+            H.c.ac_hooked = true
+            const EVTS = ['pointerdown', 'keydown', 'touchstart']
+            const tumble = async () => {
+                await (H as any).keep_awake_acquire()
+                if ((H as any).keep_awake_gat()?.AC_ready)
+                    for (const ev of EVTS) window.removeEventListener(ev, tumble)
+            }
+            for (const ev of EVTS) window.addEventListener(ev, tumble, { passive: true })
+        }
+
+        const wa = H.oai_enroll(H, { watched: 'actions' })
+        if (gat?.AC_ready) {
+            gat.keep_awake()                          // idempotent — re-attaches if an HMR/close tore it down
+            if (H.c.keep_awake_shown) { await wa.rm({ action: 1, role: 'keep_awake' }); H.c.keep_awake_shown = false }
+        } else if (!H.c.keep_awake_shown) {
+            wa.oai({ action: 1, role: 'keep_awake' }, {
+                label: 'keep awake', icon: '☕', cls: 'start',
+                fn: () => (H as any).keep_awake_acquire(),
+            })
+            H.c.keep_awake_shown = true
+        }
+    },
+//#endregion
+
 //#region w:Auto
     async Auto(A: TheC, w: TheC, e?: TheC) {
         const H = this as House
@@ -309,19 +388,12 @@
             console.log('🧪 Creduler up — runner Lies outside Story')
         }
 
-        // ── audio keep-awake ──────────────────────────────────────────────────
-        //   A backgrounded runner tab the browser puts to sleep stops answering the relay — the "runner
-        //    went quiet" failure class.  Once this runner HOLDS a granted AudioContext (needAC secured its
-        //     voice, or any AC_ready), pin a silent keep-awake source (SoundSystem.keep_awake) so the
-        //      browser flags the tab "playing media" and spares it the freeze/discard.  Idempotent (the
-        //       gat guards a second osc), so it is fine to (re-)assert every tick — it also re-attaches if
-        //        an HMR/close tore the node down.  We only ATTACH to an already-granted context; we never
-        //         force one (no gesture here → the AC-grant flow is untouched).  Editor / library tabs
-        //          never need it — only a booted runner must stay warm in the background.
-        if (H.c.boot_role === 'runner') {
-            const gat = (H.top_House().c as any).musu_gat
-            if (gat?.AC_ready) gat.keep_awake?.()
-        }
+        // ── audio keep-awake (both roles) ─────────────────────────────────────
+        //   Keep the tab flagged "playing media" so the browser spares it the background throttle/discard
+        //    that wedges the relay (the "went quiet" failure class).  Was runner-only; the editor is a
+        //     background tab too when a human drives from the CLI, so it runs for every page now.  Manages
+        //      the any-interaction AC unlock + the self-clearing Mundo "keep awake" button.  (§keep-awake)
+        await (H as any).keep_awake_tick(w)
 
         // ?I=<tag> cluster identity — stand up the Clustation Identity layer on the top House: the
         //  switchable, persisted %Identity (→ %Peering = our pub address) the relay `hello` signs
