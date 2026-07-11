@@ -16,14 +16,15 @@ Snap:H
         see:the library stands — three artists and five tracks — a shelf of glass with no light through it yet
       w:Voronoiology,dontGraph
         Voro,beat=2,level:L0,visible=5,cells:3,gangs=0,folded:5,count:3
-        cell:Artist,kind:pane,n:2
+        bare:req,n:1
+        cell:Artist Moonlit,kind:pane,n:2
           Vtuffing,of:Track,n:2
             Vrow,row:title,text:Moonlit  ×2,wgt:2,tag:Artist,nk:name
             Vrow,row:list,wgt:1,bits:2
             Vrow,row:spread,text:year,wgt:1,bits:2
             Vrow,row:fact,text:remaster ×1,wgt:1
             Vrow,row:dip,text:/*2,wgt:1
-        cell:Artist,kind:pane,n:2
+        cell:Artist Fernway,kind:pane,n:2
           Vtuffing,of:Track,n:2
             Vrow,row:title,text:Fernway  ×2,wgt:2,tag:Artist,nk:name
             Vrow,row:list,wgt:1,bits:2
@@ -31,11 +32,10 @@ Snap:H
             Vrow,row:fact,text:live ×1,wgt:1
             Vrow,row:fact,text:remaster ×1,wgt:1
             Vrow,row:dip,text:/*2,wgt:1
-        cell:Artist,kind:pane,n:1
+        cell:Artist Voxhall,kind:pane,n:1
           Vtuffing,of:Track,n:1
             Vrow,row:title,text:Voxhall  ×1,wgt:2,tag:Artist,nk:name
             Vrow,row:list,wgt:1,bits:1
             Vrow,row:fact,text:year: 2007,wgt:1
             Vrow,row:dip,text:/*1,wgt:1
-        bare:req,n:1
         bare:see,n:1

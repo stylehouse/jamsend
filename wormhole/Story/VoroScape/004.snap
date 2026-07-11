@@ -25,7 +25,8 @@ Snap:H
         see:a new artist arrives with a catalog of three — a fourth pane splits into the glass
       w:Voronoiology,dontGraph
         Voro,beat=4,level:L0,visible=6,cells:4,gangs=0,folded:13,count:4
-        cell:Artist,kind:pane,n:4
+        bare:req,n:1
+        cell:Artist Moonlit,kind:pane,n:4
           Vtuffing,of:Track,n:4
             Vrow,row:title,text:Moonlit  ×4,wgt:2,tag:Artist,nk:name
             Vrow,row:list,wgt:1,bits:4
@@ -33,7 +34,7 @@ Snap:H
             Vrow,row:fact,text:remaster ×2,wgt:1
             Vrow,row:fact,text:live ×2,wgt:1
             Vrow,row:dip,text:/*4,wgt:1
-        cell:Artist,kind:pane,n:3
+        cell:Artist Fernway,kind:pane,n:3
           Vtuffing,of:Track,n:3
             Vrow,row:title,text:Fernway  ×3,wgt:2,tag:Artist,nk:name
             Vrow,row:list,wgt:1,bits:3
@@ -41,14 +42,15 @@ Snap:H
             Vrow,row:fact,text:live ×1,wgt:1
             Vrow,row:fact,text:remaster ×2,wgt:1
             Vrow,row:dip,text:/*3,wgt:1
-        cell:Artist,kind:pane,n:3
+        cell:Artist Voxhall,kind:pane,n:3
           Vtuffing,of:Track,n:3
             Vrow,row:title,text:Voxhall  ×3,wgt:2,tag:Artist,nk:name
             Vrow,row:list,wgt:1,bits:3
             Vrow,row:fact,text:year: 2007,wgt:1
             Vrow,row:fact,text:live ×1,wgt:1
             Vrow,row:dip,text:/*3,wgt:1
-        cell:Artist,kind:pane,n:3
+        bare:see,n:1
+        cell:Artist Riverine,kind:pane,n:3
           Vtuffing,of:Track,n:3
             Vrow,row:title,text:Riverine  ×3,wgt:2,tag:Artist,nk:name
             Vrow,row:list,wgt:1,bits:3
@@ -56,5 +58,3 @@ Snap:H
             Vrow,row:fact,text:remaster ×2,wgt:1
             Vrow,row:fact,text:live ×2,wgt:1
             Vrow,row:dip,text:/*3,wgt:1
-        bare:req,n:1
-        bare:see,n:1

@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=6	{"mung":["age"]}
+      self,round=7	{"mung":["age"]}
       w:VoroMitosis
-        self,round=6	{"mung":["age"]}
+        self,round=7	{"mung":["age"]}
         req:wrangle,eternal,ok
         Coprosma:lucida,habit:vine
         Veronica:grandifolia
@@ -27,6 +27,13 @@ Snap:H
         Metrosideros:grandifolia,habit:vine
       w:Voronoiology,dontGraph
         Voro,beat=3,level:L1,visible=5,cells:4,gangs=3,folded:1,count:1
+        bare:req,n:1
+        cell:Veronica grandifolia,kind:pane,n:1
+          Vtuffing,of:Veronica,n:1
+            Vrow,row:title,text:grandifolia  ×1,wgt:2,tag:Veronica,nk:Veronica
+            Vrow,row:list,wgt:1,bits:1
+            Vrow,row:fact,text:habit: shrub,wgt:1
+            Vrow,row:dip,text:/*1,wgt:1
         cell:Coprosma,kind:gang,n:5
           Vtuffing,of:Coprosma,n:5
             Vrow,row:title,text:×5,wgt:2,tag:Coprosma
@@ -34,12 +41,6 @@ Snap:H
             Vrow,row:spread,text:habit,wgt:1,bits:3
             Vrow,row:fact,text:woodystem ×2,wgt:1
             Vrow,row:dip,text:/*5,wgt:1
-        cell:Veronica grandifolia,kind:pane,n:1
-          Vtuffing,of:Veronica,n:1
-            Vrow,row:title,text:grandifolia  ×1,wgt:2,tag:Veronica,nk:Veronica
-            Vrow,row:list,wgt:1,bits:1
-            Vrow,row:fact,text:habit: shrub,wgt:1
-            Vrow,row:dip,text:/*1,wgt:1
         cell:Veronica,kind:gang,n:6
           Vtuffing,of:Veronica,n:6
             Vrow,row:title,text:×6,wgt:2,tag:Veronica
@@ -55,4 +56,3 @@ Snap:H
             Vrow,row:fact,text:woodystem ×2,wgt:1
             Vrow,row:fact,text:habit: vine,wgt:1
             Vrow,row:dip,text:/*4,wgt:1
-        bare:req,n:1

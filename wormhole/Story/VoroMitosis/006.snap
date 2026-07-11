@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=8	{"mung":["age"]}
+      self,round=11	{"mung":["age"]}
       w:VoroMitosis
-        self,round=8	{"mung":["age"]}
+        self,round=11	{"mung":["age"]}
         req:wrangle,eternal,ok
         Veronica:crassifolius,habit:tree
           Veronica:crassifolius f. viridis,habit:shrub
@@ -41,6 +41,14 @@ Snap:H
         Leptospermum:serrata
       w:Voronoiology,dontGraph
         Voro,beat=5,level:L1,visible=7,cells:6,gangs=5,folded:1,count:1
+        bare:req,n:1
+        cell:Coprosma,kind:gang,n:5
+          Vtuffing,of:Coprosma,n:5
+            Vrow,row:title,text:×5,wgt:2,tag:Coprosma
+            Vrow,row:list,wgt:1,bits:5
+            Vrow,row:fact,text:woodystem ×3,wgt:1
+            Vrow,row:spread,text:habit,wgt:1,bits:3
+            Vrow,row:dip,text:/*5,wgt:1
         cell:Veronica,kind:gang,n:7
           Vtuffing,of:Veronica,n:7
             Vrow,row:title,text:×7,wgt:2,tag:Veronica
@@ -49,18 +57,6 @@ Snap:H
             Vrow,row:fact,text:woodystem ×4,wgt:1
             Vrow,row:fact,text:endemic ×4,wgt:1
             Vrow,row:dip,text:/*7,wgt:1
-        cell:Coprosma,kind:gang,n:5
-          Vtuffing,of:Coprosma,n:5
-            Vrow,row:title,text:×5,wgt:2,tag:Coprosma
-            Vrow,row:list,wgt:1,bits:5
-            Vrow,row:fact,text:woodystem ×3,wgt:1
-            Vrow,row:spread,text:habit,wgt:1,bits:3
-            Vrow,row:dip,text:/*5,wgt:1
-        cell:Metrosideros robusta,kind:pane,n:1
-          Vtuffing,of:Metrosideros,n:1
-            Vrow,row:title,text:robusta  ×1,wgt:2,tag:Metrosideros,nk:Metrosideros
-            Vrow,row:list,wgt:1,bits:1
-            Vrow,row:dip,text:/*1,wgt:1
         cell:Metrosideros,kind:gang,n:7
           Vtuffing,of:Metrosideros,n:7
             Vrow,row:title,text:×7,wgt:2,tag:Metrosideros
@@ -75,6 +71,11 @@ Snap:H
             Vrow,row:spread,text:habit,wgt:1,bits:2
             Vrow,row:fact,text:woodystem ×2,wgt:1
             Vrow,row:dip,text:/*6,wgt:1
+        cell:Metrosideros robusta,kind:pane,n:1
+          Vtuffing,of:Metrosideros,n:1
+            Vrow,row:title,text:robusta  ×1,wgt:2,tag:Metrosideros,nk:Metrosideros
+            Vrow,row:list,wgt:1,bits:1
+            Vrow,row:dip,text:/*1,wgt:1
         cell:Leptospermum,kind:gang,n:4
           Vtuffing,of:Leptospermum,n:4
             Vrow,row:title,text:×4,wgt:2,tag:Leptospermum
@@ -82,4 +83,3 @@ Snap:H
             Vrow,row:fact,text:woodystem ×1,wgt:1
             Vrow,row:fact,text:endemic ×1,wgt:1
             Vrow,row:dip,text:/*4,wgt:1
-        bare:req,n:1

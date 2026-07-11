@@ -244,7 +244,21 @@ Voro_report_walk(node, census, d):
             if (c.c.gang) {
                 label = c.c.fold_kind || mk
             } else if (c.sc[mk] && c.sc[mk] !== 1) {
-                label = mk + ' ' + c.sc[mk]
+                // the mainkey CARRIES the datum ({Metrosideros:'robusta'}) — that value IS the name.
+                label = mk + ' ' + ('' + c.sc[mk]).split(',').join(' ')
+            } else {
+                // the mainkey is a bare presence marker ({Artist:1,name:'Moonlit'}); the identity
+                //  lives in a sibling field.  Name the cell by its DATA (Artist Moonlit), not by a
+                //   fragile walk-order tail (Artist 1) that re-shuffles the instant a pane ahead of
+                //    it is born or dies — the very volatile-identity churn the persistent census kills.
+                let ks = Object.keys(c.sc)
+                for (let i = 1; i < ks.length; i++) {
+                    let v = c.sc[ks[i]]
+                    if (v && v !== 1) {
+                        label = mk + ' ' + ('' + v).split(',').join(' ')
+                        break
+                    }
+                }
             }
             let pop = 0
             let members = c.c.gang || c.o()

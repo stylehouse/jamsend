@@ -28,7 +28,8 @@ Snap:H
           Track,title:Gleam,year:2007
       w:Voronoiology,dontGraph
         Voro,beat=6,level:L0,visible=6,cells:5,gangs=0,folded:16,count:5
-        cell:Artist,kind:pane,n:4
+        bare:req,n:1
+        cell:Artist Moonlit,kind:pane,n:4
           Vtuffing,of:Track,n:4
             Vrow,row:title,text:Moonlit  ×4,wgt:2,tag:Artist,nk:name
             Vrow,row:list,wgt:1,bits:4
@@ -36,7 +37,7 @@ Snap:H
             Vrow,row:fact,text:remaster ×2,wgt:1
             Vrow,row:fact,text:live ×2,wgt:1
             Vrow,row:dip,text:/*4,wgt:1
-        cell:Artist,kind:pane,n:4
+        cell:Artist Fernway,kind:pane,n:4
           Vtuffing,of:Track,n:4
             Vrow,row:title,text:Fernway  ×4,wgt:2,tag:Artist,nk:name
             Vrow,row:list,wgt:1,bits:4
@@ -44,14 +45,14 @@ Snap:H
             Vrow,row:fact,text:live ×2,wgt:1
             Vrow,row:fact,text:remaster ×2,wgt:1
             Vrow,row:dip,text:/*4,wgt:1
-        cell:Artist,kind:pane,n:3
+        cell:Artist Voxhall,kind:pane,n:3
           Vtuffing,of:Track,n:3
             Vrow,row:title,text:Voxhall  ×3,wgt:2,tag:Artist,nk:name
             Vrow,row:list,wgt:1,bits:3
             Vrow,row:fact,text:year: 2007,wgt:1
             Vrow,row:fact,text:live ×1,wgt:1
             Vrow,row:dip,text:/*3,wgt:1
-        cell:Artist,kind:pane,n:3
+        cell:Artist Riverine,kind:pane,n:3
           Vtuffing,of:Track,n:3
             Vrow,row:title,text:Riverine  ×3,wgt:2,tag:Artist,nk:name
             Vrow,row:list,wgt:1,bits:3
@@ -59,11 +60,10 @@ Snap:H
             Vrow,row:fact,text:remaster ×2,wgt:1
             Vrow,row:fact,text:live ×2,wgt:1
             Vrow,row:dip,text:/*3,wgt:1
-        cell:Artist,kind:pane,n:2
+        cell:Artist Palegold,kind:pane,n:2
           Vtuffing,of:Track,n:2
             Vrow,row:title,text:Palegold  ×2,wgt:2,tag:Artist,nk:name
             Vrow,row:list,wgt:1,bits:2
             Vrow,row:fact,text:year: 2007,wgt:1
             Vrow,row:fact,text:live ×1,wgt:1
             Vrow,row:dip,text:/*2,wgt:1
-        bare:req,n:1

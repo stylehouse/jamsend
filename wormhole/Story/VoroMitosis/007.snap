@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=9	{"mung":["age"]}
+      self,round=12	{"mung":["age"]}
       w:VoroMitosis
-        self,round=9	{"mung":["age"]}
+        self,round=12	{"mung":["age"]}
         req:wrangle,eternal,ok
         Coprosma:montana,woodystem,habit:shrub
           Coprosma:montana subsp. australis
@@ -54,6 +54,7 @@ Snap:H
         Pittosporum:linearis
       w:Voronoiology,dontGraph
         Voro,beat=6,level:L1,visible=9,cells:8,gangs=6,folded:2,count:2
+        bare:req,n:1
         cell:Coprosma,kind:gang,n:7
           Vtuffing,of:Coprosma,n:7
             Vrow,row:title,text:×7,wgt:2,tag:Coprosma
@@ -61,18 +62,6 @@ Snap:H
             Vrow,row:fact,text:woodystem ×4,wgt:1
             Vrow,row:spread,text:habit,wgt:1,bits:3
             Vrow,row:dip,text:/*7,wgt:1
-        cell:Metrosideros robusta,kind:pane,n:1
-          Vtuffing,of:Metrosideros,n:1
-            Vrow,row:title,text:robusta  ×1,wgt:2,tag:Metrosideros,nk:Metrosideros
-            Vrow,row:list,wgt:1,bits:1
-            Vrow,row:dip,text:/*1,wgt:1
-        cell:Metrosideros,kind:gang,n:9
-          Vtuffing,of:Metrosideros,n:9
-            Vrow,row:title,text:×9,wgt:2,tag:Metrosideros
-            Vrow,row:list,wgt:1,bits:9
-            Vrow,row:fact,text:woodystem ×3,wgt:1
-            Vrow,row:spread,text:habit,wgt:1,bits:3
-            Vrow,row:dip,text:/*9,wgt:1
         cell:Veronica,kind:gang,n:5
           Vtuffing,of:Veronica,n:5
             Vrow,row:title,text:×5,wgt:2,tag:Veronica
@@ -81,12 +70,13 @@ Snap:H
             Vrow,row:fact,text:endemic ×2,wgt:1
             Vrow,row:fact,text:habit: shrub,wgt:1
             Vrow,row:dip,text:/*5,wgt:1
-        cell:Kunzea grandifolia,kind:pane,n:1
-          Vtuffing,of:Kunzea,n:1
-            Vrow,row:title,text:grandifolia  ×1,wgt:2,tag:Kunzea,nk:Kunzea
-            Vrow,row:list,wgt:1,bits:1
-            Vrow,row:fact,text:habit: vine,wgt:1
-            Vrow,row:dip,text:/*1,wgt:1
+        cell:Metrosideros,kind:gang,n:9
+          Vtuffing,of:Metrosideros,n:9
+            Vrow,row:title,text:×9,wgt:2,tag:Metrosideros
+            Vrow,row:list,wgt:1,bits:9
+            Vrow,row:fact,text:woodystem ×3,wgt:1
+            Vrow,row:spread,text:habit,wgt:1,bits:3
+            Vrow,row:dip,text:/*9,wgt:1
         cell:Kunzea,kind:gang,n:7
           Vtuffing,of:Kunzea,n:7
             Vrow,row:title,text:×7,wgt:2,tag:Kunzea
@@ -94,6 +84,11 @@ Snap:H
             Vrow,row:fact,text:woodystem ×2,wgt:1
             Vrow,row:spread,text:habit,wgt:1,bits:2
             Vrow,row:dip,text:/*7,wgt:1
+        cell:Metrosideros robusta,kind:pane,n:1
+          Vtuffing,of:Metrosideros,n:1
+            Vrow,row:title,text:robusta  ×1,wgt:2,tag:Metrosideros,nk:Metrosideros
+            Vrow,row:list,wgt:1,bits:1
+            Vrow,row:dip,text:/*1,wgt:1
         cell:Leptospermum,kind:gang,n:6
           Vtuffing,of:Leptospermum,n:6
             Vrow,row:title,text:×6,wgt:2,tag:Leptospermum
@@ -102,6 +97,12 @@ Snap:H
             Vrow,row:fact,text:endemic ×1,wgt:1
             Vrow,row:fact,text:habit: vine,wgt:1
             Vrow,row:dip,text:/*6,wgt:1
+        cell:Kunzea grandifolia,kind:pane,n:1
+          Vtuffing,of:Kunzea,n:1
+            Vrow,row:title,text:grandifolia  ×1,wgt:2,tag:Kunzea,nk:Kunzea
+            Vrow,row:list,wgt:1,bits:1
+            Vrow,row:fact,text:habit: vine,wgt:1
+            Vrow,row:dip,text:/*1,wgt:1
         cell:Pittosporum,kind:gang,n:4
           Vtuffing,of:Pittosporum,n:4
             Vrow,row:title,text:×4,wgt:2,tag:Pittosporum
@@ -109,4 +110,3 @@ Snap:H
             Vrow,row:fact,text:woodystem ×1,wgt:1
             Vrow,row:spread,text:habit,wgt:1,bits:2
             Vrow,row:dip,text:/*4,wgt:1
-        bare:req,n:1

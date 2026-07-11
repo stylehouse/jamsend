@@ -1,5 +1,5 @@
 Credulation,of_Book:VoroScape
-  run=0,at=1783781672.437,ok,ok_pct,mode:check
+  run=0,at=1783786818.658,ok=0,ok_pct=0.17,mode:check
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -18,9 +18,9 @@ Credulation,of_Book:VoroScape
     uses:Ghost_Story_Heistation,dige:54d44c3171347ec5
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
-    uses:Ghost_V_Voro,dige:8d195ca426f97f42
+    uses:Ghost_V_Voro,dige:26ba931f86296ae6
     uses:Ghost_Story_Voronation,dige:8d83abaa8c00b7d3
-  run,at=1783781712.649,ok,ok_pct,mode:check
+  run,at=1783786984.667,ok=0,ok_pct=0.17,mode:check
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -39,5 +39,5 @@ Credulation,of_Book:VoroScape
     uses:Ghost_Story_Heistation,dige:54d44c3171347ec5
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
-    uses:Ghost_V_Voro,dige:8d195ca426f97f42
+    uses:Ghost_V_Voro,dige:26ba931f86296ae6
     uses:Ghost_Story_Voronation,dige:8d83abaa8c00b7d3

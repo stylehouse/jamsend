@@ -247,28 +247,47 @@ One line per submachine; read the indent as containment. `<` (down the left marg
 
       replication (Repli)  -- walk a peer's C** by cursor: reach into paths, get lost in the maze like a user, offer each husk, pull its bytes on want (body_hash per page).
 
-      the library  -- ONE per Pier: %Library,pier:<prepub> (the prepub IS the Pier's primary key).
+      %Library,pier:<prepub>  -- ONE per Pier (prepub = the Pier's key): a peer's collection of cards + stock.
         %Record                -- a track's card: catalog identity (artist+title) + byte promise (bytes/total/hash).
-        %Body,seq              -- the original file, chunked whole.
-        radiostock             -- the on-disk served form (<ts>-<pub>-<enid>); enid = content identity.
+                                    its chunks are minted by whoever fills it -- the twin (listen) or the heist (grab).
+        radiostock             -- the card's on-disk served form (<ts>-<pub>-<enid>); enid = content id, ts = mint.
         < proactive first-stock -- render the first radiostock BEFORE the first user arrives, so track one is instant.
         < load_random_records   -- sample an unbounded catalog, never slurp it whole.
         < FIFO whittle_stock    -- evict the oldest when the library fills; a cache, not a hoard.
 
-      the streaming twin (rastock -> racast -> raterm)  -- SHIPPED.
-        rastock                -- one uniform preview+stream encode per track: loudness-level, seekable, on disk.
-        racast                 -- cast to Piers, pulled at listening rate; a parked want ignites the transcode; grants gate it.
-        raterm                 -- decode WHAT CROSSED into continuous PCM, silence where a chunk is absent.
+      the streaming twin (rastock -> racast -> raterm)  -- SHIPPED; each is a system:
+        rastock  -- make a track SERVABLE: one uniform encode set, on disk.
+          decode once          -- OfflineAudioContext, no gesture; the full PCM feeds the encoders.
+          loudness-level       -- measure LUFS, gain the WHOLE track to -14 / -1 dBFS ceiling.
+          preview encode       -- ONE opus encode of the first 32s (Ra_preview_secs), sliced on the 2s grid into %Preview.
+          the boundary         -- the preview/stream seam, pinned to the want-page grid (multiples of 4s).
+          radiostock file      -- <ts>-<pub>-<enid> on disk; ts = mint (newest wins, GC twins), enid = content id.
+          idempotent           -- a standing .jam resurrects instead of re-encoding; a dead-source stock is litter, deleted.
+        racast  -- serve the stock to Piers at listening rate.
+          offer husks          -- cards cross first; %Preview wants serve instantly (the chunks pre-exist).
+          parked-want transcode -- a %Stream want has no chunk yet, so it PARKS -- the park ignites the 2nd encode (boundary->end).
+          serve as it appears  -- Repli_serve_parked releases each stream chunk the instant it transcodes; no rate flag.
+          the ramp             -- want-pacing only: a PAGE=2 server stride + the terminal's ahead-window.
+          grants gate it       -- repli_allow admits per-relationship; a revoke refuses the next offer.
+        raterm  -- play WHAT CROSSED, nothing local.
+          two decoders         -- %Preview and %Stream are separate encodes: one decoder each, reset only at the seam.
+          preskip              -- the decoder DROPS ~6.5ms (312 samples @48k) of encoder warm-up at each fresh open: a sample count in the OpusHead, NOT bytes to strip.
+          gapless concat       -- chunks decode in seq order into continuous PCM; silence where one is absent.
+          starve surfaces      -- the honest playhead-vs-frontier race, no hidden buffering.
+          track change         -- an owner act runs a fresh cycle from seg 0.
+        < live edge            -- a THIRD mode: one chained continuous encode you join and follow, no seek (§9.4).
 
       the player (the deck)  -- what a listener does with the streams.
         multi-stream           -- many streams from ONE library at once: decks, cue, crossfade (MusuMix / MusuCue).
         < tempo / pitch        -- play a stream at a chosen tempo and pitch, independently (time-stretch).
         wants more             -- the terminal pulls ahead of the playhead; the demand IS the parked want.
         interest wears         -- a stream you stop attending ages out (wear): the buf drops, the husk stays.
+        < listen-through       -- consume the library in a stable random order keyed by radiostock ts; know when all's heard.
 
-      the heist (klepto)  -- point a job at a Pier and pull its music into your library. rung 1 built.
-        census                 -- walk the Pier's filesystem into servable %Records; a rolling cursor, not a fixed set.
-        the job                -- %Heist,at:<pier>: believe/disbelieve filings pinned as DATA at creation.
+      the heist  -- point a job at a Pier and pull its music into your library; MAY be klepto. rung 1 built.
+        census                 -- a DIRECTORY CURSOR walks the Pier's filesystem into %Records; rolling, not a fixed set.
+          %Body,seq            -- born HERE: the ORIGINAL file bytes, chunked whole -- the heist's byte-faithful payload.
+        the job                -- %Heist,at:<pier> + optional match (absent = klepto = everything); filings pinned as DATA.
         the pull               -- paged at heist rate; each offer dedup-checked at the door by catalog identity.
           < bandwidth control  -- a real throttle on the pull rate (uncapped today).
           < progress           -- a per-record download bar that renders as pages land.
@@ -285,6 +304,8 @@ One line per submachine; read the indent as containment. `<` (down the left marg
       the app surface  -- where a person drives it.
         < create-a-heist       -- a gesture that points a %Heist at a Pier (today ONLY the test Book mints one).
         < progress + bandwidth HUD  -- the download bar and the rate dial, on screen.
+        < boxy floats          -- each thing a vaguely-boxy Cyto node you float; fullscreen or open the larger ones.
+        < heist bloom          -- census + pull rendered as cytonodes ERUPTING into place (the heist as a flower?).
         Cyto / Matstyle        -- the live particle view every submachine renders into for free.
 ```
 

@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=11	{"mung":["age"]}
+      self,round=17	{"mung":["age"]}
       w:VoroMitosis
-        self,round=11	{"mung":["age"]}
+        self,round=17	{"mung":["age"]}
         req:wrangle,eternal,ok
         Veronica:robusta,woodystem,endemic
           Veronica:robusta var. montana,woodystem,habit:shrub
@@ -79,26 +79,7 @@ Snap:H
         Podocarpus:robusta,woodystem,habit:vine
       w:Voronoiology,dontGraph
         Voro,beat=8,level:L1,visible=12,cells:11,gangs=7,folded:4,count:4
-        cell:Veronica robusta,kind:pane,n:1
-          Vtuffing,of:Veronica,n:1
-            Vrow,row:title,text:robusta  ×1,wgt:2,tag:Veronica,nk:Veronica
-            Vrow,row:list,wgt:1,bits:1
-            Vrow,row:fact,text:habit: shrub,wgt:1
-            Vrow,row:dip,text:/*1,wgt:1
-        cell:Kunzea grandifolia,kind:pane,n:1
-          Vtuffing,of:Kunzea,n:1
-            Vrow,row:title,text:grandifolia  ×1,wgt:2,tag:Kunzea,nk:Kunzea
-            Vrow,row:list,wgt:1,bits:1
-            Vrow,row:fact,text:habit: vine,wgt:1
-            Vrow,row:dip,text:/*1,wgt:1
-        cell:Kunzea,kind:gang,n:11
-          Vtuffing,of:Kunzea,n:11
-            Vrow,row:title,text:×11,wgt:2,tag:Kunzea
-            Vrow,row:list,wgt:1,bits:11
-            Vrow,row:fact,text:woodystem ×3,wgt:1
-            Vrow,row:spread,text:habit,wgt:1,bits:3
-            Vrow,row:fact,text:endemic ×1,wgt:1
-            Vrow,row:dip,text:/*11,wgt:1
+        bare:req,n:1
         cell:Coprosma,kind:gang,n:7
           Vtuffing,of:Coprosma,n:7
             Vrow,row:title,text:×7,wgt:2,tag:Coprosma
@@ -121,12 +102,14 @@ Snap:H
             Vrow,row:fact,text:woodystem ×1,wgt:1
             Vrow,row:spread,text:habit,wgt:1,bits:3
             Vrow,row:dip,text:/*7,wgt:1
-        cell:Leptospermum lucida,kind:pane,n:1
-          Vtuffing,of:Leptospermum,n:1
-            Vrow,row:title,text:lucida  ×1,wgt:2,tag:Leptospermum,nk:Leptospermum
-            Vrow,row:list,wgt:1,bits:1
-            Vrow,row:fact,text:habit: shrub,wgt:1
-            Vrow,row:dip,text:/*1,wgt:1
+        cell:Kunzea,kind:gang,n:11
+          Vtuffing,of:Kunzea,n:11
+            Vrow,row:title,text:×11,wgt:2,tag:Kunzea
+            Vrow,row:list,wgt:1,bits:11
+            Vrow,row:fact,text:woodystem ×3,wgt:1
+            Vrow,row:spread,text:habit,wgt:1,bits:3
+            Vrow,row:fact,text:endemic ×1,wgt:1
+            Vrow,row:dip,text:/*11,wgt:1
         cell:Leptospermum,kind:gang,n:9
           Vtuffing,of:Leptospermum,n:9
             Vrow,row:title,text:×9,wgt:2,tag:Leptospermum
@@ -135,11 +118,11 @@ Snap:H
             Vrow,row:fact,text:endemic ×2,wgt:1
             Vrow,row:spread,text:habit,wgt:1,bits:2
             Vrow,row:dip,text:/*9,wgt:1
-        cell:Pittosporum crassifolius,kind:pane,n:1
-          Vtuffing,of:Pittosporum,n:1
-            Vrow,row:title,text:crassifolius  ×1,wgt:2,tag:Pittosporum,nk:Pittosporum
+        cell:Kunzea grandifolia,kind:pane,n:1
+          Vtuffing,of:Kunzea,n:1
+            Vrow,row:title,text:grandifolia  ×1,wgt:2,tag:Kunzea,nk:Kunzea
             Vrow,row:list,wgt:1,bits:1
-            Vrow,row:fact,text:habit: tree,wgt:1
+            Vrow,row:fact,text:habit: vine,wgt:1
             Vrow,row:dip,text:/*1,wgt:1
         cell:Pittosporum,kind:gang,n:7
           Vtuffing,of:Pittosporum,n:7
@@ -148,6 +131,24 @@ Snap:H
             Vrow,row:fact,text:woodystem ×2,wgt:1
             Vrow,row:spread,text:habit,wgt:1,bits:3
             Vrow,row:dip,text:/*7,wgt:1
+        cell:Leptospermum lucida,kind:pane,n:1
+          Vtuffing,of:Leptospermum,n:1
+            Vrow,row:title,text:lucida  ×1,wgt:2,tag:Leptospermum,nk:Leptospermum
+            Vrow,row:list,wgt:1,bits:1
+            Vrow,row:fact,text:habit: shrub,wgt:1
+            Vrow,row:dip,text:/*1,wgt:1
+        cell:Veronica robusta,kind:pane,n:1
+          Vtuffing,of:Veronica,n:1
+            Vrow,row:title,text:robusta  ×1,wgt:2,tag:Veronica,nk:Veronica
+            Vrow,row:list,wgt:1,bits:1
+            Vrow,row:fact,text:habit: shrub,wgt:1
+            Vrow,row:dip,text:/*1,wgt:1
+        cell:Pittosporum crassifolius,kind:pane,n:1
+          Vtuffing,of:Pittosporum,n:1
+            Vrow,row:title,text:crassifolius  ×1,wgt:2,tag:Pittosporum,nk:Pittosporum
+            Vrow,row:list,wgt:1,bits:1
+            Vrow,row:fact,text:habit: tree,wgt:1
+            Vrow,row:dip,text:/*1,wgt:1
         cell:Podocarpus,kind:gang,n:7
           Vtuffing,of:Podocarpus,n:7
             Vrow,row:title,text:×7,wgt:2,tag:Podocarpus
@@ -156,4 +157,3 @@ Snap:H
             Vrow,row:spread,text:habit,wgt:1,bits:3
             Vrow,row:fact,text:endemic ×1,wgt:1
             Vrow,row:dip,text:/*7,wgt:1
-        bare:req,n:1
