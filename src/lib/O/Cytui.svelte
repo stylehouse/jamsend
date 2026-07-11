@@ -895,8 +895,8 @@
     type MicroRow  = { text: string, kind: string, x: number, y: number, w: number, h: number, fs: number,
                        color: string | null, tag?: string, sub?: number,
                        chips?: MicroChip[], member?: TheC, dip?: boolean }
-    type VtuffDesc = { text: string, kind: string, color?: string | null, tag?: string, sub?: number,
-                       chips?: MicroChip[], member?: TheC, dip?: boolean }
+    type VtuffDesc = { text: string, kind: string, color?: string | null, tag?: string, nk?: string,
+                       sub?: number, chips?: MicroChip[], member?: TheC, dip?: boolean }
     let vmicro       = $state<{ id: string, x: number, y: number, w: number, h: number, clip: string, rows: MicroRow[] }[]>([])
     let micro_on_ids = new Set<string>()   // hysteresis memory: which cells are swapped in
     // ▤ DEMOTED to an opt-in inspection face (owner 2026-07-11: the row engine is a
@@ -938,6 +938,7 @@
                 const kind = (r.sc.row as string) ?? 'fact'
                 const d: VtuffDesc = { text: String(r.sc.text ?? ''), kind }
                 if (r.sc.tag) d.tag = String(r.sc.tag)
+                if (r.sc.nk) d.nk = String(r.sc.nk)
                 if (r.sc.sub) d.sub = r.sc.sub as number
                 if (r.c.member) { d.member = r.c.member; d.color = kind_tint(Object.keys(r.c.member.sc ?? {})[0]) }
                 if (kind === 'title') d.color = kind_tint(d.tag ?? src?.c?.fold_kind)
@@ -959,10 +960,19 @@
                 if (k !== mk && typeof m?.sc?.[k] === 'string') return m.sc[k]
             return ''
         }
+        const namekey_ts = (m: any): string => {   // the TS twin of Vtuff_namekey
+            const mk = Object.keys(m?.sc ?? {})[0]
+            const v = m?.sc?.[mk]
+            if (v !== 1 && v != null) return mk
+            for (const k of ['name', 'title', 'text', 'nick', 'label'])
+                if (k !== mk && typeof m?.sc?.[k] === 'string') return k
+            return mk
+        }
         const t_tag = src?.c?.gang ? (src?.c?.fold_kind as string) : Object.keys(src?.sc ?? {})[0]
         const t_name = src?.c?.gang ? '' : name_ts(src)
         const out: VtuffDesc[] = [{ text: `${t_name ? t_name + '  ' : ''}×${members.length}`,
-                                    kind: 'title', tag: t_tag, color: kind_tint(t_tag) }]
+                                    kind: 'title', tag: t_tag, nk: t_name ? namekey_ts(src) : undefined,
+                                    color: kind_tint(t_tag) }]
         const CAP = 8
         for (const m of members.slice(0, CAP)) {
             const sub = typeof m.o === 'function' ? m.o().length : 0
@@ -1087,12 +1097,20 @@
     //            the kind tint and their ':', values stay plain — the Stuffing's own
     //             idiom, so k vs v reads at a glance (the language critique).
     type VSubCell = { id: string, d: string, x: number, y: number, fs: number,
-                      tag?: string, key?: string, val?: string, sup?: string, subn?: number,
-                      member?: TheC }
+                      tag?: string, tint?: string | null, key?: string, val?: string, sup?: string,
+                      subn?: number, member?: TheC }
     type VSubGroup = { id: string, d: string, hue: string, boundary?: boolean,
-                       label?: { x: number, y: number, fs: number, text: string, sup?: string } }
+                       label?: { x: number, y: number, fs: number, text: string, colon?: boolean, sup?: string } }
+    // the NUCLEUS: the fold source itself as a cell of its own glass, speaking Stuffing's
+    //  explicit grammar — tag badge (mainkey, kind tint) · namekey (its vein hue) · lilac
+    //   colon · plain value · ×N sup.  tagcolon = the mainkey itself carries the value
+    //    ('cell: Kunzea'); nk = a naming key does ('Artist name: Riverine').
+    type VSubNucleus = { d: string, x: number, y: number, fs: number,
+                         tag?: string, tagcolon?: boolean, nk?: string, nkhue?: string,
+                         name?: string, sup?: string }
     type VSubPane = { id: string, clipid: string, clip: string, color: string, tint: string,
                       groups: VSubGroup[], cells: VSubCell[],
+                      spokes: { d: string, hue: string }[], nucleus?: VSubNucleus,
                       title?: { x: number, y: number, fs: number, tag?: string, name: string, sup: string },
                       dip?: { x: number, y: number, text: string } }
     let vsubs = $state<VSubPane[]>([])
@@ -1119,7 +1137,7 @@
     //     ('remaster ×2') a leaf-less key group wearing its count.  The members are one
     //      group labeled by their KIND ('Track') — that wall IS the Artist/Track boundary
     //       made visible.  No silent caps: past 12 leaves a group folds the tail to '+K'.
-    type VSubLeaf  = { tag?: string, val?: string, sup?: string, subn?: number,
+    type VSubLeaf  = { tag?: string, tint?: string | null, val?: string, sup?: string, subn?: number,
                        member?: TheC, hw: number, hh: number }
     type VSubTuple = { key?: string, kind?: string, sup?: string, leaves: VSubLeaf[] }
     function subgraph_tuples(descs: VtuffDesc[], kind: string | undefined): VSubTuple[] {
@@ -1145,7 +1163,7 @@
                     members.leaves.push(leaf({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined,
                                                member: ch.member, subn: ch.sub }))
             } else {   // member | sub
-                members.leaves.push(leaf({ val: d.text, tag: d.tag, member: d.member, subn: d.sub }))
+                members.leaves.push(leaf({ val: d.text, tag: d.tag, tint: d.color, member: d.member, subn: d.sub }))
             }
         }
         for (const g of [members, ...groups]) if (g.leaves.length > 12) {
@@ -1241,30 +1259,40 @@
         const bx = Math.min(...xs), by = Math.min(...ys)
         const bw = Math.max(...xs) - bx, bh = Math.max(...ys) - by
         const R = Math.sqrt(area / Math.PI)
-        // group seeds: members central, keys at their vein angle; pull inside via the chord
-        const gpts = tuples.map((g, gi) => {
-            let x = c.acx, y = c.acy
-            if (g.key != null) {
-                const v = vein_of(g.key)
-                x = c.acx + Math.cos(v.ang) * R * 0.62
-                y = c.acy + Math.sin(v.ang) * R * 0.62 * 0.8
-            } else if (gi > 0) { x = c.acx + 6 * gi; y = c.acy }
+        // the NUCLEUS holds the centre (owner: "Artist:Riverine must be part of the subcells
+        //  … in such a way as to clue that they are all linked to it") and EVERY tuple region —
+        //   members included — takes its vein's compass bearing, so 'Track' sits the same way
+        //    in every pane just as 'year' does.  Pull-inside via the chord as before.
+        const td = descs.find(d => d.kind === 'title')
+        const tm = td ? /^(.*?)\s*×(\d+)$/.exec(td.text) : null
+        const tname = tm ? tm[1] : (td?.text ?? '')
+        const tlen = (td?.tag ? td.tag.length * 0.75 : 0) + tname.length
+                     + (td?.nk && td.nk !== td.tag ? td.nk.length + 2 : 1) + 2
+        const gpts = [{ x: c.acx, y: c.acy }, ...tuples.map(g => {
+            const v = vein_of(g.key ?? g.kind ?? '')
+            let x = c.acx + Math.cos(v.ang) * R * 0.62
+            let y = c.acy + Math.sin(v.ang) * R * 0.62 * 0.8
             for (let t = 0; t < 5; t++) {
                 const ch = poly_chord(c.inset, y)
                 if (ch && x > ch[0] + 4 && x < ch[1] - 4) break
                 x = c.acx + (x - c.acx) * 0.7; y = c.acy + (y - c.acy) * 0.7
             }
             return { x, y }
-        })
+        })]
         const gscale = (g: VSubTuple) =>
             Math.sqrt(g.leaves.reduce((s, l) => s + (l.hw * 2) * (l.hh * 2.4), 140)
                       + (g.kind ? 260 : 0))
-        const gradii = tuples.map(g => 6 + 0.55 * gscale(g))
+        // nucleus radius from its words alone — an identity plate, not a data region
+        const gradii = [8 + 0.5 * Math.sqrt(tlen * 26), ...tuples.map(g => 6 + 0.55 * gscale(g))]
         const gpolys = power_cells(c.inset, gpts, gradii, 2.5)
         const groups: VSubGroup[] = []
         const cells: VSubCell[] = []
+        const spokes: { d: string, hue: string }[] = []
+        const npoly = gpolys[0]
+        const ncx = npoly ? npoly.reduce((a, p) => a + p.x, 0) / npoly.length : c.acx
+        const ncy = npoly ? npoly.reduce((a, p) => a + p.y, 0) / npoly.length : c.acy
         tuples.forEach((g, gi) => {
-            const gpoly = gpolys[gi]
+            const gpoly = gpolys[gi + 1]
             if (!gpoly) return   // crowded out this beat — the dip still tells the count
             const hue = g.key != null ? `hsl(${vein_of(g.key).hue}, 52%, 60%)`
                                       : (kind_tint(g.kind) ?? tint)
@@ -1282,10 +1310,15 @@
                     const fs = Math.max(7, Math.min(13,
                         band.w * 0.8 / (0.62 * (ltext.length + (colon ? 1 : 0) + (g.sup ? 2 : 0)))))
                     grp.label = { x: (band.x0 + band.x1) / 2, y: band.y + fs * 0.35, fs,
-                                  text: colon ? `${ltext}:` : ltext, sup: g.sup }
+                                  text: ltext, colon, sup: g.sup }
                 }
             }
             groups.push(grp)
+            // the SPOKE: nucleus → region in the region's hue, the "all linked to it" made
+            //  visible — every tuple hangs off the fold source it describes
+            const scx = gpoly.reduce((a, p) => a + p.x, 0) / gpoly.length
+            const scy = gpoly.reduce((a, p) => a + p.y, 0) / gpoly.length
+            spokes.push({ d: `M${ncx.toFixed(1)},${ncy.toFixed(1)}L${scx.toFixed(1)},${scy.toFixed(1)}`, hue })
             if (!g.leaves.length) return
             // leaves tessellate the group region, seeded on a phi spiral under the label band
             const gcx = gpoly.reduce((a, p) => a + p.x, 0) / gpoly.length
@@ -1313,22 +1346,35 @@
                 const fs = fill_fs(lpoly, lmy, len, 7, 30)
                 cells.push({ id: `${c.id}·g${gi}·l${li}`, d: poly_d(lpoly),
                     x: lmx, y: lmy + fs * 0.35, fs,
-                    tag: l.tag, val: l.val, sup: l.sup, subn: l.subn, member: l.member })
+                    tag: l.tag, tint: l.tint, val: l.val, sup: l.sup, subn: l.subn, member: l.member })
             })
         })
         if (!groups.length) return null
         const pane: VSubPane = { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`,
-            clip: poly_d(c.inset), color: c.color, tint, groups, cells }
-        const td = descs.find(d => d.kind === 'title')
-        if (td) {
-            const m = /^(.*?)\s*×(\d+)$/.exec(td.text)
-            const name = m ? m[1] : td.text
+            clip: poly_d(c.inset), color: c.color, tint, groups, cells, spokes }
+        if (npoly) {
+            // the nucleus label speaks Stuffing — `Artist name: Riverine ×5`, never a bare
+            //  value with its key hidden.  nk === tag → the mainkey itself carries the value
+            //   and takes the colon ('cell: Kunzea').
+            const nys = npoly.map(p => p.y)
+            const ny0 = Math.min(...nys), nh = Math.max(...nys) - ny0
+            const band = wide_chord(npoly, ny0 + nh * 0.3, ny0 + nh * 0.62, 5)
+            const fs = band ? fill_fs(npoly, band.y, Math.max(6, tlen), 8, 20) : 0
+            pane.nucleus = { d: poly_d(npoly),
+                x: band ? (band.x0 + band.x1) / 2 : ncx,
+                y: band ? band.y + fs * 0.35 : ncy, fs,
+                ...(td && band ? {
+                    tag: td.tag, tagcolon: !!tname && td.nk === td.tag,
+                    nk: tname && td.nk && td.nk !== td.tag ? td.nk : undefined,
+                    nkhue: td.nk && td.nk !== td.tag ? `hsl(${vein_of(td.nk).hue}, 52%, 68%)` : undefined,
+                    name: tname || undefined, sup: tm ? `×${tm[2]}` : undefined } : {}) }
+        } else if (td) {
+            // nucleus crowded out — fall back to the floating headline
             const band = wide_chord(c.inset, by + bh * 0.05, by + bh * 0.34)
             if (band) {
-                const tlen = name.length + (td.tag ? td.tag.length * 0.7 : 0) + 2
                 const fs = Math.max(9, Math.min(19, band.w * 0.8 / (0.62 * Math.max(4, tlen))))
                 pane.title = { x: (band.x0 + band.x1) / 2, y: band.y + fs * 0.35, fs,
-                    tag: td.tag, name, sup: m ? `×${m[2]}` : '' }
+                    tag: td.tag, name: tname, sup: tm ? `×${tm[2]}` : '' }
             }
         }
         const dd = descs.find(d => d.dip)
@@ -2889,7 +2935,12 @@
                 {#each vsubs as sp (sp.id)}
                     <clipPath id={sp.clipid}><path d={sp.clip} /></clipPath>
                     <g class="cytui-subgraph" clip-path={`url(#${sp.clipid})`}>
-                        <!-- tuple regions first: the key's VEIN hue fills its region faintly
+                        <!-- spokes first, under every wall: nucleus → region in the region's
+                             hue — the visible clue that every tuple hangs off the fold source -->
+                        {#each sp.spokes as s, si (sp.id + '·s' + si)}
+                            <path class="vsub-spoke" d={s.d} stroke={s.hue} />
+                        {/each}
+                        <!-- tuple regions: the key's VEIN hue fills its region faintly
                              (the same hue in every pane — 'year' races around the scape) and
                              the members region wears its KIND — that wall is the Artist/Track
                              boundary.  Leaf walls ride above, thinner, in the pane's colour. -->
@@ -2897,6 +2948,9 @@
                             <path class="vsub-gwall" class:boundary={g.boundary}
                                   d={g.d} stroke={g.hue} fill={g.hue} />
                         {/each}
+                        {#if sp.nucleus}
+                            <path class="vsub-nwall" d={sp.nucleus.d} stroke={sp.tint} fill={sp.tint} />
+                        {/if}
                         {#each sp.cells as scell (scell.id)}
                             <path class="vsub-wall" d={scell.d} stroke={sp.color} fill={sp.color} />
                             <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions, a11y_interactive_supports_focus -->
@@ -2905,21 +2959,32 @@
                                   font-size={scell.fs.toFixed(1)} text-anchor="middle"
                                   role={scell.member ? 'button' : undefined}
                                   onclick={scell.member ? () => micro_click(sp.id, scell.member) : undefined}>
-                                {#if scell.tag}<tspan class="vsub-tag">{scell.tag} </tspan>{/if}
+                                {#if scell.member}<tspan class="vsub-c">%</tspan>{/if}
+                                {#if scell.tag}<tspan class="vsub-tag" fill={scell.tint ?? undefined}>{scell.tag} </tspan>{/if}
                                 {#if scell.val}<tspan class="vsub-v">{scell.val}</tspan>{/if}
                                 {#if scell.sup}<tspan class="vsub-sup" dy="-0.45em">{scell.sup}</tspan>{/if}
                                 {#if scell.subn}<tspan class="vsub-sup vsub-dig" dy={scell.sup ? '0' : '-0.45em'}>/*{scell.subn}</tspan>{/if}
                             </text>
                         {/each}
-                        <!-- each tuple's key said ONCE, from its region's widest band -->
+                        <!-- each tuple's key said ONCE, from its region's widest band; the
+                             colon is Stuffing's lilac — the k→v grammar mark, present iff
+                             values follow -->
                         {#each sp.groups as g (g.id + '·k')}
                             {#if g.label}
                                 <text class="vsub-gkey" x={g.label.x.toFixed(1)} y={g.label.y.toFixed(1)}
                                       font-size={g.label.fs.toFixed(1)} text-anchor="middle" fill={g.hue}>
-                                    {g.label.text}{#if g.label.sup}<tspan class="vsub-sup" dy="-0.45em">{g.label.sup}</tspan>{/if}
+                                    {g.label.text}{#if g.label.colon}<tspan class="vsub-colon">:</tspan>{/if}{#if g.label.sup}<tspan class="vsub-sup" dy="-0.45em">{g.label.sup}</tspan>{/if}
                                 </text>
                             {/if}
                         {/each}
+                        <!-- the nucleus speaks Stuffing: kind-tinted mainkey badge · namekey in
+                             its vein hue · lilac colon · plain value · ×N sup -->
+                        {#if sp.nucleus && (sp.nucleus.tag || sp.nucleus.name)}
+                            <text class="vsub-ntitle" x={sp.nucleus.x.toFixed(1)} y={sp.nucleus.y.toFixed(1)}
+                                  font-size={sp.nucleus.fs.toFixed(1)} text-anchor="middle">
+                                {#if sp.nucleus.tag}<tspan class="vsub-ntag" fill={sp.tint}>{sp.nucleus.tag}</tspan>{#if sp.nucleus.tagcolon}<tspan class="vsub-colon">: </tspan>{:else}<tspan> </tspan>{/if}{/if}{#if sp.nucleus.nk}<tspan class="vsub-nk" fill={sp.nucleus.nkhue}>{sp.nucleus.nk}</tspan><tspan class="vsub-colon">: </tspan>{/if}{#if sp.nucleus.name}<tspan class="vsub-v">{sp.nucleus.name}</tspan>{/if}{#if sp.nucleus.sup}<tspan class="vsub-sup" dy="-0.45em">{sp.nucleus.sup}</tspan>{/if}
+                            </text>
+                        {/if}
                         {#if sp.title}
                             <text class="vsub-title" x={sp.title.x.toFixed(1)} y={sp.title.y.toFixed(1)}
                                   font-size={sp.title.fs.toFixed(1)} text-anchor="middle" fill={sp.tint}>
@@ -3081,14 +3146,33 @@
     stroke-opacity: 0.55; stroke-width: 1.4;
     stroke-dasharray: none;
 }
+/* the NUCLEUS: the fold source's own cell — wall solid and a touch luminous, the one
+   plate the spokes radiate from.  The spoke is a quiet dashed strand in the region's
+   hue: the linkage, not a wall. */
+.cytui-subgraph .vsub-nwall {
+    fill-opacity: 0.09;
+    stroke-opacity: 0.7; stroke-width: 1.4;
+    stroke-linejoin: round;
+}
+.cytui-subgraph .vsub-spoke {
+    fill: none;
+    stroke-width: 1; stroke-opacity: 0.3;
+    stroke-dasharray: 2 3; stroke-linecap: round;
+}
 .cytui-subgraph text { user-select: none; }
 .cytui-subgraph .vsub-label { fill: #c9c9c9; }
 .cytui-subgraph .vsub-label.hot { pointer-events: all; cursor: pointer; }
 .cytui-subgraph .vsub-label.hot:hover { fill: #fff; }
 .cytui-subgraph .vsub-tag { fill: #667788; font-size: 72%; }
 .cytui-subgraph .vsub-v { fill: #cfcfcf; }
-.cytui-subgraph .vsub-sup { fill: #b0a4dc; font-size: 68%; }
+/* Stuffing's grammar, spoken in SVG: lilac colon (the k→v mark), violet counts,
+   the shining green % on any poppable C — same signs, same colours. */
+.cytui-subgraph .vsub-colon { fill: rgb(228, 163, 245); }
+.cytui-subgraph .vsub-sup { fill: rgb(156, 140, 217); font-size: 68%; }
+.cytui-subgraph .vsub-c { fill: rgb(83, 255, 15); font-size: 78%; opacity: 0.85; }
 .cytui-subgraph .vsub-gkey { opacity: 0.95; }
+.cytui-subgraph .vsub-ntitle { opacity: 0.95; }
+.cytui-subgraph .vsub-ntag { font-size: 78%; }
 .cytui-subgraph .vsub-title { opacity: 0.92; }
 .cytui-subgraph .vsub-dip {
     fill: #8a7fc0; font-size: 10px;

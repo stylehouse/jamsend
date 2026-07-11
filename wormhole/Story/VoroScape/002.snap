@@ -18,14 +18,14 @@ Snap:H
         Voro,beat=2,level:L0,visible=7,cells:3,gangs=0,folded:5,count:3
         cell:Artist,kind:pane,n:2
           Vtuffing,of:Track,n:2
-            Vrow,row:title,text:Moonlit  ×2,wgt:2,tag:Artist
+            Vrow,row:title,text:Moonlit  ×2,wgt:2,tag:Artist,nk:name
             Vrow,row:list,wgt:1,bits:2
             Vrow,row:spread,text:year,wgt:1,bits:2
             Vrow,row:fact,text:remaster ×1,wgt:1
             Vrow,row:dip,text:/*2,wgt:1
         cell:Artist,kind:pane,n:2
           Vtuffing,of:Track,n:2
-            Vrow,row:title,text:Fernway  ×2,wgt:2,tag:Artist
+            Vrow,row:title,text:Fernway  ×2,wgt:2,tag:Artist,nk:name
             Vrow,row:list,wgt:1,bits:2
             Vrow,row:spread,text:year,wgt:1,bits:2
             Vrow,row:fact,text:live ×1,wgt:1
@@ -33,7 +33,7 @@ Snap:H
             Vrow,row:dip,text:/*2,wgt:1
         cell:Artist,kind:pane,n:1
           Vtuffing,of:Track,n:1
-            Vrow,row:title,text:Voxhall  ×1,wgt:2,tag:Artist
+            Vrow,row:title,text:Voxhall  ×1,wgt:2,tag:Artist,nk:name
             Vrow,row:list,wgt:1,bits:1
             Vrow,row:fact,text:year: 2007,wgt:1
             Vrow,row:dip,text:/*1,wgt:1

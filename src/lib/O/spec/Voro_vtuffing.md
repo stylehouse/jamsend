@@ -322,6 +322,36 @@ The owner, on the first slice: *"they need to start taking on tuple geometry in 
      this pass was verified headlessly; the owner's grant: "runners are free to take shots of
       the svg."
 
+#### 🎋 v2 third pass — the NUCLEUS + the Stuffing grammar (2026-07-11, same day again)
+
+The owner, on the tuple glass: *"a little more structure within each cell, so I can tell what is
+ going on with them... mainly just the Artist:Riverine must be part of the subcells... in such a
+  way as to clue that they are all linked to it... and if possible, communicate visually as
+   Stuffing does"* — plus the presentation bug: *"fix how the C Artist(,name):Riverine is
+    presented without any indication of that name key. like Stuffing, it's explicit about what's
+     a key or value."*
+
+- **The NUCLEUS.**  The fold source stopped being a floating headline and became a CELL of its
+   own glass: seeded at the pane centre with a radius from its words alone (an identity plate,
+    not a data region), wall solid in the pane's kind tint (`.vsub-nwall`).  Every tuple region —
+     members now included — takes its vein's compass bearing instead (`vein_of(kind)` for the
+      members, so 'Track' sits the same corner in every pane exactly as 'year' does).
+- **The SPOKES.**  From the nucleus to each region's centroid, a quiet dashed strand in the
+   region's own hue (`.vsub-spoke`, drawn under the walls) — the "all linked to it" clue drawn,
+    not inferred.  Verified in the shot: spoke hues = exactly the four region hues per pane.
+- **The Stuffing grammar, spoken in SVG.**  One rule-set, level-invariant (it recurses when
+   sub-sub-voronois come): mainkey = kind-tint badge; non-main key = its vein hue; **colon =
+    Stuffing's lilac rgb(228,163,245), present iff a value follows** (its own tspan now, the k→v
+     grammar mark); value = plain bright; ×N = Stuffing's violet rgb(156,140,217) sup; **the
+      shining green % rgb(83,255,15) marks every poppable C** (member leaves — Stuffing's is_C
+       glyph, now the surf affordance).  Member leaf tags wear their member's kind tint too.
+- **The namekey made explicit.**  Vtuff title rows carry `nk:<namekey>` (Voro.g `Vtuff_default`
+   + bamboo crown + the Cytui TS fallback twin), so the nucleus reads `Artist name: Riverine ×3`
+    — and a mainkey-valued source reads `cell: Kunzea` (nk === tag → the tag takes the colon).
+     `nk` rides the census transcript into fixtures; VoroScape re-recorded (the diff was purely
+      `+nk:name` on every title row).  'name' is a key like any other: it wears a vein hue
+       (hsl 53 in the shot, the same in every nucleus).
+
 ### 🔊 Quiet ↔ rampage — a throttle on the fold's thinking
 
 The owner, verbatim: *"have some way to quiet or rampage its thinking sometimes."*  The

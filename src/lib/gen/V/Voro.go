@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return 'f05e2e2c7e40543e' },
+    Ghostmeta_Ghost_V_Voro(): string { return '21b66c97c10b6604' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
@@ -632,6 +632,11 @@ Vtuff_default(root, members, src) {
         name = this.Vtuff_name(src)
     }
     let tsc = { Vrow: 1, row: 'title', text: (name ? name + '  ' : '') + '×' + members.length, wgt: 2, tag: tag }
+    // nk — the KEY the name is the value OF (Stuffing is explicit about what's a key or
+    //  what's a value; a bare 'Riverine' hid that it rides %Artist's `name`).  The renderer
+    //   says `Artist name: Riverine`; when the mainkey itself carries the name, nk === tag
+    //    and the tag takes the colon (`cell: Kunzea`).
+    if (name) tsc.nk = this.Vtuff_namekey(src)
     root.i(tsc)
     if (homo) {
         let r = root.i({ Vrow: 1, row: 'list', text: '', wgt: 1 })
@@ -710,7 +715,9 @@ Vtuff_bamboo(root, members, src) {
     }
     // crown — identity, the first joint, always present
     let crown = root.i({ Vseg: 1, seg: 'crown', joint: 0 })
-    crown.i({ Vrow: 1, row: 'title', text: (name ? name + '  ' : '') + '×' + members.length, wgt: 2, tag: tag })
+    let csc = { Vrow: 1, row: 'title', text: (name ? name + '  ' : '') + '×' + members.length, wgt: 2, tag: tag }
+    if (name) csc.nk = this.Vtuff_namekey(src)
+    crown.i(csc)
     // cane — the members (only when there ARE member rows: a mixed big family speaks only in leaf)
     if (homo || members.length <= 5) {
         let cane = root.i({ Vseg: 1, seg: 'cane', joint: 1 })

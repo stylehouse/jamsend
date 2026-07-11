@@ -88,12 +88,25 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
             addr (use the sticky: court via runner_ask first).  VoroScape GREEN 6/6 on the
              committed fixtures (the owed confirm run).  49dee9 wedged (release lands, asks still
               refuse — needs its tab reloaded); 3c5238 healthy and did all of the above.
-- **NEXT MOVES:** (1) eyes-on the tuple glass: regions legible? veins racing? boundary reads? fs
-   7–30 swings wild-good or wild-bad? member label click still pops; (2) VoroMitosis|VoroRadio
-    checks → accepts (their transcripts bake flat); (3) leftover eyes-on: fold seal, one-pane-one-
-     cell from beat 2, molded fit, uniform drag (Riverine-as-plain-node on a FRESH run = real
-      stamp-order fault); (4) 🎋 v2 deepening: sub-sub-voronois (a member's own children),
-       expand-in-place, morph-stable sub-walls, label-vs-leaf collision easing.
+- **The nucleus round (still 2026-07-11, owner: "Artist:Riverine must be part of the subcells…
+   clue that they are all linked to it… communicate visually as Stuffing does"):** the fold source
+    became a CELL of its own glass — the NUCLEUS, centre-seeded, solid kind-tint wall — and every
+     region (members now at `vein_of('Track')`'s bearing too) hangs off it by a SPOKE in the
+      region's own hue.  Text adopted Stuffing's explicit grammar (one level-invariant rule-set:
+       key = vein hue, colon = Stuffing lilac iff a value follows, value plain, mainkey = kind
+        badge, ×N = violet sup, shining green % on every poppable C).  The presentation bug fixed:
+         title rows carry `nk:<namekey>` (Voro.g + TS fallback), so the nucleus reads
+          `Artist name: Riverine ×3`, never a bare value with its key hidden — `nk` rides the
+           transcript, VoroScape fixtures re-recorded (pure `+nk:name` diff; the human ran+accepted
+            live at the machine mid-build).  Shot-verified: 5 nuclei labeled, 19 spokes in exact
+             region hues, 15 %-marked members, `year:` hsl(138) + `name` hsl(53) uniform everywhere.
+- **NEXT MOVES:** (1) eyes-on the nucleus glass: does the linkage READ? spokes too quiet/too loud?
+   nucleus plate size right? %-marker noise?; (2) VoroMitosis|VoroRadio checks → accepts (their
+    transcripts bake flat + nk); (3) leftover eyes-on: fold seal, one-pane-one-cell from beat 2,
+     molded fit, uniform drag (Riverine-as-plain-node on a FRESH run = real stamp-order fault);
+      (4) 🎋 v2 deepening: sub-sub-voronois (a member's own children — the nucleus rule recurses:
+       every popped member gets its own nucleus), expand-in-place, morph-stable sub-walls,
+        label-vs-leaf collision easing.
 
 **NIGHT LOG — 2026-07-08 overnight (autonomous build; NOTHING committed, all in the working tree).**
  Two things landed, both compile-verified via LocalGen; the pixel/eyes-on halves are staged for you.
