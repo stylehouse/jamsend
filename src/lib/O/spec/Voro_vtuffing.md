@@ -353,6 +353,11 @@ The owner, on the tuple glass: *"a little more structure within each cell, so I 
        (hsl 53 in the shot, the same in every nucleus).
 
 #### 🎋 v2 sixth pass — the glass hides NOTHING + hierarchy flows radially (2026-07-11, latest)
+Owner verdict, next session: *"this is nice … nice and gem-looking with the w/C%Track in the
+ center of each cell, surrounded by its organs like a cell-wall around its nucleus."*  So this
+  face is **the GEM** — and per *"it'd be nice to save these modes we're evolving through"*, ALL
+   the faces are now saved: `voro_modes/README.md` (per-pass commit anchors + live SVG shots;
+    the gem = `06_radial_gem.svg`).
 The owner's corrections on the fifth pass, all landed in one rebuild:
 - **Show everything, be totally generic.** *"data must be correctly presented. it may be folded
    away, but that fold must be annotated and expandable … I want all ugly bits of eg %req

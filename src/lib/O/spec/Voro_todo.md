@@ -9,277 +9,70 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
 
 ## 0 · Handover  (rewrite this section each handover; everything below stays current)
 
-**FRONTIER 2026-07-11 — the bisect landed; the fold contract is re-sealed; next is 🎋.**
- The owner ran the bisect on the drag/morph regression: commit `4add5244` ROLLED BACK Cytui (+ part
-  of Cyto) and the regression died with it — the other tests look great again.  The rolled-back WIP
-   (telemetry ring, F1 render-gate, F7 diagonal-satan, the yoink-free waitVoro queue, the `cy` stash
-    that closed the pixel loop) is PARKED at `/tmp/Cytui.wip.svelte` + `/tmp/Cyto.wip.svelte` —
-     cherry-pick a piece WITH EYES ON if wanted, never re-land wholesale.  `runner_shot.mjs` +
-      `op:'shot'/'why'` (LiesFunk) SURVIVED, but their Cytui half didn't, so the pixel loop is open
-       again until that half is rebuilt.  What the rollback also tore — and this session re-sealed:
-- **The c-side fold contract RESTORED (Cyto.svelte, in the working tree).**  The rollback kept the
-   crusher (all stamps c-side, Voro.g:28) but dropped the render side of "the same cut": descent no
-    longer stopped on `c.stuff` (→ every folded Artist's Tracks leaked into the graph as free nodes —
-     the owner's "Tracks all over the place"), `c.represented` gang members double-drew, `%Opt` config
-      graphed, and ◈'s `e_Cyto_crush` handler was gone (silent elvis no-op).  All five seams restored
-       verbatim.  Live-verified model-side (VoroScape 6/6 on `3c5238…`, census `cells:5 folded:16`);
-        pixel eyes-on owed after a tab reload.
-- **📻🕳 SHELVED** (`Cytui.svelte` `DRIFT_MODES_ON=false` — rack idiom): the tunnel never let the
-   tessellation settle; owner wants both reimagined as their own endeavour grown out of Voro.  Buttons
-    and stash-restore gated, machinery kept; one flag re-opens the lab.
-- **waitVoro dwell +2s** (`Cyto.svelte` `DWELL_MS` in `e_Cyto_animation_request`): every waitCyto
-   Book now breathes 2s per step after the layout leg — "the other tests look great, could slow down".
-- **The Vtuffing language critique is now spec** — `Voro_vtuffing.md` §🎋 "The language critique":
-   C/C path visible, keys ≠ values, `:` grammar like Stuffing, ×N and /*N styled as operators.  It is
-    the requirements list for the redesign that rides the bamboo pass.
-- **The census now carries each pane's WORDS** (owner ask, live-verified on `3c5238…`): every
-   `cell:` row in `w:Voronoiology` holds its transcribed `%Vtuffing` tree (`Voro_vtuff_transcribe`,
-    Voro.g — sc only, numbers stringified, commas shed) — the snap explains the layout obliquely,
-     and a pane's story diffs beat to beat.  ⚠ the tree follows `Vtuff_bamboo_on()` (stash
-      `Cyto_bamboo`, per-tab): DECIDE the bamboo default before re-recording, or fixtures bake
-       whichever mode the recording tab had.
-- **📸 shot rails re-armed** (the `cy` stash cherry-picked back into Cytui onMount): `runner_shot`
-   answers again.  Learned: shots are REFUSED while a run's engagement is held — release first;
-    and `cy.png()` carries ONLY the cy canvas — cells (SVG) and Stuffings (HTML) are invisible in
-     it, so a shot shows the raw graph under the glass (still good for F7-diagonal + node census;
-      the pane-content instrument is the census transcript above).
-- **The owner's go-forth round (later same session):** ≥2-seed floor GONE (`voronoi_layout`:
-   a lone seed owns the whole frame — cells from the first mount); the pane face is the REAL
-    Stuffing again (▤ row engine demoted: default-off + session-local; the `fit ≥ 0.5` floor and
-     the gather-cap lie were the chronic clip — paint_final now clamps to the cell's true capacity);
-      crown|cane bamboo SHELVED (`Vtuff_bamboo_on()` hard false — it was a zombie stash with no
-       button; census transcripts and fixtures now always flat).  Bamboo v2 = sub-cells|sub-graph
-        (`Voro_vtuffing.md` §🎋 v2 — the owner's redirect).  ⚠ ALL THREE runner tabs wedged under
-         the session's HMR volleys — every live verify past the transcript proof is gated on reloads.
-- **The onward round (2026-07-11, after the owner's eyes-on: "currently it seems lovely!"):**
-  - **Census transcript trimmed to the higher structures** (owner: *"avoid dumping out all the Vbit …
-     as long as we don't lose one"*): `Voro_vtuff_transcribe` skips `%Vbit` leaves; each chip-carrying
-      row says `bits:N` instead, so the accounting still diffs.  Gen recompiled (LocalGen).
-       **VoroScape re-recorded LIVE on `3c5238…`** (check → snap-inspected the exact intended shape →
-        `accept` over the wire): fixtures 002–006 now current-canon (library→deepen→Riverine→fill
-         steps + flat transcript), all four `%see` roster-checked recorded, zero `Vbit` anywhere.
-          ⚠ the green CONFIRM re-run never recorded — the runner tab vanished mid-watch (flock was
-           churning); one clean re-run still owed.  VoroMitosis|VoroRadio fixtures carry NO transcript
-            rows yet (pre-expansion) — their long-owed re-records will bake the flat shape when run.
-  - **Genericity probe answered** (owner: *"there's no %title told of anywhere now? be generic"*):
-     correct and by design — `title` is only ever `row:title` (the headline row-KIND) and one entry in
-      the generic naming-preference list `['name','title','text','nick','label']`; the Track key never
-       shows because the member list already displays members BY their naming key (the namekey skip).
-  - **🎋 v2 FIRST SLICE BUILT — the ▦ sub-graph** (owner: *"sub-graphs, for all of Artist** with
-     sub-voronois to each k and v and whatever they've been combined into, and the ×2 and so on like
-      annotations|superscripts, which we can click to expand the graph, later"*).  Cytui: every
-       fold|gang pane with room (√area ≥ 88) tessellates ITSELF — sub-cells per key|value|member off
-        the cached Vtuff tree, same phi-spiral + power-wall geometry as the parent scape, clipped to
-         the pane; ×N and /*N as lilac SUPERSCRIPTS; keys tinted with `:`, values plain; the pane's
-          name as a headline, /*N in the corner; member labels + corner click through to `Vtuff_pop`.
-           Default ON (`Cyto_subgraph` stash, ▦ button beside ▤; ▤ keeps per-pane priority).  The
-            dimmed molded Stuffing underneath is the fallback face for slivers.  Design record:
-             `Voro_vtuffing.md` §"🎋 v2 first slice".  **Eyes-on owed — nothing snapped changes.**
-- **The tuple round (same day, owner: "subcells are nice! but they need to start taking on tuple
-   geometry in there and across them"):** the flat cut became a TWO-LEVEL cut — every keyed row is
-    a REGION (key labels it once, values tessellate inside it), the members are a KIND-labeled
-     region whose solid wall IS the Artist/Track boundary, `vein_of(key)` gives each key name one
-      global golden-angle slot = its hue AND compass bearing in every pane (the "vein of Years
-       racing around" — shot-verified identical hsl + bearing across all 5 panes), labels
-        Wes-Wilson to fill their polygons (`fill_fs`, fs 7–30 live), and the pane headline sits on
-         its widest band (`wide_chord` — no more Palegold-in-a-corner).  **🩻 `runner_shot.mjs
-          --svg`** (op:'svg', LiesFunk) ships the live glass layer standalone with CSS baked in —
-           the pane-content instrument at last; note `--runner=` on runner_shot passes a RAW relay
-            addr (use the sticky: court via runner_ask first).  VoroScape GREEN 6/6 on the
-             committed fixtures (the owed confirm run).  49dee9 wedged (release lands, asks still
-              refuse — needs its tab reloaded); 3c5238 healthy and did all of the above.
-- **The nucleus round (still 2026-07-11, owner: "Artist:Riverine must be part of the subcells…
-   clue that they are all linked to it… communicate visually as Stuffing does"):** the fold source
-    became a CELL of its own glass — the NUCLEUS, centre-seeded, solid kind-tint wall — and every
-     region (members now at `vein_of('Track')`'s bearing too) hangs off it by a SPOKE in the
-      region's own hue.  Text adopted Stuffing's explicit grammar (one level-invariant rule-set:
-       key = vein hue, colon = Stuffing lilac iff a value follows, value plain, mainkey = kind
-        badge, ×N = violet sup, shining green % on every poppable C).  The presentation bug fixed:
-         title rows carry `nk:<namekey>` (Voro.g + TS fallback), so the nucleus reads
-          `Artist name: Riverine ×3`, never a bare value with its key hidden — `nk` rides the
-           transcript, VoroScape fixtures re-recorded (pure `+nk:name` diff; the human ran+accepted
-            live at the machine mid-build).  Shot-verified: 5 nuclei labeled, 19 spokes in exact
-             region hues, 15 %-marked members, `year:` hsl(138) + `name` hsl(53) uniform everywhere.
-- **The pipeline round (still 2026-07-11, owner: "step 2 has all these nodes flood in but not
-   cells… toggling back to cells shows us the crappy little button looking k|v|annotation ambiguous
-    labels… you just need the freedom to make Voro more elegant"):** three cuts, all live-green:
-  - **Crush BEFORE scan (F6 + the flood lag CLOSED — `Voro_render_faults_todo.md` §STATUS 07-11).**
-     The beat ordering was scan→snap(crush), so every newborn waved RAW and dressed one step late —
-      and the ARCHIVES baked the lag, so seeking replayed it.  Now `e_Cyto_commission` arms
-       `Scannable.c.crush_wanted` when the commission carries useVoroCyto, and the pre-scan hook
-        runs the new `Voro_crush_worlds(scan)` (per-world, skips Voronoiology, QUIET — story_snap
-         stays the census author, `beat=N` fixtures undisturbed).  Newborns fold in their birth
-          wave; VoroClinic's re-recorded 001.snap photographs exactly that (the wrangle upserts
-           `overlay_kind:stuff,overlay_self` at step 1 where the old fixture had a classic node).
-            The "req:wrangle left out" mystery was THIS: it cells fine once stamps precede scans.
-  - **The ▤ row engine DELETED (Cytui −300 lines: micro_fit, vmicro, the card template + CSS,
-     the ▤ button).**  It was the "crappy button-looking k|v-ambiguous labels" — the demoted
-      pre-grammar face kept resurfacing through the toggles (its off-branch never re-ran the ▦
-       pass, stranding the board).  One rule now: a pane speaks the ▦ grammar or wears its REAL
-        molded Stuffing; `vtuff_rows` survives as the ▦ feeder, `micro_click` as the surf.
-  - **Flood layout under-run FIXED** (`apply()`): newcomers > 2× settled ⇒ no pins (no rosette to
-     protect) + a SECOND free relayout on layoutstop — the owner's manual ⟳ made automatic.
-  - **Census stops walking machinery:** `%self` skipped like `%Opt` (crush + report walks) — a
-     `cell:self` gang could never be a canvas pane, and its transcript baked the self's wall-clock
-      `%est` into fixtures (VoroRadio 4-5 red on every re-run — found chasing this round's accepts).
-  - **All five re-recorded green on `77d262…`:** VoroScape 6/6 (census −self), VoroMitosis 11/11
-     (transcripts+nk baked at last), VoroRadio 9/9 **caveat 0** (est poison gone), VoroClinic 9/9
-      (the long-owed accepts), LeafFarm 30/30 untouched — the base Cyto layer holds.
-- **The uniformity round (same day, owner: "why do some things always become Stuffing? I want
-   them all [glass] if it's that mode"):** the ▦ pass now dresses EVERY pane — folds tessellate,
-    everything else (loners, one-fact folds, slivers, crowded-out beats) degrades to the new
-     **nucleus-only pane**: the whole cell speaks one grammar statement, value word-wrapped to
-      the pane (`nucleus_only`, Cytui; design + the why in `Voro_vtuffing.md` §🎋 v2 fifth pass).
-       Live-proven: VoroScape step 1 = one pane reading `req: wrangle`; mid-flood the whole
-        `see:` sentence wraps its glass; 6 nuclei at final.  All green after (VoroScape 6/6,
-         VoroMitosis 11/11, VoroRadio 9/9, LeafFarm 30/30) — render-only, nothing snaps.
-- **The honesty + radial round (same day, owner: "nope! data must be correctly presented …
-   no hiding stuff, no knowing about the data: show everything, be totally generic … avoid %
-    completely … we kind of want the %Track C at the center, and all the tracks around the
-     outside … Wes-Wilson lovely stretchy text … alignment of meanings through the subgraphs
-      and between them all … imagining elegant code to keep yourself sane"):** one rebuild of
-       the ▦ engine, render-only, full record in `Voro_vtuffing.md` §🎋 v2 sixth pass:
-  - **Nothing hides:** loners tessellate their whole `sc` like folds (`req: wrangle` +
-     `eternal` + `ok` regions); anything a pane can't fit this beat is COUNTED into a corner
-      **`+N` fold mark** (annotated, one day expandable — after Wes-Wilson settles).
-  - **% gone from the render** (it prefixes keys, the glass wore it on values); hot dotted
-     underline is the poppable cue now.
-  - **Radial hierarchy:** nucleus at the core (weight floors at 0.34·R — the source statement
-     is never the smallest text), keyed facts on the mid belt at vein bearings, members
-      ringing the RIM from the kind's bearing, a radial kind-hue gradient washing outward =
-       the slope of hierarchy made visible; `Track ×N` engraved once on the rim per pane.
-  - **Alignment:** one-value regions say `year: 2007` as a unit; values sort numeric-aware;
-     in many-value regions the key is a SEED (reserved crown sub-cell — overlap impossible).
-  - **The statement engine:** every glass text = a `VStat` fitted by `fit_stat` (+`fit_ident`,
-     the shed-grammar-before-the-name ladder) and rendered by ONE `vstat` snippet with
-      per-line `textLength` stretch (0.9–1.45× natural) — `nucleus_only`, `fill_fs`, and all
-       four old text renderers deleted into it.
-  - **Live gates:** VoroScape 6/6 c0 ×2, VoroMitosis 11/11 c10 (norm), VoroRadio 9/9 c0,
-     VoroClinic 9/9 c0, LeafFarm 30/30; SVG-verified zero text collisions, `+3` honest on the
-      cramped Fernway pane, `Artist : Fernway` (identity kept, grammar shed).
-- **NEXT MOVES:** (1) eyes-on the radial glass: does the core→belt→rim read? gradient loudness?
-   ring engraving placement? the `+N` marks (annotation now, a DOOR later — wire to a spill or
-    a zoom once Wes-Wilson is declared done)? stretch tastefulness at the 1.45× cap? mid-run
-     `%see` panes (the wrap engine was ported, its transient face is unshot);
-   (2) **🎋 v2 next layer — cells within the cells:** the radial rule IS the recursion rule;
-    recurse it into popped members / large member cells (sub-sub-voronois with the same
-     core→rim slope), asymmetric WALLS as the finer hierarchy cue (the gradient did the coarse
-      version), expand-in-place, morph-stable sub-walls;
-   (3) **re-add the rollback casualties as an isolated slice**: F7 `diag_check` (the VoroMitosis
-    end-of-run diagonal the owner keeps hitting IS loose F7) + the render telemetry (`vlog` —
-     `op:'why'` in LiesFunk is currently an orphan); the designs live in
-      `Voro_render_faults_todo.md`, the parked WIP in `/tmp/Cytui.wip.svelte` (volatile!).
+**THE ARC in one breath.**  The Voronoi layer turns the live Cyto graph into stained glass: the
+ crusher (`Ghost/V/Voro.g`, c-side stamps only) folds MANY+homogeneous behind `%stuff`, and the
+  ▦ engine (`Cytui.svelte`) makes every pane SPEAK its particle — honestly (nothing hidden, every
+   fold annotated), generically (no data key special anywhere), in one grammar (the VStat
+    statement), laid out radially (the kind-C at the core, its facts on the belt, its members
+     around the rim — the owner: *"like a cell-wall around its nucleus"*).  DESTINATION: the
+      radial rule RECURSES — cells within the cells, a popped member repeating the same core→rim
+       slope one level down, asymmetric walls carrying the finer hierarchy cue, the `+N` fold
+        marks becoming expandable DOORS — until the glass is the primary face of any C** at any
+         depth.  The faces we evolve through are SAVED: `voro_modes/README.md` (a ledger of all
+          six passes — commit anchors + live SVG shots; revive any face via
+           `git show <commit>:src/lib/O/Cytui.svelte`).
 
-**NIGHT LOG — 2026-07-08 overnight (autonomous build; NOTHING committed, all in the working tree).**
- Two things landed, both compile-verified via LocalGen; the pixel/eyes-on halves are staged for you.
-- **🎋 Bamboo schematica — meaning-side LANDED + compile-clean.**  `Ghost/V/Voro.g`: `Vtuff_build`
-   now branches flat vs a jointed **`%Vseg` stalk** (crown · cane · leaf · shoot) via `Vtuff_bamboo`,
-    gated by a workspace pref `Vtuff_bamboo_on()` = stash `Cyto_bamboo` (**default OFF → zero render
-     change**, so the live runner is untouched).  Plus the **first Se**: `Vtuff_se` reads the RADIO
-      (drift_focus → rampage the cane; dwelt-past → quiet the leaf), stamped live c-side each build
-       (`Vtuff_se_apply`, cache-safe).  `Cytui.svelte vtuff_rows` **flattens `%Vseg` transparently**
-        (backward-compatible — same rows, same order; carries `seg`/`se` onto each descriptor).
-         Compiled (LocalGen, `gen/V/Voro.go` rewritten); `npm run check` clean in the edited range.
-   - **OWED (eyes-on, cannot gate overnight — pixels):** (1) flip stash `Cyto_bamboo=1` and WATCH a
-      pane — with the flatten it renders identically to flat today, because (2) the *visible* joint
-       treatment (draw the notch between segments; swell cane on `d.se===2`, dim/collapse leaf on
-        `d.se===0`) is NOT built — it's a `micro_fit` change reading `d.seg`/`d.se`, staged for you.
-         The **🎋 toggle IS built** — a button on the ◈ bar (twin of ▤, `Cytui.svelte` ~2519) flips
-          stash `Cyto_bamboo` + re-renders; so: open a graph, hit 🎋, watch — best on **VoroRadioPier**
-           (its live drift gives Se something to react to).  Design: `Voro_vtuffing.md` §🎋 + #14.
-- **📻 VoroRadioPier — NEW Book LANDED + LIVE-smoke-verified (NOT recorded).**  Your "VoroRadio
-   feeding music from a Pier."  A twin of VoroRadio that keeps the green flora one UNTOUCHED: a fake
-    `%Pier,name:Crowd` streams a deterministic synthetic catalog (6 stations keyed station-as-mainkey,
-     the flora-mirror) that the SAME crush gangs into locales and the SAME `Voro_drift_tick` walks.
-      Keeps the full pick **trail** (`w.c.radio_trail`) — the down-payment on "saving the trail."
-       Registered `brand_new:1` in `wormhole/Credence/toc.snap`; `wormhole/Story/VoroRadioPier/toc.snap`
-        authored (9 beats, lie diges).  Ran live on runner `49dee9…`: all 9 beats, **all three `%see`
-         fire** (tuner-walked-the-pier / trail-kept / music-dribbled), no dup tracks, `drift,focus`
-          walking stations.  Shows "failed" ONLY on the lie diges (correct for brand_new).
-   - **OWED (yours):** watch it live + **record fixtures with eyes on** (I did NOT record — per the
-      eyes-on discipline).  TUNING to eyeball: it escalates to `level:L2, visible=21` because popped
-       stations spill their tracks loose — busy but functional; dial station/track counts or the
-        governor if it reads cluttered.  `Voro_todo.md` metaphysics + memory.
-- **Vision seeds captured** (your edge-of-sleep messages) in `Voro_vtuffing.md` §"Owner vision seeds":
-   dribble-from-edge/center (= the Pier IS the source) → swish (= #14 relaxation) → endless Travel →
-    trail + light-cone → wind fwd/back → trans-cellular filamentation.  All north-stars (eyes-on/core).
+**WHERE WE ARE (2026-07-11, committed `063fb214` — face 6, "the gem", owner-liked).**  Six ▦
+ passes in one day, each an owner redirect; full records per pass in `Voro_vtuffing.md` §🎋 v2:
+  flat cut → tuple regions + veins → nucleus + spokes → pipeline (crush BEFORE scan; ▤ deleted)
+   → uniform glass (every pane speaks) → **honesty + radial**: loners tessellate their whole sc;
+    `+N` corner marks count everything crowded out; `%` deleted from the render (it prefixes
+     KEYS — hot dotted underline is the poppable cue now); the nucleus weight floors at 0.34·R
+      so meaning hierarchy = visual hierarchy; members ring the rim from the kind's vein bearing
+       under a radial kind-hue gradient (the slope made visible) with `Track ×N` engraved on the
+        rim; one-value regions say `year: 2007` as a unit; the key is a SEED in many-value
+         regions (overlap impossible by construction); every glass text is a VStat fitted by
+          `fit_stat`/`fit_ident` (sheds grammar before the name) and rendered by ONE `vstat`
+           snippet with per-line textLength stretch 0.9–1.45×.  Fleet green ×5: VoroScape 6/6
+            c0 ×2, VoroMitosis 11/11 c10 (its norm), VoroRadio 9/9 c0, VoroClinic 9/9 c0,
+             LeafFarm 30/30; SVG-verified zero text collisions.  Render-only — nothing snapped.
 
-**Where we are (2026-07-07).**  The Voro *parameterisation* is SETTLED: the fold ("crush") is a
- VIEWER, imposed from the toc like Cyto/Matstyle — a Book never asks to be folded.
-- `The/Opt/useVoroCyto` (renamed from crushCyto / crush_wanted / wantsCrush): Story reads it in
-   `story_snap` and folds each run world AT SNAP TIME.  The per-worker "blast" in
-    `Story_settingoff` is GONE; `Voro_crush_scan` / `Voro_report` have NO gate.  Also stamped on
-     the Cyto commission.
-- The Book is **Voro-blind** — never folds, reads `c.stuff`, or logs the fold.  The fold
-   SELF-REPORTS into `w:Voronoiology` (a subject-agnostic process-trace; `Voro_vtuffing.md`
-    §"Status & frontier").  `dontSnapVoronoiology` (renamed from dontVoronoiology) prunes that
-     projection from the snap, Story-side in `snap_H`.
-- **Taxonomy by subject:** DATA Books (VoroScape = music, MusuReplica = replication) carry
-   `useVoroCyto` and are imposed.  FOLD Books (VoroMitosis = the fold, VoroRadio = the radio that
-    eats the fold) DRIVE `Voro_crush_scan` / `Voro_drift_tick` inline and KEEP their fold-`%see`.
-     (So deleting VoroScape's beat-6 + MusuReplica's ratio `%see` was right; touching
-      VoroMitosis's "ganged" or VoroRadio's radio `%see` would be wrong.)
-- Report row renamed `crush:1 → Voro:1`, now carrying `folded` / `count`.  `%see` in general is
-   untouched — only the few that reached into `c.stuff` died.  ◈ stays a live-only lens.
-  Design in full: memory `voro-imposed-from-above`.
+**NEXT MOVES.**
+ 1. **Owner eyes-on the gem:** does core→belt→rim read?  Gradient loudness, ring-engraving
+     placement, the `+N` marks (annotation now — a DOOR/spill/zoom later, once Wes-Wilson is
+      declared done), stretch taste at the 1.45× cap, and the transient mid-run `%see` pane
+       (its wrap engine is the ported proven one, but its face went unshot — steps run ~1s).
+ 2. **🎋 v2 next layer — cells within the cells** (owner-announced): the radial rule IS the
+     recursion rule.  Recurse it into popped members / large member cells; asymmetric WALLS as
+      the finer hierarchy-slope cue (the gradient is the coarse version); expand-in-place;
+       morph-stable sub-walls.  Don't skimp on thinking.
+ 3. **Re-add the rollback casualties as an isolated slice:** F7 `diag_check` (the VoroMitosis
+     end-of-run diagonal IS loose F7) + `vlog` render telemetry (`op:'why'` in LiesFunk is an
+      orphan).  Designs: `Voro_render_faults_todo.md` §STATUS; parked WIP `/tmp/Cytui.wip.svelte`
+       (VOLATILE — copy out if it still exists).
 
-**The gate is CLEARED (2026-07-08 — all four Books GREEN live on `49dee91d61a9de64`).**  Both `.g`
- compile clean via LocalGen; `gen/V/Voro.go` + `gen/Story/Musuation.go` written.
-- `VoroScape` — re-recorded LIVE + green (earlier).
-- `VoroMitosis` (11) — re-recorded LIVE + green; committed by the host (`da0eee49`).  The stale red was
-   pure rename-drift (report row `Voro:1` + `w:Voronoiology` self-report).  NB the extinction `%see`
-    ("a genus went extinct — stayed gone") is a LATENT assertion that never gates green: `VoroMitosis_die`
-     runs at n=8 but a later split reclaims the freed genus name from the fixed `genera` pool, so the
-      genus is back by the n=11 witness.  NOT a regression (flora logic is rename-invariant) — decide
-       later whether to make death sticky or drop the claim.
-- `VoroRadio` (9) — was ALREADY green vs committed fixtures (this handover was pessimistic; it saw a
-   stale `failed` run).  No re-record needed.
-- `MusuReplica` (14) — re-recorded LIVE + green; fixtures UNCOMMITTED in the working tree (`012.snap` +
-   tocs) for the human.  Only the n=12 witness redded — three FOLD `%see` (wire/libraries/graph "folds…
-    stuffed chunk") linger in the stale fixture but were INTENTIONALLY deleted from source (Voro-blind
-     Data Book), so re-record correctly drops them.  **CORRECTION to the old note:** MusuReplica is
-      **AC-free** (the header says so) — it does NOT stall on an AudioContext gesture.  Its cold-first-run
-       stall was a TRANSIENT spine race at n=3 (`MusuReplica_offer` → `Repli_sent_se`, the loopback
-        offer's first frame lost before the spine warmed); `release` + re-run clears it.
-- **Runner fleet drifted:** `wormhole/Cluster/toc.snap` roster is EMPTY, so `--runner=<id>` can't resolve
-   (fails "no matching runner") — plain broadcast `ping`/`run` reaches the one live runner (`49dee9…`)
-    unambiguously while only it advertises.  NEVER `accept` a run you didn't start — runs broadcast; the
-     guard is the `steps`/`snap` identity check (step count + which `%see`) before every accept.
+**OPEN ITEMS carried forward (older layers, still true).**
+- **VoroRadioPier** (the Pier-fed radio Book, built 07-08): live-smoke-verified, all three
+   `%see` fire, fixtures NEVER RECORDED — record with eyes on; busy at level:L2/visible=21,
+    maybe dial station|track counts first.  Registered brand_new in Credence.
+- **Seed→cell→mold agenda #13/#14/#12-rest** (`Voro_vtuffing.md` #10–14): #14 cell-quality
+   relaxation is the pilot for the owned-integrator branch (fcose demoted to seeder) — the
+    program-via-graph frontier.  #11 wave cadence, #12b HMR diagonal, #10 snake landed 07-08.
+- **VoroMitosis extinction `%see` is LATENT** (never gates green — a later split reclaims the
+   freed genus name); decide sticky-death vs drop, someday.
+- **📻🕳 + bamboo-v1 schematica SHELVED** (`DRIFT_MODES_ON=false`; `Vtuff_bamboo_on()` hard
+   false) — to be reimagined as their own endeavour; one flag reopens each lab.
+- The fold is a VIEWER (`The/Opt/useVoroCyto`, imposed at snap time; Books stay Voro-blind;
+   DATA vs FOLD Book taxonomy).  Design: memory `voro-imposed-from-above`.
 
-**The frontier.**  *(2026-07-08 session surfaced a whole cluster around seed→cell→mold + the diagonal; two
- fixes landed, the rest is the agenda below — all in `Voro_vtuffing.md` next-moves #10–#14.)*
-- **LANDED 2026-07-08:**
-  - **#11 the wave cadence (waitVoro)** — auto play-through animated like garbage because a *batch* of waves
-     was yoink-collapsed at `dur=0`; manual `←/→` (one wave per fire) always looked great, which was the tell.
-      `Cytui` enqueue/process_queue now animate every wave and WAIT for the voronoi morph before the next
-       (animCyto → animVoro).  Pace knobs `MORPH_MS`/`BURST_DUR`; a `MAX_ANIM_BACKLOG` valve for floods.
-  - **#12b HMR diagonal** — hot-reloading Cytui fired a bare un-pinned `relayout(400)` (an `$effect` re-runs on
-     HMR) → the graph fell into the diagonal.  `Cytui.svelte:97` now relayouts only on a real engine switch.
-  - **#10 the loose-node snake** (Cytui `install_snake`, was `install_nuclei`) — every free leaf threaded onto ONE
-     shared chain, `(parent,id)`-ordered, so late `%see` adds stop re-packing the rosette.  BUT it also chains the
-      voronoi SEEDS and a chain SPREADS them → giant isolated cells (#13 is the cure).  Eyes-on tuning still OWED.
-- **THE AGENDA (seed→cell→mold cluster):**
-  - **#13 star-not-chain** — un-spread the seeds: one shared *hub* not a chain (restores cell sizes, keeps the
-     diagonal fixed).  ~10 lines, the immediate band-aid.
-  - **#14 cell-quality relaxation** — the real cure: once per graph change, nudge bad-shape seeds toward their cell
-     centroid as a *seed hint* fcose then disposes (a sanctioned, terminating exception to pixels-never-push-back).
-      Subsumes #13.  `[scan]` — prove in isolation.
-  - **#12 diagonal, the rest** — kill the *nav-jump* trigger (a >1 seek sends an `absolute` wave → wipes cells +
-     un-pinned rebuild → diagonal; that's why "cells vanish at step 6" — a jump *to* 6, not play *into* it), then
-      expose the diagonal as a *voluntary* pack mode (owner admires it).
-  - **VoroScape folds NOTHING** (`folded:0`, snap `stuff=0`) — so only `req`+`see` seed cells and everything else
-     gets none; and they show as molded Stuffings (occlude), not row-fitted Vtuffings, because there are no
-      multi-member folds to Vtuff.  Open: why the imposed crush produces no gangs on VoroScape.
-- **NEXT (big): 🎋 bamboo schematica** — make the Vtuffing text structural (a jointed schematic the dumb renderer
-   fits into the cell); `Voro_vtuffing.md` §🎋 has the design; Se (surroundings-reactive fold) arrives with
-    it.  Tunnel + radio are parked north-stars, not next.
-- **↑ These two are ONE frontier — the real one atop this list.**  Se is a SINGLE primitive (a node forming a
-   verdict by reading its surroundings): #14's cell-quality metric is the FIRST Se in *geometry*; 🎋 bamboo's Se is
-    the SAME verdict in *text*.  Chaining Se + owning a per-node tick ("program via the graph") is exactly what fcose
-     structurally CAN'T host — so #14 is not merely the seed→cell→mold cure, it's the **pilot** for the owned-
-      integrator branch (fcose demoted to *seeder*, our own loop integrating a sum of per-node forces) that program-
-       via-graph needs.  Build #14 in the cage NOW (safe, contractive, terminating); taking the cage off IS the branch.
-        Full arc folded into `Voro_vtuffing.md` #14 (landed this preen) + §🎋.
+**BOMBS.**
+- Verify ONLY via the live runner (`runner_ask.mjs`); a headless Story_cli green is a bubble.
+- A `--runner=` pin dies when the human closes that tab; NEVER accept/release a run you didn't
+   start (client e63cdcca is the SHARED CLI identity — it proves nothing about whose run it is).
+- git-diff a Book's toc.snap before dispatch (an orphaned save can collapse one to a skeleton).
+- Never HMR mid-run; a wedged runner decodes EVERY Book total:1 (a Prep-only GREEN bubble).
+- runner_shot `--runner=` takes a RAW relay addr — court via runner_ask first, use the sticky.
+- The metaphysics below stand: pixels never push layout; nothing render-side snaps.
 
 ## The metaphysics
 
