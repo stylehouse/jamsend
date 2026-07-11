@@ -90,23 +90,14 @@
     //   lands on the freshest snapshot.  Doc switch flushes any pending push
     //   for the departing path before saving its state.
 
-    import { onDestroy, untrack } from "svelte"
-    import { EditorView } from "codemirror"
+    import { onDestroy, untrack, mount, unmount } from "svelte"
+    import { EditorView, basicSetup } from "codemirror"
     import { EditorState, StateField, StateEffect, Compartment, type Extension, type Range } from "@codemirror/state"
-    import { Decoration, type DecorationSet, ViewUpdate, ViewPlugin, WidgetType } from "@codemirror/view"
+    import { Decoration, type DecorationSet, keymap, ViewUpdate, ViewPlugin, WidgetType, drawSelection } from "@codemirror/view"
     import { indentService, indentUnit } from "@codemirror/language";
     import { foldEffect, unfoldEffect, unfoldAll, foldedRanges, codeFolding } from "@codemirror/language";
     import { defaultKeymap, indentWithTab } from "@codemirror/commands";
     import { diff_match_patch } from "diff-match-patch"
-
-    // most of basicSetup, which we remix
-    import { lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine, keymap } from '@codemirror/view';
-    import { foldGutter, indentOnInput, syntaxHighlighting, defaultHighlightStyle, bracketMatching, foldKeymap } from '@codemirror/language';
-    import { history, historyKeymap } from '@codemirror/commands';
-    import { highlightSelectionMatches, searchKeymap } from '@codemirror/search';
-    import { closeBrackets, autocompletion, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete';
-    import { lintKeymap } from '@codemirror/lint';
-
 
     import { lang, simpleLezerLinter, lang_for_path } from "$lib/O/lang/lang"
     import type { TheC } from "$lib/data/Stuff.svelte"
@@ -115,6 +106,7 @@
     import DocMinimap from "./ui/DocMinimap.svelte"
     import DocCompost from "./ui/DocCompost.svelte"  // frozen-frame overlay; arms dock.c.compost for fly-in gotos
     import DocPoint   from "./ui/DocPoint.svelte"
+    import DocStorying from "./ui/DocStorying.svelte"   // inline Credence light at a Run_A_<Book> def
     import { now_in_seconds_with_ms } from "./Peerily.svelte";
 
     let { H }: { H: House } = $props()
@@ -493,6 +485,30 @@
     $effect(() => {
         const T = dock?.ob({ Text: 1 })[0] as TheC | undefined
         if (T) Text = T
+    })
+
+    // ── book-run anchors $effect — inline Credence lights off the compiled %Map ──
+    //   Walks this dock's %Map defs; a def whose method is a Book run recipe
+    //    (Lang_book_of_method) earns a light at its absolute offset.  Positions come from
+    //     Lang_resolve_point (defs are region-relative; resolve maps them to the live doc),
+    //      the same resolver Points use.  Re-runs on dock.version (a recompile rebuilds %Map)
+    //       and dispatches the anchors into bookRunField.  Empty|pre-compile → clears them.
+    $effect(() => {
+        const v = view, d = dock
+        if (!v || !d) return
+        void d.version   // re-run when the dock recompiles (a fresh %Map bumps it)
+        const Map_C = (d.o({ Compile: 1 })[0] as TheC | undefined)?.o({ Map: 1 })[0] as TheC | undefined
+        const anchors: Array<{ from: number, of_Book: string }> = []
+        if (Map_C) {
+            for (const def of (Map_C.o({ def: 1 }) as TheC[])) {
+                const method = def.sc.method as string | undefined
+                const book   = method ? (H as any).Lang_book_of_method?.(method) as string | undefined : undefined
+                if (!book) continue
+                const r = (H as any).Lang_resolve_point?.(v.state, d, method) as { from?: number } | undefined
+                if (r && typeof r.from === "number" && r.from >= 0) anchors.push({ from: r.from, of_Book: book })
+            }
+        }
+        v.dispatch({ effects: setBookRunsEffect.of(anchors) })
     })
 
     // ── change strip ─────────────────────────────────────────────────────────────
@@ -1203,6 +1219,57 @@
         }
     }, { decorations: v => v.decorations })
 
+    // ── bookRunField — the INLINE Credence lights ─────────────────────────────
+    //   For every %Map def whose method is a Book run recipe (Lang_book_of_method turns the
+    //    Run_A_<Book> convention into a Book name), a Funkcion:Storying light is mounted RIGHT
+    //     THERE at the def, so you climb code and shoot off a demonstration in place.  The
+    //      anchors {from, of_Book} are dispatched by the driver $effect off the compiled %Map;
+    //       this field just remaps them across edits and provides the widget decorations.
+    //   Same full-replace-effect + remap shape as pointDecorationField.  A field (not a
+    //    ViewPlugin) suffices — nothing here derives from viewport|fold state, only from the
+    //     dispatched anchors.  The widget mounts DocStorying imperatively (cf Cytui's node mounts)
+    //      and unmounts it on removal; CM reuses the DOM when eq() holds (same Book), so a
+    //       recompile that leaves the Book put never remounts — the light updates in place.
+    const setBookRunsEffect = StateEffect.define<Array<{ from: number, of_Book: string }>>()
+
+    class BookRunWidget extends WidgetType {
+        of_Book: string
+        constructor(of_Book: string) { super(); this.of_Book = of_Book }
+        eq(o: BookRunWidget) { return o.of_Book === this.of_Book }
+        toDOM() {
+            const el = document.createElement("span")
+            el.className = "cm-book-run"
+            // active_path is the dock this widget lives in — the version ON SCREEN for the stale rule.
+            ;(el as any)._app = mount(DocStorying, { target: el, props: { H, of_Book: this.of_Book, dock_path: active_path } })
+            return el
+        }
+        destroy(dom: HTMLElement) { try { unmount((dom as any)._app) } catch { /* already gone */ } }
+        ignoreEvent() { return true }   // clicks belong to the mounted Storying button, not the editor
+    }
+
+    const bookRunField = StateField.define<DecorationSet>({
+        create: () => Decoration.none,
+        update(decos, tr) {
+            decos = decos.map(tr.changes)
+            for (const e of tr.effects) {
+                if (!e.is(setBookRunsEffect)) continue
+                const len = tr.state.doc.length
+                const out: Array<Range<Decoration>> = []
+                const seen = new Set<string>()   // one light per Book, at its first def
+                for (const { from, of_Book } of e.value) {
+                    if (typeof from !== "number" || from < 0 || from > len) continue
+                    if (seen.has(of_Book)) continue
+                    seen.add(of_Book)
+                    out.push(Decoration.widget({ widget: new BookRunWidget(of_Book), side: 1 }).range(from))
+                }
+                out.sort((a, b) => a.from - b.from)
+                decos = Decoration.set(out, true)
+            }
+            return decos
+        },
+        provide: f => EditorView.decorations.from(f),
+    })
+
     // ── pointFoldsField — fold/unfold dispatch for unshowing Points ───────────
     //
     //   When Lang_show_pmirrors finds an unshowing Pmirror it puts it in the folds
@@ -1585,39 +1652,6 @@
             console.warn(`lang(${initial_lang_name}) warnings:`, initial_lang_exts.warnings)
         }
 
-
-
-        const basicSetup = [
-            // lineNumbers(),
-            highlightActiveLineGutter(),
-            highlightSpecialChars(),
-            history(),
-            foldGutter(),
-            drawSelection(),
-            dropCursor(),
-            EditorState.allowMultipleSelections.of(true),
-            indentOnInput(),
-            syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-            bracketMatching(),
-            closeBrackets(),
-            autocompletion(),
-            rectangularSelection(),
-            crosshairCursor(),
-            highlightActiveLine(),
-            highlightSelectionMatches(),
-            keymap.of([
-                ...closeBracketsKeymap,
-                ...defaultKeymap,
-                ...searchKeymap,
-                ...historyKeymap,
-                ...foldKeymap,
-                ...completionKeymap,
-                ...lintKeymap
-            ])
-        ];
-
-
-
         // Build extensions once; reused by all EditorStates on this view.
         editorExtensions = [
             basicSetup,
@@ -1630,6 +1664,7 @@
             markedRegions,
             foldMarkers,
             refoldHandles,
+            bookRunField,
             EditorView.domEventHandlers({
                 copy: (e, v) => copy_clean(e, v, false),
                 cut:  (e, v) => copy_clean(e, v, true),

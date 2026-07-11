@@ -1614,6 +1614,19 @@ export const LANG_COMPILE = {
         return 'Ghostmeta_' + noext.replace(/[^a-zA-Z0-9]/g, '_')
     },
 
+    // ── Lang_book_of_method ───────────────────────────────────────────────────
+    //   The formal of_Book↔code tie, single-source-of-truth.  A Book's run recipe is the
+    //    method `Run_A_<Book>` (Story_subHouse reads `Run_A_${book}` off the Run House), so a
+    //     %Map def whose method matches IS that Book's demonstration site.  Turns the naming
+    //      CONVENTION into a derivable BACKLINK: given a method name, which Book (if any) does
+    //       this code location run?  Consumed by the inline Storying placement — a def that
+    //        answers non-undefined earns a Credence light right there in the editor.
+    //   Returns the Book name, or undefined when the method is not a Book run recipe.
+    Lang_book_of_method(method: string): string | undefined {
+        const m = /^Run_A_(.+)$/.exec(method ?? '')
+        return m ? m[1] : undefined
+    },
+
 
     // Partition the collector's flat line stream into the three module regions: the bulk are
     //  eatfunc body; 'header' from an IMPORT pseudo-method (module-top imports), 'tail' from
