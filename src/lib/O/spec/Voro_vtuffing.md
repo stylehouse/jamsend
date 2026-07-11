@@ -352,6 +352,24 @@ The owner, on the tuple glass: *"a little more structure within each cell, so I 
       `+nk:name` on every title row).  'name' is a key like any other: it wears a vein hue
        (hsl 53 in the shot, the same in every nucleus).
 
+#### 🎋 v2 fifth pass — the glass has NO stragglers: the nucleus-only pane (2026-07-11, later)
+The owner: *"why do some things always become Stuffing? I want them all [glass] if it's that
+ mode."*  The answer to the why: the ▦ pass dressed only fold STRUCTURE (things with
+  `c.gang`/`c.stuff`), plus two comfort gates ("one k|v is what the Stuffing already says",
+   "√area < 88 too small to subdivide") — everything else fell through to the older molded-
+    Stuffing face.  That reason EXPIRED with the nucleus round: the grammar speaks a single
+     particle.  So now ONE ladder, no fallbacks between modes: a fold with room gets full glass
+      (nucleus + regions + spokes + members); a loner, a one-fact fold, a crowded-out or
+       too-small pane DEGRADES to the **nucleus-only pane** — the whole cell is one grammar
+        statement (badge · namekey · lilac colon · value · ×N), the value word-wrapped into
+         chord-fitted lines (`nucleus_only` in Cytui; a `%see` sentence Wes-Wilsons its whole
+          pane).  Only a hairline that can't carry a word keeps its Stuffing — never blank
+           glass.  ▦ off stays all-molded-Stuffings: two pure faces, one per mode.
+ Live-proven: step 1 of VoroScape = a single pane reading `req: wrangle`; mid-flood a pane
+  reads the full `see: the library stands — …` sentence wrapped; final glass = 6 nuclei.
+   Loners drop their non-main sc keys (`eternal,ok` doesn't ride the statement) — eyes-on
+    whether that loss ever matters; the Vtuffing could grow fact rows for loners if so.
+
 #### 🎋 v2 fourth pass — ONE face: the ▤ row engine deleted (2026-07-11, the pipeline round)
 The demoted ▤ face (micro_fit's chord-fitted row cards — the hand-rolled Stuffing-lookalike,
  "skinny and mean") is DELETED from Cytui: the grammar face above superseded it, and a demoted

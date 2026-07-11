@@ -902,6 +902,25 @@
         return t
     }
 
+    // name|tag split, the TS twins of Voro.g's Vtuff_name|Vtuff_namekey — shared by the
+    //  vtuff_rows fallback AND the loner pane (a particle with no Vtuff tree of its own).
+    function name_ts(m: any): string {
+        const mk = Object.keys(m?.sc ?? {})[0]
+        const v = m?.sc?.[mk]
+        if (v !== 1 && v != null) return String(v)
+        for (const k of ['name', 'title', 'text', 'nick', 'label'])
+            if (k !== mk && typeof m?.sc?.[k] === 'string') return m.sc[k]
+        return ''
+    }
+    function namekey_ts(m: any): string {
+        const mk = Object.keys(m?.sc ?? {})[0]
+        const v = m?.sc?.[mk]
+        if (v !== 1 && v != null) return mk
+        for (const k of ['name', 'title', 'text', 'nick', 'label'])
+            if (k !== mk && typeof m?.sc?.[k] === 'string') return k
+        return mk
+    }
+
     // rows for a pane: the Vtuffing tree normalised to descriptors — or, before the new gen
     //  boots, a plain fallback (title + member idents + dip) so panes never say just "Track".
     function vtuff_rows(src: any): VtuffDesc[] {
@@ -927,23 +946,6 @@
         }
         const members: any[] | null = src?.c?.gang ?? (src?.c?.stuff && typeof src.o === 'function' ? src.o() : null)
         if (!members?.length) return []
-        // name|tag split, the TS twin of Vtuff_name (fallback until the gen boots)
-        const name_ts = (m: any): string => {
-            const mk = Object.keys(m?.sc ?? {})[0]
-            const v = m?.sc?.[mk]
-            if (v !== 1 && v != null) return String(v)
-            for (const k of ['name', 'title', 'text', 'nick', 'label'])
-                if (k !== mk && typeof m?.sc?.[k] === 'string') return m.sc[k]
-            return ''
-        }
-        const namekey_ts = (m: any): string => {   // the TS twin of Vtuff_namekey
-            const mk = Object.keys(m?.sc ?? {})[0]
-            const v = m?.sc?.[mk]
-            if (v !== 1 && v != null) return mk
-            for (const k of ['name', 'title', 'text', 'nick', 'label'])
-                if (k !== mk && typeof m?.sc?.[k] === 'string') return k
-            return mk
-        }
         const t_tag = src?.c?.gang ? (src?.c?.fold_kind as string) : Object.keys(src?.sc ?? {})[0]
         const t_name = src?.c?.gang ? '' : name_ts(src)
         const out: VtuffDesc[] = [{ text: `${t_name ? t_name + '  ' : ''}×${members.length}`,
@@ -1015,9 +1017,12 @@
     //  explicit grammar — tag badge (mainkey, kind tint) · namekey (its vein hue) · lilac
     //   colon · plain value · ×N sup.  tagcolon = the mainkey itself carries the value
     //    ('cell: Kunzea'); nk = a naming key does ('Artist name: Riverine').
-    type VSubNucleus = { d: string, x: number, y: number, fs: number,
+    //  d is absent on a NUCLEUS-ONLY pane (the degenerate glass: the whole cell is the
+    //   nucleus, so the cell wall already frames it); lines = the value word-wrapped into
+    //    chord-fitted continuation lines (a %see sentence fills its pane, Wes-Wilson style).
+    type VSubNucleus = { d?: string, x: number, y: number, fs: number,
                          tag?: string, tagcolon?: boolean, nk?: string, nkhue?: string,
-                         name?: string, sup?: string }
+                         name?: string, sup?: string, lines?: string[] }
     type VSubPane = { id: string, clipid: string, clip: string, color: string, tint: string,
                       groups: VSubGroup[], cells: VSubCell[],
                       spokes: { d: string, hue: string }[], nucleus?: VSubNucleus,
@@ -1153,18 +1158,90 @@
     //  tuple (members seeded at the centre, each key at its vein's compass angle — so the
     //   'year' region sits the same way in every pane), then each region's values divide IT.
     //    The key labels its region once from the region's widest band; leaves swell to fill.
+    // nucleus_only — the DEGENERATE pane: no structure worth tessellating (a bare loner, a
+    //  one-fact fold, a sliver), so the whole cell speaks ONE grammar statement — badge ·
+    //   namekey · lilac colon · value, the same rule-set as a full nucleus, value word-wrapped
+    //    into the pane (a %see sentence fills its glass).  This is what closes "why do some
+    //     things always become Stuffing": the glass used to dress only fold STRUCTURE and
+    //      everything else fell through to the molded-Stuffing face — but the nucleus grammar
+    //       speaks a single particle, so in ▦ mode every pane now speaks it.  A pane too
+    //        hairline to carry even one word keeps its Stuffing (never blank glass).
+    function nucleus_only(c: VCell, tint: string,
+                          td: { tag?: string, nk?: string, name: string, sup?: string }): VSubPane | null {
+        const pys = c.inset.map(p => p.y)
+        const py0 = Math.min(...pys), phgt = Math.max(...pys) - py0
+        const band = wide_chord(c.inset, py0 + phgt * 0.32, py0 + phgt * 0.68, 7)
+        if (!band || band.w < 18) return null
+        const nk = td.name && td.nk && td.nk !== td.tag ? td.nk : undefined
+        const headlen = (td.tag ? td.tag.length * 0.78 + 1 : 0) + (nk ? nk.length + 2 : (td.name ? 1.5 : 0))
+        const suplen = td.sup ? td.sup.length * 0.7 : 0
+        const words = td.name ? td.name.split(/\s+/) : []
+        // biggest fs whose greedy wrap fits the mid-band — head + first words share line 1
+        let fs = 7, first = '', lines: string[] = []
+        for (let t = 16; t >= 7; t--) {
+            const perline = band.w * 0.94 / (0.62 * t)
+            const maxlines = Math.max(1, Math.min(5, Math.floor((phgt * 0.72) / (t * 1.2))))
+            const acc: string[] = []
+            let cur = '', cap = perline - headlen - suplen, ok = true
+            for (const wd of words) {
+                const cand = cur ? cur + ' ' + wd : wd
+                if (cand.length <= cap) { cur = cand; continue }
+                if (!cur) { ok = false; break }
+                acc.push(cur); cur = wd; cap = perline
+                if (acc.length >= maxlines) { ok = false; break }
+            }
+            if (!ok && t > 7) continue
+            acc.push(cur)
+            if (!ok) {
+                const last = acc.length - 1
+                acc[last] = acc[last].slice(0, Math.max(1, Math.floor(cap) - 1)) + '…'
+            }
+            fs = t; first = acc.shift() ?? ''; lines = acc
+            break
+        }
+        if (!words.length) fs = Math.max(7, Math.min(14, band.w * 0.8 / (0.62 * Math.max(3, headlen))))
+        return { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`, clip: poly_d(c.inset),
+            color: c.color, tint, groups: [], cells: [], spokes: [],
+            nucleus: { x: (band.x0 + band.x1) / 2,
+                y: band.y - (lines.length * fs * 1.2) / 2 + fs * 0.35, fs,
+                tag: td.tag, tagcolon: !!td.name && !nk && !!td.tag,
+                nk, nkhue: nk ? `hsl(${vein_of(nk).hue}, 52%, 68%)` : undefined,
+                name: first || undefined, sup: td.sup,
+                lines: lines.length ? lines : undefined } }
+    }
+
     function subgraph_build(c: VCell, descs: VtuffDesc[], tint: string,
                             kind: string | undefined): VSubPane | null {
         const tuples = subgraph_tuples(descs, kind)
         const total = tuples.reduce((s, g) => s + 1 + g.leaves.length, 0)
-        if (total < 2) return null   // one k|v is exactly what the Stuffing already says
+        const td = descs.find(d => d.kind === 'title')
+        const tm = td ? /^(.*?)\s*×(\d+)$/.exec(td.text) : null
+        const tname = tm ? tm[1] : (td?.text ?? '')
+        const tlen = (td?.tag ? td.tag.length * 0.75 : 0) + tname.length
+                     + (td?.nk && td.nk !== td.tag ? td.nk.length + 2 : 1) + 2
         let A2 = 0
         for (let i = 0; i < c.inset.length; i++) {
             const p = c.inset[i], q = c.inset[(i + 1) % c.inset.length]
             A2 += p.x * q.y - q.x * p.y
         }
         const area = Math.abs(A2) / 2
-        if (Math.sqrt(area) < 88) return null   // too small to subdivide — keep the molded Stuffing
+        // no structure worth tessellating (one k|v) or no room to (√area < 88): the pane
+        //  DEGRADES to the nucleus statement instead of falling back to its Stuffing —
+        //   ▦ mode has ONE face at every size (the owner: "I want them all if it's that mode")
+        if (total < 2 || Math.sqrt(area) < 88) {
+            const pane0 = nucleus_only(c, tint,
+                { tag: td?.tag ?? kind, nk: td?.nk, name: tname, sup: tm ? `×${tm[2]}` : undefined })
+            if (pane0) {
+                const dd = descs.find(d => d.dip)
+                if (dd) {
+                    const pys = c.inset.map(p => p.y)
+                    const pb = Math.max(...pys)
+                    const chd = poly_chord(c.inset, pb - 12)
+                    if (chd) pane0.dip = { x: chd[1] - 8, y: pb - 8, text: dd.text }
+                }
+            }
+            return pane0
+        }
         const xs = c.inset.map(p => p.x), ys = c.inset.map(p => p.y)
         const bx = Math.min(...xs), by = Math.min(...ys)
         const bw = Math.max(...xs) - bx, bh = Math.max(...ys) - by
@@ -1173,11 +1250,6 @@
         //  … in such a way as to clue that they are all linked to it") and EVERY tuple region —
         //   members included — takes its vein's compass bearing, so 'Track' sits the same way
         //    in every pane just as 'year' does.  Pull-inside via the chord as before.
-        const td = descs.find(d => d.kind === 'title')
-        const tm = td ? /^(.*?)\s*×(\d+)$/.exec(td.text) : null
-        const tname = tm ? tm[1] : (td?.text ?? '')
-        const tlen = (td?.tag ? td.tag.length * 0.75 : 0) + tname.length
-                     + (td?.nk && td.nk !== td.tag ? td.nk.length + 2 : 1) + 2
         const gpts = [{ x: c.acx, y: c.acy }, ...tuples.map(g => {
             const v = vein_of(g.key ?? g.kind ?? '')
             let x = c.acx + Math.cos(v.ang) * R * 0.62
@@ -1259,7 +1331,9 @@
                     tag: l.tag, tint: l.tint, val: l.val, sup: l.sup, subn: l.subn, member: l.member })
             })
         })
-        if (!groups.length) return null
+        if (!groups.length)   // every region crowded out this beat — degrade, don't fall back
+            return nucleus_only(c, tint,
+                { tag: td?.tag ?? kind, nk: td?.nk, name: tname, sup: tm ? `×${tm[2]}` : undefined })
         const pane: VSubPane = { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`,
             clip: poly_d(c.inset), color: c.color, tint, groups, cells, spokes }
         if (npoly) {
@@ -2076,22 +2150,39 @@
         }
         vfams = fams
 
-        // ── ▦ the sub-graph pass: every fold|gang pane tessellates itself ──
-        //  a pane too small (or saying just one thing) keeps its molded Stuffing —
-        //   the ONLY other face now (the ▤ row engine is deleted).  Both cadences:
-        //    the tree is cached .g-side and the geometry is the same closed math
-        //     as the parent scape, so sub-cells track a drag live.
+        // ── ▦ the sub-graph pass: EVERY pane speaks the grammar ──
+        //  folds|gangs tessellate (nucleus + regions + member cells); anything else —
+        //   a loner, a one-fact fold, a sliver — degrades to the nucleus-only statement,
+        //    so ▦ mode has ONE face at every size (no molded-Stuffing stragglers; the
+        //     Stuffings are the OTHER mode, ▦ off).  Only a hairline pane that can't
+        //      carry a word keeps its Stuffing — never blank glass.  Both cadences:
+        //       the tree is cached .g-side and the geometry is the same closed math
+        //        as the parent scape, so sub-cells track a drag live.
         if (subgraph_on && voronoi_on) {
             const subs: VSubPane[] = []
             const next = new Set<string>()
             for (const c of L.cells) {
                 const src = node_src.get(c.id) as any
-                if (!src?.c?.gang && !src?.c?.stuff) continue
-                const descs = vtuff_rows(src)
-                if (!descs.length) continue
-                const fkind = (src?.c?.fold_kind ?? (src?.sc && Object.keys(src.sc)[0])) as string | undefined
-                const tint = kind_tint(fkind) ?? '#9ab'
-                const pane = subgraph_build(c, descs, tint, fkind)
+                let pane: VSubPane | null = null
+                if (src?.c?.gang || src?.c?.stuff) {
+                    const descs = vtuff_rows(src)
+                    if (descs.length) {
+                        const fkind = (src?.c?.fold_kind ?? (src?.sc && Object.keys(src.sc)[0])) as string | undefined
+                        pane = subgraph_build(c, descs, kind_tint(fkind) ?? '#9ab', fkind)
+                    }
+                }
+                // a LONER pane (no fold structure — the beat-wrangler req, a %see claim, a
+                //  popped tiny) still speaks the grammar: its cell becomes a nucleus-only
+                //   statement, so ▦ mode has no molded-Stuffing stragglers.
+                if (!pane && src?.sc) {
+                    const mk = Object.keys(src.sc)[0]
+                    if (mk) {
+                        const v = src.sc[mk]
+                        const nm = (v !== 1 && v != null) ? String(v) : name_ts(src)
+                        pane = nucleus_only(c, kind_tint(mk) ?? '#9ab',
+                            { tag: mk, nk: namekey_ts(src), name: nm })
+                    }
+                }
                 if (!pane) continue
                 next.add(c.id)
                 subs.push(pane)
@@ -2708,7 +2799,7 @@
         <button class="v-toggle" class:on={brush_pref} onclick={toggle_brush}
             title="gravity brush — wheel pinches|spreads the locale under the cursor (Ctrl+wheel still zooms)">🌀</button>
         <button class="v-toggle" class:on={subgraph_on} onclick={toggle_subgraph}
-            title="sub-graph — a pane tessellates itself: one sub-cell per key|value its members share or spread, ×N as superscripts, the /*N corner digs (off = molded Stuffings)">▦</button>
+            title="sub-graph — every pane speaks the glass grammar: folds tessellate (nucleus + regions + members), loners and slivers say their one nucleus statement (off = molded Stuffings everywhere)">▦</button>
         {#if DRIFT_MODES_ON}
             <button class="v-toggle" class:on={radio_on} onclick={toggle_radio}
                 title="radio — the graph plays you: a tuner drifts attention pane to pane and opens each a little (touch anything to hold it off)">📻</button>
@@ -2802,7 +2893,7 @@
                             <path class="vsub-gwall" class:boundary={g.boundary}
                                   d={g.d} stroke={g.hue} fill={g.hue} />
                         {/each}
-                        {#if sp.nucleus}
+                        {#if sp.nucleus?.d}
                             <path class="vsub-nwall" d={sp.nucleus.d} stroke={sp.tint} fill={sp.tint} />
                         {/if}
                         {#each sp.cells as scell (scell.id)}
@@ -2836,7 +2927,7 @@
                         {#if sp.nucleus && (sp.nucleus.tag || sp.nucleus.name)}
                             <text class="vsub-ntitle" x={sp.nucleus.x.toFixed(1)} y={sp.nucleus.y.toFixed(1)}
                                   font-size={sp.nucleus.fs.toFixed(1)} text-anchor="middle">
-                                {#if sp.nucleus.tag}<tspan class="vsub-ntag" fill={sp.tint}>{sp.nucleus.tag}</tspan>{#if sp.nucleus.tagcolon}<tspan class="vsub-colon">: </tspan>{:else}<tspan> </tspan>{/if}{/if}{#if sp.nucleus.nk}<tspan class="vsub-nk" fill={sp.nucleus.nkhue}>{sp.nucleus.nk}</tspan><tspan class="vsub-colon">: </tspan>{/if}{#if sp.nucleus.name}<tspan class="vsub-v">{sp.nucleus.name}</tspan>{/if}{#if sp.nucleus.sup}<tspan class="vsub-sup" dy="-0.45em">{sp.nucleus.sup}</tspan>{/if}
+                                {#if sp.nucleus.tag}<tspan class="vsub-ntag" fill={sp.tint}>{sp.nucleus.tag}</tspan>{#if sp.nucleus.tagcolon}<tspan class="vsub-colon">: </tspan>{:else}<tspan> </tspan>{/if}{/if}{#if sp.nucleus.nk}<tspan class="vsub-nk" fill={sp.nucleus.nkhue}>{sp.nucleus.nk}</tspan><tspan class="vsub-colon">: </tspan>{/if}{#if sp.nucleus.name}<tspan class="vsub-v">{sp.nucleus.name}</tspan>{/if}{#if sp.nucleus.sup}<tspan class="vsub-sup" dy="-0.45em">{sp.nucleus.sup}</tspan>{/if}{#each sp.nucleus.lines ?? [] as ln, li (li)}<tspan class="vsub-v" x={sp.nucleus.x.toFixed(1)} dy={li === 0 && sp.nucleus.sup ? '1.65em' : '1.2em'}>{ln}</tspan>{/each}
                             </text>
                         {/if}
                         {#if sp.title}

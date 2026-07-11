@@ -125,17 +125,26 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
   - **All five re-recorded green on `77d262…`:** VoroScape 6/6 (census −self), VoroMitosis 11/11
      (transcripts+nk baked at last), VoroRadio 9/9 **caveat 0** (est poison gone), VoroClinic 9/9
       (the long-owed accepts), LeafFarm 30/30 untouched — the base Cyto layer holds.
-- **NEXT MOVES:** (1) eyes-on the pipeline round: step 2 should FLOOD AS GLASS now (cells in the
-   birth wave, two layout passes), the wrangle cells from beat 1, toggling ▦ round-trips clean;
-    plus the nucleus-round eyes-on still owed (linkage read? spoke loudness? plate size? %-noise?);
+- **The uniformity round (same day, owner: "why do some things always become Stuffing? I want
+   them all [glass] if it's that mode"):** the ▦ pass now dresses EVERY pane — folds tessellate,
+    everything else (loners, one-fact folds, slivers, crowded-out beats) degrades to the new
+     **nucleus-only pane**: the whole cell speaks one grammar statement, value word-wrapped to
+      the pane (`nucleus_only`, Cytui; design + the why in `Voro_vtuffing.md` §🎋 v2 fifth pass).
+       Live-proven: VoroScape step 1 = one pane reading `req: wrangle`; mid-flood the whole
+        `see:` sentence wraps its glass; 6 nuclei at final.  All green after (VoroScape 6/6,
+         VoroMitosis 11/11, VoroRadio 9/9, LeafFarm 30/30) — render-only, nothing snaps.
+- **NEXT MOVES:** (1) eyes-on the pipeline + uniformity rounds: step 2 floods AS GLASS (cells in
+   the birth wave, two layout passes), the wrangle = `req: wrangle` glass from beat 1, `%see`
+    sentences fill their panes (fs/wrap read OK? loners dropping their non-main keys — does
+     `eternal,ok` ever matter?), ▦ toggling round-trips clean; plus the nucleus-round eyes-on
+      (linkage read? spoke loudness? plate size? %-noise?);
      (2) **re-add the rollback casualties as an isolated slice**: F7 `diag_check` (the VoroMitosis
       end-of-run diagonal the owner keeps hitting IS loose F7) + the render telemetry (`vlog` —
        `op:'why'` in LiesFunk is currently an orphan); the designs live in
         `Voro_render_faults_todo.md`, the parked WIP in `/tmp/Cytui.wip.svelte` (volatile!);
          (3) 🎋 v2 deepening: sub-sub-voronois (the nucleus rule recurses — every popped member
-          gets its own nucleus), expand-in-place, morph-stable sub-walls, label-collision easing;
-           maybe a nucleus-only pane for bare loners (the wrangle's cell could SPEAK the grammar
-            — `req: wrangle` — instead of wearing its molded Stuffing).
+          gets its own nucleus; the nucleus-only pane is its natural floor), expand-in-place,
+           morph-stable sub-walls, label-collision easing.
 
 **NIGHT LOG — 2026-07-08 overnight (autonomous build; NOTHING committed, all in the working tree).**
  Two things landed, both compile-verified via LocalGen; the pixel/eyes-on halves are staged for you.
