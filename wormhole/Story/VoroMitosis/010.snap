@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=13	{"mung":["age"]}
+      self,round=12	{"mung":["age"]}
       w:VoroMitosis
-        self,round=13	{"mung":["age"]}
+        self,round=12	{"mung":["age"]}
         req:wrangle,eternal,ok
         Kunzea:grandifolia,habit:vine
           Kunzea:grandifolia f. viridis,habit:vine
@@ -96,18 +96,87 @@ Snap:H
         Olearia:grandifolia
         Olearia:lucida
       w:Voronoiology,dontGraph
-        Voro,beat=9,level:L1,visible=15,cells:12,gangs=8,folded:4,count:4
+        Voro,beat=9,level:L1,visible=13,cells:12,gangs=8,folded:4,count:4
         cell:Kunzea grandifolia,kind:pane,n:1
+          Vtuffing,of:Kunzea,n:1
+            Vrow,row:title,text:grandifolia  ×1,wgt:2,tag:Kunzea,nk:Kunzea
+            Vrow,row:list,wgt:1,bits:1
+            Vrow,row:fact,text:habit: vine,wgt:1
+            Vrow,row:dip,text:/*1,wgt:1
         cell:Kunzea,kind:gang,n:13
+          Vtuffing,of:Kunzea,n:13
+            Vrow,row:title,text:×13,wgt:2,tag:Kunzea
+            Vrow,row:list,wgt:1,bits:13
+            Vrow,row:fact,text:woodystem ×4,wgt:1
+            Vrow,row:spread,text:habit,wgt:1,bits:3
+            Vrow,row:fact,text:endemic ×1,wgt:1
+            Vrow,row:dip,text:/*13,wgt:1
         cell:Coprosma rhamnoides,kind:pane,n:1
+          Vtuffing,of:Coprosma,n:1
+            Vrow,row:title,text:rhamnoides  ×1,wgt:2,tag:Coprosma,nk:Coprosma
+            Vrow,row:list,wgt:1,bits:1
+            Vrow,row:dip,text:/*1,wgt:1
         cell:Metrosideros,kind:gang,n:9
+          Vtuffing,of:Metrosideros,n:9
+            Vrow,row:title,text:×9,wgt:2,tag:Metrosideros
+            Vrow,row:list,wgt:1,bits:9
+            Vrow,row:fact,text:woodystem ×2,wgt:1
+            Vrow,row:spread,text:habit,wgt:1,bits:3
+            Vrow,row:fact,text:endemic ×1,wgt:1
+            Vrow,row:dip,text:/*9,wgt:1
         cell:Leptospermum lucida,kind:pane,n:1
+          Vtuffing,of:Leptospermum,n:1
+            Vrow,row:title,text:lucida  ×1,wgt:2,tag:Leptospermum,nk:Leptospermum
+            Vrow,row:list,wgt:1,bits:1
+            Vrow,row:fact,text:habit: shrub,wgt:1
+            Vrow,row:dip,text:/*1,wgt:1
         cell:Leptospermum,kind:gang,n:11
+          Vtuffing,of:Leptospermum,n:11
+            Vrow,row:title,text:×11,wgt:2,tag:Leptospermum
+            Vrow,row:list,wgt:1,bits:11
+            Vrow,row:fact,text:woodystem ×3,wgt:1
+            Vrow,row:fact,text:endemic ×3,wgt:1
+            Vrow,row:spread,text:habit,wgt:1,bits:2
+            Vrow,row:dip,text:/*11,wgt:1
         cell:Coprosma,kind:gang,n:8
+          Vtuffing,of:Coprosma,n:8
+            Vrow,row:title,text:×8,wgt:2,tag:Coprosma
+            Vrow,row:list,wgt:1,bits:8
+            Vrow,row:fact,text:woodystem ×1,wgt:1
+            Vrow,row:spread,text:habit,wgt:1,bits:2
+            Vrow,row:dip,text:/*8,wgt:1
         cell:Pittosporum crassifolius,kind:pane,n:1
+          Vtuffing,of:Pittosporum,n:1
+            Vrow,row:title,text:crassifolius  ×1,wgt:2,tag:Pittosporum,nk:Pittosporum
+            Vrow,row:list,wgt:1,bits:1
+            Vrow,row:fact,text:habit: tree,wgt:1
+            Vrow,row:dip,text:/*1,wgt:1
         cell:Pittosporum,kind:gang,n:9
+          Vtuffing,of:Pittosporum,n:9
+            Vrow,row:title,text:×9,wgt:2,tag:Pittosporum
+            Vrow,row:list,wgt:1,bits:9
+            Vrow,row:fact,text:woodystem ×3,wgt:1
+            Vrow,row:spread,text:habit,wgt:1,bits:3
+            Vrow,row:dip,text:/*9,wgt:1
         cell:Veronica,kind:gang,n:6
+          Vtuffing,of:Veronica,n:6
+            Vrow,row:title,text:×6,wgt:2,tag:Veronica
+            Vrow,row:list,wgt:1,bits:6
+            Vrow,row:fact,text:woodystem ×1,wgt:1
+            Vrow,row:fact,text:habit: tree,wgt:1
+            Vrow,row:dip,text:/*6,wgt:1
         cell:Podocarpus,kind:gang,n:9
+          Vtuffing,of:Podocarpus,n:9
+            Vrow,row:title,text:×9,wgt:2,tag:Podocarpus
+            Vrow,row:list,wgt:1,bits:9
+            Vrow,row:fact,text:woodystem ×7,wgt:1
+            Vrow,row:spread,text:habit,wgt:1,bits:3
+            Vrow,row:fact,text:endemic ×1,wgt:1
+            Vrow,row:dip,text:/*9,wgt:1
         cell:Olearia,kind:gang,n:5
-        bare:self,n:2
+          Vtuffing,of:Olearia,n:5
+            Vrow,row:title,text:×5,wgt:2,tag:Olearia
+            Vrow,row:list,wgt:1,bits:5
+            Vrow,row:fact,text:habit: shrub,wgt:1
+            Vrow,row:dip,text:/*5,wgt:1
         bare:req,n:1

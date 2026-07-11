@@ -51,16 +51,27 @@ Snap:H
         see:the tuner kept moving — six dwells chose four or more distinct locales
         see:the trail behind the listener folded back — the first locale and its whole gang aged clean while the newest stayed open
         see:an aged locale re-ganged and re-entered the pool — attention is a cycle not a consumption
-        see:the hand outranks the tuner — a manual pop survived every dwell untouched
       w:Voronoiology,dontGraph
-        Voro,beat=8,level:L2,visible=20,gangs=2,folded:0,count:0
+        Voro,beat=8,level:L2,visible=18,cells:2,gangs=2,folded:0,count:0
         drift,focus:Olearia grandifolia,opens=4
-        row:Coprosma,n=5,fold:gang,rep:robusta,of=5
-        row:Veronica,n=4,fold:loose,pop=4
-        row:Metrosideros,n=4,fold:loose,pop=4
-        row:Pittosporum,n=4,fold:loose,pop=4
-        row:Olearia,n=3,fold:loose,pop=3
-        row:Nothofagus,n=3,fold:gang,rep:tenax,of=3
+        cell:Coprosma,kind:gang,n:5
+          Vtuffing,of:Coprosma,n:5
+            Vrow,row:title,text:×5,wgt:2,tag:Coprosma
+            Vrow,row:list,wgt:1,bits:5
+            Vrow,row:fact,text:habit: vine,wgt:1
+            Vrow,row:fact,text:woodystem ×2,wgt:1
+            Vrow,row:dip,text:/*5,wgt:1
+        cell:Nothofagus,kind:gang,n:3
+          Vtuffing,of:Nothofagus,n:3
+            Vrow,row:title,text:×3,wgt:2,tag:Nothofagus
+            Vrow,row:list,wgt:1,bits:3
+            Vrow,row:spread,text:habit,wgt:1,bits:2
+            Vrow,row:dip,text:/*3,wgt:1
+        bare:req,n:1
+        bare:Veronica,n:6,pop:2
+        bare:Metrosideros,n:6,pop:2
+        bare:Olearia,n:4,pop:2
+        bare:Pittosporum,n:6,pop:2
 Snap:cytowave
   upsert,id:cytoid_1_1_23,label:see:the tuner…,parent:cytoid_1_1
     style,background-color:#a34b1f
@@ -80,12 +91,3 @@ Snap:cytowave
     style,height=20
     style,shape:ellipse
     style,width=20
-  upsert,id:cytoid_1_1_26,label:see:the hand …,parent:cytoid_1_1
-    style,background-color:#a34b1f
-    style,color:#ccc
-    style,height=20
-    style,shape:ellipse
-    style,width=20
-  upsert,id:cytoid_1_1_5,overlay_kind:stuff,overlay_self
-    style,height=44
-    style,width=110

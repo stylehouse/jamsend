@@ -24,7 +24,7 @@ Snap:H
           Track,title:Eddy,year:2019,live
         see:a new artist arrives with a catalog of three — a fourth pane splits into the glass
       w:Voronoiology,dontGraph
-        Voro,beat=4,level:L0,visible=8,cells:4,gangs=0,folded:13,count:4
+        Voro,beat=4,level:L0,visible=6,cells:4,gangs=0,folded:13,count:4
         cell:Artist,kind:pane,n:4
           Vtuffing,of:Track,n:4
             Vrow,row:title,text:Moonlit  ×4,wgt:2,tag:Artist,nk:name
@@ -56,6 +56,5 @@ Snap:H
             Vrow,row:fact,text:remaster ×2,wgt:1
             Vrow,row:fact,text:live ×2,wgt:1
             Vrow,row:dip,text:/*3,wgt:1
-        bare:self,n:2
         bare:req,n:1
         bare:see,n:1

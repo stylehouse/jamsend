@@ -15,7 +15,7 @@ Snap:H
           Track,title:Echo,year:2007,live
         see:the library stands — three artists and five tracks — a shelf of glass with no light through it yet
       w:Voronoiology,dontGraph
-        Voro,beat=2,level:L0,visible=7,cells:3,gangs=0,folded:5,count:3
+        Voro,beat=2,level:L0,visible=5,cells:3,gangs=0,folded:5,count:3
         cell:Artist,kind:pane,n:2
           Vtuffing,of:Track,n:2
             Vrow,row:title,text:Moonlit  ×2,wgt:2,tag:Artist,nk:name
@@ -37,6 +37,5 @@ Snap:H
             Vrow,row:list,wgt:1,bits:1
             Vrow,row:fact,text:year: 2007,wgt:1
             Vrow,row:dip,text:/*1,wgt:1
-        bare:self,n:2
         bare:req,n:1
         bare:see,n:1

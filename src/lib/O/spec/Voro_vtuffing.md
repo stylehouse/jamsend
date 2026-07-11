@@ -352,6 +352,20 @@ The owner, on the tuple glass: *"a little more structure within each cell, so I 
       `+nk:name` on every title row).  'name' is a key like any other: it wears a vein hue
        (hsl 53 in the shot, the same in every nucleus).
 
+#### 🎋 v2 fourth pass — ONE face: the ▤ row engine deleted (2026-07-11, the pipeline round)
+The demoted ▤ face (micro_fit's chord-fitted row cards — the hand-rolled Stuffing-lookalike,
+ "skinny and mean") is DELETED from Cytui: the grammar face above superseded it, and a demoted
+  second face kept resurfacing through the toggles as the pre-grammar look (the owner: "the crappy
+   little button looking k|v|annotation ambiguous labels… I don't see how that can exist without
+    pretty crap code").  What remains is ONE rule: a fold|gang pane speaks the ▦ grammar; a pane
+     with nothing to tessellate (a sliver, a bare loner like the beat-wrangler req) wears its REAL
+      molded Stuffing.  `vtuff_rows` (the Vtuff-tree normaliser) survives as the ▦ pass's only
+       feeder; `micro_click` survives as the Vtuff_pop surf.  Same round, the fold now lands
+        BEFORE the scan (`Voro_crush_worlds`, armed by the useVoroCyto commission) so newborns
+         wave already-folded — the flooding-step "nodes but not cells" beat and the seek-archive
+          replays of it are gone (`Voro_render_faults_todo.md` §STATUS 2026-07-11 for the full
+           mechanism + the VoroClinic fixture that photographs the fix).
+
 ### 🔊 Quiet ↔ rampage — a throttle on the fold's thinking
 
 The owner, verbatim: *"have some way to quiet or rampage its thinking sometimes."*  The

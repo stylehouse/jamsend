@@ -28,8 +28,35 @@ Every claim is tagged **[V]** = I read the code and verified, or **[S]** = suspe
 **Fix order (highest leverage first):** F1 (the render-gate race — one fix likely also cures F4 and the
  VoroScape "behind glass") → F3 (rebuild-all flashing) → F2 (settle timing).  See each below.
 
-**STATUS 2026-07-10 — the loop is closing.**  Built this round, ALL awaiting a live-tab verify (the
- runner tab must be RELOADED once so Cytui remounts + the cy stash lands):
+**STATUS 2026-07-11 — ROOT-A closed at the true root; a rollback ate two instruments.**
+- **F6 + the flooding-step lag FIXED — crush now runs BEFORE the scan.**  The mechanism, finally
+   exact: per beat the order was *do → Cyto scan/wave → snap (story_snap's `Voro_crush_scan` per
+    world)* — so the wave that ferried a newborn was computed BEFORE the beat's crush stamped it.
+     Every newborn waved RAW and only the NEXT step's scan dressed it (the owner's "step 2 has all
+      these nodes flood in but not cells; next step all is cells"), and the ARCHIVES baked that
+       lag, so seeking replayed it forever.  Fix: `e_Cyto_commission` arms `Scannable.c.crush_wanted`
+        when the commission carries `useVoroCyto`, and the pre-scan hook (`cyto_update_wave`) calls
+         the new `Voro_crush_worlds(scan)` — per-world, skips `w:Voronoiology`, QUIET (story_snap
+          stays the census author, so `beat=N` and fixtures are undisturbed).  The ◈ path rides the
+           same helper.  **Baked proof:** VoroClinic's re-recorded `001.snap` cytowave now shows the
+            wrangle upserting `overlay_kind:stuff,overlay_self` in its BIRTH wave (the old fixture
+             recorded it as a classic labeled node — the fault, photographed).
+- **The census stops walking machinery:** `%self` skipped like `%Opt` in both crush + report walks —
+   a `cell:self` gang was a pane the canvas can never draw (classify hides self), and its transcript
+    baked the self's wall-clock `%est` into fixtures (VoroRadio 4-5 red on EVERY re-run until this).
+- **The flood layout under-run FIXED** (Cytui `apply()`): when newcomers outnumber settled 2:1 the
+   pins are skipped (no rosette worth protecting) and a SECOND free relayout fires on layoutstop —
+    the "run layout() extra times myself" the owner was doing by hand.
+- **⚠ ROLLBACK CASUALTY (bisect 4add5244):** the F7 `diag_check` auto-cure AND the render telemetry
+   (`vlog`/`cy_render`, the film strip) were part of the reverted Cytui WIP and are GONE from the
+    tree — `op:'why'` in LiesFunk is an orphan ("no render telemetry"), and F7 is LOOSE again (the
+     owner sees the diagonal at VoroMitosis's end).  Re-add both as a fresh, isolated slice; the
+      designs below still hold.
+- **All five Voro-family fixtures re-recorded green** (VoroScape 6/6, VoroMitosis 11/11, VoroRadio
+   9/9 at caveat 0 — first time, the est poison is gone — VoroClinic 9/9, LeafFarm 30/30 untouched).
+
+**STATUS 2026-07-10 — the loop is closing.**  Built that round; ⚠ the last three items below were
+ since LOST in the 4add5244 rollback (see above) — kept for the designs:
 - **📸 `scripts/runner_shot.mjs`** — the pixel loop CLOSED: `op:'shot'` on the runner_ask rails returns
    `cy.png()` of the live canvas, so the render checklist below is now REMOTELY runnable (run Book →
     shot → look).  Owner's "maybe I should get you a remote cli… take screenshot of the canvas".
@@ -213,7 +240,7 @@ So the render telemetry isn't a nicety; it's the flashlight for the half that ca
 |---|---|---|---|
 | **bare node** | a plain Cyto node (dot + label) | any particle the walk keeps but doesn't fold/mount | `cytyle_classify` (Cyto.svelte) |
 | **Stuffing** | a *molded* overlay skewed into a shape — "the glass"; occludes | a node with `c.stuff` (a fold chunk) OR a proper loner (`%see`) that gets an overlay mounted | `create_stuff_overlay`, `stuff_mounts` (Cytui ~574) |
-| **Vtuffing** | the *row-fitted* successor to the molded Stuffing — members distilled to rows chord-fit to the cell | same `c.stuff` particle, but drawn as `vmicro` rows when `vtuffing_on` (the ▤ toggle, Cytui:914) | `paint_final` vtuffing branch |
+| **▦ sub-graph** | the pane tessellating ITSELF — nucleus + tuple regions + member cells, speaking Stuffing's grammar | same `c.stuff`/`c.gang` particle when `subgraph_on` (the ▦ toggle; the old ▤ row-card face is DELETED 2026-07-11) | `paint_final` ▦ pass / `subgraph_build` |
 | **cell** | a Voronoi polygon | a `stuff_mount` node, when `voronoi_on` AND `≥2` such seeds exist | `voronoi_layout` (Cytui:1416-1442) **[V]** |
 | **🎋 bamboo** | a Vtuffing whose rows are a jointed `%Vseg` stalk + live Se emphasis | `Cyto_bamboo` stash on + a Vtuffing | `Vtuff_bamboo`/`Vtuff_se` (Voro.g); flatten in `vtuff_rows` |
 

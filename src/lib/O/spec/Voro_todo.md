@@ -100,13 +100,42 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
            transcript, VoroScape fixtures re-recorded (pure `+nk:name` diff; the human ran+accepted
             live at the machine mid-build).  Shot-verified: 5 nuclei labeled, 19 spokes in exact
              region hues, 15 %-marked members, `year:` hsl(138) + `name` hsl(53) uniform everywhere.
-- **NEXT MOVES:** (1) eyes-on the nucleus glass: does the linkage READ? spokes too quiet/too loud?
-   nucleus plate size right? %-marker noise?; (2) VoroMitosis|VoroRadio checks → accepts (their
-    transcripts bake flat + nk); (3) leftover eyes-on: fold seal, one-pane-one-cell from beat 2,
-     molded fit, uniform drag (Riverine-as-plain-node on a FRESH run = real stamp-order fault);
-      (4) 🎋 v2 deepening: sub-sub-voronois (a member's own children — the nucleus rule recurses:
-       every popped member gets its own nucleus), expand-in-place, morph-stable sub-walls,
-        label-vs-leaf collision easing.
+- **The pipeline round (still 2026-07-11, owner: "step 2 has all these nodes flood in but not
+   cells… toggling back to cells shows us the crappy little button looking k|v|annotation ambiguous
+    labels… you just need the freedom to make Voro more elegant"):** three cuts, all live-green:
+  - **Crush BEFORE scan (F6 + the flood lag CLOSED — `Voro_render_faults_todo.md` §STATUS 07-11).**
+     The beat ordering was scan→snap(crush), so every newborn waved RAW and dressed one step late —
+      and the ARCHIVES baked the lag, so seeking replayed it.  Now `e_Cyto_commission` arms
+       `Scannable.c.crush_wanted` when the commission carries useVoroCyto, and the pre-scan hook
+        runs the new `Voro_crush_worlds(scan)` (per-world, skips Voronoiology, QUIET — story_snap
+         stays the census author, `beat=N` fixtures undisturbed).  Newborns fold in their birth
+          wave; VoroClinic's re-recorded 001.snap photographs exactly that (the wrangle upserts
+           `overlay_kind:stuff,overlay_self` at step 1 where the old fixture had a classic node).
+            The "req:wrangle left out" mystery was THIS: it cells fine once stamps precede scans.
+  - **The ▤ row engine DELETED (Cytui −300 lines: micro_fit, vmicro, the card template + CSS,
+     the ▤ button).**  It was the "crappy button-looking k|v-ambiguous labels" — the demoted
+      pre-grammar face kept resurfacing through the toggles (its off-branch never re-ran the ▦
+       pass, stranding the board).  One rule now: a pane speaks the ▦ grammar or wears its REAL
+        molded Stuffing; `vtuff_rows` survives as the ▦ feeder, `micro_click` as the surf.
+  - **Flood layout under-run FIXED** (`apply()`): newcomers > 2× settled ⇒ no pins (no rosette to
+     protect) + a SECOND free relayout on layoutstop — the owner's manual ⟳ made automatic.
+  - **Census stops walking machinery:** `%self` skipped like `%Opt` (crush + report walks) — a
+     `cell:self` gang could never be a canvas pane, and its transcript baked the self's wall-clock
+      `%est` into fixtures (VoroRadio 4-5 red on every re-run — found chasing this round's accepts).
+  - **All five re-recorded green on `77d262…`:** VoroScape 6/6 (census −self), VoroMitosis 11/11
+     (transcripts+nk baked at last), VoroRadio 9/9 **caveat 0** (est poison gone), VoroClinic 9/9
+      (the long-owed accepts), LeafFarm 30/30 untouched — the base Cyto layer holds.
+- **NEXT MOVES:** (1) eyes-on the pipeline round: step 2 should FLOOD AS GLASS now (cells in the
+   birth wave, two layout passes), the wrangle cells from beat 1, toggling ▦ round-trips clean;
+    plus the nucleus-round eyes-on still owed (linkage read? spoke loudness? plate size? %-noise?);
+     (2) **re-add the rollback casualties as an isolated slice**: F7 `diag_check` (the VoroMitosis
+      end-of-run diagonal the owner keeps hitting IS loose F7) + the render telemetry (`vlog` —
+       `op:'why'` in LiesFunk is currently an orphan); the designs live in
+        `Voro_render_faults_todo.md`, the parked WIP in `/tmp/Cytui.wip.svelte` (volatile!);
+         (3) 🎋 v2 deepening: sub-sub-voronois (the nucleus rule recurses — every popped member
+          gets its own nucleus), expand-in-place, morph-stable sub-walls, label-collision easing;
+           maybe a nucleus-only pane for bare loners (the wrangle's cell could SPEAK the grammar
+            — `req: wrangle` — instead of wearing its molded Stuffing).
 
 **NIGHT LOG — 2026-07-08 overnight (autonomous build; NOTHING committed, all in the working tree).**
  Two things landed, both compile-verified via LocalGen; the pixel/eyes-on halves are staged for you.

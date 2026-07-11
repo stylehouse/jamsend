@@ -49,14 +49,30 @@ Snap:H
           Nothofagus:crassifolius var. prostrata,habit:vine
         Nothofagus:colensoi,habit:tree
       w:Voronoiology,dontGraph
-        Voro,beat=6,level:L2,visible=19,gangs=3,folded:0,count:0
+        Voro,beat=6,level:L2,visible=17,cells:3,gangs=3,folded:0,count:0
         drift,focus:Metrosideros excelsa,opens=4
-        row:Coprosma,n=5,fold:loose,pop=5
-        row:Veronica,n=4,fold:loose,pop=4
-        row:Metrosideros,n=4,fold:loose,pop=4
-        row:Pittosporum,n=4,fold:gang,rep:serrata,of=4
-        row:Olearia,n=3,fold:gang,rep:grandifolia,of=3
-        row:Nothofagus,n=3,fold:gang,rep:tenax,of=3
+        cell:Olearia,kind:gang,n:3
+          Vtuffing,of:Olearia,n:3
+            Vrow,row:title,text:×3,wgt:2,tag:Olearia
+            Vrow,row:list,wgt:1,bits:3
+            Vrow,row:fact,text:habit: shrub,wgt:1
+            Vrow,row:dip,text:/*3,wgt:1
+        cell:Pittosporum,kind:gang,n:4
+          Vtuffing,of:Pittosporum,n:4
+            Vrow,row:title,text:×4,wgt:2,tag:Pittosporum
+            Vrow,row:list,wgt:1,bits:4
+            Vrow,row:spread,text:habit,wgt:1,bits:3
+            Vrow,row:dip,text:/*4,wgt:1
+        cell:Nothofagus,kind:gang,n:3
+          Vtuffing,of:Nothofagus,n:3
+            Vrow,row:title,text:×3,wgt:2,tag:Nothofagus
+            Vrow,row:list,wgt:1,bits:3
+            Vrow,row:spread,text:habit,wgt:1,bits:2
+            Vrow,row:dip,text:/*3,wgt:1
+        bare:req,n:1
+        bare:Coprosma,n:7,pop:3
+        bare:Veronica,n:6,pop:2
+        bare:Metrosideros,n:6,pop:2
 Snap:cytowave
   upsert,id:cytoid_1_1_18,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
     style,background-color:#04202a
@@ -106,9 +122,6 @@ Snap:cytowave
     style,height=20
     style,shape:ellipse
     style,width=20
-  upsert,id:cytoid_1_1_4,overlay_kind:stuff,overlay_self
-    style,height=44
-    style,width=110
   edge_upsert,id:cytoid_1_1_18_1_1,source:cytoid_1_1_18,target:cytoid_1_1_18_1
   edge_upsert,id:cytoid_1_1_18_2_1,source:cytoid_1_1_18,target:cytoid_1_1_18_2
   edge_upsert,id:cytoid_1_1_20_1_1,source:cytoid_1_1_20,target:cytoid_1_1_20_1

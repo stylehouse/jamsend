@@ -23,48 +23,34 @@ Snap:H
         see:four scattered leaves gang behind one representative — the other three ride represented
         see:the crush intends three cell chunks — a render that shows fewer is trapping data behind glass
       w:Voronoiology,dontGraph
-        Voro,beat=5,level:L0,visible=7,gangs=2,folded:8,count:2
+        Voro,beat=5,level:L0,visible=5,cells:4,gangs=2,folded:8,count:2
+        cell:Artist,kind:pane,n:4
+          Vtuffing,of:Track,n:4
+            Vrow,row:title,text:Alpha  ×4,wgt:2,tag:Artist,nk:name
+            Vrow,row:list,wgt:1,bits:4
+            Vrow,row:dip,text:/*4,wgt:1
+        cell:Artist,kind:pane,n:4
+          Vtuffing,of:Track,n:4
+            Vrow,row:title,text:Beta  ×4,wgt:2,tag:Artist,nk:name
+            Vrow,row:list,wgt:1,bits:4
+            Vrow,row:dip,text:/*4,wgt:1
+        cell:witnessed,kind:gang,n:4
+          Vtuffing,of:witnessed,n:4
+            Vrow,row:title,text:×4,wgt:2,tag:witnessed
+            Vrow,row:list,wgt:1,bits:4
+            Vrow,row:dip,text:/*4,wgt:1
+        cell:see,kind:gang,n:3
+          Vtuffing,of:see,n:3
+            Vrow,row:title,text:×3,wgt:2,tag:see
+            Vrow,row:list,wgt:1,bits:3
+            Vrow,row:dip,text:/*3,wgt:1
+        bare:req,n:1
 Snap:cytowave
-  upsert,id:cytoid_1_1,label:VoroClinic,isCompound:true
-    style,background-color:#8f3232
-    style,background-opacity=0.6
-    style,color:#ccc
-    style,font-size:8px
-    style,font-style:italic
-    style,height=20
-    style,padding:7px
-    style,shape:ellipse
-    style,text-valign:top
-    style,width=20
-  upsert,id:cytoid_1_1_1,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+  upsert,id:cytoid_1_1_5,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
     style,background-color:#04202a
     style,background-opacity=0.85
-    style,border-color:#2fb155
+    style,border-color:#298699
     style,border-width=2
     style,height=44
     style,shape:ellipse
     style,width=110
-  upsert,id:cytoid_1_1_2,label:,parent:cytoid_1_1,overlay_kind:stuff
-    style,background-color:#04202a
-    style,background-opacity=0.85
-    style,border-color:#8e29d6
-    style,border-width=2
-    style,height=120
-    style,shape:ellipse
-    style,width=220
-  upsert,id:cytoid_1_1_3,label:,parent:cytoid_1_1,overlay_kind:stuff
-    style,background-color:#04202a
-    style,background-opacity=0.85
-    style,border-color:#8e29d6
-    style,border-width=2
-    style,height=120
-    style,shape:ellipse
-    style,width=220
-  upsert,id:cytoid_1_1_4,label:,parent:cytoid_1_1,overlay_kind:stuff
-    style,background-color:#04202a
-    style,background-opacity=0.85
-    style,border-color:#c5b759
-    style,border-width=2
-    style,height=120
-    style,shape:ellipse
-    style,width=220

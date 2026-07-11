@@ -49,24 +49,52 @@ Snap:H
           Nothofagus:crassifolius var. prostrata,habit:vine
         Nothofagus:colensoi,habit:tree
       w:Voronoiology,dontGraph
-        Voro,beat=3,level:L1,visible=11,gangs=7,folded:0,count:0
+        Voro,beat=3,level:L1,visible=10,cells:6,gangs=6,folded:0,count:0
         drift,focus:Coprosma robusta,opens
-        row:Coprosma,n=5,fold:gang,rep:rhamnoides,of=2,pop=3
-        row:Veronica,n=4,fold:gang,rep:grandifolia,of=4
-        row:Metrosideros,n=4,fold:gang,rep:excelsa,of=4
-        row:Pittosporum,n=4,fold:gang,rep:serrata,of=4
-        row:Olearia,n=3,fold:gang,rep:grandifolia,of=3
-        row:Nothofagus,n=3,fold:gang,rep:tenax,of=3
+        cell:Coprosma,kind:gang,n:2
+          Vtuffing,of:Coprosma,n:2
+            Vrow,row:title,text:×2,wgt:2,tag:Coprosma
+            Vrow,row:list,wgt:1,bits:2
+            Vrow,row:fact,text:woodystem ×1,wgt:1
+            Vrow,row:fact,text:habit: vine,wgt:1
+            Vrow,row:dip,text:/*2,wgt:1
+        cell:Veronica,kind:gang,n:4
+          Vtuffing,of:Veronica,n:4
+            Vrow,row:title,text:×4,wgt:2,tag:Veronica
+            Vrow,row:list,wgt:1,bits:4
+            Vrow,row:fact,text:woodystem ×2,wgt:1
+            Vrow,row:spread,text:habit,wgt:1,bits:2
+            Vrow,row:dip,text:/*4,wgt:1
+        cell:Metrosideros,kind:gang,n:4
+          Vtuffing,of:Metrosideros,n:4
+            Vrow,row:title,text:×4,wgt:2,tag:Metrosideros
+            Vrow,row:list,wgt:1,bits:4
+            Vrow,row:fact,text:woodystem ×2,wgt:1
+            Vrow,row:fact,text:endemic ×2,wgt:1
+            Vrow,row:fact,text:habit: shrub,wgt:1
+            Vrow,row:dip,text:/*4,wgt:1
+        cell:Olearia,kind:gang,n:3
+          Vtuffing,of:Olearia,n:3
+            Vrow,row:title,text:×3,wgt:2,tag:Olearia
+            Vrow,row:list,wgt:1,bits:3
+            Vrow,row:fact,text:habit: shrub,wgt:1
+            Vrow,row:dip,text:/*3,wgt:1
+        cell:Pittosporum,kind:gang,n:4
+          Vtuffing,of:Pittosporum,n:4
+            Vrow,row:title,text:×4,wgt:2,tag:Pittosporum
+            Vrow,row:list,wgt:1,bits:4
+            Vrow,row:spread,text:habit,wgt:1,bits:3
+            Vrow,row:dip,text:/*4,wgt:1
+        cell:Nothofagus,kind:gang,n:3
+          Vtuffing,of:Nothofagus,n:3
+            Vrow,row:title,text:×3,wgt:2,tag:Nothofagus
+            Vrow,row:list,wgt:1,bits:3
+            Vrow,row:spread,text:habit,wgt:1,bits:2
+            Vrow,row:dip,text:/*3,wgt:1
+        bare:req,n:1
+        bare:Coprosma,n:5,pop:1
 Snap:cytowave
-  upsert,id:cytoid_1_1_10,label:,parent:cytoid_1_1,overlay_kind:stuff
-    style,background-color:#04202a
-    style,background-opacity=0.85
-    style,border-color:#8e29d6
-    style,border-width=2
-    style,height=120
-    style,shape:ellipse
-    style,width=220
-  upsert,id:cytoid_1_1_11,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+  upsert,id:cytoid_1_1_10,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
     style,background-color:#04202a
     style,background-opacity=0.85
     style,border-color:#8e29d6
@@ -74,6 +102,11 @@ Snap:cytowave
     style,height=44
     style,shape:ellipse
     style,width=110
-  upsert,id:cytoid_1_1_2,overlay_kind:stuff,overlay_self
+  upsert,id:cytoid_1_1_11,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#8e29d6
+    style,border-width=2
     style,height=44
+    style,shape:ellipse
     style,width=110

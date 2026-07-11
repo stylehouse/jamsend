@@ -28,7 +28,7 @@ Snap:H
           Track,title:Gleam,year:2007
         see:the shelf fills out — five artists and sixteen tracks — every pane heavy with song and ready to crush
       w:Voronoiology,dontGraph
-        Voro,beat=5,level:L0,visible=9,cells:5,gangs=0,folded:16,count:5
+        Voro,beat=5,level:L0,visible=7,cells:5,gangs=0,folded:16,count:5
         cell:Artist,kind:pane,n:4
           Vtuffing,of:Track,n:4
             Vrow,row:title,text:Moonlit  ×4,wgt:2,tag:Artist,nk:name
@@ -67,6 +67,5 @@ Snap:H
             Vrow,row:fact,text:year: 2007,wgt:1
             Vrow,row:fact,text:live ×1,wgt:1
             Vrow,row:dip,text:/*2,wgt:1
-        bare:self,n:2
         bare:req,n:1
         bare:see,n:1

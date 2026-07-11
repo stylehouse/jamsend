@@ -114,6 +114,10 @@
 
         w.c.commission         = req
         w.c.Scannable          = req.sc.Scannable as TheC
+        // useVoroCyto rides ON the commission (Story fig.1) — arm the pre-scan crush so every
+        //  wave carries fresh folds (see cyto_update_wave).  Same c-side flag ◈ uses; needs
+        //   Voro.g on this House (elsewhere the hook no-ops and snap-time stamps still land).
+        if (req.sc.useVoroCyto) (w.c.Scannable as TheC).c.crush_wanted = 1
         w.c.Styles             = req.sc.Styles as TheC | null
         w.c.client_w           = req.sc.client_w as TheC | undefined
         w.c.supports_constraints = !!req.sc.supports_constraints
@@ -219,9 +223,11 @@
 
         // TRIGGER 1: new step from client → scan + archive
         if (incoming_step_n !== undefined && !same_step_n || !w.c.supports_seek) {
-            // ◈ imposition: a crush the VIEW asked for (e_Cyto_crush), not the Book — re-stamp
-            //  before each scan so newborn particles fold too.  c-side only; no snap sees it.
-            if (scan.c.crush_wanted) (H as any).Voro_crush_scan?.(scan)
+            // crush imposition — re-stamp before each scan so newborn particles fold IN THIS
+            //  wave (snap-time stamps alone lag one step: a flooding step waved raw nodes).
+            //   Armed by ◈ (e_Cyto_crush) or by the commission itself (useVoroCyto below);
+            //    per-world + quiet (story_snap stays the census author).  c-side only.
+            if (scan.c.crush_wanted) (H as any).Voro_crush_worlds?.(scan)
             const topC = await this.cyto_scan(w, scan)
             await this.cyto_assign_ids(w, topC)
             await this.cyto_scan_refs(w, topC)

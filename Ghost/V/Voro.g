@@ -46,7 +46,10 @@
 //       hysteresis across beats, so the graph doesn't flap between levels while it grows.
 //  RETURN shape: {folded,count} = container folds only (now surfaced in w:Voronoiology's row, no
 //   longer a Book %see); gang folds ride separately as {gangs,ganged}, plus {visible,level}.
-Voro_crush_scan(w):
+//  quiet: stamp only, no self-report — the pre-scan pass (Voro_crush_worlds) re-stamps so the
+//   WAVE ferries fresh folds, but the census (and its beat counter, pinned in fixtures) must
+//    keep landing exactly once per beat, at snap time.
+Voro_crush_scan(w, quiet):
     let level = w.c.crush_level || 0
     let stats = this.Voro_crush_pass(w, level)
     while (stats.visible > 15 && level < 2) {
@@ -63,8 +66,31 @@ Voro_crush_scan(w):
         stats = trial
     }
     w.c.crush_level = level
-    this.Voro_report(w, stats)
+    if (!quiet) {
+        this.Voro_report(w, stats)
+    }
     return stats
+
+// Voro_crush_worlds — the PRE-SCAN imposition: crush every Run world (skipping the Voronoiology
+//  projection — never fold the report) right before Cyto scans, so the wave that ferries a
+//   newborn already carries its fold.  Without this the stamps land at SNAP time (story_snap),
+//    one tick AFTER the scan — a flooding step waved raw nodes and only the NEXT step's scan
+//     dressed them (the owner's "step 2 has all these nodes flood in but not cells").  Armed by
+//      Cyto: e_Cyto_commission sets Scannable.c.crush_wanted when the commission carries
+//       useVoroCyto, the ◈ button sets the same flag by hand; cyto_update_wave calls here.
+//  Always QUIET — story_snap's per-world crush stays the census author (once per beat).
+//   A scannable with no A children (a bare w, Lang's Cyto) folds as one world, same as ever.
+Voro_crush_worlds(scan):
+    let As = scan.o({ A: 1 })
+    if (!As.length) {
+        this.Voro_crush_scan(scan, 1)
+        return
+    }
+    for (const a of As) {
+        for (const rw of a.o({ w: 1 })) {
+            if (rw.sc.w !== 'Voronoiology') this.Voro_crush_scan(rw, 1)
+        }
+    }
 
 Voro_crush_pass(w, level):
     let stats = { folded: 0, count: 0, gangs: 0, ganged: 0, visible: 0, level: level }
@@ -199,7 +225,9 @@ Voro_report_walk(node, census, d):
     for (const c of node.o()) {
         if (c.c.represented) continue
         let mk = Object.keys(c.sc)[0]
-        if (mk === 'Opt') continue
+        // same cut as the crush walk: Opt is config, self is machinery — neither is a pane
+        //  nor a bare leaf the canvas could show, so neither belongs in the census.
+        if (mk === 'Opt' || mk === 'self') continue
         if (c.c.stuff) {
             let label = mk
             if (c.c.gang) {
@@ -234,7 +262,12 @@ Voro_crush_walk(node, d, stats, level):
     let spilled = 0
     for (const c of node.o()) {
         let mk = Object.keys(c.sc)[0]
-        if (mk === 'Opt') continue
+        // %Opt is config, %self is machinery (beat rounds + a wall-clock %est) — the VIEW
+        //  already hides both (cytyle_classify), so the crush must not gang them either: a
+        //   cell:self in the census is a pane the canvas can never draw (the render-debt
+        //    gauge lies) and its transcript bakes the est TIMESTAMP into fixtures (VoroRadio
+        //     steps 4-5 red on every re-run).
+        if (mk === 'Opt' || mk === 'self') continue
         // ANY pop intent among the children marks this locale as being surfed — the
         //  remaining leaves then gang at min 2 (the spill relax), because "a few pop
         //   out, the REST stays one pane" is the surf's contract.

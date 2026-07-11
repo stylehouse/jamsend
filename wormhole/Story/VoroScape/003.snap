@@ -20,7 +20,7 @@ Snap:H
           Track,title:Choir,year:2007
         see:the catalogs deepen — five new tracks land across the same three panes — the glass thickens in place
       w:Voronoiology,dontGraph
-        Voro,beat=3,level:L0,visible=7,cells:3,gangs=0,folded:10,count:3
+        Voro,beat=3,level:L0,visible=5,cells:3,gangs=0,folded:10,count:3
         cell:Artist,kind:pane,n:4
           Vtuffing,of:Track,n:4
             Vrow,row:title,text:Moonlit  ×4,wgt:2,tag:Artist,nk:name
@@ -44,6 +44,5 @@ Snap:H
             Vrow,row:fact,text:year: 2007,wgt:1
             Vrow,row:fact,text:live ×1,wgt:1
             Vrow,row:dip,text:/*3,wgt:1
-        bare:self,n:2
         bare:req,n:1
         bare:see,n:1

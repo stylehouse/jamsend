@@ -451,7 +451,7 @@
         if (!L) { if (vcells.length || vtips.length) clear_voronoi(); return }
         vregion_w = L.CW
         for (const c of L.cells) shown_pts.set(c.id, resample(c.inset, RESAMPLE_N))
-        paint_final(L)   // live cadence — vtuffing rows track too (cached tree + chord math)
+        paint_final(L)   // live cadence — ▦ sub-graphs track too (cached tree + closed math)
     }
 
     function show_overlays_soon() {
@@ -877,43 +877,19 @@
     }
     let vcells        = $state<{ id: string, d: string, color: string, swapped?: boolean, fog?: number }[]>([])
     let vtips         = $state<{ id: string, x: number, y: number, color: string }[]>([])
-    // ── the microcosm (task 6a/6b, Voro_microcosm.md) ─────────────────────────
-    //  a big-enough cell swaps its molded Stuffing for its fold's MEMBERS laid
-    //   out as a mini grid of row-cards in the cell's own frame — "just
-    //    crunching on subsets": no second graph machine, the members are one
-    //     fold.o() (or c.gang) away from the live particle we already hold.
-    //  Settle-only (the live painter never pays for it), char-estimate card
-    //   sizes (no DOM measure — metaphysics §6), clipped to the cell polygon.
-    // ── vtuffing: what a big pane SAYS (rows from Voro.g's Vtuff_build, fitted to the cell) ──
+    // ── vtuffing: what a pane SAYS (rows from Voro.g's Vtuff_build) ───────────
     //  The engine distils a fold|gang's members into a layout C** (title | shared facts |
-    //   spreads-with-chips | member rows | the /*N dip); here we normalise that tree to plain
-    //    row descriptors and CHORD-FIT them into the convex cell polygon — text follows the
-    //     slanted walls instead of a bbox grid.  Runs in BOTH cadences (the tree is cached
-    //      .g-side, the fit is pure math) so the rows persist through a drag.  ▤ toggles the
-    //       whole swap; member|dip rows are the pop-out surf (Vtuff_pop).
-    type MicroChip = { text: string, n: number, member?: TheC, sub?: number, px?: number, py?: number }
-    type MicroRow  = { text: string, kind: string, x: number, y: number, w: number, h: number, fs: number,
-                       color: string | null, tag?: string, sub?: number,
-                       chips?: MicroChip[], member?: TheC, dip?: boolean }
+    //   spreads-with-chips | member rows | the /*N dip); here we normalise that tree to
+    //    plain row descriptors for the ▦ sub-graph below — its ONE consumer.
+    //  (The old ▤ face — the same rows chord-fitted as text cards, a hand-rolled
+    //   Stuffing-lookalike with k|v|annotation all one muddy string — is DELETED
+    //    2026-07-11: its successor landed (the sub-graph speaking Stuffing's own
+    //     grammar), and a demoted second face kept resurfacing through the toggles
+    //      as the pre-grammar look.  Panes without a sub-graph read as the REAL
+    //       Stuffing, molded to the cell; there is no third rendering.)
+    type MicroChip = { text: string, n: number, member?: TheC, sub?: number }
     type VtuffDesc = { text: string, kind: string, color?: string | null, tag?: string, nk?: string,
                        sub?: number, chips?: MicroChip[], member?: TheC, dip?: boolean }
-    let vmicro       = $state<{ id: string, x: number, y: number, w: number, h: number, clip: string, rows: MicroRow[] }[]>([])
-    let micro_on_ids = new Set<string>()   // hysteresis memory: which cells are swapped in
-    // ▤ DEMOTED to an opt-in inspection face (owner 2026-07-11: the row engine is a
-    //  hand-rolled Stuffing-lookalike — "skinny and mean" — and panes should read as the
-    //   REAL Stuffing at the right size; the fit clamp in paint_final is that size).
-    //    Default OFF and session-local now: no stash restore or write, so an old
-    //     Cyto_vtuffing=true from the play days can't resurrect the rows.  The real
-    //      successor is hierarchy as sub-cells|sub-graph (Voro_vtuffing.md §🎋 v2).
-    let vtuffing_pref = $state<boolean | null>(null)
-    const vtuffing_on = $derived(vtuffing_pref ?? false)
-    function toggle_vtuffing() {
-        vtuffing_pref = !vtuffing_on
-        if (!vtuffing_on) {
-            for (const id of micro_on_ids) { const mel = overlays.get(id); if (mel) mel.style.opacity = '' }
-            micro_on_ids = new Set(); vmicro = []
-        } else voronoi_soon()
-    }
 
     // one short identity line — the TS twin of Voro.g's Vtuff_ident, for the fallback
     //  rows an OLD gen serves until the tab reload deposits Vtuff_build.
@@ -1005,72 +981,6 @@
         return [x0, x1]
     }
 
-    // slab-fit: stack the rows down the cell, each row clamped to the polygon's chord at its
-    //  band (top and bottom chords intersected — conservative, so slanted walls never clip
-    //   text).  The `list` row claims the pane's LEFTOVER height and lays its chips on a PHI
-    //    SPIRAL — the sunflower's seed packing (chip k at r ∝ √k, θ = k·137.508°, the SAME
-    //     golden angle the kind-hues step by), squeezed to the row's box; the pane's clip-path
-    //      trims any slant overflow.  Too many rows → keep title + head + dip and say "+K
-    //       more" (no silent caps).
-    function micro_fit(inset: {x:number,y:number}[], descs: VtuffDesc[],
-                       bx: number, by: number, bh: number): MicroRow[] {
-        if (!descs.length) return []
-        const usable = bh * 0.88
-        const list = descs.find(d => d.kind === 'list' && d.chips?.length)
-        const hof = (d: VtuffDesc) => (d.kind === 'title' ? 1.35 : 1)   // the list is sized OUT of band
-        const sum = (l: VtuffDesc[]) => l.reduce((s, d) => s + (d === list ? 0 : hof(d)), 0)
-        // reserve spiral room in the unit maths: ~1 unit per 4 chips, floored at 2, capped at 7
-        const reserve = list ? Math.max(2, Math.min(7, (list.chips!.length + 3) / 4)) : 0
-        let unit = usable / (sum(descs) + reserve)
-        unit = Math.max(12, Math.min(20, unit))
-        let shown = descs
-        if (unit * (sum(descs) + reserve) > usable + 1) {
-            const title = descs.filter(d => d.kind === 'title')
-            const dip   = descs.filter(d => d.dip)
-            const mid   = descs.filter(d => d.kind !== 'title' && !d.dip && d !== list)
-            let keep = mid.length
-            while (keep > 0 && unit * (sum(title) + sum(dip) + keep + reserve + 1) > usable + 1) keep--
-            const dropped = mid.length - keep
-            shown = [...title, ...(list ? [list] : []), ...mid.slice(0, keep),
-                     ...(dropped ? [{ text: `+${dropped} more`, kind: 'fact' } as VtuffDesc] : []), ...dip]
-        }
-        const bandH = unit * sum(shown)
-        const listH = list ? Math.max(unit, usable - bandH) : 0
-        let y = by + Math.max(bh * 0.06, (bh - bandH - listH) / 2)
-        const rows: MicroRow[] = []
-        for (const d of shown) {
-            const h = d === list ? listH : unit * hof(d)
-            const c1 = poly_chord(inset, y + h * 0.12)
-            const c2 = poly_chord(inset, y + h * 0.88)
-            if (c1 && c2) {
-                const x0 = Math.max(c1[0], c2[0]) + 6, x1 = Math.min(c1[1], c2[1]) - 6
-                // font-size rides the UNIT, not a tall spiral block's total height
-                const fs = (d.kind === 'title' ? unit * 1.35 : unit) * 0.62
-                if (d === list) {
-                    // ── the phi spiral (owner's ask: "like the seeds in a sunflower") ──
-                    //  Vogel's model on the unit disc, anisotropically squeezed into the
-                    //   row box — golden-angle neighbours never queue up, so text chips
-                    //    scatter evenly with no grid to fight the slanted walls.
-                    const chips = d.chips!
-                    const GA = Math.PI * (3 - Math.sqrt(5))
-                    const R = Math.sqrt(Math.max(0.5, chips.length - 0.5))
-                    const rx = (x1 - x0) / 2 * 0.82, ry = h / 2 * 0.76
-                    chips.forEach((ch, k) => {
-                        const rr = Math.sqrt(k + 0.5) / R
-                        ch.px = (x1 - x0) / 2 + Math.cos(k * GA) * rr * rx
-                        ch.py = h / 2 + Math.sin(k * GA) * rr * ry
-                    })
-                }
-                if (x1 - x0 >= 36) rows.push({
-                    text: d.text, kind: d.kind, x: x0 - bx, y: y - by, w: x1 - x0, h, fs,
-                    color: d.color ?? null, tag: d.tag, sub: d.sub,
-                    chips: d.chips, member: d.member, dip: d.dip })
-            }
-            y += h
-        }
-        return rows
-    }
-
     // the /*N surf — a member row|chip clicked pops THAT node out INTO THE GRAPH; the dip
     //  (member undefined) spills the top-K.  Vtuff_pop stamps the c.popped|c.popped_open
     //   intents and waves a re-scan — never expands inside the pane.  LOUD when the verb
@@ -1092,7 +1002,7 @@
     //       is a scape in miniature.  Multiplicities never own a cell: ×N and the /*N
     //        dig ride as SUPERSCRIPT annotations (a member label clicked is the surf —
     //         Vtuff_pop, the seed of click-to-expand "later when the graph is bigger").
-    //          The pane's molded Stuffing dims underneath (the ▤ crossfade) and its
+    //          The pane's molded Stuffing dims underneath (a crossfade) and its
     //           name stays on top as the pane HEADLINE, count superscripted.  Keys wear
     //            the kind tint and their ':', values stay plain — the Stuffing's own
     //             idiom, so k vs v reads at a glance (the language critique).
@@ -1122,7 +1032,7 @@
         const sts = (H as any).stashed
         if (sts) sts.Cyto_subgraph = subgraph_pref
         if (!subgraph_pref) {
-            for (const id of sub_on_ids) if (!micro_on_ids.has(id)) {
+            for (const id of sub_on_ids) {
                 const mel = overlays.get(id); if (mel) mel.style.opacity = ''
             }
             sub_on_ids = new Set(); vsubs = []
@@ -2166,76 +2076,15 @@
         }
         vfams = fams
 
-        // ── the vtuffing swap: ▤ on = the ENGINE owns every fold pane ──
-        //  v1 swapped per-cell above a zoom threshold WITH per-cell hysteresis
-        //   memory — so two same-size neighbours could differ purely by zoom
-        //    HISTORY, and the board read as an arbitrary half-Stuffing
-        //     half-Vtuffing mix (the owner: "weird").  One rule now: when ▤ is
-        //      on, every fold|gang pane that can say ANYTHING (clears the tiny
-        //       floor and fits ≥1 row) speaks rows; molded Stuffings live under
-        //        ▤ off.  A sliver that fits nothing keeps its Stuffing — the
-        //         dim only happens once rows really render (v1 could dim the
-        //          Stuffing then fit nothing: a blank pane).  BOTH cadences:
-        //           the tree is cached .g-side and the fit is pure math, so
-        //            the rows track a drag live.
-        if (vtuffing_on) {
-            // UNIFORMITISE (owner) — no size threshold: every fold|gang pane speaks engine rows,
-            //  so the board reads as ONE kind of thing (not a size-sorted Stuffing/engine mix).
-            //   The fit itself stays the only gate — a cell that can say NOTHING (0 rows) keeps its
-            //    molded Stuffing rather than showing blank.  (Was √area ≥ 70px; re-add a floor here
-            //     if the tiniest panes read as noise.)
-            const MICRO_MIN = 0
-            const micro: typeof vmicro = []
-            const next_on = new Set<string>()
-            for (const c of L.cells) {
-                const src = node_src.get(c.id) as any
-                if (!src?.c?.gang && !src?.c?.stuff) continue
-                let area2 = 0
-                for (let i = 0; i < c.inset.length; i++) {
-                    const p = c.inset[i], q = c.inset[(i + 1) % c.inset.length]
-                    area2 += p.x * q.y - q.x * p.y
-                }
-                const px = Math.sqrt(Math.abs(area2) / 2)
-                if (px < MICRO_MIN) continue
-                const descs = vtuff_rows(src)
-                if (!descs.length) continue
-                const xs = c.inset.map(p => p.x), ys = c.inset.map(p => p.y)
-                const bx = Math.min(...xs), by = Math.min(...ys)
-                const bw = Math.max(...xs) - bx, bh = Math.max(...ys) - by
-                const rows = micro_fit(c.inset, descs, bx, by, bh)
-                if (!rows.length) continue
-                next_on.add(c.id)
-                micro.push({ id: c.id, x: bx, y: by, w: bw, h: bh,
-                    clip: 'polygon(' + c.inset.map(p =>
-                        `${(p.x - bx).toFixed(1)}px ${(p.y - by).toFixed(1)}px`).join(',') + ')',
-                    rows })
-            }
-            // crossfade: dim the molded Stuffing of every swapped cell; restore leavers
-            for (const id of next_on) { const mel = overlays.get(id); if (mel) mel.style.opacity = '0' }
-            for (const id of micro_on_ids) if (!next_on.has(id)) {
-                const mel = overlays.get(id); if (mel) mel.style.opacity = ''
-            }
-            micro_on_ids = next_on
-            vmicro = micro
-            // a swapped cell wears the Stuffing's chrome (dotted rim + fuller
-            //  glass) so the pane still reads as a Stuffing, not a flat panel.
-            for (const cc of cells) cc.swapped = next_on.has(cc.id)
-        } else if (micro_on_ids.size || vmicro.length) {
-            for (const id of micro_on_ids) { const mel = overlays.get(id); if (mel) mel.style.opacity = '' }
-            micro_on_ids = new Set()
-            vmicro = []
-        }
-
-        // ── ▦ the sub-graph pass: every fold|gang pane big enough tessellates itself ──
-        //  runs AFTER the ▤ swap so an inspection ▤ keeps priority per pane; a pane too
-        //   small (or saying just one thing) keeps its molded Stuffing.  Both cadences,
-        //    like ▤ — the tree is cached .g-side and the geometry is the same closed
-        //     math as the parent scape, so sub-cells track a drag live.
+        // ── ▦ the sub-graph pass: every fold|gang pane tessellates itself ──
+        //  a pane too small (or saying just one thing) keeps its molded Stuffing —
+        //   the ONLY other face now (the ▤ row engine is deleted).  Both cadences:
+        //    the tree is cached .g-side and the geometry is the same closed math
+        //     as the parent scape, so sub-cells track a drag live.
         if (subgraph_on && voronoi_on) {
             const subs: VSubPane[] = []
             const next = new Set<string>()
             for (const c of L.cells) {
-                if (micro_on_ids.has(c.id)) continue
                 const src = node_src.get(c.id) as any
                 if (!src?.c?.gang && !src?.c?.stuff) continue
                 const descs = vtuff_rows(src)
@@ -2248,14 +2097,16 @@
                 subs.push(pane)
             }
             for (const id of next) { const mel = overlays.get(id); if (mel) mel.style.opacity = '0' }
-            for (const id of sub_on_ids) if (!next.has(id) && !micro_on_ids.has(id)) {
+            for (const id of sub_on_ids) if (!next.has(id)) {
                 const mel = overlays.get(id); if (mel) mel.style.opacity = ''
             }
             sub_on_ids = next
             vsubs = subs
+            // a swapped cell wears the Stuffing's chrome (dotted rim + fuller
+            //  glass) so the pane still reads as a Stuffing, not a flat panel.
             for (const cc of cells) if (next.has(cc.id)) cc.swapped = true
         } else if (sub_on_ids.size || vsubs.length) {
-            for (const id of sub_on_ids) if (!micro_on_ids.has(id)) {
+            for (const id of sub_on_ids) {
                 const mel = overlays.get(id); if (mel) mel.style.opacity = ''
             }
             sub_on_ids = new Set()
@@ -2360,10 +2211,7 @@
         vcells = []
         vtips = []
         vfams = []
-        vmicro = []
         vsubs = []
-        for (const id of micro_on_ids) { const mel = overlays.get(id); if (mel) mel.style.opacity = '' }
-        micro_on_ids.clear()
         for (const id of sub_on_ids) { const mel = overlays.get(id); if (mel) mel.style.opacity = '' }
         sub_on_ids.clear()
         shown_pts.clear()
@@ -2576,15 +2424,24 @@
             // PURELY-ADDITIVE wave (nothing removed) with a grown graph already on screen:
             //  pin the settled nodes so the newcomers tuck in without re-tumbling everything.
             //   The first wave (flora born) is all-fresh → nothing to pin → full free layout.
+            //  A FLOOD (newcomers outnumber the settled 2:1 — the 2-nodes→whole-bunch jump) is
+            //   the opposite regime: there is no grown rosette worth protecting, and one pass
+            //    from a near-empty board leaves a half-settled heap (the owner ran ⟳ by hand).
+            //     So a flood pins nothing and buys a SECOND free pass once the first settles.
             let pins: any[] | null = null
             const additive = !wave.o({ remove: 1 }).length && !wave.o({ edge_remove: 1 }).length
-            if (additive && fresh_ids.size) {
+            const settled_real = cy.nodes().filter((n: any) =>
+                !fresh_ids.has(n.id()) && !n.hasClass('nucleus') && !n.isParent() && n.inside())
+            const flood = fresh_ids.size > Math.max(2, 2 * settled_real.length)
+            if (additive && fresh_ids.size && !flood) {
                 const settled = cy.nodes().filter((n: any) =>
                     !fresh_ids.has(n.id()) && !n.hasClass('nucleus') && n.inside())
                 if (settled.length)
                     pins = settled.map((n: any) => ({ nodeId: n.id(), position: { x: n.position('x'), y: n.position('y') } }))
             }
             relayout(ms, pins)
+            if (flood) cy.one('layoutstop', () =>
+                setTimeout(() => relayout(Math.max(ms, 300)), 80))
         } else {
             // no layout needed — bring overlays back now instead of waiting
             // for a layoutstop that will never fire
@@ -2711,7 +2568,6 @@
         if (typeof stashed_f === 'boolean') families_pref = stashed_f
         const stashed_b = (H as any).stashed?.Cyto_gravity_brush
         if (typeof stashed_b === 'boolean') brush_pref = stashed_b
-        // (no Cyto_vtuffing restore — ▤ is session-local while the row engine is demoted)
         const stashed_sg = (H as any).stashed?.Cyto_subgraph
         if (typeof stashed_sg === 'boolean') subgraph_pref = stashed_sg
         if (DRIFT_MODES_ON) {   // shelved: a stashed true from the play days must not resurrect the drift
@@ -2851,8 +2707,6 @@
             title="family hulls — one faint shared outline per compound house">⬡</button>
         <button class="v-toggle" class:on={brush_pref} onclick={toggle_brush}
             title="gravity brush — wheel pinches|spreads the locale under the cursor (Ctrl+wheel still zooms)">🌀</button>
-        <button class="v-toggle" class:on={vtuffing_on} onclick={toggle_vtuffing}
-            title="vtuffing — a big-enough pane swaps its molded Stuffing for member rows fitted to the cell (off = Stuffings always)">▤</button>
         <button class="v-toggle" class:on={subgraph_on} onclick={toggle_subgraph}
             title="sub-graph — a pane tessellates itself: one sub-cell per key|value its members share or spread, ×N as superscripts, the /*N corner digs (off = molded Stuffings)">▦</button>
         {#if DRIFT_MODES_ON}
@@ -2909,7 +2763,7 @@
                         stroke-opacity="0.55" stroke-width="4.5" stroke-linecap="round" />
                 {/each}
                 {#each vcells as cell (cell.id)}
-                    <!-- a swapped (vtuffing) cell wears the Stuffing's tabletty
+                    <!-- a swapped (▦ sub-graph) cell wears the Stuffing's tabletty
                          dotted rim + a fuller glass fill; plain cells keep the
                          thin solid stroke.  Colour is the kind's swatch|hue. -->
                     <!-- fog: a tunnel cell fades with depth (fog = NEAR/d, 1 at the
@@ -3001,49 +2855,6 @@
                 {/each}
             {/if}
         </svg>
-        <!-- vtuffing layer: a big-enough cell swaps its molded Stuffing for the
-             engine's rows (Voro.g Vtuff_build — title | shared facts | spreads
-             with chips | members | the /*N dip), chord-fitted to the cell
-             polygon and clipped by it.  Tracks BOTH cadences, so the rows ride
-             a drag live.  member|dip rows are buttons: the surf pops nodes out
-             into the graph (Vtuff_pop), never expands inside the pane. -->
-        <div class="cytui-micro-layer" style:opacity={motion_hidden ? 0 : 1}>
-            {#each vmicro as mc (mc.id)}
-                <div class="cytui-micro" style:left={`${mc.x}px`} style:top={`${mc.y}px`}
-                     style:width={`${mc.w}px`} style:height={`${mc.h}px`} style:clip-path={mc.clip}>
-                    {#each mc.rows as row, ri (ri)}
-                        {@const hot = row.member != null || row.dip}
-                        <svelte:element this={hot ? 'button' : 'div'}
-                             role={hot ? 'button' : undefined}
-                             class="cytui-micro-row {row.kind}" class:hot
-                             style:left={`${row.x.toFixed(1)}px`} style:top={`${row.y.toFixed(1)}px`}
-                             style:width={`${row.w.toFixed(1)}px`} style:height={`${row.h.toFixed(1)}px`}
-                             style:font-size={`${row.fs.toFixed(1)}px`}
-                             style:align-items={row.kind === 'list' ? 'flex-start' : 'center'}
-                             style:color={row.color ?? ''}
-                             onclick={hot ? () => micro_click(mc.id, row.member) : undefined}>
-                            <!-- the mainkey IS different from other keys: it rides as a small
-                                 type-tag chip beside the bare NAME, never as inline prose -->
-                            {#if row.tag}<span class="ktag">{row.tag}</span>{/if}
-                            <span class="t">{row.text}</span>
-                            {#if row.sub}<span class="subn">/*{row.sub}</span>{/if}
-                            <!-- a chip carrying a member is its OWN pop-out handle (the
-                                 homogeneous list form: 'figaro' pops figaro) -->
-                            {#each row.chips ?? [] as chip, ci (ci)}
-                                <svelte:element this={chip.member ? 'button' : 'span'}
-                                     role={chip.member ? 'button' : undefined}
-                                     class="chip" class:hot={chip.member != null}
-                                     class:seed={chip.px != null}
-                                     style:left={chip.px != null ? `${chip.px.toFixed(1)}px` : undefined}
-                                     style:top={chip.py != null ? `${chip.py.toFixed(1)}px` : undefined}
-                                     onclick={chip.member ? (e: Event) => { e.stopPropagation(); micro_click(mc.id, chip.member) } : undefined}>
-                                    {chip.text}{chip.n > 1 ? ` ×${chip.n}` : ''}{#if chip.sub}<span class="subn">/*{chip.sub}</span>{/if}</svelte:element>
-                            {/each}
-                        </svelte:element>
-                    {/each}
-                </div>
-            {/each}
-        </div>
         <!-- scroll visor: the lit indicator for the wheel gutter over the right
              strip.  Pure pixels (pointer-events:none) — the wrap's capture-phase
              visor_guard does the actual wheel-stealing, so everything beneath
@@ -3126,7 +2937,7 @@
 /* ▦ sub-graph: walls thinner and softer than the pane strokes so the hierarchy
    reads — pane wall loud, sub-wall quiet.  Labels are the pane's words: keys
    tinted (fill inline, per-pane), values plain, superscripts small and lilac
-   like the ▤ dig glyph.  Only member labels and the dip take the pointer
+   like the old dig glyph.  Only member labels and the dip take the pointer
    (pointer-events:none rules the layer) so pane drag survives. */
 .cytui-subgraph .vsub-wall {
     fill-opacity: 0.04;
@@ -3302,107 +3113,6 @@
     transition: opacity 0.2s ease;
 }
 
-/* ── vtuffing: engine rows chord-fitted inside a big-enough cell ──────────── */
-.cytui-micro-layer {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease;
-}
-.cytui-micro { position: absolute; }
-.cytui-micro-row {
-    position: absolute;
-    display: flex;
-    align-items: center;
-    gap: 0.45em;
-    overflow: hidden;
-    white-space: nowrap;
-    color: #c3d0da;
-    background: none;
-    border: none;
-    padding: 0;
-    text-align: left;
-    box-sizing: border-box;
-}
-.cytui-micro-row .t {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex: 0 1 auto;
-}
-.cytui-micro-row.title {
-    font-weight: 600;
-    letter-spacing: 0.03em;
-}
-.cytui-micro-row.fact .t { opacity: 0.85; }
-.cytui-micro-row.spread .t { opacity: 0.55; }
-/* the homogeneous list form — the family said once in the title, the members as chips
-   SEEDED ON A PHI SPIRAL filling the cell's belly (micro_fit computes Vogel positions;
-   .seed chips sit absolutely, centre-anchored).  flex-wrap stays as the fallback for
-   any un-seeded chip row (spreads keep their inline chips). */
-.cytui-micro-row.list {
-    position: relative;
-    gap: 0.3em 0.35em;
-    flex-wrap: wrap;
-    white-space: normal;
-    align-content: flex-start;
-    overflow: visible;
-}
-.cytui-micro-row .chip.seed {
-    position: absolute;
-    transform: translate(-50%, -50%);
-    max-width: 11em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.cytui-micro-row.sub { padding-left: 1.2em; opacity: 0.72; }
-/* the TYPE: the mainkey drawn as a KEY, not a value.  Owner's call — it read as a value-chip
-   badge (bordered pill, same as the data chips) when it is really a key/label, so it now wears
-   the quiet key-label look (dim, un-boxed, like 'year'|'title' beside the bold name); keys read
-   alike, values read alike, the mainkey stops shouting. */
-.cytui-micro-row .ktag {
-    flex: none;
-    font-size: 0.82em;
-    letter-spacing: 0.02em;
-    opacity: 0.5;
-    font-style: italic;
-}
-/* the has-interior glyph: /*N in the dip's lilac wherever it appears (rows AND chips) —
-   one consistent "there's more inside; it pops out with edges" affordance */
-.cytui-micro-row .subn {
-    flex: none;
-    color: rgb(156, 140, 217);
-    font-size: 0.8em;
-}
-.cytui-micro-row .chip .subn { margin-left: 0.25em; font-size: 0.9em; }
-.cytui-micro-row .chip {
-    flex: none;
-    border: 1px solid #3d5a72;
-    border-radius: 1em;
-    padding: 0 0.5em;
-    font-size: 0.82em;
-    line-height: 1.5;
-    background: rgba(7, 12, 16, 0.55);
-    color: inherit;
-    font-family: inherit;
-}
-/* a member-bearing chip is its own pop-out handle */
-.cytui-micro-row .chip.hot {
-    pointer-events: auto;
-    cursor: pointer;
-}
-.cytui-micro-row .chip.hot:hover { text-shadow: 0 0 7px currentColor; border-color: currentColor; }
-/* member|dip rows are the pop-out surf — clickable, everything else stays glass */
-.cytui-micro-row.hot {
-    pointer-events: auto;
-    cursor: pointer;
-    font: inherit;
-    font-size: inherit;
-}
-.cytui-micro-row.hot:hover .t { text-shadow: 0 0 7px currentColor; }
-.cytui-micro-row.dip {
-    opacity: 0.75;
-    color: rgb(156, 140, 217);  /* the Stuffzipper /*N lilac — the same handle, new outcome */
-}
 /* the mounted Stuffing must keep its NATURAL size even when the voronoi mode
    pins the overlay to a cell bbox (flex would shrink it to the container and
    spoil the maximal-fit measure — offsetWidth has to stay the content size). */

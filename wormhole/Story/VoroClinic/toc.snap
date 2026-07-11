@@ -19,22 +19,34 @@ story:VoroClinic
     useVoroCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.044
+    TimeTotal:beliefs,avg=0.033
       sample=0.006,at=1783518839
       sample=0.086,at=1783518902
       sample=0.042,at=1783519006
       sample=0.042,at=1783519606
-    TimeTotal:step,avg=0.007
+      sample=0.022,at=1783751071
+      sample=0.024,at=1783751141
+      sample=0.028,at=1783751851
+      sample=0.029,at=1783751947
+      sample=0.029,at=1783751998
+      sample=0.026,at=1783752024
+    TimeTotal:step,avg=0.004
       sample=0.006,at=1783518839
       sample=0.01,at=1783518902
       sample=0.005,at=1783519006
       sample=0.005,at=1783519606
-  step,dige:8dd0c1d2ef3843af
-  step=2,dige:c07a2075f7dfe2ac
-  step=3,dige:94e59d3cdd436ff7
-  step=4,dige:4d0f4075d1028933
-  step=5,dige:40d1c88211a7c3c2
-  step=6,dige:b90d5dd116d3ed66
-  step=7,dige:6dcb56934ae7feea
-  step=8,dige:76e996a513ecd1e6
-  step=9,dige:8437bdba86238992
+      sample=0.002,at=1783751071
+      sample=0.003,at=1783751141
+      sample=0.003,at=1783751851
+      sample=0.003,at=1783751947
+      sample=0.003,at=1783751998
+      sample=0.003,at=1783752024
+  step,dige:291fbd443ba3a33e
+  step=2,dige:4aa837a368857478
+  step=3,dige:07629f28fb1b56ab
+  step=4,dige:3e2e64eaa825830a
+  step=5,dige:022673c7e9487b93
+  step=6,dige:030ec5fc92441da3
+  step=7,dige:8e6386e3000c9d7e
+  step=8,dige:7aabb05fdd4f2d5f
+  step=9,dige:28c42a7e0d126941
