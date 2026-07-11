@@ -1,45 +1,45 @@
 Snap:H
   H:MusuRaChase,Run
     A:MusuRaChase
-      self,round=96	{"mung":["age"]}
+      self,round=97	{"mung":["age"]}
       w:MusuRaChase,keep_ahead=3
-        self,round=96	{"mung":["age"]}
+        self,round=97	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Account,of:Uno
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
               Idzeug:rachase_u,to:Music,genre:Chase,spent
-              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783714059
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783737135
                 Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783714059,sign:8d6c4b67df0bcff0862a4b1f3cc1486e7ff8f26a6f6f424f6f432b3d2e3f83fd3eacc8bfcf4ad89bc37476897de520ef7aaa319dfa4121c54fc04387fb551a0a,genre:Chase
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783714059,sign:3095315f5b6f7872c03f684356d38c96a4c80a4e3366db421d892968d123d9ba3c1276c531576bae95323ba98b3c388d8259b73e6affceb08c211fe039717502,genre:Chase
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783737135,sign:4a0d7e1a509c1f9950763c3744cda3ab756f3bea630dc915a0d5493ee443405a072c12bf94ca6bffa6487dd5b25be02a4d9e78c8cc5fad294a63a99587d7a700,genre:Chase
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783737135,sign:1be6eb6996fdb6f25743d19680aaa931bd6c191d849386c522065ca1c6c90e0be48ab89bc32205893a47c64eb14d2660e5e3b12940479e06fe3597556814db06,genre:Chase
             SocialGraph
-              Edge,a:4e09f34f5a6ab900,b:b317b9a776e39d30,at:1783714059
+              Edge,a:4e09f34f5a6ab900,b:b317b9a776e39d30,at:1783737135
         Account,of:Duo
           Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
             Peering,name:be0dab3303037ad2,friendly:Duo
               Idzeug:rachase_d,to:Music,genre:Chase,spent
-              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783714059
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783737135
                 Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783714059,sign:20d256b1e9022231ce7ceb428dab4b5b225dbc80ea860c2dab017f6defb8b82624cc2212227a7f891d276d8c67eb2cd413a5917954de88b177e392f17131e806,genre:Chase
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783714059,sign:37603db7d2c1a40deba5c378c55bb9be2148a6a2b53fba94035436fa88bbe632e73451ccecfa1f30770fa9ff63e86d7bdfe1c3c3425df25954172699c6a8ba06,genre:Chase
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783737135,sign:cae6044a42a53e775f9c7feadf39d696d1db9b1718bb35628c962405c4e15fe7b7506ed179eba8d9899b8b7e2dfbfee6e99025073f5ae0cb46093fe8b480cf09,genre:Chase
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783737135,sign:3eb5ca2d8bec5c42fae4a059ef2d57bcc86a3b54adf9d284cf188ba8e24addd8507fe9eabd485d6cc07d0e0f13ca6291c7db48635b79adf2874d8f85ad33b90c,genre:Chase
             SocialGraph
-              Edge,a:be0dab3303037ad2,b:b317b9a776e39d30,at:1783714059
+              Edge,a:be0dab3303037ad2,b:b317b9a776e39d30,at:1783737135
         Account,of:Listener
           Identity:b317b9a776e39d30,prepub:b317b9a776e39d30,friendly:Listener
             Peering,name:b317b9a776e39d30,friendly:Listener
-              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783714059
+              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783737135
                 Peering,name:4e09f34f5a6ab900,friendly:Uno,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783714059,sign:3095315f5b6f7872c03f684356d38c96a4c80a4e3366db421d892968d123d9ba3c1276c531576bae95323ba98b3c388d8259b73e6affceb08c211fe039717502,genre:Chase
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783714059,sign:8d6c4b67df0bcff0862a4b1f3cc1486e7ff8f26a6f6f424f6f432b3d2e3f83fd3eacc8bfcf4ad89bc37476897de520ef7aaa319dfa4121c54fc04387fb551a0a,genre:Chase
-              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783714059
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783737135,sign:1be6eb6996fdb6f25743d19680aaa931bd6c191d849386c522065ca1c6c90e0be48ab89bc32205893a47c64eb14d2660e5e3b12940479e06fe3597556814db06,genre:Chase
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783737135,sign:4a0d7e1a509c1f9950763c3744cda3ab756f3bea630dc915a0d5493ee443405a072c12bf94ca6bffa6487dd5b25be02a4d9e78c8cc5fad294a63a99587d7a700,genre:Chase
+              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783737135
                 Peering,name:be0dab3303037ad2,friendly:Duo,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783714059,sign:37603db7d2c1a40deba5c378c55bb9be2148a6a2b53fba94035436fa88bbe632e73451ccecfa1f30770fa9ff63e86d7bdfe1c3c3425df25954172699c6a8ba06,genre:Chase
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783714059,sign:20d256b1e9022231ce7ceb428dab4b5b225dbc80ea860c2dab017f6defb8b82624cc2212227a7f891d276d8c67eb2cd413a5917954de88b177e392f17131e806,genre:Chase
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783737135,sign:3eb5ca2d8bec5c42fae4a059ef2d57bcc86a3b54adf9d284cf188ba8e24addd8507fe9eabd485d6cc07d0e0f13ca6291c7db48635b79adf2874d8f85ad33b90c,genre:Chase
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783737135,sign:cae6044a42a53e775f9c7feadf39d696d1db9b1718bb35628c962405c4e15fe7b7506ed179eba8d9899b8b7e2dfbfee6e99025073f5ae0cb46093fe8b480cf09,genre:Chase
             SocialGraph
-              Edge,a:b317b9a776e39d30,b:4e09f34f5a6ab900,at:1783714059
-              Edge,a:b317b9a776e39d30,b:be0dab3303037ad2,at:1783714059
+              Edge,a:b317b9a776e39d30,b:4e09f34f5a6ab900,at:1783737135
+              Edge,a:b317b9a776e39d30,b:be0dab3303037ad2,at:1783737135
         Peering,name:4e09f34f5a6ab900,req=2,ok
           Pier,pub:b317b9a776e39d30,req=2,ok
             req:handshake,finished
@@ -530,7 +530,7 @@ Snap:H
         stream_ask:A,preview=16,at_head=14,plays=8
         stream_want=16,of:A,preview=16
         fed:A,at_head=18,held=4
-        chased,at_head=20,warm=16
+        chased,at_head=20,warm=16,src:Duo,cands=2
         see:two source Piers stand with real opus stock — different tracks on each shelf
         see:the listener redeemed an invite from each source — both pairs sealed with live Music grants
         see:the catalog merged at the mirror — husks from both sources carry their chunk promises
