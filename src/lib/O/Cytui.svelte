@@ -1106,7 +1106,8 @@
     //         '1998 · 2007 · 2019' reads in ORDER in every pane it appears in — the
     //          same meaning lands the same way (alignment of meanings).
     type VSubLeaf  = { tag?: string, tint?: string | null, val?: string, sup?: string, subn?: number,
-                       member?: TheC, hw: number, hh: number }
+                       member?: TheC, hw: number, hh: number,
+                       loud?: boolean }   // FAKED loudness (Slice A): the spread's dominant chip
     type VSubTuple = { key?: string, sup?: string, leaves: VSubLeaf[] }
     function subgraph_tuples(descs: VtuffDesc[]): { keyed: VSubTuple[], members: VSubLeaf[] } {
         const keyed: VSubTuple[] = []
@@ -1124,8 +1125,14 @@
                 if (m) { keyed.push({ key: m[1], sup: `×${m[2]}`, leaves: [] }); continue }
                 keyed.push({ key: d.text, leaves: [] })
             } else if (d.kind === 'spread') {
-                keyed.push({ key: d.text, leaves: (d.chips ?? []).map(ch =>
-                    leaf({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined, member: ch.member, subn: ch.sub })) })
+                // FAKED loudness (Slice A): the chip with the biggest ×N leads the spread —
+                //  it's the dominant value, so it earns the loud band.  (Slice B swaps this
+                //   n-max heuristic for the grasp's the_very_* weight on the chip.)
+                const chips = d.chips ?? []
+                const top = chips.reduce((mx, ch) => ch.n > mx ? ch.n : mx, 0)
+                keyed.push({ key: d.text, leaves: chips.map(ch =>
+                    leaf({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined, member: ch.member, subn: ch.sub,
+                           loud: top > 1 && ch.n === top })) })
             } else if (d.kind === 'list') {
                 for (const ch of d.chips ?? [])
                     members.push(leaf({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined,
@@ -1190,6 +1197,23 @@
              + (h.sup ? h.sup.length * 0.7 : 0)
              + (h.tag && !h.nk && has_val ? 1.5 : 0)
     }
+    // ── the loudness bands (Slice A: text stretch-ups) ──
+    //  A statement's font band is set by how LOAD-BEARING it is, not by whatever
+    //   happens to fit.  14pt is the hard legibility floor for anything a reader
+    //    must actually READ — the identity of a pane, a member's name, the loudest
+    //     fact.  A band with lo≥14 DRIVES shedding rather than clipping: fit_stat
+    //      clips to '…' the moment even lo won't fit, and fit_ident reads that as
+    //       "shed grammar and try leaner" — so a sliver that can't hold '14pt Artist
+    //        name: Fernway' says '14pt Fernway' instead of a 7pt run-on.  Only genuine
+    //         DECORATION (ring keys, superscripts, the /*N dig) keeps a sub-14 floor.
+    //   FAKED-LOUDNESS: until the grasp speaks real the_*/the_very_* weights (Slice B),
+    //    loudness is inferred from signals already on the glass — the nucleus title and
+    //     member identities are always load-bearing; the DOMINANT chip of a spread (the
+    //      one whose ×N leads the group) is loud.  Swap `loud_band`'s callers for
+    //       grasp_of(src) weights when Slice B lands; the bands below stay the target.
+    const BAND_VERY = { lo: 16, hi: 26 }   // the_very_* — the loudest, tied to the biggest cell
+    const BAND_LOUD = { lo: 14, hi: 18 }   // the_* / load-bearing fact — at or above the 14pt floor
+    const BAND_DECO = { lo: 7,  hi: 16 }   // decoration — ring keys, presence sups, folds
     function fit_stat(poly: {x:number,y:number}[], head: VHead, val: string | undefined,
                       opts: { band?: [number, number], lo?: number, hi?: number,
                               maxlines?: number } = {}): VStat | null {
@@ -1304,7 +1328,10 @@
     //    to carry even one word keeps its Stuffing (never blank glass).  Whatever the
     //     statement can't say is the CALLER's to count into the +N fold mark.
     function nucleus_pane(c: VCell, tint: string, head: VHead, val: string): VSubPane | null {
-        const s = fit_ident(c.inset, head, val || undefined, { hi: 16, maxlines: 5 })
+        // the whole pane's ONE identity — load-bearing, so it lives at the 14pt floor and
+        //  sheds grammar (via fit_ident) before it shrinks under it; a hairline that can't
+        //   hold even the bare value at 14pt returns null and keeps its Stuffing.
+        const s = fit_ident(c.inset, head, val || undefined, { ...BAND_LOUD, hi: BAND_VERY.hi, maxlines: 5 })
         if (!s) return null
         s.cls = 'vsub-ntitle'; s.tagtint = tint
         return { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`, clip: poly_d(c.inset),
@@ -1394,13 +1421,19 @@
                 spokes.push({ d: `M${ncx.toFixed(1)},${ncy.toFixed(1)}L${scx.toFixed(1)},${scy.toFixed(1)}`, hue })
                 const one = g.leaves.length === 1 && !g.leaves[0].member ? g.leaves[0] : null
                 if (one) {
+                    // a whole one-value fact ('year: 2007') is load-bearing — 14pt floor.
+                    //  A key that won't fit its value at 14 with the colon sheds nothing
+                    //   here (fit_stat, not fit_ident), so it clips: acceptable for a fact,
+                    //    where the key names what the clipped value is.
                     const s = fit_stat(gpoly, { key: g.key, colon: true, sup: one.sup }, one.val,
-                                       { hi: 22, maxlines: 3 })
+                                       { ...BAND_LOUD, hi: 22, maxlines: 3 })
                     if (s) { s.cls = 'vsub-gkey'; s.hue = hue; stats.push(s) } else hid += 1
                     return
                 }
                 if (!g.leaves.length) {   // presence key — no v, no colon
-                    const s = fit_stat(gpoly, { key: g.key, sup: g.sup }, undefined, { hi: 14 })
+                    // a presence marker ('remaster ×2') is a LABEL, not a statement to read —
+                    //  decoration band, so it may sit under 14pt without forcing a shed
+                    const s = fit_stat(gpoly, { key: g.key, sup: g.sup }, undefined, { ...BAND_DECO })
                     if (s) { s.cls = 'vsub-gkey'; s.hue = hue; stats.push(s) } else hid += 1
                     return
                 }
@@ -1417,9 +1450,27 @@
                                  : { x: gcx, y: gy0 + gh * 0.2 }
                 const klen = (g.key?.length ?? 3) + (g.sup ? 2 : 0) + 1
                 const gR = Math.sqrt(Math.abs(gh) * (wide_chord(gpoly, gcy, gcy, 1)?.w ?? gh) / Math.PI) * 0.6
+                // un-compress ×N (Slice A): a '2007 ×3' chip shrinks its whole statement to
+                //  make room for the superscript, so at the 14pt floor it may not fit.  When
+                //   the region has SPARE sub-cells, split the ×N back into N plain copies —
+                //    the multiplicity shows as repetition (three big '2007's), not one small
+                //     '2007 ×3'.  Only expand within a seed budget the region can seat at 14pt
+                //      (≈ area / a min legible sub-cell), so we never trade a fold for a smear;
+                //       a chip whose split won't fit keeps its ×N and folds the rest to +N.
+                const MIN_CELL = 22 * 22                    // a 14pt value needs ~this much sub-cell room
+                let budget = Math.max(0, Math.floor(Math.PI * gR * gR / MIN_CELL) - 1 - g.leaves.length)
+                const dleaves: VSubLeaf[] = []
+                for (const l of g.leaves) {
+                    const n = l.sup ? Number(/×(\d+)/.exec(l.sup)?.[1] ?? 0) : 0
+                    if (n > 1 && budget >= n - 1) {         // room to seat every copy — un-compress
+                        budget -= n - 1
+                        const { sup, ...bare } = l           // drop the ×N; the copies ARE the count
+                        for (let i = 0; i < n; i++) dleaves.push({ ...bare })
+                    } else dleaves.push(l)                   // no room (or n≤1) — keep it compressed
+                }
                 const GA = Math.PI * (3 - Math.sqrt(5))
-                const lpts = [kseed, ...g.leaves.map((l, k) => {
-                    const rr = gR * Math.sqrt((k + 0.5) / g.leaves.length)
+                const lpts = [kseed, ...dleaves.map((l, k) => {
+                    const rr = gR * Math.sqrt((k + 0.5) / dleaves.length)
                     let x = gcx + Math.cos(k * GA) * rr
                     let y = gcy + gh * 0.06 + Math.sin(k * GA) * rr * 0.8
                     for (let t = 0; t < 5; t++) {
@@ -1430,18 +1481,24 @@
                     return { x, y }
                 })]
                 const lradii = [4 + klen * 1.6,
-                                ...g.leaves.map(l => 3 + 0.4 * Math.hypot(l.hw, l.hh))]
+                                ...dleaves.map(l => 3 + 0.4 * Math.hypot(l.hw, l.hh))]
                 const lpolys = power_cells(gpoly, lpts, lradii, 1.8)
                 const kpoly = lpolys[0]
+                // the KEY crown above its values is a small label — decoration band; the
+                //  values below it carry the 14pt-floor reading, this just names them
                 const ks = kpoly ? fit_stat(kpoly, { key: g.key, colon: true, sup: g.sup },
-                                            undefined, { hi: 13 }) : null
+                                            undefined, { ...BAND_DECO, hi: 13 }) : null
                 if (ks) { ks.cls = 'vsub-gkey'; ks.hue = hue; stats.push(ks) } else hid += 1
-                g.leaves.forEach((l, li) => {
+                dleaves.forEach((l, li) => {
                     const lpoly = lpolys[1 + li]
                     if (!lpoly) { hid += 1; return }
                     walls.push({ d: poly_d(lpoly), hue: c.color, cls: 'vsub-wall' })
+                    // a value chip is an identity — 14pt floor, shedding grammar (fit_ident)
+                    //  before it shrinks.  The spread's dominant chip (FAKED loud, the ×N
+                    //   leader) gets the loudest floor so it towers over its siblings.
+                    const band = l.loud ? BAND_VERY : { ...BAND_LOUD, hi: 26 }
                     const s = fit_ident(lpoly, { tag: l.tag, tagtint: l.tint, sup: l.sup }, l.val,
-                                        { hi: 26, maxlines: 2 })
+                                        { ...band, maxlines: 2 })
                     if (!s) { hid += 1; return }
                     s.cls = 'vsub-label'; s.subn = l.subn; s.member = l.member
                     stats.push(s)
@@ -1451,9 +1508,12 @@
                 const mpoly = polys[1 + keyed.length + mi]
                 if (!mpoly) { hid += 1; return }
                 walls.push({ d: poly_d(mpoly), hue: khue, cls: 'vsub-mwall', grad: true })
+                // a member is an IDENTITY on the rim — 14pt floor, shedding grammar (the
+                //  'Track name: X' → 'X' shed) before it drops under it; a rim sub-cell too
+                //   small for even the bare name at 14pt folds into +N, never a 7pt smear.
                 const s = fit_ident(mpoly, { tag: l.tag && l.tag !== kind ? l.tag : undefined,
                                              tagtint: l.tint, sup: l.sup }, l.val,
-                                    { hi: 26, maxlines: 2 })
+                                    { ...BAND_LOUD, hi: 26, maxlines: 2 })
                 if (!s) { hid += 1; return }
                 s.cls = 'vsub-label'; s.subn = l.subn; s.member = l.member
                 stats.push(s)
@@ -1473,13 +1533,19 @@
                 }
                 if (npoly) {
                     walls.push({ d: poly_d(npoly), hue: tint, cls: 'vsub-nwall' })
-                    const ns = fit_ident(npoly, head, tname || undefined, { hi: 20, maxlines: 3 })
+                    // the NUCLEUS statement is the loudest thing on the pane — the source's
+                    //  own identity, seated in the biggest sub-cell (its radius floors at
+                    //   R*0.34 above).  Loudest band, so meaning hierarchy = visual hierarchy:
+                    //    the most important statement is never the smallest text.
+                    const ns = fit_ident(npoly, head, tname || undefined, { ...BAND_VERY, maxlines: 3 })
                     if (ns) { ns.cls = 'vsub-ntitle'; ns.tagtint = tint; stats.push(ns) }
                 }
                 if (!stats.some(s => s.cls === 'vsub-ntitle')) {
-                    // nucleus crowded out — the source statement floats as a headline
+                    // nucleus crowded out — the source statement floats as a one-line
+                    //  headline, still load-bearing so still at the 14pt floor (sheds
+                    //   grammar to fit one line rather than shrink under it)
                     const ts = fit_ident(c.inset, head, tname || undefined,
-                                         { band: [0.05, 0.34], lo: 9, hi: 19, maxlines: 1 })
+                                         { band: [0.05, 0.34], lo: BAND_LOUD.lo, hi: BAND_VERY.hi, maxlines: 1 })
                     if (ts) { ts.cls = 'vsub-title'; ts.tagtint = tint; stats.push(ts) }
                 }
                 pane = { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`, clip: poly_d(c.inset),

@@ -2134,6 +2134,34 @@ export class WormholeNav {
         }
         return here
     }
+    // mkdirp's SELF-HEAL twin: FORCE-re-expand every level instead of trusting `here.expanded`.
+    //  The recovery path when a cached directory handle went stale (its backing entry removed since we
+    //   cached it -> NotFoundError on the next getFileHandle -- the "wedged runner").  A plain mkdirp
+    //    reuses a stale child listing and its dead handle; re-expanding re-reads the real directory and
+    //     refreshes each child's handle IN PLACE (expand() reuses child objects, swapping .handle), and
+    //      overwrites the _cache entries with the live objects.  Only walked after a stale hit, so the
+    //       happy path never pays for it.
+    async mkdirp_fresh(...parts: string[]): Promise<DirectoryListing> {
+        let here = this.root
+        const built: string[] = []
+        for (const part of parts) {
+            await here.expand()
+            let next = here.directories.find(d => d.name === part)
+            if (!next) {
+                await here.makeDirectory(part)
+                await here.expand()
+                next = here.directories.find(d => d.name === part)!
+            }
+            built.push(part)
+            this._cache.set(built.join('/'), next)
+            here = next
+        }
+        return here
+    }
+    // a stale-handle fault: the FSA layer could not find a dir/file it once handed us.
+    _is_stale(e: any): boolean {
+        return !!(e && (e.name === 'NotFoundError' || /not be found/i.test(String(e?.message ?? e))))
+    }
 
     async read_file(dir_path: string, filename: string): Promise<string | null> {
         const parts = dir_path.split('/').filter(Boolean)
@@ -2207,12 +2235,26 @@ export class WormholeNav {
     //   test-music generator Book to lay pure-tone WAVs into a served collection (static/testsounds).
     async bin_write(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer): Promise<void> {
         const parts = dir_path.split('/').filter(Boolean)
-        const dir = await this.mkdirp(...parts)
-        const writer = await dir.getWriter(filename)
-        await writer.write(bytes as BufferSource)
-        await writer.close()
-        this._cache.delete(parts.join('/'))
-        await dir.expand()
+        try {
+            const dir = await this.mkdirp(...parts)
+            const writer = await dir.getWriter(filename)
+            await writer.write(bytes as BufferSource)
+            await writer.close()
+            this._cache.delete(parts.join('/'))
+            await dir.expand()
+        } catch (e: any) {
+            // SELF-HEAL (the wedge fix): a dir-deleting run poisons the handle cache, so every later
+            //  landing dies with NotFoundError on a dead directory handle.  Re-walk FORCE-expanding each
+            //   level (mkdirp_fresh refreshes handles from the live disk), then retry ONCE.  A second
+            //    failure is a real fault and propagates.  This is what makes a runner leave-up-able.
+            if (!this._is_stale(e)) throw e
+            const dir = await this.mkdirp_fresh(...parts)
+            const writer = await dir.getWriter(filename)
+            await writer.write(bytes as BufferSource)
+            await writer.close()
+            this._cache.delete(parts.join('/'))
+            await dir.expand()
+        }
     }
 }
 

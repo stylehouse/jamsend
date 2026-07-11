@@ -1,9 +1,9 @@
 Snap:H
   H:MusuHeist,Run
     A:MusuHeist
-      self,round=72	{"mung":["age"]}
+      self,round=69	{"mung":["age"]}
       w:MusuHeist
-        self,round=72	{"mung":["age"]}
+        self,round=69	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -38,7 +38,7 @@ Snap:H
           newlyadded_shape,uno=2,duo=6,unsourced
           see:newlyadded logs each arrival with a fresh feeling — and never a word about the source
           reached:deny
-          denied,gone,carded_off
+          denied,gone,carded_off,log_dropped
           see:a denied track left the collection — the file gone and the log honest about the drop
           reached:flat
           flattened
@@ -47,21 +47,21 @@ Snap:H
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
               Idzeug:heist_1,to:Music,genre:Heist,spent
-              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783779475
+              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783790735
                 Peering,name:be0dab3303037ad2,friendly:Duo,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783779475,sign:7a9dacb9517af46e82b1b39aacf579740cd0b6c419947fc37d1586b74a5c990d7f133e931eb21e19b4f70f8fda385dfde49cf512f22d96a8ba649eb0e72f4b02,genre:Heist
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783779475,sign:47c9eead54ee83edddd99a79ebe230f73f409129f10303bd268b1ab7583a0fda4e15c49a029aacad6f31711f6d9e4ba8be9acf5052e1be6424579058b595a00a,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783790735,sign:dfa1504b335dcd7a76ee1cd1efa609ce01bfdd930a03d991cf6b41cecec8cf081394b36ca7a7581f2e3f48edc3f8fe9be6d923dbac4bb137555cf1bf52594903,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783790735,sign:abac984a6644260287b1cab791d713a8101f7e9437a10de9f368f8265d35506956fa8fa7dbbeb47566bfe9876cad45e2548fedb88c60459c42c8bb6d4c988a0c,genre:Heist
             SocialGraph
-              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1783779475
+              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1783790735
         Account,of:Duo
           Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
             Peering,name:be0dab3303037ad2,friendly:Duo
-              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783779475
+              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783790735
                 Peering,name:4e09f34f5a6ab900,friendly:Uno,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783779475,sign:47c9eead54ee83edddd99a79ebe230f73f409129f10303bd268b1ab7583a0fda4e15c49a029aacad6f31711f6d9e4ba8be9acf5052e1be6424579058b595a00a,genre:Heist
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783779475,sign:7a9dacb9517af46e82b1b39aacf579740cd0b6c419947fc37d1586b74a5c990d7f133e931eb21e19b4f70f8fda385dfde49cf512f22d96a8ba649eb0e72f4b02,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783790735,sign:abac984a6644260287b1cab791d713a8101f7e9437a10de9f368f8265d35506956fa8fa7dbbeb47566bfe9876cad45e2548fedb88c60459c42c8bb6d4c988a0c,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783790735,sign:dfa1504b335dcd7a76ee1cd1efa609ce01bfdd930a03d991cf6b41cecec8cf081394b36ca7a7581f2e3f48edc3f8fe9be6d923dbac4bb137555cf1bf52594903,genre:Heist
             SocialGraph
-              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1783779475
+              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1783790735
         Peering,name:4e09f34f5a6ab900,req=2,ok
           Pier,pub:be0dab3303037ad2,req=2,ok
             req:handshake,finished

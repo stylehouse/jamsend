@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return '54d44c3171347ec5' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return '602d132944d7ad09' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -376,6 +376,11 @@ async MusuHeist_deny(w) {
     let row = { denied: 1 }
     if (!raw || !raw.byteLength) row.gone = 1
     if (!w.c.uno_lib.o({ Record: 1 }).find((r) => r.sc.path === drop)) row.carded_off = 1
+    // the log stayed HONEST about the drop — the dropped entry's newlyadded line now reads `drop`, not a
+    //  lie left behind as `fresh`.  Without this the sentence's "log honest" half rode on nothing.
+    let post = await this.Heist_newlyadded_read(w.c.nav, w.c.mar_uno)
+    let dline = post.find((l) => this.Heist_newlyadded_entry(l).entry === drop)
+    if (dline && this.Heist_newlyadded_entry(dline).feeling === 'drop') row.log_dropped = 1
     this.MusuHeist_note(w, row)
 
 },
@@ -423,8 +428,12 @@ MusuHeist_witness(w) {
         if (held !== +(rec.sc.total || 0)) cok = false
     }
     if (cok && !T.oa({ see: 'two collections stand divided on one shared disk — each Pier holds only its own artists as whole original bytes' })) this.MusuHeist_note(w, { see: 'two collections stand divided on one shared disk — each Pier holds only its own artists as whole original bytes' })
-    // sealed both ways — the ONE redeem left a live Music grant at each end.
-    if (T.oa({ sealed: 1 }) && !T.oa({ see: 'the pair sealed over the wire — a mutual Music grant gates the heist both ways' })) this.MusuHeist_note(w, { see: 'the pair sealed over the wire — a mutual Music grant gates the heist both ways' })
+    // sealed both ways — the ONE redeem left a LIVE Music grant at each end, and a stranger is refused.
+    //  both_live probes the grant at witness time (not a stamped breadcrumb) AND checks a bogus peer is
+    //   denied: an allow-all seal — the tautology this guards against — would pass the bogus probe, so
+    //    this see drops the instant the consent gate is neutered.
+    let both_live = !!(w.c.repli_allow && w.c.repli_allow(w.c.uno_pre, w.c.duo_pre) && w.c.repli_allow(w.c.duo_pre, w.c.uno_pre) && !w.c.repli_allow('deadbeefstranger', w.c.uno_pre))
+    if (T.oa({ sealed: 1 }) && both_live && !T.oa({ see: 'the pair sealed over the wire — a mutual Music grant gates the heist both ways' })) this.MusuHeist_note(w, { see: 'the pair sealed over the wire — a mutual Music grant gates the heist both ways' })
     // the job stands with its filings pinned while nothing has landed yet — merge decided at creation.
     let stand = w.o({ Heist: 1 })[0]
     if (stand && stand.o({ filing: 1 }).length >= 1 && !T.o({ heisted: 1 }).length && !T.oa({ see: 'a heist job stands pointed at the pier — its filing decisions pinned before any byte crossed' })) this.MusuHeist_note(w, { see: 'a heist job stands pointed at the pier — its filing decisions pinned before any byte crossed' })
@@ -460,7 +469,7 @@ MusuHeist_witness(w) {
     if (ns && ns.sc.unsourced && +(ns.sc.uno || 0) === 2 && +(ns.sc.duo || 0) === 6 && !T.oa({ see: 'newlyadded logs each arrival with a fresh feeling — and never a word about the source' })) this.MusuHeist_note(w, { see: 'newlyadded logs each arrival with a fresh feeling — and never a word about the source' })
     // deny = delete from the collection: the file left the disk and the catalog with the log honest.
     let dn = T.o({ denied: 1 })[0]
-    if (dn && dn.sc.gone && dn.sc.carded_off && !T.oa({ see: 'a denied track left the collection — the file gone and the log honest about the drop' })) this.MusuHeist_note(w, { see: 'a denied track left the collection — the file gone and the log honest about the drop' })
+    if (dn && dn.sc.gone && dn.sc.carded_off && dn.sc.log_dropped && !T.oa({ see: 'a denied track left the collection — the file gone and the log honest about the drop' })) this.MusuHeist_note(w, { see: 'a denied track left the collection — the file gone and the log honest about the drop' })
     // afterwards nothing attributes: the scaffolding flattened away entirely.
     if (T.oa({ flattened: 1 }) && !w.o({ Heist: 1 }).length && !T.oa({ see: 'the scaffolding flattened away — no heist stands and nothing attributes who gave what' })) this.MusuHeist_note(w, { see: 'the scaffolding flattened away — no heist stands and nothing attributes who gave what' })
 

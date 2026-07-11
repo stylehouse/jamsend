@@ -8,5 +8,5 @@
 import { error } from '@sveltejs/kit'
 
 export function load() {
-    throw error(404, 'Not found — the rooms live at /BigSoundland and /BigWordland')
+    throw error(404, 'Not found')
 }

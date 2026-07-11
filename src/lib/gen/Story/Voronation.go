@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Voronation(): string { return '8d83abaa8c00b7d3' },
+    Ghostmeta_Ghost_Story_Voronation(): string { return 'fdae82df8e5d4f8c' },
 
 
 //#region pier — VoroRadioPier: the tuner drifts over MUSIC dribbled in from a (fake) Pier
@@ -366,6 +366,10 @@ async VoroMitosis_drive(w, req) {
         if (n >= 3 && n <= 10) this.VoroMitosis_grow(w, n)
         if (n === 8) this.VoroMitosis_die(w)
         if (n >= 2) this.Voro_crush_scan(w)
+        // the Se grasp rides BESIDE the census (read-only, isolation-first — VoroMitosis alone drives
+        //  it), reading the same folds through Selection.process so w:Voronoiology also snaps the
+        //   grasp's cross-beat News: the genera arriving (division) and departing (apoptosis) this beat.
+        if (n >= 2) await this.Voro_grasp(w)
         if (n === 11) this.VoroMitosis_witness(w)
     }
 

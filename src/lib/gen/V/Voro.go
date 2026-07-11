@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return '26ba931f86296ae6' },
+    Ghostmeta_Ghost_V_Voro(): string { return '674ed2c6d1325841' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
@@ -197,8 +197,11 @@ Voro_report(w, stats) {
         if (b.pop) bareC.sc.pop = '' + b.pop
         if (!b.pop) delete bareC.sc.pop
     }
-    // sweep the goners — a census child this beat never re-touched has left the crush.
-    for (const c of rw.o().slice()) if (!c.c.seen_beat) c.drop(c)
+    // sweep the goners — a census child this beat never re-touched has left the crush.  The grasp's
+    //  own %Se row is authored by Voro_grasp on its own beat (it runs AFTER this census sweep), so
+    //   this sweep must spare it — otherwise the Se row is dropped here and re-added there every beat,
+    //    the very census storm we killed, reborn on the grasp's row.
+    for (const c of rw.o().slice()) if (!c.c.seen_beat && Object.keys(c.sc)[0] !== 'Se') c.drop(c)
 
 },
 // Voro_vtuff_transcribe — copy a Vtuffing tree (a FREE C** no snap can reach) into the report
@@ -291,6 +294,95 @@ Voro_report_walk(node, census, d) {
         census.bare[mk].n = census.bare[mk].n + 1
         if (c.c.popped) census.bare[mk].pop = census.bare[mk].pop + 1
     }
+
+},
+// ── Voro_grasp — the Se GRASP, stood on the mature primitive (LiesEnd's %Seem) ─────────────────────
+//  Where Voro_report walks the crush BY HAND, the grasp stands the same reading on Selection.process
+//   — the very machine Cyto's own id-resolve rides (cyto_assign_ids: a Selection whose trace mints
+//    D%the_* nodes, whose Dip gives cross-beat-stable ids).  So the grasp is not a new idea, it is the
+//     crush read through the primitive that already knows how to have IDENTITY across beats.
+//  It is a %Seem whose D-sphere mirrors the flora one layer deep; use_Understandable wires each D node
+//   back to its source C, so the projection below can read the crush's c-side fold facts off the
+//    sphere.  resolve() then gives every fold cross-beat identity FOR FREE: a genus that survives keeps
+//     its D node, one that divides IN is a neu, one that dies (apoptosis) a goner — the mitosis
+//      counted at the primitive, not reconstructed from a diff.
+//  The %Seem machinery is snap-hostile — functions ride its sc.opt, a live Selection rides sc.Se — so
+//   it lives OFF-SNAP on a free C** parked at w.c.grasp_home (persisting across beats, so its Selection
+//    resolves the folds beat-to-beat).  Only the distilled READING is projected into w:Voronoiology as
+//     a clean %Se:scape row.  STAMPS NO verdict — pure read.  Slice 0: prove the sphere reproduces the
+//      folds and counts the mitosis; the_*/the_very_* weighting and the render gift come next.
+async Voro_grasp(w) {
+    let A = w.c.up
+    if (!A || !w.sc.w) return
+    let rw = A.o({ w: 'Voronoiology' })[0]
+    if (!rw) return
+    if (!w.c.grasp_home) w.c.grasp_home = new TheC({ c: {}, sc: { grasp_home: 1 } })
+    let home = w.c.grasp_home
+    let seem = home.o({ Seem: 'scape' })[0]
+    if (!seem) seem = this.i_Seem(home, { Seem: 'scape', C: w, use_Understandable: 1 })
+    seem.sc.C = w
+    let news = await this.o_Seem(seem)
+    // collect the fold D nodes and the loudest count FIRST, so each cell's weight is NEIGHBOUR-relative
+    //  (the Se reads its surroundings — a count of 9 is loud in a field of 3s, ordinary in a field of 20s).
+    //   A D node whose source C is a stamped fold (not a represented member already in another's pane) is
+    //    one cell the grasp knows.
+    let folds = []
+    let max_n = 1
+    let topD = news.topD
+    if (topD) {
+        for (const d of topD.o()) {
+            let src = d.c.C
+            if (src && src.c.stuff && !src.c.represented) {
+                let fn = src.c.fold_n || src.o().length
+                folds.push({ d: d, src: src, n: fn })
+                if (fn > max_n) max_n = fn
+            }
+        }
+    }
+    let grasped = folds.length
+    // VOICE each fold — distil it to the_*: its identity is always the_very (the one name that stands
+    //  for the whole cell — what the render stretches biggest), its count rides weighted 0..100 against
+    //   the loudest sibling.  Stamped as D%the children on the OFF-SNAP sphere, so this drop+rebuild
+    //    costs the snap NOTHING — only the render (Slice B2, reached via src.c.D → D%the) and the readout
+    //     below ever read them.  A gang speaks its genus (fold_kind); a container pane its own identity.
+    let loudest = ''
+    let loud_n = 0
+    for (const f of folds) {
+        for (const old of f.d.o({ the: 1 }).slice()) old.drop(old)
+        let name = f.src.c.fold_kind
+        if (!f.src.c.gang) name = this.Vtuff_ident(f.src)
+        if (!name) name = Object.keys(f.src.sc)[0]
+        name = ('' + name).split(',').join(' ')
+        f.d.i({ the: 'name', val: name, weight: 100, very: 1 })
+        f.d.i({ the: 'n', val: '' + f.n, weight: '' + Math.round(100 * f.n / max_n) })
+        if (f.n > loud_n) {
+            loud_n = f.n
+            loudest = name
+        }
+    }
+    // born = the folds that ARRIVED this beat — resolve() flagged their D node a neu AND its source
+    //  is a fold (a genus dividing IN).  The raw news.neus/goners count every LEAF that came or went
+    //   (a fast-growing flora arrives ~19 species a beat), which drowns the cell story — so we keep
+    //    only the fold-level arrivals.  died is derived from the fold-count delta (grasped = prev +
+    //     born - died): a goner D's source is already stale, so it can't be re-read, but the arithmetic
+    //      is exact.  So born|died read as CELL mitosis — divisions in, apoptosis out — a beat or two
+    //       at a time, not the leaf churn underneath.
+    let born = 0
+    for (const d of news.neus) {
+        let src = d.c.C
+        if (src && src.c.stuff && !src.c.represented) born = born + 1
+    }
+    let prev = w.c.grasp_prev_folds
+    let died = 0
+    if (prev != null) {
+        died = prev + born - grasped
+        if (died < 0) died = 0
+    }
+    w.c.grasp_prev_folds = grasped
+    // PROJECT — the grasp's readout beside the census: cells held, the cell mitosis, and the LOUDEST
+    //  cell (its the_very name) — a first legible taste of the reductionist weighting the render reads.
+    //   oai keeps its slot so only the fields slide — no storm on the grasp's own row.
+    rw.oai({ Se: 'scape' }, { grasped: '' + grasped, born: '' + born, died: '' + died, loudest: loudest })
 
 },
 // Voro_crush_walk — recurse; structural mainkeys stay graph (the skeleton must remain readable) but
