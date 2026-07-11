@@ -66,8 +66,10 @@
         'Ghost/M/Mixer.g',              // cellular mixer — beat detection, beatmatch, multi-cell sum, crossfade (stage 6)
         'Ghost/M/Mesh.g',               // the sync that sees itself — replicas/edges, cheapest-route, multicast stretch (8+9)
         'Ghost/M/Ra.g',                 // the PIPELINE spine — rastock: needles LUFS → baked gain → ONE opus encode cut into %Preview,seq chunk particles + demand-driven stream transcode
+        'Ghost/M/Heist.g',              // the heist engine — %Heist,at:<pier> moves ORIGINAL file bytes over Repli straight into the collection (newlyadded probation, catalog-identity dedup)
         'Ghost/Story/Musuation.g',      // the Musu* tests — MusuStaple; more pile on here
         'Ghost/Story/Radiation.g',      // the Ra* PRODUCT tests — RaStock; racast/raterm Books pile on here
+        'Ghost/Story/Heistation.g',     // the Heist* tests — MusuHeist rung 1; the cohort + cafe rungs pile on here
 
         'Ghost/S/Swarm.g',              // swarm spine — identity/page/pier + the Idzeug invite (Swarm_spec.md)
         'Ghost/Story/Swarmation.g',     // the Swarm* tests — SwarmStaple; more pile on here
@@ -1221,6 +1223,10 @@
         Lies_advertise(w: TheC) {
             const H = this as House
             if (H.Lies_role(w) !== 'runner') return
+            // an end-user Big*land room (boot_qualand no_advertise) is machine-role runner but must not
+            //  enter the editor's dispatch pool — one beacon enrolls it durably (Lies_runner_roster
+            //   names every sender role:runner), then Story runs land on someone's music page.
+            if (H.top_House().c.no_advertise) return
             if (!H.Lies_channel_live(w)) return
             // WHO we advertise AS must be the prepub the relay HELLO bound us under — else the editor
             //  addresses to:<pub> nobody is bound to and the relay drops it.  Lies_self resolves that exact
@@ -1323,6 +1329,8 @@
         Lies_going_cold(w: TheC) {
             const H = this as House
             if (H.Lies_role(w) !== 'runner') return
+            // never advertised (no_advertise room) ⇒ no cold beacon either — nothing to clear
+            if (H.top_House().c.no_advertise) return
             if (!H.Lies_channel_live(w)) return
             const self = (H as any).Lies_self?.(w) as { prepub: string } | undefined
             if (!self?.prepub) return

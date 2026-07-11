@@ -47,11 +47,17 @@ Every claim is tagged **[V]** = I read the code and verified, or **[S]** = suspe
 - **The flood layout under-run FIXED** (Cytui `apply()`): when newcomers outnumber settled 2:1 the
    pins are skipped (no rosette worth protecting) and a SECOND free relayout fires on layoutstop —
     the "run layout() extra times myself" the owner was doing by hand.
-- **⚠ ROLLBACK CASUALTY (bisect 4add5244):** the F7 `diag_check` auto-cure AND the render telemetry
-   (`vlog`/`cy_render`, the film strip) were part of the reverted Cytui WIP and are GONE from the
-    tree — `op:'why'` in LiesFunk is an orphan ("no render telemetry"), and F7 is LOOSE again (the
-     owner sees the diagonal at VoroMitosis's end).  Re-add both as a fresh, isolated slice; the
-      designs below still hold.
+- **⚠ ROLLBACK CASUALTY (bisect 4add5244) — RE-ADDED 2026-07-11, live-proven:** the F7 `diag_check`
+   auto-cure AND the render telemetry (`vlog`/`cy_render`, the film strip) were reverted with the
+    Cytui WIP; both are back in the tree as the isolated slice (grafted verbatim from the parked
+     WIP, now durable at `spec/voro_modes/Cytui.wip.2026-07-10.svelte.txt` — /tmp was volatile).
+      The slice: the vlog ring + `render_snapshot` mirror, wave/armed/morph✗/morph/settle events
+       + a new `flood` event (the under-run second pass, logged), `relayout` grew back its
+        `randomize` third arg, `diag_check` off every settle.  LiesFunk's `op:'why'`/`'shot'` never
+         left, so the rails just lit up.  **Proof on the first verification run:** VoroMitosis
+          11/11 c10 (its norm) with `♒ diag cured ×1` on the `--why` reply — the satan appeared at
+           exactly the Book the owner reported and was auto-cured; VoroScape 6/6 c0; fixtures
+            untouched (toc diff = TimeSpool wobble only).  F7's cure-took is eyes-on-owed only.
 - **All five Voro-family fixtures re-recorded green** (VoroScape 6/6, VoroMitosis 11/11, VoroRadio
    9/9 at caveat 0 — first time, the est poison is gone — VoroClinic 9/9, LeafFarm 30/30 untouched).
 

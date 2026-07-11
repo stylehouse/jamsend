@@ -1,5 +1,5 @@
 Credulation,of_Book:VoroScape
-  run=0,at=1783752379.36,ok,ok_pct,mode:check
+  run=0,at=1783766105.201,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -12,8 +12,10 @@ Credulation,of_Book:VoroScape
     uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
     uses:Ghost_M_Ra,dige:877d4c68475647aa
+    uses:Ghost_M_Heist,dige:a108913533fce361
     uses:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
     uses:Ghost_Story_Radiation,dige:f3403566ed74e831
+    uses:Ghost_Story_Heistation,dige:f8100c4099b641d1
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
     uses:Ghost_V_Voro,dige:8d195ca426f97f42

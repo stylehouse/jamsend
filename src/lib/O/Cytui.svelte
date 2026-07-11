@@ -317,6 +317,33 @@
     // stuff-overlays mount a LIVE Stuffing component into the node's overlay div.
     //  track the mounted instance so we can unmount it when the node leaves the graph.
     let stuff_mounts: Map<string, { app: any, ro?: ResizeObserver }> = new Map()
+
+    // the over-time story of model→cells: a bounded ring of what the render pipeline just did.
+    //  can't live in w:Voronoiology — this is render-side, and nothing render-side snaps (metaphysics #2).
+    //   pixels don't round-trip a fixture, so it's the Cyto twin of reactap: a live-tab-only signal.
+    //  surfaced over the runner_ask rails (op:'why'/'shot'); mirrored onto top_House.c.cy_render each push.
+    //   a `stuff:0` wave every beat is the empty-world tell — the seed never fired (the F6/VoroScape read).
+    type RLog = { t: number, ev: string, [k: string]: any }
+    let render_log: RLog[] = []
+    let last_settle_t = 0            // performance.now() of the last layoutstop — the "since last shake-out" mark
+    const RENDER_LOG_MAX = 48
+    function vlog(ev: string, extra: Record<string, any> = {}) {
+        render_log.push({ t: Math.round(performance.now()), ev, ...extra })
+        while (render_log.length > RENDER_LOG_MAX) render_log.shift()
+        try { (H.top_House().c as any).cy_render = render_snapshot() } catch { /* best-effort mirror */ }
+    }
+    function render_snapshot() {
+        const now = performance.now()
+        const base = last_settle_t ? Math.round(last_settle_t) : 0
+        return {
+            voronoi_on, saw_stuffy, voronoi_pref,       // the gate + its inputs
+            seeds: stuff_mounts.size, cells: vcells.length, nodes: cy ? cy.nodes().length : 0,
+            since_settle_ms: last_settle_t ? Math.round(now - last_settle_t) : null,
+            diag_cures,
+            // each event's dt = ms since the last layout settle (negative = before it)
+            log: render_log.map(r => ({ ...r, dt: base ? r.t - base : null })),
+        }
+    }
     // Background color per node id — used when updating so we don't
     // re-read the node style on every tick
     let overlay_bgs: Map<string, string> = new Map()
@@ -891,19 +918,10 @@
     type VtuffDesc = { text: string, kind: string, color?: string | null, tag?: string, nk?: string,
                        sub?: number, chips?: MicroChip[], member?: TheC, dip?: boolean }
 
-    // one short identity line — the TS twin of Voro.g's Vtuff_ident, for the fallback
-    //  rows an OLD gen serves until the tab reload deposits Vtuff_build.
-    function ident_ts(m: any): string {
-        const mk = Object.keys(m?.sc ?? {})[0] ?? '?'
-        const v = m?.sc?.[mk]
-        let t = (v === 1 || v == null) ? mk : `${mk}: ${v}`
-        for (const k of ['name', 'title', 'text', 'nick', 'label'])
-            if (k !== mk && typeof m?.sc?.[k] === 'string') { t += ` · ${m.sc[k]}`; break }
-        return t
-    }
-
-    // name|tag split, the TS twins of Voro.g's Vtuff_name|Vtuff_namekey — shared by the
-    //  vtuff_rows fallback AND the loner pane (a particle with no Vtuff tree of its own).
+    // read a bare particle's display name and which key gave it — a render-side reader for any C
+    //  with no Vtuffing tree of its own.
+    //   used by the loner pane (a %see / beat-wrangler req) and by vtuff_rows' pre-gen-boot fallback.
+    //   name = the mainkey's value, else the first of name|title|text|nick|label; namekey = which one won.
     function name_ts(m: any): string {
         const mk = Object.keys(m?.sc ?? {})[0]
         const v = m?.sc?.[mk]
@@ -921,8 +939,10 @@
         return mk
     }
 
-    // rows for a pane: the Vtuffing tree normalised to descriptors — or, before the new gen
-    //  boots, a plain fallback (title + member idents + dip) so panes never say just "Track".
+    // a pane's rows, normalised to descriptors the fit can lay out.
+    //  live path: normalise Voro.g's Vtuffing tree — meaning lives there, per the split.
+    //  fallback: before the new gen deposits Vtuff_build, derive a plain title+members+dip right here,
+    //   so a pane never degrades to just "Track" — the one place Cytui re-derives meaning, on purpose.
     function vtuff_rows(src: any): VtuffDesc[] {
         const build = (H as any).Vtuff_build
         if (build) {
@@ -2255,12 +2275,10 @@
                         pane = subgraph_build(c, descs, kind_tint(fkind) ?? '#9ab', fkind)
                     }
                 }
-                // a LONER pane (no fold structure — the beat-wrangler req, a %see claim, a
-                //  popped tiny) speaks the grammar too, and speaks ALL of it: the mainkey
-                //   statement is the nucleus and EVERY other sc fact rides as a keyed
-                //    region — show everything, know nothing about the data, no key is
-                //     special.  Small cells degrade to the statement + the +N fold mark
-                //      like any other pane.
+                // a loner pane — a particle with no fold structure (a beat-wrangler req, a %see, a popped tiny).
+                //  it speaks the grammar too, and speaks ALL of it: know nothing about the data, no key special.
+                //   the mainkey statement is the nucleus; every other sc fact rides as its own keyed region.
+                //   a small cell degrades to the statement + the +N fold mark, like any other pane.
                 if (!pane && src?.sc) {
                     const mk = Object.keys(src.sc)[0]
                     if (mk) {
@@ -2318,10 +2336,14 @@
         if (dragging) return   // live-drag owns the repaint; don't fight it
         const L = voronoi_layout()
         if (!L) {
+            // the conversion FAILED this call — why (the F1 diagnosis, live): armed?  enough seeds?
+            vlog('morph✗', { von: voronoi_on ? 1 : 0, seeds: stuff_mounts.size,
+                             need: voronoi_on ? (stuff_mounts.size < 2 ? '<2 seeds' : 'layout null') : 'not armed' })
             if (vcells.length || vtips.length) clear_voronoi()
             settle_overlay_show()
             return
         }
+        vlog('morph', { seeds: stuff_mounts.size, cells: L.cells.length })
         vregion_w = L.CW
 
         const targets = new Map<string, {x:number,y:number}[]>()
@@ -2418,6 +2440,11 @@
         rush_animations()
         animations = _C({ animations: 1, started_at: performance.now() / 1000 })
         const ms = Math.round(dur * 1000)
+        // telemetry: the wave's shape — a `stuff:0` wave every beat IS an empty world
+        //  (the seed never fired: the F6/VoroScape-is-just-self tell, now legible here)
+        vlog('wave', { up: wave.o({ upsert: 1 }).length, rm: wave.o({ remove: 1 }).length,
+                       stuff: (wave.o({ upsert: 1 }) as TheC[]).filter(n => n.sc.overlay_kind === 'stuff').length,
+                       abs: wave.sc.absolute ? 1 : 0, von: voronoi_on ? 1 : 0, seeds: stuff_mounts.size })
         let length = wave.o({ upsert: 1 }).length
         // node ids BORN this wave — so a purely-additive wave can PIN the already-settled
         //  graph and let fcose place only the newcomers (see the layout step below): a late
@@ -2513,7 +2540,7 @@
             if (overlay_kind === 'stuff') {
                 // c.stuffy exists ONLY under the %crushCyto-gated crusher — a crushed
                 //  world auto-arms the voronoi render (voronoi_pref still overrides)
-                if ((src as any)?.c?.stuffy) saw_stuffy = true
+                if ((src as any)?.c?.stuffy) { if (!saw_stuffy) vlog('armed', { id }); saw_stuffy = true }
                 proper_mounted.delete(id)    // wave-owned now; toggling proper off must not strip it
                 create_stuff_overlay(id, src, overlay_bg, !!nd.sc.overlay_self)
                 // a mounted gang rep whose gang GREW: rebuild the mirror in place
@@ -2624,8 +2651,11 @@
                     pins = settled.map((n: any) => ({ nodeId: n.id(), position: { x: n.position('x'), y: n.position('y') } }))
             }
             relayout(ms, pins)
-            if (flood) cy.one('layoutstop', () =>
-                setTimeout(() => relayout(Math.max(ms, 300)), 80))
+            if (flood) {
+                vlog('flood', { fresh: fresh_ids.size, settled: settled_real.length })
+                cy.one('layoutstop', () =>
+                    setTimeout(() => relayout(Math.max(ms, 300)), 80))
+            }
         } else {
             // no layout needed — bring overlays back now instead of waiting
             // for a layoutstop that will never fire
@@ -2691,13 +2721,16 @@
     // ── layout ────────────────────────────────────────────────────────────────
 
     let lay: any
-    function relayout(animMs = 300, pins: any[] | null = null) {
+    function relayout(animMs = 300, pins: any[] | null = null, randomize = false) {
         lay?.stop()
         const common = {
             animate:                     animMs > 0,
             animationDuration:           animMs,
             nodeDimensionsIncludeLabels: true,
-            randomize:                   false,
+            // randomize only on a diag_check escalation — a free re-lay that fell straight
+            //  back onto the balanced line needs its symmetry broken, everyone else keeps
+            //   their grown positions
+            randomize,
         }
         // fixedNodeConstraint pins already-settled nodes (apply() passes them on a purely-
         //  additive wave) so a late node-add can't re-tumble the grown layout; a manual ⟳
@@ -2740,6 +2773,58 @@
             cy.on('layoutstop', on_stop)
         }
         try { lay.run() } catch (e) { console.warn('layout error', e) }
+    }
+
+    // the whole board collapses onto one line — a degenerate fcose equilibrium; detect it, break it.
+    //  why it sticks: on a line every force cancels along it, so nothing ever pushes a node back off.
+    //   the fresh_ids pins stop the classic trigger (a late disconnected add re-packs the board),
+    //    not a collapse that forms anyway — that one sat until a manual ⟳.
+    //  the cure is a free relayout — the human's own observation: it leaves a healthy board alone,
+    //   but a repeat means it fell straight back, so randomize to break the symmetry; three failures rest.
+    //  detection: the principal-axis spread ratio of the real node positions (2×2 covariance eigenvalues).
+    //   √(minor/major) ~0 a line, ~1 a disc; a healthy rosette > 0.25, a satan < 0.1; gate at 0.1.
+    let diag_cures  = 0     // total auto-cures this mount — stashed on top_House.c so op:'shot' can report it
+    let diag_streak = 0     // consecutive still-diagonal settles — a cure that doesn't take escalates, then rests
+    function diagonal_ratio(): number | null {
+        if (!cy) return null
+        const pts: {x:number,y:number}[] = []
+        cy.nodes().forEach((n: any) => {
+            if (n.isParent() || is_nucleus(n)) return
+            pts.push(n.position())
+        })
+        if (pts.length < 6) return null   // a tiny board lines up legitimately
+        let mx = 0, my = 0
+        for (const p of pts) { mx += p.x; my += p.y }
+        mx /= pts.length; my /= pts.length
+        let xx = 0, yy = 0, xy = 0
+        for (const p of pts) { const dx = p.x - mx, dy = p.y - my; xx += dx*dx; yy += dy*dy; xy += dx*dy }
+        const tr = xx + yy, det = xx*yy - xy*xy
+        const disc  = Math.sqrt(Math.max(0, tr*tr/4 - det))
+        const major = tr/2 + disc
+        if (major <= 0) return null
+        return Math.sqrt(Math.max(0, tr/2 - disc) / major)
+    }
+    let diag_timer: ReturnType<typeof setTimeout> | null = null
+    function diag_check_soon() {
+        if (diag_timer) clearTimeout(diag_timer)
+        // past the wave queue's settle pad, so a draining batch is judged at rest, not mid-tween
+        diag_timer = setTimeout(diag_check, 1200)
+    }
+    function diag_check() {
+        diag_timer = null
+        if (!cy || dragging || anim_busy || wave_queue.length) { diag_check_soon(); return }
+        const r = diagonal_ratio()
+        if (r === null) return
+        if (r > 0.1) { diag_streak = 0; return }   // healthy (or healed) — re-arm the escalation
+        diag_streak++
+        if (diag_streak > 3) return   // three cures didn't take — stop thrashing; next wave re-arms via the streak reset
+        diag_cures++
+        try { (H.top_House().c as any).cy_diag_cures = diag_cures } catch { /* report is best-effort */ }
+        vlog('diag_cure', { ratio: +r.toFixed(3), streak: diag_streak, randomize: diag_streak > 1 ? 1 : 0 })
+        console.warn(`♒ diagonal satan (spread ratio ${r.toFixed(3)}, n=${cy.nodes().length}) — free relayout, cure #${diag_cures}${diag_streak > 1 ? ` (streak ${diag_streak}: randomize)` : ''}`)
+        // first cure = the owner's manual ⟳ (free, unpinned); a repeat means the free re-lay
+        //  fell straight back into the same balanced line — toss positions to break the symmetry.
+        relayout(400, null, diag_streak > 1)
     }
 
     // ── cytoscape init ────────────────────────────────────────────────────────
@@ -2825,7 +2910,15 @@
         // touching the dial: any motion that isn't the radio's own glide holds the tuner off
         cy.on('grab pan zoom', () => { if (!radio_gliding) radio_hold_until = Date.now() + 15000 })
         cy.on('layoutstart', () => start_live_layout())
-        cy.on('layoutstop',  () => { stop_live_layout(); show_overlays_soon() })
+        cy.on('layoutstop',  () => {
+            stop_live_layout(); show_overlays_soon()
+            // the "state-shaking-out layout()" the owner named as the telemetry epoch: stamp it,
+            //  and log the settle geometry (ratio ~0 = the diagonal satan; the morph fires next,
+            //   via show_overlays_soon's OVERLAY_QUIET_MS debounce → its own 'morph' entry)
+            last_settle_t = performance.now()
+            vlog('settle', { ratio: +(diagonal_ratio() ?? -1).toFixed(3), nodes: cy.nodes().length, seeds: stuff_mounts.size })
+            diag_check_soon()
+        })
         // ── click-to-identify ─────────────────────────────────────────────────
         // Tap any node or edge to log its id / parent / data / style. Useful for
         // finding mystery greys (which are usually n particles falling through

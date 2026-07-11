@@ -66,27 +66,27 @@ story:LeafFarm
     useCyto
   TimeSpool
     TimeTotal:beliefs,avg=0.124
-      sample=0.196,at=1783663621
-      sample=0.091,at=1783664169
-      sample=0.163,at=1783669816
-      sample=0.12,at=1783675927
       sample=0.095,at=1783676000
       sample=0.095,at=1783676027
       sample=0.118,at=1783676074
       sample=0.118,at=1783676436
       sample=0.109,at=1783676526
       sample=0.137,at=1783712633
+      sample=0.21,at=1783748761
+      sample=0.122,at=1783751914
+      sample=0.098,at=1783754830
+      sample=0.141,at=1783760341
     TimeTotal:step,avg=0.004
-      sample=0.007,at=1783663621
-      sample=0.003,at=1783664169
-      sample=0.005,at=1783669816
-      sample=0.004,at=1783675927
       sample=0.003,at=1783676000
       sample=0.003,at=1783676027
       sample=0.004,at=1783676074
       sample=0.004,at=1783676436
       sample=0.004,at=1783676526
       sample=0.005,at=1783712633
+      sample=0.007,at=1783748761
+      sample=0.004,at=1783751914
+      sample=0.003,at=1783754830
+      sample=0.005,at=1783760341
   step,dige:c60b3b661f9d8fe0
   step=2,dige:06026fe0701b3be5
   step=3,dige:9e3dab20bb8852b8

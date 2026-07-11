@@ -24,6 +24,18 @@ Waft:Ghost/Music/Ality,active
     Funkcion:Storying,of_Book:MusuRaTerm
     Funkcion:Storying,of_Book:MusuRaStream
     Funkcion:Storying,of_Book:MusuRaChase
+    Funkcion:Storying,of_Book:MusuHeist
+  What:the heist — %Heist at a pier moves ORIGINAL file bytes straight into the collection (Radio_todo §0 + §10 rung 1)
+    Doc:Ghost/M/Heist.g
+    Point,method:Heist_census
+    Point,method:Heist_job
+    Point,method:Heist_beat
+    Point,method:Heist_land
+    Point,method:Heist_feel
+    Doc:Ghost/Story/Heistation.g
+    Point,method:MusuHeist_drive
+    Point,method:MusuHeist_flow
+    Point,method:MusuHeist_witness
   What:the pipeline — rastock → racast → raterm (Radio_todo §3 — the product itself)
     What:the stock pass (Ghost/M/Ra.g — needles LUFS → baked gain → 2s Opus segments → Ogg mux → disk)
       Doc:Ghost/M/Ra.g

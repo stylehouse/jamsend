@@ -213,6 +213,36 @@ The owner, verbatim: *"when we get more bamboo schematica going on to make the t
       is lighting — a context-aware fold.  **Not built** — the hook is a neighbourhood pass
        feeding the crushable verdict.
 
+#### Se proper — the crush reads its surroundings (design, 2026-07-12)
+
+`Vtuff_se` (below) is the first Se, but it lives in the EMPHASIS domain — it reads the radio and
+ swells|quiets a pane's bands.  **Se proper** moves the same surroundings-read into the FOLD
+  decision.  Today `Voro_crushable` / `Voro_swarmable` / `Voro_gang_min` judge a candidate in
+   ISOLATION — its own child count + mainkey, plus the GLOBAL governor level.  Se widens each verdict
+    to read the neighbourhood.
+
+This is also the first real citizen of the human's **`Selection.process()`** north star — "a pile of
+ structure with identity that stuff happens to" (see Cyto).  The move it forces: name **the
+  neighbourhood as a Selection** and make the Se read a **general process** over it that all three
+   verdicts consult, instead of each rule bolting on its own ad-hoc sibling walk.
+
+- **The Selection** — `Voro_neighbourhood(c)`: the candidate's siblings under its parent, its local
+   subtree, and the world's drift stamps (`w.c.drift_focus` / `drift_opens`).  Pure c-side (rules
+    2+6); a cheap first cut, widened later.
+- **The process** — `Voro_se(c, stats, level)` → a small bias `{ hold, gangbias }`:
+   - `hold` — the radio is lighting this subtree, or a child is popped nearby → REFUSE the fold,
+      keep it open (you're looking there; don't hide it).  `Vtuff_se`'s radio read, repurposed from
+       emphasis to the fold gate.
+   - `gangbias` — the local region is already dense (a per-neighbourhood count, not just the global
+      `stats.visible`) → drop the gang min HERE: fold harder where it's crowded, leave sparse regions honest.
+- **The hooks** — additive: one `Voro_se(c)` consult at the top of `Voro_crushable` / `_swarmable`;
+   `Voro_gang_min` takes the neighbourhood density.  No verdict rewritten — each gains one surroundings read.
+
+**First buildable slice** (isolated, provable): just `hold`-on-radio — a container the tuner is
+ lighting refuses to fold.  ~3 lines, exactly `Vtuff_se`'s radio read moved to the fold gate, testable
+  as a `%see` in a Book (a lit container stays a hub while its neighbour folds).  Grade DESIGN-FIRST;
+   build when a runner is free (crush = `.g`, needs ghost-compile + a live verify).
+
 #### The language critique (2026-07-11) — what the redesign must fix
 
 The owner read the panes against the raw graph and named the failure precisely.  Without

@@ -22,6 +22,55 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 A rolling brief: the newest work sits here first, then gets baked into its home section
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 
+**2026-07-11 (day) — the HEIST design decided (owner Q&A): the rest of Radio+Piracy is an
+ rsync job creator.** Prior art re-read on owner's pointer: `src/lib/ghost/Pirating.svelte`
+  (heist req → local-dir prep BEFORE the wire → spool → resume-by-rematching) and its merge
+   model — the remote path inflates into `%place,bit,uri` particles (collection|directory|blob)
+    and the user BELIEVES or DISBELIEVES each layer (`disbelieve_directories`, `only_categories`,
+     per-file rename), the surviving bits joining into `destination_directories`. The decisions:
+ - **Payload = ORIGINAL file bytes** — new body chunk-particles beside `%Preview`/`%Stream`,
+    byte-faithful (`body_hash` vs the source file). Consequence: the source side must walk REAL
+     files, so a slice of §9.1 rides the first Book. Deferred: a "nicely transcoded send" mode
+      (IDv3 tagging + album-art embedding) — later, subagented.
+ - **Job = `%Heist,at:<pier>`** (+ optional match; absent = everything = klepto v1). A saved
+    match graduates into §9.2's `%Share` later. Sibling (speculative): a **%TreasureMap** — a
+     Pier pointing at things, maybe a music micro-blog form. Pier|TreasureMap|Heist exist FOR AS
+      LITTLE TIME AS POSSIBLE then flatten off — scaffolding, not ledger. While a Heist RUNS you
+       can see who's whatting; afterwards nothing attributes.
+ - **Landing = STRAIGHT INTO THE COLLECTION at download time** (no staging dir); the merge
+    decision (believe/disbelieve layers, remembered defaults) is therefore made at
+     heist-creation — exactly the old step-2→step-4 flow. Probation is purely metadata:
+      **`.jamsend/newlyadded`** (`.jamsend` is ALL meta, never bytes) logs what arrived recently
+       + how the listener feels about it so far; deny = delete from the collection. The log's
+        purpose: shuffle new music into the listening diet coherently for the first week or two —
+         grow to love it (→ the koha list, things to give back for) or drop it completely. It
+          NEVER shows where music came from; graduation later feeds blog-writing and freer
+           classification|appreciation systems.
+ - **Provenance: NOT persisted.** Dedup is by CATALOG identity, not source — cataloguing notices
+    an Artist-Album is already held and skips, or UPGRADES it (e.g. to flac) if policy allows.
+ - **BUILD STATUS (same day, night): rung 1 is BUILT + wired, live-gate PENDING.** `Ghost/M/Heist.g`
+    (census/job/beat/land/newlyadded/feel/sweep — %Body,seq original-byte chunks on %Record cards, the
+     generic Repli want/park/serve moving them unchanged; quarantine mirror = a `<prepub>.heist` shelf
+      key) + `Ghost/Story/Heistation.g` (Book **MusuHeist**, 18 seeded steps, 10 %see: divided census →
+       seal → job-pinned filings → byte-faithful DISK-verified landings both ways → re-heist dedup →
+        unsourced newlyadded → deny-drops-file → flatten). Both LocalGen-compiled, enrolled in
+         CREDULER_GHOSTS, registered in Credence (+brand_new) + the Ality overlay; toc seeded
+          (UNTRACKED — no dispatch before a runner tab reload). Deferred within rung 1: the
+           remembered-denials tombstone (a denied identity re-offers on a later heist — the %UnGrant
+            shape wants reusing) and the same-identity format-upgrade path.
+ - **First Book = rung 1** (loopback, needsFSA), home a NEW **`Ghost/M/Heist.g`** riding Repli:
+    TWO Piers share the SAME `testsounds/` FSA dir (the existing 8-WAV flat share — barely any
+     directory structure at first, and that's fine). The dedup trap (each Pier already "has"
+      everything the other offers) is dissolved by a **test mode that DIVIDES THE ARTISTS between
+       the Piers** — a whittled-down census so each seems to hold different music: Uno offers
+        "The Sines" + "DJ Oscillo", Duo offers "Fourier Four", etc. Each files what it heists
+         under DIFFERENT genre categories at its end. A per-Pier
+          **`.jamsend/test-marrauding-of-<runid>`** override (they share one FSA location)
+           namespaces meta + `newlyadded` + landing categories per Pier per run, so the run's
+            work deletes cleanly (one `rm -r` per marrauding dir). The believe/disbelieve merge
+             (old Pirating steps 2+4) is pinned as DATA in the Book — UI comes later. Assert:
+              byte-faithful `body_hash` per landed file + the `newlyadded` log shape.
+
 **2026-07-11 (night) — MusuRaChase FIRST-LIT + RECORDED; the whole family green.**
  The CHECK run (all 56 steps, real audio, ~4min) needed NO threshold tuning — every gate passed
   with slack: `chased,at_head=20,warm=16` and `skip:B,at_head=10,warm=16` (gate ≥6),
@@ -30,18 +79,20 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
      the pre-pinned set — none fuzz-swallowed). Verify re-runs 56/56 green twice (≈53/≈54 —
       the predicted two-seal AudibleEntropy signature; the ±1 is round= wobble). The owed
        float32-compat runs also green: MusuReplica 14/14 (≈10), MusuReco 11/11 (≈3).
- **Assertion upgrades STAGED, blocked on tab warmth (11:20).** Three of the audit's upgrades are
-  BUILT + LocalGen-compiled, fixtures NOT yet re-recorded: `src`+`cands` on the chased AND skip
-   rows (Radiation.g — kills both PRNG-luck slip channels; `cands` reads the new runtime-only
-    `w.c.ra_dial_cands` stamp in Ra_dial_next), and a post-dark `fanout_dark,of=N` row (gives the
-     restock online-gate a line to die on).  Deliberately NOT done: the `keep_ahead=2` pin (with a
-      3-candidate catalog it would falsify the fan-out sentence "kept EVERY other preview warm" —
-       it belongs in a single-source Book) and the mid-run revoke variant (a new scene, owed).
-  RESUME: keep the 49de tab UNFROZEN ~10 min (foreground it / visible window — the browser kept
-   freezing it in <2-min windows, killing every dispatch), then: burn-in MusuRaStock → CHECK run
-    MusuRaChase (steps ~15/~20 red with the new row fields — verify values sane + deterministic
-     across two CHECK runs) → accept → green ×2 → sabotage-prove `fanout_dark` (delete the
-      ra_source_live line in Ra_restock_beat, expect red, revert).
+ **Assertion upgrades LANDED + SABOTAGE-PROVEN (same day, eve).** The three audit upgrades are in
+  the recorded fixtures (committed in `e2bef100 tests`): `src`+`cands` on the chased AND skip rows
+   (Radiation.g — kills both PRNG-luck slip channels; `cands` reads the runtime-only
+    `w.c.ra_dial_cands` stamp in Ra_dial_next), and the post-dark `fanout_dark,of,warm` row (of=1
+     post-dark). Verified on a warm runner: green ×2 (56/56, the stable ≈54 signature; rows match
+      the fixtures verbatim — `chased,…,src:Duo,cands=2`), all 15 %see sentences re-confirmed
+       present, and the sabotage KILL: deleting the `ra_source_live` gate in Ra_restock_beat went
+        RED from step 20 (ok_pct 0.34, 37 reds; live `fanout_dark,of=3,warm=3` vs the pinned of=1 —
+         the formerly-dead-weight gate now has its line to die on; the untouched dial gate's
+          `skip:B,…,src:Duo` still matched, so the kill is surgically the restock's), then green
+           again on revert. Deliberately NOT done, still owed: the `keep_ahead=2` pin (with a
+            3-candidate catalog it would falsify the fan-out sentence "kept EVERY other preview
+             warm" — it belongs in a single-source Book) and the mid-run revoke variant (a new
+              scene) so `repli_allow` refuses at least once in-Book.
 
  **Adversarial audit (agent + one live sabotage).** The live probe: gate the chase %see on
   `warm >= 99` (Radiation.g:1232 via LocalGen) → the run went RED from exactly step 15 (its landing

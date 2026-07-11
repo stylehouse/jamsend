@@ -1,0 +1,395 @@
+// Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
+//  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
+//   pointed at a Pier moves ORIGINAL FILE BYTES straight into a collection — the whole old
+//    Pirating flow (inflate → believe/disbelieve → spool → land) redrawn on Housing+Repli with the
+//     merge decisions pinned as DATA and the scaffolding flattening off afterwards.
+//  More Heist Books pile on here (the cohort rung — one page-stream shared by N kleptos — and the
+//   cafe tree are §10 rungs 2 and 3).
+
+// ══ MusuHeist — rung 1, loopback: TWO Piers share the ONE testsounds disk, divided by artist ═══════
+//  The dedup trap (each Pier already "has" everything the other offers) is dissolved by the census
+//   whittle: Uno holds The Sines + DJ Oscillo, Duo holds Fourier Four — each seems to hold different
+//    music, and each files what it heists under DIFFERENT genre categories at its own end.  A
+//     per-Pier .jamsend/test-marrauding-of-bookrun/<nick> namespace holds meta + newlyadded +
+//      landings, swept at start so re-runs are deterministic (runid pinned by the Book; the app
+//       passes a real uid).  The wire is the transport-real Lake_link pair, sealed by a real Idzeug
+//        redeem, every leg gated by the mutual Music grant (w.c.repli_allow → Swarm_pier_live).
+//  SETTLING (the bomb, learned the hard way): a mock send rides H.post_do — a frame posted in beat N
+//   is seen at N+1, and a redeem|pull settles over SEVERAL such passes.  So NOTHING is beat-pinned
+//    except the one-time census (it needs the disk).  Everything else runs on a PHASE MACHINE
+//     (MusuHeist_phase) that advances only when the prior phase's FACT is true — pinning a job to a
+//      fixed beat raced the settle (landed one run, stranded the next).  The phases:
+//   CENSUS (beat 2) — marrauding swept; two censuses off the REAL disk, artist-divided, %Body chunks
+//                     minted whole with body_hash; stations + link + Repli armed → phase='seal'
+//   SEAL           — one Idzeug redeem; wait until BOTH grants read live, THEN → job uno
+//   UNO/DUO/REUNO  — each job offers on the live grant, pulls at heist rate, lands by category,
+//                     logs newlyadded, flattens on its expectation → advances to the next
+//   DENY           — logs read back (shape + unsourced), then Uno loves one + drops one → phase='flat'
+//   FLAT           — nothing attributes: no %Heist stands, both quarantine mirrors empty
+//  The %see witness gates on TRUTH (the recorded fact), never on beat number, so a see fires the first
+//   pass its fact holds — the toc just carries enough steps (30) for every settle to complete.
+//
+// CONVENTION (Musu*/Ra*): no Run_A_ recipe — the world MUST be named MusuHeist (do_fn_for dispatches
+//  by w.sc.w) or the wrangle silently never fires.
+
+MusuHeist(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuHeist_drive,w,req
+        req%ok = 1
+
+// MusuHeist_drive — the one skip gate (a writable share; no audio machinery — the heist never
+//  decodes), then acts pinned to beats, carriers pumped every pass (frames settle over post_do),
+//   and the heist flow fired the instant its preconditions hold.
+async MusuHeist_drive(w, req):
+    let nav = this.Crate_nav()
+    if (!nav || typeof nav.bin_write !== 'function') {
+        if (!w.oa({ skipped: 'no_writable_share' })) w.i({ skipped: 'no_writable_share' })
+        return
+    }
+    // ONE-TIME setup at beat 2 (needs the real disk); everything after is PRECONDITION-driven, never
+    //  beat-pinned — the mock wire settles a redeem|pull over several post_do passes, so pinning a job
+    //   to a fixed beat races the settle (it landed one run, stranded the next).  The phase machine
+    //    advances only when the prior phase's fact is TRUE, and the toc carries slack for the settles.
+    let n = (this.c.run)?.c.step_n
+    // census is RETRYABLE: gate on its OUTPUT (the libraries), not a one-shot flag — a one-shot guard
+    //  set BEFORE the work means a transient throw after the account calls strands setup half-done
+    //   forever (accounts stand, libraries never mint, the guard blocks the retry).  Its steps are
+    //    find-or-create idempotent; Lake_link guards on w.c.port_uno so it never doubles.
+    if (n >= 2 && !w.c.census_ready && !w.oa({ skipped: 1 })) {
+        try {
+            await this.MusuHeist_census(w)
+        } catch (er) {
+            if (!w.oa({ census_fail: 1 })) w.i({ census_fail: 1, why: ('' + (er && er.message || er)).slice(0, 80) })
+        }
+    }
+    for (const peering of w.o({ Peering: 1 })) await peering.do()
+    await this.MusuHeist_phase(w)
+    await this.Musu_float(w)
+
+// MusuHeist_phase — the precondition-driven state machine (the MusuRaCast_flow lesson: fire each leg
+//  the instant its precondition holds, never on a beat number).  Phases: seal → uno → duo → reuno →
+//   deny → flat → done.  Each pass advances AT MOST one edge; the pump + post_do settle carry the
+//    wire between passes.  A running job drives via MusuHeist_flow, which flips w.c.phase on flatten.
+async MusuHeist_phase(w):
+    if (!w.c.phase) return
+    if (w.c.phase === 'seal') {
+        if (!w.c.sealed_kicked) { w.c.sealed_kicked = 1; await this.MusuHeist_seal(w); return }
+        // wait for the redeem to settle both grants live, THEN start job uno
+        if (w.c.repli_allow && w.c.repli_allow(w.c.uno_pre, w.c.duo_pre) && w.c.repli_allow(w.c.duo_pre, w.c.uno_pre)) {
+            w.i({ sealed: 1 })
+            w.c.phase = 'uno'
+            await this.MusuHeist_job(w, 'uno')
+        }
+        return
+    }
+    if (w.c.phase === 'uno' || w.c.phase === 'duo' || w.c.phase === 'reuno') {
+        await this.MusuHeist_flow(w)
+        return
+    }
+    if (w.c.phase === 'deny') {
+        if (!w.c.logs_done) { w.c.logs_done = 1; await this.MusuHeist_logs(w); return }
+        if (!w.c.deny_done) { w.c.deny_done = 1; await this.MusuHeist_deny(w); return }
+        w.c.phase = 'flat'
+        return
+    }
+    if (w.c.phase === 'flat') {
+        w.c.phase = 'done'
+        await this.MusuHeist_flat_check(w)
+    }
+
+// beat 2 — the divided censuses off the ONE real disk.  The marrauding namespace sweeps first so a
+//  re-run starts clean (the pinned-runid stance).  Each census is a %Library keyed by its Peering's
+//   prepub (the §9.1c convention); the whittle divides TEST_TONES' three artists 6/2.
+async MusuHeist_census(w):
+    w i reached:step_2
+    w.c.nav = this.Crate_nav()
+    let paths = await this.Crate_nav_paths(w.c.nav, 'testsounds')
+    if (!paths.length) {
+        if (!w.oa({ skipped: 'no_testsounds' })) w.i({ skipped: 'no_testsounds' })
+        return
+    }
+    let uno = await this.SwarmStaple_person(w, 'Uno')
+    let duo = await this.SwarmStaple_person(w, 'Duo')
+    w.c.uno_pre = uno.sc.prepub
+    w.c.duo_pre = duo.sc.prepub
+    w.c.mar_uno = this.Heist_marrauding('bookrun', 'uno')
+    w.c.mar_duo = this.Heist_marrauding('bookrun', 'duo')
+    await this.Heist_sweep(w.c.nav, this.Heist_meta_dir() + '/test-marrauding-of-bookrun')
+    // Lake_link is NOT idempotent (each call mints a fresh transport pair) — guard so a census RETRY
+    //  reuses the standing ports instead of doubling the wire.
+    if (!w.c.port_uno) {
+        let link = await this.Lake_link(w, uno.sc.prepub, duo.sc.prepub)
+        w.c.port_uno = link[0]
+        w.c.port_duo = link[1]
+    }
+    this.Peeroleum_arm_whittle(w)
+    this.Swarm_arm(w)
+    this.Repli_arm(w)
+    for (const peering of w.o({ Peering: 1 })) {
+        for (const pier of peering.o({ Pier: 1 })) pier.oai({ req: 'handshake' })
+    }
+    w.c.uno_lib = this.Ra_library(w, uno.sc.prepub)
+    w.c.duo_lib = this.Ra_library(w, duo.sc.prepub)
+    // the wire roles ride the LINK PORTS (the handler's pier IS the receiving port — %Piers land
+    //  beats later, after the redeem settles, so registering those here would silently register
+    //   nothing: the empty-quarantine lesson of the first run).  Each port both casts this side's
+    //    census and receives the other side's lines — one wire, both heist directions.
+    this.Repli_register_caster(w, w.c.port_duo, w.c.duo_lib)
+    this.Repli_register_caster(w, w.c.port_uno, w.c.uno_lib)
+    this.Repli_register_rx(w, w.c.port_uno)
+    this.Repli_register_rx(w, w.c.port_duo)
+    // the RANDOM GENRE PREFIX (owner 2026-07-11): landings write into a real share — in dev the repo
+    //  itself — so the category dirs carry a prefix that can never collide with a real curation.  The
+    //   entropy seam keeps it honest: crypto-random live, pinned here by the Book seed so fixtures hold.
+    this.Ra_seed(w, 'MusuHeist')
+    let pfx = this.Ra_rand(w, 1296).toString(36)
+    while (pfx.length < 2) pfx = '0' + pfx
+    w.c.genre_pfx = pfx
+    // the synchronous census (accounts|link|libraries|registration|pfx) is COMPLETE — the retry guard
+    //  releases; only the async Heist_census + phase-open remain, inside the expecting.
+    w.c.census_ready = 1
+    await this.expecting(w, 'heist_census', 90, async () => {
+        let a = await this.Heist_census(w, w.c.uno_lib, w.c.nav, 'testsounds', ['The Sines', 'DJ Oscillo'])
+        let b = await this.Heist_census(w, w.c.duo_lib, w.c.nav, 'testsounds', ['Fourier Four'])
+        w.i({ censused: 1, uno: a.built + a.stood, duo: b.built + b.stood })
+        // census done → open the phase machine (the redeem starts next pass, settles over post_do)
+        w.c.phase = 'seal'
+    })
+    w.doai({ req: 'witness', eternal: 1 })?.(async (req) => { this.MusuHeist_witness(w); req.sc.ok = 1 })
+
+// beat 4 — ONE Idzeug redeem seals the pair with the mutual Music grant; then BOTH piers register
+//  both ways (each Pier particle is where the OTHER side's frames arrive: it casts this side's
+//   census when a want lands and receives lines when an offer lands).  The consent hook answers
+//    per-relationship — (peer, at) — off the live grant, so a revoke on either side shuts its legs.
+async MusuHeist_seal(w):
+    w i reached:seal
+    let uno = this.SwarmStaple_ident(w, 'Uno')
+    let duo = this.SwarmStaple_ident(w, 'Duo')
+    w.c.iz = await this.Swarm_mint_idzeug(w, uno, { Music: 1, genre: 'Heist' }, 'heist_1')
+    await this.Swarm_redeem(w, duo, w.c.iz)
+    // the grant lives on the SWARM peering (under the ident — Swarm_peering), NOT the w-level
+    //  transport station a bare w.o({Peering:1}) finds: same name shape, grantless — the
+    //   forever-closed-gate lesson of the second run.  at2 names the SERVING side; its ident's
+    //    peering holds the %Pier whose live Music grant admits `peer`.
+    w.c.repli_allow = (peer, at2) => {
+        let ident = (at2 === w.c.uno_pre) ? this.SwarmStaple_ident(w, 'Uno') : this.SwarmStaple_ident(w, 'Duo')
+        let pg = ident ? this.Swarm_peering(ident) : null
+        let p = pg ? pg.o({ Pier: 1, pub: peer })[0] : null
+        return !!(p && this.Swarm_pier_live(p, 'Music'))
+    }
+
+// the job table — who heists whom, what lands where.  Pinned expectations (the fixture's gates) and
+//  the filing DATA (the believe/disbelieve outcome) per direction; 'reuno' re-points Uno at Duo to
+//   prove catalog-identity dedup skips a whole catalog already held.
+MusuHeist_bundle(w, nick):
+    let pfx = w.c.genre_pfx
+    if (nick === 'uno' || nick === 'reuno') {
+        // the re-heist expects Duo's WHOLE shelf back (2 originals + the 6 landed in job B) — a
+        //  shorter expectation would flatten early and strand in-flight husks in the quarantine.
+        return { nick: nick, at: w.c.duo_pre, mine: w.c.uno_pre, rx: w.c.port_uno,
+            srcport: w.c.port_duo, srclib: w.c.duo_lib, own: w.c.uno_lib,
+            mar: w.c.mar_uno, mir_key: w.c.uno_pre + '.heist', expect: (nick === 'reuno') ? 8 : 2,
+            filings: [{ artist: 'Fourier Four', genre: pfx + '-mathrock' }] }
+    }
+    return { nick: 'duo', at: w.c.uno_pre, mine: w.c.duo_pre, rx: w.c.port_duo,
+        srcport: w.c.port_uno, srclib: w.c.uno_lib, own: w.c.duo_lib,
+        mar: w.c.mar_duo, mir_key: w.c.duo_pre + '.heist', expect: 6,
+        filings: [{ artist: 'The Sines', genre: pfx + '-chillwave' }, { artist: 'DJ Oscillo', genre: pfx + '-bangers' }] }
+
+// a job begins: the %Heist minted with its filings pinned, the quarantine shelf keyed for THIS
+//  direction (jobs run sequentially — one mirror shelf key at a time is the whole discipline).
+async MusuHeist_job(w, nick):
+    w.i({ reached: 'job_' + nick })
+    // a prior job still standing here is a timing breach worth reading in the snap — the beats are
+    //  spaced so each heist completes before the next; stamp the clash rather than silently clobber.
+    if (w.c.heist_active) w.i({ job_clash: nick })
+    let b = this.MusuHeist_bundle(w, nick)
+    w.c.repli_mirror_pier = b.mir_key
+    b.job = this.Heist_job(w, b.at, b.filings)
+    w.c.heist_active = b
+
+// MusuHeist_flow — the standing job driven every pass: offers cross once the grant is live (the
+//  SOURCE casts its whole catalog — klepto v1, no match); every husk in quarantine is dedup-checked
+//   then pulled at heist rate; the job completes when its pinned expectation is met and the mirror
+//    drained — landings verified against the DISK (re-read + re-hash: byte-faithful means the bytes
+//     that LANDED, not the bytes we meant to land), the counts stamped, the scaffolding flattened.
+async MusuHeist_flow(w):
+    let b = w.c.heist_active
+    if (!b || !b.job) return
+    if (!w.c.repli_allow) return
+    if (!b.offered_done) {
+        if (!w.c.repli_allow(b.mine, b.at)) {
+            if (!w.oa({ offer_blocked: b.nick })) w.i({ offer_blocked: b.nick })
+            return
+        }
+        b.offered_done = 1
+        b.offered = await this.Heist_offer_all(w, b.srcport, b.at, b.mine, b.srclib)
+        w.i({ offered: b.nick, n: b.offered })
+        return
+    }
+    let mir = w.o({ Library: 1, pier: b.mir_key })[0]
+    if (!mir) return
+    await this.Heist_beat(w, b.rx, b.mine, b.at, b.job, b.own, mir, w.c.nav, b.mar)
+    let landed = +(b.job.sc.landed || 0)
+    let skipped = +(b.job.sc.skipped || 0)
+    if (landed + skipped >= b.expect && !mir.o({ Record: 1 }).length) {
+        let row = { heisted: b.nick }
+        if (landed) row.landed = landed
+        if (skipped) row.skipped = skipped
+        if (b.job.sc.breached) row.breached = b.job.sc.breached
+        w.i(row)
+        if (landed) {
+            let ok = 0
+            for (const line of await this.Heist_newlyadded_read(w.c.nav, b.mar)) {
+                let entry = this.Heist_newlyadded_entry(line).entry
+                let cut = entry.split('/')
+                let filename = cut.pop()
+                let raw = null
+                try {
+                    raw = await w.c.nav.bin_read(b.mar + '/' + cut.join('/'), filename)
+                } catch (er) { raw = null }
+                if (!raw || !raw.byteLength) continue
+                // the share WATCHED: each landed file read back off the real disk and named in the
+                //  snap at its full weight — the run's own monitoring of the directory it wrote.
+                w.i({ on_disk: entry, bytes: raw.byteLength })
+                let hash = await this.Heist_hash(new Uint8Array(raw))
+                let card = b.own.o({ Record: 1 }).find((r) => r.sc.path === entry)
+                if (card && card.sc.body_hash === hash) ok = ok + 1
+            }
+            w.i({ disk_faithful: b.nick, of: ok })
+        }
+        await this.Heist_flatten(w, b.job, mir)
+        w.c.heist_active = null
+        // advance the phase machine: uno → duo → reuno → deny.  The NEXT job starts here (not next
+        //  pass) so no idle beat is wasted, and its offer waits on the same live grant.
+        if (b.nick === 'uno') { w.c.phase = 'duo'; await this.MusuHeist_job(w, 'duo') }
+        else if (b.nick === 'duo') { w.c.phase = 'reuno'; await this.MusuHeist_job(w, 'reuno') }
+        else if (b.nick === 'reuno') { w.c.phase = 'deny' }
+    }
+
+// beat 15 — the probation ledger read back: every line `<seq> <category/filename> <feeling>`, every
+//  feeling still fresh (the deny comes later), and NEVER a source — neither prepub appears anywhere
+//   in either file.  Shape breaches stamp loudly instead of passing silently.
+async MusuHeist_logs(w):
+    w i reached:logs
+    let shape = /^[0-9]+ (fresh|love|drop) .+$/
+    let clean = 1
+    let counts = {}
+    for (const side of [{ nick: 'uno', mar: w.c.mar_uno }, { nick: 'duo', mar: w.c.mar_duo }]) {
+        let lines = await this.Heist_newlyadded_read(w.c.nav, side.mar)
+        counts[side.nick] = lines.length
+        for (const line of lines) {
+            if (!shape.test(line)) clean = 0
+            if (line.includes(w.c.uno_pre) || line.includes(w.c.duo_pre)) clean = 0
+        }
+    }
+    let row = { newlyadded_shape: 1, uno: counts.uno, duo: counts.duo }
+    if (clean) row.unsourced = 1
+    w.i(row)
+
+// beat 16 — the probation verdict: Uno LOVES its first arrival (graduates in place) and DROPS the
+//  second — deny is delete-from-the-collection: the file leaves the disk, the catalog card retires,
+//   the log line stays honest about the drop.
+async MusuHeist_deny(w):
+    w i reached:deny
+    let lines = await this.Heist_newlyadded_read(w.c.nav, w.c.mar_uno)
+    if (lines.length < 2) { w.i({ deny_starved: 1 }); return }
+    let love = this.Heist_newlyadded_entry(lines[0]).entry
+    let drop = this.Heist_newlyadded_entry(lines[1]).entry
+    await this.Heist_feel(w, w.c.nav, w.c.uno_lib, w.c.mar_uno, love, 'love')
+    await this.Heist_feel(w, w.c.nav, w.c.uno_lib, w.c.mar_uno, drop, 'drop')
+    let cut = drop.split('/')
+    let filename = cut.pop()
+    let raw = null
+    try {
+        raw = await w.c.nav.bin_read(w.c.mar_uno + '/' + cut.join('/'), filename)
+    } catch (er) { raw = null }
+    let row = { denied: 1 }
+    if (!raw || !raw.byteLength) row.gone = 1
+    if (!w.c.uno_lib.o({ Record: 1 }).find((r) => r.sc.path === drop)) row.carded_off = 1
+    w.i(row)
+
+// beat 17 — nothing attributes: the scaffolding is gone (no %Heist stands, both quarantine shelves
+//  empty) and what remains — collections + newlyadded — never says who gave what.
+async MusuHeist_flat_check(w):
+    w i reached:flat
+    let heists = w.o({ Heist: 1 }).length
+    let mir_a = w.o({ Library: 1, pier: w.c.uno_pre + '.heist' })[0]
+    let mir_b = w.o({ Library: 1, pier: w.c.duo_pre + '.heist' })[0]
+    let quarantined = (mir_a ? mir_a.o({ Record: 1 }).length : 0) + (mir_b ? mir_b.o({ Record: 1 }).length : 0)
+    if (heists === 0 && quarantined === 0) {
+        w.i({ flattened: 1 })
+    } else {
+        w.i({ flatten_leak: 1, heists: heists, quarantined: quarantined })
+    }
+
+// ── the witness — %see observations gated on TRUTH not beat number (the phases complete at variable
+//  beats now, so every see fires the first pass its fact holds; a low n>=2 floor just waits for the
+//   run to have started).  Reads live truth — no commas, no apostrophes. ──
+MusuHeist_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 2)) return
+    let uno_lib = w.c.uno_lib
+    let duo_lib = w.c.duo_lib
+    if (!uno_lib || !duo_lib) return
+    // the divided censuses stand — REAL files walked into %Records whose %Body chunks are whole
+    //  original bytes; neither census holds the other's artists.
+    let cok = uno_lib.o({ Record: 1 }).length === 6 && duo_lib.o({ Record: 1 }).length === 2
+    for (const rec of uno_lib.o({ Record: 1 })) {
+        if (!['The Sines', 'DJ Oscillo'].includes(rec.sc.artist)) cok = false
+    }
+    for (const rec of duo_lib.o({ Record: 1 })) {
+        if (rec.sc.artist !== 'Fourier Four') cok = false
+        let map = this.Ra_chunk_map(rec)
+        let held = 0
+        let s = 0
+        while (s < +(rec.sc.total || 0)) {
+            if (map[s] != null) held = held + 1
+            s = s + 1
+        }
+        if (held !== +(rec.sc.total || 0)) cok = false
+    }
+    if (cok && !(oa %see:'two collections stand divided on one shared disk — each Pier holds only its own artists as whole original bytes')) i %see:'two collections stand divided on one shared disk — each Pier holds only its own artists as whole original bytes'
+    // sealed both ways — the ONE redeem left a live Music grant at each end.
+    if (w.oa({ sealed: 1 }) && !(oa %see:'the pair sealed over the wire — a mutual Music grant gates the heist both ways')) i %see:'the pair sealed over the wire — a mutual Music grant gates the heist both ways'
+    // the job stands with its filings pinned while nothing has landed yet — merge decided at creation.
+    let stand = w.o({ Heist: 1 })[0]
+    if (stand && stand.o({ filing: 1 }).length >= 1 && !w.o({ heisted: 1 }).length && !(oa %see:'a heist job stands pointed at the pier — its filing decisions pinned before any byte crossed')) i %see:'a heist job stands pointed at the pier — its filing decisions pinned before any byte crossed'
+    let ha = w.o({ heisted: 'uno' })[0]
+    let da = w.o({ disk_faithful: 'uno' })[0]
+    // job A landed: original bytes straight into the collection — the DISK re-read re-hashes to the
+    //  source hash for every landed file (byte-faithful is proven against what stands not what was meant).
+    if (ha && +(ha.sc.landed || 0) === 2 && !ha.sc.breached && da && +(da.sc.of || 0) === 2 && !(oa %see:'the heist landed straight into the collection — every file byte-faithful to its source hash on the disk')) i %see:'the heist landed straight into the collection — every file byte-faithful to its source hash on the disk'
+    // the filing held: every landed card lives under the genre its filing named.
+    if (ha) {
+        let filed = 0
+        for (const rec of uno_lib.o({ Record: 1, artist: 'Fourier Four' })) {
+            if (('' + rec.sc.path).includes('-mathrock/')) filed = filed + 1
+        }
+        if (filed === 2 && !(oa %see:'the landing filed by category — each track under the genre its filing named')) i %see:'the landing filed by category — each track under the genre its filing named'
+    }
+    // job B landed the other way — same music economy, DIFFERENT categories at the other end.
+    let hb = w.o({ heisted: 'duo' })[0]
+    let db = w.o({ disk_faithful: 'duo' })[0]
+    if (hb && +(hb.sc.landed || 0) === 6 && db && +(db.sc.of || 0) === 6) {
+        let chill = 0
+        let bang = 0
+        for (const rec of duo_lib.o({ Record: 1 })) {
+            if (('' + rec.sc.path).includes('-chillwave/')) chill = chill + 1
+            if (('' + rec.sc.path).includes('-bangers/')) bang = bang + 1
+        }
+        if (chill === 3 && bang === 3 && !(oa %see:'the mirror heist landed the other way — each end filed the same disk under its own categories')) i %see:'the mirror heist landed the other way — each end filed the same disk under its own categories'
+    }
+    // the re-heist found nothing: catalog identity skipped every offer — nothing pulled and nothing
+    //  new.  Duo offers its WHOLE shelf by then (2 originals + the 6 it heisted — the shelf IS the
+    //   collection), and Uno already holds all 8 identities: the strongest dedup read.
+    let hr = w.o({ heisted: 'reuno' })[0]
+    if (hr && +(hr.sc.skipped || 0) === 8 && !hr.sc.landed && !(oa %see:'a second heist found nothing new — the catalog identity of every offer was already held')) i %see:'a second heist found nothing new — the catalog identity of every offer was already held'
+    // the probation ledger: every arrival logged fresh and NEVER a source in the file.
+    let ns = w.o({ newlyadded_shape: 1 })[0]
+    if (ns && ns.sc.unsourced && +(ns.sc.uno || 0) === 2 && +(ns.sc.duo || 0) === 6 && !(oa %see:'newlyadded logs each arrival with a fresh feeling — and never a word about the source')) i %see:'newlyadded logs each arrival with a fresh feeling — and never a word about the source'
+    // deny = delete from the collection: the file left the disk and the catalog with the log honest.
+    let dn = w.o({ denied: 1 })[0]
+    if (dn && dn.sc.gone && dn.sc.carded_off && !(oa %see:'a denied track left the collection — the file gone and the log honest about the drop')) i %see:'a denied track left the collection — the file gone and the log honest about the drop'
+    // afterwards nothing attributes: the scaffolding flattened away entirely.
+    if (w.oa({ flattened: 1 }) && !w.o({ Heist: 1 }).length && !(oa %see:'the scaffolding flattened away — no heist stands and nothing attributes who gave what')) i %see:'the scaffolding flattened away — no heist stands and nothing attributes who gave what'

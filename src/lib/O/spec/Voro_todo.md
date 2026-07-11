@@ -46,10 +46,13 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
      recursion rule.  Recurse it into popped members / large member cells; asymmetric WALLS as
       the finer hierarchy-slope cue (the gradient is the coarse version); expand-in-place;
        morph-stable sub-walls.  Don't skimp on thinking.
- 3. **Re-add the rollback casualties as an isolated slice:** F7 `diag_check` (the VoroMitosis
-     end-of-run diagonal IS loose F7) + `vlog` render telemetry (`op:'why'` in LiesFunk is an
-      orphan).  Designs: `Voro_render_faults_todo.md` §STATUS; parked WIP `/tmp/Cytui.wip.svelte`
-       (VOLATILE — copy out if it still exists).
+ 3. **~~Re-add the rollback casualties~~ DONE 2026-07-11, live-proven:** F7 `diag_check` + `vlog`
+     render telemetry re-grafted into Cytui from the parked WIP (secured to
+      `spec/voro_modes/Cytui.wip.2026-07-10.svelte.txt` before /tmp could eat it).  VoroMitosis
+       11/11 c10 + VoroScape 6/6 c0, fixtures untouched, and the `--why` film strip came back
+        LIVE with `♒ diag cured ×1` — F7 fired and self-cured on the proving run itself.
+         Details: `Voro_render_faults_todo.md` §STATUS.  Eyes-on the cure quality still counts
+          as part of move 1's pass.
 
 **OPEN ITEMS carried forward (older layers, still true).**
 - **VoroRadioPier** (the Pier-fed radio Book, built 07-08): live-smoke-verified, all three

@@ -1,0 +1,113 @@
+Snap:H
+  H:MusuHeist,Run
+    A:MusuHeist
+      self,round=8	{"mung":["age"]}
+      w:MusuHeist
+        self,round=8	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Uno
+          Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
+            Peering,name:4e09f34f5a6ab900,friendly:Uno
+        Account,of:Duo
+          Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
+            Peering,name:be0dab3303037ad2,friendly:Duo
+        Peering,name:4e09f34f5a6ab900,req=2,ok
+          Pier,pub:be0dab3303037ad2,req=2,ok
+            req:handshake,finished
+              req:said_hello,maz=4,finished
+              req:heard_hello,maz=3,finished
+              req:said_trust,maz=2,finished
+              req:heard_trust,finished
+            protocol
+              hello
+                said,seq,acked
+                heard,pubkey:be0dab3303037ad2
+              trust
+                said,seq=2,acked
+                heard
+            outbox
+              recent
+                emit,type:hello,seq
+                emit=2,type:trust,seq=2
+            inbox
+              recent
+                unemit,type:hello,seq
+                unemit=2,type:trust,seq=2
+            Ud,pubkey:be0dab3303037ad2
+          active_transport,type:mock,open
+        Peering,name:be0dab3303037ad2,req=3,ok
+          Pier,pub:4e09f34f5a6ab900,req=2,ok
+            req:handshake,finished
+              req:said_hello,maz=4,finished
+              req:heard_hello,maz=3,finished
+              req:said_trust,maz=2,finished
+              req:heard_trust,finished
+            protocol
+              hello
+                said,seq,acked
+                heard,pubkey:4e09f34f5a6ab900
+              trust
+                said,seq=2,acked
+                heard
+            outbox
+              recent
+                emit,type:hello,seq
+                emit=2,type:trust,seq=2
+            inbox
+              recent
+                unemit,type:hello,seq
+                unemit=2,type:trust,seq=2
+            Ud,pubkey:4e09f34f5a6ab900
+          active_transport,type:mock,open
+        Library,pier:4e09f34f5a6ab900
+          Record,id:af99e3b3efe5661a,title:Cosmic C,artist:DJ Oscillo,path:DJ Oscillo - Cosmic C.wav,ext:wav,bytes=1248044,body_hash:af99e3b3efe5661ab2b32ceb82ce5fa90c42ed1d32613fdc4bcd73827abfa8b9,total=5
+            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
+          Record,id:cec642f34f501315,title:Dorian D,artist:DJ Oscillo,path:DJ Oscillo - Dorian D.wav,ext:wav,bytes=1216044,body_hash:cec642f34f50131579e3e195c6a90ebedbb737f4adbee847ae80eee804b041ca,total=5
+            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
+          Record,id:8e6fc6abdf3a262c,title:Groove G,artist:DJ Oscillo,path:DJ Oscillo - Groove G.wav,ext:wav,bytes=1056044,body_hash:8e6fc6abdf3a262c09097dd3559a8aa3d3f337959548deeba8d636ef86f4966d,total=5
+            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
+          Record,id:d2db2a78bd02c395,title:Deep A,artist:The Sines,path:The Sines - Deep A.wav,ext:wav,bytes=1152044,body_hash:d2db2a78bd02c395eafbc2c82ca4a04863888c72829838b8f26cc1c97747d023,total=5
+            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
+          Record,id:d9ce0459eaa4514c,title:High A,artist:The Sines,path:The Sines - High A.wav,ext:wav,bytes=1280044,body_hash:d9ce0459eaa4514c1d46524c711235f97c8a52192c7b6d1bb314b491eefb3d9a,total=5
+            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
+          Record,id:6d85855a70adc5c2,title:Middle A,artist:The Sines,path:The Sines - Middle A.wav,ext:wav,bytes=1024044,body_hash:6d85855a70adc5c28445522dc6976935d8a3a90234c52d3b4f28a54c3ab7a4ee,total=4
+            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
+        Library,pier:be0dab3303037ad2
+          Record,id:f60c57424cac2e10,title:Echo E,artist:Fourier Four,path:Fourier Four - Echo E.wav,ext:wav,bytes=960044,body_hash:f60c57424cac2e10046b99ea9708fbf9271c97aab0b75790ee82a7508f0c7d7a,total=4
+            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
+          Record,id:890df9ef629ed87b,title:Query E,artist:Fourier Four,path:Fourier Four - Query E.wav,ext:wav,bytes=1088044,body_hash:890df9ef629ed87bff51e2a21ad321aa9945ea3a7a8619bffebf2a6c704f38f1,total=5
+            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
+        req:heist_census,finished
+        req:witness,eternal,ok
+        censused,uno=6,duo=2

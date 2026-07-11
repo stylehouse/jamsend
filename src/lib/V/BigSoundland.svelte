@@ -40,7 +40,7 @@
     //#region H:Mundo — the shared boot lives in BigQualand now (the aufheben's common bit): this
     //  scape supplies only its knobs — a music Book, the runner role (run it so the graph forms and
     //   crush-folds to glass) — and reads H + houses back.  The OOM trap is baked in over there.
-    const q = boot_qualand({ book, role: 'sound' })
+    const q = boot_qualand({ book, role: 'sound', no_advertise: true })   // an end-user page, never a dispatch target
     let H      = $derived(q.H)
     let houses = $derived(q.houses)
     //#endregion

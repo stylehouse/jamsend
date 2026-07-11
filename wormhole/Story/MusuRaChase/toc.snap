@@ -5,28 +5,28 @@ story:MusuRaChase
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=3.142
-      sample=3.093,at=1783714365
-      sample=3.093,at=1783714367
-      sample=3.093,at=1783714369
-      sample=3.093,at=1783714371
+    TimeTotal:beliefs,avg=3.285
       sample=3.28,at=1783714476
       sample=3.042,at=1783714841
       sample=3.107,at=1783715521
       sample=3.302,at=1783715728
       sample=3.157,at=1783737208
       sample=3.157,at=1783737289
-    TimeTotal:step,avg=0.056
-      sample=0.055,at=1783714365
-      sample=0.055,at=1783714367
-      sample=0.055,at=1783714369
-      sample=0.055,at=1783714371
+      sample=3.388,at=1783754563
+      sample=3.554,at=1783754974
+      sample=3.341,at=1783755184
+      sample=3.517,at=1783755392
+    TimeTotal:step,avg=0.059
       sample=0.059,at=1783714476
       sample=0.054,at=1783714841
       sample=0.055,at=1783715521
       sample=0.059,at=1783715728
       sample=0.056,at=1783737208
       sample=0.056,at=1783737289
+      sample=0.061,at=1783754563
+      sample=0.063,at=1783754974
+      sample=0.06,at=1783755184
+      sample=0.063,at=1783755392
   step,dige:a267472e65d67c2f
   step=2,dige:ce64e7e74d9ae94c
   step=3,dige:1c72938c36e08fd8
