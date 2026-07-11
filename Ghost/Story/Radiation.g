@@ -1262,3 +1262,37 @@ MusuRaChase_witness(w):
     // the measure off the pulled bytes: the target loudness back from the online source's chunks.
     if (n >= 6 && s && s.lufs != null && Math.abs(s.lufs - target) < 2 && !(oa %see:'the terminal decoded the chase — the loudness reads the target back from the bytes that crossed')) i %see:'the terminal decoded the chase — the loudness reads the target back from the bytes that crossed'
     if (n >= 6 && s && s.b_heard <= 3 && !(oa %see:'the final track played its capped cycle clean — the online transcoder kept ahead of a fresh playhead')) i %see:'the final track played its capped cycle clean — the online transcoder kept ahead of a fresh playhead'
+
+// ── GhoghoDrone — a deliberately SLOW drone Book (the GhostHMR live-graffiti probe) ────────────────
+//  20 steps, each held ~10s by an expecting() ttlilt, so one run spans ~200s of wall clock — a wide
+//   window to hot-edit GhoghoDrone_beat below (ghost-compile → HMR) and watch the live snap MOVE
+//    mid-run with no reload.  No Run_A_ (the Musu* convention): Story_subHouse stands up
+//     A:GhoghoDrone/w:GhoghoDrone; the world MUST stay named GhoghoDrone or do_fn_for never
+//      dispatches this wrangle (the w:PereStaple lesson).  A brand-new Book (no fixtures) runs
+//       'new' mode; the drive forces run.sc.total so 'new' steps 1..20 on its own (nothing pauses
+//        without a pause note), then records.
+GhoghoDrone(A,w):
+    w oai %req:wrangle,eternal
+        await &GhoghoDrone_drive,w,req
+        req%ok = 1
+
+// GhoghoDrone_drive — force the 20-step ceiling (idempotent; 'new' mode completes at n > total), then
+//  fire one beat per step_n, once, off a req-local did_step (never H.on_step — the Pere* lesson).
+async GhoghoDrone_drive(w, req):
+    if (this.c.run && this.c.run.sc.total !== 20) this.c.run.sc.total = 20
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        await this.GhoghoDrone_beat(w, n)
+    }
+
+// GhoghoDrone_beat — ONE drone beat: mark the step, notice it once, then hold ~10s on an expecting()
+//  whose async_fn just sleeps (a clean RESOLVE well under the 12s ceiling — no timeout caveat).
+//   <-- THIS is the method to graffiti mid-run: change `mark` (or the %see line) and the next held
+//    step's snap should carry the new value live, proving the runner swapped code without a reload.
+async GhoghoDrone_beat(w, n):
+    w.oai({ drone: 1 }, { at_step: n, mark: 'steady' })
+    if (!w.oa({ see: 'the drone marks each step steady and holds ten seconds' })) w.i({ see: 'the drone marks each step steady and holds ten seconds' })
+    await this.expecting(w, 'drone_' + n, 12, async () => {
+        await new Promise((r) => setTimeout(r, 10000))
+    })
