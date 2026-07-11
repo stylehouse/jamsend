@@ -995,39 +995,44 @@
         pop.call(H, src, member)
     }
 
-    // ── ▦ the sub-graph: a pane's face as SUB-CELLS (bamboo v2's first slice) ──
-    //  The owner's redirect made concrete — "sub-voronois to each k and v and whatever
-    //   they've been combined into": a fold pane tessellates ITSELF.  One sub-cell per
-    //    key its members share (fact) or spread over, per value (the spread's chips, a
-    //     shared value keeping its count), per member — seeded on the same phi spiral
-    //      and cut by the same half-plane power walls as the parent scape, so the pane
-    //       is a scape in miniature.  Multiplicities never own a cell: ×N and the /*N
-    //        dig ride as SUPERSCRIPT annotations (a member label clicked is the surf —
-    //         Vtuff_pop, the seed of click-to-expand "later when the graph is bigger").
-    //          The pane's molded Stuffing dims underneath (a crossfade) and its
-    //           name stays on top as the pane HEADLINE, count superscripted.  Keys wear
-    //            the kind tint and their ':', values stay plain — the Stuffing's own
-    //             idiom, so k vs v reads at a glance (the language critique).
-    type VSubCell = { id: string, d: string, x: number, y: number, fs: number,
-                      tag?: string, tint?: string | null, key?: string, val?: string, sup?: string,
-                      subn?: number, member?: TheC }
-    type VSubGroup = { id: string, d: string, hue: string, boundary?: boolean,
-                       label?: { x: number, y: number, fs: number, text: string, colon?: boolean, sup?: string } }
-    // the NUCLEUS: the fold source itself as a cell of its own glass, speaking Stuffing's
-    //  explicit grammar — tag badge (mainkey, kind tint) · namekey (its vein hue) · lilac
-    //   colon · plain value · ×N sup.  tagcolon = the mainkey itself carries the value
-    //    ('cell: Kunzea'); nk = a naming key does ('Artist name: Riverine').
-    //  d is absent on a NUCLEUS-ONLY pane (the degenerate glass: the whole cell is the
-    //   nucleus, so the cell wall already frames it); lines = the value word-wrapped into
-    //    chord-fitted continuation lines (a %see sentence fills its pane, Wes-Wilson style).
-    type VSubNucleus = { d?: string, x: number, y: number, fs: number,
-                         tag?: string, tagcolon?: boolean, nk?: string, nkhue?: string,
-                         name?: string, sup?: string, lines?: string[] }
+    // ── ▦ the sub-graph: a pane's face as SUB-CELLS (bamboo v2) ──
+    //  "sub-voronois to each k and v and whatever they've been combined into": a pane
+    //   tessellates ITSELF, cut by the same half-plane power walls as the parent scape,
+    //    so the pane is a scape in miniature.  The layout is RADIAL — hierarchy has a
+    //     slope and it flows from the core outward: the source's own statement holds the
+    //      CENTRE (the %Track C at the centre), its keyed facts belt the middle at their
+    //       vein bearings, and its members ring the RIM (all the tracks around the
+    //        outside), washed by a radial gradient in their kind's hue — the asymmetric
+    //         clue for which way hierarchy runs.  Multiplicities never own a cell: ×N
+    //          and the /*N dig ride as superscripts (a member label clicked is the surf —
+    //           Vtuff_pop, the seed of click-to-expand).  The pane's molded Stuffing dims
+    //            underneath (a crossfade); ▦ off restores it — two pure faces, no third
+    //             rendering, and the glass HIDES NOTHING: what can't fit is folded behind
+    //              an annotated +N (expandable later), never silently dropped.
+    //
+    //  Every text on the glass is ONE grammar statement —
+    //    [kind badge] [namekey|key] [lilac :] [value] [×N] [/*N]
+    //  — a VStat, fitted into its polygon by fit_stat and rendered by the one vstat
+    //   snippet.  Keys wear their vein hue and the ':', values stay plain — the
+    //    Stuffing's own idiom, so k vs v reads at a glance.  (No % glyph anywhere:
+    //     % prefixes a KEY in the house notation, and these are values — the poppable
+    //      cue is the hot underline instead.)
+    type VLine = { text: string, tl?: number }
+    type VStat = { x: number, y: number, fs: number, cls: string,
+                   hue?: string,                                        // key|whole-statement colour
+                   tag?: string, tagcolon?: boolean, tagtint?: string | null,
+                   nk?: string, nkhue?: string,
+                   key?: string, colon?: boolean,
+                   val?: string, tl?: number,                           // head value + its stretch
+                   sup?: string, subn?: number,
+                   lines?: VLine[],                                     // wrapped continuation
+                   member?: TheC }
+    type VWall = { d: string, hue: string, cls: string, grad?: boolean }
     type VSubPane = { id: string, clipid: string, clip: string, color: string, tint: string,
-                      groups: VSubGroup[], cells: VSubCell[],
-                      spokes: { d: string, hue: string }[], nucleus?: VSubNucleus,
-                      title?: { x: number, y: number, fs: number, tag?: string, name: string, sup: string },
-                      dip?: { x: number, y: number, text: string } }
+                      walls: VWall[], spokes: { d: string, hue: string }[], stats: VStat[],
+                      grad?: { cx: number, cy: number, r: number, hue: string },
+                      dip?: { x: number, y: number, text: string },
+                      hid?: { x: number, y: number, n: number } }
     let vsubs = $state<VSubPane[]>([])
     let sub_on_ids = new Set<string>()   // panes whose Stuffing is dimmed under sub-cells
     let subgraph_pref = $state<boolean | null>(null)
@@ -1049,44 +1054,49 @@
     //  tell which v the year|habit k are connected to").  A keyed row is a GROUP — the key
     //   labels a REGION and its values live inside it: a spread ('year' + chips) is a
     //    many-leaf group, a fact ('year: 2007') a one-leaf group, a presence fact
-    //     ('remaster ×2') a leaf-less key group wearing its count.  The members are one
-    //      group labeled by their KIND ('Track') — that wall IS the Artist/Track boundary
-    //       made visible.  No silent caps: past 12 leaves a group folds the tail to '+K'.
+    //     ('remaster ×2') a leaf-less key group wearing its count.  MEMBERS come back
+    //      separately — they ring the pane's rim, they are not a region among regions.
+    //       No silent caps: past 12 leaves the tail folds to a '+K' leaf (in-glass, so
+    //        it's an annotated fold, not a drop).  Leaves sort numeric-aware, so
+    //         '1998 · 2007 · 2019' reads in ORDER in every pane it appears in — the
+    //          same meaning lands the same way (alignment of meanings).
     type VSubLeaf  = { tag?: string, tint?: string | null, val?: string, sup?: string, subn?: number,
                        member?: TheC, hw: number, hh: number }
-    type VSubTuple = { key?: string, kind?: string, sup?: string, leaves: VSubLeaf[] }
-    function subgraph_tuples(descs: VtuffDesc[], kind: string | undefined): VSubTuple[] {
-        const groups: VSubTuple[] = []
+    type VSubTuple = { key?: string, sup?: string, leaves: VSubLeaf[] }
+    function subgraph_tuples(descs: VtuffDesc[]): { keyed: VSubTuple[], members: VSubLeaf[] } {
+        const keyed: VSubTuple[] = []
+        const members: VSubLeaf[] = []
         const leaf = (it: Partial<VSubLeaf>): VSubLeaf => {
             const len = (it.val?.length ?? 0) + (it.tag ? it.tag.length * 0.7 : 0) + (it.sup ? 2 : 0)
             return { ...it, hw: Math.max(14, len * 2.8), hh: 6 } as VSubLeaf
         }
-        const members: VSubTuple = { kind, leaves: [] }
         for (const d of descs) {
             if (d.kind === 'title' || d.dip) continue
             if (d.kind === 'fact') {
                 const i = d.text.indexOf(': ')
-                if (i > 0) { groups.push({ key: d.text.slice(0, i), leaves: [leaf({ val: d.text.slice(i + 2) })] }); continue }
+                if (i > 0) { keyed.push({ key: d.text.slice(0, i), leaves: [leaf({ val: d.text.slice(i + 2) })] }); continue }
                 const m = /^(.+?)\s*×(\d+)$/.exec(d.text)   // presence key counted: 'remaster ×2'
-                if (m) { groups.push({ key: m[1], sup: `×${m[2]}`, leaves: [] }); continue }
-                groups.push({ key: d.text, leaves: [] })
+                if (m) { keyed.push({ key: m[1], sup: `×${m[2]}`, leaves: [] }); continue }
+                keyed.push({ key: d.text, leaves: [] })
             } else if (d.kind === 'spread') {
-                groups.push({ key: d.text, leaves: (d.chips ?? []).map(ch =>
+                keyed.push({ key: d.text, leaves: (d.chips ?? []).map(ch =>
                     leaf({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined, member: ch.member, subn: ch.sub })) })
             } else if (d.kind === 'list') {
                 for (const ch of d.chips ?? [])
-                    members.leaves.push(leaf({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined,
-                                               member: ch.member, subn: ch.sub }))
+                    members.push(leaf({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined,
+                                        member: ch.member, subn: ch.sub }))
             } else {   // member | sub
-                members.leaves.push(leaf({ val: d.text, tag: d.tag, tint: d.color, member: d.member, subn: d.sub }))
+                members.push(leaf({ val: d.text, tag: d.tag, tint: d.color, member: d.member, subn: d.sub }))
             }
         }
-        for (const g of [members, ...groups]) if (g.leaves.length > 12) {
+        for (const g of [{ leaves: members }, ...keyed]) if (g.leaves.length > 12) {
             const cut = g.leaves.length - 11
             g.leaves.length = 11
             g.leaves.push(leaf({ val: `+${cut}` }))
         }
-        return members.leaves.length ? [members, ...groups] : groups
+        for (const g of keyed)
+            g.leaves.sort((a, b) => (a.val ?? '').localeCompare(b.val ?? '', undefined, { numeric: true }))
+        return { keyed, members }
     }
 
     // the VEIN hue: one golden-angle slot per KEY NAME, global across panes — 'year' wears
@@ -1114,16 +1124,105 @@
         return best
     }
 
-    // Wes-Wilson the text into the cell: the font takes ALL the room its polygon offers
-    //  (chord width vs text length, capped by the cell's own height) instead of a timid
-    //   fixed size — the owner's "threading this text into max rendering".
-    function fill_fs(poly: {x:number,y:number}[], cy2: number, len: number,
-                     lo: number, hi: number): number {
-        const ch = poly_chord(poly, cy2)
-        const ys = poly.map(p => p.y)
-        const ph = Math.max(...ys) - Math.min(...ys)
-        const room = ch ? ch[1] - ch[0] - 6 : 40
-        return Math.max(lo, Math.min(hi, room * 0.88 / (0.62 * Math.max(2, len)), ph * 0.5))
+    // ── the statement engine: ONE fitter for every text on the glass ──
+    //  fit_stat finds the widest chord of a band, then the biggest fs whose greedy
+    //   word-wrap fits, then hands every line its chord as a textLength target —
+    //    Wes-Wilson: the words take ALL the room their glass offers, stretching to
+    //     the walls (clamped so the warp stays lovely, not silly).
+    const GLY = 0.62                     // em-width of one glyph in the mono face
+    function stretch(room: number, len: number, fs: number): number | undefined {
+        const nat = GLY * fs * len
+        if (room <= 0 || len < 2) return undefined
+        const tl = Math.max(Math.min(room, nat * 1.45), nat * 0.9)
+        return Math.abs(tl - nat) < 2 ? undefined : Math.round(tl)
+    }
+    type VHead = { tag?: string, tagcolon?: boolean, tagtint?: string | null,
+                   nk?: string, nkhue?: string, key?: string, colon?: boolean, sup?: string }
+    function head_len(h: VHead, has_val: boolean): number {
+        return (h.tag ? h.tag.length * 0.78 + 1 : 0)
+             + (h.nk ? h.nk.length + 2 : 0)
+             + (h.key ? h.key.length + (h.colon ? 2 : 0.5) : 0)
+             + (h.sup ? h.sup.length * 0.7 : 0)
+             + (h.tag && !h.nk && has_val ? 1.5 : 0)
+    }
+    function fit_stat(poly: {x:number,y:number}[], head: VHead, val: string | undefined,
+                      opts: { band?: [number, number], lo?: number, hi?: number,
+                              maxlines?: number } = {}): VStat | null {
+        const pys = poly.map(p => p.y)
+        const py0 = Math.min(...pys), phgt = Math.max(...pys) - py0
+        const [f0, f1] = opts.band ?? [0.32, 0.68]
+        const band = wide_chord(poly, py0 + phgt * f0, py0 + phgt * f1, 7)
+        if (!band || band.w < 18) return null
+        const lo = opts.lo ?? 7, hi = opts.hi ?? 16
+        const hlen = head_len(head, !!val)
+        const words = val ? val.split(/\s+/) : []
+        // biggest fs whose greedy wrap fits the band — head + first words share line 1
+        let fs = lo, first = '', lines: VLine[] = []
+        for (let t = hi; t >= lo; t--) {
+            const perline = band.w * 0.94 / (GLY * t)
+            const maxl = Math.max(1, Math.min(opts.maxlines ?? 5,
+                                              Math.floor((phgt * 0.72) / (t * 1.2))))
+            const acc: string[] = []
+            let cur = '', cap = perline - hlen, ok = true
+            for (const wd of words) {
+                const cand = cur ? cur + ' ' + wd : wd
+                if (cand.length <= cap) { cur = cand; continue }
+                if (!cur) { ok = false; break }
+                acc.push(cur); cur = wd; cap = perline
+                if (acc.length >= maxl) { ok = false; break }
+            }
+            if (!ok && t > lo) continue
+            acc.push(cur)
+            if (!ok) {
+                const last = acc.length - 1
+                acc[last] = acc[last].slice(0, Math.max(1, Math.floor(cap) - 1)) + '…'
+            }
+            fs = t; first = acc.shift() ?? ''
+            lines = acc.map(text => ({ text, tl: stretch(band.w * 0.94, text.length, t) }))
+            break
+        }
+        if (!words.length)
+            fs = Math.max(lo, Math.min(hi, band.w * 0.8 / (GLY * Math.max(3, hlen))))
+        return { x: (band.x0 + band.x1) / 2,
+                 y: band.y - (lines.length * fs * 1.2) / 2 + fs * 0.35, fs, cls: '',
+                 ...head,
+                 val: first || undefined,
+                 tl: first ? stretch(band.w * 0.94 - hlen * GLY * fs, first.length, fs) : undefined,
+                 lines: lines.length ? lines : undefined }
+    }
+    const nk_hue = (nk: string | undefined) =>
+        nk ? `hsl(${vein_of(nk).hue}, 52%, 68%)` : undefined
+    // an IDENTITY statement sheds grammar before it sheds the name: full head →
+    //  tag-only → bare value.  'Artist name: Fernway' in a sliver becomes 'Fernway',
+    //   never 'Artist name: …' — the identity is the one thing a pane must say.
+    function fit_ident(poly: {x:number,y:number}[], head: VHead, val: string | undefined,
+                       opts: { band?: [number, number], lo?: number, hi?: number,
+                               maxlines?: number } = {}): VStat | null {
+        const heads: VHead[] = [head,
+            { tag: head.tag, tagcolon: !!val, tagtint: head.tagtint, sup: head.sup },
+            { sup: head.sup }]
+        let last: VStat | null = null
+        for (const h of heads) {
+            const s = fit_stat(poly, h, val, opts)
+            if (!s) return null              // hairline — nothing fits at any slimness
+            last = s
+            if (!val) return s
+            const tail = s.lines?.length ? s.lines[s.lines.length - 1].text : (s.val ?? '')
+            if (s.val && !tail.endsWith('…')) return s
+        }
+        return last
+    }
+    // the annotated fold: +N in the pane's corner says N statements didn't fit THIS
+    //  beat's glass (crowded out or degraded away) — never a silent drop; the Stuffing
+    //   (▦ off) and the /*N dig still hold everything.  Expandable eventually.
+    function hid_mark(poly: {x:number,y:number}[], n: number): { x: number, y: number, n: number } {
+        const pb = Math.max(...poly.map(p => p.y))
+        for (const dy of [12, 18, 26]) {
+            const chd = poly_chord(poly, pb - dy)
+            if (chd && chd[1] - chd[0] > 24) return { x: chd[0] + 6, y: pb - dy + 4, n }
+        }
+        const cx2 = poly.reduce((a, p) => a + p.x, 0) / poly.length
+        return { x: cx2, y: pb - 8, n }
     }
 
     // shared power-cut: tessellate a convex polygon by weighted seeds (the parent scape's
@@ -1154,218 +1253,203 @@
         })
     }
 
-    // one pane's TUPLE tessellation, two levels deep: the pane divides into one region per
-    //  tuple (members seeded at the centre, each key at its vein's compass angle — so the
-    //   'year' region sits the same way in every pane), then each region's values divide IT.
-    //    The key labels its region once from the region's widest band; leaves swell to fill.
-    // nucleus_only — the DEGENERATE pane: no structure worth tessellating (a bare loner, a
-    //  one-fact fold, a sliver), so the whole cell speaks ONE grammar statement — badge ·
-    //   namekey · lilac colon · value, the same rule-set as a full nucleus, value word-wrapped
-    //    into the pane (a %see sentence fills its glass).  This is what closes "why do some
-    //     things always become Stuffing": the glass used to dress only fold STRUCTURE and
-    //      everything else fell through to the molded-Stuffing face — but the nucleus grammar
-    //       speaks a single particle, so in ▦ mode every pane now speaks it.  A pane too
-    //        hairline to carry even one word keeps its Stuffing (never blank glass).
-    function nucleus_only(c: VCell, tint: string,
-                          td: { tag?: string, nk?: string, name: string, sup?: string }): VSubPane | null {
-        const pys = c.inset.map(p => p.y)
-        const py0 = Math.min(...pys), phgt = Math.max(...pys) - py0
-        const band = wide_chord(c.inset, py0 + phgt * 0.32, py0 + phgt * 0.68, 7)
-        if (!band || band.w < 18) return null
-        const nk = td.name && td.nk && td.nk !== td.tag ? td.nk : undefined
-        const headlen = (td.tag ? td.tag.length * 0.78 + 1 : 0) + (nk ? nk.length + 2 : (td.name ? 1.5 : 0))
-        const suplen = td.sup ? td.sup.length * 0.7 : 0
-        const words = td.name ? td.name.split(/\s+/) : []
-        // biggest fs whose greedy wrap fits the mid-band — head + first words share line 1
-        let fs = 7, first = '', lines: string[] = []
-        for (let t = 16; t >= 7; t--) {
-            const perline = band.w * 0.94 / (0.62 * t)
-            const maxlines = Math.max(1, Math.min(5, Math.floor((phgt * 0.72) / (t * 1.2))))
-            const acc: string[] = []
-            let cur = '', cap = perline - headlen - suplen, ok = true
-            for (const wd of words) {
-                const cand = cur ? cur + ' ' + wd : wd
-                if (cand.length <= cap) { cur = cand; continue }
-                if (!cur) { ok = false; break }
-                acc.push(cur); cur = wd; cap = perline
-                if (acc.length >= maxlines) { ok = false; break }
-            }
-            if (!ok && t > 7) continue
-            acc.push(cur)
-            if (!ok) {
-                const last = acc.length - 1
-                acc[last] = acc[last].slice(0, Math.max(1, Math.floor(cap) - 1)) + '…'
-            }
-            fs = t; first = acc.shift() ?? ''; lines = acc
-            break
-        }
-        if (!words.length) fs = Math.max(7, Math.min(14, band.w * 0.8 / (0.62 * Math.max(3, headlen))))
+    // nucleus_pane — the DEGENERATE pane: no structure worth tessellating (a bare loner,
+    //  a one-fact fold, a sliver), so the whole cell speaks ONE grammar statement, value
+    //   word-wrapped into the glass (a %see sentence fills its pane).  A pane too hairline
+    //    to carry even one word keeps its Stuffing (never blank glass).  Whatever the
+    //     statement can't say is the CALLER's to count into the +N fold mark.
+    function nucleus_pane(c: VCell, tint: string, head: VHead, val: string): VSubPane | null {
+        const s = fit_ident(c.inset, head, val || undefined, { hi: 16, maxlines: 5 })
+        if (!s) return null
+        s.cls = 'vsub-ntitle'; s.tagtint = tint
         return { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`, clip: poly_d(c.inset),
-            color: c.color, tint, groups: [], cells: [], spokes: [],
-            nucleus: { x: (band.x0 + band.x1) / 2,
-                y: band.y - (lines.length * fs * 1.2) / 2 + fs * 0.35, fs,
-                tag: td.tag, tagcolon: !!td.name && !nk && !!td.tag,
-                nk, nkhue: nk ? `hsl(${vein_of(nk).hue}, 52%, 68%)` : undefined,
-                name: first || undefined, sup: td.sup,
-                lines: lines.length ? lines : undefined } }
+                 color: c.color, tint, walls: [], spokes: [], stats: [s] }
     }
 
+    // one pane's RADIAL tessellation: the source's own statement holds the centre (its
+    //  cell weight floors at a share of R, so the most important statement is never the
+    //   smallest text — meaning hierarchy = visual hierarchy), keyed facts belt the
+    //    middle at their vein bearings ('year' sits the same way in every pane), and
+    //     the members ring the RIM walking from their kind's bearing, washed outward
+    //      by the slope gradient.  Each many-value region divides ITSELF (phi spiral,
+    //       same power walls) — cells within cells; a one-value region says its whole
+    //        statement as a unit ('year: 2007'), never a floating key and an orphan
+    //         number.  Everything crowded out of this beat's glass is counted, and the
+    //          count rides the +N fold mark — annotated, never silent.
     function subgraph_build(c: VCell, descs: VtuffDesc[], tint: string,
                             kind: string | undefined): VSubPane | null {
-        const tuples = subgraph_tuples(descs, kind)
-        const total = tuples.reduce((s, g) => s + 1 + g.leaves.length, 0)
+        const { keyed, members } = subgraph_tuples(descs)
+        const total = keyed.reduce((s, g) => s + 1 + g.leaves.length, 0) + members.length
         const td = descs.find(d => d.kind === 'title')
         const tm = td ? /^(.*?)\s*×(\d+)$/.exec(td.text) : null
         const tname = tm ? tm[1] : (td?.text ?? '')
-        const tlen = (td?.tag ? td.tag.length * 0.75 : 0) + tname.length
-                     + (td?.nk && td.nk !== td.tag ? td.nk.length + 2 : 1) + 2
+        const head: VHead = { tag: td?.tag ?? kind,
+                              tagcolon: !!tname && (!td?.nk || td.nk === td.tag),
+                              nk: tname && td?.nk && td.nk !== td.tag ? td.nk : undefined,
+                              sup: tm ? `×${tm[2]}` : undefined }
+        head.nkhue = nk_hue(head.nk)
         let A2 = 0
         for (let i = 0; i < c.inset.length; i++) {
             const p = c.inset[i], q = c.inset[(i + 1) % c.inset.length]
             A2 += p.x * q.y - q.x * p.y
         }
         const area = Math.abs(A2) / 2
-        // no structure worth tessellating (one k|v) or no room to (√area < 88): the pane
-        //  DEGRADES to the nucleus statement instead of falling back to its Stuffing —
-        //   ▦ mode has ONE face at every size (the owner: "I want them all if it's that mode")
+        let pane: VSubPane | null = null
+        let hid = 0
         if (total < 2 || Math.sqrt(area) < 88) {
-            const pane0 = nucleus_only(c, tint,
-                { tag: td?.tag ?? kind, nk: td?.nk, name: tname, sup: tm ? `×${tm[2]}` : undefined })
-            if (pane0) {
-                const dd = descs.find(d => d.dip)
-                if (dd) {
-                    const pys = c.inset.map(p => p.y)
-                    const pb = Math.max(...pys)
-                    const chd = poly_chord(c.inset, pb - 12)
-                    if (chd) pane0.dip = { x: chd[1] - 8, y: pb - 8, text: dd.text }
-                }
-            }
-            return pane0
-        }
-        const xs = c.inset.map(p => p.x), ys = c.inset.map(p => p.y)
-        const bx = Math.min(...xs), by = Math.min(...ys)
-        const bw = Math.max(...xs) - bx, bh = Math.max(...ys) - by
-        const R = Math.sqrt(area / Math.PI)
-        // the NUCLEUS holds the centre (owner: "Artist:Riverine must be part of the subcells
-        //  … in such a way as to clue that they are all linked to it") and EVERY tuple region —
-        //   members included — takes its vein's compass bearing, so 'Track' sits the same way
-        //    in every pane just as 'year' does.  Pull-inside via the chord as before.
-        const gpts = [{ x: c.acx, y: c.acy }, ...tuples.map(g => {
-            const v = vein_of(g.key ?? g.kind ?? '')
-            let x = c.acx + Math.cos(v.ang) * R * 0.62
-            let y = c.acy + Math.sin(v.ang) * R * 0.62 * 0.8
-            for (let t = 0; t < 5; t++) {
-                const ch = poly_chord(c.inset, y)
-                if (ch && x > ch[0] + 4 && x < ch[1] - 4) break
-                x = c.acx + (x - c.acx) * 0.7; y = c.acy + (y - c.acy) * 0.7
-            }
-            return { x, y }
-        })]
-        const gscale = (g: VSubTuple) =>
-            Math.sqrt(g.leaves.reduce((s, l) => s + (l.hw * 2) * (l.hh * 2.4), 140)
-                      + (g.kind ? 260 : 0))
-        // nucleus radius from its words alone — an identity plate, not a data region
-        const gradii = [8 + 0.5 * Math.sqrt(tlen * 26), ...tuples.map(g => 6 + 0.55 * gscale(g))]
-        const gpolys = power_cells(c.inset, gpts, gradii, 2.5)
-        const groups: VSubGroup[] = []
-        const cells: VSubCell[] = []
-        const spokes: { d: string, hue: string }[] = []
-        const npoly = gpolys[0]
-        const ncx = npoly ? npoly.reduce((a, p) => a + p.x, 0) / npoly.length : c.acx
-        const ncy = npoly ? npoly.reduce((a, p) => a + p.y, 0) / npoly.length : c.acy
-        tuples.forEach((g, gi) => {
-            const gpoly = gpolys[gi + 1]
-            if (!gpoly) return   // crowded out this beat — the dip still tells the count
-            const hue = g.key != null ? `hsl(${vein_of(g.key).hue}, 52%, 60%)`
-                                      : (kind_tint(g.kind) ?? tint)
-            const gys = gpoly.map(p => p.y)
-            const gy0 = Math.min(...gys), gh = Math.max(...gys) - gy0
-            const grp: VSubGroup = { id: `${c.id}·g${gi}`, d: poly_d(gpoly), hue,
-                                     boundary: g.kind != null }
-            const ltext = g.key ?? g.kind ?? ''
-            if (ltext) {
-                const band = wide_chord(gpoly, gy0 + gh * 0.08, gy0 + gh * 0.4, 5)
-                if (band && band.w > 24) {
-                    // ':' only when values follow (critique #3 — the colon IS the k→v grammar;
-                    //  a presence key like 'remaster' has no v, so no colon)
-                    const colon = g.key != null && g.leaves.length > 0
-                    const fs = Math.max(7, Math.min(13,
-                        band.w * 0.8 / (0.62 * (ltext.length + (colon ? 1 : 0) + (g.sup ? 2 : 0)))))
-                    grp.label = { x: (band.x0 + band.x1) / 2, y: band.y + fs * 0.35, fs,
-                                  text: ltext, colon, sup: g.sup }
-                }
-            }
-            groups.push(grp)
-            // the SPOKE: nucleus → region in the region's hue, the "all linked to it" made
-            //  visible — every tuple hangs off the fold source it describes
-            const scx = gpoly.reduce((a, p) => a + p.x, 0) / gpoly.length
-            const scy = gpoly.reduce((a, p) => a + p.y, 0) / gpoly.length
-            spokes.push({ d: `M${ncx.toFixed(1)},${ncy.toFixed(1)}L${scx.toFixed(1)},${scy.toFixed(1)}`, hue })
-            if (!g.leaves.length) return
-            // leaves tessellate the group region, seeded on a phi spiral under the label band
-            const gcx = gpoly.reduce((a, p) => a + p.x, 0) / gpoly.length
-            const gcy = gpoly.reduce((a, p) => a + p.y, 0) / gpoly.length + (grp.label ? gh * 0.08 : 0)
-            const gR = Math.sqrt(Math.abs(gh) * (wide_chord(gpoly, gcy, gcy, 1)?.w ?? gh) / Math.PI) * 0.6
-            const GA = Math.PI * (3 - Math.sqrt(5))
-            const lpts = g.leaves.map((l, k) => {
-                const rr = gR * Math.sqrt((k + 0.5) / g.leaves.length)
-                let x = gcx + Math.cos(k * GA) * rr, y = gcy + Math.sin(k * GA) * rr * 0.8
+            // no structure worth tessellating (one k|v) or no room to: the pane DEGRADES
+            //  to its one statement — ▦ mode has ONE face at every size — and everything
+            //   the statement can't carry is counted into the +N fold mark
+            pane = nucleus_pane(c, tint, head, tname)
+            hid = total
+        } else {
+            const R = Math.sqrt(area / Math.PI)
+            const khue = kind_tint(kind) ?? tint
+            const kang = vein_of(kind ?? head.tag ?? '').ang
+            const pull = (x: number, y: number, margin: number) => {
                 for (let t = 0; t < 5; t++) {
-                    const ch = poly_chord(gpoly, y)
-                    if (ch && x > ch[0] + 3 && x < ch[1] - 3) break
-                    x = gcx + (x - gcx) * 0.7; y = gcy + (y - gcy) * 0.7
+                    const ch = poly_chord(c.inset, y)
+                    if (ch && x > ch[0] + margin && x < ch[1] - margin) break
+                    x = c.acx + (x - c.acx) * 0.7; y = c.acy + (y - c.acy) * 0.7
                 }
                 return { x, y }
+            }
+            const kpts = keyed.map(g => {
+                const v = vein_of(g.key ?? '')
+                return pull(c.acx + Math.cos(v.ang) * R * 0.55,
+                            c.acy + Math.sin(v.ang) * R * 0.55 * 0.8, 4)
             })
-            const lradii = g.leaves.map(l => 3 + 0.4 * Math.hypot(l.hw, l.hh))
-            const lpolys = power_cells(gpoly, lpts, lradii, 1.8)
-            g.leaves.forEach((l, li) => {
-                const lpoly = lpolys[li]
-                if (!lpoly) return
-                const lmx = lpoly.reduce((a, p) => a + p.x, 0) / lpoly.length
-                const lmy = lpoly.reduce((a, p) => a + p.y, 0) / lpoly.length
-                const len = (l.val?.length ?? 0) + (l.tag ? l.tag.length * 0.7 : 0) + (l.sup ? 2 : 0)
-                const fs = fill_fs(lpoly, lmy, len, 7, 30)
-                cells.push({ id: `${c.id}·g${gi}·l${li}`, d: poly_d(lpoly),
-                    x: lmx, y: lmy + fs * 0.35, fs,
-                    tag: l.tag, tint: l.tint, val: l.val, sup: l.sup, subn: l.subn, member: l.member })
+            const mpts = members.map((l, i) => {
+                const a = kang + (i + 0.5) * 2 * Math.PI / members.length
+                return pull(c.acx + Math.cos(a) * R * 0.85,
+                            c.acy + Math.sin(a) * R * 0.85 * 0.8, 3)
             })
-        })
-        if (!groups.length)   // every region crowded out this beat — degrade, don't fall back
-            return nucleus_only(c, tint,
-                { tag: td?.tag ?? kind, nk: td?.nk, name: tname, sup: tm ? `×${tm[2]}` : undefined })
-        const pane: VSubPane = { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`,
-            clip: poly_d(c.inset), color: c.color, tint, groups, cells, spokes }
-        if (npoly) {
-            // the nucleus label speaks Stuffing — `Artist name: Riverine ×5`, never a bare
-            //  value with its key hidden.  nk === tag → the mainkey itself carries the value
-            //   and takes the colon ('cell: Kunzea').
-            const nys = npoly.map(p => p.y)
-            const ny0 = Math.min(...nys), nh = Math.max(...nys) - ny0
-            const band = wide_chord(npoly, ny0 + nh * 0.3, ny0 + nh * 0.62, 5)
-            const fs = band ? fill_fs(npoly, band.y, Math.max(6, tlen), 8, 20) : 0
-            pane.nucleus = { d: poly_d(npoly),
-                x: band ? (band.x0 + band.x1) / 2 : ncx,
-                y: band ? band.y + fs * 0.35 : ncy, fs,
-                ...(td && band ? {
-                    tag: td.tag, tagcolon: !!tname && td.nk === td.tag,
-                    nk: tname && td.nk && td.nk !== td.tag ? td.nk : undefined,
-                    nkhue: td.nk && td.nk !== td.tag ? `hsl(${vein_of(td.nk).hue}, 52%, 68%)` : undefined,
-                    name: tname || undefined, sup: tm ? `×${tm[2]}` : undefined } : {}) }
-        } else if (td) {
-            // nucleus crowded out — fall back to the floating headline
-            const band = wide_chord(c.inset, by + bh * 0.05, by + bh * 0.34)
-            if (band) {
-                const fs = Math.max(9, Math.min(19, band.w * 0.8 / (0.62 * Math.max(4, tlen))))
-                pane.title = { x: (band.x0 + band.x1) / 2, y: band.y + fs * 0.35, fs,
-                    tag: td.tag, name: tname, sup: tm ? `×${tm[2]}` : '' }
+            const tlen = head_len(head, !!tname) + tname.length
+            const gscale = (g: VSubTuple) =>
+                Math.sqrt(g.leaves.reduce((s, l) => s + (l.hw * 2) * (l.hh * 2.4), 140))
+            const radii = [Math.max(8 + 0.5 * Math.sqrt(tlen * 26), R * 0.34),
+                           ...keyed.map(g => 6 + 0.55 * gscale(g)),
+                           ...members.map(l => 4 + 0.45 * Math.hypot(l.hw, l.hh))]
+            const polys = power_cells(c.inset, [{ x: c.acx, y: c.acy }, ...kpts, ...mpts], radii, 2.2)
+            const npoly = polys[0]
+            const walls: VWall[] = []
+            const stats: VStat[] = []
+            const spokes: { d: string, hue: string }[] = []
+            const ncx = npoly ? npoly.reduce((a, p) => a + p.x, 0) / npoly.length : c.acx
+            const ncy = npoly ? npoly.reduce((a, p) => a + p.y, 0) / npoly.length : c.acy
+            keyed.forEach((g, gi) => {
+                const gpoly = polys[1 + gi]
+                if (!gpoly) { hid += 1 + g.leaves.length; return }   // crowded out this beat
+                const hue = `hsl(${vein_of(g.key ?? '').hue}, 52%, 60%)`
+                walls.push({ d: poly_d(gpoly), hue, cls: 'vsub-gwall' })
+                // the SPOKE: nucleus → region in the region's hue, the "all linked to it"
+                //  made visible — every fact hangs off the source it describes
+                const scx = gpoly.reduce((a, p) => a + p.x, 0) / gpoly.length
+                const scy = gpoly.reduce((a, p) => a + p.y, 0) / gpoly.length
+                spokes.push({ d: `M${ncx.toFixed(1)},${ncy.toFixed(1)}L${scx.toFixed(1)},${scy.toFixed(1)}`, hue })
+                const one = g.leaves.length === 1 && !g.leaves[0].member ? g.leaves[0] : null
+                if (one) {
+                    const s = fit_stat(gpoly, { key: g.key, colon: true, sup: one.sup }, one.val,
+                                       { hi: 22, maxlines: 3 })
+                    if (s) { s.cls = 'vsub-gkey'; s.hue = hue; stats.push(s) } else hid += 1
+                    return
+                }
+                if (!g.leaves.length) {   // presence key — no v, no colon
+                    const s = fit_stat(gpoly, { key: g.key, sup: g.sup }, undefined, { hi: 14 })
+                    if (s) { s.cls = 'vsub-gkey'; s.hue = hue; stats.push(s) } else hid += 1
+                    return
+                }
+                // many values: the KEY is a seed like its values — its statement gets a
+                //  reserved sub-cell at the region's crown (no key/value overlap by
+                //   construction, no wall of its own), the values tessellating around
+                //    it on the phi spiral
+                const gys = gpoly.map(p => p.y)
+                const gy0 = Math.min(...gys), gh = Math.max(...gys) - gy0
+                const gcx = gpoly.reduce((a, p) => a + p.x, 0) / gpoly.length
+                const gcy = gpoly.reduce((a, p) => a + p.y, 0) / gpoly.length
+                const kb = wide_chord(gpoly, gy0 + gh * 0.1, gy0 + gh * 0.35, 5)
+                const kseed = kb ? { x: (kb.x0 + kb.x1) / 2, y: kb.y }
+                                 : { x: gcx, y: gy0 + gh * 0.2 }
+                const klen = (g.key?.length ?? 3) + (g.sup ? 2 : 0) + 1
+                const gR = Math.sqrt(Math.abs(gh) * (wide_chord(gpoly, gcy, gcy, 1)?.w ?? gh) / Math.PI) * 0.6
+                const GA = Math.PI * (3 - Math.sqrt(5))
+                const lpts = [kseed, ...g.leaves.map((l, k) => {
+                    const rr = gR * Math.sqrt((k + 0.5) / g.leaves.length)
+                    let x = gcx + Math.cos(k * GA) * rr
+                    let y = gcy + gh * 0.06 + Math.sin(k * GA) * rr * 0.8
+                    for (let t = 0; t < 5; t++) {
+                        const ch = poly_chord(gpoly, y)
+                        if (ch && x > ch[0] + 3 && x < ch[1] - 3) break
+                        x = gcx + (x - gcx) * 0.7; y = gcy + (y - gcy) * 0.7
+                    }
+                    return { x, y }
+                })]
+                const lradii = [4 + klen * 1.6,
+                                ...g.leaves.map(l => 3 + 0.4 * Math.hypot(l.hw, l.hh))]
+                const lpolys = power_cells(gpoly, lpts, lradii, 1.8)
+                const kpoly = lpolys[0]
+                const ks = kpoly ? fit_stat(kpoly, { key: g.key, colon: true, sup: g.sup },
+                                            undefined, { hi: 13 }) : null
+                if (ks) { ks.cls = 'vsub-gkey'; ks.hue = hue; stats.push(ks) } else hid += 1
+                g.leaves.forEach((l, li) => {
+                    const lpoly = lpolys[1 + li]
+                    if (!lpoly) { hid += 1; return }
+                    walls.push({ d: poly_d(lpoly), hue: c.color, cls: 'vsub-wall' })
+                    const s = fit_ident(lpoly, { tag: l.tag, tagtint: l.tint, sup: l.sup }, l.val,
+                                        { hi: 26, maxlines: 2 })
+                    if (!s) { hid += 1; return }
+                    s.cls = 'vsub-label'; s.subn = l.subn; s.member = l.member
+                    stats.push(s)
+                })
+            })
+            members.forEach((l, mi) => {
+                const mpoly = polys[1 + keyed.length + mi]
+                if (!mpoly) { hid += 1; return }
+                walls.push({ d: poly_d(mpoly), hue: khue, cls: 'vsub-mwall', grad: true })
+                const s = fit_ident(mpoly, { tag: l.tag && l.tag !== kind ? l.tag : undefined,
+                                             tagtint: l.tint, sup: l.sup }, l.val,
+                                    { hi: 26, maxlines: 2 })
+                if (!s) { hid += 1; return }
+                s.cls = 'vsub-label'; s.subn = l.subn; s.member = l.member
+                stats.push(s)
+            })
+            if (!walls.length) {   // everything crowded out this beat — degrade, count it all
+                pane = nucleus_pane(c, tint, head, tname)
+                hid = total
+            } else {
+                // the kind said once, at its own bearing on the rim — the ring's engraving,
+                //  the same compass point in every pane
+                if (members.length && kind) {
+                    const p = pull(c.acx + Math.cos(kang) * R * 0.95,
+                                   c.acy + Math.sin(kang) * R * 0.95 * 0.8, 8)
+                    stats.push({ x: p.x, y: p.y, fs: Math.max(8, Math.min(12, R * 0.09)),
+                                 cls: 'vsub-ringkey', hue: khue,
+                                 key: kind, sup: `×${members.length}` })
+                }
+                if (npoly) {
+                    walls.push({ d: poly_d(npoly), hue: tint, cls: 'vsub-nwall' })
+                    const ns = fit_ident(npoly, head, tname || undefined, { hi: 20, maxlines: 3 })
+                    if (ns) { ns.cls = 'vsub-ntitle'; ns.tagtint = tint; stats.push(ns) }
+                }
+                if (!stats.some(s => s.cls === 'vsub-ntitle')) {
+                    // nucleus crowded out — the source statement floats as a headline
+                    const ts = fit_ident(c.inset, head, tname || undefined,
+                                         { band: [0.05, 0.34], lo: 9, hi: 19, maxlines: 1 })
+                    if (ts) { ts.cls = 'vsub-title'; ts.tagtint = tint; stats.push(ts) }
+                }
+                pane = { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`, clip: poly_d(c.inset),
+                         color: c.color, tint, walls, spokes, stats }
+                if (members.length) pane.grad = { cx: c.acx, cy: c.acy, r: R * 1.15, hue: khue }
             }
         }
+        if (!pane) return null
+        const pb = Math.max(...c.inset.map(p => p.y))
         const dd = descs.find(d => d.dip)
         if (dd) {
-            const chd = poly_chord(c.inset, by + bh - 12)
-            if (chd) pane.dip = { x: chd[1] - 8, y: by + bh - 8, text: dd.text }
+            const chd = poly_chord(c.inset, pb - 12)
+            if (chd) pane.dip = { x: chd[1] - 8, y: pb - 8, text: dd.text }
         }
+        if (hid > 0) pane.hid = hid_mark(c.inset, hid)
         return pane
     }
 
@@ -2150,14 +2234,14 @@
         }
         vfams = fams
 
-        // ── ▦ the sub-graph pass: EVERY pane speaks the grammar ──
-        //  folds|gangs tessellate (nucleus + regions + member cells); anything else —
-        //   a loner, a one-fact fold, a sliver — degrades to the nucleus-only statement,
-        //    so ▦ mode has ONE face at every size (no molded-Stuffing stragglers; the
-        //     Stuffings are the OTHER mode, ▦ off).  Only a hairline pane that can't
-        //      carry a word keeps its Stuffing — never blank glass.  Both cadences:
-        //       the tree is cached .g-side and the geometry is the same closed math
-        //        as the parent scape, so sub-cells track a drag live.
+        // ── ▦ the sub-graph pass: EVERY pane speaks the grammar, ALL of it ──
+        //  folds|gangs tessellate radially (nucleus core → fact belt → member rim);
+        //   loners tessellate their own sc the same way; slivers degrade to their one
+        //    statement + the +N fold mark — so ▦ mode has ONE face at every size and
+        //     hides nothing (the Stuffings are the OTHER mode, ▦ off).  Only a hairline
+        //      pane that can't carry a word keeps its Stuffing — never blank glass.
+        //       Both cadences: the tree is cached .g-side and the geometry is the same
+        //        closed math as the parent scape, so sub-cells track a drag live.
         if (subgraph_on && voronoi_on) {
             const subs: VSubPane[] = []
             const next = new Set<string>()
@@ -2172,15 +2256,24 @@
                     }
                 }
                 // a LONER pane (no fold structure — the beat-wrangler req, a %see claim, a
-                //  popped tiny) still speaks the grammar: its cell becomes a nucleus-only
-                //   statement, so ▦ mode has no molded-Stuffing stragglers.
+                //  popped tiny) speaks the grammar too, and speaks ALL of it: the mainkey
+                //   statement is the nucleus and EVERY other sc fact rides as a keyed
+                //    region — show everything, know nothing about the data, no key is
+                //     special.  Small cells degrade to the statement + the +N fold mark
+                //      like any other pane.
                 if (!pane && src?.sc) {
                     const mk = Object.keys(src.sc)[0]
                     if (mk) {
                         const v = src.sc[mk]
                         const nm = (v !== 1 && v != null) ? String(v) : name_ts(src)
-                        pane = nucleus_only(c, kind_tint(mk) ?? '#9ab',
-                            { tag: mk, nk: namekey_ts(src), name: nm })
+                        const nk0 = namekey_ts(src)
+                        const descs: VtuffDesc[] = [{ text: nm, kind: 'title', tag: mk,
+                                                      nk: nm ? nk0 : undefined }]
+                        for (const [k, kv] of Object.entries(src.sc)) {
+                            if (k === mk || (nm !== '' && k === nk0)) continue
+                            descs.push({ text: kv === 1 ? k : `${k}: ${kv}`, kind: 'fact' })
+                        }
+                        pane = subgraph_build(c, descs, kind_tint(mk) ?? '#9ab', undefined)
                     }
                 }
                 if (!pane) continue
@@ -2799,7 +2892,7 @@
         <button class="v-toggle" class:on={brush_pref} onclick={toggle_brush}
             title="gravity brush — wheel pinches|spreads the locale under the cursor (Ctrl+wheel still zooms)">🌀</button>
         <button class="v-toggle" class:on={subgraph_on} onclick={toggle_subgraph}
-            title="sub-graph — every pane speaks the glass grammar: folds tessellate (nucleus + regions + members), loners and slivers say their one nucleus statement (off = molded Stuffings everywhere)">▦</button>
+            title="sub-graph — every pane speaks the glass grammar and hides nothing: source at the core, facts on the belt, members around the rim; slivers say their one statement + a +N fold mark (off = molded Stuffings everywhere)">▦</button>
         {#if DRIFT_MODES_ON}
             <button class="v-toggle" class:on={radio_on} onclick={toggle_radio}
                 title="radio — the graph plays you: a tuner drifts attention pane to pane and opens each a little (touch anything to hold it off)">📻</button>
@@ -2871,76 +2964,56 @@
                     <circle cx={tip.x} cy={tip.y} r="2.4"
                         fill={tip.color} fill-opacity="0.95" />
                 {/each}
-                <!-- ▦ sub-graph: each pane a scape in miniature — sub-cell walls in the
-                     pane's own hue, labels fitted per sub-cell (keys tinted with their
-                     ':', values plain, ×N and /*N as superscripts), the pane's name as
-                     a headline and its /*N dig in the corner.  Clipped to the pane
-                     polygon so nothing leaks through a wall.  A member label is the
-                     surf (Vtuff_pop) — the seed of click-to-expand. -->
+                <!-- ▦ sub-graph: each pane a scape in miniature, radially — spokes under
+                     walls under statements, the slope gradient washing the member rim.
+                     Every text is ONE vstat statement (the grammar: badge · key · lilac
+                     ':' · value · ×N · /*N, values stretching to their chords).  Clipped
+                     to the pane polygon so nothing leaks through a wall.  A member label
+                     is the surf (Vtuff_pop) — the seed of click-to-expand; the +N mark
+                     is the annotated fold of whatever this beat's glass couldn't say. -->
+                {#snippet vstat(sp: VSubPane, s: VStat)}
+                    <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions, a11y_interactive_supports_focus -->
+                    <text class={s.cls} class:hot={s.member != null}
+                          x={s.x.toFixed(1)} y={s.y.toFixed(1)}
+                          font-size={s.fs.toFixed(1)} text-anchor="middle"
+                          role={s.member ? 'button' : undefined}
+                          onclick={s.member ? () => micro_click(sp.id, s.member) : undefined}>
+                        {#if s.tag}<tspan class="vsub-tag" fill={s.tagtint ?? undefined}>{s.tag}</tspan>{#if s.tagcolon}<tspan class="vsub-colon">: </tspan>{:else}<tspan> </tspan>{/if}{/if}{#if s.nk}<tspan class="vsub-nk" fill={s.nkhue}>{s.nk}</tspan><tspan class="vsub-colon">: </tspan>{/if}{#if s.key}<tspan fill={s.hue}>{s.key}</tspan>{#if s.colon}<tspan class="vsub-colon">:{s.val ? ' ' : ''}</tspan>{/if}{/if}{#if s.val}<tspan class="vsub-v" textLength={s.tl} lengthAdjust={s.tl ? 'spacingAndGlyphs' : undefined}>{s.val}</tspan>{/if}{#if s.sup}<tspan class="vsub-sup" dy="-0.45em">{s.sup}</tspan>{/if}{#if s.subn}<tspan class="vsub-sup vsub-dig" dy={s.sup ? '0' : '-0.45em'}>/*{s.subn}</tspan>{/if}{#each s.lines ?? [] as ln, li (li)}<tspan class="vsub-v" x={s.x.toFixed(1)} dy={li === 0 && (s.sup || s.subn) ? '1.65em' : '1.2em'} textLength={ln.tl} lengthAdjust={ln.tl ? 'spacingAndGlyphs' : undefined}>{ln.text}</tspan>{/each}
+                    </text>
+                {/snippet}
                 {#each vsubs as sp (sp.id)}
                     <clipPath id={sp.clipid}><path d={sp.clip} /></clipPath>
                     <g class="cytui-subgraph" clip-path={`url(#${sp.clipid})`}>
+                        {#if sp.grad}
+                            <!-- the slope of hierarchy, flowing outward: transparent at the
+                                 source's core, the members' kind hue at the rim -->
+                            <radialGradient id={`vgrad-${sp.clipid}`} gradientUnits="userSpaceOnUse"
+                                            cx={sp.grad.cx} cy={sp.grad.cy} r={sp.grad.r}>
+                                <stop offset="45%" stop-color={sp.grad.hue} stop-opacity="0" />
+                                <stop offset="100%" stop-color={sp.grad.hue} stop-opacity="0.17" />
+                            </radialGradient>
+                        {/if}
                         <!-- spokes first, under every wall: nucleus → region in the region's
-                             hue — the visible clue that every tuple hangs off the fold source -->
+                             hue — the visible clue that every fact hangs off the source -->
                         {#each sp.spokes as s, si (sp.id + '·s' + si)}
                             <path class="vsub-spoke" d={s.d} stroke={s.hue} />
                         {/each}
-                        <!-- tuple regions: the key's VEIN hue fills its region faintly
-                             (the same hue in every pane — 'year' races around the scape) and
-                             the members region wears its KIND — that wall is the Artist/Track
-                             boundary.  Leaf walls ride above, thinner, in the pane's colour. -->
-                        {#each sp.groups as g (g.id)}
-                            <path class="vsub-gwall" class:boundary={g.boundary}
-                                  d={g.d} stroke={g.hue} fill={g.hue} />
+                        {#each sp.walls as w, wi (sp.id + '·w' + wi)}
+                            <path class={w.cls} d={w.d} stroke={w.hue}
+                                  fill={w.grad ? `url(#vgrad-${sp.clipid})` : w.hue} />
                         {/each}
-                        {#if sp.nucleus?.d}
-                            <path class="vsub-nwall" d={sp.nucleus.d} stroke={sp.tint} fill={sp.tint} />
-                        {/if}
-                        {#each sp.cells as scell (scell.id)}
-                            <path class="vsub-wall" d={scell.d} stroke={sp.color} fill={sp.color} />
-                            <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions, a11y_interactive_supports_focus -->
-                            <text class="vsub-label" class:hot={scell.member != null}
-                                  x={scell.x.toFixed(1)} y={scell.y.toFixed(1)}
-                                  font-size={scell.fs.toFixed(1)} text-anchor="middle"
-                                  role={scell.member ? 'button' : undefined}
-                                  onclick={scell.member ? () => micro_click(sp.id, scell.member) : undefined}>
-                                {#if scell.member}<tspan class="vsub-c">%</tspan>{/if}
-                                {#if scell.tag}<tspan class="vsub-tag" fill={scell.tint ?? undefined}>{scell.tag} </tspan>{/if}
-                                {#if scell.val}<tspan class="vsub-v">{scell.val}</tspan>{/if}
-                                {#if scell.sup}<tspan class="vsub-sup" dy="-0.45em">{scell.sup}</tspan>{/if}
-                                {#if scell.subn}<tspan class="vsub-sup vsub-dig" dy={scell.sup ? '0' : '-0.45em'}>/*{scell.subn}</tspan>{/if}
-                            </text>
+                        {#each sp.stats as s, si (sp.id + '·t' + si)}
+                            {@render vstat(sp, s)}
                         {/each}
-                        <!-- each tuple's key said ONCE, from its region's widest band; the
-                             colon is Stuffing's lilac — the k→v grammar mark, present iff
-                             values follow -->
-                        {#each sp.groups as g (g.id + '·k')}
-                            {#if g.label}
-                                <text class="vsub-gkey" x={g.label.x.toFixed(1)} y={g.label.y.toFixed(1)}
-                                      font-size={g.label.fs.toFixed(1)} text-anchor="middle" fill={g.hue}>
-                                    {g.label.text}{#if g.label.colon}<tspan class="vsub-colon">:</tspan>{/if}{#if g.label.sup}<tspan class="vsub-sup" dy="-0.45em">{g.label.sup}</tspan>{/if}
-                                </text>
-                            {/if}
-                        {/each}
-                        <!-- the nucleus speaks Stuffing: kind-tinted mainkey badge · namekey in
-                             its vein hue · lilac colon · plain value · ×N sup -->
-                        {#if sp.nucleus && (sp.nucleus.tag || sp.nucleus.name)}
-                            <text class="vsub-ntitle" x={sp.nucleus.x.toFixed(1)} y={sp.nucleus.y.toFixed(1)}
-                                  font-size={sp.nucleus.fs.toFixed(1)} text-anchor="middle">
-                                {#if sp.nucleus.tag}<tspan class="vsub-ntag" fill={sp.tint}>{sp.nucleus.tag}</tspan>{#if sp.nucleus.tagcolon}<tspan class="vsub-colon">: </tspan>{:else}<tspan> </tspan>{/if}{/if}{#if sp.nucleus.nk}<tspan class="vsub-nk" fill={sp.nucleus.nkhue}>{sp.nucleus.nk}</tspan><tspan class="vsub-colon">: </tspan>{/if}{#if sp.nucleus.name}<tspan class="vsub-v">{sp.nucleus.name}</tspan>{/if}{#if sp.nucleus.sup}<tspan class="vsub-sup" dy="-0.45em">{sp.nucleus.sup}</tspan>{/if}{#each sp.nucleus.lines ?? [] as ln, li (li)}<tspan class="vsub-v" x={sp.nucleus.x.toFixed(1)} dy={li === 0 && sp.nucleus.sup ? '1.65em' : '1.2em'}>{ln}</tspan>{/each}
-                            </text>
-                        {/if}
-                        {#if sp.title}
-                            <text class="vsub-title" x={sp.title.x.toFixed(1)} y={sp.title.y.toFixed(1)}
-                                  font-size={sp.title.fs.toFixed(1)} text-anchor="middle" fill={sp.tint}>
-                                {#if sp.title.tag}<tspan class="vsub-tag">{sp.title.tag} </tspan>{/if}{sp.title.name}{#if sp.title.sup}<tspan class="vsub-sup" dy="-0.45em">{sp.title.sup}</tspan>{/if}
-                            </text>
-                        {/if}
                         {#if sp.dip}
                             <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions, a11y_interactive_supports_focus -->
                             <text class="vsub-dip" x={sp.dip.x.toFixed(1)} y={sp.dip.y.toFixed(1)}
                                   text-anchor="end" role="button"
                                   onclick={() => micro_click(sp.id)}>{sp.dip.text}</text>
+                        {/if}
+                        {#if sp.hid}
+                            <text class="vsub-hid" x={sp.hid.x.toFixed(1)} y={sp.hid.y.toFixed(1)}
+                                  text-anchor="start">+{sp.hid.n}</text>
                         {/if}
                     </g>
                 {/each}
@@ -3043,10 +3116,13 @@
     stroke-opacity: 0.45; stroke-width: 1;
     stroke-dasharray: 3 2; stroke-linejoin: round;
 }
-.cytui-subgraph .vsub-gwall.boundary {
-    fill-opacity: 0.05;
-    stroke-opacity: 0.55; stroke-width: 1.4;
-    stroke-dasharray: none;
+/* member cells ring the rim in their kind's hue; the fill is the slope gradient
+   (its alpha lives in the gradient stops, so no fill-opacity here) — hierarchy
+   visibly flows centre → out. */
+.cytui-subgraph .vsub-mwall {
+    fill-opacity: 1;
+    stroke-opacity: 0.5; stroke-width: 1.1;
+    stroke-linejoin: round;
 }
 /* the NUCLEUS: the fold source's own cell — wall solid and a touch luminous, the one
    plate the spokes radiate from.  The spoke is a quiet dashed strand in the region's
@@ -3063,24 +3139,31 @@
 }
 .cytui-subgraph text { user-select: none; }
 .cytui-subgraph .vsub-label { fill: #c9c9c9; }
-.cytui-subgraph .vsub-label.hot { pointer-events: all; cursor: pointer; }
+/* the poppable cue is the hot underline (never a % — % prefixes a KEY in the house
+   notation, and these are values) */
+.cytui-subgraph .vsub-label.hot {
+    pointer-events: all; cursor: pointer;
+    text-decoration: underline dotted; text-underline-offset: 2px;
+}
 .cytui-subgraph .vsub-label.hot:hover { fill: #fff; }
-.cytui-subgraph .vsub-tag { fill: #667788; font-size: 72%; }
+.cytui-subgraph .vsub-tag { fill: #667788; font-size: 76%; }
 .cytui-subgraph .vsub-v { fill: #cfcfcf; }
-/* Stuffing's grammar, spoken in SVG: lilac colon (the k→v mark), violet counts,
-   the shining green % on any poppable C — same signs, same colours. */
+/* Stuffing's grammar, spoken in SVG: lilac colon (the k→v mark), violet counts —
+   same signs, same colours. */
 .cytui-subgraph .vsub-colon { fill: rgb(228, 163, 245); }
 .cytui-subgraph .vsub-sup { fill: rgb(156, 140, 217); font-size: 68%; }
-.cytui-subgraph .vsub-c { fill: rgb(83, 255, 15); font-size: 78%; opacity: 0.85; }
 .cytui-subgraph .vsub-gkey { opacity: 0.95; }
 .cytui-subgraph .vsub-ntitle { opacity: 0.95; }
-.cytui-subgraph .vsub-ntag { font-size: 78%; }
+.cytui-subgraph .vsub-ringkey { opacity: 0.85; }
 .cytui-subgraph .vsub-title { opacity: 0.92; }
 .cytui-subgraph .vsub-dip {
     fill: #8a7fc0; font-size: 10px;
     pointer-events: all; cursor: pointer;
 }
 .cytui-subgraph .vsub-dip:hover { fill: #b0a4dc; }
+/* the annotated fold: +N statements didn't fit this beat's glass (the Stuffing and
+   the /*N dig still hold everything) — a mark, one day a door */
+.cytui-subgraph .vsub-hid { fill: #8a7fc0; font-size: 9px; opacity: 0.8; }
 .cytui-bar button.v-toggle.on {
     color: #7ab0d4;
     border-color: #2a3a4a;

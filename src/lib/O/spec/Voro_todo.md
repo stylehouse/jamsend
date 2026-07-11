@@ -133,18 +133,42 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
        Live-proven: VoroScape step 1 = one pane reading `req: wrangle`; mid-flood the whole
         `see:` sentence wraps its glass; 6 nuclei at final.  All green after (VoroScape 6/6,
          VoroMitosis 11/11, VoroRadio 9/9, LeafFarm 30/30) — render-only, nothing snaps.
-- **NEXT MOVES:** (1) eyes-on the pipeline + uniformity rounds: step 2 floods AS GLASS (cells in
-   the birth wave, two layout passes), the wrangle = `req: wrangle` glass from beat 1, `%see`
-    sentences fill their panes (fs/wrap read OK? loners dropping their non-main keys — does
-     `eternal,ok` ever matter?), ▦ toggling round-trips clean; plus the nucleus-round eyes-on
-      (linkage read? spoke loudness? plate size? %-noise?);
-     (2) **re-add the rollback casualties as an isolated slice**: F7 `diag_check` (the VoroMitosis
-      end-of-run diagonal the owner keeps hitting IS loose F7) + the render telemetry (`vlog` —
-       `op:'why'` in LiesFunk is currently an orphan); the designs live in
-        `Voro_render_faults_todo.md`, the parked WIP in `/tmp/Cytui.wip.svelte` (volatile!);
-         (3) 🎋 v2 deepening: sub-sub-voronois (the nucleus rule recurses — every popped member
-          gets its own nucleus; the nucleus-only pane is its natural floor), expand-in-place,
-           morph-stable sub-walls, label-collision easing.
+- **The honesty + radial round (same day, owner: "nope! data must be correctly presented …
+   no hiding stuff, no knowing about the data: show everything, be totally generic … avoid %
+    completely … we kind of want the %Track C at the center, and all the tracks around the
+     outside … Wes-Wilson lovely stretchy text … alignment of meanings through the subgraphs
+      and between them all … imagining elegant code to keep yourself sane"):** one rebuild of
+       the ▦ engine, render-only, full record in `Voro_vtuffing.md` §🎋 v2 sixth pass:
+  - **Nothing hides:** loners tessellate their whole `sc` like folds (`req: wrangle` +
+     `eternal` + `ok` regions); anything a pane can't fit this beat is COUNTED into a corner
+      **`+N` fold mark** (annotated, one day expandable — after Wes-Wilson settles).
+  - **% gone from the render** (it prefixes keys, the glass wore it on values); hot dotted
+     underline is the poppable cue now.
+  - **Radial hierarchy:** nucleus at the core (weight floors at 0.34·R — the source statement
+     is never the smallest text), keyed facts on the mid belt at vein bearings, members
+      ringing the RIM from the kind's bearing, a radial kind-hue gradient washing outward =
+       the slope of hierarchy made visible; `Track ×N` engraved once on the rim per pane.
+  - **Alignment:** one-value regions say `year: 2007` as a unit; values sort numeric-aware;
+     in many-value regions the key is a SEED (reserved crown sub-cell — overlap impossible).
+  - **The statement engine:** every glass text = a `VStat` fitted by `fit_stat` (+`fit_ident`,
+     the shed-grammar-before-the-name ladder) and rendered by ONE `vstat` snippet with
+      per-line `textLength` stretch (0.9–1.45× natural) — `nucleus_only`, `fill_fs`, and all
+       four old text renderers deleted into it.
+  - **Live gates:** VoroScape 6/6 c0 ×2, VoroMitosis 11/11 c10 (norm), VoroRadio 9/9 c0,
+     VoroClinic 9/9 c0, LeafFarm 30/30; SVG-verified zero text collisions, `+3` honest on the
+      cramped Fernway pane, `Artist : Fernway` (identity kept, grammar shed).
+- **NEXT MOVES:** (1) eyes-on the radial glass: does the core→belt→rim read? gradient loudness?
+   ring engraving placement? the `+N` marks (annotation now, a DOOR later — wire to a spill or
+    a zoom once Wes-Wilson is declared done)? stretch tastefulness at the 1.45× cap? mid-run
+     `%see` panes (the wrap engine was ported, its transient face is unshot);
+   (2) **🎋 v2 next layer — cells within the cells:** the radial rule IS the recursion rule;
+    recurse it into popped members / large member cells (sub-sub-voronois with the same
+     core→rim slope), asymmetric WALLS as the finer hierarchy cue (the gradient did the coarse
+      version), expand-in-place, morph-stable sub-walls;
+   (3) **re-add the rollback casualties as an isolated slice**: F7 `diag_check` (the VoroMitosis
+    end-of-run diagonal the owner keeps hitting IS loose F7) + the render telemetry (`vlog` —
+     `op:'why'` in LiesFunk is currently an orphan); the designs live in
+      `Voro_render_faults_todo.md`, the parked WIP in `/tmp/Cytui.wip.svelte` (volatile!).
 
 **NIGHT LOG — 2026-07-08 overnight (autonomous build; NOTHING committed, all in the working tree).**
  Two things landed, both compile-verified via LocalGen; the pixel/eyes-on halves are staged for you.

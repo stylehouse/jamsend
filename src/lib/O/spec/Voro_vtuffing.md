@@ -352,9 +352,49 @@ The owner, on the tuple glass: *"a little more structure within each cell, so I 
       `+nk:name` on every title row).  'name' is a key like any other: it wears a vein hue
        (hsl 53 in the shot, the same in every nucleus).
 
+#### 🎋 v2 sixth pass — the glass hides NOTHING + hierarchy flows radially (2026-07-11, latest)
+The owner's corrections on the fifth pass, all landed in one rebuild:
+- **Show everything, be totally generic.** *"data must be correctly presented. it may be folded
+   away, but that fold must be annotated and expandable … I want all ugly bits of eg %req
+    included, no hiding stuff, no knowing about the data."*  A LONER now tessellates its whole
+     `sc` exactly like a fold: mainkey statement = nucleus, every other sc key = a keyed region
+      (`req: wrangle` + `eternal` + `ok`).  Whatever any pane can't fit THIS beat — crowded-out
+       regions, lost leaves, degraded slivers — is COUNTED and rides a **`+N` fold mark**
+        (`vsub-hid`, corner) — annotated, one day a door, never a silent drop.
+- **No `%` in the render.**  % prefixes a KEY in the house notation; the glass wore it on
+   VALUES.  Gone entirely (glyph + CSS); the poppable cue is the hot dotted underline.
+- **Radial hierarchy — "the %Track C at the center, and all the tracks around the outside".**
+   A pane's layout is now BY RANK: the source's own statement holds the CENTRE (its cell
+    weight floors at 0.34·R, so the most important statement is never the smallest text —
+     meaning hierarchy = visual hierarchy), keyed facts belt the middle at their vein
+      bearings, and each member seeds ON THE RIM walking from the kind's own bearing.  A
+       per-pane **radial gradient** (transparent core → kind hue at the rim) washes the member
+        cells — the asymmetric clue for which way the slope of hierarchy flows.  The kind is
+         engraved ONCE on the rim at its bearing (`Track ×4`) — the same compass point in
+          every pane.
+- **Alignment of meanings.**  A one-value region says its whole statement as a unit
+   (`year: 2007`) — never a floating key and an orphan number; values sort numeric-aware so
+    `1998 · 2007 · 2019` reads in order everywhere; in many-value regions the KEY is a seed
+     like its values (a reserved sub-cell at the region's crown — key/value overlap impossible
+      by construction).
+- **Wes-Wilson stretchy text.**  Every value tspan carries a `textLength` aimed at its chord
+   (clamped 0.9–1.45× natural, `spacingAndGlyphs`) — the words stretch to their walls.
+- **One statement engine.**  Every text on the glass is a `VStat` — [badge]·[key]·[lilac
+   :]·[value]·[×N]·[/*N] — fitted by `fit_stat` (band chord → fs search → greedy wrap →
+    per-line stretch) and rendered by the ONE `vstat` snippet; `fit_ident` is the identity
+     ladder (full head → tag-only → bare value: `Artist name: Fernway` in a sliver becomes
+      `Artist: Fernway` then `Fernway`, never `Artist name: …`).  The old four text renderers,
+       `nucleus_only`, `fill_fs`, and the members-as-a-region boundary are deleted into it.
+ Live-proven (VoroScape 6/6 c0 + the full fleet green): the req pane speaks `req: wrangle`
+  fs20 stretched + both presence facts; ZERO text collisions in the final glass; Fernway (the
+   cramped pane) reads `Artist : Fernway ×4` + an honest `+3`.  The radial rule is the
+    RECURSION RULE: a popped member's own pane repeats it one level down — that's the next
+     layer of graphics ("cells within the cells").
+
 #### 🎋 v2 fifth pass — the glass has NO stragglers: the nucleus-only pane (2026-07-11, later)
 The owner: *"why do some things always become Stuffing? I want them all [glass] if it's that
- mode."*  The answer to the why: the ▦ pass dressed only fold STRUCTURE (things with
+ mode."*  (The fifth pass's closing worry — loners dropping `eternal,ok` — was REJECTED by the
+  owner and closed by the sixth pass above: loners show everything now.)  The answer to the why: the ▦ pass dressed only fold STRUCTURE (things with
   `c.gang`/`c.stuff`), plus two comfort gates ("one k|v is what the Stuffing already says",
    "√area < 88 too small to subdivide") — everything else fell through to the older molded-
     Stuffing face.  That reason EXPIRED with the nucleus round: the grammar speaks a single
