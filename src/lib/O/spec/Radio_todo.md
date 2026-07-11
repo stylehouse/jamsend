@@ -225,6 +225,69 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
 
 ## 1. Destination
 
+### 1.0 The whole machine, at a glance
+
+One line per submachine; read the indent as containment. `<` (down the left margin) marks an unbuilt edge —
+ the `// <` lack mark. What has a Book behind it is real; the rest is `<`. Detail: the streaming half in
+  1.1-1.5, the heist half in §10.2, the wire's honesty in §10.1 (all built parts are terser than they read).
+
+```
+    jamsend  -- peers keep their own music and heist each other's over a trust-gated p2p wire.
+
+      identity & trust (Swarm)  -- which of your keypairs you are, and who each may reach.
+        %Account,of:<vault>  -- a stored vault a page loads; a page may hold MANY.
+        %Identity,prepub     -- the keypair you act AS; its prepub is your address, the thing you sign.
+        %Peering             -- that Identity's relationship hub (named by your own prepub).
+        %Pier,pub:<prepub>   -- YOUR view of another peer, held under your Peering; "the Pier" = our Pier FOR them.
+        %Grant / %UnGrant    -- a capability the peer signed you (or a durable revoke tombstone).
+        Invite               -- a QR scan-to-join mints the Pier (SwarmDoor).
+
+      the wire (Peeroleum)  -- ordered, repaired frames over a sealed channel (handshake, then seq/inseq/retx).
+        < real carrier         -- still a by-reference loopback (Lake_link); WebRTC/relay untested by any Book.
+
+      replication (Repli)  -- walk a peer's C** by cursor: reach into paths, get lost in the maze like a user, offer each husk, pull its bytes on want (body_hash per page).
+
+      the library  -- ONE per Pier: %Library,pier:<prepub> (the prepub IS the Pier's primary key).
+        %Record                -- a track's card: catalog identity (artist+title) + byte promise (bytes/total/hash).
+        %Body,seq              -- the original file, chunked whole.
+        radiostock             -- the on-disk served form (<ts>-<pub>-<enid>); enid = content identity.
+        < proactive first-stock -- render the first radiostock BEFORE the first user arrives, so track one is instant.
+        < load_random_records   -- sample an unbounded catalog, never slurp it whole.
+        < FIFO whittle_stock    -- evict the oldest when the library fills; a cache, not a hoard.
+
+      the streaming twin (rastock -> racast -> raterm)  -- SHIPPED.
+        rastock                -- one uniform preview+stream encode per track: loudness-level, seekable, on disk.
+        racast                 -- cast to Piers, pulled at listening rate; a parked want ignites the transcode; grants gate it.
+        raterm                 -- decode WHAT CROSSED into continuous PCM, silence where a chunk is absent.
+
+      the player (the deck)  -- what a listener does with the streams.
+        multi-stream           -- many streams from ONE library at once: decks, cue, crossfade (MusuMix / MusuCue).
+        < tempo / pitch        -- play a stream at a chosen tempo and pitch, independently (time-stretch).
+        wants more             -- the terminal pulls ahead of the playhead; the demand IS the parked want.
+        interest wears         -- a stream you stop attending ages out (wear): the buf drops, the husk stays.
+
+      the heist (klepto)  -- point a job at a Pier and pull its music into your library. rung 1 built.
+        census                 -- walk the Pier's filesystem into servable %Records; a rolling cursor, not a fixed set.
+        the job                -- %Heist,at:<pier>: believe/disbelieve filings pinned as DATA at creation.
+        the pull               -- paged at heist rate; each offer dedup-checked at the door by catalog identity.
+          < bandwidth control  -- a real throttle on the pull rate (uncapped today).
+          < progress           -- a per-record download bar that renders as pages land.
+          < stream-to-disk     -- write each chunk at its offset as it arrives; no in-memory assemble.
+        landing                -- assemble, verify body_hash, write byte-faithful into the library.
+          < $artist/$album/$track from tags  -- today filename-derived under a seeded genre prefix.
+          < merge into an existing tree + surface what you already hold on a second heist.
+          < repointable mid-heist  -- re-anchor the hierarchy, checksums still pass.
+        probation              -- .jamsend/newlyadded logs each arrival; love graduates, drop = deny = delete.
+          < remembered-denials tombstone  -- else a dropped identity re-offers next heist.
+        flatten                -- the %Heist + mirror delete; nothing attributes who gave what afterward.
+        < cohort / cafe (rungs 2-3)  -- one page-stream to N kleptos, then a LAN broadcast tree.
+
+      the app surface  -- where a person drives it.
+        < create-a-heist       -- a gesture that points a %Heist at a Pier (today ONLY the test Book mints one).
+        < progress + bandwidth HUD  -- the download bar and the rate dial, on screen.
+        Cyto / Matstyle        -- the live particle view every submachine renders into for free.
+```
+
 `Radios.svelte` is 1500 lines of pre-Housing machinery: a hand-rolled spin loop over
  `Modus`, cursors smeared across `.sc`/`.c`, backpressure as an inline `if … cool it`, the
   whole streaming algorithm tangled with real `MediaRecorder`/WebAudio/disk I/O so you can

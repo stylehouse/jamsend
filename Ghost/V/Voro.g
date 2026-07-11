@@ -125,54 +125,65 @@ Voro_report(w, stats):
     //    dontGraph world (and its whole subtree) so this debug pane can't clutter the data graph.
     //     Enriching the world is what made the old leak visible — so keep the flag ON, don't drop it.
     rw.sc.dontGraph = 1
-    for (const c of rw.o().slice()) c.drop(c)
+    // NO drop-and-rebuild — THAT is the census-storm root.  The census is PERSISTENT now: stale-mark
+    //  every child (c-side), find-or-create each cell|bare|head by its DURABLE identity, merge the
+    //   counts in place, then sweep only the children this beat never re-touched (the real goners).
+    //    So a pane that survives keeps its SLOT — a count sliding ×9→×11 is one field-diff, not the
+    //     whole cell torn down + re-added because the walk happened to reorder it.  The snap churns
+    //      on emission ORDER, and find-or-create reuses each child in place, so the order holds.
+    for (const c of rw.o()) c.c.seen_beat = 0
     w.c.report_beat = (w.c.report_beat || 0) + 1
-    // the census — GENERIC now (was Botany-locked: a music world's stations|Artists never made a
-    //  row, so the report went terse exactly where it was needed).  Walk the fold stamps the crush
-    //   just laid down: one %cell row per pane it INTENDS this beat.  That's the render-debt gauge —
-    //    every row here should be a pane on the canvas; a render showing fewer is trapping data
-    //     behind the glass (the VoroScape fault, now legible in ANY Voro world).
     let census = { cells: [], bare: {} }
     this.Voro_report_walk(w, census, 0)
     let pops = 0
     for (const f of census.cells) pops = pops + f.pop
-    // level as 'L0'|'L1'|'L2' — a bare numeric 1 would snap as the boolean sentinel (collapse
-    //  to a flag) and 0 would VANISH, so the governor level must ride as a string to stay legible
-    //   (counts that can hit 1|0 ride stringified for the same reason).
-    let head = { Voro: 1, beat: w.c.report_beat, level: 'L' + stats.level, visible: stats.visible, cells: '' + census.cells.length, gangs: stats.gangs, folded: '' + stats.folded, count: '' + stats.count }
-    if (pops) head.pop = '' + pops
-    rw.i(head)
+    // the head — one persistent %Voro particle, beat + counts merged in place.  level|counts ride
+    //  stringified: a bare 1 would snap as the boolean sentinel and a 0 would vanish.
+    let headC = rw.oai({ Voro: 1 }, { beat: w.c.report_beat, level: 'L' + stats.level, visible: stats.visible, cells: '' + census.cells.length, gangs: stats.gangs, folded: '' + stats.folded, count: '' + stats.count })
+    headC.c.seen_beat = 1
+    if (pops) headC.sc.pop = '' + pops
+    if (!pops) delete headC.sc.pop
     if (w.c.drift_focus) {
         let f = w.c.drift_focus
         let fk = Object.keys(f.sc)[0]
-        rw.i({ drift: 1, focus: fk + ' ' + f.sc[fk], opens: (w.c.drift_opens || []).length })
+        let driftC = rw.oai({ drift: 1 }, { focus: fk + ' ' + f.sc[fk], opens: (w.c.drift_opens || []).length })
+        driftC.c.seen_beat = 1
     }
-    // the intended panes: kind = pane (a folded container) | gang (loose leaves elected behind a
-    //  rep); n = members folded in; pop = members surfed out right now.  Then one %bare row per
-    //   mainkey of UNFOLDED visible leaves — legitimate data standing as plain nodes (a fat bare
-    //    row at level 0 is usually just pre-escalation; one that persists is a fold-policy gap).
+    // the panes — identity is the DURABLE {cell,kind}; n|pop MERGE, they never identify, so a count
+    //  change rides the same particle instead of re-keying.  Two gangs of one family in a beat would
+    //   share a key, so a collision takes a disambiguating tail — neither swallowed by the other's
+    //    find-or-create.  kind = pane (a folded container) | gang (loose leaves behind a rep).
+    let used = {}
     for (const f of census.cells) {
-        let row = { cell: f.label, kind: f.kind, n: '' + f.n }
-        if (f.pop) row.pop = '' + f.pop
-        let rowC = rw.i(row)
-        // the pane's own WORDS, transcribed under its cell row: Vtuff_build's free C** (the
-        //  tree the renderer fits into the cell polygon) copied into the report, so the snap
-        //   explains the layout OBLIQUELY — what each pane says and how its rows spread, never
-        //    where a pixel sits.  A pane whose story changes now diffs, beat to beat.
-        //     (⚠ the tree follows Vtuff_bamboo_on(), a per-tab stash pref — flipping 🎋 on a
-        //      RECORDING tab would bake %Vseg stalks into fixtures; fine while it defaults off,
-        //       revisit when bamboo graduates to a real mode.)
+        let n_seen = used[f.label] || 0
+        let key = n_seen ? f.label + ' ' + n_seen : f.label
+        used[f.label] = n_seen + 1
+        let cellC = rw.oai({ cell: key, kind: f.kind }, { n: '' + f.n })
+        cellC.c.seen_beat = 1
+        if (f.pop) cellC.sc.pop = '' + f.pop
+        if (!f.pop) delete cellC.sc.pop
+        // the pane's WORDS refreshed under the persistent cell: drop the old Vtuffing, re-lay it.
+        //  Vtuff_build is deterministic, so unchanged words re-emit identical text in the same slot
+        //   (the snap shows no diff); only a row whose text actually moved surfaces.  (⚠ the tree
+        //    follows Vtuff_bamboo_on(), a per-tab stash — flipping 🎋 on a RECORDING tab would bake
+        //     %Vseg stalks into fixtures; fine while it defaults off.)
+        for (const old of cellC.o({ Vtuffing: 1 }).slice()) old.drop(old)
         if (f.src) {
             let vt = this.Vtuff_build(f.src)
-            if (vt) this.Voro_vtuff_transcribe(rowC, vt)
+            if (vt) this.Voro_vtuff_transcribe(cellC, vt)
         }
     }
+    // one %bare row per mainkey of UNFOLDED visible leaves — legitimate data standing as plain
+    //  nodes (a fat bare row at level 0 is usually pre-escalation; one that persists is a fold gap).
     for (const mk of Object.keys(census.bare)) {
         let b = census.bare[mk]
-        let row = { bare: mk, n: '' + b.n }
-        if (b.pop) row.pop = '' + b.pop
-        rw.i(row)
+        let bareC = rw.oai({ bare: mk }, { n: '' + b.n })
+        bareC.c.seen_beat = 1
+        if (b.pop) bareC.sc.pop = '' + b.pop
+        if (!b.pop) delete bareC.sc.pop
     }
+    // sweep the goners — a census child this beat never re-touched has left the crush.
+    for (const c of rw.o().slice()) if (!c.c.seen_beat) c.drop(c)
 
 // Voro_vtuff_transcribe — copy a Vtuffing tree (a FREE C** no snap can reach) into the report
 //  world as SNAPPED rows.  Only sc crosses (the live c.se emphasis and c.member handles stay
