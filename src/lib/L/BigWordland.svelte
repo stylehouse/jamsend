@@ -35,7 +35,7 @@
     //  room supplies only its knobs — the editor Book, the editor role — and reads H + houses back.
     //  The OOM trap (assign H once, never read it in the construction effect) is baked in over there.
     const editor_book = boot_param('E') || 'Educarium'
-    const q = boot_qualand({ book: editor_book, role: 'word', no_advertise: true })   // an end-user page, never a dispatch target
+    const q = boot_qualand({ book: editor_book, role: 'word' })   // role 'word' ⇒ Lies%humdinger: an end-user page, never a dispatch target
     let H      = $derived(q.H)
     let houses = $derived(q.houses)
     //#endregion

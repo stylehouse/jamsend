@@ -33,12 +33,6 @@ export type QualandOpts = {
     //    always the 'sound' identity, /BigWordland always 'word').  It NEVER reaches the machine, which
     //     only ever sees editor|runner — the whole spine's role checks stay two-valued.
     role: 'editor' | 'runner' | 'word' | 'sound'
-    // an END-USER room is machine-role runner (sound → runner below) yet NOT a dispatch target: one
-    //  advertise beacon durably enrolls its prepub in the editor's registry (Lies_runner_roster names
-    //   every beacon-sender role:runner) and become_book clicks start landing on someone's music page.
-    //    This negates the beacon — Lies_advertise + Lies_going_cold honour it — while every OTHER
-    //     runner facility (Creduler, its own Book, the relay channel) stays live.
-    no_advertise?: boolean
 }
 
 export type Qualand = {
@@ -65,7 +59,12 @@ export function boot_qualand(opts: QualandOpts): Qualand {
         //  for the identity layer, and assume_identity tells Auto this page always mints/resumes one.
         h.c.boot_role = (opts.role === 'sound' || opts.role === 'runner') ? 'runner' : 'editor'
         ;(h.c as any).id_role = opts.role
-        if (opts.no_advertise) (h.c as any).no_advertise = true
+        // Lies%humdinger — a Big*land room is an END-USER page, never a dispatch target.  It's machine-role
+        //  runner (sound) or editor (word) and uses the full Lies stack, but must stay invisible to the
+        //   editor's grid: no advertise, no going-cold, and no `from` on its pings (else Lies_pong would
+        //    enroll it as a runner off the 5s heartbeat and Story runs would land on someone's music page).
+        //     Derived from role here so no call site can forget it; the guards live in Lies_humdinger.
+        if (opts.role === 'word' || opts.role === 'sound') (h.c as any).humdinger = true
         ;(h.c as any).assume_identity = true
         H = h
         setTimeout(() => { houses = [H] }, 1)

@@ -62,40 +62,52 @@ async MusuHeist_drive(w, req):
             if (!w.oa({ census_fail: 1 })) w.i({ census_fail: 1, why: ('' + (er && er.message || er)).slice(0, 80) })
         }
     }
+    // the carriers pump EVERY pass so the mock wire settles over post_do — but the phase machine
+    //  advances AT MOST ONE edge per STEP.  This is the pacing bomb the first cut missed: a belief
+    //   loop's "beats" are reconcile passes WITHIN a step, not step boundaries, so a self-advancing
+    //    phase machine drains the whole heist into one 22s step — or, worse, a NONDETERMINISTIC spread
+    //     (1 step one run, ~15 the next, depending on how far each step's reconcile happened to drain).
+    //      Gating each edge on step_n moving (the MusuRaCast lesson) makes the walk one-move-per-snap
+    //       and deterministic — the fixture tells the story and Cyto animates it.
     for (const peering of w.o({ Peering: 1 })) await peering.do()
-    await this.MusuHeist_phase(w)
+    if (n > (w.c.acted_step || 0)) {
+        if (await this.MusuHeist_phase(w)) w.c.acted_step = n
+    }
     await this.Musu_float(w)
 
-// MusuHeist_phase — the precondition-driven state machine (the MusuRaCast_flow lesson: fire each leg
-//  the instant its precondition holds, never on a beat number).  Phases: seal → uno → duo → reuno →
-//   deny → flat → done.  Each pass advances AT MOST one edge; the pump + post_do settle carry the
-//    wire between passes.  A running job drives via MusuHeist_flow, which flips w.c.phase on flatten.
+// MusuHeist_phase — the precondition-driven state machine, now paced ONE EDGE PER STEP (the drive
+//  gates re-entry on step_n moving).  Returns TRUE when this pass took a real edge — the drive then
+//   burns the step's budget so no second edge fires until the next snap; returns FALSE when it is only
+//    waiting on the wire, leaving the budget so the edge fires the instant its precondition lands (still
+//     at most once per step).  Phases: seal → uno → duo → reuno → deny → flat → done.
 async MusuHeist_phase(w):
-    if (!w.c.phase) return
+    if (!w.c.phase) return false
     if (w.c.phase === 'seal') {
-        if (!w.c.sealed_kicked) { w.c.sealed_kicked = 1; await this.MusuHeist_seal(w); return }
+        if (!w.c.sealed_kicked) { w.c.sealed_kicked = 1; await this.MusuHeist_seal(w); return true }
         // wait for the redeem to settle both grants live, THEN start job uno
         if (w.c.repli_allow && w.c.repli_allow(w.c.uno_pre, w.c.duo_pre) && w.c.repli_allow(w.c.duo_pre, w.c.uno_pre)) {
             w.i({ sealed: 1 })
             w.c.phase = 'uno'
             await this.MusuHeist_job(w, 'uno')
+            return true
         }
-        return
+        return false
     }
     if (w.c.phase === 'uno' || w.c.phase === 'duo' || w.c.phase === 'reuno') {
-        await this.MusuHeist_flow(w)
-        return
+        return await this.MusuHeist_flow(w)
     }
     if (w.c.phase === 'deny') {
-        if (!w.c.logs_done) { w.c.logs_done = 1; await this.MusuHeist_logs(w); return }
-        if (!w.c.deny_done) { w.c.deny_done = 1; await this.MusuHeist_deny(w); return }
+        if (!w.c.logs_done) { w.c.logs_done = 1; await this.MusuHeist_logs(w); return true }
+        if (!w.c.deny_done) { w.c.deny_done = 1; await this.MusuHeist_deny(w); return true }
         w.c.phase = 'flat'
-        return
+        return true
     }
     if (w.c.phase === 'flat') {
         w.c.phase = 'done'
         await this.MusuHeist_flat_check(w)
+        return true
     }
+    return false
 
 // beat 2 — the divided censuses off the ONE real disk.  The marrauding namespace sweeps first so a
 //  re-run starts clean (the pinned-runid stance).  Each census is a %Library keyed by its Peering's
@@ -148,6 +160,10 @@ async MusuHeist_census(w):
     // the synchronous census (accounts|link|libraries|registration|pfx) is COMPLETE — the retry guard
     //  releases; only the async Heist_census + phase-open remain, inside the expecting.
     w.c.census_ready = 1
+    // census owns this step (step 2); the phase machine begins advancing on the NEXT step.  acted_step
+    //  is the one-edge-per-step clock the drive gates on — set it here so no phase edge sneaks into
+    //   step 2 the moment the expecting async flips phase to 'seal'.
+    w.c.acted_step = (this.c.run)?.c.step_n
     await this.expecting(w, 'heist_census', 90, async () => {
         let a = await this.Heist_census(w, w.c.uno_lib, w.c.nav, 'testsounds', ['The Sines', 'DJ Oscillo'])
         let b = await this.Heist_census(w, w.c.duo_lib, w.c.nav, 'testsounds', ['Fourier Four'])
@@ -215,23 +231,25 @@ async MusuHeist_job(w, nick):
 //     that LANDED, not the bytes we meant to land), the counts stamped, the scaffolding flattened.
 async MusuHeist_flow(w):
     let b = w.c.heist_active
-    if (!b || !b.job) return
-    if (!w.c.repli_allow) return
+    if (!b || !b.job) return false
+    if (!w.c.repli_allow) return false
     if (!b.offered_done) {
         if (!w.c.repli_allow(b.mine, b.at)) {
             if (!w.oa({ offer_blocked: b.nick })) w.i({ offer_blocked: b.nick })
-            return
+            return false
         }
         b.offered_done = 1
         b.offered = await this.Heist_offer_all(w, b.srcport, b.at, b.mine, b.srclib)
         w.i({ offered: b.nick, n: b.offered })
-        return
+        return true
     }
     let mir = w.o({ Library: 1, pier: b.mir_key })[0]
-    if (!mir) return
-    await this.Heist_beat(w, b.rx, b.mine, b.at, b.job, b.own, mir, w.c.nav, b.mar)
+    if (!mir) return false
     let landed = +(b.job.sc.landed || 0)
     let skipped = +(b.job.sc.skipped || 0)
+    // completion is its OWN step: the final beat (below) lands the last record and returns true, then
+    //  THIS fires next snap.  Guarded by >= expect so an empty mirror mid-offer (husks still crossing)
+    //   never false-completes.  Landings verified against the DISK, counts stamped, scaffolding flattened.
     if (landed + skipped >= b.expect && !mir.o({ Record: 1 }).length) {
         let row = { heisted: b.nick }
         if (landed) row.landed = landed
@@ -260,12 +278,17 @@ async MusuHeist_flow(w):
         }
         await this.Heist_flatten(w, b.job, mir)
         w.c.heist_active = null
-        // advance the phase machine: uno → duo → reuno → deny.  The NEXT job starts here (not next
-        //  pass) so no idle beat is wasted, and its offer waits on the same live grant.
+        // advance the phase machine: uno → duo → reuno → deny.  The NEXT job is armed here (its offer
+        //  is the next snap's edge) so no idle step is wasted, and its offer waits on the same live grant.
         if (b.nick === 'uno') { w.c.phase = 'duo'; await this.MusuHeist_job(w, 'duo') }
         else if (b.nick === 'duo') { w.c.phase = 'reuno'; await this.MusuHeist_job(w, 'reuno') }
         else if (b.nick === 'reuno') { w.c.phase = 'deny' }
+        return true
     }
+    // not done yet — one pull beat this step (Ra_pull_beat wants every missing page at once; the wire
+    //  serves them over the pumped carriers between snaps).  Always an edge: a pulling step is a step.
+    await this.Heist_beat(w, b.rx, b.mine, b.at, b.job, b.own, mir, w.c.nav, b.mar)
+    return true
 
 // beat 15 — the probation ledger read back: every line `<seq> <category/filename> <feeling>`, every
 //  feeling still fresh (the deny comes later), and NEVER a source — neither prepub appears anywhere

@@ -296,7 +296,10 @@
         //      inside-Story Lies is the editor.  One per instance.
         if (H.c.boot_role === 'runner' && !H.c.creduler_up) {
             H.c.creduler_up = true
-            H.i({ A: 'Lies' }).i({ w: 'Lies', runner: 1, creduler: 1 })
+            // humdinger:1 rides the snap when this runner is an end-user Big*land room (boot_qualand set
+            //  H.c.humdinger for role sound) — Lies%humdinger, legible: it uses the full Lies stack but
+            //   stays invisible to the editor's grid (no advertise/going-cold/ping-`from`; see Lies_humdinger).
+            H.i({ A: 'Lies' }).i({ w: 'Lies', runner: 1, creduler: 1, ...(H.c.humdinger ? { humdinger: 1 } : {}) })
             // Raise the Creduler gate NOW — before the just-created Lies has had a tick to
             //  run Creduler_ensure.  Auto may tick ahead of the new Lies (it's not in this
             //   pass's attend list), and the first-boot story-start below would otherwise

@@ -181,6 +181,10 @@ Verify a Book by asking a LIVE runner to run it — not a headless boot.
   - `node scripts/runner_ask.mjs rungos`             — held runs, each addressable `@uid`
  Exit 1 when a `--watch` run finishes red, so it scripts. `story_repl.mjs` is the
   interactive twin (`@uid` addresses a held run).
+ `scripts/runner_shot.mjs` rides the same rails to SEE the render, the one thing a snap can't carry
+  (pixels never round-trip a fixture): `shot <file.png>` = `cy.png()` of the live Cyto canvas; `--svg`
+   = the voronoi glass as standalone greppable SVG; `--why` = the render telemetry film strip
+    (gate + wave/morph/settle ring). `--runner=` takes a RAW relay addr — court via runner_ask first.
 
 A runner that won't connect ("relay down", no ws attempt in the Network tab): read
  `src/lib/O/spec/Cluster_spec.md` §3.2b (boot→channel map, standup guards) + §3.3 (Brink

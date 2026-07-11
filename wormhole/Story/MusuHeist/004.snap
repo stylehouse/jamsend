@@ -10,21 +10,21 @@ Snap:H
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
               Idzeug:heist_1,to:Music,genre:Heist,spent
-              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783764786
+              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783777610
                 Peering,name:be0dab3303037ad2,friendly:Duo,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783764786,sign:e413d6273427b434a350ce9d5c4c8b6c1db761acabda561b72f3b90038fc608d3fa77d5bfec5643298e629b2d909e5e05952a622d8c37d0abe0e788d4dcc9c07,genre:Heist
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783764786,sign:67be502c50673d3ec5d85d8282525c0625681b11b9b879bdf597be51987664ab39c7054090346f7331e0a65c381019990bebc03099921d673d4bdb8b6253f405,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783777610,sign:e5356bf82e72cc456d2844b33e8d25b622f8241997eb67db8582f7f56d1d3611e4307df09771292e89d5aafc9a061c705b981add2f8a9b6f43bfdf46767ae10d,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783777610,sign:f7437f3e81a673263e165730eff542a8df06de7c782605c58229482a1f020027376e3bc5ab413fd8d7dfe045b629855ee3356c5b6eeb6c66477a7e81762d5805,genre:Heist
             SocialGraph
-              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1783764786
+              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1783777610
         Account,of:Duo
           Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
             Peering,name:be0dab3303037ad2,friendly:Duo
-              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783764786
+              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783777610
                 Peering,name:4e09f34f5a6ab900,friendly:Uno,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783764786,sign:67be502c50673d3ec5d85d8282525c0625681b11b9b879bdf597be51987664ab39c7054090346f7331e0a65c381019990bebc03099921d673d4bdb8b6253f405,genre:Heist
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783764786,sign:e413d6273427b434a350ce9d5c4c8b6c1db761acabda561b72f3b90038fc608d3fa77d5bfec5643298e629b2d909e5e05952a622d8c37d0abe0e788d4dcc9c07,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783777610,sign:f7437f3e81a673263e165730eff542a8df06de7c782605c58229482a1f020027376e3bc5ab413fd8d7dfe045b629855ee3356c5b6eeb6c66477a7e81762d5805,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783777610,sign:e5356bf82e72cc456d2844b33e8d25b622f8241997eb67db8582f7f56d1d3611e4307df09771292e89d5aafc9a061c705b981add2f8a9b6f43bfdf46767ae10d,genre:Heist
             SocialGraph
-              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1783764786
+              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1783777610
         Peering,name:4e09f34f5a6ab900,req=2,ok
           Pier,pub:be0dab3303037ad2,req=2,ok
             req:handshake,finished
@@ -43,12 +43,12 @@ Snap:H
               recent
                 emit,type:hello,seq
                 emit=2,type:trust,seq=2
-              emit=3,type:pier_accept,seq=3,sent,acked
+                emit=3,type:pier_accept,seq=3
             inbox
               recent
                 unemit,type:hello,seq
                 unemit=2,type:trust,seq=2
-              req:unemit,seq=3,type:pier_hello,done,to:pier_hello,finished
+                unemit=3,type:pier_hello,seq=3
             Ud,pubkey:be0dab3303037ad2
           active_transport,type:mock,open
         Peering,name:be0dab3303037ad2,req=3,ok
@@ -69,12 +69,12 @@ Snap:H
               recent
                 emit,type:hello,seq
                 emit=2,type:trust,seq=2
-              emit=3,type:pier_hello,seq=3,sent,acked
+                emit=3,type:pier_hello,seq=3
             inbox
               recent
                 unemit,type:hello,seq
                 unemit=2,type:trust,seq=2
-              req:unemit,seq=3,type:pier_accept,done,to:pier_accept,finished
+                unemit=3,type:pier_accept,seq=3
             Ud,pubkey:4e09f34f5a6ab900
           active_transport,type:mock,open
         Library,pier:4e09f34f5a6ab900
@@ -128,5 +128,11 @@ Snap:H
         req:heist_census,finished
         req:witness,eternal,ok
         censused,uno=6,duo=2
-        reached:step_4
+        reached:seal
+        sealed
+        reached:job_uno
+        Heist,at:be0dab3303037ad2,disbelieve_directories
+          filing,artist:Fourier Four,genre:4t-mathrock
+        see:two collections stand divided on one shared disk — each Pier holds only its own artists as whole original bytes
         see:the pair sealed over the wire — a mutual Music grant gates the heist both ways
+        see:a heist job stands pointed at the pier — its filing decisions pinned before any byte crossed

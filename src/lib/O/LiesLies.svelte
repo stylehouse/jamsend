@@ -155,6 +155,17 @@
         Lies_is_runner(w?: TheC): boolean { return (this as House).Lies_role(w) === 'runner' },
         Lies_is_editor(w?: TheC): boolean { return (this as House).Lies_role(w) === 'editor' },
 
+        // Lies_humdinger — an end-user Big*land ROOM (a /BigSoundland music scape, a /BigWordland editor
+        //  room; boot_qualand stamps H.c.humdinger for role word|sound).  It uses the FULL Lies stack —
+        //   the relay channel, Creduler gen acquisition, remoteWormhole, Peeroleum for the music, its own
+        //    Account identity — but speaks NONE of the editor-coordination presence protocol: it never
+        //     advertises, never going-colds, and its pings carry no `from` (so the editor's Lies_pong
+        //      can't mint a roster beacon from it).  Net: invisible to the editor's grid — no %Runner row,
+        //       no dispatch target, no grant — "just clients on the relay that connect and do things, like
+        //        the web".  A real ?E=/?B= machine has no id_role ⇒ no humdinger ⇒ the grid protocol is
+        //         untouched.  The stance is legibly snapped as Lies%humdinger on w:Lies at mint.
+        Lies_humdinger(_w?: TheC): boolean { return !!(this as House).top_House().c.humdinger },
+
         // Lies_channel_live — v1 send-readiness: the channel stood up and a transport
         //  carrier is wired.  Stands in for Peeroleum_peer_ready while this consumer is
         //   trust-everything (Lies_channel_up stamps Ud, drives no handshake): we address
@@ -1156,7 +1167,13 @@
             //  the 5s ping is a faster, identity-robust liveness pulse than the 15s advertise, so the editor
             //   keeps the runner's roster row fresh off the heartbeat (Lies_pong) — even between advertises,
             //    and even for a runner that pings before its first advertise lands.
-            const from = H.Lies_role(w) === 'runner' ? H.Lies_self(w)?.prepub : undefined
+            //  A HUMDINGER room stamps NO `from`: Lies_pong mints a roster beacon from a ping's `from`
+            //   alone (the "minimal ready beacon if first-heard" path), so an end-user music page would
+            //    enroll itself as a runner every 5s even though it never advertises — the exact leak that
+            //     put someone's /BigSoundland into the editor's dispatch pool.  Ping still fires (it feeds
+            //      this page's OWN reconnect watchdog, like an editor's from-less ping); it just no longer
+            //       announces WHO, so nothing enrolls.  Advertise is the sole enrollment authority.
+            const from = (H.Lies_role(w) === 'runner' && !H.Lies_humdinger(w)) ? H.Lies_self(w)?.prepub : undefined
             ;(H as any).Peeroleum_send_consumer(w, 'ping', { t: Date.now(), ...(from ? { from } : {}) })
         },
         Lies_pong(w: TheC, fr: any) {   // echo a received ping straight back — AND the ping itself is
@@ -1223,10 +1240,10 @@
         Lies_advertise(w: TheC) {
             const H = this as House
             if (H.Lies_role(w) !== 'runner') return
-            // an end-user Big*land room (boot_qualand no_advertise) is machine-role runner but must not
-            //  enter the editor's dispatch pool — one beacon enrolls it durably (Lies_runner_roster
-            //   names every sender role:runner), then Story runs land on someone's music page.
-            if (H.top_House().c.no_advertise) return
+            // an end-user Big*land room is machine-role runner but must NOT enter the editor's dispatch
+            //  pool — one beacon enrolls it durably (Lies_runner_roster names every sender role:runner),
+            //   then Story runs land on someone's music page.  Lies_humdinger is the whole gate.
+            if (H.Lies_humdinger(w)) return
             if (!H.Lies_channel_live(w)) return
             // WHO we advertise AS must be the prepub the relay HELLO bound us under — else the editor
             //  addresses to:<pub> nobody is bound to and the relay drops it.  Lies_self resolves that exact
@@ -1329,8 +1346,8 @@
         Lies_going_cold(w: TheC) {
             const H = this as House
             if (H.Lies_role(w) !== 'runner') return
-            // never advertised (no_advertise room) ⇒ no cold beacon either — nothing to clear
-            if (H.top_House().c.no_advertise) return
+            // never advertised (humdinger room) ⇒ no cold beacon either — nothing to clear
+            if (H.Lies_humdinger(w)) return
             if (!H.Lies_channel_live(w)) return
             const self = (H as any).Lies_self?.(w) as { prepub: string } | undefined
             if (!self?.prepub) return

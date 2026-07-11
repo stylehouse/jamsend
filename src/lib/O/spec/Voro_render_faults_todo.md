@@ -174,19 +174,48 @@ So the render telemetry isn't a nicety; it's the flashlight for the half that ca
    `would_seed:N` (chunks the render WOULD cell); a Book asserts N≥2 for a data Book, and if the render
     then shows 0 cells, the fault is localised to the gate.
 
-### F2 — animation doesn't wait for the Voronoi to settle  *(timing)*
-- **Owner:** "animation is poked as, doesn't wait anywhere near long enough for the Voro to get settled
-   in… animation can be nice once you're seeking on your own (giving it enough time between moves to
-    animate+compute+render+computemore)."
-- **Chain [S]:** batched waves use `BURST_DUR ≈ 0.16s` for the fcose relayout, but fcose needs longer to
-   converge; the voronoi is computed from unsettled positions, and the next wave fires after a fixed
-    `pad` rather than waiting on fcose convergence.  Manual one-at-a-time seeking "feels nice" precisely
-     because the human supplies the settle time the auto-cadence doesn't.
-- **Note:** this is the #11 `waitVoro` cadence (Voro_todo §0 LANDED) not going far enough — it waits for
-   the *morph tween* but not for *fcose convergence*.  Fix: sense fcose settle (layoutstop / a movement
-    threshold) before starting the morph and before releasing the next wave; make the auto-cadence match
-     the "seeking on your own" pace.
-- **Auto-checkable?** No (timing/pixels) — eyes-on.
+### F2 — the Run advances on a fixed timer, not the render's real settle  *(timing — HAND-OFF READY 2026-07-12)*
+
+A self-contained slice for a fresh agent.  Diagnosed to the exact seam this turn; the crush already
+ obeys the runtime, the render tail does not.
+
+- **The human, framed exactly:** "doesn't wait anywhere near long enough for the Voro to get settled
+   in… the text overlay blinks invisible at the end of the morph, and at step 3 they all show as
+    Stuffings before becoming vtuffings + take extra time."  And the load-bearing hunch: *"H%Run isn't
+     allowed to think while Story isn't having its runtime — is that understood by Voro?"*
+- **The answer [V]:** the CRUSH understands it — it runs inside `cyto_update_wave`, awaited before
+   `Cyto_wave_done`, so it thinks in-beat.  The render SETTLE does not.
+   - `e_Cyto_animation_request` (`Cyto.svelte:1379`) releases the Run with `Cyto_animation_done` on a
+      FIXED timer: `setTimeout(grawave_duration + DWELL_MS(750) + 100)` (1397-1401).
+   - the render's morph (`MORPH_MS`), overlay reveal (`OVERLAY_QUIET_MS`), `diag_check` (1200ms) and —
+      the killer — the FLOOD's second relayout (`setTimeout(relayout, 80)` on layoutstop, `Cytui.apply`)
+       all run on their OWN clocks; NONE feed `animation_done`.
+   - so on a flood step the Run advances mid-settle → every pane re-mounts Stuffing-first and blinks
+      (paint_final rebuilds `vsubs` wholesale at morph end — F3).  The tail spills past the beat: that
+       IS "thinking outside the runtime."
+- **The fix:** the fixed dwell becomes a real settle SIGNAL.
+   - the render tells Cyto "I've landed" = morph done AND no flood relayout pending AND `diag_streak`
+      clear; THAT drives `Cyto_animation_done`.  A flood step then waits for its 2nd relayout, a calm
+       step advances promptly, and the Run never advances into a blink.
+   - KEEP the dwell as a FLOOR, not the gate (the unrushed-story pacing is deliberate — the `waitVoro`
+      +2s history): wait for `max(real-settle, dwell)`, with a hard ceiling so the render never hangs
+       the Run if it never settles.
+- **The seam to build:**
+   - Cytui already has the settle points — morph end (`settle_overlay_show()` ~2409), `layoutstop`, the
+      `diag_check` quiescence — and already stamps `top_House.c.{cy,cy_render,cy_diag_cures}` (the
+       op:'shot'/'why' channel).  Add a `render_settled` latch on the same channel, e.g.
+        `top_House.c.cy_settled = story_step` (live `.c`, NEVER snapped — metaphysics #2).
+   - `e_Cyto_animation_request` awaits that stamp (poll or a tiny event) instead of the bare timer,
+      preserving its existing gates (`supports_takeTurns` @1383, `w.c.wants_animation_done` @1398).
+   - compounding cleanup (F3, optional but it's the actual blink): stop paint_final rebuilding `vsubs`
+      wholesale — diff by (id, content-sig) so an unchanged pane doesn't re-pop.  Kills the blink even
+       before the timing lands; the two reinforce.
+- **BOMBS:** verify LIVE only (a still can't see a blink) + fixtures MUST NOT move (the signal is
+   `.c`/`$state`, never a `%key`).  Never HMR mid-run.  Do NOT delete the unrushed pace — a watched run
+    must still read as a story, not a flipbook; the fix is "wait for real settle, floored at the dwell",
+     not "advance the instant the morph ends".
+- **Auto-checkable?** No (pixels/timing) — eyes-on; the `--why` film strip confirms the win: the last
+   morph/settle event's `dt` should land BEFORE the next wave, not after `animation_done`.
 
 ### F3 — cells flash / re-pop when nothing changed; can't tell a NEW node arriving  *(ROOT-B)*
 - **Owner:** "everything acts like it's changing (cells flash like they're popping into existence when
