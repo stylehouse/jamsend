@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '1af0b0ab7964f012' },
+    Ghostmeta_Ghost_M_Ra(): string { return '877d4c68475647aa' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1341,6 +1341,10 @@ Ra_dial_next(w, mirror, opts) {
         cands.push(rec)
     }
     cands.sort((x, y) => (x.sc.id < y.sc.id ? -1 : 1))
+    // the dial's domain size, exposed runtime-only (.c, never snapped) so a Book can assert HOW
+    //  FORCED a pick was — gate-removal then always changes the caller's snapped row, instead of
+    //   hiding behind a pinned rand that happens to re-pick the same record.
+    w.c.ra_dial_cands = cands.length
     if (!cands.length) return null
     if (o.id) {
         for (const rec of cands) {

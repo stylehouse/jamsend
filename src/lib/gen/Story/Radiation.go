@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Radiation(): string { return 'da9814a8256d4ece' },
+    Ghostmeta_Ghost_Story_Radiation(): string { return 'f3403566ed74e831' },
 
 // Radiation.g — the Ra* PRODUCT Books (rastock → racast → raterm; Radio_todo.md §3), in the
 //  Musuation/Swarmation mould: the file is the artifact; MusuRaStock is the first Book identity.
@@ -1163,6 +1163,11 @@ async MusuRaChase_beat(w) {
             while (mapb[lead] != null) { lead = lead + 1 }
             this.Ra_term_stream_open(w, pick, { prime: 6, play: 2, want_left: 3, ahead: 6, pipeline: 3, cap: w.c.cap })
             let sw = { chased: 1, at_head: w.c.a_head, warm: lead }
+            // WHO the dial landed on + how forced the turn was — the cross-Pier-ness of the chase
+            //  was enforced only by the pinned rand before (delete skip_src and a lucky seed still
+            //   re-picks the other Pier); src + cands make gate-removal change this line always.
+            sw.src = pick.c.from === w.c.duo_pre ? 'Duo' : (pick.c.from === w.c.uno_pre ? 'Uno' : 'other')
+            sw.cands = +(w.c.ra_dial_cands || 0)
             if (w.c.a_drops.length) sw.a_dropped = w.c.a_drops.length
             w.i(sw)
             return
@@ -1197,7 +1202,17 @@ async MusuRaChase_beat(w) {
             while (mapc[lead] != null) { lead = lead + 1 }
             this.Ra_term_stream_open(w, pick, { prime: 6, play: 2, want_left: 3, ahead: 6, pipeline: 3, cap: w.c.cap })
             let sk = { skip: 'B', at_head: w.c.b_head, warm: lead }
+            // same forcing proof as the chase row: post-dark the dial's domain is Duo's remainder
+            //  alone, and the pick's source is asserted, not left to the seed.
+            sk.src = pick.c.from === w.c.duo_pre ? 'Duo' : (pick.c.from === w.c.uno_pre ? 'Uno' : 'other')
+            sk.cands = +(w.c.ra_dial_cands || 0)
             if (p.drops.length) sk.b_dropped = p.drops.length
+            // the fan-out's HALF of the presence claim, finally on-snap: a post-dark restock read —
+            //  `of` counts only live-source candidates, so deleting the ra_source_live gate in
+            //   Ra_restock_beat flips this line (it read 3 pre-dark) instead of slipping silently
+            //    (every preview being already warm, the gate had nothing observable to change).
+            let rsd2 = await this.Ra_restock_beat(w, mir, 4)
+            w.i({ fanout_dark: 1, of: rsd2.of, warm: rsd2.warm })
             w.i(sk)
             return
         }

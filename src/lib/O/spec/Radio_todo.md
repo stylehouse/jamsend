@@ -30,6 +30,19 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
      the pre-pinned set — none fuzz-swallowed). Verify re-runs 56/56 green twice (≈53/≈54 —
       the predicted two-seal AudibleEntropy signature; the ±1 is round= wobble). The owed
        float32-compat runs also green: MusuReplica 14/14 (≈10), MusuReco 11/11 (≈3).
+ **Assertion upgrades STAGED, blocked on tab warmth (11:20).** Three of the audit's upgrades are
+  BUILT + LocalGen-compiled, fixtures NOT yet re-recorded: `src`+`cands` on the chased AND skip
+   rows (Radiation.g — kills both PRNG-luck slip channels; `cands` reads the new runtime-only
+    `w.c.ra_dial_cands` stamp in Ra_dial_next), and a post-dark `fanout_dark,of=N` row (gives the
+     restock online-gate a line to die on).  Deliberately NOT done: the `keep_ahead=2` pin (with a
+      3-candidate catalog it would falsify the fan-out sentence "kept EVERY other preview warm" —
+       it belongs in a single-source Book) and the mid-run revoke variant (a new scene, owed).
+  RESUME: keep the 49de tab UNFROZEN ~10 min (foreground it / visible window — the browser kept
+   freezing it in <2-min windows, killing every dispatch), then: burn-in MusuRaStock → CHECK run
+    MusuRaChase (steps ~15/~20 red with the new row fields — verify values sane + deterministic
+     across two CHECK runs) → accept → green ×2 → sabotage-prove `fanout_dark` (delete the
+      ra_source_live line in Ra_restock_beat, expect red, revert).
+
  **Adversarial audit (agent + one live sabotage).** The live probe: gate the chase %see on
   `warm >= 99` (Radiation.g:1232 via LocalGen) → the run went RED from exactly step 15 (its landing
    step), then green again on revert — the Book catches its own regression, and a LocalGen disk

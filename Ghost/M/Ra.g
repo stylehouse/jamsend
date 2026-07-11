@@ -1279,6 +1279,10 @@ Ra_dial_next(w, mirror, opts):
         cands.push(rec)
     }
     cands.sort((x, y) => (x.sc.id < y.sc.id ? -1 : 1))
+    // the dial's domain size, exposed runtime-only (.c, never snapped) so a Book can assert HOW
+    //  FORCED a pick was — gate-removal then always changes the caller's snapped row, instead of
+    //   hiding behind a pinned rand that happens to re-pick the same record.
+    w.c.ra_dial_cands = cands.length
     if (!cands.length) return null
     if (o.id) {
         for (const rec of cands) {
