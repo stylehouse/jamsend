@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Voronation(): string { return 'c9549167969d9e7e~g1' },
+    Ghostmeta_Ghost_Story_Voronation(): string { return 'de52af4650daa678~g1' },
 
 
 //#region pier — VoroRadioPier: the tuner drifts over MUSIC dribbled in from a (fake) Pier
@@ -705,6 +705,7 @@ async VoroScape_order(w) { const H = this;
 //   7 swarm    5 varying %req + 2 %Cairn       → noisy gang looser than plain (Voro_gang_min noisy)
 //   8 genus    5 genera × 4 loose taxa (=20)   → UNPINNED governor finds clades (Voro_crush_scan ~:52)
 //   9 popped   3 %Ingot then pop one (beat 3)  → surf intent + spill re-gang  (crush_walk popped ~:1129)
+//  10 families 4 genus gangs sharing a %clade   → region groups sibling folds  (Voro_model_family ~:805)
 VoroTest(A,w) {
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
         await this.VoroTest_drive(w,req)
@@ -890,6 +891,31 @@ VoroTest_genus(w) {
     this.VoroMitosis_found(w, 'Leptospermum', 4)
 
 },
+// shape 10 — botanical families (#19): four genus gangs that a SECONDARY property ropes into two clades.
+//  Each taxon carries a shared %clade fact (Metrosideros + Kunzea = Myrtales, Olearia + Brachyglottis =
+//   Asterales).  The model's `region` is the grasp's the:family = each cell's VALUE on the dominant
+//    SHARED key (here %clade, carried by all four reps), so sibling gangs of one clade get the SAME
+//     region while the two clades differ — the render buckets its washes by exactly this grouping, one
+//      level ABOVE the mainkey.  region lives OFF-SNAP (never projected to the Voronoiology row, so no
+//       fixture churns); the gate reads it via VoroTest_model_of.  Genus stays the first key (mainkey).
+VoroTest_families(w) {
+    this.VoroTest_clade_gang(w, 'Metrosideros', 'Myrtales', ['excelsa', 'robusta', 'umbellata'])
+    this.VoroTest_clade_gang(w, 'Kunzea', 'Myrtales', ['ericoides', 'amathicola', 'linearis'])
+    this.VoroTest_clade_gang(w, 'Olearia', 'Asterales', ['albida', 'solandri', 'furfuracea'])
+    this.VoroTest_clade_gang(w, 'Brachyglottis', 'Asterales', ['repanda', 'greyi', 'rotundifolia'])
+
+},
+// plant one genus gang of three taxa, each carrying the shared %clade fact.  sc[genus] is set FIRST so
+//  the genus is the mainkey; %clade rides as an ordinary second key (the shared property region groups by).
+VoroTest_clade_gang(w, genus, clade, epithets) {
+    for (const e of epithets) {
+        let sc = {}
+        sc[genus] = e
+        sc.clade = clade
+        w.i(sc)
+    }
+
+},
 // shape 9 — the popped intent: three %Ingot leaves that gang at the bench (L2 min 3).  The mutate beat
 //  pops ONE by hand (c.popped — the surf intent the crush must respect); that leaf then stands OUT of
 //   the fold (the popped-tiny branch skips it from the gang pool) and the remaining TWO re-gang at the
@@ -912,6 +938,7 @@ VoroTest_bench(w) {
     this.VoroTest_swarm(this.VoroTest_example(w, 'swarm'))
     this.VoroTest_genus(this.VoroTest_example(w, 'genus'))
     this.VoroTest_popped(this.VoroTest_example(w, 'popped'))
+    this.VoroTest_families(this.VoroTest_example(w, 'families'))
 
 },
 // beat 3 — the mutations, so a reader sees the readings MOVE: three arrivals swell the flock example
@@ -1029,6 +1056,18 @@ VoroTest_witness_bench(w) {
     //  prove it is the VERY SAME row (not a torn-down-and-rebuilt one) after its count slides.  c-side
     //   ref, survives across beats like VoroRadio's radio_picks — the model's find-or-create keeps it.
     w.c.census_id = brow
+    // #19 sibling folds grouped by a SECONDARY property: the families example's four genus gangs share a
+    //  %clade fact, so the model's region (the grasp's the:family = each cell's value on the dominant
+    //   SHARED key) equals WITHIN a clade and differs ACROSS.  Read off the OFF-SNAP model (region is
+    //    never projected to the snap).  Reddens if the grasp picked a per-gang key (regions would split)
+    //     or never set region (reg === fold name).
+    let fmodel = this.VoroTest_model_of(w, 'families')
+    let ffams = fmodel ? fmodel.o({ Family: 1 }) : []
+    let rMet = (ffams.find(x => x.sc.Family === 'Metrosideros') || { sc: {} }).sc.region
+    let rKun = (ffams.find(x => x.sc.Family === 'Kunzea') || { sc: {} }).sc.region
+    let rOle = (ffams.find(x => x.sc.Family === 'Olearia') || { sc: {} }).sc.region
+    let rBra = (ffams.find(x => x.sc.Family === 'Brachyglottis') || { sc: {} }).sc.region
+    if (rMet && rMet === rKun && rOle && rOle === rBra && rMet !== rOle && !(w.oa({see: 'sibling folds group by a shared property — Metrosideros and Kunzea land in one region while Olearia and Brachyglottis land in another so a secondary clade ropes the gangs the mainkey keeps apart'}))) w.i({see: 'sibling folds group by a shared property — Metrosideros and Kunzea land in one region while Olearia and Brachyglottis land in another so a secondary clade ropes the gangs the mainkey keeps apart'})
 
 },
 // beat 3 — the mutations read back PER EXAMPLE: the flock example grew, the mix example shrank.  The

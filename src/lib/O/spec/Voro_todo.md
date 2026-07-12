@@ -56,7 +56,7 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
         the same bench/mutate/quiet beats, all on the honest language.  **Headless CredRunner smoke only
          (all 15 `%see` fire; no live drift/ttlilt in the quiet beat)** — the LIVE runner gate + the
           human's re-record are OWED.  See §The VoroTest roster below for the rest of the fill-out plan
-           (#19 region + #29 loner still lack-marked — each needs care/a model cut).
+           (#19 region NOW LANDED + live-gated; #29 loner still lack-marked — needs a model cut).
  - **③ Cytui consumes the model.**  Cytui shrinks to wiring + paint: it READS the grasp's model
     (membership, order, loudness, drift) instead of recomputing it.  Today `region_of` /
      `river_order` / `family_trait` (Cytui) still hand-roll it render-side — this wave makes them
@@ -148,15 +148,18 @@ MISSION: fill VoroTest (`Ghost/Story/Voronation.g`) with the owed [model] roster
 
 **PROGRESS (2026-07-13):** ✅ #6 (lack-mark resolved → noisy threshold), #14, #18 (unpinned governor),
  #23, #28 all LANDED + CredRunner-smoked (5 new `%see`, all fire).  #7 model-part marked COVERED (bond
-  edge is [eyes]).  ⏸ #19 (region) + #29 (loner) LACK-MARKED — each needs care/a model cut, NOT guessed
-   (see the roster entries).  Next cold session: the LIVE gate (owed #1) or the #19/#29 model cuts.
+  edge is [eyes]).  ✅ #19 (region / botanical families) LANDED + **LIVE-GATED** on the :9091 runner —
+   the `sibling folds group by a shared property` see fired live (a secondary `clade` fact ropes four
+    mainkey-distinct gangs into two regions, read off-snap via `VoroTest_model_of`).  ⏸ #29 (loner)
+     STILL LACK-MARKED — needs a small model cut (persist member-facts / +N overflow), NOT guessed.
+      Next cold session: the #29 model cut, or re-record the batch-1/batch-2 fixtures live (owed).
 
 **THE ORDER** (roster numbers): #6 swarm — FIRST resolve its lack-mark (is same-mainkey-varying-
  value already mix's gang path? prove the difference with a dataset or mark it covered) → #7
   under-w gang census (model part only, no bond edge) → #18 genus/clade discovery — NOTE this one
    tests the GOVERNOR, so crush it UNPINNED (no `fixed` level) with ≥16 leaves so escalation is
-    deterministic; every other Example stays pinned L2 → #19 botanical families (the `region`
-     secondary property groups sibling folds; gate region equality across them) → #29 loner
+    deterministic; every other Example stays pinned L2 → #19 botanical families ✅ (the `region`
+     secondary property groups sibling folds; gate region equality across them — live-gated) → #29 loner
       nothing-dropped (off-snap model holds EVERY sc fact of a bare loner — gate member-facts
        count vs sc keys via `VoroTest_model_of`) → #28 census-storm identity-stable emission
         (gate what is reachable live — row-slot persistence — and state intent; the full diff-size
@@ -280,15 +283,17 @@ Six shapes are ALREADY in the bench (flock/mix/motley/gradient/groves/edges — 
        UNPINNED — the ONLY auto-levelled Example — overrun the 15-cell budget so the governor escalates
         to L1 on its own and the five genera each gang.  Gate is `crush_level === 1` (proves the density
          budget's own escalation, not a pinned level) + all five ganged.
-19. **botanical families (multi-genus hulls)** (task 4 route C). Myrtaceae = Metrosideros+Kunzea+
-     Leptospermum; Asteraceae = Olearia+Brachyglottis — the `c.vfamily` tag / `the:family` grouping;
-      sibling folds hull per family.  [model] for family membership; [eyes] for the hull rope.
-     **// < NOT gated — needs care (2026-07-13):** the model's `region` is NOT `c.vfamily` (c-side,
-      render-only, drives Cytui's hull) — it is the grasp's `the:family` = each cell's VALUE on the
-       dominant-SHARED sc key, and it is computed OFF-SNAP ONLY (never projected to the Voronoiology
-        row).  So a clean neutral gate needs sibling gangs sharing a real sc fact whose value groups
-         them (not vfamily), read via `VoroTest_model_of`.  Deferred rather than guessed — see §The
-          data-path crux.  Do NOT project region to the snap (it would churn the groves/genus fixtures).
+19. **botanical families (multi-genus hulls)** ✅ (2026-07-13, `families` Example). Myrtaceae =
+     Metrosideros+Kunzea; Asteraceae = Olearia+Brachyglottis — the grasp's `the:family` grouping;
+      sibling folds share a region per family.  [model] for family membership.
+     **Gated:** four genus gangs (3 taxa each) share a secondary `clade` sc-fact — Metrosideros+Kunzea
+      carry `clade:Myrtales`, Olearia+Brachyglottis carry `clade:Asterales`.  `clade` is the
+       dominant-SHARED sc key (all 12 leaves; each genus key only 3), so the grasp's `the:family` =
+        each cell's clade VALUE, and `region = Voro_model_family(rep)` off-snap.  The gate (read via
+         `VoroTest_model_of`) fires only when same-clade gangs share a region AND cross-clade gangs
+          differ — a 3-way condition two mainkey-distinct gangs can satisfy ONLY by the shared fact,
+           never by fold_kind.  Region kept OFF-SNAP (never projected — would churn genus fixtures).
+            Live-gated on the :9091 runner (the `sibling folds group by a shared property` see fired).
 20. **mixed-depth flora** ✅ (groves, #4). deep vs shallow containers in one world.  [model]
 21. **extinction / a freed name reclaimed** (Voro_todo open item). VoroMitosis extinction `%see` is
      LATENT — a later split reclaims the freed genus name; sticky-death vs drop.  [model]  // < the
@@ -338,11 +343,12 @@ Six shapes are ALREADY in the bench (flock/mix/motley/gradient/groves/edges — 
          cut (persist a loner's facts + a `+N` overflow marker) before a `%see` can prove it.  A bare
           loner also grows no Vtuffing (the "tessellate its whole sc" is [eyes], Cytui's properCellable).
 
-**Coverage note (2026-07-13):** the bench now holds 9 shapes (✅: flock, mix, motley, gradient, groves,
- edges, **swarm**, **genus**, **popped**); with #14/#28 gated on `flock`, the [model] fill-out landed
-  #6 #14 #18 #23 #28 this round.  #7 model-part is covered (its bond edge is [eyes]); #19 and #29 are
-   lack-marked (each needs care/a model cut, see above).  The roster totals 29; the remaining [model]
-    shapes want Pier/radio machinery (#15/#22/#26) or the deferred #19/#29.  The [eyes]-only shapes are
+**Coverage note (2026-07-13):** the bench now holds 10 shapes (✅: flock, mix, motley, gradient, groves,
+ edges, **swarm**, **genus**, **popped**, **families**); with #14/#28 gated on `flock`, the [model]
+  fill-out landed #6 #14 #18 #19 #23 #28 this round (#19 live-gated on :9091).  #7 model-part is covered
+   (its bond edge is [eyes]); #29 alone stays lack-marked (needs a model cut, see above).  The roster
+    totals 29; the remaining [model] shapes want Pier/radio machinery (#15/#22/#26) or the deferred #29.
+     The [eyes]-only shapes are
      proven by `runner_shot`, never a fixture.  Add a shape by the `[testing-is-story-books]` +
       `[see-assertion-layer]` rules (a CHECK run then manual `%see` install, never a CredRunner ACCEPT).
 
