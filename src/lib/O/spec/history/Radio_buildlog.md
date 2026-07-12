@@ -5,6 +5,28 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
   The living state, roadmap and design are in Radio_todo.md — read THAT; come here only for
    the archaeology of how a thing landed. Newest first.
 
+**2026-07-13 (day) — two rulings: the metaphor reset and the tombstone condemned.** (1) The
+ kitchen/counter language failed the human ("counter" reads as a tally in count-land; K1 would not
+  parse). §12.1 reset: **for-oneself is not an instance — it is the House** doing its own work
+   (the M-rungs + an Upkeep-shaped standing republish, now M4); the only new construct is **THE
+    DOOR** — the narrow per-relationship handler a foreign want meets (scalars in, grant asked at
+     every leg, read-only over the magazine, streaming legs or a noted refusal out; hostile trees
+      land INERT because nothing arriving is minted into a swept space). "Door" is the codebase's
+       own admission word (SwarmDoor, "refused at the door"). K1→D1 (door-hardening Book, needs
+        M2), K2→M4. (2) **`%Tombstone` CONDEMNED** — the human: "I never asked for tombstoned";
+         provenance traced honestly: it was the one gear SAFE to build blind overnight (§10.2's own
+          words — "additive to fixtures, no design fork"), never a ruling, and the Booth had
+           already vetoed its %Ban rebirth. Kill reasons: the only load-bearing skip is
+            `Heist_held`; the deny ceremony has no real populator (an out-of-band delete never
+             mints one); `%UnGrant`'s never-drop durability is earned by SECURITY, not taste; and
+              the coming world is PULL-shaped (wants/cursors) — a blacklist defends against a push
+               that stops happening. Re-homes: manifest poke-out (per-heist MOMENT) / §9.2 `%Share`
+                match (durable narrowing) / Booth IF ever surfaced. §11.5's migration checklist
+                 re-purposed as the rip checklist (delete, not rename); the rip batches with M2 +
+                  the music-metadata swap into one reload + re-record session. Standing discipline
+                   minted alongside: Heist_* realities are PROVISIONAL until M2 is real — no
+                    durable facts accrete heist-side (§12.5 re-homes every gear).
+
 **2026-07-13 (nightshift) — the four owed live-gates all clear + the §12 magazine's first rung.**
  The human left four sequenced jobs and a "you may commit as me" licence; a recovered `49de` runner
   (the wedged tab from 07-12 came back — likely a host reload) took every gate live. **(1) MusuHeist
