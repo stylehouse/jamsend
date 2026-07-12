@@ -6,6 +6,25 @@ What began as a pane-content note is the system doc now (owner's ask).  Bottom-u
    drives your attention around all of it.  The north stars come first — they are
     where this is going and every seam below should be read as rigging for them.
 
+> **THE MODEL LAYER + THE HONEST SNAP LANGUAGE (2026-07-13) — read this before trusting any
+>  snap-face detail below.**  The `%Se — the grasp` design (§🎋) LANDED as **`Voro_model`**
+>   (`Ghost/V/Voro.g`), computed in the crush tail.  It keeps an off-snap full tree on
+>    `w.c.voro_model` (%Model / %Family / %Member / %Loud + a `%Seem:model` drift organ), and it
+>     snaps a distillation into `w:Voronoiology` whose **mainkey is PROVENANCE**:
+>      `Family:<name>,n,kind,order_by,axis,from,to` rows with loudest-first `Loud:<key>[,v:<val>]`
+>       children (weights stay OFF-snap) are computed census; an `Se:drift,neu,gone` child rides a
+>        %Family row ONLY on a beat the model Seem's resolve reported movement (absence = quiet).
+>         `%Family`/`%Loud` are computed census; `%Se` is worn only by Selection-derived readings
+>          (`Se:scape`, `Se:census`, `Se:drift`).  **The Vtuffing snap-transcription is DELETED:**
+>           `Voro_vtuff_transcribe` no longer exists — the pane WORDS stay c-side on
+>            `f.src.c.vtuffing` (the grasp scores that tree, the render draws it), and render chrome
+>             (×N titles, /*N dips, `wgt`) never crosses into fixtures.  So every passage below that
+>              describes transcribing rows / `%Vbit` leaves / `nk` / `bits:N` INTO the snap or the
+>               "census transcript" is HISTORICAL — the c-side Vtuffing ENGINE is unchanged; only its
+>                snap copy died.  (The §Relics section is already flagged non-current; those relics
+>                 still mention the transcript.)  Full arc + the five waves + what's owed:
+>                  `Voro_todo.md §0`.
+
 ## ⭐ North stars
 
 ### 📻 The radio — attention as a supplied service
@@ -835,6 +854,10 @@ Captured from the live-tab review, in the owner's words + the intended behaviour
 Not current truth; the living statement is above.  These are the dated pass-by-pass notes the doc
  grew through — kept because the *reasoning* in them (why a face was tried, what the eyes said, what
   got deleted) is knowledge even when the face itself was let go.  Mine them; never cite them as spec.
+   NB (2026-07-13): where a relic below says a row / `%Vbit` / `nk` / `bits:N` "rides the census
+    transcript into fixtures", that transcription is DELETED now (`Voro_vtuff_transcribe` is gone —
+     see the model-layer banner at the top of this doc); the snap face is `Voro_model`'s honest
+      `Family`/`Loud`/`Se` language.
 
 ### 🎋 v2 — the ▦ sub-graph, pass by pass (2026-07-11)
 

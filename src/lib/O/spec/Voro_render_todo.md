@@ -1,5 +1,12 @@
 # Voro render — the grasp-fed stained glass (text stretch-ups → I/C/S/O rivers)
 
+> **Led by `Voro_todo.md §0`** — this doc is the render-wave / three-layer DETAIL.  The arc, the
+>  five waves, and what's owed live in `Voro_todo.md §0`; read that first.  Kept here (not retired)
+>   because the slice-level engineering below — the three-layer cleave, the data-path crux, Slices
+>    A–D, and the Slice-D arc-river build notes — is the load-bearing detail behind waves ③/⑤ and
+>     is not superseded.  (2026-07-13: region washes are DEFERRED behind text-rendering — see
+>      `Voro_todo.md §0` wave ⑤.)
+
 ## 0. What to get on with next
 
 **Where we are.** Every render slice is built and the grasp rides every crush: A (text stretch-ups),

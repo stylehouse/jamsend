@@ -36,28 +36,28 @@ story:LakeTiles
         dontSnapGhostList
         wantPantheate
   TimeSpool
-    TimeTotal:beliefs,avg=1.961
-      sample=2.131,at=1783449991
-      sample=2.131,at=1783449992
-      sample=2.131,at=1783449993
-      sample=2.131,at=1783449993
-      sample=1.803,at=1783450013
+    TimeTotal:beliefs,avg=1.671
       sample=1.866,at=1783855475
       sample=1.356,at=1783855532
       sample=1.554,at=1783857091
       sample=2.21,at=1783858948
       sample=2.296,at=1783859162
-    TimeTotal:step,avg=0.218
-      sample=0.237,at=1783449991
-      sample=0.237,at=1783449992
-      sample=0.237,at=1783449993
-      sample=0.237,at=1783449993
-      sample=0.2,at=1783450013
+      sample=1.667,at=1783862072
+      sample=1.66,at=1783862467
+      sample=1.66,at=1783863089
+      sample=1.357,at=1783863108
+      sample=1.083,at=1783863126
+    TimeTotal:step,avg=0.186
       sample=0.207,at=1783855475
       sample=0.151,at=1783855532
       sample=0.173,at=1783857091
       sample=0.246,at=1783858948
       sample=0.255,at=1783859162
+      sample=0.185,at=1783862072
+      sample=0.184,at=1783862467
+      sample=0.184,at=1783863089
+      sample=0.151,at=1783863108
+      sample=0.12,at=1783863126
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:Ting_Point-last
@@ -71,7 +71,7 @@ story:LakeTiles
   step,dige:22b9a652048a7e7d
   step=2,dige:474218611abb7728
   step=3,dige:9f957533e7ba307a
-  step=4,dige:55a3e03b3d2b8fef
+  step=4,dige:c5b0285d840924ef
     note,bug:Cyto edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
   step=5,dige:9c8fa42516dcee4a
   step=6,dige:4a47bb9e94a4fc70

@@ -1,3 +1,10 @@
+> **HISTORICITY (retired 2026-07-13).**  This was the design note for `Voro_todo` task 7 (the
+>  gravity-brush pinch|spread).  It LANDED as designed 2026-07-06 — 🌀 on the ◈ bar, stash
+>   `Cyto_gravity_brush` (`src/lib/O/Cytui.svelte`).  The living statement is task 7 in
+>    `Voro_todo.md` (BUILT); the built code is the implementation.  Kept for the falloff-curve /
+>     coexistence-with-fcose reasoning.  (Mobile two-finger pinch, §"The gesture" line 7, is still
+>      unbuilt — a loose end, but not enough to keep this as a live todo.)
+
 # Voro_pinch — scroll = pinch|spread the locale (Voro_todo task 7, design note)
 
 A toggleable mode where the wheel does not zoom the camera but sculpts THAT LOCALE:

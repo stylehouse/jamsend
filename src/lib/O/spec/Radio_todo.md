@@ -23,11 +23,76 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**NIGHTSHIFT ORDERS (2026-07-13 night — the human is away for hours; work the jobs IN ORDER and
+ stop at any surprise. Every complex thinking is spelled here or pointed at; do not improvise
+  around a rule.)**
+
+ *Discipline (absolute, read twice):*
+ - NEVER git stage/commit/push — everything stays in the working tree. If HEAD moves mid-shift
+    (the human commits from the host), STOP and re-check the tree before continuing.
+ - NEVER touch core (`Housing.svelte.ts`, `Hovercraft.svelte`, `Text.svelte`, the encoders) —
+    core changes are the human's call. NEVER build §12.4's parked P experiment. NEVER wire
+     `Booth.g`. Do not edit `MusuHeist`'s flow in `Heistation.g` (the human is mid-Seen_split
+      there) except where a job below says so.
+ - Verify ONLY via the live runner rails, run FROM /app:
+    `node scripts/runner_ask.mjs <op> --runner=49de` (always `--runner=`; `runners` lists).
+     Headless Story_cli greens are bubbles — BANNED as verification.
+ - Runner bombs: a run whose `total` sticks at 1 = WEDGED TAB → stop that Book, do not accept
+    ANYTHING, note it (only a human tab reload clears it). `accept` records the tab's ACTIVE run —
+     never accept after any other Book ran in between (re-run, then accept). If `rungos` shows a
+      held run YOU did not dispatch, leave it alone and note it. NEVER HMR/ghost-compile mid-run.
+       Pre-pin the assertion sentences (git-grep the Book's .g) BEFORE any accept; confirm ALL
+        appear in the recorded fixtures after. Sealing Books carry PERMANENT benign ≈ (MusuHeist
+         ~1/step from step 3) — do not chase caveat:0. MusuBerth is deterministic — expect ≈0.
+ - After ANY .g edit, compile browserless (the -c is REQUIRED):
+    `GFILES="<files space-separated>" node_modules/.bin/vitest run -c
+     scripts/Story_cli.vitest.config.mjs scripts/LocalGen.spec.ts` — green before any dispatch.
+      Runners acquire fresh gen via Creduler on tab reload/HMR.
+
+ *Job 1 — Gate 0a: MusuHeist to 15/15 + accept.* Dispatch `run MusuHeist --watch`. The sentence
+  roster lives in `Ghost/Story/Heistation.g` (git-grep `seen:` / `see:` — the FILE is the truth;
+   the human is mid-Seen_split). The manifest note rows must read `manifest:uno,fresh=3` and
+    `manifest:retomb,holds=8,refuses=1` — the old key names (held/denied/new) appearing = STALE
+     GEN → stop + note. All sentences present in the live final snap + counts true → accept →
+      re-run ×2 green → git-grep the recorded fixtures for the full roster.
+ *Job 2 — Gate 0b: MusuBerth first record.* Dispatch `run MusuBerth --watch` (7 steps; toc diges
+  are seeded `lie`, so the FIRST run reads red on diges — that IS the record run, not a failure).
+   Verify in the live snaps: `opened_empty`, `wrote_card`, `survived` (cards=1), `forgotten`
+    (cards=0), `reset_with_story` (before>=1, after=0), and the 3 `%seen` sentences
+     (`Ghost/Story/Berthation.g`). Then accept → ×2 green. `skipped:no_writable_share` in the
+      snap = the tab lacks the FSA share → stop + note (needs the human).
+ *Job 3 — M1 Musica_publish (the first §12 rung; design = §12.2 + §12.5).* New verb
+  `Musica_publish(nav, root, prepub, lib)` homed in `Ghost/M/Heist.g` beside the berth region:
+   `Berth_open(nav, root, prepub, 'Musica')` → clear its old `%Tune` children → one
+    `Tune:<Artist — Title>` child per `lib.o({Record:1})` carrying album/genre/id scalars (the
+     tune handle is §11.1; metadata IN the magazine is what §12.3 cursors anchor on) →
+      `Berth_save`. No crush at v1 (husks come with scale), no wire, no Lies. Prove it in a new
+       Book **MusuMagazine** whose flow lives in `Ghost/Story/Berthation.g` (already enrolled — no
+        CREDULER edit): mint a small in-C lib (no disk files needed — the magazine reads the
+         CATALOG, not the disk), publish, re-open a second handle and count the Tune rows,
+          re-publish after adding a Record and see the magazine grow. 3-4 `%seen` sentences (no
+           commas, no apostrophes, em-dash pauses; gate on exact counts + live truth). Wire the
+            world named EXACTLY `MusuMagazine` (the world-name bomb), seed
+             `wormhole/Story/MusuMagazine/toc.snap` with lie diges (copy MusuBerth's shape),
+              register in `wormhole/Credence/toc.snap` under Musu/mostly (+`brand_new:1`, desc
+               NO COMMAS) AND in `wormhole/Ghost/Music/Ality/toc.snap` beside MusuBerth. LocalGen
+                green → the runner needs a reload to see a NEW toc (total:1 bomb) — if no human is
+                 present to reload, leave the Book authored + registered and note the dispatch is
+                  owed; do NOT loop on a wedged dispatch.
+ *Job 4 (stretch) — MusuHeist sabotage-proofs (only if Jobs 1-2 accepted clean).* Two CHECK-only
+  sabotages, one at a time, REVERT after each, never accept a sabotaged run: (a) neuter the
+   tombstone door (`Heist_tombstoned` → return false) — the denied-stayed-refused sentence must
+    DROP from the live snap; (b) corrupt one body_hash before landing — the run must BREACH
+     (breached tally, no landed file), not land. Each proves an assertion can fail. Revert,
+      LocalGen, re-run green, then done.
+ *End of shift:* append a dated entry to `history/Radio_buildlog.md` (what ran, what recorded,
+  what stopped and why), refresh this block (strike done jobs), leave everything uncommitted.
+
 **NOW (2026-07-13, vision-checked): the arc is §12 — the stimuli machine + the magazine.** The
  substrate is banked: the heist runs end-to-end, the Berth verbs are BUILT (§11.7 ✓) and the
   MusuBerth Book is authored + registered. Owed first (Gate 0): the two live-gates on a reloaded
-   runner — MusuHeist accept to 15/15 sees, MusuBerth first run. Then §12.4's ladder: P1 (the
-    projected subHouse, isolation-proven) ∥ M1 (Musica_publish) are the independent starts.
+   runner — MusuHeist accept to 15/15 sees, MusuBerth first run. Then §12.4's ladder: M1
+    (Musica_publish) leads, K1 (the counter — §12.1's for-another serving stance) follows.
      The older NOW below is being absorbed into its home sections.
 
 **NOW (2026-07-13, post-push): three §10.2 gears LANDED compile-clean (live-gate owed on all);
@@ -504,6 +569,15 @@ The replication protocol is real (Repli_* + the Se, §6/MusuReplica — live-gre
      mostly moves whole folders... replicate the meaningful folder structure above the selected
       stuff") — written before the Se existed; now the %Sent_Tree IS a Selection, so the sentence can
        finally mean something executable.
+
+> **Vocabulary sync (2026-07-13 — see `Voro_todo.md §The Se process`).**  This section's "the Se"
+>  is the ORGAN — canonically a **%Seem** (a particle holding a live `Selection` on `sc.Se`;
+>   `i_Seem`/`o_Seem`, parks off-snap).  **%Se** is reserved for the small SNAPPED reading a Seem
+>    projects, worn iff a `Selection.process()` produced it (mainkey = provenance).  So below:
+>     "the LIBRARY as a Se over a folder tree" = a Seem whose SUBJECT is the folder tree, its
+>      neus|goners the offers|retires; "the Se's pairing carries continuity" = the Seem's D-sphere
+>       (`bD`).  The prose keeps its old name; the build recipe + honest-projection rules live in
+>        `Voro_todo.md §The Se process` and apply here unchanged.
 
 **9.1 The real library.** A's `%Library` today is `Musu_synth` output; reality is the `/music` mount
  (read-only) arriving through the FSA share gate (`H.c.disk_gated` + `open_dir` — the granted-share
@@ -1065,25 +1139,53 @@ The riff that reframes §10's heist and §9's Pier reality as ONE mechanism. Rep
       mediate at the owner's end (the anti-klepto inversion; §11.7's front door seen from the other
        side of the wire). The UI and the front door become the same object: a magazine reader.
 
-### 12.1 Beliefs get projected — the trust boundary is WHICH House processes you
+### 12.1 Beliefs are SERVED, by stance — the kitchen and the counter
 
 beliefs()/Selection.process over H/A/w is the giant HIGH-TRUST pool: every ghost method mixes into
- the House (eatfunc), so any req a sweep touches can reach everything. The sandbox is therefore
-  structural, not advisory: foreign stimuli are processed by a DIFFERENT House holding a PROJECTED
-   (subset) belief pool — a House per Pier+Protocol that wants its own belief system (or one per
-    protocol with per-Pier w inside — w is already the isolation/snap boundary; sizing TBD at P1).
- Verified mechanics (2026-07-13): `House.subHouse(name)` EXISTS (Housing.svelte.ts:553) — own Se,
-  own beliefs() cycles, registered under the parent — but it shares the FULL pool wholesale
-   (`Object.assign(sub, this.ghosts)`, :561). The new gear is small and load-bearing: a PROJECTED
-    subHouse that assigns an allowlisted subset. Injection then lands in a room with no knives —
-     even a successfully-smuggled req can only call harmless verbs.
- The escape hatch to close: `i_elvisto` posts across Houses — either elvisto is itself projected
-  away, or the receiving House gates on provenance (`sourceHousing` is ALREADY stamped by
-   i_elvistwo, Housing.svelte.ts:573 — the plumbing exists).
- Bombs: the wire must NEVER mint live machinery — foreign trees decode %Stimulus-wrapped into the
-  restricted House; today's "a %req below w never pumps without hand-stamped c.up" is an ACCIDENT
-   doing duty as a wall, don't lean on it. And HMR re-mixes ghost methods (the known gotcha) — a
-    projected House must re-restrict on every haunt or a hot update silently re-arms the full pool.
+ the House (eatfunc), so any req a sweep touches can reach everything. The human's ruling
+  (2026-07-13): the House does NOT want carving into per-Pier sandboxes — that is subtractive
+   security (take the full pool, remove the knives, hope you found them all), at most an
+    experiment. The assuredly-correct cut: **beliefs are SERVED onto the magazine's properties by
+     the Se pass, scoped by STANCE**, in (at least) two instances —
+ **for-oneself (the kitchen)**: publish + evolve the magazine as the collection churns (re-census,
+  rename missions minting %Renamed, the curated voice), feed one's own listening. Full trust —
+   it is one's own House sweeping one's own media.
+ **for-another (the counter)**: the serving instance a follower's wants meet. Built UP from only
+  what serving needs — read-only over the magazine, the grants gate, the streaming legs — so
+   correctness is by CONSTRUCTION, not subtraction: there is nothing to escape into because the
+    escape routes were never in the room. Foreign input never meets a general brain; it is READ
+     by the counter, whose entire belief set IS the protocol. Per-relationship, and there are many
+      of them revolving — the kitchen keeps cooking, the counter keeps serving: a kitchen of
+       revolving evolving music serving.
+ Prior art in miniature (all live-green): `w.c.repli_allow(peer, at)` is already the
+  per-relationship consent answer (Repli.g:249); `Repli_register_caster` enrolls serving Piers;
+   `Ra_transcode_pump` (Ra.g:1007) is a demand loop revolving over every enrolled caster. §12
+    grows THAT shape from chunk-serving to magazine-serving. And Matstyle is the rhyme for
+     property-level serving: it autovivifies STYLE by mainkey classification — the kitchen serves
+      BELIEF by property × stance the same way.
+ **Said in the Voro voice** (language sync with `Voro_todo.md` ①, the Se-up model — the two docs
+  are converging on ONE Se philosophy): a Selection pass over a data space computes READINGS, and
+   readings wear `%Se` as PROVENANCE (Se:scape/Se:census/Se:drift there; an Se:serve family here)
+    — never to be confused with the space's own content. The magazine is CONTENT (authored voice
+     + computed census); the kitchen and the counter are ONE Se pass in two STANCES, and what they
+      produce is the SERVE-MODEL: %Se-worn readings of the same magazine — what is fresh and owed
+       a re-publish (kitchen), what is servable to WHOM under which grant (counter), what moved
+        (%Seem resolves report drift; ABSENCE IS THE QUIET READING). The Voro_model pattern
+         carries over whole: the full working model rides OFF-snap (c-side), a distillation snaps
+          into a diagnostics world, so Books prove the readings without wire or pixels —
+           snap-testable serving. One-fact-one-place keeps the seam honest: %Renamed is authored
+            FACT in the magazine (content); NOTICING a rename broke a cursor is a READING (Se).
+ Open mechanics (the next cooking, deliberately unresolved): what a stance instance IS
+  mechanically (a per-relationship w under one serving world? a %Serving particle family? — w is
+   already the isolation/snap boundary with mutex-frozen reads), and how per-property belief
+    binding looks concretely. (`House.subHouse(name)` exists, Housing.svelte.ts:553, but shares
+     the FULL pool wholesale — :561 `Object.assign(sub, this.ghosts)`; parked as experiment
+      material only.)
+ Bombs that SURVIVE the redesign: the wire must NEVER mint live machinery — a decoded foreign
+  tree must not graft into ANY swept space (today's "a %req below w never pumps without
+   hand-stamped c.up" is an ACCIDENT doing duty as a wall, don't lean on it); HMR re-mixes ghost
+    methods, so any construction-captured serving fns go stale on haunt; `sourceHousing` is
+     already stamped on cross-House elvis (i_elvistwo :573) if provenance is ever needed.
 
 ### 12.2 The magazine — %Musica, the collection sublimed into media
 
@@ -1117,21 +1219,53 @@ A %Cursor is a serialized STACK OF MATCHES — a descent path of o()-queries ({M
 ### 12.4 The jobs ladder — little, Book-gated, mostly independent starts
 
 Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the substrate.
- **P — projection**: P1 projected subHouse, proven in ISOLATION first (the fight-back rule; own
-  Book: the restricted House lacks the banned verbs, a smuggled req no-ops + notes, the main House
-   unaffected); P2 the elvis provenance gate (sourceHousing check, or project elvisto away).
  **M — magazine**: M1 Musica_publish (census + crush → a %Musica Berth Waft, metadata in-magazine);
   M2 two-Pier magazine replication (the existing Repli pipe, grants gate); M3 %Renamed markers
    minted by a rename mission + replicated with the magazine.
+ **K — the kitchen and the counter** (12.1's stance instances): K1 the COUNTER — the for-another
+  serving instance over the magazine, grown from the existing consent hook (repli_allow +
+   register_caster + the pump); its Book includes the SABOTAGE scene — a hostile stream claiming
+    req:/eternal mainkeys lands INERT, because the counter only reads want-shapes; an ungranted
+     want is refused with the refusal noted. K2 the KITCHEN — the for-self standing evolve:
+      census-diff re-publish, rename missions as a standing pass, the revolving service pacing
+       over enrolled followers (Ra_transcode_pump generalized).
  **C — cursors**: C1 the %Cursor primitive + resolver (resolve | fail cleanly, own Book scenes);
   C2 heal via recent %Renamed (rename mid-follow, the cursor heals, the heal noted); C3 cursor as
    follow-progress, berthed (survives reload — the resumable browse).
- **S — stimuli**: S1 ingestion (foreign C** decodes %Stimulus-wrapped into the restricted House's
-  per-Pier w; a HOSTILE stream claiming req:/eternal mainkeys lands INERT — the sabotage Book);
-   S2 the agenda bridge (a matured %Stimulus mints an %Errand on the Brink — the owner SEES the
-    want); S3 the heist rides it — the want-driven front door (§10.2 #4 merges here: genre starts
-     + the origin's Waft:Map advice; klepto demotes to one mode).
+ **S — stimuli surfacing**: S2 the agenda bridge (a want the counter accepted mints an %Errand on
+  the Brink — the owner SEES the want); S3 the heist rides it — the want-driven front door
+   (§10.2 #4 merges here: genre starts + the origin's Waft:Map advice; klepto demotes to one
+    mode).
  **U — the magazine reader** (Big*land family): browse a replicated %Musica, wants become cursors;
   build AFTER the rungs give it real data.
- Dependencies: P1 ∥ M1 are independent starts; S needs P; C2 needs M3; S3 needs S2 + M2; U needs
-  M2 + C1.
+ (P — the projected subHouse — PARKED as experiment material per the 12.1 ruling; do not build.)
+ Dependencies: M1 is the sole independent start; K1 needs M1; K2 needs M1 + M3; C2 needs M3;
+  S3 needs K1 + M2 + S2; U needs M2 + C1.
+
+### 12.5 The heist wriggles in — every gear re-homes into making | replicating | responding
+
+Nothing built is thrown away; each existing gear has a §12 home waiting:
+ - `Heist_census` (disk → %Records + husks) → **MAKING**: the kitchen's sublimation step. Census
+    stops being per-heist prep and becomes the standing publish (M1, then K2's evolve) — a landing
+     that changes the collection re-publishes the magazine.
+ - `Heist_offer_all` + the mirror → **REPLICATING**: the mirror IS a replicated magazine slice
+    already; the bespoke offer verb is the first thing to RETIRE (at M2) into a Repli pull of the
+     %Musica subtree. Husks/crush carry over unchanged.
+ - `Heist_manifest` → **RESPONDING, follower side**: the want evaluated against one's own
+    collection (it already reads (job, mir, own_lib)); it grows into the reading a browsing
+     follower sees BEFORE wanting — look-before-commit becomes the reader's verdict column.
+ - `%Heist,at:` job scaffolding → the WANT-BUNDLE: short-lived, cursor-pointed into the magazine
+    (C1/C3); "exists for as little time as possible" already matches the stimulus shape.
+ - `Heist_beat` / `Heist_land` (streaming, body_hash + breach, filing, took/held/denied verdict
+    rows) → **UNCHANGED**: the serving legs the counter drives (K1) and the landing side the
+     wanter keeps; the verdict rows stay the job's honest ledger.
+ - `%Tombstone` → stays on the collection; the manifest consults it; the counter's refusal wording
+    rides the response and S2 surfaces it to the owner.
+ - `newlyadded` → `Waft:Listening` (the §11.7 migration): probation feelings become Berth document
+    rows; the arrival LOG stays honest beside it.
+ - `Heist_marrauding` + `Heist_sweep` → unchanged: the Books' reset floor (MusuBerth proves the
+    berth rides it).
+ - grants / `repli_allow(peer, at)` → the counter's gate (K1): per-relationship consent
+    generalizes from chunk legs to magazine serving.
+ What DIES: nothing yet — offer retires at M2, and klepto "everything you offer" demotes to one
+  mode at S3.

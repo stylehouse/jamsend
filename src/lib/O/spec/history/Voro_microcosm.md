@@ -1,3 +1,11 @@
+> **HISTORICITY (retired 2026-07-13).**  This was the design note for `Voro_todo` task 6 (the
+>  "layout within a cell" microcosm).  Its (a)+(b) built, then the owner's eyes-on verdict
+>   ("woefully underexpressing — they just say Track") SUPERSEDED it: the microcosm cards grew
+>    into the pane-content ENGINE, **Vtuffing**, and then into the ▦ sub-graph (a pane tessellating
+>     itself — nucleus + regions + members).  The living content is `Voro_vtuffing.md` (the system
+>      doc) and `Voro_todo.md §0`.  The "just crunching on subsets, no second w:Cyto" reasoning
+>       below is still the durable answer to why a fold needs no second graph machine — kept for that.
+
 # Voro_microcosm — layout WITHIN a cell + zoom-recursion (Voro_todo task 6, design note)
 
 The question that prompted this: *"it seems I would need extra w:Cyto+Cytui hanging around

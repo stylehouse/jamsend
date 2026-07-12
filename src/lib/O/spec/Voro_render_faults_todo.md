@@ -1,5 +1,12 @@
 # Voro_render_faults — the render|animate pipeline fault catalog
 
+> **Led by `Voro_todo.md §0`** — this catalog is subordinate detail.  STATUS at 2026-07-13:
+>  F1/F2/F6/F7 are BUILT + live-proven (verified against the code this date); F3+F8 (cells
+>   vanish/re-pop) are NOT a render bug — they share the identity-linearity root with the census
+>    storm, and the fix HOME is now the landed **model layer** (`Voro_model` / the persistent
+>     fold-sphere in `w:Voronoiology` — `Voro_todo.md §0` wave ①).  So this catalog is mostly
+>      spent; keep it as the map if a fault regresses.
+
 Owner's 2026-07-08 report on the live Voro render being brittle, plus a traced diagnosis.
  Written so each fault is **findable, fixable, and (where possible) auto-checkable**.  Companion to
   `Voro_vtuffing.md` (the render design) and `Voro_todo.md` (the crush + Book work).  The crush policy
