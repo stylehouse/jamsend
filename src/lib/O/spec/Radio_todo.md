@@ -23,77 +23,25 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
-**NIGHTSHIFT ORDERS (2026-07-13 night — the human is away for hours; work the jobs IN ORDER and
- stop at any surprise. Every complex thinking is spelled here or pointed at; do not improvise
-  around a rule.)**
+**NIGHTSHIFT 2026-07-13 — DONE (all four jobs cleared; committed as the human by licence).** The
+ blow-by-blow is in `history/Radio_buildlog.md` (2026-07-13 nightshift entry). In brief, on the
+  recovered `49de` runner: **Job 1** MusuHeist re-recorded 15/15 over the franken-fixtures, green ×2
+   (`caveat:28` benign), committed `1c2e7e12`. **Job 2** MusuBerth's first live record + reset-with-Story,
+    green ×2 (`caveat:0`), committed `03c2e1cd`. **Job 3 (M1)** `Musica_publish` verb + the new
+     **MusuMagazine** Book authored/registered/LocalGen-green (`683d00a6`), then live-recorded +
+      accepted, green ×2, all four `%seen` + four markers present, Credence dropped `brand_new`,
+       fixtures committed `c05e66d8`. **Job 4** both MusuHeist sabotage-proofs demonstrated the sees
+        are load-bearing — (a) `Heist_tombstoned→false` dropped see #11 (retomb read `holds=8,fresh`);
+         (b) a corrupt census `body_hash` stamped `breached,landed=2` and dropped see #4 — both
+          CHECK-only, reverted, runner left green on pristine gen `39558c`.
 
- *Discipline (absolute, read twice):*
- - NEVER git stage/commit/push — everything stays in the working tree. If HEAD moves mid-shift
-    (the human commits from the host), STOP and re-check the tree before continuing.
- - NEVER touch core (`Housing.svelte.ts`, `Hovercraft.svelte`, `Text.svelte`, the encoders) —
-    core changes are the human's call. NEVER build §12.4's parked P experiment. NEVER wire
-     `Booth.g`. Do not edit `MusuHeist`'s flow in `Heistation.g` (the human is mid-Seen_split
-      there) except where a job below says so.
- - Verify ONLY via the live runner rails, run FROM /app:
-    `node scripts/runner_ask.mjs <op> --runner=49de` (always `--runner=`; `runners` lists).
-     Headless Story_cli greens are bubbles — BANNED as verification.
- - Runner bombs: a run whose `total` sticks at 1 = WEDGED TAB → stop that Book, do not accept
-    ANYTHING, note it (only a human tab reload clears it). `accept` records the tab's ACTIVE run —
-     never accept after any other Book ran in between (re-run, then accept). If `rungos` shows a
-      held run YOU did not dispatch, leave it alone and note it. NEVER HMR/ghost-compile mid-run.
-       Pre-pin the assertion sentences (git-grep the Book's .g) BEFORE any accept; confirm ALL
-        appear in the recorded fixtures after. Sealing Books carry PERMANENT benign ≈ (MusuHeist
-         ~1/step from step 3) — do not chase caveat:0. MusuBerth is deterministic — expect ≈0.
- - After ANY .g edit, compile browserless (the -c is REQUIRED):
-    `GFILES="<files space-separated>" node_modules/.bin/vitest run -c
-     scripts/Story_cli.vitest.config.mjs scripts/LocalGen.spec.ts` — green before any dispatch.
-      Runners acquire fresh gen via Creduler on tab reload/HMR.
-
- *Job 1 — Gate 0a: MusuHeist to 15/15 + accept.* Dispatch `run MusuHeist --watch`. The sentence
-  roster lives in `Ghost/Story/Heistation.g` (git-grep `seen:` / `see:` — the FILE is the truth;
-   the human is mid-Seen_split). The manifest note rows must read `manifest:uno,fresh=3` and
-    `manifest:retomb,holds=8,refuses=1` — the old key names (held/denied/new) appearing = STALE
-     GEN → stop + note. All sentences present in the live final snap + counts true → accept →
-      re-run ×2 green → git-grep the recorded fixtures for the full roster.
- *Job 2 — Gate 0b: MusuBerth first record.* Dispatch `run MusuBerth --watch` (7 steps; toc diges
-  are seeded `lie`, so the FIRST run reads red on diges — that IS the record run, not a failure).
-   Verify in the live snaps: `opened_empty`, `wrote_card`, `survived` (cards=1), `forgotten`
-    (cards=0), `reset_with_story` (before>=1, after=0), and the 3 `%seen` sentences
-     (`Ghost/Story/Berthation.g`). Then accept → ×2 green. `skipped:no_writable_share` in the
-      snap = the tab lacks the FSA share → stop + note (needs the human).
- *Job 3 — M1 Musica_publish (the first §12 rung; design = §12.2 + §12.5).* New verb
-  `Musica_publish(nav, root, prepub, lib)` homed in `Ghost/M/Heist.g` beside the berth region:
-   `Berth_open(nav, root, prepub, 'Musica')` → clear its old `%Tune` children → one
-    `Tune:<Artist — Title>` child per `lib.o({Record:1})` carrying album/genre/id scalars (the
-     tune handle is §11.1; metadata IN the magazine is what §12.3 cursors anchor on) →
-      `Berth_save`. No crush at v1 (husks come with scale), no wire, no Lies. Prove it in a new
-       Book **MusuMagazine** whose flow lives in `Ghost/Story/Berthation.g` (already enrolled — no
-        CREDULER edit): mint a small in-C lib (no disk files needed — the magazine reads the
-         CATALOG, not the disk), publish, re-open a second handle and count the Tune rows,
-          re-publish after adding a Record and see the magazine grow. 3-4 `%seen` sentences (no
-           commas, no apostrophes, em-dash pauses; gate on exact counts + live truth). Wire the
-            world named EXACTLY `MusuMagazine` (the world-name bomb), seed
-             `wormhole/Story/MusuMagazine/toc.snap` with lie diges (copy MusuBerth's shape),
-              register in `wormhole/Credence/toc.snap` under Musu/mostly (+`brand_new:1`, desc
-               NO COMMAS) AND in `wormhole/Ghost/Music/Ality/toc.snap` beside MusuBerth. LocalGen
-                green → the runner needs a reload to see a NEW toc (total:1 bomb) — if no human is
-                 present to reload, leave the Book authored + registered and note the dispatch is
-                  owed; do NOT loop on a wedged dispatch.
- *Job 4 (stretch) — MusuHeist sabotage-proofs (only if Jobs 1-2 accepted clean).* Two CHECK-only
-  sabotages, one at a time, REVERT after each, never accept a sabotaged run: (a) neuter the
-   tombstone door (`Heist_tombstoned` → return false) — the denied-stayed-refused sentence must
-    DROP from the live snap; (b) corrupt one body_hash before landing — the run must BREACH
-     (breached tally, no landed file), not land. Each proves an assertion can fail. Revert,
-      LocalGen, re-run green, then done.
- *End of shift:* append a dated entry to `history/Radio_buildlog.md` (what ran, what recorded,
-  what stopped and why), refresh this block (strike done jobs), leave everything uncommitted.
-
-**NOW (2026-07-13, vision-checked): the arc is §12 — the stimuli machine + the magazine.** The
- substrate is banked: the heist runs end-to-end, the Berth verbs are BUILT (§11.7 ✓) and the
-  MusuBerth Book is authored + registered. Owed first (Gate 0): the two live-gates on a reloaded
-   runner — MusuHeist accept to 15/15 sees, MusuBerth first run. Then §12.4's ladder: M1
-    (Musica_publish) leads, K1 (the counter — §12.1's for-another serving stance) follows.
-     The older NOW below is being absorbed into its home sections.
+**NEXT (2026-07-13): §12.4's ladder — M1 is down, K1 leads.** With the magazine's first rung live
+ (a `%Musica` Berth Waft published from a catalog), the next §12.4 rung is **K1 — the counter**
+  (§12.1's for-another serving stance: beliefs served BY STANCE, kitchen vs counter). After K1, M2
+   (move a magazine over the wire via Repli — crush husks come with scale). Also still owed from the
+    §10.2 push below: the **music-metadata@11 swap** (the library catch) and the **Book scenes** for
+     the landed heist gears (manifest-counts, held_named, tagged-WAV-beats-filename). Everything below
+      is being absorbed into its home sections (§3.x, §9, §12).
 
 **NOW (2026-07-13, post-push): three §10.2 gears LANDED compile-clean (live-gate owed on all);
  the Booth/Ban thread is VETOED-and-parked; persistence is ruled — §11.7 (the Berth).**

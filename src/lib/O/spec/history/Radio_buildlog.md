@@ -5,6 +5,45 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
   The living state, roadmap and design are in Radio_todo.md — read THAT; come here only for
    the archaeology of how a thing landed. Newest first.
 
+**2026-07-13 (nightshift) — the four owed live-gates all clear + the §12 magazine's first rung.**
+ The human left four sequenced jobs and a "you may commit as me" licence; a recovered `49de` runner
+  (the wedged tab from 07-12 came back — likely a host reload) took every gate live. **(1) MusuHeist
+   re-recorded to 15/15.** The committed fixtures were the 13/15 buggy-gen record (the manifest
+    wildcard-leak); a clean re-record over them read `15/15` see, green ×2 (`ok_pct:1, caveat:28` — the
+     benign AudibleEntropy ≈), accepted and committed (`1c2e7e12`). **(2) MusuBerth's first live
+      record** — the disk round-trip + reset-with-Story Book that was authored-but-live-gate-owed on
+       07-12 ran, accepted, green ×2 (deterministic, `caveat:0`), committed (`03c2e1cd`). **(3) The M1
+        magazine rung.** New verb `Musica_publish(nav, root, prepub, lib)` in `Ghost/M/Heist.g` beside
+         the berth region: it opens the Pier's `Waft:Musica` berth, WIPES its old `%Tune` children (a
+          republish is a whole re-cast, not an append — a dropped Record must vanish here too), then
+           lays one `Tune:<Artist — Title>` handle per Record carrying album|genre|id (the §12.3
+            metadata cursors will anchor on), each field guarded so an absent one is omitted. No crush,
+             no wire at v1 — a plain Berth Waft moves like any C** once M2 lands. Its Book **MusuMagazine**
+              (flow in `Ghost/Story/Berthation.g`) mints a small in-C catalog (the magazine sublimes the
+               CATALOG, not disk bytes), publishes, re-opens a fresh handle and counts one tune per
+                record; probes a tune's metadata; grows the catalog + republishes to watch it grow; then
+                 drops a record + republishes to prove the recast leaves no orphan. Authored + seeded toc
+                  + registered (Credence + Ghost/Music/Ality) + LocalGen-green, committed authoring-first
+                   (`683d00a6`) with dispatch marked OWED (the wedged runner). Then the recovered runner
+                    took it: RED against the lie diges as expected, accept recorded seven step snaps,
+                     green ×2 (`caveat:0`), all four latched `%seen` present + the four markers
+                      (`published,records=2,tunes=2` / `probed,has_album,has_genre,has_id` /
+                       `regrew,before=2,after=3,grew` / `recast,after=2,orphan=0`). Credulate pins
+                        `Ghost_M_Heist~g1` + `Ghost_Story_Berthation~g1` (the record is the live LocalGen
+                         spine); Credence dropped `brand_new` now the Book is green. Fixtures committed
+                          (`c05e66d8`). **(4) MusuHeist sabotage-proofs** (both CHECK-only, never
+                           accepted, reverted via `git checkout` + LocalGen + re-run green, runner left
+                            green on pristine gen `39558c`). **(a) `Heist_tombstoned→false`**: a denied
+                             track stops being remembered, so the retomb manifest read `holds=8,fresh`
+                              (should be `denied`), the track re-lands, and see #11 (`tombstoned===1 &&
+                               no_reland`) DROPPED — absent from the live snap where the fixture has it.
+                                **(b) corrupt one census `body_hash`** (`built===0 ? hash+'ff' : hash` —
+                                 pin wrong, chunks + `id` still real): the landing stamped `breached,
+                                  landed=2` (should be `landed=3`, no breach), faithful fell below 3, and
+                                   see #4 (`!breached && faithful===3`) DROPPED. Both sees are
+                                    load-bearing, not theatre. All commits authored as Steve per the
+                                     licence, each footed with the Claude co-author line.
+
 **2026-07-12 — the manifest wildcard-leak fix + the Berth verbs land.** Two things this session.
  (1) The MusuHeist manifest scene was silently losing both denied `%see`s: the note rows carried
   `held`/`denied`/`new` count keys, but `held`/`denied` are now row MAINKEYS (`held,tune:` /
