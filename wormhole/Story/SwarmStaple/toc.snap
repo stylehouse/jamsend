@@ -4,33 +4,44 @@ story:SwarmStaple
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.073
-      sample=0.067,at=1783131850
-      sample=0.067,at=1783132031
-      sample=0.041,at=1783132053
-      sample=0.116,at=1783157860
+    TimeTotal:beliefs,avg=0.06
       sample=0.057,at=1783221436
       sample=0.067,at=1783257377
       sample=0.095,at=1783265664
       sample=0.123,at=1783368230
       sample=0.051,at=1783369771
       sample=0.048,at=1783420382
-    TimeTotal:step,avg=0.009
-      sample=0.008,at=1783131850
-      sample=0.008,at=1783132031
-      sample=0.005,at=1783132053
-      sample=0.015,at=1783157860
+      sample=0.055,at=1783852043
+      sample=0.035,at=1783852102
+      sample=0.04,at=1783852147
+      sample=0.033,at=1783852176
+    TimeTotal:step,avg=0.007
       sample=0.007,at=1783221436
       sample=0.008,at=1783257377
       sample=0.012,at=1783265664
       sample=0.015,at=1783368230
       sample=0.006,at=1783369771
       sample=0.006,at=1783420382
+      sample=0.007,at=1783852043
+      sample=0.004,at=1783852102
+      sample=0.005,at=1783852147
+      sample=0.004,at=1783852176
+  Assertions
+    Assertion:two-selves,sentence:two selves stand — each an Identity owning its Peering page — keys ride .c only,by_n:2
+    Assertion:idzeug-minted,sentence:Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical,by_n:3
+    Assertion:tamper-rejected,sentence:a tampered Idzeug fails verification — one flipped signature byte and it is rejected,by_n:4
+    Assertion:offline-redeem-fails,sentence:redeeming with the inviter offline fails — the Idzeug is proof of receipt not an offline token,by_n:4
+    Assertion:page-imported,sentence:Bob imported the page of Alice — the stashed Peering reborn under his Pier,by_n:5
+    Assertion:reciprocity-sealed,sentence:each Pier carries a Music grant the OTHER signed — Classical only — reciprocity sealed,by_n:5
+    Assertion:friendship-edge,sentence:the friendship is an edge logged in the social graph at both ends,by_n:5
+    Assertion:single-use-spent,sentence:the Idzeug is single-use — a second redeem finds the nonce spent and is rebuffed,by_n:6
+    Assertion:notgrant-retires,sentence:a NotGrant under the Pier retires it at use — the other end stands until told,by_n:7
+    Assertion:account-roundtrip,sentence:the account survives export and import byte for byte — Pier and grants and keys intact,by_n:8
   step,dige:857b7f27f55187b6
-  step=2,dige:e68f0cb818046ae7
-  step=3,dige:a26f506b8fbe032b
-  step=4,dige:32cf0110519061c5
-  step=5,dige:bbc624221953fd27
-  step=6,dige:4101ac54667139bc
-  step=7,dige:89f0aa822d5df206
-  step=8,dige:4cf572b02cda0bac
+  step=2,dige:faaa7af1c06c1c8e
+  step=3,dige:7a3756e87ebc58da
+  step=4,dige:105a70619093ec59
+  step=5,dige:67a9dba2aeca4a94
+  step=6,dige:0931b2fd8712aa9d
+  step=7,dige:a63d6d8ced17c09b
+  step=8,dige:608d26447306d7a7

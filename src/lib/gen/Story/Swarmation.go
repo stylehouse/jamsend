@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return 'a9adf6a06c9dc271' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return 'c35a937c80b7a07b' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -173,7 +173,12 @@ async SwarmStaple_roundtrip(w) {
     }
 
 },
-// ── the witness — %see once-noticed claims, polled every pass (structural + idempotent) ──────
+// ── the witness — %seen LATCHED assertions (Seen_split move 3), polled every pass (structural +
+//  idempotent). Every claim here is a happened-FACT of the handshake (two selves, a mint, a rebuff, a
+//   seal, a revocation, a round trip) — once true it STAYS true, so it latches rather than flickering.
+//    Declared in The/Assertions (SwarmStaple toc.snap); a missing one reds the run un-maskably (§4).
+//     Converted whole from %see: the truth-gates are unchanged, so the snap footprint is identical
+//      (each line present from its first-true beat on) — only the key hardened see→seen.
 SwarmStaple_witness(w) {
     let alice = this.SwarmStaple_ident(w, 'Alice')
     let bob = this.SwarmStaple_ident(w, 'Bob')
@@ -181,32 +186,32 @@ SwarmStaple_witness(w) {
     let aPeering = this.Swarm_peering(alice)
     let bPeering = this.Swarm_peering(bob)
     // beat 2: two selves — each an %Identity owning its %Peering page, the keypair on .c only.
-    if (aPeering && bPeering && alice.c.keys?.key && !(w.oa({see: 'two selves stand — each an Identity owning its Peering page — keys ride .c only'}))) w.i({see: 'two selves stand — each an Identity owning its Peering page — keys ride .c only'})
+    if (aPeering && bPeering && alice.c.keys?.key && !(w.oa({seen: 'two selves stand — each an Identity owning its Peering page — keys ride .c only'}))) w.i({seen: 'two selves stand — each an Identity owning its Peering page — keys ride .c only'})
     // beat 3: the offer exists as a nonce record — FOR the Music Feature scoped to Classical.
     let record = aPeering?.o({ Idzeug: 1 })[0]
-    if (record && record.sc.to === 'Music' && record.sc.genre === 'Classical' && !(w.oa({see: 'Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical'}))) w.i({see: 'Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical'})
+    if (record && record.sc.to === 'Music' && record.sc.genre === 'Classical' && !(w.oa({seen: 'Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical'}))) w.i({seen: 'Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical'})
     // beat 4: teeth — the flipped byte was rejected at verify; the offline redeem failed delivery.
-    if (bob.o({ rebuff: 'forged' })[0] && !(w.oa({see: 'a tampered Idzeug fails verification — one flipped signature byte and it is rejected'}))) w.i({see: 'a tampered Idzeug fails verification — one flipped signature byte and it is rejected'})
-    if (bob.o({ rebuff: 'offline' })[0] && !(w.oa({see: 'redeeming with the inviter offline fails — the Idzeug is proof of receipt not an offline token'}))) w.i({see: 'redeeming with the inviter offline fails — the Idzeug is proof of receipt not an offline token'})
+    if (bob.o({ rebuff: 'forged' })[0] && !(w.oa({seen: 'a tampered Idzeug fails verification — one flipped signature byte and it is rejected'}))) w.i({seen: 'a tampered Idzeug fails verification — one flipped signature byte and it is rejected'})
+    if (bob.o({ rebuff: 'offline' })[0] && !(w.oa({seen: 'redeeming with the inviter offline fails — the Idzeug is proof of receipt not an offline token'}))) w.i({seen: 'redeeming with the inviter offline fails — the Idzeug is proof of receipt not an offline token'})
     // beat 5: the mutual seal — read both Piers once, claim import + reciprocity + the graph.
     let aPier = aPeering?.o({ Pier: 1, pub: bob.sc.prepub })[0]
     let bPier = bPeering?.o({ Pier: 1, pub: alice.sc.prepub })[0]
-    if (bPier && bPier.o({ Peering: 1 })[0]?.sc?.friendly === 'Alice' && !(w.oa({see: 'Bob imported the page of Alice — the stashed Peering reborn under his Pier'}))) w.i({see: 'Bob imported the page of Alice — the stashed Peering reborn under his Pier'})
+    if (bPier && bPier.o({ Peering: 1 })[0]?.sc?.friendly === 'Alice' && !(w.oa({seen: 'Bob imported the page of Alice — the stashed Peering reborn under his Pier'}))) w.i({seen: 'Bob imported the page of Alice — the stashed Peering reborn under his Pier'})
     let aGot = aPier?.o({ Grant: 'Music', by: bob.c.keys?.pub })[0]
     let bGot = bPier?.o({ Grant: 'Music', by: alice.c.keys?.pub })[0]
-    if (aGot && bGot && aGot.sc.genre === 'Classical' && bGot.sc.genre === 'Classical' && !(w.oa({see: 'each Pier carries a Music grant the OTHER signed — Classical only — reciprocity sealed'}))) w.i({see: 'each Pier carries a Music grant the OTHER signed — Classical only — reciprocity sealed'})
+    if (aGot && bGot && aGot.sc.genre === 'Classical' && bGot.sc.genre === 'Classical' && !(w.oa({seen: 'each Pier carries a Music grant the OTHER signed — Classical only — reciprocity sealed'}))) w.i({seen: 'each Pier carries a Music grant the OTHER signed — Classical only — reciprocity sealed'})
     let aEdge = alice.o({ SocialGraph: 1 })[0]?.o({ Edge: 1, b: bob.sc.prepub })[0]
     let bEdge = bob.o({ SocialGraph: 1 })[0]?.o({ Edge: 1, b: alice.sc.prepub })[0]
-    if (aEdge && bEdge && !(w.oa({see: 'the friendship is an edge logged in the social graph at both ends'}))) w.i({see: 'the friendship is an edge logged in the social graph at both ends'})
+    if (aEdge && bEdge && !(w.oa({seen: 'the friendship is an edge logged in the social graph at both ends'}))) w.i({seen: 'the friendship is an edge logged in the social graph at both ends'})
     // beat 6: single-use — the spent nonce rebuffs Carol at Alice's door; no Pier forms for her.
     let carol = this.SwarmStaple_ident(w, 'Carol')
     let carolPier = carol && this.Swarm_peering(carol)?.o({ Pier: 1 })[0]
-    if (carol && carol.o({ rebuff: 'rejected_spent' })[0] && !carolPier && !(w.oa({see: 'the Idzeug is single-use — a second redeem finds the nonce spent and is rebuffed'}))) w.i({see: 'the Idzeug is single-use — a second redeem finds the nonce spent and is rebuffed'})
+    if (carol && carol.o({ rebuff: 'rejected_spent' })[0] && !carolPier && !(w.oa({seen: 'the Idzeug is single-use — a second redeem finds the nonce spent and is rebuffed'}))) w.i({seen: 'the Idzeug is single-use — a second redeem finds the nonce spent and is rebuffed'})
     // beat 7: revocation at use — Alice's Pier retires under its %NotGrant while Bob's still stands.
-    if (aPier && bPier && aPier.o({ NotGrant: 'Music' })[0] && !this.Swarm_pier_live(aPier, 'Music') && this.Swarm_pier_live(bPier, 'Music') && !(w.oa({see: 'a NotGrant under the Pier retires it at use — the other end stands until told'}))) w.i({see: 'a NotGrant under the Pier retires it at use — the other end stands until told'})
+    if (aPier && bPier && aPier.o({ NotGrant: 'Music' })[0] && !this.Swarm_pier_live(aPier, 'Music') && this.Swarm_pier_live(bPier, 'Music') && !(w.oa({seen: 'a NotGrant under the Pier retires it at use — the other end stands until told'}))) w.i({seen: 'a NotGrant under the Pier retires it at use — the other end stands until told'})
     // beat 8: the round trip — restored twin holds the Pier and the keys, and the blobs matched.
     let restored = w.o({ Account: 1, of: 'AliceVault' })[0]?.o({ Identity: 1 })[0]
-    if (restored && this.Swarm_peering(restored)?.o({ Pier: 1, pub: bob.sc.prepub })[0] && restored.c.keys?.key && w.o({ roundtrip: 'identical' })[0] && !(w.oa({see: 'the account survives export and import byte for byte — Pier and grants and keys intact'}))) w.i({see: 'the account survives export and import byte for byte — Pier and grants and keys intact'})
+    if (restored && this.Swarm_peering(restored)?.o({ Pier: 1, pub: bob.sc.prepub })[0] && restored.c.keys?.key && w.o({ roundtrip: 'identical' })[0] && !(w.oa({seen: 'the account survives export and import byte for byte — Pier and grants and keys intact'}))) w.i({seen: 'the account survives export and import byte for byte — Pier and grants and keys intact'})
 
 },
 // SwarmStaple_order — keep the Run snap readable: float A:SwarmStaple to the front of H/*.

@@ -16,14 +16,24 @@ This file is destination + the bombs + the next move. Correct anything that has 
   prove every step on a LIVE `:9091` runner via `runner_ask.mjs` — a green in `Story_cli` is a
    bubble (`verify-via-live-runner`, CLAUDE.md).
 
-**MOVES 1 + 2 LANDED (2026-07-12, proven live on runners `3c5238`/`49dee9`). The MECHANISM is
- complete.** `%seen` latches AND a missing declared assertion now reds the run — un-maskable by
-  entropy. Move 1 committed as `Seen_split 1` (`b94f79f4`); move 2 is the uncommitted
-   `Auto.svelte`+`runner_ask.mjs` diff. **What remains is MOVE 3: the fleet migration** (convert the
-    load-bearing `%see:'sentence'` assertions across the Book fleet to `%seen` + roster lines, retire
-     `%witnessed`). Move 3 is voluminous + inherently SERIAL (each Book = a live re-record + an
-      assertion-set diff); do it Book-by-Book, `SwarmSteal` is the reference conversion. NO BATCHING
-       still applies — one Book per pass, verified live.
+**MOVES 1 + 2 LANDED + MOVE 3 STARTED (2026-07-12, proven live on `3c5238`/`49dee9`). The MECHANISM
+ is complete.** `%seen` latches AND a missing declared assertion now reds the run — un-maskable by
+  entropy. Move 1 committed as `Seen_split 1` (`b94f79f4`); move 2 (`Auto.svelte`+`runner_ask.mjs`)
+   and the first migrated Book are uncommitted. **Move 3 is the remaining work: the fleet migration**
+    — convert each Book's load-bearing `%see:'sentence'` to `%seen` + roster lines, retire
+     `%witnessed`. Voluminous + inherently SERIAL (each Book = a live re-record + a sabotage check);
+      one Book per pass, verified live (NO BATCHING).
+
+**Move-3 progress (Books migrated):**
+- `SwarmSteal` — the move-1 REFERENCE: 2 `%seen` added BESIDE the `%see` (mixed Book — its other 3
+   `%see` are genuine per-beat observations, kept). Committed in `Seen_split 1`.
+- `SwarmStaple` — first FULL conversion (2026-07-12): all 10 handshake happened-facts converted
+   `%see`→`%seen` (truth-gates unchanged → identical snap footprint, only the key hardened), 10
+    `Assertion:` roster lines, fixtures 2-8 re-recorded live (latch accumulates 1→10 across the
+     beats), GREEN 8/8 + phantom-sabotage RED-proven. Uncommitted.
+- Remaining fleet: the other Swarm* Books, the Musu*/Radiation/Voronation/Peregrination families
+   (§5 inventory), and the `%witnessed` retirement. `SwarmStaple` is now the FULL-conversion worked
+    example (`SwarmSteal` is the stand-beside/mixed example).
 
 Three concrete moves, sized honestly:
 

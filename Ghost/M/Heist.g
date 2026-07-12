@@ -525,3 +525,55 @@ async Heist_sweep(nav, path):
         } catch (er) {}
     }
 //#endregion
+
+//#region berth — a Pier's own Wafts homed on disk (§11.7): the persistence door, encoders-only, zero Lies
+// A Berth homes one Pier's mutable documents — Waft:Taste, Waft:Listening, Waft:Filings, Waft:Map — each a
+//  Waft (the project-standard robust document) at <root>/.jamsend/berth/<prepub>/<name>/toc.snap, the EXACT
+//   wormhole shape (a Waft = a dir with a toc.snap) just homed under an identity instead of the repo tree.
+//    Bound to the ENCODERS ONLY (enWaft/deWaft) + the nav contract — no LiesStore, no Cortex, no docks: Lies
+//     can MOUNT a berth Waft in the editor grid later, but the Berth never needs Lies to function.  root is
+//      the caller's: the app passes the durable collection (documents TRAVEL WITH the music); a Book passes
+//       its marrauding namespace, so Heist_sweep empties every berth for free — reset-with-the-Story falls
+//        out of homing, no new reset mechanism.
+Berth_dir(root, prepub, name):
+    return root + '/.jamsend/berth/' + prepub + '/' + name
+
+// Berth_open — deWaft the Waft's toc.snap into a live C tree, or MINT an empty %Waft when absent (a first
+//  open is not an error — the document is simply new).  The on-disk dir rides home on .c (runtime-only,
+//   never snaps) so Berth_save needs only the waft.  path is the logical Waft key the tree carries.
+async Berth_open(nav, root, prepub, name):
+    let dir = this.Berth_dir(root, prepub, name)
+    let path = 'berth/' + prepub + '/' + name
+    let snap = null
+    try {
+        snap = await nav.read_file(dir, 'toc.snap')
+    } catch (er) { snap = null }
+    let waft = null
+    if (snap) {
+        let dec = this.deWaft(snap, path)
+        waft = dec.Waft
+    }
+    if (!waft) waft = new TheC({ c: {}, sc: { Waft: path } })
+    waft.c.berth_dir = dir
+    return waft
+
+// Berth_save — enWaft the live tree and write it whole to the Waft's toc.snap (write_file mkdirp's the dir,
+//  so a first save mints the berth home).  Whole-file replace — these documents are small.
+//   < crash-safe temp+rename is a later gear.
+async Berth_save(nav, waft):
+    let dir = waft.c.berth_dir
+    let enc = await this.enWaft(waft)
+    await nav.write_file(dir, 'toc.snap', enc.snap)
+
+// Berth_reset — forget a Pier's Waft(s).  With a name, drop that ONE Waft's toc.snap; without, sweep the
+//  Pier's whole berth (Heist_sweep empties every toc.snap under it, keeping the dir skeleton — the
+//   dead-handle-safe reset).  A Book's start/end sweep of its marrauding root already does the coarse
+//    version for free; this is the fine-grained door.
+async Berth_reset(nav, root, prepub, name):
+    if (name) {
+        let dir = this.Berth_dir(root, prepub, name)
+        await this.Heist_unlink(nav, dir, 'toc.snap')
+        return
+    }
+    await this.Heist_sweep(nav, root + '/.jamsend/berth/' + prepub)
+//#endregion

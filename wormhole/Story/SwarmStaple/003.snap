@@ -14,6 +14,6 @@ Snap:H
           Identity:6eb0df4e976acef2,prepub:6eb0df4e976acef2,friendly:Bob
             Peering,name:6eb0df4e976acef2,friendly:Bob
         req:witness,eternal,ok
+        seen:two selves stand — each an Identity owning its Peering page — keys ride .c only
         reached:step_3
-        see:two selves stand — each an Identity owning its Peering page — keys ride .c only
-        see:Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical
+        seen:Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical

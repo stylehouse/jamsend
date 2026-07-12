@@ -71,6 +71,7 @@
         'Ghost/Story/Musuation.g',      // the Musu* tests — MusuStaple; more pile on here
         'Ghost/Story/Radiation.g',      // the Ra* PRODUCT tests — RaStock; racast/raterm Books pile on here
         'Ghost/Story/Heistation.g',     // the Heist* tests — MusuHeist rung 1; the cohort + cafe rungs pile on here
+        'Ghost/Story/Berthation.g',     // the Berth* tests — MusuBerth: the persistence door round-trips a doc through disk and resets with the Story (§11.7)
 
         'Ghost/S/Swarm.g',              // swarm spine — identity/page/pier + the Idzeug invite (Swarm_spec.md)
         'Ghost/Story/Swarmation.g',     // the Swarm* tests — SwarmStaple; more pile on here

@@ -16,9 +16,9 @@ Snap:H
             rebuff:forged,say:verify_grant: bad signature to:Music by:32c1ce7a059129d1
             rebuff:offline,say:32c1ce7a059129d1
         req:witness,eternal,ok
+        seen:two selves stand — each an Identity owning its Peering page — keys ride .c only
         reached:step_3
+        seen:Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical
         reached:step_4
-        see:two selves stand — each an Identity owning its Peering page — keys ride .c only
-        see:Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical
-        see:a tampered Idzeug fails verification — one flipped signature byte and it is rejected
-        see:redeeming with the inviter offline fails — the Idzeug is proof of receipt not an offline token
+        seen:a tampered Idzeug fails verification — one flipped signature byte and it is rejected
+        seen:redeeming with the inviter offline fails — the Idzeug is proof of receipt not an offline token

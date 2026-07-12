@@ -54,14 +54,28 @@ story:VoroTest
       style:background-color,v:#8f8f32
   Plan
   Opt
-    waitCyto
-    useCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.051
+    TimeTotal:beliefs,avg=0.069
       sample=0.051,at=1783843367
-    TimeTotal:step,avg=0.013
+      sample=0.069,at=1783851857
+      sample=0.024,at=1783852763
+      sample=0.092,at=1783852924
+      sample=0.08,at=1783853075
+      sample=0.113,at=1783853202
+      sample=0.069,at=1783853310
+      sample=0.058,at=1783853383
+      sample=0.068,at=1783853440
+    TimeTotal:step,avg=0.017
       sample=0.013,at=1783843367
+      sample=0.017,at=1783851857
+      sample=0.006,at=1783852763
+      sample=0.023,at=1783852924
+      sample=0.02,at=1783853075
+      sample=0.028,at=1783853202
+      sample=0.017,at=1783853310
+      sample=0.014,at=1783853383
+      sample=0.017,at=1783853440
   step,dige:a0a0a0a0a0a0a0a0
   step=2,dige:b2b2b2b2b2b2b2b2
   step=3,dige:c3c3c3c3c3c3c3c3

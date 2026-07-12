@@ -5,6 +5,26 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
   The living state, roadmap and design are in Radio_todo.md — read THAT; come here only for
    the archaeology of how a thing landed. Newest first.
 
+**2026-07-12 — the manifest wildcard-leak fix + the Berth verbs land.** Two things this session.
+ (1) The MusuHeist manifest scene was silently losing both denied `%see`s: the note rows carried
+  `held`/`denied`/`new` count keys, but `held`/`denied` are now row MAINKEYS (`held,tune:` /
+   `denied,tune:`), and the deny scene reads `T.o({denied:1})` — the numeric-1 presence wildcard
+    (the o-query footgun, bit again) matched a manifest row instead of the deny note, so `dn.sc.gone`
+     came back undefined and both sentences never fired (13/15). Fix: rename the manifest counts to
+      `holds`/`refuses`/`fresh`, OMIT zero counts (house rule: absent over 0), update the `man_ok`
+       gate to match. Landed clean (LocalGen 44303c), committed by the human in `Seen_split 2`. The
+        committed MusuHeist fixtures are still the 13/15 buggy-gen record — the host's in-flight
+         `Seen_split` re-record will pick up the fixed gen and reach 15/15 for free (the two missing
+          sentences reappear; manifest rows read `uno,fresh=3` / `retomb,holds=8,refuses=1`).
+ (2) The **Berth** (§11.7) verbs are BUILT in `Ghost/M/Heist.g` (region `//#region berth`,
+  LocalGen-green 38174c): `Berth_dir`/`Berth_open`/`Berth_save`/`Berth_reset`, bound to `enWaft`/
+   `deWaft` + the nav contract only, zero Lies. Two refinements from the §11.7 sketch — the on-disk
+    dir rides home on `waft.c.berth_dir` (runtime-only) so `Berth_save(nav, waft)` needs only the
+     waft, and the save uses `write_file` (the toc.snap is TEXT) not `bin_write`. Reset-with-Story
+      falls out of homing under the marrauding root: `Heist_sweep` already empties it. The MusuBerth
+       Book proving the disk round-trip + reset was authored + registered same session; live-gate
+        OWED (the only runner was wedged — total:1 on every dispatch until a tab reload).
+
 **2026-07-12 (night) — the Booth (§11) vetting blow-by-blow.** Round 1 (five Opus critics):
  Strike→Ban (`%Knob strike` is live skip vocabulary, Radiola.g:252); Rota.g+Tune.g→one Booth.g
   (two-file litter, Rota one letter from rotation:); Ident→Marquee + parked (Idento collision +

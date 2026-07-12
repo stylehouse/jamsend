@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Voronation(): string { return '95cbf5122800e5fa' },
+    Ghostmeta_Ghost_Story_Voronation(): string { return '66dca89536a1057b' },
 
 
 //#region pier — VoroRadioPier: the tuner drifts over MUSIC dribbled in from a (fake) Pier
@@ -714,14 +714,54 @@ async VoroTest_drive(w, req) {
         req.c.did_step = n
         if (n === 2) this.VoroTest_bench(w)
         if (n === 3) this.VoroTest_mutate(w)
-        // AWAIT the crush: the Se grasp rides INSIDE Voro_crush_scan's tail and writes the snapped
-        //  %Se:scape row, so the drive must let it SETTLE before this beat snaps (exactly VoroMitosis's
-        //   discipline).  The census|report rows + w:Voronoiology land synchronously above that await.
-        if (n >= 2) await this.Voro_crush_scan(w)
+        // crush EACH %Example's own data world in turn.  Voro_crush_scan writes the standard
+        //  %Voronoiology (census + Se:scape|census|family + the off-snap %model) into the world's
+        //   PARENT — here the Example — so every Example ends the beat holding its own Voronoiology
+        //    beside its data.  No Cyto: the guts run headless, the snap of each Example IS the reading.
+        //  AWAIT each: the Se grasp|model ride INSIDE the crush tail and write snapped rows, so the beat
+        //   must let them settle before it snaps (VoroMitosis's discipline, once per Example).
+        if (n >= 2) {
+            // crush each Example at a FIXED level 2 — a unit harness pins the level so every dataset
+            //  meets the SAME fold rule (non-noisy gang_min 3), not the viewport auto-leveller that
+            //   would leave a small isolated world's leaves un-ganged.
+            for (const ex of w.o({ Example: 1 })) {
+                let dw = this.VoroTest_dataworld(ex)
+                if (dw) await this.Voro_crush_scan(dw, 0, 2)
+            }
+        }
         if (n === 2) this.VoroTest_witness_bench(w)
         if (n === 3) this.VoroTest_witness_mutate(w)
         if (n === 4) this.VoroTest_witness_quiet(w)
     }
+
+},
+// VoroTest_example — mint one %Example (a labelled dataset case) holding its own DATA world; the crush
+//  later hangs a %Voronoiology sibling beside that data world (both children of the Example), so the
+//   Example is a self-contained (input world, output world) pair.  c.up is stamped by hand — a nested
+//    world under a plain particle does not inherit it, and Voro_report reads w.c.up to place the output.
+//  Returns the DATA world to plant into.
+VoroTest_example(w, name) {
+    let ex = w.i({ Example: 1, name: name })
+    let dw = ex.i({ w: name })
+    dw.c.up = ex
+    return dw
+
+},
+// VoroTest_dataworld — an Example's DATA world: its w child that is NOT the crush's Voronoiology output.
+VoroTest_dataworld(ex) {
+    return ex.o({ w: 1 }).find(c => c.sc.w !== 'Voronoiology')
+
+},
+// VoroTest_dataworld_named — reach the data world of the Example called <name> (for the mutation beat).
+VoroTest_dataworld_named(w, name) {
+    let ex = w.o({ Example: 1, name: name })[0]
+    return ex ? this.VoroTest_dataworld(ex) : null
+
+},
+// VoroTest_seen — an Example's own Voronoiology output world (null before its first crush).
+VoroTest_seen(w, name) {
+    let ex = w.o({ Example: 1, name: name })[0]
+    return ex ? ex.o({ w: 'Voronoiology' })[0] : null
 
 },
 // ── the neutral vocabulary — geology|botany, keyed so shape (not domain) drives the fold ──────────
@@ -811,30 +851,34 @@ VoroTest_edges(w) {
     w.i({ Void: 1, name: 'hollow' })
 
 },
-// lay the whole bench — all six shapes at once, so the crush computes them in parallel in one world.
+// lay the whole bench — six shapes, each in its OWN %Example, so the crush computes six worlds in
+//  parallel and the snap shows six datasets side by side, each beside its own Voronoiology reading.
 VoroTest_bench(w) {
-    this.VoroTest_flock(w)
-    this.VoroTest_mix(w)
-    this.VoroTest_motley(w)
-    this.VoroTest_gradient(w)
-    this.VoroTest_groves(w)
-    this.VoroTest_edges(w)
+    this.VoroTest_flock(this.VoroTest_example(w, 'flock'))
+    this.VoroTest_mix(this.VoroTest_example(w, 'mix'))
+    this.VoroTest_motley(this.VoroTest_example(w, 'motley'))
+    this.VoroTest_gradient(this.VoroTest_example(w, 'gradient'))
+    this.VoroTest_groves(this.VoroTest_example(w, 'groves'))
+    this.VoroTest_edges(this.VoroTest_example(w, 'edges'))
 
 },
-// beat 3 — the mutations, so a reader sees the readings MOVE: three arrivals swell the flock
-//  (12→15 Boulders), two goners leave the mix (Fern loses two, 7→5), and one gradient member bends
-//   its %depth off the smooth run (10→99, an outlier the spread must show).  Recrush reads the deltas.
+// beat 3 — the mutations, so a reader sees the readings MOVE: three arrivals swell the flock example
+//  (12→15 Boulders), two goners leave the mix example (Fern loses two, 7→5), and one gradient member
+//   bends its %depth off the smooth run (10→99, an outlier the spread must show).  Each edits its OWN
+//    Example's data world, then the drive recrushes every Example and the deltas land per Voronoiology.
 VoroTest_mutate(w) {
-    let extra = ['spheroidal','jointed','weathered']
-    for (const g of extra) this.VoroTest_boulder(w, g)
-    let ferns = w.o().filter(c => Object.keys(c.sc)[0] === 'Fern')
-    if (ferns.length >= 2) {
-        ferns[0].drop(ferns[0])
-        ferns[1].drop(ferns[1])
+    let flock = this.VoroTest_dataworld_named(w, 'flock')
+    if (flock) { let extra = ['spheroidal','jointed','weathered']; for (const g of extra) this.VoroTest_boulder(flock, g) }
+    let mix = this.VoroTest_dataworld_named(w, 'mix')
+    if (mix) {
+        let ferns = mix.o().filter(c => Object.keys(c.sc)[0] === 'Fern')
+        if (ferns.length >= 2) { ferns[0].drop(ferns[0]); ferns[1].drop(ferns[1]) }
     }
-    let strata = w.o().filter(c => Object.keys(c.sc)[0] === 'Stratum')
-    let bent = strata.find(s => s.sc.depth === '10')
-    if (bent) bent.sc.depth = '99'
+    let grad = this.VoroTest_dataworld_named(w, 'gradient')
+    if (grad) {
+        let bent = grad.o().filter(c => Object.keys(c.sc)[0] === 'Stratum').find(s => s.sc.depth === '10')
+        if (bent) bent.sc.depth = '99'
+    }
 
 },
 // ── the counters — a %see reads the LIVE fold facts, so each claim is what the crush actually did ─
@@ -861,79 +905,77 @@ VoroTest_panes_of(w, mainkey) {
 //   commas (the peel parser splits on them).  Only stable outputs are asserted (fold|gang|bare
 //    counts + census presence); the per-family model readings (order|drift) are the SE-UP agent's
 //     and get wired at integration.
+// VoroTest_model_of — an Example's off-snap %model tree (rides on its data world's c.voro_model).
+VoroTest_model_of(w, name) {
+    let dw = this.VoroTest_dataworld_named(w, name)
+    return dw ? dw.c.voro_model : null
+
+},
+// beat 2 — the bench verdicts, read PER EXAMPLE (each dataset scanned in its own data world, each
+//  reading in its own Voronoiology).  A %see drops after its step, so it is this beat's OBSERVATION.
+//   Em-dash, never a comma (the peel parser splits on commas).  The fixtures carry the full detail;
+//    these sentences name the cross-example rules a reader should take away.
 VoroTest_witness_bench(w) {
-    let boulders = this.VoroTest_gang_of(w, 'Boulder')
-    if (boulders && (boulders.c.gang || []).length === 12 && !(w.oa({see: 'the homogeneous flock ganged — twelve boulders of one kind folded behind a single representative pane'}))) w.i({see: 'the homogeneous flock ganged — twelve boulders of one kind folded behind a single representative pane'})
-    let fern = this.VoroTest_gang_of(w, 'Fern')
-    let moss = this.VoroTest_gang_of(w, 'Moss')
-    let loners = this.VoroTest_bare_of(w, 'Lichen') + this.VoroTest_bare_of(w, 'Sedge') + this.VoroTest_bare_of(w, 'Rush')
-    if (fern && moss && loners === 3 && !(w.oa({see: 'the mix split two ways — the ferns and the mosses each ganged while the three loners stayed bare below the threshold'}))) w.i({see: 'the mix split two ways — the ferns and the mosses each ganged while the three loners stayed bare below the threshold'})
+    // every Example crushed to its OWN reading world — six data worlds, six Voronoiologies beside them.
+    let exs = w.o({ Example: 1 })
+    // a crushed Example carries a %Voro census head in its own Voronoiology — true even for the motley
+    //  (which folds NOTHING, so it has a head but zero cells); count that, not cells.
+    let seen = exs.filter(ex => { let rw = ex.o({ w: 'Voronoiology' })[0]; return rw && rw.o({ Voro: 1 }).length > 0 }).length
+    if (exs.length === 6 && seen === 6 && !(w.oa({see: 'every example computed its own Voronoiology — six datasets crushed in parallel each to its own reading world beside its data'}))) w.i({see: 'every example computed its own Voronoiology — six datasets crushed in parallel each to its own reading world beside its data'})
+    // a population folds — a dozen boulders behind one pane — where eight lone kinds cannot.
+    let flock = this.VoroTest_dataworld_named(w, 'flock')
+    let motleyW = this.VoroTest_dataworld_named(w, 'motley')
+    let boulders = flock ? this.VoroTest_gang_of(flock, 'Boulder') : null
     let motley = ['Quartz','Basalt','Slate','Gneiss','Chert','Shale','Flint','Marl']
     let bare = 0
-    for (const k of motley) bare = bare + this.VoroTest_bare_of(w, k)
-    let ganged = motley.filter(k => this.VoroTest_gang_of(w, k)).length
-    if (bare === 8 && ganged === 0 && !(w.oa({see: 'the motley never folded — eight distinct kinds one of each stayed eight bare nodes because a gang of one is below the minimum'}))) w.i({see: 'the motley never folded — eight distinct kinds one of each stayed eight bare nodes because a gang of one is below the minimum'})
-    let grad = this.VoroTest_gang_of(w, 'Stratum')
-    if (grad && (grad.c.gang || []).length === 10 && !(w.oa({see: 'the gradient ganged into one pane — ten strata sweeping a depth carried as a spread the readout can lay out in order'}))) w.i({see: 'the gradient ganged into one pane — ten strata sweeping a depth carried as a spread the readout can lay out in order'})
-    let groves = this.VoroTest_panes_of(w, 'Grove')
-    if (groves === 3 && !(w.oa({see: 'the groves each folded to their own pane — three nested containers became three cells and the crusher stopped at the fold never descending inside'}))) w.i({see: 'the groves each folded to their own pane — three nested containers became three cells and the crusher stopped at the fold never descending inside'})
-    let pair = this.VoroTest_panes_of(w, 'Pair')
-    let voidBare = this.VoroTest_bare_of(w, 'Void')
-    if (pair === 1 && voidBare === 1 && !(w.oa({see: 'the edges divide the fold — a two-member container still folds to its own small pane while the empty container has nothing to fold and stands bare'}))) w.i({see: 'the edges divide the fold — a two-member container still folds to its own small pane while the empty container has nothing to fold and stands bare'})
-    // the projection is honest: w:Voronoiology carries the crush's census AND the Se scape reading
-    //  for THIS bench — the same processing pane every Voro Book snaps beside its data.
-    let rw = w.c.up ? w.c.up.o({ w: 'Voronoiology' })[0] : null
-    let se = rw ? rw.o({ Se: 'scape' })[0] : null
-    let cells = rw ? rw.o({ cell: 1 }).length : 0
-    if (rw && se && cells >= 6 && !(w.oa({see: 'the working is projected beside the data — the Voronoiology pane censuses at least six cells and the scape reading grasped the folds'}))) w.i({see: 'the working is projected beside the data — the Voronoiology pane censuses at least six cells and the scape reading grasped the folds'})
-    // the MODEL readings (the Se-up layer): w.c.voro_model + the %Se:family rows carry what a renderer
-    //  would otherwise re-derive.  The order axis is DISCOVERED from the data (the widest-spread key) —
-    //   so the gradient family must read order_by depth on a numeric axis with its trail pinned end to
-    //    end — and every family mirrors a snapped reading with its loudest epithets ranked.
-    let model = w.c.voro_model
-    let mfams = model ? model.o({ Family: 1 }) : []
-    let gradfam = mfams.find(f => f.sc.order_by === 'depth')
-    if (gradfam && gradfam.sc.axis === 'num' && gradfam.sc.n === '10' && gradfam.sc.from && gradfam.sc.to && gradfam.sc.from !== gradfam.sc.to && !(w.oa({see: 'the model discovered the gradient — one family orders by depth on a numeric axis with its trail pinned from one end anchor to the other'}))) w.i({see: 'the model discovered the gradient — one family orders by depth on a numeric axis with its trail pinned from one end anchor to the other'})
-    let serows = rw ? rw.o({ Se: 'family' }) : []
-    let louded = mfams.filter(f => f.o({ Loud: 1 }).length > 0).length
-    if (mfams.length >= 4 && serows.length >= 4 && louded >= 3 && !(w.oa({see: 'the families each carry a model row — the roster is mirrored into snapped family readings and the loudest epithets ride ranked for the readout'}))) w.i({see: 'the families each carry a model row — the roster is mirrored into snapped family readings and the loudest epithets ride ranked for the readout'})
+    for (const k of motley) bare = bare + (motleyW ? this.VoroTest_bare_of(motleyW, k) : 0)
+    if (boulders && (boulders.c.gang || []).length === 12 && bare === 8 && !(w.oa({see: 'a population folds where lone kinds cannot — twelve boulders gang behind one pane while eight single kinds stay bare below the minimum'}))) w.i({see: 'a population folds where lone kinds cannot — twelve boulders gang behind one pane while eight single kinds stay bare below the minimum'})
+    // the groves keep their own panes — the crush folds the outermost container and never descends.
+    let grovesW = this.VoroTest_dataworld_named(w, 'groves')
+    let groves = grovesW ? this.VoroTest_panes_of(grovesW, 'Grove') : 0
+    if (groves === 3 && !(w.oa({see: 'the groves keep their own panes — three nested containers fold outermost into three cells and the crush never descends inside'}))) w.i({see: 'the groves keep their own panes — three nested containers fold outermost into three cells and the crush never descends inside'})
+    // the MODEL discovers order from the DATA: the gradient example's model finds depth as a numeric
+    //  axis and pins the ten strata end to end — the trail a render would otherwise derive from pixels.
+    let gmodel = this.VoroTest_model_of(w, 'gradient')
+    let gfams = gmodel ? gmodel.o({ Family: 1 }) : []
+    let gradfam = gfams.find(f => f.sc.order_by === 'depth')
+    if (gradfam && gradfam.sc.axis === 'num' && gradfam.sc.n === '10' && gradfam.sc.from && gradfam.sc.to && gradfam.sc.from !== gradfam.sc.to && !(w.oa({see: 'the model discovers order from the data — the gradient example reads depth as a numeric axis and pins its ten strata from one end anchor to the other'}))) w.i({see: 'the model discovers order from the data — the gradient example reads depth as a numeric axis and pins its ten strata from one end anchor to the other'})
 
 },
-// beat 3 — the mutations read back: the flock grew, the mix shrank, the gradient bent.  Each gated
-//  live on the post-recrush stamps, so a %see is the delta the crush actually recomputed this beat.
+// beat 3 — the mutations read back PER EXAMPLE: the flock example grew, the mix example shrank.  The
+//  drift readings on each Voronoiology attribute the arrivals|departures to their family.
 VoroTest_witness_mutate(w) {
-    let boulders = this.VoroTest_gang_of(w, 'Boulder')
-    if (boulders && (boulders.c.gang || []).length === 15 && !(w.oa({see: 'three arrivals swelled the flock — the boulder gang recomputed to fifteen members behind the same representative'}))) w.i({see: 'three arrivals swelled the flock — the boulder gang recomputed to fifteen members behind the same representative'})
-    let fern = this.VoroTest_gang_of(w, 'Fern')
-    if (fern && (fern.c.gang || []).length === 5 && !(w.oa({see: 'two goners left the mix — the fern gang shrank from seven to five members yet still cleared the threshold and held its pane'}))) w.i({see: 'two goners left the mix — the fern gang shrank from seven to five members yet still cleared the threshold and held its pane'})
-    let grad = this.VoroTest_gang_of(w, 'Stratum')
-    let bent = grad ? (grad.c.gang || []).some(s => s.sc.depth === '99') : false
-    if (grad && bent && !(w.oa({see: 'the gradient bent — one stratum jumped its depth off the smooth run and the gang re-read the outlier into its spread'}))) w.i({see: 'the gradient bent — one stratum jumped its depth off the smooth run and the gang re-read the outlier into its spread'})
-    // the model's DRIFT: the member-grained %Seem attributes each arrival|departure to its family —
-    //  the swollen flock must read three neus and the shrunken ferns two goners.  Read off the snapped
-    //   %Se:family rows (the distillation a fixture diffs).
-    let rw = w.c.up ? w.c.up.o({ w: 'Voronoiology' })[0] : null
-    let serows = rw ? rw.o({ Se: 'family' }) : []
-    if (serows.some(r => r.sc.neu === '3') && !(w.oa({see: 'the model felt the arrivals — a family reading carries three new members in its drift this beat'}))) w.i({see: 'the model felt the arrivals — a family reading carries three new members in its drift this beat'})
-    if (serows.some(r => r.sc.gone === '2') && !(w.oa({see: 'the model felt the goners — a family reading carries two departures in its drift this beat'}))) w.i({see: 'the model felt the goners — a family reading carries two departures in its drift this beat'})
+    let flock = this.VoroTest_dataworld_named(w, 'flock')
+    let boulders = flock ? this.VoroTest_gang_of(flock, 'Boulder') : null
+    if (boulders && (boulders.c.gang || []).length === 15 && !(w.oa({see: 'the flock example swelled — its boulder gang recomputed to fifteen members behind the same representative'}))) w.i({see: 'the flock example swelled — its boulder gang recomputed to fifteen members behind the same representative'})
+    let mix = this.VoroTest_dataworld_named(w, 'mix')
+    let fern = mix ? this.VoroTest_gang_of(mix, 'Fern') : null
+    if (fern && (fern.c.gang || []).length === 5 && !(w.oa({see: 'the mix example shed two ferns — its fern gang shrank from seven to five yet still cleared the threshold and held its pane'}))) w.i({see: 'the mix example shed two ferns — its fern gang shrank from seven to five yet still cleared the threshold and held its pane'})
+    // the model's DRIFT attributes the deltas: the flock's Voronoiology must read three arrivals on its
+    //  boulder family reading and the mix's two departures on its fern family reading.
+    let fseen = this.VoroTest_seen(w, 'flock')
+    let mseen = this.VoroTest_seen(w, 'mix')
+    let fneu = fseen ? fseen.o({ Se: 'family' }).some(r => r.sc.neu === '3') : false
+    let mgone = mseen ? mseen.o({ Se: 'family' }).some(r => r.sc.gone === '2') : false
+    if (fneu && !(w.oa({see: 'the model felt the arrivals — the flock reading carries three new members in its drift this beat'}))) w.i({see: 'the model felt the arrivals — the flock reading carries three new members in its drift this beat'})
+    if (mgone && !(w.oa({see: 'the model felt the goners — the mix reading carries two departures in its drift this beat'}))) w.i({see: 'the model felt the goners — the mix reading carries two departures in its drift this beat'})
 
 },
-// beat 4 — the quiet beat: recrush with NO mutation, so the fold verdicts must hold exactly.  Gated
-//  on the same live facts still standing — the claim is that a stable input gives a stable fold (the
-//   crush is a pure function of the data, no drift beat to beat).
+// beat 4 — the quiet beat: recrush with NO mutation, so every Example's fold verdicts hold exactly and
+//  the drift falls silent (a stale neu|gone would mean a model tail failed to re-run — the staleness
+//   this harness exists to catch).
 VoroTest_witness_quiet(w) {
-    let boulders = this.VoroTest_gang_of(w, 'Boulder')
-    let fern = this.VoroTest_gang_of(w, 'Fern')
-    let grad = this.VoroTest_gang_of(w, 'Stratum')
-    let groves = this.VoroTest_panes_of(w, 'Grove')
-    let steady = boulders && (boulders.c.gang || []).length === 15 && fern && (fern.c.gang || []).length === 5 && grad && groves === 3
-    if (steady && !(w.oa({see: 'the readings held steady — a recrush with nothing changed reproduced every gang and pane exactly because the fold is a pure function of the data'}))) w.i({see: 'the readings held steady — a recrush with nothing changed reproduced every gang and pane exactly because the fold is a pure function of the data'})
-    // drift must fall SILENT on a quiet beat — a stale neu|gone here means the model tail never re-ran
-    //  on the recrush (a staleness bug this Book exists to catch).
-    let rw = w.c.up ? w.c.up.o({ w: 'Voronoiology' })[0] : null
-    let serows = rw ? rw.o({ Se: 'family' }) : []
-    let quiet = serows.length > 0 && serows.every(r => !r.sc.neu && !r.sc.gone)
-    if (quiet && !(w.oa({see: 'the drift fell silent — no family reading carries an arrival or a departure after a recrush with nothing changed'}))) w.i({see: 'the drift fell silent — no family reading carries an arrival or a departure after a recrush with nothing changed'})
+    let flock = this.VoroTest_dataworld_named(w, 'flock')
+    let mix = this.VoroTest_dataworld_named(w, 'mix')
+    let grovesW = this.VoroTest_dataworld_named(w, 'groves')
+    let boulders = flock ? this.VoroTest_gang_of(flock, 'Boulder') : null
+    let fern = mix ? this.VoroTest_gang_of(mix, 'Fern') : null
+    let groves = grovesW ? this.VoroTest_panes_of(grovesW, 'Grove') : 0
+    let steady = boulders && (boulders.c.gang || []).length === 15 && fern && (fern.c.gang || []).length === 5 && groves === 3
+    if (steady && !(w.oa({see: 'the readings held steady across the examples — a recrush with nothing changed reproduced every gang and pane because the fold is a pure function of the data'}))) w.i({see: 'the readings held steady across the examples — a recrush with nothing changed reproduced every gang and pane because the fold is a pure function of the data'})
+    // drift silent on EVERY example this beat.
+    let all_quiet = w.o({ Example: 1 }).every(ex => { let rw = ex.o({ w: 'Voronoiology' })[0]; if (!rw) return true; return rw.o({ Se: 'family' }).every(r => !r.sc.neu && !r.sc.gone) })
+    if (all_quiet && !(w.oa({see: 'the drift fell silent everywhere — no family reading on any example carries an arrival or a departure after a recrush with nothing changed'}))) w.i({see: 'the drift fell silent everywhere — no family reading on any example carries an arrival or a departure after a recrush with nothing changed'})
 },
 //#endregion
 

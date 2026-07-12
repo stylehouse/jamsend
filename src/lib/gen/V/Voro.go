@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return 'f40027783c0d9127' },
+    Ghostmeta_Ghost_V_Voro(): string { return '37ffa9602e9dc6b0' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
@@ -61,21 +61,27 @@
 //  quiet: stamp only, no self-report — the pre-scan pass (Voro_crush_worlds) re-stamps so the
 //   WAVE ferries fresh folds, but the census (and its beat counter, pinned in fixtures) must
 //    keep landing exactly once per beat, at snap time.
-async Voro_crush_scan(w, quiet) {
-    let level = w.c.crush_level || 0
+async Voro_crush_scan(w, quiet, fixed) {
+    // fixed != null → crush at exactly that level, no auto-levelling.  The escalate|de-escalate dance
+    //  below is a VIEWPORT heuristic (keep 6..15 cells on screen); an isolated small world (a VoroTest
+    //   %Example) never trips the 15 budget so it would never gang.  A unit harness wants a DETERMINISTIC
+    //    level that demonstrates the rule, so it pins one (L2, where non-noisy gang_min is 3).
+    let level = fixed != null ? fixed : (w.c.crush_level || 0)
     let stats = this.Voro_crush_pass(w, level)
-    while (stats.visible > 15 && level < 2) {
-        level = level + 1
-        stats = this.Voro_crush_pass(w, level)
-    }
-    while (level > 0 && stats.visible < 6) {
-        let trial = this.Voro_crush_pass(w, level - 1)
-        if (trial.visible > 15) {
+    if (fixed == null) {
+        while (stats.visible > 15 && level < 2) {
+            level = level + 1
             stats = this.Voro_crush_pass(w, level)
-            break
         }
-        level = level - 1
-        stats = trial
+        while (level > 0 && stats.visible < 6) {
+            let trial = this.Voro_crush_pass(w, level - 1)
+            if (trial.visible > 15) {
+                stats = this.Voro_crush_pass(w, level)
+                break
+            }
+            level = level - 1
+            stats = trial
+        }
     }
     w.c.crush_level = level
     if (!quiet) {
@@ -739,7 +745,10 @@ async Voro_model(w) {
         if (ordered.length > 1) famC.sc.to = ('' + ordered[ordered.length - 1].anchor).split(',').join(' ')
         let oi = 0
         for (const m of ordered) {
-            let mrow = { Member: m.anchor, ord: '' + oi, weight: '' + m.weight }
+            // fam rides the member row so DRIFT can attribute it: a departed member's D-clone keeps its
+            //  own sc but LOSES its parent link in the D-sphere (the resolve hands back a detached node),
+            //   so the family must live ON the member, not be reached by walking up to the %Family clone.
+            let mrow = { Member: m.anchor, ord: '' + oi, weight: '' + m.weight, fam: fk }
             let av = this.Voro_model_axis_val(m, axis.key)
             if (av !== '') mrow.val = ('' + av).split(',').join(' ')
             famC.i(mrow)
@@ -1116,11 +1125,12 @@ Voro_model_seem_each(D, C, T) {
 
 },
 // Voro_model_drift_fam — the family a drifted D node belongs to, read by KEY PRESENCE (the D clone leads
-//  with the default trace_sc's key, so position is unreliable).  A %Family clone carries Family:<name> —
-//   that IS its family (a whole family arriving|leaving).  A %Member clone hangs under its Family D node,
-//    whose clone carries Family:<name>.  Null for anything else (the %Model head, a %Loud leaf) — not a
-//     per-family drift subject.
+//  with the default trace_sc's key, so position is unreliable).  A drifted %Member clone carries its own
+//   `fam` (stamped on the row for exactly this — the resolve hands back a DETACHED node with no parent
+//    link, so walking up to the %Family clone fails).  A whole %Family arriving|leaving carries Family.
+//     Null for anything else (the %Model head, a bare Demonstrations wrapper, a %Loud leaf).
 Voro_model_drift_fam(d) {
+    if (typeof d.sc.fam === 'string' && d.sc.fam) return d.sc.fam
     if (d.sc.Family != null && typeof d.sc.Family === 'string') return d.sc.Family
     if (d.sc.Member != null) {
         let p = d.c.up

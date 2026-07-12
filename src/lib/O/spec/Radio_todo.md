@@ -1016,11 +1016,17 @@ A **Berth** homes one Pier's Wafts — "like Lies does but without the rest of t
 - **Reset-with-the-Story falls out of homing**: the app passes root = the collection (durable;
    the documents TRAVEL WITH the music); a Book passes root = its marrauding namespace, so the
     existing start/end sweep resets every berth for free — no new reset mechanism.
-- **API** (a small verb set; home it where the first consumer lives, NOT a new organ ghost):
-   `Berth_open(nav, root, prepub, name)` → deWaft the snap into a live C tree (mint empty when
-    absent); `Berth_save(nav, root, prepub, waft)` → enWaft + bin_write (whole-file replace —
-     these documents are small; crash-safe temp+rename is a `<` later gear);
-      `Berth_reset(nav, root, prepub, name?)`.
+- **API** — ✓ BUILT 2026-07-12 in `Ghost/M/Heist.g` (region `//#region berth`, LocalGen-green;
+   homed at the first consumer, the heist, NOT a new organ ghost as ruled). As built (two refinements
+    from the sketch): `Berth_dir(root, prepub, name)` → the on-disk path;
+     `async Berth_open(nav, root, prepub, name)` → deWaft the toc.snap into a live C tree (mints an
+      empty `%Waft` when absent, a first open is not an error), stashing the dir on `waft.c.berth_dir`
+       (runtime-only) so — refinement 1 — `async Berth_save(nav, waft)` needs only the waft;
+        refinement 2 — save uses `write_file` (the snap is TEXT, enWaft returns a string) not
+         `bin_write`; `async Berth_reset(nav, root, prepub, name)` drops one Waft's toc.snap by name,
+          or sweeps the Pier's whole berth via `Heist_sweep` when name is falsy.
+   The MusuBerth Book proving the round-trip + reset-with-Story is authored + registered, LIVE-GATE
+    OWED (the runner was wedged at build time — dispatch after a tab reload).
 - **Binding**: to the ENCODERS only — `enWaft` (Text.svelte:351) / `deWaft` (:389) + the 7-method
    nav contract. ZERO Lies runtime — no LiesStore, no Cortex, no docks. Lies can MOUNT a berth
     Waft in the editor grid later (view + hand-edit the same document); the Berth never needs
