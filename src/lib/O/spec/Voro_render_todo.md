@@ -14,18 +14,22 @@
 **The arc from here — Se-up model first, geometry later.** The engine is being re-cleaved into three
  layers (the vision is under `## The three-layer engine` below). The order of the next waves:
 
-- **① The Se-up model (in flight — another agent is on `Ghost/V/Voro.g`).** Build "the first side" — the
-   grasp becomes the thing that computes the MODEL Cyto renders, in canonical waves of shape. Per-family
-    membership + weight; **semantic order from the data's own gradient property, NOT from rendered
-     positions**; loudness (the top facts); drift (goners/neus). This is snap-testable in a Book without
-      a single pixel — the point of doing it first. `the:family` already lands and the render reads it
-       null-safe (`Cytui.svelte:865` `region_of`); `the_anchor` (durable per-fold id, for river order)
-        is still owed from the grasp. // < exact `the_*` row shape is the model agent's output — state
-         intent, don't invent the keys here.
-- **② VoroTest Book (in flight — another agent is on `Ghost/Story/Voronation.g`).** A universal gallery:
-   several synthetic C** datasets computed in parallel in one run world + mutation steps, so the fixtures
-    TEACH the fold/stuff rules and the Seem readings make "what changed" legible. This is where the Se-up
-     model gets its Book gate. // < the Book's exact dataset roster + step shape is that agent's call.
+- **① The Se-up model — LANDED (2026-07-13, honest-language round).** `Voro_model` (Voro.g) computes
+   the MODEL in the crush tail: off-snap full tree on `w.c.voro_model` (%Model/%Family/%Member/%Loud +
+    the `%Seem:model` drift organ), and a snapped distillation in `w:Voronoiology` whose **mainkey is
+     provenance**: `Family:<name>,n,kind,order_by,axis,from,to` + `Loud:<key>[,v:<val>]` children are
+      COMPUTED census; the `Se:drift,neu,gone` child appears ONLY on a beat the Seem's resolve reported
+       movement (absence IS the quiet reading). The Vtuffing snap-transcription is DELETED — pane words
+        stay c-side where the grasp scores and the render draws them; render chrome (×N titles, /*N dips,
+         wgt) no longer masquerades as data in fixtures. One-fact-one-place: the axis key is excluded
+          from Loud (order_by/from/to own that story); a spread's `+N` overflow chip (structurally n:0)
+           never crosses into the model. Owed: Loud share counts (`vein` is 3-of-12 — the model reads the
+            rep's word rows, not members, so the count is lost; fix belongs to wave ③'s inversion).
+- **② VoroTest Book — LANDED (per-Example, Cyto-off).** Six datasets each an `%Example` holding its data
+   world + its own `w:Voronoiology`; fixed crush level L2; 10 `%see` across bench/mutate/quiet beats, all
+    re-proven on the honest language (headless CredRunner smoke 2026-07-13 — the LIVE runner gate + the
+     human's re-record are OWED: the fleet's runner tabs wedged on become_book that night, needing a
+      host-side reload). The fixtures at HEAD predate the language cut, so steps 2-4 diff by design.
 - **③ Cytui consumes the model.** Cytui shrinks to wiring + paint: it reads the grasp's model
    (membership, order, loudness, drift) instead of recomputing it. This is the destination the
     `Cytui_cleave_todo.md` migration map serves.

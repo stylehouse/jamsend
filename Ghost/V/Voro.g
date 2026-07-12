@@ -185,16 +185,13 @@ Voro_report(w, stats):
         cellC.c.seen_beat = 1
         if (f.pop) cellC.sc.pop = '' + f.pop
         if (!f.pop) delete cellC.sc.pop
-        // the pane's WORDS refreshed under the persistent cell: drop the old Vtuffing, re-lay it.
-        //  Vtuff_build is deterministic, so unchanged words re-emit identical text in the same slot
-        //   (the snap shows no diff); only a row whose text actually moved surfaces.  (⚠ the tree
-        //    follows Vtuff_bamboo_on(), a per-tab stash — flipping 🎋 on a RECORDING tab would bake
-        //     %Vseg stalks into fixtures; fine while it defaults off.)
+        // the pane's WORDS stay c-side (f.src.c.vtuffing — the grasp builds + scores that tree, the
+        //  render draws it).  They are NOT transcribed into the snap: a Vtuffing is render LAYOUT
+        //   (×N titles, /*N dip handles, wgt sizes — annotations of the paint, not facts of the data)
+        //    and a fixture that bakes chrome reads as data what is only presentation.  The words
+        //     surface honestly through the model's %Family/%Loud rows instead.  The sweep clears
+        //      rows an older gen left snapped under a persistent cell.
         for (const old of cellC.o({ Vtuffing: 1 }).slice()) old.drop(old)
-        if (f.src) {
-            let vt = this.Vtuff_build(f.src)
-            if (vt) this.Voro_vtuff_transcribe(cellC, vt)
-        }
     }
     // one %bare row per mainkey of UNFOLDED visible leaves — legitimate data standing as plain
     //  nodes (a fat bare row at level 0 is usually pre-escalation; one that persists is a fold gap).
@@ -218,8 +215,12 @@ Voro_report(w, stats):
     // sweep the goners — a census child this beat never re-touched has left the crush.  The grasp's
     //  own %Se row is authored by Voro_grasp on its own beat (it runs AFTER this census sweep), so
     //   this sweep must spare it — otherwise the Se row is dropped here and re-added there every beat,
-    //    the very census storm we killed, reborn on the grasp's row.
-    for (const c of rw.o().slice()) if (!c.c.seen_beat && Object.keys(c.sc)[0] !== 'Se') c.drop(c)
+    //    the very census storm we killed, reborn on the grasp's row.  The model's %Family rows are
+    //     the same shape (authored after, persistent slots, self-swept in Voro_model) — spared too.
+    for (const c of rw.o().slice()) {
+        let mk = Object.keys(c.sc)[0]
+        if (!c.c.seen_beat && mk !== 'Se' && mk !== 'Family') c.drop(c)
+    }
 
 // Voro_census_stash — mirror THIS beat's census subjects into an off-snap free C** (w.c.census_home),
 //  keyed by the SAME durable identity Voro_report gives each rw row (so a survivor keeps its slot and
@@ -248,46 +249,6 @@ Voro_census_stash(w, census, stats):
     for (const mk of Object.keys(census.bare)) {
         home.i({ bare: mk, n: '' + census.bare[mk].n })
     }
-
-// Voro_vtuff_transcribe — copy a Vtuffing tree (a FREE C** no snap can reach) into the report
-//  world as SNAPPED rows.  Only sc crosses (the live c.se emphasis and c.member handles stay
-//   c-side where they belong); the mainkey rides untouched; every other number is stringified
-//    (a bare 1 would collapse to the boolean sentinel and a Vbit's 0 would vanish); strings
-//     shed commas (a comma inside a value would shear the snap line) and empty strings say
-//      nothing so they don't ride at all.
-//  The %Vbit LEAVES don't cross (owner: "only the higher structures I want — as long as we
-//   don't lose one"): a list row's chips are per-member noise the census doesn't need, but the
-//    row that carried them says bits:N, so a chip appearing|vanishing still moves the diff.
-Voro_vtuff_transcribe(host, vt):
-    let sc = {}
-    let keys = Object.keys(vt.sc)
-    for (const k of keys) {
-        let v = vt.sc[k]
-        if (k === keys[0]) {
-            sc[k] = v
-            continue
-        }
-        if (typeof v === 'number') {
-            sc[k] = '' + v
-            continue
-        }
-        if (typeof v === 'string') {
-            if (!v.length) continue
-            sc[k] = v.split(',').join(' ')
-            continue
-        }
-        sc[k] = v
-    }
-    let kids = vt.o()
-    let bits = 0
-    for (const k of kids) if (Object.keys(k.sc)[0] === 'Vbit') bits = bits + 1
-    if (bits) sc.bits = '' + bits
-    let row = host.i(sc)
-    for (const k of kids) {
-        if (Object.keys(k.sc)[0] === 'Vbit') continue
-        this.Voro_vtuff_transcribe(row, k)
-    }
-    return row
 
 // Voro_report_walk — gather Voro_report's census on the same cut the Cyto walk makes.  A fold
 //  stamp (c.stuff) is a pane — count it, do NOT descend (folded here = folded on the canvas); a
@@ -635,10 +596,13 @@ Voro_census_mirror(w):
 //   (a) w.c.voro_model — the FULL off-snap model C** (drop-and-rebuilt each compute, reachable from
 //        nothing, so no snap and no encode ever sees it).  A consumer walks it for the whole answer:
 //         %Model head · %Family{name,n,order_by,ends} / %Member{anchor,ord,val,weight} · %Loud rows.
-//   (b) w:Voronoiology — a SMALL stable %Se:family row PER FAMILY (the fixture-diffable distillation):
-//        the family name, its size, the axis it orders along, the two END anchors, its loudest epithet,
-//         and its per-beat drift.  A full member-order string would be snap noise (it re-shuffles as
-//          the flora grows); the ends + n pin it without the churn.
+//   (b) w:Voronoiology — a SMALL stable %Family row PER FAMILY (the fixture-diffable distillation):
+//        the family name, its size + kind, the axis it orders along, the two END anchors, its %Loud
+//         claims as key:val children — and an %Se:drift child ONLY on a beat the model Seem's resolve
+//          reported movement.  The MAINKEY is provenance: %Family|%Loud are COMPUTED census (plain
+//           code), %Se is worn iff a Selection.process() produced the reading — never a costume.
+//            A full member-order string would be snap noise (it re-shuffles as the flora grows);
+//             the ends + n pin it without the churn.
 //  UNIVERSAL — zero mainkey knowledge.  A "family" is whatever value the grasp stamped on the:family
 //   (the widest-shared key's value, itself found generically); the ordering axis is the numeric-else-
 //    lexical key with the widest spread across a family's cells, discovered by scanning, never named.
@@ -693,7 +657,7 @@ Voro_model(w):
     let members_total = 0
     for (const fk of fam_order) members_total = members_total + fams[fk].members.length
     let head = model.i({ Model: 1, beat: '' + (w.c.report_beat || 0), families: '' + fam_order.length, cells: '' + members_total })
-    // one %Family in the model per group; the snapped %Se:family below MIRRORS it (reads the built node,
+    // one %Family in the model per group; the snapped %Family below MIRRORS it (reads the built node,
     //  never re-computes — the model tree is the single source).  fam_node maps name → %Family.
     let fam_node = {}
     for (const fk of fam_order) {
@@ -730,55 +694,77 @@ Voro_model(w):
             famC.i(mrow)
             oi = oi + 1
         }
-        // LOUDNESS — the family's top-K loud epithets, pooled from its weighted source and kept loudest-
-        //  first.  These are the words B2 sizes up; a consumer reads them straight instead of re-scoring.
-        let loud = this.Voro_model_loud_from(fam.loud_facts, 4)
+        // LOUDNESS — the family's top-K loud claims, pooled from its weighted source and kept loudest-
+        //  first.  Each rides as an honest (key, v) pair — a presence claim carries no v at all.  The
+        //   ORDER-AXIS key is excluded: its story is already told once, by order_by|from|to (a Loud row
+        //    repeating an axis value would say the same fact twice — the one-fact-one-place rule).
+        //     These are the words B2 sizes up; a consumer reads them straight instead of re-scoring.
+        let loud = this.Voro_model_loud_from(fam.loud_facts, 4, axis.key)
         for (const l of loud) {
-            famC.i({ Loud: l.text.split(',').join(' '), weight: '' + l.weight })
+            let lrow = { Loud: ('' + l.key).split(',').join(' '), weight: '' + l.weight }
+            if (l.val !== '') lrow.v = ('' + l.val).split(',').join(' ')
+            famC.i(lrow)
         }
     }
     // DRIFT — stand a %Seem over the model's MEMBER layer so goners|neus come with cross-beat identity for
     //  FREE (the same primitive the grasp and census_mirror ride).  A member that left is a goner, one that
     //   arrived a neu; each carries its family, so drift attributes PER FAMILY.  The Seem is snap-hostile
     //    (a live Selection on sc.Se), so it parks on the free voro_model itself, off-snap.  The distilled
-    //     per-family {gone,neu} then rides each %Se:family row — this is what lets VoroTest "deduce what
-    //      changed": a mutation beat surfaces exactly which family gained|lost which member.
+    //     per-family {gone,neu} then rides an %Se:drift child of the %Family row — this is what lets
+    //      VoroTest "deduce what changed": a mutation beat surfaces exactly which family gained|lost.
     let drift = await this.Voro_model_drift(w, model)
-    // PROJECT the small stable readings — one %Se:family per family.  All three %Se rows share the SAME
-    //  mainkey (Se), so the family name can't ride the mainkey value (it is fixed 'family'); the DURABLE
-    //   identity is {Se:'family',name:<fam>} — a survivor keeps its slot beat-to-beat and only its fields
-    //    slide (the persistent-census discipline, no storm).  Family names are unique per beat (they ARE
-    //     the grouping keys), so a name never collides; find-or-create is exact.
+    // PROJECT the small stable readings — one %Family row per family, MAINKEY = PROVENANCE.  %Family and
+    //  its %Loud children are COMPUTED census (grouping, order, loudness — plain code), so they wear plain
+    //   names; %Se is worn ONLY by the Selection-derived part (the drift child below).  Identity is the
+    //    durable {Family:<name>} — family names are unique per beat (they ARE the grouping keys), so a
+    //     survivor keeps its slot and only its fields slide (the persistent-census discipline, no storm).
     for (const fk of fam_order) {
         let famC = fam_node[fk]
         // a family of one (a bare leaf, a lone pane) has no order|drift worth a snapped row and would
         //  flood the fixture (the motley alone is eight singletons) — it stays in the off-snap model tree
-        //   for a consumer, but only families of TWO or more project a %Se row.
+        //   for a consumer, but only families of TWO or more project a snapped row.
         if (((+famC.sc.n) || 0) < 2) continue
         let d = drift[fk] || { gone: 0, neu: 0 }
-        // find-or-create by the durable {Se:'family',name:<fam>}; then overwrite the sliding fields in
-        //  place (clear the old ones first so a shrunk family sheds a stale `to`).  Se + name stay put.
-        let row = rw.o({ Se: 'family', name: fk })[0]
-        if (!row) row = rw.i({ Se: 'family', name: fk })
-        for (const k of Object.keys(row.sc)) if (k !== 'Se' && k !== 'name') delete row.sc[k]
-        // MIRROR the built %Family node's distillation — n, the axis, the two ENDS; a full member-order
-        //  string would re-shuffle as the flora grows (snap noise), so only n + the ends pin the trail.
+        let row = rw.o({ Family: fk })[0]
+        if (!row) row = rw.i({ Family: fk })
+        // overwrite the sliding fields in place (clear the old ones first so a shrunk family sheds a
+        //  stale `to`); the mainkey stays put.  n, kind, the axis, the two ENDS — a full member-order
+        //   string would re-shuffle as the flora grows (snap noise), so n + the ends pin the trail.
+        for (const k of Object.keys(row.sc)) if (k !== 'Family') delete row.sc[k]
         row.sc.n = famC.sc.n
+        if (famC.sc.kind) row.sc.kind = famC.sc.kind
         if (famC.sc.order_by) row.sc.order_by = famC.sc.order_by
+        if (famC.sc.axis) row.sc.axis = famC.sc.axis
         if (famC.sc.from) row.sc.from = famC.sc.from
         if (famC.sc.to) row.sc.to = famC.sc.to
-        // the family's loudest epithet — the first %Loud child (they were emitted loudest-first).
-        let loud0 = famC.o({ Loud: 1 })[0]
-        if (loud0) row.sc.loud = loud0.sc.Loud
-        if (d.neu) row.sc.neu = '' + d.neu
-        if (d.gone) row.sc.gone = '' + d.gone
+        // the LOUD claims ride as typed (key, v) children, loudest-first — RANK is the child order, the
+        //  numeric weight stays off-snap (it re-scores continuously; snapping it would churn fixtures on
+        //   meaningless slides).  Drop-and-relay is safe at this scale: at most K tiny rows, re-emitted
+        //    in a deterministic order, so unchanged claims serialise identically beat over beat.
+        for (const old of row.o({ Loud: 1 }).slice()) old.drop(old)
+        for (const l of famC.o({ Loud: 1 })) {
+            let lr = { Loud: l.sc.Loud }
+            if (l.sc.v) lr.v = l.sc.v
+            row.i(lr)
+        }
+        // the DRIFT — the one Selection-derived reading — rides an %Se:drift child, present ONLY on a
+        //  beat the model Seem's resolve reported movement.  Absence IS the quiet reading: a row with no
+        //   %Se child moved nothing this beat, and no field ever says so twice.
+        let sed = row.o({ Se: 'drift' })[0]
+        if (d.neu || d.gone) {
+            if (!sed) sed = row.i({ Se: 'drift' })
+            if (d.neu) { sed.sc.neu = '' + d.neu } else { delete sed.sc.neu }
+            if (d.gone) { sed.sc.gone = '' + d.gone } else { delete sed.sc.gone }
+        } else if (sed) {
+            sed.drop(sed)
+        }
         row.c.seen_beat = 1
     }
-    // sweep the %Se:family rows whose family left this beat — a row this beat never re-touched.  Matched
-    //  on the Se:family mainkey-value only, so it never touches Se:scape|Se:census (different Se values)
-    //   nor any census cell|bare row.  Then re-arm seen_beat=0 for next beat's diff.
-    for (const c of rw.o({ Se: 'family' }).slice()) if (!c.c.seen_beat) c.drop(c)
-    for (const c of rw.o({ Se: 'family' })) c.c.seen_beat = 0
+    // sweep the %Family rows whose family left this beat — a row this beat never re-touched.  Matched on
+    //  the Family mainkey only, so it never touches Se:scape|Se:census nor any census cell|bare row.
+    //   Then re-arm seen_beat=0 for next beat's diff.
+    for (const c of rw.o({ Family: 1 }).slice()) if (!c.c.seen_beat) c.drop(c)
+    for (const c of rw.o({ Family: 1 })) c.c.seen_beat = 0
 
 // Voro_model_gather — collect FOLD RECORDS on the same cut Voro_report_walk makes: a c.stuff fold is a
 //  fold (don't descend), a represented member is inside its rep, %Opt|%self are machinery, anything else
@@ -842,6 +828,9 @@ Voro_model_facts(cell):
         } else if (rk === 'spread') {
             let sk = '' + r.sc.text
             for (const b of r.o()) {
+                // a spread's visible tail ('+9') is render CHROME, structurally marked n:0 (a real
+                //  value chip always counts ≥1) — it must never cross into the model as a datum.
+                if (!(+b.sc.n)) continue
                 out.push({ key: sk, val: '' + b.sc.text, weight: (+b.sc.wgt) || (+r.sc.wgt) || 0 })
             }
         }
@@ -1021,22 +1010,29 @@ Voro_facts_top_weight(facts):
 
 // Voro_model_loud_from — a family's top-K loudest DISTINCT (key,val) claims from a pooled facts list.
 //  The grasp weighed each fact 0..100 (how much it sets its cell apart); keep the loudest weight per
-//   distinct claim and return the K loudest.  These are the family's epithets — the words B2 sizes up —
-//    read once, not re-scored.  Pooled from the fold's WEIGHTED source (a gang's rep Vtuffing, a pane's
-//     own), never per-member noise.
-Voro_model_loud_from(facts, K):
+//   distinct claim and return the K loudest as { key, val, weight } — key and val stay SPLIT so the
+//    consumer (and the snap) get a typed claim, never a pre-joined display string.  Pooled from the
+//     fold's WEIGHTED source (a gang's rep Vtuffing, a pane's own), never per-member noise.  Claims on
+//      `axis_key` don't compete — the axis organ already owns that key's whole story.
+Voro_model_loud_from(facts, K, axis_key):
     let best = {}
+    let src = {}
     let order = []
     for (const f of (facts || [])) {
         if (!f.key) continue
-        let text = f.val === '' ? f.key : f.key + ': ' + f.val
-        if (best[text] == null) { best[text] = 0; order.push(text) }
-        if (f.weight > best[text]) best[text] = f.weight
+        if (axis_key && f.key === axis_key) continue
+        let id = f.val === '' ? f.key : f.key + ': ' + f.val
+        if (best[id] == null) {
+            best[id] = 0
+            src[id] = f
+            order.push(id)
+        }
+        if (f.weight > best[id]) best[id] = f.weight
     }
     order.sort((a, b) => best[b] - best[a])
     let out = []
     let lim = K < order.length ? K : order.length
-    for (let i = 0; i < lim; i++) out.push({ text: order[i], weight: best[order[i]] })
+    for (let i = 0; i < lim; i++) out.push({ key: src[order[i]].key, val: src[order[i]].val, weight: best[order[i]] })
     return out
 
 // Voro_model_drift — per-family goners|neus via a %Seem over the model's MEMBER layer.  The Seem walks

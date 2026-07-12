@@ -650,7 +650,7 @@ async VoroTest_drive(w, req):
         if (n === 2) this.VoroTest_bench(w)
         if (n === 3) this.VoroTest_mutate(w)
         // crush EACH %Example's own data world in turn.  Voro_crush_scan writes the standard
-        //  %Voronoiology (census + Se:scape|census|family + the off-snap %model) into the world's
+        //  %Voronoiology (census + Se:scape|census + %Family rows + the off-snap %model) into the world's
         //   PARENT — here the Example — so every Example ends the beat holding its own Voronoiology
         //    beside its data.  No Cyto: the guts run headless, the snap of each Example IS the reading.
         //  AWAIT each: the Se grasp|model ride INSIDE the crush tail and write snapped rows, so the beat
@@ -866,11 +866,12 @@ VoroTest_witness_mutate(w):
     let fern = mix ? this.VoroTest_gang_of(mix, 'Fern') : null
     if (fern && (fern.c.gang || []).length === 5 && !(oa %see:'the mix example shed two ferns — its fern gang shrank from seven to five yet still cleared the threshold and held its pane')) i %see:'the mix example shed two ferns — its fern gang shrank from seven to five yet still cleared the threshold and held its pane'
     // the model's DRIFT attributes the deltas: the flock's Voronoiology must read three arrivals on its
-    //  boulder family reading and the mix's two departures on its fern family reading.
+    //  boulder family reading and the mix's two departures — each as the %Se:drift CHILD of a snapped
+    //   %Family row (the mainkey-as-provenance rule: %Se only where a Selection resolve spoke).
     let fseen = this.VoroTest_seen(w, 'flock')
     let mseen = this.VoroTest_seen(w, 'mix')
-    let fneu = fseen ? fseen.o({ Se: 'family' }).some(r => r.sc.neu === '3') : false
-    let mgone = mseen ? mseen.o({ Se: 'family' }).some(r => r.sc.gone === '2') : false
+    let fneu = fseen ? fseen.o({ Family: 1 }).some(r => (r.o({ Se: 'drift' })[0] || { sc: {} }).sc.neu === '3') : false
+    let mgone = mseen ? mseen.o({ Family: 1 }).some(r => (r.o({ Se: 'drift' })[0] || { sc: {} }).sc.gone === '2') : false
     if (fneu && !(oa %see:'the model felt the arrivals — the flock reading carries three new members in its drift this beat')) i %see:'the model felt the arrivals — the flock reading carries three new members in its drift this beat'
     if (mgone && !(oa %see:'the model felt the goners — the mix reading carries two departures in its drift this beat')) i %see:'the model felt the goners — the mix reading carries two departures in its drift this beat'
 
@@ -886,8 +887,9 @@ VoroTest_witness_quiet(w):
     let groves = grovesW ? this.VoroTest_panes_of(grovesW, 'Grove') : 0
     let steady = boulders && (boulders.c.gang || []).length === 15 && fern && (fern.c.gang || []).length === 5 && groves === 3
     if (steady && !(oa %see:'the readings held steady across the examples — a recrush with nothing changed reproduced every gang and pane because the fold is a pure function of the data')) i %see:'the readings held steady across the examples — a recrush with nothing changed reproduced every gang and pane because the fold is a pure function of the data'
-    // drift silent on EVERY example this beat.
-    let all_quiet = w.o({ Example: 1 }).every(ex => { let rw = ex.o({ w: 'Voronoiology' })[0]; if (!rw) return true; return rw.o({ Se: 'family' }).every(r => !r.sc.neu && !r.sc.gone) })
+    // drift silent on EVERY example this beat — silence is STRUCTURAL now: a quiet %Family row simply
+    //  has no %Se:drift child (absence is the reading), so the check is child-count zero, not fields.
+    let all_quiet = w.o({ Example: 1 }).every(ex => { let rw = ex.o({ w: 'Voronoiology' })[0]; if (!rw) return true; return rw.o({ Family: 1 }).every(r => r.o({ Se: 'drift' }).length === 0) })
     if (all_quiet && !(oa %see:'the drift fell silent everywhere — no family reading on any example carries an arrival or a departure after a recrush with nothing changed')) i %see:'the drift fell silent everywhere — no family reading on any example carries an arrival or a departure after a recrush with nothing changed'
 //#endregion
 

@@ -23,6 +23,13 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**NOW (2026-07-13, vision-checked): the arc is §12 — the stimuli machine + the magazine.** The
+ substrate is banked: the heist runs end-to-end, the Berth verbs are BUILT (§11.7 ✓) and the
+  MusuBerth Book is authored + registered. Owed first (Gate 0): the two live-gates on a reloaded
+   runner — MusuHeist accept to 15/15 sees, MusuBerth first run. Then §12.4's ladder: P1 (the
+    projected subHouse, isolation-proven) ∥ M1 (Musica_publish) are the independent starts.
+     The older NOW below is being absorbed into its home sections.
+
 **NOW (2026-07-13, post-push): three §10.2 gears LANDED compile-clean (live-gate owed on all);
  the Booth/Ban thread is VETOED-and-parked; persistence is ruled — §11.7 (the Berth).**
  - **Landed in the working tree** (opus-agent waves; every .g LocalGen-green): **#1
@@ -1046,3 +1053,85 @@ A **Berth** homes one Pier's Wafts — "like Lies does but without the rest of t
    formats, no broken objects. Berth documents already are; `newlyadded` MIGRATES into
     Waft:Listening rather than staying a line file; the unwired booth line-ledger dies unbuilt;
      the §11.3 airplay-log sketch becomes a Waft region when built.
+
+## 12. The stimuli machine + the magazine — protocols become media between brains (vision-checked 2026-07-13)
+
+The riff that reframes §10's heist and §9's Pier reality as ONE mechanism. Repli already moves
+ arbitrary C** (deL/enL, buffer pages, PULL, %Sent_Tree — §1.3); only convention says what it moves
+  is %Records. The generalisation: each Pier keeps MAGAZINES — curated C** media — and every
+   protocol is magazines moving between Piers, with a STIMULI MACHINE at each end deciding what an
+    arrival means. A heist request stops being a protocol verb and becomes a want that replicates
+     to the ORIGIN Pier and surfaces on its brain-agenda — the owner's grants, tombstones and taste
+      mediate at the owner's end (the anti-klepto inversion; §11.7's front door seen from the other
+       side of the wire). The UI and the front door become the same object: a magazine reader.
+
+### 12.1 Beliefs get projected — the trust boundary is WHICH House processes you
+
+beliefs()/Selection.process over H/A/w is the giant HIGH-TRUST pool: every ghost method mixes into
+ the House (eatfunc), so any req a sweep touches can reach everything. The sandbox is therefore
+  structural, not advisory: foreign stimuli are processed by a DIFFERENT House holding a PROJECTED
+   (subset) belief pool — a House per Pier+Protocol that wants its own belief system (or one per
+    protocol with per-Pier w inside — w is already the isolation/snap boundary; sizing TBD at P1).
+ Verified mechanics (2026-07-13): `House.subHouse(name)` EXISTS (Housing.svelte.ts:553) — own Se,
+  own beliefs() cycles, registered under the parent — but it shares the FULL pool wholesale
+   (`Object.assign(sub, this.ghosts)`, :561). The new gear is small and load-bearing: a PROJECTED
+    subHouse that assigns an allowlisted subset. Injection then lands in a room with no knives —
+     even a successfully-smuggled req can only call harmless verbs.
+ The escape hatch to close: `i_elvisto` posts across Houses — either elvisto is itself projected
+  away, or the receiving House gates on provenance (`sourceHousing` is ALREADY stamped by
+   i_elvistwo, Housing.svelte.ts:573 — the plumbing exists).
+ Bombs: the wire must NEVER mint live machinery — foreign trees decode %Stimulus-wrapped into the
+  restricted House; today's "a %req below w never pumps without hand-stamped c.up" is an ACCIDENT
+   doing duty as a wall, don't lean on it. And HMR re-mixes ghost methods (the known gotcha) — a
+    projected House must re-restrict on every haunt or a hot update silently re-arms the full pool.
+
+### 12.2 The magazine — %Musica, the collection sublimed into media
+
+A magazine is a curated C** projection of the filesystem: census walks the disk into %Records,
+ crush folds the homogeneous sludge behind husks so it reads as MEDIA, and the Pier's own voice
+  (Waft:Map — music-blog material, §11.7) rides beside. It lives as a Berth Waft, so it berths
+   per-identity, travels with the music, and Repli moves it like any C** (grants gate it).
+    album|title metadata is stored IN the magazine — that is what cursors anchor on (12.3).
+     Authored, generated (the Ra entropy seam), or sublimed from disk: same media, same mover.
+ Renames: a Pier that reorganises (retitles an album, splits an artist) mints %Renamed redirect-
+  facts beside the renamed node — from:, to:, at: — IN the magazine, so followers receive the
+   redirect through the same pipe as the content. (Naming note: "breach" is taken — it is the
+    body_hash integrity fail in Heist_land. %Renamed is a NEW fact family — cousin of the
+     %Tombstone/%UnGrant decision-facts, but a POSITIVE redirect and WINDOW-able: markers may
+      supersede/expire, unlike tombstones which never drop.) Followers can then run renaming
+       missions over their own filed copies — optional per Pier, a later rung.
+
+### 12.3 Cursors — a stack of matches, healed by rename markers
+
+A %Cursor is a serialized STACK OF MATCHES — a descent path of o()-queries ({Musica:1} →
+ {album:'X'} → {title:'Y'} → a seq window) — not indices. It is the native query algebra, all
+  scalar: cursors SNAP, berth, and replicate like anything else. Resolution walks the stack
+   re-finding each match; a failing level consults RECENT %Renamed markers and retries with the
+    redirect (the heal), noting what it healed. This is where-we're-up-to for any follow/browse/
+     replication-resume — resumable, showable (the gathering-performance UI), per-relationship
+      (berthed). Prior art rhymes: Point,text: (content-addressed cursor, the text substrate) and
+       %Map rel offsets — the Point re-anchoring problem class, solved once, deliberately.
+ NOT a rebuild of Repli's inseq/pages — wire-level sequencing stays; a cursor is the MEANING-level
+  position. Scope to magazine-follow first.
+
+### 12.4 The jobs ladder — little, Book-gated, mostly independent starts
+
+Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the substrate.
+ **P — projection**: P1 projected subHouse, proven in ISOLATION first (the fight-back rule; own
+  Book: the restricted House lacks the banned verbs, a smuggled req no-ops + notes, the main House
+   unaffected); P2 the elvis provenance gate (sourceHousing check, or project elvisto away).
+ **M — magazine**: M1 Musica_publish (census + crush → a %Musica Berth Waft, metadata in-magazine);
+  M2 two-Pier magazine replication (the existing Repli pipe, grants gate); M3 %Renamed markers
+   minted by a rename mission + replicated with the magazine.
+ **C — cursors**: C1 the %Cursor primitive + resolver (resolve | fail cleanly, own Book scenes);
+  C2 heal via recent %Renamed (rename mid-follow, the cursor heals, the heal noted); C3 cursor as
+   follow-progress, berthed (survives reload — the resumable browse).
+ **S — stimuli**: S1 ingestion (foreign C** decodes %Stimulus-wrapped into the restricted House's
+  per-Pier w; a HOSTILE stream claiming req:/eternal mainkeys lands INERT — the sabotage Book);
+   S2 the agenda bridge (a matured %Stimulus mints an %Errand on the Brink — the owner SEES the
+    want); S3 the heist rides it — the want-driven front door (§10.2 #4 merges here: genre starts
+     + the origin's Waft:Map advice; klepto demotes to one mode).
+ **U — the magazine reader** (Big*land family): browse a replicated %Musica, wants become cursors;
+  build AFTER the rungs give it real data.
+ Dependencies: P1 ∥ M1 are independent starts; S needs P; C2 needs M3; S3 needs S2 + M2; U needs
+  M2 + C1.
