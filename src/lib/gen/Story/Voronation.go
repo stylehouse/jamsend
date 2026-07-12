@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Voronation(): string { return 'ce1e679567dc41fc~g1' },
+    Ghostmeta_Ghost_Story_Voronation(): string { return 'c9549167969d9e7e~g1' },
 
 
 //#region pier — VoroRadioPier: the tuner drifts over MUSIC dribbled in from a (fake) Pier
@@ -679,9 +679,9 @@ async VoroScape_order(w) { const H = this;
 // ══ VoroTest — a bench of deliberately different data shapes, all crushed in ONE world ════════════
 //  The owner's ask: "show the rules of the way we fold|stuff etc in a VoroTest ... lots of instances
 //   of data having a Voro compute in parallel ... utterly universal."  Where VoroMitosis watches ONE
-//    flora move and VoroScape watches ONE library grow, VoroTest sets SIX canonical shapes side by
-//     side and crushes them together — so a reader learns the crush POLICY by reading one fixture:
-//      which shapes gang, which fold, which stay bare, and where each threshold bites.
+//    flora move and VoroScape watches ONE library grow, VoroTest sets a GALLERY of canonical shapes
+//     side by side and crushes them together — so a reader learns the crush POLICY by reading one
+//      fixture: which shapes gang, which fold, which stay bare, and where each threshold bites.
 //  The vocabulary is neutral GEOLOGY|BOTANY (no music — the point is the shape, not the domain): the
 //   crush is a pure function of STRUCTURE (mainkey homogeneity, child count, container depth), so any
 //    domain that keys the same way folds the same way.  Every shape sits LOOSE under w keyed by its
@@ -691,16 +691,20 @@ async VoroScape_order(w) { const H = this;
 //   stable).  Its subject IS the crush, so like VoroMitosis it DRIVES Voro_crush_scan inline (its
 //    do_fn), same-beat, because its %see claims read the fold facts the crush just stamped.  The
 //     world MUST be named VoroTest (Story dispatches the do_fn by the world name).
-//   beat 2  the bench is laid — all six shapes built — crush once — the fold verdicts read
-//   beat 3  MUTATIONS — arrivals grow the flock — goners leave the mix — the gradient bends — recrush
+//   beat 2  the bench is laid — every shape built — crush once — the fold verdicts read
+//   beat 3  MUTATIONS — arrivals grow the flock — goners leave the mix — the gradient bends — one
+//            ingot pops — recrush — the readings MOVE
 //   beat 4  a QUIET beat — recrush with no change — the readings hold steady (the fold is stable)
-//  The six shapes and the RULE each demonstrates (Voro.g line refs):
-//   1 flock    12 %Boulder loose leaves        → gang-fold by mainkey        (Voro_gang_fold ~:710)
-//   2 mix      7 %Fern + 5 %Moss + 3 loners    → two gangs beside bare leaves (Voro_gang_min ~:752)
+//  The shapes and the RULE each demonstrates (Voro.g line refs):
+//   1 flock    12 %Boulder loose leaves        → gang-fold by mainkey        (Voro_gang_fold ~:1199)
+//   2 mix      7 %Fern + 5 %Moss + 3 loners    → two gangs beside bare leaves (Voro_gang_min ~:1241)
 //   3 motley   8 distinct mainkeys one each    → nothing gangs — all bare    (gang of 1 < min)
-//   4 gradient 10 %Stratum sweeping a number   → one gang carrying a spread  (Vtuff_keyrows ~:1184)
-//   5 groves   3 %Grove each holding a subflock→ container-fold — no descent (Voro_crushable ~:822)
-//   6 edges    a 2-member %Pair + empty %Void  → tiny fallback-fold vs bare  (gang_fold else ~:731)
+//   4 gradient 10 %Stratum sweeping a number   → one gang carrying a spread  (Voro_model_axis ~:848)
+//   5 groves   3 %Grove each holding a subflock→ container-fold — no descent (Voro_crushable ~:1311)
+//   6 edges    a 2-member %Pair + empty %Void  → tiny fallback-fold vs bare  (gang_fold else ~:1220)
+//   7 swarm    5 varying %req + 2 %Cairn       → noisy gang looser than plain (Voro_gang_min noisy)
+//   8 genus    5 genera × 4 loose taxa (=20)   → UNPINNED governor finds clades (Voro_crush_scan ~:52)
+//   9 popped   3 %Ingot then pop one (beat 3)  → surf intent + spill re-gang  (crush_walk popped ~:1129)
 VoroTest(A,w) {
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
         await this.VoroTest_drive(w,req)
@@ -723,10 +727,14 @@ async VoroTest_drive(w, req) {
         if (n >= 2) {
             // crush each Example at a FIXED level 2 — a unit harness pins the level so every dataset
             //  meets the SAME fold rule (non-noisy gang_min 3), not the viewport auto-leveller that
-            //   would leave a small isolated world's leaves un-ganged.
+            //   would leave a small isolated world's leaves un-ganged.  The ONE exception is the genus
+            //    example (#18): it is crushed UNPINNED so its twenty leaves overrun the density budget
+            //     and the governor ESCALATES a level on its own — the governor discovering the clades is
+            //      exactly what that shape proves, so pinning it would defeat the test.
             for (const ex of w.o({ Example: 1 })) {
                 let dw = this.VoroTest_dataworld(ex)
-                if (dw) await this.Voro_crush_scan(dw, 0, 2)
+                if (!dw) continue
+                if (ex.sc.name === 'genus') { await this.Voro_crush_scan(dw, 0) } else { await this.Voro_crush_scan(dw, 0, 2) }
             }
         }
         if (n === 2) this.VoroTest_witness_bench(w)
@@ -851,8 +859,49 @@ VoroTest_edges(w) {
     w.i({ Void: 1, name: 'hollow' })
 
 },
-// lay the whole bench — six shapes, each in its OWN %Example, so the crush computes six worlds in
-//  parallel and the snap shows six datasets side by side, each beside its own Voronoiology reading.
+// shape 7 — the swarm: the NOISY assertion|request confetti folded as a GROUP (Voro.g task 5 / roster
+//  #6).  This is the ONE fold rule mix's gang path does NOT isolate.  mix already proves same-mainkey-
+//   varying-value leaves gang behind a rep (Fern, Moss) — that IS the swarm's fold mechanism, shared
+//    code (Voro_gang_fold).  What is DISTINCT is the THRESHOLD: %req|%witnessed|%see|%reached are the
+//     noisy families and Voro_gang_min gangs them looser (min 2 under the escalated governor) than an
+//      ordinary mainkey (min 3).  So at the bench's fixed L2 a swarm of five VARYING requests folds
+//       behind one representative while an ORDINARY pair of two cairns stays two bare nodes — the fold
+//        needs a smaller population when the family is noise.  The vocabulary breaks the geology rule on
+//         purpose: the noisy policy is DEFINED for these exact internal mainkeys, so the shape must use
+//          one of them (a childless %req rides the structural branch into loose[] and gangs there).
+VoroTest_swarm(w) {
+    let reqs = ['awaitbuf', 'flush', 'drain', 'settle', 'retry']
+    for (const r of reqs) this.VoroTest_leaf(w, 'req', r)
+    this.VoroTest_leaf(w, 'Cairn', 'stack')
+    this.VoroTest_leaf(w, 'Cairn', 'marker')
+
+},
+// shape 8 — the genus discovery: twenty loose taxa across FIVE genera keyed by genus (no container),
+//  reusing the flora vocabulary.  Crushed UNPINNED (see the drive) so the density budget forces the
+//   escalation: at level 0 no ordinary mainkey gangs (min 99) and all twenty stand visible, blowing the
+//    15-cell budget; the governor escalates to level 1 (non-noisy min 3) where the five genera each gang
+//     behind one representative — the machine EARNS the clades from flat leaves, exactly VoroMitosis's
+//      governor move, proven here in one beat on a fixed dataset (#18, the only auto-levelled example).
+VoroTest_genus(w) {
+    this.VoroMitosis_found(w, 'Coprosma', 4)
+    this.VoroMitosis_found(w, 'Veronica', 4)
+    this.VoroMitosis_found(w, 'Metrosideros', 4)
+    this.VoroMitosis_found(w, 'Kunzea', 4)
+    this.VoroMitosis_found(w, 'Leptospermum', 4)
+
+},
+// shape 9 — the popped intent: three %Ingot leaves that gang at the bench (L2 min 3).  The mutate beat
+//  pops ONE by hand (c.popped — the surf intent the crush must respect); that leaf then stands OUT of
+//   the fold (the popped-tiny branch skips it from the gang pool) and the remaining TWO re-gang at the
+//    RELAXED spill threshold (min 2, because a sibling popped) — the surf's contract "a few pop out, the
+//     REST stays one pane".  Two remaining is below the ordinary min 3, so the re-gang PROVES the spill
+//      relax fired; without it the pair would stand bare (#23).
+VoroTest_popped(w) {
+    for (const nm of ['bar', 'coin', 'bead']) this.VoroTest_leaf(w, 'Ingot', nm)
+
+},
+// lay the whole bench — nine shapes, each in its OWN %Example, so the crush computes nine worlds in
+//  parallel and the snap shows the datasets side by side, each beside its own Voronoiology reading.
 VoroTest_bench(w) {
     this.VoroTest_flock(this.VoroTest_example(w, 'flock'))
     this.VoroTest_mix(this.VoroTest_example(w, 'mix'))
@@ -860,6 +909,9 @@ VoroTest_bench(w) {
     this.VoroTest_gradient(this.VoroTest_example(w, 'gradient'))
     this.VoroTest_groves(this.VoroTest_example(w, 'groves'))
     this.VoroTest_edges(this.VoroTest_example(w, 'edges'))
+    this.VoroTest_swarm(this.VoroTest_example(w, 'swarm'))
+    this.VoroTest_genus(this.VoroTest_example(w, 'genus'))
+    this.VoroTest_popped(this.VoroTest_example(w, 'popped'))
 
 },
 // beat 3 — the mutations, so a reader sees the readings MOVE: three arrivals swell the flock example
@@ -878,6 +930,13 @@ VoroTest_mutate(w) {
     if (grad) {
         let bent = grad.o().filter(c => Object.keys(c.sc)[0] === 'Stratum').find(s => s.sc.depth === '10')
         if (bent) bent.sc.depth = '99'
+    }
+    // the popped example (#23): pop ONE ingot by hand — c.popped is the surf intent the recrush reads.
+    //  It stands out of the fold and the remaining two re-gang at the relaxed spill threshold.
+    let pop = this.VoroTest_dataworld_named(w, 'popped')
+    if (pop) {
+        let ingots = pop.o().filter(c => Object.keys(c.sc)[0] === 'Ingot')
+        if (ingots.length) ingots[0].c.popped = 1
     }
 
 },
@@ -916,12 +975,13 @@ VoroTest_model_of(w, name) {
 //   Em-dash, never a comma (the peel parser splits on commas).  The fixtures carry the full detail;
 //    these sentences name the cross-example rules a reader should take away.
 VoroTest_witness_bench(w) {
-    // every Example crushed to its OWN reading world — six data worlds, six Voronoiologies beside them.
+    // every Example crushed to its OWN reading world — each data world beside its own Voronoiology.
     let exs = w.o({ Example: 1 })
     // a crushed Example carries a %Voro census head in its own Voronoiology — true even for the motley
-    //  (which folds NOTHING, so it has a head but zero cells); count that, not cells.
+    //  (which folds NOTHING, so it has a head but zero cells); count that, not cells.  Gate seen ===
+    //   exs so the claim survives every new shape added to the bench — never a hard-coded roster size.
     let seen = exs.filter(ex => { let rw = ex.o({ w: 'Voronoiology' })[0]; return rw && rw.o({ Voro: 1 }).length > 0 }).length
-    if (exs.length === 6 && seen === 6 && !(w.oa({see: 'every example computed its own Voronoiology — six datasets crushed in parallel each to its own reading world beside its data'}))) w.i({see: 'every example computed its own Voronoiology — six datasets crushed in parallel each to its own reading world beside its data'})
+    if (exs.length >= 6 && seen === exs.length && !(w.oa({see: 'every example computed its own Voronoiology — each dataset crushed in parallel to its own reading world beside its data'}))) w.i({see: 'every example computed its own Voronoiology — each dataset crushed in parallel to its own reading world beside its data'})
     // a population folds — a dozen boulders behind one pane — where eight lone kinds cannot.
     let flock = this.VoroTest_dataworld_named(w, 'flock')
     let motleyW = this.VoroTest_dataworld_named(w, 'motley')
@@ -940,6 +1000,35 @@ VoroTest_witness_bench(w) {
     let gfams = gmodel ? gmodel.o({ Family: 1 }) : []
     let gradfam = gfams.find(f => f.sc.order_by === 'depth')
     if (gradfam && gradfam.sc.axis === 'num' && gradfam.sc.n === '10' && gradfam.sc.from && gradfam.sc.to && gradfam.sc.from !== gradfam.sc.to && !(w.oa({see: 'the model discovers order from the data — the gradient example reads depth as a numeric axis and pins its ten strata from one end anchor to the other'}))) w.i({see: 'the model discovers order from the data — the gradient example reads depth as a numeric axis and pins its ten strata from one end anchor to the other'})
+    // #6 the swarm: the noisy families fold looser than the ordinary ones.  Five requests of VARYING
+    //  value gang behind one representative (noisy min 2 at L2) while two cairns stay bare (ordinary
+    //   min 3) — the un-same folded as a group where an ordinary pair of the same size will not.
+    let sw = this.VoroTest_dataworld_named(w, 'swarm')
+    let reqgang = sw ? this.VoroTest_gang_of(sw, 'req') : null
+    let reqvals = {}
+    for (const p of (reqgang ? (reqgang.c.gang || []) : [])) reqvals['' + p.sc.req] = 1
+    let cairns = sw ? this.VoroTest_bare_of(sw, 'Cairn') : 0
+    if (reqgang && (reqgang.c.gang || []).length === 5 && Object.keys(reqvals).length === 5 && cairns === 2 && !(w.oa({see: 'the un-same folds as a group — five requests of varying value gang behind one representative where two ordinary cairns stay bare below the ordinary minimum'}))) w.i({see: 'the un-same folds as a group — five requests of varying value gang behind one representative where two ordinary cairns stay bare below the ordinary minimum'})
+    // #18 the governor discovers the clades: the genus example is crushed UNPINNED, so its twenty loose
+    //  taxa overran the 15-cell budget and the governor ESCALATED to level 1 (the pinned examples sit at
+    //   L2) — where the five genera each ganged behind one representative.  crush_level === 1 proves the
+    //    escalation was the density budget's own doing, not a pinned level.
+    let g = this.VoroTest_dataworld_named(w, 'genus')
+    let genera = ['Coprosma', 'Veronica', 'Metrosideros', 'Kunzea', 'Leptospermum']
+    let clades = g ? genera.filter(gn => this.VoroTest_gang_of(g, gn)).length : 0
+    if (g && g.c.crush_level === 1 && clades === 5 && !(w.oa({see: 'the governor discovered the clades — twenty loose leaves overran the density budget so the crush escalated one level on its own and five genera each ganged behind a representative'}))) w.i({see: 'the governor discovered the clades — twenty loose leaves overran the density budget so the crush escalated one level on its own and five genera each ganged behind a representative'})
+    // #14 a fact is not a spread: the flock reads grade as the SPREAD it orders by (twelve distinct
+    //  values) while stratum Miocene — the one value all twelve share — rides as a shared Loud FACT.
+    //   The model buckets the two kinds of claim apart, so the pane can speak a fact once and lay a
+    //    spread in order.  Read off the snapped row (order_by is the spread key; the Loud carries the v).
+    let fseen = this.VoroTest_seen(w, 'flock')
+    let brow = fseen ? fseen.o({ Family: 'Boulder' })[0] : null
+    let stratLoud = brow ? brow.o({ Loud: 'stratum' })[0] : null
+    if (brow && brow.sc.order_by === 'grade' && stratLoud && stratLoud.sc.v === 'Miocene' && !(w.oa({see: 'the model tells a fact from a spread — the flock orders by grade the spread that varies while stratum Miocene the value all twelve share rides as a shared fact'}))) w.i({see: 'the model tells a fact from a spread — the flock orders by grade the spread that varies while stratum Miocene the value all twelve share rides as a shared fact'})
+    // #28 census-storm slot capture: pin the flock's Family:Boulder row NODE now, so the mutate beat can
+    //  prove it is the VERY SAME row (not a torn-down-and-rebuilt one) after its count slides.  c-side
+    //   ref, survives across beats like VoroRadio's radio_picks — the model's find-or-create keeps it.
+    w.c.census_id = brow
 
 },
 // beat 3 — the mutations read back PER EXAMPLE: the flock example grew, the mix example shrank.  The
@@ -960,6 +1049,22 @@ VoroTest_witness_mutate(w) {
     let mgone = mseen ? mseen.o({ Family: 1 }).some(r => (r.o({ Se: 'drift' })[0] || { sc: {} }).sc.gone === '2') : false
     if (fneu && !(w.oa({see: 'the model felt the arrivals — the flock reading carries three new members in its drift this beat'}))) w.i({see: 'the model felt the arrivals — the flock reading carries three new members in its drift this beat'})
     if (mgone && !(w.oa({see: 'the model felt the goners — the mix reading carries two departures in its drift this beat'}))) w.i({see: 'the model felt the goners — the mix reading carries two departures in its drift this beat'})
+    // #23 the popped intent respected: one ingot was popped by hand this beat.  It stands OUT of the fold
+    //  (no stuff stamp, not represented) and the remaining TWO re-gang at the relaxed spill threshold —
+    //   two is below the ordinary min 3, so a re-gang can only mean the spill relax fired (min 2).  This
+    //    reddens if the popped-tiny branch swept the popped leaf back in (represented) or if spill relax
+    //     were removed (the pair would stand bare and VoroTest_gang_of would find no rep).
+    let popw = this.VoroTest_dataworld_named(w, 'popped')
+    let popped_leaf = popw ? popw.o().find(c => c.c.popped) : null
+    let ingang = popw ? this.VoroTest_gang_of(popw, 'Ingot') : null
+    if (popped_leaf && !popped_leaf.c.stuff && !popped_leaf.c.represented && ingang && (ingang.c.gang || []).length === 2 && !(w.oa({see: 'a popped member stands out and the rest hold together — one ingot surfed out of the fold while the remaining two re-ganged at the relaxed spill threshold'}))) w.i({see: 'a popped member stands out and the rest hold together — one ingot surfed out of the fold while the remaining two re-ganged at the relaxed spill threshold'})
+    // #28 the family kept its slot: the flock's Family:Boulder is the VERY SAME row node captured at the
+    //  bench, its count slid twelve to fifteen IN PLACE.  A census storm would have dropped and rebuilt
+    //   the row (a fresh node), so a surviving === ref is the live-reachable proof of the persistent
+    //    find-or-create emission (the full diff-size gate stays the human's fixture territory).
+    let fseen2 = this.VoroTest_seen(w, 'flock')
+    let frow = fseen2 ? fseen2.o({ Family: 'Boulder' })[0] : null
+    if (w.c.census_id && frow && frow === w.c.census_id && frow.sc.n === '15' && !(w.oa({see: 'the family kept its slot — the flock reading is the very same row across the recrush its count sliding to fifteen in place rather than a storm tearing it down and rebuilding'}))) w.i({see: 'the family kept its slot — the flock reading is the very same row across the recrush its count sliding to fifteen in place rather than a storm tearing it down and rebuilding'})
 
 },
 // beat 4 — the quiet beat: recrush with NO mutation, so every Example's fold verdicts hold exactly and

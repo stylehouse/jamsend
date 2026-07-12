@@ -48,12 +48,15 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
              `f.src.c.vtuffing` (grasp scores, render draws); render chrome (×N titles, /*N dips,
               wgt) never crosses into fixtures.  One-fact-one-place: the order-axis key is excluded
                from Loud; a spread's `+N` overflow chip (structurally n:0) is skipped by the model.
- - **② VoroTest Book — LANDED (per-Example, Cyto-off; LIVE GATE OWED).**  `Ghost/Story/Voronation.g`:
-    six datasets each an `%Example` holding its data world + its own `w:Voronoiology`; fixed crush
-     level L2; 10 `%see` across bench/mutate/quiet beats, all re-proven on the honest language.
-      **Headless CredRunner smoke 2026-07-13 only** — the LIVE runner gate + the human's re-record
-       are OWED (the fleet's runner tabs wedged on become_book that night, needing a host reload).
-        See §The VoroTest roster below for the fill-out plan.
+ - **② VoroTest Book — LANDED + FILLED OUT (per-Example, Cyto-off; LIVE GATE OWED).**
+    `Ghost/Story/Voronation.g`: now NINE datasets each an `%Example` holding its data world + its own
+     `w:Voronoiology`; fixed crush level L2 (the `genus` Example alone crushed UNPINNED for #18); the
+      original 10 `%see` PLUS 5 more (2026-07-13 fill-out: #6 swarm noisy-threshold, #14 fact-vs-spread,
+       #18 unpinned governor clade discovery, #23 popped spill re-gang, #28 row-slot identity) across
+        the same bench/mutate/quiet beats, all on the honest language.  **Headless CredRunner smoke only
+         (all 15 `%see` fire; no live drift/ttlilt in the quiet beat)** — the LIVE runner gate + the
+          human's re-record are OWED.  See §The VoroTest roster below for the rest of the fill-out plan
+           (#19 region + #29 loner still lack-marked — each needs care/a model cut).
  - **③ Cytui consumes the model.**  Cytui shrinks to wiring + paint: it READS the grasp's model
     (membership, order, loudness, drift) instead of recomputing it.  Today `region_of` /
      `river_order` / `family_trait` (Cytui) still hand-roll it render-side — this wave makes them
@@ -72,14 +75,19 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
         none Book-gateable (pixels never round-trip a fixture).
 
 **WHAT'S OWED right now (top of the pile for a cold session).**
- 1. **The LIVE gate for ① + ②** — re-prove the honest-language model + the VoroTest Book on a LIVE
-     :9091 runner (headless CredRunner is a bubble; [[verify-via-live-runner]]).  The fleet tabs
-      wedged the night ② landed — a host-side reload, then `runner_ask.mjs run VoroTest --watch`.
+ 1. **The LIVE gate for ① + ② (now incl. the 5 fill-out `%see`)** — re-prove the honest-language model
+     + the VoroTest Book (all 15 `%see`, the 3 new Examples, the UNPINNED genus governor) on a LIVE
+      :9091 runner (headless CredRunner is a bubble; [[verify-via-live-runner]]).  A runner WAS reachable
+       2026-07-13 (`runner_ask.mjs ping` → up, idle) but the NEW gen must reach it first: `npm run
+        ghost-compile -- Ghost/Story/Voronation.g` needs the editor tab open, then `runner_ask.mjs run
+         VoroTest --watch --runner=<prefix>`.  If become_book stamps but no run mints, the tabs are
+          wedged — host reload first.
  2. **The fleet re-record (human's job).**  All crush-Book fixtures (VoroTest, VoroMitosis,
      VoroScape, VoroRadio, VoroRadioPier, VoroClinic) are STALED by the language cut — steps 2-4
-      diff by design (the fixtures at HEAD predate the cut).  Re-record with eyes on, on a live
-       runner; the human owns this.  `Seen_split_todo.md` (the human's parallel `%seen`-latch +
-        assertion-roster build) is meant to make these re-records survivable — cross-reference it.
+      diff by design (the fixtures at HEAD predate the cut).  **VoroTest ALSO grew 3 Examples + 5
+       `%see` this round** (CredRunner surprises [2,3,4]) — the re-record covers those too.  Re-record
+        with eyes on, on a live runner; the human owns this.  `Seen_split_todo.md` (the human's parallel
+         `%seen`-latch + assertion-roster build) is meant to make these re-records survivable — x-ref it.
  3. **Then wave ③** — turn `region_of`/`river_order`/`family_trait` into model readers + land the
      Loud share-count inversion.
 
@@ -137,6 +145,11 @@ MISSION: fill VoroTest (`Ghost/Story/Voronation.g`) with the owed [model] roster
   any git command (no stage/commit/stash — the human reviews the tree); `src/lib/gen/**/*.go`;
    `Story.svelte`/`Hovercraft.svelte`/`Auto.svelte`; any `wormhole/` fixture (the human records);
     Radio/Heist territory (`Ghost/M/*`, `Radio_todo.md` beyond reading).
+
+**PROGRESS (2026-07-13):** ✅ #6 (lack-mark resolved → noisy threshold), #14, #18 (unpinned governor),
+ #23, #28 all LANDED + CredRunner-smoked (5 new `%see`, all fire).  #7 model-part marked COVERED (bond
+  edge is [eyes]).  ⏸ #19 (region) + #29 (loner) LACK-MARKED — each needs care/a model cut, NOT guessed
+   (see the roster entries).  Next cold session: the LIVE gate (owed #1) or the #19/#29 model cuts.
 
 **THE ORDER** (roster numbers): #6 swarm — FIRST resolve its lack-mark (is same-mainkey-varying-
  value already mix's gang path? prove the difference with a dataset or mark it covered) → #7
@@ -208,14 +221,19 @@ Six shapes are ALREADY in the bench (flock/mix/motley/gradient/groves/edges — 
      honest answer to *"what does the crusher do with depth"*.  [model]
 5. **edges — the smallest-that-folds vs the-thing-that-can't** ✅. a tiny %Pair (folds via the
     container fallback) beside an EMPTY %Void (refused, stands bare) (bench).  [model]
-6. **swarm — the un-same folded as a GROUP** (Voro_todo task 5). *"swarms of `%req:awaitbuf` and
-    kin escape the fold and litter the graph. Fold them anyway, as GROUPS"* — same-mainkey-
-     varying-value, skin shows the spread (`witnessed ×14 · 9 distinct`).  [model]  // < is this
-      distinct from mix's gang path, or covered? verify a bench case exists.
-7. **the under-w gang with no foldable parent** (Voro_todo task 5 STILL OPEN + `Voro_vtuffing.md`
-    §next-moves #2). Leaf swarms directly under `w`/`A` electing a representative; the popped↔old-gang
-     bond wants a core `n.c.bond` edge — *"the exploding edge, through the graph medium"*.  [model]
-     for the gang census; [eyes] for the bond edge draw.
+6. **swarm — the un-same folded as a GROUP** ✅ (2026-07-13, `swarm` Example). *"swarms of
+    `%req:awaitbuf` and kin escape the fold and litter the graph. Fold them anyway, as GROUPS"* —
+     same-mainkey-varying-value.  [model]  **Lack-mark RESOLVED:** the loose-leaf GANG mechanism IS
+      mix's gang path (shared `Voro_gang_fold`; mix already proves Fern/Moss fold).  What mix does NOT
+       isolate is the THRESHOLD — noisy families (req/witnessed/see/reached) gang at a LOWER min (2
+        escalated) than ordinary mainkeys (3).  The `swarm` Example pins that: five varying `%req` gang
+         behind one rep at L2 (noisy min 2) beside two `%Cairn` that stay BARE (ordinary min 3).  The
+          gate reddens if the non-noisy floor drops to 2 (the Cairns would gang) — a regression mix
+           can't catch.
+7. **the under-w gang with no foldable parent** — MODEL PART COVERED (flock/mix/swarm all gang loose
+    leaves directly under `w` electing a rep; `Voro_gang_fold` is the whole census).  What's OWED is the
+     popped↔old-gang **bond edge** (`n.c.bond`, *"the exploding edge, through the graph medium"*): that
+      is [eyes] — a drawn edge, not a model fact — so it belongs to the render wave, not this fill-out.
 
 ### The ordering / gradient / spread shapes ([model] for the axis, [contract]/[eyes] for the river)
 8. **gradient — a smooth ordered run** ✅. *"ten %Stratum leaves whose %depth sweeps 1..10 smoothly…
@@ -239,9 +257,11 @@ Six shapes are ALREADY in the bench (flock/mix/motley/gradient/groves/edges — 
      hierarchy must be expressed… as sub-cells, and sub-graph"* (`Voro_vtuffing.md` bamboo-v2). a
       real 2-level container hierarchy with per-Artist family hulls.  [model] for membership/family;
        [contract] for the sub-cell nesting; [eyes] for the glass.
-14. **Track facts + spreads** ✅-ish (VoroScape sprinkle). `%year` spread + `%live`/`%remaster`
+14. **Track facts + spreads** ✅ (2026-07-13, gated on `flock`). `%year` spread + `%live`/`%remaster`
      facts (`Voro_hash`, deterministic).  the distiller needs facts|spreads to speak, not just a
-      list.  [model] for facts vs spreads classification.
+      list.  [model] for facts vs spreads classification.  **Gated:** the flock reads `grade` (12
+       distinct) as the SPREAD it orders by (`order_by:grade`) while `stratum:Miocene` (the value all
+        twelve share) rides as a shared `Loud` FACT — the model buckets a fact apart from a spread.
 15. **a Pier-fed library dribbling in** (`Voro_vtuffing.md` owner-vision "dribble in"; VoroRadioPier).
      *"VoroRadio feeding music from a Pier" = music dribbling in from the Pier node* — a `%Pier` as
       the SOURCE a newborn is born at and flows outward from.  [model] for the source membership;
@@ -254,12 +274,21 @@ Six shapes are ALREADY in the bench (flock/mix/motley/gradient/groves/edges — 
       surface.  [model] for the weight; [contract] for the radio's read of it.
 
 ### The flora shapes (the botany test world — [model])
-18. **Genus / clade discovery from flat leaves** (VoroMitosis flatten, ROUND 4 task 6). a looser
+18. **Genus / clade discovery from flat leaves** ✅ (2026-07-13, `genus` Example). a looser
      `w/*` of `{Genus:'epithet'}` leaves where the CRUSHER discovers the clades (governor escalates
-      past 15 visible → genus gangs).  [model]
+      past 15 visible → genus gangs).  [model]  **Gated:** twenty loose taxa (5 genera × 4) crushed
+       UNPINNED — the ONLY auto-levelled Example — overrun the 15-cell budget so the governor escalates
+        to L1 on its own and the five genera each gang.  Gate is `crush_level === 1` (proves the density
+         budget's own escalation, not a pinned level) + all five ganged.
 19. **botanical families (multi-genus hulls)** (task 4 route C). Myrtaceae = Metrosideros+Kunzea+
      Leptospermum; Asteraceae = Olearia+Brachyglottis — the `c.vfamily` tag / `the:family` grouping;
       sibling folds hull per family.  [model] for family membership; [eyes] for the hull rope.
+     **// < NOT gated — needs care (2026-07-13):** the model's `region` is NOT `c.vfamily` (c-side,
+      render-only, drives Cytui's hull) — it is the grasp's `the:family` = each cell's VALUE on the
+       dominant-SHARED sc key, and it is computed OFF-SNAP ONLY (never projected to the Voronoiology
+        row).  So a clean neutral gate needs sibling gangs sharing a real sc fact whose value groups
+         them (not vfamily), read via `VoroTest_model_of`.  Deferred rather than guessed — see §The
+          data-path crux.  Do NOT project region to the snap (it would churn the groves/genus fixtures).
 20. **mixed-depth flora** ✅ (groves, #4). deep vs shallow containers in one world.  [model]
 21. **extinction / a freed name reclaimed** (Voro_todo open item). VoroMitosis extinction `%see` is
      LATENT — a later split reclaims the freed genus name; sticky-death vs drop.  [model]  // < the
@@ -270,9 +299,13 @@ Six shapes are ALREADY in the bench (flock/mix/motley/gradient/groves/edges — 
      some subset of stuff… shifts your actual attention around that area"* — age oldest / choose next
       / open a little / glide camera.  the `drift_focus`/`drift_opens`/`popped_auto` stamps.  [model]
        for the pick determinism (VoroRadio %sees it); [eyes] for the camera glide.
-23. **popped / surfed states** (§/*N surf). a member popped OUT into the graph (`c.popped` /
-     `c.popped_open` chain); the dip spills top-K=3, the rest re-gangs.  [model] for the crush
-      respecting the intent; [eyes] for the graph explosion.
+23. **popped / surfed states** ✅ (2026-07-13, `popped` Example). a member popped OUT into the graph
+     (`c.popped` / `c.popped_open` chain); the dip spills top-K=3, the rest re-gangs.  [model] for the
+      crush respecting the intent; [eyes] for the graph explosion.  **Gated:** three `%Ingot` gang at
+       the bench (L2 min 3); the mutate beat pops one (`c.popped`) — it stands OUT (no stuff, not
+        represented) and the remaining TWO re-gang at the spill min 2.  Two is below ordinary min 3, so
+         the re-gang can only mean spill relax fired — doubly adversarial (also catches the popped-tiny
+          branch sweeping the popped leaf back in).
 24. **cells within cells — recursion** (§0 destination; `history/Voro_microcosm.md`). *"effortless
      zoom-recursion through any… a microcosm member with its own fold gets its own cells"*; the
       radial rule RECURSES one level down.  [contract] for the sub-model; [eyes] for the sub-glass.
@@ -288,18 +321,30 @@ Six shapes are ALREADY in the bench (flock/mix/motley/gradient/groves/edges — 
 27. **big text stretch-ups / 14pt floor** (`Voro_render_todo.md` Slice A; `Voro_vtuffing.md` §Se-grasp).
      *"big text stretch-ups"* with a hard 14pt font floor; loud properties bigger — species epithets
       tower, universal `woodystem` recedes.  [eyes] for the fit; [model] for the `wgt` weight (grasp).
-28. **the census-storm shape — identity-stable emission** (`Voro_vtuffing.md` §Se-grasp). a step that
-     gains|loses a handful of taxa must diff as the real news, NOT a ~200-line churn.  the model's
-      keyed-in-place emission.  [model] — THE gate that proves the storm collapsed.
+28. **the census-storm shape — identity-stable emission** ✅ (2026-07-13, gated on `flock`, live-
+     reachable part). a step that gains|loses a handful of taxa must diff as the real news, NOT a
+      ~200-line churn.  the model's keyed-in-place emission.  [model] — THE gate that proves the storm
+       collapsed.  **Gated (the live-reachable part):** the flock's `Family:Boulder` row NODE is
+        captured at the bench (`w.c.census_id`); at mutate the gate asserts it is the VERY SAME node
+         (`frow === w.c.census_id`) with `n` slid to 15 — a drop-and-rebuild storm would hand back a
+          fresh node.  The full diff-SIZE gate (no ~200-line churn) stays fixture territory, the human's.
 29. **a loner showing ALL its ugly bits** (six-pass sixth, owner). *"I want all ugly bits of eg %req
      included, no hiding stuff"* — a loner tessellates its whole `sc`; folds are annotated + a `+N`
       fold mark counts everything crowded out.  [model] for "nothing dropped silently"; [eyes] for glass.
+     **// < NOT gated — needs a model feature (2026-07-13):** the off-snap model does NOT persist a
+      member's raw facts — it uses them for axis/loud then discards, and `Voro_model_loud_from` CAPS at
+       K=4, so a loner with >4 facts silently drops the tail.  A family of one is also not projected to
+        the snap (n<2).  So "nothing dropped" isn't gateable off the model as-is; it needs a small model
+         cut (persist a loner's facts + a `+N` overflow marker) before a `%see` can prove it.  A bare
+          loner also grows no Vtuffing (the "tessellate its whole sc" is [eyes], Cytui's properCellable).
 
-**Coverage note (2026-07-13):** 6 shapes are in the bench (✅); the roster totals 29.  The [model]
- and [contract] shapes are the near-term fill-out (each is a fixture-gateable `%see` on a fresh
-  `%Example`); the [eyes]-only shapes are proven by `runner_shot`, never a fixture.  Add a shape by
-   the `[testing-is-story-books]` + `[see-assertion-layer]` rules (a CHECK run then manual `%see`
-    install, never a CredRunner ACCEPT).
+**Coverage note (2026-07-13):** the bench now holds 9 shapes (✅: flock, mix, motley, gradient, groves,
+ edges, **swarm**, **genus**, **popped**); with #14/#28 gated on `flock`, the [model] fill-out landed
+  #6 #14 #18 #23 #28 this round.  #7 model-part is covered (its bond edge is [eyes]); #19 and #29 are
+   lack-marked (each needs care/a model cut, see above).  The roster totals 29; the remaining [model]
+    shapes want Pier/radio machinery (#15/#22/#26) or the deferred #19/#29.  The [eyes]-only shapes are
+     proven by `runner_shot`, never a fixture.  Add a shape by the `[testing-is-story-books]` +
+      `[see-assertion-layer]` rules (a CHECK run then manual `%see` install, never a CredRunner ACCEPT).
 
 ## The Se process — %Seem the organ, %Se the reading (the doctrine, and how to build with it)
 
