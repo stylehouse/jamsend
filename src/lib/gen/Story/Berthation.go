@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Berthation(): string { return '7bbe9ae361826f32' },
+    Ghostmeta_Ghost_Story_Berthation(): string { return 'fadda60ce33fa778~g1' },
 
 // Berthation.g — the Berth* Books: the persistence door proven (Radio_todo §11.7).  A Berth homes one
 //  Pier's own mutable documents — Waft:Taste, Waft:Listening, Waft:Filings, Waft:Map — each a Waft (the
@@ -217,6 +217,169 @@ async MusuBerth_order(w) { const H = this;
     let As = H.o({A: 1})
     if (!As.length) return
     let first = (a) => (a.sc.A === 'MusuBerth') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+},
+// ══ MusuMagazine — the first §12 rung (M1): a collection sublimed into media ═══════════════════════════
+// MusuMagazine — rung: a live catalog is PUBLISHED into a Waft:Musica magazine (§12.2), a Berth Waft that
+//  berths per-identity and Repli will move like any C**.  Musica_publish (Ghost/M/Heist.g) opens the Pier's
+//   Musica berth, wipes its old %Tune children and lays one Tune:<Artist — Title> handle (§11.1) per Record
+//    carrying album|genre|id — the metadata cursors will anchor on (§12.3).  This Book mints a SMALL IN-C
+//     catalog (no disk music — the magazine reads the CATALOG, not the file bytes), publishes, re-opens a
+//      SECOND handle (a genuine enWaft → toc.snap → deWaft round-trip) and counts one tune per record; probes
+//       a tune for its metadata; grows the catalog and re-publishes to watch the magazine grow; then DROPS a
+//        record and re-publishes to prove the recast is a whole re-cast — a vanished record leaves no orphan
+//         tune.  No crush at v1 (husks come with scale), no wire (M2 replicates it).  Same DESIGN-vs-on-the-
+//          design cut as MusuBerth: the magazine is the design (on disk), the counts hang under w/%testing.
+MusuMagazine(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuMagazine_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+MusuMagazine_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+MusuMagazine_note(w, sc) {
+    let t = this.MusuMagazine_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+// per-inner-step dispatch off the run's step_n (req.c.did_step, unsnapped — the Pere* lesson).  One publish
+//  family per step, awaited inline (local share).  The witness polls every pass reading the settled counts.
+async MusuMagazine_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuMagazine_publish_count(w)
+        if (n === 3) await this.MusuMagazine_probe_meta(w)
+        if (n === 4) await this.MusuMagazine_grow(w)
+        if (n === 5) await this.MusuMagazine_recast(w)
+    }
+    this.MusuMagazine_witness(w)
+    await this.MusuMagazine_order(w)
+
+},
+// pinned constants — a literal prepub so the on-disk dir path is deterministic across runs; the marrauding
+//  root is the Book's own namespace so the start sweep empties the magazine berth for free.
+MusuMagazine_prepub() {
+    return 'pier.magazine.test'
+},
+MusuMagazine_root() {
+    return this.Heist_marrauding('magrun', 'magazine')
+
+},
+// MusuMagazine_add — mint one in-C Record carrying the metadata a Tune anchors on (album|genre|id).  No
+//  disk bytes — the magazine sublimes the CATALOG, not the file (that is the heist's job).  Values carry no
+//   commas (a comma would split the snap line) and no apostrophes (the peel parser reserves them).
+MusuMagazine_add(lib, artist, title, album, genre, id) {
+    lib.i({ Record: 1, artist: artist, title: title, album: album, genre: genre, id: id })
+
+},
+// step 2 — mint a small catalog, PUBLISH it, re-open a SECOND handle and count one tune per record.  The
+//  marrauding namespace is swept first so a re-run publishes into a truly-empty magazine.  A no-writable-
+//   share runner skips the whole Book cleanly (the MusuBerth skip pattern).
+async MusuMagazine_publish_count(w) {
+    this.MusuMagazine_note(w, { reached: 'step_2' })
+    let nav = this.Crate_nav()
+    if (!nav || typeof nav.write_file !== 'function') {
+        if (!this.MusuMagazine_T(w).oa({ skipped: 'no_writable_share' })) this.MusuMagazine_note(w, { skipped: 'no_writable_share' })
+        return
+    }
+    w.c.nav = nav
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-magrun')
+    let lib = new TheC({ c: {}, sc: { Catalog: 1 } })
+    this.MusuMagazine_add(lib, 'Boards of Canada', 'Roygbiv', 'Music Has the Right to Children', 'electronic', 'boc-roygbiv')
+    this.MusuMagazine_add(lib, 'Aphex Twin', 'Xtal', 'Selected Ambient Works 85-92', 'ambient', 'apx-xtal')
+    w.c.mag_lib = lib
+    await this.Musica_publish(nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), lib)
+    // a SECOND independent handle — a full disk round-trip — reads the magazine back off toc.snap.
+    let back = await this.Berth_open(nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), 'Musica')
+    this.MusuMagazine_note(w, { published: 1, records: lib.o({ Record: 1 }).length, tunes: back.o({ Tune: 1 }).length })
+    w.c.mag_open = 1
+
+},
+// step 3 — PROBE one tune for its metadata: album|genre|id must ride in the magazine beside the handle (the
+//  §12.3 anchor).  Re-opens a fresh handle so the read is off the disk, not the live tree.
+async MusuMagazine_probe_meta(w) {
+    this.MusuMagazine_note(w, { reached: 'step_3' })
+    if (!w.c.mag_open) return
+    let nav = w.c.nav
+    let back = await this.Berth_open(nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), 'Musica')
+    let tune = back.o({ Tune: 'Aphex Twin — Xtal' })[0]
+    let row = { probed: 1 }
+    if (tune) {
+        if (tune.sc.album === 'Selected Ambient Works 85-92') row.has_album = 1
+        if (tune.sc.genre === 'ambient') row.has_genre = 1
+        if (tune.sc.id === 'apx-xtal') row.has_id = 1
+    }
+    this.MusuMagazine_note(w, row)
+
+},
+// step 4 — GROW: add a record to the live catalog, RE-PUBLISH, re-open and count one more tune.  Proves the
+//  magazine tracks the catalog: a fresh record surfaces as a fresh tune.
+async MusuMagazine_grow(w) {
+    this.MusuMagazine_note(w, { reached: 'step_4' })
+    if (!w.c.mag_open) return
+    let nav = w.c.nav
+    let lib = w.c.mag_lib
+    let before = (await this.Berth_open(nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), 'Musica')).o({ Tune: 1 }).length
+    this.MusuMagazine_add(lib, 'Autechre', 'Rae', 'Amber', 'electronic', 'ae-rae')
+    await this.Musica_publish(nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), lib)
+    let after = (await this.Berth_open(nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), 'Musica')).o({ Tune: 1 }).length
+    let row = { regrew: 1, before: before, after: after }
+    if (after === before + 1) row.grew = 1
+    this.MusuMagazine_note(w, row)
+
+},
+// step 5 — RECAST: DROP a record from the live catalog, re-publish, and prove the whole magazine re-cast —
+//  the dropped record's tune handle is GONE (Musica_publish wipes before it lays, so a vanished record
+//   leaves no orphan tune).  count falls back by one AND the specific handle is absent.
+async MusuMagazine_recast(w) {
+    this.MusuMagazine_note(w, { reached: 'step_5' })
+    if (!w.c.mag_open) return
+    let nav = w.c.nav
+    let lib = w.c.mag_lib
+    await lib.rm({ Record: 1, id: 'ae-rae' })
+    await this.Musica_publish(nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), lib)
+    let back = await this.Berth_open(nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), 'Musica')
+    let row = { recast: 1, after: back.o({ Tune: 1 }).length, orphan: back.o({ Tune: 'Autechre — Rae' }).length }
+    this.MusuMagazine_note(w, row)
+
+},
+// ── the witness — %seen LATCHED assertions, polled every pass.  Each is a happened-FACT of the publish
+//  round-trip, so once true it stays true.  Reads the recorded counts off %testing.  No commas, no
+//   apostrophes; an em-dash — where a pause is wanted.  Gated on the exact recorded counts. ──
+MusuMagazine_witness(w) {
+    let T = this.MusuMagazine_T(w)
+    if (T.oa({ skipped: 'no_writable_share' })) return
+    // published + count: a second handle read the magazine back off disk with one tune per record.
+    let pc = T.o({ published: 1 })[0]
+    if (pc && +(pc.sc.records || 0) === 2 && +(pc.sc.tunes || 0) === 2 && !(w.oa({seen: 'a magazine published from a live catalog — a fresh berth handle read back one tune for every record'}))) w.i({seen: 'a magazine published from a live catalog — a fresh berth handle read back one tune for every record'})
+    // metadata in-magazine: the probed tune carried its album and genre and id home beside the handle.
+    let pr = T.o({ probed: 1 })[0]
+    if (pr && pr.sc.has_album && pr.sc.has_genre && pr.sc.has_id && !(w.oa({seen: 'each tune carried its own metadata — album and genre and id rode in the magazine beside the handle'}))) w.i({seen: 'each tune carried its own metadata — album and genre and id rode in the magazine beside the handle'})
+    // grow: a republish after a fresh record laid exactly one more tune.
+    let gr = T.o({ regrew: 1 })[0]
+    if (gr && gr.sc.grew && +(gr.sc.before || 0) === 2 && +(gr.sc.after || 0) === 3 && !(w.oa({seen: 'the magazine grew with the catalog — a republish after a new record laid one more tune'}))) w.i({seen: 'the magazine grew with the catalog — a republish after a new record laid one more tune'})
+    // recast drops orphans: dropping a record and republishing left no orphan tune — count back to two.
+    let rc = T.o({ recast: 1 })[0]
+    if (rc && +(rc.sc.after || 0) === 2 && +(rc.sc.orphan || 0) === 0 && !(w.oa({seen: 'a republish recast the whole magazine — a record dropped from the catalog left no orphan tune behind'}))) w.i({seen: 'a republish recast the whole magazine — a record dropped from the catalog left no orphan tune behind'})
+
+},
+// keep the Run snap readable: float A:MusuMagazine to the front of H/*.
+async MusuMagazine_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'MusuMagazine') ? 0 : 1
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)

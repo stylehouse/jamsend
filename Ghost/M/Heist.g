@@ -576,4 +576,25 @@ async Berth_reset(nav, root, prepub, name):
         return
     }
     await this.Heist_sweep(nav, root + '/.jamsend/berth/' + prepub)
+
+// Musica_publish — the first magazine rung (§12.2, M1): sublime a collection into media homed in a Berth
+//  Waft.  Opens the Pier's Waft:Musica berth, WIPES its old %Tune children (a republish is a whole re-cast,
+//   not an append — the magazine mirrors the live catalog, so a dropped Record must vanish here too), then
+//    lays one Tune:<Artist — Title> handle (§11.1) per Record carrying the metadata cursors anchor on (§12.3):
+//     album|genre|id ride as scalars, each guarded so an absent field is OMITTED (never a `false`/'' snap
+//      wart — the album rule from Heist census).  No crush at v1 (husks come with scale) and no wire — the
+//       magazine is a plain Berth Waft that Repli will move like any C** once M2 lands.  Returns the mag so a
+//        caller can re-open a second handle and read the Tune rows back.
+async Musica_publish(nav, root, prepub, lib):
+    let mag = await this.Berth_open(nav, root, prepub, 'Musica')
+    for (const t of mag.o({ Tune: 1 })) await mag.rm({ Tune: t.sc.Tune })
+    for (const rec of lib.o({ Record: 1 })) {
+        let tune = mag.i({ Tune: rec.sc.artist + ' — ' + rec.sc.title })
+        tune.c.up = mag
+        if (rec.sc.album) tune.sc.album = rec.sc.album
+        if (rec.sc.genre) tune.sc.genre = rec.sc.genre
+        if (rec.sc.id) tune.sc.id = rec.sc.id
+    }
+    await this.Berth_save(nav, mag)
+    return mag
 //#endregion
