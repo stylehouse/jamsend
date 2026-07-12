@@ -7,15 +7,16 @@ Credulate,of_Book:VoroMitosis
   GhostInclude:Ghost_Story_Peregrination,dige:b33cab6322ef6320
   GhostInclude:Ghost_M_Radiola,dige:8786e42c3f3d4c97
   GhostInclude:Ghost_M_Sound,dige:f7dbcd82c50033cc
-  GhostInclude:Ghost_M_Crate,dige:c05f526599e015af
+  GhostInclude:Ghost_M_Crate,dige:b345b1447eeddabb
   GhostInclude:Ghost_M_Mixer,dige:d5597b5a4132d7f3
   GhostInclude:Ghost_M_Mesh,dige:286eb98843f6e7f9
   GhostInclude:Ghost_M_Ra,dige:877d4c68475647aa
-  GhostInclude:Ghost_M_Heist,dige:4c73db8a81f4c7d8
+  GhostInclude:Ghost_M_Booth,dige:24e06889933090b3
+  GhostInclude:Ghost_M_Heist,dige:f4d2607a014f42df
   GhostInclude:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
   GhostInclude:Ghost_Story_Radiation,dige:f3403566ed74e831
-  GhostInclude:Ghost_Story_Heistation,dige:f8b3d842c651570c
+  GhostInclude:Ghost_Story_Heistation,dige:c43bdb2f22902c50
   GhostInclude:Ghost_S_Swarm,dige:a5980d5d4830e92b
-  GhostInclude:Ghost_Story_Swarmation,dige:424a77682127f2ba
-  GhostInclude:Ghost_V_Voro,dige:3f7be00c3870ea1f
-  GhostInclude:Ghost_Story_Voronation,dige:fdae82df8e5d4f8c
+  GhostInclude:Ghost_Story_Swarmation,dige:a9adf6a06c9dc271
+  GhostInclude:Ghost_V_Voro,dige:c1ceca33309a5302
+  GhostInclude:Ghost_Story_Voronation,dige:b98a2dbef3f0c2a6

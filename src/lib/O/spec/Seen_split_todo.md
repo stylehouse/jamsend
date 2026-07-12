@@ -16,18 +16,30 @@ This file is destination + the bombs + the next move. Correct anything that has 
   prove every step on a LIVE `:9091` runner via `runner_ask.mjs` — a green in `Story_cli` is a
    bubble (`verify-via-live-runner`, CLAUDE.md).
 
+**MOVE 1 LANDED (2026-07-12, proven live on runner `3c5238`).** `%seen` exists and latches; the
+ mechanism is proven. Next is MOVE 2 (the roster verdict check — the CORE change that actually
+  closes the entropy-mask hole). Do NOT batch move 2 onto move 1's diff — it touches
+   `Cred_run_outcome` (all Books' verdicts); prove it in isolation with a sabotage test (drop a
+    `%seen` and confirm the ROSTER complains, not just the dige gate — and that it fires even inside
+     an entropy zone, the whole point of §4). See `fight-back-on-core-changes`.
+
 Three concrete moves, sized honestly:
 
-1. **Add the `%seen` writer + the assertion roster on ONE Book, isolation-first.** Pick a Book that
-    already carries a durable-by-luck claim — `SwarmSteal` is ideal: its 5 authored sentences
-     (`Ghost/Story/Swarmation.g:159-184`) are all `n`-gated observations that today drop, and one
-      (`identity is not address…`) is exactly the kind of "this happened by beat K" fact that WANTS
-       a latch. Stand `%seen` beside the existing `%see` (do not remove `%see` yet), latch it, and
-        add a `The/Assertions` roster entry naming it + the beat by which it must hold. Prove the
-         latch survives to the last snap on a live runner. This is one Book, one new mechanism,
-          fully reversible. **~½ day if the runner cooperates.**
+1. ~~**Add the `%seen` writer + the assertion roster on ONE Book, isolation-first.**~~ **DONE.**
+    Chosen Book: `SwarmSteal` (the 5 sentences live in `SwarmSteal_witness`, `Ghost/Story/Swarmation.g`
+     ~L383 — the earlier `:159-184` cite was `SwarmStaple`). Two `%seen` stand BESIDE the existing
+      `%see` (both kept): `theft-contested` (latches beat 4 on the `%Stolen` husk) and
+       `identity-not-address` (latches beat 6). The roster is a `The/Assertions` bucket authored in
+        `wormhole/Story/SwarmSteal/toc.snap` (`Assertion:<slug>,sentence:…,by_n:K`); it round-trips
+         the live toc encode/decode (confirmed). **Latch proven:** `theft-contested` appears in the
+          got_snap of beats 4, 5, AND 6 — it SURVIVES beat 5 where the live `stolen` flag clears and
+           the beat-4 `%see` drops (the exact latch-vs-observation contrast the split is for).
+            Fixtures 4/5/6 re-recorded from live got_snaps (the manual path — NOT Accept), step diges
+             updated in toc.snap; re-run is GREEN 6/6, caveat:0. Compiles browserless (LocalGen); gen
+              refreshed. Nothing wipes `%seen` — `w_forgets_problems` clears only `{see,waits,error}`.
+    NOTE the roster is DECLARED but NOT YET CHECKED (that is move 2); it rides inert today.
 
-2. **Wire the verdict complaint.** Make `Cred_run_outcome` (`Auto.svelte:680`) — or a sibling check
+2. **Wire the verdict complaint (← THE NEXT MOVE).** Make `Cred_run_outcome` (`Auto.svelte:680`) — or a sibling check
     it calls — read `The/Assertions` and, for each declared assertion, confirm the matching `%seen`
      latched in the run. A missing one is a NAMED red ("«identity is not address» expected by n≥5 —
       ABSENT"), surfaced in Storui and dragging `ok` false. This is the "labels complain when they

@@ -398,6 +398,17 @@ SwarmSteal_witness(w):
     if (n === 5 && this.Swarm_address(alice) === prepub + '_2' && !this.Swarm_stolen(alice) && !(oa %see:'Steal Back jumps past the thief and the siblings to prepub_2 and clears the alarm')) i %see:'Steal Back jumps past the thief and the siblings to prepub_2 and clears the alarm'
     // beat 6: identity is not address — the canonical name never moved while she is reachable at _2.
     if (n === 6 && peering.sc.name === prepub && this.Swarm_address(alice) === prepub + '_2' && peering.sc.online && !(oa %see:'identity is not address — the key never moved — a Pier still verifies her at prepub_2')) i %see:'identity is not address — the key never moved — a Pier still verifies her at prepub_2'
+    // ── %seen — the DURABLE latched assertions (Seen_split move 1). Stand beside the %see above; a %seen
+    //  is a happened-FACT, so it LATCHES: minted once the first beat its truth holds and never wiped
+    //   (w_forgets_problems clears {see} not {seen}), riding every later snap. Declared in The/Assertions
+    //    (SwarmSteal toc.snap) with the beat by which each must hold; the roster verdict check is move 2.
+    // theft-contested — latches at beat 4 (the %Stolen husk lands) and SURVIVES past beat 5, where the
+    //  LIVE `stolen` flag clears: the observation drops but the fact "a theft happened" stays true. This
+    //   is the whole point of the split — a latched fact where a %see would flicker out.
+    if (n >= 4 && peering.o({ Stolen: 'remote_copy' })[0] && !(oa %seen:'a foreign claimant once contested the name of Alice — a copy that was not one of our tabs raised Identity Stolen')) i %seen:'a foreign claimant once contested the name of Alice — a copy that was not one of our tabs raised Identity Stolen'
+    // identity-not-address — the culminating happened-fact (the doc's named latch candidate): latches at
+    //  beat 6 when the key-derived name is unchanged while the address has moved to _2 and she is online.
+    if (n >= 6 && peering.sc.name === prepub && this.Swarm_address(alice) === prepub + '_2' && peering.sc.online && !(oa %seen:'identity is not address — the key-derived name of Alice never changed while the address moved to prepub_2')) i %seen:'identity is not address — the key-derived name of Alice never changed while the address moved to prepub_2'
 
 // SwarmSteal_order — float A:SwarmSteal to the front of H/* so the Run snap stays readable.
 async SwarmSteal_order(w):

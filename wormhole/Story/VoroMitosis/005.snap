@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=9	{"mung":["age"]}
+      self,round=8	{"mung":["age"]}
       w:VoroMitosis
-        self,round=9	{"mung":["age"]}
+        self,round=8	{"mung":["age"]}
         req:wrangle,eternal,ok
         Coprosma:lucida,habit:vine
           Coprosma:lucida var. prostrata
@@ -32,6 +32,8 @@ Snap:H
       w:Voronoiology,dontGraph
         Voro,beat=4,level:L1,visible=5,cells:4,gangs=4,folded:0,count:0
         bare:req,n:1
+        Se:scape,grasped:4,born:1,died:1,loudest:Coprosma,trait:habit tree,regions:2
+        Se:census,goners:0,neus:7,rows:7
         cell:Coprosma,kind:gang,n:7
           Vtuffing,of:Coprosma,n:7
             Vrow,row:title,text:×7,wgt:2,tag:Coprosma

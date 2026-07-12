@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=19	{"mung":["age"]}
+      self,round=14	{"mung":["age"]}
       w:VoroMitosis
-        self,round=19	{"mung":["age"]}
+        self,round=14	{"mung":["age"]}
         req:wrangle,eternal,ok
         Kunzea:grandifolia,habit:vine
           Kunzea:grandifolia f. viridis,habit:vine
@@ -98,6 +98,8 @@ Snap:H
       w:Voronoiology,dontGraph
         Voro,beat=9,level:L1,visible=13,cells:12,gangs=8,folded:4,count:4
         bare:req,n:1
+        Se:scape,grasped:12,born:1,died:0,loudest:Kunzea,trait:endemic ×1,regions:4
+        Se:census,goners:0,neus:15,rows:15
         cell:Coprosma,kind:gang,n:8
           Vtuffing,of:Coprosma,n:8
             Vrow,row:title,text:×8,wgt:2,tag:Coprosma

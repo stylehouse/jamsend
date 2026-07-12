@@ -10,7 +10,7 @@ import { sha256_hex, sha256_incremental } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'e8a6d039ad310eee' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'f4d2607a014f42df' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -102,7 +102,7 @@ async Heist_census(w, lib, nav, base, artists) {
         let bytes = new Uint8Array(raw)
         // the authoritative catalog identity: tags win, filename fills the gaps.  Pass the bytes FROM OFFSET 0
         //  (Crate_meta_from_tags reads the RIFF/ID3 header there); it never throws and never returns a hole.
-        let meta = this.Crate_meta_from_tags(bytes, path)
+        let meta = await this.Crate_meta_from_tags(bytes, path)
         // a tag identity already held (the path-probe above only saw the filename identity) is recognized here
         //  — the dedup stays catalog-true even when the tag disagrees with the name it was filed under.
         if (this.Heist_held(lib, meta.artist, meta.title)) { stood = stood + 1; continue }
@@ -238,6 +238,11 @@ async Heist_beat(w, rx, mine, theirs, job, own_lib, mir, nav, mardir) {
             //  and never re-heisted.  Tallied apart from `skipped` so a snap reads WHY each husk stopped —
             //   held (already have it) vs tombstoned (dropped it before, and it stays dropped).
             job.sc.tombstoned = +(job.sc.tombstoned || 0) + 1
+            // the verdict row for a refusal (the twin of the held row above and the took row at landing): a
+            //  `denied,tune:<Artist — Title>` child pointed at the job, so the refused identity reads back by
+            //   name, not just a bare tombstoned count.  Display-only string, flattens with the job.
+            let job_denied = job.i({ denied: 1, tune: rec.sc.artist + ' — ' + rec.sc.title })
+            job_denied.c.up = job
             await mir.rm({ Record: 1, id: rec.sc.id })
             continue
         }
@@ -411,18 +416,26 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
     if (rec.sc.album) card.sc.album = rec.sc.album
     card.c.up = own_lib
     job.sc.landed = +(job.sc.landed || 0) + 1
+    // SURFACE what the heist TOOK (the landing twin of the held/denied verdict rows): one compact
+    //  `took,tune:<Artist — Title>` child per file that crossed and passed the byte gate, pointed at the
+    //   job.  Same display-only string the held rows carry (artist + em-dash + title — no source, no
+    //    path), so the job reads as a named list of verdicts (took here, held / denied elsewhere) instead
+    //     of a bare landed tally.  `took` is a distinct mainkey (never a non-first tally key), and like the
+    //      counts beside it it flattens WITH the job — scaffolding, not ledger.
+    let row = job.i({ took: 1, tune: rec.sc.artist + ' — ' + rec.sc.title })
+    row.c.up = job
     await mir.rm({ Record: 1, id: rec.sc.id })
 
 },
 // Heist_manifest — the DIRECTORY-LISTING CONFIRMABLE (roadmap §10.2 #3): look-before-you-commit.  For each
 //  husk still in the mirror, its WOULD-BE landing path (the exact same derivation Heist_land uses — Heist_rel_for,
 //   relative to the marrauding dir) and a verdict of what will happen to it: 'held' (already in the collection —
-//    dedup will skip it), 'banned' (a durable %Tombstone refuses it — a past drop stays dropped), or 'new' (it
+//    dedup will skip it), 'denied' (a durable %Tombstone refuses it — a past drop stays dropped), or 'new' (it
 //     will land).  Returns [{path, verdict}, …] in mirror order — the listing a UI or Book shows as the heist
 //      BEGINS, so the human sees what they'll get and what they already have before a byte moves.
 //  PURE READ — no mutation: it consults Heist_held / Heist_tombstoned (the same doors Heist_beat gates on) and
 //   builds strings; it mints nothing, drops nothing, writes no disk.  Verdict order matters: HELD wins over
-//    banned (if you somehow both hold AND tombstoned an identity, you have it, so 'held' is the honest read),
+//    denied (if you somehow both hold AND tombstoned an identity, you have it, so 'held' is the honest read),
 //     matching Heist_beat's door order (held-skip checked before tombstone).
 //   // <  the RESUME side — "found again as it RESUMES", the same listing re-shown mid-heist off partial
 //   // <   fill-state — is unbuilt: this is the AT-THE-START snapshot only.
@@ -434,7 +447,7 @@ Heist_manifest(job, mir, own_lib) {
         if (this.Heist_held(own_lib, rec.sc.artist, rec.sc.title)) {
             verdict = 'held'
         } else if (this.Heist_tombstoned(own_lib, rec.sc.artist, rec.sc.title)) {
-            verdict = 'banned'
+            verdict = 'denied'
         }
         out.push({ path: this.Heist_rel_for(job, rec), verdict: verdict })
     }

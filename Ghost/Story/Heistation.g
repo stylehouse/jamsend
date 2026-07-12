@@ -128,14 +128,20 @@ async MusuHeist_phase(w):
         //    land time), while the bytes themselves are gone; the dirs persist empty (deleting them would
         //     poison the next run's FSA handle cache).  Mirrors the start sweep at census — one at each end.
         await this.Heist_sweep(w.c.nav, this.Heist_meta_dir() + '/test-marrauding-of-bookrun')
+        // DROP the planted tagged WAV out of the base share too — the sweep only cleans the marrauding
+        //  namespace, but MusuHeist_plant_tagged wrote into testsounds itself, so the next run must find the
+        //   base 6/2 (else it censuses 6/4).  Best-effort file delete, DISK-only, alters no snap (the tagged
+        //    identity's proof already stands in %testing).  Skipped if the plant never ran (a skipped census).
+        if (w.c.tag_file) await this.Heist_unlink(w.c.nav, 'testsounds', w.c.tag_file)
         return true
     }
     return false
 
 // beat 2 — the divided censuses off the ONE real disk.  The marrauding namespace sweeps first so a
 //  re-run starts clean (the pinned-runid stance).  Each census is a %Library keyed by its Peering's
-//   prepub (the §9.1c convention); the whittle divides TEST_TONES' three artists 6/2.  DESIGN lands on
-//    w (accounts, link, libraries, registrations); only the reached/censused observations go to %testing.
+//   prepub (the §9.1c convention); the whittle divides the artists 6/3 — TEST_TONES' three artists plus
+//    ONE synthesized tagged WAV laid into Duo's Fourier Four (MusuHeist_plant_tagged, below).  DESIGN lands
+//     on w (accounts, link, libraries, registrations); only the reached/censused observations go to %testing.
 async MusuHeist_census(w):
     this.MusuHeist_note(w, { reached: 'step_2' })
     w.c.nav = this.Crate_nav()
@@ -188,12 +194,49 @@ async MusuHeist_census(w):
     // the slow disk-walk is held OFF the snap by an expecting() ttlilt (hold-one-snap, off the beliefs
     //  mutex): two censuses off the REAL disk, %Body chunks minted whole with body_hash, then phase opens.
     await this.expecting(w, 'heist_census', 90, async () => {
+        // PLANT the mislabeled tagged WAV into the share BEFORE either census walks it — a Fourier Four
+        //  track whose FILENAME lies (a bogus title) but whose embedded RIFF INFO tags carry the true
+        //   identity, so the census filing must trust the bytes over the name.  Duo's whittle gates on the
+        //    PATH-derived artist, so the filename keeps artist Fourier Four (else the whittle drops it before
+        //     a byte is read — the census bomb); only the TITLE misleads.
+        await this.MusuHeist_plant_tagged(w)
         let a = await this.Heist_census(w, w.c.uno_lib, w.c.nav, 'testsounds', ['The Sines', 'DJ Oscillo'])
         let b = await this.Heist_census(w, w.c.duo_lib, w.c.nav, 'testsounds', ['Fourier Four'])
         this.MusuHeist_note(w, { censused: 1, uno: a.built + a.stood, duo: b.built + b.stood })
         w.c.phase = 'seal'
     })
     w.doai({ req: 'witness', eternal: 1 })?.(async (req) => { this.MusuHeist_witness(w); req.sc.ok = 1 })
+
+// MusuHeist_plant_tagged — lay ONE mislabeled-but-tagged WAV into Duo's Fourier Four before the census
+//  walks the share.  The FILENAME lies (`Fourier Four - Bogus Name.wav` — a title that names no real
+//   tone) while the embedded RIFF INFO tags carry the TRUE identity (Fourier Four — Tagged Truth).  So the
+//    census's Crate_meta_from_tags must catalogue by the bytes, not the name: after Uno heists it, the file
+//     shelves at the TAG-derived path (<mathrock>/Fourier Four/Tagged Truth.wav), never the bogus filename.
+//  THE WHITTLE BOMB (Heist_census line 81): the census gates on the PATH-derived artist before it ever
+//   reads the bytes, so the filename MUST keep artist `Fourier Four` (in Duo's whittle) — only the TITLE is
+//    allowed to mislead.  A wrong artist in the name would drop the file at the whittle, unread.
+//  Idempotent by the bin_write overwrite; deleted again at flat (MusuHeist_flat's sweep leaves testsounds,
+//   so THIS delete is what resets the base share for the next run).  Binary/PCM synth is raw-JS territory
+//    (the DSL is scalars-only) — Crate_wav_with_tags does the byte layout, we just hand it a short sine.
+async MusuHeist_plant_tagged(w):
+    // the deliberately-misleading on-disk name (path-artist Fourier Four survives the whittle; the title
+    //  is a lie) and the TRUE identity the tags carry — pinned as data so the delete + the witness agree.
+    w.c.tag_file = 'Fourier Four - Bogus Name.wav'
+    w.c.tag_artist = 'Fourier Four'
+    w.c.tag_title = 'Tagged Truth'
+    // a short mono sine — the census hashes + chunks the raw bytes (it never decodes), so a few thousand
+    //  samples is enough for a valid tagged RIFF the reader round-trips; kept tiny so the extra file barely
+    //   grows the snap.  Deterministic (a fixed freq/length), so the body_hash is stable across runs.
+    let sr = 8000
+    let n = 4000
+    let pcm = new Float32Array(n)
+    let i = 0
+    while (i < n) {
+        pcm[i] = Math.sin(2 * Math.PI * 300 * i / sr) * 0.5
+        i = i + 1
+    }
+    let bytes = this.Crate_wav_with_tags(pcm, sr, { artist: w.c.tag_artist, title: w.c.tag_title })
+    await w.c.nav.bin_write('testsounds', w.c.tag_file, bytes)
 
 // the seal — ONE Idzeug redeem seals the pair with the mutual Music grant; then BOTH piers register
 //  both ways.  The consent hook answers per-relationship — (peer, at) — off the LIVE grant, so a revoke
@@ -221,12 +264,13 @@ async MusuHeist_seal(w):
 MusuHeist_bundle(w, nick):
     let pfx = w.c.genre_pfx
     if (nick === 'uno' || nick === 'reuno' || nick === 'retomb') {
-        // the re-heist expects Duo's WHOLE shelf back (2 originals + the 6 landed in job B) — a shorter
-        //  expectation would flatten early and strand in-flight husks in the quarantine.  retomb expects
-        //   the same 8: 7 already-held skip, the 1 denied identity is tombstoned — none re-land.
+        // the re-heist expects Duo's WHOLE shelf back (3 originals — two tones + the mislabeled tagged WAV —
+        //  plus the 6 landed in job B) — a shorter expectation would flatten early and strand in-flight husks
+        //   in the quarantine.  retomb expects the same 9: 8 already-held skip, the 1 denied identity is
+        //    tombstoned — none re-land.
         return { nick: nick, at: w.c.duo_pre, mine: w.c.uno_pre, rx: w.c.port_uno,
             srcport: w.c.port_duo, srclib: w.c.duo_lib, own: w.c.uno_lib,
-            mar: w.c.mar_uno, mir_key: w.c.uno_pre + '.heist', expect: (nick === 'reuno' || nick === 'retomb') ? 8 : 2,
+            mar: w.c.mar_uno, mir_key: w.c.uno_pre + '.heist', expect: (nick === 'reuno' || nick === 'retomb') ? 9 : 3,
             filings: [{ artist: 'Fourier Four', genre: pfx + '-mathrock' }] }
     }
     return { nick: 'duo', at: w.c.uno_pre, mine: w.c.duo_pre, rx: w.c.port_duo,
@@ -268,9 +312,21 @@ async MusuHeist_flow(w):
     let landed = +(b.job.sc.landed || 0)
     let skipped = +(b.job.sc.skipped || 0)
     let tombstoned = +(b.job.sc.tombstoned || 0)
+    // THE MANIFEST — look-before-you-commit (Heist_manifest, a pure read).  Read it on the FIRST beat the
+    //  offered husks have crossed but before Heist_beat drains a single one (landed+skipped+tombstoned===0
+    //   and the mirror is full) — so the listing is the WHOLE offer, every verdict named before a byte moves.
+    //    Two poles fall out of the run: the uno heist (all new — 3) and the retomb heist (all held/denied —
+    //     8 held, 1 denied, 0 new).  ONE note per nick, guarded, counting verdicts off the returned rows.
+    if (!this.MusuHeist_T(w).oa({ manifest: b.nick }) && landed + skipped + tombstoned === 0 && mir.o({ Record: 1 }).length >= b.expect) {
+        let man = this.Heist_manifest(b.job, mir, b.own)
+        let held = man.filter((m) => m.verdict === 'held').length
+        let denied = man.filter((m) => m.verdict === 'denied').length
+        let fresh = man.filter((m) => m.verdict === 'new').length
+        this.MusuHeist_note(w, { manifest: b.nick, held: held, denied: denied, new: fresh })
+    }
     // completion is its OWN step: the final beat (below) lands the last record and returns true, then THIS
     //  fires next snap.  Guarded by >= expect so an empty mirror mid-offer (husks still crossing) never
-    //   false-completes.  Tombstoned husks (denied-before) count toward expect too — retomb drops all 8 at
+    //   false-completes.  Tombstoned husks (denied-before) count toward expect too — retomb drops all 9 at
     //    the door and lands none.  The DISK is read back — byte-faithful means the bytes that LANDED.
     if (landed + skipped + tombstoned >= b.expect && !mir.o({ Record: 1 }).length) {
         // gather the disk truth first (on_disk monitoring + byte-faithful count), then stamp the node.
@@ -301,6 +357,18 @@ async MusuHeist_flow(w):
         if (tombstoned) row.tombstoned = tombstoned
         if (b.job.sc.breached) row.breached = b.job.sc.breached
         if (landed) row.faithful = ok
+        // the NAMED-verdict telemetry (the verdict rows counted, read here before flatten drops the job).
+        //  took_named on the uno milestone = how many `took` rows the landing left (one per file — 3); it
+        //   proves the per-track verdict rows exist in the count they should.  streamed on uno = the landing
+        //    rode the positioned bin_append stream (never assembled a whole track in memory) — a live probe
+        //     of the backend capability, fixture-stable on the FSA gate runner.
+        if (b.nick === 'uno') {
+            row.took_named = b.job.o({ took: 1 }).length
+            if (w.c.nav && typeof w.c.nav.bin_append === 'function') row.streamed = 1
+        }
+        // held_named on the reuno milestone = how many `held` verdict rows the dedup door left (one per
+        //  already-held offer) — the twin of took_named for the skip path.
+        if (b.nick === 'reuno') row.held_named = b.job.o({ held: 1 }).length
         let jn = this.MusuHeist_note(w, row)
         for (const d of disks) {
             let od = jn.i({ on_disk: d.entry, bytes: d.bytes })
@@ -410,7 +478,7 @@ MusuHeist_witness(w):
     if (!uno_lib || !duo_lib) return
     // the divided censuses stand — REAL files walked into %Records whose %Body chunks are whole original
     //  bytes; neither census holds the other's artists.
-    let cok = uno_lib.o({ Record: 1 }).length === 6 && duo_lib.o({ Record: 1 }).length === 2
+    let cok = uno_lib.o({ Record: 1 }).length === 6 && duo_lib.o({ Record: 1 }).length === 3
     // BOTH sides checked for whole original bytes (audit #1: the completeness loop used to run over duo
     //  only, so 6 of 8 tracks never had "whole bytes" witnessed — a truncated Sines/Oscillo body passed).
     for (const rec of uno_lib.o({ Record: 1 })) {
@@ -448,7 +516,7 @@ MusuHeist_witness(w):
     let ha = T.o({ heisted: 'uno' })[0]
     // job A landed: original bytes straight into the collection — the DISK re-read re-hashes to the source
     //  hash for every landed file (byte-faithful is proven against what stands not what was meant).
-    if (ha && +(ha.sc.landed || 0) === 2 && !ha.sc.breached && +(ha.sc.faithful || 0) === 2 && !T.oa({ see: 'the heist landed straight into the collection — every file byte-faithful to its source hash on the disk' })) this.MusuHeist_note(w, { see: 'the heist landed straight into the collection — every file byte-faithful to its source hash on the disk' })
+    if (ha && +(ha.sc.landed || 0) === 3 && !ha.sc.breached && +(ha.sc.faithful || 0) === 3 && !T.oa({ see: 'the heist landed straight into the collection — every file byte-faithful to its source hash on the disk' })) this.MusuHeist_note(w, { see: 'the heist landed straight into the collection — every file byte-faithful to its source hash on the disk' })
     // the filing held: every landed card lives under the genre its filing named.  Match the FULL pinned
     //  genre (pfx + '-mathrock/'), not a bare substring (audit #5), so a dropped prefix cannot pass.
     if (ha) {
@@ -456,7 +524,18 @@ MusuHeist_witness(w):
         for (const rec of uno_lib.o({ Record: 1, artist: 'Fourier Four' })) {
             if (('' + rec.sc.path).includes(w.c.genre_pfx + '-mathrock/')) filed = filed + 1
         }
-        if (filed === 2 && !T.oa({ see: 'the landing filed by category — each track under the genre its filing named' })) this.MusuHeist_note(w, { see: 'the landing filed by category — each track under the genre its filing named' })
+        if (filed === 3 && !T.oa({ see: 'the landing filed by category — each track under the genre its filing named' })) this.MusuHeist_note(w, { see: 'the landing filed by category — each track under the genre its filing named' })
+    }
+    // the mislabeled tagged WAV followed its TAGS home, not its filename.  After Uno heists Duo, exactly one
+    //  landed card sits at the TAG-derived path (<mathrock>/Fourier Four/Tagged Truth.wav) and NOT ONE card
+    //   anywhere carries the bogus filename ("Bogus Name") — the filing trusted the bytes over the name.  Both
+    //    halves matter: the positive (it shelved by tag) AND the negative (the lie never became a path), so a
+    //     census that fell back to the filename would drop this see, not slip through.
+    if (ha && w.c.tag_title) {
+        let tag_rel = w.c.genre_pfx + '-mathrock/Fourier Four/' + w.c.tag_title + '.wav'
+        let at_tag = uno_lib.o({ Record: 1, artist: 'Fourier Four', title: w.c.tag_title }).filter((r) => r.sc.path === tag_rel).length
+        let by_name = uno_lib.o({ Record: 1 }).filter((r) => ('' + r.sc.path).includes('Bogus Name')).length
+        if (at_tag === 1 && by_name === 0 && !T.oa({ see: 'a mislabeled file followed its tags home — the filing trusted the bytes over the filename' })) this.MusuHeist_note(w, { see: 'a mislabeled file followed its tags home — the filing trusted the bytes over the filename' })
     }
     // job B landed the other way — same music economy, DIFFERENT categories at the other end.  Each count
     //  is scoped to its ARTIST (audit #6): a swap that filed The Sines under bangers would keep 3+3 in the
@@ -474,26 +553,44 @@ MusuHeist_witness(w):
         if (chill === 3 && bang === 3 && !T.oa({ see: 'the mirror heist landed the other way — each end filed the same disk under its own categories' })) this.MusuHeist_note(w, { see: 'the mirror heist landed the other way — each end filed the same disk under its own categories' })
     }
     // the re-heist found nothing: catalog identity skipped every offer.  Duo offers its WHOLE shelf by then
-    //  (2 originals + the 6 it heisted), and Uno already holds all 8 identities: the strongest dedup read.
+    //  (3 originals + the 6 it heisted), and Uno already holds all 9 identities: the strongest dedup read.
     let hr = T.o({ heisted: 'reuno' })[0]
-    if (hr && +(hr.sc.skipped || 0) === 8 && !hr.sc.landed && !T.oa({ see: 'a second heist found nothing new — the catalog identity of every offer was already held' })) this.MusuHeist_note(w, { see: 'a second heist found nothing new — the catalog identity of every offer was already held' })
+    if (hr && +(hr.sc.skipped || 0) === 9 && !hr.sc.landed && !T.oa({ see: 'a second heist found nothing new — the catalog identity of every offer was already held' })) this.MusuHeist_note(w, { see: 'a second heist found nothing new — the catalog identity of every offer was already held' })
     // the probation ledger: every arrival logged fresh and NEVER a source in the file.
     let ns = T.o({ newlyadded_shape: 1 })[0]
-    if (ns && ns.sc.unsourced && +(ns.sc.uno || 0) === 2 && +(ns.sc.duo || 0) === 6 && !T.oa({ see: 'newlyadded logs each arrival with a fresh feeling — and never a word about the source' })) this.MusuHeist_note(w, { see: 'newlyadded logs each arrival with a fresh feeling — and never a word about the source' })
+    if (ns && ns.sc.unsourced && +(ns.sc.uno || 0) === 3 && +(ns.sc.duo || 0) === 6 && !T.oa({ see: 'newlyadded logs each arrival with a fresh feeling — and never a word about the source' })) this.MusuHeist_note(w, { see: 'newlyadded logs each arrival with a fresh feeling — and never a word about the source' })
     // deny = delete from the collection: the file left the disk and the catalog with the log honest.
     let dn = T.o({ denied: 1 })[0]
     if (dn && dn.sc.gone && dn.sc.carded_off && dn.sc.log_dropped && !T.oa({ see: 'a denied track left the collection — the file gone and the log honest about the drop' })) this.MusuHeist_note(w, { see: 'a denied track left the collection — the file gone and the log honest about the drop' })
     // the drop is REMEMBERED: retomb re-offered Duo's whole shelf and Uno re-downloaded nothing — the one
-    //  denied identity refused by its %Tombstone (tombstoned=1) while the 7 still-held identities skipped as
+    //  denied identity refused by its %Tombstone (tombstoned=1) while the 8 still-held identities skipped as
     //   before.  Guards the exact bug the tombstone fixes: without it the denied track re-heists (landed>0)
     //    and this see drops.  Tightened past a wildcard existence check (adversarial audit F1/F3/F5): the
     //     %Tombstone must be keyed to the DENIED identity (dn.sc.drop_*, not just "some tombstone"), AND
-    //      Uno's collection must still hold exactly 7 Records — the explicit no-reland invariant, independent
+    //      Uno's collection must still hold exactly 8 Records — the explicit no-reland invariant, independent
     //       of the landed counter and the shared ra_wanted cursor, so a resurrected track can never hide.
     let ht = T.o({ heisted: 'retomb' })[0]
     let tomb_stands = dn && uno_lib.o({ Tombstone: 1, artist: dn.sc.drop_artist, title: dn.sc.drop_title }).length === 1
-    let no_reland = uno_lib.o({ Record: 1 }).length === 7
-    if (ht && +(ht.sc.tombstoned || 0) === 1 && !ht.sc.landed && +(ht.sc.skipped || 0) === 7 && tomb_stands && no_reland && !T.oa({ see: 'a denied track stayed refused on the next heist — the collection remembered the rejection and re-downloaded nothing' })) this.MusuHeist_note(w, { see: 'a denied track stayed refused on the next heist — the collection remembered the rejection and re-downloaded nothing' })
+    let no_reland = uno_lib.o({ Record: 1 }).length === 8
+    if (ht && +(ht.sc.tombstoned || 0) === 1 && !ht.sc.landed && +(ht.sc.skipped || 0) === 8 && tomb_stands && no_reland && !T.oa({ see: 'a denied track stayed refused on the next heist — the collection remembered the rejection and re-downloaded nothing' })) this.MusuHeist_note(w, { see: 'a denied track stayed refused on the next heist — the collection remembered the rejection and re-downloaded nothing' })
+    // the manifest named every verdict BEFORE a byte moved.  Two poles prove it: the uno heist's manifest
+    //  read all-new (new=3, none held or denied — nothing was in the collection yet), and the retomb heist's
+    //   read all-refused (held=8, denied=1, new=0 — everything was either already held or tombstoned).  Both
+    //    poles must hold, so a manifest that lied one way (called a held track new, or vice versa) drops it.
+    let mu = T.o({ manifest: 'uno' })[0]
+    let mrt = T.o({ manifest: 'retomb' })[0]
+    let man_ok = mu && +(mu.sc.new || 0) === 3 && !mu.sc.held && !mu.sc.denied
+    man_ok = man_ok && mrt && +(mrt.sc.held || 0) === 8 && +(mrt.sc.denied || 0) === 1 && !mrt.sc.new
+    if (man_ok && !T.oa({ see: 'the manifest named every verdict before a byte moved — the heist showed what it would take hold and refuse' })) this.MusuHeist_note(w, { see: 'the manifest named every verdict before a byte moved — the heist showed what it would take hold and refuse' })
+    // every offer left a NAMED verdict row on its job, each pointed by tune: took (uno landed 3 took rows),
+    //  held (reuno left 9 held rows), denied (retomb refused 1 by tombstone).  The row counts ride the
+    //   durable %testing telemetry (the jobs themselves flattened) — all three verdict kinds appeared in the
+    //    counts they should, so a landing that stamped a bare tally instead of named rows drops this.
+    let verdicts_named = ha && +(ha.sc.took_named || 0) === 3 && hr && +(hr.sc.held_named || 0) === 9 && ht && +(ht.sc.tombstoned || 0) === 1
+    if (verdicts_named && !T.oa({ see: 'every offer left a named verdict on the job — took held or denied each pointed by tune' })) this.MusuHeist_note(w, { see: 'every offer left a named verdict on the job — took held or denied each pointed by tune' })
+    // the landing STREAMED chunk by chunk — the uno heist rode the positioned bin_append path (never a whole
+    //  track assembled in memory), a live probe of the backend the run actually used, stamped on the milestone.
+    if (ha && ha.sc.streamed && +(ha.sc.landed || 0) === 3 && !T.oa({ see: 'the landing streamed chunk by chunk — no whole track ever waited in memory' })) this.MusuHeist_note(w, { see: 'the landing streamed chunk by chunk — no whole track ever waited in memory' })
     // afterwards nothing attributes: the scaffolding flattened away entirely AND no surviving collection
     //  card carries a source/from breadcrumb (audit #10 — the "nothing attributes who gave what" half was
     //   unwitnessed; a landed card stamped with its origin would have flattened green).  Provenance lives on

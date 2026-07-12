@@ -15,6 +15,13 @@ Waft:Credence
     Funkcion:Storying,of_Book:SwarmDoor
     Funkcion:Storying,of_Book:SwarmGot
     Funkcion:Storying,of_Book:SwarmPolicy
+  What:Voro,desc:the Voronoi-Cyto render — Cyto's force layout reinterpreted as power-diagram cells with the crushed Stuffings molded into a rosette
+    Funkcion:StoryTimes
+    Funkcion:Storying,of_Book:VoroMitosis
+    Funkcion:Storying,of_Book:VoroScape
+    Funkcion:Storying,of_Book:VoroRadio
+    Funkcion:Storying,of_Book:VoroRadioPier,born:2026-07-08
+    Funkcion:Storying,of_Book:VoroClinic,born:2026-07-08,unusual:crush-invariant-diagnostic
   What:Musu,desc:the music-piracy streaming platform — the rastock racast raterm pipeline of Radio_todo
     Funkcion:StoryTimes
     What:mostly,desc:the stuff we mostly do as jamsend the music app — the rastock racast raterm pipeline on real tracks
@@ -59,13 +66,6 @@ Waft:Credence
         What:the network,desc:audio frames and content routing over the real Peeroleum transport
           Funkcion:Storying,of_Book:MusuMesh
           Funkcion:Storying,of_Book:MusuPier
-  What:Voro,desc:the Voronoi-Cyto render — Cyto's force layout reinterpreted as power-diagram cells with the crushed Stuffings molded into a rosette
-    Funkcion:StoryTimes
-    Funkcion:Storying,of_Book:VoroMitosis
-    Funkcion:Storying,of_Book:VoroScape
-    Funkcion:Storying,of_Book:VoroRadio
-    Funkcion:Storying,of_Book:VoroRadioPier,born:2026-07-08
-    Funkcion:Storying,of_Book:VoroClinic,born:2026-07-08,unusual:crush-invariant-diagnostic
   What:Puddle,desc:the lower-level instruments in one puddle — machinery proven once and kept for regression hunts not for relitigating
     Funkcion:StoryTimes
     What:Lake,desc:the editor machine — the Lies compile-run pipeline over Docs Wafts and focus

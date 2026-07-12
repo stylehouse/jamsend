@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=7	{"mung":["age"]}
+      self,round=6	{"mung":["age"]}
       w:VoroMitosis
-        self,round=7	{"mung":["age"]}
+        self,round=6	{"mung":["age"]}
         req:wrangle,eternal,ok
         Coprosma:lucida,habit:vine
         Veronica:grandifolia
@@ -28,6 +28,8 @@ Snap:H
       w:Voronoiology,dontGraph
         Voro,beat=3,level:L1,visible=5,cells:4,gangs=3,folded:1,count:1
         bare:req,n:1
+        Se:scape,grasped:4,born:0,died:1,loudest:Veronica,trait:endemic ×2,regions:3
+        Se:census,goners:0,neus:7,rows:7
         cell:Veronica grandifolia,kind:pane,n:1
           Vtuffing,of:Veronica,n:1
             Vrow,row:title,text:grandifolia  ×1,wgt:2,tag:Veronica,nk:Veronica

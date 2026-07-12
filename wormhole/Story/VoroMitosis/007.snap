@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=12	{"mung":["age"]}
+      self,round=11	{"mung":["age"]}
       w:VoroMitosis
-        self,round=12	{"mung":["age"]}
+        self,round=11	{"mung":["age"]}
         req:wrangle,eternal,ok
         Coprosma:montana,woodystem,habit:shrub
           Coprosma:montana subsp. australis
@@ -55,6 +55,8 @@ Snap:H
       w:Voronoiology,dontGraph
         Voro,beat=6,level:L1,visible=9,cells:8,gangs=6,folded:2,count:2
         bare:req,n:1
+        Se:scape,grasped:8,born:1,died:0,loudest:Metrosideros,trait:habit tree,regions:4
+        Se:census,goners:0,neus:11,rows:11
         cell:Coprosma,kind:gang,n:7
           Vtuffing,of:Coprosma,n:7
             Vrow,row:title,text:×7,wgt:2,tag:Coprosma

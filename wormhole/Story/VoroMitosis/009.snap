@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=17	{"mung":["age"]}
+      self,round=13	{"mung":["age"]}
       w:VoroMitosis
-        self,round=17	{"mung":["age"]}
+        self,round=13	{"mung":["age"]}
         req:wrangle,eternal,ok
         Veronica:robusta,woodystem,endemic
           Veronica:robusta var. montana,woodystem,habit:shrub
@@ -80,6 +80,8 @@ Snap:H
       w:Voronoiology,dontGraph
         Voro,beat=8,level:L1,visible=12,cells:11,gangs=7,folded:4,count:4
         bare:req,n:1
+        Se:scape,grasped:11,born:1,died:0,loudest:Kunzea,trait:endemic ×1,regions:3
+        Se:census,goners:0,neus:14,rows:14
         cell:Coprosma,kind:gang,n:7
           Vtuffing,of:Coprosma,n:7
             Vrow,row:title,text:×7,wgt:2,tag:Coprosma
