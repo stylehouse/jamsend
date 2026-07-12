@@ -795,6 +795,14 @@ export class Stuff extends TimeOffice {
             }
         }
         let C
+        // clearing a pattern that matches nothing removes nothing and adds nothing —
+        //  a pure no-op.  But replace() below still empties+Xifies+bumps the version,
+        //   and that bump wakes the think loop for another pass that clears again: the
+        //    idle GALLOP.  REACTAP named it — _req_do_one + w_forgets_problems clear
+        //     waits/error/see EVERY pass, absent at idle, so ~all the idle bumps were
+        //      no-op clears.  Skip the empty replace; the tree (and every snap) is
+        //       byte-identical either way, nothing to observe, nothing to bump.
+        if (isar(sc) && !sc.length && !this.oa(pattern_sc)) return C!   // < nothing to clear
         await this.replace(pattern_sc, async () => {
             let N = isar(sc) ? sc : [sc]
             for (let s of N) {

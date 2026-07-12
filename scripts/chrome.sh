@@ -37,17 +37,20 @@ FLAGS=(
 )
 
 # The flags only bite on a fresh process — a running Chrome would just swallow the URLs and ignore them,
-#  so quit it first (its session is restored on relaunch).  -x = exact comm match, so no collateral.
+#  so quit it first (its session is restored on relaunch).  -x = exact comm match, so no collateral;
+#   -u $USER = only OUR browser — a dockerised Chrome (the selenium/Xvfb flock) shows up in the host's
+#    pgrep under the same comm but a foreign uid, isn't ours to quit, and can't be signalled anyway,
+#     so without -u the wait loop watches it forever and bails.
 if [ -z "${NO_QUIT:-}" ]; then
   running=""
   for comm in chrome chromium chromium-browser google-chrome brave; do
-    pgrep -x "$comm" >/dev/null 2>&1 && running="$comm"
+    pgrep -x -u "$USER" "$comm" >/dev/null 2>&1 && running="$comm"
   done
   if [ -n "$running" ]; then
     echo "chrome.sh: quitting the running browser ('$running') so the flags take — your session is restored on relaunch…"
-    for comm in chrome chromium chromium-browser google-chrome brave; do pkill -x "$comm" 2>/dev/null || true; done
-    for i in $(seq 1 40); do pgrep -x "$running" >/dev/null 2>&1 || break; sleep 0.25; done
-    pgrep -x "$running" >/dev/null 2>&1 && { echo "chrome.sh: '$running' still running after 10s — quit it by hand, then rerun" >&2; exit 1; }
+    for comm in chrome chromium chromium-browser google-chrome brave; do pkill -x -u "$USER" "$comm" 2>/dev/null || true; done
+    for i in $(seq 1 40); do pgrep -x -u "$USER" "$running" >/dev/null 2>&1 || break; sleep 0.25; done
+    pgrep -x -u "$USER" "$running" >/dev/null 2>&1 && { echo "chrome.sh: '$running' still running after 10s — quit it by hand, then rerun" >&2; exit 1; }
   fi
 fi
 
