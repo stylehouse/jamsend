@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return 'c1ceca33309a5302' },
+    Ghostmeta_Ghost_V_Voro(): string { return 'f40027783c0d9127' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
@@ -89,7 +89,14 @@ async Voro_crush_scan(w, quiet) {
         //    this body is async from here down; each CALLER keeps its own await|fire-and-forget stance,
         //     but a caller whose snap must carry the %Se:scape row has to AWAIT (the census|report rows
         //      land synchronously ABOVE this await; only the grasp's row rides after it).
-        if (stats.folded > 0 || stats.gangs > 0) await this.Voro_grasp(w)
+        if (stats.folded > 0 || stats.gangs > 0) {
+            await this.Voro_grasp(w)
+            // THE MODEL rides right behind the grasp, in the same fold guard — it reads the grasp's
+            //  the:family stamps and the wgt the grasp wrote onto each Vtuffing row, then emits the
+            //   per-family readings a consumer would otherwise re-derive from pixels.  Same census-
+            //    authoring-pass discipline: never the quiet pre-scan (that would double-mint the Seem).
+            await this.Voro_model(w)
+        }
     }
     return stats
 
@@ -632,6 +639,497 @@ async Voro_census_mirror(w) {
     rw.oai({ Se: 'census' }, { goners: '' + gone, neus: '' + neu, rows: '' + home.o().length })
 
 },
+//#region model — THE MODEL: the semantics a consumer reads instead of re-deriving from pixels
+// ══ Voro_model — the first side: compute the model, hand it to Cyto ═══════════════════════════════
+//  The crush FOLDS, the grasp WEIGHS — but every SEMANTIC a render wants (which cells are one family,
+//   what order to walk them in, which of a cell's facts is loudest, what changed this beat) is still
+//    re-derived downstream from RENDERED POSITIONS (Cytui's river_order runs a PCA over where fcose
+//     happened to drop the seeds).  That is backwards: the order a family reads in is a fact of the
+//      DATA, not of the layout.  Voro_model closes it — it reads the crushed+grasped world and emits
+//       the readings ONCE, so a consumer never re-derives.  It is the twin of Voro_report: where the
+//        report snaps the crush's SHAPE (what folded), the model snaps its MEANING (how it groups,
+//         orders, and what shifted).
+//  Two homes, the census pattern exactly:
+//   (a) w.c.voro_model — the FULL off-snap model C** (drop-and-rebuilt each compute, reachable from
+//        nothing, so no snap and no encode ever sees it).  A consumer walks it for the whole answer:
+//         %Model head · %Family{name,n,order_by,ends} / %Member{anchor,ord,val,weight} · %Loud rows.
+//   (b) w:Voronoiology — a SMALL stable %Se:family row PER FAMILY (the fixture-diffable distillation):
+//        the family name, its size, the axis it orders along, the two END anchors, its loudest epithet,
+//         and its per-beat drift.  A full member-order string would be snap noise (it re-shuffles as
+//          the flora grows); the ends + n pin it without the churn.
+//  UNIVERSAL — zero mainkey knowledge.  A "family" is whatever value the grasp stamped on the:family
+//   (the widest-shared key's value, itself found generically); the ordering axis is the numeric-else-
+//    lexical key with the widest spread across a family's cells, discovered by scanning, never named.
+//     The comments say Artist/year for the reader's sake; the code names nothing.
+//  Runs in the crush tail AFTER Voro_grasp (it reads the grasp's the:family stamps and the wgt the
+//   grasp wrote onto each Vtuffing row), on census-authoring passes only — never the quiet pre-scan.
+async Voro_model(w) {
+    let A = w.c.up
+    if (!A || !w.sc.w) return
+    let rw = A.o({ w: 'Voronoiology' })[0]
+    if (!rw) return
+    if (!w.c.voro_model) w.c.voro_model = new TheC({ c: {}, sc: { voro_model: 1 } })
+    let model = w.c.voro_model
+    // rebuild the subject tree fresh each beat, but SPARE the %Seem:model node — its D-sphere IS the
+    //  cross-beat baseline the drift diff resumes against.  Drop it and every member reads as a neu
+    //   every beat (drift frozen — the bug the first live run surfaced).  Selection.process pairs by
+    //    sc CONTENT, so the %Family/%Member C nodes are free to be rebuilt; only the Seem must outlive them.
+    for (const c of model.o().slice()) if (Object.keys(c.sc)[0] !== 'Seem') c.drop(c)
+    // gather the FOLD RECORDS — the family is the FOLD UNIT, not the grasp's coarse region.  A loose-leaf
+    //  GANG is one family named by its kind, its members the ganged particles (so the ten strata are ten
+    //   MEMBERS an axis can order by depth — not one opaque cell); a container PANE is one member of a
+    //    mainkey family (three Groves → one Grove family of three); a BARE leaf is a family of one.
+    let folds = []
+    this.Voro_model_gather(w, 0, folds)
+    // group fold records into families by name (first-seen order, so neither tree nor fixture churns on
+    //  walk order).  Each family builds its MEMBERS (a gang member's facts off its sc, a pane's off its
+    //   weight-stamped Vtuffing) and its LOUD source (a gang's rep Vtuffing — the grasp scored it — a
+    //    pane|bare's own facts) so epithets rank by distinctiveness, not per-member noise.
+    let fams = {}
+    let fam_order = []
+    for (const fr of folds) {
+        let fk = fr.family
+        if (!fams[fk]) { fams[fk] = { name: fk, kind: fr.kind, rep: fr.cell, members: [], loud_facts: [] }; fam_order.push(fk) }
+        let fam = fams[fk]
+        if (fr.kind === 'gang') {
+            for (const p of (fr.particles || [])) {
+                let facts = this.Voro_model_member_facts(p)
+                fam.members.push({ anchor: this.Voro_model_member_anchor(p), facts: facts, weight: this.Voro_facts_top_weight(facts) })
+            }
+            for (const f of this.Voro_model_facts({ src: fr.cell })) fam.loud_facts.push(f)
+        } else {
+            for (const c of fr.particles) {
+                let facts = fr.kind === 'pane' ? this.Voro_model_facts({ src: c }) : this.Voro_model_member_facts(c)
+                let anchor = fr.kind === 'pane' ? this.Vtuff_ident(c) : this.Voro_model_member_anchor(c)
+                if (!anchor) anchor = Object.keys(c.sc)[0]
+                anchor = ('' + anchor).split(',').join(' ')
+                fam.members.push({ anchor: anchor, facts: facts, weight: this.Voro_facts_top_weight(facts) })
+                for (const f of facts) fam.loud_facts.push(f)
+            }
+        }
+    }
+    let members_total = 0
+    for (const fk of fam_order) members_total = members_total + fams[fk].members.length
+    let head = model.i({ Model: 1, beat: '' + (w.c.report_beat || 0), families: '' + fam_order.length, cells: '' + members_total })
+    // one %Family in the model per group; the snapped %Se:family below MIRRORS it (reads the built node,
+    //  never re-computes — the model tree is the single source).  fam_node maps name → %Family.
+    let fam_node = {}
+    for (const fk of fam_order) {
+        let fam = fams[fk]
+        let mem = fam.members
+        // the ORDER axis: the fact-key whose values spread WIDEST across this family's members.  Voro_model_axis
+        //  scores every key some member carries — numeric keys by their value RANGE (normalised), non-numeric by
+        //   how many distinct values they take — and picks the widest.  This is the data-native replacement for
+        //    Cytui's positional PCA: the trail order is a property of the DATA, computed once, here.
+        let axis = this.Voro_model_axis(mem)
+        // order the members along the axis (numeric ascending, else lexical); a family with no usable axis
+        //  keeps gather order (stable, better than random).  ord rides each member 0..n-1 for the consumer.
+        let ordered = this.Voro_model_sort(mem, axis)
+        let famC = model.i({ Family: fk, n: '' + ordered.length })
+        fam_node[fk] = famC
+        if (fam.kind) famC.sc.kind = fam.kind
+        if (axis.key) famC.sc.order_by = axis.key
+        if (axis.kind) famC.sc.axis = axis.kind
+        // the grasp's coarse region rides as a SECONDARY property (the render's wash layer buckets by it) —
+        //  never the family name.  Skip when it just echoes the fold name.
+        let reg = this.Voro_model_family(fam.rep)
+        if (reg && reg !== fk) famC.sc.region = reg
+        // the two ENDS ride the %Family node too (the snap distillation reads them here) — first|last anchor.
+        if (ordered.length) famC.sc.from = ('' + ordered[0].anchor).split(',').join(' ')
+        if (ordered.length > 1) famC.sc.to = ('' + ordered[ordered.length - 1].anchor).split(',').join(' ')
+        let oi = 0
+        for (const m of ordered) {
+            let mrow = { Member: m.anchor, ord: '' + oi, weight: '' + m.weight }
+            let av = this.Voro_model_axis_val(m, axis.key)
+            if (av !== '') mrow.val = ('' + av).split(',').join(' ')
+            famC.i(mrow)
+            oi = oi + 1
+        }
+        // LOUDNESS — the family's top-K loud epithets, pooled from its weighted source and kept loudest-
+        //  first.  These are the words B2 sizes up; a consumer reads them straight instead of re-scoring.
+        let loud = this.Voro_model_loud_from(fam.loud_facts, 4)
+        for (const l of loud) {
+            famC.i({ Loud: l.text.split(',').join(' '), weight: '' + l.weight })
+        }
+    }
+    // DRIFT — stand a %Seem over the model's MEMBER layer so goners|neus come with cross-beat identity for
+    //  FREE (the same primitive the grasp and census_mirror ride).  A member that left is a goner, one that
+    //   arrived a neu; each carries its family, so drift attributes PER FAMILY.  The Seem is snap-hostile
+    //    (a live Selection on sc.Se), so it parks on the free voro_model itself, off-snap.  The distilled
+    //     per-family {gone,neu} then rides each %Se:family row — this is what lets VoroTest "deduce what
+    //      changed": a mutation beat surfaces exactly which family gained|lost which member.
+    let drift = await this.Voro_model_drift(w, model)
+    // PROJECT the small stable readings — one %Se:family per family.  All three %Se rows share the SAME
+    //  mainkey (Se), so the family name can't ride the mainkey value (it is fixed 'family'); the DURABLE
+    //   identity is {Se:'family',name:<fam>} — a survivor keeps its slot beat-to-beat and only its fields
+    //    slide (the persistent-census discipline, no storm).  Family names are unique per beat (they ARE
+    //     the grouping keys), so a name never collides; find-or-create is exact.
+    for (const fk of fam_order) {
+        let famC = fam_node[fk]
+        // a family of one (a bare leaf, a lone pane) has no order|drift worth a snapped row and would
+        //  flood the fixture (the motley alone is eight singletons) — it stays in the off-snap model tree
+        //   for a consumer, but only families of TWO or more project a %Se row.
+        if (((+famC.sc.n) || 0) < 2) continue
+        let d = drift[fk] || { gone: 0, neu: 0 }
+        // find-or-create by the durable {Se:'family',name:<fam>}; then overwrite the sliding fields in
+        //  place (clear the old ones first so a shrunk family sheds a stale `to`).  Se + name stay put.
+        let row = rw.o({ Se: 'family', name: fk })[0]
+        if (!row) row = rw.i({ Se: 'family', name: fk })
+        for (const k of Object.keys(row.sc)) if (k !== 'Se' && k !== 'name') delete row.sc[k]
+        // MIRROR the built %Family node's distillation — n, the axis, the two ENDS; a full member-order
+        //  string would re-shuffle as the flora grows (snap noise), so only n + the ends pin the trail.
+        row.sc.n = famC.sc.n
+        if (famC.sc.order_by) row.sc.order_by = famC.sc.order_by
+        if (famC.sc.from) row.sc.from = famC.sc.from
+        if (famC.sc.to) row.sc.to = famC.sc.to
+        // the family's loudest epithet — the first %Loud child (they were emitted loudest-first).
+        let loud0 = famC.o({ Loud: 1 })[0]
+        if (loud0) row.sc.loud = loud0.sc.Loud
+        if (d.neu) row.sc.neu = '' + d.neu
+        if (d.gone) row.sc.gone = '' + d.gone
+        row.c.seen_beat = 1
+    }
+    // sweep the %Se:family rows whose family left this beat — a row this beat never re-touched.  Matched
+    //  on the Se:family mainkey-value only, so it never touches Se:scape|Se:census (different Se values)
+    //   nor any census cell|bare row.  Then re-arm seen_beat=0 for next beat's diff.
+    for (const c of rw.o({ Se: 'family' }).slice()) if (!c.c.seen_beat) c.drop(c)
+    for (const c of rw.o({ Se: 'family' })) c.c.seen_beat = 0
+
+},
+// Voro_model_gather — collect FOLD RECORDS on the same cut Voro_report_walk makes: a c.stuff fold is a
+//  fold (don't descend), a represented member is inside its rep, %Opt|%self are machinery, anything else
+//   with children is walked through, a childless leaf left standing is bare.  Each record says its KIND
+//    (gang | pane | bare), its family NAME (a gang's fold_kind, else the mainkey), the source cell, and
+//     the PARTICLES that become members (a gang's ganged list; the cell itself for a pane|bare).
+Voro_model_gather(node, d, out) {
+    if (d > 8) return
+    for (const c of node.o()) {
+        if (c.c.represented) continue
+        let mk = Object.keys(c.sc)[0]
+        if (mk === 'Opt' || mk === 'self') continue
+        if (c.c.stuff) {
+            if (c.c.gang) {
+                // a loose-leaf GANG: the fold IS a family, its members the ganged particles.  Named by its
+                //  kind (fold_kind, the shared mainkey) — NEVER a bare trait value (the old grain's `1` bug).
+                let fam = c.c.fold_kind || mk
+                out.push({ kind: 'gang', cell: c, family: ('' + fam), particles: (c.c.gang || []) })
+            } else {
+                // a CONTAINER pane (a folded container-with-children): ONE member of a mainkey family —
+                //  sibling panes of one kind (three Groves) merge into one family below.
+                out.push({ kind: 'pane', cell: c, family: mk, particles: [c] })
+            }
+            continue
+        }
+        if (c.o().length > 0) {
+            this.Voro_model_gather(c, d + 1, out)
+        } else {
+            // a BARE leaf the crush left standing: a family of one, named by its mainkey.  Kept so a
+            //  consumer sees every cell attributed; the n<2 rule keeps these singletons out of the snap.
+            out.push({ kind: 'bare', cell: c, family: mk, particles: [c] })
+        }
+    }
+
+},
+// Voro_model_family — the family a cell belongs to: the grasp's the:family awareness value, reached off
+//  the cell's off-snap D node (c.D), null-safe to fold_kind else 'misc'.  This is the SAME source
+//   Cytui's region_of reads — so the model's grouping IS what the render buckets by, no divergence.
+Voro_model_family(c) {
+    let D = c.c.D
+    if (D) {
+        let f = D.o({ the: 'family' })[0]
+        if (f && typeof f.sc.val === 'string' && f.sc.val) return f.sc.val
+    }
+    if (c.c.fold_kind) return c.c.fold_kind
+    return 'misc'
+
+},
+// Voro_model_facts — a cell's own (key,val,weight) claims, read from its weight-stamped Vtuffing tree
+//  (the grasp wrote wgt onto every row).  A single-value fact contributes its (key,val); a spread
+//   contributes each chip's value under the spread's key (so a per-family axis can see the members'
+//    values apart).  Presence facts ('remaster ×2') carry an empty val — still a claim, still loud.
+//     Reads the SAME tree the render draws, so a weight lands on the very fact the glass shows.
+Voro_model_facts(cell) {
+    let out = []
+    let t = cell.src.c.vtuffing
+    if (!t) return out
+    for (const r of t.o()) {
+        let rk = r.sc.row
+        if (rk === 'fact') {
+            let p = this.Voro_grasp_kv('' + r.sc.text)
+            out.push({ key: p.key, val: p.val, weight: (+r.sc.wgt) || 0 })
+        } else if (rk === 'spread') {
+            let sk = '' + r.sc.text
+            for (const b of r.o()) {
+                out.push({ key: sk, val: '' + b.sc.text, weight: (+b.sc.wgt) || (+r.sc.wgt) || 0 })
+            }
+        }
+    }
+    return out
+
+},
+// Voro_model_axis — find the family's ORDER AXIS: the fact-key whose values spread WIDEST across the
+//  family's cells.  For each key some cell carries, take ONE representative value per cell (its highest-
+//   weight value on that key — the value that best characterises the cell), then score the SPREAD:
+//    · numeric (every representative parses as a number) → the value RANGE, normalised by the mean so a
+//       'year' 2001..2019 and a 'bpm' 90..180 compete fairly; the wider relative range wins.
+//    · non-numeric → the count of DISTINCT values (a key everyone agrees on can't order anything; a key
+//       with many distinct values orders finely).  A tie breaks toward the key MORE cells carry.
+//   Returns { key, kind:'num'|'lex', spread }; { key:'' } when no key spreads at all (a uniform family).
+Voro_model_axis(mem) {
+    if (mem.length < 2) return { key: '', kind: '', spread: 0 }
+    let per = {}
+    for (const cell of mem) {
+        let best = {}
+        let bw = {}
+        for (const f of (cell.facts || [])) {
+            if (!f.key) continue
+            if (bw[f.key] == null || f.weight > bw[f.key]) {
+                bw[f.key] = f.weight
+                best[f.key] = f.val
+            }
+        }
+        for (const k of Object.keys(best)) {
+            if (!per[k]) per[k] = []
+            per[k].push(best[k])
+        }
+    }
+    let win_key = ''
+    let win_kind = ''
+    let win_spread = 0
+    let win_have = 0
+    for (const k of Object.keys(per)) {
+        let vals = per[k]
+        if (vals.length < 2) continue
+        let nums = []
+        let all_num = true
+        for (const v of vals) {
+            let x = this.Voro_model_num(v)
+            if (x == null) { all_num = false } else { nums.push(x) }
+        }
+        let spread = 0
+        let kind = 'lex'
+        if (all_num && nums.length >= 2) {
+            let lo = nums[0]
+            let hi = nums[0]
+            let sum = 0
+            for (const x of nums) { if (x < lo) lo = x; if (x > hi) hi = x; sum = sum + x }
+            let mean = sum / nums.length
+            let denom = mean === 0 ? 1 : Math.abs(mean)
+            spread = (hi - lo) / denom
+            kind = 'num'
+        } else {
+            let distinct = {}
+            for (const v of vals) distinct['' + v] = 1
+            spread = (Object.keys(distinct).length - 1) / vals.length
+            kind = 'lex'
+        }
+        // widest spread wins; ties toward the key more cells carry (a fuller axis is more legible)
+        if (spread > win_spread || (spread === win_spread && vals.length > win_have)) {
+            win_spread = spread
+            win_key = k
+            win_kind = kind
+            win_have = vals.length
+        }
+    }
+    return { key: win_key, kind: win_kind, spread: win_spread }
+
+},
+// Voro_model_num — parse a value as a number, or null.  Tolerates a leading|trailing scrap ('2007',
+//  ' 180 ') but refuses a word ('digital') so a lexical key never masquerades as numeric.  Uses a hand
+//   scan (no regex literals in .g) — a run of digits with at most one dot.
+Voro_model_num(v) {
+    let s = ('' + v).trim()
+    if (!s.length) return null
+    let seen_dot = false
+    let seen_dig = false
+    for (let i = 0; i < s.length; i++) {
+        let ch = s[i]
+        if (ch >= '0' && ch <= '9') { seen_dig = true; continue }
+        if (ch === '.' && !seen_dot) { seen_dot = true; continue }
+        if (ch === '-' && i === 0) continue
+        return null
+    }
+    if (!seen_dig) return null
+    return +s
+
+},
+// Voro_model_axis_val — the value a cell takes ON the axis key (its highest-weight value on that key),
+//  '' when the cell doesn't carry the axis at all.  This is the datum a member sits at along the trail —
+//   the consumer reads it to POSITION the member, no re-derivation.
+Voro_model_axis_val(cell, key) {
+    if (!key) return ''
+    let best = ''
+    let bw = -1
+    for (const f of (cell.facts || [])) {
+        if (f.key === key && f.weight > bw) { bw = f.weight; best = f.val }
+    }
+    return best
+
+},
+// Voro_model_sort — order a family's cells along the axis: numeric ascending, else lexical; a cell
+//  missing the axis value sinks to the end (a stable tail).  No axis → gather order (stable).  Pure —
+//   returns a new ordered array, never mutates the input.
+Voro_model_sort(mem, axis) {
+    let arr = mem.slice()
+    if (!axis.key) return arr
+    let key = axis.key
+    let num = axis.kind === 'num'
+    let self = this
+    arr.sort((a, b) => {
+        let va = self.Voro_model_axis_val(a, key)
+        let vb = self.Voro_model_axis_val(b, key)
+        let ha = va !== ''
+        let hb = vb !== ''
+        if (ha && !hb) return -1
+        if (!ha && hb) return 1
+        if (!ha && !hb) return 0
+        if (num) {
+            let na = self.Voro_model_num(va)
+            let nb = self.Voro_model_num(vb)
+            if (na == null) na = 0
+            if (nb == null) nb = 0
+            return na - nb
+        }
+        if (va < vb) return -1
+        if (va > vb) return 1
+        return 0
+    })
+    return arr
+
+},
+// Voro_model_member_anchor — a member's STABLE UNIQUE identity string: the mainkey's VALUE when it
+//  carries one (Fern:'silver' → silver), else a naming-key value, else the join of its distinguishing
+//   field values (a Boulder's grade+stratum).  Content-derived so the SAME particle reads the SAME
+//    anchor every beat — the drift diff pairs a survivor to itself, only true arrivals|departures move.
+Voro_model_member_anchor(p) {
+    let mk = Object.keys(p.sc)[0]
+    let mv = p.sc[mk]
+    if (typeof mv === 'string' && mv.length) return mv
+    for (const nk of ['name', 'title', 'label', 'nick', 'id']) {
+        let v = p.sc[nk]
+        if (typeof v === 'string' && v.length) return v
+    }
+    let parts = []
+    for (const k of Object.keys(p.sc)) {
+        if (k === mk) continue
+        let v = p.sc[k]
+        if (typeof v === 'string' && v.length) { parts.push(v) } else if (typeof v === 'number') { parts.push('' + v) }
+    }
+    if (parts.length) return parts.join(' ')
+    return mk
+
+},
+// Voro_model_member_facts — a raw particle's (key,val) claims read straight off its sc.  The presence
+//  mainkey marker (Boulder:1) carries no value so it contributes nothing; a mainkey that CARRIES a value
+//   (Fern:'silver') is the member's NAME not an ordering fact, so it is skipped as an axis key too.
+//    Weight 0 — a member particle was never grasp-scored (only the fold's rep Vtuffing was); loudness
+//     reads the rep instead.  A member sinks or rises on the axis by its own recorded fields.
+Voro_model_member_facts(p) {
+    let out = []
+    let mk = Object.keys(p.sc)[0]
+    for (const k of Object.keys(p.sc)) {
+        if (k === mk) continue
+        let v = p.sc[k]
+        if (typeof v === 'number') { v = '' + v }
+        if (typeof v !== 'string') continue
+        if (!v.length) continue
+        out.push({ key: k, val: v, weight: 0 })
+    }
+    return out
+
+},
+// Voro_facts_top_weight — the loudest weight in a facts list (a member's own emphasis, 0 when none).
+Voro_facts_top_weight(facts) {
+    let top = 0
+    for (const f of (facts || [])) if (f.weight > top) top = f.weight
+    return top
+
+},
+// Voro_model_loud_from — a family's top-K loudest DISTINCT (key,val) claims from a pooled facts list.
+//  The grasp weighed each fact 0..100 (how much it sets its cell apart); keep the loudest weight per
+//   distinct claim and return the K loudest.  These are the family's epithets — the words B2 sizes up —
+//    read once, not re-scored.  Pooled from the fold's WEIGHTED source (a gang's rep Vtuffing, a pane's
+//     own), never per-member noise.
+Voro_model_loud_from(facts, K) {
+    let best = {}
+    let order = []
+    for (const f of (facts || [])) {
+        if (!f.key) continue
+        let text = f.val === '' ? f.key : f.key + ': ' + f.val
+        if (best[text] == null) { best[text] = 0; order.push(text) }
+        if (f.weight > best[text]) best[text] = f.weight
+    }
+    order.sort((a, b) => best[b] - best[a])
+    let out = []
+    let lim = K < order.length ? K : order.length
+    for (let i = 0; i < lim; i++) out.push({ text: order[i], weight: best[order[i]] })
+    return out
+
+},
+// Voro_model_drift — per-family goners|neus via a %Seem over the model's MEMBER layer.  The Seem walks
+//  voro_model's %Family/%Member subtree; resolve() flags each member that arrived (neu) or left (goner)
+//   with cross-beat identity, for FREE, the same primitive the grasp and census_mirror ride.  We then
+//    attribute each neu|goner to its FAMILY.  Returns { <family>: { gone, neu } }.  Snap-hostile (a live
+//     Selection rides sc.Se), so it parks on the free voro_model itself, off-snap.
+//  Two Seem knobs matter here:
+//   · each_fn — the DEFAULT stops descent one layer deep (T.c.d > 1), which would clone Families but
+//      never their Members.  We hand our own so the walk reaches depth 2 (root → Family → Member) and
+//       stops below (a Member's own %Loud|val leaves aren't drift subjects) — so member arrivals|
+//        departures are what resolve() diffs.
+//   · trace_sc — the D clone is { ...trace_sc, ...C.sc }; the DEFAULT trace_sc ({Demonstrations:…})
+//      would make Demonstrations the clone's FIRST key, so mainkey position is unreliable.  We read the
+//       Family|Member keys by PRESENCE below instead of by position, so the default trace_sc is fine and
+//        the source sc (Member:<anchor>, Family:<name>) rides the clone untouched.
+async Voro_model_drift(w, model) {
+    let out = {}
+    let seem = model.o({ Seem: 'model' })[0]
+    let fresh = 0
+    if (!seem) {
+        seem = this.i_Seem(model, { Seem: 'model', C: model, each_fn: this.Voro_model_seem_each })
+        fresh = 1
+    }
+    seem.sc.C = model
+    let news = await this.o_Seem(seem)
+    // the FIRST resolve only ESTABLISHES the baseline D-sphere (everything is trivially "new" against an
+    //  empty sphere) — report no drift on it, so a bench beat reads clean and real arrivals|departures
+    //   start from the NEXT compute.  (The Seem now persists across the rebuild, so fresh is true once.)
+    if (fresh) return out
+    for (const d of news.neus) {
+        let fam = this.Voro_model_drift_fam(d)
+        if (!fam) continue
+        if (!out[fam]) out[fam] = { gone: 0, neu: 0 }
+        out[fam].neu = out[fam].neu + 1
+    }
+    for (const d of news.goners) {
+        let fam = this.Voro_model_drift_fam(d)
+        if (!fam) continue
+        if (!out[fam]) out[fam] = { gone: 0, neu: 0 }
+        out[fam].gone = out[fam].gone + 1
+    }
+    return out
+
+},
+// Voro_model_seem_each — the model Seem's walk gate: descend to the Member layer (depth 2), stop below.
+//  A flat arrow (T.c.d is the Travel's depth) so the drift diff is member-grained, not family-grained.
+Voro_model_seem_each(D, C, T) {
+    if (T.c.d > 2) T.sc.no_further = 'model-depth'
+
+},
+// Voro_model_drift_fam — the family a drifted D node belongs to, read by KEY PRESENCE (the D clone leads
+//  with the default trace_sc's key, so position is unreliable).  A %Family clone carries Family:<name> —
+//   that IS its family (a whole family arriving|leaving).  A %Member clone hangs under its Family D node,
+//    whose clone carries Family:<name>.  Null for anything else (the %Model head, a %Loud leaf) — not a
+//     per-family drift subject.
+Voro_model_drift_fam(d) {
+    if (d.sc.Family != null && typeof d.sc.Family === 'string') return d.sc.Family
+    if (d.sc.Member != null) {
+        let p = d.c.up
+        if (p && p.sc && typeof p.sc.Family === 'string') return p.sc.Family
+    }
+    return null
+},
+//#endregion
+
 // Voro_crush_walk — recurse; structural mainkeys stay graph (the skeleton must remain readable) but
 //  are walked THROUGH; a crushed container's subtree is NOT descended (folded here = folded in the
 //   Cyto walk, the same cut).  EVERYTHING the walk touches gets c.stuffy (the presentation skin) —

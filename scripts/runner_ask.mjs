@@ -324,7 +324,12 @@ if (watch && (op === 'run' || op === 'state') && reply.control === 'runner_ack')
 		if (acWaited && run) { acWaited = false; console.error(`✓ AudioContext granted — running`) }
 		const tag = run ? `${run.phase} ${run.n ?? '?'}/${run.total ?? '?'}` : 'no run'
 		if (tag !== last) { console.log(`… ${JSON.stringify({ run, outcome: out })}`); last = tag; progress = Date.now() }   // a step advanced ⇒ reset the death-clock
-		if (run && (run.phase === 'done' || run.phase === 'failed')) { exitCode = out && out.ok ? 0 : 1; break }
+		if (run && (run.phase === 'done' || run.phase === 'failed')) {
+			// roster verdict (Seen_split move 2): a declared %seen that never latched is a NAMED red,
+			//  un-maskable by entropy — surface it distinctly from a plain step/dige failure.
+			for (const g of (out?.gaps ?? [])) console.error(`  ✗ assertion «${g.slug}» expected by n≥${g.by_n} — ABSENT: ${g.sentence}`)
+			exitCode = out && out.ok ? 0 : 1; break
+		}
 	}
 }
 

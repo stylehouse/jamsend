@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Voronation(): string { return 'b98a2dbef3f0c2a6' },
+    Ghostmeta_Ghost_Story_Voronation(): string { return '95cbf5122800e5fa' },
 
 
 //#region pier — VoroRadioPier: the tuner drifts over MUSIC dribbled in from a (fake) Pier
@@ -672,6 +672,268 @@ async VoroScape_order(w) { const H = this;
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)
+},
+//#endregion
+
+//#region test — VoroTest: the fold|gang|family RULES themselves, shown on a gallery of shapes
+// ══ VoroTest — a bench of deliberately different data shapes, all crushed in ONE world ════════════
+//  The owner's ask: "show the rules of the way we fold|stuff etc in a VoroTest ... lots of instances
+//   of data having a Voro compute in parallel ... utterly universal."  Where VoroMitosis watches ONE
+//    flora move and VoroScape watches ONE library grow, VoroTest sets SIX canonical shapes side by
+//     side and crushes them together — so a reader learns the crush POLICY by reading one fixture:
+//      which shapes gang, which fold, which stay bare, and where each threshold bites.
+//  The vocabulary is neutral GEOLOGY|BOTANY (no music — the point is the shape, not the domain): the
+//   crush is a pure function of STRUCTURE (mainkey homogeneity, child count, container depth), so any
+//    domain that keys the same way folds the same way.  Every shape sits LOOSE under w keyed by its
+//     own mainkey (VoroMitosis's "bigger looser board") — a container would fold as ONE outer pane and
+//      hide the inner rule, so the gallery is flat and the crusher DISCOVERS each shape's fold.
+//  Deterministic throughout (traits hashed off names via Voro_hash — no randomness, fixtures byte-
+//   stable).  Its subject IS the crush, so like VoroMitosis it DRIVES Voro_crush_scan inline (its
+//    do_fn), same-beat, because its %see claims read the fold facts the crush just stamped.  The
+//     world MUST be named VoroTest (Story dispatches the do_fn by the world name).
+//   beat 2  the bench is laid — all six shapes built — crush once — the fold verdicts read
+//   beat 3  MUTATIONS — arrivals grow the flock — goners leave the mix — the gradient bends — recrush
+//   beat 4  a QUIET beat — recrush with no change — the readings hold steady (the fold is stable)
+//  The six shapes and the RULE each demonstrates (Voro.g line refs):
+//   1 flock    12 %Boulder loose leaves        → gang-fold by mainkey        (Voro_gang_fold ~:710)
+//   2 mix      7 %Fern + 5 %Moss + 3 loners    → two gangs beside bare leaves (Voro_gang_min ~:752)
+//   3 motley   8 distinct mainkeys one each    → nothing gangs — all bare    (gang of 1 < min)
+//   4 gradient 10 %Stratum sweeping a number   → one gang carrying a spread  (Vtuff_keyrows ~:1184)
+//   5 groves   3 %Grove each holding a subflock→ container-fold — no descent (Voro_crushable ~:822)
+//   6 edges    a 2-member %Pair + empty %Void  → tiny fallback-fold vs bare  (gang_fold else ~:731)
+VoroTest(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VoroTest_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VoroTest_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VoroTest_bench(w)
+        if (n === 3) this.VoroTest_mutate(w)
+        // AWAIT the crush: the Se grasp rides INSIDE Voro_crush_scan's tail and writes the snapped
+        //  %Se:scape row, so the drive must let it SETTLE before this beat snaps (exactly VoroMitosis's
+        //   discipline).  The census|report rows + w:Voronoiology land synchronously above that await.
+        if (n >= 2) await this.Voro_crush_scan(w)
+        if (n === 2) this.VoroTest_witness_bench(w)
+        if (n === 3) this.VoroTest_witness_mutate(w)
+        if (n === 4) this.VoroTest_witness_quiet(w)
+    }
+
+},
+// ── the neutral vocabulary — geology|botany, keyed so shape (not domain) drives the fold ──────────
+//  fixed lists ARE the determinism (no randomness): each list names one shape's members, and a
+//   deterministic trait sprinkle (hashed off the member's own name) gives a gang shared FACTS and a
+//    SPREAD to distil — so a pane speaks like real data, not a bare column of names.
+VoroTest_grades() {
+    return ['coarse','medium','fine','pebble','cobble','angular','rounded','platy','blocky','tabular','massive','vesicular']
+
+},
+// plant one %Boulder loose under w — the HOMOGENEOUS FLOCK (shape 1).  A shared %stratum FACT the
+//  whole flock agrees on, a %grade SPREAD that varies member to member, a %vein presence-fact on
+//   ~1/3 — so the gang's pane says one fact once and a spread of the rest.  Boulder stays first key.
+VoroTest_boulder(w, grade) {
+    let sc = { Boulder: 1, grade: grade, stratum: 'Miocene' }
+    let hsh = this.Voro_hash('Boulder|' + grade)
+    if (hsh % 3 === 0) sc.vein = 1
+    return w.i(sc)
+
+},
+// plant a leaf of some mainkey loose under w with a naming value on its key — the MIX + MOTLEY
+//  shapes (2 and 3).  The mainkey IS the type; the value names the instance ({Fern:'silver'}).
+VoroTest_leaf(w, mainkey, name) {
+    let sc = {}
+    sc[mainkey] = name
+    return w.i(sc)
+
+},
+// shape 1 — the flock: twelve %Boulder leaves, one mainkey, some shared some varying.  Under the
+//  escalated governor (this bench blows the 15-visible budget) non-noisy leaves gang at 3, so the
+//   twelve fold behind ONE representative pane carrying fold_n 12 — the plainest gang rule.
+VoroTest_flock(w) {
+    let grades = this.VoroTest_grades()
+    for (let i = 0; i < 12; i++) this.VoroTest_boulder(w, grades[i])
+
+},
+// shape 2 — the mix: two families that clear the gang threshold (7 %Fern + 5 %Moss) beside three
+//  LONERS of one each (%Lichen %Sedge %Rush).  Fern gangs, Moss gangs, each loner is a gang of one
+//   below min so it stands as a bare leaf — two folds and three bare nodes in one neighbourhood.
+VoroTest_mix(w) {
+    let fern = ['silver','hen-and-chicken','crown','shield','hard','ring','kidney']
+    let moss = ['sphagnum','pincushion','feather','fork','sheet']
+    for (const f of fern) this.VoroTest_leaf(w, 'Fern', f)
+    for (const m of moss) this.VoroTest_leaf(w, 'Moss', m)
+    this.VoroTest_leaf(w, 'Lichen', 'reindeer')
+    this.VoroTest_leaf(w, 'Sedge', 'carnation')
+    this.VoroTest_leaf(w, 'Rush', 'soft')
+
+},
+// shape 3 — the motley: eight leaves of eight DIFFERENT mainkeys, one each.  Every mainkey is a
+//  gang of one, always below min, so NOTHING folds — eight bare nodes prove the fold needs a
+//   population, not a lone instance.  Distinct rock types, each its own kind.
+VoroTest_motley(w) {
+    let kinds = { Quartz: 'milky', Basalt: 'columnar', Slate: 'roofing', Gneiss: 'banded', Chert: 'nodular', Shale: 'fissile', Flint: 'grey', Marl: 'calcareous' }
+    for (const k of Object.keys(kinds)) this.VoroTest_leaf(w, k, kinds[k])
+
+},
+// shape 4 — the gradient: ten %Stratum leaves whose %depth sweeps 1..10 smoothly (a shared %unit
+//  fact besides).  They gang into ONE pane whose Vtuffing SPREAD lays the ten depths out in order —
+//   the shape a semantic ordering|trail reads best (a continuous run, not a scatter of kinds).
+VoroTest_gradient(w) {
+    for (let i = 1; i <= 10; i++) w.i({ Stratum: 1, depth: '' + i, unit: 'metres' })
+
+},
+// shape 5 — the groves: three %Grove containers, each holding a small homogeneous sub-flock (four
+//  %Sapling leaves).  A Grove has children so it is NOT tiny → Voro_crushable folds EACH grove to
+//   its own pane and the crusher STOPS there (no descent — folded here = folded on the canvas).  So
+//    three groves = three panes, and the saplings ride INSIDE, never ganged across groves — the
+//     honest answer to "what does the crusher do with depth": it folds the outermost container.
+VoroTest_groves(w) {
+    let names = ['Kauri','Rimu','Totara']
+    for (const gn of names) {
+        let grove = w.i({ Grove: 1, name: gn })
+        for (let s = 0; s < 4; s++) grove.i({ Sapling: 1, age: '' + (s + 1) })
+    }
+
+},
+// shape 6 — the edges: a %Pair of two members (below the tiny-container threshold) and an EMPTY
+//  %Void.  The Pair is tiny (≤3 all-leaf) so it rides loose[] and never forms a gang of one — but
+//   the gang-fold FALLBACK folds a tiny CONTAINER-with-children to its own little pane (a lone
+//    thing keeps its cell).  The Void has no children so Voro_crushable refuses it and it stands
+//     BARE — the two ends of the fold: the smallest thing that still folds vs the thing that cannot.
+VoroTest_edges(w) {
+    let pair = w.i({ Pair: 1, name: 'twins' })
+    pair.i({ Pebble: 1, name: 'east' })
+    pair.i({ Pebble: 1, name: 'west' })
+    w.i({ Void: 1, name: 'hollow' })
+
+},
+// lay the whole bench — all six shapes at once, so the crush computes them in parallel in one world.
+VoroTest_bench(w) {
+    this.VoroTest_flock(w)
+    this.VoroTest_mix(w)
+    this.VoroTest_motley(w)
+    this.VoroTest_gradient(w)
+    this.VoroTest_groves(w)
+    this.VoroTest_edges(w)
+
+},
+// beat 3 — the mutations, so a reader sees the readings MOVE: three arrivals swell the flock
+//  (12→15 Boulders), two goners leave the mix (Fern loses two, 7→5), and one gradient member bends
+//   its %depth off the smooth run (10→99, an outlier the spread must show).  Recrush reads the deltas.
+VoroTest_mutate(w) {
+    let extra = ['spheroidal','jointed','weathered']
+    for (const g of extra) this.VoroTest_boulder(w, g)
+    let ferns = w.o().filter(c => Object.keys(c.sc)[0] === 'Fern')
+    if (ferns.length >= 2) {
+        ferns[0].drop(ferns[0])
+        ferns[1].drop(ferns[1])
+    }
+    let strata = w.o().filter(c => Object.keys(c.sc)[0] === 'Stratum')
+    let bent = strata.find(s => s.sc.depth === '10')
+    if (bent) bent.sc.depth = '99'
+
+},
+// ── the counters — a %see reads the LIVE fold facts, so each claim is what the crush actually did ─
+//  the gang of a mainkey: the one representative that wears c.stuff + c.gang for that mainkey (or
+//   null if the population never reached the threshold).  The whole roster the crusher elected.
+VoroTest_gang_of(w, mainkey) {
+    return w.o().find(c => Object.keys(c.sc)[0] === mainkey && c.c.stuff && c.c.gang)
+
+},
+// the count of BARE leaves of a mainkey — loose leaves the crush left standing (no fold stamp, not
+//  swallowed as a represented gang member).  A motley kind reads 1 here; a ganged kind reads 0.
+VoroTest_bare_of(w, mainkey) {
+    return w.o().filter(c => Object.keys(c.sc)[0] === mainkey && !c.c.stuff && !c.c.represented && !c.o().length).length
+
+},
+// the folded CONTAINERS of a mainkey — a Grove|Pair that Voro_crushable stamped a pane (c.stuff and
+//  it has real children, so it is a container fold, not a loose-leaf gang).
+VoroTest_panes_of(w, mainkey) {
+    return w.o().filter(c => Object.keys(c.sc)[0] === mainkey && c.c.stuff && !c.c.gang && c.o().length > 0).length
+
+},
+// beat 2 — the bench verdicts, each gated on n === 2 and the LIVE crush stamps (a %see drops after
+//  its step, so it is this beat's OBSERVATION not a latch).  Every sentence uses an em-dash — no
+//   commas (the peel parser splits on them).  Only stable outputs are asserted (fold|gang|bare
+//    counts + census presence); the per-family model readings (order|drift) are the SE-UP agent's
+//     and get wired at integration.
+VoroTest_witness_bench(w) {
+    let boulders = this.VoroTest_gang_of(w, 'Boulder')
+    if (boulders && (boulders.c.gang || []).length === 12 && !(w.oa({see: 'the homogeneous flock ganged — twelve boulders of one kind folded behind a single representative pane'}))) w.i({see: 'the homogeneous flock ganged — twelve boulders of one kind folded behind a single representative pane'})
+    let fern = this.VoroTest_gang_of(w, 'Fern')
+    let moss = this.VoroTest_gang_of(w, 'Moss')
+    let loners = this.VoroTest_bare_of(w, 'Lichen') + this.VoroTest_bare_of(w, 'Sedge') + this.VoroTest_bare_of(w, 'Rush')
+    if (fern && moss && loners === 3 && !(w.oa({see: 'the mix split two ways — the ferns and the mosses each ganged while the three loners stayed bare below the threshold'}))) w.i({see: 'the mix split two ways — the ferns and the mosses each ganged while the three loners stayed bare below the threshold'})
+    let motley = ['Quartz','Basalt','Slate','Gneiss','Chert','Shale','Flint','Marl']
+    let bare = 0
+    for (const k of motley) bare = bare + this.VoroTest_bare_of(w, k)
+    let ganged = motley.filter(k => this.VoroTest_gang_of(w, k)).length
+    if (bare === 8 && ganged === 0 && !(w.oa({see: 'the motley never folded — eight distinct kinds one of each stayed eight bare nodes because a gang of one is below the minimum'}))) w.i({see: 'the motley never folded — eight distinct kinds one of each stayed eight bare nodes because a gang of one is below the minimum'})
+    let grad = this.VoroTest_gang_of(w, 'Stratum')
+    if (grad && (grad.c.gang || []).length === 10 && !(w.oa({see: 'the gradient ganged into one pane — ten strata sweeping a depth carried as a spread the readout can lay out in order'}))) w.i({see: 'the gradient ganged into one pane — ten strata sweeping a depth carried as a spread the readout can lay out in order'})
+    let groves = this.VoroTest_panes_of(w, 'Grove')
+    if (groves === 3 && !(w.oa({see: 'the groves each folded to their own pane — three nested containers became three cells and the crusher stopped at the fold never descending inside'}))) w.i({see: 'the groves each folded to their own pane — three nested containers became three cells and the crusher stopped at the fold never descending inside'})
+    let pair = this.VoroTest_panes_of(w, 'Pair')
+    let voidBare = this.VoroTest_bare_of(w, 'Void')
+    if (pair === 1 && voidBare === 1 && !(w.oa({see: 'the edges divide the fold — a two-member container still folds to its own small pane while the empty container has nothing to fold and stands bare'}))) w.i({see: 'the edges divide the fold — a two-member container still folds to its own small pane while the empty container has nothing to fold and stands bare'})
+    // the projection is honest: w:Voronoiology carries the crush's census AND the Se scape reading
+    //  for THIS bench — the same processing pane every Voro Book snaps beside its data.
+    let rw = w.c.up ? w.c.up.o({ w: 'Voronoiology' })[0] : null
+    let se = rw ? rw.o({ Se: 'scape' })[0] : null
+    let cells = rw ? rw.o({ cell: 1 }).length : 0
+    if (rw && se && cells >= 6 && !(w.oa({see: 'the working is projected beside the data — the Voronoiology pane censuses at least six cells and the scape reading grasped the folds'}))) w.i({see: 'the working is projected beside the data — the Voronoiology pane censuses at least six cells and the scape reading grasped the folds'})
+    // the MODEL readings (the Se-up layer): w.c.voro_model + the %Se:family rows carry what a renderer
+    //  would otherwise re-derive.  The order axis is DISCOVERED from the data (the widest-spread key) —
+    //   so the gradient family must read order_by depth on a numeric axis with its trail pinned end to
+    //    end — and every family mirrors a snapped reading with its loudest epithets ranked.
+    let model = w.c.voro_model
+    let mfams = model ? model.o({ Family: 1 }) : []
+    let gradfam = mfams.find(f => f.sc.order_by === 'depth')
+    if (gradfam && gradfam.sc.axis === 'num' && gradfam.sc.n === '10' && gradfam.sc.from && gradfam.sc.to && gradfam.sc.from !== gradfam.sc.to && !(w.oa({see: 'the model discovered the gradient — one family orders by depth on a numeric axis with its trail pinned from one end anchor to the other'}))) w.i({see: 'the model discovered the gradient — one family orders by depth on a numeric axis with its trail pinned from one end anchor to the other'})
+    let serows = rw ? rw.o({ Se: 'family' }) : []
+    let louded = mfams.filter(f => f.o({ Loud: 1 }).length > 0).length
+    if (mfams.length >= 4 && serows.length >= 4 && louded >= 3 && !(w.oa({see: 'the families each carry a model row — the roster is mirrored into snapped family readings and the loudest epithets ride ranked for the readout'}))) w.i({see: 'the families each carry a model row — the roster is mirrored into snapped family readings and the loudest epithets ride ranked for the readout'})
+
+},
+// beat 3 — the mutations read back: the flock grew, the mix shrank, the gradient bent.  Each gated
+//  live on the post-recrush stamps, so a %see is the delta the crush actually recomputed this beat.
+VoroTest_witness_mutate(w) {
+    let boulders = this.VoroTest_gang_of(w, 'Boulder')
+    if (boulders && (boulders.c.gang || []).length === 15 && !(w.oa({see: 'three arrivals swelled the flock — the boulder gang recomputed to fifteen members behind the same representative'}))) w.i({see: 'three arrivals swelled the flock — the boulder gang recomputed to fifteen members behind the same representative'})
+    let fern = this.VoroTest_gang_of(w, 'Fern')
+    if (fern && (fern.c.gang || []).length === 5 && !(w.oa({see: 'two goners left the mix — the fern gang shrank from seven to five members yet still cleared the threshold and held its pane'}))) w.i({see: 'two goners left the mix — the fern gang shrank from seven to five members yet still cleared the threshold and held its pane'})
+    let grad = this.VoroTest_gang_of(w, 'Stratum')
+    let bent = grad ? (grad.c.gang || []).some(s => s.sc.depth === '99') : false
+    if (grad && bent && !(w.oa({see: 'the gradient bent — one stratum jumped its depth off the smooth run and the gang re-read the outlier into its spread'}))) w.i({see: 'the gradient bent — one stratum jumped its depth off the smooth run and the gang re-read the outlier into its spread'})
+    // the model's DRIFT: the member-grained %Seem attributes each arrival|departure to its family —
+    //  the swollen flock must read three neus and the shrunken ferns two goners.  Read off the snapped
+    //   %Se:family rows (the distillation a fixture diffs).
+    let rw = w.c.up ? w.c.up.o({ w: 'Voronoiology' })[0] : null
+    let serows = rw ? rw.o({ Se: 'family' }) : []
+    if (serows.some(r => r.sc.neu === '3') && !(w.oa({see: 'the model felt the arrivals — a family reading carries three new members in its drift this beat'}))) w.i({see: 'the model felt the arrivals — a family reading carries three new members in its drift this beat'})
+    if (serows.some(r => r.sc.gone === '2') && !(w.oa({see: 'the model felt the goners — a family reading carries two departures in its drift this beat'}))) w.i({see: 'the model felt the goners — a family reading carries two departures in its drift this beat'})
+
+},
+// beat 4 — the quiet beat: recrush with NO mutation, so the fold verdicts must hold exactly.  Gated
+//  on the same live facts still standing — the claim is that a stable input gives a stable fold (the
+//   crush is a pure function of the data, no drift beat to beat).
+VoroTest_witness_quiet(w) {
+    let boulders = this.VoroTest_gang_of(w, 'Boulder')
+    let fern = this.VoroTest_gang_of(w, 'Fern')
+    let grad = this.VoroTest_gang_of(w, 'Stratum')
+    let groves = this.VoroTest_panes_of(w, 'Grove')
+    let steady = boulders && (boulders.c.gang || []).length === 15 && fern && (fern.c.gang || []).length === 5 && grad && groves === 3
+    if (steady && !(w.oa({see: 'the readings held steady — a recrush with nothing changed reproduced every gang and pane exactly because the fold is a pure function of the data'}))) w.i({see: 'the readings held steady — a recrush with nothing changed reproduced every gang and pane exactly because the fold is a pure function of the data'})
+    // drift must fall SILENT on a quiet beat — a stale neu|gone here means the model tail never re-ran
+    //  on the recrush (a staleness bug this Book exists to catch).
+    let rw = w.c.up ? w.c.up.o({ w: 'Voronoiology' })[0] : null
+    let serows = rw ? rw.o({ Se: 'family' }) : []
+    let quiet = serows.length > 0 && serows.every(r => !r.sc.neu && !r.sc.gone)
+    if (quiet && !(w.oa({see: 'the drift fell silent — no family reading carries an arrival or a departure after a recrush with nothing changed'}))) w.i({see: 'the drift fell silent — no family reading carries an arrival or a departure after a recrush with nothing changed'})
 },
 //#endregion
 

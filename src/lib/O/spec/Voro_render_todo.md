@@ -2,36 +2,63 @@
 
 ## 0. What to get on with next
 
-**Every slice is now BUILT (2026-07-12): A + B + B2 (meaning→size), C v1 (▧ washes), C1 (family
- clumping — layout), D v1 (I/C/S/O arc-rivers + debris chips), and the grasp ROLLED OUT to every crush
-  user** (it rides `Voro_crush_scan`'s tail now — VoroScape/VoroRadio/VoroRadioPier/VoroClinic all
-   grasp, not just VoroMitosis; `Story.svelte:1243` awaits the imposed-from-above crush so `%Se:scape`
-    snaps deterministically).
+**Where we are.** Every render slice is built and the grasp rides every crush: A (text stretch-ups),
+ B+B2 (meaning→size — semantically verified live: species epithets tower at 26pt, universal `woodystem`
+  recedes to 8.6pt), C v1 (▧ washes), C1 (family clumping), D v1 (I/C/S/O arc-rivers). `Voro_grasp`
+   folds into `Voro_crush_scan`'s tail so VoroScape/VoroRadio/VoroRadioPier/VoroClinic all grasp, not
+    just VoroMitosis. VoroMitosis and VoroScape were re-recorded and **committed by the human**; the
+     three built mirrors (Voro census, and its Stemdex/Lang cousins over in `Seemables_todo.md`) are
+      live-observed — the human reports they seem to work, not yet certified. The old "run the tab, it's
+       all unexecuted, RED expected" checklist is spent; that round landed.
 
-**B2 is SEMANTICALLY VERIFIED on the live SVG (2026-07-12):** species epithets (unique) tower at 26pt,
- `habit: vine` (rare) 22pt vs `habit: shrub` (common) 11pt, `woodystem ×4` (universal) recedes to 8.6pt.
-  The engine works. Remaining eyes-on = TASTE tuning (`Voro_grasp_weight` consts 0.85/15, `band_for`
-   thresholds 80/45), not correctness.
+**The arc from here — Se-up model first, geometry later.** The engine is being re-cleaved into three
+ layers (the vision is under `## The three-layer engine` below). The order of the next waves:
 
-**NEXT (needs a human at the tab — TWO gotchas):**
- 1. **RELOAD the runner tab first** — its Vite HMR socket is dead ([[hmr-socket-dead-tell]] memory):
-     relay ops answer but `.svelte` edits (C1 + rivers) never landed in it. Everything render-side built
-      today is unexecuted in that tab until a reload.
- 2. Then `run VoroMitosis --watch` (RED expected — `%Se:scape` + step-11 `wgt` restamps + now a rebuilt
-     `%Se:census` make fixtures stale; the re-record is the human's call) and:
-    - `runner_shot --why` — expect a `clump fams:N moved:M` line (C1 alive; `fams:1` = the family
-       bucketing collapsed, tune `the:family`); after toggling `▧` expect a `river` line too.
-    - Click `▧` on the tab — washes + rivers + chips all live behind it. Tune widths/opacities/spacing
-       (knob line-refs in `## Slice D — arc-rivers build notes` at the end of this doc).
-    - `runner_shot --svg out.svg` — eyeball rivers: do arcs read as I/C/S/O? Do same-family cells sit
-       contiguous (C1's job — `CLUMP=0.30`, `MINSEP=84` in `voronoi_layout`)?
+- **① The Se-up model (in flight — another agent is on `Ghost/V/Voro.g`).** Build "the first side" — the
+   grasp becomes the thing that computes the MODEL Cyto renders, in canonical waves of shape. Per-family
+    membership + weight; **semantic order from the data's own gradient property, NOT from rendered
+     positions**; loudness (the top facts); drift (goners/neus). This is snap-testable in a Book without
+      a single pixel — the point of doing it first. `the:family` already lands and the render reads it
+       null-safe (`Cytui.svelte:865` `region_of`); `the_anchor` (durable per-fold id, for river order)
+        is still owed from the grasp. // < exact `the_*` row shape is the model agent's output — state
+         intent, don't invent the keys here.
+- **② VoroTest Book (in flight — another agent is on `Ghost/Story/Voronation.g`).** A universal gallery:
+   several synthetic C** datasets computed in parallel in one run world + mutation steps, so the fixtures
+    TEACH the fold/stuff rules and the Seem readings make "what changed" legible. This is where the Se-up
+     model gets its Book gate. // < the Book's exact dataset roster + step shape is that agent's call.
+- **③ Cytui consumes the model.** Cytui shrinks to wiring + paint: it reads the grasp's model
+   (membership, order, loudness, drift) instead of recomputing it. This is the destination the
+    `Cytui_cleave_todo.md` migration map serves.
+- **④ Geometry migration.** The pure maths (hull, clip, resample, PCA, river order, Catmull) folds into
+   `Voro.g` itself — NOT a new `VoroGlass.ts` (the human decided against a .ts module; see
+    `Cytui_cleave_todo.md §0`). A later wave, and it will feel out the LangTiles parse-storm on
+     closure-heavy raw JS.
+- **⑤ The graphical phase.** C2 (merge each family's washes into ONE filled region), chip thinning on
+   long streaks, and the Wes-Wilson lettering pass (warp the big words along the river tangents). Taste
+    tuning throughout — `Voro_grasp_weight` consts, `band_for` thresholds, riverbed widths — all
+     eyes-on via `runner_shot --svg`/`--why`, none Book-gateable (pixels never round-trip a fixture).
 
-Then: C2 (merge each family's washes into ONE filled region now that C1 makes them contiguous), chip
- thinning on long streaks, and the Wes-Wilson lettering pass (warp the big words along the river
-  tangents). Fixture staleness after the rollout: VoroMitosis, VoroScape, VoroRadio, VoroRadioPier,
-   VoroClinic (each gains `%Se:scape`; Mitosis' `%Se:census` values change) — all live re-records.
+**Two standing gotchas when you go to the tab.** (1) RELOAD the runner tab first if its Vite HMR socket
+ is dead ([[hmr-socket-dead-tell]]) — relay ops answer but `.svelte` edits silently don't land. (2) Any
+  render round leaves VoroMitosis/VoroScape/VoroRadio/VoroRadioPier/VoroClinic fixtures stale (each
+   gains/changes `%Se:scape`/`%Se:census`); the re-record is the human's, and it is churn `Seen_split`
+    (the human's parallel build of `%seen` latch + assertion roster, `Seen_split_todo.md`) is meant to
+     make survivable — cross-reference it when the re-records pile up.
 
-## The arc (the destination)
+## The three-layer engine (the destination)
+
+The human's decision (2026-07-12): Voro is **a universal data clumper-sprawler** — zero mainkey
+ knowledge in the code, data arriving in canonical waves of SHAPE. The engine cleaves three ways:
+
+- **The grasp/ghost decides WHAT** — the Seems: semantic, snap-testable in Books without pixels.
+   Membership, weight, order (from the data's gradient property), loudness, drift. This is the first
+    side and the current wave.
+- **Pure derivations decide WHERE** — the geometry: hull, clip, tessellation, river spines. Deterministic
+   functions of the model, mockable, later migrated into `Voro.g`.
+- **Cytui shrinks to WIRING + PAINT** — it consumes the model and renders it; it stops being the place
+   the diff and the census get hand-rolled.
+
+## The arc (the render north star)
 
 The human's north star, verbatim: "big text stretch-ups" (a **14pt hard font floor**, the loud
  properties bigger); "zen-garden trails of lined up tuples … we have to regroup the cells into

@@ -4,9 +4,7 @@ story:SwarmSteal
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.039
-      sample=0.035,at=1783163738
-      sample=0.035,at=1783163739
+    TimeTotal:beliefs,avg=0.037
       sample=0.197,at=1783163848
       sample=0.017,at=1783257392
       sample=0.016,at=1783366458
@@ -15,9 +13,9 @@ story:SwarmSteal
       sample=0.014,at=1783420347
       sample=0.02,at=1783840189
       sample=0.013,at=1783840318
-    TimeTotal:step,avg=0.007
-      sample=0.006,at=1783163738
-      sample=0.006,at=1783163739
+      sample=0.032,at=1783841580
+      sample=0.013,at=1783841625
+    TimeTotal:step,avg=0.006
       sample=0.033,at=1783163848
       sample=0.003,at=1783257392
       sample=0.003,at=1783366458
@@ -26,6 +24,8 @@ story:SwarmSteal
       sample=0.002,at=1783420347
       sample=0.003,at=1783840189
       sample=0.002,at=1783840318
+      sample=0.005,at=1783841580
+      sample=0.002,at=1783841625
   Assertions
     Assertion:theft-contested,sentence:a foreign claimant once contested the name of Alice — a copy that was not one of our tabs raised Identity Stolen,by_n:4
     Assertion:identity-not-address,sentence:identity is not address — the key-derived name of Alice never changed while the address moved to prepub_2,by_n:6

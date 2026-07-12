@@ -673,11 +673,41 @@
         return out
     },
 
+    // Cred_assertion_gaps — the roster verdict (Seen_split_todo move 2): for each declared
+    //  The/Assertions entry, did a matching %seen actually latch?  Because %seen LATCHES (it is never
+    //   wiped — w_forgets_problems clears only {see,waits,error}), a latched fact is present in the
+    //    FINAL step's got_snap no matter which beat it latched — so a presence test on the last
+    //     retained snap is robust to Book length AND to the 5-step got_snap trim (which never touches
+    //      the final step).  This is a labeled-fact PRESENCE check on the snap TEXT — it never goes
+    //       through the dige comparison, so entropy_forgive can NEVER mask a vanished proof
+    //        (Seen_split_todo §4 — the hole accept-drops-proof-in-entropy-zone left open).  Returns the
+    //         MISSING assertions; a Book with no roster returns [] and is wholly unaffected.
+    Cred_assertion_gaps(stW: TheC | undefined): { slug: string, sentence: string, by_n: number }[] {
+        const The    = stW?.c.The as TheC | undefined
+        const roster = (The?.o({ Assertions: 1 })[0]?.o({ Assertion: 1 }) ?? []) as TheC[]
+        if (!roster.length) return []
+        const steps  = ((stW?.c.This as TheC | undefined)?.o({ Step: 1 }) ?? []) as TheC[]
+        // the final step with a retained got_snap carries the COMPLETE latched set (latches accumulate,
+        //  the last snap is never trimmed).  Search its TEXT for the encoded line `seen:<sentence>`.
+        const last   = steps.filter(s => s.sc.got_snap).sort((a, b) => (a.sc.Step as number) - (b.sc.Step as number)).pop()
+        const snap   = (last?.sc.got_snap as string) ?? ''
+        const gaps: { slug: string, sentence: string, by_n: number }[] = []
+        for (const a of roster) {
+            const sentence = String(a.sc.sentence ?? '')
+            if (!sentence) continue
+            if (!snap.includes(`seen:${sentence}`))
+                gaps.push({ slug: String(a.sc.Assertion), sentence, by_n: Number(a.sc.by_n) || 0 })
+        }
+        return gaps
+    },
+
     // Cred_run_outcome — the real pass/fail of the just-finished Story: how many Steps stamped
     //  %ok out of the total (the same signal auto_sync_story_stats reads).  null if no run yet.
     //  caveat = the ok steps that passed only by EntropyArrest forgiveness (§10): they count
     //   green (their %ok is true) but ride back tagged so the editor can show "passed, N forgiven".
-    Cred_run_outcome(): { ok: boolean, ok_pct: number, done: number, caveat: number } | null {
+    //  gaps = declared assertions (The/Assertions) whose %seen never latched — a run with any gap is
+    //   RED even at 100% steps: a labeled proof went missing, and no entropy span can forgive that.
+    Cred_run_outcome(): { ok: boolean, ok_pct: number, done: number, caveat: number, gaps?: { slug: string, sentence: string, by_n: number }[] } | null {
         const H = this as House
         const story = H.o({ H: 'Story' })[0] as House | undefined
         const stW   = story?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
@@ -688,7 +718,8 @@
         if (!done) return null
         const ok     = steps.filter(s => s.sc.ok).length
         const caveat = steps.filter(s => s.sc.ok && s.sc.caveat).length
-        return { ok: ok === done, ok_pct: Math.round((ok / done) * 100) / 100, done, caveat }
+        const gaps   = (H as any).Cred_assertion_gaps(stW) as { slug: string, sentence: string, by_n: number }[]
+        return { ok: ok === done && !gaps.length, ok_pct: Math.round((ok / done) * 100) / 100, done, caveat, gaps: gaps.length ? gaps : undefined }
     },
 
     // Cred_spool — record this run into the soul (in-mem on Mundo.c.cred, off-snap, partitioned

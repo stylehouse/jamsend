@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return 'c43bdb2f22902c50' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return '83b6b94d7ee35164' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -340,12 +340,20 @@ async MusuHeist_flow(w) {
     //   and the mirror is full) — so the listing is the WHOLE offer, every verdict named before a byte moves.
     //    Two poles fall out of the run: the uno heist (all new — 3) and the retomb heist (all held/denied —
     //     8 held, 1 denied, 0 new).  ONE note per nick, guarded, counting verdicts off the returned rows.
+    //      Count keys are holds|refuses|fresh, NOT the verdict words: held and denied are row MAINKEYS
+    //       (held,tune: / denied,tune:) and a mainkey must never ride as a non-first key — the deny scene
+    //        reads T.o({denied:1}) and a manifest row carrying a denied key would leak into that wildcard.
+    //         Zero counts stay ABSENT (house rule: delete over 0) so each pole row names only what it saw.
     if (!this.MusuHeist_T(w).oa({ manifest: b.nick }) && landed + skipped + tombstoned === 0 && mir.o({ Record: 1 }).length >= b.expect) {
         let man = this.Heist_manifest(b.job, mir, b.own)
-        let held = man.filter((m) => m.verdict === 'held').length
-        let denied = man.filter((m) => m.verdict === 'denied').length
+        let row = { manifest: b.nick }
+        let holds = man.filter((m) => m.verdict === 'held').length
+        let refuses = man.filter((m) => m.verdict === 'denied').length
         let fresh = man.filter((m) => m.verdict === 'new').length
-        this.MusuHeist_note(w, { manifest: b.nick, held: held, denied: denied, new: fresh })
+        if (holds) row.holds = holds
+        if (refuses) row.refuses = refuses
+        if (fresh) row.fresh = fresh
+        this.MusuHeist_note(w, row)
     }
     // completion is its OWN step: the final beat (below) lands the last record and returns true, then THIS
     //  fires next snap.  Guarded by >= expect so an empty mirror mid-offer (husks still crossing) never
@@ -606,8 +614,8 @@ MusuHeist_witness(w) {
     //    poles must hold, so a manifest that lied one way (called a held track new, or vice versa) drops it.
     let mu = T.o({ manifest: 'uno' })[0]
     let mrt = T.o({ manifest: 'retomb' })[0]
-    let man_ok = mu && +(mu.sc.new || 0) === 3 && !mu.sc.held && !mu.sc.denied
-    man_ok = man_ok && mrt && +(mrt.sc.held || 0) === 8 && +(mrt.sc.denied || 0) === 1 && !mrt.sc.new
+    let man_ok = mu && +(mu.sc.fresh || 0) === 3 && !mu.sc.holds && !mu.sc.refuses
+    man_ok = man_ok && mrt && +(mrt.sc.holds || 0) === 8 && +(mrt.sc.refuses || 0) === 1 && !mrt.sc.fresh
     if (man_ok && !T.oa({ see: 'the manifest named every verdict before a byte moved — the heist showed what it would take hold and refuse' })) this.MusuHeist_note(w, { see: 'the manifest named every verdict before a byte moved — the heist showed what it would take hold and refuse' })
     // every offer left a NAMED verdict row on its job, each pointed by tune: took (uno landed 3 took rows),
     //  held (reuno left 9 held rows), denied (retomb refused 1 by tombstone).  The row counts ride the

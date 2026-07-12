@@ -1,52 +1,64 @@
-# Cytui_cleave_todo.md — a cleave plan for the 3684-line Cytui.svelte
+# Cytui_cleave_todo.md — the migration map for shrinking Cytui.svelte
 
-Plan ONLY — no code moves in this doc. The human flagged Cytui's bloat and said "maybe it's fine".
- This doc measures the bloat, proposes the ONE seam worth cutting, weighs the Svelte 5 reactivity
-  constraints honestly, and ends with a recommendation + the single gating question. Cites read live
-   2026-07-12.
+Plan ONLY — no code moves in this doc. Cytui is ~3925 lines and half of it is one region (the
+ voronoi glass). This doc measures the bloat, maps which parts are portable and which are welded to
+  Svelte 5's reactivity, and — post the 2026-07-12 three-layer decision — reads as the MIGRATION MAP
+   for the coming waves, not a standalone cleave. Cites read live 2026-07-12.
 
 ---
 
-## 0. Recommendation + the gating question
+## 0. The decision, and what this doc is now for
 
-**Recommendation: cut ONE narrow seam — the pure geometry/formatting helpers into
- `VoroGlass.svelte.ts` — and leave everything else where it is.** The file is big, but most of the
-  bigness is REACTIVE and DOM-coupled (`$state`, `cy`, `container`, `{#each}`-bound arrays) and does
-   NOT cross a `.svelte.ts` boundary cleanly in Svelte 5. There is exactly one clean, low-risk win: a
-    ~400-line cluster of stateless geometry math (convex hull, polygon clipping, ring resampling,
-     Catmull-Rom, PCA, river ordering, colour lookups) that takes plain args and returns plain values.
-      Moving THOSE out is pure win — testable in isolation, no reactivity, no HMR hazard — and it
-       shrinks the file ~11% while carving the region into "math" vs "orchestration", which is the
-        real readability gain.
+**DECISION 2026-07-12 (the human, in a hui): NO `VoroGlass.ts`.** This doc used to recommend cutting
+ the pure geometry helpers out into a sibling `VoroGlass.svelte.ts` module. That is SUPERSEDED. The
+  geometry/formatting maths folds into **`Ghost/V/Voro.g` itself** — the engine's home — not a new .ts
+   module beside Cytui. (Known caveat to carry into that wave: LangTiles parse-storms on closure-heavy
+    raw JS — `.g-authoring-gotchas` — so the closed-form eigen / clipping / Catmull code will feel that
+     out; prefer DSL, drop to raw JS only where the maths demands it.)
 
-**The "is it worth it" honest answer is in §5. Short version: the file is not broken, and the big
- stateful cleave (a whole VoroGlass component) is NOT worth it — it fights Svelte 5's reactivity
-  model. The geometry-helper cut is worth it as a modest, safe legibility win, not a rescue.**
+**Why the destination moved.** The larger decision is that Voro becomes a three-layer engine (see
+ `Voro_render_todo.md §0 "The three-layer engine"`): the grasp/ghost decides WHAT (the Seems — model),
+  pure derivations decide WHERE (geometry), and **Cytui shrinks to wiring + paint**. So the goal is no
+   longer "carve a tidy geometry library out of the component" — it is "Cytui stops computing the model
+    and the geometry at all; it consumes them." A `VoroGlass.ts` would have been geometry-in-a-new-house;
+     the real move is geometry-into-Voro.g, driven by the model the grasp now computes.
 
-**The one gating question for the human:** *Do you want the small safe cut (pure geometry helpers →
- `VoroGlass.svelte.ts`, ~400 lines, zero behaviour change), or is "maybe it's fine" a decision to
-  leave it entirely?* If the former, this doc is the map. If you were hoping to lift the WHOLE
-   voronoi region (~1955 lines) into a sibling — that is the option this doc argues AGAINST (§3/§5):
-    the reactive `$state` and `{#each}` bindings make it a rewrite, not a move.
+**What this doc is for now.** The Layer A/B/C anatomy below (§2) is still the load-bearing content — it
+ is the MAP of what migrates and what stays:
+
+- **Layer A (pure geometry, ~400 lines)** is what eventually migrates INTO `Voro.g` — the ④ geometry
+   wave in `Voro_render_todo.md §0`. Not a Cytui-sibling cut; it moves to the engine.
+- **Layer B (stateful render orchestration)** SHRINKS as the grasp's model takes over the diffing and
+   census it currently hand-rolls — but the parts that drive cytoscape and write the `{#each}` arrays
+    STAY as paint.
+- **Layer C (the reactive `$state` surface)** STAYS in Cytui — it is the paint layer by definition;
+   `{#each}`-bound arrays live in the component that renders them.
+
+The Svelte 5 reactivity honesty (§4) and the "is it worth it" read (§5) survive the decision unchanged:
+ the reactive/DOM-coupled bulk was never a clean cut to a .ts sibling, and that is exactly why the
+  geometry goes to the engine (fed by the model) rather than to a module wall beside the component.
 
 ---
 
 ## 1. The measurement
 
-`Cytui.svelte` = 3684 lines. Region structure (`//#region` markers, `grep -n "#region"`):
+`Cytui.svelte` = ~3925 lines (was 3684 when this doc was first written; the glass keeps growing).
+ Region structure (`//#region` markers, `grep -n "#region"`, read live 2026-07-12):
 
-| Region | Lines | Extent | Character |
-|---|---|---|---|
-| (top: imports + shared refs + module `$state`) | 1-123 | ~123 | `cy`, `container`, `matstyles`, `layout_name`, `status`, `grawave_dur` |
-| `animations` | 124-282 | ~158 | wave/morph/settle timing |
-| `overlays` | 283-738 | ~455 | Stuffing overlays, `node_src` map, `paint_overlays_now`, `reposition_overlays` |
-| **`voronoi`** | **739-2694** | **~1955** | **the glass — over HALF the file** |
-| `apply` | 2695-2940 | ~245 | `apply(wave, dur)` — the marker executor (NOT a diff, per Seemables §2) |
-| `layout` | 2941-3232 | ~291 | fcose/cola/dagre layout drivers |
-| (template markup) | 3235-3684 | ~449 | the `<div class="cytui">` render, `{#each vcells/vtips/vfams/vregions/vsubs}` |
+| Region | Starts | Character |
+|---|---|---|
+| (top: imports + shared refs + module `$state`) | 1 | `cy`, `container`, `matstyles`, `layout_name`, `status`, `grawave_dur` |
+| `animations` | 124 | wave/morph/settle timing |
+| `overlays` | 283 | Stuffing overlays, `node_src` map, `paint_overlays_now`, `reposition_overlays` |
+| **`voronoi`** | **739** | **the glass — over HALF the file, ~2150 lines to the `apply` marker** |
+| `apply` | 2892 | `apply(wave, dur)` — the marker executor (NOT a diff, per Seemables §2) |
+| `layout` | 3138 | fcose/cola/dagre layout drivers |
+| (template markup) | ~3450 | the `<div class="cytui">` render, `{#each vcells/vtips/vfams/vregions/vsubs}` |
 
-**The voronoi region is the bloat — ~1955 lines, 53% of the file.** Everything below is about that
- region; the other regions are reasonably sized and cohesive.
+**The voronoi region is the bloat — over half the file.** Everything below is about that region; the
+ other regions are reasonably sized and cohesive. (Line numbers inside §2/§3 below are from the
+  earlier read and have drifted a few hundred lines as the glass grew — treat them as approximate
+   anchors, re-grep the function name before relying on one.)
 
 ---
 
@@ -104,38 +116,35 @@ The template (3300-3360) renders `{#each vregions}`, `{#each vfams}`, `{#each vc
 
 ---
 
-## 3. What to move, and what stays behind
+## 3. What migrates, and what stays behind
 
-### Proposed cut — `VoroGlass.svelte.ts` (Layer A only)
+### The geometry migrates into `Voro.g` (NOT a `VoroGlass.ts` sibling)
 
-Move Layer A (the ~400 lines of pure geometry/formatting) into a sibling `src/lib/O/VoroGlass.svelte.ts`.
+Layer A (the ~400 lines of pure geometry/formatting) is what moves — the ④ geometry wave in
+ `Voro_render_todo.md §0`. Per the 2026-07-12 decision it does NOT become a sibling `.svelte.ts`
+  module; it folds into `Ghost/V/Voro.g`, the engine's home, so the maths sits WITH the model that
+   feeds it and the "where" derivations stop being trapped inside the paint component.
 
-**What travels:** the pure functions listed in Layer A. They import nothing from the component; they
- are plain TypeScript.
+**What travels:** the pure functions listed in Layer A. They import nothing from the component and
+ touch no reactivity — that is exactly why they can move. The list, as a portability checklist:
+
+- `convex_hull`, `resample`, `align_ring` — ring geometry
+- `clip_halfplane`, `seg_hit`, `box_support` — half-plane clipping
+- `poly_chord`, `wide_chord`, `stretch` — chord/fit math
+- `pca_axis`, `river_order`, `letter_of`, `catmull_d` — the "read the centroids as a written word" river machinery
+- `kind_color`/`kind_hue`/`kind_glass`/`kind_tint` — kind→colour lookups (constant-driven)
+
+**The caveat that shapes HOW it migrates:** LangTiles parse-storms on closure-heavy raw JS
+ (`.g-authoring-gotchas`). This code is closed-form eigen, polygon clipping, Catmull-Rom — dense raw
+  maths, not the DSL's comfort zone. Prefer the LangTiles DSL where it reaches; drop to raw JS (a
+   `RENDER()`/`IMPORT()` tail block, `.g-import-ts-module`) only where the maths genuinely demands it.
+    This wave will feel out that boundary; it is not a mechanical copy-paste.
 
 **What stays behind:** everything in Layers B and C — all `$state`, all `cy`/`container` access, all
  `{#each}`-bound arrays, all `toggle_*`, `voronoi_layout`, `paint_final`, `morph_voronoi`, the
-  pointer handlers. The orchestration stays in `Cytui.svelte`.
-
-**The seam signature** — the module exports pure functions, the component imports and calls them:
-
-```ts
-// VoroGlass.svelte.ts  (no reactivity — a plain .ts would even do; .svelte.ts only if a helper
-//  later needs a rune, which none currently do)
-export function convexHull(pts: Pt[]): Pt[]
-export function clipHalfplane(poly: Pt[], nx: number, ny: number, d: number): Pt[]
-export function resample(poly: Pt[], N: number): Pt[]
-export function alignRing(pts: Pt[], ref: Pt[]): Pt[]
-export function pcaAxis(pts: Pt[]): { ux: number, uy: number, flat: number }
-export function riverOrder(cents: Pt[]): { seq: Pt[], wrap: boolean }
-export function catmullD(pts: Pt[], closed: boolean): string
-export function kindColor(kind: string | undefined): string | null
-// … poly_chord, wide_chord, stretch, seg_hit, box_support, letter_of, kind_hue/glass/tint
-```
-
-The component keeps its Layer-B functions and calls `VoroGlass.convexHull(pts)` etc. No state
- crosses the boundary — arguments and return values only. That is the entire point: a pure seam,
-  which is the only kind that survives Svelte 5 cleanly.
+  pointer handlers. That is the paint layer, and it stays in `Cytui.svelte`. As the grasp's model takes
+   over the diffing/census that Layer B hand-rolls (Seemables §2, and the ③ wave), Layer B SHRINKS —
+    but what remains is irreducibly cytoscape-coupled and belongs in the component.
 
 ### Why NOT lift the whole voronoi region into a `<VoroGlass />` child component
 
@@ -160,65 +169,66 @@ So the honest cleave is: extract the STATELESS math (real decoupling), leave the
 
 ---
 
-## 4. Svelte 5 reactivity + HMR risks (why the seam must be pure)
+## 4. Svelte 5 reactivity + HMR risks (why only the pure math can move)
 
-The repo's own constraints make the "pure functions only" boundary not just cleaner but necessary:
+The repo's own constraints are why the migration boundary is "pure functions only," whether the
+ destination is a .ts sibling (rejected) or `Voro.g` (chosen):
 
-- **`$state`/`$derived` semantics differ across the `.svelte.ts` boundary.** Reactive state DOES
-   work in `.svelte.ts` files (runes are allowed there), but `$effect` timing and the reactive graph
-    behave differently than inside a component's instance scope, and `{#each}`-driving arrays are
-     simplest kept in the component that renders them. Layer A has NO runes, so this risk is zero for
-      the proposed cut — and that is exactly why the cut is limited to Layer A. The moment a moved
-       function needs a `$state`, the seam stops being free.
-- **`<script module lang="ts">` gotcha** (`module-script-lang-ts` memory): a new `.svelte.ts` (or any
-   module script) carrying TS annotations MUST declare `lang="ts"` or it silently breaks esbuild's
-    `optimizeDeps` scan — a latent parse error that surfaces only when an unrelated import invalidates
-     the dep cache. A plain `.ts` file (no Svelte compilation) sidesteps this entirely. **Since Layer
-      A needs no runes, prefer a plain `VoroGlass.ts` over `.svelte.ts`** — it dodges the module-script
-       trap completely and is trivially unit-testable.
-- **HMR re-mixes methods, not captured refs** (`hmr-remixes-ghost-methods`): this bites GHOST methods
-   dispatched through the House. The Layer A helpers are NOT ghost methods — they are local component
-    functions / module exports called directly, so HMR re-imports them normally on hot update. No
-     stale-ref hazard for the pure cut. (The hazard WOULD appear if you moved stateful orchestration
-      that stashed a function ref on a particle's `.c` — another reason to keep Layer B in place.)
-- **No fixture / no snap risk.** Cytui is a VIEW — nothing here is snapped, so no `toc.snap` moves,
-   no re-record. The blast of a mistake is VISUAL only, provable with `runner_shot.mjs --svg` (the
-    voronoi glass as standalone SVG) and `--why` (the render telemetry film strip). That makes even a
-     careless cut recoverable, but it also means the ONLY payoff is human legibility, not correctness.
+- **`$state`/`$derived` semantics don't cross a module boundary freely.** Reactive state works in
+   `.svelte.ts`, but `$effect` timing and the reactive graph behave differently outside a component's
+    instance scope, and `{#each}`-driving arrays are simplest kept in the component that renders them.
+     Layer A has NO runes, so it moves cleanly. The moment a candidate function needs a `$state`, it is
+      Layer B, and it stays.
+- **`<script module lang="ts">` gotcha** (`module-script-lang-ts` memory): this is one more reason the
+   geometry belongs in `Voro.g` rather than a new module script beside Cytui — a `.svelte.ts` carrying
+    TS annotations must declare `lang="ts"` or it silently breaks esbuild's `optimizeDeps` scan. Voro.g
+     compiles through the ghost pipeline (its own gen `.go`), sidestepping the module-script trap
+      entirely. This was the original argument for "plain .ts over .svelte.ts"; the decision took it
+       further to "into the engine, not a sibling at all."
+- **HMR re-mixes methods, not captured refs** (`hmr-remixes-ghost-methods`): a subtlety the migration
+   INTO Voro.g must respect that the old .ts-sibling plan dodged. Voro.g functions ARE ghost methods —
+    they re-mix on hot update — so a caller that captured a geometry-fn ref at construction goes stale.
+     Cytui calling `H.<geometry_fn>(...)` per beat is fine (re-dispatched through the House); a stashed
+      ref is not. Not a blocker, a discipline.
+- **No fixture / no snap risk (render side).** Cytui is a VIEW — nothing here is snapped, so no
+   `toc.snap` moves from a render change. The blast of a paint-side mistake is VISUAL only, provable
+    with `runner_shot.mjs --svg` (the glass as standalone SVG) and `--why` (the telemetry film strip).
+     (The GRASP side of the same wave — the model — DOES snap `%Se:*` and is Book-gateable; that is the
+      point of doing the model first.)
 
 ---
 
 ## 5. Is it worth it — the honest paragraph
 
-The file is 3684 lines and half of that is one region, which is a real "this is a lot" — but it is
- not BROKEN. It compiles, it renders, the voronoi work is recent and actively evolving (the Voro
-  modes gallery, the radial hierarchy, the §6 sub-graph slice — see the recent commits and
-   `Voro_todo.md`), so churn here is expected and the human is still shaping it. Splitting a file
-    that is mid-evolution can hurt: it scatters the thing you are actively editing across two files
-     and adds import friction to every change. The BIG cleave (a VoroGlass child component) is not
-      worth it — it is a rewrite that fights Svelte 5's reactivity model (§3) and relocates coupling
-       rather than removing it. The SMALL cleave (Layer A geometry → a plain `VoroGlass.ts`) is worth
-        it as a modest legibility win: it is ~400 lines of stateless math that is conceptually a
-         separate library, it decouples cleanly (verified zero coupling), it becomes unit-testable in
-          isolation, and it carves the region's mental model into "math the glass uses" vs
-           "orchestration that drives the glass" — which is the actual readability payoff. But it is a
-            tidy, not a rescue. If the human's "maybe it's fine" means "I'm still cooking the voronoi
-             and don't want to trip over a split mid-flight", then the right answer is: do nothing now,
-              and take the Layer-A cut later once the glass design settles. The cut is safe to defer
-               precisely because it is pure — it will be exactly as easy in a month.
+The file is ~3925 lines and half of that is one region, which is a real "this is a lot" — but it is
+ not BROKEN. It compiles, it renders, the voronoi work is recent and actively evolving (the Voro modes
+  gallery, the radial hierarchy, the sub-graph slice — see the recent commits and `Voro_todo.md`), so
+   churn here is expected. The point of the three-layer decision is that the shrink is NOT a
+    cut-for-tidiness — it falls OUT of the model-first arc: once the grasp computes membership / order /
+     loudness / drift (`Voro_render_todo.md §0`), Cytui stops hand-rolling the diff and census that bulk
+      Layer B, and once the geometry migrates into `Voro.g`, Layer A leaves too. What remains in Cytui is
+       the irreducibly cytoscape-coupled paint (Layer B remnant + Layer C reactive surface), which is
+        where it belongs. So the honest read is: don't cleave Cytui as a standalone task; let it shrink
+         as the model and geometry waves land. The one thing NOT to do is the big-child-component rewrite
+          (§3) — it fights Svelte 5 and relocates coupling rather than removing it. And there is no rush:
+           the geometry is pure, so it migrates exactly as easily in a month, after the model side and
+            VoroTest Book settle.
 
 ---
 
 ## Cross-references
 
-- **File:** `src/lib/O/Cytui.svelte` (3684 lines); regions at 124/283/739/2695/2941; template 3235+.
+- **The three-layer decision + the wave order:** `Voro_render_todo.md §0` ("The three-layer engine" +
+   the ①–⑤ arc). This doc is the ③/④ migration map for that arc.
+- **File:** `src/lib/O/Cytui.svelte` (~3925 lines); region starts 124/283/739/2892/3138; template ~3450+.
 - **The stateful voronoi work (why it's churning):** `Voro_todo.md`, `Voro_vtuffing.md`,
    `voro-subgraph-slice`, `voro-imposed-from-above`, `voronoi-cells-render` memories.
-- **Seemables overlap:** `Seemables_todo.md §2` (Cytui `morph_voronoi`/`apply` as a hand-rolled diff)
-   — note its ground-truth correction: `apply` is a marker executor, 6 of 7 maps must stay, and
-    `align_ring` is a DIFFERENT axis from a node move. A cleave and a Seem-ification are orthogonal;
-     the Layer-A cut does not touch `morph_voronoi`'s diff.
-- **Constraints:** `module-script-lang-ts` (prefer plain `.ts`), `hmr-remixes-ghost-methods` (pure
-   functions re-import fine), `svelte-comment-tag-gotcha` (if any moved comment holds a literal tag).
+- **Seemables overlap:** `Seemables_todo.md` Appendix §2 (Cytui `morph_voronoi`/`apply` as a
+   hand-rolled diff) — note its ground-truth correction: `apply` is a marker executor, 6 of 7 maps must
+    stay, and `align_ring` is a DIFFERENT axis from a node move. The migration and a Seem-ification are
+     orthogonal; the geometry move does not touch `morph_voronoi`'s diff.
+- **Constraints:** `.g-authoring-gotchas` (LangTiles parse-storms on closure-heavy raw JS — shapes the
+   geometry migration), `hmr-remixes-ghost-methods` (Voro.g fns re-mix; don't stash refs),
+    `module-script-lang-ts`, `svelte-comment-tag-gotcha`.
 - **Verify visually:** `runner_shot.mjs --svg` / `--why` against a live Voro runner (`?B=VoroMitosis`
    or `VoroScape`); the glass is a view, so pixels are the gate (`runner-shot-pixel-loop`).

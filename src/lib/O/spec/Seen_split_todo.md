@@ -16,12 +16,14 @@ This file is destination + the bombs + the next move. Correct anything that has 
   prove every step on a LIVE `:9091` runner via `runner_ask.mjs` — a green in `Story_cli` is a
    bubble (`verify-via-live-runner`, CLAUDE.md).
 
-**MOVE 1 LANDED (2026-07-12, proven live on runner `3c5238`).** `%seen` exists and latches; the
- mechanism is proven. Next is MOVE 2 (the roster verdict check — the CORE change that actually
-  closes the entropy-mask hole). Do NOT batch move 2 onto move 1's diff — it touches
-   `Cred_run_outcome` (all Books' verdicts); prove it in isolation with a sabotage test (drop a
-    `%seen` and confirm the ROSTER complains, not just the dige gate — and that it fires even inside
-     an entropy zone, the whole point of §4). See `fight-back-on-core-changes`.
+**MOVES 1 + 2 LANDED (2026-07-12, proven live on runners `3c5238`/`49dee9`). The MECHANISM is
+ complete.** `%seen` latches AND a missing declared assertion now reds the run — un-maskable by
+  entropy. Move 1 committed as `Seen_split 1` (`b94f79f4`); move 2 is the uncommitted
+   `Auto.svelte`+`runner_ask.mjs` diff. **What remains is MOVE 3: the fleet migration** (convert the
+    load-bearing `%see:'sentence'` assertions across the Book fleet to `%seen` + roster lines, retire
+     `%witnessed`). Move 3 is voluminous + inherently SERIAL (each Book = a live re-record + an
+      assertion-set diff); do it Book-by-Book, `SwarmSteal` is the reference conversion. NO BATCHING
+       still applies — one Book per pass, verified live.
 
 Three concrete moves, sized honestly:
 
@@ -39,20 +41,31 @@ Three concrete moves, sized honestly:
               refreshed. Nothing wipes `%seen` — `w_forgets_problems` clears only `{see,waits,error}`.
     NOTE the roster is DECLARED but NOT YET CHECKED (that is move 2); it rides inert today.
 
-2. **Wire the verdict complaint (← THE NEXT MOVE).** Make `Cred_run_outcome` (`Auto.svelte:680`) — or a sibling check
-    it calls — read `The/Assertions` and, for each declared assertion, confirm the matching `%seen`
-     latched in the run. A missing one is a NAMED red ("«identity is not address» expected by n≥5 —
-      ABSENT"), surfaced in Storui and dragging `ok` false. This is the "labels complain when they
-       go missing" the owner wants, and it is the part that CANNOT be masked by entropy tolerance
-        (see §4 — the roster check is a presence check on a labeled fact, orthogonal to the
-         dige-fuzz forgiveness that today swallows a vanished proof).
+2. ~~**Wire the verdict complaint.**~~ **DONE (proven live, sabotage-tested).** `Cred_run_outcome`
+    (`Auto.svelte`) now calls a new sibling `Cred_assertion_gaps(stW)`: it reads `The/Assertions` and,
+     for each declared assertion, confirms a matching `%seen` line is present in the FINAL retained
+      step's `got_snap`. Because `%seen` LATCHES, the last snap holds the complete latched set no
+       matter which beat each latched — so the check is robust to Book length AND to the 5-step
+        `got_snap` trim (which never touches the final step). It is a presence test on the snap TEXT,
+         NEVER through the dige comparison, so `entropy_forgive` cannot mask a vanished proof (§4). A
+          gap drags `ok` false EVEN AT 100% steps and returns `{slug,sentence,by_n}` in the outcome;
+           `runner_ask` prints `✗ assertion «slug» expected by n≥K — ABSENT: …`. **Sabotage-proven:**
+            a phantom roster entry (un-latchable sentence) reds the run while every step is green
+             (`ok_pct:1`) — exactly the entropy-mask hole, now closed. A Book with NO roster returns
+              `[]` and is wholly unaffected (additive, opt-in). Storui rendering of the named complaint
+               is a display nicety not yet wired (the load-bearing gate — `ok` false — is done).
 
-3. **Migrate the fleet + retire `%witnessed`.** Convert the load-bearing `%see:'sentence'`
-    assertions across the ~25 Books (§5 inventory) to `%seen` + a roster line, re-record each LIVE,
-     and diff the assertion SET against the prior fixture before Accept (`accept-drops-proof-in-entropy-zone`).
-      The legacy `%witnessed:step_N` latches (`Lake_witness`/`Lake_proof_witness`, `Peregrination.g`)
-       become roster entries too — they were always latched facts, just opaque ones; the roster
-        gives them a sentence.
+3. **Migrate the fleet + retire `%witnessed` (← THE NEXT MOVE, the bulk).** Convert the load-bearing
+    `%see:'sentence'` assertions across the ~25 Books (§5 inventory) to `%seen` + a roster line,
+     re-record each LIVE, and diff the assertion SET against the prior fixture before Accept
+      (`accept-drops-proof-in-entropy-zone`). The legacy `%witnessed:step_N` latches
+       (`Lake_witness`/`Lake_proof_witness`, `Peregrination.g`) become roster entries too — they were
+        always latched facts, just opaque ones; the roster gives them a sentence. Per-Book recipe
+         (`SwarmSteal` is the worked example): (a) add `i %seen:'sentence'` beside each happened-fact
+          `%see` — judge by TENSE, a live census stays `%see`/`%log`; (b) add the `Assertion:` line(s)
+           to that Book's `toc.snap`; (c) run LIVE, pull each step's got_snap, install the fixtures
+            MANUALLY (never Accept — `see-assertion-layer`), update the step diges; (d) re-run GREEN +
+             confirm gaps empty. Sabotage each with a phantom to prove the roster bites.
 
 **The arc / destination:** one emission kind (`%see`) is doing two jobs with opposite lifetimes,
  and the wrong one silently wins under traffic changes and entropy fuzz. Split them so each has the

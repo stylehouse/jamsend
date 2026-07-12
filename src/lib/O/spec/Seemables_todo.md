@@ -1,141 +1,89 @@
-# Seemables_todo.md — awareness-with-identity as a shared substrate
+# Seemables_todo.md — %Seem, and the campaign that got parked
 
-The one living doc for a cross-cutting refactor: finding the places in the machine that
- hand-roll what `%Seem` already gives, and cashing them in one isolation-proven slice at a
-  time. Not a side quest — it is the same north star the human keeps naming
-   (`Selection.process()`), pointed at the whole codebase instead of one organ.
-
-This file is the destination + the bombs + the next move. Keep it current.
+`%Seem` is the machine's awareness primitive: a second tree that mirrors a first one and reacts to it,
+ carrying identity across beats so survivors / arrivals / departures fall out for free (the
+  `Selection.process()` the editor already thinks with). This doc used to be a campaign to hunt down
+   every hand-rolled diff in the codebase and replace it with a Seem. That campaign is **parked**. The
+    living plan is now at the top; the survey is kept below as reference.
 
 ---
 
 ## 0. What to get on with next
 
-The primitive is **built, load-bearing, and proven twice** — this is a harvest, not a build.
- `%Seem` (`i_Seem`/`o_Seem`, `src/lib/O/LangHold.svelte:922-1018`) stands a `Selection`
-  (`src/lib/O/Selection.svelte.ts` — note the file the ghosts import as `$lib/mostly/Selection.svelte`)
-   over a source `n**` and mints a parallel **D-sphere**: survivors keep history (`bD`), arrivals
-    come back as `neus`, departures as `goners` — the last-beat-vs-this-beat diff, for free, WITH
-     identity. Two organs already ride it: **Cyto** (`Cyto.svelte:346` scan, `:937` id-assign, `:1154`
-      wave) and the **editor's Understanding** (`LangHold` `LE_arm` mints an `origin` + a `working`
-       Seem per `%LE`). The **Voro crush** was the first deliberate cash-in — `Voro_grasp`
-        (`Ghost/V/Voro.g:281`), a read-only Seem that reproduces the folds AND reads each cell's
-         surroundings (`Voro_render_todo.md` §0, `Voro_vtuffing.md` §🎋).
+**The harvest is PARKED — don't go replacing Se-like code.** The human's call (2026-07-12): the future
+ of `%Seem` is a **first-class interface for writing NEW algorithms**, not a broom for sweeping up old
+  instances of hand-rolled diffs. "Distill a new interface for coding algorithms rather than run around
+   replacing all these instances of Se-like stuff." So: no more converting §1–§8.
 
-Get on with these — each is a **Slice 0**: a read-only mirror stood ALONGSIDE the live code,
- changing NO verdict, proven by a Book `%see` that the sphere reproduces what the hand-rolled pass
-  produces. Ranked value ÷ risk, lowest-risk first:
+**What's live now** (proofs the organ composes, NOT certified): three read-only mirrors stand beside
+ live code, each re-derived from an INDEPENDENT source so it can genuinely disagree with its twin —
+  `Voro_census_mirror` (`Ghost/V/Voro.g:601`), `Stemdex_seem_mirror` (`LiesFunk.svelte:1527`),
+   `Lang_graft_seem_mirror` (`LangGraft.svelte:422`). They stay in the tree. The human reports they
+    "seem to work" live; none has a Book `%see` gating it yet. Leave them as standing proofs; don't
+     flip any consumer to read them without a live gate.
 
-- **① Voro_report → a Seem (§1). ⟨Slice 0 mirror BUILT 2026-07-12 — `Voro_census_mirror`; live proof +
-   accept OWED on a Voro runner. Next: prove the counts track, then flip the sweep.⟩** The exact Voro-
-    crush smell, still hand-rolled ONE FUNCTION OVER from where `Voro_grasp` already proved the fix. `Voro_report` (`Ghost/V/Voro.g:112`) stamps
-    `c.seen_beat=0` on every child, re-stamps `=1` on each survivor, then sweeps the un-touched as
-     goners (`:189`) — a hand-rolled survivors/goners pass the grasp's `o_Seem` already returns. The
-      grasp's own `%Se:scape` row is even special-cased OUT of the sweep (`:186`), a sign the two
-       mechanisms are colliding. Lowest-risk win: the grasp Seem exists; point `Voro_report` at
-        `news.topD`/`news.goners` instead of `c.seen_beat`. Not the belief loop — peripheral blast.
-- **② Story `snap_H`: an ADDITIVE step-vs-step explainer (§4). ⟨DESIGNED + CORRECTED 2026-07-12 — win is
-   SMALLER than "finish the seam" implied; DESIGN not built. See §4 ground-truth.⟩** `snap_H`
-    (`Story.svelte:1106`) DOES run a `Selection` (`Run.c.snap_Se`, `:1118`) and read `bD`, then flattens
-     to a string (`:1212`) and discards the identity — BUT: `dm_correlate` is dormant (no caller); the
-      gate is a dige-hash of that string (`:2213`) and is LIVE-vs-FIXTURE while `snap_Se` is STEP-vs-STEP
-       (orthogonal — snap_Se can't feed the gate); and the flatten is load-bearing (keep it). So this is
-        NOT a gate conversion — it's a cheap additive step-vs-step mirror (`resolved_fn` → `Run.c.snap_seem`)
-         whose only clean consumer is the DISPLAY diff panel. Lower priority than the survey ranked it.
-- **③ Stemdex scan → a Seem (§6). ⟨Slice 0 mirror BUILT 2026-07-12 — `Stemdex_seem_mirror`
-   (`LiesFunk.svelte:1494`), guarded call at scan tail `:1479`, purely additive (+53/-0), `npm run
-    check` clean. Live proof owed.⟩** Clean, self-contained, no verdict at stake. The scan
-     (`LiesFunk.svelte:1404`) hand-rolls survivor (dige-gate)/neu (re-index)/goner (roster filter,
-      `:1468`) over the doc set. **REFINEMENT the survey missed:** the roster is a `Set<string>`/`Map`,
-       NOT a walkable `C` — so Slice 0 (and any eventual flip) must first project the paths into an
-        off-snap roster-mirror `C**` with one child per path (identity-carrying, keys sanitized so the
-         peel doesn't split on `/`.`), then `o_Seem` over THAT. That projection is the real work; the
-          diff is then free. `w.c.stemdex_seem = {goners,neus,rows}` reads beside the live `gone` filter.
+**The real next move** is the Voro engine, where `%Seem`-as-interface is actually being built: the
+ grasp becomes the thing that computes the render MODEL (membership / semantic order / loudness /
+  drift), snap-testable in a Book without pixels. That work lives in `Voro_render_todo.md §0` (the
+   three-layer engine) and the incoming VoroTest Book (`Ghost/Story/Voronation.g`, another agent). If
+    you came here looking for "what to build with Seems," go there — this doc is now mostly the WHY and
+     the reference survey.
 
-**STATUS 2026-07-12 evening — READ THIS FIRST: all three mirror flaws are FIXED in code; LIVE PROOF
- OWED on each.** The morning's adversarial review found the three prototype mirrors pointing at the
-  wrong SOURCE (each read its target's own output — tautological); each was rebuilt to its fix spec
-   the same day:
-    - **§1 Voro census — REBUILT honest.** `Voro_census_stash` (Voro.g) copies THIS beat's census
-       subjects off the flora-walk `census` object into an off-snap intent tree at `w.c.census_home`
-        BEFORE the `seen_beat` sweep; `Voro_census_mirror` now Seems over THAT (never the swept `rw`),
-         so mirror and hand sweep share only their SUBJECT, not their machinery — a mis-reconciliation
-          now makes them DIVERGE (the provable claim). `%Se` rows never enter `census_home`, so no
-           self-count. (No negative-match knob exists on `Selection`; exclusion is done at population
-            time — which is why the stash tree exists at all.)
-    - **§6 Stemdex — FIXED.** `Stemdex_seem_mirror(w, dex)` syncs its mirror from `dex.docs.keys()`
-       (the INDEX — the set the prune actually sweeps at `LiesFunk:1468`), gated on the same
-        `paths.size > 50` guard the prune uses. Still no driving Book — a complete **LakeStem Book
-         plan** (driver arm nudging `Lies_stemdex_scan`, >50-doc corpus, doc-removal divergence
-          scenario, Credence registration) is written; fixtures must be recorded live.
-    - **§3 Lang graft — FIXED.** `%pm` rows now key by a per-Point uid (`Lang_point_uid` stamps
-       `pt.c.graft_uid` off a dock counter), so shared-target Pmirrors keep distinct slots and
-        `hand ⊆ seem` is structurally possible again; `Lang_graft_seem_wipe` runs the shared one-walk
-         on the `Lang_wipe_pmirrors` paths so the Seem can't go stale on early returns.
-   NET: pattern proven, fixes in; the REMAINING work is purely runner-in-the-loop — prove each
-    mirror's counts track its hand-rolled twin (Voro: a Book `%see` at the n=8 apoptosis; Stemdex:
-     build LakeStem; Lang: a shared-target-Points recompile), THEN flip one consumer each. The
-      adversarial pass EARNED its keep: it caught the theater before a runner cycle was spent.
- - The two "big" targets were DEEP-DESIGNED and came back OVERSTATED by the survey: §4 (`dm_correlate`
-    dormant; step-vs-step ≠ the live-vs-fixture gate; flatten load-bearing → additive DISPLAY only) and §2
-     (`apply` is a marker executor; 6 of 7 maps must stay; Cyto's `Ze` already resolves it → telemetry
-      only). LESSON: the survey nailed the SMELLS but oversold the WINS — deep-design AND adversarially
-       review before trusting any harvest.
-
-**BOMB (read before touching anything):** the belief loop and the req machine are **NOT candidates** —
- `Housing.organise()` (`Housing.svelte.ts:1038`) already IS a Seem consumer (its `resolved_fn` receives
-  `goners`/`neus`, verified), and the req lifecycle (`finish`/`all_finished`) compares to no stored
-   previous value. Do not "convert" them; they are the exemplars. And raw `.c.*` COUNT is a false
-    proxy for the smell — async-lifecycle scaffolding (mount handles, off-snap binary in
-     `Housing`/`LiesStore`) WANTS to persist and is not re-derived. The smell is *re-derived-each-beat*
-      `.c.*`, not `.c.*` per se.
-
-**Discipline (the core-change rule, `fight-back-on-core-changes`):** a Seem lives **off-snap** — its
- functions ride `Seem.sc.opt`, its live `Selection` rides `Seem.sc.Se`, both snap-hostile — so it
-  parks on a free `C**` (Voro's `w.c.grasp_home`) and projects only a clean distilled reading where it
-   must persist (a `%Se:scape` row, a `%News` count). Never rip out a green verdict on a maybe; grow
-    the mirror beside it, prove it green, THEN let one consumer read it.
+**Two bombs that outlive the campaign** (true whatever you build on `%Seem`):
+- **A mirror must diff an INDEPENDENT source, or it proves nothing.** The first three prototypes each
+   read their target's OWN output — tautological, breaking in lockstep, unable to disagree. The fix was
+    to stash the subject BEFORE the hand-rolled pass touches it and Seem over that. If a mirror's
+     `pairs_fn` ends up consulting the very flag the twin sets, it is theatre — reject it. (This is what
+      the 2026-07-12 adversarial pass caught before a runner cycle was spent.)
+- **`Housing.organise()` and the req machine are NOT candidates — they are the EXEMPLARS.**
+   `Housing.organise()` (`Housing.svelte.ts:1038`) already IS a Seem consumer; the req lifecycle
+    (`finish`/`all_finished`) compares to no stored previous, so there is no diff to harvest. And raw
+     `.c.*` COUNT is a false proxy for the smell — async-lifecycle scaffolding (IO memory, mount
+      handles) WANTS to persist. The smell is *re-derived-each-beat* `.c.*`, not `.c.*` per se.
 
 ---
 
-## The arc — the destination
+## The arc — Seem as an interface, not a broom
 
-Three of the human's standing complaints are one gap:
+Three of the human's standing complaints are one gap: *"too much scattered `C.c.*`"* (transient flags
+ smeared across particles, wiped and re-stamped every beat), *"you're not making large enough concepts"*
+  (a fold, a diff, a census exists only as scattered bookkeeping, never a THING you can hold and name),
+   and the same **last-beat-vs-this-beat** diff re-implemented in organ after organ. `%Seem` closes all
+    three at once: the scattered flags come home to the D node, the concept becomes a sphere you hold,
+     and the diff falls out of `resolve()`. That much has always been true and is not in doubt.
 
-1. *"too much scattered `C.c.*`"* — transient flags smeared across the particles a reading touches,
-    wiped and re-stamped every beat, because the reading has no home of its own.
-2. *"you're not making large enough concepts"* — a fold, a diff, a census exists only as scattered
-    bookkeeping, never as a THING you can hold, name, and hand around.
-3. hand-rolled **last-beat-vs-this-beat** diffs re-implemented in organ after organ — each one
-    re-deriving appeared/vanished/survived that `resolve()` already computes.
+**Where the campaign went wrong, and where it landed.** The instinct was to treat that as a to-do list:
+ find every place a diff is hand-rolled, and cash it in for a Seem, ranked by value ÷ risk. A survey
+  found eight (below). But deep-designing and adversarially reviewing the top candidates taught the
+   lesson that reframed the whole thing: **the survey nailed the SMELLS but oversold the WINS.** The two
+    "big" targets shrank on contact — Story's `snap_H` seam turned out to be an additive DISPLAY-only
+     win, not a gate conversion (the string gate is load-bearing forever); Cytui's `morph_voronoi`
+      turned out to be reading a diff Cyto already resolved, so a Seem there would double-resolve. And
+       the three read-only prototypes were tautological until rebuilt against independent sources. Every
+        conversion cost a runner cycle to prove, and half of them proved "leave it alone."
 
-`%Seem` closes all three at once. A Seem is a second tree that **mirrors the first and reacts to it**,
- carrying identity across beats. The scattered flags come home to the D node; the concept (the fold,
-  the diff, the census) becomes the sphere you hold; and the diff falls out of `resolve()` instead of
-   being hand-rolled. The neighbourhood-read — judging a thing against its surroundings, not alone —
-    stops being a bolted-on sibling walk: it is simply where `traced_fn(D, bD, C, T)` and
-     `resolved_fn(T, N, goners, neus)` already stand, AFTER the sibling layer `N` resolves.
+So the human drew the line: **stop replacing instances; make the primitive a better place to WRITE
+ algorithms.** The three mirrors that survived stay as proof the organ composes across three very
+  different substrates (a Voro census, a search index, a compiler's Point set) — but the energy goes
+   into `%Seem` as the interface the Voro engine's model is authored in, where the payoff is a NEW
+    capability (a snap-testable semantic model of a data field) rather than a like-for-like swap of code
+     that already works. The neighbourhood-read — judging a thing against its surroundings, not alone —
+      is the heart of it: `resolved_fn(T, N, goners, neus)` hands you the whole sibling set AFTER the
+       diff resolves, which is exactly what an algorithm that weighs a datum against its field needs.
 
-**Destination:** fewer scattered `c.*`; larger self-explaining concepts; awareness-with-identity as a
- shared substrate the whole machine stands on — the C data model explaining ITSELF through the awareness
-  spheres the system grows beside its particles, the exact primitive the editor already thinks with.
+**Destination:** `%Seem` as awareness-with-identity, the shared substrate the whole machine stands on —
+ not by retrofitting it everywhere, but by being the natural way new organs (starting with the Voro
+  grasp) are written. The harvest survey below is the reference for WHERE the pattern recurs; it is no
+   longer the plan.
 
-The order is a harvest by value ÷ risk: bank the read-only mirrors that change no verdict first (Voro
- report, Stemdex, Cytui morph), then the ones one hop from an existing Seem (Story snap seam, Point
-  re-anchoring beside the working clone's two Seems), and leave the load-bearing IO pump and the
-   compile map for last (or never — some are additive, not replacements).
-
-The three hooks a candidate is measured against:
-- **(a) SCATTERED STATE** — many transient/derived `c.*` flags smeared on particles, hand-wiped and
-   re-stamped each beat.
-- **(b) HAND-ROLLED DIFF** — code comparing "last beat" to "this beat" to find what appeared / vanished
-   / changed, re-implementing `resolve()`.
-- **(c) ISOLATION JUDGEMENT** — a thing judged ALONE when the right verdict needs its NEIGHBOURS or its
-   history.
+**Safety net for the churn ahead:** the Voro model work will re-record fixtures repeatedly.
+ `Seen_split` (the human's parallel build of `%seen` latch + a `The/Assertions` roster,
+  `Seen_split_todo.md`) is what makes that churn survivable — a declared assertion that silently
+   vanishes now reds the run. Cross-reference it; don't plan it here.
 
 ---
 
-## The primitive, precisely (so a candidate can be measured)
+## The primitive, precisely
 
 `Selection.process({ n, trace_fn, traced_fn, resolved_fn, … })` (`Selection.svelte.ts:244`) walks a
  source tree `n**` and, through `Stuff.replace()` → `resolve()`, PAIRS this walk against last walk. Its
@@ -148,7 +96,26 @@ The three hooks a candidate is measured against:
   back to its source C (`C.c.D = D; D.c.C = C`, `_Seem_CDUsive` `:963`). `o_Seem(Seem)` (`:980`) runs
    one walk and returns `{ goners, neus, topD }`, stamping `Seem/%News` with the counts. **Snap-hostile
     by construction** — a live `Selection` and functions never encode — so a Seem lives off-snap on a
-     free `C**` and projects only a distilled clean reading.
+     free `C**` and projects only a distilled clean reading. The proven exemplars to model a new Seem
+      on: `Voro_grasp` (`Ghost/V/Voro.g:351`), the editor's two-Seem `%LE` clone, and Cyto's chained
+       scan/id/wave Selections (`Cyto.svelte:346`/`:937`/`:1154`).
+
+---
+
+## Appendix — the harvest survey (PARKED — reference, NOT the plan)
+
+Everything below is the original codebase survey: the eight places the last-beat-vs-this-beat pattern
+ recurs, ranked by value ÷ risk, with two deep-design sections. It is kept as a MAP of where `%Seem`
+  would fit if the pattern is ever wanted at one of these sites — but per §0 the harvest campaign is
+   parked, and several entries were deep-designed to the conclusion "leave it alone." Read it as
+    reference, not a to-do list. The per-section status blocks (BUILT/FIXED/OVERSTATED) are the state
+     as of the 2026-07-12 adversarial pass and are frozen here; the three built mirrors are described
+      live in §0.
+
+**The three measuring hooks** a candidate was scored against: **(a) SCATTERED STATE** (transient `c.*`
+ hand-wiped each beat), **(b) HAND-ROLLED DIFF** (code re-implementing `resolve()`'s
+  appeared/vanished/changed), **(c) ISOLATION JUDGEMENT** (a thing judged alone when the verdict needs
+   its neighbours or history).
 
 ---
 
