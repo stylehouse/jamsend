@@ -1,0 +1,14 @@
+Snap:H
+  H:MusuBerth,Run
+    A:MusuBerth
+      self,round=3	{"mung":["age"]}
+      w:MusuBerth
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          opened_empty
+          wrote_card,tune:Fourier Four — Tagged Truth
+          reached:step_3
+          reopened,cards,survived
+        seen:a verdict card round-tripped through disk — a second independent berth handle read back exactly what the first one saved

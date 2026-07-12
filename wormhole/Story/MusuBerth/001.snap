@@ -1,0 +1,8 @@
+Snap:H
+  H:MusuBerth,Run
+    A:MusuBerth
+      self,round	{"mung":["age"]}
+      w:MusuBerth
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing

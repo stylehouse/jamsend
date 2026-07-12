@@ -1,0 +1,11 @@
+Snap:H
+  H:MusuBerth,Run
+    A:MusuBerth
+      self,round=2	{"mung":["age"]}
+      w:MusuBerth
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          opened_empty
+          wrote_card,tune:Fourier Four — Tagged Truth
