@@ -3,10 +3,33 @@ story:MusuMagazine
   Plan
   Opt
     For
-  step,dige:lie
-  step=2,dige:lie
-  step=3,dige:lie
-  step=4,dige:lie
-  step=5,dige:lie
-  step=6,dige:lie
-  step=7,dige:lie
+  TimeSpool
+    TimeTotal:beliefs,avg=0.744
+      sample=0.759,at=1783888074
+      sample=0.759,at=1783888077
+      sample=0.759,at=1783888078
+      sample=0.759,at=1783888079
+      sample=0.759,at=1783888080
+      sample=0.759,at=1783888081
+      sample=0.759,at=1783888082
+      sample=0.759,at=1783888083
+      sample=0.651,at=1783888097
+      sample=0.713,at=1783888116
+    TimeTotal:step,avg=0.106
+      sample=0.108,at=1783888074
+      sample=0.108,at=1783888077
+      sample=0.108,at=1783888078
+      sample=0.108,at=1783888079
+      sample=0.108,at=1783888080
+      sample=0.108,at=1783888081
+      sample=0.108,at=1783888082
+      sample=0.108,at=1783888083
+      sample=0.093,at=1783888097
+      sample=0.102,at=1783888116
+  step,dige:81cbe3be7ed91a26
+  step=2,dige:60e4aed2a37946d2
+  step=3,dige:e6c6e5d0a24f2f80
+  step=4,dige:940707abacc1dbae
+  step=5,dige:c257c15f6f84e8bd
+  step=6,dige:d79ba6c11f4bb45e
+  step=7,dige:862d024018e4bac5

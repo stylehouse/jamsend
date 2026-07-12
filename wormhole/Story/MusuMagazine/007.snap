@@ -1,0 +1,20 @@
+Snap:H
+  H:MusuMagazine,Run
+    A:MusuMagazine
+      self,round=7	{"mung":["age"]}
+      w:MusuMagazine
+        self,round=7	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          published,records=2,tunes=2
+          reached:step_3
+          probed,has_album,has_genre,has_id
+          reached:step_4
+          regrew,before=2,after=3,grew
+          reached:step_5
+          recast,after=2,orphan=0
+        seen:a magazine published from a live catalog — a fresh berth handle read back one tune for every record
+        seen:each tune carried its own metadata — album and genre and id rode in the magazine beside the handle
+        seen:the magazine grew with the catalog — a republish after a new record laid one more tune
+        seen:a republish recast the whole magazine — a record dropped from the catalog left no orphan tune behind

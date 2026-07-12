@@ -1,0 +1,11 @@
+Snap:H
+  H:MusuMagazine,Run
+    A:MusuMagazine
+      self,round=2	{"mung":["age"]}
+      w:MusuMagazine
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          published,records=2,tunes=2
+        seen:a magazine published from a live catalog — a fresh berth handle read back one tune for every record
