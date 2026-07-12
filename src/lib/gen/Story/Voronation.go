@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Voronation(): string { return 'de52af4650daa678~g1' },
+    Ghostmeta_Ghost_Story_Voronation(): string { return '9d9fd42afe942f57~g1' },
 
 
 //#region pier — VoroRadioPier: the tuner drifts over MUSIC dribbled in from a (fake) Pier
@@ -706,6 +706,7 @@ async VoroScape_order(w) { const H = this;
 //   8 genus    5 genera × 4 loose taxa (=20)   → UNPINNED governor finds clades (Voro_crush_scan ~:52)
 //   9 popped   3 %Ingot then pop one (beat 3)  → surf intent + spill re-gang  (crush_walk popped ~:1129)
 //  10 families 4 genus gangs sharing a %clade   → region groups sibling folds  (Voro_model_family ~:805)
+//  11 relics   2 bare %Relic × 6 facts + %Coin  → +N overflow marks crowded-out (Voro_model_loud_from)
 VoroTest(A,w) {
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
         await this.VoroTest_drive(w,req)
@@ -916,6 +917,20 @@ VoroTest_clade_gang(w, genus, clade, epithets) {
     }
 
 },
+// shape 11 — the loner showing ALL its ugly bits (#29): two %Relic leaves that stand BARE (a pair is
+//  below the ordinary gang min 3, so no gang forms) merge into one bare family of two.  Each carries SIX
+//   distinct properties, so the family's loud pool holds far more DISTINCT claims than the K=4 loud cap
+//    keeps — the model marks the crowded-out tail with a +N `over` count instead of dropping it silently.
+//   A tray of three %Coin gangs beside them: a purely-bare world (gangs:0, folded:0) never wakes the
+//    grasp|model (the "don't stand an empty Seem on a non-Voro graph" guard, Voro_crush_scan ~:86), so
+//     the coins are the fold that wakes the model — the rich bare Relics are what it must not silence.
+//   This is the "no hiding stuff" honesty gate: nothing vanishes from a fold without being tallied.
+VoroTest_relics(w) {
+    w.i({ Relic: 'astrolabe', metal: 'brass', era: 'renaissance', origin: 'Nuremberg', use: 'navigation', state: 'tarnished', rarity: 'museum' })
+    w.i({ Relic: 'sextant', metal: 'silver', era: 'georgian', origin: 'London', use: 'surveying', state: 'pristine', rarity: 'auction' })
+    for (const d of ['penny', 'florin', 'crown']) w.i({ Coin: d, metal: 'bronze' })
+
+},
 // shape 9 — the popped intent: three %Ingot leaves that gang at the bench (L2 min 3).  The mutate beat
 //  pops ONE by hand (c.popped — the surf intent the crush must respect); that leaf then stands OUT of
 //   the fold (the popped-tiny branch skips it from the gang pool) and the remaining TWO re-gang at the
@@ -939,6 +954,7 @@ VoroTest_bench(w) {
     this.VoroTest_genus(this.VoroTest_example(w, 'genus'))
     this.VoroTest_popped(this.VoroTest_example(w, 'popped'))
     this.VoroTest_families(this.VoroTest_example(w, 'families'))
+    this.VoroTest_relics(this.VoroTest_example(w, 'relics'))
 
 },
 // beat 3 — the mutations, so a reader sees the readings MOVE: three arrivals swell the flock example
@@ -1068,6 +1084,16 @@ VoroTest_witness_bench(w) {
     let rOle = (ffams.find(x => x.sc.Family === 'Olearia') || { sc: {} }).sc.region
     let rBra = (ffams.find(x => x.sc.Family === 'Brachyglottis') || { sc: {} }).sc.region
     if (rMet && rMet === rKun && rOle && rOle === rBra && rMet !== rOle && !(w.oa({see: 'sibling folds group by a shared property — Metrosideros and Kunzea land in one region while Olearia and Brachyglottis land in another so a secondary clade ropes the gangs the mainkey keeps apart'}))) w.i({see: 'sibling folds group by a shared property — Metrosideros and Kunzea land in one region while Olearia and Brachyglottis land in another so a secondary clade ropes the gangs the mainkey keeps apart'})
+    // #29 nothing dropped silently: the relics example is two bare %Relic leaves (a pair below the gang
+    //  min 3) with six distinct properties each, so the family's loud pool holds far more DISTINCT claims
+    //   than the K=4 cap keeps.  The snapped row must carry the four loudest AND an `over` count of the
+    //    crowded-out tail — read off the SNAP (over is projected, so this proves it reached the fixture).
+    //     Reddens if the cap silently dropped the tail (over absent) or the pair ganged (no bare family).
+    let rseen = this.VoroTest_seen(w, 'relics')
+    let relF = rseen ? rseen.o({ Family: 'Relic' })[0] : null
+    let kept = relF ? relF.o({ Loud: 1 }).length : 0
+    let over = relF ? ((+relF.sc.over) || 0) : 0
+    if (relF && kept === 4 && over > 0 && !(w.oa({see: 'a crowded fold drops nothing silently — the bare Relic pair carries more distinct facts than the four loudest the cap keeps so the model marks the crowded-out tail with an over count instead of letting it vanish'}))) w.i({see: 'a crowded fold drops nothing silently — the bare Relic pair carries more distinct facts than the four loudest the cap keeps so the model marks the crowded-out tail with an over count instead of letting it vanish'})
 
 },
 // beat 3 — the mutations read back PER EXAMPLE: the flock example grew, the mix example shrank.  The

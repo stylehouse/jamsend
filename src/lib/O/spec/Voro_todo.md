@@ -56,7 +56,7 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
         the same bench/mutate/quiet beats, all on the honest language.  **Headless CredRunner smoke only
          (all 15 `%see` fire; no live drift/ttlilt in the quiet beat)** — the LIVE runner gate + the
           human's re-record are OWED.  See §The VoroTest roster below for the rest of the fill-out plan
-           (#19 region NOW LANDED + live-gated; #29 loner still lack-marked — needs a model cut).
+           (#19 region live-gated; #29 loner LANDED with a model cut — ALL [model] shapes now covered).
  - **③ Cytui consumes the model.**  Cytui shrinks to wiring + paint: it READS the grasp's model
     (membership, order, loudness, drift) instead of recomputing it.  Today `region_of` /
      `river_order` / `family_trait` (Cytui) still hand-roll it render-side — this wave makes them
@@ -150,9 +150,12 @@ MISSION: fill VoroTest (`Ghost/Story/Voronation.g`) with the owed [model] roster
  #23, #28 all LANDED + CredRunner-smoked (5 new `%see`, all fire).  #7 model-part marked COVERED (bond
   edge is [eyes]).  ✅ #19 (region / botanical families) LANDED + **LIVE-GATED** on the :9091 runner —
    the `sibling folds group by a shared property` see fired live (a secondary `clade` fact ropes four
-    mainkey-distinct gangs into two regions, read off-snap via `VoroTest_model_of`).  ⏸ #29 (loner)
-     STILL LACK-MARKED — needs a small model cut (persist member-facts / +N overflow), NOT guessed.
-      Next cold session: the #29 model cut, or re-record the batch-1/batch-2 fixtures live (owed).
+    mainkey-distinct gangs into two regions, read off-snap via `VoroTest_model_of`).  ✅ #29 (loner /
+     nothing-dropped) LANDED with the smallest model cut — `Voro_model_loud_from` now returns `{list,
+      over}` and the %Family row carries a `+N` overflow (two bare `%Relic` overflow K=4 → `over:6`).
+       Headless-green + adversarially airtight; LIVE gate OWED (runner wedged on the core Voro.go HMR —
+        needs a human tab reload to re-run).  ALL [model] roster shapes are now covered.
+      Next cold session: reload a runner + live-gate #29 (re-run VoroTest), then re-record all fixtures.
 
 **THE ORDER** (roster numbers): #6 swarm — FIRST resolve its lack-mark (is same-mainkey-varying-
  value already mix's gang path? prove the difference with a dataset or mark it covered) → #7
@@ -160,8 +163,9 @@ MISSION: fill VoroTest (`Ghost/Story/Voronation.g`) with the owed [model] roster
    tests the GOVERNOR, so crush it UNPINNED (no `fixed` level) with ≥16 leaves so escalation is
     deterministic; every other Example stays pinned L2 → #19 botanical families ✅ (the `region`
      secondary property groups sibling folds; gate region equality across them — live-gated) → #29 loner
-      nothing-dropped (off-snap model holds EVERY sc fact of a bare loner — gate member-facts
-       count vs sc keys via `VoroTest_model_of`) → #28 census-storm identity-stable emission
+      nothing-dropped ✅ (a fat bare family overflows the K=4 loud cap → a `+N` `over` mark; the model
+       cut returns the count it used to discard — gate `kept === 4 && over > 0` off the snap) → #28
+        census-storm identity-stable emission
         (gate what is reachable live — row-slot persistence — and state intent; the full diff-size
          gate is fixture territory, the human's) → #14 verify facts-vs-spreads gates → #23 popped
           intent respected (set `c.popped` in the mutate beat, gate the spill).  SKIP unless the
@@ -333,22 +337,31 @@ Six shapes are ALREADY in the bench (flock/mix/motley/gradient/groves/edges — 
         captured at the bench (`w.c.census_id`); at mutate the gate asserts it is the VERY SAME node
          (`frow === w.c.census_id`) with `n` slid to 15 — a drop-and-rebuild storm would hand back a
           fresh node.  The full diff-SIZE gate (no ~200-line churn) stays fixture territory, the human's.
-29. **a loner showing ALL its ugly bits** (six-pass sixth, owner). *"I want all ugly bits of eg %req
-     included, no hiding stuff"* — a loner tessellates its whole `sc`; folds are annotated + a `+N`
-      fold mark counts everything crowded out.  [model] for "nothing dropped silently"; [eyes] for glass.
-     **// < NOT gated — needs a model feature (2026-07-13):** the off-snap model does NOT persist a
-      member's raw facts — it uses them for axis/loud then discards, and `Voro_model_loud_from` CAPS at
-       K=4, so a loner with >4 facts silently drops the tail.  A family of one is also not projected to
-        the snap (n<2).  So "nothing dropped" isn't gateable off the model as-is; it needs a small model
-         cut (persist a loner's facts + a `+N` overflow marker) before a `%see` can prove it.  A bare
-          loner also grows no Vtuffing (the "tessellate its whole sc" is [eyes], Cytui's properCellable).
+29. **a loner showing ALL its ugly bits** ✅ (2026-07-13, `relics` Example + a model cut). *"I want all
+     ugly bits of eg %req included, no hiding stuff"* — a fold keeps its K loudest claims and marks the
+      crowded-out tail with a `+N` `over` count.  [model] for "nothing dropped silently".
+     **The model cut (smallest possible):** `Voro_model_loud_from` already computed the DISTINCT non-axis
+      claim count (`order.length`) and threw it away — now it returns `{ list, over }` where `over` =
+       claims crowded out beyond K=4.  The %Family node stamps `over` off-snap and the snapped row mirrors
+        it (cleared with the sliding fields, so a family thinning back under the cap sheds it).  Behaviour
+         is ADDITIVE — the K Loud rows are byte-identical; `over:N` appears ONLY on a family whose distinct
+          loud pool exceeds 4 (rare: gang vtuffing pre-compresses, so it takes a fat BARE|pane family).
+     **Gated:** two bare `%Relic` (a pair below gang min 3) with six distinct props each → one bare family
+      of two whose loud pool is ten distinct claims → `over:6` beside four kept Loud.  A tray of three
+       `%Coin` gangs beside them purely to WAKE the model (a gangs:0/folded:0 world gets no grasp — the
+        `Voro_crush_scan ~:86` guard).  The gate reads the SNAP (over is projected) and fires only when
+         `kept === 4 && over > 0` — reddens if the cap silently dropped the tail (over absent) OR the cap
+          were removed (kept ≠ 4), so it asserts EXACTLY the invariant.  Headless-green + adversarially
+           airtight; LIVE gate OWED (the runner wedged on the core Voro.go HMR — needs a human tab reload).
+     **Blast radius:** every Voro model consumer (VoroScape/VoroRadio/VoroMitosis) now emits `over:N` on
+      any fat family — re-record if one surfaces (none in VoroTest's other Examples; all ≤2 Loud).
 
-**Coverage note (2026-07-13):** the bench now holds 10 shapes (✅: flock, mix, motley, gradient, groves,
- edges, **swarm**, **genus**, **popped**, **families**); with #14/#28 gated on `flock`, the [model]
-  fill-out landed #6 #14 #18 #19 #23 #28 this round (#19 live-gated on :9091).  #7 model-part is covered
-   (its bond edge is [eyes]); #29 alone stays lack-marked (needs a model cut, see above).  The roster
-    totals 29; the remaining [model] shapes want Pier/radio machinery (#15/#22/#26) or the deferred #29.
-     The [eyes]-only shapes are
+**Coverage note (2026-07-13):** the bench now holds 11 shapes (✅: flock, mix, motley, gradient, groves,
+ edges, **swarm**, **genus**, **popped**, **families**, **relics**); with #14/#28 gated on `flock`, the
+  [model] fill-out landed #6 #14 #18 #19 #23 #28 #29 this round (#19 live-gated on :9091; #29 headless +
+   the one small model cut, live gate owed on a runner reload).  #7 model-part is covered (its bond edge
+    is [eyes]).  **Every [model] roster shape is now covered.**  The remaining shapes want Pier/radio
+     machinery (#15/#22/#26) or are [eyes]-only —
      proven by `runner_shot`, never a fixture.  Add a shape by the `[testing-is-story-books]` +
       `[see-assertion-layer]` rules (a CHECK run then manual `%see` install, never a CredRunner ACCEPT).
 

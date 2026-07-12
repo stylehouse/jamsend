@@ -700,11 +700,15 @@ Voro_model(w):
         //    repeating an axis value would say the same fact twice — the one-fact-one-place rule).
         //     These are the words B2 sizes up; a consumer reads them straight instead of re-scoring.
         let loud = this.Voro_model_loud_from(fam.loud_facts, 4, axis.key)
-        for (const l of loud) {
+        for (const l of loud.list) {
             let lrow = { Loud: ('' + l.key).split(',').join(' '), weight: '' + l.weight }
             if (l.val !== '') lrow.v = ('' + l.val).split(',').join(' ')
             famC.i(lrow)
         }
+        // NOTHING DROPPED SILENTLY — when the loud pool overflowed the cap, record HOW MANY distinct
+        //  claims were crowded out (+N).  The kept K tell the loudest story; this count promises the
+        //   tail was seen and tallied, not vanished.  Off-snap here; the snapped row mirrors it below.
+        if (loud.over > 0) famC.sc.over = '' + loud.over
     }
     // DRIFT — stand a %Seem over the model's MEMBER layer so goners|neus come with cross-beat identity for
     //  FREE (the same primitive the grasp and census_mirror ride).  A member that left is a goner, one that
@@ -737,6 +741,10 @@ Voro_model(w):
         if (famC.sc.axis) row.sc.axis = famC.sc.axis
         if (famC.sc.from) row.sc.from = famC.sc.from
         if (famC.sc.to) row.sc.to = famC.sc.to
+        // the +N overflow rides beside the ends: the K Loud rows below tell the loudest claims, `over`
+        //  promises the crowded-out tail was counted (a fat fold never drops a fact silently).  Cleared
+        //   with the rest above, so a family that thins back under the cap sheds its `over` honestly.
+        if (famC.sc.over) row.sc.over = famC.sc.over
         // the LOUD claims ride as typed (key, v) children, loudest-first — RANK is the child order, the
         //  numeric weight stays off-snap (it re-scores continuously; snapping it would churn fixtures on
         //   meaningless slides).  Drop-and-relay is safe at this scale: at most K tiny rows, re-emitted
@@ -1014,6 +1022,9 @@ Voro_facts_top_weight(facts):
 //    consumer (and the snap) get a typed claim, never a pre-joined display string.  Pooled from the
 //     fold's WEIGHTED source (a gang's rep Vtuffing, a pane's own), never per-member noise.  Claims on
 //      `axis_key` don't compete — the axis organ already owns that key's whole story.
+//   Returns { list, over }: `list` is the kept K, `over` is how many DISTINCT non-axis claims were
+//    crowded out beyond the cap — the honesty channel, so a fat fold marks its tail (+N) instead of
+//     silently dropping it (the crowded-out claims have no other home; the axis key's do, via order_by).
 Voro_model_loud_from(facts, K, axis_key):
     let best = {}
     let src = {}
@@ -1033,7 +1044,7 @@ Voro_model_loud_from(facts, K, axis_key):
     let out = []
     let lim = K < order.length ? K : order.length
     for (let i = 0; i < lim; i++) out.push({ key: src[order[i]].key, val: src[order[i]].val, weight: best[order[i]] })
-    return out
+    return { list: out, over: order.length - lim }
 
 // Voro_model_drift — per-family goners|neus via a %Seem over the model's MEMBER layer.  The Seem walks
 //  voro_model's %Family/%Member subtree; resolve() flags each member that arrived (neu) or left (goner)
