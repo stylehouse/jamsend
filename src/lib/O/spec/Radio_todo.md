@@ -21,254 +21,41 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 
 A rolling brief: the newest work sits here first, then gets baked into its home section
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
+Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
-**2026-07-12 (night) — MusuHeist live-gate CLEARED + sabotage-proven; the %Tombstone gear BUILT
- (roadmap §10.2 #6), live-gate owed for morning.** The prior entry's owed live-gate is DONE: on a
-  focused runner tab (a backgrounded tab freezes mid-run — Page Lifecycle, not a Book bug, so the
-   honest recipe stays "installed PWA left visible") MusuHeist ran PACED (30 deterministic steps, one
-    edge per snap), green ×2 (`ok_pct:1, caveat:28` — the benign AudibleEntropy ≈ signature), all 10
-     %see present, then the seal assertion (#2) was SABOTAGE-PROVEN: neuter `w.c.repli_allow` to
-      allow-all (the exact tautology the `both_live` gate names) → the run went RED (`ok_pct:0.1`) and
-       the live step-4 snap carried ZERO occurrences of the see #2 sentence — it DROPS the instant the
-        consent gate is neutered — then green again on restore. The gate is load-bearing, not theatre.
-         Runner released; fixtures committed by the host ("cooking the books"). Two map corrections
-          this cleared: **§10.2 #7 (FSA `bin_write` self-heal) is BUILT** — `bin_write` catches a
-           stale-handle `NotFoundError`, force-re-walks via `mkdirp_fresh`, retries once (Housing.svelte.ts);
-            a runner is leave-up-able. And the design/test split + one-edge-per-snap pacing held under
-             the adversarial probe.
- **Then, build-only overnight (no live verify — the tab freezes unfocused): the remembered-denials
-  tombstone (§10.2 #6) is BUILT and compile-clean, live-gate OWED.** A dropped identity used to
-   silently re-offer on a later heist (dedup skips only what is HELD). Now `Heist_feel`'s drop mints a
-    durable **`%Tombstone,artist,title`** on the collection (the `%UnGrant` negative-fact PATTERN reused
-     for a track — catalog identity, never source; it outlives the card and every flatten), and
-      `Heist_beat` consults `Heist_tombstoned` at the door beside `Heist_held` — HELD = already have it,
-       TOMBSTONED = chose against it, both drop the husk, tallied apart (`job.sc.tombstoned`). MusuHeist
-        grew a **`retomb`** phase after `deny` (seal→uno→duo→reuno→deny→**retomb**→flat→done): Uno
-         re-offers Duo's whole 8-shelf ONCE MORE after dropping one Fourier Four track — expected
-          `tombstoned=1, landed=0, skipped=7` (the 1 denied identity refused, the 7 still-held skip),
-           an 11th %see pinning it. The see was ADVERSARIALLY HARDENED before recording (an audit agent
-            found the wildcard `{Tombstone:1}` count didn't verify identity, and `!landed` leaned on
-             branch-ordering vs the shared ra_wanted cursor): it now checks the %Tombstone is keyed to the
-              DENIED identity (`dn.sc.drop_artist/title`, captured in `MusuHeist_deny` before the card
-               retires) AND `uno_lib` still holds exactly 7 Records (an explicit no-reland invariant). Both
-                `.g` LocalGen-compiled (gen written, symbols confirmed); toc seeded to 42 steps (comfortable
-                 headroom over the ~35 the retomb scene needs); `.jamsend` stays gitignored.
- **A SECOND audit hardened five MORE sees while the Book is open for re-record (free — the whole thing
-  re-records anyway).** The un-audited witnesses had real holes: **#1** checked "whole original bytes" for
-   Duo's 2 tracks only — 6 of 8 unwitnessed (now both libs run the chunk-completeness loop); **#8** the
-    "never a word about the source" invariant only forbade the two run-specific prepub STRINGS — any other
-     provenance form (a nick, a source path, an appended `from:`) passed (now every log entry must EXACTLY
-      equal a held card's path, space-safe, so any extra token drops the see); **#10** "nothing attributes"
-       was unasserted (now no surviving collection card may carry a `source`/`from` key — provenance lives
-        on the mirror cards' `.c` only, never snapped); **#6** the chillwave/bangers split wasn't per-artist
-         (a genre swap kept 3+3 and passed — now each count is artist-scoped); **#5** matched a bare
-          `-mathrock/` substring (now the full `pfx`-prefixed genre). Sees #2/#9/#11 were already hardened;
-           #3/#4/#7 were judged tight (the #3 "filing===2" idea CONFLICTS with its own "nothing landed yet"
-            clause — job uno lands before a 2-filing job exists — so it was NOT applied). All five honest-case
-             traced + LocalGen-recompiled clean.
- **THE NEXT MOVE (morning, live — this is the owed gate):** reload the runner tab (a fresh handle),
-  `runner_ask.mjs run MusuHeist --watch --runner=<prefix>`, expect RED at the tail first pass (the new
-   `%Tombstone` line perturbs every post-deny snap + the retomb scene is unrecorded) → re-dispatch,
-    confirm `state` shows MusuHeist active, `accept` (records the tombstone perturbation + steps 31-3x),
-     re-run green ×2, CONFIRM all **11** %see present (pre-pin then grep the fixtures — a dropped see is
-      the silent failure), then SABOTAGE-PROOF the new gear: neuter `Heist_tombstoned` to `=> false`,
-       LocalGen-recompile → the denied track re-heists (`landed=1, tombstoned=0`) → see #11 DROPS → red,
-        then restore + recompile so disk is clean. If ANY hardened see drops (the retomb counts, or a newly
-         tightened #1/#5/#6/#8/#10 that traced-but-wasn't-run), it is a threshold to tune at accept time, not
-          a redesign — the honest-case was reasoned, not executed, so one may be off by a genre-prefix or a
-           count. A dropped see is a loud, specific red; fix the clause and re-run.
-
-**2026-07-12 — MusuHeist paced + design/test-split + swept both ends; live-gate STILL owed.** Three
- fixes on rung 1's Book after the owner watched it run: (1) PACING — the phase machine advances ONE EDGE
-  PER SNAP (gated on `step_n` / `w.c.acted_step`); a self-advancing machine drained the whole heist into
-   one 22s snap, or a nondeterministic 1-vs-15 spread. `expecting()`/ttlilt is the OTHER tool (hold one
-    snap for the slow census disk-walk, off the mutex) — not the pacer. (2) The %testing SPLIT — every
-     test observation now hangs under `w/%testing` (the `heisted:<nick>` node + `on_disk` monitoring,
-      census/sealed/newlyadded_shape/denied/flattened, the 10 %see); the design (Piers/Grants/Libraries/
-       %Heist) stays clean on `w`, and `Ghost/M/Heist.g` is now the PURE engine — it stamps NO test
-        markers on the world (that was the non-deterministic `heist_land_fail` bug). (3) start + END
-         sweep, files-only + snap-invisible (the repo never keeps WAV bytes; `.jamsend` gitignored). Book
-          is 30 steps now. Metadata is FILENAME-derived — the test tones carry no tags. **The full
-           what's-real map + the `<` unbuilt roadmap is now §10.2** (supersedes the "BUILD STATUS" bullet
-            below, which is pre-pacing). Live-gate owed: reload the tab (a dead FSA dir handle in
-             `WormholeNav._cache` poisons landings), CHECK -> accept -> green x2, adversarial probe.
-
-**2026-07-11 (day) — the HEIST design decided (owner Q&A): the rest of Radio+Piracy is an
- rsync job creator.** Prior art re-read on owner's pointer: `src/lib/ghost/Pirating.svelte`
-  (heist req → local-dir prep BEFORE the wire → spool → resume-by-rematching) and its merge
-   model — the remote path inflates into `%place,bit,uri` particles (collection|directory|blob)
-    and the user BELIEVES or DISBELIEVES each layer (`disbelieve_directories`, `only_categories`,
-     per-file rename), the surviving bits joining into `destination_directories`. The decisions:
- - **Payload = ORIGINAL file bytes** — new body chunk-particles beside `%Preview`/`%Stream`,
-    byte-faithful (`body_hash` vs the source file). Consequence: the source side must walk REAL
-     files, so a slice of §9.1 rides the first Book. Deferred: a "nicely transcoded send" mode
-      (IDv3 tagging + album-art embedding) — later, subagented.
- - **Job = `%Heist,at:<pier>`** (+ optional match; absent = everything = klepto v1). A saved
-    match graduates into §9.2's `%Share` later. Sibling (speculative): a **%TreasureMap** — a
-     Pier pointing at things, maybe a music micro-blog form. Pier|TreasureMap|Heist exist FOR AS
-      LITTLE TIME AS POSSIBLE then flatten off — scaffolding, not ledger. While a Heist RUNS you
-       can see who's whatting; afterwards nothing attributes.
- - **Landing = STRAIGHT INTO THE COLLECTION at download time** (no staging dir); the merge
-    decision (believe/disbelieve layers, remembered defaults) is therefore made at
-     heist-creation — exactly the old step-2→step-4 flow. Probation is purely metadata:
-      **`.jamsend/newlyadded`** (`.jamsend` is ALL meta, never bytes) logs what arrived recently
-       + how the listener feels about it so far; deny = delete from the collection. The log's
-        purpose: shuffle new music into the listening diet coherently for the first week or two —
-         grow to love it (→ the koha list, things to give back for) or drop it completely. It
-          NEVER shows where music came from; graduation later feeds blog-writing and freer
-           classification|appreciation systems.
- - **Provenance: NOT persisted.** Dedup is by CATALOG identity, not source — cataloguing notices
-    an Artist-Album is already held and skips, or UPGRADES it (e.g. to flac) if policy allows.
- - **BUILD STATUS (same day, night): rung 1 is BUILT + wired, live-gate PENDING.** `Ghost/M/Heist.g`
-    (census/job/beat/land/newlyadded/feel/sweep — %Body,seq original-byte chunks on %Record cards, the
-     generic Repli want/park/serve moving them unchanged; quarantine mirror = a `<prepub>.heist` shelf
-      key) + `Ghost/Story/Heistation.g` (Book **MusuHeist**, 18 seeded steps, 10 %see: divided census →
-       seal → job-pinned filings → byte-faithful DISK-verified landings both ways → re-heist dedup →
-        unsourced newlyadded → deny-drops-file → flatten). Both LocalGen-compiled, enrolled in
-         CREDULER_GHOSTS, registered in Credence (+brand_new) + the Ality overlay; toc seeded
-          (UNTRACKED — no dispatch before a runner tab reload). Deferred within rung 1: the
-           remembered-denials tombstone (a denied identity re-offers on a later heist — the %UnGrant
-            shape wants reusing) and the same-identity format-upgrade path.
- - **First Book = rung 1** (loopback, needsFSA), home a NEW **`Ghost/M/Heist.g`** riding Repli:
-    TWO Piers share the SAME `testsounds/` FSA dir (the existing 8-WAV flat share — barely any
-     directory structure at first, and that's fine). The dedup trap (each Pier already "has"
-      everything the other offers) is dissolved by a **test mode that DIVIDES THE ARTISTS between
-       the Piers** — a whittled-down census so each seems to hold different music: Uno offers
-        "The Sines" + "DJ Oscillo", Duo offers "Fourier Four", etc. Each files what it heists
-         under DIFFERENT genre categories at its end. A per-Pier
-          **`.jamsend/test-marrauding-of-<runid>`** override (they share one FSA location)
-           namespaces meta + `newlyadded` + landing categories per Pier per run, so the run's
-            work deletes cleanly (one `rm -r` per marrauding dir). The believe/disbelieve merge
-             (old Pirating steps 2+4) is pinned as DATA in the Book — UI comes later. Assert:
-              byte-faithful `body_hash` per landed file + the `newlyadded` log shape.
-
-**2026-07-11 (night) — MusuRaChase FIRST-LIT + RECORDED; the whole family green.**
- The CHECK run (all 56 steps, real audio, ~4min) needed NO threshold tuning — every gate passed
-  with slack: `chased,at_head=20,warm=16` and `skip:B,at_head=10,warm=16` (gate ≥6),
-   `b_heard=0` (gate ≤3, zero drops), decoded `lufs=-14` dead on target. Accepted with the
-    %see pre-pin discipline: all 15 Chase sentences survived into the fixtures (verified against
-     the pre-pinned set — none fuzz-swallowed). Verify re-runs 56/56 green twice (≈53/≈54 —
-      the predicted two-seal AudibleEntropy signature; the ±1 is round= wobble). The owed
-       float32-compat runs also green: MusuReplica 14/14 (≈10), MusuReco 11/11 (≈3).
- **Assertion upgrades LANDED + SABOTAGE-PROVEN (same day, eve).** The three audit upgrades are in
-  the recorded fixtures (committed in `e2bef100 tests`): `src`+`cands` on the chased AND skip rows
-   (Radiation.g — kills both PRNG-luck slip channels; `cands` reads the runtime-only
-    `w.c.ra_dial_cands` stamp in Ra_dial_next), and the post-dark `fanout_dark,of,warm` row (of=1
-     post-dark). Verified on a warm runner: green ×2 (56/56, the stable ≈54 signature; rows match
-      the fixtures verbatim — `chased,…,src:Duo,cands=2`), all 15 %see sentences re-confirmed
-       present, and the sabotage KILL: deleting the `ra_source_live` gate in Ra_restock_beat went
-        RED from step 20 (ok_pct 0.34, 37 reds; live `fanout_dark,of=3,warm=3` vs the pinned of=1 —
-         the formerly-dead-weight gate now has its line to die on; the untouched dial gate's
-          `skip:B,…,src:Duo` still matched, so the kill is surgically the restock's), then green
-           again on revert. Deliberately NOT done, still owed: the `keep_ahead=2` pin (with a
-            3-candidate catalog it would falsify the fan-out sentence "kept EVERY other preview
-             warm" — it belongs in a single-source Book) and the mid-run revoke variant (a new
-              scene) so `repli_allow` refuses at least once in-Book.
-
- **Adversarial audit (agent + one live sabotage).** The live probe: gate the chase %see on
-  `warm >= 99` (Radiation.g:1232 via LocalGen) → the run went RED from exactly step 15 (its landing
-   step), then green again on revert — the Book catches its own regression, and a LocalGen disk
-    write DOES hot-load into live tabs.  The audit's structural verdict: NO see or marker sits in a
-     fuzz-tolerated zone (the ≈53 come entirely from `since:`/`time:`/`sign:`/`round` churn on
-      society lines), and a missing/moved line is never swallowable (positional line-zip; length
-       mismatch = hard red).  The REAL weakness class: presence gates already satisfied (or never
-        challenged) by the time the fixtures were cut — four named slips: (1) `Ra_keep_ahead`'s
-         `w.sc.keep_ahead` pin is untested (catalog-minus-playing == the pin, the clamp never
-          bites); (2) the restock fan-out's `ra_source_live` gate is dead weight post-dark (every
-           preview already whole — deleting it changes nothing); (3) `repli_allow` never refuses
-            during a Chase run (consent enforcement rides MusuRaCast's revoke arm alone); (4) the
-             chase pick's cross-Pier-ness is enforced by the pinned PRNG, not an assertion
-              (deleting the `skip_src` gate can slip if the pinned rand re-picks the same record).
-   One-line upgrades (owed, cheap): stamp `src` on the `chased` row; stamp candidate-count on the
-    `skip` row; a post-dark `fanout_dark,of=N` row; pin `keep_ahead=2` (below catalog-1) so the
-     clamp bites; a mid-run revoke variant so `repli_allow` refuses at least once in-Book.
- Operational lessons of the night (memory: frozen-boot-empty-first-run, editor-think-quiesce-decay):
-  a tab that froze right after boot runs its FIRST dispatched Book with EMPTY steps (Creduler
-   acquire incomplete — step 1 green, rest red, no `reached:step_N`; self-heals on thaw, so burn
-    a cheap green Book first), and the editor's "● connected — no identity / beacons stale" +
-     held become_book = idle think-quiesce freezing the in-think roster fold, NOT a transport
-      failure (beacons park unfolded on `w.c.beacons`; any think heals; a beacon-driven keepalive
-       nudge is BUILT in LiesLies, live-proven over 20 idle minutes).  A SECOND, harder disease
-        showed at 09:11: a brief system freeze thaw-WEDGED the editor's belief loop permanently
-         (pings alive, thinks dead, no self-heal in 13 min; both runners survived the same freeze)
-          — editor-only in-think path, needs the tab console; the wedged tab is a live specimen,
-           root-cause in DevTools BEFORE reloading.  Full trail in memory
-            editor-think-quiesce-decay.
-
-**2026-07-11 (later) — the proto-VILLAGE: multi-caster Repli + KEEP_AHEAD + the entropy seam +
- skip-by-who-is-online.**
- The restock fan-out (the "natural next" below) landed, and it landed SOCIAL: the new Book
-  **MusuRaChase** (Radiation.g — the FIFTH Ra* Book, 15 `%see`; Credence row needsFSA+needMusic,
-   brand_new; toc seeded 56 lie steps) is MusuRaStream grown into a little village.  Uno and Duo
-    each stock a DISJOINT testsounds slice (`Ra_stock` grew a `from` offset) on their own
-     prepub-keyed radiostock; each GENERATES a single-use Idzeug and the Listener REDEEMS both over
-      two Lake_links — the real front door, never a promotion shortcut — and the mutual Music grant
-       gates every Radio leg.  The listen runs on Uno track A while `Ra_restock_beat` keeps every
-        OTHER preview warm across BOTH wires; the dial CHASES to a Duo record (instant start on the
-         warm preview, continuation from the SECOND caster's demand-driven transcode); then the
-          VILLAGE EVENT — Uno goes DARK (its carrier falls; the presence hook `w.c.ra_source_live`
-           = grants + carriers turns false) and the owner SKIPS the playing track mid-cycle:
-            `Ra_dial_next` turns the dial ONLY among sources still online, so the pick is forced to
-             Duo's remaining record — a track can always be skipped, and the next one comes from
-              whoever is really there.  `Ra_dial_next(w, mirror, opts)` is the ONE dial verb:
-               opts.skip_src (chase to the other Pier), opts.id (the later "pick one deliberately"
-                seam), else the seeded|stirred entropy dial; the same presence hook gates the
-                 restock fan-out, so a dark Pier neither warms nor wins.
-
- **What changed in the engines (all backwards-compatible; the four old Books re-ran green
-  first — Cast 12/12 ≈9, Stream 40/40 ≈37, signatures untouched):**
- - **Repli is multi-caster now** (Repli.g): `Repli_register_caster(w, pier, lib)` /
-    `Repli_register_rx(w, pier)` + `Repli_src_for`/`Repli_rx_ok` replace the single `w.c.tx`/`w.c.rx`
-     identity guards (those remain the legacy default).  The consent hook grew a second argument —
-      `w.c.repli_allow(peer, at)`, `at` = the SERVING prepub — so ONE hook answers per-relationship
-       (Uno revoking silences Uno's legs and leaves Duo casting).  Mirror %Records get `.c.from`/`.c.rx`
-        source breadcrumbs at `Repli_recv_lines` (runtime-only, nothing snaps): the wire follows the
-         track.  `Ra_transcode_pump` now serves EVERY registered caster off its own shelf.
- - **The entropy seam** (Ra.g `//#region entropy`): `Ra_rand(w, n)` picks off a per-w PRNG that
-    crypto-seeds lazily (the live default), `Ra_seed(w, str)` REPLACES the state (a Book pins the whole
-     dial), and `Ra_entropy(w, vals)` STIRS live values in — the way to inject entropy into instances
-      that are supposed to be random, without a Book losing determinism.  MusuRaChase probes it mid-run:
-       the same pinned state picks differently after a fixed stir, and the fixture reads both picks.
- - **KEEP_AHEAD** = `Ra_keep_ahead(w)` (default 4; `w.sc.keep_ahead` pins) — records-ahead ACROSS the
-    catalog; `Ra_restock_beat(w, mirror, budget)` wants the missing preview pages of the next K records
-     (want-once, budgeted per beat so it shares the wire, CLAMPED to each preview window — a prefetch
-      can never park a want or ignite a transcode).
- - **radiostock pub is a PREPUB, always** (standardised 2026-07-11): MusuRaStock/MusuRaTerm mint
-    deterministic identities for their shelf keys — the `'DJ'`/`'raterm.player'` literals retired, and
-     the one-time `Ra_stock` sweep now drops old literal-key files in passing.
-
- **Lifecycle verdict (owner asked: is the old coming-and-going worth keeping?).**  The old
-  Radios/Directory lifecycle (random `load_random_records` + FIFO `whittle_stock` + setTimeout magic)
-   does NOT come back.  In the new economy the shelf IS one's own collection — no count-bound whittle;
-    GC is newest-ts twin supersession + the dead-source drop, both standing (§1.4) — and the listener
-     side holds NO cache at all (pulled chunks are ephemera), so ITS coming-and-going is pure
-      want-pacing: the session window + the restock fan-out.  The KEEP_AHEAD chase was the old
-       machine's last live idea; it now rides Repli offers.  Nothing else there is owed a re-draw.
-
- **Verification state + next moves:**
- - MusuRaStock re-recorded 5/5 green on the prepub shelf key.  MusuRaTerm re-record and the
-    MusuRaChase first CHECK run are IN FLIGHT this session — if you are the next fork: MusuRaChase is
-     seeded (56 lie steps + the AudibleEntropy Wref) and registered (Credence + Ality), and needs a
-      RUNNER TAB RELOAD before its first dispatch (the total:1 bomb, §2 — and the seeded toc is
-       UNTRACKED: a premature dispatch clobbers it; re-seed from the loop in the session notes);
-        then a CHECK run tunes the thresholds (warm >= 6 at chase AND at skip, b_heard <= 3, LUFS ±2)
-         and the accept follows the %see pre-pin discipline (§1.5 — 15 Chase sentences).  Expect a
-          new benign ≈ signature (TWO seals graft double the AudibleEntropy fields).  Float32-path
-           compat (MusuReplica/MusuReco re-run) is also still owed.
- - **real `/music`** (§9.1) — point `Ra_stock` at the real library; the ONE mock §3.6 names.
- - **Klepto rung 10.2** (§10) — 2+ real runners; kills the tame in-process wire, the OTHER mock.
- - **§9.2 Shares / §9.4 multicast live edge / §9.5 Sent_Tree** — the live edge is a THIRD encode
-    mode (chained, no seek — §1.2's orthogonal cousin); Sent_Se is half-built.
-
-**2026-07-11 — the chunk-particle machine STANDS; nothing in the pipeline is owed.**
- The design is distilled at **§1.1–§1.5** (read those first — they are the machine as it IS).
-  All four `MusuRa*` are live-green and re-recorded: Stock 5/5, Cast 12/12, Term 12/12 (≈0,
-   deterministic), Stream 40/40. The arc that got here, one line: the preview economy was first
-    built as a hand-rolled wire (`rec.c.segs`, `have=` counters) → owner overruled ("how will
-     Repli be generic with some .c.bollocks array to manage?") → rebuilt same day on REAL chunk
-      particles + generic Repli → four owner rulings folded (preview CONST 32, radiostock
-       `<ts>-<pub>-<enid>`, no friend cache, dead-source drop) → re-recorded 2026-07-11.
-        Session-level history lives in git (`d26ce069` "Ra Repli", `4add5244`), not here.
+**NOW (2026-07-13, post-push): three §10.2 gears LANDED compile-clean (live-gate owed on all);
+ the Booth/Ban thread is VETOED-and-parked; persistence is ruled — §11.7 (the Berth).**
+ - **Landed in the working tree** (opus-agent waves; every .g LocalGen-green): **#1
+    stream-to-disk** — `Heist_land` streams each %Body via a new `nav.bin_append`
+     (Housing.svelte.ts:2260) behind a capability probe (FSA streams; OPFS/remote/node fall back
+      whole-buffer, `<`), verify-after-write vs body_hash, breach → delete + tally. **#2
+       metadata + the real tree** — the census feeds its body_hash bytes to
+        `Crate_meta_from_tags` (WAV INFO + ID3v2.3/2.4) and lands at
+         `<genre>/<Artist>/<Album>/<Title>.<ext>` (album-less drops the level; genre stays the
+          top folder — that fork is still the human's). **#3 partial** — `held,tune:` surfacing
+           on the job per already-held skip + `Heist_manifest(job, mir, lib)` → [{path, verdict}]
+            (the look-before-you-commit; resume side `<`).
+ - **VETOED**: the %Tombstone→%Ban rename (host checkout reverted Heist.g/Heistation.g/LiesLies
+    to the tombstone baseline — LEAVE IT). `Booth.g` exists unwired/unenrolled — read §11's
+     STATUS block before touching anything taste-shaped.
+ - **THE LIBRARY CATCH** (the human: "didn't we have a library for that?"): package.json ships
+    **music-metadata@11** — the hand-rolled tag parser in Crate.g duplicates it. Swap
+     `Crate_meta_from_tags`' internals to an IMPORT() of music-metadata (parseBuffer; the
+      .g-imports-ts pattern exists for exactly this). KEEP `Crate_wav_with_tags` — the WRITER —
+       music-metadata cannot write tags and tests must synthesize tagged files.
+ - **OWED, in order (the next fork's fleet)**: (1) **Book scenes** for the landed gears —
+    manifest-counts scene, held_named on the reuno row, the tagged-WAV tags-beat-filenames scene
+     (synthesize via Crate_wav_with_tags into the share at census + delete at flat; count cascade
+      uno 2→3 / reuno+retomb 8→9 / skipped 7→8 / no_reland 7→8 / newlyadded uno 2→3 — TRACE ALL),
+       a `streamed:1` telemetry marker on the uno row iff nav.bin_append existed; a first attempt
+        died at the session limit mid-edit and was REVERTED — re-run clean. Steps grow ~42→~52:
+         re-seed the toc THEN reload the runner (total:1 bomb). (2) the music-metadata swap.
+          (3) **the Berth** (§11.7) — build + a Book scene proving reset-with-Story. (4) **the
+           live gate**: LocalGen sweep → CHECK on 49de → accept (pre-pin the 11 sees; expect big
+            path churn — every landing deepens by Artist[/Album]) → sabotage-proofs (tombstone
+             door → false must drop see #11; a wrong body_hash must breach not land). (5) then
+              §10.2 #4 the single-track/want-driven session (the anti-klepto front door +
+               Waft:Map advice, §11.7), #5 repointable, similarity-upgrade.
 
  **Bombs a fresh fork must hold** (durable homes: §2 wiring bombs, §1.5 Book discipline):
   LocalGen for spine `.g` edits, never ghost-compile Ra.g against a live editor (§2);
@@ -926,11 +713,11 @@ Rung 1 (loopback) is BUILT and live-gate-pending: `Ghost/M/Heist.g` (the pure en
 - `<` **Stream-to-disk.** `Heist_land` assembles the whole file in memory (`Uint8Array(size)` + `set`)
    then writes once. Streaming each `%Body` to a growing file offset as it lands drops the memory high-water AND
     clears the `req:awaitbuf` pile-up (the "hundreds of lines of waste / 22s step").
-- **Remembered-denials tombstone — BUILT (2026-07-12 night), live-gate owed.** A dropped identity used to
-   re-offer on a later heist (catalog dedup skips only what is HELD). Now `Heist_feel`'s drop mints a durable
-    `%Tombstone,artist,title` on the collection (the `%UnGrant` negative-fact PATTERN reused for a track), and
-     `Heist_beat` consults `Heist_tombstoned` at the door. MusuHeist's `retomb` phase asserts it. Compile-clean;
-      needs the morning live CHECK+accept+sabotage-proof (§0).
+- **Remembered denials — BUILT + accepted as `%Tombstone`, being REBORN as `%Ban` on the Booth (§11).**
+   A dropped identity used to re-offer on a later heist (catalog dedup skips only what is HELD); now the
+    listener's drop mints a standing refusal the door consults beside `Heist_held`. The first cut shipped
+     live-green but its DESIGN was rejected (unexplained name, heist-local thinking) — §11 is the settled
+      family; tier 1 (§11.5) migrates this gear onto `Ghost/M/Booth.g`.
 - **The FSA reload caveat — self-heal BUILT.** A dead directory handle in `WormholeNav._cache` (a `mkdirp`
    walking a stale entry) throws `NotFoundError` on landing. `bin_write` now catches a stale-handle error
     (`_is_stale`: `NotFoundError`/"not be found"), force-re-walks each level via `mkdirp_fresh` (refreshing the
@@ -949,13 +736,13 @@ Rung 1 (loopback) is BUILT and live-gate-pending: `Ghost/M/Heist.g` (the pure en
     three are one feature: a real library tree the heist reconciles against.
 4. `<` **single-track play/skip/decide** session.
 5. `<` **repointable** mid-heist.
-6. ✓ **remembered-denials tombstone** — BUILT (2026-07-12 night), live-gate owed (§0); `<` **similarity /
-    format-upgrade** still open.
+6. ✓ **remembered denials** — BUILT + accepted; REBORN as `%Ban` per §11 tier 1 (in progress);
+    `<` **similarity / format-upgrade** still open.
 7. ✓ **FSA `bin_write` self-heal** — BUILT (Housing.svelte.ts; the reload-per-session fallback is retired
     except for a tab poisoned BEFORE it shipped).
 8. **rung 2 (cohort)** — the wire's forcing function (§10 rung 2).
 
-**Where I'd point next after the tombstone morning-gate** (still `<`, still pending your read): **#1
+**Where I'd point next after the §11 tier-1 gate** (still `<`, still pending your read): **#1
  stream-to-disk** is the highest-value remaining engine-realness item BUT it is load-bearing — it needs
   incremental sha256 (SubtleCrypto can't stream a digest), per-page landing, and breach-after-write
    semantics on the CENTRAL byte-faithfulness invariant, so it must be proven LIVE, not built blind. Then
@@ -963,3 +750,274 @@ Rung 1 (loopback) is BUILT and live-gate-pending: `Ghost/M/Heist.g` (the pure en
      to call: does genre stay a top folder above the tag tree, or does the tree replace it?) and re-records
       the 4t- fixtures. Neither was safe to land in a no-live-verify overnight; the tombstone was (reuses an
        established shape, additive to fixtures, no design fork).
+
+## 11. The Booth — taste as standing facts (the programme director organ)
+
+Born from the %Tombstone post-mortem (built unexplained, named in graveyard-speak, thought
+ heist-locally). The fix is a FAMILY designed together, so every fact answers — where it is
+  defined — the four questions the tombstone never did: **what is it, how long does it live,
+   who consults it, how is it lifted.** Adversarially vetted (record: §11.6).
+
+**STATUS (2026-07-13, the human's rulings — read BEFORE building anything in this section):**
+ - **%Tombstone STAYS in the engine.** The Ban rename was built then REVERTED by the host
+    ("you're just changing the name") — Heist.g/Heistation.g/LiesLies are back on the tombstone
+     baseline. `Ghost/M/Booth.g` exists, compiles, and is deliberately UNWIRED + UNENROLLED; the
+      human "hates Booth" — do not wire or extend it without a new ruling.
+ - **The taste data model is unsettled, and klepto-mode is what warps it** ("why would I ban a
+    track I started heisting?"): in a want-driven heist — genre starting points + the source
+     Pier's advice (§11.7 Waft:Map) — most refusal-memory dissolves. Build toward want-driven;
+      revisit refusal-memory only after that exists.
+ - **Persistence is RULED: §11.7 (the Berth).** The Waft is the project-standard mutable robust
+    document; the Booth's raw-line `.jamsend/booth` ledger is superseded — do not extend it.
+ The family vocabulary below (the tune handle, the door table, rest/wanted shapes) survives as
+  design material; the ORGAN packaging (Booth/Ban verbs, the ledger) is the vetoed part.
+
+**The model in three sentences.** Every opinion the listener forms lives as a fact on the
+ collection, pointing at music through one handle (`tune:`/`artist:` — §11.1). The **calls**
+  (§11.2: Ban, Rest, Wanted, rotation, Setlist) are consulted by the machine's doors — acquiring
+   (heist), programming (racast), playing (raterm), being-browsed — each at its own gate. The
+    **evidence** (§11.3: spins, the airplay log, and their readers charts + Hunch) feeds the calls
+     but never gates anything itself.
+
+### 11.0 One track's life through the family
+
+A husk is offered on a heist; the door checks the collection — already held? banned? — and only
+ the new and un-refused pull. The track lands on probation (`newlyadded`); the listener loves it
+  (graduates, arrives hot in rotation) or drops it (file deleted, card retired, a **Ban** minted so
+   the next heist's door refuses that identity). As it plays, **spins** and **skips** tally and the
+    **airplay log** keeps the recent tape; the **charts** read the tallies. Too many skips and the
+     Booth gets a **Hunch**: rest it — a **Rest** sits the track out for a while and expires on its
+      own; a Ban stands until the listener lifts it. What a browsing peer eventually sees is your
+       programming — charts, setlists, rotation — never your file paths.
+
+### 11.1 The tune — one way to point at music
+
+Every opinion-fact points at music the SAME way: a **`tune:`** scalar holding the canonical
+ **`Artist — Title`** string (single spaced em-dash — the same no-commas convention as %see
+  sentences; commas would fight the peel parser).
+
+    Ban,tune:Fourier Four — Query E
+    Ban,artist:DJ Oscillo
+
+**Grain is visible by which key rides the line**: `tune:` = one track, `artist:` = the whole
+ artist — never a `kind:` enum. Three invariants, each load-bearing:
+ - **The split**: `Tune_split` takes the FIRST ` — ` as the boundary, so titles may contain
+    em-dashes and artists may not (accepted rarity, stated here so nobody reverse-engineers it
+     from a snap).
+ - **One normalization site**: `Tune_key(artist, title)` (trim + collapse whitespace; "feat."
+    stripping and case-folding are `<` later gears that will land THERE and nowhere else).
+ - **Derive, don't assert**: `Tune_of(rec)` derives the handle from a %Record's tags — the record
+    keeps `artist:/title:/album:` (facts of the file) and never stores its own `tune:`.
+ Accepted cost: "every ban by artist X" is a scan-and-split over `o({Ban:1})`, since `o()` matches
+  literally (no prefix match); opinion-facts are few, the scan is fine. Verified encode-safe: an
+   em-dash is not in `encode_stringies`' unsafe set, and ` — ` already round-trips live in %see
+    sentences. Namesake to hold: lowercase `tune` is a live MAINKEY in Musuation.g test-result
+     particles (`{tune:1, kind:'result'}`, :1253) — different world, no query overlap with the
+      Booth facts, but grep before assuming `tune:` is fresh anywhere.
+
+### 11.2 The calls — facts the doors consult
+
+| fact      | heist door (acquire)   | racast door (program)  | raterm door (play)       | built    |
+|-----------|------------------------|------------------------|--------------------------|----------|
+| Ban       | refuse (`job.sc.banned`)| never cast `<`        | never queue `<`          | tier 1   |
+| Rest      | · (not its layer)      | skip while resting `<` | auto-skip, manual-ok `<` | `<` t2   |
+| Wanted    | pull first / only `<`  | ·                      | ·                        | `<` t2   |
+| rotation  | ·                      | weight `<`             | weight auto-play `<`     | `<` t4   |
+| Setlist   | ·                      | cast as program `<`    | play locally `<`         | `<` t4   |
+
+(`·` = does not consult, by design. "Already held" needs no fact: a %Record existing IS the fact,
+ probed by `Heist_held`. "Loved" needs no fact either: love is a probation VERDICT whose durable
+  trace is `rotation:heavy` — the family is not punishment-only, the positive half just lives in
+   rotation.)
+
+**Ban — the do-not-play list — TIER 1 (the %Tombstone reborn).** The listener's standing refusal
+ of a track or an artist — "is it like a hated tracks?" — exactly that, the real broadcast
+  do-not-play ledger (the BBC banned records; so do we). Minted when the listener DROPS a
+   probation track (`Heist_feel` calls `Booth_ban`), or by hand at either grain. Lives on the
+    collection — an opinion belongs to the collection, not to any job, so it survives every %Heist
+     flatten. **A ban stands until you lift it by hand (`Booth_lift`); nothing sweeps it** — not a
+      flatten, not any cleanup — because a ban that silently vanished would re-download the very
+       track it refused (the machine-side rule is the %UnGrant one: never GC a negative fact —
+        the family's only other negative fact, a waved-off Hunch, obeys the same rule). No
+         `at:` birthday — history lives in the airplay log, and a timestamp would churn fixtures.
+          Probe `Booth_bans(lib, artist, title)` — spelled as the QUESTION it is, unmistakable
+           from the act at any call site — checks tune-grain then artist-grain; the
+          artist-grain ban is first-class from day one: the door refuses EVERY track by that
+           artist, racast/raterm will never surface them, and the census still builds their cards
+            (a ban is about what enters/plays here, not about un-knowing what a peer holds).
+             Door tallies stay apart — `skipped` (already held) vs `banned` (refused) — so a snap
+              reads WHY each husk stopped.
+ **Why ban what you chose to heist? (the human's unease, 2026-07-12 — a standing stance, not
+  settled).** Klepto v1 pulls EVERYTHING; probation is the selection step, so the Ban is
+   bulk-mode's memory of a drop — you never chose the track, the heist did. In a want-driven heist
+    (Wanted raids t2 + the single-track session §10.2 #4) the Ban nearly dissolves: you simply
+     never re-want it. Direction: build toward want-driven heisting and keep the Ban as bulk-mode's
+      small memory. Alternatives weighed and parked: the verdict LEDGER as the sole store (the
+       door reads last-verdict-per-tune off `.jamsend`); one mutable `%Stance,tune` card per known
+        tune (merges ban/rest/love — C/C/C is cheap so a structured stance home is affordable —
+         but a deletable stance loses the never-GC negative-fact clarity).
+ **Persistence — where opinion lives when the tab dies.** A collection's CATALOG is derived (the
+  census re-walks the disk every boot — nothing to persist); opinion is NOT derivable, so the
+   Booth persists in the collection's own meta home: **`.jamsend/booth`** ledger lines
+    (`seq ban|lift grain key`, the proven newlyadded mechanics), net state rehydrated onto the lib
+     at census, write-through on every ban/lift. The opinion TRAVELS WITH the music — copy the
+      folder, keep your bans. A `Waft:Booth` VIEW (the hand-editable board, Credence-style — the
+       human's instinct) is the right SURFACE for it later; the Waft displays and edits the same
+        ledger rather than being a second home.
+
+**Rest — the temporal sit-out — `<` t2.** "Not now; back in a while" — radio-real: resting an
+ overplayed record. A Rest is NOT a weak Ban: you rest a track you LOVE (fatigue management), you
+  ban one you refuse (a verdict). `Rest,tune:…,back:2026-07-19` — "rest it, back the 19th": a
+   human-readable date, never an epoch (the snap must read as a sentence). Doors READ an expired
+    Rest as absent (a pure read, no mutation inside a probe); the particle is actually removed at
+     the next Booth WRITE on that collection (any ban/rest/lift sweeps expired Rests in passing —
+      a tracked write moment), so expired Rests lie around harmlessly at worst — a fixture may
+       carry a benign stale Rest, like the sealing-Books' benign ≈. The heist door does NOT
+        consult Rest: acquisition is not playing, and refusing bytes over a mood is the wrong
+         layer.
+
+**Wanted — the want list — `<` t2.** Tunes you don't hold and are hunting — the collector's want
+ list styled as the heist-land wanted poster: `Wanted,tune:…` (artist-grain allowed). Minted by
+  hand (later: from a friend's chart). The heist door pulls Wanted husks FIRST, and a
+   `raid:1` job pulls nothing else — klepto narrowed to a raid, named as one. Retired automatically at
+    landing — honestly: that retirement is an edit in `Heist_land` (where landing actually
+     happens), the same class of door-wiring as the Ban check, not a free lifecycle.
+
+**rotation — programming weight — `<` t4.** `rotation:heavy|light` on the %Record; ABSENT =
+ normal (the boolean rule generalized: the default is no key). Love on probation → heavy. Cleared
+  by deleting the key (via a tracked replace). The racast picker weights heavy up, light down,
+   resting to zero. Only matters once racast is a real programmer.
+
+**Setlist — a programmed set — `<` t4.** A NAMED, ORDERED set of tunes — the radio show. filing
+ gives a track one genre home; setlists are many-to-many. (%Crate was the natural name and is
+  TAKEN — an opened collection dir; `Show` shadows %showing. Entries are **`Cut,seq:N,tune:…`** —
+   a deep cut; DECIDED, owning that `Cut` sits one letter from the live %Cue deck particle — the
+    read-aloud quality beat the grep risk.) A Setlist whose tune goes
+    banned keeps the entry — the setlist is a document, the Ban is policy, policy wins at play
+     time. Removal of a set or an entry = a tracked replace. racast casting a setlist as a program
+      is where casting stops being shuffle and becomes radio.
+
+### 11.3 The evidence — feeds the calls, never gates
+
+**spins + skips — `<` t3.** Monotone lifetime tallies on the %Record (`spins:`/`skips:`), never
+ reset, dying with their record. raterm bumps `spins` when a play crosses half the track (a guess
+  — radio counts at air, streaming at 30s; tune at build), `skips` when the listener bails before
+   that. Precedent: Musuation.g:1350 already tallies `sc.spins` on a radio particle. Legitimate stored
+    state (a tally is not derivable from anywhere once the moment passes) — but it must stay
+     independent truth, never a cache of the airplay log, or the two drift.
+
+**airplay log — `<` t3.** The bounded recent tape — `seq spin|skip tune` lines in
+ `.jamsend/airplay.log` (no timestamp column: `seq` alone carries the order the Hunch needs, and
+  every column then reads aloud), capped ~500, reusing the proven `newlyadded` log mechanics. Real
+   stations keep exactly this. The Hunch reads it (burnout needs ORDER, not totals);
+    charts-this-week derives from it.
+
+**charts — a function, not an organ.** `Chart_top(lib, n)` derives the countdown from spins at
+ read time; storing a chart would be the assert-vs-derive disease. A %Chart particle may exist
+  only as a %testing/view artifact.
+
+**Hunch — the producer's suggestion — `<` LAST, and honestly a MECHANISM.** The machine notices
+ and proposes; only the human decides. Two hunches at birth: burnout (a tune skipped 3 of its last
+  5 plays → suggest a Rest) and three-bans (three banned tunes by one artist → suggest the
+   artist-grain Ban). **The suggested act rides as the KEY** — `Hunch,rest:The Sines — Warm Static`
+    / `Hunch,ban:DJ Oscillo` — the same trick as `tune:`/`artist:` grain; no `kind:` enum (the
+     shape §11.1 bans). Taken → becomes the real fact, hunch retired; waved off → stays with
+      `waved_off:1`, lives on the collection, and is itself never-GC (a waved-off hunch that
+       vanished would re-nag — the family's second negative fact, same rule as the Ban). This
+        organ quietly needs a rule-sweep loop over the airplay log + that per-subject memory —
+         real machinery, which is WHY it is last: build it only after spins + the log are live and
+          proven.
+
+### 11.4 Parked surfaces (deferred until there is a surface)
+
+**Liner** (`%Liner,note:…` child of a %Record — liner notes, the human's voice in the interior)
+ and **Marquee** (the station's browse-face: what a peer sees is your charts/setlists/rotation,
+  never file paths; NOT named "Ident" — Idento is the ed25519 pair, and a radio ident is the audio
+   sting). Both are display-only leaves with no door; they return when raterm/browse UI exists.
+
+### 11.5 Tier plan + the %Tombstone→%Ban migration
+
+**Tier 1 (now, one live-gate)** — one new ghost, `Ghost/M/Booth.g` (no Tune.g litter — six verbs,
+ one enrollment): `Tune_key`/`Tune_split`/`Tune_of` + `Booth_ban`/`Booth_bans`/`Booth_lift`
+  (both grains from day one; `Booth_bans` is the probe, spelled as a question). Then the migration:
+ - `Ghost/M/Heist.g`: `Heist_feel`'s inline mint → `Booth_ban`; `Heist_beat`'s door →
+    `Booth_bans`; `job.sc.tombstoned` → `job.sc.banned`; DELETE `Heist_tombstoned`; comment
+     sweep (:95-101, :150-157, :254, :270-278).
+ - `Ghost/Story/Heistation.g`: `retomb` → `encore` (phase flow comment :96, :110, :118-119;
+    bundle :223-229; flow :270, :275, :301, :316; witness :486, :493) + `Tombstone:1` query →
+     `Ban:1` (:494) + `ht.sc.tombstoned` → `banned` + BOTH see sentences reworded to (pinned here
+      as the quality bar — no commas, radio-land):
+      deny (:485): `the listener dropped the track and the Booth banned it — the file gone from
+       the disk and the do-not-play card standing on the collection`
+      encore (:496): `the same shelf came round again and the banned track stayed refused — the
+       collection remembered the ban and pulled nothing`
+ - Enrollment order (the bomb): LocalGen BOTH gen `.go` files FIRST, then add Booth.g to
+    CREDULER_GHOSTS (LiesLies.svelte :55).
+ - Fixtures: exactly 26 snaps (017-042) carry Tombstone/tombstoned/retomb — ONE live re-record
+    run + accept refreshes them; pre-pin the %see set (11 sentences, two reworded).
+ - Sabotage-proof: `Booth_bans` → `false`, LocalGen → the denied track re-heists
+    (`landed=1, banned=0`) → the encore see DROPS → red; restore, recompile, green.
+ - Unrelated namesakes stay: `%UnGrant` (crypto ledger), the `%wore_out` record-wear GC
+    (Radiola.g:227 prose calls it a tombstone), and Musuation's `{tune:1}` test-result mainkey
+     (§11.1) are NOT this and keep their names.
+
+**Tier 2**: Rest + Wanted (the other two door-facts; heist door learns priority/want_only).
+**Tier 3**: spins/skips → airplay log → charts (the evidence spine — each lands with a consumer).
+**Tier 4**: rotation + Setlist (racast becomes radio) → Marquee/Liner when there's a surface.
+
+### 11.6 Vetting record
+
+Two adversarial rounds (2026-07-12, eight Opus critics total — human-voice, music-land naming,
+ particle discipline, YAGNI, coherence, then fresh-eyes re-review). The blow-by-blow of what each
+  round changed lives in `history/Radio_buildlog.md`; what belongs HERE is what stops a re-churn:
+
+ **Dissents (kept against a critic, deliberately):** `Rest` keeps its name (critic wanted
+  Benched/Cooldown — sports/gamer-speak; "resting a record" is the radio term, and the
+   music-notation rest — a written silence — HARMONIZES); `encore` keeps its name (one critic read
+    encore as demand-not-refusal; the naming critic called it the best rename in the doc — the
+     shelf IS offered again); `Cut` for setlist entries over `Track` (12 live collisions) and
+      `Slot` (scheduling-grid speak) — the %Cue one-letter risk is owned.
+ **Settled — do not churn:** the `tune:`/`artist:` handle + grain-by-key; the calls/evidence
+  two-layer model with the story-first §11.0; the four-question frame per fact; Ban
+   stands-till-lifted + never-GC; the Rest≠weak-Ban distinction; the §11.5 checklist.
+ **Round 2 verdict: SHIP-WITH-FIXES — all applied**: `Booth_banned`→`Booth_bans` (probe as
+  question), Hunch enum killed (act-as-key + `waved_off:`), `until:`→`back:`, `want_only:`→`raid:`,
+   airplay `ts` dropped, `Cut` decided, the Musuation `tune` namesake noted, both see sentences
+    pinned (§11.5). Migration checklist independently verified against live code: zero line drift,
+     26 fixture files exact, em-dash encode-safety proven in 198 recorded snaps.
+
+### 11.7 The Berth — where a Pier's documents live (the persistence ruling, 2026-07-13)
+
+A **Berth** homes one Pier's Wafts — "like Lies does but without the rest of that
+ complicatedness" (the human's cut). The Waft is the project-standard mutable robust document;
+  what was missing is a HOME for per-identity ones and a reset story for Books. A pier berths
+   boats; ours berths documents.
+
+- **Shape**: a Berth is a directory of Wafts, one per Pier —
+   `<root>/.jamsend/berth/<prepub>/<Waftname>/toc.snap` — the EXACT wormhole shape
+    (Credence/Trope are the prior art: a Waft = a dir with a toc.snap), just homed under an
+     identity instead of the repo tree. The "wormhole/ goes to .jamsend/<identity>s-wormhole"
+      oddity the human named IS the design: same encoding, different root.
+- **Reset-with-the-Story falls out of homing**: the app passes root = the collection (durable;
+   the documents TRAVEL WITH the music); a Book passes root = its marrauding namespace, so the
+    existing start/end sweep resets every berth for free — no new reset mechanism.
+- **API** (a small verb set; home it where the first consumer lives, NOT a new organ ghost):
+   `Berth_open(nav, root, prepub, name)` → deWaft the snap into a live C tree (mint empty when
+    absent); `Berth_save(nav, root, prepub, waft)` → enWaft + bin_write (whole-file replace —
+     these documents are small; crash-safe temp+rename is a `<` later gear);
+      `Berth_reset(nav, root, prepub, name?)`.
+- **Binding**: to the ENCODERS only — `enWaft` (Text.svelte:351) / `deWaft` (:389) + the 7-method
+   nav contract. ZERO Lies runtime — no LiesStore, no Cortex, no docks. Lies can MOUNT a berth
+    Waft in the editor grid later (view + hand-edit the same document); the Berth never needs
+     Lies to function. That answers "too bound to Lies?": bind to the encoding, not the machine.
+- **What lives there — the music listening documents**: `Waft:Listening` (probation feelings +
+   history; the raw newlyadded line-file stays as the arrival LOG, the Waft is the structured
+    document), `Waft:Taste` (verdict cards the doors `o()` DIRECTLY — the document IS the store:
+     no ledger, no rehydration, no Booth — straighter, as ruled), `Waft:Filings` (remembered
+      believe/disbelieve defaults — the old Pirating memory), `Waft:Map` (the Pier's OWN
+       recommendations — §10's %TreasureMap sibling grown into the heist's FRONT DOOR).
+- **The anti-klepto front door** (the "klepto is warping the mind of it" fix): a heist should
+   START from (a) the listener's genre starting points and (b) the source Pier's advice — its
+    Waft:Map, replicated FIRST and shown as "check out first" (music-blog material as a
+     document). A Waft subtree is C**, so Repli moves it like anything else; grants gate it like
+      any Radio leg. Klepto "everything you offer" demotes to ONE mode, not the mind-set.

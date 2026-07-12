@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783793943528
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783822770952
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -84,6 +84,8 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     sub:src/lib/O/spec/voro_modes,name:voro_modes
     Doc:src/lib/O/spec/Voro_render_todo.md,name:Voro_render_todo.md,noticed_at=1783790778057
     Doc:src/lib/O/spec/Seemables_todo.md,name:Seemables_todo.md,noticed_at=1783793943528
+    Doc:src/lib/O/spec/Cytui_cleave_todo.md,name:Cytui_cleave_todo.md,noticed_at=1783822770952
+    Doc:src/lib/O/spec/Seen_split_todo.md,name:Seen_split_todo.md,noticed_at=1783822770952
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D
@@ -144,3 +146,4 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:Ghost/M/Sound.g,name:Sound,noticed_at=1783244364366
     Doc:Ghost/M/Ra.g,name:Ra,noticed_at=1783398968104
     Doc:Ghost/M/Heist.g,name:Heist,noticed_at=1783759683660
+    Doc:Ghost/M/Booth.g,name:Booth,noticed_at=1783822770952

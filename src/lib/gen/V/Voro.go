@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return '4e54bc63d788810a' },
+    Ghostmeta_Ghost_V_Voro(): string { return 'c1ceca33309a5302' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
@@ -61,7 +61,7 @@
 //  quiet: stamp only, no self-report — the pre-scan pass (Voro_crush_worlds) re-stamps so the
 //   WAVE ferries fresh folds, but the census (and its beat counter, pinned in fixtures) must
 //    keep landing exactly once per beat, at snap time.
-Voro_crush_scan(w, quiet) {
+async Voro_crush_scan(w, quiet) {
     let level = w.c.crush_level || 0
     let stats = this.Voro_crush_pass(w, level)
     while (stats.visible > 15 && level < 2) {
@@ -80,6 +80,16 @@ Voro_crush_scan(w, quiet) {
     w.c.crush_level = level
     if (!quiet) {
         this.Voro_report(w, stats)
+        // the Se GRASP rides here, in the crush governor's tail, so EVERY crush user gets it for free
+        //  — not just VoroMitosis (which drove it by hand) but VoroScape (imposed from above via the
+        //   toc's useVoroCyto) and the VoroRadio family too.  Only on the census-authoring pass, never
+        //    quiet: the pre-scan Voro_crush_worlds runs quiet and must NOT double-mint the Seem.
+        //  GUARDED on folds: a world the crush found nothing to fold in (a non-Voro graph, level 0 with
+        //   no gangs) gets no grasp — we don't stand an empty %Seem:scape on it.  Voro_grasp awaits, so
+        //    this body is async from here down; each CALLER keeps its own await|fire-and-forget stance,
+        //     but a caller whose snap must carry the %Se:scape row has to AWAIT (the census|report rows
+        //      land synchronously ABOVE this await; only the grasp's row rides after it).
+        if (stats.folded > 0 || stats.gangs > 0) await this.Voro_grasp(w)
     }
     return stats
 
@@ -197,11 +207,50 @@ Voro_report(w, stats) {
         if (b.pop) bareC.sc.pop = '' + b.pop
         if (!b.pop) delete bareC.sc.pop
     }
+    // stash the PRE-SWEEP census as an off-snap INTENT tree, straight off the flora walk (census) — an
+    //  INDEPENDENT source for Voro_census_mirror's Seem.  The mirror must be a second OPINION on the
+    //   sweep below, not a mirror of its output: point a Seem at the POST-sweep rw and its goners equal
+    //    "what the sweep dropped" BY CONSTRUCTION (break the sweep → the mirror breaks in lockstep, never
+    //     diverges, proves nothing).  Built from the census OBJECT (this beat's flora truth), not from rw
+    //      or c.seen_beat, so the two diffs share only their SUBJECT — never their machinery.  A
+    //       mis-reconciliation in the sweep and the mirror now DISAGREE.  Never carries the %Se readout
+    //        rows: they are OUTPUTS, not census subjects, so they never enter here (the self-count the
+    //         old prototype suffered is gone by construction — no negative query needed).
+    this.Voro_census_stash(w, census, stats)
     // sweep the goners — a census child this beat never re-touched has left the crush.  The grasp's
     //  own %Se row is authored by Voro_grasp on its own beat (it runs AFTER this census sweep), so
     //   this sweep must spare it — otherwise the Se row is dropped here and re-added there every beat,
     //    the very census storm we killed, reborn on the grasp's row.
     for (const c of rw.o().slice()) if (!c.c.seen_beat && Object.keys(c.sc)[0] !== 'Se') c.drop(c)
+
+},
+// Voro_census_stash — mirror THIS beat's census subjects into an off-snap free C** (w.c.census_home),
+//  keyed by the SAME durable identity Voro_report gives each rw row (so a survivor keeps its slot and
+//   the mirror's resolve() reads it as a survivor, a departure as a goner).  Persistent across beats
+//    (the Seem's Selection resolves it beat-to-beat) yet drop-and-rebuilt each beat — this tree never
+//     snaps and no render reads it, so churn is FREE here, unlike rw.  The %Se readout rows are OUTPUTS,
+//      so they are never mirrored: the subjects are the folds (cells), the bare leaves, the head and the
+//       drift focus — exactly the rows the c.seen_beat sweep governs, minus the %Se it spares.
+Voro_census_stash(w, census, stats) {
+    if (!w.c.census_home) w.c.census_home = new TheC({ c: {}, sc: { census_home: 1 } })
+    let home = w.c.census_home
+    for (const c of home.o().slice()) c.drop(c)
+    home.i({ Voro: 1, cells: '' + census.cells.length, visible: '' + stats.visible })
+    if (w.c.drift_focus) {
+        let f = w.c.drift_focus
+        let fk = Object.keys(f.sc)[0]
+        home.i({ drift: 1, focus: fk + ' ' + f.sc[fk] })
+    }
+    let used = {}
+    for (const f of census.cells) {
+        let n_seen = used[f.label] || 0
+        let key = n_seen ? f.label + ' ' + n_seen : f.label
+        used[f.label] = n_seen + 1
+        home.i({ cell: key, kind: f.kind, n: '' + f.n })
+    }
+    for (const mk of Object.keys(census.bare)) {
+        home.i({ bare: mk, n: '' + census.bare[mk].n })
+    }
 
 },
 // Voro_vtuff_transcribe — copy a Vtuffing tree (a FREE C** no snap can reach) into the report
@@ -548,27 +597,39 @@ Voro_grasp_weight(kv, keyc, total, key, val) {
 //   re-stamp =1 on each one the walk re-touches, then sweep the un-touched as goners.  That is precisely
 //    the last-beat-vs-this-beat diff the mature %Seem gives for FREE, with identity — the Seemables harvest
 //     (spec/Seemables_todo.md §1), one function over from where Voro_grasp already proved the pattern.
-//  This stands a SECOND Seem — %Seem:census over w:Voronoiology (the census world rw itself, NOT w's fold
-//   layer the grasp mirrors) — BESIDE the live sweep, changing NO verdict.  It only projects how many
-//    census rows resolve() sees ARRIVE and DEPART each beat, so a Book %see can prove they reproduce
-//     Voro_report's own add/drop set BEFORE the sweep is ever flipped to read the sphere.  Off-snap home
-//      like the grasp's; modelled exactly on Voro_grasp's proven i_Seem/o_Seem setup so it can't misfire.
+//  This stands a SECOND Seem — %Seem:census — as an INDEPENDENT second opinion on that sweep.  Where the
+//   grasp's Seem walks w's FLORA fold layer (leaf-grained), THIS one walks the CENSUS ROW layer, the same
+//    granularity the c.seen_beat sweep diffs — so its goners can be checked row-for-row against the rows
+//     the sweep drops.
+//  The honesty hinge is the SOURCE.  A first prototype pointed this Seem at the POST-sweep rw, so its
+//   goners equalled the sweep's OWN output by construction (break the sweep and the mirror broke in
+//    lockstep — it could never DISAGREE, so it proved nothing), and it self-counted its own %Se readout
+//     rows.  Here the Seem resolves over w.c.census_home — the PRE-SWEEP intent tree Voro_report stashes
+//      straight off the flora walk (Voro_census_stash), before the sweep drops anything and carrying no
+//       %Se rows at all.  The two diffs now share only their SUBJECT (the census rows), never their
+//        machinery: the sweep reads c.seen_beat on rw, the mirror reads its OWN cross-beat D-sphere on
+//         census_home.  So a mis-reconciliation — a survivor wrongly swept, a stale row wrongly kept —
+//          makes the mirror's goners and the seen_beat drops DIVERGE, which is what a proof %see can gate.
+//  Off-snap like the grasp: the Selection rides sc.Se, the fns ride sc.opt (both snap-hostile), parked on
+//   the free census_home; only the distilled {goners,neus,rows} reading projects into w:Voronoiology as a
+//    read-only %Se:census row.  rows counts HONEST census subjects (census_home holds no %Se), so it is
+//     the sweep's true survivor+neu count, never inflated by the readout rows themselves.
 async Voro_census_mirror(w) {
     let A = w.c.up
     if (!A || !w.sc.w) return
     let rw = A.o({ w: 'Voronoiology' })[0]
     if (!rw) return
-    if (!w.c.census_home) w.c.census_home = new TheC({ c: {}, sc: { census_home: 1 } })
-    let chome = w.c.census_home
-    let cseem = chome.o({ Seem: 'census' })[0]
-    if (!cseem) cseem = this.i_Seem(chome, { Seem: 'census', C: rw })
-    cseem.sc.C = rw
+    let home = w.c.census_home
+    if (!home) return
+    let cseem = home.o({ Seem: 'census' })[0]
+    if (!cseem) cseem = this.i_Seem(home, { Seem: 'census', C: home })
+    cseem.sc.C = home
     let cnews = await this.o_Seem(cseem)
-    // raw resolve() add/drop of the census rows.  The %Se readout rows ride oai (stable slots) so they
-    //  never churn as goners/neus after the single beat each first appears — the counts stay clean.
+    // resolve()'s add/drop of the PRE-SWEEP census rows — an independent verdict beside Voro_report's
+    //  c.seen_beat sweep.  rows counts census_home's honest subjects (no %Se readout rows live here).
     let gone = cnews.goners.length
     let neu = cnews.neus.length
-    rw.oai({ Se: 'census' }, { goners: '' + gone, neus: '' + neu, rows: '' + rw.o().length })
+    rw.oai({ Se: 'census' }, { goners: '' + gone, neus: '' + neu, rows: '' + home.o().length })
 
 },
 // Voro_crush_walk — recurse; structural mainkeys stay graph (the skeleton must remain readable) but

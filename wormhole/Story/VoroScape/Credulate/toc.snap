@@ -7,36 +7,16 @@ Credulate,of_Book:VoroScape
   GhostInclude:Ghost_Story_Peregrination,dige:b33cab6322ef6320
   GhostInclude:Ghost_M_Radiola,dige:8786e42c3f3d4c97
   GhostInclude:Ghost_M_Sound,dige:f7dbcd82c50033cc
-  GhostInclude:Ghost_M_Crate,dige:c05f526599e015af
+  GhostInclude:Ghost_M_Crate,dige:818945f698e16d00
   GhostInclude:Ghost_M_Mixer,dige:d5597b5a4132d7f3
   GhostInclude:Ghost_M_Mesh,dige:286eb98843f6e7f9
   GhostInclude:Ghost_M_Ra,dige:877d4c68475647aa
-  GhostInclude:Ghost_M_Heist,dige:3f756c177f0c0c16
+  GhostInclude:Ghost_M_Booth,dige:24e06889933090b3
+  GhostInclude:Ghost_M_Heist,dige:290352d2ace6855a
   GhostInclude:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
   GhostInclude:Ghost_Story_Radiation,dige:f3403566ed74e831
-  GhostInclude:Ghost_Story_Heistation,dige:45d18a7136b753fc
+  GhostInclude:Ghost_Story_Heistation,dige:f8b3d842c651570c
   GhostInclude:Ghost_S_Swarm,dige:a5980d5d4830e92b
   GhostInclude:Ghost_Story_Swarmation,dige:424a77682127f2ba
-  GhostInclude:Ghost_V_Voro,dige:4e54bc63d788810a
-  GhostInclude:Ghost_Story_Voronation,dige:a2ab27aa13d64e50
-  last_ok,at=1783818476.695,ok_pct
-    uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
-    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
-    uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
-    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-    uses:Ghost_N_Repli,dige:792b0a842d938f44
-    uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
-    uses:Ghost_M_Radiola,dige:8786e42c3f3d4c97
-    uses:Ghost_M_Sound,dige:f7dbcd82c50033cc
-    uses:Ghost_M_Crate,dige:c05f526599e015af
-    uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
-    uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
-    uses:Ghost_M_Ra,dige:877d4c68475647aa
-    uses:Ghost_M_Heist,dige:3f756c177f0c0c16
-    uses:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
-    uses:Ghost_Story_Radiation,dige:f3403566ed74e831
-    uses:Ghost_Story_Heistation,dige:45d18a7136b753fc
-    uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
-    uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
-    uses:Ghost_V_Voro,dige:4e54bc63d788810a
-    uses:Ghost_Story_Voronation,dige:a2ab27aa13d64e50
+  GhostInclude:Ghost_V_Voro,dige:c1ceca33309a5302
+  GhostInclude:Ghost_Story_Voronation,dige:b98a2dbef3f0c2a6

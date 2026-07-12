@@ -31,6 +31,7 @@
 
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
+    import { throttle } from "$lib/Y.svelte"
     import { EditorView } from "@codemirror/view"
     import { unfoldEffect, foldedRanges } from "@codemirror/language"
     import NaviCado from "$lib/O/ui/NaviCado.svelte"
@@ -182,9 +183,30 @@
     })
     // active_path: which dock is foregrounded.
     // %Languinio/%dock,path with active:1 carries sc.dock = the path string.
-    let active_path = $derived(
-        (languinio?.ob({ active: 1 })[0]?.sc.dock as string | undefined) ?? ''
-    )
+    //   STICKY + settled-read (reactivity_docs).  A bare $derived here read the dock hold
+    //    directly, so a heartbeat that caught Languinio mid-transaction (a child's replace()
+    //     "starts empty" per the doc) saw dock = '' — which nulled lang_dock and TORE THE WHOLE
+    //      MAPULEN DOWN, then rebuilt it when the next tick read full again: a 30% CPU strobe
+    //       (regions=2→0→2 every ~heartbeat) that even pegged the tab past a reactap census.
+    //    The cure is Langui's own guard for this identical read: subscribe on vers in the
+    //     $effect, re-read inside H.clear for a SETTLED snapshot, and never overwrite a good
+    //      path with '' (a genuine close leaves the map showing the last doc — it's hidden by
+    //       Langui's no_doc shell anyway, exactly as Langui's active_path behaves).
+    //    Throttled (reactivity_docs flags the H.clear end as wanting it): languinio.vers bumps
+    //     every heartbeat but the foreground dock changes only on a switch, so a leading-edge
+    //      throttle runs the settled-read at once on a real change, then coalesces the idle
+    //       heartbeats to one trailing H.clear per interval instead of one per tick.
+    let active_path = $state('')
+    const settle_active_path = throttle(() => {
+        H.clear(async () => {
+            const p = languinio?.ob({ active: 1 })[0]?.sc.dock as string | undefined
+            if (p) active_path = p
+        })
+    }, 200)
+    $effect(() => {
+        void languinio?.vers
+        settle_active_path()
+    })
     // ── spinners — the %Languinio in-flight set ───────────────────────────────
     //   Each {spinner:$name} particle under %Languinio is one indicator; this
     //   renders them ALL, so a new phase spinner (Langspinner) shows up here with

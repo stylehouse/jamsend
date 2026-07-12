@@ -32,12 +32,12 @@ Snap:H
         bare:req,n:1
         cell:Artist Moonlit,kind:pane,n:4
           Vtuffing,of:Track,n:4
-            Vrow,row:title,text:Moonlit  ×4,wgt:2,tag:Artist,nk:name
-            Vrow,row:list,wgt:1,bits:4
-            Vrow,row:spread,text:year,wgt:1,bits:3
-            Vrow,row:fact,text:remaster ×2,wgt:1
-            Vrow,row:fact,text:live ×2,wgt:1
-            Vrow,row:dip,text:/*4,wgt:1
+            Vrow,row:title,text:Moonlit  ×4,wgt:100,tag:Artist,nk:name
+            Vrow,row:list,wgt:50,bits:4
+            Vrow,row:spread,text:year,wgt:57,bits:3
+            Vrow,row:fact,text:remaster ×2,wgt:40
+            Vrow,row:fact,text:live ×2,wgt:20
+            Vrow,row:dip,text:/*4,wgt:10
         cell:Artist Fernway,kind:pane,n:4
           Vtuffing,of:Track,n:4
             Vrow,row:title,text:Fernway  ×4,wgt:2,tag:Artist,nk:name
@@ -48,20 +48,21 @@ Snap:H
             Vrow,row:dip,text:/*4,wgt:1
         cell:Artist Voxhall,kind:pane,n:3
           Vtuffing,of:Track,n:3
-            Vrow,row:title,text:Voxhall  ×3,wgt:2,tag:Artist,nk:name
-            Vrow,row:list,wgt:1,bits:3
-            Vrow,row:fact,text:year: 2007,wgt:1
-            Vrow,row:fact,text:live ×1,wgt:1
-            Vrow,row:dip,text:/*3,wgt:1
+            Vrow,row:title,text:Voxhall  ×3,wgt:100,tag:Artist,nk:name
+            Vrow,row:list,wgt:50,bits:3
+            Vrow,row:fact,text:year: 2007,wgt:57
+            Vrow,row:fact,text:live ×1,wgt:20
+            Vrow,row:dip,text:/*3,wgt:10
         bare:see,n:1
+        Se:scape,grasped:5,born:1,died:0,loudest:Artist · Moonlit,trait:remaster ×2,regions:2
         cell:Artist Riverine,kind:pane,n:3
           Vtuffing,of:Track,n:3
-            Vrow,row:title,text:Riverine  ×3,wgt:2,tag:Artist,nk:name
-            Vrow,row:list,wgt:1,bits:3
-            Vrow,row:spread,text:year,wgt:1,bits:2
-            Vrow,row:fact,text:remaster ×2,wgt:1
-            Vrow,row:fact,text:live ×2,wgt:1
-            Vrow,row:dip,text:/*3,wgt:1
+            Vrow,row:title,text:Riverine  ×3,wgt:100,tag:Artist,nk:name
+            Vrow,row:list,wgt:50,bits:3
+            Vrow,row:spread,text:year,wgt:36,bits:2
+            Vrow,row:fact,text:remaster ×2,wgt:40
+            Vrow,row:fact,text:live ×2,wgt:20
+            Vrow,row:dip,text:/*3,wgt:10
         cell:Artist Palegold,kind:pane,n:2
           Vtuffing,of:Track,n:2
             Vrow,row:title,text:Palegold  ×2,wgt:2,tag:Artist,nk:name

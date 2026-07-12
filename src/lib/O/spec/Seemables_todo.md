@@ -52,28 +52,30 @@ Get on with these — each is a **Slice 0**: a read-only mirror stood ALONGSIDE 
          peel doesn't split on `/`.`), then `o_Seem` over THAT. That projection is the real work; the
           diff is then free. `w.c.stemdex_seem = {goners,neus,rows}` reads beside the live `gone` filter.
 
-**STATUS 2026-07-12 (this session) — READ THIS FIRST:**
- - Three mirrors were built as PROTOTYPES (§1 Voro census, §6 Stemdex, §3 Lang graft) — additive,
-    compile-clean, read-only (no consumer reads them; harmless in the tree). An **adversarial review then
-     found ALL THREE FLAWED** — the `i_Seem`/`o_Seem` SKELETON is sound in each (home reused across beats,
-      `resolve()` has a last beat, departures resolve as goners), but each points at the WRONG SOURCE, so
-       **DO NOT prove any as-is** — the `%see` would be theatrical or red-on-valid-input:
-    - **§1 Voro census — SUSPECT (tautology + self-count).** Walks the POST-sweep `rw`, so `census.goners`
-       == "what the sweep dropped" BY CONSTRUCTION (break the sweep → the mirror breaks in lockstep, never
-        diverges). Also self-counts its own `%Se:census`/`%Se:scape` readout rows (+1 neu at n=3). FIX:
-         diff an INDEPENDENT source the sweep hasn't pruned (rw BEFORE the sweep at Voro_report `:189`, or
-          the flora `w`), + `match_sc` excluding `{Se:1}`.
-    - **§6 Stemdex — FLAW (wrong diff + no driver).** Diffs roster-vs-roster (`paths`), but the hand `gone`
-       (`LiesFunk:1468`) is `dex.docs`(index)-vs-roster — different sets (cache-warm, budget-lag, `size>50`
-        gate). AND no Book drives the scan (Searchbar-only) → `%see` can't even sample. FIX: sync the roster
-         from `dex.docs.keys()` + gate on `size>50`; wire a driving Book with a doc removal.
-    - **§3 Lang graft — FLAW (subset claim false).** `oai({pm:slot})` collapses duplicate-`(src_Waft,spec)`
-       Pmirrors into ONE slot, so `hand ⊆ seem` FAILS when two Points share a target; wipe early-returns
-        also leave `graft_seem` stale. FIX: key `%pm` by a per-Point unique id (incl. `src_Point`), sync on
-         the wipe paths too.
-   NET: what's banked is the PROVEN PATTERN (the skeleton works) + these precise fixes — NOT 3 shippable
-    mirrors. A runner-session fixes + proves each. The adversarial pass EARNED its keep: it caught this
-     before a runner cycle was spent proving theater.
+**STATUS 2026-07-12 evening — READ THIS FIRST: all three mirror flaws are FIXED in code; LIVE PROOF
+ OWED on each.** The morning's adversarial review found the three prototype mirrors pointing at the
+  wrong SOURCE (each read its target's own output — tautological); each was rebuilt to its fix spec
+   the same day:
+    - **§1 Voro census — REBUILT honest.** `Voro_census_stash` (Voro.g) copies THIS beat's census
+       subjects off the flora-walk `census` object into an off-snap intent tree at `w.c.census_home`
+        BEFORE the `seen_beat` sweep; `Voro_census_mirror` now Seems over THAT (never the swept `rw`),
+         so mirror and hand sweep share only their SUBJECT, not their machinery — a mis-reconciliation
+          now makes them DIVERGE (the provable claim). `%Se` rows never enter `census_home`, so no
+           self-count. (No negative-match knob exists on `Selection`; exclusion is done at population
+            time — which is why the stash tree exists at all.)
+    - **§6 Stemdex — FIXED.** `Stemdex_seem_mirror(w, dex)` syncs its mirror from `dex.docs.keys()`
+       (the INDEX — the set the prune actually sweeps at `LiesFunk:1468`), gated on the same
+        `paths.size > 50` guard the prune uses. Still no driving Book — a complete **LakeStem Book
+         plan** (driver arm nudging `Lies_stemdex_scan`, >50-doc corpus, doc-removal divergence
+          scenario, Credence registration) is written; fixtures must be recorded live.
+    - **§3 Lang graft — FIXED.** `%pm` rows now key by a per-Point uid (`Lang_point_uid` stamps
+       `pt.c.graft_uid` off a dock counter), so shared-target Pmirrors keep distinct slots and
+        `hand ⊆ seem` is structurally possible again; `Lang_graft_seem_wipe` runs the shared one-walk
+         on the `Lang_wipe_pmirrors` paths so the Seem can't go stale on early returns.
+   NET: pattern proven, fixes in; the REMAINING work is purely runner-in-the-loop — prove each
+    mirror's counts track its hand-rolled twin (Voro: a Book `%see` at the n=8 apoptosis; Stemdex:
+     build LakeStem; Lang: a shared-target-Points recompile), THEN flip one consumer each. The
+      adversarial pass EARNED its keep: it caught the theater before a runner cycle was spent.
  - The two "big" targets were DEEP-DESIGNED and came back OVERSTATED by the survey: §4 (`dm_correlate`
     dormant; step-vs-step ≠ the live-vs-fixture gate; flatten load-bearing → additive DISPLAY only) and §2
      (`apply` is a marker executor; 6 of 7 maps must stay; Cyto's `Ze` already resolves it → telemetry
@@ -484,3 +486,228 @@ The three hooks a candidate is measured against:
 - **Verify LIVE only** — `runner_ask.mjs` / `runner_shot.mjs` against a `:9091` runner; headless
    Story_cli is banned (`verify-via-live-runner`, `testing-is-story-books`). Every isolation proof is a
     Book `%see`, installed via a CHECK run + manual install, never CredRunner Accept (`see-assertion-layer`).
+
+---
+
+## §5-deep — Matstyle: the field-aware swatch + the beat-live dose band
+
+*(Deep design 2026-07-12, appended below the thin §5 sketch above. DESIGN, not built. The §5
+ headline "smell (c) only" was right but incomplete: there IS a latent (b), and it is the cleanest
+  angle — read below. The truly-cosmetic nature makes this the safest place in the whole harvest to
+   demonstrate the neighbourhood-read on live output.)*
+
+### Ground truth (read live: `Matstyle.svelte`, `Cyto.svelte`)
+
+`matstyle_get_or_create(stylesC, key)` (`Matstyle.svelte:164`) is the whole mechanism. On a new
+ mainkey it takes `idx = existing.length` (`:169`) and `bg = MATSTYLE_PALETTE[idx]` (`:174`) — the
+  next colour by **first-seen order**, from the 40-colour golden-angle palette. It is a
+   find-or-create keyed on `matstyle:<key>` under `The/Styles`, called PER NODE PER BEAT from Cyto's
+    classify: `Cyto.svelte:919` (default path) and `:741` (stuffy border). So every beat, every
+     rendered particle asks "have I seen this mainkey?" and, on a miss, mints the next palette colour.
+
+Two verdicts are each made in isolation:
+
+- **(c) colour** — `idx = existing.length` is blind to the population. It cannot spread hues to
+   maximise contrast among the mainkeys ACTUALLY present this beat, cannot de-emphasise a dominant
+    type, cannot re-use a retired slot — because it never sees the field, only its own running count.
+- **(c) dose size** — `matstyle_apply`'s `dose_drives` (`:245-263`) interpolates size against a
+   HAND-AUTHORED constant `min/max` per mainkey (`%meta:dose`, seeded in `matstyle_seed_known:184`),
+    never the live min/max across the sibling particles this beat. A dose of 8 looks "big" or "small"
+     only against the constant band, not against what else is on screen right now.
+
+**The latent (b) the §5 sketch missed — arrival IS a hand-rolled diff, it just has no departure.**
+ `matstyle_get_or_create` is a `%Seem` waiting to happen: the `o({matstyle:key})[0]` miss-check is a
+  per-beat "is this mainkey a NEU?" test, and `idx = existing.length` is a monotonic arrival counter.
+   There is no goner concept at all — swatches NEVER retire (a mainkey that vanishes from the graph
+    keeps its slot forever, and `idx` keeps climbing toward palette exhaustion, `:171`). That absence
+     is the smell: the machine already computes "new mainkey this beat" by hand, one node at a time,
+      with no memory of the SET of mainkeys present last beat.
+
+### The Seem-ification
+
+**What the Seem watches:** the set of mainkeys present in the live Cyto graph THIS beat — i.e. an
+ `o_Seem` over a distilled roster `C**` with one child per DISTINCT mainkey found during
+  `cyto_scan` (NOT over the nodes themselves — that is Cyto's own Seem; see the tautology guard
+   below). The roster is projected from the scan's classify pass: as each node is classified, note
+    its mainkey; the roster is `{ mainkey:<key>, dose_min, dose_max, count }` — the per-mainkey
+     census OF THE FIELD.
+
+**What it projects:**
+- `neus` = mainkeys that appeared this beat → mint a swatch, but now choosing the colour RELATIVE to
+   the field (spread the new hue maximally from the hues already in use, using the golden-angle
+    stepping the palette already encodes — just seeded by "what's present" not "how many I've minted").
+- `goners` = mainkeys that VANISHED → the thing the current code cannot do: retire (or grey-bank) the
+   swatch, freeing its palette slot so a long-running graph never exhausts 40 colours.
+- survivors carry `bD` = last beat's swatch + last beat's live dose band, so `dose_drives` can
+   interpolate against the BEAT'S range (`bD`-tracked live min/max) with hysteresis instead of a
+    frozen constant.
+
+**What consumer flips:** exactly one. `matstyle_get_or_create` stops reading `existing.length` and
+ reads the census Seem's `neus`/field to pick a contrast-maximising colour; `dose_drives` stops
+  reading only `%meta:dose` constants and blends in the census row's live `dose_min`/`dose_max`.
+   Nothing else changes — swatches still store off-snap in `H.ave` beside `This` (`Matstyle.svelte`
+    header), still drive `matstyle_restyle:326`.
+
+**Where its Seem lives / projects:** off-snap on the Cyto `w.c` (the census is per-graph-instance,
+ like `w.c.Styles`), modelled on the proven `i_Seem`/`o_Seem` shape (`LangHold.svelte:930/980`).
+  Projects only the census rows it needs; the swatches themselves stay where they are (they are
+   authored/editable via `matstyle_update`, so they must NOT be blown away each beat — the Seem
+    ADVISES the colour choice for NEW keys, it does not own existing swatches).
+
+### Isolation-first Slice 0
+
+A read-only census pass stood ALONGSIDE the live path: build the per-beat mainkey roster during
+ `cyto_scan`, run an `o_Seem` over it, and `console.log` / project `{neus, goners, field}` beside
+  the current `existing.length` choice — changing NO pixel. Prove (a Book `%see` — a `Leaf*` Book
+   that Cyto "basically works" on is the natural probe, `Cyto.svelte:731` comment) that the census
+    `neus` match the mainkeys that actually got new swatches this beat, and that `goners` names the
+     ones that left. THEN flip `matstyle_get_or_create`'s colour choice to be field-aware, and prove
+      the palette no longer climbs monotonically on a graph that churns mainkeys.
+
+### The tautology trap (be adversarial — this is how the first three mirrors died)
+
+**The trap:** the obvious census source is "walk the cyto_node particles and collect mainkeys." But
+ Cyto's scan (`Cyto.svelte:346`) is ITSELF a Seem, and the swatch population is a strict downstream
+  of it. A census Seem walking the SAME node set would have `neus` == "nodes Cyto's Seem already
+   classed as neu" BY CONSTRUCTION — it would break in lockstep with Cyto's scan and never diverge,
+    reading Cyto's own output back to itself. That is exactly the §1 Voro-census flaw (`§0`: "walks
+     the POST-sweep `rw` so its goners == the sweep's output tautologically") and the §6 Stemdex flaw
+      reborn.
+
+**How this design avoids it:** the census is over a DIFFERENT granularity and an INDEPENDENT source.
+ It does NOT diff nodes (Cyto owns that); it diffs the **distinct-mainkey SET**, projected from the
+  source particles' `mainkey(n)` — a coarser identity that Cyto's node-level Seem never computes.
+   Cyto's Seem answers "which NODES arrived"; the census answers "which TYPES are present", and a
+    type can persist across beats while its individual nodes churn (10 leaves → 12 leaves = zero
+     mainkey `neus`, but Cyto's node Seem reports neus). The two sets provably diverge, so the census
+      is measuring something real, not echoing Cyto. Concretely: gate the proof on a beat where node
+       count changes but the mainkey set does NOT (census `neus`==0, Cyto neus>0) — if the census
+        reports `neus`>0 there, it is tautological and must be rejected.
+
+### Honest risk assessment
+
+- **Blast is VISIBLE IN EVERY CYTO RENDER** — swatch colour and node size are on-screen on every
+   frame. A wrong field-aware colour is not a wrong verdict (no fixture, no gate — swatches are
+    off-snap `H.ave`), so the machine stays green, but the human SEES churn immediately. That is
+     actually the safety: the failure mode is cosmetic and instantly visible via `runner_shot.mjs`
+      (`runner-shot-pixel-loop`), not a silent data corruption.
+- **The specific breakage if the field-aware colour is unstable:** swatch CHURN — a colour that
+   recomputes every beat as the field shifts, so nodes flicker hue. Guard: survivors keep their
+    colour via `bD` (a mainkey that was present last beat keeps its assigned swatch; only genuine
+     `neus` get a fresh field-relative pick). Never recolour a survivor. This is why the Seem's
+      identity (survivor keeps `bD`) is load-bearing, not decorative.
+- **Do NOT let the Seem own authored swatches.** `matstyle_update` (`:366`) lets the human hand-edit
+   a swatch's colour/shape/dose; those are persisted and editable. The census advises the DEFAULT for
+    a new mainkey only — an authored override must always win. If the Seem ever overwrites an authored
+     `%style:*`, that is a regression the human will notice on the next edit.
+- **HMR caveat (`hmr-remixes-ghost-methods`):** Matstyle methods re-mix on hot update, but a census
+   `Selection` captured on `w.c` at construction holds the OLD function refs. Re-seat the census Seem
+    on the version bump, or (safer for a view) accept a one-beat stale census after an HMR — cosmetic,
+     self-heals next scan.
+
+---
+
+## §7-deep — LiesStore IO pump: the settled-vs-pending identity diff (RUNNER-IN-THE-LOOP, never blind)
+
+*(Deep design 2026-07-12, appended below the thin §7 sketch. The §7 sketch's verdict stands and is
+ REINFORCED here: the Seem fit is LOOSE and this is CORE — every dock write rides it. This section
+  designs it properly anyway, because the two-pass `sc.seen` dance IS a real hand-rolled identity
+   diff, but concludes with the honest guard: **never blind-build this; runner in the loop or not at
+    all.**)*
+
+### Ground truth (read live: `LiesStore.svelte`)
+
+`req_Store` (`:399`) is the pump — `req:Store,maz:7,eternal` sitting on `w`, pumping itself each
+ tick via its own `do_fn` (`:6-19` header). It settles finished IO in FOUR phases, and the
+  bookkeeping is entirely hand-stamped `.sc` flags scanned linearly each pump:
+
+- **Phase 1 — writes** (`:410`): `for (const wr of req.o({req:'LiesStore_write'})) if (!wr.sc.finished) continue` — scan for finished writes, stamp `Good/known` dige, hand off to `req:Codebit` by `gen_path` match, then `req.drop(wr)`.
+- **Phase 2 — reads** (`:476`): the TWO-PASS DROP. `if (rd.sc.seen) { req.drop(rd); continue }` else land content onto the waiting `%Good`, drain to subscribers, then `rd.sc.seen = 1`. The comment (`:462-475`) explains why: a read dropped IMMEDIATELY re-dispatches every tick (the tailspin) because `LiesPersist` re-checks `req.sc.finished` after the drop; the `seen` stamp buys the caller one full `do()` cycle to read `reply` before the req disappears.
+- **Phase 3 — listings** (`:515`): `if (ls.sc.finished) req.drop(ls)` — single-pass.
+- **Phase 4 — writeCarefully** (`:524`): `if (wc.sc.finished) req.drop(wc)` — single-pass; a fire-and-forget save with no accessor.
+
+Plus a per-`%Good` off-snap flag cluster: `good.c.content` (undefined=loading, null=absent,
+ string=landed), and the load-state siblings the §7 sketch names (`asked_at`, `last_error`,
+  `error_count`, `notfound_rounds`). And a hand-rolled disk diff `if (base_dige && disk_dige &&
+   disk_dige !== base_dige)` (`:777`) branching silent-pull vs conflict-park in
+    `req_LiesStore_writeCarefully` (`:745`).
+
+### Where the identity diff actually is
+
+**The two-pass `sc.seen` dance IS a survivors/neus/goners diff, hand-rolled.** Read it as:
+ - a finished-but-unseen read = a **neu** this pass (first sight → land + drain);
+ - a finished-and-seen read = a **survivor** from last pass (its one grace cycle) → **goner** this
+    pass (drop);
+ - an unfinished read = still in-flight (not in the diff yet).
+
+That is exactly `resolve()`'s pairing (`Selection.svelte.ts:306`: `a && !b` goner, `!a && b` neu,
+ `a && b` survivor) — the pump is re-implementing "which reqs are new-this-pass vs seen-last-pass vs
+  gone" by stamping `sc.seen` and scanning, once per phase, four times over.
+
+### The Seem-ification (designed, then bounded)
+
+**What the Seem would watch:** the child-req set under `req:Store` — `LiesStore_write`,
+ `LiesStore_read`, `LiesStore_listing`, `LiesStore_writeCarefully` — keyed by identity (path + kind).
+  An `o_Seem` over that set gives per-pass: `neus` (reqs that just finished — do the Phase-1/2/3
+   landing), survivors (finished last pass, this pass's `seen` grace → the two-pass drop falls out of
+    survivor→goner transition), `goners` (dropped). The four linear scans + the `sc.seen` two-pass
+     latch collapse into one `resolve()`.
+
+**What it projects:** nothing to snap (the whole IO footprint is `req:Store`'s subtree; the Seem
+ rides `w.c` off-snap like the `good.c.*` state already does). It DRIVES the landing/handoff/drop
+  directly, the way Cyto's wave Seem drives cytoscape ops.
+
+**What consumer flips:** the four phase loops in `req_Store` read the Seem's classified set instead
+ of scanning `.sc.finished`/`.sc.seen`. The `%Good`/known stamping and the Cortex handoff
+  (`write_finished`, `:447`) stay exactly as they are — they are the WORK, not the bookkeeping.
+
+**Where its Seem lives:** off-snap on `w.c` (or on `req:Store.c`), modelled on `i_Seem`/`o_Seem`
+ (`LangHold.svelte:930/980`). The req children are already particles under `req:Store`, so the
+  walk source is a real `C**` subtree — a BETTER structural fit than §5's roster projection.
+
+### The adversarial cut — the tautology AND the two deeper reasons to leave the queue alone
+
+**The tautology trap:** an `o_Seem` walking `req:Store`'s child set, where `neu` == "a req whose
+ `sc.finished` just flipped", is reading the SAME `sc.finished` flag the current scan reads — so a
+  naive Seem here echoes the finished-flag rather than independently diffing identity. The
+   `sc.finished` flag is set by the IO completion (Wormhole reply landing), and the Seem's neu/goner
+    would be a strict function of it. **To avoid it:** the Seem must diff req IDENTITY across passes
+     (was this (path,kind) req present last pass? did it leave?), NOT re-read `sc.finished`. The
+      identity is the pairing signal; `finished` is orthogonal state the landing logic reads AFTER the
+       Seem classifies. If the design ever ends up with the Seem's `pairs_fn` consulting `sc.finished`,
+        it has become tautological and must be rejected — the same rule that killed §1/§6.
+
+**Deeper reason 1 — much of `good.c.*` is legitimate async scaffolding, NOT the smell** (`§0` BOMB,
+ `fight-back-on-core-changes`). `content`/`asked_at`/`error_count`/`notfound_rounds` WANT to persist
+  across ticks — they are in-flight IO memory, not a re-derived-each-beat diff. Converting them fights
+   the async lifecycle. The smell is ONLY the `sc.seen` two-pass latch and the phase scans, not the
+    `%Good` state.
+
+**Deeper reason 2 — the two-pass drop exists for a REAL timing constraint the Seem must not
+ break.** The `seen` grace cycle (`:462-475`) is there because `req_Store` runs as a `do_fn` INSIDE
+  `w.do()` and `LiesPersist` re-checks `finished` after — an immediate drop tailspins. A Seem that
+   drops a read the pass it finishes reintroduces the exact tailspin the comment warns about. So the
+    Seem's survivor→goner transition must preserve the one-cycle grace, which means the Seem's timing
+     has to match the hand-rolled two-pass EXACTLY. Getting that wrong is not a cosmetic bug (§5) — it
+      is a per-tick re-dispatch storm on the pump every dock write rides.
+
+### Honest risk assessment + the standing verdict
+
+- **This is LOAD-BEARING: every dock write and read rides `req:Store`** (`LiesStore.svelte:6-19`).
+   A wrong diff = a stuck compile (write never hands off to Codebit), a lost read (content never
+    lands on the `%Good`), or the tailspin re-dispatch storm. Blast is the whole editor + every
+     runner's include pipeline.
+- **No snap, but a live-behaviour gate:** the pump has no fixture of its own, so the failure is not a
+   red verdict — it is a hang or a storm, only visible on a LIVE runner under real IO. That makes it
+    the OPPOSITE of §5: §5 fails visibly-and-cosmetically, §7 fails invisibly-and-catastrophically.
+- **HMR (`hmr-remixes-ghost-methods`):** the pump's `req_Store` re-mixes, but a `Selection` captured
+   on `w.c` holds stale refs — and unlike a view, a stale pump Seem is not self-healing; it can wedge
+    IO. This alone argues against a Seem here without a re-seat-on-version-bump discipline proven live.
+
+**VERDICT (unchanged from §7, stated plainly): runner-in-the-loop territory, NEVER blind-built.** If
+ anything is worth converting it is ONLY the `sc.seen` two-pass latch → a Seem's survivor→goner
+  transition, in strict isolation, proven on a live runner doing real dock writes (open a dock, edit,
+   save, watch the compile land) via `runner_ask.mjs` — with the two-pass timing verified byte-for-byte
+    against the current behaviour before any flip. The `good.c.*` cluster and the disk-diff branch
+     (`:777`) stay hand-rolled; they are not the smell. Lowest priority in the whole harvest, and a
+      candidate for "never" if the isolation proof cannot match the two-pass timing exactly.

@@ -2256,6 +2256,38 @@ export class WormholeNav {
             await dir.expand()
         }
     }
+
+    // bin_append — bin_write's STREAMING twin: extend a file at its END without holding the whole thing in
+    //  memory.  The FSA WritableFileStream keeps existing data (keepExistingData) and takes a positioned
+    //   write at the current size, so a heist can land a big asset chunk-at-a-time (Radio_todo §10.2 #1
+    //    stream-to-disk) instead of assembling one Uint8Array(size) and writing it whole.  The current size
+    //     is read off the live file handle (0 when the file does not exist yet — the FIRST append creates it,
+    //      so a caller can bin_append from seq 0 without a separate create).  Same stale-handle self-heal as
+    //       bin_write: a poisoned dir handle re-walks fresh and retries ONCE.
+    //   CAPABILITY: this rides the native FileSystemWritableFileStream (FSA/OPFS-shaped disk).  A backend
+    //    that cannot position a write does NOT define bin_append; the caller probes `typeof nav.bin_append`
+    //     and falls back to a whole-buffer bin_write (the honest subset — no partial interface that pretends
+    //      to stream and silently rewrites).
+    async bin_append(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer): Promise<void> {
+        const parts = dir_path.split('/').filter(Boolean)
+        const once = async (dir: DirectoryListing) => {
+            // current size off the live handle: absent file ⇒ 0, so the first append is the create.
+            let size = 0
+            try { size = (await (await (dir as any).handle.getFileHandle(filename)).getFile()).size }
+            catch { size = 0 }
+            const writer = await dir.getWriter(filename, true)   // keepExistingData — don't truncate
+            await (writer as any).write({ type: 'write', position: size, data: bytes as BufferSource })
+            await writer.close()
+            this._cache.delete(parts.join('/'))
+            await dir.expand()
+        }
+        try {
+            await once(await this.mkdirp(...parts))
+        } catch (e: any) {
+            if (!this._is_stale(e)) throw e
+            await once(await this.mkdirp_fresh(...parts))
+        }
+    }
 }
 
 //#endregion

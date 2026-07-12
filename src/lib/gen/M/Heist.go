@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '3f756c177f0c0c16' },
+    Ghostmeta_Ghost_M_Heist(): string { return '290352d2ace6855a' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -63,32 +63,50 @@ async Heist_hash(raw) {
 
 },
 // Heist_census — walk REAL files off the share into a library of heist-servable %Records: each card
-//  carries identity (id = enid16 of the bytes), catalog identity (artist/title), the byte promise
+//  carries identity (id = enid16 of the bytes), catalog identity (artist/title/album), the byte promise
 //   (bytes/total/body_hash), and its %Body,seq chunks minted whole (the original bytes, sliced).  `artists`
 //    (array|null) is the TEST-MODE WHITTLE: only files whose artist is listed join this census, so
 //     Piers sharing ONE disk seem to hold different music and the dedup trap dissolves.  Idempotent:
 //      a card already standing (by catalog identity) is recognized, not rebuilt.
+//  Catalog identity comes from the file's TAGS when present, the FILENAME when not: the same bytes we
+//   already read to hash the body are handed to Crate_meta_from_tags (WAV RIFF INFO / ID3v2), which falls
+//    back FIELD-BY-FIELD to Crate_meta_from_path — no second disk read.  The whittle + the cheap held-probe
+//     run FIRST on the path-derived artist (they gate whether we even read the bytes, and reading tags needs
+//      the whole file), so a tag whose artist DIFFERS from the path could slip a whittle it should fail — but
+//       the tag-derived identity is what CATALOGUES and DEDUPS: after the read we re-probe held on it, so a
+//        tag identity already standing is still recognized.  The test tones carry NO tags, so tag-artist ==
+//         path-artist and the whittle divides exactly as before (verified: album falls out empty for a flat
+//          `Artist - Title.wav`, artist/title unchanged).
 async Heist_census(w, lib, nav, base, artists) {
     let paths = await this.Crate_nav_paths(nav, base)
     let built = 0
     let stood = 0
     let skipped = 0
     for (const path of paths) {
-        let meta = this.Crate_meta_from_path(path)
-        if (artists && !artists.includes(meta.artist)) { skipped = skipped + 1; continue }
-        if (this.Heist_held(lib, meta.artist, meta.title)) { stood = stood + 1; continue }
+        let pmeta = this.Crate_meta_from_path(path)
+        if (artists && !artists.includes(pmeta.artist)) { skipped = skipped + 1; continue }
+        if (this.Heist_held(lib, pmeta.artist, pmeta.title)) { stood = stood + 1; continue }
         let parts = (base + '/' + path).split('/').filter(Boolean)
         let filename = parts.pop()
         let raw = await nav.bin_read(parts.join('/'), filename)
         if (!raw || !raw.byteLength) { skipped = skipped + 1; continue }
         let bytes = new Uint8Array(raw)
+        // the authoritative catalog identity: tags win, filename fills the gaps.  Pass the bytes FROM OFFSET 0
+        //  (Crate_meta_from_tags reads the RIFF/ID3 header there); it never throws and never returns a hole.
+        let meta = this.Crate_meta_from_tags(bytes, path)
+        // a tag identity already held (the path-probe above only saw the filename identity) is recognized here
+        //  — the dedup stays catalog-true even when the tag disagrees with the name it was filed under.
+        if (this.Heist_held(lib, meta.artist, meta.title)) { stood = stood + 1; continue }
         let hash = await this.Heist_hash(bytes)
         let CH = this.Heist_chunk_bytes()
         let total = Math.ceil(bytes.length / CH)
         let dot = filename.lastIndexOf('.')
         let ext = (dot < 0) ? '' : filename.slice(dot + 1)
+        // album rides the card as a scalar (absent → omitted, never a `false`/empty-string snap wart) so the
+        //  landing tree can shelve <genre>/<Artist>/<Album>/<Title> without re-reading the file.
         let rec = lib.i({ Record: 1, id: hash.slice(0, 16), title: meta.title, artist: meta.artist,
             path: path, ext: ext, bytes: bytes.length, body_hash: hash, total: total })
+        if (meta.album) rec.sc.album = meta.album
         rec.c.up = lib
         let s = 0
         while (s < total) {
@@ -117,6 +135,35 @@ Heist_held(lib, artist, title) {
 //     distinct reasons a husk stops: HELD = already have it; TOMBSTONED = chose against it and it stays out.
 Heist_tombstoned(lib, artist, title) {
     return !!(lib && lib.o({ Tombstone: 1, artist: artist, title: title })[0])
+
+},
+// Heist_release_buf — drop a spent chunk's bytes once they are safely on disk (the stream-to-disk buf
+//  release).  A %Body carries its bytes as its ONE binary .sc value (Repli_chunk_bytes' model); deleting
+//   that key frees the buffer for GC while the husk particle stays.  Bare delete is query+snap safe here:
+//    the value is binary (a snap would MUTE it to a ref anyway, never persist it) and the whole mirror
+//     record is rm'd moments later — this just stops the buf outliving its disk write inside one landing.
+//  The mirror's fill-probe (Ra_chunk_map, presence-is-fill-state) will now read the seq as MISSING, which
+//   is exactly right: a released seq no longer needs re-holding UNLESS the land throws before completing,
+//    in which case the next beat re-pulls it — the honest retry the streaming comment describes.
+Heist_release_buf(ch) {
+    let sc = ch.sc || {}
+    for (const k of Object.keys(sc)) {
+        if (this.Repli_is_binary(sc[k])) { delete ch.sc[k]; ch.bump(); return }
+    }
+
+},
+// Heist_unlink — best-effort delete of one file (the breach cleanup: a streamed-but-wrong body must not
+//  linger as a landing).  A missing dir|file|deleteEntry is swallowed — the file is already gone|never
+//   made, which is the outcome we wanted; a real fault surfaces as husks that never drain, not a throw.
+async Heist_unlink(nav, dir, filename) {
+    let dl = null
+    try {
+        dl = await nav.dir_at(dir)
+    } catch (er) { dl = null }
+    if (!dl || typeof dl.deleteEntry !== 'function') return
+    try {
+        await dl.deleteEntry(filename)
+    } catch (er) {}
 },
 //#endregion
 
@@ -166,6 +213,14 @@ async Heist_beat(w, rx, mine, theirs, job, own_lib, mir, nav, mardir) {
     for (const rec of mir.o({ Record: 1 })) {
         if (this.Heist_held(own_lib, rec.sc.artist, rec.sc.title)) {
             job.sc.skipped = +(job.sc.skipped || 0) + 1
+            // SURFACE what the dedup door held (roadmap §10.2 #3 "you already have these"): a compact
+            //  `held,tune:<Artist — Title>` child per skip, so a second heist from an artist reads back WHICH
+            //   tracks were already in the collection, not just a bare count.  `tune` is a display string only
+            //    (artist + em-dash + title) — no source, no path; it flattens WITH the job, so nothing persists
+            //     past the run (scaffolding, not ledger, exactly like the counts beside it).  Booth (%Ban and
+            //      friends) is UNWIRED by the human's call — this is a plain child, not a Booth mint.
+            let job_held = job.i({ held: 1, tune: rec.sc.artist + ' — ' + rec.sc.title })
+            job_held.c.up = job
             await mir.rm({ Record: 1, id: rec.sc.id })
             continue
         }
@@ -194,6 +249,45 @@ async Heist_beat(w, rx, mine, theirs, job, own_lib, mir, nav, mardir) {
     job.bump()
 
 },
+// Heist_safe_seg — make ONE path segment filesystem-safe: a `/` (a path separator smuggled inside a name)
+//  and a NUL (an illegal filename byte on every backend) are the only two characters that would BREAK the
+//   tree, so both become '-'; everything else — SPACES, punctuation, unicode, mixed case — is KEPT, because
+//    the tree is meant to read like a record shelf ("The Sines/Deep A.wav", not "the_sines/deep_a").  An
+//     empty|absent name collapses to nothing so the caller can drop the level.
+Heist_safe_seg(name) {
+    return ('' + (name || '')).replace(/[\/\x00]/g, '-')
+
+},
+// Heist_land_rel — the ONE landing-path derivation, shared by Heist_land (what to write) and Heist_manifest
+//  (what WOULD be written, look-before-you-commit).  Returns the file path RELATIVE to the marrauding dir:
+//   <genre>/<Artist>/<Album>/<Title>.<ext>.
+//  THE MADE CALL (reversible — flag): genre STAYS the top folder above the tag tree.  It preserves the
+//   pinned believe/disbelieve %filing design (the job's category decision still names the shelf), and keeps
+//    the Book's genre-substring gates meaningful.
+//   // <  the genre-vs-tree FORK stays open for the human: the alternative is to DROP genre entirely and let
+//   // <   <Artist>/<Album>/<Title> be the whole tree (tags replace curation).  One line here decides it.
+//  ALBUM-LESS handling (the made call): an absent album DROPS THE LEVEL — <genre>/<Artist>/<Title>.<ext>,
+//   never a literal "Unknown Album" folder.  Why drop, not placehold: a loose single on a real shelf sits
+//    straight under the artist, which is exactly how the test tones (flat `Artist - Title.wav`, no album tag)
+//     want to read; a synthetic folder would be noise the human then has to tidy.  Title falls back to the
+//      id so a tagless-AND-nameless file still lands somewhere addressable rather than at a bare `.ext`.
+Heist_land_rel(genre, artist, album, title, ext, id) {
+    let g = this.Heist_safe_seg(genre) || 'misc'
+    let a = this.Heist_safe_seg(artist) || 'Unknown Artist'
+    let al = this.Heist_safe_seg(album)
+    let t = this.Heist_safe_seg(title) || ('' + (id || 'track'))
+    let file = t + (ext ? '.' + ext : '')
+    if (al) return g + '/' + a + '/' + al + '/' + file
+    return g + '/' + a + '/' + file
+
+},
+// Heist_rel_for — the landing path (relative to the marrauding dir) for one mirror|census card under one
+//  job: pull the genre from the job's pinned filing, the Artist/Album/Title from the card's meta.
+Heist_rel_for(job, rec) {
+    let genre = this.Heist_filing_for(job, rec.sc.artist)
+    return this.Heist_land_rel(genre, rec.sc.artist, rec.sc.album, rec.sc.title, rec.sc.ext, rec.sc.id)
+
+},
 // Heist_land — STRAIGHT INTO THE COLLECTION: assemble the pulled %Body chunks, verify the bytes are
 //  the original (body_hash — a mismatch lands nothing and stamps the breach), file under the genre
 //   the job's filing named, note the arrival in newlyadded, and CATALOGUE — the landed card joins
@@ -201,35 +295,115 @@ async Heist_beat(w, rx, mine, theirs, job, own_lib, mir, nav, mardir) {
 //     heist's dedup notice it.  The spent mirror card drops: nothing attributes afterwards.
 async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
     let total = +(rec.sc.total || 0)
-    let map = this.Ra_chunk_map(rec)
+    // THE REAL LANDING TREE (roadmap §10.2 #2): <genre>/<Artist>/<Album>/<Title>.<ext>, relative to the
+    //  marrauding dir.  genre is the job's pinned %filing decision (unchanged), Artist/Album/Title come from
+    //   the landed card's meta (tags at census time, filename otherwise).  `rel` is derived ONCE here and is
+    //    THE card's sc.path AND the newlyadded entry AND the on-disk path — the three MUST stay identical: the
+    //     newlyadded read-back joins mardir + entry, dedup + the disk monitor key on sc.path, and the log
+    //      "unsourced" guard requires entry === a held card's path.  Splitting `rel` into dir + filename below
+    //       keeps all three the same string.  The SOURCE's relative dirs no longer survive under the genre —
+    //        the tag/name tree replaces them (disbelieve_directories is now moot for the shape; the job flag
+    //         is left on the design for a future believe-the-source-layout mode).
+    let rel = this.Heist_rel_for(job, rec)
+    let relparts = rel.split('/').filter(Boolean)
+    let filename = relparts.pop()
+    let dir = mardir + '/' + relparts.join('/')
+    // STREAM-TO-DISK (Radio_todo §10.2 #1).  The chunks land straight onto the file in seq order rather
+    //  than assembling one Uint8Array(size) copy of the whole asset beside the mirror bufs (the old ~2×
+    //   high-water).  Byte-faithfulness stays CENTRAL and unchanged: the file is read back WHOLE and
+    //    sha256'd against body_hash AFTER the last chunk, so the gate is the bytes ON DISK, not what we
+    //     meant to write — a torn or reordered write is caught exactly as a wire corruption would be.
+    //  Backend truth: streaming rides nav.bin_append (positioned FSA/disk write — the live runner's
+    //   backend).  A backend without it (a remote wormhole whose editor-side serve has no append op, or a
+    //    plain node harness) keeps the whole-buffer path — probed by `typeof nav.bin_append`, never a
+    //     silent partial.  Either path lands the same byte-faithful file or stamps the same breach.
     let size = 0
-    let s = 0
-    while (s < total) { size = size + map[s].length; s = s + 1 }
-    let bytes = new Uint8Array(size)
-    let at = 0
-    s = 0
-    while (s < total) { bytes.set(map[s], at); at = at + map[s].length; s = s + 1 }
-    let hash = await this.Heist_hash(bytes)
-    if (hash !== rec.sc.body_hash) {
-        // a byte-mismatch: the job tallies its OWN breach (design state on the %Heist); the record stays
-        //  in the mirror.  The Book reads job.sc.breached into its %testing observation — the engine never
-        //   stamps the world tree, so design stays clean of test opinion.
-        job.sc.breached = +(job.sc.breached || 0) + 1
-        return
+    if (typeof nav.bin_append === 'function') {
+        // STREAM: chunk 0 truncates|creates the file (bin_write), the rest append at the growing offset.
+        //  Each chunk's mirror buf is RELEASED the instant its bytes are on disk (Heist_release_buf), so the
+        //   peak is the shrinking mirror + one chunk — never a second whole-file copy.  A throw mid-stream
+        //    (a transient FSA hiccup) leaves the record in the mirror with SOME chunks released: the next
+        //     beat re-wants the released seqs (presence-is-fill-state) and Heist_land re-runs from a fresh
+        //      chunk 0 — a clean retry, never a half-committed card (the card mints only after the full-file
+        //       hash below passes).
+        let s = 0
+        while (s < total) {
+            let ch = this.Repli_chunk_at(rec, s)
+            let bytes = this.Ra_chunk_map(rec)[s]
+            if (s === 0) {
+                await nav.bin_write(dir, filename, bytes)
+            } else {
+                await nav.bin_append(dir, filename, bytes)
+            }
+            size = size + bytes.length
+            if (ch) this.Heist_release_buf(ch)
+            s = s + 1
+        }
+        let raw = await nav.bin_read(dir, filename)
+        let hash = await this.Heist_hash(new Uint8Array(raw || new ArrayBuffer(0)))
+        if (hash !== rec.sc.body_hash) {
+            // a byte-mismatch READ BACK OFF DISK: the job tallies its OWN breach (design state on the
+            //  %Heist), the bad file is DELETED (a streamed partial|wrong file must never linger as a
+            //   landing), and the record stays in the mirror.  The engine stamps nothing on the world tree.
+            job.sc.breached = +(job.sc.breached || 0) + 1
+            await this.Heist_unlink(nav, dir, filename)
+            return
+        }
+    } else {
+        // FALLBACK (no bin_append — remote|node): assemble the whole file, hash it, and only write a file
+        //  that already verified (so a bad body never touches this backend's disk — the pre-append breach
+        //   shape).  Same body_hash gate, same breach tally; just the old memory high-water.
+        let map = this.Ra_chunk_map(rec)
+        let s = 0
+        while (s < total) { size = size + map[s].length; s = s + 1 }
+        let bytes = new Uint8Array(size)
+        let at = 0
+        s = 0
+        while (s < total) { bytes.set(map[s], at); at = at + map[s].length; s = s + 1 }
+        let hash = await this.Heist_hash(bytes)
+        if (hash !== rec.sc.body_hash) {
+            job.sc.breached = +(job.sc.breached || 0) + 1
+            return
+        }
+        await nav.bin_write(dir, filename, bytes)
     }
-    let genre = this.Heist_filing_for(job, rec.sc.artist)
-    // the landed path: category first, then (believed only) the source's relative dirs, then the file.
-    let srcparts = ('' + (rec.sc.path || '')).split('/').filter(Boolean)
-    let filename = srcparts.pop() || (rec.sc.id + (rec.sc.ext ? '.' + rec.sc.ext : ''))
-    let dir = mardir + '/' + genre
-    if (!job.sc.disbelieve_directories && srcparts.length) dir = dir + '/' + srcparts.join('/')
-    await nav.bin_write(dir, filename, bytes)
-    await this.Heist_newlyadded_note(nav, mardir, genre + '/' + filename)
+    await this.Heist_newlyadded_note(nav, mardir, rel)
+    // the landed card at ITS OWN path (never the source's) — sc.path IS `rel`, the same string the newlyadded
+    //  log carries and the disk holds, so the next heist's dedup + the read-back monitor find it exactly.  Album
+    //   rides across when the meta had one, so a re-census of this collection reproduces the same shelf.
     let card = own_lib.i({ Record: 1, id: rec.sc.id, title: rec.sc.title, artist: rec.sc.artist,
-        path: genre + '/' + filename, ext: rec.sc.ext, bytes: bytes.length, body_hash: rec.sc.body_hash })
+        path: rel, ext: rec.sc.ext, bytes: size, body_hash: rec.sc.body_hash })
+    if (rec.sc.album) card.sc.album = rec.sc.album
     card.c.up = own_lib
     job.sc.landed = +(job.sc.landed || 0) + 1
     await mir.rm({ Record: 1, id: rec.sc.id })
+
+},
+// Heist_manifest — the DIRECTORY-LISTING CONFIRMABLE (roadmap §10.2 #3): look-before-you-commit.  For each
+//  husk still in the mirror, its WOULD-BE landing path (the exact same derivation Heist_land uses — Heist_rel_for,
+//   relative to the marrauding dir) and a verdict of what will happen to it: 'held' (already in the collection —
+//    dedup will skip it), 'banned' (a durable %Tombstone refuses it — a past drop stays dropped), or 'new' (it
+//     will land).  Returns [{path, verdict}, …] in mirror order — the listing a UI or Book shows as the heist
+//      BEGINS, so the human sees what they'll get and what they already have before a byte moves.
+//  PURE READ — no mutation: it consults Heist_held / Heist_tombstoned (the same doors Heist_beat gates on) and
+//   builds strings; it mints nothing, drops nothing, writes no disk.  Verdict order matters: HELD wins over
+//    banned (if you somehow both hold AND tombstoned an identity, you have it, so 'held' is the honest read),
+//     matching Heist_beat's door order (held-skip checked before tombstone).
+//   // <  the RESUME side — "found again as it RESUMES", the same listing re-shown mid-heist off partial
+//   // <   fill-state — is unbuilt: this is the AT-THE-START snapshot only.
+Heist_manifest(job, mir, own_lib) {
+    let out = []
+    if (!job || !mir) return out
+    for (const rec of mir.o({ Record: 1 })) {
+        let verdict = 'new'
+        if (this.Heist_held(own_lib, rec.sc.artist, rec.sc.title)) {
+            verdict = 'held'
+        } else if (this.Heist_tombstoned(own_lib, rec.sc.artist, rec.sc.title)) {
+            verdict = 'banned'
+        }
+        out.push({ path: this.Heist_rel_for(job, rec), verdict: verdict })
+    }
+    return out
 
 },
 // Heist_flatten — the job is done and the scaffolding goes: the %Heist (with its filings) and any

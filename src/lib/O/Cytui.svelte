@@ -848,6 +848,17 @@
     const region_on     = $derived(region_pref ?? false)
     let vregions        = $state<{ id: string, d: string, color: string }[]>([])
     const REGION_COLORS = ['#8b6bb7', '#5b9a77', '#b78a5b', '#5b8ab7', '#b75b7a', '#7ab75b']
+    // ── ▧ arc-rivers (Slice D) ────────────────────────────────────────────────
+    //  the same ▧ toggle that backs a family with a wash also draws ONE big tidy
+    //   arc down the middle of its territory — a river of one kind flowing through
+    //    the landscape (the zen-garden trail).  Rides on region_on, so ▧ is now
+    //     "the regroup face": washes + rivers together, and off = nothing new draws.
+    //   The letterform (I|C|S|O) falls out of the fitted arc's curvature, not a
+    //    choice; chips are the family's shared trait lined along the path's tangent.
+    let vrivers = $state<{
+        id: string, d: string, color: string, shape: string,
+        chips: { x: number, y: number, ang: number, text: string }[],
+    }[]>([])
     // the region a cell belongs to: the grasp's `the:family` awareness value,
     //  reached off the live particle's off-snap D-sphere; null-safe fallback to
     //   the crusher's fold_kind, else 'misc', so every cell buckets somewhere.
@@ -861,7 +872,7 @@
         region_pref = !region_on
         const str = (H as any).stashed
         if (str) str.Cyto_regions = region_pref
-        if (!region_on) vregions = []
+        if (!region_on) { vregions = []; vrivers = [] }   // ▧ off → wash AND river gone
         else voronoi_soon()
     }
     // ── the scroll visor ──────────────────────────────────────────────────────
@@ -1913,6 +1924,10 @@
         return Math.abs(nx * T11 + ny * T21) * hw + Math.abs(nx * T12 + ny * T22) * hh
     }
 
+    // last C1 clump signature — voronoi_layout runs per drag-frame, so its telemetry
+    //  line fires only when the clump's shape changes (see the pass inside)
+    let clump_sig = ''
+
     function voronoi_layout(): { cells: VCell[], seeds: any[], CW: number } | null {
         if (!cy || !container || !voronoi_on) return null
         const W = container.clientWidth, HH = container.clientHeight
@@ -1944,6 +1959,56 @@
         //   stays the whole frame and the first pane owns the canvas from its first mount.
         //    Cells from the very first beat, not after some threshold of company.
         if (!seeds.length) return null
+
+        // ── C1: regroup the families — same-family seeds drift toward their family's
+        //  centroid BEFORE the walls are cut, so a family's cells land as one CONTIGUOUS
+        //   territory (the scape wants continuous spaces an arc can flow through, not a
+        //    checkerboard of interleaved kinds).  Buckets by region_of — the grasp's
+        //     the:family with the crusher's fold_kind beneath it — the same grouping the
+        //      ▧ washes draw, so what clumps IS what the wash shows.  One family total
+        //       (a grasp-blind graph of misc) pulls nothing: the scape only regroups
+        //        where there ARE distinct kinds to regroup.
+        const CLUMP = 0.30, MINSEP = 84
+        {
+            const fams = new Map<string, typeof seeds>()
+            for (const s of seeds) {
+                const f = region_of(s.id)
+                let m = fams.get(f); if (!m) fams.set(f, m = [])
+                m.push(s)
+            }
+            let moved = 0, pull = 0
+            if (fams.size > 1) {
+                for (const [, mem] of fams) {
+                    if (mem.length < 2) continue
+                    const gx = mem.reduce((a, m) => a + m.x, 0) / mem.length
+                    const gy = mem.reduce((a, m) => a + m.y, 0) / mem.length
+                    for (const m of mem) {
+                        const dx = (gx - m.x) * CLUMP, dy = (gy - m.y) * CLUMP
+                        m.x += dx; m.y += dy; moved++; pull += Math.hypot(dx, dy)
+                    }
+                    // pulled kin must not fuse: a pair tighter than MINSEP is eased back
+                    //  apart along its own axis, so no sibling swallows a sibling's cell
+                    for (let i = 0; i < mem.length; i++) for (let j = i + 1; j < mem.length; j++) {
+                        const a = mem[i], b = mem[j]
+                        let dx = b.x - a.x, dy = b.y - a.y
+                        const d = Math.hypot(dx, dy)
+                        if (d >= MINSEP) continue
+                        if (d < 1) { dx = 1; dy = 0 }
+                        const need = (MINSEP - d) / 2 / Math.max(d, 1)
+                        a.x -= dx * need; a.y -= dy * need
+                        b.x += dx * need; b.y += dy * need
+                    }
+                }
+            }
+            // per-frame function (live drags repaint through here) — the film strip only
+            //  gets a line when the family census changes, not per frame; and it speaks
+            //   even when nothing pulls (fams:1) — a silent no-op is undiagnosable
+            const sig = fams.size + ':' + moved
+            if (sig !== clump_sig) {
+                clump_sig = sig
+                vlog('clump', { fams: fams.size, moved, avg: moved ? Math.round(pull / moved) : 0 })
+            }
+        }
         if (tunnel_on) tube_project(seeds, W, HH)   // 🕳 one remap, everything downstream follows
 
         // ── the rack, SHELVED ─────────────────────────────────────────────────
@@ -2247,6 +2312,158 @@
         return best ? [...pts.slice(best), ...pts.slice(0, best)] : pts
     }
 
+    // ── ▧ arc-rivers (Slice D) — fit ONE tidy arc through a family's cells ─────
+    //  a river is the family's centroids strung into a smooth path and read for its
+    //   letterform.  Two orderings, and the family's own shape picks which: a family
+    //    that WRAPS around something (its cells fan out around their common centroid)
+    //     wants the angle order — walk the ring; a family that STREAKS across the
+    //      scape wants the PCA main axis — project onto the direction of greatest
+    //       spread and walk it end to end.  Wrap is told from streak by how evenly
+    //        the angles fill the circle vs how flat the spread is off the main axis.
+    //   No allocation storm: a handful of centroids, closed math, per settle|morph.
+
+    // the family's centroids' 2×2 covariance → principal axis (largest-eigenvector),
+    //  and the flatness ratio (minor/major spread) that says wrap-vs-streak.
+    function pca_axis(pts: {x:number,y:number}[]): { ux: number, uy: number, flat: number } {
+        const n = pts.length
+        const cx = pts.reduce((a, p) => a + p.x, 0) / n
+        const cy = pts.reduce((a, p) => a + p.y, 0) / n
+        let sxx = 0, syy = 0, sxy = 0
+        for (const p of pts) {
+            const dx = p.x - cx, dy = p.y - cy
+            sxx += dx * dx; syy += dy * dy; sxy += dx * dy
+        }
+        // closed-form eigen of the symmetric [[sxx,sxy],[sxy,syy]]
+        const tr = sxx + syy, det = sxx * syy - sxy * sxy
+        const disc = Math.max(0, tr * tr / 4 - det)
+        const l1 = tr / 2 + Math.sqrt(disc)   // major eigenvalue
+        const l2 = tr / 2 - Math.sqrt(disc)   // minor eigenvalue
+        // eigenvector for l1: (sxy, l1 - sxx) unless sxy ≈ 0 (already axis-aligned)
+        let ux: number, uy: number
+        if (Math.abs(sxy) > 1e-6) { ux = l1 - syy; uy = sxy }
+        else if (sxx >= syy)      { ux = 1; uy = 0 }
+        else                      { ux = 0; uy = 1 }
+        const mag = Math.hypot(ux, uy) || 1
+        return { ux: ux / mag, uy: uy / mag, flat: l1 > 1e-6 ? l2 / l1 : 1 }
+    }
+
+    // order the centroids into the river's walk.  wrap ⇒ by angle around the family
+    //  centroid (a ring); streak ⇒ by projection onto the PCA main axis (a line).
+    //   wrap is claimed when the cloud is round enough (flat ratio high) AND the
+    //    angles actually span most of the circle — otherwise it's a streak.
+    function river_order(cents: {x:number,y:number}[]): { seq: {x:number,y:number}[], wrap: boolean } {
+        const n = cents.length
+        const cx = cents.reduce((a, p) => a + p.x, 0) / n
+        const cy = cents.reduce((a, p) => a + p.y, 0) / n
+        const { ux, uy, flat } = pca_axis(cents)
+        // angular coverage: the largest gap between sorted angles; a full ring leaves
+        //  no big gap, a streak leaves one huge one (the empty far side)
+        const angs = cents.map(p => Math.atan2(p.y - cy, p.x - cx)).sort((a, b) => a - b)
+        let maxgap = angs[0] + 2 * Math.PI - angs[angs.length - 1]
+        for (let i = 1; i < angs.length; i++) maxgap = Math.max(maxgap, angs[i] - angs[i - 1])
+        const wraps = n >= 4 && flat > 0.55 && maxgap < Math.PI * 0.9
+        if (wraps) {
+            const seq = cents.slice().sort((a, b) =>
+                Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx))
+            return { seq, wrap: true }
+        }
+        const seq = cents.slice().sort((a, b) =>
+            ((a.x - cx) * ux + (a.y - cy) * uy) - ((b.x - cx) * ux + (b.y - cy) * uy))
+        return { seq, wrap: false }
+    }
+
+    // read the ordered walk's letterform from its curvature.  the signed turn at each
+    //  interior vertex (z of consecutive edge cross-products) is the local bend; the
+    //   number of times that sign flips is the number of inflections:
+    //    a closed ring of ≥4 ⇒ O; ~straight (tiny total bend) ⇒ I; one steady bend
+    //     (no flips) ⇒ C; two-plus flips (the S-curve) ⇒ S.  A dead-band on each turn
+    //      keeps sampling jitter from inventing inflections the eye wouldn't see.
+    function letter_of(seq: {x:number,y:number}[], closed: boolean): string {
+        if (closed) return 'O'
+        if (seq.length < 3) return 'I'
+        let total = 0, flips = 0, last = 0
+        const DEAD = 0.18   // radians — a turn shallower than this doesn't count as a bend
+        for (let i = 1; i < seq.length - 1; i++) {
+            const ax = seq[i].x - seq[i - 1].x, ay = seq[i].y - seq[i - 1].y
+            const bx = seq[i + 1].x - seq[i].x, by = seq[i + 1].y - seq[i].y
+            const cr = ax * by - ay * bx
+            const la = Math.hypot(ax, ay) || 1, lb = Math.hypot(bx, by) || 1
+            const turn = Math.asin(Math.max(-1, Math.min(1, cr / (la * lb))))   // signed bend
+            total += turn
+            if (Math.abs(turn) < DEAD) continue
+            const sgn = turn > 0 ? 1 : -1
+            if (last && sgn !== last) flips++
+            last = sgn
+        }
+        if (Math.abs(total) < 0.35) return 'I'   // barely bends over the whole run
+        if (flips >= 2) return 'S'
+        return 'C'
+    }
+
+    // Catmull-Rom through the ordered points, emitted as cubic Béziers (each segment's
+    //  control points are the neighbours' tangents / 6).  `closed` wraps the ring so
+    //   an O joins seamlessly.  Self-contained formatter so it doesn't lean on
+    //    paint_final's local P.
+    function catmull_d(pts: {x:number,y:number}[], closed: boolean): string {
+        const F = (v: number) => v.toFixed(1)
+        const n = pts.length
+        if (n < 2) return ''
+        const at = (i: number) => closed ? pts[(i % n + n) % n] : pts[Math.max(0, Math.min(n - 1, i))]
+        let d = `M${F(pts[0].x)} ${F(pts[0].y)}`
+        const last = closed ? n : n - 1
+        for (let i = 0; i < last; i++) {
+            const p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2)
+            const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6
+            const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6
+            d += `C${F(c1x)} ${F(c1y)} ${F(c2x)} ${F(c2y)} ${F(p2.x)} ${F(p2.y)}`
+        }
+        if (closed) d += 'Z'
+        return d
+    }
+
+    // walk the ordered centroids as straight legs and drop a chip every STEP px,
+    //  each rotated to the local leg's tangent — the "lined up tuples" of debris.
+    //   The polyline (not the Bézier) is the ruler here: close enough to the drawn
+    //    river for the eye, and trivial to arc-length-sample.  Angles are clamped
+    //     to upright-ish so the trait stays readable (never upside down).
+    function river_chips(seq: {x:number,y:number}[], closed: boolean, text: string) {
+        const RIVER_CHIP_STEP = 110   // px between chips along the trail
+        const chips: { x: number, y: number, ang: number, text: string }[] = []
+        if (!text || seq.length < 2) return chips
+        const legs = closed ? seq.length : seq.length - 1
+        let carry = RIVER_CHIP_STEP / 2   // half a step in, so a lone leg still gets one
+        for (let i = 0; i < legs; i++) {
+            const a = seq[i], b = seq[(i + 1) % seq.length]
+            const dx = b.x - a.x, dy = b.y - a.y
+            const len = Math.hypot(dx, dy)
+            if (len < 1) continue
+            let ang = Math.atan2(dy, dx) * 180 / Math.PI
+            if (ang > 90) ang -= 180; else if (ang < -90) ang += 180   // keep the text upright-ish
+            for (let s = carry; s < len; s += RIVER_CHIP_STEP) {
+                const t = s / len
+                chips.push({ x: a.x + dx * t, y: a.y + dy * t, ang, text })
+            }
+            carry = RIVER_CHIP_STEP - ((len - carry) % RIVER_CHIP_STEP)
+        }
+        return chips
+    }
+
+    // the family's shared-trait value — the chip text.  Reach the grasp's `the:family`
+    //  value off any member's live particle (the awareness the washes bucket by); fall
+    //   back to the family bucket key when the grasp hasn't stamped a value.
+    function family_trait(members: VCell[], famKey: string): string {
+        for (const m of members) {
+            const src = node_src.get(m.id) as any
+            const val = src?.c?.D?.o?.({ the: 'family' })?.[0]?.sc?.val
+            if (typeof val === 'string' && val) return val
+        }
+        return famKey
+    }
+
+    // last ▧ river signature — paint_final runs per morph frame, so the telemetry
+    //  line fires only when the river census (families / arcs / shapes) changes
+    let river_sig = ''
+
     // ── paint_final: the vectorised rest state ────────────────────────────────
     //  cell outlines with the edge-braces IN the path (a brace is a notch of
     //  the border itself, cusp-tip pointing into the cell at the crossing —
@@ -2417,34 +2634,78 @@
         }
         vfams = fams
 
-        // ── ▧ region washes (Slice C): one translucent FILLED backing per family ──
-        //  group cells by the grasp's `the:family` (region_of, null-safe), then
-        //   back each region with a convex hull of ALL its cells' inset vertices,
-        //    drawn BENEATH the cells in the svg — so same-family cells read as one
-        //     continuous space.  Layout untouched; a family of one is skipped (its
-        //      own cell already IS its space).  Off = this whole block is skipped.
+        // ── ▧ the regroup face (Slice C + D): washes AND rivers, one grouping ─────
+        //  group the cells by the grasp's `the:family` (region_of, null-safe) ONCE,
+        //   then draw two things per family from the same members so they share a
+        //    colour: a translucent FILLED convex-hull backing (the wash — same-family
+        //     cells read as one continuous space), and one big tidy arc down its
+        //      middle (the river — a trail of one kind flowing through the landscape).
+        //   Layout untouched; a family of one is skipped (its own cell already IS its
+        //    space).  Off (region_on false) = both blocks skipped, byte-identical.
         const regs: typeof vregions = []
+        const rivs: typeof vrivers = []
         if (region_on && L.cells.length > 2) {
-            const groups = new Map<string, {x:number,y:number}[]>()
+            const groups = new Map<string, VCell[]>()
             for (const c of L.cells) {
                 const r = region_of(c.id)
-                let pts = groups.get(r)
-                if (!pts) { pts = []; groups.set(r, pts) }
-                for (const p of c.inset) pts.push(p)
+                let ms = groups.get(r)
+                if (!ms) { ms = []; groups.set(r, ms) }
+                ms.push(c)
             }
             let ri = 0
-            for (const [rid, pts] of groups) {
+            for (const [rid, members] of groups) {
                 ri++
-                if (pts.length < 6) continue    // a region of one cell is just its cell
-                const hull = convex_hull(pts)
-                if (hull.length < 3) continue
-                let d = `M${P(hull[0].x, hull[0].y)}`
-                for (let k = 1; k < hull.length; k++) d += `L${P(hull[k].x, hull[k].y)}`
-                d += 'Z'
-                regs.push({ id: `reg:${rid}`, d, color: REGION_COLORS[ri % REGION_COLORS.length] })
+                const color = REGION_COLORS[ri % REGION_COLORS.length]
+                // the wash: a filled convex hull of ALL the family's inset vertices
+                const pts: {x:number,y:number}[] = []
+                for (const m of members) for (const p of m.inset) pts.push(p)
+                if (pts.length >= 6) {
+                    const hull = convex_hull(pts)
+                    if (hull.length >= 3) {
+                        let d = `M${P(hull[0].x, hull[0].y)}`
+                        for (let k = 1; k < hull.length; k++) d += `L${P(hull[k].x, hull[k].y)}`
+                        d += 'Z'
+                        regs.push({ id: `reg:${rid}`, d, color })
+                    }
+                }
+                // the river: string the members' centroids into a smooth arc, read its
+                //  letterform, and line the shared trait along it.  A family under two
+                //   cells has no arc to draw (its lone|paired cell is already the space).
+                if (members.length >= 2) {
+                    const cents = members.map(m => ({ x: m.acx, y: m.acy }))
+                    const { seq, wrap } = river_order(cents)
+                    // a wrap that truly closes (last centroid back near the first, ≥4
+                    //  members) draws the ring shut — that's the O; else an open arc.
+                    const first = seq[0], lastc = seq[seq.length - 1]
+                    const span = Math.hypot(lastc.x - first.x, lastc.y - first.y)
+                    const spread = Math.hypot(
+                        Math.max(...cents.map(c => c.x)) - Math.min(...cents.map(c => c.x)),
+                        Math.max(...cents.map(c => c.y)) - Math.min(...cents.map(c => c.y)))
+                    const closed = wrap && seq.length >= 4 && span < spread * 0.35
+                    const d = catmull_d(seq, closed)
+                    if (d) {
+                        const shape = letter_of(seq, closed)
+                        const trait = family_trait(members, rid)
+                        rivs.push({ id: `riv:${rid}`, d, color, shape,
+                                    chips: river_chips(seq, closed, trait) })
+                    }
+                }
             }
         }
         vregions = regs
+        vrivers = rivs
+        // per-morph function (a live drag repaints through here) — the film strip only
+        //  gets a river line when the census changes, and it speaks the shape mix so a
+        //   glance at op:'why' says what letterforms the scape drew this beat
+        {
+            const sig = rivs.length + ':' + rivs.map(r => r.shape).join('')
+            if (sig !== river_sig) {
+                river_sig = sig
+                const shapes: Record<string, number> = {}
+                for (const r of rivs) shapes[r.shape] = (shapes[r.shape] ?? 0) + 1
+                vlog('river', { fams: regs.length, arcs: rivs.length, shapes })
+            }
+        }
 
         // ── ▦ the sub-graph pass: EVERY pane speaks the grammar, ALL of it ──
         //  folds|gangs tessellate radially (nucleus core → fact belt → member rim);
@@ -2611,6 +2872,7 @@
         vcells = []
         vtips = []
         vfams = []
+        vrivers = []
         vsubs = []
         for (const id of sub_on_ids) { const mel = overlays.get(id); if (mel) mel.style.opacity = '' }
         sub_on_ids.clear()
@@ -3250,6 +3512,28 @@
                         stroke={reg.color} stroke-opacity="0.28" stroke-width="1.5"
                         stroke-linejoin="round" />
                 {/each}
+                <!-- ▧ arc-rivers (Slice D): between the washes and the cell strokes, one
+                     wide translucent riverbed per family — the family's centroids fitted
+                     into a big tidy I|C|S|O and stroked in its wash colour, so a river of
+                     one kind reads as flowing through the landscape.  Rides the same
+                     region_on toggle → vrivers empty when off, nothing draws here.  The
+                     data carries its own letterform (river.shape) so op:'why' can say it. -->
+                {#each vrivers as river (river.id)}
+                    <path d={river.d} fill="none" stroke={river.color}
+                        stroke-opacity="0.14" stroke-width="22"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                    <path d={river.d} fill="none" stroke={river.color}
+                        stroke-opacity="0.30" stroke-width="6"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                    <!-- the debris: the family's shared trait as tiny chips lined along
+                         the trail, each rotated to the local tangent — the zen-garden
+                         "lined up tuples", higher opacity than the bed so they read. -->
+                    {#each river.chips as chip, ci (ci)}
+                        <text class="cytui-river-chip" x={chip.x.toFixed(1)} y={chip.y.toFixed(1)}
+                            fill={river.color} text-anchor="middle"
+                            transform={`rotate(${chip.ang.toFixed(1)} ${chip.x.toFixed(1)} ${chip.y.toFixed(1)})`}>{chip.text}</text>
+                    {/each}
+                {/each}
                 <!-- family hulls: behind the cell strokes, a chunky ROPE — the
                      boundary walls of one house lashed together.  Two passes over
                      the same segments (a wide soft body + a narrower bright core)
@@ -3412,6 +3696,16 @@
 .cytui-voronoi .cytui-veil {
     fill: #070707;
     opacity: 0.5;
+}
+/* ▧ arc-river debris: the family trait as tiny chips lined along the riverbed,
+   each already rotated to the local tangent by an inline transform.  Fill is the
+   family colour (inline, per-river); this only sets the small legible face and a
+   fill-opacity above the bed so the tuples read as the trail's grain. */
+.cytui-river-chip {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    fill-opacity: 0.85;
 }
 /* ▦ sub-graph: walls thinner and softer than the pane strokes so the hierarchy
    reads — pane wall loud, sub-wall quiet.  Labels are the pane's words: keys

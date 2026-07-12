@@ -66,6 +66,7 @@
         'Ghost/M/Mixer.g',              // cellular mixer — beat detection, beatmatch, multi-cell sum, crossfade (stage 6)
         'Ghost/M/Mesh.g',               // the sync that sees itself — replicas/edges, cheapest-route, multicast stretch (8+9)
         'Ghost/M/Ra.g',                 // the PIPELINE spine — rastock: needles LUFS → baked gain → ONE opus encode cut into %Preview,seq chunk particles + demand-driven stream transcode
+        'Ghost/M/Booth.g',              // the Booth — taste as standing facts: the tune: handle + the %Ban do-not-play list the heist door consults (Radio_todo §11)
         'Ghost/M/Heist.g',              // the heist engine — %Heist,at:<pier> moves ORIGINAL file bytes over Repli straight into the collection (newlyadded probation, catalog-identity dedup)
         'Ghost/Story/Musuation.g',      // the Musu* tests — MusuStaple; more pile on here
         'Ghost/Story/Radiation.g',      // the Ra* PRODUCT tests — RaStock; racast/raterm Books pile on here

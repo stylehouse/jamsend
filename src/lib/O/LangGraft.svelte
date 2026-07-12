@@ -403,66 +403,126 @@
     //   "last beat".  We do NOT point the Seem at the live %Pmirrors container (its
     //   %Pmirror children are the snapped output + carry graft/resume_X machinery);
     //   instead we sync a small distilled roster mirror — one %pm child per current
-    //   Pmirror, keyed by the same (src_Waft, spec) identity — the way LiesFunk's
-    //   Stemdex_seem_mirror mirrors its roster.  _C({sc}) is LangGraft's runtime
-    //   twin of Voro.g's `new TheC({...})` (TheC is a type-only import here).
+    //   Pmirror — the way LiesFunk's Stemdex_seem_mirror mirrors its roster.
+    //   _C({sc}) is LangGraft's runtime twin of Voro.g's `new TheC({...})` (TheC is
+    //   a type-only import here).
     //
-    //   The `spec` string can carry any char (a Point label / method name), so it
-    //   is sanitised into a clean slot key — a raw slash/dot would let the peel
-    //   parser split the sc key.  The full spec rides as a value, not the slot.
+    //   IDENTITY: a %pm row is keyed by the SOURCE POINT, not by (src_Waft, spec).
+    //    Two distinct Points can share a target — the same method name resolved from
+    //     two places — so two %Pmirror C objects legitimately carry the SAME (src_Waft,
+    //      spec).  Keying the mirror on (src_Waft, spec) would COLLAPSE those two into
+    //       one %pm slot, undercounting the set and making the intended `hand ⊆ seem`
+    //        claim structurally false.  So each Point gets a per-Point runtime serial
+    //         (Lang_point_uid — off-snap, stable across compiles because the live Point
+    //          C instance persists), and the %pm slot IS that uid.  The (src_Waft, spec)
+    //           still ride as VALUES for legibility; the identity resolve() pairs on is
+    //            the per-Point uid, so shared-target Points stay distinct rows.
+    //
+    //   The %pm slot is a bare numeric uid — no slash/dot for the peel to split on.
     async Lang_graft_seem_mirror(dock: TheC, points: TheC[], hand_goners: number) {
-        const H  = this as House
         const dc = dock.c as any
 
         // off-snap homes, minted ONCE and reused so the Seem has a previous beat.
         if (!dc.graft_seem_home)   dc.graft_seem_home   = _C({ c: {}, sc: { graft_seem_home: 1 } })
         if (!dc.graft_seem_roster) dc.graft_seem_roster = _C({ c: {}, sc: { graft_seem_roster: 1 } })
-        const home:   TheC = dc.graft_seem_home
         const roster: TheC = dc.graft_seem_roster
 
-        // The current Pmirror identity set = exactly what the rebuild just wrote.
-        //   Read it back off the live %Pmirrors (the authoritative post-replace set)
-        //   so the mirror can't drift from what pairs_fn actually classified.
+        // The current Pmirror set = exactly what the rebuild just wrote.  Read it back
+        //   off the live %Pmirrors (the authoritative post-replace set) so the mirror
+        //   can't drift from what pairs_fn actually classified.  One %pm per Pmirror,
+        //   keyed by its source Point's uid — shared-target Pmirrors stay distinct.
         const Pmirrors = dock.o({ Pmirrors: 1 })[0] as TheC | undefined
         const pms      = (Pmirrors?.o({ Pmirror: 1 }) ?? []) as TheC[]
 
-        // (src_Waft, spec) is the Pmirror identity; a clean slot key + the raw
-        //   parts as values keeps the peel parser out of the slash-bearing spec.
-        const slot_of = (waft: string, spec: string) =>
-            `${waft}__${spec}`.replace(/[^A-Za-z0-9]+/g, '_')
         const want = new Set<string>()
         for (const pm of pms) {
+            const pt   = pm.sc.src_Point as TheC | undefined   // $C live ref (── Shape ──)
+            const uid  = this.Lang_point_uid(dock, pt)
             const waft = (pm.sc.src_Waft as string) ?? '?'
             const spec = (pm.sc.spec as string) ?? ''
-            const slot = slot_of(waft, spec)
-            want.add(slot)
+            want.add(uid)
             // oai = stable slot: a survivor keeps its identity across compiles.
-            roster.oai({ pm: slot }, { src_Waft: waft, spec })
+            roster.oai({ pm: uid }, { src_Waft: waft, spec })
         }
         // drop departed identities so o_Seem sees them as goners this beat.
         for (const c of (roster.o({ pm: 1 }).slice() as TheC[]))
             if (!want.has(c.sc.pm as string)) roster.drop(c)
 
         // one walk over the roster mirror — {goners, neus} is the identity-diff.
-        const seem: TheC = home.o({ Seem: 'graft' })[0]
-            ?? H.i_Seem(home, { Seem: 'graft', C: roster })
-        seem.sc.C = roster
-        const news = await H.o_Seem(seem)
+        const news = await this.Lang_graft_seem_walk(dock)
 
         // project a SMALL comparison onto .c runtime (NEVER .sc — snap-hostile,
         //   off-snap limb).  hand_goners is gone_bm_ids.length from the live pass
-        //   (the goners that carried a graft mark, the set §3's evidence names);
-        //   hand_neus is the count of live Points feeding brand-new Pmirrors this
-        //   compile is not separately tabulated by pairs_fn without touching it,
-        //   so we surface only what the pass already produced — the Seem side
-        //   carries the full {goners,neus}, and a Book %see confirms seem_goners
-        //   ⊇ hand_goners (a subset by construction: not every goner had a mark).
+        //   (the goners that carried a graft mark, the set §3's evidence names).  A
+        //   Book %see confirms seem_goners ⊇ hand_goners (a SUPERSET by construction:
+        //   the Seem counts every departed Point; the hand set only goners with a
+        //   graft mark — see §3's `hand ⊆ seem`, NOT `==`).
         dc.graft_seem = {
-            seem_goners: news.goners.length,   // Pmirror identities that LEFT this compile
-            seem_neus:   news.neus.length,     // Pmirror identities that ARRIVED this compile
+            seem_goners: news.goners.length,   // source Points that LEFT this compile's set
+            seem_neus:   news.neus.length,     // source Points that ARRIVED this compile
             hand_goners,                       // gone_bm_ids.length (goners with a graft mark)
             rows:        (roster.o({ pm: 1 }).length),
             points:      points.length,        // live Points feeding this compile's Pmirrors
+        }
+    },
+
+    // ── Lang_point_uid — a stable per-Point runtime id for the graft Seem ─────
+    //
+    //   The graft Seem keys its %pm rows by the SOURCE POINT (not by the target
+    //   (src_Waft, spec), which two shared-target Points can share).  A live Point
+    //   C has no built-in uid, so we stamp a monotonic off-snap serial the first
+    //   time we see it and reuse it: the same live Point instance persists across
+    //   compiles, so its uid is stable and its %pm row survives resolve() as itself.
+    //   The counter lives on the dock (dc.graft_uid_n) so ids stay small per dock.
+    //   A null Point (no src_Point ref) collapses to a single '0' bucket — harmless,
+    //   such a Pmirror never carries a graft.
+    Lang_point_uid(dock: TheC, pt: TheC | undefined): string {
+        if (!pt) return '0'
+        const pc = pt.c as any
+        if (pc.graft_uid == null) {
+            const dc = dock.c as any
+            pc.graft_uid = String(dc.graft_uid_n = ((dc.graft_uid_n as number) ?? 0) + 1)
+        }
+        return pc.graft_uid as string
+    },
+
+    // ── Lang_graft_seem_walk — run the graft Seem once over its current roster ─
+    //
+    //   Shared by Lang_graft_seem_mirror (post-rebuild) and Lang_graft_seem_wipe
+    //   (the empty-cursor path), so BOTH sync the SAME off-snap %Seem and it can
+    //   never drift stale.  Returns o_Seem's native {goners, neus, topD}.
+    async Lang_graft_seem_walk(dock: TheC) {
+        const H  = this as House
+        const dc = dock.c as any
+        const home:   TheC = dc.graft_seem_home
+        const roster: TheC = dc.graft_seem_roster
+        const seem: TheC = home.o({ Seem: 'graft' })[0]
+            ?? H.i_Seem(home, { Seem: 'graft', C: roster })
+        seem.sc.C = roster
+        return await H.o_Seem(seem)
+    },
+
+    // ── Lang_graft_seem_wipe — sync the graft Seem when the cursor goes empty ──
+    //
+    //   Lang_wipe_pmirrors blows the whole Pmirror set away (empty cursor / doc
+    //   mismatch) WITHOUT going through Lang_graft_points_once, so if the Seem only
+    //   synced on the rebuild path it would keep last compile's roster and read the
+    //   next real compile against a stale "last beat" — a phantom set of survivors
+    //   that actually departed at the wipe.  Emptying the roster here and running one
+    //   walk makes every Pmirror resolve as a goner THIS beat, exactly as the wipe
+    //   intends.  Purely observational, off-snap, fully guarded.
+    async Lang_graft_seem_wipe(dock: TheC) {
+        const dc = dock.c as any
+        if (!dc.graft_seem_roster || !dc.graft_seem_home) return   // never mirrored — nothing to drift
+        const roster: TheC = dc.graft_seem_roster
+        for (const c of (roster.o({ pm: 1 }).slice() as TheC[])) roster.drop(c)
+        const news = await this.Lang_graft_seem_walk(dock)
+        dc.graft_seem = {
+            seem_goners: news.goners.length,   // every Pmirror departs at a wipe
+            seem_neus:   news.neus.length,
+            hand_goners: 0,
+            rows:        0,
+            points:      0,
         }
     },
 
@@ -698,6 +758,14 @@
         }
         dock.c.show_fp         = null
         dock.c.graft_cache_key = null
+
+        // Seemables §3: keep the graft Seem in step on THIS path too.  The wipe
+        //   never runs Lang_graft_points_once, so without this the Seem's roster
+        //   would stay at last compile's set and the next real compile would diff
+        //   against a stale "last beat".  Emptying + one walk reads the wipe as
+        //   every Pmirror departing.  Fully guarded — never throws into a wipe.
+        try { await this.Lang_graft_seem_wipe(dock) }
+        catch (err) { console.warn('🔩 graft seem wipe failed', err) }
     },
 
     // ── Lang_update_grafts ───────────────────────────────────────────────

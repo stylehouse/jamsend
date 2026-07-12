@@ -2,35 +2,34 @@
 
 ## 0. What to get on with next
 
-**Slices A + B + B2 are BUILT (2026-07-12), compile+type-clean, PIXEL-VERIFY OWED on a Voro runner.**
- The meaning→size pipeline is whole: the grasp reads the whole neighbourhood, weights every claim by how
-  much it sets its cell apart, and the render sizes text off that weight. What's blocking the eyes-on
-   gate is only a runner: the tab up right now is a `?B=MusuHeist` runner, which can't `become_book` a
-    Voro Book. **NEXT = a human opens a `?B=VoroMitosis` (or VoroScape) runner tab on :9091**, then:
- - `node scripts/runner_ask.mjs run VoroMitosis --watch` (RED expected — the new `wgt`/`trait`/`Se:scape`
-    fields make fixtures stale; that's the re-record, the human's call), then
- - `node scripts/runner_ask.mjs snap 11` — confirm `%Se:scape` carries a sane `trait` (e.g. `genre …`)
-    and `loudest`, and that it names the biggest cell.
- - `node scripts/runner_shot.mjs --svg out.svg` — **the real gate**: a distinctive fact (few cells share
-    it) towers ≥16pt; a universal fact (every cell has it) recedes under 14pt; identity still biggest.
-    Grep `font-size` and eyeball the hierarchy. Tune the weight formula (`Voro_grasp_weight`) live.
+**Every slice is now BUILT (2026-07-12): A + B + B2 (meaning→size), C v1 (▧ washes), C1 (family
+ clumping — layout), D v1 (I/C/S/O arc-rivers + debris chips), and the grasp ROLLED OUT to every crush
+  user** (it rides `Voro_crush_scan`'s tail now — VoroScape/VoroRadio/VoroRadioPier/VoroClinic all
+   grasp, not just VoroMitosis; `Story.svelte:1243` awaits the imposed-from-above crush so `%Se:scape`
+    snaps deterministically).
 
-**The grasp now ALSO emits `the_family` (region axis = the dominant shared key's value), `the_anchor`
- (durable id) + a `regions` count** (`Voro_grasp`, 66109c). Provisional bucketing — tune live.
+**B2 is SEMANTICALLY VERIFIED on the live SVG (2026-07-12):** species epithets (unique) tower at 26pt,
+ `habit: vine` (rare) 22pt vs `habit: shrub` (common) 11pt, `woodystem ×4` (universal) recedes to 8.6pt.
+  The engine works. Remaining eyes-on = TASTE tuning (`Voro_grasp_weight` consts 0.85/15, `band_for`
+   thresholds 80/45), not correctness.
 
-**Slice C v1 — region washes — BUILT 2026-07-12 (Cytui, behind the `▧` toggle, OFF by default).** Same-
- family cells get one translucent filled convex-hull backing drawn BENEATH the cells (`region_of(id)`
-  reads `src.c.D→the:family`, null-safe → `fold_kind`/`'misc'`; hull in `paint_final` ~2426; draw ~3248).
-   **Layout untouched** — this shows grouping without moving cells. Known limit (the standing "hulls
-    aren't touching"): different families' hulls OVERLAP where cells interleave, because nothing clumps
-     them yet. So the eyes-on next step is **C1 = family clumping** (fcose intra-family gravity by
-      `the_family`, `install_nuclei` precedent) — do it live, it's the layout engine. Then C2 (merge to
-       one filled region per family, now that they're contiguous) → Slice D (I/C/S/O arc-rivers).
+**NEXT (needs a human at the tab — TWO gotchas):**
+ 1. **RELOAD the runner tab first** — its Vite HMR socket is dead ([[hmr-socket-dead-tell]] memory):
+     relay ops answer but `.svelte` edits (C1 + rivers) never landed in it. Everything render-side built
+      today is unexecuted in that tab until a reload.
+ 2. Then `run VoroMitosis --watch` (RED expected — `%Se:scape` + step-11 `wgt` restamps + now a rebuilt
+     `%Se:census` make fixtures stale; the re-record is the human's call) and:
+    - `runner_shot --why` — expect a `clump fams:N moved:M` line (C1 alive; `fams:1` = the family
+       bucketing collapsed, tune `the:family`); after toggling `▧` expect a `river` line too.
+    - Click `▧` on the tab — washes + rivers + chips all live behind it. Tune widths/opacities/spacing
+       (knob line-refs in `## Slice D — arc-rivers build notes` at the end of this doc).
+    - `runner_shot --svg out.svg` — eyeball rivers: do arcs read as I/C/S/O? Do same-family cells sit
+       contiguous (C1's job — `CLUMP=0.30`, `MINSEP=84` in `voronoi_layout`)?
 
-Gang-robustness CONFIRMED (Voro.g:631-635): a gang's rep carries `c.stuff=1` too, so the grasp's fold
- filter already covers gangs — the VoroScape rollout (fold `Voro_grasp` into `Voro_crush_scan` so imposed-
-  from-above Books get it) is a DRIVE-POINT change only, no filter change. All render slices eyes-on,
-   none Book-gateable — verify C v1 + tune the weight formula on a live `?B=VoroMitosis`/`VoroScape` runner.
+Then: C2 (merge each family's washes into ONE filled region now that C1 makes them contiguous), chip
+ thinning on long streaks, and the Wes-Wilson lettering pass (warp the big words along the river
+  tangents). Fixture staleness after the rollout: VoroMitosis, VoroScape, VoroRadio, VoroRadioPier,
+   VoroClinic (each gains `%Se:scape`; Mitosis' `%Se:census` values change) — all live re-records.
 
 ## The arc (the destination)
 
@@ -135,3 +134,57 @@ The grasp already wires `C.c.D = D` (`_Seem_CDUsive`, `LangHold.svelte:963`). So
 7. All render slices are EYES-ON, none Book-gateable (pixels never round-trip a fixture) — verify via
     `runner_shot` (`--svg` greppable text, `--why` telemetry, `shot` raster) on a LIVE runner. The only
      gate-able artifact is the grasp's snapped `%Se:scape` fields (Slice B).
+
+## Slice D — arc-rivers build notes (2026-07-12)
+
+Built in `src/lib/O/Cytui.svelte` only (render-only, nothing snaps). Gated entirely behind the existing
+ `▧` toggle (`region_on`) — it is now "the regroup face": washes + rivers together. `region_on` false ⇒
+  `vrivers` stays `[]` and the render is byte-identical to before.
+
+**What draws.** For each `region_of`-bucketed family (same bucketing as the Slice C washes) with ≥ 2
+ cells: one wide translucent riverbed stroked in the family's `REGION_COLORS` colour, layered in the svg
+  BETWEEN the washes and the family hulls / cell strokes (`:3515`–`:3535`), with the family's shared trait
+   lined along it as tiny tangent-rotated text chips (the "zen-garden trail of lined up tuples"). Washes
+    and rivers now share ONE grouping pass (`:2637` `## ▧ the regroup face`) so a river always wears the
+     SAME colour as its wash (same `ri` index). New reactive `vrivers` state at `:858` carries
+      `{ id, d, color, shape, chips[] }`; `shape` is the classified letterform, in the data so `op:'why'`
+       can read what the scape drew.
+
+**The letterform classifier (`letter_of`, `:2381`).** The choice falls out of the ordered walk's
+ geometry, not a flag:
+- Order the family's cell centroids first (`river_order`, `:2354`): a family that WRAPS around something
+   (round cloud — PCA flatness `l2/l1 > 0.55` AND the largest angular gap `< 0.9π`, ≥4 cells) is walked by
+    angle around the family centroid; everything else (a streak) is walked by projection onto the PCA
+     main axis (`pca_axis`, `:2327`, closed-form 2×2 eigen).
+- A wrap whose last centroid closes back near the first (`span < 0.35 × bbox`, ≥4 cells) ⇒ **O** (the
+   Catmull path is drawn closed).
+- Otherwise sum the signed per-vertex turn and count sign-flips of that turn (dead-band 0.18 rad so
+   sampling jitter can't invent an inflection): tiny total bend (`|Σ| < 0.35`) ⇒ **I**; ≥ 2 flips ⇒ **S**;
+    else one steady bend ⇒ **C**.
+- Path itself is Catmull-Rom → cubic Béziers (`catmull_d`, `:2407`), self-contained formatter (doesn't
+   lean on `paint_final`'s local `P`).
+
+**Recompute cadence + telemetry.** Rivers recompute exactly where the washes do — inside `paint_final`,
+ which runs per settle AND per morph frame, so a drag/morph keeps them live. `paint_final` runs per frame,
+  so the `vlog('river', { fams, arcs, shapes })` line (`:2706`) is change-gated on `river_sig`
+   (`:2465`, `count + shape-string`) exactly like the C1 `clump_sig` pattern — one line only when the
+    river census or its shape mix changes, never a per-frame flood.
+
+**Knobs (defaults, line refs):**
+- riverbed body stroke: width **22** / opacity **0.14** (`:3523`); bright core: width **6** / opacity
+   **0.30** (`:3526`).
+- chip spacing `RIVER_CHIP_STEP` = **110px** along the polyline (`:2430`); chips start half a step in.
+- chip face `.cytui-river-chip`: font **9px**, weight 600, fill-opacity **0.85** (`:3704`), fill = family
+   colour inline; each rotated to the local leg tangent, clamped upright-ish (never upside-down).
+- wrap-detection thresholds live in `river_order` (`:2354`): flatness `0.55`, max-gap `0.9π`, min 4 cells;
+   O-closure `span < 0.35 × bbox`. `letter_of` (`:2381`): dead-band `0.18` rad, I-threshold `|Σturn| < 0.35`.
+- chip text = the grasp's `the:family` value off any member's node_src particle
+   (`family_trait`, `:2454`), falling back to the family bucket key.
+
+**Owed (eyes-on tuning, none Book-gateable — pixels don't round-trip a fixture).** Verify on a LIVE
+ runner via `runner_shot --svg`/`--why` (the grep-`river` telemetry line + the drawn `d`s). Untuned by
+  eye so far — the widths/opacities/spacing above are first-guess; likely tuning: riverbed width vs cell
+   size at real fold counts, chip density on a long streak (may need thinning like the `+N` fold-mark idea
+    in Risk 4), and confirming the wrap-vs-streak thresholds pick sane orderings on VoroScape's real
+     Artist/Track families (Risk 3). Letterform correctness is only readable off `--svg` today — a small
+      hand-check of I/C/S/O against eyeballed arcs is owed.

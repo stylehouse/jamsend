@@ -1472,26 +1472,34 @@ await M.eatfunc({
             } catch (err) { console.warn('🐝 stemdex cache save failed', err) }
 
             // Seemables Slice 0 (spec/Seemables_todo.md §6): a READ-ONLY %Seem mirror stood
-            //  BESIDE the hand-rolled roster diff above, changing NO verdict.  It reproduces the
-            //   same arrival/departure the roster filter (:1468 `gone`) hand-rolls, natively and
-            //    with identity, so a Book %see can later prove they agree before the scan is ever
-            //     flipped to read the sphere.  Fully guarded — it can never throw into the scan.
-            try { await H.Stemdex_seem_mirror(w, paths) }
-            catch (err) { console.warn('🐝 stemdex seem mirror failed', err) }
+            //  BESIDE the hand-rolled prune above, changing NO verdict.  It mirrors the INDEX
+            //   side (dex.docs) — the same independent set the prune sweeps (:1468) — so its
+            //    per-pass goners reproduce the docs that fell out of the index, honestly, and
+            //     can DIVERGE from a naive roster delta (cache-warm/budget-lag).  Gated on the
+            //      SAME size>50 real-roster guard the prune uses (a half-booted GhostList must
+            //       not read as a mass departure).  Fully guarded — it can never throw the scan.
+            if (paths.size > 50)
+                try { await H.Stemdex_seem_mirror(w, dex) }
+                catch (err) { console.warn('🐝 stemdex seem mirror failed', err) }
         } finally { dex.scanning = false }
     },
 
-    // ── Stemdex_seem_mirror — Seemables Slice 0 read-only mirror of the roster diff ───────────
-    //   The scan (e_Lies_stemdex_scan) hand-rolls survivor/neu/goner over the doc roster each
-    //    pass — the roster filter `[...dex.docs.keys()].filter(p => !paths.has(p))` IS the goner
-    //     set.  o_Seem returns that for free WITH identity.  Modelled EXACTLY on Voro.g's proven
-    //      Voro_census_mirror (i_Seem/o_Seem), translated to LiesFunk's TS: the Seem is snap-
-    //       hostile (a live Selection + fns ride its sc), so it parks on a free off-snap C** kept
-    //        once on w.c and reused — resolve() needs a "last beat" to diff against.  The roster
-    //         mirror C** carries ONE child per path (its identity = the goner/neu unit); we sync
-    //          it to the CURRENT roster each pass, then o_Seem diffs it against last pass's sphere.
+    // ── Stemdex_seem_mirror — Seemables Slice 0 read-only mirror of the INDEX diff ────────────
+    //   The scan (e_Lies_stemdex_scan) hand-rolls survivor/neu/goner and then PRUNES the index:
+    //    `[...dex.docs.keys()].filter(p => !paths.has(p))` sweeps the docs that fell out of the
+    //     corpus (:1468).  This mirror tracks the INDEX side — dex.docs.keys() — the independent
+    //      set the prune reads, NOT the roster it reads it against; so its per-pass goners are the
+    //       docs that actually LEFT the index (arrivals = docs the scan just adopted).  Because it
+    //        mirrors the index and not the roster, it can DIVERGE from a naive roster delta exactly
+    //         where the two disagree (a warm-cache doc not yet in the roster, a budget-lagged
+    //          arrival), which is the honesty the roster-vs-roster mirror lost.  o_Seem returns
+    //           that diff for free WITH identity.  Modelled on Voro.g's proven Voro_census_mirror
+    //            (i_Seem/o_Seem): the Seem is snap-hostile (a live Selection + fns ride its sc), so
+    //             it parks on a free off-snap C** kept once on w.c and reused — resolve() needs a
+    //              "last beat" to diff against.  The index mirror C** carries ONE child per indexed
+    //               path (its identity = the goner/neu unit); synced to dex.docs each pass.
     //   Purely additive: touches no dex map, no index, no search — only w.c.* runtime fields.
-    async Stemdex_seem_mirror(w: TheC, paths: Set<string>) {
+    async Stemdex_seem_mirror(w: TheC, dex: any) {
         const H = this as House
         // off-snap homes, minted ONCE and reused so the Seem has a previous beat to diff.
         //  _C({sc}) is LiesFunk's runtime twin of Voro.g's `new TheC({...})` (TheC is a type-only
@@ -1499,30 +1507,32 @@ await M.eatfunc({
         const wc = w.c as any
         if (!wc.stemdex_seem_home) wc.stemdex_seem_home = _C({ c: {}, sc: { stemdex_seem_home: 1 } })
         const home: TheC = wc.stemdex_seem_home
-        if (!wc.stemdex_roster) wc.stemdex_roster = _C({ c: {}, sc: { stemdex_roster: 1 } })
-        const roster: TheC = wc.stemdex_roster
+        if (!wc.stemdex_index) wc.stemdex_index = _C({ c: {}, sc: { stemdex_index: 1 } })
+        const index: TheC = wc.stemdex_index
 
-        // sync the roster mirror to exactly THIS pass's paths — add arrivals (oai = stable slot,
-        //  so a survivor keeps its identity), drop departures.  A path is the child identity; a
-        //   distinct sc value (base64-ish) keeps keys clean of slashes/dots that the peel splits.
+        // sync the mirror to exactly THIS pass's INDEX membership — add arrivals (oai = stable
+        //  slot, so a survivor keeps its identity), drop docs no longer indexed.  An indexed path
+        //   is the child identity; a distinct sanitized sc value keeps keys clean of slashes/dots
+        //    that the peel splits on.
         const key_of = (p: string) => p.replace(/[^A-Za-z0-9]+/g, '_')
-        const want = new Set([...paths].map(key_of))
-        for (const p of paths) roster.oai({ doc: key_of(p) }, { path: p })
-        for (const c of roster.o({ doc: 1 }).slice() as TheC[])
-            if (!want.has(c.sc.doc as string)) roster.drop(c)
+        const indexed = [...dex.docs.keys()] as string[]
+        const want = new Set(indexed.map(key_of))
+        for (const p of indexed) index.oai({ doc: key_of(p) }, { path: p })
+        for (const c of index.o({ doc: 1 }).slice() as TheC[])
+            if (!want.has(c.sc.doc as string)) index.drop(c)
 
-        // one walk over the roster mirror — {goners, neus} is the last-beat-vs-this-beat diff.
+        // one walk over the index mirror — {goners, neus} is the last-beat-vs-this-beat diff.
         const seem: TheC = home.o({ Seem: 'stemdex' })[0]
-            ?? H.i_Seem(home, { Seem: 'stemdex', C: roster })
-        seem.sc.C = roster
+            ?? H.i_Seem(home, { Seem: 'stemdex', C: index })
+        seem.sc.C = index
         const news = await H.o_Seem(seem)
 
         // project a SMALL distilled reading onto .c runtime (NEVER .sc — the Seem is snap-hostile
-        //  and this whole limb is off-snap).  A Book %see reads these beside the live roster diff.
+        //  and this whole limb is off-snap).  A Book %see reads these beside the live prune (:1468).
         wc.stemdex_seem = {
-            goners: news.goners.length,   // paths that LEFT the roster this pass (= the :1468 `gone`)
-            neus:   news.neus.length,     // paths that JOINED the roster this pass
-            rows:   roster.o({ doc: 1 }).length,
+            goners: news.goners.length,   // docs that LEFT the index this pass (= the :1468 `gone` drops)
+            neus:   news.neus.length,     // docs the scan just ADDED to the index this pass
+            rows:   index.o({ doc: 1 }).length,
         }
     },
 

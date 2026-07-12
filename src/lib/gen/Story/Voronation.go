@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Voronation(): string { return 'a2ab27aa13d64e50' },
+    Ghostmeta_Ghost_Story_Voronation(): string { return 'b98a2dbef3f0c2a6' },
 
 
 //#region pier — VoroRadioPier: the tuner drifts over MUSIC dribbled in from a (fake) Pier
@@ -122,7 +122,9 @@ async VoroRadio_drive(w, req) {
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) this.VoroRadio_seed(w)
-        if (n >= 2) this.Voro_crush_scan(w)
+        // AWAIT: the crush now grasps in its tail (writes the snapped %Se:scape row) — let it settle
+        //  before this beat snaps.  The census|report rows still land synchronously above that await.
+        if (n >= 2) await this.Voro_crush_scan(w)
         if (n === 5) await this.VoroRadio_hand(w)
         if (n >= 3 && n <= 8) {
             // REPOOL evidence, read BEFORE the n=8 tick: the locale aged at n=7 re-ganged at
@@ -224,7 +226,8 @@ async VoroRadioPier_drive(w, req) {
         req.c.did_step = n
         if (n === 2) this.Radio_seed(w)
         if (n >= 3 && n <= 8) this.Radio_dribble(w, n)
-        if (n >= 2) this.Voro_crush_scan(w)
+        // AWAIT: the crush now grasps in its tail (snapped %Se:scape row) — let it settle before snap.
+        if (n >= 2) await this.Voro_crush_scan(w)
         if (n >= 3 && n <= 8) {
             let pick = await this.Voro_drift_tick(w)
             let picks = w.c.radio_picks || []
@@ -283,7 +286,8 @@ async VoroClinic_drive(w, req) {
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) this.VoroClinic_seed(w)
-        if (n >= 2) this.Voro_crush_scan(w)
+        // AWAIT: the crush now grasps in its tail (snapped %Se:scape row) — let it settle before snap.
+        if (n >= 2) await this.Voro_crush_scan(w)
         if (n === 3) this.VoroClinic_witness(w)
     }
 
@@ -365,14 +369,16 @@ async VoroMitosis_drive(w, req) {
         if (n === 2) this.VoroMitosis_seed(w)
         if (n >= 3 && n <= 10) this.VoroMitosis_grow(w, n)
         if (n === 8) this.VoroMitosis_die(w)
-        if (n >= 2) this.Voro_crush_scan(w)
-        // the Se grasp rides BESIDE the census (read-only, isolation-first — VoroMitosis alone drives
-        //  it), reading the same folds through Selection.process so w:Voronoiology also snaps the
-        //   grasp's cross-beat News: the genera arriving (division) and departing (apoptosis) this beat.
-        if (n >= 2) await this.Voro_grasp(w)
-        // the census-mirror rides beside them (Seemables §1, Slice 0): a read-only %Seem:census over
-        //  w:Voronoiology, projecting the rows resolve() sees arrive|depart — to prove it reproduces
-        //   Voro_report's hand-rolled c.seen_beat sweep before that sweep is flipped to read the sphere.
+        // AWAIT the crush: the Se grasp now rides INSIDE Voro_crush_scan's tail (every crush user gets it
+        //  for free — VoroScape and the VoroRadio family too, no longer VoroMitosis alone), and it writes
+        //   the snapped %Se:scape row, so the drive must let it SETTLE before this beat snaps — exactly as
+        //    the old hand-driven `await this.Voro_grasp(w)` did.  The grasp reads the folds through
+        //     Selection.process; w:Voronoiology snaps its cross-beat News (division in, apoptosis out).
+        if (n >= 2) await this.Voro_crush_scan(w)
+        // the census-mirror rides where the hand grasp call used to (Seemables §1, Slice 0): a read-only
+        //  %Seem:census over the PRE-SWEEP census subjects (w.c.census_home, an independent source), so a
+        //   future %see can gate that its goners|neus reproduce Voro_report's hand c.seen_beat sweep —
+        //    a DIVERGENCE would now MEAN a mis-reconciliation, not echo the sweep's own output.
         if (n >= 2) await this.Voro_census_mirror(w)
         if (n === 11) this.VoroMitosis_witness(w)
     }

@@ -1240,7 +1240,7 @@
         //     themselves inline, so they are untouched here.
         if (H.The_Opt_val(w, 'useVoroCyto'))
             for (const rw of (Run.o({ A: 1 }) as TheC[]).flatMap((a: TheC) => a.o({ w: 1 }) as TheC[]))
-                if (rw.sc.w !== 'Voronoiology') (H as any).Voro_crush_scan?.(rw)
+                if (rw.sc.w !== 'Voronoiology') await (H as any).Voro_crush_scan?.(rw)
 
         // Snap:H — indent +1 so content nests under the header
         const h_snap  = await this.snap_H(Run, w)
