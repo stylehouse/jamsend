@@ -84,6 +84,7 @@
 
     import { onMount } from "svelte"
     import { dig }     from "$lib/Y.svelte"
+    import { _C }      from "$lib/data/Stuff.svelte"   // runtime factory for the off-snap Seem home
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
 
@@ -375,6 +376,94 @@
         // Child mutations (Pmirrors, graft children) don't propagate up
         // automatically, so we bump dock explicitly here to wake it.
         dock.bump_version()
+
+        // Seemables §3 Slice 0 — a read-only %Seem mirror of THIS same Pmirror
+        //   diff, beside the hand-rolled pairs_fn above (changes no verdict).
+        //   The hand goner count is gone_bm_ids (the goners that carried a graft
+        //   mark, the set §3 names); a Book %see can later confirm the Seem's
+        //   {goners,neus} track it.  Fully guarded — it can NEVER throw into the
+        //   graft path.
+        try { await this.Lang_graft_seem_mirror(dock, points, gone_bm_ids.length) }
+        catch (err) { console.warn('🔩 graft seem mirror failed', err) }
+    },
+
+    // ── Lang_graft_seem_mirror — Seemables §3 Slice 0 read-only mirror ───────
+    //
+    //   Lang_graft_points_once rebuilds the %Pmirror set with a hand-rolled
+    //   pairs_fn (goner a&&!b, survivor a&&b, neu !a&&b) at %Pmirror,$src_Waft,
+    //   $spec identity (the same identity resolve() pairs on — see ── Shape ──).
+    //   This method stands a %Seem:graft over a mirror of THAT SAME identity set
+    //   and reads o_Seem's native {goners,neus} — the last-compile-vs-this-compile
+    //   diff FOR FREE, with identity — so a later Book %see can confirm the two
+    //   classifications agree.  It is PURELY OBSERVATIONAL: it never touches
+    //   Pmirrors, a graft child, a CM mark or dock.version — only dock.c.* runtime.
+    //
+    //   A Seem is snap-hostile (a live Selection + fns ride its sc), so it parks
+    //   OFF-SNAP on a free C** minted ONCE on dock.c and reused, so resolve() has a
+    //   "last beat".  We do NOT point the Seem at the live %Pmirrors container (its
+    //   %Pmirror children are the snapped output + carry graft/resume_X machinery);
+    //   instead we sync a small distilled roster mirror — one %pm child per current
+    //   Pmirror, keyed by the same (src_Waft, spec) identity — the way LiesFunk's
+    //   Stemdex_seem_mirror mirrors its roster.  _C({sc}) is LangGraft's runtime
+    //   twin of Voro.g's `new TheC({...})` (TheC is a type-only import here).
+    //
+    //   The `spec` string can carry any char (a Point label / method name), so it
+    //   is sanitised into a clean slot key — a raw slash/dot would let the peel
+    //   parser split the sc key.  The full spec rides as a value, not the slot.
+    async Lang_graft_seem_mirror(dock: TheC, points: TheC[], hand_goners: number) {
+        const H  = this as House
+        const dc = dock.c as any
+
+        // off-snap homes, minted ONCE and reused so the Seem has a previous beat.
+        if (!dc.graft_seem_home)   dc.graft_seem_home   = _C({ c: {}, sc: { graft_seem_home: 1 } })
+        if (!dc.graft_seem_roster) dc.graft_seem_roster = _C({ c: {}, sc: { graft_seem_roster: 1 } })
+        const home:   TheC = dc.graft_seem_home
+        const roster: TheC = dc.graft_seem_roster
+
+        // The current Pmirror identity set = exactly what the rebuild just wrote.
+        //   Read it back off the live %Pmirrors (the authoritative post-replace set)
+        //   so the mirror can't drift from what pairs_fn actually classified.
+        const Pmirrors = dock.o({ Pmirrors: 1 })[0] as TheC | undefined
+        const pms      = (Pmirrors?.o({ Pmirror: 1 }) ?? []) as TheC[]
+
+        // (src_Waft, spec) is the Pmirror identity; a clean slot key + the raw
+        //   parts as values keeps the peel parser out of the slash-bearing spec.
+        const slot_of = (waft: string, spec: string) =>
+            `${waft}__${spec}`.replace(/[^A-Za-z0-9]+/g, '_')
+        const want = new Set<string>()
+        for (const pm of pms) {
+            const waft = (pm.sc.src_Waft as string) ?? '?'
+            const spec = (pm.sc.spec as string) ?? ''
+            const slot = slot_of(waft, spec)
+            want.add(slot)
+            // oai = stable slot: a survivor keeps its identity across compiles.
+            roster.oai({ pm: slot }, { src_Waft: waft, spec })
+        }
+        // drop departed identities so o_Seem sees them as goners this beat.
+        for (const c of (roster.o({ pm: 1 }).slice() as TheC[]))
+            if (!want.has(c.sc.pm as string)) roster.drop(c)
+
+        // one walk over the roster mirror — {goners, neus} is the identity-diff.
+        const seem: TheC = home.o({ Seem: 'graft' })[0]
+            ?? H.i_Seem(home, { Seem: 'graft', C: roster })
+        seem.sc.C = roster
+        const news = await H.o_Seem(seem)
+
+        // project a SMALL comparison onto .c runtime (NEVER .sc — snap-hostile,
+        //   off-snap limb).  hand_goners is gone_bm_ids.length from the live pass
+        //   (the goners that carried a graft mark, the set §3's evidence names);
+        //   hand_neus is the count of live Points feeding brand-new Pmirrors this
+        //   compile is not separately tabulated by pairs_fn without touching it,
+        //   so we surface only what the pass already produced — the Seem side
+        //   carries the full {goners,neus}, and a Book %see confirms seem_goners
+        //   ⊇ hand_goners (a subset by construction: not every goner had a mark).
+        dc.graft_seem = {
+            seem_goners: news.goners.length,   // Pmirror identities that LEFT this compile
+            seem_neus:   news.neus.length,     // Pmirror identities that ARRIVED this compile
+            hand_goners,                       // gone_bm_ids.length (goners with a graft mark)
+            rows:        (roster.o({ pm: 1 }).length),
+            points:      points.length,        // live Points feeding this compile's Pmirrors
+        }
     },
 
     // ── Lang_walk_points ───────────────────────────────────────────────────

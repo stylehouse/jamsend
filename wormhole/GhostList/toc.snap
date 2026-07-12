@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783763495402
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783793943528
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -82,6 +82,8 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Story_future.md,name:Story_future.md,noticed_at=1783426627562
     Doc:src/lib/O/spec/Voro_render_faults_todo.md,name:Voro_render_faults_todo.md,noticed_at=1783489335560
     sub:src/lib/O/spec/voro_modes,name:voro_modes
+    Doc:src/lib/O/spec/Voro_render_todo.md,name:Voro_render_todo.md,noticed_at=1783790778057
+    Doc:src/lib/O/spec/Seemables_todo.md,name:Seemables_todo.md,noticed_at=1783793943528
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D

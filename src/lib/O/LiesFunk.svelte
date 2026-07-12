@@ -1470,7 +1470,60 @@ await M.eatfunc({
                     if (gone.length) await db.doc.bulkDelete(gone)
                 }
             } catch (err) { console.warn('🐝 stemdex cache save failed', err) }
+
+            // Seemables Slice 0 (spec/Seemables_todo.md §6): a READ-ONLY %Seem mirror stood
+            //  BESIDE the hand-rolled roster diff above, changing NO verdict.  It reproduces the
+            //   same arrival/departure the roster filter (:1468 `gone`) hand-rolls, natively and
+            //    with identity, so a Book %see can later prove they agree before the scan is ever
+            //     flipped to read the sphere.  Fully guarded — it can never throw into the scan.
+            try { await H.Stemdex_seem_mirror(w, paths) }
+            catch (err) { console.warn('🐝 stemdex seem mirror failed', err) }
         } finally { dex.scanning = false }
+    },
+
+    // ── Stemdex_seem_mirror — Seemables Slice 0 read-only mirror of the roster diff ───────────
+    //   The scan (e_Lies_stemdex_scan) hand-rolls survivor/neu/goner over the doc roster each
+    //    pass — the roster filter `[...dex.docs.keys()].filter(p => !paths.has(p))` IS the goner
+    //     set.  o_Seem returns that for free WITH identity.  Modelled EXACTLY on Voro.g's proven
+    //      Voro_census_mirror (i_Seem/o_Seem), translated to LiesFunk's TS: the Seem is snap-
+    //       hostile (a live Selection + fns ride its sc), so it parks on a free off-snap C** kept
+    //        once on w.c and reused — resolve() needs a "last beat" to diff against.  The roster
+    //         mirror C** carries ONE child per path (its identity = the goner/neu unit); we sync
+    //          it to the CURRENT roster each pass, then o_Seem diffs it against last pass's sphere.
+    //   Purely additive: touches no dex map, no index, no search — only w.c.* runtime fields.
+    async Stemdex_seem_mirror(w: TheC, paths: Set<string>) {
+        const H = this as House
+        // off-snap homes, minted ONCE and reused so the Seem has a previous beat to diff.
+        //  _C({sc}) is LiesFunk's runtime twin of Voro.g's `new TheC({...})` (TheC is a type-only
+        //   import here; _C is the imported runtime factory that returns a fresh free particle).
+        const wc = w.c as any
+        if (!wc.stemdex_seem_home) wc.stemdex_seem_home = _C({ c: {}, sc: { stemdex_seem_home: 1 } })
+        const home: TheC = wc.stemdex_seem_home
+        if (!wc.stemdex_roster) wc.stemdex_roster = _C({ c: {}, sc: { stemdex_roster: 1 } })
+        const roster: TheC = wc.stemdex_roster
+
+        // sync the roster mirror to exactly THIS pass's paths — add arrivals (oai = stable slot,
+        //  so a survivor keeps its identity), drop departures.  A path is the child identity; a
+        //   distinct sc value (base64-ish) keeps keys clean of slashes/dots that the peel splits.
+        const key_of = (p: string) => p.replace(/[^A-Za-z0-9]+/g, '_')
+        const want = new Set([...paths].map(key_of))
+        for (const p of paths) roster.oai({ doc: key_of(p) }, { path: p })
+        for (const c of roster.o({ doc: 1 }).slice() as TheC[])
+            if (!want.has(c.sc.doc as string)) roster.drop(c)
+
+        // one walk over the roster mirror — {goners, neus} is the last-beat-vs-this-beat diff.
+        const seem: TheC = home.o({ Seem: 'stemdex' })[0]
+            ?? H.i_Seem(home, { Seem: 'stemdex', C: roster })
+        seem.sc.C = roster
+        const news = await H.o_Seem(seem)
+
+        // project a SMALL distilled reading onto .c runtime (NEVER .sc — the Seem is snap-hostile
+        //  and this whole limb is off-snap).  A Book %see reads these beside the live roster diff.
+        wc.stemdex_seem = {
+            goners: news.goners.length,   // paths that LEFT the roster this pass (= the :1468 `gone`)
+            neus:   news.neus.length,     // paths that JOINED the roster this pass
+            rows:   roster.o({ doc: 1 }).length,
+        }
     },
 
     // ── Lies_search — the universal query: methods ▸ properties ▸ freetext ────────────────────

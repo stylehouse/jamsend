@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return '602d132944d7ad09' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return '45d18a7136b753fc' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -110,7 +110,7 @@ async MusuHeist_drive(w, req) {
 //  re-entry on step_n moving).  Returns TRUE when this pass took a real edge (the drive burns the step's
 //   budget so no second edge fires until the next snap); FALSE when only waiting on the wire (the budget
 //    stays, so the edge fires the first snap its precondition lands).  seal → uno → duo → reuno → deny →
-//     flat → done.
+//     retomb → flat → done.
 async MusuHeist_phase(w) {
     if (!w.c.phase) return false
     if (w.c.phase === 'seal') {
@@ -124,13 +124,16 @@ async MusuHeist_phase(w) {
         }
         return false
     }
-    if (w.c.phase === 'uno' || w.c.phase === 'duo' || w.c.phase === 'reuno') {
+    if (w.c.phase === 'uno' || w.c.phase === 'duo' || w.c.phase === 'reuno' || w.c.phase === 'retomb') {
         return await this.MusuHeist_flow(w)
     }
     if (w.c.phase === 'deny') {
         if (!w.c.logs_done) { w.c.logs_done = 1; await this.MusuHeist_logs(w); return true }
         if (!w.c.deny_done) { w.c.deny_done = 1; await this.MusuHeist_deny(w); return true }
-        w.c.phase = 'flat'
+        // the deny left a %Tombstone on Uno's collection; retomb re-offers Duo's shelf to prove the drop
+        //  is remembered — one more heist that lands nothing, the denied identity refused at the door.
+        w.c.phase = 'retomb'
+        await this.MusuHeist_job(w, 'retomb')
         return true
     }
     if (w.c.phase === 'flat') {
@@ -233,15 +236,17 @@ async MusuHeist_seal(w) {
 },
 // the job table — who heists whom, what lands where.  Pinned expectations (the fixture's gates) and the
 //  filing DATA (the believe/disbelieve outcome) per direction; 'reuno' re-points Uno at Duo to prove
-//   catalog-identity dedup skips a whole catalog already held.
+//   catalog-identity dedup skips a whole catalog already held; 'retomb' re-points Uno at Duo ONCE MORE
+//    AFTER a deny, to prove the dropped identity is refused by its %Tombstone while the rest still skip.
 MusuHeist_bundle(w, nick) {
     let pfx = w.c.genre_pfx
-    if (nick === 'uno' || nick === 'reuno') {
+    if (nick === 'uno' || nick === 'reuno' || nick === 'retomb') {
         // the re-heist expects Duo's WHOLE shelf back (2 originals + the 6 landed in job B) — a shorter
-        //  expectation would flatten early and strand in-flight husks in the quarantine.
+        //  expectation would flatten early and strand in-flight husks in the quarantine.  retomb expects
+        //   the same 8: 7 already-held skip, the 1 denied identity is tombstoned — none re-land.
         return { nick: nick, at: w.c.duo_pre, mine: w.c.uno_pre, rx: w.c.port_uno,
             srcport: w.c.port_duo, srclib: w.c.duo_lib, own: w.c.uno_lib,
-            mar: w.c.mar_uno, mir_key: w.c.uno_pre + '.heist', expect: (nick === 'reuno') ? 8 : 2,
+            mar: w.c.mar_uno, mir_key: w.c.uno_pre + '.heist', expect: (nick === 'reuno' || nick === 'retomb') ? 8 : 2,
             filings: [{ artist: 'Fourier Four', genre: pfx + '-mathrock' }] }
     }
     return { nick: 'duo', at: w.c.uno_pre, mine: w.c.duo_pre, rx: w.c.port_duo,
@@ -284,10 +289,12 @@ async MusuHeist_flow(w) {
     if (!mir) return false
     let landed = +(b.job.sc.landed || 0)
     let skipped = +(b.job.sc.skipped || 0)
+    let tombstoned = +(b.job.sc.tombstoned || 0)
     // completion is its OWN step: the final beat (below) lands the last record and returns true, then THIS
     //  fires next snap.  Guarded by >= expect so an empty mirror mid-offer (husks still crossing) never
-    //   false-completes.  The DISK is read back — byte-faithful means the bytes that LANDED, not what we meant.
-    if (landed + skipped >= b.expect && !mir.o({ Record: 1 }).length) {
+    //   false-completes.  Tombstoned husks (denied-before) count toward expect too — retomb drops all 8 at
+    //    the door and lands none.  The DISK is read back — byte-faithful means the bytes that LANDED.
+    if (landed + skipped + tombstoned >= b.expect && !mir.o({ Record: 1 }).length) {
         // gather the disk truth first (on_disk monitoring + byte-faithful count), then stamp the node.
         let disks = []
         let ok = 0
@@ -313,6 +320,7 @@ async MusuHeist_flow(w) {
         let row = { heisted: b.nick }
         if (landed) row.landed = landed
         if (skipped) row.skipped = skipped
+        if (tombstoned) row.tombstoned = tombstoned
         if (b.job.sc.breached) row.breached = b.job.sc.breached
         if (landed) row.faithful = ok
         let jn = this.MusuHeist_note(w, row)
@@ -327,6 +335,7 @@ async MusuHeist_flow(w) {
         if (b.nick === 'uno') { w.c.phase = 'duo'; await this.MusuHeist_job(w, 'duo') }
         else if (b.nick === 'duo') { w.c.phase = 'reuno'; await this.MusuHeist_job(w, 'reuno') }
         else if (b.nick === 'reuno') { w.c.phase = 'deny' }
+        else if (b.nick === 'retomb') { w.c.phase = 'flat' }
         return true
     }
     // not done yet — one pull beat this step (Ra_pull_beat wants every missing page at once; the wire
@@ -343,12 +352,19 @@ async MusuHeist_logs(w) {
     let shape = /^[0-9]+ (fresh|love|drop) .+$/
     let clean = 1
     let counts = {}
-    for (const side of [{ nick: 'uno', mar: w.c.mar_uno }, { nick: 'duo', mar: w.c.mar_duo }]) {
+    for (const side of [{ nick: 'uno', mar: w.c.mar_uno, own: w.c.uno_lib }, { nick: 'duo', mar: w.c.mar_duo, own: w.c.duo_lib }]) {
         let lines = await this.Heist_newlyadded_read(w.c.nav, side.mar)
         counts[side.nick] = lines.length
         for (const line of lines) {
             if (!shape.test(line)) clean = 0
             if (line.includes(w.c.uno_pre) || line.includes(w.c.duo_pre)) clean = 0
+            // POSITIVE provenance guard (audit #8): the old check only forbade the two run-specific prepub
+            //  strings — a leak in ANY other form (a nick, a source path, an appended `from:` field) passed.
+            //   Instead require every entry to EXACTLY equal a held card's path: an entry carrying any extra
+            //    token no longer matches a real landing, so "never a word about the source" is enforced
+            //     against provenance generally, not two literals.  Filenames-with-spaces safe (path == path).
+            let e = this.Heist_newlyadded_entry(line)
+            if (!side.own.o({ Record: 1 }).find((r) => r.sc.path === e.entry)) clean = 0
         }
     }
     let row = { newlyadded_shape: 1, uno: counts.uno, duo: counts.duo }
@@ -365,6 +381,12 @@ async MusuHeist_deny(w) {
     if (lines.length < 2) { this.MusuHeist_note(w, { deny_starved: 1 }); return }
     let love = this.Heist_newlyadded_entry(lines[0]).entry
     let drop = this.Heist_newlyadded_entry(lines[1]).entry
+    // capture the DENIED catalog identity BEFORE the drop retires its card — the witness verifies the
+    //  minted %Tombstone is keyed to exactly this artist+title (not just that some tombstone exists), so a
+    //   mis-keyed tombstone that protects the wrong track is caught, not passed on the wildcard count.
+    let dropcard = w.c.uno_lib.o({ Record: 1 }).find((r) => r.sc.path === drop)
+    let drop_artist = dropcard ? dropcard.sc.artist : null
+    let drop_title = dropcard ? dropcard.sc.title : null
     await this.Heist_feel(w, w.c.nav, w.c.uno_lib, w.c.mar_uno, love, 'love')
     await this.Heist_feel(w, w.c.nav, w.c.uno_lib, w.c.mar_uno, drop, 'drop')
     let cut = drop.split('/')
@@ -374,6 +396,8 @@ async MusuHeist_deny(w) {
         raw = await w.c.nav.bin_read(w.c.mar_uno + '/' + cut.join('/'), filename)
     } catch (er) { raw = null }
     let row = { denied: 1 }
+    if (drop_artist) row.drop_artist = drop_artist
+    if (drop_title) row.drop_title = drop_title
     if (!raw || !raw.byteLength) row.gone = 1
     if (!w.c.uno_lib.o({ Record: 1 }).find((r) => r.sc.path === drop)) row.carded_off = 1
     // the log stayed HONEST about the drop — the dropped entry's newlyadded line now reads `drop`, not a
@@ -413,8 +437,18 @@ MusuHeist_witness(w) {
     // the divided censuses stand — REAL files walked into %Records whose %Body chunks are whole original
     //  bytes; neither census holds the other's artists.
     let cok = uno_lib.o({ Record: 1 }).length === 6 && duo_lib.o({ Record: 1 }).length === 2
+    // BOTH sides checked for whole original bytes (audit #1: the completeness loop used to run over duo
+    //  only, so 6 of 8 tracks never had "whole bytes" witnessed — a truncated Sines/Oscillo body passed).
     for (const rec of uno_lib.o({ Record: 1 })) {
         if (!['The Sines', 'DJ Oscillo'].includes(rec.sc.artist)) cok = false
+        let map = this.Ra_chunk_map(rec)
+        let held = 0
+        let s = 0
+        while (s < +(rec.sc.total || 0)) {
+            if (map[s] != null) held = held + 1
+            s = s + 1
+        }
+        if (held !== +(rec.sc.total || 0)) cok = false
     }
     for (const rec of duo_lib.o({ Record: 1 })) {
         if (rec.sc.artist !== 'Fourier Four') cok = false
@@ -441,22 +475,27 @@ MusuHeist_witness(w) {
     // job A landed: original bytes straight into the collection — the DISK re-read re-hashes to the source
     //  hash for every landed file (byte-faithful is proven against what stands not what was meant).
     if (ha && +(ha.sc.landed || 0) === 2 && !ha.sc.breached && +(ha.sc.faithful || 0) === 2 && !T.oa({ see: 'the heist landed straight into the collection — every file byte-faithful to its source hash on the disk' })) this.MusuHeist_note(w, { see: 'the heist landed straight into the collection — every file byte-faithful to its source hash on the disk' })
-    // the filing held: every landed card lives under the genre its filing named.
+    // the filing held: every landed card lives under the genre its filing named.  Match the FULL pinned
+    //  genre (pfx + '-mathrock/'), not a bare substring (audit #5), so a dropped prefix cannot pass.
     if (ha) {
         let filed = 0
         for (const rec of uno_lib.o({ Record: 1, artist: 'Fourier Four' })) {
-            if (('' + rec.sc.path).includes('-mathrock/')) filed = filed + 1
+            if (('' + rec.sc.path).includes(w.c.genre_pfx + '-mathrock/')) filed = filed + 1
         }
         if (filed === 2 && !T.oa({ see: 'the landing filed by category — each track under the genre its filing named' })) this.MusuHeist_note(w, { see: 'the landing filed by category — each track under the genre its filing named' })
     }
-    // job B landed the other way — same music economy, DIFFERENT categories at the other end.
+    // job B landed the other way — same music economy, DIFFERENT categories at the other end.  Each count
+    //  is scoped to its ARTIST (audit #6): a swap that filed The Sines under bangers would keep 3+3 in the
+    //   aggregate and pass — per-artist pins that each track sits under the genre ITS filing named.
     let hb = T.o({ heisted: 'duo' })[0]
     if (hb && +(hb.sc.landed || 0) === 6 && +(hb.sc.faithful || 0) === 6) {
         let chill = 0
         let bang = 0
-        for (const rec of duo_lib.o({ Record: 1 })) {
-            if (('' + rec.sc.path).includes('-chillwave/')) chill = chill + 1
-            if (('' + rec.sc.path).includes('-bangers/')) bang = bang + 1
+        for (const rec of duo_lib.o({ Record: 1, artist: 'The Sines' })) {
+            if (('' + rec.sc.path).includes(w.c.genre_pfx + '-chillwave/')) chill = chill + 1
+        }
+        for (const rec of duo_lib.o({ Record: 1, artist: 'DJ Oscillo' })) {
+            if (('' + rec.sc.path).includes(w.c.genre_pfx + '-bangers/')) bang = bang + 1
         }
         if (chill === 3 && bang === 3 && !T.oa({ see: 'the mirror heist landed the other way — each end filed the same disk under its own categories' })) this.MusuHeist_note(w, { see: 'the mirror heist landed the other way — each end filed the same disk under its own categories' })
     }
@@ -470,8 +509,25 @@ MusuHeist_witness(w) {
     // deny = delete from the collection: the file left the disk and the catalog with the log honest.
     let dn = T.o({ denied: 1 })[0]
     if (dn && dn.sc.gone && dn.sc.carded_off && dn.sc.log_dropped && !T.oa({ see: 'a denied track left the collection — the file gone and the log honest about the drop' })) this.MusuHeist_note(w, { see: 'a denied track left the collection — the file gone and the log honest about the drop' })
-    // afterwards nothing attributes: the scaffolding flattened away entirely.
-    if (T.oa({ flattened: 1 }) && !w.o({ Heist: 1 }).length && !T.oa({ see: 'the scaffolding flattened away — no heist stands and nothing attributes who gave what' })) this.MusuHeist_note(w, { see: 'the scaffolding flattened away — no heist stands and nothing attributes who gave what' })
+    // the drop is REMEMBERED: retomb re-offered Duo's whole shelf and Uno re-downloaded nothing — the one
+    //  denied identity refused by its %Tombstone (tombstoned=1) while the 7 still-held identities skipped as
+    //   before.  Guards the exact bug the tombstone fixes: without it the denied track re-heists (landed>0)
+    //    and this see drops.  Tightened past a wildcard existence check (adversarial audit F1/F3/F5): the
+    //     %Tombstone must be keyed to the DENIED identity (dn.sc.drop_*, not just "some tombstone"), AND
+    //      Uno's collection must still hold exactly 7 Records — the explicit no-reland invariant, independent
+    //       of the landed counter and the shared ra_wanted cursor, so a resurrected track can never hide.
+    let ht = T.o({ heisted: 'retomb' })[0]
+    let tomb_stands = dn && uno_lib.o({ Tombstone: 1, artist: dn.sc.drop_artist, title: dn.sc.drop_title }).length === 1
+    let no_reland = uno_lib.o({ Record: 1 }).length === 7
+    if (ht && +(ht.sc.tombstoned || 0) === 1 && !ht.sc.landed && +(ht.sc.skipped || 0) === 7 && tomb_stands && no_reland && !T.oa({ see: 'a denied track stayed refused on the next heist — the collection remembered the rejection and re-downloaded nothing' })) this.MusuHeist_note(w, { see: 'a denied track stayed refused on the next heist — the collection remembered the rejection and re-downloaded nothing' })
+    // afterwards nothing attributes: the scaffolding flattened away entirely AND no surviving collection
+    //  card carries a source/from breadcrumb (audit #10 — the "nothing attributes who gave what" half was
+    //   unwitnessed; a landed card stamped with its origin would have flattened green).  Provenance lives on
+    //    the MIRROR cards' .c only (runtime, never snapped) — the landed cards must be attribution-free.
+    let no_attribution = 1
+    for (const r of uno_lib.o({ Record: 1 })) { if (r.sc.source || r.sc.from || r.oa({ from: 1 })) no_attribution = 0 }
+    for (const r of duo_lib.o({ Record: 1 })) { if (r.sc.source || r.sc.from || r.oa({ from: 1 })) no_attribution = 0 }
+    if (T.oa({ flattened: 1 }) && !w.o({ Heist: 1 }).length && no_attribution && !T.oa({ see: 'the scaffolding flattened away — no heist stands and nothing attributes who gave what' })) this.MusuHeist_note(w, { see: 'the scaffolding flattened away — no heist stands and nothing attributes who gave what' })
 
 },
 

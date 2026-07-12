@@ -91,6 +91,14 @@ async Heist_census(w, lib, nav, base, artists):
 //   path (same identity, better format — e.g. to flac if policy allows) is a later gear; v1 skips.
 Heist_held(lib, artist, title):
     return !!(lib && lib.o({ Record: 1, artist: artist, title: title })[0])
+
+// Heist_tombstoned — the REMEMBERED-DENIALS probe: has this collection durably REFUSED artist+title?
+//  A %Tombstone card (minted on a deny — Heist_feel) is the %UnGrant negative-fact PATTERN applied to a
+//   track: catalog identity, never source, GC never drops it.  Consulted at the door beside Heist_held so
+//    a dropped identity can never silently re-download on a later heist (roadmap §10.2 #6).  The two are
+//     distinct reasons a husk stops: HELD = already have it; TOMBSTONED = chose against it and it stays out.
+Heist_tombstoned(lib, artist, title):
+    return !!(lib && lib.o({ Tombstone: 1, artist: artist, title: title })[0])
 //#endregion
 
 //#region job — %Heist,at:<pier>: scaffolding that exists for as little time as possible
@@ -136,6 +144,14 @@ async Heist_beat(w, rx, mine, theirs, job, own_lib, mir, nav, mardir):
     for (const rec of mir.o({ Record: 1 })) {
         if (this.Heist_held(own_lib, rec.sc.artist, rec.sc.title)) {
             job.sc.skipped = +(job.sc.skipped || 0) + 1
+            await mir.rm({ Record: 1, id: rec.sc.id })
+            continue
+        }
+        if (this.Heist_tombstoned(own_lib, rec.sc.artist, rec.sc.title)) {
+            // the collection REMEMBERS a past rejection: a denied catalog identity is refused at the door
+            //  and never re-heisted.  Tallied apart from `skipped` so a snap reads WHY each husk stopped —
+            //   held (already have it) vs tombstoned (dropped it before, and it stays dropped).
+            job.sc.tombstoned = +(job.sc.tombstoned || 0) + 1
             await mir.rm({ Record: 1, id: rec.sc.id })
             continue
         }
@@ -233,9 +249,9 @@ Heist_newlyadded_entry(line):
     return { seq: parts[0], feeling: parts[1], entry: parts.slice(2).join(' ') }
 
 // Heist_feel — the listener's verdict on a probation entry.  'love' graduates in place; 'drop' is
-//  DENY: the file leaves the collection (deleted off the disk) and its catalog card retires, the
-//   log line staying honest about the drop.  (A dropped identity WILL re-offer on a later heist —
-//    catalog dedup only skips what is held; a remembered-denials tombstone is an owed later gear.)
+//  DENY: the file leaves the collection (deleted off the disk), its catalog card retires, and a durable
+//   %Tombstone is minted so the drop is REMEMBERED — a later heist re-offering the same catalog identity
+//    is refused at the door (Heist_tombstoned), never silently re-downloaded.  The log line stays honest.
 async Heist_feel(w, nav, own_lib, mardir, entry, feeling):
     let lines = await this.Heist_newlyadded_read(nav, mardir)
     let out = []
@@ -250,7 +266,16 @@ async Heist_feel(w, nav, own_lib, mardir, entry, feeling):
                 if (dl && typeof dl.deleteEntry === 'function') await dl.deleteEntry(filename)
                 if (own_lib) {
                     let card = own_lib.o({ Record: 1 }).find((r) => r.sc.path === entry)
-                    if (card) await own_lib.rm({ Record: 1, id: card.sc.id })
+                    if (card) {
+                        // remember the rejection so a later heist cannot silently re-download it: a durable
+                        //  %Tombstone keyed by CATALOG identity (artist+title, never source) — the %UnGrant
+                        //   negative-fact SHAPE reused for a track.  Minted from the card BEFORE it retires;
+                        //    it outlives both the card and every flatten (it lives on the collection, not the
+                        //     %Heist), so a drop is final until the listener lifts it by hand.
+                        let tomb = own_lib.i({ Tombstone: 1, artist: card.sc.artist, title: card.sc.title })
+                        tomb.c.up = own_lib
+                        await own_lib.rm({ Record: 1, id: card.sc.id })
+                    }
                 }
             }
         } else {

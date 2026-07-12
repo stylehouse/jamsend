@@ -2,13 +2,35 @@
 
 ## 0. What to get on with next
 
-**Slice A — text stretch-ups, render-only, no grasp needed.** The smallest real visible win and it
- de-risks the fitter every later slice builds on. All in `Cytui.svelte`, touches no crush verdict,
-  snaps nothing. Verify with `runner_shot --svg` (text stays greppable — assert the loud statements
-   carry `font-size ≥ 14`). Then Slice B feeds it real weights.
+**Slices A + B + B2 are BUILT (2026-07-12), compile+type-clean, PIXEL-VERIFY OWED on a Voro runner.**
+ The meaning→size pipeline is whole: the grasp reads the whole neighbourhood, weights every claim by how
+  much it sets its cell apart, and the render sizes text off that weight. What's blocking the eyes-on
+   gate is only a runner: the tab up right now is a `?B=MusuHeist` runner, which can't `become_book` a
+    Voro Book. **NEXT = a human opens a `?B=VoroMitosis` (or VoroScape) runner tab on :9091**, then:
+ - `node scripts/runner_ask.mjs run VoroMitosis --watch` (RED expected — the new `wgt`/`trait`/`Se:scape`
+    fields make fixtures stale; that's the re-record, the human's call), then
+ - `node scripts/runner_ask.mjs snap 11` — confirm `%Se:scape` carries a sane `trait` (e.g. `genre …`)
+    and `loudest`, and that it names the biggest cell.
+ - `node scripts/runner_shot.mjs --svg out.svg` — **the real gate**: a distinctive fact (few cells share
+    it) towers ≥16pt; a universal fact (every cell has it) recedes under 14pt; identity still biggest.
+    Grep `font-size` and eyeball the hierarchy. Tune the weight formula (`Voro_grasp_weight`) live.
 
-Vague-but-fine candidates after that: the grasp learns to speak `the_*`/`the_very_*` (Slice B); cells
- clump into continuous regions (Slice C); the first C-arc river through one region (Slice D).
+**The grasp now ALSO emits `the_family` (region axis = the dominant shared key's value), `the_anchor`
+ (durable id) + a `regions` count** (`Voro_grasp`, 66109c). Provisional bucketing — tune live.
+
+**Slice C v1 — region washes — BUILT 2026-07-12 (Cytui, behind the `▧` toggle, OFF by default).** Same-
+ family cells get one translucent filled convex-hull backing drawn BENEATH the cells (`region_of(id)`
+  reads `src.c.D→the:family`, null-safe → `fold_kind`/`'misc'`; hull in `paint_final` ~2426; draw ~3248).
+   **Layout untouched** — this shows grouping without moving cells. Known limit (the standing "hulls
+    aren't touching"): different families' hulls OVERLAP where cells interleave, because nothing clumps
+     them yet. So the eyes-on next step is **C1 = family clumping** (fcose intra-family gravity by
+      `the_family`, `install_nuclei` precedent) — do it live, it's the layout engine. Then C2 (merge to
+       one filled region per family, now that they're contiguous) → Slice D (I/C/S/O arc-rivers).
+
+Gang-robustness CONFIRMED (Voro.g:631-635): a gang's rep carries `c.stuff=1` too, so the grasp's fold
+ filter already covers gangs — the VoroScape rollout (fold `Voro_grasp` into `Voro_crush_scan` so imposed-
+  from-above Books get it) is a DRIVE-POINT change only, no filter change. All render slices eyes-on,
+   none Book-gateable — verify C v1 + tune the weight formula on a live `?B=VoroMitosis`/`VoroScape` runner.
 
 ## The arc (the destination)
 
@@ -53,13 +75,25 @@ The grasp already wires `C.c.D = D` (`_Seem_CDUsive`, `LangHold.svelte:963`). So
  - Molded-Stuffing face (▦ off): add a min-legible-scale gate in `paint_final` (`:2229`) — shed rows
     rather than shrink below ~14pt (reuse `wrap_applied` hysteresis).
 
-**B — Grasp speaks `the_*`/`the_very_*` (the `.g` half, snap-verifiable).** Extend `Voro_grasp`
- (`Ghost/V/Voro.g`) so each fold D carries `the:<prop>,val,weight`, promotes loud ones to
-  `the_very:<prop>`, plus `the_anchor` (durable cross-beat id) and `the_family` (region key —
-   `traced_fn` fires after the sibling layer resolves, so it can neighbour-read). Swap Slice A's faked
-    weights for `grasp_of(src)`. `.g` → LocalGen/ghost-compile → live-verify; re-record the `%Se:scape`
-     fixture (identity-stable → small diff). **Weight formula is undefined** — start heuristic
-      (identity=always very; dominant spread chip; large ×N), eye it on a live tab.
+**B + B2 — Grasp weighs every claim by neighbourhood salience; the render sizes text by it. BUILT
+ 2026-07-12 (compile+type-clean; pixel-verify owed).** The path landed CLEANER than the D-sphere
+  key-matching this doc first sketched — the grasp weighs the *same Vtuffing tree the render draws*, so
+   the two halves align by construction, no cross-beat keying to drift:
+ - `.g` (`Voro_grasp`, `Ghost/V/Voro.g`): a NEIGHBOURHOOD CENSUS counts every `(key,val)` claim across
+    all cells (`Voro_grasp_tally`), then `Voro_grasp_weight` scores each claim 0..100 — universal (every
+     cell shares it) → ~20 (recedes below 14pt), unique → ~95 (towers), a rare *key* nudges up. The
+      weight is stamped straight onto each `%Vrow`/`%Vbit`'s `wgt` (off-snap tree → snaps nothing;
+       96..100 reserved for identity/title). The `%Se:scape` readout gains `trait` (the loudest cell's
+        defining claim). This is the real Se — a cell weighed against its neighbours, which the isolation
+         judges (`Voro_crushable`) never could.
+ - render (`Cytui.svelte`): `wgt_norm` carries the row `wgt` through `vtuff_rows`; `band_for(wgt, hiCap)`
+    maps it to a fit band (≥80 towers lo16, ≥45 the 14pt floor, below recedes lo7). Faked `loud` deleted.
+     A grasp-blind pane still renders sane (title 100, else 50 → 14pt floor) — enrich, never require.
+ - **The weight formula is the knob to tune live** (`Voro_grasp_weight`, the `0.85`/`15` constants +
+    the 80/45 band thresholds). Start heuristic; eye it on a `runner_shot --svg` and adjust.
+ - Owed with a runner: emit `the_family` (region key, for Slice C) + `the_anchor` (durable id, for Slice
+    D) — held until the bucketing can be eyeballed. Fold `Voro_grasp` into `Voro_crush_scan` so VoroScape
+     (imposed-from-above) gets it too.
 
 **C — Regroup into continuous spaces.** C1: fcose intra-family gravity so a `the_family` seats
  contiguously (render-side nudge; nuclei `install_nuclei:1685` is the precedent). C2: promote the

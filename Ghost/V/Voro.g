@@ -322,13 +322,54 @@ Voro_grasp(w):
         }
     }
     let grasped = folds.length
-    // VOICE each fold — distil it to the_*: its identity is always the_very (the one name that stands
-    //  for the whole cell — what the render stretches biggest), its count rides weighted 0..100 against
-    //   the loudest sibling.  Stamped as D%the children on the OFF-SNAP sphere, so this drop+rebuild
-    //    costs the snap NOTHING — only the render (Slice B2, reached via src.c.D → D%the) and the readout
-    //     below ever read them.  A gang speaks its genus (fold_kind); a container pane its own identity.
+    // ── NEIGHBOURHOOD CENSUS — the Se proper.  Count every (key,val) claim across ALL the cells, so a
+    //  claim's loudness can be read as how much it SETS ITS CELL APART: a fact every cell shares
+    //   ('format: digital') is quiet, one only this cell makes ('genre: shoegaze' among folk) is loud.
+    //    This is the surroundings-read the isolation judges (Voro_crushable) can't do — a cell weighed
+    //     against its neighbours, not alone.  Drawn from the SAME Vtuffing tree the render draws
+    //      (Vtuff_build's cached %Vtuffing), so a weight lands on the very row the glass shows — the two
+    //       halves aligned by construction, no cross-beat key-matching to drift.
+    let kv = {}
+    let keyc = {}
+    for (const f of folds) {
+        let t = this.Vtuff_build(f.src)
+        if (!t) continue
+        let saw = {}
+        for (const r of t.o()) {
+            let rk = r.sc.row
+            if (rk === 'fact') {
+                let p = this.Voro_grasp_kv('' + r.sc.text)
+                this.Voro_grasp_tally(kv, keyc, saw, p.key, p.val)
+            } else if (rk === 'spread') {
+                let sk = '' + r.sc.text
+                for (const b of r.o()) {
+                    this.Voro_grasp_tally(kv, keyc, saw, sk, '' + b.sc.text)
+                }
+            }
+        }
+    }
+    // VOICE each fold — its identity is always the_very (the name the render stretches biggest); its
+    //  count rides 0..100 against the loudest sibling; and each of its OWN rows is weighed by the census
+    //   above and the weight stamped straight onto the Vtuffing tree (off-snap, so the drop+rebuild costs
+    //    the snap NOTHING — only the render reads it, via the wgt field that already rode every Vrow).
+    //     Track the cell's loudest distinguishing trait for the readout.  The D%the children stay too,
+    //      so the sphere is self-describing: a cell's D says its name, its n, and its defining trait.
+    // the REGION axis (Slice C seed): the key the most cells share is the axis they can be grouped
+    //  along — cluster cells by their VALUE on it and same-value cells form a continuous region (the
+    //   human's "a river of some type of debris through another").  Provisional (dominant-shared-key);
+    //    the real bucketing wants eyes-on — tune when a Voro runner is up.
+    let fam_key = ''
+    let fam_best = 0
+    for (const k in keyc) {
+        if (keyc[k] > fam_best) {
+            fam_best = keyc[k]
+            fam_key = k
+        }
+    }
+    let fams = {}
     let loudest = ''
     let loud_n = 0
+    let loud_trait = ''
     for (const f of folds) {
         for (const old of f.d.o({ the: 1 }).slice()) old.drop(old)
         let name = f.src.c.fold_kind
@@ -337,9 +378,75 @@ Voro_grasp(w):
         name = ('' + name).split(',').join(' ')
         f.d.i({ the: 'name', val: name, weight: 100, very: 1 })
         f.d.i({ the: 'n', val: '' + f.n, weight: '' + Math.round(100 * f.n / max_n) })
+        let t = f.src.c.vtuffing
+        let top_fact = ''
+        let top_w = 0
+        if (t) {
+            for (const r of t.o()) {
+                let rk = r.sc.row
+                if (rk === 'title') {
+                    r.sc.wgt = 100
+                } else if (rk === 'dip') {
+                    r.sc.wgt = 10
+                } else if (rk === 'fact') {
+                    let p = this.Voro_grasp_kv('' + r.sc.text)
+                    let w = this.Voro_grasp_weight(kv, keyc, grasped, p.key, p.val)
+                    r.sc.wgt = w
+                    if (w > top_w) {
+                        top_w = w
+                        top_fact = '' + r.sc.text
+                    }
+                } else if (rk === 'spread') {
+                    let sk = '' + r.sc.text
+                    let mx = 0
+                    let mxv = ''
+                    for (const b of r.o()) {
+                        let cw = this.Voro_grasp_weight(kv, keyc, grasped, sk, '' + b.sc.text)
+                        b.sc.wgt = cw
+                        if (cw > mx) {
+                            mx = cw
+                            mxv = '' + b.sc.text
+                        }
+                    }
+                    r.sc.wgt = mx
+                    if (mx > top_w) {
+                        top_w = mx
+                        top_fact = sk + ' ' + mxv
+                    }
+                } else {
+                    r.sc.wgt = 50
+                }
+            }
+        }
+        f.d.i({ the: 'trait', val: top_fact, weight: '' + top_w })
+        // the REGION this cell belongs to (its value on the shared axis) + a durable ANCHOR (its
+        //  identity) — the two fields Slice C (regroup) and Slice D (arc bead order) read off the sphere.
+        let family = 'misc'
+        if (t && fam_key) {
+            for (const r of t.o()) {
+                let rk = r.sc.row
+                if (rk === 'fact') {
+                    let p = this.Voro_grasp_kv('' + r.sc.text)
+                    if (p.key === fam_key) {
+                        family = p.val || fam_key
+                        break
+                    }
+                } else if (rk === 'spread' && ('' + r.sc.text) === fam_key) {
+                    let b0 = r.o()[0]
+                    if (b0) {
+                        family = '' + b0.sc.text
+                    }
+                    break
+                }
+            }
+        }
+        fams[family] = 1
+        f.d.i({ the: 'family', val: family, weight: '' + fam_best })
+        f.d.i({ the: 'anchor', val: name })
         if (f.n > loud_n) {
             loud_n = f.n
             loudest = name
+            loud_trait = top_fact
         }
     }
     // born = the folds that ARRIVED this beat — resolve() flagged their D node a neu AND its source
@@ -364,7 +471,82 @@ Voro_grasp(w):
     // PROJECT — the grasp's readout beside the census: cells held, the cell mitosis, and the LOUDEST
     //  cell (its the_very name) — a first legible taste of the reductionist weighting the render reads.
     //   oai keeps its slot so only the fields slide — no storm on the grasp's own row.
-    rw.oai({ Se: 'scape' }, { grasped: '' + grasped, born: '' + born, died: '' + died, loudest: loudest })
+    rw.oai({ Se: 'scape' }, { grasped: '' + grasped, born: '' + born, died: '' + died, loudest: loudest, trait: loud_trait, regions: '' + Object.keys(fams).length })
+
+// Voro_grasp_kv — split a Vtuffing fact's text into { key, val }: 'year: 2007' → { year, 2007 };
+//  a presence fact ('remaster ×2') or a bare key → { key, '' } (its value IS its mere presence).
+Voro_grasp_kv(text):
+    let i = text.indexOf(': ')
+    if (i > 0) {
+        let o = { key: text.slice(0, i), val: text.slice(i + 2) }
+        return o
+    }
+    let x = text.lastIndexOf(' ×')
+    if (x > 0) {
+        let o = { key: text.slice(0, x), val: '' }
+        return o
+    }
+    let o = { key: text, val: '' }
+    return o
+
+// Voro_grasp_tally — record one (key,val) claim for ONE cell into the neighbourhood census, deduped
+//  per cell (a cell that says a value twice counts once — saw is this cell's).  kv counts the cells
+//   per (key,val); keyc counts the cells per key — a key few cells even carry is itself distinguishing.
+Voro_grasp_tally(kv, keyc, saw, key, val):
+    if (!key) return
+    let vk = key + '~#~' + val
+    if (!saw[vk]) {
+        saw[vk] = 1
+        kv[vk] = (kv[vk] || 0) + 1
+    }
+    let kk = 'K' + key
+    if (!saw[kk]) {
+        saw[kk] = 1
+        keyc[key] = (keyc[key] || 0) + 1
+    }
+
+// Voro_grasp_weight — a claim's loudness 0..100 from the census: universal (every cell shares it) →
+//  ~20 (recedes below the render's 14pt floor — it needn't shout), unique to this cell → ~95 (towers).
+//   A rare KEY nudges up (a property few cells even carry is distinguishing).  96..100 stays reserved
+//    for identity/title, so a fact never out-shouts the name of the thing it describes.
+Voro_grasp_weight(kv, keyc, total, key, val):
+    if (!key) return 50
+    if (!total) return 50
+    let vk = key + '~#~' + val
+    let share = (kv[vk] || 1) / total
+    let w = Math.round(100 * (1 - 0.85 * share))
+    let kshare = (keyc[key] || 1) / total
+    w = w + Math.round(15 * (1 - kshare))
+    if (w > 95) w = 95
+    if (w < 20) w = 20
+    return w
+
+// ── Voro_census_mirror — SEEM-ABLE §1, Slice 0 (isolation-first, read-only) ──────────────────────────
+//  Voro_report STILL hand-rolls its survivors/goners the old way: stamp c.seen_beat=0 on every census row,
+//   re-stamp =1 on each one the walk re-touches, then sweep the un-touched as goners.  That is precisely
+//    the last-beat-vs-this-beat diff the mature %Seem gives for FREE, with identity — the Seemables harvest
+//     (spec/Seemables_todo.md §1), one function over from where Voro_grasp already proved the pattern.
+//  This stands a SECOND Seem — %Seem:census over w:Voronoiology (the census world rw itself, NOT w's fold
+//   layer the grasp mirrors) — BESIDE the live sweep, changing NO verdict.  It only projects how many
+//    census rows resolve() sees ARRIVE and DEPART each beat, so a Book %see can prove they reproduce
+//     Voro_report's own add/drop set BEFORE the sweep is ever flipped to read the sphere.  Off-snap home
+//      like the grasp's; modelled exactly on Voro_grasp's proven i_Seem/o_Seem setup so it can't misfire.
+Voro_census_mirror(w):
+    let A = w.c.up
+    if (!A || !w.sc.w) return
+    let rw = A.o({ w: 'Voronoiology' })[0]
+    if (!rw) return
+    if (!w.c.census_home) w.c.census_home = new TheC({ c: {}, sc: { census_home: 1 } })
+    let chome = w.c.census_home
+    let cseem = chome.o({ Seem: 'census' })[0]
+    if (!cseem) cseem = this.i_Seem(chome, { Seem: 'census', C: rw })
+    cseem.sc.C = rw
+    let cnews = await this.o_Seem(cseem)
+    // raw resolve() add/drop of the census rows.  The %Se readout rows ride oai (stable slots) so they
+    //  never churn as goners/neus after the single beat each first appears — the counts stay clean.
+    let gone = cnews.goners.length
+    let neu = cnews.neus.length
+    rw.oai({ Se: 'census' }, { goners: '' + gone, neus: '' + neu, rows: '' + rw.o().length })
 
 // Voro_crush_walk — recurse; structural mainkeys stay graph (the skeleton must remain readable) but
 //  are walked THROUGH; a crushed container's subtree is NOT descended (folded here = folded in the

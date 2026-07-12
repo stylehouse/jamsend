@@ -22,6 +22,62 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 A rolling brief: the newest work sits here first, then gets baked into its home section
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 
+**2026-07-12 (night) — MusuHeist live-gate CLEARED + sabotage-proven; the %Tombstone gear BUILT
+ (roadmap §10.2 #6), live-gate owed for morning.** The prior entry's owed live-gate is DONE: on a
+  focused runner tab (a backgrounded tab freezes mid-run — Page Lifecycle, not a Book bug, so the
+   honest recipe stays "installed PWA left visible") MusuHeist ran PACED (30 deterministic steps, one
+    edge per snap), green ×2 (`ok_pct:1, caveat:28` — the benign AudibleEntropy ≈ signature), all 10
+     %see present, then the seal assertion (#2) was SABOTAGE-PROVEN: neuter `w.c.repli_allow` to
+      allow-all (the exact tautology the `both_live` gate names) → the run went RED (`ok_pct:0.1`) and
+       the live step-4 snap carried ZERO occurrences of the see #2 sentence — it DROPS the instant the
+        consent gate is neutered — then green again on restore. The gate is load-bearing, not theatre.
+         Runner released; fixtures committed by the host ("cooking the books"). Two map corrections
+          this cleared: **§10.2 #7 (FSA `bin_write` self-heal) is BUILT** — `bin_write` catches a
+           stale-handle `NotFoundError`, force-re-walks via `mkdirp_fresh`, retries once (Housing.svelte.ts);
+            a runner is leave-up-able. And the design/test split + one-edge-per-snap pacing held under
+             the adversarial probe.
+ **Then, build-only overnight (no live verify — the tab freezes unfocused): the remembered-denials
+  tombstone (§10.2 #6) is BUILT and compile-clean, live-gate OWED.** A dropped identity used to
+   silently re-offer on a later heist (dedup skips only what is HELD). Now `Heist_feel`'s drop mints a
+    durable **`%Tombstone,artist,title`** on the collection (the `%UnGrant` negative-fact PATTERN reused
+     for a track — catalog identity, never source; it outlives the card and every flatten), and
+      `Heist_beat` consults `Heist_tombstoned` at the door beside `Heist_held` — HELD = already have it,
+       TOMBSTONED = chose against it, both drop the husk, tallied apart (`job.sc.tombstoned`). MusuHeist
+        grew a **`retomb`** phase after `deny` (seal→uno→duo→reuno→deny→**retomb**→flat→done): Uno
+         re-offers Duo's whole 8-shelf ONCE MORE after dropping one Fourier Four track — expected
+          `tombstoned=1, landed=0, skipped=7` (the 1 denied identity refused, the 7 still-held skip),
+           an 11th %see pinning it. The see was ADVERSARIALLY HARDENED before recording (an audit agent
+            found the wildcard `{Tombstone:1}` count didn't verify identity, and `!landed` leaned on
+             branch-ordering vs the shared ra_wanted cursor): it now checks the %Tombstone is keyed to the
+              DENIED identity (`dn.sc.drop_artist/title`, captured in `MusuHeist_deny` before the card
+               retires) AND `uno_lib` still holds exactly 7 Records (an explicit no-reland invariant). Both
+                `.g` LocalGen-compiled (gen written, symbols confirmed); toc seeded to 42 steps (comfortable
+                 headroom over the ~35 the retomb scene needs); `.jamsend` stays gitignored.
+ **A SECOND audit hardened five MORE sees while the Book is open for re-record (free — the whole thing
+  re-records anyway).** The un-audited witnesses had real holes: **#1** checked "whole original bytes" for
+   Duo's 2 tracks only — 6 of 8 unwitnessed (now both libs run the chunk-completeness loop); **#8** the
+    "never a word about the source" invariant only forbade the two run-specific prepub STRINGS — any other
+     provenance form (a nick, a source path, an appended `from:`) passed (now every log entry must EXACTLY
+      equal a held card's path, space-safe, so any extra token drops the see); **#10** "nothing attributes"
+       was unasserted (now no surviving collection card may carry a `source`/`from` key — provenance lives
+        on the mirror cards' `.c` only, never snapped); **#6** the chillwave/bangers split wasn't per-artist
+         (a genre swap kept 3+3 and passed — now each count is artist-scoped); **#5** matched a bare
+          `-mathrock/` substring (now the full `pfx`-prefixed genre). Sees #2/#9/#11 were already hardened;
+           #3/#4/#7 were judged tight (the #3 "filing===2" idea CONFLICTS with its own "nothing landed yet"
+            clause — job uno lands before a 2-filing job exists — so it was NOT applied). All five honest-case
+             traced + LocalGen-recompiled clean.
+ **THE NEXT MOVE (morning, live — this is the owed gate):** reload the runner tab (a fresh handle),
+  `runner_ask.mjs run MusuHeist --watch --runner=<prefix>`, expect RED at the tail first pass (the new
+   `%Tombstone` line perturbs every post-deny snap + the retomb scene is unrecorded) → re-dispatch,
+    confirm `state` shows MusuHeist active, `accept` (records the tombstone perturbation + steps 31-3x),
+     re-run green ×2, CONFIRM all **11** %see present (pre-pin then grep the fixtures — a dropped see is
+      the silent failure), then SABOTAGE-PROOF the new gear: neuter `Heist_tombstoned` to `=> false`,
+       LocalGen-recompile → the denied track re-heists (`landed=1, tombstoned=0`) → see #11 DROPS → red,
+        then restore + recompile so disk is clean. If ANY hardened see drops (the retomb counts, or a newly
+         tightened #1/#5/#6/#8/#10 that traced-but-wasn't-run), it is a threshold to tune at accept time, not
+          a redesign — the honest-case was reasoned, not executed, so one may be off by a genre-prefix or a
+           count. A dropped see is a loud, specific red; fix the clause and re-run.
+
 **2026-07-12 — MusuHeist paced + design/test-split + swept both ends; live-gate STILL owed.** Three
  fixes on rung 1's Book after the owner watched it run: (1) PACING — the phase machine advances ONE EDGE
   PER SNAP (gated on `step_n` / `w.c.acted_step`); a self-advancing machine drained the whole heist into
@@ -297,7 +353,7 @@ One line per submachine; read the indent as containment. `<` (down the left marg
           < merge into an existing tree + surface what you already hold on a second heist.
           < repointable mid-heist  -- re-anchor the hierarchy, checksums still pass.
         probation              -- .jamsend/newlyadded logs each arrival; love graduates, drop = deny = delete.
-          < remembered-denials tombstone  -- else a dropped identity re-offers next heist.
+          ✓ remembered-denials tombstone  -- %Tombstone on drop; refused at the door (live-gate owed, §0).
         flatten                -- the %Heist + mirror delete; nothing attributes who gave what afterward.
         < cohort / cafe (rungs 2-3)  -- one page-stream to N kleptos, then a LAN broadcast tree.
 
@@ -870,12 +926,17 @@ Rung 1 (loopback) is BUILT and live-gate-pending: `Ghost/M/Heist.g` (the pure en
 - `<` **Stream-to-disk.** `Heist_land` assembles the whole file in memory (`Uint8Array(size)` + `set`)
    then writes once. Streaming each `%Body` to a growing file offset as it lands drops the memory high-water AND
     clears the `req:awaitbuf` pile-up (the "hundreds of lines of waste / 22s step").
-- `<` **Remembered-denials tombstone.** A dropped identity re-offers on a later heist — catalog dedup only
-   skips what is HELD. The `%UnGrant` negative-fact shape wants reusing.
-- `<` **The FSA reload caveat.** A dead directory handle in `WormholeNav._cache` (a `mkdirp` walking a
-   stale entry) throws `NotFoundError` on landing. Files-only sweeps stop the Book CAUSING it, but a pre-poisoned
-    tab needs a reload; the real fix is a `bin_write` self-heal (bust `_cache` + re-`mkdirp` on `NotFoundError`)
-     — core nav, unbuilt.
+- **Remembered-denials tombstone — BUILT (2026-07-12 night), live-gate owed.** A dropped identity used to
+   re-offer on a later heist (catalog dedup skips only what is HELD). Now `Heist_feel`'s drop mints a durable
+    `%Tombstone,artist,title` on the collection (the `%UnGrant` negative-fact PATTERN reused for a track), and
+     `Heist_beat` consults `Heist_tombstoned` at the door. MusuHeist's `retomb` phase asserts it. Compile-clean;
+      needs the morning live CHECK+accept+sabotage-proof (§0).
+- **The FSA reload caveat — self-heal BUILT.** A dead directory handle in `WormholeNav._cache` (a `mkdirp`
+   walking a stale entry) throws `NotFoundError` on landing. `bin_write` now catches a stale-handle error
+    (`_is_stale`: `NotFoundError`/"not be found"), force-re-walks each level via `mkdirp_fresh` (refreshing the
+     handles off live disk), and retries ONCE (Housing.svelte.ts); a second failure is a real fault and
+      propagates. The happy path is exercised every landing; the heal branch fires only on a poisoned handle
+       (a pre-poisoned tab from BEFORE this shipped still needs one reload). A runner is now leave-up-able.
 - `<` **The real wire (rung 2+).** Loopback mock today; the cohort rung (§10 rung 2) is the forcing
    function, then the cafe tree (rung 3).
 
@@ -888,6 +949,17 @@ Rung 1 (loopback) is BUILT and live-gate-pending: `Ghost/M/Heist.g` (the pure en
     three are one feature: a real library tree the heist reconciles against.
 4. `<` **single-track play/skip/decide** session.
 5. `<` **repointable** mid-heist.
-6. `<` **remembered-denials tombstone**; `<` **similarity / format-upgrade**.
-7. `<` **FSA `bin_write` self-heal** (or accept reload-per-session).
+6. ✓ **remembered-denials tombstone** — BUILT (2026-07-12 night), live-gate owed (§0); `<` **similarity /
+    format-upgrade** still open.
+7. ✓ **FSA `bin_write` self-heal** — BUILT (Housing.svelte.ts; the reload-per-session fallback is retired
+    except for a tab poisoned BEFORE it shipped).
 8. **rung 2 (cohort)** — the wire's forcing function (§10 rung 2).
+
+**Where I'd point next after the tombstone morning-gate** (still `<`, still pending your read): **#1
+ stream-to-disk** is the highest-value remaining engine-realness item BUT it is load-bearing — it needs
+  incremental sha256 (SubtleCrypto can't stream a digest), per-page landing, and breach-after-write
+   semantics on the CENTRAL byte-faithfulness invariant, so it must be proven LIVE, not built blind. Then
+    **#2 metadata + the real `$artist/$album/$track` tree** (has a genre-vs-tree design fork that is yours
+     to call: does genre stay a top folder above the tag tree, or does the tree replace it?) and re-records
+      the 4t- fixtures. Neither was safe to land in a no-live-verify overnight; the tombstone was (reuses an
+       established shape, additive to fixtures, no design fork).

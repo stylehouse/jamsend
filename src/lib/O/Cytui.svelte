@@ -835,6 +835,35 @@
         if (!families_on) vfams = []
         else voronoi_soon()
     }
+    // ── region washes (Cyto_regions, Slice C) ────────────────────────────────
+    //  the grasp (Voro.g Voro_grasp) buckets cells into continuous REGIONS by a
+    //   `the:family` key it stamps off-snap (reached via src.c.D).  Where the
+    //    ⬡ family hulls stroke one house's OUTER walls, ▧ backs each region with
+    //     a translucent FILLED convex hull drawn BENEATH the cells, so same-family
+    //      cells read as one continuous space — layout untouched, pure pixels.
+    //  Default OFF: when off, nothing new draws and the render is byte-identical.
+    //   The bucketing is grasp-fed but null-safe: a cell with no `the:family`
+    //    (pre-grasp / non-fold) falls back to its c.fold_kind, else 'misc'.
+    let region_pref     = $state<boolean | null>(null)
+    const region_on     = $derived(region_pref ?? false)
+    let vregions        = $state<{ id: string, d: string, color: string }[]>([])
+    const REGION_COLORS = ['#8b6bb7', '#5b9a77', '#b78a5b', '#5b8ab7', '#b75b7a', '#7ab75b']
+    // the region a cell belongs to: the grasp's `the:family` awareness value,
+    //  reached off the live particle's off-snap D-sphere; null-safe fallback to
+    //   the crusher's fold_kind, else 'misc', so every cell buckets somewhere.
+    function region_of(id: string): string {
+        const src = node_src.get(id) as any
+        const fam = src?.c?.D?.o?.({ the: 'family' })?.[0]?.sc?.val
+        if (typeof fam === 'string' && fam) return fam
+        return (src?.c?.fold_kind as string | undefined) ?? 'misc'
+    }
+    function toggle_regions() {
+        region_pref = !region_on
+        const str = (H as any).stashed
+        if (str) str.Cyto_regions = region_pref
+        if (!region_on) vregions = []
+        else voronoi_soon()
+    }
     // ── the scroll visor ──────────────────────────────────────────────────────
     //  A strip over the right edge where the wheel scrolls the PAGE instead of
     //   zooming the graph — a hand-free gutter past a graph that would otherwise
@@ -939,9 +968,9 @@
     //     grammar), and a demoted second face kept resurfacing through the toggles
     //      as the pre-grammar look.  Panes without a sub-graph read as the REAL
     //       Stuffing, molded to the cell; there is no third rendering.)
-    type MicroChip = { text: string, n: number, member?: TheC, sub?: number }
+    type MicroChip = { text: string, n: number, member?: TheC, sub?: number, wgt?: number }
     type VtuffDesc = { text: string, kind: string, color?: string | null, tag?: string, nk?: string,
-                       sub?: number, chips?: MicroChip[], member?: TheC, dip?: boolean }
+                       sub?: number, chips?: MicroChip[], member?: TheC, dip?: boolean, wgt?: number }
 
     // read a bare particle's display name and which key gave it — a render-side reader for any C
     //  with no Vtuffing tree of its own.
@@ -964,6 +993,15 @@
         return mk
     }
 
+    // a Vtuffing row's weight, normalised to the 0..100 salience scale the render sizes by.  The grasp
+    //  (Voro.g Voro_grasp) stamps real neighbourhood salience (always ≥20); a tree the grasp hasn't
+    //   reached yet still carries the distiller's crude 1|2 — read that as "no reading yet": the title
+    //    loud-most, all else at the 14pt floor, so a grasp-blind pane still renders sanely (enrich, never require).
+    function wgt_norm(w: any, kind: string): number {
+        return typeof w === 'number' && w >= 10 ? w
+             : kind === 'title' ? 100 : kind === 'dip' ? 10 : 50
+    }
+
     // a pane's rows, normalised to descriptors the fit can lay out.
     //  live path: normalise Voro.g's Vtuffing tree — meaning lives there, per the split.
     //  fallback: before the new gen deposits Vtuff_build, derive a plain title+members+dip right here,
@@ -976,7 +1014,7 @@
             const out: VtuffDesc[] = []
             for (const r of root.o() as any[]) {
                 const kind = (r.sc.row as string) ?? 'fact'
-                const d: VtuffDesc = { text: String(r.sc.text ?? ''), kind }
+                const d: VtuffDesc = { text: String(r.sc.text ?? ''), kind, wgt: wgt_norm(r.sc.wgt, kind) }
                 if (r.sc.tag) d.tag = String(r.sc.tag)
                 if (r.sc.nk) d.nk = String(r.sc.nk)
                 if (r.sc.sub) d.sub = r.sc.sub as number
@@ -984,7 +1022,7 @@
                 if (kind === 'title') d.color = kind_tint(d.tag ?? src?.c?.fold_kind)
                 if (kind === 'dip') d.dip = true
                 const bits = r.o() as any[]
-                if (bits.length) d.chips = bits.map((b: any) => ({ text: String(b.sc.text ?? ''), n: (b.sc.n as number) ?? 0, member: b.c.member, sub: b.sc.sub as number | undefined }))
+                if (bits.length) d.chips = bits.map((b: any) => ({ text: String(b.sc.text ?? ''), n: (b.sc.n as number) ?? 0, member: b.c.member, sub: b.sc.sub as number | undefined, wgt: wgt_norm(b.sc.wgt, 'chip') }))
                 out.push(d)
             }
             return out
@@ -995,17 +1033,17 @@
         const t_name = src?.c?.gang ? '' : name_ts(src)
         const out: VtuffDesc[] = [{ text: `${t_name ? t_name + '  ' : ''}×${members.length}`,
                                     kind: 'title', tag: t_tag, nk: t_name ? namekey_ts(src) : undefined,
-                                    color: kind_tint(t_tag) }]
+                                    color: kind_tint(t_tag), wgt: 100 }]
         const CAP = 8
         for (const m of members.slice(0, CAP)) {
             const sub = typeof m.o === 'function' ? m.o().length : 0
             const mk = Object.keys(m.sc ?? {})[0]
             const nm = name_ts(m)
             out.push({ text: nm || mk, kind: 'member', member: m, tag: nm ? mk : undefined,
-                       sub: sub || undefined, color: kind_tint(mk) })
+                       sub: sub || undefined, color: kind_tint(mk), wgt: 50 })
         }
-        if (members.length > CAP) out.push({ text: `+${members.length - CAP} more`, kind: 'fact' })
-        out.push({ text: `/*${members.length}`, kind: 'dip', dip: true })
+        if (members.length > CAP) out.push({ text: `+${members.length - CAP} more`, kind: 'fact', wgt: 20 })
+        out.push({ text: `/*${members.length}`, kind: 'dip', dip: true, wgt: 10 })
         return out
     }
 
@@ -1107,8 +1145,8 @@
     //          same meaning lands the same way (alignment of meanings).
     type VSubLeaf  = { tag?: string, tint?: string | null, val?: string, sup?: string, subn?: number,
                        member?: TheC, hw: number, hh: number,
-                       loud?: boolean }   // FAKED loudness (Slice A): the spread's dominant chip
-    type VSubTuple = { key?: string, sup?: string, leaves: VSubLeaf[] }
+                       wgt?: number }   // grasp salience 0..100 (Slice B2): how much this value sets its cell apart
+    type VSubTuple = { key?: string, sup?: string, leaves: VSubLeaf[], wgt?: number }
     function subgraph_tuples(descs: VtuffDesc[]): { keyed: VSubTuple[], members: VSubLeaf[] } {
         const keyed: VSubTuple[] = []
         const members: VSubLeaf[] = []
@@ -1120,25 +1158,24 @@
             if (d.kind === 'title' || d.dip) continue
             if (d.kind === 'fact') {
                 const i = d.text.indexOf(': ')
-                if (i > 0) { keyed.push({ key: d.text.slice(0, i), leaves: [leaf({ val: d.text.slice(i + 2) })] }); continue }
+                if (i > 0) { keyed.push({ key: d.text.slice(0, i), wgt: d.wgt, leaves: [leaf({ val: d.text.slice(i + 2), wgt: d.wgt })] }); continue }
                 const m = /^(.+?)\s*×(\d+)$/.exec(d.text)   // presence key counted: 'remaster ×2'
-                if (m) { keyed.push({ key: m[1], sup: `×${m[2]}`, leaves: [] }); continue }
-                keyed.push({ key: d.text, leaves: [] })
+                if (m) { keyed.push({ key: m[1], sup: `×${m[2]}`, wgt: d.wgt, leaves: [] }); continue }
+                keyed.push({ key: d.text, wgt: d.wgt, leaves: [] })
             } else if (d.kind === 'spread') {
-                // FAKED loudness (Slice A): the chip with the biggest ×N leads the spread —
-                //  it's the dominant value, so it earns the loud band.  (Slice B swaps this
-                //   n-max heuristic for the grasp's the_very_* weight on the chip.)
+                // REAL loudness (Slice B2): the grasp weighed each chip by how rare its value is
+                //  across the neighbourhood — a value only this cell carries towers, one everyone
+                //   shares recedes.  The tuple wears the row weight (the grasp set it to its loudest chip).
                 const chips = d.chips ?? []
-                const top = chips.reduce((mx, ch) => ch.n > mx ? ch.n : mx, 0)
-                keyed.push({ key: d.text, leaves: chips.map(ch =>
+                keyed.push({ key: d.text, wgt: d.wgt, leaves: chips.map(ch =>
                     leaf({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined, member: ch.member, subn: ch.sub,
-                           loud: top > 1 && ch.n === top })) })
+                           wgt: ch.wgt })) })
             } else if (d.kind === 'list') {
                 for (const ch of d.chips ?? [])
                     members.push(leaf({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined,
-                                        member: ch.member, subn: ch.sub }))
+                                        member: ch.member, subn: ch.sub, wgt: ch.wgt }))
             } else {   // member | sub
-                members.push(leaf({ val: d.text, tag: d.tag, tint: d.color, member: d.member, subn: d.sub }))
+                members.push(leaf({ val: d.text, tag: d.tag, tint: d.color, member: d.member, subn: d.sub, wgt: d.wgt }))
             }
         }
         for (const g of [{ leaves: members }, ...keyed]) if (g.leaves.length > 12) {
@@ -1206,14 +1243,24 @@
     //       "shed grammar and try leaner" — so a sliver that can't hold '14pt Artist
     //        name: Fernway' says '14pt Fernway' instead of a 7pt run-on.  Only genuine
     //         DECORATION (ring keys, superscripts, the /*N dig) keeps a sub-14 floor.
-    //   FAKED-LOUDNESS: until the grasp speaks real the_*/the_very_* weights (Slice B),
-    //    loudness is inferred from signals already on the glass — the nucleus title and
-    //     member identities are always load-bearing; the DOMINANT chip of a spread (the
-    //      one whose ×N leads the group) is loud.  Swap `loud_band`'s callers for
-    //       grasp_of(src) weights when Slice B lands; the bands below stay the target.
+    //   REAL LOUDNESS now (Slice B2): the grasp (Voro.g Voro_grasp) reads the whole neighbourhood and
+    //    stamps each statement 0..100 by how much it SETS ITS CELL APART — a fact every cell shares is
+    //     quiet, one only this cell makes towers.  That weight rides the Vtuffing row's wgt field into
+    //      band_for below.  The nucleus/title stay pinned VERY (identity out-shouts any fact); a
+    //       grasp-blind pane falls back to the 14pt floor via wgt_norm, so nothing regresses.
     const BAND_VERY = { lo: 16, hi: 26 }   // the_very_* — the loudest, tied to the biggest cell
     const BAND_LOUD = { lo: 14, hi: 18 }   // the_* / load-bearing fact — at or above the 14pt floor
     const BAND_DECO = { lo: 7,  hi: 16 }   // decoration — ring keys, presence sups, folds
+    // the grasp's weight → a fit band.  ≥80 towers (the defining trait / a the_very), ≥45 sits at the
+    //  14pt floor (load-bearing), below recedes into decoration.  hiCap keeps each callsite's own
+    //   ceiling (a rim member may go bigger than an inline fact), so the weight moves the FLOOR, not the
+    //    roof — the meaning hierarchy becomes the size hierarchy without any one statement clipping.
+    const band_for = (w: number | undefined, hiCap = 26): { lo: number, hi: number } => {
+        const s = typeof w === 'number' ? w : 50
+        if (s >= 80) return { lo: 16, hi: hiCap }
+        if (s >= 45) return { lo: 14, hi: hiCap }
+        return { lo: 7, hi: Math.min(hiCap, 15) }
+    }
     function fit_stat(poly: {x:number,y:number}[], head: VHead, val: string | undefined,
                       opts: { band?: [number, number], lo?: number, hi?: number,
                               maxlines?: number } = {}): VStat | null {
@@ -1426,7 +1473,7 @@
                     //   here (fit_stat, not fit_ident), so it clips: acceptable for a fact,
                     //    where the key names what the clipped value is.
                     const s = fit_stat(gpoly, { key: g.key, colon: true, sup: one.sup }, one.val,
-                                       { ...BAND_LOUD, hi: 22, maxlines: 3 })
+                                       { ...band_for(g.wgt, 22), maxlines: 3 })
                     if (s) { s.cls = 'vsub-gkey'; s.hue = hue; stats.push(s) } else hid += 1
                     return
                 }
@@ -1496,7 +1543,7 @@
                     // a value chip is an identity — 14pt floor, shedding grammar (fit_ident)
                     //  before it shrinks.  The spread's dominant chip (FAKED loud, the ×N
                     //   leader) gets the loudest floor so it towers over its siblings.
-                    const band = l.loud ? BAND_VERY : { ...BAND_LOUD, hi: 26 }
+                    const band = band_for(l.wgt, 26)
                     const s = fit_ident(lpoly, { tag: l.tag, tagtint: l.tint, sup: l.sup }, l.val,
                                         { ...band, maxlines: 2 })
                     if (!s) { hid += 1; return }
@@ -1513,7 +1560,7 @@
                 //   small for even the bare name at 14pt folds into +N, never a 7pt smear.
                 const s = fit_ident(mpoly, { tag: l.tag && l.tag !== kind ? l.tag : undefined,
                                              tagtint: l.tint, sup: l.sup }, l.val,
-                                    { ...BAND_LOUD, hi: 26, maxlines: 2 })
+                                    { ...band_for(l.wgt, 26), maxlines: 2 })
                 if (!s) { hid += 1; return }
                 s.cls = 'vsub-label'; s.subn = l.subn; s.member = l.member
                 stats.push(s)
@@ -2138,6 +2185,31 @@
     const poly_d = (pts: {x:number,y:number}[]) =>
         'M' + pts.map(p => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join('L') + 'Z'
 
+    // Andrew's monotone-chain convex hull — the cheapest closed geometry that
+    //  wraps a region's cells as one filled backing (Slice C).  O(n log n), no
+    //   deps; the region wash is a hull of ALL member cells' inset vertices, so
+    //    it hugs the cells rather than a loose centroid cloud.  Returns the hull
+    //     ring (may be <3 pts for a degenerate region — caller guards).
+    function convex_hull(pts: {x:number,y:number}[]): {x:number,y:number}[] {
+        if (pts.length < 3) return pts.slice()
+        const p = pts.slice().sort((a, b) => a.x - b.x || a.y - b.y)
+        const cross = (o: {x:number,y:number}, a: {x:number,y:number}, b: {x:number,y:number}) =>
+            (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x)
+        const lower: {x:number,y:number}[] = []
+        for (const q of p) {
+            while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], q) <= 0) lower.pop()
+            lower.push(q)
+        }
+        const upper: {x:number,y:number}[] = []
+        for (let i = p.length - 1; i >= 0; i--) {
+            const q = p[i]
+            while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], q) <= 0) upper.pop()
+            upper.push(q)
+        }
+        lower.pop(); upper.pop()
+        return lower.concat(upper)
+    }
+
     // uniform arc-length resample to N points, so any polygon tweens to any other
     function resample(poly: {x:number,y:number}[], N: number) {
         const at: number[] = []
@@ -2344,6 +2416,35 @@
             }
         }
         vfams = fams
+
+        // ── ▧ region washes (Slice C): one translucent FILLED backing per family ──
+        //  group cells by the grasp's `the:family` (region_of, null-safe), then
+        //   back each region with a convex hull of ALL its cells' inset vertices,
+        //    drawn BENEATH the cells in the svg — so same-family cells read as one
+        //     continuous space.  Layout untouched; a family of one is skipped (its
+        //      own cell already IS its space).  Off = this whole block is skipped.
+        const regs: typeof vregions = []
+        if (region_on && L.cells.length > 2) {
+            const groups = new Map<string, {x:number,y:number}[]>()
+            for (const c of L.cells) {
+                const r = region_of(c.id)
+                let pts = groups.get(r)
+                if (!pts) { pts = []; groups.set(r, pts) }
+                for (const p of c.inset) pts.push(p)
+            }
+            let ri = 0
+            for (const [rid, pts] of groups) {
+                ri++
+                if (pts.length < 6) continue    // a region of one cell is just its cell
+                const hull = convex_hull(pts)
+                if (hull.length < 3) continue
+                let d = `M${P(hull[0].x, hull[0].y)}`
+                for (let k = 1; k < hull.length; k++) d += `L${P(hull[k].x, hull[k].y)}`
+                d += 'Z'
+                regs.push({ id: `reg:${rid}`, d, color: REGION_COLORS[ri % REGION_COLORS.length] })
+            }
+        }
+        vregions = regs
 
         // ── ▦ the sub-graph pass: EVERY pane speaks the grammar, ALL of it ──
         //  folds|gangs tessellate radially (nucleus core → fact belt → member rim);
@@ -2942,6 +3043,8 @@
         if (typeof stashed_p === 'boolean') proper_pref = stashed_p
         const stashed_f = (H as any).stashed?.Cyto_families
         if (typeof stashed_f === 'boolean') families_pref = stashed_f
+        const stashed_reg = (H as any).stashed?.Cyto_regions
+        if (typeof stashed_reg === 'boolean') region_pref = stashed_reg
         const stashed_b = (H as any).stashed?.Cyto_gravity_brush
         if (typeof stashed_b === 'boolean') brush_pref = stashed_b
         const stashed_sg = (H as any).stashed?.Cyto_subgraph
@@ -3089,6 +3192,8 @@
             title="properCellable — wordy loners (%see) get a Stuffing, and a cell in voronoi mode">❝</button>
         <button class="v-toggle" class:on={families_on} onclick={toggle_families}
             title="family hulls — one faint shared outline per compound house">⬡</button>
+        <button class="v-toggle" class:on={region_on} onclick={toggle_regions}
+            title="region washes — group cells by the grasp's the:family and back each family with one translucent filled hull beneath the cells, so same-family cells read as one continuous space (off by default)">▧</button>
         <button class="v-toggle" class:on={brush_pref} onclick={toggle_brush}
             title="gravity brush — wheel pinches|spreads the locale under the cursor (Ctrl+wheel still zooms)">🌀</button>
         <button class="v-toggle" class:on={subgraph_on} onclick={toggle_subgraph}
@@ -3135,6 +3240,16 @@
         <svg class="cytui-voronoi" style:opacity={motion_hidden ? 0 : 1}>
             {#if voronoi_on && vcells.length}
                 <rect class="cytui-veil" width={vregion_w || '100%'} height="100%" />
+                <!-- ▧ region washes (Slice C): beneath EVERYTHING, one translucent
+                     filled convex hull per grasp `the:family`, so same-family cells
+                     read as one continuous space.  Off by default → vregions empty →
+                     nothing draws here and the layer is byte-identical to before.
+                     A faint matching stroke seams the region's outer edge. -->
+                {#each vregions as reg (reg.id)}
+                    <path d={reg.d} fill={reg.color} fill-opacity="0.09"
+                        stroke={reg.color} stroke-opacity="0.28" stroke-width="1.5"
+                        stroke-linejoin="round" />
+                {/each}
                 <!-- family hulls: behind the cell strokes, a chunky ROPE — the
                      boundary walls of one house lashed together.  Two passes over
                      the same segments (a wide soft body + a narrower bright core)

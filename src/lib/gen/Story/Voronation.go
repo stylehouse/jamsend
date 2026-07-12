@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Voronation(): string { return 'fdae82df8e5d4f8c' },
+    Ghostmeta_Ghost_Story_Voronation(): string { return 'a2ab27aa13d64e50' },
 
 
 //#region pier — VoroRadioPier: the tuner drifts over MUSIC dribbled in from a (fake) Pier
@@ -370,6 +370,10 @@ async VoroMitosis_drive(w, req) {
         //  it), reading the same folds through Selection.process so w:Voronoiology also snaps the
         //   grasp's cross-beat News: the genera arriving (division) and departing (apoptosis) this beat.
         if (n >= 2) await this.Voro_grasp(w)
+        // the census-mirror rides beside them (Seemables §1, Slice 0): a read-only %Seem:census over
+        //  w:Voronoiology, projecting the rows resolve() sees arrive|depart — to prove it reproduces
+        //   Voro_report's hand-rolled c.seen_beat sweep before that sweep is flipped to read the sphere.
+        if (n >= 2) await this.Voro_census_mirror(w)
         if (n === 11) this.VoroMitosis_witness(w)
     }
 
