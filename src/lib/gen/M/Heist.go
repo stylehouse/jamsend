@@ -10,7 +10,7 @@ import { sha256_hex, sha256_incremental } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '7e15fffcbe241597~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '66ee90dfd64e89b4~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -137,15 +137,12 @@ Heist_held(lib, artist, title) {
     return !!(lib && lib.o({ Record: 1, artist: artist, title: title })[0])
 
 },
-// Heist_tombstoned — the REMEMBERED-DENIALS probe: has this collection durably REFUSED artist+title?
-//  A %Tombstone card (minted on a deny — Heist_feel) is the %UnGrant negative-fact PATTERN applied to a
-//   track: catalog identity, never source, GC never drops it.  Consulted at the door beside Heist_held so
-//    a dropped identity can never silently re-download on a later heist (roadmap §10.2 #6).  The two are
-//     distinct reasons a husk stops: HELD = already have it; TOMBSTONED = chose against it and it stays out.
-Heist_tombstoned(lib, artist, title) {
-    return !!(lib && lib.o({ Tombstone: 1, artist: artist, title: title })[0])
+// (The %Tombstone remembered-denials gear was CONDEMNED 2026-07-13 — never asked for, and the only
+//  load-bearing skip is Heist_held.  A dropped track simply leaves the collection; a later heist may
+//   re-offer it and that is fine — a wrong re-download costs one delete, not a GC-immune ledger.  The
+//    concern re-homes: per-heist poke-out is the manifest gesture, durable per-relationship narrowing
+//     waits for the §9.2 %Share match.  See Radio_todo §10.2.)
 
-},
 // Heist_release_buf — drop a spent chunk's bytes once they are safely on disk (the stream-to-disk buf
 //  release).  A %Body carries its bytes as its ONE binary .sc value (Repli_chunk_bytes' model); deleting
 //   that key frees the buffer for GC while the husk particle stays.  Bare delete is query+snap safe here:
@@ -230,19 +227,6 @@ async Heist_beat(w, rx, mine, theirs, job, own_lib, mir, nav, mardir) {
             //      friends) is UNWIRED by the human's call — this is a plain child, not a Booth mint.
             let job_held = job.i({ held: 1, tune: rec.sc.artist + ' — ' + rec.sc.title })
             job_held.c.up = job
-            await mir.rm({ Record: 1, id: rec.sc.id })
-            continue
-        }
-        if (this.Heist_tombstoned(own_lib, rec.sc.artist, rec.sc.title)) {
-            // the collection REMEMBERS a past rejection: a denied catalog identity is refused at the door
-            //  and never re-heisted.  Tallied apart from `skipped` so a snap reads WHY each husk stopped —
-            //   held (already have it) vs tombstoned (dropped it before, and it stays dropped).
-            job.sc.tombstoned = +(job.sc.tombstoned || 0) + 1
-            // the verdict row for a refusal (the twin of the held row above and the took row at landing): a
-            //  `denied,tune:<Artist — Title>` child pointed at the job, so the refused identity reads back by
-            //   name, not just a bare tombstoned count.  Display-only string, flattens with the job.
-            let job_denied = job.i({ denied: 1, tune: rec.sc.artist + ' — ' + rec.sc.title })
-            job_denied.c.up = job
             await mir.rm({ Record: 1, id: rec.sc.id })
             continue
         }
@@ -430,13 +414,13 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
 // Heist_manifest — the DIRECTORY-LISTING CONFIRMABLE (roadmap §10.2 #3): look-before-you-commit.  For each
 //  husk still in the mirror, its WOULD-BE landing path (the exact same derivation Heist_land uses — Heist_rel_for,
 //   relative to the marrauding dir) and a verdict of what will happen to it: 'held' (already in the collection —
-//    dedup will skip it), 'denied' (a durable %Tombstone refuses it — a past drop stays dropped), or 'new' (it
-//     will land).  Returns [{path, verdict}, …] in mirror order — the listing a UI or Book shows as the heist
-//      BEGINS, so the human sees what they'll get and what they already have before a byte moves.
-//  PURE READ — no mutation: it consults Heist_held / Heist_tombstoned (the same doors Heist_beat gates on) and
-//   builds strings; it mints nothing, drops nothing, writes no disk.  Verdict order matters: HELD wins over
-//    denied (if you somehow both hold AND tombstoned an identity, you have it, so 'held' is the honest read),
-//     matching Heist_beat's door order (held-skip checked before tombstone).
+//    dedup will skip it) or 'new' (it will land).  Returns [{path, verdict}, …] in mirror order — the
+//     listing a UI or Book shows as the heist BEGINS, so the human sees what they'll get and what they
+//      already have before a byte moves.
+//  PURE READ — no mutation: it consults Heist_held (the same door Heist_beat gates on) and builds strings;
+//   it mints nothing, drops nothing, writes no disk.  (This is where a per-heist DESELECT would ride — the
+//    poke-out gesture that replaced the condemned durable %Tombstone: a UI unticks a 'new' row and it lands
+//     nothing, a MOMENT not a ledger.  Unbuilt — waits for a manifest surface.)
 //   // <  the RESUME side — "found again as it RESUMES", the same listing re-shown mid-heist off partial
 //   // <   fill-state — is unbuilt: this is the AT-THE-START snapshot only.
 Heist_manifest(job, mir, own_lib) {
@@ -444,11 +428,7 @@ Heist_manifest(job, mir, own_lib) {
     if (!job || !mir) return out
     for (const rec of mir.o({ Record: 1 })) {
         let verdict = 'new'
-        if (this.Heist_held(own_lib, rec.sc.artist, rec.sc.title)) {
-            verdict = 'held'
-        } else if (this.Heist_tombstoned(own_lib, rec.sc.artist, rec.sc.title)) {
-            verdict = 'denied'
-        }
+        if (this.Heist_held(own_lib, rec.sc.artist, rec.sc.title)) verdict = 'held'
         out.push({ path: this.Heist_rel_for(job, rec), verdict: verdict })
     }
     return out
@@ -500,9 +480,10 @@ Heist_newlyadded_entry(line) {
 
 },
 // Heist_feel — the listener's verdict on a probation entry.  'love' graduates in place; 'drop' is
-//  DENY: the file leaves the collection (deleted off the disk), its catalog card retires, and a durable
-//   %Tombstone is minted so the drop is REMEMBERED — a later heist re-offering the same catalog identity
-//    is refused at the door (Heist_tombstoned), never silently re-downloaded.  The log line stays honest.
+//  DENY: the file leaves the collection (deleted off the disk) and its catalog card retires.  The drop
+//   leaves NO durable trace (the %Tombstone was condemned 2026-07-13): a later heist re-offering the same
+//    identity finds it no longer held and may re-download it — accepted, a wrong re-download costs one
+//     delete, not a ledger.  The log line stays honest about the drop.
 async Heist_feel(w, nav, own_lib, mardir, entry, feeling) {
     let lines = await this.Heist_newlyadded_read(nav, mardir)
     let out = []
@@ -516,17 +497,10 @@ async Heist_feel(w, nav, own_lib, mardir, entry, feeling) {
                 let dl = await nav.dir_at(mardir + '/' + cut.join('/'))
                 if (dl && typeof dl.deleteEntry === 'function') await dl.deleteEntry(filename)
                 if (own_lib) {
+                    // the card retires WITH the file — the track leaves the collection cleanly.  No
+                    //  %Tombstone (condemned): nothing durable remembers the drop.
                     let card = own_lib.o({ Record: 1 }).find((r) => r.sc.path === entry)
-                    if (card) {
-                        // remember the rejection so a later heist cannot silently re-download it: a durable
-                        //  %Tombstone keyed by CATALOG identity (artist+title, never source) — the %UnGrant
-                        //   negative-fact SHAPE reused for a track.  Minted from the card BEFORE it retires;
-                        //    it outlives both the card and every flatten (it lives on the collection, not the
-                        //     %Heist), so a drop is final until the listener lifts it by hand.
-                        let tomb = own_lib.i({ Tombstone: 1, artist: card.sc.artist, title: card.sc.title })
-                        tomb.c.up = own_lib
-                        await own_lib.rm({ Record: 1, id: card.sc.id })
-                    }
+                    if (card) await own_lib.rm({ Record: 1, id: card.sc.id })
                 }
             }
         } else {

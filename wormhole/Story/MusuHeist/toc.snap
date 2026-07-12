@@ -5,55 +5,44 @@ story:MusuHeist
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=6.637
-      sample=8.283,at=1783863462
-      sample=8.283,at=1783863463
-      sample=8.283,at=1783863464
-      sample=6.624,at=1783863518
-      sample=7.362,at=1783863597
-      sample=6.117,at=1783888440
-      sample=7.411,at=1783888540
-      sample=6.269,at=1783888725
-      sample=1.318,at=1783888820
-      sample=6.422,at=1783888947
-    TimeTotal:step,avg=0.221
-      sample=0.276,at=1783863462
-      sample=0.276,at=1783863463
-      sample=0.276,at=1783863464
-      sample=0.221,at=1783863518
-      sample=0.245,at=1783863597
-      sample=0.204,at=1783888440
-      sample=0.247,at=1783888540
-      sample=0.209,at=1783888725
-      sample=0.044,at=1783888820
-      sample=0.214,at=1783888947
+    TimeTotal:beliefs,avg=5.79
+      sample=5.566,at=1783898863
+      sample=5.566,at=1783898864
+      sample=5.566,at=1783898865
+      sample=5.566,at=1783898866
+      sample=5.566,at=1783898867
+      sample=6.277,at=1783898913
+      sample=6.277,at=1783899085
+      sample=6.277,at=1783899086
+      sample=5.64,at=1783899125
+      sample=5.597,at=1783899177
+    TimeTotal:step,avg=0.305
+      sample=0.293,at=1783898863
+      sample=0.293,at=1783898864
+      sample=0.293,at=1783898865
+      sample=0.293,at=1783898866
+      sample=0.293,at=1783898867
+      sample=0.33,at=1783898913
+      sample=0.33,at=1783899085
+      sample=0.33,at=1783899086
+      sample=0.297,at=1783899125
+      sample=0.295,at=1783899177
   step,dige:3557d6c52e0e2c8d
   step=2,dige:bada99b30d03da0e
-  step=3,dige:3a40694f985290f2
+  step=3,dige:79c6a9c726849079
   step=4,dige:fba0b77d612ef667
   step=5,dige:362fef76173217dc
-  step=6,dige:f1e41cce99cf6ae6
+  step=6,dige:6e305e03fc6d9fd6
   step=7,dige:c6083c9f193e445b
   step=8,dige:8e86d8d74a78cf2f
   step=9,dige:e3f7b20617697c87
-  step=10,dige:b4dbb8993b6183c0
+  step=10,dige:b1f0455654828da3
   step=11,dige:3b5e71d2417443e2
   step=12,dige:5184c4916ca3fb2c
   step=13,dige:f23cb92a1a240545
-  step=14,dige:45bcdfd861ae0231
-  step=15,dige:0a43e260102f4927
-  step=16,dige:6227e999d1e0ada5
-  step=17,dige:670875cebdd44c73
-  step=18,dige:6ebbb86e854e6af0
-  step=19,dige:cc3fcc9ab172abd6
-  step=20,dige:0122470f7f835446
-  step=21,dige:a84c7897e98f6bd5
-  step=22,dige:cfde01b45f19acaa
-  step=23,dige:122bc4949d4e0c77
-  step=24,dige:aa05c4102d82c61d
-  step=25,dige:ec4ea3d726edbde0
-  step=26,dige:b6e6969798f5e2a8
-  step=27,dige:1c0e836709653ec4
-  step=28,dige:2da255675714bc43
-  step=29,dige:c2e5a65718bc7707
-  step=30,dige:f6f4b87d908b64e8
+  step=14,dige:3277d3ceb8b79b1f
+  step=15,dige:682337b49323dc31
+  step=16,dige:ea109d8558466a4b
+  step=17,dige:dbac2db3b8926c38
+  step=18,dige:a01c5c1e6ddd14fa
+  step=19,dige:3bb36c91a92155e8

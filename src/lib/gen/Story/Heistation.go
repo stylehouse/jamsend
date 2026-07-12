@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return '83b6b94d7ee35164' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return '14451f30db58bc7d~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -110,7 +110,7 @@ async MusuHeist_drive(w, req) {
 //  re-entry on step_n moving).  Returns TRUE when this pass took a real edge (the drive burns the step's
 //   budget so no second edge fires until the next snap); FALSE when only waiting on the wire (the budget
 //    stays, so the edge fires the first snap its precondition lands).  seal → uno → duo → reuno → deny →
-//     retomb → flat → done.
+//     flat → done.
 async MusuHeist_phase(w) {
     if (!w.c.phase) return false
     if (w.c.phase === 'seal') {
@@ -124,16 +124,15 @@ async MusuHeist_phase(w) {
         }
         return false
     }
-    if (w.c.phase === 'uno' || w.c.phase === 'duo' || w.c.phase === 'reuno' || w.c.phase === 'retomb') {
+    if (w.c.phase === 'uno' || w.c.phase === 'duo' || w.c.phase === 'reuno') {
         return await this.MusuHeist_flow(w)
     }
     if (w.c.phase === 'deny') {
         if (!w.c.logs_done) { w.c.logs_done = 1; await this.MusuHeist_logs(w); return true }
         if (!w.c.deny_done) { w.c.deny_done = 1; await this.MusuHeist_deny(w); return true }
-        // the deny left a %Tombstone on Uno's collection; retomb re-offers Duo's shelf to prove the drop
-        //  is remembered — one more heist that lands nothing, the denied identity refused at the door.
-        w.c.phase = 'retomb'
-        await this.MusuHeist_job(w, 'retomb')
+        // the deny dropped the track from the collection and left no durable trace (the %Tombstone gear
+        //  was condemned) — nothing to re-prove on a further heist, so the run moves straight to flatten.
+        w.c.phase = 'flat'
         return true
     }
     if (w.c.phase === 'flat') {
@@ -280,18 +279,16 @@ async MusuHeist_seal(w) {
 },
 // the job table — who heists whom, what lands where.  Pinned expectations (the fixture's gates) and the
 //  filing DATA (the believe/disbelieve outcome) per direction; 'reuno' re-points Uno at Duo to prove
-//   catalog-identity dedup skips a whole catalog already held; 'retomb' re-points Uno at Duo ONCE MORE
-//    AFTER a deny, to prove the dropped identity is refused by its %Tombstone while the rest still skip.
+//   catalog-identity dedup skips a whole catalog already held.
 MusuHeist_bundle(w, nick) {
     let pfx = w.c.genre_pfx
-    if (nick === 'uno' || nick === 'reuno' || nick === 'retomb') {
-        // the re-heist expects Duo's WHOLE shelf back (3 originals — two tones + the mislabeled tagged WAV —
-        //  plus the 6 landed in job B) — a shorter expectation would flatten early and strand in-flight husks
-        //   in the quarantine.  retomb expects the same 9: 8 already-held skip, the 1 denied identity is
-        //    tombstoned — none re-land.
+    if (nick === 'uno' || nick === 'reuno') {
+        // the re-heist (reuno) expects Duo's WHOLE shelf back (3 originals — two tones + the mislabeled
+        //  tagged WAV — plus the 6 landed in job B): 9 identities, all already held, none re-land.  A shorter
+        //   expectation would flatten early and strand in-flight husks in the quarantine.
         return { nick: nick, at: w.c.duo_pre, mine: w.c.uno_pre, rx: w.c.port_uno,
             srcport: w.c.port_duo, srclib: w.c.duo_lib, own: w.c.uno_lib,
-            mar: w.c.mar_uno, mir_key: w.c.uno_pre + '.heist', expect: (nick === 'reuno' || nick === 'retomb') ? 9 : 3,
+            mar: w.c.mar_uno, mir_key: w.c.uno_pre + '.heist', expect: (nick === 'reuno') ? 9 : 3,
             filings: [{ artist: 'Fourier Four', genre: pfx + '-mathrock' }] }
     }
     return { nick: 'duo', at: w.c.uno_pre, mine: w.c.duo_pre, rx: w.c.port_duo,
@@ -334,32 +331,29 @@ async MusuHeist_flow(w) {
     if (!mir) return false
     let landed = +(b.job.sc.landed || 0)
     let skipped = +(b.job.sc.skipped || 0)
-    let tombstoned = +(b.job.sc.tombstoned || 0)
     // THE MANIFEST — look-before-you-commit (Heist_manifest, a pure read).  Read it on the FIRST beat the
-    //  offered husks have crossed but before Heist_beat drains a single one (landed+skipped+tombstoned===0
-    //   and the mirror is full) — so the listing is the WHOLE offer, every verdict named before a byte moves.
-    //    Two poles fall out of the run: the uno heist (all new — 3) and the retomb heist (all held/denied —
-    //     8 held, 1 denied, 0 new).  ONE note per nick, guarded, counting verdicts off the returned rows.
-    //      Count keys are holds|refuses|fresh, NOT the verdict words: held and denied are row MAINKEYS
-    //       (held,tune: / denied,tune:) and a mainkey must never ride as a non-first key — the deny scene
-    //        reads T.o({denied:1}) and a manifest row carrying a denied key would leak into that wildcard.
-    //         Zero counts stay ABSENT (house rule: delete over 0) so each pole row names only what it saw.
-    if (!this.MusuHeist_T(w).oa({ manifest: b.nick }) && landed + skipped + tombstoned === 0 && mir.o({ Record: 1 }).length >= b.expect) {
+    //  offered husks have crossed but before Heist_beat drains a single one (landed+skipped===0 and the
+    //   mirror is full) — so the listing is the WHOLE offer, every verdict named before a byte moves.
+    //    Two poles fall out of the run: the uno heist (all new — 3) and the reuno heist (all held — 9).
+    //     ONE note per nick, guarded, counting verdicts off the returned rows.  Count keys are holds|fresh,
+    //      NOT the verdict words: held is a row MAINKEY (held,tune:) and a mainkey must never ride as a
+    //       non-first key.  Zero counts stay ABSENT (house rule: delete over 0) so each pole row names only
+    //        what it saw.  (Manifest verdicts are held|new only now — the 'denied' pole died with the
+    //         condemned %Tombstone; a per-heist deselect would surface here as a poke-out, unbuilt.)
+    if (!this.MusuHeist_T(w).oa({ manifest: b.nick }) && landed + skipped === 0 && mir.o({ Record: 1 }).length >= b.expect) {
         let man = this.Heist_manifest(b.job, mir, b.own)
         let row = { manifest: b.nick }
         let holds = man.filter((m) => m.verdict === 'held').length
-        let refuses = man.filter((m) => m.verdict === 'denied').length
         let fresh = man.filter((m) => m.verdict === 'new').length
         if (holds) row.holds = holds
-        if (refuses) row.refuses = refuses
         if (fresh) row.fresh = fresh
         this.MusuHeist_note(w, row)
     }
     // completion is its OWN step: the final beat (below) lands the last record and returns true, then THIS
     //  fires next snap.  Guarded by >= expect so an empty mirror mid-offer (husks still crossing) never
-    //   false-completes.  Tombstoned husks (denied-before) count toward expect too — retomb drops all 9 at
-    //    the door and lands none.  The DISK is read back — byte-faithful means the bytes that LANDED.
-    if (landed + skipped + tombstoned >= b.expect && !mir.o({ Record: 1 }).length) {
+    //   false-completes.  Held husks count toward expect too — reuno skips all 9 at the door and lands none.
+    //    The DISK is read back — byte-faithful means the bytes that LANDED.
+    if (landed + skipped >= b.expect && !mir.o({ Record: 1 }).length) {
         // gather the disk truth first (on_disk monitoring + byte-faithful count), then stamp the node.
         let disks = []
         let ok = 0
@@ -385,7 +379,6 @@ async MusuHeist_flow(w) {
         let row = { heisted: b.nick }
         if (landed) row.landed = landed
         if (skipped) row.skipped = skipped
-        if (tombstoned) row.tombstoned = tombstoned
         if (b.job.sc.breached) row.breached = b.job.sc.breached
         if (landed) row.faithful = ok
         // the NAMED-verdict telemetry (the verdict rows counted, read here before flatten drops the job).
@@ -412,7 +405,6 @@ async MusuHeist_flow(w) {
         if (b.nick === 'uno') { w.c.phase = 'duo'; await this.MusuHeist_job(w, 'duo') }
         else if (b.nick === 'duo') { w.c.phase = 'reuno'; await this.MusuHeist_job(w, 'reuno') }
         else if (b.nick === 'reuno') { w.c.phase = 'deny' }
-        else if (b.nick === 'retomb') { w.c.phase = 'flat' }
         return true
     }
     // not done yet — one pull beat this step (Ra_pull_beat wants every missing page at once; the wire
@@ -458,12 +450,6 @@ async MusuHeist_deny(w) {
     if (lines.length < 2) { this.MusuHeist_note(w, { deny_starved: 1 }); return }
     let love = this.Heist_newlyadded_entry(lines[0]).entry
     let drop = this.Heist_newlyadded_entry(lines[1]).entry
-    // capture the DENIED catalog identity BEFORE the drop retires its card — the witness verifies the
-    //  minted %Tombstone is keyed to exactly this artist+title (not just that some tombstone exists), so a
-    //   mis-keyed tombstone that protects the wrong track is caught, not passed on the wildcard count.
-    let dropcard = w.c.uno_lib.o({ Record: 1 }).find((r) => r.sc.path === drop)
-    let drop_artist = dropcard ? dropcard.sc.artist : null
-    let drop_title = dropcard ? dropcard.sc.title : null
     await this.Heist_feel(w, w.c.nav, w.c.uno_lib, w.c.mar_uno, love, 'love')
     await this.Heist_feel(w, w.c.nav, w.c.uno_lib, w.c.mar_uno, drop, 'drop')
     let cut = drop.split('/')
@@ -473,8 +459,6 @@ async MusuHeist_deny(w) {
         raw = await w.c.nav.bin_read(w.c.mar_uno + '/' + cut.join('/'), filename)
     } catch (er) { raw = null }
     let row = { denied: 1 }
-    if (drop_artist) row.drop_artist = drop_artist
-    if (drop_title) row.drop_title = drop_title
     if (!raw || !raw.byteLength) row.gone = 1
     if (!w.c.uno_lib.o({ Record: 1 }).find((r) => r.sc.path === drop)) row.carded_off = 1
     // the log stayed HONEST about the drop — the dropped entry's newlyadded line now reads `drop`, not a
@@ -597,32 +581,22 @@ MusuHeist_witness(w) {
     // deny = delete from the collection: the file left the disk and the catalog with the log honest.
     let dn = T.o({ denied: 1 })[0]
     if (dn && dn.sc.gone && dn.sc.carded_off && dn.sc.log_dropped && !T.oa({ see: 'a denied track left the collection — the file gone and the log honest about the drop' })) this.MusuHeist_note(w, { see: 'a denied track left the collection — the file gone and the log honest about the drop' })
-    // the drop is REMEMBERED: retomb re-offered Duo's whole shelf and Uno re-downloaded nothing — the one
-    //  denied identity refused by its %Tombstone (tombstoned=1) while the 8 still-held identities skipped as
-    //   before.  Guards the exact bug the tombstone fixes: without it the denied track re-heists (landed>0)
-    //    and this see drops.  Tightened past a wildcard existence check (adversarial audit F1/F3/F5): the
-    //     %Tombstone must be keyed to the DENIED identity (dn.sc.drop_*, not just "some tombstone"), AND
-    //      Uno's collection must still hold exactly 8 Records — the explicit no-reland invariant, independent
-    //       of the landed counter and the shared ra_wanted cursor, so a resurrected track can never hide.
-    let ht = T.o({ heisted: 'retomb' })[0]
-    let tomb_stands = dn && uno_lib.o({ Tombstone: 1, artist: dn.sc.drop_artist, title: dn.sc.drop_title }).length === 1
-    let no_reland = uno_lib.o({ Record: 1 }).length === 8
-    if (ht && +(ht.sc.tombstoned || 0) === 1 && !ht.sc.landed && +(ht.sc.skipped || 0) === 8 && tomb_stands && no_reland && !T.oa({ see: 'a denied track stayed refused on the next heist — the collection remembered the rejection and re-downloaded nothing' })) this.MusuHeist_note(w, { see: 'a denied track stayed refused on the next heist — the collection remembered the rejection and re-downloaded nothing' })
     // the manifest named every verdict BEFORE a byte moved.  Two poles prove it: the uno heist's manifest
-    //  read all-new (new=3, none held or denied — nothing was in the collection yet), and the retomb heist's
-    //   read all-refused (held=8, denied=1, new=0 — everything was either already held or tombstoned).  Both
-    //    poles must hold, so a manifest that lied one way (called a held track new, or vice versa) drops it.
+    //  read all-new (fresh=3, nothing held — the collection was empty), and the reuno heist's read all-held
+    //   (holds=9, nothing fresh — every identity was already in the collection).  Both poles must hold, so a
+    //    manifest that lied one way (called a held track new, or vice versa) drops it.  (The old all-refused
+    //     retomb pole died with the condemned %Tombstone — held|new are the only verdicts now.)
     let mu = T.o({ manifest: 'uno' })[0]
-    let mrt = T.o({ manifest: 'retomb' })[0]
-    let man_ok = mu && +(mu.sc.fresh || 0) === 3 && !mu.sc.holds && !mu.sc.refuses
-    man_ok = man_ok && mrt && +(mrt.sc.holds || 0) === 8 && +(mrt.sc.refuses || 0) === 1 && !mrt.sc.fresh
-    if (man_ok && !T.oa({ see: 'the manifest named every verdict before a byte moved — the heist showed what it would take hold and refuse' })) this.MusuHeist_note(w, { see: 'the manifest named every verdict before a byte moved — the heist showed what it would take hold and refuse' })
-    // every offer left a NAMED verdict row on its job, each pointed by tune: took (uno landed 3 took rows),
-    //  held (reuno left 9 held rows), denied (retomb refused 1 by tombstone).  The row counts ride the
-    //   durable %testing telemetry (the jobs themselves flattened) — all three verdict kinds appeared in the
-    //    counts they should, so a landing that stamped a bare tally instead of named rows drops this.
-    let verdicts_named = ha && +(ha.sc.took_named || 0) === 3 && hr && +(hr.sc.held_named || 0) === 9 && ht && +(ht.sc.tombstoned || 0) === 1
-    if (verdicts_named && !T.oa({ see: 'every offer left a named verdict on the job — took held or denied each pointed by tune' })) this.MusuHeist_note(w, { see: 'every offer left a named verdict on the job — took held or denied each pointed by tune' })
+    let mre = T.o({ manifest: 'reuno' })[0]
+    let man_ok = mu && +(mu.sc.fresh || 0) === 3 && !mu.sc.holds
+    man_ok = man_ok && mre && +(mre.sc.holds || 0) === 9 && !mre.sc.fresh
+    if (man_ok && !T.oa({ see: 'the manifest named every verdict before a byte moved — the heist showed what it would take and what it already held' })) this.MusuHeist_note(w, { see: 'the manifest named every verdict before a byte moved — the heist showed what it would take and what it already held' })
+    // every offer left a NAMED verdict row on its job, each pointed by tune: took (uno landed 3 took rows)
+    //  and held (reuno left 9 held rows).  The row counts ride the durable %testing telemetry (the jobs
+    //   themselves flattened) — both verdict kinds appeared in the counts they should, so a landing that
+    //    stamped a bare tally instead of named rows drops this.
+    let verdicts_named = ha && +(ha.sc.took_named || 0) === 3 && hr && +(hr.sc.held_named || 0) === 9
+    if (verdicts_named && !T.oa({ see: 'every offer left a named verdict on the job — took or held each pointed by tune' })) this.MusuHeist_note(w, { see: 'every offer left a named verdict on the job — took or held each pointed by tune' })
     // the landing STREAMED chunk by chunk — the uno heist rode the positioned bin_append path (never a whole
     //  track assembled in memory), a live probe of the backend the run actually used, stamped on the milestone.
     if (ha && ha.sc.streamed && +(ha.sc.landed || 0) === 3 && !T.oa({ see: 'the landing streamed chunk by chunk — no whole track ever waited in memory' })) this.MusuHeist_note(w, { see: 'the landing streamed chunk by chunk — no whole track ever waited in memory' })
