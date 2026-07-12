@@ -1,6 +1,6 @@
 // RemoteWormholeNav — the third w:Wormhole backend: method:remoteWormhole.
 //
-//  Same read_file / write_file / bin_write / dir / bin_read / read_range contract as WormholeNav (FSA) and
+//  Same read_file / write_file / bin_write / bin_append / dir / bin_read / read_range contract as WormholeNav (FSA) and
 //   OpfsOverlayNav (cloud) — but rooted in NO local filesystem.  Every call round-trips an rw-op
 //    over the relay channel to a trusted EDITOR, which runs it against ITS own handle and replies.
 //     A headless runner (a dockerised Chrome — no DirectoryAccess, OPFS illegal under a dev boot)
@@ -197,6 +197,35 @@ export class RemoteWormholeNav {
     async bin_write(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer): Promise<void> {
         const r = await this.send('bin_write', { dir_path, filename }, bytes)
         if (r.error) throw r.error
+    }
+
+    // bin_append — bin_write's STREAMING twin over the wire (op:'bin_append', bytes on a raw frame): the
+    //  editor extends its file at EOF via ITS nav.bin_append (or a server-side read+concat+bin_write when the
+    //   editor's own nav lacks append), so a heist streams a big asset chunk-at-a-time instead of re-sending
+    //    the whole file every chunk.  Reply is a tiny JSON {ok}|{error}, matched by corr like any op.
+    //   COMPAT (old editor): the heist probes `typeof nav.bin_append` on THIS object, so once the method
+    //    exists it WILL be used — but an editor built before this contract answers op:'bin_append' with
+    //     {error:'unknown op bin_append'} (a clean reject, not a timeout).  Rather than fail the landing we
+    //      degrade over the SAME wire to read+concat+bin_write — ops any editor understands — so the append
+    //       is honest against a stale editor too.  ONE probe per nav instance: on the first unknown-op we set
+    //        _no_wire_append and thereafter go straight to the read+concat path (no per-chunk error round-trip).
+    //         Against a current editor the wire op streams at EOF and this fallback never fires.
+    private _no_wire_append = false
+    async bin_append(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer): Promise<void> {
+        if (!this._no_wire_append) {
+            const r = await this.send('bin_append', { dir_path, filename }, bytes)
+            if (!r.error) return
+            // an editor that predates the op — remember, then degrade below.  Any OTHER error is a real fault.
+            if (!/unknown op\b/.test(String(r.error))) throw r.error
+            this._no_wire_append = true
+        }
+        // client-side append over ops an old editor understands: read the current bytes, concat, whole-write.
+        const chunk = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)
+        const prev  = await this.bin_read(dir_path, filename)   // absent ⇒ null ⇒ append from 0 (the create)
+        const head  = prev ? new Uint8Array(prev) : new Uint8Array(0)
+        const whole = new Uint8Array(head.byteLength + chunk.byteLength)
+        whole.set(head); whole.set(chunk, head.byteLength)
+        await this.bin_write(dir_path, filename, whole)
     }
 
     async bin_read(dir_path: string, filename: string): Promise<ArrayBuffer | null> {

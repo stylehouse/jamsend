@@ -3,12 +3,14 @@
     import { TheC } from "$lib/data/Stuff.svelte"
     import { onMount } from "svelte"
 
+import { sha256_hex, sha256_incremental } from "$lib/O/Hashly.ts"
+
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '290352d2ace6855a' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'e8a6d039ad310eee' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -30,6 +32,10 @@
 //    disk between Piers, and a per-run .jamsend/test-marrauding-of-<runid>/<nick> namespace holds
 //     each Pier's meta + landings so one rm -r cleans a run.
 
+// Hashing rides in by IMPORT (a capability for a real external dep — @noble/hashes, sync + isomorphic):
+//  sha256_hex is the SubtleCrypto replacement (identical lowercase-hex output, no await, no whole-asset
+//   re-materialize), sha256_incremental streams a running digest per chunk so the landing has a wire-side
+//    hash the instant the last byte writes — an early breach tripwire ahead of the read-back gate.
 //#region knobs
 // Heist_chunk_bytes — the %Body transport slice.  Big enough that an 8-minute WAV stays ~30 particles
 //  (snap legibility), small enough that a page frame (PAGE×this) rides any carrier comfortably.
@@ -55,11 +61,14 @@ Heist_marrauding(runid, nick) {
 //#region census — a collection walked into heist-servable %Records (the §9.1 slice the heist forces)
 // Heist_hash — full sha256 hex of raw bytes: the body_hash pinning byte identity source→landing.
 //  (Ra_enid is its first-16 slice — content identity for shelf keys; the heist asserts the WHOLE hash.)
+//  Now noble's SYNC sha256 (sha256_hex) — byte-for-byte the same lowercase-hex the old SubtleCrypto
+//   loop produced (empty / leading-zero / multi-KB all verified identical), so every pinned body_hash
+//    keeps matching.  The `async` stays for call-site symmetry (every caller awaits it, and the census
+//     computes body_hash through this same door); the digest itself no longer awaits SubtleCrypto nor
+//      re-materializes the bytes into a fresh ArrayBuffer.  `raw` is a Uint8Array here (census slices
+//       one; the landing passes the read-back bytes) — noble hashes it in place.
 async Heist_hash(raw) {
-    let d = await crypto.subtle.digest('SHA-256', raw)
-    let out = ''
-    for (const b of new Uint8Array(d)) out = out + b.toString(16).padStart(2, '0')
-    return out
+    return sha256_hex(raw)
 
 },
 // Heist_census — walk REAL files off the share into a library of heist-servable %Records: each card
@@ -312,7 +321,10 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
     //  than assembling one Uint8Array(size) copy of the whole asset beside the mirror bufs (the old ~2×
     //   high-water).  Byte-faithfulness stays CENTRAL and unchanged: the file is read back WHOLE and
     //    sha256'd against body_hash AFTER the last chunk, so the gate is the bytes ON DISK, not what we
-    //     meant to write — a torn or reordered write is caught exactly as a wire corruption would be.
+    //     meant to write — a torn or reordered write is caught exactly as a wire corruption would be.  A
+    //      wire-side incremental digest (fed per chunk) is an EARLY tripwire ahead of that gate: a corrupt
+    //       chunk breaches without paying the read-back re-materialize; the disk read-back still stands as
+    //        the final honest check (it alone catches a backend that dropped bytes we handed it).
     //  Backend truth: streaming rides nav.bin_append (positioned FSA/disk write — the live runner's
     //   backend).  A backend without it (a remote wormhole whose editor-side serve has no append op, or a
     //    plain node harness) keeps the whole-buffer path — probed by `typeof nav.bin_append`, never a
@@ -326,6 +338,12 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
         //     beat re-wants the released seqs (presence-is-fill-state) and Heist_land re-runs from a fresh
         //      chunk 0 — a clean retry, never a half-committed card (the card mints only after the full-file
         //       hash below passes).
+        // WIRE-SIDE running digest: fed each chunk's bytes as they write to disk, so the instant the last
+        //  byte lands we hold the sha256 of exactly-what-we-wrote — no read-back needed to catch the common
+        //   breach (a torn|reordered|wrong chunk arriving off the wire).  It is a TRIPWIRE, not the gate: it
+        //    hashes the bytes we HANDED the backend, which is why the read-back below still stands (a short
+        //     write the backend silently dropped agrees with the wire hash yet loses bytes on disk).
+        let wire = sha256_incremental()
         let s = 0
         while (s < total) {
             let ch = this.Repli_chunk_at(rec, s)
@@ -335,10 +353,27 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
             } else {
                 await nav.bin_append(dir, filename, bytes)
             }
+            wire.update(bytes)
             size = size + bytes.length
             if (ch) this.Heist_release_buf(ch)
             s = s + 1
         }
+        // EARLY TRIPWIRE (roadmap §10.2 #1, the memory-high-water fix's teeth): the wire digest is done the
+        //  moment the last chunk writes.  A mismatch here means the bytes we streamed are NOT the promised
+        //   body — a wire corruption — so we breach WITHOUT paying the whole-file read-back re-materialize
+        //    (the very cost this pass exists to shed).  Same tally, same unlink, same "record stays in the
+        //     mirror" as the disk gate below; just cheaper on the failure path.
+        if (wire.hex() !== rec.sc.body_hash) {
+            job.sc.breached = +(job.sc.breached || 0) + 1
+            await this.Heist_unlink(nav, dir, filename)
+            return
+        }
+        // THE FINAL GATE, UNCONDITIONAL: read the file WHOLE off disk and hash the actual bytes.  The wire
+        //  tripwire proved we streamed the right bytes; this proves the DISK holds them — a short|dropped
+        //   backend write (bytes we handed it that never fully landed) passes the wire hash yet fails here.
+        //    Kept unconditional on purpose: cheap correctness beats cleverness, and the invariant is "bytes
+        //     ON DISK, not bytes intended".  The tripwire shaved the read-back off the FAILURE path (the
+        //      breach case); the success path still earns its landing by the honest disk check.
         let raw = await nav.bin_read(dir, filename)
         let hash = await this.Heist_hash(new Uint8Array(raw || new ArrayBuffer(0)))
         if (hash !== rec.sc.body_hash) {

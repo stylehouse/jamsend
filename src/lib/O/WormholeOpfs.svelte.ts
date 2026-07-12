@@ -108,6 +108,25 @@ export class OpfsOverlayNav {
         await w.close()
     }
 
+    // bin_append — bin_write's STREAMING twin (the FSA WormholeNav.bin_append shape, over OPFS): extend a
+    //  file at its END without holding the whole thing in memory.  createWritable({keepExistingData}) keeps
+    //   the bytes already on disk and a positioned write lands the chunk at the current size, so a heist can
+    //    stream a big asset chunk-at-a-time (Radio_todo §10.2 #1) rather than assembling one Uint8Array(size).
+    //     Writes ALWAYS land in scratch, same layer as bin_write; the current size is read off the scratch
+    //      file handle (0 when it does not exist yet — the FIRST append creates it, so a caller can append
+    //       from seq 0 with no separate create).  OPFS getFileHandle is scoped to scratch here (not the seed
+    //        overlay): an append extends this origin's own write, never the read-only github snapshot.
+    async bin_append(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer): Promise<void> {
+        const parts = dir_path.split('/').filter(Boolean)
+        const d = await walk(this.scratch, parts, true)
+        const fh = await d!.getFileHandle(filename, { create: true })
+        // current size off the scratch handle: fresh (0-byte) file ⇒ 0, so the first append is the create.
+        const size = (await fh.getFile()).size
+        const w = await fh.createWritable({ keepExistingData: true })   // don't truncate — extend
+        await w.write({ type: 'write', position: size, data: bytes as BufferSource })
+        await w.close()
+    }
+
     // dir_at — dir() from a single '/'-joined path string (the discovery-site convenience).
     async dir_at(path: string) { return this.dir(...path.split('/').filter(Boolean)) }
     // a DirectoryListing-shaped probe: the worker calls .expand() then reads

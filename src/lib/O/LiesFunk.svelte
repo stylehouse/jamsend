@@ -712,6 +712,31 @@ await M.eatfunc({
                 const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf)
                 await nav.bin_write(dir_path, filename, bytes)
                 replyJSON({ ok: true })
+            } else if (op === 'bin_append') {
+                // bin_write's STREAMING twin over the wire: the runner streams a big asset chunk-at-a-time
+                //  (Radio_todo §10.2 #1).  DELEGATE to OUR nav.bin_append when it has one (FSA/OPFS — they
+                //   position a write at EOF, so the editor never assembles the whole file).  When our own nav
+                //    lacks bin_append (an FSA build older than the append contract), keep the WIRE contract
+                //     honest by doing the append SERVER-side: bin_read the current bytes, concat the chunk,
+                //      bin_write the whole — slower and memory-heavy, but correct, so the client can trust
+                //       bin_append against any editor that speaks the op.  A nav that can't even bin_write is
+                //        a real refusal (no honest append possible).
+                if (claim.mode === 'ro') return void replyJSON({ error: 'grant is read-only' })
+                if (!nav.bin_write)      return void replyJSON({ error: 'editor nav cannot bin_write' })
+                const buf = frame.buffer
+                if (buf == null)         return void replyJSON({ error: 'bin_append: frame carried no buffer' })
+                const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf)
+                if (nav.bin_append) {
+                    await nav.bin_append(dir_path, filename, bytes)
+                } else {
+                    // read+concat+bin_write fallback: absent file ⇒ read null ⇒ append from 0 (the create).
+                    const prev = nav.bin_read ? await nav.bin_read(dir_path, filename) : null
+                    const head = prev ? new Uint8Array(prev) : new Uint8Array(0)
+                    const whole = new Uint8Array(head.byteLength + bytes.byteLength)
+                    whole.set(head); whole.set(bytes, head.byteLength)
+                    await nav.bin_write(dir_path, filename, whole)
+                }
+                replyJSON({ ok: true })
             } else replyJSON({ error: `unknown op ${op}` })
         } catch (e) { replyJSON({ error: String(e) }) }
     },

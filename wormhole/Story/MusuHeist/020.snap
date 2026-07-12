@@ -39,27 +39,28 @@ Snap:H
           see:newlyadded logs each arrival with a fresh feeling — and never a word about the source
           reached:deny
           denied,drop_artist:Fourier Four,drop_title:Query E,gone,carded_off,log_dropped
-          reached:job_encore
-          offered:encore,n=8
+          see:a denied track left the collection — the file gone and the log honest about the drop
+          reached:job_retomb
+          offered:retomb,n=8
         Account,of:Uno
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
               Idzeug:heist_1,to:Music,genre:Heist,spent
-              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783831472
+              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783836424
                 Peering,name:be0dab3303037ad2,friendly:Duo,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783831472,sign:7a22e37ac84fe1cd222d323df364ce4a607a818d5d1e6c0b1ce9c5473884372eda2249a02b4d136cc12695082bd863805ea8982ce78a89ffab06f05a8a046a08,genre:Heist
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783831472,sign:5e45e62c78b1a6f4f73bc6cacb3a442bc18e0fc4f93c1ae1ddb02d27ba06d7a5735c2923e08eb9314549f5704fd1a181e9b990cf1198c16357c7b7e07db9d20a,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783836423,sign:074d9f5aaf10b00cecf133affefe06ba479c09b1525e58485fb067fb8d1f6172d7e7eafb5c2101d63ab12428ea53805056b719109e72a024c07d1ebe3f749802,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783836424,sign:4c4361e1fbaf66f17b3f75429cf8eb668bdaf8229c6747f6c89220d587056abc68ebf53114ee099daf3d758e86c5397f4ca97320dde398a1c228700bd3d6c903,genre:Heist
             SocialGraph
-              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1783831472
+              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1783836424
         Account,of:Duo
           Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
             Peering,name:be0dab3303037ad2,friendly:Duo
-              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783831472
+              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783836424
                 Peering,name:4e09f34f5a6ab900,friendly:Uno,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783831472,sign:5e45e62c78b1a6f4f73bc6cacb3a442bc18e0fc4f93c1ae1ddb02d27ba06d7a5735c2923e08eb9314549f5704fd1a181e9b990cf1198c16357c7b7e07db9d20a,genre:Heist
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783831472,sign:7a22e37ac84fe1cd222d323df364ce4a607a818d5d1e6c0b1ce9c5473884372eda2249a02b4d136cc12695082bd863805ea8982ce78a89ffab06f05a8a046a08,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783836424,sign:4c4361e1fbaf66f17b3f75429cf8eb668bdaf8229c6747f6c89220d587056abc68ebf53114ee099daf3d758e86c5397f4ca97320dde398a1c228700bd3d6c903,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783836423,sign:074d9f5aaf10b00cecf133affefe06ba479c09b1525e58485fb067fb8d1f6172d7e7eafb5c2101d63ab12428ea53805056b719109e72a024c07d1ebe3f749802,genre:Heist
             SocialGraph
-              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1783831472
+              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1783836424
         Peering,name:4e09f34f5a6ab900,req=2,ok
           Pier,pub:be0dab3303037ad2,req=2,ok
             req:handshake,finished

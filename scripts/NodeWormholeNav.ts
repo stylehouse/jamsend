@@ -12,10 +12,10 @@
 //      lands real fixtures while plain runs leave even toc.snap untouched.
 //
 //   The FULL nav contract the worker uses (see Housing.svelte.ts Wormhole / fs_op + rw_op):
-//    read_file / write_file / bin_read / bin_write / read_range / dir / dir_at — kept at PARITY with
+//    read_file / write_file / bin_read / bin_write / bin_append / read_range / dir / dir_at — kept at PARITY with
 //     the browser WormholeNav / OpfsOverlayNav / RemoteWormholeNav so the harness is never a partial
 //      nav that a binary-writing Book trips over headlessly.
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, statSync, openSync, readSync, closeSync } from 'node:fs'
+import { readFileSync, writeFileSync, appendFileSync, mkdirSync, readdirSync, existsSync, statSync, openSync, readSync, closeSync } from 'node:fs'
 import path from 'node:path'
 
 const isDirAt = (p: string) => existsSync(p) && statSync(p).isDirectory()
@@ -70,6 +70,18 @@ export class NodeWormholeNav {
         const abs = path.join(this.writeRoot(rel), rel)
         mkdirSync(path.dirname(abs), { recursive: true })
         writeFileSync(abs, bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes))
+    }
+
+    // bin_append — bin_write's STREAMING twin: extend a file at its END instead of replacing it whole, so a
+    //  headless boot can stream a big asset chunk-at-a-time (the FSA WormholeNav.bin_append shape).  appendFileSync
+    //   creates the file when absent (mode 'a'), so the FIRST append is the create — a caller appends from seq 0
+    //    with no separate write.  Same writeRoot rule as bin_write: fixtures pass through to base only while
+    //     recording, everything else sandboxes into the overlay.
+    async bin_append(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer): Promise<void> {
+        const rel = [dir_path, filename].filter(Boolean).join('/')
+        const abs = path.join(this.writeRoot(rel), rel)
+        mkdirSync(path.dirname(abs), { recursive: true })
+        appendFileSync(abs, bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes))
     }
 
     // read_range — bin_read's SEEKABLE twin: bytes [offset, offset+len) only (len omitted ⇒ to EOF), never

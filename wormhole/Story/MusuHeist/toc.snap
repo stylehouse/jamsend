@@ -5,28 +5,28 @@ story:MusuHeist
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=5.701
-      sample=5.658,at=1783819944
-      sample=5.658,at=1783819945
-      sample=5.658,at=1783819946
-      sample=5.658,at=1783819948
-      sample=5.658,at=1783819949
+    TimeTotal:beliefs,avg=5.981
       sample=5.658,at=1783819950
       sample=5.658,at=1783819951
       sample=5.658,at=1783819953
       sample=5.874,at=1783831515
       sample=5.874,at=1783834924
-    TimeTotal:step,avg=0.136
-      sample=0.135,at=1783819944
-      sample=0.135,at=1783819945
-      sample=0.135,at=1783819946
-      sample=0.135,at=1783819948
-      sample=0.135,at=1783819949
+      sample=6.6,at=1783836121
+      sample=6.169,at=1783836458
+      sample=6.169,at=1783836485
+      sample=5.864,at=1783836707
+      sample=6.284,at=1783836784
+    TimeTotal:step,avg=0.182
       sample=0.135,at=1783819950
       sample=0.135,at=1783819951
       sample=0.135,at=1783819953
       sample=0.14,at=1783831515
       sample=0.14,at=1783834924
+      sample=0.157,at=1783836121
+      sample=0.247,at=1783836458
+      sample=0.247,at=1783836485
+      sample=0.235,at=1783836707
+      sample=0.251,at=1783836784
   step,dige:3557d6c52e0e2c8d
   step=2,dige:a6db54e4969eefe0
   step=3,dige:a5d6842f4fa9b2b7
@@ -43,29 +43,12 @@ story:MusuHeist
   step=14,dige:dc7e853acb034972
   step=15,dige:c6a698fd309fcfea
   step=16,dige:a30faf182fe6128c
-  step=17,dige:dafd9bdb6b5d982b
-  step=18,dige:d35db1b46daa42bc
-  step=19,dige:a2e33e1e427c7471
-  step=20,dige:30b17bbb19a8c7aa
-  step=21,dige:91a85f053f566f04
-  step=22,dige:ae4768991d5b2967
-  step=23,dige:04be33b1dc9f3ef5
-  step=24,dige:b2a745ab43afa0da
-  step=25,dige:f48cb7175f25c97a
-  step=26,dige:2cdd14dd1a223be8
-  step=27,dige:7818c25873f0bbec
-  step=28,dige:a597bea9c236d157
-  step=29,dige:d856f6a4e6242736
-  step=30,dige:7b63e4bc1e57e3e4
-  step=31,dige:9b94b872b58ec801
-  step=32,dige:48eb5c7ef5f9b278
-  step=33,dige:3f43b78be1f17375
-  step=34,dige:3ee562bcc7d8aef6
-  step=35,dige:089dfe03b8b6e2a0
-  step=36,dige:caa338153cf83249
-  step=37,dige:74b00a6be17034a2
-  step=38,dige:4689ac2a9f1cc355
-  step=39,dige:0e498f30b123c1ec
-  step=40,dige:4a911e97f277b3f1
-  step=41,dige:0b040c4c2a50afeb
-  step=42,dige:fb5a1641edc174a1
+  step=17,dige:93c5a9f5694f46de
+  step=18,dige:0122a0fb6fe2cfa6
+  step=19,dige:acdb20cf179e4f30
+  step=20,dige:abacf0e4d5de835b
+  step=21,dige:bf6dea911f39b1e9
+  step=22,dige:d057a16cfafcd6ab
+  step=23,dige:9392b89213f98417
+  step=24,dige:ada15ed3d95ad194
+  step=25,dige:6ded4ea11d5f2b42

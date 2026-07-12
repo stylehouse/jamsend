@@ -38,6 +38,19 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
  - **VETOED**: the %Tombstone→%Ban rename (host checkout reverted Heist.g/Heistation.g/LiesLies
     to the tombstone baseline — LEAVE IT). `Booth.g` exists unwired/unenrolled — read §11's
      STATUS block before touching anything taste-shaped.
+ - **FRANKEN-FIXTURES (urgent, 2026-07-13 late)**: the accepted MusuHeist fixtures record a
+    CROSS-WIRED HUNG run — the tab ran the stale `encore` Book gen (HMR'd in before the host's
+     checkout) against the `tombstone` engine gen: the flow's completion read `banned` (never
+      written) while the engine tallied `tombstoned` → the retomb job hung at skipped=7 from step
+       ~19 to 42. Proof in the fixtures: `offered:encore` + `reached:job_encore` present;
+        `heisted:retomb`/`flattened` ABSENT — see #11 silently vanished from the roster. Recipe:
+         RELOAD the tab (kills stale gen) → clean run → TRIM the toc to last-edge + ~3 headroom
+          (the 42-seed leaves ~18 dead steps — the human: "just sitting there from step 20") →
+           re-record + accept + confirm the see roster. Also landed meanwhile: `bin_append` is a
+            FULL 4-backend contract (the host built OPFS/node/remote + the serve op; agent-audited
+             correct, old-editor degrade honest) and @noble/hashes rides `Heist_land` as an early
+              wire-hash tripwire (`Hashly.ts`; the read-back stays the unconditional
+               bytes-on-disk gate).
  - **THE LIBRARY CATCH** (the human: "didn't we have a library for that?"): package.json ships
     **music-metadata@11** — the hand-rolled tag parser in Crate.g duplicates it. Swap
      `Crate_meta_from_tags`' internals to an IMPORT() of music-metadata (parseBuffer; the
@@ -761,8 +774,10 @@ Born from the %Tombstone post-mortem (built unexplained, named in graveyard-spea
 **STATUS (2026-07-13, the human's rulings — read BEFORE building anything in this section):**
  - **%Tombstone STAYS in the engine.** The Ban rename was built then REVERTED by the host
     ("you're just changing the name") — Heist.g/Heistation.g/LiesLies are back on the tombstone
-     baseline. `Ghost/M/Booth.g` exists, compiles, and is deliberately UNWIRED + UNENROLLED; the
-      human "hates Booth" — do not wire or extend it without a new ruling.
+     baseline. `Ghost/M/Booth.g` exists, compiles, and is deliberately UNWIRED + UNENROLLED — the
+      human vetoed it then softened ("maybe I was too harsh"): the likely revival is Booth's door
+       probe over §11.7's Waft:Taste (the document as the store), NOT the line-ledger. Still: no
+        wiring without a fresh ruling.
  - **The taste data model is unsettled, and klepto-mode is what warps it** ("why would I ban a
     track I started heisting?"): in a want-driven heist — genre starting points + the source
      Pier's advice (§11.7 Waft:Map) — most refusal-memory dissolves. Build toward want-driven;
@@ -1021,3 +1036,7 @@ A **Berth** homes one Pier's Wafts — "like Lies does but without the rest of t
     Waft:Map, replicated FIRST and shown as "check out first" (music-blog material as a
      document). A Waft subtree is C**, so Repli moves it like anything else; grants gate it like
       any Radio leg. Klepto "everything you offer" demotes to ONE mode, not the mind-set.
+- **Every data file is enWaft — pure C** (the human's ruling, 2026-07-13): no ad-hoc line
+   formats, no broken objects. Berth documents already are; `newlyadded` MIGRATES into
+    Waft:Listening rather than staying a line file; the unwired booth line-ledger dies unbuilt;
+     the §11.3 airplay-log sketch becomes a Waft region when built.
