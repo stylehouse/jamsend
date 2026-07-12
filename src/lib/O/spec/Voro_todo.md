@@ -151,11 +151,11 @@ MISSION: fill VoroTest (`Ghost/Story/Voronation.g`) with the owed [model] roster
   edge is [eyes]).  ✅ #19 (region / botanical families) LANDED + **LIVE-GATED** on the :9091 runner —
    the `sibling folds group by a shared property` see fired live (a secondary `clade` fact ropes four
     mainkey-distinct gangs into two regions, read off-snap via `VoroTest_model_of`).  ✅ #29 (loner /
-     nothing-dropped) LANDED with the smallest model cut — `Voro_model_loud_from` now returns `{list,
-      over}` and the %Family row carries a `+N` overflow (two bare `%Relic` overflow K=4 → `over:6`).
-       Headless-green + adversarially airtight; LIVE gate OWED (runner wedged on the core Voro.go HMR —
-        needs a human tab reload to re-run).  ALL [model] roster shapes are now covered.
-      Next cold session: reload a runner + live-gate #29 (re-run VoroTest), then re-record all fixtures.
+     nothing-dropped) LANDED + **LIVE-GATED** with the smallest model cut — `Voro_model_loud_from` now
+      returns `{list, over}` and the %Family row carries a `+N` overflow (two bare `%Relic` overflow K=4
+       → `over:6`, computed live on a reloaded runner alongside the see; the first runner had wedged on
+        the core Voro.go HMR).  ALL [model] roster shapes are now covered and BOTH new gates are live.
+      Next: the human's fixture RE-RECORD (VoroTest reds only on the additive relics diff), then wave ③.
 
 **THE ORDER** (roster numbers): #6 swarm — FIRST resolve its lack-mark (is same-mainkey-varying-
  value already mix's gang path? prove the difference with a dataset or mark it covered) → #7
@@ -352,7 +352,9 @@ Six shapes are ALREADY in the bench (flock/mix/motley/gradient/groves/edges — 
         `Voro_crush_scan ~:86` guard).  The gate reads the SNAP (over is projected) and fires only when
          `kept === 4 && over > 0` — reddens if the cap silently dropped the tail (over absent) OR the cap
           were removed (kept ≠ 4), so it asserts EXACTLY the invariant.  Headless-green + adversarially
-           airtight; LIVE gate OWED (the runner wedged on the core Voro.go HMR — needs a human tab reload).
+           airtight + **LIVE-GATED** on a reloaded runner (`Family:Relic …,over:6` + the see computed live
+            on a fresh-core tab — the first runner had wedged on the core Voro.go HMR).  Fixture re-record
+             still owed (the run reds only on the relics diff — recorded fixtures predate this Example).
      **Blast radius:** every Voro model consumer (VoroScape/VoroRadio/VoroMitosis) now emits `over:N` on
       any fat family — re-record if one surfaces (none in VoroTest's other Examples; all ≤2 Loud).
 
