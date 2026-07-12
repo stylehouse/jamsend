@@ -7,7 +7,7 @@ Snap:H
         req:wrangle,eternal,ok
         testing
           reached:step_2
-          censused,uno=6,duo=2
+          censused,uno=6,duo=3
           see:two collections stand divided on one shared disk — each Pier holds only its own artists as whole original bytes
           reached:seal
           sealed
@@ -18,21 +18,21 @@ Snap:H
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
               Idzeug:heist_1,to:Music,genre:Heist,spent
-              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783779475
+              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783863286
                 Peering,name:be0dab3303037ad2,friendly:Duo,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783779475,sign:7a9dacb9517af46e82b1b39aacf579740cd0b6c419947fc37d1586b74a5c990d7f133e931eb21e19b4f70f8fda385dfde49cf512f22d96a8ba649eb0e72f4b02,genre:Heist
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783779475,sign:47c9eead54ee83edddd99a79ebe230f73f409129f10303bd268b1ab7583a0fda4e15c49a029aacad6f31711f6d9e4ba8be9acf5052e1be6424579058b595a00a,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783863286,sign:ad54a1fea6a4881b664de0c54308bc89c6ee7a33983f9d7e89b824e18d7c53d4c882fe3a4c7c0c098b77f890ba6bcbdc9a4725a865138ea34d95f60ac599c203,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783863286,sign:f5762c12aa0073a66e44c001526de8c0d00340a0ed3a30642c3527566c2bcaf9cdead68481b67c80c3ab628b866e31ae6cb377293d7b91b989518647b0e07f0f,genre:Heist
             SocialGraph
-              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1783779475
+              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1783863286
         Account,of:Duo
           Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
             Peering,name:be0dab3303037ad2,friendly:Duo
-              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783779475
+              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783863286
                 Peering,name:4e09f34f5a6ab900,friendly:Uno,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783779475,sign:47c9eead54ee83edddd99a79ebe230f73f409129f10303bd268b1ab7583a0fda4e15c49a029aacad6f31711f6d9e4ba8be9acf5052e1be6424579058b595a00a,genre:Heist
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783779475,sign:7a9dacb9517af46e82b1b39aacf579740cd0b6c419947fc37d1586b74a5c990d7f133e931eb21e19b4f70f8fda385dfde49cf512f22d96a8ba649eb0e72f4b02,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783863286,sign:f5762c12aa0073a66e44c001526de8c0d00340a0ed3a30642c3527566c2bcaf9cdead68481b67c80c3ab628b866e31ae6cb377293d7b91b989518647b0e07f0f,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783863286,sign:ad54a1fea6a4881b664de0c54308bc89c6ee7a33983f9d7e89b824e18d7c53d4c882fe3a4c7c0c098b77f890ba6bcbdc9a4725a865138ea34d95f60ac599c203,genre:Heist
             SocialGraph
-              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1783779475
+              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1783863286
         Peering,name:4e09f34f5a6ab900,req=2,ok
           Pier,pub:be0dab3303037ad2,req=2,ok
             req:handshake,finished
@@ -122,6 +122,8 @@ Snap:H
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
         Library,pier:be0dab3303037ad2
+          Record,id:f9cb73180655432e,title:Tagged Truth,artist:Fourier Four,path:Fourier Four - Bogus Name.wav,ext:wav,bytes=8110,body_hash:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d,total
+            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
           Record,id:f60c57424cac2e10,title:Echo E,artist:Fourier Four,path:Fourier Four - Echo E.wav,ext:wav,bytes=960044,body_hash:f60c57424cac2e10046b99ea9708fbf9271c97aab0b75790ee82a7508f0c7d7a,total=4
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}

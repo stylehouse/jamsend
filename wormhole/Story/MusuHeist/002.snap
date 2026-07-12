@@ -7,7 +7,7 @@ Snap:H
         req:wrangle,eternal,ok
         testing
           reached:step_2
-          censused,uno=6,duo=2
+          censused,uno=6,duo=3
           see:two collections stand divided on one shared disk — each Pier holds only its own artists as whole original bytes
         Account,of:Uno
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
@@ -96,6 +96,8 @@ Snap:H
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
         Library,pier:be0dab3303037ad2
+          Record,id:f9cb73180655432e,title:Tagged Truth,artist:Fourier Four,path:Fourier Four - Bogus Name.wav,ext:wav,bytes=8110,body_hash:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d,total
+            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
           Record,id:f60c57424cac2e10,title:Echo E,artist:Fourier Four,path:Fourier Four - Echo E.wav,ext:wav,bytes=960044,body_hash:f60c57424cac2e10046b99ea9708fbf9271c97aab0b75790ee82a7508f0c7d7a,total=4
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}

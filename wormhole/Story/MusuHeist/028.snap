@@ -1,9 +1,9 @@
 Snap:H
   H:MusuHeist,Run
     A:MusuHeist
-      self,round=71	{"mung":["age"]}
+      self,round=86	{"mung":["age"]}
       w:MusuHeist
-        self,round=71	{"mung":["age"]}
+        self,round=86	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -47,6 +47,15 @@ Snap:H
           denied,drop_artist:Fourier Four,drop_title:Echo E,gone,carded_off,log_dropped
           see:a denied track left the collection — the file gone and the log honest about the drop
           reached:job_retomb
+          offered:retomb,n=9
+          manifest:retomb,holds=8,refuses
+          see:the manifest named every verdict before a byte moved — the heist showed what it would take hold and refuse
+          heisted:retomb,skipped=8,tombstoned
+          see:a denied track stayed refused on the next heist — the collection remembered the rejection and re-downloaded nothing
+          see:every offer left a named verdict on the job — took held or denied each pointed by tune
+          reached:flat
+          flattened
+          see:the scaffolding flattened away — no heist stands and nothing attributes who gave what
         Account,of:Uno
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
@@ -104,15 +113,6 @@ Snap:H
                 emit=64,type:repli_page,seq=64
             inbox
               recent
-                unemit=29,type:repli_want,seq=29
-                unemit=30,type:repli_want,seq=30
-                unemit=31,type:repli_want,seq=31
-                unemit=32,type:repli_want,seq=32
-                unemit=33,type:repli_want,seq=33
-                unemit=34,type:repli_want,seq=34
-                unemit=35,type:repli_want,seq=35
-                unemit=36,type:repli_want,seq=36
-                unemit=37,type:repli_want,seq=37
                 unemit=38,type:repli_want,seq=38
                 unemit=39,type:repli_want,seq=39
                 unemit=40,type:repli_lines,seq=40
@@ -124,6 +124,15 @@ Snap:H
                 unemit=46,type:repli_lines,seq=46
                 unemit=47,type:repli_lines,seq=47
                 unemit=48,type:repli_lines,seq=48
+                unemit=49,type:repli_lines,seq=49
+                unemit=50,type:repli_lines,seq=50
+                unemit=51,type:repli_lines,seq=51
+                unemit=52,type:repli_lines,seq=52
+                unemit=53,type:repli_lines,seq=53
+                unemit=54,type:repli_lines,seq=54
+                unemit=55,type:repli_lines,seq=55
+                unemit=56,type:repli_lines,seq=56
+                unemit=57,type:repli_lines,seq=57
             Ud,pubkey:be0dab3303037ad2
             req:awaitbuf,bufferid,landed,finished
             req:awaitbuf,bufferid=2,landed,finished
@@ -152,15 +161,6 @@ Snap:H
                 heard
             outbox
               recent
-                emit=29,type:repli_want,seq=29
-                emit=30,type:repli_want,seq=30
-                emit=31,type:repli_want,seq=31
-                emit=32,type:repli_want,seq=32
-                emit=33,type:repli_want,seq=33
-                emit=34,type:repli_want,seq=34
-                emit=35,type:repli_want,seq=35
-                emit=36,type:repli_want,seq=36
-                emit=37,type:repli_want,seq=37
                 emit=38,type:repli_want,seq=38
                 emit=39,type:repli_want,seq=39
                 emit=40,type:repli_lines,seq=40
@@ -172,6 +172,15 @@ Snap:H
                 emit=46,type:repli_lines,seq=46
                 emit=47,type:repli_lines,seq=47
                 emit=48,type:repli_lines,seq=48
+                emit=49,type:repli_lines,seq=49
+                emit=50,type:repli_lines,seq=50
+                emit=51,type:repli_lines,seq=51
+                emit=52,type:repli_lines,seq=52
+                emit=53,type:repli_lines,seq=53
+                emit=54,type:repli_lines,seq=54
+                emit=55,type:repli_lines,seq=55
+                emit=56,type:repli_lines,seq=56
+                emit=57,type:repli_lines,seq=57
             inbox
               recent
                 unemit=45,type:repli_page,seq=45
@@ -288,5 +297,3 @@ Snap:H
         req:witness,eternal,ok
         Library,pier:4e09f34f5a6ab900.heist
         Library,pier:be0dab3303037ad2.heist
-        Heist,at:be0dab3303037ad2,disbelieve_directories
-          filing,artist:Fourier Four,genre:4t-mathrock
