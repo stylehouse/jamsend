@@ -1,0 +1,168 @@
+Snap:H
+  H:VoroTest,Run
+    A:VoroTest
+      self,round=4	{"mung":["age"]}
+      w:VoroTest
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Example,name:flock
+          w:flock
+            Boulder,grade:coarse,stratum:Miocene,vein
+            Boulder,grade:medium,stratum:Miocene
+            Boulder,grade:fine,stratum:Miocene
+            Boulder,grade:pebble,stratum:Miocene
+            Boulder,grade:cobble,stratum:Miocene
+            Boulder,grade:angular,stratum:Miocene
+            Boulder,grade:rounded,stratum:Miocene
+            Boulder,grade:platy,stratum:Miocene,vein
+            Boulder,grade:blocky,stratum:Miocene
+            Boulder,grade:tabular,stratum:Miocene,vein
+            Boulder,grade:massive,stratum:Miocene
+            Boulder,grade:vesicular,stratum:Miocene
+            Boulder,grade:spheroidal,stratum:Miocene,vein
+            Boulder,grade:jointed,stratum:Miocene
+            Boulder,grade:weathered,stratum:Miocene,vein
+          w:Voronoiology,dontGraph
+            Voro,beat=3,level:L2,visible,cells:1,gangs,folded:0,count:0
+            cell:Boulder,kind:gang,n:15
+              Vtuffing,of:Boulder,n:15
+                Vrow,row:title,text:×15,wgt:100,tag:Boulder
+                Vrow,row:list,wgt:50,bits:15
+                Vrow,row:spread,text:grade,wgt:20,bits:4
+                Vrow,row:fact,text:stratum: Miocene,wgt:20
+                Vrow,row:fact,text:vein ×5,wgt:20
+                Vrow,row:dip,text:/*15,wgt:10
+            Se:scape,grasped:1,born:0,died:0,loudest:Boulder,trait:grade coarse,regions:1
+            Se:family,name:Boulder,n:15,order_by:grade,from:angular Miocene,to:weathered Miocene 1,loud:grade: coarse
+        Example,name:mix
+          w:mix
+            Fern:crown
+            Fern:shield
+            Fern:hard
+            Fern:ring
+            Fern:kidney
+            Moss:sphagnum
+            Moss:pincushion
+            Moss:feather
+            Moss:fork
+            Moss:sheet
+            Lichen:reindeer
+            Sedge:carnation
+            Rush:soft
+          w:Voronoiology,dontGraph
+            Voro,beat=3,level:L2,visible=5,cells:2,gangs=2,folded:0,count:0
+            cell:Fern,kind:gang,n:5
+              Vtuffing,of:Fern,n:5
+                Vrow,row:title,text:×5,wgt:100,tag:Fern
+                Vrow,row:list,wgt:50,bits:5
+                Vrow,row:dip,text:/*5,wgt:10
+            cell:Moss,kind:gang,n:5
+              Vtuffing,of:Moss,n:5
+                Vrow,row:title,text:×5,wgt:100,tag:Moss
+                Vrow,row:list,wgt:50,bits:5
+                Vrow,row:dip,text:/*5,wgt:10
+            bare:Lichen,n:1
+            bare:Sedge,n:1
+            bare:Rush,n:1
+            Se:scape,grasped:2,born:0,died:0,loudest:Fern,trait:,regions:1
+            Se:family,name:Fern,n:5,from:crown,to:kidney
+            Se:family,name:Moss,n:5,from:sphagnum,to:sheet
+        Example,name:motley
+          w:motley
+            Quartz:milky
+            Basalt:columnar
+            Slate:roofing
+            Gneiss:banded
+            Chert:nodular
+            Shale:fissile
+            Flint:grey
+            Marl:calcareous
+          w:Voronoiology,dontGraph
+            Voro,beat=3,level:L2,visible=8,cells:0,gangs=0,folded:0,count:0
+            bare:Quartz,n:1
+            bare:Basalt,n:1
+            bare:Slate,n:1
+            bare:Gneiss,n:1
+            bare:Chert,n:1
+            bare:Shale,n:1
+            bare:Flint,n:1
+            bare:Marl,n:1
+        Example,name:gradient
+          w:gradient
+            Stratum,depth:1,unit:metres
+            Stratum,depth:2,unit:metres
+            Stratum,depth:3,unit:metres
+            Stratum,depth:4,unit:metres
+            Stratum,depth:5,unit:metres
+            Stratum,depth:6,unit:metres
+            Stratum,depth:7,unit:metres
+            Stratum,depth:8,unit:metres
+            Stratum,depth:9,unit:metres
+            Stratum,depth:99,unit:metres
+          w:Voronoiology,dontGraph
+            Voro,beat=3,level:L2,visible,cells:1,gangs,folded:0,count:0
+            cell:Stratum,kind:gang,n:10
+              Vtuffing,of:Stratum,n:10
+                Vrow,row:title,text:×10,wgt:100,tag:Stratum
+                Vrow,row:list,wgt:50,bits:10
+                Vrow,row:spread,text:depth,wgt:20,bits:4
+                Vrow,row:fact,text:unit: metres,wgt:20
+                Vrow,row:dip,text:/*10,wgt:10
+            Se:scape,grasped:1,born:0,died:0,loudest:Stratum,trait:depth 1,regions:1
+            Se:family,name:Stratum,n:10,order_by:depth,from:1 metres,to:99 metres,loud:depth: 1
+        Example,name:groves
+          w:groves
+            Grove,name:Kauri
+              Sapling,age:1
+              Sapling,age:2
+              Sapling,age:3
+              Sapling,age:4
+            Grove,name:Rimu
+              Sapling,age:1
+              Sapling,age:2
+              Sapling,age:3
+              Sapling,age:4
+            Grove,name:Totara
+              Sapling,age:1
+              Sapling,age:2
+              Sapling,age:3
+              Sapling,age:4
+          w:Voronoiology,dontGraph
+            Voro,beat=3,level:L2,visible=3,cells:3,gangs=0,folded:12,count:3
+            cell:Grove Kauri,kind:pane,n:4
+              Vtuffing,of:Sapling,n:4
+                Vrow,row:title,text:Kauri  ×4,wgt:100,tag:Grove,nk:name
+                Vrow,row:list,wgt:50,bits:4
+                Vrow,row:spread,text:age,wgt:20,bits:4
+                Vrow,row:dip,text:/*4,wgt:10
+            cell:Grove Rimu,kind:pane,n:4
+              Vtuffing,of:Sapling,n:4
+                Vrow,row:title,text:Rimu  ×4,wgt:100,tag:Grove,nk:name
+                Vrow,row:list,wgt:50,bits:4
+                Vrow,row:spread,text:age,wgt:20,bits:4
+                Vrow,row:dip,text:/*4,wgt:10
+            cell:Grove Totara,kind:pane,n:4
+              Vtuffing,of:Sapling,n:4
+                Vrow,row:title,text:Totara  ×4,wgt:100,tag:Grove,nk:name
+                Vrow,row:list,wgt:50,bits:4
+                Vrow,row:spread,text:age,wgt:20,bits:4
+                Vrow,row:dip,text:/*4,wgt:10
+            Se:scape,grasped:3,born:0,died:0,loudest:Grove · Kauri,trait:age 1,regions:1
+            Se:family,name:Grove,n:3,order_by:age,from:Grove · Kauri,to:Grove · Totara,loud:age: 1
+        Example,name:edges
+          w:edges
+            Pair,name:twins
+              Pebble,name:east
+              Pebble,name:west
+            Void,name:hollow
+          w:Voronoiology,dontGraph
+            Voro,beat=3,level:L2,visible=2,cells:1,gangs=0,folded:2,count:1
+            cell:Pair twins,kind:pane,n:2
+              Vtuffing,of:Pebble,n:2
+                Vrow,row:title,text:twins  ×2,wgt:100,tag:Pair,nk:name
+                Vrow,row:list,wgt:50,bits:2
+                Vrow,row:dip,text:/*2,wgt:10
+            bare:Void,n:1
+            Se:scape,grasped:1,born:0,died:0,loudest:Pair · twins,trait:,regions:1
+        see:the readings held steady across the examples — a recrush with nothing changed reproduced every gang and pane because the fold is a pure function of the data
+        see:the drift fell silent everywhere — no family reading on any example carries an arrival or a departure after a recrush with nothing changed

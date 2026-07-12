@@ -11,7 +11,7 @@ import { browserTrustedPubs, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_test_Story_Lake_LakeTiles(): string { return '9c4c3e373bf4ee17' },
+    Ghostmeta_Ghost_test_Story_Lake_LakeTiles(): string { return '9c4c3e373bf4ee17~g1' },
 
 // yeti etc!!!!!
 theCompiledStuff(A,w) {

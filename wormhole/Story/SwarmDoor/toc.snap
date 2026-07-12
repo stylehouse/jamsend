@@ -4,8 +4,7 @@ story:SwarmDoor
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.058
-      sample=0.056,at=1783365883
+    TimeTotal:beliefs,avg=0.056
       sample=0.082,at=1783365909
       sample=0.055,at=1783365966
       sample=0.054,at=1783366452
@@ -15,8 +14,8 @@ story:SwarmDoor
       sample=0.065,at=1783368123
       sample=0.084,at=1783369795
       sample=0.028,at=1783420359
-    TimeTotal:step,avg=0.012
-      sample=0.011,at=1783365883
+      sample=0.031,at=1783855449
+    TimeTotal:step,avg=0.011
       sample=0.016,at=1783365909
       sample=0.011,at=1783365966
       sample=0.011,at=1783366452
@@ -26,6 +25,7 @@ story:SwarmDoor
       sample=0.013,at=1783368123
       sample=0.017,at=1783369795
       sample=0.006,at=1783420359
+      sample=0.006,at=1783855449
   step,dige:8aeed028b37708e0
   step=2,dige:b798b4a19ea8475c
   step=3,dige:3b452baa62a8c321

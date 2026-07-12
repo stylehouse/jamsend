@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '3b44c41dc8f08af3' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '3b44c41dc8f08af3~g1' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).

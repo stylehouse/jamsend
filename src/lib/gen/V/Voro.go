@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return '37ffa9602e9dc6b0' },
+    Ghostmeta_Ghost_V_Voro(): string { return '37ffa9602e9dc6b0~g1' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the

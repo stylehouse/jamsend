@@ -4,8 +4,10 @@ story:MusuBerth
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0
-    TimeTotal:step,avg=0
+    TimeTotal:beliefs,avg=0.543
+      sample=0.543,at=1783855379
+    TimeTotal:step,avg=0.078
+      sample=0.078,at=1783855379
   step,dige:lie
   step=2,dige:lie
   step=3,dige:lie

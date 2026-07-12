@@ -12,6 +12,7 @@ story:MusuSkip
       sample=0.003,at=1783368351
       sample=0.002,at=1783676763
       sample=0.002,at=1783692232
+      sample=0.004,at=1783855478
     TimeTotal:step,avg=0.005
       sample=0.004,at=1783047719
       sample=0.006,at=1783076037
@@ -20,4 +21,5 @@ story:MusuSkip
       sample=0.003,at=1783368351
       sample=0.002,at=1783676763
       sample=0.002,at=1783692232
+      sample=0.004,at=1783855478
   step,dige:5fd5d2fc5d80e380

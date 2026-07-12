@@ -13,6 +13,7 @@ story:SwarmPolicy
       sample=0.041,at=1783392451
       sample=0.034,at=1783420375
       sample=0.144,at=1783713027
+      sample=0.054,at=1783855456
     TimeTotal:step,avg=0.008
       sample=0.007,at=1783369389
       sample=0.006,at=1783369504
@@ -22,6 +23,7 @@ story:SwarmPolicy
       sample=0.007,at=1783392451
       sample=0.006,at=1783420375
       sample=0.024,at=1783713027
+      sample=0.009,at=1783855456
   step,dige:e5c5f344a350825c
   step=2,dige:5a6d64f986b731f7
   step=3,dige:954df57609535f8e
