@@ -35,20 +35,24 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
          (b) a corrupt census `body_hash` stamped `breached,landed=2` and dropped see #4 — both
           CHECK-only, reverted, runner left green on pristine gen `39558c`.
 
-**NEXT (2026-07-13 pm — two rulings settled): M2 leads; the tombstone rips.** Ruled today: (1) the
- kitchen/counter metaphor is DEAD (§12.1 language reset — one brain and a DOOR per relationship;
-  K1/K2 dissolve into D1 the door-hardening Book + M4 the standing republish). (2) `%Tombstone` is
-   CONDEMNED (§10.2 — never asked for, roadmap accretion; the only load-bearing skip is Heist_held;
-    poke-out = the manifest gesture; durable narrowing = the §9.2 `%Share` match; §11.5's migration
-     checklist is re-purposed as the RIP checklist). Standing discipline from the same ruling:
-      Heist_* realities are PROVISIONAL until Repli|magazine (M2) is real — do not accrete durable
-       facts heist-side (§12.5 re-homes every gear anyway). The next straight-forward batch (author
-        everything, then ONE runner-reload session records it all): (a) the **music-metadata@11
-         swap** (the library catch, §10.2); (b) the **tombstone rip** + MusuHeist re-record (~30→~19
-          steps — the retomb scene goes; the owed manifest-counts/tagged-WAV scenes fold into this
-           same single re-record); (c) **M2** — a two-Pier magazine replication Book over the
-            existing Repli pipe (grant on = lands, grant off = refused + noted). Then C1 cursors /
-             S2 the agenda bridge.
+**NEXT (2026-07-13 late): rulings landed — the magazine is real data; owed = Ra re-records + the
+ blessing-needed fold/cp-landing.** DONE today (all committed, live green): the tombstone RIP
+  (MusuHeist 30→19, green ×2); test music is TAGGED-BY-DEFAULT (the generator learns
+   Crate_wav_with_tags — every testsounds file carries IART/INAM agreeing with its filename; the
+    lone disagreeing file stays MusuHeist's plant); the MAGAZINE rebuilt as `%Cloud/%Record` on the
+     OBSERVABLE PLANE (§12.2 — reflected into w/%Mag so the fixture diff SHOWS records/clouds
+      appearing+vanishing, not judgement rows grading themselves; the fabricated `genre` is gone).
+ - **OWED, mechanical (safe, no blessing):** the tags change shifted every testsounds byte, so the
+    **Ra family fixtures are stale** — re-record MusuRaStock/RaCast/RaTerm/RaStream/RaChase over the
+     tagged collection (census divides identically; identities unchanged; pure body_hash/id/bytes
+      churn). Same recipe as the MusuHeist re-record.
+ - **OWED, needs the human's blessing (do NOT build blind — §12.2 tail):** (a) the **FOLD** —
+    publish the magazine off MusuHeist's REAL census, retiring MusuMagazine's minted lib (kills the
+     duplicated test-catalog the human flagged); (b) the **cp-LANDING** ruling — whole-directory
+      pickup, same relative path, tags are metadata not file-naming authority (rewrites Heist_land +
+       rewords ~3 MusuHeist sees, full re-record). Both are the same fixture-churn wave — do them
+        together in one sweep once blessed.
+ - **Then** M2 (two-Pier magazine replication over Repli, grant-gated) → D1 the door → C1 cursors.
 
 **NOW (2026-07-13, post-push): three §10.2 gears LANDED compile-clean (live-gate owed on all);
  the Booth/Ban thread is VETOED-and-parked; persistence is ruled — §11.7 (the Berth).**
@@ -1178,6 +1182,44 @@ A magazine is a curated C** projection of the filesystem: census walks the disk 
    per-identity, travels with the music, and Repli moves it like any C** (grants gate it).
     album|title metadata is stored IN the magazine — that is what cursors anchor on (12.3).
      Authored, generated (the Ra entropy seam), or sublimed from disk: same media, same mover.
+ **STRUCTURE (built 2026-07-13, M1): still %Records, with a %Cloud layer.** The magazine holds the
+  census cards UNCHANGED — `%Record,id,artist,title,album,path,body_hash` (the SAME mainkey+scalars
+   the collection holds, minus the %Body byte-slices; NO `genre` — a genre is a FOLDER not a card
+    scalar and no census mints one, so the first cut's fabricated `genre` was a shape that cannot
+     exist). Records do NOT hang straight off the Waft — they group under a
+      **`%Cloud,randomic,created_at`** ARRIVAL BATCH:
+```
+Waft:Musica
+  Cloud,randomic:<id>,created_at:<ts>     ← one publish's new arrivals, stamped when they came
+    Record,id:…,artist:…,title:…,album:…,path:…,body_hash:…
+    Record,…
+  Cloud,randomic:<id2>,created_at:<ts2>   ← a later publish's batch
+```
+  So every Record wears the time it joined (read up through its Cloud), and a whole era is
+   forgotten at once — `Musica_forget(cutoff)` drops old Clouds (the radiostock-cascade unlink is
+    parked `// <`). `randomic`+`created_at` are PARAMS not wall-clock: the app passes a real random
+     id + Date.now, a Book PINS them (the Heist_marrauding runid pattern) so snaps stay deterministic.
+ **Publish is RECONCILE-then-ADD** (`Musica_publish`, Ghost/M/Heist.g), not wipe-and-rewrite: drop
+  any published id the collection lost + any emptied Cloud (the recast — a dropped track leaves no
+   orphan), then lay the collection ids not yet in any Cloud under a fresh Cloud. `Musica_cards(mag)`
+    is the flat catalog view (walk Cloud→Record); the Cloud layer is for GROUPING+forgetting, not
+     browsing one era at a time.
+ **OBSERVABLE-PLANE DISCIPLINE (the human's ruling, 2026-07-13):** a Book must put the magazine's
+  actual Cloud/Record tree ON the snap (MusuMagazine reflects the disk-read handle into w/%Mag), so
+   the fixture DIFF shows a card appearing / a second Cloud arriving / a dropped card vanishing — the
+    DATA is the proof, %testing counts only accompany it (see [[snap-data-not-judgement]]). A
+     judgement-only snap (`published,records=2`) is the drive grading its own homework.
+ **OWED (needs the human's blessing — do not build blind):** (a) the FOLD — the magazine's real
+  feeder is the Heist census (catalog-shaped Records), so `Musica_publish` should be proven off
+   MusuHeist's REAL census over testsounds, not MusuMagazine's minted lib (kills the duplicated
+    test-catalog the human flagged); (b) the cp-LANDING ruling — a heist picks up WHOLE DIRECTORIES
+     and does a `cp` (same relative `path:`), NEVER renaming files off tags; tags stay metadata
+      (dedup identity + magazine display), never file-naming authority. That rewrites
+       `Heist_land`/`Heist_rel_for` and rewords ~3 MusuHeist sees (filed-by-category, mislabeled-
+        file) — a full MusuHeist re-record. Corner-case ledger: weird tag text enters snapped
+         scalars (clamp control chars + cap length); non-audio sibling in a picked-up dir (probe
+          audio, parked `// <` at Heist_census); album-art needs an oracle (parked `// <` in
+           Crate.g); landing-path collision → skip+`clash` verdict on the manifest.
  Renames: a Pier that reorganises (retitles an album, splits an artist) mints %Renamed redirect-
   facts beside the renamed node — from:, to:, at: — IN the magazine, so followers receive the
    redirect through the same pipe as the content. (Naming note: "breach" is taken — it is the
