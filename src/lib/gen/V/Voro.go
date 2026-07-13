@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return '43f3df7828e7e1d0~g1' },
+    Ghostmeta_Ghost_V_Voro(): string { return 'b3f89f0d99d03638~g1' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
@@ -85,7 +85,12 @@ async Voro_crush_scan(w, quiet, fixed) {
     }
     w.c.crush_level = level
     if (!quiet) {
-        this.Voro_report(w, stats)
+        // ONE WALK (the model ruling, 2026-07-13): a single fold-gather feeds the report AND the
+        //  model — the shapes the census counts and the families the model groups read the SAME
+        //   records, so the two faces can never drift apart on what stands.
+        let folds = []
+        this.Voro_fold_gather(w, 0, folds)
+        this.Voro_report(w, stats, folds)
         // the Se GRASP rides here, in the crush governor's tail, so EVERY crush user gets it for free
         //  — not just VoroMitosis (which drove it by hand) but VoroScape (imposed from above via the
         //   toc's useVoroCyto) and the VoroRadio family too.  Only on the census-authoring pass, never
@@ -101,7 +106,9 @@ async Voro_crush_scan(w, quiet, fixed) {
             //  the:family stamps and the wgt the grasp wrote onto each Vtuffing row, then emits the
             //   per-family readings a consumer would otherwise re-derive from pixels.  Same census-
             //    authoring-pass discipline: never the quiet pre-scan (that would double-mint the Seem).
-            await this.Voro_model(w)
+            //  It reads the SAME fold records the report just counted — the structure is unchanged
+            //   between them (the grasp stamps c-side weights only), so the gather stays honest.
+            await this.Voro_model(w, folds)
         }
     }
     return stats
@@ -151,7 +158,7 @@ Voro_crush_pass(w, level) {
 //            decides RECORDING not building — it prunes w:Voronoiology from the snap for a Book with
 //             %dontSnapVoronoiology (MusuReplica keeps its replication fixture clean); the ◈ button
 //              folds the Cyto MIRROR, which never reaches Story, so it reports live only.
-Voro_report(w, stats) {
+Voro_report(w, stats, folds) {
     let A = w.c.up
     if (!A || !w.sc.w) return null
     let rname = 'Voronoiology'
@@ -171,8 +178,24 @@ Voro_report(w, stats) {
     //      on emission ORDER, and find-or-create reuses each child in place, so the order holds.
     for (const c of rw.o()) c.c.seen_beat = 0
     w.c.report_beat = (w.c.report_beat || 0) + 1
+    // the census is a PROJECTION of the fold records (the model ruling) — the report no longer
+    //  walks the world itself; it counts the same records the model families.  Cells keep their
+    //   per-fold grain (label, kind, n, pop); bare leaves aggregate per mainkey.
+    if (!folds) {
+        folds = []
+        this.Voro_fold_gather(w, 0, folds)
+    }
     let census = { cells: [], bare: {} }
-    this.Voro_report_walk(w, census, 0)
+    for (const fr of folds) {
+        if (fr.kind === 'bare') {
+            let mk = fr.family
+            if (!census.bare[mk]) census.bare[mk] = { n: 0, pop: 0 }
+            census.bare[mk].n = census.bare[mk].n + 1
+            census.bare[mk].pop = census.bare[mk].pop + fr.pop
+        } else {
+            census.cells.push({ label: fr.label, kind: fr.kind, n: fr.n, pop: fr.pop, src: fr.cell })
+        }
+    }
     let pops = 0
     for (const f of census.cells) pops = pops + f.pop
     // the head — one persistent %Voro particle, beat + counts merged in place.  level|counts ride
@@ -193,9 +216,7 @@ Voro_report(w, stats) {
     //    find-or-create.  kind = pane (a folded container) | gang (loose leaves behind a rep).
     let used = {}
     for (const f of census.cells) {
-        let n_seen = used[f.label] || 0
-        let key = n_seen ? f.label + ' ' + n_seen : f.label
-        used[f.label] = n_seen + 1
+        let key = this.Voro_census_key(used, f.label)
         let cellC = rw.oai({ cell: key, kind: f.kind }, { n: '' + f.n })
         cellC.c.seen_beat = 1
         if (f.pop) cellC.sc.pop = '' + f.pop
@@ -257,64 +278,79 @@ Voro_census_stash(w, census, stats) {
     }
     let used = {}
     for (const f of census.cells) {
-        let n_seen = used[f.label] || 0
-        let key = n_seen ? f.label + ' ' + n_seen : f.label
-        used[f.label] = n_seen + 1
-        home.i({ cell: key, kind: f.kind, n: '' + f.n })
+        home.i({ cell: this.Voro_census_key(used, f.label), kind: f.kind, n: '' + f.n })
     }
     for (const mk of Object.keys(census.bare)) {
         home.i({ bare: mk, n: '' + census.bare[mk].n })
     }
 
 },
-// Voro_report_walk — gather Voro_report's census on the same cut the Cyto walk makes.  A fold
-//  stamp (c.stuff) is a pane — count it, do NOT descend (folded here = folded on the canvas); a
-//   represented member is already inside its rep's pane; anything else with children is walked-
-//    through structure; a leaf left standing is bare.  Popped members tally per-pane (a gang's
-//     popped ride its c.gang list, a folded container's its children) and a popped LONER —
-//      crush_walk lets it stand alone — tallies on its mainkey's bare row.
-Voro_report_walk(node, census, d) {
+// Voro_census_key — a census row's durable identity from its label: the first of a label keeps the
+//  bare label, a same-label sibling takes a disambiguating tail (neither swallowed by the other's
+//   find-or-create).  ONE home (the model ruling): Voro_report's rows and Voro_census_stash's mirror
+//    subjects MUST key identically or the mirror's second opinion silently rots — sharing the keyer
+//     makes that agreement structural, while their SOURCES stay independent (that's the proof).
+Voro_census_key(used, label) {
+    let n_seen = used[label] || 0
+    used[label] = n_seen + 1
+    return n_seen ? label + ' ' + n_seen : label
+
+},
+// Voro_fold_gather — THE one walk over a crushed world (the model ruling, 2026-07-13: the report is
+//  bits of the model — one gather feeds both, so what the census counts and what the model families
+//   can never disagree on what stands).  The same cut the Cyto walk makes: a fold stamp (c.stuff) is
+//    a cell — count it, do NOT descend (folded here = folded on the canvas); a represented member is
+//     already inside its rep's pane; %Opt is config, %self machinery — neither a pane nor a bare
+//      leaf the canvas could show; anything else with children is walked-through structure; a
+//       childless leaf left standing is bare.  Each record carries BOTH faces at once — the
+//        report's (label, kind, n, pop) and the model's (family, cell, particles):
+//    · a loose-leaf GANG is one family named by its kind (fold_kind, the shared mainkey — NEVER a
+//       bare trait value, the old grain's `1` bug), its members the ganged particles.
+//    · a CONTAINER pane is ONE member of a mainkey family (sibling panes of one kind merge model-
+//       side).  Its LABEL is its DATUM — the mainkey's value ({Metrosideros:'robusta'} → that value
+//        IS the name) or the first valued sibling field ({Artist:1,name:'Moonlit'} → Artist
+//         Moonlit) — never a fragile walk-order tail that re-shuffles when a neighbour is born.
+//    · a BARE leaf is a family of one, named by its mainkey (the report aggregates these per
+//       mainkey; the model merges same-mainkey loners into one bare family).
+//   Popped members tally per-record (a gang's popped ride its c.gang list, a folded container's its
+//    children) and a popped LONER — crush_walk lets it stand alone — tallies on its bare record.
+Voro_fold_gather(node, d, out) {
     if (d > 8) return
     for (const c of node.o()) {
         if (c.c.represented) continue
         let mk = Object.keys(c.sc)[0]
-        // same cut as the crush walk: Opt is config, self is machinery — neither is a pane
-        //  nor a bare leaf the canvas could show, so neither belongs in the census.
         if (mk === 'Opt' || mk === 'self') continue
         if (c.c.stuff) {
-            let label = mk
-            if (c.c.gang) {
-                label = c.c.fold_kind || mk
-            } else if (c.sc[mk] && c.sc[mk] !== 1) {
-                // the mainkey CARRIES the datum ({Metrosideros:'robusta'}) — that value IS the name.
-                label = mk + ' ' + ('' + c.sc[mk]).split(',').join(' ')
-            } else {
-                // the mainkey is a bare presence marker ({Artist:1,name:'Moonlit'}); the identity
-                //  lives in a sibling field.  Name the cell by its DATA (Artist Moonlit), not by a
-                //   fragile walk-order tail (Artist 1) that re-shuffles the instant a pane ahead of
-                //    it is born or dies — the very volatile-identity churn the persistent census kills.
-                let ks = Object.keys(c.sc)
-                for (let i = 1; i < ks.length; i++) {
-                    let v = c.sc[ks[i]]
-                    if (v && v !== 1) {
-                        label = mk + ' ' + ('' + v).split(',').join(' ')
-                        break
-                    }
-                }
-            }
             let pop = 0
             let members = c.c.gang || c.o()
             for (const m of members) if (m.c.popped) pop = pop + 1
-            census.cells.push({ label: label, kind: c.c.gang ? 'gang' : 'pane', n: c.c.fold_n || c.o().length, pop: pop, src: c })
+            let n = c.c.fold_n || c.o().length
+            if (c.c.gang) {
+                let fam = '' + (c.c.fold_kind || mk)
+                out.push({ kind: 'gang', cell: c, family: fam, label: fam, n: n, pop: pop, particles: (c.c.gang || []) })
+            } else {
+                let label = mk
+                if (c.sc[mk] && c.sc[mk] !== 1) {
+                    label = mk + ' ' + ('' + c.sc[mk]).split(',').join(' ')
+                } else {
+                    let ks = Object.keys(c.sc)
+                    for (let i = 1; i < ks.length; i++) {
+                        let v = c.sc[ks[i]]
+                        if (v && v !== 1) {
+                            label = mk + ' ' + ('' + v).split(',').join(' ')
+                            break
+                        }
+                    }
+                }
+                out.push({ kind: 'pane', cell: c, family: mk, label: label, n: n, pop: pop, particles: [c] })
+            }
             continue
         }
         if (c.o().length > 0) {
-            this.Voro_report_walk(c, census, d + 1)
+            this.Voro_fold_gather(c, d + 1, out)
             continue
         }
-        if (!census.bare[mk]) census.bare[mk] = { n: 0, pop: 0 }
-        census.bare[mk].n = census.bare[mk].n + 1
-        if (c.c.popped) census.bare[mk].pop = census.bare[mk].pop + 1
+        out.push({ kind: 'bare', cell: c, family: mk, label: mk, n: 1, pop: c.c.popped ? 1 : 0, particles: [c] })
     }
 
 },
@@ -632,7 +668,7 @@ async Voro_census_mirror(w) {
 //     The comments say Artist/year for the reader's sake; the code names nothing.
 //  Runs in the crush tail AFTER Voro_grasp (it reads the grasp's the:family stamps and the wgt the
 //   grasp wrote onto each Vtuffing row), on census-authoring passes only — never the quiet pre-scan.
-async Voro_model(w) {
+async Voro_model(w, folds) {
     let A = w.c.up
     if (!A || !w.sc.w) return
     let rw = A.o({ w: 'Voronoiology' })[0]
@@ -644,12 +680,15 @@ async Voro_model(w) {
     //   every beat (drift frozen — the bug the first live run surfaced).  Selection.process pairs by
     //    sc CONTENT, so the %Family/%Member C nodes are free to be rebuilt; only the Seem must outlive them.
     for (const c of model.o().slice()) if (Object.keys(c.sc)[0] !== 'Seem') c.drop(c)
-    // gather the FOLD RECORDS — the family is the FOLD UNIT, not the grasp's coarse region.  A loose-leaf
-    //  GANG is one family named by its kind, its members the ganged particles (so the ten strata are ten
-    //   MEMBERS an axis can order by depth — not one opaque cell); a container PANE is one member of a
-    //    mainkey family (three Groves → one Grove family of three); a BARE leaf is a family of one.
-    let folds = []
-    this.Voro_model_gather(w, 0, folds)
+    // the FOLD RECORDS arrive from the ONE walk (Voro_fold_gather, shared with the report) — the
+    //  family is the FOLD UNIT, not the grasp's coarse region.  A loose-leaf GANG is one family named
+    //   by its kind, its members the ganged particles (so the ten strata are ten MEMBERS an axis can
+    //    order by depth — not one opaque cell); a container PANE is one member of a mainkey family
+    //     (three Groves → one Grove family of three); a BARE leaf is a family of one.
+    if (!folds) {
+        folds = []
+        this.Voro_fold_gather(w, 0, folds)
+    }
     // group fold records into families by name (first-seen order, so neither tree nor fixture churns on
     //  walk order).  Each family builds its MEMBERS (a gang member's facts off its sc, a pane's off its
     //   weight-stamped Vtuffing) and its LOUD source (a gang's rep Vtuffing — the grasp scored it — a
@@ -798,40 +837,9 @@ async Voro_model(w) {
     for (const c of rw.o({ Family: 1 })) c.c.seen_beat = 0
 
 },
-// Voro_model_gather — collect FOLD RECORDS on the same cut Voro_report_walk makes: a c.stuff fold is a
-//  fold (don't descend), a represented member is inside its rep, %Opt|%self are machinery, anything else
-//   with children is walked through, a childless leaf left standing is bare.  Each record says its KIND
-//    (gang | pane | bare), its family NAME (a gang's fold_kind, else the mainkey), the source cell, and
-//     the PARTICLES that become members (a gang's ganged list; the cell itself for a pane|bare).
-Voro_model_gather(node, d, out) {
-    if (d > 8) return
-    for (const c of node.o()) {
-        if (c.c.represented) continue
-        let mk = Object.keys(c.sc)[0]
-        if (mk === 'Opt' || mk === 'self') continue
-        if (c.c.stuff) {
-            if (c.c.gang) {
-                // a loose-leaf GANG: the fold IS a family, its members the ganged particles.  Named by its
-                //  kind (fold_kind, the shared mainkey) — NEVER a bare trait value (the old grain's `1` bug).
-                let fam = c.c.fold_kind || mk
-                out.push({ kind: 'gang', cell: c, family: ('' + fam), particles: (c.c.gang || []) })
-            } else {
-                // a CONTAINER pane (a folded container-with-children): ONE member of a mainkey family —
-                //  sibling panes of one kind (three Groves) merge into one family below.
-                out.push({ kind: 'pane', cell: c, family: mk, particles: [c] })
-            }
-            continue
-        }
-        if (c.o().length > 0) {
-            this.Voro_model_gather(c, d + 1, out)
-        } else {
-            // a BARE leaf the crush left standing: a family of one, named by its mainkey.  Kept so a
-            //  consumer sees every cell attributed; the n<2 rule keeps these singletons out of the snap.
-            out.push({ kind: 'bare', cell: c, family: mk, particles: [c] })
-        }
-    }
+// (Voro_model_gather is DEAD — the model ruling folded it and Voro_report_walk into the ONE
+//  Voro_fold_gather above; the model consumes the same records the report counts.)
 
-},
 // Voro_model_family — the family a cell belongs to: the grasp's the:family awareness value, reached off
 //  the cell's off-snap D node (c.D), null-safe to fold_kind else 'misc'.  This is the SAME source
 //   Cytui's region_of reads — so the model's grouping IS what the render buckets by, no divergence.
