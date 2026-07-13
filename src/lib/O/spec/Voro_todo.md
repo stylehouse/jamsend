@@ -67,7 +67,15 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
          per-tab ◈/▧/▦ prefs settable over the ask rails at last).  Evidence gallery:
           `/tmp/nightshift_gallery/` (mitosis_promo3.svg = rivers carrying '1998' 22px +
            'remaster ×2' + 'live ×2', five `»2` cells, 'remaster' NOWHERE in a cell).
-            OPEN refinement: literal wall-adjacency quieting (VCell.edge_src knows neighbours).**
+            OPEN refinement — wall-adjacency quieting (analysed 2026-07-14, NEEDS THE HUMAN'S EYES
+             before building).  Region promotion is the ∀ grain (a claim EVERY member shares → the
+              river); the gap it misses is a claim shared by a CONTIGUOUS SUBSET (e.g. `remaster:2` on
+               three cells that border each other but not the fourth).  `VCell.edge_src[k]` = the
+                neighbouring seed id per wall, so per claim you can walk the adjacency graph, find
+                 connected components ≥2, and write it ONCE on the shared border (hush in the members,
+                  `»N` like today).  The OPEN QUESTION is taste, not mechanism: text-on-a-wall may
+                   compress noise OR add clutter — decide on live pixels, so NOT buildable blind while
+                    the runner's occupied.  Render-only + gated (like cs) when it lands.**
      **cs — LANDED `b2e8e965` (2026-07-14 night, the human's live steer): the ▧ region wash
       "wasn't making sense" (a calendar-grid glyph backing a meaningless hull).  Relabelled `cs`
        and given meaning — a region is a local COORDINATE SYSTEM for its member cells, and the
