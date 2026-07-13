@@ -12,16 +12,16 @@ Credulate,of_Book:MusuMagazine
   GhostInclude:Ghost_M_Mesh,dige:286eb98843f6e7f9
   GhostInclude:Ghost_M_Ra,dige:877d4c68475647aa
   GhostInclude:Ghost_M_Booth,dige:24e06889933090b3
-  GhostInclude:Ghost_M_Heist,dige:7e15fffcbe241597~g1
+  GhostInclude:Ghost_M_Heist,dige:66ee90dfd64e89b4~g1
   GhostInclude:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
   GhostInclude:Ghost_Story_Radiation,dige:f3403566ed74e831
-  GhostInclude:Ghost_Story_Heistation,dige:83b6b94d7ee35164
+  GhostInclude:Ghost_Story_Heistation,dige:14451f30db58bc7d~g1
   GhostInclude:Ghost_Story_Berthation,dige:fadda60ce33fa778~g1
   GhostInclude:Ghost_S_Swarm,dige:a5980d5d4830e92b
   GhostInclude:Ghost_Story_Swarmation,dige:c35a937c80b7a07b
-  GhostInclude:Ghost_V_Voro,dige:8c9d91bfccb695b0~g1
-  GhostInclude:Ghost_Story_Voronation,dige:de52af4650daa678~g1
-  last_ok,at=1783888116.847,ok_pct
+  GhostInclude:Ghost_V_Voro,dige:43f3df7828e7e1d0~g1
+  GhostInclude:Ghost_Story_Voronation,dige:9d9fd42afe942f57~g1
+  last_ok,at=1783900416.054,ok_pct
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -35,12 +35,12 @@ Credulate,of_Book:MusuMagazine
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
     uses:Ghost_M_Ra,dige:877d4c68475647aa
     uses:Ghost_M_Booth,dige:24e06889933090b3
-    uses:Ghost_M_Heist,dige:7e15fffcbe241597~g1
+    uses:Ghost_M_Heist,dige:66ee90dfd64e89b4~g1
     uses:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
     uses:Ghost_Story_Radiation,dige:f3403566ed74e831
-    uses:Ghost_Story_Heistation,dige:83b6b94d7ee35164
+    uses:Ghost_Story_Heistation,dige:14451f30db58bc7d~g1
     uses:Ghost_Story_Berthation,dige:fadda60ce33fa778~g1
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:c35a937c80b7a07b
-    uses:Ghost_V_Voro,dige:8c9d91bfccb695b0~g1
-    uses:Ghost_Story_Voronation,dige:de52af4650daa678~g1
+    uses:Ghost_V_Voro,dige:43f3df7828e7e1d0~g1
+    uses:Ghost_Story_Voronation,dige:9d9fd42afe942f57~g1

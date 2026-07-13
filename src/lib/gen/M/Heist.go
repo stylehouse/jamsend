@@ -10,7 +10,7 @@ import { sha256_hex, sha256_incremental } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '66ee90dfd64e89b4~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'f023d8d2764669cd~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -100,6 +100,9 @@ async Heist_census(w, lib, nav, base, artists) {
         let raw = await nav.bin_read(parts.join('/'), filename)
         if (!raw || !raw.byteLength) { skipped = skipped + 1; continue }
         let bytes = new Uint8Array(raw)
+        // <  probe the BYTES really are audio media before censusing — the extension gate alone lies;
+        // <   a non-audio file must never become a %Record (music-metadata's container sniff is the
+        // <    natural probe — a parse that finds no audio format = skip, not fallback-to-path).
         // the authoritative catalog identity: tags win, filename fills the gaps.  Pass the bytes FROM OFFSET 0
         //  (Crate_meta_from_tags reads the RIFF/ID3 header there); it never throws and never returns a hole.
         let meta = await this.Crate_meta_from_tags(bytes, path)

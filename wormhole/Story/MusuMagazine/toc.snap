@@ -4,8 +4,7 @@ story:MusuMagazine
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.744
-      sample=0.759,at=1783888074
+    TimeTotal:beliefs,avg=0.775
       sample=0.759,at=1783888077
       sample=0.759,at=1783888078
       sample=0.759,at=1783888079
@@ -15,8 +14,8 @@ story:MusuMagazine
       sample=0.759,at=1783888083
       sample=0.651,at=1783888097
       sample=0.713,at=1783888116
-    TimeTotal:step,avg=0.106
-      sample=0.108,at=1783888074
+      sample=1.072,at=1783900415
+    TimeTotal:step,avg=0.11
       sample=0.108,at=1783888077
       sample=0.108,at=1783888078
       sample=0.108,at=1783888079
@@ -26,6 +25,7 @@ story:MusuMagazine
       sample=0.108,at=1783888083
       sample=0.093,at=1783888097
       sample=0.102,at=1783888116
+      sample=0.153,at=1783900415
   step,dige:81cbe3be7ed91a26
   step=2,dige:60e4aed2a37946d2
   step=3,dige:e6c6e5d0a24f2f80
