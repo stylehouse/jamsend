@@ -1570,18 +1570,23 @@ Voro_crush_clear(node, d):
 //       cell polygon.  The smarts live HERE, .g-side, and extend the Waft way: define
 //        Vtuff_of_<fold kind> on any ghost and that kind's panes author their own rows.
 //
-//  The tree (claims TYPED since the Stuffing-shape cut, 2026-07-14 — k/v pairs end-to-end, the
-//   Stuffing algorithm's own idiom; display text composed only at paint via Vtuff_claim_text):
+//  The tree (fully TYPED since the Stuffing-shape cuts, 2026-07-14 — k/v bits end-to-end, the
+//   Stuffing algorithm's own idiom; ALL display text composed only at paint, Cytui vtuff_rows;
+//    only the '+N' overflow tail keeps a text: — it is chrome, never a claim):
 //             %Vtuffing,of:<kind>,n:<members>              (c.src backlinks the fold|gang rep)
-//               /%Vrow,row:title,text:'Artist: Moonlit  ×5',wgt:2
+//               /%Vrow,row:title,tag:Artist,name:Moonlit,nk:name,wgt:2
+//                                                          — paint says 'Moonlit  ×5' (n off the root)
 //               /%Vrow,row:fact,k:artist,v:'Neil Young'    — a key EVERYONE agrees on, said once
 //               /%Vrow,row:fact,k:remaster,n:2             — a presence claim, counted, no v
 //               /%Vrow,row:spread,k:title                  — a key that varies, chips below
 //                  /%Vbit,v:'Tide',n:2                     — value chips with counts
 //                  /%Vbit,text:'+9',n:0                    — the overflow tail: chrome, never a claim
-//               /%Vrow,row:member,text:'Track · Halo'      — per-member when the family is small
-//                                                            (c.member — the pop-out handle)
-//               /%Vrow,row:dip,text:'/*12'                 — the surf handle (c.members)
+//               /%Vrow,row:list,k:title                    — a homogeneous family's member chips
+//                  /%Vbit,v:'Halo',n:1,sub:3               — (c.member — each chip pops out)
+//               /%Vrow,row:member,tag:Track,name:Halo      — per-member when the family is small
+//                                                            (c.member — the pop-out handle; tag
+//                                                             rides ALWAYS, paint decides its chip)
+//               /%Vrow,row:dip                             — the surf handle (c.members; paint /*N)
 
 // Vtuff_build — the cached entry: members = the gang, else the fold's children.  The cache
 //  (c.vtuffing) is keyed by a cheap signature — member count + summed versions — so a beat that
@@ -1681,6 +1686,99 @@ Vtuff_member_bit(m):
     if (!t) t = Object.keys(m.sc)[0]
     return t
 
+// ── the shared row-authors (the 1b cut, 2026-07-14) ──────────────────────────────────────────
+//  Vtuff_default and Vtuff_bamboo used to duplicate this wording wholesale (~50 lines twice,
+//   already drifting).  Now each stalk only decides WHERE rows land (root, or which segment);
+//    what a row SAYS lives here once.  And the rows go fully TYPED — name|nk|tag|k|n ride as
+//     their own keys, display text is composed at paint (Cytui vtuff_rows), same as the claims
+//      went in the Stuffing-shape cut.  Only the '+N' overflow tail keeps a text: it is chrome.
+
+// Vtuff_kinds — the family's mainkey census (the tiny phase-1 of the Stuffing shape).
+Vtuff_kinds(members):
+    let kinds = {}
+    for (const m of members) kinds[Object.keys(m.sc)[0]] = 1
+    return kinds
+
+// Vtuff_skips — which keys the title|list already spoke, so keyrows must not repeat them
+//  (homogeneous: the family mainkey + the naming key — the 'cell: Olearia ×4' then
+//   'Olearia: figaro' stutter; mixed: nothing was spoken, skip nothing).
+Vtuff_skips(members, kinds):
+    if (Object.keys(kinds).length === 1) return [Object.keys(kinds)[0], this.Vtuff_namekey(members[0])]
+    return []
+
+// Vtuff_title_row — the one title every pane opens with: tag (the kind), name + nk when the
+//  container carries one.  A gang has no name of its own (the rep's ident would read as ONE
+//   member — '4 figaros'), so its title is just the tag + count; a fold container contributes
+//    its name.  The '×N' count is paint's, off the tree root's n.
+Vtuff_title_row(into, members, src, kinds):
+    let tag = src.c.fold_kind || Object.keys(kinds)[0]
+    let name = ''
+    if (!src.c.gang) {
+        tag = Object.keys(src.sc)[0]
+        name = this.Vtuff_name(src)
+    }
+    let tsc = { Vrow: 1, row: 'title', wgt: 2, tag: tag }
+    if (name) {
+        tsc.name = name
+        // nk — the KEY the name is the value OF (Stuffing is explicit about what's a key or
+        //  what's a value; a bare 'Riverine' hid that it rides %Artist's `name`).  The renderer
+        //   says `Artist name: Riverine`; when the mainkey itself carries the name, nk === tag
+        //    and the tag takes the colon (`cell: Kunzea`).
+        tsc.nk = this.Vtuff_namekey(src)
+    }
+    into.i(tsc)
+
+// Vtuff_member_rows — how a family speaks its MEMBERS.  Homogeneous: one list row of chips,
+//  each chip's v the member's distinguishing bit (the row's k says which key the bits are
+//   values of); the '+N' overflow tail stays text+n:0 chrome.  Mixed small: per-member rows
+//    (each a pop-out handle), a tiny family Travelling the openness ONE level (row:sub) — the
+//     same-graph seed of recursion, depth capped where the pixels are.  Mixed big: nothing —
+//      facts|spreads speak instead.  tag rides ALWAYS now (it IS the member's kind — honest
+//       data); whether to DRAW it beside the name is paint's call.
+Vtuff_member_rows(into, members, kinds):
+    let homo = Object.keys(kinds).length === 1
+    if (homo) {
+        let r = into.i({ Vrow: 1, row: 'list', k: this.Vtuff_namekey(members[0]), wgt: 1 })
+        let shown = members
+        // generous — the phi spiral packs ~25 comfortably; the renderer's fit is the real
+        //  gate (the human: "give it until we have problems fitting everything in").
+        if (members.length > 25) shown = members.slice(0, 25)
+        for (const m of shown) {
+            let bsc = { Vbit: 1, v: this.Vtuff_member_bit(m), n: 1 }
+            let bsub = m.o().length
+            if (bsub) bsc.sub = bsub
+            let b = r.i(bsc)
+            b.c.member = m
+        }
+        if (members.length > shown.length) r.i({ Vbit: 1, text: '+' + (members.length - shown.length), n: 0 })
+    } else if (members.length <= 5) {
+        for (const m of members) {
+            let nm = this.Vtuff_name(m)
+            let sub = m.o().length
+            let rsc = { Vrow: 1, row: 'member', tag: Object.keys(m.sc)[0], wgt: 1 }
+            if (nm) rsc.name = nm
+            if (sub) rsc.sub = sub
+            let r = into.i(rsc)
+            r.c.member = m
+            if (members.length <= 3 && sub && sub <= 3) {
+                for (const k of m.o()) {
+                    let knm = this.Vtuff_name(k)
+                    let ksc = { Vrow: 1, row: 'sub', tag: Object.keys(k.sc)[0], wgt: 1 }
+                    if (knm) ksc.name = knm
+                    let ksub = k.o().length
+                    if (ksub) ksc.sub = ksub
+                    let sr = into.i(ksc)
+                    sr.c.member = k
+                }
+            }
+        }
+    }
+
+// Vtuff_dip_row — the /*N surf handle; the count is paint's, off the tree root's n.
+Vtuff_dip_row(into, members):
+    let dip = into.i({ Vrow: 1, row: 'dip', wgt: 1 })
+    dip.c.members = members
+
 // Vtuff_default — the generic distiller.  A HOMOGENEOUS family (one mainkey) never repeats
 //  itself: the title names the family ONCE ('Olearia  ×4') and one list row carries the members
 //   as clickable chips of just their distinguishing bit ('figaro | tenuifolium | +2' — the
@@ -1691,71 +1789,18 @@ Vtuff_member_bit(m):
 //        A MIXED big family gets facts|spreads.  A presence-only key everyone carries (the
 //         mainkey's 1) says nothing — skipped.
 Vtuff_default(root, members, src):
-    let kinds = {}
-    for (const m of members) {
-        kinds[Object.keys(m.sc)[0]] = 1
-    }
+    let kinds = this.Vtuff_kinds(members)
     let homo = Object.keys(kinds).length === 1
-    // the TITLE: one name + one type-tag, every pane the same shape.  A gang has no name of
-    //  its own (the rep's ident would read as ONE member — '4 figaros'), so its title is just
-    //   the tag + count; a fold container contributes its name ('Kunzea  ×14' tagged `cell`,
-    //    'Fernway  ×2' tagged `Artist` — no more two formats).
-    let tag = src.c.fold_kind || Object.keys(kinds)[0]
-    let name = ''
-    if (!src.c.gang) {
-        tag = Object.keys(src.sc)[0]
-        name = this.Vtuff_name(src)
-    }
-    let tsc = { Vrow: 1, row: 'title', text: (name ? name + '  ' : '') + '×' + members.length, wgt: 2, tag: tag }
-    // nk — the KEY the name is the value OF (Stuffing is explicit about what's a key or
-    //  what's a value; a bare 'Riverine' hid that it rides %Artist's `name`).  The renderer
-    //   says `Artist name: Riverine`; when the mainkey itself carries the name, nk === tag
-    //    and the tag takes the colon (`cell: Kunzea`).
-    if (name) tsc.nk = this.Vtuff_namekey(src)
-    root.i(tsc)
+    this.Vtuff_title_row(root, members, src, kinds)
+    this.Vtuff_member_rows(root, members, kinds)
+    // keyrows for a homogeneous family (minus what the title|list spoke) and for a mixed BIG
+    //  one (everything — nothing else speaks); a mixed SMALL family said each member instead.
     if (homo) {
-        let r = root.i({ Vrow: 1, row: 'list', text: '', wgt: 1 })
-        let shown = members
-        // generous — the phi spiral packs ~25 comfortably; the renderer's fit is the real
-        //  gate (the owner: "give it until we have problems fitting everything in").
-        if (members.length > 25) shown = members.slice(0, 25)
-        for (const m of shown) {
-            let bsc = { Vbit: 1, text: this.Vtuff_member_bit(m), n: 1 }
-            let bsub = m.o().length
-            if (bsub) bsc.sub = bsub
-            let b = r.i(bsc)
-            b.c.member = m
-        }
-        if (members.length > shown.length) r.i({ Vbit: 1, text: '+' + (members.length - shown.length), n: 0 })
-        this.Vtuff_keyrows(root, members, [Object.keys(kinds)[0], this.Vtuff_namekey(members[0])])
-    } else if (members.length <= 5) {
-        for (const m of members) {
-            let nm = this.Vtuff_name(m)
-            let mmk = Object.keys(m.sc)[0]
-            let sub = m.o().length
-            let rsc = { Vrow: 1, row: 'member', text: nm || mmk, wgt: 1 }
-            if (nm) rsc.tag = mmk
-            if (sub) rsc.sub = sub
-            let r = root.i(rsc)
-            r.c.member = m
-            if (members.length <= 3 && sub && sub <= 3) {
-                for (const k of m.o()) {
-                    let knm = this.Vtuff_name(k)
-                    let kmk = Object.keys(k.sc)[0]
-                    let ksc = { Vrow: 1, row: 'sub', text: knm || kmk, wgt: 1 }
-                    if (knm && kmk !== mmk) ksc.tag = kmk
-                    let ksub = k.o().length
-                    if (ksub) ksc.sub = ksub
-                    let sr = root.i(ksc)
-                    sr.c.member = k
-                }
-            }
-        }
-    } else {
+        this.Vtuff_keyrows(root, members, this.Vtuff_skips(members, kinds))
+    } else if (members.length > 5) {
         this.Vtuff_keyrows(root, members, [])
     }
-    let dip = root.i({ Vrow: 1, row: 'dip', text: '/*' + members.length, wgt: 1 })
-    dip.c.members = members
+    this.Vtuff_dip_row(root, members)
 
 //#region bamboo — 🎋 the schematic gets jointed, and the fold reads its surroundings (Se)
 // ══ Vtuff_bamboo — the same distilled rows, grown into a jointed STALK ═══════════════════════════
@@ -1777,71 +1822,24 @@ Vtuff_bamboo_on():
     return false
 
 Vtuff_bamboo(root, members, src):
-    let kinds = {}
-    for (const m of members) kinds[Object.keys(m.sc)[0]] = 1
+    let kinds = this.Vtuff_kinds(members)
     let homo = Object.keys(kinds).length === 1
-    let tag = src.c.fold_kind || Object.keys(kinds)[0]
-    let name = ''
-    if (!src.c.gang) {
-        tag = Object.keys(src.sc)[0]
-        name = this.Vtuff_name(src)
-    }
     // crown — identity, the first joint, always present
     let crown = root.i({ Vseg: 1, seg: 'crown', joint: 0 })
-    let csc = { Vrow: 1, row: 'title', text: (name ? name + '  ' : '') + '×' + members.length, wgt: 2, tag: tag }
-    if (name) csc.nk = this.Vtuff_namekey(src)
-    crown.i(csc)
+    this.Vtuff_title_row(crown, members, src, kinds)
     // cane — the members (only when there ARE member rows: a mixed big family speaks only in leaf)
     if (homo || members.length <= 5) {
         let cane = root.i({ Vseg: 1, seg: 'cane', joint: 1 })
-        if (homo) {
-            let r = cane.i({ Vrow: 1, row: 'list', text: '', wgt: 1 })
-            let shown = members
-            if (members.length > 25) shown = members.slice(0, 25)
-            for (const m of shown) {
-                let bsc = { Vbit: 1, text: this.Vtuff_member_bit(m), n: 1 }
-                let bsub = m.o().length
-                if (bsub) bsc.sub = bsub
-                let b = r.i(bsc)
-                b.c.member = m
-            }
-            if (members.length > shown.length) r.i({ Vbit: 1, text: '+' + (members.length - shown.length), n: 0 })
-        } else {
-            for (const m of members) {
-                let nm = this.Vtuff_name(m)
-                let mmk = Object.keys(m.sc)[0]
-                let sub = m.o().length
-                let rsc = { Vrow: 1, row: 'member', text: nm || mmk, wgt: 1 }
-                if (nm) rsc.tag = mmk
-                if (sub) rsc.sub = sub
-                let r = cane.i(rsc)
-                r.c.member = m
-                if (members.length <= 3 && sub && sub <= 3) {
-                    for (const k of m.o()) {
-                        let knm = this.Vtuff_name(k)
-                        let kmk = Object.keys(k.sc)[0]
-                        let ksc = { Vrow: 1, row: 'sub', text: knm || kmk, wgt: 1 }
-                        if (knm && kmk !== mmk) ksc.tag = kmk
-                        let ksub = k.o().length
-                        if (ksub) ksc.sub = ksub
-                        let sr = cane.i(ksc)
-                        sr.c.member = k
-                    }
-                }
-            }
-        }
+        this.Vtuff_member_rows(cane, members, kinds)
     }
-    // leaf — shared facts + spreads (reuse the flat distiller's keyrows into this segment)
+    // leaf — shared facts + spreads (the same keyrows the flat stalk speaks, into this segment;
+    //  a mixed small family keeps its leaf here — the cane already spoke the members, but a
+    //   stalk reads by BANDS, so the leaf still says what they share)
     let leaf = root.i({ Vseg: 1, seg: 'leaf', joint: 2 })
-    if (homo) {
-        this.Vtuff_keyrows(leaf, members, [Object.keys(kinds)[0], this.Vtuff_namekey(members[0])])
-    } else {
-        this.Vtuff_keyrows(leaf, members, [])
-    }
+    this.Vtuff_keyrows(leaf, members, this.Vtuff_skips(members, kinds))
     // shoot — the /*N surf handle, the last joint, always present
     let shoot = root.i({ Vseg: 1, seg: 'shoot', joint: 3 })
-    let bdip = shoot.i({ Vrow: 1, row: 'dip', text: '/*' + members.length, wgt: 1 })
-    bdip.c.members = members
+    this.Vtuff_dip_row(shoot, members)
 
 // Vtuff_world — walk c.up to the enclosing w, for Se's neighbourhood read.  Capped so a detached
 //  or mid-mint tree can't spin.

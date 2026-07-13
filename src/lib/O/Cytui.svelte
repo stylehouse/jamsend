@@ -1026,18 +1026,36 @@
             const root = build.call(H, src)
             if (!root) return []
             const out: VtuffDesc[] = []
+            let memberTag: string | undefined   // the enclosing member row's kind, for sub-row tag hushing
             for (const r of root.o() as any[]) {
                 const kind = (r.sc.row as string) ?? 'fact'
                 const d: VtuffDesc = { text: String(r.sc.text ?? ''), kind, wgt: wgt_norm(r.sc.wgt, kind) }
-                if (r.sc.k != null) {
+                if (r.sc.k != null && (kind === 'fact' || kind === 'spread')) {
                     // a TYPED claim (the Stuffing-shape cut): carry the k/v pair and compose the
                     //  display right here — this IS paint, the one place a string may be born.
+                    //   (a list row carries a k too — which key its chips are values of — but its
+                    //    text stays empty: the chips speak)
                     d.key = String(r.sc.k)
                     if (r.sc.v != null) { d.val = String(r.sc.v); d.text = `${d.key}: ${d.val}` }
                     else if (kind === 'fact' && r.sc.n) { d.pn = Number(r.sc.n); d.text = `${d.key} ×${d.pn}` }
                     else d.text = d.key
+                } else if (r.sc.text == null) {
+                    // a TYPED presentation row (the 1b cut): compose its display here too.  A row
+                    //  that DOES carry text is an old gen's cached tree (HMR skew) and keeps its
+                    //   baked words — enrich, never require.
+                    if (kind === 'title') d.text = `${r.sc.name ? r.sc.name + '  ' : ''}×${root.sc.n ?? ''}`
+                    else if (kind === 'member' || kind === 'sub') d.text = String(r.sc.name ?? r.sc.tag ?? '')
+                    else if (kind === 'dip') d.text = `/*${root.sc.n ?? ''}`
                 }
                 if (r.sc.tag) d.tag = String(r.sc.tag)
+                // typed member|sub rows carry their kind-tag ALWAYS (honest data); the small chip
+                //  BESIDE the text is paint's call: drawn only when a name rides (else the tag IS
+                //   the text) and, for a sub, only when its kind differs from its member's (don't
+                //    re-say the parent).
+                if (r.sc.text == null) {
+                    if (kind === 'member') { memberTag = d.tag; if (!r.sc.name) d.tag = undefined }
+                    else if (kind === 'sub' && (!r.sc.name || d.tag === memberTag)) d.tag = undefined
+                }
                 if (r.sc.nk) d.nk = String(r.sc.nk)
                 if (r.sc.sub) d.sub = r.sc.sub as number
                 if (r.c.member) { d.member = r.c.member; d.color = kind_tint(Object.keys(r.c.member.sc ?? {})[0]) }
