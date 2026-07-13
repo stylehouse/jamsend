@@ -398,6 +398,39 @@ Six shapes are ALREADY in the bench (flock/mix/motley/gradient/groves/edges — 
      proven by `runner_shot`, never a fixture.  Add a shape by the `[testing-is-story-books]` +
       `[see-assertion-layer]` rules (a CHECK run then manual `%see` install, never a CredRunner ACCEPT).
 
+## The lexicon — every load-bearing word, formally introduced (the human's ask, 2026-07-13)
+
+New words get a line HERE when they enter the system; an ill-defined word is a bug.
+
+- **claim** — one `key:val` a particle asserts about itself (`%Relic,metal:brass` claims its metal).
+- **family** — who belongs together: the fold unit (a gang of one mainkey; sibling panes of one
+   kind; same-mainkey bare loners merged).
+- **fold / gang / pane / bare** — the crush's outcomes: a GANG of loose same-mainkey leaves behind
+   one rep; a container folded as its own PANE; a leaf left standing BARE.  `c.stuff` marks a fold.
+- **census** — the count of what stands (the `%cell`/`%bare` rows).  // < "census" ALSO names the
+   grasp's claim-tally (the loudness corpus) — two senses, one word; rename candidate.
+- **grasp** — the Se pass that weighs every claim against the neighbours and voices each fold into
+   the sphere (`the:name|n|trait|family` on its D).
+- **loudness** — a claim's earned type-size: how much it sets its cell apart.  Shared-by-all ≈ 20
+   (recedes); unique ≈ 95 (towers); 96–100 reserved for identity, so a fact never out-shouts the
+    name of the thing it describes.
+- **%Loud** — a family's top-4 loudest claims: THE PROPERTIES NOT ON EVERY ROW (the differentia).
+   // < the word is opaque — the human may rename.
+- **trait** — a cell's single loudest claim (its epithet); `Se:scape`'s trait = the loudest cell's.
+- **region** — the grasp's coarse grouping: each cell's value on the widest-SHARED key.
+- **axis / order_by** — the widest-SPREAD key: what orders a family's members (`from`/`to` ends).
+- **name** — // < TODAY an English key list (`Voro_naming_keys`, one home since 2026-07-13).  The
+   designed rule is the BIJECTIVE KEY — the key whose values tell members apart exactly 1:1 —
+    completing the data-discovered trio: region = widest-shared, axis = widest-spread, name =
+     bijective.  One philosophy, no English.
+- **model** — ALL data representation by Voro (the ruling); `w:Voronoiology` is its snapped face.
+- **reading** — one row of testimony the machine writes about what it saw; mainkey = how it knows.
+- **%Seem / %Se** — the memory organ (a live Selection off-snap) / a reading that REQUIRED memory
+   (phase-level provenance: `%Se:input|scape|census|drift`).
+- **weather / %Se:input** — arrivals|departures of the data itself, openness-blind.
+- **openness** — the zoom state (crush level, pops).  Moves ON the remembered things (an
+   annotation), never decides WHO is remembered (the born|died reframe).
+
 ## The Se process — %Seem the organ, %Se the reading (the doctrine, and how to build with it)
 
 Vocabulary, binding across docs (`Radio_todo.md §9` says "the Se" for the organ — same thing,
