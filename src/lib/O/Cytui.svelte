@@ -1137,7 +1137,8 @@
                       walls: VWall[], spokes: { d: string, hue: string }[], stats: VStat[],
                       grad?: { cx: number, cy: number, r: number, hue: string },
                       dip?: { x: number, y: number, text: string },
-                      hid?: { x: number, y: number, n: number } }
+                      hid?: { x: number, y: number, n: number },
+                      com?: { x: number, y: number, n: number } }
     let vsubs = $state<VSubPane[]>([])
     let sub_on_ids = new Set<string>()   // panes whose Stuffing is dimmed under sub-cells
     let subgraph_pref = $state<boolean | null>(null)
@@ -1424,7 +1425,17 @@
     //         number.  Everything crowded out of this beat's glass is counted, and the
     //          count rides the +N fold mark — annotated, never silent.
     function subgraph_build(c: VCell, descs: VtuffDesc[], tint: string,
-                            kind: string | undefined): VSubPane | null {
+                            kind: string | undefined, quiet?: Set<string>): VSubPane | null {
+        // the HUSH (the 2026-07-14 steer): claims this cell's whole region states ride the
+        //  region's river instead — drop them here and LEDGER the count (»N, distinct from
+        //   the +N crowd-out: +N means "no room this beat", »N means "the river says it").
+        //    Nothing is silently gone; compression wrt the neighbours, honestly annotated.
+        let com = 0
+        if (quiet?.size) descs = descs.filter(d => {
+            const id = claim_id(d)
+            if (id && quiet.has(id)) { com++; return false }
+            return true
+        })
         const { keyed, members } = subgraph_tuples(descs)
         const total = keyed.reduce((s, g) => s + 1 + g.leaves.length, 0) + members.length
         const td = descs.find(d => d.kind === 'title')
@@ -1636,6 +1647,13 @@
             if (chd) pane.dip = { x: chd[1] - 8, y: pb - 8, text: dd.text }
         }
         if (hid > 0) pane.hid = hid_mark(c.inset, hid)
+        // the »N ledger: N claims left for the region's river (the promotion's receipt) —
+        //  sits opposite the +N crowd-out mark, same low band, its own quiet green.
+        if (com > 0) {
+            const chd = poly_chord(c.inset, pb - 12)
+            pane.com = chd ? { x: chd[1] - 8, y: pb - 18, n: com }
+                           : { x: c.acx, y: pb - 18, n: com }
+        }
         return pane
     }
 
@@ -2443,12 +2461,17 @@
     //   The polyline (not the Bézier) is the ruler here: close enough to the drawn
     //    river for the eye, and trivial to arc-length-sample.  Angles are clamped
     //     to upright-ish so the trait stays readable (never upside down).
-    function river_chips(seq: {x:number,y:number}[], closed: boolean, text: string) {
+    //  Takes the region's whole SPEECH — the trait first, then every promoted shared claim —
+    //   and cycles it station by station, each chip Wes-Wilson-sized to fill its station
+    //    (short words tower, long claims stay legible at the floor): the river SAYS what the
+    //     member cells no longer repeat.
+    function river_chips(seq: {x:number,y:number}[], closed: boolean, texts: string[]) {
         const RIVER_CHIP_STEP = 110   // px between chips along the trail
-        const chips: { x: number, y: number, ang: number, text: string }[] = []
-        if (!text || seq.length < 2) return chips
+        const chips: { x: number, y: number, ang: number, text: string, fs: number }[] = []
+        if (!texts.length || seq.length < 2) return chips
         const legs = closed ? seq.length : seq.length - 1
         let carry = RIVER_CHIP_STEP / 2   // half a step in, so a lone leg still gets one
+        let ti = 0
         for (let i = 0; i < legs; i++) {
             const a = seq[i], b = seq[(i + 1) % seq.length]
             const dx = b.x - a.x, dy = b.y - a.y
@@ -2458,11 +2481,23 @@
             if (ang > 90) ang -= 180; else if (ang < -90) ang += 180   // keep the text upright-ish
             for (let s = carry; s < len; s += RIVER_CHIP_STEP) {
                 const t = s / len
-                chips.push({ x: a.x + dx * t, y: a.y + dy * t, ang, text })
+                const text = texts[ti++ % texts.length]
+                // fill ~80% of the station with the word — the Wes-Wilson stretch, clamped lovely
+                const fs = Math.max(9, Math.min(22, (RIVER_CHIP_STEP * 0.8) / (GLY * Math.max(2, text.length))))
+                chips.push({ x: a.x + dx * t, y: a.y + dy * t, ang, text, fs })
             }
             carry = RIVER_CHIP_STEP - ((len - carry) % RIVER_CHIP_STEP)
         }
         return chips
+    }
+
+    // a fact desc's claim identity — the (k,v) pair as one string key, matching between the
+    //  promotion pre-pass (which claims does EVERY member pane state?) and the ▦ quieting
+    //   (drop exactly those from the cell).  Typed descs only: an untyped fact (old gen)
+    //    never participates — enrich, never require.
+    function claim_id(d: VtuffDesc): string | null {
+        if (d.kind !== 'fact' || d.key == null) return null
+        return d.key + '' + (d.val ?? '×' + (d.pn ?? ''))
     }
 
     // the family's shared-trait value — the chip text.  Reach the grasp's `the:family`
@@ -2651,6 +2686,45 @@
         }
         vfams = fams
 
+        // ── the desc pre-pass: every pane's rows read ONCE, shared by the promotion
+        //  (the regroup face below asks "what does EVERY member state?") and the ▦
+        //   sub-graph pass (which draws them).  Panes with fold structure normalise
+        //    their Vtuffing; a loner pane speaks its own sc the same grammar — typed
+        //     k/v on its facts, so a popped member's claims promote like anyone's.
+        const descmap = new Map<string, { descs: VtuffDesc[], tint: string, fkind?: string }>()
+        if (subgraph_on && voronoi_on) {
+            for (const c of L.cells) {
+                const src = node_src.get(c.id) as any
+                if (src?.c?.gang || src?.c?.stuff) {
+                    const descs = vtuff_rows(src)
+                    if (descs.length) {
+                        const fkind = (src?.c?.fold_kind ?? (src?.sc && Object.keys(src.sc)[0])) as string | undefined
+                        descmap.set(c.id, { descs, tint: kind_tint(fkind) ?? '#9ab', fkind })
+                        continue
+                    }
+                }
+                if (src?.sc) {
+                    const mk = Object.keys(src.sc)[0]
+                    if (mk) {
+                        const v = src.sc[mk]
+                        const nm = (v !== 1 && v != null) ? String(v) : name_ts(src)
+                        const nk0 = namekey_ts(src)
+                        const descs: VtuffDesc[] = [{ text: nm, kind: 'title', tag: mk,
+                                                      nk: nm ? nk0 : undefined }]
+                        for (const [k, kv] of Object.entries(src.sc)) {
+                            if (k === mk || (nm !== '' && k === nk0)) continue
+                            descs.push(kv === 1 ? { text: k, kind: 'fact', key: k }
+                                                : { text: `${k}: ${kv}`, kind: 'fact', key: k, val: String(kv) })
+                        }
+                        descmap.set(c.id, { descs, tint: kind_tint(mk) ?? '#9ab' })
+                    }
+                }
+            }
+        }
+        // which claims each cell may hush this beat — filled by the promotion below,
+        //  consumed by the ▦ pass; a cell not in the map quiets nothing.
+        const quiet_map = new Map<string, Set<string>>()
+
         // ── ▧ the regroup face (Slice C + D): washes AND rivers, one grouping ─────
         //  group the cells by the grasp's `the:family` (region_of, null-safe) ONCE,
         //   then draw two things per family from the same members so they share a
@@ -2703,8 +2777,41 @@
                     if (d) {
                         const shape = letter_of(seq, closed)
                         const trait = family_trait(members, rid)
+                        // THE PROMOTION (the 2026-07-14 steer): a claim EVERY member pane
+                        //  states is the REGION's story, not any one cell's — say it once,
+                        //   big, along the river, and hush it in the members (quiet_map →
+                        //    the ▦ pass folds it behind the »N ledger).  Strict ∀ (every
+                        //     member, typed claims only); the region-bucket claim itself
+                        //      counts as promoted — the trait chip IS its promotion.
+                        //       Nothing vanishes: cells mark »N, the river says the words.
+                        const texts = [trait]
+                        if (descmap.size) {
+                            let shared: Map<string, string> | null = null
+                            let all = true
+                            for (const m of members) {
+                                const dm = descmap.get(m.id)
+                                if (!dm) { all = false; break }
+                                const cm = new Map<string, string>()
+                                for (const dd of dm.descs) {
+                                    const id = claim_id(dd)
+                                    if (id) cm.set(id, dd.text)
+                                }
+                                if (!shared) shared = cm
+                                else for (const id of [...shared.keys()]) if (!cm.has(id)) shared.delete(id)
+                                if (!shared.size) break
+                            }
+                            if (all && shared?.size) {
+                                const quiet = new Set<string>()
+                                for (const [id, text] of shared) {
+                                    quiet.add(id)
+                                    const val = id.slice(id.indexOf('') + 1)
+                                    if (text !== trait && val !== rid) texts.push(text)
+                                }
+                                for (const m of members) quiet_map.set(m.id, quiet)
+                            }
+                        }
                         rivs.push({ id: `riv:${rid}`, d, color, shape,
-                                    chips: river_chips(seq, closed, trait) })
+                                    chips: river_chips(seq, closed, texts) })
                     }
                 }
             }
@@ -2715,12 +2822,14 @@
         //  gets a river line when the census changes, and it speaks the shape mix so a
         //   glance at op:'why' says what letterforms the scape drew this beat
         {
-            const sig = rivs.length + ':' + rivs.map(r => r.shape).join('')
+            let promoted = 0
+            for (const q of new Set(quiet_map.values())) promoted += q.size
+            const sig = rivs.length + ':' + rivs.map(r => r.shape).join('') + ':' + promoted
             if (sig !== river_sig) {
                 river_sig = sig
                 const shapes: Record<string, number> = {}
                 for (const r of rivs) shapes[r.shape] = (shapes[r.shape] ?? 0) + 1
-                vlog('river', { fams: regs.length, arcs: rivs.length, shapes })
+                vlog('river', { fams: regs.length, arcs: rivs.length, shapes, promoted })
             }
         }
 
@@ -2736,34 +2845,12 @@
             const subs: VSubPane[] = []
             const next = new Set<string>()
             for (const c of L.cells) {
-                const src = node_src.get(c.id) as any
-                let pane: VSubPane | null = null
-                if (src?.c?.gang || src?.c?.stuff) {
-                    const descs = vtuff_rows(src)
-                    if (descs.length) {
-                        const fkind = (src?.c?.fold_kind ?? (src?.sc && Object.keys(src.sc)[0])) as string | undefined
-                        pane = subgraph_build(c, descs, kind_tint(fkind) ?? '#9ab', fkind)
-                    }
-                }
-                // a loner pane — a particle with no fold structure (a beat-wrangler req, a %see, a popped tiny).
-                //  it speaks the grammar too, and speaks ALL of it: know nothing about the data, no key special.
-                //   the mainkey statement is the nucleus; every other sc fact rides as its own keyed region.
-                //   a small cell degrades to the statement + the +N fold mark, like any other pane.
-                if (!pane && src?.sc) {
-                    const mk = Object.keys(src.sc)[0]
-                    if (mk) {
-                        const v = src.sc[mk]
-                        const nm = (v !== 1 && v != null) ? String(v) : name_ts(src)
-                        const nk0 = namekey_ts(src)
-                        const descs: VtuffDesc[] = [{ text: nm, kind: 'title', tag: mk,
-                                                      nk: nm ? nk0 : undefined }]
-                        for (const [k, kv] of Object.entries(src.sc)) {
-                            if (k === mk || (nm !== '' && k === nk0)) continue
-                            descs.push({ text: kv === 1 ? k : `${k}: ${kv}`, kind: 'fact' })
-                        }
-                        pane = subgraph_build(c, descs, kind_tint(mk) ?? '#9ab', undefined)
-                    }
-                }
+                // the pre-pass already read every pane (fold|gang via its Vtuffing, a loner
+                //  via its own sc — same grammar, no key special); here each cell just draws,
+                //   hushing the claims its region's river now speaks for it (quiet_map).
+                const dm = descmap.get(c.id)
+                if (!dm) continue
+                const pane = subgraph_build(c, dm.descs, dm.tint, dm.fkind, quiet_map.get(c.id))
                 if (!pane) continue
                 next.add(c.id)
                 subs.push(pane)
@@ -3386,6 +3473,32 @@
         //    fixture).  top_House.c.cy is per-tab + never snapped (a live object belongs only in .c).
         try { (H.top_House().c as any).cy = cy } catch { /* no House root yet — a shot just reports none */ }
 
+        // the remote FACE-ARM (runner_shot --arm → LiesFunk op:'face'): set this tab's ◈/▧/▦
+        //  prefs over the ask rails — the stashes are per-tab, so before this a headless caller
+        //   could never SEE a face nobody armed here.  Same writes as the toggles (pref + stash
+        //    + repaint), SET not flip; answers the resulting gate so the caller knows what it got.
+        try {
+            (H.top_House().c as any).cy_face = (f: any) => {
+                const sts = (H as any).stashed
+                if (f.voronoi != null) { voronoi_pref = !!f.voronoi; if (sts) sts.Cyto_voronoi = voronoi_pref }
+                if (f.regions != null) {
+                    region_pref = !!f.regions
+                    if (sts) sts.Cyto_regions = region_pref
+                    if (!region_pref) { vregions = []; vrivers = [] }
+                }
+                if (f.subgraph != null) {
+                    subgraph_pref = !!f.subgraph
+                    if (sts) sts.Cyto_subgraph = subgraph_pref
+                    if (!subgraph_pref) {
+                        for (const id of sub_on_ids) { const mel = overlays.get(id); if (mel) mel.style.opacity = '' }
+                        sub_on_ids = new Set(); vsubs = []
+                    }
+                }
+                voronoi_soon()
+                return { voronoi: voronoi_on, regions: region_on, subgraph: subgraph_on }
+            }
+        } catch { /* no House root yet */ }
+
         // ── overlay visibility gating ────────────────────────────────
         // Every motion — a node drag, a background pan, a scroll-to-zoom,
         // a layout wave — drives the SAME live-repaint loop (drag_frame):
@@ -3547,7 +3660,7 @@
                          "lined up tuples", higher opacity than the bed so they read. -->
                     {#each river.chips as chip, ci (ci)}
                         <text class="cytui-river-chip" x={chip.x.toFixed(1)} y={chip.y.toFixed(1)}
-                            fill={river.color} text-anchor="middle"
+                            fill={river.color} text-anchor="middle" font-size="{chip.fs}px"
                             transform={`rotate(${chip.ang.toFixed(1)} ${chip.x.toFixed(1)} ${chip.y.toFixed(1)})`}>{chip.text}</text>
                     {/each}
                 {/each}
@@ -3626,6 +3739,11 @@
                             <text class="vsub-dip" x={sp.dip.x.toFixed(1)} y={sp.dip.y.toFixed(1)}
                                   text-anchor="end" role="button"
                                   onclick={() => micro_click(sp.id)}>{sp.dip.text}</text>
+                        {/if}
+                        {#if sp.com}
+                            <!-- »N: this pane's region-shared claims ride the river now -->
+                            <text class="vsub-com" x={sp.com.x.toFixed(1)} y={sp.com.y.toFixed(1)}
+                                  text-anchor="end">»{sp.com.n}</text>
                         {/if}
                         {#if sp.hid}
                             <text class="vsub-hid" x={sp.hid.x.toFixed(1)} y={sp.hid.y.toFixed(1)}
@@ -3790,6 +3908,8 @@
 /* the annotated fold: +N statements didn't fit this beat's glass (the Stuffing and
    the /*N dig still hold everything) — a mark, one day a door */
 .cytui-subgraph .vsub-hid { fill: #8a7fc0; font-size: 9px; opacity: 0.8; }
+/* »N — the promotion's receipt: these claims moved OUT to the region's river */
+.cytui-subgraph .vsub-com { fill: #7fb08a; font-size: 9px; opacity: 0.85; }
 .cytui-bar button.v-toggle.on {
     color: #7ab0d4;
     border-color: #2a3a4a;

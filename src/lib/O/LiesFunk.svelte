@@ -2412,6 +2412,14 @@ await M.eatfunc({
                         result = { svg, w: wpx, h: hpx,
                             paths: el.querySelectorAll('path').length, labels: el.querySelectorAll('text').length }
                     }
+                } else if (op === 'face') {
+                    // the remote FACE-ARM (runner_shot --arm): flip this tab's ◈/▧/▦ prefs so a
+                    //  headless caller can SEE a face nobody armed here — the prefs are per-tab
+                    //   stashes, unreachable from outside before this.  The hook is Cytui's
+                    //    (top_House.c.cy_face, exposed beside .cy); an old tab says so honestly.
+                    const fn = (H.top_House().c as any).cy_face
+                    if (typeof fn !== 'function') { ok = false; result = { error: 'no cy_face hook — this tab runs an old Cytui; reload it' } }
+                    else result = fn((ask as any).faces ?? { voronoi: 1, regions: 1, subgraph: 1 })
                 } else { ok = false; result = { error: `unknown op ${op}` } }
             } catch (e) { ok = false; result = { error: String((e as Error).message) } }
             const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any

@@ -53,7 +53,9 @@ const addr   = `runshot-${stamp}`   // ephemeral — the reply comes back corr-r
 
 const why = flags.has('--why')                          // telemetry only — no png
 const svg = flags.has('--svg')                          // the voronoi SVG layer, standalone
-const ask = why ? { op: 'why' } : svg ? { op: 'svg' } : { op: 'shot', full: !flags.has('--viewport') }
+const arm = flags.has('--arm')                          // remote face-arm: set the tab's ◈/▧/▦ prefs
+const ask = arm ? { op: 'face', faces: { voronoi: 1, regions: 1, subgraph: 1 } }
+          : why ? { op: 'why' } : svg ? { op: 'svg' } : { op: 'shot', full: !flags.has('--viewport') }
 if (kv.scale) ask.scale = Number(kv.scale)
 if (kv.w)     ask.maxWidth = Number(kv.w)
 if (kv.h)     ask.maxHeight = Number(kv.h)
@@ -99,6 +101,7 @@ if (reply.control !== 'runner_ack' || reply.ok === false) {
     process.exit(1)
 }
 const r = reply.result || {}
+if (arm) { console.log(`◈ faces armed: ${JSON.stringify(r)}`); process.exit(0) }
 if (why) { printRender(r); process.exit(0) }   // the whole reply IS the telemetry
 if (svg) {
     if (!r.svg) { console.error(`✗ svg: runner returned no svg (${JSON.stringify(r)})`); process.exit(1) }
