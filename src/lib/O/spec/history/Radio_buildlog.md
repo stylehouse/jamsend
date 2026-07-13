@@ -5,6 +5,28 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
   The living state, roadmap and design are in Radio_todo.md — read THAT; come here only for
    the archaeology of how a thing landed. Newest first.
 
+**2026-07-13 (late evening) — C1: cursors (`%Dogear`), LIVE-GREEN ×2.** The human's steer: `%Cursor`/`%cursor`
+ are taken (LiesKeep focus-history + LangCurse Interest), so "try `%lematch` — make it like that." A `%Dogear`
+  is a linear spine of `%curs` match-segments, each storing ONE `o()`-query; `Cursor_resolve(dog, root)` re-finds
+   each level from a root down and lands on the leaf OR returns a CLEAN-fail verdict `{ok:false, depth, missing, at}`
+    — no throw (the seam C2's `%Renamed` heal plugs into). Primitive `Cursor_*` in `Ghost/M/Heist.g`; Book
+     **MusuCursor** in `Heistation.g`. Two design wins: (1) KEY-AGNOSTIC — a level pins by whatever keys its node
+      wears (`id`/`randomic`/`shuffle`), so the human's same-turn Cloud-model redirect (drop `randomic`, partition
+       by `shuffle|ctime|mtime` every ~20) slides under it untouched; (2) snap-safe wildcard — the presence TYPE
+        rides as a `wild:<Type>` value (re-inflated to `{Type:1}` at resolve), literal pins flat, dodging the
+         `Cloud:"1"` exactly() footgun. Three sees: lands-on-leaf (depth 3), lands-on-a-level (depth 2, partial),
+          clean-fail (knock the record out → fails at that level, reports the missing query). ADVERSARIAL review
+           found + fixed a real soft spot: see #3's "no crash" degraded to a SILENT un-latch on an upstream throw
+            (a `%see` cannot detect its own absence) → a `reached:step_4` marker gives the recorded snap-diff teeth;
+             see #2 tightened to assert the landed node is a `%Cloud`. RUNNER-WEDGE DETOUR: an in-session
+              `ghost-compile` HMR of the big `Heistation.g` stalled 49de's think loop (it engaged a Book but never
+               minted a Run — `run:null`, confirmed by a known-green MusuDoor control also going null) and 3c52 was
+                begun-wedged; both cleared only on a browser-tab reload (human action), after which a thaw run + the
+                 real run recorded green (6/6, `caveat:0`), accept, green ×2. `Credulate` pins `Heistation~g1
+                  @bbc3c8cc` + `Heist~g1`. D1 was ALSO re-posed for the human this session (it IS Invites & Grants —
+                   part a swaps the demo grant-toggle for the live `Swarm_pier_live` verdict MusuHeist already runs;
+                    one revoke scene, attended) — captured in Radio_todo §0.
+
 **2026-07-13 (evening) — D1 part b: the anti-klepto SABOTAGE wall (MusuDoor), LIVE-GREEN ×2.** With M2
  live-gated, split D1 and built **part b** — the §12 heart, the door the recipient stands. Book **MusuDoor**
   (fork of MusuVend, appended to `Ghost/Story/Heistation.g`): a malicious origin HAND-CRAFTS a magazine card

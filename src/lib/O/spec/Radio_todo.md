@@ -23,8 +23,7 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
-**C1 — CURSORS (`%Dogear`): BUILT + adversarially-reviewed + LocalGen-green; LIVE-GATE BLOCKED (both
- :9091 runners wedged 2026-07-13 — need a browser-tab reload).** New Book **MusuCursor**
+**C1 — CURSORS (`%Dogear`): LIVE-GREEN ×2 (2026-07-13; 6/6 steps, caveat:0).** New Book **MusuCursor**
   (`Ghost/Story/Heistation.g`, after MusuDoor) + the cursor primitive (`Cursor_*` in `Ghost/M/Heist.g`).
    The human's steer was to **model the cursor on `%lematch`**: a `%Dogear` is a linear spine of `%curs`
     match-segments, each storing ONE `o()`-query; `Cursor_resolve(dog, root)` re-finds each level from a
@@ -39,11 +38,13 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
              fixed a real soft spot — see #3's "no crash" degraded to a SILENT un-latch on an upstream throw,
               so a `reached:step_4` marker now gives the recorded snap-diff teeth (RED, not silent); see #2 also
                tightened to assert the landed node is a `%Cloud`. Compiles byte-clean (LocalGen 88271c +
-                ghost-compile `@bbc3c8cc` accepted). Registered Credence (`brand_new:1`) + Ality; toc seeded
-                 (6 lie steps). **The ONE remaining step is the live green ×2 recording** — blocked because both
-                  runners won't mint a Run (49de post-HMR think-stall; 3c52 begun-wedge on Peeroleum) and need a
-                   tab reload; a known-green **MusuDoor** control on 49de also returned `run:null`, isolating the
-                    fault to the runner, not the Book. Do NOT accept fixtures until a reloaded runner runs it green.
+                ghost-compile `@bbc3c8cc` accepted). Registered Credence + Ality. **LIVE-GREEN ×2 on the
+                 reloaded 49de runner** (6/6, `caveat:0`) — the snap shows both `%Dogear` spines
+                  (`Dogear,of:record-t1 → curs,Mag:Musica → curs,wild:Cloud,randomic:draw_one → curs,wild:Record,id:t1`),
+                   the knockout genuinely removed t1 from its cloud, and all three sees + `reached:step_2`/`step_4`
+                    latched. `Credulate` pins the fresh gen (`Heistation~g1 @bbc3c8cc`, `Heist~g1`). (The runners had
+                     wedged mid-session — 49de post-HMR think-stall, 3c52 begun-wedge — until a tab reload; lesson: an
+                      in-session `ghost-compile` HMR of a big ghost can stall a live runner's think loop.)
 
 **D1, re-posed (the human asked "what's it all for?" — and yes, it IS Invites & Grants).** "The door" is
  the SERVING side of a follow: your machine hands a follower content over Repli; the door is the per-pull
@@ -1364,7 +1365,7 @@ A %Cursor is a serialized STACK OF MATCHES — a descent path of o()-queries ({M
        %Map rel offsets — the Point re-anchoring problem class, solved once, deliberately.
  NOT a rebuild of Repli's inseq/pages — wire-level sequencing stays; a cursor is the MEANING-level
   position. Scope to magazine-follow first.
- **BUILT (C1, 2026-07-13 — modelled on `%lematch` per the human's steer; live-gate blocked, runners wedged):**
+ **BUILT + LIVE-GREEN ×2 (C1, 2026-07-13 — modelled on `%lematch` per the human's steer):**
   the serialized name is a `%Dogear` (the mainkeys `%Cursor`/`%cursor` are taken — LiesKeep focus-history +
    LangCurse Interest), a linear spine of `%curs` match-segments (one `o()`-query each). `Cursor_*` in
     `Ghost/M/Heist.g`: `Cursor_make(home, into, queries)` mints it, `Cursor_resolve(dog, root)` walks the
@@ -1372,7 +1373,7 @@ A %Cursor is a serialized STACK OF MATCHES — a descent path of o()-queries ({M
       the CLEAN-fail verdict is the exact seam C2's `%Renamed` heal plugs into. Snap-safe wildcard: the type
        rides as `wild:<Type>` (re-inflated to `{Type:1}`), literal pins flat, so it round-trips without the
         `Cloud:"1"` footgun and is KEY-AGNOSTIC (absorbs the §0 Cloud-model change). Proven by **MusuCursor**
-         (three sees: lands-on-leaf, lands-on-a-level, clean-fail). Live green ×2 recording OWED.
+         (three sees: lands-on-leaf, lands-on-a-level, clean-fail), LIVE-GREEN ×2.
 
 ### 12.4 The jobs ladder — little, Book-gated, mostly independent starts
 
@@ -1415,7 +1416,7 @@ Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the
                    Do NOT ship the sabotage see without a LIVE run — an unrun security assertion can be
                     vacuously green, the worst false-green; adversarially review AND live-gate it.
  **C — cursors**: C1 the %Dogear primitive + resolver (resolve | fail cleanly, own Book scenes) —
-  BUILT + reviewed + LocalGen-green as MusuCursor (§12.3), live green ×2 OWED (runners wedged 2026-07-13);
+  BUILT + LIVE-GREEN ×2 as MusuCursor (§12.3, 2026-07-13);
    C2 heal via recent %Renamed (rename mid-follow, the cursor heals, the heal noted — plugs into C1's clean-
     fail verdict); C3 cursor as follow-progress, berthed (survives reload — the resumable browse).
  **S — stimuli surfacing**: S2 the agenda bridge (a want the door accepted mints an %Errand on
@@ -1426,8 +1427,8 @@ Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the
   build AFTER the rungs give it real data.
  (P — the projected subHouse — PARKED as experiment material per the 12.1 ruling; do not build.)
  Dependencies: M1 ✓ (landed + live-recorded 2026-07-13); M2 ✓ (LIVE-GREEN ×2 2026-07-13); D1 part b ✓
-  (MusuDoor, the sabotage wall, LIVE-GREEN ×2 2026-07-13); C1 built + reviewed + LocalGen-green (MusuCursor,
-   2026-07-13) — live green ×2 OWED (both runners wedged, need a tab reload). **D1 part a** (harden the grant
+  (MusuDoor, the sabotage wall, LIVE-GREEN ×2 2026-07-13); C1 ✓ (MusuCursor cursors,
+   LIVE-GREEN ×2 2026-07-13). **D1 part a** (harden the grant
     toggle into the live Swarm_pier_live door — one revoke-mid-relationship scene, best folded into MusuHeist;
      reintroduces seal entropy, ATTENDED) is the remaining door rung; M4 needs M1 + M3; C2 needs M3 + C1;
       S3 needs D1 + M2 + S2; U needs M2 + C1.
