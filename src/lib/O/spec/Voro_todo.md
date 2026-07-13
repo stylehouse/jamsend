@@ -73,9 +73,11 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
             (D-spheres), never the model itself.  Kills by construction: the report/gather twin
              walks, the grasp-vs-model fact-walk divergence (the `'+9'` chrome chip tallied as a
               claim — found 2026-07-13), and Voronoiology's triple authorship.  The %Se choir the
-               merge leaves standing: `%Se:input|scape|census|drift|attention` — each phase an
-                honest reading off one Selection-backed memory (input = the leaf weather the grasp
-                 currently discards; attention = the radio's hand-flags folded into a Seem).
+               merge leaves standing: `%Se:input|scape|census|drift` — each phase an honest
+                reading off one Selection-backed memory (input = the leaf weather the grasp
+                 currently discards).  `%Se:attention` is STRUCK for now (the human, 2026-07-13):
+                  the radio is a half-baked v1 placeholder — the real shape is conveyor-ish (one
+                   end things get added to) and is to be led to GRADUALLY; don't formalize v1.
  - **④ Geometry folds into `Voro.g`.**  The pure maths (hull, clip, resample, PCA, river order,
     Catmull) folds into `Voro.g` — NOT a new `VoroGlass.ts` (the human decided AGAINST a .ts
      module).  A later wave; it will feel out the LangTiles parse-storm on closure-heavy raw JS.
