@@ -1,0 +1,37 @@
+Snap:H
+  H:MusuRecast,Run
+    A:MusuRecast
+      self,round=4	{"mung":["age"]}
+      w:MusuRecast
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          published:a,cards=3,clouds,goners=0
+        Peering,name:Origin,req=2,ok
+          Pier,pub:Follower,req=2,ok
+            Ud,pubkey:Follower
+            outbox
+              emit,type:repli_lines,seq,sent,body_hash:f324a8f01b0ca8fd6f4535e299b4d6a3c018004987943b531f8540a7cd875744,body_len=427,acked
+          active_transport,type:mock,open
+        Peering,name:Follower,req=3,ok
+          Pier,pub:Origin,req=2,ok
+            Ud,pubkey:Origin
+            inbox
+              req:unemit,seq,type:repli_lines,body_hash:f324a8f01b0ca8fd6f4535e299b4d6a3c018004987943b531f8540a7cd875744,body_len=427,done,to:repli_lines,finished
+          active_transport,type:mock,open
+        Library,pier:Origin
+          Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+          Record,id:t1,artist:Auteur,title:Meander Two,path:crate/a/Auteur - Meander Two.opus
+          Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+        Mag:Musica
+          Cloud,randomic:draw_a,created_at=1000
+            Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+            Record,id:t1,artist:Auteur,title:Meander Two,path:crate/a/Auteur - Meander Two.opus
+            Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+        Library,pier:Follower.mirror
+          Mag:Musica
+            Cloud,randomic:draw_a,created_at=1000
+              Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+              Record,id:t1,artist:Auteur,title:Meander Two,path:crate/a/Auteur - Meander Two.opus
+              Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus

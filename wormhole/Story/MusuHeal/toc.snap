@@ -4,8 +4,7 @@ story:MusuHeal
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.024
-      sample=0.024,at=1783944995
+    TimeTotal:beliefs,avg=0.023
       sample=0.024,at=1783944997
       sample=0.024,at=1783944997
       sample=0.024,at=1783944998
@@ -15,8 +14,8 @@ story:MusuHeal
       sample=0.024,at=1783945003
       sample=0.018,at=1783945011
       sample=0.032,at=1783945058
+      sample=0.015,at=1783970981
     TimeTotal:step,avg=0.003
-      sample=0.003,at=1783944995
       sample=0.003,at=1783944997
       sample=0.003,at=1783944997
       sample=0.003,at=1783944998
@@ -26,6 +25,7 @@ story:MusuHeal
       sample=0.003,at=1783945003
       sample=0.003,at=1783945011
       sample=0.005,at=1783945058
+      sample=0.002,at=1783970981
   step,dige:163e5b7b113d955a
   step=2,dige:ba40237fabd93675
   step=3,dige:28ab53121186c695

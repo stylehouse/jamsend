@@ -1532,3 +1532,462 @@ MusuResume_witness(w):
     //   object from the original), so a deWaft that aliased would flip this red rather than pass tautologically.
     let s = T.o({ resume: 1 })[0]
     if (s && +s.sc.ok === 1 && +s.sc.depth === 2 && s.sc.id === 't1' && +s.sc.independent === 1 && !T.oa({ see: 'the browse resumes across a reload — the re-decoded bookmark lands on the same record even after the original live tree is torn down' })) this.MusuResume_note(w, { see: 'the browse resumes across a reload — the re-decoded bookmark lands on the same record even after the original live tree is torn down' })
+
+// ══ MusuRename — M3: a RENAME MISSION mints %Renamed and the redirect RIDES THE PIPE ══════════════════════
+//  C2 (MusuHeal) proved the heal MECHANISM with hand-authored markers, no wire.  M3 closes the loop the
+//   §12.2 renames paragraph promises: a Pier that reorganises mints the redirect-fact as PART of the rename
+//    (Musica_rename — one gesture, never a rename without its marker), and the marker crosses to a follower
+//     through the SAME Repli pipe as the content, where a STALE cursor heals through it.  The wire is
+//      MusuVend's proven two-Pier loopback (Lake_link + Repli_offer husk + Repli_merge); what is NEW here is
+//       the composition — mission at the origin, redirect at the follower, heal over the mirror.
+//  TWO renames, deliberately: the markers must stay DISTINCT at the follower.  A %Renamed's default wire loc
+//   is ['Renamed'] alone ('key' is not id-ish), so without the repli_loc Renamed_mint stamps, the second
+//    marker would upsert onto the first and blur both redirects into one — see #5 pins that seam (the
+//     one-line regression: drop the repli_loc stamp in Renamed_mint).  Drop the mint from Musica_rename and
+//      #1 #2 #4 #5 all go red; drop the retitle-apply and #1 #3 go red — every see names its break.
+//  THE RETITLE IS AN IN-PLACE UPDATE ON THE WIRE: title is a merge PROP (the card locates by ['Record','id']),
+//   so the follower's card changes its name without forking a second card — see #3.  A rename of the LOC key
+//    itself (id) would cross as add-not-move (Musica_rename's `// <`) — missions stay on prop keys here.
+//  DETERMINISTIC + in-memory (no FSA no audio no Berth no entropy profile): runs on ANY runner, caveat:0.
+//   CONVENTION (Musu*): no Run_A_ recipe — the world MUST be named MusuRename.
+
+MusuRename(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuRename_drive,w,req
+        req%ok = 1
+
+MusuRename_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+MusuRename_note(w, sc):
+    let t = this.MusuRename_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+// MusuRename_drive — ONE scene per beat off step_n (Musu family style): setup (2), publish (3), settle (4),
+//  baseline cursors over the MIRROR (5), the rename mission at the origin (6), re-offer (7), settle (8),
+//   re-resolve (9).  The witness runs every pass so each %see fires the first pass its truth holds; frames
+//    settle over post_do between beats (the reliable Lake_link mock — offers merge before the next do()).
+async MusuRename_drive(w, req):
+    if (typeof this.Lake_link !== 'function' || typeof this.Peeroleum_send !== 'function') {
+        if (!this.MusuRename_T(w).oa({ skipped: 'no_transport' })) this.MusuRename_note(w, { skipped: 'no_transport' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuRename_setup(w)
+        if (n === 3) await this.MusuRename_publish(w)
+        if (n === 5) this.MusuRename_baseline(w)
+        if (n === 6) this.MusuRename_mission(w)
+        if (n === 7) await this.MusuRename_reoffer(w)
+        if (n === 9) this.MusuRename_reresolve(w)
+        if (n === 4 || n === 8) await this.MusuRename_pump(w)
+    }
+    this.MusuRename_witness(w)
+    await this.Musu_float(w)
+
+// MusuRename_setup — MusuVend's wiring: two Piers over the loopback, repli handlers armed, the origin shelf +
+//  its in-memory magazine, the follower's named mirror.  The grant stays ON throughout — the gate is
+//   MusuVend/MusuDoor's subject; here it is open plumbing so the mission is the only variable.
+async MusuRename_setup(w):
+    this.MusuRename_note(w, { reached: 'step_2' })
+    let link = await this.Lake_link(w, 'Origin', 'Follower')
+    w.c.tx = link[0]
+    w.c.rx = link[1]
+    this.Peeroleum_arm_whittle(w)
+    link[1].i({ Ud: 1, pubkey: 'Origin' })
+    link[0].i({ Ud: 1, pubkey: 'Follower' })
+    this.Repli_arm(w)
+    w.c.repli_mirror_pier = 'Follower.mirror'
+    this.Repli_register_rx(w, link[1])
+    let origin_lib = w.i({ Library: 1, pier: 'Origin' })
+    origin_lib.c.up = w
+    w.c.origin_lib = origin_lib
+    w.c.repli_src = origin_lib
+    this.Repli_register_caster(w, link[0], origin_lib)
+    let mag = w.i({ Mag: 'Musica' })
+    mag.c.up = w
+    w.c.origin_mag = mag
+    w.c.grants = { Follower: 1 }
+    w.c.repli_allow = (peer, at) => !!(w.c.grants && w.c.grants[peer])
+    this.Ra_seed(w, 'MusuRename')
+    w.c.pool = [
+        { id: 't0', artist: 'Auteur', title: 'Meander One', path: 'crate/a/Auteur - Meander One.opus' },
+        { id: 't1', artist: 'Bassbin', title: 'Low Draw', path: 'crate/b/Bassbin - Low Draw.opus' },
+        { id: 't2', artist: 'Choral', title: 'High Draw', path: 'crate/c/Choral - High Draw.opus' }
+    ]
+    w.c.set_up = 1
+
+// MusuRename_publish — one draw: the whole pool onto the origin shelf, folded into the magazine (Musica_fold —
+//  the one brain), offered whole to the follower (husk — payload-less cards cross in one frame).  The draw's
+//   randomic is seeded so the fixture is stable; the Book pins created_at.
+async MusuRename_publish(w):
+    let lib = w.c.origin_lib
+    for (const t of w.c.pool) {
+        let rec = lib.oai({ Record: 1, id: t.id })
+        rec.c.up = lib
+        rec.sc.artist = t.artist
+        rec.sc.title = t.title
+        rec.sc.path = t.path
+    }
+    let randomic = 'd' + this.Ra_rand(w, 1000000000).toString(36)
+    w.c.draw_randomic = randomic
+    await this.Musica_fold(w.c.origin_mag, lib, randomic, 1000)
+    let crossed = await this.Repli_offer(w, w.c.tx, 'Origin', 'Follower', w.c.origin_mag)
+    let row = { offered: 1, cards: this.Musica_cards(w.c.origin_mag).length }
+    if (crossed) { row.crossed = 1 }
+    this.MusuRename_note(w, row)
+
+// MusuRename_baseline — the FOLLOWER takes two positions in its own MIRROR, pinned by TITLE (the thing a
+//  browsing reader actually saw — and the thing the mission is about to move).  Both resolve cleanly with
+//   ZERO heals, so the after-rename heal is a genuine change and not "the cursor always heals".
+MusuRename_baseline(w):
+    this.MusuRename_note(w, { reached: 'step_5' })
+    let T = this.MusuRename_T(w)
+    let mir = this.Repli_mirror_lib(w)
+    let draw = w.c.draw_randomic
+    w.c.cur_low = this.Cursor_make(T, 'mirror-low', [{ Mag: 'Musica' }, { Cloud: 1, randomic: draw }, { Record: 1, title: 'Low Draw' }])
+    w.c.cur_high = this.Cursor_make(T, 'mirror-high', [{ Mag: 'Musica' }, { Cloud: 1, randomic: draw }, { Record: 1, title: 'High Draw' }])
+    let a = this.Cursor_resolve(w.c.cur_low, mir)
+    let b = this.Cursor_resolve(w.c.cur_high, mir)
+    let row = { baseline: 1 }
+    if (a.ok && !a.heals.length && a.landed) { row.low = a.landed.sc.id }
+    if (b.ok && !b.heals.length && b.landed) { row.high = b.landed.sc.id }
+    if (row.low === 't1' && row.high === 't2') { row.fresh = 1 }
+    this.MusuRename_note(w, row)
+
+// MusuRename_mission — the origin reorganises: TWO retitles, each ONE Musica_rename gesture (apply + mint,
+//  never separable).  Receipts pin what the mission read as `from` — the witness cross-checks the origin
+//   magazine actually wears the new names with the redirect-facts beside them.
+MusuRename_mission(w):
+    this.MusuRename_note(w, { reached: 'step_6' })
+    let r1 = this.Musica_rename(w.c.origin_mag, 't1', 'title', 'Low Tide', 5000)
+    let r2 = this.Musica_rename(w.c.origin_mag, 't2', 'title', 'High Tide', 5001)
+    if (r1) { this.MusuRename_note(w, { renamed: 't1', from: r1.from, to: 'Low Tide' }) }
+    if (r2) { this.MusuRename_note(w, { renamed: 't2', from: r2.from, to: 'High Tide' }) }
+
+// MusuRename_reoffer — the mission's delta rides the SAME pipe as the content: re-offer the whole magazine
+//  (Repli_offer ships every line; the merge upserts — the retitled cards update in place by their id loc, the
+//   markers arrive as fresh facts beside them).
+async MusuRename_reoffer(w):
+    let crossed = await this.Repli_offer(w, w.c.tx, 'Origin', 'Follower', w.c.origin_mag)
+    let row = { reoffered: 1 }
+    if (crossed) { row.crossed = 1 }
+    this.MusuRename_note(w, row)
+
+// MusuRename_reresolve — the follower's positions went STALE (the titles they pinned no longer exist); both
+//  heal through the REPLICATED markers and land on the retitled records, noting what they followed.  The
+//   mirror row pins the DATA the sees read: card count (no fork) and marker count (no blur).
+MusuRename_reresolve(w):
+    this.MusuRename_note(w, { reached: 'step_9' })
+    let mir = this.Repli_mirror_lib(w)
+    let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
+    let a = this.Cursor_resolve(w.c.cur_low, mir)
+    let row = { healed: 'low', depth: a.depth }
+    if (a.ok) { row.ok = 1 }
+    if (a.landed) { row.id = a.landed.sc.id; row.title = a.landed.sc.title }
+    if (a.heals.length) { row.from = a.heals[0].from; row.to = a.heals[0].to }
+    this.MusuRename_note(w, row)
+    let b = this.Cursor_resolve(w.c.cur_high, mir)
+    let row2 = { healed: 'high', depth: b.depth }
+    if (b.ok) { row2.ok = 1 }
+    if (b.landed) { row2.id = b.landed.sc.id; row2.title = b.landed.sc.title }
+    if (b.heals.length) { row2.from = b.heals[0].from; row2.to = b.heals[0].to }
+    this.MusuRename_note(w, row2)
+    let cloud = vmag ? vmag.o({ Cloud: 1 })[0] : null
+    let row3 = { mirror: 1 }
+    if (vmag) { row3.cards = this.Musica_cards(vmag).length }
+    if (cloud) { row3.marks = cloud.o({ Renamed: 1 }).length }
+    this.MusuRename_note(w, row3)
+
+async MusuRename_pump(w):
+    if (w.c.rx) { await w.c.rx.do() }
+
+// MusuRename_card — find a magazine card by id across every cloud (the flat catalog view).
+MusuRename_card(mag, id):
+    if (!mag) return null
+    for (const rec of this.Musica_cards(mag)) { if (rec.sc.id === id) return rec }
+    return null
+
+// ── the witness — %see gated on TRUTH not beat number, once-noticed under %testing (no commas no
+//  apostrophes, em-dash pauses).  Reads the origin magazine AND the follower's live mirror. ──
+MusuRename_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 3)) return
+    if (!w.c.set_up) return
+    let T = this.MusuRename_T(w)
+    let omag = w.c.origin_mag
+    let mir = this.Repli_mirror_lib(w)
+    let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
+    let vcloud = vmag ? vmag.o({ Cloud: 1 })[0] : null
+    // #1 THE MISSION IS ONE GESTURE: the origin card wears its new title AND the redirect-fact sits beside it
+    //  in the same cloud with the exact from/to the receipt pinned.  Breakable two ways — drop the mint inside
+    //   Musica_rename (marker gone) or drop the apply (title unmoved); either flips this red.
+    let oc1 = this.MusuRename_card(omag, 't1')
+    let ocloud = omag ? omag.o({ Cloud: 1 })[0] : null
+    let omark = ocloud ? ocloud.o({ Renamed: 1, key: 'title', from: 'Low Draw' })[0] : null
+    let one_gesture = oc1 && oc1.sc.title === 'Low Tide' && omark && omark.sc.to === 'Low Tide' && T.oa({ renamed: 't1' })
+    if (one_gesture && !T.oa({ see: 'the rename mission is one gesture — the origin retitle laid its redirect fact beside the card in the same stroke' })) this.MusuRename_note(w, { see: 'the rename mission is one gesture — the origin retitle laid its redirect fact beside the card in the same stroke' })
+    // #2 THE REDIRECT RODE THE PIPE: the follower's mirror holds the marker with its from/to intact — and this
+    //  Book's follower side never calls Renamed_mint, so Repli_merge is the ONLY way a redirect-fact can exist
+    //   there.  Breakable: an encode that skips %Renamed children or a lost re-offer leaves the mirror bare.
+    let vmark = vcloud ? vcloud.o({ Renamed: 1, key: 'title', from: 'Low Draw' })[0] : null
+    let rode = vmark && vmark.sc.to === 'Low Tide' && T.oa({ reoffered: 1 })
+    if (rode && !T.oa({ see: 'the redirect fact rode the same pipe as the content — the follower mirror holds a marker it never minted itself' })) this.MusuRename_note(w, { see: 'the redirect fact rode the same pipe as the content — the follower mirror holds a marker it never minted itself' })
+    // #3 IN PLACE NOT A FORK: the retitled card crossed as the SAME card — the mirror still holds exactly three
+    //  records, t1 wears the new title, and no card wears the old one.  Breakable: title creeping into the wire
+    //   loc (a retitle would then mint a second card) or a merge that creates instead of updates.
+    let v1 = this.MusuRename_card(vmag, 't1')
+    let old_title = 0
+    if (vmag) { for (const c of this.Musica_cards(vmag)) { if (c.sc.title === 'Low Draw') { old_title = 1 } } }
+    let in_place = vmag && this.Musica_cards(vmag).length === 3 && v1 && v1.sc.title === 'Low Tide' && !old_title
+    if (in_place && !T.oa({ see: 'a retitle crossed as the same card wearing its new name — the mirror updated in place and no second card appeared' })) this.MusuRename_note(w, { see: 'a retitle crossed as the same card wearing its new name — the mirror updated in place and no second card appeared' })
+    // #4 A STALE CURSOR HEALED THROUGH THE WIRE: the follower's title-pinned position resolved cleanly BEFORE
+    //  the mission (baseline fresh — zero heals) and after it landed on the retitled record by following the
+    //   REPLICATED redirect, noting from and to.  This is the M3 composition — C2 proved the heal mechanism on
+    //    hand-authored markers; here the marker's only source is the wire.
+    let base = T.o({ baseline: 1 })[0]
+    let hl = T.o({ healed: 'low' })[0]
+    let healed_low = base && +base.sc.fresh === 1 && hl && +hl.sc.ok === 1 && +hl.sc.depth === 3 && hl.sc.id === 't1' && hl.sc.from === 'Low Draw' && hl.sc.to === 'Low Tide'
+    if (healed_low && !T.oa({ see: 'a stale cursor healed through the replicated redirect — the follower landed on the retitled record and noted what it followed' })) this.MusuRename_note(w, { see: 'a stale cursor healed through the replicated redirect — the follower landed on the retitled record and noted what it followed' })
+    // #5 TWO REDIRECTS STAYED DISTINCT: the mirror cloud carries BOTH markers with different from values and the
+    //  second stale cursor healed too.  This pins the marker's wire identity — drop the repli_loc stamp in
+    //   Renamed_mint (the one-line regression) and the second marker upserts onto the first at the follower,
+    //    blurring both redirects into one and failing the low heal.
+    let marks = vcloud ? vcloud.o({ Renamed: 1 }) : []
+    let hh = T.o({ healed: 'high' })[0]
+    let distinct = marks.length === 2 && marks[0].sc.from !== marks[1].sc.from && hh && +hh.sc.ok === 1 && hh.sc.id === 't2' && hh.sc.from === 'High Draw' && hh.sc.to === 'High Tide'
+    if (distinct && !T.oa({ see: 'two redirects stayed distinct across the wire — each rename kept its own marker and both stale cursors healed' })) this.MusuRename_note(w, { see: 'two redirects stayed distinct across the wire — each rename kept its own marker and both stale cursors healed' })
+
+// ══ MusuRecast — M4: the census-diff RE-PUBLISH — a goner crosses the wire and leaves no orphan ═══════════
+//  M2 (MusuVend) proved a magazine and its NEUS travel, but its forget scene was a LOCAL GC — the witness said
+//   so outright (asserts on the ORIGIN only; the follower keeps a dropped cloud until a Repli_retire
+//    propagates).  M4 wires that retire to the fold: when the origin collection LOSES a track, the re-publish
+//     drops the card locally AND crosses an op:delete so the follower's mirror drops the same card.  The gap is
+//      real because a streamy merge (Repli_merge) is an UPSERT — it never removes what an offer OMITS, by
+//       design — so a re-offer alone can never withdraw a goner; the withdrawal must be an explicit delete.
+//  TWO GRANULARITIES (mirroring Musica_fold's own two-level reconcile): a card lost from a SURVIVING cloud
+//   (a path Mag>Cloud>del Record) and a whole cloud EMPTIED (a path Mag>del Cloud — the whole-era drop in one
+//    line).  Repli_retire stays the FLAT depth-0 goner for a Record off a mirror lib (MusuReplica); a magazine
+//     card is three levels down, so Musica_recast_offer's delete carries its Mag/Cloud ancestry as plain upsert
+//      lines the merge walks — no wire-core change, just the depth the merge already understands.
+//  THE DISCRIMINATION (non-vacuity — [[adversarial-test-agent]]): the goner is proven at BOTH levels and the
+//   SURVIVORS are checked whole.  Drop the record-goner emission → t1 orphans at the follower (see #2 red);
+//    drop the cloud-goner emission → draw B orphans (see #3 red); broaden the delete pattern to a Record:1
+//     wildcard → the survivors get nuked (see #5 red).  The origin↔follower agreement (see #4) is the headline
+//      no-orphan invariant, red under any asymmetry.
+//  DETERMINISTIC + in-memory (no FSA no audio no Berth no entropy — the two Piers are MusuVend's Lake_link
+//   loopback): runs on ANY runner, caveat:0.  CONVENTION (Musu*): the world MUST be named MusuRecast.
+
+MusuRecast(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuRecast_drive,w,req
+        req%ok = 1
+
+MusuRecast_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+MusuRecast_note(w, sc):
+    let t = this.MusuRecast_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+// MusuRecast_drive — ONE scene per beat: setup (2), publish draw A (3), publish draw B (5), baseline over the
+//  MIRROR (7), lose one RECORD + recast (8), lose a whole CLOUD + recast (10); pumps settle the follower's rx
+//   between the sending beats (the reliable Lake_link mock drains inline in post_do — the pumps are
+//    belt-and-braces + a settle pass).  The witness runs every pass so each %see fires the first pass true.
+async MusuRecast_drive(w, req):
+    if (typeof this.Lake_link !== 'function' || typeof this.Peeroleum_send !== 'function') {
+        if (!this.MusuRecast_T(w).oa({ skipped: 'no_transport' })) this.MusuRecast_note(w, { skipped: 'no_transport' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuRecast_setup(w)
+        if (n === 3) await this.MusuRecast_publish(w, 'a')
+        if (n === 5) await this.MusuRecast_publish(w, 'b')
+        if (n === 7) this.MusuRecast_baseline(w)
+        if (n === 8) await this.MusuRecast_lose_record(w)
+        if (n === 9) await this.MusuRecast_after_record(w)
+        if (n === 10) await this.MusuRecast_lose_cloud(w)
+        if (n === 4 || n === 6 || n === 11 || n === 12) await this.MusuRecast_pump(w)
+    }
+    this.MusuRecast_witness(w)
+    await this.Musu_float(w)
+
+// MusuRecast_setup — MusuVend's wiring: two Piers over the loopback, repli handlers armed, the origin shelf +
+//  its in-memory magazine, the follower's named mirror.  Grant stays ON (the gate is MusuVend/MusuDoor's
+//   subject; here the variable is the census diff).  A five-track pool: draw A = t0 t1 t2, draw B = t3 t4.
+async MusuRecast_setup(w):
+    this.MusuRecast_note(w, { reached: 'step_2' })
+    let link = await this.Lake_link(w, 'Origin', 'Follower')
+    w.c.tx = link[0]
+    w.c.rx = link[1]
+    this.Peeroleum_arm_whittle(w)
+    link[1].i({ Ud: 1, pubkey: 'Origin' })
+    link[0].i({ Ud: 1, pubkey: 'Follower' })
+    this.Repli_arm(w)
+    w.c.repli_mirror_pier = 'Follower.mirror'
+    this.Repli_register_rx(w, link[1])
+    let origin_lib = w.i({ Library: 1, pier: 'Origin' })
+    origin_lib.c.up = w
+    w.c.origin_lib = origin_lib
+    w.c.repli_src = origin_lib
+    this.Repli_register_caster(w, link[0], origin_lib)
+    let mag = w.i({ Mag: 'Musica' })
+    mag.c.up = w
+    w.c.origin_mag = mag
+    w.c.grants = { Follower: 1 }
+    w.c.repli_allow = (peer, at) => !!(w.c.grants && w.c.grants[peer])
+    this.Ra_seed(w, 'MusuRecast')
+    w.c.pool = [
+        { id: 't0', artist: 'Auteur', title: 'Meander One', path: 'crate/a/Auteur - Meander One.opus' },
+        { id: 't1', artist: 'Auteur', title: 'Meander Two', path: 'crate/a/Auteur - Meander Two.opus' },
+        { id: 't2', artist: 'Bassbin', title: 'Low Draw', path: 'crate/b/Bassbin - Low Draw.opus' },
+        { id: 't3', artist: 'Choral', title: 'High Draw', path: 'crate/c/Choral - High Draw.opus' },
+        { id: 't4', artist: 'Choral', title: 'Long Draw', path: 'crate/c/Choral - Long Draw.opus' }
+    ]
+    w.c.set_up = 1
+
+// MusuRecast_publish — lay a draw onto the origin shelf as %Records and RECAST-offer the magazine.  The first
+//  two publishes find no goners (nothing is lost yet) so the recast is a pure neu offer; each draw's ids form a
+//   fresh %Cloud (draw A id 'draw_a' ts 1000, draw B 'draw_b' ts 2000 — fixed so the fixture is stable).  The
+//    note pins the DATA (which draw, the running card + cloud counts).
+async MusuRecast_publish(w, which):
+    let lib = w.c.origin_lib
+    let slice = (which === 'a') ? [0, 1, 2] : [3, 4]
+    for (const ix of slice) {
+        let t = w.c.pool[ix]
+        let rec = lib.oai({ Record: 1, id: t.id })
+        rec.c.up = lib
+        rec.sc.artist = t.artist
+        rec.sc.title = t.title
+        rec.sc.path = t.path
+    }
+    let randomic = (which === 'a') ? 'draw_a' : 'draw_b'
+    let ts = (which === 'a') ? 1000 : 2000
+    let out = await this.Musica_recast_offer(w, w.c.tx, 'Origin', 'Follower', w.c.origin_mag, lib, randomic, ts)
+    let row = { published: which, cards: this.Musica_cards(w.c.origin_mag).length, clouds: w.c.origin_mag.o({ Cloud: 1 }).length, goners: (out.gone_records || []).length + (out.gone_clouds || []).length }
+    this.MusuRecast_note(w, row)
+
+// MusuRecast_baseline — after both draws the follower mirrors ALL FIVE cards across TWO clouds.  Pins the neu
+//  side and the starting point so the two goner scenes are genuine losses off a full mirror.
+MusuRecast_baseline(w):
+    this.MusuRecast_note(w, { reached: 'step_7' })
+    let mir = this.Repli_mirror_lib(w)
+    let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
+    let all = vmag ? 1 : 0
+    for (const id of ['t0', 't1', 't2', 't3', 't4']) { if (!this.MusuRecast_card(vmag, id)) { all = 0 } }
+    let row = { baseline: 1, clouds: vmag ? vmag.o({ Cloud: 1 }).length : 0 }
+    if (all) { row.all_five = 1 }
+    this.MusuRecast_note(w, row)
+
+// MusuRecast_lose_record — the collection loses ONE track (t1, from draw A).  Recast: Musica_fold drops t1's
+//  card from its cloud (t0 t2 survive so the cloud lives), and the recast crosses a path-delete for t1 so the
+//   follower drops it too.  The note pins what the recast reported it withdrew (gone_recs) — a faithful receipt.
+async MusuRecast_lose_record(w):
+    this.MusuRecast_note(w, { reached: 'lose_record' })
+    await w.c.origin_lib.rm({ Record: 1, id: 't1' })
+    let out = await this.Musica_recast_offer(w, w.c.tx, 'Origin', 'Follower', w.c.origin_mag, w.c.origin_lib, 'draw_a', 1000)
+    this.MusuRecast_note(w, { lost_record: 't1', gone_recs: (out.gone_records || []).join('|'), gone_cl: (out.gone_clouds || []).join('|') })
+
+// MusuRecast_after_record — pin the follower's survivor state THE INSTANT the record goner has drained, BEFORE
+//  the cloud scene re-offers.  This is the load-bearing capture for see #5 (adversarial review, 2026-07-14): a
+//   record-delete broadened to a Record:1 wildcard would empty the WHOLE draw_a cloud here (t0 t2 gone with t1),
+//    but scene 3's re-offer would re-add t0 t2 by step 11 — so a survivors-intact check read only at the END is a
+//     FALSE-GREEN (the over-reach heals before it is sampled).  Pinned at this milestone the damage is frozen: a
+//      broadened delete records s0=0 s2=0 here and can never un-write, so #5 goes red.  Reads the LIVE mirror
+//       (scene 1's frames already drained in post_do); the pump is belt-and-braces.
+async MusuRecast_after_record(w):
+    if (w.c.rx) { await w.c.rx.do() }
+    this.MusuRecast_note(w, { reached: 'step_9' })
+    let mir = this.Repli_mirror_lib(w)
+    let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
+    let s0 = vmag && this.MusuRecast_card(vmag, 't0') ? 1 : 0
+    let s2 = vmag && this.MusuRecast_card(vmag, 't2') ? 1 : 0
+    let t1_gone = vmag && !this.MusuRecast_card(vmag, 't1') ? 1 : 0
+    this.MusuRecast_note(w, { after_record: 1, s0: s0, s2: s2, t1_gone: t1_gone })
+
+// MusuRecast_lose_cloud — the collection loses a whole ERA (t3 AND t4 — all of draw B).  Recast: the fold drops
+//  both, draw B's cloud empties and is removed, and the recast crosses a single cloud-level delete (not two
+//   record deletes) so the follower drops the entire cloud at once — the whole reason the %Cloud layer exists.
+async MusuRecast_lose_cloud(w):
+    this.MusuRecast_note(w, { reached: 'lose_cloud' })
+    await w.c.origin_lib.rm({ Record: 1, id: 't3' })
+    await w.c.origin_lib.rm({ Record: 1, id: 't4' })
+    let out = await this.Musica_recast_offer(w, w.c.tx, 'Origin', 'Follower', w.c.origin_mag, w.c.origin_lib, 'draw_a', 1000)
+    this.MusuRecast_note(w, { lost_cloud: 'draw_b', gone_recs: (out.gone_records || []).join('|'), gone_cl: (out.gone_clouds || []).join('|') })
+
+async MusuRecast_pump(w):
+    if (w.c.rx) { await w.c.rx.do() }
+
+// MusuRecast_card — find a magazine card by id across every cloud (the flat catalog view).
+MusuRecast_card(mag, id):
+    if (!mag) return null
+    for (const rec of this.Musica_cards(mag)) { if (rec.sc.id === id) return rec }
+    return null
+
+// MusuRecast_ids — the sorted id set a magazine holds (the flat catalog), joined for a scalar compare.
+MusuRecast_ids(mag):
+    let out = []
+    if (mag) { for (const rec of this.Musica_cards(mag)) out.push(rec.sc.id) }
+    out.sort()
+    return out.join('|')
+
+// ── the witness — %see gated on TRUTH not beat number, once-noticed under %testing (no commas no
+//  apostrophes, em-dash pauses).  Reads the origin magazine AND the follower's live mirror. ──
+MusuRecast_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 7)) return
+    if (!w.c.set_up) return
+    let T = this.MusuRecast_T(w)
+    let omag = w.c.origin_mag
+    let mir = this.Repli_mirror_lib(w)
+    let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
+    // #1 THE NEUS CROSSED: after both draws the follower mirrors all five cards across two clouds — the baseline
+    //  the goners are then withdrawn from.  Breakable: a publish that never crossed or a cloud that merged wrong.
+    let base = T.o({ baseline: 1 })[0]
+    if (base && +base.sc.all_five === 1 && +base.sc.clouds === 2 && !T.oa({ see: 'both draws crossed and the follower mirrors all five cards in two clouds' })) this.MusuRecast_note(w, { see: 'both draws crossed and the follower mirrors all five cards in two clouds' })
+    // #2 A RECORD GONER LEAVES NO ORPHAN: after the collection lost t1 the follower dropped exactly that card and
+    //  KEPT its cloud-mates t0 and t2 — and the recast reported it withdrew t1 (the faithful receipt).  Break:
+    //   drop the gone_records emission in Musica_recast_offer and t1 orphans at the follower while the receipt
+    //    empties — either flips this red.  Gate also that t1 is genuinely absent from the mirror now.
+    let lr = T.o({ lost_record: 't1' })[0]
+    let t1_gone = vmag && !this.MusuRecast_card(vmag, 't1')
+    let mates = vmag && this.MusuRecast_card(vmag, 't0') && this.MusuRecast_card(vmag, 't2') ? 1 : 0
+    if (lr && lr.sc.gone_recs === 't1' && t1_gone && mates && !T.oa({ see: 'a track lost from the collection crosses as a goner — the follower drops that exact card and keeps its cloud-mates' })) this.MusuRecast_note(w, { see: 'a track lost from the collection crosses as a goner — the follower drops that exact card and keeps its cloud-mates' })
+    // #3 A WHOLE ERA CROSSES IN ONE STROKE: after the collection lost all of draw B the follower lost the ENTIRE
+    //  cloud — down to one cloud, no t3 no t4, and no empty husk left behind — and the recast reported a single
+    //   CLOUD-level withdrawal (gone_cl draw_b, not two record deletes).  Break: drop the gone_clouds emission and
+    //    the cloud (or an emptied husk) orphans at the follower.
+    let lc = T.o({ lost_cloud: 'draw_b' })[0]
+    let cloud_gone = vmag && !this.MusuRecast_card(vmag, 't3') && !this.MusuRecast_card(vmag, 't4') && vmag.o({ Cloud: 1 }).length === 1
+    if (lc && lc.sc.gone_cl === 'draw_b' && cloud_gone && !T.oa({ see: 'a whole forgotten era crosses in one stroke — losing every track of a draw dropped the follower entire cloud not an empty husk' })) this.MusuRecast_note(w, { see: 'a whole forgotten era crosses in one stroke — losing every track of a draw dropped the follower entire cloud not an empty husk' })
+    // #4 NO ORPHAN EITHER SIDE (the headline invariant): after both recasts the origin and the follower hold the
+    //  EXACT same catalog — t0 and t2 only.  Neither keeps a card the other dropped.  Gate on BOTH lose scenes
+    //   having run so it cannot fire early, and on the two id sets being equal AND the expected survivors.  Break:
+    //    any asymmetry (a local drop not propagated, or a delete that over-reaches one side).
+    let both_ran = T.oa({ lost_record: 't1' }) && T.oa({ lost_cloud: 'draw_b' })
+    let oids = this.MusuRecast_ids(omag)
+    let vids = this.MusuRecast_ids(vmag)
+    if (both_ran && oids === 't0|t2' && vids === 't0|t2' && !T.oa({ see: 'the origin and the follower agree after every recast — neither keeps a card the other dropped' })) this.MusuRecast_note(w, { see: 'the origin and the follower agree after every recast — neither keeps a card the other dropped' })
+    // #5 THE RECORD GONER IS SURGICAL: the INSTANT t1 was withdrawn the follower still held its cloud-mates t0 and
+    //  t2 (the frozen after_record capture, s0 & s2 & t1_gone) AND at the end those survivors keep their EXACT
+    //   identity.  The after_record gate is the load-bearing discriminator (adversarial review 2026-07-14): a
+    //    record-delete broadened to a Record:1 wildcard empties the whole cloud at that milestone — s0=0 s2=0
+    //     frozen there — so this goes red, whereas a survivors-check read only at the END would false-green
+    //      because scene 3's re-offer re-adds t0 t2.  So the break (broaden the record delete) genuinely flips it.
+    let ar = T.o({ after_record: 1 })[0]
+    let surgical = ar && +ar.sc.s0 === 1 && +ar.sc.s2 === 1 && +ar.sc.t1_gone === 1
+    let v0 = vmag ? this.MusuRecast_card(vmag, 't0') : null
+    let v2 = vmag ? this.MusuRecast_card(vmag, 't2') : null
+    let intact = v0 && v0.sc.title === 'Meander One' && v0.sc.artist === 'Auteur' && v0.sc.path === 'crate/a/Auteur - Meander One.opus' && v2 && v2.sc.title === 'Low Draw' && v2.sc.artist === 'Bassbin'
+    if (both_ran && surgical && intact && !T.oa({ see: 'the record goner is surgical — the instant the lost track was withdrawn the follower still held its cloud-mates whole' })) this.MusuRecast_note(w, { see: 'the record goner is surgical — the instant the lost track was withdrawn the follower still held its cloud-mates whole' })

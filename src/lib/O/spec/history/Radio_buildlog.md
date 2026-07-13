@@ -5,6 +5,68 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
   The living state, roadmap and design are in Radio_todo.md — read THAT; come here only for
    the archaeology of how a thing landed. Newest first.
 
+**2026-07-14 — M4 (first rung): the census-diff re-publish — a goner crosses the wire and leaves no orphan
+ (MusuRecast), LIVE-GREEN ×2.** MusuVend (M2) proved a magazine and its NEUS travel but its forget scene was a
+  LOCAL GC — the witness said so outright (it asserted on the ORIGIN only, because "the follower keeps a dropped
+   cloud until a Repli_retire propagates"). M4 wires that retire to the fold. New verb `Musica_recast_offer`
+    (`Ghost/M/Heist.g`, after `Musica_forget`): snapshot the published (id→cloud) and cloud sets, `Musica_fold`
+     the magazine, snapshot again, re-offer the whole magazine (husk — neus + in-place updates ride the upsert),
+      then cross an explicit **path-carrying op:delete** per goner. The gap is real because `Repli_merge` is an
+       UPSERT — it never removes what an offer OMITS (by design) — so a re-offer alone can never withdraw a lost
+        card; the withdrawal must be an explicit delete. TWO granularities mirror `Musica_fold`'s own two-level
+         reconcile: a card lost from a SURVIVING cloud rides `Mag>Cloud>del Record`, a whole cloud EMPTIED rides
+          `Mag>del Cloud` (the whole-era drop in one line, guarded so an emptied cloud's records don't also emit
+           stray record-deletes). `Repli_retire` stays the FLAT depth-0 goner for a record off a mirror lib
+            (MusuReplica); a magazine card is three levels down, so the delete carries its Mag/Cloud ancestry as
+             plain upsert lines the merge already walks — **no Repli wire-core change**, proven by tracing
+              `Repli_recv_lines` always merging into the one `Repli_mirror_lib`. The Book **MusuRecast**
+               (`Heistation.g`, after MusuRename) forks MusuVend's two-Pier loopback: publish draw A (t0 t1 t2)
+                and draw B (t3 t4) into two clouds, lose t1 (record goner, cloud survives), then lose t3+t4 (whole
+                 draw B → cloud goner). Final state: origin AND follower both hold only t0 t2, draw B's cloud gone
+                  from both — no orphan, no empty husk, survivors intact. 5 sees. **The adversarial review (opus
+                   subagent) caught see #5 as a FALSE-GREEN and it was fixed before recording:** #5's claimed break
+                    (broaden the record-delete to a `Record:1` wildcard) transiently empties the survivors' whole
+                     cloud, but scene 3's re-offer re-adds t0 t2 before the witness ever samples a settled
+                      `both_ran` pass — so #5 latched green anyway. The fix pins the survivor state in a frozen
+                       `after_record` note the INSTANT the record goner drains (step 9, before scene 3 can heal it),
+                        where the broadened delete leaves `s0=0 s2=0` and can never un-write — now the break
+                         genuinely flips it red. `.g` gotcha en route: `for (const i of slice)` mangled to
+                          `w.i({of:1})` (the compiler read `i` as the create verb) → renamed the loop var to `ix`.
+                           Live sequence on runner `49de`: warm-up MusuCursor green (thaw), CHECK RED vs lie diges,
+                            first accept caught a `self,round=5` heartbeat wobble (caveat:1 vs a warm `round=4`) — a
+                             benign quiescence margin the `mung:age` mask does not cover — so a full warm re-record
+                              (reset toc→lie, clear snaps, re-run, accept 12/12) settled the fixture to `round=4` and
+                               two confirm runs came back 12/12 `caveat:0`, GREEN ×2. Deterministic + in-memory (no
+                                FSA / audio / Berth / entropy). Registered Credence (`brand_new:1`) + Ality. M4's
+                                 census-diff wire heart is proven; the remaining M4 is rename-as-standing-Upkeep +
+                                  the revolving service pacing (the standing-loop shell around this primitive).
+
+**2026-07-14 — M3: a rename mission mints `%Renamed` and the redirect rides the wire (MusuRename), LIVE-GREEN ×2.**
+ The magazine rung that closes C2's loop. C2 (MusuHeal) proved the heal MECHANISM with HAND-AUTHORED markers and no
+  wire; M3 mints the marker from a real reorganise gesture and crosses it Pier-to-Pier, so a follower's stale cursor
+   heals through a marker whose ONLY source is the replication pipe. New verb `Musica_rename(mag, id, key, to, at)`
+    (`Ghost/M/Heist.g`, beside `Musica_forget` in the magazine region): find the card by id across the clouds, mint
+     the `%Renamed` redirect BESIDE it (same cloud — where `Cursor_heal` looks), then apply the new value — apply +
+      mint are ONE gesture, so the magazine never shows a rename without its redirect. `Renamed_mint` gained
+       `m.c.repli_loc = ['Renamed','key','from']` so two markers stay DISTINCT on the wire (the default `['Renamed']`
+        loc — `key` is not id-ish per `Repli_loc_keys` — would upsert the second marker onto the first and blur both
+         redirects; a same-`(key,from)` supersede still upserts `to` in place, so newest-wins survives the wire too).
+    The Book **MusuRename** (`Heistation.g`, after MusuResume) forks MusuVend's two-Pier loopback: origin publishes a
+     3-card magazine, follower makes two TITLE-pinned `%Dogear` cursors into its OWN mirror (both `fresh` — zero heals),
+      origin runs two rename missions (`Low Draw`→`Low Tide`, `High Draw`→`High Tide`), re-offers the whole magazine.
+       The cards update IN PLACE at the follower (loc `['Record','id']`; `title` a merge PROP — no fork) and the two
+        markers arrive as fresh facts; both stale cursors then heal through the replicated markers, landing on the
+         retitled records and noting from→to. 9 steps, 5 sees. Adversarial review (opus subagent) returned all 5
+          SOUND: every claimed one-line break flips its see red, none tautological, and the `{Renamed:1}` numeric-1
+           presence-wildcard survives the peel round-trip (decodes back to number 1, so `o({Renamed:1})` still
+            wildcards on the mirror — the `"1"` literal footgun does NOT bite because the queries never pass through
+             `exactly()`). Live sequence on runner `49de`: warm-up MusuCursor green (thaw), MusuRename CHECK RED vs the
+              lie diges (expected), accept recorded 001–009 + real toc diges + Credulate pin, then a second run came
+               back 9/9 `caveat:0` matching the fixtures — GREEN ×2. Deterministic + in-memory (no FSA / audio / Berth
+                / entropy profile). Registered Credence (`brand_new:1`) + Ality. The M-rung's next natural step is M4
+                 (census-diff re-publish + rename missions as a standing Upkeep pass); U (the magazine reader) is also
+                  unblocked now the whole cursor stack under it is green.
+
 **2026-07-14 — C3: a berthed `%Dogear` resumes a browse across a reload (MusuResume), LIVE-GREEN ×2.** The cursor
  arc's last rung. Book **MusuResume** (`Heistation.g`, after MusuHeal): a `%Dogear` homed INSIDE a magazine survives
   a full `enWaft`→`deWaft` round-trip and still resolves to the record it named — the resumable browse. Isolates the

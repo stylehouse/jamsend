@@ -12,16 +12,16 @@ Credulate,of_Book:VoroScape
   GhostInclude:Ghost_M_Mesh,dige:286eb98843f6e7f9
   GhostInclude:Ghost_M_Ra,dige:877d4c68475647aa
   GhostInclude:Ghost_M_Booth,dige:24e06889933090b3
-  GhostInclude:Ghost_M_Heist,dige:f52331c1f6201e0b~g1
+  GhostInclude:Ghost_M_Heist,dige:35bfffaeaf433b43~g1
   GhostInclude:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
   GhostInclude:Ghost_Story_Radiation,dige:f3403566ed74e831
-  GhostInclude:Ghost_Story_Heistation,dige:b90b4339b3fd804d~g1
+  GhostInclude:Ghost_Story_Heistation,dige:4be36ddb9cba1d15~g1
   GhostInclude:Ghost_Story_Berthation,dige:7bbe9ae361826f32~g1
   GhostInclude:Ghost_S_Swarm,dige:a5980d5d4830e92b
   GhostInclude:Ghost_Story_Swarmation,dige:c35a937c80b7a07b
-  GhostInclude:Ghost_V_Voro,dige:e46b97399a1148c4~g1
+  GhostInclude:Ghost_V_Voro,dige:0d166ca603b73194~g1
   GhostInclude:Ghost_Story_Voronation,dige:a793373e1f6bf9ba~g1
-  last_ok,at=1783950306.57,ok_pct
+  last_ok,at=1783969091.586,ok_pct
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -35,12 +35,12 @@ Credulate,of_Book:VoroScape
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
     uses:Ghost_M_Ra,dige:877d4c68475647aa
     uses:Ghost_M_Booth,dige:24e06889933090b3
-    uses:Ghost_M_Heist,dige:f52331c1f6201e0b~g1
+    uses:Ghost_M_Heist,dige:35bfffaeaf433b43~g1
     uses:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
     uses:Ghost_Story_Radiation,dige:f3403566ed74e831
-    uses:Ghost_Story_Heistation,dige:b90b4339b3fd804d~g1
+    uses:Ghost_Story_Heistation,dige:4be36ddb9cba1d15~g1
     uses:Ghost_Story_Berthation,dige:7bbe9ae361826f32~g1
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:c35a937c80b7a07b
-    uses:Ghost_V_Voro,dige:e46b97399a1148c4~g1
+    uses:Ghost_V_Voro,dige:0d166ca603b73194~g1
     uses:Ghost_Story_Voronation,dige:a793373e1f6bf9ba~g1

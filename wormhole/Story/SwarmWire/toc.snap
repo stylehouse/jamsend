@@ -26,6 +26,12 @@ story:SwarmWire
       sample=0.018,at=1783369778
       sample=0.018,at=1783420340
       sample=0.024,at=1783855408
+  Assertions
+    Assertion:stations-stand,sentence:two stations stand on the spine — the swarm frame kinds armed on the world,by_n:2
+    Assertion:link-authenticated,sentence:the link authenticated first — hello and trust both ways before any swarm frame,by_n:3
+    Assertion:frames-crossed,sentence:pier_hello and pier_accept crossed as real frames — booked through outbox and inbox,by_n:4
+    Assertion:friendship-sealed,sentence:the friendship sealed over the wire — mutual Music grants at both ends,by_n:4
+    Assertion:spent-nonce-refuses,sentence:the spent nonce refuses over the wire too — a pier_reject crossed back,by_n:5
   step,dige:707011a29fe51dc1
   step=2,dige:37c348365fd83926
   step=3,dige:ac320a80a7590739

@@ -1,0 +1,62 @@
+Snap:H
+  H:MusuRename,Run
+    A:MusuRename
+      self,round=10	{"mung":["age"]}
+      w:MusuRename
+        self,round=10	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          offered,cards=3,crossed
+          reached:step_5
+          Dogear,of:mirror-low
+            curs,Mag:Musica
+              curs,wild:Cloud,randomic:dgbl8pe
+                curs,wild:Record,title:Low Draw
+          Dogear,of:mirror-high
+            curs,Mag:Musica
+              curs,wild:Cloud,randomic:dgbl8pe
+                curs,wild:Record,title:High Draw
+          baseline,low:t1,high:t2,fresh
+          reached:step_6
+          renamed:t1,from:Low Draw,to:Low Tide
+          renamed:t2,from:High Draw,to:High Tide
+          see:the rename mission is one gesture — the origin retitle laid its redirect fact beside the card in the same stroke
+          reoffered,crossed
+          see:the redirect fact rode the same pipe as the content — the follower mirror holds a marker it never minted itself
+          see:a retitle crossed as the same card wearing its new name — the mirror updated in place and no second card appeared
+        Peering,name:Origin,req=2,ok
+          Pier,pub:Follower,req=2,ok
+            Ud,pubkey:Follower
+            outbox
+              recent
+                emit,type:repli_lines,seq
+              emit=2,type:repli_lines,seq=2,sent,body_hash:5df0da7cb2a60c8f2fb6e4df6bf4e0572046443cddca59950e661f0ec02c50eb,body_len=604,acked
+          active_transport,type:mock,open
+        Peering,name:Follower,req=3,ok
+          Pier,pub:Origin,req=2,ok
+            Ud,pubkey:Origin
+            inbox
+              recent
+                unemit,type:repli_lines,seq
+              req:unemit,seq=2,type:repli_lines,body_hash:5df0da7cb2a60c8f2fb6e4df6bf4e0572046443cddca59950e661f0ec02c50eb,body_len=604,done,to:repli_lines,finished
+          active_transport,type:mock,open
+        Library,pier:Origin
+          Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+          Record,id:t1,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+          Record,id:t2,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
+        Mag:Musica
+          Cloud,randomic:dgbl8pe,created_at=1000
+            Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+            Record,id:t1,artist:Bassbin,title:Low Tide,path:crate/b/Bassbin - Low Draw.opus
+            Record,id:t2,artist:Choral,title:High Tide,path:crate/c/Choral - High Draw.opus
+            Renamed,key:title,from:Low Draw,to:Low Tide,at=5000
+            Renamed,key:title,from:High Draw,to:High Tide,at=5001
+        Library,pier:Follower.mirror
+          Mag:Musica
+            Cloud,randomic:dgbl8pe,created_at=1000
+              Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+              Record,id:t1,artist:Bassbin,title:Low Tide,path:crate/b/Bassbin - Low Draw.opus
+              Record,id:t2,artist:Choral,title:High Tide,path:crate/c/Choral - High Draw.opus
+              Renamed,key:title,from:Low Draw,to:Low Tide,at=5000
+              Renamed,key:title,from:High Draw,to:High Tide,at=5001

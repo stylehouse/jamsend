@@ -23,6 +23,46 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**M4 (first rung) — THE CENSUS-DIFF RE-PUBLISH (a goner crosses the wire and leaves no orphan): LIVE-GREEN ×2
+ (2026-07-14; 12/12, caveat:0).** New Book **MusuRecast** (`Ghost/Story/Heistation.g`, after MusuRecast) wires the
+  retire to the fold — the gap MusuVend's forget scene left explicitly open (its forget was a LOCAL GC; "the follower
+   keeps the cloud until a Repli_retire propagates"). New verb **`Musica_recast_offer(w, tx, from, to, mag, lib,
+    randomic, created_at)`** (`Ghost/M/Heist.g`): re-fold the magazine, re-offer the whole thing (husk — neus + in-place
+     updates ride an upsert), then cross an explicit **path-carrying `op:delete`** per goner — because a streamy merge
+      never removes what an offer OMITS (by design), so a re-offer alone can never withdraw a lost card. TWO
+       granularities, mirroring the fold's own reconcile: a card lost from a SURVIVING cloud (`Mag>Cloud>del Record`)
+        and a whole cloud EMPTIED (`Mag>del Cloud` — the whole-era drop in one line). `Repli_retire` stays the FLAT
+         depth-0 goner for a record off a mirror lib (MusuReplica); a magazine card is three levels down, so the delete
+          carries its Mag/Cloud ancestry as plain upsert lines the merge already walks — **no Repli wire-core change**.
+    The Book publishes two clouds, loses one record (t1 — cloud survives) then a whole draw (t3+t4 — cloud empties), and
+     proves the follower's mirror drops EXACTLY what the origin lost, no orphan and no empty husk, survivors intact.
+      5 sees. **Adversarial review (opus subagent) caught see #5 as a FALSE-GREEN** — its claimed break (broaden the
+       record-delete to a `Record:1` wildcard) transiently nukes the survivors but scene 3's re-offer re-adds them
+        before the witness samples any settled pass, so it latched green anyway. FIXED by pinning the survivor state in
+         a frozen `after_record` note the instant the record goner drains (before scene 3 can heal it), where the
+          broadened delete leaves `s0=0 s2=0` and can never un-write — now the break genuinely flips it red. Registered
+           Credence (`brand_new:1`) + Ality. (Live note: the first accept caught a `self,round=5` heartbeat wobble →
+            caveat:1; a fresh warm re-record settled it to `round=4`/caveat:0 — a benign quiescence margin, not data.)
+             **M4's census-diff heart is proven; the remaining M4 is rename-as-standing-Upkeep + revolving service pacing.**
+
+**M3 — THE RENAME MISSION (a `%Renamed` redirect rides the wire and a stale cursor heals through it): LIVE-GREEN ×2
+ (2026-07-14; 9/9, caveat:0).** New Book **MusuRename** (`Ghost/Story/Heistation.g`, after MusuResume) closes the
+  loop C2 (MusuHeal) proved only in-memory: C2 healed a cursor through HAND-AUTHORED markers; M3 mints the marker
+   from a real reorganise gesture and crosses it Pier-to-Pier. New verb **`Musica_rename(mag, id, key, to, at)`**
+    (`Ghost/M/Heist.g`) is ONE gesture — it applies the retitle AND mints the `%Renamed` beside the card in the same
+     stroke, so the magazine never shows a rename without its redirect. On MusuVend's proven two-Pier loopback the
+      origin retitles two cards, re-offers the whole magazine, and the follower's cards update IN PLACE (the card
+       locates on the wire by `['Record','id']`; `title` is a merge PROP, so no fork) while the two markers arrive as
+        fresh facts. Two title-pinned `%Dogear` cursors that were `fresh` (zero heals) before the mission then HEAL
+         through the REPLICATED markers, landing on the retitled records and noting from→to. **`Renamed_mint` gained a
+          `repli_loc:['Renamed','key','from']` stamp** so two markers stay DISTINCT on the wire (the default `['Renamed']`
+           loc would upsert the second onto the first and blur both redirects into one) — see #5 pins exactly that seam.
+            5 sees, each with a named one-line break; adversarial review returned all 5 SOUND (no tautology, no
+             false-green path — the `{Renamed:1}` numeric-1 wildcard survives the peel round-trip, verified). Deterministic
+              + in-memory (no FSA / audio / Berth / entropy): runs on ANY runner. Registered Credence (`brand_new:1`) +
+               Ality. **M3 is done; the M-rung's next natural step is M4** (census-diff re-publish + rename missions as a
+                standing Upkeep pass — needs M1 ✓ + M3 ✓); **U** (the magazine reader) is also unblocked.
+
 **C3 — THE RESUME (berthed `%Dogear` survives a reload): LIVE-GREEN ×2 (2026-07-14; 7/7, caveat:0).** New Book
  **MusuResume** (`Ghost/Story/Heistation.g`, after MusuHeal): a `%Dogear` homed inside a magazine survives a full
   `enWaft`→`deWaft` round-trip (the disk-less core of Berth save+open — MusuBerth owns the real disk) and still
@@ -162,8 +202,9 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
       (M2): **multi-cloud grow** — draw A + draw B form two distinct `%Cloud`s (see #5); and
        **`Musica_forget`** — `Musica_forget_fold` extracted (the pure GC twin of `Musica_fold`) and
         exercised by MusuVend's forget scene (see #6: origin drops the older cloud by its stamp, keeps
-         the fresher). Still `// <` on forget: the radiostock cascade + the follower-propagation via
-          Repli_retire (forget is a local GC until a retire crosses).
+         the fresher). Still `// <` on forget: the radiostock cascade. (The follower-propagation via
+          Repli_retire is now BUILT — M4/MusuRecast crosses the goner at record + cloud level; folding it into
+           Musica_forget's Berth path is the standing-loop remainder.)
  - **M2 LIVE-GREEN; D1 part b LIVE-GREEN (MusuDoor, 2026-07-13) — NEXT build is D1 part a.**
     D1 was split: **part b (the SABOTAGE wall) LANDED** as the `MusuDoor` Book (fork of MusuVend,
      9/9 caveat:0 ×2 on runner 49de, commit `f76b3d7e`). A malicious origin grafts a `%req:sabotage,eternal`
@@ -1380,6 +1421,14 @@ Waft:Musica
      %Tombstone/%UnGrant decision-facts, but a POSITIVE redirect and WINDOW-able: markers may
       supersede/expire, unlike tombstones which never drop.) Followers can then run renaming
        missions over their own filed copies — optional per Pier, a later rung.
+ **BUILT (M3, 2026-07-14 — MusuRename, LIVE-GREEN ×2):** `Musica_rename(mag, id, key, to, at)` is the reorganise
+  gesture — apply the retitle AND mint the `%Renamed` beside the card in ONE stroke (never a rename without its
+   redirect). The marker + the retitled card ride the SAME Repli pipe to a follower; the card updates in place
+    (loc `['Record','id']`, `title` a merge prop — no fork) and a follower's stale cursor heals through the
+     replicated marker. `Renamed_mint` stamps `repli_loc:['Renamed','key','from']` so multiple markers stay
+      distinct on the wire (the default `['Renamed']` loc would blur them). Missions stay on merge-PROP keys
+       (`title`/`album`/`artist`) for now — a rename of a LOC key (id) crosses as add-not-move until
+        delete-propagation is wired to the fold (`Musica_forget`'s PROPAGATION `// <`).
 
 ### 12.3 Cursors — a stack of matches, healed by rename markers
 
@@ -1425,15 +1474,20 @@ Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the
  **M — magazine**: M1 Musica_publish (census + crush → a %Musica Berth Waft, metadata in-magazine) ✓;
   M2 two-Pier magazine replication (the existing Repli pipe, grants gate) ✓ LIVE-GREEN ×2 2026-07-13
    (MusuVend Book — magazine folds in memory, Repli_offers whole husk, grant on↔off↔on, forget; 11/11
-    caveat:0, 6 sees); M3 %Renamed markers minted by a rename mission + replicated with the magazine.
+    caveat:0, 6 sees); M3 ✓ %Renamed markers minted by a rename mission + replicated with the magazine
+     (MusuRename Book, LIVE-GREEN ×2 2026-07-14 — `Musica_rename` = apply+mint one gesture; the marker rides the
+      pipe and a follower's stale cursor heals through it; `Renamed_mint` `repli_loc` keeps markers distinct;
+       9/9 caveat:0, 5 sees, all SOUND adversarially).
  **D — the door** (12.1; the K rungs DISSOLVED 2026-07-13 with the metaphor): D1 the
   door-hardening Book — the for-another serving path over the magazine, grown from the existing
    consent hook (repli_allow + register_caster + the pump); its Book includes the SABOTAGE scene —
     a hostile stream claiming req:/eternal mainkeys lands INERT, because the door only reads
      want-shapes; an ungranted want is refused with the refusal noted (was K1). The for-self
-      standing evolve is House-work, so it files under M as **M4** — census-diff re-publish,
-       rename missions as a standing Upkeep-shaped pass, the revolving service pacing over
-        enrolled followers (Ra_transcode_pump generalized) (was K2).
+      standing evolve is House-work, so it files under M as **M4** — census-diff re-publish
+       (✓ its wire heart — MusuRecast, LIVE-GREEN ×2 2026-07-14: `Musica_recast_offer` folds + offers neus +
+        crosses a path-carrying op:delete per goner at BOTH the record and cloud level, no orphan),
+         rename missions as a standing Upkeep-shaped pass (owed), the revolving service pacing over
+          enrolled followers (Ra_transcode_pump generalized, owed) (was K2).
   **D1 SPLIT (2026-07-13): part b LANDED (MusuDoor, LIVE-GREEN ×2, `f76b3d7e`); part a OWED.** The
    recipe below was followed for part b (the sabotage wall) with ONE correction from the build: the
     canary is NOT an immediate-child check (an adversarial review caught that as a false-green — it
@@ -1464,8 +1518,9 @@ Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the
    C2 ✓ heal via recent %Renamed (MusuHeal, LIVE-GREEN ×2 2026-07-14 — the `%Renamed` fact-shape + `Cursor_heal`
     landed here; M3 mints the same markers from a real rename mission later); C3 ✓ cursor as follow-progress,
      berthed (MusuResume, LIVE-GREEN ×2 2026-07-14 — a berthed %Dogear survives an enWaft→deWaft round-trip and
-      resumes the browse). **The cursor arc C1·C2·C3 is complete** — the remaining cursor-flavoured work is U (the
-       magazine reader turns wants into cursors) and M3 (mint %Renamed from a real rename, exercising C2's heal live).
+      resumes the browse). **The cursor arc C1·C2·C3 is complete** — and M3 (MusuRename, LIVE-GREEN ×2 2026-07-14) has now
+       exercised the heal on LIVE wire-replicated markers, so the remaining cursor-flavoured work is U (the
+        magazine reader turns wants into cursors).
  **S — stimuli surfacing**: S2 the agenda bridge (a want the door accepted mints an %Errand on
   the Brink — the owner SEES the want); S3 the heist rides it — the want-driven front door
    (§10.2 #4 merges here: genre starts + the origin's Waft:Map advice; klepto demotes to one
@@ -1476,20 +1531,28 @@ Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the
  Dependencies: M1 ✓ (landed + live-recorded 2026-07-13); M2 ✓ (LIVE-GREEN ×2 2026-07-13); D1 part b ✓
   (MusuDoor, the sabotage wall, LIVE-GREEN ×2 2026-07-13); C1 ✓ (MusuCursor cursors, LIVE-GREEN ×2 2026-07-13);
    C2 ✓ (MusuHeal, the %Renamed heal, LIVE-GREEN ×2 2026-07-14); C3 ✓ (MusuResume, the berthed-cursor resume,
-    LIVE-GREEN ×2 2026-07-14 — the whole cursor arc is done). The OPEN rungs, in rough order of readiness:
-     **M3** (mint `%Renamed` from a real rename mission + replicate — the fact-shape already proven by C2; needs
-      M1 ✓, exercises C2's heal on live data) is the natural next M rung; **D1 part a** (harden the grant toggle
-       into the live Swarm_pier_live door — one revoke-mid-relationship scene, best folded into MusuHeist;
-        reintroduces seal entropy, so needs an EntropyProfile + a warming re-accept, ATTENDED) is the remaining
-         door rung; M4 needs M1 + M3; S3 needs D1 + M2 + S2; **U** (the magazine reader — wants become cursors)
-          needs M2 ✓ + C1 ✓ and is now UNBLOCKED (the whole cursor stack it leans on is green).
+    LIVE-GREEN ×2 2026-07-14 — the whole cursor arc is done); M3 ✓ (MusuRename, LIVE-GREEN ×2 2026-07-14 —
+     `Musica_rename` mints `%Renamed` from a real reorganise gesture + replicates it, the heal now proven on live
+      wire markers); M4 (first rung) ✓ (MusuRecast, LIVE-GREEN ×2 2026-07-14 — `Musica_recast_offer` crosses a goner
+       as a path-carrying op:delete at the record AND cloud level, no orphan on the wire). The OPEN rungs, in rough
+        order of readiness:
+     **M4 (rest)** — rename missions as a standing Upkeep pass + the revolving service pacing over enrolled followers
+      (Ra_transcode_pump generalized); the census-diff wire heart is now proven, this is the standing-loop shell
+       around it; **D1 part a** (harden the grant toggle into the live Swarm_pier_live door — one
+        revoke-mid-relationship scene, best folded into MusuHeist; reintroduces seal entropy, so needs an
+         EntropyProfile + a warming re-accept, ATTENDED) is the remaining door rung; S3 needs D1 + M2 + S2; **U**
+          (the magazine reader — wants become cursors) needs M2 ✓ + C1 ✓ and is now UNBLOCKED (the whole cursor
+           stack it leans on is green).
 
 ### 12.5 The heist wriggles in — every gear re-homes into making | replicating | responding
 
 Nothing built is thrown away; each existing gear has a §12 home waiting:
  - `Heist_census` (disk → %Records + husks) → **MAKING**: the House's sublimation step. Census
     stops being per-heist prep and becomes the standing publish (M1, then M4's standing
-     republish) — a landing that changes the collection re-publishes the magazine.
+     republish) — a landing that changes the collection re-publishes the magazine. The wire half of
+      that republish is BUILT: `Musica_recast_offer` (M4/MusuRecast) re-folds and crosses BOTH the neus
+       and the goners (a lost card = a path op:delete, a lost era = a cloud op:delete) so a follower's
+        mirror tracks the collection's drift with no orphan.
  - `Heist_offer_all` + the mirror → **REPLICATING**: the mirror IS a replicated magazine slice
     already; the bespoke offer verb is the first thing to RETIRE (at M2) into a Repli pull of the
      %Musica subtree. Husks/crush carry over unchanged.

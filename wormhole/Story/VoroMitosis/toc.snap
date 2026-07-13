@@ -42,8 +42,7 @@ story:VoroMitosis
     For
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.219
-      sample=0.2,at=1783920247
+    TimeTotal:beliefs,avg=0.222
       sample=0.2,at=1783920280
       sample=0.227,at=1783939348
       sample=0.227,at=1783939476
@@ -53,8 +52,8 @@ story:VoroMitosis
       sample=0.241,at=1783943989
       sample=0.194,at=1783944036
       sample=0.183,at=1783945688
+      sample=0.231,at=1783951877
     TimeTotal:step,avg=0.02
-      sample=0.018,at=1783920247
       sample=0.018,at=1783920280
       sample=0.021,at=1783939348
       sample=0.021,at=1783939476
@@ -64,6 +63,7 @@ story:VoroMitosis
       sample=0.022,at=1783943989
       sample=0.018,at=1783944036
       sample=0.017,at=1783945688
+      sample=0.021,at=1783951877
   step,dige:9eb579214a9df3ce
   step=2,dige:5c96baa857ea53d3
   step=3,dige:acf6a1d053a878d8

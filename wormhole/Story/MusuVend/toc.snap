@@ -4,16 +4,18 @@ story:MusuVend
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.042
+    TimeTotal:beliefs,avg=0.04
       sample=0.042,at=1783930162
       sample=0.042,at=1783930246
       sample=0.039,at=1783930265
       sample=0.044,at=1783930277
+      sample=0.033,at=1783970994
     TimeTotal:step,avg=0.004
       sample=0.004,at=1783930162
       sample=0.004,at=1783930246
       sample=0.004,at=1783930265
       sample=0.004,at=1783930277
+      sample=0.003,at=1783970994
   step,dige:ec78b12d711b7cf1
   step=2,dige:222eb756cdba314c
   step=3,dige:dc79bccb4fd7ebfb

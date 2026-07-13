@@ -10,7 +10,7 @@ import { sha256_hex, sha256_incremental } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'f52331c1f6201e0b~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '48dae1965be8201d~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -696,12 +696,100 @@ async Musica_forget_fold(mag, cutoff) {
 //   // <  the RADIOSTOCK CASCADE: dropping a Cloud must also drop the .jam radiostock chunks derived from its
 //   // <   Records (the human: "delete including radiostock") — unbuilt; needs the enid→stock map (Ra_enid is
 //   // <    the Record id's first-16, so the join exists) walked and each stock file unlinked off disk.
-//   // <  PROPAGATION: forget is a LOCAL GC — a follower keeps the cloud until a Repli_retire (op:delete) per
-//   // <   dropped Record crosses (MusuReplica's goner path); wiring that to the fold is a later rung.
+//   PROPAGATION: forget itself is a LOCAL GC (a Berth-side era drop).  The WIRE twin is now built —
+//    Musica_recast_offer (M4) crosses a goner as a path-carrying op:delete at BOTH the record and cloud level,
+//     so a follower's mirror sheds what the origin dropped (MusuRecast, LIVE-GREEN ×2).  Folding that goner-cross
+//      INTO Musica_forget's Berth path (a forget that also retires over enrolled followers) is the standing-loop
+//       rung — M4's remainder; Musica_recast_offer is the primitive it will call.
 async Musica_forget(nav, mag, cutoff) {
     let dropped = await this.Musica_forget_fold(mag, cutoff)
     if (dropped) await this.Berth_save(nav, mag)
     return dropped
+
+},
+// Musica_recast_offer — the census-diff RE-PUBLISH over the wire (M4, §12.2 / §12.5): re-fold the magazine
+//  from the live collection, then propagate the WHOLE reconcile to a follower.  Neus + in-place updates ride a
+//   whole-mag re-offer (Repli_offer husk — a streamy UPSERT); GONERS ride explicit path-deletes.  The gap this
+//    closes (Musica_forget's PROPAGATION `// <`, MusuVend's deferred forget-scene): Musica_fold drops a lost
+//     card LOCALLY, but a streamy merge never removes what an offer OMITS (by design — an offer is not a
+//      snapshot), so a follower keeps the card until an op:delete crosses.  TWO goner granularities, mirroring
+//       the fold's own two-level reconcile: a card lost from a SURVIVING cloud (path Mag>Cloud>del Record) and a
+//        whole cloud EMPTIED (path Mag>del Cloud — the whole-era drop, one line not N).  Repli_retire stays the
+//         FLAT depth-0 goner for a Record hanging straight off a mirror lib (MusuReplica); a magazine card is
+//          three levels down, so the delete must CARRY its Mag/Cloud ancestry as plain upsert lines the merge
+//           walks before the delete — no wire-core change, just the depth the merge already understands.
+//    Returns { gone_records, gone_clouds } (the id / randomic lists that crossed as deletes) so a Book
+//     witnesses PRECISELY what the recast withdrew.
+async Musica_recast_offer(w, tx, from, to, mag, lib, randomic, created_at) {
+    // snapshot the published (id → its cloud's randomic) and the cloud set BEFORE the fold reconciles.
+    let rec_before = {}
+    let cloud_before = {}
+    for (const cloud of mag.o({ Cloud: 1 })) {
+        cloud_before[cloud.sc.randomic] = 1
+        for (const rec of cloud.o({ Record: 1 })) rec_before[rec.sc.id] = cloud.sc.randomic
+    }
+    await this.Musica_fold(mag, lib, randomic, created_at)
+    // what survives AFTER (both levels).
+    let rec_after = {}
+    let cloud_after = {}
+    for (const cloud of mag.o({ Cloud: 1 })) {
+        cloud_after[cloud.sc.randomic] = 1
+        for (const rec of cloud.o({ Record: 1 })) rec_after[rec.sc.id] = 1
+    }
+    // neus + in-place updates cross as a whole-mag upsert (a goner is simply absent from this fragment).
+    await this.Repli_offer(w, tx, from, to, mag)
+    // goner CLOUDS: a whole batch forgotten → one cloud-level delete (drops its records with it at the follower).
+    let gone_clouds = []
+    for (const r of Object.keys(cloud_before)) {
+        if (cloud_after[r]) continue
+        gone_clouds.push(r)
+        let lines = [
+            this.enL({ d: 0, stringies: { Mag: 'Musica' }, objecties: { loc: ['Mag'] } }),
+            this.enL({ d: 1, stringies: { Cloud: 1, randomic: r }, objecties: { loc: ['Cloud', 'randomic'], op: 'delete' } })
+        ]
+        await this.Repli_send_lines(w, tx, from, to, lines.join('\n'), { list: [] })
+    }
+    // goner RECORDS: a card lost from a SURVIVING cloud → a path-delete under that cloud (a card whose whole
+    //  cloud is gone rode the cloud delete above, so it is skipped here — guarded on cloud_after).
+    let gone_records = []
+    for (const id of Object.keys(rec_before)) {
+        let r = rec_before[id]
+        if (rec_after[id] || !cloud_after[r]) continue
+        gone_records.push(id)
+        let lines = [
+            this.enL({ d: 0, stringies: { Mag: 'Musica' }, objecties: { loc: ['Mag'] } }),
+            this.enL({ d: 1, stringies: { Cloud: 1, randomic: r }, objecties: { loc: ['Cloud', 'randomic'] } }),
+            this.enL({ d: 2, stringies: { Record: 1, id: id }, objecties: { loc: ['Record', 'id'], op: 'delete' } })
+        ]
+        await this.Repli_send_lines(w, tx, from, to, lines.join('\n'), { list: [] })
+    }
+    return { gone_records: gone_records, gone_clouds: gone_clouds }
+
+},
+// Musica_rename — the RENAME MISSION (M3, §12.2): ONE reorganise gesture over the magazine.  Find the card
+//  by id across the clouds, mint the %Renamed redirect-fact BESIDE it (same cloud — where Cursor_heal will
+//   look), then apply the new value.  The marker and the retitle are one stroke, so the magazine never shows
+//    a rename without its redirect; a follower receives BOTH through the same pipe (a re-offer ships the
+//     whole tree and Repli_merge upserts the card in place — its id loc is unchanged — while the marker
+//      arrives as a fresh fact beside it).  Returns { card, mark, from } or null when no card wears the id.
+//  The mission edits the MAGAZINE — the published catalog face a Pier reorganises (retitle a track or an
+//   album label).  Reflecting a collection-side retag INTO already-published cards is the census-diff
+//    re-publish (M4): Musica_fold only drops gone ids and adds fresh ones, it never updates a published
+//     card's props — the mission is how a catalog identity moves today.
+//  `at` is a PARAM not wall-clock (the app passes Date.now; a Book pins it so snaps stay determinate).
+//  // <  a rename of a LOC key (id) crosses as add-not-move: the old identity lingers at a follower until
+//  // <   delete-propagation (a Repli_retire per goner) is wired to the fold — Musica_forget's PROPAGATION
+//  // <    lack.  Missions stay on merge-prop keys (title | album | artist) until that rung.
+Musica_rename(mag, id, key, to, at) {
+    for (const cloud of mag.o({ Cloud: 1 })) {
+        for (const card of cloud.o({ Record: 1, id: id })) {
+            let from = card.sc[key]
+            let mark = this.Renamed_mint(cloud, key, from, to, at)
+            card.sc[key] = to
+            return { card: card, mark: mark, from: from }
+        }
+    }
+    return null
 },
 //#endregion
 
@@ -820,10 +908,16 @@ Cursor_heal(node, seg, q) {
 // Renamed_mint — mint a %Renamed redirect-fact BESIDE the renamed node (under `parent`): key/from/to name which
 //  pin moved and where, at names when (a Book PINS it; the app passes Date.now).  A POSITIVE, window-able cousin
 //   of the %Tombstone/%UnGrant decision-facts (§12.2) — it rides the magazine so followers heal through the same
-//    pipe.  Caller renames the node itself (the marker records the move, it does not perform it).  Returns the mark.
+//    pipe.  Caller renames the node itself (the marker records the move, it does not perform it — Musica_rename
+//     is the mission that does both).  Returns the mark.
+//  repli_loc: a marker locates on the wire by (Renamed, key, from) — WITHOUT it the default loc is ['Renamed']
+//   alone ('key' is not id-ish — Repli_loc_keys) and a SECOND rename would upsert onto the first marker,
+//    blurring both redirects into one at the follower.  With it a SUPERSEDE (same key + from, a new to)
+//     upserts `to` in place — newest-wins survives the wire by construction.  A runtime .c hint, never snaps.
 Renamed_mint(parent, key, from, to, at) {
     let m = parent.i({ Renamed: 1, key: key, from: from, to: to, at: at })
     m.c.up = parent
+    m.c.repli_loc = ['Renamed', 'key', 'from']
     return m
 },
 //#endregion

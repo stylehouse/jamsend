@@ -269,10 +269,15 @@ async SwarmWire_replay(w):
     w.sc.now = 1751600040
     await this.Swarm_redeem(w, this.SwarmStaple_ident(w, 'Bob'), w.c.iz)
 
-// SwarmWire_witness — each %see is a per-beat OBSERVATION gated to its step (n === K), read live at
-//  that beat and let DROP after (a %see is wiped every think — the gate stops it re-minting past its
-//   beat, so the fixture shows one fresh claim per step, not an accumulating ledger). A crossed frame
-//    reads as its live inbox %req:unemit,done (sc.to = the frame type) at the very step it lands.
+// SwarmWire_witness — %seen LATCHED assertions (Seen_split move 3), polled every pass. Every claim is a
+//  happened-FACT of the wire handshake (two stations, an authenticated link, real frames crossing, the
+//   seal, the spent-nonce refusal) — once true it STAYS true, so it LATCHES (never wiped) rather than
+//    flickering. The n === K truth-gate is KEPT: a crossed frame reads as its live inbox %req:unemit,done
+//     (sc.to = the frame type) only at the step it lands, so gating to that beat catches the transient
+//      exactly when it is observable; the latch then carries it to the final snap. Declared in
+//       The/Assertions (SwarmWire toc.snap); a missing one reds the run un-maskably (§4). Converted from
+//        %see: the truth-gates are unchanged, so each fact still appears at its beat — now it also
+//         persists after (an accumulating ledger, the %seen design) instead of dropping each think.
 SwarmWire_witness(w):
     let n = (this.c.run)?.c.step_n
     let alice = this.SwarmStaple_ident(w, 'Alice')
@@ -280,20 +285,20 @@ SwarmWire_witness(w):
     if (!alice || !bob) return
     let stations = w.o({ Peering: 1 })
     // beat 2: two stations + the swarm kinds armed on the world.
-    if (n === 2 && stations.length >= 2 && w.c.on?.pier_hello && !(oa %see:'two stations stand on the spine — the swarm frame kinds armed on the world')) i %see:'two stations stand on the spine — the swarm frame kinds armed on the world'
+    if (n === 2 && stations.length >= 2 && w.c.on?.pier_hello && !(oa %seen:'two stations stand on the spine — the swarm frame kinds armed on the world')) i %seen:'two stations stand on the spine — the swarm frame kinds armed on the world'
     let aPier = stations.find(p => p.sc.name === alice.sc.prepub)?.o({ Pier: 1 })[0]
     let bPier = stations.find(p => p.sc.name === bob.sc.prepub)?.o({ Pier: 1 })[0]
     if (!aPier || !bPier) return
     // beat 3: authenticated both ways BEFORE any swarm frame crossed.
-    if (n === 3 && this.Peeroleum_peer_ready(aPier) && this.Peeroleum_peer_ready(bPier) && !(oa %see:'the link authenticated first — hello and trust both ways before any swarm frame')) i %see:'the link authenticated first — hello and trust both ways before any swarm frame'
+    if (n === 3 && this.Peeroleum_peer_ready(aPier) && this.Peeroleum_peer_ready(bPier) && !(oa %seen:'the link authenticated first — hello and trust both ways before any swarm frame')) i %seen:'the link authenticated first — hello and trust both ways before any swarm frame'
     // beat 4: the hello and accept each crossed as a real DONE inbox item, and the friendship sealed.
     let heard = (pier, kind) => pier.o({ inbox: 1 })[0]?.o({ req: 'unemit' }).some(u => u.sc.to === kind && u.sc.done)
-    if (n === 4 && heard(aPier, 'pier_hello') && heard(bPier, 'pier_accept') && !(oa %see:'pier_hello and pier_accept crossed as real frames — booked through outbox and inbox')) i %see:'pier_hello and pier_accept crossed as real frames — booked through outbox and inbox'
+    if (n === 4 && heard(aPier, 'pier_hello') && heard(bPier, 'pier_accept') && !(oa %seen:'pier_hello and pier_accept crossed as real frames — booked through outbox and inbox')) i %seen:'pier_hello and pier_accept crossed as real frames — booked through outbox and inbox'
     let aGot = this.Swarm_peering(alice)?.o({ Pier: 1, pub: bob.sc.prepub })[0]?.o({ Grant: 'Music', by: bob.c.keys?.pub })[0]
     let bGot = this.Swarm_peering(bob)?.o({ Pier: 1, pub: alice.sc.prepub })[0]?.o({ Grant: 'Music', by: alice.c.keys?.pub })[0]
-    if (n === 4 && aGot && bGot && !(oa %see:'the friendship sealed over the wire — mutual Music grants at both ends')) i %see:'the friendship sealed over the wire — mutual Music grants at both ends'
+    if (n === 4 && aGot && bGot && !(oa %seen:'the friendship sealed over the wire — mutual Music grants at both ends')) i %seen:'the friendship sealed over the wire — mutual Music grants at both ends'
     // beat 5: the refusal crossed back — a pier_reject frame heard at Bob and surfaced as %rebuff.
-    if (n === 5 && heard(bPier, 'pier_reject') && bob.o({ rebuff: 'rejected_spent' })[0] && !(oa %see:'the spent nonce refuses over the wire too — a pier_reject crossed back')) i %see:'the spent nonce refuses over the wire too — a pier_reject crossed back'
+    if (n === 5 && heard(bPier, 'pier_reject') && bob.o({ rebuff: 'rejected_spent' })[0] && !(oa %seen:'the spent nonce refuses over the wire too — a pier_reject crossed back')) i %seen:'the spent nonce refuses over the wire too — a pier_reject crossed back'
 
 // SwarmWire_order — float A:SwarmWire to the front of H/* so the Run snap stays readable.
 async SwarmWire_order(w):

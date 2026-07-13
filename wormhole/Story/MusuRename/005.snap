@@ -1,0 +1,49 @@
+Snap:H
+  H:MusuRename,Run
+    A:MusuRename
+      self,round=7	{"mung":["age"]}
+      w:MusuRename
+        self,round=7	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          offered,cards=3,crossed
+          reached:step_5
+          Dogear,of:mirror-low
+            curs,Mag:Musica
+              curs,wild:Cloud,randomic:dgbl8pe
+                curs,wild:Record,title:Low Draw
+          Dogear,of:mirror-high
+            curs,Mag:Musica
+              curs,wild:Cloud,randomic:dgbl8pe
+                curs,wild:Record,title:High Draw
+          baseline,low:t1,high:t2,fresh
+        Peering,name:Origin,req=2,ok
+          Pier,pub:Follower,req=2,ok
+            Ud,pubkey:Follower
+            outbox
+              recent
+                emit,type:repli_lines,seq
+          active_transport,type:mock,open
+        Peering,name:Follower,req=3,ok
+          Pier,pub:Origin,req=2,ok
+            Ud,pubkey:Origin
+            inbox
+              recent
+                unemit,type:repli_lines,seq
+          active_transport,type:mock,open
+        Library,pier:Origin
+          Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+          Record,id:t1,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+          Record,id:t2,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
+        Mag:Musica
+          Cloud,randomic:dgbl8pe,created_at=1000
+            Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+            Record,id:t1,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+            Record,id:t2,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
+        Library,pier:Follower.mirror
+          Mag:Musica
+            Cloud,randomic:dgbl8pe,created_at=1000
+              Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+              Record,id:t1,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+              Record,id:t2,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus

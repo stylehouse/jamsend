@@ -1,0 +1,60 @@
+Snap:H
+  H:MusuRecast,Run
+    A:MusuRecast
+      self,round=19	{"mung":["age"]}
+      w:MusuRecast
+        self,round=19	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          published:a,cards=3,clouds,goners=0
+          published:b,cards=5,clouds=2,goners=0
+          reached:step_7
+          baseline,clouds=2,all_five
+          see:both draws crossed and the follower mirrors all five cards in two clouds
+          reached:lose_record
+          lost_record:t1,gone_recs:t1,gone_cl:
+          see:a track lost from the collection crosses as a goner — the follower drops that exact card and keeps its cloud-mates
+          reached:step_9
+          after_record,s0,s2,t1_gone
+          reached:lose_cloud
+          lost_cloud:draw_b,gone_recs:,gone_cl:draw_b
+          see:the record goner is surgical — the instant the lost track was withdrawn the follower still held its cloud-mates whole
+          see:a whole forgotten era crosses in one stroke — losing every track of a draw dropped the follower entire cloud not an empty husk
+          see:the origin and the follower agree after every recast — neither keeps a card the other dropped
+        Peering,name:Origin,req=2,ok
+          Pier,pub:Follower,req=2,ok
+            Ud,pubkey:Follower
+            outbox
+              recent
+                emit,type:repli_lines,seq
+                emit=2,type:repli_lines,seq=2
+                emit=3,type:repli_lines,seq=3
+                emit=4,type:repli_lines,seq=4
+              emit=5,type:repli_lines,seq=5,sent,body_hash:6f09afa986fa2e88d93188ea0ab1ec355c72bb394ceb1df0a12bd42f93022e2f,body_len=315,acked
+              emit=6,type:repli_lines,seq=6,sent,body_hash:70bb5dadd84d54422a6a2f437e1c088a6ad45ebdc771e9a69a7c8715dba663af,body_len=93,acked
+          active_transport,type:mock,open
+        Peering,name:Follower,req=3,ok
+          Pier,pub:Origin,req=2,ok
+            Ud,pubkey:Origin
+            inbox
+              recent
+                unemit,type:repli_lines,seq
+                unemit=2,type:repli_lines,seq=2
+                unemit=3,type:repli_lines,seq=3
+                unemit=4,type:repli_lines,seq=4
+              req:unemit,seq=5,type:repli_lines,body_hash:6f09afa986fa2e88d93188ea0ab1ec355c72bb394ceb1df0a12bd42f93022e2f,body_len=315,done,to:repli_lines,finished
+              req:unemit,seq=6,type:repli_lines,body_hash:70bb5dadd84d54422a6a2f437e1c088a6ad45ebdc771e9a69a7c8715dba663af,body_len=93,done,to:repli_lines,finished
+          active_transport,type:mock,open
+        Library,pier:Origin
+          Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+          Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+        Mag:Musica
+          Cloud,randomic:draw_a,created_at=1000
+            Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+            Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+        Library,pier:Follower.mirror
+          Mag:Musica
+            Cloud,randomic:draw_a,created_at=1000
+              Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+              Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus

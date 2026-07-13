@@ -1,0 +1,7 @@
+Snap:H
+  H:MusuRename,Run
+    A:MusuRename
+      self,round	{"mung":["age"]}
+      w:MusuRename
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

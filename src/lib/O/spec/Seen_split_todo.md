@@ -31,9 +31,22 @@ This file is destination + the bombs + the next move. Correct anything that has 
    `%see`→`%seen` (truth-gates unchanged → identical snap footprint, only the key hardened), 10
     `Assertion:` roster lines, fixtures 2-8 re-recorded live (latch accumulates 1→10 across the
      beats), GREEN 8/8 + phantom-sabotage RED-proven. Uncommitted.
-- Remaining fleet: the other Swarm* Books, the Musu*/Radiation/Voronation/Peregrination families
-   (§5 inventory), and the `%witnessed` retirement. `SwarmStaple` is now the FULL-conversion worked
-    example (`SwarmSteal` is the stand-beside/mixed example).
+- `SwarmWire` — FULL conversion AUTHORED + COMPILED (2026-07-14), **live re-record OWED**. All 5
+   wire-handshake happened-facts converted `%see`→`%seen` (`SwarmWire_witness`; the `n === K`
+    truth-gates KEPT — a crossed frame reads as its live inbox `%req:unemit,done` only at the step it
+     lands, so gate it there to catch the transient, then the latch carries it to the final snap), 5
+      `Assertion:` roster lines in `wormhole/Story/SwarmWire/toc.snap` (sentences byte-identical to the
+       emissions — verified with a diff), gen recompiled via **LocalGen** (`{seen:…}` confirmed;
+        browserless because the live editor was throttled mid-VoroMitosis → no `ghost-compile`). NOT yet
+         live: fixtures `002-005.snap` still hold the OLD single `see:` line, so a live CHECK reds steps
+          2-5 on the dige while the roster/gaps go green — that IS the re-record trigger, not a failure.
+           Blocked on a free runner (the flock's one runner was leased to VoroMitosis). Next: `run
+            SwarmWire` live → confirm `gaps` empty → install each got_snap (`snap <n>` gives text + the
+             live dige) into `00N.snap` + toc step-dige → re-run GREEN → phantom-sabotage one entry.
+- Remaining fleet: the rest of the Swarm* Books (`Door`/`Got`/`Policy`/`Invite` untouched — `Wire` in
+   flight above), the Musu*/Radiation/Voronation/Peregrination families (§5 inventory), and the
+    `%witnessed` retirement. `SwarmStaple` is the FULL-conversion worked example (`SwarmSteal` is the
+     stand-beside/mixed example; `SwarmWire` is the authored-but-live-owed one).
 
 Three concrete moves, sized honestly:
 
