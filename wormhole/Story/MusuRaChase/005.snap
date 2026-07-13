@@ -1,45 +1,45 @@
 Snap:H
   H:MusuRaChase,Run
     A:MusuRaChase
-      self,round=27	{"mung":["age"]}
+      self,round=28	{"mung":["age"]}
       w:MusuRaChase,keep_ahead=3
-        self,round=27	{"mung":["age"]}
+        self,round=28	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Account,of:Uno
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
               Idzeug:rachase_u,to:Music,genre:Chase,spent
-              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783714059
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783907909
                 Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783714059,sign:8d6c4b67df0bcff0862a4b1f3cc1486e7ff8f26a6f6f424f6f432b3d2e3f83fd3eacc8bfcf4ad89bc37476897de520ef7aaa319dfa4121c54fc04387fb551a0a,genre:Chase
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783714059,sign:3095315f5b6f7872c03f684356d38c96a4c80a4e3366db421d892968d123d9ba3c1276c531576bae95323ba98b3c388d8259b73e6affceb08c211fe039717502,genre:Chase
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783907909,sign:eaf00b50deee14bc25e80bbdd2a234df3597eaa8ac451894a6067b82fb3587b0a94e9636a57cecefd621c7338a318c3b433529454495bb614a9ce605dd69ef00,genre:Chase
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783907909,sign:f21d5e2f7e64e510ddccc75f1cce0d5b80ac39177c2ea1ef0f6be95842c07f3036fa080e1ef06bf5f87775aa48cbd4f00db9e7191ae0158f571ef6427f6fdd0e,genre:Chase
             SocialGraph
-              Edge,a:4e09f34f5a6ab900,b:b317b9a776e39d30,at:1783714059
+              Edge,a:4e09f34f5a6ab900,b:b317b9a776e39d30,at:1783907909
         Account,of:Duo
           Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
             Peering,name:be0dab3303037ad2,friendly:Duo
               Idzeug:rachase_d,to:Music,genre:Chase,spent
-              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783714059
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783907909
                 Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783714059,sign:20d256b1e9022231ce7ceb428dab4b5b225dbc80ea860c2dab017f6defb8b82624cc2212227a7f891d276d8c67eb2cd413a5917954de88b177e392f17131e806,genre:Chase
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783714059,sign:37603db7d2c1a40deba5c378c55bb9be2148a6a2b53fba94035436fa88bbe632e73451ccecfa1f30770fa9ff63e86d7bdfe1c3c3425df25954172699c6a8ba06,genre:Chase
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783907909,sign:10181e028b66ea22efb7806319fc5b6b4e0eff00e0d36fe278a81825162afd5f9797c5f02733049a9a2bcc25c71f20056bdecdaf55fdff695cfc81ec5bd1730e,genre:Chase
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783907909,sign:2712d1570bf4d2e6b9ba2e94d643f6c51121fe3ed7b9cbfb776cc751433b2745a59ef3ee47523f6154990be7245420ca525615ca4560e41eb790b78fd63cf70d,genre:Chase
             SocialGraph
-              Edge,a:be0dab3303037ad2,b:b317b9a776e39d30,at:1783714059
+              Edge,a:be0dab3303037ad2,b:b317b9a776e39d30,at:1783907909
         Account,of:Listener
           Identity:b317b9a776e39d30,prepub:b317b9a776e39d30,friendly:Listener
             Peering,name:b317b9a776e39d30,friendly:Listener
-              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783714059
+              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783907909
                 Peering,name:4e09f34f5a6ab900,friendly:Uno,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783714059,sign:3095315f5b6f7872c03f684356d38c96a4c80a4e3366db421d892968d123d9ba3c1276c531576bae95323ba98b3c388d8259b73e6affceb08c211fe039717502,genre:Chase
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783714059,sign:8d6c4b67df0bcff0862a4b1f3cc1486e7ff8f26a6f6f424f6f432b3d2e3f83fd3eacc8bfcf4ad89bc37476897de520ef7aaa319dfa4121c54fc04387fb551a0a,genre:Chase
-              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783714059
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783907909,sign:f21d5e2f7e64e510ddccc75f1cce0d5b80ac39177c2ea1ef0f6be95842c07f3036fa080e1ef06bf5f87775aa48cbd4f00db9e7191ae0158f571ef6427f6fdd0e,genre:Chase
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783907909,sign:eaf00b50deee14bc25e80bbdd2a234df3597eaa8ac451894a6067b82fb3587b0a94e9636a57cecefd621c7338a318c3b433529454495bb614a9ce605dd69ef00,genre:Chase
+              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783907909
                 Peering,name:be0dab3303037ad2,friendly:Duo,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783714059,sign:37603db7d2c1a40deba5c378c55bb9be2148a6a2b53fba94035436fa88bbe632e73451ccecfa1f30770fa9ff63e86d7bdfe1c3c3425df25954172699c6a8ba06,genre:Chase
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783714059,sign:20d256b1e9022231ce7ceb428dab4b5b225dbc80ea860c2dab017f6defb8b82624cc2212227a7f891d276d8c67eb2cd413a5917954de88b177e392f17131e806,genre:Chase
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783907909,sign:2712d1570bf4d2e6b9ba2e94d643f6c51121fe3ed7b9cbfb776cc751433b2745a59ef3ee47523f6154990be7245420ca525615ca4560e41eb790b78fd63cf70d,genre:Chase
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783907909,sign:10181e028b66ea22efb7806319fc5b6b4e0eff00e0d36fe278a81825162afd5f9797c5f02733049a9a2bcc25c71f20056bdecdaf55fdff695cfc81ec5bd1730e,genre:Chase
             SocialGraph
-              Edge,a:b317b9a776e39d30,b:4e09f34f5a6ab900,at:1783714059
-              Edge,a:b317b9a776e39d30,b:be0dab3303037ad2,at:1783714059
+              Edge,a:b317b9a776e39d30,b:4e09f34f5a6ab900,at:1783907909
+              Edge,a:b317b9a776e39d30,b:be0dab3303037ad2,at:1783907909
         Peering,name:4e09f34f5a6ab900,req=2,ok
           Pier,pub:b317b9a776e39d30,req=2,ok
             req:handshake,finished
@@ -61,27 +61,27 @@ Snap:H
                 emit=3,type:pier_accept,seq=3
                 emit=4,type:repli_lines,seq=4
                 emit=5,type:repli_lines,seq=5
-              emit=6,type:repli_lines,seq=6,sent,body_hash:b00cc432b8ec4afdf9f12c86eb71e99b49fcd1515a96c725697901b5d585d720,body_len=199,acked
-              emit=7,type:repli_page,seq=7,sent,body_hash:937a7a36a957382ed222d29d70587038a00abeacda7f7329d77ab2eca827ed45,body_len=32620,acked
-              emit=8,type:repli_page,seq=8,sent,body_hash:5d1dabcc9256d93be5accff5a55e93171377c33625f16c47559cb5f2f30ec27e,body_len=32300,acked
-              emit=9,type:repli_lines,seq=9,sent,body_hash:6b098e6901affde4b90f9ca05be0292012c3d501da1ed939a1818bad9e47fa58,body_len=182,acked
-              emit=10,type:repli_page,seq=10,sent,body_hash:48dc354cfdebf87db8cb135439dba7d2d59670a232069ad7049c1e0077d48d62,body_len=32300,acked
-              emit=11,type:repli_page,seq=11,sent,body_hash:936e4c6a081fb00c18a10a8994902793b6d70b9186f13981d1b9a628d2eb2023,body_len=32300,acked
-              emit=12,type:repli_lines,seq=12,sent,body_hash:bee1702f79ffb339df4efe907452a02475759ebc462350f0e8482ff061617cb5,body_len=182,acked
-              emit=13,type:repli_page,seq=13,sent,body_hash:f45804d412ec1b5fa6050a81ae5b0d6333c1d8c7a35416027734ffbd14d22f23,body_len=32300,acked
-              emit=14,type:repli_page,seq=14,sent,body_hash:99c18d5d6294b3e2b7d91f278893ae30a94ff1ab907f2d696426d195cca8fb96,body_len=32300,acked
-              emit=15,type:repli_lines,seq=15,sent,body_hash:a4905c905579fab8b762553d8a4dafe369ad463dd4393085d31681fb0d0b2ec6,body_len=199,acked
-              emit=16,type:repli_page,seq=16,sent,body_hash:86671a6d004f6b09a8c4439e8bdbc6de5585879dd1251966542548842258a70e,body_len=32620,acked
-              emit=17,type:repli_page,seq=17,sent,body_hash:db9acbea6a2e3ea0b6fd571b978614d4978574ff4615a102eb43585116d92f88,body_len=32300,acked
-              emit=18,type:repli_lines,seq=18,sent,body_hash:c7f2bb0bac05f6d1ceccbcc6ad561219b979b7f531b7382821586e75f4db86d0,body_len=183,acked
-              emit=19,type:repli_page,seq=19,sent,body_hash:8b3baffe9a47faaf45aad82d934338e989fde0475ee7574f743a7c1aa3e1af63,body_len=32300,acked
-              emit=20,type:repli_page,seq=20,sent,body_hash:ec70d43fce3fdf94d7ee79deb7e5feb567e8cd738afd2a53fa1dfb71eba41c59,body_len=32300,acked
-              emit=21,type:repli_lines,seq=21,sent,body_hash:95f899db725680f4d8a2a11d9bcaf22722c46354792f2dd6bac850c4bd24f0c9,body_len=184,acked
-              emit=22,type:repli_page,seq=22,sent,body_hash:2b014486afb83b1e14cf9dd55709a067108bce655abe3dc0d7a3b32fc9c40623,body_len=32300,acked
-              emit=23,type:repli_page,seq=23,sent,body_hash:05567d55cfce984cdc7f5435d7c7d69875a66a42eaa96b65c79924fa9bea4e81,body_len=32300,acked
-              emit=24,type:repli_lines,seq=24,sent,body_hash:b487dd2f9a1b19db960c589148a15f961ac1842c51d3a769f32b25032784a7e9,body_len=184,acked
-              emit=25,type:repli_page,seq=25,sent,body_hash:3924af0e97fe2ae67dc2b821798fc507faa49ac9b553ca4e9693376b683eef84,body_len=32300,acked
-              emit=26,type:repli_page,seq=26,sent,body_hash:b62c38ab58a02229406376ac5b907420d514375478eec92e2f8a32f03b0ca506,body_len=32300,acked
+              emit=6,type:repli_lines,seq=6,sent,body_hash:b01c591308674a27ccfbadd9288dd369903757c9acf49709abfc23eee1a1d16e,body_len=199,acked
+              emit=7,type:repli_page,seq=7,sent,body_hash:3ccd2f51f3f3b66e3115ee8cb2d1c43575a42bf9704abf44b8af40d1a8d74d7b,body_len=32620,acked
+              emit=8,type:repli_page,seq=8,sent,body_hash:144cde8bcbf6a150cae10b2f4115f1fd62f97576477adbaaa900bac3cfc53872,body_len=32300,acked
+              emit=9,type:repli_lines,seq=9,sent,body_hash:4186108ebdecd2f260b73c76a15a18b48b114d71ac8c5a058f427d757e3c06c0,body_len=182,acked
+              emit=10,type:repli_page,seq=10,sent,body_hash:224607ca4d58380a3271f7a0a2621c076034997f83423effb1cabda2252985e3,body_len=32300,acked
+              emit=11,type:repli_page,seq=11,sent,body_hash:bd7e4cd4018af8df29a4ce36cf8cf48ddf14f9265dafc3ce6499e71a5280320a,body_len=32300,acked
+              emit=12,type:repli_lines,seq=12,sent,body_hash:f030e2139d1b8ad312d232ae63906f2ff1e333f5ad7b54fe0d23a10679aa5947,body_len=182,acked
+              emit=13,type:repli_page,seq=13,sent,body_hash:e562bac3d0f1dfc9969825f34ffb0ddba65467e2df0ca90f1b224292f3c6154d,body_len=32300,acked
+              emit=14,type:repli_page,seq=14,sent,body_hash:774bf989acb4a0f4d775b5bfbe38c4ceb10372cdaf58dbd2738898a012d0d3fe,body_len=32300,acked
+              emit=15,type:repli_lines,seq=15,sent,body_hash:3b403839e4ca9d4534407b2c0ffe82e99ad6abdca48c57425e823a1c8b84d6a9,body_len=199,acked
+              emit=16,type:repli_page,seq=16,sent,body_hash:3457aa775f90150bb7dfee2664537ff0249c76f412150375802373b5dcd6e379,body_len=32620,acked
+              emit=17,type:repli_page,seq=17,sent,body_hash:24e815ca6fe5761ede36e7deca8327236309956d788d7280dbc8ede8ca0bf23b,body_len=32300,acked
+              emit=18,type:repli_lines,seq=18,sent,body_hash:af5085e18e3f888a711b0c821792f808e3a1b9acf6a93ed62a7df4346699aec1,body_len=183,acked
+              emit=19,type:repli_page,seq=19,sent,body_hash:264238c1c63afa12031ca91e07293c7c4c15bb886d1f94e8877bfe0541051a17,body_len=32300,acked
+              emit=20,type:repli_page,seq=20,sent,body_hash:aa9dbc861991e9abee3f88f0308a07e85fefc22daa4d1a816dbd6b7765d27131,body_len=32300,acked
+              emit=21,type:repli_lines,seq=21,sent,body_hash:83660999a862f823aa97b4a8391ebfa56a727c0d05f586b40c55db14cef15949,body_len=184,acked
+              emit=22,type:repli_page,seq=22,sent,body_hash:d8b306612ace71a39769d537ad436fd14a8db41f23523dea8e042656395f301f,body_len=32300,acked
+              emit=23,type:repli_page,seq=23,sent,body_hash:df55a0d0259400a835144f5c24fbcc22abdbf2279c8793f801035388489d5aff,body_len=32300,acked
+              emit=24,type:repli_lines,seq=24,sent,body_hash:78375aa22391048d27cebe796d73983ef4707a67b21972ac5b828021ed0dc0c6,body_len=184,acked
+              emit=25,type:repli_page,seq=25,sent,body_hash:7421c8384159092728bb78fe76d5682ecb026174db64edccab1977888f77f0f4,body_len=32300,acked
+              emit=26,type:repli_page,seq=26,sent,body_hash:d9a2d18f38ffb6bdd34937145c07661db3eec2038149be1c6789ef23a13bd222,body_len=32300,acked
             inbox
               recent
                 unemit,type:hello,seq
@@ -129,27 +129,27 @@ Snap:H
                 unemit=3,type:pier_accept,seq=3
                 unemit=4,type:repli_lines,seq=4
                 unemit=5,type:repli_lines,seq=5
-              req:unemit,seq=6,type:repli_lines,body_hash:b00cc432b8ec4afdf9f12c86eb71e99b49fcd1515a96c725697901b5d585d720,body_len=199,done,to:repli_lines,finished
-              req:unemit,seq=7,type:repli_page,body_hash:937a7a36a957382ed222d29d70587038a00abeacda7f7329d77ab2eca827ed45,body_len=32620,done,to:repli_page,finished
-              req:unemit,seq=8,type:repli_page,body_hash:5d1dabcc9256d93be5accff5a55e93171377c33625f16c47559cb5f2f30ec27e,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=9,type:repli_lines,body_hash:6b098e6901affde4b90f9ca05be0292012c3d501da1ed939a1818bad9e47fa58,body_len=182,done,to:repli_lines,finished
-              req:unemit,seq=10,type:repli_page,body_hash:48dc354cfdebf87db8cb135439dba7d2d59670a232069ad7049c1e0077d48d62,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=11,type:repli_page,body_hash:936e4c6a081fb00c18a10a8994902793b6d70b9186f13981d1b9a628d2eb2023,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=12,type:repli_lines,body_hash:bee1702f79ffb339df4efe907452a02475759ebc462350f0e8482ff061617cb5,body_len=182,done,to:repli_lines,finished
-              req:unemit,seq=13,type:repli_page,body_hash:f45804d412ec1b5fa6050a81ae5b0d6333c1d8c7a35416027734ffbd14d22f23,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=14,type:repli_page,body_hash:99c18d5d6294b3e2b7d91f278893ae30a94ff1ab907f2d696426d195cca8fb96,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=15,type:repli_lines,body_hash:a4905c905579fab8b762553d8a4dafe369ad463dd4393085d31681fb0d0b2ec6,body_len=199,done,to:repli_lines,finished
-              req:unemit,seq=16,type:repli_page,body_hash:86671a6d004f6b09a8c4439e8bdbc6de5585879dd1251966542548842258a70e,body_len=32620,done,to:repli_page,finished
-              req:unemit,seq=17,type:repli_page,body_hash:db9acbea6a2e3ea0b6fd571b978614d4978574ff4615a102eb43585116d92f88,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=18,type:repli_lines,body_hash:c7f2bb0bac05f6d1ceccbcc6ad561219b979b7f531b7382821586e75f4db86d0,body_len=183,done,to:repli_lines,finished
-              req:unemit,seq=19,type:repli_page,body_hash:8b3baffe9a47faaf45aad82d934338e989fde0475ee7574f743a7c1aa3e1af63,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=20,type:repli_page,body_hash:ec70d43fce3fdf94d7ee79deb7e5feb567e8cd738afd2a53fa1dfb71eba41c59,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=21,type:repli_lines,body_hash:95f899db725680f4d8a2a11d9bcaf22722c46354792f2dd6bac850c4bd24f0c9,body_len=184,done,to:repli_lines,finished
-              req:unemit,seq=22,type:repli_page,body_hash:2b014486afb83b1e14cf9dd55709a067108bce655abe3dc0d7a3b32fc9c40623,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=23,type:repli_page,body_hash:05567d55cfce984cdc7f5435d7c7d69875a66a42eaa96b65c79924fa9bea4e81,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=24,type:repli_lines,body_hash:b487dd2f9a1b19db960c589148a15f961ac1842c51d3a769f32b25032784a7e9,body_len=184,done,to:repli_lines,finished
-              req:unemit,seq=25,type:repli_page,body_hash:3924af0e97fe2ae67dc2b821798fc507faa49ac9b553ca4e9693376b683eef84,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=26,type:repli_page,body_hash:b62c38ab58a02229406376ac5b907420d514375478eec92e2f8a32f03b0ca506,body_len=32300,done,to:repli_page,finished
+              req:unemit,seq=6,type:repli_lines,body_hash:b01c591308674a27ccfbadd9288dd369903757c9acf49709abfc23eee1a1d16e,body_len=199,done,to:repli_lines,finished
+              req:unemit,seq=7,type:repli_page,body_hash:3ccd2f51f3f3b66e3115ee8cb2d1c43575a42bf9704abf44b8af40d1a8d74d7b,body_len=32620,done,to:repli_page,finished
+              req:unemit,seq=8,type:repli_page,body_hash:144cde8bcbf6a150cae10b2f4115f1fd62f97576477adbaaa900bac3cfc53872,body_len=32300,done,to:repli_page,finished
+              req:unemit,seq=9,type:repli_lines,body_hash:4186108ebdecd2f260b73c76a15a18b48b114d71ac8c5a058f427d757e3c06c0,body_len=182,done,to:repli_lines,finished
+              req:unemit,seq=10,type:repli_page,body_hash:224607ca4d58380a3271f7a0a2621c076034997f83423effb1cabda2252985e3,body_len=32300,done,to:repli_page,finished
+              req:unemit,seq=11,type:repli_page,body_hash:bd7e4cd4018af8df29a4ce36cf8cf48ddf14f9265dafc3ce6499e71a5280320a,body_len=32300,done,to:repli_page,finished
+              req:unemit,seq=12,type:repli_lines,body_hash:f030e2139d1b8ad312d232ae63906f2ff1e333f5ad7b54fe0d23a10679aa5947,body_len=182,done,to:repli_lines,finished
+              req:unemit,seq=13,type:repli_page,body_hash:e562bac3d0f1dfc9969825f34ffb0ddba65467e2df0ca90f1b224292f3c6154d,body_len=32300,done,to:repli_page,finished
+              req:unemit,seq=14,type:repli_page,body_hash:774bf989acb4a0f4d775b5bfbe38c4ceb10372cdaf58dbd2738898a012d0d3fe,body_len=32300,done,to:repli_page,finished
+              req:unemit,seq=15,type:repli_lines,body_hash:3b403839e4ca9d4534407b2c0ffe82e99ad6abdca48c57425e823a1c8b84d6a9,body_len=199,done,to:repli_lines,finished
+              req:unemit,seq=16,type:repli_page,body_hash:3457aa775f90150bb7dfee2664537ff0249c76f412150375802373b5dcd6e379,body_len=32620,done,to:repli_page,finished
+              req:unemit,seq=17,type:repli_page,body_hash:24e815ca6fe5761ede36e7deca8327236309956d788d7280dbc8ede8ca0bf23b,body_len=32300,done,to:repli_page,finished
+              req:unemit,seq=18,type:repli_lines,body_hash:af5085e18e3f888a711b0c821792f808e3a1b9acf6a93ed62a7df4346699aec1,body_len=183,done,to:repli_lines,finished
+              req:unemit,seq=19,type:repli_page,body_hash:264238c1c63afa12031ca91e07293c7c4c15bb886d1f94e8877bfe0541051a17,body_len=32300,done,to:repli_page,finished
+              req:unemit,seq=20,type:repli_page,body_hash:aa9dbc861991e9abee3f88f0308a07e85fefc22daa4d1a816dbd6b7765d27131,body_len=32300,done,to:repli_page,finished
+              req:unemit,seq=21,type:repli_lines,body_hash:83660999a862f823aa97b4a8391ebfa56a727c0d05f586b40c55db14cef15949,body_len=184,done,to:repli_lines,finished
+              req:unemit,seq=22,type:repli_page,body_hash:d8b306612ace71a39769d537ad436fd14a8db41f23523dea8e042656395f301f,body_len=32300,done,to:repli_page,finished
+              req:unemit,seq=23,type:repli_page,body_hash:df55a0d0259400a835144f5c24fbcc22abdbf2279c8793f801035388489d5aff,body_len=32300,done,to:repli_page,finished
+              req:unemit,seq=24,type:repli_lines,body_hash:78375aa22391048d27cebe796d73983ef4707a67b21972ac5b828021ed0dc0c6,body_len=184,done,to:repli_lines,finished
+              req:unemit,seq=25,type:repli_page,body_hash:7421c8384159092728bb78fe76d5682ecb026174db64edccab1977888f77f0f4,body_len=32300,done,to:repli_page,finished
+              req:unemit,seq=26,type:repli_page,body_hash:d9a2d18f38ffb6bdd34937145c07661db3eec2038149be1c6789ef23a13bd222,body_len=32300,done,to:repli_page,finished
             Ud,pubkey:4e09f34f5a6ab900
             req:awaitbuf,bufferid,landed,finished
             req:awaitbuf,bufferid=2,landed,finished
@@ -222,7 +222,7 @@ Snap:H
             Ud,pubkey:b317b9a776e39d30
           active_transport,type:mock,open
         Library,pier:4e09f34f5a6ab900
-          Record,id:af99e3b3efe5661a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.35,gain=-6.65,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
+          Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
             Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
@@ -239,7 +239,7 @@ Snap:H
             Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:cec642f34f501315,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
+          Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
             Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
@@ -257,7 +257,7 @@ Snap:H
             Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
         Library,pier:be0dab3303037ad2
-          Record,id:8e6fc6abdf3a262c,title:Groove G,artist:DJ Oscillo,seconds=66,lufs=-7.84,gain=-6.16,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=33,bytes=517443
+          Record,id:cf95c97b08584b92,title:Groove G,artist:DJ Oscillo,seconds=66,lufs=-7.83,gain=-6.17,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=33,bytes=517443
             Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
@@ -274,7 +274,7 @@ Snap:H
             Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:f60c57424cac2e10,title:Echo E,artist:Fourier Four,seconds=60,lufs=-6.61,gain=-7.39,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=30,bytes=517443
+          Record,id:a14602e5ca2e9bd0,title:Echo E,artist:Fourier Four,seconds=60,lufs=-6.61,gain=-7.39,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=30,bytes=517443
             Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
@@ -295,14 +295,14 @@ Snap:H
         req:witness,eternal,ok
         reached:step_4
         Library,pier:b317b9a776e39d30
-          Record,id:af99e3b3efe5661a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.35,gain=-6.65,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
+          Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
             Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:cec642f34f501315,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
+          Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
             Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
@@ -311,8 +311,8 @@ Snap:H
             Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
             Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:8e6fc6abdf3a262c,title:Groove G,artist:DJ Oscillo,seconds=66,lufs=-7.84,gain=-6.16,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=33,bytes=517443
-          Record,id:f60c57424cac2e10,title:Echo E,artist:Fourier Four,seconds=60,lufs=-6.61,gain=-7.39,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=30,bytes=517443
+          Record,id:cf95c97b08584b92,title:Groove G,artist:DJ Oscillo,seconds=66,lufs=-7.83,gain=-6.17,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=33,bytes=517443
+          Record,id:a14602e5ca2e9bd0,title:Echo E,artist:Fourier Four,seconds=60,lufs=-6.61,gain=-7.39,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=30,bytes=517443
         see:two source Piers stand with real opus stock — different tracks on each shelf
         see:the listener redeemed an invite from each source — both pairs sealed with live Music grants
         see:the catalog merged at the mirror — husks from both sources carry their chunk promises

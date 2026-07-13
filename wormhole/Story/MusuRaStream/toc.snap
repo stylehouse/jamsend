@@ -5,65 +5,65 @@ story:MusuRaStream
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=1.693
-      sample=2.144,at=1783672034
-      sample=2.163,at=1783675771
-      sample=1.604,at=1783676961
-      sample=1.564,at=1783682851
-      sample=1.547,at=1783688498
+    TimeTotal:beliefs,avg=1.393
       sample=1.547,at=1783688573
       sample=1.547,at=1783688589
       sample=1.547,at=1783688607
       sample=1.744,at=1783688848
       sample=1.523,at=1783694669
-    TimeTotal:step,avg=0.042
-      sample=0.054,at=1783672034
-      sample=0.054,at=1783675771
-      sample=0.04,at=1783676961
-      sample=0.039,at=1783682851
-      sample=0.039,at=1783688498
+      sample=1.129,at=1783907748
+      sample=1.129,at=1783907765
+      sample=1.129,at=1783907777
+      sample=1.374,at=1783907830
+      sample=1.262,at=1783907891
+    TimeTotal:step,avg=0.035
       sample=0.039,at=1783688573
       sample=0.039,at=1783688589
       sample=0.039,at=1783688607
       sample=0.044,at=1783688848
       sample=0.038,at=1783694669
+      sample=0.028,at=1783907748
+      sample=0.028,at=1783907765
+      sample=0.028,at=1783907777
+      sample=0.034,at=1783907830
+      sample=0.032,at=1783907891
   step,dige:5ededce3357c5628
-  step=2,dige:fbc7a577dc654ac2
-  step=3,dige:dba5f9691fee1140
-  step=4,dige:5af1e0257d60f905
-  step=5,dige:5cb27433b2dec6a1
-  step=6,dige:1f33caee6cba48b1
-  step=7,dige:a5e5655233cacca3
-  step=8,dige:bd6fddeb76b80622
-  step=9,dige:2a3fb66098595d38
-  step=10,dige:f4c1f75c44d8a932
-  step=11,dige:19636c0d39316add
-  step=12,dige:ee17c5c14efa5a66
-  step=13,dige:1f7ca536bb2532d2
-  step=14,dige:b37a469cd3cfdae6
-  step=15,dige:50dd13f6fe5b4167
-  step=16,dige:8d9b6009b76023f7
-  step=17,dige:f7a43b9d74fcc419
-  step=18,dige:fd5bdbf1974216bd
-  step=19,dige:6561e15ed099774e
-  step=20,dige:137365267ced980f
-  step=21,dige:033836b98882233e
-  step=22,dige:e9370d4a83206b21
-  step=23,dige:88fe81620bbd7f35
-  step=24,dige:d1bd840abfcfa69c
-  step=25,dige:004bf5a935201ad3
-  step=26,dige:a9eb9cab51319ea6
-  step=27,dige:d6b44405635344a8
-  step=28,dige:d870195be17dbcd3
-  step=29,dige:d3b9dcfe7fc7b4df
-  step=30,dige:1e403c82925876a1
-  step=31,dige:6a2a2faee11151bd
-  step=32,dige:2552bb0b41826faf
-  step=33,dige:7a3ee8bbf1e0abad
-  step=34,dige:21310b2643827bda
-  step=35,dige:b30743f17dcfb123
-  step=36,dige:6d4bfd2d77f6bf86
-  step=37,dige:26a36d955577fa1b
-  step=38,dige:fc418d57a52a0c7b
-  step=39,dige:ea5420f3b85809c9
-  step=40,dige:7097e5922745a869
+  step=2,dige:d06c74b0d0b425ea
+  step=3,dige:3826ba7f95f5270d
+  step=4,dige:8bd9c0077589fb6d
+  step=5,dige:c5b41e00e441636b
+  step=6,dige:8e06de6dca2d9960
+  step=7,dige:01b9a92a79b254f1
+  step=8,dige:554ee3d8b98cbfe5
+  step=9,dige:72ab8e92d9b671c5
+  step=10,dige:4273abc4a687eec8
+  step=11,dige:7322bc3dc48ed841
+  step=12,dige:72f186a13864af26
+  step=13,dige:0bfe71b4ba3360a5
+  step=14,dige:8854c3e152808d24
+  step=15,dige:d5d1b14f9a4ebdff
+  step=16,dige:db3636a22a8aee3d
+  step=17,dige:dbc4531c06375f5c
+  step=18,dige:db70e1e2ed85a33d
+  step=19,dige:9e0d173238164cb5
+  step=20,dige:f3eeda12ddd538bf
+  step=21,dige:40748278b51f39dd
+  step=22,dige:1ed6652524f11af3
+  step=23,dige:b3e472515df2b94c
+  step=24,dige:c4fdb3d566cd7232
+  step=25,dige:0a3bae9f2bef3289
+  step=26,dige:2264db1156087b0e
+  step=27,dige:a51a3dbf544a6fca
+  step=28,dige:7217b2881bad0e59
+  step=29,dige:5551bc24b0c6b013
+  step=30,dige:e93b8174c07c74aa
+  step=31,dige:da8f61a156bf0ff0
+  step=32,dige:a766f54cbc474965
+  step=33,dige:c6b9eecefc0e1961
+  step=34,dige:0440bc1c4b37d961
+  step=35,dige:25eb4fca49bdcd9e
+  step=36,dige:08b7cd9a1a7a6279
+  step=37,dige:834963da3c6563d9
+  step=38,dige:13c1a243dafed3e9
+  step=39,dige:b30ee8e9065ce53d
+  step=40,dige:0f842c32a693f6ad
