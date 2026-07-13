@@ -26,7 +26,7 @@ Snap:H
             Se:input,arrived:12,left:0
             Family:Boulder,n:12,kind:gang,order_by:grade,axis:lex,from:angular Miocene,to:vesicular Miocene
               Loud:stratum,v:Miocene
-              Loud:vein
+              Loud:vein,share:3
         Example,name:mix
           w:mix
             Fern:silver
@@ -200,17 +200,17 @@ Snap:H
             Se:scape,grasped:5,born:5,died:0,loudest:Coprosma,trait:habit: vine,regions:1
             Se:input,arrived:20,left:0
             Family:Coprosma,n:4,kind:gang,order_by:habit,axis:lex,from:robusta,to:propinqua
-              Loud:woodystem
+              Loud:woodystem,share:2
             Family:Veronica,n:4,kind:gang,order_by:habit,axis:lex,from:tenuifolium,to:lucida
-              Loud:woodystem
+              Loud:woodystem,share:2
             Family:Metrosideros,n:4,kind:gang,order_by:woodystem,axis:num,from:excelsa,to:tenax
-              Loud:endemic
-              Loud:habit,v:shrub
+              Loud:endemic,share:2
+              Loud:habit,v:shrub,share:2
             Family:Kunzea,n:4,kind:gang,order_by:habit,axis:lex,from:tenax,to:crassifolius
-              Loud:woodystem
+              Loud:woodystem,share:1
             Family:Leptospermum,n:4,kind:gang,from:australis,to:serrata
-              Loud:endemic
-              Loud:woodystem
+              Loud:endemic,share:1
+              Loud:woodystem,share:1
         Example,name:popped
           w:popped
             Ingot:bar
@@ -262,10 +262,10 @@ Snap:H
             Se:scape,grasped:1,born:1,died:0,loudest:Coin,trait:metal: bronze,regions:1
             Se:input,arrived:5,left:0
             Family:Relic,n:2,kind:bare,order_by:metal,axis:lex,from:astrolabe,to:sextant,over:6
-              Loud:era,v:renaissance
-              Loud:origin,v:Nuremberg
-              Loud:use,v:navigation
-              Loud:state,v:tarnished
+              Loud:era,v:renaissance,share:1
+              Loud:origin,v:Nuremberg,share:1
+              Loud:use,v:navigation,share:1
+              Loud:state,v:tarnished,share:1
             Family:Coin,n:3,kind:gang,order_by:metal,axis:lex,from:penny,to:crown
         see:every example computed its own Voronoiology — each dataset crushed in parallel to its own reading world beside its data
         see:a population folds where lone kinds cannot — twelve boulders gang behind one pane while eight single kinds stay bare below the minimum
@@ -274,5 +274,6 @@ Snap:H
         see:the un-same folds as a group — five requests of varying value gang behind one representative where two ordinary cairns stay bare below the ordinary minimum
         see:the governor discovered the clades — twenty loose leaves overran the density budget so the crush escalated one level on its own and five genera each ganged behind a representative
         see:the model tells a fact from a spread — the flock orders by grade the spread that varies while stratum Miocene the value all twelve share rides as a shared fact
+        see:a minority-but-loud trait keeps its count — the flock names vein and marks how many of the strata carry it not all so the claim the rep cannot count survives as a share
         see:sibling folds group by a shared property — Metrosideros and Kunzea land in one region while Olearia and Brachyglottis land in another so a secondary clade ropes the gangs the mainkey keeps apart
         see:a crowded fold drops nothing silently — the bare Relic pair carries more distinct facts than the four loudest the cap keeps so the model marks the crowded-out tail with an over count instead of letting it vanish

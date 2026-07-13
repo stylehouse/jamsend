@@ -1141,3 +1141,125 @@ MusuDoor_witness(w):
         if (!vc || !oc || vc.sc.title !== oc.sc.title || vc.sc.artist !== oc.sc.artist || vc.sc.path !== oc.sc.path) { honest_ok = 0 }
     }
     if (honest_ok && !T.oa({ see: 'the sabotage was contained — every honest record kept its identity beside the inert grafted request' })) this.MusuDoor_note(w, { see: 'the sabotage was contained — every honest record kept its identity beside the inert grafted request' })
+
+// ══ MusuCursor — C1: a %Dogear is a STACK OF MATCHES into a magazine (§12.3) ══════════════════════════════
+//  A cursor is where-we're-up-to for any follow / browse / replication-resume, and the human's steer is to
+//   model it on %lematch: a linear spine of match-segments, each storing ONE o()-query, resolved by re-finding
+//    each level from a root down (Cursor_* in Ghost/M/Heist.g).  It is native query algebra, all scalar — so a
+//     Dogear snaps, berths and replicates like anything.  This Book proves C1 in isolation: no wire, no Piers,
+//      no disk — it hand-builds a two-cloud magazine under w, mints two cursors, and drives three claims:
+//       RESOLVE (a full cursor lands on the exact record it names), a PARTIAL cursor (names a level not a leaf —
+//        lands on the cloud and stops), and a CLEAN FAIL (knock a named record out, resolve again — the cursor
+//         reports the exact query it could not find and how far it got, no throw, no half-state).  The clean-fail
+//          verdict is the seam C2 will grow into: consult recent %Renamed for the missing level and retry with
+//           the redirect (the heal).  KEY-AGNOSTIC by design: a level pins by whatever keys its node wears
+//            (randomic today, a shuffle/ctime/mtime partition tomorrow), so the coming Cloud-model change slides
+//             under the cursor untouched.  DETERMINISTIC + in-memory → runs on ANY runner, caveat:0.  CONVENTION
+//              (Musu*): no Run_A_ recipe — the world MUST be named MusuCursor (do_fn_for dispatches by w.sc.w).
+
+MusuCursor(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuCursor_drive,w,req
+        req%ok = 1
+
+// MusuCursor_T / MusuCursor_note — the one %testing subtree; c.up stamped so an upward walk from a marker reaches w.
+MusuCursor_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+MusuCursor_note(w, sc):
+    let t = this.MusuCursor_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+// MusuCursor_drive — ONE scene per beat (Musu family style); the witness runs EVERY pass so each %see fires the
+//  first pass its truth holds.  The resolve outcomes are captured as %testing NOTES at their beat (a resolve is
+//   read from runtime, but the knock-out changes state between beats — so "it resolved before" must be pinned as
+//    data, not re-derived after) and the witness gates the sees on those notes.
+async MusuCursor_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuCursor_setup(w)
+        if (n === 3) this.MusuCursor_resolve_scene(w)
+        if (n === 4) await this.MusuCursor_knockout_scene(w)
+    }
+    this.MusuCursor_witness(w)
+    await this.Musu_float(w)
+
+// MusuCursor_setup — hand-build a two-cloud magazine under w (no fold — the cursor Book is about POSITION, not
+//  publishing; MusuVend covers the fold), then mint two Dogears: `hit` names one exact record three levels deep,
+//   `cloud-two` names just the second cloud (a level, not a leaf).  Homed under %testing so both ride the snap.
+async MusuCursor_setup(w):
+    this.MusuCursor_note(w, { reached: 'step_2' })
+    let mag = w.i({ Mag: 'Musica' })
+    mag.c.up = w
+    w.c.mag = mag
+    let c1 = mag.i({ Cloud: 1, randomic: 'draw_one', created_at: 1000 })
+    c1.c.up = mag
+    c1.c.repli_loc = ['Cloud', 'randomic']
+    let r1 = c1.i({ Record: 1, id: 't1', artist: 'Auteur', title: 'One', path: 'crate/a/one.opus' })
+    r1.c.up = c1
+    let r2 = c1.i({ Record: 1, id: 't2', artist: 'Bassbin', title: 'Two', path: 'crate/b/two.opus' })
+    r2.c.up = c1
+    let c2 = mag.i({ Cloud: 1, randomic: 'draw_two', created_at: 2000 })
+    c2.c.up = mag
+    c2.c.repli_loc = ['Cloud', 'randomic']
+    let r3 = c2.i({ Record: 1, id: 't3', artist: 'Cutter', title: 'Three', path: 'crate/c/three.opus' })
+    r3.c.up = c2
+    let T = this.MusuCursor_T(w)
+    w.c.cur_hit = this.Cursor_make(T, 'record-t1', [{ Mag: 'Musica' }, { Cloud: 1, randomic: 'draw_one' }, { Record: 1, id: 't1' }])
+    w.c.cur_cloud = this.Cursor_make(T, 'cloud-two', [{ Mag: 'Musica' }, { Cloud: 1, randomic: 'draw_two' }])
+    w.c.set_up = 1
+
+// MusuCursor_resolve_scene — resolve BOTH cursors from w and pin each outcome as a note: the hit lands on the
+//  exact record (depth 3, id t1), the partial lands on the cloud and stops (depth 2, its draw fingerprint).
+MusuCursor_resolve_scene(w):
+    let hit = this.Cursor_resolve(w.c.cur_hit, w)
+    let row = { resolved: 'hit', depth: hit.depth }
+    if (hit.ok) { row.ok = 1 }
+    if (hit.landed) { row.id = hit.landed.sc.id }
+    this.MusuCursor_note(w, row)
+    let cl = this.Cursor_resolve(w.c.cur_cloud, w)
+    let row2 = { resolved: 'cloud', depth: cl.depth }
+    if (cl.ok) { row2.ok = 1 }
+    if (cl.landed) { row2.randomic = cl.landed.sc.randomic }
+    // cloud_type pins that the landed node is genuinely a %Cloud (has the Cloud mainkey), not merely something
+    //  wearing randomic:draw_two — so see #2 asserts the TYPE it landed on, matching its prose "lands on the cloud".
+    if (cl.landed && cl.landed.sc.Cloud) { row2.cloud_type = 1 }
+    this.MusuCursor_note(w, row2)
+
+// MusuCursor_knockout_scene — remove the record the `hit` cursor names, then resolve it AGAIN: it fails cleanly at
+//  the Record level (Mag + Cloud still resolve, depth 2) and reports the exact query it could not find (id t1).
+async MusuCursor_knockout_scene(w):
+    // reached:step_4 marks the scene RAN before the resolve, so the recorded snap pins step 4 executing.  see #3's
+    //  "no crash" cannot self-detect a throw upstream of its own note (a %see latches on presence, not absence);
+    //   this marker gives the fixture-diff teeth — a regression that aborts the fail path drops the gone note AND
+    //    this marker from the snap → the diff goes RED instead of a silent un-latch (adversarial review 2026-07-13).
+    this.MusuCursor_note(w, { reached: 'step_4' })
+    let c1 = w.c.mag.o({ Cloud: 1, randomic: 'draw_one' })[0]
+    await c1.rm({ Record: 1, id: 't1' })
+    let gone = this.Cursor_resolve(w.c.cur_hit, w)
+    let row = { resolved: 'gone', depth: gone.depth }
+    if (!gone.ok) { row.failed = 1 }
+    if (gone.missing) { row.missing_id = gone.missing.id }
+    this.MusuCursor_note(w, row)
+
+// ── the witness — %see gated on TRUTH not beat number, once-noticed under %testing (no commas no apostrophes). ──
+MusuCursor_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 3)) return
+    if (!w.c.set_up) return
+    let T = this.MusuCursor_T(w)
+    // #1 LANDS: a full cursor re-finds every level from the magazine down and lands on the exact leaf it names.
+    let hit = T.o({ resolved: 'hit' })[0]
+    if (hit && +hit.sc.ok === 1 && +hit.sc.depth === 3 && hit.sc.id === 't1' && !T.oa({ see: 'a cursor is a stack of matches — resolving one re-finds every level from the magazine down and lands on the exact record it names' })) this.MusuCursor_note(w, { see: 'a cursor is a stack of matches — resolving one re-finds every level from the magazine down and lands on the exact record it names' })
+    // #2 A LEVEL NOT A LEAF: a two-deep cursor lands on the cloud and stops there — position is any depth.
+    let cl = T.o({ resolved: 'cloud' })[0]
+    if (cl && +cl.sc.ok === 1 && +cl.sc.depth === 2 && cl.sc.randomic === 'draw_two' && +cl.sc.cloud_type === 1 && !T.oa({ see: 'a cursor can name a level not just a leaf — a two-deep cursor lands on the cloud and stops there' })) this.MusuCursor_note(w, { see: 'a cursor can name a level not just a leaf — a two-deep cursor lands on the cloud and stops there' })
+    // #3 CLEAN FAIL: with the named record gone the cursor fails at that level — it reports the exact match it
+    //  could not find and how far it got (depth 2), never a throw.  This verdict is the seam C2 heals through.
+    let gone = T.o({ resolved: 'gone' })[0]
+    if (gone && +gone.sc.failed === 1 && +gone.sc.depth === 2 && gone.sc.missing_id === 't1' && !T.oa({ see: 'when a named level is gone the cursor fails cleanly — it reports the exact match it could not find and how far it got not a crash' })) this.MusuCursor_note(w, { see: 'when a named level is gone the cursor fails cleanly — it reports the exact match it could not find and how far it got not a crash' })

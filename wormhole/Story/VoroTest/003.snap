@@ -29,7 +29,7 @@ Snap:H
             Se:input,arrived:3,left:0
             Family:Boulder,n:15,kind:gang,order_by:grade,axis:lex,from:angular Miocene,to:weathered Miocene 1
               Loud:stratum,v:Miocene
-              Loud:vein
+              Loud:vein,share:5
               Se:drift,neu:3
         Example,name:mix
           w:mix
@@ -53,7 +53,7 @@ Snap:H
             bare:Lichen,n:1
             bare:Sedge,n:1
             bare:Rush,n:1
-            Se:scape,grasped:2,born:0,died:0,loudest:Fern,regions:1
+            Se:scape,grasped:2,born:0,died:1,loudest:Fern,regions:1,folded:1
             Se:input,arrived:0,left:2
             Family:Fern,n:5,kind:gang,from:crown,to:kidney
               Se:drift,gone:2
@@ -199,17 +199,17 @@ Snap:H
             cell:Leptospermum,kind:gang,n:4
             Se:scape,grasped:5,born:0,died:0,loudest:Coprosma,trait:habit: vine,regions:1
             Family:Coprosma,n:4,kind:gang,order_by:habit,axis:lex,from:robusta,to:propinqua
-              Loud:woodystem
+              Loud:woodystem,share:2
             Family:Veronica,n:4,kind:gang,order_by:habit,axis:lex,from:tenuifolium,to:lucida
-              Loud:woodystem
+              Loud:woodystem,share:2
             Family:Metrosideros,n:4,kind:gang,order_by:woodystem,axis:num,from:excelsa,to:tenax
-              Loud:endemic
-              Loud:habit,v:shrub
+              Loud:endemic,share:2
+              Loud:habit,v:shrub,share:2
             Family:Kunzea,n:4,kind:gang,order_by:habit,axis:lex,from:tenax,to:crassifolius
-              Loud:woodystem
+              Loud:woodystem,share:1
             Family:Leptospermum,n:4,kind:gang,from:australis,to:serrata
-              Loud:endemic
-              Loud:woodystem
+              Loud:endemic,share:1
+              Loud:woodystem,share:1
         Example,name:popped
           w:popped
             Ingot:bar
@@ -218,7 +218,7 @@ Snap:H
           w:Voronoiology,dontGraph
             Voro,beat=2,level:L2,visible=2,cells:1,gangs,folded:0,count:0
             cell:Ingot,kind:gang,n:2
-            Se:scape,grasped:1,born:0,died:0,loudest:Ingot,regions:1
+            Se:scape,grasped:1,born:0,died:0,loudest:Ingot,regions:1,folded:1,unfolded:1
             Family:Ingot,n:3,kind:bare,from:bar,to:bead
             bare:Ingot,n:1,pop:1
         Example,name:families
@@ -259,14 +259,15 @@ Snap:H
             bare:Relic,n:2
             Se:scape,grasped:1,born:0,died:0,loudest:Coin,trait:metal: bronze,regions:1
             Family:Relic,n:2,kind:bare,order_by:metal,axis:lex,from:astrolabe,to:sextant,over:6
-              Loud:era,v:renaissance
-              Loud:origin,v:Nuremberg
-              Loud:use,v:navigation
-              Loud:state,v:tarnished
+              Loud:era,v:renaissance,share:1
+              Loud:origin,v:Nuremberg,share:1
+              Loud:use,v:navigation,share:1
+              Loud:state,v:tarnished,share:1
             Family:Coin,n:3,kind:gang,order_by:metal,axis:lex,from:penny,to:crown
         see:the flock example swelled — its boulder gang recomputed to fifteen members behind the same representative
         see:the mix example shed two ferns — its fern gang shrank from seven to five yet still cleared the threshold and held its pane
         see:the model felt the arrivals — the flock reading carries three new members in its drift this beat
         see:the model felt the goners — the mix reading carries two departures in its drift this beat
         see:a popped member stands out and the rest hold together — one ingot surfed out of the fold while the remaining two re-ganged at the relaxed spill threshold
+        see:the dial is not mitosis — the popped gang undressed and its spill re-dressed while nothing was born and nothing died
         see:the family kept its slot — the flock reading is the very same row across the recrush its count sliding to fifteen in place rather than a storm tearing it down and rebuilding

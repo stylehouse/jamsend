@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=16	{"mung":["age"]}
+      self,round=17	{"mung":["age"]}
       w:VoroMitosis
-        self,round=16	{"mung":["age"]}
+        self,round=17	{"mung":["age"]}
         req:wrangle,eternal,ok
         Metrosideros:robusta,woodystem,habit:vine
           Metrosideros:robusta var. prostrata,woodystem,endemic
@@ -67,7 +67,7 @@ Snap:H
       w:Voronoiology,dontGraph
         Voro,beat=7,level:L1,visible=10,cells:9,gangs=6,folded:3,count:3
         bare:req,n:1
-        Se:scape,grasped:9,born:0,died:0,loudest:Metrosideros,trait:habit tree,regions:3
+        Se:scape,grasped:9,born:0,died:1,loudest:Metrosideros,trait:habit tree,regions:3,folded:2
         Se:input,arrived:12,left:4
         Family:Coprosma,n:5,kind:gang,order_by:woodystem,axis:num,from:rhamnoides,to:excelsa
           Se:drift,gone:2

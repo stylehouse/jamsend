@@ -53,7 +53,7 @@ Snap:H
         cell:Olearia,kind:gang,n:3
         cell:Nothofagus,kind:gang,n:3
         bare:req,n:1
-        Se:scape,grasped:3,born:0,died:0,loudest:Coprosma,trait:woodystem ×2,regions:2
+        Se:scape,grasped:3,born:0,died:0,loudest:Coprosma,trait:woodystem ×2,regions:2,unfolded:1,folded:1
         Family:Coprosma,n:5,kind:gang,order_by:habit,axis:lex,from:robusta,to:propinqua
           Loud:woodystem,share:2
           Se:drift,gone:2

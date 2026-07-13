@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=12	{"mung":["age"]}
+      self,round=11	{"mung":["age"]}
       w:VoroMitosis
-        self,round=12	{"mung":["age"]}
+        self,round=11	{"mung":["age"]}
         req:wrangle,eternal,ok
         Veronica:crassifolius,habit:tree
           Veronica:crassifolius f. viridis,habit:shrub
@@ -42,7 +42,7 @@ Snap:H
       w:Voronoiology,dontGraph
         Voro,beat=5,level:L1,visible=7,cells:6,gangs=5,folded:1,count:1
         bare:req,n:1
-        Se:scape,grasped:6,born:1,died:0,loudest:Veronica,trait:endemic ×4,regions:2
+        Se:scape,grasped:6,born:1,died:1,loudest:Veronica,trait:endemic ×4,regions:2,folded:2
         Se:input,arrived:12,left:4
         Family:Coprosma,n:5,kind:gang,order_by:habit,axis:lex,from:montana,to:propinqua
           Se:drift,gone:2

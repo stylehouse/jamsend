@@ -28,7 +28,7 @@ Snap:H
       w:Voronoiology,dontGraph
         Voro,beat=3,level:L1,visible=5,cells:4,gangs=3,folded:1,count:1
         bare:req,n:1
-        Se:scape,grasped:4,born:0,died:1,loudest:Veronica,trait:endemic ×2,regions:3
+        Se:scape,grasped:4,born:0,died:1,loudest:Veronica,trait:endemic ×2,regions:3,folded:2
         Se:input,arrived:5,left:1
         Family:Coprosma,n:5,kind:gang,order_by:habit,axis:lex,from:montana,to:lucida
           Loud:woodystem,share:2

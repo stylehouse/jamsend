@@ -37,34 +37,34 @@ story:VoroRadio
     useCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.103
-      sample=0.029,at=1783760261
-      sample=0.107,at=1783914068
-      sample=0.13,at=1783920332
-      sample=0.13,at=1783920366
+    TimeTotal:beliefs,avg=0.105
       sample=0.102,at=1783920380
       sample=0.11,at=1783939551
       sample=0.11,at=1783939627
       sample=0.11,at=1783939631
       sample=0.103,at=1783939664
       sample=0.103,at=1783939679
+      sample=0.108,at=1783940707
+      sample=0.102,at=1783943282
+      sample=0.102,at=1783943295
+      sample=0.102,at=1783943299
     TimeTotal:step,avg=0.011
-      sample=0.003,at=1783760261
-      sample=0.012,at=1783914068
-      sample=0.014,at=1783920332
-      sample=0.014,at=1783920366
       sample=0.011,at=1783920380
       sample=0.012,at=1783939551
       sample=0.012,at=1783939627
       sample=0.012,at=1783939631
       sample=0.011,at=1783939664
       sample=0.011,at=1783939679
+      sample=0.012,at=1783940707
+      sample=0.011,at=1783943282
+      sample=0.011,at=1783943295
+      sample=0.011,at=1783943299
   step,dige:604eb571a0e11262
   step=2,dige:702eafa715984805
   step=3,dige:01a2eacb8a90201b
-  step=4,dige:a057950013a338c2
-  step=5,dige:e70c57b8c6a5ee9e
-  step=6,dige:1a482e79e1df1ab9
-  step=7,dige:4f436949fd4302f8
-  step=8,dige:cd03c94ce331be04
-  step=9,dige:1eb16c4ba24febde
+  step=4,dige:950e7bb52dbb44cb
+  step=5,dige:081b976427c9c6c1
+  step=6,dige:0eea8de50abed383
+  step=7,dige:b23a1407f53de4eb
+  step=8,dige:f8c8ac9874caa24c
+  step=9,dige:086e580bf45db12c

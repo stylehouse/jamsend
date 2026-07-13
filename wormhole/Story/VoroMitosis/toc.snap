@@ -42,9 +42,7 @@ story:VoroMitosis
     For
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.218
-      sample=0.251,at=1783854836
-      sample=0.189,at=1783859753
+    TimeTotal:beliefs,avg=0.222
       sample=0.208,at=1783913930
       sample=0.208,at=1783914017
       sample=0.208,at=1783914022
@@ -53,9 +51,9 @@ story:VoroMitosis
       sample=0.2,at=1783920280
       sample=0.227,at=1783939348
       sample=0.227,at=1783939476
+      sample=0.237,at=1783943172
+      sample=0.237,at=1783943227
     TimeTotal:step,avg=0.02
-      sample=0.023,at=1783854836
-      sample=0.017,at=1783859753
       sample=0.019,at=1783913930
       sample=0.019,at=1783914017
       sample=0.019,at=1783914022
@@ -64,14 +62,16 @@ story:VoroMitosis
       sample=0.018,at=1783920280
       sample=0.021,at=1783939348
       sample=0.021,at=1783939476
+      sample=0.022,at=1783943172
+      sample=0.022,at=1783943227
   step,dige:9eb579214a9df3ce
   step=2,dige:5c96baa857ea53d3
-  step=3,dige:4493846398f540d4
-  step=4,dige:55687dc4516411a9
-  step=5,dige:f628db6000389181
-  step=6,dige:22c0d2e763a8363a
-  step=7,dige:91423391e2954af3
-  step=8,dige:9245eea0363291f9
-  step=9,dige:d25d963d09e86856
-  step=10,dige:bac6472b62a40187
+  step=3,dige:acf6a1d053a878d8
+  step=4,dige:cf1a58dae8405a35
+  step=5,dige:ddb4a236d60073a9
+  step=6,dige:a656350cf9403539
+  step=7,dige:6b02459618df128b
+  step=8,dige:7ce6bf2b0c1d1c46
+  step=9,dige:3dae520304d77565
+  step=10,dige:3ca16e4749de7c7b
   step=11,dige:b90ee2f9315f1182

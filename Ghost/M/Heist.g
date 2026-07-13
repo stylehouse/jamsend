@@ -660,3 +660,80 @@ async Musica_forget(nav, mag, cutoff):
     if (dropped) await this.Berth_save(nav, mag)
     return dropped
 //#endregion
+
+//#region cursor — a %Dogear is a STACK OF MATCHES into a magazine (§12.3 / C1), modelled on %lematch:
+//  each level stores one o()-query and resolution re-finds it from a root down.  The query algebra IS the
+//   position — not indices, all scalar — so a Dogear SNAPS, berths and replicates like any particle.  It is
+//    KEY-AGNOSTIC: a level pins by whatever keys its node wears (id | randomic | shuffle | seq), so the Cloud
+//     model can change underneath it (randomic → a shuffle/ctime/mtime partition) without touching the cursor.
+//  C1 here = build + resolve|fail-cleanly.  C2 (later) heals a level that went missing by consulting recent
+//   %Renamed markers and retrying with the redirect, noting the heal.  C3 (later) berths a Dogear as a
+//    follow's progress so a browse resumes across a reload.  Prior art it rhymes with: Point,text: (a content-
+//     addressed cursor over the text substrate) and %Map rel offsets — the same re-anchoring problem, solved
+//      once per substrate.  NOT a rebuild of Repli's inseq/pages: the wire keeps its sequencing; a Dogear is
+//       the MEANING-level position over it.
+
+// Cursor_seg_query — rebuild the o()-query one %curs segment stores.  A `wild:<Type>` key re-inflates to a
+//  presence wildcard {Type:1} (matches the type, any value); every other non-structural key is a LITERAL
+//   value pin.  The split is why the query survives the snap: a bare {Cloud:1} would decode to Cloud:"1" and
+//    stop wildcarding (the exactly() footgun — a `1` marker stringifies to the literal "1"), so the TYPE
+//     rides as a value under `wild` and re-inflates here, never stored as a stringifiable presence key.
+Cursor_seg_query(seg):
+    let q = {}
+    if (seg.sc.wild) q[seg.sc.wild] = 1
+    for (const k of Object.keys(seg.sc)) {
+        if (k === 'curs' || k === 'wild') continue
+        q[k] = seg.sc[k]
+    }
+    return q
+
+// Cursor_push — append one match level to a Dogear chain (host = the Dogear or the last %curs segment).  Give
+//  it a plain o()-query; a key valued 1 is the presence wildcard (the level's TYPE), every other key is a
+//   literal pin.  Splits the single wildcard type out to `wild:` so the segment snaps safe.  (One wild type
+//    per level — every magazine level names one — a later multi-wildcard need can widen this.)  Returns the
+//     new segment, so a caller can chain by hand.  Plain i(): a fresh spine has nothing to find-or-create.
+Cursor_push(host, query):
+    let sc = { curs: 1 }
+    for (const k of Object.keys(query)) {
+        if (query[k] === 1) { sc.wild = k } else { sc[k] = query[k] }
+    }
+    let seg = host.i(sc)
+    seg.c.up = host
+    return seg
+
+// Cursor_make — mint a %Dogear (label `of:` names what it points into, cosmetic) with a stack of o()-queries
+//  ordered root→leaf.  Returns the Dogear.  The whole chain is one linear spine of %curs segments.
+Cursor_make(home, into, queries):
+    let dog = home.i({ Dogear: 1, of: into })
+    dog.c.up = home
+    let host = dog
+    for (const q of queries) host = this.Cursor_push(host, q)
+    return dog
+
+// Cursor_segs — a Dogear's match levels root→leaf.  The spine is linear (one %curs child each), so a walk
+//  down the first %curs child at every step enumerates the whole stack in order.
+Cursor_segs(dog):
+    let out = []
+    let seg = dog.o({ curs: 1 })[0]
+    while (seg) { out.push(seg); seg = seg.o({ curs: 1 })[0] }
+    return out
+
+// Cursor_resolve — WALK the stack from `root`, re-finding each level's o()-query in turn.  Returns a plain
+//  verdict, never a throw:
+//    { ok:true,  at, depth, landed }         — every level re-found; `landed` is the leaf node it names.
+//    { ok:false, at, depth, missing }        — a level's match is gone; `missing` is the query that failed,
+//                                               `depth` how many levels resolved, `at` the last node reached.
+//  A CLEAN fail is the point: a follow/browse resume reads the verdict and reacts (C2 will, right here,
+//   consult recent %Renamed for `missing` and retry with the redirect, noting what it healed).
+Cursor_resolve(dog, root):
+    let node = root
+    let depth = 0
+    for (const seg of this.Cursor_segs(dog)) {
+        let q = this.Cursor_seg_query(seg)
+        let next = node.o(q)[0]
+        if (!next) return { ok: false, at: node, depth: depth, missing: q }
+        node = next
+        depth = depth + 1
+    }
+    return { ok: true, at: node, depth: depth, landed: node }
+//#endregion

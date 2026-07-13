@@ -57,7 +57,7 @@ Snap:H
         cell:Pittosporum,kind:gang,n:4
         cell:Nothofagus,kind:gang,n:3
         bare:req,n:1
-        Se:scape,grasped:6,born:0,died:0,loudest:Veronica,trait:woodystem ×2,regions:3
+        Se:scape,grasped:6,born:0,died:0,loudest:Veronica,trait:woodystem ×2,regions:3,folded:1,unfolded:1
         Family:Coprosma,n:7,kind:bare,order_by:habit,axis:lex,from:propinqua var. montana,to:grandifolia var. prostrata
           Loud:woodystem,share:1
           Se:drift,neu:2

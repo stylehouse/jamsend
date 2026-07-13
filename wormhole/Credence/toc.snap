@@ -20,7 +20,7 @@ Waft:Credence
     Funkcion:Storying,of_Book:VoroMitosis
     Funkcion:Storying,of_Book:VoroScape
     Funkcion:Storying,of_Book:VoroRadio
-    Funkcion:Storying,of_Book:VoroClinic,born:2026-07-08,unusual:crush-invariant-diagnostic
+    Funkcion:Storying,of_Book:VoroClinic,born:2026-07-08,unusual:crush-invariant-diagnostics
     Funkcion:Storying,of_Book:VoroTest
   What:Musu,desc:the music-piracy streaming platform — the rastock racast raterm pipeline of Radio_todo
     Funkcion:StoryTimes
@@ -69,6 +69,7 @@ Waft:Credence
         What:the network,desc:audio frames and content routing over the real Peeroleum transport
           Funkcion:Storying,of_Book:MusuMesh
           Funkcion:Storying,of_Book:MusuPier
+    Funkcion:Storying,of_Book:MusuCursor
   What:Puddle,desc:the lower-level instruments in one puddle — machinery proven once and kept for regression hunts not for relitigating
     Funkcion:StoryTimes
     What:Lake,desc:the editor machine — the Lies compile-run pipeline over Docs Wafts and focus

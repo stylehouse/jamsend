@@ -55,7 +55,7 @@ Snap:H
       w:Voronoiology,dontGraph
         Voro,beat=6,level:L1,visible=9,cells:8,gangs=6,folded:2,count:2
         bare:req,n:1
-        Se:scape,grasped:8,born:1,died:0,loudest:Metrosideros,trait:habit tree,regions:4
+        Se:scape,grasped:8,born:1,died:0,loudest:Metrosideros,trait:habit tree,regions:4,folded:2
         Se:input,arrived:13,left:3
         Family:Coprosma,n:7,kind:gang,order_by:habit,axis:lex,from:montana,to:propinqua
           Se:drift,neu:2
@@ -87,3 +87,4 @@ Snap:H
         Family:Pittosporum,n:4,kind:gang,order_by:habit,axis:lex,from:microphylla,to:linearis
           Loud:woodystem,share:1
           Se:drift,neu:5
+        self,round	{"mung":["age"]}

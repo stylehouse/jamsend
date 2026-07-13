@@ -56,29 +56,29 @@ story:VoroTest
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.136
-      sample=0.126,at=1783888193
-      sample=0.129,at=1783897605
-      sample=0.126,at=1783907234
-      sample=0.152,at=1783913797
-      sample=0.173,at=1783913860
-      sample=0.173,at=1783913868
-      sample=0.151,at=1783914141
-      sample=0.109,at=1783920390
-      sample=0.109,at=1783920398
-      sample=0.112,at=1783939636
-    TimeTotal:step,avg=0.034
-      sample=0.031,at=1783888193
-      sample=0.032,at=1783897605
-      sample=0.031,at=1783907234
-      sample=0.038,at=1783913797
-      sample=0.043,at=1783913860
-      sample=0.043,at=1783913868
-      sample=0.038,at=1783914141
-      sample=0.027,at=1783920390
-      sample=0.027,at=1783920398
-      sample=0.028,at=1783939636
+    TimeTotal:beliefs,avg=0.202
+      sample=0.148,at=1783940685
+      sample=0.148,at=1783940686
+      sample=0.148,at=1783940687
+      sample=0.12,at=1783940693
+      sample=0.16,at=1783942406
+      sample=0.159,at=1783942668
+      sample=0.408,at=1783942927
+      sample=0.408,at=1783942928
+      sample=0.208,at=1783942935
+      sample=0.11,at=1783943270
+    TimeTotal:step,avg=0.05
+      sample=0.037,at=1783940685
+      sample=0.037,at=1783940686
+      sample=0.037,at=1783940687
+      sample=0.03,at=1783940693
+      sample=0.04,at=1783942406
+      sample=0.04,at=1783942668
+      sample=0.102,at=1783942927
+      sample=0.102,at=1783942928
+      sample=0.052,at=1783942935
+      sample=0.027,at=1783943270
   step,dige:73fb81b056823899
-  step=2,dige:1779f13ff64879c5
-  step=3,dige:56688df8a1e9f16e
-  step=4,dige:6b2c8ef45ffc8dab
+  step=2,dige:b9316657f0400cad
+  step=3,dige:0bb5c46eb853f6c3
+  step=4,dige:6815ca5adbc0329c

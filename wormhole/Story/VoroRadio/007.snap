@@ -54,7 +54,7 @@ Snap:H
         cell:Pittosporum,kind:gang,n:4
         cell:Nothofagus,kind:gang,n:3
         bare:req,n:1
-        Se:scape,grasped:3,born:0,died:1,loudest:Pittosporum,trait:habit vine,regions:2
+        Se:scape,grasped:3,born:0,died:0,loudest:Pittosporum,trait:habit vine,regions:2,unfolded:1
         Family:Coprosma,n:7,kind:bare,order_by:habit,axis:lex,from:propinqua var. montana,to:grandifolia var. prostrata
           Loud:woodystem,v:1,share:1
         Family:Veronica,n:6,kind:bare,order_by:habit,axis:lex,from:tenuifolium,to:excelsa var. prostrata
