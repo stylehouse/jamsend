@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Berthation(): string { return 'fadda60ce33fa778~g1' },
+    Ghostmeta_Ghost_Story_Berthation(): string { return 'ef0d4e7e16f4e93b~g1' },
 
 // Berthation.g — the Berth* Books: the persistence door proven (Radio_todo §11.7).  A Berth homes one
 //  Pier's own mutable documents — Waft:Taste, Waft:Listening, Waft:Filings, Waft:Map — each a Waft (the
@@ -225,14 +225,17 @@ async MusuBerth_order(w) { const H = this;
 // ══ MusuMagazine — the first §12 rung (M1): a collection sublimed into media ═══════════════════════════
 // MusuMagazine — rung: a live catalog is PUBLISHED into a Waft:Musica magazine (§12.2), a Berth Waft that
 //  berths per-identity and Repli will move like any C**.  Musica_publish (Ghost/M/Heist.g) opens the Pier's
-//   Musica berth, wipes its old %Tune children and lays one Tune:<Artist — Title> handle (§11.1) per Record
-//    carrying album|genre|id — the metadata cursors will anchor on (§12.3).  This Book mints a SMALL IN-C
-//     catalog (no disk music — the magazine reads the CATALOG, not the file bytes), publishes, re-opens a
-//      SECOND handle (a genuine enWaft → toc.snap → deWaft round-trip) and counts one tune per record; probes
-//       a tune for its metadata; grows the catalog and re-publishes to watch the magazine grow; then DROPS a
-//        record and re-publishes to prove the recast is a whole re-cast — a vanished record leaves no orphan
-//         tune.  No crush at v1 (husks come with scale), no wire (M2 replicates it).  Same DESIGN-vs-on-the-
-//          design cut as MusuBerth: the magazine is the design (on disk), the counts hang under w/%testing.
+//   Musica berth and lays the census %Record cards (id/artist/title/album/path/body_hash — the SAME shape the
+//    collection holds, minus the %Body byte-slices) grouped under a %Cloud,randomic,created_at ARRIVAL BATCH,
+//     so every Record wears the time it joined and a whole era can be forgotten at once (Musica_forget).
+//  THE OBSERVABLE-PLANE FIX (the human's 2026-07-13 ruling — "we're just snapping the judgement of some data
+//   not actually seeing the data itself"): each step REFLECTS the disk-read magazine into w/%Mag (a fresh
+//    copy of the Cloud/Record tree, c.up-stamped so it SNAPS), so the fixture DIFF shows a Record row
+//     appearing, a second Cloud arriving, a dropped card VANISHING — the data is the proof, the %testing
+//      counts only accompany it.  The lib is minted in-C (no disk bytes — the magazine sublimes the CATALOG,
+//       and Book-minted %Records carry the real census shape); the eventual fold publishes off a REAL census.
+//  Round-trip is genuine: publish enWaft → toc.snap → a SECOND Berth_open deWaft reads it back before reflect.
+//   No crush at v1 (husks come with scale), no wire (M2 replicates it).
 MusuMagazine(A,w) {
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
         await this.MusuMagazine_drive(w,req)
@@ -277,16 +280,46 @@ MusuMagazine_root() {
     return this.Heist_marrauding('magrun', 'magazine')
 
 },
-// MusuMagazine_add — mint one in-C Record carrying the metadata a Tune anchors on (album|genre|id).  No
-//  disk bytes — the magazine sublimes the CATALOG, not the file (that is the heist's job).  Values carry no
-//   commas (a comma would split the snap line) and no apostrophes (the peel parser reserves them).
-MusuMagazine_add(lib, artist, title, album, genre, id) {
-    lib.i({ Record: 1, artist: artist, title: title, album: album, genre: genre, id: id })
+// MusuMagazine_add — mint one in-C %Record carrying the REAL census shape (id/artist/title/album/path/
+//  body_hash — NO genre: a genre is a folder not a card scalar, and no census mints one).  No disk bytes —
+//   the magazine sublimes the CATALOG, not the file.  path + body_hash are stable per id so the snap is
+//    deterministic.  Values carry no commas (a comma splits the snap line) and no apostrophes (peel-reserved).
+MusuMagazine_add(lib, artist, title, album, id) {
+    lib.i({ Record: 1, id: id, artist: artist, title: title, album: album, path: artist + ' - ' + title + '.wav', body_hash: id + '-body' })
 
 },
-// step 2 — mint a small catalog, PUBLISH it, re-open a SECOND handle and count one tune per record.  The
-//  marrauding namespace is swept first so a re-run publishes into a truly-empty magazine.  A no-writable-
-//   share runner skips the whole Book cleanly (the MusuBerth skip pattern).
+// MusuMagazine_reflect — copy the disk-read magazine's Cloud/Record tree into w/%Mag as fresh c.up-stamped
+//  children, so the ACTUAL data rides the snap (the observable-plane fix).  Rebuilt WHOLE each step off the
+//   just-deWaft'd handle, so the fixture diff shows the magazine change on camera — a card appearing, a
+//    second Cloud arriving, a dropped card vanishing.
+async MusuMagazine_reflect(w, back) {
+    for (const old of w.o({ Mag: 1 })) await w.rm({ Mag: old.sc.Mag })
+    let holder = w.i({ Mag: 'Musica' })
+    holder.c.up = w
+    for (const cloud of back.o({ Cloud: 1 })) {
+        let ch = holder.i({ Cloud: 1, randomic: cloud.sc.randomic, created_at: cloud.sc.created_at })
+        ch.c.up = holder
+        for (const rec of cloud.o({ Record: 1 })) {
+            let rc = ch.i({ Record: 1, id: rec.sc.id, artist: rec.sc.artist, title: rec.sc.title, path: rec.sc.path })
+            rc.c.up = ch
+            if (rec.sc.album) rc.sc.album = rec.sc.album
+            if (rec.sc.body_hash) rc.sc.body_hash = rec.sc.body_hash
+        }
+    }
+    return holder
+
+},
+// MusuMagazine_reopen — a SECOND independent handle off disk (enWaft → toc.snap → deWaft round-trip), then
+//  reflect it into the snap.  Returns the deWaft'd handle so a step can count off it too.
+async MusuMagazine_reopen(w) {
+    let back = await this.Berth_open(w.c.nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), 'Musica')
+    await this.MusuMagazine_reflect(w, back)
+    return back
+
+},
+// step 2 — mint a small catalog, PUBLISH it into a Cloud stamped at t=1000, re-open a SECOND handle and
+//  REFLECT it into the snap.  The marrauding namespace is swept first so a re-run publishes into a truly-
+//   empty magazine.  A no-writable-share runner skips the whole Book cleanly (the MusuBerth skip pattern).
 async MusuMagazine_publish_count(w) {
     this.MusuMagazine_note(w, { reached: 'step_2' })
     let nav = this.Crate_nav()
@@ -297,62 +330,66 @@ async MusuMagazine_publish_count(w) {
     w.c.nav = nav
     await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-magrun')
     let lib = new TheC({ c: {}, sc: { Catalog: 1 } })
-    this.MusuMagazine_add(lib, 'Boards of Canada', 'Roygbiv', 'Music Has the Right to Children', 'electronic', 'boc-roygbiv')
-    this.MusuMagazine_add(lib, 'Aphex Twin', 'Xtal', 'Selected Ambient Works 85-92', 'ambient', 'apx-xtal')
+    this.MusuMagazine_add(lib, 'Boards of Canada', 'Roygbiv', 'Music Has the Right to Children', 'boc-roygbiv')
+    this.MusuMagazine_add(lib, 'Aphex Twin', 'Xtal', 'Selected Ambient Works 85-92', 'apx-xtal')
     w.c.mag_lib = lib
-    await this.Musica_publish(nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), lib)
-    // a SECOND independent handle — a full disk round-trip — reads the magazine back off toc.snap.
-    let back = await this.Berth_open(nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), 'Musica')
-    this.MusuMagazine_note(w, { published: 1, records: lib.o({ Record: 1 }).length, tunes: back.o({ Tune: 1 }).length })
+    await this.Musica_publish(nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), lib, 'c1', 1000)
+    let mag = await this.MusuMagazine_reopen(w)
+    this.MusuMagazine_note(w, { published: 1, records: lib.o({ Record: 1 }).length, cards: this.Musica_cards(mag).length, clouds: mag.o({ Cloud: 1 }).length })
     w.c.mag_open = 1
 
 },
-// step 3 — PROBE one tune for its metadata: album|genre|id must ride in the magazine beside the handle (the
-//  §12.3 anchor).  Re-opens a fresh handle so the read is off the disk, not the live tree.
+// step 3 — PROBE one Record for its metadata AND the time it joined: album|body_hash ride on the card,
+//  created_at on its Cloud (the §12.3 anchor + the human's see-the-time-of-the-record).  Reads the REFLECTED
+//   snap tree (w/%Mag) — the same data the fixture shows.
 async MusuMagazine_probe_meta(w) {
     this.MusuMagazine_note(w, { reached: 'step_3' })
     if (!w.c.mag_open) return
-    let nav = w.c.nav
-    let back = await this.Berth_open(nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), 'Musica')
-    let tune = back.o({ Tune: 'Aphex Twin — Xtal' })[0]
+    let mag = w.o({ Mag: 1 })[0]
     let row = { probed: 1 }
-    if (tune) {
-        if (tune.sc.album === 'Selected Ambient Works 85-92') row.has_album = 1
-        if (tune.sc.genre === 'ambient') row.has_genre = 1
-        if (tune.sc.id === 'apx-xtal') row.has_id = 1
+    if (mag) {
+        for (const cloud of mag.o({ Cloud: 1 })) {
+            let rec = cloud.o({ Record: 1, id: 'apx-xtal' })[0]
+            if (rec) {
+                if (rec.sc.album === 'Selected Ambient Works 85-92') row.has_album = 1
+                if (rec.sc.body_hash === 'apx-xtal-body') row.has_hash = 1
+                row.joined_at = cloud.sc.created_at
+            }
+        }
     }
     this.MusuMagazine_note(w, row)
 
 },
-// step 4 — GROW: add a record to the live catalog, RE-PUBLISH, re-open and count one more tune.  Proves the
-//  magazine tracks the catalog: a fresh record surfaces as a fresh tune.
+// step 4 — GROW: add a record, RE-PUBLISH into a FRESH Cloud (t=2000).  The old batch (c1) is untouched; the
+//  new record arrives in cloud c2.  Reflect and prove BOTH — two Cloud rows in the snap.
 async MusuMagazine_grow(w) {
     this.MusuMagazine_note(w, { reached: 'step_4' })
     if (!w.c.mag_open) return
-    let nav = w.c.nav
     let lib = w.c.mag_lib
-    let before = (await this.Berth_open(nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), 'Musica')).o({ Tune: 1 }).length
-    this.MusuMagazine_add(lib, 'Autechre', 'Rae', 'Amber', 'electronic', 'ae-rae')
-    await this.Musica_publish(nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), lib)
-    let after = (await this.Berth_open(nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), 'Musica')).o({ Tune: 1 }).length
-    let row = { regrew: 1, before: before, after: after }
-    if (after === before + 1) row.grew = 1
+    this.MusuMagazine_add(lib, 'Autechre', 'Rae', 'Amber', 'ae-rae')
+    await this.Musica_publish(w.c.nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), lib, 'c2', 2000)
+    let mag = await this.MusuMagazine_reopen(w)
+    let row = { regrew: 1, clouds: mag.o({ Cloud: 1 }).length, cards: this.Musica_cards(mag).length }
+    let c2 = mag.o({ Cloud: 1, randomic: 'c2' })[0]
+    if (c2 && c2.o({ Record: 1, id: 'ae-rae' }).length === 1 && +(c2.sc.created_at || 0) === 2000) row.in_new_cloud = 1
+    let c1 = mag.o({ Cloud: 1, randomic: 'c1' })[0]
+    if (c1 && c1.o({ Record: 1 }).length === 2) row.old_untouched = 1
     this.MusuMagazine_note(w, row)
 
 },
-// step 5 — RECAST: DROP a record from the live catalog, re-publish, and prove the whole magazine re-cast —
-//  the dropped record's tune handle is GONE (Musica_publish wipes before it lays, so a vanished record
-//   leaves no orphan tune).  count falls back by one AND the specific handle is absent.
+// step 5 — RECAST: DROP a record, re-publish (t=3000).  Reconcile removes the vanished id from its Cloud; an
+//  emptied Cloud (c2 held only ae-rae) drops with it.  Reflect and prove the card is GONE from the snap —
+//   no orphan card, no stray empty Cloud.
 async MusuMagazine_recast(w) {
     this.MusuMagazine_note(w, { reached: 'step_5' })
     if (!w.c.mag_open) return
-    let nav = w.c.nav
     let lib = w.c.mag_lib
     await lib.rm({ Record: 1, id: 'ae-rae' })
-    await this.Musica_publish(nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), lib)
-    let back = await this.Berth_open(nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), 'Musica')
-    let row = { recast: 1, after: back.o({ Tune: 1 }).length, orphan: back.o({ Tune: 'Autechre — Rae' }).length }
-    this.MusuMagazine_note(w, row)
+    await this.Musica_publish(w.c.nav, this.MusuMagazine_root(), this.MusuMagazine_prepub(), lib, 'c3', 3000)
+    let mag = await this.MusuMagazine_reopen(w)
+    let orphan = 0
+    for (const cloud of mag.o({ Cloud: 1 })) orphan = orphan + cloud.o({ Record: 1, id: 'ae-rae' }).length
+    this.MusuMagazine_note(w, { recast: 1, cards: this.Musica_cards(mag).length, clouds: mag.o({ Cloud: 1 }).length, orphan: orphan })
 
 },
 // ── the witness — %seen LATCHED assertions, polled every pass.  Each is a happened-FACT of the publish
@@ -361,18 +398,21 @@ async MusuMagazine_recast(w) {
 MusuMagazine_witness(w) {
     let T = this.MusuMagazine_T(w)
     if (T.oa({ skipped: 'no_writable_share' })) return
-    // published + count: a second handle read the magazine back off disk with one tune per record.
+    let mag = w.o({ Mag: 1 })[0]
+    // published: the REFLECTED magazine carries one Cloud stamped at t=1000 holding a Record per catalog entry
+    //  — gated on the ACTUAL reflected tree (the snap data), not only the noted count.
     let pc = T.o({ published: 1 })[0]
-    if (pc && +(pc.sc.records || 0) === 2 && +(pc.sc.tunes || 0) === 2 && !(w.oa({seen: 'a magazine published from a live catalog — a fresh berth handle read back one tune for every record'}))) w.i({seen: 'a magazine published from a live catalog — a fresh berth handle read back one tune for every record'})
-    // metadata in-magazine: the probed tune carried its album and genre and id home beside the handle.
+    let c1 = mag ? mag.o({ Cloud: 1, randomic: 'c1' })[0] : null
+    if (pc && +(pc.sc.records || 0) === 2 && +(pc.sc.cards || 0) === 2 && +(pc.sc.clouds || 0) === 1 && c1 && +(c1.sc.created_at || 0) === 1000 && c1.o({ Record: 1 }).length === 2 && !(w.oa({seen: 'a magazine published from a live catalog — the reflected berth held a record per entry grouped under one cloud stamped with when they arrived'}))) w.i({seen: 'a magazine published from a live catalog — the reflected berth held a record per entry grouped under one cloud stamped with when they arrived'})
+    // metadata + time: the probed card carried its exact album and body hash and read its join time off its cloud.
     let pr = T.o({ probed: 1 })[0]
-    if (pr && pr.sc.has_album && pr.sc.has_genre && pr.sc.has_id && !(w.oa({seen: 'each tune carried its own metadata — album and genre and id rode in the magazine beside the handle'}))) w.i({seen: 'each tune carried its own metadata — album and genre and id rode in the magazine beside the handle'})
-    // grow: a republish after a fresh record laid exactly one more tune.
+    if (pr && pr.sc.has_album && pr.sc.has_hash && +(pr.sc.joined_at || 0) === 1000 && !(w.oa({seen: 'each record carried its metadata and the time it joined — album and body hash on the card and the created_at on its cloud'}))) w.i({seen: 'each record carried its metadata and the time it joined — album and body hash on the card and the created_at on its cloud'})
+    // grow: a fresh record arrived in a NEW second cloud (t=2000) and the first batch stayed untouched.
     let gr = T.o({ regrew: 1 })[0]
-    if (gr && gr.sc.grew && +(gr.sc.before || 0) === 2 && +(gr.sc.after || 0) === 3 && !(w.oa({seen: 'the magazine grew with the catalog — a republish after a new record laid one more tune'}))) w.i({seen: 'the magazine grew with the catalog — a republish after a new record laid one more tune'})
-    // recast drops orphans: dropping a record and republishing left no orphan tune — count back to two.
+    if (gr && gr.sc.in_new_cloud && gr.sc.old_untouched && +(gr.sc.clouds || 0) === 2 && +(gr.sc.cards || 0) === 3 && !(w.oa({seen: 'the magazine grew into a new cloud — a fresh record joined a second batch and the first was left untouched'}))) w.i({seen: 'the magazine grew into a new cloud — a fresh record joined a second batch and the first was left untouched'})
+    // recast: the dropped record vanished from the snap with its emptied cloud — no orphan card left behind.
     let rc = T.o({ recast: 1 })[0]
-    if (rc && +(rc.sc.after || 0) === 2 && +(rc.sc.orphan || 0) === 0 && !(w.oa({seen: 'a republish recast the whole magazine — a record dropped from the catalog left no orphan tune behind'}))) w.i({seen: 'a republish recast the whole magazine — a record dropped from the catalog left no orphan tune behind'})
+    if (rc && +(rc.sc.orphan || 0) === 0 && +(rc.sc.cards || 0) === 2 && +(rc.sc.clouds || 0) === 1 && mag && !mag.o({ Cloud: 1, randomic: 'c2' }).length && !(w.oa({seen: 'a republish recast the magazine — a record dropped from the catalog vanished with its emptied cloud and left no orphan behind'}))) w.i({seen: 'a republish recast the magazine — a record dropped from the catalog vanished with its emptied cloud and left no orphan behind'})
 
 },
 // keep the Run snap readable: float A:MusuMagazine to the front of H/*.

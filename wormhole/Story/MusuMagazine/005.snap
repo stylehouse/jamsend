@@ -7,14 +7,18 @@ Snap:H
         req:wrangle,eternal,ok
         testing
           reached:step_2
-          published,records=2,tunes=2
+          published,records=2,cards=2,clouds
           reached:step_3
-          probed,has_album,has_genre,has_id
+          probed,has_album,has_hash,joined_at=1000
           reached:step_4
-          regrew,before=2,after=3,grew
+          regrew,clouds=2,cards=3,in_new_cloud,old_untouched
           reached:step_5
-          recast,after=2,orphan=0
-        seen:a magazine published from a live catalog — a fresh berth handle read back one tune for every record
-        seen:each tune carried its own metadata — album and genre and id rode in the magazine beside the handle
-        seen:the magazine grew with the catalog — a republish after a new record laid one more tune
-        seen:a republish recast the whole magazine — a record dropped from the catalog left no orphan tune behind
+          recast,cards=2,clouds,orphan=0
+        seen:a magazine published from a live catalog — the reflected berth held a record per entry grouped under one cloud stamped with when they arrived
+        seen:each record carried its metadata and the time it joined — album and body hash on the card and the created_at on its cloud
+        seen:the magazine grew into a new cloud — a fresh record joined a second batch and the first was left untouched
+        Mag:Musica
+          Cloud,randomic:c1,created_at=1000
+            Record,id:boc-roygbiv,artist:Boards of Canada,title:Roygbiv,path:Boards of Canada - Roygbiv.wav,album:Music Has the Right to Children,body_hash:boc-roygbiv-body
+            Record,id:apx-xtal,artist:Aphex Twin,title:Xtal,path:Aphex Twin - Xtal.wav,album:Selected Ambient Works 85-92,body_hash:apx-xtal-body
+        seen:a republish recast the magazine — a record dropped from the catalog vanished with its emptied cloud and left no orphan behind

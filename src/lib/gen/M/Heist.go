@@ -10,7 +10,7 @@ import { sha256_hex, sha256_incremental } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'f023d8d2764669cd~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '5be1d0623ef34750~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -595,25 +595,71 @@ async Berth_reset(nav, root, prepub, name) {
 
 },
 // Musica_publish — the first magazine rung (§12.2, M1): sublime a collection into media homed in a Berth
-//  Waft.  Opens the Pier's Waft:Musica berth, WIPES its old %Tune children (a republish is a whole re-cast,
-//   not an append — the magazine mirrors the live catalog, so a dropped Record must vanish here too), then
-//    lays one Tune:<Artist — Title> handle (§11.1) per Record carrying the metadata cursors anchor on (§12.3):
-//     album|genre|id ride as scalars, each guarded so an absent field is OMITTED (never a `false`/'' snap
-//      wart — the album rule from Heist census).  No crush at v1 (husks come with scale) and no wire — the
-//       magazine is a plain Berth Waft that Repli will move like any C** once M2 lands.  Returns the mag so a
-//        caller can re-open a second handle and read the Tune rows back.
-async Musica_publish(nav, root, prepub, lib) {
+//  Waft.  The magazine is the catalog SUBLIMED, not the payload: it carries the census %Record cards
+//   (id/artist/title/album/path/body_hash — the SAME mainkey + scalars the collection holds, minus the
+//    %Body byte-slices) so the whole query algebra — a %Cursor is o()-matches — reads over magazine,
+//     collection and a follower's mirror alike.  NO genre: a filing is a folder, not a card scalar, and no
+//      census mints one (the fabricated `genre` was why the first cut proved a shape that cannot exist).
+//  THE %Cloud LAYER (the human's 2026-07-13 ruling): Records do not hang straight off the Waft — they group
+//   under a %Cloud,randomic,created_at.  A Cloud is an ARRIVAL BATCH: one publish that finds new records lays
+//    ONE Cloud stamped with when they came, so every Record wears the time it joined (read up through its
+//     Cloud) and a whole era can be forgotten at once (Musica_forget) — collection AND its derived radiostock.
+//      randomic + created_at are PARAMS not wall-clock: the app passes a real random id + Date.now, a Book
+//       PINS them so its snaps stay deterministic (the Heist_marrauding runid pattern).
+//  Publish is RECONCILE-then-ADD, not wipe-and-rewrite: first drop any published Record whose id left the
+//   collection (the recast — a dropped track leaves no orphan) and any Cloud left empty; then lay the NEW
+//    arrivals (lib ids not yet in any Cloud) under a fresh Cloud.  A republish with no change mints no Cloud.
+//   Returns the mag so a caller re-opens a second handle and reads the Cloud/Record rows back.
+async Musica_publish(nav, root, prepub, lib, randomic, created_at) {
     let mag = await this.Berth_open(nav, root, prepub, 'Musica')
-    for (const t of mag.o({ Tune: 1 })) await mag.rm({ Tune: t.sc.Tune })
-    for (const rec of lib.o({ Record: 1 })) {
-        let tune = mag.i({ Tune: rec.sc.artist + ' — ' + rec.sc.title })
-        tune.c.up = mag
-        if (rec.sc.album) tune.sc.album = rec.sc.album
-        if (rec.sc.genre) tune.sc.genre = rec.sc.genre
-        if (rec.sc.id) tune.sc.id = rec.sc.id
+    // the live collection's identities — an id set the reconcile and the new-arrival scan both read.
+    let have = {}
+    for (const rec of lib.o({ Record: 1 })) have[rec.sc.id] = rec
+    // RECONCILE: drop any published Record the collection no longer holds; then drop any Cloud left empty.
+    let published = {}
+    for (const cloud of mag.o({ Cloud: 1 })) {
+        for (const rec of cloud.o({ Record: 1 })) {
+            if (!have[rec.sc.id]) { await cloud.rm({ Record: 1, id: rec.sc.id }); continue }
+            published[rec.sc.id] = 1
+        }
+        if (!cloud.o({ Record: 1 }).length) await mag.rm({ Cloud: 1, randomic: cloud.sc.randomic })
+    }
+    // ADD: the collection ids not yet in any Cloud form THIS publish's arrival batch.
+    let fresh = lib.o({ Record: 1 }).filter((r) => !published[r.sc.id])
+    if (fresh.length) {
+        let cloud = mag.i({ Cloud: 1, randomic: randomic, created_at: created_at })
+        cloud.c.up = mag
+        for (const rec of fresh) {
+            let card = cloud.i({ Record: 1, id: rec.sc.id, artist: rec.sc.artist, title: rec.sc.title, path: rec.sc.path })
+            card.c.up = cloud
+            if (rec.sc.album) card.sc.album = rec.sc.album
+            if (rec.sc.body_hash) card.sc.body_hash = rec.sc.body_hash
+        }
     }
     await this.Berth_save(nav, mag)
     return mag
+
+},
+// Musica_cards — every %Record across every %Cloud, newest-cloud-agnostic: the flat catalog view a reader or
+//  a cursor walks (the Cloud layer is for GROUPING and forgetting, not for browsing one era at a time).
+Musica_cards(mag) {
+    let out = []
+    for (const cloud of mag.o({ Cloud: 1 })) for (const rec of cloud.o({ Record: 1 })) out.push(rec)
+    return out
+
+},
+// Musica_forget — GC an era: drop every %Cloud stamped older than `cutoff` (created_at < cutoff), which drops
+//  its Records with it.  The magazine's own reason the %Cloud layer exists — a whole batch forgotten at once.
+//   // <  the RADIOSTOCK CASCADE: dropping a Cloud must also drop the .jam radiostock chunks derived from its
+//   // <   Records (the human: "delete including radiostock") — unbuilt; needs the enid→stock map (Ra_enid is
+//   // <    the Record id's first-16, so the join exists) walked and each stock file unlinked off disk.
+async Musica_forget(nav, mag, cutoff) {
+    let dropped = 0
+    for (const cloud of mag.o({ Cloud: 1 })) {
+        if (+(cloud.sc.created_at || 0) < cutoff) { await mag.rm({ Cloud: 1, randomic: cloud.sc.randomic }); dropped = dropped + 1 }
+    }
+    if (dropped) await this.Berth_save(nav, mag)
+    return dropped
 },
 //#endregion
 

@@ -7,5 +7,9 @@ Snap:H
         req:wrangle,eternal,ok
         testing
           reached:step_2
-          published,records=2,tunes=2
-        seen:a magazine published from a live catalog — a fresh berth handle read back one tune for every record
+          published,records=2,cards=2,clouds
+        Mag:Musica
+          Cloud,randomic:c1,created_at=1000
+            Record,id:boc-roygbiv,artist:Boards of Canada,title:Roygbiv,path:Boards of Canada - Roygbiv.wav,album:Music Has the Right to Children,body_hash:boc-roygbiv-body
+            Record,id:apx-xtal,artist:Aphex Twin,title:Xtal,path:Aphex Twin - Xtal.wav,album:Selected Ambient Works 85-92,body_hash:apx-xtal-body
+        seen:a magazine published from a live catalog — the reflected berth held a record per entry grouped under one cloud stamped with when they arrived
