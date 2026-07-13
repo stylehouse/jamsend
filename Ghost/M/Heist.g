@@ -88,6 +88,11 @@ async Heist_census(w, lib, nav, base, artists):
         // <  probe the BYTES really are audio media before censusing — the extension gate alone lies;
         // <   a non-audio file must never become a %Record (music-metadata's container sniff is the
         // <    natural probe — a parse that finds no audio format = skip, not fallback-to-path).
+        // <  KID-SAFE (the human's 2026-07-13 ruling): non-audio SIBLINGS in a picked-up directory
+        // <   (cover.jpg, .nfo, stray images) NEVER copy — a heist moves AUDIO only, never arbitrary
+        // <    files a stranger placed beside them.  Same distrust as embedded album art: untrusted
+        // <     imagery does not ride the wire without the oracle (see Crate_meta_from_tags' ALBUM ART
+        // <      mark).  The two are one rule — visual bytes need an authority, so v1 carries none.
         // the authoritative catalog identity: tags win, filename fills the gaps.  Pass the bytes FROM OFFSET 0
         //  (Crate_meta_from_tags reads the RIFF/ID3 header there); it never throws and never returns a hole.
         let meta = await this.Crate_meta_from_tags(bytes, path)
@@ -120,6 +125,19 @@ async Heist_census(w, lib, nav, base, artists):
 // Heist_held — the CATALOG-IDENTITY dedup probe: does this collection already hold artist+title?
 //  Source-blind by design (provenance is never persisted, so it could not ask anyway).  The upgrade
 //   path (same identity, better format — e.g. to flac if policy allows) is a later gear; v1 skips.
+// <  DEDUP MUST NOT DROP A DISTINCT TRACK (the human's 2026-07-13 ruling — the Muslimgauze problem: an
+// <   album of 12 `Muslimgauze - Untitled` tracks all share artist+title, so this probe COLLAPSES 11 of
+// <    them as "already held" and eats the record).  The fix is layered and BIAS-TO-KEEP:
+// <     1. widen identity to artist+title+ALBUM+DISC+TRACK when the tags carry them (12 Untitleds have
+// <        track 1..12 → distinct → all land);
+// <     2. SENSE A THIN IDENTITY: when album/disc/track are absent so the tag-identity cannot separate
+// <        multiples, DO NOT dedup on it — a wrong drop is worse than a possible dupe (a dupe costs a
+// <        delete, a drop loses music);
+// <     3. the FILENAME/PATH is the reliable fallback axis — cp-landing keeps the ORIGINAL name (no
+// <        rename), so `01 Untitled.flac`..`12 Untitled.flac` already distinguish on disk; a same-path
+// <        collision at the destination is the true-dupe / clash signal (skip + a `clash` manifest
+// <        verdict).  So: dedup by (tag-identity WHEN rich enough) else by path, never drop on a thin
+// <        tag-identity alone.  Unbuilt — rides the cp-landing wave (Radio_todo §12.2).
 Heist_held(lib, artist, title):
     return !!(lib && lib.o({ Record: 1, artist: artist, title: title })[0])
 

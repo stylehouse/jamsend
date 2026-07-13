@@ -1220,6 +1220,21 @@ Waft:Musica
          scalars (clamp control chars + cap length); non-audio sibling in a picked-up dir (probe
           audio, parked `// <` at Heist_census); album-art needs an oracle (parked `// <` in
            Crate.g); landing-path collision → skip+`clash` verdict on the manifest.
+ **The corner-case answers (the human, 2026-07-13 — all captured as `// <` at their code sites):**
+  - **Non-audio siblings NEVER copy** (kid-safe): a heist moves AUDIO only, never `cover.jpg`/`.nfo`/
+     stray images a stranger placed in the directory. Same rule as embedded album art — visual bytes
+      need an ORACLE authority before they ride the wire, and v1 carries none (marks joined at
+       Heist_census KID-SAFE + Crate_meta_from_tags ALBUM ART).
+  - **Dedup must NOT drop a distinct track** (the Muslimgauze problem: 12 `Muslimgauze - Untitled` all
+     share artist+title, so today's `Heist_held` collapses 11 as "already held" and eats them). The
+      fix is layered and BIAS-TO-KEEP: (1) widen identity to artist+title+**album+disc+track** when
+       tags carry them; (2) SENSE a thin identity — when those are absent so multiples cannot be
+        separated, DO NOT dedup on it (a wrong drop loses music; a dupe costs one delete); (3) the
+         **filename/path** is the reliable fallback axis — cp-landing keeps the original name, so
+          `01 Untitled.flac`..`12 Untitled.flac` already distinguish on disk, and a same-path collision
+           at the destination is the true-dupe/clash signal. So: dedup by rich-enough tag-identity ELSE
+            by path, never drop on a thin tag-identity alone. (Rides the cp-landing wave — `Heist_held`
+             mark.)
  Renames: a Pier that reorganises (retitles an album, splits an artist) mints %Renamed redirect-
   facts beside the renamed node — from:, to:, at: — IN the magazine, so followers receive the
    redirect through the same pipe as the content. (Naming note: "breach" is taken — it is the

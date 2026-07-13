@@ -337,9 +337,11 @@ Crate_tag_mime(path):
 //      A file with no recognised tag, an all-empty tag, OR a parse that THREW is exactly the path result.
 //  ASYNC (parseBuffer returns a Promise); the single caller (Heist_census) awaits it.  album may legitimately
 //   stay empty — the landing drops that level (Heist_land_rel's album-less shelf), never a placeholder folder.
-//  // <  ALBUM ART: parseBuffer surfaces embedded pictures (metadata.common.picture) — NEVER trust or
-//  // <   persist embedded art without looking it up in an ORACLE (a cover-art authority / hash check);
-//  // <    parked until an oracle exists.  Today we read no pictures at all, which is the safe floor.
+//  // <  ALBUM ART / KID-SAFE: parseBuffer surfaces embedded pictures (metadata.common.picture) — NEVER
+//  // <   trust or persist embedded art without looking it up in an ORACLE (a cover-art authority / hash
+//  // <    check).  Same rule bars non-audio SIBLINGS from a picked-up directory (Heist_census' KID-SAFE
+//  // <     mark): visual bytes a stranger placed in a collection do not ride the wire without an
+//  // <      authority.  Parked until an oracle exists; today we read no pictures at all — the safe floor.
 async Crate_meta_from_tags(bytes, path):
     let fallback = this.Crate_meta_from_path(path)
     let tag = { artist: '', album: '', title: '' }
