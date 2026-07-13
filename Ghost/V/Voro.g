@@ -400,6 +400,12 @@ Voro_grasp(w):
             } else if (rk === 'spread') {
                 let sk = '' + r.sc.text
                 for (const b of r.o()) {
+                    // a spread's '+N' overflow tail is render CHROME (structurally n:0 — a real
+                    //  value chip always counts ≥1); paint must never enter the census as a claim.
+                    //   The model's fact-read always knew this rule — the one-extraction discipline
+                    //    (the model ruling) brings the census to the same honesty (found 2026-07-13:
+                    //     a rare '+9' scored LOUD and could even become a cell's trait).
+                    if (!(+b.sc.n)) continue
                     this.Voro_grasp_tally(kv, keyc, saw, sk, '' + b.sc.text)
                 }
             }
@@ -458,6 +464,12 @@ Voro_grasp(w):
                     let mx = 0
                     let mxv = ''
                     for (const b of r.o()) {
+                        // the '+N' chrome chip stays QUIET by fiat — paint never competes with facts
+                        //  for loudness (nor for the trait below); a fixed hush keeps its size stable.
+                        if (!(+b.sc.n)) {
+                            b.sc.wgt = 20
+                            continue
+                        }
                         let cw = this.Voro_grasp_weight(kv, keyc, grasped, sk, '' + b.sc.text)
                         b.sc.wgt = cw
                         if (cw > mx) {
@@ -528,7 +540,26 @@ Voro_grasp(w):
     // PROJECT — the grasp's readout beside the census: cells held, the cell mitosis, and the LOUDEST
     //  cell (its the_very name) — a first legible taste of the reductionist weighting the render reads.
     //   oai keeps its slot so only the fields slide — no storm on the grasp's own row.
-    rw.oai({ Se: 'scape' }, { grasped: '' + grasped, born: '' + born, died: '' + died, loudest: loudest, trait: loud_trait, regions: '' + Object.keys(fams).length })
+    //  ABSENCE IS A VALUE: a world too small for any claim to distinguish (one cell has no
+    //   neighbours) has NO trait — the field is deleted, never snapped as an empty `trait:`.
+    let sdict = { grasped: '' + grasped, born: '' + born, died: '' + died, loudest: loudest }
+    if (loud_trait) sdict.trait = loud_trait
+    sdict.regions = '' + Object.keys(fams).length
+    let scape = rw.oai({ Se: 'scape' }, sdict)
+    if (!loud_trait) delete scape.sc.trait
+    // %Se:input — the flora's own weather: the raw news this grasp otherwise DISCARDS when it keeps
+    //  only fold-level mitosis above (the sphere's one-layer grain — every top-level node that came
+    //   or went, folds and bare leaves alike).  Present ONLY on a beat something moved (absence IS
+    //    the quiet reading); the report's sweep spares %Se rows, so the grasp manages its own —
+    //     dropped when the weather stills.
+    let ain = news.neus.length
+    let aout = news.goners.length
+    if (ain || aout) {
+        rw.oai({ Se: 'input' }, { arrived: '' + ain, left: '' + aout })
+    } else {
+        let inrow = rw.o({ Se: 'input' })[0]
+        if (inrow) inrow.drop(inrow)
+    }
 
 // Voro_grasp_kv — split a Vtuffing fact's text into { key, val }: 'year: 2007' → { year, 2007 };
 //  a presence fact ('remaster ×2') or a bare key → { key, '' } (its value IS its mere presence).
