@@ -25,17 +25,23 @@ Waft:Credence
   What:Musu,desc:the music-piracy streaming platform — the rastock racast raterm pipeline of Radio_todo
     Funkcion:StoryTimes
     What:mostly,desc:the stuff we mostly do as jamsend the music app — the rastock racast raterm pipeline on real tracks
-      Funkcion:Storying,of_Book:MusuGenerateTestsMusic,needsFSA:1,unusual:test-data-seeding
-      Funkcion:Storying,of_Book:MusuRaStock,needsFSA:1,needMusic:1
-      Funkcion:Storying,of_Book:MusuRaCast,needsFSA:1,needMusic:1
-      Funkcion:Storying,of_Book:MusuRaTerm,needsFSA:1,needMusic:1
-      Funkcion:Storying,of_Book:MusuRaStream,needsFSA:1,needMusic:1,born:2026-07-08
-      Funkcion:Storying,of_Book:MusuRaChase,needsFSA:1,needMusic:1,born:2026-07-11
-      Funkcion:Storying,of_Book:MusuHeist,needsFSA:1,needMusic:1,born:2026-07-11
-      Funkcion:Storying,of_Book:MusuBerth,needsFSA:1,born:2026-07-12
-      Funkcion:Storying,of_Book:MusuVend,born:2026-07-13
-      Funkcion:Storying,of_Book:MusuDoor,born:2026-07-13
-      Funkcion:Storying,of_Book:MusuReco,needMusic:1
+      What:the pipeline,desc:rastock racast raterm — the product chain on real tracks plus its test-data seeder
+        Funkcion:Storying,of_Book:MusuGenerateTestsMusic,needsFSA:1,unusual:test-data-seeding
+        Funkcion:Storying,of_Book:MusuRaStock,needsFSA:1,needMusic:1
+        Funkcion:Storying,of_Book:MusuRaCast,needsFSA:1,needMusic:1
+        Funkcion:Storying,of_Book:MusuRaTerm,needsFSA:1,needMusic:1
+        Funkcion:Storying,of_Book:MusuRaStream,needsFSA:1,needMusic:1,born:2026-07-08
+        Funkcion:Storying,of_Book:MusuRaChase,needsFSA:1,needMusic:1,born:2026-07-11
+      What:the magazine,desc:the sharing layer — heist bytes into a collection then berth persist share and browse it across Piers
+        Funkcion:Storying,of_Book:MusuHeist,needsFSA:1,needMusic:1,born:2026-07-11
+        Funkcion:Storying,of_Book:MusuBerth,needsFSA:1,born:2026-07-12
+        Funkcion:Storying,of_Book:MusuVend,born:2026-07-13
+        Funkcion:Storying,of_Book:MusuDoor,born:2026-07-13
+        Funkcion:Storying,of_Book:MusuReco,needMusic:1
+        What:the cursor,desc:a Dogear names a spot in a magazine — resolve then heal across a rename then resume across a reload
+          Funkcion:Storying,of_Book:MusuCursor,born:2026-07-13
+          Funkcion:Storying,of_Book:MusuHeal,born:2026-07-14
+          Funkcion:Storying,of_Book:MusuResume,born:2026-07-14
       What:replication,desc:paginated C** replication of a music library across two Piers
         Funkcion:Storying,of_Book:MusuBounce,needMusic:1
         Funkcion:Storying,of_Book:MusuReplica
@@ -69,9 +75,6 @@ Waft:Credence
         What:the network,desc:audio frames and content routing over the real Peeroleum transport
           Funkcion:Storying,of_Book:MusuMesh
           Funkcion:Storying,of_Book:MusuPier
-    Funkcion:Storying,of_Book:MusuCursor,born:2026-07-13
-    Funkcion:Storying,of_Book:MusuHeal,born:2026-07-14
-    Funkcion:Storying,of_Book:MusuResume
   What:Puddle,desc:the lower-level instruments in one puddle — machinery proven once and kept for regression hunts not for relitigating
     Funkcion:StoryTimes
     What:Lake,desc:the editor machine — the Lies compile-run pipeline over Docs Wafts and focus
