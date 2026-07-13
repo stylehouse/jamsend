@@ -34,6 +34,30 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
                 evolved through are SAVED: `voro_modes/README.md` (a ledger — commit anchors + live
                  SVG shots; revive any face via `git show <commit>:src/lib/O/Cytui.svelte`).
 
+**THE 2026-07-14 STEER (the human, live — supersedes the wave-③ remainder + §Nightshift orders,
+ which was the fill-out shift, done).**  Three rulings, one arc:
+ - **The distiller bows to Stuffing** — the ALGORITHM (`Stuff.svelte.ts compute_groups`: group
+    like rows → columns → value-chips-with-counts, `is_one` collapse), NOT the HTML component.
+     Vtuff_default's bespoke row taxonomy (title/list/member/sub/fact/spread heuristics with the
+      English naming list threaded through) is replaced by that one clean `((k:v+)+)+` slope:
+       typed key/value bits end-to-end, display text derived only at paint.  Kills by construction
+        the meaning→text→re-parse round-trip (the grasp's `Voro_grasp_kv` reading `'year: 2007'`
+         back OUT of a display string it itself caused to be written).
+ - **Vtuffing's real job is the VISUAL EXTENSION** — laying those bits out nicely in the cell
+    **wrt how the neighbours lay theirs**, to compress the glass's visual noise (Se doctrine: a
+     claim the neighbourhood shares QUIETS locally — its story promotes to family-level lettering,
+      the Wes-Wilson river pass — while a claim that differs SHOUTS).  The grasp's TF-IDF wgt
+       already encodes the contrast; the cut is layout-side suppression + promotion, not new
+        analytics.  Head for really nice rendering FIRST — truer to reality, simpler.
+ - **The naming-cut is DROPPED as filed; the bijective key is PARKED.**  region|axis|name are
+    necessary-ish but fundamentally fallible analytics — do not grow them.  `Voro_model_namekey`
+     keeps its code but is not threaded further (its spirit may resurface at the Stuffing-algorithm
+      level: an identity column = distinct-per-carrier).  The eventual true shape is %dome-style
+       INSTRUCTION — the data telling any Stuffing|Vtuffing|Voro|resolve() how to treat a key
+        (`D%the_key,the_very_key` making a key meaningful on identity) — explicit over inferred;
+         not now.  Identity-anchor direction likewise Se-side (Dip_assign persists across a Seem's
+          replace via resume_X; `mem.further`-pathed stash for openness) — noted, not this shift.
+
 **THE FIVE WAVES (the arc from here — model first, geometry later, pixels last).**
  - **① The Se-up model — LANDED (2026-07-13, honest-language round).**  `Voro_model` (Voro.g)
     computes the MODEL in the crush tail: an off-snap full tree on `w.c.voro_model` (%Model /
