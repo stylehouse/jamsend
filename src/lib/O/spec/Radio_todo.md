@@ -93,12 +93,20 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
         exercised by MusuVend's forget scene (see #6: origin drops the older cloud by its stamp, keeps
          the fresher). Still `// <` on forget: the radiostock cascade + the follower-propagation via
           Repli_retire (forget is a local GC until a retire crosses).
- - **M2 BUILT (see the top block); NEXT build is D1** — harden the for-another serving path into the
-    DOOR: swap MusuVend's Book-owned grant toggle for the live `Swarm_pier_live` verdict (the MusuHeist
-     `repli_allow` shape) and add the SABOTAGE scene (a hostile stream claiming `req:`/`eternal` mainkeys
-      lands INERT — the door only reads want-shapes). Then C1 cursors. Corner-cases for when cp-landing
-       meets real disk (all `// <`): audio-probe the bytes, the album-art/kid-safe oracle, dedup
-        album+disc+track-else-path, landing-path clash.
+ - **M2 LIVE-GREEN; D1 part b LIVE-GREEN (MusuDoor, 2026-07-13) — NEXT build is D1 part a.**
+    D1 was split: **part b (the SABOTAGE wall) LANDED** as the `MusuDoor` Book (fork of MusuVend,
+     9/9 caveat:0 ×2 on runner 49de, commit `f76b3d7e`). A malicious origin grafts a `%req:sabotage,eternal`
+      under a magazine card; it merges deep in the follower mirror as DATA and lands **INERT** — `reqdo_sweep`
+       pumps only w's IMMEDIATE reqs, so a req buried below the mirror is never enumerated. The canary is
+        DYNAMIC (a `req_sabotage` handler flips `w.c.pwned` IF ever pumped; an adversarial review killed the
+         first immediate-child draft as a false-green) so BOTH a promoting merge AND a deep-walking sweep go
+          red. 3 sees: wall + gate (revoked peer refused) + containment. Deterministic (no crypto/entropy).
+    **D1 part a (OWED, the crypto door):** swap MusuDoor's Book-owned grant toggle for the live
+     `Swarm_pier_live` verdict (the MusuHeist `repli_allow` shape) — reintroduces seal wall-clock →
+      an EntropyProfile + a warming re-accept, so best done ATTENDED (§12.4 D1 recipe (a)). The sabotage
+       wall does not depend on WHO the peer is, so it landed cleanly without the crypto.
+    Then C1 cursors. Corner-cases for when cp-landing meets real disk (all `// <`): audio-probe the bytes,
+     the album-art/kid-safe oracle, dedup album+disc+track-else-path, landing-path clash.
 
 **NOW (2026-07-13, post-push): three §10.2 gears LANDED compile-clean (live-gate owed on all);
  the Booth/Ban thread is VETOED-and-parked; persistence is ruled — §11.7 (the Berth).**
@@ -1330,6 +1338,12 @@ Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the
       standing evolve is House-work, so it files under M as **M4** — census-diff re-publish,
        rename missions as a standing Upkeep-shaped pass, the revolving service pacing over
         enrolled followers (Ra_transcode_pump generalized) (was K2).
+  **D1 SPLIT (2026-07-13): part b LANDED (MusuDoor, LIVE-GREEN ×2, `f76b3d7e`); part a OWED.** The
+   recipe below was followed for part b (the sabotage wall) with ONE correction from the build: the
+    canary is NOT an immediate-child check (an adversarial review caught that as a false-green — it
+     misses a deep-walking-sweep regression) but a DYNAMIC `req_sabotage` handler that flips `w.c.pwned`
+      if the buried req is ever PUMPED, proven live by a control that pumps an identical req through a
+       throwaway holder world. Part (a) below (the crypto door) is the remaining rung.
   **D1 BUILD RECIPE (teed up 2026-07-13 — build once M2 is live-gated):** fork MusuVend (the wire +
    two Piers + the grant seam are proven there). (a) HARDEN the grant: swap MusuVend's Book-owned
     `w.c.grants` toggle for the LIVE Swarm verdict — copy MusuHeist's shape
@@ -1359,9 +1373,10 @@ Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the
  **U — the magazine reader** (Big*land family): browse a replicated %Musica, wants become cursors;
   build AFTER the rungs give it real data.
  (P — the projected subHouse — PARKED as experiment material per the 12.1 ruling; do not build.)
- Dependencies: M1 ✓ (landed + live-recorded 2026-07-13); M2 ✓ (LIVE-GREEN ×2 2026-07-13) — D1 LEADS
-  NEXT (harden MusuVend's grant toggle into the live Swarm_pier_live door + the sabotage scene); M4 needs
-   M1 + M3; C2 needs M3; S3 needs D1 + M2 + S2; U needs M2 + C1.
+ Dependencies: M1 ✓ (landed + live-recorded 2026-07-13); M2 ✓ (LIVE-GREEN ×2 2026-07-13); D1 part b ✓
+  (MusuDoor, the sabotage wall, LIVE-GREEN ×2 2026-07-13) — **D1 part a** (harden the grant toggle into the
+   live Swarm_pier_live door — reintroduces seal entropy, ATTENDED) is the remaining door rung; M4 needs
+    M1 + M3; C2 needs M3; S3 needs D1 + M2 + S2; U needs M2 + C1.
 
 ### 12.5 The heist wriggles in — every gear re-homes into making | replicating | responding
 

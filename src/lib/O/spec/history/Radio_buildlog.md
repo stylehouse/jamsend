@@ -5,6 +5,28 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
   The living state, roadmap and design are in Radio_todo.md — read THAT; come here only for
    the archaeology of how a thing landed. Newest first.
 
+**2026-07-13 (evening) — D1 part b: the anti-klepto SABOTAGE wall (MusuDoor), LIVE-GREEN ×2.** With M2
+ live-gated, split D1 and built **part b** — the §12 heart, the door the recipient stands. Book **MusuDoor**
+  (fork of MusuVend, appended to `Ghost/Story/Heistation.g`): a malicious origin HAND-CRAFTS a magazine card
+   carrying a grafted `%req:sabotage,eternal,arm:pwn` — a standing request dressed as catalog data. It rides
+    the husk (`Repli_lines_of` ships every non-chunk child), merges deep under the follower mirror via plain
+     `i()` (not `oai`, so no req-machine), and lands **INERT**: `reqdo`/`reqdo_sweep` pump only w's IMMEDIATE
+      reqs (`w.o({req:1})`), and merged content lands strictly below the mirror lib. The step-9 snap SHOWS the
+       trojan sitting harmless in both the origin mag and the follower mirror.
+ THE BUG THE REVIEW CAUGHT: my first draft asserted "the grafted req is not among `w.o({req:1})`" — an
+  adversarial reviewer proved it a **false-green**: it watched the wrong shape (`sc.sabotage` key vs the
+   attack's `req:'sabotage'` value) AND only caught a promoting merge, not the deep-walking-sweep regression
+    the §12.1 BOMB actually names. Rewrote the canary DYNAMIC: a `req_sabotage` handler (`do_fn_for` resolves
+     `H.req_<value>`) flips `w.c.pwned` if the buried req is EVER pumped; a positive control pumps an identical
+      req through a throwaway holder world's `.do()` and watches pwned flip (non-vacuity via the exact dispatch
+       path). Now BOTH promotion and a deep-walking sweep go red. A second reviewer verified the fix and
+        (correctly) insisted the lie-dige Book gates nothing until live-recorded — which is exactly the gate.
+ 3 sees (wall + gate-refusal + containment). Deterministic — no FSA/audio/Berth/entropy, so it ran on any
+  runner, `caveat:0`. **LIVE-GREEN ×2** (runner 49de: 9/9, `caveat:0`, all 3 sees latched, Credulate confirms
+   fresh gen `ca0695eb~g1`), commit `f76b3d7e`. Registered Credence + Ality. **D1 part a** (the crypto door —
+    swap the toggle for the live `Swarm_pier_live` verdict, reintroducing seal entropy) is the remaining rung,
+     best done attended. Corrected [[musu-ra-magazine-m2]]'s "NEXT = D1" and Radio_todo §0/§12.4/deps.
+
 **2026-07-13 (pm) — M2: magazine replication (MusuVend), compile-clean + the "one brain" split.** After
  the fold made the magazine real on MusuHeist, the human asked whether the MusuRa* family uses the magazine
   "and otherwise reflect the current era". An Explore mapped it honestly: **NO** — MusuRaStock/Cast/Term/
