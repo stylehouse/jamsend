@@ -64,6 +64,18 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
        started; the readers still recompute.  This is where **the Loud share-count inversion** lands:
         the model reads the rep's word rows, not the members, so a share count like `vein` 3-of-12
          is LOST — the fix is the model pooling member facts ITSELF instead of the rep's word rows.
+      **The human's ruling (2026-07-13): the report becomes bits of the model — one elegant core.**
+       "the model" = ALL data representation by Voro (recommended naming, pending the nod — Cyto's
+        input needs no separate noun since it IS the model; Cyto is one consumer among consumers).
+         ONE walk of the crushed world + ONE fact-extraction build the model; `w:Voronoiology` is
+          nothing but the model's SNAPPED FACE (every row a projection of a model node — the
+           `%cell`/`%bare` shapes are `%Family` rows worn thin); the %Seems are the model's MEMORY
+            (D-spheres), never the model itself.  Kills by construction: the report/gather twin
+             walks, the grasp-vs-model fact-walk divergence (the `'+9'` chrome chip tallied as a
+              claim — found 2026-07-13), and Voronoiology's triple authorship.  The %Se choir the
+               merge leaves standing: `%Se:input|scape|census|drift|attention` — each phase an
+                honest reading off one Selection-backed memory (input = the leaf weather the grasp
+                 currently discards; attention = the radio's hand-flags folded into a Seem).
  - **④ Geometry folds into `Voro.g`.**  The pure maths (hull, clip, resample, PCA, river order,
     Catmull) folds into `Voro.g` — NOT a new `VoroGlass.ts` (the human decided AGAINST a .ts
      module).  A later wave; it will feel out the LangTiles parse-storm on closure-heavy raw JS.
