@@ -99,11 +99,12 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
                    relic-family `share:1` flood (a bare pair of unique-prop singletons) is the honest
                     price; if the human wants it gone it's a one-char tighten (`share > 1`), but that
                      re-hides the rare-loud singles.
-      **RE-RECORD OWED (after `c970ceed`): VoroTest · VoroRadio · VoroRadioPier · and AGAIN
-       VoroMitosis · VoroScape** (the share commit landed AFTER the human's fresh Mitosis+Scape record,
-        so it re-staled them — Loud rows gain `share:N`).  **VoroClinic is NOT owed** — it produces zero
-         partial Loud rows, so the share cut is invisible to it (its only drift is a transient
-          `Snap:cytowave` animation artifact, pre-existing timing noise); it's `%unusual` anyway.
+      **RE-RECORD OWED (after `c970ceed`): VoroTest · VoroRadio · and AGAIN VoroMitosis · VoroScape**
+       (the share commit landed AFTER the human's fresh Mitosis+Scape record, so it re-staled them —
+        Loud rows gain `share:N`).  **VoroClinic is NOT owed** — it produces zero partial Loud rows, so
+         the share cut is invisible to it (its only drift is a transient `Snap:cytowave` animation
+          artifact, pre-existing timing noise); it's `%unusual` anyway.  (**VoroRadioPier RETIRED**
+           `5f6b5d29` — the human: "this suite is about form not the Pier"; the roster is five Books now.)
       **// < born|died — REFRAMED (the human, 2026-07-13): openness contamination, not death
        semantics.**  The scape sphere already watches the DATA openness-blind (the crush stamps
         `c.stuff` in place, never reparents — why `%Se:input` came out clean).  born|died then
@@ -134,7 +135,7 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
          VoroTest --watch --runner=<prefix>`.  If become_book stamps but no run mints, the tabs are
           wedged — host reload first.
  2. **The fleet re-record (human's job).**  All crush-Book fixtures (VoroTest, VoroMitosis,
-     VoroScape, VoroRadio, VoroRadioPier, VoroClinic) are STALED by the language cut — steps 2-4
+     VoroScape, VoroRadio, VoroClinic — VoroRadioPier retired `5f6b5d29`) are STALED by the language cut — steps 2-4
       diff by design (the fixtures at HEAD predate the cut).  **VoroTest ALSO grew 3 Examples + 5
        `%see` this round** (CredRunner surprises [2,3,4]) — the re-record covers those too.  Re-record
         with eyes on, on a live runner; the human owns this.  `Seen_split_todo.md` (the human's parallel
@@ -175,8 +176,9 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
         rewires behind — the pixels stay, the recompute moves to the model.
 
 **OPEN ITEMS carried forward (older layers, still true).**
-- **VoroRadioPier** (the Pier-fed radio Book, built 07-08): live-smoke-verified, all three
-   `%see` fire, fixtures NEVER RECORDED — record with eyes on.  Registered brand_new in Credence.
+- **~~VoroRadioPier~~ RETIRED** (`5f6b5d29`, 2026-07-13): the Pier-fed radio Book is gone — the human
+   ruled the Voro suite is about the crush/model FORM, not the music source, and two of its three
+    `%see` only duplicated VoroRadio.  The roster is five Books.
 - **Seed→cell→mold agenda #13/#14/#12-rest** (`Voro_vtuffing.md` §next-moves #10–14): #14
    cell-quality relaxation is the pilot for the owned-integrator branch (fcose demoted to seeder)
     — the program-via-graph frontier.  #11 wave cadence, #12b HMR diagonal, #10 snake landed 07-08.
@@ -338,10 +340,11 @@ Six shapes are ALREADY in the bench (flock/mix/motley/gradient/groves/edges — 
       list.  [model] for facts vs spreads classification.  **Gated:** the flock reads `grade` (12
        distinct) as the SPREAD it orders by (`order_by:grade`) while `stratum:Miocene` (the value all
         twelve share) rides as a shared `Loud` FACT — the model buckets a fact apart from a spread.
-15. **a Pier-fed library dribbling in** (`Voro_vtuffing.md` owner-vision "dribble in"; VoroRadioPier).
-     *"VoroRadio feeding music from a Pier" = music dribbling in from the Pier node* — a `%Pier` as
-      the SOURCE a newborn is born at and flows outward from.  [model] for the source membership;
-       [eyes] for the dribble entry animation.
+15. **a Pier-fed library dribbling in** (`Voro_vtuffing.md` owner-vision "dribble in"; its demo
+     Book VoroRadioPier was RETIRED `5f6b5d29` — the shape is now UN-EXERCISED, kept here as vision).
+      *"VoroRadio feeding music from a Pier" = music dribbling in from the Pier node* — a `%Pier` as
+       the SOURCE a newborn is born at and flows outward from.  [model] for the source membership;
+        [eyes] for the dribble entry animation.
 16. **Peer-shares as cross-cell filaments** (`Voro_vtuffing.md` owner-vision "trans-cellular
      filamentation"). *"VoroScape's Peer-shares=edges… threading BETWEEN panes"* — relationships as
       filaments spanning the tessellation.  [contract] for the edge set; [eyes] for the filament draw.
