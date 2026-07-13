@@ -5,6 +5,33 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
   The living state, roadmap and design are in Radio_todo.md — read THAT; come here only for
    the archaeology of how a thing landed. Newest first.
 
+**2026-07-13 (afternoon) — tags-by-default, the %Cloud magazine on the plane, and the Ra re-record
+ sweep.** Three things, all live-recorded on 49de + committed. (1) **The tombstone RIP** landed
+  first (MusuHeist 30→19, green ×2; see the day entry's ruling) — then the human caught the
+   MusuMagazine fixtures "snapping the judgement of some data not actually seeing the data itself":
+    the berth Waft was disk-homed and never reachable in the H** tree, so the snap carried only
+     `published,records=2` count rows the drive grades itself on. Probe confirmed it (album=genre,
+      mangled join — one-liners that should break it but couldn't). (2) **Test music is
+       tagged-by-default**: the subagent traced that Crate_wav_with_tags (the RIFF INFO writer) was
+        built but called ONCE (MusuHeist's plant) — the general generator (wav_bytes) stayed bare,
+         so every testsounds file was tagless (ffprobe confirmed). Fix: wav_bytes→pcm_sine (synth
+          only), the container now comes from the tag writer; every file carries IART/INAM agreeing
+           with its filename (the lone disagreeing file stays the plant, sharpened). Empirical gate:
+            the seeder reads one file back and stamps `tagged` iff the fourccs are on disk.
+             (3) **The magazine rebuilt as %Cloud/%Record** (§12.2): still census %Records (no
+              fabricated `genre` — no census mints one), now grouped under a %Cloud,randomic,created_at
+               ARRIVAL BATCH (the human's layer — every Record wears its join time, whole eras
+                forgotten via Musica_forget). Musica_publish is reconcile-then-add. The Book REFLECTS
+                 the disk-read tree into w/%Mag so the fixture diff shows the data change on camera —
+                  a second Cloud arriving at t=2000, ae-rae vanishing with its emptied cloud. 4 %seen
+                   on the reflected data, green ×2 caveat:0. (4) The tag change shifted every source
+                    WAV's bytes → census enid → every Ra shelf key; **re-recorded the whole Ra family**
+                     (RaStock/Cast/Term/Stream/Chase) over the tagged collection, green ×2 each (the
+                      caveats are AudibleEntropy ≈ over real muted-audio lufs/ms, identity churn
+                       deterministic). OWED + blessing-needed: the FOLD (publish off MusuHeist's real
+                        census, retire the minted lib) + the cp-LANDING (whole-dir pickup, no rename) —
+                         one fixture-churn wave once blessed.
+
 **2026-07-13 (day) — two rulings: the metaphor reset and the tombstone condemned.** (1) The
  kitchen/counter language failed the human ("counter" reads as a tally in count-land; K1 would not
   parse). §12.1 reset: **for-oneself is not an instance — it is the House** doing its own work
