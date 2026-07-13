@@ -709,7 +709,10 @@ Voro_model(w, folds):
         if (fr.kind === 'gang') {
             for (const p of (fr.particles || [])) {
                 let facts = this.Voro_model_member_facts(p)
-                fam.members.push({ anchor: this.Voro_model_member_anchor(p), facts: facts, weight: this.Voro_facts_top_weight(facts) })
+                // namefacts = the particle's OWN sc claims (== facts for a gang leaf); the naming
+                //  rule scans these for a bijective key.  mv = the mainkey's carried value (Fern:silver
+                //   names itself), which pre-empts any namekey.
+                fam.members.push({ anchor: this.Voro_model_member_anchor(p), facts: facts, namefacts: facts, mv: this.Voro_model_mval(p), weight: this.Voro_facts_top_weight(facts) })
             }
             for (const f of this.Voro_model_facts({ src: fr.cell })) fam.loud_facts.push(f)
         } else {
@@ -718,7 +721,15 @@ Voro_model(w, folds):
                 let anchor = fr.kind === 'pane' ? this.Vtuff_ident(c) : this.Voro_model_member_anchor(c)
                 if (!anchor) anchor = Object.keys(c.sc)[0]
                 anchor = ('' + anchor).split(',').join(' ')
-                fam.members.push({ anchor: anchor, facts: facts, weight: this.Voro_facts_top_weight(facts) })
+                // a PANE's facts are its distilled vtuffing (the members' shared story) — but its NAME
+                //  lives on the container's OWN sc (Artist{name:'Moonlit'}), so naming scans that, not
+                //   the vtuffing.  A bare leaf's own sc IS its facts.  LAZY: a self-naming pane (mainkey
+                //    carries a value, mv set) never consults namefacts, so skip the extra scan — it kept
+                //     VoroMitosis's genus-panes from paying a cost that nudged its time-budget round.
+                let mv = this.Voro_model_mval(c)
+                let namefacts = facts
+                if (!mv && fr.kind === 'pane') namefacts = this.Voro_model_member_facts(c)
+                fam.members.push({ anchor: anchor, facts: facts, namefacts: namefacts, mv: mv, weight: this.Voro_facts_top_weight(facts) })
                 for (const f of facts) fam.loud_facts.push(f)
             }
         }
@@ -737,6 +748,10 @@ Voro_model(w, folds):
         //   how many distinct values they take — and picks the widest.  This is the data-native replacement for
         //    Cytui's positional PCA: the trail order is a property of the DATA, computed once, here.
         let axis = this.Voro_model_axis(mem)
+        // the NAME key: the key (not the axis — that story is told by order_by) whose values IDENTIFY
+        //  the members, discovered exactly as the axis is.  Its value names each end below; a member
+        //   that names ITSELF (mainkey carries a value) or carries no name key falls back to its anchor.
+        let namekey = this.Voro_model_namekey(mem, axis.key)
         // order the members along the axis (numeric ascending, else lexical); a family with no usable axis
         //  keeps gather order (stable, better than random).  ord rides each member 0..n-1 for the consumer.
         let ordered = this.Voro_model_sort(mem, axis)
@@ -749,9 +764,11 @@ Voro_model(w, folds):
         //  never the family name.  Skip when it just echoes the fold name.
         let reg = this.Voro_model_family(fam.rep)
         if (reg && reg !== fk) famC.sc.region = reg
-        // the two ENDS ride the %Family node too (the snap distillation reads them here) — first|last anchor.
-        if (ordered.length) famC.sc.from = ('' + ordered[0].anchor).split(',').join(' ')
-        if (ordered.length > 1) famC.sc.to = ('' + ordered[ordered.length - 1].anchor).split(',').join(' ')
+        // the two ENDS ride the %Family node too (the snap distillation reads them here) — first|last,
+        //  shown by their NAME (the bijective key's value, type-prefix dropped) so the snap reads the
+        //   data not the machinery; the anchor stays the drift-identity, unshown.
+        if (ordered.length) famC.sc.from = ('' + this.Voro_model_display(ordered[0], namekey)).split(',').join(' ')
+        if (ordered.length > 1) famC.sc.to = ('' + this.Voro_model_display(ordered[ordered.length - 1], namekey)).split(',').join(' ')
         let oi = 0
         for (const m of ordered) {
             // fam rides the member row so DRIFT can attribute it: a departed member's D-clone keeps its
@@ -1009,6 +1026,57 @@ Voro_model_sort(mem, axis):
         return 0
     })
     return arr
+
+// Voro_model_mval — the mainkey's CARRIED value ('' when the mainkey is a bare presence marker).
+//  A particle that names itself ({Fern:'silver'}, {Coprosma:'robusta'}) needs no discovered name key.
+Voro_model_mval(p):
+    let mk = Object.keys(p.sc)[0]
+    let v = p.sc[mk]
+    if (v !== 1 && v != null && ('' + v).length) return '' + v
+    return ''
+
+// Voro_model_namekey — a family's NAME key, discovered the way the axis is: the key (excluding the
+//  axis key, whose story order_by already tells) whose values IDENTIFY the members — a BIJECTION on
+//   its carriers (as many distinct values as members that carry it).  This is the generic replacement
+//    for an English name-list: a key EARNS naming by telling members apart, whatever it is called.
+//     Missing data degrades gracefully — a key on 9-of-10 members still qualifies (coverage 0.9), the
+//      tenth just falls back to its anchor; ties break toward wider coverage then more carriers, so a
+//       partial near-name never beats a full one.  '' when no key identifies (the compound anchor
+//        stays the name then, e.g. a boulder's grade+stratum).  Members with a self-naming mainkey
+//         (mv) don't reach here — they name themselves.
+Voro_model_namekey(mem, axis_key):
+    if (mem.length < 2) return ''
+    let stat = {}
+    for (const m of mem) {
+        if (m.mv) continue
+        let seen = {}
+        for (const f of m.namefacts) {
+            if (!f.key || f.key === axis_key || seen[f.key]) continue
+            seen[f.key] = 1
+            if (!stat[f.key]) stat[f.key] = { carriers: 0, distinct: 0, vals: {} }
+            let s = stat[f.key]
+            s.carriers = s.carriers + 1
+            if (!s.vals[f.val]) { s.vals[f.val] = 1; s.distinct = s.distinct + 1 }
+        }
+    }
+    let best = ''
+    let best_car = 0
+    for (const k in stat) {
+        let s = stat[k]
+        if (s.distinct !== s.carriers) continue
+        if (s.carriers > best_car) { best = k; best_car = s.carriers }
+    }
+    return best
+
+// Voro_model_display — how a member SHOWS at a family end: its self-name (mainkey value) first, else
+//  its value on the family's discovered name key, else its anchor (the compound).  Never the drift
+//   identity's job — this is for eyes; the anchor stays the pairing key untouched.
+Voro_model_display(m, namekey):
+    if (m.mv) return m.mv
+    if (namekey) {
+        for (const f of m.namefacts) if (f.key === namekey && f.val !== '') return f.val
+    }
+    return m.anchor
 
 // Voro_model_member_anchor — a member's STABLE UNIQUE identity string: the mainkey's VALUE when it
 //  carries one (Fern:'silver' → silver), else a naming-key value, else the join of its distinguishing
