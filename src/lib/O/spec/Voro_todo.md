@@ -421,14 +421,15 @@ New words get a line HERE when they enter the system; an ill-defined word is a b
 - **trait** — a cell's single loudest claim (its epithet); `Se:scape`'s trait = the loudest cell's.
 - **region** — the grasp's coarse grouping: each cell's value on the widest-SHARED key.
 - **axis / order_by** — the widest-SPREAD key: what orders a family's members (`from`/`to` ends).
-- **name** — // < TODAY an English key list (`Voro_naming_keys`, one home since 2026-07-13).  The
-   designed rule (wild-hardened per the human): the key with the best COVERAGE × DISTINCTNESS —
-    `(members carrying it / n) × (distinct values / carriers)` — so missing data degrades the score
-     instead of throwing; a member missing the chosen key falls back (mainkey value, else an
-      anonymous chip).  NAME (for eyes — concise, lossy fine) stays separate from ANCHOR (drift
-       identity — the stricter join-of-values, unchanged).  Completes the data-discovered trio:
-        region = widest-shared, axis = widest-spread, name = best-identifying.  No English, no
-         magic thresholds; the per-key stats already ride `Voro_model_axis`'s pass.
+- **name** — DISCOVERED (`Voro_model_namekey`, 2026-07-13): the key (excluding the axis) that is a
+   BIJECTION on its carriers — as many distinct values as members carrying it.  Missing data just
+    lowers coverage (a 9-of-10 key still names those 9; the tenth falls to its anchor); a self-naming
+     mainkey (`Fern:silver`) pre-empts it.  Completes the data-discovered trio: region = widest-shared,
+      axis = widest-spread, name = best-identifying.  NAME (eyes) is SEPARATE from ANCHOR (drift
+       identity, the join-of-values, frozen).  LANDED for the snapped ENDS (from/to lose the type
+        prefix).  // < remnant: the render-side `Voro_naming_keys` English list still feeds
+         `Vtuff_name`/`Vtuff_ident` (the pane titles the glass draws) — thread the discovered key
+          there in wave ③ (eyes-verified), then delete the list.
 - **model** — ALL data representation by Voro (the ruling); `w:Voronoiology` is its snapped face.
 - **reading** — one row of testimony the machine writes about what it saw; mainkey = how it knows.
 - **%Seem / %Se** — the memory organ (a live Selection off-snap) / a reading that REQUIRED memory
