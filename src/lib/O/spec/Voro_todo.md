@@ -74,10 +74,21 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
              walks, the grasp-vs-model fact-walk divergence (the `'+9'` chrome chip tallied as a
               claim — found 2026-07-13), and Voronoiology's triple authorship.  The %Se choir the
                merge leaves standing: `%Se:input|scape|census|drift` — each phase an honest
-                reading off one Selection-backed memory (input = the leaf weather the grasp
-                 currently discards).  `%Se:attention` is STRUCK for now (the human, 2026-07-13):
-                  the radio is a half-baked v1 placeholder — the real shape is conveyor-ish (one
-                   end things get added to) and is to be led to GRADUALLY; don't formalize v1.
+                reading off one Selection-backed memory.  `%Se:attention` is STRUCK for now (the
+                 human, 2026-07-13): the radio is a half-baked v1 placeholder — the real shape is
+                  conveyor-ish (one end things get added to) and is to be led to GRADUALLY.
+      **LANDED (2026-07-13, same day):** cut 1 — `Voro_fold_gather` is THE one walk (report_walk +
+       model_gather folded in; the report PROJECTS its census from the same records the model
+        families; `Voro_census_key` = one keyer for report + stash) — proven byte-identical on all
+         4 Books' got.snaps.  cut 2 — `%Se:input,arrived,left` lives (only when the weather moved);
+          the `'+9'` chrome chip no longer census-tallied nor trait-eligible (hushed wgt 20); empty
+           `trait:` deleted not snapped.  **RE-RECORD OWED on VoroTest|VoroMitosis|VoroScape|
+            VoroRadio** — diffs are exactly the Se:input rows + trait:, removals.
+      **// < died semantics — the human's call needed:** `Se:scape.died` is arithmetic (`prev +
+       born − grasped` off `w.c.grasp_prev_folds`), which counts a DEMOTION (fold unfolds to bare
+        on de-escalate) as a death.  A pure sphere-count (goners that were voiced folds) would
+         read demotions as survivors — different semantics, so the hand-counter stays until the
+          human picks: is a demotion an apoptosis or a survival?
  - **④ Geometry folds into `Voro.g`.**  The pure maths (hull, clip, resample, PCA, river order,
     Catmull) folds into `Voro.g` — NOT a new `VoroGlass.ts` (the human decided AGAINST a .ts
      module).  A later wave; it will feel out the LangTiles parse-storm on closure-heavy raw JS.
