@@ -56,8 +56,13 @@ In a query, a numeric `1` is a **presence wildcard** (`{k:1}` = has key `k`, any
 Creation bumps version; watchers ($effect) react off that.
 
 **Travel** is the tree-walk primitive over the C tree, depth-first.
- The encoders walk with Travel + mainkey to serialise generically; a particle
-  whose mainkey is not in the protocol is a fatal encode error, subtree skipped.
+ The encoders walk with Travel + mainkey to serialise generically. The mainkey
+  **vocabulary gate is parked** (`enWaft`'s `all_knowing` defaults true — "relaxed
+   about mainkeys so any tree encodes"), so an unknown mainkey does NOT skip or
+    fault; a protocol (WAFT_PROTOCOL &c.) now only attaches `omit_sc` session-key
+     stripping (`active, created_at, new, not_found` fall out silently). What still
+      bites at encode: an **object|function value in `.sc` is fatal** (refs belong
+       in `.c`), and `max_child_depth` silently cuts children below its bound.
 A **snap** is the text serialisation of the C tree which Story makes between steps.
 
 ## Subsystems (each a "ghost" — a .svelte module of logic)

@@ -5,6 +5,28 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
   The living state, roadmap and design are in Radio_todo.md — read THAT; come here only for
    the archaeology of how a thing landed. Newest first.
 
+**2026-07-14 — C3: a berthed `%Dogear` resumes a browse across a reload (MusuResume), LIVE-GREEN ×2.** The cursor
+ arc's last rung. Book **MusuResume** (`Heistation.g`, after MusuHeal): a `%Dogear` homed INSIDE a magazine survives
+  a full `enWaft`→`deWaft` round-trip and still resolves to the record it named — the resumable browse. Isolates the
+   ENCODE|DECODE (MusuBerth owns the real FSA disk), so it needs no FSA and runs on ANY runner, deterministic (7/7,
+    caveat:0). Two proofs baked in: (1) a live-only bookmark under `%testing` does NOT ride the snap, so the re-decoded
+     magazine carries EXACTLY one Dogear (`dogear_count:1`, `kept_present`, `live_absent`) — the "berth vs session"
+      discrimination; (2) independence — the original tree is mutated after the round-trip (t1→t9, no redirect) and the
+       resume still lands. Adversarial review verdict: SOUND, no hard bug (depth===2 right, the `wild`-split saves the
+        post-decode string match, `created_at` stripping harmless) — but it caught the `independent` leg as NEAR-
+         TAUTOLOGICAL (`deWaft` structurally cannot alias — it parses text into a fresh tree — so `!old.ok` was forced
+          by our own rename, making `independent === res.ok`). Fix with teeth: re-gate independence on the re-decoded
+           cloud being a DISTINCT node object, a check a hypothetical aliasing `deWaft` would actually flip red. LESSON
+            re-confirmed: the post-`ghost-compile` HMR re-froze the runner's boot — the FIRST MusuResume run came back
+             `total:1` (Prep-only, vacuous green) and its `story_save` clobbered the toc.snap to a 1-step skeleton; the
+              SECOND run thawed to full 7 steps (frozen-boot-empty-first-run + toc-collapse, both self-heal). En route
+               it corrected **CLAUDE.md**: the enWaft vocabulary gate is PARKED (`all_knowing` — any mainkey encodes;
+                the old "unknown mainkey = fatal skip" was stale, the only encode-fatal is an object/function in `.sc`),
+                 and regrouped **Credence** (`What:mostly` → pipeline / magazine / replication; the cursor trio homed
+                  under `magazine → the cursor`, ending the organiser's bare-orphan churn). Commits `a28f480f` (C3) +
+                   `8b3b14a4` (Credence regroup). **C1·C2·C3 done — the cursor is a first-class, durable, self-healing
+                    position over a magazine.**
+
 **2026-07-14 — C2: the cursor HEAL via `%Renamed` redirect-facts (MusuHeal), LIVE-GREEN ×2.** Straight on from
  C1: grew `Cursor_resolve`'s clean-fail verdict into a HEAL. When a named level is gone, `Cursor_heal` (new,
   `Ghost/M/Heist.g`) looks beside the last node reached for a `%Renamed,key,from,to` marker and retries the query

@@ -23,6 +23,19 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**C3 — THE RESUME (berthed `%Dogear` survives a reload): LIVE-GREEN ×2 (2026-07-14; 7/7, caveat:0).** New Book
+ **MusuResume** (`Ghost/Story/Heistation.g`, after MusuHeal): a `%Dogear` homed inside a magazine survives a full
+  `enWaft`→`deWaft` round-trip (the disk-less core of Berth save+open — MusuBerth owns the real disk) and still
+   resolves to the record it named — the resumable browse. Needs no FSA, runs on ANY runner, deterministic.
+    DISCRIMINATION: a second bookmark is live-only under `%testing`; only the berthed one rides the snap (re-decoded
+     magazine carries EXACTLY one Dogear — `dogear_count:1`, `kept_present`, `live_absent`). Adversarial review
+      caught the `independent` leg as near-tautological (`deWaft` structurally can't alias, so `!old.ok` was forced
+       by our own rename) → re-gated on the re-decoded cloud being a DISTINCT node object, which a hypothetical
+        aliasing `deWaft` would actually flip red. En route it corrected **CLAUDE.md**: the enWaft vocabulary gate
+         is PARKED (`all_knowing` — any mainkey rides; the old "unknown mainkey = fatal encode skip" was stale — the
+          only encode-fatal is an object/function in `.sc`). Credence regrouped (`What:mostly` → pipeline / magazine
+           / replication; the cursor trio homed under `magazine → the cursor`). **The cursor arc C1·C2·C3 is complete.**
+
 **C2 — THE HEAL (`%Renamed` redirect): LIVE-GREEN ×2 (2026-07-14; 7/7 steps, caveat:0).** New Book
  **MusuHeal** (`Ghost/Story/Heistation.g`, after MusuCursor) grows C1's clean-fail verdict into a HEAL:
   when a cursor's named level is gone, `Cursor_resolve` consults recent `%Renamed,key,from,to` markers beside
@@ -1396,6 +1409,15 @@ A %Cursor is a serialized STACK OF MATCHES — a descent path of o()-queries ({M
      stamped, newest-wins). The heal is transparent to an un-renamed cursor (no marker → empty `heals` → C1's
       verdict unchanged). MusuHeal proves it with a marked/unmarked twin: the marked cursor heals to the new
        identity, the unmarked one fails cleanly — the marker is provably load-bearing.
+ **C3 THE RESUME — LIVE-GREEN ×2 (MusuResume, 2026-07-14):** a `%Dogear` homed INSIDE a magazine survives a full
+  `enWaft`→`deWaft` round-trip (the disk-less core of Berth save+open; MusuBerth owns the real FSA disk) and still
+   resolves to the record it named — the resumable browse. Runs on ANY runner (no FSA), deterministic. `Cursor_resolve`
+    walks DOWN via children (never `c.up`, which doesn't survive decode), so it resolves cleanly against a freshly-
+     decoded tree; the `%Dogear`/`%curs` spine encodes with zero protocol work (the enWaft vocabulary gate is parked —
+      any mainkey rides). Discrimination: a live-only bookmark under `%testing` does NOT ride the snap (re-decoded
+       magazine carries exactly one Dogear); independence is gated on the re-decoded cloud being a DISTINCT node
+        object — an adversarial hardening, since `deWaft` structurally can't alias so the earlier `!old.ok` leg was
+         tautological.
 
 ### 12.4 The jobs ladder — little, Book-gated, mostly independent starts
 
@@ -1440,8 +1462,10 @@ Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the
  **C — cursors**: C1 the %Dogear primitive + resolver (resolve | fail cleanly, own Book scenes) —
   BUILT + LIVE-GREEN ×2 as MusuCursor (§12.3, 2026-07-13);
    C2 ✓ heal via recent %Renamed (MusuHeal, LIVE-GREEN ×2 2026-07-14 — the `%Renamed` fact-shape + `Cursor_heal`
-    landed here; M3 mints the same markers from a real rename mission later); **C3 (NEXT) cursor as follow-
-     progress, berthed** (survives reload — the resumable browse; leans on MusuBerth's proven round-trip).
+    landed here; M3 mints the same markers from a real rename mission later); C3 ✓ cursor as follow-progress,
+     berthed (MusuResume, LIVE-GREEN ×2 2026-07-14 — a berthed %Dogear survives an enWaft→deWaft round-trip and
+      resumes the browse). **The cursor arc C1·C2·C3 is complete** — the remaining cursor-flavoured work is U (the
+       magazine reader turns wants into cursors) and M3 (mint %Renamed from a real rename, exercising C2's heal live).
  **S — stimuli surfacing**: S2 the agenda bridge (a want the door accepted mints an %Errand on
   the Brink — the owner SEES the want); S3 the heist rides it — the want-driven front door
    (§10.2 #4 merges here: genre starts + the origin's Waft:Map advice; klepto demotes to one
@@ -1451,11 +1475,14 @@ Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the
  (P — the projected subHouse — PARKED as experiment material per the 12.1 ruling; do not build.)
  Dependencies: M1 ✓ (landed + live-recorded 2026-07-13); M2 ✓ (LIVE-GREEN ×2 2026-07-13); D1 part b ✓
   (MusuDoor, the sabotage wall, LIVE-GREEN ×2 2026-07-13); C1 ✓ (MusuCursor cursors, LIVE-GREEN ×2 2026-07-13);
-   C2 ✓ (MusuHeal, the %Renamed heal, LIVE-GREEN ×2 2026-07-14). **D1 part a** (harden the grant
-    toggle into the live Swarm_pier_live door — one revoke-mid-relationship scene, best folded into MusuHeist;
-     reintroduces seal entropy, ATTENDED) is the remaining door rung; M4 needs M1 + M3; **M3** (mint `%Renamed`
-      from a real rename mission + replicate — the fact-shape already proven by C2) is now the natural next M
-       rung; **C3** (berth a `%Dogear`) needs C1 ✓ only; S3 needs D1 + M2 + S2; U needs M2 + C1.
+   C2 ✓ (MusuHeal, the %Renamed heal, LIVE-GREEN ×2 2026-07-14); C3 ✓ (MusuResume, the berthed-cursor resume,
+    LIVE-GREEN ×2 2026-07-14 — the whole cursor arc is done). The OPEN rungs, in rough order of readiness:
+     **M3** (mint `%Renamed` from a real rename mission + replicate — the fact-shape already proven by C2; needs
+      M1 ✓, exercises C2's heal on live data) is the natural next M rung; **D1 part a** (harden the grant toggle
+       into the live Swarm_pier_live door — one revoke-mid-relationship scene, best folded into MusuHeist;
+        reintroduces seal entropy, so needs an EntropyProfile + a warming re-accept, ATTENDED) is the remaining
+         door rung; M4 needs M1 + M3; S3 needs D1 + M2 + S2; **U** (the magazine reader — wants become cursors)
+          needs M2 ✓ + C1 ✓ and is now UNBLOCKED (the whole cursor stack it leans on is green).
 
 ### 12.5 The heist wriggles in — every gear re-homes into making | replicating | responding
 
