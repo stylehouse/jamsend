@@ -27,10 +27,15 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
  **`randomic` clarified (the human):** a `%Cloud` is a RANDOM DRAW meandered out of a collection NEVER
   fully enumerated (`Crate_meander`), not "the whole lib this tick" — the magazine is random samples over
    time; `randomic` is the draw-fingerprint. Folded into `Musica_fold`'s doc + §12.2 + MusuVend's framing.
- **State:** both `.g` LocalGen-green (`Heist.go 43938c`, `Heistation.go 60481c`); toc seeded (11 lie
-  steps); registered in Credence (`brand_new:1`) + Ality. An in-session ADVERSARIAL code review of the 5
-   sees was run (not a live run). **LIVE-GATE OWED** — blocked on a foregrounded runner tab (the freeze
-    problem); `run MusuVend --runner=<prefix>` → accept → confirm 5 sees + green ×2 (no entropy warming).
+ **State:** both `.g` LocalGen-green; toc seeded (11 lie steps); registered in Credence (`brand_new:1`) +
+  Ality. **ADVERSARIAL code review PASSED** (in-session, not a live run): no RED-causing bug, all 5 sees
+   fire, 4 of 5 breakable by a named one-line change; #2 (catalog-not-payload) is honest but semi-taut on
+    the wire (its leaf property is the FOLD's sublimation, not the husk — husk is a no-op for a payload-less
+     magazine; commented at the site). Confirmed independently: value/string wire round-trip type-stable,
+      `{Cloud:1}` is a numeric wildcard so `repli_loc` is load-bearing for see #5, all 6 mainkeys snap (vs
+       MusuHeist/022.snap), and the `reliable:true` Lake_link mock drains inline in post_do (the rx.do()
+        pumps are belt-and-braces). **LIVE-GATE OWED** — blocked on a foregrounded runner tab (the freeze
+         problem); `run MusuVend --runner=<prefix>` → accept → confirm 5 sees + green ×2 (no entropy warming).
 
 **2026-07-13 (night) — the blessed wave: cp-landing + the fold ("build it!").** The human blessed the
  cp-landing + magazine-fold wave, and it landed live green ×2 (on runner 3c52 — 49de and 20e3 both

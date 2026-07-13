@@ -49,10 +49,17 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
     collection NEVER fully enumerated (`Crate_meander` random-walks the crate — Crate.g); the magazine is
      random samples accreting over time, not a full census. `randomic` is the draw's fingerprint. Folded
       into the fold's doc + MusuVend's framing.
+ - **ADVERSARIAL review PASSED (in-session code review, not a live run):** no RED-causing bug; all 5 sees
+    fire; 4 of 5 are breakable by a named one-line change (#1 corrupt a fold scalar, #3 allow-all, #4 cache
+     the revoke, #5 drop `repli_loc` → `{Cloud:1}` numeric-wildcard collapses both clouds). #2 (catalog-not-
+      payload) is honest but semi-tautological ON THE WIRE — its leaf property is the FOLD's sublimation, not
+       the husk (husk is a no-op for a payload-less magazine; the husk path is proven on MusuReplica/Reco/
+        Heist). Commented at the site. Value/string wire round-trip type-stable; all 6 mainkeys snap
+         (vs MusuHeist/022.snap); the `reliable:true` mock drains inline in post_do (the rx.do() pumps are
+          belt-and-braces).
  - **LIVE-GATE OWED (blocked on a foregrounded runner tab — backgrounded tabs freeze, Page Lifecycle):**
     on a live :9091 runner, `run MusuVend --runner=<prefix>` then accept, confirm all 5 sees + green ×2.
-     No entropy warming needed (deterministic). ADVERSARIAL review of the sees was run in-session (a
-      code review, not a live run) — fold its verdicts before the accept.
+     No entropy warming needed (deterministic).
 
 **NIGHTSHIFT 2026-07-13 — DONE (all four jobs cleared; committed as the human by licence).** The
  blow-by-blow is in `history/Radio_buildlog.md` (2026-07-13 nightshift entry). In brief, on the

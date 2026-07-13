@@ -793,7 +793,10 @@ async MusuVend_resume(w):
     if (crossed) { row.crossed = 1 }
     this.MusuVend_note(w, row)
 
-// MusuVend_pump — process the follower's receive side so a delivered repli_lines frame merges into the mirror.
+// MusuVend_pump — pump the follower's receive side.  REDUNDANT belt-and-braces: the clean Lake_link mock is
+//  reliable:true, so Peeroleum_deliver drains the inbox INLINE in post_do after the sending beat — an offer
+//   sent at beat K is already merged into the mirror before beat K+1's do() (same as MusuReplica).  Kept as a
+//    settle pass and for parity with a lossy wire.
 async MusuVend_pump(w):
     if (w.c.rx) { await w.c.rx.do() }
 
@@ -825,7 +828,12 @@ MusuVend_witness(w):
     }
     if (crossed_ok && !T.oa({ see: 'a magazine crossed the wire — the follower mirrors every record of the first draw with its identity intact' })) this.MusuVend_note(w, { see: 'a magazine crossed the wire — the follower mirrors every record of the first draw with its identity intact' })
     // #2 the catalog not the payload: every crossed card is an identity LEAF (no stream no body beneath it) even
-    //  though the origin LIBRARY record it was folded from carries a streamable %Stream handle — the sublimation.
+    //  though the origin LIBRARY record it was folded from carries a streamable %Stream handle — the SUBLIMATION.
+    //   NUANCE (adversarial review): the leaf property is the FOLD's doing (Musica_fold copies only scalars,
+    //    mints no children) — NOT the husk (husk is a no-op here: a magazine card has no payload child to skip;
+    //     the husk path is proven on the payload-carrying libraries in MusuReplica/MusuReco/MusuHeist).  So this
+    //      see gates the sublimation SHAPE (leaf card vs streamable library record), breakable by the fold or the
+    //       %Stream — it does not claim the husk mechanism.
     let light = vmag ? 1 : 0
     if (vmag) {
         for (const card of this.Musica_cards(vmag)) { if (card.o().length) { light = 0 } }
