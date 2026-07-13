@@ -1386,3 +1386,149 @@ MusuHeal_witness(w):
     //   lost cursor failing + no redirect followed; this is the one-line-regression witness (drop the marker).
     let l = T.o({ healed: 'lost' })[0]
     if (l && +l.sc.failed === 1 && l.sc.missing_id === 't2' && !l.sc.followed && !T.oa({ see: 'the redirect marker is what heals — an identical rename with no marker left the other cursor failing cleanly with nothing to follow' })) this.MusuHeal_note(w, { see: 'the redirect marker is what heals — an identical rename with no marker left the other cursor failing cleanly with nothing to follow' })
+
+// ══ MusuResume — C3: a BERTHED %Dogear resumes a browse across a reload ═══════════════════════════════════
+//  C1 (MusuCursor) built a cursor that lands or fails cleanly; C2 (MusuHeal) healed it across a rename.  C3
+//   makes it DURABLE: a %Dogear homed inside a berth (a follower's persisted document) survives a full snap-out
+//    and snap-in and still lands on the record it named — the resumable browse.  MusuBerth already owns the DISK
+//     round-trip (enWaft → toc.snap → deWaft on a real FSA share); this isolates the part that actually preserves
+//      a browse — the ENCODE|DECODE — via a pure enWaft → deWaft with the dumb disk store elided.  So it needs no
+//       FSA and runs on ANY runner, deterministic, caveat:0.  (The Dogear/curs spine encodes with zero protocol
+//        work: the enWaft vocabulary gate is parked — all_knowing — so any mainkey rides; only an object|function
+//         in .sc is fatal, and a %curs segment is all scalars.)
+//  THE DISCRIMINATION (non-vacuity baked in — [[adversarial-test-agent]]): one bookmark is homed IN the magazine
+//   (the berth) and a second is homed live-only under %testing.  Only the berthed one rides the snap — the
+//    re-decoded magazine carries EXACTLY one Dogear.  Move the berthed cursor out of the magazine (the one-line
+//     regression) and the re-decoded tree has zero, flipping see #2/#3.  INDEPENDENCE is proven too: after the
+//      round-trip the ORIGINAL magazine is mutated (its t1 renamed to t9 with NO redirect) so the same query
+//       against it now fails cleanly — yet the resumed cursor still lands, so mag2 is a genuinely fresh tree
+//        sharing no refs, not a live alias.  CONVENTION (Musu*): the world MUST be named MusuResume.
+
+MusuResume(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuResume_drive,w,req
+        req%ok = 1
+
+MusuResume_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+MusuResume_note(w, sc):
+    let t = this.MusuResume_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+// MusuResume_drive — ONE scene per beat: build (2), resolve-before (3), reload=snap-round-trip (4), resume (5).
+//  The witness runs every pass so each see fires the first pass its truth holds; outcomes are pinned as notes at
+//   their beat because the round-trip and the mutation change state between beats.
+async MusuResume_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuResume_setup(w)
+        if (n === 3) this.MusuResume_before(w)
+        if (n === 4) await this.MusuResume_reload(w)
+        if (n === 5) this.MusuResume_resume(w)
+    }
+    this.MusuResume_witness(w)
+    await this.Musu_float(w)
+
+// MusuResume_setup — a one-cloud magazine with two records.  `cur` (of:record-t1) is homed INSIDE the magazine —
+//  the BERTHED bookmark that rides the snap.  `cur_live` (of:live-t2) is homed under %testing — a live-only
+//   position that does NOT.  Both name a record two levels deep (Cloud → Record).
+MusuResume_setup(w):
+    this.MusuResume_note(w, { reached: 'step_2' })
+    let mag = w.i({ Mag: 'Musica' })
+    mag.c.up = w
+    w.c.mag = mag
+    let cloud = mag.i({ Cloud: 1, randomic: 'draw_one', created_at: 1000 })
+    cloud.c.up = mag
+    cloud.c.repli_loc = ['Cloud', 'randomic']
+    let r1 = cloud.i({ Record: 1, id: 't1', artist: 'Auteur', title: 'One', path: 'crate/a/one.opus' })
+    r1.c.up = cloud
+    let r2 = cloud.i({ Record: 1, id: 't2', artist: 'Bassbin', title: 'Two', path: 'crate/b/two.opus' })
+    r2.c.up = cloud
+    // the BERTHED bookmark — homed IN the magazine, so it travels with the magazine snap.
+    w.c.cur = this.Cursor_make(mag, 'record-t1', [{ Cloud: 1, randomic: 'draw_one' }, { Record: 1, id: 't1' }])
+    // the LIVE-ONLY bookmark — homed under %testing, so it does NOT ride the magazine snap (the discrimination).
+    let T = this.MusuResume_T(w)
+    w.c.cur_live = this.Cursor_make(T, 'live-t2', [{ Cloud: 1, randomic: 'draw_one' }, { Record: 1, id: 't2' }])
+    w.c.set_up = 1
+
+// MusuResume_before — the berthed cursor resolves against the live magazine BEFORE any reload: lands on t1 two
+//  levels deep.  Pins the baseline so the resume is a genuine survival, not a cursor that never worked.
+MusuResume_before(w):
+    this.MusuResume_note(w, { reached: 'step_3' })
+    let res = this.Cursor_resolve(w.c.mag.o({ Dogear: 1 })[0], w.c.mag)
+    let row = { before: 1, depth: res.depth }
+    if (res.ok) { row.ok = 1 }
+    if (res.landed) { row.id = res.landed.sc.id }
+    this.MusuResume_note(w, row)
+
+// MusuResume_reload — THE ROUND-TRIP: enWaft the live magazine to a snap string and deWaft it straight back into a
+//  FRESH independent tree (the disk-less core of Berth_save+Berth_open — MusuBerth owns the disk).  Then mutate the
+//   ORIGINAL (rename its t1 to t9 with NO redirect) so a later resume against mag2 proves independence.  Pins: the
+//    encode was clean, the re-decoded magazine carries its cloud + EXACTLY the one berthed Dogear (kept present,
+//     live-only absent).
+async MusuResume_reload(w):
+    this.MusuResume_note(w, { reached: 'step_4' })
+    let enc = await this.enWaft(w.c.mag)
+    let dec = this.deWaft(enc.snap, 'Musica')
+    let mag2 = dec.Waft
+    w.c.mag2 = mag2
+    // mutate the ORIGINAL so a resume against mag2 proves it is not a live alias — t1 → t9 with NO %Renamed, so
+    //  the original cursor now fails CLEANLY (no redirect to heal it).
+    let oc = w.c.mag.o({ Cloud: 1, randomic: 'draw_one' })[0]
+    await oc.rm({ Record: 1, id: 't1' })
+    let rn = oc.i({ Record: 1, id: 't9', artist: 'Auteur', title: 'One', path: 'crate/a/one.opus' })
+    rn.c.up = oc
+    let row = { reload: 1 }
+    if (enc.errors.length === 0) { row.encode_clean = 1 }
+    if (mag2 && mag2.o({ Cloud: 1, randomic: 'draw_one' })[0]) { row.cloud_ok = 1 }
+    if (mag2) { row.dogear_count = mag2.o({ Dogear: 1 }).length }
+    if (mag2 && mag2.o({ Dogear: 1, of: 'record-t1' }).length === 1) { row.kept_present = 1 }
+    if (mag2 && mag2.o({ Dogear: 1, of: 'live-t2' }).length === 0) { row.live_absent = 1 }
+    this.MusuResume_note(w, row)
+
+// MusuResume_resume — resolve the RE-DECODED bookmark against the re-decoded magazine: it lands on t1 exactly as
+//  before, even though the original tree was torn down.  independent = the resume landed AND the same query against
+//   the mutated original now fails (t1 → t9, no redirect) — proof mag2 is a fresh tree sharing no refs.
+MusuResume_resume(w):
+    this.MusuResume_note(w, { reached: 'step_5' })
+    let res = this.Cursor_resolve(w.c.mag2.o({ Dogear: 1 })[0], w.c.mag2)
+    let old = this.Cursor_resolve(w.c.mag.o({ Dogear: 1 })[0], w.c.mag)
+    // INDEPENDENCE with teeth (adversarial hardening): !old.ok alone is a tautology — the Book itself renamed the
+    //  original t1, so old always fails.  The real claim is that mag2 is a genuinely FRESH tree, so gate on the
+    //   re-decoded cloud being a DIFFERENT node object than the original: a deWaft that ever returned a live alias
+    //    would make these identical and flip #3 red.  original_torn is kept as narrative (the original diverged).
+    let oc2 = w.c.mag2.o({ Cloud: 1, randomic: 'draw_one' })[0]
+    let oc1 = w.c.mag.o({ Cloud: 1, randomic: 'draw_one' })[0]
+    let row = { resume: 1, depth: res.depth }
+    if (res.ok) { row.ok = 1 }
+    if (res.landed) { row.id = res.landed.sc.id }
+    if (oc2 && oc1 && oc2 !== oc1) { row.distinct = 1 }
+    if (!old.ok) { row.original_torn = 1 }
+    if (res.ok && row.distinct === 1) { row.independent = 1 }
+    this.MusuResume_note(w, row)
+
+// ── the witness — %see gated on TRUTH not beat number, once-noticed under %testing (no commas no apostrophes). ──
+MusuResume_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 5)) return
+    if (!w.c.set_up) return
+    let T = this.MusuResume_T(w)
+    // #1 THE BOOKMARK RESOLVES BEFORE RELOAD: the berthed cursor landed on t1 two levels deep while the tree lived.
+    let b = T.o({ before: 1 })[0]
+    if (b && +b.sc.ok === 1 && +b.sc.depth === 2 && b.sc.id === 't1' && !T.oa({ see: 'a berthed bookmark resolves before any reload — it lands on the exact record it names' })) this.MusuResume_note(w, { see: 'a berthed bookmark resolves before any reload — it lands on the exact record it names' })
+    // #2 THE BERTH IS WHAT PERSISTS: after a full snap-out and snap-in the re-decoded magazine carries its cloud and
+    //  EXACTLY the one berthed Dogear — the live-only bookmark did not ride along.  Move `cur` out of the magazine
+    //   (the one-line regression) and dogear_count drops to zero, flipping this and see #3.
+    let r = T.o({ reload: 1 })[0]
+    if (r && +r.sc.encode_clean === 1 && +r.sc.cloud_ok === 1 && +r.sc.dogear_count === 1 && +r.sc.kept_present === 1 && +r.sc.live_absent === 1 && !T.oa({ see: 'a bookmark homed in the berth survives a full snap-out and snap-in while a live-only position does not — persistence is the berth not the session' })) this.MusuResume_note(w, { see: 'a bookmark homed in the berth survives a full snap-out and snap-in while a live-only position does not — persistence is the berth not the session' })
+    // #3 THE BROWSE RESUMES: the re-decoded bookmark lands on the same record even after the original tree was torn
+    //  down — independence = the resume landed AND mag2 is a genuinely fresh tree (its cloud is a distinct node
+    //   object from the original), so a deWaft that aliased would flip this red rather than pass tautologically.
+    let s = T.o({ resume: 1 })[0]
+    if (s && +s.sc.ok === 1 && +s.sc.depth === 2 && s.sc.id === 't1' && +s.sc.independent === 1 && !T.oa({ see: 'the browse resumes across a reload — the re-decoded bookmark lands on the same record even after the original live tree is torn down' })) this.MusuResume_note(w, { see: 'the browse resumes across a reload — the re-decoded bookmark lands on the same record even after the original live tree is torn down' })

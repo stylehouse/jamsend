@@ -1,0 +1,19 @@
+Snap:H
+  H:MusuResume,Run
+    A:MusuResume
+      self,round=2	{"mung":["age"]}
+      w:MusuResume
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          Dogear,of:live-t2
+            curs,wild:Cloud,randomic:draw_one
+              curs,wild:Record,id:t2
+        Mag:Musica
+          Cloud,randomic:draw_one,created_at=1000
+            Record,id:t1,artist:Auteur,title:One,path:crate/a/one.opus
+            Record,id:t2,artist:Bassbin,title:Two,path:crate/b/two.opus
+          Dogear,of:record-t1
+            curs,wild:Cloud,randomic:draw_one
+              curs,wild:Record,id:t1

@@ -1,0 +1,25 @@
+story:MusuResume
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.035
+      sample=0.054,at=1783949556
+      sample=0.032,at=1783949702
+      sample=0.032,at=1783949738
+      sample=0.026,at=1783949751
+      sample=0.03,at=1783949772
+    TimeTotal:step,avg=0.005
+      sample=0.008,at=1783949556
+      sample=0.005,at=1783949702
+      sample=0.005,at=1783949738
+      sample=0.004,at=1783949751
+      sample=0.004,at=1783949772
+  step,dige:ff28bdbb0aa846ab
+  step=2,dige:e0ff9ea1bf8e890d
+  step=3,dige:e3733389ecbbaca5
+  step=4,dige:19214d718d965f08
+  step=5,dige:e1e0fb31e4888bf2
+  step=6,dige:61eb2e1bf61044ba
+  step=7,dige:eee886f3ee38d292

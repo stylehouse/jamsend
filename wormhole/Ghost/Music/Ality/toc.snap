@@ -30,6 +30,7 @@ Waft:Ghost/Music/Ality,active
     Funkcion:Storying,of_Book:MusuDoor
     Funkcion:Storying,of_Book:MusuCursor
     Funkcion:Storying,of_Book:MusuHeal
+    Funkcion:Storying,of_Book:MusuResume
   What:the heist — %Heist at a pier moves ORIGINAL file bytes straight into the collection (Radio_todo §0 + §10 rung 1)
     Doc:Ghost/M/Heist.g
     Point,method:Heist_census
