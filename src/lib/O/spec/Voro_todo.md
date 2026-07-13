@@ -82,8 +82,28 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
         families; `Voro_census_key` = one keyer for report + stash) — proven byte-identical on all
          4 Books' got.snaps.  cut 2 — `%Se:input,arrived,left` lives (only when the weather moved);
           the `'+9'` chrome chip no longer census-tallied nor trait-eligible (hushed wgt 20); empty
-           `trait:` deleted not snapped.  **RE-RECORD OWED on VoroTest|VoroMitosis|VoroScape|
-            VoroRadio** — diffs are exactly the Se:input rows + trait:, removals.
+           `trait:` deleted not snapped.
+      **LANDED (2026-07-13, `c970ceed`): the LOUD SHARE-COUNT INVERSION.**  A `%Family`'s Loud claims
+       pooled from the fold's ONE distilled rep row, so a minority-but-loud trait (a gang's `%vein` on
+        ~⅓ of the strata) could NAME the family but never say how many carried it — a count a single
+         rep cell structurally can't hold.  `Voro_model_share(mem, key, val)` counts the MEMBERS
+          carrying each claim, over the same per-member facts the axis + naming already read (presence
+           claim → match the key alone; valued → key+val), and rides the model's `%Loud` node → the
+            snapped row as `share:N`, snapped ONLY when PARTIAL (`0 < share < n`): universal (`share===n`)
+             stays the family's default reading, a rep-only distillation (`share 0`) is never fabricated.
+              The Boulder flock now reads `Loud:vein,share:3` at 12 strata, `share:5` at 15 — one of every
+               three, exactly the `hsh % 3` seed.  Surgical: the ONLY snap change is partial Loud rows
+                gaining `,share:N`; Loud selection|weight|order untouched.  **DECISION — `share:1` KEPT**
+                 (44% of the shares): `Family:Kunzea,n:12` `Loud:endemic,share:1` — one of twelve is
+                  endemic yet endemic is loud; suppress the `1` and it MIS-READS as universal.  The
+                   relic-family `share:1` flood (a bare pair of unique-prop singletons) is the honest
+                    price; if the human wants it gone it's a one-char tighten (`share > 1`), but that
+                     re-hides the rare-loud singles.
+      **RE-RECORD OWED (after `c970ceed`): VoroTest · VoroRadio · VoroRadioPier · and AGAIN
+       VoroMitosis · VoroScape** (the share commit landed AFTER the human's fresh Mitosis+Scape record,
+        so it re-staled them — Loud rows gain `share:N`).  **VoroClinic is NOT owed** — it produces zero
+         partial Loud rows, so the share cut is invisible to it (its only drift is a transient
+          `Snap:cytowave` animation artifact, pre-existing timing noise); it's `%unusual` anyway.
       **// < born|died — REFRAMED (the human, 2026-07-13): openness contamination, not death
        semantics.**  The scape sphere already watches the DATA openness-blind (the crush stamps
         `c.stuff` in place, never reparents — why `%Se:input` came out clean).  born|died then
@@ -119,8 +139,14 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
        `%see` this round** (CredRunner surprises [2,3,4]) — the re-record covers those too.  Re-record
         with eyes on, on a live runner; the human owns this.  `Seen_split_todo.md` (the human's parallel
          `%seen`-latch + assertion-roster build) is meant to make these re-records survivable — x-ref it.
- 3. **Then wave ③** — turn `region_of`/`river_order`/`family_trait` into model readers + land the
-     Loud share-count inversion.
+ 3. **Then wave ③ (part done)** — the **Loud share-count inversion is LANDED** (`c970ceed`,
+     `share:N` on partial Loud rows).  What REMAINS of wave ③: turn `region_of` / `family_trait`
+      (Cytui) into readers off `w.c.voro_model` instead of the old `the:family` D-stamp
+       (render-only — byte-invariant on snaps, so un-gateable; verify by eyes via `runner_shot`),
+        and thread the discovered `namekey` into `Vtuff_*` so the bijective-key naming reaches the
+         glass, THEN delete `Voro_naming_keys`.  (`river_order` stays render-side by nature — it
+          PCA-orders RENDERED centroid positions, which the model has no coordinates for; the model
+           owns the DATA order via `order_by`/`from`/`to`, a different axis than the drawn arc.)
 
 **Two standing gotchas at the tab.** (1) RELOAD the runner tab first if its Vite HMR socket is
  dead ([[hmr-socket-dead-tell]]) — relay ops answer but `.svelte` edits silently don't land.
