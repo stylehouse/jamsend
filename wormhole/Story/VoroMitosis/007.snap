@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=14	{"mung":["age"]}
+      self,round=16	{"mung":["age"]}
       w:VoroMitosis
-        self,round=14	{"mung":["age"]}
+        self,round=16	{"mung":["age"]}
         req:wrangle,eternal,ok
         Coprosma:montana,woodystem,habit:shrub
           Coprosma:montana subsp. australis
@@ -87,4 +87,3 @@ Snap:H
         Family:Pittosporum,n:4,kind:gang,order_by:habit,axis:lex,from:microphylla,to:linearis
           Loud:woodystem,share:1
           Se:drift,neu:5
-        self,round	{"mung":["age"]}
