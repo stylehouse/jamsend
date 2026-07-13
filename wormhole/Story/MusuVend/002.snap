@@ -1,0 +1,19 @@
+Snap:H
+  H:MusuVend,Run
+    A:MusuVend
+      self,round=2	{"mung":["age"]}
+      w:MusuVend
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+        Peering,name:Origin,req=2,ok
+          Pier,pub:Follower,req=2,ok
+            Ud,pubkey:Follower
+          active_transport,type:mock,open
+        Peering,name:Follower,req=3,ok
+          Pier,pub:Origin,req=2,ok
+            Ud,pubkey:Origin
+          active_transport,type:mock,open
+        Library,pier:Origin
+        Mag:Musica

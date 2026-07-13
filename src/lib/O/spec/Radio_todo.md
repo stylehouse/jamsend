@@ -23,7 +23,7 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
-**M2 — MAGAZINE REPLICATION BUILT (2026-07-13 pm; compile-clean, LIVE-GATE OWED).** New Book
+**M2 — MAGAZINE REPLICATION: LIVE-GREEN ×2 (2026-07-13 pm; 11/11 steps, caveat:0).** New Book
  **MusuVend** (`Ghost/Story/Heistation.g`, appended after MusuHeist) proves the magazine TRAVELS: two
   Piers over a Lake_link loopback, an in-memory magazine folded at the origin and `Repli_offer`ed whole
    (husk — a magazine card is a payload-less leaf, so no wants: the tree crosses in ONE frame), the
@@ -58,9 +58,11 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
         Heist). Commented at the site. Value/string wire round-trip type-stable; all 6 mainkeys snap
          (vs MusuHeist/022.snap); the `reliable:true` mock drains inline in post_do (the rx.do() pumps are
           belt-and-braces).
- - **LIVE-GATE OWED (blocked on a foregrounded runner tab — backgrounded tabs freeze, Page Lifecycle):**
-    on a live :9091 runner, `run MusuVend --runner=<prefix>` then accept, confirm all 5 sees + green ×2.
-     No entropy warming needed (deterministic).
+ - **LIVE-GREEN ×2 (2026-07-13, runner 49de):** recorded 11/11 steps, `caveat:0` (deterministic — no
+    entropy jitter), all 6 sees latched, both clouds distinct at the follower, forget dropped the older
+     cloud. The runner was FROZEN on first dispatch (total:1 Prep bubble — the freeze problem) and SELF-
+      HEALED on the second run (frozen-boot: the first run is a sacrificial thaw), then accept → green ×2.
+       Fixtures committed. `Credulate/toc.snap` confirms the fresh gen (`Heistation~g1`, `Heist~g1`).
 
 **NIGHTSHIFT 2026-07-13 — DONE (all four jobs cleared; committed as the human by licence).** The
  blow-by-blow is in `history/Radio_buildlog.md` (2026-07-13 nightshift entry). In brief, on the
@@ -1317,9 +1319,9 @@ A %Cursor is a serialized STACK OF MATCHES — a descent path of o()-queries ({M
 
 Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the substrate.
  **M — magazine**: M1 Musica_publish (census + crush → a %Musica Berth Waft, metadata in-magazine) ✓;
-  M2 two-Pier magazine replication (the existing Repli pipe, grants gate) ✓ BUILT compile-clean
-   (MusuVend Book — magazine folds in memory, Repli_offers whole husk, grant on↔off↔on; live-gate owed);
-    M3 %Renamed markers minted by a rename mission + replicated with the magazine.
+  M2 two-Pier magazine replication (the existing Repli pipe, grants gate) ✓ LIVE-GREEN ×2 2026-07-13
+   (MusuVend Book — magazine folds in memory, Repli_offers whole husk, grant on↔off↔on, forget; 11/11
+    caveat:0, 6 sees); M3 %Renamed markers minted by a rename mission + replicated with the magazine.
  **D — the door** (12.1; the K rungs DISSOLVED 2026-07-13 with the metaphor): D1 the
   door-hardening Book — the for-another serving path over the magazine, grown from the existing
    consent hook (repli_allow + register_caster + the pump); its Book includes the SABOTAGE scene —
@@ -1357,9 +1359,9 @@ Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the
  **U — the magazine reader** (Big*land family): browse a replicated %Musica, wants become cursors;
   build AFTER the rungs give it real data.
  (P — the projected subHouse — PARKED as experiment material per the 12.1 ruling; do not build.)
- Dependencies: M1 ✓ (landed + live-recorded 2026-07-13); M2 ✓ (built compile-clean 2026-07-13,
-  live-gate owed) — D1 LEADS NEXT (harden MusuVend's grant toggle into the live Swarm_pier_live door +
-   the sabotage scene); M4 needs M1 + M3; C2 needs M3; S3 needs D1 + M2 + S2; U needs M2 + C1.
+ Dependencies: M1 ✓ (landed + live-recorded 2026-07-13); M2 ✓ (LIVE-GREEN ×2 2026-07-13) — D1 LEADS
+  NEXT (harden MusuVend's grant toggle into the live Swarm_pier_live door + the sabotage scene); M4 needs
+   M1 + M3; C2 needs M3; S3 needs D1 + M2 + S2; U needs M2 + C1.
 
 ### 12.5 The heist wriggles in — every gear re-homes into making | replicating | responding
 

@@ -3,14 +3,25 @@ story:MusuVend
   Plan
   Opt
     For
-  step,dige:lie
-  step=2,dige:lie
-  step=3,dige:lie
-  step=4,dige:lie
-  step=5,dige:lie
-  step=6,dige:lie
-  step=7,dige:lie
-  step=8,dige:lie
-  step=9,dige:lie
-  step=10,dige:lie
-  step=11,dige:lie
+  TimeSpool
+    TimeTotal:beliefs,avg=0.042
+      sample=0.042,at=1783930162
+      sample=0.042,at=1783930246
+      sample=0.039,at=1783930265
+      sample=0.044,at=1783930277
+    TimeTotal:step,avg=0.004
+      sample=0.004,at=1783930162
+      sample=0.004,at=1783930246
+      sample=0.004,at=1783930265
+      sample=0.004,at=1783930277
+  step,dige:ec78b12d711b7cf1
+  step=2,dige:222eb756cdba314c
+  step=3,dige:dc79bccb4fd7ebfb
+  step=4,dige:a7290e725e7a9bf6
+  step=5,dige:cafe48285ebe9f04
+  step=6,dige:b4a2dc99f9e0e555
+  step=7,dige:87fbc24df228cb75
+  step=8,dige:d5665b78349afcad
+  step=9,dige:ace8ccd2dc5d2243
+  step=10,dige:46554877519a0ad6
+  step=11,dige:5f412279efd069c0

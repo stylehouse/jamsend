@@ -36,8 +36,11 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
      magazine; commented at the site). Confirmed independently: value/string wire round-trip type-stable,
       `{Cloud:1}` is a numeric wildcard so `repli_loc` is load-bearing for see #5, all 6 mainkeys snap (vs
        MusuHeist/022.snap), and the `reliable:true` Lake_link mock drains inline in post_do (the rx.do()
-        pumps are belt-and-braces). **LIVE-GATE OWED** — blocked on a foregrounded runner tab (the freeze
-         problem); `run MusuVend --runner=<prefix>` → accept → confirm 5 sees + green ×2 (no entropy warming).
+        pumps are belt-and-braces). **LIVE-GREEN ×2** (2026-07-13, runner 49de): 11/11 steps, `caveat:0`,
+         all 6 sees latched, both clouds distinct at the follower, forget dropped the older cloud. The
+          runner FROZE on the first dispatch (total:1 Prep bubble — the freeze problem the human flagged)
+           and SELF-HEALED on the second run (frozen-boot: the first dispatch is a sacrificial thaw), then
+            accept → green ×2. Fixtures committed; `Credulate` confirms the fresh gen (`Heistation~g1`).
 
 **2026-07-13 (night) — the blessed wave: cp-landing + the fold ("build it!").** The human blessed the
  cp-landing + magazine-fold wave, and it landed live green ×2 (on runner 3c52 — 49de and 20e3 both
