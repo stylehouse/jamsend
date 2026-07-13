@@ -414,15 +414,21 @@ New words get a line HERE when they enter the system; an ill-defined word is a b
 - **loudness** — a claim's earned type-size: how much it sets its cell apart.  Shared-by-all ≈ 20
    (recedes); unique ≈ 95 (towers); 96–100 reserved for identity, so a fact never out-shouts the
     name of the thing it describes.
-- **%Loud** — a family's top-4 loudest claims: THE PROPERTIES NOT ON EVERY ROW (the differentia).
-   // < the word is opaque — the human may rename.
+- **%Loud** — a family's top-4 claims ranked by ACROSS-PILE rarity: what distinguishes this family
+   from the OTHER cells of the world (often facts every member shares WITHIN the pile — the
+    within-pile variation story belongs to spreads|axis, not Loud).  // < the word is opaque (the
+     human may rename) AND the implementation has the known share-count inversion (wave ③).
 - **trait** — a cell's single loudest claim (its epithet); `Se:scape`'s trait = the loudest cell's.
 - **region** — the grasp's coarse grouping: each cell's value on the widest-SHARED key.
 - **axis / order_by** — the widest-SPREAD key: what orders a family's members (`from`/`to` ends).
 - **name** — // < TODAY an English key list (`Voro_naming_keys`, one home since 2026-07-13).  The
-   designed rule is the BIJECTIVE KEY — the key whose values tell members apart exactly 1:1 —
-    completing the data-discovered trio: region = widest-shared, axis = widest-spread, name =
-     bijective.  One philosophy, no English.
+   designed rule (wild-hardened per the human): the key with the best COVERAGE × DISTINCTNESS —
+    `(members carrying it / n) × (distinct values / carriers)` — so missing data degrades the score
+     instead of throwing; a member missing the chosen key falls back (mainkey value, else an
+      anonymous chip).  NAME (for eyes — concise, lossy fine) stays separate from ANCHOR (drift
+       identity — the stricter join-of-values, unchanged).  Completes the data-discovered trio:
+        region = widest-shared, axis = widest-spread, name = best-identifying.  No English, no
+         magic thresholds; the per-key stats already ride `Voro_model_axis`'s pass.
 - **model** — ALL data representation by Voro (the ruling); `w:Voronoiology` is its snapped face.
 - **reading** — one row of testimony the machine writes about what it saw; mainkey = how it knows.
 - **%Seem / %Se** — the memory organ (a live Selection off-snap) / a reading that REQUIRED memory
