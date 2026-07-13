@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return 'bbc3c8cc5e541d86~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return 'b80b9c7a63f202e4~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -1330,6 +1330,139 @@ MusuCursor_witness(w) {
     //  could not find and how far it got (depth 2), never a throw.  This verdict is the seam C2 heals through.
     let gone = T.o({ resolved: 'gone' })[0]
     if (gone && +gone.sc.failed === 1 && +gone.sc.depth === 2 && gone.sc.missing_id === 't1' && !T.oa({ see: 'when a named level is gone the cursor fails cleanly — it reports the exact match it could not find and how far it got not a crash' })) this.MusuCursor_note(w, { see: 'when a named level is gone the cursor fails cleanly — it reports the exact match it could not find and how far it got not a crash' })
+
+},
+// ══ MusuHeal — C2: a cursor HEALS across a rename via %Renamed redirect-facts ═════════════════════════════
+//  C1 (MusuCursor) proved a cursor lands or fails CLEANLY.  C2 grows the clean-fail into a HEAL: when a named
+//   level is gone, `Cursor_resolve` consults recent `%Renamed` markers beside the last node reached and retries
+//    with the redirect (`Cursor_heal`), landing on the moved node and NOTING what it healed (from → to).  The
+//     marker rides IN the magazine beside the renamed node (§12.2), a positive window-able cousin of the
+//      %Tombstone/%UnGrant decision-facts, so a follower heals through the same pipe the content came down.
+//  THE DISCRIMINATION (non-vacuity baked in — [[adversarial-test-agent]]): two records are renamed identically,
+//   ONE with a %Renamed marker and ONE without.  The marked cursor heals and lands on the new identity; the
+//    unmarked cursor fails cleanly with nothing to follow.  So the heal is provably the MARKER's doing — remove
+//     the marker (the one-line regression) and the heal stops, flipping see #1/#2 while see #3 stays the control.
+//  DETERMINISTIC + in-memory (no wire — the %Renamed shape is hand-authored here; M3 mints it from a real rename
+//   mission later): runs on ANY runner, caveat:0.  CONVENTION (Musu*): the world MUST be named MusuHeal.
+
+MusuHeal(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuHeal_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+MusuHeal_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+MusuHeal_note(w, sc) {
+    let t = this.MusuHeal_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+// MusuHeal_drive — ONE scene per beat: build (2), resolve-before (3), rename both (4), resolve-after (5).  The
+//  witness runs every pass so each see fires the first pass its truth holds; the resolve outcomes are pinned as
+//   notes at their beat because the rename changes state between beats.
+async MusuHeal_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuHeal_setup(w)
+        if (n === 3) this.MusuHeal_baseline(w)
+        if (n === 4) await this.MusuHeal_rename(w)
+        if (n === 5) this.MusuHeal_reresolve(w)
+    }
+    this.MusuHeal_witness(w)
+    await this.Musu_float(w)
+
+},
+// MusuHeal_setup — a one-cloud magazine with two records, and two cursors that name them exactly (three levels
+//  deep).  `kept` names t1 (which will be renamed WITH a marker), `lost` names t2 (renamed WITHOUT one).
+MusuHeal_setup(w) {
+    this.MusuHeal_note(w, { reached: 'step_2' })
+    let mag = w.i({ Mag: 'Musica' })
+    mag.c.up = w
+    w.c.mag = mag
+    let cloud = mag.i({ Cloud: 1, randomic: 'draw_one', created_at: 1000 })
+    cloud.c.up = mag
+    cloud.c.repli_loc = ['Cloud', 'randomic']
+    w.c.cloud = cloud
+    let r1 = cloud.i({ Record: 1, id: 't1', artist: 'Auteur', title: 'One', path: 'crate/a/one.opus' })
+    r1.c.up = cloud
+    let r2 = cloud.i({ Record: 1, id: 't2', artist: 'Bassbin', title: 'Two', path: 'crate/b/two.opus' })
+    r2.c.up = cloud
+    let T = this.MusuHeal_T(w)
+    w.c.cur_kept = this.Cursor_make(T, 'record-t1', [{ Mag: 'Musica' }, { Cloud: 1, randomic: 'draw_one' }, { Record: 1, id: 't1' }])
+    w.c.cur_lost = this.Cursor_make(T, 'record-t2', [{ Mag: 'Musica' }, { Cloud: 1, randomic: 'draw_one' }, { Record: 1, id: 't2' }])
+    w.c.set_up = 1
+
+},
+// MusuHeal_baseline — before any rename, BOTH cursors resolve to their records; pins that the cursors were valid
+//  so the after-rename fail/heal is a genuine change, not a cursor that never worked.
+MusuHeal_baseline(w) {
+    this.MusuHeal_note(w, { reached: 'step_3' })
+    let a = this.Cursor_resolve(w.c.cur_kept, w)
+    let b = this.Cursor_resolve(w.c.cur_lost, w)
+    let row = { baseline: 1 }
+    if (a.ok && a.landed && a.landed.sc.id === 't1' && b.ok && b.landed && b.landed.sc.id === 't2') { row.both = 1 }
+    this.MusuHeal_note(w, row)
+
+},
+// MusuHeal_rename — rename BOTH records (drop the old id, add the new), but mint a %Renamed redirect ONLY for t1.
+//  t1 → t1b WITH a marker beside it in the cloud; t2 → t2b with NONE.  The marker records the move; Renamed_mint
+//   does not perform it — the Book moves the node.
+async MusuHeal_rename(w) {
+    this.MusuHeal_note(w, { reached: 'step_4' })
+    let cloud = w.c.cloud
+    await cloud.rm({ Record: 1, id: 't1' })
+    let n1 = cloud.i({ Record: 1, id: 't1b', artist: 'Auteur', title: 'One', path: 'crate/a/one.opus' })
+    n1.c.up = cloud
+    this.Renamed_mint(cloud, 'id', 't1', 't1b', 4000)
+    await cloud.rm({ Record: 1, id: 't2' })
+    let n2 = cloud.i({ Record: 1, id: 't2b', artist: 'Bassbin', title: 'Two', path: 'crate/b/two.opus' })
+    n2.c.up = cloud
+
+},
+// MusuHeal_reresolve — resolve both cursors AFTER the rename: `kept` heals via the redirect and lands on t1b
+//  (noting from → to); `lost` fails cleanly with no marker to follow.  Both outcomes pinned as notes.
+MusuHeal_reresolve(w) {
+    this.MusuHeal_note(w, { reached: 'step_5' })
+    let a = this.Cursor_resolve(w.c.cur_kept, w)
+    let row = { healed: 'kept', depth: a.depth }
+    if (a.ok) { row.ok = 1 }
+    if (a.landed) { row.id = a.landed.sc.id }
+    if (a.heals.length) { row.from = a.heals[0].from; row.to = a.heals[0].to }
+    this.MusuHeal_note(w, row)
+    let b = this.Cursor_resolve(w.c.cur_lost, w)
+    let row2 = { healed: 'lost', depth: b.depth }
+    if (!b.ok) { row2.failed = 1 }
+    if (b.missing) { row2.missing_id = b.missing.id }
+    if (b.heals.length) { row2.followed = 1 }
+    this.MusuHeal_note(w, row2)
+
+},
+// ── the witness — %see gated on TRUTH not beat number, once-noticed under %testing (no commas no apostrophes). ──
+MusuHeal_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 5)) return
+    if (!w.c.set_up) return
+    let T = this.MusuHeal_T(w)
+    // #1 THE HEAL LANDS: after the rename the kept cursor re-resolved and landed on the record NEW identity via
+    //  the redirect (ok, depth 3, id t1b) — the named record moved yet the cursor followed it.
+    let k = T.o({ healed: 'kept' })[0]
+    if (k && +k.sc.ok === 1 && +k.sc.depth === 3 && k.sc.id === 't1b' && !T.oa({ see: 'a cursor healed itself across a rename — the named record moved yet the cursor followed the redirect and landed on its new identity' })) this.MusuHeal_note(w, { see: 'a cursor healed itself across a rename — the named record moved yet the cursor followed the redirect and landed on its new identity' })
+    // #2 THE HEAL IS NOTED: the cursor recorded the redirect it followed — old name to new (from t1 to t1b).
+    if (k && k.sc.from === 't1' && k.sc.to === 't1b' && !T.oa({ see: 'the heal is self-describing — the cursor noted the redirect it followed from the old name to the new' })) this.MusuHeal_note(w, { see: 'the heal is self-describing — the cursor noted the redirect it followed from the old name to the new' })
+    // #3 THE MARKER IS LOAD-BEARING (the control): an IDENTICAL rename with NO %Renamed left the other cursor
+    //  failing cleanly with nothing to follow — so the heal is the marker doing not a coincidence.  Gate on the
+    //   lost cursor failing + no redirect followed; this is the one-line-regression witness (drop the marker).
+    let l = T.o({ healed: 'lost' })[0]
+    if (l && +l.sc.failed === 1 && l.sc.missing_id === 't2' && !l.sc.followed && !T.oa({ see: 'the redirect marker is what heals — an identical rename with no marker left the other cursor failing cleanly with nothing to follow' })) this.MusuHeal_note(w, { see: 'the redirect marker is what heals — an identical rename with no marker left the other cursor failing cleanly with nothing to follow' })
 
 },
 

@@ -1,0 +1,7 @@
+Snap:H
+  H:MusuHeal,Run
+    A:MusuHeal
+      self,round	{"mung":["age"]}
+      w:MusuHeal
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

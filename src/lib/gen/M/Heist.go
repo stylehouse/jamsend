@@ -10,7 +10,7 @@ import { sha256_hex, sha256_incremental } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '51d7092d7edc94c6~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'f52331c1f6201e0b~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -768,22 +768,63 @@ Cursor_segs(dog) {
 },
 // Cursor_resolve — WALK the stack from `root`, re-finding each level's o()-query in turn.  Returns a plain
 //  verdict, never a throw:
-//    { ok:true,  at, depth, landed }         — every level re-found; `landed` is the leaf node it names.
-//    { ok:false, at, depth, missing }        — a level's match is gone; `missing` is the query that failed,
-//                                               `depth` how many levels resolved, `at` the last node reached.
-//  A CLEAN fail is the point: a follow/browse resume reads the verdict and reacts (C2 will, right here,
-//   consult recent %Renamed for `missing` and retry with the redirect, noting what it healed).
+//    { ok:true,  at, depth, landed, heals }   — every level re-found; `landed` is the leaf node it names.
+//    { ok:false, at, depth, missing, heals }  — a level's match is gone AND no redirect healed it; `missing`
+//                                               is the query that failed, `depth` how many levels resolved.
+//  THE HEAL (C2): a failing level does NOT immediately fail — it consults recent %Renamed markers beside the
+//   last node reached and retries with the redirect (`Cursor_heal`).  `heals` lists every level a redirect
+//    rescued (`{key, from, to}`) — "noting what it healed" (§12.3).  A clean fail only when no redirect matches,
+//     so a follow/browse resume still reads a precise verdict.  The heal is transparent to a cursor over an
+//      un-renamed magazine (no markers → `heals` empty → identical to C1's verdict).
 Cursor_resolve(dog, root) {
     let node = root
     let depth = 0
+    let heals = []
     for (const seg of this.Cursor_segs(dog)) {
         let q = this.Cursor_seg_query(seg)
         let next = node.o(q)[0]
-        if (!next) return { ok: false, at: node, depth: depth, missing: q }
+        if (!next) {
+            let healed = this.Cursor_heal(node, seg, q)
+            if (healed) { next = healed.node; heals.push(healed.note) }
+        }
+        if (!next) return { ok: false, at: node, depth: depth, missing: q, heals: heals }
         node = next
         depth = depth + 1
     }
-    return { ok: true, at: node, depth: depth, landed: node }
+    return { ok: true, at: node, depth: depth, landed: node, heals: heals }
+
+},
+// Cursor_heal — a failed level's redirect (C2).  For each LITERAL pin of the segment, look beside `node` (the
+//  last node reached — the missing node's would-be parent) for a %Renamed whose `key`/`from` match that pin,
+//   and retry the query with the pin remapped to the marker's `to`.  Returns `{ node, note }` on the first
+//    redirect that lands, else null.  RECENT wins: markers are appended, a supersede lands later, so the NEWEST
+//     matching marker is consulted (`%Renamed` is window-able — a later marker can re-point or a GC can expire an
+//      old one — unlike a %Tombstone which never drops).  The redirect rides IN the magazine beside the renamed
+//       node, so a follower receives it through the same pipe as the content (§12.2).
+Cursor_heal(node, seg, q) {
+    for (const k of Object.keys(seg.sc)) {
+        if (k === 'curs' || k === 'wild') continue
+        let from = seg.sc[k]
+        let marks = node.o({ Renamed: 1, key: k, from: from })
+        if (!marks.length) continue
+        let mark = marks[marks.length - 1]
+        let q2 = {}
+        for (const kk of Object.keys(q)) q2[kk] = q[kk]
+        q2[k] = mark.sc.to
+        let hit = node.o(q2)[0]
+        if (hit) return { node: hit, note: { key: k, from: from, to: mark.sc.to } }
+    }
+    return null
+
+},
+// Renamed_mint — mint a %Renamed redirect-fact BESIDE the renamed node (under `parent`): key/from/to name which
+//  pin moved and where, at names when (a Book PINS it; the app passes Date.now).  A POSITIVE, window-able cousin
+//   of the %Tombstone/%UnGrant decision-facts (§12.2) — it rides the magazine so followers heal through the same
+//    pipe.  Caller renames the node itself (the marker records the move, it does not perform it).  Returns the mark.
+Renamed_mint(parent, key, from, to, at) {
+    let m = parent.i({ Renamed: 1, key: key, from: from, to: to, at: at })
+    m.c.up = parent
+    return m
 },
 //#endregion
 
