@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Voronation(): string { return '9d9fd42afe942f57~g1' },
+    Ghostmeta_Ghost_Story_Voronation(): string { return '9ef3d59f4f49b50c~g1' },
 
 
 //#region pier — VoroRadioPier: the tuner drifts over MUSIC dribbled in from a (fake) Pier
@@ -1068,6 +1068,16 @@ VoroTest_witness_bench(w) {
     let brow = fseen ? fseen.o({ Family: 'Boulder' })[0] : null
     let stratLoud = brow ? brow.o({ Loud: 'stratum' })[0] : null
     if (brow && brow.sc.order_by === 'grade' && stratLoud && stratLoud.sc.v === 'Miocene' && !(w.oa({see: 'the model tells a fact from a spread — the flock orders by grade the spread that varies while stratum Miocene the value all twelve share rides as a shared fact'}))) w.i({see: 'the model tells a fact from a spread — the flock orders by grade the spread that varies while stratum Miocene the value all twelve share rides as a shared fact'})
+    // #30 a minority-but-loud trait keeps its COUNT: the flock's %vein rides ~a third of the strata (the
+    //  `hsh % 3` seed), a claim the gang's ONE rep cell structurally cannot count.  The share cut pools
+    //   the MEMBERS, so the snapped Loud:vein row carries `share:N` — present IFF partial (0 < N < n),
+    //    so its very presence proves vein is a minority reading not the family-wide one.  Read off the
+    //     SNAP (share is projected).  Reddens if rep-pooled loudness swallowed the count (no share) or
+    //      vein went universal (share === n, suppressed).
+    let veinLoud = brow ? brow.o({ Loud: 'vein' })[0] : null
+    let veinShare = veinLoud ? ((+veinLoud.sc.share) || 0) : 0
+    let bn = brow ? ((+brow.sc.n) || 0) : 0
+    if (veinLoud && veinShare > 0 && veinShare < bn && !(w.oa({see: 'a minority-but-loud trait keeps its count — the flock names vein and marks how many of the strata carry it not all so the claim the rep cannot count survives as a share'}))) w.i({see: 'a minority-but-loud trait keeps its count — the flock names vein and marks how many of the strata carry it not all so the claim the rep cannot count survives as a share'})
     // #28 census-storm slot capture: pin the flock's Family:Boulder row NODE now, so the mutate beat can
     //  prove it is the VERY SAME row (not a torn-down-and-rebuilt one) after its count slides.  c-side
     //   ref, survives across beats like VoroRadio's radio_picks — the model's find-or-create keeps it.
