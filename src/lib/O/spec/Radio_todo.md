@@ -1328,6 +1328,25 @@ Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the
       standing evolve is House-work, so it files under M as **M4** — census-diff re-publish,
        rename missions as a standing Upkeep-shaped pass, the revolving service pacing over
         enrolled followers (Ra_transcode_pump generalized) (was K2).
+  **D1 BUILD RECIPE (teed up 2026-07-13 — build once M2 is live-gated):** fork MusuVend (the wire +
+   two Piers + the grant seam are proven there). (a) HARDEN the grant: swap MusuVend's Book-owned
+    `w.c.grants` toggle for the LIVE Swarm verdict — copy MusuHeist's shape
+     (`w.c.repli_allow = (peer, at2) => Swarm_pier_live(Swarm_peering(ident).o({Pier:1,pub:peer})[0], 'Music')`
+      via `SwarmStaple_ident`/`Swarm_mint_idzeug`/`Swarm_redeem`); NOTE this reintroduces seal wall-clock
+       → the fixture needs an EntropyProfile (Wref:Trope/Ra/AudibleEntropy or a fresh seal-tolerant one)
+        + a warming re-accept — MusuVend's determinism is deliberately NOT carried into D1. (b) THE
+         SABOTAGE SCENE (the §12 heart, the anti-klepto inversion): a hostile origin offers a magazine
+          whose card carries a grafted `req:`/`eternal` child; the follower merges it (Repli_merge reads
+           it as plain data). ASSERT it lands INERT — a canary the malicious req WOULD set (a w.c flag, a
+            minted particle, a side-effect) stays UNSET across a full belief pass, because the wire never
+             stamps c.up into a swept world. Make it BREAKABLE: if the merge stamped c.up + pumped, the
+              canary flips → the see drops. BOMB (§12.1): today's inertness is "an ACCIDENT doing duty as
+               a wall" (a decoded req has no c.up into a swept space, so it never pumps) — the sabotage
+                see PINS that accident so a future change that starts pumping foreign trees goes red; the
+                 REAL construction-level wall (a merge that provably cannot graft live machinery) is the
+                  deeper owed rung the see guards toward. (c) keep MusuVend's ungranted-refusal scene.
+                   Do NOT ship the sabotage see without a LIVE run — an unrun security assertion can be
+                    vacuously green, the worst false-green; adversarially review AND live-gate it.
  **C — cursors**: C1 the %Cursor primitive + resolver (resolve | fail cleanly, own Book scenes);
   C2 heal via recent %Renamed (rename mid-follow, the cursor heals, the heal noted); C3 cursor as
    follow-progress, berthed (survives reload — the resumable browse).
