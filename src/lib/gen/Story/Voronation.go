@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Voronation(): string { return '2fdf46a461217518~g1' },
+    Ghostmeta_Ghost_Story_Voronation(): string { return 'a793373e1f6bf9ba~g1' },
 
 
 //#region radio — VoroRadio: the tuner PROVEN (📻 drift as a deterministic Story Book)
@@ -993,6 +993,15 @@ VoroTest_witness_mutate(w) {
     let popped_leaf = popw ? popw.o().find(c => c.c.popped) : null
     let ingang = popw ? this.VoroTest_gang_of(popw, 'Ingot') : null
     if (popped_leaf && !popped_leaf.c.stuff && !popped_leaf.c.represented && ingang && (ingang.c.gang || []).length === 2 && !(w.oa({see: 'a popped member stands out and the rest hold together — one ingot surfed out of the fold while the remaining two re-ganged at the relaxed spill threshold'}))) w.i({see: 'a popped member stands out and the rest hold together — one ingot surfed out of the fold while the remaining two re-ganged at the relaxed spill threshold'})
+    // #31 the dial is not mitosis (the openness split): this beat's pop is the VIEWER's hand — the
+    //  ingot gang undressed (unfolded) and its spill re-dressed at the relaxed min (folded) while NOT
+    //   ONE node arrived or left the data.  The old silhouette arithmetic (prev+born−grasped) booked
+    //    exactly this undressing as a death; the split reads the same beat honestly — born and died
+    //     both zero with the dial's own weather beside them on the one row.  Reddens if the was_fold
+    //      annotation is lost (folded|unfolded vanish) or an undressing books as died again.
+    let pseen = this.VoroTest_seen(w, 'popped')
+    let prow = pseen ? pseen.o({ Se: 'scape' })[0] : null
+    if (prow && !(+prow.sc.born) && !(+prow.sc.died) && (+prow.sc.folded) > 0 && (+prow.sc.unfolded) > 0 && !(w.oa({see: 'the dial is not mitosis — the popped gang undressed and its spill re-dressed while nothing was born and nothing died'}))) w.i({see: 'the dial is not mitosis — the popped gang undressed and its spill re-dressed while nothing was born and nothing died'})
     // #28 the family kept its slot: the flock's Family:Boulder is the VERY SAME row node captured at the
     //  bench, its count slid twelve to fifteen IN PLACE.  A census storm would have dropped and rebuilt
     //   the row (a fresh node), so a surviving === ref is the live-reachable proof of the persistent

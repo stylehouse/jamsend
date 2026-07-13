@@ -518,25 +518,46 @@ Voro_grasp(w):
             loud_trait = top_fact
         }
     }
-    // born = the folds that ARRIVED this beat — resolve() flagged their D node a neu AND its source
-    //  is a fold (a genus dividing IN).  The raw news.neus/goners count every LEAF that came or went
-    //   (a fast-growing flora arrives ~19 species a beat), which drowns the cell story — so we keep
-    //    only the fold-level arrivals.  died is derived from the fold-count delta (grasped = prev +
-    //     born - died): a goner D's source is already stale, so it can't be re-read, but the arithmetic
-    //      is exact.  So born|died read as CELL mitosis — divisions in, apoptosis out — a beat or two
-    //       at a time, not the leaf churn underneath.
+    // born|died vs folded|unfolded — the OPENNESS split (the human's reframe, 2026-07-13).  The sphere
+    //  watches the DATA openness-blind (the crush stamps c.stuff in place, never reparents), but a fold
+    //   COUNT mixes two movers: the world (real mitosis) and the viewer (the governor turning the dial
+    //    — a demotion is an UNDRESSING, not a death).  So fold-status rides each remembered subject as
+    //     an ANNOTATION and ONE resolve separates the pairs:
+    //   · born — a NEU whose source wears a fold: data divided IN (raw leaf churn stays %Se:input's).
+    //   · died — a GONER whose source wore the mark: the fold's data actually LEFT.  Read off our
+    //      OWN last-beat annotation — the goner's D still holds its source object (d.c.C), and a
+    //       stale mark is exactly the question ("was it a fold?") — never the old prev+born−grasped
+    //        silhouette arithmetic that booked every undressing as apoptosis.
+    //   · folded|unfolded — a SURVIVOR whose mark flipped: the dial turned, the data stayed put.
+    //  The mark rides the SOURCE particle (src.c.was_fold), not the D — o_Seem REPLACES the topD
+    //   every resolve (fresh D objects, survivor identity is content-paired), so a D-side mark dies
+    //    with its beat; the flora persists.  c-side, so no snap sees it; Voro_unstamp doesn't
+    //     touch it (the mark is the grasp's memory, not a crush stamp).
     let born = 0
     for (const d of news.neus) {
         let src = d.c.C
         if (src && src.c.stuff && !src.c.represented) born = born + 1
     }
-    let prev = w.c.grasp_prev_folds
     let died = 0
-    if (prev != null) {
-        died = prev + born - grasped
-        if (died < 0) died = 0
+    for (const d of news.goners) {
+        let src = d.c.C
+        if (src && src.c.was_fold) died = died + 1
     }
-    w.c.grasp_prev_folds = grasped
+    let folded = 0
+    let unfolded = 0
+    if (topD) {
+        for (const d of topD.o()) {
+            let src = d.c.C
+            if (!src) continue
+            let isf = (src.c.stuff && !src.c.represented) ? 1 : 0
+            // survivors only: a neu has no last-beat mark to flip (its arrival is born's story)
+            if (!news.neus.includes(d)) {
+                if (isf && !src.c.was_fold) folded = folded + 1
+                if (!isf && src.c.was_fold) unfolded = unfolded + 1
+            }
+            src.c.was_fold = isf
+        }
+    }
     // PROJECT — the grasp's readout beside the census: cells held, the cell mitosis, and the LOUDEST
     //  cell (its the_very name) — a first legible taste of the reductionist weighting the render reads.
     //   oai keeps its slot so only the fields slide — no storm on the grasp's own row.
@@ -545,8 +566,14 @@ Voro_grasp(w):
     let sdict = { grasped: '' + grasped, born: '' + born, died: '' + died, loudest: loudest }
     if (loud_trait) sdict.trait = loud_trait
     sdict.regions = '' + Object.keys(fams).length
+    // the dial's own weather — present only on a beat the viewer moved (absence IS the quiet
+    //  reading), and AFTER regions so a quiet row keeps its byte-order.
+    if (folded) sdict.folded = '' + folded
+    if (unfolded) sdict.unfolded = '' + unfolded
     let scape = rw.oai({ Se: 'scape' }, sdict)
     if (!loud_trait) delete scape.sc.trait
+    if (!folded) delete scape.sc.folded
+    if (!unfolded) delete scape.sc.unfolded
     // %Se:input — the flora's own weather: the raw news this grasp otherwise DISCARDS when it keeps
     //  only fold-level mitosis above (the sphere's one-layer grain — every top-level node that came
     //   or went, folds and bare leaves alike).  Present ONLY on a beat something moved (absence IS
