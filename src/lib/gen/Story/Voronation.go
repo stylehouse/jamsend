@@ -8,86 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Voronation(): string { return '9ef3d59f4f49b50c~g1' },
-
-
-//#region pier — VoroRadioPier: the tuner drifts over MUSIC dribbled in from a (fake) Pier
-// < strewn with test data to move out to Voronation.g
-// ══ the fake music Pier — a deterministic catalog, the DRIBBLE-SOURCE the tuner walks ═══════════
-//  "VoroRadio feeding music in from a Pier" (owner), the Pier "very fake" by licence.  Structurally
-//   the flora-mirror: a %Pier holds tracks keyed STATION-as-mainkey ({Fernway:'Tide'}) exactly as
-//    the flora keys taxa genus-as-mainkey, so the SAME crush gangs same-station tracks into a locale
-//     and the SAME Voro_drift_tick walks across stations — zero new render, zero new fold policy.
-//      No transport, no audio, no wall clock: tracks are the deterministic sprinkle twin of
-//       Botany_plant (fixtures byte-stable).  The Pier is the source content flows in from (spec
-//        Voro_vtuffing.md §Owner vision seeds — dribble → swish → Travel → trail).
-Radio_stations() {
-    return ['Fernway', 'Moonlit', 'Kolter', 'Sable', 'Vireo', 'Halcyon', 'Brasswick', 'Lowfield']
-},
-Radio_titles() {
-    return ['Tide', 'Halo', 'Drift', 'Ember', 'Vellum', 'Marrow', 'Cinder', 'Fathom', 'Glass', 'Lantern', 'Pulse', 'Ridge', 'Solace', 'Wend', 'Yolk', 'Zephyr']
-},
-Radio_genres() {
-    return ['dreampop', 'krautrock', 'ambient']
-
-},
-// plant one track under the pier, keyed by its STATION (the mainkey, so a station's tracks gang);
-//  a deterministic sprinkle rides each (stable fixtures): a %year of three values (a Vtuffing
-//   SPREAD — chips), %live on ~1/3 (a presence-FACT — 'live ×N'), and a %genre the whole station
-//    agrees on (a shared FACT), so a station pane speaks like a real locale.  vfamily by genre
-//     ropes same-genre stations into one ⬡ hull.  Station stays the first key.
-Radio_track(pier, station, title) {
-    let sc = {}
-    sc[station] = title
-    let hsh = this.Voro_hash(station + '|' + title)
-    let years = ['1998', '2007', '2019']
-    sc.year = years[hsh % 3]
-    if (hsh % 3 === 0) sc.live = 1
-    let genres = this.Radio_genres()
-    sc.genre = genres[this.Voro_hash(station) % 3]
-    let tr = pier.i(sc)
-    tr.c.vfamily = 'pier:' + sc.genre
-    return tr
-
-},
-// tune k tracks of a station into the pier (the flora-mirror of VoroMitosis_found).  Offset the
-//  title index by how many the station ALREADY has, so a later dribble adds FRESH titles instead of
-//   re-planting the seed's ({station:title} would collide → a station showing the same track twice).
-Radio_station_in(pier, station, k) {
-    let titles = this.Radio_titles()
-    let si = this.Radio_stations().indexOf(station)
-    if (si < 0) si = 0
-    let have = pier.o().filter(c => Object.keys(c.sc)[0] === station).length
-    for (let t = 0; t < k; t++) this.Radio_track(pier, station, titles[(si * 3 + have + t) % titles.length])
-
-},
-// the pier itself — one dribble-source node under w
-Radio_pier(w) {
-    let p = w.o({ Pier: 1, name: 'Crowd' })[0]
-    if (!p) p = w.i({ Pier: 1, name: 'Crowd' })
-    return p
-
-},
-// the initial library: six stations open at once so ≥4 locales exist for the drift-count witness
-Radio_seed(w) {
-    let p = this.Radio_pier(w)
-    this.Radio_station_in(p, 'Fernway', 4)
-    this.Radio_station_in(p, 'Moonlit', 3)
-    this.Radio_station_in(p, 'Kolter', 4)
-    this.Radio_station_in(p, 'Sable', 3)
-    this.Radio_station_in(p, 'Vireo', 4)
-    this.Radio_station_in(p, 'Halcyon', 3)
-
-},
-// the stream keeps flowing: one more track dribbles onto a station each drift beat (deterministic
-//  by beat, so the fold GROWS under the tuner — the Pier is not a one-shot seed but a source).
-Radio_dribble(w, n) {
-    let p = this.Radio_pier(w)
-    let sts = this.Radio_stations()
-    this.Radio_station_in(p, sts[n % 6], 1)
-
-},
-//#endregion
+    Ghostmeta_Ghost_Story_Voronation(): string { return '2fdf46a461217518~g1' },
 
 
 //#region radio — VoroRadio: the tuner PROVEN (📻 drift as a deterministic Story Book)
@@ -202,68 +123,7 @@ VoroRadio_witness(w) {
     let hand = w.c.radio_hand || []
     if (hand.length > 0 && hand.every(x => (x.c.popped || x.c.popped_open) && !x.c.popped_auto) && !(w.oa({see: 'the hand outranks the tuner — a manual pop survived every dwell untouched'}))) w.i({see: 'the hand outranks the tuner — a manual pop survived every dwell untouched'})
 
-
-
-
-
-
 },
-// ══ VoroRadioPier — VoroRadio's music twin: the tuner PROVEN over a streamed Pier of stations ════
-//  brand_new — record LIVE with eyes on (this session compile-verified + smoke-checked it, did NOT
-//   record fixtures).  Same witness shape as VoroRadio (moving) plus two Pier-specific truths: the
-//    TRAIL was kept (the durable breadcrumb — "saving the trail") and music DRIBBLED in (the stream
-//     folded into locales).  The world MUST be named VoroRadioPier (Story_subHouse dispatches by it).
-VoroRadioPier(A, w) {
-    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
-        await this.VoroRadioPier_drive(w,req)
-        req.sc.ok = 1
-
-    })
-},
-async VoroRadioPier_drive(w, req) {
-    let n = (this.c.run)?.c.step_n
-    if (n != null && n !== req.c.did_step) {
-        req.c.did_step = n
-        if (n === 2) this.Radio_seed(w)
-        if (n >= 3 && n <= 8) this.Radio_dribble(w, n)
-        // AWAIT: the crush now grasps in its tail (snapped %Se:scape row) — let it settle before snap.
-        if (n >= 2) await this.Voro_crush_scan(w)
-        if (n >= 3 && n <= 8) {
-            let pick = await this.Voro_drift_tick(w)
-            let picks = w.c.radio_picks || []
-            if (pick) picks.push(pick)
-            w.c.radio_picks = picks
-            // saving the trail: a DURABLE breadcrumb of the WHOLE path (not just the drift_opens
-            //  window of 4) — station + track at each dwell, a down-payment on the §Owner vision.
-            let trail = w.c.radio_trail || []
-            if (pick) {
-                let mk = Object.keys(pick.sc)[0]
-                trail.push({ seq: n, station: mk, track: pick.sc[mk] })
-            }
-            w.c.radio_trail = trail
-        }
-        if (n === 9) this.VoroRadioPier_witness(w)
-    }
-
-},
-VoroRadioPier_witness(w) {
-    let picks = w.c.radio_picks || []
-    let distinct = picks.filter((p, i) => picks.indexOf(p) === i).length
-    if (picks.length >= 5 && distinct >= 4 && !(w.oa({see: 'the tuner walked the pier — six dwells lit four or more distinct stations of streamed music'}))) w.i({see: 'the tuner walked the pier — six dwells lit four or more distinct stations of streamed music'})
-    let trail = w.c.radio_trail || []
-    if (trail.length >= 5 && !(w.oa({see: 'the trail was kept — every dwell left a breadcrumb of its station and track behind the listener'}))) w.i({see: 'the trail was kept — every dwell left a breadcrumb of its station and track behind the listener'})
-    let p = w.o({ Pier: 1 })[0]
-    let ntracks = p ? p.o().length : 0
-    if (ntracks >= 12 && !(w.oa({see: 'music dribbled in from the pier — a dozen or more tracks streamed in and folded into station locales'}))) w.i({see: 'music dribbled in from the pier — a dozen or more tracks streamed in and folded into station locales'})
-
-
-
-},
-//#endregion
-
-//#region radio — VoroRadio: the tuner PROVEN (📻 drift as a deterministic Story Book)
-
-
 //#endregion
 
 //#region clinic — VoroClinic: auto-guard the CRUSH model (the render's faults are downstream)
