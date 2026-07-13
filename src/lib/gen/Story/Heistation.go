@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return 'b2f6d4bd47e027ad~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return 'd5223fcdb47e3b32~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -128,10 +128,15 @@ async MusuHeist_phase(w) {
         return await this.MusuHeist_flow(w)
     }
     if (w.c.phase === 'deny') {
+        // THE §12 FOLD (M1 on REAL data): publish Uno's actual collection as a magazine — Musica_publish over
+        //  the REAL census %Records the heist landed (real cp paths, real body_hashes, real tags), not a minted
+        //   toy.  Two publishes bracket the deny so the RECAST proves on real data: v1 = the whole held
+        //    collection, then after the deny drops a track, v2 reconciles it out — the dropped track vanishes
+        //     from the magazine too, no orphan.  Each reflects into w/%Mag so the actual Records ride the snap.
+        if (!w.c.mag_v1) { w.c.mag_v1 = 1; await this.MusuHeist_publish_mag(w, 'batch', 100, 'held'); return true }
         if (!w.c.logs_done) { w.c.logs_done = 1; await this.MusuHeist_logs(w); return true }
         if (!w.c.deny_done) { w.c.deny_done = 1; await this.MusuHeist_deny(w); return true }
-        // the deny dropped the track from the collection and left no durable trace (the %Tombstone gear
-        //  was condemned) — nothing to re-prove on a further heist, so the run moves straight to flatten.
+        if (!w.c.mag_v2) { w.c.mag_v2 = 1; await this.MusuHeist_publish_mag(w, 'batch', 100, 'recast'); return true }
         w.c.phase = 'flat'
         return true
     }
@@ -485,6 +490,30 @@ async MusuHeist_flat_check(w) {
     }
 
 },
+// MusuHeist_publish_mag — the §12 fold: publish Uno's REAL collection as a %Musica magazine and REFLECT it
+//  into w/%Mag so the actual census Records ride the snap (the observable-plane rule — detail is data, not a
+//   count).  Musica_publish is the shared verb (Ghost/M/Heist.g) over the real uno_lib, homed in Uno's
+//    marrauding berth so the end sweep cleans it.  The reflect rebuilds w/%Mag WHOLE each call, so the snap
+//     diff shows the magazine track the collection — the denied track vanishing on the recast.
+async MusuHeist_publish_mag(w, randomic, ts, stage) {
+    let mag = await this.Musica_publish(w.c.nav, w.c.mar_uno, w.c.uno_pre, w.c.uno_lib, randomic, ts)
+    for (const old of w.o({ Mag: 1 })) await w.rm({ Mag: old.sc.Mag })
+    let holder = w.i({ Mag: 'Musica' })
+    holder.c.up = w
+    for (const cl of mag.o({ Cloud: 1 })) {
+        let ch = holder.i({ Cloud: 1, randomic: cl.sc.randomic, created_at: cl.sc.created_at })
+        ch.c.up = holder
+        for (const rec of cl.o({ Record: 1 })) {
+            let rc = ch.i({ Record: 1, id: rec.sc.id, artist: rec.sc.artist, title: rec.sc.title, path: rec.sc.path })
+            rc.c.up = ch
+            if (rec.sc.album) rc.sc.album = rec.sc.album
+            if (rec.sc.body_hash) rc.sc.body_hash = rec.sc.body_hash
+        }
+    }
+    this.MusuHeist_note(w, { mag_pub: stage, cards: this.Musica_cards(mag).length })
+    return mag
+
+},
 // ── the witness — %see observations gated on TRUTH not beat number (phases complete at variable beats,
 //  so every see fires the first pass its fact holds; a low n>=2 floor just waits for the run to have
 //   started).  Reads live truth — design off w/libraries, test verdicts off %testing.  The see claims
@@ -601,6 +630,20 @@ MusuHeist_witness(w) {
     // the landing STREAMED chunk by chunk — the uno heist rode the positioned bin_append path (never a whole
     //  track assembled in memory), a live probe of the backend the run actually used, stamped on the milestone.
     if (ha && ha.sc.streamed && +(ha.sc.landed || 0) === 3 && !T.oa({ see: 'the landing streamed chunk by chunk — no whole track ever waited in memory' })) this.MusuHeist_note(w, { see: 'the landing streamed chunk by chunk — no whole track ever waited in memory' })
+    // THE §12 FOLD — the magazine on REAL data (the human's ruling: prove Musica_publish off the real census,
+    //  not a minted toy, with the actual Records ON the snap).  v1 published Uno's whole HELD collection (9)
+    //   as census Records keeping their real cp paths + body_hashes — the reflected w/%Mag carries them.
+    let magR = w.o({ Mag: 1 })[0]
+    let mh = T.o({ mag_pub: 'held' })[0]
+    let real_card = magR && magR.o({ Cloud: 1 }).some((cl) => cl.o({ Record: 1 }).some((r) => ('' + r.sc.path).includes(w.c.genre_pfx + '-') && r.sc.body_hash))
+    if (mh && +(mh.sc.cards || 0) === 9 && real_card && !T.oa({ see: 'Uno published its whole collection as a magazine — every landed track rode in as a record keeping its own path and hash' })) this.MusuHeist_note(w, { see: 'Uno published its whole collection as a magazine — every landed track rode in as a record keeping its own path and hash' })
+    // v2 RECAST on real data: the deny dropped a track from the collection AND the magazine reconciled it out
+    //  — one fewer card than the held publish, the reflected magazine back in step with the collection (every
+    //   magazine record still held by the collection: no orphan).
+    let mr = T.o({ mag_pub: 'recast' })[0]
+    let mag_cards = magR ? this.Musica_cards(magR).length : 0
+    let no_orphan = magR && magR.o({ Cloud: 1 }).every((cl) => cl.o({ Record: 1 }).every((r) => uno_lib.o({ Record: 1, id: r.sc.id }).length === 1))
+    if (mr && +(mr.sc.cards || 0) === 8 && mag_cards === 8 && no_orphan && !T.oa({ see: 'a republish recast the real magazine in step with the collection — the denied track left the magazine too and no orphan stayed behind' })) this.MusuHeist_note(w, { see: 'a republish recast the real magazine in step with the collection — the denied track left the magazine too and no orphan stayed behind' })
     // afterwards nothing attributes: the scaffolding flattened away entirely AND no surviving collection
     //  card carries a source/from breadcrumb (audit #10 — the "nothing attributes who gave what" half was
     //   unwitnessed; a landed card stamped with its origin would have flattened green).  Provenance lives on
