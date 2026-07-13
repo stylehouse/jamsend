@@ -23,6 +23,37 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**M2 — MAGAZINE REPLICATION BUILT (2026-07-13 pm; compile-clean, LIVE-GATE OWED).** New Book
+ **MusuVend** (`Ghost/Story/Heistation.g`, appended after MusuHeist) proves the magazine TRAVELS: two
+  Piers over a Lake_link loopback, an in-memory magazine folded at the origin and `Repli_offer`ed whole
+   (husk — a magazine card is a payload-less leaf, so no wants: the tree crosses in ONE frame), the
+    follower mirrors it. The GATE is the point — draw A crosses (granted) → draw B REFUSED + noted
+     (revoked) → draw B catches up (re-granted); the gate is consulted live, cached nowhere. 5 `%see`.
+      Deterministic + in-memory (no FSA / no audio / no Berth / no AudibleEntropy) so it runs on ANY
+       runner and its fixture is jitter-free. Both `.g` LocalGen-green (`Heist.go 43938c`,
+        `Heistation.go 60481c`); toc seeded (11 lie steps); registered in Credence (`brand_new:1`) + Ality.
+ - **The MusuRa question, answered honestly (the human asked "do MusuRa* use the magazine?").** NO —
+    the MusuRaStock/Cast/Term/Stream/Chase family stocks a real `%Library` but never publishes a
+     magazine from it (zero `Musica`/`%Cloud` refs). They ARE otherwise fully current-era (no tombstone,
+      no `%Tune`, no genre tag-tree). The shapes already FIT — `Musica_fold` consumes exactly what
+       `Ra_library` builds (`%Library,pier > %Record`) — nobody had wired them. MusuVend is the first
+        wiring (folds a magazine from a `%Library`); wiring the REAL Ra stock → magazine into the MusuRa
+         Books is a follow-up (needs an FSA runner; owed).
+ - **`Musica_publish` split into the "one brain" (§12.1):** the pure reconcile-then-add is now
+    `Musica_fold(mag, lib, randomic, created_at)` (in-memory, no disk); `Musica_publish` is the Berth
+     wrap (open → fold → save). So ONE magazine-building brain serves the disk publish AND the wire — no
+      duplicated reconcile. The fold stamps `cloud.c.repli_loc = ['Cloud','randomic']` so a Cloud
+       reconciles by its draw-fingerprint on the wire (without it the default `['Cloud']` loc collapses
+        every batch to one blur at the follower).
+ - **`randomic` = a RANDOM DRAW (the human's clarification):** a `%Cloud` is a handful MEANDERED out of a
+    collection NEVER fully enumerated (`Crate_meander` random-walks the crate — Crate.g); the magazine is
+     random samples accreting over time, not a full census. `randomic` is the draw's fingerprint. Folded
+      into the fold's doc + MusuVend's framing.
+ - **LIVE-GATE OWED (blocked on a foregrounded runner tab — backgrounded tabs freeze, Page Lifecycle):**
+    on a live :9091 runner, `run MusuVend --runner=<prefix>` then accept, confirm all 5 sees + green ×2.
+     No entropy warming needed (deterministic). ADVERSARIAL review of the sees was run in-session (a
+      code review, not a live run) — fold its verdicts before the accept.
+
 **NIGHTSHIFT 2026-07-13 — DONE (all four jobs cleared; committed as the human by licence).** The
  blow-by-blow is in `history/Radio_buildlog.md` (2026-07-13 nightshift entry). In brief, on the
   recovered `49de` runner: **Job 1** MusuHeist re-recorded 15/15 over the franken-fixtures, green ×2
@@ -50,10 +81,12 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
       land: **multi-cloud grow** (a SECOND arrival batch forming a new `%Cloud` beside the first — rides
        M4's standing republish) and **`Musica_forget`** (GC old clouds — untested, no caller yet; test
         it when it wires to the radiostock cascade).
- - **NEXT build:** M2 — two-Pier magazine replication over the existing Repli pipe, grant-gated
-    (grant on = the real magazine lands at the follower; grant off = refused + noted). Then D1 the
-     door → C1 cursors. Corner-cases for when cp-landing meets real disk (all `// <`): audio-probe the
-      bytes, the album-art/kid-safe oracle, dedup album+disc+track-else-path, landing-path clash.
+ - **M2 BUILT (see the top block); NEXT build is D1** — harden the for-another serving path into the
+    DOOR: swap MusuVend's Book-owned grant toggle for the live `Swarm_pier_live` verdict (the MusuHeist
+     `repli_allow` shape) and add the SABOTAGE scene (a hostile stream claiming `req:`/`eternal` mainkeys
+      lands INERT — the door only reads want-shapes). Then C1 cursors. Corner-cases for when cp-landing
+       meets real disk (all `// <`): audio-probe the bytes, the album-art/kid-safe oracle, dedup
+        album+disc+track-else-path, landing-path clash.
 
 **NOW (2026-07-13, post-push): three §10.2 gears LANDED compile-clean (live-gate owed on all);
  the Booth/Ban thread is VETOED-and-parked; persistence is ruled — §11.7 (the Berth).**
@@ -1200,6 +1233,17 @@ Waft:Musica
    forgotten at once — `Musica_forget(cutoff)` drops old Clouds (the radiostock-cascade unlink is
     parked `// <`). `randomic`+`created_at` are PARAMS not wall-clock: the app passes a real random
      id + Date.now, a Book PINS them (the Heist_marrauding runid pattern) so snaps stay deterministic.
+  **`randomic` = a RANDOM DRAW (the human's clarification 2026-07-13):** a Cloud is not "the whole
+   collection this tick" — it is a HANDFUL randomly MEANDERED out of a collection that is NEVER fully
+    enumerated (`Crate_meander` random-walks the crate track by track — Crate.g). So the magazine is
+     random samples accreting over time; `randomic` is the draw's fingerprint (it was randomly pulled),
+      NOT merely a batch nonce. A publish that meanders more surfaces a NEW Cloud beside the old ones.
+  **`Musica_fold` — the "one brain" (built 2026-07-13, §12.1):** `Musica_publish` split so the PURE
+   reconcile-then-add is `Musica_fold(mag, lib, randomic, created_at)` (in-memory, no disk) and
+    `Musica_publish` is the Berth wrap (open → fold → save). ONE magazine-building brain now serves both
+     the disk publish AND the wire (M2/MusuVend folds in memory and offers over Repli). The fold stamps
+      `cloud.c.repli_loc = ['Cloud','randomic']` so a Cloud reconciles by its draw-fingerprint on the
+       wire (the default `['Cloud']` loc would collapse every batch to one blur at a follower).
  **Publish is RECONCILE-then-ADD** (`Musica_publish`, Ghost/M/Heist.g), not wipe-and-rewrite: drop
   any published id the collection lost + any emptied Cloud (the recast — a dropped track leaves no
    orphan), then lay the collection ids not yet in any Cloud under a fresh Cloud. `Musica_cards(mag)`
@@ -1262,9 +1306,10 @@ A %Cursor is a serialized STACK OF MATCHES — a descent path of o()-queries ({M
 ### 12.4 The jobs ladder — little, Book-gated, mostly independent starts
 
 Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the substrate.
- **M — magazine**: M1 Musica_publish (census + crush → a %Musica Berth Waft, metadata in-magazine);
-  M2 two-Pier magazine replication (the existing Repli pipe, grants gate); M3 %Renamed markers
-   minted by a rename mission + replicated with the magazine.
+ **M — magazine**: M1 Musica_publish (census + crush → a %Musica Berth Waft, metadata in-magazine) ✓;
+  M2 two-Pier magazine replication (the existing Repli pipe, grants gate) ✓ BUILT compile-clean
+   (MusuVend Book — magazine folds in memory, Repli_offers whole husk, grant on↔off↔on; live-gate owed);
+    M3 %Renamed markers minted by a rename mission + replicated with the magazine.
  **D — the door** (12.1; the K rungs DISSOLVED 2026-07-13 with the metaphor): D1 the
   door-hardening Book — the for-another serving path over the magazine, grown from the existing
    consent hook (repli_allow + register_caster + the pump); its Book includes the SABOTAGE scene —
@@ -1283,9 +1328,9 @@ Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the
  **U — the magazine reader** (Big*land family): browse a replicated %Musica, wants become cursors;
   build AFTER the rungs give it real data.
  (P — the projected subHouse — PARKED as experiment material per the 12.1 ruling; do not build.)
- Dependencies: M1 ✓ (landed + live-recorded 2026-07-13); M2 needs only M1 and leads next; D1
-  needs M2 (harden the serve path once it exists); M4 needs M1 + M3; C2 needs M3; S3 needs
-   D1 + M2 + S2; U needs M2 + C1.
+ Dependencies: M1 ✓ (landed + live-recorded 2026-07-13); M2 ✓ (built compile-clean 2026-07-13,
+  live-gate owed) — D1 LEADS NEXT (harden MusuVend's grant toggle into the live Swarm_pier_live door +
+   the sabotage scene); M4 needs M1 + M3; C2 needs M3; S3 needs D1 + M2 + S2; U needs M2 + C1.
 
 ### 12.5 The heist wriggles in — every gear re-homes into making | replicating | responding
 

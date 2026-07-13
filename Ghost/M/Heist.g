@@ -583,6 +583,22 @@ async Berth_reset(nav, root, prepub, name):
 //   Returns the mag so a caller re-opens a second handle and reads the Cloud/Record rows back.
 async Musica_publish(nav, root, prepub, lib, randomic, created_at):
     let mag = await this.Berth_open(nav, root, prepub, 'Musica')
+    await this.Musica_fold(mag, lib, randomic, created_at)
+    await this.Berth_save(nav, mag)
+    return mag
+
+// Musica_fold — the PURE reconcile-then-add: given an already-open magazine node `mag` and the collection
+//  `lib`, drop any published Record the collection lost + any Cloud left empty, then lay the fresh ids under
+//   a new %Cloud stamped randomic/created_at.  NO disk — the Berth wrap is Musica_publish (open + save); a
+//    replication Book folds into an IN-MEMORY node and offers it over the wire (M2/MusuVend).  So ONE
+//     magazine-building brain serves both the disk publish and the wire — the "one brain" ruling (§12.1),
+//      not two copies of the reconcile.  Returns the mag.
+//  `randomic` names a RANDOM DRAW (the human's clarification 2026-07-13): a Cloud is a handful MEANDERED out
+//   of a collection that is NEVER fully enumerated — Crate_meander random-walks the crate track by track
+//    (Ghost/M/Crate.g), so the magazine is random samples accreting over time, not a full census.  It is the
+//     draw's fingerprint; `created_at` stamps when the draw joined.  Both PARAMS (the app passes a real
+//      random id + Date.now, a Book PINS them — the Heist_marrauding runid pattern — so snaps stay determinate).
+async Musica_fold(mag, lib, randomic, created_at):
     // the live collection's identities — an id set the reconcile and the new-arrival scan both read.
     let have = {}
     for (const rec of lib.o({ Record: 1 })) have[rec.sc.id] = rec
@@ -595,11 +611,16 @@ async Musica_publish(nav, root, prepub, lib, randomic, created_at):
         }
         if (!cloud.o({ Record: 1 }).length) await mag.rm({ Cloud: 1, randomic: cloud.sc.randomic })
     }
-    // ADD: the collection ids not yet in any Cloud form THIS publish's arrival batch.
+    // ADD: the collection ids not yet in any Cloud form THIS draw's batch.
     let fresh = lib.o({ Record: 1 }).filter((r) => !published[r.sc.id])
     if (fresh.length) {
         let cloud = mag.i({ Cloud: 1, randomic: randomic, created_at: created_at })
         cloud.c.up = mag
+        // repli_loc: a Cloud locates on the wire by (Cloud, randomic).  WITHOUT it the default loc is
+        //  ['Cloud'] alone (randomic is not an id-ish key — Repli_loc_keys), so a SECOND draw would upsert
+        //   onto the first and the whole Cloud layer would collapse to one merged blur at the follower.  A
+        //    runtime .c hint (Repli reads it, honoured by any offer of this tree); never snaps.
+        cloud.c.repli_loc = ['Cloud', 'randomic']
         for (const rec of fresh) {
             let card = cloud.i({ Record: 1, id: rec.sc.id, artist: rec.sc.artist, title: rec.sc.title, path: rec.sc.path })
             card.c.up = cloud
@@ -607,7 +628,6 @@ async Musica_publish(nav, root, prepub, lib, randomic, created_at):
             if (rec.sc.body_hash) card.sc.body_hash = rec.sc.body_hash
         }
     }
-    await this.Berth_save(nav, mag)
     return mag
 
 // Musica_cards — every %Record across every %Cloud, newest-cloud-agnostic: the flat catalog view a reader or

@@ -5,6 +5,33 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
   The living state, roadmap and design are in Radio_todo.md — read THAT; come here only for
    the archaeology of how a thing landed. Newest first.
 
+**2026-07-13 (pm) — M2: magazine replication (MusuVend), compile-clean + the "one brain" split.** After
+ the fold made the magazine real on MusuHeist, the human asked whether the MusuRa* family uses the magazine
+  "and otherwise reflect the current era". An Explore mapped it honestly: **NO** — MusuRaStock/Cast/Term/
+   Stream/Chase stock a real `%Library` but publish no magazine (zero `Musica`/`%Cloud` refs); they ARE
+    otherwise current-era clean (no tombstone / `%Tune` / genre tag-tree). The shapes already FIT
+     (`Musica_fold` consumes exactly `Ra_library`'s `%Library,pier > %Record`) — nobody wired them.
+ **Built M2** — Book **MusuVend** (appended to `Ghost/Story/Heistation.g`): two Piers over a Lake_link
+  loopback, an in-memory magazine folded at the origin and `Repli_offer`ed WHOLE (husk — a magazine card
+   is a payload-less leaf, so no wants: the tree crosses in ONE frame; `Repli_merge` upserts it under the
+    follower's mirror lib). The GATE is the point — a Book-owned `w.c.grants.Follower` toggle read by
+     `w.c.repli_allow`: draw A crosses (granted) → draw B REFUSED + noted (revoked) → draw B catches up
+      (re-granted, gate consulted live). 5 `%see`. DETERMINISTIC + in-memory: no FSA / no audio / no Berth
+       / no AudibleEntropy → runs on ANY runner, jitter-free fixture.
+ **The "one brain" split (§12.1):** `Musica_publish` factored so the pure reconcile-then-add is
+  `Musica_fold(mag, lib, randomic, created_at)` (no disk) and `Musica_publish` is the Berth wrap
+   (open→fold→save). ONE magazine builder now serves the disk publish AND the wire — no duplicated
+    reconcile. The fold stamps `cloud.c.repli_loc = ['Cloud','randomic']` (else `Repli_loc_keys` defaults
+     to `['Cloud']` and a second draw collapses onto the first at the follower — the wire-fix that makes
+      the Cloud layer survive replication).
+ **`randomic` clarified (the human):** a `%Cloud` is a RANDOM DRAW meandered out of a collection NEVER
+  fully enumerated (`Crate_meander`), not "the whole lib this tick" — the magazine is random samples over
+   time; `randomic` is the draw-fingerprint. Folded into `Musica_fold`'s doc + §12.2 + MusuVend's framing.
+ **State:** both `.g` LocalGen-green (`Heist.go 43938c`, `Heistation.go 60481c`); toc seeded (11 lie
+  steps); registered in Credence (`brand_new:1`) + Ality. An in-session ADVERSARIAL code review of the 5
+   sees was run (not a live run). **LIVE-GATE OWED** — blocked on a foregrounded runner tab (the freeze
+    problem); `run MusuVend --runner=<prefix>` → accept → confirm 5 sees + green ×2 (no entropy warming).
+
 **2026-07-13 (night) — the blessed wave: cp-landing + the fold ("build it!").** The human blessed the
  cp-landing + magazine-fold wave, and it landed live green ×2 (on runner 3c52 — 49de and 20e3 both
   froze mid-session: backgrounded browser tabs freeze via Page Lifecycle, so a runner only steps while

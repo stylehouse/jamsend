@@ -624,3 +624,229 @@ MusuHeist_witness(w):
     for (const r of uno_lib.o({ Record: 1 })) { if (r.sc.source || r.sc.from || r.oa({ from: 1 })) no_attribution = 0 }
     for (const r of duo_lib.o({ Record: 1 })) { if (r.sc.source || r.sc.from || r.oa({ from: 1 })) no_attribution = 0 }
     if (T.oa({ flattened: 1 }) && !w.o({ Heist: 1 }).length && no_attribution && !T.oa({ see: 'the scaffolding flattened away — no heist stands and nothing attributes who gave what' })) this.MusuHeist_note(w, { see: 'the scaffolding flattened away — no heist stands and nothing attributes who gave what' })
+
+// ══ MusuVend — M2: two-Pier MAGAZINE replication, grant-gated (Radio_todo §12.4 M-rung) ══════════════
+//  The magazine (%Musica > %Cloud > %Record — Musica_fold, Ghost/M/Heist.g) is the LIGHT CATALOG FACE of a
+//   collection: the same census cards a %Library holds (id/artist/title/album/path) MINUS the audio payload.
+//    THE MUSURA QUESTION (the human, 2026-07-13): the MusuRa* streaming Books stock a real %Library but never
+//     publish a magazine from it — the two shapes fit (Musica_fold consumes exactly Ra_library's %Records) but
+//      nobody wired them.  This Book is the first wiring: it folds a magazine from a %Library and proves the
+//       magazine TRAVELS.  The origin folds a magazine IN MEMORY (no Berth) and OFFERS it over the existing
+//        Repli pipe — Repli_offer husk, and a magazine card is a leaf with no %Body, so no wants ever arise:
+//         the WHOLE tree crosses in ONE frame and the follower mirrors it (Repli_merge upserts any C** by
+//          loc-keys under the follower's mirror library).
+//  THE GATE is the point.  Repli_allowed asks w.c.repli_allow at EVERY leg (cached nowhere): granted → the
+//   magazine lands; revoked → the next draw is REFUSED and noted (Repli_offer returns did-it-cross=false);
+//    re-granted → the held-back draw catches up.  No existing Book flipped the grant on↔off — that gap is
+//     exactly M2/D1 (D1 later hardens this into the for-another DOOR with a Swarm_pier_live verdict + the
+//      sabotage scene; here the predicate is a Book-owned toggle so the mechanism reads clean).
+//  RANDOMIC (the human's clarification 2026-07-13): a %Cloud is a RANDOM DRAW — a handful MEANDERED out of a
+//   collection NEVER fully enumerated (Crate_meander random-walks the crate track by track — Crate.g).  So the
+//    magazine is random samples accreting over time, not a full census; randomic is the draw's fingerprint.
+//     This Book stands the unbounded crate in as a fixed POOL and draws two DISJOINT deterministic handfuls (so
+//      the fixture is stable) while randomic carries a seeded fingerprint — meander fidelity itself is a Crate
+//       concern proven elsewhere; here the point is the wire + the gate.
+//  IN-MEMORY + DETERMINISTIC: no FSA, no real audio, no Berth — so it runs on ANY runner (not only an FSA-
+//   granted one) and its fixture is jitter-free (NO AudibleEntropy profile).  The two Piers are a Lake_link
+//    loopback pair (MusuReplica's setup); the magazine root rides the wire as %Mag,Musica (the snappable shape
+//     MusuHeist's fold proved — not a raw %Musica mainkey), so the follower's mirror subtree snaps as DATA.
+//  CONVENTION (Musu*): no Run_A_ recipe — the world MUST be named MusuVend (do_fn_for dispatches by w.sc.w).
+
+MusuVend(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuVend_drive,w,req
+        req%ok = 1
+
+// MusuVend_T / MusuVend_note — the one %testing subtree: every observation the test makes hangs here, off the
+//  design tree (the wire + the two Piers + the magazines live on w as first-class C).  c.up stamped so an
+//   upward walk from a marker reaches w.
+MusuVend_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+MusuVend_note(w, sc):
+    let t = this.MusuVend_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+// MusuVend_drive — needs the Peeroleum spine (skips cleanly headless).  ONE protocol action per beat off
+//  step_n (req-local did_step, Musu family style); the witness runs EVERY pass so each %see fires the first
+//   pass its truth holds (frames settle over post_do between beats, so an offer sent at beat K lands at K+1).
+async MusuVend_drive(w, req):
+    if (typeof this.Lake_link !== 'function' || typeof this.Peeroleum_send !== 'function') {
+        if (!this.MusuVend_T(w).oa({ skipped: 'no_transport' })) this.MusuVend_note(w, { skipped: 'no_transport' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuVend_setup(w)
+        if (n === 3) await this.MusuVend_publish(w, 'a')
+        if (n === 5) await this.MusuVend_revoke(w)
+        if (n === 7) await this.MusuVend_resume(w)
+        if (n === 4 || n === 6 || (n >= 8 && n <= 11)) await this.MusuVend_pump(w)
+    }
+    this.MusuVend_witness(w)
+    await this.Musu_float(w)
+
+// MusuVend_setup — stand up the two Piers over the loopback (Lake_link), arm the repli handlers, and build the
+//  ORIGIN side: a %Library standing in for a stocked collection, the in-memory magazine folded from it, and the
+//   POOL the draws meander.  The FOLLOWER's mirror shelf is named so arriving lines merge there.  The grant is a
+//    Book-owned toggle (D1 swaps in the live Swarm verdict); ON for the follower at the start.
+async MusuVend_setup(w):
+    this.MusuVend_note(w, { reached: 'step_2' })
+    let link = await this.Lake_link(w, 'Origin', 'Follower')
+    w.c.tx = link[0]
+    w.c.rx = link[1]
+    this.Peeroleum_arm_whittle(w)
+    link[1].i({ Ud: 1, pubkey: 'Origin' })
+    link[0].i({ Ud: 1, pubkey: 'Follower' })
+    this.Repli_arm(w)
+    // the follower's mirror shelf (Repli_mirror_lib reads w.c.repli_mirror_pier) + register the receiving port.
+    w.c.repli_mirror_pier = 'Follower.mirror'
+    this.Repli_register_rx(w, link[1])
+    // the origin shelf + its magazine.  register the origin port as a caster (a magazine has no chunks, so no
+    //  want ever arrives — but the enrolment keeps the wiring honest to the multi-caster convention).
+    let origin_lib = w.i({ Library: 1, pier: 'Origin' })
+    origin_lib.c.up = w
+    w.c.origin_lib = origin_lib
+    w.c.repli_src = origin_lib
+    this.Repli_register_caster(w, link[0], origin_lib)
+    let mag = w.i({ Mag: 'Musica' })
+    mag.c.up = w
+    w.c.origin_mag = mag
+    // the grant: ON for the follower.  Repli_allowed asks (peer=to, at=from) at every leg — repli_allow reads
+    //  the toggle live, so a revoke between two offers shuts the second (the "cached nowhere" property).
+    w.c.grants = { Follower: 1 }
+    w.c.repli_allow = (peer, at) => !!(w.c.grants && w.c.grants[peer])
+    // the unbounded collection stood in as a fixed pool (a real origin meanders Crate_meander through a share
+    //  it never fully enumerates).  Two disjoint handfuls, one per draw; seeded so the fixture is reproducible.
+    this.Ra_seed(w, 'MusuVend')
+    w.c.pool = [
+        { id: 't0', artist: 'Auteur', title: 'Meander One', path: 'crate/a/Auteur - Meander One.opus' },
+        { id: 't1', artist: 'Auteur', title: 'Meander Two', path: 'crate/a/Auteur - Meander Two.opus' },
+        { id: 't2', artist: 'Bassbin', title: 'Low Draw', path: 'crate/b/Bassbin - Low Draw.opus' },
+        { id: 't3', artist: 'Bassbin', title: 'Deep Draw', path: 'crate/b/Bassbin - Deep Draw.opus' },
+        { id: 't4', artist: 'Choral', title: 'High Draw', path: 'crate/c/Choral - High Draw.opus' },
+        { id: 't5', artist: 'Choral', title: 'Long Draw', path: 'crate/c/Choral - Long Draw.opus' }
+    ]
+    w.c.set_up = 1
+
+// MusuVend_meander — a random DRAW: take `count` tracks from the pool (a fixed slice for a stable fixture,
+//  standing for Crate_meander over an unbounded crate), add any not already on the origin shelf as %Records —
+//   a %Stream handle rides each so the LIBRARY card is streamable (the magazine card folded from it will be a
+//    bare identity leaf, proving the sublimation).  Returns { ids, randomic }; randomic is the seeded draw-
+//     fingerprint the %Cloud wears (the human: randomic = it was randomly pulled from the collection).
+MusuVend_meander(w, from, count):
+    let pool = w.c.pool || []
+    let ids = []
+    let i = from
+    while (i < from + count && i < pool.length) {
+        let t = pool[i]
+        let rec = w.c.origin_lib.oai({ Record: 1, id: t.id })
+        rec.c.up = w.c.origin_lib
+        rec.sc.artist = t.artist
+        rec.sc.title = t.title
+        rec.sc.path = t.path
+        let st = rec.oai({ Stream: 1, name: 'audio' })
+        st.c.up = rec
+        st.sc.total = 8
+        st.sc.have = 0
+        ids.push(t.id)
+        i = i + 1
+    }
+    let randomic = 'd' + this.Ra_rand(w, 1000000000).toString(36)
+    return { ids: ids, randomic: randomic }
+
+// MusuVend_publish — meander a draw into the shelf, FOLD it into the magazine (Musica_fold — the shared brain),
+//  then OFFER the whole magazine to the follower.  Returns did-it-cross (false when the grant refuses).  The
+//   note carries the DATA (which draw, the magazine card count) so the snap reads the magazine growing.
+async MusuVend_publish(w, which):
+    let draw = (which === 'a') ? this.MusuVend_meander(w, 0, 3) : this.MusuVend_meander(w, 3, 3)
+    let ts = (which === 'a') ? 1000 : 2000
+    if (which === 'a') { w.c.draw_a = draw.ids }
+    if (which === 'b') { w.c.draw_b = draw.ids }
+    await this.Musica_fold(w.c.origin_mag, w.c.origin_lib, draw.randomic, ts)
+    let crossed = await this.Repli_offer(w, w.c.tx, 'Origin', 'Follower', w.c.origin_mag)
+    let row = { offered: which, cards: this.Musica_cards(w.c.origin_mag).length }
+    if (crossed) { row.crossed = 1 }
+    this.MusuVend_note(w, row)
+    return crossed
+
+// MusuVend_revoke — pull the follower's grant, then publish the SECOND draw.  The magazine grows at the origin
+//  (a second %Cloud folds in) but the offer is REFUSED at the gate — nothing crosses, and the refusal is noted.
+async MusuVend_revoke(w):
+    this.MusuVend_note(w, { reached: 'revoke' })
+    w.c.grants.Follower = 0
+    let crossed = await this.MusuVend_publish(w, 'b')
+    if (!crossed) { this.MusuVend_note(w, { refused: 'b' }) }
+
+// MusuVend_resume — re-grant, then re-offer the whole magazine.  The gate was consulted LIVE, so the held-back
+//  second draw now crosses and the follower catches up to both clouds.
+async MusuVend_resume(w):
+    this.MusuVend_note(w, { reached: 'resume' })
+    w.c.grants.Follower = 1
+    let crossed = await this.Repli_offer(w, w.c.tx, 'Origin', 'Follower', w.c.origin_mag)
+    let row = { resumed: 1 }
+    if (crossed) { row.crossed = 1 }
+    this.MusuVend_note(w, row)
+
+// MusuVend_pump — process the follower's receive side so a delivered repli_lines frame merges into the mirror.
+async MusuVend_pump(w):
+    if (w.c.rx) { await w.c.rx.do() }
+
+// MusuVend_card — find a magazine card by id across every cloud (the flat catalog view — Musica_cards).
+MusuVend_card(mag, id):
+    if (!mag) return null
+    for (const rec of this.Musica_cards(mag)) { if (rec.sc.id === id) return rec }
+    return null
+
+// ── the witness — %see gated on TRUTH not beat number, once-noticed under %testing (the modern assertion,
+//  no commas no apostrophes, em-dash pauses).  Reads the follower's live mirror magazine + the origin's. ──
+MusuVend_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 3)) return
+    if (!w.c.set_up) return
+    let T = this.MusuVend_T(w)
+    let omag = w.c.origin_mag
+    let mir = this.Repli_mirror_lib(w)
+    let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
+    let a_ids = w.c.draw_a || []
+    let b_ids = w.c.draw_b || []
+    // #1 the magazine crossed: the follower mirrors the first draw — every card present by id with its identity
+    //  scalars (title/artist/path) byte-faithful to the origin's, grouped under a cloud.
+    let crossed_ok = vmag && a_ids.length ? 1 : 0
+    for (const id of a_ids) {
+        let vc = this.MusuVend_card(vmag, id)
+        let oc = this.MusuVend_card(omag, id)
+        if (!vc || !oc || vc.sc.title !== oc.sc.title || vc.sc.artist !== oc.sc.artist || vc.sc.path !== oc.sc.path) { crossed_ok = 0 }
+    }
+    if (crossed_ok && !T.oa({ see: 'a magazine crossed the wire — the follower mirrors every record of the first draw with its identity intact' })) this.MusuVend_note(w, { see: 'a magazine crossed the wire — the follower mirrors every record of the first draw with its identity intact' })
+    // #2 the catalog not the payload: every crossed card is an identity LEAF (no stream no body beneath it) even
+    //  though the origin LIBRARY record it was folded from carries a streamable %Stream handle — the sublimation.
+    let light = vmag ? 1 : 0
+    if (vmag) {
+        for (const card of this.Musica_cards(vmag)) { if (card.o().length) { light = 0 } }
+        let heavy = w.c.origin_lib && w.c.origin_lib.o({ Record: 1 }).length && w.c.origin_lib.o({ Record: 1 }).every((r) => r.o({ Stream: 1 }).length)
+        if (!heavy) { light = 0 }
+    }
+    if (light && !T.oa({ see: 'the magazine is the catalog not the payload — each crossed card is an identity leaf while the library record it sublimed from stays streamable' })) this.MusuVend_note(w, { see: 'the magazine is the catalog not the payload — each crossed card is an identity leaf while the library record it sublimed from stays streamable' })
+    // #3 the grant gates the wire: after the revoke the follower NEVER received the second draw — the offer was
+    //  refused and noted, and not one card of draw B reached the mirror.  Gate on the refusal being noted so this
+    //   cannot fire before the revoke (draw B is trivially absent before it exists); once-noticed latches it.
+    let refused = T.oa({ refused: 'b' })
+    let b_absent = 1
+    for (const id of b_ids) { if (this.MusuVend_card(vmag, id)) { b_absent = 0 } }
+    if (refused && b_absent && b_ids.length && !T.oa({ see: 'the grant gates the wire — a revoked follower never received the second draw and the refusal was noted' })) this.MusuVend_note(w, { see: 'the grant gates the wire — a revoked follower never received the second draw and the refusal was noted' })
+    // #4 consulted live not cached: re-granting let the held-back draw cross — the follower now holds BOTH draws.
+    let both = vmag && a_ids.length && b_ids.length ? 1 : 0
+    for (const id of a_ids) { if (!this.MusuVend_card(vmag, id)) { both = 0 } }
+    for (const id of b_ids) { if (!this.MusuVend_card(vmag, id)) { both = 0 } }
+    if (both && !T.oa({ see: 'the grant is consulted live not cached — re-granting let the held-back draw cross and the follower caught up' })) this.MusuVend_note(w, { see: 'the grant is consulted live not cached — re-granting let the held-back draw cross and the follower caught up' })
+    // #5 the cloud layer survived: the follower holds two DISTINCT clouds by their draw-fingerprints and arrival
+    //  stamps — not one merged blur (proves the repli_loc reconcile; without it the second cloud upserts the first).
+    let clouds = vmag ? vmag.o({ Cloud: 1 }) : []
+    let two_distinct = clouds.length === 2 && clouds[0].sc.randomic !== clouds[1].sc.randomic && clouds[0].sc.created_at !== clouds[1].sc.created_at
+    if (two_distinct && !T.oa({ see: 'each random draw kept its own cloud across the wire — the follower holds two distinct clouds not one merged blur' })) this.MusuVend_note(w, { see: 'each random draw kept its own cloud across the wire — the follower holds two distinct clouds not one merged blur' })
