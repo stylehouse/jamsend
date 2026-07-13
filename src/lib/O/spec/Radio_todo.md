@@ -23,6 +23,21 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**C2 — THE HEAL (`%Renamed` redirect): LIVE-GREEN ×2 (2026-07-14; 7/7 steps, caveat:0).** New Book
+ **MusuHeal** (`Ghost/Story/Heistation.g`, after MusuCursor) grows C1's clean-fail verdict into a HEAL:
+  when a cursor's named level is gone, `Cursor_resolve` consults recent `%Renamed,key,from,to` markers beside
+   the last node reached and retries with the redirect (`Cursor_heal` in `Ghost/M/Heist.g`), landing on the
+    moved node and NOTING what it healed (`heals:[{key,from,to}]`). The marker rides IN the magazine beside the
+     renamed node (a positive, window-able cousin of `%Tombstone`/`%UnGrant`), so a follower heals through the
+      same pipe the content came down. `Renamed_mint(parent,key,from,to,at)` mints one. THE DISCRIMINATION
+       (non-vacuity baked in): the Book renames two records identically, ONE with a marker and ONE without — the
+        marked cursor heals to `t1b` noting `from:t1→to:t1b`, the unmarked one fails cleanly (`missing t2`). So
+         the heal is provably the marker's doing — the one-line regression (drop the `Renamed_mint`) flips the
+          heal sees red while the control stays green. Adversarial review confirmed SOUND + falsifiable; it flagged
+           steps 3/5 lacked `reached:` markers (silent-un-latch risk) → both added. The heal is TRANSPARENT to an
+            un-renamed cursor (MusuCursor re-ran green, caveat:0, after the `Cursor_resolve` change). Registered
+             Credence + Ality. `Credulate` pins the fresh gen (`Heist~g1 @f52331c1`, `Heistation~g1 @b80b9c7a`).
+
 **C1 — CURSORS (`%Dogear`): LIVE-GREEN ×2 (2026-07-13; 6/6 steps, caveat:0).** New Book **MusuCursor**
   (`Ghost/Story/Heistation.g`, after MusuDoor) + the cursor primitive (`Cursor_*` in `Ghost/M/Heist.g`).
    The human's steer was to **model the cursor on `%lematch`**: a `%Dogear` is a linear spine of `%curs`
@@ -1374,6 +1389,13 @@ A %Cursor is a serialized STACK OF MATCHES — a descent path of o()-queries ({M
        rides as `wild:<Type>` (re-inflated to `{Type:1}`), literal pins flat, so it round-trips without the
         `Cloud:"1"` footgun and is KEY-AGNOSTIC (absorbs the §0 Cloud-model change). Proven by **MusuCursor**
          (three sees: lands-on-leaf, lands-on-a-level, clean-fail), LIVE-GREEN ×2.
+ **C2 THE HEAL — LIVE-GREEN ×2 (MusuHeal, 2026-07-14):** `Cursor_resolve` grew a heal branch — a failing level
+  consults recent `%Renamed,key,from,to` markers beside the last node reached (`Cursor_heal`) and retries with
+   the redirect, landing on the moved node and recording `heals:[{key,from,to}]`. `Renamed_mint` lays a marker
+    beside the renamed node IN the magazine (a positive, window-able cousin of `%Tombstone`/`%UnGrant`, `at:`-
+     stamped, newest-wins). The heal is transparent to an un-renamed cursor (no marker → empty `heals` → C1's
+      verdict unchanged). MusuHeal proves it with a marked/unmarked twin: the marked cursor heals to the new
+       identity, the unmarked one fails cleanly — the marker is provably load-bearing.
 
 ### 12.4 The jobs ladder — little, Book-gated, mostly independent starts
 
@@ -1417,8 +1439,9 @@ Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the
                     vacuously green, the worst false-green; adversarially review AND live-gate it.
  **C — cursors**: C1 the %Dogear primitive + resolver (resolve | fail cleanly, own Book scenes) —
   BUILT + LIVE-GREEN ×2 as MusuCursor (§12.3, 2026-07-13);
-   C2 heal via recent %Renamed (rename mid-follow, the cursor heals, the heal noted — plugs into C1's clean-
-    fail verdict); C3 cursor as follow-progress, berthed (survives reload — the resumable browse).
+   C2 ✓ heal via recent %Renamed (MusuHeal, LIVE-GREEN ×2 2026-07-14 — the `%Renamed` fact-shape + `Cursor_heal`
+    landed here; M3 mints the same markers from a real rename mission later); **C3 (NEXT) cursor as follow-
+     progress, berthed** (survives reload — the resumable browse; leans on MusuBerth's proven round-trip).
  **S — stimuli surfacing**: S2 the agenda bridge (a want the door accepted mints an %Errand on
   the Brink — the owner SEES the want); S3 the heist rides it — the want-driven front door
    (§10.2 #4 merges here: genre starts + the origin's Waft:Map advice; klepto demotes to one
@@ -1427,11 +1450,12 @@ Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the
   build AFTER the rungs give it real data.
  (P — the projected subHouse — PARKED as experiment material per the 12.1 ruling; do not build.)
  Dependencies: M1 ✓ (landed + live-recorded 2026-07-13); M2 ✓ (LIVE-GREEN ×2 2026-07-13); D1 part b ✓
-  (MusuDoor, the sabotage wall, LIVE-GREEN ×2 2026-07-13); C1 ✓ (MusuCursor cursors,
-   LIVE-GREEN ×2 2026-07-13). **D1 part a** (harden the grant
+  (MusuDoor, the sabotage wall, LIVE-GREEN ×2 2026-07-13); C1 ✓ (MusuCursor cursors, LIVE-GREEN ×2 2026-07-13);
+   C2 ✓ (MusuHeal, the %Renamed heal, LIVE-GREEN ×2 2026-07-14). **D1 part a** (harden the grant
     toggle into the live Swarm_pier_live door — one revoke-mid-relationship scene, best folded into MusuHeist;
-     reintroduces seal entropy, ATTENDED) is the remaining door rung; M4 needs M1 + M3; C2 needs M3 + C1;
-      S3 needs D1 + M2 + S2; U needs M2 + C1.
+     reintroduces seal entropy, ATTENDED) is the remaining door rung; M4 needs M1 + M3; **M3** (mint `%Renamed`
+      from a real rename mission + replicate — the fact-shape already proven by C2) is now the natural next M
+       rung; **C3** (berth a `%Dogear`) needs C1 ✓ only; S3 needs D1 + M2 + S2; U needs M2 + C1.
 
 ### 12.5 The heist wriggles in — every gear re-homes into making | replicating | responding
 

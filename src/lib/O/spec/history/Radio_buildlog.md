@@ -5,6 +5,23 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
   The living state, roadmap and design are in Radio_todo.md — read THAT; come here only for
    the archaeology of how a thing landed. Newest first.
 
+**2026-07-14 — C2: the cursor HEAL via `%Renamed` redirect-facts (MusuHeal), LIVE-GREEN ×2.** Straight on from
+ C1: grew `Cursor_resolve`'s clean-fail verdict into a HEAL. When a named level is gone, `Cursor_heal` (new,
+  `Ghost/M/Heist.g`) looks beside the last node reached for a `%Renamed,key,from,to` marker and retries the query
+   with the pin remapped to `to`, recording `heals:[{key,from,to}]` — "noting what it healed" (§12.3). The marker
+    rides IN the magazine beside the renamed node — a POSITIVE, window-able (`at:`-stamped, newest-wins) cousin of
+     the `%Tombstone`/`%UnGrant` decision-facts — so a follower heals through the same pipe the content came down.
+      `Renamed_mint(parent,key,from,to,at)` lays one. Book **MusuHeal** (`Heistation.g`, after MusuCursor) proves it
+       with a marked/unmarked TWIN: rename t1→t1b WITH a marker and t2→t2b WITHOUT, then re-resolve — the marked
+        cursor heals to t1b noting from:t1→to:t1b, the unmarked one fails cleanly (missing t2). So the heal is
+         provably the marker's doing (the one-line regression = drop the mint → heal sees go red, control stays
+          green). Adversarial review: SOUND + falsifiable; it caught steps 3/5 missing a `reached:` marker
+           (silent-un-latch risk) → both added. The heal is TRANSPARENT to an un-renamed cursor — MusuCursor
+            re-ran green (caveat:0) after the `Cursor_resolve` change, no re-record needed. Recorded 7/7 caveat:0
+             on the reloaded 49de (which survived the ghost-compile HMR this time — the earlier wedge was a
+              one-off), accept, green ×2. NEXT on the C track: C3 (berth a `%Dogear` as follow-progress). The
+               `%Renamed` fact-shape landing here also tees up M3 (mint the same marker from a real rename mission).
+
 **2026-07-13 (late evening) — C1: cursors (`%Dogear`), LIVE-GREEN ×2.** The human's steer: `%Cursor`/`%cursor`
  are taken (LiesKeep focus-history + LangCurse Interest), so "try `%lematch` — make it like that." A `%Dogear`
   is a linear spine of `%curs` match-segments, each storing ONE `o()`-query; `Cursor_resolve(dog, root)` re-finds
