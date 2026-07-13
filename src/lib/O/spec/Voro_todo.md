@@ -105,17 +105,23 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
          the share cut is invisible to it (its only drift is a transient `Snap:cytowave` animation
           artifact, pre-existing timing noise); it's `%unusual` anyway.  (**VoroRadioPier RETIRED**
            `5f6b5d29` — the human: "this suite is about form not the Pier"; the roster is five Books now.)
-      **// < born|died — REFRAMED (the human, 2026-07-13): openness contamination, not death
-       semantics.**  The scape sphere already watches the DATA openness-blind (the crush stamps
-        `c.stuff` in place, never reparents — why `%Se:input` came out clean).  born|died then
-         FILTER the news by fold-status, and fold-status = data × openness — one number mixing the
-          world moving (real mitosis) with the viewer moving (the governor turning the dial: a
-           demotion is an UNDRESSING counted as apoptosis by the `grasp_prev_folds` arithmetic
-            because it only counts silhouettes).  Fix shape: fold-status becomes an ANNOTATION on
-             the remembered D (one voice mark) — not a filter on who is remembered — then ONE
-              resolve separates born|died (data mitosis) from folded|unfolded (dial turns).
-               "Crawl more places" is the same sphere widened when flora nests; the subject stays
-                the-data-as-it-is.  Cut deferred — the ×4 re-record lands first.
+      **LANDED (2026-07-13, `bb1c2ecf`): born|died vs folded|unfolded — THE OPENNESS SPLIT.**
+       The reframe held exactly: fold-status rides each remembered subject as an ANNOTATION and one
+        resolve separates the pairs.  One placement discovery: the mark lives on the SOURCE particle
+         (`src.c.was_fold`), NOT the D — `o_Seem` REPLACES the topD every resolve (fresh D objects;
+          survivor identity is content-paired), so a D-side mark dies with its beat; the flora
+           persists, and a goner's D still holds its source object (`d.c.C`), so `died` reads our own
+            last-beat mark off the departed — the "stale goner can't be re-read" problem dissolves
+             (staleness IS the question).  `died` is now DIRECT (a goner that wore the mark), never
+              the `prev+born−grasped` silhouette arithmetic (deleted, with `w.c.grasp_prev_folds`);
+               `folded|unfolded` = a survivor whose mark flipped, snapped on `Se:scape` ONLY when the
+                viewer moved (absence is the quiet reading, after `regions` so quiet rows keep their
+                 byte-order).  **VoroTest #31** gates it at the popped Example's mutate beat — one row
+                  reads `born:0,died:0,folded:1,unfolded:1` (the pop + the spill re-gang, zero
+                   mitosis) — adversarially proven both ways (lose the annotation → dies; book
+                    undressings as died → dies).  The old arithmetic's lies live on
+                     demotion-without-redress beats: VoroMitosis fixtures show old `died:1` rows now
+                      reading `unfolded:1` — the re-record diff carries that proof.
  - **④ Geometry folds into `Voro.g`.**  The pure maths (hull, clip, resample, PCA, river order,
     Catmull) folds into `Voro.g` — NOT a new `VoroGlass.ts` (the human decided AGAINST a .ts
      module).  A later wave; it will feel out the LangTiles parse-storm on closure-heavy raw JS.
@@ -477,7 +483,9 @@ New words get a line HERE when they enter the system; an ill-defined word is a b
    (phase-level provenance: `%Se:input|scape|census|drift`).
 - **weather / %Se:input** — arrivals|departures of the data itself, openness-blind.
 - **openness** — the zoom state (crush level, pops).  Moves ON the remembered things (an
-   annotation), never decides WHO is remembered (the born|died reframe).
+   annotation), never decides WHO is remembered (the born|died reframe — LANDED `bb1c2ecf`:
+    the mark is `src.c.was_fold` on the SOURCE particle; `Se:scape` says `folded:N`/`unfolded:N`
+     only on a beat the dial turned, while born|died stay pure mitosis).
 
 ## The Se process — %Seem the organ, %Se the reading (the doctrine, and how to build with it)
 
