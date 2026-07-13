@@ -56,7 +56,7 @@ const TEST_TONES: Array<{ artist: string, title: string, freq: number, secs: num
     { artist: 'DJ Oscillo',   title: 'Cosmic C', freq: 1046.5, secs: 78 },
 ]
 
-// wav_bytes — a mono 16-bit PCM WAV of a pure sine (20ms fade in/out to avoid clicks).  Binary encode is
+// pcm_sine — mono PCM of a pure sine (20ms fade in/out to avoid clicks).  Binary encode is
 //  DSL-hostile, so it lives here (break-glass) and the .g Book orchestrates.  decodeAudioData reads it.
 //  8kHz sample rate is DELIBERATE, not a stub: the highest tone is 1760Hz, so Nyquist (4kHz) keeps 2.3x
 //   headroom — the sines are captured losslessly, yet the files are ~6x smaller than 48kHz (a 70s track is
@@ -66,25 +66,21 @@ const TEST_TONES: Array<{ artist: string, title: string, freq: number, secs: num
 //  amp is the sine's linear amplitude (0.6 = the shared default, ~-7.5 LUFS on these tones — RaStock
 //   gains that DOWN to -14); a caller passes a quieter value to lay down a below-target track (Dorian D)
 //    that RaStock has to gain UP to -14 instead, proving the boost direction.
-function wav_bytes(freq: number, secs: number, sr = 8000, amp = 0.6): Uint8Array {
+//  (Was wav_bytes, which ALSO wrapped the samples in a bare RIFF container — the reason every generated
+//   test file carried NO tags.  The container now comes from Crate_wav_with_tags — the ghost's hand-rolled
+//    LIST/INFO writer — so every file carries IART/INAM tags agreeing with its filename, and the synth
+//     here returns just the PCM.)
+function pcm_sine(freq: number, secs: number, sr = 8000, amp = 0.6): Float32Array {
     const n = Math.floor(sr * secs)
     const fade = Math.min(Math.floor(sr * 0.02), Math.floor(n / 2))
-    const dataLen = n * 2
-    const buf = new ArrayBuffer(44 + dataLen)
-    const dv = new DataView(buf)
-    const wstr = (o: number, s: string) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)) }
-    wstr(0, 'RIFF'); dv.setUint32(4, 36 + dataLen, true); wstr(8, 'WAVE')
-    wstr(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true)
-    dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true)
-    wstr(36, 'data'); dv.setUint32(40, dataLen, true)
+    const out = new Float32Array(n)
     for (let i = 0; i < n; i++) {
         let env = 1
         if (i < fade) env = i / fade
         else if (i > n - fade) env = (n - i) / fade
-        const s = Math.sin(2 * Math.PI * freq * i / sr) * amp * env
-        dv.setInt16(44 + i * 2, Math.max(-1, Math.min(1, s)) * 32767, true)
+        out[i] = Math.sin(2 * Math.PI * freq * i / sr) * amp * env
     }
-    return new Uint8Array(buf)
+    return out
 }
 
 // HAVOC_LIMBS — the havoc drum-machine's reusable behaviours, keyed by limb kind.
@@ -2150,7 +2146,12 @@ await M.eatfunc({
                 const prog = w.i({ generating: TEST_TONES.length, dir })
                 const writes = TEST_TONES.map(t => {
                     const name = `${t.artist} - ${t.title}.wav`
-                    const run = bounded(nav.bin_write(dir, name, wav_bytes(t.freq, t.secs, undefined, t.amp)), `bin_write ${name}`)
+                    // the container comes from the ghost's tag writer, so every generated file carries real
+                    //  RIFF INFO tags (IART/INAM) that AGREE with its filename — the collection is
+                    //   tagged-by-default now, and the census reads tags first, path as fallback.  (The one
+                    //    deliberately DISAGREEING file stays MusuHeist's plant — its specialness sharpens.)
+                    const body = (H as any).Crate_wav_with_tags(pcm_sine(t.freq, t.secs, undefined, t.amp), 8000, { artist: t.artist, title: t.title })
+                    const run = bounded(nav.bin_write(dir, name, body), `bin_write ${name}`)
                         .then(r => { prog.i({ file_written: name }); return r })
                     return { name, run }
                 })
@@ -2166,8 +2167,22 @@ await M.eatfunc({
                 }
                 // done: retire the live `generating` anchor and stamp the durable completion the witness gates
                 //  on — count, dir, and each file by name — so the SETTLED snap is fully descriptive too.
+                //  PROVE the tags landed (not just that writes settled): read ONE file back off the disk and
+                //   scan its header for the IART/INAM fourccs — markers only the tagged container carries.
+                //    This is the empirical gate for the whole re-tagging: a `generated` row LACKING `tagged`
+                //     means the old bare-WAV code ran (a stale module — reload the tab), never a half-write.
+                let tagged = 0
+                try {
+                    const back = await bounded(nav.bin_read(dir, writes[0].name), `bin_read ${writes[0].name}`)
+                    const u8 = new Uint8Array(back).slice(0, 512)
+                    let head = ''
+                    for (let i = 0; i < u8.length; i++) head += String.fromCharCode(u8[i])
+                    if (head.includes('IART') && head.includes('INAM')) tagged = 1
+                } catch {}
                 w.drop(prog)
-                const g = w.i({ generated: settled.length, dir })
+                const row: any = { generated: settled.length, dir }
+                if (tagged) row.tagged = 1
+                const g = w.i(row)
                 for (const x of writes) g.i({ file_written: x.name })
             })
         },

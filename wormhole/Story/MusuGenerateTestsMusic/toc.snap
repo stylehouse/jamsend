@@ -4,27 +4,27 @@ story:MusuGenerateTestsMusic
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.388
-      sample=0.371,at=1783405797
-      sample=0.57,at=1783405828
-      sample=0.311,at=1783418374
-      sample=0.311,at=1783418386
+    TimeTotal:beliefs,avg=0.398
       sample=0.295,at=1783418391
       sample=0.383,at=1783442674
       sample=0.483,at=1783443762
       sample=0.395,at=1783859075
       sample=0.373,at=1783902207
       sample=0.392,at=1783905814
-    TimeTotal:step,avg=0.194
-      sample=0.185,at=1783405797
-      sample=0.285,at=1783405828
-      sample=0.156,at=1783418374
-      sample=0.156,at=1783418386
+      sample=0.422,at=1783906322
+      sample=0.422,at=1783906345
+      sample=0.422,at=1783906346
+      sample=0.396,at=1783906350
+    TimeTotal:step,avg=0.199
       sample=0.147,at=1783418391
       sample=0.191,at=1783442674
       sample=0.242,at=1783443762
       sample=0.198,at=1783859075
       sample=0.186,at=1783902207
       sample=0.196,at=1783905814
-  step,dige:5d7bdf139a06c7d1
-  step=2,dige:5d7bdf139a06c7d1
+      sample=0.211,at=1783906322
+      sample=0.211,at=1783906345
+      sample=0.211,at=1783906346
+      sample=0.198,at=1783906350
+  step,dige:f18e9578f7a37b50
+  step=2,dige:395fa4ffe2aa8b8b

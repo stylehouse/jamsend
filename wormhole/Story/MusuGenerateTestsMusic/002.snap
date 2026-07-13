@@ -1,12 +1,12 @@
 Snap:H
   H:MusuGenerateTestsMusic,Run
     A:MusuGenerateTestsMusic
-      self,round=2	{"mung":["age"]}
+      self,round=3	{"mung":["age"]}
       w:MusuGenerateTestsMusic
-        self,round=2	{"mung":["age"]}
+        self,round=3	{"mung":["age"]}
         req:wrangle,eternal,ok
         req:gen_testsounds,finished
-        generated=8,dir:testsounds
+        generated=8,dir:testsounds,tagged
           file_written:The Sines - Deep A.wav
           file_written:The Sines - Middle A.wav
           file_written:The Sines - High A.wav

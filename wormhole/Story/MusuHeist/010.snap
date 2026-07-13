@@ -18,8 +18,8 @@ Snap:H
           manifest:uno,fresh=3
           heisted:uno,landed=3,faithful=3,took_named=3,streamed
             on_disk:4t-mathrock/Fourier Four/Tagged Truth.wav,bytes=8110
-            on_disk:4t-mathrock/Fourier Four/Echo E.wav,bytes=960044
-            on_disk:4t-mathrock/Fourier Four/Query E.wav,bytes=1088044
+            on_disk:4t-mathrock/Fourier Four/Echo E.wav,bytes=960104
+            on_disk:4t-mathrock/Fourier Four/Query E.wav,bytes=1088104
           reached:job_duo
           see:the heist landed straight into the collection — every file byte-faithful to its source hash on the disk
           see:the landing filed by category — each track under the genre its filing named
@@ -31,21 +31,21 @@ Snap:H
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
               Idzeug:heist_1,to:Music,genre:Heist,spent
-              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783898882
+              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783906368
                 Peering,name:be0dab3303037ad2,friendly:Duo,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783898882,sign:e28405d09addb76ba92582e62f8705cd877d4da4bcf330899ed99aa7e0ae97b3162028aaaba658cd61a5db5ce30171a53819b2fbf2ee2cf13f0d9f68431fab0f,genre:Heist
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783898882,sign:9b36fdf9f89e60721c87c55c5858e4962e1b3399a8694cec8d6e43cecb5183f7910d89919cdaa7610e3f7485ace93ee11b7cafb00af18dd797d3784141b91603,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783906368,sign:4227823a23594953c53a8c4cdcd334b209cb3266ae42b009b1daea89a3830e719c5d8872c3c63243b0faef4b5490039435d6fc9b8483305dc2909da38cb55802,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783906368,sign:846eac1fdfb56ac12d2dfd539c319b702d480a21ed31d6899848dab6880a7fa1746758f68227cdd55b41da78a2380a702d0d8e00693b92fea83ce18ca730c90b,genre:Heist
             SocialGraph
-              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1783898882
+              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1783906368
         Account,of:Duo
           Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
             Peering,name:be0dab3303037ad2,friendly:Duo
-              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783898882
+              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783906368
                 Peering,name:4e09f34f5a6ab900,friendly:Uno,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783898882,sign:9b36fdf9f89e60721c87c55c5858e4962e1b3399a8694cec8d6e43cecb5183f7910d89919cdaa7610e3f7485ace93ee11b7cafb00af18dd797d3784141b91603,genre:Heist
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783898882,sign:e28405d09addb76ba92582e62f8705cd877d4da4bcf330899ed99aa7e0ae97b3162028aaaba658cd61a5db5ce30171a53819b2fbf2ee2cf13f0d9f68431fab0f,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783906368,sign:846eac1fdfb56ac12d2dfd539c319b702d480a21ed31d6899848dab6880a7fa1746758f68227cdd55b41da78a2380a702d0d8e00693b92fea83ce18ca730c90b,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783906368,sign:4227823a23594953c53a8c4cdcd334b209cb3266ae42b009b1daea89a3830e719c5d8872c3c63243b0faef4b5490039435d6fc9b8483305dc2909da38cb55802,genre:Heist
             SocialGraph
-              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1783898882
+              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1783906368
         Peering,name:4e09f34f5a6ab900,req=2,ok
           Pier,pub:be0dab3303037ad2,req=2,ok
             req:handshake,finished
@@ -80,52 +80,52 @@ Snap:H
                 emit=16,type:repli_lines,seq=16
                 emit=17,type:repli_lines,seq=17
                 emit=18,type:repli_lines,seq=18
-              emit=19,type:repli_lines,seq=19,sent,body_hash:2328532a00d0a04f1c6d8fabfe101556938cd408bf95288e32db608310473425,body_len=170,acked
-              emit=20,type:repli_page,seq=20,sent,body_hash:318cfbc3539746565c232e113e19ce75110cfb52238cb217e16e11e262a3efc9,body_len=262144,acked
-              emit=21,type:repli_page,seq=21,sent,body_hash:95a2a5b4a91aec9854684977919271337d888b3d5e5ca0978b16f2c6842fdd93,body_len=262144,acked
-              emit=22,type:repli_lines,seq=22,sent,body_hash:49e27514f86758c85a767e02d6fdb7fc8bb94173d046e330fbb8d248129d25e7,body_len=170,acked
-              emit=23,type:repli_page,seq=23,sent,body_hash:89621d7c9e5ab6ace093d5101ebf339d512671022c5997c5d601dd4762241091,body_len=262144,acked
-              emit=24,type:repli_page,seq=24,sent,body_hash:3c1fcf2361069e168979db433740d23117ea616c653eabebf2de0eb437a0b6aa,body_len=262144,acked
-              emit=25,type:repli_lines,seq=25,sent,body_hash:4c67bf13163dde8d45f2f9809f320665e1995bf749b3df57516d5c82eb28fbac,body_len=110,acked
-              emit=26,type:repli_page,seq=26,sent,body_hash:b2109cd86fe2bb1eeece86f6ebb8a0f3fffc624c50d69ad0306e12fdcf43ff69,body_len=199468,acked
-              emit=27,type:repli_lines,seq=27,sent,body_hash:ab4b46d1067672112ae2f94b49006fa0dbead11580044e993053d733fdc04f2a,body_len=170,acked
-              emit=28,type:repli_page,seq=28,sent,body_hash:9c60604c1e19de80c7c9f2a26fcd52713715d6c3a9b5d7c6abbd74658d68888a,body_len=262144,acked
-              emit=29,type:repli_page,seq=29,sent,body_hash:386cdbf0f5ab22691dedd791dae6e676b21354b538aa9d405feb0ab8bdaa40e1,body_len=262144,acked
-              emit=30,type:repli_lines,seq=30,sent,body_hash:7b494659b1b32f374956304584569a1c5735c74500b48ac45f78185dc1a1e1ad,body_len=170,acked
-              emit=31,type:repli_page,seq=31,sent,body_hash:3bdf76ea270e0de50db8fec32ef4a90bfd3934e613feb023c962b2473f94e52a,body_len=262144,acked
-              emit=32,type:repli_page,seq=32,sent,body_hash:9df6234a70b926ed87baa3e6e65e8962df7e2e1f66b5e0e666d43a330244de91,body_len=262144,acked
-              emit=33,type:repli_lines,seq=33,sent,body_hash:183a727d91a7ee2228a275aee528842dd9bc20b7877b0fa284cec92153c0cb54,body_len=111,acked
-              emit=34,type:repli_page,seq=34,sent,body_hash:f54f305cec4dffa7cea1deb375412fee0128cd3b65dab75783e183aeaa697b48,body_len=167468,acked
-              emit=35,type:repli_lines,seq=35,sent,body_hash:a4db54b9046c8b60b448988feea322b4513a7cd861647e501cc83aa6eee39373,body_len=172,acked
-              emit=36,type:repli_page,seq=36,sent,body_hash:49f3d69e37bee1f68ee721d2ab7bace6628c612f62027943525962dd372ec837,body_len=262144,acked
-              emit=37,type:repli_page,seq=37,sent,body_hash:340333fed617928ce84210ee5212cf3e351cb8703fb7920f6fb5c84e0d2c59dd,body_len=262144,acked
-              emit=38,type:repli_lines,seq=38,sent,body_hash:99d2429aed11d012ecbbc39480c67ae7664e7a87f7c546a002a46328715e743e,body_len=172,acked
-              emit=39,type:repli_page,seq=39,sent,body_hash:564d1488e92e206507e6d20690041d9b9ec87404e3ed750380934eefd62a5619,body_len=262144,acked
-              emit=40,type:repli_page,seq=40,sent,body_hash:1cbb580f0621af8290814cd3365a828b9a82df26225f08a7485da8d23f729b72,body_len=262144,acked
-              emit=41,type:repli_lines,seq=41,sent,body_hash:d5548baa515fbb4dc1db4ddbc8b2aece92b8a0dd8289f5083a7210845e6bb413,body_len=111,acked
-              emit=42,type:repli_page,seq=42,sent,body_hash:e947ce87730ad294da0355b5640f6cdc1221d9705a2a1640accc171fbab0930a,body_len=7468,acked
-              emit=43,type:repli_lines,seq=43,sent,body_hash:6de3f88eefc405dca2f8e56df129b47317f20fa983a6732249400f43bd0690e3,body_len=172,acked
-              emit=44,type:repli_page,seq=44,sent,body_hash:3b8bd47ffa5f5634091f90203fc115e7142f8cff97fc1950da466b8767e3229c,body_len=262144,acked
-              emit=45,type:repli_page,seq=45,sent,body_hash:12e7b0416f803184a4ee97058fe3675aae301108ac4942325b1908f0eb8b05ea,body_len=262144,acked
-              emit=46,type:repli_lines,seq=46,sent,body_hash:4b45247510f3e74e7a24904eca989fe403688338a23da1590b74e1a2f0c7e272,body_len=172,acked
-              emit=47,type:repli_page,seq=47,sent,body_hash:a461dcccea16e45015f7dea26370a4bfeb15dfd8020323747c3217135da8d331,body_len=262144,acked
-              emit=48,type:repli_page,seq=48,sent,body_hash:4a17ff0e97ca466240045141296033e0d4cef0c020d30882a0aa1541ee89ca39,body_len=262144,acked
-              emit=49,type:repli_lines,seq=49,sent,body_hash:ce668c6027cd0ffd27846502dc052660a6bb30b59ec378ee7a9ca0a9329afd7c,body_len=111,acked
-              emit=50,type:repli_page,seq=50,sent,body_hash:05573dc07859b20665346afbb1457193cf983dd4e24cb0ec6be66de661874adc,body_len=103468,acked
-              emit=51,type:repli_lines,seq=51,sent,body_hash:5b81fa18bf62a5f186bffd9ce9f29ee6b7d7f9c01c54473c95f890d668034bbb,body_len=172,acked
-              emit=52,type:repli_page,seq=52,sent,body_hash:a530fe2cf541bd97d3784923676298393cb8b27291d2b7fce5014e6e2ec7cfa7,body_len=262144,acked
-              emit=53,type:repli_page,seq=53,sent,body_hash:9db74005ce49d802ff22bf83f17255840848ec9a5fcb8bb37522d8666d87426f,body_len=262144,acked
-              emit=54,type:repli_lines,seq=54,sent,body_hash:2b0c4f5f54ab3f92bb397500366fc6b64138dfcc20a86f96296144a626b7cb59,body_len=172,acked
-              emit=55,type:repli_page,seq=55,sent,body_hash:15e48bc0b179a4c50e3d73b667bfe2435900e831a1c40f7b8cb0082206162b6f,body_len=262144,acked
-              emit=56,type:repli_page,seq=56,sent,body_hash:469dc47b98e0b049ed8e1b74f3d96b42898df17d937b4884bf945c3f49ebb64e,body_len=262144,acked
-              emit=57,type:repli_lines,seq=57,sent,body_hash:fb58b7a63c033b2e20ae5ab9fe0e9e4f5b683511c8dd5d49d85fa54b03d1ed38,body_len=111,acked
-              emit=58,type:repli_page,seq=58,sent,body_hash:135673b85c1a07f54b392dababc6b9722fd9e38d7af52b8d999c09df6027405b,body_len=231468,acked
-              emit=59,type:repli_lines,seq=59,sent,body_hash:e701f02083f651a8a4e3a81819b32fdbb91bb912e0af74f7f4964535206789b4,body_len=172,acked
-              emit=60,type:repli_page,seq=60,sent,body_hash:2b0f3aa506c501472446b95b9160690323818820dcf7610eaff9d6aad3f9bb65,body_len=262144,acked
-              emit=61,type:repli_page,seq=61,sent,body_hash:a358c1b93cd8e78d06a509206ff681941e63132d2e45070326bd05c42bf7e777,body_len=262144,acked
-              emit=62,type:repli_lines,seq=62,sent,body_hash:06cf29ee5e4e76eff763d01bf8c5e06f98385185b2f1fb51eb37f1297360009d,body_len=172,acked
-              emit=63,type:repli_page,seq=63,sent,body_hash:bc64f007d5ce5ce6bfcb146d99cd88be4056df5e9f0364186552bfdd242215cc,body_len=262144,acked
-              emit=64,type:repli_page,seq=64,sent,body_hash:91fb46ce39d1c665ffbd7cbb3c502ad66d077dda625040b3ae8f4df0ddabc4cf,body_len=237612,acked
+              emit=19,type:repli_lines,seq=19,sent,body_hash:5b0719c30df0a64687de74eb64b0f3d19727175736f09ca844e03a413b32c84d,body_len=170,acked
+              emit=20,type:repli_page,seq=20,sent,body_hash:32f2a4b9830963b69a3ecef564163166a625173dfaeb2e94bbec20f563e8a4c6,body_len=262144,acked
+              emit=21,type:repli_page,seq=21,sent,body_hash:c2bdf70e56dfbcd2400355444080f4497c9d1dbe2d43f019b48857814de61c55,body_len=262144,acked
+              emit=22,type:repli_lines,seq=22,sent,body_hash:ae25cacf511f0cc81d14269cb49895e2afb11f3e53ba2cbf7a76d80d4a7e5a91,body_len=170,acked
+              emit=23,type:repli_page,seq=23,sent,body_hash:a26ee0de6039f4b2aee4964cffa22b08bbf7ba0206144384ebdd57997941b19e,body_len=262144,acked
+              emit=24,type:repli_page,seq=24,sent,body_hash:8a70913a174870526ca43f8a933dc7546dcb2c3ca1857006c3cb355039e4a92d,body_len=262144,acked
+              emit=25,type:repli_lines,seq=25,sent,body_hash:42401a1b483a6a376f9eaf3cf410d2914315683824152538a2cbeeab65718e33,body_len=110,acked
+              emit=26,type:repli_page,seq=26,sent,body_hash:98498a2492c3f3a9de030a74d79049dbe924a9d9419f23554d2e737438c07db9,body_len=199528,acked
+              emit=27,type:repli_lines,seq=27,sent,body_hash:70d0f597cad9fa0352ff23f5aa4af6bce43fd1d74a521aa9c08a74e15e565368,body_len=170,acked
+              emit=28,type:repli_page,seq=28,sent,body_hash:2ef13a17a9fec32b21f92821072ba9b1376ccbe015e56b506d086cebdce73707,body_len=262144,acked
+              emit=29,type:repli_page,seq=29,sent,body_hash:dc98ba9ee147502d021081ba7748be786a151832c79eff227ef984b33db4f292,body_len=262144,acked
+              emit=30,type:repli_lines,seq=30,sent,body_hash:c31691177d18d1f5fe7c64ac4711b457b6ea369bbc34348ef1873fdd0d246272,body_len=170,acked
+              emit=31,type:repli_page,seq=31,sent,body_hash:d5588f8190bfaad1e70e7d1a2dd33e2b6e0c0cae16395ce24fde8ac5be775c9e,body_len=262144,acked
+              emit=32,type:repli_page,seq=32,sent,body_hash:60f762687185d12894a372cc2abdd169867520a3274edcb0878333ca67bef78c,body_len=262144,acked
+              emit=33,type:repli_lines,seq=33,sent,body_hash:faaf9a23d6f702c81167f0461f0f1f569db477da84c49558eb043270ba1155bb,body_len=111,acked
+              emit=34,type:repli_page,seq=34,sent,body_hash:d2aad47f8d408f9f6a338c06e1b406c687c94a5e8b700d5e4c7002e4b3d9444c,body_len=167528,acked
+              emit=35,type:repli_lines,seq=35,sent,body_hash:b6db8e409f672df97b7bd761417b6272b3a4760e754dabe03b8e303a1385bd6b,body_len=172,acked
+              emit=36,type:repli_page,seq=36,sent,body_hash:f8d28b2fd8a9c26ca177cee50d513cdb5b86bbad96f4583725cbfefacb59fa97,body_len=262144,acked
+              emit=37,type:repli_page,seq=37,sent,body_hash:af4bedde200bf10f5cf41c50c640fa170ceddb0af50567a093d0a44c74096f0d,body_len=262144,acked
+              emit=38,type:repli_lines,seq=38,sent,body_hash:2f734b144c9cfc2784bb6608a3f7826f16a14445305abc2537d2bfe94966a072,body_len=172,acked
+              emit=39,type:repli_page,seq=39,sent,body_hash:938dd9f2ec627db677312339931e1b58afd0b3e10b76de01b300d936f78e5351,body_len=262144,acked
+              emit=40,type:repli_page,seq=40,sent,body_hash:fc42c9b09c25eab1c9201e3870b41e19b585ee64fa5b8057f878f2848582d940,body_len=262144,acked
+              emit=41,type:repli_lines,seq=41,sent,body_hash:77d509f160c2a354a6ffeea05db3c313590259a547a4f9943856c8edb98acac4,body_len=111,acked
+              emit=42,type:repli_page,seq=42,sent,body_hash:083b9dbe9be2e50a2047552429dd4599755f3d8560f0960b3ef8d43a96001c88,body_len=7528,acked
+              emit=43,type:repli_lines,seq=43,sent,body_hash:8bc9f5b45f50d147a542365373239d74930fffb22d35fed6d2390a11f34b2c22,body_len=172,acked
+              emit=44,type:repli_page,seq=44,sent,body_hash:be87a6978544f4c747cf28e1b084ae21889b9490eed1ceb106fd859f6bbd5759,body_len=262144,acked
+              emit=45,type:repli_page,seq=45,sent,body_hash:35c18db98e61c804d569808c75207437758824cdeb8ed8c359be28966b78b816,body_len=262144,acked
+              emit=46,type:repli_lines,seq=46,sent,body_hash:8b82a00471390468495cf0f2a4323b79bff47eed739789a6ae1e99afdb854c4b,body_len=172,acked
+              emit=47,type:repli_page,seq=47,sent,body_hash:74d4d852e69b9d3e0c5c037a4a7c164a1a9ce3da1aabd2bf8f4e08ddea48ed14,body_len=262144,acked
+              emit=48,type:repli_page,seq=48,sent,body_hash:25d043fb9c56263e7a6a9f8d2643a2ad368d8d7bda7f24b8eadfd23752a5ac05,body_len=262144,acked
+              emit=49,type:repli_lines,seq=49,sent,body_hash:cb9575d8bb73d6a31b41a34bbec109dd4fce8d035b4d13072bb38530e81541ff,body_len=111,acked
+              emit=50,type:repli_page,seq=50,sent,body_hash:fdf47b9f73d4686195c18d0bf7d2d7832a9310c77be21639f4900d71f76c55aa,body_len=103524,acked
+              emit=51,type:repli_lines,seq=51,sent,body_hash:d59a054fc5dd66eafa3849f3dc3289a9e3a9772d4d11cedf7eafa8904b0d44fa,body_len=172,acked
+              emit=52,type:repli_page,seq=52,sent,body_hash:d57c6e4c1511529cae54e2007f16f26b949f7380118286c53882c29664cc779d,body_len=262144,acked
+              emit=53,type:repli_page,seq=53,sent,body_hash:3e7eb0bdd839d5216739061d54d9192c534bcd258e6129e04909cb1ca321dde3,body_len=262144,acked
+              emit=54,type:repli_lines,seq=54,sent,body_hash:97578127ae751d3945c6f196b5ef5ad49bea2c00b37ea2c36e6da8fc9bc0bd01,body_len=172,acked
+              emit=55,type:repli_page,seq=55,sent,body_hash:e924a5c1f5832a15cd82a13e37fc8812595ae5836d1afac877473fbf289ef179,body_len=262144,acked
+              emit=56,type:repli_page,seq=56,sent,body_hash:ce6b2f4b800c5364fc2186baad03ccd88f2a11f36dba761a546c2066053d5f81,body_len=262144,acked
+              emit=57,type:repli_lines,seq=57,sent,body_hash:adc2a0313885ae27aa1495b1b6c85abd20fc08ff4b58a7fe5f989aa3917c6386,body_len=111,acked
+              emit=58,type:repli_page,seq=58,sent,body_hash:c1ec28ad3bd24d913ff4ba6192feb3d3d4ebf307e789b86efc91e1ba1494cce6,body_len=231524,acked
+              emit=59,type:repli_lines,seq=59,sent,body_hash:d0e187c16e83ab51d7d4d06621d0e8af237682041cc9f01bf3cb4a205770b890,body_len=172,acked
+              emit=60,type:repli_page,seq=60,sent,body_hash:f44fd10ebaeb6a9f39168ac44bdbb9700a21001d65657b207660b2e0aa99de4c,body_len=262144,acked
+              emit=61,type:repli_page,seq=61,sent,body_hash:7590a233708c2b4f30a8abdd8105d153790bb88c32a46a03739679f248814d5c,body_len=262144,acked
+              emit=62,type:repli_lines,seq=62,sent,body_hash:7ea3a3066b5dd55b10d11d5dc0253d05350a2aca731f42d55bc684a1e38569c0,body_len=172,acked
+              emit=63,type:repli_page,seq=63,sent,body_hash:e0d1807fa53044f48021912f357290b98042bcff9711a9cdb268833f96e87cf5,body_len=262144,acked
+              emit=64,type:repli_page,seq=64,sent,body_hash:73ea2950a7a0a6020cf94ee01142e43ac40287d007e7acad945210a362cd2acd,body_len=237670,acked
             inbox
               recent
                 unemit=3,type:pier_hello,seq=3
@@ -250,52 +250,52 @@ Snap:H
                 unemit=16,type:repli_lines,seq=16
                 unemit=17,type:repli_lines,seq=17
                 unemit=18,type:repli_lines,seq=18
-              req:unemit,seq=19,type:repli_lines,body_hash:2328532a00d0a04f1c6d8fabfe101556938cd408bf95288e32db608310473425,body_len=170,done,to:repli_lines,finished
-              req:unemit,seq=20,type:repli_page,body_hash:318cfbc3539746565c232e113e19ce75110cfb52238cb217e16e11e262a3efc9,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=21,type:repli_page,body_hash:95a2a5b4a91aec9854684977919271337d888b3d5e5ca0978b16f2c6842fdd93,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=22,type:repli_lines,body_hash:49e27514f86758c85a767e02d6fdb7fc8bb94173d046e330fbb8d248129d25e7,body_len=170,done,to:repli_lines,finished
-              req:unemit,seq=23,type:repli_page,body_hash:89621d7c9e5ab6ace093d5101ebf339d512671022c5997c5d601dd4762241091,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=24,type:repli_page,body_hash:3c1fcf2361069e168979db433740d23117ea616c653eabebf2de0eb437a0b6aa,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=25,type:repli_lines,body_hash:4c67bf13163dde8d45f2f9809f320665e1995bf749b3df57516d5c82eb28fbac,body_len=110,done,to:repli_lines,finished
-              req:unemit,seq=26,type:repli_page,body_hash:b2109cd86fe2bb1eeece86f6ebb8a0f3fffc624c50d69ad0306e12fdcf43ff69,body_len=199468,done,to:repli_page,finished
-              req:unemit,seq=27,type:repli_lines,body_hash:ab4b46d1067672112ae2f94b49006fa0dbead11580044e993053d733fdc04f2a,body_len=170,done,to:repli_lines,finished
-              req:unemit,seq=28,type:repli_page,body_hash:9c60604c1e19de80c7c9f2a26fcd52713715d6c3a9b5d7c6abbd74658d68888a,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=29,type:repli_page,body_hash:386cdbf0f5ab22691dedd791dae6e676b21354b538aa9d405feb0ab8bdaa40e1,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=30,type:repli_lines,body_hash:7b494659b1b32f374956304584569a1c5735c74500b48ac45f78185dc1a1e1ad,body_len=170,done,to:repli_lines,finished
-              req:unemit,seq=31,type:repli_page,body_hash:3bdf76ea270e0de50db8fec32ef4a90bfd3934e613feb023c962b2473f94e52a,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=32,type:repli_page,body_hash:9df6234a70b926ed87baa3e6e65e8962df7e2e1f66b5e0e666d43a330244de91,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=33,type:repli_lines,body_hash:183a727d91a7ee2228a275aee528842dd9bc20b7877b0fa284cec92153c0cb54,body_len=111,done,to:repli_lines,finished
-              req:unemit,seq=34,type:repli_page,body_hash:f54f305cec4dffa7cea1deb375412fee0128cd3b65dab75783e183aeaa697b48,body_len=167468,done,to:repli_page,finished
-              req:unemit,seq=35,type:repli_lines,body_hash:a4db54b9046c8b60b448988feea322b4513a7cd861647e501cc83aa6eee39373,body_len=172,done,to:repli_lines,finished
-              req:unemit,seq=36,type:repli_page,body_hash:49f3d69e37bee1f68ee721d2ab7bace6628c612f62027943525962dd372ec837,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=37,type:repli_page,body_hash:340333fed617928ce84210ee5212cf3e351cb8703fb7920f6fb5c84e0d2c59dd,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=38,type:repli_lines,body_hash:99d2429aed11d012ecbbc39480c67ae7664e7a87f7c546a002a46328715e743e,body_len=172,done,to:repli_lines,finished
-              req:unemit,seq=39,type:repli_page,body_hash:564d1488e92e206507e6d20690041d9b9ec87404e3ed750380934eefd62a5619,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=40,type:repli_page,body_hash:1cbb580f0621af8290814cd3365a828b9a82df26225f08a7485da8d23f729b72,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=41,type:repli_lines,body_hash:d5548baa515fbb4dc1db4ddbc8b2aece92b8a0dd8289f5083a7210845e6bb413,body_len=111,done,to:repli_lines,finished
-              req:unemit,seq=42,type:repli_page,body_hash:e947ce87730ad294da0355b5640f6cdc1221d9705a2a1640accc171fbab0930a,body_len=7468,done,to:repli_page,finished
-              req:unemit,seq=43,type:repli_lines,body_hash:6de3f88eefc405dca2f8e56df129b47317f20fa983a6732249400f43bd0690e3,body_len=172,done,to:repli_lines,finished
-              req:unemit,seq=44,type:repli_page,body_hash:3b8bd47ffa5f5634091f90203fc115e7142f8cff97fc1950da466b8767e3229c,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=45,type:repli_page,body_hash:12e7b0416f803184a4ee97058fe3675aae301108ac4942325b1908f0eb8b05ea,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=46,type:repli_lines,body_hash:4b45247510f3e74e7a24904eca989fe403688338a23da1590b74e1a2f0c7e272,body_len=172,done,to:repli_lines,finished
-              req:unemit,seq=47,type:repli_page,body_hash:a461dcccea16e45015f7dea26370a4bfeb15dfd8020323747c3217135da8d331,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=48,type:repli_page,body_hash:4a17ff0e97ca466240045141296033e0d4cef0c020d30882a0aa1541ee89ca39,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=49,type:repli_lines,body_hash:ce668c6027cd0ffd27846502dc052660a6bb30b59ec378ee7a9ca0a9329afd7c,body_len=111,done,to:repli_lines,finished
-              req:unemit,seq=50,type:repli_page,body_hash:05573dc07859b20665346afbb1457193cf983dd4e24cb0ec6be66de661874adc,body_len=103468,done,to:repli_page,finished
-              req:unemit,seq=51,type:repli_lines,body_hash:5b81fa18bf62a5f186bffd9ce9f29ee6b7d7f9c01c54473c95f890d668034bbb,body_len=172,done,to:repli_lines,finished
-              req:unemit,seq=52,type:repli_page,body_hash:a530fe2cf541bd97d3784923676298393cb8b27291d2b7fce5014e6e2ec7cfa7,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=53,type:repli_page,body_hash:9db74005ce49d802ff22bf83f17255840848ec9a5fcb8bb37522d8666d87426f,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=54,type:repli_lines,body_hash:2b0c4f5f54ab3f92bb397500366fc6b64138dfcc20a86f96296144a626b7cb59,body_len=172,done,to:repli_lines,finished
-              req:unemit,seq=55,type:repli_page,body_hash:15e48bc0b179a4c50e3d73b667bfe2435900e831a1c40f7b8cb0082206162b6f,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=56,type:repli_page,body_hash:469dc47b98e0b049ed8e1b74f3d96b42898df17d937b4884bf945c3f49ebb64e,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=57,type:repli_lines,body_hash:fb58b7a63c033b2e20ae5ab9fe0e9e4f5b683511c8dd5d49d85fa54b03d1ed38,body_len=111,done,to:repli_lines,finished
-              req:unemit,seq=58,type:repli_page,body_hash:135673b85c1a07f54b392dababc6b9722fd9e38d7af52b8d999c09df6027405b,body_len=231468,done,to:repli_page,finished
-              req:unemit,seq=59,type:repli_lines,body_hash:e701f02083f651a8a4e3a81819b32fdbb91bb912e0af74f7f4964535206789b4,body_len=172,done,to:repli_lines,finished
-              req:unemit,seq=60,type:repli_page,body_hash:2b0f3aa506c501472446b95b9160690323818820dcf7610eaff9d6aad3f9bb65,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=61,type:repli_page,body_hash:a358c1b93cd8e78d06a509206ff681941e63132d2e45070326bd05c42bf7e777,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=62,type:repli_lines,body_hash:06cf29ee5e4e76eff763d01bf8c5e06f98385185b2f1fb51eb37f1297360009d,body_len=172,done,to:repli_lines,finished
-              req:unemit,seq=63,type:repli_page,body_hash:bc64f007d5ce5ce6bfcb146d99cd88be4056df5e9f0364186552bfdd242215cc,body_len=262144,done,to:repli_page,finished
-              req:unemit,seq=64,type:repli_page,body_hash:91fb46ce39d1c665ffbd7cbb3c502ad66d077dda625040b3ae8f4df0ddabc4cf,body_len=237612,done,to:repli_page,finished
+              req:unemit,seq=19,type:repli_lines,body_hash:5b0719c30df0a64687de74eb64b0f3d19727175736f09ca844e03a413b32c84d,body_len=170,done,to:repli_lines,finished
+              req:unemit,seq=20,type:repli_page,body_hash:32f2a4b9830963b69a3ecef564163166a625173dfaeb2e94bbec20f563e8a4c6,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=21,type:repli_page,body_hash:c2bdf70e56dfbcd2400355444080f4497c9d1dbe2d43f019b48857814de61c55,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=22,type:repli_lines,body_hash:ae25cacf511f0cc81d14269cb49895e2afb11f3e53ba2cbf7a76d80d4a7e5a91,body_len=170,done,to:repli_lines,finished
+              req:unemit,seq=23,type:repli_page,body_hash:a26ee0de6039f4b2aee4964cffa22b08bbf7ba0206144384ebdd57997941b19e,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=24,type:repli_page,body_hash:8a70913a174870526ca43f8a933dc7546dcb2c3ca1857006c3cb355039e4a92d,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=25,type:repli_lines,body_hash:42401a1b483a6a376f9eaf3cf410d2914315683824152538a2cbeeab65718e33,body_len=110,done,to:repli_lines,finished
+              req:unemit,seq=26,type:repli_page,body_hash:98498a2492c3f3a9de030a74d79049dbe924a9d9419f23554d2e737438c07db9,body_len=199528,done,to:repli_page,finished
+              req:unemit,seq=27,type:repli_lines,body_hash:70d0f597cad9fa0352ff23f5aa4af6bce43fd1d74a521aa9c08a74e15e565368,body_len=170,done,to:repli_lines,finished
+              req:unemit,seq=28,type:repli_page,body_hash:2ef13a17a9fec32b21f92821072ba9b1376ccbe015e56b506d086cebdce73707,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=29,type:repli_page,body_hash:dc98ba9ee147502d021081ba7748be786a151832c79eff227ef984b33db4f292,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=30,type:repli_lines,body_hash:c31691177d18d1f5fe7c64ac4711b457b6ea369bbc34348ef1873fdd0d246272,body_len=170,done,to:repli_lines,finished
+              req:unemit,seq=31,type:repli_page,body_hash:d5588f8190bfaad1e70e7d1a2dd33e2b6e0c0cae16395ce24fde8ac5be775c9e,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=32,type:repli_page,body_hash:60f762687185d12894a372cc2abdd169867520a3274edcb0878333ca67bef78c,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=33,type:repli_lines,body_hash:faaf9a23d6f702c81167f0461f0f1f569db477da84c49558eb043270ba1155bb,body_len=111,done,to:repli_lines,finished
+              req:unemit,seq=34,type:repli_page,body_hash:d2aad47f8d408f9f6a338c06e1b406c687c94a5e8b700d5e4c7002e4b3d9444c,body_len=167528,done,to:repli_page,finished
+              req:unemit,seq=35,type:repli_lines,body_hash:b6db8e409f672df97b7bd761417b6272b3a4760e754dabe03b8e303a1385bd6b,body_len=172,done,to:repli_lines,finished
+              req:unemit,seq=36,type:repli_page,body_hash:f8d28b2fd8a9c26ca177cee50d513cdb5b86bbad96f4583725cbfefacb59fa97,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=37,type:repli_page,body_hash:af4bedde200bf10f5cf41c50c640fa170ceddb0af50567a093d0a44c74096f0d,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=38,type:repli_lines,body_hash:2f734b144c9cfc2784bb6608a3f7826f16a14445305abc2537d2bfe94966a072,body_len=172,done,to:repli_lines,finished
+              req:unemit,seq=39,type:repli_page,body_hash:938dd9f2ec627db677312339931e1b58afd0b3e10b76de01b300d936f78e5351,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=40,type:repli_page,body_hash:fc42c9b09c25eab1c9201e3870b41e19b585ee64fa5b8057f878f2848582d940,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=41,type:repli_lines,body_hash:77d509f160c2a354a6ffeea05db3c313590259a547a4f9943856c8edb98acac4,body_len=111,done,to:repli_lines,finished
+              req:unemit,seq=42,type:repli_page,body_hash:083b9dbe9be2e50a2047552429dd4599755f3d8560f0960b3ef8d43a96001c88,body_len=7528,done,to:repli_page,finished
+              req:unemit,seq=43,type:repli_lines,body_hash:8bc9f5b45f50d147a542365373239d74930fffb22d35fed6d2390a11f34b2c22,body_len=172,done,to:repli_lines,finished
+              req:unemit,seq=44,type:repli_page,body_hash:be87a6978544f4c747cf28e1b084ae21889b9490eed1ceb106fd859f6bbd5759,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=45,type:repli_page,body_hash:35c18db98e61c804d569808c75207437758824cdeb8ed8c359be28966b78b816,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=46,type:repli_lines,body_hash:8b82a00471390468495cf0f2a4323b79bff47eed739789a6ae1e99afdb854c4b,body_len=172,done,to:repli_lines,finished
+              req:unemit,seq=47,type:repli_page,body_hash:74d4d852e69b9d3e0c5c037a4a7c164a1a9ce3da1aabd2bf8f4e08ddea48ed14,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=48,type:repli_page,body_hash:25d043fb9c56263e7a6a9f8d2643a2ad368d8d7bda7f24b8eadfd23752a5ac05,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=49,type:repli_lines,body_hash:cb9575d8bb73d6a31b41a34bbec109dd4fce8d035b4d13072bb38530e81541ff,body_len=111,done,to:repli_lines,finished
+              req:unemit,seq=50,type:repli_page,body_hash:fdf47b9f73d4686195c18d0bf7d2d7832a9310c77be21639f4900d71f76c55aa,body_len=103524,done,to:repli_page,finished
+              req:unemit,seq=51,type:repli_lines,body_hash:d59a054fc5dd66eafa3849f3dc3289a9e3a9772d4d11cedf7eafa8904b0d44fa,body_len=172,done,to:repli_lines,finished
+              req:unemit,seq=52,type:repli_page,body_hash:d57c6e4c1511529cae54e2007f16f26b949f7380118286c53882c29664cc779d,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=53,type:repli_page,body_hash:3e7eb0bdd839d5216739061d54d9192c534bcd258e6129e04909cb1ca321dde3,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=54,type:repli_lines,body_hash:97578127ae751d3945c6f196b5ef5ad49bea2c00b37ea2c36e6da8fc9bc0bd01,body_len=172,done,to:repli_lines,finished
+              req:unemit,seq=55,type:repli_page,body_hash:e924a5c1f5832a15cd82a13e37fc8812595ae5836d1afac877473fbf289ef179,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=56,type:repli_page,body_hash:ce6b2f4b800c5364fc2186baad03ccd88f2a11f36dba761a546c2066053d5f81,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=57,type:repli_lines,body_hash:adc2a0313885ae27aa1495b1b6c85abd20fc08ff4b58a7fe5f989aa3917c6386,body_len=111,done,to:repli_lines,finished
+              req:unemit,seq=58,type:repli_page,body_hash:c1ec28ad3bd24d913ff4ba6192feb3d3d4ebf307e789b86efc91e1ba1494cce6,body_len=231524,done,to:repli_page,finished
+              req:unemit,seq=59,type:repli_lines,body_hash:d0e187c16e83ab51d7d4d06621d0e8af237682041cc9f01bf3cb4a205770b890,body_len=172,done,to:repli_lines,finished
+              req:unemit,seq=60,type:repli_page,body_hash:f44fd10ebaeb6a9f39168ac44bdbb9700a21001d65657b207660b2e0aa99de4c,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=61,type:repli_page,body_hash:7590a233708c2b4f30a8abdd8105d153790bb88c32a46a03739679f248814d5c,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=62,type:repli_lines,body_hash:7ea3a3066b5dd55b10d11d5dc0253d05350a2aca731f42d55bc684a1e38569c0,body_len=172,done,to:repli_lines,finished
+              req:unemit,seq=63,type:repli_page,body_hash:e0d1807fa53044f48021912f357290b98042bcff9711a9cdb268833f96e87cf5,body_len=262144,done,to:repli_page,finished
+              req:unemit,seq=64,type:repli_page,body_hash:73ea2950a7a0a6020cf94ee01142e43ac40287d007e7acad945210a362cd2acd,body_len=237670,done,to:repli_page,finished
             Ud,pubkey:4e09f34f5a6ab900
             req:awaitbuf,bufferid,landed,finished
             req:awaitbuf,bufferid=2,landed,finished
@@ -328,53 +328,53 @@ Snap:H
             req:awaitbuf,bufferid=29,landed,finished
           active_transport,type:mock,open
         Library,pier:4e09f34f5a6ab900
-          Record,id:af99e3b3efe5661a,title:Cosmic C,artist:DJ Oscillo,path:DJ Oscillo - Cosmic C.wav,ext:wav,bytes=1248044,body_hash:af99e3b3efe5661ab2b32ceb82ce5fa90c42ed1d32613fdc4bcd73827abfa8b9,total=5
+          Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,path:DJ Oscillo - Cosmic C.wav,ext:wav,bytes=1248104,body_hash:d71294dbbcd7b726b29eb435b756e0663034b5e94639324b091fed01fbd6c1f7,total=5
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:cec642f34f501315,title:Dorian D,artist:DJ Oscillo,path:DJ Oscillo - Dorian D.wav,ext:wav,bytes=1216044,body_hash:cec642f34f50131579e3e195c6a90ebedbb737f4adbee847ae80eee804b041ca,total=5
+          Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,path:DJ Oscillo - Dorian D.wav,ext:wav,bytes=1216104,body_hash:02cfcb9c15affeaf0321fb7f155f65782ba44e45767f2cea9beeac447a8784ef,total=5
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:8e6fc6abdf3a262c,title:Groove G,artist:DJ Oscillo,path:DJ Oscillo - Groove G.wav,ext:wav,bytes=1056044,body_hash:8e6fc6abdf3a262c09097dd3559a8aa3d3f337959548deeba8d636ef86f4966d,total=5
+          Record,id:cf95c97b08584b92,title:Groove G,artist:DJ Oscillo,path:DJ Oscillo - Groove G.wav,ext:wav,bytes=1056104,body_hash:cf95c97b08584b92d262f214ddfdf536da5a18303b6e27ccb177c1c4088eb765,total=5
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:d2db2a78bd02c395,title:Deep A,artist:The Sines,path:The Sines - Deep A.wav,ext:wav,bytes=1152044,body_hash:d2db2a78bd02c395eafbc2c82ca4a04863888c72829838b8f26cc1c97747d023,total=5
+          Record,id:d8a28ada85f2e851,title:Deep A,artist:The Sines,path:The Sines - Deep A.wav,ext:wav,bytes=1152100,body_hash:d8a28ada85f2e85151b446112e4d97db3bc6cc24c5ef335b2593be0d95df6b28,total=5
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:d9ce0459eaa4514c,title:High A,artist:The Sines,path:The Sines - High A.wav,ext:wav,bytes=1280044,body_hash:d9ce0459eaa4514c1d46524c711235f97c8a52192c7b6d1bb314b491eefb3d9a,total=5
+          Record,id:95f3c03e41e9c007,title:High A,artist:The Sines,path:The Sines - High A.wav,ext:wav,bytes=1280100,body_hash:95f3c03e41e9c0070da6e6a35d5901ac37a8e0e18025e75c3ad8862326f97ef4,total=5
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:6d85855a70adc5c2,title:Middle A,artist:The Sines,path:The Sines - Middle A.wav,ext:wav,bytes=1024044,body_hash:6d85855a70adc5c28445522dc6976935d8a3a90234c52d3b4f28a54c3ab7a4ee,total=4
+          Record,id:902552d4a0b8b0c1,title:Middle A,artist:The Sines,path:The Sines - Middle A.wav,ext:wav,bytes=1024102,body_hash:902552d4a0b8b0c19cc6e6331097145ccc9be1d31b90ee9bc3691730c85043b8,total=4
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
           Record,id:f9cb73180655432e,title:Tagged Truth,artist:Fourier Four,path:4t-mathrock/Fourier Four/Tagged Truth.wav,ext:wav,bytes=8110,body_hash:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d
-          Record,id:f60c57424cac2e10,title:Echo E,artist:Fourier Four,path:4t-mathrock/Fourier Four/Echo E.wav,ext:wav,bytes=960044,body_hash:f60c57424cac2e10046b99ea9708fbf9271c97aab0b75790ee82a7508f0c7d7a
-          Record,id:890df9ef629ed87b,title:Query E,artist:Fourier Four,path:4t-mathrock/Fourier Four/Query E.wav,ext:wav,bytes=1088044,body_hash:890df9ef629ed87bff51e2a21ad321aa9945ea3a7a8619bffebf2a6c704f38f1
+          Record,id:a14602e5ca2e9bd0,title:Echo E,artist:Fourier Four,path:4t-mathrock/Fourier Four/Echo E.wav,ext:wav,bytes=960104,body_hash:a14602e5ca2e9bd00fe5f7d96e1f27bd1113071f99d18687f3a98a6c76f5b998
+          Record,id:370d870166ffe45f,title:Query E,artist:Fourier Four,path:4t-mathrock/Fourier Four/Query E.wav,ext:wav,bytes=1088104,body_hash:370d870166ffe45f2e19b0bd1e8fdf765e0d208ac53fab66790ffe1e334c4a0e
         Library,pier:be0dab3303037ad2
           Record,id:f9cb73180655432e,title:Tagged Truth,artist:Fourier Four,path:Fourier Four - Bogus Name.wav,ext:wav,bytes=8110,body_hash:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d,total
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:f60c57424cac2e10,title:Echo E,artist:Fourier Four,path:Fourier Four - Echo E.wav,ext:wav,bytes=960044,body_hash:f60c57424cac2e10046b99ea9708fbf9271c97aab0b75790ee82a7508f0c7d7a,total=4
+          Record,id:a14602e5ca2e9bd0,title:Echo E,artist:Fourier Four,path:Fourier Four - Echo E.wav,ext:wav,bytes=960104,body_hash:a14602e5ca2e9bd00fe5f7d96e1f27bd1113071f99d18687f3a98a6c76f5b998,total=4
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:890df9ef629ed87b,title:Query E,artist:Fourier Four,path:Fourier Four - Query E.wav,ext:wav,bytes=1088044,body_hash:890df9ef629ed87bff51e2a21ad321aa9945ea3a7a8619bffebf2a6c704f38f1,total=5
+          Record,id:370d870166ffe45f,title:Query E,artist:Fourier Four,path:Fourier Four - Query E.wav,ext:wav,bytes=1088104,body_hash:370d870166ffe45f2e19b0bd1e8fdf765e0d208ac53fab66790ffe1e334c4a0e,total=5
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
@@ -390,37 +390,37 @@ Snap:H
           held,tune:Fourier Four — Echo E
           held,tune:Fourier Four — Query E
         Library,pier:be0dab3303037ad2.heist
-          Record,id:af99e3b3efe5661a,title:Cosmic C,artist:DJ Oscillo,path:DJ Oscillo - Cosmic C.wav,ext:wav,bytes=1248044,body_hash:af99e3b3efe5661ab2b32ceb82ce5fa90c42ed1d32613fdc4bcd73827abfa8b9,total=5
+          Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,path:DJ Oscillo - Cosmic C.wav,ext:wav,bytes=1248104,body_hash:d71294dbbcd7b726b29eb435b756e0663034b5e94639324b091fed01fbd6c1f7,total=5
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:cec642f34f501315,title:Dorian D,artist:DJ Oscillo,path:DJ Oscillo - Dorian D.wav,ext:wav,bytes=1216044,body_hash:cec642f34f50131579e3e195c6a90ebedbb737f4adbee847ae80eee804b041ca,total=5
+          Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,path:DJ Oscillo - Dorian D.wav,ext:wav,bytes=1216104,body_hash:02cfcb9c15affeaf0321fb7f155f65782ba44e45767f2cea9beeac447a8784ef,total=5
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:8e6fc6abdf3a262c,title:Groove G,artist:DJ Oscillo,path:DJ Oscillo - Groove G.wav,ext:wav,bytes=1056044,body_hash:8e6fc6abdf3a262c09097dd3559a8aa3d3f337959548deeba8d636ef86f4966d,total=5
+          Record,id:cf95c97b08584b92,title:Groove G,artist:DJ Oscillo,path:DJ Oscillo - Groove G.wav,ext:wav,bytes=1056104,body_hash:cf95c97b08584b92d262f214ddfdf536da5a18303b6e27ccb177c1c4088eb765,total=5
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:d2db2a78bd02c395,title:Deep A,artist:The Sines,path:The Sines - Deep A.wav,ext:wav,bytes=1152044,body_hash:d2db2a78bd02c395eafbc2c82ca4a04863888c72829838b8f26cc1c97747d023,total=5
+          Record,id:d8a28ada85f2e851,title:Deep A,artist:The Sines,path:The Sines - Deep A.wav,ext:wav,bytes=1152100,body_hash:d8a28ada85f2e85151b446112e4d97db3bc6cc24c5ef335b2593be0d95df6b28,total=5
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:d9ce0459eaa4514c,title:High A,artist:The Sines,path:The Sines - High A.wav,ext:wav,bytes=1280044,body_hash:d9ce0459eaa4514c1d46524c711235f97c8a52192c7b6d1bb314b491eefb3d9a,total=5
+          Record,id:95f3c03e41e9c007,title:High A,artist:The Sines,path:The Sines - High A.wav,ext:wav,bytes=1280100,body_hash:95f3c03e41e9c0070da6e6a35d5901ac37a8e0e18025e75c3ad8862326f97ef4,total=5
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:6d85855a70adc5c2,title:Middle A,artist:The Sines,path:The Sines - Middle A.wav,ext:wav,bytes=1024044,body_hash:6d85855a70adc5c28445522dc6976935d8a3a90234c52d3b4f28a54c3ab7a4ee,total=4
+          Record,id:902552d4a0b8b0c1,title:Middle A,artist:The Sines,path:The Sines - Middle A.wav,ext:wav,bytes=1024102,body_hash:902552d4a0b8b0c19cc6e6331097145ccc9be1d31b90ee9bc3691730c85043b8,total=4
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}

@@ -1,9 +1,9 @@
 Snap:H
   H:MusuHeist,Run
     A:MusuHeist
-      self,round=65	{"mung":["age"]}
+      self,round=66	{"mung":["age"]}
       w:MusuHeist
-        self,round=65	{"mung":["age"]}
+        self,round=66	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -18,8 +18,8 @@ Snap:H
           manifest:uno,fresh=3
           heisted:uno,landed=3,faithful=3,took_named=3,streamed
             on_disk:4t-mathrock/Fourier Four/Tagged Truth.wav,bytes=8110
-            on_disk:4t-mathrock/Fourier Four/Echo E.wav,bytes=960044
-            on_disk:4t-mathrock/Fourier Four/Query E.wav,bytes=1088044
+            on_disk:4t-mathrock/Fourier Four/Echo E.wav,bytes=960104
+            on_disk:4t-mathrock/Fourier Four/Query E.wav,bytes=1088104
           reached:job_duo
           see:the heist landed straight into the collection — every file byte-faithful to its source hash on the disk
           see:the landing filed by category — each track under the genre its filing named
@@ -28,12 +28,12 @@ Snap:H
           offered:duo,n=9
           manifest:duo,holds=3,fresh=6
           heisted:duo,landed=6,skipped=3,faithful=6
-            on_disk:4t-bangers/DJ Oscillo/Cosmic C.wav,bytes=1248044
-            on_disk:4t-bangers/DJ Oscillo/Dorian D.wav,bytes=1216044
-            on_disk:4t-bangers/DJ Oscillo/Groove G.wav,bytes=1056044
-            on_disk:4t-chillwave/The Sines/Deep A.wav,bytes=1152044
-            on_disk:4t-chillwave/The Sines/High A.wav,bytes=1280044
-            on_disk:4t-chillwave/The Sines/Middle A.wav,bytes=1024044
+            on_disk:4t-bangers/DJ Oscillo/Cosmic C.wav,bytes=1248104
+            on_disk:4t-bangers/DJ Oscillo/Dorian D.wav,bytes=1216104
+            on_disk:4t-bangers/DJ Oscillo/Groove G.wav,bytes=1056104
+            on_disk:4t-chillwave/The Sines/Deep A.wav,bytes=1152100
+            on_disk:4t-chillwave/The Sines/High A.wav,bytes=1280100
+            on_disk:4t-chillwave/The Sines/Middle A.wav,bytes=1024102
           reached:job_reuno
           see:the mirror heist landed the other way — each end filed the same disk under its own categories
           offered:reuno,n=9
@@ -41,21 +41,21 @@ Snap:H
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
               Idzeug:heist_1,to:Music,genre:Heist,spent
-              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783863286
+              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783906368
                 Peering,name:be0dab3303037ad2,friendly:Duo,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783863286,sign:ad54a1fea6a4881b664de0c54308bc89c6ee7a33983f9d7e89b824e18d7c53d4c882fe3a4c7c0c098b77f890ba6bcbdc9a4725a865138ea34d95f60ac599c203,genre:Heist
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783863286,sign:f5762c12aa0073a66e44c001526de8c0d00340a0ed3a30642c3527566c2bcaf9cdead68481b67c80c3ab628b866e31ae6cb377293d7b91b989518647b0e07f0f,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783906368,sign:4227823a23594953c53a8c4cdcd334b209cb3266ae42b009b1daea89a3830e719c5d8872c3c63243b0faef4b5490039435d6fc9b8483305dc2909da38cb55802,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783906368,sign:846eac1fdfb56ac12d2dfd539c319b702d480a21ed31d6899848dab6880a7fa1746758f68227cdd55b41da78a2380a702d0d8e00693b92fea83ce18ca730c90b,genre:Heist
             SocialGraph
-              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1783863286
+              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1783906368
         Account,of:Duo
           Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
             Peering,name:be0dab3303037ad2,friendly:Duo
-              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783863286
+              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783906368
                 Peering,name:4e09f34f5a6ab900,friendly:Uno,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783863286,sign:f5762c12aa0073a66e44c001526de8c0d00340a0ed3a30642c3527566c2bcaf9cdead68481b67c80c3ab628b866e31ae6cb377293d7b91b989518647b0e07f0f,genre:Heist
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783863286,sign:ad54a1fea6a4881b664de0c54308bc89c6ee7a33983f9d7e89b824e18d7c53d4c882fe3a4c7c0c098b77f890ba6bcbdc9a4725a865138ea34d95f60ac599c203,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783906368,sign:846eac1fdfb56ac12d2dfd539c319b702d480a21ed31d6899848dab6880a7fa1746758f68227cdd55b41da78a2380a702d0d8e00693b92fea83ce18ca730c90b,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783906368,sign:4227823a23594953c53a8c4cdcd334b209cb3266ae42b009b1daea89a3830e719c5d8872c3c63243b0faef4b5490039435d6fc9b8483305dc2909da38cb55802,genre:Heist
             SocialGraph
-              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1783863286
+              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1783906368
         Peering,name:4e09f34f5a6ab900,req=2,ok
           Pier,pub:be0dab3303037ad2,req=2,ok
             req:handshake,finished
@@ -115,14 +115,14 @@ Snap:H
                 unemit=38,type:repli_want,seq=38
                 unemit=39,type:repli_want,seq=39
               req:unemit,seq=40,type:repli_lines,body_hash:7390c8fb3a6522c76c3c0c3f7e79a5e2b9cb6e19141cb97e21f994998eecbdfc,body_len=224,done,to:repli_lines,finished
-              req:unemit,seq=41,type:repli_lines,body_hash:0054a07d45225ea267c87152b4f959b9ff9d9a71126998ae17d3fc64652f45de,body_len=218,done,to:repli_lines,finished
-              req:unemit,seq=42,type:repli_lines,body_hash:0ae0dd51c47c19aef5cf867982083a1f1e431a7bfb0209e4181d6d273ac5b9cd,body_len=221,done,to:repli_lines,finished
-              req:unemit,seq=43,type:repli_lines,body_hash:67ad213cb62fcc8ee571fb12482e2f4eab9e94c491c7c3a703e9d631a6bf3b4d,body_len=220,done,to:repli_lines,finished
-              req:unemit,seq=44,type:repli_lines,body_hash:76758d3b791c4545c68768978bdedd9ebb3526a617580af2787bffcf2d0536c0,body_len=220,done,to:repli_lines,finished
-              req:unemit,seq=45,type:repli_lines,body_hash:ada5b3704921ddc3b0adb1138d5c4b87e28b8d3839276d53718156bb5e855ab7,body_len=220,done,to:repli_lines,finished
-              req:unemit,seq=46,type:repli_lines,body_hash:272d1c7a2bfa695d85e8ea891045f6d81f26178e920b95cf9baad6ef204d664a,body_len=216,done,to:repli_lines,finished
-              req:unemit,seq=47,type:repli_lines,body_hash:2f1c10aefb43587654b79000568f531671e8e56e065514ae0e7041105a12efe3,body_len=216,done,to:repli_lines,finished
-              req:unemit,seq=48,type:repli_lines,body_hash:a97b2d23f8be6c0dce8f26c2640541fc93fc720e6d89965c9ca0fec9e5a45a0b,body_len=220,done,to:repli_lines,finished
+              req:unemit,seq=41,type:repli_lines,body_hash:8639a3c7e1736ade0e2261b602622c203037dfbd96f057994b5ccdcf6d32b09b,body_len=218,done,to:repli_lines,finished
+              req:unemit,seq=42,type:repli_lines,body_hash:6966711b0d7b922fb80b71b96c6dd7172f9beff6ec4a6dcf0cd10a1c72cd3997,body_len=221,done,to:repli_lines,finished
+              req:unemit,seq=43,type:repli_lines,body_hash:07a745c55a67d177360367e8b1276f2b00d521f32adc9f6fb20c6a9686618a2a,body_len=220,done,to:repli_lines,finished
+              req:unemit,seq=44,type:repli_lines,body_hash:1794f74807a5a6c2aceec983e9bb4293ef3f3fc32566cbc6645e3042e72f7e2f,body_len=220,done,to:repli_lines,finished
+              req:unemit,seq=45,type:repli_lines,body_hash:1e5d3c18d4a06ddf67a5d944c43ba0b081c83bc07ea1d694cf8b05fe424d6b19,body_len=220,done,to:repli_lines,finished
+              req:unemit,seq=46,type:repli_lines,body_hash:0d0acb44bbf13f2c40a76d30eda2e6bb5afcc00a7576ad38faaea0512c9624f5,body_len=216,done,to:repli_lines,finished
+              req:unemit,seq=47,type:repli_lines,body_hash:316c6617b03f075d6db138596a1fde53215921f29b9c971c6a3856014500e905,body_len=216,done,to:repli_lines,finished
+              req:unemit,seq=48,type:repli_lines,body_hash:46bc6937cf21f3f4d09d70179e72626f251cbe6fc1ab102f721c7320dfe3850b,body_len=220,done,to:repli_lines,finished
             Ud,pubkey:be0dab3303037ad2
             req:awaitbuf,bufferid,landed,finished
             req:awaitbuf,bufferid=2,landed,finished
@@ -172,14 +172,14 @@ Snap:H
                 emit=38,type:repli_want,seq=38
                 emit=39,type:repli_want,seq=39
               emit=40,type:repli_lines,seq=40,sent,body_hash:7390c8fb3a6522c76c3c0c3f7e79a5e2b9cb6e19141cb97e21f994998eecbdfc,body_len=224,acked
-              emit=41,type:repli_lines,seq=41,sent,body_hash:0054a07d45225ea267c87152b4f959b9ff9d9a71126998ae17d3fc64652f45de,body_len=218,acked
-              emit=42,type:repli_lines,seq=42,sent,body_hash:0ae0dd51c47c19aef5cf867982083a1f1e431a7bfb0209e4181d6d273ac5b9cd,body_len=221,acked
-              emit=43,type:repli_lines,seq=43,sent,body_hash:67ad213cb62fcc8ee571fb12482e2f4eab9e94c491c7c3a703e9d631a6bf3b4d,body_len=220,acked
-              emit=44,type:repli_lines,seq=44,sent,body_hash:76758d3b791c4545c68768978bdedd9ebb3526a617580af2787bffcf2d0536c0,body_len=220,acked
-              emit=45,type:repli_lines,seq=45,sent,body_hash:ada5b3704921ddc3b0adb1138d5c4b87e28b8d3839276d53718156bb5e855ab7,body_len=220,acked
-              emit=46,type:repli_lines,seq=46,sent,body_hash:272d1c7a2bfa695d85e8ea891045f6d81f26178e920b95cf9baad6ef204d664a,body_len=216,acked
-              emit=47,type:repli_lines,seq=47,sent,body_hash:2f1c10aefb43587654b79000568f531671e8e56e065514ae0e7041105a12efe3,body_len=216,acked
-              emit=48,type:repli_lines,seq=48,sent,body_hash:a97b2d23f8be6c0dce8f26c2640541fc93fc720e6d89965c9ca0fec9e5a45a0b,body_len=220,acked
+              emit=41,type:repli_lines,seq=41,sent,body_hash:8639a3c7e1736ade0e2261b602622c203037dfbd96f057994b5ccdcf6d32b09b,body_len=218,acked
+              emit=42,type:repli_lines,seq=42,sent,body_hash:6966711b0d7b922fb80b71b96c6dd7172f9beff6ec4a6dcf0cd10a1c72cd3997,body_len=221,acked
+              emit=43,type:repli_lines,seq=43,sent,body_hash:07a745c55a67d177360367e8b1276f2b00d521f32adc9f6fb20c6a9686618a2a,body_len=220,acked
+              emit=44,type:repli_lines,seq=44,sent,body_hash:1794f74807a5a6c2aceec983e9bb4293ef3f3fc32566cbc6645e3042e72f7e2f,body_len=220,acked
+              emit=45,type:repli_lines,seq=45,sent,body_hash:1e5d3c18d4a06ddf67a5d944c43ba0b081c83bc07ea1d694cf8b05fe424d6b19,body_len=220,acked
+              emit=46,type:repli_lines,seq=46,sent,body_hash:0d0acb44bbf13f2c40a76d30eda2e6bb5afcc00a7576ad38faaea0512c9624f5,body_len=216,acked
+              emit=47,type:repli_lines,seq=47,sent,body_hash:316c6617b03f075d6db138596a1fde53215921f29b9c971c6a3856014500e905,body_len=216,acked
+              emit=48,type:repli_lines,seq=48,sent,body_hash:46bc6937cf21f3f4d09d70179e72626f251cbe6fc1ab102f721c7320dfe3850b,body_len=220,acked
             inbox
               recent
                 unemit=45,type:repli_page,seq=45
@@ -234,76 +234,76 @@ Snap:H
             req:awaitbuf,bufferid=29,landed,finished
           active_transport,type:mock,open
         Library,pier:4e09f34f5a6ab900
-          Record,id:af99e3b3efe5661a,title:Cosmic C,artist:DJ Oscillo,path:DJ Oscillo - Cosmic C.wav,ext:wav,bytes=1248044,body_hash:af99e3b3efe5661ab2b32ceb82ce5fa90c42ed1d32613fdc4bcd73827abfa8b9,total=5
+          Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,path:DJ Oscillo - Cosmic C.wav,ext:wav,bytes=1248104,body_hash:d71294dbbcd7b726b29eb435b756e0663034b5e94639324b091fed01fbd6c1f7,total=5
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:cec642f34f501315,title:Dorian D,artist:DJ Oscillo,path:DJ Oscillo - Dorian D.wav,ext:wav,bytes=1216044,body_hash:cec642f34f50131579e3e195c6a90ebedbb737f4adbee847ae80eee804b041ca,total=5
+          Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,path:DJ Oscillo - Dorian D.wav,ext:wav,bytes=1216104,body_hash:02cfcb9c15affeaf0321fb7f155f65782ba44e45767f2cea9beeac447a8784ef,total=5
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:8e6fc6abdf3a262c,title:Groove G,artist:DJ Oscillo,path:DJ Oscillo - Groove G.wav,ext:wav,bytes=1056044,body_hash:8e6fc6abdf3a262c09097dd3559a8aa3d3f337959548deeba8d636ef86f4966d,total=5
+          Record,id:cf95c97b08584b92,title:Groove G,artist:DJ Oscillo,path:DJ Oscillo - Groove G.wav,ext:wav,bytes=1056104,body_hash:cf95c97b08584b92d262f214ddfdf536da5a18303b6e27ccb177c1c4088eb765,total=5
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:d2db2a78bd02c395,title:Deep A,artist:The Sines,path:The Sines - Deep A.wav,ext:wav,bytes=1152044,body_hash:d2db2a78bd02c395eafbc2c82ca4a04863888c72829838b8f26cc1c97747d023,total=5
+          Record,id:d8a28ada85f2e851,title:Deep A,artist:The Sines,path:The Sines - Deep A.wav,ext:wav,bytes=1152100,body_hash:d8a28ada85f2e85151b446112e4d97db3bc6cc24c5ef335b2593be0d95df6b28,total=5
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:d9ce0459eaa4514c,title:High A,artist:The Sines,path:The Sines - High A.wav,ext:wav,bytes=1280044,body_hash:d9ce0459eaa4514c1d46524c711235f97c8a52192c7b6d1bb314b491eefb3d9a,total=5
+          Record,id:95f3c03e41e9c007,title:High A,artist:The Sines,path:The Sines - High A.wav,ext:wav,bytes=1280100,body_hash:95f3c03e41e9c0070da6e6a35d5901ac37a8e0e18025e75c3ad8862326f97ef4,total=5
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:6d85855a70adc5c2,title:Middle A,artist:The Sines,path:The Sines - Middle A.wav,ext:wav,bytes=1024044,body_hash:6d85855a70adc5c28445522dc6976935d8a3a90234c52d3b4f28a54c3ab7a4ee,total=4
+          Record,id:902552d4a0b8b0c1,title:Middle A,artist:The Sines,path:The Sines - Middle A.wav,ext:wav,bytes=1024102,body_hash:902552d4a0b8b0c19cc6e6331097145ccc9be1d31b90ee9bc3691730c85043b8,total=4
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
           Record,id:f9cb73180655432e,title:Tagged Truth,artist:Fourier Four,path:4t-mathrock/Fourier Four/Tagged Truth.wav,ext:wav,bytes=8110,body_hash:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d
-          Record,id:f60c57424cac2e10,title:Echo E,artist:Fourier Four,path:4t-mathrock/Fourier Four/Echo E.wav,ext:wav,bytes=960044,body_hash:f60c57424cac2e10046b99ea9708fbf9271c97aab0b75790ee82a7508f0c7d7a
-          Record,id:890df9ef629ed87b,title:Query E,artist:Fourier Four,path:4t-mathrock/Fourier Four/Query E.wav,ext:wav,bytes=1088044,body_hash:890df9ef629ed87bff51e2a21ad321aa9945ea3a7a8619bffebf2a6c704f38f1
+          Record,id:a14602e5ca2e9bd0,title:Echo E,artist:Fourier Four,path:4t-mathrock/Fourier Four/Echo E.wav,ext:wav,bytes=960104,body_hash:a14602e5ca2e9bd00fe5f7d96e1f27bd1113071f99d18687f3a98a6c76f5b998
+          Record,id:370d870166ffe45f,title:Query E,artist:Fourier Four,path:4t-mathrock/Fourier Four/Query E.wav,ext:wav,bytes=1088104,body_hash:370d870166ffe45f2e19b0bd1e8fdf765e0d208ac53fab66790ffe1e334c4a0e
         Library,pier:be0dab3303037ad2
           Record,id:f9cb73180655432e,title:Tagged Truth,artist:Fourier Four,path:Fourier Four - Bogus Name.wav,ext:wav,bytes=8110,body_hash:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d,total
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:f60c57424cac2e10,title:Echo E,artist:Fourier Four,path:Fourier Four - Echo E.wav,ext:wav,bytes=960044,body_hash:f60c57424cac2e10046b99ea9708fbf9271c97aab0b75790ee82a7508f0c7d7a,total=4
+          Record,id:a14602e5ca2e9bd0,title:Echo E,artist:Fourier Four,path:Fourier Four - Echo E.wav,ext:wav,bytes=960104,body_hash:a14602e5ca2e9bd00fe5f7d96e1f27bd1113071f99d18687f3a98a6c76f5b998,total=4
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:890df9ef629ed87b,title:Query E,artist:Fourier Four,path:Fourier Four - Query E.wav,ext:wav,bytes=1088044,body_hash:890df9ef629ed87bff51e2a21ad321aa9945ea3a7a8619bffebf2a6c704f38f1,total=5
+          Record,id:370d870166ffe45f,title:Query E,artist:Fourier Four,path:Fourier Four - Query E.wav,ext:wav,bytes=1088104,body_hash:370d870166ffe45f2e19b0bd1e8fdf765e0d208ac53fab66790ffe1e334c4a0e,total=5
             Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
             Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
-          Record,id:af99e3b3efe5661a,title:Cosmic C,artist:DJ Oscillo,path:4t-bangers/DJ Oscillo/Cosmic C.wav,ext:wav,bytes=1248044,body_hash:af99e3b3efe5661ab2b32ceb82ce5fa90c42ed1d32613fdc4bcd73827abfa8b9
-          Record,id:cec642f34f501315,title:Dorian D,artist:DJ Oscillo,path:4t-bangers/DJ Oscillo/Dorian D.wav,ext:wav,bytes=1216044,body_hash:cec642f34f50131579e3e195c6a90ebedbb737f4adbee847ae80eee804b041ca
-          Record,id:8e6fc6abdf3a262c,title:Groove G,artist:DJ Oscillo,path:4t-bangers/DJ Oscillo/Groove G.wav,ext:wav,bytes=1056044,body_hash:8e6fc6abdf3a262c09097dd3559a8aa3d3f337959548deeba8d636ef86f4966d
-          Record,id:d2db2a78bd02c395,title:Deep A,artist:The Sines,path:4t-chillwave/The Sines/Deep A.wav,ext:wav,bytes=1152044,body_hash:d2db2a78bd02c395eafbc2c82ca4a04863888c72829838b8f26cc1c97747d023
-          Record,id:d9ce0459eaa4514c,title:High A,artist:The Sines,path:4t-chillwave/The Sines/High A.wav,ext:wav,bytes=1280044,body_hash:d9ce0459eaa4514c1d46524c711235f97c8a52192c7b6d1bb314b491eefb3d9a
-          Record,id:6d85855a70adc5c2,title:Middle A,artist:The Sines,path:4t-chillwave/The Sines/Middle A.wav,ext:wav,bytes=1024044,body_hash:6d85855a70adc5c28445522dc6976935d8a3a90234c52d3b4f28a54c3ab7a4ee
+          Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,path:4t-bangers/DJ Oscillo/Cosmic C.wav,ext:wav,bytes=1248104,body_hash:d71294dbbcd7b726b29eb435b756e0663034b5e94639324b091fed01fbd6c1f7
+          Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,path:4t-bangers/DJ Oscillo/Dorian D.wav,ext:wav,bytes=1216104,body_hash:02cfcb9c15affeaf0321fb7f155f65782ba44e45767f2cea9beeac447a8784ef
+          Record,id:cf95c97b08584b92,title:Groove G,artist:DJ Oscillo,path:4t-bangers/DJ Oscillo/Groove G.wav,ext:wav,bytes=1056104,body_hash:cf95c97b08584b92d262f214ddfdf536da5a18303b6e27ccb177c1c4088eb765
+          Record,id:d8a28ada85f2e851,title:Deep A,artist:The Sines,path:4t-chillwave/The Sines/Deep A.wav,ext:wav,bytes=1152100,body_hash:d8a28ada85f2e85151b446112e4d97db3bc6cc24c5ef335b2593be0d95df6b28
+          Record,id:95f3c03e41e9c007,title:High A,artist:The Sines,path:4t-chillwave/The Sines/High A.wav,ext:wav,bytes=1280100,body_hash:95f3c03e41e9c0070da6e6a35d5901ac37a8e0e18025e75c3ad8862326f97ef4
+          Record,id:902552d4a0b8b0c1,title:Middle A,artist:The Sines,path:4t-chillwave/The Sines/Middle A.wav,ext:wav,bytes=1024102,body_hash:902552d4a0b8b0c19cc6e6331097145ccc9be1d31b90ee9bc3691730c85043b8
         req:heist_census,finished
         req:witness,eternal,ok
         Library,pier:4e09f34f5a6ab900.heist
           Record,id:f9cb73180655432e,title:Tagged Truth,artist:Fourier Four,path:Fourier Four - Bogus Name.wav,ext:wav,bytes=8110,body_hash:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d,total
-          Record,id:f60c57424cac2e10,title:Echo E,artist:Fourier Four,path:Fourier Four - Echo E.wav,ext:wav,bytes=960044,body_hash:f60c57424cac2e10046b99ea9708fbf9271c97aab0b75790ee82a7508f0c7d7a,total=4
-          Record,id:890df9ef629ed87b,title:Query E,artist:Fourier Four,path:Fourier Four - Query E.wav,ext:wav,bytes=1088044,body_hash:890df9ef629ed87bff51e2a21ad321aa9945ea3a7a8619bffebf2a6c704f38f1,total=5
-          Record,id:af99e3b3efe5661a,title:Cosmic C,artist:DJ Oscillo,path:4t-bangers/DJ Oscillo/Cosmic C.wav,ext:wav,bytes=1248044,body_hash:af99e3b3efe5661ab2b32ceb82ce5fa90c42ed1d32613fdc4bcd73827abfa8b9
-          Record,id:cec642f34f501315,title:Dorian D,artist:DJ Oscillo,path:4t-bangers/DJ Oscillo/Dorian D.wav,ext:wav,bytes=1216044,body_hash:cec642f34f50131579e3e195c6a90ebedbb737f4adbee847ae80eee804b041ca
-          Record,id:8e6fc6abdf3a262c,title:Groove G,artist:DJ Oscillo,path:4t-bangers/DJ Oscillo/Groove G.wav,ext:wav,bytes=1056044,body_hash:8e6fc6abdf3a262c09097dd3559a8aa3d3f337959548deeba8d636ef86f4966d
-          Record,id:d2db2a78bd02c395,title:Deep A,artist:The Sines,path:4t-chillwave/The Sines/Deep A.wav,ext:wav,bytes=1152044,body_hash:d2db2a78bd02c395eafbc2c82ca4a04863888c72829838b8f26cc1c97747d023
-          Record,id:d9ce0459eaa4514c,title:High A,artist:The Sines,path:4t-chillwave/The Sines/High A.wav,ext:wav,bytes=1280044,body_hash:d9ce0459eaa4514c1d46524c711235f97c8a52192c7b6d1bb314b491eefb3d9a
-          Record,id:6d85855a70adc5c2,title:Middle A,artist:The Sines,path:4t-chillwave/The Sines/Middle A.wav,ext:wav,bytes=1024044,body_hash:6d85855a70adc5c28445522dc6976935d8a3a90234c52d3b4f28a54c3ab7a4ee
+          Record,id:a14602e5ca2e9bd0,title:Echo E,artist:Fourier Four,path:Fourier Four - Echo E.wav,ext:wav,bytes=960104,body_hash:a14602e5ca2e9bd00fe5f7d96e1f27bd1113071f99d18687f3a98a6c76f5b998,total=4
+          Record,id:370d870166ffe45f,title:Query E,artist:Fourier Four,path:Fourier Four - Query E.wav,ext:wav,bytes=1088104,body_hash:370d870166ffe45f2e19b0bd1e8fdf765e0d208ac53fab66790ffe1e334c4a0e,total=5
+          Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,path:4t-bangers/DJ Oscillo/Cosmic C.wav,ext:wav,bytes=1248104,body_hash:d71294dbbcd7b726b29eb435b756e0663034b5e94639324b091fed01fbd6c1f7
+          Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,path:4t-bangers/DJ Oscillo/Dorian D.wav,ext:wav,bytes=1216104,body_hash:02cfcb9c15affeaf0321fb7f155f65782ba44e45767f2cea9beeac447a8784ef
+          Record,id:cf95c97b08584b92,title:Groove G,artist:DJ Oscillo,path:4t-bangers/DJ Oscillo/Groove G.wav,ext:wav,bytes=1056104,body_hash:cf95c97b08584b92d262f214ddfdf536da5a18303b6e27ccb177c1c4088eb765
+          Record,id:d8a28ada85f2e851,title:Deep A,artist:The Sines,path:4t-chillwave/The Sines/Deep A.wav,ext:wav,bytes=1152100,body_hash:d8a28ada85f2e85151b446112e4d97db3bc6cc24c5ef335b2593be0d95df6b28
+          Record,id:95f3c03e41e9c007,title:High A,artist:The Sines,path:4t-chillwave/The Sines/High A.wav,ext:wav,bytes=1280100,body_hash:95f3c03e41e9c0070da6e6a35d5901ac37a8e0e18025e75c3ad8862326f97ef4
+          Record,id:902552d4a0b8b0c1,title:Middle A,artist:The Sines,path:4t-chillwave/The Sines/Middle A.wav,ext:wav,bytes=1024102,body_hash:902552d4a0b8b0c19cc6e6331097145ccc9be1d31b90ee9bc3691730c85043b8
         Library,pier:be0dab3303037ad2.heist
         Heist,at:be0dab3303037ad2,disbelieve_directories
           filing,artist:Fourier Four,genre:4t-mathrock
