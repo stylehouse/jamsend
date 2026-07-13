@@ -5,8 +5,13 @@ Description=x11vnc serving the real jamsend desktop (:0) — for manual FSA gran
 #   picker actually work: a real DE brings the dbus session + xdg-desktop-portal backend +
 #    window focus that the bare Xvfb :10 never had (there the picker just flickered and
 #     threw "The user aborted a request" / AbortError). Less to run, and it grants FSA.
-# Wait for the display manager so :0 exists before we attach.
-After=display-manager.service graphical.target
+# Wait for the display manager so :0 exists before we attach — the display manager ONLY.
+#  After=graphical.target used to ride along and wedged a host whose boot transaction never
+#   completes (a plymouth-quit-wait-style straggler holds the target's job open forever):
+#    every start of this unit parked as a `waiting` job that never ran, journal empty,
+#     while gdm + Xorg were visibly fine.  gdm up IS the condition we need; the target
+#      added nothing but that trap.
+After=display-manager.service
 Wants=display-manager.service
 
 [Service]
