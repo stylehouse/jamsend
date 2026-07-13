@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return '49118eff1f487d27~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return '36c04fe9772ff036~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -719,7 +719,8 @@ async MusuVend_drive(w, req) {
         if (n === 3) await this.MusuVend_publish(w, 'a')
         if (n === 5) await this.MusuVend_revoke(w)
         if (n === 7) await this.MusuVend_resume(w)
-        if (n === 4 || n === 6 || (n >= 8 && n <= 11)) await this.MusuVend_pump(w)
+        if (n === 9) await this.MusuVend_forget(w)
+        if (n === 4 || n === 6 || n === 8 || n === 10 || n === 11) await this.MusuVend_pump(w)
     }
     this.MusuVend_witness(w)
     await this.Musu_float(w)
@@ -832,6 +833,16 @@ async MusuVend_resume(w) {
     this.MusuVend_note(w, row)
 
 },
+// MusuVend_forget — GC an era at the origin: Musica_forget_fold drops the OLDER cloud (created_at 1000 < 1500
+//  cutoff) and keeps the fresher (2000) — the whole reason the %Cloud layer exists (the human: "delete old
+//   Clouds").  A LOCAL GC: the follower keeps both until a Repli_retire propagates the drop (a later rung —
+//    Musica_forget's `// <`), so the witness asserts on the ORIGIN magazine only.
+async MusuVend_forget(w) {
+    this.MusuVend_note(w, { reached: 'forget' })
+    let dropped = await this.Musica_forget_fold(w.c.origin_mag, 1500)
+    this.MusuVend_note(w, { forgot: dropped, clouds: w.c.origin_mag.o({ Cloud: 1 }).length })
+
+},
 // MusuVend_pump — pump the follower's receive side.  REDUNDANT belt-and-braces: the clean Lake_link mock is
 //  reliable:true, so Peeroleum_deliver drains the inbox INLINE in post_do after the sending beat — an offer
 //   sent at beat K is already merged into the mirror before beat K+1's do() (same as MusuReplica).  Kept as a
@@ -899,6 +910,14 @@ MusuVend_witness(w) {
     let clouds = vmag ? vmag.o({ Cloud: 1 }) : []
     let two_distinct = clouds.length === 2 && clouds[0].sc.randomic !== clouds[1].sc.randomic && clouds[0].sc.created_at !== clouds[1].sc.created_at
     if (two_distinct && !T.oa({ see: 'each random draw kept its own cloud across the wire — the follower holds two distinct clouds not one merged blur' })) this.MusuVend_note(w, { see: 'each random draw kept its own cloud across the wire — the follower holds two distinct clouds not one merged blur' })
+    // #6 an era forgotten at once: the origin GC'd the OLDER cloud (created_at 1000 < 1500 cutoff) and kept the
+    //  fresher (2000) — the whole reason the %Cloud layer exists.  Asserts on the ORIGIN (forget is local; the
+    //   follower keeps both until a retire propagates).  Breakable: a cutoff that spared the old cloud or a
+    //    forget that dropped the wrong one leaves clouds!==1 or created_at!==2000.
+    let fg = T.o({ forgot: 1 })[0]
+    let oclouds = omag ? omag.o({ Cloud: 1 }) : []
+    let era_gone = fg && +(fg.sc.forgot || 0) === 1 && oclouds.length === 1 && +(oclouds[0].sc.created_at || 0) === 2000
+    if (era_gone && !T.oa({ see: 'an era was forgotten at once — the origin dropped the older cloud by its stamp and kept the fresher one' })) this.MusuVend_note(w, { see: 'an era was forgotten at once — the origin dropped the older cloud by its stamp and kept the fresher one' })
 
 },
 

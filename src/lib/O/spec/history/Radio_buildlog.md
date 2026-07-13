@@ -16,8 +16,10 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
    is a payload-less leaf, so no wants: the tree crosses in ONE frame; `Repli_merge` upserts it under the
     follower's mirror lib). The GATE is the point — a Book-owned `w.c.grants.Follower` toggle read by
      `w.c.repli_allow`: draw A crosses (granted) → draw B REFUSED + noted (revoked) → draw B catches up
-      (re-granted, gate consulted live). 5 `%see`. DETERMINISTIC + in-memory: no FSA / no audio / no Berth
-       / no AudibleEntropy → runs on ANY runner, jitter-free fixture.
+      (re-granted, gate consulted live) → a FORGET scene GCs the older cloud (`Musica_forget_fold`, the
+       %Cloud layer's raison d'être). 6 `%see` — absorbing BOTH owed-coverage items from the deleted
+        MusuMagazine (multi-cloud grow = see #5, Musica_forget = see #6). DETERMINISTIC + in-memory: no FSA
+         / no audio / no Berth / no AudibleEntropy → runs on ANY runner, jitter-free fixture.
  **The "one brain" split (§12.1):** `Musica_publish` factored so the pure reconcile-then-add is
   `Musica_fold(mag, lib, randomic, created_at)` (no disk) and `Musica_publish` is the Berth wrap
    (open→fold→save). ONE magazine builder now serves the disk publish AND the wire — no duplicated

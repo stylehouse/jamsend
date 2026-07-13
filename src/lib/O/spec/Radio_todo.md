@@ -28,10 +28,11 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
   Piers over a Lake_link loopback, an in-memory magazine folded at the origin and `Repli_offer`ed whole
    (husk — a magazine card is a payload-less leaf, so no wants: the tree crosses in ONE frame), the
     follower mirrors it. The GATE is the point — draw A crosses (granted) → draw B REFUSED + noted
-     (revoked) → draw B catches up (re-granted); the gate is consulted live, cached nowhere. 5 `%see`.
-      Deterministic + in-memory (no FSA / no audio / no Berth / no AudibleEntropy) so it runs on ANY
-       runner and its fixture is jitter-free. Both `.g` LocalGen-green (`Heist.go 43938c`,
-        `Heistation.go 60481c`); toc seeded (11 lie steps); registered in Credence (`brand_new:1`) + Ality.
+     (revoked) → draw B catches up (re-granted); the gate is consulted live, cached nowhere. Then a FORGET
+      scene GCs the older cloud (the `%Cloud` layer's raison d'être — an era dropped at once). 6 `%see`.
+       Deterministic + in-memory (no FSA / no audio / no Berth / no AudibleEntropy) so it runs on ANY
+        runner and its fixture is jitter-free. Both `.g` LocalGen-green; toc seeded (11 lie steps);
+         registered in Credence (`brand_new:1`) + Ality.
  - **The MusuRa question, answered honestly (the human asked "do MusuRa* use the magazine?").** NO —
     the MusuRaStock/Cast/Term/Stream/Chase family stocks a real `%Library` but never publishes a
      magazine from it (zero `Musica`/`%Cloud` refs). They ARE otherwise fully current-era (no tombstone,
@@ -84,10 +85,12 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
         data as data.
  - **MusuMagazine DELETED (2026-07-13):** the fold made MusuHeist the real-data magazine proof, so the
     `%Cloud` toy was retired (Berthation.g flow + Credence/Ality registration + fixtures all gone; the
-     `Musica_*` verbs stay in Heist.g). OWED COVERAGE it uniquely held, to re-add where the features
-      land: **multi-cloud grow** (a SECOND arrival batch forming a new `%Cloud` beside the first — rides
-       M4's standing republish) and **`Musica_forget`** (GC old clouds — untested, no caller yet; test
-        it when it wires to the radiostock cascade).
+     `Musica_*` verbs stay in Heist.g). Its two OWED-coverage items are now BOTH ABSORBED BY MusuVend
+      (M2): **multi-cloud grow** — draw A + draw B form two distinct `%Cloud`s (see #5); and
+       **`Musica_forget`** — `Musica_forget_fold` extracted (the pure GC twin of `Musica_fold`) and
+        exercised by MusuVend's forget scene (see #6: origin drops the older cloud by its stamp, keeps
+         the fresher). Still `// <` on forget: the radiostock cascade + the follower-propagation via
+          Repli_retire (forget is a local GC until a retire crosses).
  - **M2 BUILT (see the top block); NEXT build is D1** — harden the for-another serving path into the
     DOOR: swap MusuVend's Book-owned grant toggle for the live `Swarm_pier_live` verdict (the MusuHeist
      `repli_allow` shape) and add the SABOTAGE scene (a hostile stream claiming `req:`/`eternal` mainkeys

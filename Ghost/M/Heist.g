@@ -637,16 +637,26 @@ Musica_cards(mag):
     for (const cloud of mag.o({ Cloud: 1 })) for (const rec of cloud.o({ Record: 1 })) out.push(rec)
     return out
 
-// Musica_forget — GC an era: drop every %Cloud stamped older than `cutoff` (created_at < cutoff), which drops
-//  its Records with it.  The magazine's own reason the %Cloud layer exists — a whole batch forgotten at once.
-//   // <  the RADIOSTOCK CASCADE: dropping a Cloud must also drop the .jam radiostock chunks derived from its
-//   // <   Records (the human: "delete including radiostock") — unbuilt; needs the enid→stock map (Ra_enid is
-//   // <    the Record id's first-16, so the join exists) walked and each stock file unlinked off disk.
-async Musica_forget(nav, mag, cutoff):
+// Musica_forget_fold — the PURE era-GC: drop every %Cloud stamped older than `cutoff` (created_at < cutoff),
+//  which drops its Records with it.  The magazine's own reason the %Cloud layer exists — a whole batch
+//   forgotten at once (the human: "we could basically delete old Clouds").  No disk — the twin of Musica_fold:
+//    Musica_forget wraps it with the Berth save; a Book (MusuVend) forgets an in-memory magazine and asserts.
+//     Returns dropped count.
+async Musica_forget_fold(mag, cutoff):
     let dropped = 0
     for (const cloud of mag.o({ Cloud: 1 })) {
         if (+(cloud.sc.created_at || 0) < cutoff) { await mag.rm({ Cloud: 1, randomic: cloud.sc.randomic }); dropped = dropped + 1 }
     }
+    return dropped
+
+// Musica_forget — the Berth wrap: forget the era in memory then persist.
+//   // <  the RADIOSTOCK CASCADE: dropping a Cloud must also drop the .jam radiostock chunks derived from its
+//   // <   Records (the human: "delete including radiostock") — unbuilt; needs the enid→stock map (Ra_enid is
+//   // <    the Record id's first-16, so the join exists) walked and each stock file unlinked off disk.
+//   // <  PROPAGATION: forget is a LOCAL GC — a follower keeps the cloud until a Repli_retire (op:delete) per
+//   // <   dropped Record crosses (MusuReplica's goner path); wiring that to the fold is a later rung.
+async Musica_forget(nav, mag, cutoff):
+    let dropped = await this.Musica_forget_fold(mag, cutoff)
     if (dropped) await this.Berth_save(nav, mag)
     return dropped
 //#endregion
