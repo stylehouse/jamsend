@@ -1018,7 +1018,7 @@ Voro_model_member_anchor(p):
     let mk = Object.keys(p.sc)[0]
     let mv = p.sc[mk]
     if (typeof mv === 'string' && mv.length) return mv
-    for (const nk of ['name', 'title', 'label', 'nick', 'id']) {
+    for (const nk of this.Voro_naming_keys()) {
         let v = p.sc[nk]
         if (typeof v === 'string' && v.length) return v
     }
@@ -1451,6 +1451,16 @@ Vtuff_build(src):
     src.c.vtuffing_bamboo = bamboo
     return root
 
+// Voro_naming_keys — THE one list of keys that may name a particle, deduped from four divergent
+//  copies (2026-07-13 they even disagreed: member_anchor had 'id' not 'text', another order).
+//   // < an English list is NOT generic and the human wants it DEAD.  The designed replacement is
+//    the BIJECTIVE KEY — the key whose values tell a family's members apart exactly 1:1 —
+//     data-discovered like its siblings (region = widest-SHARED key, axis = widest-SPREAD key,
+//      name = the bijective key: one philosophy, no English).  It needs family context threaded
+//       to every namer, so it is its own cut, under the byte-diff harness.
+Voro_naming_keys():
+    return ['name', 'title', 'text', 'nick', 'label', 'id']
+
 // Vtuff_ident — one short line of identity for a particle: the mainkey (with its value when the
 //  value carries meaning), sweetened by a naming key when one rides along.  {cell:'Coprosma'}
 //   reads 'cell: Coprosma'; {Track:1,title:'Tide'} reads 'Track · Tide'.
@@ -1459,7 +1469,7 @@ Vtuff_ident(m):
     let v = m.sc[mk]
     let t = mk
     if (v !== 1 && v != null) t = mk + ': ' + v
-    let names = ['name', 'title', 'text', 'nick', 'label']
+    let names = this.Voro_naming_keys()
     for (const k of names) {
         if (k !== mk && typeof m.sc[k] === 'string') {
             t = t + ' · ' + m.sc[k]
@@ -1478,7 +1488,7 @@ Vtuff_name(m):
     let mk = Object.keys(m.sc)[0]
     let v = m.sc[mk]
     if (v !== 1 && v != null) return '' + v
-    let names = ['name', 'title', 'text', 'nick', 'label']
+    let names = this.Voro_naming_keys()
     for (const k of names) {
         if (k !== mk && typeof m.sc[k] === 'string') return m.sc[k]
     }
@@ -1492,7 +1502,7 @@ Vtuff_namekey(m):
     let mk = Object.keys(m.sc)[0]
     let v = m.sc[mk]
     if (v !== 1 && v != null) return mk
-    let names = ['name', 'title', 'text', 'nick', 'label']
+    let names = this.Voro_naming_keys()
     for (const k of names) {
         if (k !== mk && typeof m.sc[k] === 'string') return k
     }
