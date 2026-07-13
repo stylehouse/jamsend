@@ -147,6 +147,18 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
          glass, THEN delete `Voro_naming_keys`.  (`river_order` stays render-side by nature — it
           PCA-orders RENDERED centroid positions, which the model has no coordinates for; the model
            owns the DATA order via `order_by`/`from`/`to`, a different axis than the drawn arc.)
+      **THE SEQUENCING TRAP on the naming cut (found 2026-07-13, the bomb for whoever tries it).**
+       `Vtuff_name`/`Vtuff_ident`/`Vtuff_namekey` are PER-PARTICLE and run DURING the crush (they
+        build `c.vtuffing`); `Voro_model_namekey` — the discovered bijective key — is a PER-FAMILY
+         reading computed LATER, in the model build in the crush TAIL.  So at Vtuff time the family's
+          namekey does not exist yet: you cannot just pass it in.  Three ways out, pick with the human:
+           (a) the namers re-discover the bijective key LOCALLY from the fold's members (no model
+            dependency, but duplicates the discovery — against "one core"); (b) compute the per-fold
+             namekey during the crush and stash it on the rep for both Vtuff and the model to read;
+              (c) re-stamp the vtuffing name AFTER the model.  And it is NOT purely render: `Vtuff_ident`
+               feeds the model's pane anchor (`:721`) and the vtuffing feeds `Voro_model_facts`, so the
+                cut ripples into `from`/`to`/`Loud` — byte-diffable, but broad.  This is why the comment
+                 at `Voro.g:1557` calls it "its own cut" — do NOT fold it into a Cytui-reader wave.
 
 **Two standing gotchas at the tab.** (1) RELOAD the runner tab first if its Vite HMR socket is
  dead ([[hmr-socket-dead-tell]]) — relay ops answer but `.svelte` edits silently don't land.
