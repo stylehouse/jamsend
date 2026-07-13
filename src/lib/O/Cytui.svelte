@@ -1443,7 +1443,7 @@
     //         number.  Everything crowded out of this beat's glass is counted, and the
     //          count rides the +N fold mark — annotated, never silent.
     function subgraph_build(c: VCell, descs: VtuffDesc[], tint: string,
-                            kind: string | undefined, quiet?: Set<string>): VSubPane | null {
+                            kind: string | undefined, quiet?: Set<string>, frame = 0): VSubPane | null {
         // the HUSH (the 2026-07-14 steer): claims this cell's whole region states ride the
         //  region's river instead — drop them here and LEDGER the count (»N, distinct from
         //   the +N crowd-out: +N means "no room this beat", »N means "the river says it").
@@ -1481,7 +1481,11 @@
         } else {
             const R = Math.sqrt(area / Math.PI)
             const khue = kind_tint(kind) ?? tint
-            const kang = vein_of(kind ?? head.tag ?? '').ang
+            // the cs frame (0 when cs is off) rotates the WHOLE compass — vein bearings and the
+            //  member ring alike — so downstream-along-the-river is a fixed local direction and a
+            //   key lands the same way river-relative in every cell of the region.  frame=0 leaves
+            //    every angle exactly as before.
+            const kang = vein_of(kind ?? head.tag ?? '').ang + frame
             const pull = (x: number, y: number, margin: number) => {
                 for (let t = 0; t < 5; t++) {
                     const ch = poly_chord(c.inset, y)
@@ -1491,9 +1495,9 @@
                 return { x, y }
             }
             const kpts = keyed.map(g => {
-                const v = vein_of(g.key ?? '')
-                return pull(c.acx + Math.cos(v.ang) * R * 0.55,
-                            c.acy + Math.sin(v.ang) * R * 0.55 * 0.8, 4)
+                const a = vein_of(g.key ?? '').ang + frame
+                return pull(c.acx + Math.cos(a) * R * 0.55,
+                            c.acy + Math.sin(a) * R * 0.55 * 0.8, 4)
             })
             const mpts = members.map((l, i) => {
                 const a = kang + (i + 0.5) * 2 * Math.PI / members.length
@@ -2742,6 +2746,11 @@
         // which claims each cell may hush this beat — filled by the promotion below,
         //  consumed by the ▦ pass; a cell not in the map quiets nothing.
         const quiet_map = new Map<string, Set<string>>()
+        // the cs FRAME per member cell — the river's local flow direction (radians) where it
+        //  passes through that cell, filled by the river fit below, consumed by the ▦ pass:
+        //   the cell rotates its sub-cell compass so 0 = DOWNSTREAM.  A cell not in the map
+        //    (region off, family of one) keeps the screen-fixed compass — byte-identical.
+        const cs_frames = new Map<string, number>()
 
         // ── ▧ the regroup face (Slice C + D): washes AND rivers, one grouping ─────
         //  group the cells by the grasp's `the:family` (region_of, null-safe) ONCE,
@@ -2781,7 +2790,9 @@
                 //  letterform, and line the shared trait along it.  A family under two
                 //   cells has no arc to draw (its lone|paired cell is already the space).
                 if (members.length >= 2) {
-                    const cents = members.map(m => ({ x: m.acx, y: m.acy }))
+                    // carry the cell id on each centroid so the ordered walk can hand every
+                    //  member its LOCAL river tangent (the cs frame) after ordering
+                    const cents = members.map(m => ({ x: m.acx, y: m.acy, id: m.id }))
                     const { seq, wrap } = river_order(cents)
                     // a wrap that truly closes (last centroid back near the first, ≥4
                     //  members) draws the ring shut — that's the O; else an open arc.
@@ -2791,6 +2802,22 @@
                         Math.max(...cents.map(c => c.x)) - Math.min(...cents.map(c => c.x)),
                         Math.max(...cents.map(c => c.y)) - Math.min(...cents.map(c => c.y)))
                     const closed = wrap && seq.length >= 4 && span < spread * 0.35
+                    // the cs FRAME: hand every member the river's LOCAL flow direction where it
+                    //  passes through — the tangent from its upstream to its downstream neighbour
+                    //   (the ring wraps for a closed O).  The ▦ pass rotates that cell's sub-cell
+                    //    compass by this angle, so 0 = downstream and a key sits the same way
+                    //     RIVER-relative in every cell: the coordinate system the human named,
+                    //      posable and twisted to fit the landform.  Only filled under cs (region_on),
+                    //       so cs-off leaves every compass screen-fixed — byte-identical render.
+                    const S = seq.length
+                    for (let i = 0; i < S; i++) {
+                        const id = (seq[i] as any).id as string | undefined
+                        if (!id) continue
+                        const prev = closed ? seq[(i - 1 + S) % S] : seq[Math.max(0, i - 1)]
+                        const next = closed ? seq[(i + 1) % S] : seq[Math.min(S - 1, i + 1)]
+                        const tx = next.x - prev.x, ty = next.y - prev.y
+                        if (Math.hypot(tx, ty) > 1) cs_frames.set(id, Math.atan2(ty, tx))
+                    }
                     const d = catmull_d(seq, closed)
                     if (d) {
                         const shape = letter_of(seq, closed)
@@ -2868,7 +2895,7 @@
                 //   hushing the claims its region's river now speaks for it (quiet_map).
                 const dm = descmap.get(c.id)
                 if (!dm) continue
-                const pane = subgraph_build(c, dm.descs, dm.tint, dm.fkind, quiet_map.get(c.id))
+                const pane = subgraph_build(c, dm.descs, dm.tint, dm.fkind, quiet_map.get(c.id), cs_frames.get(c.id) ?? 0)
                 if (!pane) continue
                 next.add(c.id)
                 subs.push(pane)
@@ -3602,8 +3629,8 @@
             title="properCellable — wordy loners (%see) get a Stuffing, and a cell in voronoi mode">❝</button>
         <button class="v-toggle" class:on={families_on} onclick={toggle_families}
             title="family hulls — one faint shared outline per compound house">⬡</button>
-        <button class="v-toggle" class:on={region_on} onclick={toggle_regions}
-            title="region washes — group cells by the grasp's the:family and back each family with one translucent filled hull beneath the cells, so same-family cells read as one continuous space (off by default)">▧</button>
+        <button class="v-toggle v-cs" class:on={region_on} onclick={toggle_regions}
+            title="cs — the region's coordinate system (the human's naming, 2026-07-14): same-family cells share one wash + one river, and the river IS the posable axis, twisted to fit around the landform — member cells rotate their sub-cell compass to it, so a key sits the same way RIVER-relative in every cell and the space reads as aligned across them (off by default)">cs</button>
         <button class="v-toggle" class:on={brush_pref} onclick={toggle_brush}
             title="gravity brush — wheel pinches|spreads the locale under the cursor (Ctrl+wheel still zooms)">🌀</button>
         <button class="v-toggle" class:on={subgraph_on} onclick={toggle_subgraph}
@@ -3931,6 +3958,11 @@
 .cytui-bar button.v-toggle.on {
     color: #7ab0d4;
     border-color: #2a3a4a;
+}
+/* cs — a two-letter label where its siblings are single glyphs: shrink it to sit on
+   the same baseline (the region's coordinate-system face). */
+.cytui-bar button.v-toggle.v-cs {
+    font-size: 78%; font-style: italic; letter-spacing: -0.02em;
 }
 .cytui-overlays {
     position: absolute;
