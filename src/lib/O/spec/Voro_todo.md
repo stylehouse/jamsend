@@ -38,8 +38,17 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
  which was the fill-out shift, done).**  Three rulings, one arc:
  - **The distiller bows to Stuffing** — the ALGORITHM (`Stuff.svelte.ts compute_groups`: group
     like rows → columns → value-chips-with-counts, `is_one` collapse), NOT the HTML component.
-     **LANDED `bdc3d923` (typed claims, byte-neutral ×30 snaps, sabotage-proven, live-green 4/4);
-      the presentation-row unification (one transpose for title|list|member paths) still OPEN.**
+     **LANDED `bdc3d923` (typed claims, byte-neutral ×30 snaps, sabotage-proven, live-green 4/4).
+      LANDED `ba581d99` (2026-07-14 night): the presentation rows go TYPED too — title|list|member|
+       sub|dip carry name/nk/tag/k as their own keys, ALL display text composed at paint (Cytui
+        vtuff_rows), only the `+N` overflow tail keeps a text (chrome).  `Vtuff_default` and
+         `Vtuff_bamboo` stop duplicating ~50 lines of wording twice (already drifting) — the shared
+          authors `Vtuff_title_row`/`Vtuff_member_rows`/`Vtuff_dip_row`/`Vtuff_kinds`/`Vtuff_skips`
+           say a row ONCE, each stalk only decides WHERE rows land.  A member row's kind-tag rides
+            ALWAYS now (honest data); the draw-the-chip decision is paint's (memberTag hush), held
+             byte-equal to the old baked calls.  Claim set invariant (fact/spread/skips untouched);
+              headless byte-neutral ×30 snaps ×4 Books.  Live SVG label-parity gate OWED (blocked:
+               the one runner is the human's MusuCursor).**
      Vtuff_default's bespoke row taxonomy (title/list/member/sub/fact/spread heuristics with the
       English naming list threaded through) is replaced by that one clean `((k:v+)+)+` slope:
        typed key/value bits end-to-end, display text derived only at paint.  Kills by construction
@@ -59,6 +68,18 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
           `/tmp/nightshift_gallery/` (mitosis_promo3.svg = rivers carrying '1998' 22px +
            'remaster ×2' + 'live ×2', five `»2` cells, 'remaster' NOWHERE in a cell).
             OPEN refinement: literal wall-adjacency quieting (VCell.edge_src knows neighbours).**
+     **cs — LANDED `b2e8e965` (2026-07-14 night, the human's live steer): the ▧ region wash
+      "wasn't making sense" (a calendar-grid glyph backing a meaningless hull).  Relabelled `cs`
+       and given meaning — a region is a local COORDINATE SYSTEM for its member cells, and the
+        family's river IS its axis (posable = the graph's layout axis; twisted to fit the voronoi
+         landform).  Each member cell learns the river's local flow tangent where it passes through
+          (`cs_frames`, from the ordered centroid walk); the ▦ sub-cell pass rotates that cell's
+           whole compass by the frame, so downstream is a fixed local direction and a key sits the
+            same way RIVER-relative in every cell — the space reads as aligned across them.  Render-
+             side only (no .g/snap): frame filled only under region_on, defaults 0, cs-off byte-
+              identical.  Live SVG gate OWED (same runner block).  NEXT LAYER = tropism: "certain
+               plants grow towards" the axis (the human) — the frame is the trellis, a fact/member
+                can LEAN toward downstream; not built.**
  - **The naming-cut is DROPPED as filed; the bijective key is PARKED.**  region|axis|name are
     necessary-ish but fundamentally fallible analytics — do not grow them.  `Voro_model_namekey`
      keeps its code but is not threaded further (its spirit may resurface at the Stuffing-algorithm
@@ -67,6 +88,26 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
         (`D%the_key,the_very_key` making a key meaningful on identity) — explicit over inferred;
          not now.  Identity-anchor direction likewise Se-side (Dip_assign persists across a Seem's
           replace via resume_X; `mem.further`-pathed stash for openness) — noted, not this shift.
+
+**SPIN-OFF captured, not built — the STYLE-EXPLAINER HUD (the human, 2026-07-14).**  "tooltips, or
+ part of the hud that explains the style of what you're pointing at (eg the %woodystem subcell) so
+  users can learn to read our svg stylings (which should become more artistic, gradually… a world
+   of stuff to spin off)."  The glass has grown a real vocabulary — lilac colon = k→v mark, violet
+    ×N = count, `»N` = promoted to the region's river, `+N` = crowded out this beat, per-key VEIN
+     hue (one golden-angle slot per key name, global), the cs frame's river-relative compass, the
+      river LETTERFORM (O/I/C/S read from curvature), kind-tint tags.  Nothing tells a newcomer how
+       to read it.  The ask: point at a sub-cell (or any glass element) and a HUD panel decodes the
+        style under the cursor — teaching the language, and a seam toward the render becoming MORE
+         artistic over time (the human owns that aesthetic direction — hence captured, not built).
+   First-step sketch (when the human spins it up): the CSS already carries the legend in comments
+    (`.vsub-colon`/`.vsub-sup`/`.vsub-com`/`.vsub-hid` each documented) — lift those into a data
+     table `STYLE_LEXICON[className] = {glyph, meaning}`; the sub-graph tspans already class-tag
+      every element (`vsub-colon`, `vsub-sup`, `vsub-com`, `vsub-gkey`, `vsub-label.hot`…), and
+       `vsub-label.hot:hover` proves per-element hover is wired — so a mouseover reads the hovered
+        tspan's class → lexicon entry → a Brink-style HUD face (memory [[lens-primitive]] Brink HUD
+         is the home; a `Lens:Legend` face beside Rundar/Relay/Sound).  Keep it a READER (no snap,
+          no model) — it explains what's drawn, it doesn't change it.  Verify via `runner_shot --svg`
+           greps + live eyes.  NOT this shift; a whole area, the human's to shape.
 
 **THE FIVE WAVES (the arc from here — model first, geometry later, pixels last).**
  - **① The Se-up model — LANDED (2026-07-13, honest-language round).**  `Voro_model` (Voro.g)
