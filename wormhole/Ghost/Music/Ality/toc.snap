@@ -26,7 +26,6 @@ Waft:Ghost/Music/Ality,active
     Funkcion:Storying,of_Book:MusuRaChase
     Funkcion:Storying,of_Book:MusuHeist
     Funkcion:Storying,of_Book:MusuBerth
-    Funkcion:Storying,of_Book:MusuMagazine
   What:the heist — %Heist at a pier moves ORIGINAL file bytes straight into the collection (Radio_todo §0 + §10 rung 1)
     Doc:Ghost/M/Heist.g
     Point,method:Heist_census

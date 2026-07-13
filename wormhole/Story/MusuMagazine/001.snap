@@ -1,8 +1,0 @@
-Snap:H
-  H:MusuMagazine,Run
-    A:MusuMagazine
-      self,round	{"mung":["age"]}
-      w:MusuMagazine
-        self,round	{"mung":["age"]}
-        req:wrangle,eternal,ok
-        testing

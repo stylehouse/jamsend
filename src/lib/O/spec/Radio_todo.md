@@ -44,11 +44,12 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
       reflects it into w/%Mag — real ids/hashes/cp-paths on the snap; the existing deny gives a RECAST
        on real data; 14→16 sees, 19→22 steps). The magazine is now proven on the real machinery, the
         data as data.
- - **OPEN for the human — MusuMagazine disposition:** the fold makes MusuHeist the real-data magazine
-    proof, so MusuMagazine (the rebuilt `%Cloud` toy) is now only the LOGIC unit-test — it uniquely
-     covers multi-cloud grow (c1→c2) and would cover `Musica_forget` (untested). KEPT for now as that
-      focused unit test; RETIRE it (de-register Credence+Ality, drop fixtures) if you want zero
-       duplication — my rec is keep-but-add-a-forget-scene. Your call.
+ - **MusuMagazine DELETED (2026-07-13):** the fold made MusuHeist the real-data magazine proof, so the
+    `%Cloud` toy was retired (Berthation.g flow + Credence/Ality registration + fixtures all gone; the
+     `Musica_*` verbs stay in Heist.g). OWED COVERAGE it uniquely held, to re-add where the features
+      land: **multi-cloud grow** (a SECOND arrival batch forming a new `%Cloud` beside the first — rides
+       M4's standing republish) and **`Musica_forget`** (GC old clouds — untested, no caller yet; test
+        it when it wires to the radiostock cascade).
  - **NEXT build:** M2 — two-Pier magazine replication over the existing Repli pipe, grant-gated
     (grant on = the real magazine lands at the follower; grant off = refused + noted). Then D1 the
      door → C1 cursors. Corner-cases for when cp-landing meets real disk (all `// <`): audio-probe the
