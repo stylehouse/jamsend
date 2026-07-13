@@ -253,33 +253,25 @@ async Heist_beat(w, rx, mine, theirs, job, own_lib, mir, nav, mardir):
 Heist_safe_seg(name):
     return ('' + (name || '')).replace(/[\/\x00]/g, '-')
 
-// Heist_land_rel — the ONE landing-path derivation, shared by Heist_land (what to write) and Heist_manifest
-//  (what WOULD be written, look-before-you-commit).  Returns the file path RELATIVE to the marrauding dir:
-//   <genre>/<Artist>/<Album>/<Title>.<ext>.
-//  THE MADE CALL (reversible — flag): genre STAYS the top folder above the tag tree.  It preserves the
-//   pinned believe/disbelieve %filing design (the job's category decision still names the shelf), and keeps
-//    the Book's genre-substring gates meaningful.
-//   // <  the genre-vs-tree FORK stays open for the human: the alternative is to DROP genre entirely and let
-//   // <   <Artist>/<Album>/<Title> be the whole tree (tags replace curation).  One line here decides it.
-//  ALBUM-LESS handling (the made call): an absent album DROPS THE LEVEL — <genre>/<Artist>/<Title>.<ext>,
-//   never a literal "Unknown Album" folder.  Why drop, not placehold: a loose single on a real shelf sits
-//    straight under the artist, which is exactly how the test tones (flat `Artist - Title.wav`, no album tag)
-//     want to read; a synthetic folder would be noise the human then has to tidy.  Title falls back to the
-//      id so a tagless-AND-nameless file still lands somewhere addressable rather than at a bare `.ext`.
-Heist_land_rel(genre, artist, album, title, ext, id):
-    let g = this.Heist_safe_seg(genre) || 'misc'
-    let a = this.Heist_safe_seg(artist) || 'Unknown Artist'
-    let al = this.Heist_safe_seg(album)
-    let t = this.Heist_safe_seg(title) || ('' + (id || 'track'))
-    let file = t + (ext ? '.' + ext : '')
-    if (al) return g + '/' + a + '/' + al + '/' + file
-    return g + '/' + a + '/' + file
+// Heist_cp_path — the SOURCE's own relative path (name + any subdirs), made SAFE to land under a dest-root.
+//  cp-landing (the human's 2026-07-13 ruling): a heist is a COPY, so the source's own filename and folder
+//   layout survive UNCHANGED — tags catalog and display a track but NEVER rename the file (the 12
+//    `Muslimgauze - Untitled` tracks keep `01 Untitled.flac`..`12 Untitled.flac` and so never collapse).
+//  SECURITY (kid-safe): a source path must never write OUTSIDE the collection, so drop any '..' / '.' /
+//   leading-slash escape before landing — a malicious offer cannot traverse up out of the dest-root.  A
+//    path that sanitizes to nothing (all dots) falls back to the content id so it still lands addressably.
+Heist_cp_path(rec):
+    let parts = ('' + (rec.sc.path || '')).split('/').filter((p) => p && p !== '.' && p !== '..')
+    if (!parts.length) return ('' + (rec.sc.id || 'track')) + (rec.sc.ext ? '.' + rec.sc.ext : '')
+    return parts.join('/')
 
 // Heist_rel_for — the landing path (relative to the marrauding dir) for one mirror|census card under one
-//  job: pull the genre from the job's pinned filing, the Artist/Album/Title from the card's meta.
+//  job: the filing decision picks the DEST-ROOT (the believe/disbelieve %filing design shrinks to "which
+//   top folder"), and the source's own relative path rides underneath UNCHANGED (a cp, no rename).  Shared
+//    by Heist_land (what to write) and Heist_manifest (what WOULD be written, look-before-you-commit).
 Heist_rel_for(job, rec):
-    let genre = this.Heist_filing_for(job, rec.sc.artist)
-    return this.Heist_land_rel(genre, rec.sc.artist, rec.sc.album, rec.sc.title, rec.sc.ext, rec.sc.id)
+    let root = this.Heist_safe_seg(this.Heist_filing_for(job, rec.sc.artist)) || 'misc'
+    return root + '/' + this.Heist_cp_path(rec)
 
 // Heist_land — STRAIGHT INTO THE COLLECTION: assemble the pulled %Body chunks, verify the bytes are
 //  the original (body_hash — a mismatch lands nothing and stamps the breach), file under the genre
@@ -288,15 +280,15 @@ Heist_rel_for(job, rec):
 //     heist's dedup notice it.  The spent mirror card drops: nothing attributes afterwards.
 async Heist_land(w, nav, job, own_lib, mir, rec, mardir):
     let total = +(rec.sc.total || 0)
-    // THE REAL LANDING TREE (roadmap §10.2 #2): <genre>/<Artist>/<Album>/<Title>.<ext>, relative to the
-    //  marrauding dir.  genre is the job's pinned %filing decision (unchanged), Artist/Album/Title come from
-    //   the landed card's meta (tags at census time, filename otherwise).  `rel` is derived ONCE here and is
-    //    THE card's sc.path AND the newlyadded entry AND the on-disk path — the three MUST stay identical: the
-    //     newlyadded read-back joins mardir + entry, dedup + the disk monitor key on sc.path, and the log
-    //      "unsourced" guard requires entry === a held card's path.  Splitting `rel` into dir + filename below
-    //       keeps all three the same string.  The SOURCE's relative dirs no longer survive under the genre —
-    //        the tag/name tree replaces them (disbelieve_directories is now moot for the shape; the job flag
-    //         is left on the design for a future believe-the-source-layout mode).
+    // THE LANDING PATH is a cp (the human's 2026-07-13 ruling): <dest-root>/<source-relative-path>, relative
+    //  to the marrauding dir.  dest-root is the job's pinned %filing decision (unchanged); the source's OWN
+    //   name + subdirs ride underneath untouched — tags catalog the track but never rename the file.  `rel`
+    //    is derived ONCE here and is THE landed card's sc.path AND the newlyadded entry AND the on-disk path —
+    //     the three MUST stay identical: the newlyadded read-back joins mardir + entry, dedup + the disk
+    //      monitor key on sc.path, and the log "unsourced" guard requires entry === a held card's path.
+    //       Splitting `rel` into dir + filename below keeps all three the same string.  (The source's dirs now
+    //        SURVIVE under the dest-root — that is the whole point of a cp; Heist_cp_path sanitizes any '..'
+    //         escape so a hostile offer cannot traverse out of the collection.)
     let rel = this.Heist_rel_for(job, rec)
     let relparts = rel.split('/').filter(Boolean)
     let filename = relparts.pop()

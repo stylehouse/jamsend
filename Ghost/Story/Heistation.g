@@ -209,8 +209,9 @@ async MusuHeist_census(w):
 // MusuHeist_plant_tagged — lay ONE mislabeled-but-tagged WAV into Duo's Fourier Four before the census
 //  walks the share.  The FILENAME lies (`Fourier Four - Bogus Name.wav` — a title that names no real
 //   tone) while the embedded RIFF INFO tags carry the TRUE identity (Fourier Four — Tagged Truth).  So the
-//    census's Crate_meta_from_tags must catalogue by the bytes, not the name: after Uno heists it, the file
-//     shelves at the TAG-derived path (<mathrock>/Fourier Four/Tagged Truth.wav), never the bogus filename.
+//    census's Crate_meta_from_tags must catalogue by the bytes, not the name: after Uno heists it, the card's
+//     IDENTITY is the tag (title Tagged Truth) while the FILE keeps its own bogus name on disk (cp never
+//      renames) — catalogued by the tags, never renamed by them.
 //  THE WHITTLE BOMB (Heist_census line 81): the census gates on the PATH-derived artist before it ever
 //   reads the bytes, so the filename MUST keep artist `Fourier Four` (in Duo's whittle) — only the TITLE is
 //    allowed to mislead.  A wrong artist in the name would drop the file at the whittle, unread.
@@ -518,16 +519,16 @@ MusuHeist_witness(w):
         }
         if (filed === 3 && !T.oa({ see: 'the landing filed by category — each track under the genre its filing named' })) this.MusuHeist_note(w, { see: 'the landing filed by category — each track under the genre its filing named' })
     }
-    // the mislabeled tagged WAV followed its TAGS home, not its filename.  After Uno heists Duo, exactly one
-    //  landed card sits at the TAG-derived path (<mathrock>/Fourier Four/Tagged Truth.wav) and NOT ONE card
-    //   anywhere carries the bogus filename ("Bogus Name") — the filing trusted the bytes over the name.  Both
-    //    halves matter: the positive (it shelved by tag) AND the negative (the lie never became a path), so a
-    //     census that fell back to the filename would drop this see, not slip through.
+    // cp-landing INVERTS this scene: the file is COPIED, never renamed, so it KEEPS its lying filename
+    //  (Bogus Name) on disk — but its catalogue identity is the TAG truth (title = Tagged Truth).  So the
+    //   proof is: exactly one card carries the tag-title identity AND that same card's path still holds the
+    //    original filename.  Tags catalogue and dedup; a cp never renames the bytes.  (Was "followed its tags
+    //     home" — the tag-tree rename; that shape retired with cp.)
     if (ha && w.c.tag_title) {
-        let tag_rel = w.c.genre_pfx + '-mathrock/Fourier Four/' + w.c.tag_title + '.wav'
-        let at_tag = uno_lib.o({ Record: 1, artist: 'Fourier Four', title: w.c.tag_title }).filter((r) => r.sc.path === tag_rel).length
-        let by_name = uno_lib.o({ Record: 1 }).filter((r) => ('' + r.sc.path).includes('Bogus Name')).length
-        if (at_tag === 1 && by_name === 0 && !T.oa({ see: 'a mislabeled file followed its tags home — the filing trusted the bytes over the filename' })) this.MusuHeist_note(w, { see: 'a mislabeled file followed its tags home — the filing trusted the bytes over the filename' })
+        let card = uno_lib.o({ Record: 1, artist: 'Fourier Four', title: w.c.tag_title })[0]
+        let cataloged_by_tag = card ? 1 : 0
+        let kept_filename = card && ('' + card.sc.path).includes('Bogus Name') ? 1 : 0
+        if (cataloged_by_tag === 1 && kept_filename === 1 && !T.oa({ see: 'a mislabeled file kept its own name on disk — the catalog knew the truth from the tags but a cp never renames the file' })) this.MusuHeist_note(w, { see: 'a mislabeled file kept its own name on disk — the catalog knew the truth from the tags but a cp never renames the file' })
     }
     // job B landed the other way — same music economy, DIFFERENT categories at the other end.  Each count
     //  is scoped to its ARTIST (audit #6): a swap that filed The Sines under bangers would keep 3+3 in the
