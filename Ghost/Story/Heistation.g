@@ -876,3 +876,268 @@ MusuVend_witness(w):
     let oclouds = omag ? omag.o({ Cloud: 1 }) : []
     let era_gone = fg && +(fg.sc.forgot || 0) === 1 && oclouds.length === 1 && +(oclouds[0].sc.created_at || 0) === 2000
     if (era_gone && !T.oa({ see: 'an era was forgotten at once — the origin dropped the older cloud by its stamp and kept the fresher one' })) this.MusuVend_note(w, { see: 'an era was forgotten at once — the origin dropped the older cloud by its stamp and kept the fresher one' })
+
+// ══ MusuDoor — D1 (part b): the for-another DOOR — the anti-klepto SABOTAGE wall + the ungranted refusal ═══
+//  MusuVend (M2) proved the magazine TRAVELS grant-gated.  This Book forks its wire + two Piers + grant seam
+//   and proves the DOOR the recipient stands: content that arrives over the wire is DATA and CANNOT smuggle
+//    LIVE MACHINERY.  The §12 heart (§12.1, the anti-klepto inversion): a malicious origin hand-crafts a
+//     magazine card carrying a grafted %req:sabotage,eternal — a standing request dressed as a catalog leaf.
+//      The follower merges it (Repli_merge upserts any C** as data — it does not judge structure), yet it
+//       lands INERT: reqdo/reqdo_sweep pump only the reqs that are IMMEDIATE children of a w: world
+//        (w.o({req:1})), and merged content lands strictly BELOW the mirror library, so a grafted req is never
+//         one of the world's own requests → never enumerated → never pumped.
+//  THE BOMB (§12.1, kept honest here): today's inertness is an ACCIDENT doing duty as a wall — the sweep's
+//   immediate-children-only reach, not a deliberate check that a merge cannot graft live machinery (and a
+//    wire-decoded req has no closure to run anyway — a SECOND, deeper wall).  The sabotage %see PINS the
+//     accidental wall so a future change that starts pumping foreign trees (a deep-walking sweep, promotion of
+//      merged reqs) goes RED; the construction-level wall (a merge that PROVABLY cannot graft machinery) is the
+//       deeper owed rung the see guards toward.  So the see does NOT overclaim — it pins "never became a world
+//        request", the property that holds today.
+//  THE CANARY (why an immediate-child check is NOT enough — adversarial review, 2026-07-13).  A first draft
+//   asserted the grafted req is "not among w.o({req:1})" (w's immediate reqs).  That is a FALSE-GREEN: it only
+//    catches a merge that PROMOTES a req to w-level, not the regression the BOMB names (a deep-walking sweep
+//     that pumps a req wherever it sits), and worse it watched the wrong shape.  The real canary is dynamic —
+//      does the buried req ever get PUMPED.  So the follower installs req_sabotage, the handler do_fn_for
+//       resolves for a req valued 'sabotage' (H.req_<value>); it flips the world's `pwned`.  Today the buried
+//        req is never reached by any sweep, so req_sabotage NEVER fires — the wall.  ANY future change that
+//         pumps it (promotion OR a deep-walking sweep) fires the handler → pwned → the %see goes RED.
+//  NON-VACUITY (an unrun security assertion is the worst false-green — recipe warning + [[adversarial-test-agent]]):
+//   the wall see latches only once (a) the grafted req is PRESENT deep in the mirror (the merge accepted it —
+//    not green because nothing was grafted), (b) a CONTROL pumped an identical sabotage req through its own
+//     world .do() and watched pwned FLIP (so "pwned stays unset" is a real discriminator via the exact dispatch
+//      path — not vacuously always-false), and (c) a belief sweep demonstrably elapsed after the graft.  Plus a
+//       containment see: the honest neighbours kept their identity beside the inert graft (no store corruption).
+//  DEFERRED (D1 part a — the crypto door): MusuVend's Book-owned grant toggle is KEPT here (deterministic, so
+//   the fixture is jitter-free and live-gateable on any runner).  Hardening it into the live Swarm_pier_live
+//    verdict (MusuHeist's shape) reintroduces seal wall-clock → an EntropyProfile + a warming re-accept; that
+//     is a separate rung best done attended (Radio_todo §12.4 D1 recipe (a)).  The sabotage wall does not
+//      depend on WHO the peer is — a grafted req is inert whether the sender is granted or not — so the
+//       security core lands cleanly without the crypto.
+//  IN-MEMORY + DETERMINISTIC: no FSA, no audio, no Berth, no AudibleEntropy → runs on ANY runner, caveat:0.
+//   CONVENTION (Musu*): no Run_A_ recipe — the world MUST be named MusuDoor (do_fn_for dispatches by w.sc.w).
+
+MusuDoor(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuDoor_drive,w,req
+        req%ok = 1
+
+// MusuDoor_T / MusuDoor_note — the one %testing subtree; c.up stamped so an upward walk from a marker reaches w.
+MusuDoor_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+MusuDoor_note(w, sc):
+    let t = this.MusuDoor_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+// MusuDoor_drive — ONE protocol action per beat (Musu family style); the witness runs EVERY pass so each %see
+//  fires the first pass its truth holds.  Frames settle over post_do between beats (reliable Lake_link mock), so
+//   an offer sent at beat K is merged before K+1's do().  Skips cleanly with no transport (headless).
+async MusuDoor_drive(w, req):
+    if (typeof this.Lake_link !== 'function' || typeof this.Peeroleum_send !== 'function') {
+        if (!this.MusuDoor_T(w).oa({ skipped: 'no_transport' })) this.MusuDoor_note(w, { skipped: 'no_transport' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuDoor_setup(w)
+        if (n === 3) await this.MusuDoor_publish_honest(w)
+        if (n === 5) await this.MusuDoor_control(w)
+        if (n === 6) await this.MusuDoor_sabotage(w)
+        if (n === 8) await this.MusuDoor_revoke(w)
+        if (n === 4 || n === 9) await this.MusuDoor_pump(w)
+        // beat 7: pump, THEN mark that a sweep elapsed after the graft — "inert" means "survived a sweep", not
+        //  "not yet swept".  (The sweep runs every beat over this w; the buried req is never in w.o({req:1}).)
+        if (n === 7) { await this.MusuDoor_pump(w); this.MusuDoor_note(w, { settled_after_graft: 1 }) }
+    }
+    this.MusuDoor_witness(w)
+    await this.Musu_float(w)
+
+// MusuDoor_setup — the two Piers over the loopback (Lake_link), the repli handlers, the ORIGIN shelf + its
+//  in-memory magazine, and the grant (a Book-owned toggle, ON for the follower; D1 part a swaps the live Swarm
+//   verdict).  A tiny pool stands in for the unbounded crate (two honest tracks + one that arrives after the cut).
+async MusuDoor_setup(w):
+    this.MusuDoor_note(w, { reached: 'step_2' })
+    let link = await this.Lake_link(w, 'Origin', 'Follower')
+    w.c.tx = link[0]
+    w.c.rx = link[1]
+    this.Peeroleum_arm_whittle(w)
+    link[1].i({ Ud: 1, pubkey: 'Origin' })
+    link[0].i({ Ud: 1, pubkey: 'Follower' })
+    this.Repli_arm(w)
+    w.c.repli_mirror_pier = 'Follower.mirror'
+    this.Repli_register_rx(w, link[1])
+    let origin_lib = w.i({ Library: 1, pier: 'Origin' })
+    origin_lib.c.up = w
+    w.c.origin_lib = origin_lib
+    w.c.repli_src = origin_lib
+    this.Repli_register_caster(w, link[0], origin_lib)
+    let mag = w.i({ Mag: 'Musica' })
+    mag.c.up = w
+    w.c.origin_mag = mag
+    w.c.grants = { Follower: 1 }
+    w.c.repli_allow = (peer, at) => !!(w.c.grants && w.c.grants[peer])
+    w.c.pool = [
+        { id: 't0', artist: 'Auteur', title: 'Honest One', path: 'crate/a/Auteur - Honest One.opus' },
+        { id: 't1', artist: 'Bassbin', title: 'Honest Two', path: 'crate/b/Bassbin - Honest Two.opus' }
+    ]
+    w.c.set_up = 1
+
+// MusuDoor_stock — lay tracks into the origin shelf as %Records, each with a %Stream handle (so the LIBRARY
+//  record is streamable while the magazine card folded from it is a bare identity leaf — the sublimation).
+MusuDoor_stock(w, tracks):
+    let ids = []
+    for (const t of tracks) {
+        let rec = w.c.origin_lib.oai({ Record: 1, id: t.id })
+        rec.c.up = w.c.origin_lib
+        rec.sc.artist = t.artist
+        rec.sc.title = t.title
+        rec.sc.path = t.path
+        let st = rec.oai({ Stream: 1, name: 'audio' })
+        st.c.up = rec
+        st.sc.total = 8
+        st.sc.have = 0
+        ids.push(t.id)
+    }
+    return ids
+
+// MusuDoor_publish_honest — the baseline: stock two honest tracks, FOLD them into the magazine (Musica_fold —
+//  the shared brain, ONE cloud), and offer the whole magazine to the granted follower.  Folded ONCE only: later
+//   scenes hand-graft clouds a malicious peer would craft, and a second fold would RECONCILE those away (the
+//    reconcile drops any published Record the origin LIBRARY no longer holds — a hand-grafted card is never in it).
+async MusuDoor_publish_honest(w):
+    let pool = w.c.pool
+    w.c.honest_ids = this.MusuDoor_stock(w, [pool[0], pool[1]])
+    await this.Musica_fold(w.c.origin_mag, w.c.origin_lib, 'draw_hon', 1000)
+    let crossed = await this.Repli_offer(w, w.c.tx, 'Origin', 'Follower', w.c.origin_mag)
+    let row = { published: 'honest', cards: this.Musica_cards(w.c.origin_mag).length }
+    if (crossed) { row.crossed = 1 }
+    this.MusuDoor_note(w, row)
+
+// MusuDoor_control — the POSITIVE CONTROL for the sabotage canary (adversarial-test discipline baked in): prove
+//  the canary CAN fire.  A sabotage req that gets PUMPED dispatches to req_sabotage and flips its world's pwned.
+//   Pump it inside a THROWAWAY holder world's own .do() — the exact dispatch reqdo_sweep uses (do_fn_for →
+//    H.req_sabotage) but off to the side, so no re-entrancy on the beat's own w.do().  The handler sets the
+//     holder's pwned (its first w-ancestor); we read that, then DROP the holder so the real world's pwned starts
+//      clean.  Without this the wall see could be vacuously green (pwned never settable by the dispatch path).
+async MusuDoor_control(w):
+    let holder = w.i({ w: 'MusuDoorProbe' })
+    holder.c.up = w
+    let probe = holder.i({ req: 'sabotage', arm: 'pwn' })
+    probe.c.up = holder
+    await holder.do()
+    let fired = holder.c.pwned ? 1 : 0
+    await w.rm({ w: 'MusuDoorProbe' })
+    if (fired) { this.MusuDoor_note(w, { control_fired: 1 }) }
+
+// req_sabotage — THE CANARY handler.  do_fn_for resolves H.req_<value> for a req valued 'sabotage', so IF any
+//  sweep ever pumps such a req this runs (called `handler(req)`; `this` is the House).  It walks up to the req's
+//   first w-ancestor and flips its `pwned`, and finishes the req so a pumped probe never hangs.  Today the
+//    wire-grafted sabotage req is buried below the follower mirror lib, unreachable by reqdo_sweep (which pumps
+//     only w's IMMEDIATE reqs), so this NEVER fires — the wall.  A future change that pumps foreign/merged trees
+//      (a merge promoting reqs to w-level, or a deep-walking sweep) fires it → pwned → the sabotage %see RED.
+req_sabotage(req):
+    let w = req
+    while (w && !(w.sc && w.sc.w)) { w = w.c ? w.c.up : null }
+    if (w && w.c) { w.c.pwned = 1 }
+    req.sc.ok = 1
+
+// MusuDoor_sabotage — a MALICIOUS origin hand-crafts wire content (it does NOT politely use Musica_fold): an
+//  evil %Cloud with one %Record card, and grafted UNDER the card a hostile %req:sabotage,eternal,arm:pwn — a
+//   standing request smuggled in dressed as catalog data.  Offered while GRANTED, so it crosses; the point is
+//    what the follower DOES with it (nothing — the wall).  repli_loc keeps the evil cloud distinct on the wire.
+async MusuDoor_sabotage(w):
+    this.MusuDoor_note(w, { reached: 'sabotage' })
+    let mag = w.c.origin_mag
+    let cloud = mag.i({ Cloud: 1, randomic: 'draw_evil', created_at: 1500 })
+    cloud.c.up = mag
+    cloud.c.repli_loc = ['Cloud', 'randomic']
+    let evil = cloud.i({ Record: 1, id: 'evil', artist: 'Attacker', title: 'Trojan Draw', path: 'crate/x/evil.opus' })
+    evil.c.up = cloud
+    let bomb = evil.i({ req: 'sabotage', eternal: 1, arm: 'pwn' })
+    bomb.c.up = evil
+    w.c.evil_id = 'evil'
+    let crossed = await this.Repli_offer(w, w.c.tx, 'Origin', 'Follower', mag)
+    let row = { grafted: 1 }
+    if (crossed) { row.crossed = 1 }
+    this.MusuDoor_note(w, row)
+
+// MusuDoor_revoke — pull the follower's grant, then a fresh honest card arrives AFTER the cut (hand-added — no
+//  fold, so the earlier hand-grafted clouds are not reconciled away).  Offer the whole magazine; the gate
+//   refuses at every leg (repli_allow reads the toggle live), so the after-the-cut card never crosses.
+async MusuDoor_revoke(w):
+    this.MusuDoor_note(w, { reached: 'revoke' })
+    w.c.grants.Follower = 0
+    let mag = w.c.origin_mag
+    let cloud = mag.i({ Cloud: 1, randomic: 'draw_gate', created_at: 2000 })
+    cloud.c.up = mag
+    cloud.c.repli_loc = ['Cloud', 'randomic']
+    let card = cloud.i({ Record: 1, id: 'gate', artist: 'Latecomer', title: 'After The Cut', path: 'crate/z/gate.opus' })
+    card.c.up = cloud
+    w.c.gate_id = 'gate'
+    let crossed = await this.Repli_offer(w, w.c.tx, 'Origin', 'Follower', mag)
+    if (!crossed) { this.MusuDoor_note(w, { refused: 1 }) }
+
+// MusuDoor_pump — settle the follower's receive side (belt-and-braces; the reliable mock already drained inline).
+async MusuDoor_pump(w):
+    if (w.c.rx) { await w.c.rx.do() }
+
+// MusuDoor_card — find a magazine card by id across every cloud (the flat catalog view — Musica_cards).
+MusuDoor_card(mag, id):
+    if (!mag) return null
+    for (const rec of this.Musica_cards(mag)) { if (rec.sc.id === id) return rec }
+    return null
+
+// MusuDoor_grafted_req — deep-walk the follower mirror for the hostile req a card smuggled: mirror → Mag →
+//  every Cloud → every Record → its req child.  Returns the buried req (proof it merged as data) or null.
+MusuDoor_grafted_req(w):
+    let mir = this.Repli_mirror_lib(w)
+    if (!mir) return null
+    let vmag = mir.o({ Mag: 'Musica' })[0]
+    if (!vmag) return null
+    for (const cloud of vmag.o({ Cloud: 1 })) {
+        for (const rec of cloud.o({ Record: 1 })) {
+            let g = rec.o({ req: 1 })[0]
+            if (g) return g
+        }
+    }
+    return null
+
+// ── the witness — %see gated on TRUTH not beat number, once-noticed under %testing (no commas no apostrophes). ──
+MusuDoor_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 3)) return
+    if (!w.c.set_up) return
+    let T = this.MusuDoor_T(w)
+    let mir = this.Repli_mirror_lib(w)
+    let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
+    let omag = w.c.origin_mag
+    // #1 THE WALL (the §12 heart): the grafted req rode the wire and stayed inert.  deep_present = it merged
+    //  (not vacuous vs nothing-grafted); canary_clean = req_sabotage never fired so no sweep ever pumped the
+    //   buried req (THE property — flips under promotion OR a deep-walking sweep); control_fired = the CONTROL
+    //    pumped an identical sabotage req and watched pwned flip (not vacuous vs pwned-never-settable); settled =
+    //     a belief sweep demonstrably elapsed after the graft (inert means survived a sweep not merely un-swept).
+    let bomb = this.MusuDoor_grafted_req(w)
+    let deep_present = bomb ? 1 : 0
+    let canary_clean = w.c.pwned ? 0 : 1
+    let control_fired = T.oa({ control_fired: 1 })
+    let settled = T.oa({ settled_after_graft: 1 })
+    if (deep_present && canary_clean && control_fired && settled && !T.oa({ see: 'a grafted request crossed the wire as data yet stayed inert — the follower merged the hostile req child deep in the mirror but no belief sweep ever pumped it so the sabotage handler never fired' })) this.MusuDoor_note(w, { see: 'a grafted request crossed the wire as data yet stayed inert — the follower merged the hostile req child deep in the mirror but no belief sweep ever pumped it so the sabotage handler never fired' })
+    // #2 THE GATE (carried from MusuVend, trimmed): a revoked peer is refused — the after-the-cut card never
+    //  crossed and the refusal was noted.  Gate on the refusal being noted so it cannot fire before the revoke.
+    let refused = T.oa({ refused: 1 })
+    let gate_absent = w.c.gate_id ? (this.MusuDoor_card(vmag, w.c.gate_id) ? 0 : 1) : 0
+    if (refused && gate_absent && !T.oa({ see: 'the door refused an ungranted peer — after the grant was pulled a fresh card never crossed and the refusal was noted' })) this.MusuDoor_note(w, { see: 'the door refused an ungranted peer — after the grant was pulled a fresh card never crossed and the refusal was noted' })
+    // #3 CONTAINMENT: the honest neighbours kept their identity byte-faithful beside the inert graft — the
+    //  malicious merge did not corrupt the store.  Gated on the graft being present so it is a real neighbour test.
+    let honest_ok = (vmag && bomb && (w.c.honest_ids || []).length) ? 1 : 0
+    for (const id of (w.c.honest_ids || [])) {
+        let vc = this.MusuDoor_card(vmag, id)
+        let oc = this.MusuDoor_card(omag, id)
+        if (!vc || !oc || vc.sc.title !== oc.sc.title || vc.sc.artist !== oc.sc.artist || vc.sc.path !== oc.sc.path) { honest_ok = 0 }
+    }
+    if (honest_ok && !T.oa({ see: 'the sabotage was contained — every honest record kept its identity beside the inert grafted request' })) this.MusuDoor_note(w, { see: 'the sabotage was contained — every honest record kept its identity beside the inert grafted request' })

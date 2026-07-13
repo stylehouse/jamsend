@@ -1,0 +1,38 @@
+Snap:H
+  H:MusuDoor,Run
+    A:MusuDoor
+      self,round=6	{"mung":["age"]}
+      w:MusuDoor
+        self,round=6	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          published:honest,cards=2,crossed
+        Peering,name:Origin,req=2,ok
+          Pier,pub:Follower,req=2,ok
+            Ud,pubkey:Follower
+            outbox
+              recent
+                emit,type:repli_lines,seq
+          active_transport,type:mock,open
+        Peering,name:Follower,req=3,ok
+          Pier,pub:Origin,req=2,ok
+            Ud,pubkey:Origin
+            inbox
+              recent
+                unemit,type:repli_lines,seq
+          active_transport,type:mock,open
+        Library,pier:Origin
+          Record,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
+            Stream,name:audio,total=8,have=0
+          Record,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
+            Stream,name:audio,total=8,have=0
+        Mag:Musica
+          Cloud,randomic:draw_hon,created_at=1000
+            Record,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
+            Record,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
+        Library,pier:Follower.mirror
+          Mag:Musica
+            Cloud,randomic:draw_hon,created_at=1000
+              Record,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
+              Record,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
