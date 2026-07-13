@@ -789,6 +789,15 @@ Voro_model(w, folds):
         for (const l of loud.list) {
             let lrow = { Loud: ('' + l.key).split(',').join(' '), weight: '' + l.weight }
             if (l.val !== '') lrow.v = ('' + l.val).split(',').join(' ')
+            // SHARE — how many of THIS family's members carry the claim, counted from the same per-member
+            //  facts the axis + naming read (never the rep's distilled row: a gang's rep is ONE cell, so
+            //   'vein' on it says nothing about how many of the 15 strata actually vein — the count the
+            //    rep can't hold).  Snap it ONLY when the claim is PARTIAL (0 < share < n): a universal
+            //     claim (share === n) is the family's default reading (unremarkable), and a rep-only
+            //      distillation no member literally carries (share 0) can't be backed.  So a Loud row
+            //       says a number only when a minority-but-loud trait is the news — 'vein' 3-of-15.
+            let share = this.Voro_model_share(mem, l.key, l.val)
+            if (share > 0 && share < mem.length) lrow.share = '' + share
             famC.i(lrow)
         }
         // NOTHING DROPPED SILENTLY — when the loud pool overflowed the cap, record HOW MANY distinct
@@ -839,6 +848,10 @@ Voro_model(w, folds):
         for (const l of famC.o({ Loud: 1 })) {
             let lr = { Loud: l.sc.Loud }
             if (l.sc.v) lr.v = l.sc.v
+            // the SHARE rides beside the claim — how many of the family's n members carry it, snapped
+            //  ONLY when partial (the model set it iff 0 < share < n).  So 'vein 3' reads against the
+            //   %Family n above: three of the fifteen, the minority-but-loud trait the rep can't count.
+            if (l.sc.share) lr.share = l.sc.share
             row.i(lr)
         }
         // the DRIFT — the one Selection-derived reading — rides an %Se:drift child, present ONLY on a
@@ -1152,6 +1165,26 @@ Voro_model_loud_from(facts, K, axis_key):
     let lim = K < order.length ? K : order.length
     for (let i = 0; i < lim; i++) out.push({ key: src[order[i]].key, val: src[order[i]].val, weight: best[order[i]] })
     return { list: out, over: order.length - lim }
+
+// Voro_model_share — how many of a family's MEMBERS carry a given loud claim, counted over the SAME
+//  per-member facts the axis + naming read (each member's own recorded fields, not the fold's one
+//   distilled rep row).  A presence claim (val '') matches on the KEY alone — members carry vein:schist,
+//    vein:quartz, different values but the shared trait is "has a vein"; a valued claim matches (key,val)
+//     exactly.  One count per member (a member repeating the key still counts once).  This is the count
+//      the rep-pooled loudness structurally cannot see: it lets a %Family row say '3-of-15' honestly.
+Voro_model_share(mem, key, val):
+    let c = 0
+    for (const m of mem) {
+        let has = false
+        for (const f of (m.facts || [])) {
+            if (f.key !== key) continue
+            if (val !== '' && f.val !== val) continue
+            has = true
+            break
+        }
+        if (has) c = c + 1
+    }
+    return c
 
 // Voro_model_drift — per-family goners|neus via a %Seem over the model's MEMBER layer.  The Seem walks
 //  voro_model's %Family/%Member subtree; resolve() flags each member that arrived (neu) or left (goner)
