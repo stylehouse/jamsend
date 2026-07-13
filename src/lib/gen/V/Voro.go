@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return 'da59d6037646ca0e~g1' },
+    Ghostmeta_Ghost_V_Voro(): string { return 'e46b97399a1148c4~g1' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
@@ -414,10 +414,10 @@ async Voro_grasp(w) {
         for (const r of t.o()) {
             let rk = r.sc.row
             if (rk === 'fact') {
-                let p = this.Voro_grasp_kv('' + r.sc.text)
+                let p = this.Voro_claim_kv(r)
                 this.Voro_grasp_tally(kv, keyc, saw, p.key, p.val)
             } else if (rk === 'spread') {
-                let sk = '' + r.sc.text
+                let sk = this.Voro_claim_kv(r).key
                 for (const b of r.o()) {
                     // a spread's '+N' overflow tail is render CHROME (structurally n:0 — a real
                     //  value chip always counts ≥1); paint must never enter the census as a claim.
@@ -425,7 +425,7 @@ async Voro_grasp(w) {
                     //    (the model ruling) brings the census to the same honesty (found 2026-07-13:
                     //     a rare '+9' scored LOUD and could even become a cell's trait).
                     if (!(+b.sc.n)) continue
-                    this.Voro_grasp_tally(kv, keyc, saw, sk, '' + b.sc.text)
+                    this.Voro_grasp_tally(kv, keyc, saw, sk, this.Voro_chip_val(b))
                 }
             }
         }
@@ -471,15 +471,15 @@ async Voro_grasp(w) {
                 } else if (rk === 'dip') {
                     r.sc.wgt = 10
                 } else if (rk === 'fact') {
-                    let p = this.Voro_grasp_kv('' + r.sc.text)
+                    let p = this.Voro_claim_kv(r)
                     let w = this.Voro_grasp_weight(kv, keyc, grasped, p.key, p.val)
                     r.sc.wgt = w
                     if (w > top_w) {
                         top_w = w
-                        top_fact = '' + r.sc.text
+                        top_fact = this.Vtuff_claim_text(r)
                     }
                 } else if (rk === 'spread') {
-                    let sk = '' + r.sc.text
+                    let sk = this.Voro_claim_kv(r).key
                     let mx = 0
                     let mxv = ''
                     for (const b of r.o()) {
@@ -489,11 +489,11 @@ async Voro_grasp(w) {
                             b.sc.wgt = 20
                             continue
                         }
-                        let cw = this.Voro_grasp_weight(kv, keyc, grasped, sk, '' + b.sc.text)
+                        let cw = this.Voro_grasp_weight(kv, keyc, grasped, sk, this.Voro_chip_val(b))
                         b.sc.wgt = cw
                         if (cw > mx) {
                             mx = cw
-                            mxv = '' + b.sc.text
+                            mxv = this.Voro_chip_val(b)
                         }
                     }
                     r.sc.wgt = mx
@@ -514,15 +514,17 @@ async Voro_grasp(w) {
             for (const r of t.o()) {
                 let rk = r.sc.row
                 if (rk === 'fact') {
-                    let p = this.Voro_grasp_kv('' + r.sc.text)
+                    let p = this.Voro_claim_kv(r)
                     if (p.key === fam_key) {
                         family = p.val || fam_key
                         break
                     }
-                } else if (rk === 'spread' && ('' + r.sc.text) === fam_key) {
+                } else if (rk === 'spread' && this.Voro_claim_kv(r).key === fam_key) {
+                    // b0 is always a REAL chip (the '+N' tail only ever follows one) — its value
+                    //  is the cell's most-common on the shared axis, same as ever.
                     let b0 = r.o()[0]
                     if (b0) {
-                        family = '' + b0.sc.text
+                        family = this.Voro_chip_val(b0)
                     }
                     break
                 }
@@ -610,6 +612,10 @@ async Voro_grasp(w) {
 },
 // Voro_grasp_kv — split a Vtuffing fact's text into { key, val }: 'year: 2007' → { year, 2007 };
 //  a presence fact ('remaster ×2') or a bare key → { key, '' } (its value IS its mere presence).
+//   FALLBACK ONLY since the Stuffing-shape cut (2026-07-14): the distiller authors typed k/v
+//    fields and every reader goes through Voro_claim_kv; this parse survives for a PRE-TYPED
+//     cached tree (an old gen's src.c.vtuffing outliving an HMR re-mix — the sig can't see
+//      content-unchanged staleness).  Enrich, never require.
 Voro_grasp_kv(text) {
     let i = text.indexOf(': ')
     if (i > 0) {
@@ -623,6 +629,36 @@ Voro_grasp_kv(text) {
     }
     let o = { key: text, val: '' }
     return o
+
+},
+// Voro_claim_kv — a claim row's { key, val }, read straight off the TYPED fields the distiller
+//  authors (the Stuffing-shape cut: claims stay key/value pairs end-to-end — meaning never makes
+//   the meaning→text→re-parse round trip).  Works on fact AND spread rows (a spread carries k
+//    alone, val '').  Pre-typed rows fall back to the text parse above.
+Voro_claim_kv(r) {
+    if (r.sc.k != null) {
+        let o = { key: '' + r.sc.k, val: r.sc.v == null ? '' : '' + r.sc.v }
+        return o
+    }
+    return this.Voro_grasp_kv('' + r.sc.text)
+
+},
+// Voro_chip_val — a spread chip's value, typed-first (v), text for a pre-typed chip.  (The '+N'
+//  overflow tail carries no v and is n:0 — census|model skip it before this read.)
+Voro_chip_val(b) {
+    if (b.sc.v != null) return '' + b.sc.v
+    return '' + b.sc.text
+
+},
+// Vtuff_claim_text — a typed claim row's display text, composed the ONE legacy way — this string
+//  is load-bearing beyond paint: the grasp's the:trait stamp carries it into the D-sphere, where
+//   the Seem pairs rows by exact content.  'year: 2007' for a valued fact, 'remaster ×2' for a
+//    counted presence, the bare key otherwise; a pre-typed row keeps its own text.
+Vtuff_claim_text(r) {
+    if (r.sc.k == null) return '' + r.sc.text
+    if (r.sc.v != null) return r.sc.k + ': ' + r.sc.v
+    if (r.sc.n) return r.sc.k + ' ×' + r.sc.n
+    return '' + r.sc.k
 
 },
 // Voro_grasp_tally — record one (key,val) claim for ONE cell into the neighbourhood census, deduped
@@ -953,15 +989,15 @@ Voro_model_facts(cell) {
     for (const r of t.o()) {
         let rk = r.sc.row
         if (rk === 'fact') {
-            let p = this.Voro_grasp_kv('' + r.sc.text)
+            let p = this.Voro_claim_kv(r)
             out.push({ key: p.key, val: p.val, weight: (+r.sc.wgt) || 0 })
         } else if (rk === 'spread') {
-            let sk = '' + r.sc.text
+            let sk = this.Voro_claim_kv(r).key
             for (const b of r.o()) {
                 // a spread's visible tail ('+9') is render CHROME, structurally marked n:0 (a real
                 //  value chip always counts ≥1) — it must never cross into the model as a datum.
                 if (!(+b.sc.n)) continue
-                out.push({ key: sk, val: '' + b.sc.text, weight: (+b.sc.wgt) || (+r.sc.wgt) || 0 })
+                out.push({ key: sk, val: this.Voro_chip_val(b), weight: (+b.sc.wgt) || (+r.sc.wgt) || 0 })
             }
         }
     }
@@ -1587,14 +1623,18 @@ Voro_crush_clear(node, d) {
 //       cell polygon.  The smarts live HERE, .g-side, and extend the Waft way: define
 //        Vtuff_of_<fold kind> on any ghost and that kind's panes author their own rows.
 //
-//  The tree:  %Vtuffing,of:<kind>,n:<members>            (c.src backlinks the fold|gang rep)
+//  The tree (claims TYPED since the Stuffing-shape cut, 2026-07-14 — k/v pairs end-to-end, the
+//   Stuffing algorithm's own idiom; display text composed only at paint via Vtuff_claim_text):
+//             %Vtuffing,of:<kind>,n:<members>              (c.src backlinks the fold|gang rep)
 //               /%Vrow,row:title,text:'Artist: Moonlit  ×5',wgt:2
-//               /%Vrow,row:fact,text:'artist: Neil Young'   — a key EVERYONE agrees on, said once
-//               /%Vrow,row:spread,text:'title'              — a key that varies, chips below
-//                  /%Vbit,text:'Tide',n:2                   — value chips with counts
-//               /%Vrow,row:member,text:'Track · Halo'       — per-member when the family is small
-//                                                             (c.member — the pop-out handle)
-//               /%Vrow,row:dip,text:'/*12'                  — the surf handle (c.members)
+//               /%Vrow,row:fact,k:artist,v:'Neil Young'    — a key EVERYONE agrees on, said once
+//               /%Vrow,row:fact,k:remaster,n:2             — a presence claim, counted, no v
+//               /%Vrow,row:spread,k:title                  — a key that varies, chips below
+//                  /%Vbit,v:'Tide',n:2                     — value chips with counts
+//                  /%Vbit,text:'+9',n:0                    — the overflow tail: chrome, never a claim
+//               /%Vrow,row:member,text:'Track · Halo'      — per-member when the family is small
+//                                                            (c.member — the pop-out handle)
+//               /%Vrow,row:dip,text:'/*12'                 — the surf handle (c.members)
 
 // Vtuff_build — the cached entry: members = the gang, else the fold's children.  The cache
 //  (c.vtuffing) is keyed by a cheap signature — member count + summed versions — so a beat that
@@ -1943,17 +1983,23 @@ Vtuff_keyrows(root, members, skips) {
         if (!have) continue
         if (order.length === 1) {
             if (order[0] === '1') {
-                if (have < members.length) root.i({ Vrow: 1, row: 'fact', text: k + ' ×' + have, wgt: 1 })
+                // a presence claim rides TYPED: the key alone + its count, no v (its value IS its
+                //  mere presence).  Display text is composed at paint (Vtuff_claim_text) — the
+                //   Stuffing-shape cut, 2026-07-14: claims stay k/v pairs end-to-end, never
+                //    rendered into a string a reader must parse back apart.
+                if (have < members.length) root.i({ Vrow: 1, row: 'fact', k: k, n: have, wgt: 1 })
             } else {
-                root.i({ Vrow: 1, row: 'fact', text: k + ': ' + order[0], wgt: 1 })
+                root.i({ Vrow: 1, row: 'fact', k: k, v: order[0], wgt: 1 })
             }
             continue
         }
         order.sort((a, b) => vals[b] - vals[a])
-        let r = root.i({ Vrow: 1, row: 'spread', text: k, wgt: 1 })
+        let r = root.i({ Vrow: 1, row: 'spread', k: k, wgt: 1 })
         let chips = order
         if (order.length > 4) chips = order.slice(0, 3)
-        for (const v of chips) r.i({ Vbit: 1, text: v, n: vals[v] })
+        for (const v of chips) r.i({ Vbit: 1, v: v, n: vals[v] })
+        // the overflow tail stays TEXT + n:0 — it is chrome (paint), not a claim; the n:0 mark is
+        //  what census|model skip by, and its lack of a v now says the same thing twice over.
         if (order.length > chips.length) r.i({ Vbit: 1, text: '+' + (order.length - chips.length), n: 0 })
     }
 

@@ -980,7 +980,10 @@
     //      as the pre-grammar look.  Panes without a sub-graph read as the REAL
     //       Stuffing, molded to the cell; there is no third rendering.)
     type MicroChip = { text: string, n: number, member?: TheC, sub?: number, wgt?: number }
+    // key|val|pn ride TYPED off the distiller's k/v fields (the Stuffing-shape cut, 2026-07-14) —
+    //  text stays the composed display; consumers prefer the typed pair over re-parsing it.
     type VtuffDesc = { text: string, kind: string, color?: string | null, tag?: string, nk?: string,
+                       key?: string, val?: string, pn?: number,
                        sub?: number, chips?: MicroChip[], member?: TheC, dip?: boolean, wgt?: number }
 
     // read a bare particle's display name and which key gave it — a render-side reader for any C
@@ -1026,6 +1029,14 @@
             for (const r of root.o() as any[]) {
                 const kind = (r.sc.row as string) ?? 'fact'
                 const d: VtuffDesc = { text: String(r.sc.text ?? ''), kind, wgt: wgt_norm(r.sc.wgt, kind) }
+                if (r.sc.k != null) {
+                    // a TYPED claim (the Stuffing-shape cut): carry the k/v pair and compose the
+                    //  display right here — this IS paint, the one place a string may be born.
+                    d.key = String(r.sc.k)
+                    if (r.sc.v != null) { d.val = String(r.sc.v); d.text = `${d.key}: ${d.val}` }
+                    else if (kind === 'fact' && r.sc.n) { d.pn = Number(r.sc.n); d.text = `${d.key} ×${d.pn}` }
+                    else d.text = d.key
+                }
                 if (r.sc.tag) d.tag = String(r.sc.tag)
                 if (r.sc.nk) d.nk = String(r.sc.nk)
                 if (r.sc.sub) d.sub = r.sc.sub as number
@@ -1033,7 +1044,7 @@
                 if (kind === 'title') d.color = kind_tint(d.tag ?? src?.c?.fold_kind)
                 if (kind === 'dip') d.dip = true
                 const bits = r.o() as any[]
-                if (bits.length) d.chips = bits.map((b: any) => ({ text: String(b.sc.text ?? ''), n: (b.sc.n as number) ?? 0, member: b.c.member, sub: b.sc.sub as number | undefined, wgt: wgt_norm(b.sc.wgt, 'chip') }))
+                if (bits.length) d.chips = bits.map((b: any) => ({ text: String(b.sc.v ?? b.sc.text ?? ''), n: (b.sc.n as number) ?? 0, member: b.c.member, sub: b.sc.sub as number | undefined, wgt: wgt_norm(b.sc.wgt, 'chip') }))
                 out.push(d)
             }
             return out
@@ -1168,6 +1179,12 @@
         for (const d of descs) {
             if (d.kind === 'title' || d.dip) continue
             if (d.kind === 'fact') {
+                if (d.key != null) {   // typed k/v (the Stuffing-shape cut) — no re-parse, ever
+                    if (d.val != null) { keyed.push({ key: d.key, wgt: d.wgt, leaves: [leaf({ val: d.val, wgt: d.wgt })] }); continue }
+                    keyed.push({ key: d.key, sup: d.pn ? `×${d.pn}` : undefined, wgt: d.wgt, leaves: [] })
+                    continue
+                }
+                // pre-typed fallback (an old gen's rows): the legacy text parse
                 const i = d.text.indexOf(': ')
                 if (i > 0) { keyed.push({ key: d.text.slice(0, i), wgt: d.wgt, leaves: [leaf({ val: d.text.slice(i + 2), wgt: d.wgt })] }); continue }
                 const m = /^(.+?)\s*×(\d+)$/.exec(d.text)   // presence key counted: 'remaster ×2'
@@ -1178,7 +1195,7 @@
                 //  across the neighbourhood — a value only this cell carries towers, one everyone
                 //   shares recedes.  The tuple wears the row weight (the grasp set it to its loudest chip).
                 const chips = d.chips ?? []
-                keyed.push({ key: d.text, wgt: d.wgt, leaves: chips.map(ch =>
+                keyed.push({ key: d.key ?? d.text, wgt: d.wgt, leaves: chips.map(ch =>
                     leaf({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined, member: ch.member, subn: ch.sub,
                            wgt: ch.wgt })) })
             } else if (d.kind === 'list') {
