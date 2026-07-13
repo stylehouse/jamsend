@@ -84,11 +84,17 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
           the `'+9'` chrome chip no longer census-tallied nor trait-eligible (hushed wgt 20); empty
            `trait:` deleted not snapped.  **RE-RECORD OWED on VoroTest|VoroMitosis|VoroScape|
             VoroRadio** — diffs are exactly the Se:input rows + trait:, removals.
-      **// < died semantics — the human's call needed:** `Se:scape.died` is arithmetic (`prev +
-       born − grasped` off `w.c.grasp_prev_folds`), which counts a DEMOTION (fold unfolds to bare
-        on de-escalate) as a death.  A pure sphere-count (goners that were voiced folds) would
-         read demotions as survivors — different semantics, so the hand-counter stays until the
-          human picks: is a demotion an apoptosis or a survival?
+      **// < born|died — REFRAMED (the human, 2026-07-13): openness contamination, not death
+       semantics.**  The scape sphere already watches the DATA openness-blind (the crush stamps
+        `c.stuff` in place, never reparents — why `%Se:input` came out clean).  born|died then
+         FILTER the news by fold-status, and fold-status = data × openness — one number mixing the
+          world moving (real mitosis) with the viewer moving (the governor turning the dial: a
+           demotion is an UNDRESSING counted as apoptosis by the `grasp_prev_folds` arithmetic
+            because it only counts silhouettes).  Fix shape: fold-status becomes an ANNOTATION on
+             the remembered D (one voice mark) — not a filter on who is remembered — then ONE
+              resolve separates born|died (data mitosis) from folded|unfolded (dial turns).
+               "Crawl more places" is the same sphere widened when flora nests; the subject stays
+                the-data-as-it-is.  Cut deferred — the ×4 re-record lands first.
  - **④ Geometry folds into `Voro.g`.**  The pure maths (hull, clip, resample, PCA, river order,
     Catmull) folds into `Voro.g` — NOT a new `VoroGlass.ts` (the human decided AGAINST a .ts
      module).  A later wave; it will feel out the LangTiles parse-storm on closure-heavy raw JS.
