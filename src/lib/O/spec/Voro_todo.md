@@ -38,6 +38,8 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
  which was the fill-out shift, done).**  Three rulings, one arc:
  - **The distiller bows to Stuffing** — the ALGORITHM (`Stuff.svelte.ts compute_groups`: group
     like rows → columns → value-chips-with-counts, `is_one` collapse), NOT the HTML component.
+     **LANDED `bdc3d923` (typed claims, byte-neutral ×30 snaps, sabotage-proven, live-green 4/4);
+      the presentation-row unification (one transpose for title|list|member paths) still OPEN.**
      Vtuff_default's bespoke row taxonomy (title/list/member/sub/fact/spread heuristics with the
       English naming list threaded through) is replaced by that one clean `((k:v+)+)+` slope:
        typed key/value bits end-to-end, display text derived only at paint.  Kills by construction
@@ -49,6 +51,14 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
       the Wes-Wilson river pass — while a claim that differs SHOUTS).  The grasp's TF-IDF wgt
        already encodes the contrast; the cut is layout-side suppression + promotion, not new
         analytics.  Head for really nice rendering FIRST — truer to reality, simpler.
+     **LANDED `31a39949` (2026-07-14 night): region rivers speak every ∀-shared claim (chips
+      Wes-Wilson-sized per station), member cells hush exactly those behind a `»N` receipt
+       (≠ `+N` crowd-out), telemetry counts `promoted:N`.  Verified on live pixels via the NEW
+        remote face-arm (`runner_shot --arm` → op:'face' → Cytui `cy_face` on top_House.c —
+         per-tab ◈/▧/▦ prefs settable over the ask rails at last).  Evidence gallery:
+          `/tmp/nightshift_gallery/` (mitosis_promo3.svg = rivers carrying '1998' 22px +
+           'remaster ×2' + 'live ×2', five `»2` cells, 'remaster' NOWHERE in a cell).
+            OPEN refinement: literal wall-adjacency quieting (VCell.edge_src knows neighbours).**
  - **The naming-cut is DROPPED as filed; the bijective key is PARKED.**  region|axis|name are
     necessary-ish but fundamentally fallible analytics — do not grow them.  `Voro_model_namekey`
      keeps its code but is not threaded further (its spirit may resurface at the Stuffing-algorithm
