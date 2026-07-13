@@ -3,9 +3,32 @@ story:MusuCursor
   Plan
   Opt
     For
-  step,dige:lie
-  step=2,dige:lie
-  step=3,dige:lie
-  step=4,dige:lie
-  step=5,dige:lie
-  step=6,dige:lie
+  TimeSpool
+    TimeTotal:beliefs,avg=0.041
+      sample=0.046,at=1783943635
+      sample=0.046,at=1783943681
+      sample=0.046,at=1783943683
+      sample=0.046,at=1783943684
+      sample=0.046,at=1783943685
+      sample=0.046,at=1783943687
+      sample=0.046,at=1783943688
+      sample=0.046,at=1783943690
+      sample=0.022,at=1783943697
+      sample=0.02,at=1783943721
+    TimeTotal:step,avg=0.007
+      sample=0.008,at=1783943635
+      sample=0.008,at=1783943681
+      sample=0.008,at=1783943683
+      sample=0.008,at=1783943684
+      sample=0.008,at=1783943685
+      sample=0.008,at=1783943687
+      sample=0.008,at=1783943688
+      sample=0.008,at=1783943690
+      sample=0.004,at=1783943697
+      sample=0.003,at=1783943721
+  step,dige:158a1b1ccb7d3bd1
+  step=2,dige:8d14eb20b3173bc7
+  step=3,dige:f54935fdcd3c96a1
+  step=4,dige:59ee2045ed8562dd
+  step=5,dige:3051d18f341fa01c
+  step=6,dige:2a900051ca5d0f58

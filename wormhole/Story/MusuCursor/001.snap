@@ -1,0 +1,7 @@
+Snap:H
+  H:MusuCursor,Run
+    A:MusuCursor
+      self,round	{"mung":["age"]}
+      w:MusuCursor
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

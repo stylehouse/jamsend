@@ -1,0 +1,28 @@
+Snap:H
+  H:MusuCursor,Run
+    A:MusuCursor
+      self,round=6	{"mung":["age"]}
+      w:MusuCursor
+        self,round=6	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          Dogear,of:record-t1
+            curs,Mag:Musica
+              curs,wild:Cloud,randomic:draw_one
+                curs,wild:Record,id:t1
+          Dogear,of:cloud-two
+            curs,Mag:Musica
+              curs,wild:Cloud,randomic:draw_two
+          resolved:hit,depth=3,ok,id:t1
+          resolved:cloud,depth=2,ok,randomic:draw_two,cloud_type
+          see:a cursor is a stack of matches — resolving one re-finds every level from the magazine down and lands on the exact record it names
+          see:a cursor can name a level not just a leaf — a two-deep cursor lands on the cloud and stops there
+          reached:step_4
+          resolved:gone,depth=2,failed,missing_id:t1
+          see:when a named level is gone the cursor fails cleanly — it reports the exact match it could not find and how far it got not a crash
+        Mag:Musica
+          Cloud,randomic:draw_one,created_at=1000
+            Record,id:t2,artist:Bassbin,title:Two,path:crate/b/two.opus
+          Cloud,randomic:draw_two,created_at=2000
+            Record,id:t3,artist:Cutter,title:Three,path:crate/c/three.opus
