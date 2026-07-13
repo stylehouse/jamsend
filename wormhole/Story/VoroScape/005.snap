@@ -38,7 +38,7 @@ Snap:H
         Se:input,arrived:2,left:1
         Family:Artist,n:5,kind:pane,order_by:year,axis:num,from:Moonlit,to:Palegold
           Se:drift,neu:1
-          Loud:remaster
+          Loud:remaster,share:3
           Loud:live
         cell:Artist Riverine,kind:pane,n:3
         cell:Artist Palegold,kind:pane,n:2

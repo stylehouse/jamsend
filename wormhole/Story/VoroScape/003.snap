@@ -29,5 +29,5 @@ Snap:H
         Se:scape,grasped:3,born:0,died:0,loudest:Artist · Moonlit,trait:remaster ×2,regions:2
         Se:input,arrived:1,left:1
         Family:Artist,n:3,kind:pane,order_by:year,axis:num,from:Moonlit,to:Voxhall
-          Loud:remaster
+          Loud:remaster,share:2
           Loud:live

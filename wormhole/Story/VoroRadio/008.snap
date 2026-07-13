@@ -55,18 +55,18 @@ Snap:H
         bare:req,n:1
         Se:scape,grasped:3,born:0,died:0,loudest:Coprosma,trait:woodystem ×2,regions:2
         Family:Coprosma,n:5,kind:gang,order_by:habit,axis:lex,from:robusta,to:propinqua
-          Loud:woodystem
+          Loud:woodystem,share:2
           Se:drift,gone:2
         Family:Veronica,n:6,kind:bare,order_by:habit,axis:lex,from:tenuifolium,to:excelsa var. prostrata
-          Loud:woodystem,v:1
+          Loud:woodystem,v:1,share:2
         Family:Metrosideros,n:6,kind:bare,order_by:habit,axis:lex,from:fusca,to:tenax var. prostrata
-          Loud:woodystem,v:1
-          Loud:endemic,v:1
+          Loud:woodystem,v:1,share:2
+          Loud:endemic,v:1,share:1
         Family:Olearia,n:3,kind:gang,from:grandifolia,to:tenuifolium
-          Loud:habit,v:shrub
+          Loud:habit,v:shrub,share:1
         Family:Pittosporum,n:6,kind:bare,order_by:woodystem,axis:num,from:montana var. montana,to:robusta var. prostrata
-          Loud:habit,v:tree
-          Loud:endemic,v:1
+          Loud:habit,v:tree,share:1
+          Loud:endemic,v:1,share:2
           Se:drift,neu:2
         Family:Nothofagus,n:3,kind:gang,order_by:habit,axis:lex,from:tenax,to:crassifolius
         drift,focus:Pittosporum serrata,opens=4

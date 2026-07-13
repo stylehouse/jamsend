@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=6	{"mung":["age"]}
+      self,round=5	{"mung":["age"]}
       w:VoroMitosis
-        self,round=6	{"mung":["age"]}
+        self,round=5	{"mung":["age"]}
         req:wrangle,eternal,ok
         Coprosma:robusta,habit:vine
           Coprosma:robusta subsp. australis
@@ -36,11 +36,11 @@ Snap:H
         Se:scape,grasped:5,born:0,died:0,loudest:Coprosma: propinqua,trait:habit: tree,regions:3
         Se:input,arrived:4,left:0
         Family:Coprosma,n:7,kind:pane,order_by:habit,axis:lex,from:propinqua,to:grandifolia
-          Loud:woodystem,v:1
+          Loud:woodystem,v:1,share:2
           Se:drift,neu:2
         Family:Veronica,n:5,kind:pane,order_by:woodystem,axis:lex,from:tenuifolium,to:crassifolius
-          Loud:habit,v:shrub
-          Loud:habit,v:tree
+          Loud:habit,v:shrub,share:2
+          Loud:habit,v:tree,share:2
           Se:drift,neu:2
         Se:census,goners:0,neus:10,rows:10
         cell:Coprosma robusta,kind:pane,n:1

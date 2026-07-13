@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=17	{"mung":["age"]}
+      self,round=20	{"mung":["age"]}
       w:VoroMitosis
-        self,round=17	{"mung":["age"]}
+        self,round=20	{"mung":["age"]}
         req:wrangle,eternal,ok
         Kunzea:grandifolia,habit:vine
           Kunzea:grandifolia f. viridis,habit:vine
@@ -102,43 +102,43 @@ Snap:H
         Se:input,arrived:19,left:5
         Family:Coprosma,n:9,kind:pane,order_by:habit,axis:lex,from:tenax,to:crassifolius
           Se:drift,neu:2
-          Loud:woodystem
+          Loud:woodystem,share:1
         Family:Veronica,n:6,kind:gang,from:grandifolia,to:australis
           Se:drift,gone:3
-          Loud:habit,v:tree
-          Loud:woodystem
+          Loud:habit,v:tree,share:1
+          Loud:woodystem,share:1
         Se:census,goners:0,neus:15,rows:15
         cell:Coprosma,kind:gang,n:8
         cell:Veronica,kind:gang,n:6
         cell:Metrosideros,kind:gang,n:9
         Family:Metrosideros,n:9,kind:gang,order_by:habit,axis:lex,from:fusca,to:crassifolius
           Se:drift,gone:1,neu:3
-          Loud:endemic
-          Loud:woodystem
+          Loud:endemic,share:1
+          Loud:woodystem,share:2
         cell:Kunzea,kind:gang,n:13
         Family:Kunzea,n:14,kind:pane,order_by:habit,axis:lex,from:tenax,to:crassifolius
           Se:drift,neu:2,gone:1
-          Loud:endemic
-          Loud:woodystem
+          Loud:endemic,share:1
+          Loud:woodystem,share:4
         cell:Leptospermum,kind:gang,n:11
         Family:Leptospermum,n:12,kind:pane,order_by:habit,axis:lex,from:lucida,to:divaricata
           Se:drift,neu:2
-          Loud:endemic
-          Loud:woodystem
+          Loud:endemic,share:3
+          Loud:woodystem,share:3
         cell:Kunzea grandifolia,kind:pane,n:1
         cell:Pittosporum,kind:gang,n:9
         Family:Pittosporum,n:10,kind:pane,order_by:habit,axis:lex,from:microphylla,to:crassifolius
           Se:drift,neu:2
-          Loud:woodystem
+          Loud:woodystem,share:3
         cell:Leptospermum lucida,kind:pane,n:1
         cell:Pittosporum crassifolius,kind:pane,n:1
         cell:Podocarpus,kind:gang,n:9
         Family:Podocarpus,n:9,kind:gang,order_by:habit,axis:lex,from:microphylla,to:crassifolius
           Se:drift,neu:3,gone:1
-          Loud:endemic
-          Loud:woodystem
+          Loud:endemic,share:1
+          Loud:woodystem,share:7
         cell:Coprosma rhamnoides,kind:pane,n:1
         cell:Olearia,kind:gang,n:5
         Family:Olearia,n:5,kind:gang,from:robusta,to:lucida
-          Loud:habit,v:shrub
+          Loud:habit,v:shrub,share:1
           Se:drift,neu:6

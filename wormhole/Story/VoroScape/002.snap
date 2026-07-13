@@ -24,5 +24,5 @@ Snap:H
         Se:scape,grasped:3,born:3,died:0,loudest:Artist · Moonlit,trait:remaster ×1,regions:3
         Se:input,arrived:7,left:0
         Family:Artist,n:3,kind:pane,order_by:year,axis:num,from:Moonlit,to:Fernway
-          Loud:live
-          Loud:remaster
+          Loud:live,share:1
+          Loud:remaster,share:2

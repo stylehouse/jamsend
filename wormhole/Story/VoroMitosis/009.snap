@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=16	{"mung":["age"]}
+      self,round=18	{"mung":["age"]}
       w:VoroMitosis
-        self,round=16	{"mung":["age"]}
+        self,round=18	{"mung":["age"]}
         req:wrangle,eternal,ok
         Veronica:robusta,woodystem,endemic
           Veronica:robusta var. montana,woodystem,habit:shrub
@@ -84,38 +84,38 @@ Snap:H
         Se:input,arrived:18,left:6
         Family:Coprosma,n:7,kind:gang,order_by:woodystem,axis:num,from:rhamnoides,to:excelsa
           Se:drift,neu:2
-          Loud:habit,v:vine
+          Loud:habit,v:vine,share:2
         Family:Veronica,n:9,kind:pane,order_by:habit,axis:lex,from:robusta,to:fusca
           Se:drift,neu:2
-          Loud:endemic
-          Loud:woodystem
+          Loud:endemic,share:1
+          Loud:woodystem,share:2
         Se:census,goners:0,neus:14,rows:14
         cell:Coprosma,kind:gang,n:7
         cell:Veronica,kind:gang,n:8
         cell:Metrosideros,kind:gang,n:7
         Family:Metrosideros,n:7,kind:gang,order_by:habit,axis:lex,from:fusca,to:tenuifolium
           Se:drift,gone:5
-          Loud:woodystem
+          Loud:woodystem,share:1
         cell:Kunzea,kind:gang,n:11
         Family:Kunzea,n:12,kind:pane,order_by:habit,axis:lex,from:tenax,to:crassifolius
           Se:drift,neu:2
-          Loud:endemic
-          Loud:woodystem
+          Loud:endemic,share:1
+          Loud:woodystem,share:3
         cell:Leptospermum,kind:gang,n:9
         Family:Leptospermum,n:10,kind:pane,order_by:habit,axis:lex,from:lucida,to:tenax
           Se:drift,neu:2
-          Loud:endemic
-          Loud:woodystem
+          Loud:endemic,share:2
+          Loud:woodystem,share:2
         cell:Kunzea grandifolia,kind:pane,n:1
         cell:Pittosporum,kind:gang,n:7
         Family:Pittosporum,n:8,kind:pane,order_by:habit,axis:lex,from:microphylla,to:totara
           Se:drift,neu:2
-          Loud:woodystem
+          Loud:woodystem,share:2
         cell:Leptospermum lucida,kind:pane,n:1
         cell:Veronica robusta,kind:pane,n:1
         cell:Pittosporum crassifolius,kind:pane,n:1
         cell:Podocarpus,kind:gang,n:7
         Family:Podocarpus,n:7,kind:gang,order_by:habit,axis:lex,from:microphylla,to:propinqua
-          Loud:endemic
-          Loud:woodystem
+          Loud:endemic,share:1
+          Loud:woodystem,share:6
           Se:drift,neu:8

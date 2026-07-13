@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=8	{"mung":["age"]}
+      self,round=10	{"mung":["age"]}
       w:VoroMitosis
-        self,round=8	{"mung":["age"]}
+        self,round=10	{"mung":["age"]}
         req:wrangle,eternal,ok
         Coprosma:lucida,habit:vine
           Coprosma:lucida var. prostrata
@@ -35,11 +35,11 @@ Snap:H
         Se:scape,grasped:4,born:1,died:1,loudest:Coprosma,trait:habit tree,regions:2
         Se:input,arrived:9,left:3
         Family:Coprosma,n:7,kind:gang,order_by:habit,axis:lex,from:montana,to:lucida
-          Loud:woodystem
+          Loud:woodystem,share:3
           Se:drift,neu:2
         Family:Veronica,n:5,kind:gang,order_by:habit,axis:lex,from:linearis,to:robusta
-          Loud:endemic
-          Loud:woodystem
+          Loud:endemic,share:3
+          Loud:woodystem,share:3
           Se:drift,neu:1,gone:3
         Se:census,goners:0,neus:7,rows:7
         cell:Coprosma,kind:gang,n:7
@@ -47,8 +47,8 @@ Snap:H
         cell:Metrosideros,kind:gang,n:6
         Family:Metrosideros,n:6,kind:gang,order_by:habit,axis:lex,from:microphylla,to:propinqua
           Se:drift,neu:2
-          Loud:woodystem
+          Loud:woodystem,share:2
         cell:Kunzea,kind:gang,n:4
         Family:Kunzea,n:4,kind:gang,order_by:habit,axis:lex,from:tenax,to:tenuifolium
-          Loud:woodystem
+          Loud:woodystem,share:1
           Se:drift,neu:5

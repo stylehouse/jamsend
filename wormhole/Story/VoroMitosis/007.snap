@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=11	{"mung":["age"]}
+      self,round=14	{"mung":["age"]}
       w:VoroMitosis
-        self,round=11	{"mung":["age"]}
+        self,round=14	{"mung":["age"]}
         req:wrangle,eternal,ok
         Coprosma:montana,woodystem,habit:shrub
           Coprosma:montana subsp. australis
@@ -59,31 +59,31 @@ Snap:H
         Se:input,arrived:13,left:3
         Family:Coprosma,n:7,kind:gang,order_by:habit,axis:lex,from:montana,to:propinqua
           Se:drift,neu:2
-          Loud:woodystem
+          Loud:woodystem,share:4
         Family:Veronica,n:5,kind:gang,order_by:woodystem,axis:num,from:robusta,to:lucida
           Se:drift,gone:2
-          Loud:endemic
-          Loud:habit,v:shrub
+          Loud:endemic,share:2
+          Loud:habit,v:shrub,share:1
         Se:census,goners:0,neus:11,rows:11
         cell:Coprosma,kind:gang,n:7
         cell:Veronica,kind:gang,n:5
         cell:Metrosideros,kind:gang,n:9
         Family:Metrosideros,n:10,kind:pane,order_by:habit,axis:lex,from:microphylla,to:tenuifolium
           Se:drift,neu:2
-          Loud:woodystem
+          Loud:woodystem,share:3
         cell:Kunzea,kind:gang,n:7
         Family:Kunzea,n:8,kind:pane,order_by:habit,axis:lex,from:tenax,to:linearis
           Se:drift,neu:2
-          Loud:woodystem
+          Loud:woodystem,share:2
         cell:Metrosideros robusta,kind:pane,n:1
         cell:Leptospermum,kind:gang,n:6
         Family:Leptospermum,n:6,kind:gang,from:lucida,to:propinqua
           Se:drift,neu:2
-          Loud:endemic
-          Loud:habit,v:vine
-          Loud:woodystem
+          Loud:endemic,share:1
+          Loud:habit,v:vine,share:1
+          Loud:woodystem,share:1
         cell:Kunzea grandifolia,kind:pane,n:1
         cell:Pittosporum,kind:gang,n:4
         Family:Pittosporum,n:4,kind:gang,order_by:habit,axis:lex,from:microphylla,to:linearis
-          Loud:woodystem
+          Loud:woodystem,share:1
           Se:drift,neu:5

@@ -33,7 +33,7 @@ Snap:H
         Se:scape,grasped:4,born:1,died:0,loudest:Artist · Moonlit,trait:year 2007,regions:2
         Se:input,arrived:2,left:1
         Family:Artist,n:4,kind:pane,order_by:year,axis:num,from:Fernway,to:Voxhall
-          Loud:remaster
+          Loud:remaster,share:3
           Loud:live
           Se:drift,neu:1
         cell:Artist Riverine,kind:pane,n:3

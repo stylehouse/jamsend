@@ -57,18 +57,18 @@ Snap:H
         bare:req,n:1
         Se:scape,grasped:2,born:0,died:1,loudest:Coprosma,trait:woodystem ×2,regions:2
         Family:Coprosma,n:5,kind:gang,order_by:habit,axis:lex,from:robusta,to:propinqua
-          Loud:woodystem
+          Loud:woodystem,share:2
         Family:Veronica,n:6,kind:bare,order_by:habit,axis:lex,from:tenuifolium,to:excelsa var. prostrata
-          Loud:woodystem,v:1
+          Loud:woodystem,v:1,share:2
         Family:Metrosideros,n:6,kind:bare,order_by:habit,axis:lex,from:fusca,to:tenax var. prostrata
-          Loud:woodystem,v:1
-          Loud:endemic,v:1
+          Loud:woodystem,v:1,share:2
+          Loud:endemic,v:1,share:1
         Family:Olearia,n:4,kind:bare,order_by:habit,axis:lex,from:tenuifolium,to:grandifolia
-          Loud:woodystem,v:1
+          Loud:woodystem,v:1,share:1
           Se:drift,neu:1
         Family:Pittosporum,n:6,kind:bare,order_by:woodystem,axis:num,from:montana var. montana,to:robusta var. prostrata
-          Loud:habit,v:tree
-          Loud:endemic,v:1
+          Loud:habit,v:tree,share:1
+          Loud:endemic,v:1,share:2
         Family:Nothofagus,n:3,kind:gang,order_by:habit,axis:lex,from:tenax,to:crassifolius
         drift,focus:Olearia grandifolia,opens=4
         bare:Veronica,n:6,pop:2
@@ -77,21 +77,256 @@ Snap:H
         bare:Pittosporum,n:6,pop:2
         bare:Olearia,n:4,pop:2
 Snap:cytowave
-  upsert,id:cytoid_1_1_23,label:see:the tuner…,parent:cytoid_1_1
-    style,background-color:#a34b1f
+  upsert,id:cytoid_1_1,label:VoroRadio,isCompound:true
+    style,background-color:#8f3232
+    style,background-opacity=0.6
+    style,color:#ccc
+    style,font-size:8px
+    style,font-style:italic
+    style,height=20
+    style,padding:7px
+    style,shape:ellipse
+    style,text-valign:top
+    style,width=20
+  upsert,id:cytoid_1_1_1,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#2fb155
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  upsert,id:cytoid_1_1_12,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#c5b759
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  {"upsert":1,"id":"cytoid_1_1_12_1","label":"Veronica:lucida va…\nwoodystem\nhabit:tree","parent":"cytoid_1_1"}
+    style,background-color:#c5b759
     style,color:#ccc
     style,height=20
     style,shape:ellipse
     style,width=20
-  upsert,id:cytoid_1_1_24,label:see:the trail…,parent:cytoid_1_1
-    style,background-color:#a34b1f
+  {"upsert":1,"id":"cytoid_1_1_12_2","label":"Veronica:lucida va…\nhabit:tree","parent":"cytoid_1_1"}
+    style,background-color:#c5b759
     style,color:#ccc
     style,height=20
     style,shape:ellipse
     style,width=20
-  upsert,id:cytoid_1_1_25,label:see:an aged l…,parent:cytoid_1_1
-    style,background-color:#a34b1f
+  upsert,id:cytoid_1_1_13,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#c5b759
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  upsert,id:cytoid_1_1_14,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#c5b759
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  upsert,id:cytoid_1_1_14_1,label:Veronica:excelsa v…,parent:cytoid_1_1
+    style,background-color:#c5b759
     style,color:#ccc
     style,height=20
     style,shape:ellipse
     style,width=20
+  upsert,id:cytoid_1_1_14_2,label:Veronica:excelsa v…,parent:cytoid_1_1
+    style,background-color:#c5b759
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_1_15,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#298699
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  {"upsert":1,"id":"cytoid_1_1_15_1","label":"Metrosideros:totara va…\nwoodystem\nhabit:tree","parent":"cytoid_1_1"}
+    style,background-color:#298699
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  {"upsert":1,"id":"cytoid_1_1_15_2","label":"Metrosideros:totara va…\nhabit:vine","parent":"cytoid_1_1"}
+    style,background-color:#298699
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_1_16,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#298699
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  upsert,id:cytoid_1_1_17,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#298699
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  upsert,id:cytoid_1_1_17_1,label:Metrosideros:tenax var…,parent:cytoid_1_1
+    style,background-color:#298699
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_1_17_2,label:Metrosideros:tenax var…,parent:cytoid_1_1
+    style,background-color:#298699
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_1_18,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#61bd42
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  {"upsert":1,"id":"cytoid_1_1_18_1","label":"Pittosporum:montana v…\nwoodystem\nendemic","parent":"cytoid_1_1"}
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_1_18_2,label:Pittosporum:montana v…,parent:cytoid_1_1
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_1_19,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#61bd42
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  upsert,id:cytoid_1_1_2,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#8e29d6
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  upsert,id:cytoid_1_1_20,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#61bd42
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  {"upsert":1,"id":"cytoid_1_1_20_1","label":"Pittosporum:robusta v…\nwoodystem\nendemic","parent":"cytoid_1_1"}
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_1_20_2,label:Pittosporum:robusta v…,parent:cytoid_1_1
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_1_21,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#bc2476
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  {"upsert":1,"id":"cytoid_1_1_21_1","label":"Olearia:lucida va…\nwoodystem\nhabit:tree","parent":"cytoid_1_1"}
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  {"upsert":1,"id":"cytoid_1_1_21_2","label":"Olearia:lucida va…\nhabit:tree","parent":"cytoid_1_1"}
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_1_22,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#bc2476
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  upsert,id:cytoid_1_1_3,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#c5b759
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  upsert,id:cytoid_1_1_4,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#298699
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  upsert,id:cytoid_1_1_5,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#bc2476
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  upsert,id:cytoid_1_1_6,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#61bd42
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  upsert,id:cytoid_1_1_7,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#534ed0
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  edge_upsert,id:cytoid_1_1_12_1_1,source:cytoid_1_1_12,target:cytoid_1_1_12_1
+  edge_upsert,id:cytoid_1_1_12_2_1,source:cytoid_1_1_12,target:cytoid_1_1_12_2
+  edge_upsert,id:cytoid_1_1_14_1_1,source:cytoid_1_1_14,target:cytoid_1_1_14_1
+  edge_upsert,id:cytoid_1_1_14_2_1,source:cytoid_1_1_14,target:cytoid_1_1_14_2
+  edge_upsert,id:cytoid_1_1_15_1_1,source:cytoid_1_1_15,target:cytoid_1_1_15_1
+  edge_upsert,id:cytoid_1_1_15_2_1,source:cytoid_1_1_15,target:cytoid_1_1_15_2
+  edge_upsert,id:cytoid_1_1_17_1_1,source:cytoid_1_1_17,target:cytoid_1_1_17_1
+  edge_upsert,id:cytoid_1_1_17_2_1,source:cytoid_1_1_17,target:cytoid_1_1_17_2
+  edge_upsert,id:cytoid_1_1_18_1_1,source:cytoid_1_1_18,target:cytoid_1_1_18_1
+  edge_upsert,id:cytoid_1_1_18_2_1,source:cytoid_1_1_18,target:cytoid_1_1_18_2
+  edge_upsert,id:cytoid_1_1_20_1_1,source:cytoid_1_1_20,target:cytoid_1_1_20_1
+  edge_upsert,id:cytoid_1_1_20_2_1,source:cytoid_1_1_20,target:cytoid_1_1_20_2
+  edge_upsert,id:cytoid_1_1_21_1_1,source:cytoid_1_1_21,target:cytoid_1_1_21_1
+  edge_upsert,id:cytoid_1_1_21_2_1,source:cytoid_1_1_21,target:cytoid_1_1_21_2

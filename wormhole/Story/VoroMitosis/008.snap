@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=15	{"mung":["age"]}
+      self,round=16	{"mung":["age"]}
       w:VoroMitosis
-        self,round=15	{"mung":["age"]}
+        self,round=16	{"mung":["age"]}
         req:wrangle,eternal,ok
         Metrosideros:robusta,woodystem,habit:vine
           Metrosideros:robusta var. prostrata,woodystem,endemic
@@ -71,32 +71,32 @@ Snap:H
         Se:input,arrived:12,left:4
         Family:Coprosma,n:5,kind:gang,order_by:woodystem,axis:num,from:rhamnoides,to:excelsa
           Se:drift,gone:2
-          Loud:habit,v:vine
+          Loud:habit,v:vine,share:2
         Family:Veronica,n:7,kind:gang,order_by:woodystem,axis:num,from:robusta,to:lucida
           Se:drift,neu:2
-          Loud:endemic
-          Loud:habit,v:shrub
+          Loud:endemic,share:2
+          Loud:habit,v:shrub,share:1
         Se:census,goners:0,neus:12,rows:12
         cell:Coprosma,kind:gang,n:5
         cell:Veronica,kind:gang,n:7
         cell:Metrosideros,kind:gang,n:11
         Family:Metrosideros,n:12,kind:pane,order_by:habit,axis:lex,from:microphylla,to:tenuifolium
           Se:drift,neu:3,gone:1
-          Loud:woodystem
+          Loud:woodystem,share:3
         cell:Kunzea,kind:gang,n:9
         Family:Kunzea,n:10,kind:pane,order_by:habit,axis:lex,from:tenax,to:totara
           Se:drift,neu:2
-          Loud:endemic
-          Loud:woodystem
+          Loud:endemic,share:1
+          Loud:woodystem,share:3
         cell:Metrosideros robusta,kind:pane,n:1
         cell:Leptospermum,kind:gang,n:7
         Family:Leptospermum,n:8,kind:pane,order_by:habit,axis:lex,from:lucida,to:lucida
           Se:drift,neu:2
-          Loud:endemic
-          Loud:woodystem
+          Loud:endemic,share:1
+          Loud:woodystem,share:1
         cell:Kunzea grandifolia,kind:pane,n:1
         cell:Pittosporum,kind:gang,n:6
         Family:Pittosporum,n:6,kind:gang,order_by:habit,axis:lex,from:microphylla,to:linearis
           Se:drift,neu:2
-          Loud:woodystem
+          Loud:woodystem,share:2
         cell:Leptospermum lucida,kind:pane,n:1

@@ -56,8 +56,7 @@ story:VoroTest
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.157
-      sample=0.326,at=1783859608
+    TimeTotal:beliefs,avg=0.136
       sample=0.126,at=1783888193
       sample=0.129,at=1783897605
       sample=0.126,at=1783907234
@@ -67,8 +66,8 @@ story:VoroTest
       sample=0.151,at=1783914141
       sample=0.109,at=1783920390
       sample=0.109,at=1783920398
-    TimeTotal:step,avg=0.039
-      sample=0.081,at=1783859608
+      sample=0.112,at=1783939636
+    TimeTotal:step,avg=0.034
       sample=0.031,at=1783888193
       sample=0.032,at=1783897605
       sample=0.031,at=1783907234
@@ -78,6 +77,7 @@ story:VoroTest
       sample=0.038,at=1783914141
       sample=0.027,at=1783920390
       sample=0.027,at=1783920398
+      sample=0.028,at=1783939636
   step,dige:73fb81b056823899
   step=2,dige:1779f13ff64879c5
   step=3,dige:56688df8a1e9f16e

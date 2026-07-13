@@ -31,15 +31,15 @@ Snap:H
         Se:scape,grasped:4,born:0,died:1,loudest:Veronica,trait:endemic ×2,regions:3
         Se:input,arrived:5,left:1
         Family:Coprosma,n:5,kind:gang,order_by:habit,axis:lex,from:montana,to:lucida
-          Loud:woodystem
+          Loud:woodystem,share:2
         Family:Veronica,n:7,kind:pane,order_by:habit,axis:lex,from:grandifolia,to:microphylla
-          Loud:endemic
-          Loud:woodystem
+          Loud:endemic,share:2
+          Loud:woodystem,share:3
         Se:census,goners:0,neus:7,rows:7
         cell:Veronica grandifolia,kind:pane,n:1
         cell:Coprosma,kind:gang,n:5
         cell:Veronica,kind:gang,n:6
         cell:Metrosideros,kind:gang,n:4
         Family:Metrosideros,n:4,kind:gang,order_by:habit,axis:lex,from:robusta,to:propinqua
-          Loud:woodystem
+          Loud:woodystem,share:2
           Se:drift,neu:5

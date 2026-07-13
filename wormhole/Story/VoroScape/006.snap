@@ -35,7 +35,7 @@ Snap:H
         Se:scape,grasped:5,born:0,died:0,loudest:Artist · Moonlit,trait:remaster ×2,regions:2
         Se:input,arrived:0,left:1
         Family:Artist,n:5,kind:pane,order_by:year,axis:num,from:Moonlit,to:Palegold
-          Loud:remaster
+          Loud:remaster,share:3
           Loud:live
         cell:Artist Riverine,kind:pane,n:3
         cell:Artist Palegold,kind:pane,n:2
