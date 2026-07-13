@@ -35,24 +35,24 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
          (b) a corrupt census `body_hash` stamped `breached,landed=2` and dropped see #4 — both
           CHECK-only, reverted, runner left green on pristine gen `39558c`.
 
-**NEXT (2026-07-13 late): rulings landed — the magazine is real data; owed = Ra re-records + the
- blessing-needed fold/cp-landing.** DONE today (all committed, live green): the tombstone RIP
-  (MusuHeist 30→19, green ×2); test music is TAGGED-BY-DEFAULT (the generator learns
-   Crate_wav_with_tags — every testsounds file carries IART/INAM agreeing with its filename; the
-    lone disagreeing file stays MusuHeist's plant); the MAGAZINE rebuilt as `%Cloud/%Record` on the
-     OBSERVABLE PLANE (§12.2 — reflected into w/%Mag so the fixture diff SHOWS records/clouds
-      appearing+vanishing, not judgement rows grading themselves; the fabricated `genre` is gone).
- - **OWED, mechanical (safe, no blessing):** the tags change shifted every testsounds byte, so the
-    **Ra family fixtures are stale** — re-record MusuRaStock/RaCast/RaTerm/RaStream/RaChase over the
-     tagged collection (census divides identically; identities unchanged; pure body_hash/id/bytes
-      churn). Same recipe as the MusuHeist re-record.
- - **OWED, needs the human's blessing (do NOT build blind — §12.2 tail):** (a) the **FOLD** —
-    publish the magazine off MusuHeist's REAL census, retiring MusuMagazine's minted lib (kills the
-     duplicated test-catalog the human flagged); (b) the **cp-LANDING** ruling — whole-directory
-      pickup, same relative path, tags are metadata not file-naming authority (rewrites Heist_land +
-       rewords ~3 MusuHeist sees, full re-record). Both are the same fixture-churn wave — do them
-        together in one sweep once blessed.
- - **Then** M2 (two-Pier magazine replication over Repli, grant-gated) → D1 the door → C1 cursors.
+**NEXT (2026-07-13 night): the whole heist+magazine wave is BUILT — M2 leads next.** DONE today
+ (all committed, live green ×2): the tombstone RIP; test music TAGGED-BY-DEFAULT; the magazine as
+  `%Cloud/%Record` on the observable plane; the Ra family re-record over the tagged bytes; then the
+   blessed wave — **cp-LANDING** (a heist is a cp: `<dest-root>/<source-path>`, whole-dir pickup, no
+    rename, `Heist_cp_path` sanitizes `..`, kid-safe non-audio-siblings + dedup bias-to-keep captured
+     as `// <`) and **the FOLD** (MusuHeist publishes Uno's REAL collection via `Musica_publish` and
+      reflects it into w/%Mag — real ids/hashes/cp-paths on the snap; the existing deny gives a RECAST
+       on real data; 14→16 sees, 19→22 steps). The magazine is now proven on the real machinery, the
+        data as data.
+ - **OPEN for the human — MusuMagazine disposition:** the fold makes MusuHeist the real-data magazine
+    proof, so MusuMagazine (the rebuilt `%Cloud` toy) is now only the LOGIC unit-test — it uniquely
+     covers multi-cloud grow (c1→c2) and would cover `Musica_forget` (untested). KEPT for now as that
+      focused unit test; RETIRE it (de-register Credence+Ality, drop fixtures) if you want zero
+       duplication — my rec is keep-but-add-a-forget-scene. Your call.
+ - **NEXT build:** M2 — two-Pier magazine replication over the existing Repli pipe, grant-gated
+    (grant on = the real magazine lands at the follower; grant off = refused + noted). Then D1 the
+     door → C1 cursors. Corner-cases for when cp-landing meets real disk (all `// <`): audio-probe the
+      bytes, the album-art/kid-safe oracle, dedup album+disc+track-else-path, landing-path clash.
 
 **NOW (2026-07-13, post-push): three §10.2 gears LANDED compile-clean (live-gate owed on all);
  the Booth/Ban thread is VETOED-and-parked; persistence is ruled — §11.7 (the Berth).**
@@ -1209,14 +1209,16 @@ Waft:Musica
    the fixture DIFF shows a card appearing / a second Cloud arriving / a dropped card vanishing — the
     DATA is the proof, %testing counts only accompany it (see [[snap-data-not-judgement]]). A
      judgement-only snap (`published,records=2`) is the drive grading its own homework.
- **OWED (needs the human's blessing — do not build blind):** (a) the FOLD — the magazine's real
-  feeder is the Heist census (catalog-shaped Records), so `Musica_publish` should be proven off
-   MusuHeist's REAL census over testsounds, not MusuMagazine's minted lib (kills the duplicated
-    test-catalog the human flagged); (b) the cp-LANDING ruling — a heist picks up WHOLE DIRECTORIES
-     and does a `cp` (same relative `path:`), NEVER renaming files off tags; tags stay metadata
-      (dedup identity + magazine display), never file-naming authority. That rewrites
-       `Heist_land`/`Heist_rel_for` and rewords ~3 MusuHeist sees (filed-by-category, mislabeled-
-        file) — a full MusuHeist re-record. Corner-case ledger: weird tag text enters snapped
+ **BUILT (2026-07-13 night):** (a) the FOLD — `Musica_publish` is proven off MusuHeist's REAL
+  census (Uno's landed collection reflected into w/%Mag on the snap; the deny gives a recast on real
+   data), so the magazine no longer rides a minted toy; (b) cp-LANDING — `Heist_rel_for` lands at
+    `<dest-root>/<source-path>` (`Heist_cp_path` sanitizes `..`), tags are metadata never file-naming,
+     the mislabeled see inverted (the file keeps its name, the catalog knows the truth), `Heist_land_rel`
+      deleted. MusuHeist 19→22 steps, 16 sees, green ×2. STILL owed (all `// <` at their sites, ride
+       real disk / M2): weird tag text clamp; non-audio sibling probe + album-art/kid-safe oracle;
+        dedup album+disc+track-else-path; landing-path clash verdict.
+ (Was the blessing-owed plan; the human blessed it "build it!" and it landed.  Historic corner-case
+  ledger: Corner-case ledger: weird tag text enters snapped
          scalars (clamp control chars + cap length); non-audio sibling in a picked-up dir (probe
           audio, parked `// <` at Heist_census); album-art needs an oracle (parked `// <` in
            Crate.g); landing-path collision → skip+`clash` verdict on the manifest.

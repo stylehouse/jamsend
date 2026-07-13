@@ -5,6 +5,25 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
   The living state, roadmap and design are in Radio_todo.md — read THAT; come here only for
    the archaeology of how a thing landed. Newest first.
 
+**2026-07-13 (night) — the blessed wave: cp-landing + the fold ("build it!").** The human blessed the
+ cp-landing + magazine-fold wave, and it landed live green ×2 (on runner 3c52 — 49de and 20e3 both
+  froze mid-session: backgrounded browser tabs freeze via Page Lifecycle, so a runner only steps while
+   its tab is FOREGROUNDED; 20e3 worked only while the human was briefly looking, 3c52 while they
+    were back). **cp-landing:** a heist is now a COPY — `Heist_rel_for` lands at
+     `<dest-root>/<source-relative-path>`, the source's own filename+subdirs survive, tags catalog but
+      never rename (`Heist_cp_path` sanitizes `..` for kid-safe security); `Heist_land_rel` (the old
+       `<genre>/<Artist>/<Album>/<Title>` tag-tree) deleted; the mislabeled-plant see INVERTED (the
+        file keeps its bogus name on disk, the catalog knows the truth from the tags). **The fold:**
+         MusuHeist now publishes Uno's REAL collection via `Musica_publish` and reflects it into
+          w/%Mag — real ids, body_hashes, cp paths ON the snap (the human's "detail is data" after
+           "MusuMagazine tests not much"); the existing deny gives a RECAST on real data for free
+            (publish 9, deny drops one, republish → 8, the denied track vanishes from the magazine, no
+             orphan). 14→16 sees, 19→22 steps. Two cold-timestamp steps needed the usual
+              entropy-warming re-accept. MusuMagazine (the %Cloud toy) KEPT as the multi-cloud-grow +
+               forget unit-test; retire-vs-keep surfaced to the human. Corner-cases (weird tag text
+                clamp, non-audio/album-art oracle, dedup album+disc+track, landing clash) captured as
+                 `// <` for when cp-landing meets real disk at M2.
+
 **2026-07-13 (afternoon) — tags-by-default, the %Cloud magazine on the plane, and the Ra re-record
  sweep.** Three things, all live-recorded on 49de + committed. (1) **The tombstone RIP** landed
   first (MusuHeist 30→19, green ×2; see the day entry's ruling) — then the human caught the
