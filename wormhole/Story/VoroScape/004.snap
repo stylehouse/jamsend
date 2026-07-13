@@ -27,35 +27,13 @@ Snap:H
         Voro,beat=4,level:L0,visible=6,cells:4,gangs=0,folded:13,count:4
         bare:req,n:1
         cell:Artist Moonlit,kind:pane,n:4
-          Vtuffing,of:Track,n:4
-            Vrow,row:title,text:Moonlit  ×4,wgt:100,tag:Artist,nk:name
-            Vrow,row:list,wgt:50,bits:4
-            Vrow,row:spread,text:year,wgt:43,bits:3
-            Vrow,row:fact,text:remaster ×2,wgt:48
-            Vrow,row:fact,text:live ×2,wgt:20
-            Vrow,row:dip,text:/*4,wgt:10
         cell:Artist Fernway,kind:pane,n:3
-          Vtuffing,of:Track,n:3
-            Vrow,row:title,text:Fernway  ×3,wgt:100,tag:Artist,nk:name
-            Vrow,row:list,wgt:50,bits:3
-            Vrow,row:spread,text:year,wgt:43,bits:2
-            Vrow,row:fact,text:live ×1,wgt:20
-            Vrow,row:fact,text:remaster ×2,wgt:48
-            Vrow,row:dip,text:/*3,wgt:10
         cell:Artist Voxhall,kind:pane,n:3
-          Vtuffing,of:Track,n:3
-            Vrow,row:title,text:Voxhall  ×3,wgt:100,tag:Artist,nk:name
-            Vrow,row:list,wgt:50,bits:3
-            Vrow,row:fact,text:year: 2007,wgt:43
-            Vrow,row:fact,text:live ×1,wgt:20
-            Vrow,row:dip,text:/*3,wgt:10
         bare:see,n:1
         Se:scape,grasped:4,born:1,died:0,loudest:Artist · Moonlit,trait:year 2007,regions:2
+        Se:input,arrived:2,left:1
+        Family:Artist,n:4,kind:pane,order_by:year,axis:num,from:Fernway,to:Voxhall
+          Loud:remaster
+          Loud:live
+          Se:drift,neu:1
         cell:Artist Riverine,kind:pane,n:3
-          Vtuffing,of:Track,n:3
-            Vrow,row:title,text:Riverine  ×3,wgt:2,tag:Artist,nk:name
-            Vrow,row:list,wgt:1,bits:3
-            Vrow,row:spread,text:year,wgt:1,bits:2
-            Vrow,row:fact,text:remaster ×2,wgt:1
-            Vrow,row:fact,text:live ×2,wgt:1
-            Vrow,row:dip,text:/*3,wgt:1

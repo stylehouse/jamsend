@@ -5,8 +5,7 @@ story:MusuRaCast
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=1.417
-      sample=1.408,at=1783676852
+    TimeTotal:beliefs,avg=1.419
       sample=1.717,at=1783682660
       sample=1.717,at=1783682762
       sample=1.573,at=1783688368
@@ -16,8 +15,8 @@ story:MusuRaCast
       sample=1.331,at=1783907552
       sample=1.091,at=1783907593
       sample=1.068,at=1783907627
+      sample=1.427,at=1783920633
     TimeTotal:step,avg=0.118
-      sample=0.117,at=1783676852
       sample=0.143,at=1783682660
       sample=0.143,at=1783682762
       sample=0.131,at=1783688368
@@ -27,6 +26,7 @@ story:MusuRaCast
       sample=0.111,at=1783907552
       sample=0.091,at=1783907593
       sample=0.089,at=1783907627
+      sample=0.119,at=1783920633
   step,dige:0a066e0d16fc5e0e
   step=2,dige:0b1664ebe636eb80
   step=3,dige:f070fbd04c4d1592

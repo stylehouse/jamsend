@@ -50,26 +50,24 @@ Snap:H
         Nothofagus:colensoi,habit:tree
       w:Voronoiology,dontGraph
         Voro,beat=6,level:L2,visible=17,cells:3,gangs=3,folded:0,count:0
-        drift,focus:Metrosideros excelsa,opens=4
         cell:Olearia,kind:gang,n:3
-          Vtuffing,of:Olearia,n:3
-            Vrow,row:title,text:×3,wgt:2,tag:Olearia
-            Vrow,row:list,wgt:1,bits:3
-            Vrow,row:fact,text:habit: shrub,wgt:1
-            Vrow,row:dip,text:/*3,wgt:1
         cell:Pittosporum,kind:gang,n:4
-          Vtuffing,of:Pittosporum,n:4
-            Vrow,row:title,text:×4,wgt:2,tag:Pittosporum
-            Vrow,row:list,wgt:1,bits:4
-            Vrow,row:spread,text:habit,wgt:1,bits:3
-            Vrow,row:dip,text:/*4,wgt:1
         cell:Nothofagus,kind:gang,n:3
-          Vtuffing,of:Nothofagus,n:3
-            Vrow,row:title,text:×3,wgt:2,tag:Nothofagus
-            Vrow,row:list,wgt:1,bits:3
-            Vrow,row:spread,text:habit,wgt:1,bits:2
-            Vrow,row:dip,text:/*3,wgt:1
         bare:req,n:1
+        Se:scape,grasped:3,born:0,died:1,loudest:Pittosporum,trait:habit vine,regions:2
+        Family:Coprosma,n:7,kind:bare,order_by:habit,axis:lex,from:propinqua var. montana,to:grandifolia var. prostrata
+          Loud:woodystem,v:1
+        Family:Veronica,n:6,kind:bare,order_by:habit,axis:lex,from:tenuifolium,to:excelsa var. prostrata
+          Loud:woodystem,v:1
+        Family:Metrosideros,n:6,kind:bare,order_by:habit,axis:lex,from:fusca,to:tenax var. prostrata
+          Loud:woodystem,v:1
+          Loud:endemic,v:1
+          Se:drift,neu:2
+        Family:Olearia,n:3,kind:gang,from:grandifolia,to:tenuifolium
+          Loud:habit,v:shrub
+        Family:Pittosporum,n:4,kind:gang,order_by:habit,axis:lex,from:montana,to:linearis
+        Family:Nothofagus,n:3,kind:gang,order_by:habit,axis:lex,from:tenax,to:crassifolius
+        drift,focus:Metrosideros excelsa,opens=4
         bare:Coprosma,n:7,pop:3
         bare:Veronica,n:6,pop:2
         bare:Metrosideros,n:6,pop:2

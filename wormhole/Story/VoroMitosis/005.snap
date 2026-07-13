@@ -33,33 +33,22 @@ Snap:H
         Voro,beat=4,level:L1,visible=5,cells:4,gangs=4,folded:0,count:0
         bare:req,n:1
         Se:scape,grasped:4,born:1,died:1,loudest:Coprosma,trait:habit tree,regions:2
+        Se:input,arrived:9,left:3
+        Family:Coprosma,n:7,kind:gang,order_by:habit,axis:lex,from:montana,to:lucida
+          Loud:woodystem
+          Se:drift,neu:2
+        Family:Veronica,n:5,kind:gang,order_by:habit,axis:lex,from:linearis,to:robusta
+          Loud:endemic
+          Loud:woodystem
+          Se:drift,neu:1,gone:3
         Se:census,goners:0,neus:7,rows:7
         cell:Coprosma,kind:gang,n:7
-          Vtuffing,of:Coprosma,n:7
-            Vrow,row:title,text:×7,wgt:2,tag:Coprosma
-            Vrow,row:list,wgt:1,bits:7
-            Vrow,row:spread,text:habit,wgt:1,bits:3
-            Vrow,row:fact,text:woodystem ×3,wgt:1
-            Vrow,row:dip,text:/*7,wgt:1
         cell:Veronica,kind:gang,n:5
-          Vtuffing,of:Veronica,n:5
-            Vrow,row:title,text:×5,wgt:2,tag:Veronica
-            Vrow,row:list,wgt:1,bits:5
-            Vrow,row:spread,text:habit,wgt:1,bits:2
-            Vrow,row:fact,text:woodystem ×3,wgt:1
-            Vrow,row:fact,text:endemic ×3,wgt:1
-            Vrow,row:dip,text:/*5,wgt:1
         cell:Metrosideros,kind:gang,n:6
-          Vtuffing,of:Metrosideros,n:6
-            Vrow,row:title,text:×6,wgt:2,tag:Metrosideros
-            Vrow,row:list,wgt:1,bits:6
-            Vrow,row:fact,text:woodystem ×2,wgt:1
-            Vrow,row:spread,text:habit,wgt:1,bits:3
-            Vrow,row:dip,text:/*6,wgt:1
+        Family:Metrosideros,n:6,kind:gang,order_by:habit,axis:lex,from:microphylla,to:propinqua
+          Se:drift,neu:2
+          Loud:woodystem
         cell:Kunzea,kind:gang,n:4
-          Vtuffing,of:Kunzea,n:4
-            Vrow,row:title,text:×4,wgt:2,tag:Kunzea
-            Vrow,row:list,wgt:1,bits:4
-            Vrow,row:spread,text:habit,wgt:1,bits:2
-            Vrow,row:fact,text:woodystem ×1,wgt:1
-            Vrow,row:dip,text:/*4,wgt:1
+        Family:Kunzea,n:4,kind:gang,order_by:habit,axis:lex,from:tenax,to:tenuifolium
+          Loud:woodystem
+          Se:drift,neu:5

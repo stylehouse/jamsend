@@ -24,27 +24,17 @@ Snap:H
         see:the crush intends three cell chunks — a render that shows fewer is trapping data behind glass
       w:Voronoiology,dontGraph
         Voro,beat=5,level:L0,visible=5,cells:4,gangs=2,folded:8,count:2
-        cell:Artist,kind:pane,n:4
-          Vtuffing,of:Track,n:4
-            Vrow,row:title,text:Alpha  ×4,wgt:2,tag:Artist,nk:name
-            Vrow,row:list,wgt:1,bits:4
-            Vrow,row:dip,text:/*4,wgt:1
-        cell:Artist,kind:pane,n:4
-          Vtuffing,of:Track,n:4
-            Vrow,row:title,text:Beta  ×4,wgt:2,tag:Artist,nk:name
-            Vrow,row:list,wgt:1,bits:4
-            Vrow,row:dip,text:/*4,wgt:1
-        cell:witnessed,kind:gang,n:4
-          Vtuffing,of:witnessed,n:4
-            Vrow,row:title,text:×4,wgt:2,tag:witnessed
-            Vrow,row:list,wgt:1,bits:4
-            Vrow,row:dip,text:/*4,wgt:1
-        cell:see,kind:gang,n:3
-          Vtuffing,of:see,n:3
-            Vrow,row:title,text:×3,wgt:2,tag:see
-            Vrow,row:list,wgt:1,bits:3
-            Vrow,row:dip,text:/*3,wgt:1
         bare:req,n:1
+        cell:Artist Alpha,kind:pane,n:4
+        cell:Artist Beta,kind:pane,n:4
+        cell:witnessed,kind:gang,n:4
+        Se:scape,grasped:4,born:1,died:0,loudest:Artist · Alpha,regions:1
+        Family:Artist,n:2,kind:pane,from:Alpha,to:Beta
+        Family:witnessed,n:4,kind:gang,from:w0,to:w3
+        cell:see,kind:gang,n:3
+        Se:input,arrived:3,left:0
+        Family:see,n:3,kind:gang,from:a container of four folds to one chunk carrying its full count of four,to:the crush intends three cell chunks — a render that shows fewer is trapping data behind glass
+          Se:drift,neu:4
 Snap:cytowave
   upsert,id:cytoid_1_1_5,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
     style,background-color:#04202a

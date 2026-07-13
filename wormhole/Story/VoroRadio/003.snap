@@ -51,46 +51,24 @@ Snap:H
       w:Voronoiology,dontGraph
         Voro,beat=2,level:L1,visible=7,cells:6,gangs=6,folded:0,count:0
         cell:Coprosma,kind:gang,n:5
-          Vtuffing,of:Coprosma,n:5
-            Vrow,row:title,text:×5,wgt:2,tag:Coprosma
-            Vrow,row:list,wgt:1,bits:5
-            Vrow,row:fact,text:habit: vine,wgt:1
-            Vrow,row:fact,text:woodystem ×2,wgt:1
-            Vrow,row:dip,text:/*5,wgt:1
         cell:Veronica,kind:gang,n:4
-          Vtuffing,of:Veronica,n:4
-            Vrow,row:title,text:×4,wgt:2,tag:Veronica
-            Vrow,row:list,wgt:1,bits:4
-            Vrow,row:fact,text:woodystem ×2,wgt:1
-            Vrow,row:spread,text:habit,wgt:1,bits:2
-            Vrow,row:dip,text:/*4,wgt:1
         cell:Metrosideros,kind:gang,n:4
-          Vtuffing,of:Metrosideros,n:4
-            Vrow,row:title,text:×4,wgt:2,tag:Metrosideros
-            Vrow,row:list,wgt:1,bits:4
-            Vrow,row:fact,text:woodystem ×2,wgt:1
-            Vrow,row:fact,text:endemic ×2,wgt:1
-            Vrow,row:fact,text:habit: shrub,wgt:1
-            Vrow,row:dip,text:/*4,wgt:1
         cell:Olearia,kind:gang,n:3
-          Vtuffing,of:Olearia,n:3
-            Vrow,row:title,text:×3,wgt:2,tag:Olearia
-            Vrow,row:list,wgt:1,bits:3
-            Vrow,row:fact,text:habit: shrub,wgt:1
-            Vrow,row:dip,text:/*3,wgt:1
         cell:Pittosporum,kind:gang,n:4
-          Vtuffing,of:Pittosporum,n:4
-            Vrow,row:title,text:×4,wgt:2,tag:Pittosporum
-            Vrow,row:list,wgt:1,bits:4
-            Vrow,row:spread,text:habit,wgt:1,bits:3
-            Vrow,row:dip,text:/*4,wgt:1
         cell:Nothofagus,kind:gang,n:3
-          Vtuffing,of:Nothofagus,n:3
-            Vrow,row:title,text:×3,wgt:2,tag:Nothofagus
-            Vrow,row:list,wgt:1,bits:3
-            Vrow,row:spread,text:habit,wgt:1,bits:2
-            Vrow,row:dip,text:/*3,wgt:1
         bare:req,n:1
+        Se:scape,grasped:6,born:0,died:0,loudest:Coprosma,trait:habit: vine,regions:3
+        Family:Coprosma,n:5,kind:gang,order_by:habit,axis:lex,from:robusta,to:propinqua
+          Loud:woodystem
+        Family:Veronica,n:4,kind:gang,order_by:habit,axis:lex,from:tenuifolium,to:lucida
+          Loud:woodystem
+        Family:Metrosideros,n:4,kind:gang,order_by:woodystem,axis:num,from:excelsa,to:tenax
+          Loud:endemic
+          Loud:habit,v:shrub
+        Family:Olearia,n:3,kind:gang,from:grandifolia,to:tenuifolium
+          Loud:habit,v:shrub
+        Family:Pittosporum,n:4,kind:gang,order_by:habit,axis:lex,from:montana,to:linearis
+        Family:Nothofagus,n:3,kind:gang,order_by:habit,axis:lex,from:tenax,to:crassifolius
 Snap:cytowave
   upsert,id:cytoid_1_1_8,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
     style,background-color:#04202a

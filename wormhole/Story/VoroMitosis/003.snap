@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=5	{"mung":["age"]}
+      self,round=6	{"mung":["age"]}
       w:VoroMitosis
-        self,round=5	{"mung":["age"]}
+        self,round=6	{"mung":["age"]}
         req:wrangle,eternal,ok
         Coprosma:robusta,habit:vine
           Coprosma:robusta subsp. australis
@@ -28,36 +28,20 @@ Snap:H
       w:Voronoiology,dontGraph
         Voro,beat=2,level:L0,visible=13,cells:5,gangs=0,folded:8,count:5
         cell:Coprosma propinqua,kind:pane,n:2
-          Vtuffing,of:Coprosma,n:2
-            Vrow,row:title,text:propinqua  ×2,wgt:100,tag:Coprosma,nk:Coprosma
-            Vrow,row:list,wgt:50,bits:2
-            Vrow,row:fact,text:habit: tree,wgt:48
-            Vrow,row:dip,text:/*2,wgt:10
         cell:Coprosma grandifolia,kind:pane,n:2
-          Vtuffing,of:Coprosma,n:2
-            Vrow,row:title,text:grandifolia  ×2,wgt:100,tag:Coprosma,nk:Coprosma
-            Vrow,row:list,wgt:50,bits:2
-            Vrow,row:dip,text:/*2,wgt:10
         cell:Veronica lucida,kind:pane,n:2
-          Vtuffing,of:Veronica,n:2
-            Vrow,row:title,text:lucida  ×2,wgt:100,tag:Veronica,nk:Veronica
-            Vrow,row:list,wgt:50,bits:2
-            Vrow,row:fact,text:woodystem ×1,wgt:82
-            Vrow,row:fact,text:habit: tree,wgt:48
-            Vrow,row:dip,text:/*2,wgt:10
         bare:req,n:1
         bare:Coprosma,n:4
         bare:Veronica,n:3
         Se:scape,grasped:5,born:0,died:0,loudest:Coprosma: propinqua,trait:habit: tree,regions:3
+        Se:input,arrived:4,left:0
+        Family:Coprosma,n:7,kind:pane,order_by:habit,axis:lex,from:propinqua,to:grandifolia
+          Loud:woodystem,v:1
+          Se:drift,neu:2
+        Family:Veronica,n:5,kind:pane,order_by:woodystem,axis:lex,from:tenuifolium,to:crassifolius
+          Loud:habit,v:shrub
+          Loud:habit,v:tree
+          Se:drift,neu:2
         Se:census,goners:0,neus:10,rows:10
         cell:Coprosma robusta,kind:pane,n:1
-          Vtuffing,of:Coprosma,n:1
-            Vrow,row:title,text:robusta  ×1,wgt:2,tag:Coprosma,nk:Coprosma
-            Vrow,row:list,wgt:1,bits:1
-            Vrow,row:dip,text:/*1,wgt:1
         cell:Veronica grandifolia,kind:pane,n:1
-          Vtuffing,of:Veronica,n:1
-            Vrow,row:title,text:grandifolia  ×1,wgt:2,tag:Veronica,nk:Veronica
-            Vrow,row:list,wgt:1,bits:1
-            Vrow,row:fact,text:habit: shrub,wgt:1
-            Vrow,row:dip,text:/*1,wgt:1

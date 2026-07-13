@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=4	{"mung":["age"]}
+      self,round=5	{"mung":["age"]}
       w:VoroMitosis
-        self,round=4	{"mung":["age"]}
+        self,round=5	{"mung":["age"]}
         req:wrangle,eternal,ok
         Coprosma:robusta,habit:vine
         Coprosma:propinqua
@@ -22,25 +22,16 @@ Snap:H
       w:Voronoiology,dontGraph
         Voro,beat,level:L0,visible=9,cells:3,gangs=0,folded:6,count:3
         cell:Coprosma propinqua,kind:pane,n:2
-          Vtuffing,of:Coprosma,n:2
-            Vrow,row:title,text:propinqua  ×2,wgt:2,tag:Coprosma,nk:Coprosma
-            Vrow,row:list,wgt:1,bits:2
-            Vrow,row:fact,text:habit: tree,wgt:1
-            Vrow,row:dip,text:/*2,wgt:1
         cell:Coprosma grandifolia,kind:pane,n:2
-          Vtuffing,of:Coprosma,n:2
-            Vrow,row:title,text:grandifolia  ×2,wgt:2,tag:Coprosma,nk:Coprosma
-            Vrow,row:list,wgt:1,bits:2
-            Vrow,row:dip,text:/*2,wgt:1
         cell:Veronica lucida,kind:pane,n:2
-          Vtuffing,of:Veronica,n:2
-            Vrow,row:title,text:lucida  ×2,wgt:2,tag:Veronica,nk:Veronica
-            Vrow,row:list,wgt:1,bits:2
-            Vrow,row:fact,text:woodystem ×1,wgt:1
-            Vrow,row:fact,text:habit: tree,wgt:1
-            Vrow,row:dip,text:/*2,wgt:1
         bare:req,n:1
         bare:Coprosma,n:3
         bare:Veronica,n:2
         Se:scape,grasped:3,born:3,died:0,loudest:Coprosma: propinqua,trait:habit: tree,regions:2
+        Se:input,arrived:11,left:0
+        Family:Coprosma,n:5,kind:bare,order_by:habit,axis:lex,from:propinqua,to:grandifolia
+          Loud:woodystem,v:1
+        Family:Veronica,n:3,kind:bare,order_by:woodystem,axis:lex,from:tenuifolium,to:lucida
+          Loud:habit,v:tree
+          Loud:habit,v:shrub
         Se:census,goners:0,neus:8,rows:8

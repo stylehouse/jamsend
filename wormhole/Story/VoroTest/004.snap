@@ -51,7 +51,7 @@ Snap:H
             bare:Lichen,n:1
             bare:Sedge,n:1
             bare:Rush,n:1
-            Se:scape,grasped:2,born:0,died:0,loudest:Fern,trait:,regions:1
+            Se:scape,grasped:2,born:0,died:0,loudest:Fern,regions:1
             Family:Fern,n:5,kind:gang,from:crown,to:kidney
             Family:Moss,n:5,kind:gang,from:sphagnum,to:sheet
         Example,name:motley
@@ -115,7 +115,7 @@ Snap:H
             cell:Grove Rimu,kind:pane,n:4
             cell:Grove Totara,kind:pane,n:4
             Se:scape,grasped:3,born:0,died:0,loudest:Grove · Kauri,trait:age 1,regions:1
-            Family:Grove,n:3,kind:pane,order_by:age,axis:num,from:Grove · Kauri,to:Grove · Totara
+            Family:Grove,n:3,kind:pane,order_by:age,axis:num,from:Kauri,to:Totara
         Example,name:edges
           w:edges
             Pair,name:twins
@@ -126,6 +126,138 @@ Snap:H
             Voro,beat=3,level:L2,visible=2,cells:1,gangs=0,folded:2,count:1
             cell:Pair twins,kind:pane,n:2
             bare:Void,n:1
-            Se:scape,grasped:1,born:0,died:0,loudest:Pair · twins,trait:,regions:1
+            Se:scape,grasped:1,born:0,died:0,loudest:Pair · twins,regions:1
+        Example,name:swarm
+          w:swarm
+            req:awaitbuf
+            req:flush
+            req:drain
+            req:settle
+            req:retry
+            Cairn:stack
+            Cairn:marker
+          w:Voronoiology,dontGraph
+            Voro,beat=3,level:L2,visible=3,cells:1,gangs,folded:0,count:0
+            cell:req,kind:gang,n:5
+            bare:Cairn,n:2
+            Se:scape,grasped:1,born:0,died:0,loudest:req,regions:1
+            Family:req,n:5,kind:gang,from:awaitbuf,to:retry
+            Family:Cairn,n:2,kind:bare,from:stack,to:marker
+        Example,name:genus
+          w:genus
+            Coprosma:robusta,habit:vine
+            Coprosma:propinqua
+              Coprosma:propinqua var. montana,habit:tree
+              Coprosma:propinqua var. prostrata,habit:tree
+            Coprosma:rhamnoides,woodystem,habit:vine
+            Coprosma:grandifolia,woodystem,habit:vine
+              Coprosma:grandifolia var. montana
+              Coprosma:grandifolia var. prostrata
+            Veronica:grandifolia
+            Veronica:lucida
+              Veronica:lucida var. montana,woodystem,habit:tree
+              Veronica:lucida var. prostrata,habit:tree
+            Veronica:tenuifolium,woodystem,habit:shrub
+            Veronica:excelsa,woodystem,habit:tree
+              Veronica:excelsa var. montana
+              Veronica:excelsa var. prostrata
+            Metrosideros:excelsa,woodystem,endemic
+            Metrosideros:totara,woodystem,endemic
+              Metrosideros:totara var. montana,woodystem,habit:tree
+              Metrosideros:totara var. prostrata,habit:vine
+            Metrosideros:fusca,habit:shrub
+            Metrosideros:tenax,habit:shrub
+              Metrosideros:tenax var. montana
+              Metrosideros:tenax var. prostrata
+            Kunzea:tenax,habit:shrub
+            Kunzea:crassifolius
+              Kunzea:crassifolius var. montana,habit:tree
+              Kunzea:crassifolius var. prostrata,habit:vine
+            Kunzea:colensoi,habit:tree
+            Kunzea:australis,woodystem,habit:tree
+              Kunzea:australis var. montana,woodystem,endemic
+              Kunzea:australis var. prostrata
+            Leptospermum:australis,woodystem,endemic
+            Leptospermum:divaricata
+              Leptospermum:divaricata var. montana,habit:tree
+              Leptospermum:divaricata var. prostrata,woodystem,habit:vine
+            Leptospermum:microphylla
+            Leptospermum:serrata
+              Leptospermum:serrata var. montana,woodystem,habit:tree
+              Leptospermum:serrata var. prostrata,woodystem,habit:vine
+          w:Voronoiology,dontGraph
+            Voro,beat=3,level:L1,visible=5,cells:5,gangs=5,folded:0,count:0
+            cell:Coprosma,kind:gang,n:4
+            cell:Veronica,kind:gang,n:4
+            cell:Metrosideros,kind:gang,n:4
+            cell:Kunzea,kind:gang,n:4
+            cell:Leptospermum,kind:gang,n:4
+            Se:scape,grasped:5,born:0,died:0,loudest:Coprosma,trait:habit: vine,regions:1
+            Family:Coprosma,n:4,kind:gang,order_by:habit,axis:lex,from:robusta,to:propinqua
+              Loud:woodystem
+            Family:Veronica,n:4,kind:gang,order_by:habit,axis:lex,from:tenuifolium,to:lucida
+              Loud:woodystem
+            Family:Metrosideros,n:4,kind:gang,order_by:woodystem,axis:num,from:excelsa,to:tenax
+              Loud:endemic
+              Loud:habit,v:shrub
+            Family:Kunzea,n:4,kind:gang,order_by:habit,axis:lex,from:tenax,to:crassifolius
+              Loud:woodystem
+            Family:Leptospermum,n:4,kind:gang,from:australis,to:serrata
+              Loud:endemic
+              Loud:woodystem
+        Example,name:popped
+          w:popped
+            Ingot:bar
+            Ingot:coin
+            Ingot:bead
+          w:Voronoiology,dontGraph
+            Voro,beat=3,level:L2,visible=2,cells:1,gangs,folded:0,count:0
+            cell:Ingot,kind:gang,n:2
+            Se:scape,grasped:1,born:0,died:0,loudest:Ingot,regions:1
+            Family:Ingot,n:3,kind:bare,from:bar,to:bead
+            bare:Ingot,n:1,pop:1
+        Example,name:families
+          w:families
+            Metrosideros:excelsa,clade:Myrtales
+            Metrosideros:robusta,clade:Myrtales
+            Metrosideros:umbellata,clade:Myrtales
+            Kunzea:ericoides,clade:Myrtales
+            Kunzea:amathicola,clade:Myrtales
+            Kunzea:linearis,clade:Myrtales
+            Olearia:albida,clade:Asterales
+            Olearia:solandri,clade:Asterales
+            Olearia:furfuracea,clade:Asterales
+            Brachyglottis:repanda,clade:Asterales
+            Brachyglottis:greyi,clade:Asterales
+            Brachyglottis:rotundifolia,clade:Asterales
+          w:Voronoiology,dontGraph
+            Voro,beat=3,level:L2,visible=4,cells:4,gangs=4,folded:0,count:0
+            cell:Metrosideros,kind:gang,n:3
+            cell:Kunzea,kind:gang,n:3
+            cell:Olearia,kind:gang,n:3
+            cell:Brachyglottis,kind:gang,n:3
+            Se:scape,grasped:4,born:0,died:0,loudest:Metrosideros,trait:clade: Myrtales,regions:2
+            Family:Metrosideros,n:3,kind:gang,order_by:clade,axis:lex,from:excelsa,to:umbellata
+            Family:Kunzea,n:3,kind:gang,order_by:clade,axis:lex,from:ericoides,to:linearis
+            Family:Olearia,n:3,kind:gang,order_by:clade,axis:lex,from:albida,to:furfuracea
+            Family:Brachyglottis,n:3,kind:gang,order_by:clade,axis:lex,from:repanda,to:rotundifolia
+        Example,name:relics
+          w:relics
+            Relic:astrolabe,metal:brass,era:renaissance,origin:Nuremberg,use:navigation,state:tarnished,rarity:museum
+            Relic:sextant,metal:silver,era:georgian,origin:London,use:surveying,state:pristine,rarity:auction
+            Coin:penny,metal:bronze
+            Coin:florin,metal:bronze
+            Coin:crown,metal:bronze
+          w:Voronoiology,dontGraph
+            Voro,beat=3,level:L2,visible=3,cells:1,gangs,folded:0,count:0
+            cell:Coin,kind:gang,n:3
+            bare:Relic,n:2
+            Se:scape,grasped:1,born:0,died:0,loudest:Coin,trait:metal: bronze,regions:1
+            Family:Relic,n:2,kind:bare,order_by:metal,axis:lex,from:astrolabe,to:sextant,over:6
+              Loud:era,v:renaissance
+              Loud:origin,v:Nuremberg
+              Loud:use,v:navigation
+              Loud:state,v:tarnished
+            Family:Coin,n:3,kind:gang,order_by:metal,axis:lex,from:penny,to:crown
         see:the readings held steady across the examples — a recrush with nothing changed reproduced every gang and pane because the fold is a pure function of the data
         see:the drift fell silent everywhere — no family reading on any example carries an arrival or a departure after a recrush with nothing changed

@@ -21,21 +21,12 @@ Snap:H
         witnessed:w3
       w:Voronoiology,dontGraph
         Voro,beat=9,level:L0,visible=4,cells:3,gangs,folded:8,count:2
-        cell:Artist,kind:pane,n:4
-          Vtuffing,of:Track,n:4
-            Vrow,row:title,text:Alpha  ×4,wgt:2,tag:Artist,nk:name
-            Vrow,row:list,wgt:1,bits:4
-            Vrow,row:dip,text:/*4,wgt:1
-        cell:Artist,kind:pane,n:4
-          Vtuffing,of:Track,n:4
-            Vrow,row:title,text:Beta  ×4,wgt:2,tag:Artist,nk:name
-            Vrow,row:list,wgt:1,bits:4
-            Vrow,row:dip,text:/*4,wgt:1
-        cell:witnessed,kind:gang,n:4
-          Vtuffing,of:witnessed,n:4
-            Vrow,row:title,text:×4,wgt:2,tag:witnessed
-            Vrow,row:list,wgt:1,bits:4
-            Vrow,row:dip,text:/*4,wgt:1
         bare:req,n:1
+        cell:Artist Alpha,kind:pane,n:4
+        cell:Artist Beta,kind:pane,n:4
+        cell:witnessed,kind:gang,n:4
+        Se:scape,grasped:3,born:0,died:0,loudest:Artist · Alpha,regions:1
+        Family:Artist,n:2,kind:pane,from:Alpha,to:Beta
+        Family:witnessed,n:4,kind:gang,from:w0,to:w3
 Snap:cytowave
   remove,id:cytoid_1_1_5

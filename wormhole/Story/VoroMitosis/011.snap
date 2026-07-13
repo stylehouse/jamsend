@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=15	{"mung":["age"]}
+      self,round=18	{"mung":["age"]}
       w:VoroMitosis
-        self,round=15	{"mung":["age"]}
+        self,round=18	{"mung":["age"]}
         req:wrangle,eternal,ok
         Kunzea:grandifolia,habit:vine
           Kunzea:grandifolia f. viridis,habit:vine
@@ -101,86 +101,37 @@ Snap:H
         Voro,beat=10,level:L1,visible=13,cells:12,gangs=8,folded:4,count:4
         bare:req,n:1
         Se:scape,grasped:12,born:0,died:0,loudest:Kunzea,trait:endemic ×1,regions:4
+        Family:Coprosma,n:9,kind:pane,order_by:habit,axis:lex,from:tenax,to:crassifolius
+          Loud:woodystem
+        Family:Veronica,n:6,kind:gang,from:grandifolia,to:australis
+          Loud:habit,v:tree
+          Loud:woodystem
         Se:census,goners:0,neus:15,rows:15
         cell:Coprosma,kind:gang,n:8
-          Vtuffing,of:Coprosma,n:8
-            Vrow,row:title,text:×8,wgt:100,tag:Coprosma
-            Vrow,row:list,wgt:50,bits:8
-            Vrow,row:fact,text:woodystem ×1,wgt:56
-            Vrow,row:spread,text:habit,wgt:51,bits:2
-            Vrow,row:dip,text:/*8,wgt:10
         cell:Veronica,kind:gang,n:6
-          Vtuffing,of:Veronica,n:6
-            Vrow,row:title,text:×6,wgt:100,tag:Veronica
-            Vrow,row:list,wgt:50,bits:6
-            Vrow,row:fact,text:woodystem ×1,wgt:56
-            Vrow,row:fact,text:habit: tree,wgt:58
-            Vrow,row:dip,text:/*6,wgt:10
         cell:Metrosideros,kind:gang,n:9
-          Vtuffing,of:Metrosideros,n:9
-            Vrow,row:title,text:×9,wgt:100,tag:Metrosideros
-            Vrow,row:list,wgt:50,bits:9
-            Vrow,row:fact,text:woodystem ×2,wgt:56
-            Vrow,row:spread,text:habit,wgt:58,bits:3
-            Vrow,row:fact,text:endemic ×1,wgt:82
-            Vrow,row:dip,text:/*9,wgt:10
+        Family:Metrosideros,n:9,kind:gang,order_by:habit,axis:lex,from:fusca,to:crassifolius
+          Loud:endemic
+          Loud:woodystem
         cell:Kunzea,kind:gang,n:13
-          Vtuffing,of:Kunzea,n:13
-            Vrow,row:title,text:×13,wgt:100,tag:Kunzea
-            Vrow,row:list,wgt:50,bits:13
-            Vrow,row:fact,text:woodystem ×4,wgt:56
-            Vrow,row:spread,text:habit,wgt:58,bits:3
-            Vrow,row:fact,text:endemic ×1,wgt:82
-            Vrow,row:dip,text:/*13,wgt:10
+        Family:Kunzea,n:14,kind:pane,order_by:habit,axis:lex,from:tenax,to:crassifolius
+          Loud:endemic
+          Loud:woodystem
         cell:Leptospermum,kind:gang,n:11
-          Vtuffing,of:Leptospermum,n:11
-            Vrow,row:title,text:×11,wgt:100,tag:Leptospermum
-            Vrow,row:list,wgt:50,bits:11
-            Vrow,row:fact,text:woodystem ×3,wgt:56
-            Vrow,row:fact,text:endemic ×3,wgt:82
-            Vrow,row:spread,text:habit,wgt:51,bits:2
-            Vrow,row:dip,text:/*11,wgt:10
+        Family:Leptospermum,n:12,kind:pane,order_by:habit,axis:lex,from:lucida,to:divaricata
+          Loud:endemic
+          Loud:woodystem
         cell:Kunzea grandifolia,kind:pane,n:1
-          Vtuffing,of:Kunzea,n:1
-            Vrow,row:title,text:grandifolia  ×1,wgt:100,tag:Kunzea,nk:Kunzea
-            Vrow,row:list,wgt:50,bits:1
-            Vrow,row:fact,text:habit: vine,wgt:51
-            Vrow,row:dip,text:/*1,wgt:10
         cell:Pittosporum,kind:gang,n:9
-          Vtuffing,of:Pittosporum,n:9
-            Vrow,row:title,text:×9,wgt:100,tag:Pittosporum
-            Vrow,row:list,wgt:50,bits:9
-            Vrow,row:fact,text:woodystem ×3,wgt:56
-            Vrow,row:spread,text:habit,wgt:58,bits:3
-            Vrow,row:dip,text:/*9,wgt:10
+        Family:Pittosporum,n:10,kind:pane,order_by:habit,axis:lex,from:microphylla,to:crassifolius
+          Loud:woodystem
         cell:Leptospermum lucida,kind:pane,n:1
-          Vtuffing,of:Leptospermum,n:1
-            Vrow,row:title,text:lucida  ×1,wgt:100,tag:Leptospermum,nk:Leptospermum
-            Vrow,row:list,wgt:50,bits:1
-            Vrow,row:fact,text:habit: shrub,wgt:44
-            Vrow,row:dip,text:/*1,wgt:10
         cell:Pittosporum crassifolius,kind:pane,n:1
-          Vtuffing,of:Pittosporum,n:1
-            Vrow,row:title,text:crassifolius  ×1,wgt:100,tag:Pittosporum,nk:Pittosporum
-            Vrow,row:list,wgt:50,bits:1
-            Vrow,row:fact,text:habit: tree,wgt:58
-            Vrow,row:dip,text:/*1,wgt:10
         cell:Podocarpus,kind:gang,n:9
-          Vtuffing,of:Podocarpus,n:9
-            Vrow,row:title,text:×9,wgt:100,tag:Podocarpus
-            Vrow,row:list,wgt:50,bits:9
-            Vrow,row:fact,text:woodystem ×7,wgt:56
-            Vrow,row:spread,text:habit,wgt:58,bits:3
-            Vrow,row:fact,text:endemic ×1,wgt:82
-            Vrow,row:dip,text:/*9,wgt:10
+        Family:Podocarpus,n:9,kind:gang,order_by:habit,axis:lex,from:microphylla,to:crassifolius
+          Loud:endemic
+          Loud:woodystem
         cell:Coprosma rhamnoides,kind:pane,n:1
-          Vtuffing,of:Coprosma,n:1
-            Vrow,row:title,text:rhamnoides  ×1,wgt:100,tag:Coprosma,nk:Coprosma
-            Vrow,row:list,wgt:50,bits:1
-            Vrow,row:dip,text:/*1,wgt:10
         cell:Olearia,kind:gang,n:5
-          Vtuffing,of:Olearia,n:5
-            Vrow,row:title,text:×5,wgt:100,tag:Olearia
-            Vrow,row:list,wgt:50,bits:5
-            Vrow,row:fact,text:habit: shrub,wgt:44
-            Vrow,row:dip,text:/*5,wgt:10
+        Family:Olearia,n:5,kind:gang,from:robusta,to:lucida
+          Loud:habit,v:shrub
