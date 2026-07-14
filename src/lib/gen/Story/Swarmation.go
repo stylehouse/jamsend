@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return 'f4e35eee8c243f8c~g1' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return '910b984e14e606aa~g1' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -712,7 +712,13 @@ async SwarmDoor_settle(w) {
     w.sc.now = 1751900030
 
 },
-// ── the witness — per-beat %see observations, n-gated, reading live truth (no commas, no apostrophes) ──
+// ── the witness — %seen LATCHED assertions (Seen_split move 3), n-gated, reading live truth (no commas,
+//    no apostrophes). Every claim is a happened-FACT of the door handshake (two bare stations, a minted
+//     Idzeug, a promoted Pier, first contact sealed, readiness riding station_up) — once true it STAYS
+//      true, so it LATCHES rather than dropping each think. The n === K gate is KEPT: several gates read a
+//       state that holds only at their beat (bare "no Pier yet", the pre-seal route), so gating pins the
+//        fact to when it is observable; the latch then carries it to the final snap. Declared in
+//         The/Assertions (SwarmDoor toc.snap); a missing one reds the run un-maskably (§4). ──
 SwarmDoor_witness(w) {
     let n = (this.c.run)?.c.step_n
     let inviter = this.SwarmStaple_ident(w, 'Inviter')
@@ -724,12 +730,12 @@ SwarmDoor_witness(w) {
     let live = (s) => !!this.Peeroleum_carrier(s, w)
     // beat 2: two BARE stations — a carrier each, station_up, the swarm kinds armed, and NEITHER
     //  holds a Pier yet (first contact is still to come).
-    if (n === 2 && live(iStation) && live(jStation) && w.c.station_up && w.c.on?.pier_hello && !iStation.o({ Pier: 1 }).length && !jStation.o({ Pier: 1 }).length && !(w.oa({see: 'two bare stations stand on the spine — a carrier each — and neither holds a Pier yet'}))) w.i({see: 'two bare stations stand on the spine — a carrier each — and neither holds a Pier yet'})
+    if (n === 2 && live(iStation) && live(jStation) && w.c.station_up && w.c.on?.pier_hello && !iStation.o({ Pier: 1 }).length && !jStation.o({ Pier: 1 }).length && !(w.oa({seen: 'two bare stations stand on the spine — a carrier each — and neither holds a Pier yet'}))) w.i({seen: 'two bare stations stand on the spine — a carrier each — and neither holds a Pier yet'})
     // beat 3: the inviter holds a single-use Idzeug — its station still routes to no one.
     let record = this.Swarm_peering(inviter)?.o({ Idzeug: 1 })[0]
-    if (n === 3 && record && record.sc.to === 'Music' && !iStation.o({ Pier: 1 }).length && !(w.oa({see: 'the inviter holds a single-use Idzeug — its station still routes to no one'}))) w.i({see: 'the inviter holds a single-use Idzeug — its station still routes to no one'})
+    if (n === 3 && record && record.sc.to === 'Music' && !iStation.o({ Pier: 1 }).length && !(w.oa({seen: 'the inviter holds a single-use Idzeug — its station still routes to no one'}))) w.i({seen: 'the inviter holds a single-use Idzeug — its station still routes to no one'})
     // beat 4: the joiner promoted its OWN transport Pier to the inviter before dialing (the panel move).
-    if (n === 4 && jStation.o({ Pier: 1, pub: inviter.sc.prepub })[0] && !(w.oa({see: 'the joiner promotes a transport Pier to the inviter before dialing — the redeemer knows the target'}))) w.i({see: 'the joiner promotes a transport Pier to the inviter before dialing — the redeemer knows the target'})
+    if (n === 4 && jStation.o({ Pier: 1, pub: inviter.sc.prepub })[0] && !(w.oa({seen: 'the joiner promotes a transport Pier to the inviter before dialing — the redeemer knows the target'}))) w.i({seen: 'the joiner promotes a transport Pier to the inviter before dialing — the redeemer knows the target'})
     // beat 5: FIRST CONTACT — a stranger reached a station holding no prior Pier; the door promoted
     //  the transport route AND sealed the durable friendship, each grant signed by the other.
     let iRoute = iStation.o({ Pier: 1, pub: joiner.sc.prepub })[0]
@@ -738,10 +744,10 @@ SwarmDoor_witness(w) {
     let jPier = this.Swarm_peering(joiner)?.o({ Pier: 1, pub: inviter.sc.prepub })[0]
     let iGot = iPier?.o({ Grant: 'Music', by: joiner.c.keys?.pub })[0]
     let jGot = jPier?.o({ Grant: 'Music', by: inviter.c.keys?.pub })[0]
-    if (n === 5 && iRoute && iGot && jGot && !(w.oa({see: 'first contact — a stranger reached a station with no prior Pier and the door promoted the route and sealed both grants'}))) w.i({see: 'first contact — a stranger reached a station with no prior Pier and the door promoted the route and sealed both grants'})
+    if (n === 5 && iRoute && iGot && jGot && !(w.oa({seen: 'first contact — a stranger reached a station with no prior Pier and the door promoted the route and sealed both grants'}))) w.i({seen: 'first contact — a stranger reached a station with no prior Pier and the door promoted the route and sealed both grants'})
     // beat 5: readiness rode station_up — NEITHER transport Pier ran a per-Pier handshake, yet the
     //  frames crossed (peer_ready false both ends — a live carrier under an up station was enough).
-    if (n === 5 && iRoute && jRoute && w.c.station_up && !this.Peeroleum_peer_ready(iRoute) && !this.Peeroleum_peer_ready(jRoute) && iPier && jPier && !(w.oa({see: 'readiness rode station_up — neither transport Pier ran a handshake yet the frames crossed and sealed'}))) w.i({see: 'readiness rode station_up — neither transport Pier ran a handshake yet the frames crossed and sealed'})
+    if (n === 5 && iRoute && jRoute && w.c.station_up && !this.Peeroleum_peer_ready(iRoute) && !this.Peeroleum_peer_ready(jRoute) && iPier && jPier && !(w.oa({seen: 'readiness rode station_up — neither transport Pier ran a handshake yet the frames crossed and sealed'}))) w.i({seen: 'readiness rode station_up — neither transport Pier ran a handshake yet the frames crossed and sealed'})
 
 },
 // SwarmDoor_order — float A:SwarmDoor to the front of H/* so the Run snap stays readable.

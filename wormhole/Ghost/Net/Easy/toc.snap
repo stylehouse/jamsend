@@ -1,11 +1,34 @@
-Waft:Ghost/Net/Easy,active
+Waft:Ghost/Net/Easy
   Funkcion:CreduFunk
     Funkcion:Storying,of_Book:PereStaple
     Funkcion:Storying,of_Book:PereProof
     CreduCoherence:latest
-      Credulate,of_Book:PereStaple,vset:Ghost_N_Peeroleum@2b17c426d1cc9020|Ghost_N_Tribunal@683d031e368194c6,finished_at=1782269354667
-        GhostInclude:Ghost_N_Peeroleum,dige:2b17c426d1cc9020
-        GhostInclude:Ghost_N_Tribunal,dige:683d031e368194c6
+      Credulate,of_Book:PereStaple,vset:Ghost_N_Peeroleum@054dff5c07f2987b|Ghost_N_Tribunal@df09d03ad06f3d71,finished_at=1784029316445
+        GhostInclude:Ghost_N_Peeroleum,dige:054dff5c07f2987b
+        GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
+      Credulate,of_Book:PereProof,vset:Ghost_N_Peeroleum@054dff5c07f2987b|Ghost_N_Tribunal@df09d03ad06f3d71,finished_at=1784029316445
+        GhostInclude:Ghost_N_Peeroleum,dige:054dff5c07f2987b
+        GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
+    GhostLedger,head:L4-0140d4dce96d848d,next_seq=5
+      Ledger:L0-811c9dc51f2be47c,seq=0,at=1784029316445,vset:
+      Ledger:L1-2cd467c565c3ef7a,seq,at=1784029331947,vset:Ghost/N/Peeroleum.g@3b44c41dc8f08af3~g1
+        GhostInclude:Ghost/N/Peeroleum.g,dige:3b44c41dc8f08af3~g1
+      Ledger:L2-8ec51937f467b2be,seq=2,at=1784029336658,vset:Ghost/N/Peeroleum.g@3b44c41dc8f08af3~g1|Ghost/V/Voro.g@028c7be5c5a4d306~g1
+        GhostInclude:Ghost/N/Peeroleum.g,dige:3b44c41dc8f08af3~g1
+        GhostInclude:Ghost/V/Voro.g,dige:028c7be5c5a4d306~g1
+      Ledger:L3-fe8f0faebb93f645,seq=3,at=1784031302839,vset:Ghost/N/Peeroleum.g@3b44c41dc8f08af3~g1|Ghost/N/Reliable.g@48e8948c7d8da3ed~g1|Ghost/V/Voro.g@028c7be5c5a4d306~g1
+        GhostInclude:Ghost/N/Peeroleum.g,dige:3b44c41dc8f08af3~g1
+        GhostInclude:Ghost/V/Voro.g,dige:028c7be5c5a4d306~g1
+        GhostInclude:Ghost/N/Reliable.g,dige:48e8948c7d8da3ed~g1
+      Ledger:L4-0140d4dce96d848d,seq=4,at=1784031313491,vset:Ghost/N/Peeroleum.g@3b44c41dc8f08af3~g1|Ghost/N/Reliable.g@48e8948c7d8da3ed~g1|Ghost/Story/Swarmation.g@910b984e14e606aa~g1|Ghost/V/Voro.g@028c7be5c5a4d306~g1
+        GhostInclude:Ghost/N/Peeroleum.g,dige:3b44c41dc8f08af3~g1
+        GhostInclude:Ghost/V/Voro.g,dige:028c7be5c5a4d306~g1
+        GhostInclude:Ghost/N/Reliable.g,dige:48e8948c7d8da3ed~g1
+        GhostInclude:Ghost/Story/Swarmation.g,dige:910b984e14e606aa~g1
+    CreduCoherence:perfection
+      Credulate,of_Book:PereStaple,vset:Ghost_N_Peeroleum@054dff5c07f2987b|Ghost_N_Tribunal@df09d03ad06f3d71,finished_at=1784029400158
+        GhostInclude:Ghost_N_Peeroleum,dige:054dff5c07f2987b
+        GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
   What:the peer
     Doc:Ghost/N/Peeroleum.g
     Point,method:Peeroleum
@@ -34,6 +57,8 @@ Waft:Ghost/Net/Easy,active
     Doc:Ghost/N/Tyrant.g
     Point,method:Run_A_PereTyrant
     Point,method:req_trust
+    What:Swarmily
+      Doc:Ghost/Story/Swarmation.g
   What:the spec
     Doc:src/lib/O/spec/Peeroleum_spec.md
     Doc:src/lib/O/spec/Peeroleum_handover.md

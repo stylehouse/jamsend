@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Reliable(): string { return '48e8948c7d8da3ed' },
+    Ghostmeta_Ghost_N_Reliable(): string { return '48e8948c7d8da3ed~g1' },
 
 // Reliable — the network-healing floor: an in-order, exactly-once stream over a lossy line.
 //  Pure cursor|ledger algebra, no particles of its own; the methods ride on H and the spine calls them.

@@ -1,6 +1,6 @@
 Credulate,of_Book:MusuBuddy
   GhostInclude:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3~g1
-  GhostInclude:Ghost_N_Reliable,dige:48e8948c7d8da3ed
+  GhostInclude:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
   GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
   GhostInclude:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
   GhostInclude:Ghost_N_Repli,dige:749e491be4cbe2e2~g1
@@ -19,12 +19,12 @@ Credulate,of_Book:MusuBuddy
   GhostInclude:Ghost_Story_Heistation,dige:7d0bbd67a32b5e47~g1
   GhostInclude:Ghost_Story_Berthation,dige:7bbe9ae361826f32~g1
   GhostInclude:Ghost_S_Swarm,dige:a5980d5d4830e92b
-  GhostInclude:Ghost_Story_Swarmation,dige:f4e35eee8c243f8c~g1
-  GhostInclude:Ghost_V_Voro,dige:ab1d6e6ec1ce79ae~g1
+  GhostInclude:Ghost_Story_Swarmation,dige:910b984e14e606aa~g1
+  GhostInclude:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
   GhostInclude:Ghost_Story_Voronation,dige:a793373e1f6bf9ba~g1
-  last_ok,at=1784024190.687,ok_pct
+  last_ok,at=1784032250.992,ok_pct
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3~g1
-    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
+    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
     uses:Ghost_N_Repli,dige:749e491be4cbe2e2~g1
@@ -43,6 +43,6 @@ Credulate,of_Book:MusuBuddy
     uses:Ghost_Story_Heistation,dige:7d0bbd67a32b5e47~g1
     uses:Ghost_Story_Berthation,dige:7bbe9ae361826f32~g1
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
-    uses:Ghost_Story_Swarmation,dige:f4e35eee8c243f8c~g1
-    uses:Ghost_V_Voro,dige:ab1d6e6ec1ce79ae~g1
+    uses:Ghost_Story_Swarmation,dige:910b984e14e606aa~g1
+    uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
     uses:Ghost_Story_Voronation,dige:a793373e1f6bf9ba~g1

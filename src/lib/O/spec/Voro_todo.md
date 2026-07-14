@@ -34,6 +34,42 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
                 evolved through are SAVED: `voro_modes/README.md` (a ledger — commit anchors + live
                  SVG shots; revive any face via `git show <commit>:src/lib/O/Cytui.svelte`).
 
+**WHAT LANDED THIS SHIFT, PART 3 (2026-07-15) — the I-ROUND: the human live at the desk, over the
+ H-round craters.**  Steer in pieces: "there's a year:2007 that looks like part of Artist but those
+  ARE the Tracks" (grasp, from H) → "it still wants more maxing out the space … inline-text up against
+   the ceiling" → "we say Track,title:… then also year:… the laters should just be eg year:" →
+    "so many Artist cells, they should collaborate to huddle the Artist part up one end" → "the
+     Stuffing blob is gradiented the wrong way … Artist says it's supposed to be Teal but it's pink
+      like Track" → "put a spell on the cell to grow it, until the cyto gets it more than enough
+       space and we remove the spell" → "the hourglass ribbons could be not there until you mouse
+        over the cell they're in."  All Cytui-only, gen unchanged.  In order:
+ - **I1 cell hue = what the cell IS** — `cell_color`/descmap tint: a GANG rep wears its members'
+    `fold_kind`, a REAL container wears its OWN mainkey (Artist→teal `#298699`); the members' pink
+     lives on the coagulate.  (Was: every fold preferred fold_kind → Artist cell went Track-pink.)
+ - **I2 inner shadow** — a 2nd linearGradient over the coag (black 0.32→0 over 34px at the header
+    seam) so the parent-facing edge reads sunk-in; the depth grad (transparent-from-parent) stays.
+ - **I3 badge dedup** — the kind badge shows on the FIRST row of a tag run, the rest bare
+    (`Track title:` then `year:` `remaster` `live`).
+ - **I4 central unfoldment** — inflate ceiling 1.35→2.0 + a centering re-layout (drop by half the
+    spare height, kept only if all atoms still seat) — text fills its room, centred not top-jammed.
+ - **I5 huddle** — the header seats at the HIGHEST chord that holds the title (~full width), else
+    the widest chord — same-kind cells align their container level at one end without starving.
+ - **I6 the GROWTH SPELL** — `vspell` per-cell multiplier on the seed's content box (voronoi_layout
+    reads it; the power walls do the growing, no cytoscape touch so the stream keeps flowing).
+     spell_update at paint-end: STARVED (degraded | +N | a load-bearing atom <11px) grows ×1.18/beat
+      cap 2.4; ROOMY (used<60% avail) decays ×0.93 to lift; SNUG holds.  Dead band = no flutter;
+       re-paints rAF (visible) / queueMicrotask (hidden tab).
+ - **I8 ribbons hover-gated** — H5 hourglass ribbons out of `walls` into `sp.ribbons`, drawn only
+    while `ribbon_pane===sp.id` (enter/leave on the coag path); the resting glass is clean again.
+ - **I9 self-gate on the MIN identity atom** — the badge can seat fat while the wrapped name floors
+    to 7px; gate on the smallest ntitle (floor 9 — borderline keeps its crater + the spell grows it;
+     below 9 → flat).  GATE (4 runs, runner 20e3476b, arm-first): Clinic + Scape + flora all green;
+      teal cell / pink coag, badge-dedup, ribbons-0-at-rest, flora-0-coags hold EVERY run.  What's
+       ENTROPY-VARIABLE and therefore eyes-gated on the live tab, NOT pinned by static shots: exact
+        px (8–16 min as the spell settles vs a shifting layout), crater-vs-flat count (1–2), which
+         cells crush (Scape went 4-teal↔5-teal run-to-run).  A flat cell reads every row fine, so
+          flat is a fine outcome — don't chase the crater count through shots.
+
 **WHAT LANDED THIS SHIFT, PART 2 (2026-07-14 later) — the H-ROUND: the human's correction of the
  orbs.**  The steer: "you've misunderstood the black blur thing — I mean mouseover|click handlers
   all over the tuple, any one of the v we click on shows what other $v and $k are involved in it …
