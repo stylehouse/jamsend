@@ -47,8 +47,11 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
            say a row ONCE, each stalk only decides WHERE rows land.  A member row's kind-tag rides
             ALWAYS now (honest data); the draw-the-chip decision is paint's (memberTag hush), held
              byte-equal to the old baked calls.  Claim set invariant (fact/spread/skips untouched);
-              headless byte-neutral ×30 snaps ×4 Books.  Live SVG label-parity gate OWED (blocked:
-               the one runner is the human's MusuCursor).**
+              headless byte-neutral ×30 snaps ×4 Books.  **LIVE-GATED 2026-07-14** on VoroMitosis
+               (flora world): facts render as separate typed tspans — key + lilac `: ` (vsub-colon)
+                + value (`habit: …`), a presence claim as key + `×3` sup (`woodystem ×3`) — composed
+                 at paint from typed k/v/n, NOT a re-parsed string; member chips (species), spreads,
+                  `/*N` dips, `+N` tails all present.  Evidence: `/tmp/nightshift_gallery/mitosis_1b_cs.svg`.**
      Vtuff_default's bespoke row taxonomy (title/list/member/sub/fact/spread heuristics with the
       English naming list threaded through) is replaced by that one clean `((k:v+)+)+` slope:
        typed key/value bits end-to-end, display text derived only at paint.  Kills by construction
@@ -85,9 +88,12 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
            whole compass by the frame, so downstream is a fixed local direction and a key sits the
             same way RIVER-relative in every cell — the space reads as aligned across them.  Render-
              side only (no .g/snap): frame filled only under region_on, defaults 0, cs-off byte-
-              identical.  Live SVG gate OWED (same runner block).  NEXT LAYER = tropism: "certain
-               plants grow towards" the axis (the human) — the frame is the trellis, a fact/member
-                can LEAN toward downstream; not built.**
+              identical.  **EXERCISED LIVE 2026-07-14** on the same VoroMitosis capture — regions
+               armed, 30 river chips rendering, 1 promotion `»`-receipt, no breakage; the cs
+                compass-alignment is a subtle visual best judged by the human's eye (the ◈/cs/▦
+                 faces were left armed on the runner).  NEXT LAYER = tropism: "certain plants grow
+                  towards" the axis (the human) — the frame is the trellis, a fact/member can LEAN
+                   toward downstream; not built.**
  - **The naming-cut is DROPPED as filed; the bijective key is PARKED.**  region|axis|name are
     necessary-ish but fundamentally fallible analytics — do not grow them.  `Voro_model_namekey`
      keeps its code but is not threaded further (its spirit may resurface at the Stuffing-algorithm

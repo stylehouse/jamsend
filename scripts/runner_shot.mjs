@@ -41,8 +41,21 @@ const out   = argv.find(a => !a.startsWith('-')) || '/tmp/runner_shot.png'
 
 // TARGET — the runner runner_ask last courted (sticky), so a shot lands on the tab you just ran on;
 //  --runner=<id> overrides; else the role broadcast 'runner' (first ack wins — fine with one tab up).
+// Unlike runner_ask, this script does NOT court — the relay routes `to:` by FULL prepub (or the
+//  'runner' role), so a bare PREFIX ('77d26228') is unroutable and the ask silently drops (12s
+//   timeout that reads as a dead/stale tab — a footgun that cost a whole debugging saga once).
+//    So: resolve a short --runner against the sticky runner_ask wrote (its full courted prepub);
+//     if they match, use the full addr; else warn loudly to court first rather than time out blind.
 let TARGET = 'runner'
-if (kv.runner) TARGET = kv.runner
+if (kv.runner) {
+    TARGET = kv.runner
+    if (TARGET !== 'runner' && TARGET.length < 16) {   // a full prepub is 16 hex; less = a prefix
+        let sticky = ''
+        try { sticky = readFileSync('/tmp/runner_ask.target', 'utf8').trim() } catch { /* none */ }
+        if (sticky.startsWith(TARGET) && sticky.length >= 16) { TARGET = sticky; console.error(`⇢ --runner=${kv.runner} resolved to full prepub ${TARGET} via the sticky`) }
+        else console.error(`⚠ --runner=${kv.runner} is a PREFIX — the relay needs a FULL prepub, so this will time out.  Court it first:  node scripts/runner_ask.mjs state --runner=${kv.runner}  then re-run WITHOUT --runner (uses the sticky).`)
+    }
+}
 else { try { TARGET = readFileSync('/tmp/runner_ask.target', 'utf8').trim() || 'runner' } catch { /* no sticky — broadcast */ } }
 
 const HTTP   = process.env.RUNNER_URL || 'http://172.17.0.1:9091'
