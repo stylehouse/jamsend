@@ -40,6 +40,13 @@
 //      STARTS when the first %Stream want PARKS and runs to completion at the encoder's real pace —
 //       the parked want IS the demand; racast_rate is dead, there is no flag to starve with.
 
+// Per-chunk content-addressing (Radio_spec §5A rung 0): sha256_hex hashes a chunk's bytes into its
+//  durable `cid` — the content-address every chunk-mint site stamps (Ra_record_from / Ra_chunk_mint /
+//   Heist_census) and Heist_land verifies against.  Same noble hasher Heist.g uses (byte-identical to the
+//    SubtleCrypto path Ra_enid still walks), so a chunk cid and a body_hash slice agree bit-for-bit.
+IMPORT()
+    import { sha256_hex } from "$lib/O/Hashly.ts"
+
 //#region knobs
 // Ra_target_lufs — the ONE loudness constant (Radio_todo §3.2, decided 2026-07-07): -14 LUFS, the
 //  streaming norm.  Read off w so a Book can pin it; the old machine's -8 would peak-cap half a
@@ -535,8 +542,17 @@ Ra_library(w, whose):
 //    FROM them here, so the header and the body can never disagree.
 Ra_pack(info, bufs):
     let sizes = []
-    for (const b of bufs) sizes.push(b.length)
+    // cids[] — the per-chunk content-address manifest (rung 0), parallel to sizes[]: each buffer's full
+    //  sha256 hex, origin-authored into the card.  Riding the HEADER (not just the chunk particles) makes
+    //   the .jam self-verifying AND gives a future swarm offer a hash-per-seq it can hand out BEFORE the
+    //    bytes, so a puller can check a stranger's chunk against what this origin promised.
+    let cids = []
+    for (const b of bufs) {
+        sizes.push(b.length)
+        cids.push(sha256_hex(b))
+    }
     info.sizes = sizes
+    info.cids = cids
     let head = new TextEncoder().encode(JSON.stringify(info) + '\n')
     let total = head.length
     for (const b of bufs) total = total + b.length
@@ -644,6 +660,9 @@ Ra_record_from(lib, info, bufs):
             ch.sc.preskip = +(info.preskip || 312)
         }
         ch.sc.buf = (bufs[s] instanceof Uint8Array) ? bufs[s] : new Uint8Array(bufs[s])
+        // the chunk's durable content-address (rung 0): derived from the bytes actually stamped, so it
+        //  matches the .jam header's cids[s] by construction and survives the resurrect round-trip.
+        ch.sc.cid = sha256_hex(ch.sc.buf)
         ch.bump()
         s = s + 1
     }
@@ -930,6 +949,7 @@ Ra_chunk_mint(rec, seq, buf, preskip):
         j.set(a, 0)
         j.set(buf, a.length)
         prev.sc.buf = j
+        prev.sc.cid = sha256_hex(j)
         prev.bump()
         return
     }
@@ -940,6 +960,9 @@ Ra_chunk_mint(rec, seq, buf, preskip):
         ch.sc.preskip = preskip
     }
     ch.sc.buf = buf
+    // the on-demand stream chunk's content-address (rung 0) — computed live from the transcode's bytes;
+    //  a re-transcode of the same source+gain reproduces the same seq→cid, so it is deterministic.
+    ch.sc.cid = sha256_hex(buf)
     ch.bump()
 
 // Ra_transcode_ensure — stand the demand-driven stream encode for a Record (rec.c.ra), or null:

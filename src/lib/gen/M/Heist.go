@@ -10,7 +10,7 @@ import { sha256_hex, sha256_incremental } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '821cc65a7687ccb8~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '44eebb2136b728db~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -129,7 +129,13 @@ async Heist_census(w, lib, nav, base, artists) {
         while (s < total) {
             let b = rec.i({ Body: 1, seq: '' + s })
             b.c.up = rec
-            b.sc.buf = bytes.slice(s * CH, Math.min(bytes.length, (s + 1) * CH))
+            // the %Body chunk's content-address (rung 0): the full sha256 of exactly the bytes this seq
+            //  carries.  It rides the census card so a landing (Heist_land) verifies each chunk against the
+            //   ORIGIN's per-seq promise — a localized breach ahead of the whole-file body_hash gate, and the
+            //    hash-per-seq a swarm pull will check a stranger's chunk against.
+            let slice = bytes.slice(s * CH, Math.min(bytes.length, (s + 1) * CH))
+            b.sc.buf = slice
+            b.sc.cid = sha256_hex(slice)
             s = s + 1
         }
         built = built + 1
@@ -350,6 +356,16 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
         while (s < total) {
             let ch = this.Repli_chunk_at(rec, s)
             let bytes = this.Ra_chunk_map(rec)[s]
+            // PER-CHUNK GATE (rung 0): the bytes must hash to the origin's promised cid BEFORE they touch
+            //  disk — a localized breach that names the seq, ahead of the whole-file wire+read-back gates
+            //   below (which still stand as the final honest checks).  A chunk minted before cids existed
+            //    carries none and falls through unchanged — backward compatible.  Same tally + unlink as a
+            //     whole-file breach; the unlink is a no-op when nothing has written yet (seq 0).
+            if (ch && ch.sc.cid && sha256_hex(bytes) !== ch.sc.cid) {
+                job.sc.breached = +(job.sc.breached || 0) + 1
+                await this.Heist_unlink(nav, dir, filename)
+                return
+            }
             if (s === 0) {
                 await nav.bin_write(dir, filename, bytes)
             } else {
@@ -396,7 +412,20 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
         let bytes = new Uint8Array(size)
         let at = 0
         s = 0
-        while (s < total) { bytes.set(map[s], at); at = at + map[s].length; s = s + 1 }
+        while (s < total) {
+            let cb = map[s]
+            let ch = this.Repli_chunk_at(rec, s)
+            // PER-CHUNK GATE (rung 0), fallback path: same origin-cid check before assembly.  A mismatch
+            //  tallies the breach and lands nothing — this path writes only after the whole-file gate, so
+            //   there is nothing on disk to unlink.
+            if (ch && ch.sc.cid && sha256_hex(cb) !== ch.sc.cid) {
+                job.sc.breached = +(job.sc.breached || 0) + 1
+                return
+            }
+            bytes.set(cb, at)
+            at = at + cb.length
+            s = s + 1
+        }
         let hash = await this.Heist_hash(bytes)
         if (hash !== rec.sc.body_hash) {
             job.sc.breached = +(job.sc.breached || 0) + 1

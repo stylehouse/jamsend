@@ -23,6 +23,43 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**DESTINATION MOVED — read `Radio_spec.md` §1-5 first (rebuilt 2026-07-15).** The spec is now the
+ destination doc, reshaped into **two planes** (descriptor/culture floods · content/bytes routes),
+  **two spines** (culture: identity→magazine→browse→heist→persist→swarm · audio: the nine stages), and
+   **two itemised ladders** (spec §5A culture · §5B audio). **The live culture worklist is spec §5A** —
+    its rung 0 is the keystone **[P0] per-chunk content-addressing** (a per-chunk sha256 in the
+     origin-signed card; `Ra_enid` is whole-file today), which gates BOTH the swarm (rung 7) AND
+      demoting the unconditional disk read-back. This todo is now being **drained into the spec**: as a
+       section here lands or is superseded by a spec rung, collapse it to a one-line pointer or retire the
+        WHOLE file's dead parts to `history/`. The multicast slog moved to its own doc
+         `Radio_multicast_todo.md` (= spec §5A rung 7). Map of this file → spec: §9 Pier reality → §2.1
+          homing law + §5A r1; §10 klepto/heist → §5A r4; §11.7 Berth → §5A r5; §12 magazine/stimuli →
+           §2.3 + §5A r2; §12.4 jobs ladder → §5A r3/r6.
+
+**2026-07-15 — RUNG 0 (per-chunk content-addressing) BUILT + LIVE-PROVEN; re-record + signing OWED.**
+ Every chunk now carries a durable **`cid`** = full sha256 of its bytes — minted at all three chunk-mint
+  sites (`Ra_record_from` %Preview, `Ra_chunk_mint` %Stream, `Heist_census` %Body), carried in the `.jam`
+   header as a `cids[]` manifest (parallel to `sizes[]`, filled in `Ra_pack`), and **verified per-chunk in
+    `Heist_land`** (both the stream and the fallback path) as a localized breach ahead of the whole-file
+     `body_hash` gate. Files: `Ghost/M/Ra.g` (+ a `Hashly.ts` IMPORT), `Ghost/M/Heist.g`; gen written via
+      LocalGen (`src/lib/gen/M/{Ra,Heist}.go`). **Compiles clean** through the real in-app translator.
+ **Live proof (HMR hot-loaded the gen; the editor was down):** `runner_ask run MusuHeist` → the census
+  mints a `cid` on every `%Body` (39 in step-2's snap), zero step errors, the phase machine runs to `deny`.
+   The run goes RED ONLY because the recorded fixtures lack the new `cid` rows — an additive-snap diff, not a
+    logic failure (per-chunk verify is a no-op on honest bytes: same bytes → same hash → pass; it only fires
+     on real corruption the wire/body_hash gates already exclude).
+ **THE OWED RE-RECORD** (do with the editor up / eyes on — accept from a COMPLETE run):
+   1. `node scripts/runner_ask.mjs run MusuHeist --watch`   → expect RED (the cid diff)
+   2. `node scripts/runner_ask.mjs accept`                  → re-record all steps (the sanctioned path)
+   3. `git diff --stat wormhole/Story/MusuHeist/`           → sanity: step COUNT stable = no collapse
+   4. `node scripts/runner_ask.mjs run MusuHeist --watch`   → expect GREEN
+  I did NOT accept unattended: the runner had only PARTIAL got_snap retention (a later `snap N` was already
+   gone), and an accept from incomplete snaps is exactly what can collapse a toc — better with the human present.
+ **Also owed:** the Ra-path (`%Preview`/`%Stream`) live + resurrect-round-trip proof (MusuStock/MusuRaStream);
+  an adversarial corrupt-one-chunk breach Book (prove the localized gate FIRES on a poisoned chunk); and an
+   **origin-signature** over the card's `cids[]` — the cid catches CORRUPTION today, not a LYING peer, so
+    swarm-trust (rung 7) still waits on the signature. See spec §2.4 + §5A rung 0.
+
 **THE SNAP READS LIKE THE SESSION — N1-N5 + the Jam ledger + the Card rename: LANDED and LIVE-GREEN (2026-07-14).**
  The human read MusuBuddy's snaps and named four smells + one growth; all are coded, adversarially reviewed, and
   RE-RECORDED GREEN on the :9091 runner (all 14 affected Books — see `history/Radio_buildlog.md`). The live runner

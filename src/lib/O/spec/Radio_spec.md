@@ -5,35 +5,130 @@ The high-level shape of the music-piracy platform and the functions we string to
   (itemised here — the stage Books' test snaps carry only the compact `stage,of,name,built`
    map and a pointer back to this doc).
 
-The companion docs: `Radio_todo.md` (the older running todo), `Hovercraft.design.md` (req/ttlilt),
- `EntropyArrest.md` (snap-noise taming + the caveat band the transport Books lean on). `Swarm_spec.md` is
-  the non-Radio half — the p2p social side (identity, presence, sharing) this streams over.
-   `Radio_scape_handover.md` is the live session brief for the **scape** (§8) — the Voro layer, the demo
-    Books, and the road to Sounditron.
+The companion docs, and how they relate: `Radio_todo.md` (the running worklist — being drained INTO this
+ doc as each thread lands or is retired), `Radio_multicast_todo.md` (the opportunistic-webrtc swarm design,
+  §5A rung 7), `Hovercraft.design.md` (req/ttlilt), `EntropyArrest.md` (snap-noise taming + the caveat band
+   the transport Books lean on). `Swarm_spec.md` is the non-Radio half — the p2p social side (identity,
+    presence, sharing) this streams over. `Radio_scape_handover.md` is the live session brief for the
+     **scape** (§8) — the Voro layer, the demo Books, and the road to Sounditron.
 
 ---
 
 ## 1. The one idea
 
 **The platform is one replicated `C**` sync that can see itself in several places, with the edges between
- them.** Every feature is a facet of that:
+ them — and it lives in two planes.** Every feature is a facet of that:
 
-- a **client** is a replica of the sync;
-- an **edge** is a link between two replicas, with a **cost** and a **kind** — `peer` (webrtc, cheap,
-   local) or `relay` (the uplink, costly);
-- **content routes along the cheapest edges**, not always back through the relay;
-- a **listener**, a **DJ-cue headset**, a **mixer deck**, a **cafe mesh** are all the same machine —
-   replicate state, route audio along edges.
+- **The descriptor plane — the culture.** Mags, cards, listings, wants, grants, cursors: the small,
+   legible `C**` that says *what music exists, who holds it, what I want, what I'm allowed*. It replicates
+    to every peer that shares an interest — cheap, self-describing, seeing itself everywhere. **Repli**
+     carries it; a subscriber is just a replica whose interests overlap yours.
+- **The content plane — the bytes.** The audio itself: previews and streams, chunk by chunk,
+   content-addressed. It does NOT flood; it is materialised **on demand** and **routed along the cheapest
+    edges** — pulled from whoever near holds it, transcoded to the grade you asked for, and (where webrtc
+     peers exist) fanned out once then forwarded locally so the uplink stays quiet.
 
-So "build the whole platform" is not N features; it is *one sync-with-edges*, and each stage below is a
- lens on it.
+An **edge** is a link between two replicas with a **cost** and a **kind** — `peer` (webrtc, cheap, local)
+ or `relay` (the uplink, costly). **The descriptor plane floods; the content plane routes.**
+
+Two spines hang off the one sync, meeting at the transport:
+
+- the **culture spine** — identity → magazine → browse → heist → persist → swarm: how music travels
+   *between people*.
+- the **audio spine** — collection → decode → play → mix → cast → mesh: how a track becomes *sound in a
+   room*.
+
+A listener, a DJ-cue headset, a mixer deck, a cafe mesh, a friend's phone across the world are all the
+ same machine: replicate the culture, route the bytes, make sound. So "build the whole platform" is not N
+  features; it is *one sync-with-edges, two planes, two spines* — and each stage below is a lens on it.
 
 ---
 
-## 2. The data model (recap)
+## 2. The data model
 
 Everything is a particle (`C`/TheC). Persisted scalar strings ride `.sc`; runtime objects/refs ride `.c`
- (never encoded). The audio-specific shapes:
+ (never encoded). A **mainkey** — the first `sc` key — is *what a thing IS*; a reference wears its OWN
+  mainkey and carries the id. The cast splits by plane: the descriptor particles (culture) and the content
+   particles (bytes).
+
+### 2.1 The homing law — nothing per-Pier floats on `w`
+
+**A world holds many peers' state at once; no equipment may expect anything at `w/*` that is per-Pier.**
+ Per-peer state homes under an identity:
+
+- `Peering,name:<self>` — **you, to yourself**: your holdings, your mags, your wants. The UI frames it as
+   "mine".
+- `Pier,pub:<them>` — **a friend, as you hold them**: what you've learned they have, what they've granted
+   you, what you hold of theirs. One `Pier` per public key.
+- `Grant` / `%UnGrant` — signed, durable consent facts. A `%UnGrant` is a **tombstone**: a negative
+   decision that must NEVER be garbage-collected (absence is ambiguous; a tombstone is not).
+
+The tell you broke this is the MusuBuddy smell — a `Mag:Musica`, a `Kept`, a `Dogear`, telemetry rows all
+ lying flat on `w` where nothing says whose they are. Each belongs under a `Peering` or a `Pier`.
+
+### 2.2 The Ray — a peer's shelf of magazines
+
+Each `Pier` carries a **`Ray`**: that peer's shelf of `%Mag`s for you to browse. `Ray,self` (under your
+ `Peering`) is **you** — the same shape, the same mags, but the UI makes it seem you own it. A `Ray` is
+  where the music culture's stuff lives; you browse a friend's `Ray` exactly as you browse your own. **A
+   card resolves against MANY Rays** — you browse the blogs and pull a record from anyone who holds it, a
+    friend or a stranger or yourself.
+
+### 2.3 The magazine stack — the GC-able unit
+
+`%Mag` is **the garbage-collectible unit** of the culture. Drop a `%Mag` and all it named is forgettable;
+ keep it and it names what to hold.
+
+```
+Ray  (per Pier, or Ray,self)
+  %Mag:Musica                          ← a magazine — music, OR want-of-music (symmetric)
+    %Cloud,randomic:<draw>,created_at   ← one draw's arrivals; randomic present ⇒ machine-drawn
+      %Card,id,artist,title,album,path,body_hash    ← a catalog LISTING (a referring particle)
+```
+
+- a **`%Mag`** carries **music or want-of-music** — one shape, either polarity. `Ray,self/Mag:marauding`
+   is a durable **wishlist**: it logs what you're pulling, and it persists and resumes a heist across a
+    restart.
+- a **`%Cloud`** with `randomic` present is a machine-drawn handful — a random meander over a collection
+   never fully enumerated; omit `randomic` and the cloud is **curated** (hand-kept).
+- a **`%Card`** is a *listing*, never a holding: id + metadata + `body_hash`, minus the bytes. The card is
+   a **referring particle** wearing its own mainkey; the shared `id` is the free join to the holding.
+
+### 2.4 The holding + content-addressing — where the bytes live
+
+A **`%Record`** is a *holding*: it has, or materialises, the chunks. **`%Library` dissolves** — now that
+ `%Mag` is the unit, a `%Mag` you hold links straight to the radiostock; waking a card loads `%Record` +
+  `%Preview`, and `%Stream` only in the live copy.
+
+- **`%Original`** — the whole-file master. It *wants to be* the original (flac) and will **settle for and
+   encode down to** whatever grade a want asks. Every lesser grade is derived from it; it is the one source
+    of truth.
+- **`%Preview,seq`** (const 32) / **`%Stream,seq`** — the chunk children, positioned by `(enid, seq)` and
+   now each carrying its own **`cid`** (a full-sha256 content-address of its bytes).
+- **`radiostock`** = `<ts>-<pub>-<enid>`; `enid` = `Ra_enid`, today a sha256 over the WHOLE source's raw
+   bytes (first 16 hex). `body_hash` (whole-file sha256) rides the card.
+
+**[P0 — the keystone] Per-chunk content-addressing — the primitive now lands** *(2026-07-15)*. Every chunk
+ carries a durable **`cid`** (full sha256 of its bytes): minted where chunks mint (`Ra_record_from` for
+  `%Preview`, `Ra_chunk_mint` for `%Stream`, `Heist_census` for `%Body`), carried in the `.jam` header as a
+   **`cids[]`** manifest parallel to `sizes[]`, and **verified per-chunk at `Heist_land`** — a localized
+    breach that names the corrupt seq *ahead of* the whole-file `body_hash` gate (which still stands as the
+     final read-back check). Live-proven on the `:9091` runner: the census mints a `cid` on every `%Body`
+      (39 in one snap), no step errors, the heist phase machine still completes to `deny`. **Still owed:**
+       the manifest must ride an **origin-signed** card before a stranger's bytes are *trustworthy* — today
+        the cid catches corruption, not a lying peer; the signature is the swarm-trust layer (rung 7). Only
+         then does the unconditional disk read-back demote to a lazy backstop. (`Hashly.ts` `sha256_hex`; the
+          `sha256_incremental` streaming wire tripwire stays.)
+
+### 2.5 The Rack — the super-Mag of interests
+
+**`%Rack`** (name provisional) is the super-`%Mag` at `Peering/*`: it tracks *every* `%Mag` a `Peering` has
+ an interest in — its own and its friends'. It is **loaded on init** and is the root of what to re-home and
+  re-subscribe when the app wakes.
+
+### 2.6 The audio runtime shapes
+
+Once bytes arrive, the audio spine's shapes take over (unchanged):
 
 - `%record` — a decoded track. `c.chunks = [Float32Array]` (CHUNK=2400 @ 48000); `sc.artist|title|
    seconds|loudness|nchunks|real`.
@@ -43,15 +138,54 @@ Everything is a particle (`C`/TheC). Persisted scalar strings ride `.sc`; runtim
     re-grounds on real music. `Crate_radiostock(rec)` wraps a real `%record`.
 - a **node**/**edge** — the mesh graph (`Mesh.g`): `%node{id,relay_only}`, `%edge{a,b,kind,cost}`.
 
-Determinism: seed `H.prng` via `Musu_seed(n)`; render through an **OfflineAudioContext** (no wall clock)
- so a run is byte-reproducible. Real-time playback uses the **online AudioContext** (needs a user gesture;
-  the runner muted). Transport Books run the **Peeroleum** spine on a mock carrier (deterministic clock).
+### 2.7 enWaft carries the descriptors, not the bytes
+
+The descriptor plane travels as a Waft; the content plane never rides inside it. **`enWaft` filters out the
+ buf chunks** (`%Mag/Dir/Blob/Chunk,buf`) — the document carries cards and pointers; the chunk bytes live
+  in a swarm-shared content store, fetched along edges. That is also what lets a crowd share one set of
+   chunks: everyone is served what everyone's getting (the multicast design, `Radio_multicast_todo.md`).
+
+Determinism: seed `H.prng` via `Musu_seed(n)`; render through an **OfflineAudioContext** (no wall clock) so
+ a run is byte-reproducible. Real-time playback uses the **online AudioContext** (needs a user gesture; the
+  runner muted). Transport Books run the **Peeroleum** spine on a mock carrier (deterministic clock).
 
 ---
 
-## 3. The pipeline — the high-level functions, strung together
+## 3. The two flows
 
-The flow of one track from disk to a roomful of phones:
+The culture spine wraps the audio spine: the outer loop moves music *between people*; the inner pipeline
+ turns arrived bytes into *sound*.
+
+### 3.1 The outer loop — music between people
+
+```
+peer's collection ─▶ publish a %Mag ─▶ browse a Ray of Mags ─▶ heist ─▶ land ─▶ persist ─▶ resume
+   (their disk)       cards, not bytes     over their Pier      offer     into your   %Rack /    marauding
+                                                              manifest    holdings    Berth      picks up
+                                                                pull
+                                                                  │
+                                     content-addressed chunks · cheapest edge · transcoded to grade
+```
+
+1. **Publish** — a holder folds its collection into a `%Mag:Musica` (`Musica_publish`; `Musica_fold` is the
+   pure one-brain that serves the disk publish AND the wire offer).
+2. **Browse** — you read a peer's `Ray` of `%Mag`s over their `Pier`. Cards, not bytes; a card resolves
+   against whoever holds it.
+3. **Heist** — the pull, a transient `%Heist,at:<pier>` that exists as briefly as possible:
+   - **offer** (`Heist_offer_all`) — the source casts its catalog as chunkless husks: a pointer to every
+      file you'd want, no `%buf` opened.
+   - **manifest** (`Heist_manifest`) — a look-before-commit read: `held` / `new` per card. *(The RESUME
+      side — the same listing re-shown mid-heist off partial fill — is the unbuilt marker.)*
+   - **pull** (`Heist_beat` / `Ra_pull_beat`) — ask for the bits you don't hold, dedup-skip the ones you
+      do, content-route the rest.
+   - **land** (`Heist_land`) — assemble, verify, catalogue into your holdings; the `%Heist` then flattens
+      (`Heist_flatten`).
+4. **Persist** — the `%Rack` and the **Berth** home what you kept so it survives a restart (§5A rung 5).
+5. **Resume** — `Ray,self/Mag:marauding` is the durable wishlist; a heist persists against it and resumes.
+
+### 3.2 The inner pipeline — arrived bytes become sound
+
+Once a track is in your collection, the audio spine (the nine stages, §5B) runs it:
 
 ```
 Collection → Rastock → Player ───────(Pier: real transport)──────▶ listener
@@ -72,12 +206,16 @@ Collection → Rastock → Player ───────(Pier: real transport)─
 7. **Mesh** is the whole thing as replicas + edges; content routes the cheapest path.
 8. **Stretch** is multicast over the mesh: the relay sends once, a peer forwards locally.
 
+The two flows **meet at the Pier** (the one real transport that both the heist pull and the live cast ride)
+ and **at content-addressing** (the same per-chunk identity that lets a heist trust a stranger's bytes is
+  what lets the swarm forward them).
+
 ---
 
-## 4. The controllers (code + data, not req piles)
+## 4. The controllers and negotiators
 
-Pure stateless rate curves in `Ghost/M/Radiola.g`; the caller owns the trajectory data. Two ends of the
- same stream:
+Pure, stateless curves in `Ghost/M/Radiola.g`; the caller owns the trajectory data. Two guard the audio
+ buffer at opposite ends of the same stream; a third negotiates the grade of the bytes themselves.
 
 - **Glide** (`Glide_decide(frontier, cur, ended, p)`) — guards the *delivered buffer running dry*. Backs
    off toward a floor as the audio ahead of the playhead runs out (Schmitt band, recover gradually). Its
@@ -91,13 +229,71 @@ Wreckage metric: **coverage**. A gap is uncovered playback time — silence *whe
  sounding* (a chunk starts after the previous ends). Musical quiet sits inside a covered span and never
   counts. This replaced the rms-floor guessing.
 
+**Quality on demand — the content-plane negotiator.** Grade is *not* a global toggle; it is a facet of the
+ **want**. A want carries the grade its context calls for — a phone on cellular asks low, a mixer deck asks
+  lossless. The holder keeps only the `%Original` and serves the best grade *at or below* what is asked,
+   **transcoding down lazily** on the first touch of each segment and **caching** the encoded result, so the
+    second listener at that grade pays nothing. It never upsamples: a want above what the `%Original` can
+     give is served the `%Original`. Grade is negotiated from context, memoised per segment, and *derived* —
+      never stored N times.
+
 ---
 
-## 5. The 9 stages — itemised
+## 5. The two ladders — itemised
+
+Two spines, two build-status ladders. The **audio ladder** is mature — nine green stages on the live
+ `:9091` runner. The **culture ladder** is where this doc's live work is.
 
 Legend: **[built]** real data/logic flows through it; **[done]** a specific refinement landed; **[todo]**
- owed. The Book that proves each stage is named; all are green on the live `:9091` runner (accepted
-  fixtures) unless noted.
+ owed; **[P0]** a keystone precondition. The Book that proves a stage is named; audio-ladder fixtures are
+  accepted-green on the live runner unless noted.
+
+### 5A — The culture ladder (identity · magazine · heist · persist · swarm)
+
+**0 — Content-addressing** **[built · live-proven 2026-07-15 · re-record + signing owed]** — every chunk
+ carries a durable `cid` (sha256 of its bytes): minted at all three chunk-mint sites (`Ra_record_from` /
+  `Ra_chunk_mint` / `Heist_census`), a `cids[]` manifest in the `.jam` header, verified per-chunk at
+   `Heist_land` (a localized breach ahead of the whole-file gate). The runner mints cids on every `%Body`
+    (HMR-loaded gen, no step errors, phase machine completes). *Owed:* accept the MusuHeist fixture
+     re-record (the additive `cid` rows — the RED is only that diff); the Ra-path (`%Preview`/`%Stream`) +
+      resurrect round-trip proof; an adversarial corrupt-one-chunk breach Book; and the origin-signature
+       that makes the manifest swarm-trustworthy (rung 7). §2.4.
+
+**1 — Identity homing** *(the multi-Pier law, §2.1)* **[todo]** — every per-peer particle under
+ `Peering,name:<self>` or `Pier,pub:<them>`; drop the finished transient `buddy_*` reqs at a safe seam;
+  nest the loose telemetry rows. *(The MusuBuddy snap is the smell that names the work.)*
+
+**2 — Magazine** *(Book: MusuHeist · `Ghost/M/Heist.g`)* **[built · green ×2, 2026-07-14]** —
+ `%Mag:Musica > %Cloud,randomic > %Card`; `Musica_publish/fold/cards/forget`; the `%Card` mainkey split
+  from the `%Record` holding (a listing is not a holding). `randomic` = a random draw; `c.repli_loc` keeps
+   the Cloud layer alive across replication. The browse **cursor arc** (`%Dogear` — resolve, heal a
+    `%Renamed`, resume a berthed browse) is green ×2 alongside.
+
+**3 — Holdings + Library dissolve** **[todo]** — a `%Mag` links to the radiostock; waking a card loads
+ `%Record` + `%Preview`, `%Stream` only in the live copy; `%Library` dissolves; `%Original` is the master
+  every grade derives from. *(Designed this session, §2.4; unbuilt.)*
+
+**4 — Heist** *(`Ghost/M/Heist.g`)* **[built · gate-owed]** — offer → manifest → pull → land; whole-file
+ `body_hash` verified at land; cp-landing rulings (copy not rename; non-audio siblings never copy; dedup
+  bias-to-keep). *(The manifest's RESUME side is the `<` unbuilt marker; the read-back demotes only after
+   rung 0.)*
+
+**5 — Persist (Berth + Rack)** *(Book: MusuBerth — live-gate owed)* **[built · gate-owed]** — the **Berth**
+ is the non-Lies Waft host: `<root>/.jamsend/berth/<prepub>/<name>/toc.snap`, bound to the encoders only
+  (enWaft/deWaft + the 7-method nav contract), zero Lies runtime; API in Heist.g `//#region berth`. It
+   hosts `Waft:Listening` + the `%Rack`. `%Rack` (§2.5) tracks every interested `%Mag`, loaded on init.
+    *(Berth built; the MusuBerth live-gate, the `%Rack`, and init are owed.)*
+
+**6 — Marauding (wishlist persist/resume)** **[todo]** — `Ray,self/Mag:marauding` logs pulls, persists the
+ heist, and resumes it across a restart. *(Designed; the resume side is unbuilt — see rung 4.)*
+
+**7 — Swarm (opportunistic webrtc chunk-sharing)** **[design · needs 2+ runners]** — a swarm peer is just
+ another `Repli_register_caster`; **Repli sends `C**` to many overlapping-interest subscribers at once**,
+  and Peeroleum §18 already fans one upload out to a `@channel` relay-side. The webrtc evolution (a
+   have-bitmap inventory beacon + a cheapest-source chooser) is designed in `Radio_multicast_todo.md`,
+    gated on rung 0. This is the content plane's routing made real.
+
+### 5B — The audio ladder (the nine stages)
 
 ### 1 — Collection  *(Books: MusuGenerateTestsMusic writes · MusuReco reads · Ghost/M/Crate.g)*  **[built]**  *(MusuCrate retired 2026-07-05 — redundant, folded into MusuReco+MusuGlide)*
 Walk a music library into a track list. Real today by DISCOVERING it through the Wormhole nav: `Crate_nav_paths`
@@ -252,7 +448,10 @@ The deterministic / single-runner models are built. What's left needs real plumb
    PCM and feed the Player/Glide (Pier todo). Closes "the synapse carries music," not just bytes.
 - **The concealment ladder** — repeat/pingpong/crossfade-on-seam under real dropout (Player).
 - **Live-voice mixing** — N real Audiolets summing in real time, gesture-gated (Mixer); per-Cell coverage.
-- **Real C** replication** over the transport — DJ-cue + Mesh currently model the descriptor sync.
+- **Wire DJ-cue + Mesh onto real `C**` replication.** The *capability* now exists — **Repli** streams
+   `C**` over the real transport to many subscribers with overlapping interests (it is what the whole
+    culture plane rides, §1/§5A). What remains is rewiring the two Books that still *model* the descriptor
+     sync (MusuCue, MusuMesh) onto Repli-over-Pier, and proving multi-subscriber fan-out with 2+ runners.
 - **Real collection source** — Wormhole `bin_read` / a library / proper tags, off the static symlink.
 
 The MVP that ties it together: a real caster on the Pier streaming a real `%record` to two webrtc-peered
@@ -265,7 +464,7 @@ The MVP that ties it together: a real caster on the Pier streaming a real `%reco
 Where §1-7 build the *stream*, the **scape** is the *view*: the whole thing as a Cyto graph tessellated into
  **Voronoi stained-glass cells** (Cytui ◈ mode — power-diagram cells coloured by Matstyle; the render is pure
   pixels, so no Book sees it — `voronoi-cells-render`). `lib/V/BigSoundland.svelte` (was Mound) is its toplevel
-   (the `/` route Piracy-scape); the owner's destination is "Voronoi stained glass graphs of music."
+   (the `/` route Piracy-scape); the human's destination is "Voronoi stained glass graphs of music."
     *Session-continuation brief for this whole area: `Radio_scape_handover.md`.*
 
 **The crush is now a decoupled luxury layer.** The fold that turns a big graph into a few Stuffing chunks
@@ -305,7 +504,7 @@ Where §1-7 build the *stream*, the **scape** is the *view*: the whole thing as 
       spine-load with no identity/share/relay, so BigSoundland.svelte shows a diagnostic surface (boot state +
        the Story-runner UI) while the glass hasn't gathered. NEXT: a LIVE gather (real library via the Crate
         nav + real Piers off the Swarm side, `Swarm_spec §6`) in place of the seeded Book, and a bespoke Voro
-         surface; open owner call — a runner boot joins the relay flock (fine for a live Piracy-scape, but
+         surface; open call for the human — a runner boot joins the relay flock (fine for a live Piracy-scape, but
           `boot_role='editor'` if `/` shouldn't spawn a grid runner).
 
 **Cytui scape UI (2026-07-05):** a **Vexpandy** V-toggle sits in the ◈ bar — it doubles the graph height

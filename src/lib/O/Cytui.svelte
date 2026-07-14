@@ -979,6 +979,31 @@
         cy.endBatch()
         pan_zoom_motion()   // the brush is just another motion
     }
+    // ── DRAG THE ARTIST — the crater's IDENTITY is a grab handle wired straight to the cell's
+    //  cytoscape node (the human: "make the Artist draggable, wire the drag to the cytoscape node
+    //   underneath that cell").  Grabbing sp.id moves the RIGHT node deterministically — a voronoi
+    //    seed can sit anywhere inside its cell, so a pass-through canvas grab is ambiguous, but the
+    //     pane knows its own node.  node.position + pan_zoom_motion re-tessellates live (the same
+    //      path as the gravity brush), so a hand can free a cell trapped by its neighbours.  Window
+    //       listeners (not the element's) survive the live re-render the drag itself triggers.
+    let vdrag: { node: any, sx: number, sy: number, px: number, py: number, zoom: number } | null = null
+    function vsub_move(e: PointerEvent) {
+        if (!vdrag || !cy) return
+        vdrag.node.position({ x: vdrag.px + (e.clientX - vdrag.sx) / vdrag.zoom,
+                              y: vdrag.py + (e.clientY - vdrag.sy) / vdrag.zoom })
+        pan_zoom_motion()
+    }
+    function vsub_drop() { window.removeEventListener('pointermove', vsub_move); vdrag = null }
+    function vsub_grab(e: PointerEvent, id: string) {
+        if (!cy || live_layout || vdrag) return          // a running layout owns positions
+        const node = cy.getElementById(id)
+        if (!node?.length || node.isParent?.() || is_nucleus(node)) return
+        const p = node.position()
+        vdrag = { node, sx: e.clientX, sy: e.clientY, px: p.x, py: p.y, zoom: cy.zoom() }
+        window.addEventListener('pointermove', vsub_move)
+        window.addEventListener('pointerup', vsub_drop, { once: true })
+        e.stopPropagation(); e.preventDefault()
+    }
     let vcells        = $state<{ id: string, d: string, color: string, swapped?: boolean, fog?: number }[]>([])
     let vtips         = $state<{ id: string, x: number, y: number, color: string }[]>([])
     // ── vtuffing: what a pane SAYS (rows from Voro.g's Vtuff_build) ───────────
@@ -1212,6 +1237,7 @@
                    sup?: string, subn?: number,
                    lines?: VLine[],                                     // wrapped continuation
                    rot?: number,                                        // baseline angle (deg) — the tuples face
+                   box?: boolean,                                       // a KIND label in its own subcell (a tinted pill)
                    member?: TheC,
                    members?: TheC[] }                                   // the claim's carriers — the correspondence
     type VWall = { d: string, hue: string, cls: string, grad?: boolean, fillid?: string }
@@ -1595,7 +1621,8 @@
            + (a.nk ? a.nk.length + 2 : 0)
            + (a.key ? a.key.length + (a.colon ? 1.5 : 0.5) : 0)
            + (a.val?.length ?? 0)
-           + (a.sup ? a.sup.length * 0.7 : 0) + (a.subn ? 3 : 0) })
+           + (a.sup ? a.sup.length * 0.7 : 0) + (a.subn ? 3 : 0)
+           + (a.box ? 1.0 : 0) })   // the kind chip: a hair of side padding, hugging the word (no stretch)
     // the salience → row size map ("squished": density beats the 14pt floor here)
     const row_fs = (w?: number) => { const s = w ?? 50; return s >= 80 ? 15 : s >= 45 ? 11.5 : 9 }
 
@@ -1727,9 +1754,16 @@
             const hue = `hsl(${vein_of(g.key ?? '').hue}, 52%, 60%)`
             const showtag = g.tag && g.tag !== ptag ? g.tag : undefined
             if (g.tag) ptag = g.tag
-            const as: VAtom[] = [atom({ tag: showtag, tagtint: showtag ? kind_tint(showtag) : undefined,
-                                        key: g.key, colon: g.leaves.length > 0, sup: g.sup,
-                                        members: g.members, hue, cls: 'vsub-gkey' }, fs)]
+            // the KIND ('Track') is its OWN boxed atom — a subcell, not inline text (the human:
+            //  "always put Artist/Track in a subcell — they look like properties otherwise"); the
+            //   key ('title:') flows after it as a separate atom, so the seam gets real spacing
+            //    ('Track title:', never the run-together 'Tracktitle:').  The dedup still holds:
+            //     only the first row of a tag run mints the boxed kind.
+            const as: VAtom[] = []
+            if (showtag) as.push(atom({ tag: showtag, tagtint: kind_tint(showtag), box: true,
+                                        cls: 'vsub-gkey' }, fs))
+            as.push(atom({ key: g.key, colon: g.leaves.length > 0, sup: g.sup,
+                           members: g.members, hue, cls: 'vsub-gkey' }, fs))
             for (const l of g.leaves)
                 as.push(atom({ val: l.val, sup: l.sup, subn: l.subn, member: l.member,
                                members: l.members, tag: l.tag, tagtint: l.tint, cls: 'vsub-label' },
@@ -1751,7 +1785,7 @@
         //    'name: Palegold' lands on the next line at full size (the flow's treeing indent).
         //     B0.4 holds: no ×N on the name — the count is the /*N tail.
         const trow: VAtom[] = []
-        if (head.tag) trow.push(atom({ tag: head.tag, tagcolon: head.tagcolon && !head.nk,
+        if (head.tag) trow.push(atom({ tag: head.tag, box: true,   // the container kind in its own subcell
                                        tagtint: tint, cls: 'vsub-ntitle' }, 16))
         if (tname || head.nk || head.sup)
             trow.push(atom({ nk: head.nk, nkhue: head.nkhue, val: tname || undefined, sup: head.sup,
@@ -1834,93 +1868,74 @@
             const p = c.inset[i], q = c.inset[(i + 1) % c.inset.length]; A2 += p.x * q.y - q.x * p.y
         }
         const R = Math.sqrt(Math.abs(A2) / 2 / Math.PI)
-        if (R < 60) return null                          // too small — flat reads better
-        // CARD split — the HUDDLE (the human: "so many Artist/… cells, they should collaborate to
-        //  huddle the Artist part of their sub-cell structure up one end of their cells"): the
-        //   header seats at the HIGHEST band whose chord can hold the title, not under the widest
-        //    chord mid-cell — a shape-relative rule, so every same-kind cell wears its container
-        //     level at the same end and the eye scans them as one shelf.  The coagulate keeps the
-        //      contiguous room below (≥42% of the height guarded).
-        const ys = c.inset.map(p => p.y)
-        const cy0 = Math.min(...ys), cy1 = Math.max(...ys)
-        const CH = cy1 - cy0
-        let wmax = 0, ywide = cy0
-        for (let yy = cy0 + 4; yy < cy1 - 4; yy += Math.max(4, CH / 22)) {
-            const cc = poly_chord(c.inset, yy)
-            if (cc && cc[1] - cc[0] > wmax) { wmax = cc[1] - cc[0]; ywide = yy }
-        }
-        // huddle high — but only as high as the identity genuinely FITS, else fall to the widest
-        //  chord (the safe seat).  A too-eager huddle seats the header in the cell's narrow top and
-        //   starves it (the 7px 'name: Voxhall' the shot caught); requiring ~the full title width
-        //    keeps the strip wide enough to seat, so the crater survives instead of flattening.
-        const tw = (head_len(head, !!tname) + tname.length) * GLY * 12 + 16   // the title at a modest 12px
-        let ytop = ywide
-        for (let yy = cy0 + 3; yy < cy1 - 20; yy += Math.max(3, CH / 40)) {
-            const cc = poly_chord(c.inset, yy)
-            if (cc && cc[1] - cc[0] >= tw * 0.9) { ytop = yy; break }
-        }
-        const hh = Math.min(CH * 0.55, Math.max(26, 16 + (1 + shared.length) * 15))
-        // the split gives the header a FULL hh below the seat — a shallower split thins the band
-        //  and the wrapped identity shrinks (a live shot dropped to 8px); the body keeps ≥42% of
-        //   the height guarded either way.  How MANY cells crater (vs fall flat) is entropy-variable
-        //    on real data (the fuzz moves the graph run-to-run) and eyes-gated on the live tab — a
-        //     flat cell still reads every row legibly (banded + badge-deduped), so a flat fallback
-        //      is a fine outcome, not a failure.
-        const hband = Math.min(cy1 - CH * 0.42, Math.max(cy0 + hh * 0.5, ytop + hh))
-        const headerPoly = clip_halfplane(c.inset, { x: c.acx, y: hband }, { x: 0, y: 1 })    // top: y ≤ hband
-        const bodyPoly = clip_halfplane(c.inset, { x: c.acx, y: hband }, { x: 0, y: -1 })      // body: y ≥ hband
-        if (headerPoly.length < 3 || bodyPoly.length < 3) return null
+        // a C-cradle nucleus insets on THREE sides, so it needs a touch more cell than a flat band;
+        //  a smaller fold reads better flat (the spell grows a borderline one until the C fits).
+        if (R < 40) return null                          // too small to draw a legible C — flat reads better
+        // ── THE C-CRADLE (the human, 2026-07-15: "a standard C-shaped crater … the Artist wraps the
+        //  members in a C") — the coagulate is a NUCLEUS inset toward the centre-right, and the cell's
+        //   OWN Artist tint wraps it on THREE sides: the TOP arm holds the identity, the LEFT spine and
+        //    BOTTOM lip close the C, and the C opens to the right (the cell's own wall).  "A cell-wall
+        //     around its nucleus."  The identity sits at one end BY CONSTRUCTION, so same-kind cells
+        //      huddle their Artist level with no chord search (the old huddle is now the C's geometry).
+        const ys = c.inset.map(p => p.y), xs = c.inset.map(p => p.x)
+        const cy0 = Math.min(...ys), cy1 = Math.max(...ys), CH = cy1 - cy0
+        const cx0 = Math.min(...xs), cx1 = Math.max(...xs), CW = cx1 - cx0
+        // the top arm holds the identity (room for its H2 wrap — kind on one line, 'name: Riverine'
+        //  on the next); the bottom arm is a thin lip; the left arm is the C's spine.  All are
+        //   fractions of the cell, so the whole C scales with the growth spell.
+        const ahTop = Math.min(CH * 0.46, Math.max(38, 16 + (1 + shared.length) * 15))
+        const ahBot = Math.min(CH * 0.20, 22)
+        const aw    = Math.min(CW * 0.30, Math.max(18, CW * 0.14))
+        const yTop = cy0 + ahTop, yBot = cy1 - ahBot, xLeft = cx0 + aw
         const cen = (poly: {x:number,y:number}[]) =>
             ({ x: poly.reduce((a, p) => a + p.x, 0) / poly.length, y: poly.reduce((a, p) => a + p.y, 0) / poly.length })
+        // the identity's arm (the top band) and the nucleus (below the top arm, above the bottom lip,
+        //  right of the left spine — open to the cell's right wall).
+        const headerPoly = clip_halfplane(c.inset, { x: c.acx, y: yTop }, { x: 0, y: 1 })      // y ≤ yTop
+        let coagBox = clip_halfplane(c.inset, { x: c.acx, y: yTop }, { x: 0, y: -1 })           // y ≥ yTop
+        coagBox = clip_halfplane(coagBox, { x: c.acx, y: yBot }, { x: 0, y: 1 })                // y ≤ yBot
+        coagBox = clip_halfplane(coagBox, { x: xLeft, y: c.acy }, { x: -1, y: 0 })              // x ≥ xLeft
+        if (headerPoly.length < 3 || coagBox.length < 3) return null
         const walls: VWall[] = []
         const stats: VStat[] = []
         let hid = 0
-        // the header — SELF-GATE (B3's identity floor): if the identity won't seat at a readable
-        //  size, the cell is too small to crater; flat reads fine small.  The landed title size is
-        //   the CEILING for the whole coagulate (G2: the identity "must be the biggest!").
+        // the header identity (the top arm) — its landed size is the CEILING for the nucleus (G2:
+        //  the identity "must be the biggest!").
         let hcap = 16
         {
             const hc = cen(headerPoly)
             const hres = pane_rows(headerPoly, hc.x, hc.y, tuple_rows(head, tname, shared, [], tint, kind), { inflate: true })
-            if (!hres) return null
-            // the self-gate reads the SMALLEST identity atom, not the first — the badge can seat
-            //  fat (23px) while the NAME wraps into a narrow band and floors to 7px (the shot's
-            //   'name: Voxhall' blemish); a header that can't hold its whole identity ≥11px falls
-            //    to flat tuples (readable) and the growth spell swells the cell until it can crater.
+            if (!hres) return null                        // the arm can't seat even one line — un-drawable
             const hts = hres.stats.filter(s => s.cls === 'vsub-ntitle')
             const htitle = hts.length ? Math.min(...hts.map(s => s.fs ?? 0)) : 0
-            // floor at 9 (not 11): a borderline header KEEPS its crater and the growth spell
-            //  (tiny < 11) swells the cell until the identity clears the legible floor — better
-            //   than flattening a cell that's one beat away from roomy.  Below 9 the strip is
-            //    genuinely too small; flat tuples read it fine.
-            if (hts.length && htitle < 9) return null
+            // the LEGIBILITY floor (read on the SMALLEST identity atom — a fat badge can hide a 7px
+            //  wrapped name): a fold too tight to seat its identity ≥11px does NOT crater TINY.  It
+            //   falls back to flat (which INFLATES big + reads fine); a still-tiny flat pane is grown
+            //    by the existing spell (tiny()) until it can crater BIG.  Never crater unreadable, and
+            //     never CHASE a crater on a readable flat fold (that stormed the re-paint — "very blinky").
+            if (hts.length && htitle < 11) return null
             hcap = htitle || 16
             stats.push(...hres.stats)
             hid += hres.hid
         }
-        // the COAGULATE: one smooth shape in the members' kind tint — the STRONG level boundary
-        //  ("two different C/C levels cannot share data descriptions" — this line is that strength
-        //   drawn); everything inside it is the members' own story.
+        // the COAGULATE nucleus: one smooth shape in the members' kind tint, cradled by the C — the
+        //  STRONG level boundary ("two different C/C levels cannot share data descriptions").
         const mtint = (mem[0].member ? kind_tint(Object.keys(mem[0].member.sc ?? {})[0]) : null) ?? c.color
-        const coag = chaikin(poly_grow(bodyPoly, -3), 2)
+        const coag = chaikin(poly_grow(coagBox, -3), 2)
         if (coag.length < 3) return null
-        // the coagulate's fill is a LINEAR gradient, transparent on the PARENT side (the header
-        //  seam) and deepening toward the far wall — containment reads as depth (the human's ask).
-        //   And an INNER SHADOW on that same parent-facing edge (the second ask): black falling
-        //    off over a short run below the seam, so the blob reads as sunk INTO the cell rather
-        //     than laid on it.
+        // the fill is a LINEAR gradient transparent at the nucleus TOP (the identity seam) deepening
+        //  down, + an INNER SHADOW on that top edge, so the nucleus reads as sunk INTO the cradle.
         const gid = `vcoag-${dom_id(c.id)}`
-        const ymax = Math.max(...coag.map(p => p.y))
-        const lgrads = [{ id: gid, x1: c.acx, y1: hband, x2: c.acx, y2: ymax, hue: mtint },
-                        { id: gid + 's', x1: c.acx, y1: hband, x2: c.acx,
-                          y2: Math.min(ymax, hband + 34), hue: '#000', o0: 0.32, o1: 0 }]
+        const ymax = Math.max(...coag.map(p => p.y)), ymin = Math.min(...coag.map(p => p.y))
+        const lgrads = [{ id: gid, x1: c.acx, y1: ymin, x2: c.acx, y2: ymax, hue: mtint },
+                        { id: gid + 's', x1: c.acx, y1: ymin, x2: c.acx,
+                          y2: Math.min(ymax, ymin + 30), hue: '#000', o0: 0.30, o1: 0 }]
         walls.push({ d: poly_d(coag), hue: mtint, cls: 'vsub-coag', fillid: gid },
                    { d: poly_d(coag), hue: 'none', cls: 'vsub-coagsh', fillid: gid + 's' })
-        // the member band flows INSIDE the coagulate — the same distilled rows a flat pane speaks
-        //  (the lead list, then the tagged facts|spreads), capped under the header.
+        // the member band flows INSIDE the nucleus — the distilled rows, capped under the identity.
         const cc2 = cen(coag)
         const bres = pane_rows(coag, cc2.x, cc2.y, keyed_rows(memb, kind), { inflate: true, capfs: hcap * 0.9 })
-        if (!bres) return null                           // the band can't seat — flat fallback
+        if (!bres) return null                           // the nucleus can't seat — flat fallback
         stats.push(...bres.stats)
         hid += bres.hid
         // H5 — hourglass ribbons: each claim chip reaches for the member chips it speaks for
@@ -2002,6 +2017,11 @@
             //   returns null when there's no fold structure or the cell's too tight, and we fall to
             //    the flat tuples stack; a pane too tight for even a title degrades like everyone else.
             let tp = vsub_craters ? crater_pane(c, head, tname, keyed, tint, kind) : null
+            // a fold too tight to crater legibly falls back to FLAT (which inflates big + reads fine);
+            //  the EXISTING tiny() spell grows a genuinely-small one until it can crater — no separate
+            //   "always chase a crater" push (that made every readable flat fold beg to grow → a
+            //    zero-sum re-paint STORM, the human's "very blinky").  Big cells crater; small folds
+            //     read flat; the human can DRAG a cell bigger to crater it (see cell drag).
             if (!tp) tp = tuple_pane(c, head, tname, keyed, members, tint, kind)
             if (tp) { pane = tp.pane; hid = tp.hid }
             else { pane = nucleus_pane(c, tint, head, tname); hid = total }
@@ -4416,6 +4436,17 @@
                      is the surf (Vtuff_pop) — the seed of click-to-expand; the +N mark
                      is the annotated fold of whatever this beat's glass couldn't say. -->
                 {#snippet vstat(sp: VSubPane, s: VStat)}
+                    {@const bw = s.box && s.tag ? Math.max(s.tag.length + 1.0, 3.0) * GLY * s.fs : 0}
+                    {#if bw}
+                        <!-- the KIND's subcell: a FAINT tinted field hugging 'Artist'/'Track' so it
+                             reads as the TYPE (the start of a C), not a property — but no border and
+                             barely-rounded, so it's a soft field, not a button (the human's J-walkback:
+                             "the button-looking mainkey is more confusing and visual noisey") -->
+                        <rect class="vsub-kindbox" x={(s.x - bw / 2).toFixed(1)} y={(s.y - s.fs * 0.78).toFixed(1)}
+                              width={bw.toFixed(1)} height={(s.fs * 0.98).toFixed(1)} rx={(s.fs * 0.16).toFixed(1)}
+                              fill={s.tagtint ?? '#888'}
+                              transform={s.rot != null ? `rotate(${s.rot} ${s.x.toFixed(1)} ${s.y.toFixed(1)})` : undefined} />
+                    {/if}
                     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions, a11y_interactive_supports_focus -->
                     <text class={s.cls} class:hot={s.member != null} class:corr-hot={!!s.members?.length}
                           class:corr-lit={corr_mark(sp, s) === 1} class:corr-dim={corr_mark(sp, s) === -1}
@@ -4423,11 +4454,12 @@
                           font-size={s.fs.toFixed(1)} text-anchor="middle"
                           transform={s.rot != null ? `rotate(${s.rot} ${s.x.toFixed(1)} ${s.y.toFixed(1)})` : undefined}
                           role={s.member || s.members?.length ? 'button' : undefined}
+                          onpointerdown={s.cls === 'vsub-ntitle' ? (e) => vsub_grab(e, sp.id) : undefined}
                           onmouseenter={s.member || s.members?.length ? () => corr_over(sp, s) : undefined}
                           onmouseleave={s.member || s.members?.length ? () => corr_out(s) : undefined}
                           onclick={s.member ? () => micro_click(sp.id, s.member)
                                  : s.members?.length ? () => corr_pin_toggle(sp, s) : undefined}>
-                        {#if s.tag}<tspan class="vsub-tag" fill={s.tagtint ?? undefined}>{s.tag}</tspan>{#if s.tagcolon}<tspan class="vsub-colon">: </tspan>{:else}<tspan> </tspan>{/if}{/if}{#if s.nk}<tspan class="vsub-nk" fill={s.nkhue}>{s.nk}</tspan><tspan class="vsub-colon">: </tspan>{/if}{#if s.key}<tspan fill={s.hue}>{s.key}</tspan>{#if s.colon}<tspan class="vsub-colon">:{s.val ? ' ' : ''}</tspan>{/if}{/if}{#if s.val}<tspan class="vsub-v" textLength={s.tl} lengthAdjust={s.tl ? 'spacingAndGlyphs' : undefined}>{s.val}</tspan>{/if}{#if s.sup}<tspan class="vsub-sup" dy="-0.45em">{s.sup}</tspan>{/if}{#if s.subn}<tspan class="vsub-sup vsub-dig" dy={s.sup ? '0' : '-0.45em'}>/*{s.subn}</tspan>{/if}{#each s.lines ?? [] as ln, li (li)}<tspan class="vsub-v" x={s.x.toFixed(1)} dy={li === 0 && (s.sup || s.subn) ? '1.65em' : '1.2em'} textLength={ln.tl} lengthAdjust={ln.tl ? 'spacingAndGlyphs' : undefined}>{ln.text}</tspan>{/each}
+                        {#if s.tag}<tspan class={s.box ? 'vsub-kindlabel' : 'vsub-tag'} fill={s.tagtint ?? undefined}>{s.tag}?</tspan>{#if !s.box}{#if s.tagcolon}<tspan class="vsub-colon">: </tspan>{:else}<tspan>{' '}</tspan>{/if}{/if}{/if}{#if s.nk}<tspan class="vsub-nk" fill={s.nkhue}>{s.nk}</tspan><tspan class="vsub-colon">: </tspan>{/if}{#if s.key}<tspan fill={s.hue}>{s.key}</tspan>{#if s.colon}<tspan class="vsub-colon">:{s.val ? ' ' : ''}</tspan>{/if}{/if}{#if s.val}<tspan class="vsub-v" textLength={s.tl} lengthAdjust={s.tl ? 'spacingAndGlyphs' : undefined}>{s.val}</tspan>{/if}{#if s.sup}<tspan class="vsub-sup" dy="-0.45em">{s.sup}</tspan>{/if}{#if s.subn}<tspan class="vsub-sup vsub-dig" dy={s.sup ? '0' : '-0.45em'}>/*{s.subn}</tspan>{/if}{#each s.lines ?? [] as ln, li (li)}<tspan class="vsub-v" x={s.x.toFixed(1)} dy={li === 0 && (s.sup || s.subn) ? '1.65em' : '1.2em'} textLength={ln.tl} lengthAdjust={ln.tl ? 'spacingAndGlyphs' : undefined}>{ln.text}</tspan>{/each}
                     </text>
                 {/snippet}
                 {#each vsubs as sp (sp.id)}
@@ -4659,13 +4691,25 @@
 }
 .cytui-subgraph .vsub-label.hot:hover { fill: #fff; }
 .cytui-subgraph .vsub-tag { fill: #667788; font-size: 76%; }
+/* the KIND label — the TYPE not a property, tinted, at natural width (no stretch). */
+.cytui-subgraph .vsub-kindlabel { font-size: 88%; font-weight: 500; }
+/* the kind's soft field — a faint tint wash, NO border, barely rounded: reads as "a C
+   begins here" without the button chrome (the human's J-walkback). */
+.cytui-subgraph .vsub-kindbox {
+    fill-opacity: 0.13;
+    stroke: none;
+    pointer-events: none;
+}
 .cytui-subgraph .vsub-v { fill: #cfcfcf; }
 /* Stuffing's grammar, spoken in SVG: lilac colon (the k→v mark), violet counts —
    same signs, same colours. */
 .cytui-subgraph .vsub-colon { fill: rgb(228, 163, 245); }
 .cytui-subgraph .vsub-sup { fill: rgb(156, 140, 217); font-size: 68%; }
 .cytui-subgraph .vsub-gkey { opacity: 0.95; }
-.cytui-subgraph .vsub-ntitle { opacity: 0.95; }
+/* the identity is the DRAG HANDLE (opts back into the pointer-events:none layer): grab the
+   Artist to move its cell's cytoscape node.  cursor:grab is the affordance. */
+.cytui-subgraph text.vsub-ntitle { opacity: 0.95; pointer-events: all; cursor: grab; }
+.cytui-subgraph text.vsub-ntitle:active { cursor: grabbing; }
 .cytui-subgraph .vsub-ringkey { opacity: 0.85; }
 .cytui-subgraph .vsub-title { opacity: 0.92; }
 .cytui-subgraph .vsub-dip {

@@ -34,6 +34,60 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
                 evolved through are SAVED: `voro_modes/README.md` (a ledger — commit anchors + live
                  SVG shots; revive any face via `git show <commit>:src/lib/O/Cytui.svelte`).
 
+**WHAT LANDED THIS SHIFT, PART 5 (2026-07-15) — the FINAL steer: walking the J-round back.**  After
+ seeing J2/J3 live, the human: (a) a research question — "someone has already built this fitting-text-
+  exactly-into-polygons trick aye … what can I google?"; (b) a bug — "sometimes Artist only appears, no
+   name:Riverine"; (c) a J2 walk-back — "the button-looking mainkey is more confusing and visual noisey,
+    though that that's the start of a C (eg the inner Stuffing Track) is clear"; (d) a new ruling — "the
+     crater should always be there! that'll communicate it better."  All Cytui paint-only, gen unchanged:
+ - **P5.1 de-button the kind chip (walks back J2+J3)** — the pill was a filled+*stroked* rounded box
+    with a `textLength` glyph-*stretch*: that chrome (border + pill + spaced-out label) is what read as a
+     BUTTON.  Now: `vsub-kindbox` has **no stroke**, fainter fill (0.13), a small radius (`fs*0.16`),
+      hugging the word; `vsub-kindlabel` drops the stretch + tracking and sits at natural width, weight
+       500.  Still clearly "a C begins here" (tinted field, the TYPE) — just no button.  The J3 stretch
+        is REMOVED, not iterated (the "Michaelangelo stretch text into place" want lives on for row
+         justification / the polygon-fit research below, not the kind label).
+ - **P5.2 the name-drop ("Artist only, no name:Riverine")** — the identity title is two atoms
+    (`[kind-chip][name]`); in a header band only ~one line tall, the name WRAPS then hits the vertical
+     floor and gets DROPPED (`flow` sets `dry`, counts it to `hid`), leaving a lonely kind.  Fix, two
+      independent mitigations: the de-buttoned chip is **narrower** (`atom.len` box reserve 2.2→1.0, no
+       stretch) so the title wraps less, AND the crater **header floor rises 26→42px** so a wrapped
+        two-line identity ('Track' / 'name: Riverine') has a landing (honours H2 wrap).
+ - **P5.3 crater ALWAYS for a fold** — the size/legibility self-gates are relaxed: `R<60`→`R<34` (only a
+    sliver too small to draw a coagulate at all falls back) and the header `htitle<9 → flat` self-gate is
+     **removed**.  A cross-kind fold now KEEPS its crater even a beat cramped; the growth SPELL (tiny<11)
+      swells it legible over the next beats — communicating the fold beats waiting for room.  The
+       `mem.length<2` gate stays (no fold structure = genuinely nothing to crater) and the pure-geometry
+        gates (`!hres`, `coag.length<3`, `!bres`) stay (un-drawable → flat, and the spell still grows a
+         flat cell toward a future crater).
+ - **P5.4 the research answer (polygon text-fitting, for the human's google)** — the trick has names:
+    **"pole of inaccessibility"** (largest inscribed circle → the label anchor) = Mapbox **`polylabel`**;
+     **text-on-path / textPath warp** along a spine (SVG `<textPath>`, `opentype.js` glyph-path warp,
+      `paper.js`, `Blotter.js`); **word/typographic packing in a shape** — search "wordcloud polygon
+       mask" (`d3-cloud` + mask), "packing words into a shape", "shape-aware text layout"; **conformal /
+        harmonic warp to a region** ("conformal text mapping", "as-rigid-as-possible text warp"); and for
+         the Wes-Wilson river feel, "text warp along curve", "variable-font optical-size fit", "Skia
+          paragraph shaping".  `polylabel` + `<textPath>` on the river spine is the closest ready pair.
+ - **VERIFY: LIVE SHOT STILL OWED (blocked).**  The one idle machine-runner (`20e3476b`) is wedged on a
+    STALE cached bundle — its `location.reload()` (via `runner_ask reload`) won't cache-bust, so it keeps
+     reporting `no cy_face hook — old Cytui`; a shot of it wouldn't carry these edits anyway.  The only
+      tab with the new Cytui is the human's ★editor (HMR-live — that IS the review channel), off-limits
+       to a shot.  Type-clean (check: 0 errors in the edited ranges), paint-only + fixture-safe.  Shoot
+        when a *fresh* idle runner frees (or the human hard-reloads `20e3476b` / restarts the dev server).
+
+**WHAT LANDED THIS SHIFT, PART 4 (2026-07-15) — the J-ROUND: after "hover behaviour is really
+ nice."**  Three asks, all Cytui paint-only: **J1 the gap** — the inline gkey ran "Track" into
+  "title" ("Tracktitle:") because its separator was a bare SVG space (collapses); the kind is now
+   its own atom (flow-spaced) + a non-breaking-space separator on the shared-atom paths.  **J2 the
+    kind in a subcell** — Artist/Track "look like properties otherwise", so the kind label (header +
+     gkey) is split into a `box:true` atom drawn as a tinted rounded pill (`vsub-kindbox` +
+      full-size `vsub-kindlabel`), reading as the TYPE not a property; the badge-dedup still holds.
+       **J3 Michaelangelo (first cut)** — the kind label STRETCHES (`textLength`/spacingAndGlyphs)
+        to fill a min-width pill so kinds align (poster-lettering feel); fuller row justification is
+         the continuing "stretch text into place" direction.  VERIFY: the idle runner fleet vanished
+          mid-round (only the human's ★editor up) — no shot yet, but the edits HMR into their live
+           tab; type-clean + paint-only (fixture-safe).  **LIVE SHOT OWED** when a runner frees.
+
 **WHAT LANDED THIS SHIFT, PART 3 (2026-07-15) — the I-ROUND: the human live at the desk, over the
  H-round craters.**  Steer in pieces: "there's a year:2007 that looks like part of Artist but those
   ARE the Tracks" (grasp, from H) → "it still wants more maxing out the space … inline-text up against
