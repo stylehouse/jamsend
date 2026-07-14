@@ -32,23 +32,23 @@ This file is destination + the bombs + the next move. Correct anything that has 
    `%see`→`%seen` (truth-gates unchanged → identical snap footprint, only the key hardened), 10
     `Assertion:` roster lines, fixtures 2-8 re-recorded live (latch accumulates 1→10 across the
      beats), GREEN 8/8 + phantom-sabotage RED-proven. Committed as `Seen_split 3` (`57671c1c`).
-- `SwarmWire` — FULL conversion + re-record LANDED IN-TREE (2026-07-14), **confirm ×2 + sabotage
-   OWED**. All 5
-   wire-handshake happened-facts converted `%see`→`%seen` (`SwarmWire_witness`; the `n === K`
-    truth-gates KEPT — a crossed frame reads as its live inbox `%req:unemit,done` only at the step it
-     lands, so gate it there to catch the transient, then the latch carries it to the final snap), 5
-      `Assertion:` roster lines in `wormhole/Story/SwarmWire/toc.snap` (sentences byte-identical to the
-       emissions — verified with a diff), gen recompiled via **LocalGen** (`{seen:…}` confirmed;
-        browserless because the live editor was throttled mid-VoroMitosis → no `ghost-compile`). The
-         re-record then LANDED (2026-07-14, in a session lost to a crash before it could stamp this
-          doc): the working-tree fixtures `002-005.snap` hold `seen:` and the Credulation run-record
-           reads check-red 0.2 ×2 (the expected old-fixture reds) then `run=2` GREEN — installed +
-            confirmed ×1, all uncommitted. Still OWED: one more live confirm run (green ×2 is the
-             house gate) + phantom-sabotage one roster entry → then it's a commit point.
-- Remaining fleet: the rest of the Swarm* Books (`Door`/`Got`/`Policy`/`Invite` untouched — `Wire` in
-   flight above), the Musu*/Radiation/Voronation/Peregrination families (§5 inventory), and the
-    `%witnessed` retirement. `SwarmStaple` is the FULL-conversion worked example (`SwarmSteal` is the
-     stand-beside/mixed example; `SwarmWire` is the landed-but-unconfirmed one).
+- `SwarmWire` — FULL conversion DONE + LIVE-GREEN ×2 + SABOTAGE-PROVEN (2026-07-14) — **commit
+   point** (working tree clean vs HEAD; the re-record was committed by the human, this is the confirm).
+    All 5 wire-handshake happened-facts converted `%see`→`%seen` (`SwarmWire_witness`; the `n === K`
+     truth-gates KEPT — a crossed frame reads as its live inbox `%req:unemit,done` only at the step it
+      lands, so gate it there to catch the transient, then the latch carries it to the final snap), 5
+       `Assertion:` roster lines in `wormhole/Story/SwarmWire/toc.snap` (sentences byte-identical to the
+        emissions), gen via **LocalGen** (`{seen:…}`). Confirm run on runner `20e3476` (had to burn the
+         frozen-boot `begun`-wedge Voro run first — `frozen-boot-empty-first-run`): GREEN 5/5 caveat:0,
+          gaps EMPTY, and the latch trajectory shows live (gaps 5→4→3→1→0 as each `%seen` lands at its
+           beat) — that IS the per-Book roster-wired proof. Sabotage: a phantom `Assertion` (un-latchable
+            sentence) → `phase:failed` with `ok_pct:1` (all steps green) + `caveat:1` STILL red on the
+             named gap — the entropy-mask hole stays closed, `caveat` never short-circuits the roster.
+              Phantom reverted, runner released.
+- Remaining fleet: the rest of the Swarm* Books (`Door`/`Got`/`Policy`/`Invite` untouched — `Wire`
+   DONE), the Musu*/Radiation/Voronation/Peregrination families (§5 inventory), and the `%witnessed`
+    retirement. `SwarmStaple`/`SwarmWire` are the two FULL-conversion worked examples (`SwarmSteal` is
+     the stand-beside/mixed example).
 
 Three concrete moves, sized honestly:
 

@@ -69,6 +69,7 @@
         'Ghost/M/Ra.g',                 // the PIPELINE spine — rastock: needles LUFS → baked gain → ONE opus encode cut into %Preview,seq chunk particles + demand-driven stream transcode
         'Ghost/M/Booth.g',              // the Booth — taste as standing facts: the tune: handle + the %Ban do-not-play list the heist door consults (Radio_todo §11)
         'Ghost/M/Heist.g',              // the heist engine — %Heist,at:<pier> moves ORIGINAL file bytes over Repli straight into the collection (newlyadded probation, catalog-identity dedup)
+        'Ghost/M/Jam.g',                // the jam ledger — %Jam,with:<dj> session of ordered %Spin/%Like/%Grab facts + a keeper copy into the listener's own shelf (the glanceable session history)
         'Ghost/Story/Musuation.g',      // the Musu* tests — MusuStaple; more pile on here
         'Ghost/Story/Radiation.g',      // the Ra* PRODUCT tests — RaStock; racast/raterm Books pile on here
         'Ghost/Story/Heistation.g',     // the Heist* tests — MusuHeist rung 1; the cohort + cafe rungs pile on here

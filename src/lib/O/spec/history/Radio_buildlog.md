@@ -5,6 +5,55 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
   The living state, roadmap and design are in Radio_todo.md — read THAT; come here only for
    the archaeology of how a thing landed. Newest first.
 
+**2026-07-14 (later, autonomous) — THE SNAP READS LIKE THE SESSION: N1-N5 snap-hygiene + the Card rename + the
+ Jam ledger. Code landed compile-clean; fleet re-record OWED (runners were flaky, work was done blind).** The
+  human read MusuBuddy's fresh snaps and named the smells: fake-looking `%Record` cards that impersonate the
+   audio holdings ("there's only one of anything"), an `{"undef":["path"]}` brand, 38 dead `req:awaitbuf` rows,
+    and a browse with no structure ("I should be able to glance and see what they played to each other, what
+     each liked, what each heisted — I say get there"). Five moves, all coded this session, none yet re-gated
+      on a runner:
+- **N1** guarded three unconditional `k: rec.sc.k` mints (Musica_fold card, heist-landing, reflect) → the
+   `undef` brand gone. **N3** made `Repli_attach_page` `drop()` the holding req once bytes land (`finish()` only
+    marks `%finished`, never detaches — the 38 rows) — an unlanded awaitbuf stays; MusuReplica's `warns_missing`
+     reads only the unlanded set. **Adversarial review (opus): SAFE** — `o({req:1})` is a fresh snapshot so the
+      mid-sweep drop can't corrupt iteration, the re-entry is idempotent, and the withheld-bytes awaitbuf still
+       latches `warns_missing`. **N5** distilled three rulings into CLAUDE.md (identity-per-shelf + referring
+      particles; no maybe-undef sc; drop finished transient reqs).
+- **N2 — the card stops impersonating `%Record`.** Cards under a `%Cloud` → `%Card`; holdings under a `%Library`
+   stay `%Record`. Chosen shape **`Card,id:<id>` (Option B — KEEP the id scalar)**, NOT mainkey-value `Card:<id>`:
+    `Repli_loc_keys` gives `['Card','id']` (id-ish) = byte-identical wire behavior to the old `Record,id`, no
+     `repli_loc` hint, and ZERO `.sc.id` reader ripple — so N2 was a near-pure mainkey-WORD swap on the
+      Cloud-child sites, and the finder helpers + the browse survived untouched. `%Card` is not a new coinage —
+       it REUSES MusuBerth's existing `Card` (a saved track-reference; the magazine card is a full listing, the
+        Berth toy a degenerate `Card,tune,verdict` — same family, MusuBerth unaffected). Both files audited (every
+         remaining `Record:1` is a holding). **Adversarial review (opus subagent) returned VERDICT: SOUND** —
+          confirmed the one direct mainkey reader (`Repli.g:461 if c.sc.Record`, the audio-pull breadcrumb) is
+           correctly Record-only (cards never pull audio), cursors + goner-delete loc all correct; it flagged
+            the `%Card`/Berth reuse for a human eyeball (I hold it a legit unification, not the sin) and two
+             stale comments (fixed).
+- **N4 — the Jam ledger (the browse gets structure).** New family ghost **`Ghost/M/Jam.g`** (enrolled in
+   CREDULER_GHOSTS): a `Jam,with:<dj>` session under the listener's shelf holding ordered **`Spin,of:<id>,title,at`
+    / `Like,of:<id>,at` / `Grab,of:<id>,at`** facts — `Grab`, NOT `Heist` (that mainkey is the reserved operation
+     `%Heist,at:<pier>`); `of:` is the N:1 referring form. `Jam_grab` also copies the pulled holding (scalars +
+      chunk children, bytes shared) into a caller-supplied `kept` shelf. Wired into MusuBuddy: `MusuBuddy_jam` at
+       the tail of HEAR (beat 10) spins/likes/grabs the browsed track into the mirror `%Jam` + a keeper in a
+        distinct `%Kept,pier:<lis>` shelf (grabbing into the mirror would just re-find the husk). Two new sees
+         (beat 11): the ledger reads Spin→Like→Grab in `at` order (reads the real rows), and the keeper stands
+          WHOLE in `%Kept` while the husk still stands in the mirror (copy-not-move). 13 sees. Adversarial review
+           (opus): both sees SOUND — live-data reads with verified one-line breaks, no blocking bug.
+- **OWED / coordination.** Nothing re-recorded — every magazine + audio-pull Book is stale-RED until a live
+   runner re-records the union (headless BANNED). This ran alongside ANOTHER agent at a **MusuStanding** commit
+    point; N2 makes MusuStanding's fixtures stale (its cards → `%Card`), so the RULE (in Radio_todo §0): don't
+     commit any magazine Book green without re-recording POST-N2; a `Record`-card MusuStanding re-record is
+      superseded. My landed N1/N3 do NOT touch MusuStanding. Held the runner (a begun-wedge from mid-session gen
+       HMR would break the shared tab + step on the other agent). All verification via LocalGen (browserless,
+        byte-identical gen) + adversarial subagents — the runner gate is the human's to run.
+- **Plus a UI bit (graph legibility):** `Matstyle.matstyle_seed_known` gained semantic swatches for the whole
+   Radio particle family — `%Record` heavy teal (the audio holding) vs `%Card` light bordered (the listing),
+    both title-labelled; `%Spin`/`%Like`/`%Grab` one ellipse family with distinct hues (green played / warm
+     liked / amber heisted); `%Jam`/`%Kept`/`%Mag`/`%Cloud` the containers — so the Cyto/Voro graph reads the
+      session the way the snap now does, instead of arbitrary auto-palette blobs. Non-contended, type-clean.
+
 **2026-07-14 — the Ra pipeline RE-DRAW: MusuBuddy consolidates stock|cast|play under the magazine; the three
  standalone Ra* Books RETIRED. LIVE-GREEN ×2.** The human challenged the reflex to write yet another Book:
   "do MusuRaStock|Cast|Term really stay relevant once we have the magazine, or is that the same job twice?"

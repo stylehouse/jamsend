@@ -1045,17 +1045,23 @@
                 if (r.sc.k != null && (kind === 'fact' || kind === 'spread')) {
                     // a TYPED claim (the Stuffing-shape cut): carry the k/v pair and compose the
                     //  display right here — this IS paint, the one place a string may be born.
-                    //   (a list row carries a k too — which key its chips are values of — but its
-                    //    text stays empty: the chips speak)
                     d.key = String(r.sc.k)
                     if (r.sc.v != null) { d.val = String(r.sc.v); d.text = `${d.key}: ${d.val}` }
                     else if (kind === 'fact' && r.sc.n) { d.pn = Number(r.sc.n); d.text = `${d.key} ×${d.pn}` }
                     else d.text = d.key
+                } else if (r.sc.k != null && kind === 'list') {
+                    // a list row carries a k too — which key its chips are values of ('title') — but
+                    //  its text stays empty: the chips speak.  B0.2 (the first real-world read): this
+                    //   branch was MISSING, so an %Artist fold's %Track members lost their title key
+                    //    (only fact|spread captured d.key); now the list keeps it, and tag rides below.
+                    d.key = String(r.sc.k)
                 } else if (r.sc.text == null) {
                     // a TYPED presentation row (the 1b cut): compose its display here too.  A row
                     //  that DOES carry text is an old gen's cached tree (HMR skew) and keeps its
                     //   baked words — enrich, never require.
-                    if (kind === 'title') d.text = `${r.sc.name ? r.sc.name + '  ' : ''}×${root.sc.n ?? ''}`
+                    // B0.4: the title is IDENTITY ONLY (name + kind-tag) — the count rides the /*N
+                    //  tail (the same root.sc.n), never an ×N on the name that reads as "N such".
+                    if (kind === 'title') d.text = String(r.sc.name ?? '')
                     else if (kind === 'member' || kind === 'sub') d.text = String(r.sc.name ?? r.sc.tag ?? '')
                     else if (kind === 'dip') d.text = `/*${root.sc.n ?? ''}`
                 }
@@ -1200,7 +1206,7 @@
     type VSubLeaf  = { tag?: string, tint?: string | null, val?: string, sup?: string, subn?: number,
                        member?: TheC, hw: number, hh: number,
                        wgt?: number }   // grasp salience 0..100 (Slice B2): how much this value sets its cell apart
-    type VSubTuple = { key?: string, sup?: string, leaves: VSubLeaf[], wgt?: number }
+    type VSubTuple = { key?: string, sup?: string, tag?: string, lead?: boolean, leaves: VSubLeaf[], wgt?: number }
     function subgraph_tuples(descs: VtuffDesc[]): { keyed: VSubTuple[], members: VSubLeaf[] } {
         const keyed: VSubTuple[] = []
         const members: VSubLeaf[] = []
@@ -1231,9 +1237,19 @@
                     leaf({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined, member: ch.member, subn: ch.sub,
                            wgt: ch.wgt })) })
             } else if (d.kind === 'list') {
-                for (const ch of d.chips ?? [])
-                    members.push(leaf({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined,
-                                        member: ch.member, subn: ch.sub, wgt: ch.wgt }))
+                const lv = (d.chips ?? []).map(ch => leaf({ val: ch.text, sup: ch.n > 1 ? `×${ch.n}` : undefined,
+                                                            member: ch.member, subn: ch.sub, wgt: ch.wgt }))
+                if (d.tag != null)
+                    // a fold's members are a DIFFERENT kind with their own naming key (an %Artist by
+                    //  its %Tracks' title — Voro.g tags the list ONLY then): a KEYED, kind-tagged row
+                    //   that LEADS, identity before the shared facts (B0.1/B0.2/B0.3).  A SAME-kind
+                    //    list (flora species of one genus) stays bare trailing members — the human's
+                    //     liked read ('Metrosideros / … / propinqua rhamnoides …'), not a redundant
+                    //      'Metrosideros:' keyed row.
+                    keyed.push({ key: d.key, tag: d.tag, lead: true, wgt: d.wgt, leaves: lv })
+                else
+                    // bare epithets of the family ITSELF (the flora species names) — flow at the end
+                    for (const l of lv) members.push(l)
             } else {   // member | sub
                 members.push(leaf({ val: d.text, tag: d.tag, tint: d.color, member: d.member, subn: d.sub, wgt: d.wgt }))
             }
@@ -1243,7 +1259,7 @@
             g.leaves.length = 11
             g.leaves.push(leaf({ val: `+${cut}` }))
         }
-        for (const g of keyed)
+        for (const g of keyed) if (!g.lead)   // a lead list keeps gather order (like the members it is)
             g.leaves.sort((a, b) => (a.val ?? '').localeCompare(b.val ?? '', undefined, { numeric: true }))
         return { keyed, members }
     }
@@ -1490,29 +1506,39 @@
     //             floor by design here: the notation wants density (the title keeps
     //              the loud floor; a loud claim's row still out-sizes its siblings).
     type VAtom = Partial<VStat> & { len: number, afs: number }
-    function tuple_pane(c: VCell, head: VHead, tname: string, keyed: VSubTuple[],
-                        members: VSubLeaf[], tint: string, kind: string | undefined):
-            { pane: VSubPane, hid: number } | null {
-        const th = tuple_frame(c.inset)
+    // one atom's on-screen width estimate (em units) — pure, so the whole-cell pane and a crater
+    //  sub-cell build atoms identically.
+    const atom = (a: Partial<VStat>, afs: number): VAtom => ({ ...a, afs,
+        len: (a.tag ? a.tag.length * 0.78 + 1 : 0)
+           + (a.nk ? a.nk.length + 2 : 0)
+           + (a.key ? a.key.length + (a.colon ? 1.5 : 0.5) : 0)
+           + (a.val?.length ?? 0)
+           + (a.sup ? a.sup.length * 0.7 : 0) + (a.subn ? 3 : 0) })
+    // the salience → row size map ("squished": density beats the 14pt floor here)
+    const row_fs = (w?: number) => { const s = w ?? 50; return s >= 80 ? 15 : s >= 45 ? 11.5 : 9 }
+
+    // pane_rows — flow pre-built ROWS (each a line of atoms) into a convex polygon: rotate the
+    //  baseline to the polygon's biggest top-left wall (tuple_frame), seat each line-BOX between
+    //   the chords at its top AND bottom edge (a sloping wall can't clip the ascenders — the human:
+    //    "a line obscured by the cellwall above it"), and INFLATE the whole stack to fill the spare
+    //     height (the human: "inflating into its potential space").  This is the pure geometry
+    //      behind BOTH the whole-cell tuples pane AND each B1 crater sub-cell — so a %Track's own
+    //       sub-space aligns to its OWN wall and fills its OWN room.  rows[0] is load-bearing: if it
+    //        can't seat, the pane degrades (null).  Stats return in ORIGINAL coords, pivoted cx,cy.
+    function pane_rows(poly: {x:number,y:number}[], cx: number, cy: number, rows: VAtom[][],
+                       opts?: { toppad?: number, inflate?: boolean }):
+            { stats: VStat[], hid: number, used: number } | null {
+        if (!rows.length) return null
+        const th = tuple_frame(poly)
         const cosR = Math.cos(-th), sinR = Math.sin(-th)
-        const rpoly = c.inset.map(p => ({ x: c.acx + (p.x - c.acx) * cosR - (p.y - c.acy) * sinR,
-                                          y: c.acy + (p.x - c.acx) * sinR + (p.y - c.acy) * cosR }))
+        const rpoly = poly.map(p => ({ x: cx + (p.x - cx) * cosR - (p.y - cy) * sinR,
+                                       y: cy + (p.x - cx) * sinR + (p.y - cy) * cosR }))
         const cosB = Math.cos(th), sinB = Math.sin(th)
         const deg = Math.abs(th) > 1e-3 ? +(th * 180 / Math.PI).toFixed(1) : undefined
         const rys = rpoly.map(p => p.y)
         const ry0 = Math.min(...rys), ry1 = Math.max(...rys)
         const availH = ry1 - ry0 - 6
-        const atom = (a: Partial<VStat>, afs: number): VAtom => ({ ...a, afs,
-            len: (a.tag ? a.tag.length * 0.78 + 1 : 0)
-               + (a.nk ? a.nk.length + 2 : 0)
-               + (a.key ? a.key.length + (a.colon ? 1.5 : 0.5) : 0)
-               + (a.val?.length ?? 0)
-               + (a.sup ? a.sup.length * 0.7 : 0) + (a.subn ? 3 : 0) })
-        // the usable x-span for a whole line-BOX (top→bottom), not just its centreline —
-        //  the INTERSECTION of the chord under the box's top edge and the chord over its
-        //   bottom edge, so a sloping wall above can't clip the ascenders (the human:
-        //    "a line of text obscured by the cellwall above it").  null ⇒ the box doesn't
-        //     seat cleanly at this y; the caller steps down until it does.
+        const toppad = opts?.toppad ?? 4
         const line_span = (ytop: number, lh: number): [number, number] | null => {
             const pad = Math.min(3, lh * 0.22)
             const a = poly_chord(rpoly, ytop + pad), b = poly_chord(rpoly, ytop + lh - pad)
@@ -1520,18 +1546,13 @@
             const lo = Math.max(a[0], b[0]), hi = Math.min(a[1], b[1])
             return hi - lo > 6 ? [lo, hi] : null
         }
-        // the salience → row size map ("squished": density beats the 14pt floor here)
-        const row_fs = (w?: number) => { const s = w ?? 50; return s >= 80 ? 15 : s >= 45 ? 11.5 : 9 }
-        // lay the whole pane at a base-size ZOOM; fresh state each call so we can measure
-        //  the natural stack at 1× then re-run bigger to fill the cell.  `used` is the
-        //   stacked height consumed (for the inflate ratio); `hid` the +N crowd-out.
         const layout = (zoom: number): { stats: VStat[], hid: number, used: number } | null => {
             const stats: VStat[] = []
-            let ycur = ry0 + 4, hid = 0, dry = false
+            let ycur = ry0 + toppad, hid = 0, dry = false
             // one LINE of atoms, flowing left→right along the rotated chord, wrapping to an
-            //  indented continuation; every atom is its own VStat so a member chip keeps its
-            //   own click.  Out of vertical room ⇒ the rest of the pane counts into +N.
+            //  indented continuation; every atom is its own VStat so a member chip keeps its click.
             const flow = (atoms: VAtom[]) => {
+                if (!atoms.length) return
                 if (dry) { hid += atoms.length; return }
                 const lh = Math.max(...atoms.map(a => a.afs * zoom)) * 1.24
                 let ch = line_span(ycur, lh)
@@ -1556,52 +1577,206 @@
                     const { len: _l, afs: _f, ...rest } = a
                     const rx = x + w / 2, ry = ycur + lh * 0.8
                     stats.push({ ...rest, fs: afs, rot: deg,
-                                 x: c.acx + (rx - c.acx) * cosB - (ry - c.acy) * sinB,
-                                 y: c.acy + (rx - c.acx) * sinB + (ry - c.acy) * cosB } as VStat)
+                                 x: cx + (rx - cx) * cosB - (ry - cy) * sinB,
+                                 y: cy + (rx - cx) * sinB + (ry - cy) * cosB } as VStat)
                     x += w + afs * 0.55
                     fresh = false
                 }
                 ycur += lh + 1.5
             }
-            // the title line — the identity stays loud (≥14): kind badge · name · ×N
-            flow([atom({ ...head, val: tname || undefined, cls: 'vsub-ntitle', tagtint: tint }, 16)])
-            if (!stats.length) return null                             // not even a title fits — degrade
-            // keyed rows in GLOBAL vein order — the same key at the same rank in every pane
-            for (const g of keyed) vein_of(g.key ?? '')
-            const order = [...keyed].sort((a, b) =>
-                (vein_slot.get(a.key ?? '') ?? 99) - (vein_slot.get(b.key ?? '') ?? 99))
-            for (const g of order) {
-                const fs = row_fs(g.wgt)
-                const hue = `hsl(${vein_of(g.key ?? '').hue}, 52%, 60%)`
-                const as: VAtom[] = [atom({ key: g.key, colon: g.leaves.length > 0, sup: g.sup,
-                                            hue, cls: 'vsub-gkey' }, fs)]
-                for (const l of g.leaves)
-                    as.push(atom({ val: l.val, sup: l.sup, subn: l.subn, member: l.member,
-                                   tag: l.tag, tagtint: l.tint, cls: 'vsub-label' },
-                                 (l.wgt ?? 50) >= 80 ? fs * 1.3 : fs))
-                flow(as)
+            for (let ri = 0; ri < rows.length; ri++) {
+                flow(rows[ri])
+                if (ri === 0 && !stats.length) return null             // the lead line didn't seat — degrade
             }
-            // the members flow last — bare names (the title already said their kind once)
-            if (members.length)
-                flow(members.map(l => atom({ val: l.val, sup: l.sup, subn: l.subn, member: l.member,
-                                             tag: l.tag && l.tag !== kind ? l.tag : undefined,
-                                             tagtint: l.tint, cls: 'vsub-label' }, row_fs(l.wgt))))
             return { stats, hid, used: ycur - ry0 }
         }
-        // measure at 1×, then INFLATE into the cell's empty vertical space (the human:
-        //  "it just needs inflating into its potential space") — only when nothing was
-        //   crowded out at 1× and the fill would actually grow; damped (·0.7) so the
-        //    re-wrap at the bigger size doesn't overflow, and the inflated pass is kept
-        //     only if it too seats everything (never trade a shown row for bigger text).
+        // measure at 1×, then INFLATE — only when nothing was crowded out and the fill grows;
+        //  damped (·0.7) so the re-wrap doesn't overflow, kept only if it too seats everything.
         let res = layout(1)
         if (!res) return null
-        if (res.hid === 0 && res.used > 8 && availH / res.used > 1.15) {
+        if (opts?.inflate !== false && res.hid === 0 && res.used > 8 && availH / res.used > 1.15) {
             const zoom = Math.min(2.4, 1 + (availH / res.used - 1) * 0.7)
             const up = layout(zoom)
             if (up && up.stats.length && up.hid === 0) res = up
         }
+        return res
+    }
+
+    // tuple_rows — the tuples ROWS for one family: title (identity, loud), keyed rows in the C's
+    //  own order (lead list first — B0.3), then bare members.  A pure row-builder (no geometry),
+    //   so a crater's header uses the same voice as a whole-cell pane.
+    function tuple_rows(head: VHead, tname: string, keyed: VSubTuple[], members: VSubLeaf[],
+                        tint: string, kind: string | undefined): VAtom[][] {
+        const rows: VAtom[][] = []
+        // the title line — identity stays loud (≥14): kind badge · name (B0.4: no ×N; the count is
+        //  the /*N tail, so the name never reads as "N such things")
+        rows.push([atom({ ...head, val: tname || undefined, cls: 'vsub-ntitle', tagtint: tint }, 16)])
+        // keyed rows in the C's OWN order (B0.3): the distiller emits sc order (Vtuff_keyrows walks
+        //  Object.keys), a lead list (the fold's tagged members) comes FIRST — identity before facts;
+        //   a stable partition keeps sc order within each band.  Vein now only tints the key hue.
+        for (const g of keyed) vein_of(g.key ?? '')
+        const order = [...keyed].sort((a, b) => (a.lead ? 0 : 1) - (b.lead ? 0 : 1))
+        for (const g of order) {
+            const fs = row_fs(g.wgt)
+            const hue = `hsl(${vein_of(g.key ?? '').hue}, 52%, 60%)`
+            const as: VAtom[] = [atom({ tag: g.tag, tagtint: g.tag ? kind_tint(g.tag) : undefined,
+                                        key: g.key, colon: g.leaves.length > 0, sup: g.sup,
+                                        hue, cls: 'vsub-gkey' }, fs)]
+            for (const l of g.leaves)
+                as.push(atom({ val: l.val, sup: l.sup, subn: l.subn, member: l.member,
+                               tag: l.tag, tagtint: l.tint, cls: 'vsub-label' },
+                             (l.wgt ?? 50) >= 80 ? fs * 1.3 : fs))
+            rows.push(as)
+        }
+        // the members flow last — bare names (the title already said their kind once)
+        if (members.length)
+            rows.push(members.map(l => atom({ val: l.val, sup: l.sup, subn: l.subn, member: l.member,
+                                              tag: l.tag && l.tag !== kind ? l.tag : undefined,
+                                              tagtint: l.tint, cls: 'vsub-label' }, row_fs(l.wgt))))
+        return rows
+    }
+
+    function tuple_pane(c: VCell, head: VHead, tname: string, keyed: VSubTuple[],
+                        members: VSubLeaf[], tint: string, kind: string | undefined):
+            { pane: VSubPane, hid: number } | null {
+        const rows = tuple_rows(head, tname, keyed, members, tint, kind)
+        const res = pane_rows(c.inset, c.acx, c.acy, rows, { inflate: true })
+        if (!res) return null
         return { pane: { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`, clip: poly_d(c.inset),
                          color: c.color, tint, walls: [], spokes: [], stats: res.stats }, hid: res.hid }
+    }
+
+    // ── B1: C-SPACE CRATERS ── (the human, 2026-07-14: "we need a sense of where each C is …
+    //  something needs to encapsulate where the %Artist/%Track subcell spaces are … anchor points
+    //   in it … do we just voronoi that subcell structure? … but not with cytoscape").  A big
+    //    cross-kind FOLD cell divides into sub-cells — one per member C — so each %Track visibly
+    //     sits inside its %Artist.  The header sub-cell speaks the container's identity + the SHARED
+    //      (venn) facts ONCE; each member sub-cell is its OWN mini tuples pane in its OWN sc order.
+    //       Programmatic, reusing power_cells (the star's wall math) + pane_rows (the tuples flow) —
+    //        NOT a second cytoscape.  Bounded by cell size; a tight cell stays flat (tuple_pane).
+    let vsub_craters = $state(true)   // A/B the craters against flat tuples: runner_shot --face=craters:0
+
+    // member_rows — one member C's OWN tuple rows, read straight from its sc (no distillation — it is
+    //  a single particle): kind badge · name (· /*N when it holds more), then its own facts in its
+    //   OWN sc order.  The recursion floor of the C-space: what a %Track says inside its own crater.
+    function member_rows(m: any): VAtom[][] {
+        const sc = m?.sc ?? {}
+        const mk = Object.keys(sc)[0]
+        if (!mk) return []
+        const nmk = namekey_ts(m), nm = name_ts(m)
+        const sub = typeof m.o === 'function' ? m.o().length : 0
+        const rows: VAtom[][] = []
+        rows.push([atom({ tag: mk, tagtint: kind_tint(mk), tagcolon: !!nm && nmk === mk,
+                          nk: nm && nmk !== mk ? nmk : undefined,
+                          nkhue: nk_hue(nm && nmk !== mk ? nmk : undefined),
+                          val: nm || undefined, subn: sub || undefined, cls: 'vsub-ntitle' }, 13)])
+        for (const k of Object.keys(sc)) {
+            if (k === mk || k === nmk) continue          // the title already said the kind + the name
+            const v = sc[k]
+            const hue = `hsl(${vein_of(k).hue}, 52%, 60%)`
+            if (v === 1) rows.push([atom({ key: k, hue, cls: 'vsub-gkey' }, row_fs())])           // presence
+            else rows.push([atom({ key: k, colon: true, val: String(v), hue, cls: 'vsub-gkey' }, row_fs())])
+        }
+        return rows
+    }
+
+    function crater_pane(c: VCell, head: VHead, tname: string, keyed: VSubTuple[],
+                         tint: string, kind: string | undefined): { pane: VSubPane, hid: number } | null {
+        const lead = keyed.find(g => g.lead)
+        const mem = lead ? lead.leaves.filter(l => l.member) : []
+        if (mem.length < 2) return null                  // no cross-kind fold structure — flat tuples
+        const shared = keyed.filter(g => !g.lead)         // the venn facts, said once in the header
+        let A2 = 0
+        for (let i = 0; i < c.inset.length; i++) {
+            const p = c.inset[i], q = c.inset[(i + 1) % c.inset.length]; A2 += p.x * q.y - q.x * p.y
+        }
+        const R = Math.sqrt(Math.abs(A2) / 2 / Math.PI)
+        if (R < 60 || mem.length > 14) return null        // too small, or too many to seat — flat reads better
+        // CARD layout: a full-width HEADER BAND across the top (the widest chords, so the %Artist
+        //  identity is PROMINENT — the human's "ensure the artist isn't too small, it drifts into an
+        //   acute corner"; a centre-seeded header lost to its own members).  A horizontal cut splits
+        //    the cell; the members power-split the body below on an aspect-aware GRID so the craters
+        //     come out EVEN (a phi-spiral of few seeds gave one 29px beside one 7px).
+        const ys = c.inset.map(p => p.y)
+        const cy0 = Math.min(...ys), cy1 = Math.max(...ys)
+        const CH = cy1 - cy0
+        // place the split BELOW the cell's WIDEST chord, so the header band owns the prominent width
+        //  (a pointy TOP would drown the identity — the same acute-corner starve the human flagged);
+        //   the members still keep ≥42% of the height for their craters.
+        let ywide = cy0, wmax = 0
+        for (let yy = cy0 + 4; yy < cy1 - 4; yy += Math.max(4, CH / 22)) {
+            const cc = poly_chord(c.inset, yy)
+            if (cc && cc[1] - cc[0] > wmax) { wmax = cc[1] - cc[0]; ywide = yy }
+        }
+        const hh = Math.min(CH * 0.55, Math.max(26, 16 + (1 + shared.length) * 15))
+        const hband = Math.min(cy1 - CH * 0.42, Math.max(cy0 + hh * 0.5, ywide + hh * 0.4))
+        const headerPoly = clip_halfplane(c.inset, { x: c.acx, y: hband }, { x: 0, y: 1 })    // top: y ≤ hband
+        const bodyPoly = clip_halfplane(c.inset, { x: c.acx, y: hband }, { x: 0, y: -1 })      // body: y ≥ hband
+        if (headerPoly.length < 3 || bodyPoly.length < 3) return null
+        const bxs = bodyPoly.map(p => p.x), bys = bodyPoly.map(p => p.y)
+        const bx0 = Math.min(...bxs), bx1 = Math.max(...bxs), by0 = Math.min(...bys), by1 = Math.max(...bys)
+        const bW = bx1 - bx0 || 1, bH = by1 - by0 || 1
+        const bcx = bodyPoly.reduce((a, p) => a + p.x, 0) / bodyPoly.length
+        const bcy = bodyPoly.reduce((a, p) => a + p.y, 0) / bodyPoly.length
+        const pull = (x: number, y: number, margin: number) => {
+            for (let t = 0; t < 6; t++) {
+                const ch = poly_chord(bodyPoly, y)
+                if (ch && x > ch[0] + margin && x < ch[1] - margin) break
+                x = bcx + (x - bcx) * 0.72; y = bcy + (y - bcy) * 0.72
+            }
+            return { x, y }
+        }
+        const cols = Math.max(1, Math.round(Math.sqrt(mem.length * bW / Math.max(1, bH))))
+        const rowsN = Math.ceil(mem.length / cols)
+        const mpts = mem.map((l, k) => {
+            const r = Math.floor(k / cols), inRow = Math.min(cols, mem.length - r * cols)
+            const cph = k - r * cols
+            const gx = bx0 + bW * (cph + 0.5 + (cols - inRow) / 2) / cols   // centre a short last row
+            const gy = by0 + bH * (r + 0.5) / rowsN
+            return pull(gx, gy, 4)
+        })
+        const mlen = (l: VSubLeaf) => (l.member ? Object.keys(l.member.sc ?? {}).length : 1) + (l.val?.length ?? 4) * 0.3
+        const mbase = mem.reduce((s, l) => s + Math.sqrt(mlen(l)), 0) / mem.length || 1
+        const radii = mem.map(l => 10 + 1.2 * mbase + 0.8 * (Math.sqrt(mlen(l)) - mbase))
+        const polys = power_cells(bodyPoly, mpts, radii, 2.5)
+        // NOTE (evenness taste, owed on real BIG-artist cells): a grid seed near a boundary can still
+        //  get a lopsided crater.  LLOYD RELAXATION (re-seed each cell to its centroid, re-partition,
+        //   1–2×) is the obvious lever — held out until it can be judged on pixels, not VoroClinic's
+        //    small run-to-run-noisy cells where the win couldn't be told from the noise.
+        const cen = (poly: {x:number,y:number}[]) =>
+            ({ x: poly.reduce((a, p) => a + p.x, 0) / poly.length, y: poly.reduce((a, p) => a + p.y, 0) / poly.length })
+        const walls: VWall[] = []
+        const stats: VStat[] = []
+        let hid = 0
+        // the header band — container identity + the shared/venn facts (said ONCE), across the top.
+        //  SELF-GATE (B3's identity floor, applied to the whole crater decision): if the identity
+        //   won't seat at a readable size, this cell is too small to crater — return null and let the
+        //    caller render flat tuples, which reads fine small.  Never a drowned 8px %Artist name.
+        {
+            const hc = cen(headerPoly)
+            const hres = pane_rows(headerPoly, hc.x, hc.y, tuple_rows(head, tname, shared, [], tint, kind), { inflate: true })
+            if (!hres) return null
+            const htitle = hres.stats.find(s => s.cls === 'vsub-ntitle')
+            if (htitle && (htitle.fs ?? 0) < 11) return null
+            stats.push(...hres.stats)
+        }
+        // a faint rule where the header band meets the body, so the identity reads as its own strip
+        const sep = poly_chord(c.inset, hband)
+        if (sep) walls.push({ d: `M${sep[0].toFixed(1)},${hband.toFixed(1)}L${sep[1].toFixed(1)},${hband.toFixed(1)}`, hue: c.color, cls: 'vsub-wall' })
+        // each member crater — its OWN mini tuples pane (its sc order) + its wall, so you SEE where it is
+        mem.forEach((l, i) => {
+            const mp = polys[i]
+            if (!mp) { hid++; return }
+            walls.push({ d: poly_d(mp), hue: c.color, cls: 'vsub-wall' })
+            const mc = cen(mp)
+            const mres = l.member ? pane_rows(mp, mc.x, mc.y, member_rows(l.member), { inflate: true }) : null
+            if (mres) { stats.push(...mres.stats); return }
+            // too tight for the member's full pane — fall to its one bare label, else count it
+            const one = pane_rows(mp, mc.x, mc.y, [[atom({ val: l.val, member: l.member, cls: 'vsub-label' }, 8)]], { inflate: false })
+            if (one) stats.push(...one.stats); else hid++
+        })
+        return { pane: { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`, clip: poly_d(c.inset),
+                         color: c.color, tint, walls, spokes: [], stats }, hid }
     }
 
     // nucleus_pane — the DEGENERATE pane: no structure worth tessellating (a bare loner,
@@ -1667,9 +1842,12 @@
             pane = nucleus_pane(c, tint, head, tname)
             hid = total
         } else if (vsub_face === 'tuples') {
-            // the notation face (the new default): the same tree said as snap-like rows.
-            //  A pane too tight for even a title degrades like everyone else.
-            const tp = tuple_pane(c, head, tname, keyed, members, tint, kind)
+            // the notation face (the new default): the same tree said as snap-like rows.  A big
+            //  cross-kind FOLD first tries the B1 CRATERS (each member C its own sub-cell); it
+            //   returns null when there's no fold structure or the cell's too tight, and we fall to
+            //    the flat tuples stack; a pane too tight for even a title degrades like everyone else.
+            let tp = vsub_craters ? crater_pane(c, head, tname, keyed, tint, kind) : null
+            if (!tp) tp = tuple_pane(c, head, tname, keyed, members, tint, kind)
             if (tp) { pane = tp.pane; hid = tp.hid }
             else { pane = nucleus_pane(c, tint, head, tname); hid = total }
         } else {
@@ -3705,6 +3883,9 @@
         if (typeof stashed_sg === 'boolean') subgraph_pref = stashed_sg
         const stashed_vf = (H as any).stashed?.Cyto_vsub_face
         if (stashed_vf === 'tuples' || stashed_vf === 'star') vsub_face = stashed_vf
+        const stashed_cr = (H as any).stashed?.Cyto_craters
+        if (stashed_cr === 0 || stashed_cr === false) vsub_craters = false
+        else if (stashed_cr === 1 || stashed_cr === true) vsub_craters = true
         if (DRIFT_MODES_ON) {   // shelved: a stashed true from the play days must not resurrect the drift
             const stashed_r = (H as any).stashed?.Cyto_radio
             if (stashed_r === true) { radio_pref = true; radio_timer = setInterval(radio_tick, RADIO_DWELL) }
@@ -3789,8 +3970,13 @@
                     vsub_face = f.vsub
                     if (sts) sts.Cyto_vsub_face = f.vsub
                 }
+                // B1: the C-space craters, A/B'd against flat tuples (--face=craters:0|1)
+                if (f.craters != null && !Number.isNaN(f.craters)) {
+                    vsub_craters = !!f.craters
+                    if (sts) sts.Cyto_craters = vsub_craters ? 1 : 0
+                }
                 voronoi_soon()
-                return { voronoi: voronoi_on, regions: region_on, subgraph: subgraph_on, vsub: vsub_face }
+                return { voronoi: voronoi_on, regions: region_on, subgraph: subgraph_on, vsub: vsub_face, craters: vsub_craters }
             }
         } catch { /* no House root yet */ }
 

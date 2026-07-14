@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return '0d166ca603b73194~g1' },
+    Ghostmeta_Ghost_V_Voro(): string { return 'ba725387c4f80450~g1' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
@@ -1797,10 +1797,19 @@ Vtuff_title_row(into, members, src, kinds) {
 //     same-graph seed of recursion, depth capped where the pixels are.  Mixed big: nothing —
 //      facts|spreads speak instead.  tag rides ALWAYS now (it IS the member's kind — honest
 //       data); whether to DRAW it beside the name is paint's call.
-Vtuff_member_rows(into, members, kinds) {
+Vtuff_member_rows(into, members, kinds, src) {
     let homo = Object.keys(kinds).length === 1
     if (homo) {
-        let r = into.i({ Vrow: 1, row: 'list', k: this.Vtuff_namekey(members[0]), wgt: 1 })
+        // the list carries its members' KIND when it differs from the container that titles the
+        //  pane — an %Artist fold whose members are %Tracks (B0.1, the first real-world read): the
+        //   title said 'Artist', so the list must say 'Track' or the kind is silently lost.  A gang
+        //    (title tag == the members' own kind, '4 figaros') already said it — no tag.
+        let mk = Object.keys(members[0].sc)[0]
+        let ck = mk
+        if (src) ck = src.c.gang ? (src.c.fold_kind || Object.keys(kinds)[0]) : Object.keys(src.sc)[0]
+        let lsc = { Vrow: 1, row: 'list', k: this.Vtuff_namekey(members[0]), wgt: 1 }
+        if (mk !== ck) lsc.tag = mk
+        let r = into.i(lsc)
         let shown = members
         // generous — the phi spiral packs ~25 comfortably; the renderer's fit is the real
         //  gate (the human: "give it until we have problems fitting everything in").
@@ -1856,7 +1865,7 @@ Vtuff_default(root, members, src) {
     let kinds = this.Vtuff_kinds(members)
     let homo = Object.keys(kinds).length === 1
     this.Vtuff_title_row(root, members, src, kinds)
-    this.Vtuff_member_rows(root, members, kinds)
+    this.Vtuff_member_rows(root, members, kinds, src)
     // keyrows for a homogeneous family (minus what the title|list spoke) and for a mixed BIG
     //  one (everything — nothing else speaks); a mixed SMALL family said each member instead.
     if (homo) {
@@ -1896,7 +1905,7 @@ Vtuff_bamboo(root, members, src) {
     // cane — the members (only when there ARE member rows: a mixed big family speaks only in leaf)
     if (homo || members.length <= 5) {
         let cane = root.i({ Vseg: 1, seg: 'cane', joint: 1 })
-        this.Vtuff_member_rows(cane, members, kinds)
+        this.Vtuff_member_rows(cane, members, kinds, src)
     }
     // leaf — shared facts + spreads (the same keyrows the flat stalk speaks, into this segment;
     //  a mixed small family keeps its leaf here — the cane already spoke the members, but a

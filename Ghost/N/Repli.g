@@ -512,12 +512,15 @@ Repli_attach_page(w, pier, id, bytes):
         mirror.bump()
     }
     delete pier.c.awaiting[id]
+    if (pier.c.bufs) delete pier.c.bufs[id]
+    // the holding req has SERVED: its bytes landed, so RETIRE it whole rather than leave a landed+finished
+    //  row in every later snap (the human 2026-07-14: "they just need dropping when they are done with —
+    //   they are not interesting").  Only a LANDED awaitbuf drops; an UNLANDED one stays (a real in-flight
+    //    pull + the warn-if-late reconciler), and MusuReplica's warns_missing reads only the unlanded set, so
+    //     the cull is invisible to the missing-buffer proof.  Safe from inside a sibling's OR its own do: the
+    //      req sweep iterates a fresh o() snapshot array, so detaching a req never corrupts the live iteration.
     let req = pier.o({ req: 'awaitbuf', bufferid: id })[0]
-    if (req) {
-        req.sc.landed = 1
-        req.bump()
-        this.reqyoncile(req, { finished: 1 })
-    }
+    if (req) pier.drop(req)
 
 // Repli_awaitbuf_do — pumped each pass while the req is open: attach if the bytes are here now, else WARN once
 //  the promised page is overdue (a few ticks).  The reconcile itself is driven by Repli_attach_page on arrival;

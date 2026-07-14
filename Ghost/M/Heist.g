@@ -382,8 +382,9 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir):
     // the landed card at ITS OWN path (never the source's) — sc.path IS `rel`, the same string the newlyadded
     //  log carries and the disk holds, so the next heist's dedup + the read-back monitor find it exactly.  Album
     //   rides across when the meta had one, so a re-census of this collection reproduces the same shelf.
-    let card = own_lib.i({ Record: 1, id: rec.sc.id, title: rec.sc.title, artist: rec.sc.artist,
-        path: rel, ext: rec.sc.ext, bytes: size, body_hash: rec.sc.body_hash })
+    let card = own_lib.i({ Record: 1, id: rec.sc.id, title: rec.sc.title, artist: rec.sc.artist, path: rel, bytes: size })
+    if (rec.sc.ext) card.sc.ext = rec.sc.ext
+    if (rec.sc.body_hash) card.sc.body_hash = rec.sc.body_hash
     if (rec.sc.album) card.sc.album = rec.sc.album
     card.c.up = own_lib
     job.sc.landed = +(job.sc.landed || 0) + 1
@@ -566,10 +567,13 @@ async Berth_reset(nav, root, prepub, name):
     await this.Heist_sweep(nav, root + '/.jamsend/berth/' + prepub)
 
 // Musica_publish — the first magazine rung (§12.2, M1): sublime a collection into media homed in a Berth
-//  Waft.  The magazine is the catalog SUBLIMED, not the payload: it carries the census %Record cards
-//   (id/artist/title/album/path/body_hash — the SAME mainkey + scalars the collection holds, minus the
-//    %Body byte-slices) so the whole query algebra — a %Cursor is o()-matches — reads over magazine,
-//     collection and a follower's mirror alike.  NO genre: a filing is a folder, not a card scalar, and no
+//  Waft.  The magazine is the catalog SUBLIMED, not the payload: it carries %Card LISTINGS (id/artist/title/
+//   album/path/body_hash — the same identity + metadata SCALARS the %Record holding carries, minus the %Body
+//    byte-slices) under their OWN mainkey.  A card is a REFERRING particle, never an impersonation of the
+//     holding (the human 2026-07-14: "some other object referring to the Record" — the join is the shared id,
+//      %Card,id:X beside %Record,id:X).  The query algebra still reads across all three faces — a %Cursor is
+//       o()-matches, and a magazine level names %Card where the collection names %Record.  NO genre: a filing
+//        is a folder, not a card scalar, and no
 //      census mints one (the fabricated `genre` was why the first cut proved a shape that cannot exist).
 //  THE %Cloud LAYER (the human's 2026-07-13 ruling): Records do not hang straight off the Waft — they group
 //   under a %Cloud,randomic,created_at.  A Cloud is an ARRIVAL BATCH: one publish that finds new records lays
@@ -605,11 +609,11 @@ async Musica_fold(mag, lib, randomic, created_at):
     // RECONCILE: drop any published Record the collection no longer holds; then drop any Cloud left empty.
     let published = {}
     for (const cloud of mag.o({ Cloud: 1 })) {
-        for (const rec of cloud.o({ Record: 1 })) {
-            if (!have[rec.sc.id]) { await cloud.rm({ Record: 1, id: rec.sc.id }); continue }
+        for (const rec of cloud.o({ Card: 1 })) {
+            if (!have[rec.sc.id]) { await cloud.rm({ Card: 1, id: rec.sc.id }); continue }
             published[rec.sc.id] = 1
         }
-        if (!cloud.o({ Record: 1 }).length) await mag.rm({ Cloud: 1, randomic: cloud.sc.randomic })
+        if (!cloud.o({ Card: 1 }).length) await mag.rm({ Cloud: 1, randomic: cloud.sc.randomic })
     }
     // ADD: the collection ids not yet in any Cloud form THIS draw's batch.
     let fresh = lib.o({ Record: 1 }).filter((r) => !published[r.sc.id])
@@ -622,19 +626,20 @@ async Musica_fold(mag, lib, randomic, created_at):
         //    runtime .c hint (Repli reads it, honoured by any offer of this tree); never snaps.
         cloud.c.repli_loc = ['Cloud', 'randomic']
         for (const rec of fresh) {
-            let card = cloud.i({ Record: 1, id: rec.sc.id, artist: rec.sc.artist, title: rec.sc.title, path: rec.sc.path })
+            let card = cloud.i({ Card: 1, id: rec.sc.id, artist: rec.sc.artist, title: rec.sc.title })
             card.c.up = cloud
+            if (rec.sc.path) card.sc.path = rec.sc.path
             if (rec.sc.album) card.sc.album = rec.sc.album
             if (rec.sc.body_hash) card.sc.body_hash = rec.sc.body_hash
         }
     }
     return mag
 
-// Musica_cards — every %Record across every %Cloud, newest-cloud-agnostic: the flat catalog view a reader or
+// Musica_cards — every %Card across every %Cloud, newest-cloud-agnostic: the flat catalog view a reader or
 //  a cursor walks (the Cloud layer is for GROUPING and forgetting, not for browsing one era at a time).
 Musica_cards(mag):
     let out = []
-    for (const cloud of mag.o({ Cloud: 1 })) for (const rec of cloud.o({ Record: 1 })) out.push(rec)
+    for (const cloud of mag.o({ Cloud: 1 })) for (const rec of cloud.o({ Card: 1 })) out.push(rec)
     return out
 
 // Musica_forget_fold — the PURE era-GC: drop every %Cloud stamped older than `cutoff` (created_at < cutoff),
@@ -682,7 +687,7 @@ async Musica_recast_offer(w, tx, from, to, mag, lib, randomic, created_at):
     let cloud_before = {}
     for (const cloud of mag.o({ Cloud: 1 })) {
         cloud_before[cloud.sc.randomic] = 1
-        for (const rec of cloud.o({ Record: 1 })) rec_before[rec.sc.id] = cloud.sc.randomic
+        for (const rec of cloud.o({ Card: 1 })) rec_before[rec.sc.id] = cloud.sc.randomic
     }
     await this.Musica_fold(mag, lib, randomic, created_at)
     // what survives AFTER (both levels).
@@ -690,7 +695,7 @@ async Musica_recast_offer(w, tx, from, to, mag, lib, randomic, created_at):
     let cloud_after = {}
     for (const cloud of mag.o({ Cloud: 1 })) {
         cloud_after[cloud.sc.randomic] = 1
-        for (const rec of cloud.o({ Record: 1 })) rec_after[rec.sc.id] = 1
+        for (const rec of cloud.o({ Card: 1 })) rec_after[rec.sc.id] = 1
     }
     // neus + in-place updates cross as a whole-mag upsert (a goner is simply absent from this fragment).
     await this.Repli_offer(w, tx, from, to, mag)
@@ -715,7 +720,7 @@ async Musica_recast_offer(w, tx, from, to, mag, lib, randomic, created_at):
         let lines = [
             this.enL({ d: 0, stringies: { Mag: 'Musica' }, objecties: { loc: ['Mag'] } }),
             this.enL({ d: 1, stringies: { Cloud: 1, randomic: r }, objecties: { loc: ['Cloud', 'randomic'] } }),
-            this.enL({ d: 2, stringies: { Record: 1, id: id }, objecties: { loc: ['Record', 'id'], op: 'delete' } })
+            this.enL({ d: 2, stringies: { Card: 1, id: id }, objecties: { loc: ['Card', 'id'], op: 'delete' } })
         ]
         await this.Repli_send_lines(w, tx, from, to, lines.join('\n'), { list: [] })
     }
@@ -760,7 +765,7 @@ async Musica_stand(w, tx, from, to, mag, lib, randomic, created_at):
 //  // <    lack.  Missions stay on merge-prop keys (title | album | artist) until that rung.
 Musica_rename(mag, id, key, to, at):
     for (const cloud of mag.o({ Cloud: 1 })) {
-        for (const card of cloud.o({ Record: 1, id: id })) {
+        for (const card of cloud.o({ Card: 1, id: id })) {
             let from = card.sc[key]
             let mark = this.Renamed_mint(cloud, key, from, to, at)
             card.sc[key] = to

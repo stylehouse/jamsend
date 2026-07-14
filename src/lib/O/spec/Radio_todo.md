@@ -23,6 +23,76 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**THE SNAP READS LIKE THE SESSION — N1/N3/N5 + Jam ghost + the Card rename LANDED as code (compile-clean),
+ FLEET RE-RECORD OWED (runners were jammed 2026-07-14; nothing re-recorded yet — every magazine + audio-pull
+  Book is STALE-RED until it is).** The human read MusuBuddy's snaps and named four smells + one growth; all
+   are coded, none yet re-gated on a live runner. What landed:
+
+- **N1 — no maybe-undefined sc mints. DONE.** Guarded the three unconditional `k: rec.sc.k` mints (`Heist.g`
+   Musica_fold card + heist-landing, `Heistation.g` reflect card) the way `album` already was. Kills the
+    `{"undef":["path"]}` brand. Blast: MusuBuddy fixtures only (the pathless Ra-stocked cards; the seeded
+     cursor Books already carried paths). `undef` also appears in Engage/LakeSurfer/Peeringinst from UNRELATED
+      mints — out of scope, untouched.
+- **N3 — drop the finished awaitbuf. DONE.** `finish()` marks `%finished` but never detaches, so 38
+   landed+finished `awaitbuf` rows piled up per pulled track. Fix in `Repli_attach_page`: once bytes land,
+    `pier.drop(req)` the holding req (+ `delete pier.c.bufs[id]`) — an UNLANDED awaitbuf still stands (real
+     in-flight pull + the warn-if-late reconciler). Safe because the req sweep iterates a fresh `o()` snapshot,
+      and MusuReplica's `warns_missing` reads only the unlanded set. Blast: MusuBuddy, MusuHeist, MusuRaStream,
+       MusuRaChase, MusuReco, MusuReplica, **VoroTest** (its canned scape carries awaitbuf rows — check how it
+        regenerates before re-recording).
+- **N2 — the card stops impersonating %Record. DONE (code), UNDER ADVERSARIAL REVIEW, re-record owed.**
+   Cards under a `%Cloud` are now `%Card`; holdings under a `%Library` stay `%Record`. **Chosen shape:
+    `Card,id:<id>,artist,title[,album,body_hash,path]` (Option B — KEEP the `id` scalar), NOT `Card:<id>`
+     (mainkey-value).** Why: `Repli_loc_keys` gives `['Card','id']` (id is id-ish) — byte-identical wire
+      behavior to the old `Record,id`, no `repli_loc` hint, and **zero `.sc.id` reader ripple** (the finder
+       helpers `Musica_cards`/`Musu*_card` and MusuBuddy's browse read `.sc.id`/`.sc.title` unchanged), so N2
+        was a near-pure mainkey-WORD swap on the Cloud-child sites only. **`Card` is NOT a new collision — it
+         REUSES MusuBerth's existing `Card` mainkey** (a saved track-reference; the magazine card is a full
+          listing, the Berth toy a degenerate `Card,tune,verdict` — same family "a reference to a track", the
+           human's own prior coinage). MusuBerth is UNAFFECTED (its cards live in a Berth Waft, never mixed;
+            `o()` is direct-children-only). Sites: `Heist.g` fold/cards/recast goner-emit (`{Card:1,id}` loc
+             `['Card','id']`); `Heistation.g` every Cloud-child query/mint/rm + cursor leaves (anchored on the
+              `}])` array-close so `origin_lib.rm({Record:1,id:'t1'})` holdings stayed put) + the finder
+               helpers unchanged; `Radiation.g` the ONE browse cursor leaf. Both files audited (every remaining
+                `Record:1` is a holding; every `Card:1` a Cloud child). Blast (fixture ripple, all magazine
+                 Books): MusuBuddy, MusuHeist, MusuVend, MusuDoor, MusuReco, MusuCursor, MusuHeal, MusuResume,
+                  MusuRename, MusuRecast, **MusuStanding**.
+- **N5 — distilled into CLAUDE.md. DONE.** Three rulings in the C-objects section: identity-is-per-shelf +
+   referring particles wear their own mainkey (1:1 → mainkey may carry the identity beside the join key; N:1 →
+    an `of:` pointer); never stamp a maybe-undefined sc (an `undef` marker = a mint bug); an owner drops its
+     finished transient reqs (scaffolding, not snap furniture).
+- **N4 — the Jam ledger. GHOST + MusuBuddy WIRING LANDED (compile-clean), sees under adversarial review,
+   re-record OWED.** New family ghost `Ghost/M/Jam.g` (enrolled in CREDULER_GHOSTS after Heist.g): under the
+    listener's shelf a `Jam,with:<dj>` session of ordered **`Spin,of:<id>,title,at`** / **`Like,of:<id>,at`** /
+     **`Grab,of:<id>,at`** facts (`Grab`, NOT `Heist` — that mainkey is the reserved operation `%Heist,at:<pier>`;
+      `of:` is the N:1 referring form). Verbs `Jam_home/seq/event/spin/like/grab/ledger/tally`; `Jam_grab` also
+       copies the pulled holding — scalars + chunk children (bytes shared) — into a caller-supplied `kept` shelf.
+        MusuBuddy wiring: `MusuBuddy_jam(w)` runs at the tail of `MusuBuddy_hear` (beat 10, once, after `w.c.term`)
+         — spins/likes/grabs the browsed track into the mirror's `%Jam` session + a keeper copy in a distinct
+          `%Kept,pier:<lis>` shelf (grabbing into the mirror would just re-find the husk). TWO new sees at beat 11:
+           the ledger reads Spin→Like→Grab in `at` order (reads the real rows, not a flag), and the keeper stands
+            WHOLE in `%Kept` while the husk still stands in the mirror (copy-not-move). 13 sees total. **Adversarial
+             review (opus): both sees SOUND** (live-data reads, verified one-line breaks, no blocking bug; `vmag`
+              is near-vacuous decoration, the load-bearing conjuncts carry it). STILL OWED: the fleet re-record
+               includes MusuBuddy for the jam rows (already in the N2 union).
+
+**Graph-density follow-up (low priority, decide on a live look):** `Jam_grab` copies the browsed track's ~38
+ chunk particles into `%Kept` (required — the `kept_whole` see reads them), so MusuBuddy's Cyto graph now holds
+  the mirror record's chunks AND the keeper's. If that reads cluttered on a live render, stuff-fold them (`%stuff`
+   / the `Repli_crush_scan` path → `no_further` suppresses Cyto descent while the particles stay for the see) —
+    ideally the mirror record too. Not a correctness issue; the Matstyle swatches already give them semantic color.
+
+**⚠ COORDINATION — the OWED fleet re-record + the other agent's MusuStanding.** N2 makes **MusuStanding**'s
+ fixtures stale (its cards become `%Card`). Another agent was at a MusuStanding commit-point (2026-07-14).
+  RULE for whoever re-records: do NOT commit any magazine Book green without re-recording it POST-N2; a
+   MusuStanding re-record done as `Record`-cards is SUPERSEDED by N2 (redo as `%Card`). My landed N1/N3 do NOT
+    touch MusuStanding (it has neither the `undef` brand nor awaitbuf rows), so only N2 intersects it.
+
+GATE (all OWED, needs a LIVE runner — headless Story_cli BANNED): re-record the N1+N2+N3 union (the magazine
+ + audio-pull Books above) — force-clean where a caveat-ok step blocks, git-diff each toc before dispatch;
+  THEN wire N4 into MusuBuddy → adversarial-review the new sees → re-record MusuBuddy. The sealed real-audio
+   Books (MusuBuddy) keep their benign `AudibleEntropy` ≈ — don't chase caveat:0.
+
 **THE RA PIPELINE RE-DRAW — MusuBuddy consolidates stock|cast|play UNDER the magazine, and the three
  standalone Ra* Books RETIRED: LIVE-GREEN ×2 (2026-07-14; 14/14 green — a sealed real-audio Book, so
   steps 4–14 ride benign `AudibleEntropy` ≈; caveat:0 is unreachable by design, not chased).** The human's

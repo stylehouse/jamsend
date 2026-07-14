@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783993564132
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1784012360294
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -149,3 +149,4 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:Ghost/M/Ra.g,name:Ra,noticed_at=1783398968104
     Doc:Ghost/M/Heist.g,name:Heist,noticed_at=1783759683660
     Doc:Ghost/M/Booth.g,name:Booth,noticed_at=1783822770952
+    Doc:Ghost/M/Jam.g,name:Jam,noticed_at=1784012360294

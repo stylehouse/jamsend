@@ -761,7 +761,8 @@ MusuRaChase_witness(w):
 //   (flow)   STAND      — Musica_stand crosses the magazine + the husks the moment the grant is live
 //   (flow)   BROWSE     — a title-pinned %Dogear resolves down the MIRROR magazine to its card
 //   (flow)   PULL       — the browsed husk pulls whole — boundary wants park and the transcode feeds
-//   beat 10  HEAR       — decode the PULLED chunk particles: LUFS + healthy and starved spool renders
+//   beat 10  HEAR       — decode the PULLED chunk particles: LUFS + healthy and starved spool renders; then
+//    the JAM — spin|like|grab the browsed track into a %Jam ledger + a keeper copy in the listener's %Kept shelf
 //   beat 12  REVOKE     — grant pulled; a fresh track joins the origin; a stand meets the closed gate QUIET
 //
 // CONVENTION (Musu*/Ra*): no Run_A_ recipe — the world MUST be named MusuBuddy (do_fn_for dispatches by
@@ -898,7 +899,7 @@ async MusuBuddy_flow(w):
             w.c.browsed = 1
             let titles = cards.map((c2) => c2.sc.title).sort()
             let pick = titles[1]
-            let dog = this.Cursor_make(w, 'the browse', [{ Mag: 'Musica' }, { Cloud: 1, randomic: 'draw_one' }, { Record: 1, title: pick }])
+            let dog = this.Cursor_make(w, 'the browse', [{ Mag: 'Musica' }, { Cloud: 1, randomic: 'draw_one' }, { Card: 1, title: pick }])
             let got = this.Cursor_resolve(dog, mir)
             if (got.ok) {
                 w.c.pick_id = got.landed.sc.id
@@ -951,6 +952,32 @@ async MusuBuddy_hear(w):
         if (lufs != null) row.lufs = lufs
         w.i(row)
     })
+    // the session HAPPENED — record it (the jam ledger) the same beat the listener heard the track, so the
+    //  next beat's witness reads a completed ledger.  Skips cleanly if the decode failed (no term).
+    await this.MusuBuddy_jam(w)
+
+// MusuBuddy_jam — the session's history, made legible on the snap (the human 2026-07-14: "I should be able to
+//  glance through this snap and see what they played to each other — what each liked — what each heisted").  The
+//   listener heard the browsed track, so it SPINS (the DJ played it), LIKES it, and GRABS a keeper into their OWN
+//    shelf — %Kept, DISTINCT from the streaming mirror (grabbing into the mirror would just re-find the husk; a
+//     grab is a KEEP, not a transient stream).  The ledger (%Jam,with > %Spin/%Like/%Grab, ordered by `at`) rides
+//      the mirror's snap; the keeper stands beside the buddy's magazine.  Runs once (guarded on w.c.jammed).
+async MusuBuddy_jam(w):
+    if (w.c.jammed) return
+    let mir = w.o({ Library: 1, pier: w.c.lis_pre })[0]
+    let rec = (mir && w.c.pick_id) ? mir.o({ Record: 1, id: w.c.pick_id })[0] : null
+    if (!rec || !w.c.term) { w.i({ jam_fail: 'nothing heard' }); return }
+    w.c.jammed = 1
+    let kept = w.oai({ Kept: 1, pier: w.c.lis_pre })
+    kept.c.up = w
+    let jam = this.Jam_home(mir, w.c.dj_pre)
+    this.Jam_spin(jam, rec)
+    this.Jam_like(jam, rec)
+    let g = this.Jam_grab(jam, rec, kept)
+    let tally = this.Jam_tally(jam)
+    let row = { jammed: 1, spins: tally.spins, likes: tally.likes, grabs: tally.grabs, events: this.Jam_ledger(jam).length }
+    if (g.kept) row.kept_id = g.kept.sc.id
+    w.i(row)
 
 // beat 12 — REVOKE, and the magazine goes STALE: the grant pulled, a fresh track joins the origin
 //  collection (a hand card — the census claim needs an identity, not audio), and a second stand meets
@@ -1048,6 +1075,32 @@ MusuBuddy_witness(w):
     if (n === 11 && t && t.lufs != null && Math.abs(t.lufs - target) < 2 && !(oa %see:'the follower decoded what it pulled — the loudness reads the target back from the bytes that crossed')) i %see:'the follower decoded what it pulled — the loudness reads the target back from the bytes that crossed'
     if (n === 11 && t && t.starved_gaps > t.healthy_gaps + 3 && !(oa %see:'a withheld run of chunks surfaced as measured gaps — the spool starved without papering over the hole')) i %see:'a withheld run of chunks surfaced as measured gaps — the spool starved without papering over the hole'
     if (n === 11 && t && t.healthy_gaps <= 3 && t.starved_gaps > t.healthy_gaps + 3 && !(oa %see:'the complete pull played essentially gapless — the same spool that surfaced the starve runs clean when the stock is whole')) i %see:'the complete pull played essentially gapless — the same spool that surfaced the starve runs clean when the stock is whole'
+    // beat 11: the JAM LEDGER reads the session in ORDER — the referring-particle rows under the mirror
+    //  session (Spin then Like then Grab by `at`), not a summary flag: the DJ spun a track the listener liked
+    //   and then grabbed a keeper of.
+    let jamnode = mir ? mir.o({ Jam: 1, with: w.c.dj_pre })[0] : null
+    let led = jamnode ? this.Jam_ledger(jamnode) : []
+    let ledger_ok = led.length === 3 && Object.keys(led[0].sc)[0] === 'Spin' && Object.keys(led[1].sc)[0] === 'Like' && Object.keys(led[2].sc)[0] === 'Grab'
+    if (n === 11 && ledger_ok && !(oa %see:'the jam ledger reads the session in order — the DJ spun a track the listener liked and then grabbed')) i %see:'the jam ledger reads the session in order — the DJ spun a track the listener liked and then grabbed'
+    // beat 11: the grabbed keeper STANDS whole in the listeners own %Kept shelf (every chunk copied off the
+    //  pulled husk) beside the buddys magazine still in the mirror — a KEEP the listener owns, not a stream.
+    let kept = w.o({ Kept: 1, pier: w.c.lis_pre })[0]
+    let keptrec = (kept && w.c.pick_id) ? kept.o({ Record: 1, id: w.c.pick_id })[0] : null
+    let husk_still = (mir && w.c.pick_id) ? mir.o({ Record: 1, id: w.c.pick_id })[0] : null
+    let kept_whole = false
+    if (keptrec) {
+        let kmap = this.Ra_chunk_map(keptrec)
+        let kheld = 0
+        let i5 = 0
+        while (i5 < +(keptrec.sc.total || 0)) {
+            if (kmap[i5] != null) kheld = kheld + 1
+            i5 = i5 + 1
+        }
+        kept_whole = +(keptrec.sc.total || 0) > 0 && kheld === +(keptrec.sc.total || 0)
+    }
+    // COPY not move: the keeper is whole in %Kept AND the original husk still stands in the mirror (a grab that
+    //  re-parented the husk would drop husk_still) AND the buddy's magazine is still beside it.
+    if (n === 11 && keptrec && kept_whole && husk_still && vmag && !(oa %see:'the grabbed keeper stands whole in the listeners own shelf beside the buddys magazine')) i %see:'the grabbed keeper stands whole in the listeners own shelf beside the buddys magazine'
     // beat 13: the stale magazine — the origin CHANGED (a fresh card stands in its own magazine) but the
     //  closed gate let nothing cross: zero frames burned and the mirror still shows the pre-revoke draw.
     let rv = w.o({ revoked_stand: 1 })[0]

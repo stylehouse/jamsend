@@ -5,8 +5,7 @@ story:MusuBuddy
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=1.836
-      sample=1.924,at=1784000730
+    TimeTotal:beliefs,avg=1.852
       sample=1.924,at=1784000732
       sample=1.924,at=1784000733
       sample=1.924,at=1784000734
@@ -16,8 +15,8 @@ story:MusuBuddy
       sample=1.23,at=1784000767
       sample=1.331,at=1784000851
       sample=2.327,at=1784001281
-    TimeTotal:step,avg=0.131
-      sample=0.137,at=1784000730
+      sample=2.089,at=1784003999
+    TimeTotal:step,avg=0.132
       sample=0.137,at=1784000732
       sample=0.137,at=1784000733
       sample=0.137,at=1784000734
@@ -27,6 +26,7 @@ story:MusuBuddy
       sample=0.088,at=1784000767
       sample=0.095,at=1784000851
       sample=0.166,at=1784001281
+      sample=0.149,at=1784003999
   step,dige:b3d94b4565d8f9d0
   step=2,dige:e8dc3a448c2a0a57
   step=3,dige:a80a66eefc6c0f06

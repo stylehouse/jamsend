@@ -34,6 +34,23 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
                 evolved through are SAVED: `voro_modes/README.md` (a ledger — commit anchors + live
                  SVG shots; revive any face via `git show <commit>:src/lib/O/Cytui.svelte`).
 
+**WHAT LANDED THIS SESSION (2026-07-14, autonomous) — the honesty pass + the craters.**  Uncommitted
+ in the working tree: `Ghost/V/Voro.g` (+ gen `Voro.go`), `Cytui.svelte`, this doc.  In order:
+ - **The three taste-fixes** (inflate to fill · no top-wall clip · no >45° baseline) — LANDED, proven.
+ - **B0 honesty** — the flattening lies from the first real-world (Artist/Track) read, all four fixed
+    and LIVE-PROVEN on VoroClinic: kind chip + title key restored, sc order in-pane, ×N→/*N tail.
+ - **B1 C-SPACE CRATERS** — a big cross-kind fold cell divides into per-member sub-cells (each %Track
+    its own crater with its own mini pane); `pane_rows` (tuples flow on any polygon) + `crater_pane`
+     (card: widest-chord header band + grid-split body via `power_cells`); SELF-GATES to flat tuples on
+      small cells so the identity never drowns.  A/B via `runner_shot --face=craters:0|1`.  Structure
+       proven; **member-evenness taste owed on real BIG-artist cells** (VoroClinic's cells too small/
+        noisy to tune blind — the human's eyes + pixels; Lloyd relaxation is the noted lever).
+ - **B2 probe** (code) — the slow /*N collapse pinned: `cyto_update_wave` re-crushes only if
+    `crush_wanted` armed, which lapses after Story finishes.  Candidate fix noted, NOT shipped blind.
+ - **B3 identity floor** — landed as the crater self-gate.
+ Details for each are the B0/B1/B2/B3 bullets under **THE PLAN — bamboo v2** below.  The human's noted
+  north-stars (not built): SHADOWS revealing the hierarchical landscape + TUNNELS between cells.
+
 **THE 2026-07-14 STEER (the human, live — supersedes the wave-③ remainder + §Nightshift orders,
  which was the fill-out shift, done).**  Three rulings, one arc:
  - **The distiller bows to Stuffing** — the ALGORITHM (`Stuff.svelte.ts compute_groups`: group
@@ -145,10 +162,134 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
         (3) **no steep baseline** — `tuple_frame` REJECTS any wall >45° outright (was only soft-penalised;
          a +60° wall = the "150°-down" the human saw); no qualifying wall ⇒ horizontal.  Live shot now shows
           only 0/−15/+30°, **0 labels over 45°**.
+     - **THE FIRST REAL-WORLD READ (2026-07-14, Artists|Tracks live) — the flattening LIES, and
+        bamboo v2 IS C-SPACES.**  The human read the tuples glass on real music data ("this new graphic
+         is great! but…") and caught it lying.  The root of every lie is ONE thing: the pane flattened
+          all rows into a stack and FORGOT WHICH C EACH ROW CAME FROM.  The wants, each grounded:
+        1. *"not indicating that the thing inside there is a %Track"* — a fold-container's title tag is
+            the CONTAINER's mainkey (`Vtuff_title_row`: `tag = Object.keys(src.sc)[0]` = 'Artist'), and
+             the homogeneous member list (`Vtuff_member_rows`, list branch) emits Vbits with `v:` ONLY —
+              no `tag` on chips.  (The "tag rides ALWAYS — honest data" comment guards the MIXED branch;
+               homo assumed the title spoke the kind, which is FALSE for a fold whose members are another
+                kind — an %Artist holding %Tracks.)
+        2. *"AND it loses its %title"* — the distiller DOES say which key the bits are values of
+            (`row:'list', k: Vtuff_namekey(members[0])` = 'title') but Cytui `subgraph_tuples`' list
+             branch reads `d.chips` and DROPS `d.key`.  The one honest key never reaches the glass.
+        3. *"those two properties come before the %year|live|remaster — which we are also lying about"* —
+            ORDER.  A C reads mainkey → title → year|live|remaster (its OWN sc order); the glass sorts
+             keyed rows by GLOBAL vein rank and leaves by localeCompare.  Cross-pane alignment must not
+              beat within-C truth (fix: sc order wins in-pane; vein rank becomes the cross-pane tiebreak,
+               or is seeded FROM mean sc-index so both mostly agree).
+        4. *"%Artist,name:Moonlit ×4 … ×4 there means four such %Artists (in a Stuffusion) … we mean
+            /*4"* — the title's ×N is the member count off the tree root's n (`Vtuff_title_row`) but it
+             READS as a count-of-such-Cs.  The honest mark is the FOLD TAIL: `/*4` at the end of the
+              %Artist sub-cell when its inners are closed, bare `/` when open.
+        5. **the /*N surf misbehaves:** clicked, it SPILLS top-K members into the cytoscape graph
+            (Vtuff_pop) and the pane collapses to its bare title ('Artist:name:Voxhall') — surprising;
+             the collapse lands SLOWLY (the human's hypothesis, probably right: Story finished → the
+              world's beliefs() pump quiesced, so the re-crush waits for a random think — "needs a
+               feebly_ponder()?"; trickle is off, so it isn't that); and once closed there is NO reopen
+                (the inverse gesture is a right-click nobody can discover).
+        6. *"ensure Artist,name:Moonlit isn't too small, it can often drift down into an acute corner"* —
+            the title atom can shrink toward the 7px floor and seats at the first chord that fits, which
+             in a pointy cell is deep in an acute corner.
+     - **THE PLAN — bamboo v2 = C-spaces** (the human already redirected bamboo here 2026-07-11, written
+        on the lab door: `Vtuff_bamboo_on()` hard-false "until bamboo v2: hierarchy expressed as
+         sub-cells|sub-graph, not text stalks" — today's steer is that spec: *"we need a sense of where
+          each C is … something needs to encapsulate where the %Artist/%Track subcell spaces are, and we
+           need to lay them out sensibly, to max out space … we just need to anchor points in it, eg in
+            the acute corners … but not with cytoscape, right? possibly other cytoscape worker instances
+             though.  do we just voronoi that subcell structure?"*).  Phased for the long slog:
+        - **B0 honesty — LANDED + LIVE-PROVEN 2026-07-14 (VoroClinic, gen ba725387).**  Read now:
+           `⟨Artist⟩ Artist name: Alpha / ⟨Track⟩ Track title: a1 a2 a3 a4 / tail /*4`.  (1) Voro.g
+            `Vtuff_member_rows` threads `src` + tags the homo list with the member kind when it differs
+             from the container title kind; (2) Cytui `vtuff_rows` captures `d.key` for `list` rows (was
+              fact|spread only — the title key died at the read); (3) `subgraph_tuples` routes a TAGGED
+               (cross-kind) list to a keyed LEAD tuple, a same-kind list (flora genus) stays bare trailing
+                members — GATE ON `d.tag` NOT `d.key` (d.key was too broad, regressed flora into a
+                 redundant 'Metrosideros:' row); `tuple_pane` orders keyed lead-first stable (== sc order),
+                  vein now hue-only; (4) title drops ×N (redundant with the /*N dip, same root.sc.n).
+                   Flora (VoroMitosis, same-kind) unregressed.  X-kind verify Book = **VoroClinic**
+                    (VoroTest builds the data but useVoroCyto=0 → no glass; VoroScape has a dirty toc).
+        - **B1 C-SPACE CRATERS — BUILT + LIVE-PROVEN 2026-07-14 (VoroClinic, Cytui only).**  A big
+           cross-kind FOLD cell divides into per-member sub-cells so you SEE where each C is.
+            `pane_rows(poly,cx,cy,rows,opts)` = the tuples flow extracted to run on ANY convex polygon
+             (its OWN best-wall rotation + line_span + inflate); `tuple_pane` = pane_rows on the whole
+              cell; `crater_pane` = a CARD — a full-width header band placed BELOW the cell's WIDEST
+               chord (a pointy top would drown the %Artist — the acute-corner starve), members
+                grid-split the body via `power_cells` (even, vs a lopsided phi-spiral), each member its
+                 OWN mini pane (its sc order) + wall; `member_rows` reads a single particle's sc direct.
+                  SELF-GATES on an 11px identity floor → small cells fall back to flat tuples.  A/B via
+                   `runner_shot --face=craters:0|1`.  Live: Beta (big) craters — 28px header + 4 Track
+                    sub-cells; Alpha (small) flat 28px.  **OPEN taste (the human's eyes on real BIG
+                     artist cells):** member evenness still wobbles (9px next to 22px); the human's
+                      north-stars = SHADOWS revealing the hierarchical landscape + TUNNELS between
+                       (noted, not built).  See memory [[tuples-face-snap-notation]].
+        - ~~**B1 C-spaces (refined 2026-07-14, second steer):**~~ (design, now BUILT above) each member C gets an ENCAPSULATED
+           sub-region of its cell, and the frame is the EXISTING series — *"the
+            Stuffing/Stuffusion/Stuffziad series of cells-within-cells, that's what I'm going for.
+             just compositioned into the cell"*.  That series is real code (`Stuff.svelte.ts`):
+              **Stuffusion** (a group of rows) → **Stuffziad** (one key's k:v group) → **Stuffziado**
+               (a single value), each `Stuffuzia` already carrying `innered`/`inner_sizing` recursion
+                hooks; and `Voro_vtuffing.md` already names `Vtuff_default` "the
+                 Stuffusion|Stuffziad|Stuffziado compression RE-SAID AS ROWS".  **B1 = say it as
+                  SPACES instead of rows**: the cell's area divides into the compression's own
+                   nesting — member sub-cells (Stuffusion grain), each holding its keyed sub-regions
+                    (Stuffziad grain) down to values (Stuffziado grain), depth capped where the
+                     pixels are.
+           · **RULED: programmatic, not cytoscape.**  Pinning a second set of cy nodes into the cell
+              and resolving the cell-full between them COULD be done (invisible pinned nodes, read
+               positions, power-split between them) but it is a whole other layer — the human: *"we
+                should try and do something programmatic"*.  We already own the machinery: the star
+                 face's phi-spiral splitter divides a polygon into weighted sub-regions today, and
+                  `poly_chord`/`line_span` seat text in any convex piece.  Headless cy workers stay
+                   a maybe for BIG inner families only.
+           · **VERIFIED architecture (the human's assumption is exactly true):** the model has the
+              whole Artist+Track tree (`Voro_model_build` gathers fold children as `fam.members`
+               with their facts) while cytoscape nodes ONLY the Artist (the crush stamps the fold;
+                `Cyto.svelte` `no_further='stuffed'` suppresses descent) — a simpler first set of
+                 cells, the full Artist/Track display rendered within each.
+           · Geometry: seeds from the cell's own shape with ANCHOR POINTS AT THE ACUTE CORNERS
+              (corners become useful — small members nest into them); the parent's venn band keeps
+               the widest chord, said once above the member spaces.  Layout goal: MAX OUT SPACE.
+                (The packing is a genuinely academic job — weighted division of an arbitrary convex
+                 cell honouring corner anchors + a band reserve; start greedy: corner-anchored
+                  power-split, judge on pixels, only then consider relaxation passes.)
+        - **B2 the surf lifecycle + THE LEVER (verified):** the model-side lever the human asked for
+           EXISTS — `c.popped`/`c.popped_open`, stamped by `Vtuff_pop`, read by `crush_walk` (a popped
+            member STANDS ALONE as its own cy node) and `Voro_crushable` (null on popped_open = won't
+             re-fold).  Today it is BINARY: folded ↔ spilled-to-graph.  B1 adds the missing middle,
+              so the states become THREE, all model-driven:
+                1. **folded-closed** — inners hidden, tail reads `/*N`;
+                2. **open-in-glass** — inners rendered as sub-cells INSIDE the cell (no cy nodes),
+                    tail reads bare `/`;
+                3. **spilled** — popped out as real cytoscape nodes (the deliberate gesture — maybe
+                    the right-click it already is; today's /*N click does this and surprises).
+              /*N click toggles 1↔2; the click nudges a think so the toggle lands NOW.
+           · **PROBE DONE 2026-07-14 (code, not a synthetic click — no headless-click path exists):**
+              the human's "collapses really slowly … has Story shut off beliefs()?" intuition is
+               CONFIRMED and pinned.  `Vtuff_pop` stamps `c.popped` then `await cyto_update_wave(w)` —
+                so the wave fires on the click (not on a later think).  BUT `cyto_update_wave`
+                 (Cyto.svelte:230) re-crushes ONLY `if (scan.c.crush_wanted)` — during a Book each step
+                  arms it; after Story finishes it is not reliably armed, so the wave RE-SCANS but does
+                   not RE-CRUSH, and the spill (popped members → standalone cells) waits for the next
+                    think that re-arms `crush_wanted`.  That IS the "feebly_ponder" delay.  **CANDIDATE
+                     FIX (small, but arm-then-verify with a live click — DON'T ship blind into the
+                      human's live-used pop):** in `Vtuff_pop`, set `w.c.Scannable.c.crush_wanted = 1`
+                       before `cyto_update_wave(w)` so the wave re-crushes immediately.  The B1
+                        in-glass toggle (state 1↔2) sidesteps it entirely — no spill, just a re-render.
+        - **B3 identity floor — LANDED (as the crater self-gate) 2026-07-14.**  `crater_pane` returns
+           null when the header identity won't seat ≥11px → the caller renders flat tuples (readable
+            small), so the %Artist name is NEVER drowned in an acute corner — the human's opening
+             complaint.  The header band is also placed BELOW the cell's WIDEST chord (prominence).
+              STILL OPEN for the FLAT `tuple_pane` title on a pointy-top cell: seat it on the widest
+               chord band rather than the first-from-top (rare; not yet seen to drown live).
+        - B1 also RETIRES the display-side namekey for members: a sub-celled %Track shows kind+title
+           structurally, so Vtuff_name/Vtuff_member_bit shrink toward the model-anchor-only use (the
+            parked deep cut, resolved by architecture instead of analytics).
      - **OPEN (bigger cuts, the human's call):** the model dumped **on a separate channel from the snap**
-        (bigger than Voronoiology, NOT inside H%Run) + the namekey DEEP CUT — the tuples face already
-         obsoletes its DISPLAY need (you show the whole tuple, you don't distill one fallible name), so the
-          remaining namekey use is model-anchor only.
+        (bigger than Voronoiology, NOT inside H%Run) + the namekey model-anchor remainder (see B1 above —
+         the display half is retired by C-spaces).
  - **The naming-cut is DROPPED as filed; the bijective key is PARKED.**  region|axis|name are
     necessary-ish but fundamentally fallible analytics — do not grow them.  `Voro_model_namekey`
      keeps its code but is not threaded further (its spirit may resurface at the Stuffing-algorithm

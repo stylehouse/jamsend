@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return '4fca977d0ed40e33~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return '7d0bbd67a32b5e47~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -491,7 +491,7 @@ async MusuHeist_flat_check(w) {
 
 },
 // MusuHeist_publish_mag — the §12 fold: publish Uno's REAL collection as a %Musica magazine and REFLECT it
-//  into w/%Mag so the actual census Records ride the snap (the observable-plane rule — detail is data, not a
+//  into w/%Mag so the actual census cards ride the snap (the observable-plane rule — detail is data, not a
 //   count).  Musica_publish is the shared verb (Ghost/M/Heist.g) over the real uno_lib, homed in Uno's
 //    marrauding berth so the end sweep cleans it.  The reflect rebuilds w/%Mag WHOLE each call, so the snap
 //     diff shows the magazine track the collection — the denied track vanishing on the recast.
@@ -503,9 +503,10 @@ async MusuHeist_publish_mag(w, randomic, ts, stage) {
     for (const cl of mag.o({ Cloud: 1 })) {
         let ch = holder.i({ Cloud: 1, randomic: cl.sc.randomic, created_at: cl.sc.created_at })
         ch.c.up = holder
-        for (const rec of cl.o({ Record: 1 })) {
-            let rc = ch.i({ Record: 1, id: rec.sc.id, artist: rec.sc.artist, title: rec.sc.title, path: rec.sc.path })
+        for (const rec of cl.o({ Card: 1 })) {
+            let rc = ch.i({ Card: 1, id: rec.sc.id, artist: rec.sc.artist, title: rec.sc.title })
             rc.c.up = ch
+            if (rec.sc.path) rc.sc.path = rec.sc.path
             if (rec.sc.album) rc.sc.album = rec.sc.album
             if (rec.sc.body_hash) rc.sc.body_hash = rec.sc.body_hash
         }
@@ -632,17 +633,17 @@ MusuHeist_witness(w) {
     if (ha && ha.sc.streamed && +(ha.sc.landed || 0) === 3 && !T.oa({ see: 'the landing streamed chunk by chunk — no whole track ever waited in memory' })) this.MusuHeist_note(w, { see: 'the landing streamed chunk by chunk — no whole track ever waited in memory' })
     // THE §12 FOLD — the magazine on REAL data (the human's ruling: prove Musica_publish off the real census,
     //  not a minted toy, with the actual Records ON the snap).  v1 published Uno's whole HELD collection (9)
-    //   as census Records keeping their real cp paths + body_hashes — the reflected w/%Mag carries them.
+    //   as census %Card listings keeping their real cp paths + body_hashes — the reflected w/%Mag carries them.
     let magR = w.o({ Mag: 1 })[0]
     let mh = T.o({ mag_pub: 'held' })[0]
-    let real_card = magR && magR.o({ Cloud: 1 }).some((cl) => cl.o({ Record: 1 }).some((r) => ('' + r.sc.path).includes(w.c.genre_pfx + '-') && r.sc.body_hash))
+    let real_card = magR && magR.o({ Cloud: 1 }).some((cl) => cl.o({ Card: 1 }).some((r) => ('' + r.sc.path).includes(w.c.genre_pfx + '-') && r.sc.body_hash))
     if (mh && +(mh.sc.cards || 0) === 9 && real_card && !T.oa({ see: 'Uno published its whole collection as a magazine — every landed track rode in as a record keeping its own path and hash' })) this.MusuHeist_note(w, { see: 'Uno published its whole collection as a magazine — every landed track rode in as a record keeping its own path and hash' })
     // v2 RECAST on real data: the deny dropped a track from the collection AND the magazine reconciled it out
     //  — one fewer card than the held publish, the reflected magazine back in step with the collection (every
     //   magazine record still held by the collection: no orphan).
     let mr = T.o({ mag_pub: 'recast' })[0]
     let mag_cards = magR ? this.Musica_cards(magR).length : 0
-    let no_orphan = magR && magR.o({ Cloud: 1 }).every((cl) => cl.o({ Record: 1 }).every((r) => uno_lib.o({ Record: 1, id: r.sc.id }).length === 1))
+    let no_orphan = magR && magR.o({ Cloud: 1 }).every((cl) => cl.o({ Card: 1 }).every((r) => uno_lib.o({ Record: 1, id: r.sc.id }).length === 1))
     if (mr && +(mr.sc.cards || 0) === 8 && mag_cards === 8 && no_orphan && !T.oa({ see: 'a republish recast the real magazine in step with the collection — the denied track left the magazine too and no orphan stayed behind' })) this.MusuHeist_note(w, { see: 'a republish recast the real magazine in step with the collection — the denied track left the magazine too and no orphan stayed behind' })
     // afterwards nothing attributes: the scaffolding flattened away entirely AND no surviving collection
     //  card carries a source/from breadcrumb (audit #10 — the "nothing attributes who gave what" half was
@@ -655,7 +656,7 @@ MusuHeist_witness(w) {
 
 },
 // ══ MusuVend — M2: two-Pier MAGAZINE replication, grant-gated (Radio_todo §12.4 M-rung) ══════════════
-//  The magazine (%Musica > %Cloud > %Record — Musica_fold, Ghost/M/Heist.g) is the LIGHT CATALOG FACE of a
+//  The magazine (%Musica > %Cloud > %Card — Musica_fold, Ghost/M/Heist.g) is the LIGHT CATALOG FACE of a
 //   collection: the same census cards a %Library holds (id/artist/title/album/path) MINUS the audio payload.
 //    THE MUSURA QUESTION (the human, 2026-07-13): the MusuRa* streaming Books stock a real %Library but never
 //     publish a magazine from it — the two shapes fit (Musica_fold consumes exactly Ra_library's %Records) but
@@ -1109,7 +1110,7 @@ async MusuDoor_sabotage(w) {
     let cloud = mag.i({ Cloud: 1, randomic: 'draw_evil', created_at: 1500 })
     cloud.c.up = mag
     cloud.c.repli_loc = ['Cloud', 'randomic']
-    let evil = cloud.i({ Record: 1, id: 'evil', artist: 'Attacker', title: 'Trojan Draw', path: 'crate/x/evil.opus' })
+    let evil = cloud.i({ Card: 1, id: 'evil', artist: 'Attacker', title: 'Trojan Draw', path: 'crate/x/evil.opus' })
     evil.c.up = cloud
     let bomb = evil.i({ req: 'sabotage', eternal: 1, arm: 'pwn' })
     bomb.c.up = evil
@@ -1130,7 +1131,7 @@ async MusuDoor_revoke(w) {
     let cloud = mag.i({ Cloud: 1, randomic: 'draw_gate', created_at: 2000 })
     cloud.c.up = mag
     cloud.c.repli_loc = ['Cloud', 'randomic']
-    let card = cloud.i({ Record: 1, id: 'gate', artist: 'Latecomer', title: 'After The Cut', path: 'crate/z/gate.opus' })
+    let card = cloud.i({ Card: 1, id: 'gate', artist: 'Latecomer', title: 'After The Cut', path: 'crate/z/gate.opus' })
     card.c.up = cloud
     w.c.gate_id = 'gate'
     let crossed = await this.Repli_offer(w, w.c.tx, 'Origin', 'Follower', mag)
@@ -1157,7 +1158,7 @@ MusuDoor_grafted_req(w) {
     let vmag = mir.o({ Mag: 'Musica' })[0]
     if (!vmag) return null
     for (const cloud of vmag.o({ Cloud: 1 })) {
-        for (const rec of cloud.o({ Record: 1 })) {
+        for (const rec of cloud.o({ Card: 1 })) {
             let g = rec.o({ req: 1 })[0]
             if (g) return g
         }
@@ -1264,17 +1265,17 @@ async MusuCursor_setup(w) {
     let c1 = mag.i({ Cloud: 1, randomic: 'draw_one', created_at: 1000 })
     c1.c.up = mag
     c1.c.repli_loc = ['Cloud', 'randomic']
-    let r1 = c1.i({ Record: 1, id: 't1', artist: 'Auteur', title: 'One', path: 'crate/a/one.opus' })
+    let r1 = c1.i({ Card: 1, id: 't1', artist: 'Auteur', title: 'One', path: 'crate/a/one.opus' })
     r1.c.up = c1
-    let r2 = c1.i({ Record: 1, id: 't2', artist: 'Bassbin', title: 'Two', path: 'crate/b/two.opus' })
+    let r2 = c1.i({ Card: 1, id: 't2', artist: 'Bassbin', title: 'Two', path: 'crate/b/two.opus' })
     r2.c.up = c1
     let c2 = mag.i({ Cloud: 1, randomic: 'draw_two', created_at: 2000 })
     c2.c.up = mag
     c2.c.repli_loc = ['Cloud', 'randomic']
-    let r3 = c2.i({ Record: 1, id: 't3', artist: 'Cutter', title: 'Three', path: 'crate/c/three.opus' })
+    let r3 = c2.i({ Card: 1, id: 't3', artist: 'Cutter', title: 'Three', path: 'crate/c/three.opus' })
     r3.c.up = c2
     let T = this.MusuCursor_T(w)
-    w.c.cur_hit = this.Cursor_make(T, 'record-t1', [{ Mag: 'Musica' }, { Cloud: 1, randomic: 'draw_one' }, { Record: 1, id: 't1' }])
+    w.c.cur_hit = this.Cursor_make(T, 'record-t1', [{ Mag: 'Musica' }, { Cloud: 1, randomic: 'draw_one' }, { Card: 1, id: 't1' }])
     w.c.cur_cloud = this.Cursor_make(T, 'cloud-two', [{ Mag: 'Musica' }, { Cloud: 1, randomic: 'draw_two' }])
     w.c.set_up = 1
 
@@ -1306,7 +1307,7 @@ async MusuCursor_knockout_scene(w) {
     //    this marker from the snap → the diff goes RED instead of a silent un-latch (adversarial review 2026-07-13).
     this.MusuCursor_note(w, { reached: 'step_4' })
     let c1 = w.c.mag.o({ Cloud: 1, randomic: 'draw_one' })[0]
-    await c1.rm({ Record: 1, id: 't1' })
+    await c1.rm({ Card: 1, id: 't1' })
     let gone = this.Cursor_resolve(w.c.cur_hit, w)
     let row = { resolved: 'gone', depth: gone.depth }
     if (!gone.ok) { row.failed = 1 }
@@ -1392,13 +1393,13 @@ MusuHeal_setup(w) {
     cloud.c.up = mag
     cloud.c.repli_loc = ['Cloud', 'randomic']
     w.c.cloud = cloud
-    let r1 = cloud.i({ Record: 1, id: 't1', artist: 'Auteur', title: 'One', path: 'crate/a/one.opus' })
+    let r1 = cloud.i({ Card: 1, id: 't1', artist: 'Auteur', title: 'One', path: 'crate/a/one.opus' })
     r1.c.up = cloud
-    let r2 = cloud.i({ Record: 1, id: 't2', artist: 'Bassbin', title: 'Two', path: 'crate/b/two.opus' })
+    let r2 = cloud.i({ Card: 1, id: 't2', artist: 'Bassbin', title: 'Two', path: 'crate/b/two.opus' })
     r2.c.up = cloud
     let T = this.MusuHeal_T(w)
-    w.c.cur_kept = this.Cursor_make(T, 'record-t1', [{ Mag: 'Musica' }, { Cloud: 1, randomic: 'draw_one' }, { Record: 1, id: 't1' }])
-    w.c.cur_lost = this.Cursor_make(T, 'record-t2', [{ Mag: 'Musica' }, { Cloud: 1, randomic: 'draw_one' }, { Record: 1, id: 't2' }])
+    w.c.cur_kept = this.Cursor_make(T, 'record-t1', [{ Mag: 'Musica' }, { Cloud: 1, randomic: 'draw_one' }, { Card: 1, id: 't1' }])
+    w.c.cur_lost = this.Cursor_make(T, 'record-t2', [{ Mag: 'Musica' }, { Cloud: 1, randomic: 'draw_one' }, { Card: 1, id: 't2' }])
     w.c.set_up = 1
 
 },
@@ -1419,12 +1420,12 @@ MusuHeal_baseline(w) {
 async MusuHeal_rename(w) {
     this.MusuHeal_note(w, { reached: 'step_4' })
     let cloud = w.c.cloud
-    await cloud.rm({ Record: 1, id: 't1' })
-    let n1 = cloud.i({ Record: 1, id: 't1b', artist: 'Auteur', title: 'One', path: 'crate/a/one.opus' })
+    await cloud.rm({ Card: 1, id: 't1' })
+    let n1 = cloud.i({ Card: 1, id: 't1b', artist: 'Auteur', title: 'One', path: 'crate/a/one.opus' })
     n1.c.up = cloud
     this.Renamed_mint(cloud, 'id', 't1', 't1b', 4000)
-    await cloud.rm({ Record: 1, id: 't2' })
-    let n2 = cloud.i({ Record: 1, id: 't2b', artist: 'Bassbin', title: 'Two', path: 'crate/b/two.opus' })
+    await cloud.rm({ Card: 1, id: 't2' })
+    let n2 = cloud.i({ Card: 1, id: 't2b', artist: 'Bassbin', title: 'Two', path: 'crate/b/two.opus' })
     n2.c.up = cloud
 
 },
@@ -1529,15 +1530,15 @@ MusuResume_setup(w) {
     let cloud = mag.i({ Cloud: 1, randomic: 'draw_one', created_at: 1000 })
     cloud.c.up = mag
     cloud.c.repli_loc = ['Cloud', 'randomic']
-    let r1 = cloud.i({ Record: 1, id: 't1', artist: 'Auteur', title: 'One', path: 'crate/a/one.opus' })
+    let r1 = cloud.i({ Card: 1, id: 't1', artist: 'Auteur', title: 'One', path: 'crate/a/one.opus' })
     r1.c.up = cloud
-    let r2 = cloud.i({ Record: 1, id: 't2', artist: 'Bassbin', title: 'Two', path: 'crate/b/two.opus' })
+    let r2 = cloud.i({ Card: 1, id: 't2', artist: 'Bassbin', title: 'Two', path: 'crate/b/two.opus' })
     r2.c.up = cloud
     // the BERTHED bookmark — homed IN the magazine, so it travels with the magazine snap.
-    w.c.cur = this.Cursor_make(mag, 'record-t1', [{ Cloud: 1, randomic: 'draw_one' }, { Record: 1, id: 't1' }])
+    w.c.cur = this.Cursor_make(mag, 'record-t1', [{ Cloud: 1, randomic: 'draw_one' }, { Card: 1, id: 't1' }])
     // the LIVE-ONLY bookmark — homed under %testing, so it does NOT ride the magazine snap (the discrimination).
     let T = this.MusuResume_T(w)
-    w.c.cur_live = this.Cursor_make(T, 'live-t2', [{ Cloud: 1, randomic: 'draw_one' }, { Record: 1, id: 't2' }])
+    w.c.cur_live = this.Cursor_make(T, 'live-t2', [{ Cloud: 1, randomic: 'draw_one' }, { Card: 1, id: 't2' }])
     w.c.set_up = 1
 
 },
@@ -1566,8 +1567,8 @@ async MusuResume_reload(w) {
     // mutate the ORIGINAL so a resume against mag2 proves it is not a live alias — t1 → t9 with NO %Renamed, so
     //  the original cursor now fails CLEANLY (no redirect to heal it).
     let oc = w.c.mag.o({ Cloud: 1, randomic: 'draw_one' })[0]
-    await oc.rm({ Record: 1, id: 't1' })
-    let rn = oc.i({ Record: 1, id: 't9', artist: 'Auteur', title: 'One', path: 'crate/a/one.opus' })
+    await oc.rm({ Card: 1, id: 't1' })
+    let rn = oc.i({ Card: 1, id: 't9', artist: 'Auteur', title: 'One', path: 'crate/a/one.opus' })
     rn.c.up = oc
     let row = { reload: 1 }
     if (enc.errors.length === 0) { row.encode_clean = 1 }
@@ -1745,8 +1746,8 @@ MusuRename_baseline(w) {
     let T = this.MusuRename_T(w)
     let mir = this.Repli_mirror_lib(w)
     let draw = w.c.draw_randomic
-    w.c.cur_low = this.Cursor_make(T, 'mirror-low', [{ Mag: 'Musica' }, { Cloud: 1, randomic: draw }, { Record: 1, title: 'Low Draw' }])
-    w.c.cur_high = this.Cursor_make(T, 'mirror-high', [{ Mag: 'Musica' }, { Cloud: 1, randomic: draw }, { Record: 1, title: 'High Draw' }])
+    w.c.cur_low = this.Cursor_make(T, 'mirror-low', [{ Mag: 'Musica' }, { Cloud: 1, randomic: draw }, { Card: 1, title: 'Low Draw' }])
+    w.c.cur_high = this.Cursor_make(T, 'mirror-high', [{ Mag: 'Musica' }, { Cloud: 1, randomic: draw }, { Card: 1, title: 'High Draw' }])
     let a = this.Cursor_resolve(w.c.cur_low, mir)
     let b = this.Cursor_resolve(w.c.cur_high, mir)
     let row = { baseline: 1 }
@@ -1879,7 +1880,7 @@ MusuRename_witness(w) {
 //      lines the merge walks — no wire-core change, just the depth the merge already understands.
 //  THE DISCRIMINATION (non-vacuity — [[adversarial-test-agent]]): the goner is proven at BOTH levels and the
 //   SURVIVORS are checked whole.  Drop the record-goner emission → t1 orphans at the follower (see #2 red);
-//    drop the cloud-goner emission → draw B orphans (see #3 red); broaden the delete pattern to a Record:1
+//    drop the cloud-goner emission → draw B orphans (see #3 red); broaden the delete pattern to a Card:1
 //     wildcard → the survivors get nuked (see #5 red).  The origin↔follower agreement (see #4) is the headline
 //      no-orphan invariant, red under any asymmetry.
 //  DETERMINISTIC + in-memory (no FSA no audio no Berth no entropy — the two Piers are MusuVend's Lake_link
@@ -2012,7 +2013,7 @@ async MusuRecast_lose_record(w) {
 },
 // MusuRecast_after_record — pin the follower's survivor state THE INSTANT the record goner has drained, BEFORE
 //  the cloud scene re-offers.  This is the load-bearing capture for see #5 (adversarial review, 2026-07-14): a
-//   record-delete broadened to a Record:1 wildcard would empty the WHOLE draw_a cloud here (t0 t2 gone with t1),
+//   record-delete broadened to a Card:1 wildcard would empty the WHOLE draw_a cloud here (t0 t2 gone with t1),
 //    but scene 3's re-offer would re-add t0 t2 by step 11 — so a survivors-intact check read only at the END is a
 //     FALSE-GREEN (the over-reach heals before it is sampled).  Pinned at this milestone the damage is frozen: a
 //      broadened delete records s0=0 s2=0 here and can never un-write, so #5 goes red.  Reads the LIVE mirror
@@ -2098,7 +2099,7 @@ MusuRecast_witness(w) {
     // #5 THE RECORD GONER IS SURGICAL: the INSTANT t1 was withdrawn the follower still held its cloud-mates t0 and
     //  t2 (the frozen after_record capture, s0 & s2 & t1_gone) AND at the end those survivors keep their EXACT
     //   identity.  The after_record gate is the load-bearing discriminator (adversarial review 2026-07-14): a
-    //    record-delete broadened to a Record:1 wildcard empties the whole cloud at that milestone — s0=0 s2=0
+    //    record-delete broadened to a Card:1 wildcard empties the whole cloud at that milestone — s0=0 s2=0
     //     frozen there — so this goes red, whereas a survivors-check read only at the END would false-green
     //      because scene 3's re-offer re-adds t0 t2.  So the break (broaden the record delete) genuinely flips it.
     let ar = T.o({ after_record: 1 })[0]

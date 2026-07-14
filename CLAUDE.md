@@ -47,6 +47,32 @@ A snapped boolean rides as `1` or **absent**, never `false`/`0`: a JS boolean is
    and prefer a C method (`replace()`/`r()`/roai's replace) over a raw `delete n.sc.key`
     so the change is tracked and the snap stays consistent.
 
+**Identity is per-shelf; a mainkey is what the thing IS, and a reference is its own
+ kind.** A thing exists ONCE under a given container as its mainkey — the **holding**
+  (a `%Record` in a `%Library` carries or materialises its audio chunks). Anything that
+   merely NAMES that thing elsewhere is a **referring particle** wearing its OWN mainkey
+    and carrying the id — never a second particle impersonating the holding's mainkey.
+     A 1:1 reference can let the mainkey carry the identity, keeping the join key beside
+      it (`Card,id:X` — a catalog listing — sits beside `Record,id:X` — the holding — and
+       the shared `id` IS the join). A **many:1** reference wears an `of:` pointer
+        (`Spin,of:X` / `Like,of:X` / `Heist,of:X` — a Jam ledger, many events per track).
+         The tell you got this wrong: two DIFFERENT shapes under one mainkey (the old
+          magazine minted `%Record` cards that looked exactly like holdings — "there's
+           only one of anything", the human).
+
+**Never stamp a maybe-undefined sc value.** `i({ path: rec.sc.path })` where `rec` has
+ no `path` writes `undefined` into sc, and the encoder faithfully brands the line
+  `{"undef":["path"]}` (Text.svelte `objecties.undef`) — an honest marker of a sloppy
+   mint. Guard it: `if (rec.sc.path) card.sc.path = rec.sc.path` (the album/body_hash
+    idiom). An `undef` marker in a snap is a **mint bug**, not furniture — go fix the mint.
+
+**An owner drops its finished transient reqs.** `finish(req)` marks `%finished` and bumps
+ but does NOT detach the req, so a snap fills with dead `req:...,finished` rows (38 landed
+  `awaitbuf`s per pulled track, before the cull). Once a transient `%req` has served, DROP
+   it (`host.drop(req)`) at a safe seam — the req sweep iterates a fresh `o()` snapshot, so
+    a detach never corrupts the live iteration. Transient reqs are scaffolding, not ledger;
+     leave in the snap only the reqs whose in-flight state is worth SEEING.
+
 Notation we use when talking about particles:
   `%Text` means `{Text:1}`; `%LE` means `{LE:1}`, never write `%LE,1`,
    unless the property obviously carries a value, as in `%Spotlight,src`.

@@ -219,6 +219,36 @@
                                        S('border-color','#5a5a9a'); S('border-width',1)
                                     //    M('is_compound', { v: 1 })
                                        M('label', { fmt: '%s', keys: 'hand' }) },
+            // ── the radiobuddies music particles (Radio_todo): a %Record is the audio HOLDING (heavy, teal —
+            //     the payload), a %Card the catalog LISTING (lighter, bordered — the reference); both label by
+            //     track title so a graph reads the tune, not "Record".  The session %Jam holds three EVENT kinds
+            //     drawn as one ellipse FAMILY with distinct hues — %Spin green (played), %Like warm (taste),
+            //     %Grab amber (heisted) — so a glance at the graph reads the session the way the snap now does.
+            Record:            () => { S('background-color','#123a4a'); S('color','#9adfff')
+                                       S('shape','round-rectangle'); S('width',30)
+                                       M('label', { fmt: '%s', keys: 'title' }) },
+            // NB no title-label on %Card: the mainkey is shared with MusuBerth's title-less toy card, and
+            //  matstyle_label returns '' for a missing key — so let %Card fall back to the default multi-line
+            //   cyto_label (informative for any shape).  %Record is title-labelled (every music holding has one).
+            Card:              () => { S('background-color','#2c2c3c'); S('color','#c0c0dd')
+                                       S('shape','round-rectangle'); S('width',22)
+                                       S('border-color','#55557a'); S('border-width',1) },
+            Jam:               () => { S('background-color','#3a2814'); S('color','#ffcf9a')
+                                       S('shape','round-rectangle'); S('width',26) },
+            Spin:              () => { S('background-color','#14401a'); S('color','#a0ffb0')
+                                       S('shape','ellipse'); S('width',16) },
+            Like:              () => { S('background-color','#5a1830'); S('color','#ffb0c8')
+                                       S('shape','ellipse'); S('width',16) },
+            Grab:              () => { S('background-color','#4a3010'); S('color','#ffcf80')
+                                       S('shape','ellipse'); S('width',16) },
+            // the magazine containers: %Mag the catalog (purple), %Cloud a draw batch (light ellipse), %Kept
+            //  the listener's keeper collection (cool blue — a stored shelf, cousin to %shelf but their own).
+            Mag:               () => { S('background-color','#2a1838'); S('color','#d8b0ff')
+                                       S('shape','round-rectangle'); S('width',28) },
+            Cloud:             () => { S('background-color','#303848'); S('color','#b8c8d8')
+                                       S('shape','ellipse'); S('width',20) },
+            Kept:              () => { S('background-color','#182838'); S('color','#a0c8f0')
+                                       S('shape','round-rectangle'); S('width',26) },
         }
         seeds[key]?.()
     },
