@@ -41,13 +41,22 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
          (beat 11): the ledger reads Spin→Like→Grab in `at` order (reads the real rows), and the keeper stands
           WHOLE in `%Kept` while the husk still stands in the mirror (copy-not-move). 13 sees. Adversarial review
            (opus): both sees SOUND — live-data reads with verified one-line breaks, no blocking bug.
-- **OWED / coordination.** Nothing re-recorded — every magazine + audio-pull Book is stale-RED until a live
-   runner re-records the union (headless BANNED). This ran alongside ANOTHER agent at a **MusuStanding** commit
-    point; N2 makes MusuStanding's fixtures stale (its cards → `%Card`), so the RULE (in Radio_todo §0): don't
-     commit any magazine Book green without re-recording POST-N2; a `Record`-card MusuStanding re-record is
-      superseded. My landed N1/N3 do NOT touch MusuStanding. Held the runner (a begun-wedge from mid-session gen
-       HMR would break the shared tab + step on the other agent). All verification via LocalGen (browserless,
-        byte-identical gen) + adversarial subagents — the runner gate is the human's to run.
+- **LIVE-RECORDED GREEN (the human said "run all the tests").** All 14 affected Books re-recorded green on the
+   :9091 runner: N2 — MusuBuddy/Cursor/Recast/Rename/Heal/Standing/Resume/Vend/Door/Heist (each verified by its
+    OWN claims: cursor resolves on Card cards, the goner-delete is surgical with no orphan, the rename-heal
+     fires through %Renamed, forget drops old Card clouds, the sabotage stays inert, the census→magazine holds);
+      N3 — MusuBuddy/Heist/RaStream/RaChase/Reco/Replica (zero landed-awaitbuf rows; MusuReplica keeps its ONE
+       unlanded `warned:buffer_late` row so `warns_missing` still latches — the missing-buffer proof survived).
+        VoroTest turned out NOT in the union (its `awaitbuf` is a static Voro fold-test leaf, not Repli — the N3
+         reviewer's catch, confirmed). Non-union sanity green: MusuStaple (music, %Record), PereStaple (non-music
+          Repli spine) — the changes are cleanly scoped to music. **TWO real bugs the live runner caught that the
+           static reviews could NOT:** (1) the jam ran a beat too early — `MusuBuddy_jam` at hear's tail fired
+            BEFORE `expecting()` resolved `w.c.term` (expecting DEFERS; `await` returns after ARMING, not
+             resolving) → moved it to beat 11, gated on the resolved term (the "wake ≠ hold" trap); (2)
+              `Jam_ledger`'s `jam.o({at:1})` returned NOTHING — a mainkey-LESS query finds no bucket in the o()
+               index → gather by the three event mainkeys then sort by `at`. Both fixed, re-delivered, re-verified
+                green. The runner gate earned its keep. (Gen delivery via `ghost-compile` was intermittently
+                 half-open — retry worked each time; LocalGen kept the disk gen honest in parallel.)
 - **Plus a UI bit (graph legibility):** `Matstyle.matstyle_seed_known` gained semantic swatches for the whole
    Radio particle family — `%Record` heavy teal (the audio holding) vs `%Card` light bordered (the listing),
     both title-labelled; `%Spin`/`%Like`/`%Grab` one ellipse family with distinct hues (green played / warm

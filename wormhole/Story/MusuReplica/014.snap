@@ -67,12 +67,6 @@ Snap:H
               emit=7,type:repli_want,seq=7,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
             req:awaitbuf,bufferid
               warned:buffer_late
-            req:awaitbuf,bufferid=2,landed,finished
-            req:awaitbuf,bufferid=3,landed,finished
-            req:awaitbuf,bufferid=4,landed,finished
-            req:awaitbuf,bufferid=5,landed,finished
-            req:awaitbuf,bufferid=6,landed,finished
-            req:awaitbuf,bufferid=7,landed,finished
           active_transport,type:mock,open
         Library,pier:DJ
           Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6

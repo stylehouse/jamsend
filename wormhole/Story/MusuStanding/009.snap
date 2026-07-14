@@ -24,8 +24,8 @@ Snap:H
               recent
                 emit,type:repli_lines,seq
                 emit=2,type:repli_lines,seq=2
-              emit=3,type:repli_lines,seq=3,sent,body_hash:a1ec9eca3bd8b0561d05aab2b6b060820f46ccbef2bb22b3c47b97da68500e64,body_len=484,acked
-              emit=4,type:repli_lines,seq=4,sent,body_hash:2e5842f52c756c08e8d9c6ae84b7d0a4c8be495bac9c01f5f54d391d81927f0a,body_len=130,acked
+              emit=3,type:repli_lines,seq=3,sent,body_hash:d0938fe1422b3c28f5a989df7145fcc7dede78ea6321694de422a12cc76cfd66,body_len=472,acked
+              emit=4,type:repli_lines,seq=4,sent,body_hash:5a0f061ecffee99979ec6ebe486056e64c72299b8dc2917db5b4fa69432ae038,body_len=126,acked
           active_transport,type:mock,open
         Peering,name:Follower,req=3,ok
           Pier,pub:Origin,req=2,ok
@@ -34,8 +34,8 @@ Snap:H
               recent
                 unemit,type:repli_lines,seq
                 unemit=2,type:repli_lines,seq=2
-              req:unemit,seq=3,type:repli_lines,body_hash:a1ec9eca3bd8b0561d05aab2b6b060820f46ccbef2bb22b3c47b97da68500e64,body_len=484,done,to:repli_lines,finished
-              req:unemit,seq=4,type:repli_lines,body_hash:2e5842f52c756c08e8d9c6ae84b7d0a4c8be495bac9c01f5f54d391d81927f0a,body_len=130,done,to:repli_lines,finished
+              req:unemit,seq=3,type:repli_lines,body_hash:d0938fe1422b3c28f5a989df7145fcc7dede78ea6321694de422a12cc76cfd66,body_len=472,done,to:repli_lines,finished
+              req:unemit,seq=4,type:repli_lines,body_hash:5a0f061ecffee99979ec6ebe486056e64c72299b8dc2917db5b4fa69432ae038,body_len=126,done,to:repli_lines,finished
           active_transport,type:mock,open
         Library,pier:Origin
           Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
@@ -43,14 +43,14 @@ Snap:H
           Record,id:t3,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
         Mag:Musica
           Cloud,randomic:c1,created_at=1000
-            Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-            Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+            Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+            Card,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
           Cloud,randomic:c2,created_at=3000
-            Record,id:t3,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
+            Card,id:t3,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
         Library,pier:Follower.mirror
           Mag:Musica
             Cloud,randomic:c1,created_at=1000
-              Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-              Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+              Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+              Card,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
             Cloud,randomic:c2,created_at=3000
-              Record,id:t3,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
+              Card,id:t3,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus

@@ -10,7 +10,7 @@ Snap:H
           Dogear,of:record-t1
             curs,Mag:Musica
               curs,wild:Cloud,randomic:draw_one
-                curs,wild:Record,id:t1
+                curs,wild:Card,id:t1
           Dogear,of:cloud-two
             curs,Mag:Musica
               curs,wild:Cloud,randomic:draw_two
@@ -23,6 +23,6 @@ Snap:H
           see:when a named level is gone the cursor fails cleanly — it reports the exact match it could not find and how far it got not a crash
         Mag:Musica
           Cloud,randomic:draw_one,created_at=1000
-            Record,id:t2,artist:Bassbin,title:Two,path:crate/b/two.opus
+            Card,id:t2,artist:Bassbin,title:Two,path:crate/b/two.opus
           Cloud,randomic:draw_two,created_at=2000
-            Record,id:t3,artist:Cutter,title:Three,path:crate/c/three.opus
+            Card,id:t3,artist:Cutter,title:Three,path:crate/c/three.opus

@@ -12,13 +12,13 @@ Snap:H
           Pier,pub:Follower,req=2,ok
             Ud,pubkey:Follower
             outbox
-              emit,type:repli_lines,seq,sent,body_hash:2a919a6d45c1e100caf31cdf3b1ed30b911dac40c2c34aca4e02a5c48d2bf483,body_len=319,acked
+              emit,type:repli_lines,seq,sent,body_hash:79a22df8f2a3bf264167d825e2b4f93589b9a3ee8fe4d12e6abede7ac552bf30,body_len=311,acked
           active_transport,type:mock,open
         Peering,name:Follower,req=3,ok
           Pier,pub:Origin,req=2,ok
             Ud,pubkey:Origin
             inbox
-              req:unemit,seq,type:repli_lines,body_hash:2a919a6d45c1e100caf31cdf3b1ed30b911dac40c2c34aca4e02a5c48d2bf483,body_len=319,done,to:repli_lines,finished
+              req:unemit,seq,type:repli_lines,body_hash:79a22df8f2a3bf264167d825e2b4f93589b9a3ee8fe4d12e6abede7ac552bf30,body_len=311,done,to:repli_lines,finished
           active_transport,type:mock,open
         Library,pier:Origin
           Record,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
@@ -27,10 +27,10 @@ Snap:H
             Stream,name:audio,total=8,have=0
         Mag:Musica
           Cloud,randomic:draw_hon,created_at=1000
-            Record,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
-            Record,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
+            Card,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
+            Card,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
         Library,pier:Follower.mirror
           Mag:Musica
             Cloud,randomic:draw_hon,created_at=1000
-              Record,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
-              Record,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
+              Card,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
+              Card,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus

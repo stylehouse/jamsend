@@ -101,36 +101,6 @@ Snap:H
                 emit=28,type:repli_want,seq=28
                 emit=29,type:repli_want,seq=29
                 emit=30,type:repli_want,seq=30
-            req:awaitbuf,bufferid,landed,finished
-            req:awaitbuf,bufferid=2,landed,finished
-            req:awaitbuf,bufferid=3,landed,finished
-            req:awaitbuf,bufferid=4,landed,finished
-            req:awaitbuf,bufferid=5,landed,finished
-            req:awaitbuf,bufferid=6,landed,finished
-            req:awaitbuf,bufferid=7,landed,finished
-            req:awaitbuf,bufferid=8,landed,finished
-            req:awaitbuf,bufferid=9,landed,finished
-            req:awaitbuf,bufferid=10,landed,finished
-            req:awaitbuf,bufferid=11,landed,finished
-            req:awaitbuf,bufferid=12,landed,finished
-            req:awaitbuf,bufferid=13,landed,finished
-            req:awaitbuf,bufferid=14,landed,finished
-            req:awaitbuf,bufferid=15,landed,finished
-            req:awaitbuf,bufferid=16,landed,finished
-            req:awaitbuf,bufferid=17,landed,finished
-            req:awaitbuf,bufferid=18,landed,finished
-            req:awaitbuf,bufferid=19,landed,finished
-            req:awaitbuf,bufferid=20,landed,finished
-            req:awaitbuf,bufferid=21,landed,finished
-            req:awaitbuf,bufferid=22,landed,finished
-            req:awaitbuf,bufferid=23,landed,finished
-            req:awaitbuf,bufferid=24,landed,finished
-            req:awaitbuf,bufferid=25,landed,finished
-            req:awaitbuf,bufferid=26,landed,finished
-            req:awaitbuf,bufferid=27,landed,finished
-            req:awaitbuf,bufferid=28,landed,finished
-            req:awaitbuf,bufferid=29,landed,finished
-            req:awaitbuf,bufferid=30,landed,finished
           active_transport,type:mock,open
         Library,pier:DJ
           Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real,transcoded

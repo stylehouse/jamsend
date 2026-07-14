@@ -10,7 +10,7 @@ Snap:H
           Dogear,of:record-t1
             curs,Mag:Musica
               curs,wild:Cloud,randomic:draw_one
-                curs,wild:Record,id:t1
+                curs,wild:Card,id:t1
           Dogear,of:cloud-two
             curs,Mag:Musica
               curs,wild:Cloud,randomic:draw_two
@@ -20,7 +20,7 @@ Snap:H
           see:a cursor can name a level not just a leaf — a two-deep cursor lands on the cloud and stops there
         Mag:Musica
           Cloud,randomic:draw_one,created_at=1000
-            Record,id:t1,artist:Auteur,title:One,path:crate/a/one.opus
-            Record,id:t2,artist:Bassbin,title:Two,path:crate/b/two.opus
+            Card,id:t1,artist:Auteur,title:One,path:crate/a/one.opus
+            Card,id:t2,artist:Bassbin,title:Two,path:crate/b/two.opus
           Cloud,randomic:draw_two,created_at=2000
-            Record,id:t3,artist:Cutter,title:Three,path:crate/c/three.opus
+            Card,id:t3,artist:Cutter,title:Three,path:crate/c/three.opus

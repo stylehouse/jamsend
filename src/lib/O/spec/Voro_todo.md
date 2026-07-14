@@ -34,8 +34,81 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
                 evolved through are SAVED: `voro_modes/README.md` (a ledger — commit anchors + live
                  SVG shots; revive any face via `git show <commit>:src/lib/O/Cytui.svelte`).
 
-**WHAT LANDED THIS SESSION (2026-07-14, autonomous) — the honesty pass + the craters.**  Uncommitted
- in the working tree: `Ghost/V/Voro.g` (+ gen `Voro.go`), `Cytui.svelte`, this doc.  In order:
+**WHAT LANDED THIS SHIFT, PART 2 (2026-07-14 later) — the H-ROUND: the human's correction of the
+ orbs.**  The steer: "you've misunderstood the black blur thing — I mean mouseover|click handlers
+  all over the tuple, any one of the v we click on shows what other $v and $k are involved in it …
+   I didn't intend a crater per C (ie tuple) — an entire Stuffing+Stuffusion, just ONE in each cell
+    … conserve Track,title: … hourglass-like edges between the year|remaster|live and the title …
+     the Artist and Track should be fairly uniform size … you can wrap Artist\nname:Palegold …
+      a background gradient on the subcell, going transparent from the parent side."  In order:
+ - **H1 one coagulate per cell** — the per-member orbs (G3's misread) are GONE; a crater is now
+    header strip (container level) + ONE smooth coagulate holding the member band's DISTILLED rows
+     (`keyed_rows(memb)` — the lead list + tagged facts|spreads, 'title:' said ONCE).  member_rows,
+      the key universe, the static blur rows, clip_to: deleted.
+ - **H2 wrap at grammar seams** — the title is TWO atoms now (kind badge · name:value), so a narrow
+    cell wraps '⟨Artist⟩ / name: Palegold' at full size instead of shrinking one long atom.
+ - **H3 uniformity** — inflate zoom ceiling 2.4 → 1.35: titles top out ~21.6 instead of 38.4, and
+    narrowness wraps (H2) instead of shrinking — all w/C/* cells converge on one voice.
+ - **H4 correspondence** — Vtuff_keyrows stamps `c.members` on every fact|spread chip (c-side,
+    fixture-safe; gen landed); paint: hover ANY claim chip → its carrier member chips + one-hop
+     sibling claims LIGHT (corr-lit); hover a member chip → its claims light and every claim it
+      LACKS takes the black blur (corr-dim — THIS is where the human's "black blurs over %remaster"
+       lives, absence revealed on touch, not static rows); click PINS a claim chip (member click
+        stays the pop).  Scoped per-pane via corr_pane_id.
+ - **H5 hourglass ribbons** — `corr_ribbons`: a faint band from each claim chip to each member chip
+    it speaks for, pinched to a waist (both edges through one midpoint), capped at 14, crater-only,
+     R>90.  UNVERIFIABLE until the Clinic seed gen lands (title-only tracks have no value chips).
+ - **The parent-side gradient** — the coagulate's fill is a per-pane linearGradient (userSpaceOnUse,
+    hband → far wall): transparent at the parent seam, the members' tint deepening away — depth
+     without a drawn shadow (VSubPane.lgrads + VWall.fillid channels).
+
+**WHAT LANDED THIS SHIFT (2026-07-14 late, autonomous) — the G-ROUND: grasp levels + orbs.**  The
+ human's steer on the live craters ("nice! there's a year:2007 here look like its part of
+  %Artist,name:Palegold, but those ARE strictly part of the Tracks … some of these Artist,name bits
+   are really small. they must be the biggest! … each C coagulate should have quite a smooth shape …
+    overlapping orbs … it's got to be visually clearer where the individual groupings are … two
+     different C/C levels cannot share data descriptions … but C/n/* and C/m/* can think about
+      alignment of their tuples across the boundary of their cells").  Uncommitted: `Ghost/V/Voro.g`
+       (+ gen), `Cytui.svelte`, `Ghost/Story/Voronation.g` (seed enrichment, **gen NOT landed** — see
+        the wedge below), this doc.  In order:
+ - **G1 model** — `Vtuff_keyrows` now stamps WHOSE LEVEL each fact/spread lives at: per-key carrier-
+    kind attribution (all carriers one kind ≠ container kind → the row wears `tag:<Kind>`, same rule
+     as B0.1's list tag).  A %year distilled off %Tracks can never again read as the %Artist's.
+ - **G1 paint** — `subgraph_tuples` threads the tag; flat panes BAND by grasp level (title + container's
+    own untagged facts / lead list / the members' tagged facts, each wearing the kind chip); a crater
+     HEADER speaks the container's level ONLY (`!g.lead && !g.tag`) — the member facts show inside the
+      craters, where they strictly live.  Nothing dropped; the boundary kept.
+ - **G2 identity ceiling** — `pane_rows` gained `capfs` + the LEAD CAP: once the identity row lands,
+    every later row is capped at its size ×0.92 (whatever shrinks the identity shrinks the rest under
+     it); craters pass `capfs = header_title_fs × 0.9` so no %Track ever out-sizes its %Artist.
+ - **G3 coagulate + orbs** — the member group wears ONE smooth shape (`chaikin(poly_grow(bodyPoly,-3))`,
+    the STRONG level boundary, in the members' kind tint) and each member's power cell becomes an ORB
+     (grown +4.5 past the power gap so neighbours OVERLAP — soft same-level seams — rounded, clipped to
+      the coagulate); the mini pane flows INSIDE the orb (rounded corners are kinder to text than the
+       acute power corners).  The header/body separator rule dropped — the coagulate boundary IS the line.
+ - **G4/G5 absence blurs + alignment** — each crater builds the fold's KEY UNIVERSE in global vein rank
+    (same key, same row, in every orb AND across cells — the licensed same-level alignment); a key a
+     member LACKS renders as a black blur of the key word in place (`vsub-blur`, blur(1.6px)) — 'no
+      %remaster' reads as loudly as 'remaster'.  Hover-highlight (the steer's "or" alternative) not built.
+ - **LIVE-VERIFIED (runner 3c5238c6, 2026-07-14 late):** VoroClinic GREEN 9/9 ×3 + VoroMitosis GREEN
+    11/11.  The glass (`/tmp/nightshift_gallery/g_clinic.svg`): Beta CRATERS — 1 coagulate + 4 orbs,
+     header `Artist name: Beta` 28.3px, orb titles 8.4–13.1px (all under the ×0.9 ceiling); Alpha
+      self-gates FLAT with the lead cap visibly binding (title 9.7 → every row 8.9 = ×0.92); the
+       witnessed gang chips land at EXACTLY title×0.92.  Flora: 13 panes, titles clean, ZERO
+        orb|coag|blur (craters never fire on a same-kind gang — the invariant held).  G1/G4 pixels
+         wait on the seed gen (the wedge).  Orb-size wobble (8.4–13.1) is the standing evenness
+          taste item — Lloyd is the lever, the human's eyes the judge.  GOTCHA learned: arm the
+           faces BEFORE the run — an arm AFTER `done` re-morphs a torn-down world (seeds:0) and
+            CLEARS the glass (the why-strip: `morph✗ von:1 seeds:0 need:<2`).
+ - **THE WEDGE (needs the human):** the editor's compile dock for `Ghost/Story/Voronation.g` hangs on
+    ANY real content change (byte-identical content no-ops fine; `Voro.g` compiles fine interleaved —
+     bisected to the file, not the construct).  So the VoroClinic seed enrichment (tracks get
+      VoroScape's year/live/remaster sprinkle, needed to SEE G1/G4 on the Clinic) is authored but its
+       gen is NOT landed, and the Clinic re-record is owed behind it.  Likely cure: reopen/reload the
+        editor tab (not done remotely — it's the human's live tab).
+
+**WHAT LANDED THE PREVIOUS SHIFT (2026-07-14, autonomous) — the honesty pass + the craters.**
+ (Committed by the human in `gust`.)  In order:
  - **The three taste-fixes** (inflate to fill · no top-wall clip · no >45° baseline) — LANDED, proven.
  - **B0 honesty** — the flattening lies from the first real-world (Artist/Track) read, all four fixed
     and LIVE-PROVEN on VoroClinic: kind chip + title key restored, sc order in-pane, ×N→/*N tail.

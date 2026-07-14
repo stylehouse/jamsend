@@ -1,9 +1,9 @@
 Snap:H
   H:MusuReco,Run
     A:MusuReco
-      self,round=23	{"mung":["age"]}
+      self,round=24	{"mung":["age"]}
       w:MusuReco
-        self,round=23	{"mung":["age"]}
+        self,round=24	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
@@ -19,7 +19,7 @@ Snap:H
                 emit=6,type:repli_lines,seq=6
                 emit=7,type:repli_page,seq=7
               emit=8,type:repli_lines,seq=8,sent,body_hash:7352d15189746128b62ac8d9f4a6cff3400e2b550b7fd3c6e03b313d04c096c2,body_len=137,acked
-              emit=9,type:repli_page,seq=9,sent,body_hash:8dde52307f911ddc45e871d484a45cf79e5c2c0c178318b34995fa6997e275dc,body_len=76800,acked
+              emit=9,type:repli_page,seq=9,sent,body_hash:ab97a4e8119acadaea563d6df9519842b55053dd56d2852afc45a21e3d9dc352,body_len=76800,acked
             inbox
               recent
                 unemit=11,type:repli_want,seq=11
@@ -82,7 +82,7 @@ Snap:H
                 unemit=6,type:repli_lines,seq=6
                 unemit=7,type:repli_page,seq=7
               req:unemit,seq=8,type:repli_lines,body_hash:7352d15189746128b62ac8d9f4a6cff3400e2b550b7fd3c6e03b313d04c096c2,body_len=137,done,to:repli_lines,finished
-              req:unemit,seq=9,type:repli_page,body_hash:8dde52307f911ddc45e871d484a45cf79e5c2c0c178318b34995fa6997e275dc,body_len=76800,done,to:repli_page,finished
+              req:unemit,seq=9,type:repli_page,body_hash:ab97a4e8119acadaea563d6df9519842b55053dd56d2852afc45a21e3d9dc352,body_len=76800,done,to:repli_page,finished
             outbox
               recent
                 emit=11,type:repli_want,seq=11
@@ -105,10 +105,6 @@ Snap:H
                 emit=28,type:repli_want,seq=28
                 emit=29,type:repli_want,seq=29
                 emit=30,type:repli_want,seq=30
-            req:awaitbuf,bufferid,landed,finished
-            req:awaitbuf,bufferid=2,landed,finished
-            req:awaitbuf,bufferid=3,landed,finished
-            req:awaitbuf,bufferid=4,landed,finished
           active_transport,type:mock,open
         Library,pier:DJ
           Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real

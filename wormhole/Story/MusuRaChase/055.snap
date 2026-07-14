@@ -1,45 +1,45 @@
 Snap:H
   H:MusuRaChase,Run
     A:MusuRaChase
-      self,round=178	{"mung":["age"]}
+      self,round=177	{"mung":["age"]}
       w:MusuRaChase,keep_ahead=3
-        self,round=178	{"mung":["age"]}
+        self,round=177	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Account,of:Uno
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
               Idzeug:rachase_u,to:Music,genre:Chase,spent
-              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783907909
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1784025441
                 Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783907909,sign:eaf00b50deee14bc25e80bbdd2a234df3597eaa8ac451894a6067b82fb3587b0a94e9636a57cecefd621c7338a318c3b433529454495bb614a9ce605dd69ef00,genre:Chase
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783907909,sign:f21d5e2f7e64e510ddccc75f1cce0d5b80ac39177c2ea1ef0f6be95842c07f3036fa080e1ef06bf5f87775aa48cbd4f00db9e7191ae0158f571ef6427f6fdd0e,genre:Chase
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1784025441,sign:267b3d357980be2c5ea424327a1ccb31289eefb2b40be0278c6e7b426bca56b65cda8c0e2bf4d7c0f8cd09918e6450892d21523c81297b635fc4e5265605700e,genre:Chase
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784025441,sign:e3f8912ee7682c92dd2d5a9c943790d2c2e426955101e4000cec83db7f4e020c88df06950a48d4c601e2c3f64284d5643a618350e11a6163a82844a4938eca0e,genre:Chase
             SocialGraph
-              Edge,a:4e09f34f5a6ab900,b:b317b9a776e39d30,at:1783907909
+              Edge,a:4e09f34f5a6ab900,b:b317b9a776e39d30,at:1784025441
         Account,of:Duo
           Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
             Peering,name:be0dab3303037ad2,friendly:Duo
               Idzeug:rachase_d,to:Music,genre:Chase,spent
-              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783907909
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1784025441
                 Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783907909,sign:10181e028b66ea22efb7806319fc5b6b4e0eff00e0d36fe278a81825162afd5f9797c5f02733049a9a2bcc25c71f20056bdecdaf55fdff695cfc81ec5bd1730e,genre:Chase
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783907909,sign:2712d1570bf4d2e6b9ba2e94d643f6c51121fe3ed7b9cbfb776cc751433b2745a59ef3ee47523f6154990be7245420ca525615ca4560e41eb790b78fd63cf70d,genre:Chase
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1784025441,sign:1eafdd2f2cbc934d9f368e94af5e1d85e979c97c8c6253c0146eb7fec4b069407c3080b81b3cdd2d945154415db4804faeb3cfc4ed90b17448d668b1a99c9606,genre:Chase
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784025441,sign:819edd67edec9105e32a3be9f8da7d5be848eca40bd6d6739f98e069dcd10896f96194af97d373b3b8d8240d2eabff324e9b92b7eba109ee6e125263a1309108,genre:Chase
             SocialGraph
-              Edge,a:be0dab3303037ad2,b:b317b9a776e39d30,at:1783907909
+              Edge,a:be0dab3303037ad2,b:b317b9a776e39d30,at:1784025441
         Account,of:Listener
           Identity:b317b9a776e39d30,prepub:b317b9a776e39d30,friendly:Listener
             Peering,name:b317b9a776e39d30,friendly:Listener
-              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1783907909
+              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1784025441
                 Peering,name:4e09f34f5a6ab900,friendly:Uno,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783907909,sign:f21d5e2f7e64e510ddccc75f1cce0d5b80ac39177c2ea1ef0f6be95842c07f3036fa080e1ef06bf5f87775aa48cbd4f00db9e7191ae0158f571ef6427f6fdd0e,genre:Chase
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1783907909,sign:eaf00b50deee14bc25e80bbdd2a234df3597eaa8ac451894a6067b82fb3587b0a94e9636a57cecefd621c7338a318c3b433529454495bb614a9ce605dd69ef00,genre:Chase
-              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1783907909
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784025441,sign:e3f8912ee7682c92dd2d5a9c943790d2c2e426955101e4000cec83db7f4e020c88df06950a48d4c601e2c3f64284d5643a618350e11a6163a82844a4938eca0e,genre:Chase
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1784025441,sign:267b3d357980be2c5ea424327a1ccb31289eefb2b40be0278c6e7b426bca56b65cda8c0e2bf4d7c0f8cd09918e6450892d21523c81297b635fc4e5265605700e,genre:Chase
+              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1784025441
                 Peering,name:be0dab3303037ad2,friendly:Duo,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783907909,sign:2712d1570bf4d2e6b9ba2e94d643f6c51121fe3ed7b9cbfb776cc751433b2745a59ef3ee47523f6154990be7245420ca525615ca4560e41eb790b78fd63cf70d,genre:Chase
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1783907909,sign:10181e028b66ea22efb7806319fc5b6b4e0eff00e0d36fe278a81825162afd5f9797c5f02733049a9a2bcc25c71f20056bdecdaf55fdff695cfc81ec5bd1730e,genre:Chase
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784025441,sign:819edd67edec9105e32a3be9f8da7d5be848eca40bd6d6739f98e069dcd10896f96194af97d373b3b8d8240d2eabff324e9b92b7eba109ee6e125263a1309108,genre:Chase
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1784025441,sign:1eafdd2f2cbc934d9f368e94af5e1d85e979c97c8c6253c0146eb7fec4b069407c3080b81b3cdd2d945154415db4804faeb3cfc4ed90b17448d668b1a99c9606,genre:Chase
             SocialGraph
-              Edge,a:b317b9a776e39d30,b:4e09f34f5a6ab900,at:1783907909
-              Edge,a:b317b9a776e39d30,b:be0dab3303037ad2,at:1783907909
+              Edge,a:b317b9a776e39d30,b:4e09f34f5a6ab900,at:1784025441
+              Edge,a:b317b9a776e39d30,b:be0dab3303037ad2,at:1784025441
         Peering,name:4e09f34f5a6ab900,req=2,ok
           Pier,pub:b317b9a776e39d30,req=2,ok
             req:handshake,finished
@@ -159,42 +159,6 @@ Snap:H
                 unemit=58,type:repli_page,seq=58
                 unemit=59,type:repli_page,seq=59
             Ud,pubkey:4e09f34f5a6ab900
-            req:awaitbuf,bufferid,landed,finished
-            req:awaitbuf,bufferid=2,landed,finished
-            req:awaitbuf,bufferid=3,landed,finished
-            req:awaitbuf,bufferid=4,landed,finished
-            req:awaitbuf,bufferid=5,landed,finished
-            req:awaitbuf,bufferid=6,landed,finished
-            req:awaitbuf,bufferid=7,landed,finished
-            req:awaitbuf,bufferid=8,landed,finished
-            req:awaitbuf,bufferid=9,landed,finished
-            req:awaitbuf,bufferid=10,landed,finished
-            req:awaitbuf,bufferid=11,landed,finished
-            req:awaitbuf,bufferid=12,landed,finished
-            req:awaitbuf,bufferid=13,landed,finished
-            req:awaitbuf,bufferid=14,landed,finished
-            req:awaitbuf,bufferid=15,landed,finished
-            req:awaitbuf,bufferid=16,landed,finished
-            req:awaitbuf,bufferid=17,landed,finished
-            req:awaitbuf,bufferid=18,landed,finished
-            req:awaitbuf,bufferid=19,landed,finished
-            req:awaitbuf,bufferid=20,landed,finished
-            req:awaitbuf,bufferid=21,landed,finished
-            req:awaitbuf,bufferid=22,landed,finished
-            req:awaitbuf,bufferid=23,landed,finished
-            req:awaitbuf,bufferid=24,landed,finished
-            req:awaitbuf,bufferid=25,landed,finished
-            req:awaitbuf,bufferid=26,landed,finished
-            req:awaitbuf,bufferid=27,landed,finished
-            req:awaitbuf,bufferid=28,landed,finished
-            req:awaitbuf,bufferid=29,landed,finished
-            req:awaitbuf,bufferid=30,landed,finished
-            req:awaitbuf,bufferid=31,landed,finished
-            req:awaitbuf,bufferid=32,landed,finished
-            req:awaitbuf,bufferid=33,landed,finished
-            req:awaitbuf,bufferid=34,landed,finished
-            req:awaitbuf,bufferid=35,landed,finished
-            req:awaitbuf,bufferid=36,landed,finished
           active_transport,type:mock,open
           Pier,pub:be0dab3303037ad2,req=3,ok
             req:handshake,finished
@@ -254,72 +218,6 @@ Snap:H
                 unemit=103,type:repli_page,seq=103
                 unemit=104,type:repli_page,seq=104
             Ud,pubkey:be0dab3303037ad2
-            req:awaitbuf,bufferid,landed,finished
-            req:awaitbuf,bufferid=2,landed,finished
-            req:awaitbuf,bufferid=3,landed,finished
-            req:awaitbuf,bufferid=4,landed,finished
-            req:awaitbuf,bufferid=5,landed,finished
-            req:awaitbuf,bufferid=6,landed,finished
-            req:awaitbuf,bufferid=7,landed,finished
-            req:awaitbuf,bufferid=8,landed,finished
-            req:awaitbuf,bufferid=9,landed,finished
-            req:awaitbuf,bufferid=10,landed,finished
-            req:awaitbuf,bufferid=11,landed,finished
-            req:awaitbuf,bufferid=12,landed,finished
-            req:awaitbuf,bufferid=13,landed,finished
-            req:awaitbuf,bufferid=14,landed,finished
-            req:awaitbuf,bufferid=15,landed,finished
-            req:awaitbuf,bufferid=16,landed,finished
-            req:awaitbuf,bufferid=17,landed,finished
-            req:awaitbuf,bufferid=18,landed,finished
-            req:awaitbuf,bufferid=19,landed,finished
-            req:awaitbuf,bufferid=20,landed,finished
-            req:awaitbuf,bufferid=21,landed,finished
-            req:awaitbuf,bufferid=22,landed,finished
-            req:awaitbuf,bufferid=23,landed,finished
-            req:awaitbuf,bufferid=24,landed,finished
-            req:awaitbuf,bufferid=25,landed,finished
-            req:awaitbuf,bufferid=26,landed,finished
-            req:awaitbuf,bufferid=27,landed,finished
-            req:awaitbuf,bufferid=28,landed,finished
-            req:awaitbuf,bufferid=29,landed,finished
-            req:awaitbuf,bufferid=30,landed,finished
-            req:awaitbuf,bufferid=31,landed,finished
-            req:awaitbuf,bufferid=32,landed,finished
-            req:awaitbuf,bufferid=33,landed,finished
-            req:awaitbuf,bufferid=34,landed,finished
-            req:awaitbuf,bufferid=35,landed,finished
-            req:awaitbuf,bufferid=36,landed,finished
-            req:awaitbuf,bufferid=37,landed,finished
-            req:awaitbuf,bufferid=38,landed,finished
-            req:awaitbuf,bufferid=39,landed,finished
-            req:awaitbuf,bufferid=40,landed,finished
-            req:awaitbuf,bufferid=41,landed,finished
-            req:awaitbuf,bufferid=42,landed,finished
-            req:awaitbuf,bufferid=43,landed,finished
-            req:awaitbuf,bufferid=44,landed,finished
-            req:awaitbuf,bufferid=45,landed,finished
-            req:awaitbuf,bufferid=46,landed,finished
-            req:awaitbuf,bufferid=47,landed,finished
-            req:awaitbuf,bufferid=48,landed,finished
-            req:awaitbuf,bufferid=49,landed,finished
-            req:awaitbuf,bufferid=50,landed,finished
-            req:awaitbuf,bufferid=51,landed,finished
-            req:awaitbuf,bufferid=52,landed,finished
-            req:awaitbuf,bufferid=53,landed,finished
-            req:awaitbuf,bufferid=54,landed,finished
-            req:awaitbuf,bufferid=55,landed,finished
-            req:awaitbuf,bufferid=56,landed,finished
-            req:awaitbuf,bufferid=57,landed,finished
-            req:awaitbuf,bufferid=58,landed,finished
-            req:awaitbuf,bufferid=59,landed,finished
-            req:awaitbuf,bufferid=60,landed,finished
-            req:awaitbuf,bufferid=61,landed,finished
-            req:awaitbuf,bufferid=62,landed,finished
-            req:awaitbuf,bufferid=63,landed,finished
-            req:awaitbuf,bufferid=64,landed,finished
-            req:awaitbuf,bufferid=65,landed,finished
-            req:awaitbuf,bufferid=66,landed,finished
           active_transport,type:mock,open
         Peering,name:be0dab3303037ad2,req=4,ok
           Pier,pub:b317b9a776e39d30,req=2,ok

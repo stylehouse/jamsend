@@ -31,7 +31,7 @@ Snap:H
                 emit=2,type:repli_lines,seq=2
                 emit=3,type:repli_lines,seq=3
                 emit=4,type:repli_lines,seq=4
-              emit=5,type:repli_lines,seq=5,sent,body_hash:6f09afa986fa2e88d93188ea0ab1ec355c72bb394ceb1df0a12bd42f93022e2f,body_len=315,acked
+              emit=5,type:repli_lines,seq=5,sent,body_hash:094c78b641d9ce303b57a93671e1c5b9e9ad02ef99d9b0f5850a7ad639bfc59f,body_len=307,acked
               emit=6,type:repli_lines,seq=6,sent,body_hash:70bb5dadd84d54422a6a2f437e1c088a6ad45ebdc771e9a69a7c8715dba663af,body_len=93,acked
           active_transport,type:mock,open
         Peering,name:Follower,req=3,ok
@@ -43,7 +43,7 @@ Snap:H
                 unemit=2,type:repli_lines,seq=2
                 unemit=3,type:repli_lines,seq=3
                 unemit=4,type:repli_lines,seq=4
-              req:unemit,seq=5,type:repli_lines,body_hash:6f09afa986fa2e88d93188ea0ab1ec355c72bb394ceb1df0a12bd42f93022e2f,body_len=315,done,to:repli_lines,finished
+              req:unemit,seq=5,type:repli_lines,body_hash:094c78b641d9ce303b57a93671e1c5b9e9ad02ef99d9b0f5850a7ad639bfc59f,body_len=307,done,to:repli_lines,finished
               req:unemit,seq=6,type:repli_lines,body_hash:70bb5dadd84d54422a6a2f437e1c088a6ad45ebdc771e9a69a7c8715dba663af,body_len=93,done,to:repli_lines,finished
           active_transport,type:mock,open
         Library,pier:Origin
@@ -51,10 +51,10 @@ Snap:H
           Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
         Mag:Musica
           Cloud,randomic:draw_a,created_at=1000
-            Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-            Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+            Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+            Card,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
         Library,pier:Follower.mirror
           Mag:Musica
             Cloud,randomic:draw_a,created_at=1000
-              Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-              Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+              Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+              Card,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus

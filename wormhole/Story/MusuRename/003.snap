@@ -12,13 +12,13 @@ Snap:H
           Pier,pub:Follower,req=2,ok
             Ud,pubkey:Follower
             outbox
-              emit,type:repli_lines,seq,sent,body_hash:f5d90bfd6cadc9cc81df6d831513032b2100c423d309eb257d9e3d206daa17e1,body_len=424,acked
+              emit,type:repli_lines,seq,sent,body_hash:7c44f200d16f5f166d24a8836f8c7fd07c5219a90b1c3532ad96e066a371cdfe,body_len=412,acked
           active_transport,type:mock,open
         Peering,name:Follower,req=3,ok
           Pier,pub:Origin,req=2,ok
             Ud,pubkey:Origin
             inbox
-              req:unemit,seq,type:repli_lines,body_hash:f5d90bfd6cadc9cc81df6d831513032b2100c423d309eb257d9e3d206daa17e1,body_len=424,done,to:repli_lines,finished
+              req:unemit,seq,type:repli_lines,body_hash:7c44f200d16f5f166d24a8836f8c7fd07c5219a90b1c3532ad96e066a371cdfe,body_len=412,done,to:repli_lines,finished
           active_transport,type:mock,open
         Library,pier:Origin
           Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
@@ -26,12 +26,12 @@ Snap:H
           Record,id:t2,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
         Mag:Musica
           Cloud,randomic:dgbl8pe,created_at=1000
-            Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-            Record,id:t1,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
-            Record,id:t2,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
+            Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+            Card,id:t1,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+            Card,id:t2,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
         Library,pier:Follower.mirror
           Mag:Musica
             Cloud,randomic:dgbl8pe,created_at=1000
-              Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-              Record,id:t1,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
-              Record,id:t2,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
+              Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+              Card,id:t1,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+              Card,id:t2,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus

@@ -1,30 +1,30 @@
 Snap:H
   H:MusuRaStream,Run
     A:MusuRaStream
-      self,round=100	{"mung":["age"]}
+      self,round=99	{"mung":["age"]}
       w:MusuRaStream
-        self,round=100	{"mung":["age"]}
+        self,round=99	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Account,of:DJ
           Identity:c012850d69de1318,prepub:c012850d69de1318,friendly:DJ
             Peering,name:c012850d69de1318,friendly:DJ
               Idzeug:rastream_1,to:Music,genre:Classical,spent
-              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783907715
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1784025365
                 Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1783907715,sign:a90da1c4106503bea682a5cffd697b15aca1b17cc3cee56b5fbea0304f1973c8cbcf6cfcf527c51542555d9c6f9bd09ce9d6cfe33b822b30ccb5f6bf1225db02,genre:Classical
-                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783907715,sign:0ffb3922ca129a6e912d0bde1a36609de252e401f6a3b86f5c2e1ac2c396d8bee2d2bad6c21188f8ec5f643352f92f01702f458304311e6d022e005a736b2409,genre:Classical
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1784025365,sign:bde9aad6bef74fed08d5c2128dfff66dc4370b7f27ed7db8259364d4eef86353b17bfcbd80f98506b92b2b07a45d5973d743768258d366be280d268a88346e00,genre:Classical
+                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784025365,sign:8e29f83704b9aade1644d03ddcc0189de9f77ce89cdfd445589cbfecb333ed24765573dfd9d38f6195c3ec7ddaeb4b506b74e52976e8f7f220dec5fdbd85560f,genre:Classical
             SocialGraph
-              Edge,a:c012850d69de1318,b:b317b9a776e39d30,at:1783907715
+              Edge,a:c012850d69de1318,b:b317b9a776e39d30,at:1784025365
         Account,of:Listener
           Identity:b317b9a776e39d30,prepub:b317b9a776e39d30,friendly:Listener
             Peering,name:b317b9a776e39d30,friendly:Listener
-              Pier,pub:c012850d69de1318,friendly:DJ,since:1783907715
+              Pier,pub:c012850d69de1318,friendly:DJ,since:1784025365
                 Peering,name:c012850d69de1318,friendly:DJ,pub:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535
-                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783907715,sign:0ffb3922ca129a6e912d0bde1a36609de252e401f6a3b86f5c2e1ac2c396d8bee2d2bad6c21188f8ec5f643352f92f01702f458304311e6d022e005a736b2409,genre:Classical
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1783907715,sign:a90da1c4106503bea682a5cffd697b15aca1b17cc3cee56b5fbea0304f1973c8cbcf6cfcf527c51542555d9c6f9bd09ce9d6cfe33b822b30ccb5f6bf1225db02,genre:Classical
+                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784025365,sign:8e29f83704b9aade1644d03ddcc0189de9f77ce89cdfd445589cbfecb333ed24765573dfd9d38f6195c3ec7ddaeb4b506b74e52976e8f7f220dec5fdbd85560f,genre:Classical
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1784025365,sign:bde9aad6bef74fed08d5c2128dfff66dc4370b7f27ed7db8259364d4eef86353b17bfcbd80f98506b92b2b07a45d5973d743768258d366be280d268a88346e00,genre:Classical
             SocialGraph
-              Edge,a:b317b9a776e39d30,b:c012850d69de1318,at:1783907715
+              Edge,a:b317b9a776e39d30,b:c012850d69de1318,at:1784025365
         Peering,name:c012850d69de1318,req=2,ok
           Pier,pub:b317b9a776e39d30,req=2,ok
             req:handshake,finished
@@ -144,46 +144,6 @@ Snap:H
                 unemit=64,type:repli_page,seq=64
                 unemit=65,type:repli_page,seq=65
             Ud,pubkey:c012850d69de1318
-            req:awaitbuf,bufferid,landed,finished
-            req:awaitbuf,bufferid=2,landed,finished
-            req:awaitbuf,bufferid=3,landed,finished
-            req:awaitbuf,bufferid=4,landed,finished
-            req:awaitbuf,bufferid=5,landed,finished
-            req:awaitbuf,bufferid=6,landed,finished
-            req:awaitbuf,bufferid=7,landed,finished
-            req:awaitbuf,bufferid=8,landed,finished
-            req:awaitbuf,bufferid=9,landed,finished
-            req:awaitbuf,bufferid=10,landed,finished
-            req:awaitbuf,bufferid=11,landed,finished
-            req:awaitbuf,bufferid=12,landed,finished
-            req:awaitbuf,bufferid=13,landed,finished
-            req:awaitbuf,bufferid=14,landed,finished
-            req:awaitbuf,bufferid=15,landed,finished
-            req:awaitbuf,bufferid=16,landed,finished
-            req:awaitbuf,bufferid=17,landed,finished
-            req:awaitbuf,bufferid=18,landed,finished
-            req:awaitbuf,bufferid=19,landed,finished
-            req:awaitbuf,bufferid=20,landed,finished
-            req:awaitbuf,bufferid=21,landed,finished
-            req:awaitbuf,bufferid=22,landed,finished
-            req:awaitbuf,bufferid=23,landed,finished
-            req:awaitbuf,bufferid=24,landed,finished
-            req:awaitbuf,bufferid=25,landed,finished
-            req:awaitbuf,bufferid=26,landed,finished
-            req:awaitbuf,bufferid=27,landed,finished
-            req:awaitbuf,bufferid=28,landed,finished
-            req:awaitbuf,bufferid=29,landed,finished
-            req:awaitbuf,bufferid=30,landed,finished
-            req:awaitbuf,bufferid=31,landed,finished
-            req:awaitbuf,bufferid=32,landed,finished
-            req:awaitbuf,bufferid=33,landed,finished
-            req:awaitbuf,bufferid=34,landed,finished
-            req:awaitbuf,bufferid=35,landed,finished
-            req:awaitbuf,bufferid=36,landed,finished
-            req:awaitbuf,bufferid=37,landed,finished
-            req:awaitbuf,bufferid=38,landed,finished
-            req:awaitbuf,bufferid=39,landed,finished
-            req:awaitbuf,bufferid=40,landed,finished
           active_transport,type:mock,open
         Library,pier:c012850d69de1318
           Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443

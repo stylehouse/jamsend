@@ -797,6 +797,7 @@ async MusuBuddy_drive(w, req):
         if (n === 3) await this.MusuBuddy_restock(w)
         if (n === 4) await this.MusuBuddy_seal(w)
         if (n === 10) await this.MusuBuddy_hear(w)
+        if (n === 11) await this.MusuBuddy_jam(w)
         if (n === 12) await this.MusuBuddy_revoke(w)
     }
     for (const peering of w.o({ Peering: 1 })) await peering.do()
@@ -952,11 +953,8 @@ async MusuBuddy_hear(w):
         if (lufs != null) row.lufs = lufs
         w.i(row)
     })
-    // the session HAPPENED — record it (the jam ledger) the same beat the listener heard the track, so the
-    //  next beat's witness reads a completed ledger.  Skips cleanly if the decode failed (no term).
-    await this.MusuBuddy_jam(w)
 
-// MusuBuddy_jam — the session's history, made legible on the snap (the human 2026-07-14: "I should be able to
+// beat 11 — MusuBuddy_jam — the session's history, made legible on the snap (the human 2026-07-14: "I should be able to
 //  glance through this snap and see what they played to each other — what each liked — what each heisted").  The
 //   listener heard the browsed track, so it SPINS (the DJ played it), LIKES it, and GRABS a keeper into their OWN
 //    shelf — %Kept, DISTINCT from the streaming mirror (grabbing into the mirror would just re-find the husk; a

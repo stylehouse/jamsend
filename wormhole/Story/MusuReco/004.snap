@@ -1,9 +1,9 @@
 Snap:H
   H:MusuReco,Run
     A:MusuReco
-      self,round=16	{"mung":["age"]}
+      self,round=17	{"mung":["age"]}
       w:MusuReco
-        self,round=16	{"mung":["age"]}
+        self,round=17	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
@@ -13,7 +13,7 @@ Snap:H
               recent
                 emit,type:repli_lines,seq
               emit=2,type:repli_lines,seq=2,sent,body_hash:b189aaeb8ad0f62bb201dd67d943abad94c147c513c7206b1ad18428cd9dc497,body_len=134,acked
-              emit=3,type:repli_page,seq=3,sent,body_hash:959ff994853f630888b91928676bf73864c4d2f924256ed6d98d4350336af734,body_len=76800,acked
+              emit=3,type:repli_page,seq=3,sent,body_hash:6c75b45bac3b7e2e2d8e5844f0e34745ee31fd7cab98d3b9d5b51d316dd072ab,body_len=76800,acked
             inbox
               req:unemit,seq,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
               req:unemit,seq=2,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
@@ -82,7 +82,7 @@ Snap:H
               recent
                 unemit,type:repli_lines,seq
               req:unemit,seq=2,type:repli_lines,body_hash:b189aaeb8ad0f62bb201dd67d943abad94c147c513c7206b1ad18428cd9dc497,body_len=134,done,to:repli_lines,finished
-              req:unemit,seq=3,type:repli_page,body_hash:959ff994853f630888b91928676bf73864c4d2f924256ed6d98d4350336af734,body_len=76800,done,to:repli_page,finished
+              req:unemit,seq=3,type:repli_page,body_hash:6c75b45bac3b7e2e2d8e5844f0e34745ee31fd7cab98d3b9d5b51d316dd072ab,body_len=76800,done,to:repli_page,finished
             outbox
               emit,type:repli_want,seq,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
               emit=2,type:repli_want,seq=2,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
@@ -114,7 +114,6 @@ Snap:H
               emit=28,type:repli_want,seq=28,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
               emit=29,type:repli_want,seq=29,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
               emit=30,type:repli_want,seq=30,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
-            req:awaitbuf,bufferid,landed,finished
           active_transport,type:mock,open
         Library,pier:DJ
           Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real

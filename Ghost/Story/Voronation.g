@@ -133,17 +133,20 @@ async VoroClinic_drive(w, req):
 
 // two folded libraries (container folds via Voro_crushable) + one gang of noisy leaves (gang-fold);
 //  deterministic, so the crush verdict is a pure function of this world — fixtures byte-stable.
+//   Tracks carry VoroScape's musical sprinkle (hashed off the title — still pure): a %year, %live
+//    on ~1/2, %remaster on ~1/3, so the Clinic exercises the CROSS-LEVEL grasp (G1: a track's
+//     facts must never read as artist facts) and the absence blurs, not just a bare title list.
 VoroClinic_seed(w):
     let a1 = w.i({ Artist: 1, name: 'Alpha' })
-    a1.i({ Track: 1, title: 'a1' })
-    a1.i({ Track: 1, title: 'a2' })
-    a1.i({ Track: 1, title: 'a3' })
-    a1.i({ Track: 1, title: 'a4' })
+    this.VoroScape_track(a1, 'a1')
+    this.VoroScape_track(a1, 'a2')
+    this.VoroScape_track(a1, 'a3')
+    this.VoroScape_track(a1, 'a4')
     let a2 = w.i({ Artist: 1, name: 'Beta' })
-    a2.i({ Track: 1, title: 'b1' })
-    a2.i({ Track: 1, title: 'b2' })
-    a2.i({ Track: 1, title: 'b3' })
-    a2.i({ Track: 1, title: 'b4' })
+    this.VoroScape_track(a2, 'b1')
+    this.VoroScape_track(a2, 'b2')
+    this.VoroScape_track(a2, 'b3')
+    this.VoroScape_track(a2, 'b4')
     for (let i = 0; i < 4; i++) w.i({ witnessed: 'w' + i })
 
 // count the c.stuff CHUNKS under a node (each a cell candidate the render owes as glass); a chunk is

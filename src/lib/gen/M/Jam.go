@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Jam(): string { return '95925669638d4eba~g1' },
+    Ghostmeta_Ghost_M_Jam(): string { return '9d89d2f22ccfbc41~g1' },
 
 // Jam.g — the JAM LEDGER: a session's history, legible on the snap (the human 2026-07-14, reading
 //  MusuBuddy: "I should be able to glance through this snap and see what they played to each other, what
@@ -124,11 +124,17 @@ Jam_grab(jam, rec, kept) {
     return { event: ev, kept: dst }
 
 },
-// Jam_ledger — the session's events in order (every event carries `at`, so one query gathers all three kinds
-//  across their distinct mainkeys, then sorts).  The reader's / Book's view of "what happened, in sequence".
+// Jam_ledger — the session's events in order.  Gather by the three distinct event MAINKEYS then sort by the
+//  `at` ordinal — a mainkey-less `o({at:1})` returns NOTHING (the o() index keys on the mainkey; a query with
+//   no mainkey finds no bucket — proven live 2026-07-14, a static-review blind spot).  The reader's / Book's
+//    view of "what happened, in sequence".
 Jam_ledger(jam) {
     let out = []
-    for (const ev of jam.o({ at: 1 })) out.push(ev)
+    for (const kind of ['Spin', 'Like', 'Grab']) {
+        let q = {}
+        q[kind] = 1
+        for (const ev of jam.o(q)) out.push(ev)
+    }
     out.sort((a, b) => (+a.sc.at) - (+b.sc.at))
     return out
 

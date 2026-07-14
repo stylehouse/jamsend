@@ -15,9 +15,9 @@ Snap:H
                 emit=2,type:repli_lines,seq=2
                 emit=3,type:repli_page,seq=3
               emit=4,type:repli_lines,seq=4,sent,body_hash:96fd5e2b8b0b8b07c55091525e035cb949d1dd2d4393691cd249f1ab97c85b7e,body_len=136,acked
-              emit=5,type:repli_page,seq=5,sent,body_hash:961bd5ac6f6c80458d9411a7ca92301815bec4da6ca9d0eff161def24f502a5a,body_len=76800,acked
+              emit=5,type:repli_page,seq=5,sent,body_hash:cefaa2b894127e8fd045dacb2ffd36c4f67f8c5a2d96648e43f870ea314aa1a4,body_len=76800,acked
               emit=6,type:repli_lines,seq=6,sent,body_hash:9b3e7d35fc48fecf1c79516a9ae590482057c4f02a4ceebfa044658ea27b1303,body_len=137,acked
-              emit=7,type:repli_page,seq=7,sent,body_hash:57a56632dec93558ef15779f3d432f027fa1e92234e5e7c57401e7b68e5e4b95,body_len=76800,acked
+              emit=7,type:repli_page,seq=7,sent,body_hash:35afe47cdee604d8ce245bfdf2cc4e70b9e990310bde3bc153a17cb2cc32efc6,body_len=76800,acked
             inbox
               recent
                 unemit=11,type:repli_want,seq=11
@@ -77,9 +77,9 @@ Snap:H
                 unemit=2,type:repli_lines,seq=2
                 unemit=3,type:repli_page,seq=3
               req:unemit,seq=4,type:repli_lines,body_hash:96fd5e2b8b0b8b07c55091525e035cb949d1dd2d4393691cd249f1ab97c85b7e,body_len=136,done,to:repli_lines,finished
-              req:unemit,seq=5,type:repli_page,body_hash:961bd5ac6f6c80458d9411a7ca92301815bec4da6ca9d0eff161def24f502a5a,body_len=76800,done,to:repli_page,finished
+              req:unemit,seq=5,type:repli_page,body_hash:cefaa2b894127e8fd045dacb2ffd36c4f67f8c5a2d96648e43f870ea314aa1a4,body_len=76800,done,to:repli_page,finished
               req:unemit,seq=6,type:repli_lines,body_hash:9b3e7d35fc48fecf1c79516a9ae590482057c4f02a4ceebfa044658ea27b1303,body_len=137,done,to:repli_lines,finished
-              req:unemit,seq=7,type:repli_page,body_hash:57a56632dec93558ef15779f3d432f027fa1e92234e5e7c57401e7b68e5e4b95,body_len=76800,done,to:repli_page,finished
+              req:unemit,seq=7,type:repli_page,body_hash:35afe47cdee604d8ce245bfdf2cc4e70b9e990310bde3bc153a17cb2cc32efc6,body_len=76800,done,to:repli_page,finished
             outbox
               recent
                 emit=11,type:repli_want,seq=11
@@ -102,9 +102,6 @@ Snap:H
                 emit=28,type:repli_want,seq=28
                 emit=29,type:repli_want,seq=29
                 emit=30,type:repli_want,seq=30
-            req:awaitbuf,bufferid,landed,finished
-            req:awaitbuf,bufferid=2,landed,finished
-            req:awaitbuf,bufferid=3,landed,finished
           active_transport,type:mock,open
         Library,pier:DJ
           Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real

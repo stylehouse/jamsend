@@ -9,7 +9,7 @@ Snap:H
           reached:step_2
           Dogear,of:live-t2
             curs,wild:Cloud,randomic:draw_one
-              curs,wild:Record,id:t2
+              curs,wild:Card,id:t2
           reached:step_3
           before,depth=2,ok,id:t1
           reached:step_4
@@ -21,8 +21,8 @@ Snap:H
           see:the browse resumes across a reload — the re-decoded bookmark lands on the same record even after the original live tree is torn down
         Mag:Musica
           Cloud,randomic:draw_one,created_at=1000
-            Record,id:t2,artist:Bassbin,title:Two,path:crate/b/two.opus
-            Record,id:t9,artist:Auteur,title:One,path:crate/a/one.opus
+            Card,id:t2,artist:Bassbin,title:Two,path:crate/b/two.opus
+            Card,id:t9,artist:Auteur,title:One,path:crate/a/one.opus
           Dogear,of:record-t1
             curs,wild:Cloud,randomic:draw_one
-              curs,wild:Record,id:t1
+              curs,wild:Card,id:t1

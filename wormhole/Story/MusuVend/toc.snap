@@ -4,26 +4,30 @@ story:MusuVend
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.04
+    TimeTotal:beliefs,avg=0.041
       sample=0.042,at=1783930162
       sample=0.042,at=1783930246
       sample=0.039,at=1783930265
       sample=0.044,at=1783930277
       sample=0.033,at=1783970994
+      sample=0.037,at=1784025047
+      sample=0.05,at=1784025157
     TimeTotal:step,avg=0.004
       sample=0.004,at=1783930162
       sample=0.004,at=1783930246
       sample=0.004,at=1783930265
       sample=0.004,at=1783930277
       sample=0.003,at=1783970994
+      sample=0.003,at=1784025047
+      sample=0.005,at=1784025157
   step,dige:ec78b12d711b7cf1
   step=2,dige:222eb756cdba314c
-  step=3,dige:dc79bccb4fd7ebfb
-  step=4,dige:a7290e725e7a9bf6
-  step=5,dige:cafe48285ebe9f04
-  step=6,dige:b4a2dc99f9e0e555
-  step=7,dige:87fbc24df228cb75
-  step=8,dige:d5665b78349afcad
-  step=9,dige:ace8ccd2dc5d2243
-  step=10,dige:46554877519a0ad6
-  step=11,dige:5f412279efd069c0
+  step=3,dige:1df9bc211a99d66e
+  step=4,dige:625d107bd82f6fb5
+  step=5,dige:5a349e894b32472f
+  step=6,dige:6cbc6e1bf30e612e
+  step=7,dige:0b1a090cfb8eda74
+  step=8,dige:182801d2b5fac750
+  step=9,dige:96443c73650c5cc0
+  step=10,dige:9ec5e785c6ee0284
+  step=11,dige:e784a0deb7515171

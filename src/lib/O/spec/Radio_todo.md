@@ -23,10 +23,11 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
-**THE SNAP READS LIKE THE SESSION — N1/N3/N5 + Jam ghost + the Card rename LANDED as code (compile-clean),
- FLEET RE-RECORD OWED (runners were jammed 2026-07-14; nothing re-recorded yet — every magazine + audio-pull
-  Book is STALE-RED until it is).** The human read MusuBuddy's snaps and named four smells + one growth; all
-   are coded, none yet re-gated on a live runner. What landed:
+**THE SNAP READS LIKE THE SESSION — N1-N5 + the Jam ledger + the Card rename: LANDED and LIVE-GREEN (2026-07-14).**
+ The human read MusuBuddy's snaps and named four smells + one growth; all are coded, adversarially reviewed, and
+  RE-RECORDED GREEN on the :9091 runner (all 14 affected Books — see `history/Radio_buildlog.md`). The live runner
+   caught TWO bugs the static reviews could not (the jam ran a beat before `expecting()` resolved `w.c.term`; a
+    mainkey-less `o({at:1})` in `Jam_ledger` returned nothing) — both fixed and re-verified. What landed:
 
 - **N1 — no maybe-undefined sc mints. DONE.** Guarded the three unconditional `k: rec.sc.k` mints (`Heist.g`
    Musica_fold card + heist-landing, `Heistation.g` reflect card) the way `album` already was. Kills the
@@ -82,16 +83,14 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
    / the `Repli_crush_scan` path → `no_further` suppresses Cyto descent while the particles stay for the see) —
     ideally the mirror record too. Not a correctness issue; the Matstyle swatches already give them semantic color.
 
-**⚠ COORDINATION — the OWED fleet re-record + the other agent's MusuStanding.** N2 makes **MusuStanding**'s
- fixtures stale (its cards become `%Card`). Another agent was at a MusuStanding commit-point (2026-07-14).
-  RULE for whoever re-records: do NOT commit any magazine Book green without re-recording it POST-N2; a
-   MusuStanding re-record done as `Record`-cards is SUPERSEDED by N2 (redo as `%Card`). My landed N1/N3 do NOT
-    touch MusuStanding (it has neither the `undef` brand nor awaitbuf rows), so only N2 intersects it.
-
-GATE (all OWED, needs a LIVE runner — headless Story_cli BANNED): re-record the N1+N2+N3 union (the magazine
- + audio-pull Books above) — force-clean where a caveat-ok step blocks, git-diff each toc before dispatch;
-  THEN wire N4 into MusuBuddy → adversarial-review the new sees → re-record MusuBuddy. The sealed real-audio
-   Books (MusuBuddy) keep their benign `AudibleEntropy` ≈ — don't chase caveat:0.
+**RE-RECORD DONE (2026-07-14).** All 14 affected Books re-recorded GREEN on the live :9091 runner, including
+ **MusuStanding** (now `%Card`, superseding any `Record`-card version). The sealed real-audio Books keep their
+  benign `AudibleEntropy` ≈ (MusuBuddy caveat:11; the Ra Books caveat:37/53 — all ok_pct:1; caveat:0 is
+   unreachable by design, not chased). Working-tree note: running each Book also refreshed its
+    `Credulate`/`Credulation` gen-pins to the new gen bundle (now including `Ghost_M_Jam`) and its toc
+     timing-stats — benign bookkeeping churn across the run set, expected in the diff. Gen reached the runner
+      via `ghost-compile` (intermittently half-open — a retry cleared it each time; LocalGen kept the disk gen
+       honest in parallel).
 
 **THE RA PIPELINE RE-DRAW — MusuBuddy consolidates stock|cast|play UNDER the magazine, and the three
  standalone Ra* Books RETIRED: LIVE-GREEN ×2 (2026-07-14; 14/14 green — a sealed real-audio Book, so
@@ -395,6 +394,14 @@ GATE (all OWED, needs a LIVE runner — headless Story_cli BANNED): re-record th
     always `--runner=<prefix>`; pre-pin the `%see` set before any accept and confirm after (§1.5);
      sealing Books show PERMANENT benign ≈ on grafted seal fields — do not chase caveat:0 (§1.5);
       the host commits mid-session — re-check the tree after HEAD moves.
+
+**Captured idea (the human, 2026-07-14) — the CUE as the DJ metaphor for an invite.** The `Idzeug`/`Invite`
+ tokens "can be got from a place in the DJ equipment to plug in the monitor for headphone-ing to the next
+  track." So the invite/grant isn't only a door — it's the DJ's CUE: an Idzeug redeemed at the deck lets you
+   MONITOR (headphone-preview) the next track before it plays out loud, the way a real DJ cues the incoming
+    record in their cans. Ties the Swarm invite (SwarmDoor / §1.0 Invite) to the deck's cue channel (MusuCue,
+     §1.0 `multi-stream: decks, cue, crossfade`). Design seam for when the deck UI + invite meet — a redeemed
+      grant surfaces a "cue the next track" affordance, distinct from the out-loud play.
 
 ---
 

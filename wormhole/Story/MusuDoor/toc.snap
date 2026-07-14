@@ -4,34 +4,34 @@ story:MusuDoor
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.049
-      sample=0.034,at=1783934007
-      sample=0.034,at=1783934008
-      sample=0.034,at=1783934009
-      sample=0.034,at=1783934010
-      sample=0.034,at=1783934011
-      sample=0.034,at=1783934012
-      sample=0.034,at=1783934013
-      sample=0.028,at=1783934026
-      sample=0.027,at=1783934040
-      sample=0.196,at=1783943617
-    TimeTotal:step,avg=0.006
-      sample=0.004,at=1783934007
-      sample=0.004,at=1783934008
-      sample=0.004,at=1783934009
-      sample=0.004,at=1783934010
-      sample=0.004,at=1783934011
-      sample=0.004,at=1783934012
-      sample=0.004,at=1783934013
-      sample=0.003,at=1783934026
-      sample=0.003,at=1783934040
-      sample=0.022,at=1783943617
+    TimeTotal:beliefs,avg=0.035
+      sample=0.036,at=1784025180
+      sample=0.036,at=1784025185
+      sample=0.036,at=1784025189
+      sample=0.036,at=1784025189
+      sample=0.036,at=1784025190
+      sample=0.036,at=1784025193
+      sample=0.036,at=1784025194
+      sample=0.036,at=1784025195
+      sample=0.036,at=1784025198
+      sample=0.029,at=1784025207
+    TimeTotal:step,avg=0.004
+      sample=0.004,at=1784025180
+      sample=0.004,at=1784025185
+      sample=0.004,at=1784025189
+      sample=0.004,at=1784025189
+      sample=0.004,at=1784025190
+      sample=0.004,at=1784025193
+      sample=0.004,at=1784025194
+      sample=0.004,at=1784025195
+      sample=0.004,at=1784025198
+      sample=0.003,at=1784025207
   step,dige:0fc451ce3b8f1d97
   step=2,dige:475a206b7629dccc
-  step=3,dige:c7260bed31e38885
-  step=4,dige:8385a52db2366125
-  step=5,dige:e02ab7a928d7b3d4
-  step=6,dige:39e9ed07b71e7fb9
-  step=7,dige:c8010805d96b9489
-  step=8,dige:ca5d06d8d5d13b1e
-  step=9,dige:fcf9ed90ad0c1f35
+  step=3,dige:c442ac95fe564cb6
+  step=4,dige:224e202f2df2383f
+  step=5,dige:fff67f04c506b73e
+  step=6,dige:2902cb97a88b5b90
+  step=7,dige:82d292f6e0bf7cbb
+  step=8,dige:e7f3c8313687ff5a
+  step=9,dige:d0d869bf79210ddc

@@ -52,36 +52,36 @@ story:MusuReco
     dontSnapCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=1.067
-      sample=1.397,at=1783288782
-      sample=1.038,at=1783331350
-      sample=1.17,at=1783343692
-      sample=0.941,at=1783442622
-      sample=0.941,at=1783442643
-      sample=0.965,at=1783442700
-      sample=0.985,at=1783443859
-      sample=0.937,at=1783447755
-      sample=0.951,at=1783697395
-      sample=1.341,at=1783714940
-    TimeTotal:step,avg=0.097
-      sample=0.127,at=1783288782
-      sample=0.094,at=1783331350
-      sample=0.106,at=1783343692
-      sample=0.086,at=1783442622
-      sample=0.086,at=1783442643
-      sample=0.088,at=1783442700
-      sample=0.09,at=1783443859
-      sample=0.085,at=1783447755
-      sample=0.086,at=1783697395
-      sample=0.122,at=1783714940
+    TimeTotal:beliefs,avg=1.318
+      sample=1.363,at=1784029031
+      sample=1.363,at=1784029033
+      sample=1.363,at=1784029035
+      sample=1.363,at=1784029036
+      sample=1.363,at=1784029037
+      sample=1.363,at=1784029039
+      sample=1.363,at=1784029040
+      sample=1.363,at=1784029042
+      sample=1.363,at=1784029043
+      sample=0.911,at=1784029072
+    TimeTotal:step,avg=0.12
+      sample=0.124,at=1784029031
+      sample=0.124,at=1784029033
+      sample=0.124,at=1784029035
+      sample=0.124,at=1784029036
+      sample=0.124,at=1784029037
+      sample=0.124,at=1784029039
+      sample=0.124,at=1784029040
+      sample=0.124,at=1784029042
+      sample=0.124,at=1784029043
+      sample=0.083,at=1784029072
   step,dige:3dbd760e21c9003f
   step=2,dige:bd403f2eaa545bb0
   step=3,dige:c2a87f798979b983
-  step=4,dige:fb4c95bddc443455
-  step=5,dige:81233dee6dbf78e7
-  step=6,dige:1da26710526df536
-  step=7,dige:7491190373b8a7ee
-  step=8,dige:781b4cccf26f4a5f
-  step=9,dige:fc38600ac1fb6d37
-  step=10,dige:424444f33148eba9
-  step=11,dige:91f7b19f79ae6dd2
+  step=4,dige:24c9c1132b68a3e6
+  step=5,dige:57ee33bbe15c3527
+  step=6,dige:a01da063ce92ff3d
+  step=7,dige:9c47a761116fd0ac
+  step=8,dige:2cf17bca72e56982
+  step=9,dige:b0d35f0a82416fa0
+  step=10,dige:7483433e8083a479
+  step=11,dige:388e546114704ef9

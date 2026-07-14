@@ -18,7 +18,7 @@ Snap:H
             outbox
               recent
                 emit,type:repli_lines,seq
-              emit=2,type:repli_lines,seq=2,sent,body_hash:48897fa1de68e0e23a3a8bd78dfc1fda97fba69a988286a86bc78ab86eacb9aa,body_len=542,acked
+              emit=2,type:repli_lines,seq=2,sent,body_hash:820b8c4055dc534b0dd210db6ebd4b514aa9eb731b2285c0193da5a782a04643,body_len=530,acked
           active_transport,type:mock,open
         Peering,name:Follower,req=3,ok
           Pier,pub:Origin,req=2,ok
@@ -26,7 +26,7 @@ Snap:H
             inbox
               recent
                 unemit,type:repli_lines,seq
-              req:unemit,seq=2,type:repli_lines,body_hash:48897fa1de68e0e23a3a8bd78dfc1fda97fba69a988286a86bc78ab86eacb9aa,body_len=542,done,to:repli_lines,finished
+              req:unemit,seq=2,type:repli_lines,body_hash:820b8c4055dc534b0dd210db6ebd4b514aa9eb731b2285c0193da5a782a04643,body_len=530,done,to:repli_lines,finished
           active_transport,type:mock,open
         Library,pier:Origin
           Record,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
@@ -35,16 +35,16 @@ Snap:H
             Stream,name:audio,total=8,have=0
         Mag:Musica
           Cloud,randomic:draw_hon,created_at=1000
-            Record,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
-            Record,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
+            Card,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
+            Card,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
           Cloud,randomic:draw_evil,created_at=1500
-            Record,id:evil,artist:Attacker,title:Trojan Draw,path:crate/x/evil.opus
+            Card,id:evil,artist:Attacker,title:Trojan Draw,path:crate/x/evil.opus
               req:sabotage,eternal,arm:pwn
         Library,pier:Follower.mirror
           Mag:Musica
             Cloud,randomic:draw_hon,created_at=1000
-              Record,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
-              Record,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
+              Card,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
+              Card,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
             Cloud,randomic:draw_evil,created_at=1500
-              Record,id:evil,artist:Attacker,title:Trojan Draw,path:crate/x/evil.opus
+              Card,id:evil,artist:Attacker,title:Trojan Draw,path:crate/x/evil.opus
                 req:sabotage,eternal,arm:pwn

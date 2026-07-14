@@ -1805,9 +1805,9 @@ Vtuff_default(root, members, src):
     // keyrows for a homogeneous family (minus what the title|list spoke) and for a mixed BIG
     //  one (everything — nothing else speaks); a mixed SMALL family said each member instead.
     if (homo) {
-        this.Vtuff_keyrows(root, members, this.Vtuff_skips(members, kinds))
+        this.Vtuff_keyrows(root, members, this.Vtuff_skips(members, kinds), src)
     } else if (members.length > 5) {
-        this.Vtuff_keyrows(root, members, [])
+        this.Vtuff_keyrows(root, members, [], src)
     }
     this.Vtuff_dip_row(root, members)
 
@@ -1845,7 +1845,7 @@ Vtuff_bamboo(root, members, src):
     //  a mixed small family keeps its leaf here — the cane already spoke the members, but a
     //   stalk reads by BANDS, so the leaf still says what they share)
     let leaf = root.i({ Vseg: 1, seg: 'leaf', joint: 2 })
-    this.Vtuff_keyrows(leaf, members, this.Vtuff_skips(members, kinds))
+    this.Vtuff_keyrows(leaf, members, this.Vtuff_skips(members, kinds), src)
     // shoot — the /*N surf handle, the last joint, always present
     let shoot = root.i({ Vseg: 1, seg: 'shoot', joint: 3 })
     this.Vtuff_dip_row(shoot, members)
@@ -1902,7 +1902,15 @@ Vtuff_se_apply(root, src):
 //    'Olearia: figaro' / Frond,Root stutter the owner flagged).  A key with ONE
 //    distinct value across everyone says it once (fact); a varying key shows value chips with
 //     counts, most-common first, capped with a visible tail.
-Vtuff_keyrows(root, members, skips):
+//  Every row carries WHOSE LEVEL its claim lives at (G1, the second real-world read: a %year
+//   distilled off the %Tracks rode untagged, so paint seated it in the %Artist's own band —
+//    "those ARE strictly part of the Tracks … two different C/C levels cannot share data
+//     descriptions").  Same rule as the list's B0.1: when a key's carriers are all ONE kind
+//      and that kind differs from the container's, the row wears their tag; paint then keeps
+//       the grouping boundary however it renders (a tagged band flat, per-member craters).
+Vtuff_keyrows(root, members, skips, src):
+    let ck = null
+    if (src) ck = src.c.gang ? (src.c.fold_kind || null) : Object.keys(src.sc)[0]
     let keys = []
     let seen = {}
     for (const m of members) {
@@ -1913,33 +1921,56 @@ Vtuff_keyrows(root, members, skips):
     for (const k of keys) {
         if (skips && skips.includes(k)) continue
         let vals = {}
+        let who = {}
         let order = []
         let have = 0
+        let carriers = {}
         for (const m of members) {
             if (!Object.prototype.hasOwnProperty.call(m.sc, k)) continue
             have = have + 1
+            carriers[Object.keys(m.sc)[0]] = 1
             let v = '' + m.sc[k]
-            if (vals[v] == null) { vals[v] = 0; order.push(v) }
+            if (vals[v] == null) { vals[v] = 0; who[v] = []; order.push(v) }
             vals[v] = vals[v] + 1
+            who[v].push(m)
         }
         if (!have) continue
+        let cks = Object.keys(carriers)
+        let tag = null
+        if (ck && cks.length === 1 && cks[0] !== ck) tag = cks[0]
+        // every claim remembers WHO it speaks for (c.members, c-side so it never snaps): the
+        //  correspondence the glass renders as hover-lit chips + hourglass ribbons — "any one of
+        //   the v we click on shows what other $v and $k are involved in it" (the human).
         if (order.length === 1) {
             if (order[0] === '1') {
                 // a presence claim rides TYPED: the key alone + its count, no v (its value IS its
                 //  mere presence).  Display text is composed at paint (Vtuff_claim_text) — the
                 //   Stuffing-shape cut, 2026-07-14: claims stay k/v pairs end-to-end, never
                 //    rendered into a string a reader must parse back apart.
-                if (have < members.length) root.i({ Vrow: 1, row: 'fact', k: k, n: have, wgt: 1 })
+                if (have < members.length) {
+                    let fsc = { Vrow: 1, row: 'fact', k: k, n: have, wgt: 1 }
+                    if (tag) fsc.tag = tag
+                    let f = root.i(fsc)
+                    f.c.members = who[order[0]]
+                }
             } else {
-                root.i({ Vrow: 1, row: 'fact', k: k, v: order[0], wgt: 1 })
+                let fsc = { Vrow: 1, row: 'fact', k: k, v: order[0], wgt: 1 }
+                if (tag) fsc.tag = tag
+                let f = root.i(fsc)
+                f.c.members = who[order[0]]
             }
             continue
         }
         order.sort((a, b) => vals[b] - vals[a])
-        let r = root.i({ Vrow: 1, row: 'spread', k: k, wgt: 1 })
+        let ssc = { Vrow: 1, row: 'spread', k: k, wgt: 1 }
+        if (tag) ssc.tag = tag
+        let r = root.i(ssc)
         let chips = order
         if (order.length > 4) chips = order.slice(0, 3)
-        for (const v of chips) r.i({ Vbit: 1, v: v, n: vals[v] })
+        for (const v of chips) {
+            let b = r.i({ Vbit: 1, v: v, n: vals[v] })
+            b.c.members = who[v]
+        }
         // the overflow tail stays TEXT + n:0 — it is chrome (paint), not a claim; the n:0 mark is
         //  what census|model skip by, and its lack of a v now says the same thing twice over.
         if (order.length > chips.length) r.i({ Vbit: 1, text: '+' + (order.length - chips.length), n: 0 })

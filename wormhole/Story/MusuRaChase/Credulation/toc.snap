@@ -1,10 +1,10 @@
 Credulation,of_Book:MusuRaChase
-  run=0,at=1783920712.658,ok,ok_pct,mode:check
+  run=0,at=1784025532.013,ok=0,ok_pct=0.07,mode:check
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-    uses:Ghost_N_Repli,dige:792b0a842d938f44
+    uses:Ghost_N_Repli,dige:749e491be4cbe2e2~g1
     uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
     uses:Ghost_M_Radiola,dige:8786e42c3f3d4c97
     uses:Ghost_M_Sound,dige:f7dbcd82c50033cc
@@ -13,12 +13,85 @@ Credulation,of_Book:MusuRaChase
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
     uses:Ghost_M_Ra,dige:877d4c68475647aa
     uses:Ghost_M_Booth,dige:24e06889933090b3
-    uses:Ghost_M_Heist,dige:1f6826d3ccbab171~g1
+    uses:Ghost_M_Heist,dige:821cc65a7687ccb8~g1
+    uses:Ghost_M_Jam,dige:9d89d2f22ccfbc41~g1
     uses:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
-    uses:Ghost_Story_Radiation,dige:f3403566ed74e831
-    uses:Ghost_Story_Heistation,dige:d5223fcdb47e3b32~g1
+    uses:Ghost_Story_Radiation,dige:0bbfe920082b5b3e~g1
+    uses:Ghost_Story_Heistation,dige:7d0bbd67a32b5e47~g1
     uses:Ghost_Story_Berthation,dige:7bbe9ae361826f32~g1
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
-    uses:Ghost_Story_Swarmation,dige:c35a937c80b7a07b
-    uses:Ghost_V_Voro,dige:e18bf67a4ae48210~g1
-    uses:Ghost_Story_Voronation,dige:9d9fd42afe942f57~g1
+    uses:Ghost_Story_Swarmation,dige:f4e35eee8c243f8c~g1
+    uses:Ghost_V_Voro,dige:ab1d6e6ec1ce79ae~g1
+    uses:Ghost_Story_Voronation,dige:a793373e1f6bf9ba~g1
+  run,at=1784025557.825,ok=0,ok_pct=0.07,mode:check
+    uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3~g1
+    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
+    uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
+    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
+    uses:Ghost_N_Repli,dige:749e491be4cbe2e2~g1
+    uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
+    uses:Ghost_M_Radiola,dige:8786e42c3f3d4c97
+    uses:Ghost_M_Sound,dige:f7dbcd82c50033cc
+    uses:Ghost_M_Crate,dige:1181580f6e6c1a5e~g1
+    uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
+    uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
+    uses:Ghost_M_Ra,dige:877d4c68475647aa
+    uses:Ghost_M_Booth,dige:24e06889933090b3
+    uses:Ghost_M_Heist,dige:821cc65a7687ccb8~g1
+    uses:Ghost_M_Jam,dige:9d89d2f22ccfbc41~g1
+    uses:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
+    uses:Ghost_Story_Radiation,dige:0bbfe920082b5b3e~g1
+    uses:Ghost_Story_Heistation,dige:7d0bbd67a32b5e47~g1
+    uses:Ghost_Story_Berthation,dige:7bbe9ae361826f32~g1
+    uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
+    uses:Ghost_Story_Swarmation,dige:f4e35eee8c243f8c~g1
+    uses:Ghost_V_Voro,dige:ab1d6e6ec1ce79ae~g1
+    uses:Ghost_Story_Voronation,dige:a793373e1f6bf9ba~g1
+  run=2,at=1784025559.51,ok=0,ok_pct=0.09,mode:check
+    uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3~g1
+    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
+    uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
+    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
+    uses:Ghost_N_Repli,dige:749e491be4cbe2e2~g1
+    uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
+    uses:Ghost_M_Radiola,dige:8786e42c3f3d4c97
+    uses:Ghost_M_Sound,dige:f7dbcd82c50033cc
+    uses:Ghost_M_Crate,dige:1181580f6e6c1a5e~g1
+    uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
+    uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
+    uses:Ghost_M_Ra,dige:877d4c68475647aa
+    uses:Ghost_M_Booth,dige:24e06889933090b3
+    uses:Ghost_M_Heist,dige:821cc65a7687ccb8~g1
+    uses:Ghost_M_Jam,dige:9d89d2f22ccfbc41~g1
+    uses:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
+    uses:Ghost_Story_Radiation,dige:0bbfe920082b5b3e~g1
+    uses:Ghost_Story_Heistation,dige:7d0bbd67a32b5e47~g1
+    uses:Ghost_Story_Berthation,dige:7bbe9ae361826f32~g1
+    uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
+    uses:Ghost_Story_Swarmation,dige:f4e35eee8c243f8c~g1
+    uses:Ghost_V_Voro,dige:ab1d6e6ec1ce79ae~g1
+    uses:Ghost_Story_Voronation,dige:a793373e1f6bf9ba~g1
+  run=3,at=1784025709.441,ok,ok_pct,mode:check
+    uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3~g1
+    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
+    uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
+    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
+    uses:Ghost_N_Repli,dige:749e491be4cbe2e2~g1
+    uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
+    uses:Ghost_M_Radiola,dige:8786e42c3f3d4c97
+    uses:Ghost_M_Sound,dige:f7dbcd82c50033cc
+    uses:Ghost_M_Crate,dige:1181580f6e6c1a5e~g1
+    uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
+    uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
+    uses:Ghost_M_Ra,dige:877d4c68475647aa
+    uses:Ghost_M_Booth,dige:24e06889933090b3
+    uses:Ghost_M_Heist,dige:821cc65a7687ccb8~g1
+    uses:Ghost_M_Jam,dige:9d89d2f22ccfbc41~g1
+    uses:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
+    uses:Ghost_Story_Radiation,dige:0bbfe920082b5b3e~g1
+    uses:Ghost_Story_Heistation,dige:7d0bbd67a32b5e47~g1
+    uses:Ghost_Story_Berthation,dige:7bbe9ae361826f32~g1
+    uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
+    uses:Ghost_Story_Swarmation,dige:f4e35eee8c243f8c~g1
+    uses:Ghost_V_Voro,dige:ab1d6e6ec1ce79ae~g1
+    uses:Ghost_Story_Voronation,dige:a793373e1f6bf9ba~g1

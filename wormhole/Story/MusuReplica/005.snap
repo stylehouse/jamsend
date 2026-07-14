@@ -1,9 +1,9 @@
 Snap:H
   H:MusuReplica,Run
     A:MusuReplica
-      self,round=14	{"mung":["age"]}
+      self,round=15	{"mung":["age"]}
       w:MusuReplica
-        self,round=14	{"mung":["age"]}
+        self,round=15	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
@@ -41,8 +41,6 @@ Snap:H
               emit=3,type:repli_want,seq=3,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
             req:awaitbuf,bufferid
               warned:buffer_late
-            req:awaitbuf,bufferid=2,landed,finished
-            req:awaitbuf,bufferid=3,landed,finished
           active_transport,type:mock,open
         Library,pier:DJ
           Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6

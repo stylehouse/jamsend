@@ -10,11 +10,11 @@ Snap:H
           Dogear,of:record-t1
             curs,Mag:Musica
               curs,wild:Cloud,randomic:draw_one
-                curs,wild:Record,id:t1
+                curs,wild:Card,id:t1
           Dogear,of:record-t2
             curs,Mag:Musica
               curs,wild:Cloud,randomic:draw_one
-                curs,wild:Record,id:t2
+                curs,wild:Card,id:t2
           reached:step_3
           baseline,both
           reached:step_4
@@ -26,6 +26,6 @@ Snap:H
           see:the redirect marker is what heals — an identical rename with no marker left the other cursor failing cleanly with nothing to follow
         Mag:Musica
           Cloud,randomic:draw_one,created_at=1000
-            Record,id:t1b,artist:Auteur,title:One,path:crate/a/one.opus
+            Card,id:t1b,artist:Auteur,title:One,path:crate/a/one.opus
             Renamed,key:id,from:t1,to:t1b,at=4000
-            Record,id:t2b,artist:Bassbin,title:Two,path:crate/b/two.opus
+            Card,id:t2b,artist:Bassbin,title:Two,path:crate/b/two.opus
