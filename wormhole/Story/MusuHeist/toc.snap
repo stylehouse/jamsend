@@ -5,10 +5,7 @@ story:MusuHeist
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=7.669
-      sample=7.641,at=1784025275
-      sample=7.641,at=1784025276
-      sample=7.641,at=1784025277
+    TimeTotal:beliefs,avg=7.752
       sample=7.641,at=1784025278
       sample=7.641,at=1784025279
       sample=7.641,at=1784025281
@@ -16,10 +13,10 @@ story:MusuHeist
       sample=7.641,at=1784025282
       sample=7.641,at=1784025284
       sample=7.918,at=1784025328
-    TimeTotal:step,avg=0.348
-      sample=0.347,at=1784025275
-      sample=0.347,at=1784025276
-      sample=0.347,at=1784025277
+      sample=10.287,at=1784046949
+      sample=6.848,at=1784047565
+      sample=6.617,at=1784049894
+    TimeTotal:step,avg=0.352
       sample=0.347,at=1784025278
       sample=0.347,at=1784025279
       sample=0.347,at=1784025281
@@ -27,25 +24,28 @@ story:MusuHeist
       sample=0.347,at=1784025282
       sample=0.347,at=1784025284
       sample=0.36,at=1784025328
+      sample=0.468,at=1784046949
+      sample=0.311,at=1784047565
+      sample=0.301,at=1784049894
   step,dige:3557d6c52e0e2c8d
-  step=2,dige:54fe661fd1302735
-  step=3,dige:793829148c113462
-  step=4,dige:8255e14e6ddb4dfe
-  step=5,dige:586b94f200e01dd5
-  step=6,dige:809539a8b3674c1e
-  step=7,dige:90fcca0a0cda8ad9
-  step=8,dige:5b1e3c9424ce6c24
-  step=9,dige:95183cd1856f5c68
-  step=10,dige:2bfc1d71b19b881e
-  step=11,dige:b18f8cd24ee8e14c
-  step=12,dige:2a03f46b6a336d5c
-  step=13,dige:962e28029ffc1f54
-  step=14,dige:9caef731674f528e
-  step=15,dige:9e039c085422236a
-  step=16,dige:2af94786d47f2993
-  step=17,dige:032bbd5fd1320cd9
-  step=18,dige:5009baa5fd29e9bc
-  step=19,dige:97e88353bf71d6a5
-  step=20,dige:d8dd8461d82c1fb7
-  step=21,dige:748afeb4f3142405
-  step=22,dige:f94b998aa9346dcc
+  step=2,dige:5109ce1ef63b8ba8
+  step=3,dige:6eac5a1bcfefc5fc
+  step=4,dige:72c5996c58bbad7c
+  step=5,dige:81b420c0faf3e141
+  step=6,dige:5ed02dea22fece45
+  step=7,dige:6532aad059e95da3
+  step=8,dige:10b587256d32c3d9
+  step=9,dige:1f3dcffd3c979a27
+  step=10,dige:a012de2a526fd214
+  step=11,dige:84146e6dbdc1a1d0
+  step=12,dige:d065dec1eddcc663
+  step=13,dige:6d373c7a4796c50e
+  step=14,dige:877cba3b30fb7186
+  step=15,dige:cffb9e0857f5742a
+  step=16,dige:f510089da0fabd50
+  step=17,dige:52bf3402237814a4
+  step=18,dige:84826313b12c9dd4
+  step=19,dige:3917c56d475dd5a8
+  step=20,dige:fbf7916faa73bb48
+  step=21,dige:81743bbd7413d206
+  step=22,dige:e36fd3522762819d

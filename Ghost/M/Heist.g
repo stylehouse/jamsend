@@ -337,6 +337,12 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir):
             //     whole-file breach; the unlink is a no-op when nothing has written yet (seq 0).
             if (ch && ch.sc.cid && sha256_hex(bytes) !== ch.sc.cid) {
                 job.sc.breached = +(job.sc.breached || 0) + 1
+                // NAME THE SEQ: what makes a per-chunk gate worth more than the whole-file body_hash is that it
+                //  says WHERE — the localized breach records the offending seq on the job (last one wins; one
+                //   land breaches at most once — it returns).  body_hash can only say "the file is wrong"; this
+                //    says "chunk 2 is wrong" before chunks 3+ ever write.  A diagnostic scalar — flattens with
+                //     the job, never ledger.
+                job.sc.breach_seq = '' + s
                 await this.Heist_unlink(nav, dir, filename)
                 return
             }
@@ -394,6 +400,7 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir):
             //   there is nothing on disk to unlink.
             if (ch && ch.sc.cid && sha256_hex(cb) !== ch.sc.cid) {
                 job.sc.breached = +(job.sc.breached || 0) + 1
+                job.sc.breach_seq = '' + s
                 return
             }
             bytes.set(cb, at)

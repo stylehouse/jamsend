@@ -250,14 +250,17 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
 
 ### 5A — The culture ladder (identity · magazine · heist · persist · swarm)
 
-**0 — Content-addressing** **[built · live-proven 2026-07-15 · re-record + signing owed]** — every chunk
- carries a durable `cid` (sha256 of its bytes): minted at all three chunk-mint sites (`Ra_record_from` /
-  `Ra_chunk_mint` / `Heist_census`), a `cids[]` manifest in the `.jam` header, verified per-chunk at
-   `Heist_land` (a localized breach ahead of the whole-file gate). The runner mints cids on every `%Body`
-    (HMR-loaded gen, no step errors, phase machine completes). *Owed:* accept the MusuHeist fixture
-     re-record (the additive `cid` rows — the RED is only that diff); the Ra-path (`%Preview`/`%Stream`) +
-      resurrect round-trip proof; an adversarial corrupt-one-chunk breach Book; and the origin-signature
-       that makes the manifest swarm-trustworthy (rung 7). §2.4.
+**0 — Content-addressing** **[built · green ×2, 2026-07-15 · signing owed]** — every chunk carries a durable
+ `cid` (sha256 of its bytes): minted at all three chunk-mint sites (`Ra_record_from` / `Ra_chunk_mint` /
+  `Heist_census`), a `cids[]` manifest in the `.jam` header, verified per-chunk at `Heist_land` (a localized
+   breach ahead of the whole-file gate — and it now records `job.sc.breach_seq`, so the breach NAMES the
+    offending chunk the way `body_hash` never can). **MusuHeist** re-recorded 22/22 GREEN with the additive
+     `cid` rows on every `%Body`. **MusuBreach** (`Ghost/Story/Heistation.g`, green ×2) is the adversarial
+      twin: it lands an honest record clean (the control — the gate discriminates) then flips one byte of a
+       middle chunk LEAVING its cid and proves the gate FIRES — breach, no land, file unlinked mid-stream,
+        record retained, and the gate's own `breach_seq` matches the poisoned seq. *Owed:* the Ra-path
+         (`%Preview`/`%Stream`) + resurrect round-trip proof; and the origin-signature that makes the manifest
+          swarm-trustworthy — the cid catches CORRUPTION (proven) not a LYING peer (rung 7). §2.4.
 
 **1 — Identity homing** *(the multi-Pier law, §2.1)* **[todo]** — every per-peer particle under
  `Peering,name:<self>` or `Pier,pub:<them>`; drop the finished transient `buddy_*` reqs at a safe seam;
@@ -287,11 +290,20 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
 **6 — Marauding (wishlist persist/resume)** **[todo]** — `Ray,self/Mag:marauding` logs pulls, persists the
  heist, and resumes it across a restart. *(Designed; the resume side is unbuilt — see rung 4.)*
 
-**7 — Swarm (opportunistic webrtc chunk-sharing)** **[design · needs 2+ runners]** — a swarm peer is just
- another `Repli_register_caster`; **Repli sends `C**` to many overlapping-interest subscribers at once**,
-  and Peeroleum §18 already fans one upload out to a `@channel` relay-side. The webrtc evolution (a
-   have-bitmap inventory beacon + a cheapest-source chooser) is designed in `Radio_multicast_todo.md`,
-    gated on rung 0. This is the content plane's routing made real.
+**7 — Swarm (opportunistic webrtc chunk-sharing)** **[routing: design · trust keystone: built ×2 in isolation]**
+ — a swarm peer is just another `Repli_register_caster`; **Repli sends `C**` to many overlapping-interest
+  subscribers at once**, and Peeroleum §18 already fans one upload out to a `@channel` relay-side. The webrtc
+   evolution (a have-bitmap inventory beacon + a cheapest-source chooser) is designed in
+    `Radio_multicast_todo.md`, gated on rung 0. This is the content plane's routing made real.
+ **The trust keystone — origin-signature over the cids manifest** (the thing that lets you pull a chunk from a
+  STRANGER): the per-chunk cid catches CORRUPTION but not a lying peer who recomputes a cid over bad bytes. So
+   the origin signs the manifest of cids (ed25519 over `id | cid0.cid1…`, the `Idento` primitive Swarm.g already
+    uses) and a receiver who knows the origin key verifies the vouch before trusting a byte. **Proven in
+     isolation, green ×2** — `MusuBreach` step 6: the honest vouch verifies; a FORGED manifest (a middleman
+      swaps one cid) fails the signature; an IMPOSTER (a different key) is rejected. *Owed:* the WIRING — carry
+       `sig` + `by` in the `.jam` header / the offer husk, and verify at the offer door before any pull (promote
+        `MusuBreach_sign/verify` to `Ra_*` in `Ghost/M/Ra.g`). The two gates together — cid keeps an honest peer
+         honest, signature keeps a dishonest peer out — are what make a swarm pull safe.
 
 ### 5B — The audio ladder (the nine stages)
 

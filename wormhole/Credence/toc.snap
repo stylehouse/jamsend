@@ -31,6 +31,7 @@ Waft:Credence
         Funkcion:Storying,of_Book:MusuRaChase,needsFSA:1,needMusic:1,born:2026-07-11
       What:the magazine,desc:the sharing layer — heist bytes into a collection then berth persist share and browse it across Piers
         Funkcion:Storying,of_Book:MusuHeist,needsFSA:1,needMusic:1,born:2026-07-11
+        Funkcion:Storying,of_Book:MusuBreach,needsFSA:1,needMusic:1,born:2026-07-15
         Funkcion:Storying,of_Book:MusuBerth,needsFSA:1,born:2026-07-12
         Funkcion:Storying,of_Book:MusuVend,born:2026-07-13
         Funkcion:Storying,of_Book:MusuDoor,born:2026-07-13
@@ -76,6 +77,7 @@ Waft:Credence
     Funkcion:Storying,of_Book:MusuRecast
     Funkcion:Storying,of_Book:MusuStanding
     Funkcion:Storying,of_Book:MusuBuddy,needsFSA:1,needMusic:1,born:2026-07-14
+    Funkcion:Storying,of_Book:MusuBreach
   What:Puddle,desc:the lower-level instruments in one puddle — machinery proven once and kept for regression hunts not for relitigating
     Funkcion:StoryTimes
     What:Lake,desc:the editor machine — the Lies compile-run pipeline over Docs Wafts and focus

@@ -36,7 +36,7 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
           homing law + §5A r1; §10 klepto/heist → §5A r4; §11.7 Berth → §5A r5; §12 magazine/stimuli →
            §2.3 + §5A r2; §12.4 jobs ladder → §5A r3/r6.
 
-**2026-07-15 — RUNG 0 (per-chunk content-addressing) BUILT + LIVE-PROVEN; re-record + signing OWED.**
+**2026-07-15 — RUNG 0 (per-chunk content-addressing) BUILT + RE-RECORDED LIVE-GREEN; signing + Ra-path + breach-Book OWED.**
  Every chunk now carries a durable **`cid`** = full sha256 of its bytes — minted at all three chunk-mint
   sites (`Ra_record_from` %Preview, `Ra_chunk_mint` %Stream, `Heist_census` %Body), carried in the `.jam`
    header as a `cids[]` manifest (parallel to `sizes[]`, filled in `Ra_pack`), and **verified per-chunk in
@@ -48,17 +48,53 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
    The run goes RED ONLY because the recorded fixtures lack the new `cid` rows — an additive-snap diff, not a
     logic failure (per-chunk verify is a no-op on honest bytes: same bytes → same hash → pass; it only fires
      on real corruption the wire/body_hash gates already exclude).
- **THE OWED RE-RECORD** (do with the editor up / eyes on — accept from a COMPLETE run):
-   1. `node scripts/runner_ask.mjs run MusuHeist --watch`   → expect RED (the cid diff)
-   2. `node scripts/runner_ask.mjs accept`                  → re-record all steps (the sanctioned path)
-   3. `git diff --stat wormhole/Story/MusuHeist/`           → sanity: step COUNT stable = no collapse
-   4. `node scripts/runner_ask.mjs run MusuHeist --watch`   → expect GREEN
-  I did NOT accept unattended: the runner had only PARTIAL got_snap retention (a later `snap N` was already
-   gone), and an accept from incomplete snaps is exactly what can collapse a toc — better with the human present.
- **Also owed:** the Ra-path (`%Preview`/`%Stream`) live + resurrect-round-trip proof (MusuStock/MusuRaStream);
-  an adversarial corrupt-one-chunk breach Book (prove the localized gate FIRES on a poisoned chunk); and an
-   **origin-signature** over the card's `cids[]` — the cid catches CORRUPTION today, not a LYING peer, so
-    swarm-trust (rung 7) still waits on the signature. See spec §2.4 + §5A rung 0.
+ **RE-RECORD — DONE (2026-07-15, night shift).** `run → accept → re-run` on the :9091 runner: MusuHeist is
+  **22/22 GREEN** (caveat 20 = the AudibleEntropy fuzz-tolerance, benign ≈). Fixtures `002.snap`–`022.snap` now
+   carry the `cid:` rows (39 in step-2), step count stable (no toc collapse), zero encode smells. The FIXTURES
+    changed, not the code — HEAD (`4afe3965`) already had the gen; only the wormhole snaps were owed.
+  **BOMB the night cost an hour on:** the fleet has FOUR runners advertising and an un-addressed `run`/`steps`/
+   `state` round-robins across them, so a `steps` query lands on a runner that never ran the Book (stale
+    `done:6`) and reads as a truncated/false result. **Pin the WHOLE sequence to ONE runner** —
+     `--runner=<self-id>` on run AND steps AND state (list them with `runner_ask runners`; the `★claude`
+      favourite is the safe pick). This is the [[pere-books-total-1]] / "always --runner=" law, re-learned.
+ **BREACH BOOK — DONE (2026-07-15, night shift). `MusuBreach` LIVE-GREEN ×2 (7/7, caveat 0) — proves BOTH trust
+  gates.** The adversarial twin of MusuHeist proves the gate FIRES: it censuses two artists off testsounds, lands one HONEST record clean
+   (the control — proves the gate discriminates not a blanket refusal: `honest,landed,no_breach,on_disk,dropped`),
+    then flips ONE byte of a MIDDLE chunk's buf LEAVING its cid and lands again — `poison,seq:2,breached,no_new_land,
+     gone,retained,gate_named`. Four `%see` truths latch. Authored in `Ghost/Story/Heistation.g` (a sibling Book,
+      dispatched by `w.sc.w`); registered in `wormhole/Credence` (`needsFSA:1,needMusic:1`). **The rigor upgrade:** a
+       whole-file `body_hash` would ALSO catch this corruption, so to prove the PER-CHUNK gate's real value —
+        *localization* — `Heist_land` now records `job.sc.breach_seq` (the code finally does what its own comment
+         claimed: "names the seq"), and the Book asserts the GATE's own report matched the poisoned seq (`gate_named`).
+          body_hash can only say "the file is wrong" AFTER assembling it all; the cid says "chunk 2 is wrong" first.
+   **Bootstrap gotcha (cost time):** a NEW Book runs 1 step until its `toc.snap` carries `step=2..N,dige:lie*` lines;
+    a wedged runner ACCEPTS become_book but never steps (`run:null` forever) — `runners` + run a known Book to find a
+     HEALTHY one, ALWAYS pin `--runner=`. (49dee91d + 3c5238c6 wedged this night; 20e3476b stayed clean.)
+  **The SECOND gate — ORIGIN-SIGNATURE (rung 7), proven in isolation same night.** MusuBreach step 6 (`vouch`):
+   the cid catches corruption but NOT a lying peer who recomputes a cid over bad bytes, so the origin SIGNS the
+    cids manifest (ed25519 over `id | cid0.cid1…` via the `Idento` primitive Swarm.g uses — DETERMINISTIC so the
+     vouch snaps stable: `vouch,by:434ced…,vouched,forgery_caught,imposter_caught`). Three probes: honest vouch
+      verifies; a FORGED manifest (swap one cid) fails; an IMPOSTER (wrong key) is rejected. Helpers live in
+       Heistation.g as `MusuBreach_sign/verify/manifest` (GOTCHA: the Idento sign method is `.sig()` NOT
+        `.signhex()`; verify is `.ver()`). *The two gates together: cid keeps an honest peer honest; the
+         signature keeps a dishonest peer out.*
+  **RA-PATH cids — DONE (2026-07-15). `MusuRaStream` (40/40) + `MusuRaChase` (56/56) re-recorded GREEN ×2.** The
+   `%Preview`/`%Stream` chunks now carry cids in the fixtures (they ride the snap round-trip — the resurrect
+    proof), same additive re-record as MusuHeist. **Rung-0 fixture debt is now 4/4 CLEARED** (every Book with
+     chunk particles green with cids: MusuHeist(22) ✓ · MusuRaStream(40) ✓ · MusuRaChase(56) ✓ · MusuBuddy(14) ✓ —
+      MusuBuddy re-recorded green ×2 once the fleet stabilized; the earlier stalls were the runner wedging under
+       load not the Book, so a two-probe stability gate before the heavy run cleared it). **BIG FINDING for the signing layer:** the Ra-path cids ride the ENTROPY BAND (37-38
+     of 40 steps caveated ≈) because the transcode is NOT bit-reproducible — the same source encoded twice gives
+      slightly different bytes → different cids.  Heist-path cids (original file bytes) are EXACT; Ra-path cids
+       are per-transcode.  CONSEQUENCE: two peers who independently transcode the same track get DIFFERENT cids →
+        different manifests → different signatures, so a swarm cannot dedup/verify across independent transcodes.
+         The content-address that a signature vouches for must be the ORIGINAL master's cids (deterministic), not
+          each grade's — fold this into the rung-7 wiring design (the `%Original` of §2.4 rung 3 is the anchor).
+ **Still owed — ONLY the origin-signature WIRING** (the crypto is proven, the plumbing isn't): carry `sig` + `by`
+  in the `.jam` header / the offer husk and verify at the offer door before any pull — promote
+   `MusuBreach_sign/verify` to `Ra_*` in `Ghost/M/Ra.g`, keyed on the MASTER's cids per the finding above. Left
+    designed for eyes-on (it touches the live trust path — don't rewire core unattended). The whole rung-0 fixture
+     debt is CLEARED (all 4 chunk-Books green). See spec §2.4 + §5A rung 0 + rung 7.
 
 **THE SNAP READS LIKE THE SESSION — N1-N5 + the Jam ledger + the Card rename: LANDED and LIVE-GREEN (2026-07-14).**
  The human read MusuBuddy's snaps and named four smells + one growth; all are coded, adversarially reviewed, and

@@ -1,29 +1,29 @@
 Snap:H
   H:MusuBuddy,Run
     A:MusuBuddy
-      self,round=48	{"mung":["age"]}
+      self,round=52	{"mung":["age"]}
       w:MusuBuddy
-        self,round=48	{"mung":["age"]}
+        self,round=52	{"mung":["age"]}
         req:wrangle,eternal,ok
         Account,of:DJ
           Identity:c012850d69de1318,prepub:c012850d69de1318,friendly:DJ
             Peering,name:c012850d69de1318,friendly:DJ
               Idzeug:buddy_1,to:Music,genre:Buddies,spent
-              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1784024082
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1784058123
                 Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1784024082,sign:05a3b3f7be78ea19442be82d747ae0379546478e406321c15a1a4899c6cb035ceb71b3bb5d3828d81a8951bc2489b6f126afc8c96afccb3b3176c0b23efde70c,genre:Buddies
-                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784024082,sign:200dda7603672819ac689e1fcd67265337f9b61f87725f0a8666a6bc81bdd17dc258468e3352601f399608bef3505895e843903b5b1feafbd897b1ecb1e36203,genre:Buddies
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1784058123,sign:8e7545efc902e320e25fc71c15bd676c842f74b8da66b760b6822c341aa568e1c297cb03e960d9a0b2541c8e00ddc5346cc5495b140420f5a97670b9bab84405,genre:Buddies
+                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784058123,sign:af2480e73375d5971c1a74083014c1c0bcb2ae2b9709ed6c2bc22d10bd3ed536a74b565939011d5689b7a1f9f28d8095f2238559125d196924079aac17c5dc0d,genre:Buddies
             SocialGraph
-              Edge,a:c012850d69de1318,b:b317b9a776e39d30,at:1784024082
+              Edge,a:c012850d69de1318,b:b317b9a776e39d30,at:1784058123
         Account,of:Listener
           Identity:b317b9a776e39d30,prepub:b317b9a776e39d30,friendly:Listener
             Peering,name:b317b9a776e39d30,friendly:Listener
-              Pier,pub:c012850d69de1318,friendly:DJ,since:1784024082
+              Pier,pub:c012850d69de1318,friendly:DJ,since:1784058123
                 Peering,name:c012850d69de1318,friendly:DJ,pub:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535
-                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784024082,sign:200dda7603672819ac689e1fcd67265337f9b61f87725f0a8666a6bc81bdd17dc258468e3352601f399608bef3505895e843903b5b1feafbd897b1ecb1e36203,genre:Buddies
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1784024082,sign:05a3b3f7be78ea19442be82d747ae0379546478e406321c15a1a4899c6cb035ceb71b3bb5d3828d81a8951bc2489b6f126afc8c96afccb3b3176c0b23efde70c,genre:Buddies
+                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784058123,sign:af2480e73375d5971c1a74083014c1c0bcb2ae2b9709ed6c2bc22d10bd3ed536a74b565939011d5689b7a1f9f28d8095f2238559125d196924079aac17c5dc0d,genre:Buddies
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1784058123,sign:8e7545efc902e320e25fc71c15bd676c842f74b8da66b760b6822c341aa568e1c297cb03e960d9a0b2541c8e00ddc5346cc5495b140420f5a97670b9bab84405,genre:Buddies
             SocialGraph
-              Edge,a:b317b9a776e39d30,b:c012850d69de1318,at:1784024082
+              Edge,a:b317b9a776e39d30,b:c012850d69de1318,at:1784058123
         Peering,name:c012850d69de1318,req=2,ok
           Pier,pub:b317b9a776e39d30,req=2,ok
             req:handshake,finished
@@ -46,61 +46,61 @@ Snap:H
               emit=4,type:repli_lines,seq=4,sent,body_hash:2c73cadd3d154d8c6f204bc503a330142c5ae7211e738e47b694a0be1507b8f6,body_len=274,acked
               emit=5,type:repli_lines,seq=5,sent,body_hash:68dd54c1132b647046ca6dfd32aed6cf5e89a754300c3ef6550e53fba3dbaa45,body_len=192,acked
               emit=6,type:repli_lines,seq=6,sent,body_hash:d822632976ff4b8c291071b34fb85a5874ff0f34852708e0a9ab347722b7cbee,body_len=192,acked
-              emit=7,type:repli_lines,seq=7,sent,body_hash:2238adc7d11d2b075cdfbcaa0d20c0121de1d4fe6a9f17eaf1193412b9abe967,body_len=199,acked
+              emit=7,type:repli_lines,seq=7,sent,body_hash:cb92b7dcf12bd167b2903fcd829ffcb2dcbc34bf08967a412986159953fb2649,body_len=337,acked
               emit=8,type:repli_page,seq=8,sent,body_hash:3457aa775f90150bb7dfee2664537ff0249c76f412150375802373b5dcd6e379,body_len=32620,acked
               emit=9,type:repli_page,seq=9,sent,body_hash:24e815ca6fe5761ede36e7deca8327236309956d788d7280dbc8ede8ca0bf23b,body_len=32300,acked
-              emit=10,type:repli_lines,seq=10,sent,body_hash:5659f98ebe69dff3d70d53bea930074e265b1534974339906e9166768e62ec0d,body_len=182,acked
+              emit=10,type:repli_lines,seq=10,sent,body_hash:a5eec977de2efb2aed85871026ba0dcafecd5f5a29a14411154df0c24d32e3eb,body_len=320,acked
               emit=11,type:repli_page,seq=11,sent,body_hash:264238c1c63afa12031ca91e07293c7c4c15bb886d1f94e8877bfe0541051a17,body_len=32300,acked
               emit=12,type:repli_page,seq=12,sent,body_hash:aa9dbc861991e9abee3f88f0308a07e85fefc22daa4d1a816dbd6b7765d27131,body_len=32300,acked
-              emit=13,type:repli_lines,seq=13,sent,body_hash:fd7aa072d27a9012e5f718fd403631c04146181c8b60e0e8ca0a8e68c32c5575,body_len=182,acked
+              emit=13,type:repli_lines,seq=13,sent,body_hash:81b597db42410cbbe47bb0af6ed92a42a0718d12d0b74dd7fb37f701ff4982b3,body_len=320,acked
               emit=14,type:repli_page,seq=14,sent,body_hash:d8b306612ace71a39769d537ad436fd14a8db41f23523dea8e042656395f301f,body_len=32300,acked
               emit=15,type:repli_page,seq=15,sent,body_hash:df55a0d0259400a835144f5c24fbcc22abdbf2279c8793f801035388489d5aff,body_len=32300,acked
-              emit=16,type:repli_lines,seq=16,sent,body_hash:6d43e03e7da934038a8d20b5d736f7c3f259badd052994d62b3c39073fe1de57,body_len=182,acked
+              emit=16,type:repli_lines,seq=16,sent,body_hash:a5db1aaff3c240e54221b7e75f1dcf4ebd17553a47d597d7c3bc5d22cf59cac9,body_len=320,acked
               emit=17,type:repli_page,seq=17,sent,body_hash:7421c8384159092728bb78fe76d5682ecb026174db64edccab1977888f77f0f4,body_len=32300,acked
               emit=18,type:repli_page,seq=18,sent,body_hash:d9a2d18f38ffb6bdd34937145c07661db3eec2038149be1c6789ef23a13bd222,body_len=32300,acked
-              emit=19,type:repli_lines,seq=19,sent,body_hash:d0b6ded2aa695800fec43373367aece1465c867db12d22ade3173d8d32f4628f,body_len=183,acked
+              emit=19,type:repli_lines,seq=19,sent,body_hash:a7ca4f839f71c46153ded919924d5248e36fcb37fbb6a264054d107ac430180d,body_len=321,acked
               emit=20,type:repli_page,seq=20,sent,body_hash:e586d7742fecdc1c937679a523e5706bc668298fc7165c334f392203dc113ade,body_len=32300,acked
               emit=21,type:repli_page,seq=21,sent,body_hash:35ec8c6044f14e537c8f6e93ef6d52e7def4736a98cd04122dc56529ebba9232,body_len=32300,acked
-              emit=22,type:repli_lines,seq=22,sent,body_hash:cb19b686683a6f87ff4a4cd83f5360c585585ad3d847b2b11ad1546d8080af20,body_len=186,acked
+              emit=22,type:repli_lines,seq=22,sent,body_hash:557c3d7a5e34efd0e08881025e5518852beb512cc0413f3d4b9b0db9e50bd5c6,body_len=324,acked
               emit=23,type:repli_page,seq=23,sent,body_hash:71b1dca8905cc9b4924814a56978fbeef18307dea496f9a3d509dc45a158bc5d,body_len=32300,acked
               emit=24,type:repli_page,seq=24,sent,body_hash:f4c6666305796bfc9ad844007c919329eb6968c28221335251b4c0a4dc6a7a22,body_len=32300,acked
-              emit=25,type:repli_lines,seq=25,sent,body_hash:d85f148c591e67239b26f629647337606ece5833e4798a0a26fe2a0b17888b8d,body_len=186,acked
+              emit=25,type:repli_lines,seq=25,sent,body_hash:6beddb3aa67afe721f7fad1da5b609fb0b0bc777d80c8c2a7b92807ad2e26bd1,body_len=324,acked
               emit=26,type:repli_page,seq=26,sent,body_hash:728b06eb6b132f11d4580345ab2e8614e0d1f5163a7c2cfb9826f1a603851063,body_len=32300,acked
               emit=27,type:repli_page,seq=27,sent,body_hash:009ed34af0bea671c1bc2cab4e9a52f2932f89625fad01ecfa27967e9e1e2d97,body_len=32300,acked
-              emit=28,type:repli_lines,seq=28,sent,body_hash:b5f69068e26b990b2be338caf2876e8549d70eff136bf34bdc231746bc6d2495,body_len=186,acked
+              emit=28,type:repli_lines,seq=28,sent,body_hash:bc308739b2678144d14119f753b1b77a0cd9255832c55626876c7c33ce42418a,body_len=324,acked
               emit=29,type:repli_page,seq=29,sent,body_hash:819beaabf2ab5742123998ed14ec1b8a6601aab545d4ce893119feca0bdb78a6,body_len=32300,acked
               emit=30,type:repli_page,seq=30,sent,body_hash:82060ded7c33145ae7de702e7550c7641590f602f69b86c6f8771abf8b815413,body_len=32623,acked
-              emit=31,type:repli_lines,seq=31,sent,body_hash:9cc4b35ba53dc23ce722b235ce8ee4cd13ac796e45351009694566b5203788bd,body_len=199,acked
+              emit=31,type:repli_lines,seq=31,sent,body_hash:9c8434e15d5f4f85b1ec2ee4285376d47e187274d0df31d8ec7b2234c973da33,body_len=337,acked
               emit=32,type:repli_page,seq=32,sent,body_hash:e764f0a82e3724b0036454e89b506c9a91c2ec97222d73524872bc681b55b741,body_len=32620,acked
               emit=33,type:repli_page,seq=33,sent,body_hash:373f9ea548734080f87ea856e0bb0eb17f26bdb59094d60275c2a205a5af091c,body_len=32300,acked
-              emit=34,type:repli_lines,seq=34,sent,body_hash:7ef7cbba22506dc4aa904cbe27612b0afd0a6ba20e9c0f76a11215b563f3c8c9,body_len=182,acked
+              emit=34,type:repli_lines,seq=34,sent,body_hash:0d7fa849a047d4277413113bad950d3efd7008d3dea886ff78350660810a7bf5,body_len=320,acked
               emit=35,type:repli_page,seq=35,sent,body_hash:43b21ffee85fe320e8d02272df5530cfe37b2c1cbccf82ce587cf0c763e682f1,body_len=32300,acked
               emit=36,type:repli_page,seq=36,sent,body_hash:c80578456cb5b80545767880ec568b239e7b52ed866c3492da7b9ad940411955,body_len=32300,acked
-              emit=37,type:repli_lines,seq=37,sent,body_hash:06467c08463367e66bea28d814d3ac28864f35e33263399cb3aa13964015d9b3,body_len=182,acked
+              emit=37,type:repli_lines,seq=37,sent,body_hash:8448f850c686d1220b80e96e9bc2693dbbac9bcd67bfd63ceb7d4e291443535b,body_len=320,acked
               emit=38,type:repli_page,seq=38,sent,body_hash:af45fa523c66fe5a20ebd755bd921a3b83527d10b8ba8144ee4a2c76095947bb,body_len=32300,acked
               emit=39,type:repli_page,seq=39,sent,body_hash:ae62f3d22ebf3a14140473838d0d7a4f2f1b15f6fe4c67f11d2765d577558c4e,body_len=32300,acked
-              emit=40,type:repli_lines,seq=40,sent,body_hash:6d82aa5c87e911a45e2c09960ecd3f43e65d6bb795de370da25c358fd1814c81,body_len=182,acked
+              emit=40,type:repli_lines,seq=40,sent,body_hash:01dd48e19026b9b35118c6da6592237b8ad36e2a90aa8fb699fb9ae5ca2182c9,body_len=320,acked
               emit=41,type:repli_page,seq=41,sent,body_hash:bde84edda595b8e31b61214fbe27ba2001a76ccc9f22f63ad7b445347ff92131,body_len=32300,acked
               emit=42,type:repli_page,seq=42,sent,body_hash:b5917488216b01d502f1892236b4633e227d83f88cbca41694d3a6af3ca7e2da,body_len=32286,acked
-              emit=43,type:repli_lines,seq=43,sent,body_hash:73555c53d49b9b7653ac4ee28c4146de05b15ed10532c62d91725d2a3be915ce,body_len=182,acked
+              emit=43,type:repli_lines,seq=43,sent,body_hash:d62b4c6bfbea0a13329901eb5c53c86107820b09f4ae0887501a483c480a6302,body_len=320,acked
               emit=44,type:repli_page,seq=44,sent,body_hash:ca6cf15070f031c4d5b3eb857c06393c20d6f92e25776ff55acecf378d178bed,body_len=32302,acked
               emit=45,type:repli_page,seq=45,sent,body_hash:ccf0a8d0516ef0dfc7bed744087260880e59ae8e8a8a32cfb81a597f19a0a5bc,body_len=32288,acked
-              emit=46,type:repli_lines,seq=46,sent,body_hash:0c0759af633d28f9e98f9819b9d2b4c9f418fda0741aa71b1bef696510a2c309,body_len=182,acked
+              emit=46,type:repli_lines,seq=46,sent,body_hash:0006f56a21a87dac2779d9e008e031b570b958a0c12562f121e78a98996f0363,body_len=320,acked
               emit=47,type:repli_page,seq=47,sent,body_hash:e179de5750f2f968bf4890cb2cfdce1d16d3a6a442a8b2b1711ce307bcd5d116,body_len=32251,acked
               emit=48,type:repli_page,seq=48,sent,body_hash:23ee1a62682e6b22cfbd30d77462db520f022c9b70866879a7c946b9c8bb7541,body_len=32293,acked
-              emit=49,type:repli_lines,seq=49,sent,body_hash:c11928ee8291f027e25cf14b1e61c899671ee1fb97ee9e6d29c90b12c3e07e13,body_len=182,acked
+              emit=49,type:repli_lines,seq=49,sent,body_hash:312a17f6b655a05feef23902f6f58c1ae6748df134564d4245a174bad02f7f3e,body_len=320,acked
               emit=50,type:repli_page,seq=50,sent,body_hash:f4cbf3569e071caa4eefae49b8b8688dc5e0d56a11c2c3920de6d617080445e0,body_len=32279,acked
               emit=51,type:repli_page,seq=51,sent,body_hash:9f4952741419c8fe6acefa53717dcd3669c18dff67882db15182c17ec474da05,body_len=32293,acked
-              emit=52,type:repli_lines,seq=52,sent,body_hash:b8efca42a35ed2b604b2c91264119baad0e55f13d1fa64b0466191784f3bc02e,body_len=182,acked
+              emit=52,type:repli_lines,seq=52,sent,body_hash:a0fa0644ccf1ac3f5b1b0ae4d7c98cfd14ef35aa8b6d703cb738164da907035f,body_len=320,acked
               emit=53,type:repli_page,seq=53,sent,body_hash:7238b59beb1764875f876075f1e28b798e90a7a13ade50b61ae760c698e1d608,body_len=32231,acked
               emit=54,type:repli_page,seq=54,sent,body_hash:2e53a8a4cdebad1da49ee5ecee05fb2d8a37e54e5247487ececd0182b3377b1c,body_len=32275,acked
-              emit=55,type:repli_lines,seq=55,sent,body_hash:157a57345f3931e4dc92c9e52d304c13b41fc18c46dc66ebba71a10471524e24,body_len=182,acked
+              emit=55,type:repli_lines,seq=55,sent,body_hash:28d26fb22b5d15076b57dd02aeae32ca8476a37f25cc6c592bc70f6ea4afdbff,body_len=320,acked
               emit=56,type:repli_page,seq=56,sent,body_hash:78f7465a40b1c1919c7e6d6372fdd6b5db3d0eae3acb1ec0df1b0078f7a88269,body_len=32292,acked
               emit=57,type:repli_page,seq=57,sent,body_hash:cb07fcac16a9ee48e1980e0fa28d63679967faae725211f5522f33fd1f70e6db,body_len=32311,acked
-              emit=58,type:repli_lines,seq=58,sent,body_hash:91ad09b6db93a87eb13cd4b6e360ca61a0b8cc763f68dee4b0f7e81c4e66e0ed,body_len=182,acked
+              emit=58,type:repli_lines,seq=58,sent,body_hash:20ee2f9c22ae8f1a952795a5a87b3be3666263837b114aae0d9a79e17f7bb078,body_len=320,acked
               emit=59,type:repli_page,seq=59,sent,body_hash:2d5278a2894feb23d55f177bfdcb55262e7180550dd23d2e524bfd9f033a1ac3,body_len=32222,acked
               emit=60,type:repli_page,seq=60,sent,body_hash:9e9038a2a68a5dad2db12b1463446f418a38b4989d1c919dc8a7f1517313eda6,body_len=32257,acked
-              emit=61,type:repli_lines,seq=61,sent,body_hash:eacf185777cbef5dd47a7467b86700b46b5b780859cd97d732188ae0eef64259,body_len=182,acked
+              emit=61,type:repli_lines,seq=61,sent,body_hash:7c0527f7d44d6271f6b21891be9c12890190bb0a3db79c1a0c158d912c12ed9f,body_len=320,acked
               emit=62,type:repli_page,seq=62,sent,body_hash:24a9f7e7ec7c2786b89dff29cfbcbffca27d4a1a26d8cd595cd79fc19abd3678,body_len=32305,acked
               emit=63,type:repli_page,seq=63,sent,body_hash:ca2cc2ecf90ee39a357650d60709a06a54f6f4d30f9b41c9948f8c042e964692,body_len=39645,acked
             inbox
@@ -175,122 +175,122 @@ Snap:H
               req:unemit,seq=4,type:repli_lines,body_hash:2c73cadd3d154d8c6f204bc503a330142c5ae7211e738e47b694a0be1507b8f6,body_len=274,done,to:repli_lines,finished
               req:unemit,seq=5,type:repli_lines,body_hash:68dd54c1132b647046ca6dfd32aed6cf5e89a754300c3ef6550e53fba3dbaa45,body_len=192,done,to:repli_lines,finished
               req:unemit,seq=6,type:repli_lines,body_hash:d822632976ff4b8c291071b34fb85a5874ff0f34852708e0a9ab347722b7cbee,body_len=192,done,to:repli_lines,finished
-              req:unemit,seq=7,type:repli_lines,body_hash:2238adc7d11d2b075cdfbcaa0d20c0121de1d4fe6a9f17eaf1193412b9abe967,body_len=199,done,to:repli_lines,finished
+              req:unemit,seq=7,type:repli_lines,body_hash:cb92b7dcf12bd167b2903fcd829ffcb2dcbc34bf08967a412986159953fb2649,body_len=337,done,to:repli_lines,finished
               req:unemit,seq=8,type:repli_page,body_hash:3457aa775f90150bb7dfee2664537ff0249c76f412150375802373b5dcd6e379,body_len=32620,done,to:repli_page,finished
               req:unemit,seq=9,type:repli_page,body_hash:24e815ca6fe5761ede36e7deca8327236309956d788d7280dbc8ede8ca0bf23b,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=10,type:repli_lines,body_hash:5659f98ebe69dff3d70d53bea930074e265b1534974339906e9166768e62ec0d,body_len=182,done,to:repli_lines,finished
+              req:unemit,seq=10,type:repli_lines,body_hash:a5eec977de2efb2aed85871026ba0dcafecd5f5a29a14411154df0c24d32e3eb,body_len=320,done,to:repli_lines,finished
               req:unemit,seq=11,type:repli_page,body_hash:264238c1c63afa12031ca91e07293c7c4c15bb886d1f94e8877bfe0541051a17,body_len=32300,done,to:repli_page,finished
               req:unemit,seq=12,type:repli_page,body_hash:aa9dbc861991e9abee3f88f0308a07e85fefc22daa4d1a816dbd6b7765d27131,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=13,type:repli_lines,body_hash:fd7aa072d27a9012e5f718fd403631c04146181c8b60e0e8ca0a8e68c32c5575,body_len=182,done,to:repli_lines,finished
+              req:unemit,seq=13,type:repli_lines,body_hash:81b597db42410cbbe47bb0af6ed92a42a0718d12d0b74dd7fb37f701ff4982b3,body_len=320,done,to:repli_lines,finished
               req:unemit,seq=14,type:repli_page,body_hash:d8b306612ace71a39769d537ad436fd14a8db41f23523dea8e042656395f301f,body_len=32300,done,to:repli_page,finished
               req:unemit,seq=15,type:repli_page,body_hash:df55a0d0259400a835144f5c24fbcc22abdbf2279c8793f801035388489d5aff,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=16,type:repli_lines,body_hash:6d43e03e7da934038a8d20b5d736f7c3f259badd052994d62b3c39073fe1de57,body_len=182,done,to:repli_lines,finished
+              req:unemit,seq=16,type:repli_lines,body_hash:a5db1aaff3c240e54221b7e75f1dcf4ebd17553a47d597d7c3bc5d22cf59cac9,body_len=320,done,to:repli_lines,finished
               req:unemit,seq=17,type:repli_page,body_hash:7421c8384159092728bb78fe76d5682ecb026174db64edccab1977888f77f0f4,body_len=32300,done,to:repli_page,finished
               req:unemit,seq=18,type:repli_page,body_hash:d9a2d18f38ffb6bdd34937145c07661db3eec2038149be1c6789ef23a13bd222,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=19,type:repli_lines,body_hash:d0b6ded2aa695800fec43373367aece1465c867db12d22ade3173d8d32f4628f,body_len=183,done,to:repli_lines,finished
+              req:unemit,seq=19,type:repli_lines,body_hash:a7ca4f839f71c46153ded919924d5248e36fcb37fbb6a264054d107ac430180d,body_len=321,done,to:repli_lines,finished
               req:unemit,seq=20,type:repli_page,body_hash:e586d7742fecdc1c937679a523e5706bc668298fc7165c334f392203dc113ade,body_len=32300,done,to:repli_page,finished
               req:unemit,seq=21,type:repli_page,body_hash:35ec8c6044f14e537c8f6e93ef6d52e7def4736a98cd04122dc56529ebba9232,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=22,type:repli_lines,body_hash:cb19b686683a6f87ff4a4cd83f5360c585585ad3d847b2b11ad1546d8080af20,body_len=186,done,to:repli_lines,finished
+              req:unemit,seq=22,type:repli_lines,body_hash:557c3d7a5e34efd0e08881025e5518852beb512cc0413f3d4b9b0db9e50bd5c6,body_len=324,done,to:repli_lines,finished
               req:unemit,seq=23,type:repli_page,body_hash:71b1dca8905cc9b4924814a56978fbeef18307dea496f9a3d509dc45a158bc5d,body_len=32300,done,to:repli_page,finished
               req:unemit,seq=24,type:repli_page,body_hash:f4c6666305796bfc9ad844007c919329eb6968c28221335251b4c0a4dc6a7a22,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=25,type:repli_lines,body_hash:d85f148c591e67239b26f629647337606ece5833e4798a0a26fe2a0b17888b8d,body_len=186,done,to:repli_lines,finished
+              req:unemit,seq=25,type:repli_lines,body_hash:6beddb3aa67afe721f7fad1da5b609fb0b0bc777d80c8c2a7b92807ad2e26bd1,body_len=324,done,to:repli_lines,finished
               req:unemit,seq=26,type:repli_page,body_hash:728b06eb6b132f11d4580345ab2e8614e0d1f5163a7c2cfb9826f1a603851063,body_len=32300,done,to:repli_page,finished
               req:unemit,seq=27,type:repli_page,body_hash:009ed34af0bea671c1bc2cab4e9a52f2932f89625fad01ecfa27967e9e1e2d97,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=28,type:repli_lines,body_hash:b5f69068e26b990b2be338caf2876e8549d70eff136bf34bdc231746bc6d2495,body_len=186,done,to:repli_lines,finished
+              req:unemit,seq=28,type:repli_lines,body_hash:bc308739b2678144d14119f753b1b77a0cd9255832c55626876c7c33ce42418a,body_len=324,done,to:repli_lines,finished
               req:unemit,seq=29,type:repli_page,body_hash:819beaabf2ab5742123998ed14ec1b8a6601aab545d4ce893119feca0bdb78a6,body_len=32300,done,to:repli_page,finished
               req:unemit,seq=30,type:repli_page,body_hash:82060ded7c33145ae7de702e7550c7641590f602f69b86c6f8771abf8b815413,body_len=32623,done,to:repli_page,finished
-              req:unemit,seq=31,type:repli_lines,body_hash:9cc4b35ba53dc23ce722b235ce8ee4cd13ac796e45351009694566b5203788bd,body_len=199,done,to:repli_lines,finished
+              req:unemit,seq=31,type:repli_lines,body_hash:9c8434e15d5f4f85b1ec2ee4285376d47e187274d0df31d8ec7b2234c973da33,body_len=337,done,to:repli_lines,finished
               req:unemit,seq=32,type:repli_page,body_hash:e764f0a82e3724b0036454e89b506c9a91c2ec97222d73524872bc681b55b741,body_len=32620,done,to:repli_page,finished
               req:unemit,seq=33,type:repli_page,body_hash:373f9ea548734080f87ea856e0bb0eb17f26bdb59094d60275c2a205a5af091c,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=34,type:repli_lines,body_hash:7ef7cbba22506dc4aa904cbe27612b0afd0a6ba20e9c0f76a11215b563f3c8c9,body_len=182,done,to:repli_lines,finished
+              req:unemit,seq=34,type:repli_lines,body_hash:0d7fa849a047d4277413113bad950d3efd7008d3dea886ff78350660810a7bf5,body_len=320,done,to:repli_lines,finished
               req:unemit,seq=35,type:repli_page,body_hash:43b21ffee85fe320e8d02272df5530cfe37b2c1cbccf82ce587cf0c763e682f1,body_len=32300,done,to:repli_page,finished
               req:unemit,seq=36,type:repli_page,body_hash:c80578456cb5b80545767880ec568b239e7b52ed866c3492da7b9ad940411955,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=37,type:repli_lines,body_hash:06467c08463367e66bea28d814d3ac28864f35e33263399cb3aa13964015d9b3,body_len=182,done,to:repli_lines,finished
+              req:unemit,seq=37,type:repli_lines,body_hash:8448f850c686d1220b80e96e9bc2693dbbac9bcd67bfd63ceb7d4e291443535b,body_len=320,done,to:repli_lines,finished
               req:unemit,seq=38,type:repli_page,body_hash:af45fa523c66fe5a20ebd755bd921a3b83527d10b8ba8144ee4a2c76095947bb,body_len=32300,done,to:repli_page,finished
               req:unemit,seq=39,type:repli_page,body_hash:ae62f3d22ebf3a14140473838d0d7a4f2f1b15f6fe4c67f11d2765d577558c4e,body_len=32300,done,to:repli_page,finished
-              req:unemit,seq=40,type:repli_lines,body_hash:6d82aa5c87e911a45e2c09960ecd3f43e65d6bb795de370da25c358fd1814c81,body_len=182,done,to:repli_lines,finished
+              req:unemit,seq=40,type:repli_lines,body_hash:01dd48e19026b9b35118c6da6592237b8ad36e2a90aa8fb699fb9ae5ca2182c9,body_len=320,done,to:repli_lines,finished
               req:unemit,seq=41,type:repli_page,body_hash:bde84edda595b8e31b61214fbe27ba2001a76ccc9f22f63ad7b445347ff92131,body_len=32300,done,to:repli_page,finished
               req:unemit,seq=42,type:repli_page,body_hash:b5917488216b01d502f1892236b4633e227d83f88cbca41694d3a6af3ca7e2da,body_len=32286,done,to:repli_page,finished
-              req:unemit,seq=43,type:repli_lines,body_hash:73555c53d49b9b7653ac4ee28c4146de05b15ed10532c62d91725d2a3be915ce,body_len=182,done,to:repli_lines,finished
+              req:unemit,seq=43,type:repli_lines,body_hash:d62b4c6bfbea0a13329901eb5c53c86107820b09f4ae0887501a483c480a6302,body_len=320,done,to:repli_lines,finished
               req:unemit,seq=44,type:repli_page,body_hash:ca6cf15070f031c4d5b3eb857c06393c20d6f92e25776ff55acecf378d178bed,body_len=32302,done,to:repli_page,finished
               req:unemit,seq=45,type:repli_page,body_hash:ccf0a8d0516ef0dfc7bed744087260880e59ae8e8a8a32cfb81a597f19a0a5bc,body_len=32288,done,to:repli_page,finished
-              req:unemit,seq=46,type:repli_lines,body_hash:0c0759af633d28f9e98f9819b9d2b4c9f418fda0741aa71b1bef696510a2c309,body_len=182,done,to:repli_lines,finished
+              req:unemit,seq=46,type:repli_lines,body_hash:0006f56a21a87dac2779d9e008e031b570b958a0c12562f121e78a98996f0363,body_len=320,done,to:repli_lines,finished
               req:unemit,seq=47,type:repli_page,body_hash:e179de5750f2f968bf4890cb2cfdce1d16d3a6a442a8b2b1711ce307bcd5d116,body_len=32251,done,to:repli_page,finished
               req:unemit,seq=48,type:repli_page,body_hash:23ee1a62682e6b22cfbd30d77462db520f022c9b70866879a7c946b9c8bb7541,body_len=32293,done,to:repli_page,finished
-              req:unemit,seq=49,type:repli_lines,body_hash:c11928ee8291f027e25cf14b1e61c899671ee1fb97ee9e6d29c90b12c3e07e13,body_len=182,done,to:repli_lines,finished
+              req:unemit,seq=49,type:repli_lines,body_hash:312a17f6b655a05feef23902f6f58c1ae6748df134564d4245a174bad02f7f3e,body_len=320,done,to:repli_lines,finished
               req:unemit,seq=50,type:repli_page,body_hash:f4cbf3569e071caa4eefae49b8b8688dc5e0d56a11c2c3920de6d617080445e0,body_len=32279,done,to:repli_page,finished
               req:unemit,seq=51,type:repli_page,body_hash:9f4952741419c8fe6acefa53717dcd3669c18dff67882db15182c17ec474da05,body_len=32293,done,to:repli_page,finished
-              req:unemit,seq=52,type:repli_lines,body_hash:b8efca42a35ed2b604b2c91264119baad0e55f13d1fa64b0466191784f3bc02e,body_len=182,done,to:repli_lines,finished
+              req:unemit,seq=52,type:repli_lines,body_hash:a0fa0644ccf1ac3f5b1b0ae4d7c98cfd14ef35aa8b6d703cb738164da907035f,body_len=320,done,to:repli_lines,finished
               req:unemit,seq=53,type:repli_page,body_hash:7238b59beb1764875f876075f1e28b798e90a7a13ade50b61ae760c698e1d608,body_len=32231,done,to:repli_page,finished
               req:unemit,seq=54,type:repli_page,body_hash:2e53a8a4cdebad1da49ee5ecee05fb2d8a37e54e5247487ececd0182b3377b1c,body_len=32275,done,to:repli_page,finished
-              req:unemit,seq=55,type:repli_lines,body_hash:157a57345f3931e4dc92c9e52d304c13b41fc18c46dc66ebba71a10471524e24,body_len=182,done,to:repli_lines,finished
+              req:unemit,seq=55,type:repli_lines,body_hash:28d26fb22b5d15076b57dd02aeae32ca8476a37f25cc6c592bc70f6ea4afdbff,body_len=320,done,to:repli_lines,finished
               req:unemit,seq=56,type:repli_page,body_hash:78f7465a40b1c1919c7e6d6372fdd6b5db3d0eae3acb1ec0df1b0078f7a88269,body_len=32292,done,to:repli_page,finished
               req:unemit,seq=57,type:repli_page,body_hash:cb07fcac16a9ee48e1980e0fa28d63679967faae725211f5522f33fd1f70e6db,body_len=32311,done,to:repli_page,finished
-              req:unemit,seq=58,type:repli_lines,body_hash:91ad09b6db93a87eb13cd4b6e360ca61a0b8cc763f68dee4b0f7e81c4e66e0ed,body_len=182,done,to:repli_lines,finished
+              req:unemit,seq=58,type:repli_lines,body_hash:20ee2f9c22ae8f1a952795a5a87b3be3666263837b114aae0d9a79e17f7bb078,body_len=320,done,to:repli_lines,finished
               req:unemit,seq=59,type:repli_page,body_hash:2d5278a2894feb23d55f177bfdcb55262e7180550dd23d2e524bfd9f033a1ac3,body_len=32222,done,to:repli_page,finished
               req:unemit,seq=60,type:repli_page,body_hash:9e9038a2a68a5dad2db12b1463446f418a38b4989d1c919dc8a7f1517313eda6,body_len=32257,done,to:repli_page,finished
-              req:unemit,seq=61,type:repli_lines,body_hash:eacf185777cbef5dd47a7467b86700b46b5b780859cd97d732188ae0eef64259,body_len=182,done,to:repli_lines,finished
+              req:unemit,seq=61,type:repli_lines,body_hash:7c0527f7d44d6271f6b21891be9c12890190bb0a3db79c1a0c158d912c12ed9f,body_len=320,done,to:repli_lines,finished
               req:unemit,seq=62,type:repli_page,body_hash:24a9f7e7ec7c2786b89dff29cfbcbffca27d4a1a26d8cd595cd79fc19abd3678,body_len=32305,done,to:repli_page,finished
               req:unemit,seq=63,type:repli_page,body_hash:ca2cc2ecf90ee39a357650d60709a06a54f6f4d30f9b41c9948f8c042e964692,body_len=39645,done,to:repli_page,finished
             Ud,pubkey:c012850d69de1318
           active_transport,type:mock,open
         Library,pier:c012850d69de1318
           Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
-            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:0,head,preskip=312,cid:3ccd2f51f3f3b66e3115ee8cb2d1c43575a42bf9704abf44b8af40d1a8d74d7b	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1,cid:144cde8bcbf6a150cae10b2f4115f1fd62f97576477adbaaa900bac3cfc53872	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2,cid:224607ca4d58380a3271f7a0a2621c076034997f83423effb1cabda2252985e3	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3,cid:bd7e4cd4018af8df29a4ce36cf8cf48ddf14f9265dafc3ce6499e71a5280320a	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4,cid:e562bac3d0f1dfc9969825f34ffb0ddba65467e2df0ca90f1b224292f3c6154d	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5,cid:774bf989acb4a0f4d775b5bfbe38c4ceb10372cdaf58dbd2738898a012d0d3fe	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6,cid:d8bb01b9d2fb794a054c6061e89c76ceb106dab97115ba1821d7def09396f1c1	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7,cid:95eab5bfd38f7a92de39a3b55fc20b94c189ac99b985f641fc86eebd42613155	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8,cid:2cc35a04310a7ad42dae8b64cafb15b5f0e8aeb7df88ef49a0fd2c30bea6b43f	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9,cid:d2349eb37985140aeb5c6569fa2ab4ab0686d04ca04d2906be03c0c813eb0d28	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10,cid:31def79e6787801b908766a4a114a111239e2ca5f05cbff6439cf001824c56b9	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11,cid:4a8468642f8ba5b3c7eaf5f7095c26a62795c02dde06dc3cdea6d9a7c9984228	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12,cid:525a5cfa378c5b2e7e05ed44ed3d6283cb7dc2bb9412200bbb9fdc8fd492b681	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13,cid:d01bb06dff81abc1b549cc048d6b72c2088e6275ea02d7f82bdc6fa0145202ad	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14,cid:2850cb9adf1f9f0a22ecd7de7829804b4247a3a225ca45568cbb3af88b69bc44	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15,cid:3ab52c6af8c8ee61b625c0831f959da0289a33ed976efd9f78e1b8d4547cc4ac	{"ref":{"buf":"Uint8Array()"}}
           Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
-            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:16,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:17	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:18	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:19	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:20	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:21	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:22	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:23	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:24	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:25	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:26	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:27	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:28	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:29	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:30	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:31	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:32	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:33	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:34	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:35	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:36	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:37	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:0,head,preskip=312,cid:3457aa775f90150bb7dfee2664537ff0249c76f412150375802373b5dcd6e379	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1,cid:24e815ca6fe5761ede36e7deca8327236309956d788d7280dbc8ede8ca0bf23b	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2,cid:264238c1c63afa12031ca91e07293c7c4c15bb886d1f94e8877bfe0541051a17	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3,cid:aa9dbc861991e9abee3f88f0308a07e85fefc22daa4d1a816dbd6b7765d27131	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4,cid:d8b306612ace71a39769d537ad436fd14a8db41f23523dea8e042656395f301f	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5,cid:df55a0d0259400a835144f5c24fbcc22abdbf2279c8793f801035388489d5aff	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6,cid:7421c8384159092728bb78fe76d5682ecb026174db64edccab1977888f77f0f4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7,cid:d9a2d18f38ffb6bdd34937145c07661db3eec2038149be1c6789ef23a13bd222	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8,cid:e586d7742fecdc1c937679a523e5706bc668298fc7165c334f392203dc113ade	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9,cid:35ec8c6044f14e537c8f6e93ef6d52e7def4736a98cd04122dc56529ebba9232	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10,cid:71b1dca8905cc9b4924814a56978fbeef18307dea496f9a3d509dc45a158bc5d	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11,cid:f4c6666305796bfc9ad844007c919329eb6968c28221335251b4c0a4dc6a7a22	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12,cid:728b06eb6b132f11d4580345ab2e8614e0d1f5163a7c2cfb9826f1a603851063	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13,cid:009ed34af0bea671c1bc2cab4e9a52f2932f89625fad01ecfa27967e9e1e2d97	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14,cid:819beaabf2ab5742123998ed14ec1b8a6601aab545d4ce893119feca0bdb78a6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15,cid:82060ded7c33145ae7de702e7550c7641590f602f69b86c6f8771abf8b815413	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:16,head,preskip=312,cid:e764f0a82e3724b0036454e89b506c9a91c2ec97222d73524872bc681b55b741	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:17,cid:373f9ea548734080f87ea856e0bb0eb17f26bdb59094d60275c2a205a5af091c	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:18,cid:43b21ffee85fe320e8d02272df5530cfe37b2c1cbccf82ce587cf0c763e682f1	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:19,cid:c80578456cb5b80545767880ec568b239e7b52ed866c3492da7b9ad940411955	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:20,cid:af45fa523c66fe5a20ebd755bd921a3b83527d10b8ba8144ee4a2c76095947bb	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:21,cid:ae62f3d22ebf3a14140473838d0d7a4f2f1b15f6fe4c67f11d2765d577558c4e	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:22,cid:bde84edda595b8e31b61214fbe27ba2001a76ccc9f22f63ad7b445347ff92131	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:23,cid:b5917488216b01d502f1892236b4633e227d83f88cbca41694d3a6af3ca7e2da	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:24,cid:ca6cf15070f031c4d5b3eb857c06393c20d6f92e25776ff55acecf378d178bed	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:25,cid:ccf0a8d0516ef0dfc7bed744087260880e59ae8e8a8a32cfb81a597f19a0a5bc	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:26,cid:e179de5750f2f968bf4890cb2cfdce1d16d3a6a442a8b2b1711ce307bcd5d116	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:27,cid:23ee1a62682e6b22cfbd30d77462db520f022c9b70866879a7c946b9c8bb7541	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:28,cid:f4cbf3569e071caa4eefae49b8b8688dc5e0d56a11c2c3920de6d617080445e0	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:29,cid:9f4952741419c8fe6acefa53717dcd3669c18dff67882db15182c17ec474da05	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:30,cid:7238b59beb1764875f876075f1e28b798e90a7a13ade50b61ae760c698e1d608	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:31,cid:2e53a8a4cdebad1da49ee5ecee05fb2d8a37e54e5247487ececd0182b3377b1c	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:32,cid:78f7465a40b1c1919c7e6d6372fdd6b5db3d0eae3acb1ec0df1b0078f7a88269	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:33,cid:cb07fcac16a9ee48e1980e0fa28d63679967faae725211f5522f33fd1f70e6db	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:34,cid:2d5278a2894feb23d55f177bfdcb55262e7180550dd23d2e524bfd9f033a1ac3	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:35,cid:9e9038a2a68a5dad2db12b1463446f418a38b4989d1c919dc8a7f1517313eda6	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:36,cid:24a9f7e7ec7c2786b89dff29cfbcbffca27d4a1a26d8cd595cd79fc19abd3678	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:37,cid:ca2cc2ecf90ee39a357650d60709a06a54f6f4d30f9b41c9948f8c042e964692	{"ref":{"buf":"Uint8Array()"}}
         req:buddy_stock,finished
         req:witness,eternal,ok
         stocked:first,of=2,ready=2
@@ -308,44 +308,44 @@ Snap:H
               Card,id:02cfcb9c15affeaf,artist:DJ Oscillo,title:Dorian D
           Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
           Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
-            Preview,seq:0,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:5	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:6	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:7	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:8	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:9	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:10	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:11	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:12	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
-            Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:16,head,preskip=312	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:17	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:18	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:19	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:20	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:21	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:22	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:23	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:24	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:25	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:26	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:27	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:28	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:29	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:30	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:31	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:32	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:33	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:34	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:35	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:36	{"ref":{"buf":"Uint8Array()"}}
-            Stream,seq:37	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:0,head,preskip=312,cid:3457aa775f90150bb7dfee2664537ff0249c76f412150375802373b5dcd6e379	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:1,cid:24e815ca6fe5761ede36e7deca8327236309956d788d7280dbc8ede8ca0bf23b	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:2,cid:264238c1c63afa12031ca91e07293c7c4c15bb886d1f94e8877bfe0541051a17	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:3,cid:aa9dbc861991e9abee3f88f0308a07e85fefc22daa4d1a816dbd6b7765d27131	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:4,cid:d8b306612ace71a39769d537ad436fd14a8db41f23523dea8e042656395f301f	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:5,cid:df55a0d0259400a835144f5c24fbcc22abdbf2279c8793f801035388489d5aff	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:6,cid:7421c8384159092728bb78fe76d5682ecb026174db64edccab1977888f77f0f4	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:7,cid:d9a2d18f38ffb6bdd34937145c07661db3eec2038149be1c6789ef23a13bd222	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:8,cid:e586d7742fecdc1c937679a523e5706bc668298fc7165c334f392203dc113ade	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:9,cid:35ec8c6044f14e537c8f6e93ef6d52e7def4736a98cd04122dc56529ebba9232	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:10,cid:71b1dca8905cc9b4924814a56978fbeef18307dea496f9a3d509dc45a158bc5d	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:11,cid:f4c6666305796bfc9ad844007c919329eb6968c28221335251b4c0a4dc6a7a22	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:12,cid:728b06eb6b132f11d4580345ab2e8614e0d1f5163a7c2cfb9826f1a603851063	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:13,cid:009ed34af0bea671c1bc2cab4e9a52f2932f89625fad01ecfa27967e9e1e2d97	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:14,cid:819beaabf2ab5742123998ed14ec1b8a6601aab545d4ce893119feca0bdb78a6	{"ref":{"buf":"Uint8Array()"}}
+            Preview,seq:15,cid:82060ded7c33145ae7de702e7550c7641590f602f69b86c6f8771abf8b815413	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:16,head,preskip=312,cid:e764f0a82e3724b0036454e89b506c9a91c2ec97222d73524872bc681b55b741	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:17,cid:373f9ea548734080f87ea856e0bb0eb17f26bdb59094d60275c2a205a5af091c	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:18,cid:43b21ffee85fe320e8d02272df5530cfe37b2c1cbccf82ce587cf0c763e682f1	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:19,cid:c80578456cb5b80545767880ec568b239e7b52ed866c3492da7b9ad940411955	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:20,cid:af45fa523c66fe5a20ebd755bd921a3b83527d10b8ba8144ee4a2c76095947bb	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:21,cid:ae62f3d22ebf3a14140473838d0d7a4f2f1b15f6fe4c67f11d2765d577558c4e	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:22,cid:bde84edda595b8e31b61214fbe27ba2001a76ccc9f22f63ad7b445347ff92131	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:23,cid:b5917488216b01d502f1892236b4633e227d83f88cbca41694d3a6af3ca7e2da	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:24,cid:ca6cf15070f031c4d5b3eb857c06393c20d6f92e25776ff55acecf378d178bed	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:25,cid:ccf0a8d0516ef0dfc7bed744087260880e59ae8e8a8a32cfb81a597f19a0a5bc	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:26,cid:e179de5750f2f968bf4890cb2cfdce1d16d3a6a442a8b2b1711ce307bcd5d116	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:27,cid:23ee1a62682e6b22cfbd30d77462db520f022c9b70866879a7c946b9c8bb7541	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:28,cid:f4cbf3569e071caa4eefae49b8b8688dc5e0d56a11c2c3920de6d617080445e0	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:29,cid:9f4952741419c8fe6acefa53717dcd3669c18dff67882db15182c17ec474da05	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:30,cid:7238b59beb1764875f876075f1e28b798e90a7a13ade50b61ae760c698e1d608	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:31,cid:2e53a8a4cdebad1da49ee5ecee05fb2d8a37e54e5247487ececd0182b3377b1c	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:32,cid:78f7465a40b1c1919c7e6d6372fdd6b5db3d0eae3acb1ec0df1b0078f7a88269	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:33,cid:cb07fcac16a9ee48e1980e0fa28d63679967faae725211f5522f33fd1f70e6db	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:34,cid:2d5278a2894feb23d55f177bfdcb55262e7180550dd23d2e524bfd9f033a1ac3	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:35,cid:9e9038a2a68a5dad2db12b1463446f418a38b4989d1c919dc8a7f1517313eda6	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:36,cid:24a9f7e7ec7c2786b89dff29cfbcbffca27d4a1a26d8cd595cd79fc19abd3678	{"ref":{"buf":"Uint8Array()"}}
+            Stream,seq:37,cid:ca2cc2ecf90ee39a357650d60709a06a54f6f4d30f9b41c9948f8c042e964692	{"ref":{"buf":"Uint8Array()"}}
         Dogear,of:the browse
           curs,Mag:Musica
             curs,wild:Cloud,randomic:draw_one

@@ -40,6 +40,14 @@
 // CONVENTION (Musu*/Ra*): no Run_A_ recipe — the world MUST be named MusuHeist (do_fn_for dispatches
 //  by w.sc.w) or the wrangle silently never fires.
 
+// Idento — the ed25519 pair (the same primitive Swarm.g signs invites with).  MusuBreach uses it to prove
+//  the ORIGIN-SIGNATURE keystone (Radio_spec §5A rung 7): the cid catches CORRUPTION but not a LYING peer
+//   who recomputes a cid over bad bytes; an origin's unforgeable signature over the cids manifest is what
+//    catches the forger.  ed25519 signatures are deterministic (key + message → one sig) and the Book seeds
+//     its keys — so the vouch repeats run to run, a pinnable fixture.
+IMPORT()
+    import { Idento } from "$lib/Y.svelte.ts"
+
 MusuHeist(A,w):
     w oai %req:wrangle,eternal
         await &MusuHeist_drive,w,req
@@ -2178,3 +2186,264 @@ MusuStanding_witness(w):
     let oids = this.MusuStanding_ids(omag)
     let vids = this.MusuStanding_ids(vmag)
     if (both_quiet && oids === 't0|t2|t3' && vids === 't0|t2|t3' && !T.oa({ see: 'the census diff is the only trigger — every quiet census sent nothing and the origin and follower agree on the final collection' })) this.MusuStanding_note(w, { see: 'the census diff is the only trigger — every quiet census sent nothing and the origin and follower agree on the final collection' })
+
+// ══ MusuBreach — the rung-0 per-chunk gate PROVEN TO FIRE (Radio_spec §5A rung 0 · §2.4 [P0]) ═══════════
+//  The adversarial twin of MusuHeist's honest landing: this Book POISONS one chunk and shows Heist_land
+//   refuses it.  The whole point of the per-seq cid is that a corrupt chunk is caught EARLY and LOCALLY —
+//    named by its seq, ahead of the whole-file body_hash gate — so a test that only ever feeds honest bytes
+//     (as MusuHeist does) never exercises the teeth.  Here the teeth bite.  No wire, no Peering, no
+//      magazine: the census mints %Records whose %Body chunks carry whole original bytes AND their cid, and
+//       those chunks ARE the "received" chunks Heist_land checks — so poisoning one buf (leaving its cid)
+//        models exactly the corruption the gate exists to catch.
+//  TWO TRUST GATES, both proven here.  (1) CORRUPTION — the cid catches bytes that no longer match the
+//   promise that rode with them (steps 2-4: honest land vs one poisoned chunk).  (2) FORGERY — the cid does
+//    NOT catch a LYING peer who recomputes the cid over bad bytes; the rung-7 ORIGIN-SIGNATURE does (step 6:
+//     the origin signs the cids manifest; a swapped cid or a wrong key fails the unforgeable vouch).  The cid
+//      gate keeps an honest peer honest; the signature keeps a dishonest peer out — the machine needs both.
+//       (The signature is proven in ISOLATION here; wiring it into the live .jam-header + offer is owed.)
+//  CONVENTION (Musu*/Ra*): no Run_A_ recipe — the world MUST be named MusuBreach (do_fn_for dispatches by
+//   w.sc.w).  Everything the test observes hangs under ONE w/%testing subtree (MusuBreach_T), off the design.
+MusuBreach(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuBreach_drive,w,req
+        req%ok = 1
+
+// MusuBreach_T — the one %testing subtree: all the test's observations hang here, off the design tree.
+MusuBreach_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+// MusuBreach_note — stamp one observation under %testing (the test's voice; never touches the design).
+MusuBreach_note(w, sc):
+    let t = this.MusuBreach_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+// MusuBreach_drive — one move per step off step_n (req-local did_step, Musu family style); the witness runs
+//  EVERY pass so each %see fires the first pass its truth holds.  step 2 censuses, 3 lands an honest record
+//   (the control), 4 poisons a chunk and lands (the breach), 5 sweeps the run's bytes off the shared disk.
+async MusuBreach_drive(w, req):
+    let nav = this.Crate_nav()
+    if (!nav || typeof nav.bin_write !== 'function') {
+        if (!this.MusuBreach_T(w).oa({ skipped: 'no_writable_share' })) this.MusuBreach_note(w, { skipped: 'no_writable_share' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuBreach_census(w, nav)
+        if (n === 3) await this.MusuBreach_honest(w, nav)
+        if (n === 4) await this.MusuBreach_poison(w, nav)
+        if (n === 5) await this.MusuBreach_sweep(w, nav)
+        if (n === 6) await this.MusuBreach_vouch(w)
+    }
+    this.MusuBreach_witness(w)
+    await this.Musu_float(w)
+
+// MusuBreach_census — walk two artists off the ONE real testsounds disk into a mirror library.  Sweeps the
+//  run namespace first so a re-run is deterministic (the pinned-runid stance).  Heist_census mints each
+//   %Record with %Body chunks carrying whole original bytes + a per-seq cid + the whole-file body_hash — the
+//    exact shape a landing verifies, so the breach scene needs no wire to be real.  The job pins its filing
+//     (a Book decides everything; no interactive prompt).
+async MusuBreach_census(w, nav):
+    this.MusuBreach_note(w, { reached: 'step_2' })
+    let paths = await this.Crate_nav_paths(nav, 'testsounds')
+    if (!paths.length) {
+        if (!this.MusuBreach_T(w).oa({ skipped: 'no_testsounds' })) this.MusuBreach_note(w, { skipped: 'no_testsounds' })
+        return
+    }
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-breachrun')
+    let mir = w.i({ Library: 1, pier: 'breach.mirror' })
+    mir.c.up = w
+    let own = w.i({ Library: 1, pier: 'breach.own' })
+    own.c.up = w
+    await this.Heist_census(w, mir, nav, 'testsounds', ['The Sines', 'DJ Oscillo'])
+    w.c.mir = mir
+    w.c.own = own
+    w.c.mardir = this.Heist_marrauding('breachrun', 'solo')
+    w.c.job = this.Heist_job(w, 'breachpier', [{ artist: 'The Sines', genre: 'breachtest' }, { artist: 'DJ Oscillo', genre: 'breachtest' }], {})
+    // COVERAGE fact: every chunk of every censused record carries a cid (the origin's per-seq promise).  The
+    //  library shrinks as lands consume records, so capture the fact NOW as a %testing marker the witness reads.
+    let recs = mir.o({ Record: 1 })
+    let all_cid = recs.length > 0
+    for (const rec of recs) {
+        for (const ch of rec.o({ seq: 1 })) {
+            if (!ch.sc.cid) all_cid = false
+        }
+    }
+    let m = this.MusuBreach_note(w, { censused: 1, records: recs.length })
+    if (all_cid) m.sc.all_cid = 1
+
+// MusuBreach_honest — THE CONTROL: land one untouched record.  Every chunk's bytes hash to its cid so the
+//  gate passes, the file materializes on disk, the card catalogues, the spent mirror card drops.  Proves the
+//   gate discriminates — it is not a blanket "refuse everything" that would pass this test for the wrong reason.
+async MusuBreach_honest(w, nav):
+    let mir = w.c.mir
+    let job = w.c.job
+    if (!mir || !job) return
+    let rec = mir.o({ Record: 1 })[0]
+    if (!rec) return
+    let before = +(job.sc.landed || 0)
+    let breach0 = +(job.sc.breached || 0)
+    let id = rec.sc.id
+    let rel = this.Heist_rel_for(job, rec)
+    await this.Heist_land(w, nav, job, w.c.own, mir, rec, w.c.mardir)
+    let present = await this.MusuBreach_on_disk(nav, w.c.mardir, rel)
+    let m = this.MusuBreach_note(w, { honest: 1 })
+    if (+(job.sc.landed || 0) - before === 1) m.sc.landed = 1
+    if (+(job.sc.breached || 0) === breach0) m.sc.no_breach = 1
+    if (present) m.sc.on_disk = 1
+    if (!mir.o({ Record: 1, id: id }).length) m.sc.dropped = 1
+
+// MusuBreach_poison — THE BREACH: flip ONE byte of a MIDDLE chunk's buf and LEAVE its cid, then land.  A
+//  middle seq means seq 0 and 1 already streamed to disk when the poison seq breaches — so this also proves
+//   the mid-stream unlink (the half-written file must not linger as a landing).  Expect: breached bumps by
+//    one, no new land, the file is GONE, and the record STAYS in the mirror for a retry (Heist_land returns
+//     before it drops the spent card).
+async MusuBreach_poison(w, nav):
+    let mir = w.c.mir
+    let job = w.c.job
+    if (!mir || !job) return
+    let rec = mir.o({ Record: 1 })[0]
+    if (!rec) return
+    let total = +(rec.sc.total || 0)
+    let seq = Math.min(2, Math.max(0, total - 1))
+    let ch = this.Repli_chunk_at(rec, seq)
+    if (!ch) return
+    let landed0 = +(job.sc.landed || 0)
+    let breach0 = +(job.sc.breached || 0)
+    // POISON: a fresh copy with byte 0 flipped, assigned back over buf — the cid is untouched, so the bytes
+    //  no longer match the promise that rode with them.  Ra_chunk_map reads this buf live, so the gate sees it.
+    let bad = new Uint8Array(ch.sc.buf)
+    bad[0] = bad[0] ^ 1
+    ch.sc.buf = bad
+    let id = rec.sc.id
+    let rel = this.Heist_rel_for(job, rec)
+    await this.Heist_land(w, nav, job, w.c.own, mir, rec, w.c.mardir)
+    let present = await this.MusuBreach_on_disk(nav, w.c.mardir, rel)
+    let m = this.MusuBreach_note(w, { poison: 1, seq: '' + seq })
+    if (+(job.sc.breached || 0) - breach0 === 1) m.sc.breached = 1
+    if (+(job.sc.landed || 0) === landed0) m.sc.no_new_land = 1
+    if (!present) m.sc.gone = 1
+    if (mir.o({ Record: 1, id: id }).length) m.sc.retained = 1
+    // THE PER-CHUNK PROOF: the GATE itself named the offending seq (job.sc.breach_seq) — and it matches the
+    //  seq we poisoned.  This is what a whole-file body_hash could NOT do: body_hash says "the file is wrong"
+    //   AFTER assembling it all; the per-chunk cid says "chunk 2 is wrong" and stops there.  gate_named is the
+    //    test reading the GATE's report — not our own knowledge of what we poisoned — so the localization is the
+    //     gate's doing.
+    if (job.sc.breach_seq === '' + seq) m.sc.gate_named = 1
+
+// MusuBreach_sweep — drop this run's landed bytes off the shared disk (the human's "delete at end and start"
+//  rule — the repo must never be left holding WAV bytes).  DISK-only, alters no snap: the %testing on_disk
+//   observations captured at land time stand as the proof, while the bytes themselves go.  The poison file is
+//    already gone (the breach unlinked it); this clears the honest control's landing.
+async MusuBreach_sweep(w, nav):
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-breachrun')
+    this.MusuBreach_note(w, { swept: 1 })
+
+// MusuBreach_on_disk — does the landed file for `rel` exist under the marrauding dir?  Splits `rel` into
+//  dir + filename exactly as Heist_land does (the three-way path identity), then probes with bin_read: a
+//   present file returns bytes; a missing one returns null|empty or throws (either is "absent").
+async MusuBreach_on_disk(nav, mardir, rel):
+    let relparts = rel.split('/').filter(Boolean)
+    let filename = relparts.pop()
+    let dir = mardir + '/' + relparts.join('/')
+    try {
+        let raw = await nav.bin_read(dir, filename)
+        return !!(raw && raw.byteLength)
+    } catch (er) { return false }
+
+// MusuBreach_manifest — the canonical string an origin vouches for: the track identity bound to its cids in
+//  seq order.  Binding the id stops a signature over track A's chunk-set being replayed as track B's.
+MusuBreach_manifest(id, cids):
+    return ('' + (id || '')) + '|' + (cids || []).join('.')
+
+// MusuBreach_sign — the origin signs the manifest with its ed25519 secret (deterministic — same key + message
+//  → the same signature every time — so a seeded Book pins it).
+async MusuBreach_sign(ido, id, cids):
+    return await ido.sig(this.MusuBreach_manifest(id, cids))
+
+// MusuBreach_verify — a receiver checks a signature against a KNOWN origin pubkey (the FULL pub, not the 16-hex
+//  prepub — from_hex needs the whole key to verify).  Returns false on any mismatch or garbage — never throws.
+async MusuBreach_verify(pubhex, id, cids, sig):
+    let v = new Idento()
+    v.from_hex(pubhex)
+    try {
+        return await v.ver(sig, this.MusuBreach_manifest(id, cids))
+    } catch (er) { return false }
+
+// MusuBreach_vouch — THE ORIGIN-SIGNATURE (rung 7 keystone, proven in isolation): the cid catches a corrupt
+//  chunk (steps 3-4) but NOT a lying peer who recomputes the cid over bad bytes.  So the origin SIGNS its
+//   chunk-set — a manifest of the cids in seq order, ed25519 over (id | cids) — and a receiver who knows the
+//    origin key verifies the vouch before trusting a byte.  Three probes: the honest vouch verifies; a FORGED
+//     manifest (a middleman swaps one cid for a different chunk's) fails the origin signature; an IMPOSTER (a
+//      different key signing the real manifest) is rejected against the origin key.  Pure crypto over the census
+//       chunks — the .jam-header carry + offer-side verify is the owed WIRING step (Radio_spec §5A rung 7).
+async MusuBreach_vouch(w):
+    let mir = w.c.mir
+    if (!mir) return
+    let rec = mir.o({ Record: 1 })[0]
+    if (!rec) return
+    // gather the cids by seq DIRECTLY off the particles (not Repli_chunk_at, which needs the buf present) — a
+    //  landing RELEASES chunk bufs as they write, but the cid is the durable promise and never leaves.  So the
+    //   manifest reads true off any record — even the poisoned one whose seq-0/1 bufs were freed before the breach.
+    let cids = []
+    let s = 0
+    let total = +(rec.sc.total || 0)
+    while (s < total) {
+        let ch = rec.o({ seq: '' + s })[0]
+        if (ch && ch.sc.cid) cids.push(ch.sc.cid)
+        s = s + 1
+    }
+    if (cids.length < 3) return
+    // deterministic selves — seeded keys so the signature (and its snap) repeats run to run.
+    let origin = new Idento()
+    await origin.generateKeys('MusuBreach-origin')
+    let imposter = new Idento()
+    await imposter.generateKeys('MusuBreach-imposter')
+    let opub = origin.freeze().pub
+    let sig = await this.MusuBreach_sign(origin, rec.sc.id, cids)
+    let vouched = await this.MusuBreach_verify(opub, rec.sc.id, cids, sig)
+    // FORGERY: a middleman claims seq 2 carries seq 0's content — a genuinely different manifest under the same
+    //  origin sig.  cids differ per chunk (different bytes → different sha256) so this is always a real change.
+    let forged = [...cids]
+    forged[2] = cids[0]
+    let forgery_ok = (cids[0] === cids[2]) ? true : await this.MusuBreach_verify(opub, rec.sc.id, forged, sig)
+    // IMPOSTER: a DIFFERENT key signs the real manifest — rejected against the origin key.
+    let imp_sig = await this.MusuBreach_sign(imposter, rec.sc.id, cids)
+    let imp_ok = await this.MusuBreach_verify(opub, rec.sc.id, cids, imp_sig)
+    let m = this.MusuBreach_note(w, { vouch: 1, by: origin.pretty_pubkey() })
+    if (vouched) m.sc.vouched = 1
+    if (!forgery_ok) m.sc.forgery_caught = 1
+    if (!imp_ok) m.sc.imposter_caught = 1
+
+// MusuBreach_witness — the SIX %see truths: the two trust gates the machine leans on.  CORRUPTION (the cid):
+//  cids exist, honest bytes land, a poisoned chunk breaches, the breach is localized.  FORGERY (the signature):
+//   the origin vouches for its chunk-set, and a lying peer is caught.  Gated on the %testing markers (live
+//    truth), never a beat number — each fires the first pass its fact holds and latches once-noticed.
+MusuBreach_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 2)) return
+    let T = this.MusuBreach_T(w)
+    // #1 the census carries the promise — every chunk of every record has a per-seq cid beside the body hash.
+    let cm = T.o({ censused: 1 })[0]
+    if (cm && cm.sc.all_cid && +(cm.sc.records || 0) >= 2 && !T.oa({ see: 'each chunk carries the origin content-address — a per-seq cid minted beside the whole-file body hash' })) this.MusuBreach_note(w, { see: 'each chunk carries the origin content-address — a per-seq cid minted beside the whole-file body hash' })
+    // #2 the control — an untouched record lands clean, so the gate is discriminating not a blanket refusal.
+    let hm = T.o({ honest: 1 })[0]
+    if (hm && hm.sc.landed && hm.sc.no_breach && hm.sc.on_disk && hm.sc.dropped && !T.oa({ see: 'an honest record lands clean — every chunk hashes to its promised cid so the file materializes on disk and the mirror card drops' })) this.MusuBreach_note(w, { see: 'an honest record lands clean — every chunk hashes to its promised cid so the file materializes on disk and the mirror card drops' })
+    // #3 the teeth — one poisoned chunk breaches the landing and nothing new lands.
+    let pm = T.o({ poison: 1 })[0]
+    if (pm && pm.sc.breached && pm.sc.no_new_land && !T.oa({ see: 'a single poisoned chunk breaches the landing — its bytes no longer hash to the origin cid so the gate refuses it and nothing new lands' })) this.MusuBreach_note(w, { see: 'a single poisoned chunk breaches the landing — its bytes no longer hash to the origin cid so the gate refuses it and nothing new lands' })
+    // #4 the breach is LOCALIZED — the GATE named the corrupt seq (gate_named: its own report matched the seq
+    //  we poisoned) which a whole-file body_hash never could — deleted the half-written file and left the record
+    //   unlanded for a retry (the mid-stream unlink: seq 0 and 1 wrote before the poison seq bit).
+    if (pm && pm.sc.gate_named && pm.sc.gone && pm.sc.retained && !T.oa({ see: 'the per-chunk gate localized the breach — it named the exact corrupt seq (what a whole-file hash never could) deleted the half-written file and left the record in the mirror for a retry' })) this.MusuBreach_note(w, { see: 'the per-chunk gate localized the breach — it named the exact corrupt seq (what a whole-file hash never could) deleted the half-written file and left the record in the mirror for a retry' })
+    // #5 THE ORIGIN VOUCHES (the forgery gate) — the cids manifest is signed and verifies against the origin key.
+    let vm = T.o({ vouch: 1 })[0]
+    if (vm && vm.sc.vouched && !T.oa({ see: 'the origin vouches for its chunk-set — it signs the manifest of cids and a receiver verifies the vouch against the origin key before trusting a byte' })) this.MusuBreach_note(w, { see: 'the origin vouches for its chunk-set — it signs the manifest of cids and a receiver verifies the vouch against the origin key before trusting a byte' })
+    // #6 A LYING PEER IS CAUGHT — a swapped cid (a different chunk-set) OR a wrong-key signature fails the vouch.
+    //  This is what the per-chunk cid alone cannot do: the cid catches corruption but a forger recomputes it; the
+    //   origin signature is unforgeable without the origin secret.  The two gates together close both holes.
+    if (vm && vm.sc.forgery_caught && vm.sc.imposter_caught && !T.oa({ see: 'a lying peer is caught — a middleman who swaps a cid or signs with the wrong key fails the origin signature so a forged promise cannot poison the swarm' })) this.MusuBreach_note(w, { see: 'a lying peer is caught — a middleman who swaps a cid or signs with the wrong key fails the origin signature so a forged promise cannot poison the swarm' })

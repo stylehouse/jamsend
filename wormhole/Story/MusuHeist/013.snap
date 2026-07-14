@@ -1,9 +1,9 @@
 Snap:H
   H:MusuHeist,Run
     A:MusuHeist
-      self,round=63	{"mung":["age"]}
+      self,round=66	{"mung":["age"]}
       w:MusuHeist
-        self,round=63	{"mung":["age"]}
+        self,round=66	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -41,21 +41,21 @@ Snap:H
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
               Idzeug:heist_1,to:Music,genre:Heist,spent
-              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1784025233
+              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1784046916
                 Peering,name:be0dab3303037ad2,friendly:Duo,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1784025233,sign:5565c1d57291d109daee2fab578023ddb38ec8d767d868318dd28a5066b4c675165b1962661805c812af3f1da492c3beb0ef019cd652d7bc7e0b7f023ff30c0a,genre:Heist
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1784025233,sign:936fa308e836dc39028b055727aca7381518d2052e8272d64baca590f184d3928e52930acaaa496081c7516e1b1452e75ae2c018b3292b39fafaab9ce0d49006,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1784046916,sign:a994d6a46cb815313b439de2308489f4a6b0a4be65fef320f24d1dc4c5d1c09b65e65ddb639414fe9eaa8ac47b0ff5bf85c27f81400ab91f36afd8abfc774f0d,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1784046916,sign:7a673997f17fce89cbef1d7a2ec52482662d3423c45af38c0e7725dcfb9662153e4fe5c4b0765d3d3bcacd1090532173f7b6ac45d0289d63de643254a117420b,genre:Heist
             SocialGraph
-              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1784025233
+              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1784046916
         Account,of:Duo
           Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
             Peering,name:be0dab3303037ad2,friendly:Duo
-              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1784025233
+              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1784046916
                 Peering,name:4e09f34f5a6ab900,friendly:Uno,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1784025233,sign:936fa308e836dc39028b055727aca7381518d2052e8272d64baca590f184d3928e52930acaaa496081c7516e1b1452e75ae2c018b3292b39fafaab9ce0d49006,genre:Heist
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1784025233,sign:5565c1d57291d109daee2fab578023ddb38ec8d767d868318dd28a5066b4c675165b1962661805c812af3f1da492c3beb0ef019cd652d7bc7e0b7f023ff30c0a,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1784046916,sign:7a673997f17fce89cbef1d7a2ec52482662d3423c45af38c0e7725dcfb9662153e4fe5c4b0765d3d3bcacd1090532173f7b6ac45d0289d63de643254a117420b,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1784046916,sign:a994d6a46cb815313b439de2308489f4a6b0a4be65fef320f24d1dc4c5d1c09b65e65ddb639414fe9eaa8ac47b0ff5bf85c27f81400ab91f36afd8abfc774f0d,genre:Heist
             SocialGraph
-              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1784025233
+              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1784046916
         Peering,name:4e09f34f5a6ab900,req=2,ok
           Pier,pub:be0dab3303037ad2,req=2,ok
             req:handshake,finished
@@ -196,57 +196,57 @@ Snap:H
           active_transport,type:mock,open
         Library,pier:4e09f34f5a6ab900
           Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,path:DJ Oscillo - Cosmic C.wav,ext:wav,bytes=1248104,body_hash:d71294dbbcd7b726b29eb435b756e0663034b5e94639324b091fed01fbd6c1f7,total=5
-            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:0,cid:32f2a4b9830963b69a3ecef564163166a625173dfaeb2e94bbec20f563e8a4c6	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:1,cid:c2bdf70e56dfbcd2400355444080f4497c9d1dbe2d43f019b48857814de61c55	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:2,cid:a26ee0de6039f4b2aee4964cffa22b08bbf7ba0206144384ebdd57997941b19e	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:3,cid:8a70913a174870526ca43f8a933dc7546dcb2c3ca1857006c3cb355039e4a92d	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:4,cid:98498a2492c3f3a9de030a74d79049dbe924a9d9419f23554d2e737438c07db9	{"ref":{"buf":"Uint8Array()"}}
           Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,path:DJ Oscillo - Dorian D.wav,ext:wav,bytes=1216104,body_hash:02cfcb9c15affeaf0321fb7f155f65782ba44e45767f2cea9beeac447a8784ef,total=5
-            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:0,cid:2ef13a17a9fec32b21f92821072ba9b1376ccbe015e56b506d086cebdce73707	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:1,cid:dc98ba9ee147502d021081ba7748be786a151832c79eff227ef984b33db4f292	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:2,cid:d5588f8190bfaad1e70e7d1a2dd33e2b6e0c0cae16395ce24fde8ac5be775c9e	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:3,cid:60f762687185d12894a372cc2abdd169867520a3274edcb0878333ca67bef78c	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:4,cid:d2aad47f8d408f9f6a338c06e1b406c687c94a5e8b700d5e4c7002e4b3d9444c	{"ref":{"buf":"Uint8Array()"}}
           Record,id:cf95c97b08584b92,title:Groove G,artist:DJ Oscillo,path:DJ Oscillo - Groove G.wav,ext:wav,bytes=1056104,body_hash:cf95c97b08584b92d262f214ddfdf536da5a18303b6e27ccb177c1c4088eb765,total=5
-            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:0,cid:f8d28b2fd8a9c26ca177cee50d513cdb5b86bbad96f4583725cbfefacb59fa97	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:1,cid:af4bedde200bf10f5cf41c50c640fa170ceddb0af50567a093d0a44c74096f0d	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:2,cid:938dd9f2ec627db677312339931e1b58afd0b3e10b76de01b300d936f78e5351	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:3,cid:fc42c9b09c25eab1c9201e3870b41e19b585ee64fa5b8057f878f2848582d940	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:4,cid:083b9dbe9be2e50a2047552429dd4599755f3d8560f0960b3ef8d43a96001c88	{"ref":{"buf":"Uint8Array()"}}
           Record,id:d8a28ada85f2e851,title:Deep A,artist:The Sines,path:The Sines - Deep A.wav,ext:wav,bytes=1152100,body_hash:d8a28ada85f2e85151b446112e4d97db3bc6cc24c5ef335b2593be0d95df6b28,total=5
-            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:0,cid:be87a6978544f4c747cf28e1b084ae21889b9490eed1ceb106fd859f6bbd5759	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:1,cid:35c18db98e61c804d569808c75207437758824cdeb8ed8c359be28966b78b816	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:2,cid:74d4d852e69b9d3e0c5c037a4a7c164a1a9ce3da1aabd2bf8f4e08ddea48ed14	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:3,cid:25d043fb9c56263e7a6a9f8d2643a2ad368d8d7bda7f24b8eadfd23752a5ac05	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:4,cid:fdf47b9f73d4686195c18d0bf7d2d7832a9310c77be21639f4900d71f76c55aa	{"ref":{"buf":"Uint8Array()"}}
           Record,id:95f3c03e41e9c007,title:High A,artist:The Sines,path:The Sines - High A.wav,ext:wav,bytes=1280100,body_hash:95f3c03e41e9c0070da6e6a35d5901ac37a8e0e18025e75c3ad8862326f97ef4,total=5
-            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:0,cid:d57c6e4c1511529cae54e2007f16f26b949f7380118286c53882c29664cc779d	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:1,cid:3e7eb0bdd839d5216739061d54d9192c534bcd258e6129e04909cb1ca321dde3	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:2,cid:e924a5c1f5832a15cd82a13e37fc8812595ae5836d1afac877473fbf289ef179	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:3,cid:ce6b2f4b800c5364fc2186baad03ccd88f2a11f36dba761a546c2066053d5f81	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:4,cid:c1ec28ad3bd24d913ff4ba6192feb3d3d4ebf307e789b86efc91e1ba1494cce6	{"ref":{"buf":"Uint8Array()"}}
           Record,id:902552d4a0b8b0c1,title:Middle A,artist:The Sines,path:The Sines - Middle A.wav,ext:wav,bytes=1024102,body_hash:902552d4a0b8b0c19cc6e6331097145ccc9be1d31b90ee9bc3691730c85043b8,total=4
-            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:0,cid:f44fd10ebaeb6a9f39168ac44bdbb9700a21001d65657b207660b2e0aa99de4c	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:1,cid:7590a233708c2b4f30a8abdd8105d153790bb88c32a46a03739679f248814d5c	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:2,cid:e0d1807fa53044f48021912f357290b98042bcff9711a9cdb268833f96e87cf5	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:3,cid:73ea2950a7a0a6020cf94ee01142e43ac40287d007e7acad945210a362cd2acd	{"ref":{"buf":"Uint8Array()"}}
           Record,id:f9cb73180655432e,title:Tagged Truth,artist:Fourier Four,path:4t-mathrock/Fourier Four - Bogus Name.wav,bytes=8110,ext:wav,body_hash:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d
           Record,id:a14602e5ca2e9bd0,title:Echo E,artist:Fourier Four,path:4t-mathrock/Fourier Four - Echo E.wav,bytes=960104,ext:wav,body_hash:a14602e5ca2e9bd00fe5f7d96e1f27bd1113071f99d18687f3a98a6c76f5b998
           Record,id:370d870166ffe45f,title:Query E,artist:Fourier Four,path:4t-mathrock/Fourier Four - Query E.wav,bytes=1088104,ext:wav,body_hash:370d870166ffe45f2e19b0bd1e8fdf765e0d208ac53fab66790ffe1e334c4a0e
         Library,pier:be0dab3303037ad2
           Record,id:f9cb73180655432e,title:Tagged Truth,artist:Fourier Four,path:Fourier Four - Bogus Name.wav,ext:wav,bytes=8110,body_hash:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d,total
-            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:0,cid:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d	{"ref":{"buf":"Uint8Array()"}}
           Record,id:a14602e5ca2e9bd0,title:Echo E,artist:Fourier Four,path:Fourier Four - Echo E.wav,ext:wav,bytes=960104,body_hash:a14602e5ca2e9bd00fe5f7d96e1f27bd1113071f99d18687f3a98a6c76f5b998,total=4
-            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:0,cid:62fe086bedd8fc14c678f0f861479e2423395f2458cdec148c5d10e123e52f3c	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:1,cid:aeaabcfdab75e79a17a32eaa29ffdd07aa239bd5bc834e3cce2935976ff29de4	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:2,cid:e2a6a000a30cbb07375d5758afbb8f3317657afafaa0babc84aa1f228c0fdbde	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:3,cid:38a0d9a52023b39f9a707381301d003fd8e8d030c7bc0784b4c295bc480d20ec	{"ref":{"buf":"Uint8Array()"}}
           Record,id:370d870166ffe45f,title:Query E,artist:Fourier Four,path:Fourier Four - Query E.wav,ext:wav,bytes=1088104,body_hash:370d870166ffe45f2e19b0bd1e8fdf765e0d208ac53fab66790ffe1e334c4a0e,total=5
-            Body,seq:0	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:1	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:2	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:3	{"ref":{"buf":"Uint8Array()"}}
-            Body,seq:4	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:0,cid:e6d110dd0f1cd78f2f569672dbfaf94f70986f00d69d28f7f026f7c2e83ce0d0	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:1,cid:5e82a3125d667693455aefb4261f983ba147887ce80a2fbd86b53987c91e244f	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:2,cid:67b6ba7d0c5e133e7c42c2a5e0fd2b3719802e52a1f25fd7245b5fedb4ac0030	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:3,cid:e93363967ef1f18b833aa79d3992d224baca57e479a9008072c6bbdd723d78e5	{"ref":{"buf":"Uint8Array()"}}
+            Body,seq:4,cid:565a3f31322bcab625f816f25518c515304ac11dc152e43280e95146a09d8ed2	{"ref":{"buf":"Uint8Array()"}}
           Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,path:4t-bangers/DJ Oscillo - Cosmic C.wav,bytes=1248104,ext:wav,body_hash:d71294dbbcd7b726b29eb435b756e0663034b5e94639324b091fed01fbd6c1f7
           Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,path:4t-bangers/DJ Oscillo - Dorian D.wav,bytes=1216104,ext:wav,body_hash:02cfcb9c15affeaf0321fb7f155f65782ba44e45767f2cea9beeac447a8784ef
           Record,id:cf95c97b08584b92,title:Groove G,artist:DJ Oscillo,path:4t-bangers/DJ Oscillo - Groove G.wav,bytes=1056104,ext:wav,body_hash:cf95c97b08584b92d262f214ddfdf536da5a18303b6e27ccb177c1c4088eb765

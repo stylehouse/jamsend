@@ -34,6 +34,56 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
                 evolved through are SAVED: `voro_modes/README.md` (a ledger — commit anchors + live
                  SVG shots; revive any face via `git show <commit>:src/lib/O/Cytui.svelte`).
 
+**⚠ BOMB — "I'm not seeing any changes" = a STALE BROWSER CACHE, not your code (2026-07-15).**  A
+ whole live session's Cytui edits appeared to "not land" in any tab.  The dev server was serving them
+  FINE — proven by fetching the bundle directly: `node -e 'fetch("http://172.17.0.1:9091/src/lib/O/
+   Cytui.svelte").then(r=>r.text()).then(t=>console.log(/vsub_grab/.test(t)))'` returned the current
+    code.  Every browser tab (even a freshly-opened one) was pinned to an OLD cached copy — the tell is
+     `runner_shot --arm` replying `no cy_face hook — this tab runs an old Cytui`.  `runner_ask reload`
+      is a SOFT `location.reload()` and reuses the cache, so it can't fix it (and neither can HMR once
+       its socket dies).  FIX is human-side, quickest first: (1) HARD reload the tab (Ctrl/Cmd+Shift+R);
+        (2) DevTools → Application → Service Workers → Unregister (an OLD *caching* SW version can linger
+         — the current `src/service-worker.js` caches nothing, pass-through); (3) restart the Vite dev
+          server (re-versions every module).  Until a tab is hard-reloaded, NOTHING you ship is visible
+           to anyone — don't chase a phantom bug in the code.  The **"Artist?" CANARY** (a `?` appended
+            to every kind label in the vstat snippet) is live as the propagation test: once you see
+             "Artist?" the pipeline works — then REVERT the canary (one line, `{s.tag}?` → `{s.tag}`).
+
+**WHAT LANDED THIS SHIFT, PART 6 (2026-07-15) — the LIVE SESSION (the human firing steers over HMR;
+ all Cytui paint-only, gen unchanged; UNVERIFIED-BY-SHOT — stale cache above; review on hard-reload).**
+ - **DE-BUTTON the kind chip** (walks back J2/J3): `vsub-kindbox` lost its stroke + glyph-stretch → a
+    faint tinted field hugging the word, not a button.  `vsub-kindlabel` natural width, weight 500.
+ - **NAME-DROP fix** ("sometimes Artist only appears, no name:Riverine"): the narrower chip + (originally)
+    a taller header floor; now moot under the C-cradle (identity owns the whole top arm).
+ - **C-CRADLE crater** (the human picked it over artist-bowl / nested-craters): the coagulate is a
+    NUCLEUS inset to the centre-right (`clip_halfplane` ×3), the cell's OWN Artist tint wrapping it on
+     THREE sides — TOP arm holds the identity, LEFT spine + BOTTOM lip close the C, opens right.  "A
+      cell-wall around its nucleus."  Replaced the header-band split + the chord huddle (identity sits
+       at the top by construction → same-kind cells huddle for free).  Arms are cell-fractions → the C
+        scales with the spell.  R<40.  OPEN refinement (not done): echo the name on the BOTTOM arm (the
+         human's sketch showed it) — held back as speculative-blind until the cache clears.
+ - **DRAG THE ARTIST** ("wire the drag to the cytoscape node underneath that cell"): the identity
+    (`vsub-ntitle`) is a grab handle → `vsub_grab/move/drop` set `cy.getElementById(sp.id).position()`
+     + `pan_zoom_motion()` (live re-tessellate, like the gravity brush); WINDOW listeners survive the
+      re-render; yields to a running layout.  Moves the RIGHT node (a seed sits anywhere in its cell).
+       The manual way to free a TRAPPED cell (the human's alt to an auto-repulsion spell — parked, #46).
+ - **THE BLINK was `wants_crater`** (my grow-then-crater bug): flagging every readable flat fold to grow
+    → a zero-sum re-paint STORM that flipped cells crater↔flat → toggled the Stuffing overlay opacity.
+     REVERTED.  Kept the htitle<11 legibility gate (small folds stay FLAT-and-readable = the "text is
+      very small" fix) + the existing `tiny()` spell (grows a genuinely-tiny flat fold until it craters).
+ - **SPELL HYSTERESIS** ("turn itself off only once the cell becomes even bigger than the size — it was
+    oscillating on+off"): wide HOLD band — grow while starved, hold once it seats, only LET GO once the
+     cell is clearly oversized (`roomy` = content fills <42%, was 60%); gentle steps (1.15/0.95); never
+      shrink a cell that grew this pass.  So too-small→grow, big-enough→hold, way-too-big→ease off.
+ - **HOVER-ESCAPE** ("the hover effect can get stuck on … a catch to escape it"): a mid-hover
+    re-tessellation strands the reveal (corr_hot lights by stable particle ref, ribbon by cell id, so a
+     lost mouseleave sticks).  `corr_clear()` wired to Escape, to leaving the graph (wrap pointerleave),
+      and to drag-start.
+ - VERIFY LIST when a tab is finally hard-reloaded: (a) canary "Artist?" shows → REVERT it; (b) kind chip
+    reads as a soft field not a button; (c) crater is a C — Artist tint wraps a pink nucleus, opens right;
+     (d) grab the Artist name → the cell moves; (e) no blinking; (f) the spell settles (no on/off flutter);
+      (g) hover a chip then press Escape / leave the graph → the highlight clears.
+
 **WHAT LANDED THIS SHIFT, PART 5 (2026-07-15) — the FINAL steer: walking the J-round back.**  After
  seeing J2/J3 live, the human: (a) a research question — "someone has already built this fitting-text-
   exactly-into-polygons trick aye … what can I google?"; (b) a bug — "sometimes Artist only appears, no

@@ -993,15 +993,22 @@
                               y: vdrag.py + (e.clientY - vdrag.sy) / vdrag.zoom })
         pan_zoom_motion()
     }
-    function vsub_drop() { window.removeEventListener('pointermove', vsub_move); vdrag = null }
+    function vsub_drop() {
+        window.removeEventListener('pointermove', vsub_move)
+        window.removeEventListener('pointerup', vsub_drop)
+        window.removeEventListener('pointercancel', vsub_drop)   // touch interrupted — end cleanly too
+        vdrag = null
+    }
     function vsub_grab(e: PointerEvent, id: string) {
         if (!cy || live_layout || vdrag) return          // a running layout owns positions
         const node = cy.getElementById(id)
         if (!node?.length || node.isParent?.() || is_nucleus(node)) return
         const p = node.position()
         vdrag = { node, sx: e.clientX, sy: e.clientY, px: p.x, py: p.y, zoom: cy.zoom() }
+        corr_clear()                                     // a drag re-tessellates → would strand a hover
         window.addEventListener('pointermove', vsub_move)
-        window.addEventListener('pointerup', vsub_drop, { once: true })
+        window.addEventListener('pointerup', vsub_drop)
+        window.addEventListener('pointercancel', vsub_drop)      // no stuck drag if pointerup never comes
         e.stopPropagation(); e.preventDefault()
     }
     let vcells        = $state<{ id: string, d: string, color: string, swapped?: boolean, fog?: number }[]>([])
@@ -1185,6 +1192,18 @@
     function corr_pin_toggle(sp: VSubPane, s: VStat) {
         if (corr_pin === s) { corr_pin = null; if (!corr_hot) corr_pane_id = null }
         else { corr_pin = s; corr_pane_id = sp.id }
+    }
+    // the ESCAPE catch (the human: "the hover effect can get stuck on … perhaps there's a catch to
+    //  escape it?").  A live re-tessellation (spell/drag) destroys a hovered chip mid-hover, so its
+    //   mouseleave never fires — and the reveal lights by STABLE refs (corr_hot by particle, the
+    //    ribbon by cell id), so it persists.  corr_clear drops the transient reveal; `all` also drops
+    //     a deliberate PIN.  Wired to Escape, to leaving the graph, and to a drag start (the biggest
+    //      strander) — so there's always a way out.
+    function corr_clear(all = false) {
+        corr_hot = null
+        ribbon_pane = null
+        if (all) corr_pin = null
+        if (!corr_pin) corr_pane_id = null
     }
     // 1 = lit (involved), -1 = the blur (a correspondence chip NOT involved with the touched one),
     //  0 = untouched chrome (keys without carriers, titles, other panes)
@@ -1839,7 +1858,7 @@
         if (!res) return null
         return { pane: { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`, clip: poly_d(c.inset),
                          color: c.color, tint, walls: [], spokes: [], stats: res.stats,
-                         roomy: res.hid === 0 && res.used < res.avail * 0.6 }, hid: res.hid }
+                         roomy: res.hid === 0 && res.used < res.avail * 0.42 }, hid: res.hid }
     }
 
     // ── THE C-SPACE CRATER — ONE per cell ── (B1 2026-07-14, corrected by the human the same day:
@@ -1946,7 +1965,7 @@
         const ribbons = R > 90 ? corr_ribbons(bres.stats, mtint) : []
         return { pane: { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`, clip: poly_d(c.inset),
                          color: c.color, tint, walls, spokes: [], stats, lgrads, ribbons,
-                         roomy: hid === 0 && bres.used < bres.avail * 0.6 }, hid }
+                         roomy: hid === 0 && bres.used < bres.avail * 0.42 }, hid }
     }
 
     // nucleus_pane — the DEGENERATE pane: no structure worth tessellating (a bare loner,
@@ -3139,17 +3158,27 @@
             const fss = p.stats.filter(s => LOADED.has(s.cls ?? '')).map(s => s.fs ?? 99)
             return fss.length > 0 && Math.min(...fss) < 11
         }
+        // HYSTERESIS (the human: "it needs to turn itself off only once the cell becomes even
+        //  bigger than the size" — it was oscillating on+off): the GROW gate and the RELEASE gate
+        //   are far apart, with a wide HOLD band between them, so a cell that just grew to fit does
+        //    NOT immediately read as roomy and shrink back into starvation.  GROW while STARVED
+        //     (identity/claims below the legible floor); once it seats fine it HOLDS at that size;
+        //      it only LETS GO once the cell is CLEARLY oversized (`p.roomy` = content fills < 42%
+        //       of the pane — set stricter than the old 60%).  Gentle steps damp the overshoot that
+        //        fed the flip.  So: too small → grow; big enough → hold (never shrink); way too big
+        //         → ease off.  A cell that grew this pass is never also shrunk in it.
         let cast = 0, lifted = 0
+        const grewNow = new Set<string>()
         for (const id of want) {
             const p = by.get(id)
             const starved = !built.has(id) || (p?.hid?.n ?? 0) > 0 || tiny(p)
             const cur = vspell.get(id) ?? 1
             if (starved) {
-                const nxt = Math.min(2.4, cur * 1.18)
-                if (nxt > cur + 1e-3) { vspell.set(id, nxt); cast++ }
-            } else if (p?.roomy && cur > 1) {
-                const nxt = cur * 0.93
-                if (nxt <= 1.04) vspell.delete(id); else vspell.set(id, nxt)
+                const nxt = Math.min(2.4, cur * 1.15)
+                if (nxt > cur + 1e-3) { vspell.set(id, nxt); cast++; grewNow.add(id) }
+            } else if (p?.roomy && cur > 1 && !grewNow.has(id)) {
+                const nxt = cur * 0.95
+                if (nxt <= 1.03) vspell.delete(id); else vspell.set(id, nxt)
                 lifted++
             }
         }
@@ -4305,6 +4334,9 @@
     })
 </script>
 
+<!-- Escape clears a stuck correspondence hover (see corr_clear) — top-level, as svelte:window must be -->
+<svelte:window onkeydown={(e) => { if (e.key === 'Escape') corr_clear(true) }} />
+
 <div class="cytui" class:tall={tall}>
     <div class="cytui-bar">
         <span class="cytui-status">{status}</span>
@@ -4359,7 +4391,8 @@
          story pips; role=application tells AT the arrows are app-handled.
          onwheelcapture is the visor guard — see the scroll-visor region. -->
     <div class="cytui-graph-wrap" bind:this={wrap_el} tabindex="-1" role="application"
-         onpointerdown={wrap_pointerdown} onkeydown={wrap_key} onwheelcapture={visor_guard}>
+         onpointerdown={wrap_pointerdown} onkeydown={wrap_key} onwheelcapture={visor_guard}
+         onpointerleave={() => corr_clear()}>
         <div class="cytui-graph" bind:this={container}></div>
         <!-- voronoi layer between the canvas and the HTML overlays: the veil dims
              the raw graph so the cells (and the Stuffings stretched into them)
