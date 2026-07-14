@@ -66,8 +66,16 @@ const addr   = `runshot-${stamp}`   // ephemeral — the reply comes back corr-r
 
 const why = flags.has('--why')                          // telemetry only — no png
 const svg = flags.has('--svg')                          // the voronoi SVG layer, standalone
-const arm = flags.has('--arm')                          // remote face-arm: set the tab's ◈/▧/▦ prefs
-const ask = arm ? { op: 'face', faces: { voronoi: 1, regions: 1, subgraph: 1 } }
+const arm = flags.has('--arm')                          // remote face-arm: set the tab's ◈/▦ prefs
+// --arm default arms ◈+▦ ONLY — never regions (arming ▧ once STASHED Cyto_regions=1 onto the
+//  human's tab and the washes stuck across reloads; a remote arm must not leave surprise state).
+//   --face=k:v,k:v overrides/extends, e.g. --face=regions:0 to clean that stash off a tab, or
+//    --face=vsub:star to A/B the ▦ face parameter ('tuples' is the default face).
+const faces = Object.fromEntries((kv.face ?? 'voronoi:1,subgraph:1').split(',').map(s => {
+    const [k, v] = s.split(':')
+    return [k, v === 'tuples' || v === 'star' ? v : Number(v)]
+}))
+const ask = arm ? { op: 'face', faces }
           : why ? { op: 'why' } : svg ? { op: 'svg' } : { op: 'shot', full: !flags.has('--viewport') }
 if (kv.scale) ask.scale = Number(kv.scale)
 if (kv.w)     ask.maxWidth = Number(kv.w)
@@ -120,7 +128,7 @@ if (svg) {
     if (!r.svg) { console.error(`✗ svg: runner returned no svg (${JSON.stringify(r)})`); process.exit(1) }
     const svgout = out.endsWith('.png') ? '/tmp/runner_shot.svg' : out
     writeFileSync(svgout, r.svg)
-    console.log(`🩻 ${svgout} — ${(r.svg.length / 1024).toFixed(0)}KB · ${r.w}×${r.h} · ${r.paths} paths ${r.labels} labels`)
+    console.log(`🩻 ${svgout} — ${(r.svg.length / 1024).toFixed(0)}KB · ${r.w}×${r.h} · ${r.paths} paths ${r.labels} labels${r.groups != null ? ` · ${r.groups} vsub-groups (state ${r.state_vsubs})` : ''}${r.svgs > 1 ? ` · ${r.svgs} svgs` : ''}${r.cands ? ` · cands [${r.cands.join(' ')}]` : ''}`)
     process.exit(0)
 }
 if (!r.png) { console.error(`✗ shot: runner returned no png (${JSON.stringify(r)})`); process.exit(1) }

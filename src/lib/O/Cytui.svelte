@@ -332,12 +332,24 @@
         while (render_log.length > RENDER_LOG_MAX) render_log.shift()
         try { (H.top_House().c as any).cy_render = render_snapshot() } catch { /* best-effort mirror */ }
     }
+    // uncaught page errors ride the SAME film strip (op:'why') — a template-flush throw is
+    //  otherwise invisible headless: state updates, vlogs fire, but the DOM silently stops
+    //   after the throw point (the "cells but no panes" mystery, 2026-07-14).  Bounded ring
+    //    like everything here; window-level, armed once per mount.
+    $effect(() => {
+        const oe = (e: ErrorEvent) => vlog('jserr', { m: String(e.message ?? e.error ?? '?').slice(0, 140) })
+        const or = (e: PromiseRejectionEvent) => vlog('jserr', { m: ('rej: ' + String(e.reason)).slice(0, 140) })
+        window.addEventListener('error', oe)
+        window.addEventListener('unhandledrejection', or)
+        return () => { window.removeEventListener('error', oe); window.removeEventListener('unhandledrejection', or) }
+    })
     function render_snapshot() {
         const now = performance.now()
         const base = last_settle_t ? Math.round(last_settle_t) : 0
         return {
             voronoi_on, saw_stuffy, voronoi_pref,       // the gate + its inputs
             seeds: stuff_mounts.size, cells: vcells.length, nodes: cy ? cy.nodes().length : 0,
+            vsubs: vsubs.length, vtips: vtips.length, sub_on: subgraph_on,   // ▦ DOM census (chasing the blank glass)
             since_settle_ms: last_settle_t ? Math.round(now - last_settle_t) : null,
             diag_cures,
             // each event's dt = ms since the last layout settle (negative = before it)
@@ -1149,6 +1161,7 @@
                    val?: string, tl?: number,                           // head value + its stretch
                    sup?: string, subn?: number,
                    lines?: VLine[],                                     // wrapped continuation
+                   rot?: number,                                        // baseline angle (deg) — the tuples face
                    member?: TheC }
     type VWall = { d: string, hue: string, cls: string, grad?: boolean }
     type VSubPane = { id: string, clipid: string, clip: string, color: string, tint: string,
@@ -1416,6 +1429,181 @@
         })
     }
 
+    // ── the ▦ face parameter — a PARAMETER, not a bar button (the human, 2026-07-14:
+    //  "a parameter (not in the UI because we'll probably take all this away to another
+    //   UI, it's prototyping)").  'tuples' is the NEW DEFAULT: the pane speaks SNAP
+    //    NOTATION — squished rows, aligned to the cell's own best wall.  'star' keeps
+    //     the radial gem (nucleus/belt/rim) for the A/B.  Flip live over the ask rails
+    //      (runner_shot --arm --face=vsub:star) or the Cyto_vsub_face stash.
+    let vsub_face: 'tuples' | 'star' = 'tuples'
+
+    // the WRITING DIRECTION of a tuples pane: text hangs off the cell's OWN shape —
+    //  "they should mostly favour the shape of their cell, to align text with the
+    //   biggest top-left-est cell wall" (the human).  Longest wall wins, weighted
+    //    toward the top-left and away from unreadable steepness; the angle is
+    //     normalised upright (a baseline never runs upside-down) and quantised to
+    //      15° so near-agreeing neighbours agree EXACTLY — rows read parallel across
+    //       the glass with no cross-cell solve ("something like but possibly not
+    //        exactly cs").  A wall steeper than 45° is REJECTED outright, not just
+    //         penalised — past that the notation tips toward vertical and reads badly
+    //          (the human saw a ~150°-down baseline: a +60° wall the soft penalty let
+    //           win); when no wall qualifies the pane stays horizontal (best = 0).
+    function tuple_frame(poly: {x:number,y:number}[]): number {
+        const xs = poly.map(p => p.x), ys = poly.map(p => p.y)
+        const bx0 = Math.min(...xs), bw = Math.max(...xs) - bx0 || 1
+        const by0 = Math.min(...ys), bh = Math.max(...ys) - by0 || 1
+        let best = 0, score = -1
+        for (let i = 0; i < poly.length; i++) {
+            const a = poly[i], b = poly[(i + 1) % poly.length]
+            const len = Math.hypot(b.x - a.x, b.y - a.y)
+            if (len < 8) continue
+            let th = Math.atan2(b.y - a.y, b.x - a.x)
+            if (th > Math.PI / 2) th -= Math.PI            // upright: (-90°, 90°]
+            else if (th <= -Math.PI / 2) th += Math.PI
+            if (Math.abs(th) > Math.PI / 4 + 1e-3) continue   // >45° tips toward vertical — leave it horizontal
+            const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2
+            const tl = 1 - ((mx - bx0) / bw + (my - by0) / bh) / 2     // 1 at the top-left corner
+            const read = 0.35 + 0.65 * Math.cos(th) * Math.cos(th)    // a steep baseline reads badly
+            const s = len * (0.5 + tl) * read
+            if (s > score) { score = s; best = th }
+        }
+        return Math.round(best / (Math.PI / 12)) * (Math.PI / 12)
+    }
+
+    // one pane as SNAP NOTATION — the 'tuples' face (the human, 2026-07-14: "ALL the
+    //  info, arranged so I can read the notation that looks similar to snap but with
+    //   multiple rows squished together … some venn diagramming or similar visual
+    //    tricks (like treeing — it's VERY BASIC!)").  The distiller already DID the
+    //     venn and the treeing: a fact row is the family's ∀-intersection said once,
+    //      a spread its variance with counts, the title its kind said once — so this
+    //       face simply SAYS the tree as stacked rows, the way a snap would read:
+    //         Kunzea ×14            ← the title line (kind badge · name · ×N)
+    //         habit: vine           ← a fact, the venn-intersection
+    //         year: 1998 ×2 2007    ← a spread, key once + its value chips
+    //         figaro tenuifolium…   ← the members, flowing
+    //       left-aligned down the baseline of the cell's best wall (tuple_frame),
+    //        wrapped lines indenting one em (the treeing).  Keys keep their vein hue
+    //         and the lilac colon; keyed rows land in GLOBAL vein order so the same
+    //          key sits at the same rank in every pane (meaning-alignment across
+    //           cells without any solve).  Whatever the glass can't seat this beat
+    //            folds into +N — annotated, never silent.  Rows sit UNDER the 14pt
+    //             floor by design here: the notation wants density (the title keeps
+    //              the loud floor; a loud claim's row still out-sizes its siblings).
+    type VAtom = Partial<VStat> & { len: number, afs: number }
+    function tuple_pane(c: VCell, head: VHead, tname: string, keyed: VSubTuple[],
+                        members: VSubLeaf[], tint: string, kind: string | undefined):
+            { pane: VSubPane, hid: number } | null {
+        const th = tuple_frame(c.inset)
+        const cosR = Math.cos(-th), sinR = Math.sin(-th)
+        const rpoly = c.inset.map(p => ({ x: c.acx + (p.x - c.acx) * cosR - (p.y - c.acy) * sinR,
+                                          y: c.acy + (p.x - c.acx) * sinR + (p.y - c.acy) * cosR }))
+        const cosB = Math.cos(th), sinB = Math.sin(th)
+        const deg = Math.abs(th) > 1e-3 ? +(th * 180 / Math.PI).toFixed(1) : undefined
+        const rys = rpoly.map(p => p.y)
+        const ry0 = Math.min(...rys), ry1 = Math.max(...rys)
+        const availH = ry1 - ry0 - 6
+        const atom = (a: Partial<VStat>, afs: number): VAtom => ({ ...a, afs,
+            len: (a.tag ? a.tag.length * 0.78 + 1 : 0)
+               + (a.nk ? a.nk.length + 2 : 0)
+               + (a.key ? a.key.length + (a.colon ? 1.5 : 0.5) : 0)
+               + (a.val?.length ?? 0)
+               + (a.sup ? a.sup.length * 0.7 : 0) + (a.subn ? 3 : 0) })
+        // the usable x-span for a whole line-BOX (top→bottom), not just its centreline —
+        //  the INTERSECTION of the chord under the box's top edge and the chord over its
+        //   bottom edge, so a sloping wall above can't clip the ascenders (the human:
+        //    "a line of text obscured by the cellwall above it").  null ⇒ the box doesn't
+        //     seat cleanly at this y; the caller steps down until it does.
+        const line_span = (ytop: number, lh: number): [number, number] | null => {
+            const pad = Math.min(3, lh * 0.22)
+            const a = poly_chord(rpoly, ytop + pad), b = poly_chord(rpoly, ytop + lh - pad)
+            if (!a || !b) return null
+            const lo = Math.max(a[0], b[0]), hi = Math.min(a[1], b[1])
+            return hi - lo > 6 ? [lo, hi] : null
+        }
+        // the salience → row size map ("squished": density beats the 14pt floor here)
+        const row_fs = (w?: number) => { const s = w ?? 50; return s >= 80 ? 15 : s >= 45 ? 11.5 : 9 }
+        // lay the whole pane at a base-size ZOOM; fresh state each call so we can measure
+        //  the natural stack at 1× then re-run bigger to fill the cell.  `used` is the
+        //   stacked height consumed (for the inflate ratio); `hid` the +N crowd-out.
+        const layout = (zoom: number): { stats: VStat[], hid: number, used: number } | null => {
+            const stats: VStat[] = []
+            let ycur = ry0 + 4, hid = 0, dry = false
+            // one LINE of atoms, flowing left→right along the rotated chord, wrapping to an
+            //  indented continuation; every atom is its own VStat so a member chip keeps its
+            //   own click.  Out of vertical room ⇒ the rest of the pane counts into +N.
+            const flow = (atoms: VAtom[]) => {
+                if (dry) { hid += atoms.length; return }
+                const lh = Math.max(...atoms.map(a => a.afs * zoom)) * 1.24
+                let ch = line_span(ycur, lh)
+                while (!ch && ycur + lh < ry1 - 3) { ycur += lh * 0.5; ch = line_span(ycur, lh) }
+                if (!ch || ycur + lh > ry1 - 3) { dry = true; hid += atoms.length; return }
+                let x = ch[0] + 5, right = ch[1] - 4, fresh = true
+                const indent = atoms[0].afs * zoom * 1.4
+                for (const a of atoms) {
+                    if (dry) { hid++; continue }                       // the pane ran out mid-line
+                    let afs = a.afs * zoom, w = a.len * GLY * afs
+                    if (!fresh && x + w > right) {                     // wrap — the treeing indent
+                        ycur += lh
+                        const nch = line_span(ycur, lh)
+                        if (!nch || ycur + lh > ry1 - 3) { dry = true; hid++; continue }
+                        x = nch[0] + 5 + indent; right = nch[1] - 4
+                    }
+                    const room = right - x
+                    if (w > room) {                                    // over-wide atom — shrink, floor 7
+                        afs = Math.max(7, room / (GLY * a.len))
+                        w = a.len * GLY * afs
+                    }
+                    const { len: _l, afs: _f, ...rest } = a
+                    const rx = x + w / 2, ry = ycur + lh * 0.8
+                    stats.push({ ...rest, fs: afs, rot: deg,
+                                 x: c.acx + (rx - c.acx) * cosB - (ry - c.acy) * sinB,
+                                 y: c.acy + (rx - c.acx) * sinB + (ry - c.acy) * cosB } as VStat)
+                    x += w + afs * 0.55
+                    fresh = false
+                }
+                ycur += lh + 1.5
+            }
+            // the title line — the identity stays loud (≥14): kind badge · name · ×N
+            flow([atom({ ...head, val: tname || undefined, cls: 'vsub-ntitle', tagtint: tint }, 16)])
+            if (!stats.length) return null                             // not even a title fits — degrade
+            // keyed rows in GLOBAL vein order — the same key at the same rank in every pane
+            for (const g of keyed) vein_of(g.key ?? '')
+            const order = [...keyed].sort((a, b) =>
+                (vein_slot.get(a.key ?? '') ?? 99) - (vein_slot.get(b.key ?? '') ?? 99))
+            for (const g of order) {
+                const fs = row_fs(g.wgt)
+                const hue = `hsl(${vein_of(g.key ?? '').hue}, 52%, 60%)`
+                const as: VAtom[] = [atom({ key: g.key, colon: g.leaves.length > 0, sup: g.sup,
+                                            hue, cls: 'vsub-gkey' }, fs)]
+                for (const l of g.leaves)
+                    as.push(atom({ val: l.val, sup: l.sup, subn: l.subn, member: l.member,
+                                   tag: l.tag, tagtint: l.tint, cls: 'vsub-label' },
+                                 (l.wgt ?? 50) >= 80 ? fs * 1.3 : fs))
+                flow(as)
+            }
+            // the members flow last — bare names (the title already said their kind once)
+            if (members.length)
+                flow(members.map(l => atom({ val: l.val, sup: l.sup, subn: l.subn, member: l.member,
+                                             tag: l.tag && l.tag !== kind ? l.tag : undefined,
+                                             tagtint: l.tint, cls: 'vsub-label' }, row_fs(l.wgt))))
+            return { stats, hid, used: ycur - ry0 }
+        }
+        // measure at 1×, then INFLATE into the cell's empty vertical space (the human:
+        //  "it just needs inflating into its potential space") — only when nothing was
+        //   crowded out at 1× and the fill would actually grow; damped (·0.7) so the
+        //    re-wrap at the bigger size doesn't overflow, and the inflated pass is kept
+        //     only if it too seats everything (never trade a shown row for bigger text).
+        let res = layout(1)
+        if (!res) return null
+        if (res.hid === 0 && res.used > 8 && availH / res.used > 1.15) {
+            const zoom = Math.min(2.4, 1 + (availH / res.used - 1) * 0.7)
+            const up = layout(zoom)
+            if (up && up.stats.length && up.hid === 0) res = up
+        }
+        return { pane: { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`, clip: poly_d(c.inset),
+                         color: c.color, tint, walls: [], spokes: [], stats: res.stats }, hid: res.hid }
+    }
+
     // nucleus_pane — the DEGENERATE pane: no structure worth tessellating (a bare loner,
     //  a one-fact fold, a sliver), so the whole cell speaks ONE grammar statement, value
     //   word-wrapped into the glass (a %see sentence fills its pane).  A pane too hairline
@@ -1478,6 +1666,12 @@
             //   the statement can't carry is counted into the +N fold mark
             pane = nucleus_pane(c, tint, head, tname)
             hid = total
+        } else if (vsub_face === 'tuples') {
+            // the notation face (the new default): the same tree said as snap-like rows.
+            //  A pane too tight for even a title degrades like everyone else.
+            const tp = tuple_pane(c, head, tname, keyed, members, tint, kind)
+            if (tp) { pane = tp.pane; hid = tp.hid }
+            else { pane = nucleus_pane(c, tint, head, tname); hid = total }
         } else {
             const R = Math.sqrt(area / Math.PI)
             const khue = kind_tint(kind) ?? tint
@@ -1843,6 +2037,7 @@
     let shown_pts:   Map<string, {x:number,y:number}[]> = new Map()
     let shown_color: Map<string, string> = new Map()
     let morph_raf = 0
+    let morph_backstop: ReturnType<typeof setTimeout> | null = null   // rAF-throttle safety net (below)
 
     function voronoi_soon() {
         if (voronoi_timer) clearTimeout(voronoi_timer)
@@ -2534,6 +2729,9 @@
         return famKey
     }
 
+    // last ▦ census signature + the pending census (filled mid-paint, logged at paint's end)
+    let vsub_sig = ''
+    let vsub_last = { face: '', cells: 0, descs: 0, subs: 0, err: '' }
     // last ▧ river signature — paint_final runs per morph frame, so the telemetry
     //  line fires only when the river census (families / arcs / shapes) changes
     let river_sig = ''
@@ -2889,17 +3087,22 @@
         if (subgraph_on && voronoi_on) {
             const subs: VSubPane[] = []
             const next = new Set<string>()
+            let sub_err = ''
             for (const c of L.cells) {
                 // the pre-pass already read every pane (fold|gang via its Vtuffing, a loner
                 //  via its own sc — same grammar, no key special); here each cell just draws,
                 //   hushing the claims its region's river now speaks for it (quiet_map).
                 const dm = descmap.get(c.id)
                 if (!dm) continue
-                const pane = subgraph_build(c, dm.descs, dm.tint, dm.fkind, quiet_map.get(c.id), cs_frames.get(c.id) ?? 0)
+                let pane: VSubPane | null = null
+                try { pane = subgraph_build(c, dm.descs, dm.tint, dm.fkind, quiet_map.get(c.id), cs_frames.get(c.id) ?? 0) }
+                catch (e) { sub_err = String(e).slice(0, 120) }   // one broken pane must not blank the glass
                 if (!pane) continue
                 next.add(c.id)
                 subs.push(pane)
             }
+            vsub_last = { face: vsub_face, cells: L.cells.length, descs: descmap.size,
+                          subs: subs.length, err: sub_err }
             for (const id of next) { const mel = overlays.get(id); if (mel) mel.style.opacity = '0' }
             for (const id of sub_on_ids) if (!next.has(id)) {
                 const mel = overlays.get(id); if (mel) mel.style.opacity = ''
@@ -2931,6 +3134,18 @@
         }
         vcells = cells
         vtips = tips
+        // ▦ census on the telemetry rails, at the TRUE END of paint (op:'why' reads it) —
+        //  captures the fresh vsubs/vtips/vcells so an empty glass says WHY: no sources
+        //   (descs 0 = node_src lost post-HMR), every pane degrading, or a builder throwing.
+        //    One line only when the census CHANGES (never a per-drag-frame flood).
+        const uniq = new Set(vsubs.map(s => s.id)).size   // a keyed-each dup id blanks the WHOLE block
+        const vsig = `${vsub_last.face}:${cells.length}:${vsub_last.descs}:${vsub_last.subs}:${vsubs.length}:${uniq}:${tips.length}:${vsub_last.err}`
+        if (vsig !== vsub_sig) {
+            vsub_sig = vsig
+            vlog('vsub', { face: vsub_last.face, cells: cells.length, descs: vsub_last.descs,
+                           built: vsub_last.subs, vsubs: vsubs.length, uniq, vtips: tips.length,
+                           ...(vsub_last.err ? { err: vsub_last.err } : {}) })
+        }
     }
 
     // ── morph_voronoi: tween shown → next generation, then paint the rest state ──
@@ -2982,11 +3197,38 @@
             }
             if (!still) break
         }
-        if (still) { for (const c of L.cells) shown_pts.set(c.id, targets.get(c.id)!); paint_final(L); settle_overlay_show(); mark_settled(); return }
+        // still (nothing moved) OR a HIDDEN tab jump straight to the settled paint — no tween.
+        //  A background tab (every headless runner: booted ?B=, never focused) PAUSES
+        //   requestAnimationFrame, so the animating branch below would clear vsubs/vtips and
+        //    NEVER reach its terminal paint_final to restore them — the glass renders cells but
+        //     blank sub-cells (the whole "0 vsub-groups" headless-capture bug, 2026-07-14).  A
+        //      hidden tab has no animation to watch anyway, so the settled paint IS the right
+        //       frame; a visible tab still tweens.  This also cleans up the dying cells the plain
+        //        `still` path skipped (it's guarded on dying.length===0).
+        if (still || document.hidden) {
+            for (const c of L.cells) shown_pts.set(c.id, targets.get(c.id)!)
+            for (const dc of dying) { shown_pts.delete(dc.id); shown_color.delete(dc.id) }
+            paint_final(L); settle_overlay_show(); mark_settled(); return
+        }
 
         cancelAnimationFrame(morph_raf)
         vtips = []   // tips re-arrive with the settled walls
         vsubs = []   // sub-cells too — stale walls mid-tween would lie
+        // rAF-THROTTLE SAFETY NET: the tween restores vtips/vsubs only when its frame loop
+        //  reaches k>=1.  An UNFOCUSED window (document.hidden false, so the sync path above
+        //   didn't fire) throttles rAF to ~1fps, stretching a 300ms tween to seconds during
+        //    which the glass shows cells but blank sub-cells.  setTimeout is NOT rAF-throttled,
+        //     so it force-lands the settled paint if the tween hasn't by then — the render is
+        //      never left mid-clear (the transient "0 vsub-groups" a headless shot could catch).
+        if (morph_backstop) clearTimeout(morph_backstop)
+        morph_backstop = setTimeout(() => {
+            morph_backstop = null
+            if (vsubs.length) return                       // the tween already landed
+            cancelAnimationFrame(morph_raf)
+            for (const c of L.cells) shown_pts.set(c.id, targets.get(c.id)!)
+            for (const dc of dying) { shown_pts.delete(dc.id); shown_color.delete(dc.id) }
+            paint_final(L); settle_overlay_show(); mark_settled()
+        }, MORPH_MS + 150)
         const t0 = performance.now()
         const frame = (now: number) => {
             const k = Math.min(1, (now - t0) / MORPH_MS)
@@ -3007,6 +3249,7 @@
             vcells = cur
             if (k < 1) { morph_raf = requestAnimationFrame(frame) }
             else {
+                if (morph_backstop) { clearTimeout(morph_backstop); morph_backstop = null }
                 for (const dc of dying) { shown_pts.delete(dc.id); shown_color.delete(dc.id) }
                 paint_final(L)
                 settle_overlay_show()
@@ -3460,6 +3703,8 @@
         if (typeof stashed_b === 'boolean') brush_pref = stashed_b
         const stashed_sg = (H as any).stashed?.Cyto_subgraph
         if (typeof stashed_sg === 'boolean') subgraph_pref = stashed_sg
+        const stashed_vf = (H as any).stashed?.Cyto_vsub_face
+        if (stashed_vf === 'tuples' || stashed_vf === 'star') vsub_face = stashed_vf
         if (DRIFT_MODES_ON) {   // shelved: a stashed true from the play days must not resurrect the drift
             const stashed_r = (H as any).stashed?.Cyto_radio
             if (stashed_r === true) { radio_pref = true; radio_timer = setInterval(radio_tick, RADIO_DWELL) }
@@ -3539,8 +3784,13 @@
                         sub_on_ids = new Set(); vsubs = []
                     }
                 }
+                // the ▦ face parameter — 'tuples' (snap-notation rows) | 'star' (the radial gem)
+                if (f.vsub === 'tuples' || f.vsub === 'star') {
+                    vsub_face = f.vsub
+                    if (sts) sts.Cyto_vsub_face = f.vsub
+                }
                 voronoi_soon()
-                return { voronoi: voronoi_on, regions: region_on, subgraph: subgraph_on }
+                return { voronoi: voronoi_on, regions: region_on, subgraph: subgraph_on, vsub: vsub_face }
             }
         } catch { /* no House root yet */ }
 
@@ -3630,11 +3880,11 @@
         <button class="v-toggle" class:on={families_on} onclick={toggle_families}
             title="family hulls — one faint shared outline per compound house">⬡</button>
         <button class="v-toggle v-cs" class:on={region_on} onclick={toggle_regions}
-            title="cs — the region's coordinate system (the human's naming, 2026-07-14): same-family cells share one wash + one river, and the river IS the posable axis, twisted to fit around the landform — member cells rotate their sub-cell compass to it, so a key sits the same way RIVER-relative in every cell and the space reads as aligned across them (off by default)">cs</button>
+            title="rivers — the C/S squiggles: family washes + letterform arc-rivers (I/C/S/O) with ∀-shared claims promoted onto them (»N receipts in the cells).  PARKED OFF (the human, 2026-07-14: the squiggles aren't earning their ink yet; the cross-cell harmony they gesture at now lives in the tuples face's shared baselines)">∿</button>
         <button class="v-toggle" class:on={brush_pref} onclick={toggle_brush}
             title="gravity brush — wheel pinches|spreads the locale under the cursor (Ctrl+wheel still zooms)">🌀</button>
         <button class="v-toggle" class:on={subgraph_on} onclick={toggle_subgraph}
-            title="sub-graph — every pane speaks the glass grammar and hides nothing: source at the core, facts on the belt, members around the rim; slivers say their one statement + a +N fold mark (off = molded Stuffings everywhere)">▦</button>
+            title="sub-graph — every pane speaks the glass grammar and hides nothing; slivers say their one statement + a +N fold mark (off = molded Stuffings everywhere).  Face rides the vsub_face PARAMETER, not a button: 'tuples' (default — snap-notation rows aligned to the cell's best wall) | 'star' (the radial gem)">▦</button>
         {#if DRIFT_MODES_ON}
             <button class="v-toggle" class:on={radio_on} onclick={toggle_radio}
                 title="radio — the graph plays you: a tuner drifts attention pane to pane and opens each a little (touch anything to hold it off)">📻</button>
@@ -3750,6 +4000,7 @@
                     <text class={s.cls} class:hot={s.member != null}
                           x={s.x.toFixed(1)} y={s.y.toFixed(1)}
                           font-size={s.fs.toFixed(1)} text-anchor="middle"
+                          transform={s.rot != null ? `rotate(${s.rot} ${s.x.toFixed(1)} ${s.y.toFixed(1)})` : undefined}
                           role={s.member ? 'button' : undefined}
                           onclick={s.member ? () => micro_click(sp.id, s.member) : undefined}>
                         {#if s.tag}<tspan class="vsub-tag" fill={s.tagtint ?? undefined}>{s.tag}</tspan>{#if s.tagcolon}<tspan class="vsub-colon">: </tspan>{:else}<tspan> </tspan>{/if}{/if}{#if s.nk}<tspan class="vsub-nk" fill={s.nkhue}>{s.nk}</tspan><tspan class="vsub-colon">: </tspan>{/if}{#if s.key}<tspan fill={s.hue}>{s.key}</tspan>{#if s.colon}<tspan class="vsub-colon">:{s.val ? ' ' : ''}</tspan>{/if}{/if}{#if s.val}<tspan class="vsub-v" textLength={s.tl} lengthAdjust={s.tl ? 'spacingAndGlyphs' : undefined}>{s.val}</tspan>{/if}{#if s.sup}<tspan class="vsub-sup" dy="-0.45em">{s.sup}</tspan>{/if}{#if s.subn}<tspan class="vsub-sup vsub-dig" dy={s.sup ? '0' : '-0.45em'}>/*{s.subn}</tspan>{/if}{#each s.lines ?? [] as ln, li (li)}<tspan class="vsub-v" x={s.x.toFixed(1)} dy={li === 0 && (s.sup || s.subn) ? '1.65em' : '1.2em'} textLength={ln.tl} lengthAdjust={ln.tl ? 'spacingAndGlyphs' : undefined}>{ln.text}</tspan>{/each}

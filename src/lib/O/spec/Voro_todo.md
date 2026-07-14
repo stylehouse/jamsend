@@ -91,9 +91,64 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
               identical.  **EXERCISED LIVE 2026-07-14** on the same VoroMitosis capture — regions
                armed, 30 river chips rendering, 1 promotion `»`-receipt, no breakage; the cs
                 compass-alignment is a subtle visual best judged by the human's eye (the ◈/cs/▦
-                 faces were left armed on the runner).  NEXT LAYER = tropism: "certain plants grow
-                  towards" the axis (the human) — the frame is the trellis, a fact/member can LEAN
-                   toward downstream; not built.**
+                 faces were left armed on the runner).  **SUPERSEDED (2026-07-14, the human, live):
+                  "the cs squiggles are retarded at the moment" and "it has no effect on subcell
+                   structure yet which was the whole point".  The cs river-frame IDEA (align sub-cell
+                    space across cells) was RIGHT; rotating the star compass by it was the wrong body.
+                     Button relabelled `cs`→`∿` (it draws C/S letterforms), PARKED OFF (region_pref
+                      default false; render byte-identical off).  The alignment intent moved to the
+                       TUPLES FACE below ("something like but possibly not exactly cs").**
+
+     **THE ▦ SUB-CELL NOW HAS TWO FACES via the `vsub_face` PARAMETER — LANDED 2026-07-14 night (the
+      human's live steer, live-proven on VoroMitosis).**  "WHAT I REALLY WANT is ALL the info,
+       arranged so I can read the notation that looks similar to snap but with multiple rows squished
+        together … a parameter (not in the UI because we'll probably take all this away to another UI,
+         it's prototyping) where we can make it this gem-like star formations, or the new default:
+          somewhat more like a C structure, tuples … using something like but possibly not exactly cs
+           to make those tuples aligned and hang in the same direction across places, but they should
+            mostly favour the shape of their cell, to align text with the biggest top-left-est cell wall."
+     - `let vsub_face: 'tuples' | 'star'` in Cytui — a PARAMETER, not a bar button (prototyping; the
+        real UI comes later).  `subgraph_build` branches: tiny→nucleus_pane; **`tuples` (NEW DEFAULT)**
+         →`tuple_pane`; else the radial **`star`** gem (the six-pass face, unchanged).  Flip live over
+          the ask rails: `runner_shot --arm --face=vsub:star` (op:'face' now takes `vsub`); or the
+           `Cyto_vsub_face` stash.
+     - `tuple_pane` says the distiller's tree as SNAP-LIKE STACKED ROWS: title (kind badge · name · ×N),
+        keyed rows in GLOBAL vein order (same key at the same RANK in every pane = "hang in the same
+         direction across places"), `key:` + value chips, then the members flowing; wraps with a one-em
+          TREEING indent; over-wide atoms shrink to a 7px floor, the rest folds to `+N` (never a clipped
+           `…`).  Density beats the 14pt floor here — the notation wants all the info (rows 9–15px, the
+            title stays loud).  `tuple_frame(poly)` picks the cell's biggest top-left wall (len ×
+             top-left-weight × readability, upright-normalised, quantised 15°) and the whole pane's
+              baseline rotates to it — "favour the shape of their cell".  Each atom is its own VStat, so
+               a member chip keeps its click/pop.
+     - **LIVE-PROVEN** (`/tmp/nightshift_gallery/tuples_clean.svg`): 13 panes, 141 labels, **0 ellipsis**,
+        rotations −45…+30.  Reads e.g. `Metrosideros ×11 / habit: shrub ×3  tree  vine ×4 / woodystem ×3
+         / propinqua rhamnoides grandifolia microphylla serrata …`.  The "venn/treeing" the human named is
+          the distiller's ∀-intersection facts + variance-spreads (already there) laid out readably.
+     - **BOMB found + fixed en route (`morph_voronoi` rAF-throttle):** the morph clears `vsubs`/`vtips`
+        SYNCHRONOUSLY but restored them only inside a `requestAnimationFrame` loop — a background/unfocused
+         runner tab PAUSES/THROTTLES rAF, so every `runner_shot --svg` showed CELLS but BLANK sub-cells
+          (`0 vsub-groups` with `state_vsubs:13`).  NOT a tuples bug; a general headless-capture fragility
+           the feature merely exposed.  Fix: `if (still || document.hidden)` paints the settled state
+            synchronously (a hidden tab has no animation anyway) + a `setTimeout(MORPH_MS+150)` backstop
+             for the visible-but-throttled case.  Also added `op:'reload'` to runner_ask/LiesFunk (runner-
+              only remote `location.reload()`) — the fleet wedge-healer.  See memory [[raf-throttle-blank-subcells]].
+     - **THREE TASTE-FIXES LANDED (2026-07-14, the human "yay … now it just needs inflating into its
+        potential space … a line obscured by the cellwall above it, and a 150° down angle"):**
+        (1) **inflate** — `tuple_pane` now lays out at 1× to MEASURE the natural stack height, then re-runs
+         at a damped `zoom` (`min(2.4, 1+(availH/used−1)·0.7)`) to fill the cell's empty vertical space,
+          kept only if the bigger pass still seats everything (never trade a shown row for size).  Sparse
+           one-member cells now render 22–38px, dense cells stay 12px — verified `tuples_v2.svg`.
+        (2) **no wall-clip** — `flow` seated lines on the CENTRELINE chord, so ascenders poked under a
+         sloping top wall; now `line_span(ytop,lh)` = the INTERSECTION of the chord under the box's top and
+          over its bottom, and a line steps down until its whole box seats inside both walls.
+        (3) **no steep baseline** — `tuple_frame` REJECTS any wall >45° outright (was only soft-penalised;
+         a +60° wall = the "150°-down" the human saw); no qualifying wall ⇒ horizontal.  Live shot now shows
+          only 0/−15/+30°, **0 labels over 45°**.
+     - **OPEN (bigger cuts, the human's call):** the model dumped **on a separate channel from the snap**
+        (bigger than Voronoiology, NOT inside H%Run) + the namekey DEEP CUT — the tuples face already
+         obsoletes its DISPLAY need (you show the whole tuple, you don't distill one fallible name), so the
+          remaining namekey use is model-anchor only.
  - **The naming-cut is DROPPED as filed; the bijective key is PARKED.**  region|axis|name are
     necessary-ish but fundamentally fallible analytics — do not grow them.  `Voro_model_namekey`
      keeps its code but is not threaded further (its spirit may resurface at the Stuffing-algorithm

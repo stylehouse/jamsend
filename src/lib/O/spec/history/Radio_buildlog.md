@@ -5,6 +5,39 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
   The living state, roadmap and design are in Radio_todo.md — read THAT; come here only for
    the archaeology of how a thing landed. Newest first.
 
+**2026-07-14 — the Ra pipeline RE-DRAW: MusuBuddy consolidates stock|cast|play under the magazine; the three
+ standalone Ra* Books RETIRED. LIVE-GREEN ×2.** The human challenged the reflex to write yet another Book:
+  "do MusuRaStock|Cast|Term really stay relevant once we have the magazine, or is that the same job twice?"
+   and "you can totally mutate tests that already exist." The honest split (grounded in §3.6's real-vs-mock
+    ledger): the magazine is the CATALOG (identity leaves — "the magazine is the catalog not the payload"),
+     the Ra pipeline is the PAYLOAD (real `OfflineAudioContext`→LUFS→Opus→`.jam`→decode PCM); orthogonal axes
+      that MEET. But the three standalone Ra* Books proved stock|cast|play in a config the destination never
+       runs — a stream with no catalog naming it. So the move was NOT another test: build the integrated Book,
+        stand it green, THEN delete the oldies (they stay green as the safety net during the hop — §3.5's
+         "nothing deleted until its re-draw stands"). New Book **MusuBuddy** (`Ghost/Story/Radiation.g`, after
+          MusuRaChase): 14 beats — stock two real tracks + wire (2), idempotent restock (3), seal (4), then
+           flow legs fire on preconditions — `Musica_stand` publishes the `%Musica` magazine + husks over the
+            granted wire; a title-pinned `%Dogear` browses the follower MIRROR to a card; the browsed card's
+             id = its Record id, so it PULLS ITS OWN audio whole (park|ignite on demand) while the unbrowsed
+              husk stays unspent; HEAR (10) decodes the PULLED bytes; REVOKE (12) — a fresh origin draw meets
+               the closed gate, zero frames. 11 sees absorbing RaStock (opposite-gains + idempotent restock),
+                RaCast (seal + husk + park/serve + byte-faithful pull + revoke silence), RaTerm (LUFS survives
+                 the opus trip + honest starve + gapless), plus three NEW: browse-by-meaning, unbrowsed-husk-
+                  unspent (the economy), stale-magazine-after-revoke. CHECK run gave the real numbers with big
+                   margins (lufs −14.02 vs −14; healthy 0 / starved 280) — NO tuning. Adversarial review (opus)
+                    returned all 11 SOUND, each with a verified one-line break, all four false-green suspects
+                     defused. It ALSO surfaced a real latent consent-gap (`Repli_send_lines` bypasses
+                      `repli_allow` → goner deletes leak to a revoked follower) — NOT MusuBuddy's claim, parked
+                       in Radio_todo §0.9 (the low-priority lot), not fixed here. Recorded + warm-verified
+                        green ×2 (steps 4–14 ride benign `AudibleEntropy` ≈ — a sealed real-audio Book, caveat:0
+                         unreachable by design). Then RETIRED MusuRaStock/RaCast/RaTerm — deleted the three Book
+                          regions (`Radiation.g` shrank ~530 lines, gen 106975c→73814c), their `wormhole/Story/`
+                           fixtures, and their Credence + Ality rows; `Ghost/M/Ra.g` untouched; RaStream/RaChase
+                            + the real-audio lowlevels + the seeder stay. GOTCHA: the post-delete gen re-compile
+                             HMR-wedged the sole runner (begun-wedge — heals on a tab reload); MusuBuddy's green
+                              is banked from before the delete, its Credulate re-pins to the trimmed gen on the
+                               next clean run — benign gen-pin churn, not a re-gate.
+
 **2026-07-14 — M4 (second rung): census becomes the STANDING publish — a diff-watcher pass, idempotent on a quiet
  census (MusuStanding), LIVE-GREEN ×2.** MusuRecast crossed a census DIFF when `Musica_recast_offer` was CALLED;
   this rung makes the census itself the TRIGGER — "a landing that changes the collection re-publishes the magazine"

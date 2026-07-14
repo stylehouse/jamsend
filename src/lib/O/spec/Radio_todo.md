@@ -23,6 +23,38 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**THE RA PIPELINE RE-DRAW — MusuBuddy consolidates stock|cast|play UNDER the magazine, and the three
+ standalone Ra* Books RETIRED: LIVE-GREEN ×2 (2026-07-14; 14/14 green — a sealed real-audio Book, so
+  steps 4–14 ride benign `AudibleEntropy` ≈; caveat:0 is unreachable by design, not chased).** The human's
+   push (2026-07-14): "do MusuRaStock|Cast|Term really stay relevant once we have the magazine — or is that
+    proving the same job twice?" The honest answer split — the magazine is the CATALOG (identity leaves), the
+     Ra pipeline is the PAYLOAD (the real PCM), orthogonal axes that MEET — but the three standalone Ra* Books
+      proved stock|cast|play in a configuration **the destination never runs**: a stream with no catalog
+       naming it. The magazine arriving IS the higher-level re-draw §3.5 always promised. New Book **MusuBuddy**
+        (`Ghost/Story/Radiation.g`) runs the pipeline WITH its front door: `Musica_stand` publishes the
+         collection as a `%Musica` magazine over the granted wire, a title-pinned `%Dogear` browses the
+          follower's MIRROR down to a card, and **the browsed card fetches its OWN audio** — card id = Record
+           id (the catalog and the stream identity are ONE), so the pull parks|ignites on demand, the terminal
+            decodes THE PULLED bytes (LUFS −14.02 at target, an honest starve, gapless when whole), and a
+             revoke leaves the magazine STALE (a fresh origin draw meets the closed gate — zero frames, the
+              MusuStanding seq discriminator). It ABSORBS every claim of the three (RaStock: opposite-direction
+               gains toward one target + idempotent restock; RaCast: seal + husk promise + park/serve demand +
+                byte-faithful whole pull + revoke silence; RaTerm: LUFS survives the opus trip + honest starve
+                 + gapless), and adds three the standalone configs could not make: the browse-by-meaning join,
+                  the **unbrowsed husk kept unspent** (the economy — pull is per-card, never broadcast), and
+                   the stale-magazine-after-revoke. 11 sees; **adversarial review (opus) returned all 11 SOUND**
+                    (each with a verified one-line break; the four hunted false-green suspects all defused —
+                     origin transcode mints on the origin record so the mirror husk stays empty, a wrong cursor
+                      landing fails the title equality, `o()` is direct-children-only so husks and cards never
+                       collide, the sorted testsounds give genuinely opposite gains). RETIRED once green ×2:
+                        MusuRaStock/RaCast/RaTerm deleted (Book code in `Radiation.g`, fixtures, Credence, Ality)
+                         — `Ghost/M/Ra.g`'s spine verbs are UNTOUCHED (MusuBuddy + RaStream + RaChase ride them);
+                          RaStream/RaChase (the streaming-race + village-dial residue the magazine can't express)
+                           and the real-audio lowlevels + `MusuGenerateTestsMusic` all STAY. (Live note: the gen
+                            re-compile after the delete HMR-wedged the sole runner — MusuBuddy's green is banked
+                             from BEFORE the delete; its Credulate re-pins to the trimmed gen on the next clean
+                              run after a tab reload — benign gen-pin churn, not a re-gate.)
+
 **M4 (second rung) — CENSUS BECOMES THE STANDING PUBLISH (a diff-watcher pass, idempotent on a quiet census):
  LIVE-GREEN ×2 (2026-07-14; 12/12, caveat:0).** New Book **MusuStanding** (`Ghost/Story/Heistation.g`, after
   MusuStanding) makes the census itself the TRIGGER: MusuRecast crossed a diff when `Musica_recast_offer` was
@@ -293,6 +325,25 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
     always `--runner=<prefix>`; pre-pin the `%see` set before any accept and confirm after (§1.5);
      sealing Books show PERMANENT benign ≈ on grafted seal fields — do not chase caveat:0 (§1.5);
       the host commits mid-session — re-check the tree after HEAD moves.
+
+---
+
+## 0.9 Parking lot — low-priority fixes (deferred, not blocking any rung)
+
+Known-real problems found in passing that we deliberately DON'T stop the mainline for. Patch them
+ opportunistically alongside more relevant work; each names its own proving Book so it lands with a gate.
+
+- **`Repli_send_lines` bypasses the consent gate — goner DELETES leak to a REVOKED follower.**
+   `Repli_offer` (Repli.g:283) is `Repli_allowed`-gated, but `Repli_send_lines` (Repli.g:229) is NOT, and
+    `Musica_recast_offer` (Heist.g:706/720) calls it directly for goner `op:delete`s. So the wire refuses to
+     ADD to a revoked peer but will still DELETE from their mirror — an asymmetric consent bypass (a revoked
+      peer's held copy should be frozen, not remotely editable). Found by MusuBuddy's adversarial review
+       (2026-07-14); MusuBuddy's own revoke scene ADDS a card, so it never exercises the leak (see 11 stays
+        sound). FIX: gate the two goner-delete `Repli_send_lines` calls in `Musica_recast_offer` on
+         `Repli_allowed(w, to, from)` (surgical — leaves the Repli core primitive alone; check other callers
+          before gating the primitive itself). PROVE: a delete-after-revoke Book (MusuBuddy's see-11 shape but
+           a GONER not a neu) — the dropped record/cloud does NOT reach the revoked mirror + zero frames burned;
+            adversarially review AND live-gate (an unrun security assertion is the worst false-green).
 
 ---
 
@@ -651,6 +702,20 @@ The tiny aspect proofs become `Radio_lowlevel.md` material as `Ra*` goes green �
  higher-level re-draws: MusuCrowd's many-listeners claim re-proves ON racast, the spool slices
   re-prove INSIDE raterm, MusuSignal's starve gate inside MusuRaTerm. Nothing is deleted until its
    re-draw stands.
+
+**THE RULE CLIMBED A LEVEL — the PRODUCT Books retire too (2026-07-14).** The re-draw ladder does not
+ stop at Ra*: the three standalone Ra* PRODUCT Books proved stock|cast|play in a configuration the
+  destination never runs — a stream with no catalog naming it — so once **MusuBuddy** (§0, the
+   magazine-driven pipeline where the stream is BORN from a browsed `%Musica` card) stood LIVE-GREEN ×2,
+    **MusuRaStock / MusuRaCast / MusuRaTerm were DELETED** (Book code in `Radiation.g`, their fixtures,
+     their Credence + Ality rows). The same discipline governed it: nothing deleted until its re-draw
+      stood green. What is NOT redundant and STAYS: **RaStream / RaChase** (the streaming-race — park at
+       the boundary, feed past it, the village dial — which the static catalog cannot express),
+        `MusuGenerateTestsMusic` (the seeder), and the real-audio lowlevels (MusuSignal/Glide/Tune/Edge/
+         Radio/Conceal — the PCM aspect proofs; RaTerm was their consolidation target and MusuBuddy now
+          is). `Ghost/M/Ra.g`'s spine verbs are untouched — MusuBuddy rides them. The magazine and the
+           pipeline were always the IDENTITY and BITSTREAM halves of one experience, meant to meet, not
+            two proofs of one job.
 
 ### 3.6 What is REAL and what is a MOCK in the Ra Books (honest ledger)
 

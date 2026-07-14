@@ -25,11 +25,8 @@ Waft:Credence
   What:Musu,desc:the music-piracy streaming platform — the rastock racast raterm pipeline of Radio_todo
     Funkcion:StoryTimes
     What:mostly,desc:the stuff we mostly do as jamsend the music app — the rastock racast raterm pipeline on real tracks
-      What:the pipeline,desc:rastock racast raterm — the product chain on real tracks plus its test-data seeder
+      What:the pipeline,desc:the streaming session on real tracks — a listening ramp and the village chase plus the test-data seeder (stock|cast|play consolidated into MusuBuddy §3.5)
         Funkcion:Storying,of_Book:MusuGenerateTestsMusic,needsFSA:1,unusual:test-data-seeding
-        Funkcion:Storying,of_Book:MusuRaStock,needsFSA:1,needMusic:1
-        Funkcion:Storying,of_Book:MusuRaCast,needsFSA:1,needMusic:1
-        Funkcion:Storying,of_Book:MusuRaTerm,needsFSA:1,needMusic:1
         Funkcion:Storying,of_Book:MusuRaStream,needsFSA:1,needMusic:1,born:2026-07-08
         Funkcion:Storying,of_Book:MusuRaChase,needsFSA:1,needMusic:1,born:2026-07-11
       What:the magazine,desc:the sharing layer — heist bytes into a collection then berth persist share and browse it across Piers
@@ -78,6 +75,7 @@ Waft:Credence
     Funkcion:Storying,of_Book:MusuRename
     Funkcion:Storying,of_Book:MusuRecast
     Funkcion:Storying,of_Book:MusuStanding
+    Funkcion:Storying,of_Book:MusuBuddy,needsFSA:1,needMusic:1,born:2026-07-14,brand_new:1
   What:Puddle,desc:the lower-level instruments in one puddle — machinery proven once and kept for regression hunts not for relitigating
     Funkcion:StoryTimes
     What:Lake,desc:the editor machine — the Lies compile-run pipeline over Docs Wafts and focus

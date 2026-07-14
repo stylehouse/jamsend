@@ -1,7 +1,0 @@
-Snap:H
-  H:MusuRaTerm,Run
-    A:MusuRaTerm
-      self,round	{"mung":["age"]}
-      w:MusuRaTerm
-        self,round	{"mung":["age"]}
-        req:wrangle,eternal,ok

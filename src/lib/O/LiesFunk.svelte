@@ -2392,8 +2392,14 @@ await M.eatfunc({
                     //     scoping classes travel on the elements), xmlns + explicit size added, so the
                     //      file stands alone in a viewer — AND the text stays TEXT, so a headless caller
                     //       can grep geometry + labels instead of eyeballing pixels.
-                    const el = Array.from(document.querySelectorAll('svg.cytui-voronoi'))
-                        .sort((a, b) => b.childElementCount - a.childElementCount)[0] as SVGSVGElement | undefined
+                    //  A tab can hold MORE THAN ONE voronoi svg (an HMR-lingering mount, a second
+                    //   Cytui face) — prefer the one actually SPEAKING (most <text> labels), then
+                    //    the most-populated; `cands` reports every candidate's children/labels so a
+                    //     wrong pick is visible from the caller side instead of a silent blank glass.
+                    const cands = Array.from(document.querySelectorAll('svg.cytui-voronoi')) as SVGSVGElement[]
+                    const el = cands.sort((a, b) =>
+                        (b.querySelectorAll('text').length - a.querySelectorAll('text').length)
+                        || (b.childElementCount - a.childElementCount))[0]
                     if (!el || !el.childElementCount) { ok = false; result = { error: 'no populated .cytui-voronoi svg — is a useCyto Book mounted with ◈ armed?' } }
                     else {
                         let css = ''
@@ -2409,8 +2415,13 @@ await M.eatfunc({
                             + ` width="${wpx}" height="${hpx}" viewBox="0 0 ${wpx} ${hpx}"`
                             + ` style="background:#070707;font-family:ui-monospace,monospace;font-size:11px">`
                             + `<style>${css}</style>${el.innerHTML}</svg>`
+                        const cr = (H.top_House().c as any).cy_render
                         result = { svg, w: wpx, h: hpx,
-                            paths: el.querySelectorAll('path').length, labels: el.querySelectorAll('text').length }
+                            paths: el.querySelectorAll('path').length, labels: el.querySelectorAll('text').length,
+                            groups: el.querySelectorAll('.cytui-subgraph').length,     // vsub <g> in THIS svg's DOM
+                            state_vsubs: cr?.vsubs ?? null,                            // the render's own vsubs count
+                            svgs: cands.length,
+                            cands: cands.map(c => `${c.childElementCount}c/${c.querySelectorAll('text').length}t`) }
                     }
                 } else if (op === 'face') {
                     // the remote FACE-ARM (runner_shot --arm): flip this tab's ◈/▧/▦ prefs so a
@@ -2420,6 +2431,15 @@ await M.eatfunc({
                     const fn = (H.top_House().c as any).cy_face
                     if (typeof fn !== 'function') { ok = false; result = { error: 'no cy_face hook — this tab runs an old Cytui; reload it' } }
                     else result = fn((ask as any).faces ?? { voronoi: 1, regions: 1, subgraph: 1 })
+                } else if (op === 'reload') {
+                    // the remote TAB RELOAD — the fleet's wedge-healer.  Every "tab broken" class
+                    //  (HMR-wedged template flush, dead Vite socket, frozen-boot husk) ends the same
+                    //   way: reload the tab — which until now only the human at the browser could do.
+                    //    RUNNER TABS ONLY: an editor holds the human's live work, a machine must not
+                    //     reload it out from under them.  Reply rides out first; the reload follows a
+                    //      breath later so the ack survives the socket.
+                    if (!H.Lies_is_runner(w)) { ok = false; result = { error: 'not a runner — refusing to reload an editor tab' } }
+                    else { result = { reloading: true }; setTimeout(() => location.reload(), 400) }
                 } else { ok = false; result = { error: `unknown op ${op}` } }
             } catch (e) { ok = false; result = { error: String((e as Error).message) } }
             const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any

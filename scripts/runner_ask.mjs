@@ -46,7 +46,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 //  so the CLI can no longer drift to a worse death criterion than the layer it's questioning.
 import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs'
 
-const OPS = ['ping', 'probe', 'run', 'state', 'steps', 'snap', 'trace', 'rungos', 'accept', 'release', 'runners']
+const OPS = ['ping', 'probe', 'run', 'state', 'steps', 'snap', 'trace', 'rungos', 'accept', 'release', 'runners', 'reload']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -118,7 +118,7 @@ const op    = pos[0]
 const arg   = pos[1]
 const watch = flags.has('--watch')
 if (!op || !OPS.includes(op)) {
-	console.error('usage: node scripts/runner_ask.mjs <ping|probe|run <Book>|state|steps|snap <n>|rungos|accept|release|runners> [@uid] [--runner=<id>] [--watch]')
+	console.error('usage: node scripts/runner_ask.mjs <ping|probe|run <Book>|state|steps|snap <n>|rungos|accept|release|runners|reload> [@uid] [--runner=<id>] [--watch]')
 	process.exit(2)
 }
 // `runners` — list the Waft:Cluster registry (no relay needed); a discovery aid for --runner=<id>.

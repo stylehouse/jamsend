@@ -1,7 +1,7 @@
 Snap:H
-  H:MusuRaStock,Run
-    A:MusuRaStock
+  H:MusuBuddy,Run
+    A:MusuBuddy
       self,round	{"mung":["age"]}
-      w:MusuRaStock
+      w:MusuBuddy
         self,round	{"mung":["age"]}
         req:wrangle,eternal,ok

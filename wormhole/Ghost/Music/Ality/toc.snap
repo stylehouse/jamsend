@@ -19,11 +19,9 @@ Waft:Ghost/Music/Ality,active
     Funkcion:Storying,of_Book:MusuConceal
     Funkcion:Storying,of_Book:MusuBounce
     Funkcion:Storying,of_Book:MusuReplica
-    Funkcion:Storying,of_Book:MusuRaStock
-    Funkcion:Storying,of_Book:MusuRaCast
-    Funkcion:Storying,of_Book:MusuRaTerm
     Funkcion:Storying,of_Book:MusuRaStream
     Funkcion:Storying,of_Book:MusuRaChase
+    Funkcion:Storying,of_Book:MusuBuddy
     Funkcion:Storying,of_Book:MusuHeist
     Funkcion:Storying,of_Book:MusuBerth
     Funkcion:Storying,of_Book:MusuVend
@@ -56,12 +54,6 @@ Waft:Ghost/Music/Ality,active
       Point,method:Ra_ogg_opus
       Point,method:Ra_stock_standing
       Point,method:Ra_proof
-    What:MusuRaStock (the Book — survey / stock / prove / again)
-      Doc:Ghost/Story/Radiation.g
-      Point,method:MusuRaStock_drive
-      Point,method:MusuRaStock_pass
-      Point,method:MusuRaStock_proofs
-      Point,method:MusuRaStock_witness
     What:the preview economy — %Preview caches in radiostock/ and %Stream continues right after it
       Doc:Ghost/M/Ra.g
       Point,method:Ra_preview_secs

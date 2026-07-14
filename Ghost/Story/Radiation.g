@@ -1,8 +1,14 @@
 // Radiation.g — the Ra* PRODUCT Books (rastock → racast → raterm; Radio_todo.md §3), in the
-//  Musuation/Swarmation mould: the file is the artifact; MusuRaStock is the first Book identity.
+//  Musuation/Swarmation mould: the file is the artifact; MusuRaStream is the first Book identity.
 //   The Creduler loads this ghost live BEFORE the Story begins (once it is in CREDULER_GHOSTS),
 //    so Ghost/M/Ra.g's pipeline spine is on H.  These Books test the PRODUCT — a low-level Musu*
 //     Book retires only when its Ra* re-draw here is green (the consolidation rule).
+//  THE CONSOLIDATION CLIMBED A LEVEL (2026-07-14, §3.5): the first three Ra* Books — MusuRaStock
+//   (stock), MusuRaCast (cast), MusuRaTerm (play) — proved stock|cast|play in a configuration the
+//    destination never runs (a stream with no catalog naming it), so they RETIRED into MusuBuddy
+//     (below), the magazine-driven pipeline where the stream is born from a browsed %Musica card.
+//      Ra.g's spine verbs are untouched (MusuBuddy + RaStream + RaChase all ride them); only the
+//       three standalone Book re-draws were deleted once MusuBuddy stood LIVE-GREEN ×2.
 //
 //  THE CHUNK-PARTICLE REBUILD (2026-07-10): the cast wire DISSOLVED into Repli — a %Record's chunks
 //   are real %Preview,seq/%Stream,seq child particles (bytes on .sc.buf, muted in the snap), the
@@ -10,536 +16,6 @@
 //     off PARKED WANTS (fork (c): demand-driven — nothing past the preview exists until asked).
 //      These Books therefore arm Repli_arm, gate with w.c.repli_allow, and drive Ra_transcode_pump.
 //
-//  MusuRaStock — a real library becomes SERVABLE STOCK, end to end (needsFSA: the stock really writes):
-//   beat 2  SURVEY — walk testsounds off the granted share; the census home (%Library keyed by the
-//                    DJ identity's prepub) stands empty — nothing pre-stocked in the world
-//   beat 3  STOCK  — the first three tracks (three DIFFERENT source loudnesses) re-encode PREVIEW-
-//                    FIRST: ONE continuous opus encode over the window, cut into ~2s packet chunks
-//                    that stand as %Preview,seq particles (radiostock/<id>.jam caches the same bufs;
-//                    the whole-track gain is measured and carded so the on-demand continuation lands
-//                    uniform) — held by an expecting (real encode clock)
-//   beat 4  PROVE  — chunk 0 of each read BACK off the disk → the raw-packet decoder (the same one
-//                    the terminal trusts) → the SAME meter that set the gain reads the target
-//                    loudness at ~2.00s
-//   beat 5  AGAIN  — a second pass finds the stock STANDING (the .jam parses + fmt matches + every
-//                    chunk present) and rebuilds nothing: the idempotence that makes rastock a
-//                    resumable library pass instead of a nightly re-encode
-//
-// CONVENTION (Musu*): no Run_A_ recipe — Story_subHouse stands up A:MusuRaStock/w:MusuRaStock by default.
-//  The world MUST be named after the Book (do_fn_for dispatches by w.sc.w) or the wrangle silently
-//   never fires.
-
-MusuRaStock(A,w):
-    w oai %req:wrangle,eternal
-        await &MusuRaStock_drive,w,req
-        req%ok = 1
-
-// MusuRaStock_drive — three skip gates (the Book needs decode + WebCodecs Opus both ways + a writable
-//  share; needsFSA on its Credence row routes dispatch to the local-FSA runner), then one beat's
-//   setup fired once off step_n (req-local did_step, the Pere* lesson).
-async MusuRaStock_drive(w, req):
-    if (typeof OfflineAudioContext === 'undefined') {
-        if (!w.oa({ skipped: 'no_audio' })) w.i({ skipped: 'no_audio' })
-        return
-    }
-    if (typeof AudioEncoder === 'undefined' || typeof AudioDecoder === 'undefined') {
-        if (!w.oa({ skipped: 'no_webcodecs' })) w.i({ skipped: 'no_webcodecs' })
-        return
-    }
-    let nav = this.Crate_nav()
-    if (!nav || typeof nav.bin_write !== 'function') {
-        if (!w.oa({ skipped: 'no_writable_share' })) w.i({ skipped: 'no_writable_share' })
-        return
-    }
-    let n = (this.c.run)?.c.step_n
-    if (n != null && n !== req.c.did_step) {
-        req.c.did_step = n
-        if (n === 2) await this.MusuRaStock_survey(w)
-        if (n === 3) await this.MusuRaStock_stock(w)
-        if (n === 4) await this.MusuRaStock_prove(w)
-        if (n === 5) await this.MusuRaStock_again(w)
-    }
-    await this.Musu_float(w)
-
-// beat 2 — the survey: walk the share (the same sorted walk the stock pass will take), stand the
-//  census home, install the witness.  take=3 pins the pass to the first three tracks — the three
-//   DJ Oscillo tones, whose different K-weightings make the uniformity claim real.  The shelf key
-//    is the DJ identity's PREPUB (standardised 2026-07-11 — radiostock names carry the owning
-//     Peering's real address, never a nickname; deterministic here, seeded off the person's name).
-async MusuRaStock_survey(w):
-    w i reached:step_2
-    w.c.nav = this.Crate_nav()
-    w.c.take = 3
-    let dj = await this.SwarmStaple_person(w, 'DJ')
-    w.c.dj_pre = dj.sc.prepub
-    let paths = await this.Crate_nav_paths(w.c.nav, 'testsounds')
-    w.i({ survey: 1, tracks: paths.length })
-    this.Ra_library(w, w.c.dj_pre)
-    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.MusuRaStock_witness(w); req.sc.ok = 1 })
-
-// beat 3 — the stock pass, held by an expecting (decode + needles + the preview encode per track
-//  is real wall clock — and a throttled background tab stretches each meter call, so the budget
-//   carries margin; Story must not snap mid-pass).
-async MusuRaStock_stock(w):
-    w i reached:step_3
-    await this.expecting(w, 'rastock', 180, async () => { await this.MusuRaStock_pass(w, 'first') })
-
-// beat 4 — the proof read, expecting-held.  90s and PARALLEL proofs: a background runner tab is
-//  timer-throttled and each needles meter call can stretch to ~30s of wall clock — three serial
-//   proofs blew a 30s budget while every one of them was actually SUCCEEDING (lufs -14.02).
-async MusuRaStock_prove(w):
-    w i reached:step_4
-    await this.expecting(w, 'raproof', 240, async () => { await this.MusuRaStock_proofs(w) })
-
-// beat 5 — the second pass: same verb, same take — the disk truth decides what happens.
-async MusuRaStock_again(w):
-    w i reached:step_5
-    await this.expecting(w, 'rastock_again', 60, async () => { await this.MusuRaStock_pass(w, 'again') })
-
-// MusuRaStock_pass — one whole Ra_stock pass + its %stocked row (beat 3 and the beat-5 re-run share
-//  it).  'first' stamps READY = built+stood — run-stable whether the disk started clean or a prior
-//   RUN left the stock standing (built|stood split there would diff the fixture on every rerun).
-//    'again' stamps the split raw: IN-run it is determined — everything stands, nothing builds —
-//     and that determinism IS the claim.  Zero counts stay absent (the snapped-boolean discipline).
-async MusuRaStock_pass(w, which):
-    let lib = this.Ra_library(w, w.c.dj_pre)
-    let r = await this.Ra_stock(w, lib, w.c.nav, 'testsounds', w.c.take)
-    let p = { stocked: which, of: r.of }
-    if (which === 'first' && r.built + r.stood) p.ready = r.built + r.stood
-    if (which === 'again' && r.built) p.built = r.built
-    if (which === 'again' && r.stood) p.stood = r.stood
-    if (r.skipped) p.skipped = r.skipped
-    w.i(p)
-
-// MusuRaStock_proofs — chunk 0 of every %Record back off the disk, all records IN PARALLEL (the
-//  throttled waits overlap instead of stacking); the %proof child rides the %Record it proves.
-async MusuRaStock_proofs(w):
-    let lib = this.Ra_library(w, w.c.dj_pre)
-    let jobs = lib.o({ Record: 1 }).map((rec) => this.MusuRaStock_proof_one(w, rec))
-    await Promise.all(jobs)
-
-// MusuRaStock_proof_one — one record's proof.  A failed proof stamps its REASON (fail=) instead of
-//  vanishing — the row reads off the snap while red and never mints once green (the see gates
-//   never pass a fail).
-async MusuRaStock_proof_one(w, rec):
-    let got = null
-    try {
-        got = await this.Ra_proof(w.c.nav, w.c.dj_pre, rec.sc.id, 0)
-    } catch (er) {
-        rec.i({ proof: 1, fail: ('threw ' + String(er)).replace(/[,:]/g, ' ').slice(0, 90) })
-        return
-    }
-    if (!got) return
-    if (got.fail) {
-        rec.i({ proof: 1, fail: got.fail })
-        return
-    }
-    let pr = { proof: 1, seconds: got.seconds }
-    if (got.lufs != null) pr.lufs = got.lufs
-    if (got.ms) pr.ms = got.ms
-    rec.i(pr)
-
-// ── the witness — per-beat %see observations, n-gated, reading live truth (no commas, no apostrophes) ──
-MusuRaStock_witness(w):
-    let n = (this.c.run)?.c.step_n
-    let lib = w.o({ Library: 1, pier: w.c.dj_pre })[0]
-    if (!lib) return
-    let recs = lib.o({ Record: 1 })
-    // beat 2: the walk gave tracks and the census home stands empty — nothing pre-stocked.
-    let sv = w.o({ survey: 1 })[0]
-    if (n === 2 && sv && +(sv.sc.tracks || 0) >= 3 && recs.length === 0 && !(oa %see:'the share holds real tracks and the library stands empty')) i %see:'the share holds real tracks and the library stands empty'
-    // beat 3: three real %Records each preview-FIRST — the cached window standing as REAL chunk
-    //  particles (every %Preview,seq holding its bytes, head+preskip on seq 0 where the decoder
-    //   opens) and a boundary the stream side will pick up from (total past preview, NO %Stream
-    //    chunk existing yet — nothing past the preview exists until asked).
-    let p1 = w.o({ stocked: 'first' })[0]
-    let shape_ok = recs.length === 3
-    for (const r of recs) {
-        let P = +(r.sc.preview || 0)
-        let T = +(r.sc.total || 0)
-        let map = this.Ra_chunk_map(r)
-        let whole = P > 0
-        let i2 = 0
-        while (i2 < P) {
-            if (map[i2] == null) whole = false
-            i2 = i2 + 1
-        }
-        let head = this.Repli_chunk_at(r, 0)
-        let headed = !!(head && head.sc.head && +(head.sc.preskip || 0) > 0)
-        let virgin = r.o({ Stream: 1 }).length === 0
-        if (!(r.sc.real && whole && headed && virgin && T >= P)) shape_ok = false
-    }
-    if (n === 3 && p1 && +(p1.sc.ready || 0) === 3 && !p1.sc.skipped && shape_ok && !(oa %see:'three real tracks stand as loudness uniform opus stock on disk')) i %see:'three real tracks stand as loudness uniform opus stock on disk'
-    if (n === 3 && shape_ok && !(oa %see:'every Record stands preview first — real chunk particles under the head and nothing past the boundary exists yet')) i %see:'every Record stands preview first — real chunk particles under the head and nothing past the boundary exists yet'
-    // beat 4: the read-back proof — chunk 0 decodes to ~2.00s and ON target by the meter that set the
-    //  gain; and the uniformity is REAL — the tones took DIFFERENT gains yet landed together.
-    let proofs = []
-    for (const r of recs) { let pf = r.o({ proof: 1 })[0]; if (pf) proofs.push(pf) }
-    let target = this.Ra_target_lufs(w)
-    let on_target = proofs.length === 3 && proofs.every(pf => pf.sc.lufs != null && Math.abs(+(pf.sc.lufs) - target) <= 1 && Math.abs(+(pf.sc.seconds) - 2) <= 0.1)
-    if (n === 4 && on_target && !(oa %see:'a stock chunk read back decodes to two seconds at the target loudness')) i %see:'a stock chunk read back decodes to two seconds at the target loudness'
-    let gains = new Set()
-    for (const r of recs) gains.add(r.sc.gain)
-    let vals = proofs.map(pf => +(pf.sc.lufs))
-    let spread = (proofs.length === 3) ? Math.max(...vals) - Math.min(...vals) : 99
-    if (n === 4 && gains.size >= 2 && spread <= 1 && !(oa %see:'different tones took different gains yet landed within one LU of each other')) i %see:'different tones took different gains yet landed within one LU of each other'
-    // beat 5: idempotence — the second pass found everything standing and built nothing.
-    let p2 = w.o({ stocked: 'again' })[0]
-    if (n === 5 && p2 && !p2.sc.built && +(p2.sc.stood || 0) === 3 && !p2.sc.skipped && !(oa %see:'a second pass recognized the standing stock and rebuilt nothing')) i %see:'a second pass recognized the standing stock and rebuilt nothing'
-
-
-// ══ MusuRaCast — the SECOND Ra* Book (Radio_todo.md §3.3): the stock CAST to a sealed Pier ═══════════════
-//  MusuRaStock proved a real library becomes servable stock; MusuRaCast proves that stock CROSSES — the
-//   husk offered (a catalog card, chunkless), the Record PULLED page by page as REAL chunk particles
-//    (each page frame sha256-verified by the transport floor — byte identity pinned per chunk), and
-//     gated all the way down: no Music grant, no husk, no bytes.  The wire is GENERIC Repli — the only
-//      Ra verbs at the caster are the stock and the demand-driven transcode the parked wants ignite.
-//  The pair is transport-REAL (SwarmWire's seam, not the mail-drop): a Lake_link carries frames between
-//   two fixed selves, Swarm seals a mutual Music grant, and the repli_* frames ride that authenticated
-//    carrier.  The grant gate is INJECTED — w.c.repli_allow asks Swarm_pier_live per leg, so neither
-//     Ra.g nor Repli.g ever imports Swarm.
-//  SETTLING (the bomb): a mock send rides H.post_do, so a frame posted in beat N is not seen until N+1
-//   (memory transport-frames-post-do).  The crossing legs are precondition-gated, NOT beat-pinned; the
-//    claims (sealed / husk / parked-demand / whole-pull byte-faithful / revoked-silence) are what hold.
-//   beat 2  STOCK   — DJ stands one real Record (preview chunks standing); stations + Repli/Swarm armed
-//   beat 3  SHAKE   — pump the stations: the link authenticates before any grant or repli frame
-//   beat 4  SEAL    — DJ mints an unbound Music Idzeug and the listener redeems it: hello→accept cross
-//                     the wire, both ends land a %Pier with the mutual Music grant; the gate wires
-//   beat 5+ FLOW    — the husk crosses; the listener pulls EVERYTHING (want-once per page): preview
-//                     pages serve instantly off the standing chunks, the boundary wants PARK — the
-//                     parked want ignites the transcode, chunks mint as it advances, parks release
-//   beat 9  REVOKE  — DJ %NotGrants the Music; a re-offer of the catalog is refused at the gate
-//   beat 10 SILENCE — the revoked listener heard nothing new — a want met with silence
-//
-// CONVENTION (Musu*/Ra*): no Run_A_ recipe — the world MUST be named MusuRaCast (do_fn_for dispatches by
-//  w.sc.w) or the wrangle silently never fires.
-
-MusuRaCast(A,w):
-    w oai %req:wrangle,eternal
-        await &MusuRaCast_drive,w,req
-        req%ok = 1
-
-// MusuRaCast_drive — the same three skip gates as MusuRaStock, then: setup|seal|revoke pinned to their
-//  beats, the carriers pumped every pass (frames settle over post_do), the DEMAND PUMP run every pass
-//   (parked wants → transcode advance → parks release), and the flow fired the moment preconditions hold.
-async MusuRaCast_drive(w, req):
-    if (typeof OfflineAudioContext === 'undefined') {
-        if (!w.oa({ skipped: 'no_audio' })) w.i({ skipped: 'no_audio' })
-        return
-    }
-    if (typeof AudioEncoder === 'undefined' || typeof AudioDecoder === 'undefined') {
-        if (!w.oa({ skipped: 'no_webcodecs' })) w.i({ skipped: 'no_webcodecs' })
-        return
-    }
-    let nav = this.Crate_nav()
-    if (!nav || typeof nav.bin_write !== 'function') {
-        if (!w.oa({ skipped: 'no_writable_share' })) w.i({ skipped: 'no_writable_share' })
-        return
-    }
-    let n = (this.c.run)?.c.step_n
-    if (n != null && n !== req.c.did_step) {
-        req.c.did_step = n
-        if (n === 2) await this.MusuRaCast_stock(w)
-        if (n === 4) await this.MusuRaCast_seal(w)
-        if (n === 9) await this.MusuRaCast_revoke(w)
-    }
-    // pump both carriers every pass so posted frames settle within the run; then the demand pump —
-    //  the caster answers parked wants at the encoder's real pace and releases what the frontier covers.
-    for (const peering of w.o({ Peering: 1 })) await peering.do()
-    await this.Ra_transcode_pump(w)
-    await this.MusuRaCast_flow(w)
-    await this.Musu_float(w)
-
-// beat 2 — stand the stock and the stations.  DJ's library is keyed by its own prepub (the §9.1c census
-//  convention); the mirror shelf is the listener's own prepub (w.c.repli_mirror_pier), so the two never
-//   collide in the one world.  Ra_stock take=1 is enough to pull ONE Record whole; it is idempotent, so
-//    a standing .jam from a prior run resurrects instead of re-encoding.  Held by an expecting.
-async MusuRaCast_stock(w):
-    w i reached:step_2
-    w.c.nav = this.Crate_nav()
-    let dj = await this.SwarmStaple_person(w, 'DJ')
-    let lis = await this.SwarmStaple_person(w, 'Listener')
-    w.c.dj_pre = dj.sc.prepub
-    w.c.lis_pre = lis.sc.prepub
-    w.c.repli_mirror_pier = lis.sc.prepub
-    // the transport-real pair: one Lake_link carries frames between the two prepubs; arm the whittle,
-    //  the swarm frame kinds, and the GENERIC repli frame kinds; seed the handshake so the link
-    //   authenticates over 2→3 (SwarmWire's shape — frames settle across passes).
-    let link = await this.Lake_link(w, dj.sc.prepub, lis.sc.prepub)
-    w.c.tx = link[0]
-    w.c.rx = link[1]
-    this.Peeroleum_arm_whittle(w)
-    this.Swarm_arm(w)
-    this.Repli_arm(w)
-    for (const peering of w.o({ Peering: 1 })) {
-        for (const pier of peering.o({ Pier: 1 })) pier.oai({ req: 'handshake' })
-    }
-    let lib = this.Ra_library(w, dj.sc.prepub)
-    w.c.repli_src = lib
-    await this.expecting(w, 'racast_stock', 180, async () => { await this.Ra_stock(w, lib, w.c.nav, 'testsounds', 1) })
-    w.doai({ req: 'witness', eternal: 1 })?.(async (req) => { this.MusuRaCast_witness(w); req.sc.ok = 1 })
-
-// beat 4 — the seal over the wire: DJ mints an unbound Music offer (Classical), the listener redeems;
-//  hello→accept settle through the pumped stations (across a beat's passes, the SwarmWire seam), both
-//   ends land a %Pier holding the mutual grant.  Wiring the gate here is the only pinned act — the
-//    cast waits on the grant going live (MusuRaCast_flow), not on this beat.
-async MusuRaCast_seal(w):
-    w i reached:step_4
-    let dj = this.SwarmStaple_ident(w, 'DJ')
-    let lis = this.SwarmStaple_ident(w, 'Listener')
-    w.c.iz = await this.Swarm_mint_idzeug(w, dj, { Music: 1, genre: 'Classical' }, 'racast_1')
-    await this.Swarm_redeem(w, lis, w.c.iz)
-    // wire the consent hook: Repli serves the listener only while DJ's %Pier for it holds a live
-    //  Music grant.  The arrow keeps this=H, and the lookup re-asks every leg — a later revoke shuts it.
-    let djp = this.Swarm_peering(dj)
-    w.c.repli_allow = (peer) => { let p = djp.o({ Pier: 1, pub: peer })[0]; return !!(p && this.Swarm_pier_live(p, 'Music')) }
-
-// MusuRaCast_flow — the crossing, robust to post_do settling: fire each leg the instant its precondition
-//  holds.  OFFER the catalog husk the moment the grant is live and the stock stands (the husk is
-//   chunkless — a card); PULL every page once the husk has landed (want-once per offset — preview
-//    offsets serve instantly, boundary offsets PARK and ride the transcode's bow wave).  The pulled
-//     row lands once the mirror holds every chunk, carrying the park|release counts the demand claim
-//      reads (the stream side existed only because wants asked for it).
-async MusuRaCast_flow(w):
-    if (!w.c.repli_allow) return
-    let dj = this.SwarmStaple_ident(w, 'DJ')
-    if (!dj) return
-    let djp = this.Swarm_peering(dj)
-    let grantPier = djp ? djp.o({ Pier: 1, pub: w.c.lis_pre })[0] : null
-    let live = !!(grantPier && this.Swarm_pier_live(grantPier, 'Music'))
-    if (live && !w.c.cast_done) {
-        let srecs = w.c.repli_src ? w.c.repli_src.o({ Record: 1 }) : []
-        if (srecs.length >= 1) {
-            w.c.cast_done = 1
-            let n2 = 0
-            for (const rec of srecs) {
-                if (await this.Repli_offer(w, w.c.tx, w.c.dj_pre, w.c.lis_pre, rec)) n2 = n2 + 1
-            }
-            w.c.cast_n = n2
-        }
-    }
-    let mir = w.o({ Library: 1, pier: w.c.lis_pre })[0]
-    let rec = mir ? mir.o({ Record: 1 })[0] : null
-    if (rec && +(rec.sc.total || 0) > 0 && !w.c.pull_ok) {
-        let r = await this.Ra_pull_beat(w, w.c.rx, w.c.lis_pre, w.c.dj_pre, rec)
-        if (r.done) {
-            w.c.pull_ok = 1
-            let row = { pulled: 1, chunks: r.held }
-            if (w.c.repli_parked) row.parked = w.c.repli_parked
-            if (w.c.repli_unparked) row.unparked = w.c.repli_unparked
-            w.i(row)
-        }
-    }
-
-// beat 9 — revoke: DJ %NotGrants the Music it gave the listener (its %Pier retires at use), then proves
-//  the gate: a re-offer of the whole catalog now crosses ZERO cards.  A non-zero count would mean the
-//   gate leaked — stamp it so the fixture reads the breach instead of a silent green.
-async MusuRaCast_revoke(w):
-    w i reached:step_9
-    let dj = this.SwarmStaple_ident(w, 'DJ')
-    let pier = this.Swarm_peering(dj).o({ Pier: 1, pub: w.c.lis_pre })[0]
-    await this.Swarm_revoke(w, dj, pier, 'Music')
-    let offered = 0
-    for (const rec of (w.c.repli_src ? w.c.repli_src.o({ Record: 1 }) : [])) {
-        if (await this.Repli_offer(w, w.c.tx, w.c.dj_pre, w.c.lis_pre, rec)) offered = offered + 1
-    }
-    w.i({ revoke_probe: 1 })
-    if (offered) w.i({ revoke_offered: offered })
-
-// ── the witness — per-beat %see observations, n-gated, reading live truth (no commas, no apostrophes) ──
-MusuRaCast_witness(w):
-    let n = (this.c.run)?.c.step_n
-    let dj = this.SwarmStaple_ident(w, 'DJ')
-    let lis = this.SwarmStaple_ident(w, 'Listener')
-    if (!dj || !lis) return
-    let src = w.o({ Library: 1, pier: w.c.dj_pre })[0]
-    let srcRec = src ? src.o({ Record: 1 })[0] : null
-    let mir = w.o({ Library: 1, pier: w.c.lis_pre })[0]
-    let mirRec = mir ? mir.o({ Record: 1 })[0] : null
-    let djp = this.Swarm_peering(dj)
-    let grantPier = djp ? djp.o({ Pier: 1, pub: w.c.lis_pre })[0] : null
-    let live = !!(grantPier && this.Swarm_pier_live(grantPier, 'Music'))
-    let stations = w.o({ Peering: 1 })
-    // beat 2: the caster stands a real Record whose preview is REAL chunk particles — and the two
-    //  carriers wait on the spine with the generic repli kinds armed; no grant, no cast yet.
-    let srcWhole = false
-    if (srcRec) {
-        let P = +(srcRec.sc.preview || 0)
-        let map = this.Ra_chunk_map(srcRec)
-        srcWhole = P > 0
-        let i2 = 0
-        while (i2 < P) {
-            if (map[i2] == null) srcWhole = false
-            i2 = i2 + 1
-        }
-    }
-    if (n === 2 && srcRec && srcRec.sc.real && srcWhole && +(srcRec.sc.total || 0) > +(srcRec.sc.preview || 0) && stations.length >= 2 && w.c.on?.repli_want && !(oa %see:'the caster stands a real opus Record — its preview cached as real chunk particles on the shelf')) i %see:'the caster stands a real opus Record — its preview cached as real chunk particles on the shelf'
-    // beat 4: the pair sealed over the wire — DJ holds a live Music grant for the listener.
-    if (n === 4 && live && !(oa %see:'the pair sealed over the wire — the caster holds a live Music grant for the listener')) i %see:'the pair sealed over the wire — the caster holds a live Music grant for the listener'
-    // beat 6: the catalog husk crossed — a Record head carrying its chunk promise, no bytes rode along
-    //  (the husk is a card; whatever chunks the mirror holds by now arrived as WANTED pages).
-    if (n === 6 && mirRec && +(mirRec.sc.total || 0) > 0 && !(oa %see:'the listener received the catalog husk — a Record head carrying its chunk promise')) i %see:'the listener received the catalog husk — a Record head carrying its chunk promise'
-    // the demand economy observed: the boundary wants PARKED (the stream side did not exist when they
-    //  asked) and RELEASED as the transcode advanced — the pulled row carries the counts.
-    let pulled = w.o({ pulled: 1 })[0]
-    if (n >= 6 && pulled && +(pulled.sc.parked || 0) > 0 && +(pulled.sc.unparked || 0) > 0 && !(oa %see:'the stream chunks did not exist until asked — boundary wants parked at the frontier and released as the transcode advanced')) i %see:'the stream chunks did not exist until asked — boundary wants parked at the frontier and released as the transcode advanced'
-    // the whole Record crossed: every chunk particle present at the mirror and the preview
-    //  byte-faithful to the husk-promised weight (per-frame sha256 pinned each page on the way).
-    if (n >= 8 && mirRec && srcRec) {
-        let T = +(mirRec.sc.total || 0)
-        let P = +(mirRec.sc.preview || 0)
-        let map = this.Ra_chunk_map(mirRec)
-        let held = 0
-        let pbytes = 0
-        let i3 = 0
-        while (i3 < T) {
-            if (map[i3] != null) {
-                held = held + 1
-                if (i3 < P) pbytes = pbytes + map[i3].length
-            }
-            i3 = i3 + 1
-        }
-        let whole = T > P && held === T && pbytes > 0 && pbytes === +(mirRec.sc.bytes || 0) && pbytes === +(srcRec.sc.bytes || 0)
-        if (whole && !(oa %see:'the listener pulled the whole Record — the preview byte-faithful and the continuation transcoded on demand')) i %see:'the listener pulled the whole Record — the preview byte-faithful and the continuation transcoded on demand'
-    }
-    // beat 10: the grant is gone and the gate held — a re-offer crossed nothing, the listener heard silence.
-    if (n === 10 && w.oa({ revoke_probe: 1 }) && !live && !w.oa({ revoke_offered: 1 }) && !(oa %see:'the revoked listener heard nothing new — a re-offer met the closed gate with silence')) i %see:'the revoked listener heard nothing new — a re-offer met the closed gate with silence'
-
-// ══ MusuRaTerm — the THIRD Ra* Book (Radio_todo.md §3.4): the stock PLAYED, honestly ════════════════════
-//  MusuRaStock proved a library becomes uniform servable stock; MusuRaCast proved that stock CROSSES byte-faithful.
-//   MusuRaTerm proves the last verb — the terminal DECODES the chunk particles back to real PCM and plays
-//    them without lying: the baked -14 LUFS gain reads BACK at the target (no play-time gain node), and a
-//     spool that runs out of stock renders an HONEST hole (a measured gap) rather than papering it over.
-//      The terminal IS the owner here — no wire: the local play is itself the demand, so the continuation
-//       encode runs to completion in place (the same ensure|advance verbs a parked want drives at a
-//        caster) and the whole track stands as chunk particles before the measure.
-//  DETERMINISTIC snap (no AudibleEntropy Wref yet): the decode + LUFS + gap counts are pure functions of
-//   the stock, so the measurement rows are stable run-to-run.  Only if a live CHECK run shows a field
-//    wobble do we harvest it into Trope/Ra/AudibleEntropy (the MusuRaCast discipline) — do not pre-Wref.
-//   beat 2  STOCK  — stand one real Record (Ra_stock take=1, idempotent — builds or resurrects)
-//   beat 4  HEAR   — the one expensive block: transcode the continuation to completion (the local
-//                    demand), decode ALL the chunk particles across the seam through the run decoder,
-//                    measure LUFS + render the spool healthy and starved; stamp a `heard` row
-//   beat 6  GAIN   — the played-back LUFS reads the baked target back (the gain survived the opus trip)
-//   beat 8  STARVE — a withheld run of chunks surfaces as measured gaps — the spool did not lie
-//   beat 10 CLEAN  — the complete stock plays essentially gapless through the SAME spool — gate not vacuous
-//
-// CONVENTION (Musu*/Ra*): no Run_A_ recipe — the world MUST be named MusuRaTerm (do_fn_for dispatches by
-//  w.sc.w) or the wrangle silently never fires.
-
-MusuRaTerm(A,w):
-    w oai %req:wrangle,eternal
-        await &MusuRaTerm_drive,w,req
-        req%ok = 1
-
-// MusuRaTerm_drive — the same three skip gates, then one beat's work fired once off step_n (req-local
-//  did_step).  No Peering pump — MusuRaTerm has no wire; the whole scenario is stock-then-play.
-async MusuRaTerm_drive(w, req):
-    if (typeof OfflineAudioContext === 'undefined') {
-        if (!w.oa({ skipped: 'no_audio' })) w.i({ skipped: 'no_audio' })
-        return
-    }
-    if (typeof AudioEncoder === 'undefined' || typeof AudioDecoder === 'undefined') {
-        if (!w.oa({ skipped: 'no_webcodecs' })) w.i({ skipped: 'no_webcodecs' })
-        return
-    }
-    let nav = this.Crate_nav()
-    if (!nav || typeof nav.bin_write !== 'function') {
-        if (!w.oa({ skipped: 'no_writable_share' })) w.i({ skipped: 'no_writable_share' })
-        return
-    }
-    let n = (this.c.run)?.c.step_n
-    if (n != null && n !== req.c.did_step) {
-        req.c.did_step = n
-        if (n === 2) await this.MusuRaTerm_stock(w)
-        if (n === 4) await this.MusuRaTerm_hear(w)
-    }
-    await this.Musu_float(w)
-
-// beat 2 — stand the stock: a real Record built (or resurrected) from testsounds, held by an
-//  expecting for the real encode clock.  No wire — but the shelf key is still a real PREPUB
-//   (standardised 2026-07-11): the Player identity is minted deterministically for its address.
-async MusuRaTerm_stock(w):
-    w i reached:step_2
-    w.c.nav = this.Crate_nav()
-    let player = await this.SwarmStaple_person(w, 'Player')
-    let lib = this.Ra_library(w, player.sc.prepub)
-    w.c.raterm_src = lib
-    await this.expecting(w, 'raterm_stock', 180, async () => { await this.Ra_stock(w, lib, w.c.nav, 'testsounds', 1) })
-    w.doai({ req: 'witness', eternal: 1 })?.(async (req) => { this.MusuRaTerm_witness(w); req.sc.ok = 1 })
-
-// beat 4 — HEAR: the one expensive block, held by an expecting so the real transcode + decode clock
-//  runs.  The terminal plays ACROSS THE SEAM: the standing preview chunks PLUS the continuation the
-//   local demand transcodes to completion — decoded by the SAME run decoder a mirror uses — then read
-//    three ways: LUFS (the whole-track gain proof, spanning the seam), the healthy spool render, and
-//     the starved render (a middle run withheld — it straddles the boundary on a short preview).
-//      Cache the SCALAR reads on w.c.term and stamp a `heard` row.  Guarded to run exactly once.
-async MusuRaTerm_hear(w):
-    w i reached:step_4
-    if (w.c.term) return
-    let lib = w.c.raterm_src
-    let rec = lib ? lib.o({ Record: 1 })[0] : null
-    if (!rec) return
-    await this.expecting(w, 'raterm_hear', 180, async () => {
-        let T = +(rec.sc.total || 0)
-        let P = +(rec.sc.preview || 0)
-        if (T > P) {
-            let ra = await this.Ra_transcode_ensure(w, rec)
-            if (!ra) { w.i({ hear_fail: 'no stream source' }); return }
-            let guard = 0
-            while (!ra.done && guard < 999) {
-                await this.Ra_transcode_advance(w, rec)
-                guard = guard + 1
-            }
-        }
-        let map = this.Ra_chunk_map(rec)
-        let have = 0
-        let i2 = 0
-        while (i2 < T) {
-            if (map[i2] != null) have = have + 1
-            i2 = i2 + 1
-        }
-        if (have < T) { w.i({ hear_fail: 'transcode short ' + have }); return }
-        let d = await this.Ra_term_decode_pulled(w, rec, T)
-        if (d.fail) { w.i({ hear_fail: d.fail }); return }
-        let lufs = await this.Ra_lufs(d.channels, d.sr)
-        let healthy = this.Sound_measure(this.Ra_term_spool(d.channels, d.per, []))
-        let lo = Math.floor(d.segs * 0.4)
-        let hi = Math.floor(d.segs * 0.6)
-        let drop = []
-        let k = lo
-        while (k < hi) { drop.push(k); k = k + 1 }
-        let starved = this.Sound_measure(this.Ra_term_spool(d.channels, d.per, drop))
-        w.c.term = { seconds: d.seconds, segs: d.segs, preview: P, lufs: lufs, healthy_gaps: healthy.gaps, healthy_bits: healthy.bits, starved_gaps: starved.gaps, dropped: drop.length }
-        let row = { heard: 1, seconds: d.seconds, segs: d.segs, preview: P, healthy: healthy.gaps, starved: starved.gaps, dropped: drop.length }
-        if (lufs != null) row.lufs = lufs
-        w.i(row)
-    })
-
-// ── the witness — per-beat %see observations, n-gated, reading live truth (no commas, no apostrophes) ──
-//  Thresholds (LUFS ±2 of target, starved > healthy + 3, healthy <= 3) are TUNED off the first live CHECK
-//   run, the MusuRaCast lesson — the `heard` row records the real numbers so the gates can be set from them.
-MusuRaTerm_witness(w):
-    let n = (this.c.run)?.c.step_n
-    let lib = w.c.raterm_src
-    let rec = lib ? lib.o({ Record: 1 })[0] : null
-    let total = +(rec?.sc?.total || 0)
-    let t = w.c.term
-    let target = this.Ra_target_lufs(w)
-    let recSecs = +(rec?.sc?.seconds || 0)
-    // beat 2: a real Record stands, uniform and whole on the shelf.
-    if (n === 2 && rec && rec.sc.real && total > 0 && !(oa %see:'the terminal stands a real opus Record from the library — uniform stock whole on the shelf')) i %see:'the terminal stands a real opus Record from the library — uniform stock whole on the shelf'
-    // beat 4: the whole track decoded to real PCM ACROSS THE SEAM — standing preview chunks + the
-    //  continuation the local demand transcoded — and the played duration matches the stocked source.
-    if (n === 4 && t && t.seconds > 0 && recSecs > 0 && Math.abs(t.seconds - recSecs) < 4 && +(t.preview || 0) > 0 && t.segs > t.preview && !(oa %see:'the terminal played the standing preview chunks and the continuation its own demand transcoded — the whole track across the seam')) i %see:'the terminal played the standing preview chunks and the continuation its own demand transcoded — the whole track across the seam'
-    // beat 6: the played-back loudness reads the baked target back — ONE whole-track gain, so the
-    //  preview and the transcoded continuation land uniform and the seam is inaudible by level.
-    if (n === 6 && t && t.lufs != null && Math.abs(t.lufs - target) < 2 && !(oa %see:'the played-back audio measures at the uniform target loudness — the baked gain survived the opus round trip')) i %see:'the played-back audio measures at the uniform target loudness — the baked gain survived the opus round trip'
-    // beat 8: a withheld run of chunks surfaced as measured gaps — an honest starve not a paper-over.
-    if (n === 8 && t && t.starved_gaps > t.healthy_gaps + 3 && !(oa %see:'a withheld run of chunks surfaced as measured gaps — the spool starved without papering over the hole')) i %see:'a withheld run of chunks surfaced as measured gaps — the spool starved without papering over the hole'
-    // beat 10: the complete stock plays essentially gapless through the same spool — the gate is not vacuous.
-    if (n === 10 && t && t.healthy_gaps <= 3 && t.starved_gaps > t.healthy_gaps + 3 && !(oa %see:'the complete stock played essentially gapless — the same spool that surfaced the starve runs clean when the stock is whole')) i %see:'the complete stock played essentially gapless — the same spool that surfaced the starve runs clean when the stock is whole'
-
 // ══ MusuRaStream — the FOURTH Ra* Book (Radio_todo §3.4/§9.3): a real LISTENING SESSION over the wire ═══════
 //  THE PREVIEW ECONOMY END TO END on the chunk-particle machinery: the husk crosses; the listener opens a
 //   paced listen on track A — page wants PIPELINE inside the preview window (the ramp: first page → play
@@ -1262,6 +738,322 @@ MusuRaChase_witness(w):
     // the measure off the pulled bytes: the target loudness back from the online source's chunks.
     if (n >= 6 && s && s.lufs != null && Math.abs(s.lufs - target) < 2 && !(oa %see:'the terminal decoded the chase — the loudness reads the target back from the bytes that crossed')) i %see:'the terminal decoded the chase — the loudness reads the target back from the bytes that crossed'
     if (n >= 6 && s && s.b_heard <= 3 && !(oa %see:'the final track played its capped cycle clean — the online transcoder kept ahead of a fresh playhead')) i %see:'the final track played its capped cycle clean — the online transcoder kept ahead of a fresh playhead'
+
+// ══ MusuBuddy — the magazine-driven pipeline: the Radiobuddies experience in one Book ═══════════════════
+//  THE RE-DRAW (Radio_todo §3.5) of MusuRaStock + MusuRaCast + MusuRaTerm: those three proved stock|cast|play
+//   in a configuration the destination never runs — a stream with no catalog naming it.  Here the pipeline
+//    finally runs WITH its real front door: the origin collection stands as a %Mag,Musica magazine
+//     (Musica_stand — the M4 standing publish IS the door), the magazine crosses the granted wire, and the
+//      follower BROWSES — a %Dogear cursor pinned by TITLE lands on a card, and the card FETCHES ITS OWN
+//       AUDIO: card id = Record id (Musica_fold sublimes from the same lib Ra_stock fills), so the catalog
+//        identity and the stream identity are ONE.  Only the browsed record crosses whole (the unbrowsed
+//         husk keeps its promise unspent — the economy); its stream side parks|ignites on demand; the
+//          terminal decodes THE PULLED BYTES (loudness at target, an honest starve, gapless when whole); a
+//           revoke leaves the magazine STALE (a fresh draw at the origin meets the closed gate — zero
+//            frames, the MusuStanding seq discriminator).  Absorbed claims — RaStock: different gains
+//             toward one target + idempotent restock; RaCast: seal, husk promise, park|release demand,
+//              whole byte-faithful pull, revoke silence; RaTerm: LUFS survives the opus trip, honest
+//               starve, gapless clean.  RaStream|RaChase keep the boundary economy + the village dial
+//                (their own re-draw later).
+//   beat 2   STOCK+WIRE — two real tracks stocked (different gains → one target); Lake_link + arms + handshake
+//   beat 3   RESTOCK    — the same pass again recognizes the standing stock and rebuilds nothing
+//   beat 4   SEAL       — a Music grant minted + redeemed over the wire; repli_allow reads it live
+//   (flow)   STAND      — Musica_stand crosses the magazine + the husks the moment the grant is live
+//   (flow)   BROWSE     — a title-pinned %Dogear resolves down the MIRROR magazine to its card
+//   (flow)   PULL       — the browsed husk pulls whole — boundary wants park and the transcode feeds
+//   beat 10  HEAR       — decode the PULLED chunk particles: LUFS + healthy and starved spool renders
+//   beat 12  REVOKE     — grant pulled; a fresh track joins the origin; a stand meets the closed gate QUIET
+//
+// CONVENTION (Musu*/Ra*): no Run_A_ recipe — the world MUST be named MusuBuddy (do_fn_for dispatches by
+//  w.sc.w) or the wrangle silently never fires.
+
+MusuBuddy(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuBuddy_drive,w,req
+        req%ok = 1
+
+// MusuBuddy_drive — the family's three skip gates, the pinned beats fired once off step_n (req-local
+//  did_step), then every pass: pump the carriers (frames settle over post_do), run the demand pump
+//   (parked wants → transcode advance → parks release), and fire the flow legs on their preconditions.
+async MusuBuddy_drive(w, req):
+    if (typeof OfflineAudioContext === 'undefined') {
+        if (!w.oa({ skipped: 'no_audio' })) w.i({ skipped: 'no_audio' })
+        return
+    }
+    if (typeof AudioEncoder === 'undefined' || typeof AudioDecoder === 'undefined') {
+        if (!w.oa({ skipped: 'no_webcodecs' })) w.i({ skipped: 'no_webcodecs' })
+        return
+    }
+    let nav = this.Crate_nav()
+    if (!nav || typeof nav.bin_write !== 'function') {
+        if (!w.oa({ skipped: 'no_writable_share' })) w.i({ skipped: 'no_writable_share' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuBuddy_stock(w)
+        if (n === 3) await this.MusuBuddy_restock(w)
+        if (n === 4) await this.MusuBuddy_seal(w)
+        if (n === 10) await this.MusuBuddy_hear(w)
+        if (n === 12) await this.MusuBuddy_revoke(w)
+    }
+    for (const peering of w.o({ Peering: 1 })) await peering.do()
+    await this.Ra_transcode_pump(w)
+    await this.MusuBuddy_flow(w)
+    await this.Musu_float(w)
+
+// beat 2 — the stock and the wire in one stand: DJ + Listener identities, the transport-real pair, the
+//  whittle|swarm|repli arms, the handshake seeds, and TWO real tracks stocked (two source loudnesses →
+//   two different baked gains toward the one target — the uniformity claim needs the spread).  take=2:
+//    enough for the browse to CHOOSE (the economy claim needs an unbrowsed husk left unspent).
+async MusuBuddy_stock(w):
+    w.c.nav = this.Crate_nav()
+    let dj = await this.SwarmStaple_person(w, 'DJ')
+    let lis = await this.SwarmStaple_person(w, 'Listener')
+    w.c.dj_pre = dj.sc.prepub
+    w.c.lis_pre = lis.sc.prepub
+    w.c.repli_mirror_pier = lis.sc.prepub
+    let link = await this.Lake_link(w, dj.sc.prepub, lis.sc.prepub)
+    w.c.tx = link[0]
+    w.c.rx = link[1]
+    this.Peeroleum_arm_whittle(w)
+    this.Swarm_arm(w)
+    this.Repli_arm(w)
+    for (const peering of w.o({ Peering: 1 })) {
+        for (const pier of peering.o({ Pier: 1 })) pier.oai({ req: 'handshake' })
+    }
+    let lib = this.Ra_library(w, dj.sc.prepub)
+    w.c.repli_src = lib
+    await this.expecting(w, 'buddy_stock', 180, async () => {
+        let r = await this.Ra_stock(w, lib, w.c.nav, 'testsounds', 2)
+        let p = { stocked: 'first', of: r.of }
+        if (r.built + r.stood) p.ready = r.built + r.stood
+        if (r.skipped) p.skipped = r.skipped
+        w.i(p)
+    })
+    w.doai({ req: 'witness', eternal: 1 })?.(async (req) => { this.MusuBuddy_witness(w); req.sc.ok = 1 })
+
+// beat 3 — the second pass: the disk truth decides — everything stands, nothing builds (RaStock's
+//  idempotence claim, absorbed).  Zero counts stay absent (the snapped-boolean discipline).
+async MusuBuddy_restock(w):
+    await this.expecting(w, 'buddy_restock', 60, async () => {
+        let r = await this.Ra_stock(w, w.c.repli_src, w.c.nav, 'testsounds', 2)
+        let p = { stocked: 'again' }
+        if (r.built) p.built = r.built
+        if (r.stood) p.stood = r.stood
+        w.i(p)
+    })
+
+// beat 4 — the seal over the wire (the RaCast shape): DJ mints an unbound Music offer, the listener
+//  redeems; hello→accept settle through the pumped stations.  The consent hook re-asks EVERY leg —
+//   one live grant gates the magazine AND the stream, and a later revoke shuts both.
+async MusuBuddy_seal(w):
+    let dj = this.SwarmStaple_ident(w, 'DJ')
+    let lis = this.SwarmStaple_ident(w, 'Listener')
+    w.c.iz = await this.Swarm_mint_idzeug(w, dj, { Music: 1, genre: 'Buddies' }, 'buddy_1')
+    await this.Swarm_redeem(w, lis, w.c.iz)
+    let djp = this.Swarm_peering(dj)
+    w.c.repli_allow = (peer) => { let p = djp.o({ Pier: 1, pub: peer })[0]; return !!(p && this.Swarm_pier_live(p, 'Music')) }
+
+// MusuBuddy_flow — the crossing, robust to post_do settling: each leg fires the instant its precondition
+//  holds.  STAND the magazine + offer the husks the moment the grant is live and the stock stands (the
+//   magazine door IS Musica_stand — the M4 standing publish); BROWSE the moment the mirror holds the
+//    cards and the husks (a title-pinned cursor — the follower chooses by MEANING, and the landed card
+//     names which husk to spend); PULL only the browsed record — want-once per offset, preview offsets
+//      serve instantly, boundary offsets PARK and ride the transcode bow wave.
+async MusuBuddy_flow(w):
+    if (!w.c.repli_allow) return
+    let dj = this.SwarmStaple_ident(w, 'DJ')
+    if (!dj) return
+    let djp = this.Swarm_peering(dj)
+    let grantPier = djp ? djp.o({ Pier: 1, pub: w.c.lis_pre })[0] : null
+    let live = !!(grantPier && this.Swarm_pier_live(grantPier, 'Music'))
+    // LEG 1 — the magazine stands and crosses, and every husk follows (the catalog promise; no bytes).
+    if (live && !w.c.stand_done) {
+        let srecs = w.c.repli_src ? w.c.repli_src.o({ Record: 1 }) : []
+        if (srecs.length >= 2) {
+            w.c.stand_done = 1
+            let mag = w.i({ Mag: 'Musica' })
+            mag.c.up = w
+            w.c.origin_mag = mag
+            let before = (w.c.tx.c.seq || 0)
+            await this.Musica_stand(w, w.c.tx, w.c.dj_pre, w.c.lis_pre, mag, w.c.repli_src, 'draw_one', 1752400000000)
+            let husks = 0
+            for (const rec of srecs) {
+                if (await this.Repli_offer(w, w.c.tx, w.c.dj_pre, w.c.lis_pre, rec)) husks = husks + 1
+            }
+            w.i({ published: 1, cards: this.Musica_cards(mag).length, husks: husks, sent: (w.c.tx.c.seq || 0) - before })
+        }
+    }
+    // LEG 2 — the browse: a %Dogear pinned by TITLE walks the MIRROR magazine (never the origin) down to
+    //  its card.  The pick is the SECOND title in sorted order — deterministic and never hardcoded to a
+    //   tone, so the tone set can change under the Book without touching it.
+    let mir = w.o({ Library: 1, pier: w.c.lis_pre })[0]
+    let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
+    if (vmag && !w.c.browsed) {
+        let cards = this.Musica_cards(vmag)
+        let husk_ok = cards.length >= 2 && cards.every((c2) => { let h2 = mir.o({ Record: 1, id: c2.sc.id })[0]; return h2 && +(h2.sc.total || 0) > 0 })
+        if (husk_ok) {
+            w.c.browsed = 1
+            let titles = cards.map((c2) => c2.sc.title).sort()
+            let pick = titles[1]
+            let dog = this.Cursor_make(w, 'the browse', [{ Mag: 'Musica' }, { Cloud: 1, randomic: 'draw_one' }, { Record: 1, title: pick }])
+            let got = this.Cursor_resolve(dog, mir)
+            if (got.ok) {
+                w.c.pick_id = got.landed.sc.id
+                w.c.other_id = cards.map((c2) => c2.sc.id).filter((id2) => id2 !== got.landed.sc.id)[0]
+                w.i({ browsed: 1, title: pick, id: got.landed.sc.id, depth: got.depth })
+            } else {
+                w.i({ browse_fail: 1, depth: got.depth })
+            }
+        }
+    }
+    // LEG 3 — the pull, of the browsed record ONLY: page wants go out want-once per offset; the pulled
+    //  row lands once the mirror holds every chunk, carrying the park|release counts the demand claim reads.
+    let rec = (mir && w.c.pick_id) ? mir.o({ Record: 1, id: w.c.pick_id })[0] : null
+    if (rec && +(rec.sc.total || 0) > 0 && !w.c.pull_ok) {
+        let r = await this.Ra_pull_beat(w, w.c.rx, w.c.lis_pre, w.c.dj_pre, rec)
+        if (r.done) {
+            w.c.pull_ok = 1
+            let row = { pulled: 1, chunks: r.held }
+            if (w.c.repli_parked) row.parked = w.c.repli_parked
+            if (w.c.repli_unparked) row.unparked = w.c.repli_unparked
+            w.i(row)
+        }
+    }
+
+// beat 10 — HEAR, off THE PULLED CHUNK PARTICLES (never local disk — the RaStream rule): decode what the
+//  mirror actually holds through the run decoder, measure LUFS, render the spool healthy and starved (a
+//   middle run withheld), cache the scalar reads on w.c.term and stamp a heard row.  Runs exactly once.
+async MusuBuddy_hear(w):
+    if (w.c.term) return
+    let mir = w.o({ Library: 1, pier: w.c.lis_pre })[0]
+    let rec = (mir && w.c.pick_id) ? mir.o({ Record: 1, id: w.c.pick_id })[0] : null
+    if (!rec || !w.c.pull_ok) {
+        w.i({ hear_fail: 'nothing pulled' })
+        return
+    }
+    await this.expecting(w, 'buddy_hear', 240, async () => {
+        let T = +(rec.sc.total || 0)
+        let d = await this.Ra_term_decode_pulled(w, rec, T)
+        if (d.fail) { w.i({ hear_fail: d.fail }); return }
+        let lufs = await this.Ra_lufs(d.channels, d.sr)
+        let healthy = this.Sound_measure(this.Ra_term_spool(d.channels, d.per, []))
+        let lo = Math.floor(d.segs * 0.4)
+        let hi = Math.floor(d.segs * 0.6)
+        let drop = []
+        let k = lo
+        while (k < hi) { drop.push(k); k = k + 1 }
+        let starved = this.Sound_measure(this.Ra_term_spool(d.channels, d.per, drop))
+        w.c.term = { seconds: d.seconds, segs: d.segs, lufs: lufs, healthy_gaps: healthy.gaps, starved_gaps: starved.gaps, dropped: drop.length }
+        let row = { heard: 1, seconds: d.seconds, segs: d.segs, healthy: healthy.gaps, starved: starved.gaps, dropped: drop.length }
+        if (lufs != null) row.lufs = lufs
+        w.i(row)
+    })
+
+// beat 12 — REVOKE, and the magazine goes STALE: the grant pulled, a fresh track joins the origin
+//  collection (a hand card — the census claim needs an identity, not audio), and a second stand meets
+//   the CLOSED gate: changed at the origin, ZERO frames on the wire (the MusuStanding seq discriminator
+//    — a gate leak would burn a seq and the quiet_wire flag would never stamp).
+async MusuBuddy_revoke(w):
+    let dj = this.SwarmStaple_ident(w, 'DJ')
+    let pier = this.Swarm_peering(dj).o({ Pier: 1, pub: w.c.lis_pre })[0]
+    await this.Swarm_revoke(w, dj, pier, 'Music')
+    w.c.repli_src.i({ Record: 1, id: 'fresh_after_revoke', title: 'Fresh Cut', artist: 'DJ Oscillo', path: 'phantom' })
+    let before = (w.c.tx.c.seq || 0)
+    let out = await this.Musica_stand(w, w.c.tx, w.c.dj_pre, w.c.lis_pre, w.c.origin_mag, w.c.repli_src, 'draw_two', 1752400001000)
+    let sent = (w.c.tx.c.seq || 0) - before
+    let row = { revoked_stand: 1 }
+    if (out.changed) row.changed = 1
+    if (sent === 0) { row.quiet_wire = 1 } else { row.sent = sent }
+    w.i(row)
+
+// ── the witness — per-beat %see observations, n-gated, reading live truth (no commas, no apostrophes) ──
+MusuBuddy_witness(w):
+    let n = (this.c.run)?.c.step_n
+    let lib = w.c.repli_src
+    let recs = lib ? lib.o({ Record: 1 }) : []
+    let mir = w.o({ Library: 1, pier: w.c.lis_pre })[0]
+    let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
+    let dj = this.SwarmStaple_ident(w, 'DJ')
+    let djp = dj ? this.Swarm_peering(dj) : null
+    let grantPier = djp ? djp.o({ Pier: 1, pub: w.c.lis_pre })[0] : null
+    let live = !!(grantPier && this.Swarm_pier_live(grantPier, 'Music'))
+    // beat 2: two real tracks stand as stock, each preview-capped — and their baked gains DIFFER (two
+    //  source loudnesses pulled toward the one target — uniformity as a spread, not a coincidence).
+    let real2 = recs.length === 2 && recs.every((r2) => r2.sc.real && +(r2.sc.total || 0) > +(r2.sc.preview || 0))
+    let spread_ok = recs.length === 2 && +recs[0].sc.gain !== +recs[1].sc.gain
+    if (n === 2 && real2 && spread_ok && !(oa %see:'the origin stands real opus stock — two tracks took different gains toward one loudness target')) i %see:'the origin stands real opus stock — two tracks took different gains toward one loudness target'
+    // beat 3: the second pass recognized the disk truth — everything stood, nothing built.
+    let ag = w.o({ stocked: 'again' })[0]
+    if (n === 3 && ag && +(ag.sc.stood || 0) === 2 && !ag.sc.built && !(oa %see:'a second stock pass recognized the standing stock and rebuilt nothing')) i %see:'a second stock pass recognized the standing stock and rebuilt nothing'
+    // beat 4: the seal — one live grant, and everything downstream reads it.
+    if (n === 4 && live && !(oa %see:'the pair sealed over the wire — one live Music grant gates both the magazine and the stream')) i %see:'the pair sealed over the wire — one live Music grant gates both the magazine and the stream'
+    // beat 6: the magazine crossed as the BROWSE SURFACE — and the catalog|stream join is visible: every
+    //  card id finds a husk Record beside the mirror magazine wearing a standing chunk promise.
+    let cards2 = vmag ? this.Musica_cards(vmag) : []
+    let husked = cards2.length === 2 && cards2.every((c2) => { let h2 = mir.o({ Record: 1, id: c2.sc.id })[0]; return h2 && +(h2.sc.total || 0) > 0 })
+    if (n === 6 && husked && !(oa %see:'the magazine crossed as the browse surface — every card at the follower names a record with a standing chunk promise')) i %see:'the magazine crossed as the browse surface — every card at the follower names a record with a standing chunk promise'
+    // beat 6: the browse — the cursor landed on a card whose id names the ORIGIN record wearing the very
+    //  title the cursor pinned (the cross-substrate join, not a read-back of the walk's own bookkeeping).
+    let br = w.o({ browsed: 1 })[0]
+    let orec = br ? (lib ? lib.o({ Record: 1, id: br.sc.id })[0] : null) : null
+    if (n === 6 && br && +br.sc.depth === 3 && orec && orec.sc.title === br.sc.title && !(oa %see:'the follower browsed by meaning — a title-pinned cursor walked the mirror magazine and landed on the exact card wearing it')) i %see:'the follower browsed by meaning — a title-pinned cursor walked the mirror magazine and landed on the exact card wearing it'
+    // the demand economy observed: the boundary wants PARKED (the stream side did not exist when they
+    //  asked) and RELEASED as the transcode advanced — the pulled row carries the counts.
+    let pulled = w.o({ pulled: 1 })[0]
+    if (n >= 8 && pulled && +(pulled.sc.parked || 0) > 0 && +(pulled.sc.unparked || 0) > 0 && !(oa %see:'the stream chunks did not exist until asked — boundary wants parked at the frontier and released as the transcode advanced')) i %see:'the stream chunks did not exist until asked — boundary wants parked at the frontier and released as the transcode advanced'
+    // the browsed card fetched ITS OWN audio: the named record whole at the mirror and byte-faithful on
+    //  the preview weight — while the unbrowsed husk holds ZERO chunks (the promise unspent — pull is
+    //   spent per-card by the browse, never broadcast).
+    if (n >= 8 && w.c.pick_id && w.c.other_id) {
+        let mrec = mir ? mir.o({ Record: 1, id: w.c.pick_id })[0] : null
+        let srcRec = lib ? lib.o({ Record: 1, id: w.c.pick_id })[0] : null
+        let other = mir ? mir.o({ Record: 1, id: w.c.other_id })[0] : null
+        let whole = false
+        if (mrec && srcRec) {
+            let T = +(mrec.sc.total || 0)
+            let P = +(mrec.sc.preview || 0)
+            let map = this.Ra_chunk_map(mrec)
+            let held = 0
+            let pbytes = 0
+            let i3 = 0
+            while (i3 < T) {
+                if (map[i3] != null) {
+                    held = held + 1
+                    if (i3 < P) pbytes = pbytes + map[i3].length
+                }
+                i3 = i3 + 1
+            }
+            whole = T > P && held === T && pbytes > 0 && pbytes === +(mrec.sc.bytes || 0) && pbytes === +(srcRec.sc.bytes || 0)
+        }
+        let unspent = false
+        if (other && +(other.sc.total || 0) > 0) {
+            let omap = this.Ra_chunk_map(other)
+            let oheld = 0
+            let i4 = 0
+            while (i4 < +(other.sc.total || 0)) {
+                if (omap[i4] != null) oheld = oheld + 1
+                i4 = i4 + 1
+            }
+            unspent = oheld === 0
+        }
+        if (whole && unspent && !(oa %see:'the browsed card fetched its own audio — the record the cursor named crossed whole and byte-faithful while the unbrowsed husk kept its promise unspent')) i %see:'the browsed card fetched its own audio — the record the cursor named crossed whole and byte-faithful while the unbrowsed husk kept its promise unspent'
+    }
+    // beat 11: the three terminal reads off w.c.term — the PULLED bytes at target loudness, the honest
+    //  starve, and the clean gapless render through the SAME spool (the gate is not vacuous).
+    let t = w.c.term
+    let target = this.Ra_target_lufs(w)
+    if (n === 11 && t && t.lufs != null && Math.abs(t.lufs - target) < 2 && !(oa %see:'the follower decoded what it pulled — the loudness reads the target back from the bytes that crossed')) i %see:'the follower decoded what it pulled — the loudness reads the target back from the bytes that crossed'
+    if (n === 11 && t && t.starved_gaps > t.healthy_gaps + 3 && !(oa %see:'a withheld run of chunks surfaced as measured gaps — the spool starved without papering over the hole')) i %see:'a withheld run of chunks surfaced as measured gaps — the spool starved without papering over the hole'
+    if (n === 11 && t && t.healthy_gaps <= 3 && t.starved_gaps > t.healthy_gaps + 3 && !(oa %see:'the complete pull played essentially gapless — the same spool that surfaced the starve runs clean when the stock is whole')) i %see:'the complete pull played essentially gapless — the same spool that surfaced the starve runs clean when the stock is whole'
+    // beat 13: the stale magazine — the origin CHANGED (a fresh card stands in its own magazine) but the
+    //  closed gate let nothing cross: zero frames burned and the mirror still shows the pre-revoke draw.
+    let rv = w.o({ revoked_stand: 1 })[0]
+    let fresh_at_origin = w.c.origin_mag ? this.Musica_cards(w.c.origin_mag).some((c2) => c2.sc.id === 'fresh_after_revoke') : false
+    let fresh_at_mirror = vmag ? this.Musica_cards(vmag).some((c2) => c2.sc.id === 'fresh_after_revoke') : false
+    if (n === 13 && rv && rv.sc.changed && rv.sc.quiet_wire && !live && fresh_at_origin && !fresh_at_mirror && !(oa %see:'the revoked follower browses a stale magazine — a fresh draw at the origin met the closed gate and never crossed')) i %see:'the revoked follower browses a stale magazine — a fresh draw at the origin met the closed gate and never crossed'
 
 // ── GhoghoDrone — a deliberately SLOW drone Book (the GhostHMR live-graffiti probe) ────────────────
 //  20 steps, each held ~10s by an expecting() ttlilt, so one run spans ~200s of wall clock — a wide
