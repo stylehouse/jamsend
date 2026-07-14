@@ -239,8 +239,12 @@
         padding: 0.2rem 0.35rem; outline: none;
     }
     .pi-input:focus { border-color: #446 }
-    .pi-main { width: 9rem }
-    .pi-sc   { flex: 1; min-width: 5rem }
+    /* mainkey field — a modest, SHRINKABLE basis (was a hard 9rem that hogged the row): it yields
+       space so the sc field can take the width.  the mainkey is usually a short name; it scrolls if long. */
+    .pi-main { flex: 0 1 7rem; min-width: 4rem }
+    /* sc field (the non-mainkey peelable) — grows to take ALL the width the row can give it.
+       flex:1 (basis 0) makes it eat every bit of free space; min-width keeps it usable when the row is tight. */
+    .pi-sc   { flex: 1 1 0; min-width: 6rem }
 
     .pi-submit {
         background: #1a1a2a; border: 1px solid #334; border-radius: 3px;

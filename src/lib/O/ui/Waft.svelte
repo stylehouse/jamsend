@@ -850,8 +850,12 @@
                 {/if}
                 {@render pi(item_props(C, upC, t, dpath))}
                 <!-- a one-line desc (e.g. a Credence What:desc naming what the group tests) sits to the
-                     RIGHT of the label with a margin; kept out of the inline peel via DISPLAY_SKIP. -->
-                {#if C.sc?.desc}<span class="ls-desc" title={C.sc.desc as string}>{C.sc.desc}</span>{/if}
+                     RIGHT of the label with a margin; kept out of the inline peel via DISPLAY_SKIP.
+                     DISPLAY-ONLY: hidden while editing (matching the .ls-hdr-desc class's own !editing
+                     gate) — a shown desc claims its content width + the 5em margin FIRST, starving the
+                     flex-basis-0 PeelInput to ~0 wide (the "pi-row is 0 wide" collapse). Editing needs
+                     the row for the inputs; the desc returns once the orb closes. -->
+                {#if C.sc?.desc && !editing.has(C)}<span class="ls-desc" title={C.sc.desc as string}>{C.sc.desc}</span>{/if}
             </div>
             {#if td.child_types}
                 {#if editing.has(C) && (add_type_C.has(C) || add_raw_C.has(C))}
@@ -952,10 +956,12 @@
     .ls-waft-half { flex: 1 1 calc(50% - 0.3rem); min-width: 0; }
 
     /* a group's one-line desc (Credence What:desc) — muted italic, a fixed 5em to the right of the
-       label.  the two-class selector out-specifies the .ls-item-hdr :global(.pi-wrap) flex:1 rule so
-       the label shrinks to content width — otherwise the 5em reads from a full-width label (miles across). */
-    .ls-item-hdr.ls-hdr-desc :global(.pi-wrap) { flex: 0 1 auto; }
-    .ls-item-hdr.ls-hdr-desc :global(.pi-row)  { flex: 0 1 auto; }
+       label.  the two-class selector out-specifies the .ls-item-hdr :global(.pi-wrap) flex:1 rule so the
+       label sizes to its CONTENT — and flex-shrink 0 so the title is shown in FULL, never crush-truncated
+       before it reaches the desc (the title is the identity; the desc is the lower-priority extra).  The
+       desc gives instead: it keeps shrink:1 and ellipsises when the row runs out of room. */
+    .ls-item-hdr.ls-hdr-desc :global(.pi-wrap) { flex: 0 0 auto; }
+    .ls-item-hdr.ls-hdr-desc :global(.pi-row)  { flex: 0 0 auto; }
     .ls-desc {
         flex: 0 1 auto; min-width: 0; margin-left: 5em;
         font-size: 0.86rem; color: #7a7a8c; font-style: italic; line-height: 1.3;
