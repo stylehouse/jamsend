@@ -23,6 +23,26 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**M4 (second rung) — CENSUS BECOMES THE STANDING PUBLISH (a diff-watcher pass, idempotent on a quiet census):
+ LIVE-GREEN ×2 (2026-07-14; 12/12, caveat:0).** New Book **MusuStanding** (`Ghost/Story/Heistation.g`, after
+  MusuStanding) makes the census itself the TRIGGER: MusuRecast crossed a diff when `Musica_recast_offer` was
+   CALLED; this makes a *change to the collection* drive it. New verb **`Musica_stand(w, tx, from, to, mag, lib,
+    randomic, created_at)`** (`Ghost/M/Heist.g`) fingerprints the collection (its sorted id set) and — if UNCHANGED
+     since `mag.c.last_census` — does NOTHING (no fold, no offer, no frame); on a change it recast-offers the delta
+      and remembers the new fingerprint. **The idempotence is the load-bearing claim** — it makes the pass a real
+       diff-watcher, not a blind every-beat re-offer that would spam the wire and defeat the husk economy. The Book
+        seeds {t0,t1,t2}, stands (publish), stands again on the unchanged census (QUIET — zero frames), grows (+t3)
+         and stands (propagates), shrinks (−t1) and stands (goner crosses), stands again (QUIET). 5 sees. The
+          idempotence discriminator reads the **origin Pier frame counter** (`Pier_next_seq` → `tx.c.seq`): a quiet
+           stand must send zero frames — remove the fingerprint gate (the one-line regression) and every stand
+            re-offers, `sent>0`, red. (The mirror-content sees would MISS that — a redundant husk re-offer upserts
+             the same cards and changes nothing visible; only the frame count witnesses a wasted republish.)
+              Adversarial review (opus subagent) returned all 5 SOUND, confirming the unconditional `Repli_offer` on
+               a granted non-empty mag always burns one seq and nothing else touches `tx.c.seq`. Deterministic +
+                in-memory; registered Credence (`brand_new:1`) + Ality. **M4's standing publish is proven; the last
+                 M4 piece is the roster FAN-OUT — standing over N enrolled followers (needs per-follower mirror
+                  routing; `// <` in `Musica_stand`).**
+
 **M4 (first rung) — THE CENSUS-DIFF RE-PUBLISH (a goner crosses the wire and leaves no orphan): LIVE-GREEN ×2
  (2026-07-14; 12/12, caveat:0).** New Book **MusuRecast** (`Ghost/Story/Heistation.g`, after MusuRecast) wires the
   retire to the fold — the gap MusuVend's forget scene left explicitly open (its forget was a LOCAL GC; "the follower
@@ -1485,9 +1505,12 @@ Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the
      want-shapes; an ungranted want is refused with the refusal noted (was K1). The for-self
       standing evolve is House-work, so it files under M as **M4** — census-diff re-publish
        (✓ its wire heart — MusuRecast, LIVE-GREEN ×2 2026-07-14: `Musica_recast_offer` folds + offers neus +
-        crosses a path-carrying op:delete per goner at BOTH the record and cloud level, no orphan),
-         rename missions as a standing Upkeep-shaped pass (owed), the revolving service pacing over
-          enrolled followers (Ra_transcode_pump generalized, owed) (was K2).
+        crosses a path-carrying op:delete per goner at BOTH the record and cloud level, no orphan; ✓ made STANDING —
+         MusuStanding, LIVE-GREEN ×2 2026-07-14: `Musica_stand` fingerprints the census and re-publishes only on a
+          real change, an unchanged census puts ZERO frames on the wire),
+           rename missions as a standing Upkeep-shaped pass (owed), the revolving service pacing over
+            enrolled followers (Ra_transcode_pump generalized — the roster FAN-OUT, needs per-follower mirror
+             routing, owed) (was K2).
   **D1 SPLIT (2026-07-13): part b LANDED (MusuDoor, LIVE-GREEN ×2, `f76b3d7e`); part a OWED.** The
    recipe below was followed for part b (the sabotage wall) with ONE correction from the build: the
     canary is NOT an immediate-child check (an adversarial review caught that as a false-green — it
@@ -1534,11 +1557,14 @@ Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the
     LIVE-GREEN ×2 2026-07-14 — the whole cursor arc is done); M3 ✓ (MusuRename, LIVE-GREEN ×2 2026-07-14 —
      `Musica_rename` mints `%Renamed` from a real reorganise gesture + replicates it, the heal now proven on live
       wire markers); M4 (first rung) ✓ (MusuRecast, LIVE-GREEN ×2 2026-07-14 — `Musica_recast_offer` crosses a goner
-       as a path-carrying op:delete at the record AND cloud level, no orphan on the wire). The OPEN rungs, in rough
-        order of readiness:
-     **M4 (rest)** — rename missions as a standing Upkeep pass + the revolving service pacing over enrolled followers
-      (Ra_transcode_pump generalized); the census-diff wire heart is now proven, this is the standing-loop shell
-       around it; **D1 part a** (harden the grant toggle into the live Swarm_pier_live door — one
+       as a path-carrying op:delete at the record AND cloud level, no orphan on the wire); M4 (standing) ✓
+        (MusuStanding, LIVE-GREEN ×2 2026-07-14 — `Musica_stand` fingerprints the census and re-publishes only on a
+         real change, a quiet census sends zero frames). The OPEN rungs, in rough order of readiness:
+     **M4 (rest)** — the roster FAN-OUT: standing over N enrolled followers (Ra_transcode_pump generalized), which
+      needs per-follower mirror routing (Repli_mirror_lib keys off one `w.c.repli_mirror_pier` today) — plus
+       rename missions as a standing Upkeep pass; the census-diff wire heart AND the single-relationship standing
+        pass are now proven, this is the roster shell around them; **D1 part a** (harden the grant toggle into the
+         live Swarm_pier_live door — one
         revoke-mid-relationship scene, best folded into MusuHeist; reintroduces seal entropy, so needs an
          EntropyProfile + a warming re-accept, ATTENDED) is the remaining door rung; S3 needs D1 + M2 + S2; **U**
           (the magazine reader — wants become cursors) needs M2 ✓ + C1 ✓ and is now UNBLOCKED (the whole cursor
@@ -1549,10 +1575,13 @@ Gate 0 (owed): MusuHeist accept to 15/15 + MusuBerth first live run — bank the
 Nothing built is thrown away; each existing gear has a §12 home waiting:
  - `Heist_census` (disk → %Records + husks) → **MAKING**: the House's sublimation step. Census
     stops being per-heist prep and becomes the standing publish (M1, then M4's standing
-     republish) — a landing that changes the collection re-publishes the magazine. The wire half of
-      that republish is BUILT: `Musica_recast_offer` (M4/MusuRecast) re-folds and crosses BOTH the neus
-       and the goners (a lost card = a path op:delete, a lost era = a cloud op:delete) so a follower's
-        mirror tracks the collection's drift with no orphan.
+     republish) — a landing that changes the collection re-publishes the magazine. This is now BUILT:
+      `Musica_recast_offer` (M4/MusuRecast) re-folds and crosses BOTH the neus and the goners (a lost card
+       = a path op:delete, a lost era = a cloud op:delete); and `Musica_stand` (M4/MusuStanding) is the
+        standing pass over it — it fingerprints the census and re-publishes ONLY on a real change (an
+         unchanged census sends nothing), so a follower's mirror tracks the collection's drift with no
+          orphan and no wasted wire. Remaining: drive the pass off a real Upkeep + fan it out over a
+           follower roster.
  - `Heist_offer_all` + the mirror → **REPLICATING**: the mirror IS a replicated magazine slice
     already; the bespoke offer verb is the first thing to RETIRE (at M2) into a Repli pull of the
      %Musica subtree. Husks/crush carry over unchanged.

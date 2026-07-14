@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return 'c5831c5df43948de~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return '4fca977d0ed40e33~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -2107,6 +2107,206 @@ MusuRecast_witness(w) {
     let v2 = vmag ? this.MusuRecast_card(vmag, 't2') : null
     let intact = v0 && v0.sc.title === 'Meander One' && v0.sc.artist === 'Auteur' && v0.sc.path === 'crate/a/Auteur - Meander One.opus' && v2 && v2.sc.title === 'Low Draw' && v2.sc.artist === 'Bassbin'
     if (both_ran && surgical && intact && !T.oa({ see: 'the record goner is surgical — the instant the lost track was withdrawn the follower still held its cloud-mates whole' })) this.MusuRecast_note(w, { see: 'the record goner is surgical — the instant the lost track was withdrawn the follower still held its cloud-mates whole' })
+
+},
+// ══ MusuStanding — M4: census becomes the STANDING publish — a diff-watcher pass that only re-offers on change ═
+//  MusuRecast (M4 first rung) proved a census DIFF crosses the wire when Musica_recast_offer is CALLED.  This rung
+//   makes the census itself the TRIGGER: a standing pass (`Musica_stand`) fingerprints the collection each beat and
+//    recasts ONLY when the census actually changed — "a landing that changes the collection re-publishes the
+//     magazine" (§12.5), and, the other half, an UNCHANGED census re-publishes NOTHING.  That idempotence is the
+//      load-bearing claim — it is what makes the pass a real diff-watcher instead of a blind every-beat re-offer
+//       that would spam the wire and defeat the husk economy.  A real House drives the pass off an Upkeep watching
+//        the collection version; this Book drives it per beat and mutates the collection between beats to stand in
+//         for landings and removals.
+//  THE DISCRIMINATOR (non-vacuity — [[adversarial-test-agent]]): the idempotence see reads the ORIGIN Pier frame
+//   counter (Pier_next_seq → tx.c.seq).  A quiet stand must send ZERO frames — remove the fingerprint gate in
+//    Musica_stand (the one-line regression) and every stand re-offers, so `sent` on a quiet stand goes >0 and the
+//     see goes red.  The mirror-content sees would NOT catch that regression (a redundant husk re-offer upserts the
+//      same cards and changes nothing visible) — only the frame count does; that is why it is the gate.
+//  DETERMINISTIC + in-memory (no FSA no audio no Berth no entropy): runs on ANY runner, caveat:0.  CONVENTION
+//   (Musu*): the world MUST be named MusuStanding.
+
+MusuStanding(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuStanding_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+MusuStanding_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+MusuStanding_note(w, sc) {
+    let t = this.MusuStanding_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+// MusuStanding_drive — ONE scene per beat: setup with a seeded collection (2), first stand=publish (3), a QUIET
+//  stand over the unchanged census (5), grow the collection + stand (6/7), shrink it + stand (8/9), a second
+//   QUIET stand after the goner (11).  Pumps settle the follower rx between sending beats.  The witness runs every
+//    pass so each %see fires the first pass its truth holds.
+async MusuStanding_drive(w, req) {
+    if (typeof this.Lake_link !== 'function' || typeof this.Peeroleum_send !== 'function') {
+        if (!this.MusuStanding_T(w).oa({ skipped: 'no_transport' })) this.MusuStanding_note(w, { skipped: 'no_transport' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuStanding_setup(w)
+        if (n === 3) await this.MusuStanding_stand(w, 'first', 'c1', 1000)
+        if (n === 5) await this.MusuStanding_stand(w, 'quiet_a', 'c_qa', 1500)
+        if (n === 6) this.MusuStanding_grow(w)
+        if (n === 7) await this.MusuStanding_stand(w, 'grew', 'c2', 3000)
+        if (n === 8) this.MusuStanding_shrink(w)
+        if (n === 9) await this.MusuStanding_stand(w, 'shrank', 'c3', 4000)
+        if (n === 11) await this.MusuStanding_stand(w, 'quiet_b', 'c_qb', 5000)
+        if (n === 4 || n === 10 || n === 12) await this.MusuStanding_pump(w)
+    }
+    this.MusuStanding_witness(w)
+    await this.Musu_float(w)
+
+},
+// MusuStanding_setup — MusuRecast's wiring (two Piers over the loopback, repli handlers, origin shelf + magazine,
+//  follower mirror, grant ON) plus the STARTING collection t0 t1 t2 already censused onto the origin shelf.
+async MusuStanding_setup(w) {
+    this.MusuStanding_note(w, { reached: 'step_2' })
+    let link = await this.Lake_link(w, 'Origin', 'Follower')
+    w.c.tx = link[0]
+    w.c.rx = link[1]
+    this.Peeroleum_arm_whittle(w)
+    link[1].i({ Ud: 1, pubkey: 'Origin' })
+    link[0].i({ Ud: 1, pubkey: 'Follower' })
+    this.Repli_arm(w)
+    w.c.repli_mirror_pier = 'Follower.mirror'
+    this.Repli_register_rx(w, link[1])
+    let origin_lib = w.i({ Library: 1, pier: 'Origin' })
+    origin_lib.c.up = w
+    w.c.origin_lib = origin_lib
+    w.c.repli_src = origin_lib
+    this.Repli_register_caster(w, link[0], origin_lib)
+    let mag = w.i({ Mag: 'Musica' })
+    mag.c.up = w
+    w.c.origin_mag = mag
+    w.c.grants = { Follower: 1 }
+    w.c.repli_allow = (peer, at) => !!(w.c.grants && w.c.grants[peer])
+    this.Ra_seed(w, 'MusuStanding')
+    w.c.pool = [
+        { id: 't0', artist: 'Auteur', title: 'Meander One', path: 'crate/a/Auteur - Meander One.opus' },
+        { id: 't1', artist: 'Auteur', title: 'Meander Two', path: 'crate/a/Auteur - Meander Two.opus' },
+        { id: 't2', artist: 'Bassbin', title: 'Low Draw', path: 'crate/b/Bassbin - Low Draw.opus' },
+        { id: 't3', artist: 'Choral', title: 'High Draw', path: 'crate/c/Choral - High Draw.opus' }
+    ]
+    this.MusuStanding_add(w, [0, 1, 2])
+    w.c.set_up = 1
+
+},
+// MusuStanding_add — census a slice of the pool onto the origin shelf as %Records (a stand-in for a landing that
+//  grows the collection).  Idempotent per id (oai).
+MusuStanding_add(w, idxs) {
+    let lib = w.c.origin_lib
+    for (const ix of idxs) {
+        let t = w.c.pool[ix]
+        let rec = lib.oai({ Record: 1, id: t.id })
+        rec.c.up = lib
+        rec.sc.artist = t.artist
+        rec.sc.title = t.title
+        rec.sc.path = t.path
+    }
+
+},
+// MusuStanding_stand — run the standing pass and pin what it did: whether it re-published (changed) and HOW MANY
+//  frames it put on the wire (sent = the origin Pier seq delta — Pier_next_seq).  A quiet stand pins quiet:1 +
+//   sent 0; a publishing stand pins changed:1 + sent >= 1.  These are faithful receipts (the seq delta is the real
+//    wire effect, not the pass self-report), so the idempotence see reads the machine not its opinion.
+async MusuStanding_stand(w, tag, randomic, ts) {
+    let tx = w.c.tx
+    let before = (tx.c.seq || 0)
+    let out = await this.Musica_stand(w, tx, 'Origin', 'Follower', w.c.origin_mag, w.c.origin_lib, randomic, ts)
+    let sent = (tx.c.seq || 0) - before
+    let row = { stand: tag, sent: sent, cards: this.Musica_cards(w.c.origin_mag).length }
+    if (out.changed) { row.changed = 1 }
+    if (sent === 0) { row.quiet = 1 }
+    if (out.gone_records && out.gone_records.length) { row.gone_recs = out.gone_records.join('|') }
+    this.MusuStanding_note(w, row)
+    return out
+
+},
+// MusuStanding_grow — a landing: t3 joins the collection (the census grows).  The NEXT stand must notice.
+MusuStanding_grow(w) {
+    this.MusuStanding_note(w, { reached: 'grow' })
+    this.MusuStanding_add(w, [3])
+
+},
+// MusuStanding_shrink — a removal: t1 leaves the collection (the census shrinks).  The NEXT stand must cross the goner.
+async MusuStanding_shrink(w) {
+    this.MusuStanding_note(w, { reached: 'shrink' })
+    await w.c.origin_lib.rm({ Record: 1, id: 't1' })
+
+},
+async MusuStanding_pump(w) {
+    if (w.c.rx) { await w.c.rx.do() }
+
+},
+MusuStanding_card(mag, id) {
+    if (!mag) return null
+    for (const rec of this.Musica_cards(mag)) { if (rec.sc.id === id) return rec }
+    return null
+
+},
+MusuStanding_ids(mag) {
+    let out = []
+    if (mag) { for (const rec of this.Musica_cards(mag)) out.push(rec.sc.id) }
+    out.sort()
+    return out.join('|')
+
+},
+// ── the witness — %see gated on TRUTH not beat number, once-noticed under %testing (no commas no
+//  apostrophes, em-dash pauses).  Reads the origin magazine AND the follower's live mirror + the stand notes. ──
+MusuStanding_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 3)) return
+    if (!w.c.set_up) return
+    let T = this.MusuStanding_T(w)
+    let omag = w.c.origin_mag
+    let mir = this.Repli_mirror_lib(w)
+    let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
+    // #1 THE STANDING PASS PUBLISHES: the first stand re-published (changed + sent >= 1) with NO hand-written
+    //  offer, and the follower mirrors the seeded census t0 t1 t2.  Breakable: a stand that never folds/offers.
+    let first = T.o({ stand: 'first' })[0]
+    let mirrors_seed = vmag && this.MusuStanding_card(vmag, 't0') && this.MusuStanding_card(vmag, 't1') && this.MusuStanding_card(vmag, 't2') ? 1 : 0
+    if (first && +first.sc.changed === 1 && +first.sc.sent >= 1 && mirrors_seed && !T.oa({ see: 'the standing pass publishes the census with no hand-written offer — the follower mirrors the seeded collection' })) this.MusuStanding_note(w, { see: 'the standing pass publishes the census with no hand-written offer — the follower mirrors the seeded collection' })
+    // #2 IDEMPOTENT (the diff-watcher): a stand over an UNCHANGED census sent ZERO frames — quiet + sent 0.  THE
+    //  load-bearing gate: remove the fingerprint check in Musica_stand and this stand re-offers (sent > 0) → red.
+    //   The mirror-content sees would miss that (a redundant husk re-offer changes nothing visible); the frame
+    //    count is the only witness of a wasted republish.
+    let qa = T.o({ stand: 'quiet_a' })[0]
+    if (qa && +qa.sc.quiet === 1 && +qa.sc.sent === 0 && !qa.sc.changed && !T.oa({ see: 'an unchanged census re-publishes nothing — the standing pass put zero frames on the wire so it is a real diff-watcher not a blind re-offer' })) this.MusuStanding_note(w, { see: 'an unchanged census re-publishes nothing — the standing pass put zero frames on the wire so it is a real diff-watcher not a blind re-offer' })
+    // #3 A LANDING PROPAGATES: after t3 joined the collection the next stand re-published it and the follower
+    //  gained t3 — the census grew and the magazine followed.  Breakable: the fingerprint gate misses the growth.
+    let grew = T.o({ stand: 'grew' })[0]
+    let t3_here = vmag && this.MusuStanding_card(vmag, 't3') ? 1 : 0
+    if (grew && +grew.sc.changed === 1 && +grew.sc.sent >= 1 && t3_here && !T.oa({ see: 'a landing propagates through the standing pass — a track that joined the collection appeared at the follower' })) this.MusuStanding_note(w, { see: 'a landing propagates through the standing pass — a track that joined the collection appeared at the follower' })
+    // #4 A REMOVAL PROPAGATES AS A GONER: after t1 left the collection the next stand crossed the goner — the
+    //  follower dropped t1 and kept t0 t2.  The stand reported the goner it withdrew (gone_recs t1).  Breakable:
+    //   the gate misses the shrink or the goner is not crossed (the MusuRecast path exercised under the pass).
+    let shrank = T.o({ stand: 'shrank' })[0]
+    let t1_gone = vmag && !this.MusuStanding_card(vmag, 't1') ? 1 : 0
+    let kept = vmag && this.MusuStanding_card(vmag, 't0') && this.MusuStanding_card(vmag, 't2') ? 1 : 0
+    if (shrank && shrank.sc.gone_recs === 't1' && t1_gone && kept && !T.oa({ see: 'a removal propagates as a goner — a track that left the collection was withdrawn from the follower while its neighbours stayed' })) this.MusuStanding_note(w, { see: 'a removal propagates as a goner — a track that left the collection was withdrawn from the follower while its neighbours stayed' })
+    // #5 THE CENSUS IS THE TRIGGER: across the run the pass re-published EXACTLY on the real changes — BOTH quiet
+    //  stands sent nothing (the second one AFTER a goner too) — and the origin and follower agree on the final
+    //   census t0 t2 t3.  Ties the whole story: the trigger is the census diff and nothing else.
+    let qb = T.o({ stand: 'quiet_b' })[0]
+    let both_quiet = qa && +qa.sc.quiet === 1 && qb && +qb.sc.quiet === 1
+    let oids = this.MusuStanding_ids(omag)
+    let vids = this.MusuStanding_ids(vmag)
+    if (both_quiet && oids === 't0|t2|t3' && vids === 't0|t2|t3' && !T.oa({ see: 'the census diff is the only trigger — every quiet census sent nothing and the origin and follower agree on the final collection' })) this.MusuStanding_note(w, { see: 'the census diff is the only trigger — every quiet census sent nothing and the origin and follower agree on the final collection' })
 
 },
 

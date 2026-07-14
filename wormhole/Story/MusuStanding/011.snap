@@ -1,0 +1,58 @@
+Snap:H
+  H:MusuStanding,Run
+    A:MusuStanding
+      self,round=18	{"mung":["age"]}
+      w:MusuStanding
+        self,round=18	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          stand:first,sent,cards=3,changed
+          see:the standing pass publishes the census with no hand-written offer — the follower mirrors the seeded collection
+          stand:quiet_a,sent=0,cards=3,quiet
+          see:an unchanged census re-publishes nothing — the standing pass put zero frames on the wire so it is a real diff-watcher not a blind re-offer
+          reached:grow
+          stand:grew,sent,cards=4,changed
+          see:a landing propagates through the standing pass — a track that joined the collection appeared at the follower
+          reached:shrink
+          stand:shrank,sent=2,cards=3,changed,gone_recs:t1
+          see:a removal propagates as a goner — a track that left the collection was withdrawn from the follower while its neighbours stayed
+          stand:quiet_b,sent=0,cards=3,quiet
+          see:the census diff is the only trigger — every quiet census sent nothing and the origin and follower agree on the final collection
+        Peering,name:Origin,req=2,ok
+          Pier,pub:Follower,req=2,ok
+            Ud,pubkey:Follower
+            outbox
+              recent
+                emit,type:repli_lines,seq
+                emit=2,type:repli_lines,seq=2
+                emit=3,type:repli_lines,seq=3
+                emit=4,type:repli_lines,seq=4
+          active_transport,type:mock,open
+        Peering,name:Follower,req=3,ok
+          Pier,pub:Origin,req=2,ok
+            Ud,pubkey:Origin
+            inbox
+              recent
+                unemit,type:repli_lines,seq
+                unemit=2,type:repli_lines,seq=2
+                unemit=3,type:repli_lines,seq=3
+                unemit=4,type:repli_lines,seq=4
+          active_transport,type:mock,open
+        Library,pier:Origin
+          Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+          Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+          Record,id:t3,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
+        Mag:Musica
+          Cloud,randomic:c1,created_at=1000
+            Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+            Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+          Cloud,randomic:c2,created_at=3000
+            Record,id:t3,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
+        Library,pier:Follower.mirror
+          Mag:Musica
+            Cloud,randomic:c1,created_at=1000
+              Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+              Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+            Cloud,randomic:c2,created_at=3000
+              Record,id:t3,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus

@@ -5,6 +5,32 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
   The living state, roadmap and design are in Radio_todo.md — read THAT; come here only for
    the archaeology of how a thing landed. Newest first.
 
+**2026-07-14 — M4 (second rung): census becomes the STANDING publish — a diff-watcher pass, idempotent on a quiet
+ census (MusuStanding), LIVE-GREEN ×2.** MusuRecast crossed a census DIFF when `Musica_recast_offer` was CALLED;
+  this rung makes the census itself the TRIGGER — "a landing that changes the collection re-publishes the magazine"
+   (§12.5). New verb `Musica_stand(w, tx, from, to, mag, lib, randomic, created_at)` (`Ghost/M/Heist.g`, after
+    `Musica_recast_offer`): fingerprint the collection (its sorted id set); if UNCHANGED since `mag.c.last_census`,
+     return `{changed:false}` doing NOTHING (no fold, no offer, no frame); else recast-offer the delta and remember
+      the new fingerprint. The idempotence is the whole point — it makes the pass a real diff-watcher, not a blind
+       every-beat re-offer that would spam the wire and defeat the husk economy. The Book **MusuStanding**
+        (`Heistation.g`, after MusuRecast) drives the pass per beat and mutates the collection between beats to
+         stand in for landings/removals: seed {t0,t1,t2}, stand (publish), stand on the unchanged census (QUIET),
+          grow (+t3) + stand (propagates), shrink (−t1) + stand (goner crosses), stand (QUIET). Final: origin and
+           follower agree on {t0,t2,t3} across two clouds. 5 sees. The load-bearing discriminator is the ORIGIN
+            Pier frame counter — `MusuStanding_stand` reads `tx.c.seq` (via `Pier_next_seq`) before/after each stand
+             and pins `sent`; a quiet stand pins `sent=0`+`quiet:1`. Remove the fingerprint gate (the one-line
+              regression) and every stand re-offers → `sent>0` on a quiet stand → red; the mirror-content sees would
+               MISS that (a redundant husk re-offer upserts the same cards and changes nothing visible), so the
+                frame count is the only witness of a wasted republish. The adversarial review (opus subagent)
+                 returned all 5 sees SOUND — confirming `tx = w.c.tx` is the only pier any frame touches (the setup
+                  stamps `%Ud` directly with no handshake, acks book no seq, `Musu_float` is pure layout), so the
+                   `sent` receipt is pristine and the idempotence gate genuinely flips red. Live on `49de`: thaw
+                    MusuCursor green, CHECK RED vs lie, accept 12/12, two confirm runs 12/12 `caveat:0` (warm/warm,
+                     no round-wobble this time). MusuRecast re-ran green after the shared-`Heist.g` addition
+                      (non-regressive). Deterministic + in-memory. Registered Credence (`brand_new:1`) + Ality. The
+                       last M4 piece is the roster FAN-OUT (standing over N enrolled followers — needs per-follower
+                        mirror routing, since `Repli_mirror_lib` keys off one `w.c.repli_mirror_pier` today).
+
 **2026-07-14 — M4 (first rung): the census-diff re-publish — a goner crosses the wire and leaves no orphan
  (MusuRecast), LIVE-GREEN ×2.** MusuVend (M2) proved a magazine and its NEUS travel but its forget scene was a
   LOCAL GC — the witness said so outright (it asserted on the ORIGIN only, because "the follower keeps a dropped

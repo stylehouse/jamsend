@@ -10,6 +10,15 @@ Distilled from a run of handover notes; only the durable shape was kept,
  snaps: read `src/lib/O/spec/Coding_guide.md` — the non-obvious mechanics (wake ≠ hold, the
   ttlilt rules, the all-holds compile→rerun chain, and "verify a timing fix by re-running").**
 
+## The one bet
+
+Everything here is one bet made at every layer: **turn every kind of state — a song, a
+ test, a friendship, an error — into the same legible living matter, held where a group
+  can see it, prove it, and rewrite it while it runs; pour music through it first.**
+The posture doc — the community of ghosts, what counts as true, the tells that the bet is
+ being broken — is `src/lib/O/spec/Homethink_todo.md`. Read it to stand somewhere before
+  touching anything.
+
 ## What jamsend is
 
 A peer-to-peer music app: Svelte 5, served by the dev container on 9091,

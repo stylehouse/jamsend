@@ -1,0 +1,38 @@
+Snap:H
+  H:MusuStanding,Run
+    A:MusuStanding
+      self,round=4	{"mung":["age"]}
+      w:MusuStanding
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          stand:first,sent,cards=3,changed
+          see:the standing pass publishes the census with no hand-written offer — the follower mirrors the seeded collection
+        Peering,name:Origin,req=2,ok
+          Pier,pub:Follower,req=2,ok
+            Ud,pubkey:Follower
+            outbox
+              emit,type:repli_lines,seq,sent,body_hash:508382a24e180e24b9c1ddc567d24710dfd440a28e0245873da6d195b2b972ea,body_len=423,acked
+          active_transport,type:mock,open
+        Peering,name:Follower,req=3,ok
+          Pier,pub:Origin,req=2,ok
+            Ud,pubkey:Origin
+            inbox
+              req:unemit,seq,type:repli_lines,body_hash:508382a24e180e24b9c1ddc567d24710dfd440a28e0245873da6d195b2b972ea,body_len=423,done,to:repli_lines,finished
+          active_transport,type:mock,open
+        Library,pier:Origin
+          Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+          Record,id:t1,artist:Auteur,title:Meander Two,path:crate/a/Auteur - Meander Two.opus
+          Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+        Mag:Musica
+          Cloud,randomic:c1,created_at=1000
+            Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+            Record,id:t1,artist:Auteur,title:Meander Two,path:crate/a/Auteur - Meander Two.opus
+            Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+        Library,pier:Follower.mirror
+          Mag:Musica
+            Cloud,randomic:c1,created_at=1000
+              Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+              Record,id:t1,artist:Auteur,title:Meander Two,path:crate/a/Auteur - Meander Two.opus
+              Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus

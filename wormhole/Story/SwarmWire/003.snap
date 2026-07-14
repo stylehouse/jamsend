@@ -60,4 +60,5 @@ Snap:H
             Ud,pubkey:32c1ce7a059129d1
           active_transport,type:mock,open
         req:witness,eternal,ok
-        see:the link authenticated first — hello and trust both ways before any swarm frame
+        seen:two stations stand on the spine — the swarm frame kinds armed on the world
+        seen:the link authenticated first — hello and trust both ways before any swarm frame

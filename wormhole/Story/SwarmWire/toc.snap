@@ -4,10 +4,7 @@ story:SwarmWire
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.136
-      sample=0.24,at=1783163918
-      sample=0.234,at=1783166705
-      sample=0.217,at=1783182283
+    TimeTotal:beliefs,avg=0.093
       sample=0.093,at=1783257399
       sample=0.108,at=1783352921
       sample=0.076,at=1783368237
@@ -15,10 +12,10 @@ story:SwarmWire
       sample=0.089,at=1783369778
       sample=0.09,at=1783420340
       sample=0.121,at=1783855408
-    TimeTotal:step,avg=0.027
-      sample=0.048,at=1783163918
-      sample=0.047,at=1783166705
-      sample=0.043,at=1783182283
+      sample=0.102,at=1783980391
+      sample=0.102,at=1783980439
+      sample=0.055,at=1783980449
+    TimeTotal:step,avg=0.019
       sample=0.019,at=1783257399
       sample=0.022,at=1783352921
       sample=0.015,at=1783368237
@@ -26,6 +23,9 @@ story:SwarmWire
       sample=0.018,at=1783369778
       sample=0.018,at=1783420340
       sample=0.024,at=1783855408
+      sample=0.02,at=1783980391
+      sample=0.02,at=1783980439
+      sample=0.011,at=1783980449
   Assertions
     Assertion:stations-stand,sentence:two stations stand on the spine — the swarm frame kinds armed on the world,by_n:2
     Assertion:link-authenticated,sentence:the link authenticated first — hello and trust both ways before any swarm frame,by_n:3
@@ -33,7 +33,7 @@ story:SwarmWire
     Assertion:friendship-sealed,sentence:the friendship sealed over the wire — mutual Music grants at both ends,by_n:4
     Assertion:spent-nonce-refuses,sentence:the spent nonce refuses over the wire too — a pier_reject crossed back,by_n:5
   step,dige:707011a29fe51dc1
-  step=2,dige:37c348365fd83926
-  step=3,dige:ac320a80a7590739
-  step=4,dige:c653699ad6094a7c
-  step=5,dige:2f92d64eadd19a3f
+  step=2,dige:7a2d9c6880e48124
+  step=3,dige:7b1e7bb217ca7487
+  step=4,dige:da868e88748e4d6a
+  step=5,dige:8ffbc48ad322f336

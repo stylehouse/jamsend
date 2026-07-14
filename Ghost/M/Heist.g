@@ -721,6 +721,29 @@ async Musica_recast_offer(w, tx, from, to, mag, lib, randomic, created_at):
     }
     return { gone_records: gone_records, gone_clouds: gone_clouds }
 
+// Musica_stand — the STANDING census-diff publish (M4, §12.5): "census stops being per-heist prep and becomes
+//  the standing publish".  Take the collection's census FINGERPRINT (its sorted id set) and compare to the last
+//   stand's: if UNCHANGED, do NOTHING — no fold, no offer, no frame.  That idempotence is the whole point — it
+//    makes the pass a real DIFF-WATCHER, not a blind re-publish every beat (which would spam the wire and defeat
+//     the husk economy).  On a change, recast-offer the delta (Musica_recast_offer — neus cross as an upsert,
+//      goners as path-deletes) and remember the new fingerprint.  A real House drives this from an Upkeep watching
+//       the collection version (Ra_transcode_pump generalized — a landing that changes the collection re-publishes
+//        the magazine); a Book drives it per beat.  Returns { changed, gone_records, gone_clouds }; changed:false
+//         when the census was quiet.  The fingerprint rides mag.c.last_census (runtime .c, never snaps).
+//   // <  FAN-OUT: a real service stands over N ENROLLED followers (w.c.repli_casters), recasting the delta to
+//   // <   each per its own grant — the "revolving service pacing" (was K2).  Needs per-follower mirror routing
+//   // <    (Repli_mirror_lib keys off one w.c.repli_mirror_pier today), so this proves the single-relationship
+//   // <     stand; the roster fan-out is the next M4 rung.
+async Musica_stand(w, tx, from, to, mag, lib, randomic, created_at):
+    let ids = []
+    for (const rec of lib.o({ Record: 1 })) ids.push(rec.sc.id)
+    ids.sort()
+    let fp = ids.join('|')
+    if (mag.c.last_census === fp) return { changed: false, gone_records: [], gone_clouds: [] }
+    let out = await this.Musica_recast_offer(w, tx, from, to, mag, lib, randomic, created_at)
+    mag.c.last_census = fp
+    return { changed: true, gone_records: out.gone_records, gone_clouds: out.gone_clouds }
+
 // Musica_rename — the RENAME MISSION (M3, §12.2): ONE reorganise gesture over the magazine.  Find the card
 //  by id across the clouds, mint the %Renamed redirect-fact BESIDE it (same cloud — where Cursor_heal will
 //   look), then apply the new value.  The marker and the retitle are one stroke, so the magazine never shows

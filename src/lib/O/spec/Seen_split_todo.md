@@ -18,8 +18,9 @@ This file is destination + the bombs + the next move. Correct anything that has 
 
 **MOVES 1 + 2 LANDED + MOVE 3 STARTED (2026-07-12, proven live on `3c5238`/`49dee9`). The MECHANISM
  is complete.** `%seen` latches AND a missing declared assertion now reds the run — un-maskable by
-  entropy. Move 1 committed as `Seen_split 1` (`b94f79f4`); move 2 (`Auto.svelte`+`runner_ask.mjs`)
-   and the first migrated Book are uncommitted. **Move 3 is the remaining work: the fleet migration**
+  entropy. All three mechanism landings are committed: `Seen_split 1` (`b94f79f4`), `Seen_split 2`
+   (`90760b69`, the `Cred_assertion_gaps` verdict), `Seen_split 3` (`57671c1c`, the SwarmStaple full
+    conversion). **Move 3 is the remaining work: the fleet migration**
     — convert each Book's load-bearing `%see:'sentence'` to `%seen` + roster lines, retire
      `%witnessed`. Voluminous + inherently SERIAL (each Book = a live re-record + a sabotage check);
       one Book per pass, verified live (NO BATCHING).
@@ -30,23 +31,24 @@ This file is destination + the bombs + the next move. Correct anything that has 
 - `SwarmStaple` — first FULL conversion (2026-07-12): all 10 handshake happened-facts converted
    `%see`→`%seen` (truth-gates unchanged → identical snap footprint, only the key hardened), 10
     `Assertion:` roster lines, fixtures 2-8 re-recorded live (latch accumulates 1→10 across the
-     beats), GREEN 8/8 + phantom-sabotage RED-proven. Uncommitted.
-- `SwarmWire` — FULL conversion AUTHORED + COMPILED (2026-07-14), **live re-record OWED**. All 5
+     beats), GREEN 8/8 + phantom-sabotage RED-proven. Committed as `Seen_split 3` (`57671c1c`).
+- `SwarmWire` — FULL conversion + re-record LANDED IN-TREE (2026-07-14), **confirm ×2 + sabotage
+   OWED**. All 5
    wire-handshake happened-facts converted `%see`→`%seen` (`SwarmWire_witness`; the `n === K`
     truth-gates KEPT — a crossed frame reads as its live inbox `%req:unemit,done` only at the step it
      lands, so gate it there to catch the transient, then the latch carries it to the final snap), 5
       `Assertion:` roster lines in `wormhole/Story/SwarmWire/toc.snap` (sentences byte-identical to the
        emissions — verified with a diff), gen recompiled via **LocalGen** (`{seen:…}` confirmed;
-        browserless because the live editor was throttled mid-VoroMitosis → no `ghost-compile`). NOT yet
-         live: fixtures `002-005.snap` still hold the OLD single `see:` line, so a live CHECK reds steps
-          2-5 on the dige while the roster/gaps go green — that IS the re-record trigger, not a failure.
-           Blocked on a free runner (the flock's one runner was leased to VoroMitosis). Next: `run
-            SwarmWire` live → confirm `gaps` empty → install each got_snap (`snap <n>` gives text + the
-             live dige) into `00N.snap` + toc step-dige → re-run GREEN → phantom-sabotage one entry.
+        browserless because the live editor was throttled mid-VoroMitosis → no `ghost-compile`). The
+         re-record then LANDED (2026-07-14, in a session lost to a crash before it could stamp this
+          doc): the working-tree fixtures `002-005.snap` hold `seen:` and the Credulation run-record
+           reads check-red 0.2 ×2 (the expected old-fixture reds) then `run=2` GREEN — installed +
+            confirmed ×1, all uncommitted. Still OWED: one more live confirm run (green ×2 is the
+             house gate) + phantom-sabotage one roster entry → then it's a commit point.
 - Remaining fleet: the rest of the Swarm* Books (`Door`/`Got`/`Policy`/`Invite` untouched — `Wire` in
    flight above), the Musu*/Radiation/Voronation/Peregrination families (§5 inventory), and the
     `%witnessed` retirement. `SwarmStaple` is the FULL-conversion worked example (`SwarmSteal` is the
-     stand-beside/mixed example; `SwarmWire` is the authored-but-live-owed one).
+     stand-beside/mixed example; `SwarmWire` is the landed-but-unconfirmed one).
 
 Three concrete moves, sized honestly:
 
