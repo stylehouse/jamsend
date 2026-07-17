@@ -18,8 +18,10 @@ Snap:H
           reached:step_3
           baseline,both
           reached:step_4
-        Mag:Musica
-          Cloud,randomic:draw_one,created_at=1000
-            Card,id:t1b,artist:Auteur,title:One,path:crate/a/one.opus
-            Renamed,key:id,from:t1,to:t1b,at=4000
-            Card,id:t2b,artist:Bassbin,title:Two,path:crate/b/two.opus
+        MusuSelf,pub:Self
+          radiostocking,pub:Self
+            Mag:Musica
+              Cloud,randomic:draw_one,created_at=1000
+                Card,id:t1b,artist:Auteur,title:One,path:crate/a/one.opus
+                Renamed,key:id,from:t1,to:t1b,at=4000
+                Card,id:t2b,artist:Bassbin,title:Two,path:crate/b/two.opus

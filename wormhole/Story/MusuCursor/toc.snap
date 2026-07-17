@@ -4,10 +4,7 @@ story:MusuCursor
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.023
-      sample=0.046,at=1783943690
-      sample=0.022,at=1783943697
-      sample=0.02,at=1783943721
+    TimeTotal:beliefs,avg=0.018
       sample=0.03,at=1783944893
       sample=0.024,at=1783951877
       sample=0.021,at=1783970174
@@ -15,10 +12,10 @@ story:MusuCursor
       sample=0.02,at=1784024251
       sample=0.02,at=1784024316
       sample=0.01,at=1784024322
-    TimeTotal:step,avg=0.004
-      sample=0.008,at=1783943690
-      sample=0.004,at=1783943697
-      sample=0.003,at=1783943721
+      sample=0.012,at=1784274874
+      sample=0.009,at=1784274905
+      sample=0.014,at=1784274923
+    TimeTotal:step,avg=0.003
       sample=0.005,at=1783944893
       sample=0.004,at=1783951877
       sample=0.003,at=1783970174
@@ -26,9 +23,12 @@ story:MusuCursor
       sample=0.003,at=1784024251
       sample=0.003,at=1784024316
       sample=0.002,at=1784024322
+      sample=0.002,at=1784274874
+      sample=0.002,at=1784274905
+      sample=0.002,at=1784274923
   step,dige:158a1b1ccb7d3bd1
-  step=2,dige:7809fb32113d4d7f
-  step=3,dige:0ed6cb0d211a9bf6
-  step=4,dige:73dc3bbab0bf753c
-  step=5,dige:967623a9ff180c8e
-  step=6,dige:f9258c77eb144a01
+  step=2,dige:1deab115673e306c
+  step=3,dige:f4e39f666d211c49
+  step=4,dige:8b2b5e651229d84d
+  step=5,dige:045258ebaad8f24d
+  step=6,dige:19f5036c128eae53

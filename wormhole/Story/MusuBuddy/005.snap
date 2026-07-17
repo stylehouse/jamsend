@@ -1,29 +1,29 @@
 Snap:H
   H:MusuBuddy,Run
     A:MusuBuddy
-      self,round=53	{"mung":["age"]}
+      self,round=49	{"mung":["age"]}
       w:MusuBuddy
-        self,round=53	{"mung":["age"]}
+        self,round=49	{"mung":["age"]}
         req:wrangle,eternal,ok
         Account,of:DJ
           Identity:c012850d69de1318,prepub:c012850d69de1318,friendly:DJ
             Peering,name:c012850d69de1318,friendly:DJ
               Idzeug:buddy_1,to:Music,genre:Buddies,spent
-              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1784260875
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1784275678
                 Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1784260875,sign:8f9ea5e1e54980463e66c61320a2c0308e3848e94fe9644493fa1438e52ab0aeccae680592938fce7fa16f864de3f93eb132d6667d92e8bf7af7140ac3f9cd00,genre:Buddies
-                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784260875,sign:3ac92736012653419cea9c7a709cc7401d3c973139e7ff62b67282b82538c48ca37acac4696024c13c464d2551d96950d8a903cb72fb88b1db49eb9838f63f01,genre:Buddies
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1784275678,sign:42407b0316fd984abba2ef8480bd0f2ddea16dc5945f999e4e4203783778b649eefcb48ed1a9cdfa6e00ea2977e010744f305d70ad242d6d0c40ee67d0f91e0c,genre:Buddies
+                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784275678,sign:c5a556dff9d7bce6e70f6bb2c6ab592b16e7456b3af601b7033aa92da480b49d2ebdaaa1ae9efadba4c1a9f9fdc15956f1f1d3ab4c04b5b4846bd0e482e7c109,genre:Buddies
             SocialGraph
-              Edge,a:c012850d69de1318,b:b317b9a776e39d30,at:1784260875
+              Edge,a:c012850d69de1318,b:b317b9a776e39d30,at:1784275678
         Account,of:Listener
           Identity:b317b9a776e39d30,prepub:b317b9a776e39d30,friendly:Listener
             Peering,name:b317b9a776e39d30,friendly:Listener
-              Pier,pub:c012850d69de1318,friendly:DJ,since:1784260876
+              Pier,pub:c012850d69de1318,friendly:DJ,since:1784275678
                 Peering,name:c012850d69de1318,friendly:DJ,pub:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535
-                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784260875,sign:3ac92736012653419cea9c7a709cc7401d3c973139e7ff62b67282b82538c48ca37acac4696024c13c464d2551d96950d8a903cb72fb88b1db49eb9838f63f01,genre:Buddies
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1784260875,sign:8f9ea5e1e54980463e66c61320a2c0308e3848e94fe9644493fa1438e52ab0aeccae680592938fce7fa16f864de3f93eb132d6667d92e8bf7af7140ac3f9cd00,genre:Buddies
+                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784275678,sign:c5a556dff9d7bce6e70f6bb2c6ab592b16e7456b3af601b7033aa92da480b49d2ebdaaa1ae9efadba4c1a9f9fdc15956f1f1d3ab4c04b5b4846bd0e482e7c109,genre:Buddies
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1784275678,sign:42407b0316fd984abba2ef8480bd0f2ddea16dc5945f999e4e4203783778b649eefcb48ed1a9cdfa6e00ea2977e010744f305d70ad242d6d0c40ee67d0f91e0c,genre:Buddies
             SocialGraph
-              Edge,a:b317b9a776e39d30,b:c012850d69de1318,at:1784260876
+              Edge,a:b317b9a776e39d30,b:c012850d69de1318,at:1784275678
         Peering,name:c012850d69de1318,req=2,ok
           Pier,pub:b317b9a776e39d30,req=2,ok
             req:handshake,finished
@@ -202,15 +202,16 @@ Snap:H
               Stream,seq:35,cid:9e9038a2a68a5dad2db12b1463446f418a38b4989d1c919dc8a7f1517313eda6	{"ref":{"buf":"Uint8Array()"}}
               Stream,seq:36,cid:24a9f7e7ec7c2786b89dff29cfbcbffca27d4a1a26d8cd595cd79fc19abd3678	{"ref":{"buf":"Uint8Array()"}}
               Stream,seq:37,cid:ca2cc2ecf90ee39a357650d60709a06a54f6f4d30f9b41c9948f8c042e964692	{"ref":{"buf":"Uint8Array()"}}
+          radiostocking,pub:c012850d69de1318
+            Mag:Musica
+              Cloud,randomic:draw_one,created_at=1752400000000
+                Card,id:d71294dbbcd7b726,artist:DJ Oscillo,title:Cosmic C
+                Card,id:02cfcb9c15affeaf,artist:DJ Oscillo,title:Dorian D
         req:buddy_stock,finished
         req:witness,eternal,ok
         stocked:first,of=2,ready=2
         req:buddy_restock,finished
         stocked:again,stood=2
-        Mag:Musica
-          Cloud,randomic:draw_one,created_at=1752400000000
-            Card,id:d71294dbbcd7b726,artist:DJ Oscillo,title:Cosmic C
-            Card,id:02cfcb9c15affeaf,artist:DJ Oscillo,title:Dorian D
         published,cards=2,husks=2,sent=3
         MusuThem,pub:b317b9a776e39d30
           stock,pub:b317b9a776e39d30

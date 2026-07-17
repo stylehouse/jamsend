@@ -79,6 +79,46 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
          `%MusuSelf,pub:Seeker > shop/`, not `w` (see the shop-shelf entry above). NEXT: the Stemdex/%Seem
           by-meaning rung (swap `Heist_words` for the stem index) and `%Lead` accumulation across MANY far Mags.
 
+**2026-07-17 — the BAY + `%Heistlet` TRAVELLING ASK DONE (green ×2, Book MusuBay 9/9 ×2 on 49dee91d): the
+ per-Pier corner of the shop + the ask that travels (spec §2.4 bay block — [built] stamp carries the detail).**
+  `Ra_home_bay(w, me, them)` mints `bay,pub:<them>` under MY shop; `Heist_let_mint/ask/answer/adopt`
+   (`Ghost/M/Heist.g //#region soft`) run the round trip: mint `%Heistlet,of:<hid>,pier:` with scalar `ask,id:`
+    children → Repli_offer over the granted wire (BOTH directions granted — the return leg needs it) → the far
+     side stamps `have:1`|`held:1`|NOTHING in place on its mirror → the annotated copy crosses back → adopt
+      copies the marks onto MY bay original (mirror = landing zone, never the home). A `%Heist` gained an
+       optional `hid` ident (`opts.hid`, stamped only when supplied) — the Heistlet's `of:` join key. MusuBay
+        also proved the **multi-source `%Lead` fan-in** (one wish → two piers → 4 Leads from both under the one
+         soft Heist) + negative control (a fabricated ask id stays UNMARKED both sides) + the pull economy
+          (only the had card spends). GOTCHA baked into the Book: a frame settles over post_do BETWEEN beats —
+           send and answer must be SEPARATE steps or the mirror copy isn't there yet. Pre-existing Books
+            byte-stable (MusuSoft 6/6 · MusuHeist 22/22 c20 · MusuBreach 10/10 — no per-step dige drift).
+             OWED: Heistlet `cursor · backoff` leg fields; a true two-runner return leg; prod `hid` derivation
+              (rides with the prod signer-setter).
+
+**2026-07-17 — the MAG SHELVES DONE (green ×2 on 49dee91d, 12 Books re-recorded): every world-side `%Mag`
+ re-homed onto the owner's `radiostocking/` — ALL FOUR §2.2 shelves are now real.** `Ra_home_radiostocking(w,
+  pub)` + `Ra_home_the(w, pub)` (`Ghost/M/Ra.g`, via `Ra_home_shelf`). All ~12 mint sites judged SELF (every
+   site publishes the owner's OWN draw — no site holds a mag about another pier; the mirror-side `mir.o({Mag})`
+    copies are the wire's landing zone, untouched). MusuCursor/MusuHeal needed their Dogear spines re-rooted at
+     the shelf (`Cursor_resolve(cursor, w.c.mag_root)` — cursor verdicts byte-preserved). Fixture diff =
+      re-shelving ONLY (verified side-by-side on Soft/Vend/Bay/Heist); control MusuReplica stayed green with no
+       re-record (mints no world-side Mag). Re-recorded: Soft 6 · Vend 11 · Door 9 · Cursor 6 · Heal 7 · Resume 7
+        · Rename 9 · Recast 12 · Standing 12 · Bay 9 · Heist 22 (c20 band) · Buddy 14 (c11 band). `the/` shelf =
+         door only; first resident arrives with the written-zine rung.
+
+**2026-07-17 — the GONER-DELETE CONSENT GAP CLOSED (green ×2, Book MusuFreeze 9/9 c0 on 49dee91d): a revoked
+ follower's mirror is FROZEN — the wire refused to ADD to a revoked peer but would still DELETE from their
+  mirror (found by the 2026-07-14 adversarial review; no Book exercised delete-AFTER-revoke, so the leak sat
+   un-asserted).** The surgical guard: `Musica_recast_offer` (Heist.g ~1032) consults `Repli_allowed(w, to,
+    from)` and both goner loops skip the send when the gate is closed — receipts still populate (the origin's
+     census diff stays honest); `Repli_send_lines` itself untouched. Sabotage-proven: guard neutralised → the
+      revoked mirror LOST the track + `leaked` fired + only the revoke-sees went red (real discrimination);
+       guard in → `quiet_wire` (zero frames) + `frozen` (the mirror keeps the copy the origin dropped).
+        MusuRecast re-verified byte-identical (no-op under a live grant). **EYES-ON: `Repli_retire`
+         (Repli.g:292) is the same raw-send pattern with NO gate** — unreached by Musica today but the same
+          class of leak; the standing choice (gate it too | move the gate INTO `Repli_send_lines`, the core
+           primitive) is the human's. Full caller survey in the [[repli-send-lines-consent-gap]] memory.
+
 **2026-07-17 — the RADIOSTOCK CASCADE GC DONE (green ×2): `Musica_forget` now reaps the derived disk cache.**
  An era forget (`Musica_forget(nav, mag, cutoff, pub)`) drops the old `%Cloud`s AND unlinks every
   `.jamsend_radiostock` file whose track left the magazine — the human's "delete including radiostock". The

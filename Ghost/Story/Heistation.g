@@ -484,9 +484,12 @@ async MusuHeist_flat_check(w):
 //     diff shows the magazine track the collection — the denied track vanishing on the recast.
 async MusuHeist_publish_mag(w, randomic, ts, stage):
     let mag = await this.Musica_publish(w.c.nav, w.c.mar_uno, w.c.uno_pre, w.c.uno_lib, randomic, ts)
-    for (const old of w.o({ Mag: 1 })) await w.rm({ Mag: old.sc.Mag })
-    let holder = w.i({ Mag: 'Musica' })
-    holder.c.up = w
+    // the reflected magazine homes on UNO's radiostocking shelf (a machine-drawn draw — GC fodder), not floating
+    //  flat on w (Radio_spec §2.2/§5A rung 1); pub is uno_pre, the same identity uno_lib holds Uno's holdings under.
+    let mag_shelf = this.Ra_home_radiostocking(w, w.c.uno_pre)
+    for (const old of mag_shelf.o({ Mag: 1 })) await mag_shelf.rm({ Mag: old.sc.Mag })
+    let holder = mag_shelf.i({ Mag: 'Musica' })
+    holder.c.up = mag_shelf
     for (const cl of mag.o({ Cloud: 1 })) {
         let ch = holder.i({ Cloud: 1, randomic: cl.sc.randomic, created_at: cl.sc.created_at })
         ch.c.up = holder
@@ -621,8 +624,9 @@ MusuHeist_witness(w):
     if (ha && ha.sc.streamed && +(ha.sc.landed || 0) === 3 && !T.oa({ see: 'the landing streamed chunk by chunk — no whole track ever waited in memory' })) this.MusuHeist_note(w, { see: 'the landing streamed chunk by chunk — no whole track ever waited in memory' })
     // THE §12 FOLD — the magazine on REAL data (the human's ruling: prove Musica_publish off the real census,
     //  not a minted toy, with the actual Records ON the snap).  v1 published Uno's whole HELD collection (9)
-    //   as census %Card listings keeping their real cp paths + body_hashes — the reflected w/%Mag carries them.
-    let magR = w.o({ Mag: 1 })[0]
+    //   as census %Card listings keeping their real cp paths + body_hashes — the reflected magazine carries them.
+    //  Re-resolves off Uno's radiostocking shelf (rung 1 re-home) rather than flat on w.
+    let magR = this.Ra_home_radiostocking(w, w.c.uno_pre).o({ Mag: 1 })[0]
     let mh = T.o({ mag_pub: 'held' })[0]
     let real_card = magR && magR.o({ Cloud: 1 }).some((cl) => cl.o({ Card: 1 }).some((r) => ('' + r.sc.path).includes(w.c.genre_pfx + '-') && r.sc.body_hash))
     if (mh && +(mh.sc.cards || 0) === 9 && real_card && !T.oa({ see: 'Uno published its whole collection as a magazine — every landed track rode in as a record keeping its own path and hash' })) this.MusuHeist_note(w, { see: 'Uno published its whole collection as a magazine — every landed track rode in as a record keeping its own path and hash' })
@@ -731,8 +735,11 @@ async MusuVend_setup(w):
     w.c.origin_lib = origin_lib
     w.c.repli_src = origin_lib
     this.Repli_register_caster(w, link[0], origin_lib)
-    let mag = w.i({ Mag: 'Musica' })
-    mag.c.up = w
+    // the origin's magazine homes on ITS radiostocking shelf (a machine-drawn draw — GC fodder), not floating
+    //  flat on w (Radio_spec §2.2/§5A rung 1); pub 'Origin' matches origin_lib so home + shelf sit together.
+    let mag_shelf = this.Ra_home_radiostocking(w, 'Origin')
+    let mag = mag_shelf.i({ Mag: 'Musica' })
+    mag.c.up = mag_shelf
     w.c.origin_mag = mag
     // the grant: ON for the follower.  Repli_allowed asks (peer=to, at=from) at every leg — repli_allow reads
     //  the toggle live, so a revoke between two offers shuts the second (the "cached nowhere" property).
@@ -991,8 +998,10 @@ async MusuDoor_setup(w):
     w.c.origin_lib = origin_lib
     w.c.repli_src = origin_lib
     this.Repli_register_caster(w, link[0], origin_lib)
-    let mag = w.i({ Mag: 'Musica' })
-    mag.c.up = w
+    // the origin's magazine homes on ITS radiostocking shelf (a draw — GC fodder), not flat on w (§2.2/§5A r1).
+    let mag_shelf = this.Ra_home_radiostocking(w, 'Origin')
+    let mag = mag_shelf.i({ Mag: 'Musica' })
+    mag.c.up = mag_shelf
     w.c.origin_mag = mag
     w.c.grants = { Follower: 1 }
     w.c.repli_allow = (peer, at) => !!(w.c.grants && w.c.grants[peer])
@@ -1209,8 +1218,13 @@ async MusuCursor_drive(w, req):
 //   `cloud-two` names just the second cloud (a level, not a leaf).  Homed under %testing so both ride the snap.
 async MusuCursor_setup(w):
     this.MusuCursor_note(w, { reached: 'step_2' })
-    let mag = w.i({ Mag: 'Musica' })
-    mag.c.up = w
+    // the magazine homes on the self radiostocking shelf (a draw — GC fodder), not flat on w (§2.2/§5A rung 1).
+    //  The cursor spine still opens with {Mag:'Musica'}, so the resolve simply re-roots at the SHELF (stashed on
+    //   w.c.mag_root) instead of w — the walk is otherwise identical, and no Dogear/verdict shape changes.
+    let mag_shelf = this.Ra_home_radiostocking(w, 'Self')
+    w.c.mag_root = mag_shelf
+    let mag = mag_shelf.i({ Mag: 'Musica' })
+    mag.c.up = mag_shelf
     w.c.mag = mag
     let c1 = mag.i({ Cloud: 1, randomic: 'draw_one', created_at: 1000 })
     c1.c.up = mag
@@ -1229,15 +1243,16 @@ async MusuCursor_setup(w):
     w.c.cur_cloud = this.Cursor_make(T, 'cloud-two', [{ Mag: 'Musica' }, { Cloud: 1, randomic: 'draw_two' }])
     w.c.set_up = 1
 
-// MusuCursor_resolve_scene — resolve BOTH cursors from w and pin each outcome as a note: the hit lands on the
+// MusuCursor_resolve_scene — resolve BOTH cursors from the radiostocking shelf (w.c.mag_root) and pin each
+//  outcome as a note: the hit lands on the
 //  exact record (depth 3, id t1), the partial lands on the cloud and stops (depth 2, its draw fingerprint).
 MusuCursor_resolve_scene(w):
-    let hit = this.Cursor_resolve(w.c.cur_hit, w)
+    let hit = this.Cursor_resolve(w.c.cur_hit, w.c.mag_root)
     let row = { resolved: 'hit', depth: hit.depth }
     if (hit.ok) { row.ok = 1 }
     if (hit.landed) { row.id = hit.landed.sc.id }
     this.MusuCursor_note(w, row)
-    let cl = this.Cursor_resolve(w.c.cur_cloud, w)
+    let cl = this.Cursor_resolve(w.c.cur_cloud, w.c.mag_root)
     let row2 = { resolved: 'cloud', depth: cl.depth }
     if (cl.ok) { row2.ok = 1 }
     if (cl.landed) { row2.randomic = cl.landed.sc.randomic }
@@ -1256,7 +1271,7 @@ async MusuCursor_knockout_scene(w):
     this.MusuCursor_note(w, { reached: 'step_4' })
     let c1 = w.c.mag.o({ Cloud: 1, randomic: 'draw_one' })[0]
     await c1.rm({ Card: 1, id: 't1' })
-    let gone = this.Cursor_resolve(w.c.cur_hit, w)
+    let gone = this.Cursor_resolve(w.c.cur_hit, w.c.mag_root)
     let row = { resolved: 'gone', depth: gone.depth }
     if (!gone.ok) { row.failed = 1 }
     if (gone.missing) { row.missing_id = gone.missing.id }
@@ -1327,8 +1342,13 @@ async MusuHeal_drive(w, req):
 //  deep).  `kept` names t1 (which will be renamed WITH a marker), `lost` names t2 (renamed WITHOUT one).
 MusuHeal_setup(w):
     this.MusuHeal_note(w, { reached: 'step_2' })
-    let mag = w.i({ Mag: 'Musica' })
-    mag.c.up = w
+    // the magazine homes on the self radiostocking shelf (a draw — GC fodder), not flat on w (§2.2/§5A rung 1).
+    //  The cursor spine still opens with {Mag:'Musica'}, so each resolve re-roots at the SHELF (w.c.mag_root)
+    //   instead of w — the walk and its heal are otherwise identical.
+    let mag_shelf = this.Ra_home_radiostocking(w, 'Self')
+    w.c.mag_root = mag_shelf
+    let mag = mag_shelf.i({ Mag: 'Musica' })
+    mag.c.up = mag_shelf
     w.c.mag = mag
     let cloud = mag.i({ Cloud: 1, randomic: 'draw_one', created_at: 1000 })
     cloud.c.up = mag
@@ -1347,8 +1367,8 @@ MusuHeal_setup(w):
 //  so the after-rename fail/heal is a genuine change, not a cursor that never worked.
 MusuHeal_baseline(w):
     this.MusuHeal_note(w, { reached: 'step_3' })
-    let a = this.Cursor_resolve(w.c.cur_kept, w)
-    let b = this.Cursor_resolve(w.c.cur_lost, w)
+    let a = this.Cursor_resolve(w.c.cur_kept, w.c.mag_root)
+    let b = this.Cursor_resolve(w.c.cur_lost, w.c.mag_root)
     let row = { baseline: 1 }
     if (a.ok && a.landed && a.landed.sc.id === 't1' && b.ok && b.landed && b.landed.sc.id === 't2') { row.both = 1 }
     this.MusuHeal_note(w, row)
@@ -1371,13 +1391,13 @@ async MusuHeal_rename(w):
 //  (noting from → to); `lost` fails cleanly with no marker to follow.  Both outcomes pinned as notes.
 MusuHeal_reresolve(w):
     this.MusuHeal_note(w, { reached: 'step_5' })
-    let a = this.Cursor_resolve(w.c.cur_kept, w)
+    let a = this.Cursor_resolve(w.c.cur_kept, w.c.mag_root)
     let row = { healed: 'kept', depth: a.depth }
     if (a.ok) { row.ok = 1 }
     if (a.landed) { row.id = a.landed.sc.id }
     if (a.heals.length) { row.from = a.heals[0].from; row.to = a.heals[0].to }
     this.MusuHeal_note(w, row)
-    let b = this.Cursor_resolve(w.c.cur_lost, w)
+    let b = this.Cursor_resolve(w.c.cur_lost, w.c.mag_root)
     let row2 = { healed: 'lost', depth: b.depth }
     if (!b.ok) { row2.failed = 1 }
     if (b.missing) { row2.missing_id = b.missing.id }
@@ -1455,8 +1475,12 @@ async MusuResume_drive(w, req):
 //   position that does NOT.  Both name a record two levels deep (Cloud → Record).
 MusuResume_setup(w):
     this.MusuResume_note(w, { reached: 'step_2' })
-    let mag = w.i({ Mag: 'Musica' })
-    mag.c.up = w
+    // the magazine homes on the self radiostocking shelf (a draw — GC fodder), not flat on w (§2.2/§5A rung 1).
+    //  The berthed cursor resolves from w.c.mag (the mag node itself) and the reload enWafts w.c.mag directly,
+    //   so the re-home is transparent to both — only the mag's container path moves.
+    let mag_shelf = this.Ra_home_radiostocking(w, 'Self')
+    let mag = mag_shelf.i({ Mag: 'Musica' })
+    mag.c.up = mag_shelf
     w.c.mag = mag
     let cloud = mag.i({ Cloud: 1, randomic: 'draw_one', created_at: 1000 })
     cloud.c.up = mag
@@ -1623,8 +1647,10 @@ async MusuRename_setup(w):
     w.c.origin_lib = origin_lib
     w.c.repli_src = origin_lib
     this.Repli_register_caster(w, link[0], origin_lib)
-    let mag = w.i({ Mag: 'Musica' })
-    mag.c.up = w
+    // the origin's magazine homes on ITS radiostocking shelf (a draw — GC fodder), not flat on w (§2.2/§5A r1).
+    let mag_shelf = this.Ra_home_radiostocking(w, 'Origin')
+    let mag = mag_shelf.i({ Mag: 'Musica' })
+    mag.c.up = mag_shelf
     w.c.origin_mag = mag
     w.c.grants = { Follower: 1 }
     w.c.repli_allow = (peer, at) => !!(w.c.grants && w.c.grants[peer])
@@ -1855,8 +1881,10 @@ async MusuRecast_setup(w):
     w.c.origin_lib = origin_lib
     w.c.repli_src = origin_lib
     this.Repli_register_caster(w, link[0], origin_lib)
-    let mag = w.i({ Mag: 'Musica' })
-    mag.c.up = w
+    // the origin's magazine homes on ITS radiostocking shelf (a draw — GC fodder), not flat on w (§2.2/§5A r1).
+    let mag_shelf = this.Ra_home_radiostocking(w, 'Origin')
+    let mag = mag_shelf.i({ Mag: 'Musica' })
+    mag.c.up = mag_shelf
     w.c.origin_mag = mag
     w.c.grants = { Follower: 1 }
     w.c.repli_allow = (peer, at) => !!(w.c.grants && w.c.grants[peer])
@@ -2005,6 +2033,253 @@ MusuRecast_witness(w):
     let intact = v0 && v0.sc.title === 'Meander One' && v0.sc.artist === 'Auteur' && v0.sc.path === 'crate/a/Auteur - Meander One.opus' && v2 && v2.sc.title === 'Low Draw' && v2.sc.artist === 'Bassbin'
     if (both_ran && surgical && intact && !T.oa({ see: 'the record goner is surgical — the instant the lost track was withdrawn the follower still held its cloud-mates whole' })) this.MusuRecast_note(w, { see: 'the record goner is surgical — the instant the lost track was withdrawn the follower still held its cloud-mates whole' })
 
+// ══ MusuFreeze — the DELETE-AFTER-REVOKE consent wall: a revoked follower's mirror is FROZEN not remotely editable ═
+//  M4's MusuRecast proved a goner CROSSES a granted wire and leaves no orphan.  This Book proves the OTHER half of
+//   that power: once a follower's grant is REVOKED, a goner must NOT cross — a revoked peer's held copy is frozen,
+//    not remotely mutable.  The hole (adversarial review 2026-07-14): Repli_offer self-gates on Repli_allowed so an
+//     ADD never crosses to a revoked peer, but Musica_recast_offer emitted its goner op:delete lines through the raw
+//      Repli_send_lines primitive, which gates NOTHING — so revoke a follower, then drop a record at the origin, and
+//       the op:delete would still cross and mutate the frozen mirror.  The wire refused to ADD but would still DELETE:
+//        the wrong direction of trust.  The fix guards Musica_recast_offer's delete emission on Repli_allowed(w,to,from).
+//  THE DISCRIMINATION (non-vacuity — [[adversarial-test-agent]]): the gate must DISCRIMINATE not just block.  The
+//   CONTROL scene drops a record while the grant is LIVE and proves the delete DOES cross (the follower's mirror loses
+//    the card) — so the wire genuinely propagates deletes; the PROBE scene drops another record AFTER the revoke and
+//     proves that one does NOT cross (the frozen mirror still holds the card AND zero frames were burned for the peer).
+//      Remove the guard → the probe delete crosses the closed gate, the frozen card vanishes, and both probe sees go
+//       red (that is the sabotage run, recorded below).  ZERO frames is the strongest observable: it reads the origin
+//        Pier's own seq counter (Pier_next_seq → tx.c.seq), which a gate leak would burn.
+//  DETERMINISTIC + in-memory (no FSA no audio no Berth no entropy — the two Piers are MusuRecast's Lake_link loopback):
+//   runs on ANY runner, caveat:0.  CONVENTION (Musu*): the world MUST be named MusuFreeze (do_fn_for dispatches by w.sc.w).
+//  TIMING (the post_do lesson — [[transport-frames-post-do]]): a do_fn NEVER sees a frame round-trip intra-beat —
+//   frames settle over post_do BETWEEN beats.  So every mirror-EFFECT read happens a BEAT AFTER its send: the
+//    control sends at 5 and its drop is read at 6; the probe sends at 7 and its silence is read at 8.  The frame
+//     COUNT (tx.c.seq) reads in-scene — the seq bumps synchronously at send time, unlike the mirror round trip.
+//   beat 2  SETUP     — two Piers over the loopback + repli arms; origin shelf + magazine; the follower's mirror; grant ON
+//   beat 3  PUBLISH   — lay two draws onto the origin shelf and recast-offer — the follower will mirror all five cards
+//   beat 4  BASELINE  — the publish settled: pin the follower holds all five across two clouds (the copy the probe guards)
+//   beat 5  CONTROL   — grant LIVE: origin loses t1 and recasts — count the frames (crossed > 0)
+//   beat 6  CHECK+REVOKE — the control delete settled: pin the follower dropped t1; THEN pull the follower's grant
+//   beat 7  PROBE     — origin loses t2 and recasts to the REVOKED follower — count the frames (sent should be 0)
+//   beat 8  FROZEN    — the probe delete never crossed: pin the follower STILL holds t2 — the mirror is frozen
+//   beat 9  SETTLE    — a final pump confirms nothing drained late — the mirror stays frozen at t0 t2 t3 t4
+
+MusuFreeze(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuFreeze_drive,w,req
+        req%ok = 1
+
+MusuFreeze_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+MusuFreeze_note(w, sc):
+    let t = this.MusuFreeze_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+// MusuFreeze_card — find a magazine card by id across every cloud (the flat catalog view).
+MusuFreeze_card(mag, id):
+    if (!mag) return null
+    for (const rec of this.Musica_cards(mag)) { if (rec.sc.id === id) return rec }
+    return null
+
+// MusuFreeze_drive — ONE move per beat off a req-local did_step (the Musu family style); the witness runs
+//  every pass so each see fires the first pass its truth holds.  Pumps settle the follower's rx between the
+//   sending beats (the reliable Lake_link mock drains inline in post_do — belt-and-braces + a settle pass).
+async MusuFreeze_drive(w, req):
+    if (typeof this.Lake_link !== 'function' || typeof this.Peeroleum_send !== 'function') {
+        if (!this.MusuFreeze_T(w).oa({ skipped: 'no_transport' })) this.MusuFreeze_note(w, { skipped: 'no_transport' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuFreeze_setup(w)
+        if (n === 3) await this.MusuFreeze_publish(w)
+        if (n === 4) this.MusuFreeze_baseline(w)
+        if (n === 5) await this.MusuFreeze_control(w)
+        if (n === 6) await this.MusuFreeze_check_revoke(w)
+        if (n === 7) await this.MusuFreeze_probe(w)
+        if (n === 8) await this.MusuFreeze_frozen(w)
+        if (n === 9) await this.MusuFreeze_pump(w)
+    }
+    this.MusuFreeze_witness(w)
+    await this.Musu_float(w)
+
+// MusuFreeze_setup — MusuRecast's wiring: two Piers over the loopback, repli handlers armed, the origin shelf +
+//  its in-memory magazine, the follower's named mirror.  The grant is the VARIABLE here (MusuRecast held it ON as
+//   furniture) — a per-peer w.c.grants toggle the hook reads LIVE at every leg (MusuDoor's idiom).  A five-track
+//    pool laid as two draws: draw A = t0 t1 t2, draw B = t3 t4.
+async MusuFreeze_setup(w):
+    this.MusuFreeze_note(w, { reached: 'step_2' })
+    let link = await this.Lake_link(w, 'Origin', 'Follower')
+    w.c.tx = link[0]
+    w.c.rx = link[1]
+    this.Peeroleum_arm_whittle(w)
+    link[1].i({ Ud: 1, pubkey: 'Origin' })
+    link[0].i({ Ud: 1, pubkey: 'Follower' })
+    this.Repli_arm(w)
+    w.c.repli_mirror_pier = 'Follower.mirror'
+    this.Repli_register_rx(w, link[1])
+    let origin_lib = this.Ra_home_self(w, 'Origin')
+    w.c.origin_lib = origin_lib
+    w.c.repli_src = origin_lib
+    this.Repli_register_caster(w, link[0], origin_lib)
+    // the origin's magazine homes on ITS radiostocking shelf (a draw — GC fodder), not flat on w (§2.2/§5A r1).
+    let mag_shelf = this.Ra_home_radiostocking(w, 'Origin')
+    let mag = mag_shelf.i({ Mag: 'Musica' })
+    mag.c.up = mag_shelf
+    w.c.origin_mag = mag
+    // the gate: ON for the follower to start.  Repli_allowed asks (peer=to, at=from) at every leg — the hook reads
+    //  the live toggle, so a revoke between two recasts shuts the second one (the whole point of asking every leg).
+    w.c.grants = { Follower: 1 }
+    w.c.repli_allow = (peer, at) => !!(w.c.grants && w.c.grants[peer])
+    this.Ra_seed(w, 'MusuFreeze')
+    w.c.pool = [
+        { id: 't0', artist: 'Auteur', title: 'Meander One', path: 'crate/a/Auteur - Meander One.opus' },
+        { id: 't1', artist: 'Auteur', title: 'Meander Two', path: 'crate/a/Auteur - Meander Two.opus' },
+        { id: 't2', artist: 'Bassbin', title: 'Low Draw', path: 'crate/b/Bassbin - Low Draw.opus' },
+        { id: 't3', artist: 'Choral', title: 'High Draw', path: 'crate/c/Choral - High Draw.opus' },
+        { id: 't4', artist: 'Choral', title: 'Long Draw', path: 'crate/c/Choral - Long Draw.opus' }
+    ]
+    w.c.set_up = 1
+
+// MusuFreeze_publish — lay BOTH draws onto the origin shelf as %Records and recast-offer once per draw.  Draw A
+//  (t0 t1 t2) forms cloud draw_a ts 1000, draw B (t3 t4) forms cloud draw_b ts 2000 — fixed so the fixture is
+//   stable.  The grant is live, so both offers cross and the follower mirrors all five cards across two clouds.
+async MusuFreeze_publish(w):
+    let lib = w.c.origin_lib
+    for (const which of ['a', 'b']) {
+        let slice = (which === 'a') ? [0, 1, 2] : [3, 4]
+        for (const ix of slice) {
+            let t = w.c.pool[ix]
+            let rec = lib.oai({ Record: 1, id: t.id })
+            rec.c.up = lib
+            rec.sc.artist = t.artist
+            rec.sc.title = t.title
+            rec.sc.path = t.path
+        }
+        let randomic = (which === 'a') ? 'draw_a' : 'draw_b'
+        let ts = (which === 'a') ? 1000 : 2000
+        await this.Musica_recast_offer(w, w.c.tx, 'Origin', 'Follower', w.c.origin_mag, lib, randomic, ts)
+    }
+    this.MusuFreeze_note(w, { published: 1, cards: this.Musica_cards(w.c.origin_mag).length, clouds: w.c.origin_mag.o({ Cloud: 1 }).length })
+
+// MusuFreeze_baseline — after both draws the follower mirrors ALL FIVE cards across TWO clouds: the full frozen
+//  copy the two goner scenes will act on.  Pins the starting point so a later loss is a genuine loss off a full mirror.
+MusuFreeze_baseline(w):
+    if (w.c.rx) { }
+    this.MusuFreeze_note(w, { reached: 'step_4' })
+    let mir = this.Repli_mirror_lib(w)
+    let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
+    let all = vmag ? 1 : 0
+    for (const id of ['t0', 't1', 't2', 't3', 't4']) { if (!this.MusuFreeze_card(vmag, id)) { all = 0 } }
+    let row = { baseline: 1, clouds: vmag ? vmag.o({ Cloud: 1 }).length : 0 }
+    if (all) { row.all_five = 1 }
+    this.MusuFreeze_note(w, row)
+
+// MusuFreeze_control — CONTROL scene, grant LIVE: the origin loses t1 and recasts.  The gate is open, so the
+//  op:delete crosses; the frames the recast burns count SYNCHRONOUSLY (tx.c.seq before/after — the seq bumps at
+//   send time), so `crossed > 0` reads in-scene.  The MIRROR effect (t1 dropped) does NOT — a frame never round-
+//    trips intra-beat (the post_do lesson), so it is read a beat later in MusuFreeze_check_revoke.  Pin the
+//     receipt (gone_recs) and the frame count here.
+async MusuFreeze_control(w):
+    await w.c.origin_lib.rm({ Record: 1, id: 't1' })
+    let before = (w.c.tx.c.seq || 0)
+    let out = await this.Musica_recast_offer(w, w.c.tx, 'Origin', 'Follower', w.c.origin_mag, w.c.origin_lib, 'draw_a', 1000)
+    let sent = (w.c.tx.c.seq || 0) - before
+    let row = { control: 1, lost: 't1', gone_recs: (out.gone_records || []).join('|') }
+    if (sent > 0) { row.crossed = sent }
+    this.MusuFreeze_note(w, row)
+
+// MusuFreeze_check_revoke — a BEAT AFTER the control send, so the control delete has settled over post_do: read the
+//  follower mirror and pin that it dropped t1 (the granted delete really crossed — the gate discriminates, it does
+//   not merely block).  THEN pull the follower's grant — a negative decision, not an absence: the toggle goes to 0
+//    and the hook reads it live at the very next leg (Repli_allowed caches nowhere).  From here the mirror is FROZEN:
+//     the origin may still edit its OWN collection, but nothing it does can reach across the closed gate.
+async MusuFreeze_check_revoke(w):
+    if (w.c.rx) { await w.c.rx.do() }
+    let mir = this.Repli_mirror_lib(w)
+    let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
+    let t1_gone = vmag && !this.MusuFreeze_card(vmag, 't1') ? 1 : 0
+    this.MusuFreeze_note(w, { checked: 1, t1_gone: t1_gone })
+    w.c.grants.Follower = 0
+    this.MusuFreeze_note(w, { revoked: 'Follower', grant_live: w.c.repli_allow('Follower', 'Origin') ? 1 : 0 })
+
+// MusuFreeze_probe — THE PROBE, after the revoke: the origin loses t2 and recasts to the now-REVOKED follower.  The
+//  gate is CLOSED, so the guard suppresses the goner op:delete — ZERO frames cross for that peer (tx.c.seq unmoved,
+//   read in-scene).  The recast's local receipt still HONESTLY lists t2 as withdrawn at the origin (Musica_fold
+//    dropped it locally) — the origin's own census is real — but nothing crossed the gate.  The mirror effect (that
+//     t2 stayed) is read a beat later in MusuFreeze_frozen.
+async MusuFreeze_probe(w):
+    await w.c.origin_lib.rm({ Record: 1, id: 't2' })
+    let before = (w.c.tx.c.seq || 0)
+    let out = await this.Musica_recast_offer(w, w.c.tx, 'Origin', 'Follower', w.c.origin_mag, w.c.origin_lib, 'draw_a', 1000)
+    let sent = (w.c.tx.c.seq || 0) - before
+    let t2_gone_origin = w.c.origin_mag && !this.MusuFreeze_card(w.c.origin_mag, 't2') ? 1 : 0
+    let row = { probe: 1, lost: 't2', gone_recs: (out.gone_records || []).join('|'), t2_gone_origin: t2_gone_origin }
+    if (sent === 0) { row.quiet_wire = 1 } else { row.leaked = sent }
+    this.MusuFreeze_note(w, row)
+
+// MusuFreeze_frozen — a BEAT AFTER the probe send, so any leaked delete would have settled: read the follower mirror
+//  and pin that it STILL holds t2 — the frozen copy survived the drop at the origin.  If the guard leaked the delete
+//   this read would find t2 gone (t2_frozen=0), flipping the frozen see red.  The pump is belt-and-braces.
+async MusuFreeze_frozen(w):
+    if (w.c.rx) { await w.c.rx.do() }
+    let mir = this.Repli_mirror_lib(w)
+    let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
+    let t2_frozen = vmag && this.MusuFreeze_card(vmag, 't2') ? 1 : 0
+    this.MusuFreeze_note(w, { frozen: 1, t2_frozen: t2_frozen })
+
+async MusuFreeze_pump(w):
+    if (w.c.rx) { await w.c.rx.do() }
+    this.MusuFreeze_note(w, { reached: 'step_9' })
+
+// ── the witness — see gated on TRUTH not beat number, once-noticed under %testing (no commas no
+//  apostrophes, em-dash pauses).  Reads the origin magazine AND the follower's live mirror. ──
+MusuFreeze_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 4)) return
+    if (!w.c.set_up) return
+    let T = this.MusuFreeze_T(w)
+    let omag = w.c.origin_mag
+    let mir = this.Repli_mirror_lib(w)
+    let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
+    // #1 THE BASELINE CROSSED: after both draws the follower mirrors all five cards in two clouds — the full frozen
+    //  copy the goner scenes act on.  Breakable: a publish that never crossed or a cloud that merged wrong.
+    let base = T.o({ baseline: 1 })[0]
+    if (base && +base.sc.all_five === 1 && +base.sc.clouds === 2 && !T.oa({ see: 'both draws crossed the granted wire — the follower mirrors all five cards in two clouds' })) this.MusuFreeze_note(w, { see: 'both draws crossed the granted wire — the follower mirrors all five cards in two clouds' })
+    // #2 THE GATE PROPAGATES A DELETE WHILE GRANTED (the control — the gate must discriminate not merely block): with
+    //  the grant LIVE the origin lost t1 and the goner CROSSED — the follower dropped exactly that card (read a beat
+    //   later once it settled) and the recast burned frames doing it.  Break: this proves the wire genuinely deletes so
+    //    the probe silence is meaningful.  Gate on the check row (t1 gone at the mirror) AND the control receipt.
+    let ctl = T.o({ control: 1 })[0]
+    let chk = T.o({ checked: 1 })[0]
+    if (ctl && chk && +chk.sc.t1_gone === 1 && ctl.sc.gone_recs === 't1' && +(ctl.sc.crossed || 0) > 0 && !T.oa({ see: 'a delete crosses a granted wire — the origin dropped a card and the follower mirror lost that exact card' })) this.MusuFreeze_note(w, { see: 'a delete crosses a granted wire — the origin dropped a card and the follower mirror lost that exact card' })
+    // #3 THE REVOKED MIRROR IS FROZEN (the headline consent wall): after the follower grant was pulled the origin
+    //  dropped t2 and recast — but the goner did NOT cross.  The frozen mirror STILL holds t2 (read a beat later in the
+    //   frozen row) and the origin burned ZERO frames for that peer (the seq discriminator — a gate leak would burn a
+    //    seq and quiet_wire would never stamp).  Break: remove the Repli_allowed guard in Musica_recast_offer and the
+    //     delete crosses — t2_frozen goes 0 and quiet_wire never stamps — both halves flip this red (the sabotage run).
+    let pr = T.o({ probe: 1 })[0]
+    let frz = T.o({ frozen: 1 })[0]
+    let revoked = T.oa({ revoked: 'Follower' }) && +(T.o({ revoked: 'Follower' })[0].sc.grant_live || 0) === 0
+    if (pr && frz && revoked && +frz.sc.t2_frozen === 1 && pr.sc.quiet_wire && !T.oa({ see: 'a revoked follower mirror is frozen — a drop at the origin after the grant was pulled never crossed and burned zero frames' })) this.MusuFreeze_note(w, { see: 'a revoked follower mirror is frozen — a drop at the origin after the grant was pulled never crossed and burned zero frames' })
+    // #4 THE ORIGIN STAYS HONEST — the frozen copy is a WIRE fact not a fiction: the origin OWN census really did lose
+    //  t2 (the fold dropped it locally and the receipt listed it) — the origin is free to edit its own collection — yet
+    //   its follower keeps the card because the WIRE refused it.  The asymmetry IS the frozen copy — the origin holds t0
+    //    alone from draw A while the revoked follower still holds t0 AND t2.  Break: any leak collapses it.  Gate on the
+    //     frozen row so it fires no earlier than the a-beat-later mirror read.
+    let oids = []
+    if (omag) { for (const rec of this.Musica_cards(omag)) oids.push(rec.sc.id) }
+    oids.sort()
+    let vids = []
+    if (vmag) { for (const rec of this.Musica_cards(vmag)) vids.push(rec.sc.id) }
+    vids.sort()
+    if (pr && frz && +pr.sc.t2_gone_origin === 1 && oids.join('|') === 't0|t3|t4' && vids.join('|') === 't0|t2|t3|t4' && !T.oa({ see: 'the frozen copy is a wire fact not a fiction — the origin census really lost the track yet the revoked follower keeps it because the wire refused' })) this.MusuFreeze_note(w, { see: 'the frozen copy is a wire fact not a fiction — the origin census really lost the track yet the revoked follower keeps it because the wire refused' })
+
 // ══ MusuStanding — M4: census becomes the STANDING publish — a diff-watcher pass that only re-offers on change ═
 //  MusuRecast (M4 first rung) proved a census DIFF crosses the wire when Musica_recast_offer is CALLED.  This rung
 //   makes the census itself the TRIGGER: a standing pass (`Musica_stand`) fingerprints the collection each beat and
@@ -2080,8 +2355,10 @@ async MusuStanding_setup(w):
     w.c.origin_lib = origin_lib
     w.c.repli_src = origin_lib
     this.Repli_register_caster(w, link[0], origin_lib)
-    let mag = w.i({ Mag: 'Musica' })
-    mag.c.up = w
+    // the origin's magazine homes on ITS radiostocking shelf (a draw — GC fodder), not flat on w (§2.2/§5A r1).
+    let mag_shelf = this.Ra_home_radiostocking(w, 'Origin')
+    let mag = mag_shelf.i({ Mag: 'Musica' })
+    mag.c.up = mag_shelf
     w.c.origin_mag = mag
     w.c.grants = { Follower: 1 }
     w.c.repli_allow = (peer, at) => !!(w.c.grants && w.c.grants[peer])
@@ -3146,8 +3423,10 @@ async MusuSoft_setup(w, nav):
         for (const r of recs) { if (r.sc.id !== (cosmic && cosmic.sc.id)) decoys.push(r.sc.id) }
         w.c.decoy_ids = decoys
         // fold the mag from the origin shelf (Musica_fold — the shared brain) and OFFER it over the granted wire.
-        let mag = w.i({ Mag: 'Musica' })
-        mag.c.up = w
+        //  the mag homes on Origin's radiostocking shelf (a draw — GC fodder), not flat on w (§2.2/§5A rung 1).
+        let mag_shelf = this.Ra_home_radiostocking(w, 'Origin')
+        let mag = mag_shelf.i({ Mag: 'Musica' })
+        mag.c.up = mag_shelf
         w.c.origin_mag = mag
         w.c.grants = { Seeker: 1 }
         w.c.repli_allow = (peer, at) => !!(w.c.grants && w.c.grants[peer])
@@ -3291,3 +3570,345 @@ MusuSoft_witness(w):
     let pm = T.o({ pulled: 1 })[0]
     let hardened = wa && wa.sc.at ? 1 : 0
     if (pm && hardened && pm.sc.landed_whole && pm.sc.only_wanted && pm.sc.decoys_unspent && !T.oa({ see: 'choosing the lead hardened the wish and pulled exactly that one card whole into the seeker stock while the two unchosen cards stayed unspent husks — a pull is per-card never a broadcast' })) this.MusuSoft_note(w, { see: 'choosing the lead hardened the wish and pulled exactly that one card whole into the seeker stock while the two unchosen cards stayed unspent husks — a pull is per-card never a broadcast' })
+
+// ══ MusuBay — the per-Pier BAY + the %Heistlet travelling ask (Radio_spec §2.4) ═════════════════════════
+//  MusuSoft proved a wish CONDENSES against a Lead the caller already trusts.  But a Lead only says a peer's
+//   CATALOG matched — before committing a pull, the ask itself can TRAVEL to that peer to confirm which ids
+//    they can serve NOW.  The shop's per-Pier sub-part — the loading `bay,pub:<them>` (Ra_home_bay) — is the
+//     Repli-able corner where that travelling ask lives: a %Heistlet,of:<hid>,pier: minted in F's bay is
+//      Repli'd OVER to F ("have you got these?"), F stamps have|held marks on it IN PLACE, and the annotated
+//       ask replicates BACK and is ADOPTED onto MY original.  The Heistlet is the heist manifest AND rung 7's
+//        inventory beacon worn as one culture shape.  The scenes, on a MusuSoft-style loopback DOUBLED (two
+//         origin Piers, each on its own granted wire, both granting the reverse leg too):
+//          2  TWO origins census DISTINCT real testsound tracks + publish Mags over granted wires.
+//          3  ONE wish (with a pinned hid) fans out to BOTH origins (Heist_ask ×2) → %Leads from BOTH
+//              accumulate under the ONE soft Heist (the multi-source fan-in — Heist_match is idempotent per
+//               (pier,id), so two origins' answers stack, never collide).
+//          4  choose a Lead → Heist_let_mint in THAT pier's bay: two ask ids — one the far side HAS (the real
+//              chosen card) + one it does NOT (a fabricated negative-control id).
+//          5  Heist_let_ask crosses the granted wire (SEND — a frame settles between beats, so the answer waits).
+//          6  the settled ask is answered IN PLACE — Heist_let_answer stamps have:1 on the standing id and
+//              NOTHING on the unknown one (silence is honest) — then the annotated copy Repli's BACK.
+//          7  the return leg lands → Heist_let_adopt stamps MY original bay Heistlet (have on the real id —
+//              nothing on the fake — the negative control proven on MY own shelf).
+//          8  condense + pull the HAD card via the untouched machinery (Heist_condense → Heist_beat) → only
+//              that card's bytes spend (the decoys stay unspent husks — the MusuSoft economy discriminator).
+//          9  sweep + float.
+//  REAL AUDIO for the bytes (Heist_census hashes+slices — no decode); ISOLATION: a DISTINCT marrauding
+//   namespace (test-marrauding-of-bay) swept at start + end.  needsFSA + needMusic gate.  CONVENTION (Musu*):
+//    no Run_A_ recipe — the world MUST be named MusuBay (do_fn_for dispatches by w.sc.w).
+
+MusuBay(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuBay_drive,w,req
+        req%ok = 1
+
+// MusuBay_T / MusuBay_note — the one %testing subtree: every observation hangs here, off the design tree
+//  (the wires + the origins + the mags + the soft Heist + the bays live on w as first-class C).  c.up stamped.
+MusuBay_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+MusuBay_note(w, sc):
+    let t = this.MusuBay_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+// MusuBay_drive — the family skip gates (no transport | no writable share | no testsounds), then ONE move per
+//  step off step_n (req-local did_step, Musu style); the witness runs EVERY pass so each %see fires the first
+//   pass its truth holds.  Both origins' receive ports pump every pass so asks/mags/return-legs settle over the
+//    mock wire between beats.
+async MusuBay_drive(w, req):
+    if (typeof this.Lake_link !== 'function' || typeof this.Peeroleum_send !== 'function') {
+        if (!this.MusuBay_T(w).oa({ skipped: 'no_transport' })) this.MusuBay_note(w, { skipped: 'no_transport' })
+        return
+    }
+    let nav = this.Crate_nav()
+    if (!nav || typeof nav.bin_write !== 'function') {
+        if (!this.MusuBay_T(w).oa({ skipped: 'no_writable_share' })) this.MusuBay_note(w, { skipped: 'no_writable_share' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuBay_setup(w, nav)
+        if (n === 3) await this.MusuBay_fanout(w)
+        if (n === 4) await this.MusuBay_mint(w)
+        if (n === 5) await this.MusuBay_ask(w)
+        if (n === 6) await this.MusuBay_answer(w)
+        if (n === 7) await this.MusuBay_adopt(w)
+        if (n === 8) await this.MusuBay_pull(w, nav)
+        if (n === 9) await this.MusuBay_sweep(w, nav)
+    }
+    // pump BOTH receive ports every pass so the mag offers + the Heistlet ask/return-leg settle over the mock
+    //  wire (belt-and-braces — Lake_link is reliable:true so Peeroleum_deliver drains inline in post_do).
+    for (const port of (w.c.rx_ports || [])) { await port.do() }
+    this.MusuBay_witness(w)
+    await this.Musu_float(w)
+
+// MusuBay_setup — stand up TWO wires, Seeker⇄Origin1 and Seeker⇄Origin2, each port registered BOTH ways (a
+//  caster of its own census AND a receiving port — the MusuHeist two-way idiom, needed because the Heistlet
+//   crosses Seeker→Origin and the annotated copy crosses back Origin→Seeker).  Both origins census DISTINCT
+//    real testsound tracks off the shared disk (Heist_census — %Body bufs + real title/artist), fold a %Mag,
+//     and offer it over its granted wire.  The grant is a Book-owned toggle ON for both directions.
+async MusuBay_setup(w, nav):
+    this.MusuBay_note(w, { reached: 'step_2' })
+    this.Ra_seed(w, 'MusuBay')
+    w.c.nav = nav
+    let paths = await this.Crate_nav_paths(nav, 'testsounds')
+    if (paths.length < 3) {
+        if (!this.MusuBay_T(w).oa({ skipped: 'no_testsounds' })) this.MusuBay_note(w, { skipped: 'need_three_tracks' })
+        return
+    }
+    // TWO wires off ONE seeker.  Each Lake_link mints a fresh transport pair; guard so a setup RETRY reuses the
+    //  standing ports.  link[0] is the origin-side port (casts its census), link[1] the seeker-side port.
+    if (!w.c.tx1) {
+        let l1 = await this.Lake_link(w, 'Origin1', 'Seeker')
+        w.c.tx1 = l1[0]
+        w.c.sx1 = l1[1]
+        let l2 = await this.Lake_link(w, 'Origin2', 'Seeker')
+        w.c.tx2 = l2[0]
+        w.c.sx2 = l2[1]
+    }
+    this.Peeroleum_arm_whittle(w)
+    w.c.sx1.i({ Ud: 1, pubkey: 'Origin1' })
+    w.c.tx1.i({ Ud: 1, pubkey: 'Seeker' })
+    w.c.sx2.i({ Ud: 1, pubkey: 'Origin2' })
+    w.c.tx2.i({ Ud: 1, pubkey: 'Seeker' })
+    this.Repli_arm(w)
+    // the seeker's mirror shelf (where origin offers land) + BOTH receive ports.  The origin-side ports are ALSO
+    //  registered rx so the Heistlet ask lands there; the seeker ports rx the annotated return leg.  All four
+    //   pump each pass.
+    w.c.repli_mirror_pier = 'Origin1'
+    this.Repli_register_rx(w, w.c.sx1)
+    this.Repli_register_rx(w, w.c.sx2)
+    this.Repli_register_rx(w, w.c.tx1)
+    this.Repli_register_rx(w, w.c.tx2)
+    w.c.rx_ports = [w.c.sx1, w.c.sx2, w.c.tx1, w.c.tx2]
+    // each origin's own shelf, censused off the real disk to DISTINCT artists (Origin1 = DJ Oscillo's three
+    //  tracks; Origin2 = The Sines' tracks — the whittle divides the ONE disk so the two origins seem to hold
+    //   different music).  Heist_census hashes+slices (no decode): each card carries its real identity + %Body.
+    let origin1_lib = this.Ra_home_self(w, 'Origin1')
+    let origin2_lib = this.Ra_home_self(w, 'Origin2')
+    w.c.origin1_lib = origin1_lib
+    w.c.origin2_lib = origin2_lib
+    this.Repli_register_caster(w, w.c.tx1, origin1_lib)
+    this.Repli_register_caster(w, w.c.tx2, origin2_lib)
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-bay')
+    // the grant: ON for both directions (Seeker↔Origin1, Seeker↔Origin2).  Repli_allowed asks (peer=to, at=from)
+    //  at every leg — a Heistlet Seeker→Origin1 asks grant(Origin1, Seeker); the return leg asks grant(Seeker,
+    //   Origin1).  Both open so both legs cross.
+    w.c.grants = { Seeker: 1, Origin1: 1, Origin2: 1 }
+    w.c.repli_allow = (peer, at) => !!(w.c.grants && w.c.grants[peer])
+    await this.expecting(w, 'bay_census', 90, async () => {
+        let c1 = await this.Heist_census(w, origin1_lib, nav, 'testsounds', ['DJ Oscillo'])
+        let c2 = await this.Heist_census(w, origin2_lib, nav, 'testsounds', ['The Sines'])
+        // pin the CHOSEN card (Origin1's Cosmic C) so wish, Lead, Heistlet + discriminator all agree; and the
+        //  two Origin1 decoys so the witness reads them staying unspent.  A fabricated id the far side LACKS is
+        //   the negative control the Heistlet asks about beside the real one.
+        let recs1 = origin1_lib.o({ Record: 1 })
+        let cosmic = recs1.find((r) => r.sc.title === 'Cosmic C')
+        if (cosmic) w.c.want_id = cosmic.sc.id
+        let decoys = []
+        for (const r of recs1) { if (r.sc.id !== (cosmic && cosmic.sc.id)) decoys.push(r.sc.id) }
+        w.c.decoy_ids = decoys
+        w.c.fake_id = 'deadbeefdeadbeef'
+        // fold + offer each origin's mag over its granted wire.  Each mag homes on ITS OWN origin's radiostocking
+        //  shelf (a draw — GC fodder), not flat on w (§2.2/§5A rung 1) — Origin1's under Origin1's home, Origin2's
+        //   under Origin2's.  `which:` is kept so the two mags stay distinct across the wire merge (the mirror
+        //    locates by ['Mag'], container-blind — the shelves separate them at the ORIGIN, which keeps them so).
+        let mag1_shelf = this.Ra_home_radiostocking(w, 'Origin1')
+        let mag1 = mag1_shelf.i({ Mag: 'Musica', which: 'one' })
+        mag1.c.up = mag1_shelf
+        w.c.origin1_mag = mag1
+        await this.Musica_fold(mag1, origin1_lib, 'baydraw1', 1000)
+        let cr1 = await this.Repli_offer(w, w.c.tx1, 'Origin1', 'Seeker', mag1)
+        let mag2_shelf = this.Ra_home_radiostocking(w, 'Origin2')
+        let mag2 = mag2_shelf.i({ Mag: 'Musica', which: 'two' })
+        mag2.c.up = mag2_shelf
+        w.c.origin2_mag = mag2
+        await this.Musica_fold(mag2, origin2_lib, 'baydraw2', 1000)
+        let cr2 = await this.Repli_offer(w, w.c.tx2, 'Origin2', 'Seeker', mag2)
+        let m = this.MusuBay_note(w, { setup: 1, cards1: this.Musica_cards(mag1).length, cards2: this.Musica_cards(mag2).length })
+        if (cr1 && cr2) m.sc.mags_offered = 1
+        if (cosmic) m.sc.want_pinned = 1
+        w.c.set_up = 1
+    })
+
+// MusuBay_fanout — ONE wish (with a pinned hid) asked of BOTH origins: Heist_ask crosses it over each granted
+//  wire, then each origin MATCHES its OWN mag against the wish and accumulates %Leads under the ONE soft Heist.
+//   The multi-source fan-in: Heist_match is idempotent per (pier,id), so Origin1's Lead and Origin2's Lead
+//    STACK under the single wish (never collide).  `cosmic` hits Origin1's Cosmic C; `sine` hits Origin2's
+//     titles — a two-word wish that finds a Lead at EACH pier, proving the accumulation from BOTH sources.
+async MusuBay_fanout(w):
+    this.MusuBay_note(w, { reached: 'step_3' })
+    if (!w.c.set_up) return
+    // the wish homes in the SEEKER's shop shelf (Ra_home_shop, §2.4); it carries a pinned hid the Heistlet
+    //  refers back to (the many:1 `of` law).  Two words — `cosmic` hits Origin1's Cosmic C, `sine` hits
+    //   Origin2's Sines titles.
+    let wish = this.Heist_wish(w, this.Ra_home_shop(w, 'Seeker'), 'cosmic sine', [], { hid: 'wish1' })
+    w.c.wish = wish
+    let cr1 = await this.Heist_ask(w, w.c.tx1, 'Seeker', 'Origin1', wish)
+    let cr2 = await this.Heist_ask(w, w.c.tx2, 'Seeker', 'Origin2', wish)
+    // each far side answers against its OWN mag; the Leads accumulate under the ONE wish.
+    let l1 = this.Heist_match(w, wish, w.c.origin1_mag, 'Origin1')
+    let l2 = this.Heist_match(w, wish, w.c.origin2_mag, 'Origin2')
+    let m = this.MusuBay_note(w, { fanned: 1, leads: this.Heist_leads(wish).length })
+    if (cr1 && cr2) m.sc.asked_both = 1
+    // read the accumulation off the LIVE wish — a Lead from Origin1 AND a Lead from Origin2 under the one Heist.
+    let leads = this.Heist_leads(wish)
+    let from1 = 0
+    let from2 = 0
+    for (const ld of leads) { if (ld.sc.pier === 'Origin1') from1 = 1; if (ld.sc.pier === 'Origin2') from2 = 1 }
+    if (from1 && from2) m.sc.both_piers = 1
+    // pin the Origin1 Lead (the one we'll mint a Heistlet for — the chosen source that HAS Cosmic C).
+    let chosen = leads.find((ld) => ld.sc.pier === 'Origin1' && ld.sc.id === w.c.want_id)
+    if (chosen) w.c.chose_lead = chosen
+
+// MusuBay_mint — CHOOSING the Origin1 Lead mints the travelling ask in Origin1's bay: Heist_let_mint stamps a
+//  %Heistlet,of:wish1,pier:Origin1 under Ra_home_bay(w, Seeker, Origin1) — the per-Pier corner of MY loading
+//   zone — with TWO ask ids: the REAL want (Cosmic C — Origin1 HAS it) and a FABRICATED id (Origin1 LACKS it)
+//    — the negative control.  The Heistlet stands in MY shop's bay, ids scalar-only so they cross a husk.
+async MusuBay_mint(w):
+    this.MusuBay_note(w, { reached: 'step_4' })
+    if (!w.c.set_up || !w.c.chose_lead) return
+    let bay = this.Ra_home_bay(w, 'Seeker', 'Origin1')
+    w.c.bay = bay
+    let letc = this.Heist_let_mint(w, w.c.wish, w.c.chose_lead, bay, [w.c.want_id, w.c.fake_id])
+    w.c.let = letc
+    let m = this.MusuBay_note(w, { minted: 1, asks: letc.o({ ask: 1 }).length })
+    // the Heistlet stands in Seeker's shop > bay,pub:Origin1 — locate it back through the home path to prove it.
+    let shop = this.Ra_home_shop(w, 'Seeker')
+    let bcheck = shop.o({ bay: 1, pub: 'Origin1' })[0]
+    let stood = bcheck ? bcheck.o({ Heistlet: 1, of: 'wish1', pier: 'Origin1' })[0] : null
+    if (stood && stood.o({ ask: 1 }).length === 2) m.sc.bay_stood = 1
+
+// MusuBay_ask — the Heistlet TRAVELS: Heist_let_ask crosses it Seeker→Origin1 over the granted wire (a
+//  chunkless husk — the ask children are scalar-only, so the whole manifest rides one frame).  SEND ONLY: a
+//   frame settles over post_do BETWEEN beats (an offer sent at beat K merges at the mirror by K+1), so the
+//    far side cannot answer in the SAME step that sends — the answer waits for step 6, by when the ask has
+//     landed in the mirror.  This one move is just the outbound leg + the did-it-cross verdict.
+async MusuBay_ask(w):
+    this.MusuBay_note(w, { reached: 'step_5' })
+    if (!w.c.let) return
+    let crossed = await this.Heist_let_ask(w, w.c.tx1, 'Seeker', 'Origin1', w.c.let)
+    let m = this.MusuBay_note(w, { asked: 1 })
+    if (crossed) m.sc.crossed = 1
+
+// MusuBay_answer — the FAR SIDE answers the settled ask IN PLACE, then Repli's the annotated copy BACK.  By
+//  step 6 the ask frame has merged into the mirror (Repli_mirror_lib — where Origin1's offers land), so find
+//   MY Heistlet's mirror copy there and let Origin1 answer it against its OWN census stock: have:1 on the
+//    standing want, NOTHING on the fabricated id it lacks (silence is honest).  Then cross the annotated copy
+//     back over the reverse wire (Origin1→Seeker — the grant's reverse leg is open) so step 7 adopts it.
+async MusuBay_answer(w):
+    this.MusuBay_note(w, { reached: 'step_6' })
+    if (!w.c.let) return
+    let mir = this.Repli_mirror_lib(w)
+    let letMirror = mir ? mir.o({ Heistlet: 1, of: 'wish1', pier: 'Origin1' })[0] : null
+    w.c.let_mirror = letMirror
+    let m = this.MusuBay_note(w, { answered: 1 })
+    if (!letMirror) return
+    // the far side (Origin1) answers against its OWN census stock — have:1 for the standing want, nothing for
+    //  the fabricated id it lacks.
+    this.Heist_let_answer(w, letMirror, w.c.origin1_lib)
+    let wa = letMirror.o({ ask: 1, id: w.c.want_id })[0]
+    let fa = letMirror.o({ ask: 1, id: w.c.fake_id })[0]
+    if (wa && wa.sc.have) m.sc.have_real = 1
+    if (fa && !fa.sc.have && !fa.sc.held) m.sc.fake_silent = 1
+    // cross the annotated copy BACK (a real grant-gated husk cross — the return leg travels).  In a single-world
+    //  loopback the mirror IS the answered copy, but the reverse offer proves the wire carries the annotation.
+    let returned = await this.Heist_let_ask(w, w.c.sx1, 'Origin1', 'Seeker', letMirror)
+    if (returned) m.sc.returned = 1
+
+// MusuBay_adopt — the RETURN LEG lands: by step 7 the annotated copy has settled in MY per-Pier RX mirror, so
+//  Heist_let_adopt copies the have|held marks from the mirror copy onto MY ORIGINAL bay Heistlet.  The mirror
+//   was a landing zone — adoption is the explicit seam onto what I own.  The negative control lands on MY OWN
+//    shelf: have on the real id, nothing on the fake.
+async MusuBay_adopt(w):
+    this.MusuBay_note(w, { reached: 'step_7' })
+    if (!w.c.let_mirror) return
+    let mine = this.Heist_let_adopt(w, w.c.wish, w.c.bay, w.c.let_mirror)
+    let m = this.MusuBay_note(w, { adopted: 1 })
+    if (mine) {
+        let wa = mine.o({ ask: 1, id: w.c.want_id })[0]
+        let fa = mine.o({ ask: 1, id: w.c.fake_id })[0]
+        if (wa && wa.sc.have) m.sc.own_have = 1
+        if (fa && !fa.sc.have && !fa.sc.held) m.sc.own_fake_silent = 1
+    }
+
+// MusuBay_pull — the confirmed ask hardens into bytes via the UNTOUCHED machinery: Heist_condense stamps
+//  at:Origin1 + the filing, then Heist_beat over a same-world mirror trimmed to the one HAD card lands it
+//   whole into the seeker's Ra_home_them stock (body_hash).  The economy discriminator: the two decoys never
+//    enter the mirror — they stay UNSPENT husks in Origin1's mag (chunkless), proving a pull is per-card.
+async MusuBay_pull(w, nav):
+    this.MusuBay_note(w, { reached: 'step_8' })
+    let wish = w.c.wish
+    if (!wish || !w.c.set_up || !w.c.chose_lead) return
+    this.Heist_condense(wish, w.c.chose_lead, 'DJ Oscillo', 'baytest')
+    let mardir = this.Heist_marrauding('bay', 'seeker')
+    w.c.mardir = mardir
+    await this.expecting(w, 'bay_pull', 90, async () => {
+        // the pull mirror: census ONLY Origin1's tracks into a them-shelf, then trim to exactly the had record.
+        let mir = this.Ra_home_them(w, 'bay.pull.mirror')
+        await this.Heist_census(w, mir, nav, 'testsounds', ['DJ Oscillo'])
+        for (const r of mir.o({ Record: 1 })) { if (r.sc.id !== w.c.want_id) await mir.rm({ Record: 1, id: r.sc.id }) }
+        let own = this.Ra_home_them(w, wish.sc.at)
+        w.c.seeker_stock = own
+        await this.Heist_beat(w, null, null, null, wish, own, mir, nav, mardir)
+        let landed = own.o({ Record: 1 })
+        let got = landed.find((r) => r.sc.id === w.c.want_id)
+        let m = this.MusuBay_note(w, { pulled: 1, landed: landed.length })
+        if (got && got.sc.body_hash) m.sc.landed_whole = 1
+        if (landed.length === 1 && got) m.sc.only_wanted = 1
+        // the two decoys stay UNSPENT husks in Origin1's mag (chunkless cards, no %Body, never pulled).
+        let mag = w.c.origin1_mag
+        let unspent = 0
+        for (const id of (w.c.decoy_ids || [])) {
+            let card = this.MusuVend_card(mag, id)
+            if (card && !card.o({ Body: 1 }).length) unspent = unspent + 1
+        }
+        if (unspent === (w.c.decoy_ids || []).length && unspent === 2) m.sc.decoys_unspent = 1
+    })
+
+// MusuBay_sweep — leave the shared share clean — the pull landed real bytes into a marrauding namespace, so
+//  drop them (files-only, dirs kept — the dead-handle-safe reset).  The %testing proof stands; the bytes go.
+async MusuBay_sweep(w, nav):
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-bay')
+    this.MusuBay_note(w, { swept: 1 })
+
+// MusuBay_witness — the SIX %see truths, gated on live %testing markers + live particle reads (the actual
+//  Leads under the wish, the actual Heistlet in the bay, the actual marks, the landed %Record), never a beat
+//   number — each fires the first pass its fact holds and latches once-noticed.  NO COMMAS in a sentence (the
+//    peel parser splits on them — em-dashes instead).
+MusuBay_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 2)) return
+    if (!w.c.set_up) return
+    let T = this.MusuBay_T(w)
+    // #1 two origins published DISTINCT catalogs over two granted wires — the doubled loopback stands.
+    let su = T.o({ setup: 1 })[0]
+    if (su && su.sc.mags_offered && su.sc.want_pinned && !T.oa({ see: 'two origin piers each published a distinct catalog over its own granted wire — the loading zone has more than one relationship at once' })) this.MusuBay_note(w, { see: 'two origin piers each published a distinct catalog over its own granted wire — the loading zone has more than one relationship at once' })
+    // #2 the multi-source fan-in — ONE wish asked of two piers accumulated a Lead from BOTH under the one Heist.
+    let fo = T.o({ fanned: 1 })[0]
+    let wish = w.c.wish
+    let fan_ok = fo && fo.sc.asked_both && fo.sc.both_piers && wish && this.Heist_leads(wish).length >= 2 ? 1 : 0
+    if (fan_ok && !T.oa({ see: 'one wish fanned out to two piers and gathered leads from both under the single soft heist — the answers accumulate across sources not against each other' })) this.MusuBay_note(w, { see: 'one wish fanned out to two piers and gathered leads from both under the single soft heist — the answers accumulate across sources not against each other' })
+    // #3 choosing a Lead minted the travelling ask in THAT pier's bay — the per-Pier Repli-able corner.
+    let mi = T.o({ minted: 1 })[0]
+    if (mi && mi.sc.bay_stood && !T.oa({ see: 'choosing a lead minted a heistlet in that piers own bay under my shop — the ask itself now lives in the per-pier corner of my loading zone ready to travel' })) this.MusuBay_note(w, { see: 'choosing a lead minted a heistlet in that piers own bay under my shop — the ask itself now lives in the per-pier corner of my loading zone ready to travel' })
+    // #4 the ask travelled (asked.crossed) and the far side answered IN PLACE (answered.have_real/fake_silent) —
+    //  have on the id it holds — silence on the unknown.  The two markers are separate beats (send at step 5,
+    //   answer at step 6 once the frame settled), so the truth gates on BOTH.
+    let ak = T.o({ asked: 1 })[0]
+    let an = T.o({ answered: 1 })[0]
+    if (ak && ak.sc.crossed && an && an.sc.have_real && an.sc.fake_silent && !T.oa({ see: 'the heistlet crossed the wire and the far side stamped have on the id it holds while the fabricated id got nothing — silence is the honest answer for what a peer lacks' })) this.MusuBay_note(w, { see: 'the heistlet crossed the wire and the far side stamped have on the id it holds while the fabricated id got nothing — silence is the honest answer for what a peer lacks' })
+    // #5 the return leg + adopt — the annotated copy crossed back (answered.returned) and adoption stamped MY
+    //  OWN bay heistlet (adopted.own_have/own_fake_silent).
+    let ad = T.o({ adopted: 1 })[0]
+    if (an && an.sc.returned && ad && ad.sc.own_have && ad.sc.own_fake_silent && !T.oa({ see: 'the annotated ask replicated back and adoption stamped my own bay heistlet — have on the real id and nothing on the fake — the mirror was a landing zone and adoption is the seam onto what I own' })) this.MusuBay_note(w, { see: 'the annotated ask replicated back and adoption stamped my own bay heistlet — have on the real id and nothing on the fake — the mirror was a landing zone and adoption is the seam onto what I own' })
+    // #6 the confirmed ask pulled exactly the had card whole while the decoys stayed unspent — per-card.
+    let pl = T.o({ pulled: 1 })[0]
+    let hardened = wish && wish.sc.at ? 1 : 0
+    if (pl && hardened && pl.sc.landed_whole && pl.sc.only_wanted && pl.sc.decoys_unspent && !T.oa({ see: 'the confirmed ask hardened and pulled exactly that one card whole into the seeker stock while the two unchosen cards stayed unspent husks — the bay confirmed before a byte moved' })) this.MusuBay_note(w, { see: 'the confirmed ask hardened and pulled exactly that one card whole into the seeker stock while the two unchosen cards stayed unspent husks — the bay confirmed before a byte moved' })

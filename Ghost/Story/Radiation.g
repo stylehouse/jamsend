@@ -876,8 +876,11 @@ async MusuBuddy_flow(w):
         let srecs = w.c.repli_src ? w.c.repli_src.o({ Record: 1 }) : []
         if (srecs.length >= 2) {
             w.c.stand_done = 1
-            let mag = w.i({ Mag: 'Musica' })
-            mag.c.up = w
+            // the DJ's magazine homes on ITS radiostocking shelf (a machine-drawn draw — GC fodder), not floating
+            //  flat on w (Radio_spec §2.2/§5A rung 1); pub is dj_pre, the identity repli_src holds the DJ's stock under.
+            let mag_shelf = this.Ra_home_radiostocking(w, w.c.dj_pre)
+            let mag = mag_shelf.i({ Mag: 'Musica' })
+            mag.c.up = mag_shelf
             w.c.origin_mag = mag
             let before = (w.c.tx.c.seq || 0)
             await this.Musica_stand(w, w.c.tx, w.c.dj_pre, w.c.lis_pre, mag, w.c.repli_src, 'draw_one', 1752400000000)

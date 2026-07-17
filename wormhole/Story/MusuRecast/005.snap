@@ -32,14 +32,15 @@ Snap:H
             Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
             Record,id:t3,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
             Record,id:t4,artist:Choral,title:Long Draw,path:crate/c/Choral - Long Draw.opus
-        Mag:Musica
-          Cloud,randomic:draw_a,created_at=1000
-            Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-            Card,id:t1,artist:Auteur,title:Meander Two,path:crate/a/Auteur - Meander Two.opus
-            Card,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
-          Cloud,randomic:draw_b,created_at=2000
-            Card,id:t3,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
-            Card,id:t4,artist:Choral,title:Long Draw,path:crate/c/Choral - Long Draw.opus
+          radiostocking,pub:Origin
+            Mag:Musica
+              Cloud,randomic:draw_a,created_at=1000
+                Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+                Card,id:t1,artist:Auteur,title:Meander Two,path:crate/a/Auteur - Meander Two.opus
+                Card,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+              Cloud,randomic:draw_b,created_at=2000
+                Card,id:t3,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
+                Card,id:t4,artist:Choral,title:Long Draw,path:crate/c/Choral - Long Draw.opus
         MusuThem,pub:Follower.mirror
           stock,pub:Follower.mirror
             Mag:Musica

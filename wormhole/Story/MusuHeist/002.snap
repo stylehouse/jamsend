@@ -97,6 +97,7 @@ Snap:H
               Body,seq:2,cid:e0d1807fa53044f48021912f357290b98042bcff9711a9cdb268833f96e87cf5	{"ref":{"buf":"Uint8Array()"}}
               Body,seq:3,cid:73ea2950a7a0a6020cf94ee01142e43ac40287d007e7acad945210a362cd2acd	{"ref":{"buf":"Uint8Array()"}}
           shop,pub:4e09f34f5a6ab900
+          radiostocking,pub:4e09f34f5a6ab900
         MusuSelf,pub:be0dab3303037ad2
           stock,pub:be0dab3303037ad2
             Record,id:f9cb73180655432e,title:Tagged Truth,artist:Fourier Four,path:Fourier Four - Bogus Name.wav,ext:wav,bytes=8110,body_hash:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d,total

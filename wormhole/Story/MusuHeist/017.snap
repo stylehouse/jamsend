@@ -1,9 +1,9 @@
 Snap:H
   H:MusuHeist,Run
     A:MusuHeist
-      self,round=69	{"mung":["age"]}
+      self,round=70	{"mung":["age"]}
       w:MusuHeist
-        self,round=69	{"mung":["age"]}
+        self,round=70	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -51,21 +51,21 @@ Snap:H
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
               Idzeug:heist_1,to:Music,genre:Heist,spent
-              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1784264148
+              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1784275482
                 Peering,name:be0dab3303037ad2,friendly:Duo,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1784264148,sign:494b1d4bca38815f517c985eb5fbc6cd9155c6ca96769398dfadd7958f696033052ce509fb4d61ea9e6270a7cc37275981efbf29c90dc3643a4da1c55ef47907,genre:Heist
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1784264148,sign:fc085532167b52001edc60197d7521414e7dcf0d8b6614ab32084e3e7fd343989a569aac6d4612084e6397d668d24b7c292bbb0ae4db2a5537a6ea0bd0405c0d,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1784275482,sign:b978069c8efb3a378812ee9aabc0afd2270e14c922d68d3ba216ff869cf36fa9bf67ef666f5d399edde39ab6636433037e32b3749b7745f21c98f2aab9659309,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1784275482,sign:181b9942cdb93b3bed2eb5c8db35f76766dac06b32e59e3fec83965831da9f5517e8c6d6031e2df802b5d4b9098d898e357863b8bc07144517784cc6a42b3d0b,genre:Heist
             SocialGraph
-              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1784264148
+              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1784275482
         Account,of:Duo
           Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
             Peering,name:be0dab3303037ad2,friendly:Duo
-              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1784264148
+              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1784275482
                 Peering,name:4e09f34f5a6ab900,friendly:Uno,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1784264148,sign:fc085532167b52001edc60197d7521414e7dcf0d8b6614ab32084e3e7fd343989a569aac6d4612084e6397d668d24b7c292bbb0ae4db2a5537a6ea0bd0405c0d,genre:Heist
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1784264148,sign:494b1d4bca38815f517c985eb5fbc6cd9155c6ca96769398dfadd7958f696033052ce509fb4d61ea9e6270a7cc37275981efbf29c90dc3643a4da1c55ef47907,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1784275482,sign:181b9942cdb93b3bed2eb5c8db35f76766dac06b32e59e3fec83965831da9f5517e8c6d6031e2df802b5d4b9098d898e357863b8bc07144517784cc6a42b3d0b,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1784275482,sign:b978069c8efb3a378812ee9aabc0afd2270e14c922d68d3ba216ff869cf36fa9bf67ef666f5d399edde39ab6636433037e32b3749b7745f21c98f2aab9659309,genre:Heist
             SocialGraph
-              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1784264148
+              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1784275482
         Peering,name:4e09f34f5a6ab900,req=2,ok
           Pier,pub:be0dab3303037ad2,req=2,ok
             req:handshake,finished
@@ -227,6 +227,18 @@ Snap:H
             Record,id:a14602e5ca2e9bd0,title:Echo E,artist:Fourier Four,path:4t-mathrock/Fourier Four - Echo E.wav,bytes=960104,ext:wav,body_hash:a14602e5ca2e9bd00fe5f7d96e1f27bd1113071f99d18687f3a98a6c76f5b998
             Record,id:370d870166ffe45f,title:Query E,artist:Fourier Four,path:4t-mathrock/Fourier Four - Query E.wav,bytes=1088104,ext:wav,body_hash:370d870166ffe45f2e19b0bd1e8fdf765e0d208ac53fab66790ffe1e334c4a0e
           shop,pub:4e09f34f5a6ab900
+          radiostocking,pub:4e09f34f5a6ab900
+            Mag:Musica
+              Cloud,randomic:batch,created_at=100
+                Card,id:d71294dbbcd7b726,artist:DJ Oscillo,title:Cosmic C,path:DJ Oscillo - Cosmic C.wav,body_hash:d71294dbbcd7b726b29eb435b756e0663034b5e94639324b091fed01fbd6c1f7
+                Card,id:02cfcb9c15affeaf,artist:DJ Oscillo,title:Dorian D,path:DJ Oscillo - Dorian D.wav,body_hash:02cfcb9c15affeaf0321fb7f155f65782ba44e45767f2cea9beeac447a8784ef
+                Card,id:cf95c97b08584b92,artist:DJ Oscillo,title:Groove G,path:DJ Oscillo - Groove G.wav,body_hash:cf95c97b08584b92d262f214ddfdf536da5a18303b6e27ccb177c1c4088eb765
+                Card,id:d8a28ada85f2e851,artist:The Sines,title:Deep A,path:The Sines - Deep A.wav,body_hash:d8a28ada85f2e85151b446112e4d97db3bc6cc24c5ef335b2593be0d95df6b28
+                Card,id:95f3c03e41e9c007,artist:The Sines,title:High A,path:The Sines - High A.wav,body_hash:95f3c03e41e9c0070da6e6a35d5901ac37a8e0e18025e75c3ad8862326f97ef4
+                Card,id:902552d4a0b8b0c1,artist:The Sines,title:Middle A,path:The Sines - Middle A.wav,body_hash:902552d4a0b8b0c19cc6e6331097145ccc9be1d31b90ee9bc3691730c85043b8
+                Card,id:f9cb73180655432e,artist:Fourier Four,title:Tagged Truth,path:4t-mathrock/Fourier Four - Bogus Name.wav,body_hash:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d
+                Card,id:a14602e5ca2e9bd0,artist:Fourier Four,title:Echo E,path:4t-mathrock/Fourier Four - Echo E.wav,body_hash:a14602e5ca2e9bd00fe5f7d96e1f27bd1113071f99d18687f3a98a6c76f5b998
+                Card,id:370d870166ffe45f,artist:Fourier Four,title:Query E,path:4t-mathrock/Fourier Four - Query E.wav,body_hash:370d870166ffe45f2e19b0bd1e8fdf765e0d208ac53fab66790ffe1e334c4a0e
         MusuSelf,pub:be0dab3303037ad2
           stock,pub:be0dab3303037ad2
             Record,id:f9cb73180655432e,title:Tagged Truth,artist:Fourier Four,path:Fourier Four - Bogus Name.wav,ext:wav,bytes=8110,body_hash:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d,total
@@ -255,14 +267,3 @@ Snap:H
           stock,pub:4e09f34f5a6ab900.heist
         MusuThem,pub:be0dab3303037ad2.heist
           stock,pub:be0dab3303037ad2.heist
-        Mag:Musica
-          Cloud,randomic:batch,created_at=100
-            Card,id:d71294dbbcd7b726,artist:DJ Oscillo,title:Cosmic C,path:DJ Oscillo - Cosmic C.wav,body_hash:d71294dbbcd7b726b29eb435b756e0663034b5e94639324b091fed01fbd6c1f7
-            Card,id:02cfcb9c15affeaf,artist:DJ Oscillo,title:Dorian D,path:DJ Oscillo - Dorian D.wav,body_hash:02cfcb9c15affeaf0321fb7f155f65782ba44e45767f2cea9beeac447a8784ef
-            Card,id:cf95c97b08584b92,artist:DJ Oscillo,title:Groove G,path:DJ Oscillo - Groove G.wav,body_hash:cf95c97b08584b92d262f214ddfdf536da5a18303b6e27ccb177c1c4088eb765
-            Card,id:d8a28ada85f2e851,artist:The Sines,title:Deep A,path:The Sines - Deep A.wav,body_hash:d8a28ada85f2e85151b446112e4d97db3bc6cc24c5ef335b2593be0d95df6b28
-            Card,id:95f3c03e41e9c007,artist:The Sines,title:High A,path:The Sines - High A.wav,body_hash:95f3c03e41e9c0070da6e6a35d5901ac37a8e0e18025e75c3ad8862326f97ef4
-            Card,id:902552d4a0b8b0c1,artist:The Sines,title:Middle A,path:The Sines - Middle A.wav,body_hash:902552d4a0b8b0c19cc6e6331097145ccc9be1d31b90ee9bc3691730c85043b8
-            Card,id:f9cb73180655432e,artist:Fourier Four,title:Tagged Truth,path:4t-mathrock/Fourier Four - Bogus Name.wav,body_hash:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d
-            Card,id:a14602e5ca2e9bd0,artist:Fourier Four,title:Echo E,path:4t-mathrock/Fourier Four - Echo E.wav,body_hash:a14602e5ca2e9bd00fe5f7d96e1f27bd1113071f99d18687f3a98a6c76f5b998
-            Card,id:370d870166ffe45f,artist:Fourier Four,title:Query E,path:4t-mathrock/Fourier Four - Query E.wav,body_hash:370d870166ffe45f2e19b0bd1e8fdf765e0d208ac53fab66790ffe1e334c4a0e

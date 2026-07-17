@@ -1,0 +1,21 @@
+Snap:H
+  H:MusuFreeze,Run
+    A:MusuFreeze
+      self,round=2	{"mung":["age"]}
+      w:MusuFreeze
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+        Peering,name:Origin,req=2,ok
+          Pier,pub:Follower,req=2,ok
+            Ud,pubkey:Follower
+          active_transport,type:mock,open
+        Peering,name:Follower,req=3,ok
+          Pier,pub:Origin,req=2,ok
+            Ud,pubkey:Origin
+          active_transport,type:mock,open
+        MusuSelf,pub:Origin
+          stock,pub:Origin
+          radiostocking,pub:Origin
+            Mag:Musica

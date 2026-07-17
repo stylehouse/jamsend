@@ -10,10 +10,12 @@ Snap:H
           Dogear,of:live-t2
             curs,wild:Cloud,randomic:draw_one
               curs,wild:Card,id:t2
-        Mag:Musica
-          Cloud,randomic:draw_one,created_at=1000
-            Card,id:t1,artist:Auteur,title:One,path:crate/a/one.opus
-            Card,id:t2,artist:Bassbin,title:Two,path:crate/b/two.opus
-          Dogear,of:record-t1
-            curs,wild:Cloud,randomic:draw_one
-              curs,wild:Card,id:t1
+        MusuSelf,pub:Self
+          radiostocking,pub:Self
+            Mag:Musica
+              Cloud,randomic:draw_one,created_at=1000
+                Card,id:t1,artist:Auteur,title:One,path:crate/a/one.opus
+                Card,id:t2,artist:Bassbin,title:Two,path:crate/b/two.opus
+              Dogear,of:record-t1
+                curs,wild:Cloud,randomic:draw_one
+                  curs,wild:Card,id:t1

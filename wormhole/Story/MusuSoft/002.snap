@@ -41,12 +41,13 @@ Snap:H
               Body,seq:2,cid:938dd9f2ec627db677312339931e1b58afd0b3e10b76de01b300d936f78e5351	{"ref":{"buf":"Uint8Array()"}}
               Body,seq:3,cid:fc42c9b09c25eab1c9201e3870b41e19b585ee64fa5b8057f878f2848582d940	{"ref":{"buf":"Uint8Array()"}}
               Body,seq:4,cid:083b9dbe9be2e50a2047552429dd4599755f3d8560f0960b3ef8d43a96001c88	{"ref":{"buf":"Uint8Array()"}}
+          radiostocking,pub:Origin
+            Mag:Musica
+              Cloud,randomic:softdraw,created_at=1000
+                Card,id:d71294dbbcd7b726,artist:DJ Oscillo,title:Cosmic C,path:DJ Oscillo - Cosmic C.wav,body_hash:d71294dbbcd7b726b29eb435b756e0663034b5e94639324b091fed01fbd6c1f7
+                Card,id:02cfcb9c15affeaf,artist:DJ Oscillo,title:Dorian D,path:DJ Oscillo - Dorian D.wav,body_hash:02cfcb9c15affeaf0321fb7f155f65782ba44e45767f2cea9beeac447a8784ef
+                Card,id:cf95c97b08584b92,artist:DJ Oscillo,title:Groove G,path:DJ Oscillo - Groove G.wav,body_hash:cf95c97b08584b92d262f214ddfdf536da5a18303b6e27ccb177c1c4088eb765
         req:soft_census,finished
-        Mag:Musica
-          Cloud,randomic:softdraw,created_at=1000
-            Card,id:d71294dbbcd7b726,artist:DJ Oscillo,title:Cosmic C,path:DJ Oscillo - Cosmic C.wav,body_hash:d71294dbbcd7b726b29eb435b756e0663034b5e94639324b091fed01fbd6c1f7
-            Card,id:02cfcb9c15affeaf,artist:DJ Oscillo,title:Dorian D,path:DJ Oscillo - Dorian D.wav,body_hash:02cfcb9c15affeaf0321fb7f155f65782ba44e45767f2cea9beeac447a8784ef
-            Card,id:cf95c97b08584b92,artist:DJ Oscillo,title:Groove G,path:DJ Oscillo - Groove G.wav,body_hash:cf95c97b08584b92d262f214ddfdf536da5a18303b6e27ccb177c1c4088eb765
         MusuThem,pub:Origin
           stock,pub:Origin
             Mag:Musica

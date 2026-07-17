@@ -88,6 +88,13 @@ Each home carries the same shelves:
   shop/                   ← the LOADING ZONE — mid-transfer both directions, per-Pier bays inside (§2.4)
 ```
 
+**[built · green ×2, 2026-07-17 — all four shelves real]** `Ra_home_radiostocking(w, pub)` /
+ `Ra_home_the(w, pub)` (`Ghost/M/Ra.g`, beside `stock`/`shop`/`bay` via `Ra_home_shelf`) — every world-side
+  `%Mag` (all randomic draws today) re-homed off the floor onto the OWNER's `radiostocking/`; 12 Books
+   re-recorded, fixture diff = re-shelving only, mirror-side copies untouched (the wire locates a Mag by
+    `loc:['Mag']`, container-blind — proven again). `the/` has its door but no resident until the
+     written-zine rung mints one.
+
 A `%MusuThem` home is mostly descriptor — their Mags as I've learned them; the bytes I hold all sit on MY
  settled shelf with `from:`/`at:` provenance, so the two planes (§1) map onto the homes. **A card still resolves
   against MANY homes** — you browse the blogs and pull a record from anyone who holds it, a friend or a
@@ -133,7 +140,18 @@ The **shop** (`%MusuSelf,pub/shop/`) is the LOADING ZONE: what is mid-transfer, 
   **bay** (name provisional) — because the ask itself travels: a **`%Heistlet`** minted in F's bay is
    **Repli'd over to F** — *have you got these?* — F stamps have|held marks on it in place, and the
     annotated ask replicates back. The Heistlet is the heist manifest AND rung 7's inventory beacon worn
-     as one culture shape (§5A r7).
+     as one culture shape (§5A r7). **[built · green ×2, 2026-07-17 · Book MusuBay]** — `Ra_home_bay(w, me,
+      them)` (`Ghost/M/Ra.g`, beside `Ra_home_shop`) mints `bay,pub:<them>` under MY shop; `Heist_let_mint`
+       (`Ghost/M/Heist.g //#region soft`) mints the `%Heistlet,of:<hid>,pier:` with scalar `ask,id:` children
+        (a `%Heist` now takes an optional caller-supplied `hid` ident — the join key `of:` refers by; prod
+         derivation owed alongside the signer-setter); `Heist_let_ask` crosses it as a chunkless husk
+          (Repli_offer, both directions granted); the far side's `Heist_let_answer` stamps `have:1` (bytes
+           stand) | `held:1` (bufless husk) | NOTHING (unknown — silence is honest) on its mirror copy;
+            the annotated copy crosses BACK and `Heist_let_adopt` stamps the marks onto MY bay original —
+             the mirror is a landing zone, never the home. MusuBay also proves the multi-source `%Lead`
+              fan-in (one wish asked of TWO piers — Leads from both accumulate under the one soft Heist).
+               The Heistlet's `cursor · backoff` leg fields stay OWED (a later rung); a true two-world
+                return leg awaits a 2-runner test (the loopback proves the seams, not the distance).
 
 ```
 shop/
@@ -182,9 +200,9 @@ A Heist is a desire hardening into bytes; every phase is the SAME particle weari
               under MY home (§2.1 satisfied — nothing per-Pier on `w`); `Heist_flatten` removes from the job's own
                container (`job.c.up`), not `w`. Re-recorded green ×2: MusuHeist 22/22, MusuBreach 10/10, MusuSoft
                 6/6 — the fixture diff was ONLY the `Heist,` line moving from the floor to `MusuSelf,pub:<asker>` >
-                 `shop,pub:<asker>` (records/Leads/filings/took rows unchanged beneath). **Still owed:** the shop's
-                  per-Pier `bay,pub:<them>` sub-part + the `%Heistlet` (§2.4 above — the travelling ask), and the
-                   wet `%Original`/`%Record` quarantine moving UNDER the `%Heist` in the shop. MusuSoft proves the arc on the MusuVend loopback: origin
+                 `shop,pub:<asker>` (records/Leads/filings/took rows unchanged beneath). **Still owed:** the
+                  wet `%Original`/`%Record` quarantine moving UNDER the `%Heist` in the shop (the bay +
+                   `%Heistlet` landed 2026-07-17 — see the bay block above · Book MusuBay). MusuSoft proves the arc on the MusuVend loopback: origin
              censuses 3 real testsound tracks + publishes a `%Mag` over the granted wire → a wish matching one
               title's word finds exactly ONE `%Lead` → a wish matching nothing finds ZERO (the negative control)
                → condensing pulls exactly that one card whole while the two unchosen cards stay UNSPENT husks (the

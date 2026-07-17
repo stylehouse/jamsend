@@ -36,13 +36,14 @@ Snap:H
               Stream,name:audio,total=8,have=0
             Record,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
               Stream,name:audio,total=8,have=0
-        Mag:Musica
-          Cloud,randomic:draw_hon,created_at=1000
-            Card,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
-            Card,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
-          Cloud,randomic:draw_evil,created_at=1500
-            Card,id:evil,artist:Attacker,title:Trojan Draw,path:crate/x/evil.opus
-              req:sabotage,eternal,arm:pwn
+          radiostocking,pub:Origin
+            Mag:Musica
+              Cloud,randomic:draw_hon,created_at=1000
+                Card,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
+                Card,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
+              Cloud,randomic:draw_evil,created_at=1500
+                Card,id:evil,artist:Attacker,title:Trojan Draw,path:crate/x/evil.opus
+                  req:sabotage,eternal,arm:pwn
         MusuThem,pub:Follower.mirror
           stock,pub:Follower.mirror
             Mag:Musica

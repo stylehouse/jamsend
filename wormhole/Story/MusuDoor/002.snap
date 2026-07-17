@@ -17,4 +17,5 @@ Snap:H
           active_transport,type:mock,open
         MusuSelf,pub:Origin
           stock,pub:Origin
-        Mag:Musica
+          radiostocking,pub:Origin
+            Mag:Musica

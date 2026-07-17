@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Radiation(): string { return 'd3ea2c5547e5b216~g1' },
+    Ghostmeta_Ghost_Story_Radiation(): string { return 'b7af12f3ca26712c~g1' },
 
 // Radiation.g — the Ra* PRODUCT Books (rastock → racast → raterm; Radio_todo.md §3), in the
 //  Musuation/Swarmation mould: the file is the artifact; MusuRaStream is the first Book identity.
@@ -913,8 +913,11 @@ async MusuBuddy_flow(w) {
         let srecs = w.c.repli_src ? w.c.repli_src.o({ Record: 1 }) : []
         if (srecs.length >= 2) {
             w.c.stand_done = 1
-            let mag = w.i({ Mag: 'Musica' })
-            mag.c.up = w
+            // the DJ's magazine homes on ITS radiostocking shelf (a machine-drawn draw — GC fodder), not floating
+            //  flat on w (Radio_spec §2.2/§5A rung 1); pub is dj_pre, the identity repli_src holds the DJ's stock under.
+            let mag_shelf = this.Ra_home_radiostocking(w, w.c.dj_pre)
+            let mag = mag_shelf.i({ Mag: 'Musica' })
+            mag.c.up = mag_shelf
             w.c.origin_mag = mag
             let before = (w.c.tx.c.seq || 0)
             await this.Musica_stand(w, w.c.tx, w.c.dj_pre, w.c.lis_pre, mag, w.c.repli_src, 'draw_one', 1752400000000)

@@ -222,12 +222,14 @@
     .pi-nav-area:hover .pi-display-val { color: #c0d8e8 }
     .pi-nav-area:hover .pi-display-sc  { color: #7a9aaa }
 
+    /* line-height 1.5: the monospace _ sits at the very bottom of the line box, and
+       overflow:hidden clips it invisible without this descender room */
     .pi-display-val {
-        font-family: monospace; font-size: 0.82rem;
+        font-family: monospace; font-size: 0.84rem; line-height: 1.5;
         color: #9ab8cc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .pi-display-sc {
-        font-family: monospace; font-size: 0.72rem;
+        font-family: monospace; font-size: 0.74rem; line-height: 1.5;
         color: #5a7a8a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         flex: 1;
     }
@@ -235,7 +237,7 @@
 
     .pi-input {
         background: #0d0d14; border: 1px solid #333; border-radius: 3px;
-        color: #aaa; font-family: monospace; font-size: 0.76rem;
+        color: #aaa; font-family: monospace; font-size: 0.78rem; line-height: 1.5;
         padding: 0.2rem 0.35rem; outline: none;
     }
     .pi-input:focus { border-color: #446 }

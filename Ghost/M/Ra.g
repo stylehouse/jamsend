@@ -548,6 +548,32 @@ Ra_home_them(w, pub):
 //    home Ra_home_self returns the stock shelf of).  Returns the `shop` child, carrying pub like stock does.
 Ra_home_shop(w, pub):
     return this.Ra_home_shelf(w, w.oai({ MusuSelf: 1, pub: pub }), pub, 'shop')
+// Ra_home_bay — the PER-PIER sub-part of the loading zone (Radio_spec §2.4): a `bay,pub:<them>` corner UNDER
+//  the shop shelf, the Repli-able piece of MY loading zone for one relationship.  MY asks OF them live here
+//   (the %Heistlet,of:<hid> travelling manifest I mint + Repli over to them — "have you got these?"), and
+//    THEIR asks of me land here too (the serving side's %parked_want already homes per-Pier — the bay is its
+//     culture-side roof).  `me` is MY key (whose shop this is); `them` is the friend keyed by `pub`.  Lowercase
+//      `bay` mainkey like the sibling shelves; c.up stamped so a mint under it snaps + an upward walk reaches w.
+Ra_home_bay(w, me, them):
+    let shop = this.Ra_home_shop(w, me)
+    let bay = shop.oai({ bay: 1, pub: them })
+    bay.c.up = shop
+    return bay
+// Ra_home_radiostocking / Ra_home_the — the two MAGAZINE shelves beside stock|shop (Radio_spec §2.2/§2.3):
+//  where the %Mag zines home instead of floating flat on `w` (the last rung-1 homing violation — §5A rung 1).
+//   `radiostocking/` = the EPHEMERAL draws, machine-drawn handfuls that are GC fodder (every current mag is a
+//    randomic draw, so every converted mint lands here); `the/` = the DURABLE mags, the ones a `What/` review
+//     is written about, hence never dropped.  A mag graduates radiostocking → the the moment prose is written
+//      about a track it carries (the zine sense — see the/'s first-resident comment below).  Both are the
+//       ASKER/HOLDER's own shelf under `%MusuSelf,pub`, mirroring Ra_home_shop — the mag is MY publication, so
+//        it homes under MY home (§2.1 satisfied — nothing per-Pier floats on w).  Returns the shelf child.
+Ra_home_radiostocking(w, pub):
+    return this.Ra_home_shelf(w, w.oai({ MusuSelf: 1, pub: pub }), pub, 'radiostocking')
+// Ra_home_the — the durable-keeper shelf.  Its FIRST resident arrives with the written-zine rung (rung 2's
+//  `What/` prose promoting a draw into a keeper — Radio_spec §2.3); no hand-authored keeper mag exists yet, so
+//   nothing mints here today — the door stands ready for that rung, never fabricating a resident.
+Ra_home_the(w, pub):
+    return this.Ra_home_shelf(w, w.oai({ MusuSelf: 1, pub: pub }), pub, 'the')
 // Ra_home_shelf — the shared tail: home under w, a NAMED shelf (`stock`|`shop`) under the home, pub stamped
 //  on both (the home wears it as its identity; the shelf carries it so a Record's rec.c.up resolves pub).
 //   `name` is the shelf mainkey — the shelves are siblings under the one home, so a home carries both.

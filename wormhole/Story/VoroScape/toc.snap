@@ -33,7 +33,6 @@ story:VoroScape
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.049
-      sample=0.029,at=1784253114
       sample=0.018,at=1784253162
       sample=0.066,at=1784253283
       sample=0.139,at=1784253393
@@ -43,8 +42,8 @@ story:VoroScape
       sample=0.085,at=1784259580
       sample=0.016,at=1784271025
       sample=0.012,at=1784271473
+      sample=0.032,at=1784285145
     TimeTotal:step,avg=0.008
-      sample=0.005,at=1784253114
       sample=0.003,at=1784253162
       sample=0.011,at=1784253283
       sample=0.023,at=1784253393
@@ -54,6 +53,7 @@ story:VoroScape
       sample=0.014,at=1784259580
       sample=0.003,at=1784271025
       sample=0.002,at=1784271473
+      sample=0.005,at=1784285145
   step,dige:c61532ec59f1649a
   step=2,dige:949c6b72319bf5c4
   step=3,dige:356548407f1a0758

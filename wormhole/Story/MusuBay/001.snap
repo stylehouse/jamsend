@@ -1,0 +1,7 @@
+Snap:H
+  H:MusuBay,Run
+    A:MusuBay
+      self,round	{"mung":["age"]}
+      w:MusuBay
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

@@ -24,8 +24,10 @@ Snap:H
           see:a cursor healed itself across a rename — the named record moved yet the cursor followed the redirect and landed on its new identity
           see:the heal is self-describing — the cursor noted the redirect it followed from the old name to the new
           see:the redirect marker is what heals — an identical rename with no marker left the other cursor failing cleanly with nothing to follow
-        Mag:Musica
-          Cloud,randomic:draw_one,created_at=1000
-            Card,id:t1b,artist:Auteur,title:One,path:crate/a/one.opus
-            Renamed,key:id,from:t1,to:t1b,at=4000
-            Card,id:t2b,artist:Bassbin,title:Two,path:crate/b/two.opus
+        MusuSelf,pub:Self
+          radiostocking,pub:Self
+            Mag:Musica
+              Cloud,randomic:draw_one,created_at=1000
+                Card,id:t1b,artist:Auteur,title:One,path:crate/a/one.opus
+                Renamed,key:id,from:t1,to:t1b,at=4000
+                Card,id:t2b,artist:Bassbin,title:Two,path:crate/b/two.opus

@@ -5,39 +5,39 @@ story:MusuBuddy
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=1.168
-      sample=1.277,at=1784058246
-      sample=1.277,at=1784058247
-      sample=1.277,at=1784058248
-      sample=1.255,at=1784058277
-      sample=1.07,at=1784058306
+    TimeTotal:beliefs,avg=1.242
       sample=1.115,at=1784260893
       sample=1.115,at=1784260909
       sample=1.009,at=1784260940
       sample=1.231,at=1784260974
       sample=1.053,at=1784264548
-    TimeTotal:step,avg=0.083
-      sample=0.091,at=1784058246
-      sample=0.091,at=1784058247
-      sample=0.091,at=1784058248
-      sample=0.09,at=1784058277
-      sample=0.076,at=1784058306
+      sample=1.476,at=1784275697
+      sample=1.476,at=1784275724
+      sample=1.476,at=1784275725
+      sample=1.421,at=1784275753
+      sample=1.045,at=1784275789
+    TimeTotal:step,avg=0.089
       sample=0.08,at=1784260893
       sample=0.08,at=1784260909
       sample=0.072,at=1784260940
       sample=0.088,at=1784260974
       sample=0.075,at=1784264548
+      sample=0.105,at=1784275697
+      sample=0.105,at=1784275724
+      sample=0.105,at=1784275725
+      sample=0.101,at=1784275753
+      sample=0.075,at=1784275789
   step,dige:b3d94b4565d8f9d0
   step=2,dige:77b098869d1d7296
   step=3,dige:60bdc73faa37e8c1
-  step=4,dige:cfd1fce1ea4b68d0
-  step=5,dige:e3273e078644048e
-  step=6,dige:65e31637e6739d31
-  step=7,dige:832f673e76539dff
-  step=8,dige:ce2e77e0cf9a3303
-  step=9,dige:70b8656e1289e0f1
-  step=10,dige:371976471347a58f
-  step=11,dige:3dd977d56c9d2cd9
-  step=12,dige:1d9759736ffdb862
-  step=13,dige:00a68bc86811d73d
-  step=14,dige:bd4fa37f0cc8ee2d
+  step=4,dige:b17e60a1d0dbb2b1
+  step=5,dige:78f16e85a209a7cd
+  step=6,dige:4c54baf3f925807b
+  step=7,dige:fd8b99108e8d333a
+  step=8,dige:391ff82c67db702f
+  step=9,dige:0b7440b51c0618e8
+  step=10,dige:67ce8e59cf0c16c7
+  step=11,dige:9e7b1df528e87d14
+  step=12,dige:ca7b69ebb28b5cb2
+  step=13,dige:90b97a6df1243fcd
+  step=14,dige:eb6facd33d8b74ca

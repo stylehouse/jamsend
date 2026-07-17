@@ -196,6 +196,9 @@ Heist_job(w, at, filings, opts):
     let home = (opts && opts.home) ? opts.home : w
     let job = home.i({ Heist: 1, at: at })
     job.c.up = home
+    // OPTIONAL IDENT (§2.4): the hard job carries `hid` the same way the soft wish does — stamped ONLY when
+    //  supplied (an undefined would brand the snap {"undef":["hid"]}); a %Heistlet,of:<hid> refers by it.
+    if (opts && opts.hid) job.sc.hid = opts.hid
     if (!opts || !opts.believe_directories) job.sc.disbelieve_directories = 1
     for (const f of (filings || [])) {
         let fl = job.i({ filing: 1, artist: f.artist, genre: f.genre })
@@ -555,9 +558,14 @@ async Heist_flatten(w, job, mir):
 //    is [{key, value}, …] — loose filters (an artist hint, a grade) stamped as scalar children so they SNAP
 //     and ride the ask; a Book pins them.  Returns the soft %Heist.  The wish carries no commas by the
 //      caller's care (a comma tips encode into its JSON fallback — the %see peel rule, same discipline).
-Heist_wish(w, home, sentence, constraints):
+//  OPTIONAL IDENT (§2.4, the travelling ask): `opts.hid` stamps `heist.sc.hid` — a stable identity a
+//   %Heistlet,of:<hid> refers back to across a bay (the many:1 `of` law).  Stamped ONLY when supplied (an
+//    undefined hid would brand the snap `{"undef":["hid"]}` — a mint bug); a Book pins a deterministic hid,
+//     the compat callers pass none and the soft Heist stays hid-less exactly as before.
+Heist_wish(w, home, sentence, constraints, opts):
     let heist = home.i({ Heist: 1, wish: sentence })
     heist.c.up = home
+    if (opts && opts.hid) heist.sc.hid = opts.hid
     for (const con of (constraints || [])) {
         let c = heist.i({ constraint: 1, key: con.key, value: con.value })
         c.c.up = heist
@@ -641,6 +649,92 @@ Heist_condense(heist, lead, artist, genre):
     fl.c.up = heist
     heist.bump()
     return heist
+
+// ─── the %Heistlet: the travelling ask + this source's leg (§2.4 — the per-Pier bay's Repli-able manifest) ───
+// The condense above hardens a wish against ONE chosen Lead the CALLER already knows can fulfil.  But a
+//  Lead only says a peer's CATALOG matched — before committing a pull, the ask itself can TRAVEL to that peer
+//   to confirm which ids they can actually serve NOW: a %Heistlet minted in that Pier's bay is Repli'd over,
+//    the far side stamps have|held marks on it IN PLACE, and the annotated ask replicates back.  It is the
+//     heist manifest AND rung 7's inventory beacon worn as one culture shape.  Four verbs — mint · ask ·
+//      answer · adopt — and the marks ride as booleans (1 or ABSENT, never false/0 — a clean scalar snap).
+
+// Heist_let_mint — CHOOSING a Lead's pier mints the travelling ask in THAT pier's bay: %Heistlet,of:<hid>,
+//  pier:<lead pier> under `bay` (Ra_home_bay(w, <me>, <them>)), with one scalar-only `ask,id:<card id>` child
+//   per asked id.  `of` refers to the heist by its hid (the many:1 referring-particle law — the Heistlet wears
+//    its OWN mainkey carrying the pointer, never a second %Heist impersonating the operation).  The ask
+//     children MUST be scalar-only so they cross a Repli_offer HUSK intact (a husk skips only binary-bearing
+//      children; a bare `ask,id:` has none, so the whole manifest rides one frame).  `ids` is the array of
+//       card ids to ask about — a Book pins the wanted id + a negative-control id the far side lacks.  hid
+//        rides off the heist (Heist_wish/Heist_job stamped it) or the caller's fallback.  Returns the Heistlet.
+Heist_let_mint(w, heist, lead, bay, ids):
+    let hid = (heist && heist.sc.hid) ? heist.sc.hid : (heist && heist.sc.wish) ? heist.sc.wish : 'heist'
+    let letc = bay.i({ Heistlet: 1, of: hid, pier: lead.sc.pier })
+    letc.c.up = bay
+    // the Heistlet locates on the wire by (Heistlet, of, pier) — WITHOUT this the default loc is ['Heistlet']
+    //  alone (`of` is not an id-ish key — Repli_loc_keys), so a second Heistlet would upsert onto the first at
+    //   the mirror.  A runtime .c hint (Repli reads it, honoured by any offer of this tree); never snaps.
+    letc.c.repli_loc = ['Heistlet', 'of', 'pier']
+    for (const id of (ids || [])) {
+        let ask = letc.i({ ask: 1, id: id })
+        ask.c.up = letc
+    }
+    letc.bump()
+    return letc
+
+// Heist_let_ask — the Heistlet crosses the granted wire to its pier, EXACTLY as Heist_ask crosses a wish:
+//  Repli_offer ships the head + its scalar-only `ask,id:` children as one chunkless husk (consent-gated inside
+//   Repli_offer).  Returns did-it-cross (false when the grant refuses — a bay to a peer who has not granted
+//    you never travels).  The far side reads the merged Heistlet off its mirror and ANSWERS in place.
+async Heist_let_ask(w, tx, from, to, letc):
+    return await this.Repli_offer(w, tx, from, to, letc)
+
+// Heist_let_answer — the FAR side answers the travelling ask IN PLACE on its mirror copy: for each `ask,id:`
+//  child, probe `lib` (the far side's own stock — where its %Record holdings stand) and stamp the verdict on
+//   the ask child.  THREE honest outcomes, booleans as 1-or-ABSENT:
+//    have:1  — a %Record,id stands AND its bytes stand (its first chunk carries bytes — Repli_chunk_at reads a
+//               %Body|%Preview|%Stream seq 0 with a buf): I can serve this now.
+//    held:1  — a %Record,id stands but is a HUSK (no chunk bytes — a card mirrored bufless): I KNOW it but
+//               cannot serve its bytes from here.
+//    (nothing) — no %Record,id at all: silence is honest (the pattern Heist_match set — the search never
+//                 flatters; an unknown id gets no mark, not a false).
+//  Idempotent: a re-answer re-reads live truth and re-stamps the same marks (a mark already 1 stays 1).
+Heist_let_answer(w, letc, lib):
+    if (!letc || !lib) return letc
+    for (const ask of letc.o({ ask: 1 })) {
+        let rec = lib.o({ Record: 1, id: ask.sc.id })[0]
+        if (!rec) continue
+        // "bytes stand" HONESTLY: the first chunk particle (any mainkey — %Body/%Preview/%Stream share the seq
+        //  space) carries its buf.  A census %Record has %Body,seq:0 with a buf; a husk mirror card has the
+        //   %Record head but no chunk children, so Repli_chunk_at returns null → held.
+        if (this.Repli_chunk_at(rec, 0)) {
+            ask.sc.have = 1
+        } else {
+            ask.sc.held = 1
+        }
+        ask.bump()
+    }
+    letc.bump()
+    return letc
+
+// Heist_let_adopt — the RETURN LEG lands: the far side Repli'd its annotated Heistlet BACK over the reverse
+//  wire, and the marked copy sits in MY per-Pier RX mirror (`letMirror`).  Locate MY ORIGINAL Heistlet in MY
+//   `bay` (by of+pier — the same identity) and copy the have|held marks from the mirror copy onto the
+//    original's matching `ask,id:` children.  The mirror is a LANDING ZONE, never the home — adoption is the
+//     explicit seam that moves the answer onto the ask I own.  Idempotent (re-adopt re-copies the same marks);
+//      an unmatched original or a mirror `ask` without a home ask is skipped silently.  Returns the original.
+Heist_let_adopt(w, heist, bay, letMirror):
+    if (!letMirror || !bay) return null
+    let mine = bay.o({ Heistlet: 1, of: letMirror.sc.of, pier: letMirror.sc.pier })[0]
+    if (!mine) return null
+    for (const mask of letMirror.o({ ask: 1 })) {
+        let own = mine.o({ ask: 1, id: mask.sc.id })[0]
+        if (!own) continue
+        if (mask.sc.have) own.sc.have = 1
+        if (mask.sc.held) own.sc.held = 1
+        own.bump()
+    }
+    mine.bump()
+    return mine
 //#endregion
 
 //#region newlyadded — probation as metadata: the log that shuffles new music into the listening diet
@@ -928,11 +1022,20 @@ async Musica_recast_offer(w, tx, from, to, mag, lib, randomic, created_at):
     }
     // neus + in-place updates cross as a whole-mag upsert (a goner is simply absent from this fragment).
     await this.Repli_offer(w, tx, from, to, mag)
+    // CONSENT-GATE the goner deletes (adversarial review 2026-07-14): Repli_offer above self-gates on
+    //  Repli_allowed, but Repli_send_lines is the raw primitive and gates nothing — a revoked follower
+    //   whose grant was pulled would still have an op:delete cross and MUTATE its frozen mirror (the wire
+    //    refused to ADD but would still DELETE — the wrong direction of trust).  Ask the hook exactly as
+    //     Repli_offer does (peer=to the follower, at=from the origin); refused → emit no delete frame.  The
+    //      receipt lists (gone_records|gone_clouds) still report the ORIGIN's honest local census diff — the
+    //       Musica_fold already dropped these locally — but nothing crosses the closed gate.
+    let allowed = this.Repli_allowed(w, to, from)
     // goner CLOUDS: a whole batch forgotten → one cloud-level delete (drops its records with it at the follower).
     let gone_clouds = []
     for (const r of Object.keys(cloud_before)) {
         if (cloud_after[r]) continue
         gone_clouds.push(r)
+        if (!allowed) continue
         let lines = [
             this.enL({ d: 0, stringies: { Mag: 'Musica' }, objecties: { loc: ['Mag'] } }),
             this.enL({ d: 1, stringies: { Cloud: 1, randomic: r }, objecties: { loc: ['Cloud', 'randomic'], op: 'delete' } })
@@ -946,6 +1049,7 @@ async Musica_recast_offer(w, tx, from, to, mag, lib, randomic, created_at):
         let r = rec_before[id]
         if (rec_after[id] || !cloud_after[r]) continue
         gone_records.push(id)
+        if (!allowed) continue
         let lines = [
             this.enL({ d: 0, stringies: { Mag: 'Musica' }, objecties: { loc: ['Mag'] } }),
             this.enL({ d: 1, stringies: { Cloud: 1, randomic: r }, objecties: { loc: ['Cloud', 'randomic'] } }),

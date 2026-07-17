@@ -52,13 +52,14 @@ Snap:H
             Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
             Record,id:t1,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
             Record,id:t2,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
-        Mag:Musica
-          Cloud,randomic:dgbl8pe,created_at=1000
-            Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-            Card,id:t1,artist:Bassbin,title:Low Tide,path:crate/b/Bassbin - Low Draw.opus
-            Card,id:t2,artist:Choral,title:High Tide,path:crate/c/Choral - High Draw.opus
-            Renamed,key:title,from:Low Draw,to:Low Tide,at=5000
-            Renamed,key:title,from:High Draw,to:High Tide,at=5001
+          radiostocking,pub:Origin
+            Mag:Musica
+              Cloud,randomic:dgbl8pe,created_at=1000
+                Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+                Card,id:t1,artist:Bassbin,title:Low Tide,path:crate/b/Bassbin - Low Draw.opus
+                Card,id:t2,artist:Choral,title:High Tide,path:crate/c/Choral - High Draw.opus
+                Renamed,key:title,from:Low Draw,to:Low Tide,at=5000
+                Renamed,key:title,from:High Draw,to:High Tide,at=5001
         MusuThem,pub:Follower.mirror
           stock,pub:Follower.mirror
             Mag:Musica
