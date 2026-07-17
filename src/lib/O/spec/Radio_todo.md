@@ -90,7 +90,7 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
         different manifests → different signatures, so a swarm cannot dedup/verify across independent transcodes.
          The content-address that a signature vouches for must be the ORIGINAL master's cids (deterministic), not
           each grade's — fold this into the rung-7 wiring design (the `%Original` of §2.4 rung 3 is the anchor).
- **Still owed — ONLY the origin-signature WIRING** (the crypto is proven, the plumbing isn't): carry `sig` + `by`
+ **Still owed — ONLY the origin-signature WIRING** `[RUNG7-WIRE]` (the crypto is proven, the plumbing isn't): carry `sig` + `by`
   in the `.jam` header / the offer husk and verify at the offer door before any pull — promote
    `MusuBreach_sign/verify` to `Ra_*` in `Ghost/M/Ra.g`, keyed on the MASTER's cids per the finding above. Left
     designed for eyes-on (it touches the live trust path — don't rewire core unattended). The whole rung-0 fixture

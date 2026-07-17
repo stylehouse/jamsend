@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Voronation(): string { return 'a793373e1f6bf9ba~g1' },
+    Ghostmeta_Ghost_Story_Voronation(): string { return '19b605e62bdd580c~g1' },
 
 
 //#region radio — VoroRadio: the tuner PROVEN (📻 drift as a deterministic Story Book)
@@ -154,17 +154,20 @@ async VoroClinic_drive(w, req) {
 },
 // two folded libraries (container folds via Voro_crushable) + one gang of noisy leaves (gang-fold);
 //  deterministic, so the crush verdict is a pure function of this world — fixtures byte-stable.
+//   Tracks carry VoroScape's musical sprinkle (hashed off the title — still pure): a %year, %live
+//    on ~1/2, %remaster on ~1/3, so the Clinic exercises the CROSS-LEVEL grasp (G1: a track's
+//     facts must never read as artist facts) and the absence blurs, not just a bare title list.
 VoroClinic_seed(w) {
     let a1 = w.i({ Artist: 1, name: 'Alpha' })
-    a1.i({ Track: 1, title: 'a1' })
-    a1.i({ Track: 1, title: 'a2' })
-    a1.i({ Track: 1, title: 'a3' })
-    a1.i({ Track: 1, title: 'a4' })
+    this.VoroScape_track(a1, 'a1')
+    this.VoroScape_track(a1, 'a2')
+    this.VoroScape_track(a1, 'a3')
+    this.VoroScape_track(a1, 'a4')
     let a2 = w.i({ Artist: 1, name: 'Beta' })
-    a2.i({ Track: 1, title: 'b1' })
-    a2.i({ Track: 1, title: 'b2' })
-    a2.i({ Track: 1, title: 'b3' })
-    a2.i({ Track: 1, title: 'b4' })
+    this.VoroScape_track(a2, 'b1')
+    this.VoroScape_track(a2, 'b2')
+    this.VoroScape_track(a2, 'b3')
+    this.VoroScape_track(a2, 'b4')
     for (let i = 0; i < 4; i++) w.i({ witnessed: 'w' + i })
 
 },
@@ -442,7 +445,9 @@ async VoroScape_drive(w, req) {
 //   ride inside it (a pane's interior).  A thin shelf — the growth beats thicken it.
 VoroScape_library(w) {
     let moon = w.i({ Artist: 1, name: 'Moonlit' })
-    this.VoroScape_track(moon, 'Tide')
+    let tide = this.VoroScape_track(moon, 'Tide')
+    let spot = this.VoroScape_section(tide, 'the-spot', 3, 6)
+    this.VoroScape_section(spot, 'cymbal', 4, 5)
     this.VoroScape_track(moon, 'Halo')
     let fern = w.i({ Artist: 1, name: 'Fernway' })
     this.VoroScape_track(fern, 'Root')
@@ -461,7 +466,15 @@ VoroScape_track(artist, title) {
     sc.year = years[hsh % 3]
     if ((Math.floor(hsh / 4)) % 2 === 0) sc.live = 1
     if (hsh % 3 === 0) sc.remaster = 1
-    artist.i(sc)
+    return artist.i(sc)
+
+},
+// give a song real DEPTH — a nested %What time-region (a section, and a lick INSIDE it) — so the
+//  scape carries a genuine Track/What/What C** for the crush to fold into nested craters (the
+//   human, 2026-07-15: "add a Track/What:the-spot start_at:3 end_at:6 / What:cymbal start_at:4
+//    end_at:5").  %What:<name> — the mainkey carries the section name; start_at|end_at are its span.
+VoroScape_section(host, name, start_at, end_at) {
+    return host.i({ What: name, start_at: start_at, end_at: end_at })
 
 },
 // beat 3 — the catalogs deepen: five new tracks land across the SAME three panes.  No new cells —

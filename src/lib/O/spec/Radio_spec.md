@@ -64,15 +64,34 @@ Everything is a particle (`C`/TheC). Persisted scalar strings ride `.sc`; runtim
    decision that must NEVER be garbage-collected (absence is ambiguous; a tombstone is not).
 
 The tell you broke this is the MusuBuddy smell — a `Mag:Musica`, a `Kept`, a `Dogear`, telemetry rows all
- lying flat on `w` where nothing says whose they are. Each belongs under a `Peering` or a `Pier`.
+ lying flat on `w` where nothing says whose they are. Each belongs under a `Peering` or a `Pier` — for
+  music, under its `%MusuSelf|%MusuThem` home (§2.2).
 
-### 2.2 The Ray — a peer's shelf of magazines
+### 2.2 The Musu homes — `%MusuSelf` | `%MusuThem` *(re-drawn 2026-07-17 — supersedes the Ray; design, unbuilt)*
 
-Each `Pier` carries a **`Ray`**: that peer's shelf of `%Mag`s for you to browse. `Ray,self` (under your
- `Peering`) is **you** — the same shape, the same mags, but the UI makes it seem you own it. A `Ray` is
-  where the music culture's stuff lives; you browse a friend's `Ray` exactly as you browse your own. **A
-   card resolves against MANY Rays** — you browse the blogs and pull a record from anyone who holds it, a
-    friend or a stranger or yourself.
+*(Notation here: `/` nests — `A/B` is a child B under A; `|` alternates — `%Preview|Stream` is "a
+ `%Preview` or a `%Stream`".)*
+
+`%Library` and the `Ray` dissolve into **one music home per identity**: shallow, so equipment never digs
+ a `Peering/Pier/something,deep` path to reach the shelf it wants, yet still obeying the homing law (§2.1)
+  because each home wears the `pub`:
+
+- **`%MusuSelf,pub:<me>`** — my music home (correlates to `Peering,name:<self>`).
+- **`%MusuThem,pub:<them>`** — a friend's music as I hold it (correlates to `Pier,pub:<them>`); one per key.
+
+Each home carries the same shelves:
+
+```
+%MusuSelf,pub:<me>
+  radiostocking/%Mag…     ← the ephemeral draws — machine-drawn handfuls, GC fodder
+  the/%Mag…               ← the durable Mags — tracks written about, hence never dropped
+  shop/                   ← where music is handled, weighed and transferred (§2.4)
+```
+
+A `%MusuThem` home is mostly descriptor — their Mags as I've learned them; the bytes I hold all sit in MY
+ shop with `from:`/`at:` provenance, so the two planes (§1) map onto the homes. **A card still resolves
+  against MANY homes** — you browse the blogs and pull a record from anyone who holds it, a friend or a
+   stranger or yourself.
 
 ### 2.3 The magazine stack — the GC-able unit
 
@@ -80,33 +99,57 @@ Each `Pier` carries a **`Ray`**: that peer's shelf of `%Mag`s for you to browse.
  keep it and it names what to hold.
 
 ```
-Ray  (per Pier, or Ray,self)
+%MusuSelf,pub / radiostocking|the      ← the home's shelves (§2.2): ephemeral draws | durable keepers
   %Mag:Musica                          ← a magazine — music, OR want-of-music (symmetric)
     %Cloud,randomic:<draw>,created_at   ← one draw's arrivals; randomic present ⇒ machine-drawn
       %Card,id,artist,title,album,path,body_hash    ← a catalog LISTING (a referring particle)
 ```
 
-- a **`%Mag`** carries **music or want-of-music** — one shape, either polarity. `Ray,self/Mag:marauding`
-   is a durable **wishlist**: it logs what you're pulling, and it persists and resumes a heist across a
-    restart.
+- a **`%Mag`** carries **music or want-of-music** — one shape, either polarity. The want-polarity now has
+   its own name: a **`%Grasp`** — the chosen handful of remote tracks|directories, a durable **wishlist**
+    that logs what you're pulling and persists|resumes across a restart; a **`%Heist`** is a Grasp's
+     *actively-downloading* leg (transient, Mag-shaped — a manifest of cards that dies on land).
+- **`Mag|Grasp|Heist` are Waft-based** — any of them can carry a `What/` doc anywhere inside; writing
+   about a track is exactly what promotes its Mag into `the/` (durable, never dropped).
 - a **`%Cloud`** with `randomic` present is a machine-drawn handful — a random meander over a collection
    never fully enumerated; omit `randomic` and the cloud is **curated** (hand-kept).
 - a **`%Card`** is a *listing*, never a holding: id + metadata + `body_hash`, minus the bytes. The card is
    a **referring particle** wearing its own mainkey; the shared `id` is the free join to the holding.
 
-### 2.4 The holding + content-addressing — where the bytes live
+### 2.4 The shop — where the bytes live *(re-drawn 2026-07-17; as-built today = `%Library,pier:` + census `%Record/%Body` — rung 3 is this re-draw)*
 
-A **`%Record`** is a *holding*: it has, or materialises, the chunks. **`%Library` dissolves** — now that
- `%Mag` is the unit, a `%Mag` you hold links straight to the radiostock; waking a card loads `%Record` +
-  `%Preview`, and `%Stream` only in the live copy.
+The **shop** (`%MusuSelf,pub/shop/`) is where music is handled, weighed and transferred — the holdings
+ counter. Three byte-roles, three mainkeys (identity-per-shelf: a downloaded grade never impersonates the
+  master), plus the two Mag-shaped movers:
 
-- **`%Original`** — the whole-file master. It *wants to be* the original (flac) and will **settle for and
-   encode down to** whatever grade a want asks. Every lesser grade is derived from it; it is the one source
-    of truth.
-- **`%Preview,seq`** (const 32) / **`%Stream,seq`** — the chunk children, positioned by `(enid, seq)` and
-   now each carrying its own **`cid`** (a full-sha256 content-address of its bytes).
+```
+shop/
+  %Original,id:<enid>               ← THE master — held where it is GIVEN as such; never travels
+     .sc: path,body_hash,sr,nch,…    ← whole-source identity + baked loudness (lufs/gain/preskip)
+     %Chunk,seq  .sc: buf,cid       ← the source bytes sliced (today's %Body, re-homed)
+  %Record,id:<enid>                 ← the streaming materialisation — stands on its OWN, beside (never
+     %Preview,seq  .sc: buf,cid        under) an %Original: a pull lands one of THESE, derived from
+     %Stream,seq   .sc: buf,cid        someone's master, and it may never see that master at all
+  %Blob,id:<enid>,grade:ogg128      ← a whole-file export grade   .sc: path (one real file on a nav)
+  %Grasp…                           ← the chosen handful of remote tracks|directories (persists, §2.3)
+  %Heist,at:<pier>                  ← a Grasp's actively-downloading leg (transient, §2.3)
+```
+
+- **`%Original`** *wants to be* the original (flac) and **encodes down to** whatever grade a want asks —
+   derive lazily, cache per grade, never upsample. A download never *becomes* an `%Original`: masterhood
+    is where the file is given, not an upgrade a copy can earn.
+- **`%Record/%Preview|Stream`** keeps exactly today's shape — ONE continuous opus encode (`opus128`, const
+   32 preview window + on-demand continuation), raw length-prefixed packets: the head FACTS
+    (`preskip/sr/nch`) ride the card, and no tags ride in-band (metadata is the `%Card`'s job).
+- **`%Blob,grade:`** names codec+bitrate (`ogg128`, `flac`) — the `ogg128` export is where real
+   OpusHead+OpusTags pages finally get written (from card metadata): Androids still play `.ogg` more
+    happily than `.opus`, so phone-sync ships Ogg. One real file on a nav, not chunk particles.
+- every chunk (`%Chunk|Preview|Stream,seq`) carries its **`cid`** (full-sha256 content-address of its
+   bytes); the signature (rung 7) keys on the **`%Original`'s** cids — the one deterministic manifest.
 - **`radiostock`** = `<ts>-<pub>-<enid>`; `enid` = `Ra_enid`, today a sha256 over the WHOLE source's raw
    bytes (first 16 hex). `body_hash` (whole-file sha256) rides the card.
+- the `%Original`/grade-dispatch verbs get their own ghost — **`Ghost/M/Orig.g`** — keeping the pipeline
+   (`Ra.g`) and the culture (`Heist.g`) files from swallowing the new layer.
 
 **[P0 — the keystone] Per-chunk content-addressing — the primitive now lands** *(2026-07-15)*. Every chunk
  carries a durable **`cid`** (full sha256 of its bytes): minted where chunks mint (`Ra_record_from` for
@@ -122,9 +165,10 @@ A **`%Record`** is a *holding*: it has, or materialises, the chunks. **`%Library
 
 ### 2.5 The Rack — the super-Mag of interests
 
-**`%Rack`** (name provisional) is the super-`%Mag` at `Peering/*`: it tracks *every* `%Mag` a `Peering` has
- an interest in — its own and its friends'. It is **loaded on init** and is the root of what to re-home and
-  re-subscribe when the app wakes.
+**`%Rack`** (name provisional) is the super-`%Mag` at the `%MusuSelf` home (was `Peering/*`): it tracks
+ *every* `%Mag` a `Peering` has an interest in — its own and its friends'. It is **loaded on init** and is
+  the root of what to re-home and re-subscribe when the app wakes. *(Open: the `radiostocking|the` shelves
+   may absorb this job — the shelves ARE the interest list.)*
 
 ### 2.6 The audio runtime shapes
 
@@ -159,8 +203,8 @@ The culture spine wraps the audio spine: the outer loop moves music *between peo
 ### 3.1 The outer loop — music between people
 
 ```
-peer's collection ─▶ publish a %Mag ─▶ browse a Ray of Mags ─▶ heist ─▶ land ─▶ persist ─▶ resume
-   (their disk)       cards, not bytes     over their Pier      offer     into your   %Rack /    marauding
+peer's collection ─▶ publish a %Mag ─▶ browse a home of Mags ─▶ heist ─▶ land ─▶ persist ─▶ resume
+   (their disk)       cards, not bytes     over their Pier      offer     into your   %Rack /    a %Grasp
                                                               manifest    holdings    Berth      picks up
                                                                 pull
                                                                   │
@@ -169,8 +213,8 @@ peer's collection ─▶ publish a %Mag ─▶ browse a Ray of Mags ─▶ heist
 
 1. **Publish** — a holder folds its collection into a `%Mag:Musica` (`Musica_publish`; `Musica_fold` is the
    pure one-brain that serves the disk publish AND the wire offer).
-2. **Browse** — you read a peer's `Ray` of `%Mag`s over their `Pier`. Cards, not bytes; a card resolves
-   against whoever holds it.
+2. **Browse** — you read a peer's home of `%Mag`s (`%MusuThem`, §2.2) over their `Pier`. Cards, not
+   bytes; a card resolves against whoever holds it.
 3. **Heist** — the pull, a transient `%Heist,at:<pier>` that exists as briefly as possible:
    - **offer** (`Heist_offer_all`) — the source casts its catalog as chunkless husks: a pointer to every
       file you'd want, no `%buf` opened.
@@ -181,7 +225,7 @@ peer's collection ─▶ publish a %Mag ─▶ browse a Ray of Mags ─▶ heist
    - **land** (`Heist_land`) — assemble, verify, catalogue into your holdings; the `%Heist` then flattens
       (`Heist_flatten`).
 4. **Persist** — the `%Rack` and the **Berth** home what you kept so it survives a restart (§5A rung 5).
-5. **Resume** — `Ray,self/Mag:marauding` is the durable wishlist; a heist persists against it and resumes.
+5. **Resume** — a `%Grasp` is the durable wishlist; its `%Heist` persists against it and resumes.
 
 ### 3.2 The inner pipeline — arrived bytes become sound
 
@@ -264,7 +308,8 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
 
 **1 — Identity homing** *(the multi-Pier law, §2.1)* **[todo]** — every per-peer particle under
  `Peering,name:<self>` or `Pier,pub:<them>`; drop the finished transient `buddy_*` reqs at a safe seam;
-  nest the loose telemetry rows. *(The MusuBuddy snap is the smell that names the work.)*
+  nest the loose telemetry rows. The music shape of this law is the `%MusuSelf|%MusuThem` homes (§2.2).
+   *(The MusuBuddy snap is the smell that names the work.)*
 
 **2 — Magazine** *(Book: MusuHeist · `Ghost/M/Heist.g`)* **[built · green ×2, 2026-07-14]** —
  `%Mag:Musica > %Cloud,randomic > %Card`; `Musica_publish/fold/cards/forget`; the `%Card` mainkey split
@@ -272,9 +317,12 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
    the Cloud layer alive across replication. The browse **cursor arc** (`%Dogear` — resolve, heal a
     `%Renamed`, resume a berthed browse) is green ×2 alongside.
 
-**3 — Holdings + Library dissolve** **[todo]** — a `%Mag` links to the radiostock; waking a card loads
- `%Record` + `%Preview`, `%Stream` only in the live copy; `%Library` dissolves; `%Original` is the master
-  every grade derives from. *(Designed this session, §2.4; unbuilt.)*
+**3 — Holdings + Library dissolve** **[todo]** — `%Library` (and the `Ray`) dissolve into the
+ `%MusuSelf|%MusuThem` homes (§2.2); the `shop/` holds `%Original/%Chunk` (the master — today's census
+  `%Record/%Body` re-homed), `%Record/%Preview|Stream` standing on its own beside it (a pull lands a
+   Record — derived, never a master), and `%Blob,grade:` export grades (`ogg128` for phone-sync). Waking
+    a card loads the `%Record`; `%Stream` only in the live copy. New ghost `Orig.g` groups the
+     `%Original`/grade-dispatch verbs. *(Re-drawn 2026-07-17, §2.2+§2.4; unbuilt.)*
 
 **4 — Heist** *(`Ghost/M/Heist.g`)* **[built · gate-owed]** — offer → manifest → pull → land; whole-file
  `body_hash` verified at land; cp-landing rulings (copy not rename; non-audio siblings never copy; dedup
@@ -287,8 +335,10 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
    hosts `Waft:Listening` + the `%Rack`. `%Rack` (§2.5) tracks every interested `%Mag`, loaded on init.
     *(Berth built; the MusuBerth live-gate, the `%Rack`, and init are owed.)*
 
-**6 — Marauding (wishlist persist/resume)** **[todo]** — `Ray,self/Mag:marauding` logs pulls, persists the
- heist, and resumes it across a restart. *(Designed; the resume side is unbuilt — see rung 4.)*
+**6 — Marauding (wishlist persist/resume)** **[todo]** — a `%Grasp` (the chosen handful of remote
+ tracks|directories, Mag-shaped, Waft-based) logs pulls, persists the heist, and resumes it across a
+  restart; the `%Heist` is its actively-downloading leg. *(Re-coined 2026-07-17 — was
+   `Ray,self/Mag:marauding`; the resume side is unbuilt — see rung 4.)*
 
 **7 — Swarm (opportunistic webrtc chunk-sharing)** **[routing: design · trust keystone: built ×2 in isolation]**
  — a swarm peer is just another `Repli_register_caster`; **Repli sends `C**` to many overlapping-interest
@@ -300,9 +350,12 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
    the origin signs the manifest of cids (ed25519 over `id | cid0.cid1…`, the `Idento` primitive Swarm.g already
     uses) and a receiver who knows the origin key verifies the vouch before trusting a byte. **Proven in
      isolation, green ×2** — `MusuBreach` step 6: the honest vouch verifies; a FORGED manifest (a middleman
-      swaps one cid) fails the signature; an IMPOSTER (a different key) is rejected. *Owed:* the WIRING — carry
-       `sig` + `by` in the `.jam` header / the offer husk, and verify at the offer door before any pull (promote
-        `MusuBreach_sign/verify` to `Ra_*` in `Ghost/M/Ra.g`). The two gates together — cid keeps an honest peer
+      swaps one cid) fails the signature; an IMPOSTER (a different key) is rejected. *Owed:* `[RUNG7-WIRE]` the
+       WIRING — carry `sig` + `by` in the `.jam` header / the offer husk, and verify at the offer door before
+        any pull (promote `MusuBreach_sign/verify` to `Ra_*` in `Ghost/M/Ra.g`), **keyed on the MASTER's cids**:
+         the Ra-path transcode is NOT bit-reproducible (two independent transcodes of one source → different
+          bytes → different cids), so the signature must vouch for the deterministic `%Original` (rung 3), never
+           each grade's — else no swarm can dedup/verify across peers who transcoded separately. The two gates together — cid keeps an honest peer
          honest, signature keeps a dishonest peer out — are what make a swarm pull safe.
 
 ### 5B — The audio ladder (the nine stages)

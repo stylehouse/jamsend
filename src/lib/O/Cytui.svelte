@@ -1640,8 +1640,7 @@
            + (a.nk ? a.nk.length + 2 : 0)
            + (a.key ? a.key.length + (a.colon ? 1.5 : 0.5) : 0)
            + (a.val?.length ?? 0)
-           + (a.sup ? a.sup.length * 0.7 : 0) + (a.subn ? 3 : 0)
-           + (a.box ? 1.0 : 0) })   // the kind chip: a hair of side padding, hugging the word (no stretch)
+           + (a.sup ? a.sup.length * 0.7 : 0) + (a.subn ? 3 : 0) })
     // the salience → row size map ("squished": density beats the 14pt floor here)
     const row_fs = (w?: number) => { const s = w ?? 50; return s >= 80 ? 15 : s >= 45 ? 11.5 : 9 }
 
@@ -1654,10 +1653,13 @@
     //       sub-space aligns to its OWN wall and fills its OWN room.  rows[0] is load-bearing: if it
     //        can't seat, the pane degrades (null).  Stats return in ORIGINAL coords, pivoted cx,cy.
     function pane_rows(poly: {x:number,y:number}[], cx: number, cy: number, rows: VAtom[][],
-                       opts?: { toppad?: number, inflate?: boolean, capfs?: number }):
+                       opts?: { toppad?: number, inflate?: boolean, capfs?: number, norot?: boolean }):
             { stats: VStat[], hid: number, used: number, avail: number } | null {
         if (!rows.length) return null
-        const th = tuple_frame(poly)
+        // norot keeps the baseline HORIZONTAL instead of tilting to the biggest wall — the identity
+        //  arm wants it (a name reads level, never rotated down into a sharp corner of a slanted
+        //   slice: the human's "the Artist … drifted down into a sharp corner of the cell").
+        const th = opts?.norot ? 0 : tuple_frame(poly)
         const cosR = Math.cos(-th), sinR = Math.sin(-th)
         const rpoly = poly.map(p => ({ x: cx + (p.x - cx) * cosR - (p.y - cy) * sinR,
                                        y: cy + (p.x - cx) * sinR + (p.y - cy) * cosR }))
@@ -1754,6 +1756,73 @@
         return res
     }
 
+    // zone_seat — COMPLETELY DIFFERENT text hosting: the space determines the font size,
+    //  not the other way round.  Divide the polygon's height into zones proportional to
+    //   weight, find the widest chord in each zone, then size text to FILL that territory
+    //    (min of height-fill and width-fill).  No flowing, no wrapping, no inflate step —
+    //     each content item OWNS its band.  A long member list auto-splits into sub-zones
+    //      of GROUP_MAX atoms so each group still reads at a legible size.
+    //  Return type matches pane_rows so callers switch without structural change.
+    function zone_seat(
+            poly: {x:number,y:number}[], cx: number, cy: number,
+            zones: { atoms: VAtom[], weight: number }[],
+            opts?: { toppad?: number, botpad?: number, capfs?: number }
+    ): { stats: VStat[], hid: number, used: number, avail: number } | null {
+        // expand: a zone with many atoms splits into equal sub-zones of GROUP_MAX
+        const GROUP_MAX = 5
+        const exp: { atoms: VAtom[], weight: number }[] = []
+        for (const z of zones) {
+            if (!z.atoms.length) continue
+            if (z.atoms.length <= GROUP_MAX) { exp.push(z); continue }
+            const n = Math.ceil(z.atoms.length / GROUP_MAX)
+            const sw = z.weight / n
+            for (let i = 0; i < n; i++)
+                exp.push({ atoms: z.atoms.slice(i * GROUP_MAX, (i + 1) * GROUP_MAX), weight: sw })
+        }
+        if (!exp.length) return null
+        const ys = poly.map(p => p.y)
+        const y0 = Math.min(...ys) + (opts?.toppad ?? 4)
+        const y1 = Math.max(...ys) - (opts?.botpad ?? 4)
+        const H = y1 - y0
+        if (H < 12) return null
+        const tw = exp.reduce((s, z) => s + z.weight, 0)
+        const stats: VStat[] = []
+        let hid = 0, ycur = y0
+        let cap = opts?.capfs ?? Infinity
+        for (const zone of exp) {
+            const zh = H * zone.weight / tw
+            // wide_chord: find the widest horizontal chord inside this zone — a slanted cell's
+            //  widest reachable point may not be at the centre; sizing to it gives more room.
+            const best = wide_chord(poly, ycur, ycur + zh, 6)
+            if (!best || best.w < 12) { hid += zone.atoms.length; ycur += zh; continue }
+            const avail_w = best.w - 12
+            const total_len = zone.atoms.reduce((s, a) => s + a.len, 0)
+            const gap_em = Math.max(0, zone.atoms.length - 1) * 0.55
+            const text_em = total_len * GLY + gap_em
+            const fs_h = zh * 0.70
+            const fs_w = text_em > 0 ? avail_w / text_em : 24
+            let fs = Math.min(Math.min(fs_h, fs_w), cap, 24)
+            if (fs < 7) { hid += zone.atoms.length; ycur += zh; continue }
+            // identity ceiling: content zones must not exceed the identity's font size.  A floor
+            //  of 10 keeps content legible even when a long identity compresses to near 7pt.
+            if (cap === Infinity) cap = Math.max(fs, 10)
+            // place atoms at the zone's optical centre, centred in the widest-chord span
+            const line_px = text_em * fs
+            const place_chord = poly_chord(poly, ycur + zh * 0.72) ?? [best.x0, best.x1]
+            let x = place_chord[0] + Math.max(6, (place_chord[1] - place_chord[0] - line_px) / 2)
+            const ry = ycur + zh * 0.74
+            for (const a of zone.atoms) {
+                const aw = a.len * GLY * fs
+                if (aw < 0.5) { hid++; continue }
+                const { len: _l, afs: _af, ...rest } = a
+                stats.push({ ...rest, fs, x: x + aw / 2, y: ry } as VStat)
+                x += aw + fs * 0.55
+            }
+            ycur += zh
+        }
+        return stats.length ? { stats, hid, used: ycur - y0, avail: H } : null
+    }
+
     // keyed_rows — the keyed claims as rows, banded by GRASP LEVEL (G1: "two different C/C levels
     //  cannot share data descriptions"): the container's own untagged facts first, then the member
     //   band — the lead list (their identity) followed by THEIR tagged facts, each wearing the kind
@@ -1779,7 +1848,7 @@
             //    ('Track title:', never the run-together 'Tracktitle:').  The dedup still holds:
             //     only the first row of a tag run mints the boxed kind.
             const as: VAtom[] = []
-            if (showtag) as.push(atom({ tag: showtag, tagtint: kind_tint(showtag), box: true,
+            if (showtag) as.push(atom({ tag: showtag, tagtint: kind_tint(showtag),
                                         cls: 'vsub-gkey' }, fs))
             as.push(atom({ key: g.key, colon: g.leaves.length > 0, sup: g.sup,
                            members: g.members, hue, cls: 'vsub-gkey' }, fs))
@@ -1804,19 +1873,27 @@
         //    'name: Palegold' lands on the next line at full size (the flow's treeing indent).
         //     B0.4 holds: no ×N on the name — the count is the /*N tail.
         const trow: VAtom[] = []
-        if (head.tag) trow.push(atom({ tag: head.tag, box: true,   // the container kind in its own subcell
+        if (head.tag) trow.push(atom({ tag: head.tag,   // the container kind — a plain colour-coded word
                                        tagtint: tint, cls: 'vsub-ntitle' }, 16))
         if (tname || head.nk || head.sup)
             trow.push(atom({ nk: head.nk, nkhue: head.nkhue, val: tname || undefined, sup: head.sup,
                              cls: 'vsub-ntitle' }, 16))
         rows.push(trow.length ? trow
                               : [atom({ ...head, val: tname || undefined, cls: 'vsub-ntitle', tagtint: tint }, 16)])
-        rows.push(...keyed_rows(keyed, kind))
-        // the members flow last — bare names (the title already said their kind once)
+        // a homogeneous gang's bare members ARE the genus's instances (each a %Genus:value), so they
+        //  flow DIRECTLY under the identity — the genus's actual content — and their shared|partial
+        //   traits come AFTER, reading as "across these", never ABOVE as if the genus itself carried
+        //    them (the human, 2026-07-15: "we show Coprosma / woodystem / habit:shrub|vine / propinqua
+        //     / rhamnoides, which is a lie given the data is eg %Coprosma:propinqua").  The distiller
+        //      already emits this order (Vtuff_default: title → member_rows → keyrows); tuple_rows used
+        //       to REVERSE it (facts led — a holdover from when they were the CONTAINER's own).  A
+        //        cross-kind fold is untouched: its members ride a LEAD tuple inside `keyed`, so
+        //         `members` here is empty and the identity-then-shared-facts order stands.
         if (members.length)
             rows.push(members.map(l => atom({ val: l.val, sup: l.sup, subn: l.subn, member: l.member,
                                               tag: l.tag && l.tag !== kind ? l.tag : undefined,
                                               tagtint: l.tint, cls: 'vsub-label' }, row_fs(l.wgt))))
+        rows.push(...keyed_rows(keyed, kind))
         return rows
     }
 
@@ -1854,7 +1931,9 @@
                         members: VSubLeaf[], tint: string, kind: string | undefined):
             { pane: VSubPane, hid: number } | null {
         const rows = tuple_rows(head, tname, keyed, members, tint, kind)
-        const res = pane_rows(c.inset, c.acx, c.acy, rows, { inflate: true })
+        // zone_seat: identity row gets 3× weight (it IS the cell), content rows share the rest.
+        const zones = rows.map((atoms, i) => ({ atoms, weight: i === 0 ? 3 : 1.5 }))
+        const res = zone_seat(c.inset, c.acx, c.acy, zones)
         if (!res) return null
         return { pane: { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`, clip: poly_d(c.inset),
                          color: c.color, tint, walls: [], spokes: [], stats: res.stats,
@@ -1877,7 +1956,7 @@
                          tint: string, kind: string | undefined): { pane: VSubPane, hid: number } | null {
         const lead = keyed.find(g => g.lead)
         const mem = lead ? lead.leaves.filter(l => l.member) : []
-        if (mem.length < 2) return null                  // no cross-kind fold structure — flat tuples
+        if (mem.length < 1) return null                  // no cross-kind fold structure — flat tuples
         // G1's boundary: untagged rows are the CONTAINER's (they ride the header); the lead list +
         //  every tagged row is the MEMBERS' level and lives in the coagulate.
         const shared = keyed.filter(g => !g.lead && !g.tag)
@@ -1889,7 +1968,7 @@
         const R = Math.sqrt(Math.abs(A2) / 2 / Math.PI)
         // a C-cradle nucleus insets on THREE sides, so it needs a touch more cell than a flat band;
         //  a smaller fold reads better flat (the spell grows a borderline one until the C fits).
-        if (R < 40) return null                          // too small to draw a legible C — flat reads better
+        if (R < 24) return null                           // too small to draw a legible C — flat reads better
         // ── THE C-CRADLE (the human, 2026-07-15: "a standard C-shaped crater … the Artist wraps the
         //  members in a C") — the coagulate is a NUCLEUS inset toward the centre-right, and the cell's
         //   OWN Artist tint wraps it on THREE sides: the TOP arm holds the identity, the LEFT spine and
@@ -1923,21 +2002,18 @@
         let hcap = 16
         {
             const hc = cen(headerPoly)
-            const hres = pane_rows(headerPoly, hc.x, hc.y, tuple_rows(head, tname, shared, [], tint, kind), { inflate: true })
+            const hrows = tuple_rows(head, tname, shared, [], tint, kind)
+            const hzones = hrows.map((atoms, i) => ({ atoms, weight: i === 0 ? 3 : 1.5 }))
+            const hres = zone_seat(headerPoly, hc.x, hc.y, hzones)
             if (!hres) return null                        // the arm can't seat even one line — un-drawable
             const hts = hres.stats.filter(s => s.cls === 'vsub-ntitle')
             const htitle = hts.length ? Math.min(...hts.map(s => s.fs ?? 0)) : 0
-            // the LEGIBILITY floor (read on the SMALLEST identity atom — a fat badge can hide a 7px
-            //  wrapped name): a fold too tight to seat its identity ≥11px does NOT crater TINY.  It
-            //   falls back to flat (which INFLATES big + reads fine); a still-tiny flat pane is grown
-            //    by the existing spell (tiny()) until it can crater BIG.  Never crater unreadable, and
-            //     never CHASE a crater on a readable flat fold (that stormed the re-paint — "very blinky").
-            if (hts.length && htitle < 11) return null
+            if (hts.length && htitle < 9) return null     // identity too small to crater
             hcap = htitle || 16
             stats.push(...hres.stats)
             hid += hres.hid
         }
-        // the COAGULATE nucleus: one smooth shape in the members' kind tint, cradled by the C — the
+        // the COAGULATE nucleus (the TRACK basin): one smooth shape in the members' kind tint — the
         //  STRONG level boundary ("two different C/C levels cannot share data descriptions").
         const mtint = (mem[0].member ? kind_tint(Object.keys(mem[0].member.sc ?? {})[0]) : null) ?? c.color
         const coag = chaikin(poly_grow(coagBox, -3), 2)
@@ -1946,14 +2022,34 @@
         //  down, + an INNER SHADOW on that top edge, so the nucleus reads as sunk INTO the cradle.
         const gid = `vcoag-${dom_id(c.id)}`
         const ymax = Math.max(...coag.map(p => p.y)), ymin = Math.min(...coag.map(p => p.y))
-        const lgrads = [{ id: gid, x1: c.acx, y1: ymin, x2: c.acx, y2: ymax, hue: mtint },
+        // ── THE ARTIST BASIN (outer crater) — an EXPLICIT inset lining of the whole cell, so the
+        //  container reads as its OWN carved bowl, DRAWN rather than leaning on the flat cell
+        //   background (the human, 2026-07-15: "don't rely on the outer cell, draw a crater that
+        //    lines it ... trying to get one around the Artist as well as Track").  A soft top-edge
+        //     shadow (the carved lip) + two stepped rim contours in the container tint; the Track
+        //      nucleus nests INSIDE, so basin-within-basin IS the Artist⊃Track nesting, drawn not
+        //       implied.  Insets are px so they hold at every cell size (R≥40 leaves room for -7).
+        const abgid = `vabas-${dom_id(c.id)}`
+        const abLip = chaikin(poly_grow(c.inset, -3), 1)
+        const abStep = chaikin(poly_grow(c.inset, -7), 1)
+        const acy0 = Math.min(...c.inset.map(p => p.y)), acy1 = Math.max(...c.inset.map(p => p.y))
+        const lgrads = [{ id: abgid, x1: c.acx, y1: acy0, x2: c.acx,
+                          y2: Math.min(acy1, acy0 + 46), hue: '#000', o0: 0.20, o1: 0 },
+                        { id: gid, x1: c.acx, y1: ymin, x2: c.acx, y2: ymax, hue: mtint },
                         { id: gid + 's', x1: c.acx, y1: ymin, x2: c.acx,
                           y2: Math.min(ymax, ymin + 30), hue: '#000', o0: 0.30, o1: 0 }]
-        walls.push({ d: poly_d(coag), hue: mtint, cls: 'vsub-coag', fillid: gid },
+        walls.push({ d: poly_d(abLip), hue: 'none', cls: 'vsub-abasinsh', fillid: abgid },
+                   { d: poly_d(abLip),  hue: tint,   cls: 'vsub-abasin' },
+                   { d: poly_d(abStep), hue: tint,   cls: 'vsub-abasin2' })
+        // the Track nucleus, nested INSIDE the Artist basin.  Its rim is the container tint too — the
+        //  member-tint fill plus the two basins' nesting carry the level distinction now.
+        walls.push({ d: poly_d(coag), hue: tint, cls: 'vsub-coag', fillid: gid },
                    { d: poly_d(coag), hue: 'none', cls: 'vsub-coagsh', fillid: gid + 's' })
         // the member band flows INSIDE the nucleus — the distilled rows, capped under the identity.
         const cc2 = cen(coag)
-        const bres = pane_rows(coag, cc2.x, cc2.y, keyed_rows(memb, kind), { inflate: true, capfs: hcap * 0.9 })
+        const nrows = keyed_rows(memb, kind)
+        const nzones = nrows.map(atoms => ({ atoms, weight: 1.5 }))
+        const bres = zone_seat(coag, cc2.x, cc2.y, nzones, { capfs: hcap * 0.9 })
         if (!bres) return null                           // the nucleus can't seat — flat fallback
         stats.push(...bres.stats)
         hid += bres.hid
@@ -2024,10 +2120,9 @@
         const area = Math.abs(A2) / 2
         let pane: VSubPane | null = null
         let hid = 0
-        if (total < 2 || Math.sqrt(area) < 88) {
-            // no structure worth tessellating (one k|v) or no room to: the pane DEGRADES
-            //  to its one statement — ▦ mode has ONE face at every size — and everything
-            //   the statement can't carry is counted into the +N fold mark
+        if (total < 2 || area < 900) {
+            // no structure worth tessellating (one k|v) or true hairline cell: the pane
+            //  DEGRADES to its one statement and everything it can't carry is counted
             pane = nucleus_pane(c, tint, head, tname)
             hid = total
         } else if (vsub_face === 'tuples') {
@@ -2229,11 +2324,9 @@
         }
         if (!pane) return null
         const pb = Math.max(...c.inset.map(p => p.y))
-        const dd = descs.find(d => d.dip)
-        if (dd) {
-            const chd = poly_chord(c.inset, pb - 12)
-            if (chd) pane.dip = { x: chd[1] - 8, y: pb - 8, text: dd.text }
-        }
+        // the /*N "surf" dip is GONE — it read as a fold-OPEN control but Vtuff_pop's stamp is
+        //  one-way (opens, can't re-close: "there's no way back"), so it was a trap, not an
+        //   affordance.  Popping a whole fold into the graph belongs to the drag/▦ gestures now.
         if (hid > 0) pane.hid = hid_mark(c.inset, hid)
         // the »N ledger: N claims left for the region's river (the promotion's receipt) —
         //  sits opposite the +N crowd-out mark, same low band, its own quiet green.
@@ -3156,8 +3249,15 @@
         const tiny = (p?: VSubPane) => {
             if (!p) return false
             const fss = p.stats.filter(s => LOADED.has(s.cls ?? '')).map(s => s.fs ?? 99)
-            return fss.length > 0 && Math.min(...fss) < 11
+            // the legible floor is 12 now (was 11 — the human: "just a bit more text bloat-up needed"):
+            //  grow a cell until its load-bearing atoms clear 12px.  A higher floor also swells more
+            //   cells past the crater threshold, so the cradle surfaces on more C's as a side effect.
+            return fss.length > 0 && Math.min(...fss) < 12
         }
+        // FREEZE the spell mid-drag: pan_zoom_motion repaints every frame while a cell is dragged, and
+        //  a grow|shrink verdict landing on one of those frames flips a neighbour crater↔flat — the
+        //   residual "blinks during dragging".  Hold all sizes steady until the drop; resume next paint.
+        if (vdrag) return
         // HYSTERESIS (the human: "it needs to turn itself off only once the cell becomes even
         //  bigger than the size" — it was oscillating on+off): the GROW gate and the RELEASE gate
         //   are far apart, with a wide HOLD band between them, so a cell that just grew to fit does
@@ -3174,7 +3274,7 @@
             const starved = !built.has(id) || (p?.hid?.n ?? 0) > 0 || tiny(p)
             const cur = vspell.get(id) ?? 1
             if (starved) {
-                const nxt = Math.min(2.4, cur * 1.15)
+                const nxt = Math.min(3.0, cur * 1.15)   // ceiling 3.0 (was 2.4) — room to reach the 12px floor
                 if (nxt > cur + 1e-3) { vspell.set(id, nxt); cast++; grewNow.add(id) }
             } else if (p?.roomy && cur > 1 && !grewNow.has(id)) {
                 const nxt = cur * 0.95
@@ -4469,17 +4569,9 @@
                      is the surf (Vtuff_pop) — the seed of click-to-expand; the +N mark
                      is the annotated fold of whatever this beat's glass couldn't say. -->
                 {#snippet vstat(sp: VSubPane, s: VStat)}
-                    {@const bw = s.box && s.tag ? Math.max(s.tag.length + 1.0, 3.0) * GLY * s.fs : 0}
-                    {#if bw}
-                        <!-- the KIND's subcell: a FAINT tinted field hugging 'Artist'/'Track' so it
-                             reads as the TYPE (the start of a C), not a property — but no border and
-                             barely-rounded, so it's a soft field, not a button (the human's J-walkback:
-                             "the button-looking mainkey is more confusing and visual noisey") -->
-                        <rect class="vsub-kindbox" x={(s.x - bw / 2).toFixed(1)} y={(s.y - s.fs * 0.78).toFixed(1)}
-                              width={bw.toFixed(1)} height={(s.fs * 0.98).toFixed(1)} rx={(s.fs * 0.16).toFixed(1)}
-                              fill={s.tagtint ?? '#888'}
-                              transform={s.rot != null ? `rotate(${s.rot} ${s.x.toFixed(1)} ${s.y.toFixed(1)})` : undefined} />
-                    {/if}
+                    <!-- the KIND ('Artist'/'Track') is just its own colour-coded word (kind_tint) — no
+                         box, no pill: "the regular colour-coded key visual … standard" (the human's
+                         J-walkback all the way home: a field/button around a mainkey only added noise) -->
                     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions, a11y_interactive_supports_focus -->
                     <text class={s.cls} class:hot={s.member != null} class:corr-hot={!!s.members?.length}
                           class:corr-lit={corr_mark(sp, s) === 1} class:corr-dim={corr_mark(sp, s) === -1}
@@ -4492,7 +4584,7 @@
                           onmouseleave={s.member || s.members?.length ? () => corr_out(s) : undefined}
                           onclick={s.member ? () => micro_click(sp.id, s.member)
                                  : s.members?.length ? () => corr_pin_toggle(sp, s) : undefined}>
-                        {#if s.tag}<tspan class={s.box ? 'vsub-kindlabel' : 'vsub-tag'} fill={s.tagtint ?? undefined}>{s.tag}?</tspan>{#if !s.box}{#if s.tagcolon}<tspan class="vsub-colon">: </tspan>{:else}<tspan>{' '}</tspan>{/if}{/if}{/if}{#if s.nk}<tspan class="vsub-nk" fill={s.nkhue}>{s.nk}</tspan><tspan class="vsub-colon">: </tspan>{/if}{#if s.key}<tspan fill={s.hue}>{s.key}</tspan>{#if s.colon}<tspan class="vsub-colon">:{s.val ? ' ' : ''}</tspan>{/if}{/if}{#if s.val}<tspan class="vsub-v" textLength={s.tl} lengthAdjust={s.tl ? 'spacingAndGlyphs' : undefined}>{s.val}</tspan>{/if}{#if s.sup}<tspan class="vsub-sup" dy="-0.45em">{s.sup}</tspan>{/if}{#if s.subn}<tspan class="vsub-sup vsub-dig" dy={s.sup ? '0' : '-0.45em'}>/*{s.subn}</tspan>{/if}{#each s.lines ?? [] as ln, li (li)}<tspan class="vsub-v" x={s.x.toFixed(1)} dy={li === 0 && (s.sup || s.subn) ? '1.65em' : '1.2em'} textLength={ln.tl} lengthAdjust={ln.tl ? 'spacingAndGlyphs' : undefined}>{ln.text}</tspan>{/each}
+                        {#if s.tag}<tspan class="vsub-tag" fill={s.tagtint ?? undefined}>{s.tag}</tspan>{#if s.tagcolon}<tspan class="vsub-colon">: </tspan>{:else}<tspan>{' '}</tspan>{/if}{/if}{#if s.nk}<tspan class="vsub-nk" fill={s.nkhue}>{s.nk}</tspan><tspan class="vsub-colon">: </tspan>{/if}{#if s.key}<tspan fill={s.hue}>{s.key}</tspan>{#if s.colon}<tspan class="vsub-colon">:{s.val ? ' ' : ''}</tspan>{/if}{/if}{#if s.val}<tspan class="vsub-v" textLength={s.tl} lengthAdjust={s.tl ? 'spacingAndGlyphs' : undefined}>{s.val}</tspan>{/if}{#if s.sup}<tspan class="vsub-sup" dy="-0.45em">{s.sup}</tspan>{/if}{#if s.subn}<tspan class="vsub-sup vsub-dig" dy={s.sup ? '0' : '-0.45em'}>/*{s.subn}</tspan>{/if}{#each s.lines ?? [] as ln, li (li)}<tspan class="vsub-v" x={s.x.toFixed(1)} dy={li === 0 && (s.sup || s.subn) ? '1.65em' : '1.2em'} textLength={ln.tl} lengthAdjust={ln.tl ? 'spacingAndGlyphs' : undefined}>{ln.text}</tspan>{/each}
                     </text>
                 {/snippet}
                 {#each vsubs as sp (sp.id)}
@@ -4538,21 +4630,15 @@
                         {#each sp.stats as s, si (sp.id + '·t' + si)}
                             {@render vstat(sp, s)}
                         {/each}
-                        {#if sp.dip}
-                            <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions, a11y_interactive_supports_focus -->
-                            <text class="vsub-dip" x={sp.dip.x.toFixed(1)} y={sp.dip.y.toFixed(1)}
-                                  text-anchor="end" role="button"
-                                  onclick={() => micro_click(sp.id)}>{sp.dip.text}</text>
-                        {/if}
                         {#if sp.com}
                             <!-- »N: this pane's region-shared claims ride the river now -->
                             <text class="vsub-com" x={sp.com.x.toFixed(1)} y={sp.com.y.toFixed(1)}
                                   text-anchor="end">»{sp.com.n}</text>
                         {/if}
-                        {#if sp.hid}
-                            <text class="vsub-hid" x={sp.hid.x.toFixed(1)} y={sp.hid.y.toFixed(1)}
-                                  text-anchor="start">+{sp.hid.n}</text>
-                        {/if}
+                        <!-- the +N crowd-out mark is no longer PAINTED (the human: "the +1 … I'm not
+                             wanting").  sp.hid still rides as DATA — the growth spell reads it to keep
+                             swelling a cell until everything seats, so the fold heals by GROWING, not by
+                             confessing a count. -->
                     </g>
                 {/each}
             {/if}
@@ -4671,7 +4757,7 @@
    from the parent side") so containment reads as depth, no drawn shadow. */
 .cytui-subgraph .vsub-coag {
     fill-opacity: 1;                /* the gradient stops carry the alpha */
-    stroke-opacity: 0.5; stroke-width: 1.3;
+    stroke-opacity: 0.85; stroke-width: 2;   /* the cradle rim — the Artist wall, made to read */
     stroke-linejoin: round;
 }
 .cytui-subgraph .vsub-coagsh {
@@ -4679,6 +4765,14 @@
     stroke: none;
     pointer-events: none;
 }
+/* the ARTIST BASIN — the OUTER crater's lining (the human: "draw a crater that lines it ...
+   one around the Artist as well as Track").  Two stepped inset contours in the container tint
+   = a carved lip, the inner one fainter reads as the stepped-in wall; fill:none (a stylesheet
+   rule beats the fill="" presentation attribute) so only the lip LINES draw, and the top-edge
+   shadow (vsub-abasinsh) carves the depth.  The Track nucleus sits inside → basin-in-basin. */
+.cytui-subgraph .vsub-abasin  { fill: none; stroke-opacity: 0.55; stroke-width: 1.6; stroke-linejoin: round; }
+.cytui-subgraph .vsub-abasin2 { fill: none; stroke-opacity: 0.26; stroke-width: 1;   stroke-linejoin: round; }
+.cytui-subgraph .vsub-abasinsh { fill-opacity: 1; stroke: none; pointer-events: none; }
 /* H5 hourglass ribbons: claim ↔ member correspondence ("which %title goes with
    which %year"), faint bands pinched to a waist — hover carries the full read. */
 .cytui-subgraph .vsub-hour {
@@ -4723,16 +4817,10 @@
     text-decoration: underline dotted; text-underline-offset: 2px;
 }
 .cytui-subgraph .vsub-label.hot:hover { fill: #fff; }
-.cytui-subgraph .vsub-tag { fill: #667788; font-size: 76%; }
-/* the KIND label — the TYPE not a property, tinted, at natural width (no stretch). */
-.cytui-subgraph .vsub-kindlabel { font-size: 88%; font-weight: 500; }
-/* the kind's soft field — a faint tint wash, NO border, barely rounded: reads as "a C
-   begins here" without the button chrome (the human's J-walkback). */
-.cytui-subgraph .vsub-kindbox {
-    fill-opacity: 0.13;
-    stroke: none;
-    pointer-events: none;
-}
+/* the KIND word — the TYPE, said once, at natural size; colour is the inline kind_tint,
+   so it reads as "a C begins here" the same way any key reads by its vein hue.  #667788 is
+   only the fallback when no tint rides. */
+.cytui-subgraph .vsub-tag { fill: #667788; }
 .cytui-subgraph .vsub-v { fill: #cfcfcf; }
 /* Stuffing's grammar, spoken in SVG: lilac colon (the k→v mark), violet counts —
    same signs, same colours. */
@@ -4745,14 +4833,8 @@
 .cytui-subgraph text.vsub-ntitle:active { cursor: grabbing; }
 .cytui-subgraph .vsub-ringkey { opacity: 0.85; }
 .cytui-subgraph .vsub-title { opacity: 0.92; }
-.cytui-subgraph .vsub-dip {
-    fill: #8a7fc0; font-size: 10px;
-    pointer-events: all; cursor: pointer;
-}
-.cytui-subgraph .vsub-dip:hover { fill: #b0a4dc; }
-/* the annotated fold: +N statements didn't fit this beat's glass (the Stuffing and
-   the /*N dig still hold everything) — a mark, one day a door */
-.cytui-subgraph .vsub-hid { fill: #8a7fc0; font-size: 9px; opacity: 0.8; }
+/* (.vsub-dip / .vsub-hid are gone — the /*N surf and the +N crowd-out mark are no longer
+   painted; the cell heals by GROWING, and a fold opens by drag, not a one-way badge.) */
 /* »N — the promotion's receipt: these claims moved OUT to the region's river */
 .cytui-subgraph .vsub-com { fill: #7fb08a; font-size: 9px; opacity: 0.85; }
 .cytui-bar button.v-toggle.on {

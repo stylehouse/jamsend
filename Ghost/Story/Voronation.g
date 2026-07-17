@@ -403,7 +403,9 @@ async VoroScape_drive(w, req):
 //   ride inside it (a pane's interior).  A thin shelf — the growth beats thicken it.
 VoroScape_library(w):
     let moon = w.i({ Artist: 1, name: 'Moonlit' })
-    this.VoroScape_track(moon, 'Tide')
+    let tide = this.VoroScape_track(moon, 'Tide')
+    let spot = this.VoroScape_section(tide, 'the-spot', 3, 6)
+    this.VoroScape_section(spot, 'cymbal', 4, 5)
     this.VoroScape_track(moon, 'Halo')
     let fern = w.i({ Artist: 1, name: 'Fernway' })
     this.VoroScape_track(fern, 'Root')
@@ -421,7 +423,14 @@ VoroScape_track(artist, title):
     sc.year = years[hsh % 3]
     if ((Math.floor(hsh / 4)) % 2 === 0) sc.live = 1
     if (hsh % 3 === 0) sc.remaster = 1
-    artist.i(sc)
+    return artist.i(sc)
+
+// give a song real DEPTH — a nested %What time-region (a section, and a lick INSIDE it) — so the
+//  scape carries a genuine Track/What/What C** for the crush to fold into nested craters (the
+//   human, 2026-07-15: "add a Track/What:the-spot start_at:3 end_at:6 / What:cymbal start_at:4
+//    end_at:5").  %What:<name> — the mainkey carries the section name; start_at|end_at are its span.
+VoroScape_section(host, name, start_at, end_at):
+    return host.i({ What: name, start_at: start_at, end_at: end_at })
 
 // beat 3 — the catalogs deepen: five new tracks land across the SAME three panes.  No new cells —
 //  a pane's weight is its track count, so the existing glass visibly thickens in place.

@@ -45,9 +45,83 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
         (2) DevTools → Application → Service Workers → Unregister (an OLD *caching* SW version can linger
          — the current `src/service-worker.js` caches nothing, pass-through); (3) restart the Vite dev
           server (re-versions every module).  Until a tab is hard-reloaded, NOTHING you ship is visible
-           to anyone — don't chase a phantom bug in the code.  The **"Artist?" CANARY** (a `?` appended
-            to every kind label in the vstat snippet) is live as the propagation test: once you see
-             "Artist?" the pipeline works — then REVERT the canary (one line, `{s.tag}?` → `{s.tag}`).
+           to anyone — don't chase a phantom bug in the code.  (RESOLVED 2026-07-15: the human hard-
+            reloaded, the "Artist?" canary showed through, propagation confirmed, canary REVERTED.  Keep
+             this note — the failure mode recurs every long session; reach for the bundle-fetch proof first.)
+
+**WHAT LANDED THIS SHIFT, PART 8 (2026-07-15) — the K-round: the crater REDRAWN as an explicit nested
+ lining, + VoroScape given real depth.**  The human, after PART 7: *"no, nothing like the Cradle effect
+  I'd like is there"* — PART 7's rim only thickened the nucleus outline and still LEANED ON the flat cell
+   background to imply the C.  New steer: *"the cratering effect having more depth, trying to get one
+    around the Artist as well as Track … don't rely on the outer cell, draw a crater that lines it."*  And
+     the north star: *"for now I want to reliably communicate C structure via vtuffing."*
+ - **CRATER = EXPLICIT NESTED BASINS** (`crater_pane`, Cytui, paint-only).  Added the **Artist basin**:
+    two stepped inset rim contours following `c.inset` (`poly_grow -3` / `-7`, `vsub-abasin`/`-abasin2`,
+     `fill:none` via stylesheet beating the `fill=""` attr) + a soft top-edge inner shadow (`vsub-abasinsh`,
+      the carved lip).  The Track nucleus (the old coag) now nests INSIDE it — **basin-within-basin draws
+       the Artist⊃Track nesting** instead of relying on the background.  Insets are px, so they hold at
+        every cell size (R≥40 leaves room for −7).  Type-clean (113 baseline, no new errors).  **NEEDS THE
+         HUMAN'S EYES** — third crater attempt; if still not it, STOP guessing and align on the look (an
+          ASCII/shot round) before a fourth.
+ - **VoroScape DEEPER C** (`Voronation.g`, gen rewritten via LocalGen — editor was DOWN, ghost-compile
+    couldn't reach it).  `VoroScape_track` now RETURNS the track; new `VoroScape_section(host,name,s,e)`
+     mints `%What:<name>,start_at,end_at`; `VoroScape_library` deepens **Tide → What:the-spot(3–6) →
+      What:cymbal(4–5)** — a genuine Track/What/What for the crush to fold (music-book twin of the depth
+       VoroMitosis already has via `Botany_plant` forms).  **⚠ DRIFTS THE VoroScape FIXTURE** — its
+        toc.snap needs the human's re-record (I did NOT run the Book or touch any toc).
+ - **COPROSMA-LIE ORDER FIX LANDED** (the human chose this next; Cytui `tuple_rows`, PAINT-ONLY — no
+    distiller change, so NO fixture drift / re-record).  The human quoted the exact render ORDER as the
+     lie: `Coprosma / woodystem / habit:shrub|vine / propinqua / rhamnoides` — facets ABOVE the species,
+      reading as genus content.  ROOT CAUSE (not the pooling I first guessed): the distiller ALREADY
+       emits the honest order (`Vtuff_default`: title → member_rows → keyrows), but `tuple_rows` REVERSED
+        it (facts led — a holdover from when they were the container's own).  FIX: a homo gang's bare
+         members (its `%Genus:value` instances) now flow DIRECTLY under the identity; their shared|partial
+          traits follow, reading as "across these".  Cross-kind folds untouched (members ride a lead
+           tuple → `members` empty → order stands).  Type-clean (113 baseline).
+    (i-next) **DEEPER Coprosma honesty (OWED):** the traits stay POOLED (shared across the species), not
+        each-species-carries-its-own.  "Keep each member's value+facts together" fully = a sub-basin per
+         species (the crater/C-spaces B1 path) — HELD because (deferred text-fit) per-member facts = more
+          text that fights the current seat.
+    (ii) **text-fit "import help?"** — see the fork below; the human leaned *"for now … reliably"* =
+         reliability pass now (never drop to bare label, never clip past the wall, grasp the width), the
+          heavy solver later.
+    (iii) PART 7's (a)/(b)/(c) still want the human's confirmation once they're back at a live desk.
+
+**WHAT LANDED THIS SHIFT, PART 7 (2026-07-15) — the AWAKE punch-list (human hard-reloaded, seeing it
+ live, firing precise steers; all Cytui paint-only, gen unchanged).**  The J-round walked ALL the way
+  home + the cradle made to actually read:
+ - **KIND CHIP FULLY DE-BOXED** (the human: "the soft tinted field … I don't want it, just the regular
+    colour-coded key visual would be better. standard!").  Dropped `box:true` at both mint sites, the
+     `vsub-kindbox` rect, and the `vsub-kindlabel`/`vsub-kindbox` CSS.  The kind is now a plain
+      colour-coded word (inline `kind_tint`), reads exactly like any key by its hue.  Canary `?` reverted.
+ - **Both bottom badges GONE** (the human: "the +1 and /*3 … I'm not wanting").  `/*N` dip removed
+    (`pane.dip` no longer assigned): it looked like a fold-OPEN control but `Vtuff_pop`'s stamp is
+     ONE-WAY — "opens, no way back" — a trap, not an affordance.  `+N` crowd-out mark no longer PAINTED,
+      but `sp.hid` still rides as DATA so the growth spell keeps swelling a cell until everything seats
+       (the fold heals by GROWING, not by confessing a count).
+ - **CRADLE MADE TO READ** (the human: "the C-cradle — I don't see at all … it's supposed to be around
+    every C?").  Root cause: the nucleus rim was the nucleus's OWN hue, so the C only showed if the cell
+     background happened to contrast.  FIX: rim the nucleus in the CONTAINER's tint (the Artist) at
+      opacity 0.85 / width 2 — the wrapping level now draws its own wall regardless of hue family.
+ - **HEADER NO LONGER DRIFTS TO A CORNER** (the human: "the Artist … renders nowhere / clipped / drifted
+    down into a sharp corner").  Root cause: `pane_rows` rotated the identity baseline to the biggest
+     wall, tilting it into a slanted slice's point.  FIX: new `norot` opt on `pane_rows`, set for the
+      header arm — the identity reads LEVEL.  (Nucleus body still follows the wall.)
+ - **TEXT BLOAT-UP** (the human: "just a bit more text bloat-up needed").  Spell legible floor 11→12,
+    grow ceiling 2.4→3.0 — cells swell until load-bearing atoms clear 12px, which also floats more cells
+     past the crater threshold (more cradles surface as a side effect).
+ - **DRAG-BLINK FROZEN** (the human: "only occasionally after|during dragging … it blinks").  `spell_update`
+    early-returns while `vdrag` is active, so a grow|shrink verdict can't land on a drag repaint frame.
+ - **STILL OWED / needs the human's eyes (do NOT blind-tune further):**
+    (a) **is the cradle on ENOUGH C's now?**  I HELD the `R < 40` crater gate — the beefier spell should
+        float more cells over it, but if the human's cells are just small, that gate is the knob to drop
+        (40 → ~32) once they confirm the rim+header look right on the ones that DO crater.
+    (b) **did the rim + norot actually kill the corner-drift?** — reasoned, not shot-verified.
+    (c) the residual **drag-blink** should be gone with the freeze; confirm.
+    (d) the **academic text-in-polygon puzzle** (the human: "should we import help?") — the honest answer
+        is our `pane_rows` chord-seat + inflate is a hand-rolled solver; a real library (e.g. a
+        constrained text-layout / SAT-style fitter) is a genuine option if we want justified arcs.  Parked
+        as a real fork in the road, not a bug.
 
 **WHAT LANDED THIS SHIFT, PART 6 (2026-07-15) — the LIVE SESSION (the human firing steers over HMR;
  all Cytui paint-only, gen unchanged; UNVERIFIED-BY-SHOT — stale cache above; review on hard-reload).**
