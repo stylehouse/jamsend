@@ -37,20 +37,22 @@ Snap:H
               req:unemit,seq=3,type:repli_lines,body_hash:d0938fe1422b3c28f5a989df7145fcc7dede78ea6321694de422a12cc76cfd66,body_len=472,done,to:repli_lines,finished
               req:unemit,seq=4,type:repli_lines,body_hash:5a0f061ecffee99979ec6ebe486056e64c72299b8dc2917db5b4fa69432ae038,body_len=126,done,to:repli_lines,finished
           active_transport,type:mock,open
-        Library,pier:Origin
-          Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-          Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
-          Record,id:t3,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
+        MusuSelf,pub:Origin
+          stock,pub:Origin
+            Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+            Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+            Record,id:t3,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
         Mag:Musica
           Cloud,randomic:c1,created_at=1000
             Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
             Card,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
           Cloud,randomic:c2,created_at=3000
             Card,id:t3,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
-        Library,pier:Follower.mirror
-          Mag:Musica
-            Cloud,randomic:c1,created_at=1000
-              Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-              Card,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
-            Cloud,randomic:c2,created_at=3000
-              Card,id:t3,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
+        MusuThem,pub:Follower.mirror
+          stock,pub:Follower.mirror
+            Mag:Musica
+              Cloud,randomic:c1,created_at=1000
+                Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+                Card,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+              Cloud,randomic:c2,created_at=3000
+                Card,id:t3,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus

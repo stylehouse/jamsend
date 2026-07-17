@@ -1,0 +1,13 @@
+story:MusuRaStock
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.002
+      sample=0.001,at=1784261304
+      sample=0.002,at=1784261500
+    TimeTotal:step,avg=0.002
+      sample=0.001,at=1784261304
+      sample=0.002,at=1784261501
+  step,dige:caa06a2f917226aa

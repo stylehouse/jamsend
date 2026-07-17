@@ -5,29 +5,35 @@ story:MusuVend
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.041
-      sample=0.042,at=1783930162
-      sample=0.042,at=1783930246
-      sample=0.039,at=1783930265
-      sample=0.044,at=1783930277
       sample=0.033,at=1783970994
       sample=0.037,at=1784025047
       sample=0.05,at=1784025157
+      sample=0.036,at=1784254328
+      sample=0.043,at=1784260472
+      sample=0.043,at=1784260508
+      sample=0.039,at=1784260521
+      sample=0.031,at=1784260541
+      sample=0.034,at=1784263329
+      sample=0.068,at=1784264516
     TimeTotal:step,avg=0.004
-      sample=0.004,at=1783930162
-      sample=0.004,at=1783930246
-      sample=0.004,at=1783930265
-      sample=0.004,at=1783930277
       sample=0.003,at=1783970994
       sample=0.003,at=1784025047
       sample=0.005,at=1784025157
+      sample=0.003,at=1784254328
+      sample=0.004,at=1784260472
+      sample=0.004,at=1784260508
+      sample=0.004,at=1784260521
+      sample=0.003,at=1784260541
+      sample=0.003,at=1784263329
+      sample=0.006,at=1784264516
   step,dige:ec78b12d711b7cf1
-  step=2,dige:222eb756cdba314c
-  step=3,dige:1df9bc211a99d66e
-  step=4,dige:625d107bd82f6fb5
-  step=5,dige:5a349e894b32472f
-  step=6,dige:6cbc6e1bf30e612e
-  step=7,dige:0b1a090cfb8eda74
-  step=8,dige:182801d2b5fac750
-  step=9,dige:96443c73650c5cc0
-  step=10,dige:9ec5e785c6ee0284
-  step=11,dige:e784a0deb7515171
+  step=2,dige:02cce9018e728dcb
+  step=3,dige:ff4ba7477764c161
+  step=4,dige:4ab1ef7e4752e494
+  step=5,dige:70c104d72b3898b1
+  step=6,dige:81261bc4d6ca2e16
+  step=7,dige:882385992b42f2ff
+  step=8,dige:6aaf95f9c1811b3f
+  step=9,dige:b1aa7e12478de8e8
+  step=10,dige:ed20ba9e66facb59
+  step=11,dige:12a9f29e32a207fe

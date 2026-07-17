@@ -46,6 +46,7 @@
 //    SubtleCrypto path Ra_enid still walks), so a chunk cid and a body_hash slice agree bit-for-bit.
 IMPORT()
     import { sha256_hex } from "$lib/O/Hashly.ts"
+    import { Idento } from "$lib/Y.svelte.ts"
 
 //#region knobs
 // Ra_target_lufs — the ONE loudness constant (Radio_todo §3.2, decided 2026-07-07): -14 LUFS, the
@@ -529,12 +530,39 @@ async Ra_stock_peek(nav, name):
     }
     return card
 
-// Ra_library — the census-convention home (%Library,pier:<whose> — a KEY, not a nickname): the
-//  same shape Swarm_music_census counts, so a stocked library is a countable shelf with no adapter.
+// Ra_home_self / Ra_home_them — the Musu homes (Radio_spec §2.2/§2.4, rung 3): per-identity music
+//  homes, each with a `stock/` shelf where the settled %Record/%Original holdings live exactly as
+//   they lived under the old flat %Library.  `%MusuSelf,pub:<me>` is MY holdings; `%MusuThem,pub:<them>`
+//    is what I hold OF a friend (the mirror side).  Both obey the homing law (§2.1) by wearing `pub`.
+//  Each door returns the SHELF (the stock child), which replaces the old %Library node one-for-one:
+//   the shelf carries `pub` so the two stock readers (Ra_stock_one, Ra_card via rec.c.up.sc.pub) still
+//    resolve WHOSE bytes these are without digging back up to the home.  `oai` is a side-effecting
+//     find-or-create on a plain (non-req) mainkey — the same idiom the old Ra_library used.
+Ra_home_self(w, pub):
+    return this.Ra_home_shelf(w, w.oai({ MusuSelf: 1, pub: pub }), pub, 'stock')
+Ra_home_them(w, pub):
+    return this.Ra_home_shelf(w, w.oai({ MusuThem: 1, pub: pub }), pub, 'stock')
+// Ra_home_shop — the LOADING ZONE shelf beside stock/ (Radio_spec §2.4): what is mid-transfer in either
+//  direction, and ONLY while in motion — a %Heist (my active pull) lives here, not on the world floor.
+//   The shop is the ASKER's: a heist is MY operation, so it homes under MY %MusuSelf,pub home (the same
+//    home Ra_home_self returns the stock shelf of).  Returns the `shop` child, carrying pub like stock does.
+Ra_home_shop(w, pub):
+    return this.Ra_home_shelf(w, w.oai({ MusuSelf: 1, pub: pub }), pub, 'shop')
+// Ra_home_shelf — the shared tail: home under w, a NAMED shelf (`stock`|`shop`) under the home, pub stamped
+//  on both (the home wears it as its identity; the shelf carries it so a Record's rec.c.up resolves pub).
+//   `name` is the shelf mainkey — the shelves are siblings under the one home, so a home carries both.
+Ra_home_shelf(w, home, pub, name):
+    home.c.up = w
+    let sc = {}
+    sc[name] = 1
+    sc.pub = pub
+    let shelf = home.oai(sc)
+    shelf.c.up = home
+    return shelf
+// Ra_library — DEPRECATED alias to Ra_home_self, kept one cycle while call sites migrate (rung 3).
+//  Old callers that meant "my own census shelf" resolve here; a mirror/follower side wants Ra_home_them.
 Ra_library(w, whose):
-    let lib = w.oai({ Library: 1, pier: whose })
-    lib.c.up = w
-    return lib
+    return this.Ra_home_self(w, whose)
 
 // Ra_pack — the .jam wire.  A one-line JSON header (the resurrection card; sizes[] = each buffer's
 //  byte length) + a single '\n' (JSON.stringify never emits a raw newline, so the FIRST 0x0A is an
@@ -565,6 +593,20 @@ Ra_pack(info, bufs):
     }
     return out
 
+// Ra_vouch_header — Seam A (Radio_spec §5A rung 7): stamp the origin signature onto a .jam header BEFORE
+//  Ra_pack serializes it, so a header with a `by` gains a `sig` over its own cids manifest.  `signer` is a
+//   keyed Idento (absent → a no-op, the header stays the byte-identical old shape so old jams still load and
+//    an unsigned build is unchanged).  Computes cids the SAME way Ra_pack will (deterministic — same bytes,
+//     same sha256), signs Ra_manifest(info.id, cids), and stamps info.by (FULL pubkey hex) + info.sig.
+//  Called with a signer only on the STOCK path that owns a signing identity; the generic build passes none.
+async Ra_vouch_header(info, bufs, signer):
+    if (!signer) return info
+    let cids = []
+    for (const b of bufs) cids.push(sha256_hex(b))
+    info.by = signer.freeze().pub
+    info.sig = await this.Ra_sign(signer, info.id, cids)
+    return info
+
 // Ra_unpack — the read twin: split at the first '\n', JSON.parse the header, then carve the body
 //  into buffers by the header's sizes[].  Returns {info, bufs, end} | null; `end` is where the last
 //   buffer should stop — a caller compares it to the real byte length to catch a truncated write.
@@ -586,6 +628,41 @@ Ra_unpack(raw):
         off = off + sz
     }
     return { info: info, bufs: bufs, end: off }
+//#endregion
+
+//#region trust — the origin-signature over the cids manifest (Radio_spec §5A rung 7).  The per-chunk cid
+//  (rung 0) catches CORRUPTION — bytes that no longer match the promise that rode with them — but NOT a
+//   LYING peer who recomputes a cid over bad bytes.  So an origin SIGNS the manifest of its chunk cids with
+//    its ed25519 secret; a receiver who knows the origin key verifies the vouch BEFORE trusting a byte.  The
+//     two gates together: cid keeps an honest peer honest, the signature keeps a dishonest peer out.  These
+//      were proven in isolation as MusuBreach_sign/verify/manifest (Heistation.g); promoted here so the .jam
+//       wire (Seam A) and the Heist offer door (Seam B) share ONE implementation with the crypto test.
+//  KEYED ON THE MASTER'S CIDS: the Heist-path %Body cids are the original file bytes (deterministic across
+//   peers); the Ra-path transcode is NOT bit-reproducible (two transcodes → different bytes → different
+//    cids), so only the %Original's cids (rung 3) can ever ride a swarm-shared signature — a grade's own
+//     cids sign only its local .jam.
+// Ra_manifest — the canonical string an origin vouches for: the track identity bound to its cids in seq
+//  order.  Binding the id stops a signature over track A's chunk-set being replayed as track B's.  The dot
+//   join is chosen because a sha256 hex never contains a dot, so the split back is unambiguous.
+Ra_manifest(id, cids):
+    return ('' + (id || '')) + '|' + (cids || []).join('.')
+
+// Ra_sign — the origin signs the manifest with its ed25519 secret (deterministic — same key + message →
+//  the same signature every time — so a seeded Book pins it).  `ido` is a keyed Idento.  Returns the hex sig.
+async Ra_sign(ido, id, cids):
+    return await ido.sig(this.Ra_manifest(id, cids))
+
+// Ra_verify — a receiver checks a signature against a KNOWN origin pubkey (the FULL pub hex, not the 16-hex
+//  prepub — from_hex needs the whole key to verify).  Returns false on any mismatch, missing input, or
+//   garbage — never throws (a hostile offer must fail closed, never crash the door).
+async Ra_verify(pubhex, id, cids, sig):
+    if (!pubhex || !sig) return false
+    let v = new Idento()
+    try {
+        v.from_hex(pubhex)
+        return await v.ver(sig, this.Ra_manifest(id, cids))
+    } catch (er) { return false }
+//#endregion
 
 // Ra_stock_standing — the idempotence probe: this content already stocked on THIS Peering's shelf?
 //  Truth lives ON DISK (a fresh boot has no particles): the newest (pub, enid) file parses AND its
@@ -611,6 +688,11 @@ async Ra_stock_standing(nav, pub, enid):
     if (!(+info.total > 0)) return null
     if (un.end > raw.byteLength) return null
     if (un.bufs.length !== +info.segs) return null
+    // — Seam A, read side (rung 7): a header that CLAIMS an origin (`by` present) must carry a signature
+    //    that verifies over its own cids manifest — else the .jam is a forged|tampered card and must NOT
+    //     resurrect (refuse it as not-standing, so the caller rebuilds from the real source it can hash).
+    //      A header with NO `by` passes untouched (an unsigned jam is the graceful old shape). —
+    if (info.by && !(await this.Ra_verify(info.by, info.id, info.cids, info.sig))) return null
     return { info: info, bufs: un.bufs, name: hit.name }
 
 // Ra_record_from — mint|refresh the %Record + its %Preview,seq CHUNK PARTICLES from a stock card —
@@ -677,7 +759,7 @@ Ra_record_from(lib, info, bufs):
 //      across the seam.  Returns {stood:1}|{built:1}|null (unreadable/undecodable — the caller counts
 //       it skipped).
 async Ra_stock_one(w, lib, nav, src_base, path):
-    let pub = lib.sc.pier
+    let pub = lib.sc.pub
     // — read the source ONCE, up front —
     // its bytes ARE the identity (enid = sha256 of the whole track), so freshness needs no separate
     //  oracle: same bytes find their standing file by name; changed bytes are a NEW enid, find
@@ -740,6 +822,10 @@ async Ra_stock_one(w, lib, nav, src_base, path):
     //    shot.  segs = what THIS file holds (the preview); total = the whole track's chunk count —
     let meta = this.Crate_meta_from_path(path)
     let info = { fmt: 'pkt', id: enid, path: path, base: src_base, col: 1, src_size: src_size, title: meta.title, artist: meta.artist, album: meta.album, seconds: +decoded.duration.toFixed(2), lufs: lufs, gain: gain.db, capped: gain.capped, segs: P, total: segs, preview_secs: this.Ra_preview_secs(), sr: 48000, br: this.Ra_bitrate(), seg_secs: this.Ra_seg_secs(), nch: nch, preskip: st.preskip, target: this.Ra_target_lufs(w) }
+    // — Seam A (rung 7): if this shelf owns a signing identity, stamp `by`+`sig` over the cids manifest
+    //    onto the header before pack.  lib.c.signer is a keyed Idento a Book|app sets; absent → the header
+    //     stays the byte-identical old shape so an unsigned stock (every current Book) is unchanged. —
+    await this.Ra_vouch_header(info, bufs, lib.c.signer)
     await nav.bin_write(this.Ra_stock_dir(), this.Ra_stock_name(Date.now(), pub, enid), this.Ra_pack(info, bufs))
     // — the write supersedes: older twins of this enid and any stale render of this PATH (same file,
     //    different bytes, so a different enid) are litter now — sweep this Peering's shelf —
@@ -767,6 +853,30 @@ async Ra_stock_gc(nav, pub, enid, base, path):
         let card = await this.Ra_stock_peek(nav, p.name)
         if (card && card.path === path && (card.base || '') === (base || '')) await this.Ra_stock_drop(nav, p.name)
     }
+
+// Ra_stock_cascade — the era-forget cascade (Musica_forget's radiostock arm): an enid left a magazine
+//  when its era Cloud was dropped, so its derived .jam stock is candidate litter now.  BIAS-TO-KEEP:
+//   the stock is a derivable CACHE (re-derived on demand from the source), so a wrong keep costs nothing
+//    and a wrong drop costs one re-encode — so an enid still referenced by ANY surviving card KEEPS its
+//     stock (the `keep` set the caller passes = every id still in the magazine after the fold), and only
+//      an enid referenced by NOTHING cascades to Ra_stock_drop.  The join is Card.id === stock enid (both
+//       are Ra_enid — the content hash; Ra_record_from stamps the Record.id, Musica_fold copies it to the
+//        Card, Ra_stock_name keys the file by it).  GRACEFUL NO-OP: an in-memory magazine with no disk
+//         stock drops exactly nothing — Ra_stock_ls finds no shelf files for this pub, so the loop is
+//          empty and an existing forget path (MusuVend rides Musica_forget_fold) stays byte-identical.
+//   pub scopes the shelf to THIS Peering (many Piers share one .jamsend); foreign pubs are never seen.
+//    Returns the list of enids whose stock was unlinked (a Book witnesses PRECISELY what cascaded).
+async Ra_stock_cascade(nav, pub, gone, keep):
+    let drop_set = {}
+    for (const id of gone) { if (!keep[id]) drop_set[id] = 1 }
+    let cascaded = []
+    if (!Object.keys(drop_set).length) return cascaded
+    for (const p of await this.Ra_stock_ls(nav, pub)) {
+        if (!drop_set[p.enid]) continue
+        await this.Ra_stock_drop(nav, p.name)
+        cascaded.push(p.enid)
+    }
+    return cascaded
 
 // Ra_stock — the pass over a collection: walk the source, stock the first `take` tracks (take
 //  absent|0 = all) starting at sorted-walk offset `from` (absent|0 = the top — a multi-Pier Book
@@ -862,13 +972,13 @@ async Ra_proof(nav, pub, id, s):
 // Ra_card — the radiostock card read once per Record (rec.c.card): the transcode needs the source
 //  path|base (they stay OFF the snapped head — comma-hazardous and local) and the resurrection
 //   scalars ride the head already.  The file re-finds by (pub, enid) — pub off the Record's own
-//    shelf (rec.c.up, the %Library whose pier key owns the stock); the read filename is remembered
+//    shelf (rec.c.up, the `stock/` shelf whose pub key owns the stock); the read filename is remembered
 //     on rec.c.card_file so the dead-source rule can drop exactly the file it loaded.
 async Ra_card(w, rec):
     if (rec.c.card) return rec.c.card
     let nav = w.c.ra_nav || this.Crate_nav()
     if (!nav) return null
-    let pub = rec.c.up?.sc?.pier
+    let pub = rec.c.up?.sc?.pub
     if (!pub) return null
     let hit = null
     try {

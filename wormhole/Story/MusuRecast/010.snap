@@ -46,15 +46,17 @@ Snap:H
               req:unemit,seq=5,type:repli_lines,body_hash:094c78b641d9ce303b57a93671e1c5b9e9ad02ef99d9b0f5850a7ad639bfc59f,body_len=307,done,to:repli_lines,finished
               req:unemit,seq=6,type:repli_lines,body_hash:70bb5dadd84d54422a6a2f437e1c088a6ad45ebdc771e9a69a7c8715dba663af,body_len=93,done,to:repli_lines,finished
           active_transport,type:mock,open
-        Library,pier:Origin
-          Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-          Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+        MusuSelf,pub:Origin
+          stock,pub:Origin
+            Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+            Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
         Mag:Musica
           Cloud,randomic:draw_a,created_at=1000
             Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
             Card,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
-        Library,pier:Follower.mirror
-          Mag:Musica
-            Cloud,randomic:draw_a,created_at=1000
-              Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-              Card,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+        MusuThem,pub:Follower.mirror
+          stock,pub:Follower.mirror
+            Mag:Musica
+              Cloud,randomic:draw_a,created_at=1000
+                Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+                Card,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus

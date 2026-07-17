@@ -22,19 +22,21 @@ Snap:H
               req:unemit,seq=2,type:repli_lines,body_hash:10ebc47d04f51634a25f62703d7941e6e7de1e53b786be43f2a8b9d634cfd016,body_len=160,done,to:repli_lines,finished
               req:unemit,seq=3,type:repli_lines,body_hash:4b3b462e8a76d5ed04a3cbda574a28d19e4c3f6fb8af357e9ab1b89dafa1e192,body_len=160,done,to:repli_lines,finished
           active_transport,type:mock,open
-        Library,pier:DJ
-          Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
-            Stream,name:audio,total=6,have=0,sr=48000
-          Record,id:rec1,title:Tone-1,artist:Synthetic,seconds=0.3,nchunks=6
-            Stream,name:audio,total=6,have=0,sr=48000
-          Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
-            Stream,name:audio,total=6,have=0,sr=48000
+        MusuSelf,pub:DJ
+          stock,pub:DJ
+            Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
+              Stream,name:audio,total=6,have=0,sr=48000
+            Record,id:rec1,title:Tone-1,artist:Synthetic,seconds=0.3,nchunks=6
+              Stream,name:audio,total=6,have=0,sr=48000
+            Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
+              Stream,name:audio,total=6,have=0,sr=48000
         reached:step_3
         Sent_Tree,pier:DJ,dontSnap
-        Library,pier:Crowd
-          Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
-            Stream,name:audio,total=6,have=0,sr=48000
-          Record,id:rec1,title:Tone-1,artist:Synthetic,seconds=0.3,nchunks=6
-            Stream,name:audio,total=6,have=0,sr=48000
-          Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
-            Stream,name:audio,total=6,have=0,sr=48000
+        MusuThem,pub:Crowd
+          stock,pub:Crowd
+            Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
+              Stream,name:audio,total=6,have=0,sr=48000
+            Record,id:rec1,title:Tone-1,artist:Synthetic,seconds=0.3,nchunks=6
+              Stream,name:audio,total=6,have=0,sr=48000
+            Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
+              Stream,name:audio,total=6,have=0,sr=48000

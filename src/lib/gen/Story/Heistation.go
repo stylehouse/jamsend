@@ -10,7 +10,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return '9f8834b645883ef6~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return '850f6df6a94c26e5~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -199,8 +199,8 @@ async MusuHeist_census(w) {
     for (const peering of w.o({ Peering: 1 })) {
         for (const pier of peering.o({ Pier: 1 })) pier.oai({ req: 'handshake' })
     }
-    w.c.uno_lib = this.Ra_library(w, uno.sc.prepub)
-    w.c.duo_lib = this.Ra_library(w, duo.sc.prepub)
+    w.c.uno_lib = this.Ra_home_self(w, uno.sc.prepub)
+    w.c.duo_lib = this.Ra_home_self(w, duo.sc.prepub)
     // the wire roles ride the LINK PORTS (the handler's pier IS the receiving port — %Piers land beats
     //  later, after the redeem settles, so registering those here would silently register nothing).  Each
     //   port both casts this side's census and receives the other side's lines — one wire, both directions.
@@ -317,7 +317,9 @@ async MusuHeist_job(w, nick) {
     if (w.c.heist_active) this.MusuHeist_note(w, { job_clash: nick })
     let b = this.MusuHeist_bundle(w, nick)
     w.c.repli_mirror_pier = b.mir_key
-    b.job = this.Heist_job(w, b.at, b.filings)
+    // the job homes in the ASKER's shop shelf (Radio_spec §2.4) — b.mine is who is pulling, so the loading
+    //  zone is under their %MusuSelf,pub home, never the world floor.
+    b.job = this.Heist_job(w, b.at, b.filings, { home: this.Ra_home_shop(w, b.mine) })
     w.c.heist_active = b
 
 },
@@ -340,7 +342,7 @@ async MusuHeist_flow(w) {
         this.MusuHeist_note(w, { offered: b.nick, n: b.offered })
         return true
     }
-    let mir = w.o({ Library: 1, pier: b.mir_key })[0]
+    let mir = w.o({ MusuThem: 1, pub: b.mir_key })[0]?.o({ stock: 1 })[0]
     if (!mir) return false
     let landed = +(b.job.sc.landed || 0)
     let skipped = +(b.job.sc.skipped || 0)
@@ -486,9 +488,13 @@ async MusuHeist_deny(w) {
 //  remains — collections + newlyadded — never says who gave what.  The verdict observation to %testing.
 async MusuHeist_flat_check(w) {
     this.MusuHeist_note(w, { reached: 'flat' })
-    let heists = w.o({ Heist: 1 }).length
-    let mir_a = w.o({ Library: 1, pier: w.c.uno_pre + '.heist' })[0]
-    let mir_b = w.o({ Library: 1, pier: w.c.duo_pre + '.heist' })[0]
+    // the jobs home in each asker's shop shelf now (§2.4) — no %Heist floats on w — so count across BOTH
+    //  askers' shops (plus w for the compat leg, so a stray on the floor still reads as a leak).
+    let shop_a = this.Ra_home_shop(w, w.c.uno_pre)
+    let shop_b = this.Ra_home_shop(w, w.c.duo_pre)
+    let heists = w.o({ Heist: 1 }).length + shop_a.o({ Heist: 1 }).length + shop_b.o({ Heist: 1 }).length
+    let mir_a = w.o({ MusuThem: 1, pub: w.c.uno_pre + '.heist' })[0]?.o({ stock: 1 })[0]
+    let mir_b = w.o({ MusuThem: 1, pub: w.c.duo_pre + '.heist' })[0]?.o({ stock: 1 })[0]
     let quarantined = (mir_a ? mir_a.o({ Record: 1 }).length : 0) + (mir_b ? mir_b.o({ Record: 1 }).length : 0)
     if (heists === 0 && quarantined === 0) {
         this.MusuHeist_note(w, { flattened: 1 })
@@ -568,7 +574,9 @@ MusuHeist_witness(w) {
     let both_live = !!(w.c.repli_allow && w.c.repli_allow(w.c.uno_pre, w.c.duo_pre) && w.c.repli_allow(w.c.duo_pre, w.c.uno_pre) && !w.c.repli_allow('deadbeefstranger', w.c.uno_pre))
     if (T.oa({ sealed: 1 }) && both_live && !T.oa({ see: 'the pair sealed over the wire — a mutual Music grant gates the heist both ways' })) this.MusuHeist_note(w, { see: 'the pair sealed over the wire — a mutual Music grant gates the heist both ways' })
     // the job stands with its filings pinned while nothing has landed yet — merge decided at creation.
-    let stand = w.o({ Heist: 1 })[0]
+    //  it lives in the asker's shop shelf now (§2.4), not on w — the first standing job is uno's (asker uno_pre),
+    //   but look across both askers' shops so a duo-first ordering still finds the standing job.
+    let stand = this.Ra_home_shop(w, w.c.uno_pre).o({ Heist: 1 })[0] || this.Ra_home_shop(w, w.c.duo_pre).o({ Heist: 1 })[0]
     if (stand && stand.o({ filing: 1 }).length >= 1 && !T.o({ heisted: 1 }).length && !T.oa({ see: 'a heist job stands pointed at the pier — its filing decisions pinned before any byte crossed' })) this.MusuHeist_note(w, { see: 'a heist job stands pointed at the pier — its filing decisions pinned before any byte crossed' })
     let ha = T.o({ heisted: 'uno' })[0]
     // job A landed: original bytes straight into the collection — the DISK re-read re-hashes to the source
@@ -752,8 +760,7 @@ async MusuVend_setup(w) {
     this.Repli_register_rx(w, link[1])
     // the origin shelf + its magazine.  register the origin port as a caster (a magazine has no chunks, so no
     //  want ever arrives — but the enrolment keeps the wiring honest to the multi-caster convention).
-    let origin_lib = w.i({ Library: 1, pier: 'Origin' })
-    origin_lib.c.up = w
+    let origin_lib = this.Ra_home_self(w, 'Origin')
     w.c.origin_lib = origin_lib
     w.c.repli_src = origin_lib
     this.Repli_register_caster(w, link[0], origin_lib)
@@ -1027,8 +1034,7 @@ async MusuDoor_setup(w) {
     this.Repli_arm(w)
     w.c.repli_mirror_pier = 'Follower.mirror'
     this.Repli_register_rx(w, link[1])
-    let origin_lib = w.i({ Library: 1, pier: 'Origin' })
-    origin_lib.c.up = w
+    let origin_lib = this.Ra_home_self(w, 'Origin')
     w.c.origin_lib = origin_lib
     w.c.repli_src = origin_lib
     this.Repli_register_caster(w, link[0], origin_lib)
@@ -1705,8 +1711,7 @@ async MusuRename_setup(w) {
     this.Repli_arm(w)
     w.c.repli_mirror_pier = 'Follower.mirror'
     this.Repli_register_rx(w, link[1])
-    let origin_lib = w.i({ Library: 1, pier: 'Origin' })
-    origin_lib.c.up = w
+    let origin_lib = this.Ra_home_self(w, 'Origin')
     w.c.origin_lib = origin_lib
     w.c.repli_src = origin_lib
     this.Repli_register_caster(w, link[0], origin_lib)
@@ -1952,8 +1957,7 @@ async MusuRecast_setup(w) {
     this.Repli_arm(w)
     w.c.repli_mirror_pier = 'Follower.mirror'
     this.Repli_register_rx(w, link[1])
-    let origin_lib = w.i({ Library: 1, pier: 'Origin' })
-    origin_lib.c.up = w
+    let origin_lib = this.Ra_home_self(w, 'Origin')
     w.c.origin_lib = origin_lib
     w.c.repli_src = origin_lib
     this.Repli_register_caster(w, link[0], origin_lib)
@@ -2193,8 +2197,7 @@ async MusuStanding_setup(w) {
     this.Repli_arm(w)
     w.c.repli_mirror_pier = 'Follower.mirror'
     this.Repli_register_rx(w, link[1])
-    let origin_lib = w.i({ Library: 1, pier: 'Origin' })
-    origin_lib.c.up = w
+    let origin_lib = this.Ra_home_self(w, 'Origin')
     w.c.origin_lib = origin_lib
     w.c.repli_src = origin_lib
     this.Repli_register_caster(w, link[0], origin_lib)
@@ -2372,6 +2375,10 @@ async MusuBreach_drive(w, req) {
         if (n === 4) await this.MusuBreach_poison(w, nav)
         if (n === 5) await this.MusuBreach_sweep(w, nav)
         if (n === 6) await this.MusuBreach_vouch(w)
+        if (n === 7) await this.MusuBreach_wire_census(w, nav)
+        if (n === 8) await this.MusuBreach_wire_honest(w, nav)
+        if (n === 9) await this.MusuBreach_wire_forged(w, nav)
+        if (n === 10) await this.MusuBreach_wire_sweep(w, nav)
     }
     this.MusuBreach_witness(w)
     await this.Musu_float(w)
@@ -2390,15 +2397,13 @@ async MusuBreach_census(w, nav) {
         return
     }
     await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-breachrun')
-    let mir = w.i({ Library: 1, pier: 'breach.mirror' })
-    mir.c.up = w
-    let own = w.i({ Library: 1, pier: 'breach.own' })
-    own.c.up = w
+    let mir = this.Ra_home_them(w, 'breach.mirror')
+    let own = this.Ra_home_self(w, 'breach.own')
     await this.Heist_census(w, mir, nav, 'testsounds', ['The Sines', 'DJ Oscillo'])
     w.c.mir = mir
     w.c.own = own
     w.c.mardir = this.Heist_marrauding('breachrun', 'solo')
-    w.c.job = this.Heist_job(w, 'breachpier', [{ artist: 'The Sines', genre: 'breachtest' }, { artist: 'DJ Oscillo', genre: 'breachtest' }], {})
+    w.c.job = this.Heist_job(w, 'breachpier', [{ artist: 'The Sines', genre: 'breachtest' }, { artist: 'DJ Oscillo', genre: 'breachtest' }], { home: this.Ra_home_shop(w, 'breach.own') })
     // COVERAGE fact: every chunk of every censused record carries a cid (the origin's per-seq promise).  The
     //  library shrinks as lands consume records, so capture the fact NOW as a %testing marker the witness reads.
     let recs = mir.o({ Record: 1 })
@@ -2495,26 +2500,20 @@ async MusuBreach_on_disk(nav, mardir, rel) {
     } catch (er) { return false }
 
 },
-// MusuBreach_manifest — the canonical string an origin vouches for: the track identity bound to its cids in
-//  seq order.  Binding the id stops a signature over track A's chunk-set being replayed as track B's.
+// MusuBreach_manifest/sign/verify — DELEGATE to the promoted Ra_* helpers (Ghost/M/Ra.g //#region trust).
+//  The crypto was PROVEN here in isolation, then promoted to Ra.g so the .jam wire (Seam A) and the Heist
+//   offer door (Seam B) share the ONE implementation this test exercises — a green here now proves the same
+//    code the live trust path runs, not a parallel copy that could drift.
 MusuBreach_manifest(id, cids) {
-    return ('' + (id || '')) + '|' + (cids || []).join('.')
+    return this.Ra_manifest(id, cids)
 
 },
-// MusuBreach_sign — the origin signs the manifest with its ed25519 secret (deterministic — same key + message
-//  → the same signature every time — so a seeded Book pins it).
 async MusuBreach_sign(ido, id, cids) {
-    return await ido.sig(this.MusuBreach_manifest(id, cids))
+    return await this.Ra_sign(ido, id, cids)
 
 },
-// MusuBreach_verify — a receiver checks a signature against a KNOWN origin pubkey (the FULL pub, not the 16-hex
-//  prepub — from_hex needs the whole key to verify).  Returns false on any mismatch or garbage — never throws.
 async MusuBreach_verify(pubhex, id, cids, sig) {
-    let v = new Idento()
-    v.from_hex(pubhex)
-    try {
-        return await v.ver(sig, this.MusuBreach_manifest(id, cids))
-    } catch (er) { return false }
+    return await this.Ra_verify(pubhex, id, cids, sig)
 
 },
 // MusuBreach_vouch — THE ORIGIN-SIGNATURE (rung 7 keystone, proven in isolation): the cid catches a corrupt
@@ -2563,10 +2562,140 @@ async MusuBreach_vouch(w) {
     if (!imp_ok) m.sc.imposter_caught = 1
 
 },
-// MusuBreach_witness — the SIX %see truths: the two trust gates the machine leans on.  CORRUPTION (the cid):
-//  cids exist, honest bytes land, a poisoned chunk breaches, the breach is localized.  FORGERY (the signature):
-//   the origin vouches for its chunk-set, and a lying peer is caught.  Gated on the %testing markers (live
-//    truth), never a beat number — each fires the first pass its fact holds and latches once-noticed.
+// ── THE WIRING (RUNG7-WIRE) — the isolated crypto of step 6 now carried on a real offer + verified at the
+//  offer DOOR before any pull.  Steps 2-6 proved the signature works; 7-10 prove it is WIRED: the origin
+//   stamps by/vouch_sig/vouch_cids onto a Record head (Heist_offer_vouch — the three scalar keys that ride a
+//    chunkless husk), and Heist_beat's door verifies BEFORE Ra_pull_beat wants a byte.  A same-world mirror
+//     (the census records carry their %Body bufs already) lets Heist_beat land the honest offer with no wire;
+//      the forged offer is refused at the door — zero wants, zero new lands, a legible unvouched marker. ──
+
+// MusuBreach_wire_origin — the ONE seeded origin Idento the wire steps sign|verify with (deterministic, so the
+//  by/sig snap stable run to run).  Reuses the same 'MusuBreach-origin' seed step 6 vouches with.
+async MusuBreach_wire_origin() {
+    let o = new Idento()
+    await o.generateKeys('MusuBreach-origin')
+    return o
+
+},
+// MusuBreach_wire_census — FRESH single-record mirrors for the two wire scenes, independent of the steps 3-5
+//  landings.  A Heist_beat walks the WHOLE mirror, so the honest scene and the forged scene each need their OWN
+//   mirror trimmed to exactly ONE record — else one honest beat would land the lot and drain the forged scene.
+//    Two libraries censused off the real disk (each mints its own %Body chunks + cids), each cut to its first
+//     record; two jobs; the honest job files The Sines, the forged job files DJ Oscillo.  (The trim keeps the
+//      scene deterministic and the assertions exact: one land, one refusal.)
+async MusuBreach_wire_census(w, nav) {
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-breachwire')
+    let hmir = this.Ra_home_them(w, 'breach.wire.honest.mirror')
+    let hown = this.Ra_home_self(w, 'breach.wire.honest.own')
+    let fmir = this.Ra_home_them(w, 'breach.wire.forged.mirror')
+    let fown = this.Ra_home_self(w, 'breach.wire.forged.own')
+    await this.Heist_census(w, hmir, nav, 'testsounds', ['The Sines'])
+    await this.Heist_census(w, fmir, nav, 'testsounds', ['DJ Oscillo'])
+    // trim each mirror to its FIRST record — one land / one refusal, a clean single-record scene per gate.
+    await this.MusuBreach_trim_to_one(hmir)
+    await this.MusuBreach_trim_to_one(fmir)
+    w.c.whmir = hmir
+    w.c.whown = hown
+    w.c.wfmir = fmir
+    w.c.wfown = fown
+    w.c.whmardir = this.Heist_marrauding('breachwire', 'honest')
+    w.c.wfmardir = this.Heist_marrauding('breachwire', 'forged')
+    w.c.whjob = this.Heist_job(w, 'breachwirehonest', [{ artist: 'The Sines', genre: 'breachtest' }], { home: this.Ra_home_shop(w, 'breach.wire.honest.own') })
+    w.c.wfjob = this.Heist_job(w, 'breachwireforged', [{ artist: 'DJ Oscillo', genre: 'breachtest' }], { home: this.Ra_home_shop(w, 'breach.wire.forged.own') })
+    this.MusuBreach_note(w, { wire_census: 1, honest: hmir.o({ Record: 1 }).length, forged: fmir.o({ Record: 1 }).length })
+
+},
+// MusuBreach_trim_to_one — drop every mirror record past the first, so a Heist_beat pass touches exactly one.
+async MusuBreach_trim_to_one(mir) {
+    let recs = mir.o({ Record: 1 })
+    let i = 1
+    while (i < recs.length) {
+        await mir.rm({ Record: 1, id: recs[i].sc.id })
+        i = i + 1
+    }
+
+},
+// MusuBreach_wire_honest — SEAM B honest: the origin vouches for a record (stamps by/vouch_sig/vouch_cids the way
+//  a real offer would), the door verifies (Heist_vouch_ok true), and Heist_beat pulls+lands it — a signed offer
+//   that checks out flows through unblocked.  Asserts: the vouch verifies, the record LANDS (job.landed bumps by
+//    one — the mirror holds exactly one), the door minted NO unvouched refusal, and the record left the mirror.
+async MusuBreach_wire_honest(w, nav) {
+    let mir = w.c.whmir
+    let job = w.c.whjob
+    if (!mir || !job) return
+    let rec = mir.o({ Record: 1 })[0]
+    if (!rec) return
+    let origin = await this.MusuBreach_wire_origin()
+    await this.Heist_offer_vouch(rec, origin)
+    let door_ok = await this.Heist_vouch_ok(rec)
+    let id = rec.sc.id
+    let landed0 = +(job.sc.landed || 0)
+    let unv0 = +(job.sc.unvouched || 0)
+    // one beat: the record's %Body bufs are present (same-world census) so Ra_pull_beat returns done and
+    //  Heist_beat lands it — the door passed a signed-and-valid offer straight through.
+    await this.Heist_beat(w, null, null, null, job, w.c.whown, mir, nav, w.c.whmardir)
+    let m = this.MusuBreach_note(w, { wire_honest: 1, by: origin.pretty_pubkey() })
+    if (door_ok) m.sc.door_ok = 1
+    if (+(job.sc.landed || 0) - landed0 === 1) m.sc.landed = 1
+    if (+(job.sc.unvouched || 0) === unv0) m.sc.no_refusal = 1
+    if (!mir.o({ Record: 1, id: id }).length) m.sc.flowed = 1
+
+},
+// MusuBreach_wire_forged — SEAM B forgery: a MIDDLEMAN takes the origin's honest signature but swaps one cid in
+//  the carried manifest (vouch_cids) — the classic replay of A's sig over a different chunk-set.  The door
+//   recomputes the manifest from the tampered cids, the signature no longer verifies, and Heist_beat REFUSES the
+//    offer BEFORE Ra_pull_beat wants a byte: zero new lands, the unvouched tally bumps, a legible unvouched marker
+//     names the track, and the husk is dropped.  This is the whole keystone — a lying peer cannot get a pull armed.
+async MusuBreach_wire_forged(w, nav) {
+    let mir = w.c.wfmir
+    let job = w.c.wfjob
+    if (!mir || !job) return
+    let rec = mir.o({ Record: 1 })[0]
+    if (!rec) return
+    let origin = await this.MusuBreach_wire_origin()
+    // an HONEST vouch first (the real origin sig over the real cids), then a middleman TAMPERS the carried
+    //  manifest: swap one cid for a different seq's.  The sig is untouched (the origin's real one) — it simply
+    //   no longer matches the manifest the head now advertises.  cids differ per chunk (different bytes → sha256).
+    await this.Heist_offer_vouch(rec, origin)
+    let cids = ('' + rec.sc.vouch_cids).split('.')
+    let real_ok = await this.Heist_vouch_ok(rec)
+    let forged = [...cids]
+    forged[2] = cids[0]
+    rec.sc.vouch_cids = forged.join('.')
+    rec.bump()
+    let door_bad = await this.Heist_vouch_ok(rec)
+    let id = rec.sc.id
+    let landed0 = +(job.sc.landed || 0)
+    let unv0 = +(job.sc.unvouched || 0)
+    let wanted0 = Object.keys(w.c.ra_wanted || {}).length
+    await this.Heist_beat(w, null, null, null, job, w.c.wfown, mir, nav, w.c.wfmardir)
+    let wanted1 = Object.keys(w.c.ra_wanted || {}).length
+    let m = this.MusuBreach_note(w, { wire_forged: 1, seq: '2' })
+    if (real_ok) m.sc.real_verified = 1
+    if (!door_bad) m.sc.door_refused = 1
+    if (+(job.sc.unvouched || 0) - unv0 === 1) m.sc.unvouched_bumped = 1
+    if (+(job.sc.landed || 0) === landed0) m.sc.no_new_land = 1
+    if (wanted1 === wanted0) m.sc.no_wants = 1
+    if (!mir.o({ Record: 1, id: id }).length) m.sc.dropped = 1
+    // the GATE'S OWN legible marker names the refused track (job's unvouched child), the wired twin of the
+    //  breach_seq localization — a snap reader sees WHICH offer was turned away, not just a bare count.
+    let named = job.o({ unvouched: 1 }).find((u) => u.sc.tune === rec.sc.artist + ' — ' + rec.sc.title)
+    if (named) m.sc.gate_named = 1
+
+},
+// MusuBreach_wire_sweep — drop the wire scene's landed bytes off the shared disk (the honest offer's landing);
+//  the forged offer never wrote.  Same hygiene as MusuBreach_sweep — the repo never keeps WAV bytes.
+async MusuBreach_wire_sweep(w, nav) {
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-breachwire')
+    this.MusuBreach_note(w, { wire_swept: 1 })
+
+},
+// MusuBreach_witness — the EIGHT %see truths: the two trust gates the machine leans on, in isolation AND wired.
+//  CORRUPTION (the cid): cids exist, honest bytes land, a poisoned chunk breaches, the breach is localized.
+//   FORGERY (the signature, in isolation): the origin vouches for its chunk-set, and a lying peer is caught.
+//    THE WIRING (Seam B at the offer door): a signed-and-valid offer flows through; a forged offer is refused
+//     before a byte is wanted.  Gated on the %testing markers (live truth), never a beat number — each fires
+//      the first pass its fact holds and latches once-noticed.
 MusuBreach_witness(w) {
     let n = (this.c.run)?.c.step_n
     if (!(n >= 2)) return
@@ -2591,6 +2720,765 @@ MusuBreach_witness(w) {
     //  This is what the per-chunk cid alone cannot do: the cid catches corruption but a forger recomputes it; the
     //   origin signature is unforgeable without the origin secret.  The two gates together close both holes.
     if (vm && vm.sc.forgery_caught && vm.sc.imposter_caught && !T.oa({ see: 'a lying peer is caught — a middleman who swaps a cid or signs with the wrong key fails the origin signature so a forged promise cannot poison the swarm' })) this.MusuBreach_note(w, { see: 'a lying peer is caught — a middleman who swaps a cid or signs with the wrong key fails the origin signature so a forged promise cannot poison the swarm' })
+    // #7 THE WIRING — a signed-and-valid offer flows THROUGH the door: the origin stamps the vouch onto the
+    //  Record head a chunkless husk carries and the door verifies it before pulling — an honest offer lands.
+    let wh = T.o({ wire_honest: 1 })[0]
+    if (wh && wh.sc.door_ok && wh.sc.landed && wh.sc.no_refusal && wh.sc.flowed && !T.oa({ see: 'a signed offer flows through the door — the origin vouch rides the chunkless husk head and verifies so the honest record pulls and lands unblocked' })) this.MusuBreach_note(w, { see: 'a signed offer flows through the door — the origin vouch rides the chunkless husk head and verifies so the honest record pulls and lands unblocked' })
+    // #8 THE KEYSTONE — a FORGED offer is refused at the door BEFORE any pull: a middleman who replays the
+    //  origin signature over a swapped manifest fails the door check so zero wants are minted and nothing lands.
+    let wf = T.o({ wire_forged: 1 })[0]
+    if (wf && wf.sc.real_verified && wf.sc.door_refused && wf.sc.unvouched_bumped && wf.sc.no_new_land && wf.sc.no_wants && wf.sc.dropped && wf.sc.gate_named && !T.oa({ see: 'a forged offer is refused at the door before any pull — a swapped manifest fails the origin signature so zero chunks are wanted nothing lands and the gate names the turned-away track' })) this.MusuBreach_note(w, { see: 'a forged offer is refused at the door before any pull — a swapped manifest fails the origin signature so zero chunks are wanted nothing lands and the gate names the turned-away track' })
+
+},
+// ══ MusuOgg — the ogg128 phone-sync export PROVEN (Radio_spec §2.4 `%Blob,grade:ogg128`) ═══════════════
+//  Androids play `.ogg` more happily than `.opus`, so syncing music to a phone ships a REAL RFC-7845
+//   Ogg/Opus file.  Ra.g's chunk pipeline DELETED the container from the wire (raw length-prefixed opus
+//    packets); THIS Book proves Orig.g writes a real container BACK — for export only, never touching the
+//     chunk format.  The arc: stock ONE real testsound track → drive the demand transcode to the END so
+//      ALL %Preview+%Stream chunks stand → Orig_ogg_export muxes their packets into an Ogg/Opus file on
+//       the nav + mints the %Blob,grade:ogg128 → a STRUCTURAL gate re-reads that file (every page CRC
+//        verifies, the OpusHead facts match the record) → a DECODER gate hands the file to a real
+//         OfflineAudioContext.decodeAudioData and reads back a duration within ~0.25s of the record's.
+//  ENTROPY LAW: the transcode is NOT bit-reproducible (two encodes → different bytes), so the Book snaps
+//   STRUCTURE (crc_ok, page count, rounded duration) — never the ogg bytes|hash|size.
+//  CONVENTION (Musu*/Ra*): no Run_A_ recipe — the world MUST be named MusuOgg (do_fn_for dispatches by
+//   w.sc.w).  Everything the test observes hangs under ONE w/%testing subtree (MusuOgg_T), off the design.
+MusuOgg(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuOgg_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// MusuOgg_T — the one %testing subtree: all the test's observations hang here, off the design tree.
+MusuOgg_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+// MusuOgg_note — stamp one observation under %testing (the test's voice; never touches the design).
+MusuOgg_note(w, sc) {
+    let t = this.MusuOgg_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+// MusuOgg_drive — the family's skip gates (no audio | no webcodecs | no writable share), then one move
+//  per step off step_n (req-local did_step, Musu style); the witness runs EVERY pass so each %see fires
+//   the first pass its truth holds.  The slow work (stock+transcode, export, decode) each rides an
+//    expecting() ttlilt so a Story snap only lands the resolved picture.  step 2 stocks + transcodes to
+//     the end, 3 exports, 4 re-reads the file structurally, 5 decodes it back, 6 sweeps the run's files.
+async MusuOgg_drive(w, req) {
+    if (typeof OfflineAudioContext === 'undefined') {
+        if (!this.MusuOgg_T(w).oa({ skipped: 'no_audio' })) this.MusuOgg_note(w, { skipped: 'no_audio' })
+        return
+    }
+    if (typeof AudioEncoder === 'undefined' || typeof AudioDecoder === 'undefined') {
+        if (!this.MusuOgg_T(w).oa({ skipped: 'no_webcodecs' })) this.MusuOgg_note(w, { skipped: 'no_webcodecs' })
+        return
+    }
+    let nav = this.Crate_nav()
+    if (!nav || typeof nav.bin_write !== 'function') {
+        if (!this.MusuOgg_T(w).oa({ skipped: 'no_writable_share' })) this.MusuOgg_note(w, { skipped: 'no_writable_share' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuOgg_stock(w, nav)
+        if (n === 3) await this.MusuOgg_export(w, nav)
+        if (n === 4) await this.MusuOgg_structural(w, nav)
+        if (n === 5) await this.MusuOgg_decode(w, nav)
+        if (n === 6) await this.MusuOgg_sweep(w, nav)
+    }
+    this.MusuOgg_witness(w)
+    await this.Musu_float(w)
+
+},
+// MusuOgg_stock — beat 2: stock ONE real testsound track into a shop library, then DRIVE the demand
+//  transcode straight to the end (no wire, no two-Pier want machinery — Ra_transcode_ensure once, then
+//   Ra_transcode_advance in a loop until the encode is done), so EVERY chunk of the whole track stands as
+//    a %Preview|%Stream particle.  The whole thing rides ONE expecting() ttlilt (its wall clock is a real
+//     decode+encode of a full track) so the snap lands the resolved standing.  Pinned seed for determinism.
+async MusuOgg_stock(w, nav) {
+    this.MusuOgg_note(w, { reached: 'step_2' })
+    this.Ra_seed(w, 'MusuOgg')
+    w.c.nav = nav
+    let paths = await this.Crate_nav_paths(nav, 'testsounds')
+    if (!paths.length) {
+        if (!this.MusuOgg_T(w).oa({ skipped: 'no_testsounds' })) this.MusuOgg_note(w, { skipped: 'no_testsounds' })
+        return
+    }
+    let lib = this.Ra_home_self(w, 'ogg.shop')
+    w.c.lib = lib
+    await this.expecting(w, 'ogg_stock', 240, async () => {
+        let r = await this.Ra_stock(w, lib, nav, 'testsounds', 1)
+        let rec = lib.o({ Record: 1 })[0]
+        if (!rec) return
+        w.c.rec_id = rec.sc.id
+        // drive the continuation encode to completion — the direct-drive alternative to parked wants.
+        let ra = await this.Ra_transcode_ensure(w, rec)
+        let guard = 0
+        while (ra && !ra.done && guard < 4000) {
+            await this.Ra_transcode_advance(w, rec)
+            guard = guard + 1
+        }
+        // the standing fact: EVERY seq 0..total-1 holds its buf (no gap) — read off particle presence.
+        let total = +(rec.sc.total || 0)
+        let map = this.Ra_chunk_map(rec)
+        let have = 0
+        let s = 0
+        while (s < total) {
+            if (map[s] != null) have = have + 1
+            s = s + 1
+        }
+        let p = { stocked: 1, total: total, have: have, seconds: Math.round(+(rec.sc.seconds || 0)) }
+        if (have === total && total > 0) p.whole = 1
+        if (r && r.built) p.built = 1
+        if (r && r.stood) p.stood = 1
+        this.MusuOgg_note(w, p)
+    })
+    w.doai({ req: 'witness', eternal: 1 })?.(async (req) => { this.MusuOgg_witness(w); req.sc.ok = 1 })
+
+},
+// MusuOgg_dir — where the export lands: the app's private '.jamsend/' corner (never media bytes at a
+//  share top level), a per-Book run namespace so a re-run is deterministic and the sweep is clean.
+MusuOgg_dir() {
+    return '.jamsend/ogg-export/musuogg'
+
+},
+// MusuOgg_name — the export file name, keyed by the record id so the %Blob path is stable across a re-run.
+MusuOgg_name(id) {
+    return 'sync-' + id + '.ogg'
+
+},
+// MusuOgg_export — beat 3: mux the standing chunks into a real Ogg/Opus file and mint the %Blob.  Sweep
+//  the run's export dir first (deterministic re-run).  Orig_ogg_export collects the packets in seq order,
+//   writes the container, and homes the %Blob,id,grade:ogg128 beside the Record with sc.path (never the
+//    bytes).  Reads the muxed length + page count as %testing facts (structure, not the non-reproducible
+//     bytes).  Rides an expecting() ttlilt — the mux+write is a real disk write of a whole track.
+async MusuOgg_export(w, nav) {
+    let lib = w.c.lib
+    if (!lib || !w.c.rec_id) return
+    let rec = lib.o({ Record: 1, id: w.c.rec_id })[0]
+    if (!rec) return
+    await this.MusuOgg_sweep_dir(nav)
+    let dir = this.MusuOgg_dir()
+    let name = this.MusuOgg_name(rec.sc.id)
+    await this.expecting(w, 'ogg_export', 120, async () => {
+        let ex = await this.Orig_ogg_export(w, nav, rec, dir, name)
+        if (ex.gap != null) {
+            this.MusuOgg_note(w, { export_fail: 1, gap: ex.gap })
+            return
+        }
+        // the file is on disk? read its length back straight off the nav (the artifact is real).
+        let raw = await nav.bin_read(dir, name)
+        let m = this.MusuOgg_note(w, { exported: 1, pages: ex.pages, packets: ex.packets })
+        if (raw && raw.byteLength > 0) m.sc.on_disk = 1
+        // the %Blob landed beside the Record, wearing its own mainkey + the join id + a path (not bytes)?
+        let blob = lib.o({ Blob: 1, id: rec.sc.id, grade: 'ogg128' })[0]
+        if (blob) {
+            if (blob.sc.path) m.sc.blob_path = 1
+            if (!blob.sc.buf) m.sc.no_bytes_on_sc = 1
+        }
+    })
+
+},
+// MusuOgg_structural — beat 4: re-read the written file page by page (Orig_ogg_parse) and prove the
+//  container is well-formed: EVERY page's stored CRC recomputes (crc_ok), the last page carries EOS, and
+//   the OpusHead facts (preskip, 48000 rate, channel count) match what the record promised.  This is the
+//    ogg128 promise itself — a real self-consistent Ogg an Android player accepts.  page count is stable
+//     (2 header + ceil(packets/50) audio) so it is snap-safe.
+async MusuOgg_structural(w, nav) {
+    let lib = w.c.lib
+    if (!lib || !w.c.rec_id) return
+    let rec = lib.o({ Record: 1, id: w.c.rec_id })[0]
+    if (!rec) return
+    await this.expecting(w, 'ogg_structural', 60, async () => {
+        let raw = await nav.bin_read(this.MusuOgg_dir(), this.MusuOgg_name(rec.sc.id))
+        if (!raw || !raw.byteLength) {
+            this.MusuOgg_note(w, { structural_fail: 'no_file' })
+            return
+        }
+        let pr = this.Orig_ogg_parse(raw)
+        let m = this.MusuOgg_note(w, { parsed: 1, pages: pr.pages })
+        if (pr.crc_ok) m.sc.crc_ok = 1
+        if (pr.eos) m.sc.eos = 1
+        if (+pr.rate === 48000) m.sc.rate_ok = 1
+        if (+pr.nch === +(rec.sc.nch || 1)) m.sc.nch_ok = 1
+        if (+pr.preskip === this.Orig_export_preskip(rec)) m.sc.preskip_ok = 1
+        // the granule head-fact: playback samples = granule − preskip; its seconds must be near the card.
+        let secs = (pr.granule - pr.preskip) / 48000
+        m.sc.gran_secs = Math.round(secs)
+        if (Math.abs(secs - +(rec.sc.seconds || 0)) < 0.5) m.sc.gran_near = 1
+    })
+
+},
+// MusuOgg_decode — beat 5: hand the WRITTEN ogg file to a real OfflineAudioContext.decodeAudioData (the
+//  gesture-free path the whole Ra pipeline already trusts — a browser decodes Ogg/Opus off it) and read
+//   the decoded duration back.  It must land within ~0.25s of the record's seconds — the round-trip proof
+//    that the container is not just structurally sound but a REAL playable file.  The raw decoded seconds
+//     is non-reproducible at fine grain, so only its ROUNDED value + the within-tolerance flag snap.
+async MusuOgg_decode(w, nav) {
+    let lib = w.c.lib
+    if (!lib || !w.c.rec_id) return
+    let rec = lib.o({ Record: 1, id: w.c.rec_id })[0]
+    if (!rec) return
+    await this.expecting(w, 'ogg_decode', 90, async () => {
+        let raw = await nav.bin_read(this.MusuOgg_dir(), this.MusuOgg_name(rec.sc.id))
+        if (!raw || !raw.byteLength) {
+            this.MusuOgg_note(w, { decode_fail: 'no_file' })
+            return
+        }
+        let ctx = new OfflineAudioContext(1, 1, 48000)
+        let decoded = null
+        try {
+            // decodeAudioData wants an ArrayBuffer it can detach — hand it a fresh copy.  bin_read
+            //  returns an ArrayBuffer already (never a Uint8Array), so slice(0) both copies and normalises.
+            let u8 = (raw instanceof Uint8Array) ? raw : new Uint8Array(raw)
+            let ab = u8.slice().buffer
+            decoded = await ctx.decodeAudioData(ab)
+        } catch (er) {
+            this.MusuOgg_note(w, { decode_fail: ('' + (er && er.message || er)).slice(0, 60) })
+            return
+        }
+        let dur = +decoded.duration
+        let want = +(rec.sc.seconds || 0)
+        // the decoded length OVERSHOOTS the source by the opus END-PAD (the encoder emits whole final
+        //  frames past the exact end; a player trims to the granule — which the structural gate proved is
+        //   the exact 78s).  So the honest round-trip claim is: it decodes, it never UNDERSHOOTS, and the
+        //    overshoot is a small fraction of a second (< 0.6s here — one sub-2s tail of padded frames).
+        let over = dur - want
+        // SNAP ONLY THE STABLE FACTS (entropy law): the raw decoded dur drifts run-to-run (the encode is
+        //  not bit-reproducible), so snap the WHOLE-second duration + the sample rate + the boolean gate —
+        //   never the fractional dur/over (they ride .c for a live eye, off the snap plane).
+        let m = this.MusuOgg_note(w, { decoded: 1, dur_secs: Math.round(dur), want_secs: Math.round(want), sr: decoded.sampleRate, ch: decoded.numberOfChannels })
+        m.c.dur = dur
+        m.c.over = over
+        if (over >= -0.05 && over < 0.6) m.sc.dur_near = 1
+    })
+
+},
+// MusuOgg_sweep_dir — remove the run's export dir (best-effort) so a re-run writes fresh.
+async MusuOgg_sweep_dir(nav) {
+    try {
+        let dl = await nav.dir_at(this.MusuOgg_dir())
+        if (dl && typeof dl.deleteEntry === 'function') {
+            await dl.expand()
+            let names = []
+            for (const f of dl.files) names.push(f.name)
+            for (const nm of names) {
+                try { await dl.deleteEntry(nm) } catch (er) {}
+            }
+        }
+    } catch (er) {}
+
+},
+// MusuOgg_sweep — beat 6: leave the share clean — the exported file was a test artifact, not stock.  The
+//  note lands FIRST (the witness reads it), then a guarded read-back confirms the file is gone (a bin_read
+//   on the swept dir may return null OR throw — either way the file is not there).
+async MusuOgg_sweep(w, nav) {
+    await this.MusuOgg_sweep_dir(nav)
+    let gone = 0
+    try {
+        let raw = await nav.bin_read(this.MusuOgg_dir(), this.MusuOgg_name(w.c.rec_id))
+        if (!raw || !raw.byteLength) gone = 1
+    } catch (er) {
+        gone = 1
+    }
+    let m = this.MusuOgg_note(w, { swept: 1 })
+    if (gone) m.sc.file_gone = 1
+
+},
+// MusuOgg_witness — the SIX %see truths, gated on live %testing markers (never a beat number) so each
+//  fires the first pass its fact holds and latches once-noticed.  NO COMMAS in a sentence (the peel
+//   parser splits on them — em-dashes instead).
+MusuOgg_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 2)) return
+    let T = this.MusuOgg_T(w)
+    // #1 the whole track stood as chunk particles — every seq holds its buf so the export has all the packets.
+    let sm = T.o({ stocked: 1 })[0]
+    if (sm && sm.sc.whole && +(sm.sc.total || 0) > 0 && !T.oa({ see: 'the whole track stands as chunk particles — the demand transcode drove to the end so every seq holds its opus packets ready to export' })) this.MusuOgg_note(w, { see: 'the whole track stands as chunk particles — the demand transcode drove to the end so every seq holds its opus packets ready to export' })
+    // #2 a real Ogg file was written and the %Blob homed beside the Record with a path never the bytes.
+    let em = T.o({ exported: 1 })[0]
+    if (em && em.sc.on_disk && em.sc.blob_path && em.sc.no_bytes_on_sc && !T.oa({ see: 'the export writes one real Ogg file on the nav — a %Blob grade:ogg128 lands beside the Record carrying its path never the giant bytes on sc' })) this.MusuOgg_note(w, { see: 'the export writes one real Ogg file on the nav — a %Blob grade:ogg128 lands beside the Record carrying its path never the giant bytes on sc' })
+    // #3 the container is well-formed — every page CRC verifies on a fresh read-back.
+    let stm = T.o({ parsed: 1 })[0]
+    if (stm && stm.sc.crc_ok && stm.sc.eos && !T.oa({ see: 'the written container is well-formed — every Ogg page CRC recomputes on read-back and the final page carries the end-of-stream flag' })) this.MusuOgg_note(w, { see: 'the written container is well-formed — every Ogg page CRC recomputes on read-back and the final page carries the end-of-stream flag' })
+    // #4 the OpusHead facts match the record — the RFC-7845 identification header is honest.
+    if (stm && stm.sc.rate_ok && stm.sc.nch_ok && stm.sc.preskip_ok && stm.sc.gran_near && !T.oa({ see: 'the OpusHead is honest — its 48000 input rate channel count and preskip match the record and the page granule reads back the track duration' })) this.MusuOgg_note(w, { see: 'the OpusHead is honest — its 48000 input rate channel count and preskip match the record and the page granule reads back the track duration' })
+    // #5 THE ROUND-TRIP — a real AudioContext decodes the file back to the record's duration (bar the opus end-pad).
+    let dm = T.o({ decoded: 1 })[0]
+    if (dm && dm.sc.dur_near && !T.oa({ see: 'the file is truly playable — a real AudioContext decodes the exported Ogg back to the record duration bar a fraction-of-a-second opus end-pad a player trims to the granule' })) this.MusuOgg_note(w, { see: 'the file is truly playable — a real AudioContext decodes the exported Ogg back to the record duration bar a fraction-of-a-second opus end-pad a player trims to the granule' })
+    // #6 the run leaves the share clean — the export artifact swept, the shop untouched.
+    let swm = T.o({ swept: 1 })[0]
+    if (swm && swm.sc.file_gone && !T.oa({ see: 'the run leaves no litter — the exported test file is swept off the share and the shop stock stays untouched' })) this.MusuOgg_note(w, { see: 'the run leaves no litter — the exported test file is swept off the share and the shop stock stays untouched' })
+
+},
+// ══ MusuReap — the RADIOSTOCK CASCADE GC PROVEN (Radio_spec §12.2 M4 / Musica_forget) ══════════════════
+//  Forgetting a magazine era must reap the DERIVED disk cache too — the human's ruling "delete including
+//   radiostock".  A %Cloud is an arrival batch; a whole era can be dropped at once (Musica_forget_fold), and
+//    each track that leaves the magazine leaves a dead .jamsend_radiostock file behind (the join is
+//     Card.id === stock enid — both the content hash).  THIS Book proves Musica_forget's new cascade arm:
+//      stock TWO real testsound tracks into TWO eras (created_at 1000 and 2000) → forget the OLD era
+//       (cutoff 1500) → the dropped track's stock file is GONE from disk WHILE the kept track's file STANDS.
+//        That standing file IS the bias-to-keep discriminator — the stock is a re-derivable cache, so a
+//         survivor never loses its warm copy.
+//  ISOLATION: a DISTINCT stocking pub ('reap.shop') so this Book's shelf files collide with no other Book's
+//   warm cache on the shared .jamsend/radiostock; the Book sweeps its own pub at start AND end.  ENTROPY:
+//    the enids are content hashes of real audio (stable), but the FILENAMES carry a mint ts (Date.now) that
+//     drifts run-to-run — so the Book snaps PRESENCE facts (file-there / file-gone, read live off Ra_stock_ls)
+//      never the ts-bearing names.  CONVENTION (Musu*): no Run_A_ recipe — the world MUST be named MusuReap.
+MusuReap(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuReap_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// MusuReap_T — the one %testing subtree: all observations hang here, off the design tree.
+MusuReap_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+// MusuReap_note — stamp one observation under %testing (the test's voice; never touches the design).
+MusuReap_note(w, sc) {
+    let t = this.MusuReap_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+// MusuReap_pub — the DISTINCT stocking identity for this Book (== lib.sc.pier), so its shelf never crosses
+//  another Book's warm cache on the shared radiostock dir.
+MusuReap_pub() {
+    return 'reap.shop'
+
+},
+// MusuReap_sweep_shelf — drop every radiostock file this Book's pub owns (start + end hygiene): Ra_stock_ls
+//  filters to OUR pub, so a foreign Book's warm cache is never touched.  Returns how many were swept.
+async MusuReap_sweep_shelf(w, nav) {
+    let n = 0
+    for (const p of await this.Ra_stock_ls(nav, this.MusuReap_pub())) { await this.Ra_stock_drop(nav, p.name); n = n + 1 }
+    return n
+
+},
+// MusuReap_has — is THIS enid's stock file standing on disk right now?  Read LIVE off Ra_stock_ls (the actual
+//  shelf), never a Book-side flag — the %see gates on the real disk truth.
+async MusuReap_has(w, nav, enid) {
+    for (const p of await this.Ra_stock_ls(nav, this.MusuReap_pub())) { if (p.enid === enid) return 1 }
+    return 0
+
+},
+// MusuReap_drive — the family's skip gates (no audio | no writable share | no testsounds), then one move per
+//  step off step_n (req-local did_step, Musu style); the witness runs EVERY pass so each %see fires the first
+//   pass its truth holds.  step 2 stocks two tracks into two eras, step 3 forgets the old era and reads the
+//    disk back, step 4 sweeps the Book's own shelf.  The slow work (two real decode+encodes) rides an
+//     expecting() ttlilt so the snap lands the resolved standing.
+async MusuReap_drive(w, req) {
+    if (typeof OfflineAudioContext === 'undefined') {
+        if (!this.MusuReap_T(w).oa({ skipped: 'no_audio' })) this.MusuReap_note(w, { skipped: 'no_audio' })
+        return
+    }
+    let nav = this.Crate_nav()
+    if (!nav || typeof nav.bin_write !== 'function') {
+        if (!this.MusuReap_T(w).oa({ skipped: 'no_writable_share' })) this.MusuReap_note(w, { skipped: 'no_writable_share' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuReap_publish(w, nav)
+        if (n === 3) await this.MusuReap_forget(w, nav)
+        if (n === 4) await this.MusuReap_sweep(w, nav)
+    }
+    this.MusuReap_witness(w)
+    await this.Musu_float(w)
+
+},
+// MusuReap_publish — beat 2: sweep our own shelf clean, stock TWO real testsound tracks (each writes ONE
+//  .jamsend_radiostock keyed by our pub + its enid), then fold TWO eras.  Fold A publishes with only track A
+//   in the lib (created_at 1000); then track B is stocked and fold B lays only the not-yet-published id
+//    (track B) under a fresh cloud (created_at 2000) — Musica_fold's "fresh ids not in any cloud" gives ONE
+//     track per era.  The whole decode+encode rides an expecting() ttlilt.  Reads the two enids + the two
+//      stock files' presence as %testing facts (off the LIVE shelf).
+async MusuReap_publish(w, nav) {
+    this.MusuReap_note(w, { reached: 'step_2' })
+    this.Ra_seed(w, 'MusuReap')
+    w.c.nav = nav
+    let paths = await this.Crate_nav_paths(nav, 'testsounds')
+    if (paths.length < 2) {
+        if (!this.MusuReap_T(w).oa({ skipped: 'no_testsounds' })) this.MusuReap_note(w, { skipped: 'need_two_tracks' })
+        return
+    }
+    let root = this.Heist_marrauding('reap', 'shop')
+    w.c.root = root
+    let pub = this.MusuReap_pub()
+    // start-of-run hygiene: our shelf clean AND our berth clean, so a re-run is deterministic.
+    await this.MusuReap_sweep_shelf(w, nav)
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-reap')
+    let lib = this.Ra_home_self(w, pub)
+    w.c.lib = lib
+    await this.expecting(w, 'reap_publish', 240, async () => {
+        // era A — stock ONLY the FIRST track, fold it under created_at 1000.
+        let ra = await this.Ra_stock(w, lib, nav, 'testsounds', 1, 0)
+        let recs_a = lib.o({ Record: 1 })
+        if (recs_a.length !== 1) { this.MusuReap_note(w, { publish_fail: 'stock_a', have: recs_a.length }); return }
+        w.c.id_a = recs_a[0].sc.id
+        await this.Musica_publish(nav, root, pub, lib, 'reapA', 1000)
+        // era B — stock the SECOND track, fold again; only the new id lays under a fresh cloud (2000).
+        await this.Ra_stock(w, lib, nav, 'testsounds', 1, 1)
+        let recs_b = lib.o({ Record: 1 })
+        if (recs_b.length !== 2) { this.MusuReap_note(w, { publish_fail: 'stock_b', have: recs_b.length }); return }
+        w.c.id_b = recs_b.find((r) => r.sc.id !== w.c.id_a).sc.id
+        let mag = await this.Musica_publish(nav, root, pub, lib, 'reapB', 2000)
+        w.c.mag = mag
+        // the standing facts: two clouds each holding one card, and BOTH enids have a stock file on disk.
+        let clouds = mag.o({ Cloud: 1 }).length
+        let has_a = await this.MusuReap_has(w, nav, w.c.id_a)
+        let has_b = await this.MusuReap_has(w, nav, w.c.id_b)
+        let m = this.MusuReap_note(w, { published: 1, clouds: clouds, cards: this.Musica_cards(mag).length })
+        if (w.c.id_a !== w.c.id_b) m.sc.distinct_ids = 1
+        if (has_a) m.sc.stock_a = 1
+        if (has_b) m.sc.stock_b = 1
+    })
+
+},
+// MusuReap_forget — beat 3: forget the OLD era (cutoff 1500 drops the created_at-1000 cloud, keeps 2000).
+//  Musica_forget CASCADES: track A left the magazine and is referenced by nothing surviving, so its stock
+//   file is unlinked; track B survives so its file STANDS (bias-to-keep).  Read the disk back LIVE — the
+//    dropped file is GONE and the kept file is THERE — the whole proof.  Rides an expecting() ttlilt (the
+//     cascade re-lists + unlinks on real disk).
+async MusuReap_forget(w, nav) {
+    this.MusuReap_note(w, { reached: 'step_3' })
+    let mag = w.c.mag
+    if (!mag || !w.c.id_a || !w.c.id_b) return
+    await this.expecting(w, 'reap_forget', 60, async () => {
+        let out = await this.Musica_forget(nav, mag, 1500, this.MusuReap_pub())
+        let clouds = mag.o({ Cloud: 1 }).length
+        let gone_a = !(await this.MusuReap_has(w, nav, w.c.id_a))
+        let stands_b = await this.MusuReap_has(w, nav, w.c.id_b)
+        // the magazine no longer lists track A (its era dropped) but still lists track B.
+        let listed_a = !!this.MusuVend_card(mag, w.c.id_a)
+        let listed_b = !!this.MusuVend_card(mag, w.c.id_b)
+        let m = this.MusuReap_note(w, { forgot: 1, dropped: out.dropped, cascaded: out.cascaded.length, clouds: clouds })
+        if (out.dropped === 1 && clouds === 1) m.sc.one_era_dropped = 1
+        if (!listed_a && listed_b) m.sc.mag_shed_a = 1
+        // the DISCRIMINATOR — the dropped track's stock is gone AND the kept track's stock stands.
+        if (gone_a) m.sc.stock_a_gone = 1
+        if (stands_b) m.sc.stock_b_stands = 1
+        if (out.cascaded.length === 1 && out.cascaded[0] === w.c.id_a) m.sc.cascaded_a = 1
+    })
+
+},
+// MusuReap_sweep — beat 4: leave the shared shelf clean — this Book's stock was a test artifact.  Drop every
+//  file our pub owns, then read the shelf back: it holds NONE of ours.  The note lands first (the witness
+//   reads it), then a live re-list confirms the shelf is clear of this pub.
+async MusuReap_sweep(w, nav) {
+    let swept = await this.MusuReap_sweep_shelf(w, nav)
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-reap')
+    let remain = (await this.Ra_stock_ls(nav, this.MusuReap_pub())).length
+    let m = this.MusuReap_note(w, { swept: 1, count: swept })
+    if (remain === 0) m.sc.shelf_clear = 1
+
+},
+// MusuReap_witness — the FOUR %see truths, gated on live %testing markers (never a beat number) so each fires
+//  the first pass its fact holds and latches once-noticed.  NO COMMAS in a sentence (the peel parser splits
+//   on them — em-dashes instead).  The cascade truths read the ACTUAL shelf result (stock_*_gone/stands are
+//    set off a live Ra_stock_ls), not a Book flag.
+MusuReap_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 2)) return
+    let T = this.MusuReap_T(w)
+    // #1 two eras stocked — two distinct clouds each with its card and each track's stock file standing on disk.
+    let pm = T.o({ published: 1 })[0]
+    if (pm && +(pm.sc.clouds || 0) === 2 && pm.sc.distinct_ids && pm.sc.stock_a && pm.sc.stock_b && !T.oa({ see: 'two arrival eras stock into two clouds — each track holds its own distinct content-hashed radiostock file standing on disk before any forget' })) this.MusuReap_note(w, { see: 'two arrival eras stock into two clouds — each track holds its own distinct content-hashed radiostock file standing on disk before any forget' })
+    // #2 forgetting the OLD era drops exactly one cloud and the magazine sheds only that era's card.
+    let fm = T.o({ forgot: 1 })[0]
+    if (fm && fm.sc.one_era_dropped && fm.sc.mag_shed_a && !T.oa({ see: 'forgetting the old era drops exactly one cloud — the magazine sheds the old-era card while the fresher card stays listed' })) this.MusuReap_note(w, { see: 'forgetting the old era drops exactly one cloud — the magazine sheds the old-era card while the fresher card stays listed' })
+    // #3 THE CASCADE + THE DISCRIMINATOR — the dropped track's stock is REAPED off disk while the kept track's stock STANDS.
+    if (fm && fm.sc.stock_a_gone && fm.sc.stock_b_stands && fm.sc.cascaded_a && !T.oa({ see: 'the forget reaps the derived cache — the dropped track radiostock file is gone from disk while the kept track file still stands — the bias-to-keep discriminator reading both sides of the shelf' })) this.MusuReap_note(w, { see: 'the forget reaps the derived cache — the dropped track radiostock file is gone from disk while the kept track file still stands — the bias-to-keep discriminator reading both sides of the shelf' })
+    // #4 the run leaves the shared shelf clean of this Book's pub — no litter for the next Book.
+    let sm = T.o({ swept: 1 })[0]
+    if (sm && sm.sc.shelf_clear && !T.oa({ see: 'the run leaves the shared shelf clean — every radiostock file this Book minted under its own pub is swept so no warm cache litters the next Book' })) this.MusuReap_note(w, { see: 'the run leaves the shared shelf clean — every radiostock file this Book minted under its own pub is swept so no warm cache litters the next Book' })
+
+},
+// ══ MusuSoft — the SOFT %Heist: the search that hardens into a pull (Radio_spec §2.4 / §5A rung 4) ═══════
+//  A hard %Heist,at:<pier> is a manifest of known ids at a known peer.  The human's 2026-07-17 ruling turns
+//   that inside out: a heist BEGINS as barely more than a wish — no ids, only meaning — and CONDENSES by
+//    stages (wish → ask → %Lead → choose → the built pull).  This Book proves the LITERAL-match rung of that
+//     front: a wish sentence matched against card title|artist|genre|album (the Stemdex/%Seem by-meaning rung
+//      rides later).  The scenes, on the MusuVend-style loopback (two Piers over Lake_link, one granted wire):
+//       2  the ORIGIN censuses 3 real testsound tracks (distinct titles) + publishes a %Mag over the granted
+//           wire — the culture crosses (proven at the seeker's mirror).
+//       3  the SEEKER mints a soft wish matching exactly ONE title's word — Heist_ask crosses — Heist_match on
+//           the origin side stamps exactly ONE %Lead naming the right card (lead_named).
+//       4  a second wish matching NOTHING crosses — zero Leads (the negative control — search does not flatter).
+//       5  condense the Lead → the EXISTING pull runs (Heist_beat over a same-world mirror trimmed to the one
+//           chosen card) → the ONE wanted track lands WHOLE in the seeker's mirror stock (body_hash) while the
+//            two unwanted cards stay UNSPENT husks (the economy discriminator — a pull is per-card).
+//       6  sweep + float.
+//  REAL AUDIO ONLY FOR THE BYTES: the census (Heist_census) hashes+slices the raw file into %Body chunks — no
+//   decode — so the culture side runs fast; the pull lands the ORIGINAL bytes and the body_hash gate is real.
+//    ISOLATION: a DISTINCT marrauding namespace (test-marrauding-of-soft) swept at start + end so a re-run is
+//     deterministic; needsFSA (a writable share) + needMusic (testsounds present) gate the run.  CONVENTION
+//      (Musu*): no Run_A_ recipe — the world MUST be named MusuSoft (do_fn_for dispatches by w.sc.w).
+
+MusuSoft(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuSoft_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// MusuSoft_T / MusuSoft_note — the one %testing subtree: every observation hangs here, off the design tree
+//  (the wire + the two Piers + the mags + the soft Heists live on w as first-class C).  c.up stamped so an
+//   upward walk from a marker reaches w.
+MusuSoft_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+MusuSoft_note(w, sc) {
+    let t = this.MusuSoft_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+// MusuSoft_drive — the family skip gates (no writable share | no testsounds), then ONE move per step off
+//  step_n (req-local did_step, Musu style); the witness runs EVERY pass so each %see fires the first pass its
+//   truth holds.  Frames settle over post_do between beats, so an ask sent at beat K merges at the mirror by
+//    K+1 — the carriers pump every pass.
+async MusuSoft_drive(w, req) {
+    if (typeof this.Lake_link !== 'function' || typeof this.Peeroleum_send !== 'function') {
+        if (!this.MusuSoft_T(w).oa({ skipped: 'no_transport' })) this.MusuSoft_note(w, { skipped: 'no_transport' })
+        return
+    }
+    let nav = this.Crate_nav()
+    if (!nav || typeof nav.bin_write !== 'function') {
+        if (!this.MusuSoft_T(w).oa({ skipped: 'no_writable_share' })) this.MusuSoft_note(w, { skipped: 'no_writable_share' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuSoft_setup(w, nav)
+        if (n === 3) await this.MusuSoft_wish_hit(w)
+        if (n === 4) await this.MusuSoft_wish_miss(w)
+        if (n === 5) await this.MusuSoft_condense(w, nav)
+        if (n === 6) await this.MusuSoft_sweep(w, nav)
+    }
+    // pump the receive side every pass so the ask/mag settle over the mock wire (belt-and-braces — Lake_link
+    //  is reliable:true so Peeroleum_deliver drains inline in post_do, same as MusuVend).
+    if (w.c.rx) { await w.c.rx.do() }
+    this.MusuSoft_witness(w)
+    await this.Musu_float(w)
+
+},
+// MusuSoft_setup — stand up the two Piers over the loopback (Lake_link), arm the repli handlers, census the
+//  ORIGIN's 3 distinct real tracks off the shared disk (Heist_census — %Body bufs + real title/artist), fold
+//   a %Mag from that shelf, and OFFER it over the granted wire so the seeker's mirror mirrors it.  The grant
+//    is a Book-owned toggle ON for the seeker (D1 swaps in the live Swarm verdict).  The census gives the pull
+//     side its bytes AND the match side its card identities from ONE walk.
+async MusuSoft_setup(w, nav) {
+    this.MusuSoft_note(w, { reached: 'step_2' })
+    this.Ra_seed(w, 'MusuSoft')
+    w.c.nav = nav
+    let paths = await this.Crate_nav_paths(nav, 'testsounds')
+    if (paths.length < 3) {
+        if (!this.MusuSoft_T(w).oa({ skipped: 'no_testsounds' })) this.MusuSoft_note(w, { skipped: 'need_three_tracks' })
+        return
+    }
+    // the wire: a Lake_link loopback pair, Origin ⇄ Seeker; arm the whittle + the repli handlers.
+    let link = await this.Lake_link(w, 'Origin', 'Seeker')
+    w.c.tx = link[0]
+    w.c.rx = link[1]
+    this.Peeroleum_arm_whittle(w)
+    link[1].i({ Ud: 1, pubkey: 'Origin' })
+    link[0].i({ Ud: 1, pubkey: 'Seeker' })
+    this.Repli_arm(w)
+    // the seeker's mirror shelf (where the origin's offered mag lands) + register the receiving port.
+    w.c.repli_mirror_pier = 'Origin'
+    this.Repli_register_rx(w, link[1])
+    // the origin's own shelf, censused off the real disk to 3 distinct DJ Oscillo tracks (Cosmic C / Dorian D
+    //  / Groove G — the whittle to ONE artist gives three DISTINCT titles, so a wish word can hit exactly one).
+    //   Heist_census hashes+slices (no decode): each card carries its real identity AND its %Body bufs, so the
+    //    pull side (step 5) has the original bytes and the match side has real title|artist.
+    let root = this.Heist_marrauding('soft', 'origin')
+    w.c.root = root
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-soft')
+    let origin_lib = this.Ra_home_self(w, 'Origin')
+    w.c.origin_lib = origin_lib
+    this.Repli_register_caster(w, link[0], origin_lib)
+    await this.expecting(w, 'soft_census', 90, async () => {
+        let cen = await this.Heist_census(w, origin_lib, nav, 'testsounds', ['DJ Oscillo'])
+        let recs = origin_lib.o({ Record: 1 })
+        // pin the chosen card's identity (Cosmic C) so the wish, the Lead, and the discriminator all agree; and
+        //  the two decoys so the witness reads them staying unspent.
+        let cosmic = recs.find((r) => r.sc.title === 'Cosmic C')
+        if (cosmic) w.c.want_id = cosmic.sc.id
+        let decoys = []
+        for (const r of recs) { if (r.sc.id !== (cosmic && cosmic.sc.id)) decoys.push(r.sc.id) }
+        w.c.decoy_ids = decoys
+        // fold the mag from the origin shelf (Musica_fold — the shared brain) and OFFER it over the granted wire.
+        let mag = w.i({ Mag: 'Musica' })
+        mag.c.up = w
+        w.c.origin_mag = mag
+        w.c.grants = { Seeker: 1 }
+        w.c.repli_allow = (peer, at) => !!(w.c.grants && w.c.grants[peer])
+        await this.Musica_fold(mag, origin_lib, 'softdraw', 1000)
+        let crossed = await this.Repli_offer(w, w.c.tx, 'Origin', 'Seeker', mag)
+        let m = this.MusuSoft_note(w, { setup: 1, censused: cen.built + cen.stood, cards: this.Musica_cards(mag).length })
+        if (crossed) m.sc.mag_offered = 1
+        if (cosmic) m.sc.want_pinned = 1
+        w.c.set_up = 1
+    })
+
+},
+// MusuSoft_origin_mag — the mag the ORIGIN answers a wish against.  The match runs on the far side's OWN
+//  catalog (§2.4 "matches it against its Mags"); here that is the origin's folded mag (the seeker's mirror
+//   holds a copy, but the origin is who fulfils, so it matches its own).
+MusuSoft_origin_mag(w) {
+    return w.c.origin_mag
+
+},
+// MusuSoft_wish_hit — the SEEKER mints a soft wish whose word matches exactly ONE origin card (`cosmic` hits
+//  the title Cosmic C and nothing else — the sibling titles Dorian D / Groove G and the artist DJ Oscillo
+//   carry no such substring).  Heist_ask crosses the soft Heist as a chunkless husk over the granted wire;
+//    then the origin MATCHES (Heist_match) its mag against the wish and stamps exactly ONE %Lead under the
+//     soft Heist naming the right card.  The wish homes in the SEEKER's shop shelf (Ra_home_shop(w, 'Seeker'),
+//      §2.4 — a heist is the asker's operation, so the loading zone is under the asker's home, not w); the
+//       seeker's soft Heist is w.c.wish_a.
+async MusuSoft_wish_hit(w) {
+    this.MusuSoft_note(w, { reached: 'step_3' })
+    if (!w.c.set_up) return
+    // a two-word wish — `cosmic` hits exactly one card; `voyage` hits nothing (kept short + comma-free so the
+    //  literal contains-match is clean and the sentence snaps as one scalar).
+    let wish = this.Heist_wish(w, this.Ra_home_shop(w, 'Seeker'), 'cosmic voyage', [])
+    w.c.wish_a = wish
+    let crossed = await this.Heist_ask(w, w.c.tx, 'Seeker', 'Origin', wish)
+    // the far side answers: match the wish against the origin's OWN mag and accumulate %Lead answers on the wish.
+    let leads = this.Heist_match(w, wish, this.MusuSoft_origin_mag(w), 'Origin')
+    let m = this.MusuSoft_note(w, { wished: 'a', leads: leads.length })
+    if (crossed) m.sc.asked = 1
+    // the one Lead names the wanted card by id + tune — read it back off the live wish, not the return.
+    let live = this.Heist_leads(wish)
+    if (live.length === 1 && live[0].sc.id === w.c.want_id) m.sc.one_lead = 1
+    if (live.length === 1 && live[0].sc.tune === 'DJ Oscillo — Cosmic C') m.sc.lead_named = 1
+
+},
+// MusuSoft_wish_miss — the NEGATIVE control: a second wish whose words match NOTHING in the origin's catalog
+//  (`zither reggae` — no title|artist|genre|album carries either substring) crosses and matches to ZERO leads.
+//   The search does not flatter — silence is the honest answer (no Lead minted, the soft Heist stays leadless).
+async MusuSoft_wish_miss(w) {
+    this.MusuSoft_note(w, { reached: 'step_4' })
+    if (!w.c.set_up) return
+    let wish = this.Heist_wish(w, this.Ra_home_shop(w, 'Seeker'), 'zither reggae', [])
+    w.c.wish_b = wish
+    let crossed = await this.Heist_ask(w, w.c.tx, 'Seeker', 'Origin', wish)
+    let leads = this.Heist_match(w, wish, this.MusuSoft_origin_mag(w), 'Origin')
+    let m = this.MusuSoft_note(w, { wished: 'b', leads: leads.length })
+    if (crossed) m.sc.asked = 1
+    if (this.Heist_leads(wish).length === 0) m.sc.no_leads = 1
+
+},
+// MusuSoft_condense — CHOOSING the Lead hardens the soft wish into the built pull.  Heist_condense stamps
+//  at:<pier> + the filing for exactly the chosen card; then the EXISTING pull machinery (Heist_beat) runs it.
+//   The pull rides a SAME-WORLD mirror censused to the chosen card ONLY (its %Body bufs present, so Ra_pull_beat
+//    returns done in one beat and Heist_beat lands it) — the wet copy graduates into the seeker's Ra_home_them
+//     stock via body_hash exactly as a hard heist lands.  The economy discriminator: the two decoy cards NEVER
+//      get a mirror|pull — they stay UNSPENT husks in the mag (chunkless), proving a pull is per-card not a
+//       broadcast.  own_lib is the seeker's mirror stock; the mirror is trimmed to the one wanted record.
+async MusuSoft_condense(w, nav) {
+    this.MusuSoft_note(w, { reached: 'step_5' })
+    let wish = w.c.wish_a
+    if (!wish || !w.c.set_up) return
+    let leads = this.Heist_leads(wish)
+    if (!leads.length) return
+    let lead = leads[0]
+    // harden — stamp at + the filing for the chosen card (artist off the tune, genre a Book-pinned category).
+    this.Heist_condense(wish, lead, 'DJ Oscillo', 'softtest')
+    w.c.condensed_at = wish.sc.at
+    let mardir = this.Heist_marrauding('soft', 'seeker')
+    w.c.mardir = mardir
+    await this.expecting(w, 'soft_pull', 90, async () => {
+        // the pull mirror: census ONLY the chosen card's track into a them-shelf (its %Body bufs present), then
+        //  trim to exactly that record so Heist_beat spends one card — the decoys never enter this mirror.
+        let mir = this.Ra_home_them(w, 'soft.pull.mirror')
+        await this.Heist_census(w, mir, nav, 'testsounds', ['DJ Oscillo'])
+        for (const r of mir.o({ Record: 1 })) { if (r.sc.id !== w.c.want_id) await mir.rm({ Record: 1, id: r.sc.id }) }
+        let own = this.Ra_home_them(w, w.c.condensed_at)
+        w.c.seeker_stock = own
+        // the hardened wish's `at` becomes the job — reuse the filing the condense pinned; Heist_beat lands the
+        //  one record whole (same-world mirror, null wire — the MusuBreach idiom).
+        let landed0 = own.o({ Record: 1 }).length
+        await this.Heist_beat(w, null, null, null, wish, own, mir, nav, mardir)
+        let landed = own.o({ Record: 1 })
+        let got = landed.find((r) => r.sc.id === w.c.want_id)
+        let m = this.MusuSoft_note(w, { pulled: 1, landed: landed.length, took: +(wish.sc.landed || 0) })
+        // the wanted track landed WHOLE (body_hash present on the settled card) in the seeker's mirror stock.
+        if (got && got.sc.body_hash) m.sc.landed_whole = 1
+        if (landed.length === 1 && got) m.sc.only_wanted = 1
+        // the two decoys stay UNSPENT husks in the mag (chunkless cards, no %Body, never pulled).
+        let mag = w.c.origin_mag
+        let unspent = 0
+        for (const id of (w.c.decoy_ids || [])) {
+            let card = this.MusuVend_card(mag, id)
+            if (card && !card.o({ Body: 1 }).length) unspent = unspent + 1
+        }
+        if (unspent === (w.c.decoy_ids || []).length && unspent === 2) m.sc.decoys_unspent = 1
+    })
+
+},
+// MusuSoft_sweep — leave the shared share clean — the pull landed real bytes into a marrauding namespace, so
+//  drop them (files-only, dirs kept — the dead-handle-safe reset).  The %testing proof-of-landing stands; the
+//   bytes go.
+async MusuSoft_sweep(w, nav) {
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-soft')
+    this.MusuSoft_note(w, { swept: 1 })
+
+},
+// MusuSoft_witness — the FIVE %see truths, gated on live %testing markers + live particle reads (the actual
+//  %Lead rows, the actual landed %Record, the actual unspent mag cards), never a beat number — each fires the
+//   first pass its fact holds and latches once-noticed.  NO COMMAS in a sentence (the peel parser splits on
+//    them — em-dashes instead).
+MusuSoft_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 2)) return
+    if (!w.c.set_up) return
+    let T = this.MusuSoft_T(w)
+    // #1 the culture crossed: the origin's mag reached the seeker's mirror — every censused card present by id.
+    let mir = this.Repli_mirror_lib(w)
+    let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
+    let omag = w.c.origin_mag
+    let mag_ok = vmag && omag && this.Musica_cards(vmag).length === this.Musica_cards(omag).length && this.Musica_cards(omag).length === 3 ? 1 : 0
+    if (mag_ok) {
+        for (const card of this.Musica_cards(omag)) { if (!this.MusuVend_card(vmag, card.sc.id)) mag_ok = 0 }
+    }
+    if (mag_ok && !T.oa({ see: 'the origin catalog crossed the granted wire — the seeker mirrors all three cards of the published magazine before any wish' })) this.MusuSoft_note(w, { see: 'the origin catalog crossed the granted wire — the seeker mirrors all three cards of the published magazine before any wish' })
+    // #2 a wish begins SOFT — a %Heist carrying a wish sentence and no ids: barely more than meaning.  Gated on
+    //  the mint marker so it fires at step 3 (before condense stamps `at` — %see latches once-noticed there).
+    let wa = w.c.wish_a
+    let wished_a = T.o({ wished: 'a' })[0]
+    if (wa && wa.sc.wish && wished_a && !T.oa({ see: 'a heist begins soft — a wish sentence and no pier and no ids — barely more than meaning' })) this.MusuSoft_note(w, { see: 'a heist begins soft — a wish sentence and no pier and no ids — barely more than meaning' })
+    // #3 the ask found exactly ONE lead naming the right card — the search condenses meaning to a candidate.
+    let wm = T.o({ wished: 'a' })[0]
+    if (wm && wm.sc.asked && wm.sc.one_lead && wm.sc.lead_named && !T.oa({ see: 'the ask crossed and found exactly one lead — the far side matched the wish word to a single card and named it by artist and title' })) this.MusuSoft_note(w, { see: 'the ask crossed and found exactly one lead — the far side matched the wish word to a single card and named it by artist and title' })
+    // #4 the negative control — a wish matching nothing accumulates zero leads (the search does not flatter).
+    let miss = T.o({ wished: 'b' })[0]
+    let wb = w.c.wish_b
+    if (miss && miss.sc.asked && miss.sc.no_leads && wb && !this.Heist_leads(wb).length && !T.oa({ see: 'a wish matching nothing crosses and gathers no leads — silence is the honest answer and the search never flatters' })) this.MusuSoft_note(w, { see: 'a wish matching nothing crosses and gathers no leads — silence is the honest answer and the search never flatters' })
+    // #5 condensing PULLED exactly the chosen card whole while the two decoys stayed unspent husks — per-card.
+    let pm = T.o({ pulled: 1 })[0]
+    let hardened = wa && wa.sc.at ? 1 : 0
+    if (pm && hardened && pm.sc.landed_whole && pm.sc.only_wanted && pm.sc.decoys_unspent && !T.oa({ see: 'choosing the lead hardened the wish and pulled exactly that one card whole into the seeker stock while the two unchosen cards stayed unspent husks — a pull is per-card never a broadcast' })) this.MusuSoft_note(w, { see: 'choosing the lead hardened the wish and pulled exactly that one card whole into the seeker stock while the two unchosen cards stayed unspent husks — a pull is per-card never a broadcast' })
 
 },
 

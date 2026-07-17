@@ -18,17 +18,19 @@ Snap:H
             inbox
               req:unemit,seq,type:repli_lines,body_hash:74378263a1673f692726c4e53979546fd81f10b44423df9629bf4893b7cbc49e,body_len=322,done,to:repli_lines,finished
           active_transport,type:mock,open
-        Library,pier:DJ
-          Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
-            Stream,name:audio,total=240,have=0,sr=48000
-            preview,seq=0,from=0,to=12
-            Reco,by:DJ,note:this one grows — stay past the second chord
-          Record,id:trk1,title:Dorian D,artist:DJ Oscillo,seconds=76,loudness=0.1413,nchunks=240,real
-            Stream,name:audio,total=240,have=0,sr=48000
+        MusuSelf,pub:DJ
+          stock,pub:DJ
+            Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
+              Stream,name:audio,total=240,have=0,sr=48000
+              preview,seq=0,from=0,to=12
+              Reco,by:DJ,note:this one grows — stay past the second chord
+            Record,id:trk1,title:Dorian D,artist:DJ Oscillo,seconds=76,loudness=0.1413,nchunks=240,real
+              Stream,name:audio,total=240,have=0,sr=48000
         reached:step_3
         refused:not_started
-        Library,pier:Crowd
-          Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
-            Stream,name:audio,total=240,have=0,sr=48000
-            preview,seq=0,from=0,to=12
-            Reco,by:DJ,note:this one grows — stay past the second chord
+        MusuThem,pub:Crowd
+          stock,pub:Crowd
+            Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
+              Stream,name:audio,total=240,have=0,sr=48000
+              preview,seq=0,from=0,to=12
+              Reco,by:DJ,note:this one grows — stay past the second chord

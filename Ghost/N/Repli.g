@@ -438,13 +438,13 @@ async Repli_serve_chunks(w, pier, h, rec):
     await this.Repli_send_lines(w, pier, h.to, h.from, out.join('\n'), bufmap)
 
 // ─── receiver (Pier B) ───
-// Repli_mirror_lib — B's growing MIRROR collection (find-or-create).  The pier key defaults to the
-//  demo's 'Crowd'; a real listener names its shelf (w.c.repli_mirror_pier — its own prepub, the
-//   census convention).
+// Repli_mirror_lib — B's growing MIRROR collection (find-or-create).  The mirror side of the Musu
+//  homes (Radio_spec §2.2 rung 3): what I hold OF another rides a `%MusuThem,pub:<them>` / stock
+//   shelf.  The pub key defaults to the demo's 'Crowd'; a real listener names its shelf
+//    (w.c.repli_mirror_pier — the source's key, the census convention).  Returns the stock shelf,
+//     which stands in for the old flat %Library one-for-one (Records live directly under it).
 Repli_mirror_lib(w):
-    let lib = w.oai({ Library: 1, pier: w.c.repli_mirror_pier || 'Crowd' })
-    lib.c.up = w
-    return lib
+    return this.Ra_home_them(w, w.c.repli_mirror_pier || 'Crowd')
 
 // Repli_recv_lines — B got a repli_lines frame: decode + merge into the mirror; for every merged particle that
 //  referenced objecties.buffer, open a holding %req:awaitbuf under the Pier (the extra unemit processing).

@@ -2648,8 +2648,7 @@ async MusuReplica_setup(w):
     link[1].i({ Ud: 1, pubkey: 'DJ' })
     link[0].i({ Ud: 1, pubkey: 'Crowd' })
     this.Repli_arm(w)
-    let src = w.oai({ Library: 1, pier: 'DJ' })
-    src.c.up = w
+    let src = this.Ra_home_self(w, 'DJ')
     w.c.repli_src = src
     let ti = 0
     while (ti < 3) {
@@ -2846,8 +2845,7 @@ async MusuReco_setup(w):
     link[0].i({ Ud: 1, pubkey: 'Crowd' })
     this.Repli_arm(w)
     w.c.repli_page = 8
-    let src = w.oai({ Library: 1, pier: 'DJ' })
-    src.c.up = w
+    let src = this.Ra_home_self(w, 'DJ')
     w.c.repli_src = src
     let nav = this.Crate_nav()
     let paths = nav ? await this.Crate_nav_paths(nav, 'testsounds') : []

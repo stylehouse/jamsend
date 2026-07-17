@@ -28,19 +28,20 @@ Snap:H
               recent
                 unemit,type:repli_lines,seq
           active_transport,type:mock,open
-        Library,pier:Origin
-          Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-            Stream,name:audio,total=8,have=0
-          Record,id:t1,artist:Auteur,title:Meander Two,path:crate/a/Auteur - Meander Two.opus
-            Stream,name:audio,total=8,have=0
-          Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
-            Stream,name:audio,total=8,have=0
-          Record,id:t3,artist:Bassbin,title:Deep Draw,path:crate/b/Bassbin - Deep Draw.opus
-            Stream,name:audio,total=8,have=0
-          Record,id:t4,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
-            Stream,name:audio,total=8,have=0
-          Record,id:t5,artist:Choral,title:Long Draw,path:crate/c/Choral - Long Draw.opus
-            Stream,name:audio,total=8,have=0
+        MusuSelf,pub:Origin
+          stock,pub:Origin
+            Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+              Stream,name:audio,total=8,have=0
+            Record,id:t1,artist:Auteur,title:Meander Two,path:crate/a/Auteur - Meander Two.opus
+              Stream,name:audio,total=8,have=0
+            Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+              Stream,name:audio,total=8,have=0
+            Record,id:t3,artist:Bassbin,title:Deep Draw,path:crate/b/Bassbin - Deep Draw.opus
+              Stream,name:audio,total=8,have=0
+            Record,id:t4,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
+              Stream,name:audio,total=8,have=0
+            Record,id:t5,artist:Choral,title:Long Draw,path:crate/c/Choral - Long Draw.opus
+              Stream,name:audio,total=8,have=0
         Mag:Musica
           Cloud,randomic:d70fnpn,created_at=1000
             Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
@@ -50,9 +51,10 @@ Snap:H
             Card,id:t3,artist:Bassbin,title:Deep Draw,path:crate/b/Bassbin - Deep Draw.opus
             Card,id:t4,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
             Card,id:t5,artist:Choral,title:Long Draw,path:crate/c/Choral - Long Draw.opus
-        Library,pier:Follower.mirror
-          Mag:Musica
-            Cloud,randomic:d70fnpn,created_at=1000
-              Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-              Card,id:t1,artist:Auteur,title:Meander Two,path:crate/a/Auteur - Meander Two.opus
-              Card,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+        MusuThem,pub:Follower.mirror
+          stock,pub:Follower.mirror
+            Mag:Musica
+              Cloud,randomic:d70fnpn,created_at=1000
+                Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+                Card,id:t1,artist:Auteur,title:Meander Two,path:crate/a/Auteur - Meander Two.opus
+                Card,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus

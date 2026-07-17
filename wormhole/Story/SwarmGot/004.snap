@@ -50,12 +50,14 @@ Snap:H
               recent
                 unemit,type:pier_accept,seq
               req:unemit,seq=2,type:ive_got,done,to:ive_got,finished
-        Library,pier:fe3e32fea4a2a33e
-          Record,id:e1,title:Air,artist:Bach
-          Record,id:e2,title:Bourree,artist:Bach
-          Record,id:e3,title:Gymnopedie,artist:Satie
-        Library,pier:0332cf6fb046bfa9
-          Record,id:f1,title:Naima,artist:Coltrane
-          Record,id:f2,title:Cousin-Mary,artist:Coltrane
+        MusuSelf,pub:fe3e32fea4a2a33e
+          stock,pub:fe3e32fea4a2a33e
+            Record,id:e1,title:Air,artist:Bach
+            Record,id:e2,title:Bourree,artist:Bach
+            Record,id:e3,title:Gymnopedie,artist:Satie
+        MusuSelf,pub:0332cf6fb046bfa9
+          stock,pub:0332cf6fb046bfa9
+            Record,id:f1,title:Naima,artist:Coltrane
+            Record,id:f2,title:Cousin-Mary,artist:Coltrane
         req:witness,eternal,ok
         see:the door sealed the friendship — now each side may boast its shelf

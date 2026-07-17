@@ -1,0 +1,77 @@
+Snap:H
+  H:MusuSoft,Run
+    A:MusuSoft
+      self,round=8	{"mung":["age"]}
+      w:MusuSoft
+        self,round=8	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          setup,censused=3,cards=3,mag_offered,want_pinned
+          see:the origin catalog crossed the granted wire — the seeker mirrors all three cards of the published magazine before any wish
+          reached:step_3
+          wished:a,leads,one_lead,lead_named
+          see:a heist begins soft — a wish sentence and no pier and no ids — barely more than meaning
+          reached:step_4
+          wished:b,leads=0,no_leads
+          reached:step_5
+          pulled,landed,took,landed_whole,only_wanted,decoys_unspent
+          see:choosing the lead hardened the wish and pulled exactly that one card whole into the seeker stock while the two unchosen cards stayed unspent husks — a pull is per-card never a broadcast
+        Peering,name:Origin,req=2,ok
+          Pier,pub:Seeker,req=2,ok
+            Ud,pubkey:Seeker
+            outbox
+              recent
+                emit,type:repli_lines,seq
+          active_transport,type:mock,open
+        Peering,name:Seeker,req=3,ok
+          Pier,pub:Origin,req=2,ok
+            Ud,pubkey:Origin
+            inbox
+              recent
+                unemit,type:repli_lines,seq
+          active_transport,type:mock,open
+        MusuSelf,pub:Origin
+          stock,pub:Origin
+            Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,path:DJ Oscillo - Cosmic C.wav,ext:wav,bytes=1248104,body_hash:d71294dbbcd7b726b29eb435b756e0663034b5e94639324b091fed01fbd6c1f7,total=5
+              Body,seq:0,cid:32f2a4b9830963b69a3ecef564163166a625173dfaeb2e94bbec20f563e8a4c6	{"ref":{"buf":"Uint8Array()"}}
+              Body,seq:1,cid:c2bdf70e56dfbcd2400355444080f4497c9d1dbe2d43f019b48857814de61c55	{"ref":{"buf":"Uint8Array()"}}
+              Body,seq:2,cid:a26ee0de6039f4b2aee4964cffa22b08bbf7ba0206144384ebdd57997941b19e	{"ref":{"buf":"Uint8Array()"}}
+              Body,seq:3,cid:8a70913a174870526ca43f8a933dc7546dcb2c3ca1857006c3cb355039e4a92d	{"ref":{"buf":"Uint8Array()"}}
+              Body,seq:4,cid:98498a2492c3f3a9de030a74d79049dbe924a9d9419f23554d2e737438c07db9	{"ref":{"buf":"Uint8Array()"}}
+            Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,path:DJ Oscillo - Dorian D.wav,ext:wav,bytes=1216104,body_hash:02cfcb9c15affeaf0321fb7f155f65782ba44e45767f2cea9beeac447a8784ef,total=5
+              Body,seq:0,cid:2ef13a17a9fec32b21f92821072ba9b1376ccbe015e56b506d086cebdce73707	{"ref":{"buf":"Uint8Array()"}}
+              Body,seq:1,cid:dc98ba9ee147502d021081ba7748be786a151832c79eff227ef984b33db4f292	{"ref":{"buf":"Uint8Array()"}}
+              Body,seq:2,cid:d5588f8190bfaad1e70e7d1a2dd33e2b6e0c0cae16395ce24fde8ac5be775c9e	{"ref":{"buf":"Uint8Array()"}}
+              Body,seq:3,cid:60f762687185d12894a372cc2abdd169867520a3274edcb0878333ca67bef78c	{"ref":{"buf":"Uint8Array()"}}
+              Body,seq:4,cid:d2aad47f8d408f9f6a338c06e1b406c687c94a5e8b700d5e4c7002e4b3d9444c	{"ref":{"buf":"Uint8Array()"}}
+            Record,id:cf95c97b08584b92,title:Groove G,artist:DJ Oscillo,path:DJ Oscillo - Groove G.wav,ext:wav,bytes=1056104,body_hash:cf95c97b08584b92d262f214ddfdf536da5a18303b6e27ccb177c1c4088eb765,total=5
+              Body,seq:0,cid:f8d28b2fd8a9c26ca177cee50d513cdb5b86bbad96f4583725cbfefacb59fa97	{"ref":{"buf":"Uint8Array()"}}
+              Body,seq:1,cid:af4bedde200bf10f5cf41c50c640fa170ceddb0af50567a093d0a44c74096f0d	{"ref":{"buf":"Uint8Array()"}}
+              Body,seq:2,cid:938dd9f2ec627db677312339931e1b58afd0b3e10b76de01b300d936f78e5351	{"ref":{"buf":"Uint8Array()"}}
+              Body,seq:3,cid:fc42c9b09c25eab1c9201e3870b41e19b585ee64fa5b8057f878f2848582d940	{"ref":{"buf":"Uint8Array()"}}
+              Body,seq:4,cid:083b9dbe9be2e50a2047552429dd4599755f3d8560f0960b3ef8d43a96001c88	{"ref":{"buf":"Uint8Array()"}}
+        req:soft_census,finished
+        Mag:Musica
+          Cloud,randomic:softdraw,created_at=1000
+            Card,id:d71294dbbcd7b726,artist:DJ Oscillo,title:Cosmic C,path:DJ Oscillo - Cosmic C.wav,body_hash:d71294dbbcd7b726b29eb435b756e0663034b5e94639324b091fed01fbd6c1f7
+            Card,id:02cfcb9c15affeaf,artist:DJ Oscillo,title:Dorian D,path:DJ Oscillo - Dorian D.wav,body_hash:02cfcb9c15affeaf0321fb7f155f65782ba44e45767f2cea9beeac447a8784ef
+            Card,id:cf95c97b08584b92,artist:DJ Oscillo,title:Groove G,path:DJ Oscillo - Groove G.wav,body_hash:cf95c97b08584b92d262f214ddfdf536da5a18303b6e27ccb177c1c4088eb765
+        MusuThem,pub:Origin
+          stock,pub:Origin
+            Mag:Musica
+              Cloud,randomic:softdraw,created_at=1000
+                Card,id:d71294dbbcd7b726,artist:DJ Oscillo,title:Cosmic C,path:DJ Oscillo - Cosmic C.wav,body_hash:d71294dbbcd7b726b29eb435b756e0663034b5e94639324b091fed01fbd6c1f7
+                Card,id:02cfcb9c15affeaf,artist:DJ Oscillo,title:Dorian D,path:DJ Oscillo - Dorian D.wav,body_hash:02cfcb9c15affeaf0321fb7f155f65782ba44e45767f2cea9beeac447a8784ef
+                Card,id:cf95c97b08584b92,artist:DJ Oscillo,title:Groove G,path:DJ Oscillo - Groove G.wav,body_hash:cf95c97b08584b92d262f214ddfdf536da5a18303b6e27ccb177c1c4088eb765
+            Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,path:softtest/DJ Oscillo - Cosmic C.wav,bytes=1248104,ext:wav,body_hash:d71294dbbcd7b726b29eb435b756e0663034b5e94639324b091fed01fbd6c1f7
+        MusuSelf,pub:Seeker
+          shop,pub:Seeker
+            Heist,wish:cosmic voyage,at:Origin,chose:d71294dbbcd7b726,landed
+              Lead,pier:Origin,id:d71294dbbcd7b726,tune:DJ Oscillo — Cosmic C
+              filing,artist:DJ Oscillo,genre:softtest
+              took,tune:DJ Oscillo — Cosmic C
+            Heist,wish:zither reggae
+        req:soft_pull,finished
+        MusuThem,pub:soft.pull.mirror
+          stock,pub:soft.pull.mirror

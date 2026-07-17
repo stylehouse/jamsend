@@ -187,9 +187,15 @@ async Heist_unlink(nav, dir, filename):
 //   each surviving artist files under a category at THIS end.  disbelieve_directories:1 = do not
 //    reproduce the source's directory layers under the category (the flat-collect stance); absent =
 //     the source's relative dirs survive below the genre.  No match key = everything = klepto v1.
+//   HOMING (Radio_spec §2.1/§2.4): a heist is per-Pier state and must NOT float on the world floor.
+//    `opts.home` is the asker's shop shelf (Ra_home_shop(w, <me>)) — the loading zone where the active
+//     pull lives while in motion.  Given, the job mints UNDER it; absent, it falls back flat-on-w (the
+//      compat leg during migration).  The seam mirrors Heist_wish's `home` param — the soft and hard
+//       Heist home the same way.  Readers resolve against the same shelf they were minted under.
 Heist_job(w, at, filings, opts):
-    let job = w.i({ Heist: 1, at: at })
-    job.c.up = w
+    let home = (opts && opts.home) ? opts.home : w
+    let job = home.i({ Heist: 1, at: at })
+    job.c.up = home
     if (!opts || !opts.believe_directories) job.sc.disbelieve_directories = 1
     for (const f of (filings || [])) {
         let fl = job.i({ filing: 1, artist: f.artist, genre: f.genre })
@@ -206,12 +212,52 @@ Heist_filing_for(job, artist):
 
 // Heist_offer_all — the SOURCE side casts its catalog at the heister: every census card crosses as a
 //  husk (chunkless — %Body bufs cross only when wanted).  Consent-gated per card inside Repli_offer.
-async Heist_offer_all(w, tx, from, to, lib):
+//  Seam B, serve side (Radio_spec §5A rung 7): an optional `signer` (a keyed Idento) stamps the origin
+//   vouch onto each Record head BEFORE the husk ships — three scalar keys (by / vouch_sig / vouch_cids)
+//    that cross the husk for FREE (the %Body chunks with their cids do NOT — husk:1 skips binary-bearing
+//     children — so the manifest must ride the head itself for a door that verifies before a byte moves).
+//      No signer → the heads cross unsigned and the door adopts them gracefully (the MusuHeist path).
+async Heist_offer_all(w, tx, from, to, lib, signer):
     let crossed = 0
     for (const rec of (lib ? lib.o({ Record: 1 }) : [])) {
+        if (signer) await this.Heist_offer_vouch(rec, signer)
         if (await this.Repli_offer(w, tx, from, to, rec)) crossed = crossed + 1
     }
     return crossed
+
+// Heist_offer_vouch — stamp the origin signature onto ONE Record head so a chunkless husk carries a
+//  door-verifiable promise.  The %Body cids ARE the master's original file bytes (deterministic across
+//   peers, unlike a transcode grade — Radio_spec §5A rung 7), gathered in seq order.  Three scalar keys,
+//    all husk-crossing: `by` = the FULL origin pubkey hex; `vouch_sig` = ed25519 over Ra_manifest(id, cids);
+//     `vouch_cids` = the cids dot-joined (a sha256 hex never dots, so the receiver splits back unambiguously
+//      and rebuilds the exact manifest the head does not carry as %Body children).  Idempotent — a re-offer
+//       restamps the same deterministic sig.
+async Heist_offer_vouch(rec, signer):
+    let cids = []
+    let s = 0
+    let total = +(rec.sc.total || 0)
+    while (s < total) {
+        let ch = rec.o({ Body: 1, seq: '' + s })[0]
+        if (ch && ch.sc.cid) cids.push(ch.sc.cid)
+        s = s + 1
+    }
+    if (cids.length !== total || !total) return
+    rec.sc.by = signer.freeze().pub
+    rec.sc.vouch_sig = await this.Ra_sign(signer, rec.sc.id, cids)
+    rec.sc.vouch_cids = cids.join('.')
+    rec.bump()
+
+// Heist_vouch_ok — the receive-side check for ONE offered husk (Seam B): reconstruct the origin's manifest
+//  from the head's carried keys and verify the signature against the claimed origin key.  `vouch_cids` is the
+//   dot-joined cids the origin promised (the %Body children did NOT cross the husk, so the manifest rides the
+//    head); split it back, verify Ra_manifest(id, cids) against `vouch_sig` under `by`.  A missing sig|cids on a
+//     record that CLAIMS a `by` is a malformed vouch → refuse.  Fails closed (Ra_verify never throws).  When the
+//      chunks later arrive, Heist_land's per-chunk cid gate still checks each landed byte against its own promise,
+//       so a door-passed origin is bound to the bytes at land time too — the two gates in series.
+async Heist_vouch_ok(rec):
+    if (!rec.sc.vouch_sig || !rec.sc.vouch_cids) return false
+    let cids = ('' + rec.sc.vouch_cids).split('.')
+    return await this.Ra_verify(rec.sc.by, rec.sc.id, cids, rec.sc.vouch_sig)
 
 // Heist_beat — the heister's pass, driven every beat while the job stands: walk the quarantine
 //  mirror's husks; a card ALREADY HELD by catalog identity is skipped and dropped (dedup at the
@@ -232,6 +278,20 @@ async Heist_beat(w, rx, mine, theirs, job, own_lib, mir, nav, mardir):
             //      friends) is UNWIRED by the human's call — this is a plain child, not a Booth mint.
             let job_held = job.i({ held: 1, tune: rec.sc.artist + ' — ' + rec.sc.title })
             job_held.c.up = job
+            await mir.rm({ Record: 1, id: rec.sc.id })
+            continue
+        }
+        // Seam B, the OFFER DOOR (Radio_spec §5A rung 7): a husk that CLAIMS an origin (`by` present) must
+        //  carry a signature that verifies over its promised cids BEFORE a single chunk is wanted — the cid
+        //   catches corruption but only the origin signature keeps a LYING peer out.  A signed-but-failing
+        //    offer is REFUSED: zero wants minted (we `continue` before Ra_pull_beat), the husk dropped, and a
+        //     legible `unvouched,tune:` child stamped beside the job's tally.  An UNSIGNED husk passes (graceful
+        //      adoption — the MusuHeist path is unsigned and must stay green).  Gated ONLY here at the Heist
+        //       call, never in the generic Repli offer path other Books ride.
+        if (rec.sc.by && !(await this.Heist_vouch_ok(rec))) {
+            job.sc.unvouched = +(job.sc.unvouched || 0) + 1
+            let job_bad = job.i({ unvouched: 1, tune: rec.sc.artist + ' — ' + rec.sc.title })
+            job_bad.c.up = job
             await mir.rm({ Record: 1, id: rec.sc.id })
             continue
         }
@@ -458,12 +518,129 @@ Heist_manifest(job, mir, own_lib):
 
 // Heist_flatten — the job is done and the scaffolding goes: the %Heist (with its filings) and any
 //  quarantine leftovers delete.  The collection + newlyadded are all that remain — and neither says
-//   where anything came from.
+//   where anything came from.  The job removes from its OWN container (job.c.up — the shop shelf when
+//    Heist_job homed it there, else w for the compat leg), never assuming the world floor: the re-home
+//     (§2.4) moves the %Heist off w, and flatten follows it home rather than looking for it on w.
 async Heist_flatten(w, job, mir):
     if (mir) {
         for (const rec of mir.o({ Record: 1 })) await mir.rm({ Record: 1, id: rec.sc.id })
     }
-    if (job) await w.rm({ Heist: 1, at: job.sc.at })
+    if (job) await (job.c.up || w).rm({ Heist: 1, at: job.sc.at })
+//#endregion
+
+//#region soft — the %Heist starts SOFT and CONDENSES: wish → ask → %Lead → choose → the built pull (§2.4)
+// A hard %Heist,at:<pier> (the job above) is a manifest of known ids aimed at a known peer.  The human's
+//  2026-07-17 ruling turns that inside out: a heist BEGINS as barely more than a wish — no ids, only meaning
+//   — and hardens by stages.  This region builds the SOFT front of that arc (the LITERAL-match rung); the
+//    Stemdex/%Seem by-meaning rung rides later.  The five phases, and the ONE particle wearing more
+//     definition at each:
+//      wish     Heist_wish   — %Heist,wish:<sentence> — a wish + loose constraints, NO `at` (soft's tell)
+//      ask      Heist_ask    — the soft Heist crosses a granted wire as a chunkless husk (a descriptor, not
+//                               bytes — the wish is a leaf, so Repli_offer ships it in one frame)
+//      %Lead    Heist_match  — the FAR side walks its Mags and stamps a %Lead,pier: per literal hit UNDER the
+//                               soft Heist (answers accumulate on the wish; no hit = no Lead — silence is honest)
+//      choose   Heist_condense — picking a Lead HARDENS the wish: stamp `at:<pier>` + mint the filing, and the
+//                               EXISTING pull machinery (Heist_beat) takes it from there — condensation FEEDS
+//                                the built land, it never edits it
+// WHERE THE SOFT HEIST HOMES (§2.4, re-homed 2026-07-17): the `shop/` shelf now exists (Ra_home_shop(w, <me>)
+//  in Ra.g, beside stock/) — the LOADING ZONE where a heist lives WHILE IN MOTION.  A heist is the ASKER's
+//   operation, so it homes under the asker's OWN %MusuSelf,pub shop shelf, not the world floor (the §2.1
+//    homing law — nothing per-Pier floats on w).  A caller passes the asker's shop as `home` (Heist_wish for
+//     soft, Heist_job's opts.home for hard); the %Lead answers accumulate UNDER the wish there.  Passing `w`
+//      still works (the compat leg) — the seam is the `home` param, unchanged.
+
+// Heist_wish — mint the SOFT %Heist: a wish sentence + loose constraints, NO `at` (soft's defining absence —
+//  a hard Heist_job stamps `at`; a soft one has only meaning).  `home` is where it hangs — the asker's shop
+//   shelf (Ra_home_shop(w, <me>), §2.4), or `w` for the compat leg.  `constraints` (optional)
+//    is [{key, value}, …] — loose filters (an artist hint, a grade) stamped as scalar children so they SNAP
+//     and ride the ask; a Book pins them.  Returns the soft %Heist.  The wish carries no commas by the
+//      caller's care (a comma tips encode into its JSON fallback — the %see peel rule, same discipline).
+Heist_wish(w, home, sentence, constraints):
+    let heist = home.i({ Heist: 1, wish: sentence })
+    heist.c.up = home
+    for (const con of (constraints || [])) {
+        let c = heist.i({ constraint: 1, key: con.key, value: con.value })
+        c.c.up = heist
+    }
+    return heist
+
+// Heist_soft — is this %Heist still soft (a wish with no `at`)?  The tell the whole arc turns on: soft = has a
+//  `wish` and NO `at`; condensing stamps `at` and it is soft no longer.  Read live off the sc, never a flag.
+Heist_soft(heist):
+    return !!(heist && heist.sc.wish && !heist.sc.at)
+
+// Heist_words — split a wish sentence into lowercase word tokens for the literal match: non-word runs are the
+//  boundaries (spaces, punctuation, the em-dash a wish uses instead of a comma), empties dropped.  The FIRST
+//   match rung is literal contains — a wish word is a substring the card's fields hold; the Stemdex/%Seem
+//    by-meaning rung (later) replaces this tokeniser with the stem index, the ask unchanged.
+Heist_words(sentence):
+    let out = []
+    for (const w of ('' + (sentence || '')).toLowerCase().split(/[^a-z0-9]+/)) {
+        if (w) out.push(w)
+    }
+    return out
+
+// Heist_ask — the ask crosses the granted wire to a peer: the soft %Heist rides as a chunkless husk (the same
+//  offer frame idiom MusuVend's rails use — Repli_offer ships the head + non-buffer children in one repli_lines
+//   frame, and a wish is a leaf with no %Body, so nothing but the descriptor crosses).  Consent-gated inside
+//    Repli_offer exactly as an offer is.  Returns did-it-cross (false when the grant refuses — a wish to a peer
+//     who has not granted you never travels).  The far side reads the merged ask off its mirror and MATCHES.
+async Heist_ask(w, tx, from, to, heist):
+    return await this.Repli_offer(w, tx, from, to, heist)
+
+// Heist_match — the FAR side answers a wish: walk every %Card of the offered Mag (Musica_cards — the flat
+//  catalog), literal case-insensitive CONTAINS-match each wish word against title|artist|genre|album, and for
+//   each card ANY wish word hits, stamp a %Lead,pier:<who>,id:<card id>,tune:<artist — title> under the soft
+//    Heist — the answer accumulating on the wish (§2.4 "%Lead,pier: answers accumulate under the Heist").  NO
+//     match → NO Lead (silence is the honest answer — the search does not flatter).  Idempotent: a Lead already
+//      standing for a (pier, id) is recognised, not doubled, so re-matching a re-crossed ask adds nothing.
+//   `pier` is WHO can fulfil (the far side's key); `mag` is the far side's catalog.  The %Lead is a REFERRING
+//    particle (its own mainkey, carrying the card id — the many:1 `of` sense is served by pier+id together) —
+//     never an impersonation of the %Card.  genre is an editorial claim the card may carry (§2.3); it matches
+//      when present, absent falls out silently.  Returns the leads minted|found this pass.
+Heist_match(w, heist, mag, pier):
+    let out = []
+    if (!heist || !mag) return out
+    let words = this.Heist_words(heist.sc.wish)
+    if (!words.length) return out
+    for (const card of this.Musica_cards(mag)) {
+        // the searchable haystack: the card's editorial+identity fields, lowercased once.  A missing field is
+        //  the empty string (never a `undefined` in the join — the maybe-undefined snap wart), so it simply
+        //   contributes no substring.
+        let hay = [card.sc.title, card.sc.artist, card.sc.genre, card.sc.album]
+            .map((v) => ('' + (v || '')).toLowerCase()).join(' ')
+        let hit = 0
+        for (const word of words) { if (hay.includes(word)) hit = 1 }
+        if (!hit) continue
+        let lead = heist.oai({ Lead: 1, pier: pier, id: card.sc.id })
+        lead.c.up = heist
+        lead.sc.tune = ('' + (card.sc.artist || '')) + ' — ' + ('' + (card.sc.title || ''))
+        out.push(lead)
+    }
+    return out
+
+// Heist_leads — every %Lead accumulated under a soft Heist (the answers the search gathered), in mint order.
+Heist_leads(heist):
+    return heist ? heist.o({ Lead: 1 }) : []
+
+// Heist_condense — CHOOSING a Lead hardens the soft %Heist into the already-built pull.  The wish stamps
+//  `at:<lead pier>` (soft no more — it now names WHO fulfils) and mints the %filing for exactly the chosen
+//   card's artist under `genre` (the manifest of one card, the believe/disbelieve decision the hard job pins
+//    at creation).  It EDITS NOTHING downstream: Heist_beat/Heist_land/the vouch door are untouched —
+//     condensation FEEDS them.  The caller then drives Heist_beat over the mirror that carries the chosen
+//      card's %Body bufs (a same-world census mirror, or a real wire pull), and the landed %Record arrives in
+//       the asker's Ra_home_them(w, <pier>) stock exactly as a hard heist lands.  `genre` files the landing
+//        (the shop's category); `artist` comes off the Lead's tune|the caller.  Returns the hardened Heist.
+//   The Lead stays BESIDE the hardened wish (the answer that was chosen — a mid-run reader sees WHICH Lead
+//    condensed the heist); the un-chosen Leads stay too until the heist flattens (scaffolding, not ledger).
+Heist_condense(heist, lead, artist, genre):
+    if (!heist || !lead) return heist
+    heist.sc.at = lead.sc.pier
+    heist.sc.chose = lead.sc.id
+    let fl = heist.i({ filing: 1, artist: artist, genre: genre })
+    fl.c.up = heist
+    heist.bump()
+    return heist
 //#endregion
 
 //#region newlyadded — probation as metadata: the log that shuffles new music into the listening diet
@@ -690,19 +867,35 @@ async Musica_forget_fold(mag, cutoff):
     }
     return dropped
 
-// Musica_forget — the Berth wrap: forget the era in memory then persist.
-//   // <  the RADIOSTOCK CASCADE: dropping a Cloud must also drop the .jam radiostock chunks derived from its
-//   // <   Records (the human: "delete including radiostock") — unbuilt; needs the enid→stock map (Ra_enid is
-//   // <    the Record id's first-16, so the join exists) walked and each stock file unlinked off disk.
-//   PROPAGATION: forget itself is a LOCAL GC (a Berth-side era drop).  The WIRE twin is now built —
-//    Musica_recast_offer (M4) crosses a goner as a path-carrying op:delete at BOTH the record and cloud level,
-//     so a follower's mirror sheds what the origin dropped (MusuRecast, LIVE-GREEN ×2).  Folding that goner-cross
-//      INTO Musica_forget's Berth path (a forget that also retires over enrolled followers) is the standing-loop
-//       rung — M4's remainder; Musica_recast_offer is the primitive it will call.
-async Musica_forget(nav, mag, cutoff):
+// Musica_forget — the Berth wrap: forget the era in memory, persist, then CASCADE the drop to the derived
+//  radiostock on disk.  The RADIOSTOCK CASCADE (the human: "delete including radiostock") is now BUILT: an
+//   era drop takes every %Cloud older than cutoff, so its %Card ids leave the magazine — and each such id
+//    that is referenced by NOTHING surviving is a dead .jam stock now.  The join is Card.id === stock enid
+//     (both are Ra_enid, the content hash — Ra_record_from stamps Record.id, Musica_fold copies it onto the
+//      Card, Ra_stock_name keys the file by it), so no map is needed: gather the ids before/after the fold,
+//       and hand the goners (minus any survivor — BIAS-TO-KEEP, the stock is a re-derivable cache) to
+//        Ra_stock_cascade, which unlinks each dead shelf file off THIS pub's shelf.  `pub` is the stocking
+//         Peering's prepub (== lib.sc.pier at stock time), threaded in by the caller — it scopes the shelf
+//          scan so a many-Pier .jamsend never crosses shelves.  GRACEFUL NO-OP: an in-memory magazine with
+//           no disk stock (MusuVend rides Musica_forget_fold direct, never this) cascades nothing — the ls
+//            finds no files — so existing forget paths stay byte-identical.
+//   // <  still unbuilt — the WIRE goner: forget is a LOCAL GC (this Berth-side era + its disk cache).  The
+//   // <   wire twin EXISTS (Musica_recast_offer, M4 — a goner crosses as a path-carrying op:delete at both
+//   // <    record and cloud level, MusuRecast LIVE-GREEN ×2), but folding that goner-cross INTO Musica_forget's
+//   // <     Berth path (a forget that ALSO retires over enrolled followers) is the standing-loop rung — M4's
+//   // <      remainder; Musica_recast_offer is the primitive it will call.
+async Musica_forget(nav, mag, cutoff, pub):
+    // the era's ids BEFORE the fold — every card across every cloud — so the cascade knows the full goner set.
+    let before = []
+    for (const rec of this.Musica_cards(mag)) before.push(rec.sc.id)
     let dropped = await this.Musica_forget_fold(mag, cutoff)
     if (dropped) await this.Berth_save(nav, mag)
-    return dropped
+    // the survivors AFTER the fold (BIAS-TO-KEEP: an id still referenced anywhere keeps its stock).
+    let keep = {}
+    for (const rec of this.Musica_cards(mag)) keep[rec.sc.id] = 1
+    let cascaded = []
+    if (dropped && pub) cascaded = await this.Ra_stock_cascade(nav, pub, before, keep)
+    return { dropped: dropped, cascaded: cascaded }
 
 // Musica_recast_offer — the census-diff RE-PUBLISH over the wire (M4, §12.2 / §12.5): re-fold the magazine
 //  from the live collection, then propagate the WHOLE reconcile to a follower.  Neus + in-place updates ride a

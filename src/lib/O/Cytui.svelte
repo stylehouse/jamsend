@@ -1578,7 +1578,23 @@
     //    NOTATION — squished rows, aligned to the cell's own best wall.  'star' keeps
     //     the radial gem (nucleus/belt/rim) for the A/B.  Flip live over the ask rails
     //      (runner_shot --arm --face=vsub:star) or the Cyto_vsub_face stash.
-    let vsub_face: 'tuples' | 'star' = 'tuples'
+    let vsub_face = $state<'tuples' | 'star' | 'phi'>('tuples')
+
+    // ── LIVE KNOBS — the tunable constants of the ▦ layer, addressable at runtime ──
+    //  The Attractor Ground (spec/Attractor_todo.md): a face is a builder from (cells,
+    //   descs, KNOBS) → layers, and a judge tunes those knobs live to compete entries on
+    //    the same data.  A knob is a plain number with a registered DEFAULT; an override
+    //     lives in vknobs and rides the stash (Cyto_knobs) so it survives a reload.  vknob()
+    //      is called in hot paint paths, so it must be cheap — one map read, register-on-miss.
+    //   ADD a knob by reading it at its use site (vknob('crater.rmin', 24)); the first call
+    //    registers the default, and every call after is the live value.  Read ONCE at the top
+    //     of a function into a local — never per-iteration.
+    const vknob_defs: Record<string, number> = {}
+    let vknobs = $state<Record<string, number>>({})
+    function vknob(name: string, def: number): number {
+        if (vknob_defs[name] === undefined) vknob_defs[name] = def
+        return vknobs[name] ?? def
+    }
 
     // the WRITING DIRECTION of a tuples pane: text hangs off the cell's OWN shape —
     //  "they should mostly favour the shape of their cell, to align text with the
@@ -1758,65 +1774,115 @@
 
     // zone_seat — COMPLETELY DIFFERENT text hosting: the space determines the font size,
     //  not the other way round.  Divide the polygon's height into zones proportional to
-    //   weight, find the widest chord in each zone, then size text to FILL that territory
-    //    (min of height-fill and width-fill).  No flowing, no wrapping, no inflate step —
-    //     each content item OWNS its band.  A long member list auto-splits into sub-zones
-    //      of GROUP_MAX atoms so each group still reads at a legible size.
+    //   weight, size each zone's text to FILL its territory (min of height-fill and
+    //    width-fill), placed on its OWN measured chord.  No flowing, no wrapping.
+    //  Three rules keep text either fully visible or honestly folded, never clipped
+    //   mid-word (the human's 'Artist name:Palego' clip):
+    //    (1) SAME-CHORD sizing AND placement — a zone is sized against, and placed on, the
+    //         wide_chord's own y/x; sizing width === placement width, so a slant wall can
+    //          never cut a row it wasn't measured for.
+    //    (2) SPLIT-DON'T-SHRINK — a zone whose estimated landed fs would fall below
+    //         zone.fsfloor with ≥2 atoms splits at the tag|name seam (atom0 | rest) instead
+    //          of squashing onto one line; the identity lands as 'Artist' then 'name: Palegold',
+    //           both BIG.  (Plus the old GROUP_MAX chunking of long member lists.)
+    //    (3) EXACT-OR-FOLDED — if a sized row still overruns its chord, shrink ONLY the last
+    //         atom to a 7pt floor (pane_rows' rule); if it still won't fit, drop trailing atoms
+    //          into hid.  A glyph never paints past the wall.
     //  Return type matches pane_rows so callers switch without structural change.
     function zone_seat(
             poly: {x:number,y:number}[], cx: number, cy: number,
             zones: { atoms: VAtom[], weight: number }[],
             opts?: { toppad?: number, botpad?: number, capfs?: number }
     ): { stats: VStat[], hid: number, used: number, avail: number } | null {
-        // expand: a zone with many atoms splits into equal sub-zones of GROUP_MAX
-        const GROUP_MAX = 5
-        const exp: { atoms: VAtom[], weight: number }[] = []
-        for (const z of zones) {
-            if (!z.atoms.length) continue
-            if (z.atoms.length <= GROUP_MAX) { exp.push(z); continue }
-            const n = Math.ceil(z.atoms.length / GROUP_MAX)
-            const sw = z.weight / n
-            for (let i = 0; i < n; i++)
-                exp.push({ atoms: z.atoms.slice(i * GROUP_MAX, (i + 1) * GROUP_MAX), weight: sw })
-        }
-        if (!exp.length) return null
-        const ys = poly.map(p => p.y)
-        const y0 = Math.min(...ys) + (opts?.toppad ?? 4)
-        const y1 = Math.max(...ys) - (opts?.botpad ?? 4)
+        const GROUP_MAX = Math.max(1, Math.round(vknob('zone.groupmax', 5)))
+        const FSFLOOR = vknob('zone.fsfloor', 10.5)      // below this a splittable zone splits
+        const FSCEIL = vknob('zone.fsceil', 24)          // the per-row size ceiling
+        const ys0 = poly.map(p => p.y)
+        const y0 = Math.min(...ys0) + (opts?.toppad ?? 4)
+        const y1 = Math.max(...ys0) - (opts?.botpad ?? 4)
         const H = y1 - y0
         if (H < 12) return null
-        const tw = exp.reduce((s, z) => s + z.weight, 0)
+        // one zone's text width in em (atoms + inter-atom gaps) — the sizing basis
+        const zone_em = (atoms: VAtom[]) =>
+            atoms.reduce((s, a) => s + a.len, 0) * GLY + Math.max(0, atoms.length - 1) * 0.55
+        // an optimistic landed fs for a zone owning `share` of H, measured against the poly's
+        //  widest chord anywhere (best case for width) — used only to DECIDE splitting.
+        const wideAll = wide_chord(poly, y0, y1, 7)
+        const wAll = wideAll ? wideAll.w - 12 : 0
+        const est_fs = (atoms: VAtom[], share: number) => {
+            const em = zone_em(atoms)
+            const fh = share * H * 0.70
+            const fw = em > 0 && wAll > 0 ? wAll / em : FSCEIL
+            return Math.min(fh, fw, FSCEIL)
+        }
+        // EXPAND (split-don't-shrink) over a work queue: chunk a long list to GROUP_MAX, then
+        //  keep splitting a still-too-small multi-atom zone at its atoms[0]|atoms[1..] seam.
+        const tw0 = zones.reduce((s, z) => s + (z.atoms.length ? z.weight : 0), 0) || 1
+        const queue = zones.filter(z => z.atoms.length)
+            .map(z => ({ atoms: z.atoms, weight: z.weight }))
+        const exp: { atoms: VAtom[], weight: number }[] = []
+        let guard = 0
+        while (queue.length && guard++ < 400) {
+            const z = queue.shift()!
+            if (z.atoms.length > GROUP_MAX) {          // long list → equal GROUP_MAX chunks
+                const n = Math.ceil(z.atoms.length / GROUP_MAX), sw = z.weight / n
+                for (let i = 0; i < n; i++)
+                    queue.push({ atoms: z.atoms.slice(i * GROUP_MAX, (i + 1) * GROUP_MAX), weight: sw })
+                continue
+            }
+            // would this zone land below the floor while it still has a seam to break at?
+            if (z.atoms.length >= 2 && est_fs(z.atoms, z.weight / tw0) < FSFLOOR) {
+                queue.push({ atoms: z.atoms.slice(0, 1), weight: z.weight * 0.5 },
+                           { atoms: z.atoms.slice(1),    weight: z.weight * 0.5 })
+                continue
+            }
+            exp.push(z)
+        }
+        if (!exp.length) return null
+        const tw = exp.reduce((s, z) => s + z.weight, 0) || 1
         const stats: VStat[] = []
         let hid = 0, ycur = y0
         let cap = opts?.capfs ?? Infinity
         for (const zone of exp) {
             const zh = H * zone.weight / tw
-            // wide_chord: find the widest horizontal chord inside this zone — a slanted cell's
-            //  widest reachable point may not be at the centre; sizing to it gives more room.
+            // SAME CHORD for sizing AND placement: measure the widest chord in the band, size
+            //  the row to it, and seat the baseline on THAT chord's own y (clamped so the row's
+            //   fs*1.24 box sits inside the band) — no second, narrower placement chord to overrun.
             const best = wide_chord(poly, ycur, ycur + zh, 6)
             if (!best || best.w < 12) { hid += zone.atoms.length; ycur += zh; continue }
             const avail_w = best.w - 12
-            const total_len = zone.atoms.reduce((s, a) => s + a.len, 0)
-            const gap_em = Math.max(0, zone.atoms.length - 1) * 0.55
-            const text_em = total_len * GLY + gap_em
+            const text_em = zone_em(zone.atoms)
             const fs_h = zh * 0.70
-            const fs_w = text_em > 0 ? avail_w / text_em : 24
-            let fs = Math.min(Math.min(fs_h, fs_w), cap, 24)
+            const fs_w = text_em > 0 ? avail_w / text_em : FSCEIL
+            let fs = Math.min(fs_h, fs_w, cap, FSCEIL)
             if (fs < 7) { hid += zone.atoms.length; ycur += zh; continue }
             // identity ceiling: content zones must not exceed the identity's font size.  A floor
             //  of 10 keeps content legible even when a long identity compresses to near 7pt.
             if (cap === Infinity) cap = Math.max(fs, 10)
-            // place atoms at the zone's optical centre, centred in the widest-chord span
-            const line_px = text_em * fs
-            const place_chord = poly_chord(poly, ycur + zh * 0.72) ?? [best.x0, best.x1]
-            let x = place_chord[0] + Math.max(6, (place_chord[1] - place_chord[0] - line_px) / 2)
-            const ry = ycur + zh * 0.74
-            for (const a of zone.atoms) {
-                const aw = a.len * GLY * fs
+            // baseline on the wide chord's own y, box kept inside [ycur, ycur+zh]
+            const box = fs * 1.24
+            const ry = Math.min(Math.max(best.y, ycur + box * 0.8), ycur + zh - box * 0.2)
+            // EXACT-OR-FOLDED: if the sized line still overruns (a splitless zone can), shrink the
+            //  LAST atom to a 7pt floor; if it STILL overruns, drop trailing atoms into hid.
+            const seat = zone.atoms.map(a => ({ a, fs }))
+            const line_px = () => seat.reduce((s, e) => s + e.a.len * GLY * e.fs, 0)
+                                + Math.max(0, seat.length - 1) * fs * 0.55
+            while (seat.length && line_px() > avail_w) {
+                const last = seat[seat.length - 1]
+                const others = line_px() - last.a.len * GLY * last.fs
+                const room = avail_w - others
+                const shrunk = last.a.len > 0 ? room / (GLY * last.a.len) : 0
+                if (shrunk >= 7) { last.fs = shrunk; break }
+                seat.pop(); hid++                       // can't fit even at 7 — honestly fold it
+            }
+            if (!seat.length) { ycur += zh; continue }
+            let x = best.x0 + Math.max(6, (best.w - line_px()) / 2)
+            for (const e of seat) {
+                const aw = e.a.len * GLY * e.fs
                 if (aw < 0.5) { hid++; continue }
-                const { len: _l, afs: _af, ...rest } = a
-                stats.push({ ...rest, fs, x: x + aw / 2, y: ry } as VStat)
-                x += aw + fs * 0.55
+                const { len: _l, afs: _af, ...rest } = e.a
+                stats.push({ ...rest, fs: e.fs, x: x + aw / 2, y: ry } as VStat)
+                x += aw + e.fs * 0.55
             }
             ycur += zh
         }
@@ -1931,13 +1997,14 @@
                         members: VSubLeaf[], tint: string, kind: string | undefined):
             { pane: VSubPane, hid: number } | null {
         const rows = tuple_rows(head, tname, keyed, members, tint, kind)
-        // zone_seat: identity row gets 3× weight (it IS the cell), content rows share the rest.
-        const zones = rows.map((atoms, i) => ({ atoms, weight: i === 0 ? 3 : 1.5 }))
+        // zone_seat: identity row gets zone.identw weight (it IS the cell), content rows share the rest.
+        const identw = vknob('zone.identw', 3), roww = vknob('zone.roww', 1.5)
+        const zones = rows.map((atoms, i) => ({ atoms, weight: i === 0 ? identw : roww }))
         const res = zone_seat(c.inset, c.acx, c.acy, zones)
         if (!res) return null
         return { pane: { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`, clip: poly_d(c.inset),
                          color: c.color, tint, walls: [], spokes: [], stats: res.stats,
-                         roomy: res.hid === 0 && res.used < res.avail * 0.42 }, hid: res.hid }
+                         roomy: res.hid === 0 && res.used < res.avail * vknob('spell.roomy', 0.42) }, hid: res.hid }
     }
 
     // ── THE C-SPACE CRATER — ONE per cell ── (B1 2026-07-14, corrected by the human the same day:
@@ -1956,7 +2023,7 @@
                          tint: string, kind: string | undefined): { pane: VSubPane, hid: number } | null {
         const lead = keyed.find(g => g.lead)
         const mem = lead ? lead.leaves.filter(l => l.member) : []
-        if (mem.length < 1) return null                  // no cross-kind fold structure — flat tuples
+        if (mem.length < 1) { crater_skips.nofold++; return null }   // no cross-kind fold structure — flat tuples
         // G1's boundary: untagged rows are the CONTAINER's (they ride the header); the lead list +
         //  every tagged row is the MEMBERS' level and lives in the coagulate.
         const shared = keyed.filter(g => !g.lead && !g.tag)
@@ -1968,7 +2035,7 @@
         const R = Math.sqrt(Math.abs(A2) / 2 / Math.PI)
         // a C-cradle nucleus insets on THREE sides, so it needs a touch more cell than a flat band;
         //  a smaller fold reads better flat (the spell grows a borderline one until the C fits).
-        if (R < 24) return null                           // too small to draw a legible C — flat reads better
+        if (R < vknob('crater.rmin', 24)) { crater_skips.small++; return null }   // too small to draw a legible C
         // ── THE C-CRADLE (the human, 2026-07-15: "a standard C-shaped crater … the Artist wraps the
         //  members in a C") — the coagulate is a NUCLEUS inset toward the centre-right, and the cell's
         //   OWN Artist tint wraps it on THREE sides: the TOP arm holds the identity, the LEFT spine and
@@ -1993,7 +2060,7 @@
         let coagBox = clip_halfplane(c.inset, { x: c.acx, y: yTop }, { x: 0, y: -1 })           // y ≥ yTop
         coagBox = clip_halfplane(coagBox, { x: c.acx, y: yBot }, { x: 0, y: 1 })                // y ≤ yBot
         coagBox = clip_halfplane(coagBox, { x: xLeft, y: c.acy }, { x: -1, y: 0 })              // x ≥ xLeft
-        if (headerPoly.length < 3 || coagBox.length < 3) return null
+        if (headerPoly.length < 3 || coagBox.length < 3) { crater_skips.geo++; return null }
         const walls: VWall[] = []
         const stats: VStat[] = []
         let hid = 0
@@ -2003,12 +2070,12 @@
         {
             const hc = cen(headerPoly)
             const hrows = tuple_rows(head, tname, shared, [], tint, kind)
-            const hzones = hrows.map((atoms, i) => ({ atoms, weight: i === 0 ? 3 : 1.5 }))
+            const hzones = hrows.map((atoms, i) => ({ atoms, weight: i === 0 ? vknob('zone.identw', 3) : vknob('zone.roww', 1.5) }))
             const hres = zone_seat(headerPoly, hc.x, hc.y, hzones)
-            if (!hres) return null                        // the arm can't seat even one line — un-drawable
+            if (!hres) { crater_skips.geo++; return null }   // the arm can't seat even one line — un-drawable
             const hts = hres.stats.filter(s => s.cls === 'vsub-ntitle')
             const htitle = hts.length ? Math.min(...hts.map(s => s.fs ?? 0)) : 0
-            if (hts.length && htitle < 9) return null     // identity too small to crater
+            if (hts.length && htitle < vknob('crater.hfloor', 9)) { crater_skips.header++; return null }   // identity too small to crater
             hcap = htitle || 16
             stats.push(...hres.stats)
             hid += hres.hid
@@ -2017,7 +2084,7 @@
         //  STRONG level boundary ("two different C/C levels cannot share data descriptions").
         const mtint = (mem[0].member ? kind_tint(Object.keys(mem[0].member.sc ?? {})[0]) : null) ?? c.color
         const coag = chaikin(poly_grow(coagBox, -3), 2)
-        if (coag.length < 3) return null
+        if (coag.length < 3) { crater_skips.geo++; return null }
         // the fill is a LINEAR gradient transparent at the nucleus TOP (the identity seam) deepening
         //  down, + an INNER SHADOW on that top edge, so the nucleus reads as sunk INTO the cradle.
         const gid = `vcoag-${dom_id(c.id)}`
@@ -2048,9 +2115,9 @@
         // the member band flows INSIDE the nucleus — the distilled rows, capped under the identity.
         const cc2 = cen(coag)
         const nrows = keyed_rows(memb, kind)
-        const nzones = nrows.map(atoms => ({ atoms, weight: 1.5 }))
+        const nzones = nrows.map(atoms => ({ atoms, weight: vknob('zone.roww', 1.5) }))
         const bres = zone_seat(coag, cc2.x, cc2.y, nzones, { capfs: hcap * 0.9 })
-        if (!bres) return null                           // the nucleus can't seat — flat fallback
+        if (!bres) { crater_skips.geo++; return null }   // the nucleus can't seat — flat fallback
         stats.push(...bres.stats)
         hid += bres.hid
         // H5 — hourglass ribbons: each claim chip reaches for the member chips it speaks for
@@ -2059,9 +2126,10 @@
         //    over the cell they're in … one more layer of stuff") — they'd clutter the resting
         //     glass (30 ribbons on a 5-Artist scape); the hover is the moment you're asking.
         const ribbons = R > 90 ? corr_ribbons(bres.stats, mtint) : []
+        crater_ok++
         return { pane: { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`, clip: poly_d(c.inset),
                          color: c.color, tint, walls, spokes: [], stats, lgrads, ribbons,
-                         roomy: hid === 0 && bres.used < bres.avail * 0.42 }, hid }
+                         roomy: hid === 0 && bres.used < bres.avail * vknob('spell.roomy', 0.42) }, hid }
     }
 
     // nucleus_pane — the DEGENERATE pane: no structure worth tessellating (a bare loner,
@@ -2078,6 +2146,419 @@
         s.cls = 'vsub-ntitle'; s.tagtint = tint
         return { id: c.id, clipid: `vsubclip-${dom_id(c.id)}`, clip: poly_d(c.inset),
                  color: c.color, tint, walls: [], spokes: [], stats: [s] }
+    }
+
+    // ── ϕ THE GOLDEN LETTERING LAYER (face 'phi') ── (the human, 2026-07-17: "cast a phi
+    //  sunflower grid onto the cells, assign continuous spaces across the grids with another
+    //   bit of give+take basically ignoring cell boundaries, then we completely obscure what
+    //    we have drawn so far with this other... labels stretched onto a phi spiral! with
+    //     connective tissue showing expandy regions" — and the why: "phi is easy to see kinks
+    //      in but not overly griddy, we can probably communicate pretty well a warping
+    //       data-landscape").
+    //  ϕ v2 (the human, 2026-07-17: "the center of the sunflower is off the screen, and we're
+    //   dealing with a gently curving phi grid, which we assign runs of dots on to chunks of UI
+    //    we want to fit there... 'Artist name:Vox' wants to be all in a line, Track** is below
+    //     and indented... dragging the Artist phi blobule should still move the cyto node...
+    //      blinklessly stream through the display layers... it gets small text too easily. we
+    //       need more confidence about fitting the text should be able to really max it out").
+    //  The pole is OFF-SCREEN (phi.pole_dist·half-diagonal at bearing phi.pole_ang) so every
+    //   groove crossing the viewport is a gentle near-parallel smile-arc — no tight turns.  A
+    //    cell's labels claim as ONE C-BLOCK, snap-notation-shaped: the TITLE whole on one groove,
+    //     each child line INDENTED onto the adjacent groove that is screen-DOWN of the title
+    //      (phi.indent em).  The whole block is claim-tested at each candidate anchor; a block
+    //       that won't seat retries with fewer children (fold the tail into +N), down to
+    //        title-only, else the cell folds entirely.  Sizing is INVERTED: fs is the LARGEST
+    //         that fills the free gap on the groove (capped phi.fsceil, floored phi.fsfloor →
+    //          smaller folds instead) — the human's "really max it out".  A title may claim TWO
+    //           grooves (phi.titlegrooves) for a bigger cap.  The ledger stays TOTAL-spiral-angle
+    //            intervals (big r → tiny angular spans, exact overlap check), so text can NEVER
+    //             obscure text.  STABLE IDENTITY: pathids are deterministic (vphi-cellid-slug),
+    //              and a module-level phi_prev seats each label at its previous interval first —
+    //               so a drag re-validates in place instead of reshuffling every arc (the blink
+    //                fix: the old global-seq pathids renamed every arc → full DOM recreation).
+    const PHI_G = 17                                     // groove pitch px (label fs capped below it)
+    type PhiArc = { pathid: string, d: string, fs: number, cls: string, tint: string,
+                    k?: string, khue?: string | null, text: string, tl?: number, cellid: string }
+    let vphi = $state<{ lattice: string, arcs: PhiArc[], ties: { d: string, tint: string }[],
+                        folds: { id: string, x: number, y: number, n: number, tint: string }[],
+                        labels: number, folded: number, held: number, moved: number } | null>(null)
+    // hysteresis across rebuilds: a label's last claimed interval, keyed by its stable pathid.
+    //  Each build re-seats a label at its previous [t0,t1] before searching (if still free), so a
+    //   drag re-validates in place — no global reshuffle, no blink.  Replaced wholesale each build.
+    let phi_prev = new Map<string, { t0: number, t1: number }>()
+    const phi_boost = new Set<string>()                  // cells the human expanded (chip click)
+    function phi_expand(id: string) {
+        if (phi_boost.has(id)) phi_boost.delete(id); else phi_boost.add(id)
+        voronoi_soon()                                   // the same repaint the runner ops ride
+    }
+    function phi_build(cells: VCell[],
+                       dmap: Map<string, { descs: VtuffDesc[], tint: string, fkind?: string }>,
+                       qmap: Map<string, Set<string>>): typeof vphi {
+        const live = cells.filter(c => dmap.has(c.id))
+        if (!live.length) return null
+        // knobs read ONCE at the top (hot paint path — never a per-iteration map read)
+        const G = vknob('phi.pitch', PHI_G)              // groove pitch px
+        const phi_cap = Math.round(vknob('phi.cap', 9))          // labels per cell (resting)
+        const phi_boostcap = Math.round(vknob('phi.boostcap', 22)) // labels per boosted cell
+        const POLE_DIST = vknob('phi.pole_dist', 2.5)    // pole displacement in bbox half-diagonals
+        const POLE_ANG = vknob('phi.pole_ang', 90)       // pole bearing deg (90 = straight down)
+        const INDENT_EM = vknob('phi.indent', 1.5)       // child indent in em of the title fs
+        const STICKY = vknob('phi.sticky', 1.6)          // a held label may sit this × its normal budget
+        const REACH = vknob('phi.reach', 2.2)            // per-label distance budget factor
+        const TITLE_GROOVES = Math.max(1, Math.round(vknob('phi.titlegrooves', 2))) // grooves a title may span
+        const FSCEIL = vknob('phi.fsceil', 26)           // gap-sized fs ceiling
+        const FSFLOOR = vknob('phi.fsfloor', 9)          // below this the line folds instead
+        // the spiral pole sits OFF-SCREEN: the glass bbox centre displaced POLE_DIST half-diagonals
+        //  at bearing POLE_ANG (90 = down in screen coords → grooves are gentle smile-arcs stacked
+        //   vertically, big r everywhere so every angular span is tiny and near-parallel).
+        const hxs = live.map(c => c.acx), hys = live.map(c => c.acy)
+        const bx0 = Math.min(...hxs), bx1 = Math.max(...hxs)
+        const by0 = Math.min(...hys), by1 = Math.max(...hys)
+        const bcx = (bx0 + bx1) / 2, bcy = (by0 + by1) / 2
+        const halfdiag = Math.max(G * 6, 0.5 * Math.hypot(bx1 - bx0, by1 - by0))
+        const par = POLE_ANG * Math.PI / 180
+        const px = bcx + Math.cos(par) * POLE_DIST * halfdiag
+        const py = bcy + Math.sin(par) * POLE_DIST * halfdiag
+        const R_of = (t: number) => G * t / (2 * Math.PI)
+        const T_of = (r: number) => r * 2 * Math.PI / G
+        // ONE ledger for the whole spiral — claimed [t0,t1] in total angle.  Turns differ by
+        //  2π, so only true same-groove neighbours can ever collide, and they show here.  With an
+        //   off-screen pole every r is big → every span px/r is tiny, so a groove crosses the
+        //    viewport as an almost-straight arc but the exact-interval overlap check is unchanged.
+        const claimed: [number, number][] = []
+        // the containing gap of a bearing on ONE groove turn k: the free [lo,hi] the point sits in,
+        //  measured in total angle on that turn.  Sizing reads the gap so a line MAXES OUT (fills it).
+        const gap_at = (tc: number): { lo: number, hi: number } => {
+            let lo = -Infinity, hi = Infinity
+            for (const [a, b] of claimed) {
+                if (b <= tc) { if (b > lo) lo = b }
+                else if (a >= tc) { if (a < hi) hi = a }
+                else return { lo: tc, hi: tc }           // tc lands inside a claim — no gap
+            }
+            return { lo, hi }
+        }
+        const free = (t0: number, t1: number) => !claimed.some(([a, b]) => t0 < b && a < t1)
+        // one cell's labels off its Vtuffing descs — the SAME distilled voice the panes speak.  A
+        //  cell claims as ONE C-BLOCK: the TITLE whole on one line (tag + name together, never split
+        //   across grooves), the rest INDENTED below it (facts loud→quiet, then members).
+        type PL = { cls: string, k?: string, khue?: string | null, text: string, wgt: number,
+                    tint: string, slug: string }
+        const cell_labels = (c: VCell): { title: PL | null, children: PL[], extra: number } => {
+            const dm = dmap.get(c.id)!
+            const quiet = qmap.get(c.id)
+            const seen = new Map<string, number>()       // per-cell dedup for identical slugs
+            const slug_of = (cls: string, key: string): string => {
+                const base = dom_id(cls + '-' + key).slice(0, 40)
+                const n = (seen.get(base) ?? 0); seen.set(base, n + 1)
+                return n ? `${base}~${n}` : base
+            }
+            let title: PL | null = null
+            const children: PL[] = []
+            for (const d of dm.descs) {
+                if (d.dip) continue
+                const cid = claim_id(d)
+                if (cid && quiet?.has(cid)) continue     // the river says this one
+                if (d.kind === 'title') {
+                    title = { cls: 'vsub-phit', k: d.tag, khue: d.tag ? kind_tint(d.tag) : dm.tint,
+                              text: d.text, wgt: 200, tint: dm.tint,
+                              slug: slug_of('vsub-phit', (d.tag ?? '') + d.text) }
+                } else if (d.kind === 'fact' || d.kind === 'spread') {
+                    const key = d.key ?? d.text
+                    let txt = d.kind === 'fact'
+                        ? (d.val ?? (d.pn ? `×${d.pn}` : ''))
+                        : (d.chips ?? []).map(ch => ch.n > 1 ? `${ch.text} ×${ch.n}` : ch.text).join('  ')
+                    if (txt.length > 30) txt = txt.slice(0, 28) + '…'
+                    children.push({ cls: 'vsub-phif', k: key, khue: `hsl(${vein_of(key).hue}, 52%, 60%)`,
+                                    text: txt, wgt: d.wgt ?? 50, tint: '#b9b9c6',
+                                    slug: slug_of('vsub-phif', key + txt) })
+                } else if (d.kind === 'list') {
+                    for (const ch of d.chips ?? []) {
+                        const t = ch.n > 1 ? `${ch.text} ×${ch.n}` : ch.text
+                        children.push({ cls: 'vsub-phim', text: t, wgt: ch.wgt ?? 40,
+                                        tint: (d.tag ? kind_tint(d.tag) : null) ?? dm.tint,
+                                        slug: slug_of('vsub-phim', t) })
+                    }
+                } else {   // member | sub
+                    children.push({ cls: 'vsub-phim', text: d.text, wgt: d.wgt ?? 40,
+                                    tint: d.color ?? dm.tint, slug: slug_of('vsub-phim', d.text) })
+                }
+            }
+            children.sort((a, b) => b.wgt - a.wgt)        // loud → quiet under the title
+            const CAP = Math.max(1, (phi_boost.has(c.id) ? phi_boostcap : phi_cap) - (title ? 1 : 0))
+            const extra = Math.max(0, children.length - CAP)
+            if (extra) children.length = CAP
+            return { title, children, extra }
+        }
+        const arcs: PhiArc[] = [], ties: { d: string, tint: string }[] = []
+        const folds: { id: string, x: number, y: number, n: number, tint: string }[] = []
+        let total = 0, folded = 0, held = 0, moved = 0
+        const next_prev = new Map<string, { t0: number, t1: number }>()
+        // one line's character count (key + colon-space + text).  Sizing is INVERTED: given the free
+        //  gap on the containing groove, pick the LARGEST fs whose natural width fits it (capped by
+        //   fsceil + the height allowance, floored by fsfloor → smaller folds).  The human: "really
+        //    max it out — it gets small text too easily."
+        const line_chars = (L: PL) => (L.k ? L.k.length + 2 : 0) + L.text.length
+        // resolve a groove turn k for a home bearing φ so R(2πk+φ) ≈ target r; screen-down is +1 or −1
+        //  in k depending on where the pole sits — computed EMPIRICALLY per title below.
+        // try to place ONE line on groove turn k at bearing ph.  Returns the arc (unclaimed here — the
+        //  caller commits the whole block at once) or null if it can't fit even at the floor.  fscap =
+        //   the pitch fraction cap (0.92 for a single groove, ~1.8 for a two-groove title lower arc).
+        type Placed = { t0: number, t1: number, arc: PhiArc, rlow: number }
+        const place_line = (L: PL, k: number, ph: number, fscap: number, cid: string,
+                            groovesLow: number): Placed | null => {
+            if (k < 1) return null
+            const tc = 2 * Math.PI * k + ph
+            if (tc <= 2 * Math.PI) return null            // off the pole singularity
+            const rlow = R_of(2 * Math.PI * groovesLow + ph)   // radius the text rides (lower groove)
+            if (rlow <= 0) return null
+            const gap = gap_at(tc)
+            const gw = (Math.min(gap.hi, tc + 3) - Math.max(gap.lo, tc - 3))   // angular width, capped generous
+            if (gw <= 0) return null
+            const gap_px = gw * rlow                       // the gap's arc length in px
+            const chars = line_chars(L)
+            // biggest fs whose natural width (chars·GLY·fs) fits the gap minus pads, then capped
+            let fs = Math.min(FSCEIL, G * fscap, (gap_px - 12) / (GLY * Math.max(1, chars)))
+            if (fs < FSFLOOR) return null                  // too cramped → the caller folds this line
+            fs = Math.min(fs, FSCEIL)
+            const natpx = chars * GLY * fs
+            const span = (natpx + 10) / rlow
+            if (rlow <= 0 || span <= 0) return null         // degenerate span guard
+            if (span > 2.2) return null                     // a near-full-circle line reads silly
+            const t0 = tc - span / 2, t1 = tc + span / 2
+            if (t0 <= 2 * Math.PI) return null
+            if (!free(t0, t1)) return null
+            // sample the LOWER groove arc; reverse if it runs right-to-left so text reads L→R
+            const pts: { x: number, y: number }[] = []
+            const n = Math.max(6, Math.min(80, Math.ceil(span / 0.07)))
+            for (let i = 0; i <= n; i++) {
+                const t = t0 + (t1 - t0) * i / n, r = R_of(t)
+                const tt = t + 2 * Math.PI * (groovesLow - k)   // ride the lower groove at this bearing
+                const rr = R_of(tt)
+                pts.push({ x: px + rr * Math.cos(tt), y: py + rr * Math.sin(tt) })
+            }
+            if (pts[pts.length - 1].x < pts[0].x) pts.reverse()
+            const d = 'M' + pts.map(p => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join('L')
+            const arc: PhiArc = { pathid: `vphi-${dom_id(cid)}-${L.slug}`, d, fs, cls: L.cls,
+                                  tint: L.tint, k: L.k, khue: L.khue, text: L.text,
+                                  tl: stretch(rlow * span - 10, chars, fs), cellid: cid }
+            return { t0, t1, arc, rlow }
+        }
+        // big cells claim first (the give+take favours the load-bearing); a cell's whole C-block
+        //  claims consecutively, so its lines land on NEIGHBOURING grooves — blind to the cell wall.
+        const parea = (p: VCell) => { let s = 0
+            for (let i = 0; i < p.inset.length; i++) {
+                const u = p.inset[i], v = p.inset[(i + 1) % p.inset.length]; s += u.x * v.y - v.x * u.y }
+            return Math.abs(s) }
+        const order = [...live].sort((a, b) => parea(b) - parea(a))
+        // commit a placed line: ledger it, remember its interval, arc it, held/moved-count it
+        const commit = (p: Placed, prev?: { t0: number, t1: number }) => {
+            claimed.push([p.t0, p.t1])
+            next_prev.set(p.arc.pathid, { t0: p.t0, t1: p.t1 })
+            arcs.push(p.arc)
+            if (prev && Math.abs(prev.t0 - p.t0) < 1e-6 && Math.abs(prev.t1 - p.t1) < 1e-6) held++
+            else if (prev) moved++
+        }
+        for (const c of order) {
+            const { title, children, extra } = cell_labels(c)
+            const nlabels = (title ? 1 : 0) + children.length + extra
+            total += nlabels
+            let miss = extra
+            // home (r, φ) from the OFF-SCREEN pole
+            const dx = c.acx - px, dy = c.acy - py
+            const r_h = Math.max(G * 1.5, Math.hypot(dx, dy))
+            let ph = Math.atan2(dy, dx); if (ph < 0) ph += 2 * Math.PI
+            const k_h = Math.max(1, Math.round((T_of(r_h) - ph) / (2 * Math.PI)))
+            // which k-step is screen-DOWN at this bearing?  sample the point one groove out (k+1) vs
+            //  the home point and see whose y is larger — do NOT hardcode (depends on the pole side).
+            const pt_at = (kk: number) => { const t = 2 * Math.PI * kk + ph, r = R_of(t)
+                return { x: px + r * Math.cos(t), y: py + r * Math.sin(t) } }
+            const down = pt_at(k_h + 1).y > pt_at(k_h).y ? 1 : -1   // +1 or −1 in k = screen-down
+            const boost = phi_boost.has(c.id) ? 3 : 1
+            const budget = boost * (REACH * G + 70)
+            const dktitle = boost > 1 ? [0, 1, -1, 2, -2, 3, -3, 4, -4] : [0, 1, -1, 2, -2, 3, -3]
+            const offs = [0, 0.02, -0.02, 0.05, -0.05, 0.09, -0.09, 0.15, -0.15, 0.24, -0.24]
+
+            // try to seat the whole block anchored at title groove kt, bearing ph+off.  Children go
+            //  on the grooves screen-down from the title, each indented by INDENT_EM em of the title
+            //   fs converted to angle (/rlow).  Returns the placed set, or null if the title won't fit.
+            const try_block = (kt: number, off: number, kids: PL[]): Placed[] | null => {
+                if (!title) return null
+                // TITLE: may span TITLE_GROOVES grooves (bigger cap) when all are free at this window
+                let tp: Placed | null = null
+                for (let ng = Math.min(TITLE_GROOVES, kt); ng >= 1; ng--) {
+                    const low = kt                          // the lowest groove the title occupies
+                    const cap = ng >= 2 ? 1.8 : 0.92
+                    const cand = place_line(title, kt, ph + off, cap, c.id, low)
+                    if (!cand) continue
+                    // the upper grooves the title spans must ALSO be free over the same angular window
+                    let ok = true
+                    for (let g = 1; g < ng; g++) {
+                        const t0u = cand.t0 - 2 * Math.PI * g, t1u = cand.t1 - 2 * Math.PI * g
+                        if (!free(t0u, t1u)) { ok = false; break }
+                    }
+                    if (!ok) continue
+                    tp = cand
+                    // reserve the extra spanned grooves so a child can't invade the title's body
+                    ;(cand as any).spanUp = ng - 1
+                    break
+                }
+                if (!tp) return null
+                const out: Placed[] = [tp]
+                const spanUp: number = (tp as any).spanUp ?? 0
+                const claim_local: [number, number][] = [[tp.t0, tp.t1]]
+                for (let g = 1; g <= spanUp; g++) claim_local.push([tp.t0 - 2 * Math.PI * g, tp.t1 - 2 * Math.PI * g])
+                const local_free = (t0: number, t1: number) =>
+                    free(t0, t1) && !claim_local.some(([a, b]) => t0 < b && a < t1)
+                // the indent, in angle, off the title's START bearing (a treeing indent like snap
+                //  notation): INDENT_EM em of the title fs, converted to angle via /r.  A child line's
+                //   arc START sits at the title's start + this indent; place_line centres a line, so we
+                //    add half the child's own natural span back to turn a start into a centre.
+                const indentAng = INDENT_EM * tp.arc.fs / tp.rlow
+                const title_start = tp.t0                   // the title's arc start in total angle
+                let kc = kt
+                for (const kid of kids) {
+                    kc += down                              // next groove screen-DOWN
+                    const rc = R_of(title_start + 2 * Math.PI * (kc - kt))   // this child's groove radius
+                    const half = (line_chars(kid) * GLY * FSFLOOR) / (2 * Math.max(1, rc))  // ≥ half-span guess
+                    let cp: Placed | null = null
+                    for (const nudge of offs) {
+                        // start = title start + indent; centre = start + half its span (nudged out to dodge)
+                        const centre = title_start + 2 * Math.PI * (kc - kt) + indentAng + half + nudge
+                        const cand = place_line(kid, kc, centre - 2 * Math.PI * kc, 0.92, c.id, kc)
+                        if (cand && local_free(cand.t0, cand.t1)) { cp = cand; break }
+                    }
+                    if (!cp) return null                    // a child couldn't seat here — whole anchor fails
+                    out.push(cp)
+                    claim_local.push([cp.t0, cp.t1])
+                }
+                return out
+            }
+
+            // HYSTERESIS: try each label at its PREVIOUS interval first (if still free), so a drag
+            //  re-validates in place.  A held title drags its own block along; a held child re-seats
+            //   alone.  We only fast-path the whole block if the title held AND all kids held.
+            let placedSet: { p: Placed, prev?: { t0: number, t1: number } }[] | null = null
+            if (title) {
+                const tprev = phi_prev.get(`vphi-${dom_id(c.id)}-${title.slug}`)
+                if (tprev && free(tprev.t0, tprev.t1)) {
+                    // rebuild the title arc at its old interval, then try to re-seat kids at theirs
+                    const set = seat_at_prev(c, title, children, tprev)
+                    if (set) placedSet = set
+                }
+            }
+            // fresh block search: anchor the block, walking grooves/bearings out from home, honouring
+            //  the budget.  Retry with progressively fewer children (fold the tail) down to title-only.
+            if (!placedSet && title) {
+                let kids = children.slice()
+                search: while (true) {
+                    for (const dk of dktitle) {
+                        const kt = k_h + dk
+                        if (kt < 1) continue
+                        if (Math.abs(dk) * G > budget) continue
+                        for (const off of offs) {
+                            const rk = R_of(2 * Math.PI * kt + ph)
+                            if (Math.abs(off) * rk > budget) continue
+                            const set = try_block(kt, off, kids)
+                            if (set) { placedSet = set.map(p => ({ p })); break search }
+                        }
+                    }
+                    if (!kids.length) break                 // even title-only wouldn't seat
+                    kids = kids.slice(0, kids.length - 1)    // fold the tail, retry
+                }
+            }
+            if (placedSet) {
+                for (const { p, prev } of placedSet) commit(p, prev)
+                // the tail folded off by the retry (or the child-seat) shows honestly in +N
+                const placedKids = placedSet.length - 1
+                miss += Math.max(0, children.length - placedKids)
+                // connective tissue: if the block landed far from home, thread the title back
+                const tmid = placedSet[0].p
+                const midx = px + placedSet[0].p.rlow * Math.cos((tmid.t0 + tmid.t1) / 2)
+                const midy = py + placedSet[0].p.rlow * Math.sin((tmid.t0 + tmid.t1) / 2)
+                if (Math.hypot(midx - c.acx, midy - c.acy) > G * 3)
+                    ties.push({ d: `M${c.acx.toFixed(1)} ${c.acy.toFixed(1)} Q${((c.acx + midx) / 2 + 10).toFixed(1)} ${((c.acy + midy) / 2 - 10).toFixed(1)} ${midx.toFixed(1)} ${midy.toFixed(1)}`,
+                                tint: placedSet[0].p.arc.tint })
+            } else {
+                miss += (title ? 1 : 0) + children.length   // the block folds entirely
+            }
+            folded += miss
+            if (miss > 0) folds.push({ id: c.id, x: c.acx, y: c.acy, n: miss, tint: dmap.get(c.id)!.tint })
+        }
+        phi_prev = next_prev
+        // the faint reference lattice — the flat neutral the warping landscape reads against.  Only
+        //  draw what's VISIBLE: for each turn whose radius band crosses the bbox (+margin), sample
+        //   just the angular window subtending the bbox from the pole.  No miles of off-screen path.
+        const marg = G * 3
+        const rmin = Math.max(1, halfdiag * (POLE_DIST - 1) - marg)
+        const rmax = halfdiag * (POLE_DIST + 1) + marg
+        // the bearing window: the bbox corners' angles from the pole
+        const corners = [[bx0, by0], [bx1, by0], [bx1, by1], [bx0, by1]] as const
+        let amin = Infinity, amax = -Infinity
+        for (const [cx, cy] of corners) {
+            let a = Math.atan2(cy - py, cx - px); if (a < 0) a += 2 * Math.PI
+            amin = Math.min(amin, a); amax = Math.max(amax, a)
+        }
+        if (amax - amin > Math.PI) { const t = amin; amin = amax - 2 * Math.PI; amax = t }  // wrap-safe
+        const lat: string[] = []
+        const kmin = Math.max(1, Math.floor(T_of(rmin) / (2 * Math.PI)))
+        const kmax = Math.ceil(T_of(rmax) / (2 * Math.PI))
+        for (let k = kmin; k <= kmax && k - kmin < 200; k++) {
+            const seg: string[] = []
+            for (let a = amin - 0.05; a <= amax + 0.05; a += 0.03) {
+                const t = 2 * Math.PI * k + a, r = R_of(t)
+                if (t <= 2 * Math.PI) continue
+                seg.push(`${(px + r * Math.cos(t)).toFixed(0)} ${(py + r * Math.sin(t)).toFixed(0)}`)
+            }
+            if (seg.length > 1) lat.push('M' + seg.join('L'))
+        }
+        return { lattice: lat.join(''), arcs, ties, folds, labels: total, folded, held, moved }
+
+        // re-seat a whole block at the title's PREVIOUS interval: rebuild the title arc there, then
+        //  try each child at its own previous interval (or a fresh nearby groove).  Returns the placed
+        //   set with prev-markers for held/moved counting, or null if the seated title no longer fits.
+        function seat_at_prev(c: VCell, title: PL, children: PL[],
+                              tprev: { t0: number, t1: number }): { p: Placed, prev?: { t0: number, t1: number } }[] | null {
+            const p = rebuild_at(c.id, title, tprev, 0.92)
+            if (!p) return null
+            const out: { p: Placed, prev?: { t0: number, t1: number } }[] = [{ p, prev: tprev }]
+            const local: [number, number][] = [[p.t0, p.t1]]
+            const lfree = (t0: number, t1: number) => free(t0, t1) && !local.some(([a, b]) => t0 < b && a < t1)
+            for (const kid of children) {
+                const kprev = phi_prev.get(`vphi-${dom_id(c.id)}-${kid.slug}`)
+                if (kprev && lfree(kprev.t0, kprev.t1)) {
+                    const kp = rebuild_at(c.id, kid, kprev, 0.92)
+                    if (kp) { out.push({ p: kp, prev: kprev }); local.push([kp.t0, kp.t1]); continue }
+                }
+                break                                       // a child moved — stop the fast path, fold the tail
+            }
+            return out
+        }
+        // rebuild a line's arc at a GIVEN total-angle interval (the hysteresis re-seat): its lower
+        //  groove is the turn nearest the interval centre; fs is re-derived from the interval width.
+        function rebuild_at(cid: string, L: PL, iv: { t0: number, t1: number }, fscap: number): Placed | null {
+            const tc = (iv.t0 + iv.t1) / 2
+            const k = Math.round((tc - 0) / (2 * Math.PI))
+            if (k < 1 || tc <= 2 * Math.PI) return null
+            const rlow = R_of(tc)
+            if (rlow <= 0) return null
+            const span = iv.t1 - iv.t0
+            if (span <= 0) return null
+            const chars = line_chars(L)
+            let fs = Math.min(FSCEIL, G * fscap, (rlow * span - 12) / (GLY * Math.max(1, chars)))
+            if (fs < FSFLOOR) return null
+            const pts: { x: number, y: number }[] = []
+            const n = Math.max(6, Math.min(80, Math.ceil(span / 0.07)))
+            for (let i = 0; i <= n; i++) {
+                const t = iv.t0 + span * i / n, r = R_of(t)
+                pts.push({ x: px + r * Math.cos(t), y: py + r * Math.sin(t) })
+            }
+            if (pts[pts.length - 1].x < pts[0].x) pts.reverse()
+            const d = 'M' + pts.map(pp => `${pp.x.toFixed(1)} ${pp.y.toFixed(1)}`).join('L')
+            const arc: PhiArc = { pathid: `vphi-${dom_id(cid)}-${L.slug}`, d, fs, cls: L.cls,
+                                  tint: L.tint, k: L.k, khue: L.khue, text: L.text,
+                                  tl: stretch(rlow * span - 10, chars, fs), cellid: cid }
+            return { t0: iv.t0, t1: iv.t1, arc, rlow }
+        }
     }
 
     // one pane's RADIAL tessellation: the source's own statement holds the centre (its
@@ -3211,6 +3692,13 @@
     // last ▦ census signature + the pending census (filled mid-paint, logged at paint's end)
     let vsub_sig = ''
     let vsub_last = { face: '', cells: 0, descs: 0, subs: 0, err: '' }
+    // WHY a crater didn't draw (the human: "a couple of Artist lack subcells for their /Track —
+    //  why is that a sometimes maybe kinda deal?").  crater_pane returns null AND bumps a reason;
+    //   reset per paint, rides the vsub census so the sometimes-ness becomes legible.
+    //    small = R below crater.rmin; header = identity below crater.hfloor; geo = degenerate
+    //     clip or a band that couldn't seat; nofold = no cross-kind fold structure (mem < 1).
+    const crater_skips = { small: 0, header: 0, geo: 0, nofold: 0 }
+    let crater_ok = 0
     // last ▧ river signature — paint_final runs per morph frame, so the telemetry
     //  line fires only when the river census (families / arcs / shapes) changes
     let river_sig = ''
@@ -3246,13 +3734,16 @@
         //    small … put a spell on the cell to grow it").  Read the load-bearing atoms only
         //     (titles, keys, values) — a decorative sup at 8px is not a starvation signal.
         const LOADED = new Set(['vsub-ntitle', 'vsub-title', 'vsub-gkey', 'vsub-label'])
+        // the legible floor (spell.floor, was 11 — the human: "just a bit more text bloat-up
+        //  needed"): grow a cell until its load-bearing atoms clear it.  A higher floor also
+        //   swells more cells past the crater threshold, so the cradle surfaces on more C's.
+        const floor = vknob('spell.floor', 12)
+        const grow = vknob('spell.grow', 1.18), decay = vknob('spell.decay', 0.93)
+        const growcap = vknob('spell.cap', 3.0)
         const tiny = (p?: VSubPane) => {
             if (!p) return false
             const fss = p.stats.filter(s => LOADED.has(s.cls ?? '')).map(s => s.fs ?? 99)
-            // the legible floor is 12 now (was 11 — the human: "just a bit more text bloat-up needed"):
-            //  grow a cell until its load-bearing atoms clear 12px.  A higher floor also swells more
-            //   cells past the crater threshold, so the cradle surfaces on more C's as a side effect.
-            return fss.length > 0 && Math.min(...fss) < 12
+            return fss.length > 0 && Math.min(...fss) < floor
         }
         // FREEZE the spell mid-drag: pan_zoom_motion repaints every frame while a cell is dragged, and
         //  a grow|shrink verdict landing on one of those frames flips a neighbour crater↔flat — the
@@ -3274,10 +3765,10 @@
             const starved = !built.has(id) || (p?.hid?.n ?? 0) > 0 || tiny(p)
             const cur = vspell.get(id) ?? 1
             if (starved) {
-                const nxt = Math.min(3.0, cur * 1.15)   // ceiling 3.0 (was 2.4) — room to reach the 12px floor
+                const nxt = Math.min(growcap, cur * grow)   // ceiling spell.cap — room to reach the floor
                 if (nxt > cur + 1e-3) { vspell.set(id, nxt); cast++; grewNow.add(id) }
             } else if (p?.roomy && cur > 1 && !grewNow.has(id)) {
-                const nxt = cur * 0.95
+                const nxt = cur * decay
                 if (nxt <= 1.03) vspell.delete(id); else vspell.set(id, nxt)
                 lifted++
             }
@@ -3646,6 +4137,8 @@
             const subs: VSubPane[] = []
             const next = new Set<string>()
             let sub_err = ''
+            crater_skips.small = crater_skips.header = crater_skips.geo = crater_skips.nofold = 0
+            crater_ok = 0
             for (const c of L.cells) {
                 // the pre-pass already read every pane (fold|gang via its Vtuffing, a loner
                 //  via its own sc — same grammar, no key special); here each cell just draws,
@@ -3656,9 +4149,23 @@
                 try { pane = subgraph_build(c, dm.descs, dm.tint, dm.fkind, quiet_map.get(c.id), cs_frames.get(c.id) ?? 0) }
                 catch (e) { sub_err = String(e).slice(0, 120) }   // one broken pane must not blank the glass
                 if (!pane) continue
+                // ϕ owns all VISIBLE text (the lettering rides on top), but the pane's stats stay
+                //  as DATA — the growth spell reads them, so cells still grow under ϕ and craters/
+                //   structure surface on small cells.  The blanking is render-time now (markup gates
+                //    the stats render on face !== 'phi'), not build-time.
                 next.add(c.id)
                 subs.push(pane)
             }
+            // ϕ: build the global lettering layer off the SAME descs — every desc'd cell gets
+            //  labels even where its pane degraded.  LIVE mid-drag (phi.livedrag=1, the default):
+            //   hysteresis (phi_prev) re-validates most labels in place, so a per-frame rebuild is
+            //    cheap and streams blinklessly — the dragged cell's block follows its home.  With
+            //     livedrag=0 keep the old freeze.  A cheap perf FLOOR: >400 labels freezes regardless.
+            if (vsub_face === 'phi') {
+                const livedrag = vknob('phi.livedrag', 1) >= 1
+                const big = (vphi?.labels ?? 0) > 400
+                if (!vdrag || !vphi || (livedrag && !big)) vphi = phi_build(L.cells, descmap, quiet_map)
+            } else vphi = null
             vsub_last = { face: vsub_face, cells: L.cells.length, descs: descmap.size,
                           subs: subs.length, err: sub_err }
             for (const id of next) { const mel = overlays.get(id); if (mel) mel.style.opacity = '0' }
@@ -3669,6 +4176,8 @@
             vsubs = subs
             // the spell pass reads this beat's verdicts (starved|roomy|snug per cell that
             //  WANTED a pane) and re-paints once if any spell moved — see spell_update above.
+            //   Runs under ϕ too now: the stats survive as data (blanking is render-time), so
+            //    the spell reads real sizes and GROWS small cells — structure returns under ϕ.
             spell_update(descmap.keys(), subs, next)
             // a swapped cell wears the Stuffing's chrome (dotted rim + fuller
             //  glass) so the pane still reads as a Stuffing, not a flat panel.
@@ -3679,6 +4188,7 @@
             }
             sub_on_ids = new Set()
             vsubs = []
+            vphi = null
         }
 
         // a seed whose cell got swallowed falls back to plain node-centering
@@ -3700,11 +4210,26 @@
         //   (descs 0 = node_src lost post-HMR), every pane degrading, or a builder throwing.
         //    One line only when the census CHANGES (never a per-drag-frame flood).
         const uniq = new Set(vsubs.map(s => s.id)).size   // a keyed-each dup id blanks the WHOLE block
-        const vsig = `${vsub_last.face}:${cells.length}:${vsub_last.descs}:${vsub_last.subs}:${vsubs.length}:${uniq}:${tips.length}:${vsub_last.err}`
+        // ϕ signature: placed/labels-folded ONLY — held/moved churn every drag frame, so they ride
+        //  the census payload (observable) but are EXCLUDED from the change-sig (never re-log a frame).
+        const phisig = vphi ? `:ϕ${vphi.arcs.length}/${vphi.labels}-${vphi.folded}` : ''
+        // WHY-NOT-CRATER census: the craters run under tuples AND phi (phi builds the panes as
+        //  underpainting), so answer the human's "why a sometimes deal?" on either face whenever a
+        //   counter fired.  Fold the numbers into the sig so a change re-logs.
+        const ck = crater_skips
+        const cratLive = (vsub_last.face === 'tuples' || vsub_last.face === 'phi')
+                       && (crater_ok + ck.small + ck.header + ck.geo + ck.nofold) > 0
+        const cratsig = cratLive ? `:C${crater_ok}/${ck.small}/${ck.header}/${ck.geo}/${ck.nofold}` : ''
+        const vsig = `${vsub_last.face}:${cells.length}:${vsub_last.descs}:${vsub_last.subs}:${vsubs.length}:${uniq}:${tips.length}:${vsub_last.err}${phisig}${cratsig}`
         if (vsig !== vsub_sig) {
             vsub_sig = vsig
             vlog('vsub', { face: vsub_last.face, cells: cells.length, descs: vsub_last.descs,
                            built: vsub_last.subs, vsubs: vsubs.length, uniq, vtips: tips.length,
+                           ...(vphi ? { phi: { labels: vphi.labels, placed: vphi.arcs.length,
+                                               folded: vphi.folded, boosted: phi_boost.size,
+                                               held: vphi.held, moved: vphi.moved } } : {}),
+                           ...(cratLive ? { crater: { ok: crater_ok, small: ck.small,
+                                               header: ck.header, geo: ck.geo, nofold: ck.nofold } } : {}),
                            ...(vsub_last.err ? { err: vsub_last.err } : {}) })
         }
     }
@@ -3827,6 +4352,7 @@
         vfams = []
         vrivers = []
         vsubs = []
+        vphi = null
         for (const id of sub_on_ids) { const mel = overlays.get(id); if (mel) mel.style.opacity = '' }
         sub_on_ids.clear()
         shown_pts.clear()
@@ -4265,7 +4791,10 @@
         const stashed_sg = (H as any).stashed?.Cyto_subgraph
         if (typeof stashed_sg === 'boolean') subgraph_pref = stashed_sg
         const stashed_vf = (H as any).stashed?.Cyto_vsub_face
-        if (stashed_vf === 'tuples' || stashed_vf === 'star') vsub_face = stashed_vf
+        if (stashed_vf === 'tuples' || stashed_vf === 'star' || stashed_vf === 'phi') vsub_face = stashed_vf
+        // live knob overrides survive a reload alongside the face (Attractor Ground)
+        const sk = (H as any).stashed?.Cyto_knobs
+        if (sk && typeof sk === 'object') vknobs = { ...sk }
         const stashed_cr = (H as any).stashed?.Cyto_craters
         if (stashed_cr === 0 || stashed_cr === false) vsub_craters = false
         else if (stashed_cr === 1 || stashed_cr === true) vsub_craters = true
@@ -4348,8 +4877,9 @@
                         sub_on_ids = new Set(); vsubs = []
                     }
                 }
-                // the ▦ face parameter — 'tuples' (snap-notation rows) | 'star' (the radial gem)
-                if (f.vsub === 'tuples' || f.vsub === 'star') {
+                // the ▦ face parameter — 'tuples' (snap-notation rows) | 'star' (the radial
+                //  gem) | 'phi' (the golden lettering layer: --face=vsub:phi)
+                if (f.vsub === 'tuples' || f.vsub === 'star' || f.vsub === 'phi') {
                     vsub_face = f.vsub
                     if (sts) sts.Cyto_vsub_face = f.vsub
                 }
@@ -4358,8 +4888,59 @@
                     vsub_craters = !!f.craters
                     if (sts) sts.Cyto_craters = vsub_craters ? 1 : 0
                 }
+                // ── the Attractor Ground: live knobs + named moments over the same rails ──
+                let knob_err: string | undefined
+                // f.knobs → hand back the whole registered table (name → {def, val}); nothing set.
+                if (f.knobs) {
+                    const table: Record<string, { def: number, val: number }> = {}
+                    for (const k of Object.keys(vknob_defs).sort())
+                        table[k] = { def: vknob_defs[k], val: vknobs[k] ?? vknob_defs[k] }
+                    return { knobs: table }
+                }
+                // f.knob "name=value" → set one override (delete when it equals the default).
+                //  An unknown name is REFUSED (its default is never registered until a use site
+                //   reads it, so a typo can't silently invent a knob); persist the whole map.
+                if (typeof f.knob === 'string') {
+                    const eq = f.knob.indexOf('=')
+                    const nm = (eq >= 0 ? f.knob.slice(0, eq) : f.knob).trim()
+                    const vv = eq >= 0 ? Number(f.knob.slice(eq + 1)) : NaN
+                    if (!(nm in vknob_defs)) knob_err = `unknown knob ${nm}`
+                    else if (Number.isNaN(vv)) knob_err = `bad value for ${nm}`
+                    else {
+                        if (vv === vknob_defs[nm]) delete vknobs[nm]; else vknobs[nm] = vv
+                        vknobs = { ...vknobs }
+                        if (sts) sts.Cyto_knobs = { ...vknobs }
+                    }
+                }
+                // f.moment_save/load/list/drop → a snapshot IS (face + knob overrides); a judge
+                //  flips between saved entries on the same live data (spec/Attractor_todo.md).
+                let moment_err: string | undefined, moment_out: any
+                const moments = (): Record<string, { face: string, knobs: Record<string, number> }> =>
+                    ((sts && (sts.Cyto_moments ??= {})) || {})
+                if (typeof f.moment_save === 'string' && f.moment_save) {
+                    moments()[f.moment_save] = { face: vsub_face, knobs: { ...vknobs } }
+                }
+                if (typeof f.moment_load === 'string' && f.moment_load) {
+                    const m = moments()[f.moment_load]
+                    if (!m) moment_err = `no moment ${f.moment_load}`
+                    else {
+                        if (m.face === 'tuples' || m.face === 'star' || m.face === 'phi') vsub_face = m.face
+                        vknobs = { ...(m.knobs ?? {}) }
+                        if (sts) { sts.Cyto_vsub_face = vsub_face; sts.Cyto_knobs = { ...vknobs } }
+                    }
+                }
+                if (typeof f.moment_drop === 'string' && f.moment_drop) delete moments()[f.moment_drop]
+                if (f.moment_list) {
+                    const list: Record<string, { face: string, nknobs: number }> = {}
+                    for (const [nm, m] of Object.entries(moments()))
+                        list[nm] = { face: m.face, nknobs: Object.keys(m.knobs ?? {}).length }
+                    moment_out = { moments: list }
+                }
                 voronoi_soon()
-                return { voronoi: voronoi_on, regions: region_on, subgraph: subgraph_on, vsub: vsub_face, craters: vsub_craters }
+                if (moment_out) return moment_out
+                return { voronoi: voronoi_on, regions: region_on, subgraph: subgraph_on,
+                         vsub: vsub_face, craters: vsub_craters, knobs: Object.keys(vknobs).length,
+                         ...(knob_err ? { knob_err } : {}), ...(moment_err ? { moment_err } : {}) }
             }
         } catch { /* no House root yet */ }
 
@@ -4456,7 +5037,7 @@
         <button class="v-toggle" class:on={brush_pref} onclick={toggle_brush}
             title="gravity brush — wheel pinches|spreads the locale under the cursor (Ctrl+wheel still zooms)">🌀</button>
         <button class="v-toggle" class:on={subgraph_on} onclick={toggle_subgraph}
-            title="sub-graph — every pane speaks the glass grammar and hides nothing; slivers say their one statement + a +N fold mark (off = molded Stuffings everywhere).  Face rides the vsub_face PARAMETER, not a button: 'tuples' (default — snap-notation rows aligned to the cell's best wall) | 'star' (the radial gem)">▦</button>
+            title="sub-graph — every pane speaks the glass grammar and hides nothing; slivers say their one statement + a +N fold mark (off = molded Stuffings everywhere).  Face rides the vsub_face PARAMETER, not a button: 'tuples' (default — snap-notation rows aligned to the cell's best wall) | 'star' (the radial gem) | 'phi' (the golden lettering layer — labels claim groove arcs, text never obscures text)">▦</button>
         {#if DRIFT_MODES_ON}
             <button class="v-toggle" class:on={radio_on} onclick={toggle_radio}
                 title="radio — the graph plays you: a tuner drifts attention pane to pane and opens each a little (touch anything to hold it off)">📻</button>
@@ -4627,13 +5208,19 @@
                                 <path class="vsub-hour" d={r.d} stroke={r.hue} fill={r.hue} />
                             {/each}
                         {/if}
-                        {#each sp.stats as s, si (sp.id + '·t' + si)}
-                            {@render vstat(sp, s)}
-                        {/each}
-                        {#if sp.com}
-                            <!-- »N: this pane's region-shared claims ride the river now -->
-                            <text class="vsub-com" x={sp.com.x.toFixed(1)} y={sp.com.y.toFixed(1)}
-                                  text-anchor="end">»{sp.com.n}</text>
+                        <!-- pane stats + »N are the tuples/star voice; ϕ owns all visible text
+                             (its groove lettering rides on top, blind to cell walls), so under ϕ
+                             the walls/tints stay as underpainting but the stats DON'T paint.  The
+                             stats still built as DATA (the spell reads them → cells grow under ϕ). -->
+                        {#if vsub_face !== 'phi'}
+                            {#each sp.stats as s, si (sp.id + '·t' + si)}
+                                {@render vstat(sp, s)}
+                            {/each}
+                            {#if sp.com}
+                                <!-- »N: this pane's region-shared claims ride the river now -->
+                                <text class="vsub-com" x={sp.com.x.toFixed(1)} y={sp.com.y.toFixed(1)}
+                                      text-anchor="end">»{sp.com.n}</text>
+                            {/if}
                         {/if}
                         <!-- the +N crowd-out mark is no longer PAINTED (the human: "the +1 … I'm not
                              wanting").  sp.hid still rides as DATA — the growth spell reads it to keep
@@ -4641,6 +5228,40 @@
                              confessing a count. -->
                     </g>
                 {/each}
+                <!-- ϕ the golden lettering layer (face 'phi'): every label rides its own CLAIMED
+                     groove arc — the ledger is exact, so text never obscures text; what found no
+                     groove within budget folds into the +N chip (click = expandy, 3× reach for
+                     that cell).  The faint lattice is the flat reference the landscape warps;
+                     dashed ties thread a displaced label back home.  UNclipped — the whole point
+                     is ignoring cell boundaries; the glass beneath is the underpainting. -->
+                {#if vphi}
+                    <path class="vsub-philattice" d={vphi.lattice} />
+                    {#each vphi.ties as t, ti ('ϕt' + ti)}
+                        <path class="vsub-phitie" d={t.d} stroke={t.tint} />
+                    {/each}
+                    {#each vphi.arcs as a (a.pathid)}
+                        <path id={a.pathid} class="vsub-phigroove" d={a.d} stroke={a.tint} />
+                        <!-- the TITLE arc (vsub-phit) is the cell's DRAG HANDLE: grab the Artist blobule
+                             to move its cytoscape node (mirrors the pane identity's vsub-ntitle drag).
+                             Fact/member arcs stay non-interactive.  svelte-ignore matches the pane's. -->
+                        <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions, a11y_interactive_supports_focus -->
+                        <text class={a.cls} font-size={a.fs.toFixed(1)}
+                              onpointerdown={a.cls === 'vsub-phit' ? (e) => vsub_grab(e, a.cellid) : undefined}
+                              role={a.cls === 'vsub-phit' ? 'button' : undefined}>
+                            <textPath href={`#${a.pathid}`} startOffset="4"
+                                      textLength={a.tl} lengthAdjust={a.tl ? 'spacingAndGlyphs' : undefined}>
+                                {#if a.k}<tspan fill={a.khue ?? undefined}>{a.k}</tspan><tspan class="vsub-phicolon">: </tspan>{/if}<tspan fill={a.tint}>{a.text}</tspan>
+                            </textPath>
+                        </text>
+                    {/each}
+                    {#each vphi.folds as f (f.id)}
+                        <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+                        <g class="vsub-phifold" onclick={() => phi_expand(f.id)}>
+                            <circle cx={f.x.toFixed(1)} cy={f.y.toFixed(1)} r="10" stroke={f.tint} />
+                            <text x={f.x.toFixed(1)} y={(f.y + 3.5).toFixed(1)} text-anchor="middle">+{f.n}</text>
+                        </g>
+                    {/each}
+                {/if}
             {/if}
         </svg>
         <!-- scroll visor: the lit indicator for the wheel gutter over the right
@@ -4773,6 +5394,24 @@
 .cytui-subgraph .vsub-abasin  { fill: none; stroke-opacity: 0.55; stroke-width: 1.6; stroke-linejoin: round; }
 .cytui-subgraph .vsub-abasin2 { fill: none; stroke-opacity: 0.26; stroke-width: 1;   stroke-linejoin: round; }
 .cytui-subgraph .vsub-abasinsh { fill-opacity: 1; stroke: none; pointer-events: none; }
+/* ϕ the golden lettering layer: the faint reference lattice, each label's groove arc,
+   the dashed ties home, and the +N expandy chips.  Text fills ride tspan fill attrs
+   (kind/vein/tint hues); classes here carry weight + the layer's quietness only. */
+.cytui-voronoi .vsub-philattice { fill: none; stroke: #8a8a9a; stroke-opacity: 0.07; stroke-width: 1; pointer-events: none; }
+.cytui-voronoi .vsub-phigroove  { fill: none; stroke-opacity: 0.10; stroke-width: 1.2; pointer-events: none; }
+.cytui-voronoi .vsub-phitie     { fill: none; stroke-opacity: 0.20; stroke-width: 1; stroke-dasharray: 2 4; pointer-events: none; }
+/* the TITLE arc is the cell's DRAG HANDLE — it opts back into the pointer-events:none SVG (the
+   whole .cytui-voronoi layer is none, like the pane layer), so a grab lands on it and moves the
+   cytoscape node.  cursor:grab is the affordance; fact/member arcs stay non-interactive (they
+   inherit the layer's none). */
+.cytui-voronoi text.vsub-phit   { font-weight: 600; pointer-events: all; cursor: grab; }
+.cytui-voronoi text.vsub-phit:active { cursor: grabbing; }
+.cytui-voronoi text.vsub-phif   { opacity: 0.92; }
+.cytui-voronoi text.vsub-phim   { opacity: 0.95; }
+.cytui-voronoi .vsub-phicolon   { fill: #8878aa; }
+.cytui-voronoi .vsub-phifold    { cursor: pointer; }
+.cytui-voronoi .vsub-phifold circle { fill: #101016; fill-opacity: 0.75; stroke-opacity: 0.6; stroke-width: 1.2; }
+.cytui-voronoi .vsub-phifold text   { fill: #c8c8d4; font-size: 10px; }
 /* H5 hourglass ribbons: claim ↔ member correspondence ("which %title goes with
    which %year"), faint bands pinched to a waist — hover carries the full read. */
 .cytui-subgraph .vsub-hour {

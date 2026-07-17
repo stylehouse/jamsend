@@ -52,6 +52,10 @@ story:MusuReplica
       style:background-color,v:#af43db
     matstyle:Voro
       style:background-color,v:#8f8f32
+    matstyle:MusuSelf
+      style:background-color,v:#2f8bb1
+    matstyle:MusuThem
+      style:background-color,v:#d62970
   Plan
   Opt
     useCyto
@@ -61,39 +65,39 @@ story:MusuReplica
     waitCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.193
-      sample=0.2,at=1783425623
-      sample=0.2,at=1783425625
-      sample=0.192,at=1783425651
-      sample=0.219,at=1783433745
+    TimeTotal:beliefs,avg=0.163
       sample=0.227,at=1783697354
       sample=0.235,at=1783714915
       sample=0.252,at=1783751175
       sample=0.142,at=1784025824
       sample=0.142,at=1784025830
       sample=0.121,at=1784029138
-    TimeTotal:step,avg=0.014
-      sample=0.014,at=1783425623
-      sample=0.014,at=1783425625
-      sample=0.014,at=1783425651
-      sample=0.016,at=1783433745
+      sample=0.137,at=1784261153
+      sample=0.137,at=1784261170
+      sample=0.13,at=1784261230
+      sample=0.107,at=1784261291
+    TimeTotal:step,avg=0.012
       sample=0.016,at=1783697354
       sample=0.017,at=1783714915
       sample=0.018,at=1783751175
       sample=0.01,at=1784025824
       sample=0.01,at=1784025830
       sample=0.009,at=1784029138
+      sample=0.01,at=1784261153
+      sample=0.01,at=1784261170
+      sample=0.009,at=1784261230
+      sample=0.008,at=1784261291
   step,dige:50568e7a78216459
-  step=2,dige:c8a132a351a7379f
-  step=3,dige:6752f74cd69207c7
-  step=4,dige:0f2802cd08cd3420
-  step=5,dige:f9c036d2c1284d17
-  step=6,dige:36f0f1a927d0def5
-  step=7,dige:792f4cb5420354ab
-  step=8,dige:482b9fce5b5272cb
-  step=9,dige:435bb80c22f70dab
-  step=10,dige:f5d2fa2504be1e7e
-  step=11,dige:4eed6b943101d859
-  step=12,dige:6d18af85725f544d
-  step=13,dige:33c8868f57e8c254
-  step=14,dige:066aaf8446b6b364
+  step=2,dige:d5a5e6cc7586cea7
+  step=3,dige:10691044dce040d9
+  step=4,dige:5ec3a4d52fadd573
+  step=5,dige:fdb2f72ed81b0369
+  step=6,dige:d28d9c59a107096c
+  step=7,dige:33e33a64456f7985
+  step=8,dige:57f80226717ac279
+  step=9,dige:aa7792964e2e43a7
+  step=10,dige:04f377fa724c1f11
+  step=11,dige:e19f9adb29cf6dd9
+  step=12,dige:3cdbc176cad5bb21
+  step=13,dige:2504be821a9d599b
+  step=14,dige:7e57689929293477

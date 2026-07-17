@@ -5,39 +5,39 @@ story:MusuBuddy
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=1.254
-      sample=1.277,at=1784058241
-      sample=1.277,at=1784058242
-      sample=1.277,at=1784058243
-      sample=1.277,at=1784058244
-      sample=1.277,at=1784058245
+    TimeTotal:beliefs,avg=1.168
       sample=1.277,at=1784058246
       sample=1.277,at=1784058247
       sample=1.277,at=1784058248
       sample=1.255,at=1784058277
       sample=1.07,at=1784058306
-    TimeTotal:step,avg=0.089
-      sample=0.091,at=1784058241
-      sample=0.091,at=1784058242
-      sample=0.091,at=1784058243
-      sample=0.091,at=1784058244
-      sample=0.091,at=1784058245
+      sample=1.115,at=1784260893
+      sample=1.115,at=1784260909
+      sample=1.009,at=1784260940
+      sample=1.231,at=1784260974
+      sample=1.053,at=1784264548
+    TimeTotal:step,avg=0.083
       sample=0.091,at=1784058246
       sample=0.091,at=1784058247
       sample=0.091,at=1784058248
       sample=0.09,at=1784058277
       sample=0.076,at=1784058306
+      sample=0.08,at=1784260893
+      sample=0.08,at=1784260909
+      sample=0.072,at=1784260940
+      sample=0.088,at=1784260974
+      sample=0.075,at=1784264548
   step,dige:b3d94b4565d8f9d0
-  step=2,dige:1eeec77f65fa1725
-  step=3,dige:87c82a4a0e6908e7
-  step=4,dige:c731929c5bcbb134
-  step=5,dige:cd6667cf48f7384a
-  step=6,dige:f79089ecbefc09e2
-  step=7,dige:31fb034d1ddb0ee1
-  step=8,dige:8f24e95f1e803e40
-  step=9,dige:a7bc252976e0e1a0
-  step=10,dige:6af17b240f60ac82
-  step=11,dige:95b46c8681d04dfb
-  step=12,dige:81b42e374b2c2615
-  step=13,dige:20036e0d44d8b2fd
-  step=14,dige:cb6b607b3ad63af1
+  step=2,dige:77b098869d1d7296
+  step=3,dige:60bdc73faa37e8c1
+  step=4,dige:cfd1fce1ea4b68d0
+  step=5,dige:e3273e078644048e
+  step=6,dige:65e31637e6739d31
+  step=7,dige:832f673e76539dff
+  step=8,dige:ce2e77e0cf9a3303
+  step=9,dige:70b8656e1289e0f1
+  step=10,dige:371976471347a58f
+  step=11,dige:3dd977d56c9d2cd9
+  step=12,dige:1d9759736ffdb862
+  step=13,dige:00a68bc86811d73d
+  step=14,dige:bd4fa37f0cc8ee2d

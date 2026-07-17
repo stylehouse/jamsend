@@ -12,7 +12,7 @@ import { signHeader } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'a5980d5d4830e92b' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'a58f4193baad277f~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -513,17 +513,19 @@ Swarm_seal(w, ident, page, theirGrant, myGrant) {
 //     friend's last boast into ONE number a face can show (a Pier with music is a BIGGER cell).
 //      The full tree stays a DELIBERATE pull (§9.2 Selections) — the tally is the appetite for it.
 
-// Swarm_music_census — count MY OWN shelf in w: the %Library,pier:<my prepub> convention (Musu's
-//  Library shape, keyed by WHOSE it is — a key, not a nickname, so live and Book read the same).
-//   records = every %Record; artists = distinct sc.artist. No library counts zero — an honest
-//    empty shelf, never an error.
+// Swarm_music_census — count MY OWN shelf in w: the %MusuSelf,pub:<my prepub> / stock home
+//  (Radio_spec §2.2 rung 3 — was %Library,pier:; keyed by WHOSE it is, a key not a nickname, so live
+//   and Book read the same). records = every %Record; artists = distinct sc.artist. No home counts
+//    zero — an honest empty shelf, never an error.
 Swarm_music_census(w, ident) {
     let records = 0
     let artists = new Set()
-    for (const lib of w.o({ Library: 1, pier: ident.sc.prepub })) {
-        for (const r of lib.o({ Record: 1 })) {
-            records = records + 1
-            if (r.sc.artist) artists.add(r.sc.artist)
+    for (const home of w.o({ MusuSelf: 1, pub: ident.sc.prepub })) {
+        for (const shelf of home.o({ stock: 1 })) {
+            for (const r of shelf.o({ Record: 1 })) {
+                records = records + 1
+                if (r.sc.artist) artists.add(r.sc.artist)
+            }
         }
     }
     return { records: records, artists: artists.size }

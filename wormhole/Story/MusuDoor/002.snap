@@ -15,5 +15,6 @@ Snap:H
           Pier,pub:Origin,req=2,ok
             Ud,pubkey:Origin
           active_transport,type:mock,open
-        Library,pier:Origin
+        MusuSelf,pub:Origin
+          stock,pub:Origin
         Mag:Musica

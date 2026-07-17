@@ -14,10 +14,11 @@ Snap:H
           Pier,pub:DJ,req=2,ok
             Ud,pubkey:DJ
           active_transport,type:mock,open
-        Library,pier:DJ
-          Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
-            Stream,name:audio,total=6,have=0,sr=48000
-          Record,id:rec1,title:Tone-1,artist:Synthetic,seconds=0.3,nchunks=6
-            Stream,name:audio,total=6,have=0,sr=48000
-          Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
-            Stream,name:audio,total=6,have=0,sr=48000
+        MusuSelf,pub:DJ
+          stock,pub:DJ
+            Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
+              Stream,name:audio,total=6,have=0,sr=48000
+            Record,id:rec1,title:Tone-1,artist:Synthetic,seconds=0.3,nchunks=6
+              Stream,name:audio,total=6,have=0,sr=48000
+            Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
+              Stream,name:audio,total=6,have=0,sr=48000

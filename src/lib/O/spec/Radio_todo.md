@@ -36,6 +36,62 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
           homing law + §5A r1; §10 klepto/heist → §5A r4; §11.7 Berth → §5A r5; §12 magazine/stimuli →
            §2.3 + §5A r2; §12.4 jobs ladder → §5A r3/r6.
 
+**2026-07-17 — §2 RE-DRAWN with the human: the Musu homes (spec §2.2-§2.4 + rungs 1/3/6 carry it).**
+ `%Library` + the `Ray` dissolve into `%MusuSelf|%MusuThem,pub` homes, each with `radiostocking/ | the/ |
+  shop/` shelves; `%Original/%Chunk` is the master standing BESIDE (never above) `%Record/%Preview|Stream`
+   (a pull lands a Record — derived, never a master); `%Blob,grade:ogg128` export grades (Android plays
+    `.ogg` happier than `.opus`); `%Grasp` → `%Heist` = wishlist → its actively-downloading leg (both
+     Mag-shaped, Waft-based, `What/` anywhere; a Grasp is also the abuse-report shape — *what of their
+      share is naughty*). The shop is FLAT: bytes in ONE place, every meaning a Mag|Grasp referring in by
+       id; GC roots = the Mags|Grasps. **Tonight (authorized hours, opus subagents): `[RUNG7-WIRE]` DONE
+        (2026-07-17, green ×2 — see below) + the ogg128 export DONE (2026-07-17, green ×2): `Ghost/M/Orig.g`
+         (`Orig_ogg_export`/`_mux`/`_parse`) writes a real RFC-7845 Ogg/Opus file + mints `%Blob,grade:ogg128`
+          (path, never bytes); Book **MusuOgg** proves it live (stock→transcode-to-end→export→page-CRC +
+           OpusHead re-read→real decodeAudioData round-trip). **The r3 CONTAINER DISSOLVE also DONE
+            (2026-07-17, green ×2): `%Library,pier:` → `Ra_home_self`/`Ra_home_them` (`Ghost/M/Ra.g`) minting
+             `%MusuSelf|%MusuThem,pub` homes + a `stock` shelf that replaces the flat lib node one-for-one;
+              ~35 sites converted by side-judgment (origin/own→self, mirror→them) across Ra/Heist(ation)/
+               Radiation/Musuation/Swarmation/Repli + the `Swarm_music_census` walk; green ×2 on the core six
+                (Vend/Heist/Breach/Ogg/Reap/Buddy) + Reco/Replica, fixture diff = ONLY the re-shelving.** The
+                 `%Original` master itself + re-homing the `%Blob` into the shop stay OWED (eyes-on).**
+
+**2026-07-17 — the `shop/` SHELF DONE + the `%Heist` re-homed (green ×2: MusuHeist 22 · MusuBreach 10 ·
+ MusuSoft 6): the Heist no longer floats on `w` (spec §2.4 shop block + §2.1/§5A r1).** `Ra_home_shop(w, <me>)`
+  (`Ghost/M/Ra.g`, beside `Ra_home_self`/`_them` — `Ra_home_shelf` generalized to a shelf-name param) mints the
+   `shop/` shelf under the asker's `%MusuSelf,pub` home; `Heist_job(w, at, filings, {home})` + `Heist_wish(w,
+    home, …)` hang the `%Heist` there (soft wish AND hard job alike), `Heist_flatten` removes from `job.c.up`
+     not `w`. Call sites converted: MusuHeist_job (asker `b.mine`'s shop), the two Breach job seams + the two
+      wire jobs (each own's shop), both MusuSoft wishes (`Ra_home_shop(w, 'Seeker')`); the two `w.o({Heist:1})`
+       readers in Heistation resolve against the asker shops. Fixture diff was ONLY `Heist,` moving from the floor
+        to `MusuSelf,pub:<asker>` > `shop,pub:<asker>` (records/Leads/filings/took unchanged). **Still owed:** the
+         per-Pier `bay,pub:<them>` sub-part + `%Heistlet` (the travelling ask), and the wet `%Original`/`%Record`
+          quarantine moving UNDER the `%Heist` in the shop.
+
+**2026-07-17 — the SOFT `%Heist` DONE (green ×2, Book MusuSoft): the search that hardens into a pull (spec
+ §2.4 soft block + §5A r4).** `Ghost/M/Heist.g //#region soft` — `Heist_wish` mints `%Heist,wish:<sentence>`
+  (soft = a `wish` + NO `at`); `Heist_ask` crosses it as a chunkless husk over the granted wire; `Heist_match`
+   walks `Musica_cards` and stamps `%Lead,pier:,id:,tune:` per LITERAL contains-hit (title|artist|genre|album)
+    under the soft Heist (no hit → no Lead); `Heist_condense` hardens the chosen wish (stamps `at` + the filing)
+     and the EXISTING pull (`Heist_beat`/`Heist_land`/vouch door — untouched) lands the one record. MusuSoft
+      loopback: 3 real tracks + a `%Mag` cross → one-word wish finds exactly ONE Lead → a nothing-wish finds
+       ZERO → condense pulls that ONE card whole while the two decoys stay UNSPENT husks. **HOMING GAP CLOSED
+        (2026-07-17):** the `shop/` shelf now exists (`Ra_home_shop`) — the soft Heist homes under the seeker's
+         `%MusuSelf,pub:Seeker > shop/`, not `w` (see the shop-shelf entry above). NEXT: the Stemdex/%Seem
+          by-meaning rung (swap `Heist_words` for the stem index) and `%Lead` accumulation across MANY far Mags.
+
+**2026-07-17 — the RADIOSTOCK CASCADE GC DONE (green ×2): `Musica_forget` now reaps the derived disk cache.**
+ An era forget (`Musica_forget(nav, mag, cutoff, pub)`) drops the old `%Cloud`s AND unlinks every
+  `.jamsend_radiostock` file whose track left the magazine — the human's "delete including radiostock". The
+   join is `Card.id === stock enid` (both `Ra_enid`), so no map: gather the ids before/after the fold and hand
+    the goners to the new **`Ra_stock_cascade(nav, pub, gone, keep)`** (Ghost/M/Ra.g), which is **BIAS-TO-KEEP**
+     — an id still referenced by ANY survivor keeps its stock (the cache re-derives; a wrong drop costs one
+      re-encode). `pub` (== stocking `lib.sc.pier`) is threaded in by the caller; graceful no-op when there is
+       no disk stock (MusuVend still rides `Musica_forget_fold` direct, byte-identical). `Musica_forget` now
+        returns `{ dropped, cascaded }`. Book **MusuReap** proves it live (two eras stocked → forget the old →
+         the dropped track's stock file GONE while the kept track's STANDS — the bias-to-keep discriminator).
+          Still `// <` on forget: the WIRE goner (fold `Musica_recast_offer`'s op:delete into the Berth path so
+           a forget also retires over enrolled followers) — M4's remainder.
+
 **2026-07-15 — RUNG 0 (per-chunk content-addressing) BUILT + RE-RECORDED LIVE-GREEN; signing + Ra-path + breach-Book OWED.**
  Every chunk now carries a durable **`cid`** = full sha256 of its bytes — minted at all three chunk-mint
   sites (`Ra_record_from` %Preview, `Ra_chunk_mint` %Stream, `Heist_census` %Body), carried in the `.jam`
@@ -90,11 +146,29 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
         different manifests → different signatures, so a swarm cannot dedup/verify across independent transcodes.
          The content-address that a signature vouches for must be the ORIGINAL master's cids (deterministic), not
           each grade's — fold this into the rung-7 wiring design (the `%Original` of §2.4 rung 3 is the anchor).
- **Still owed — ONLY the origin-signature WIRING** `[RUNG7-WIRE]` (the crypto is proven, the plumbing isn't): carry `sig` + `by`
-  in the `.jam` header / the offer husk and verify at the offer door before any pull — promote
-   `MusuBreach_sign/verify` to `Ra_*` in `Ghost/M/Ra.g`, keyed on the MASTER's cids per the finding above. Left
-    designed for eyes-on (it touches the live trust path — don't rewire core unattended). The whole rung-0 fixture
-     debt is CLEARED (all 4 chunk-Books green). See spec §2.4 + §5A rung 0 + rung 7.
+ **2026-07-17 — `[RUNG7-WIRE]` DONE (green ×2).** The origin-signature is now WIRED into the live trust path.
+  **The ONE implementation** lives in `Ghost/M/Ra.g //#region trust` — `Ra_manifest`/`Ra_sign`/`Ra_verify`; the
+   isolation-proof helpers `MusuBreach_sign/verify/manifest` (Heistation.g) now DELEGATE to them, so the crypto
+    test exercises the live-path code (steps 2-6 unchanged, byte-identical diges — the delegation was transparent).
+  **Seam A — the `.jam` at rest:** `Ra_vouch_header(info, bufs, signer)` stamps `by`+`sig` over the cids manifest
+   onto the header before `Ra_pack`; `Ra_stock_standing` REFUSES a header that claims a `by` but fails verify
+    (unsigned headers pass untouched — old jams still load). Signer threads off `lib.c.signer` (absent for every
+     current Book → byte-identical old shape; no fixture churn). `Ra.g:544` (pack) + `589–644` (`//#region trust`)
+      + `Ra_vouch_header` at `569` + the `Ra_stock_one` vouch call at `801` + the `Ra_stock_standing` gate at `668`.
+  **Seam B — the offer door (the keystone):** `Heist_offer_all(w,tx,from,to,lib,signer)` → `Heist_offer_vouch`
+   stamps `by`/`vouch_sig`/`vouch_cids` on the Record head (three scalar keys — they ride the chunkless husk; the
+    `%Body` cids do NOT, so the manifest rides the head). `Heist_beat` verifies (`Heist_vouch_ok`) BEFORE
+     `Ra_pull_beat` — a signed-but-failing offer is REFUSED: zero wants, zero lands, `job.sc.unvouched`+ a legible
+      `unvouched,tune:` marker; an unsigned offer passes. Gate ONLY at the Heist call — the generic Repli path is
+       untouched (**MusuHeist 22/22 GREEN, caveat 20 benign**). `Heist.g:214` (`Heist_offer_all`) + `229`
+        (`Heist_offer_vouch`) + `251` (`Heist_vouch_ok`) + `285` (the door gate inside `Heist_beat`).
+  **Proof:** `MusuBreach` grew from 7→10 steps (`Ghost/Story/Heistation.g`) — steps 7-10 wire steps: honest signed
+   offer flows through the door and lands (`door_ok,landed,no_refusal,flowed`); a FORGED manifest (origin sig
+    replayed over a swapped `vouch_cids`) refused at the door (`real_verified,door_refused,unvouched_bumped,
+     no_new_land,no_wants,dropped,gate_named`). Two new `%see` truths. **Green ×2** on runner `49dee91d61a9de64`.
+  **Still owed (rung 7, not this wire):** an APP path that actually SETS a signer (`lib.c.signer` / the `signer`
+   arg) in production stock/offer — today only a Book would; and the swarm ROUTING (have-bitmap beacon + cheapest-
+    source chooser, `Radio_multicast_todo.md`). The whole rung-0 fixture debt is CLEARED. See spec §2.4 + §5A rung 0 + rung 7.
 
 **THE SNAP READS LIKE THE SESSION — N1-N5 + the Jam ledger + the Card rename: LANDED and LIVE-GREEN (2026-07-14).**
  The human read MusuBuddy's snaps and named four smells + one growth; all are coded, adversarially reviewed, and
@@ -396,9 +470,11 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
       (M2): **multi-cloud grow** — draw A + draw B form two distinct `%Cloud`s (see #5); and
        **`Musica_forget`** — `Musica_forget_fold` extracted (the pure GC twin of `Musica_fold`) and
         exercised by MusuVend's forget scene (see #6: origin drops the older cloud by its stamp, keeps
-         the fresher). Still `// <` on forget: the radiostock cascade. (The follower-propagation via
-          Repli_retire is now BUILT — M4/MusuRecast crosses the goner at record + cloud level; folding it into
-           Musica_forget's Berth path is the standing-loop remainder.)
+         the fresher). The radiostock cascade is now BUILT (2026-07-17, MusuReap green ×2 — `Musica_forget`
+          reaps the derived `.jamsend_radiostock` off disk via `Ra_stock_cascade`, bias-to-keep). The only
+           remaining `// <` on forget: the WIRE goner. (The follower-propagation via Repli_retire is BUILT —
+            M4/MusuRecast crosses the goner at record + cloud level; folding it into Musica_forget's Berth path
+             so a forget ALSO retires over enrolled followers is the standing-loop remainder.)
  - **M2 LIVE-GREEN; D1 part b LIVE-GREEN (MusuDoor, 2026-07-13) — NEXT build is D1 part a.**
     D1 was split: **part b (the SABOTAGE wall) LANDED** as the `MusuDoor` Book (fork of MusuVend,
      9/9 caveat:0 ×2 on runner 49de, commit `f76b3d7e`). A malicious origin grafts a `%req:sabotage,eternal`
@@ -1597,8 +1673,9 @@ Waft:Musica
   Cloud,randomic:<id2>,created_at:<ts2>   ← a later publish's batch
 ```
   So every Record wears the time it joined (read up through its Cloud), and a whole era is
-   forgotten at once — `Musica_forget(cutoff)` drops old Clouds (the radiostock-cascade unlink is
-    parked `// <`). `randomic`+`created_at` are PARAMS not wall-clock: the app passes a real random
+   forgotten at once — `Musica_forget(nav, mag, cutoff, pub)` drops old Clouds AND cascades the
+    radiostock-unlink to disk (BUILT 2026-07-17, `Ra_stock_cascade`, bias-to-keep; MusuReap green ×2).
+     `randomic`+`created_at` are PARAMS not wall-clock: the app passes a real random
      id + Date.now, a Book PINS them (the Heist_marrauding runid pattern) so snaps stay deterministic.
   **`randomic` = a RANDOM DRAW (the human's clarification 2026-07-13):** a Cloud is not "the whole
    collection this tick" — it is a HANDFUL randomly MEANDERED out of a collection that is NEVER fully

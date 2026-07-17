@@ -735,12 +735,11 @@ async SwarmGot_drive(w, req):
     }
     await this.SwarmGot_order(w)
 
-// SwarmGot_shelf — seed (or grow) a %Library,pier:<prepub> — the census convention: a shelf
-//  belongs to a KEY, never a nickname. Single-word titles (a comma in a value is a line-codec
-//   landmine). Idempotent per Record id.
+// SwarmGot_shelf — seed (or grow) a person's OWN music home (Radio_spec §2.2 rung 3): a
+//  %MusuSelf,pub:<prepub> / stock shelf — the census convention, a shelf belongs to a KEY, never a
+//   nickname. Single-word titles (a comma in a value is a line-codec landmine). Idempotent per Record id.
 SwarmGot_shelf(w, ident, rows):
-    let lib = w.oai({ Library: 1, pier: ident.sc.prepub })
-    lib.c.up = w
+    let lib = this.Ra_home_self(w, ident.sc.prepub)
     for (const row of rows) {
         if (!lib.o({ Record: 1, id: row.id })[0]) lib.i({ Record: 1, id: row.id, title: row.title, artist: row.artist })
     }

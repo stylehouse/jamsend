@@ -112,22 +112,24 @@ Snap:H
                 emit=29,type:repli_want,seq=29
                 emit=30,type:repli_want,seq=30
           active_transport,type:mock,open
-        Library,pier:DJ
-          Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
-            Stream,name:audio,total=240,have=0,sr=48000
-            preview,seq=0,from=0,to=12
-            Reco,by:DJ,note:this one grows — stay past the second chord
-            preview,seq,from=12,to=24
-            preview,seq=2,from=24,to=36
-            preview,seq=3,from=36,to=48
-          Record,id:trk1,title:Dorian D,artist:DJ Oscillo,seconds=76,loudness=0.1413,nchunks=240,real
-            Stream,name:audio,total=240,have=0,sr=48000
+        MusuSelf,pub:DJ
+          stock,pub:DJ
+            Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
+              Stream,name:audio,total=240,have=0,sr=48000
+              preview,seq=0,from=0,to=12
+              Reco,by:DJ,note:this one grows — stay past the second chord
+              preview,seq,from=12,to=24
+              preview,seq=2,from=24,to=36
+              preview,seq=3,from=36,to=48
+            Record,id:trk1,title:Dorian D,artist:DJ Oscillo,seconds=76,loudness=0.1413,nchunks=240,real
+              Stream,name:audio,total=240,have=0,sr=48000
         reached:step_3
         refused:not_started
-        Library,pier:Crowd
-          Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
-            Stream,name:audio,total=240,have=48,sr=48000,page_from=40,page_to=48,got=6
-            preview,seq=0,from=0,to=12
-            Reco,by:DJ,note:this one grows — stay past the second chord
+        MusuThem,pub:Crowd
+          stock,pub:Crowd
+            Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
+              Stream,name:audio,total=240,have=48,sr=48000,page_from=40,page_to=48,got=6
+              preview,seq=0,from=0,to=12
+              Reco,by:DJ,note:this one grows — stay past the second chord
         reached:step_4
         early:before_transcode_done

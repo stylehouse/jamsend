@@ -22,17 +22,19 @@ Snap:H
               recent
                 unemit,type:repli_lines,seq
           active_transport,type:mock,open
-        Library,pier:Origin
-          Record,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
-            Stream,name:audio,total=8,have=0
-          Record,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
-            Stream,name:audio,total=8,have=0
+        MusuSelf,pub:Origin
+          stock,pub:Origin
+            Record,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
+              Stream,name:audio,total=8,have=0
+            Record,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
+              Stream,name:audio,total=8,have=0
         Mag:Musica
           Cloud,randomic:draw_hon,created_at=1000
             Card,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
             Card,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
-        Library,pier:Follower.mirror
-          Mag:Musica
-            Cloud,randomic:draw_hon,created_at=1000
-              Card,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
-              Card,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
+        MusuThem,pub:Follower.mirror
+          stock,pub:Follower.mirror
+            Mag:Musica
+              Cloud,randomic:draw_hon,created_at=1000
+                Card,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
+                Card,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus

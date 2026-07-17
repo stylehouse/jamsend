@@ -85,11 +85,11 @@ Each home carries the same shelves:
 %MusuSelf,pub:<me>
   radiostocking/%Mag…     ← the ephemeral draws — machine-drawn handfuls, GC fodder
   the/%Mag…               ← the durable Mags — tracks written about, hence never dropped
-  shop/                   ← where music is handled, weighed and transferred (§2.4)
+  shop/                   ← the LOADING ZONE — mid-transfer both directions, per-Pier bays inside (§2.4)
 ```
 
-A `%MusuThem` home is mostly descriptor — their Mags as I've learned them; the bytes I hold all sit in MY
- shop with `from:`/`at:` provenance, so the two planes (§1) map onto the homes. **A card still resolves
+A `%MusuThem` home is mostly descriptor — their Mags as I've learned them; the bytes I hold all sit on MY
+ settled shelf with `from:`/`at:` provenance, so the two planes (§1) map onto the homes. **A card still resolves
   against MANY homes** — you browse the blogs and pull a record from anyone who holds it, a friend or a
    stranger or yourself.
 
@@ -111,19 +111,98 @@ A `%MusuThem` home is mostly descriptor — their Mags as I've learned them; the
      *actively-downloading* leg (transient, Mag-shaped — a manifest of cards that dies on land).
 - **`Mag|Grasp|Heist` are Waft-based** — any of them can carry a `What/` doc anywhere inside; writing
    about a track is exactly what promotes its Mag into `the/` (durable, never dropped).
+- a **`%Grasp` is not music-specific** — the chosen handful of ANY remote Waft|Repli data. That makes it
+   the standard shape for **reporting abuse**: a report is a Grasp of *what of their share is naughty* —
+    the same referring handful, worn with a report polarity and SENT instead of pulled.
+- **the Mag is a ZINE, not a format** *(the human, 2026-07-17)* — the magazine sense of `%Mag` is CULTURAL:
+   the `What/` prose is the point (a review beside a `%Card` is that card's reason to exist), genre is an
+    EDITORIAL claim not metadata, and a curated ordered written-through Mag IS a mixtape. *(imagined, on
+     license:)* a curated `%Cloud` is an ISSUE — back-issues age out through the built era-GC like old
+      zines yellowing in a box; a `%Spotlight,id:<card>` names the cover track; and a circulating Mag
+       carrying its origin signature (rung 7) keeps its BYLINE through any number of hands — the trust
+        wire gives the CULTURE provenance, not just the bytes.
 - a **`%Cloud`** with `randomic` present is a machine-drawn handful — a random meander over a collection
    never fully enumerated; omit `randomic` and the cloud is **curated** (hand-kept).
 - a **`%Card`** is a *listing*, never a holding: id + metadata + `body_hash`, minus the bytes. The card is
    a **referring particle** wearing its own mainkey; the shared `id` is the free join to the holding.
 
-### 2.4 The shop — where the bytes live *(re-drawn 2026-07-17; as-built today = `%Library,pier:` + census `%Record/%Body` — rung 3 is this re-draw)*
+### 2.4 The shop (the loading zone) + the settled holdings *(re-drawn 2026-07-17 twice — shop = "the whole loading here-and-there zone", the human; as-built today = `%Library,pier:` + census `%Record/%Body` — rung 3 is this re-draw)*
 
-The **shop** (`%MusuSelf,pub/shop/`) is where music is handled, weighed and transferred — the holdings
- counter. Three byte-roles, three mainkeys (identity-per-shelf: a downloaded grade never impersonates the
-  master), plus the two Mag-shaped movers:
+The **shop** (`%MusuSelf,pub/shop/`) is the LOADING ZONE: what is mid-transfer, in either direction, lives
+ here and ONLY while in motion — nothing settles in the shop. It has a **per-Pier sub-part** — the loading
+  **bay** (name provisional) — because the ask itself travels: a **`%Heistlet`** minted in F's bay is
+   **Repli'd over to F** — *have you got these?* — F stamps have|held marks on it in place, and the
+    annotated ask replicates back. The Heistlet is the heist manifest AND rung 7's inventory beacon worn
+     as one culture shape (§5A r7).
 
 ```
 shop/
+  %Heist,of:<grasp>              ← the OPERATION: one active pull of a Grasp — may span MANY sources
+     %Original|%Record (wet)     ← the incoming partial — QUARANTINED here until verified; graduation on
+                                     body_hash moves it to the settled shelf; a breach dies here, never
+                                      having stood among the holdings
+  bay,pub:<them>                 ← the per-Pier sub-part — the Repli-able corner of the zone
+     %Heistlet,of:<heist>        ← the travelling ask + this source's leg (cursor · have-marks · backoff);
+                                     THEIR asks of me land here too (the serving side's %parked_want
+                                      already homes per-Pier — the bay is its culture-side roof)
+```
+
+At the client end the in-flight `%Original` LIVES under the `%Heist` (the wet copy); at the server end the
+ bay only ever REFERS to the served holding by id — outgoing ships straight off the settled shelf, bytes
+  never get a second home.
+
+**The `%Heist` starts SOFT** *(the human, 2026-07-17)* **[the literal-match front: built · green ×2, 2026-07-17 · Book MusuSoft]** — barely more than a wish, and it CONDENSES:
+
+```
+wish         a %Heist with only What/ prose + loose constraints — no ids, only meaning
+search       the soft Heist travels as an ask — the bays fan it out; a far side MATCHES it
+              against its Mags (literal first; Stemdex|%Seem by-meaning is standing machinery)
+%Lead,pier:  answers accumulate under the Heist — who can fulfil + what matched + how well
+manifest     choosing a Lead mints the %Heistlet in that Pier's bay (have|held marks)
+pull|land    the hardened Heist as already built — wet quarantine · graduation · flatten
+```
+
+A Heist is a desire hardening into bytes; every phase is the SAME particle wearing more definition.
+ *(Phase names imagined on license — cheap to change.)*
+
+**[built · green ×2, 2026-07-17 · Book MusuSoft — the LITERAL-match rung]** the soft front is wired in
+ `Ghost/M/Heist.g //#region soft`: `Heist_wish(w, home, sentence, constraints)` mints `%Heist,wish:<sentence>`
+  (soft = a `wish` and NO `at` — `Heist_soft` reads that tell); `Heist_ask(w, tx, from, to, heist)` crosses the
+   wish as a chunkless husk over the granted wire (Repli_offer — a wish is a leaf, no bytes); `Heist_match(w,
+    heist, mag, pier)` walks `Musica_cards`, literal case-insensitive CONTAINS-match of the wish's words
+     (`Heist_words`) against title|artist|genre|album, and stamps one `%Lead,pier:<who>,id:<card id>,tune:<artist
+      — title>` per hit UNDER the soft Heist (no hit → no Lead — silence is honest); `Heist_condense(heist, lead,
+       artist, genre)` HARDENS the chosen wish (stamps `at:<pier>` + the filing) and the EXISTING pull
+        (`Heist_beat`/`Heist_land`/the vouch door — all untouched) takes it from there, landing the one record
+         whole in the asker's `Ra_home_them(w, <pier>)` stock. **THE SHOP SHELF LANDED (2026-07-17):** the soft
+          `%Heist` (and the hard `Heist_job` alike) no longer floats on the world floor — `Ra_home_shop(w, <me>)`
+           (`Ghost/M/Ra.g`, beside `Ra_home_self`/`_them`) mints the `shop/` shelf under the ASKER's `%MusuSelf,pub`
+            home, and `Heist_wish(w, home, …)` / `Heist_job(w, at, filings, {home})` hang the `%Heist` there (the
+             `%Lead` answers accumulate UNDER it in the shop). A heist is MY operation, so the loading zone lives
+              under MY home (§2.1 satisfied — nothing per-Pier on `w`); `Heist_flatten` removes from the job's own
+               container (`job.c.up`), not `w`. Re-recorded green ×2: MusuHeist 22/22, MusuBreach 10/10, MusuSoft
+                6/6 — the fixture diff was ONLY the `Heist,` line moving from the floor to `MusuSelf,pub:<asker>` >
+                 `shop,pub:<asker>` (records/Leads/filings/took rows unchanged beneath). **Still owed:** the shop's
+                  per-Pier `bay,pub:<them>` sub-part + the `%Heistlet` (§2.4 above — the travelling ask), and the
+                   wet `%Original`/`%Record` quarantine moving UNDER the `%Heist` in the shop. MusuSoft proves the arc on the MusuVend loopback: origin
+             censuses 3 real testsound tracks + publishes a `%Mag` over the granted wire → a wish matching one
+              title's word finds exactly ONE `%Lead` → a wish matching nothing finds ZERO (the negative control)
+               → condensing pulls exactly that one card whole while the two unchosen cards stay UNSPENT husks (the
+                per-card economy). The Stemdex/%Seem by-meaning rung swaps `Heist_words` for the stem index,
+                 `Heist_ask` unchanged.
+
+**The settled holdings shelve on `stock/`** — a fourth shelf beside `radiostocking|the|shop` (ruled
+ 2026-07-17 on the human's names-are-cheap license: its disk shadow is literally the radiostock). *(As-built
+  2026-07-17, the container dissolve leg: `Ra_home_self(w, pub)` / `Ra_home_them(w, pub)` in `Ghost/M/Ra.g`
+   find-or-create the `%MusuSelf,pub`|`%MusuThem,pub` home and return its `stock` child — the shelf that
+    replaces the old flat `%Library,pier:` node one-for-one, `%Record`s living directly under it. The shelf
+     carries `pub` so a Record's `rec.c.up.sc.pub` still names WHOSE bytes these are. `Ra_library` is a thin
+      deprecated alias to `Ra_home_self` for one cycle. All ~35 call sites converted by side-judgment —
+       origin/own/census → self, mirror/follower → them; the census walk `Swarm_music_census` walks the new
+        home. `%Original/%Chunk` and the `%Blob` re-home into this shelf|shop still owed.)* The settled trio:
+
+```
+stock/
   %Original,id:<enid>               ← THE master — held where it is GIVEN as such; never travels
      .sc: path,body_hash,sr,nch,…    ← whole-source identity + baked loudness (lufs/gain/preskip)
      %Chunk,seq  .sc: buf,cid       ← the source bytes sliced (today's %Body, re-homed)
@@ -131,8 +210,6 @@ shop/
      %Preview,seq  .sc: buf,cid        under) an %Original: a pull lands one of THESE, derived from
      %Stream,seq   .sc: buf,cid        someone's master, and it may never see that master at all
   %Blob,id:<enid>,grade:ogg128      ← a whole-file export grade   .sc: path (one real file on a nav)
-  %Grasp…                           ← the chosen handful of remote tracks|directories (persists, §2.3)
-  %Heist,at:<pier>                  ← a Grasp's actively-downloading leg (transient, §2.3)
 ```
 
 - **`%Original`** *wants to be* the original (flac) and **encodes down to** whatever grade a want asks —
@@ -144,8 +221,23 @@ shop/
 - **`%Blob,grade:`** names codec+bitrate (`ogg128`, `flac`) — the `ogg128` export is where real
    OpusHead+OpusTags pages finally get written (from card metadata): Androids still play `.ogg` more
     happily than `.opus`, so phone-sync ships Ogg. One real file on a nav, not chunk particles.
+    **[built · green ×2, 2026-07-17]** — `Ghost/M/Orig.g` (`Orig_ogg_export`/`Orig_ogg_mux`/`Orig_ogg_parse`)
+     collects a `%Record`'s `%Preview|%Stream` packets in seq order and muxes them into a real RFC-7845
+      Ogg/Opus stream (OpusHead BOS + OpusTags + audio pages, RFC-3533 CRC un-reflected, granule = cumulative
+       48k samples incl. preskip), `nav.bin_write`s the file, and mints `%Blob,id,grade:ogg128` with `sc.path`
+        (never the bytes — the file IS the artifact). Proven by Book **MusuOgg** (`Ghost/Story/Heistation.g`):
+         stock one track → drive the transcode to the end → export → every page CRC re-reads · OpusHead facts
+          match the card → a real `OfflineAudioContext.decodeAudioData` round-trips the file to the track
+           duration (bar the opus end-pad a player trims to the granule). The export is r3's home-in-waiting;
+            today the `%Blob` lands beside the `%Record` (r3 re-homes into the shop proper).
 - every chunk (`%Chunk|Preview|Stream,seq`) carries its **`cid`** (full-sha256 content-address of its
    bytes); the signature (rung 7) keys on the **`%Original`'s** cids — the one deterministic manifest.
+- **why the settled shelf is FLAT** — a `%Blob|Original` never "sits inside" something else, because bytes
+   live in exactly ONE place (the settled shelf) and every MEANING — my collection, a phone sync, an active
+    pull, a report — is a `Mag|Grasp` *referring* in by id, never containing. A sync-set is a Grasp ("these
+     tracks — ogg128 — to the phone") whose landed output is the `%Blob`; the GC root set is exactly the
+      Mags|Grasps, so a holding nothing refers to is reapable. The ONE exception is the shop's wet partial —
+       contained by its `%Heist` precisely because it is not yet a holding.
 - **`radiostock`** = `<ts>-<pub>-<enid>`; `enid` = `Ra_enid`, today a sha256 over the WHOLE source's raw
    bytes (first 16 hex). `body_hash` (whole-file sha256) rides the card.
 - the `%Original`/grade-dispatch verbs get their own ghost — **`Ghost/M/Orig.g`** — keeping the pipeline
@@ -294,7 +386,7 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
 
 ### 5A — The culture ladder (identity · magazine · heist · persist · swarm)
 
-**0 — Content-addressing** **[built · green ×2, 2026-07-15 · signing owed]** — every chunk carries a durable
+**0 — Content-addressing** **[built · green ×2, 2026-07-15 · signing WIRED 2026-07-17 (rung 7)]** — every chunk carries a durable
  `cid` (sha256 of its bytes): minted at all three chunk-mint sites (`Ra_record_from` / `Ra_chunk_mint` /
   `Heist_census`), a `cids[]` manifest in the `.jam` header, verified per-chunk at `Heist_land` (a localized
    breach ahead of the whole-file gate — and it now records `job.sc.breach_seq`, so the breach NAMES the
@@ -302,14 +394,17 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
      `cid` rows on every `%Body`. **MusuBreach** (`Ghost/Story/Heistation.g`, green ×2) is the adversarial
       twin: it lands an honest record clean (the control — the gate discriminates) then flips one byte of a
        middle chunk LEAVING its cid and proves the gate FIRES — breach, no land, file unlinked mid-stream,
-        record retained, and the gate's own `breach_seq` matches the poisoned seq. *Owed:* the Ra-path
-         (`%Preview`/`%Stream`) + resurrect round-trip proof; and the origin-signature that makes the manifest
-          swarm-trustworthy — the cid catches CORRUPTION (proven) not a LYING peer (rung 7). §2.4.
+        record retained, and the gate's own `breach_seq` matches the poisoned seq. The Ra-path
+         (`%Preview`/`%Stream`) + resurrect round-trip is proven (MusuRaStream/MusuRaChase carry cids in their
+          fixtures); the origin-signature that makes the manifest swarm-trustworthy is now WIRED (rung 7) — the
+           cid catches CORRUPTION, the signature catches a LYING peer. §2.4.
 
 **1 — Identity homing** *(the multi-Pier law, §2.1)* **[todo]** — every per-peer particle under
  `Peering,name:<self>` or `Pier,pub:<them>`; drop the finished transient `buddy_*` reqs at a safe seam;
   nest the loose telemetry rows. The music shape of this law is the `%MusuSelf|%MusuThem` homes (§2.2).
-   *(The MusuBuddy snap is the smell that names the work.)*
+   *(The MusuBuddy snap is the smell that names the work.)* **[done, 2026-07-17]** the `%Heist` (soft wish AND
+    hard job) no longer floats on `w` — `Ra_home_shop(w, <me>)` homes it under the asker's `%MusuSelf,pub` >
+     `shop/` shelf (§2.4); MusuHeist/MusuBreach/MusuSoft re-recorded green ×2, the diff only the re-shelving.
 
 **2 — Magazine** *(Book: MusuHeist · `Ghost/M/Heist.g`)* **[built · green ×2, 2026-07-14]** —
  `%Mag:Musica > %Cloud,randomic > %Card`; `Musica_publish/fold/cards/forget`; the `%Card` mainkey split
@@ -317,17 +412,38 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
    the Cloud layer alive across replication. The browse **cursor arc** (`%Dogear` — resolve, heal a
     `%Renamed`, resume a berthed browse) is green ×2 alongside.
 
-**3 — Holdings + Library dissolve** **[todo]** — `%Library` (and the `Ray`) dissolve into the
- `%MusuSelf|%MusuThem` homes (§2.2); the `shop/` holds `%Original/%Chunk` (the master — today's census
-  `%Record/%Body` re-homed), `%Record/%Preview|Stream` standing on its own beside it (a pull lands a
-   Record — derived, never a master), and `%Blob,grade:` export grades (`ogg128` for phone-sync). Waking
-    a card loads the `%Record`; `%Stream` only in the live copy. New ghost `Orig.g` groups the
-     `%Original`/grade-dispatch verbs. *(Re-drawn 2026-07-17, §2.2+§2.4; unbuilt.)*
+**3 — Holdings + Library dissolve** **[the container dissolve: built · green ×2, 2026-07-17 · the
+ `%Original` master + `%Blob` re-home still todo]** — `%Library` (and the `Ray`) dissolve into the
+  `%MusuSelf|%MusuThem` homes (§2.2); the `stock/` shelf holds `%Original/%Chunk` (the master — today's
+   census `%Record/%Body` re-homed), `%Record/%Preview|Stream` standing on its own beside it (a pull lands
+    a Record — derived, never a master), and `%Blob,grade:` export grades (`ogg128` for phone-sync). Waking
+     a card loads the `%Record`; `%Stream` only in the live copy. **The container dissolve LANDED
+      (2026-07-17):** `Ra_home_self`/`Ra_home_them` (`Ghost/M/Ra.g`, §2.4 as-built) replace the flat
+       `%Library,pier:` node with a per-identity home + `stock` shelf; ~35 call sites converted by
+        side-judgment across `Ra.g`/`Heist.g→Heistation.g`/`Radiation.g`/`Musuation.g`/`Swarmation.g`/`Repli.g`,
+         the census walk `Swarm_music_census` (`Ghost/S/Swarm.g`) walking the new home. Green ×2 on the core
+          six (MusuVend 11/11 · MusuHeist 22/22 · MusuBreach 10/10 · MusuOgg 6/6 · MusuReap 4/4 · MusuBuddy
+           14/14) + MusuReco/MusuReplica; the fixture diff was ONLY the re-shelving (`Library,pier:X` →
+            `MusuSelf|MusuThem,pub:X` + a nested `stock,pub:X` line, records unchanged beneath). The MusuVend
+             two-Pier wire loopback proved container mainkeys do NOT ride the wire (offer/merge locate by
+              `['Record','id']`). New ghost **`Ghost/M/Orig.g`** groups the `%Original`/grade-dispatch verbs —
+               its first verb landed: the `ogg128` export (`Orig_ogg_export`, Book **MusuOgg**, green ×2, §2.4)
+                writes a real Ogg/Opus file and mints the `%Blob` beside the `%Record`. Still todo: the
+                 `%Original` master itself (flac source → derive-any-grade), and re-homing the `%Blob` into the
+                  shop. *(Re-drawn 2026-07-17, §2.2+§2.4.)*
 
-**4 — Heist** *(`Ghost/M/Heist.g`)* **[built · gate-owed]** — offer → manifest → pull → land; whole-file
- `body_hash` verified at land; cp-landing rulings (copy not rename; non-audio siblings never copy; dedup
-  bias-to-keep). *(The manifest's RESUME side is the `<` unbuilt marker; the read-back demotes only after
-   rung 0.)*
+**4 — Heist** *(`Ghost/M/Heist.g`)* **[built · gate-owed · the SOFT front: built · green ×2, 2026-07-17 ·
+ Book MusuSoft]** — offer → manifest → pull → land; whole-file `body_hash` verified at land; cp-landing
+  rulings (copy not rename; non-audio siblings never copy; dedup bias-to-keep). *(The manifest's RESUME side
+   is the `<` unbuilt marker; the read-back demotes only after rung 0.)* Resume needs NO wet-state
+    persistence: the `%Grasp` persists, the wet partial is disposable, and resuming = re-manifesting against
+     the settled shelves (the held|new dedup already skips what landed) — only the missing re-pulls.
+   **The `%Heist` now starts SOFT and CONDENSES** (§2.4 soft block): `Heist_wish`/`Heist_ask`/`Heist_match`/
+    `Heist_condense` (`Ghost/M/Heist.g //#region soft`) build the LITERAL-match front — a wish sentence
+     matched against card title|artist|genre|album, `%Lead,pier:` answers accumulating under the soft Heist,
+      choosing one hardening it into the existing pull (which condensation FEEDS, never edits). Book
+       **MusuSoft** green ×2 (the one-lead + the zero-lead negative control + the per-card pull discriminator);
+        the Stemdex/%Seem by-meaning rung is later.
 
 **5 — Persist (Berth + Rack)** *(Book: MusuBerth — live-gate owed)* **[built · gate-owed]** — the **Berth**
  is the non-Lies Waft host: `<root>/.jamsend/berth/<prepub>/<name>/toc.snap`, bound to the encoders only
@@ -338,25 +454,41 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
 **6 — Marauding (wishlist persist/resume)** **[todo]** — a `%Grasp` (the chosen handful of remote
  tracks|directories, Mag-shaped, Waft-based) logs pulls, persists the heist, and resumes it across a
   restart; the `%Heist` is its actively-downloading leg. *(Re-coined 2026-07-17 — was
-   `Ray,self/Mag:marauding`; the resume side is unbuilt — see rung 4.)*
+   `Ray,self/Mag:marauding`; the resume side is unbuilt — see rung 4.)* Ruled (on license): the Grasp
+    **prunes** as legs complete — forward intent only; the `%Grab` ledger fact **endures** — never a
+     double ledger.
 
-**7 — Swarm (opportunistic webrtc chunk-sharing)** **[routing: design · trust keystone: built ×2 in isolation]**
+**7 — Swarm (opportunistic webrtc chunk-sharing)** **[routing: design · trust keystone: WIRED + green ×2 2026-07-17]**
  — a swarm peer is just another `Repli_register_caster`; **Repli sends `C**` to many overlapping-interest
   subscribers at once**, and Peeroleum §18 already fans one upload out to a `@channel` relay-side. The webrtc
    evolution (a have-bitmap inventory beacon + a cheapest-source chooser) is designed in
-    `Radio_multicast_todo.md`, gated on rung 0. This is the content plane's routing made real.
+    `Radio_multicast_todo.md`, gated on rung 0 — and the **`%Heistlet`** (§2.4, a Repli'd ask stamped with
+     have|held marks by the far side) IS that beacon worn as culture matter: one shape serves the heist
+      manifest and the swarm inventory. This is the content plane's routing made real.
  **The trust keystone — origin-signature over the cids manifest** (the thing that lets you pull a chunk from a
   STRANGER): the per-chunk cid catches CORRUPTION but not a lying peer who recomputes a cid over bad bytes. So
    the origin signs the manifest of cids (ed25519 over `id | cid0.cid1…`, the `Idento` primitive Swarm.g already
-    uses) and a receiver who knows the origin key verifies the vouch before trusting a byte. **Proven in
-     isolation, green ×2** — `MusuBreach` step 6: the honest vouch verifies; a FORGED manifest (a middleman
-      swaps one cid) fails the signature; an IMPOSTER (a different key) is rejected. *Owed:* `[RUNG7-WIRE]` the
-       WIRING — carry `sig` + `by` in the `.jam` header / the offer husk, and verify at the offer door before
-        any pull (promote `MusuBreach_sign/verify` to `Ra_*` in `Ghost/M/Ra.g`), **keyed on the MASTER's cids**:
-         the Ra-path transcode is NOT bit-reproducible (two independent transcodes of one source → different
-          bytes → different cids), so the signature must vouch for the deterministic `%Original` (rung 3), never
-           each grade's — else no swarm can dedup/verify across peers who transcoded separately. The two gates together — cid keeps an honest peer
-         honest, signature keeps a dishonest peer out — are what make a swarm pull safe.
+    uses) and a receiver who knows the origin key verifies the vouch before trusting a byte. The helpers now live
+     in `Ghost/M/Ra.g //#region trust` as `Ra_manifest`/`Ra_sign`/`Ra_verify` (the ONE implementation —
+      `MusuBreach_*` delegate to them so the crypto test exercises the live-path code).
+ **`[RUNG7-WIRE]` WIRED (2026-07-17):** two seams, both keyed on the MASTER's cids (the Ra-path transcode is NOT
+  bit-reproducible — two transcodes → different cids — so only the deterministic `%Original`/`%Body` cids can
+   ride a swarm-shared signature). *Seam A — the `.jam` at rest:* `Ra_vouch_header(info, bufs, signer)` stamps
+    `by` (full pubkey) + `sig` onto the header before `Ra_pack`; the read side (`Ra_stock_standing`) refuses a
+     header that claims a `by` but fails verification (an unsigned header passes untouched, so old jams still
+      load — the signer threads off `lib.c.signer`, absent for every current Book). *Seam B — the offer door
+       (the keystone):* `Heist_offer_all(..., signer)` calls `Heist_offer_vouch` to stamp `by`/`vouch_sig`/
+        `vouch_cids` onto the Record head (three scalar keys that ride the chunkless husk — the `%Body` cids
+         don't cross a husk, so the manifest rides the head), and `Heist_beat` verifies (`Heist_vouch_ok`) BEFORE
+          `Ra_pull_beat` wants a byte: a signed-but-failing offer is REFUSED (zero wants, zero chunks land,
+           `job.sc.unvouched` bumped + a legible `unvouched,tune:` marker names the turned-away track); an
+            unsigned offer passes (graceful adoption). The gate lives ONLY at the Heist call — the generic Repli
+             offer path other Books ride is untouched (MusuHeist 22/22 stays green). **Proven green ×2** —
+              `MusuBreach` now 10 steps: steps 2-6 the isolation crypto (control land · poisoned-chunk breach ·
+               honest vouch · forged/imposter caught), steps 7-10 the WIRING (a signed offer flows through the
+                door and lands; a forged offer — the origin sig replayed over a swapped `vouch_cids` — is refused
+                 at the door before any pull, gate-named). The two gates together — cid keeps an honest peer
+                  honest, signature keeps a dishonest peer out — are what make a swarm pull safe.
 
 ### 5B — The audio ladder (the nine stages)
 

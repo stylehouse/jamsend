@@ -41,10 +41,11 @@ Snap:H
                 unemit,type:repli_lines,seq
               req:unemit,seq=2,type:repli_lines,body_hash:462783eaec54cf06eaf1cc9a33e59ce9fb0e4c4f36bad2bebcc4f9ffab402e0f,body_len=592,done,to:repli_lines,finished
           active_transport,type:mock,open
-        Library,pier:Origin
-          Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-          Record,id:t1,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
-          Record,id:t2,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
+        MusuSelf,pub:Origin
+          stock,pub:Origin
+            Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+            Record,id:t1,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+            Record,id:t2,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
         Mag:Musica
           Cloud,randomic:dgbl8pe,created_at=1000
             Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
@@ -52,11 +53,12 @@ Snap:H
             Card,id:t2,artist:Choral,title:High Tide,path:crate/c/Choral - High Draw.opus
             Renamed,key:title,from:Low Draw,to:Low Tide,at=5000
             Renamed,key:title,from:High Draw,to:High Tide,at=5001
-        Library,pier:Follower.mirror
-          Mag:Musica
-            Cloud,randomic:dgbl8pe,created_at=1000
-              Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-              Card,id:t1,artist:Bassbin,title:Low Tide,path:crate/b/Bassbin - Low Draw.opus
-              Card,id:t2,artist:Choral,title:High Tide,path:crate/c/Choral - High Draw.opus
-              Renamed,key:title,from:Low Draw,to:Low Tide,at=5000
-              Renamed,key:title,from:High Draw,to:High Tide,at=5001
+        MusuThem,pub:Follower.mirror
+          stock,pub:Follower.mirror
+            Mag:Musica
+              Cloud,randomic:dgbl8pe,created_at=1000
+                Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+                Card,id:t1,artist:Bassbin,title:Low Tide,path:crate/b/Bassbin - Low Draw.opus
+                Card,id:t2,artist:Choral,title:High Tide,path:crate/c/Choral - High Draw.opus
+                Renamed,key:title,from:Low Draw,to:Low Tide,at=5000
+                Renamed,key:title,from:High Draw,to:High Tide,at=5001

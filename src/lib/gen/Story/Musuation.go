@@ -10,7 +10,7 @@ import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return '50ba98bdc241a8c0' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return 'd51f5a2297ec8c96~g1' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Radio_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -2821,8 +2821,7 @@ async MusuReplica_setup(w) {
     link[1].i({ Ud: 1, pubkey: 'DJ' })
     link[0].i({ Ud: 1, pubkey: 'Crowd' })
     this.Repli_arm(w)
-    let src = w.oai({ Library: 1, pier: 'DJ' })
-    src.c.up = w
+    let src = this.Ra_home_self(w, 'DJ')
     w.c.repli_src = src
     let ti = 0
     while (ti < 3) {
@@ -3030,8 +3029,7 @@ async MusuReco_setup(w) {
     link[0].i({ Ud: 1, pubkey: 'Crowd' })
     this.Repli_arm(w)
     w.c.repli_page = 8
-    let src = w.oai({ Library: 1, pier: 'DJ' })
-    src.c.up = w
+    let src = this.Ra_home_self(w, 'DJ')
     w.c.repli_src = src
     let nav = this.Crate_nav()
     let paths = nav ? await this.Crate_nav_paths(nav, 'testsounds') : []

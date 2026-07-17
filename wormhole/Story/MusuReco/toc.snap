@@ -52,36 +52,36 @@ story:MusuReco
     dontSnapCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=1.318
-      sample=1.363,at=1784029031
-      sample=1.363,at=1784029033
-      sample=1.363,at=1784029035
-      sample=1.363,at=1784029036
+    TimeTotal:beliefs,avg=1.146
       sample=1.363,at=1784029037
       sample=1.363,at=1784029039
       sample=1.363,at=1784029040
       sample=1.363,at=1784029042
       sample=1.363,at=1784029043
       sample=0.911,at=1784029072
-    TimeTotal:step,avg=0.12
-      sample=0.124,at=1784029031
-      sample=0.124,at=1784029033
-      sample=0.124,at=1784029035
-      sample=0.124,at=1784029036
+      sample=0.966,at=1784261021
+      sample=0.966,at=1784261036
+      sample=0.857,at=1784261061
+      sample=0.949,at=1784261090
+    TimeTotal:step,avg=0.104
       sample=0.124,at=1784029037
       sample=0.124,at=1784029039
       sample=0.124,at=1784029040
       sample=0.124,at=1784029042
       sample=0.124,at=1784029043
       sample=0.083,at=1784029072
+      sample=0.088,at=1784261021
+      sample=0.088,at=1784261036
+      sample=0.078,at=1784261061
+      sample=0.086,at=1784261090
   step,dige:3dbd760e21c9003f
-  step=2,dige:bd403f2eaa545bb0
-  step=3,dige:c2a87f798979b983
-  step=4,dige:24c9c1132b68a3e6
-  step=5,dige:57ee33bbe15c3527
-  step=6,dige:a01da063ce92ff3d
-  step=7,dige:9c47a761116fd0ac
-  step=8,dige:2cf17bca72e56982
-  step=9,dige:b0d35f0a82416fa0
-  step=10,dige:7483433e8083a479
-  step=11,dige:388e546114704ef9
+  step=2,dige:d038652e9b2704fc
+  step=3,dige:edde16fa3f6008eb
+  step=4,dige:9261bed6d57a99a5
+  step=5,dige:316a338735d2f2f3
+  step=6,dige:06d7a4ac6692da7d
+  step=7,dige:283a10875df920a3
+  step=8,dige:0a9520f64a175892
+  step=9,dige:60c8f8cb0809d767
+  step=10,dige:21a783742819f887
+  step=11,dige:e00a76ab8ac93f65

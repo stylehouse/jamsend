@@ -10,7 +10,7 @@ import { Selection } from "$lib/mostly/Selection.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return '749e491be4cbe2e2~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return 'be77904d800a223a~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -473,13 +473,13 @@ async Repli_serve_chunks(w, pier, h, rec) {
 
 },
 // ─── receiver (Pier B) ───
-// Repli_mirror_lib — B's growing MIRROR collection (find-or-create).  The pier key defaults to the
-//  demo's 'Crowd'; a real listener names its shelf (w.c.repli_mirror_pier — its own prepub, the
-//   census convention).
+// Repli_mirror_lib — B's growing MIRROR collection (find-or-create).  The mirror side of the Musu
+//  homes (Radio_spec §2.2 rung 3): what I hold OF another rides a `%MusuThem,pub:<them>` / stock
+//   shelf.  The pub key defaults to the demo's 'Crowd'; a real listener names its shelf
+//    (w.c.repli_mirror_pier — the source's key, the census convention).  Returns the stock shelf,
+//     which stands in for the old flat %Library one-for-one (Records live directly under it).
 Repli_mirror_lib(w) {
-    let lib = w.oai({ Library: 1, pier: w.c.repli_mirror_pier || 'Crowd' })
-    lib.c.up = w
-    return lib
+    return this.Ra_home_them(w, w.c.repli_mirror_pier || 'Crowd')
 
 },
 // Repli_recv_lines — B got a repli_lines frame: decode + merge into the mirror; for every merged particle that

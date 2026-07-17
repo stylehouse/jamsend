@@ -1,0 +1,11 @@
+story:MusuRaCast
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.002
+      sample=0.002,at=1784262105
+    TimeTotal:step,avg=0.002
+      sample=0.002,at=1784262105
+  step,dige:2951c3dff80f0508

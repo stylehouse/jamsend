@@ -49,7 +49,101 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
             reloaded, the "Artist?" canary showed through, propagation confirmed, canary REVERTED.  Keep
              this note — the failure mode recurs every long session; reach for the bundle-fetch proof first.)
 
-**WHAT LANDED THIS SHIFT, PART 8 (2026-07-15) — the K-round: the crater REDRAWN as an explicit nested
+**WHAT LANDED THIS SHIFT, PART 11 (2026-07-17) — ϕ v2: the golden lettering re-laid.**  The
+ human's steer, verbatim: *"I'm thinking the center of the sunflower is off the screen, and we're
+  dealing with a gently curving phi grid, which we assign runs of dots on to chunks of UI we want to
+   fit there… 'Artist   name:Vox' wants to be all in a line, Track** is below and indented. there may
+    be inefficiencies (gaps) from laying out so… but dragging the Artist phi blobule should still
+     move the cyto node for it, and blinklessly stream through the display layers… currently it likes
+      to blink after a drag but otherwise very good. so yeah it gets small text too easily. we need
+       more confidence about fitting the text, should be able to really max it out."*  Five changes
+        to `phi_build` + its render block (render-only — no gen/toc/fixtures):
+- **POLE OFF-SCREEN.**  The spiral pole = glass bbox centre displaced `phi.pole_dist` (2.5)
+   half-diagonals at `phi.pole_ang` (90 = straight down), so every groove crossing the viewport is a
+    gentle near-parallel smile-arc (big r everywhere → tiny angular spans, no tight turns).  Home
+     (r,φ) recomputed from the new pole; the upright-flip is now robust (reverse the sampled points if
+      the path runs right-to-left, `end.x < start.x`) not the old centred-pole `sin>0`.  The lattice
+       draws ONLY the visible annulus × bearing-window (no miles of off-screen path).
+- **C-BLOCK LAYOUT.**  A cell claims as ONE block: the TITLE whole on one groove (tag + name
+   together, never split), the rest INDENTED below on adjacent grooves on the side that is screen-DOWN
+    of the title (computed EMPIRICALLY per bearing — not hardcoded), each indented `phi.indent` (1.5)
+     em.  The block is claim-tested WHOLE at each candidate anchor; if it won't seat, retry with fewer
+      children (fold the tail into +N), down to title-only, else the cell folds entirely.
+- **STABLE IDENTITY = THE BLINK FIX.**  Root cause: arc pathids were minted from a GLOBAL `seq`
+   counter, so every rebuild renamed every arc → the keyed-each destroyed+recreated every DOM node
+    (the blink).  Now pathids are DETERMINISTIC (`vphi-<cellid>-<slug>`, slug from the label's stable
+     cls+key/text + a per-cell dedup counter), and a module `phi_prev` map re-seats each label at its
+      previous interval first (if still free) — labels stay put, Svelte patches attrs.  So ϕ now
+       rebuilds LIVE under drag (`phi.livedrag`=1; freeze at 0 or >400 labels).
+- **DRAG THE BLOBULE.**  The title arc (`vsub-phit`) is a grab handle: `onpointerdown → vsub_grab(e,
+   cellid)`, mirroring the pane identity; CSS opts it back into the pointer-events:none ϕ layer with
+    `cursor:grab`.  Fact/member arcs stay non-interactive.
+- **MAX THE TEXT OUT.**  Sizing INVERTED: fs is the LARGEST that fills the free gap on the groove
+   (chars·GLY·fs ≤ gap), capped `phi.fsceil` (26), floored `phi.fsfloor` (9 → smaller FOLDS instead of
+    shrinking).  Titles may span TWO grooves (`phi.titlegrooves`) for a ~1.8×pitch cap; children stay
+     single-groove (0.92×pitch).  Wgt is now PRIORITY (claim order), no longer the size.  Wes-Wilson
+      `stretch()` still fills the final room.
+- **Telemetry + docs.**  The ϕ census gained `held`/`moved` (observable, but EXCLUDED from the
+   change-signature so a drag frame never floods the log).  Knob table + arc live in `Attractor_todo`.
+- **PIXELS STILL OWED.**  Verified svelte-check-clean only (3341/89 unchanged); the live runner is
+   engaged elsewhere.  Eyeball: grooves gentle, 'Artist name:Vox' one line + Track indented, NO
+    post-drag blink, big bold text with honest folds — not tiny text everywhere.
+
+**WHAT LANDED, PART 10 (2026-07-17) — the Attractor Ground + the zone_seat clip fix.**
+ The ▦ layer became a competition ground: rival FACES draw the same live glass, a JUDGE tunes live
+  KNOBS and flips between named MOMENTS on the same data.  The design + the full knob table + the op
+   rails live in `Attractor_todo.md`; the shape in one line: the harness owns the data/geometry/
+    plumbing, a face is just a builder `(cells,descs,knobs)→layers`, faces ADD never REPLACE.
+- **`zone_seat` fixed (the 'Artist name:Palego' clip).**  It sized a row against the widest chord in
+   a zone but PLACED it on a different, narrower chord → the row overran and the clipPath cut it
+    mid-word.  Now SAME-CHORD sizing+placement (seat on the measured chord's own y), SPLIT-DON'T-SHRINK
+     (a too-small identity breaks 'Artist' / 'name: Palegold', both big), and EXACT-OR-FOLDED (shrink
+      the last atom to 7 then honestly fold — never a clipped glyph).
+- **The spell runs under ϕ again.**  Blanking moved from build-time to RENDER-time (the markup gates
+   the pane stats, the data survives), so the growth spell reads real sizes and GROWS small cells under
+    ϕ too — craters/structure return to the small cells that ϕ used to freeze flat.
+- **Crater why-not telemetry.**  The human: *"a couple of Artist lack subcells for their /Track — why is
+   that a sometimes maybe kinda deal?"*  `crater_pane` now bumps a per-paint `crater_skips` reason
+    (`small|header|geo|nofold`) and rides it on the `vsub` census, so `--why` says exactly why a crater
+     didn't draw.
+
+**WHAT LANDED, PART 9 (2026-07-17) — ϕ: the golden lettering layer (face `phi`) + zone_seat
+ + gates opened.**  The human's steer, in full: *"I need the lettering positioned much more wonderfully.
+  we absolutely must know if we're obscuring a part of the words and adjust to not do that, or simply
+   decide we're out of space and increase vagueness (prevalence of click-for-more folds) … cast a phi
+    sunflower grid onto the cells, assign continuous spaces across the grids with another bit of
+     give+take basically ignoring cell boundaries, then we completely obscure what we have drawn so far
+      with this other… labels stretched onto a phi spiral! with connective tissue showing expandy
+       regions"* — and the design rationale: *"phi is easy to see kinks in but not overly griddy, we can
+        probably communicate pretty well a warping data-landscape."*
+- **The ϕ layer (`phi_build`, Cytui ~2090; face value `phi`, flip `--face=vsub:phi`).**  ONE Archimedean
+   groove spiral (pitch `PHI_G=17`) over the WHOLE glass, pole at the glass centre.  Every label (built
+    per cell from the SAME Vtuffing descs — title/facts/spreads/members, river-hushed claims skipped)
+     claims a contiguous groove arc near its home cell: the ledger is **total-spiral-angle intervals**,
+      so same-groove collision is an exact interval check, adjacent grooves are fs-capped below the
+       pitch → **text can NEVER obscure text, by construction** (the human's "we absolutely must know").
+        A label that finds no free arc within its distance budget FOLDS honestly into a `+N` chip at
+         its cell — **click the chip = 3× reach budget for that cell** (`phi_expand`/`phi_boost`, the
+          "expandy regions").  Displaced labels keep a dashed **tie** home; the faint full-spiral
+           **lattice** renders as the flat reference the warps read against.  Text on `<textPath>` with
+            the existing Wes-Wilson `stretch()`; arcs in the bottom half flip so words read upright.
+- **Under ϕ the panes still build but their stats blank** — walls/craters/tints stay as the
+   UNDERPAINTING ("completely obscure what we have drawn so far" = the lettering rides on top,
+    unclipped, blind to cell boundaries).  The growth spell is GATED OFF under ϕ (blanked stats would
+     read as global starvation → storm).  ϕ census rides the `vsub` vlog (`phi: {labels, placed,
+      folded, boosted}`) so `--why` says how many labels landed vs folded.  Frozen mid-drag like the
+       spell (a per-frame re-claim would jitter every label).
+- **`zone_seat` (Cytui ~1766) — the tuples-face text host REPLACED** (same shift, before the ϕ steer):
+   territory-first sizing — the polygon's height divides into weight-proportional zones, each zone's
+    text sized to FILL its band (width×height), no flow/wrap/inflate.  Long member lists auto-split
+     into groups of 5.  `tuple_pane` + both `crater_pane` seats now ride it; gates opened (crater
+      `R<24` was 40, `mem≥1` was 2, degrade `area<900` was √area<88).  ⚠ 'tuples' face is UNSEEN
+       live since the swap — if ϕ takes, zone_seat is the fallback face, eyeball it too.
+- **Verify:** hard-reload a :9091 tab (see the BOMB below), `runner_shot --arm --face=vsub:phi`, then
+   shot + `--why` (the vsub line should say `phi:` with placed≈labels, folded small; click a +N chip
+    and the census should shift).  NOT yet live-eyeballed — pixels are the gate, this section is the map.
+
+**WHAT LANDED, PART 8 (2026-07-15) — the K-round: the crater REDRAWN as an explicit nested
  lining, + VoroScape given real depth.**  The human, after PART 7: *"no, nothing like the Cradle effect
   I'd like is there"* — PART 7's rim only thickened the nucleus outline and still LEANED ON the flat cell
    background to imply the C.  New steer: *"the cratering effect having more depth, trying to get one
