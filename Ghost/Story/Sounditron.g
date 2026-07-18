@@ -5,14 +5,16 @@
 //     travels to POST /log when something goes wrong.  (BigSoundland.svelte header named this
 //      destination; the human 2026-07-17: "yeah, Sounditron!")
 //
-//  THE VERDICT REGIME IS Opt/wild (Story.svelte): the environment IS the data, so a dige can
-//   never match across environments — steps snap and record but never fixture-compare.  Honesty
-//    lives in the ASSERTION CONTRACT (toc `The/step=N/%Assertion:slug,sentence:…` — the hosting
-//     step is the by-when): the contract sentences are "the machine works" facts that must
-//      latch ANYWHERE (machine, relay, survey, report).  The ACHIEVEMENTS (granted, a peer
-//       online, sound flowing, listening) are UNCONTRACTED %sworn — they latch opportunistically
-//        and ride the report; a user with no friends online is a REPORTED session ("Pier not
-//         online"), never a failed run.
+//  THE VERDICT REGIME IS NORMAL FIXTURE-CHECKING + the assertion contract — BOTH (the human,
+//   2026-07-19; Opt/wild — record-not-check — is dead).  Steps snap, record, and dige-compare
+//    like any Book; the environment's value-wobble (alive counts, ids, cids) is EntropyArrest's
+//     job, and a DIFFERENT environment (another machine's music, other peers) will honestly red
+//      the fixtures — this Book's recorded run is Steve's shelf.  The semantic truths live in
+//       the ASSERTION CONTRACT (toc `The/step=N/%Assertion:slug,sentence:…` — the hosting step
+//        is the by-when): "the machine works" facts that must latch ANYWHERE.  The opportunistic
+//         %sworn (granted, a peer online, sound flowing, listening) are so far UNDECLARED — they
+//          want declaring, but latch only when the environment offers them; a user with no
+//           friends online is a REPORTED session ("Pier not online"), never a failed run.
 //
 //  Beats are EVENT-PACED, not clock-paced (the human: "ttlilt until Story can capture meaningful
 //   state changes"): a beat arms an expecting() — the ttlilt holds the snap open — and the
@@ -48,8 +50,9 @@ async Sounditron_drive(w, req):
     }
 // NOTE the finished relay_wait/peer_wait reqs are LEFT STANDING for now — a sweep that dropped
 //  them here stalled the live run at the 4→5 corridor (suspect: the Run-republished ttlilt row
-//   outliving its dropped req → ttlilt_held forever → never quiescent).  Dead rows in a wild
-//    snap are cosmetic; prove the safe seam before re-adding (see Sounditron_todo).
+//   outliving its dropped req → ttlilt_held forever → never quiescent).  Dead rows land in the
+//    fixture identically each run — stable furniture, no gate pressure; prove the safe seam
+//     before re-adding (see Sounditron_todo).
 
 // ── the real seams, read defensively (any may be absent on a cold boot) ─────────────────────
 
@@ -67,7 +70,7 @@ Sounditron_channel_live(w):
     return !!(lw && M.Lies_channel_live && M.Lies_channel_live(lw))
 
 // Sounditron_grants — OBSERVE the durable sealed friendships (never re-set-up: the %Grant lives
-//  in storage beside anything a run could mint, so a wild diagnostic READS it as-is — the human's
+//  in storage beside anything a run could mint, so the diagnostic READS it as-is — the human's
 //   grant-in-storage ruling).  Shape per Swarm_seal: %Pier,pub under MY %Peering, holding the
 //    %Grant pair (theirs-for-me + mine-for-them).  Returns [{pub, grants}] per granted contact.
 Sounditron_grants(w):
@@ -96,7 +99,21 @@ async Sounditron_machine(w):
     if (ident?.sc?.friendly) m.sc.friendly = this.Sounditron_clean(ident.sc.friendly)
     if (!self && !(oa %log:'no identity yet — the tab has no addressable self')) i %log:'no identity yet — the tab has no addressable self'
     this.Sounditron_glass(w)
+    // hold the step until the Stoker SETTLES (preheat churn done + parked + census stamped):
+    //  the fixture-checked regime (2026-07-19) needs every frame from here on to carry the
+    //   FULL stock shelf — a mid-provisioning snap pins a racing frame no re-run can match
+    //    (structural drift, beyond EntropyArrest's reach — it forgives values, never rows).
+    this.expecting(w, 'stoker_wait', 10, async () => { await this.Sounditron_await(w, 10, () => this.Sounditron_stock_settled(w)) })
     w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.Sounditron_witness(w); req.sc.ok = 1 })
+
+// the settle truth: the Stoker parked (idle — radio off with the churn consumed — or spent)
+//  WITH its census stamped; stock==null is the pre-first-look frame, still mid-flight.
+//   No Stoker ghost at all (Radio.g absent) settles trivially — nothing will ever land.
+Sounditron_stock_settled(w):
+    let st = w.o({ Stoker: 1 })[0]
+    if (!st) return 1
+    if (st.sc.stock == null) return 0
+    return (st.sc.Stoker === 'idle' || st.sc.Stoker === 'spent') ? 1 : 0
 
 // the glass — commissioned by the WORLD itself, not a toc Opt (the step-time cut, the human
 //  2026-07-17): Cyto watch_c's the Scannable and rescans on ANY version bump — no
@@ -118,10 +135,31 @@ Sounditron_glass(w):
     //  it with the radio's cell) and the TUNER (the glass's own dial — Cyto.svelte; which
     //   crews of cells are shown).  Same law as the radio: find-or-create per w, above every
     //    gate, via top_House.
-    if (MR.Stoker_ensure) MR.Stoker_ensure(w)
+    if (MR.Stoker_ensure) {
+        let stoker = MR.Stoker_ensure(w)
+        // PRE-EMPT the dig (2026-07-19): one churn NOW, while the radio is still off — the
+        //  crates are dug at commission time and the first ▶ finds stock STANDING, so the
+        //   first bit loads and plays immediately.  Once per tab; then the stoker parks.
+        if (MR.Stoker_preheat) MR.Stoker_preheat(stoker)
+    }
     if (MR.Tuner_ensure) MR.Tuner_ensure(w)
+    // the RIFFLE — rifle through either collection (mine + every friend crate standing),
+    //  blatting the hand out as %Riff cells; its ▶ auditions a chosen record (Radio_tune).
+    if (MR.Riffle_ensure) MR.Riffle_ensure(w)
+    // and the DOOR — the prioritised, for-the-user's-eyes face (DoorFace: who am I ·
+    //  a landed ?Iz joining · sealed friends with the pulse liveness dot).  The particle
+    //   is only the cell anchor; the face reads live House state.
+    let door = w.o({ Door: 1 })[0]
+    if (!door) {
+        door = w.i({ Door: 'open', face: 'Door' })
+        door.c.up = w
+    }
     let SH = this.c.up
     if (!SH) return
+    // the TRICKLE rides every commissioned context (idempotent per tab — a fresh era each
+    //  run hands the loop the new w; the stale loop dies on its next look).  Above the
+    //   glass_done latch: the liveness must keep flowing on an already-commissioned tab.
+    this.Sounditron_trickle(w)
     if (this.c.glass_done) return
     this.c.glass_done = 1
     // the Story rail (toc useCyto+dontSnapCyto+useVoroCyto — live glass, pure-H snaps, the
@@ -132,8 +170,46 @@ Sounditron_glass(w):
     if (!SH.o({ A: 'Cyto' }).length) SH.i({ A: 'Cyto' }).i({ w: 'Cyto' })
     let stw = SH.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0]
     let styles = stw && SH.The_Styles ? SH.The_Styles(stw) : null
-    let commission = new TheC({ c: {}, sc: { Scannable: this, Styles: styles, client_w: w, useVoroCyto: 1 } })
+    let commission = new TheC({ c: {}, sc: { Scannable: this, Styles: styles, client_w: w, useVoroCyto: 1, useFaces: 1 } })
     SH.i_elvisto('Cyto/Cyto', 'Cyto_commission', { req: commission })
+
+// the TRICKLE — the live page's slow think (the human 2026-07-19: "that model may need to be
+//  driven at some fps along with some trickle think"): a detached era-guarded loop (the stoker's
+//   law — NOTHING under beliefs) keeping the glass's social facts CURRENT between Book runs:
+//    a presence pulse to every sealed pier every other tick (Swarm_pulse_all → the far side's
+//     heard_at), and the %Friend rows re-read (grant · records boast · the `here` liveness dot).
+//      Bumps w ONLY on a real change, so re-tessellation is paid exactly when something moved —
+//       a friend arriving or leaving IS the change worth seeing.  Era rides the TOP House (one
+//        trickle per tab); each run's glass hands the loop its new w and the stale loop dies.
+Sounditron_trickle(w):
+    let M = this.top_House()
+    let era = (M.c.trickle_era || 0) + 1
+    M.c.trickle_era = era
+    this.Sounditron_trickle_look(w, era)
+
+async Sounditron_trickle_look(w, era):
+    let M = this.top_House()
+    if (M.c.trickle_era !== era) return
+    let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
+    if (ident) {
+        let tick = (M.c.trickle_n || 0) + 1
+        M.c.trickle_n = tick
+        if (M.Swarm_pulse_all && tick % 2 === 0) {
+            let sw = M.Swarm_station_world ? M.Swarm_station_world() : null
+            if (sw) { try { M.Swarm_pulse_all(sw, ident) } catch (er) {} }
+        }
+        try { await this.Sounditron_friends(w) } catch (er) {}
+        if (M.c.trickle_era !== era) return
+        let fp = ''
+        for (const f of w.o({ Friend: 1 })) {
+            fp = fp + f.sc.Friend + ':' + (f.sc.here || 0) + ':' + (f.sc.records || 0) + ':' + (f.sc.music || 0) + ' '
+        }
+        if (w.c.trickle_fp !== fp) {
+            w.c.trickle_fp = fp
+            w.bump()
+        }
+    }
+    setTimeout(() => { this.Sounditron_trickle_look(w, era) }, 2500)
 
 // beat 3 — THE RELAY: hold the step open up to 10s for the channel to stand.
 async Sounditron_relay(w):
@@ -251,6 +327,13 @@ async Sounditron_friends(w):
         if (pier.o({ Grant: 'Music' })[0]) f.sc.music = 1
         let rec = pier.o({ IveGot: 1, by: 'records' })[0]?.sc?.count
         if (rec != null) f.sc.records = String(rec)
+        // the pulse liveness: heard from them within the window → here (the dot in the glass).
+        //  Books never stamp heard_at, so this is a no-op there — the row stays as recorded.
+        if (pier.c.heard_at && (Date.now() - pier.c.heard_at) < 12000) {
+            f.sc.here = 1
+        } else {
+            delete f.sc.here
+        }
     }
 
 // the meander — DETACHED (an expecting holds snap 4 while it wanders): a bounded random walk of
@@ -262,15 +345,22 @@ async Sounditron_muse(w):
     if (!nav || !M.Crate_nav_meander) { w.c.muse_found = []; w.c.muse_why = 'no disk share — the collection sleeps'; return }
     try {
         // known musical grounds first (a dev share's repo root is mostly src/ and wormhole/ —
-        //  a blind wander there strikes out), then the wild wander from the root.
+        //  a blind wander there strikes out), then the wander from the root.
         let picks = []
         for (const base of ['testsounds', 'music', '']) {
-            picks = await M.Crate_nav_meander(nav, base, 6)
+            // bound 12 (was 6): a SMALL share (the runner's 8-track testsounds) is swept
+            //  whole, so the fixture-checked regime (2026-07-19) sees the same membership
+            //   every run; a big share stays a bounded probe, and its fixtures will wobble
+            //    — that environment's tell, not this Book's bug.
+            picks = await M.Crate_nav_meander(nav, base, 12)
             if (picks.length) {
                 if (base) picks = picks.map(p => base + '/' + p)
                 break
             }
         }
+        // sorted before the witness mints: child order IS snap order, and a random walk's
+        //  arrival order would re-shuffle the fixture every run
+        picks.sort()
         w.c.muse_found = picks
         if (!picks.length) w.c.muse_why = 'the wander found no music this time'
     } catch (er) {

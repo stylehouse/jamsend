@@ -32,45 +32,52 @@ story:Sounditron
       style:background-color,v:#b12f4a
     matstyle:sworn
       style:background-color,v:#29d638
+    matstyle:Friend
+      style:background-color,v:#8259c5
   Plan
   Opt
-    wild
     report
     useCyto
     dontSnapCyto
     useVoroCyto
+    useFaces
     For
+  EntropyArrest
+    Entcase:Session_alive
+      lematch,w:Sounditron
+        lematch,Session,alive
+          means,spayer,re:Session.alive={INT},tol:any
   TimeSpool
-    TimeTotal:beliefs,avg=0.049
-      sample=0.152,at=1784363872
-      sample=0.042,at=1784364291
-      sample=0.039,at=1784364470
-      sample=0.044,at=1784364891
-      sample=0.033,at=1784365071
-      sample=0.037,at=1784365497
-      sample=0.032,at=1784365677
-      sample=0.032,at=1784366097
-      sample=0.037,at=1784366250
-      sample=0.043,at=1784366700
+    TimeTotal:beliefs,avg=0.048
+      sample=0.075,at=1784383959
+      sample=0.051,at=1784384169
+      sample=0.051,at=1784384176
+      sample=0.042,at=1784384193
+      sample=0.037,at=1784384339
+      sample=0.037,at=1784384343
+      sample=0.04,at=1784384363
+      sample=0.037,at=1784384436
+      sample=0.049,at=1784384461
+      sample=0.059,at=1784384998
     TimeTotal:step,avg=0.007
-      sample=0.022,at=1784363872
-      sample=0.006,at=1784364291
-      sample=0.006,at=1784364470
-      sample=0.006,at=1784364891
-      sample=0.005,at=1784365071
-      sample=0.005,at=1784365497
-      sample=0.005,at=1784365677
-      sample=0.005,at=1784366097
-      sample=0.005,at=1784366250
-      sample=0.006,at=1784366700
-  step,dige:wild
-  step=2,dige:wild,desc:the machine stands
+      sample=0.011,at=1784383959
+      sample=0.007,at=1784384169
+      sample=0.007,at=1784384176
+      sample=0.006,at=1784384193
+      sample=0.005,at=1784384339
+      sample=0.005,at=1784384343
+      sample=0.006,at=1784384363
+      sample=0.005,at=1784384436
+      sample=0.007,at=1784384461
+      sample=0.008,at=1784384998
+  step,dige:34f0d341711ed73b
+  step=2,dige:aa823764faeb8970,desc:the machine stands
     Assertion:machine-stood,sentence:the machine stood — an addressable self emerged on the spine
-  step=3,dige:wild,desc:the relay answers
+  step=3,dige:f523ae080918a5bf,desc:the relay answers
     Assertion:relay-answers,sentence:the relay answers — the channel stood and frames can cross
-  step=4,dige:wild,desc:who could we reach
+  step=4,dige:cd10cdb3616927e2,desc:who could we reach
     Assertion:possibilities-surveyed,sentence:the possibilities of peers were surveyed — every known address counted
-  step=5,dige:wild,desc:reach for a peer
-  step=6,dige:wild,desc:does sound run here
-  step=7,dige:wild,desc:sum and report
+  step=5,dige:2d3524b22a6093b6,desc:reach for a peer
+  step=6,dige:468744a3686796ac,desc:does sound run here
+  step=7,dige:f7d96e2df853bc48,desc:sum and report
     Assertion:report-stands,sentence:the session summed itself — a report stands ready to travel

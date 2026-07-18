@@ -56,16 +56,27 @@ The queue now: (1) the retry recipe above → then a Sounditron run on a BigSoun
      a beat arms `expecting()` (the ttlilt holds the snap) and the eternal witness req notices
       truths on whatever pass they land.  The guts are referring particles under w — `%Machine`,
        `%Relay`, `%Possibility` (per known address), `%Census`, `%Audio`, `%Session`.
-- **The roster split that makes a wild Book honest:** ROSTERED %seen = "the machine works"
-   (machine-stood, relay-answers, possibilities-surveyed, report-stands — must latch ANYWHERE);
-    UNROSTERED %seen = achievements (granted, peer, sound, listening) that latch when the world
-     provides.  A user with no friends online is a REPORTED session ("Pier not online", a %log),
-      never a failed run.
-- **`Opt/wild`** (Story.svelte, snap_step_after_wave): the environment IS the data, so the
-   fixture game is off — no dige compare, no exp preload, no disk verify; steps snap+record
-    (got_snap/dige land for the run-record), ok=true, and the RUN's verdict is the assertion
-     roster + the report.  toc step lines carry `dige:wild` purely as the drive count.
-      Fleet untouched: SwarmStaple ran green 8/8 live with all of this in place.
+- **The contract split that keeps the diagnostic honest:** DECLARED %Assertions = "the machine
+   works" (machine-stood, relay-answers, possibilities-surveyed, report-stands — must latch
+    ANYWHERE); UNDECLARED %sworn (granted, peer, sound, listening) latch when the world provides
+     — they still WANT declaring (the explorer shows them amber ◇), they're just not yet in the
+      contract.  A user with no friends online is a REPORTED session ("Pier not online", a %log),
+       never a failed run.
+- **`Opt/wild` is DEAD (2026-07-19 — the human: "I wanted both").**  Sounditron now records AND
+   fixture-checks like any Book; the three Story.svelte wild gates (exp-preload skip, disk-verify
+    skip, ok-always verdict) are deleted and `wild` left the toc Opt block.  What made it
+     checkable was determinism at two seams + one cap, found by diffing consecutive live runs:
+     - `stoker_wait` expecting in beat 2 holds the snap until the Stoker SETTLES (parked with
+        census stamped) — a mid-provisioning frame pins a racing stock shelf no re-run matches
+         (structural drift, beyond EntropyArrest, which forgives values never rows);
+     - the meander's picks are SORTED and bounded 12 (was 6) — a small share (the runner's
+        8-track testsounds) sweeps whole and mints in stable order; a big share stays a real
+         bounded probe whose fixtures will honestly wobble;
+     - `Entcase:Session_alive` (toc EntropyArrest, `re:Session.alive={INT},tol:any`) forgives
+        the seconds-alive counter — the caveat:1 on every green run.
+    Live: all 7 fixtures re-recorded, green 7/7 caveat:1 ×2 consecutive, contract 4/4.  A
+     DIFFERENT environment (another machine's music, other peers) will still red the fixtures —
+      that red is that environment's tell, and the assertion contract stays the portable verdict.
 - **`%desc` on steps — LIVE-PROVEN.**  A Book describes its own step: `i %desc:'a few words'`
    (NO COMMAS — em-dash) at the beat; `story_harvest_desc` harvests it The-side at
     snap_step_after_wave BEFORE the encode (never snap bytes → retrofits never churn fixtures);
