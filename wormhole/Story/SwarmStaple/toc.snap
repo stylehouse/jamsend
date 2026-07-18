@@ -4,28 +4,28 @@ story:SwarmStaple
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.06
-      sample=0.057,at=1783221436
-      sample=0.067,at=1783257377
-      sample=0.095,at=1783265664
-      sample=0.123,at=1783368230
+    TimeTotal:beliefs,avg=0.047
       sample=0.051,at=1783369771
       sample=0.048,at=1783420382
       sample=0.055,at=1783852043
       sample=0.035,at=1783852102
       sample=0.04,at=1783852147
       sample=0.033,at=1783852176
-    TimeTotal:step,avg=0.007
-      sample=0.007,at=1783221436
-      sample=0.008,at=1783257377
-      sample=0.012,at=1783265664
-      sample=0.015,at=1783368230
+      sample=0.048,at=1784295397
+      sample=0.052,at=1784295840
+      sample=0.055,at=1784295851
+      sample=0.049,at=1784296122
+    TimeTotal:step,avg=0.006
       sample=0.006,at=1783369771
       sample=0.006,at=1783420382
       sample=0.007,at=1783852043
       sample=0.004,at=1783852102
       sample=0.005,at=1783852147
       sample=0.004,at=1783852176
+      sample=0.006,at=1784295397
+      sample=0.007,at=1784295840
+      sample=0.007,at=1784295851
+      sample=0.006,at=1784296122
   Assertions
     Assertion:two-selves,sentence:two selves stand — each an Identity owning its Peering page — keys ride .c only,by_n:2
     Assertion:idzeug-minted,sentence:Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical,by_n:3

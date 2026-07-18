@@ -81,6 +81,8 @@
 
         'Ghost/V/Voro.g',               // the Vis lens — the crush fold policy (Musu drives + ◈ imposition call it)
         'Ghost/Story/Voronation.g',
+
+        'Ghost/Story/Sounditron.g',     // the Sounditron — the real-environment diagnostic Book /BigSoundland runs (Opt/wild; assertions are the verdict)
     ]
 
     // ── RUNNER_FACETS — a runner's advertised self-state, as ONE ordered list ──────────────────────

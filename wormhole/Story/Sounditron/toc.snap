@@ -1,0 +1,36 @@
+story:Sounditron
+  Styles
+    matstyle:w
+      style:background-color,v:#8f3232
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:w
+    matstyle:req
+      style:background-color,v:#2fb155
+    matstyle:desc
+      style:background-color,v:#8e29d6
+    matstyle:Relay
+      style:background-color,v:#c5b759
+    matstyle:Census
+      style:background-color,v:#298699
+  Plan
+  Opt
+    wild
+    report
+    For
+  Assertions
+    Assertion:machine-stood,sentence:the machine stood — an addressable self emerged on the spine,by_n:2
+    Assertion:relay-answers,sentence:the relay answers — the channel stood and frames can cross,by_n:3
+    Assertion:possibilities-surveyed,sentence:the possibilities of peers were surveyed — every known address counted,by_n:4
+    Assertion:report-stands,sentence:the session summed itself — a report stands ready to travel,by_n:7
+  TimeSpool
+    TimeTotal:beliefs,avg=1.659
+      sample=1.659,at=1784333219
+    TimeTotal:step,avg=0.237
+      sample=0.237,at=1784333219
+  step,dige:wild
+  step=2,dige:wild,desc:the machine stands
+  step=3,dige:wild,desc:the relay answers
+  step=4,dige:wild,desc:who could we reach
+  step=5,dige:wild,desc:reach for a peer
+  step=6,dige:wild,desc:does sound run here
+  step=7,dige:wild,desc:sum and report

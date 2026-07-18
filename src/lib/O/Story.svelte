@@ -196,6 +196,31 @@
         return (w.c.The)?.o(exactly({ step: n }))[0]?.sc.dige
     },
 
+    The_step_desc(w: TheC, n: number): string | undefined {
+        return (w.c.The)?.o(exactly({ step: n }))[0]?.sc.desc
+    },
+
+    // story_harvest_desc — a Book describes its own step: `i %desc:'a few words'` on its w at
+    //  beat n (no commas — the peel splits on them; use an em-dash).  Harvested HERE, before the
+    //   encode, because a desc is metadata ABOUT the step, not world state — it lands The-side
+    //    (the toc step line, `step=N,dige:…,desc:…`) and never appears in a got_snap, so
+    //     retrofitting descs onto a recorded Book never churns a fixture.  The emitter is the
+    //      author: a harvested desc overwrites (the .g is current), a hand-authored toc desc
+    //       with no emission stays.  Flora w's only — a %desc buried in a req** subtree would
+    //        leak into the snap instead, so emit on your w.
+    story_harvest_desc(w: TheC, Run: House, n: number) {
+        const H = this as House
+        for (const A of Run.o({ A: 1 }) as TheC[]) {
+            for (const fw of A.o({ w: 1 }) as TheC[]) {
+                for (const d of fw.o({ desc: 1 }) as TheC[]) {
+                    const sentence = d.sc.desc
+                    if (typeof sentence === 'string' && sentence) H.The_step(w, n).sc.desc = sentence
+                    fw.drop(d)
+                }
+            }
+        }
+    },
+
     The_frontier(w: TheC): number {
         // read the frontier step number from the {note:1,frontier:1} particle.
         // o({note:1,frontier:1}) — both values are wildcard 1, matching any particle
@@ -647,7 +672,7 @@
         // The UI builds the full strip skeleton from this, overlaying live stepsC data
         // for steps that have actually run this session.  sorted ascending.
         const the_steps = ((w.c.The)?.o({ step: 1 }))
-            .map(s => ({ n: s.sc.step as number, dige: s.sc.dige }))
+            .map(s => ({ n: s.sc.step as number, dige: s.sc.dige, desc: s.sc.desc }))
             .sort((a, b) => a.n - b.n)
 
         // A step is "bad" (offerable to Accept All) when it mismatches OR when it
@@ -1591,6 +1616,9 @@
         //      and the pip goes green/caveat between steps with no pause.  One read per round
         //       (the wh queue is serial); returning early here gates the drive until it's done.
         //        A missing fixture caches as null and falls back to the pause / post-run sweep.
+        // wild (Opt/wild) has no fixtures to preload — don't spin the wh queue on reads
+        //  that can only answer not-found.
+        if (run.sc.mode === 'check' && !run.c.exps_loaded && H.The_Opt_val(w, 'wild')) run.c.exps_loaded = true
         if (run.sc.mode === 'check' && !run.c.exps_loaded) {
             const exps = (w.c.exp_snaps ??= {}) as Record<number, string | null>
             const need = ((w.c.The as TheC | undefined)?.o({ step: 1 }) ?? [])
@@ -2149,6 +2177,7 @@
                 run.c.driving = true
             }
             const n = run.c.step_n as number
+            H.story_harvest_desc(w, Run, n)   // %desc → The-side, BEFORE the encode (never snap bytes)
             const snap     = await this.story_snap(w, run, Run)
             const got_dige = await dig(snap)
             Run.trace('snapped', String(n))
@@ -2207,6 +2236,24 @@
                 H.The_step(w, n).sc.dige = got_dige
                 H.story_analysis(w)
                 await update_status(`recording ${H.pad(n)}/${H.pad(run.sc.total)}`, 'save')
+                await snap_step_finish()
+            } else if (H.The_Opt_val(w, 'wild')) {
+                // ── Opt/wild: the run is a RECORD, not a fixture check ──────────────────
+                // For a Book whose data IS the real environment (Sounditron): a dige can
+                //  never match across environments, so the fixture game is off entirely —
+                //   no compare, no exp preload, no disk verify, no Accept pressure.  A step
+                //    is ok unless the beat was blocked (the untried path above); the RUN's
+                //     verdict stays honest through the assertion roster (Cred_assertion_gaps
+                //      — %seen presence, entropy-proof) and the report.  got_snap/dige still
+                //       land (the run-record and time-travel ride them); toc step lines
+                //        carry `dige:wild` purely as the drive count.
+                step.sc.got_snap = snap
+                step.sc.dige = got_dige
+                step.sc.ok = true
+                delete step.sc.caveat
+                step.bump_version()
+                H.story_analysis(w)
+                await update_status(`✓ ${H.pad(n)} wild`, 'default')
                 await snap_step_finish()
             } else {
                 const exp_dige = H.The_step_dige(w, n)

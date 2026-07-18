@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1784252255313
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1784296842281
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -39,6 +39,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:Ghost/Story/Voronation.g,name:Voronation,noticed_at=1783517188793
     Doc:Ghost/Story/Heistation.g,name:Heistation,noticed_at=1783759683660
     Doc:Ghost/Story/Berthation.g,name:Berthation,noticed_at=1783854682761
+    Doc:Ghost/Story/Sounditron.g,name:Sounditron,noticed_at=1784294810150
   open_dir:src/lib/O/spec
   group:src/lib/O/spec,dir:src/lib/O/spec
     Doc:src/lib/O/spec/Covenant_design.md,name:Covenant_design.md,noticed_at=1782180409139
@@ -89,6 +90,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Homethink_todo.md,name:Homethink_todo.md,noticed_at=1783993564132
     Doc:src/lib/O/spec/Radio_multicast_todo.md,name:Radio_multicast_todo.md,noticed_at=1784039741536
     Doc:src/lib/O/spec/Attractor_todo.md,name:Attractor_todo.md,noticed_at=1784252255313
+    Doc:src/lib/O/spec/Sounditron_todo.md,name:Sounditron_todo.md,noticed_at=1784296842281
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D

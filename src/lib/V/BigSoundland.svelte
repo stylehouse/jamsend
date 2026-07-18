@@ -34,8 +34,11 @@
     import { boot_param } from "$lib/boot"
     import { boot_qualand } from "$lib/O/BigQualand.svelte"
 
-    // the music Book whose graph becomes the stained glass; ?B= overrides (?B=VoroMitosis, etc.)
-    const book = boot_param('B') || 'VoroScape'
+    // the resident Book — the Sounditron (the diagnostic probe this header long promised): it
+    //  probes the REAL environment, commissions the glass ITSELF (world-side, not a toc Opt),
+    //   and its guts — %Machine/%Relay/%Possibility/%Audio/%Session + the seen|log trail —
+    //    ARE the graph the crusher folds.  ?B= overrides (?B=VoroScape for the music demo).
+    const book = boot_param('B') || 'Sounditron'
 
     //#region H:Mundo — the shared boot lives in BigQualand now (the aufheben's common bit): this
     //  scape supplies only its knobs — a music Book, the runner role (run it so the graph forms and

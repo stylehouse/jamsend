@@ -794,12 +794,41 @@
         return { ok: ok === done && !gaps.length, ok_pct: Math.round((ok / done) * 100) / 100, done, caveat, gaps: gaps.length ? gaps : undefined }
     },
 
+    // Cred_report_wild — the reporting-test-probe leg (Sounditron; Tyranny's /log rails): a Book
+    //  carrying The/Opt/report POSTs its outcome to /log?stream=Startup-<user8> in the batch
+    //   format the perl logger expects (newline-joined JSON lines).  ALWAYS one outcome line —
+    //    the census ("how many webrtc connections ever work") needs successes as its denominator
+    //     — and on a red|gapped run the per-step bundle too (+%desc, +the latched %seen set read
+    //      off the final snap TEXT, the same entropy-proof source Cred_assertion_gaps uses).
+    //       Fire-and-forget; a dev server without /log just warns (Tyranny's dev posture).
+    Cred_report_wild(book: string, outcome: { ok: boolean, ok_pct: number, done: number, caveat: number, gaps?: any[] } | null) {
+        const H = this as House
+        if (!outcome || typeof fetch !== 'function') return
+        const story = H.o({ H: 'Story' })[0] as House | undefined
+        const stW   = story?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
+        const The   = stW?.c.The as TheC | undefined
+        if (!(The?.o({ Opt: 1 })[0]?.o({ report: 1 }) ?? []).length) return   // opt-in per Book
+        const self8 = String((H as any).Clustation_self?.()?.prepub ?? 'anon').slice(0, 8)
+        const steps = ((stW?.c.This as TheC | undefined)?.o({ Step: 1 }) ?? []) as TheC[]
+        const last  = steps.filter(s => s.sc.got_snap).sort((a, b) => (a.sc.Step as number) - (b.sc.Step as number)).pop()
+        const seen  = ((last?.sc.got_snap as string) ?? '').split('\n').map(l => l.trim()).filter(l => l.startsWith('seen:')).map(l => l.slice(5))
+        const lines: any[] = [{ kind: 'outcome', book, at: now_in_seconds_with_ms(), ok: outcome.ok, ok_pct: outcome.ok_pct, done: outcome.done, caveat: outcome.caveat, gaps: outcome.gaps, seen }]
+        if (!outcome.ok) {
+            const the_steps = (The?.o({ step: 1 }) ?? []) as TheC[]
+            const desc_of = (n: number) => the_steps.find(s => s.sc.step === n)?.sc.desc
+            for (const s of steps) lines.push({ kind: 'step', n: s.sc.Step, ok: !!s.sc.ok, caveat: s.sc.caveat ? 1 : undefined, untried: s.sc.untried ? 1 : undefined, error: s.sc.error, desc: desc_of(s.sc.Step as number) })
+        }
+        fetch(`/log?stream=Startup-${self8}`, { method: 'POST', body: lines.map(l => JSON.stringify(l)).join('\n') })
+            .catch(er => console.warn('Cred_report_wild upload', er))
+    },
+
     // Cred_spool — record this run into the soul (in-mem on Mundo.c.cred, off-snap, partitioned
     //  per Book) and persist that Book's HEAD + trail INTO the Book's own Story directory.
     Cred_spool(w: TheC, book: string, mode: string) {
         const H = this as House
-        const outcome = (H as any).Cred_run_outcome() as { ok: boolean, ok_pct: number, done: number } | null
+        const outcome = (H as any).Cred_run_outcome() as { ok: boolean, ok_pct: number, done: number, caveat: number, gaps?: any[] } | null
         if (!outcome) return
+        ;(H as any).Cred_report_wild(book, outcome)
         const versions = (H as any).Cred_ghost_versions() as { name: string, dige: string }[]
         const at = now_in_seconds_with_ms()
         const hc = H.c as any

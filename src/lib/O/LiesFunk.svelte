@@ -2329,9 +2329,15 @@ await M.eatfunc({
                                 : { error: `no held run "${ask.uid}" (try op:rungos)` })
                     }
                     else if (op === 'steps') {
+                        // desc joins from the The side (the toc step line) — Book-stable, so the same
+                        //  join serves a held uid's pins and the live run alike.  Raw C read, not a
+                        //   Story method (those live on the Story House, not this one).
+                        const stW = H.Lies_runner_story_w()
+                        const the_steps = ((stW?.c.The as TheC | undefined)?.o({ step: 1 }) ?? []) as TheC[]
+                        const desc_of = (n: number) => the_steps.find(s => s.sc.step === n)?.sc.desc
                         result = {
                             book, uid,
-                            steps: steps.map(s => ({ n: s.n, ok: s.ok, caveat: s.caveat, untried: s.untried, error: s.error, dige: s.dige })),
+                            steps: steps.map(s => ({ n: s.n, ok: s.ok, caveat: s.caveat, untried: s.untried, error: s.error, dige: s.dige, desc: desc_of(s.n) })),
                             done: steps.length, ok: steps.length > 0 && steps.every(s => !!s.ok),
                         }
                     } else if (op === 'snaps') {

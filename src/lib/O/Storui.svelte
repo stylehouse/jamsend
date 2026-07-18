@@ -200,7 +200,7 @@
         | { kind: 'right_only'; line: string }
         | { kind: 'squish';     count: number }
 
-    type StepEntry = { n: number, dige: string | undefined }
+    type StepEntry = { n: number, dige: string | undefined, desc?: string }
 
     //#region display state 
 
@@ -1216,7 +1216,7 @@
                         class:has-notes={flags.length > 0}
                         class:is-anchor={is_anchor}
                         onclick={() => pick(n)}
-                        title="step {String(n).padStart(3,'0')}{hollow?' (hollow)':accepted?' (accepted)':caveat?' (caveat — forgiven noise)':''}  {(Step && Step.sc.dige || ts.dige) ?? ''}"
+                        title="step {String(n).padStart(3,'0')}{hollow?' (hollow)':accepted?' (accepted)':caveat?' (caveat — forgiven noise)':''}{ts.desc ? ' — ' + ts.desc : ''}  {(Step && Step.sc.dige || ts.dige) ?? ''}"
                     >{hollow ? '○' : caveat && !accepted ? '≈' : ok ? '·' : '✗'}</button>
                 </div>
             {/each}
@@ -1252,6 +1252,7 @@
                 <!-- header ────────────────────────────────────────────── -->
                 <div class="sr-phdr">
                     <span class="sr-pn">step {String(n).padStart(3,'0')}</span>
+                    {#if ts_sel?.desc}<span class="sr-pdesc" title="the step's %desc — a few words from the beat that made it">{ts_sel.desc}</span>{/if}
                     <span class="sr-pdige">{dige}</span>
                     {#if hollow}
                         <span class="sr-plabel hollow">hollow</span>
@@ -1668,6 +1669,8 @@
 }
 .sr-pn    { color: #79b; font-weight: 600; }
 .sr-pdige { color: #555; font-size: 10px; }
+/* the step's %desc — a few words riding the toc step line */
+.sr-pdesc { color: #9a8; font-size: 11px; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 22em; }
 .sr-plabel { font-size: 10px; }
 .sr-plabel.mm       { color: #c55; }
 .sr-plabel.accepted { color: #4a9; }
