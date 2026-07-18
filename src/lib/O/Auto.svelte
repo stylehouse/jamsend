@@ -103,7 +103,9 @@
         await ido.generateKeys()
         const f = ido.freeze()                       // { pub, key } hex
         const prepub = ido.pretty_pubkey()           // 16-hex
-        return { pub: f.pub as string, key: f.key as string, prepub }
+        // born rides the stored Thang: "is this identity BRAND NEW?" is a real question the
+        //  door asks (a self born today auto-joins a scanned invite — the scan IS the intent).
+        return { pub: f.pub as string, key: f.key as string, prepub, born: Date.now() }
     },
 
     // Clustation_ensure_identity — resolve ?I= and stand up the active %Identity (+ its %Peering)
@@ -154,12 +156,15 @@
     //   active flag rides 1/absent so it stays snap-clean, and only ONE %Identity is active at a time.
     //    The single concretion both the ?I= mint|peek (ensure_identity) and the .env adopt (IdHatch)
     //     funnel through, so a key from either source becomes the same first-class object.
-    Clustation_concrete(this: House, A: TheC, tag: string, stored: { pub: string; key: string; prepub: string }): TheC {
+    Clustation_concrete(this: House, A: TheC, tag: string, stored: { pub: string; key: string; prepub: string; born?: number }): TheC {
         for (const old of A.o({ Identity: 1 }) as TheC[]) delete old.sc.active
         const ident = A.oai({ Identity: tag }) as TheC
         ident.c.up = A
         ident.c.keys = { pub: stored.pub, key: stored.key }
         ident.sc.prepub = stored.prepub
+        // birth date, snap-clean (yyyy-mm-dd): the door's born-today auto-join reads it, the
+        //  DoorFace shows it.  Absent on pre-born Thangs and adopted legacy keys — honestly old.
+        if (stored.born) ident.sc.born = new Date(stored.born).toISOString().slice(0, 10)
         // cosmetic handle: a memorable face for the roster, derived from the prepub (which stays
         //  the real address).  Snap-clean scalar string; every mint|adopt funnels through here.
         ident.sc.nick = cluster_name(stored.prepub)
@@ -168,6 +173,25 @@
         peering.c.up = ident
         ;(this as House).c.active_identity = ident
         return ident
+    },
+
+    // Clustation_pin — store the ACTIVE identity under its OWN prepub tag, so a ?I=<prepub> boot
+    //  RESUMES it.  The door calls this when a claimed ?Iz rewrites the address bar to ?I=<prepub>:
+    //   a role-tagged default identity ('sound') is stored only under its role, and without the pin
+    //    that reload would mint a STRANGER under the prepub tag — the friendship left on the old key.
+    async Clustation_pin(this: House, H?: House): Promise<boolean> {
+        H = (H ?? this) as House
+        const ident = (H as any).Clustation_active_identity?.(H) as TheC | undefined
+        if (!ident?.c?.keys || typeof (H as any).thang_add !== 'function') return false
+        const A  = H.o({ A: 'Clustation' })[0] || H.i({ A: 'Clustation' })
+        const wT = A.o({ w: 'Thangs', thangs: 'identities' })[0] || A.i({ w: 'Thangs', thangs: 'identities' })
+        wT.c.up = A
+        const born = ident.sc.born ? Date.parse(String(ident.sc.born)) : undefined
+        await (H as any).thang_add(wT, String(ident.sc.prepub), {
+            pub: ident.c.keys.pub, key: ident.c.keys.key, prepub: String(ident.sc.prepub),
+            ...(born ? { born } : {}),
+        })
+        return true
     },
 
     // Clustation_adopt — take an EXTERNAL keypair (a pasted .env.cluster-<role> — IdHatch) and make
@@ -753,29 +777,21 @@
     //      goes through the dige comparison, so entropy_forgive can NEVER mask a vanished proof
     //       (the hole accept-drops-proof-in-entropy-zone left open).  Returns the MISSING
     //        assertions; a Book with no contract returns [] and is wholly unaffected.
-    //  CHURN BRIDGE (until SwarmStaple/Steal/Wire + MusuBerth convert): the old flat
-    //   The/Assertions bucket still reads as contract (n from its by_n), and legacy `%seen`
-    //    evidence still counts via `seen:<sentence>` presence in the final retained got_snap
-    //     TEXT (latches accumulate; the last snap is never trimmed).
+    //  (The churn bridge — the flat The/Assertions bucket + legacy `seen:` snap-text evidence —
+    //   was DELETED 2026-07-19 once the whole fleet converted and re-recorded.)
     Cred_assertion_gaps(stW: TheC | undefined): { slug: string, sentence: string, n: number }[] {
         const The      = stW?.c.The as TheC | undefined
         const contract: { slug: string, sentence: string, n: number }[] = []
         for (const st of (The?.o({ step: 1 }) ?? []) as TheC[])
             for (const a of st.o({ Assertion: 1 }) as TheC[])
                 contract.push({ slug: String(a.sc.Assertion), sentence: String(a.sc.sentence ?? ''), n: Number(st.sc.step) || 0 })
-        for (const a of (The?.o({ Assertions: 1 })[0]?.o({ Assertion: 1 }) ?? []) as TheC[])
-            contract.push({ slug: String(a.sc.Assertion), sentence: String(a.sc.sentence ?? ''), n: Number(a.sc.by_n) || 0 })
         if (!contract.length) return []
         const book  = stW?.sc.Book as string
         const shelf = (stW?.c.ave as TheC | undefined)?.o({ Assertioning: 1, Story: book })[0] as TheC | undefined
-        const steps = ((stW?.c.This as TheC | undefined)?.o({ Step: 1 }) ?? []) as TheC[]
-        const last  = steps.filter(s => s.sc.got_snap).sort((a, b) => (a.sc.Step as number) - (b.sc.Step as number)).pop()
-        const snap  = (last?.sc.got_snap as string) ?? ''
         const gaps: { slug: string, sentence: string, n: number }[] = []
         for (const a of contract) {
             if (!a.sentence) continue
             if (shelf?.oa({ sworn: a.sentence })) continue
-            if (snap.includes(`seen:${a.sentence}`)) continue   // churn bridge
             gaps.push(a)
         }
         return gaps
@@ -807,8 +823,7 @@
     //   format the perl logger expects (newline-joined JSON lines).  ALWAYS one outcome line —
     //    the census ("how many webrtc connections ever work") needs successes as its denominator
     //     — and on a red|gapped run the per-step bundle too (+%desc, +the latched %sworn set read
-    //      off the Assertioning shelf, the same entropy-proof source Cred_assertion_gaps uses;
-    //       legacy `seen:` snap-text latches ride along until the churn Books convert).
+    //      off the Assertioning shelf, the same entropy-proof source Cred_assertion_gaps uses).
     //       Fire-and-forget; a dev server without /log just warns (Tyranny's dev posture).
     Cred_report_wild(book: string, outcome: { ok: boolean, ok_pct: number, done: number, caveat: number, gaps?: any[] } | null) {
         const H = this as House
@@ -823,11 +838,8 @@
         if (!(The?.o({ Opt: 1 })[0]?.o({ report: 1 }) ?? []).length) return   // opt-in per Book
         const self8 = String((H as any).Clustation_self?.()?.prepub ?? 'anon').slice(0, 8)
         const steps = ((stW?.c.This as TheC | undefined)?.o({ Step: 1 }) ?? []) as TheC[]
-        const last  = steps.filter(s => s.sc.got_snap).sort((a, b) => (a.sc.Step as number) - (b.sc.Step as number)).pop()
         const shelf = (stW?.c.ave as TheC | undefined)?.o({ Assertioning: 1, Story: book })[0] as TheC | undefined
         const sworn = ((shelf?.o({ sworn: 1 }) ?? []) as TheC[]).map(s => String(s.sc.sworn))
-        for (const l of ((last?.sc.got_snap as string) ?? '').split('\n').map(l => l.trim()).filter(l => l.startsWith('seen:')))
-            sworn.push(l.slice(5))   // churn bridge — legacy %seen latches still riding snap bytes
         const lines: any[] = [{ kind: 'outcome', book, at: now_in_seconds_with_ms(), ok: outcome.ok, ok_pct: outcome.ok_pct, done: outcome.done, caveat: outcome.caveat, gaps: outcome.gaps, sworn }]
         if (!outcome.ok) {
             const the_steps = (The?.o({ step: 1 }) ?? []) as TheC[]

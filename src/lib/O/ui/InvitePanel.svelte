@@ -135,6 +135,26 @@
             .then((claim: any) => invite = claim)
             .catch((e: any) => iz_err = 'the invite did not verify — ' + String(e).slice(0, 80))
     })
+    // AUTO-JOIN — a self BORN TODAY landing on a scanned invite joins by itself: the scan was
+    //  the intent, and a brand-new visitor has no reason to hesitate at a button.  An older
+    //   identity keeps the deliberate JOIN (maybe they don't want this friendship on this key).
+    //    Gated on `stood` so the station is up before the dial; fires ONCE.
+    let auto_fired = $state(false)
+    let born_today = $derived.by(() => {
+        void H?.version
+        return !!self?.sc?.born && self.sc.born === new Date().toISOString().slice(0, 10)
+    })
+    $effect(() => {
+        if (!invite || !self || !stood || !born_today || auto_fired || joined) return
+        auto_fired = true
+        joined = '… a self born today — joining by itself'
+        join()
+    })
+    // the DOOR BEACON — the glass's DoorFace reads this (runtime .c, never snapped): the same
+    //  landing state this panel holds privately, shared so the prioritised face can show it.
+    $effect(() => {
+        if (H?.c) H.c.door = { iz: !!iz, landed: !!invite, from: invite?.friendly || invite?.prepub || '', note: joined || iz_err || '' }
+    })
     // JOIN — the frontier rung, live: our own station up, a %Pier promoted to the inviter's
     //  prepub, the ws open + hello-bound, then the proven redeem. The seal (their pier_accept)
     //   lands asynchronously — watch for the account %Pier so "joined" means SEALED, not just
@@ -163,6 +183,20 @@
             : denied
                 ? '✗ the inviter denied the invite: ' + String(denied.sc.rebuff).slice(9) + ' — ask for a fresh QR'
                 : '… hello delivered, but no accept yet — is the inviter tab still open?'
+        // the ?Iz is CLAIMED — the address bar becomes this tab's identity (?I=<prepub>): a
+        //  reload now RESUMES the sealed self instead of re-presenting a spent invite blob
+        //   (which would only say "did not verify").  Same replaceState move as ?I=new's —
+        //   but PIN first: a role-tagged default self is stored only under its role, and an
+        //    unpinned ?I=<prepub> reload would mint a stranger (Clustation_pin's why).
+        if (sealed && self?.sc?.prepub && typeof window !== 'undefined' && window.history?.replaceState) {
+            const pinned = await H.Clustation_pin?.()
+            if (pinned) {
+                const url = new URL(window.location.href)
+                url.searchParams.delete('Iz')
+                url.searchParams.set('I', String(self.sc.prepub))
+                window.history.replaceState(null, '', url.toString())
+            }
+        }
     }
 </script>
 
