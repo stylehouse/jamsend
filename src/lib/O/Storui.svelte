@@ -199,8 +199,14 @@
         | { kind: 'left_only';  line: string }
         | { kind: 'right_only'; line: string }
         | { kind: 'squish';     count: number }
+        | GhostRow
 
     type StepEntry = { n: number, dige: string | undefined, desc?: string }
+
+    // ghost: a declared %Assertion whose sworn evidence never latched — rendered as a red
+    //  ghost line standing where the evidence would (see inject_ghosts).  Synthetic: in
+    //  NEITHER snap, so only the render path (render_rows) ever carries one.
+    type GhostRow = { kind: 'ghost'; slug: string; sentence: string; line: string }
 
     //#region display state 
 
@@ -482,6 +488,7 @@
         const next = (diff_mode === m) ? null : m
         diff_mode   = next
         sticky_mode = next
+        explorer_open = false   // choosing a diff is choosing show-diff — the mutex
     }
 
     // rows_for: pure function — compute DiffRow[] given a mode, reference, and got snap.
@@ -601,6 +608,126 @@
         if (!keys.length) return 'note'
         return keys.map(k => nc.sc[k] === 1 ? k : `${k}:${nc.sc[k]}`).join(', ')
     }
+
+    //#region assertions — the contract vs this run's sworn evidence
+    //
+    //   CONTRACT: The/step=N/%Assertion:slug,sentence — the hosting step IS the by-when.
+    //   EVIDENCE: the ave/%Assertioning,Story:<book> shelf, filled pre-encode by
+    //    story_harvest_sworn and reset each run.  Both live OFF the snap, so this whole
+    //    layer costs zero fixture bytes; a Book with no contract shows nothing of it.
+    //
+    //   Leniency is structural, never configured:
+    //     pending — the hosting step hasn't completed this run
+    //     latched — a matching %sworn stands on the shelf (n: = the step it latched)
+    //     overdue — the hosting step passed with no latch, run still going (amber)
+    //     red     — the run ended and the evidence never came (the gap gate's verdict)
+
+    type AssertState = 'latched' | 'pending' | 'overdue' | 'red'
+    type AssertEntry = { slug: string, sentence: string, due: number, state: AssertState,
+                         latch_n: number | null, microsnap: string | null }
+
+    // assert_entries — one row per declared %Assertion, joined to shelf evidence by
+    //  byte-identical sentence (the same join Cred_assertion_gaps makes at run end).
+    //  The shelf is read through H.ave.ob, which tracks H.ave.vers — bumped each flush
+    //  after a harvest touches the shelf — so this derive stays live without polling.
+    let assert_entries = $derived.by((): AssertEntry[] => {
+        const The = story_w?.c.The as TheC | undefined
+        void The?.version
+        const book  = story_w?.sc.Book as string | undefined
+        const shelf = book ? H.ave.ob({ Assertioning: 1, Story: book })[0] as TheC | undefined : undefined
+        const ended = run_paused || run_failed != null
+        const entries: AssertEntry[] = []
+        for (const st of (The?.o({ step: 1 }) ?? []) as TheC[]) {
+            for (const a of st.o({ Assertion: 1 }) as TheC[]) {
+                const sentence = String(a.sc.sentence ?? '')
+                const due      = Number(st.sc.step) || 0
+                const row      = sentence ? shelf?.o({ sworn: sentence })[0] as TheC | undefined : undefined
+                const state: AssertState = row ? 'latched'
+                    : due <= run_done ? (ended ? 'red' : 'overdue')
+                    : 'pending'
+                entries.push({ slug: String(a.sc.Assertion), sentence, due, state,
+                               latch_n: row ? (Number(row.sc.n) || null) : null,
+                               microsnap: (row?.c as any)?.microsnap ?? null })
+            }
+        }
+        return entries.sort((x, y) => x.due - y.due)
+    })
+
+    // undeclared — %sworn with no contract row: NOT ok.  Every sworn wants declaring;
+    //  an undeclared one so far exists only in the Book's code, invisible to the gap
+    //  gate.  Shown ◇ amber in the explorer.  The human's Accept is the door into the
+    //  contract — never a tunable matcher (that slope is a second EntropyArrest).
+    let undeclared = $derived.by(() => {
+        const book = story_w?.sc.Book as string | undefined
+        if (!book) return []
+        const shelf = H.ave.ob({ Assertioning: 1, Story: book })[0] as TheC | undefined
+        if (!shelf) return []
+        const contracted = new Set(assert_entries.map(e => e.sentence))
+        return (shelf.o({ sworn: 1 }) as TheC[])
+            .filter(s => !contracted.has(String(s.sc.sworn)))
+            .map(s => ({ sentence: String(s.sc.sworn), n: Number(s.sc.n) || 0,
+                         microsnap: (s.c as any).microsnap ?? null }))
+    })
+
+    let assert_broken  = $derived(assert_entries.some(e => e.state === 'overdue' || e.state === 'red'))
+    let assert_latched = $derived(assert_entries.filter(e => e.state === 'latched').length)
+
+    // explorer — MUTEXES with show-diff: one body, one occupant.  Opening it replaces
+    //  the diff; choosing any diff mode (buttons or the e/r/f keys) closes it again.
+    //  explorer_focus glows the row a ghost line or pip mark was clicked through from —
+    //  the clue and the navigation are one mechanism.
+    let explorer_open  = $state(false)
+    let explorer_focus = $state<string | null>(null)
+    let ax_open        = $state<string | null>(null)   // row whose microsnap is unfolded
+
+    function open_explorer(slug: string) {
+        explorer_open  = true
+        explorer_focus = slug
+        ax_open        = null
+    }
+
+    // hover-desc layer — the hovered pip's %desc ALONE, absolute above the strip so it
+    //  never shifts layout; instant, and the pip's native title tooltip stays.
+    let hover_n    = $state<number | null>(null)
+    let hover_desc = $derived(hover_n != null ? display.steps.find(ts => ts.n === hover_n)?.desc : undefined)
+
+    // inject_ghosts — the red GHOST LINE: a missing assertion rendered at the spot its
+    //  sworn evidence would stand.  story_swear mints %sworn as the newest child of the
+    //  run world (w:<book> — the run world is named after the Book), so the spot is the
+    //  end of that world's subtree on the got side.  If the anchor line is hidden in a
+    //  squish or absent, the ghosts land at the nearest visible boundary — the LINE is
+    //  the point, its exact pixel row less so.
+    function inject_ghosts(rows: DiffRow[], missing: AssertEntry[], book: string | undefined): DiffRow[] {
+        if (!missing.length) return rows
+        const got_line = (r: DiffRow): string | null =>
+            r.kind === 'pair' ? (r.right ?? r.left) : r.kind === 'right_only' ? r.line : null
+        let at = rows.length, ind = '  '
+        const wi = book ? rows.findIndex(r => got_line(r)?.trimStart().startsWith('w:' + book) ?? false) : -1
+        if (wi >= 0) {
+            const w_ind = (got_line(rows[wi])!.match(/^ */)?.[0] ?? '').length
+            for (let j = wi + 1; j < rows.length; j++) {
+                const l = got_line(rows[j]); if (l == null) continue
+                const d = (l.match(/^ */)?.[0] ?? '').length
+                if (d <= w_ind) { at = j; break }
+            }
+            const kid     = wi + 1 < rows.length ? got_line(rows[wi + 1]) : null
+            const kid_ind = kid ? (kid.match(/^ */)?.[0] ?? '') : ''
+            ind = kid_ind.length > w_ind ? kid_ind : ' '.repeat(w_ind + 2)
+        }
+        const ghosts: DiffRow[] = missing.map(e =>
+            ({ kind: 'ghost' as const, slug: e.slug, sentence: e.sentence, line: ind + 'sworn:' + e.sentence }))
+        return [...rows.slice(0, at), ...ghosts, ...rows.slice(at)]
+    }
+
+    // render_rows — diff_rows plus ghosts for the displayed step.  ONLY the render path
+    //  reads this; diff_changed/EntropyArrest/collect_range stay on the real diff_rows.
+    let render_rows = $derived.by((): DiffRow[] => {
+        const n = displayed_at
+        if (n == null) return diff_rows
+        const missing = assert_entries.filter(e => e.due === n && (e.state === 'overdue' || e.state === 'red'))
+        return inject_ghosts(diff_rows, missing, story_w?.sc.Book as string | undefined)
+    })
+    //#endregion
 
     //#region selection + accept 
     //
@@ -904,7 +1031,7 @@
     function handle_story_key(e: KeyboardEvent) {
         const tag = (e.target as HTMLElement).tagName
         if (tag === 'INPUT' || tag === 'TEXTAREA') return
-        if (display.open_at == null && e.key !== 'e' && e.key !== 'a') return
+        if (display.open_at == null && e.key !== 'e' && e.key !== 'a' && e.key !== 's') return
         const idx = display.steps.findIndex(ts => ts.n === display.open_at)
         if (e.key === 'ArrowRight' && idx < display.steps.length - 1) {
             e.preventDefault()
@@ -931,6 +1058,12 @@
             e.preventDefault()
             diff_mode   = 'naive'
             sticky_mode = 'naive'
+            explorer_open = false   // raw is show-diff too — the mutex
+        } else if (e.key === 's') {
+            // s: toggle the assertions explorer (mutexes with show-diff; stands alone
+            //  in the panel's seat when no step is open — assertions are run-wide)
+            e.preventDefault()
+            explorer_open = !explorer_open
         } else if (e.key === 'f' && !e.ctrlKey && !e.metaKey) {
             // f: toggle first mode (first_snap <=> got_snap Resnapture diff)
             // Ctrl/Cmd+F falls through so the browser's find bar can open
@@ -1091,6 +1224,16 @@
                 {String(run_done).padStart(3,'0')}
                 {#if run_total}&nbsp;/&nbsp;{String(run_total).padStart(3,'0')}{/if}
             </span>
+            <!-- sworn: the assertions explorer toggle — declared latched/total, ◇ undeclared.
+                 Run-wide, so it lives on the run bar; the explorer mutexes with show-diff. -->
+            {#if assert_entries.length || undeclared.length}
+                <button class="sr-assert-btn" class:active={explorer_open} class:broken={assert_broken}
+                        class:warn={!assert_broken && undeclared.length > 0}
+                        onclick={() => explorer_open = !explorer_open}
+                        title="declared %Assertions latched/total{undeclared.length ? ' — plus ' + undeclared.length + ' undeclared (want declaring)' : ''} — opens the explorer in the diff's seat ([s])">
+                    sworn {assert_latched}/{assert_entries.length}{#if undeclared.length}&nbsp;◇{undeclared.length}{/if}
+                </button>
+            {/if}
             {#if run_failed}
                 <span class="sr-status fail">✗ {String(run_failed).padStart(3,'0')}</span>
             {:else if run_paused}
@@ -1186,6 +1329,14 @@
         <!-- tabindex=0: Tab-key entry point for story focus; arrow/e/r/t keys -->
         <!--   bubble from any focused child up to the .sr root handler.       -->
         <div class="sr-strip-wrap">
+        <!-- hover-desc layer: the hovered pip's %desc alone, floating above the strip
+             (absolute — zero layout shift; instant; pointer-events:none so it never
+             intercepts the very mouse travel that raised it).  Native titles stay. -->
+        {#if hover_n != null && hover_desc}
+            <div class="sr-hoverdesc">
+                <span class="sr-hd-n">step {String(hover_n).padStart(3,'0')}</span>{hover_desc}
+            </div>
+        {/if}
         <div class="sr-strip scrollsmall" tabindex="0" bind:this={strip_el}>
             {#each display.steps as ts (ts.n)}
                 {@const n         = ts.n}
@@ -1197,11 +1348,22 @@
                 {@const on        = display.open_at === n}
                 {@const ph        = n === playhead_n()}
                 {@const flags     = note_flags_for(n)}
+                {@const amarks    = assert_entries.filter(e => e.due === n)}
                 {@const is_anchor = diff_collecting && n === diff_anchor}
-                <div class="sr-pip-cell">
+                <div class="sr-pip-cell"
+                     onmouseenter={() => hover_n = n}
+                     onmouseleave={() => { if (hover_n === n) hover_n = null }}>
                     <div class="sr-flags">
                         {#each flags as f (f.type)}
                             <span class="sr-flag" style="background:{f.color}" title={f.type}></span>
+                        {/each}
+                        <!-- assertion marks: diamonds beside the square note flags — one per
+                             %Assertion hosted at this step, loudest when broken.  Click-through:
+                             the mark opens its step AND the explorer focused on that assertion. -->
+                        {#each amarks as e (e.slug)}
+                            <span class="sr-amark {e.state}" role="button" tabindex="-1"
+                                  title="%Assertion «{e.slug}» — {e.sentence} — {e.state}{e.latch_n != null ? ' (sworn at step ' + e.latch_n + ')' : ''}"
+                                  onclick={ev => { ev.stopPropagation(); pick(n); open_explorer(e.slug) }}></span>
                         {/each}
                     </div>
                     <button
@@ -1295,9 +1457,10 @@
                             {/if}
                             <button class:active={eff_mode==='naive'}
                                     onclick={() => toggle_mode('naive')}>raw</button>
-                            <span class="sr-ekey">[e r t a f]</span>
+                            <span class="sr-ekey">[e r t a f s]</span>
                         </span>
                     {/if}
+
 
                     <!-- copy: range collector ─────────────────────────── -->
                     <!-- idle: "copy diff" immediately arms this step as    -->
@@ -1351,19 +1514,22 @@
                 <!--   without this class the diff/pre would push trace   -->
                 <!--   below the panel's overflow:hidden in expanded view. -->
                 <div class="sr-body" style="opacity:{waiting_for_exp ? 0.5 : 1}; transition:opacity 0.3s">
-                {#if hollow}
+                {#if explorer_open}
+                    <!-- the assertions explorer MUTEXES with show-diff: one body, one occupant -->
+                    {@render assert_explorer()}
+                {:else if hollow}
                     <div class="sr-hollow-body">step {String(n).padStart(3,'0')} not yet run this session</div>
                 {:else if !(Step?.sc.got_snap)}
                     <!-- snap ran but content not yet fetched; story_sel will queue the load -->
                     <div class="sr-hollow-body">snap not yet loaded</div>
                 {:else if eff_mode === 'naive'}
-                    <!-- raw: single pre, full got_snap text, no diff colouring -->
-                    <pre class="sr-pre sr-tree-pre scrollbig">{#each diff_rows as row, i (i)}{#if row.kind === 'pair'}{@render snap_line(row.left, 'same')}{/if}{/each}</pre>
+                    <!-- raw: single pre, full got_snap text, no diff colouring (ghost lines still stand) -->
+                    <pre class="sr-pre sr-tree-pre scrollbig">{#each render_rows as row, i (i)}{#if row.kind === 'pair'}{@render snap_line(row.left, 'same')}{:else if row.kind === 'ghost'}{@render ghost_line(row)}{/if}{/each}</pre>
 
                 {:else}
                     <!-- two-column proper diff — rendered via the diff2_view snippet -->
                     <!-- so the same markup can be reused in the Resnapture popup     -->
-                    {@render diff2_view(diff_rows, col_labels, eff_mode)}
+                    {@render diff2_view(render_rows, col_labels, eff_mode)}
                 {/if}
                 </div>
 
@@ -1412,6 +1578,14 @@
                 </div>
 
             </div>
+        {:else if explorer_open}
+            <!-- explorer with no step open: assertions are run-wide, so the sworn button
+                 (run bar) / [s] can raise it standalone in the panel's seat -->
+            <div class="sr-panel">
+                <div class="sr-body">
+                    {@render assert_explorer()}
+                </div>
+            </div>
         {/if}
 
     {/if}
@@ -1451,6 +1625,8 @@
                         <div class="sr-diff2-cell gone">{@render line_content(row.line)}</div>
                     {:else if row.kind === 'right_only'}
                         <div class="sr-diff2-cell neu sr-empty-cell"></div>
+                    {:else if row.kind === 'ghost'}
+                        <div class="sr-diff2-cell sr-ghost-cell sr-empty-cell"></div>
                     {/if}
                 {/each}
             </div>
@@ -1472,6 +1648,12 @@
                         <div class="sr-diff2-cell gone sr-empty-cell"></div>
                     {:else if row.kind === 'right_only'}
                         <div class="sr-diff2-cell neu">{@render line_content(row.line)}</div>
+                    {:else if row.kind === 'ghost'}
+                        <!-- the got column is where the evidence would stand — the ghost lives there -->
+                        <div class="sr-diff2-cell sr-ghost-cell" role="button" tabindex="-1"
+                             title="declared %Assertion «{row.slug}» — its sworn evidence never latched; click to open the assertions explorer"
+                             onclick={() => open_explorer(row.slug)}
+                        ><span class="sr-ind">{row.line.match(/^ */)?.[0] ?? ''}</span><span class="sr-ghost-txt">sworn:{row.sentence}</span>  <span class="sr-ghost-tag">— never latched</span></div>
                     {/if}
                 {/each}
             </div>
@@ -1508,6 +1690,72 @@
      Runs on the full raw line string so snap codec re-parsing is not needed. -->
 {#snippet intra_line(line: string, ops: Array<[number, string]>, side: 'left' | 'right')}
     {@const indent = (line.match(/^ */)?.[0] ?? '')}<span class="sr-ind">{indent}</span>{#each ops_for_display(line, ops, side) as span}<span class={span.cls}>{span.text}</span>{/each}
+{/snippet}
+
+<!-- ghost_line: naive-pre form of the red ghost line — a declared assertion whose
+     evidence never latched, standing where the sworn would.  Click-through to the
+     explorer: the clue and the navigation are one mechanism. -->
+{#snippet ghost_line(row: GhostRow)}
+    {@const indent = row.line.match(/^ */)?.[0] ?? ''}
+    <span class="sr-line sr-ghost" role="button" tabindex="-1"
+          title="declared %Assertion «{row.slug}» — its sworn evidence never latched; click to open the assertions explorer"
+          onclick={() => open_explorer(row.slug)}
+    ><span class="sr-ind">{indent}</span><span class="sr-ghost-txt">sworn:{row.sentence}</span>  <span class="sr-ghost-tag">— never latched</span>&#10;</span>
+{/snippet}
+
+<!-- assert_explorer: the contract vs this run's evidence, in the diff's seat (the mutex).
+     One row per declared %Assertion: state glyph, slug, sentence, the hosting step
+     (clickable — the by-when), latch n.  A latched row with a microsnap (⌖) unfolds it
+     on click — what the assertion pointed at, frozen at go-off time.  Below: unclaimed
+     evidence (◇) — sworn beyond the contract; Accept is the door in, never a matcher. -->
+{#snippet assert_explorer()}
+    <div class="sr-ax scrollbig">
+        <div class="sr-ax-sec">declared %Assertions</div>
+        {#each assert_entries as e (e.slug)}
+            {@const unfolded = ax_open === e.slug}
+            <div class="sr-ax-row {e.state}" class:focus={explorer_focus === e.slug}
+                 role="button" tabindex="-1"
+                 onclick={() => ax_open = unfolded ? null : e.slug}>
+                <span class="sr-ax-ico">{e.state === 'latched' ? '✓' : e.state === 'pending' ? '◌' : '✗'}</span>
+                <span class="sr-ax-slug">{e.slug}</span>
+                <span class="sr-ax-sent">«{e.sentence}»</span>
+                <button class="sr-ax-due" title="the hosting step — the by-when; click to open it"
+                        onclick={ev => { ev.stopPropagation(); explorer_focus = e.slug; pick(e.due) }}
+                >step {String(e.due).padStart(3,'0')}</button>
+                {#if e.state === 'latched'}
+                    <span class="sr-ax-n">sworn at {String(e.latch_n ?? 0).padStart(3,'0')}</span>
+                {:else}
+                    <span class="sr-ax-state">{e.state}</span>
+                {/if}
+                {#if e.microsnap}<span class="sr-ax-has-micro" title="carries a microsnap — click the row to unfold it">⌖</span>{/if}
+            </div>
+            {#if unfolded && e.microsnap}
+                <pre class="sr-ax-micro">{e.microsnap}</pre>
+            {/if}
+        {/each}
+        {#if !assert_entries.length}
+            <div class="sr-ax-none">no declared %Assertions yet</div>
+        {/if}
+        {#if undeclared.length}
+            <!-- NOT ok: every sworn wants declaring — these so far exist only in the Book's
+                 code, invisible to the gap gate.  Accept is the door into the contract. -->
+            <div class="sr-ax-sec undecl">undeclared %Assertions — want declaring</div>
+            {#each undeclared as a (a.sentence)}
+                {@const unfolded = ax_open === a.sentence}
+                <div class="sr-ax-row sr-ax-undecl" role="button" tabindex="-1"
+                     onclick={() => ax_open = unfolded ? null : a.sentence}>
+                    <span class="sr-ax-ico">◇</span>
+                    <span class="sr-ax-sent">«{a.sentence}»</span>
+                    <span class="sr-ax-n">sworn at {String(a.n).padStart(3,'0')}</span>
+                    <span class="sr-ax-state">undeclared</span>
+                    {#if a.microsnap}<span class="sr-ax-has-micro" title="carries a microsnap — click the row to unfold it">⌖</span>{/if}
+                </div>
+                {#if unfolded && a.microsnap}
+                    <pre class="sr-ax-micro">{a.microsnap}</pre>
+                {/if}
+            {/each}
+        {/if}
+    </div>
 {/snippet}
 
 {#snippet trace_panel(events: TraceEvent[])}
@@ -1634,6 +1882,30 @@
 /* flags row: always rendered as spacer so pips stay bottom-aligned */
 .sr-flags    { display: flex; flex-direction: row; gap: 1px; min-height: 8px; align-items: flex-end; }
 .sr-flag     { display: inline-block; width: 7px; height: 7px; border-radius: 1px; flex-shrink: 0; }
+
+/* assertion marks: diamonds (rotated squares) so they read apart from the square
+   note flags at 7px.  Loudest when broken: red pulses, amber holds steady. */
+.sr-amark {
+    display: inline-block; width: 6px; height: 6px; flex-shrink: 0;
+    margin: 0 1px 1px; transform: rotate(45deg); border-radius: 1px;
+    border: 1px solid transparent; cursor: pointer;
+}
+.sr-amark.latched { background: #2a8; }
+.sr-amark.pending { background: transparent; border-color: #3a4a3a; }
+.sr-amark.overdue { background: #c93; }
+.sr-amark.red     { background: #c33; animation: sr-amark-pulse 1.2s ease-in-out infinite; }
+@keyframes sr-amark-pulse { 0%,100% { box-shadow: 0 0 0 0 #c3333300 } 50% { box-shadow: 0 0 4px 1px #c33399 } }
+
+/* hover-desc layer: floats just above the strip (over the run bar's bottom edge) —
+   absolute so hovering never shifts layout; no transition so it's instant. */
+.sr-hoverdesc {
+    position: absolute; bottom: calc(100% + 1px); left: 6px; right: 6px; z-index: 6;
+    pointer-events: none;
+    background: #10140fee; border: 1px solid #2a3a2a; border-radius: 3px;
+    padding: 3px 8px; font-size: 11px; font-style: italic; color: #9a8;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sr-hd-n { color: #567; font-style: normal; font-size: 9px; margin-right: 7px; }
 
 .sr-pip {
     position: relative; width: 28px; height: 28px; border: none; border-radius: 3px;
@@ -1816,6 +2088,84 @@
     0%, 100% { box-shadow: inset 3px 0 0 #e83, 0 0 3px #c6330033; }
     50%      { box-shadow: inset 3px 0 0 #fb5, 0 0 8px #e8773399; }
 }
+
+/* ── assertions: ghost lines + the sworn button + the explorer ──────────── */
+/* ghost: a declared assertion whose evidence never latched — a red dashed line
+   standing where the sworn would.  Clickable → the explorer (clue = navigation). */
+.sr-diff2-cell.sr-ghost-cell { background: #1a0408; }
+.sr-diff2-cell.sr-ghost-cell:not(.sr-empty-cell) {
+    border-left-color: #c33; cursor: pointer;
+    outline: 1px dashed #722; outline-offset: -1px;
+}
+.sr-diff2-cell.sr-ghost-cell:not(.sr-empty-cell):hover { background: #2a080c; }
+.sr-line.sr-ghost {
+    background: #1a0408; border-left-color: #c33; cursor: pointer;
+    outline: 1px dashed #722; outline-offset: -1px;
+}
+.sr-line.sr-ghost:hover { background: #2a080c; }
+.sr-ghost-txt { color: #e77; font-style: italic; }
+.sr-ghost-tag { color: #944; font-size: 9px; font-style: italic; }
+
+/* sworn button: latched/total (+ ◇ unclaimed); pulses red while broken */
+.sr-assert-btn {
+    background: #181818; border: 1px solid #2a3a2a; border-radius: 2px;
+    color: #4a9; cursor: pointer; font-size: 9px; font-family: inherit;
+    padding: 0 6px; line-height: 15px;
+}
+.sr-assert-btn.active { background: #0e1e18; border-color: #2a4a3a; color: #6bc; }
+.sr-assert-btn.broken { border-color: #a33; color: #c55; animation: sr-pulse 1.4s ease-in-out infinite; }
+.sr-assert-btn.broken.active { background: #1a0808; }
+/* warn: no contract break, but undeclared sworn exist — they want declaring */
+.sr-assert-btn.warn { border-color: #6a4a1a; color: #c93; }
+
+/* the explorer body — sits in the diff's seat while open (the mutex) */
+.sr-ax { padding: 4px 0 6px; min-height: 12em; max-height: min(40vh, 666px); overflow-y: auto; background: #0d0f0d; }
+.sr.expanded .sr-ax { flex: 1; max-height: none; }
+.sr-ax-sec {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #446; padding: 5px 10px 3px;
+}
+.sr-ax-row {
+    display: flex; align-items: baseline; gap: 8px; padding: 2px 10px;
+    cursor: pointer; border-left: 2px solid transparent;
+}
+.sr-ax-row:hover { background: #161a16; }
+.sr-ax-row.latched .sr-ax-ico { color: #4a9; }
+.sr-ax-row.pending { opacity: 0.55; }
+.sr-ax-row.pending .sr-ax-ico   { color: #567; }
+.sr-ax-row.pending .sr-ax-state { color: #555; }
+.sr-ax-row.overdue { border-left-color: #c93; }
+.sr-ax-row.overdue .sr-ax-ico   { color: #c93; }
+.sr-ax-row.overdue .sr-ax-state { color: #c93; }
+.sr-ax-row.red { border-left-color: #c33; background: #180608; }
+.sr-ax-row.red .sr-ax-ico   { color: #c55; }
+.sr-ax-row.red .sr-ax-state { color: #c55; }
+/* focus: the row a ghost line / pip mark clicked through to */
+.sr-ax-row.focus { outline: 1px dashed #c55; outline-offset: -1px; }
+.sr-ax-ico  { flex-shrink: 0; width: 1em; text-align: center; }
+.sr-ax-slug { color: #79b; flex-shrink: 0; }
+.sr-ax-sent { color: #999; flex: 1; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 8em; }
+.sr-ax-due {
+    background: none; border: 1px solid #2a2a3a; border-radius: 2px; flex-shrink: 0;
+    color: #567; cursor: pointer; font-size: 9px; font-family: inherit; padding: 0 5px; line-height: 14px;
+}
+.sr-ax-due:hover { color: #79b; border-color: #3a3a5a; }
+.sr-ax-n { color: #4a9; font-size: 9px; flex-shrink: 0; }
+.sr-ax-state { font-size: 9px; flex-shrink: 0; }
+.sr-ax-has-micro { color: #567; font-size: 10px; flex-shrink: 0; }
+/* undeclared: NOT ok — amber, wants declaring (Accept is the door into the contract) */
+.sr-ax-sec.undecl { color: #6a4a1a; }
+.sr-ax-undecl { border-left-color: #6a4a1a; }
+.sr-ax-undecl .sr-ax-ico   { color: #c93; }
+.sr-ax-undecl .sr-ax-state { color: #c93; }
+/* the unfolded microsnap — what the assertion pointed at, frozen at go-off time */
+.sr-ax-micro {
+    margin: 0 10px 4px 28px; padding: 4px 8px;
+    background: #0a0c10; border-left: 2px solid #2a3a4a;
+    color: #7aa8c7; font-size: 10px; line-height: 1.5;
+    white-space: pre; overflow-x: auto;
+}
+.sr-ax-none { padding: 8px 12px; color: #444; font-style: italic; font-size: 10px; }
 
 /* squish: collapsed run of uninteresting same lines */
 .sr-squish {

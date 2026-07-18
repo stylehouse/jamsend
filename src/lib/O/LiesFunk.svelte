@@ -2387,8 +2387,6 @@ await M.eatfunc({
                         for (const st of (The?.o({ step: 1 }) ?? []) as TheC[])
                             for (const a of st.o({ Assertion: 1 }) as TheC[])
                                 contract.push({ slug: a.sc.Assertion, sentence: a.sc.sentence, n: st.sc.step })
-                        for (const a of ((The?.o({ Assertions: 1 })[0]?.o({ Assertion: 1 }) ?? []) as TheC[]))
-                            contract.push({ slug: a.sc.Assertion, sentence: a.sc.sentence, n: Number(a.sc.by_n) || 0, legacy: 1 })
                         const shelf = (stW.c.ave as TheC | undefined)?.o({ Assertioning: 1, Story: book })[0] as TheC | undefined
                         const sworn = ((shelf?.o({ sworn: 1 }) ?? []) as TheC[]).map(s => ({
                             sentence: s.sc.sworn, n: s.sc.n,

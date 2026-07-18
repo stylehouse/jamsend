@@ -42,5 +42,3 @@ Snap:H
               recent
                 unemit,type:pier_accept,seq
         req:witness,eternal,ok
-        see:first contact — a stranger reached a station with no prior Pier and the door promoted the route and sealed both grants
-        see:readiness rode station_up — neither transport Pier ran a handshake yet the frames crossed and sealed

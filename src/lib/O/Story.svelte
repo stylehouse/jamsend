@@ -1517,6 +1517,10 @@
             // useVoroCyto rides ON the commission (fig.1) — the declared home for the fold switch;
             //  the imposition itself is Story-side in story_snap, but Cyto/◈ can read it here.
             if (H.The_Opt_val(w, 'useVoroCyto')) commission.sc.useVoroCyto = 1
+            // useFaces likewise — the commissioner opts its glass into BELIEVING %face and the
+            //  FACE_MAINKEYS imposition (Cyto gates on it so a stray sc.face in a plain Book
+            //   stays an honest row, never a surprise cell).
+            if (H.The_Opt_val(w, 'useFaces')) commission.sc.useFaces = 1
             H.i_elvisto('Cyto/Cyto', 'Cyto_commission', { req: commission })
         }
 
@@ -1704,9 +1708,6 @@
         //      and the pip goes green/caveat between steps with no pause.  One read per round
         //       (the wh queue is serial); returning early here gates the drive until it's done.
         //        A missing fixture caches as null and falls back to the pause / post-run sweep.
-        // wild (Opt/wild) has no fixtures to preload — don't spin the wh queue on reads
-        //  that can only answer not-found.
-        if (run.sc.mode === 'check' && !run.c.exps_loaded && H.The_Opt_val(w, 'wild')) run.c.exps_loaded = true
         if (run.sc.mode === 'check' && !run.c.exps_loaded) {
             const exps = (w.c.exp_snaps ??= {}) as Record<number, string | null>
             const need = ((w.c.The as TheC | undefined)?.o({ step: 1 }) ?? [])
@@ -1744,13 +1745,6 @@
             H.story_analysis(w)
         }
 
-        if (run.sc.check_snap && H.The_Opt_val(w, 'wild')) {
-            // wild: no fixtures exist — the disk verify has nothing to verify, and a
-            //  disk_ok=false would dress every pip in a stale badge ("disk snap missing" spam,
-            //   the 2026-07-18 console).  Drop the request; the diff panel honestly shows
-            //    got-only for a wild step.
-            delete run.sc.check_snap
-        }
         if (run.sc.check_snap) {
             // ── single dige verify — runs for both mismatch and snap_checking steps ─
             // Mismatch path:      fetch_snap queues check_snap (same beliefs round).
@@ -2333,25 +2327,12 @@
                 H.story_analysis(w)
                 await update_status(`recording ${H.pad(n)}/${H.pad(run.sc.total)}`, 'save')
                 await snap_step_finish()
-            } else if (H.The_Opt_val(w, 'wild')) {
-                // ── Opt/wild: the run is a RECORD, not a fixture check ──────────────────
-                // For a Book whose data IS the real environment (Sounditron): a dige can
-                //  never match across environments, so the fixture game is off entirely —
-                //   no compare, no exp preload, no disk verify, no Accept pressure.  A step
-                //    is ok unless the beat was blocked (the untried path above); the RUN's
-                //     verdict stays honest through the assertion contract (Cred_assertion_gaps
-                //      — %sworn on the Assertioning shelf, entropy-proof) and the report.  got_snap/dige still
-                //       land (the run-record and time-travel ride them); toc step lines
-                //        carry `dige:wild` purely as the drive count.
-                step.sc.got_snap = snap
-                step.sc.dige = got_dige
-                step.sc.ok = true
-                delete step.sc.caveat
-                step.bump_version()
-                H.story_analysis(w)
-                await update_status(`✓ ${H.pad(n)} wild`, 'default')
-                await snap_step_finish()
             } else {
+                // (Opt/wild — the record-not-check verdict regime — lived here 2026-07-17
+                //  → 2026-07-19, then the human wanted BOTH: assertions AND fixture
+                //   tracking.  An environment-probing Book now checks like any other;
+                //    environment wobble is EntropyArrest's job, and the semantic truths
+                //     stay with the assertion contract.)
                 const exp_dige = H.The_step_dige(w, n)
                 let ok = exp_dige === got_dige
                 V.Story && console.log(`🔍 n=${n} ok=${ok} exp=${exp_dige?.slice(0,8)} got=${got_dige.slice(0,8)}`)

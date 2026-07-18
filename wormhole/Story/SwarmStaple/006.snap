@@ -34,16 +34,9 @@ Snap:H
             SocialGraph
               Edge,a:6eb0df4e976acef2,b:32c1ce7a059129d1,at:1751500030
         req:witness,eternal,ok
-        seen:two selves stand — each an Identity owning its Peering page — keys ride .c only
         reached:step_3
-        seen:Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical
         reached:step_4
-        seen:a tampered Idzeug fails verification — one flipped signature byte and it is rejected
-        seen:redeeming with the inviter offline fails — the Idzeug is proof of receipt not an offline token
         reached:step_5
-        seen:Bob imported the page of Alice — the stashed Peering reborn under his Pier
-        seen:each Pier carries a Music grant the OTHER signed — Classical only — reciprocity sealed
-        seen:the friendship is an edge logged in the social graph at both ends
         reached:step_6
         Account,of:Carol
           Identity:c77f156e08d70949,prepub:c77f156e08d70949,friendly:Carol
@@ -51,4 +44,3 @@ Snap:H
             mail
               frame:pier_reject,did
             rebuff:rejected_spent,say:32c1ce7a059129d1
-        seen:the Idzeug is single-use — a second redeem finds the nonce spent and is rebuffed

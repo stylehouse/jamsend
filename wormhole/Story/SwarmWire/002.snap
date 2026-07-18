@@ -1,9 +1,9 @@
 Snap:H
   H:SwarmWire,Run
     A:SwarmWire
-      self,round=6	{"mung":["age"]}
+      self,round=5	{"mung":["age"]}
       w:SwarmWire,now=1751600000
-        self,round=6	{"mung":["age"]}
+        self,round=5	{"mung":["age"]}
         req:wrangle,eternal,ok
         Account,of:Alice
           Identity:32c1ce7a059129d1,prepub:32c1ce7a059129d1,friendly:Alice
@@ -56,4 +56,3 @@ Snap:H
             Ud,pubkey:32c1ce7a059129d1
           active_transport,type:mock,open
         req:witness,eternal,ok
-        seen:two stations stand on the spine — the swarm frame kinds armed on the world

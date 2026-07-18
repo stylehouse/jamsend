@@ -4,36 +4,35 @@ story:SwarmWire
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.095
-      sample=0.076,at=1783368237
-      sample=0.095,at=1783368839
-      sample=0.089,at=1783369778
-      sample=0.09,at=1783420340
-      sample=0.121,at=1783855408
-      sample=0.102,at=1783980391
-      sample=0.102,at=1783980439
-      sample=0.055,at=1783980449
-      sample=0.172,at=1784011726
+    TimeTotal:beliefs,avg=0.084
       sample=0.051,at=1784336633
-    TimeTotal:step,avg=0.019
-      sample=0.015,at=1783368237
-      sample=0.019,at=1783368839
-      sample=0.018,at=1783369778
-      sample=0.018,at=1783420340
-      sample=0.024,at=1783855408
-      sample=0.02,at=1783980391
-      sample=0.02,at=1783980439
-      sample=0.011,at=1783980449
-      sample=0.034,at=1784011726
+      sample=0.046,at=1784377605
+      sample=0.038,at=1784377933
+      sample=0.038,at=1784377936
+      sample=0.038,at=1784377939
+      sample=0.038,at=1784377940
+      sample=0.038,at=1784377941
+      sample=0.038,at=1784377942
+      sample=0.06,at=1784377949
+      sample=0.459,at=1784382438
+    TimeTotal:step,avg=0.017
       sample=0.01,at=1784336633
-  Assertions
-    Assertion:stations-stand,sentence:two stations stand on the spine — the swarm frame kinds armed on the world,by_n:2
-    Assertion:link-authenticated,sentence:the link authenticated first — hello and trust both ways before any swarm frame,by_n:3
-    Assertion:frames-crossed,sentence:pier_hello and pier_accept crossed as real frames — booked through outbox and inbox,by_n:4
-    Assertion:friendship-sealed,sentence:the friendship sealed over the wire — mutual Music grants at both ends,by_n:4
-    Assertion:spent-nonce-refuses,sentence:the spent nonce refuses over the wire too — a pier_reject crossed back,by_n:5
+      sample=0.009,at=1784377605
+      sample=0.008,at=1784377933
+      sample=0.008,at=1784377936
+      sample=0.008,at=1784377939
+      sample=0.008,at=1784377940
+      sample=0.008,at=1784377941
+      sample=0.008,at=1784377942
+      sample=0.012,at=1784377949
+      sample=0.092,at=1784382438
   step,dige:707011a29fe51dc1
-  step=2,dige:7a2d9c6880e48124
-  step=3,dige:7b1e7bb217ca7487
-  step=4,dige:da868e88748e4d6a
-  step=5,dige:8ffbc48ad322f336
+  step=2,dige:96a4b3efee164265
+    Assertion:stations-stand,sentence:two stations stand on the spine — the swarm frame kinds armed on the world
+  step=3,dige:be559dbe91bbbd13
+    Assertion:link-authenticated,sentence:the link authenticated first — hello and trust both ways before any swarm frame
+  step=4,dige:a60d566ae988ed0f
+    Assertion:friendship-sealed,sentence:the friendship sealed over the wire — mutual Music grants at both ends
+    Assertion:frames-crossed,sentence:pier_hello and pier_accept crossed as real frames — booked through outbox and inbox
+  step=5,dige:8851280c48d3bb19
+    Assertion:spent-nonce-refuses,sentence:the spent nonce refuses over the wire too — a pier_reject crossed back

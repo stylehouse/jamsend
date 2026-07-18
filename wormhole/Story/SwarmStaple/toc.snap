@@ -4,44 +4,43 @@ story:SwarmStaple
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.045
-      sample=0.035,at=1783852102
-      sample=0.04,at=1783852147
-      sample=0.033,at=1783852176
-      sample=0.048,at=1784295397
-      sample=0.052,at=1784295840
-      sample=0.055,at=1784295851
-      sample=0.049,at=1784296122
+    TimeTotal:beliefs,avg=0.044
       sample=0.061,at=1784334659
       sample=0.046,at=1784336599
       sample=0.031,at=1784336613
+      sample=0.043,at=1784377597
+      sample=0.044,at=1784377908
+      sample=0.044,at=1784377912
+      sample=0.044,at=1784377916
+      sample=0.044,at=1784377917
+      sample=0.044,at=1784377918
+      sample=0.04,at=1784377927
     TimeTotal:step,avg=0.006
-      sample=0.004,at=1783852102
-      sample=0.005,at=1783852147
-      sample=0.004,at=1783852176
-      sample=0.006,at=1784295397
-      sample=0.007,at=1784295840
-      sample=0.007,at=1784295851
-      sample=0.006,at=1784296122
       sample=0.008,at=1784334659
       sample=0.006,at=1784336599
       sample=0.004,at=1784336613
-  Assertions
-    Assertion:two-selves,sentence:two selves stand — each an Identity owning its Peering page — keys ride .c only,by_n:2
-    Assertion:idzeug-minted,sentence:Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical,by_n:3
-    Assertion:tamper-rejected,sentence:a tampered Idzeug fails verification — one flipped signature byte and it is rejected,by_n:4
-    Assertion:offline-redeem-fails,sentence:redeeming with the inviter offline fails — the Idzeug is proof of receipt not an offline token,by_n:4
-    Assertion:page-imported,sentence:Bob imported the page of Alice — the stashed Peering reborn under his Pier,by_n:5
-    Assertion:reciprocity-sealed,sentence:each Pier carries a Music grant the OTHER signed — Classical only — reciprocity sealed,by_n:5
-    Assertion:friendship-edge,sentence:the friendship is an edge logged in the social graph at both ends,by_n:5
-    Assertion:single-use-spent,sentence:the Idzeug is single-use — a second redeem finds the nonce spent and is rebuffed,by_n:6
-    Assertion:notgrant-retires,sentence:a NotGrant under the Pier retires it at use — the other end stands until told,by_n:7
-    Assertion:account-roundtrip,sentence:the account survives export and import byte for byte — Pier and grants and keys intact,by_n:8
+      sample=0.005,at=1784377597
+      sample=0.006,at=1784377908
+      sample=0.006,at=1784377912
+      sample=0.006,at=1784377916
+      sample=0.006,at=1784377917
+      sample=0.006,at=1784377918
+      sample=0.005,at=1784377927
   step,dige:857b7f27f55187b6
-  step=2,dige:faaa7af1c06c1c8e
-  step=3,dige:7a3756e87ebc58da
-  step=4,dige:105a70619093ec59
-  step=5,dige:67a9dba2aeca4a94
-  step=6,dige:0931b2fd8712aa9d
-  step=7,dige:a63d6d8ced17c09b
-  step=8,dige:608d26447306d7a7
+  step=2,dige:8c658e1450d254fb
+    Assertion:two-selves,sentence:two selves stand — each an Identity owning its Peering page — keys ride .c only
+  step=3,dige:f05dfb0492b0d481
+    Assertion:idzeug-minted,sentence:Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical
+  step=4,dige:8bebe0e452a3c6fc
+    Assertion:offline-redeem-fails,sentence:redeeming with the inviter offline fails — the Idzeug is proof of receipt not an offline token
+    Assertion:tamper-rejected,sentence:a tampered Idzeug fails verification — one flipped signature byte and it is rejected
+  step=5,dige:cf63a752581a5f2e
+    Assertion:friendship-edge,sentence:the friendship is an edge logged in the social graph at both ends
+    Assertion:reciprocity-sealed,sentence:each Pier carries a Music grant the OTHER signed — Classical only — reciprocity sealed
+    Assertion:page-imported,sentence:Bob imported the page of Alice — the stashed Peering reborn under his Pier
+  step=6,dige:6c0a149712d3a8fc
+    Assertion:single-use-spent,sentence:the Idzeug is single-use — a second redeem finds the nonce spent and is rebuffed
+  step=7,dige:3ee91586202d6b80
+    Assertion:notgrant-retires,sentence:a NotGrant under the Pier retires it at use — the other end stands until told
+  step=8,dige:7357d21df1c736a7
+    Assertion:account-roundtrip,sentence:the account survives export and import byte for byte — Pier and grants and keys intact

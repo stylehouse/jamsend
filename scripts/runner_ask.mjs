@@ -274,15 +274,16 @@ else if (op === 'snap' && reply.result?.got_snap) {
 	process.stdout.write(reply.result.got_snap.endsWith('\n') ? reply.result.got_snap : reply.result.got_snap + '\n')
 } else if (op === 'assertions' && reply.result?.contract) {
 	// the contract vs the evidence (never "roster" — that word is the Cluster runners'): each
-	//  declared %Assertion against the Assertioning shelf, then the uncontracted achievements,
-	//   then each sworn's microsnap — what it pointed at, at go-off time.
+	//  declared %Assertion against the Assertioning shelf, then the UNDECLARED sworn (not ok —
+	//   every sworn wants declaring), then each sworn's microsnap — what it pointed at, at
+	//    go-off time.
 	const r = reply.result
-	console.log(`assertions: ${r.book} — contract ${r.contract.length}, sworn ${r.sworn.length}, gaps ${r.gaps.length}`)
+	console.log(`assertions: ${r.book} — declared ${r.contract.length}, sworn ${r.sworn.length}, gaps ${r.gaps.length}`)
 	for (const c of r.contract) {
 		const hit = r.sworn.find(s => s.sentence === c.sentence)
-		console.log(`  ${hit ? '✓' : '✗'} «${c.slug}» step ${c.n}${c.legacy ? ' (legacy bucket)' : ''}${hit ? ` — sworn n=${hit.n}` : ' — ABSENT'}: ${c.sentence}`)
+		console.log(`  ${hit ? '✓' : '✗'} «${c.slug}» step ${c.n}${hit ? ` — sworn at step ${hit.n}` : ' — ABSENT'}: ${c.sentence}`)
 	}
-	for (const s of r.sworn.filter(s => !s.contracted)) console.log(`  ◇ achievement n=${s.n}: ${s.sentence}`)
+	for (const s of r.sworn.filter(s => !s.contracted)) console.log(`  ◇ undeclared (wants declaring) — sworn at step ${s.n}: ${s.sentence}`)
 	for (const s of r.sworn.filter(s => s.microsnap)) {
 		console.log(`  ⌖ «${s.sentence}» pointed at:`)
 		for (const l of String(s.microsnap).split('\n')) console.log(`      ${l}`)
@@ -343,7 +344,7 @@ if (watch && (op === 'run' || op === 'state') && reply.control === 'runner_ack')
 		if (run && (run.phase === 'done' || run.phase === 'failed')) {
 			// contract verdict (Seen_split rulings): a declared %Assertion whose %sworn never latched
 			//  is a NAMED red, un-maskable by entropy — surface it distinctly from a step/dige failure.
-			for (const g of (out?.gaps ?? [])) console.error(`  ✗ assertion «${g.slug}» expected by step ${g.n ?? g.by_n ?? '?'} — ABSENT: ${g.sentence}`)
+			for (const g of (out?.gaps ?? [])) console.error(`  ✗ assertion «${g.slug}» expected by step ${g.n} — ABSENT: ${g.sentence}`)
 			exitCode = out && out.ok ? 0 : 1; break
 		}
 	}

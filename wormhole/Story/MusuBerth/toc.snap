@@ -4,30 +4,32 @@ story:MusuBerth
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.614
-      sample=0.543,at=1783855379
-      sample=0.545,at=1783863861
-      sample=0.545,at=1783863907
-      sample=0.545,at=1783863910
-      sample=0.545,at=1783863911
-      sample=0.511,at=1783863919
-      sample=0.685,at=1783870199
+    TimeTotal:beliefs,avg=0.798
       sample=0.87,at=1783870214
       sample=0.739,at=1783870227
-    TimeTotal:step,avg=0.088
-      sample=0.078,at=1783855379
-      sample=0.078,at=1783863861
-      sample=0.078,at=1783863907
-      sample=0.078,at=1783863910
-      sample=0.078,at=1783863911
-      sample=0.073,at=1783863919
-      sample=0.098,at=1783870199
+      sample=0.606,at=1784377619
+      sample=0.861,at=1784377957
+      sample=0.861,at=1784377973
+      sample=0.861,at=1784377974
+      sample=0.861,at=1784377975
+      sample=0.861,at=1784377976
+      sample=0.861,at=1784377977
+      sample=0.6,at=1784377986
+    TimeTotal:step,avg=0.114
       sample=0.124,at=1783870214
       sample=0.106,at=1783870227
+      sample=0.087,at=1784377619
+      sample=0.123,at=1784377957
+      sample=0.123,at=1784377973
+      sample=0.123,at=1784377974
+      sample=0.123,at=1784377975
+      sample=0.123,at=1784377976
+      sample=0.123,at=1784377977
+      sample=0.086,at=1784377986
   step,dige:12e0cf54a0772eb6
   step=2,dige:493f1482e12fc6dc
-  step=3,dige:75b1ef8729a369de
-  step=4,dige:1c9c6b211f59e33f
-  step=5,dige:57a22d2eac09fd34
-  step=6,dige:54c44e050a360d59
-  step=7,dige:67900482a9d4b45a
+  step=3,dige:1c804c33fdc60282
+  step=4,dige:2c92483da16e5652
+  step=5,dige:f1f5427db4ac08bb
+  step=6,dige:b0d8ad828f44c09d
+  step=7,dige:059e23ae08600ea1

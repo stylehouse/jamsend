@@ -12,6 +12,4 @@ Snap:H
               Sibling:tab_spare,address:32c1ce7a059129d1_3,role:serve
               Stolen:remote_copy,at:1751700020
         req:witness,eternal,ok
-        seen:a foreign claimant once contested the name of Alice — a copy that was not one of our tabs raised Identity Stolen
         see:identity is not address — the key never moved — a Pier still verifies her at prepub_2
-        seen:identity is not address — the key-derived name of Alice never changed while the address moved to prepub_2

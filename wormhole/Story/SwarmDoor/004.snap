@@ -39,4 +39,3 @@ Snap:H
             inbox
               req:unemit,seq,type:pier_accept,done,to:pier_accept,finished
         req:witness,eternal,ok
-        see:the joiner promotes a transport Pier to the inviter before dialing — the redeemer knows the target

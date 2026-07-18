@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Berthation(): string { return '7bbe9ae361826f32~g1' },
+    Ghostmeta_Ghost_Story_Berthation(): string { return 'a90a9afcc3b2ffc4~g1' },
 
 // Berthation.g — the Berth* Books: the persistence door proven (Radio_todo §11.7).  A Berth homes one
 //  Pier's own mutable documents — Waft:Taste, Waft:Listening, Waft:Filings, Waft:Map — each a Waft (the
@@ -187,11 +187,12 @@ async MusuBerth_sweep_story(w) {
     this.MusuBerth_note(w, row)
 
 },
-// ── the witness — %seen LATCHED assertions (Seen_split move 1), polled every pass.  Each claim is a
-//  happened-FACT of the round-trip (a card survived disk, a named reset forgot it, the Story's coarse
-//   sweep forgot it), so once true it STAYS true and latches.  Reads the recorded observations off
-//    %testing (they are the test's own honest read-back of live disk state).  No commas, no apostrophes;
-//     an em-dash — where a pause is wanted.  Gated on the exact recorded counts. ──
+// ── the witness — %sworn assertions via this.story_swear (idempotent per run; evidence on the
+//  Assertioning shelf, never snap bytes).  Each claim is a happened-FACT of the round-trip (a card
+//   survived disk, a named reset forgot it, the Story's coarse sweep forgot it).  Reads the
+//    recorded observations off %testing (they are the test's own honest read-back of live disk
+//     state).  No commas, no apostrophes; an em-dash — where a pause is wanted.  Gated on the
+//      exact recorded counts. ──
 MusuBerth_witness(w) {
     let T = this.MusuBerth_T(w)
     // skipped runner (no writable share) — nothing to witness, the skip note stands alone.
@@ -199,15 +200,15 @@ MusuBerth_witness(w) {
     // the persistence proof: a second independent handle read the card back off the disk — one %Card with
     //  the same tune and verdict as was written, round-tripped enWaft → toc.snap → deWaft.
     let ro = T.o({ reopened: 1 })[0]
-    if (ro && ro.sc.survived && +(ro.sc.cards || 0) === 1 && !(w.oa({seen: 'a verdict card round-tripped through disk — a second independent berth handle read back exactly what the first one saved'}))) w.i({seen: 'a verdict card round-tripped through disk — a second independent berth handle read back exactly what the first one saved'})
+    if (ro && ro.sc.survived && +(ro.sc.cards || 0) === 1) this.story_swear(w, 'a verdict card round-tripped through disk — a second independent berth handle read back exactly what the first one saved')
     // the fine-grained forget: a name-scoped reset dropped the one Waft toc.snap and the next open read
     //  the berth empty — the card is gone by the targeted door.
     let rn = T.o({ reset_named: 1 })[0]
-    if (rn && rn.sc.forgotten && +(rn.sc.cards || 0) === 0 && !(w.oa({seen: 'a name-scoped berth reset forgot the card — the next open of the same berth read it empty'}))) w.i({seen: 'a name-scoped berth reset forgot the card — the next open of the same berth read it empty'})
+    if (rn && rn.sc.forgotten && +(rn.sc.cards || 0) === 0) this.story_swear(w, 'a name-scoped berth reset forgot the card — the next open of the same berth read it empty')
     // reset-with-the-Story: the berth homes under the marrauding root so the Book coarse sweep — the same
     //  sweep the Story runs at start and end — emptied it for free.  before proves there was a card to lose.
     let sw = T.o({ swept_story: 1 })[0]
-    if (sw && sw.sc.reset_with_story && +(sw.sc.before || 0) >= 1 && +(sw.sc.after || 0) === 0 && !(w.oa({seen: 'the berth reset with the Story — homed under the marrauding root the coarse sweep emptied it with no separate reset'}))) w.i({seen: 'the berth reset with the Story — homed under the marrauding root the coarse sweep emptied it with no separate reset'})
+    if (sw && sw.sc.reset_with_story && +(sw.sc.before || 0) >= 1 && +(sw.sc.after || 0) === 0) this.story_swear(w, 'the berth reset with the Story — homed under the marrauding root the coarse sweep emptied it with no separate reset')
 
 },
 // MusuBerth_order — keep the Run snap readable: float A:MusuBerth to the front of H/* (ahead of the

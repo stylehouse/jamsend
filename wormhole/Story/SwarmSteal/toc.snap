@@ -4,34 +4,33 @@ story:SwarmSteal
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.037
-      sample=0.197,at=1783163848
-      sample=0.017,at=1783257392
-      sample=0.016,at=1783366458
-      sample=0.028,at=1783368243
-      sample=0.018,at=1783369784
-      sample=0.014,at=1783420347
-      sample=0.02,at=1783840189
-      sample=0.013,at=1783840318
-      sample=0.032,at=1783841580
-      sample=0.013,at=1783841625
+    TimeTotal:beliefs,avg=0.034
+      sample=0.048,at=1784377860
+      sample=0.048,at=1784377881
+      sample=0.048,at=1784377882
+      sample=0.048,at=1784377883
+      sample=0.048,at=1784377884
+      sample=0.012,at=1784377891
+      sample=0.012,at=1784378194
+      sample=0.012,at=1784378206
+      sample=0.033,at=1784378224
+      sample=0.026,at=1784382233
     TimeTotal:step,avg=0.006
-      sample=0.033,at=1783163848
-      sample=0.003,at=1783257392
-      sample=0.003,at=1783366458
-      sample=0.005,at=1783368243
-      sample=0.003,at=1783369784
-      sample=0.002,at=1783420347
-      sample=0.003,at=1783840189
-      sample=0.002,at=1783840318
-      sample=0.005,at=1783841580
-      sample=0.002,at=1783841625
-  Assertions
-    Assertion:theft-contested,sentence:a foreign claimant once contested the name of Alice — a copy that was not one of our tabs raised Identity Stolen,by_n:4
-    Assertion:identity-not-address,sentence:identity is not address — the key-derived name of Alice never changed while the address moved to prepub_2,by_n:6
+      sample=0.008,at=1784377860
+      sample=0.008,at=1784377881
+      sample=0.008,at=1784377882
+      sample=0.008,at=1784377883
+      sample=0.008,at=1784377884
+      sample=0.002,at=1784377891
+      sample=0.002,at=1784378194
+      sample=0.002,at=1784378206
+      sample=0.005,at=1784378224
+      sample=0.004,at=1784382233
   step,dige:e4469f33b30ab529
   step=2,dige:f06c000a693257e0
   step=3,dige:8cee1080e430c174
-  step=4,dige:7c3374da30d41084
-  step=5,dige:1bbe501ae16f0f47
-  step=6,dige:90c068a4d4a5a5aa
+  step=4,dige:705d9e3f05e16006
+    Assertion:theft-contested,sentence:a foreign claimant once contested the name of Alice — a copy that was not one of our tabs raised Identity Stolen
+  step=5,dige:494003587078ccbd
+  step=6,dige:81e80bae84580ac2
+    Assertion:identity-not-address,sentence:identity is not address — the key-derived name of Alice never changed while the address moved to prepub_2

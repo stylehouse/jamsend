@@ -148,12 +148,11 @@ async SwarmStaple_roundtrip(w):
         w.i({ roundtrip: 'differs', bytes: String(blob.length), at: String(at), a: blob.slice(at, at + 40), b: blob2.slice(at, at + 40) })
     }
 
-// ── the witness — %seen LATCHED assertions (Seen_split move 3), polled every pass (structural +
-//  idempotent). Every claim here is a happened-FACT of the handshake (two selves, a mint, a rebuff, a
-//   seal, a revocation, a round trip) — once true it STAYS true, so it latches rather than flickering.
-//    Declared in The/Assertions (SwarmStaple toc.snap); a missing one reds the run un-maskably (§4).
-//     Converted whole from %see: the truth-gates are unchanged, so the snap footprint is identical
-//      (each line present from its first-true beat on) — only the key hardened see→seen.
+// ── the witness — %sworn assertions via this.story_swear (idempotent per run, shelf-checked, so
+//  no oa guards ride the sentences). Every claim here is a happened-FACT of the handshake (two
+//   selves, a mint, a rebuff, a seal, a revocation, a round trip) — once true it STAYS true.
+//    Evidence lands on the ave/%Assertioning shelf (never snap bytes); the contract lives under
+//     the toc step lines (`step=N/%Assertion`) and a missing one reds the run un-maskably.
 SwarmStaple_witness(w):
     let alice = this.SwarmStaple_ident(w, 'Alice')
     let bob = this.SwarmStaple_ident(w, 'Bob')
@@ -161,32 +160,32 @@ SwarmStaple_witness(w):
     let aPeering = this.Swarm_peering(alice)
     let bPeering = this.Swarm_peering(bob)
     // beat 2: two selves — each an %Identity owning its %Peering page, the keypair on .c only.
-    if (aPeering && bPeering && alice.c.keys?.key && !(oa %seen:'two selves stand — each an Identity owning its Peering page — keys ride .c only')) i %seen:'two selves stand — each an Identity owning its Peering page — keys ride .c only'
+    if (aPeering && bPeering && alice.c.keys?.key) this.story_swear(w, 'two selves stand — each an Identity owning its Peering page — keys ride .c only')
     // beat 3: the offer exists as a nonce record — FOR the Music Feature scoped to Classical.
     let record = aPeering?.o({ Idzeug: 1 })[0]
-    if (record && record.sc.to === 'Music' && record.sc.genre === 'Classical' && !(oa %seen:'Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical')) i %seen:'Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical'
+    if (record && record.sc.to === 'Music' && record.sc.genre === 'Classical') this.story_swear(w, 'Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical')
     // beat 4: teeth — the flipped byte was rejected at verify; the offline redeem failed delivery.
-    if (bob.o({ rebuff: 'forged' })[0] && !(oa %seen:'a tampered Idzeug fails verification — one flipped signature byte and it is rejected')) i %seen:'a tampered Idzeug fails verification — one flipped signature byte and it is rejected'
-    if (bob.o({ rebuff: 'offline' })[0] && !(oa %seen:'redeeming with the inviter offline fails — the Idzeug is proof of receipt not an offline token')) i %seen:'redeeming with the inviter offline fails — the Idzeug is proof of receipt not an offline token'
+    if (bob.o({ rebuff: 'forged' })[0]) this.story_swear(w, 'a tampered Idzeug fails verification — one flipped signature byte and it is rejected')
+    if (bob.o({ rebuff: 'offline' })[0]) this.story_swear(w, 'redeeming with the inviter offline fails — the Idzeug is proof of receipt not an offline token')
     // beat 5: the mutual seal — read both Piers once, claim import + reciprocity + the graph.
     let aPier = aPeering?.o({ Pier: 1, pub: bob.sc.prepub })[0]
     let bPier = bPeering?.o({ Pier: 1, pub: alice.sc.prepub })[0]
-    if (bPier && bPier.o({ Peering: 1 })[0]?.sc?.friendly === 'Alice' && !(oa %seen:'Bob imported the page of Alice — the stashed Peering reborn under his Pier')) i %seen:'Bob imported the page of Alice — the stashed Peering reborn under his Pier'
+    if (bPier && bPier.o({ Peering: 1 })[0]?.sc?.friendly === 'Alice') this.story_swear(w, 'Bob imported the page of Alice — the stashed Peering reborn under his Pier')
     let aGot = aPier?.o({ Grant: 'Music', by: bob.c.keys?.pub })[0]
     let bGot = bPier?.o({ Grant: 'Music', by: alice.c.keys?.pub })[0]
-    if (aGot && bGot && aGot.sc.genre === 'Classical' && bGot.sc.genre === 'Classical' && !(oa %seen:'each Pier carries a Music grant the OTHER signed — Classical only — reciprocity sealed')) i %seen:'each Pier carries a Music grant the OTHER signed — Classical only — reciprocity sealed'
+    if (aGot && bGot && aGot.sc.genre === 'Classical' && bGot.sc.genre === 'Classical') this.story_swear(w, 'each Pier carries a Music grant the OTHER signed — Classical only — reciprocity sealed')
     let aEdge = alice.o({ SocialGraph: 1 })[0]?.o({ Edge: 1, b: bob.sc.prepub })[0]
     let bEdge = bob.o({ SocialGraph: 1 })[0]?.o({ Edge: 1, b: alice.sc.prepub })[0]
-    if (aEdge && bEdge && !(oa %seen:'the friendship is an edge logged in the social graph at both ends')) i %seen:'the friendship is an edge logged in the social graph at both ends'
+    if (aEdge && bEdge) this.story_swear(w, 'the friendship is an edge logged in the social graph at both ends')
     // beat 6: single-use — the spent nonce rebuffs Carol at Alice's door; no Pier forms for her.
     let carol = this.SwarmStaple_ident(w, 'Carol')
     let carolPier = carol && this.Swarm_peering(carol)?.o({ Pier: 1 })[0]
-    if (carol && carol.o({ rebuff: 'rejected_spent' })[0] && !carolPier && !(oa %seen:'the Idzeug is single-use — a second redeem finds the nonce spent and is rebuffed')) i %seen:'the Idzeug is single-use — a second redeem finds the nonce spent and is rebuffed'
+    if (carol && carol.o({ rebuff: 'rejected_spent' })[0] && !carolPier) this.story_swear(w, 'the Idzeug is single-use — a second redeem finds the nonce spent and is rebuffed')
     // beat 7: revocation at use — Alice's Pier retires under its %NotGrant while Bob's still stands.
-    if (aPier && bPier && aPier.o({ NotGrant: 'Music' })[0] && !this.Swarm_pier_live(aPier, 'Music') && this.Swarm_pier_live(bPier, 'Music') && !(oa %seen:'a NotGrant under the Pier retires it at use — the other end stands until told')) i %seen:'a NotGrant under the Pier retires it at use — the other end stands until told'
+    if (aPier && bPier && aPier.o({ NotGrant: 'Music' })[0] && !this.Swarm_pier_live(aPier, 'Music') && this.Swarm_pier_live(bPier, 'Music')) this.story_swear(w, 'a NotGrant under the Pier retires it at use — the other end stands until told')
     // beat 8: the round trip — restored twin holds the Pier and the keys, and the blobs matched.
     let restored = w.o({ Account: 1, of: 'AliceVault' })[0]?.o({ Identity: 1 })[0]
-    if (restored && this.Swarm_peering(restored)?.o({ Pier: 1, pub: bob.sc.prepub })[0] && restored.c.keys?.key && w.o({ roundtrip: 'identical' })[0] && !(oa %seen:'the account survives export and import byte for byte — Pier and grants and keys intact')) i %seen:'the account survives export and import byte for byte — Pier and grants and keys intact'
+    if (restored && this.Swarm_peering(restored)?.o({ Pier: 1, pub: bob.sc.prepub })[0] && restored.c.keys?.key && w.o({ roundtrip: 'identical' })[0]) this.story_swear(w, 'the account survives export and import byte for byte — Pier and grants and keys intact')
 
 // SwarmStaple_order — keep the Run snap readable: float A:SwarmStaple to the front of H/*.
 async SwarmStaple_order(w):
@@ -269,15 +268,13 @@ async SwarmWire_replay(w):
     w.sc.now = 1751600040
     await this.Swarm_redeem(w, this.SwarmStaple_ident(w, 'Bob'), w.c.iz)
 
-// SwarmWire_witness — %seen LATCHED assertions (Seen_split move 3), polled every pass. Every claim is a
-//  happened-FACT of the wire handshake (two stations, an authenticated link, real frames crossing, the
-//   seal, the spent-nonce refusal) — once true it STAYS true, so it LATCHES (never wiped) rather than
-//    flickering. The n === K truth-gate is KEPT: a crossed frame reads as its live inbox %req:unemit,done
-//     (sc.to = the frame type) only at the step it lands, so gating to that beat catches the transient
-//      exactly when it is observable; the latch then carries it to the final snap. Declared in
-//       The/Assertions (SwarmWire toc.snap); a missing one reds the run un-maskably (§4). Converted from
-//        %see: the truth-gates are unchanged, so each fact still appears at its beat — now it also
-//         persists after (an accumulating ledger, the %seen design) instead of dropping each think.
+// SwarmWire_witness — %sworn assertions via this.story_swear (idempotent per run; evidence lands
+//  on the Assertioning shelf, never snap bytes). Every claim is a happened-FACT of the wire
+//   handshake (two stations, an authenticated link, real frames crossing, the seal, the
+//    spent-nonce refusal). The n === K truth-gate is KEPT: a crossed frame reads as its live
+//     inbox %req:unemit,done (sc.to = the frame type) only at the step it lands, so gating to
+//      that beat catches the transient exactly when it is observable; the sworn then carries it
+//       for the run. Contract under the toc step lines; a missing one reds the run un-maskably.
 SwarmWire_witness(w):
     let n = (this.c.run)?.c.step_n
     let alice = this.SwarmStaple_ident(w, 'Alice')
@@ -285,20 +282,20 @@ SwarmWire_witness(w):
     if (!alice || !bob) return
     let stations = w.o({ Peering: 1 })
     // beat 2: two stations + the swarm kinds armed on the world.
-    if (n === 2 && stations.length >= 2 && w.c.on?.pier_hello && !(oa %seen:'two stations stand on the spine — the swarm frame kinds armed on the world')) i %seen:'two stations stand on the spine — the swarm frame kinds armed on the world'
+    if (n === 2 && stations.length >= 2 && w.c.on?.pier_hello) this.story_swear(w, 'two stations stand on the spine — the swarm frame kinds armed on the world')
     let aPier = stations.find(p => p.sc.name === alice.sc.prepub)?.o({ Pier: 1 })[0]
     let bPier = stations.find(p => p.sc.name === bob.sc.prepub)?.o({ Pier: 1 })[0]
     if (!aPier || !bPier) return
     // beat 3: authenticated both ways BEFORE any swarm frame crossed.
-    if (n === 3 && this.Peeroleum_peer_ready(aPier) && this.Peeroleum_peer_ready(bPier) && !(oa %seen:'the link authenticated first — hello and trust both ways before any swarm frame')) i %seen:'the link authenticated first — hello and trust both ways before any swarm frame'
+    if (n === 3 && this.Peeroleum_peer_ready(aPier) && this.Peeroleum_peer_ready(bPier)) this.story_swear(w, 'the link authenticated first — hello and trust both ways before any swarm frame')
     // beat 4: the hello and accept each crossed as a real DONE inbox item, and the friendship sealed.
     let heard = (pier, kind) => pier.o({ inbox: 1 })[0]?.o({ req: 'unemit' }).some(u => u.sc.to === kind && u.sc.done)
-    if (n === 4 && heard(aPier, 'pier_hello') && heard(bPier, 'pier_accept') && !(oa %seen:'pier_hello and pier_accept crossed as real frames — booked through outbox and inbox')) i %seen:'pier_hello and pier_accept crossed as real frames — booked through outbox and inbox'
+    if (n === 4 && heard(aPier, 'pier_hello') && heard(bPier, 'pier_accept')) this.story_swear(w, 'pier_hello and pier_accept crossed as real frames — booked through outbox and inbox')
     let aGot = this.Swarm_peering(alice)?.o({ Pier: 1, pub: bob.sc.prepub })[0]?.o({ Grant: 'Music', by: bob.c.keys?.pub })[0]
     let bGot = this.Swarm_peering(bob)?.o({ Pier: 1, pub: alice.sc.prepub })[0]?.o({ Grant: 'Music', by: alice.c.keys?.pub })[0]
-    if (n === 4 && aGot && bGot && !(oa %seen:'the friendship sealed over the wire — mutual Music grants at both ends')) i %seen:'the friendship sealed over the wire — mutual Music grants at both ends'
+    if (n === 4 && aGot && bGot) this.story_swear(w, 'the friendship sealed over the wire — mutual Music grants at both ends')
     // beat 5: the refusal crossed back — a pier_reject frame heard at Bob and surfaced as %rebuff.
-    if (n === 5 && heard(bPier, 'pier_reject') && bob.o({ rebuff: 'rejected_spent' })[0] && !(oa %seen:'the spent nonce refuses over the wire too — a pier_reject crossed back')) i %seen:'the spent nonce refuses over the wire too — a pier_reject crossed back'
+    if (n === 5 && heard(bPier, 'pier_reject') && bob.o({ rebuff: 'rejected_spent' })[0]) this.story_swear(w, 'the spent nonce refuses over the wire too — a pier_reject crossed back')
 
 // SwarmWire_order — float A:SwarmWire to the front of H/* so the Run snap stays readable.
 async SwarmWire_order(w):
@@ -408,17 +405,17 @@ SwarmSteal_witness(w):
     if (n === 5 && this.Swarm_address(alice) === prepub + '_2' && !this.Swarm_stolen(alice) && !(oa %see:'Steal Back jumps past the thief and the siblings to prepub_2 and clears the alarm')) i %see:'Steal Back jumps past the thief and the siblings to prepub_2 and clears the alarm'
     // beat 6: identity is not address — the canonical name never moved while she is reachable at _2.
     if (n === 6 && peering.sc.name === prepub && this.Swarm_address(alice) === prepub + '_2' && peering.sc.online && !(oa %see:'identity is not address — the key never moved — a Pier still verifies her at prepub_2')) i %see:'identity is not address — the key never moved — a Pier still verifies her at prepub_2'
-    // ── %seen — the DURABLE latched assertions (Seen_split move 1). Stand beside the %see above; a %seen
-    //  is a happened-FACT, so it LATCHES: minted once the first beat its truth holds and never wiped
-    //   (w_forgets_problems clears {see} not {seen}), riding every later snap. Declared in The/Assertions
-    //    (SwarmSteal toc.snap) with the beat by which each must hold; the roster verdict check is move 2.
+    // ── %sworn — the DURABLE assertions, via this.story_swear (idempotent per run). Stand beside the
+    //  %see above; a sworn is a happened-FACT, latched once the first beat its truth holds — evidence
+    //   on the Assertioning shelf (never snap bytes), contract under the toc step lines (the hosting
+    //    step is the by-when); Cred_assertion_gaps reds a missing one.
     // theft-contested — latches at beat 4 (the %Stolen husk lands) and SURVIVES past beat 5, where the
     //  LIVE `stolen` flag clears: the observation drops but the fact "a theft happened" stays true. This
     //   is the whole point of the split — a latched fact where a %see would flicker out.
-    if (n >= 4 && peering.o({ Stolen: 'remote_copy' })[0] && !(oa %seen:'a foreign claimant once contested the name of Alice — a copy that was not one of our tabs raised Identity Stolen')) i %seen:'a foreign claimant once contested the name of Alice — a copy that was not one of our tabs raised Identity Stolen'
+    if (n >= 4 && peering.o({ Stolen: 'remote_copy' })[0]) this.story_swear(w, 'a foreign claimant once contested the name of Alice — a copy that was not one of our tabs raised Identity Stolen')
     // identity-not-address — the culminating happened-fact (the doc's named latch candidate): latches at
     //  beat 6 when the key-derived name is unchanged while the address has moved to _2 and she is online.
-    if (n >= 6 && peering.sc.name === prepub && this.Swarm_address(alice) === prepub + '_2' && peering.sc.online && !(oa %seen:'identity is not address — the key-derived name of Alice never changed while the address moved to prepub_2')) i %seen:'identity is not address — the key-derived name of Alice never changed while the address moved to prepub_2'
+    if (n >= 6 && peering.sc.name === prepub && this.Swarm_address(alice) === prepub + '_2' && peering.sc.online) this.story_swear(w, 'identity is not address — the key-derived name of Alice never changed while the address moved to prepub_2')
 
 // SwarmSteal_order — float A:SwarmSteal to the front of H/* so the Run snap stays readable.
 async SwarmSteal_order(w):
@@ -649,13 +646,14 @@ async SwarmDoor_knock(w):
 async SwarmDoor_settle(w):
     w.sc.now = 1751900030
 
-// ── the witness — %seen LATCHED assertions (Seen_split move 3), n-gated, reading live truth (no commas,
-//    no apostrophes). Every claim is a happened-FACT of the door handshake (two bare stations, a minted
-//     Idzeug, a promoted Pier, first contact sealed, readiness riding station_up) — once true it STAYS
-//      true, so it LATCHES rather than dropping each think. The n === K gate is KEPT: several gates read a
-//       state that holds only at their beat (bare "no Pier yet", the pre-seal route), so gating pins the
-//        fact to when it is observable; the latch then carries it to the final snap. Declared in
-//         The/Assertions (SwarmDoor toc.snap); a missing one reds the run un-maskably (§4). ──
+// ── the witness — %sworn assertions via this.story_swear (idempotent per run; evidence on the
+//    Assertioning shelf, never snap bytes — no commas, no apostrophes in sentences). Every claim
+//     is a happened-FACT of the door handshake (two bare stations, a minted Idzeug, a promoted
+//      Pier, first contact sealed, readiness riding station_up). The n === K gate is KEPT:
+//       several gates read a state that holds only at their beat (bare "no Pier yet", the
+//        pre-seal route), so gating pins the fact to when it is observable.  These are all
+//         ACHIEVEMENTS today (no contract lines in SwarmDoor's toc); its fixtures were
+//          re-recorded 2026-07-19 — they had carried a stale pre-hardening `see:` line. ──
 SwarmDoor_witness(w):
     let n = (this.c.run)?.c.step_n
     let inviter = this.SwarmStaple_ident(w, 'Inviter')
@@ -667,12 +665,12 @@ SwarmDoor_witness(w):
     let live = (s) => !!this.Peeroleum_carrier(s, w)
     // beat 2: two BARE stations — a carrier each, station_up, the swarm kinds armed, and NEITHER
     //  holds a Pier yet (first contact is still to come).
-    if (n === 2 && live(iStation) && live(jStation) && w.c.station_up && w.c.on?.pier_hello && !iStation.o({ Pier: 1 }).length && !jStation.o({ Pier: 1 }).length && !(oa %seen:'two bare stations stand on the spine — a carrier each — and neither holds a Pier yet')) i %seen:'two bare stations stand on the spine — a carrier each — and neither holds a Pier yet'
+    if (n === 2 && live(iStation) && live(jStation) && w.c.station_up && w.c.on?.pier_hello && !iStation.o({ Pier: 1 }).length && !jStation.o({ Pier: 1 }).length) this.story_swear(w, 'two bare stations stand on the spine — a carrier each — and neither holds a Pier yet')
     // beat 3: the inviter holds a single-use Idzeug — its station still routes to no one.
     let record = this.Swarm_peering(inviter)?.o({ Idzeug: 1 })[0]
-    if (n === 3 && record && record.sc.to === 'Music' && !iStation.o({ Pier: 1 }).length && !(oa %seen:'the inviter holds a single-use Idzeug — its station still routes to no one')) i %seen:'the inviter holds a single-use Idzeug — its station still routes to no one'
+    if (n === 3 && record && record.sc.to === 'Music' && !iStation.o({ Pier: 1 }).length) this.story_swear(w, 'the inviter holds a single-use Idzeug — its station still routes to no one')
     // beat 4: the joiner promoted its OWN transport Pier to the inviter before dialing (the panel move).
-    if (n === 4 && jStation.o({ Pier: 1, pub: inviter.sc.prepub })[0] && !(oa %seen:'the joiner promotes a transport Pier to the inviter before dialing — the redeemer knows the target')) i %seen:'the joiner promotes a transport Pier to the inviter before dialing — the redeemer knows the target'
+    if (n === 4 && jStation.o({ Pier: 1, pub: inviter.sc.prepub })[0]) this.story_swear(w, 'the joiner promotes a transport Pier to the inviter before dialing — the redeemer knows the target')
     // beat 5: FIRST CONTACT — a stranger reached a station holding no prior Pier; the door promoted
     //  the transport route AND sealed the durable friendship, each grant signed by the other.
     let iRoute = iStation.o({ Pier: 1, pub: joiner.sc.prepub })[0]
@@ -681,10 +679,10 @@ SwarmDoor_witness(w):
     let jPier = this.Swarm_peering(joiner)?.o({ Pier: 1, pub: inviter.sc.prepub })[0]
     let iGot = iPier?.o({ Grant: 'Music', by: joiner.c.keys?.pub })[0]
     let jGot = jPier?.o({ Grant: 'Music', by: inviter.c.keys?.pub })[0]
-    if (n === 5 && iRoute && iGot && jGot && !(oa %seen:'first contact — a stranger reached a station with no prior Pier and the door promoted the route and sealed both grants')) i %seen:'first contact — a stranger reached a station with no prior Pier and the door promoted the route and sealed both grants'
+    if (n === 5 && iRoute && iGot && jGot) this.story_swear(w, 'first contact — a stranger reached a station with no prior Pier and the door promoted the route and sealed both grants')
     // beat 5: readiness rode station_up — NEITHER transport Pier ran a per-Pier handshake, yet the
     //  frames crossed (peer_ready false both ends — a live carrier under an up station was enough).
-    if (n === 5 && iRoute && jRoute && w.c.station_up && !this.Peeroleum_peer_ready(iRoute) && !this.Peeroleum_peer_ready(jRoute) && iPier && jPier && !(oa %seen:'readiness rode station_up — neither transport Pier ran a handshake yet the frames crossed and sealed')) i %seen:'readiness rode station_up — neither transport Pier ran a handshake yet the frames crossed and sealed'
+    if (n === 5 && iRoute && jRoute && w.c.station_up && !this.Peeroleum_peer_ready(iRoute) && !this.Peeroleum_peer_ready(jRoute) && iPier && jPier) this.story_swear(w, 'readiness rode station_up — neither transport Pier ran a handshake yet the frames crossed and sealed')
 
 // SwarmDoor_order — float A:SwarmDoor to the front of H/* so the Run snap stays readable.
 async SwarmDoor_order(w):

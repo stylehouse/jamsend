@@ -78,9 +78,41 @@ This file is destination + the bombs + the next move. Correct anything that has 
     to feed a microsnap.
 - **Sounditron is converted** (witness = story_swear calls, no oa guards; contract under its toc
    steps; `granted` swear deliberately subject-less — never microsnap sealed %Grant material).
-**NEXT: the churn Accepts** (SwarmStaple/Steal/Wire + MusuBerth → %sworn + per-step contract, live
- test + Accept each, then delete the churn bridge), **then Storui** (hover layer, sr-flag assertion
-  marks with pending→overdue→red, explorer⇄show-diff ghost lines).
+**THE CHURN IS DONE + THE BRIDGE IS DELETED (2026-07-19, all live on the reloaded runner).**
+ Converted: SwarmSteal (contract 2), SwarmStaple (contract 10 — the toc declared all ten, not six),
+  SwarmWire (contract 5), SwarmDoor (5 achievements — its toc never declared a contract and its
+   fixtures carried a stale pre-hardening `see:` line, so it was red BEFORE the churn; re-recorded
+    clean), MusuBerth (3 achievements).  Each: baseline green under the bridge → convert (.g
+     mechanical `oa %seen`-guard → `story_swear`, toc bucket → per-step, by_n dropped) → red on
+      dige (fixtures lose ONLY the seen: bytes — diffed byte-exact on SwarmSteal before Accepting)
+       → live Accept → green.  Fleet fixtures now carry ZERO assertion bytes (grepped).  The churn
+        bridge (flat-bucket contract + `seen:` snap-text evidence) is deleted from
+         Cred_assertion_gaps, Cred_report_wild, the `assertions` op, and the CLI printer.
+          Post-bridge proofs: SwarmSteal + Sounditron green shelf-only, and a phantom %Assertion
+           on the DIGE path redded a 100%-steps run with the named gap (un-maskable, both regimes).
+            Churn conversions kept subjects OFF (bare swears) — retrofitting microsnap subjects is
+             now FREE (never a fixture byte), do it whenever a witness gets touched.
+**THE STORUI LAYER IS BUILT (2026-07-19, bundle-proven + green SwarmSteal burned on the live
+ runner).** All three UI strokes, all reading the same two sources the gap gate reads (contract =
+  `story_w.c.The` step lines; evidence = the `ave/%Assertioning` shelf through `H.ave.ob`, live
+   per flush) — zero new state, zero fixture bytes, a contract-less Book shows none of it:
+- **hover layer** — the hovered pip's `%desc` alone, absolute above the strip (`.sr-hoverdesc`,
+   pointer-events:none, instant); native titles stay.
+- **assertion marks** — 6px DIAMONDS beside the square note flags, one per `%Assertion` hosted
+   at that pip; leniency is structural: `pending` hollow → `latched` green → `overdue` amber
+    (step passed unlatched mid-run) → `red` pulsing at run end.  Click = pick the step + open
+     the explorer focused on that assertion.
+- **explorer ⇄ show-diff mutex** — one body, one occupant: the `sworn N/M` button (RUN BAR,
+   between the step counter and the verdict — the human's placement; or `[s]`, panel or not)
+    swaps the diff for the explorer: `declared %Assertions` rows with state / due-step /
+     "sworn at NNN" / ⌖ microsnap unfold, then `undeclared %Assertions` amber below — NOT ok,
+      they all want declaring, some just exist only in the Book so far.  Any diff-mode choice
+       swaps back.  An absent assertion
+     renders as a red dashed **GHOST LINE** in show-diff at the spot the sworn would stand (end
+      of the `w:<book>` subtree on the got side, squish-tolerant) — clicking it opens the
+       explorer: the clue and the navigation are one mechanism.
+The build order is DONE.  Left open deliberately: the human's Accept harvesting unclaimed
+ evidence into the contract (ruled, not yet built — the explorer only shows the ◇ rows).
 
 **MOVES 1 + 2 LANDED + MOVE 3 STARTED (2026-07-12, proven live on `3c5238`/`49dee9`). The MECHANISM
  is complete.** `%seen` latches AND a missing declared assertion now reds the run — un-maskable by

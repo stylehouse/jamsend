@@ -15,6 +15,3 @@ Snap:H
           reset_named,cards=0,forgotten
           reached:step_5
           swept_story,before,after=0,reset_with_story
-        seen:a verdict card round-tripped through disk — a second independent berth handle read back exactly what the first one saved
-        seen:a name-scoped berth reset forgot the card — the next open of the same berth read it empty
-        seen:the berth reset with the Story — homed under the marrauding root the coarse sweep emptied it with no separate reset
