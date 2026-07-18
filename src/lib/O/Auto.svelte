@@ -156,7 +156,7 @@
     //   active flag rides 1/absent so it stays snap-clean, and only ONE %Identity is active at a time.
     //    The single concretion both the ?I= mint|peek (ensure_identity) and the .env adopt (IdHatch)
     //     funnel through, so a key from either source becomes the same first-class object.
-    Clustation_concrete(this: House, A: TheC, tag: string, stored: { pub: string; key: string; prepub: string; born?: number }): TheC {
+    Clustation_concrete(this: House, A: TheC, tag: string, stored: { pub: string; key: string; prepub: string; born?: number; friendly?: string }): TheC {
         for (const old of A.o({ Identity: 1 }) as TheC[]) delete old.sc.active
         const ident = A.oai({ Identity: tag }) as TheC
         ident.c.up = A
@@ -171,8 +171,45 @@
         ident.sc.active = 1
         const peering = ident.oai({ Peering: 1, name: stored.prepub }) as TheC
         peering.c.up = ident
+        // the CHOSEN name (friendly) rehydrates onto both the identity and its page — this is
+        //  what crosses the wire (Swarm_page → invites → the friend's roster), so a named self
+        //   stays named across reloads.  Chosen via Clustation_friendly; absent = unnamed yet.
+        if (stored.friendly) {
+            ident.sc.friendly = stored.friendly
+            peering.sc.friendly = stored.friendly
+        }
         ;(this as House).c.active_identity = ident
         return ident
+    },
+
+    // Clustation_friendly — NAME YOURSELF (the first-time move): stamp the chosen name on the
+    //  active %Identity + its %Peering page (what invites carry), and persist it into the
+    //   identities Thang under BOTH homes the identity answers to — its prepub tag and this
+    //    page's role tag (a role-resumed boot must find the name too).  Returns false while
+    //     the Thangs mount is still booting (caller can retry).
+    async Clustation_friendly(this: House, name: string, H?: House): Promise<boolean> {
+        H = (H ?? this) as House
+        const top = (H.top_House?.() ?? H) as House
+        const A = (top.o({ A: 'Clustation' }) as TheC[])[0]
+        const ident = A && (A.o({ Identity: 1 }) as TheC[]).find(i => i.sc.active)
+        if (!ident?.c?.keys || typeof (H as any).thang_add !== 'function') return false
+        const clean = String(name ?? '').split(',').join(' ·').trim().slice(0, 24)
+        if (!clean) return false
+        ident.sc.friendly = clean
+        const peering = ident.o({ Peering: 1 })[0] as TheC | undefined
+        if (peering) peering.sc.friendly = clean
+        const wT = A.o({ w: 'Thangs', thangs: 'identities' })[0] || A.i({ w: 'Thangs', thangs: 'identities' })
+        wT.c.up = A
+        const born = ident.sc.born ? Date.parse(String(ident.sc.born)) : undefined
+        const stored = {
+            pub: ident.c.keys.pub, key: ident.c.keys.key, prepub: String(ident.sc.prepub),
+            ...(born ? { born } : {}), friendly: clean,
+        }
+        await (H as any).thang_add(wT, String(ident.sc.prepub), stored)
+        const role = (top.c as any)?.id_role
+        if (role) await (H as any).thang_add(wT, String(role), stored)
+        ident.bump()
+        return true
     },
 
     // Clustation_pin — store the ACTIVE identity under its OWN prepub tag, so a ?I=<prepub> boot
@@ -190,6 +227,7 @@
         await (H as any).thang_add(wT, String(ident.sc.prepub), {
             pub: ident.c.keys.pub, key: ident.c.keys.key, prepub: String(ident.sc.prepub),
             ...(born ? { born } : {}),
+            ...(ident.sc.friendly ? { friendly: String(ident.sc.friendly) } : {}),
         })
         return true
     },

@@ -21,13 +21,28 @@
         return {
             state: (sc.Riffle as string) ?? 'shut',
             crate: sc.crate as string | undefined,
-            homes: homes.map((h: any) => ({ key: h.key as string, name: h.name as string })),
+            homes: homes.map((h: any) => ({
+                key: h.key as string,
+                name: h.name as string,
+                count: h.shelf?.o?.({ Record: 1 })?.length ?? 0,
+            })),
             cards,
         }
     })
+    let picked_home = $derived(face.homes.find((h: any) => h.key === picked) ?? face.homes[0])
 
     function blat() { (H as any)?.Riffle_blat?.(n, picked) }
     function clear() { (H as any)?.Riffle_clear?.(n) }
+    // the friend's ive_got boast (their last records count over the wire) — the honest promise
+    //  of what a pull would bring, shown while their local mirror crate is still empty.
+    function boast(pub: string): number | null {
+        try {
+            const self = (H as any)?.Swarm_live_self?.()
+            const pier = self && (H as any)?.Swarm_peering?.(self)?.o({ Pier: 1, pub })?.[0]
+            const c = pier?.o({ IveGot: 1, by: 'records' })?.[0]?.sc?.count
+            return c != null ? +c : null
+        } catch { return null }
+    }
     function tune(rec: any) {
         const radio = n?.c?.w?.o?.({ Radio: 1 })?.[0]
         if (radio && rec) (H as any)?.Radio_tune?.(radio, rec)
@@ -56,6 +71,10 @@
                 </div>
             {/each}
         </div>
+    {:else if face.homes.length <= 1}
+        <div class="rf-note">just your crate here — invite a friend and theirs appears</div>
+    {:else if picked_home && picked_home.count === 0}
+        <div class="rf-note">{boast(picked_home.key) != null ? `${picked_home.name} boasts ${boast(picked_home.key)} records — the heist brings them here` : `nothing pulled from ${picked_home.name} yet — the heist brings tracks here`}</div>
     {/if}
 </div>
 
@@ -110,4 +129,5 @@
     }
     .rf-play:hover { color: #fff; }
     .rf-name { font-size: 9px; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+    .rf-note { font-size: 9px; opacity: 0.6; font-style: italic; margin-top: 3px; }
 </style>

@@ -41,6 +41,9 @@
             {/if}
             {#if face.last}<div class="sf-last">↳ {face.last}</div>{/if}
             {#if face.note}<div class="sf-note">{face.note}</div>{/if}
+            {#if face.state === 'idle' && !face.dug && !face.stood && !face.note}
+                <div class="sf-note">digs when the radio wants tracks — ⛏ digs now</div>
+            {/if}
         </div>
     </div>
 </div>

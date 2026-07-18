@@ -227,6 +227,9 @@
             <span class="ip-title">⨳ <b>{self.sc.nick || self.sc.prepub}</b></span>
             {#if !url}
                 <button class="ip-act" onclick={mint} title="mint a single-use Music invite and show its QR">invite a friend</button>
+                {#if born_today && !friends.length && !iz}
+                    <span class="ip-note">✨ you are new here — this button makes a QR a friend scans, and their music reaches your radio</span>
+                {/if}
             {:else}
                 <InviteQR {url} size={140} caption="" />
                 <span class="ip-row">

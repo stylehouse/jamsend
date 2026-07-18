@@ -36,7 +36,8 @@
             }
         } catch { friends = [] }
         return {
-            nick: self?.sc?.nick as string | undefined,
+            name: (self?.sc?.friendly || self?.sc?.nick) as string | undefined,
+            named: !!self?.sc?.friendly,
             prepub: self?.sc?.prepub ? String(self.sc.prepub).slice(0, 8) : undefined,
             born: self?.sc?.born as string | undefined,
             newborn: !!self?.sc?.born && self.sc.born === today,
@@ -44,13 +45,38 @@
             friends,
         }
     })
+
+    // ── NAME YOURSELF — the first-time move: the chosen name (friendly) is what invites carry
+    //  and what friends see; the auto-nick is only a stand-in.  Persists via Clustation_friendly.
+    let naming = $state(false)
+    let name_draft = $state('')
+    function name_open() {
+        name_draft = face.named && face.name ? face.name : ''
+        naming = true
+    }
+    async function name_save() {
+        const ok = await (H as any)?.Clustation_friendly?.(name_draft)
+        if (ok) naming = false
+    }
 </script>
 
 <div class="df">
-    <div class="df-title">🚪 {face.nick ?? 'no self yet'}
+    <div class="df-title">🚪 {face.name ?? 'standing you up…'}
+        {#if face.prepub && !naming}
+            <button class="df-edit" onclick={name_open} title="name yourself — friends see this">✎</button>
+        {/if}
         {#if face.prepub}<span class="df-pub">{face.prepub}</span>{/if}
         {#if face.newborn}<span class="df-born">✨ born today</span>{/if}
     </div>
+    {#if naming}
+        <div class="df-naming">
+            <input class="df-input" bind:value={name_draft} placeholder="what do friends call you?"
+                onkeydown={(e) => { if (e.key === 'Enter') name_save(); if (e.key === 'Escape') naming = false }} />
+            <button class="df-edit" onclick={name_save}>✓</button>
+        </div>
+    {:else if face.prepub && !face.named}
+        <div class="df-note">✎ name yourself — the name rides your invites</div>
+    {/if}
     {#if face.door?.landed}
         <div class="df-invite">📨 invite from <b>{face.door.from}</b></div>
     {/if}
@@ -66,7 +92,7 @@
         </div>
     {/each}
     {#if !face.friends.length && !face.door?.landed}
-        <div class="df-note">no piers sealed — invite a friend from the panel</div>
+        <div class="df-note">{face.newborn ? 'you are new here — the invite QR below is how a friend joins you' : 'no friends yet — mint an invite QR in the panel'}</div>
     {/if}
 </div>
 
@@ -88,6 +114,27 @@
         50%      { filter: drop-shadow(0 0 10px rgba(196, 130, 224, 0.75)); }
     }
     .df-title { font-size: 12px; font-weight: 700; color: #d9a9ef; }
+    .df-edit {
+        pointer-events: auto;
+        cursor: pointer;
+        background: none;
+        color: #b48fc9;
+        border: none;
+        font-size: 10px;
+        padding: 0 3px;
+    }
+    .df-edit:hover { color: #fff; }
+    .df-naming { display: flex; gap: 3px; margin-top: 3px; }
+    .df-input {
+        pointer-events: auto;
+        background: #241733;
+        color: #ead9ef;
+        border: 1px solid #8a6fae;
+        border-radius: 6px;
+        font-size: 10px;
+        padding: 2px 6px;
+        width: 170px;
+    }
     .df-pub { font-size: 8px; opacity: 0.55; font-family: monospace; margin-left: 4px; }
     .df-born {
         font-size: 9px;

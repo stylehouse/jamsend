@@ -18,6 +18,9 @@
         void H?.version
         void tick
         const sc = n?.sc ?? {}
+        // the first-time read: never played, nothing dialed — teach what ▶ will do, using the
+        //  stoker's census (stock standing = the preheat already dug) so the promise is honest.
+        const stock = +((n?.c?.w?.o?.({ Stoker: 1 })?.[0]?.sc?.stock) ?? 0)
         return {
             state:  (sc.Radio as string) ?? 'off',
             title:  sc.title as string | undefined,
@@ -27,6 +30,8 @@
             played: +(sc.played ?? 0),
             drops:  +(sc.drops ?? 0),
             note:   sc.note as string | undefined,
+            first:  ((sc.Radio ?? 'off') === 'off') && !sc.title && !+(sc.played ?? 0),
+            stock,
         }
     })
 
@@ -57,6 +62,8 @@
             {#if face.drops > 0}&nbsp;· {face.drops} drops{/if}</div>
     {:else if face.state === 'digging'}
         <div class="rf-time">digging the crates…</div>
+    {:else if face.first}
+        <div class="rf-time">{face.stock > 0 ? `▶ plays your music — ${face.stock} records stand ready` : '▶ starts the radio — the stoker will dig your share'}</div>
     {/if}
 </div>
 
