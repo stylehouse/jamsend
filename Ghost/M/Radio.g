@@ -15,6 +15,11 @@
 //      and digs when FRESH (unheard-this-sitting) runs low; EXHAUSTING the set (the dial finds
 //       nothing unheard) makes it churn extra fast.  The radio is how the collection gets
 //        walked: it stocks as it listens — and the stoking is VISIBLE, a face in the glass.
+//  INSTANT-ON (2026-07-19): the dig is PRE-EMPTED wherever possible.  A commissioner may
+//   Stoker_preheat at boot (one churn while the radio is still off — the first ▶ finds stock
+//    STANDING); a landing NUDGES a digging radio awake mid-poll (Radio_nudge — never wait out
+//     the 3s look); and the dial turns ~2s BEFORE the frontier, so the next record's first
+//      chunks are decoded and laid AT the seam — gapless, the first bit already standing.
 //  THE MUTEX LAW (Sounditron's lesson, load-bearing): nothing here runs under beliefs().  Every
 //   loop is a detached setTimeout chain guarded by c.era — pause|skip|replay bump the era and the
 //    stale loop falls silent on its next look.  The face reads sc; the machine lives on c.
@@ -65,6 +70,7 @@ async Radio_go(radio, opts):
     if (!gat) {
         radio.sc.note = 'no web audio here'
         this.Radio_state(radio, 'off')
+        this.Radio_media_off()
         return
     }
     radio.c.gat = gat
@@ -100,6 +106,7 @@ Radio_pause(radio):
     }
     radio.c.aud = null
     this.Radio_state(radio, 'paused')
+    this.Radio_media_pause()
 
 // Radio_skip — the dial turn on demand: cut the voice (what was scheduled dies), drop the
 //  record, and let the pump's next look dial fresh.  w.c.play keeps the skipped id until the
@@ -125,6 +132,40 @@ Radio_skip(radio):
     this.Radio_pump(radio, era)
 //#endregion
 
+//#region media — the lockscreen now-playing card (ported from the old Radios.svelte ghost).
+//  Raised by REAL playback only, feature-detected (navigator absent in the node/jsdom boot —
+//   a clean no-op).  The card offers exactly the transport the radio has: next|pause|play.
+//    Pause KEEPS the card (playbackState 'paused', so the lockscreen play button resumes);
+//     only a real teardown (state → off) clears it.
+Radio_media_now(radio, rec):
+    if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return
+    try {
+        let meta = {}
+        meta.title = String(rec.sc.title || rec.sc.id || 'jamsend')
+        meta.artist = String(rec.sc.artist || '')
+        meta.artwork = [{ src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' }]
+        navigator.mediaSession.metadata = new MediaMetadata(meta)
+        navigator.mediaSession.playbackState = 'playing'
+        if (!radio.c.media_wired) {
+            radio.c.media_wired = 1
+            navigator.mediaSession.setActionHandler('nexttrack', () => { this.Radio_skip(radio) })
+            navigator.mediaSession.setActionHandler('pause', () => { this.Radio_pause(radio) })
+            navigator.mediaSession.setActionHandler('play', () => { this.Radio_go(radio, null) })
+        }
+    } catch (er) {}
+
+Radio_media_pause():
+    if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return
+    try { navigator.mediaSession.playbackState = 'paused' } catch (er) {}
+
+Radio_media_off():
+    if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return
+    try {
+        navigator.mediaSession.metadata = null
+        navigator.mediaSession.playbackState = 'none'
+    } catch (er) {}
+//#endregion
+
 //#region pump — the detached listen loop (never under beliefs; era-guarded)
 Radio_pump_soon(radio, era, ms):
     setTimeout(() => { this.Radio_pump(radio, era) }, ms)
@@ -141,7 +182,10 @@ async Radio_pump(radio, era):
     if (!w || !AC || !radio.c.aud) return
     let rec = radio.c.rec
     if (!rec) {
-        rec = await this.Radio_dial(radio)
+        // a tuned pick (the riffle's audition) outranks the dial — consumed exactly once
+        let pick = radio.c.tune_rec || null
+        radio.c.tune_rec = null
+        rec = pick || await this.Radio_dial(radio)
         if (radio.c.era !== era) return
         if (!rec) {
             // nothing to play YET — the stoker was poked (Radio_dial did); show the dig
@@ -180,6 +224,7 @@ async Radio_pump(radio, era):
         if (!radio.c.dec) {
             radio.sc.note = 'no AudioDecoder here'
             this.Radio_state(radio, 'off')
+            this.Radio_media_off()
             return
         }
         this.Radio_dec_feed(radio.c.dec, this.Ra_chunk_packets(m.bytes[s]))
@@ -220,7 +265,11 @@ async Radio_pump(radio, era):
             this.Radio_dec_close(radio.c.dec)
             radio.c.dec = null
         }
-        if (now >= (radio.c.end || 0) - 0.05) {
+        // advance EARLY: turn the dial ~2s before the frontier, so the next look dials+opens
+        //  while this track still plays out — the next record's first chunks decode and land
+        //   AT the seam (Radio_open never resets c.end; Radio_place chains at max(end, now)).
+        //    Gapless, and the first bit is standing before it is due — never a 400ms hole.
+        if (now >= (radio.c.end || 0) - 2.0) {
             radio.sc.played = (+(radio.sc.played || 0)) + 1
             radio.c.rec = null
             radio.c.drained = 0
@@ -259,6 +308,7 @@ Radio_open(radio, rec):
     radio.sc.at = 0
     delete radio.sc.note
     radio.bump()
+    this.Radio_media_now(radio, rec)
 
 // the supply loop: while the preview plays, transcode the %Stream continuation into being
 //  (the demand-driven encode, self-served — no Repli needed for one's own stock).  A record
@@ -331,6 +381,17 @@ async Radio_dial(radio):
         radio.bump()
     }
     return again
+
+// Radio_nudge — the stoker's landing announcement: stock JUST stood, and a digging radio must
+//  not wait out its 3s poll — pump NOW.  The fresh era cancels the pending timer chain (two
+//   chains on one era would double-pump forever); gated hard on 'digging' so a playing radio
+//    is never restarted and a paused|off one never woken.
+Radio_nudge(w):
+    let radio = w.o({ Radio: 1 })[0]
+    if (!radio || radio.sc.Radio !== 'digging') return
+    let era = (radio.c.era || 0) + 1
+    radio.c.era = era
+    this.Radio_pump(radio, era)
 //#endregion
 
 //#region stoker — the PROVISIONING organ, a face of its own: watch the shelf, dig when fresh runs low
@@ -373,6 +434,15 @@ Stoker_churn(st):
     st.c.churn_asked = 1
     this.Stoker_wake(st)
 
+// Stoker_preheat — PRE-EMPT the dig: one churn at glass-commission time, while the radio is
+//  still off, so the crates are dug before anyone presses ▶ and the first bit plays
+//   immediately.  The COMMISSIONER opts in (Sounditron_glass does) — a sealed Book that never
+//    calls it sees no spontaneous digging.  Once per tab; after the pass the loop parks.
+Stoker_preheat(st):
+    if (st.c.preheated) return
+    st.c.preheated = 1
+    this.Stoker_churn(st)
+
 Stoker_soon(st, era, ms):
     setTimeout(() => { this.Stoker_look(st, era) }, ms)
 
@@ -400,6 +470,7 @@ async Stoker_look(st, era):
         try { ls = await this.Ra_stock_ls(nav, pub) } catch (er) { ls = [] }
         if (st.c.era !== era) return
         let k = 0
+        let stood0 = +(st.sc.stood || 0)
         while (k < ls.length && k < 12) {
             let stand = null
             try { stand = await this.Ra_stock_standing(nav, pub, ls[k].enid) } catch (er) { stand = null }
@@ -412,8 +483,11 @@ async Stoker_look(st, era):
             }
             k = k + 1
         }
+        // resurrection landed — a digging radio should start sounding NOW, not next poll
+        if (+(st.sc.stood || 0) > stood0) this.Radio_nudge(w)
     }
     this.Stoker_census(st, shelf, radio)
+    this.Stoker_cull(st, shelf, radio)
     let want = st.c.churn_asked || +(st.sc.fresh || 0) < 2
     if (!want) {
         this.Stoker_state(st, 'watching')
@@ -421,6 +495,9 @@ async Stoker_look(st, era):
         return
     }
     if (!nav) {
+        // consume the ask here too — an unconsumed churn with no disk would hold the loop
+        //  out of its park forever (the headless boot's exact shape).
+        st.c.churn_asked = 0
         st.sc.note = 'no disk share — nothing to dig'
         this.Stoker_state(st, 'spent')
         this.Stoker_soon(st, era, 20000)
@@ -436,6 +513,8 @@ async Stoker_look(st, era):
         digs = digs + 1
         let got = await this.Stoker_dig(st, w, shelf, nav)
         if (st.c.era !== era) return
+        // first landing of the churn: nudge — the radio starts on it while we keep digging
+        if (got > 0 && landed === 0) this.Radio_nudge(w)
         landed = landed + got
         await new Promise((r) => setTimeout(r, 250))
         if (st.c.era !== era) return
@@ -465,12 +544,46 @@ Stoker_census(st, shelf, radio):
     if (st.sc.fresh !== fresh) { st.sc.fresh = fresh; changed = 1 }
     if (changed) st.bump()
 
-// one DIG: wander the bases in order until one yields picks, stock them, count what is NEW on
-//  the shelf.  Ra_stock_one is idempotent (a standing enid resurrects; a standing %Record just
-//   re-finds) — so newness is the shelf's record count moving, never the verb's return.
+// Stoker_cull — the recordWear inheritance (the old Radios.svelte ghost's death circuitry,
+//  simplified): the shelf is a WORKING crate, not an archive — past the cap, HEARD records
+//   wear out and drop, oldest first; never the playing one, never unheard stock.  Their bytes
+//    still stand in radiostock on disk, so a worn record is one resurrection away — dropping
+//     here is memory honesty (32s of opus each), not forgetting.  sc.worn counts it.
+Stoker_cull(st, shelf, radio):
+    let recs = shelf.o({ Record: 1 })
+    let over = recs.length - 24
+    if (over < 1) return
+    let heard = (radio && radio.c.heard) ? radio.c.heard : {}
+    let playing = radio ? radio.c.rec : null
+    let worn = 0
+    for (const r of recs) {
+        if (over < 1) break
+        if (r === playing) continue
+        if (!heard[r.sc.id]) continue
+        shelf.drop(r)
+        over = over - 1
+        worn = worn + 1
+    }
+    if (worn > 0) {
+        st.sc.worn = (+(st.sc.worn || 0)) + worn
+        st.bump()
+    }
+
+// one DIG: wander the bases, stock what the wander found, count what is NEW on the shelf.
+//  Ra_stock_one is idempotent (a standing enid resurrects; a standing %Record just re-finds) —
+//   so newness is the shelf's record count moving, never the verb's return.
+//  The starting base ROTATES per dig (st.c.dig_i): a first-base-wins ladder STARVED testsounds
+//   entirely — while music/ yielded, the human's new flacs there could never appear.  Music
+//    still leads the cycle; a dry base falls through to the next in rotated order.
 async Stoker_dig(st, w, shelf, nav):
     let before = shelf.o({ Record: 1 }).length
-    for (const base of ['music', '', 'testsounds']) {
+    let bases = ['music', '', 'testsounds']
+    let start = (st.c.dig_i || 0) % bases.length
+    st.c.dig_i = (st.c.dig_i || 0) + 1
+    let bi = 0
+    while (bi < bases.length) {
+        let base = bases[(start + bi) % bases.length]
+        bi = bi + 1
         let picks = []
         try { picks = await this.Crate_nav_meander(nav, base, 2) } catch (er) { picks = [] }
         if (!picks.length) continue
@@ -491,6 +604,99 @@ async Stoker_dig(st, w, shelf, nav):
         st.bump()
     }
     return landed
+//#endregion
+
+//#region riffle — rifle through a collection, BLATTING the hand out as Voro cells
+//  %Riffle (mainkey value = shut|open) wears face:'Riffle' + crew:'Riffle' — its own tuner
+//   crew, so the whole spread tucks away in one toggle (make space, then riffle again).
+//  BLAT deals a random hand of %Riff cards — REFERRING particles (the identity law: id +
+//   display, never a second %Record impersonating the holding) — each wearing stuff:1 so the
+//    glass seeds a CELL per card.  The rec ref rides card.c.rec for the audition (Radio_tune);
+//     deal-state (the dealt set, the crate key) rides .c only.  A card ▶ plays THAT record.
+Riffle_ensure(w):
+    let ri = w.o({ Riffle: 1 })[0]
+    if (!ri) {
+        ri = w.i({ Riffle: 'shut', face: 'Riffle', crew: 'Riffle' })
+        ri.c.up = w
+    }
+    ri.c.w = w
+    return ri
+
+// the collections one can rifle: MY crate + every friend crate standing (a %MusuThem home
+//  exists only once something pulled — few rows is honest, not an error).  Friendly names
+//   come off the sealed %Pier; a nameless friend shows their prepub8.
+Riffle_homes(w):
+    let out = []
+    let pub = this.Radio_pub(w) || 'me'
+    out.push({ key: 'mine', name: 'my crate', shelf: this.Ra_home_self(w, pub) })
+    let M = this.top_House()
+    let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
+    for (const home of w.o({ MusuThem: 1 })) {
+        let hp = String(home.sc.pub || '')
+        if (!hp) continue
+        let pier = (ident && M.Swarm_peering) ? M.Swarm_peering(ident)?.o({ Pier: 1, pub: hp })[0] : null
+        let name = pier?.sc?.friendly ? String(pier.sc.friendly) : hp.slice(0, 8)
+        out.push({ key: hp, name: name, shelf: this.Ra_home_them(w, hp) })
+    }
+    return out
+
+// Riffle_blat — deal a hand: up to 6 random not-yet-dealt records from the chosen crate become
+//  %Riff cards.  Switching crates sweeps the old spread first; exhausting a crate reshuffles
+//   (the dealt set clears) — a riffle never dead-ends.
+Riffle_blat(ri, key):
+    let w = ri.c.w
+    let homes = this.Riffle_homes(w)
+    let home = null
+    for (const h of homes) {
+        if (h.key === key) home = h
+    }
+    if (!home) home = homes[0]
+    if (!home) return
+    if (ri.c.crate_key && ri.c.crate_key !== home.key) this.Riffle_clear(ri)
+    ri.c.crate_key = home.key
+    ri.sc.Riffle = 'open'
+    ri.sc.crate = this.Radio_clean(home.name)
+    if (!ri.c.dealt) ri.c.dealt = {}
+    let all = home.shelf.o({ Record: 1 })
+    let recs = []
+    for (const r of all) {
+        if (!ri.c.dealt[r.sc.id]) recs.push(r)
+    }
+    if (!recs.length && all.length) {
+        ri.c.dealt = {}
+        recs = all.slice()
+    }
+    let dealt = 0
+    while (dealt < 6 && recs.length) {
+        let k = Math.floor(Math.random() * recs.length)
+        let rec = recs.splice(k, 1)[0]
+        ri.c.dealt[rec.sc.id] = 1
+        let card = ri.i({ Riff: 1, id: rec.sc.id, stuff: 1, crew: 'Riffle' })
+        card.c.up = ri
+        card.c.rec = rec
+        card.sc.title = this.Radio_clean(rec.sc.title || rec.sc.id)
+        let artist = this.Radio_clean(rec.sc.artist || '')
+        if (artist) card.sc.artist = artist
+        dealt = dealt + 1
+    }
+    ri.sc.out = ri.o({ Riff: 1 }).length
+    ri.bump()
+
+// Riffle_clear — sweep the spread (drop every %Riff): the glass shrinks back in one wave.
+Riffle_clear(ri):
+    for (const card of ri.o({ Riff: 1 })) ri.drop(card)
+    ri.c.dealt = {}
+    delete ri.sc.out
+    ri.sc.Riffle = 'shut'
+    ri.bump()
+
+// Radio_tune — the riffle's audition: play THIS record now.  The chosen-record skip: the pick
+//  rides c.tune_rec and the pump's next dial consumes it before any shelf draw (cold radio
+//   included — skip's no-gat path runs Radio_go, whose first pump finds the pick waiting).
+Radio_tune(radio, rec):
+    if (!rec) return
+    radio.c.tune_rec = rec
+    this.Radio_skip(radio)
 //#endregion
 
 //#region dec — ONE persistent AudioDecoder per encode run, fed as chunks schedule

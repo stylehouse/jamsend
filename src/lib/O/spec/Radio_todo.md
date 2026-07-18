@@ -23,6 +23,93 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**THE RIFFLE + DURABLE FRIENDSHIP + THE DIG ROTATION (2026-07-19 latest — uncommitted).**
+ The human: "flac in testsounds not appearing… rifle through either collection, blatting out Voro
+  cells… the Grant and|or friendship gets lost very easily — how is that not robust as?"
+ · **testsounds starvation FIXED** (Radio.g Stoker_dig): flac was never the problem (Crate_is_audio
+    has it; decodeAudioData handles it) — the music-first FIRST-BASE-WINS ladder starved testsounds
+     entirely.  The starting base now ROTATES per dig (st.c.dig_i through music|''|testsounds);
+      music still leads the cycle, a dry base falls through.
+ · **FRIENDSHIP SURVIVES RELOAD** (Swarm.g — the iz-ledger disease, second organ): Swarm_seal
+    built %Pier|%Grant|%NotGrant as RUNTIME particles; the r2r redial quietly re-sealed only when
+     the friend was online — a lone reload LOST the friendship.  `Swarm_pier_stash` (raw grant
+      atoms + page + every revocation atom, keyed my-prepub → their-prepub on top-House stashed)
+       + `Swarm_piers_rehydrate` at station standup THROUGH idempotent Swarm_seal; `since` no
+        longer resets on re-seal; Swarm_revoke stashes its tombstone IMMEDIATELY (a forgotten
+         revoke would re-grant on rehydrate — never).  Swarm{Invite,Policy,Staple} headless green.
+ · **THE RIFFLE** (Radio.g region riffle + RiffleFace + glass_kinds + Sounditron_glass mint):
+    %Riffle face, crew:'Riffle'.  Riffle_homes = my crate + every %MusuThem crate standing
+     (friendly names off the sealed Pier).  BLAT deals 6 random %Riff cards — REFERRING
+      particles (id + title|artist, stuff:1 → a CELL each; rec ref rides c.rec) — reshuffles on
+       exhaustion, sweeps on crate-switch; Riffle_clear shrinks the glass back in one wave.
+        `Radio_tune(radio, rec)` = the audition: the card ▶ plays THAT record now (c.tune_rec
+         outranks the dial at the pump's next pick, cold radio included).
+ · Live gate: Sounditron on 49de ran all 7 steps clean; reds are pure dige drift against
+    pre-this-round fixtures (the Book is FIXTURE-CHECKED now — Opt/wild dead) — the human's
+     accept re-records.  Live snap 7: `Stoker:idle,stood=4,stock=4,fresh=4` (preheat resurrected
+      the shelf at commission — instant-on PROVEN live) + `Riffle:shut` standing.
+
+**INSTANT-ON + THE OLD GHOST'S GEMS (2026-07-19 later — uncommitted).**
+ The human: "pre-empt 'digging in the crates' where possible, and have the first bit load and
+  play immediately. check the Radios.svelte for more functionality."  Radio.g grew four moves:
+ · **Stoker_preheat** — one churn at glass-commission time (Sounditron_glass opts in), while
+    the radio is still off: the crates are dug before anyone presses ▶.  LIVE-PROVEN: snap 7
+     shows `Stoker:churning` with `Radio:off` — impossible on the old parked-with-the-radio code.
+ · **Radio_nudge** — the stoker's landing announcement: first landing of a churn (and a
+    resurrection that stood records) pumps a `digging` radio NOW instead of letting it poll out
+     its 3s look.  Fresh era so the pending timer chain dies (two chains would double-pump).
+ · **Gapless pre-advance** — the dial turns at `end - 2.0s` (was −0.05): the next record dials,
+    opens and decodes while the current one plays out, landing AT the frontier (Radio_open never
+     resets c.end; Radio_place chains at max(end, now)).  No more ~400ms boundary hole.
+ · **Mined from `src/lib/ghost/Radios.svelte`** (legacy quarry, mounts only via lib/mostly):
+    **Media Session** (Radio_media_now|pause|off — lockscreen now-playing card, next|pause|play
+     handlers, feature-detected; pause KEEPS the card so lockscreen play resumes) and
+      **Stoker_cull** (the recordWear death circuitry, simplified: shelf cap 24, HEARD non-playing
+       records wear out oldest-first, sc.worn counts — bytes still stand in radiostock, one
+        resurrection away).  NOT ported (noted for later rungs): live-edge melt/playbackRate
+         flow control (needs a remote broadcaster — §9's leg), ack_seq STAY_AHEAD spooling (same),
+          the disk-side 200-item radiostock cache whittle.  Also fixed: an unconsumed
+           churn_asked with no disk share held the stoker out of its park forever (headless tell).
+ · OPEN EYE for the soak tab: live snap 7 showed `stock=0` beside `last:Query E` mid-churn —
+    `last` stamps on a re-found standing record while `dug` counts only shelf-count DELTA, so a
+     re-find explains it; but if ▶ on a real tab still waits, look at Radio_pub drift ('me' →
+      prepub) re-keying Ra_home_self mid-sitting, stranding stock under the old shelf.
+
+**THE DOOR + /system/ + THE PULSE (2026-07-19 — uncommitted; the "hardly anything is happening" fix).**
+ The human: "once the ?Iz is claimed it should change to ?I=$pub… auto-join if their Identity was
+  born today… another UI thing floating in the VoroCyto… a /system/ subcellularity… I'm reloading
+   one client, I should be able to see that in the other client."  Four organs:
+ · **The claim arc** (`Auto.svelte` + `InvitePanel.svelte`): identities now carry `born`
+    (Clustation_mint stamps epoch into the Thang; concrete stamps sc.born yyyy-mm-dd — adopted
+     legacy keys stay honestly birthless).  A SEALED ?Iz claim rewrites the address bar to
+      `?I=<my prepub>` — but PINS first (`Clustation_pin`: the role-tagged default self is stored
+       only under 'sound'; an unpinned ?I=<prepub> reload would MINT A STRANGER and orphan the
+        friendship).  A self BORN TODAY auto-joins a landed invite (the scan was the intent;
+         older identities keep the deliberate button).  InvitePanel shares its landing state as
+          `H.c.door` (runtime beacon) for the glass.
+ · **The %Door face** (`DoorFace.svelte`, imposed-priority sparkle): who am I (nick · prepub8 ·
+    born, ✨ badge on born-today) · a landed invite joining · sealed friends each with grant,
+     records boast, and the PULSE DOT.
+ · **/system/** (`glass_faces.ts CREW_MAINKEYS`): req/Machine/Relay/Census/Possibility/Session/
+    Tally/Audio tessellate under ONE 'system' crew — one tuner toggle tucks the boiler-room away.
+     Viewer-side like FACE_MAINKEYS; explicit sc.crew still wins.  NOTE: faces are now GATED by
+      the commission's `useFaces` (a concurrent hand's refinement — wired here into the
+       Sounditron toc Opt, the Story-rail commission pass-through, and Sounditron_glass's own).
+ · **The PULSE + the trickle** (`Swarm.g` + `Sounditron.g`): ANY inbound frame from a sealed pier
+    stamps `pier.c.heard_at` (c-side, Books untouched; strangers stamp nothing — the ive_got
+     law), and a new no-payload `pulse` frame kind exists only to generate that traffic
+      (`Swarm_pulse_all`).  `Sounditron_trickle` — a detached era-guarded loop (era on the TOP
+       House, one per tab; each run re-hands it the new w) — pulses every ~5s and re-reads the
+        %Friend rows (grant · records · `here:1` within a 12s window), bumping w ONLY on a real
+         delta.  So: reload one client and its dot dims in the other's glass within ~12s, and
+          returns when it's back.  This is the first thread of the "model driven at some fps" —
+           the full curated model world stays designed-not-built (§3's chooser + a %Buddy shape).
+ **GATED:** LocalGen (Swarm/Sounditron/Radio/Ra), bundle-fetch ×7 clean, headless Sounditron
+  stands `Door:open,face:Door` in snap 7.  **OWED:** the live-tab gate (the soak tabs dropped off
+   the roster mid-verify — re-run + `--svg` when one returns); FINGERS: scan a QR with a fresh
+    phone (born-today auto-join end-to-end), watch the address bar become ?I=; a muted Book for
+     the pulse/heard_at loop (two-identity, SwarmGot-shaped).
+
 **THE STOKER + CREWS + THE PIRATING FACES (2026-07-18 late — uncommitted; the C-and-D fix).**
  The human: "it's only playing DJ Oscillo's C and D… all the things in the Voro UI need grouping…
   I want to see the provisioning system cranking along… exhausting the set should churn radiostock

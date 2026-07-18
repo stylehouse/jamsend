@@ -11,10 +11,14 @@ import RadioFace from './ui/RadioFace.svelte'
 import StokerFace from './ui/StokerFace.svelte'
 import TunerFace from './ui/TunerFace.svelte'
 import HeistFace from './ui/HeistFace.svelte'
+import DoorFace from './ui/DoorFace.svelte'
+import RiffleFace from './ui/RiffleFace.svelte'
 
 export const GLASS_KINDS: Record<string, any> = {
     Radio: RadioFace,     // the continuous listen — play/pause/skip, now-playing
     Stoker: StokerFace,   // the provisioning organ — watch the digs crank, poke a churn
     Tuner: TunerFace,     // the glass's dial — which crews of cells are shown
     Heist: HeistFace,     // the Pirating flow — posed needs | soft wish → leads → take
+    Door: DoorFace,       // who am I + who's with me — identity, landings, pulse liveness
+    Riffle: RiffleFace,   // rifle a collection — blat %Riff cards out as cells, audition ▶
 }

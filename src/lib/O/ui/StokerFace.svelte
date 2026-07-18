@@ -22,6 +22,7 @@
             fresh: +(sc.fresh ?? 0),
             dug:   +(sc.dug ?? 0),
             stood: +(sc.stood ?? 0),
+            worn:  +(sc.worn ?? 0),
             last:  sc.last as string | undefined,
             note:  sc.note as string | undefined,
         }
@@ -35,8 +36,8 @@
         <div class="sf-mid">
             <div class="sf-title">{ICON[face.state] ?? '🪣'} stoker · {face.state}</div>
             <div class="sf-line">stock {face.stock} · fresh {face.fresh}</div>
-            {#if face.dug > 0 || face.stood > 0}
-                <div class="sf-line dim">dug {face.dug}{#if face.stood > 0}&nbsp;· stood {face.stood}{/if}</div>
+            {#if face.dug > 0 || face.stood > 0 || face.worn > 0}
+                <div class="sf-line dim">dug {face.dug}{#if face.stood > 0}&nbsp;· stood {face.stood}{/if}{#if face.worn > 0}&nbsp;· worn {face.worn}{/if}</div>
             {/if}
             {#if face.last}<div class="sf-last">↳ {face.last}</div>{/if}
             {#if face.note}<div class="sf-note">{face.note}</div>{/if}
