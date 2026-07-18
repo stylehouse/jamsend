@@ -23,6 +23,23 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**THE DAWN SESSION (2026-07-19 5:20am — COMMITTED, 8 commits).**  Everything below through the
+ pulse round is in history now (9636136f..03b6eb96); the tree was swept clean in coherent
+  stories.  On top: **FIRST-TIME-MODE** — `Clustation_friendly` (name yourself from the
+   DoorFace ✎; persists into the identities Thang under prepub AND role tags, rehydrates in
+    Clustation_concrete, rides Clustation_pin) and TEACH empty-states on every face (Door,
+     Radio off the stoker census, Stoker, Riffle quoting the friend's ive_got boast, InvitePanel
+      spelling out the trick to a born-today self).  **THE ONE REMAINING SEAM in the user story**
+       (fresh page → … → riffle THEIR crate → their track on my radio): nothing LIVE starts the
+        Repli pull that fills %MusuThem after a seal — the mirror machinery is PROVEN on the
+         Book wire (Radiation: Repli deL/enL → MusuThem/stock) but the live station wire never
+          starts a session.  That is the next rung: seal (or grant-gossip) → Repli_follow over
+           the relay → %MusuThem fills → the Riffle's friend crate goes live → Radio_tune plays
+            their track.  The Riffle + boast already point users at exactly this door.
+ NOTE for the human: Sounditron fixtures committed at dawn predate the Riffle row — the Book
+  runs RED on dige until you re-record (accept); all 7 steps run clean live, world rows stand
+   (Radio|Stoker stood=4|Riffle|Door).
+
 **THE RIFFLE + DURABLE FRIENDSHIP + THE DIG ROTATION (2026-07-19 latest — uncommitted).**
  The human: "flac in testsounds not appearing… rifle through either collection, blatting out Voro
   cells… the Grant and|or friendship gets lost very easily — how is that not robust as?"
