@@ -1656,6 +1656,13 @@
             H.story_analysis(w)
         }
 
+        if (run.sc.check_snap && H.The_Opt_val(w, 'wild')) {
+            // wild: no fixtures exist — the disk verify has nothing to verify, and a
+            //  disk_ok=false would dress every pip in a stale badge ("disk snap missing" spam,
+            //   the 2026-07-18 console).  Drop the request; the diff panel honestly shows
+            //    got-only for a wild step.
+            delete run.sc.check_snap
+        }
         if (run.sc.check_snap) {
             // ── single dige verify — runs for both mismatch and snap_checking steps ─
             // Mismatch path:      fetch_snap queues check_snap (same beliefs round).

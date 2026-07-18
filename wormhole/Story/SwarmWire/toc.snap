@@ -4,8 +4,7 @@ story:SwarmWire
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.101
-      sample=0.108,at=1783352921
+    TimeTotal:beliefs,avg=0.095
       sample=0.076,at=1783368237
       sample=0.095,at=1783368839
       sample=0.089,at=1783369778
@@ -15,8 +14,8 @@ story:SwarmWire
       sample=0.102,at=1783980439
       sample=0.055,at=1783980449
       sample=0.172,at=1784011726
-    TimeTotal:step,avg=0.02
-      sample=0.022,at=1783352921
+      sample=0.051,at=1784336633
+    TimeTotal:step,avg=0.019
       sample=0.015,at=1783368237
       sample=0.019,at=1783368839
       sample=0.018,at=1783369778
@@ -26,6 +25,7 @@ story:SwarmWire
       sample=0.02,at=1783980439
       sample=0.011,at=1783980449
       sample=0.034,at=1784011726
+      sample=0.01,at=1784336633
   Assertions
     Assertion:stations-stand,sentence:two stations stand on the spine — the swarm frame kinds armed on the world,by_n:2
     Assertion:link-authenticated,sentence:the link authenticated first — hello and trust both ways before any swarm frame,by_n:3

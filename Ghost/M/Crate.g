@@ -195,6 +195,34 @@ async Crate_nav_paths(nav, base):
     out.sort()
     return out
 
+// Crate_nav_meander — the WANDER for a face: random-walk the nav hop by hop (dir_at/expand of ONE
+//  directory per hop — never Crate_nav_paths' breadth-first everything; 200k-track-safe by
+//   construction, the no-enumeration law) until a directory with audio turns up, then hand back up
+//    to `want` of its tracks as base-relative paths.  A dead end climbs back to base and tries
+//     elsewhere; GIVE_UP bounds a trackless share.  prandle keeps a seeded run reproducible.
+async Crate_nav_meander(nav, base, want):
+    let GIVE_UP = 12
+    let rel = ''
+    let hops = 0
+    while (hops < GIVE_UP) {
+        hops = hops + 1
+        let dl = await nav.dir_at(rel ? (base + '/' + rel) : base)
+        if (!dl) { rel = ''; continue }
+        await dl.expand()
+        let audio = dl.files.filter(f => this.Crate_is_audio(this.Crate_ext(f.name)))
+        if (audio.length) {
+            let picks = []
+            let pool = [...audio]
+            while (pool.length && picks.length < want) picks.push(pool.splice(this.prandle(pool.length), 1)[0])
+            return picks.map(f => rel ? (rel + '/' + f.name) : f.name)
+        }
+        let dirs = dl.directories
+        if (!dirs.length) { rel = ''; continue }
+        let d = dirs[this.prandle(dirs.length)]
+        rel = rel ? (rel + '/' + d.name) : d.name
+    }
+    return []
+
 // Crate_nav_payload — read ONE track's bytes through the nav, decode FROM THE START (OfflineAudioContext —
 //  no gesture), keep the first ~PREVIEW chunks, derive loudness + path metadata.  The nav twin of the old
 //   fetch-based reader.  Returns a plain payload (no particle) or null on unreadable/undecodable.

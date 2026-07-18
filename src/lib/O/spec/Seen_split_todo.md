@@ -11,6 +11,40 @@ This file is destination + the bombs + the next move. Correct anything that has 
 
 ## 0. What to get on with next
 
+**2026-07-18 RULINGS (the human) — move 3 becomes a redesign; supersedes §2's shapes where they differ:**
+- **The word is `%sworn`** (greppability: `see/seen/seed/chosen` all collide; `sworn` greps clean).
+- **Contract moves per-step:** `The/Steps/step=N/%Assertion:slug,sentence:…` — the step it rides
+   under IS its by-when; `by_n` dies as a field. (Toc codec already round-trips step children — notes.)
+- **Evidence moves off the world:** the beat still mints `i %sworn:'sentence'` on `w`, but a harvest
+   seam (sibling of `story_harvest_desc`, pre-encode) MOVES it to a per-run shelf
+    `ave/%Assertioning,Story:<book>` beside `This`, stamping `n:` at latch. Consequence: sworn lines
+     leave fixture bytes FOREVER (one last churn of SwarmStaple/Steal/Wire + MusuBerth); the world
+      snap stays pure guts; the shelf is the assertion record with its own time domain.
+- **Births are coded;** unmatched `%sworn` = "unclaimed evidence" in the explorer; the human's Accept
+   harvests it into `The/step=N/%Assertion` — thereafter its absence complains (programmatic
+    assertions "can't randomly stop happening"). No universal dumper/tunable matcher — that slope is
+     a second EntropyArrest; EntropyArrest matches wobbling VALUES, Assertions assert PRESENCE.
+- **Leniency from structure:** `pending` until its step, `overdue` (amber beside the pip) once the
+   step passes unlatched, a red gap only at run end.
+- **Microsnaps (ruled 2026-07-18):** at latch, capture what the assertion POINTS AT — encode the
+   subject subtree onto the sworn on the shelf, taken under the House mutex so state is frozen
+    (Atime swears are already inside it; async legs — expecting callbacks — must acquire it first).
+     The swear idiom grows an optional subject (the witness hands the particle it read the truth
+      from); bare `i %sworn:'sentence'` stays legal, just microsnap-less.
+- **TERMINOLOGY: never "roster"** (collides with the Cluster runner roster) — it is the CONTRACT
+   (The-side `%Assertion`) and the EVIDENCE (Run-side `%sworn`). Sweep code comments + runner_ask.
+- **Accept doctrine REVISED:** now that `Cred_assertion_gaps` reds a missing declared assertion,
+   live Accept can no longer silently eat a declared proof — the human authorizes live test+Accept
+    for the churn re-records (headless `ACCEPT=1` stays banned — canonical-dige corruption).
+- **UI:** hover layer shows ONLY the hovered pip's `%desc` (absolute above the strip, instant;
+   native tooltip stays); assertion marks join the per-pip `sr-flags` row (loudest when broken);
+    the Assertions explorer MUTEXES with show-diff; an absent assertion renders as a red GHOST LINE
+     in show-diff at the spot the sworn evidence would stand — click-through to the explorer (the
+      clue and the navigation are one mechanism). CLI: a `runner_ask assertions` op.
+- **Horizon (own doc when started, not here):** post-hoc runtime specimenry — named ad-hoc snaps
+   (`Storyrun` + a snap-now-as:<name> op), the last-5 moment spool (the Yore ring), freetext-first
+    introspection (Stemdex over snap text), CLI-side "assert this". Debrief session after the build.
+
 **Design-decided, build-deferred.** The primitive to build is small in code but lands on the
  test machine's spine (the fixture-dige gate + Accept). Do NOT batch it with unrelated work, and
   prove every step on a LIVE `:9091` runner via `runner_ask.mjs` — a green in `Story_cli` is a

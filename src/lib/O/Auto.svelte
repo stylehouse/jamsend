@@ -804,6 +804,10 @@
     Cred_report_wild(book: string, outcome: { ok: boolean, ok_pct: number, done: number, caveat: number, gaps?: any[] } | null) {
         const H = this as House
         if (!outcome || typeof fetch !== 'function') return
+        // localhost has no /log (it's leproxy's handle_path in front of the perl logger, prod
+        //  only) — a dev tab would just 404-spam the console.  POST only off-localhost.
+        const host = typeof location !== 'undefined' ? location.hostname : ''
+        if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]') return
         const story = H.o({ H: 'Story' })[0] as House | undefined
         const stW   = story?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
         const The   = stW?.c.The as TheC | undefined

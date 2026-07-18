@@ -12,7 +12,7 @@ import { signHeader } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'a58f4193baad277f~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'c15c8fe14c217628~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -126,6 +126,7 @@ async Swarm_mint_idzeug(w, ident, feature, nonce) {
     let record = peering.oai({ Idzeug: nonce, to: mainkey, ...params })
     record.c.up = peering
     record.c.iz = this.Swarm_b64(JSON.stringify(atom))
+    this.Swarm_iz_stash(ident, nonce, { to: mainkey, ...params })
     return record.c.iz
 
 },
@@ -321,7 +322,43 @@ async Swarm_pump(w, ident) {
 // Swarm_rebuff — a failed redeem|hello surfaces as %rebuff under the identity: legible in the
 //  snap, and the seed of §3's error-surfacing TODO (the owner should SEE a rebuff).
 Swarm_rebuff(ident, why, say) {
+    console.log('🚪 rebuff %' + why + (say ? ' — ' + String(say).slice(0, 60) : ''))
     ident.i({ rebuff: why, say: String(say ?? '').slice(0, 60) })
+
+},
+// ── the invite ledger survives reload ───────────────────────────────────────────────────────
+//  The %Idzeug records under the %Peering are runtime particles, so mint-then-reload made the
+//   door deny its OWN invite ('unknown' — the 2026-07-18 two-tab seal failure).  The durable
+//    twin rides the top House stash (auto-saved, the BigSoundland_sprawl rail) keyed
+//     prepub → nonce; the station standup rehydrates records before any hello can arrive
+//      (handlers only arm AT standup).  Spend marks both homes — a reload never un-spends.
+Swarm_iz_stash(ident, nonce, c) {
+    let live = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (!live || live !== ident) return
+    let st = this.top_House().stashed
+    if (!st) return
+    if (!st.Swarm_izzes) st.Swarm_izzes = {}
+    let prepub = ident.sc.prepub
+    if (!st.Swarm_izzes[prepub]) st.Swarm_izzes[prepub] = {}
+    let mine = st.Swarm_izzes[prepub]
+    mine[nonce] = { ...(mine[nonce] || {}), ...c }
+
+},
+Swarm_iz_rehydrate(w, ident) {
+    let st = this.top_House().stashed
+    let mine = st?.Swarm_izzes?.[ident.sc.prepub]
+    if (!mine) return
+    let peering = this.Swarm_peering(ident)
+    for (const nonce of Object.keys(mine)) {
+        let c = mine[nonce]
+        let record = peering.o({ Idzeug: nonce })[0]
+        if (!record) {
+            record = peering.i({ Idzeug: nonce, to: c.to })
+            record.c.up = peering
+            if (c.ttl) record.sc.ttl = c.ttl
+        }
+        if (c.spent) record.sc.spent = 1
+    }
 },
 //#endregion
 
@@ -350,6 +387,7 @@ Swarm_station_world() {
 //    ghosts haven't deposited (the boot window) — the caller just asks again.
 async Swarm_station_up(w, ident) {
     if (!w || !ident?.c?.keys) return null
+    if (!w.c.iz_rehydrated && this.top_House().stashed) { w.c.iz_rehydrated = 1; this.Swarm_iz_rehydrate(w, ident) }
     let station = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
     if (station && w.c.station_up) return station
     if (typeof this.Socket_real !== 'function') return null
@@ -450,6 +488,7 @@ async Swarm_hello(w, ident, frame) {
     catch (er) { return deny('bad_grant') }
     if (theirs.for !== ident.c.keys.pub || theirs.by !== frame.page.pub) return deny('grant_mismatch')
     record.sc.spent = 1
+    this.Swarm_iz_stash(ident, claim.nonce, { spent: 1 })
     let mine = await mint_grant(ident.c.keys, frame.page.pub, claim.to, this.Swarm_iz_params(claim), this.Swarm_now(w))
     let pier = this.Swarm_seal(w, ident, frame.page, frame.grant, mine)
     this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_accept', grant: mine, page: this.Swarm_page(ident) })

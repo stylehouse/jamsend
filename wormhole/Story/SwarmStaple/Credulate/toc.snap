@@ -19,12 +19,12 @@ Credulate,of_Book:SwarmStaple
   GhostInclude:Ghost_Story_Radiation,dige:b7af12f3ca26712c~g1
   GhostInclude:Ghost_Story_Heistation,dige:d6c29d7ab8eb0ce8~g1
   GhostInclude:Ghost_Story_Berthation,dige:7bbe9ae361826f32~g1
-  GhostInclude:Ghost_S_Swarm,dige:a58f4193baad277f~g1
+  GhostInclude:Ghost_S_Swarm,dige:c15c8fe14c217628~g1
   GhostInclude:Ghost_Story_Swarmation,dige:369ec581e75028fc~g1
   GhostInclude:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
   GhostInclude:Ghost_Story_Voronation,dige:19b605e62bdd580c~g1
-  GhostInclude:Ghost_Story_Sounditron,dige:89107b4a2944c56f~g1
-  last_ok,at=1784296122.852,ok_pct
+  GhostInclude:Ghost_Story_Sounditron,dige:e1ece0bae29e0041~g1
+  last_ok,at=1784336613.796,ok_pct
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -45,8 +45,8 @@ Credulate,of_Book:SwarmStaple
     uses:Ghost_Story_Radiation,dige:b7af12f3ca26712c~g1
     uses:Ghost_Story_Heistation,dige:d6c29d7ab8eb0ce8~g1
     uses:Ghost_Story_Berthation,dige:7bbe9ae361826f32~g1
-    uses:Ghost_S_Swarm,dige:a58f4193baad277f~g1
+    uses:Ghost_S_Swarm,dige:c15c8fe14c217628~g1
     uses:Ghost_Story_Swarmation,dige:369ec581e75028fc~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
     uses:Ghost_Story_Voronation,dige:19b605e62bdd580c~g1
-    uses:Ghost_Story_Sounditron,dige:89107b4a2944c56f~g1
+    uses:Ghost_Story_Sounditron,dige:e1ece0bae29e0041~g1

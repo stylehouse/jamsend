@@ -36,6 +36,12 @@
         if (w && H.Swarm_station_up(w, self)) stood = true
     })
 
+    // ── REBUFFS — the door's recent denials, legible (%rebuff under the identity) ─────────────
+    let rebuffs = $derived.by(() => {
+        void H?.version
+        try { return self ? ((self.o({ rebuff: 1 }) ?? []) as any[]).slice(-3) : [] } catch { return [] }
+    })
+
     // ── FRIENDS — the sealed %Piers under the self's page, on both faces ──────────────────────
     let friends = $derived.by(() => {
         void H?.version
@@ -61,10 +67,13 @@
     // boast on every NEW seal (both faces run this — the joiner's seal lands async after join,
     //  the inviter's inside Swarm_hello). Zeros send too: an empty shelf is an honest boast, and
     //   it proves the live wire today. Growth-only, so a hearing (version bump) never re-boasts.
+    // gossiped is a MONOTONIC high-water: a mid-Atime read can catch transacting state and
+    //  flicker friends 1→0→1 — resetting the mark on shrink turned every flicker into a fresh
+    //   boast (the 2026-07-18 ive_got storm, seq 300+).  Never lower it.
     let gossiped = 0
     $effect(() => {
         const n = friends.length
-        if (n <= gossiped) { gossiped = n; return }
+        if (n <= gossiped) return
         gossiped = n
         try {
             const w = H.Swarm_station_world?.()
@@ -146,12 +155,19 @@
         if (!claim) { joined = '✗ the inviter refused or is unreachable — the rebuff rides the identity'; return }
         joined = '… hello delivered — waiting for the seal'
         const sealed = await wait_for(() => H.Swarm_peering(self)?.o({ Pier: 1, pub: invite.prepub })[0], 8000)
+        // no seal — the inviter's pier_reject (heard by the station) rides the identity as a
+        //  %rebuff,rejected_<why>; naming the why beats "is the tab still open?" every time.
+        const denied = (self.o({ rebuff: 1 }) as any[]).filter(r => String(r.sc.rebuff).startsWith('rejected_')).at(-1)
         joined = sealed
             ? '✓ joined — ' + (claim.friendly || claim.prepub) + ' is a music Pier now'
-            : '… hello delivered, but no accept yet — is the inviter tab still open?'
+            : denied
+                ? '✗ the inviter denied the invite: ' + String(denied.sc.rebuff).slice(9) + ' — ask for a fresh QR'
+                : '… hello delivered, but no accept yet — is the inviter tab still open?'
     }
 </script>
 
+<!-- Escape closes the big QR face (top-level — svelte:window may not sit inside a block) -->
+<svelte:window onkeydown={(e) => { if (big && e.key === 'Escape') big = false }} />
 <div class="ip">
     {#if relic}
         <!-- the old garden's invite: recognized, named, and honestly un-honourable (rung 1) -->
@@ -185,6 +201,12 @@
                 </span>
             {/if}
             {#if err}<span class="ip-note">{err}</span>{/if}
+            <!-- the door speaks: every failed hello|redeem is a %rebuff on the identity — show the
+                 recent ones so a denied scan is a NAMED event here, not silence (hello_unknown
+                 was invisible through the whole 2026-07-18 two-tab session) -->
+            {#each rebuffs as r}
+                <span class="ip-note" title={r.sc.say}>🚪 {r.sc.rebuff}{r.sc.say ? ' — ' + r.sc.say : ''}</span>
+            {/each}
         </div>
     {:else}
         <span class="ip-note">⏳ identity…</span>
@@ -206,11 +228,15 @@
 {#if url && big}
     <!-- the full-screen face: the QR takes most of the viewport, white-on-white multiplied into the
          warm backdrop — the modules stay ink, the quiet zone and cells take the tan (scan-safe: the
-         blend only ever DARKENS toward the backdrop, never lightens the ink). Click-away closes. -->
+         blend only ever DARKENS toward the backdrop, never lightens the ink).  ANY click closes —
+         the QR fills the screen, so a stopPropagation on it left only a sliver of escapable margin
+         ("too hard to get out of", the human) — plus the ✕ and Escape (the svelte:window rides
+         the template top, as it must). -->
     <div class="ip-overlay" onclick={() => big = false}>
-        <div class="ip-big" onclick={(e) => e.stopPropagation()}>
+        <button class="ip-big-x" onclick={() => big = false} title="close (Esc or click anywhere)">✕</button>
+        <div class="ip-big">
             <InviteQR {url} size={big_size} pad={Math.max(20, Math.floor(big_size / 24))} bg="#ffffff" bare caption="" />
-            <span class="ip-big-cap">scan to join — single-use, dies after its first scan</span>
+            <span class="ip-big-cap">scan to join — single-use, dies after its first scan · click anywhere to close</span>
         </div>
     </div>
 {/if}
@@ -245,7 +271,14 @@
         background: radial-gradient(circle at 50% 44%, #f3e3bd 0%, #e2bd85 46%, #a8763f 100%);
         cursor: pointer;
     }
-    .ip-big { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; cursor: auto; }
+    .ip-big { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; cursor: pointer; }
+    /* the way out, unmissable: fat tap target riding the top-right of the overlay */
+    .ip-big-x {
+        position: absolute; top: 14px; right: 18px; z-index: 61;
+        font-size: 28px; line-height: 1; padding: 10px 14px;
+        background: rgba(0,0,0,0.18); color: #fff; border: none; border-radius: 10px; cursor: pointer;
+    }
+    .ip-big-x:hover { background: rgba(0,0,0,0.34); }
     /* the blend: the QR's white becomes the backdrop's tan exactly; its ink stays ink */
     .ip-big :global(img) { mix-blend-mode: multiply; display: block; }
     .ip-big-cap { font-size: 0.85rem; color: #4a300f; letter-spacing: 0.02em; }

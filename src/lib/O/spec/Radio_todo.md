@@ -23,6 +23,35 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**THE RADIO IS BUILT (2026-07-18 — `Ghost/M/Radio.g`, uncommitted, live-gate owed a tab reload).**
+ The one wire the pipeline never had: chunk particles decoded and laid on the REAL AudioContext
+  timeline, continuously — the human: "continuously playing music, like a radio, starts going from
+   the start (via %Stream) after the first track you leave playing."  The shape: `Radio_ensure(w)`
+    stands a `%Radio` face particle (mainkey value = state off|digging|playing|paused|starved;
+     sc.face:'Radio' mounts RadioFace in the glass — see Sounditron_todo §4e); ▶ = `Radio_go` (the
+      click IS the AudioContext gesture) → a detached era-guarded pump (`Radio_pump`, setTimeout
+       chain — NOTHING under beliefs, the Sounditron mutex law) feeds ONE persistent AudioDecoder
+        per encode run (reset only at a `head` chunk — flush() resets WebCodecs state, so flush only
+         at run end), spills harvested PCM onto the timeline at the frontier (`aud.schedule(buf,
+          max(end, now))` — the Sound_real_stream idiom; a late landing = a counted gap), and when
+           the timeline reaches the end the DIAL turns itself (`Ra_dial_next` → next track chains at
+            the frontier, seamless).  %Stream comes into being BEHIND the 32s preview: a supply loop
+             runs `Ra_transcode_ensure|advance` while the preview plays (self-served, no Repli);
+              source unreadable ⇒ cap at preview and move on.  An empty shelf DIGS: resurrect
+               standing radiostock (cheap), then ONE `Crate_nav_meander` wander + `Ra_stock_one`
+                (never a scan — the 200k law).  Starve ⇒ 6s grace then SPLICE (honest drop, decoder
+                 re-opens dirty).  Pause rewinds to the heard chunk; skip cuts the voice.
+ **GATED so far (2026-07-18 late):** `%Radio,face:Radio` stands in snap 7 on BOTH a fresh headless
+  spine and the live runner 56fb (Sounditron 7/7), and the face's CELL stands in the live SVG
+   tessellation (11 paths — a cell only seeds off a successful component mount).  Two bombs were
+    defused en route: cross-ghost calls MUST ride `top_House()` (`this.Radio_ensure` on the run
+     House is silently undefined — the M. convention), and a mint must sit ABOVE `Sounditron_glass`'s
+      `!this.c.up` bail (headless run Houses have no up).
+ **OWED:** EARS — press ▶ on a /BigSoundland tab (the click is the autoplay gesture; only the human
+  can) and leave it playing; the remote leg (dial across granted `%MusuThem` mirrors — want-paging
+   exists in `Ra_term_stream_beat`, not yet worn by the radio); a muted Radio Book
+    (`Radio_go(radio, {mute:1})` is Book-ready); volume/fade on the face.
+
 **DESTINATION MOVED — read `Radio_spec.md` §1-5 first (rebuilt 2026-07-15).** The spec is now the
  destination doc, reshaped into **two planes** (descriptor/culture floods · content/bytes routes),
   **two spines** (culture: identity→magazine→browse→heist→persist→swarm · audio: the nine stages), and

@@ -502,6 +502,8 @@
                     //  the live particle rides the wave entry's .c (stamped in make_wave from source_n).
                     C.sc.overlay_kind = nd.overlay_kind
                     if (nd.overlay_bg) C.sc.overlay_bg = nd.overlay_bg
+                    // a registered FACE (glass_kinds.ts): which component Cytui mounts for kind 'face'
+                    if (nd.overlay_face) C.sc.overlay_face = nd.overlay_face
                     // self-mode stuffing (show the particle itself, not children) — from the DRAWN n,
                     //  not source_n, so stuff_of peeks (children of another tree) keep their meaning
                     if (nd.overlay_self) C.sc.overlay_self = 1
@@ -514,7 +516,7 @@
                 //     it and every folded Artist's Tracks leak back into the graph as free nodes).
                 //      cyto_folded (c-side, never snapped) is the live graph's own receipt that the fold
                 //       really happened — a Book can witness it, where a stamp alone only proves intent.
-                if (n.sc.stuff != null || n.c.stuff) {
+                if (n.sc.stuff != null || n.c.stuff || n.sc.face != null) {
                     T.sc.no_further = 'stuffed'
                     n.c.cyto_folded = Se.c.tick
                 }
@@ -733,6 +735,27 @@
         //       it = FOLDED (Stuffing of the children, descent suppressed), without = the
         //        particle ITSELF as one row (overlay_self).
         //   plain sc.stuff — the classic labelled stuff-chunk (AwFloat's stuff_of peeks etc).
+        // a particle wearing sc.face hosts a LIVE registered component (glass_kinds.ts) — the
+        //  stuff rail generalised: same overlay mount, same cell seeding, same paint_final mold,
+        //   a chosen component instead of a Stuffing.  Checked BEFORE the stuff skins so the Voro
+        //    crusher's blanket c.stuffy stamp can't shadow a face into a plain Stuffing.  The node
+        //     is the host oval (birth size only — the ResizeObserver grows it to the component).
+        if (n.sc.face != null) {
+            return {
+                label: '',
+                overlay_kind: 'face',
+                overlay_face: String(n.sc.face),
+                style: {
+                    'background-color': '#04202a',
+                    'background-opacity': 0.85,
+                    'border-width': 2,
+                    'border-color': '#d9a026',
+                    shape: 'ellipse',
+                    width:  200,
+                    height: 100,
+                },
+            }
+        }
         if (n.sc.stuff != null || n.c.stuffy) {
             const key = this.mainkey(n)
             let border = '#266ed9'
@@ -1247,11 +1270,12 @@
                     if (C.sc.overlay_str)  etc.overlay_str  = C.sc.overlay_str
                     if (C.sc.overlay_kind) etc.overlay_kind = C.sc.overlay_kind
                     if (C.sc.overlay_bg)   etc.overlay_bg   = C.sc.overlay_bg
+                    if (C.sc.overlay_face) etc.overlay_face = C.sc.overlay_face
                     if (C.sc.overlay_self) etc.overlay_self = C.sc.overlay_self
                     const entry = wave.i({ upsert: 1, id, ...etc })
                     // ferry the LIVE particle to Cytui for a component overlay (eg 'stuff' → mount a
                     //  Stuffing of it). A .c ref, never encoded — it rides the in-process graph channel.
-                    if (C.sc.overlay_kind === 'stuff' && C.c.source_n) entry.c.source_n = C.c.source_n
+                    if ((C.sc.overlay_kind === 'stuff' || C.sc.overlay_kind === 'face') && C.c.source_n) entry.c.source_n = C.c.source_n
                 } else if (style_ch || label_ch !== null || par_ch !== null) {
                     const entry = wave.i({ upsert: 1, id, ...etc,
                         ...(style_ch          ? { style:      style_ch         } : {}),
@@ -1261,9 +1285,10 @@
                         ...(C.sc.overlay_str  ? { overlay_str:  C.sc.overlay_str  } : {}),
                         ...(C.sc.overlay_kind ? { overlay_kind: C.sc.overlay_kind } : {}),
                         ...(C.sc.overlay_bg   ? { overlay_bg:   C.sc.overlay_bg   } : {}),
+                        ...(C.sc.overlay_face ? { overlay_face: C.sc.overlay_face } : {}),
                         ...(C.sc.overlay_self ? { overlay_self: C.sc.overlay_self } : {}),
                     })
-                    if (C.sc.overlay_kind === 'stuff' && C.c.source_n) entry.c.source_n = C.c.source_n
+                    if ((C.sc.overlay_kind === 'stuff' || C.sc.overlay_kind === 'face') && C.c.source_n) entry.c.source_n = C.c.source_n
                 }
             },
  

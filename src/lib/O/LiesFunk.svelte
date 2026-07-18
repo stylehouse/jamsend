@@ -2069,7 +2069,11 @@ await M.eatfunc({
             try {
                 ac = new AudioContext()
                 const t0 = ac.currentTime
-                try { await ac.resume() } catch {}
+                // resume() PENDS FOREVER on a gestureless tab (autoplay policy resolves it only on a
+                //  user gesture) — an un-raced await here deadlocked a caller that held the beliefs
+                //   mutex (the Sounditron step-6 wedge).  Race it: after 1s carry on and report the
+                //    state honestly ('suspended' IS the answer the probe exists to give).
+                try { await Promise.race([ac.resume(), new Promise(r => setTimeout(r, 1000))]) } catch {}
                 const state = ac.state
                 const osc = ac.createOscillator()
                 const an  = ac.createAnalyser(); an.fftSize = 2048

@@ -31,6 +31,7 @@
     import MatstyleEditor from './ui/MatstyleEditor.svelte'
     import Stuffing from '$lib/data/Stuffing.svelte'
     import Vexpandy from '$lib/O/ui/Vexpandy.svelte'
+    import { GLASS_KINDS } from '$lib/O/glass_kinds'
     let matstyles = $state<TheC[]>([])
     let ms_palette: string[] = []
     let ms_shapes: string[]  = []
@@ -639,6 +640,27 @@
         const app = mount(Stuffing, { target: el, props: { stuff: gang_stuff(id, source_n), mem, H, self_row: !!self_mode } })
         // grow the node when the Stuffing's rendered size changes — content events only (commits,
         //  zoom font steps), not render frames, so the layout can settle between waves (waitCyto).
+        const ro = new ResizeObserver(() => size_stuff_node(id, el))
+        ro.observe(el)
+        stuff_mounts.set(id, { app, ro })
+    }
+
+    // create_face_overlay — the stuff rail generalised: mount a REGISTERED component
+    //  (glass_kinds.ts, keyed by the particle's sc.face) instead of a Stuffing.  Registering in
+    //   stuff_mounts is what earns the node a voronoi cell + the paint_final mold; the component
+    //    self-reacts off H.version, so the mount is once-only like the Stuffing's.
+    function create_face_overlay(id: string, source_n: TheC | undefined, kind: string) {
+        if (!overlay_container || !source_n) return
+        if (overlays.has(id)) return
+        const Face = GLASS_KINDS[kind]
+        if (!Face) return
+        const el = document.createElement('div')
+        el.className = 'cyto-overlay face-overlay'
+        el.dataset.nodeId = id
+        overlay_container.appendChild(el)
+        overlays.set(id, el)
+        if (cy) el.style.fontSize = `${Math.max(6, 12 * cy.zoom())}px`
+        const app = mount(Face, { target: el, props: { n: source_n, H } })
         const ro = new ResizeObserver(() => size_stuff_node(id, el))
         ro.observe(el)
         stuff_mounts.set(id, { app, ro })
@@ -4487,6 +4509,9 @@
                 // a mounted gang rep whose gang GREW: rebuild the mirror in place
                 //  (the Stuffing keeps its ref and re-groups on the next flush)
                 if ((src as any)?.c?.gang && overlays.has(id)) gang_stuff(id, src as TheC)
+            } else if (overlay_kind === 'face' && nd.sc.overlay_face) {
+                // a registered face component (glass_kinds.ts) rides the same rail as a Stuffing
+                create_face_overlay(id, src, String(nd.sc.overlay_face))
             } else if (overlay_str != null) {
                 create_overlay(id, overlay_str, overlay_kind ?? 'code', overlay_bg)
             } else if (proper_on && is_proper(src)) {
@@ -5592,6 +5617,16 @@
    made the chunk undraggable). Transparent + scrollbarless: the overlay sizes to its
    content (max-content — reposition_overlays does NOT force width/height on it; it grows
    the NODE to wrap us instead), and the oval provides the backdrop + Matstyle border. */
+:global(.face-overlay) {
+    /* a registered face component (glass_kinds): same posture as a stuff-overlay, but its
+       INTERACTIVE bits re-arm pointer-events themselves (buttons) — the rest stays pannable */
+    pointer-events: none;
+    overflow: visible;
+    background: transparent;
+    width: max-content;
+    height: max-content;
+    max-width: 340px;
+}
 :global(.stuff-overlay) {
     pointer-events: none;
     overflow: hidden;
