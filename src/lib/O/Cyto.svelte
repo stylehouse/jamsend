@@ -71,7 +71,7 @@
     import { onMount }   from "svelte"
     import Cytui         from "./Cytui.svelte"
     import { ex, indent, sex } from "$lib/Y.svelte";
-    import { FACE_MAINKEYS } from "$lib/O/glass_faces"
+    import { FACE_MAINKEYS, CREW_MAINKEYS } from "$lib/O/glass_faces"
 
     let { M } = $props()
     let V = {}
@@ -119,6 +119,10 @@
         //  wave carries fresh folds (see cyto_update_wave).  Same c-side flag ◈ uses; needs
         //   Voro.g on this House (elsewhere the hook no-ops and snap-time stamps still land).
         if (req.sc.useVoroCyto) (w.c.Scannable as TheC).c.crush_wanted = 1
+        // useFaces gates BELIEVING %face (worn sc.face AND the FACE_MAINKEYS imposition) —
+        //  the supports_constraints pattern: a commissioner opts its glass into a scan
+        //   behaviour.  Ungated, any Book with a %Heist would sprout a face cell.
+        w.c.use_faces          = !!req.sc.useFaces
         w.c.Styles             = req.sc.Styles as TheC | null
         w.c.client_w           = req.sc.client_w as TheC | undefined
         w.c.supports_constraints = !!req.sc.supports_constraints
@@ -419,7 +423,7 @@
                 //  the %Tuner face after the walk, and a MUTED crew's particles drop
                 //   from the graph right here — cells vanish, space returns.  Census
                 //    before drop, so a hidden crew stays listed (and un-hidable).
-                const crew = this.cyto_crew(n)
+                const crew = this.cyto_crew(w, n)
                 if (crew) {
                     crews_seen[crew] = (crews_seen[crew] ?? 0) + 1
                     if (crew_mute[crew]) { T.sc.not = 1; D.drop(D); return }
@@ -534,7 +538,7 @@
                 //     it and every folded Artist's Tracks leak back into the graph as free nodes).
                 //      cyto_folded (c-side, never snapped) is the live graph's own receipt that the fold
                 //       really happened — a Book can witness it, where a stamp alone only proves intent.
-                if (n.sc.stuff != null || n.c.stuff || this.cyto_face_kind(n) != null) {
+                if (n.sc.stuff != null || n.c.stuff || this.cyto_face_kind(w, n) != null) {
                     T.sc.no_further = 'stuffed'
                     n.c.cyto_folded = Se.c.tick
                 }
@@ -711,19 +715,26 @@
     // a face is WORN (sc.face — the particle asked) or IMPOSED by the viewer (FACE_MAINKEYS,
     //  glass_faces.ts — the world stays Voro-blind: no snap changes because the glass chose
     //   to dress a %Heist).  Either way the kind names the component in glass_kinds.ts.
-    cyto_face_kind(n: TheC): string | null {
+    //  BELIEVED only when the commission said useFaces (→ w.c.use_faces) — the
+    //   supports_constraints pattern, so a stray sc.face in a non-radio Book stays a row.
+    cyto_face_kind(w: TheC, n: TheC): string | null {
+        if (!w.c.use_faces) return null
         if (n.sc.face != null) return String(n.sc.face)
         const mk = this.mainkey(n)
         return (mk && FACE_MAINKEYS[mk]) || null
     },
 
-    // the CREW a particle tessellates under: explicit sc.crew wins; a face defaults to its
-    //  kind; a stuffed cell-holder to its mainkey; anything else is crewless (never muted).
-    cyto_crew(n: TheC): string | null {
+    // the CREW a particle tessellates under: explicit sc.crew wins; then the viewer's
+    //  CREW_MAINKEYS imposition (the /system/ tuck — machinery rows under ONE tuner toggle);
+    //   a face defaults to its kind; a stuffed cell-holder to its mainkey; else crewless
+    //    (never muted).
+    cyto_crew(w: TheC, n: TheC): string | null {
         if (n.sc.crew != null) return String(n.sc.crew)
-        const fk = this.cyto_face_kind(n)
+        const mk = this.mainkey(n)
+        if (mk && CREW_MAINKEYS[mk]) return CREW_MAINKEYS[mk]
+        const fk = this.cyto_face_kind(w, n)
         if (fk) return fk
-        if (n.sc.stuff != null || n.c.stuffy || n.c.stuff) return this.mainkey(n) ?? null
+        if (n.sc.stuff != null || n.c.stuffy || n.c.stuff) return mk ?? null
         return null
     },
 
@@ -815,7 +826,7 @@
         //     the Voro crusher's blanket c.stuffy stamp can't shadow a face into a plain
         //      Stuffing.  The node is the host oval (birth size only — the ResizeObserver grows
         //       it to the component).
-        const face_kind = this.cyto_face_kind(n)
+        const face_kind = this.cyto_face_kind(w, n)
         if (face_kind != null) {
             return {
                 label: '',
@@ -1263,6 +1274,9 @@
 
         const dur  = (w.sc.grawave_duration as number) ?? 0.3
         const wave = _C({ CytoWave:1, duration: dur })
+        // the commission's face opt-in rides the wave c-side (never snapped) so Cytui can
+        //  gate its SUB-cell face mounts by the same believing rule as the node grain.
+        wave.c.use_faces = !!w.c.use_faces
         if (reset_Ze) wave.sc.absolute = 1
         // wave-local counter for constraints (they don't have cyto_ids anymore —
         // see cyto_assign_ids). wave.sc.constraints is a fresh object per wave,

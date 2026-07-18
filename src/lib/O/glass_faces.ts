@@ -8,3 +8,19 @@
 export const FACE_MAINKEYS: Record<string, string> = {
     Heist: 'Heist',   // the Pirating flow — posed needs | soft wish → %Leads → choose
 }
+
+// CREW_MAINKEYS — the viewer's CREW imposition (the /system/ subcellularity, the human
+//  2026-07-19: "a /system/ [group] to put a bunch of the current lot in").  Machinery rows
+//   tessellate under ONE 'system' crew, so a single tuner toggle tucks the whole
+//    boiler-room away and the glass keeps its space for the user's-eyes faces.
+//  Same law as FACE_MAINKEYS: viewer-side, zero snap change, explicit sc.crew always wins.
+export const CREW_MAINKEYS: Record<string, string> = {
+    req: 'system',
+    Machine: 'system',
+    Relay: 'system',
+    Census: 'system',
+    Possibility: 'system',
+    Session: 'system',
+    Tally: 'system',
+    Audio: 'system',
+}

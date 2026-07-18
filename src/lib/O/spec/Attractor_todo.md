@@ -35,6 +35,38 @@ The ▦ layer of Cytui as a competition ground: rival FACES draw the same live g
            folds where it truly won't fit — not tiny text everywhere.  Pixels still OWED (runner
             engaged elsewhere; verified svelte-check-clean only).
 
+**FACES BELIEVED BY COMMISSION + ZTUFFING SUB-FACES + THE UNCLIPPED MOLD (2026-07-19).**
+ Three rulings from the human, landed render/scan-side (no fixture drift):
+ - **Believing %face is COMMISSION-GATED.**  `useFaces: 1` on the Cyto commission (the
+    `supports_constraints` pattern — a commissioner opts its glass into a scan behaviour) →
+     `w.c.use_faces` → `cyto_face_kind(w, n)` returns null ungated, for WORN sc.face and the
+      FACE_MAINKEYS imposition alike.  A stray %Heist in a non-radio Book stays a row.
+       Sounditron's commission already carries the flag (the human pre-wired it); the flag
+        also rides every wave c-side (`wave.c.use_faces`) so Cytui gates by the same rule.
+ - **ztuffing hosts components** (`sub_faces_sync`, Cytui): a faced MEMBER of a fold|gang
+    (which never becomes a cy node) mounts its registered component in a slot along its
+     cell's bottom band — side-by-side, centred, `stuff.subh`/`stuff.subw` — mounted once
+      per stable key, repositioned per paint, unmounted when gone (the gang-mirror
+       lifecycle).  The member still reads in the pane's rows; the face ADDS a body.
+ - **The mold is 1.5× and unclipped, in an absolute band.**  `stuff.scale` (default 1.5 —
+    started at 2, the human walked it back same-day: "they're too big now… split the
+     difference") rides on top of the fits-the-cell clamp; `stuff.clip` (default 0) drops
+      the polygon clipPath, and `.stuff-overlay` went `overflow: visible` (the bbox was
+       rectangle-clipping even without the polygon).  The FINAL mold is then clamped to
+        `stuff.top` / `stuff.bottom` (the human: "one gets waaay too big. there should be a
+         top and bottom level") — an absolute ceiling|floor on content size vs natural,
+          whatever the cell offered.  Ownership moved off the clipPath onto
+           `el.dataset.molded` — the mark reposition_overlays honours and the strip sites
+            clear — and molded FACE overlays now skip node-recentring too (they were being
+             fought over before).
+ - **The hover z-lift** (same ask): the cell polygon under the mouse lifts its overlay above
+    the whole overlapping pile — "so you can feel your way into them".  `vlift_move` on the
+     wrap's mousemove (the glass SVG is pointer-events:none, CSS :hover can't fire) →
+      `.vlift` z-index 40.  Pure render chrome, no knob yet.
+ EYEBALL owed with the rest: radio faces overflowing their cells gracefully inside the band,
+  sub-face slots where a faced member gangs, the lift surfacing the moused chunk;
+   `--face=knob:stuff.top=2.5` and kin to taste the band live.
+
 **NEXT MOVES (a few vague candidates).**
 - Face builders as SEPARATE modules — right now `phi_build`/`tuple_pane`/`crater_pane` are
    functions in one file; a face wants to be a registered `(cells,descs,knobs)→layers` entry so
@@ -82,6 +114,13 @@ The ▦ layer of Cytui as a competition ground: rival FACES draw the same live g
 - `zone.fsceil`   = 24    per-row font-size ceiling
 - `zone.identw`   = 3     identity zone weight (its share of the cell height)
 - `zone.roww`     = 1.5   a content row's zone weight
+- `stuff.scale`   = 1.5   molded overlay content size ON TOP of its fits-the-cell clamp (>1 overflows the cell on purpose; was 2, split the difference)
+- `stuff.top`     = 2     ABSOLUTE ceiling on the final mold — no chunk past top× its natural size, however huge its cell ("one gets waaay too big")
+- `stuff.bottom`  = 0.5   ABSOLUTE floor on the final mold — never below bottom×; a cramped cell overflows instead (the hover z-lift digs the pile)
+- `stuff.clip`    = 0     trim molded content to the cell polygon (0 = overflow free — the human's "can they just not clip their cell")
+- `stuff.fs`      = 12    base overlay font px (× cy.zoom) for Stuffing|face overlays
+- `stuff.subh`    = 110   ztuffing sub-face slot max height px (slot band at the cell's bottom)
+- `stuff.subw`    = 220   ztuffing sub-face slot max width px (side-by-side, centred)
 - `spell.floor`   = 12    load-bearing atoms below this read as starvation → grow
 - `spell.grow`    = 1.18  per-beat grow multiplier on a starved cell
 - `spell.decay`   = 0.93  per-beat shrink multiplier on a clearly-oversized cell
@@ -93,6 +132,15 @@ A knob registers its default on first read (`vknob('name', def)`), and an overri
   local — never per-iteration; the hot paint paths depend on it staying a single map read.
 
 ## The op rails  (extend the same face op — runner_shot `--face=` passes a JSON object)
+
+**What `--face` IS:** an `op:'face'` message sent over the SAME relay rails as `runner_ask`
+ (request|reply by corr) to a LIVE tab, handled by Cytui's `cy_face` hook — it arms per-tab
+  render prefs (face, knobs, moments) on the spot, no reload.  It rides `runner_shot` because
+   a judge usually arms-then-shoots (`--arm --face=vsub:phi` then `shot`), but the arm is its
+    own op — you can flip faces/knobs on a tab you never screenshot.  **Capture blindness:**
+     `shot` = `cy.png()` (the cytoscape CANVAS) and `--svg` = the voronoi glass SVG — NEITHER
+      sees the HTML overlay layer (node Stuffings, the radio faces TunerFace/StokerFace/
+       HeistFace).  Overlay pixels are the human's eyes only; see Voro_todo §0 gotcha (3).
 
 - `--face=knob:phi.pitch=20`     set one knob (=default → deletes the override); unknown name is
                                   refused (a typo can't invent a knob), persisted, repaints.

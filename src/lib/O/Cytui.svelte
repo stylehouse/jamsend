@@ -32,6 +32,7 @@
     import Stuffing from '$lib/data/Stuffing.svelte'
     import Vexpandy from '$lib/O/ui/Vexpandy.svelte'
     import { GLASS_KINDS } from '$lib/O/glass_kinds'
+    import { FACE_MAINKEYS } from '$lib/O/glass_faces'
     let matstyles = $state<TheC[]>([])
     let ms_palette: string[] = []
     let ms_shapes: string[]  = []
@@ -603,26 +604,80 @@
     //   scattered same-mainkey siblings on c.gang) has no children of its own —
     //    so the Stuffing it hosts shows a MIRROR container instead: a free
     //     particle (never reachable from H**, so never snapped) whose children
-    //      are sc-copies of the live members.  Rebuilt in place when the gang's
-    //       size changes (the mounted Stuffing keeps its ref; rows refresh at
-    //        the normal register_stuffing cadence).  Membership swaps at equal
-    //         count can lag one beat — acceptable for assertion confetti.
-    const gang_mirrors = new Map<string, { mirror: TheC, n: number }>()
+    //      are sc-copies of the live members.  MERGED in place, never wiped:
+    //       the old drop-all+recreate made the mounted Stuffing rebuild its
+    //        whole DOM (and pulse its commit spinner) on every membership
+    //         change — on a streaming world (chunks landing, Stoker churn)
+    //          that was the %gang_of blink loop.  A row whose sc still matches
+    //           a member is left untouched — no version bump, no commit — so
+    //            only the actual delta reaches the DOM.  Same-sig duplicates
+    //             pair off by count (a multiset); merged rows append, so pane
+    //              order can drift from gang order after churn — acceptable.
+    const gang_mirrors = new Map<string, TheC>()
     function gang_stuff(id: string, src: TheC): TheC {
         const members = (src as any).c?.gang as TheC[] | undefined
         if (!members?.length) return src
-        const got = gang_mirrors.get(id)
-        if (got && got.n === members.length) return got.mirror
-        const mirror = got?.mirror ?? _C({ gang_of: Object.keys(src.sc ?? {})[0] ?? 'gang' })
-        for (const ch of mirror.o()) ch.drop(ch)
+        const mirror = gang_mirrors.get(id) ?? _C({ gang_of: Object.keys(src.sc ?? {})[0] ?? 'gang' })
+        const sig = (sc: any) => JSON.stringify(sc ?? {})
+        const stale = new Map<string, TheC[]>()
+        for (const ch of mirror.o()) {
+            const s = sig(ch.sc)
+            const list = stale.get(s) ?? []
+            list.push(ch); stale.set(s, list)
+        }
         for (const m of members) {
             const sc: any = {}
             for (const [k, v] of Object.entries(m.sc ?? {}))
                 if (typeof v !== 'object' && typeof v !== 'function') sc[k] = v
-            mirror.i(sc)
+            if (!stale.get(sig(sc))?.pop()) mirror.i(sc)
         }
-        gang_mirrors.set(id, { mirror, n: members.length })
+        for (const list of stale.values()) for (const ch of list) ch.drop(ch)
+        gang_mirrors.set(id, mirror)
         return mirror
+    }
+
+    // ── sub-faces: ztuffing hosts registered components ──────────────────────
+    //  the node-grain faces rail (create_face_overlay) at the SUB-cell grain: a fold|gang
+    //   MEMBER wearing a face (worn sc.face, or imposed FACE_MAINKEYS — believed only when
+    //    the commission said useFaces; the flag rides each wave c-side) mounts its component
+    //     in a slot along its cell's bottom band instead of reading as text rows.  Mount
+    //      once per stable key, reposition per paint, unmount when gone — the gang-mirror
+    //       lifecycle.  These els never enter `overlays` (no cy node id), so neither
+    //        reposition_overlays nor paint_final's mold ever fights the slots.
+    let waves_use_faces = false
+    const sub_face_mounts = new Map<string, { app: any, el: HTMLDivElement }>()
+    function sub_face_kind(m: TheC): string | null {
+        if (!waves_use_faces || !m?.sc) return null
+        const kind = m.sc.face != null ? String(m.sc.face)
+                   : FACE_MAINKEYS[Object.keys(m.sc)[0] ?? ''] ?? null
+        return kind && GLASS_KINDS[kind] ? kind : null
+    }
+    function sub_faces_sync(wants: { key: string, kind: string, n: TheC,
+                                     x: number, y: number, w: number, h: number }[]) {
+        const seen = new Set<string>()
+        for (const wf of wants) {
+            seen.add(wf.key)
+            let m = sub_face_mounts.get(wf.key)
+            if (!m) {
+                if (!overlay_container) continue
+                const el = document.createElement('div')
+                el.className = 'cyto-overlay face-overlay sub-face'
+                overlay_container.appendChild(el)
+                if (cy) el.style.fontSize = `${Math.max(6, vknob('stuff.fs', 12) * cy.zoom())}px`
+                const app = mount(GLASS_KINDS[wf.kind], { target: el, props: { n: wf.n, H } })
+                m = { app, el }
+                sub_face_mounts.set(wf.key, m)
+            }
+            m.el.style.left   = `${wf.x.toFixed(1)}px`
+            m.el.style.top    = `${wf.y.toFixed(1)}px`
+            m.el.style.width  = `${wf.w.toFixed(1)}px`
+            m.el.style.height = `${wf.h.toFixed(1)}px`
+        }
+        for (const [key, m] of sub_face_mounts) if (!seen.has(key)) {
+            try { unmount(m.app) } catch (e) {}
+            m.el.remove()
+            sub_face_mounts.delete(key)
+        }
     }
 
     function create_stuff_overlay(id: string, source_n: TheC | undefined, bg?: string, self_mode?: boolean) {
@@ -635,7 +690,7 @@
         overlay_container.appendChild(el)
         overlays.set(id, el)
         // seed the zoom-scaled font BEFORE the first measure, else the observer sizes off 16px
-        if (cy) el.style.fontSize = `${Math.max(6, 12 * cy.zoom())}px`
+        if (cy) el.style.fontSize = `${Math.max(6, vknob('stuff.fs', 12) * cy.zoom())}px`
         const mem = (H as any).imem('cytostuff:' + stuff_stash_key(source_n))
         const app = mount(Stuffing, { target: el, props: { stuff: gang_stuff(id, source_n), mem, H, self_row: !!self_mode } })
         // grow the node when the Stuffing's rendered size changes — content events only (commits,
@@ -659,7 +714,7 @@
         el.dataset.nodeId = id
         overlay_container.appendChild(el)
         overlays.set(id, el)
-        if (cy) el.style.fontSize = `${Math.max(6, 12 * cy.zoom())}px`
+        if (cy) el.style.fontSize = `${Math.max(6, vknob('stuff.fs', 12) * cy.zoom())}px`
         const app = mount(Face, { target: el, props: { n: source_n, H } })
         const ro = new ResizeObserver(() => size_stuff_node(id, el))
         ro.observe(el)
@@ -721,10 +776,19 @@
     function reposition_overlays() {
         if (!cy || !overlay_container) return
         const zoom = cy.zoom()
+        const sfs = vknob('stuff.fs', 12)   // once per call — this path runs per pan/zoom frame
 
         for (const [id, el] of overlays) {
             const node = cy.getElementById(id)
             if (!node.length) { remove_overlay(id); continue }
+
+            // a cell-molded overlay (Stuffing OR face — dataset.molded, stamped by
+            //  paint_final) is paint_final's to move — node-centering it here is the
+            //   visible jump-to-the-node-and-back between a gesture settling and the
+            //    morph re-molding it.  Leave it seated in its cell; clear_voronoi and
+            //     the swallowed-cell fallback clear the mark before anything re-centers.
+            //      (Was gated on el.style.clipPath — the clip is a knob now, default off.)
+            if (el.dataset.molded) continue
 
             const pos = node.renderedPosition()
 
@@ -734,14 +798,7 @@
             //    per-frame path — a node.style() write per render frame kept the layout perpetually
             //     energised, so a waitCyto Book never saw the wave settle and wedged between steps.
             if (el.classList.contains('stuff-overlay')) {
-                // a cell-molded Stuffing (clipPath = its cell) is paint_final's to move —
-                //  node-centering it here is the visible jump-to-the-node-and-back between
-                //   a gesture settling and the morph re-molding it.  Leave it seated in its
-                //    cell; clear_voronoi strips the clipPath before it repositions, and the
-                //     swallowed-cell fallback clears its own, so an unmolded Stuffing still
-                //      centers normally below.
-                if (el.style.clipPath) continue
-                el.style.fontSize = `${Math.max(6, 12 * zoom)}px`
+                el.style.fontSize = `${Math.max(6, sfs * zoom)}px`
                 el.style.display  = zoom < 0.3 ? 'none' : ''
                 const cw = el.offsetWidth, ch = el.offsetHeight
                 el.style.left = `${pos.x - cw / 2}px`
@@ -756,7 +813,7 @@
             el.style.top       = `${pos.y - h / 2}px`
             el.style.width     = `${w}px`
             el.style.height    = `${h}px`
-            el.style.fontSize  = `${Math.max(6, 12 * zoom)}px`
+            el.style.fontSize  = `${Math.max(6, sfs * zoom)}px`
             el.style.display   = zoom < 0.3 ? 'none' : ''  // hide at extreme zoom-out
         }
     }
@@ -3809,7 +3866,54 @@
         else if (!spell_raf) spell_raf = requestAnimationFrame(() => { spell_raf = 0; again() })
     }
 
+    // ── the hover z-lift: feel your way into the pile ────────────────────────
+    //  At stuff.scale > 1 neighbouring chunks overlap; the cell under the mouse
+    //   lifts its overlay above all the others (the human: "they should z-index
+    //    above all others when moused over, so you can feel your way into them").
+    //     The glass SVG is pointer-events:none and the node ovals don't tile the
+    //      plane, so the wrap's mousemove hit-tests the CELL polygons directly —
+    //       ~15 cells × ~8 walls of cross products, cheap enough un-throttled.
+    let lift_cells: { id: string, poly: { x: number, y: number }[] }[] = []
+    let lift_id: string | null = null
+    function in_poly(px: number, py: number, poly: { x: number, y: number }[]): boolean {
+        let hit = false
+        for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+            const a = poly[i], b = poly[j]
+            if ((a.y > py) !== (b.y > py) && px < (b.x - a.x) * (py - a.y) / (b.y - a.y) + a.x) hit = !hit
+        }
+        return hit
+    }
+    function vlift_apply(id: string | null) {
+        if (id === lift_id) return
+        if (lift_id) overlays.get(lift_id)?.classList.remove('vlift')
+        lift_id = id
+        if (id) overlays.get(id)?.classList.add('vlift')
+    }
+    function vlift_move(e: MouseEvent) {
+        if (!lift_cells.length || !wrap_el) return
+        const r = wrap_el.getBoundingClientRect()
+        const px = e.clientX - r.left, py = e.clientY - r.top
+        let hit: string | null = null
+        for (const c of lift_cells) if (in_poly(px, py, c.poly)) { hit = c.id; break }
+        vlift_apply(hit)
+    }
+
     function paint_final(L: { cells: VCell[], seeds: any[], CW: number }) {
+        // mold knobs, read ONCE per paint (hot path): stuff.scale = the molded content's
+        //  size on top of its fits-the-cell clamp (1.5 = the split-the-difference ruling,
+        //   walked back from 2 — "they're too big now"); stuff.clip = trim the content to
+        //    the cell polygon (0 = overflow free, the human's ruling); stuff.top|bottom =
+        //     the ABSOLUTE band on the final mold ("there should be a top and bottom
+        //      level") — no chunk renders past top× its natural size however huge its
+        //       cell, none below bottom× however cramped.
+        const mold_scale  = vknob('stuff.scale', 1.5)
+        const mold_clip   = vknob('stuff.clip', 0) >= 1
+        const mold_top    = vknob('stuff.top', 2)
+        const mold_bottom = vknob('stuff.bottom', 0.5)
+        // the hover z-lift reads these polygons on every mousemove — refresh per paint,
+        //  and re-assert the lifted class (a re-minted overlay el loses it silently)
+        lift_cells = L.cells.map(c => ({ id: c.id, poly: c.inset }))
+        if (lift_id) overlays.get(lift_id)?.classList.add('vlift')
         const crossings = new Map<string, { wall: number, t: number, m: {x:number,y:number}, color: string }[]>()
         const cell_by_id = new Map(L.cells.map(c => [c.id, c]))
         cy.edges().forEach((e: any) => {
@@ -3890,8 +3994,12 @@
                 el.style.width    = `${bw.toFixed(1)}px`
                 el.style.height   = `${bh.toFixed(1)}px`
                 el.style.maxWidth = 'none'
-                el.style.clipPath = 'polygon(' + c.inset.map(p =>
-                    `${(p.x - bx).toFixed(1)}px ${(p.y - by).toFixed(1)}px`).join(',') + ')'
+                // molded = paint_final's to move — the mark reposition_overlays honours.
+                //  (Was the clipPath itself; the clip is a KNOB now, default OFF — the
+                //   human: "can they just not clip their cell? that'd be nice.")
+                el.dataset.molded = '1'
+                el.style.clipPath = mold_clip ? 'polygon(' + c.inset.map(p =>
+                    `${(p.x - bx).toFixed(1)}px ${(p.y - by).toFixed(1)}px`).join(',') + ')' : ''
                 const child = el.firstElementChild as HTMLElement | null
                 if (child) {
                     // wrap width FROM the cell: hand the content the cell's own
@@ -3921,7 +4029,15 @@
                     const chw = (child.offsetWidth || 1) / 2, chh = (child.offsetHeight || 1) / 2
                     const fx = (bw / 2) / Math.max(1e-6, box_support(1, 0, chw, chh, c.T11, c.T12, c.T22, c.T21))
                     const fy = (bh / 2) / Math.max(1e-6, box_support(0, 1, chw, chh, c.T11, c.T12, c.T22, c.T21))
-                    const fit = Math.min(c.fit, fx, fy)
+                    // stuff.scale rides ON TOP of the fits-the-cell clamp — above 1 the
+                    //  content deliberately overflows its cell; with stuff.clip=0 (the
+                    //   default) nothing trims it.  The stuff.top|bottom band then rules
+                    //    ABSOLUTELY: a huge cell can't balloon its chunk past top× natural
+                    //     size (the "one gets waaay too big"), and a cramped cell never
+                    //      grinds below bottom× — it overflows instead, and the hover
+                    //       z-lift is how you feel into the resulting pile.
+                    const fit = Math.min(mold_top, Math.max(mold_bottom,
+                        Math.min(c.fit, fx, fy) * mold_scale))
                     const a  = (fit * c.T11).toFixed(3), b12 = (fit * c.T12).toFixed(3)
                     const b21 = (fit * c.T21).toFixed(3), d2 = (fit * c.T22).toFixed(3)
                     const tx = c.acx - (bx + bw / 2), ty = c.acy - (by + bh / 2)
@@ -4159,9 +4275,38 @@
             const subs: VSubPane[] = []
             const next = new Set<string>()
             let sub_err = ''
+            const face_wants: Parameters<typeof sub_faces_sync>[0] = []
+            const sub_subh = vknob('stuff.subh', 110), sub_subw = vknob('stuff.subw', 220)
             crater_skips.small = crater_skips.header = crater_skips.geo = crater_skips.nofold = 0
             crater_ok = 0
             for (const c of L.cells) {
+                // ztuffing sub-faces: a faced MEMBER of this cell's fold|gang claims a slot
+                //  along the cell's bottom band (side-by-side, centred) — its component mounts
+                //   there via sub_faces_sync below.  The member still reads in the pane's rows
+                //    too (the face ADDS a body, it doesn't hush the claim).
+                {
+                    const fsrc = node_src.get(c.id) as any
+                    const kids: TheC[] = (fsrc?.c?.gang as TheC[] | undefined)
+                        ?? (fsrc?.c?.stuff && typeof fsrc?.o === 'function' ? fsrc.o() : [])
+                    const faced = (kids ?? []).map(m => ({ m, kind: sub_face_kind(m) }))
+                                              .filter(f => f.kind) as { m: TheC, kind: string }[]
+                    if (faced.length) {
+                        const fxs = c.inset.map(p => p.x), fys = c.inset.map(p => p.y)
+                        const fbx = Math.min(...fxs), fby = Math.min(...fys)
+                        const fbw = Math.max(...fxs) - fbx, fbh = Math.max(...fys) - fby
+                        const sh = Math.min(fbh * 0.5, sub_subh)
+                        const sw = Math.min(fbw / faced.length, sub_subw)
+                        const fx0 = fbx + (fbw - sw * faced.length) / 2
+                        const dups = new Set<string>()
+                        faced.forEach((f, i) => {
+                            let key = `${c.id}·${stuff_stash_key(f.m)}`
+                            while (dups.has(key)) key += "'"
+                            dups.add(key)
+                            face_wants.push({ key, kind: f.kind, n: f.m,
+                                x: fx0 + i * sw, y: fby + fbh - sh, w: sw, h: sh })
+                        })
+                    }
+                }
                 // the pre-pass already read every pane (fold|gang via its Vtuffing, a loner
                 //  via its own sc — same grammar, no key special); here each cell just draws,
                 //   hushing the claims its region's river now speaks for it (quiet_map).
@@ -4196,6 +4341,7 @@
             }
             sub_on_ids = next
             vsubs = subs
+            sub_faces_sync(face_wants)
             // the spell pass reads this beat's verdicts (starved|roomy|snug per cell that
             //  WANTED a pane) and re-paints once if any spell moved — see spell_update above.
             //   Runs under ϕ too now: the stats survive as data (blanking is render-time), so
@@ -4211,6 +4357,7 @@
             sub_on_ids = new Set()
             vsubs = []
             vphi = null
+            sub_faces_sync([])
         }
 
         // a seed whose cell got swallowed falls back to plain node-centering
@@ -4218,6 +4365,7 @@
             if (cell_by_id.has(s.id)) continue
             const el = overlays.get(s.id)
             if (!el) continue
+            delete el.dataset.molded
             el.style.clipPath = ''; el.style.width = ''; el.style.height = ''; el.style.maxWidth = ''
             const inner = el.firstElementChild as HTMLElement | null
             if (inner) { inner.style.transform = ''; inner.style.width = ''; inner.style.maxWidth = '' }
@@ -4369,6 +4517,8 @@
 
     function clear_voronoi() {
         cancelAnimationFrame(morph_raf)
+        lift_cells = []
+        vlift_apply(null)
         vcells = []
         vtips = []
         vfams = []
@@ -4381,11 +4531,13 @@
         shown_color.clear()
         wrap_applied.clear()
         for (const el of overlays.values()) {
-            if (!el.classList.contains('stuff-overlay')) continue
+            if (!el.classList.contains('stuff-overlay') && !el.classList.contains('face-overlay')) continue
+            delete el.dataset.molded
             el.style.clipPath = ''; el.style.width = ''; el.style.height = ''; el.style.maxWidth = ''
             const inner = el.firstElementChild as HTMLElement | null
             if (inner) { inner.style.transform = ''; inner.style.width = ''; inner.style.maxWidth = '' }
         }
+        sub_faces_sync([])
         reposition_overlays()
     }
 
@@ -4394,6 +4546,9 @@
 
     function apply(wave: TheC, dur: number) {
         if (!cy) return
+        // the commission's face opt-in, ferried c-side on every wave (Cyto make_wave) —
+        //  gates the ztuffing sub-face mounts by the same believing rule as the node grain.
+        waves_use_faces = !!(wave as any).c?.use_faces
         rush_animations()
         animations = _C({ animations: 1, started_at: performance.now() / 1000 })
         const ms = Math.round(dur * 1000)
@@ -4506,8 +4661,8 @@
                 if ((src as any)?.c?.stuffy) { if (!saw_stuffy) vlog('armed', { id }); saw_stuffy = true }
                 proper_mounted.delete(id)    // wave-owned now; toggling proper off must not strip it
                 create_stuff_overlay(id, src, overlay_bg, !!nd.sc.overlay_self)
-                // a mounted gang rep whose gang GREW: rebuild the mirror in place
-                //  (the Stuffing keeps its ref and re-groups on the next flush)
+                // a mounted gang rep: merge the mirror every wave (delta-only —
+                //  untouched rows never bump, so a quiet gang costs no commit)
                 if ((src as any)?.c?.gang && overlays.has(id)) gang_stuff(id, src as TheC)
             } else if (overlay_kind === 'face' && nd.sc.overlay_face) {
                 // a registered face component (glass_kinds.ts) rides the same rail as a Stuffing
@@ -5097,6 +5252,7 @@
          story pips; role=application tells AT the arrows are app-handled.
          onwheelcapture is the visor guard — see the scroll-visor region. -->
     <div class="cytui-graph-wrap" bind:this={wrap_el} tabindex="-1" role="application"
+         onmousemove={vlift_move} onmouseleave={() => vlift_apply(null)}
          onpointerdown={wrap_pointerdown} onkeydown={wrap_key} onwheelcapture={visor_guard}
          onpointerleave={() => corr_clear()}>
         <div class="cytui-graph" bind:this={container}></div>
@@ -5561,6 +5717,11 @@
     overflow: hidden;
     border-radius: 4px;
 }
+/* the hover z-lift (vlift_move): the moused-over cell's chunk surfaces above the
+   whole overlapping pile, so you can feel your way into it */
+:global(.cyto-overlay.vlift) {
+    z-index: 40;
+}
 
 :global(.code-overlay) {
     /* text styling matches cy node's monospace font */
@@ -5629,7 +5790,11 @@
 }
 :global(.stuff-overlay) {
     pointer-events: none;
-    overflow: hidden;
+    /* visible, not hidden: in mold mode paint_final pins this div to the cell BBOX and
+       stuff.scale>1 deliberately overflows it — hidden would rectangle-clip the content
+       even with the polygon clip (stuff.clip) off.  In node mode the div is max-content
+       sized, so nothing overflows and visible changes nothing. */
+    overflow: visible;
     background: transparent;
     width: max-content;
     height: max-content;
