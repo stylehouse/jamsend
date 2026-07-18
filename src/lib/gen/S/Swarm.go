@@ -12,7 +12,7 @@ import { signHeader } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'c15c8fe14c217628~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'bf081a71276a91f2~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -294,13 +294,22 @@ async Swarm_arm(w) {
     let hear = async (w2, pier, frame) => {
         let ident = this.Swarm_account_of(w2, frame.header.to)
         if (!ident) return false
+        // PRESENCE, for free: ANY inbound frame from an already-sealed pier stamps heard_at
+        //  (c-side — never snapped, Books untouched).  A stranger stamps nothing — the same
+        //   law as ive_got: gossip never opens a door.  The 'pulse' kind exists ONLY to
+        //    generate this traffic (Swarm_pulse_all); it needs no verb of its own.
+        let from = frame.swarm?.page?.prepub
+        if (from) {
+            let sealed = this.Swarm_peering(ident)?.o({ Pier: 1, pub: from })[0]
+            if (sealed) sealed.c.heard_at = Date.now()
+        }
         if (frame.header.type === 'pier_hello') await this.Swarm_hello(w2, ident, frame.swarm)
         if (frame.header.type === 'pier_accept') await this.Swarm_accept(w2, ident, frame.swarm)
         if (frame.header.type === 'pier_reject') this.Swarm_rejected(w2, ident, frame.swarm)
         if (frame.header.type === 'ive_got') this.Swarm_ive_got(w2, ident, frame.swarm)
         return true
     }
-    for (const kind of ['pier_hello', 'pier_accept', 'pier_reject', 'ive_got']) w.c.on[kind] = hear
+    for (const kind of ['pier_hello', 'pier_accept', 'pier_reject', 'ive_got', 'pulse']) w.c.on[kind] = hear
 
 },
 // Swarm_pump — handle an identity's undone mail (a Book's drive calls this each pass; production
@@ -388,6 +397,7 @@ Swarm_station_world() {
 async Swarm_station_up(w, ident) {
     if (!w || !ident?.c?.keys) return null
     if (!w.c.iz_rehydrated && this.top_House().stashed) { w.c.iz_rehydrated = 1; this.Swarm_iz_rehydrate(w, ident) }
+    if (!w.c.piers_rehydrated && this.top_House().stashed) { w.c.piers_rehydrated = 1; this.Swarm_piers_rehydrate(w, ident) }
     let station = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
     if (station && w.c.station_up) return station
     if (typeof this.Socket_real !== 'function') return null
@@ -528,7 +538,8 @@ Swarm_seal(w, ident, page, theirGrant, myGrant) {
     let pier = peering.oai({ Pier: 1, pub: page.prepub })
     pier.c.up = peering
     pier.sc.friendly = page.friendly
-    pier.sc.since = String(this.Swarm_now(w))
+    // since = when the friendship BEGAN — a re-seal (redial, rehydrate) never resets it
+    if (!pier.sc.since) pier.sc.since = String(this.Swarm_now(w))
     let theirPage = pier.oai({ Peering: 1, name: page.prepub })
     theirPage.c.up = pier
     theirPage.sc.friendly = page.friendly
@@ -541,7 +552,64 @@ Swarm_seal(w, ident, page, theirGrant, myGrant) {
     if (!graph.o({ Edge: 1, b: page.prepub })[0]) {
         graph.i({ Edge: 1, a: ident.sc.prepub, b: page.prepub, at: String(this.Swarm_now(w)) })
     }
+    this.Swarm_pier_stash(ident, page, [theirGrant, myGrant], null)
     return pier
+
+},
+// ── the FRIENDSHIP survives reload (the iz-ledger disease, second organ) ────────────────────
+//  Swarm_seal built %Pier|%Grant|%NotGrant as RUNTIME particles, and the r2r redial was quietly
+//   re-sealing them only when the friend happened to be online to re-hello — a lone reload LOST
+//    the friendship ("gets lost very easily", the human 2026-07-19).  The durable twin mirrors
+//     Swarm_izzes exactly: top-House stash (auto-saved, the sprawl rail) keyed my-prepub →
+//      their-prepub, holding their page, the RAW grant atoms, and every revocation atom.  A
+//       tombstone is a negative decision-fact — the stash NEVER drops one, so a rehydrated
+//        revoke still revokes.  Station standup rehydrates through Swarm_seal ITSELF
+//         (idempotent), so every friendship stands before the first frame can arrive.
+Swarm_pier_stash(ident, page, grants, nots) {
+    let live = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (!live || live !== ident) return
+    let st = this.top_House().stashed
+    if (!st) return
+    if (!st.Swarm_piers) st.Swarm_piers = {}
+    let mine = st.Swarm_piers[ident.sc.prepub]
+    if (!mine) { mine = {}; st.Swarm_piers[ident.sc.prepub] = mine }
+    let e = mine[page.prepub]
+    if (!e) { e = { page: {}, grants: [], nots: [] }; mine[page.prepub] = e }
+    // merge fields, never blank a known page with a partial caller (revoke passes prepub only)
+    if (page.prepub) e.page.prepub = page.prepub
+    if (page.pub) e.page.pub = page.pub
+    if (page.friendly) e.page.friendly = page.friendly
+    for (const g of (grants || [])) {
+        if (!g) continue
+        let key = String(g.to) + '|' + String(g.by) + '|' + String(g.for || '')
+        if (!e.grants.some(h => (String(h.to) + '|' + String(h.by) + '|' + String(h.for || '')) === key)) e.grants.push(g)
+    }
+    for (const a of (nots || [])) {
+        if (!a) continue
+        if (!e.nots.some(h => h.sign === a.sign)) e.nots.push(a)
+    }
+
+},
+Swarm_piers_rehydrate(w, ident) {
+    let st = this.top_House().stashed
+    let mine = st?.Swarm_piers?.[ident.sc.prepub]
+    if (!mine) return
+    for (const theirPrepub of Object.keys(mine)) {
+        let e = mine[theirPrepub]
+        if (!e?.page?.prepub) continue
+        let pier = this.Swarm_seal(w, ident, e.page, e.grants?.[0] ?? null, e.grants?.[1] ?? null)
+        let gi = 2
+        while (gi < (e.grants?.length || 0)) {
+            let g = e.grants[gi]
+            if (g && !pier.o({ Grant: g.to, by: g.by })[0]) grant_to_C(pier, g)
+            gi = gi + 1
+        }
+        for (const a of (e.nots || [])) {
+            if (!pier.o({ NotGrant: a.not, by: a.by, for: a.for }).some(x => x.sc.sign === a.sign)) {
+                pier.i({ NotGrant: a.not, by: a.by, for: a.for, time: a.time, sign: a.sign })
+            }
+        }
+    }
 },
 //#endregion
 
@@ -568,6 +636,19 @@ Swarm_music_census(w, ident) {
         }
     }
     return { records: records, artists: artists.size }
+
+},
+// Swarm_pulse_all — the PRESENCE heartbeat: one tiny 'pulse' frame to every sealed pier, so the
+//  far side's heard_at stays warm while we live (the hear funnel stamps it — pulse carries no
+//   payload beyond the page and asks nothing).  A reloaded|closed tab stops pulsing and its dot
+//    dims in every friend's glass within the liveness window.  Best-effort, returns pulses sent;
+//     the caller paces it (the Sounditron trickle: every ~5s on a live page, never in a Book).
+Swarm_pulse_all(w, ident) {
+    let sent = 0
+    for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+        if (this.Swarm_deliver(w, ident, pier.sc.pub, { kind: 'pulse', page: this.Swarm_page(ident) })) sent = sent + 1
+    }
+    return sent
 
 },
 // Swarm_gossip_music — the deliberate boast: census my shelf and tell every LIVE sealed friend
@@ -635,6 +716,9 @@ Swarm_ive_got_tally(w, ident) {
 async Swarm_revoke(w, ident, pier, feature) {
     let theirPub = pier.o({ Peering: 1 })[0]?.sc?.pub
     let atom = await mint_revoke(ident.c.keys, theirPub, feature, {}, this.Swarm_now(w))
+    // the tombstone goes durable IMMEDIATELY (pier.sc.pub = their prepub, the stash key) —
+    //  a revoke that a reload could forget would re-grant on rehydrate.
+    this.Swarm_pier_stash(ident, { prepub: pier.sc.pub }, null, [atom])
     return pier.i({ NotGrant: atom.not, by: atom.by, for: atom.for, time: atom.time, sign: atom.sign })
 
 },
