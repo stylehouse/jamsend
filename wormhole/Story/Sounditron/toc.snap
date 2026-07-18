@@ -30,6 +30,8 @@ story:Sounditron
       style:background-color,v:#32618f
     matstyle:MusuSelf
       style:background-color,v:#b12f4a
+    matstyle:sworn
+      style:background-color,v:#29d638
   Plan
   Opt
     wild
@@ -38,38 +40,37 @@ story:Sounditron
     dontSnapCyto
     useVoroCyto
     For
-  Assertions
-    Assertion:machine-stood,sentence:the machine stood — an addressable self emerged on the spine,by_n:2
-    Assertion:relay-answers,sentence:the relay answers — the channel stood and frames can cross,by_n:3
-    Assertion:possibilities-surveyed,sentence:the possibilities of peers were surveyed — every known address counted,by_n:4
-    Assertion:report-stands,sentence:the session summed itself — a report stands ready to travel,by_n:7
   TimeSpool
-    TimeTotal:beliefs,avg=0.044
-      sample=0.038,at=1784360710
-      sample=0.045,at=1784360747
-      sample=0.052,at=1784360852
-      sample=0.051,at=1784361183
-      sample=0.04,at=1784361303
-      sample=0.035,at=1784361353
-      sample=0.057,at=1784361784
-      sample=0.036,at=1784361879
-      sample=0.05,at=1784361903
-      sample=0.036,at=1784362051
-    TimeTotal:step,avg=0.006
-      sample=0.005,at=1784360710
-      sample=0.006,at=1784360747
-      sample=0.007,at=1784360852
-      sample=0.007,at=1784361183
-      sample=0.006,at=1784361303
-      sample=0.005,at=1784361353
-      sample=0.008,at=1784361784
-      sample=0.005,at=1784361879
-      sample=0.007,at=1784361903
-      sample=0.005,at=1784362051
+    TimeTotal:beliefs,avg=0.049
+      sample=0.152,at=1784363872
+      sample=0.042,at=1784364291
+      sample=0.039,at=1784364470
+      sample=0.044,at=1784364891
+      sample=0.033,at=1784365071
+      sample=0.037,at=1784365497
+      sample=0.032,at=1784365677
+      sample=0.032,at=1784366097
+      sample=0.037,at=1784366250
+      sample=0.043,at=1784366700
+    TimeTotal:step,avg=0.007
+      sample=0.022,at=1784363872
+      sample=0.006,at=1784364291
+      sample=0.006,at=1784364470
+      sample=0.006,at=1784364891
+      sample=0.005,at=1784365071
+      sample=0.005,at=1784365497
+      sample=0.005,at=1784365677
+      sample=0.005,at=1784366097
+      sample=0.005,at=1784366250
+      sample=0.006,at=1784366700
   step,dige:wild
   step=2,dige:wild,desc:the machine stands
+    Assertion:machine-stood,sentence:the machine stood — an addressable self emerged on the spine
   step=3,dige:wild,desc:the relay answers
+    Assertion:relay-answers,sentence:the relay answers — the channel stood and frames can cross
   step=4,dige:wild,desc:who could we reach
+    Assertion:possibilities-surveyed,sentence:the possibilities of peers were surveyed — every known address counted
   step=5,dige:wild,desc:reach for a peer
   step=6,dige:wild,desc:does sound run here
   step=7,dige:wild,desc:sum and report
+    Assertion:report-stands,sentence:the session summed itself — a report stands ready to travel

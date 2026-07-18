@@ -2371,6 +2371,33 @@ await M.eatfunc({
                             result = { n: s.n, ok: s.ok, dige: s.dige, book, uid, got_snap: s.got_snap, exp_snap: s.exp_snap }
                         }
                     }
+                } else if (op === 'assertions') {
+                    // the CONTRACT vs the EVIDENCE (Seen_split rulings 2026-07-18): contract = toc
+                    //  `The/step=N/%Assertion` children (+ the flat legacy bucket during the churn);
+                    //   evidence = the ave/%Assertioning,Story:<book> shelf where story_harvest_sworn
+                    //    lands every latched %sworn — n: the first-latch step, c.microsnap what the
+                    //     assertion pointed at, encoded at go-off time.  Uncontracted evidence rides
+                    //      too (the achievements).  Raw C reads — Story methods live on another House.
+                    const stW = H.Lies_runner_story_w()
+                    if (!stW) { ok = false; result = { error: 'no Story world yet — run a Book first' } }
+                    else {
+                        const The  = stW.c.The as TheC | undefined
+                        const book = (stW.sc.Book as string) ?? null
+                        const contract: any[] = []
+                        for (const st of (The?.o({ step: 1 }) ?? []) as TheC[])
+                            for (const a of st.o({ Assertion: 1 }) as TheC[])
+                                contract.push({ slug: a.sc.Assertion, sentence: a.sc.sentence, n: st.sc.step })
+                        for (const a of ((The?.o({ Assertions: 1 })[0]?.o({ Assertion: 1 }) ?? []) as TheC[]))
+                            contract.push({ slug: a.sc.Assertion, sentence: a.sc.sentence, n: Number(a.sc.by_n) || 0, legacy: 1 })
+                        const shelf = (stW.c.ave as TheC | undefined)?.o({ Assertioning: 1, Story: book })[0] as TheC | undefined
+                        const sworn = ((shelf?.o({ sworn: 1 }) ?? []) as TheC[]).map(s => ({
+                            sentence: s.sc.sworn, n: s.sc.n,
+                            microsnap: ((s.c as any).microsnap as string) ?? null,
+                            contracted: contract.some(c => c.sentence === s.sc.sworn) ? 1 : 0,
+                        }))
+                        const gaps = contract.filter(c => c.sentence && !sworn.some(s => s.sentence === c.sentence))
+                        result = { book, contract, sworn, gaps }
+                    }
                 } else if (op === 'shot') {
                     // a live PNG of the Cyto canvas (scripts/runner_shot.mjs).  The ONE fault class a
                     //  snap can NOT carry: pixels never round-trip a fixture, so a headless caller could

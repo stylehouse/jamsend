@@ -50,6 +50,38 @@ This file is destination + the bombs + the next move. Correct anything that has 
   prove every step on a LIVE `:9091` runner via `runner_ask.mjs` — a green in `Story_cli` is a
    bubble (`verify-via-live-runner`, CLAUDE.md).
 
+**THE PRIMITIVE LANDED (2026-07-18, live-proven on the `:9091` runner — green ×2, sabotage red ×1).**
+ As-built, where it differs from or sharpens the rulings above:
+- **The API is `this.story_swear(w, 'sentence — no commas', subjectC?)`** (Story.svelte, beside
+   `story_harvest_desc`): SYNC (callable from any Atime witness — the microsnap must not await),
+    idempotent per run (reads the shelf, then w), mints `%sworn` on w; with a subject it stamps
+     `c.microsnap` = `story_microsnap(subject)` — a sync bounded enLine walk (depth-cap 3, no loopy
+      bookkeeping), taken at go-off time under the beat's mutex. Bare `i %sworn:'…'` stays legal
+       (guard with `oa`); the harvest dedups by sentence either way.
+- **The shelf**: `ave/%Assertioning,Story:<book>` (`story_assertioning`), reset per run in
+   `Story_settingoff` (`story_assertioning_reset` — evidence is a run's own testimony, and
+    story_swear's idempotence reads the shelf, so a stale shelf would refuse re-latch).
+     `story_harvest_sworn` rides beside `story_harvest_desc` at `snap_step_after_wave`; `n:` = the
+      FIRST harvest step, never overwritten. Microsnap rides `.c` — never encodes anywhere; the
+       `assertions` op ships it as JSON.
+- **`Cred_assertion_gaps` reads per-step contract + shelf**, and keeps a CHURN BRIDGE: the flat
+   `The/Assertions` bucket (n from by_n) + legacy `seen:` snap-text presence both still count,
+    until SwarmStaple/Steal/Wire + MusuBerth convert — then delete the bridge. Gap shape is now
+     `{slug, sentence, n}` (by_n is gone; runner_ask prints "expected by step N").
+- **toc codec**: the %step skip-rule now keeps a step whose only cargo is an `%Assertion` child;
+   contract lines round-trip a live save (proven — the runner re-saved Sounditron's toc mid-build
+    and the contract survived).
+- **`runner_ask assertions` op is live** (LiesFunk runner-side + CLI printer): contract vs evidence
+   with ✓/✗ per slug, `◇ achievement` for uncontracted sworn, `⌖` microsnap blocks; exit 1 on gaps.
+- **Honesty note**: a subject that doesn't exist yet at go-off → bare swear, no microsnap (seen
+   live: relay-answers latched at n=2, before beat 3 minted `%Relay`). Don't mint rows early just
+    to feed a microsnap.
+- **Sounditron is converted** (witness = story_swear calls, no oa guards; contract under its toc
+   steps; `granted` swear deliberately subject-less — never microsnap sealed %Grant material).
+**NEXT: the churn Accepts** (SwarmStaple/Steal/Wire + MusuBerth → %sworn + per-step contract, live
+ test + Accept each, then delete the churn bridge), **then Storui** (hover layer, sr-flag assertion
+  marks with pending→overdue→red, explorer⇄show-diff ghost lines).
+
 **MOVES 1 + 2 LANDED + MOVE 3 STARTED (2026-07-12, proven live on `3c5238`/`49dee9`). The MECHANISM
  is complete.** `%seen` latches AND a missing declared assertion now reds the run — un-maskable by
   entropy. All three mechanism landings are committed: `Seen_split 1` (`b94f79f4`), `Seen_split 2`

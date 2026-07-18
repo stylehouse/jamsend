@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '70c2860d8fbfeb22~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '8f1135f0793a56af~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1495,6 +1495,9 @@ async Ra_restock_beat(w, mirror, budget) {
 //      opts.id       — the DELIBERATE pick (the owner chose a specific record; honored when it
 //                       passes the same gates — the "we might pick one at some point" seam);
 //      opts.skip_src — exclude one source (the chase-to-the-OTHER-Pier move);
+//      opts.skip_ids — a {id:1} set to pass over (the radio's heard-this-sitting memory: the
+//                       dial prefers FRESH; when everything is skipped it returns null and the
+//                        caller falls back to a plain dial — a replay, counted honestly);
 //      otherwise     — the entropy dial (Ra_rand: crypto-live, Book-seedable, live-stirrable).
 //       Candidates sort by id so the dial's domain never wobbles run to run.  null = nothing to
 //        turn to (every other source dark or unstocked) — the caller keeps playing what it has.
@@ -1507,6 +1510,7 @@ Ra_dial_next(w, mirror, opts) {
         if (rec.sc.id === playing) continue
         if (!(+(rec.sc.preview || 0) > 0)) continue
         if (o.skip_src && rec.c.from === o.skip_src) continue
+        if (o.skip_ids && o.skip_ids[rec.sc.id]) continue
         if (w.c.ra_source_live && !w.c.ra_source_live(rec.c.from)) continue
         cands.push(rec)
     }

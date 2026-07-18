@@ -7,11 +7,12 @@
 //
 //  THE VERDICT REGIME IS Opt/wild (Story.svelte): the environment IS the data, so a dige can
 //   never match across environments — steps snap and record but never fixture-compare.  Honesty
-//    lives in the ASSERTION ROSTER (toc The/Assertions): the rostered %seen are "the machine
-//     works" facts that must latch ANYWHERE (machine, relay, survey, report).  The ACHIEVEMENTS
-//      (granted, a peer online, sound flowing, listening) are UNROSTERED %seen — they latch
-//       opportunistically and ride the report; a user with no friends online is a REPORTED
-//        session ("Pier not online"), never a failed run.
+//    lives in the ASSERTION CONTRACT (toc `The/step=N/%Assertion:slug,sentence:…` — the hosting
+//     step is the by-when): the contract sentences are "the machine works" facts that must
+//      latch ANYWHERE (machine, relay, survey, report).  The ACHIEVEMENTS (granted, a peer
+//       online, sound flowing, listening) are UNCONTRACTED %sworn — they latch opportunistically
+//        and ride the report; a user with no friends online is a REPORTED session ("Pier not
+//         online"), never a failed run.
 //
 //  Beats are EVENT-PACED, not clock-paced (the human: "ttlilt until Story can capture meaningful
 //   state changes"): a beat arms an expecting() — the ttlilt holds the snap open — and the
@@ -113,6 +114,12 @@ Sounditron_glass(w):
     //     never this run House (the M. convention, re-learned twice tonight).
     let MR = this.top_House()
     if (MR.Radio_ensure) MR.Radio_ensure(w)
+    // its two housemates: the STOKER (the provisioning organ — Radio.g, crew:'Radio' groups
+    //  it with the radio's cell) and the TUNER (the glass's own dial — Cyto.svelte; which
+    //   crews of cells are shown).  Same law as the radio: find-or-create per w, above every
+    //    gate, via top_House.
+    if (MR.Stoker_ensure) MR.Stoker_ensure(w)
+    if (MR.Tuner_ensure) MR.Tuner_ensure(w)
     let SH = this.c.up
     if (!SH) return
     if (this.c.glass_done) return
@@ -309,9 +316,12 @@ async Sounditron_await(w, secs, truth_fn):
         await new Promise(r => setTimeout(r, 300))
     }
 
-// ── the witness — every pass, guarded once-per-truth.  Rostered %seen = "the machine works"
-//  (must latch anywhere); unrostered %seen = achievements (latch when the world provides);
-//   %log = the one-snap diagnoses.  Sentences carry NO commas (the peel splits on them).
+// ── the witness — every pass, in Atime.  this.story_swear is the latch: idempotent per run
+//  (it reads the Assertioning shelf), so no oa guard rides a sentence; the subject param
+//   microsnaps what the assertion POINTS AT, at go-off time, under the beat's mutex.
+//    Contract %sworn = "the machine works" (must latch — a gap reds the run); uncontracted
+//     %sworn = achievements (latch when the world provides); %log = the one-snap diagnoses.
+//      Sentences carry NO commas (the peel splits on them).
 Sounditron_witness(w):
     let n = (this.c.run)?.c.step_n
     let self = this.Sounditron_self(w)
@@ -331,14 +341,18 @@ Sounditron_witness(w):
     }
     if (n != null && n >= 4 && w.c.muse_why && !(oa %log:'the collection did not stir')) { w.i({ log: 'the collection did not stir', why: this.Sounditron_clean(w.c.muse_why) }) }
     this.Sounditron_heist_met(w)
-    if (w.o({ Found: 1 })[0] && !(oa %seen:'the collection stirred — real tracks wandered into the glass')) i %seen:'the collection stirred — real tracks wandered into the glass'
-    if (w.o({ Friend: 1 }).some(f => Number(f.sc.records) > 0) && !(oa %seen:'a friend counted their shelf — records stand reachable')) i %seen:'a friend counted their shelf — records stand reachable'
-    if (self && !(oa %seen:'the machine stood — an addressable self emerged on the spine')) i %seen:'the machine stood — an addressable self emerged on the spine'
-    if (this.Sounditron_channel_live(w) && !(oa %seen:'the relay answers — the channel stood and frames can cross')) i %seen:'the relay answers — the channel stood and frames can cross'
+    let foundRow = w.o({ Found: 1 })[0]
+    if (foundRow) this.story_swear(w, 'the collection stirred — real tracks wandered into the glass', foundRow)
+    let countedFriend = w.o({ Friend: 1 }).find(f => Number(f.sc.records) > 0)
+    if (countedFriend) this.story_swear(w, 'a friend counted their shelf — records stand reachable', countedFriend)
+    if (self) this.story_swear(w, 'the machine stood — an addressable self emerged on the spine', w.o({ Machine: 1 })[0])
+    if (this.Sounditron_channel_live(w)) this.story_swear(w, 'the relay answers — the channel stood and frames can cross', w.o({ Relay: 1 })[0])
     if (n != null && n === 3 && !this.Sounditron_channel_live(w) && !(oa %log:'relay down — never dialed or the socket died')) i %log:'relay down — never dialed or the socket died'
-    if (w.o({ Census: 1 })[0] && !(oa %seen:'the possibilities of peers were surveyed — every known address counted')) i %seen:'the possibilities of peers were surveyed — every known address counted'
-    if (this.Sounditron_grants(w).length && !(oa %seen:'granted — a sealed friendship holds Music grants in storage')) i %seen:'granted — a sealed friendship holds Music grants in storage'
-    if (this.Sounditron_peer_live(w) && !(oa %seen:'a peer stood reachable — a channel opened beyond ourselves')) i %seen:'a peer stood reachable — a channel opened beyond ourselves'
+    if (w.o({ Census: 1 })[0]) this.story_swear(w, 'the possibilities of peers were surveyed — every known address counted', w.o({ Census: 1 })[0])
+    // granted: NO subject on purpose — the %Grant pair is sealed key material in storage; a
+    //  microsnap of it would ship crypto in the report.  The sentence is the whole testimony.
+    if (this.Sounditron_grants(w).length) this.story_swear(w, 'granted — a sealed friendship holds Music grants in storage')
+    if (this.Sounditron_peer_live(w)) this.story_swear(w, 'a peer stood reachable — a channel opened beyond ourselves')
     if (n != null && n === 5 && !this.Sounditron_peer_live(w) && !(oa %log:'Pier not online — nobody reachable to connect to')) i %log:'Pier not online — nobody reachable to connect to'
     let probe = w.c.audio_probe
     let audioRow = w.o({ Audio: 1 })[0]
@@ -348,6 +362,6 @@ Sounditron_witness(w):
         if (probe.realtime) audioRow.sc.real = 1
         if (probe.heard) audioRow.sc.heard = 1
     }
-    if (audioRow?.sc?.real && !(oa %seen:'the sound system answered — a real AudioContext ran here')) i %seen:'the sound system answered — a real AudioContext ran here'
+    if (audioRow?.sc?.real) this.story_swear(w, 'the sound system answered — a real AudioContext ran here', audioRow)
     if (n != null && n === 6 && probe && !probe.realtime && !(oa %log:'no live audio — the context never ticked in real time')) i %log:'no live audio — the context never ticked in real time'
-    if (w.o({ Session: 1 })[0] && !(oa %seen:'the session summed itself — a report stands ready to travel')) i %seen:'the session summed itself — a report stands ready to travel'
+    if (w.o({ Session: 1 })[0]) this.story_swear(w, 'the session summed itself — a report stands ready to travel', w.o({ Session: 1 })[0])

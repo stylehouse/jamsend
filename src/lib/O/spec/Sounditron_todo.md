@@ -225,6 +225,21 @@ The human: "we want to send a UI component into Voro|Cyto for laying out, much l
 - **Caveat for shots:** a face is live DOM — neither the canvas PNG nor the SVG glass carries its
    pixels; the PROOF a face mounted is its CELL standing in the `--svg` tessellation (a cell only
     seeds off a successful mount).
+- **IMPOSED faces (2026-07-18 late):** a face can also arrive BY MAINKEY — `FACE_MAINKEYS` in
+   **`glass_faces.ts`** (the component-free half; Cyto imports THIS, never glass_kinds.ts, so the
+    headless spine never drags .svelte components).  Imposition is viewer-side: no sc changes, no
+     snap changes, sealed Books stay Voro-blind.  First imposed: `%Heist` → HeistFace (posed
+      needs | soft wish→Leads→take).  Resolution = `cyto_face_kind(n)` (worn sc.face wins).
+- **CREWS + the %Tuner (2026-07-18 late — the make-space dial):** every cell-holder tessellates
+   under a CREW — `cyto_crew(n)`: explicit `sc.crew` || face kind || stuffed mainkey.  cyto_scan
+    censuses crews into the %Tuner's `.c.crews` (silent write) and DROPS muted crews at classify
+     (census BEFORE drop, so a hidden crew stays listed and un-hidable).  TunerFace = ▣/☐ rows →
+      `Tuner_toggle` (Cyto.svelte) → `.c.mute` flip + the unfold-idiom absolute rescan.  Mute +
+       census ride `.c` ONLY — a Book's snap never churns on a viewer's taste.  The tuner is
+        minted by the COMMISSIONER (opt-in — `Sounditron_glass` does; a bare Leaf* world keeps
+         its fixtures), and it can never mute itself.  Faces so far: Radio (gold) · Stoker
+          (green, crew:'Radio' — one toggle hides the whole listening pair) · Tuner (blue) ·
+           Heist (crimson).
 
 ## 5. Speculation — thrown-on steps (designed earlier, unbuilt)
 
@@ -245,7 +260,19 @@ A `Speculation:<slug>` = a What-shaped bundle (the Mag/Grasp idiom) of NON-canon
 - Sounditron must NEVER join run-all (unusual:real-environment) — it probes the machine it's on,
    wedges tabs while the BOMB stands, and holds 12s+ waits by design.
 
-## 7. Advisory — the %sworn/%Assertioning upgrade is coming (Seen_split build, 2026-07-18)
+## 7. Advisory — the %sworn/%Assertioning upgrade LANDED (Seen_split build, 2026-07-18)
+
+**Update, same day: it's live and Sounditron is already converted** — green ×2 on the real runner,
+ sabotage-probe red ×1, runner released.  The witness now calls **`this.story_swear(w, 'sentence',
+  subjectC?)`** (sync, idempotent per run, no more `oa` guards; subject → microsnap at go-off);
+   bare `i %sworn:'…'` also works.  The contract sits under the toc step lines; evidence lands on
+    the `ave/%Assertioning,Story:Sounditron` shelf, so got_snaps carry NO assertion bytes now.
+     `node scripts/runner_ask.mjs assertions` shows contract-vs-evidence + the microsnaps.  If you
+      re-touch the witness: swear in Atime only (a detached leg stamps `w.c`, the witness swears
+       next pass), keep sentences comma-free, and never hand a %Grant (sealed key material) as a
+        subject.  The paragraph below is the original advisory, kept for the why.
+
+### (original advisory, superseded)
 
 To the agent on Radios + Sounditron: the assertion layer your Book leans on is being rebuilt under
  you — nothing to do yet, just know the shape so nothing surprises.  `%seen` becomes **`%sworn`**

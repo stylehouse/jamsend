@@ -71,6 +71,7 @@
     import { onMount }   from "svelte"
     import Cytui         from "./Cytui.svelte"
     import { ex, indent, sex } from "$lib/Y.svelte";
+    import { FACE_MAINKEYS } from "$lib/O/glass_faces"
 
     let { M } = $props()
     let V = {}
@@ -366,6 +367,13 @@
         Se.c.tick++
         let tick = Se.c.tick
 
+        // ── the %Tuner's say: which crews are muted this scan.  Mute + census ride .c —
+        //  viewer preference, never snapped, so the client world's Book stays Voro-blind.
+        const tuner = (w.c.client_w as TheC | undefined)?.o({ Tuner: 1 })[0]
+        if (tuner) tuner.c.cyto_w = w   // the toggle's way back to THIS cyto world
+        const crew_mute = (tuner?.c?.mute ?? {}) as Record<string, 1>
+        const crews_seen: Record<string, number> = {}
+
         await Se.process({
             n:          Scannable,
             loop_but_no_further: 1,
@@ -406,6 +414,16 @@
                 if (w.c.supports_constraints && n.sc.cyto_dir) cls = 'invisible'
                 // avoid everything under n**
                 if (cls === 'skip')      { T.sc.not = 1; D.drop(D); return }
+                // ── crews: the tuner's make-space dial ─────────────────
+                // every cell-holder belongs to a CREW (cyto_crew); the census rides to
+                //  the %Tuner face after the walk, and a MUTED crew's particles drop
+                //   from the graph right here — cells vanish, space returns.  Census
+                //    before drop, so a hidden crew stays listed (and un-hidable).
+                const crew = this.cyto_crew(n)
+                if (crew) {
+                    crews_seen[crew] = (crews_seen[crew] ?? 0) + 1
+                    if (crew_mute[crew]) { T.sc.not = 1; D.drop(D); return }
+                }
                 // a structure that vanishes - can overload and confuse resolve()
                 if (cls === 'invisible') {
                     if (T == T.c.path[0]) {
@@ -516,7 +534,7 @@
                 //     it and every folded Artist's Tracks leak back into the graph as free nodes).
                 //      cyto_folded (c-side, never snapped) is the live graph's own receipt that the fold
                 //       really happened — a Book can witness it, where a stamp alone only proves intent.
-                if (n.sc.stuff != null || n.c.stuff || n.sc.face != null) {
+                if (n.sc.stuff != null || n.c.stuff || this.cyto_face_kind(n) != null) {
                     T.sc.no_further = 'stuffed'
                     n.c.cyto_folded = Se.c.tick
                 }
@@ -606,6 +624,10 @@
         })
         Se.c.n_to_C = n_to_C
 
+        // the crew census lands on the tuner SILENTLY (c-side, no bump — the wave push
+        //  that follows bumps anyway, and the TunerFace keeps its own second-hand).
+        if (tuner) tuner.c.crews = crews_seen
+
         return topC
     },
 
@@ -685,6 +707,57 @@
         return null
     },
 
+    // ── the faces rail: kind + crew resolution ───────────────────────────
+    // a face is WORN (sc.face — the particle asked) or IMPOSED by the viewer (FACE_MAINKEYS,
+    //  glass_faces.ts — the world stays Voro-blind: no snap changes because the glass chose
+    //   to dress a %Heist).  Either way the kind names the component in glass_kinds.ts.
+    cyto_face_kind(n: TheC): string | null {
+        if (n.sc.face != null) return String(n.sc.face)
+        const mk = this.mainkey(n)
+        return (mk && FACE_MAINKEYS[mk]) || null
+    },
+
+    // the CREW a particle tessellates under: explicit sc.crew wins; a face defaults to its
+    //  kind; a stuffed cell-holder to its mainkey; anything else is crewless (never muted).
+    cyto_crew(n: TheC): string | null {
+        if (n.sc.crew != null) return String(n.sc.crew)
+        const fk = this.cyto_face_kind(n)
+        if (fk) return fk
+        if (n.sc.stuff != null || n.c.stuffy || n.c.stuff) return this.mainkey(n) ?? null
+        return null
+    },
+
+    // ── the %Tuner: the glass's own dial — ONE face that says which crews show ──
+    //  (the human: "all the things in the Voro UI need grouping somehow, with one thing in
+    //   them that controls which of those groups are shown — so we can make space").  Minted
+    //    per glass world by its commissioner (Sounditron_glass does; opt-in, so a bare Leaf*
+    //     world keeps its fixtures untouched).  Mute state + crew census ride .c ONLY: the
+    //      sc row is constant, and a Book's snap never churns on a viewer's taste.
+    Tuner_ensure(w: TheC): TheC {
+        let t = w.o({ Tuner: 1 })[0]
+        if (!t) {
+            t = w.i({ Tuner: 'glass', face: 'Tuner' })
+            t.c.up = w
+        }
+        t.c.w = w
+        return t
+    },
+
+    // flip one crew shown|hidden and re-tessellate NOW — the unfold idiom (absolute wave
+    //  past the same-step guard).  The tuner itself never mutes: the hand that hides must
+    //   stay visible to un-hide.
+    async Tuner_toggle(t: TheC, crew: string): Promise<void> {
+        if (!t || !crew || crew === 'Tuner') return
+        const mute = (t.c.mute ??= {}) as Record<string, 1>
+        if (mute[crew]) delete mute[crew]
+        else mute[crew] = 1
+        const cw = t.c.cyto_w as TheC | undefined
+        if (!cw) return
+        const last = cw.c.last_step_n as number | undefined
+        delete cw.c.last_step_n
+        await this.cyto_update_wave(cw, last ?? 1, true)
+    },
+
     cyto_label(n: TheC): string {
         const parts: string[] = []
         for (const [k, v] of Object.entries(n.sc ?? {})) {
@@ -735,16 +808,19 @@
         //       it = FOLDED (Stuffing of the children, descent suppressed), without = the
         //        particle ITSELF as one row (overlay_self).
         //   plain sc.stuff — the classic labelled stuff-chunk (AwFloat's stuff_of peeks etc).
-        // a particle wearing sc.face hosts a LIVE registered component (glass_kinds.ts) — the
-        //  stuff rail generalised: same overlay mount, same cell seeding, same paint_final mold,
-        //   a chosen component instead of a Stuffing.  Checked BEFORE the stuff skins so the Voro
-        //    crusher's blanket c.stuffy stamp can't shadow a face into a plain Stuffing.  The node
-        //     is the host oval (birth size only — the ResizeObserver grows it to the component).
-        if (n.sc.face != null) {
+        // a particle WEARING sc.face — or one whose mainkey the viewer IMPOSES a face on
+        //  (FACE_MAINKEYS, glass_faces.ts) — hosts a LIVE registered component (glass_kinds.ts):
+        //   the stuff rail generalised — same overlay mount, same cell seeding, same paint_final
+        //    mold, a chosen component instead of a Stuffing.  Checked BEFORE the stuff skins so
+        //     the Voro crusher's blanket c.stuffy stamp can't shadow a face into a plain
+        //      Stuffing.  The node is the host oval (birth size only — the ResizeObserver grows
+        //       it to the component).
+        const face_kind = this.cyto_face_kind(n)
+        if (face_kind != null) {
             return {
                 label: '',
                 overlay_kind: 'face',
-                overlay_face: String(n.sc.face),
+                overlay_face: face_kind,
                 style: {
                     'background-color': '#04202a',
                     'background-opacity': 0.85,

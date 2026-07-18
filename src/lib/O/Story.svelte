@@ -221,6 +221,88 @@
         }
     },
 
+    // ── the Assertioning shelf — where sworn evidence lives, OFF the world snap ──────────────
+    // The contract is The-side (`The/step=N/%Assertion:slug,sentence:…` — the hosting step IS
+    //  the by-when); the EVIDENCE is a Run's latched `%sworn`, and it lives HERE:
+    //   ave/%Assertioning,Story:<book> — beside This, in the watched ave channel, so the UI
+    //    reacts but snap_H never sees it.  A %sworn thus never costs a fixture byte: latch on w,
+    //     harvested to the shelf pre-encode (the %desc law).  Reset per run — evidence is a
+    //      run's own testimony, never carried over.
+    story_assertioning(w: TheC): TheC | undefined {
+        const ave  = w.c.ave as TheC | undefined
+        const book = w.sc.Book as string
+        if (!ave || !book) return undefined
+        return ave.oai({ Assertioning: 1, Story: book })
+    },
+
+    story_assertioning_reset(w: TheC) {
+        const ave  = w.c.ave as TheC | undefined
+        const book = w.sc.Book as string
+        if (!ave || !book) return
+        for (const row of ave.o({ Assertioning: 1, Story: book }) as TheC[]) ave.drop(row)
+    },
+
+    // story_microsnap — a SYNC bounded encode of one subject subtree, via enLine (the shared
+    //  line codec).  Sync matters: swearing happens inside a beat, under the House mutex, and
+    //   the microsnap must capture the subject AT THAT MOMENT — an async encode would read a
+    //    later world.  No loopy/ref bookkeeping (a subject is a small referring particle);
+    //     depth-capped so a mispointed subject can't drag a whole world in.
+    story_microsnap(subject: TheC, d = 0, cap = 3): string {
+        const q: any = { d, rules: [] }
+        const lines: string[] = (((this as any).enLine(subject, q) ?? []) as string[]).slice()
+        if (d < cap) for (const kid of subject.o({}) as TheC[])
+            lines.push(this.story_microsnap(kid, d + 1, cap))
+        return lines.join('\n')
+    },
+
+    // story_swear — the one idempotent latch: a Book swears a sentence ONCE per run.
+    //   this.story_swear(w, 'the machine stood — no commas; use an em-dash', subjectC?)
+    //  Checks the shelf (sworn earlier this run), then w (latched this step, awaiting harvest),
+    //   then mints %sworn on w.  With a subject, the sworn carries c.microsnap — what the
+    //    assertion POINTS AT, encoded at go-off time.  Call it in Atime ONLY (a beat / the
+    //     witness — the House mutex is already held there); a detached async leg must not swear
+    //      directly: stamp w.c and let the witness swear next pass (the Sounditron law).
+    //  Bare `i %sworn:'sentence'` stays legal too (guard with oa; microsnap-less) — the harvest
+    //   dedups by sentence either way.
+    story_swear(w: TheC, sentence: string, subject?: TheC) {
+        if (typeof sentence !== 'string' || !sentence) return
+        const shelf = this.story_assertioning(w)
+        if (shelf?.oa({ sworn: sentence })) return
+        if (w.oa({ sworn: sentence })) return
+        const s = w.i({ sworn: sentence })
+        if (subject) s.c.microsnap = this.story_microsnap(subject)
+    },
+
+    // story_harvest_sworn — the %desc law applied to evidence: every flora-w %sworn moves to
+    //  the Assertioning shelf BEFORE the encode, stamped n: (the step it first latched — never
+    //   overwritten), carrying its microsnap.  oai by sentence dedups a re-mint (a bare-idiom
+    //    swear whose w-side guard went with the last harvest).  Cred_assertion_gaps reads the
+    //     shelf; the snap stays pure.
+    story_harvest_sworn(w: TheC, Run: House, n: number) {
+        const H = this as House
+        let touched = false
+        for (const A of Run.o({ A: 1 }) as TheC[]) {
+            for (const fw of A.o({ w: 1 }) as TheC[]) {
+                for (const s of fw.o({ sworn: 1 }) as TheC[]) {
+                    const sentence = s.sc.sworn
+                    if (typeof sentence === 'string' && sentence) {
+                        const shelf = (H as any).story_assertioning(w) as TheC | undefined
+                        if (shelf) {
+                            const row = shelf.oai({ sworn: sentence })
+                            if (!row.sc.n) {
+                                row.sc.n = n
+                                if (s.c.microsnap) row.c.microsnap = s.c.microsnap
+                            }
+                            touched = true
+                        }
+                    }
+                    fw.drop(s)
+                }
+            }
+        }
+        if (touched) (w.c.ave as TheC | undefined)?.bump_version()
+    },
+
     The_frontier(w: TheC): number {
         // read the frontier step number from the {note:1,frontier:1} particle.
         // o({note:1,frontier:1}) — both values are wildcard 1, matching any particle
@@ -416,7 +498,8 @@
                 }
 
                 // %step skip rule: nothing worth saving for this step
-                if (n.sc.step != null && !n.sc.dige && !(n.o({ note: 1 }).length)) {
+                //  (an %Assertion child is contract — always worth saving, even dige-less)
+                if (n.sc.step != null && !n.sc.dige && !(n.o({ note: 1 }).length) && !(n.o({ Assertion: 1 }).length)) {
                     T.sc.not = 1
                     return
                 }
@@ -1402,6 +1485,11 @@
         // Called once, just before step 1 — toc decoded, Run wired.
         const H = this as House
 
+        // ── the Assertioning shelf resets per run ─────────────────────
+        // Evidence is a run's own testimony: a stale shelf from the last run of this Book
+        //  would make story_swear refuse to re-latch (its idempotence reads the shelf).
+        this.story_assertioning_reset(w)
+
         // ── commission Cyto ───────────────────────────────────────────
         // Stand up this Story's OWN Cyto world (e.g. the Leaf* tests) on demand, gated
         //  by The/Opt/useCyto.  This must run AFTER the toc is decoded — Story_plan runs
@@ -2185,6 +2273,7 @@
             }
             const n = run.c.step_n as number
             H.story_harvest_desc(w, Run, n)   // %desc → The-side, BEFORE the encode (never snap bytes)
+            ;(H as any).story_harvest_sworn(w, Run, n)   // %sworn → the Assertioning shelf, same law
             const snap     = await this.story_snap(w, run, Run)
             const got_dige = await dig(snap)
             Run.trace('snapped', String(n))
@@ -2250,8 +2339,8 @@
                 //  never match across environments, so the fixture game is off entirely —
                 //   no compare, no exp preload, no disk verify, no Accept pressure.  A step
                 //    is ok unless the beat was blocked (the untried path above); the RUN's
-                //     verdict stays honest through the assertion roster (Cred_assertion_gaps
-                //      — %seen presence, entropy-proof) and the report.  got_snap/dige still
+                //     verdict stays honest through the assertion contract (Cred_assertion_gaps
+                //      — %sworn on the Assertioning shelf, entropy-proof) and the report.  got_snap/dige still
                 //       land (the run-record and time-travel ride them); toc step lines
                 //        carry `dige:wild` purely as the drive count.
                 step.sc.got_snap = snap

@@ -23,6 +23,38 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**THE STOKER + CREWS + THE PIRATING FACES (2026-07-18 late — uncommitted; the C-and-D fix).**
+ The human: "it's only playing DJ Oscillo's C and D… all the things in the Voro UI need grouping…
+  I want to see the provisioning system cranking along… exhausting the set should churn radiostock
+   extra fast."  Three organs landed:
+ · **The %Stoker** (`Radio.g //#region stoker`, face:'Stoker', crew:'Radio'): provisioning is now
+    its OWN visible loop — the radio's dial never digs.  It parks with the radio, resurrects
+     standing radiostock once, counts `stock`/`fresh` (unheard-this-sitting vs `radio.c.heard`)
+      every 3s, and DIGS when fresh drops under 2 or the dial poked `Stoker_churn` (exhaustion =
+       dial found nothing unheard → churn back-to-back to 4 fresh or a dry pass → `spent`).
+        Dig order is **music-first** — the old testsounds-first first-base-wins wander IS why only
+         DJ Oscillo's C and D ever played.  The dial (`Ra_dial_next` gained `opts.skip_ids`,
+          default-off so every sealed Book is untouched) prefers FRESH and replays honestly when
+           exhausted (`radio.sc.replays` counts it, stops climbing as fresh stock lands).
+ · **CREWS + the %Tuner** (`Cyto.svelte`): every cell-holder tessellates under a CREW (sc.crew ||
+    its face kind || stuffed mainkey); cyto_scan writes the census to the %Tuner's `.c.crews`
+     and DROPS muted crews at classify — cells vanish, space returns.  TunerFace lists crews with
+      ▣/☐ toggles → `Tuner_toggle` → mute flip + the unfold-idiom absolute rescan.  Mute + census
+       ride `.c` ONLY (viewer preference — Books stay Voro-blind, snap rows constant).  Minted
+        opt-in by the commissioner (Sounditron_glass) so Leaf* fixtures never move.
+ · **The Pirating face** (`HeistFace.svelte` + `glass_faces.ts`): `FACE_MAINKEYS` imposes a face
+    BY MAINKEY, viewer-side — no %Heist ever wears sc.face, sealed Musu fixtures untouched.
+     Renders both shapes: POSED (Sounditron's nugget — sentence + %Need met:1) and SOFT (wish +
+      %Lead answers, a `take` button per Lead → `Heist_condense`).  `glass_faces.ts` is the
+       component-free half Cyto imports (headless spine has no DOM; glass_kinds.ts keeps the
+        component map for Cytui).
+ **GATED:** Sounditron 7/7 live on 77d2; `Stoker:idle,face:Stoker,crew:Radio` + `Tuner:glass,
+  face:Tuner` + the posed Heist in snap 7 headless AND live; SVG tessellation grew 11→14 paths
+   (one cell per new face — a cell only seeds off a successful mount).  **OWED:** fingers on the
+    live buttons (churn ⛏ · a crew toggle · a Lead take — remote shots can't click); a live
+     soft-Heist wish in a radio world once the remote dial leg lands; the pull driver behind
+      `take` (condense stamps at/chose; nothing drives Heist_beat live yet).
+
 **THE RADIO IS BUILT (2026-07-18 — `Ghost/M/Radio.g`, uncommitted, live-gate owed a tab reload).**
  The one wire the pipeline never had: chunk particles decoded and laid on the REAL AudioContext
   timeline, continuously — the human: "continuously playing music, like a radio, starts going from

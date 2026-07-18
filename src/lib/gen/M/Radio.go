@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return 'cec2e3ea3bc8edf8~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return 'dd3be4e95d08b7c4~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -20,10 +20,13 @@
 //      turns itself.  %Stream chunks come into being BEHIND the preview: a supply loop runs the
 //       demand-driven transcode (Ra_transcode_ensure|advance) while the 32s preview plays, so a
 //        track goes from the start via %Stream without ever having existed in full before.
-//  An empty shelf DIGS: resurrect standing radiostock first (cheap — the bytes are already cut),
-//   then MEANDER the share (Crate_nav_meander — one random wander down, never a scan; the
-//    no-enumeration law) and stock what the wander found.  The radio is how the collection gets
-//     walked: it stocks as it listens.
+//  PROVISIONING is the STOKER's job — a second face particle (%Stoker) with its own detached
+//   loop: resurrect standing radiostock first (cheap — the bytes are already cut), then MEANDER
+//    the share (Crate_nav_meander — one random wander down, never a scan; the no-enumeration
+//     law) and stock what the wander found.  The stoker watches the shelf while the radio plays
+//      and digs when FRESH (unheard-this-sitting) runs low; EXHAUSTING the set (the dial finds
+//       nothing unheard) makes it churn extra fast.  The radio is how the collection gets
+//        walked: it stocks as it listens — and the stoking is VISIBLE, a face in the glass.
 //  THE MUTEX LAW (Sounditron's lesson, load-bearing): nothing here runs under beliefs().  Every
 //   loop is a detached setTimeout chain guarded by c.era — pause|skip|replay bump the era and the
 //    stale loop falls silent on its next look.  The face reads sc; the machine lives on c.
@@ -40,6 +43,9 @@ Radio_ensure(w) {
         radio.c.up = w
     }
     radio.c.w = w
+    // heard-this-sitting: the ids the dial already played (runtime memory, never snapped —
+    //  a radio forgets on reload, honestly; durable taste is the Booth's job, not this).
+    if (!radio.c.heard) radio.c.heard = {}
     return radio
 
 },
@@ -80,6 +86,7 @@ async Radio_go(radio, opts) {
     radio.c.gat = gat
     if (!radio.c.aud) radio.c.aud = gat.new_audiolet()
     if (opts && opts.mute) radio.c.aud.mute()
+    this.Stoker_wake(this.Stoker_ensure(radio.c.w))
     this.Radio_pump(radio, era)
 
 },
@@ -157,8 +164,10 @@ async Radio_pump(radio, era) {
         rec = await this.Radio_dial(radio)
         if (radio.c.era !== era) return
         if (!rec) {
-            this.Radio_state(radio, 'starved')
-            this.Radio_pump_soon(radio, era, 4000)
+            // nothing to play YET — the stoker was poked (Radio_dial did); show the dig
+            //  and look again soon: music starts the moment the first stock lands.
+            this.Radio_state(radio, 'digging')
+            this.Radio_pump_soon(radio, era, 3000)
             return
         }
         this.Radio_open(radio, rec)
@@ -250,6 +259,8 @@ Radio_open(radio, rec) {
     let w = radio.c.w
     this.Ra_term_stream_open(w, rec, {})
     radio.c.rec = rec
+    if (!radio.c.heard) radio.c.heard = {}
+    radio.c.heard[rec.sc.id] = 1
     radio.c.seq = 0
     radio.c.dec = null
     radio.c.pre = 0
@@ -317,7 +328,7 @@ Radio_face_tick(radio, AC) {
 },
 //#endregion
 
-//#region dial — pick the next record: shelf → resurrect standing stock → meander the share
+//#region dial — pick the next record off the shelf, FRESH first (the stoker keeps it stocked)
 Radio_pub(w) {
     let M = this.top_House()
     let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
@@ -327,49 +338,190 @@ Radio_pub(w) {
     return M.Lies_self?.(lw)?.prepub ?? null
 
 },
-// the dial's ladder, each rung honest about its cost: (1) whatever the shelf holds already;
-//  (2) resurrect standing radiostock files once — the bytes are cut, no decode; (3) DIG: one
-//   random meander down the share (never a scan — the 200k-track law) and stock what it found.
+// the dial reads the shelf and NEVER digs (that's the stoker's loop): (1) a FRESH pick — a
+//  record not in heard-this-sitting (skip_ids); (2) none fresh = the set is EXHAUSTED — poke
+//   the stoker to CHURN and REPLAY meanwhile (a radio never goes quiet because the crate ran
+//    out; sc.replays counts the honesty, and it stops climbing the moment fresh stock lands).
 async Radio_dial(radio) {
     let w = radio.c.w
     let pub = this.Radio_pub(w) || 'me'
     let shelf = this.Ra_home_self(w, pub)
+    let stoker = this.Stoker_ensure(w)
+    let fresh = this.Ra_dial_next(w, shelf, { skip_ids: radio.c.heard || {} })
+    if (fresh) return fresh
+    this.Stoker_churn(stoker)
+    let again = this.Ra_dial_next(w, shelf, {})
+    if (again) {
+        radio.sc.replays = (+(radio.sc.replays || 0)) + 1
+        radio.bump()
+    }
+    return again
+},
+//#endregion
+
+//#region stoker — the PROVISIONING organ, a face of its own: watch the shelf, dig when fresh runs low
+// %Stoker (mainkey value = state idle|watching|churning|spent) wears face:'Stoker' + crew:'Radio'
+//  (the tuner groups it with the radio's cell).  The loop is the radio pump's twin: a detached
+//   era-guarded setTimeout chain, NOTHING under beliefs.  It runs while the radio plays and parks
+//    when the radio does.  Display sc: stock (records standing) · fresh (unheard this sitting) ·
+//     dug (newly stocked this sitting) · stood (resurrected) · last (latest find) — bumped only
+//      when a number actually moves, so a mere glance never re-tessellates the glass.
+//  The dig order is music-first: 'testsounds' is a dev fixture crate, and a first-base-wins
+//   wander that starts there plays the same two test tracks forever — the real share leads,
+//    the root is the fallback, testsounds only when nothing else yields.
+Stoker_ensure(w) {
+    let st = w.o({ Stoker: 1 })[0]
+    if (!st) {
+        st = w.i({ Stoker: 'idle', face: 'Stoker', crew: 'Radio' })
+        st.c.up = w
+    }
+    st.c.w = w
+    return st
+
+},
+Stoker_state(st, state) {
+    if (st.sc.Stoker !== state) {
+        st.sc.Stoker = state
+        st.bump()
+    }
+
+},
+// Stoker_wake — the radio came alive (or a churn was asked while parked): run the watch loop.
+//  Idempotent while awake — one loop per stoker, a fresh era per wake.
+Stoker_wake(st) {
+    if (st.c.awake) return
+    st.c.awake = 1
+    let era = (st.c.era || 0) + 1
+    st.c.era = era
+    this.Stoker_soon(st, era, 50)
+
+},
+// Stoker_churn — the EXHAUSTION poke (the dial found nothing unheard): dig extra fast until
+//  fresh stock stands again.  A flag the next look consumes; the wake covers the parked case.
+Stoker_churn(st) {
+    st.c.churn_asked = 1
+    this.Stoker_wake(st)
+
+},
+Stoker_soon(st, era, ms) {
+    setTimeout(() => { this.Stoker_look(st, era) }, ms)
+
+},
+// one look: park with the radio · resurrect standing radiostock once (the bytes are already
+//  cut — no decode) · count the shelf · when wanted (churn asked or fresh under the floor),
+//   DIG to the goal or a dry pass.  Churning looks again in ~1.5s; watching every 3s.
+async Stoker_look(st, era) {
+    if (st.c.era !== era) return
+    let w = st.c.w
+    let radio = w.o({ Radio: 1 })[0]
+    let rs = radio ? radio.sc.Radio : 'off'
+    if (rs !== 'playing' && rs !== 'digging' && rs !== 'starved') {
+        st.c.awake = 0
+        this.Stoker_state(st, 'idle')
+        return
+    }
+    let pub = this.Radio_pub(w) || 'me'
+    let shelf = this.Ra_home_self(w, pub)
     let nav = this.Crate_nav ? this.Crate_nav() : null
-    if (nav && !radio.c.resurrected) {
-        radio.c.resurrected = 1
+    if (nav && !st.c.resurrected) {
+        st.c.resurrected = 1
         let ls = []
         try { ls = await this.Ra_stock_ls(nav, pub) } catch (er) { ls = [] }
+        if (st.c.era !== era) return
         let k = 0
         while (k < ls.length && k < 12) {
             let stand = null
             try { stand = await this.Ra_stock_standing(nav, pub, ls[k].enid) } catch (er) { stand = null }
+            if (st.c.era !== era) return
             if (stand && +(stand.info.preview_secs || 0) === this.Ra_preview_secs()) {
-                if (!shelf.oa({ Record: 1, id: ls[k].enid })) this.Ra_record_from(shelf, stand.info, stand.bufs)
+                if (!shelf.oa({ Record: 1, id: ls[k].enid })) {
+                    this.Ra_record_from(shelf, stand.info, stand.bufs)
+                    st.sc.stood = (+(st.sc.stood || 0)) + 1
+                }
             }
             k = k + 1
         }
     }
-    let rec = this.Ra_dial_next(w, shelf, {})
-    if (rec) return rec
-    if (!nav) {
-        radio.sc.note = 'no disk share — the collection sleeps'
-        radio.bump()
-        return null
+    this.Stoker_census(st, shelf, radio)
+    let want = st.c.churn_asked || +(st.sc.fresh || 0) < 2
+    if (!want) {
+        this.Stoker_state(st, 'watching')
+        this.Stoker_soon(st, era, 3000)
+        return
     }
-    this.Radio_state(radio, 'digging')
-    for (const base of ['testsounds', 'music', '']) {
+    if (!nav) {
+        st.sc.note = 'no disk share — nothing to dig'
+        this.Stoker_state(st, 'spent')
+        this.Stoker_soon(st, era, 20000)
+        return
+    }
+    st.c.churn_asked = 0
+    this.Stoker_state(st, 'churning')
+    let digs = 0
+    let landed = 0
+    while (digs < 6 && st.c.era === era) {
+        this.Stoker_census(st, shelf, radio)
+        if (+(st.sc.fresh || 0) >= 4) break
+        digs = digs + 1
+        let got = await this.Stoker_dig(st, w, shelf, nav)
+        if (st.c.era !== era) return
+        landed = landed + got
+        await new Promise((r) => setTimeout(r, 250))
+        if (st.c.era !== era) return
+    }
+    this.Stoker_census(st, shelf, radio)
+    if (landed > 0 || +(st.sc.fresh || 0) >= 2) {
+        delete st.sc.note
+        this.Stoker_state(st, 'watching')
+        this.Stoker_soon(st, era, 1500)
+    } else {
+        st.sc.note = 'the wander came up dry — resting'
+        this.Stoker_state(st, 'spent')
+        this.Stoker_soon(st, era, 15000)
+    }
+
+},
+// the count pass: stock = records standing; fresh = not yet heard this sitting.  One bump only
+//  when a number moved — the watching glance runs every 3s and must cost the glass nothing.
+Stoker_census(st, shelf, radio) {
+    let heard = (radio && radio.c.heard) ? radio.c.heard : {}
+    let recs = shelf.o({ Record: 1 })
+    let fresh = 0
+    for (const r of recs) {
+        if (!heard[r.sc.id]) fresh = fresh + 1
+    }
+    let changed = 0
+    if (st.sc.stock !== recs.length) { st.sc.stock = recs.length; changed = 1 }
+    if (st.sc.fresh !== fresh) { st.sc.fresh = fresh; changed = 1 }
+    if (changed) st.bump()
+
+},
+// one DIG: wander the bases in order until one yields picks, stock them, count what is NEW on
+//  the shelf.  Ra_stock_one is idempotent (a standing enid resurrects; a standing %Record just
+//   re-finds) — so newness is the shelf's record count moving, never the verb's return.
+async Stoker_dig(st, w, shelf, nav) {
+    let before = shelf.o({ Record: 1 }).length
+    for (const base of ['music', '', 'testsounds']) {
         let picks = []
         try { picks = await this.Crate_nav_meander(nav, base, 2) } catch (er) { picks = [] }
+        if (!picks.length) continue
         for (const p of picks) {
             let got = null
             try { got = await this.Ra_stock_one(w, shelf, nav, base, p) } catch (er) { got = null }
             if (got && got.id) {
-                let fresh = this.Ra_dial_next(w, shelf, { id: got.id })
-                if (fresh) return fresh
+                let rec = shelf.o({ Record: 1, id: got.id })[0]
+                if (rec && rec.sc.title) st.sc.last = this.Radio_clean(rec.sc.title)
             }
         }
+        break
     }
-    return this.Ra_dial_next(w, shelf, {})
+    let after = shelf.o({ Record: 1 }).length
+    let landed = after - before
+    if (landed > 0) {
+        st.sc.dug = (+(st.sc.dug || 0)) + landed
+        st.bump()
+    }
+    return landed
 },
 //#endregion
 

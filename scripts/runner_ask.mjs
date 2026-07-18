@@ -46,7 +46,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 //  so the CLI can no longer drift to a worse death criterion than the layer it's questioning.
 import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs'
 
-const OPS = ['ping', 'probe', 'run', 'state', 'steps', 'snap', 'trace', 'rungos', 'accept', 'release', 'runners', 'reload']
+const OPS = ['ping', 'probe', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'rungos', 'accept', 'release', 'runners', 'reload']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -272,6 +272,22 @@ if (reply.control !== 'runner_ack') { console.error(`✗ ${op}: ${reply.error ??
 else if (op === 'snap' && reply.result?.got_snap) {
 	console.error(`snap: Step ${reply.result.n} ok=${reply.result.ok} dige=${reply.result.dige}`)
 	process.stdout.write(reply.result.got_snap.endsWith('\n') ? reply.result.got_snap : reply.result.got_snap + '\n')
+} else if (op === 'assertions' && reply.result?.contract) {
+	// the contract vs the evidence (never "roster" — that word is the Cluster runners'): each
+	//  declared %Assertion against the Assertioning shelf, then the uncontracted achievements,
+	//   then each sworn's microsnap — what it pointed at, at go-off time.
+	const r = reply.result
+	console.log(`assertions: ${r.book} — contract ${r.contract.length}, sworn ${r.sworn.length}, gaps ${r.gaps.length}`)
+	for (const c of r.contract) {
+		const hit = r.sworn.find(s => s.sentence === c.sentence)
+		console.log(`  ${hit ? '✓' : '✗'} «${c.slug}» step ${c.n}${c.legacy ? ' (legacy bucket)' : ''}${hit ? ` — sworn n=${hit.n}` : ' — ABSENT'}: ${c.sentence}`)
+	}
+	for (const s of r.sworn.filter(s => !s.contracted)) console.log(`  ◇ achievement n=${s.n}: ${s.sentence}`)
+	for (const s of r.sworn.filter(s => s.microsnap)) {
+		console.log(`  ⌖ «${s.sentence}» pointed at:`)
+		for (const l of String(s.microsnap).split('\n')) console.log(`      ${l}`)
+	}
+	if (r.gaps.length) exitCode = 1
 } else if (reply.ok === false) {
 	// a refused/failed op — surface the runner's reason on stderr (busy lease, GC'd run, unknown Book…)
 	console.error(`✗ ${op}: ${reply.result?.error ?? 'failed'}`)
@@ -325,9 +341,9 @@ if (watch && (op === 'run' || op === 'state') && reply.control === 'runner_ack')
 		const tag = run ? `${run.phase} ${run.n ?? '?'}/${run.total ?? '?'}` : 'no run'
 		if (tag !== last) { console.log(`… ${JSON.stringify({ run, outcome: out })}`); last = tag; progress = Date.now() }   // a step advanced ⇒ reset the death-clock
 		if (run && (run.phase === 'done' || run.phase === 'failed')) {
-			// roster verdict (Seen_split move 2): a declared %seen that never latched is a NAMED red,
-			//  un-maskable by entropy — surface it distinctly from a plain step/dige failure.
-			for (const g of (out?.gaps ?? [])) console.error(`  ✗ assertion «${g.slug}» expected by n≥${g.by_n} — ABSENT: ${g.sentence}`)
+			// contract verdict (Seen_split rulings): a declared %Assertion whose %sworn never latched
+			//  is a NAMED red, un-maskable by entropy — surface it distinctly from a step/dige failure.
+			for (const g of (out?.gaps ?? [])) console.error(`  ✗ assertion «${g.slug}» expected by step ${g.n ?? g.by_n ?? '?'} — ABSENT: ${g.sentence}`)
 			exitCode = out && out.ok ? 0 : 1; break
 		}
 	}

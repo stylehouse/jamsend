@@ -745,30 +745,38 @@
         return out
     },
 
-    // Cred_assertion_gaps — the roster verdict (Seen_split_todo move 2): for each declared
-    //  The/Assertions entry, did a matching %seen actually latch?  Because %seen LATCHES (it is never
-    //   wiped — w_forgets_problems clears only {see,waits,error}), a latched fact is present in the
-    //    FINAL step's got_snap no matter which beat it latched — so a presence test on the last
-    //     retained snap is robust to Book length AND to the 5-step got_snap trim (which never touches
-    //      the final step).  This is a labeled-fact PRESENCE check on the snap TEXT — it never goes
-    //       through the dige comparison, so entropy_forgive can NEVER mask a vanished proof
-    //        (Seen_split_todo §4 — the hole accept-drops-proof-in-entropy-zone left open).  Returns the
-    //         MISSING assertions; a Book with no roster returns [] and is wholly unaffected.
-    Cred_assertion_gaps(stW: TheC | undefined): { slug: string, sentence: string, by_n: number }[] {
-        const The    = stW?.c.The as TheC | undefined
-        const roster = (The?.o({ Assertions: 1 })[0]?.o({ Assertion: 1 }) ?? []) as TheC[]
-        if (!roster.length) return []
-        const steps  = ((stW?.c.This as TheC | undefined)?.o({ Step: 1 }) ?? []) as TheC[]
-        // the final step with a retained got_snap carries the COMPLETE latched set (latches accumulate,
-        //  the last snap is never trimmed).  Search its TEXT for the encoded line `seen:<sentence>`.
-        const last   = steps.filter(s => s.sc.got_snap).sort((a, b) => (a.sc.Step as number) - (b.sc.Step as number)).pop()
-        const snap   = (last?.sc.got_snap as string) ?? ''
-        const gaps: { slug: string, sentence: string, by_n: number }[] = []
-        for (const a of roster) {
-            const sentence = String(a.sc.sentence ?? '')
-            if (!sentence) continue
-            if (!snap.includes(`seen:${sentence}`))
-                gaps.push({ slug: String(a.sc.Assertion), sentence, by_n: Number(a.sc.by_n) || 0 })
+    // Cred_assertion_gaps — the contract-vs-evidence verdict (Seen_split rulings 2026-07-18):
+    //  for each declared %Assertion, did a matching %sworn actually latch this run?
+    //   CONTRACT: `The/step=N/%Assertion:slug,sentence:…` — a child of its toc step; the hosting
+    //    step IS the by-when (no by_n field).  EVIDENCE: the ave/%Assertioning,Story:<book>
+    //     shelf, where story_harvest_sworn moves every latched %sworn pre-encode.  Neither side
+    //      goes through the dige comparison, so entropy_forgive can NEVER mask a vanished proof
+    //       (the hole accept-drops-proof-in-entropy-zone left open).  Returns the MISSING
+    //        assertions; a Book with no contract returns [] and is wholly unaffected.
+    //  CHURN BRIDGE (until SwarmStaple/Steal/Wire + MusuBerth convert): the old flat
+    //   The/Assertions bucket still reads as contract (n from its by_n), and legacy `%seen`
+    //    evidence still counts via `seen:<sentence>` presence in the final retained got_snap
+    //     TEXT (latches accumulate; the last snap is never trimmed).
+    Cred_assertion_gaps(stW: TheC | undefined): { slug: string, sentence: string, n: number }[] {
+        const The      = stW?.c.The as TheC | undefined
+        const contract: { slug: string, sentence: string, n: number }[] = []
+        for (const st of (The?.o({ step: 1 }) ?? []) as TheC[])
+            for (const a of st.o({ Assertion: 1 }) as TheC[])
+                contract.push({ slug: String(a.sc.Assertion), sentence: String(a.sc.sentence ?? ''), n: Number(st.sc.step) || 0 })
+        for (const a of (The?.o({ Assertions: 1 })[0]?.o({ Assertion: 1 }) ?? []) as TheC[])
+            contract.push({ slug: String(a.sc.Assertion), sentence: String(a.sc.sentence ?? ''), n: Number(a.sc.by_n) || 0 })
+        if (!contract.length) return []
+        const book  = stW?.sc.Book as string
+        const shelf = (stW?.c.ave as TheC | undefined)?.o({ Assertioning: 1, Story: book })[0] as TheC | undefined
+        const steps = ((stW?.c.This as TheC | undefined)?.o({ Step: 1 }) ?? []) as TheC[]
+        const last  = steps.filter(s => s.sc.got_snap).sort((a, b) => (a.sc.Step as number) - (b.sc.Step as number)).pop()
+        const snap  = (last?.sc.got_snap as string) ?? ''
+        const gaps: { slug: string, sentence: string, n: number }[] = []
+        for (const a of contract) {
+            if (!a.sentence) continue
+            if (shelf?.oa({ sworn: a.sentence })) continue
+            if (snap.includes(`seen:${a.sentence}`)) continue   // churn bridge
+            gaps.push(a)
         }
         return gaps
     },
@@ -777,9 +785,9 @@
     //  %ok out of the total (the same signal auto_sync_story_stats reads).  null if no run yet.
     //  caveat = the ok steps that passed only by EntropyArrest forgiveness (§10): they count
     //   green (their %ok is true) but ride back tagged so the editor can show "passed, N forgiven".
-    //  gaps = declared assertions (The/Assertions) whose %seen never latched — a run with any gap is
+    //  gaps = contract %Assertions whose %sworn never latched — a run with any gap is
     //   RED even at 100% steps: a labeled proof went missing, and no entropy span can forgive that.
-    Cred_run_outcome(): { ok: boolean, ok_pct: number, done: number, caveat: number, gaps?: { slug: string, sentence: string, by_n: number }[] } | null {
+    Cred_run_outcome(): { ok: boolean, ok_pct: number, done: number, caveat: number, gaps?: { slug: string, sentence: string, n: number }[] } | null {
         const H = this as House
         const story = H.o({ H: 'Story' })[0] as House | undefined
         const stW   = story?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
@@ -790,7 +798,7 @@
         if (!done) return null
         const ok     = steps.filter(s => s.sc.ok).length
         const caveat = steps.filter(s => s.sc.ok && s.sc.caveat).length
-        const gaps   = (H as any).Cred_assertion_gaps(stW) as { slug: string, sentence: string, by_n: number }[]
+        const gaps   = (H as any).Cred_assertion_gaps(stW) as { slug: string, sentence: string, n: number }[]
         return { ok: ok === done && !gaps.length, ok_pct: Math.round((ok / done) * 100) / 100, done, caveat, gaps: gaps.length ? gaps : undefined }
     },
 
@@ -798,8 +806,9 @@
     //  carrying The/Opt/report POSTs its outcome to /log?stream=Startup-<user8> in the batch
     //   format the perl logger expects (newline-joined JSON lines).  ALWAYS one outcome line —
     //    the census ("how many webrtc connections ever work") needs successes as its denominator
-    //     — and on a red|gapped run the per-step bundle too (+%desc, +the latched %seen set read
-    //      off the final snap TEXT, the same entropy-proof source Cred_assertion_gaps uses).
+    //     — and on a red|gapped run the per-step bundle too (+%desc, +the latched %sworn set read
+    //      off the Assertioning shelf, the same entropy-proof source Cred_assertion_gaps uses;
+    //       legacy `seen:` snap-text latches ride along until the churn Books convert).
     //       Fire-and-forget; a dev server without /log just warns (Tyranny's dev posture).
     Cred_report_wild(book: string, outcome: { ok: boolean, ok_pct: number, done: number, caveat: number, gaps?: any[] } | null) {
         const H = this as House
@@ -815,8 +824,11 @@
         const self8 = String((H as any).Clustation_self?.()?.prepub ?? 'anon').slice(0, 8)
         const steps = ((stW?.c.This as TheC | undefined)?.o({ Step: 1 }) ?? []) as TheC[]
         const last  = steps.filter(s => s.sc.got_snap).sort((a, b) => (a.sc.Step as number) - (b.sc.Step as number)).pop()
-        const seen  = ((last?.sc.got_snap as string) ?? '').split('\n').map(l => l.trim()).filter(l => l.startsWith('seen:')).map(l => l.slice(5))
-        const lines: any[] = [{ kind: 'outcome', book, at: now_in_seconds_with_ms(), ok: outcome.ok, ok_pct: outcome.ok_pct, done: outcome.done, caveat: outcome.caveat, gaps: outcome.gaps, seen }]
+        const shelf = (stW?.c.ave as TheC | undefined)?.o({ Assertioning: 1, Story: book })[0] as TheC | undefined
+        const sworn = ((shelf?.o({ sworn: 1 }) ?? []) as TheC[]).map(s => String(s.sc.sworn))
+        for (const l of ((last?.sc.got_snap as string) ?? '').split('\n').map(l => l.trim()).filter(l => l.startsWith('seen:')))
+            sworn.push(l.slice(5))   // churn bridge — legacy %seen latches still riding snap bytes
+        const lines: any[] = [{ kind: 'outcome', book, at: now_in_seconds_with_ms(), ok: outcome.ok, ok_pct: outcome.ok_pct, done: outcome.done, caveat: outcome.caveat, gaps: outcome.gaps, sworn }]
         if (!outcome.ok) {
             const the_steps = (The?.o({ step: 1 }) ?? []) as TheC[]
             const desc_of = (n: number) => the_steps.find(s => s.sc.step === n)?.sc.desc
