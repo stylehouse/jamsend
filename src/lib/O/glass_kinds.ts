@@ -13,6 +13,10 @@ import TunerFace from './ui/TunerFace.svelte'
 import HeistFace from './ui/HeistFace.svelte'
 import DoorFace from './ui/DoorFace.svelte'
 import RiffleFace from './ui/RiffleFace.svelte'
+import RiffFace from './ui/RiffFace.svelte'
+import ZineFace from './ui/ZineFace.svelte'
+import LineupFace from './ui/LineupFace.svelte'
+import CrateFace from './ui/CrateFace.svelte'
 
 export const GLASS_KINDS: Record<string, any> = {
     Radio: RadioFace,     // the continuous listen — play/pause/skip, now-playing
@@ -20,5 +24,9 @@ export const GLASS_KINDS: Record<string, any> = {
     Tuner: TunerFace,     // the glass's dial — which crews of cells are shown
     Heist: HeistFace,     // the Pirating flow — posed needs | soft wish → leads → take
     Door: DoorFace,       // who am I + who's with me — identity, landings, pulse liveness
-    Riffle: RiffleFace,   // rifle a collection — blat %Riff cards out as cells, audition ▶
+    Riffle: RiffleFace,   // rifle a collection — the deck: crates, folders, deal/sweep
+    Riff: RiffFace,       // one dealt card — a track (▶ tunes) or a folder (open descends)
+    Zine: ZineFace,       // the pocket mag (Faves Berth) — its cards listed, ▶ auditions
+    Lineup: LineupFace,   // the standing programme — up next (~20 deep), starve errors RED
+    Crate: CrateFace,     // a Musu home — the records spread out on the bed, ▶ auditions
 }

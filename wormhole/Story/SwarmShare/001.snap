@@ -1,0 +1,7 @@
+Snap:H
+  H:SwarmShare,Run
+    A:SwarmShare
+      self,round	{"mung":["age"]}
+      w:SwarmShare
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

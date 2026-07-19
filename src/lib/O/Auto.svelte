@@ -192,7 +192,9 @@
         const top = (H.top_House?.() ?? H) as House
         const A = (top.o({ A: 'Clustation' }) as TheC[])[0]
         const ident = A && (A.o({ Identity: 1 }) as TheC[]).find(i => i.sc.active)
-        if (!ident?.c?.keys || typeof (H as any).thang_add !== 'function') return false
+        // thang_put, not thang_add: the identity IS already stored under these tags — a rename
+        //  is an update, and add's duplicate-throw was the bug that kept the name box open forever.
+        if (!ident?.c?.keys || typeof (H as any).thang_put !== 'function') return false
         const clean = String(name ?? '').split(',').join(' ·').trim().slice(0, 24)
         if (!clean) return false
         ident.sc.friendly = clean
@@ -205,9 +207,9 @@
             pub: ident.c.keys.pub, key: ident.c.keys.key, prepub: String(ident.sc.prepub),
             ...(born ? { born } : {}), friendly: clean,
         }
-        await (H as any).thang_add(wT, String(ident.sc.prepub), stored)
+        await (H as any).thang_put(wT, String(ident.sc.prepub), stored)
         const role = (top.c as any)?.id_role
-        if (role) await (H as any).thang_add(wT, String(role), stored)
+        if (role) await (H as any).thang_put(wT, String(role), stored)
         ident.bump()
         return true
     },
@@ -219,12 +221,14 @@
     async Clustation_pin(this: House, H?: House): Promise<boolean> {
         H = (H ?? this) as House
         const ident = (H as any).Clustation_active_identity?.(H) as TheC | undefined
-        if (!ident?.c?.keys || typeof (H as any).thang_add !== 'function') return false
+        // thang_put: a re-pin of an already-pinned prepub is a no-op update, not a clash — the
+        //  add-throw here silently killed the ?Iz→?I address-bar swap downstream of a re-join.
+        if (!ident?.c?.keys || typeof (H as any).thang_put !== 'function') return false
         const A  = H.o({ A: 'Clustation' })[0] || H.i({ A: 'Clustation' })
         const wT = A.o({ w: 'Thangs', thangs: 'identities' })[0] || A.i({ w: 'Thangs', thangs: 'identities' })
         wT.c.up = A
         const born = ident.sc.born ? Date.parse(String(ident.sc.born)) : undefined
-        await (H as any).thang_add(wT, String(ident.sc.prepub), {
+        await (H as any).thang_put(wT, String(ident.sc.prepub), {
             pub: ident.c.keys.pub, key: ident.c.keys.key, prepub: String(ident.sc.prepub),
             ...(born ? { born } : {}),
             ...(ident.sc.friendly ? { friendly: String(ident.sc.friendly) } : {}),
@@ -239,13 +243,14 @@
     //     migration: the cluster key stops living in the bare .stashed.cluster_idento slot.
     async Clustation_adopt(this: House, keypair: { pub: string; key: string }, H?: House): Promise<boolean> {
         H = (H ?? this) as House
-        if (typeof (H as any).thang_add !== 'function') return false
+        if (typeof (H as any).thang_put !== 'function') return false
         const prepub = prepubOf(keypair.pub)
         const stored = { pub: keypair.pub, key: keypair.key, prepub }
         const A  = H.o({ A: 'Clustation' })[0] || H.i({ A: 'Clustation' })
         const wT = A.o({ w: 'Thangs', thangs: 'identities' })[0] || A.i({ w: 'Thangs', thangs: 'identities' })
         wT.c.up = A
-        await (H as any).thang_add(wT, prepub, stored)
+        // put, not add: re-adopting the same pasted key is a refresh, not a duplicate.
+        await (H as any).thang_put(wT, prepub, stored)
         ;(H as any).Clustation_concrete(A, prepub, stored)
         console.log(`🪪 Identity adopted ${prepub}`)
         return true

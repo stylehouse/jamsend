@@ -59,6 +59,17 @@ The ▦ layer of Cytui as a competition ground: rival FACES draw the same live g
            `el.dataset.molded` — the mark reposition_overlays honours and the strip sites
             clear — and molded FACE overlays now skip node-recentring too (they were being
              fought over before).
+    SECOND same-day walk-back ("some Stuffings are getting way too big… our perception of
+     keeping them bound to the cell must be dead"): it WAS half-dead — gather's per-wall fit
+      used the CAPPED 260×200 dims, paint's re-clamp used TRUE dims but only the cell's
+       BBOX (a loose lie for slivers), and the `stuff.bottom` floor overrode the bind
+        outright (floor × unbounded natural size = the monster).  Fixed: `mold_max_fit`
+         (ONE per-wall loop, shared gather+paint) re-binds at paint with the TRUE content
+          box against the REAL walls, and everything the band|scale asks past that bind is
+           overflow, DAMPED to `(want/bound)^stuff.damp` — sqrt by default, so a
+            floor-propped shelf noses out ~1.8× its cell instead of burying the
+             neighbourhood 3×.  `stuff.damp=1` restores linear.  Felt default overflow is
+              now √1.5 ≈ 1.22× — if the glass reads timid, raise `stuff.scale`, not damp.
  - **The hover z-lift** (same ask): the cell polygon under the mouse lifts its overlay above
     the whole overlapping pile — "so you can feel your way into them".  `vlift_move` on the
      wrap's mousemove (the glass SVG is pointer-events:none, CSS :hover can't fire) →
@@ -117,6 +128,7 @@ The ▦ layer of Cytui as a competition ground: rival FACES draw the same live g
 - `stuff.scale`   = 1.5   molded overlay content size ON TOP of its fits-the-cell clamp (>1 overflows the cell on purpose; was 2, split the difference)
 - `stuff.top`     = 2     ABSOLUTE ceiling on the final mold — no chunk past top× its natural size, however huge its cell ("one gets waaay too big")
 - `stuff.bottom`  = 0.5   ABSOLUTE floor on the final mold — never below bottom×; a cramped cell overflows instead (the hover z-lift digs the pile)
+- `stuff.damp`    = 0.5   overflow compressor: past the TRUE cell bind the mold grows like (want/bound)^damp — sqrt default; 1 = old linear overflow
 - `stuff.clip`    = 0     trim molded content to the cell polygon (0 = overflow free — the human's "can they just not clip their cell")
 - `stuff.fs`      = 12    base overlay font px (× cy.zoom) for Stuffing|face overlays
 - `stuff.subh`    = 110   ztuffing sub-face slot max height px (slot band at the cell's bottom)

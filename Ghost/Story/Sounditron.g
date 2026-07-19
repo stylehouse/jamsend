@@ -146,6 +146,9 @@ Sounditron_glass(w):
     // the RIFFLE — rifle through either collection (mine + every friend crate standing),
     //  blatting the hand out as %Riff cells; its ▶ auditions a chosen record (Radio_tune).
     if (MR.Riffle_ensure) MR.Riffle_ensure(w)
+    // and the ZINE — the pocket mag's live face (%Zine referring cell → the Faves Berth on
+    //  disk; ★ pops land there, ZineFace lists + auditions them).
+    if (MR.Musica_zine_ensure) MR.Musica_zine_ensure(w)
     // and the DOOR — the prioritised, for-the-user's-eyes face (DoorFace: who am I ·
     //  a landed ?Iz joining · sealed friends with the pulse liveness dot).  The particle
     //   is only the cell anchor; the face reads live House state.
@@ -377,6 +380,7 @@ Sounditron_heist(w):
     let from = f ? f.sc.Friend : 'a friend to be'
     let h = w.oai({ Heist: 'the one they played last night', posed: 1 })
     h.sc.from = from
+    h.sc.crew = 'system'
     h.oai({ Need: 'a sealed Music grant — the door open both ways' }).c.up = h
     h.oai({ Need: 'the friend online — bytes only flow live' }).c.up = h
     h.oai({ Need: 'their shelf counted — records to want' }).c.up = h

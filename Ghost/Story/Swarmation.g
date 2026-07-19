@@ -964,3 +964,188 @@ async SwarmPolicy_order(w):
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)
+
+
+// ══ SwarmShare — the EIGHTH Book: live-share keying + suggestion store-and-forward + rebirth reset ══════
+//  This week's machinery on the Book wire (Swarm_spec §9 share/suggest + Repli §2.2 per-friend homes):
+//   1) the per-friend MIRROR KEYING — Repli's opt-in repli_mirror_by_from/repli_mirror_w key what I hold
+//    OF a friend under %MusuThem,pub:<THEM> (the caster) instead of one merged pile under my own key;
+//   2) the SUGGESTION as store-and-forward — a %Suggest minted while the friend is unreachable stands
+//    un-got under my Pier for them, and their rebirth greeting (swarm_hi) drains the queue when they
+//     surface, the far side mirroring it and confirming with suggest_got (my copy wears got:1);
+//   3) the REBIRTH RESET — a CHANGED station era in the greeting is the restart signal, so Swarm_heard_hi
+//    resets the route's stream state (Peeroleum_reset_handshake: inbox/outbox/protocol gone, %Ud kept)
+//     and re-baselines peer_era, dodging the seq-reset epoch a cold re-dial would force.
+//  DISCIPLINE (the brief's warnings): NEVER Swarm_share_up (it starts a wall-clock setTimeout loop — a
+//   Book must never), NEVER touch top_House().c.radio_w (the live tab's state), and NEVER set
+//    w.c.station_up (it engages the voucher gate — the mechanics test cleanly with it off; the LIVE
+//     two-tab join is that gate's proof, un-Bookable here).  TWO pairs so each concern stays isolated:
+//      Cass→Deb carry the mirror (a station link, peer_ready, Repli armed); Alice+Bob carry the
+//       suggestion (sealed over the MAIL wire, no station until Bob surfaces at beat 6 — so beat 5's
+//        offline suggest genuinely has no route) and the rebirth.  Own world w:SwarmShare (dispatch by
+//         world name — the usual bomb); seeded keys, pinned clock.
+//   beat 2  the two pairs stand — Cass/Deb linked+handshaked+Repli-armed with Cass's shelf; Alice+Bob sealed
+//   beat 3  Cass offers her two records with the per-friend keying flags set
+//   beat 4  settle — the mirror landed keyed by Cass not merged under Deb
+//   beat 5  Alice suggests a track to Bob while he is offline — it stands un-got under her Pier for him
+//   beat 6  Bob surfaces — the transport link stands and its handshake seeds (holds until ready)
+//   beat 7  the greeting arrives — Swarm_heard_hi drains the queue; the suggest crosses and confirms
+//   beat 8  settle — Bob holds the mirrored suggestion and Alice's copy wears got
+//   beat 9  Bob restarts — a changed era resets the route stream state while keeping %Ud
+
+SwarmShare(A,w):
+    w oai %req:wrangle,eternal
+        await &SwarmShare_drive,w,req
+        req%ok = 1
+
+// SwarmShare_drive — beat dispatch (req-local did_step), then the per-pass tail: drain every account's
+//  mail (SwarmStaple_pump — the seal wire) AND pump every station's handshake reqs (Lake_pump_handshakes —
+//   generic over w's station %Peerings) and re-sort. Beats 4 and 8 arm nothing — the witness reads them settled.
+async SwarmShare_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.SwarmShare_stand(w)
+        if (n === 3) await this.SwarmShare_mirror(w)
+        if (n === 5) await this.SwarmShare_suggest_offline(w)
+        if (n === 6) await this.SwarmShare_arrive_link(w)
+        if (n === 7) await this.SwarmShare_arrive_hi(w)
+        if (n === 9) await this.SwarmShare_rebirth(w)
+    }
+    await this.SwarmStaple_pump(w)
+    await this.Lake_pump_handshakes(w)
+    await this.SwarmShare_order(w)
+
+// beat 2 — the two pairs. Cass/Deb: a station link between their prepubs, the swarm+Repli kinds armed, the
+//  caster's shelf registered, and the per-Pier handshake seeded (holds until %Ud both ends). Alice/Bob:
+//   two fixed selves sealed as friends over the MAIL wire (both online, mint+redeem), no station yet — their
+//    transport link stands only when Bob surfaces at beat 6, so beat 5's suggest has genuinely no route.
+async SwarmShare_stand(w):
+    w i reached:step_2
+    w.sc.now = 1751940000
+    let cass = await this.SwarmStaple_person(w, 'Cass')
+    let deb = await this.SwarmStaple_person(w, 'Deb')
+    let lc = await this.Lake_link(w, cass.sc.prepub, deb.sc.prepub)
+    w.c.cass_tx = lc[0]
+    w.c.deb_rx = lc[1]
+    this.Swarm_arm(w)
+    this.Repli_arm(w)
+    let clib = this.Ra_home_self(w, cass.sc.prepub)
+    clib.i({ Record: 1, id: 'c1', title: 'Take-Five', artist: 'Brubeck' })
+    clib.i({ Record: 1, id: 'c2', title: 'So-What', artist: 'Davis' })
+    this.Repli_register_caster(w, lc[0], clib)
+    this.Repli_register_rx(w, lc[1])
+    let alice = await this.SwarmStaple_person(w, 'Alice')
+    let bob = await this.SwarmStaple_person(w, 'Bob')
+    this.Swarm_online(alice, true)
+    this.Swarm_online(bob, true)
+    w.c.iz_ab = await this.Swarm_mint_idzeug(w, alice, { Music: 1, genre: 'Jazz' }, 'share_ab')
+    await this.Swarm_redeem(w, bob, w.c.iz_ab)
+    // seed the mirror pair's handshake (only Cass/Deb have a station Peering yet; the seed is generic over w's).
+    for (const peering of w.o({ Peering: 1 })) {
+        for (const pier of peering.o({ Pier: 1 })) pier.oai({ req: 'handshake' })
+    }
+    w.doai({ req: 'witness', eternal: 1 })?.(async (req) => { this.SwarmShare_witness(w); req.sc.ok = 1 })
+
+// beat 3 — the per-friend keying (the new opt-in): key the mirror shelf by the frame SENDER and mint the
+//  homes in THIS world, then Cass offers her two records. What I hold OF Cass lands under %MusuThem,pub:<Cass>,
+//   not merged under my own listener key (the old default).
+async SwarmShare_mirror(w):
+    w i reached:step_3
+    w.sc.now = 1751940010
+    let cass = this.SwarmStaple_ident(w, 'Cass')
+    let deb = this.SwarmStaple_ident(w, 'Deb')
+    w.c.repli_mirror_by_from = 1
+    w.c.repli_mirror_w = w
+    let clib = this.Ra_home_self(w, cass.sc.prepub)
+    for (const rec of clib.o({ Record: 1 })) await this.Repli_offer(w, w.c.cass_tx, cass.sc.prepub, deb.sc.prepub, rec)
+
+// beat 5 — Alice suggests a track to Bob while he is unreachable: Bob offline + no station route, so
+//  Swarm_deliver fails and the %Suggest stands un-got under Alice's Pier for him (store-and-forward).
+async SwarmShare_suggest_offline(w):
+    w i reached:step_5
+    w.sc.now = 1751940030
+    let alice = this.SwarmStaple_ident(w, 'Alice')
+    let bob = this.SwarmStaple_ident(w, 'Bob')
+    this.Swarm_online(bob, false)
+    let alib = this.Ra_home_self(w, alice.sc.prepub)
+    let arec = alib.o({ Record: 1, id: 'a1' })[0] || alib.i({ Record: 1, id: 'a1', title: 'Ruby', artist: 'Navarro' })
+    this.Swarm_suggest(w, alice, bob.sc.prepub, arec, 'for a late night')
+
+// beat 6 — Bob's tab comes up: stand the transport link between the two prepubs and seed the per-Pier
+//  handshake (holds until peer_ready + %Ud both ends) so the greeting at beat 7 has a live ready route.
+async SwarmShare_arrive_link(w):
+    w i reached:step_6
+    w.sc.now = 1751940040
+    let alice = this.SwarmStaple_ident(w, 'Alice')
+    let bob = this.SwarmStaple_ident(w, 'Bob')
+    let lab = await this.Lake_link(w, alice.sc.prepub, bob.sc.prepub)
+    w.c.alice_route = lab[0]
+    w.c.bob_route = lab[1]
+    for (const pier of [lab[0], lab[1]]) pier.oai({ req: 'handshake' })
+
+// beat 7 — the greeting arrives: feed Alice a swarm_hi from Bob (a reply so no boast rides along). The
+//  funnel's voucher gate is off (station_up unset), so Swarm_heard_hi answers by re-offering every un-got
+//   suggestion over the now-ready route — the suggest crosses to Bob (mirrored under his Pier) and his
+//    suggest_got confirms back, all on the post_do cascade witnessed settled at beat 8.
+async SwarmShare_arrive_hi(w):
+    w i reached:step_7
+    w.sc.now = 1751940050
+    let alice = this.SwarmStaple_ident(w, 'Alice')
+    let bob = this.SwarmStaple_ident(w, 'Bob')
+    let frame = { header: { type: 'swarm_hi', from: bob.sc.prepub, to: alice.sc.prepub, seq: 1 }, swarm: { kind: 'swarm_hi', era: 100, reply: 1, page: this.Swarm_page(bob) } }
+    this.Swarm_heard_hi(w, alice, frame)
+
+// beat 9 — Bob restarts: stamp a prior era on Alice's route for him, then feed a hi carrying a CHANGED era.
+//  The changed era is the restart signal — Swarm_heard_hi resets the route stream state (Peeroleum_reset_
+//   handshake: inbox/outbox/protocol gone, %Ud kept) and re-baselines peer_era, dodging a seq-reset epoch.
+async SwarmShare_rebirth(w):
+    w i reached:step_9
+    w.sc.now = 1751940070
+    let alice = this.SwarmStaple_ident(w, 'Alice')
+    let bob = this.SwarmStaple_ident(w, 'Bob')
+    let route = w.c.alice_route
+    if (!route) return
+    route.c.peer_era = 111
+    let frame = { header: { type: 'swarm_hi', from: bob.sc.prepub, to: alice.sc.prepub, seq: 2 }, swarm: { kind: 'swarm_hi', era: 222, reply: 1, page: this.Swarm_page(bob) } }
+    this.Swarm_heard_hi(w, alice, frame)
+
+// ── the witness — sworn assertions via this.story_swear (the current regime; %see is extinct). Each is
+//  n-gated to the beat its truth is observable (the un-got suggest reads true only at beat 5 before the
+//   drain flips it got at beat 8 — the SwarmWire n-gate pattern), then latched for the run. Evidence rides
+//    the off-snap ave/%Assertioning shelf; a declared contract is a toc step=N/%Assertion (declare via CLI).
+SwarmShare_witness(w):
+    let n = (this.c.run)?.c.step_n
+    let cass = this.SwarmStaple_ident(w, 'Cass')
+    let deb = this.SwarmStaple_ident(w, 'Deb')
+    let alice = this.SwarmStaple_ident(w, 'Alice')
+    let bob = this.SwarmStaple_ident(w, 'Bob')
+    if (!cass || !deb || !alice || !bob) return
+    // beat 4: the mirror landed keyed by the CASTER prepub — Cass's two records under my %MusuThem,pub:<Cass>
+    //  crate, NEVER merged under the listener key (the per-friend keying the opt-in flags switched on).
+    let cassMir = w.o({ MusuThem: 1, pub: cass.sc.prepub })[0]?.o({ stock: 1 })[0]
+    let debMir = w.o({ MusuThem: 1, pub: deb.sc.prepub })[0]
+    if (n === 4 && cassMir && cassMir.o({ Record: 1 }).length === 2 && !debMir) this.story_swear(w, 'the mirror lands keyed by the caster prepub — two records under MusuThem for the friend never merged under the listener key')
+    // beat 5: a suggestion minted while the friend is unreachable stands un-got under my Pier for them — the
+    //  store-and-forward promise. Nothing crossed — no mirrored suggestion at Bob yet.
+    let aPier = this.Swarm_peering(alice)?.o({ Pier: 1, pub: bob.sc.prepub })[0]
+    let bPier = this.Swarm_peering(bob)?.o({ Pier: 1, pub: alice.sc.prepub })[0]
+    let aSug = aPier?.o({ Suggest: 1, by: alice.sc.prepub })[0]
+    if (n === 5 && aSug && aSug.sc.id === 'a1' && !aSug.sc.got && !bPier?.o({ Suggest: 1 }).length) this.story_swear(w, 'a suggestion minted while the friend is unreachable stands un-got under my Pier for them — store and forward')
+    // beat 8: the friend surfaced and the greeting drained the queue — the suggestion crossed (mirrored under
+    //  his Pier for me) and his suggest_got retired my copy (got now set).
+    let bMirSug = bPier?.o({ Suggest: 1, by: alice.sc.prepub, id: 'a1' })[0]
+    if (n === 8 && bMirSug && aSug?.sc?.got) this.story_swear(w, 'the rebirth greeting drains the queue — the suggestion crosses mirrored at the friend and his confirmation retires my copy got')
+    // beat 9: a changed era in the greeting is the restart signal — the route stream state was reset (inbox
+    //  and outbox gone) while %Ud was kept and peer_era re-baselined to the new era.
+    let route = w.c.alice_route
+    if (n === 9 && route && !route.oa({ inbox: 1 }) && !route.oa({ outbox: 1 }) && route.oa({ Ud: 1 }) && route.c.peer_era === 222) this.story_swear(w, 'a changed era in the greeting resets the route stream state while keeping Ud — the reborn peer re-baselines the link')
+
+// SwarmShare_order — float A:SwarmShare to the front of H/* so the Run snap stays readable.
+async SwarmShare_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'SwarmShare') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)

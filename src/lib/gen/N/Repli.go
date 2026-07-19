@@ -10,7 +10,7 @@ import { Selection } from "$lib/mostly/Selection.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return 'be77904d800a223a~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return 'f7973ae850a3a56a~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -478,8 +478,15 @@ async Repli_serve_chunks(w, pier, h, rec) {
 //   shelf.  The pub key defaults to the demo's 'Crowd'; a real listener names its shelf
 //    (w.c.repli_mirror_pier — the source's key, the census convention).  Returns the stock shelf,
 //     which stands in for the old flat %Library one-for-one (Records live directly under it).
-Repli_mirror_lib(w) {
-    return this.Ra_home_them(w, w.c.repli_mirror_pier || 'Crowd')
+//  Two OPT-IN live extensions (unset = the Book behaviour, byte-identical):
+//   w.c.repli_mirror_by_from — key the shelf by the frame's SENDER, so N friends grow N
+//    per-friend %MusuThem crates (what Riffle_homes browses) instead of one merged pile.
+//   w.c.repli_mirror_w — mint the homes in THAT world (the radio/glass world) rather than the
+//    transport world the frames ride: the station world is plumbing, the crates are furniture.
+Repli_mirror_lib(w, from) {
+    let mw = w.c.repli_mirror_w || w
+    let key = (w.c.repli_mirror_by_from && from) ? String(from) : (w.c.repli_mirror_pier || 'Crowd')
+    return this.Ra_home_them(mw, key)
 
 },
 // Repli_recv_lines — B got a repli_lines frame: decode + merge into the mirror; for every merged particle that
@@ -487,7 +494,7 @@ Repli_mirror_lib(w) {
 async Repli_recv_lines(w, pier, frame) {
     if (!this.Repli_rx_ok(w, pier)) return
     let text = new TextDecoder().decode(frame.buffer)
-    let lib = this.Repli_mirror_lib(w)
+    let lib = this.Repli_mirror_lib(w, frame.header.from)
     let touched = await this.Repli_merge(lib, text)
     for (const c of touched) {
         if (c.c.await_buffer != null) this.Repli_open_awaitbuf(w, pier, c, c.c.await_buffer)

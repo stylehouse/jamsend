@@ -17,10 +17,18 @@
     let { H }: { H: any } = $props()
 
     // the live self resolves once the Creduler deposits Swarm.g's verbs AND Auto stands the
-    //  identity — both bump H.version, so a $derived off it settles without racing the boot.
-    let self = $derived.by(() => {
+    //  identity — both bump H.version.  LATCHED plain $state, not a $derived (reactivity_docs):
+    //   Swarm_live_self() can THROW transiently mid-Atime and return null, and a $derived that
+    //    momentarily went null collapsed the {#if self} block, destroying the your-name <input>
+    //     and kicking focus out of it as you typed.  Assign ONLY on a truthy, CHANGED ref; never
+    //      back to null once set — the identity never un-exists, so the latch is honest.
+    let self = $state<any>(null)
+    $effect(() => {
         void H?.version
-        try { return typeof H?.Swarm_live_self === 'function' ? H.Swarm_live_self() : null } catch { return null }
+        if (typeof H?.Swarm_live_self !== 'function') return
+        let v: any = null
+        try { v = H.Swarm_live_self() } catch { v = null }
+        if (v && v !== self) self = v
     })
 
     // ── STATION — being on this page IS being at the door ─────────────────────────────────────
@@ -34,6 +42,18 @@
         if (stood || !self || typeof H?.Swarm_station_up !== 'function') return
         const w = H.Swarm_station_world?.()
         if (w && H.Swarm_station_up(w, self)) stood = true
+    })
+
+    // ── SHARE — the standing music session (what a friendship is FOR): once the station is up
+    //  AND the radio world stands (Stoker_ensure stamps it), arm the live Repli glue — my stock
+    //   serves every Music-granted friend, their casts fill per-friend %MusuThem crates.
+    //    Retries on version bumps until the radio world appears.
+    let shared = $state(false)
+    $effect(() => {
+        void H?.version
+        if (!stood || shared || !self || typeof H?.Swarm_share_up !== 'function') return
+        const w = H.Swarm_station_world?.()
+        if (w && H.Swarm_share_up(w, self)) shared = true
     })
 
     // ── REBUFFS — the door's recent denials, legible (%rebuff under the identity) ─────────────
@@ -123,6 +143,26 @@
         } catch { return null }
     })
 
+    // ── NAME FIRST — an identity is GENERATED nameless; asking the name is the door's FIRST
+    //  move, before a scanned ?Iz gets handled: the hello should carry who you are, and the
+    //   inviter should watch a NAMED friend seal — not an anon prepub that renames later.
+    //    Persists via Clustation_friendly (thang_put under prepub + role tags).
+    // LATCHED like self (same reactivity_docs disease): a rename never un-names, so once a
+    //  friendly has been seen the name-ask branch stays closed even if a mid-Atime read can't see
+    //   it for a tick.  name_save also sets it directly on success (no wait for the next bump).
+    let named = $state(false)
+    $effect(() => { void H?.version; if (!named && self?.sc?.friendly) named = true })
+    let name_draft = $state('')
+    let name_err = $state('')
+    async function name_save() {
+        name_err = ''
+        try {
+            const ok = await H?.Clustation_friendly?.(name_draft)
+            if (!ok) { name_err = 'not saved — is the identity still standing up? try again'; return }
+            named = true
+        } catch (e) { name_err = 'not saved — ' + String(e).slice(0, 60) }
+    }
+
     // ── LAND (?Iz= in this page's own URL) ────────────────────────────────────────────────────
     let iz = boot_param('Iz')
     let invite = $state<any>(null)       // the verified claim {to, by, prepub, friendly, ...}
@@ -145,9 +185,11 @@
         return !!self?.sc?.born && self.sc.born === new Date().toISOString().slice(0, 10)
     })
     $effect(() => {
-        if (!invite || !self || !stood || !born_today || auto_fired || joined) return
+        // NAMED gates the auto-join: the newborn tells us who they are first, THEN the door
+        //  handles the invite by itself — the one question a brand-new visitor must answer.
+        if (!invite || !self || !stood || !born_today || !named || auto_fired || joined) return
         auto_fired = true
-        joined = '… a self born today — joining by itself'
+        joined = '… joining by itself'
         join()
     })
     // the DOOR BEACON — the glass's DoorFace reads this (runtime .c, never snapped): the same
@@ -173,6 +215,21 @@
         await sleep(400)   // one beat for the signed hello-bind to land at the relay
         const claim = await H.Swarm_redeem(w, self, iz)
         if (!claim) { joined = '✗ the inviter refused or is unreachable — the rebuff rides the identity'; return }
+        // the ?Iz is SPENT the moment the redeem lands — swap the address bar to ?I=<prepub>
+        //  RIGHT HERE, not after the seal-watch: gating the swap on an 8s seal window stranded
+        //   ?Iz whenever the seal ran late, and a reload then re-presented a dead blob ("did
+        //    not verify").  PIN first (Clustation_pin's why): a role-tagged default self is
+        //     stored only under its role, and an unpinned ?I=<prepub> reload would mint a
+        //      stranger — the friendship left on the old key.
+        if (self?.sc?.prepub && typeof window !== 'undefined' && window.history?.replaceState) {
+            const pinned = await H.Clustation_pin?.()
+            if (pinned) {
+                const u = new URL(window.location.href)
+                u.searchParams.delete('Iz')
+                u.searchParams.set('I', String(self.sc.prepub))
+                window.history.replaceState(null, '', u.toString())
+            }
+        }
         joined = '… hello delivered — waiting for the seal'
         const sealed = await wait_for(() => H.Swarm_peering(self)?.o({ Pier: 1, pub: invite.prepub })[0], 8000)
         // no seal — the inviter's pier_reject (heard by the station) rides the identity as a
@@ -183,25 +240,22 @@
             : denied
                 ? '✗ the inviter denied the invite: ' + String(denied.sc.rebuff).slice(9) + ' — ask for a fresh QR'
                 : '… hello delivered, but no accept yet — is the inviter tab still open?'
-        // the ?Iz is CLAIMED — the address bar becomes this tab's identity (?I=<prepub>): a
-        //  reload now RESUMES the sealed self instead of re-presenting a spent invite blob
-        //   (which would only say "did not verify").  Same replaceState move as ?I=new's —
-        //   but PIN first: a role-tagged default self is stored only under its role, and an
-        //    unpinned ?I=<prepub> reload would mint a stranger (Clustation_pin's why).
-        if (sealed && self?.sc?.prepub && typeof window !== 'undefined' && window.history?.replaceState) {
-            const pinned = await H.Clustation_pin?.()
-            if (pinned) {
-                const url = new URL(window.location.href)
-                url.searchParams.delete('Iz')
-                url.searchParams.set('I', String(self.sc.prepub))
-                window.history.replaceState(null, '', url.toString())
-            }
-        }
     }
 </script>
 
 <!-- Escape closes the big QR face (top-level — svelte:window may not sit inside a block) -->
 <svelte:window onkeydown={(e) => { if (big && e.key === 'Escape') big = false }} />
+
+<!-- the name-ask: the first-time move, rendered wherever an unnamed self is about to act -->
+{#snippet namer(hint: string)}
+    <span class="ip-row">
+        <input class="ip-name" bind:value={name_draft} placeholder="your name"
+            onkeydown={(e) => { if (e.key === 'Enter') name_save() }} />
+        <button class="ip-act" onclick={name_save}>that's me</button>
+    </span>
+    <span class="ip-note">{hint}</span>
+    {#if name_err}<span class="ip-note">⚠ {name_err}</span>{/if}
+{/snippet}
 <div class="ip">
     {#if relic}
         <!-- the old garden's invite: recognized, named, and honestly un-honourable (rung 1) -->
@@ -215,7 +269,12 @@
         <div class="ip-land">
             {#if invite}
                 <span class="ip-title">📨 an invite from <b>{invite.friendly || invite.prepub}</b> — {invite.to}</span>
-                <button class="ip-act" onclick={join}>join</button>
+                {#if !named}
+                    {@render namer(`what do friends call you? ${invite.friendly || 'your friend'} will see this name${born_today ? ' — then you join by yourself' : ''}`)}
+                {/if}
+                {#if named || !born_today}
+                    <button class="ip-act" onclick={join}>join</button>
+                {/if}
                 {#if joined}<span class="ip-note">{joined}</span>{/if}
             {:else}
                 <span class="ip-note">{iz_err}</span>
@@ -224,7 +283,10 @@
     {/if}
     {#if self}
         <div class="ip-mint">
-            <span class="ip-title">⨳ <b>{self.sc.nick || self.sc.prepub}</b></span>
+            <span class="ip-title">⨳ <b>{self.sc.friendly || self.sc.nick || self.sc.prepub}</b></span>
+            {#if !named && !iz}
+                {@render namer('what do friends call you? the name rides your invites')}
+            {/if}
             {#if !url}
                 <button class="ip-act" onclick={mint} title="mint a single-use Music invite and show its QR">invite a friend</button>
                 {#if born_today && !friends.length && !iz}
@@ -294,6 +356,11 @@
     .ip-act:hover { border-color: #77a; color: #fff; }
     .ip-note { font-size: 0.72rem; color: #889; max-width: 22rem; }
     .ip-row { display: flex; gap: 0.4rem; }
+    .ip-name {
+        background: #1a1a26; border: 1px solid #44446a; color: #dde;
+        border-radius: 5px; font-size: 0.78rem; padding: 0.15rem 0.5rem; width: 11rem;
+    }
+    .ip-name:focus { border-color: #77a; outline: none; }
     .ip-friends { display: flex; flex-direction: column; gap: 0.25rem; align-self: center; }
     .ip-friend {
         font-size: 0.75rem; color: #cb9; white-space: nowrap;

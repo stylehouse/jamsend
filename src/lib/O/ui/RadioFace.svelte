@@ -21,7 +21,14 @@
         // the first-time read: never played, nothing dialed — teach what ▶ will do, using the
         //  stoker's census (stock standing = the preheat already dug) so the promise is honest.
         const stock = +((n?.c?.w?.o?.({ Stoker: 1 })?.[0]?.sc?.stock) ?? 0)
+        // the POOL: friend tracks standing in the %MusuThem mirrors (the live share fill) —
+        //  the radio dials across them too, and the face says so only when it's true.
+        let pool = 0
+        for (const home of (n?.c?.w?.o?.({ MusuThem: 1 }) ?? [])) {
+            pool += home?.o?.({ stock: 1 })?.[0]?.o?.({ Record: 1 })?.length ?? 0
+        }
         return {
+            pool,
             state:  (sc.Radio as string) ?? 'off',
             title:  sc.title as string | undefined,
             artist: sc.artist as string | undefined,
@@ -54,6 +61,10 @@
             {#if face.note}<div class="rf-note">{face.note}</div>{/if}
         </div>
         <button class="rf-btn rf-skip" onclick={() => (H as any)?.Radio_skip?.(n)} title="next">⏭</button>
+        {#if face.title}
+            <button class="rf-btn rf-skip" onclick={() => (H as any)?.Radio_mag_pop?.(n?.c?.w, n?.c?.rec)}
+                title="pop this track into your Faves mag">★</button>
+        {/if}
     </div>
     {#if face.of > 0}
         <div class="rf-bar"><div class="rf-fill" style="width:{Math.min(100, 100 * face.at / face.of)}%"></div></div>
@@ -63,7 +74,10 @@
     {:else if face.state === 'digging'}
         <div class="rf-time">digging the crates…</div>
     {:else if face.first}
-        <div class="rf-time">{face.stock > 0 ? `▶ plays your music — ${face.stock} records stand ready` : '▶ starts the radio — the stoker will dig your share'}</div>
+        <div class="rf-time">{face.pool > 0 ? `▶ plays the pool — ${face.stock} of yours + ${face.pool} from friends` : face.stock > 0 ? `▶ plays your music — ${face.stock} records stand ready` : '▶ starts the radio — the stoker will dig your share'}</div>
+    {/if}
+    {#if face.pool > 0 && !face.first}
+        <div class="rf-time">⚯ {face.pool} friend {face.pool === 1 ? 'track rides' : 'tracks ride'} the dial</div>
     {/if}
 </div>
 

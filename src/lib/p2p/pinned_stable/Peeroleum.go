@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '054dff5c07f2987b' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '831035f4b7de0927~g1' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -416,8 +416,12 @@ Peeroleum_send(w, frame) {
     //        stops beaconing and drops off the editor's roster though it's still alive (its pings ride the
     //         off-think keepalive).  As a beacon it's self-healing: the relay ws is reliable+ordered, so
     //          first-contact still lands and a lost beat is replaced ~15s later — app-level acks buy
-    //           nothing.  Ephemeral lets the off-think keepalive emit it, so an idle runner stays visible.)
-    let ephemeral = (h.type === 'ack' || h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase' || h.type === 'advertise')
+    //           nothing.  Ephemeral lets the off-think keepalive emit it, so an idle runner stays visible.
+    //            swarm_hi (the rebirth greeting) joins them for a THIRD reason: it must dodge the
+    //             unemit dedup — a restarted peer re-uses seq numbers per type, and the greeting that
+    //              ANNOUNCES the restart cannot itself be the frame the stale history swallows.)
+    let ephemeral = (h.type === 'ack' || h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase')
+    ephemeral = ephemeral || h.type === 'advertise' || h.type === 'swarm_hi'
     if (pier && !ephemeral) {
         // a binary frame records body_hash + body_len on its emit so the snap shows
         //  "a test_binary of N bytes, hash X, sent" (the body itself rides off-snap on the frame).
@@ -464,7 +468,33 @@ async Peeroleum_deliver(w, frame) {
         H.feebly_ponder()
         return
     }
+    // an addr-less CLI ask (runner_ask.mjs / reactap.mjs / ghost_compile.ts — exactly the two types
+    //  the relay corr-remembers) is NOT a peer envelope: its `from` is an ephemeral reply addr, never
+    //   a Pier, and the reply is a raw control frame the relay corr-routes back.  So dispatch it by
+    //    TYPE here, BEFORE routing, ephemeral-style (no inbox booking, no ack-back — there is no Pier
+    //     to ack through, and a CLI never retransmits, it just times out).  Routing these was the bug:
+    //      an EDITOR holds N runner Piers, so pub===from missed → the frame hit `if (!pier) return` and
+    //       vanished; the single-Pier runner only ever matched by luck through Peeroleum_route's
+    //        length===1 arm (then booked into its inbox).  By type, it lands whether this node holds
+    //         0, 1, or N Piers, editor or runner alike.
+    if (h.type === 'runner_ask' || h.type === 'ghost_compile') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, null, frame); return }
     let {peering, pier} = this.Peeroleum_route(w, h, 'to')
+    // first-contact: a pier_hello arrives BY DESIGN from a prepub no %Pier exists for yet — the
+    //  invite front door (Swarm_spec §6.3/§10.1). The Pier/Ud booking discipline can't apply to a
+    //   caller we haven't met, and doesn't need to: the Idzeug echoed inside is its own credential
+    //    (Swarm_hello re-verifies the signature before anything seals). Dispatch to the registered
+    //     handler (armed by Swarm_arm) — the handler promotes the %Pier — then ack through the
+    //      fresh route so the caller's outbox emit retires. A pier this node ALREADY holds falls
+    //       through to the normal booked path below; every other no-pier frame still drops.
+    if (!pier && h.type === 'pier_hello') {
+        let on = w.c.on && w.c.on[h.type]
+        if (!on) return
+        await on(w, null, frame)
+        let now = this.Peeroleum_route(w, h, 'to')
+        if (now.pier) this.Peeroleum_send(w, {header: {type: 'ack', from: h.to, to: h.from, ack: h.seq}})
+        H.feebly_ponder()
+        return
+    }
     if (!pier) return
     // inbound-silence liveness (Reliable.g twin of the outbound %stalled): stamp the LOGICAL tick we last
     //  heard ANYTHING on this Pier — every frame, acks included (an ack is the cheapest liveness proof, so
@@ -485,7 +515,7 @@ async Peeroleum_deliver(w, frame) {
     //      endless wedge (the 48s).  advertise joins them so a beacon never books/acks either — and the
     //       feebly_ponder is safe because advertise is editor-inbound only (runners send it to:'editor';
     //        the editor has no Story drive to re-wedge), and it nudges Lies_aim to refresh the roster Brink.
-    if (h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase' || h.type === 'advertise') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
+    if (h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase' || h.type === 'advertise' || h.type === 'swarm_hi') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
     // The inbox is a serial %req drain: a booked frame is a %req:unemit (discriminated by the sender's
     //  per-Pier seq) and inbox.do() runs each unemit-req's do_fn (req_unemit) one at a time, in arrival
     //   order, awaiting each — that IS the serial async drain, so the hand-rolled %queued/%handling lock
@@ -508,7 +538,19 @@ async Peeroleum_deliver(w, frame) {
     let reliable = conn?.reliable !== false   // default reliable; only an explicit false engages inseq
     let seq = Number(h.seq)
     if (reliable || !Number.isFinite(seq)) {   // reliable carrier, or a frame with no seq → book straight, never hold
-        H.Peeroleum_book_unemit(inbox, w, pier, frame); await inbox.do(); H.feebly_ponder(); return
+        let ureq = H.Peeroleum_book_unemit(inbox, w, pier, frame)
+        if (ureq.sc.finished) {
+            // reused-seq collision: this (seq,type) already served a PREVIOUS incarnation (or the
+            //  transport re-delivered a served frame).  Silence here was the 20s wormhole mute —
+            //   RE-ACK so the sender's ack-gated retry stands down; the boot-epoch reset (ping-borne
+            //    Lies_pong / the swarm channel's swarm_hi) is what re-opens a reborn peer's stream.
+            let me = pier.c.up.sc.name
+            H.Peeroleum_send(w, {header:{type:'ack', from:me, to:pier.sc.pub, ack:h.seq}})
+            console.warn(`🛰⚠ reused-seq collision seq=${h.seq} type=${h.type} from=${h.from} — re-acked, not re-dispatched (stale inbox history; a reborn peer wants the epoch reset)`)
+            H.feebly_ponder()
+            return
+        }
+        await inbox.do(); H.feebly_ponder(); return
     }
     // ── inbound seq discipline (Reliable.g: inseq_admit) — LOSSY carriers only ──
     pier.c.inseq = pier.c.inseq || {last: 0, buffered: []}
@@ -584,7 +626,9 @@ async req_unemit(req) {
         if (h.type === 'hello') ok = (await H.hear_hello(w, pier, frame)) !== false
         else if (h.type === 'trust') ok = (await H.hear_trust(w, pier, frame)) !== false
         else if (on) ok = (await on(w, pier, frame)) !== false
-        // else (noop, or an unregistered type): nothing to deliver — done, then acked.
+        else if (h.type !== 'noop') console.warn(`🛰⚠ Peeroleum: NO handler for frame type '${h.type}' from ${h.from} — acked but the work is LOST (typo'd handler? an editor-only frame reached a runner or vice-versa?). Robustness_plan Organ 2 — escalate to faulty/dont-ack once a live run proves no legit send-without-handler type retx-wedges.`)
+        // else (noop): nothing to deliver — legitimately done, then acked.  An UNREGISTERED type now
+        //  warns loudly above (was a silent ack — the "lies upward" bug); delivery is unchanged for now.
     }
     if (ok) {
         req.sc.done = 1

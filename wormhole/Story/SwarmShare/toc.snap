@@ -1,0 +1,41 @@
+story:SwarmShare
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.057
+      sample=0.058,at=1784421445
+      sample=0.059,at=1784437264
+      sample=0.059,at=1784437286
+      sample=0.059,at=1784437288
+      sample=0.059,at=1784437289
+      sample=0.059,at=1784437290
+      sample=0.059,at=1784437291
+      sample=0.056,at=1784437305
+      sample=0.06,at=1784437362
+      sample=0.046,at=1784437377
+    TimeTotal:step,avg=0.007
+      sample=0.006,at=1784421445
+      sample=0.007,at=1784437264
+      sample=0.007,at=1784437286
+      sample=0.007,at=1784437288
+      sample=0.007,at=1784437289
+      sample=0.007,at=1784437290
+      sample=0.007,at=1784437291
+      sample=0.006,at=1784437305
+      sample=0.007,at=1784437362
+      sample=0.005,at=1784437377
+  step,dige:bc1061aa38822e63
+  step=2,dige:0dfe6aac7a4adaa8
+  step=3,dige:480eab16672f45bb
+  step=4,dige:0da55ab793dffdae
+    Assertion:the-mirror-lands-keyed,sentence:the mirror lands keyed by the caster prepub — two records under MusuThem for the friend never merged under the listener key
+  step=5,dige:066157379b9ac37a
+    Assertion:a-suggestion-minted-while,sentence:a suggestion minted while the friend is unreachable stands un-got under my Pier for them — store and forward
+  step=6,dige:92a6ee154d00e98d
+  step=7,dige:3760940a0146600a
+  step=8,dige:d38f7e508fb1ae9e
+    Assertion:the-rebirth-greeting-drains,sentence:the rebirth greeting drains the queue — the suggestion crosses mirrored at the friend and his confirmation retires my copy got
+  step=9,dige:d23246ef8f18d056
+    Assertion:a-changed-era-in,sentence:a changed era in the greeting resets the route stream state while keeping Ud — the reborn peer re-baselines the link

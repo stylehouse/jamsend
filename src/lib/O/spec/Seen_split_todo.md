@@ -111,8 +111,14 @@ This file is destination + the bombs + the next move. Correct anything that has 
      renders as a red dashed **GHOST LINE** in show-diff at the spot the sworn would stand (end
       of the `w:<book>` subtree on the got side, squish-tolerant) — clicking it opens the
        explorer: the clue and the navigation are one mechanism.
-The build order is DONE.  Left open deliberately: the human's Accept harvesting unclaimed
- evidence into the contract (ruled, not yet built — the explorer only shows the ◇ rows).
+The build order is DONE.  **The declare door is BUILT too (2026-07-19, the human: "I thought
+ just a button to promote it?"):** each undeclared row wears a `declare ↑` button →
+  `e_story_declare` mints `The/step=N/%Assertion:<slug>` (N = the shelf's `n:` — the by-when
+   the evidence itself proposes; slug = head-clause kebab, ≤4 words, human-renamable) and
+    story_saves the toc — from the next run on its absence complains.  Undo = delete the toc
+     line.  CLI twin: `runner_ask declare '<sentence>'` (byte-identical to the assertions
+      output).  Live-proven: Sounditron's sound sentence walked through the door — declared 5,
+       ✓ latched at step 6, undeclared 2.  Code never self-promotes; the click is the human's.
 
 **MOVES 1 + 2 LANDED + MOVE 3 STARTED (2026-07-12, proven live on `3c5238`/`49dee9`). The MECHANISM
  is complete.** `%seen` latches AND a missing declared assertion now reds the run — un-maskable by

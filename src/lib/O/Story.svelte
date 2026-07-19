@@ -303,6 +303,45 @@
         if (touched) (w.c.ave as TheC | undefined)?.bump_version()
     },
 
+    // story_slug — a deterministic slug from a sentence's head clause (before the em-dash),
+    //  capped at four words.  The human renames in the toc at leisure — the slug is a handle,
+    //   never the identity (the sentence is the join).
+    story_slug(sentence: string): string {
+        return sentence.split('—')[0].trim().toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+            .split('-').slice(0, 4).join('-')
+    },
+
+    // e_story_declare — the DOOR into the contract (the ruled Accept-harvest, as a button):
+    //  promote ONE undeclared sworn into `The/step=N/%Assertion`, N = the step it latched
+    //   this run (the shelf's n: stamp — the by-when the evidence itself proposes).  From the
+    //    next run on its ABSENCE COMPLAINS (Cred_assertion_gaps) — that is the point; undo is
+    //     deleting the toc line.  Only the human clicks this (the explorer's declare button);
+    //      code never self-promotes evidence.
+    async e_story_declare(A: TheC, w: TheC, e?: TheC) {
+        const H = this
+        const sentence = e?.sc.sentence as string | undefined
+        const The = w.c.The as TheC | undefined
+        if (!sentence || !The) return
+        // already declared anywhere → no-op (the button only rides undeclared rows, but a
+        //  double-click or a stale panel must not mint twins)
+        for (const st of The.o({ step: 1 }) as TheC[])
+            if ((st.o({ Assertion: 1 }) as TheC[]).some(a => a.sc.sentence === sentence)) return
+        const shelf = (H as any).story_assertioning(w) as TheC | undefined
+        const row   = shelf?.o({ sworn: sentence })[0] as TheC | undefined
+        const n     = Number(row?.sc.n) || 0
+        if (!n) { console.warn(`story_declare: no latch record for «${sentence}» — declare by hand in the toc`); return }
+        let slug = (H as any).story_slug(sentence) as string
+        const taken = (s: string) => (The.o({ step: 1 }) as TheC[]).some(st => st.o({ Assertion: s }).length)
+        if (taken(slug)) { let k = 2; while (taken(`${slug}-${k}`)) k++; slug = `${slug}-${k}` }
+        const a = ((H as any).The_step(w, n) as TheC).oai({ Assertion: slug })
+        a.sc.sentence = sentence
+        The.bump_version()
+        H.story_analysis(w)
+        H.story_save()
+        ;V.Story && console.log(`📜 story_declare: The/step=${n}/%Assertion:${slug}`)
+    },
+
     The_frontier(w: TheC): number {
         // read the frontier step number from the {note:1,frontier:1} particle.
         // o({note:1,frontier:1}) — both values are wildcard 1, matching any particle

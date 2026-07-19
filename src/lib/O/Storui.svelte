@@ -952,6 +952,10 @@
             diff_anchor     = null
         }
         last_user_pick = n
+        // opening a step pip IS a show-diff choice — the mutex swaps sworn mode away here
+        //  exactly like the mode buttons do.  (The assertion-mark click still lands in the
+        //   explorer: it calls pick() first, then open_explorer() re-raises it.)
+        explorer_open = false
         // opening a step pip should show its diff — default the panel open (the user can
         //  still collapse it via the Vexpandy; the next pip-open re-opens).
         expanded = true
@@ -1410,6 +1414,12 @@
             {@const trace_span   = trace_events?.length ? (trace_events.at(-1)!.t - trace_events[0].t) : null}
 
             <div class="sr-panel">
+                {#if explorer_open}
+                    <!-- SWORN MODE: the mutex is TOTAL — the whole panel belongs to the
+                         explorer; every piece of diff furniture (mode buttons, copy diff,
+                         trace, Accept, notes) is show-diff's and stands down with it. -->
+                    {@render sworn_panel()}
+                {:else}
 
                 <!-- header ────────────────────────────────────────────── -->
                 <div class="sr-phdr">
@@ -1514,10 +1524,7 @@
                 <!--   without this class the diff/pre would push trace   -->
                 <!--   below the panel's overflow:hidden in expanded view. -->
                 <div class="sr-body" style="opacity:{waiting_for_exp ? 0.5 : 1}; transition:opacity 0.3s">
-                {#if explorer_open}
-                    <!-- the assertions explorer MUTEXES with show-diff: one body, one occupant -->
-                    {@render assert_explorer()}
-                {:else if hollow}
+                {#if hollow}
                     <div class="sr-hollow-body">step {String(n).padStart(3,'0')} not yet run this session</div>
                 {:else if !(Step?.sc.got_snap)}
                     <!-- snap ran but content not yet fetched; story_sel will queue the load -->
@@ -1576,15 +1583,14 @@
                         </div>
                     {/each}
                 </div>
+                {/if}
 
             </div>
         {:else if explorer_open}
             <!-- explorer with no step open: assertions are run-wide, so the sworn button
                  (run bar) / [s] can raise it standalone in the panel's seat -->
             <div class="sr-panel">
-                <div class="sr-body">
-                    {@render assert_explorer()}
-                </div>
+                {@render sworn_panel()}
             </div>
         {/if}
 
@@ -1703,6 +1709,20 @@
     ><span class="sr-ind">{indent}</span><span class="sr-ghost-txt">sworn:{row.sentence}</span>  <span class="sr-ghost-tag">— never latched</span>&#10;</span>
 {/snippet}
 
+<!-- sworn_panel: the WHOLE panel in sworn mode — its own green header, zero diff furniture.
+     × returns to the diff; the e/r/f keys exit the same way (toggle_mode closes the explorer). -->
+{#snippet sworn_panel()}
+    <div class="sr-phdr sworn">
+        <span class="sr-sworn-title">sworn</span>
+        <span class="sr-sworn-counts">{assert_latched}/{assert_entries.length} declared latched{#if undeclared.length}&nbsp;·&nbsp;◇{undeclared.length} undeclared{/if}</span>
+        <span class="sr-ekey">[s]</span>
+        <button class="sr-close" onclick={() => explorer_open = false} title="back to the diff">×</button>
+    </div>
+    <div class="sr-body">
+        {@render assert_explorer()}
+    </div>
+{/snippet}
+
 <!-- assert_explorer: the contract vs this run's evidence, in the diff's seat (the mutex).
      One row per declared %Assertion: state glyph, slug, sentence, the hosting step
      (clickable — the by-when), latch n.  A latched row with a microsnap (⌖) unfolds it
@@ -1747,7 +1767,12 @@
                     <span class="sr-ax-ico">◇</span>
                     <span class="sr-ax-sent">«{a.sentence}»</span>
                     <span class="sr-ax-n">sworn at {String(a.n).padStart(3,'0')}</span>
-                    <span class="sr-ax-state">undeclared</span>
+                    <!-- the door into the contract: mints The/step=N/%Assertion (N = where it
+                         swore) and saves the toc — from the next run on its absence complains -->
+                    <button class="sr-ax-declare"
+                            title="declare it — the sentence joins the contract at step {a.n} and its absence complains from the next run on"
+                            onclick={ev => { ev.stopPropagation(); H.i_elvisto('Story/Story', 'story_declare', { sentence: a.sentence }) }}
+                    >declare ↑</button>
                     {#if a.microsnap}<span class="sr-ax-has-micro" title="carries a microsnap — click the row to unfold it">⌖</span>{/if}
                 </div>
                 {#if unfolded && a.microsnap}
@@ -2119,7 +2144,7 @@
 .sr-assert-btn.warn { border-color: #6a4a1a; color: #c93; }
 
 /* the explorer body — sits in the diff's seat while open (the mutex) */
-.sr-ax { padding: 4px 0 6px; min-height: 12em; max-height: min(40vh, 666px); overflow-y: auto; background: #0d0f0d; }
+.sr-ax { padding: 4px 0 6px; min-height: 12em; max-height: min(40vh, 666px); overflow-y: auto; background: #0c120e; }
 .sr.expanded .sr-ax { flex: 1; max-height: none; }
 .sr-ax-sec {
     font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
@@ -2153,11 +2178,25 @@
 .sr-ax-n { color: #4a9; font-size: 9px; flex-shrink: 0; }
 .sr-ax-state { font-size: 9px; flex-shrink: 0; }
 .sr-ax-has-micro { color: #567; font-size: 10px; flex-shrink: 0; }
-/* undeclared: NOT ok — amber, wants declaring (Accept is the door into the contract) */
+/* sworn mode: the panel wears the evidence green (the matstyle:sworn swatch) —
+   unmistakably not a diff.  The counts ride beside the title; [s]+× push right. */
+.sr-phdr.sworn { background: #0c1a10; border-bottom-color: #1e3a26; }
+.sr-phdr.sworn .sr-ekey { margin-left: auto; }
+.sr-sworn-title {
+    color: #29d638; font-weight: 700; font-size: 11px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+}
+.sr-sworn-counts { color: #4a9; font-size: 10px; }
+
+/* undeclared: NOT ok — amber, wants declaring; the declare button IS the door in */
 .sr-ax-sec.undecl { color: #6a4a1a; }
 .sr-ax-undecl { border-left-color: #6a4a1a; }
-.sr-ax-undecl .sr-ax-ico   { color: #c93; }
-.sr-ax-undecl .sr-ax-state { color: #c93; }
+.sr-ax-undecl .sr-ax-ico { color: #c93; }
+.sr-ax-declare {
+    background: #1a2a1a; border: 1px solid #2a4a2a; border-radius: 2px; flex-shrink: 0;
+    color: #4a9; cursor: pointer; font-size: 9px; font-family: inherit; padding: 0 6px; line-height: 14px;
+}
+.sr-ax-declare:hover { background: #234a28; color: #7dc; }
 /* the unfolded microsnap — what the assertion pointed at, frozen at go-off time */
 .sr-ax-micro {
     margin: 0 10px 4px 28px; padding: 4px 8px;

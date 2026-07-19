@@ -1,0 +1,6 @@
+Snap:H
+  H:Swarmation,Run
+    A:Swarmation
+      self,round	{"mung":["age"]}
+      w:Swarmation
+        self,round	{"mung":["age"]}

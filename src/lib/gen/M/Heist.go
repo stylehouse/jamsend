@@ -10,7 +10,7 @@ import { sha256_hex, sha256_incremental } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '13a326925cc59212~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'a8255bb2b5e0bf1b~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -994,6 +994,91 @@ async Musica_fold(mag, lib, randomic, created_at) {
         }
     }
     return mag
+
+},
+// Musica_pop — the HAND-CURATED pocket zine (§12's "a curated Mag IS a mixtape"): pop ONE track into
+//  the named mag as a %Card referring particle under a %Cloud,randomic:'chosen' — curation is a draw
+//   BY A PERSON, so the hand gets one standing Cloud of its own rather than a census batch.  Distinct
+//    from Musica_publish's census fold: no lib, no reconcile — a pop is append-only (dropping a card
+//     back out is the reader's later gear).  Idempotent per id.  Returns the mag.
+async Musica_pop(nav, root, prepub, name, rec) {
+    if (!rec?.sc?.id) return null
+    let mag = await this.Berth_open(nav, root, prepub, name || 'Faves')
+    let cloud = mag.o({ Cloud: 1, randomic: 'chosen' })[0]
+    if (!cloud) {
+        cloud = mag.i({ Cloud: 1, randomic: 'chosen', created_at: String(Date.now()) })
+        cloud.c.up = mag
+        cloud.c.repli_loc = ['Cloud', 'randomic']
+    }
+    if (!cloud.o({ Card: 1, id: rec.sc.id })[0]) {
+        let card = cloud.i({ Card: 1, id: rec.sc.id })
+        card.c.up = cloud
+        if (rec.sc.title) card.sc.title = rec.sc.title
+        if (rec.sc.artist) card.sc.artist = rec.sc.artist
+        if (rec.sc.album) card.sc.album = rec.sc.album
+        if (rec.sc.path) card.sc.path = rec.sc.path
+        if (rec.sc.body_hash) card.sc.body_hash = rec.sc.body_hash
+    }
+    await this.Berth_save(nav, mag)
+    // a standing %Zine cell for this mag refreshes at once — the ★ shows up in the glass
+    //  without waiting for a reload.
+    let rw = this.top_House().c.radio_w
+    let z = rw ? rw.o({ Zine: name || 'Faves' })[0] : null
+    if (z) this.Musica_zine_load(z)
+    return mag
+
+},
+// ── the ZINE cell — the pocket mag's live face in the glass ─────────────────────────────────
+//  %Zine,name is a REFERRING particle (its OWN mainkey — the holding is the Berth Waft on
+//   disk, never impersonated); ZineFace lists the mag's cards and ▶ auditions by enid against
+//    whatever shelf holds the bytes.  Card rows ride .c (re-read from disk on load, commas
+//     safe); only the count snaps.
+Musica_zine_ensure(w) {
+    let z = w.o({ Zine: 'Faves' })[0]
+    if (!z) {
+        z = w.i({ Zine: 'Faves', face: 'Zine', crew: 'Radio' })
+        z.c.up = w
+    }
+    z.c.w = w
+    this.Musica_zine_load(z)
+    return z
+
+},
+async Musica_zine_load(z) {
+    let nav = this.Crate_nav ? this.Crate_nav() : null
+    if (!nav) return
+    let w = z.c.w
+    let pub = this.Radio_pub(w) || 'me'
+    let mag = null
+    try { mag = await this.Berth_open(nav, '', String(pub), String(z.sc.Zine || 'Faves')) } catch (er) { mag = null }
+    if (!mag) return
+    let rows = []
+    for (const card of this.Musica_cards(mag)) {
+        rows.push({ id: String(card.sc.id || ''), title: String(card.sc.title || card.sc.id || ''), artist: String(card.sc.artist || '') })
+    }
+    z.c.cards = rows
+    let count = String(rows.length)
+    if (z.sc.count !== count) z.sc.count = count
+    z.bump()
+
+},
+// ▶ on a zine row: resolve the enid against MY stock first, then every friend mirror — the
+//  zine lists REFERENCES; whoever holds the bytes plays.  False = not on any shelf right now.
+Musica_zine_tune(z, id) {
+    let w = z.c.w
+    let radio = w.o({ Radio: 1 })[0]
+    if (!radio || !id) return false
+    let pub = this.Radio_pub(w) || 'me'
+    let rec = this.Ra_home_self(w, pub).o({ Record: 1, id: String(id) })[0]
+    if (!rec) {
+        for (const home of w.o({ MusuThem: 1 })) {
+            if (rec) continue
+            rec = this.Ra_home_them(w, String(home.sc.pub)).o({ Record: 1, id: String(id) })[0]
+        }
+    }
+    if (!rec) return false
+    this.Radio_tune(radio, rec)
+    return true
 
 },
 // Musica_cards — every %Card across every %Cloud, newest-cloud-agnostic: the flat catalog view a reader or

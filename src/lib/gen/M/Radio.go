@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return 'd7ba110cac33c0f1~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '57531934fbcf0681~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -385,8 +385,11 @@ Radio_face_tick(radio, AC) {
 Radio_pub(w) {
     let M = this.top_House()
     let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
-    let p = ident?.c?.keys?.prepub
-    if (p) return p
+    // the prepub rides sc (Clustation_concrete) — c.keys is {pub, key} only, so the old
+    //  c.keys.prepub read was ALWAYS undefined: the live shelf never keyed by identity,
+    //   which silently orphaned the share's serving side from the stoker's stock.
+    let p = ident?.sc?.prepub
+    if (p) return String(p)
     let lw = M.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0]
     return M.Lies_self?.(lw)?.prepub ?? null
 
@@ -400,8 +403,25 @@ async Radio_dial(radio) {
     let pub = this.Radio_pub(w) || 'me'
     let shelf = this.Ra_home_self(w, pub)
     let stoker = this.Stoker_ensure(w)
+    // THE LINEUP first (the standing programme, the human 2026-07-19: "constantly producing
+    //  Mag, up to 20 tracks further than the listened-to cursor"): consume its head card —
+    //   the fill keeps it deep and every contributor represented.  Playing IS the cursor:
+    //    a consumed card drops, the programme advances.
+    this.Radio_lineup_fill(w, radio)
+    let lu = this.Radio_lineup_ensure(w)
+    let head = lu.o({ Card: 1 })[0]
+    if (head) {
+        let hrec = head.c.rec
+        lu.drop(head)
+        lu.bump()
+        if (hrec) return hrec
+    }
+    // no lineup (empty crates) — the old direct dial as the fallback ladder
     let fresh = this.Ra_dial_next(w, shelf, { skip_ids: radio.c.heard || {} })
+    let pool = this.Radio_dial_pool(w, radio)
+    if (fresh && pool) return (this.Ra_rand(w, 2) === 0) ? fresh : pool
     if (fresh) return fresh
+    if (pool) return pool
     this.Stoker_churn(stoker)
     let again = this.Ra_dial_next(w, shelf, {})
     if (again) {
@@ -409,6 +429,137 @@ async Radio_dial(radio) {
         radio.bump()
     }
     return again
+
+},
+//#region lineup — the STANDING PROGRAMME: a rolling %Mag the radio plays through
+//  The radio stops dialling blind one track at a time: %Mag:'Lineup' holds %Card referring
+//   rows — up to 20 tracks past the listened-to cursor — and the pump consumes its head.
+//    EVERY crate contributes round-robin: my stock and each granted friend's mirror (a Pier
+//     means their music plays here automatically).  A granted friend who is HERE with
+//      nothing playable to give is an %error on the lineup (the human: "noticeable = an
+//       error") — self-clearing the moment a track of theirs lands.
+
+Radio_lineup_ensure(w) {
+    let lu = w.o({ Mag: 'Lineup' })[0]
+    if (!lu) {
+        lu = w.i({ Mag: 'Lineup', face: 'Lineup', crew: 'Radio' })
+        lu.c.up = w
+    }
+    lu.c.w = w
+    return lu
+
+},
+// fill to 20 ahead: round-robin the contributor pools (mine + each friend crate with a
+//  playable record), skipping lined and heard ids.  Cheap when already full.
+Radio_lineup_fill(w, radio) {
+    let lu = this.Radio_lineup_ensure(w)
+    let AHEAD = 20
+    if (lu.o({ Card: 1 }).length >= AHEAD) return lu
+    let lined = {}
+    for (const c2 of lu.o({ Card: 1 })) lined[c2.sc.id] = 1
+    let pub = this.Radio_pub(w) || 'me'
+    let pools = []
+    let mine = []
+    for (const rec of this.Ra_home_self(w, pub).o({ Record: 1 })) {
+        if (lined[rec.sc.id]) continue
+        if (radio && radio.c.heard && radio.c.heard[rec.sc.id]) continue
+        mine.push(rec)
+    }
+    if (mine.length) pools.push({ key: 'mine', recs: mine })
+    for (const home of w.o({ MusuThem: 1 })) {
+        let hp = String(home.sc.pub || '')
+        if (!hp) continue
+        let frecs = []
+        for (const rec of this.Ra_home_them(w, hp).o({ Record: 1 })) {
+            if (lined[rec.sc.id]) continue
+            if (radio && radio.c.heard && radio.c.heard[rec.sc.id]) continue
+            let map = this.Ra_chunk_map(rec)
+            if (map[0] == null) continue
+            frecs.push(rec)
+        }
+        if (frecs.length) pools.push({ key: hp, recs: frecs })
+    }
+    this.Radio_lineup_errors(w, lu, pools)
+    if (!pools.length) return lu
+    let pi = lu.c.fill_i || 0
+    let guard = 0
+    while (lu.o({ Card: 1 }).length < AHEAD && guard < 80) {
+        guard = guard + 1
+        let pool = pools[pi % pools.length]
+        pi = pi + 1
+        if (!pool.recs.length) {
+            let alive = 0
+            for (const p2 of pools) {
+                if (p2.recs.length) alive = alive + 1
+            }
+            if (!alive) break
+            continue
+        }
+        let k = this.Ra_rand(w, pool.recs.length)
+        let rec = pool.recs.splice(k, 1)[0]
+        let card = lu.i({ Card: 1, id: String(rec.sc.id) })
+        card.c.up = lu
+        card.c.rec = rec
+        if (rec.sc.title) card.sc.title = this.Radio_clean(String(rec.sc.title))
+        let artist = this.Radio_clean(String(rec.sc.artist || ''))
+        if (artist) card.sc.artist = artist
+        if (pool.key !== 'mine') card.sc.by = pool.key
+    }
+    lu.c.fill_i = pi
+    lu.sc.up_next = String(lu.o({ Card: 1 }).length)
+    lu.bump()
+    return lu
+
+},
+// the starve watch: a granted friend who has PULSED lately but contributed NO playable
+//  record — the wire owes us their music and none is coming across.  A real %error row,
+//   one per friend, dropped the moment their pool stands.
+Radio_lineup_errors(w, lu, pools) {
+    let M = this.top_House()
+    let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
+    if (!ident || !M.Swarm_peering) return
+    for (const p of M.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+        if (!p.sc.pub) continue
+        if (!M.Swarm_pier_live(p, 'Music')) continue
+        let hp = String(p.sc.pub)
+        let has = 0
+        for (const pl of pools) {
+            if (pl.key === hp) has = 1
+        }
+        let here = p.c.heard_at && (Date.now() - p.c.heard_at) < 30000
+        let err = lu.o({ error: 1, of: hp })[0]
+        if (!has && here) {
+            if (!err) {
+                let name = p.sc.friendly ? String(p.sc.friendly) : hp.slice(0, 8)
+                lu.i({ error: 1, of: hp, say: this.Radio_clean('no music coming across from ' + name) })
+                lu.bump()
+            }
+            continue
+        }
+        if (err) {
+            lu.drop(err)
+            lu.bump()
+        }
+    }
+},
+//#endregion
+
+// Radio_dial_pool — an unheard friend-crate record whose preview has begun to land (map[0]
+//  present — a husk plays silence, so presence IS playability).  Random across every crate.
+Radio_dial_pool(w, radio) {
+    let cands = []
+    for (const home of w.o({ MusuThem: 1 })) {
+        if (!home.sc.pub) continue
+        let shelf = this.Ra_home_them(w, String(home.sc.pub))
+        for (const rec of shelf.o({ Record: 1 })) {
+            if (radio.c.heard && radio.c.heard[rec.sc.id]) continue
+            let map = this.Ra_chunk_map(rec)
+            if (map[0] == null) continue
+            cands.push(rec)
+        }
+    }
+    if (!cands.length) return null
+    return cands[this.Ra_rand(w, cands.length)]
 
 },
 // Radio_nudge — the stoker's landing announcement: stock JUST stood, and a digging radio must
@@ -441,6 +592,9 @@ Stoker_ensure(w) {
         st.c.up = w
     }
     st.c.w = w
+    // the RADIO WORLD beacon (runtime .c on the top House): the live share (Swarm_share_up)
+    //  needs the world where the stoker actually shelves — stock served out, mirrors minted in.
+    this.top_House().c.radio_w = w
     return st
 
 },
@@ -507,7 +661,7 @@ async Stoker_look(st, era) {
         if (st.c.era !== era) return
         let k = 0
         let stood0 = +(st.sc.stood || 0)
-        while (k < ls.length && k < 12) {
+        while (k < ls.length && k < 24) {
             let stand = null
             try { stand = await this.Ra_stock_standing(nav, pub, ls[k].enid) } catch (er) { stand = null }
             if (st.c.era !== era) return
@@ -524,7 +678,10 @@ async Stoker_look(st, era) {
     }
     this.Stoker_census(st, shelf, radio)
     this.Stoker_cull(st, shelf, radio)
-    let want = st.c.churn_asked || +(st.sc.fresh || 0) < 2
+    // the standing programme grows as stock lands: every look tops the lineup up (cheap
+    //  when full) so the next-up list is deep BEFORE the dial ever needs it.
+    if (radio) this.Radio_lineup_fill(w, radio)
+    let want = st.c.churn_asked || +(st.sc.fresh || 0) < 8
     if (!want) {
         this.Stoker_state(st, 'watching')
         this.Stoker_soon(st, era, 3000)
@@ -541,11 +698,13 @@ async Stoker_look(st, era) {
     }
     st.c.churn_asked = 0
     this.Stoker_state(st, 'churning')
+    let had = {}
+    for (const r of shelf.o({ Record: 1 })) had[r.sc.id] = 1
     let digs = 0
     let landed = 0
-    while (digs < 6 && st.c.era === era) {
+    while (digs < 8 && st.c.era === era) {
         this.Stoker_census(st, shelf, radio)
-        if (+(st.sc.fresh || 0) >= 4) break
+        if (+(st.sc.fresh || 0) >= 20) break
         digs = digs + 1
         let got = await this.Stoker_dig(st, w, shelf, nav)
         if (st.c.era !== era) return
@@ -556,10 +715,16 @@ async Stoker_look(st, era) {
         if (st.c.era !== era) return
     }
     this.Stoker_census(st, shelf, radio)
-    if (landed > 0 || +(st.sc.fresh || 0) >= 2) {
+    if (landed > 0) this.Stoker_mag_draw(st, w, shelf, pub, had)
+    if (landed > 0) {
         delete st.sc.note
         this.Stoker_state(st, 'watching')
         this.Stoker_soon(st, era, 1500)
+    } else if (+(st.sc.fresh || 0) >= 2) {
+        // playable but the wander found nothing NEW — rest a real beat, never a hot
+        //  churn loop (the raised floor would otherwise re-dig every 1.5s look forever)
+        this.Stoker_state(st, 'watching')
+        this.Stoker_soon(st, era, 15000)
     } else {
         st.sc.note = 'the wander came up dry — resting'
         this.Stoker_state(st, 'spent')
@@ -589,7 +754,7 @@ Stoker_census(st, shelf, radio) {
 //     here is memory honesty (32s of opus each), not forgetting.  sc.worn counts it.
 Stoker_cull(st, shelf, radio) {
     let recs = shelf.o({ Record: 1 })
-    let over = recs.length - 24
+    let over = recs.length - 44
     if (over < 1) return
     let heard = (radio && radio.c.heard) ? radio.c.heard : {}
     let playing = radio ? radio.c.rec : null
@@ -606,6 +771,39 @@ Stoker_cull(st, shelf, radio) {
         st.sc.worn = (+(st.sc.worn || 0)) + worn
         st.bump()
     }
+
+},
+// Stoker_mag_draw — the CULTURE trace of a churn (Radio_spec §2.3): every dig round that
+//  landed tracks mints one %Cloud draw of %Card referring rows on the radiostocking %Mag,
+//   so the machine is constantly producing Mag — what got drawn, when, as legible culture
+//    beside the flat stock (the settled shelf stays FLAT by ruling; the Mag REFERS by id).
+//     Ephemeral-shelf law: the draws are GC fodder — keep the last 8, drop the oldest.
+Stoker_mag_draw(st, w, shelf, pub, had) {
+    let sh = this.Ra_home_radiostocking(w, pub)
+    let mag = sh.oai({ Mag: 'Musica' })
+    let di = (st.c.draw_i || 0) + 1
+    st.c.draw_i = di
+    let cl = null
+    for (const r of shelf.o({ Record: 1 })) {
+        if (had[r.sc.id]) continue
+        if (!cl) {
+            cl = mag.i({ Cloud: 1, randomic: 'dig' + di })
+            cl.c.repli_loc = ['Cloud', 'randomic']
+        }
+        let card = cl.i({ Card: 1, id: r.sc.id })
+        if (r.sc.title) card.sc.title = r.sc.title
+        if (r.sc.artist) card.sc.artist = r.sc.artist
+        if (r.sc.album) card.sc.album = r.sc.album
+    }
+    if (!cl) return
+    let clouds = mag.o({ Cloud: 1 })
+    let over = clouds.length - 8
+    let k = 0
+    while (k < over) {
+        mag.drop(clouds[k])
+        k = k + 1
+    }
+    mag.bump()
 
 },
 // one DIG: wander the bases, stock what the wander found, count what is NEW on the shelf.
@@ -646,13 +844,28 @@ async Stoker_dig(st, w, shelf, nav) {
 },
 //#endregion
 
-//#region riffle — rifle through a collection, BLATTING the hand out as Voro cells
-//  %Riffle (mainkey value = shut|open) wears face:'Riffle' + crew:'Riffle' — its own tuner
-//   crew, so the whole spread tucks away in one toggle (make space, then riffle again).
-//  BLAT deals a random hand of %Riff cards — REFERRING particles (the identity law: id +
-//   display, never a second %Record impersonating the holding) — each wearing stuff:1 so the
-//    glass seeds a CELL per card.  The rec ref rides card.c.rec for the audition (Radio_tune);
-//     deal-state (the dealt set, the crate key) rides .c only.  A card ▶ plays THAT record.
+//#region riffle — rifle through a collection: the DISPLAY-SYSTEM deck
+//  %Riffle (mainkey value = shut|open) wears face:'Riffle' + crew:'Riffle'.  The deck deals
+//   %Riff CARDS — each its own CELL in the glass with its own face (face:'Riff'), never rows
+//    inside one sprawling panel: dir cards open folders, track cards audition (▶ = tune).
+//     Cards are REFERRING particles (the identity law: id|path + display scalars, never a
+//      second %Record impersonating a holding).
+//  THE INTERACTION (reimagined — the human: "deal|sweep is feckin weird"):
+//   • a CRATE CHIP opens a crate, always a fresh spread (Riffle_blat).
+//   • a FOLDER card (dir or '..') NAVIGATES (Riffle_enter) — no click-through-four-levels tax.
+//   • ONE button, FLIP (Riffle_flip): replace the track hand with the next random handful,
+//      the dir/'..' cards staying put; exhausting the pool reshuffles — a riffle never dead-ends.
+//   • CLOSE (Riffle_close, the ✕ by the title) shuts the deck.
+//  DEEP BY DEFAULT (the human: "can we please see the WHOLE testsounds/"): MY crate's track
+//   hand draws from the ENTIRE SUBTREE below the current folder (Riffle_paths — a bounded BFS),
+//    so a nested album four folders down is one flip away, not four clicks.  Dir cards still
+//     deal one level (alphabetical, cap 12) for SCOPING the deep draw.  sc.tracks is the honest
+//      subtree total ("128 tracks below"); a clipped walk says so.
+//  A FRIEND's crate is their %MusuThem mirror (the live Repli fill): flat record hand, ▶
+//   auditions the mirror record itself; flip replaces its hand too.  Deal-state, the deep path
+//    cache, and PATHS ride .c only (paths carry commas; browsing is viewer furniture) — sc holds
+//     only clean display scalars.  An unstocked track stocks on demand at ▶ (Riffle_tune:
+//      Ra_stock_one, then the radio plays it NOW).
 Riffle_ensure(w) {
     let ri = w.o({ Riffle: 1 })[0]
     if (!ri) {
@@ -661,6 +874,80 @@ Riffle_ensure(w) {
     }
     ri.c.w = w
     return ri
+
+},
+// every card is minted here: face:'Riff' makes it a faced cell of its own, crew Riffle tucks
+//  the whole spread behind one tuner toggle.
+Riffle_card(ri, sc) {
+    let card = ri.i(Object.assign({ face: 'Riff', crew: 'Riffle' }, sc))
+    card.c.up = ri
+    return card
+
+},
+// split a share-rooted path into the stoker's (base, rest) discipline: the first segment is
+//  the base when the path nests — so metadata parsing and the radiostock card's base/path
+//   fields match what a dig of the same file would have minted (one enid economy throughout).
+Riffle_base_split(p) {
+    let segs = String(p || '').split('/').filter(s => s.length)
+    if (segs.length > 1) return { base: segs[0], rest: segs.slice(1).join('/') }
+    return { base: '', rest: segs.join('/') }
+
+},
+// Riffle_meta — display metadata for a DEEP track path.  The last segment is the filename; if
+//  its stem carries ' - ' it is the flat "NN Artist - Title" shape (parse the filename alone);
+//   otherwise it is the nested "Artist/Album/NN Title" shape (parse the last THREE segments, so
+//    the artist/album come off the FOLDERS the file sits under).  Crate_meta_from_path does both.
+Riffle_meta(p) {
+    let segs = String(p || '').split('/').filter(s => s.length)
+    let file = segs.length ? segs[segs.length - 1] : String(p || '')
+    let dot = file.lastIndexOf('.')
+    let stem = (dot < 0) ? file : file.slice(0, dot)
+    if (stem.includes(' - ')) return this.Crate_meta_from_path(file)
+    return this.Crate_meta_from_path(segs.slice(-3).join('/'))
+
+},
+// Riffle_paths — the DEEP walk: a bounded breadth-first sweep of the whole subtree below `rel`,
+//  collecting every audio file's SHARE-ROOTED path (so a card's c.path stocks the same as a dig
+//   would).  Noise dirs (dotfiles, node_modules) never descend.  Bounded by construction — at
+//    most 512 directories visited and 3000 paths kept — so even a giant share answers a hand
+//     without enumerating forever; clipped:1 tells the face the walk hit a cap.
+async Riffle_paths(nav, rel) {
+    let paths = []
+    let queue = [String(rel || '')]
+    let seen = 0
+    let clipped = 0
+    while (queue.length) {
+        if (seen >= 512) { clipped = 1; break }
+        let cur = queue.shift()
+        seen = seen + 1
+        let dl = null
+        try { dl = await nav.dir_at(cur) } catch (er) { dl = null }
+        if (!dl) continue
+        await dl.expand()
+        for (const f of dl.files) {
+            let nm = String(f.name || '')
+            if (!this.Crate_is_audio(this.Crate_ext(nm))) continue
+            paths.push(cur ? (cur + '/' + nm) : nm)
+        }
+        if (paths.length >= 3000) { clipped = 1; break }
+        for (const d of dl.directories) {
+            let dn = String(d.name || '')
+            if (dn && dn[0] !== '.' && dn !== 'node_modules') queue.push(cur ? (cur + '/' + dn) : dn)
+        }
+    }
+    if (paths.length > 3000) paths = paths.slice(0, 3000)
+    return { paths: paths, dirs_seen: seen, clipped: clipped }
+
+},
+// Riffle_deep_ensure — the cached subtree pool for the current folder.  Recomputed only when the
+//  deck's path moved (Riffle_enter nulls the cache; opening a crate nulls it on a switch); a flip
+//   at the same folder reuses the pool.  Rides ri.c (paths carry commas — never sc).
+async Riffle_deep_ensure(ri, nav) {
+    let rel = ri.c.path || ''
+    if (ri.c.deep && ri.c.deep.key === rel) return ri.c.deep
+    let deep = await this.Riffle_paths(nav, rel)
+    ri.c.deep = { key: rel, paths: deep.paths, clipped: deep.clipped }
+    return ri.c.deep
 
 },
 // the collections one can rifle: MY crate + every friend crate standing (a %MusuThem home
@@ -682,10 +969,10 @@ Riffle_homes(w) {
     return out
 
 },
-// Riffle_blat — deal a hand: up to 6 random not-yet-dealt records from the chosen crate become
-//  %Riff cards.  Switching crates sweeps the old spread first; exhausting a crate reshuffles
-//   (the dealt set clears) — a riffle never dead-ends.
-Riffle_blat(ri, key) {
+// Riffle_blat — OPEN the chosen crate, always a fresh spread.  'mine' deals the current folder
+//  whole (dir cards + a deep track hand); a friend key deals a flat hand off their mirror shelf.
+//   Switching crates resets the walk (path, deep cache, dealt-set) so the new crate opens clean.
+async Riffle_blat(ri, key) {
     let w = ri.c.w
     let homes = this.Riffle_homes(w)
     let home = null
@@ -694,12 +981,93 @@ Riffle_blat(ri, key) {
     }
     if (!home) home = homes[0]
     if (!home) return
-    if (ri.c.crate_key && ri.c.crate_key !== home.key) this.Riffle_clear(ri)
+    if (ri.c.crate_key !== home.key) {
+        for (const card of ri.o({ Riff: 1 })) ri.drop(card)
+        ri.c.dealt = {}
+        ri.c.path = ''
+        ri.c.deep = null
+    }
     ri.c.crate_key = home.key
     ri.sc.Riffle = 'open'
     ri.sc.crate = this.Radio_clean(home.name)
+    if (home.key === 'mine') {
+        await this.Riffle_deal_dir(ri)
+    } else {
+        ri.c.dealt = {}
+        this.Riffle_deal_shelf(ri, home)
+    }
+    ri.sc.out = ri.o({ Riff: 1 }).length
+    ri.bump()
+
+},
+// Riffle_flip — the ONE action: replace the track hand with the next random handful, the dir
+//  and '..' cards staying put.  MY crate re-draws from the deep subtree pool; a friend crate
+//   re-draws from its mirror shelf.  The dealt-set persists across flips (each flip a fresh
+//    handful) and reshuffles when exhausted — a riffle never dead-ends.
+async Riffle_flip(ri) {
+    let w = ri.c.w
+    if (ri.c.crate_key && ri.c.crate_key !== 'mine') {
+        let home = null
+        for (const h of this.Riffle_homes(w)) {
+            if (h.key === ri.c.crate_key) home = h
+        }
+        if (home) this.Riffle_deal_shelf(ri, home)
+        ri.sc.out = ri.o({ Riff: 1 }).length
+        ri.bump()
+        return
+    }
+    let nav = this.Crate_nav ? this.Crate_nav() : null
+    if (nav) await this.Riffle_deep_ensure(ri, nav)
+    this.Riffle_deal_deep(ri)
+    ri.sc.out = ri.o({ Riff: 1 }).length
+    ri.bump()
+
+},
+// drop ONLY the track cards (sc.Riff === 1 — dir/'..' cards stay), then deal up to 6 fresh
+//  undealt tracks from the deep subtree pool; reshuffle on exhaustion.  sc.tracks carries the
+//   honest subtree total.
+Riffle_deal_deep(ri) {
+    for (const card of ri.o({ Riff: 1 })) {
+        if (card.sc.Riff === 1 || card.sc.Riff === '1') ri.drop(card)
+    }
     if (!ri.c.dealt) ri.c.dealt = {}
+    let all = (ri.c.deep && ri.c.deep.paths) || []
+    ri.sc.tracks = String(all.length)
+    let pool = []
+    for (const p of all) {
+        if (!ri.c.dealt[p]) pool.push(p)
+    }
+    if (!pool.length && all.length) {
+        ri.c.dealt = {}
+        pool = all.slice()
+    }
+    let dealt = 0
+    while (dealt < 6 && pool.length) {
+        let k = this.Ra_rand(ri.c.w, pool.length)
+        let p = pool.splice(k, 1)[0]
+        ri.c.dealt[p] = 1
+        let meta = this.Riffle_meta(p)
+        let last = String(p).split('/').pop()
+        let card = this.Riffle_card(ri, { Riff: 1 })
+        card.c.path = p
+        card.sc.title = this.Radio_clean(meta.title || last)
+        let artist = this.Radio_clean(meta.artist || '')
+        if (artist) card.sc.artist = artist
+        dealt = dealt + 1
+    }
+
+},
+// the flat hand off a shelf of standing %Records (friend crates): REPLACE the track hand (drop
+//  only track cards), the dealt-set persisting across flips; reshuffle on exhaustion.
+Riffle_deal_shelf(ri, home) {
+    for (const card of ri.o({ Riff: 1 })) {
+        if (card.sc.Riff === 1 || card.sc.Riff === '1') ri.drop(card)
+    }
+    if (!ri.c.dealt) ri.c.dealt = {}
+    delete ri.sc.at
+    delete ri.sc.folders
     let all = home.shelf.o({ Record: 1 })
+    ri.sc.tracks = String(all.length)
     let recs = []
     for (const r of all) {
         if (!ri.c.dealt[r.sc.id]) recs.push(r)
@@ -710,28 +1078,137 @@ Riffle_blat(ri, key) {
     }
     let dealt = 0
     while (dealt < 6 && recs.length) {
-        let k = Math.floor(Math.random() * recs.length)
+        let k = this.Ra_rand(ri.c.w, recs.length)
         let rec = recs.splice(k, 1)[0]
         ri.c.dealt[rec.sc.id] = 1
-        let card = ri.i({ Riff: 1, id: rec.sc.id, stuff: 1, crew: 'Riffle' })
-        card.c.up = ri
+        let card = this.Riffle_card(ri, { Riff: 1, id: rec.sc.id })
         card.c.rec = rec
         card.sc.title = this.Radio_clean(rec.sc.title || rec.sc.id)
         let artist = this.Radio_clean(rec.sc.artist || '')
         if (artist) card.sc.artist = artist
         dealt = dealt + 1
     }
+
+},
+// one FOLDER of the share as SCOPING cells: '..' + every subdir (alphabetical, capped 12 —
+//  sc.folders carries the honest total) — plus a DEEP track hand drawn from the whole subtree
+//   below here (Riffle_deep_ensure).  Noise dirs (dotfiles, node_modules) never deal — a share
+//    root is often a working tree; the riffle is for MUSIC.  Always a fresh spread.
+async Riffle_deal_dir(ri) {
+    let nav = this.Crate_nav ? this.Crate_nav() : null
+    if (!nav) {
+        ri.sc.note = 'no share granted yet'
+        return
+    }
+    delete ri.sc.note
+    let rel = ri.c.path || ''
+    let dl = null
+    try { dl = await nav.dir_at(rel) } catch (er) { dl = null }
+    if (!dl && rel) {
+        ri.c.path = ''
+        ri.c.deep = null
+        rel = ''
+        try { dl = await nav.dir_at('') } catch (er) { dl = null }
+    }
+    if (!dl) {
+        ri.sc.note = 'the share did not answer'
+        return
+    }
+    await dl.expand()
+    for (const card of ri.o({ Riff: 1 })) ri.drop(card)
+    ri.c.dealt = {}
+    let segs = rel.split('/').filter(s => s.length)
+    ri.sc.at = this.Radio_clean(segs.length ? segs.slice(-2).join(' / ') : 'the share')
+    if (segs.length) {
+        let up = this.Riffle_card(ri, { Riff: 'up' })
+        up.c.path = segs.slice(0, -1).join('/')
+        up.sc.title = '..'
+    }
+    let dirs = []
+    for (const d of dl.directories) {
+        let nm = String(d.name || '')
+        if (!nm || nm[0] === '.' || nm === 'node_modules') continue
+        dirs.push(nm)
+    }
+    dirs.sort()
+    ri.sc.folders = String(dirs.length)
+    let di = 0
+    while (di < dirs.length && di < 12) {
+        let nm = dirs[di]
+        let card = this.Riffle_card(ri, { Riff: 'dir' })
+        card.c.path = rel ? (rel + '/' + nm) : nm
+        card.sc.title = this.Radio_clean(nm)
+        di = di + 1
+    }
+    let deep = await this.Riffle_deep_ensure(ri, nav)
+    if (deep.clipped) ri.sc.note = 'clipped at 3000 — step into a folder'
+    this.Riffle_deal_deep(ri)
+
+},
+// enter a folder card (a dir or the '..'): move the deck's path, drop the deep cache so the new
+//  folder's subtree recomputes, and re-deal the level whole.
+async Riffle_enter(card) {
+    let ri = card.c.up
+    if (!ri) return
+    ri.c.path = String(card.c.path || '')
+    ri.c.deep = null
+    ri.c.dealt = {}
+    await this.Riffle_deal_dir(ri)
     ri.sc.out = ri.o({ Riff: 1 }).length
     ri.bump()
 
 },
-// Riffle_clear — sweep the spread (drop every %Riff): the glass shrinks back in one wave.
-Riffle_clear(ri) {
+// ▶ on a card: a standing record tunes at once; a bare path STOCKS first (the whole Ra
+//  pipeline — read, gain, preview encode — then the radio plays it NOW).  sc.tuning is the
+//   honest wait the face shows; an unreadable source says so instead of pretending.
+async Riffle_tune(card) {
+    let ri = card.c.up
+    let w = ri ? ri.c.w : null
+    let radio = w ? w.o({ Radio: 1 })[0] : null
+    if (!radio) return
+    if (card.c.rec) {
+        this.Radio_tune(radio, card.c.rec)
+        return
+    }
+    if (!card.c.path) return
+    let nav = this.Crate_nav ? this.Crate_nav() : null
+    if (!nav) return
+    card.sc.tuning = 1
+    card.bump()
+    let pub = this.Radio_pub(w) || 'me'
+    let shelf = this.Ra_home_self(w, pub)
+    let bs = this.Riffle_base_split(card.c.path)
+    let got = null
+    try { got = await this.Ra_stock_one(w, shelf, nav, bs.base, bs.rest) } catch (er) { got = null }
+    delete card.sc.tuning
+    let rec = got && got.id ? shelf.o({ Record: 1, id: got.id })[0] : null
+    if (rec) {
+        card.c.rec = rec
+        this.Radio_tune(radio, rec)
+    } else {
+        card.sc.note = 'unreadable'
+    }
+    card.bump()
+
+},
+// Riffle_close — shut the deck (drop every %Riff, forget the walk): the glass shrinks back in
+//  one wave.  The ✕ by the title calls this.
+Riffle_close(ri) {
     for (const card of ri.o({ Riff: 1 })) ri.drop(card)
     ri.c.dealt = {}
+    ri.c.deep = null
     delete ri.sc.out
+    delete ri.sc.at
+    delete ri.sc.folders
+    delete ri.sc.tracks
+    delete ri.sc.note
     ri.sc.Riffle = 'shut'
     ri.bump()
+
+},
+// Riffle_clear — kept as an alias so any older caller (or an external verb) still resolves.
+Riffle_clear(ri) {
+    this.Riffle_close(ri)
 
 },
 // Radio_tune — the riffle's audition: play THIS record now.  The chosen-record skip: the pick
@@ -741,6 +1218,18 @@ Radio_tune(radio, rec) {
     if (!rec) return
     radio.c.tune_rec = rec
     this.Radio_skip(radio)
+
+},
+// Radio_mag_pop — pop a record into MY pocket zine (the 'Faves' mag): the live wrapper that
+//  resolves nav + identity for Musica_pop.  The mag berths beside the music
+//   (.jamsend/berth/<me>/Faves — documents travel WITH the collection).
+async Radio_mag_pop(w, rec) {
+    let nav = this.Crate_nav ? this.Crate_nav() : null
+    if (!nav || !rec) return false
+    let pub = this.Radio_pub(w) || 'me'
+    if (typeof this.Musica_pop !== 'function') return false
+    await this.Musica_pop(nav, '', String(pub), 'Faves', rec)
+    return true
 },
 //#endregion
 

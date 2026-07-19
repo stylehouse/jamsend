@@ -375,8 +375,12 @@ Peeroleum_send(w, frame):
     //        stops beaconing and drops off the editor's roster though it's still alive (its pings ride the
     //         off-think keepalive).  As a beacon it's self-healing: the relay ws is reliable+ordered, so
     //          first-contact still lands and a lost beat is replaced ~15s later — app-level acks buy
-    //           nothing.  Ephemeral lets the off-think keepalive emit it, so an idle runner stays visible.)
-    let ephemeral = (h.type === 'ack' || h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase' || h.type === 'advertise')
+    //           nothing.  Ephemeral lets the off-think keepalive emit it, so an idle runner stays visible.
+    //            swarm_hi (the rebirth greeting) joins them for a THIRD reason: it must dodge the
+    //             unemit dedup — a restarted peer re-uses seq numbers per type, and the greeting that
+    //              ANNOUNCES the restart cannot itself be the frame the stale history swallows.)
+    let ephemeral = (h.type === 'ack' || h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase')
+    ephemeral = ephemeral || h.type === 'advertise' || h.type === 'swarm_hi'
     if (pier && !ephemeral) {
         // a binary frame records body_hash + body_len on its emit so the snap shows
         //  "a test_binary of N bytes, hash X, sent" (the body itself rides off-snap on the frame).
@@ -469,7 +473,7 @@ async Peeroleum_deliver(w, frame):
     //      endless wedge (the 48s).  advertise joins them so a beacon never books/acks either — and the
     //       feebly_ponder is safe because advertise is editor-inbound only (runners send it to:'editor';
     //        the editor has no Story drive to re-wedge), and it nudges Lies_aim to refresh the roster Brink.
-    if (h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase' || h.type === 'advertise') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
+    if (h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase' || h.type === 'advertise' || h.type === 'swarm_hi') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
     // The inbox is a serial %req drain: a booked frame is a %req:unemit (discriminated by the sender's
     //  per-Pier seq) and inbox.do() runs each unemit-req's do_fn (req_unemit) one at a time, in arrival
     //   order, awaiting each — that IS the serial async drain, so the hand-rolled %queued/%handling lock
@@ -492,7 +496,19 @@ async Peeroleum_deliver(w, frame):
     let reliable = conn?.reliable !== false   // default reliable; only an explicit false engages inseq
     let seq = Number(h.seq)
     if (reliable || !Number.isFinite(seq)) {   // reliable carrier, or a frame with no seq → book straight, never hold
-        H.Peeroleum_book_unemit(inbox, w, pier, frame); await inbox.do(); H.feebly_ponder(); return
+        let ureq = H.Peeroleum_book_unemit(inbox, w, pier, frame)
+        if (ureq.sc.finished) {
+            // reused-seq collision: this (seq,type) already served a PREVIOUS incarnation (or the
+            //  transport re-delivered a served frame).  Silence here was the 20s wormhole mute —
+            //   RE-ACK so the sender's ack-gated retry stands down; the boot-epoch reset (ping-borne
+            //    Lies_pong / the swarm channel's swarm_hi) is what re-opens a reborn peer's stream.
+            let me = pier.c.up%name
+            H.Peeroleum_send(w, {header:{type:'ack', from:me, to:pier%pub, ack:h.seq}})
+            console.warn(`🛰⚠ reused-seq collision seq=${h.seq} type=${h.type} from=${h.from} — re-acked, not re-dispatched (stale inbox history; a reborn peer wants the epoch reset)`)
+            H.feebly_ponder()
+            return
+        }
+        await inbox.do(); H.feebly_ponder(); return
     }
     // ── inbound seq discipline (Reliable.g: inseq_admit) — LOSSY carriers only ──
     pier.c.inseq = pier.c.inseq || {last: 0, buffered: []}

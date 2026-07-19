@@ -27,12 +27,37 @@
         let friends: any[] = []
         try {
             if (self && typeof H?.Swarm_peering === 'function') {
-                friends = ((H.Swarm_peering(self)?.o({ Pier: 1 }) ?? []) as any[]).map((p: any) => ({
-                    name: String(p.sc.friendly || String(p.sc.pub).slice(0, 8)),
-                    music: !!p.o({ Grant: 'Music' })[0],
-                    records: p.o({ IveGot: 1, by: 'records' })[0]?.sc?.count,
-                    here: !!p.c?.heard_at && Date.now() - p.c.heard_at < 12000,
-                }))
+                const rw = (H as any)?.c?.radio_w
+                const playing = !!rw?.o?.({ Radio: 1 })?.[0]?.c?.rec
+                friends = ((H.Swarm_peering(self)?.o({ Pier: 1 }) ?? []) as any[]).map((p: any) => {
+                    // the latest suggestion FROM them (by === their pub), with its mirror rec
+                    //  resolved by enid against their crate when the share already carried it —
+                    //   resolvable means ▶ plays it right here.
+                    const sug = (p.o({ Suggest: 1 }) as any[]).filter(s => s.sc.by === String(p.sc.pub)).at(-1)
+                    let sug_rec: any = null
+                    if (sug && rw) {
+                        try {
+                            sug_rec = rw.o({ MusuThem: 1, pub: String(p.sc.pub) })[0]
+                                ?.o({ stock: 1 })?.[0]?.o({ Record: 1, id: String(sug.sc.id) })?.[0] ?? null
+                        } catch { sug_rec = null }
+                    }
+                    // presence in three honest rungs off heard_at (their pulse heartbeat, ~5s):
+                    //  here (<15s ≈ 2 missed pulses) · fading (<45s) · away.  The old 12s window
+                    //   flickered on one dropped pulse — "doesn't seem reliable", the human.
+                    const ago = p.c?.heard_at ? Math.round((Date.now() - p.c.heard_at) / 1000) : null
+                    const rung = ago == null ? 'away' : ago < 15 ? 'here' : ago < 45 ? 'fading' : 'away'
+                    return {
+                        pub: String(p.sc.pub),
+                        name: String(p.sc.friendly || String(p.sc.pub).slice(0, 8)),
+                        music: !!p.o({ Grant: 'Music' })[0],
+                        records: p.o({ IveGot: 1, by: 'records' })[0]?.sc?.count,
+                        rung,
+                        ago,
+                        sug: sug ? { title: sug.sc.title || sug.sc.id, note: sug.sc.note } : null,
+                        sug_rec,
+                        can_suggest: playing && !!p.o({ Grant: 'Music' })[0],
+                    }
+                })
             }
         } catch { friends = [] }
         return {
@@ -50,13 +75,41 @@
     //  and what friends see; the auto-nick is only a stand-in.  Persists via Clustation_friendly.
     let naming = $state(false)
     let name_draft = $state('')
+    let name_err = $state('')
     function name_open() {
         name_draft = face.named && face.name ? face.name : ''
+        name_err = ''
         naming = true
     }
     async function name_save() {
-        const ok = await (H as any)?.Clustation_friendly?.(name_draft)
-        if (ok) naming = false
+        // the save can REFUSE (identity mid-standup) or THROW (persistence hiccup) — both must
+        //  say so here, not strand an open box: the silent-reject was exactly the never-closing
+        //   name box of 2026-07-19.
+        name_err = ''
+        try {
+            const ok = await (H as any)?.Clustation_friendly?.(name_draft)
+            if (ok) naming = false
+            else name_err = 'not saved — try again in a moment'
+        } catch (e) { name_err = 'not saved — ' + String(e).slice(0, 50) }
+    }
+
+    // ── SUGGEST — "you'd love this": send the PLAYING track to a friend, async to their being
+    //  online (Swarm_suggest stashes + re-offers until their suggest_got).  ▶ on an arrived
+    //   suggestion tunes the mirror record the share already carried over.
+    function suggest(pub: string) {
+        try {
+            const w = (H as any)?.Swarm_station_world?.()
+            const self = (H as any)?.Swarm_live_self?.()
+            const rec = (H as any)?.c?.radio_w?.o?.({ Radio: 1 })?.[0]?.c?.rec
+            if (w && self && rec) (H as any)?.Swarm_suggest?.(w, self, pub, rec, null)
+        } catch {}
+    }
+    function tune_sug(rec: any) {
+        try {
+            const rw = (H as any)?.c?.radio_w
+            const radio = rw?.o?.({ Radio: 1 })?.[0]
+            if (radio && rec) (H as any)?.Radio_tune?.(radio, rec)
+        } catch {}
     }
 </script>
 
@@ -74,6 +127,7 @@
                 onkeydown={(e) => { if (e.key === 'Enter') name_save(); if (e.key === 'Escape') naming = false }} />
             <button class="df-edit" onclick={name_save}>✓</button>
         </div>
+        {#if name_err}<div class="df-note">⚠ {name_err}</div>{/if}
     {:else if face.prepub && !face.named}
         <div class="df-note">✎ name yourself — the name rides your invites</div>
     {/if}
@@ -85,11 +139,26 @@
     {/if}
     {#each face.friends as f}
         <div class="df-friend">
-            <span class="df-dot" class:here={f.here}>●</span>
+            <span class="df-dot" class:here={f.rung === 'here'} class:fading={f.rung === 'fading'}
+                title={f.ago == null ? `${f.name} — not heard this session (their tab is closed or away)` : `${f.name} — heard ${f.ago}s ago (their station's pulse heartbeat)`}>●</span>
             <span class="df-name">{f.name}</span>
             {#if f.music}<span class="df-tag">♪ granted</span>{/if}
             {#if f.records != null}<span class="df-tag dim">{f.records} records</span>{/if}
+            {#if f.can_suggest}
+                <button class="df-edit" onclick={() => suggest(f.pub)}
+                    title="suggest the playing track to {f.name} — lands even if they're away">♪→</button>
+            {/if}
         </div>
+        {#if f.sug}
+            <div class="df-sug">
+                {#if f.sug_rec}
+                    <button class="df-edit" onclick={() => tune_sug(f.sug_rec)} title="play their suggestion">▶</button>
+                {/if}
+                <span class="df-tag">suggests: {f.sug.title}</span>
+                {#if f.sug.note}<span class="df-tag dim">{f.sug.note}</span>{/if}
+                {#if !f.sug_rec}<span class="df-tag dim">arriving with the share…</span>{/if}
+            </div>
+        {/if}
     {/each}
     {#if !face.friends.length && !face.door?.landed}
         <div class="df-note">{face.newborn ? 'you are new here — the invite QR below is how a friend joins you' : 'no friends yet — mint an invite QR in the panel'}</div>
@@ -148,9 +217,14 @@
     }
     .df-invite { font-size: 10px; margin-top: 3px; }
     .df-note { font-size: 9px; opacity: 0.7; font-style: italic; margin-top: 2px; }
-    .df-friend { display: flex; align-items: center; gap: 5px; font-size: 10px; margin-top: 2px; }
-    .df-dot { color: #5a4a5f; font-size: 8px; }
+    /* the friends ARE the app — they read at full size, not as a footnote ("friends list is
+       tiny", the human 2026-07-19) */
+    .df-friend { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-top: 4px; }
+    .df-friend .df-name { font-weight: 600; }
+    .df-sug { display: flex; align-items: center; gap: 4px; font-size: 10px; margin-left: 16px; }
+    .df-dot { color: #5a4a5f; font-size: 10px; }
     .df-dot.here { color: #7fe8bf; text-shadow: 0 0 4px #7fe8bf; }
+    .df-dot.fading { color: #d8b86a; }
     .df-tag { font-size: 8px; color: #b48fc9; }
     .df-tag.dim { opacity: 0.6; }
 </style>

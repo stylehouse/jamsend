@@ -4,8 +4,7 @@ story:SwarmStaple
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.044
-      sample=0.061,at=1784334659
+    TimeTotal:beliefs,avg=0.043
       sample=0.046,at=1784336599
       sample=0.031,at=1784336613
       sample=0.043,at=1784377597
@@ -15,8 +14,8 @@ story:SwarmStaple
       sample=0.044,at=1784377917
       sample=0.044,at=1784377918
       sample=0.04,at=1784377927
+      sample=0.046,at=1784422505
     TimeTotal:step,avg=0.006
-      sample=0.008,at=1784334659
       sample=0.006,at=1784336599
       sample=0.004,at=1784336613
       sample=0.005,at=1784377597
@@ -26,6 +25,7 @@ story:SwarmStaple
       sample=0.006,at=1784377917
       sample=0.006,at=1784377918
       sample=0.005,at=1784377927
+      sample=0.006,at=1784422505
   step,dige:857b7f27f55187b6
   step=2,dige:8c658e1450d254fb
     Assertion:two-selves,sentence:two selves stand — each an Identity owning its Peering page — keys ride .c only

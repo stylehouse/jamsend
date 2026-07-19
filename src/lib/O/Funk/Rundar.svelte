@@ -51,8 +51,13 @@
     let peers: TheC[]  = $state([])
     let run_phase: any = $state(undefined)
     let role           = $state('')
+    let id_role        = $state('')
     let channel_live   = $state(false)
     let now            = $state(Date.now())
+    // what WE are, for the human's eyes: a Big*land page (id_role stamped — sound|word) is the
+    //  APP, not "runner" (grid plumbing named us by our transport role; the human reads the
+    //   page).  An editor stays 'editor' — BigWordland would take that angle when it does.
+    let who = $derived(role === 'editor' ? 'editor' : id_role ? 'app' : (role || 'lies'))
 
     // editor RACK mode: when the suggester stamps lens.sc.rack, this ONE face reads the whole snapped
     //  %Runner roster off w:Lies (1:1 with the %HostedIdentity registry, projected by Lies_runner_roster)
@@ -81,6 +86,7 @@
             peers        = w.o({ channel_peer: 1 }) as TheC[]
             run_phase    = w.c?.run_phase
             role         = (H as any).Lies_role?.(w) ?? ''
+            id_role      = ((H as any).top_House?.()?.c?.id_role as string) ?? ''
             channel_live = !!(H as any).Lies_channel_live?.(w)
             wormhole_state = (w.c?.wormhole_state as string) ?? ''   // remote-Wormhole acquire (runner)
             grant_status   = (w.c?.wormhole_grant_status as string) ?? ''
@@ -272,10 +278,10 @@
     </div>
 {:else}
 <div class="rp">
-    <div class="rp-hd">runner</div>
+    <div class="rp-hd">{who}</div>
     <div class="rp-link rp-{link.cls}" title="endpoint liveness — the ping/pong heartbeat (Lies_heartbeat)">
         <span class="rp-dot">{link.glyph}</span>
-        <span class="rp-role">{role || 'lies'}</span>
+        <span class="rp-role">{who}</span>
         <span class="rp-txt">{link.text}</span>
     </div>
     {#if latest?.state && latest.at && now - latest.at < 5000}

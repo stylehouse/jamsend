@@ -18,14 +18,25 @@
     import { onMount } from "svelte"
     import type { House } from "$lib/O/Housing.svelte"
 
-    let { H, who, audio_fullscreen = false }: {
-        H: House | null, who?: string, audio_fullscreen?: boolean } = $props()
+    let { H, who, audio_fullscreen = false, proactive = false }: {
+        H: House | null, who?: string, audio_fullscreen?: boolean, proactive?: boolean } = $props()
 
     let disk_poll = $state(0)
     let ac_poll   = $state(0)
     let pending_gats: any[] = []
     onMount(() => {
-        const iv = setInterval(() => disk_poll++, 400)
+        const iv = setInterval(() => {
+            disk_poll++
+            // proactive (the music toplevels): don't wait for a hard audio demand — a page whose
+            //  whole point is sound wants its ONE tap up front, so the gate stands until the AC
+            //   is granted.  The gat is created cold here (keep_awake_gat never starts audio);
+            //    the tap wakes it inside the gesture.
+            if (proactive) {
+                if (!H?.c?.musu_gat) { try { (H as any)?.keep_awake_gat?.() } catch {} }
+                const g = H?.c?.musu_gat
+                if (g && !g.AC_ready && !pending_gats.includes(g)) { pending_gats.push(g); ac_poll++ }
+            }
+        }, 400)
         const on_want = (e: any) => {
             const g = e?.detail?.gat
             if (g && !g.AC_ready && !pending_gats.includes(g)) { pending_gats.push(g); ac_poll++ }
@@ -63,6 +74,9 @@
             if (!act?.sc.fn) { share_error = 'wormhole not ready yet — a moment'; opening_share = false; return }
             disk_p = act.sc.fn()                          // requestDirectoryAccess() — same gesture
         }
+        // the full keep-awake pin rides the same gesture (resume + silent source + re-advertise) —
+        //  harmless when the AC is already up, exactly right when this tap is the grant.
+        try { (H as any)?.keep_awake_acquire?.() } catch {}
         try {
             await Promise.all(wakes)
             if (disk_p) await disk_p
@@ -78,19 +92,14 @@
 {#if disk_gated || (ac_wanted && !ac_via_brink)}
     <FaceSucker altitude={77} fullscreen={true}>
         {#snippet content()}
+            <!-- ONE standard gate, no situation talk (the human 2026-07-19: it's either needFSA
+                 or needAC and naming either is noise — a nice app kids can use asks ONCE, warmly).
+                 The tap harvests the gesture: AC wakes always; the folder picker fires ONLY when a
+                 share is actually wanted (disk_gated) — never for a bare audio grant. -->
             <div class="disk-gate">
-                {#if disk_gated}
-                    <h2>{role_label} needs a real folder</h2>
-                    <p>OPFS is disabled while developing — open a shared directory so the
-                        machine reads &amp; writes the real project tree.{#if ac_wanted} The
-                        same tap also starts audio.{/if}</p>
-                {:else}
-                    <h2>{role_label} needs a tap for sound</h2>
-                    <p>The share is already open; audio just needs one gesture to start
-                        (browser autoplay policy).</p>
-                {/if}
+                <h2>one tap to open the music</h2>
                 <button class="big" onclick={open_share} disabled={opening_share}>
-                    {opening_share ? 'opening…' : '📂 open share'}
+                    {opening_share ? 'opening…' : '▶ open'}
                 </button>
                 {#if share_error}<p class="gate-err">{share_error}</p>{/if}
             </div>

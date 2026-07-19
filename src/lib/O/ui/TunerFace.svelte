@@ -26,25 +26,27 @@
     let hidden_n = $derived(crews.filter((c) => c.hidden).length)
 </script>
 
+<!-- a bare census renders NOTHING: "tuner — no crews yet" meant nothing to anyone
+     (the human 2026-07-19); this face only speaks when there is something to show/hide. -->
+{#if crews.length}
 <div class="tf">
-    <div class="tf-title">▦ tuner</div>
+    <div class="tf-title">👁 show / hide</div>
     <div class="tf-list">
         {#each crews as c (c.crew)}
             <button class="tf-crew" class:hid={c.hidden}
                 onclick={() => (H as any)?.Tuner_toggle?.(n, c.crew)}
-                title={c.hidden ? 'show ' + c.crew : 'hide ' + c.crew}>
+                title={c.hidden ? 'show the ' + c.crew + ' cells' : 'tuck the ' + c.crew + ' cells away'}>
                 <span class="tf-box">{c.hidden ? '☐' : '▣'}</span>
                 <span class="tf-name">{c.crew}</span>
                 <span class="tf-count">×{c.count}</span>
             </button>
         {/each}
     </div>
-    {#if !crews.length}
-        <div class="tf-note">no crews yet — the glass is bare</div>
-    {:else if hidden_n > 0}
-        <div class="tf-note">{hidden_n} hidden — space made</div>
+    {#if hidden_n > 0}
+        <div class="tf-note">{hidden_n} tucked away</div>
     {/if}
 </div>
+{/if}
 
 <style>
     .tf {

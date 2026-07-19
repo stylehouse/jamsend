@@ -1,0 +1,39 @@
+story:PereReborn
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.081
+      sample=0.115,at=1784436868
+      sample=0.115,at=1784436869
+      sample=0.115,at=1784436870
+      sample=0.115,at=1784436871
+      sample=0.115,at=1784436872
+      sample=0.048,at=1784436924
+      sample=0.054,at=1784437160
+      sample=0.039,at=1784437214
+      sample=0.044,at=1784437249
+      sample=0.05,at=1784437391
+    TimeTotal:step,avg=0.01
+      sample=0.014,at=1784436868
+      sample=0.014,at=1784436869
+      sample=0.014,at=1784436870
+      sample=0.014,at=1784436871
+      sample=0.014,at=1784436872
+      sample=0.006,at=1784436924
+      sample=0.007,at=1784437160
+      sample=0.005,at=1784437214
+      sample=0.006,at=1784437249
+      sample=0.006,at=1784437391
+  step,dige:f2575951e0b13435
+  step=2,dige:30014df34e4fa645
+  step=3,dige:d51874f218095c23
+  step=4,dige:32ce552b81f72003
+    Assertion:a-reloads-with-its,sentence:A reloads with its seq counter back at one while B still holds the three finished emits it served — the asymmetry stands
+  step=5,dige:87ff658a022e7f18
+    Assertion:a-resends-at-the,sentence:A resends at the reused seqs and B re-acks without re-dispatching — the handler never re-runs yet the emits clear — no silent hang
+  step=6,dige:ac57ed236374f2e6
+  step=7,dige:6a709f24c9d40452
+    Assertion:the-epoch-reset-clears,sentence:the epoch reset clears B stale history — A fresh frames dispatch and ack — the stream is reborn whole
+  step=8,dige:ec389e3ec25856b8

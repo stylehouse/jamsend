@@ -14,7 +14,7 @@
 IMPORT()
     import { Idento, peel } from "$lib/Y.svelte.ts"
     import { mint_grant, verify_grant, grant_to_C, mint_revoke } from "$lib/O/Funk/Grant.ts"
-    import { signHeader } from "$lib/p2p/cluster_trust"
+    import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
 
 //#region self — keys, the account tree, the page
 
@@ -244,6 +244,8 @@ Swarm_deliver(w, ident, prepub, frame):
         let ready = this.Peeroleum_peer_ready(route) || (w.c.station_up && !!this.Peeroleum_carrier(station, w))
         if (!ready) return false
         let seq = this.Pier_next_seq(route)
+        // attach the per-era voucher so the sealed receiver can prove it was US (the relay won't)
+        if (w.c.station_voucher) frame.voucher = w.c.station_voucher
         this.Peeroleum_send(w, { header: { type: frame.kind, from: ident.sc.prepub, to: prepub, seq: seq }, swarm: frame })
         return true
     }
@@ -264,22 +266,53 @@ Swarm_arm(w):
     let hear = async (w2, pier, frame) => {
         let ident = this.Swarm_account_of(w2, frame.header.to)
         if (!ident) return false
-        // PRESENCE, for free: ANY inbound frame from an already-sealed pier stamps heard_at
-        //  (c-side — never snapped, Books untouched).  A stranger stamps nothing — the same
-        //   law as ive_got: gossip never opens a door.  The 'pulse' kind exists ONLY to
-        //    generate this traffic (Swarm_pulse_all); it needs no verb of its own.
         let from = frame.swarm?.page?.prepub
-        if (from) {
-            let sealed = this.Swarm_peering(ident)?.o({ Pier: 1, pub: from })[0]
-            if (sealed) sealed.c.heard_at = Date.now()
+        let sealed = from ? this.Swarm_peering(ident)?.o({ Pier: 1, pub: from })[0] : null
+        // THE VOUCHER GATE — the relay routes on header.to only and never checks header.from,
+        //  so on a LIVE station any socket could forge a sealed friend's prepub.  A frame from a
+        //   SEALED pier must therefore carry a valid per-era voucher signed by the key we imported
+        //    at seal, else it is DEAD here: no heard_at (a spoofer must not warm presence), no
+        //     dispatch.  A stranger (no sealed pier) is ungated — their own credential is checked
+        //      downstream; pier_hello is EXEMPT (it arrives BEFORE the seal, with its Idzeug proof).
+        //       Books never set station_up, so the mail-wire fixtures never see this gate.
+        if (sealed && w2.c.station_up && frame.header.type !== 'pier_hello') {
+            let ok = await this.Swarm_voucher_ok(sealed, from, frame.swarm?.voucher)
+            if (!ok) {
+                this.Swarm_rebuff(ident, 'unvouched_' + frame.header.type, from)
+                return false
+            }
         }
+        // PRESENCE, for free: a VOUCHED (or ungated) inbound frame from an already-sealed pier
+        //  stamps heard_at (c-side — never snapped, Books untouched).  A stranger stamps nothing —
+        //   the same law as ive_got: gossip never opens a door.  The 'pulse' kind exists ONLY to
+        //    generate this traffic (Swarm_pulse_all); it needs no verb of its own.
+        if (sealed) sealed.c.heard_at = Date.now()
         if (frame.header.type === 'pier_hello') await this.Swarm_hello(w2, ident, frame.swarm)
         if (frame.header.type === 'pier_accept') await this.Swarm_accept(w2, ident, frame.swarm)
         if (frame.header.type === 'pier_reject') this.Swarm_rejected(w2, ident, frame.swarm)
         if (frame.header.type === 'ive_got') this.Swarm_ive_got(w2, ident, frame.swarm)
+        if (frame.header.type === 'swarm_hi') this.Swarm_heard_hi(w2, ident, frame)
+        if (frame.header.type === 'suggest') this.Swarm_suggested(w2, ident, frame.swarm)
+        if (frame.header.type === 'suggest_got') this.Swarm_suggest_got(w2, ident, frame.swarm)
         return true
     }
-    for (const kind of ['pier_hello', 'pier_accept', 'pier_reject', 'ive_got', 'pulse']) w.c.on[kind] = hear
+    for (const kind of ['pier_hello', 'pier_accept', 'pier_reject', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got']) w.c.on[kind] = hear
+
+// Swarm_voucher_ok — is this voucher a valid proof the sealed friend `from` sent the frame?
+//  (1) a cache hit — a voucher whose sign we already proved this era — passes without crypto.
+//   (2) otherwise: prepubOf(vh.pub) must equal the claimed sender, vh.pub must equal the pub we
+//    IMPORTED at seal (their %Pier's %Peering page), and the ed25519 signature must verify against
+//     vh.pub.  All three hold ⇒ cache the sign and accept; any fail ⇒ reject (caller rebuffs).
+async Swarm_voucher_ok(sealed, from, vh):
+    if (!vh || !vh.sign || !vh.pub) return false
+    if (sealed.c.voucher_ok && sealed.c.voucher_ok === vh.sign) return true
+    if (prepubOf(vh.pub) !== from) return false
+    let held = sealed.o({ Peering: 1 })[0]?.sc?.pub
+    if (!held || held !== vh.pub) return false
+    let who = await verifyHeader(vh, [vh.pub])
+    if (who !== vh.pub) return false
+    sealed.c.voucher_ok = vh.sign
+    return true
 
 // Swarm_pump — handle an identity's undone mail (a Book's drive calls this each pass; production
 //  hangs it off the transport's inbound). Async — every handler crosses the crypto.
@@ -382,10 +415,28 @@ Swarm_station_up(w, ident):
                 let sign = await signHeader(header, ident.c.keys.key)
                 port.ws?.send(JSON.stringify(Object.assign({}, header, { sign: sign })))
             } catch (e) { console.warn('⨳ station hello failed (relay down?)', e) }
+            // the per-era VOUCHER: the relay authenticates the LINK (the hello above) but ROUTES
+            //  on header.to alone and never checks header.from against the key we sealed, so a
+            //   spoofer on any socket could forge a friend's prepub.  We sign a tiny proof our
+            //    identity key holds this station and attach it to every swarm frame we route; a
+            //     sealed friend re-verifies US against the pub they imported at seal.  One era per
+            //      standup, re-signed on every (re)open so a stale one can't outlive an era change.
+            try {
+                w.c.station_era = w.c.station_era || Date.now()
+                let vh = { control: 'voucher', from: ident.sc.prepub, pub: ident.c.keys.pub, era: w.c.station_era, ts: Date.now() }
+                vh.sign = await signHeader(vh, ident.c.keys.key)
+                w.c.station_voucher = vh
+            } catch (e) { console.warn('⨳ station voucher failed', e) }
+            // the rebirth greeting rides every (re)connect, right behind the hello-bind — same
+            //  socket, ordered, so the relay routes it the moment the bind lands.  Routes first:
+            //   a reconnect may follow a reload that hasn't re-minted them yet.
+            this.Swarm_station_routes(w, ident)
+            this.Swarm_hi_all(w, ident)
         })
     }
     this.Tribunal_activate_websocket(w)
     w.c.station_up = 1
+    this.Swarm_station_routes(w, ident)
     return station
 
 // Swarm_station_pier — promote first-contact into a transport route: the station's %Pier keyed by
@@ -400,6 +451,77 @@ Swarm_station_pier(w, ident, prepub):
     pier.c.up = station
     pier.oai({ Ud: 1 })
     return pier
+
+// Swarm_station_routes — re-mint the transport route for EVERY sealed friendship.  The route
+//  %Pier (+%Ud) was minted only at invite time, so a reloaded tab held friendships it could
+//   neither speak to nor hear (Peeroleum_deliver's no-pier drop swallowed every inbound frame):
+//    the friendship SURVIVED the reload, the link did not.  Idempotent (oai all the way down);
+//     runs at standup and on every socket (re)open.
+Swarm_station_routes(w, ident):
+    let n = 0
+    for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+        if (!pier.sc.pub) continue
+        if (this.Swarm_station_pier(w, ident, String(pier.sc.pub))) n = n + 1
+    }
+    return n
+
+// ── the rebirth greeting (swarm_hi) ─────────────────────────────────────────────────────────
+//  A refreshed tab restarts its per-Pier seq at 1, and the surviving side's inbox still holds
+//   finished %unemit rows for those (seq,type) pairs — every real frame the reborn side sends
+//    books into a finished req and dies undispatched, unacked: the silent post-reload mute
+//     (Cluster_spec's owed reconnect-epoch).  swarm_hi is the cure: an EPHEMERAL frame
+//      (collision-immune by lane — Peeroleum_send/deliver) carrying my station ERA.  A changed
+//       era at the hearer resets the route (Peeroleum_reset_handshake: stream history gone,
+//        %Ud kept) so the reborn peer's frames book fresh.  Sent on every socket (re)open and
+//         whenever a pulse pass finds a friend silent — the link self-heals from EITHER side.
+
+// one greeting to one friend; reply:1 marks an answer (answers are never re-answered).
+Swarm_hi_one(w, ident, prepub, reply):
+    let route = this.Swarm_station_pier(w, ident, prepub)
+    if (!route) return false
+    let station = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
+    if (!w.c.station_up || !this.Peeroleum_carrier(station, w)) return false
+    w.c.station_era = w.c.station_era || Date.now()
+    let hi = { kind: 'swarm_hi', era: w.c.station_era, page: this.Swarm_page(ident) }
+    if (reply) hi.reply = 1
+    // swarm_hi rides Peeroleum_send DIRECTLY (not Swarm_deliver), so carry the voucher itself —
+    //  a sealed friend gates swarm_hi like every other frame (it isn't pier_hello).
+    if (w.c.station_voucher) hi.voucher = w.c.station_voucher
+    let seq = this.Pier_next_seq(route)
+    this.Peeroleum_send(w, { header: { type: 'swarm_hi', from: ident.sc.prepub, to: prepub, seq: seq }, swarm: hi })
+    return true
+
+Swarm_hi_all(w, ident):
+    let n = 0
+    for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+        if (pier.sc.pub && this.Swarm_hi_one(w, ident, String(pier.sc.pub), 0)) n = n + 1
+    }
+    return n
+
+// hear a greeting: sealed friends only (gossip never opens a door — the stranger's hi does
+//  nothing, exactly like a stranger's boast).  Era change = the peer RESTARTED: reset the
+//   route's stream state and clear the want-once cursors (a vanished want must be re-askable
+//    after a rebirth — w.c.ra_wanted would otherwise hold every lost pull as a permanent hole).
+//     A first hi is answered (they learn MY era) and followed by a fresh boast; a reply isn't.
+Swarm_heard_hi(w, ident, frame):
+    let hi = frame.swarm || {}
+    let from = hi.page?.prepub || frame.header.from
+    if (!from) return
+    let sealed = this.Swarm_peering(ident)?.o({ Pier: 1, pub: String(from) })[0]
+    if (!sealed) return
+    let route = this.Swarm_station_pier(w, ident, String(from))
+    if (!route) return
+    if (hi.era && route.c.peer_era && route.c.peer_era !== hi.era) {
+        this.Peeroleum_reset_handshake(route)
+        delete w.c.ra_wanted
+    }
+    if (hi.era) route.c.peer_era = hi.era
+    if (!hi.reply) {
+        this.Swarm_hi_one(w, ident, String(from), 1)
+        this.Swarm_gossip_music(w, ident)
+    }
+    // they are HERE — anything queued for them goes now (the store-and-forward drain)
+    this.Swarm_suggest_resend(w, ident, String(from))
 //#endregion
 
 //#region handshake — live, both online (§6.3)
@@ -565,7 +687,114 @@ Swarm_piers_rehydrate(w, ident):
                 pier.i({ NotGrant: a.not, by: a.by, for: a.for, time: a.time, sign: a.sign })
             }
         }
+        for (const s of (e.suggests || [])) {
+            if (!s?.id || !s?.by) continue
+            let sug = pier.oai({ Suggest: 1, id: String(s.id), by: String(s.by) })
+            sug.c.up = pier
+            if (s.title && !sug.sc.title) sug.sc.title = s.title
+            if (s.artist && !sug.sc.artist) sug.sc.artist = s.artist
+            if (s.note && !sug.sc.note) sug.sc.note = s.note
+            if (s.got) sug.sc.got = 1
+        }
     }
+//#endregion
+
+//#region suggestion — "you'd love this": durable, store-and-forward, async to their being online
+//  A %Suggest is a REFERRING particle (enid + display scalars + note — never a second %Record)
+//   living under the friendship %Pier on BOTH sides and in the pier stash (reload-proof).
+//    Delivery: best-effort NOW over the booked lane, then RE-OFFERED every time the friend's
+//     rebirth greeting arrives (their standup his us), until their suggest_got retires it —
+//      so a suggestion made at midnight lands when they surface at noon, no queue ceremony.
+//       The far side resolves the enid against the share's mirror crate (usually already
+//        there — the husk cast precedes it) and ▶ auditions at once.
+
+// mint + stash + first send.  rec = a standing %Record (mine or a mirror's); note optional.
+Swarm_suggest(w, ident, prepub, rec, note):
+    if (!rec?.sc?.id || !prepub) return false
+    let pier = this.Swarm_peering(ident)?.o({ Pier: 1, pub: String(prepub) })[0]
+    if (!pier) return false
+    let sug = pier.oai({ Suggest: 1, id: String(rec.sc.id), by: String(ident.sc.prepub) })
+    sug.c.up = pier
+    if (rec.sc.title) sug.sc.title = String(rec.sc.title).split(',').join(' ·')
+    if (rec.sc.artist) sug.sc.artist = String(rec.sc.artist).split(',').join(' ·')
+    if (note) sug.sc.note = String(note).split(',').join(' ·').slice(0, 80)
+    sug.bump()
+    this.Swarm_suggest_stash(ident, String(prepub), sug)
+    this.Swarm_suggest_send(w, ident, String(prepub), sug)
+    return true
+
+Swarm_suggest_send(w, ident, prepub, sug):
+    if (sug.sc.got) return false
+    let body = { kind: 'suggest', page: this.Swarm_page(ident), id: String(sug.sc.id) }
+    if (sug.sc.title) body.title = String(sug.sc.title)
+    if (sug.sc.artist) body.artist = String(sug.sc.artist)
+    if (sug.sc.note) body.note = String(sug.sc.note)
+    return this.Swarm_deliver(w, ident, prepub, body)
+
+// re-offer everything they haven't confirmed — called when their hi says they're here.
+Swarm_suggest_resend(w, ident, prepub):
+    let pier = this.Swarm_peering(ident)?.o({ Pier: 1, pub: String(prepub) })[0]
+    if (!pier) return 0
+    let sent = 0
+    for (const sug of pier.o({ Suggest: 1, by: String(ident.sc.prepub) })) {
+        if (sug.sc.got) continue
+        if (this.Swarm_suggest_send(w, ident, String(prepub), sug)) sent = sent + 1
+    }
+    return sent
+
+// hear a suggestion: sealed friends only (a stranger's is a %rebuff, nothing lands).  Mint
+//  the same referring shape under MY pier for them, stash it, confirm with suggest_got.
+Swarm_suggested(w, ident, frame):
+    let from = frame.page?.prepub
+    let pier = from ? this.Swarm_peering(ident)?.o({ Pier: 1, pub: String(from) })[0] : null
+    if (!pier) {
+        this.Swarm_rebuff(ident, 'suggest_stranger', from)
+        return
+    }
+    if (!frame.id) return
+    let sug = pier.oai({ Suggest: 1, id: String(frame.id), by: String(from) })
+    sug.c.up = pier
+    if (frame.title && !sug.sc.title) sug.sc.title = String(frame.title).split(',').join(' ·')
+    if (frame.artist && !sug.sc.artist) sug.sc.artist = String(frame.artist).split(',').join(' ·')
+    if (frame.note && !sug.sc.note) sug.sc.note = String(frame.note).split(',').join(' ·').slice(0, 80)
+    sug.bump()
+    this.Swarm_suggest_stash(ident, String(from), sug)
+    this.Swarm_deliver(w, ident, String(from), { kind: 'suggest_got', page: this.Swarm_page(ident), id: String(frame.id) })
+
+// hear the confirmation: MY suggestion reached them — retire the re-offer, keep the memory.
+Swarm_suggest_got(w, ident, frame):
+    let from = frame.page?.prepub
+    let pier = from ? this.Swarm_peering(ident)?.o({ Pier: 1, pub: String(from) })[0] : null
+    if (!pier || !frame.id) return
+    let sug = pier.o({ Suggest: 1, id: String(frame.id), by: String(ident.sc.prepub) })[0]
+    if (!sug) return
+    sug.sc.got = 1
+    sug.bump()
+    this.Swarm_suggest_stash(ident, String(from), sug)
+
+// the durable lane beside grants/nots in the pier stash: keyed (id, by), capped, got carried.
+Swarm_suggest_stash(ident, prepub, sug):
+    let live = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (!live || live !== ident) return
+    let st = this.top_House().stashed
+    if (!st) return
+    if (!st.Swarm_piers) st.Swarm_piers = {}
+    let mine = st.Swarm_piers[ident.sc.prepub]
+    if (!mine) { mine = {}; st.Swarm_piers[ident.sc.prepub] = mine }
+    let e = mine[prepub]
+    if (!e) { e = { page: { prepub: prepub }, grants: [], nots: [] }; mine[prepub] = e }
+    if (!e.suggests) e.suggests = []
+    let row = { id: String(sug.sc.id), by: String(sug.sc.by) }
+    if (sug.sc.title) row.title = String(sug.sc.title)
+    if (sug.sc.artist) row.artist = String(sug.sc.artist)
+    if (sug.sc.note) row.note = String(sug.sc.note)
+    if (sug.sc.got) row.got = 1
+    let kept = []
+    for (const r of e.suggests) {
+        if (!(r.id === row.id && r.by === row.by)) kept.push(r)
+    }
+    kept.push(row)
+    e.suggests = kept.slice(-24)
 //#endregion
 
 //#region ive got — the reachable-music tally (Radio_todo §9.1c)
@@ -582,7 +811,10 @@ Swarm_piers_rehydrate(w, ident):
 Swarm_music_census(w, ident):
     let records = 0
     let artists = new Set()
-    for (const home of w.o({ MusuSelf: 1, pub: ident.sc.prepub })) {
+    // opt-in census world (w.c.census_w — the live share points it at the RADIO world, where
+    //  the stoker actually shelves): unset = census w itself, the Book behaviour, unchanged.
+    let cw = w.c.census_w || w
+    for (const home of cw.o({ MusuSelf: 1, pub: ident.sc.prepub })) {
         for (const shelf of home.o({ stock: 1 })) {
             for (const r of shelf.o({ Record: 1 })) {
                 records = records + 1
@@ -601,6 +833,11 @@ Swarm_pulse_all(w, ident):
     let sent = 0
     for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
         if (this.Swarm_deliver(w, ident, pier.sc.pub, { kind: 'pulse', page: this.Swarm_page(ident) })) sent = sent + 1
+        // self-heal: a friend we haven't heard for a while gets the rebirth greeting too —
+        //  ephemeral, collision-immune, so it lands even when the booked lane is muted (their
+        //   stale inbox history, our stale one, either way the hi exchange resets the stream).
+        let quiet = !pier.c.heard_at || (Date.now() - pier.c.heard_at) > 15000
+        if (quiet && w.c.station_up) this.Swarm_hi_one(w, ident, String(pier.sc.pub), 0)
     }
     return sent
 
@@ -655,6 +892,129 @@ Swarm_ive_got_tally(w, ident):
         artists = artists + Number(pier.o({ IveGot: 1, by: 'artists' })[0]?.sc?.count || 0)
     }
     return { records: records, artists: artists, piers: piers }
+//#endregion
+
+//#region share — the STANDING music session: what a friendship is FOR
+//  After the seal the music must actually MOVE: my stock is served to every Music-granted
+//   friend, and their casts fill per-friend %MusuThem crates in the RADIO world — the crates
+//    the Riffle browses and the radio's pool dial draws from.  Every wire below is the proven
+//     Repli machinery (the Radiation Books); this region is only the LIVE glue: arm, enroll,
+//      offer, pump.  The pump is a detached era-guarded wall-clock loop OUTSIDE the beliefs
+//       mutex, entering the machine through post_do (the carrier's own seam) so a beat never
+//        overlaps a think and never awaits unbounded inside one.
+
+// Swarm_share_granted — the Repli consent hook: the requester holds a LIVE Music grant on my
+//  page (tombstones override — Swarm_pier_live checks at use, never cached).
+Swarm_share_granted(peer):
+    let me = this.Swarm_live_self ? this.Swarm_live_self() : null
+    let p = me ? this.Swarm_peering(me)?.o({ Pier: 1, pub: String(peer) })[0] : null
+    return !!(p && this.Swarm_pier_live(p, 'Music'))
+
+// Swarm_share_present — the pull's source-liveness hook: only want pages over wires whose
+//  caster has pulsed recently (a want at silence is a permanent ra_wanted hole).
+Swarm_share_present(from):
+    let me = this.Swarm_live_self ? this.Swarm_live_self() : null
+    let p = me ? this.Swarm_peering(me)?.o({ Pier: 1, pub: String(from) })[0] : null
+    return !!(p && p.c.heard_at && (Date.now() - p.c.heard_at) < 20000)
+
+// Swarm_share_up — idempotent: arm Repli on the station world, wire the grant gate + the
+//  mirror conventions, and start the pump.  Needs the radio world standing (top.c.radio_w —
+//   Stoker_ensure stamps it) for the shelves; returns false until it is, callers just re-ask.
+Swarm_share_up(w, ident):
+    if (!w || !ident?.sc?.prepub) return false
+    if (w.c.share_up) return true
+    let rw = this.top_House().c.radio_w
+    if (!rw) return false
+    if (typeof this.Repli_arm !== 'function') return false
+    this.Repli_arm(w)
+    w.c.repli_mirror_pier = String(ident.sc.prepub)   // my addr — the pull's from-address (Ra_restock_beat)
+    w.c.repli_mirror_by_from = 1                       // per-friend crates, keyed by the caster
+    w.c.repli_mirror_w = rw                            // crates mint in the radio world — the glass sees them
+    w.c.census_w = rw                                  // the boast counts the shelf the stoker actually fills
+    w.c.repli_allow = (peer) => this.Swarm_share_granted(peer)
+    w.c.ra_source_live = (from) => this.Swarm_share_present(from)
+    w.c.share_up = 1
+    this.Swarm_share_loop(w, ident)
+    return true
+
+// the pump loop: ~600ms cadence, era-guarded (a re-up cancels the stale chain — the Radio
+//  loop law), each beat a post_do so the req drains ride the mutex like a carrier delivery.
+Swarm_share_loop(w, ident):
+    w.c.share_era = (w.c.share_era || 0) + 1
+    let era = w.c.share_era
+    const tick = () => {
+        if (era !== w.c.share_era || !w.c.share_up) return
+        this.post_do(async () => {
+            if (era !== w.c.share_era) return
+            try { await this.Swarm_share_beat(w, ident) } catch (er) { console.warn('⨳ share beat', er) }
+        })
+        setTimeout(tick, 600)
+    }
+    setTimeout(tick, 600)
+
+// one beat, all idempotent + bounded: enroll every granted friend both ways, husk-offer my
+//  stock when it (or the peer's incarnation) changed, drain the Peering reqs (awaitbufs +
+//   parked wants), feed the transcoder, and keep every friend crate's previews warming.
+async Swarm_share_beat(w, ident):
+    let rw = this.top_House().c.radio_w
+    if (!rw) return
+    let me = String(ident.sc.prepub)
+    let stock = this.Ra_home_self(rw, me)
+    for (const p of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+        if (!p.sc.pub) continue
+        if (!this.Swarm_pier_live(p, 'Music')) continue
+        let pub = String(p.sc.pub)
+        let route = this.Swarm_station_pier(w, ident, pub)
+        if (!route) continue
+        if (!route.c.repli_src) this.Repli_register_caster(w, route, stock)
+        if (!route.c.repli_rx) this.Repli_register_rx(w, route)
+        // OFFER on change: stock grew, or the peer was reborn (offered_mark carries both).
+        //  Presence-gated — husking at silence is litter.  Repli_merge dedups the far side,
+        //   so a re-offer after rebirth is safe, just not free.
+        if (!p.c.heard_at || (Date.now() - p.c.heard_at) >= 20000) continue
+        let n = stock.o({ Record: 1 }).length
+        let mark = String(w.c.station_era || 0) + ':' + String(route.c.peer_era || 0) + ':' + n
+        if (route.c.offered_mark !== mark) {
+            route.c.offered_mark = mark
+            for (const rec of stock.o({ Record: 1 })) await this.Repli_offer(w, route, me, pub, rec)
+        }
+    }
+    for (const peering of w.o({ Peering: 1 })) await peering.do()
+    if (typeof this.Ra_transcode_pump === 'function') await this.Ra_transcode_pump(w)
+    for (const home of rw.o({ MusuThem: 1 })) {
+        if (!home.sc.pub) continue
+        await this.Ra_restock_beat(w, this.Ra_home_them(rw, String(home.sc.pub)), 2)
+    }
+    // ── the FULL-LENGTH leg: the radio is playing a FRIEND's record — keep the wire ahead of
+    //  the REAL playhead (never the Books' simulated cursor: Ra_term_stream_beat advances its
+    //   own head, and a second playhead racing the AudioContext would lie).  Want the next
+    //    missing pages inside a ~32s ahead-window from the radio's live position; an ask past
+    //     the preview PARKS at the caster and ignites its transcode (served back by its own
+    //      Ra_transcode_pump as the chunks land).  Want-once rides ra_wanted — cleared by the
+    //       rebirth reset like every other pull, so a lost want is re-askable.
+    let radio = rw.o({ Radio: 1 })[0]
+    let playing = radio ? radio.c.rec : null
+    if (playing && playing.c.from && playing.c.rx && playing.sc.id) {
+        let seg_s = +(playing.sc.seg_secs || 2)
+        let head = Math.floor((+(radio.sc.at || 0)) / seg_s)
+        let total = +(playing.sc.total || 0)
+        let PAGE = +(w.c.repli_page || 2)
+        let map = this.Ra_chunk_map(playing)
+        w.c.ra_wanted = w.c.ra_wanted || {}
+        let asked = 0
+        let off = head - (head % PAGE)
+        while (off < total && off < head + 16 && asked < 3) {
+            if (map[off] == null) {
+                let key = String(playing.sc.id) + ':' + off
+                if (!w.c.ra_wanted[key]) {
+                    w.c.ra_wanted[key] = 1
+                    await this.Repli_want_next(w, playing.c.rx, me, String(playing.c.from), String(playing.sc.id), 'opus', off)
+                    asked = asked + 1
+                }
+            }
+            off = off + PAGE
+        }
+    }
 //#endregion
 
 //#region revocation — the only way a grant ends (§6.4)

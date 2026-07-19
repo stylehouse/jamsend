@@ -693,3 +693,901 @@ HISTORICITY: these are the "on this day" build-diary entries that used to accret
       particles + generic Repli → four owner rulings folded (preview CONST 32, radiostock
        `<ts>-<pub>-<enid>`, no friend cache, dead-source drop) → re-recorded 2026-07-11.
         Session-level history lives in git (`d26ce069` "Ra Repli", `4add5244`), not here.
+
+
+---
+
+# 2026-07-19 — the whole Radio_todo §0 rolling brief, moved here on the trim
+
+The human (2026-07-19): the todo carried too much noisy detail.  Everything below is the §0
+ body as it stood — the robusticise marathon blocks (uncommitted work) AND the landed dated
+  rungs (2026-07-13..17, all DONE/green — their remainders live on as the §0 owed ledger).
+   Verbatim, nothing rewritten.
+
+**THE ROBUSTICISE ROUND (2026-07-19 morning, post-dawn — UNCOMMITTED).**  The human's sweep:
+ "sanity check and make good allllll things" + hours of budget.  What landed (all compiled:
+  LocalGen ×6 ghosts, bundle-proof ×8 faces; Swarmation GREEN 1.0 post-change):
+
+ - **THE SHARE IS WIRED LIVE** (the dawn brief's "one remaining seam").  `Swarm_share_up/`
+    `_beat/_loop` (Swarm.g share region): after station standup + radio world standing
+     (`top.c.radio_w`, stamped by Stoker_ensure), Repli arms on w:Swarm — my stock casts husks
+      to every Music-granted friend (offer on stock-growth|rebirth, presence-gated), their
+       casts fill **per-friend %MusuThem crates IN THE RADIO WORLD** (`repli_mirror_by_from`
+        + `repli_mirror_w`, opt-in Repli extensions — Books byte-identical), previews warm
+         via Ra_restock_beat, parked wants feed Ra_transcode_pump.  The pump is a 600ms
+          era-guarded post_do loop (the carrier's own mutex seam).  InvitePanel arms it.
+     The radio DIALS THE POOL: Radio_dial_pool joins friend-crate records (first chunk landed)
+      into the dial, coin-flip vs my fresh pick; RadioFace says "plays the pool — N of yours
+       + M from friends" honestly.  BUG FIXED under it: Radio_pub read c.keys.prepub (ALWAYS
+        undefined — c.keys is {pub,key}); now sc.prepub, so the live shelf keys by identity.
+ - **RECONNECT ROBUSTICISED** (the "either end refresh" complaint).  Two-layer fix:
+    (1) `Swarm_station_routes` re-mints the transport %Pier (+%Ud) for every sealed friendship
+     at standup + every socket (re)open — the route was minted ONLY at invite time, so a
+      reloaded tab could neither send (route miss) nor hear (no-pier drop) forever.
+    (2) **swarm_hi, the rebirth greeting**: a new EPHEMERAL frame kind (Peeroleum send+deliver
+     lanes — collision-immune by construction) carrying my station era.  A changed era at the
+      hearer = the peer restarted → `Peeroleum_reset_handshake` on the route (inbox unemit
+       history gone — the (seq,type)-collision silent mute killed; %Ud kept) + `ra_wanted`
+        cursors cleared (lost pulls re-askable).  Sent at (re)open + whenever a pulse pass
+         finds a friend silent >15s — self-healing from EITHER side, no epoch ceremony.
+ - **%Suggest — async recommendation** ("suggest a track, async to them being online").
+    Durable referring particle (enid + title/artist/note) under the friendship %Pier BOTH
+     sides + a `suggests` lane in the pier stash (reload-proof).  Delivery: booked lane now +
+      re-offered on every arriving hi until their `suggest_got` retires it — store-and-forward
+       by construction.  DoorFace: ♪→ per friend suggests the PLAYING track; an arrived
+        suggestion shows under the friend row with ▶ once the share's mirror carries the enid.
+ - **Mags: the pocket zine.**  `Musica_pop` (Heist.g) — append-only hand-curated %Card into a
+    named Berth mag under %Cloud,randomic:'chosen'; `Radio_mag_pop` wraps it live ('Faves',
+     berthed at .jamsend/berth/<me>/Faves).  ★ on RadioFace (playing) + RiffFace (standing rec).
+ - **RIFFLE REWORKED as the display system** ("split the sprawl across things that become
+    nodes").  %Riff cards now wear their OWN face (RiffFace, glass_kinds 'Riff') — the deck
+     face (RiffleFace) shrank to crates + location + deal/sweep, plain words (no 'blat' in
+      UI).  MY crate walks the REAL share BY FOLDER on the nav contract (one dir_at/expand
+       per level, dirs+files split — thousands-safe): '..' + dir cards (alphabetical, cap 12,
+        sc.folders honest total, dot/node_modules skipped) + a 6-track random hand; ▶ on an
+         unstocked path = Riffle_tune → Ra_stock_one → Radio_tune (the (base,rest) split
+          matches the stoker's discipline so enids agree).  Friend crates stay flat mirror
+           hands.
+ - **NAMING FIXED + MOVED TO THE DOOR.**  Root cause of "never closes/never persists":
+    `thang_add` THROWS on an existing tag; Clustation_friendly/pin/adopt re-added under
+     already-stored tags → the save rejected mid-await.  New `thang_put` upsert (Thangs.svelte);
+      all three switched.  The ?Iz→?I swap now fires the moment redeem lands (was gated on an
+       8s seal-watch — a late seal stranded ?Iz and a reload re-presented a spent blob).
+        InvitePanel now ASKS THE NAME FIRST (namer snippet at the identity line + the landing
+         face; auto-join GATES on named — the newborn answers one question, then the door
+          handles the invite by itself).  DoorFace ✎ stays as rename, with honest error notes.
+ - **TUNER FIXED** ("no crews yet"): Cyto.svelte:376 looked for the %Tuner only under
+    w.c.client_w — a Story-railed commission points that at w:Story while Tuner_ensure mints
+     under the RUN world, so the census computed every scan and was thrown away.  Lookup
+      widened to the Scannable + its worlds; census/mute/cyto_w all heal from the one seam.
+
+ **GATES STILL OWED (fingers-proofs — two live tabs, one human):** name-at-door round-trip;
+  QR seal → stock husks appear in the friend's riffle crate → preview plays → radio pool
+   dials it; refresh EITHER tab mid-session → dots re-green within ~15s (the hi exchange) →
+    crates refill; suggest while the friend's tab is CLOSED → their reload shows it.
+ **Sounditron fixtures**: still awaiting the human's accept (dawn note) — now additionally
+  drifted by Riff faces + Radio_pub shelf keying.  Re-record AFTER the fingers-proofs.
+ **THE SECOND WAVE (same morning, the human's follow-ups — UNCOMMITTED):**
+  - **Relay spoof ANSWERED**: relay.ts routeFromBrowser routes on header.to ONLY — from is
+     never checked against the hello-bound addr, so spoofing was real.  The human's ruling
+      ("validate their key against the Pier we trust every time; the relay needn't be
+       trusting") → the per-era VOUCHER: identity-signed {prepub, pub, era} attached to every
+        swarm frame (Swarm_deliver), verified at the hear funnel against the SEALED pier's
+         stored pub (cached per sign; sealed-only — pier_hello keeps its Idzeug credential),
+          spoofed frames rebuffed BEFORE heard_at.  (Built by the delegated agent this round.)
+  - **Editor↔runner epoch FIXED + RE-PINNED (authorized)**: ping frames now carry `boot`
+     (SOCKCAP_BOOT, both roles — an incarnation, not an identity, enrolls nothing);
+      Lies_pong compares per-Pier peer_boot and Peeroleum_reset_handshake's a reborn peer's
+       stream.  The spine adds re-ack on a reused-seq finished-unemit collision (loud warn,
+        never silent again).  p2p/pinned_stable/Peeroleum.go promoted from fresh gen per the
+         documented procedure (diff was small + additive: CLI by-type dispatch, pier_hello
+          first-contact, swarm_hi lane, the re-ack); Tribunal.go unchanged.  OWED: the
+           PereProof asymmetric-reconnect Book step (the 2026-07-05 decision said build it
+            when the spine re-pins — that is now).
+  - **Riffle reimagined** (the human: "deal|sweep is feckin weird"; "see the whole
+     testsounds/"): crate chips open, ONE ⟳ flip REPLACES the hand, ✕ closes; my crate deals
+      DEEP from the whole subtree below the current path (bounded BFS, noise dirs skipped,
+       honest totals + clipped note) so a 4-deep album is one flip away.  (Delegated agent.)
+  - **Name input focus fix**: InvitePanel's `self` was a $derived off H.version whose
+     transient null collapsed the input's branch (reactivity_docs' form-closing disease) —
+      now LATCHED $state (assign only truthy+changed).  (Delegated agent.)
+  - **Presence dot honest**: DoorFace three rungs off heard_at (here <15s · fading <45s ·
+     away) + a tooltip naming the pulse heartbeat; the 12s window flickered on one lost pulse.
+  - **Rundar wording**: a Big*land page labels itself `app` (id_role stamped), never
+     'runner'; editor stays editor.
+  - **The ZINE cell**: %Zine,name referring cell (never impersonating the disk %Mag) +
+     ZineFace — the Faves Berth listed in the glass, ▶ auditions by enid across shelves,
+      ★ refreshes it live.  Musica_zine_ensure rides Sounditron_glass.
+
+ **THE THIRD WAVE (the human's pre-absence sweep — UNCOMMITTED, all compiled green):**
+  - **Meander starvation KILLED** (Crate_nav_meander): local audio is now ONE branch beside
+     each subdir, drawn uniformly — the old audio-first return stopped at the first level with
+      any audio, so testsounds' root wavs starved every deep album below (the human's Charif
+       Megarbane / Deadfly Ensemble listing).  Flat shares walk exactly as before; noise dirs
+        (dot, node_modules) never draw.
+  - **ONE BootGate** (kid-friendly): "one tap to open the music" — never names needAC/needFSA,
+     proactive on BigSoundland (the gate stands until the AC grant), the tap harvests the
+      gesture (keep_awake_acquire) and fires the folder picker ONLY when disk_gated.
+  - **The glass de-junked**: CREW_MAINKEYS grew a debug shelf (Dogear — "the one they played
+     last night" — Storyrun, Sent_Tree, Crush_Tree → 'system'); a fresh %Tuner defaults the
+      system crew MUTED (the boiler-room starts tucked); TunerFace renders NOTHING when bare
+       and titles itself "show / hide" (nobody knows what a "tuner" is).
+  - **Friends read at full size** (DoorFace 13px + weight; three-rung presence dot here <15s ·
+     fading <45s · away, tooltip names the pulse heartbeat).  Rundar's single-pair panel calls
+      a Big*land page "app", never 'runner'.
+  - **Full-length friend listens**: Swarm_share_beat's keep-ahead leg (see the second wave note
+     in [[live-share-wired]] / the share region) — wants ride the REAL playhead ~32s ahead.
+  - **Books DELEGATED** (in flight as this brief writes): PereReborn (asymmetric reconnect —
+     the collision re-ack + epoch reset teeth) + SwarmShare (per-friend mirror keying,
+      %Suggest store-and-forward, hi rebirth reset), then the authorized Sounditron re-record.
+
+ **THE FOURTH WAVE (mid-absence, the human's drive-bys):**
+  - **Starvation VERDICT (probed, not guessed):** a headless probe ran the (transcribed)
+     branch-weighted meander ×200 over the REAL testsounds tree — 58 distinct tracks, 50 of
+      them deep: every album the human listed surfaces (Marzipan, Tayyara Warak, Deadfly
+       Ensemble, Resonating Earth), and the nav lists every level cleanly.  The machine is
+        cured; the live tab was still running pre-fix gen — the cure arrives with the hard
+         reload.  (Probe was a transient scripts/ spec, deleted after the run.)
+  - **THE LINEUP** (the human: "constantly producing Mag, up to 20 tracks further than the
+     listened-to cursor... any time there's a Pier it should automatically start listening
+      to their music... can't get any across should be an ERROR"): %Mag:'Lineup' in the
+       radio world — a rolling queue of %Card referring rows the dial consumes head-first
+        (playing IS the cursor); Radio_lineup_fill tops it to 20 round-robin across MY crate
+         + every granted friend's playable mirror records (friend cards wear by:<prepub>);
+          fills at every stoker look + every dial.  STARVE = a real %error row on the lineup
+           per granted+present friend contributing nothing playable (self-clearing when
+            their first track lands).  LineupFace ("up next · N", friend tags, errors RED)
+             in glass_kinds.  Old dial ladder kept as the empty-crates fallback.
+
+ **Posited unknowns (the final figure-out):**
+  - Voucher replay: a frame-capturing third party could replay a friend's voucher within its
+     era to spoof presence (not grants).  Per-frame header-sign at the Peeroleum seam (the
+      spec's designed spot, req_unemit) is the full cure — next spine round.
+  - The proactive BootGate on a tab whose gat the browser refuses to init (no audio device?):
+     the gate would stand forever — needs a fingers-check on one odd device.
+  - Watch_c reactivity for the deeper-state derivations (the human: "it's a little involved")
+     — the faces poll H.version + a 1s tick today; the watch_c channel migration is the
+      inspiringly-architected version, not yet designed.
+  - Full-length friend listens: the pool plays PREVIEW windows (32×2s); the term-stream leg
+     (Ra_term_stream_beat at the radio's demand) is proven on Books but not wired to the live
+      pump — next rung, small.
+  - FSA `expand()` costs a getFile() per file (a 3000-file dir = 3000 awaits on first listing);
+     a names-only expand is owed for the riffle at scale.
+  - The share offers the WHOLE stock as husks per rebirth (bounded by Stoker_cull ≈24 +
+     mirrors excluded) — fine now, wants Repli_sent_se's neu/goner Selection once stocks grow.
+  - `pier.c.seq`/unemit rows on the live channel still never cull (whittle is Book-armed);
+     the hi-reset bounds the damage but a standing-session sweep is owed.
+
+**THE DAWN SESSION (2026-07-19 5:20am — COMMITTED, 8 commits).**  Everything below through the
+ pulse round is in history now (9636136f..03b6eb96); the tree was swept clean in coherent
+  stories.  On top: **FIRST-TIME-MODE** — `Clustation_friendly` (name yourself from the
+   DoorFace ✎; persists into the identities Thang under prepub AND role tags, rehydrates in
+    Clustation_concrete, rides Clustation_pin) and TEACH empty-states on every face (Door,
+     Radio off the stoker census, Stoker, Riffle quoting the friend's ive_got boast, InvitePanel
+      spelling out the trick to a born-today self).  **THE ONE REMAINING SEAM in the user story**
+       (fresh page → … → riffle THEIR crate → their track on my radio): nothing LIVE starts the
+        Repli pull that fills %MusuThem after a seal — the mirror machinery is PROVEN on the
+         Book wire (Radiation: Repli deL/enL → MusuThem/stock) but the live station wire never
+          starts a session.  That is the next rung: seal (or grant-gossip) → Repli_follow over
+           the relay → %MusuThem fills → the Riffle's friend crate goes live → Radio_tune plays
+            their track.  The Riffle + boast already point users at exactly this door.
+ NOTE for the human: Sounditron fixtures committed at dawn predate the Riffle row — the Book
+  runs RED on dige until you re-record (accept); all 7 steps run clean live, world rows stand
+   (Radio|Stoker stood=4|Riffle|Door).
+
+**THE RIFFLE + DURABLE FRIENDSHIP + THE DIG ROTATION (2026-07-19 latest — uncommitted).**
+ The human: "flac in testsounds not appearing… rifle through either collection, blatting out Voro
+  cells… the Grant and|or friendship gets lost very easily — how is that not robust as?"
+ · **testsounds starvation FIXED** (Radio.g Stoker_dig): flac was never the problem (Crate_is_audio
+    has it; decodeAudioData handles it) — the music-first FIRST-BASE-WINS ladder starved testsounds
+     entirely.  The starting base now ROTATES per dig (st.c.dig_i through music|''|testsounds);
+      music still leads the cycle, a dry base falls through.
+ · **FRIENDSHIP SURVIVES RELOAD** (Swarm.g — the iz-ledger disease, second organ): Swarm_seal
+    built %Pier|%Grant|%NotGrant as RUNTIME particles; the r2r redial quietly re-sealed only when
+     the friend was online — a lone reload LOST the friendship.  `Swarm_pier_stash` (raw grant
+      atoms + page + every revocation atom, keyed my-prepub → their-prepub on top-House stashed)
+       + `Swarm_piers_rehydrate` at station standup THROUGH idempotent Swarm_seal; `since` no
+        longer resets on re-seal; Swarm_revoke stashes its tombstone IMMEDIATELY (a forgotten
+         revoke would re-grant on rehydrate — never).  Swarm{Invite,Policy,Staple} headless green.
+ · **THE RIFFLE** (Radio.g region riffle + RiffleFace + glass_kinds + Sounditron_glass mint):
+    %Riffle face, crew:'Riffle'.  Riffle_homes = my crate + every %MusuThem crate standing
+     (friendly names off the sealed Pier).  BLAT deals 6 random %Riff cards — REFERRING
+      particles (id + title|artist, stuff:1 → a CELL each; rec ref rides c.rec) — reshuffles on
+       exhaustion, sweeps on crate-switch; Riffle_clear shrinks the glass back in one wave.
+        `Radio_tune(radio, rec)` = the audition: the card ▶ plays THAT record now (c.tune_rec
+         outranks the dial at the pump's next pick, cold radio included).
+ · Live gate: Sounditron on 49de ran all 7 steps clean; reds are pure dige drift against
+    pre-this-round fixtures (the Book is FIXTURE-CHECKED now — Opt/wild dead) — the human's
+     accept re-records.  Live snap 7: `Stoker:idle,stood=4,stock=4,fresh=4` (preheat resurrected
+      the shelf at commission — instant-on PROVEN live) + `Riffle:shut` standing.
+
+**INSTANT-ON + THE OLD GHOST'S GEMS (2026-07-19 later — uncommitted).**
+ The human: "pre-empt 'digging in the crates' where possible, and have the first bit load and
+  play immediately. check the Radios.svelte for more functionality."  Radio.g grew four moves:
+ · **Stoker_preheat** — one churn at glass-commission time (Sounditron_glass opts in), while
+    the radio is still off: the crates are dug before anyone presses ▶.  LIVE-PROVEN: snap 7
+     shows `Stoker:churning` with `Radio:off` — impossible on the old parked-with-the-radio code.
+ · **Radio_nudge** — the stoker's landing announcement: first landing of a churn (and a
+    resurrection that stood records) pumps a `digging` radio NOW instead of letting it poll out
+     its 3s look.  Fresh era so the pending timer chain dies (two chains would double-pump).
+ · **Gapless pre-advance** — the dial turns at `end - 2.0s` (was −0.05): the next record dials,
+    opens and decodes while the current one plays out, landing AT the frontier (Radio_open never
+     resets c.end; Radio_place chains at max(end, now)).  No more ~400ms boundary hole.
+ · **Mined from `src/lib/ghost/Radios.svelte`** (legacy quarry, mounts only via lib/mostly):
+    **Media Session** (Radio_media_now|pause|off — lockscreen now-playing card, next|pause|play
+     handlers, feature-detected; pause KEEPS the card so lockscreen play resumes) and
+      **Stoker_cull** (the recordWear death circuitry, simplified: shelf cap 24, HEARD non-playing
+       records wear out oldest-first, sc.worn counts — bytes still stand in radiostock, one
+        resurrection away).  NOT ported (noted for later rungs): live-edge melt/playbackRate
+         flow control (needs a remote broadcaster — §9's leg), ack_seq STAY_AHEAD spooling (same),
+          the disk-side 200-item radiostock cache whittle.  Also fixed: an unconsumed
+           churn_asked with no disk share held the stoker out of its park forever (headless tell).
+ · OPEN EYE for the soak tab: live snap 7 showed `stock=0` beside `last:Query E` mid-churn —
+    `last` stamps on a re-found standing record while `dug` counts only shelf-count DELTA, so a
+     re-find explains it; but if ▶ on a real tab still waits, look at Radio_pub drift ('me' →
+      prepub) re-keying Ra_home_self mid-sitting, stranding stock under the old shelf.
+
+**THE DOOR + /system/ + THE PULSE (2026-07-19 — uncommitted; the "hardly anything is happening" fix).**
+ The human: "once the ?Iz is claimed it should change to ?I=$pub… auto-join if their Identity was
+  born today… another UI thing floating in the VoroCyto… a /system/ subcellularity… I'm reloading
+   one client, I should be able to see that in the other client."  Four organs:
+ · **The claim arc** (`Auto.svelte` + `InvitePanel.svelte`): identities now carry `born`
+    (Clustation_mint stamps epoch into the Thang; concrete stamps sc.born yyyy-mm-dd — adopted
+     legacy keys stay honestly birthless).  A SEALED ?Iz claim rewrites the address bar to
+      `?I=<my prepub>` — but PINS first (`Clustation_pin`: the role-tagged default self is stored
+       only under 'sound'; an unpinned ?I=<prepub> reload would MINT A STRANGER and orphan the
+        friendship).  A self BORN TODAY auto-joins a landed invite (the scan was the intent;
+         older identities keep the deliberate button).  InvitePanel shares its landing state as
+          `H.c.door` (runtime beacon) for the glass.
+ · **The %Door face** (`DoorFace.svelte`, imposed-priority sparkle): who am I (nick · prepub8 ·
+    born, ✨ badge on born-today) · a landed invite joining · sealed friends each with grant,
+     records boast, and the PULSE DOT.
+ · **/system/** (`glass_faces.ts CREW_MAINKEYS`): req/Machine/Relay/Census/Possibility/Session/
+    Tally/Audio tessellate under ONE 'system' crew — one tuner toggle tucks the boiler-room away.
+     Viewer-side like FACE_MAINKEYS; explicit sc.crew still wins.  NOTE: faces are now GATED by
+      the commission's `useFaces` (a concurrent hand's refinement — wired here into the
+       Sounditron toc Opt, the Story-rail commission pass-through, and Sounditron_glass's own).
+ · **The PULSE + the trickle** (`Swarm.g` + `Sounditron.g`): ANY inbound frame from a sealed pier
+    stamps `pier.c.heard_at` (c-side, Books untouched; strangers stamp nothing — the ive_got
+     law), and a new no-payload `pulse` frame kind exists only to generate that traffic
+      (`Swarm_pulse_all`).  `Sounditron_trickle` — a detached era-guarded loop (era on the TOP
+       House, one per tab; each run re-hands it the new w) — pulses every ~5s and re-reads the
+        %Friend rows (grant · records · `here:1` within a 12s window), bumping w ONLY on a real
+         delta.  So: reload one client and its dot dims in the other's glass within ~12s, and
+          returns when it's back.  This is the first thread of the "model driven at some fps" —
+           the full curated model world stays designed-not-built (§3's chooser + a %Buddy shape).
+ **GATED:** LocalGen (Swarm/Sounditron/Radio/Ra), bundle-fetch ×7 clean, headless Sounditron
+  stands `Door:open,face:Door` in snap 7.  **OWED:** the live-tab gate (the soak tabs dropped off
+   the roster mid-verify — re-run + `--svg` when one returns); FINGERS: scan a QR with a fresh
+    phone (born-today auto-join end-to-end), watch the address bar become ?I=; a muted Book for
+     the pulse/heard_at loop (two-identity, SwarmGot-shaped).
+
+**THE STOKER + CREWS + THE PIRATING FACES (2026-07-18 late — uncommitted; the C-and-D fix).**
+ The human: "it's only playing DJ Oscillo's C and D… all the things in the Voro UI need grouping…
+  I want to see the provisioning system cranking along… exhausting the set should churn radiostock
+   extra fast."  Three organs landed:
+ · **The %Stoker** (`Radio.g //#region stoker`, face:'Stoker', crew:'Radio'): provisioning is now
+    its OWN visible loop — the radio's dial never digs.  It parks with the radio, resurrects
+     standing radiostock once, counts `stock`/`fresh` (unheard-this-sitting vs `radio.c.heard`)
+      every 3s, and DIGS when fresh drops under 2 or the dial poked `Stoker_churn` (exhaustion =
+       dial found nothing unheard → churn back-to-back to 4 fresh or a dry pass → `spent`).
+        Dig order is **music-first** — the old testsounds-first first-base-wins wander IS why only
+         DJ Oscillo's C and D ever played.  The dial (`Ra_dial_next` gained `opts.skip_ids`,
+          default-off so every sealed Book is untouched) prefers FRESH and replays honestly when
+           exhausted (`radio.sc.replays` counts it, stops climbing as fresh stock lands).
+ · **CREWS + the %Tuner** (`Cyto.svelte`): every cell-holder tessellates under a CREW (sc.crew ||
+    its face kind || stuffed mainkey); cyto_scan writes the census to the %Tuner's `.c.crews`
+     and DROPS muted crews at classify — cells vanish, space returns.  TunerFace lists crews with
+      ▣/☐ toggles → `Tuner_toggle` → mute flip + the unfold-idiom absolute rescan.  Mute + census
+       ride `.c` ONLY (viewer preference — Books stay Voro-blind, snap rows constant).  Minted
+        opt-in by the commissioner (Sounditron_glass) so Leaf* fixtures never move.
+ · **The Pirating face** (`HeistFace.svelte` + `glass_faces.ts`): `FACE_MAINKEYS` imposes a face
+    BY MAINKEY, viewer-side — no %Heist ever wears sc.face, sealed Musu fixtures untouched.
+     Renders both shapes: POSED (Sounditron's nugget — sentence + %Need met:1) and SOFT (wish +
+      %Lead answers, a `take` button per Lead → `Heist_condense`).  `glass_faces.ts` is the
+       component-free half Cyto imports (headless spine has no DOM; glass_kinds.ts keeps the
+        component map for Cytui).
+ **GATED:** Sounditron 7/7 live on 77d2; `Stoker:idle,face:Stoker,crew:Radio` + `Tuner:glass,
+  face:Tuner` + the posed Heist in snap 7 headless AND live; SVG tessellation grew 11→14 paths
+   (one cell per new face — a cell only seeds off a successful mount).  **OWED:** fingers on the
+    live buttons (churn ⛏ · a crew toggle · a Lead take — remote shots can't click); a live
+     soft-Heist wish in a radio world once the remote dial leg lands; the pull driver behind
+      `take` (condense stamps at/chose; nothing drives Heist_beat live yet).
+
+**THE RADIO IS BUILT (2026-07-18 — `Ghost/M/Radio.g`, uncommitted, live-gate owed a tab reload).**
+ The one wire the pipeline never had: chunk particles decoded and laid on the REAL AudioContext
+  timeline, continuously — the human: "continuously playing music, like a radio, starts going from
+   the start (via %Stream) after the first track you leave playing."  The shape: `Radio_ensure(w)`
+    stands a `%Radio` face particle (mainkey value = state off|digging|playing|paused|starved;
+     sc.face:'Radio' mounts RadioFace in the glass — see Sounditron_todo §4e); ▶ = `Radio_go` (the
+      click IS the AudioContext gesture) → a detached era-guarded pump (`Radio_pump`, setTimeout
+       chain — NOTHING under beliefs, the Sounditron mutex law) feeds ONE persistent AudioDecoder
+        per encode run (reset only at a `head` chunk — flush() resets WebCodecs state, so flush only
+         at run end), spills harvested PCM onto the timeline at the frontier (`aud.schedule(buf,
+          max(end, now))` — the Sound_real_stream idiom; a late landing = a counted gap), and when
+           the timeline reaches the end the DIAL turns itself (`Ra_dial_next` → next track chains at
+            the frontier, seamless).  %Stream comes into being BEHIND the 32s preview: a supply loop
+             runs `Ra_transcode_ensure|advance` while the preview plays (self-served, no Repli);
+              source unreadable ⇒ cap at preview and move on.  An empty shelf DIGS: resurrect
+               standing radiostock (cheap), then ONE `Crate_nav_meander` wander + `Ra_stock_one`
+                (never a scan — the 200k law).  Starve ⇒ 6s grace then SPLICE (honest drop, decoder
+                 re-opens dirty).  Pause rewinds to the heard chunk; skip cuts the voice.
+ **GATED so far (2026-07-18 late):** `%Radio,face:Radio` stands in snap 7 on BOTH a fresh headless
+  spine and the live runner 56fb (Sounditron 7/7), and the face's CELL stands in the live SVG
+   tessellation (11 paths — a cell only seeds off a successful component mount).  Two bombs were
+    defused en route: cross-ghost calls MUST ride `top_House()` (`this.Radio_ensure` on the run
+     House is silently undefined — the M. convention), and a mint must sit ABOVE `Sounditron_glass`'s
+      `!this.c.up` bail (headless run Houses have no up).
+ **OWED:** EARS — press ▶ on a /BigSoundland tab (the click is the autoplay gesture; only the human
+  can) and leave it playing; the remote leg (dial across granted `%MusuThem` mirrors — want-paging
+   exists in `Ra_term_stream_beat`, not yet worn by the radio); a muted Radio Book
+    (`Radio_go(radio, {mute:1})` is Book-ready); volume/fade on the face.
+
+**DESTINATION MOVED — read `Radio_spec.md` §1-5 first (rebuilt 2026-07-15).** The spec is now the
+ destination doc, reshaped into **two planes** (descriptor/culture floods · content/bytes routes),
+  **two spines** (culture: identity→magazine→browse→heist→persist→swarm · audio: the nine stages), and
+   **two itemised ladders** (spec §5A culture · §5B audio). **The live culture worklist is spec §5A** —
+    its rung 0 is the keystone **[P0] per-chunk content-addressing** (a per-chunk sha256 in the
+     origin-signed card; `Ra_enid` is whole-file today), which gates BOTH the swarm (rung 7) AND
+      demoting the unconditional disk read-back. This todo is now being **drained into the spec**: as a
+       section here lands or is superseded by a spec rung, collapse it to a one-line pointer or retire the
+        WHOLE file's dead parts to `history/`. The multicast slog moved to its own doc
+         `Radio_multicast_todo.md` (= spec §5A rung 7). Map of this file → spec: §9 Pier reality → §2.1
+          homing law + §5A r1; §10 klepto/heist → §5A r4; §11.7 Berth → §5A r5; §12 magazine/stimuli →
+           §2.3 + §5A r2; §12.4 jobs ladder → §5A r3/r6.
+
+**2026-07-17 — §2 RE-DRAWN with the human: the Musu homes (spec §2.2-§2.4 + rungs 1/3/6 carry it).**
+ `%Library` + the `Ray` dissolve into `%MusuSelf|%MusuThem,pub` homes, each with `radiostocking/ | the/ |
+  shop/` shelves; `%Original/%Chunk` is the master standing BESIDE (never above) `%Record/%Preview|Stream`
+   (a pull lands a Record — derived, never a master); `%Blob,grade:ogg128` export grades (Android plays
+    `.ogg` happier than `.opus`); `%Grasp` → `%Heist` = wishlist → its actively-downloading leg (both
+     Mag-shaped, Waft-based, `What/` anywhere; a Grasp is also the abuse-report shape — *what of their
+      share is naughty*). The shop is FLAT: bytes in ONE place, every meaning a Mag|Grasp referring in by
+       id; GC roots = the Mags|Grasps. **Tonight (authorized hours, opus subagents): `[RUNG7-WIRE]` DONE
+        (2026-07-17, green ×2 — see below) + the ogg128 export DONE (2026-07-17, green ×2): `Ghost/M/Orig.g`
+         (`Orig_ogg_export`/`_mux`/`_parse`) writes a real RFC-7845 Ogg/Opus file + mints `%Blob,grade:ogg128`
+          (path, never bytes); Book **MusuOgg** proves it live (stock→transcode-to-end→export→page-CRC +
+           OpusHead re-read→real decodeAudioData round-trip). **The r3 CONTAINER DISSOLVE also DONE
+            (2026-07-17, green ×2): `%Library,pier:` → `Ra_home_self`/`Ra_home_them` (`Ghost/M/Ra.g`) minting
+             `%MusuSelf|%MusuThem,pub` homes + a `stock` shelf that replaces the flat lib node one-for-one;
+              ~35 sites converted by side-judgment (origin/own→self, mirror→them) across Ra/Heist(ation)/
+               Radiation/Musuation/Swarmation/Repli + the `Swarm_music_census` walk; green ×2 on the core six
+                (Vend/Heist/Breach/Ogg/Reap/Buddy) + Reco/Replica, fixture diff = ONLY the re-shelving.** The
+                 `%Original` master itself + re-homing the `%Blob` into the shop stay OWED (eyes-on).**
+
+**2026-07-17 — the `shop/` SHELF DONE + the `%Heist` re-homed (green ×2: MusuHeist 22 · MusuBreach 10 ·
+ MusuSoft 6): the Heist no longer floats on `w` (spec §2.4 shop block + §2.1/§5A r1).** `Ra_home_shop(w, <me>)`
+  (`Ghost/M/Ra.g`, beside `Ra_home_self`/`_them` — `Ra_home_shelf` generalized to a shelf-name param) mints the
+   `shop/` shelf under the asker's `%MusuSelf,pub` home; `Heist_job(w, at, filings, {home})` + `Heist_wish(w,
+    home, …)` hang the `%Heist` there (soft wish AND hard job alike), `Heist_flatten` removes from `job.c.up`
+     not `w`. Call sites converted: MusuHeist_job (asker `b.mine`'s shop), the two Breach job seams + the two
+      wire jobs (each own's shop), both MusuSoft wishes (`Ra_home_shop(w, 'Seeker')`); the two `w.o({Heist:1})`
+       readers in Heistation resolve against the asker shops. Fixture diff was ONLY `Heist,` moving from the floor
+        to `MusuSelf,pub:<asker>` > `shop,pub:<asker>` (records/Leads/filings/took unchanged). **Still owed:** the
+         per-Pier `bay,pub:<them>` sub-part + `%Heistlet` (the travelling ask), and the wet `%Original`/`%Record`
+          quarantine moving UNDER the `%Heist` in the shop.
+
+**2026-07-17 — the SOFT `%Heist` DONE (green ×2, Book MusuSoft): the search that hardens into a pull (spec
+ §2.4 soft block + §5A r4).** `Ghost/M/Heist.g //#region soft` — `Heist_wish` mints `%Heist,wish:<sentence>`
+  (soft = a `wish` + NO `at`); `Heist_ask` crosses it as a chunkless husk over the granted wire; `Heist_match`
+   walks `Musica_cards` and stamps `%Lead,pier:,id:,tune:` per LITERAL contains-hit (title|artist|genre|album)
+    under the soft Heist (no hit → no Lead); `Heist_condense` hardens the chosen wish (stamps `at` + the filing)
+     and the EXISTING pull (`Heist_beat`/`Heist_land`/vouch door — untouched) lands the one record. MusuSoft
+      loopback: 3 real tracks + a `%Mag` cross → one-word wish finds exactly ONE Lead → a nothing-wish finds
+       ZERO → condense pulls that ONE card whole while the two decoys stay UNSPENT husks. **HOMING GAP CLOSED
+        (2026-07-17):** the `shop/` shelf now exists (`Ra_home_shop`) — the soft Heist homes under the seeker's
+         `%MusuSelf,pub:Seeker > shop/`, not `w` (see the shop-shelf entry above). NEXT: the Stemdex/%Seem
+          by-meaning rung (swap `Heist_words` for the stem index) and `%Lead` accumulation across MANY far Mags.
+
+**2026-07-17 — the BAY + `%Heistlet` TRAVELLING ASK DONE (green ×2, Book MusuBay 9/9 ×2 on 49dee91d): the
+ per-Pier corner of the shop + the ask that travels (spec §2.4 bay block — [built] stamp carries the detail).**
+  `Ra_home_bay(w, me, them)` mints `bay,pub:<them>` under MY shop; `Heist_let_mint/ask/answer/adopt`
+   (`Ghost/M/Heist.g //#region soft`) run the round trip: mint `%Heistlet,of:<hid>,pier:` with scalar `ask,id:`
+    children → Repli_offer over the granted wire (BOTH directions granted — the return leg needs it) → the far
+     side stamps `have:1`|`held:1`|NOTHING in place on its mirror → the annotated copy crosses back → adopt
+      copies the marks onto MY bay original (mirror = landing zone, never the home). A `%Heist` gained an
+       optional `hid` ident (`opts.hid`, stamped only when supplied) — the Heistlet's `of:` join key. MusuBay
+        also proved the **multi-source `%Lead` fan-in** (one wish → two piers → 4 Leads from both under the one
+         soft Heist) + negative control (a fabricated ask id stays UNMARKED both sides) + the pull economy
+          (only the had card spends). GOTCHA baked into the Book: a frame settles over post_do BETWEEN beats —
+           send and answer must be SEPARATE steps or the mirror copy isn't there yet. Pre-existing Books
+            byte-stable (MusuSoft 6/6 · MusuHeist 22/22 c20 · MusuBreach 10/10 — no per-step dige drift).
+             OWED: Heistlet `cursor · backoff` leg fields; a true two-runner return leg; prod `hid` derivation
+              (rides with the prod signer-setter).
+
+**2026-07-17 — the MAG SHELVES DONE (green ×2 on 49dee91d, 12 Books re-recorded): every world-side `%Mag`
+ re-homed onto the owner's `radiostocking/` — ALL FOUR §2.2 shelves are now real.** `Ra_home_radiostocking(w,
+  pub)` + `Ra_home_the(w, pub)` (`Ghost/M/Ra.g`, via `Ra_home_shelf`). All ~12 mint sites judged SELF (every
+   site publishes the owner's OWN draw — no site holds a mag about another pier; the mirror-side `mir.o({Mag})`
+    copies are the wire's landing zone, untouched). MusuCursor/MusuHeal needed their Dogear spines re-rooted at
+     the shelf (`Cursor_resolve(cursor, w.c.mag_root)` — cursor verdicts byte-preserved). Fixture diff =
+      re-shelving ONLY (verified side-by-side on Soft/Vend/Bay/Heist); control MusuReplica stayed green with no
+       re-record (mints no world-side Mag). Re-recorded: Soft 6 · Vend 11 · Door 9 · Cursor 6 · Heal 7 · Resume 7
+        · Rename 9 · Recast 12 · Standing 12 · Bay 9 · Heist 22 (c20 band) · Buddy 14 (c11 band). `the/` shelf =
+         door only; first resident arrives with the written-zine rung.
+
+**2026-07-17 — the GONER-DELETE CONSENT GAP CLOSED (green ×2, Book MusuFreeze 9/9 c0 on 49dee91d): a revoked
+ follower's mirror is FROZEN — the wire refused to ADD to a revoked peer but would still DELETE from their
+  mirror (found by the 2026-07-14 adversarial review; no Book exercised delete-AFTER-revoke, so the leak sat
+   un-asserted).** The surgical guard: `Musica_recast_offer` (Heist.g ~1032) consults `Repli_allowed(w, to,
+    from)` and both goner loops skip the send when the gate is closed — receipts still populate (the origin's
+     census diff stays honest); `Repli_send_lines` itself untouched. Sabotage-proven: guard neutralised → the
+      revoked mirror LOST the track + `leaked` fired + only the revoke-sees went red (real discrimination);
+       guard in → `quiet_wire` (zero frames) + `frozen` (the mirror keeps the copy the origin dropped).
+        MusuRecast re-verified byte-identical (no-op under a live grant). **EYES-ON: `Repli_retire`
+         (Repli.g:292) is the same raw-send pattern with NO gate** — unreached by Musica today but the same
+          class of leak; the standing choice (gate it too | move the gate INTO `Repli_send_lines`, the core
+           primitive) is the human's. Full caller survey in the [[repli-send-lines-consent-gap]] memory.
+
+**2026-07-17 — the RADIOSTOCK CASCADE GC DONE (green ×2): `Musica_forget` now reaps the derived disk cache.**
+ An era forget (`Musica_forget(nav, mag, cutoff, pub)`) drops the old `%Cloud`s AND unlinks every
+  `.jamsend_radiostock` file whose track left the magazine — the human's "delete including radiostock". The
+   join is `Card.id === stock enid` (both `Ra_enid`), so no map: gather the ids before/after the fold and hand
+    the goners to the new **`Ra_stock_cascade(nav, pub, gone, keep)`** (Ghost/M/Ra.g), which is **BIAS-TO-KEEP**
+     — an id still referenced by ANY survivor keeps its stock (the cache re-derives; a wrong drop costs one
+      re-encode). `pub` (== stocking `lib.sc.pier`) is threaded in by the caller; graceful no-op when there is
+       no disk stock (MusuVend still rides `Musica_forget_fold` direct, byte-identical). `Musica_forget` now
+        returns `{ dropped, cascaded }`. Book **MusuReap** proves it live (two eras stocked → forget the old →
+         the dropped track's stock file GONE while the kept track's STANDS — the bias-to-keep discriminator).
+          Still `// <` on forget: the WIRE goner (fold `Musica_recast_offer`'s op:delete into the Berth path so
+           a forget also retires over enrolled followers) — M4's remainder.
+
+**2026-07-15 — RUNG 0 (per-chunk content-addressing) BUILT + RE-RECORDED LIVE-GREEN; signing + Ra-path + breach-Book OWED.**
+ Every chunk now carries a durable **`cid`** = full sha256 of its bytes — minted at all three chunk-mint
+  sites (`Ra_record_from` %Preview, `Ra_chunk_mint` %Stream, `Heist_census` %Body), carried in the `.jam`
+   header as a `cids[]` manifest (parallel to `sizes[]`, filled in `Ra_pack`), and **verified per-chunk in
+    `Heist_land`** (both the stream and the fallback path) as a localized breach ahead of the whole-file
+     `body_hash` gate. Files: `Ghost/M/Ra.g` (+ a `Hashly.ts` IMPORT), `Ghost/M/Heist.g`; gen written via
+      LocalGen (`src/lib/gen/M/{Ra,Heist}.go`). **Compiles clean** through the real in-app translator.
+ **Live proof (HMR hot-loaded the gen; the editor was down):** `runner_ask run MusuHeist` → the census
+  mints a `cid` on every `%Body` (39 in step-2's snap), zero step errors, the phase machine runs to `deny`.
+   The run goes RED ONLY because the recorded fixtures lack the new `cid` rows — an additive-snap diff, not a
+    logic failure (per-chunk verify is a no-op on honest bytes: same bytes → same hash → pass; it only fires
+     on real corruption the wire/body_hash gates already exclude).
+ **RE-RECORD — DONE (2026-07-15, night shift).** `run → accept → re-run` on the :9091 runner: MusuHeist is
+  **22/22 GREEN** (caveat 20 = the AudibleEntropy fuzz-tolerance, benign ≈). Fixtures `002.snap`–`022.snap` now
+   carry the `cid:` rows (39 in step-2), step count stable (no toc collapse), zero encode smells. The FIXTURES
+    changed, not the code — HEAD (`4afe3965`) already had the gen; only the wormhole snaps were owed.
+  **BOMB the night cost an hour on:** the fleet has FOUR runners advertising and an un-addressed `run`/`steps`/
+   `state` round-robins across them, so a `steps` query lands on a runner that never ran the Book (stale
+    `done:6`) and reads as a truncated/false result. **Pin the WHOLE sequence to ONE runner** —
+     `--runner=<self-id>` on run AND steps AND state (list them with `runner_ask runners`; the `★claude`
+      favourite is the safe pick). This is the [[pere-books-total-1]] / "always --runner=" law, re-learned.
+ **BREACH BOOK — DONE (2026-07-15, night shift). `MusuBreach` LIVE-GREEN ×2 (7/7, caveat 0) — proves BOTH trust
+  gates.** The adversarial twin of MusuHeist proves the gate FIRES: it censuses two artists off testsounds, lands one HONEST record clean
+   (the control — proves the gate discriminates not a blanket refusal: `honest,landed,no_breach,on_disk,dropped`),
+    then flips ONE byte of a MIDDLE chunk's buf LEAVING its cid and lands again — `poison,seq:2,breached,no_new_land,
+     gone,retained,gate_named`. Four `%see` truths latch. Authored in `Ghost/Story/Heistation.g` (a sibling Book,
+      dispatched by `w.sc.w`); registered in `wormhole/Credence` (`needsFSA:1,needMusic:1`). **The rigor upgrade:** a
+       whole-file `body_hash` would ALSO catch this corruption, so to prove the PER-CHUNK gate's real value —
+        *localization* — `Heist_land` now records `job.sc.breach_seq` (the code finally does what its own comment
+         claimed: "names the seq"), and the Book asserts the GATE's own report matched the poisoned seq (`gate_named`).
+          body_hash can only say "the file is wrong" AFTER assembling it all; the cid says "chunk 2 is wrong" first.
+   **Bootstrap gotcha (cost time):** a NEW Book runs 1 step until its `toc.snap` carries `step=2..N,dige:lie*` lines;
+    a wedged runner ACCEPTS become_book but never steps (`run:null` forever) — `runners` + run a known Book to find a
+     HEALTHY one, ALWAYS pin `--runner=`. (49dee91d + 3c5238c6 wedged this night; 20e3476b stayed clean.)
+  **The SECOND gate — ORIGIN-SIGNATURE (rung 7), proven in isolation same night.** MusuBreach step 6 (`vouch`):
+   the cid catches corruption but NOT a lying peer who recomputes a cid over bad bytes, so the origin SIGNS the
+    cids manifest (ed25519 over `id | cid0.cid1…` via the `Idento` primitive Swarm.g uses — DETERMINISTIC so the
+     vouch snaps stable: `vouch,by:434ced…,vouched,forgery_caught,imposter_caught`). Three probes: honest vouch
+      verifies; a FORGED manifest (swap one cid) fails; an IMPOSTER (wrong key) is rejected. Helpers live in
+       Heistation.g as `MusuBreach_sign/verify/manifest` (GOTCHA: the Idento sign method is `.sig()` NOT
+        `.signhex()`; verify is `.ver()`). *The two gates together: cid keeps an honest peer honest; the
+         signature keeps a dishonest peer out.*
+  **RA-PATH cids — DONE (2026-07-15). `MusuRaStream` (40/40) + `MusuRaChase` (56/56) re-recorded GREEN ×2.** The
+   `%Preview`/`%Stream` chunks now carry cids in the fixtures (they ride the snap round-trip — the resurrect
+    proof), same additive re-record as MusuHeist. **Rung-0 fixture debt is now 4/4 CLEARED** (every Book with
+     chunk particles green with cids: MusuHeist(22) ✓ · MusuRaStream(40) ✓ · MusuRaChase(56) ✓ · MusuBuddy(14) ✓ —
+      MusuBuddy re-recorded green ×2 once the fleet stabilized; the earlier stalls were the runner wedging under
+       load not the Book, so a two-probe stability gate before the heavy run cleared it). **BIG FINDING for the signing layer:** the Ra-path cids ride the ENTROPY BAND (37-38
+     of 40 steps caveated ≈) because the transcode is NOT bit-reproducible — the same source encoded twice gives
+      slightly different bytes → different cids.  Heist-path cids (original file bytes) are EXACT; Ra-path cids
+       are per-transcode.  CONSEQUENCE: two peers who independently transcode the same track get DIFFERENT cids →
+        different manifests → different signatures, so a swarm cannot dedup/verify across independent transcodes.
+         The content-address that a signature vouches for must be the ORIGINAL master's cids (deterministic), not
+          each grade's — fold this into the rung-7 wiring design (the `%Original` of §2.4 rung 3 is the anchor).
+ **2026-07-17 — `[RUNG7-WIRE]` DONE (green ×2).** The origin-signature is now WIRED into the live trust path.
+  **The ONE implementation** lives in `Ghost/M/Ra.g //#region trust` — `Ra_manifest`/`Ra_sign`/`Ra_verify`; the
+   isolation-proof helpers `MusuBreach_sign/verify/manifest` (Heistation.g) now DELEGATE to them, so the crypto
+    test exercises the live-path code (steps 2-6 unchanged, byte-identical diges — the delegation was transparent).
+  **Seam A — the `.jam` at rest:** `Ra_vouch_header(info, bufs, signer)` stamps `by`+`sig` over the cids manifest
+   onto the header before `Ra_pack`; `Ra_stock_standing` REFUSES a header that claims a `by` but fails verify
+    (unsigned headers pass untouched — old jams still load). Signer threads off `lib.c.signer` (absent for every
+     current Book → byte-identical old shape; no fixture churn). `Ra.g:544` (pack) + `589–644` (`//#region trust`)
+      + `Ra_vouch_header` at `569` + the `Ra_stock_one` vouch call at `801` + the `Ra_stock_standing` gate at `668`.
+  **Seam B — the offer door (the keystone):** `Heist_offer_all(w,tx,from,to,lib,signer)` → `Heist_offer_vouch`
+   stamps `by`/`vouch_sig`/`vouch_cids` on the Record head (three scalar keys — they ride the chunkless husk; the
+    `%Body` cids do NOT, so the manifest rides the head). `Heist_beat` verifies (`Heist_vouch_ok`) BEFORE
+     `Ra_pull_beat` — a signed-but-failing offer is REFUSED: zero wants, zero lands, `job.sc.unvouched`+ a legible
+      `unvouched,tune:` marker; an unsigned offer passes. Gate ONLY at the Heist call — the generic Repli path is
+       untouched (**MusuHeist 22/22 GREEN, caveat 20 benign**). `Heist.g:214` (`Heist_offer_all`) + `229`
+        (`Heist_offer_vouch`) + `251` (`Heist_vouch_ok`) + `285` (the door gate inside `Heist_beat`).
+  **Proof:** `MusuBreach` grew from 7→10 steps (`Ghost/Story/Heistation.g`) — steps 7-10 wire steps: honest signed
+   offer flows through the door and lands (`door_ok,landed,no_refusal,flowed`); a FORGED manifest (origin sig
+    replayed over a swapped `vouch_cids`) refused at the door (`real_verified,door_refused,unvouched_bumped,
+     no_new_land,no_wants,dropped,gate_named`). Two new `%see` truths. **Green ×2** on runner `49dee91d61a9de64`.
+  **Still owed (rung 7, not this wire):** an APP path that actually SETS a signer (`lib.c.signer` / the `signer`
+   arg) in production stock/offer — today only a Book would; and the swarm ROUTING (have-bitmap beacon + cheapest-
+    source chooser, `Radio_multicast_todo.md`). The whole rung-0 fixture debt is CLEARED. See spec §2.4 + §5A rung 0 + rung 7.
+
+**THE SNAP READS LIKE THE SESSION — N1-N5 + the Jam ledger + the Card rename: LANDED and LIVE-GREEN (2026-07-14).**
+ The human read MusuBuddy's snaps and named four smells + one growth; all are coded, adversarially reviewed, and
+  RE-RECORDED GREEN on the :9091 runner (all 14 affected Books — see `history/Radio_buildlog.md`). The live runner
+   caught TWO bugs the static reviews could not (the jam ran a beat before `expecting()` resolved `w.c.term`; a
+    mainkey-less `o({at:1})` in `Jam_ledger` returned nothing) — both fixed and re-verified. What landed:
+
+- **N1 — no maybe-undefined sc mints. DONE.** Guarded the three unconditional `k: rec.sc.k` mints (`Heist.g`
+   Musica_fold card + heist-landing, `Heistation.g` reflect card) the way `album` already was. Kills the
+    `{"undef":["path"]}` brand. Blast: MusuBuddy fixtures only (the pathless Ra-stocked cards; the seeded
+     cursor Books already carried paths). `undef` also appears in Engage/LakeSurfer/Peeringinst from UNRELATED
+      mints — out of scope, untouched.
+- **N3 — drop the finished awaitbuf. DONE.** `finish()` marks `%finished` but never detaches, so 38
+   landed+finished `awaitbuf` rows piled up per pulled track. Fix in `Repli_attach_page`: once bytes land,
+    `pier.drop(req)` the holding req (+ `delete pier.c.bufs[id]`) — an UNLANDED awaitbuf still stands (real
+     in-flight pull + the warn-if-late reconciler). Safe because the req sweep iterates a fresh `o()` snapshot,
+      and MusuReplica's `warns_missing` reads only the unlanded set. Blast: MusuBuddy, MusuHeist, MusuRaStream,
+       MusuRaChase, MusuReco, MusuReplica, **VoroTest** (its canned scape carries awaitbuf rows — check how it
+        regenerates before re-recording).
+- **N2 — the card stops impersonating %Record. DONE (code), UNDER ADVERSARIAL REVIEW, re-record owed.**
+   Cards under a `%Cloud` are now `%Card`; holdings under a `%Library` stay `%Record`. **Chosen shape:
+    `Card,id:<id>,artist,title[,album,body_hash,path]` (Option B — KEEP the `id` scalar), NOT `Card:<id>`
+     (mainkey-value).** Why: `Repli_loc_keys` gives `['Card','id']` (id is id-ish) — byte-identical wire
+      behavior to the old `Record,id`, no `repli_loc` hint, and **zero `.sc.id` reader ripple** (the finder
+       helpers `Musica_cards`/`Musu*_card` and MusuBuddy's browse read `.sc.id`/`.sc.title` unchanged), so N2
+        was a near-pure mainkey-WORD swap on the Cloud-child sites only. **`Card` is NOT a new collision — it
+         REUSES MusuBerth's existing `Card` mainkey** (a saved track-reference; the magazine card is a full
+          listing, the Berth toy a degenerate `Card,tune,verdict` — same family "a reference to a track", the
+           human's own prior coinage). MusuBerth is UNAFFECTED (its cards live in a Berth Waft, never mixed;
+            `o()` is direct-children-only). Sites: `Heist.g` fold/cards/recast goner-emit (`{Card:1,id}` loc
+             `['Card','id']`); `Heistation.g` every Cloud-child query/mint/rm + cursor leaves (anchored on the
+              `}])` array-close so `origin_lib.rm({Record:1,id:'t1'})` holdings stayed put) + the finder
+               helpers unchanged; `Radiation.g` the ONE browse cursor leaf. Both files audited (every remaining
+                `Record:1` is a holding; every `Card:1` a Cloud child). Blast (fixture ripple, all magazine
+                 Books): MusuBuddy, MusuHeist, MusuVend, MusuDoor, MusuReco, MusuCursor, MusuHeal, MusuResume,
+                  MusuRename, MusuRecast, **MusuStanding**.
+- **N5 — distilled into CLAUDE.md. DONE.** Three rulings in the C-objects section: identity-is-per-shelf +
+   referring particles wear their own mainkey (1:1 → mainkey may carry the identity beside the join key; N:1 →
+    an `of:` pointer); never stamp a maybe-undefined sc (an `undef` marker = a mint bug); an owner drops its
+     finished transient reqs (scaffolding, not snap furniture).
+- **N4 — the Jam ledger. GHOST + MusuBuddy WIRING LANDED (compile-clean), sees under adversarial review,
+   re-record OWED.** New family ghost `Ghost/M/Jam.g` (enrolled in CREDULER_GHOSTS after Heist.g): under the
+    listener's shelf a `Jam,with:<dj>` session of ordered **`Spin,of:<id>,title,at`** / **`Like,of:<id>,at`** /
+     **`Grab,of:<id>,at`** facts (`Grab`, NOT `Heist` — that mainkey is the reserved operation `%Heist,at:<pier>`;
+      `of:` is the N:1 referring form). Verbs `Jam_home/seq/event/spin/like/grab/ledger/tally`; `Jam_grab` also
+       copies the pulled holding — scalars + chunk children (bytes shared) — into a caller-supplied `kept` shelf.
+        MusuBuddy wiring: `MusuBuddy_jam(w)` runs at the tail of `MusuBuddy_hear` (beat 10, once, after `w.c.term`)
+         — spins/likes/grabs the browsed track into the mirror's `%Jam` session + a keeper copy in a distinct
+          `%Kept,pier:<lis>` shelf (grabbing into the mirror would just re-find the husk). TWO new sees at beat 11:
+           the ledger reads Spin→Like→Grab in `at` order (reads the real rows, not a flag), and the keeper stands
+            WHOLE in `%Kept` while the husk still stands in the mirror (copy-not-move). 13 sees total. **Adversarial
+             review (opus): both sees SOUND** (live-data reads, verified one-line breaks, no blocking bug; `vmag`
+              is near-vacuous decoration, the load-bearing conjuncts carry it). STILL OWED: the fleet re-record
+               includes MusuBuddy for the jam rows (already in the N2 union).
+
+**Graph-density follow-up (low priority, decide on a live look):** `Jam_grab` copies the browsed track's ~38
+ chunk particles into `%Kept` (required — the `kept_whole` see reads them), so MusuBuddy's Cyto graph now holds
+  the mirror record's chunks AND the keeper's. If that reads cluttered on a live render, stuff-fold them (`%stuff`
+   / the `Repli_crush_scan` path → `no_further` suppresses Cyto descent while the particles stay for the see) —
+    ideally the mirror record too. Not a correctness issue; the Matstyle swatches already give them semantic color.
+
+**RE-RECORD DONE (2026-07-14).** All 14 affected Books re-recorded GREEN on the live :9091 runner, including
+ **MusuStanding** (now `%Card`, superseding any `Record`-card version). The sealed real-audio Books keep their
+  benign `AudibleEntropy` ≈ (MusuBuddy caveat:11; the Ra Books caveat:37/53 — all ok_pct:1; caveat:0 is
+   unreachable by design, not chased). Working-tree note: running each Book also refreshed its
+    `Credulate`/`Credulation` gen-pins to the new gen bundle (now including `Ghost_M_Jam`) and its toc
+     timing-stats — benign bookkeeping churn across the run set, expected in the diff. Gen reached the runner
+      via `ghost-compile` (intermittently half-open — a retry cleared it each time; LocalGen kept the disk gen
+       honest in parallel).
+
+**THE RA PIPELINE RE-DRAW — MusuBuddy consolidates stock|cast|play UNDER the magazine, and the three
+ standalone Ra* Books RETIRED: LIVE-GREEN ×2 (2026-07-14; 14/14 green — a sealed real-audio Book, so
+  steps 4–14 ride benign `AudibleEntropy` ≈; caveat:0 is unreachable by design, not chased).** The human's
+   push (2026-07-14): "do MusuRaStock|Cast|Term really stay relevant once we have the magazine — or is that
+    proving the same job twice?" The honest answer split — the magazine is the CATALOG (identity leaves), the
+     Ra pipeline is the PAYLOAD (the real PCM), orthogonal axes that MEET — but the three standalone Ra* Books
+      proved stock|cast|play in a configuration **the destination never runs**: a stream with no catalog
+       naming it. The magazine arriving IS the higher-level re-draw §3.5 always promised. New Book **MusuBuddy**
+        (`Ghost/Story/Radiation.g`) runs the pipeline WITH its front door: `Musica_stand` publishes the
+         collection as a `%Musica` magazine over the granted wire, a title-pinned `%Dogear` browses the
+          follower's MIRROR down to a card, and **the browsed card fetches its OWN audio** — card id = Record
+           id (the catalog and the stream identity are ONE), so the pull parks|ignites on demand, the terminal
+            decodes THE PULLED bytes (LUFS −14.02 at target, an honest starve, gapless when whole), and a
+             revoke leaves the magazine STALE (a fresh origin draw meets the closed gate — zero frames, the
+              MusuStanding seq discriminator). It ABSORBS every claim of the three (RaStock: opposite-direction
+               gains toward one target + idempotent restock; RaCast: seal + husk promise + park/serve demand +
+                byte-faithful whole pull + revoke silence; RaTerm: LUFS survives the opus trip + honest starve
+                 + gapless), and adds three the standalone configs could not make: the browse-by-meaning join,
+                  the **unbrowsed husk kept unspent** (the economy — pull is per-card, never broadcast), and
+                   the stale-magazine-after-revoke. 11 sees; **adversarial review (opus) returned all 11 SOUND**
+                    (each with a verified one-line break; the four hunted false-green suspects all defused —
+                     origin transcode mints on the origin record so the mirror husk stays empty, a wrong cursor
+                      landing fails the title equality, `o()` is direct-children-only so husks and cards never
+                       collide, the sorted testsounds give genuinely opposite gains). RETIRED once green ×2:
+                        MusuRaStock/RaCast/RaTerm deleted (Book code in `Radiation.g`, fixtures, Credence, Ality)
+                         — `Ghost/M/Ra.g`'s spine verbs are UNTOUCHED (MusuBuddy + RaStream + RaChase ride them);
+                          RaStream/RaChase (the streaming-race + village-dial residue the magazine can't express)
+                           and the real-audio lowlevels + `MusuGenerateTestsMusic` all STAY. (Live note: the gen
+                            re-compile after the delete HMR-wedged the sole runner — MusuBuddy's green is banked
+                             from BEFORE the delete; its Credulate re-pins to the trimmed gen on the next clean
+                              run after a tab reload — benign gen-pin churn, not a re-gate.)
+
+**M4 (second rung) — CENSUS BECOMES THE STANDING PUBLISH (a diff-watcher pass, idempotent on a quiet census):
+ LIVE-GREEN ×2 (2026-07-14; 12/12, caveat:0).** New Book **MusuStanding** (`Ghost/Story/Heistation.g`, after
+  MusuStanding) makes the census itself the TRIGGER: MusuRecast crossed a diff when `Musica_recast_offer` was
+   CALLED; this makes a *change to the collection* drive it. New verb **`Musica_stand(w, tx, from, to, mag, lib,
+    randomic, created_at)`** (`Ghost/M/Heist.g`) fingerprints the collection (its sorted id set) and — if UNCHANGED
+     since `mag.c.last_census` — does NOTHING (no fold, no offer, no frame); on a change it recast-offers the delta
+      and remembers the new fingerprint. **The idempotence is the load-bearing claim** — it makes the pass a real
+       diff-watcher, not a blind every-beat re-offer that would spam the wire and defeat the husk economy. The Book
+        seeds {t0,t1,t2}, stands (publish), stands again on the unchanged census (QUIET — zero frames), grows (+t3)
+         and stands (propagates), shrinks (−t1) and stands (goner crosses), stands again (QUIET). 5 sees. The
+          idempotence discriminator reads the **origin Pier frame counter** (`Pier_next_seq` → `tx.c.seq`): a quiet
+           stand must send zero frames — remove the fingerprint gate (the one-line regression) and every stand
+            re-offers, `sent>0`, red. (The mirror-content sees would MISS that — a redundant husk re-offer upserts
+             the same cards and changes nothing visible; only the frame count witnesses a wasted republish.)
+              Adversarial review (opus subagent) returned all 5 SOUND, confirming the unconditional `Repli_offer` on
+               a granted non-empty mag always burns one seq and nothing else touches `tx.c.seq`. Deterministic +
+                in-memory; registered Credence (`brand_new:1`) + Ality. **M4's standing publish is proven; the last
+                 M4 piece is the roster FAN-OUT — standing over N enrolled followers (needs per-follower mirror
+                  routing; `// <` in `Musica_stand`).**
+
+**M4 (first rung) — THE CENSUS-DIFF RE-PUBLISH (a goner crosses the wire and leaves no orphan): LIVE-GREEN ×2
+ (2026-07-14; 12/12, caveat:0).** New Book **MusuRecast** (`Ghost/Story/Heistation.g`, after MusuRecast) wires the
+  retire to the fold — the gap MusuVend's forget scene left explicitly open (its forget was a LOCAL GC; "the follower
+   keeps the cloud until a Repli_retire propagates"). New verb **`Musica_recast_offer(w, tx, from, to, mag, lib,
+    randomic, created_at)`** (`Ghost/M/Heist.g`): re-fold the magazine, re-offer the whole thing (husk — neus + in-place
+     updates ride an upsert), then cross an explicit **path-carrying `op:delete`** per goner — because a streamy merge
+      never removes what an offer OMITS (by design), so a re-offer alone can never withdraw a lost card. TWO
+       granularities, mirroring the fold's own reconcile: a card lost from a SURVIVING cloud (`Mag>Cloud>del Record`)
+        and a whole cloud EMPTIED (`Mag>del Cloud` — the whole-era drop in one line). `Repli_retire` stays the FLAT
+         depth-0 goner for a record off a mirror lib (MusuReplica); a magazine card is three levels down, so the delete
+          carries its Mag/Cloud ancestry as plain upsert lines the merge already walks — **no Repli wire-core change**.
+    The Book publishes two clouds, loses one record (t1 — cloud survives) then a whole draw (t3+t4 — cloud empties), and
+     proves the follower's mirror drops EXACTLY what the origin lost, no orphan and no empty husk, survivors intact.
+      5 sees. **Adversarial review (opus subagent) caught see #5 as a FALSE-GREEN** — its claimed break (broaden the
+       record-delete to a `Record:1` wildcard) transiently nukes the survivors but scene 3's re-offer re-adds them
+        before the witness samples any settled pass, so it latched green anyway. FIXED by pinning the survivor state in
+         a frozen `after_record` note the instant the record goner drains (before scene 3 can heal it), where the
+          broadened delete leaves `s0=0 s2=0` and can never un-write — now the break genuinely flips it red. Registered
+           Credence (`brand_new:1`) + Ality. (Live note: the first accept caught a `self,round=5` heartbeat wobble →
+            caveat:1; a fresh warm re-record settled it to `round=4`/caveat:0 — a benign quiescence margin, not data.)
+             **M4's census-diff heart is proven; the remaining M4 is rename-as-standing-Upkeep + revolving service pacing.**
+
+**M3 — THE RENAME MISSION (a `%Renamed` redirect rides the wire and a stale cursor heals through it): LIVE-GREEN ×2
+ (2026-07-14; 9/9, caveat:0).** New Book **MusuRename** (`Ghost/Story/Heistation.g`, after MusuResume) closes the
+  loop C2 (MusuHeal) proved only in-memory: C2 healed a cursor through HAND-AUTHORED markers; M3 mints the marker
+   from a real reorganise gesture and crosses it Pier-to-Pier. New verb **`Musica_rename(mag, id, key, to, at)`**
+    (`Ghost/M/Heist.g`) is ONE gesture — it applies the retitle AND mints the `%Renamed` beside the card in the same
+     stroke, so the magazine never shows a rename without its redirect. On MusuVend's proven two-Pier loopback the
+      origin retitles two cards, re-offers the whole magazine, and the follower's cards update IN PLACE (the card
+       locates on the wire by `['Record','id']`; `title` is a merge PROP, so no fork) while the two markers arrive as
+        fresh facts. Two title-pinned `%Dogear` cursors that were `fresh` (zero heals) before the mission then HEAL
+         through the REPLICATED markers, landing on the retitled records and noting from→to. **`Renamed_mint` gained a
+          `repli_loc:['Renamed','key','from']` stamp** so two markers stay DISTINCT on the wire (the default `['Renamed']`
+           loc would upsert the second onto the first and blur both redirects into one) — see #5 pins exactly that seam.
+            5 sees, each with a named one-line break; adversarial review returned all 5 SOUND (no tautology, no
+             false-green path — the `{Renamed:1}` numeric-1 wildcard survives the peel round-trip, verified). Deterministic
+              + in-memory (no FSA / audio / Berth / entropy): runs on ANY runner. Registered Credence (`brand_new:1`) +
+               Ality. **M3 is done; the M-rung's next natural step is M4** (census-diff re-publish + rename missions as a
+                standing Upkeep pass — needs M1 ✓ + M3 ✓); **U** (the magazine reader) is also unblocked.
+
+**C3 — THE RESUME (berthed `%Dogear` survives a reload): LIVE-GREEN ×2 (2026-07-14; 7/7, caveat:0).** New Book
+ **MusuResume** (`Ghost/Story/Heistation.g`, after MusuHeal): a `%Dogear` homed inside a magazine survives a full
+  `enWaft`→`deWaft` round-trip (the disk-less core of Berth save+open — MusuBerth owns the real disk) and still
+   resolves to the record it named — the resumable browse. Needs no FSA, runs on ANY runner, deterministic.
+    DISCRIMINATION: a second bookmark is live-only under `%testing`; only the berthed one rides the snap (re-decoded
+     magazine carries EXACTLY one Dogear — `dogear_count:1`, `kept_present`, `live_absent`). Adversarial review
+      caught the `independent` leg as near-tautological (`deWaft` structurally can't alias, so `!old.ok` was forced
+       by our own rename) → re-gated on the re-decoded cloud being a DISTINCT node object, which a hypothetical
+        aliasing `deWaft` would actually flip red. En route it corrected **CLAUDE.md**: the enWaft vocabulary gate
+         is PARKED (`all_knowing` — any mainkey rides; the old "unknown mainkey = fatal encode skip" was stale — the
+          only encode-fatal is an object/function in `.sc`). Credence regrouped (`What:mostly` → pipeline / magazine
+           / replication; the cursor trio homed under `magazine → the cursor`). **The cursor arc C1·C2·C3 is complete.**
+
+**C2 — THE HEAL (`%Renamed` redirect): LIVE-GREEN ×2 (2026-07-14; 7/7 steps, caveat:0).** New Book
+ **MusuHeal** (`Ghost/Story/Heistation.g`, after MusuCursor) grows C1's clean-fail verdict into a HEAL:
+  when a cursor's named level is gone, `Cursor_resolve` consults recent `%Renamed,key,from,to` markers beside
+   the last node reached and retries with the redirect (`Cursor_heal` in `Ghost/M/Heist.g`), landing on the
+    moved node and NOTING what it healed (`heals:[{key,from,to}]`). The marker rides IN the magazine beside the
+     renamed node (a positive, window-able cousin of `%Tombstone`/`%UnGrant`), so a follower heals through the
+      same pipe the content came down. `Renamed_mint(parent,key,from,to,at)` mints one. THE DISCRIMINATION
+       (non-vacuity baked in): the Book renames two records identically, ONE with a marker and ONE without — the
+        marked cursor heals to `t1b` noting `from:t1→to:t1b`, the unmarked one fails cleanly (`missing t2`). So
+         the heal is provably the marker's doing — the one-line regression (drop the `Renamed_mint`) flips the
+          heal sees red while the control stays green. Adversarial review confirmed SOUND + falsifiable; it flagged
+           steps 3/5 lacked `reached:` markers (silent-un-latch risk) → both added. The heal is TRANSPARENT to an
+            un-renamed cursor (MusuCursor re-ran green, caveat:0, after the `Cursor_resolve` change). Registered
+             Credence + Ality. `Credulate` pins the fresh gen (`Heist~g1 @f52331c1`, `Heistation~g1 @b80b9c7a`).
+
+**C1 — CURSORS (`%Dogear`): LIVE-GREEN ×2 (2026-07-13; 6/6 steps, caveat:0).** New Book **MusuCursor**
+  (`Ghost/Story/Heistation.g`, after MusuDoor) + the cursor primitive (`Cursor_*` in `Ghost/M/Heist.g`).
+   The human's steer was to **model the cursor on `%lematch`**: a `%Dogear` is a linear spine of `%curs`
+    match-segments, each storing ONE `o()`-query; `Cursor_resolve(dog, root)` re-finds each level from a
+     root down, LANDING on the leaf or returning a CLEAN fail verdict `{ok:false, depth, missing, at}` —
+      no throw (the seam C2 heals through: consult recent `%Renamed` for `missing`, retry with the
+       redirect). **KEY-AGNOSTIC** by design — a level pins by whatever keys its node wears
+        (`id`/`randomic`/`shuffle`), so the Cloud-model redirect below slides under it untouched. Snap-safe:
+         the wildcard TYPE rides as a `wild:<Type>` VALUE (re-inflated to `{Type:1}` at resolve) so it dodges
+          the `Cloud:"1"` exactly() footgun; literal pins ride flat. Three sees: RESOLVE (lands on the exact
+           record, depth 3), PARTIAL (names a level not a leaf — lands on the cloud, depth 2), CLEAN FAIL
+            (knock the record out → fails at that level, reports the missing query). Adversarial review found +
+             fixed a real soft spot — see #3's "no crash" degraded to a SILENT un-latch on an upstream throw,
+              so a `reached:step_4` marker now gives the recorded snap-diff teeth (RED, not silent); see #2 also
+               tightened to assert the landed node is a `%Cloud`. Compiles byte-clean (LocalGen 88271c +
+                ghost-compile `@bbc3c8cc` accepted). Registered Credence + Ality. **LIVE-GREEN ×2 on the
+                 reloaded 49de runner** (6/6, `caveat:0`) — the snap shows both `%Dogear` spines
+                  (`Dogear,of:record-t1 → curs,Mag:Musica → curs,wild:Cloud,randomic:draw_one → curs,wild:Record,id:t1`),
+                   the knockout genuinely removed t1 from its cloud, and all three sees + `reached:step_2`/`step_4`
+                    latched. `Credulate` pins the fresh gen (`Heistation~g1 @bbc3c8cc`, `Heist~g1`). (The runners had
+                     wedged mid-session — 49de post-HMR think-stall, 3c52 begun-wedge — until a tab reload; lesson: an
+                      in-session `ghost-compile` HMR of a big ghost can stall a live runner's think loop.)
+
+**D1, re-posed (the human asked "what's it all for?" — and yes, it IS Invites & Grants).** "The door" is
+ the SERVING side of a follow: your machine hands a follower content over Repli; the door is the per-pull
+  consent check. Part b (MusuDoor, done) proved the door only lets DATA through, never live machinery.
+   Part a (owed) is the WHO-check: swap the demo's Book-owned `w.c.grants` boolean for the REAL verdict
+    `Swarm_pier_live(pier, 'Music')` — does this Pier hold a live, signed, un-revoked grant (minted by an
+     invite, redeemable, revocable by a `%NotGrant`)? **MusuHeist ALREADY runs that exact verdict live**
+      (`Heistation.g:258`); the ONLY unproven composition is revoke-mid-relationship → next-draw-refused
+       OVER the magazine pipe. So part a is one small SCENE (best folded into MusuHeist), not a fresh Book —
+        it just needs the `AudibleEntropy` profile (real grants carry a wall-clock `time:`/`sign:` that must
+         be fuzzed) + a warming re-accept, hence attended.
+
+**CLOUD MODEL redirect (the human, 2026-07-13):** drop `randomic`; have the REAL rastock lay Records
+ ordered by an axis — `shuffle | ctime | mtime` — PARTITIONED every ~20, so a 400-track collection becomes
+  ~20 Clouds of 20 (`Cloud,shuffle:0 … 19`). The Cloud key becomes its partition position along that
+   ordering, not a random draw-id. An M-family data-model change (touches `Musica_fold`'s batching, the
+    `repli_loc` → `['Cloud','shuffle']`, and the real `Ra_stock` generator that today stocks a `%Library`
+     but publishes no magazine) — folds in at the M3/M4 real-rastock→magazine seam. Does NOT block C1 (the
+      cursor is key-agnostic). (Read "20 magazines = 400 Records" as 20 Clouds/partitions × 20; confirm if
+       something else was meant.)
+
+**M2 — MAGAZINE REPLICATION: LIVE-GREEN ×2 (2026-07-13 pm; 11/11 steps, caveat:0).** New Book
+ **MusuVend** (`Ghost/Story/Heistation.g`, appended after MusuHeist) proves the magazine TRAVELS: two
+  Piers over a Lake_link loopback, an in-memory magazine folded at the origin and `Repli_offer`ed whole
+   (husk — a magazine card is a payload-less leaf, so no wants: the tree crosses in ONE frame), the
+    follower mirrors it. The GATE is the point — draw A crosses (granted) → draw B REFUSED + noted
+     (revoked) → draw B catches up (re-granted); the gate is consulted live, cached nowhere. Then a FORGET
+      scene GCs the older cloud (the `%Cloud` layer's raison d'être — an era dropped at once). 6 `%see`.
+       Deterministic + in-memory (no FSA / no audio / no Berth / no AudibleEntropy) so it runs on ANY
+        runner and its fixture is jitter-free. Both `.g` LocalGen-green; toc seeded (11 lie steps);
+         registered in Credence (`brand_new:1`) + Ality.
+ - **The MusuRa question, answered honestly (the human asked "do MusuRa* use the magazine?").** NO —
+    the MusuRaStock/Cast/Term/Stream/Chase family stocks a real `%Library` but never publishes a
+     magazine from it (zero `Musica`/`%Cloud` refs). They ARE otherwise fully current-era (no tombstone,
+      no `%Tune`, no genre tag-tree). The shapes already FIT — `Musica_fold` consumes exactly what
+       `Ra_library` builds (`%Library,pier > %Record`) — nobody had wired them. MusuVend is the first
+        wiring (folds a magazine from a `%Library`); wiring the REAL Ra stock → magazine into the MusuRa
+         Books is a follow-up (needs an FSA runner; owed).
+ - **`Musica_publish` split into the "one brain" (§12.1):** the pure reconcile-then-add is now
+    `Musica_fold(mag, lib, randomic, created_at)` (in-memory, no disk); `Musica_publish` is the Berth
+     wrap (open → fold → save). So ONE magazine-building brain serves the disk publish AND the wire — no
+      duplicated reconcile. The fold stamps `cloud.c.repli_loc = ['Cloud','randomic']` so a Cloud
+       reconciles by its draw-fingerprint on the wire (without it the default `['Cloud']` loc collapses
+        every batch to one blur at the follower).
+ - **`randomic` = a RANDOM DRAW (the human's clarification):** a `%Cloud` is a handful MEANDERED out of a
+    collection NEVER fully enumerated (`Crate_meander` random-walks the crate — Crate.g); the magazine is
+     random samples accreting over time, not a full census. `randomic` is the draw's fingerprint. Folded
+      into the fold's doc + MusuVend's framing.
+ - **ADVERSARIAL review PASSED (in-session code review, not a live run):** no RED-causing bug; all 5 sees
+    fire; 4 of 5 are breakable by a named one-line change (#1 corrupt a fold scalar, #3 allow-all, #4 cache
+     the revoke, #5 drop `repli_loc` → `{Cloud:1}` numeric-wildcard collapses both clouds). #2 (catalog-not-
+      payload) is honest but semi-tautological ON THE WIRE — its leaf property is the FOLD's sublimation, not
+       the husk (husk is a no-op for a payload-less magazine; the husk path is proven on MusuReplica/Reco/
+        Heist). Commented at the site. Value/string wire round-trip type-stable; all 6 mainkeys snap
+         (vs MusuHeist/022.snap); the `reliable:true` mock drains inline in post_do (the rx.do() pumps are
+          belt-and-braces).
+ - **LIVE-GREEN ×2 (2026-07-13, runner 49de):** recorded 11/11 steps, `caveat:0` (deterministic — no
+    entropy jitter), all 6 sees latched, both clouds distinct at the follower, forget dropped the older
+     cloud. The runner was FROZEN on first dispatch (total:1 Prep bubble — the freeze problem) and SELF-
+      HEALED on the second run (frozen-boot: the first run is a sacrificial thaw), then accept → green ×2.
+       Fixtures committed. `Credulate/toc.snap` confirms the fresh gen (`Heistation~g1`, `Heist~g1`).
+
+**NIGHTSHIFT 2026-07-13 — DONE (all four jobs cleared; committed as the human by licence).** The
+ blow-by-blow is in `history/Radio_buildlog.md` (2026-07-13 nightshift entry). In brief, on the
+  recovered `49de` runner: **Job 1** MusuHeist re-recorded 15/15 over the franken-fixtures, green ×2
+   (`caveat:28` benign), committed `1c2e7e12`. **Job 2** MusuBerth's first live record + reset-with-Story,
+    green ×2 (`caveat:0`), committed `03c2e1cd`. **Job 3 (M1)** `Musica_publish` verb + the new
+     **MusuMagazine** Book authored/registered/LocalGen-green (`683d00a6`), then live-recorded +
+      accepted, green ×2, all four `%seen` + four markers present, Credence dropped `brand_new`,
+       fixtures committed `c05e66d8`. **Job 4** both MusuHeist sabotage-proofs demonstrated the sees
+        are load-bearing — (a) `Heist_tombstoned→false` dropped see #11 (retomb read `holds=8,fresh`);
+         (b) a corrupt census `body_hash` stamped `breached,landed=2` and dropped see #4 — both
+          CHECK-only, reverted, runner left green on pristine gen `39558c`.
+
+**NEXT (2026-07-13 night): the whole heist+magazine wave is BUILT — M2 leads next.** DONE today
+ (all committed, live green ×2): the tombstone RIP; test music TAGGED-BY-DEFAULT; the magazine as
+  `%Cloud/%Record` on the observable plane; the Ra family re-record over the tagged bytes; then the
+   blessed wave — **cp-LANDING** (a heist is a cp: `<dest-root>/<source-path>`, whole-dir pickup, no
+    rename, `Heist_cp_path` sanitizes `..`, kid-safe non-audio-siblings + dedup bias-to-keep captured
+     as `// <`) and **the FOLD** (MusuHeist publishes Uno's REAL collection via `Musica_publish` and
+      reflects it into w/%Mag — real ids/hashes/cp-paths on the snap; the existing deny gives a RECAST
+       on real data; 14→16 sees, 19→22 steps). The magazine is now proven on the real machinery, the
+        data as data.
+ - **MusuMagazine DELETED (2026-07-13):** the fold made MusuHeist the real-data magazine proof, so the
+    `%Cloud` toy was retired (Berthation.g flow + Credence/Ality registration + fixtures all gone; the
+     `Musica_*` verbs stay in Heist.g). Its two OWED-coverage items are now BOTH ABSORBED BY MusuVend
+      (M2): **multi-cloud grow** — draw A + draw B form two distinct `%Cloud`s (see #5); and
+       **`Musica_forget`** — `Musica_forget_fold` extracted (the pure GC twin of `Musica_fold`) and
+        exercised by MusuVend's forget scene (see #6: origin drops the older cloud by its stamp, keeps
+         the fresher). The radiostock cascade is now BUILT (2026-07-17, MusuReap green ×2 — `Musica_forget`
+          reaps the derived `.jamsend_radiostock` off disk via `Ra_stock_cascade`, bias-to-keep). The only
+           remaining `// <` on forget: the WIRE goner. (The follower-propagation via Repli_retire is BUILT —
+            M4/MusuRecast crosses the goner at record + cloud level; folding it into Musica_forget's Berth path
+             so a forget ALSO retires over enrolled followers is the standing-loop remainder.)
+ - **M2 LIVE-GREEN; D1 part b LIVE-GREEN (MusuDoor, 2026-07-13) — NEXT build is D1 part a.**
+    D1 was split: **part b (the SABOTAGE wall) LANDED** as the `MusuDoor` Book (fork of MusuVend,
+     9/9 caveat:0 ×2 on runner 49de, commit `f76b3d7e`). A malicious origin grafts a `%req:sabotage,eternal`
+      under a magazine card; it merges deep in the follower mirror as DATA and lands **INERT** — `reqdo_sweep`
+       pumps only w's IMMEDIATE reqs, so a req buried below the mirror is never enumerated. The canary is
+        DYNAMIC (a `req_sabotage` handler flips `w.c.pwned` IF ever pumped; an adversarial review killed the
+         first immediate-child draft as a false-green) so BOTH a promoting merge AND a deep-walking sweep go
+          red. 3 sees: wall + gate (revoked peer refused) + containment. Deterministic (no crypto/entropy).
+    **D1 part a (OWED, the crypto door):** swap MusuDoor's Book-owned grant toggle for the live
+     `Swarm_pier_live` verdict (the MusuHeist `repli_allow` shape) — reintroduces seal wall-clock →
+      an EntropyProfile + a warming re-accept, so best done ATTENDED (§12.4 D1 recipe (a)). The sabotage
+       wall does not depend on WHO the peer is, so it landed cleanly without the crypto.
+    Then C1 cursors. Corner-cases for when cp-landing meets real disk (all `// <`): audio-probe the bytes,
+     the album-art/kid-safe oracle, dedup album+disc+track-else-path, landing-path clash.
+
+**NOW (2026-07-13, post-push): three §10.2 gears LANDED compile-clean (live-gate owed on all);
+ the Booth/Ban thread is VETOED-and-parked; persistence is ruled — §11.7 (the Berth).**
+ - **Landed in the working tree** (opus-agent waves; every .g LocalGen-green): **#1
+    stream-to-disk** — `Heist_land` streams each %Body via a new `nav.bin_append`
+     (Housing.svelte.ts:2260) behind a capability probe (FSA streams; OPFS/remote/node fall back
+      whole-buffer, `<`), verify-after-write vs body_hash, breach → delete + tally. **#2
+       metadata + the real tree** — the census feeds its body_hash bytes to
+        `Crate_meta_from_tags` (WAV INFO + ID3v2.3/2.4) and lands at
+         `<genre>/<Artist>/<Album>/<Title>.<ext>` (album-less drops the level; genre stays the
+          top folder — that fork is still the human's). **#3 partial** — `held,tune:` surfacing
+           on the job per already-held skip + `Heist_manifest(job, mir, lib)` → [{path, verdict}]
+            (the look-before-you-commit; resume side `<`).
+ - **VETOED**: the %Tombstone→%Ban rename (host checkout reverted Heist.g/Heistation.g/LiesLies
+    to the tombstone baseline — LEAVE IT). `Booth.g` exists unwired/unenrolled — read §11's
+     STATUS block before touching anything taste-shaped.
+ - **FRANKEN-FIXTURES (urgent, 2026-07-13 late)**: the accepted MusuHeist fixtures record a
+    CROSS-WIRED HUNG run — the tab ran the stale `encore` Book gen (HMR'd in before the host's
+     checkout) against the `tombstone` engine gen: the flow's completion read `banned` (never
+      written) while the engine tallied `tombstoned` → the retomb job hung at skipped=7 from step
+       ~19 to 42. Proof in the fixtures: `offered:encore` + `reached:job_encore` present;
+        `heisted:retomb`/`flattened` ABSENT — see #11 silently vanished from the roster. Recipe:
+         RELOAD the tab (kills stale gen) → clean run → TRIM the toc to last-edge + ~3 headroom
+          (the 42-seed leaves ~18 dead steps — the human: "just sitting there from step 20") →
+           re-record + accept + confirm the see roster. Also landed meanwhile: `bin_append` is a
+            FULL 4-backend contract (the host built OPFS/node/remote + the serve op; agent-audited
+             correct, old-editor degrade honest) and @noble/hashes rides `Heist_land` as an early
+              wire-hash tripwire (`Hashly.ts`; the read-back stays the unconditional
+               bytes-on-disk gate).
+ - **THE LIBRARY CATCH** (the human: "didn't we have a library for that?"): package.json ships
+    **music-metadata@11** — the hand-rolled tag parser in Crate.g duplicates it. Swap
+     `Crate_meta_from_tags`' internals to an IMPORT() of music-metadata (parseBuffer; the
+      .g-imports-ts pattern exists for exactly this). KEEP `Crate_wav_with_tags` — the WRITER —
+       music-metadata cannot write tags and tests must synthesize tagged files.
+ - **OWED, in order (the next fork's fleet)**: (1) **Book scenes** for the landed gears —
+    manifest-counts scene, held_named on the reuno row, the tagged-WAV tags-beat-filenames scene
+     (synthesize via Crate_wav_with_tags into the share at census + delete at flat; count cascade
+      uno 2→3 / reuno+retomb 8→9 / skipped 7→8 / no_reland 7→8 / newlyadded uno 2→3 — TRACE ALL),
+       a `streamed:1` telemetry marker on the uno row iff nav.bin_append existed; a first attempt
+        died at the session limit mid-edit and was REVERTED — re-run clean. Steps grow ~42→~52:
+         re-seed the toc THEN reload the runner (total:1 bomb). (2) the music-metadata swap.
+          (3) **the Berth** (§11.7) — build + a Book scene proving reset-with-Story. (4) **the
+           live gate**: LocalGen sweep → CHECK on 49de → accept (pre-pin the 11 sees; expect big
+            path churn — every landing deepens by Artist[/Album]) → sabotage-proofs (tombstone
+             door → false must drop see #11; a wrong body_hash must breach not land). (5) then
+              §10.2 #4 the single-track/want-driven session (the anti-klepto front door +
+               Waft:Map advice, §11.7), #5 repointable, similarity-upgrade.
+
+ **Bombs a fresh fork must hold** (durable homes: §2 wiring bombs, §1.5 Book discipline):
+  LocalGen for spine `.g` edits, never ghost-compile Ra.g against a live editor (§2);
+   new Book = seed the toc THEN reload the runner + register in Credence (§2);
+    always `--runner=<prefix>`; pre-pin the `%see` set before any accept and confirm after (§1.5);
+     sealing Books show PERMANENT benign ≈ on grafted seal fields — do not chase caveat:0 (§1.5);
+      the host commits mid-session — re-check the tree after HEAD moves.
+
+**Captured idea (the human, 2026-07-14) — the CUE as the DJ metaphor for an invite.** The `Idzeug`/`Invite`
+ tokens "can be got from a place in the DJ equipment to plug in the monitor for headphone-ing to the next
+  track." So the invite/grant isn't only a door — it's the DJ's CUE: an Idzeug redeemed at the deck lets you
+   MONITOR (headphone-preview) the next track before it plays out loud, the way a real DJ cues the incoming
+    record in their cans. Ties the Swarm invite (SwarmDoor / §1.0 Invite) to the deck's cue channel (MusuCue,
+     §1.0 `multi-stream: decks, cue, crossfade`). Design seam for when the deck UI + invite meet — a redeemed
+      grant surfaces a "cue the next track" affordance, distinct from the out-loud play.

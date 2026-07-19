@@ -210,15 +210,25 @@ async Crate_nav_meander(nav, base, want):
         if (!dl) { rel = ''; continue }
         await dl.expand()
         let audio = dl.files.filter(f => this.Crate_is_audio(this.Crate_ext(f.name)))
-        if (audio.length) {
+        // the local audio pool is ONE branch beside each subdir, drawn uniformly.  The old
+        //  audio-first return STOPPED at the first level holding any audio, so a share with
+        //   tracks at its root STARVED everything below (testsounds/muchOther/** — the human's
+        //    deep albums, unreachable forever).  Now a root of 5 wavs + 1 folder descends half
+        //     the time, a folders-only level always descends, and a FLAT share (no subdirs)
+        //      still picks locally every hop — the 200k flat crate walks exactly as before.
+        //  Noise dirs (dot-dirs, node_modules) never draw: a repo-root share is a working
+        //   tree, and the wander is for MUSIC.
+        let dirs = dl.directories.filter(d => { let nm = String(d.name || ''); return nm && nm[0] !== '.' && nm !== 'node_modules' })
+        let branches = dirs.length + (audio.length ? 1 : 0)
+        if (!branches) { rel = ''; continue }
+        let k = this.prandle(branches)
+        if (audio.length && k === dirs.length) {
             let picks = []
             let pool = [...audio]
             while (pool.length && picks.length < want) picks.push(pool.splice(this.prandle(pool.length), 1)[0])
             return picks.map(f => rel ? (rel + '/' + f.name) : f.name)
         }
-        let dirs = dl.directories
-        if (!dirs.length) { rel = ''; continue }
-        let d = dirs[this.prandle(dirs.length)]
+        let d = dirs[k]
         rel = rel ? (rel + '/' + d.name) : d.name
     }
     return []

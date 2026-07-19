@@ -617,7 +617,11 @@
     function gang_stuff(id: string, src: TheC): TheC {
         const members = (src as any).c?.gang as TheC[] | undefined
         if (!members?.length) return src
-        const mirror = gang_mirrors.get(id) ?? _C({ gang_of: Object.keys(src.sc ?? {})[0] ?? 'gang' })
+        // the mirror labels as the MEMBER mainkey + live count ("req:7"), never the old
+        //  'gang_of' word — the human: "useless gang_of nodes".  Refresh the count in place.
+        const gmk = Object.keys(src.sc ?? {})[0] ?? 'gang'
+        const mirror = gang_mirrors.get(id) ?? _C({ [gmk]: members.length })
+        if (Object.keys(mirror.sc ?? {})[0] === gmk) mirror.sc[gmk] = members.length
         const sig = (sc: any) => JSON.stringify(sc ?? {})
         const stale = new Map<string, TheC[]>()
         for (const ch of mirror.o()) {
@@ -3201,6 +3205,30 @@
         return Math.abs(nx * T11 + ny * T21) * hw + Math.abs(nx * T12 + ny * T22) * hh
     }
 
+    // the TRUE bind: the largest molded scale whose transformed content box still
+    //  clears every wall of the cell polygon — per-wall room from the anchor over
+    //   the support along the wall normal.  ONE loop shared by the gather (capped
+    //    dims — walls get placed before content settles) and paint_final (TRUE
+    //     dims: the old re-clamp there checked only the cell's BBOX, a loose lie
+    //      for sliver cells — half of how big chunks slipped their cells).
+    function mold_max_fit(inset: {x:number,y:number}[], acx: number, acy: number,
+                          hw: number, hh: number,
+                          T11: number, T12: number, T22: number, T21: number): number {
+        let smax = 3.2
+        for (let k = 0; k < inset.length; k++) {
+            const a = inset[k], b = inset[(k + 1) % inset.length]
+            let nx = b.y - a.y, ny = -(b.x - a.x)
+            const nl = Math.hypot(nx, ny)
+            if (nl < 1e-6) continue
+            nx /= nl; ny /= nl
+            let room = (a.x - acx) * nx + (a.y - acy) * ny
+            if (room < 0) { nx = -nx; ny = -ny; room = -room }
+            const denom = box_support(nx, ny, hw, hh, T11, T12, T22, T21)
+            if (denom > 1e-6) smax = Math.min(smax, room / denom)
+        }
+        return smax
+    }
+
     // last C1 clump signature — voronoi_layout runs per drag-frame, so its telemetry
     //  line fires only when the clump's shape changes (see the pass inside)
     let clump_sig = ''
@@ -3422,18 +3450,7 @@
             // ── maximal fit under the molding ────────────────────────────────
             //  same closed form as the plain fit, with T folded into the
             //  support: for each wall, s·support_T(n̂) ≤ room(centroid→wall)
-            let smax = 3.2
-            for (let k = 0; k < inset.length; k++) {
-                const a = inset[k], b = inset[(k + 1) % inset.length]
-                let nx = b.y - a.y, ny = -(b.x - a.x)
-                const nl = Math.hypot(nx, ny)
-                if (nl < 1e-6) continue
-                nx /= nl; ny /= nl
-                let room = (a.x - acx) * nx + (a.y - acy) * ny
-                if (room < 0) { nx = -nx; ny = -ny; room = -room }
-                const denom = box_support(nx, ny, s.hw, s.hh, T11, T12, T22, T21)
-                if (denom > 1e-6) smax = Math.min(smax, room / denom)
-            }
+            const smax = mold_max_fit(inset, acx, acy, s.hw, s.hh, T11, T12, T22, T21)
             // no half-size floor: the old Math.max(0.5, …) forced a Stuffing to at least
             //  half its natural size even in a cell that couldn't hold it — the guaranteed
             //   clip the owner kept seeing.  Slightly small beats cut-off words; 0.18 is
@@ -3910,6 +3927,10 @@
         const mold_clip   = vknob('stuff.clip', 0) >= 1
         const mold_top    = vknob('stuff.top', 2)
         const mold_bottom = vknob('stuff.bottom', 0.5)
+        // stuff.damp = the overflow compressor: anything the band|scale asks for PAST
+        //  the true cell bind grows like (want/bound)^damp — sqrt by default, 1 = the
+        //   old linear overflow ("once their scaling gets big it needs extra dampening")
+        const mold_damp   = vknob('stuff.damp', 0.5)
         // the hover z-lift reads these polygons on every mousemove — refresh per paint,
         //  and re-assert the lifted class (a re-minted overlay el loses it silently)
         lift_cells = L.cells.map(c => ({ id: c.id, poly: c.inset }))
@@ -4021,23 +4042,24 @@
                         wrap_applied.set(c.id, targ)
                     }
                     // the RIGHT amount of space (owner): never paint a Stuffing bigger than
-                    //  its cell can hold.  c.fit was computed from the seed's gather-time
-                    //   content box, which is CAPPED (260×200) — big content lies to it.
-                    //    Re-clamp with the child's TRUE current box under the same support
-                    //     formula: the transformed content must fit the cell's bbox on both
-                    //      axes.  The polygon clipPath still trims corners; words survive.
+                    //  its cell can hold.  c.fit came from the seed's gather-time content
+                    //   box, which is CAPPED (260×200) — big content lies to it.  Re-bind
+                    //    with the child's TRUE current box against the REAL cell walls
+                    //     (mold_max_fit; the old re-clamp here checked only the cell's bbox).
                     const chw = (child.offsetWidth || 1) / 2, chh = (child.offsetHeight || 1) / 2
-                    const fx = (bw / 2) / Math.max(1e-6, box_support(1, 0, chw, chh, c.T11, c.T12, c.T22, c.T21))
-                    const fy = (bh / 2) / Math.max(1e-6, box_support(0, 1, chw, chh, c.T11, c.T12, c.T22, c.T21))
-                    // stuff.scale rides ON TOP of the fits-the-cell clamp — above 1 the
-                    //  content deliberately overflows its cell; with stuff.clip=0 (the
-                    //   default) nothing trims it.  The stuff.top|bottom band then rules
-                    //    ABSOLUTELY: a huge cell can't balloon its chunk past top× natural
-                    //     size (the "one gets waaay too big"), and a cramped cell never
-                    //      grinds below bottom× — it overflows instead, and the hover
-                    //       z-lift is how you feel into the resulting pile.
-                    const fit = Math.min(mold_top, Math.max(mold_bottom,
-                        Math.min(c.fit, fx, fy) * mold_scale))
+                    const bound = Math.max(0.05, 0.92 * mold_max_fit(
+                        c.inset, c.acx, c.acy, chw, chh, c.T11, c.T12, c.T22, c.T21))
+                    // stuff.scale rides ON TOP of the bind (above 1 the content deliberately
+                    //  noses past its walls; stuff.clip=0 leaves it untrimmed) and the
+                    //   stuff.top|bottom band still rules the ABSOLUTE scale.  But whatever
+                    //    they ask for past the TRUE bind is overflow, and overflow is DAMPED:
+                    //     it grows like (want/bound)^stuff.damp, so a floor-propped shelf
+                    //      noses out ~1.8× its cell where it used to bury the neighbourhood
+                    //       3× — the hover z-lift digs what still piles up.
+                    const want = Math.min(mold_top, Math.max(mold_bottom,
+                        Math.min(c.fit, bound) * mold_scale))
+                    const fit  = want > bound
+                        ? bound * Math.pow(want / bound, mold_damp) : want
                     const a  = (fit * c.T11).toFixed(3), b12 = (fit * c.T12).toFixed(3)
                     const b21 = (fit * c.T21).toFixed(3), d2 = (fit * c.T22).toFixed(3)
                     const tx = c.acx - (bx + bw / 2), ty = c.acy - (by + bh / 2)

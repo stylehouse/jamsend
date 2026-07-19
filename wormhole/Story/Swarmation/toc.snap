@@ -1,0 +1,13 @@
+story:Swarmation
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.009
+      sample=0.002,at=1784407598
+      sample=0.015,at=1784418010
+    TimeTotal:step,avg=0.009
+      sample=0.002,at=1784407598
+      sample=0.015,at=1784418010
+  step,dige:50ab9079202419ee

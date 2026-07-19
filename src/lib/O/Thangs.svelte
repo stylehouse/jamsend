@@ -171,6 +171,20 @@
                 })
             },
 
+            // Upsert a thang: write the row whether or not it exists.  thang_add's duplicate
+            //  throw guards accidental identity clobbering, but re-stamping the SAME identity
+            //   (a renamed self, a re-pin, a re-adopt) is an update, not a clash — this is that.
+            async thang_put(w: TheC, name: string, init: any = {}) {
+                const table = w.sc.thangs as string
+                if (!table) throw `thang_put: w has no sc.thangs`
+                if (!name)  throw `thang_put: !name`
+                await db.Thang.put({
+                    table,
+                    name,
+                    json: JSON.stringify(init),
+                })
+            },
+
             // Remove a thang. liveQuery drops the particle on next emission.
             async thang_remove(w: TheC, name: string) {
                 const table = w.sc.thangs as string

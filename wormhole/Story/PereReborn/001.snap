@@ -1,0 +1,7 @@
+Snap:H
+  H:PereReborn,Run
+    A:PereReborn
+      self,round	{"mung":["age"]}
+      w:PereReborn
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

@@ -1246,7 +1246,10 @@
             //      this page's OWN reconnect watchdog, like an editor's from-less ping); it just no longer
             //       announces WHO, so nothing enrolls.  Advertise is the sole enrollment authority.
             const from = (H.Lies_role(w) === 'runner' && !H.Lies_humdinger(w)) ? H.Lies_self(w)?.prepub : undefined
-            ;(H as any).Peeroleum_send_consumer(w, 'ping', { t: Date.now(), ...(from ? { from } : {}) })
+            // boot = this page-life's id, riding every ping (both roles — it names an INCARNATION,
+            //  not an identity, so it enrolls nothing; the HUMDINGER leak was `from`, not this).
+            //   The hearer's Lies_pong compares it per-Pier and resets a reborn peer's stream.
+            ;(H as any).Peeroleum_send_consumer(w, 'ping', { t: Date.now(), boot: SOCKCAP_BOOT, ...(from ? { from } : {}) })
         },
         Lies_pong(w: TheC, fr: any) {   // echo a received ping straight back — AND the ping itself is
                                         //  proof the peer is alive, so stamp last_heard.  This is the
@@ -1271,6 +1274,30 @@
             else
                 (H as any).Peeroleum_send_consumer(w, 'pong', { t: fr?.t })
             const peer = H.Lies_role(w) === 'editor' ? 'runner' : 'editor'
+            // ── boot-epoch (the reconnect-seq-collision cure, Lies-channel half): the ping carries
+            //  the pinger's page-life id.  A CHANGED boot on a Pier we hold stream state for = the
+            //   peer RELOADED — its per-Pier seqs restarted, and our inbox's finished %unemit
+            //    history would silently swallow every reused (seq,type): the 20s wormhole mute.
+            //     Reset the stream (Peeroleum_reset_handshake — %Ud kept) so the reborn peer books
+            //      fresh; first-heard boots just stamp.  The swarm channel's swarm_hi is the twin.
+            {
+                const boot = String(fr?.boot ?? '')
+                if (boot) {
+                    const from2 = String(fr?.from ?? '').trim()
+                    const bp = peer === 'runner'
+                        ? (/^[0-9a-f]{16}$/.test(from2)
+                            ? (H as any).Lies_runner_pier(w, from2)
+                            : (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1, pub: 'runner' })[0])
+                        : (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1, pub: 'editor' })[0]
+                    if (bp) {
+                        if (bp.c.peer_boot && bp.c.peer_boot !== boot) {
+                            console.warn(`🛰↻ ${peer} REBORN (boot ${String(bp.c.peer_boot).slice(0, 6)}→${boot.slice(0, 6)}) — resetting its stream so fresh seqs book fresh`)
+                            ;(H as any).Peeroleum_reset_handshake?.(bp)
+                        }
+                        bp.c.peer_boot = boot
+                    }
+                }
+            }
             w.oai({ channel_peer: peer }, { last_heard: Date.now() })      // oai: in-place merge, no transacting window (cf. pong_recv's roai)
             // editor: a runner's ping carries its prepub → keep THAT runner's roster liveness fresh off the
             //  5s heartbeat, not only the 15s advertise.  Off-think (no mutex held on the ephemeral route):

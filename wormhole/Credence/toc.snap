@@ -6,6 +6,8 @@ Waft:Credence
     Funkcion:Storying,of_Book:PereStaple
     Funkcion:Storying,of_Book:PereTyrant
     Funkcion:Storying,of_Book:PereProof
+    Funkcion:Storying,of_Book:Peregrination
+    Funkcion:Storying,of_Book:PereReborn
   What:Swarm,desc:the social sharing layer — signed invites reciprocal grants revocation and portable accounts
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:SwarmStaple
@@ -15,6 +17,8 @@ Waft:Credence
     Funkcion:Storying,of_Book:SwarmDoor
     Funkcion:Storying,of_Book:SwarmGot
     Funkcion:Storying,of_Book:SwarmPolicy
+    Funkcion:Storying,of_Book:Swarmation
+    Funkcion:Storying,of_Book:SwarmShare
   What:Voro,desc:the Voronoi-Cyto render — Cyto's force layout reinterpreted as power-diagram cells with the crushed Stuffings molded into a rosette
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:VoroMitosis

@@ -373,7 +373,24 @@
 
         // ── the %Tuner's say: which crews are muted this scan.  Mute + census ride .c —
         //  viewer preference, never snapped, so the client world's Book stays Voro-blind.
+        //   The tuner may ride the client world OR the scanned tree itself: Tuner_ensure mints
+        //    under the RUN world, while a Story-railed commission's client_w is w:Story — a
+        //     client_w-only lookup threw the census away every scan ("no crews yet", forever).
         const tuner = (w.c.client_w as TheC | undefined)?.o({ Tuner: 1 })[0]
+            || (Scannable as TheC | undefined)?.o?.({ Tuner: 1 })[0]
+            || ((Scannable as TheC | undefined)?.o?.({ w: 1 }) ?? [])
+                .map((sw: any) => sw.o({ Tuner: 1 })[0]).find(Boolean)
+            // the Story rail hands Scannable = the RUN HOUSE — its worlds sit under A:*, one
+            //  hop deeper than every leg above (the live tell: mute + census silently dead,
+            //   machinery never tucked).  H > A > w > %Tuner:
+            || ((Scannable as TheC | undefined)?.o?.({ A: 1 }) ?? [])
+                .flatMap((a: any) => a.o({ w: 1 }))
+                .map((sw: any) => sw.o({ Tuner: 1 })[0]).find(Boolean)
+        // the boiler-room starts TUCKED (the human 2026-07-19: "a lot of junk on the screen"):
+        //  a fresh tuner defaults the 'system' crew muted — machinery cells claim no space
+        //   until someone deliberately shows them.  Set before crew_mute reads, so even the
+        //    first scan drops them; a user's own mute map is never overwritten.
+        if (tuner && !tuner.c.mute) tuner.c.mute = { system: 1 }
         if (tuner) tuner.c.cyto_w = w   // the toggle's way back to THIS cyto world
         const crew_mute = (tuner?.c?.mute ?? {}) as Record<string, 1>
         const crews_seen: Record<string, number> = {}
@@ -423,7 +440,12 @@
                 //  the %Tuner face after the walk, and a MUTED crew's particles drop
                 //   from the graph right here — cells vanish, space returns.  Census
                 //    before drop, so a hidden crew stays listed (and un-hidable).
-                const crew = this.cyto_crew(w, n)
+                let crew = this.cyto_crew(w, n)
+                // THE ALLOWLIST INVERSION (the user glass): a DRAWN cell-holder (cls null
+                //  ONLY — an invisible A / compound w crewed here would drop its WHOLE
+                //   subtree and blank the glass, the step-2 nodes:0 bug) that isn't dressed
+                //    for the user tessellates under 'system' and starts tucked.
+                if (!crew && cls === null && w.c.use_faces) crew = 'system'
                 if (crew) {
                     crews_seen[crew] = (crews_seen[crew] ?? 0) + 1
                     if (crew_mute[crew]) { T.sc.not = 1; D.drop(D); return }
@@ -726,8 +748,10 @@
 
     // the CREW a particle tessellates under: explicit sc.crew wins; then the viewer's
     //  CREW_MAINKEYS imposition (the /system/ tuck — machinery rows under ONE tuner toggle);
-    //   a face defaults to its kind; a stuffed cell-holder to its mainkey; else crewless
-    //    (never muted).
+    //   a face defaults to its kind; a stuffed cell-holder to its mainkey; else crewless.
+    //    The user-glass ALLOWLIST (undressed DRAWN holders → 'system', tucked) lives at the
+    //     scan's call site, NOT here — it needs the classify verdict, because crewing an
+    //      invisible A / compound w drops the whole subtree and blanks the glass.
     cyto_crew(w: TheC, n: TheC): string | null {
         if (n.sc.crew != null) return String(n.sc.crew)
         const mk = this.mainkey(n)

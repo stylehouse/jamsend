@@ -6,7 +6,9 @@
 //   by the viewer — the world stays Voro-blind (no snap ever changes because the glass
 //    chose to dress a %Heist).  glass_kinds.ts maps the KIND to its component for Cytui.
 export const FACE_MAINKEYS: Record<string, string> = {
-    Heist: 'Heist',   // the Pirating flow — posed needs | soft wish → %Leads → choose
+    Heist: 'Heist',       // the Pirating flow — posed needs | soft wish → %Leads → choose
+    MusuSelf: 'Crate',    // my music home — the record collection, spread out to gaze across
+    MusuThem: 'Crate',    // a friend's music as I hold it — same spread, worn with their name
 }
 
 // CREW_MAINKEYS — the viewer's CREW imposition (the /system/ subcellularity, the human
@@ -23,4 +25,10 @@ export const CREW_MAINKEYS: Record<string, string> = {
     Session: 'system',
     Tally: 'system',
     Audio: 'system',
+    // the debug shelf (2026-07-19, "should be under a debug folder"): cursor memories, run
+    //  records, replication bookkeeping — real state, none of it for a visitor's eyes.
+    Dogear: 'system',
+    Storyrun: 'system',
+    Sent_Tree: 'system',
+    Crush_Tree: 'system',
 }

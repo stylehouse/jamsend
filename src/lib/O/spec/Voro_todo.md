@@ -105,14 +105,21 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
              **hover z-lift**: the cell under the mouse lifts its overlay above the whole
               overlapping pile (`vlift_move` polygon hit-test on the wrap → `.vlift` z-index
                — the glass SVG is pointer-events:none, so the wrap's mousemove is the feel).
-                Detail + knobs: `Attractor_todo.md`.
+                SECOND walk-back same day ("still way too big… the bound-to-cell perception
+                 must be dead" — it WAS half-dead: capped gather dims + bbox-only re-clamp +
+                  the floor overriding the bind): paint now re-binds with the TRUE content
+                   box against the REAL walls (`mold_max_fit`, one loop shared with gather)
+                    and everything past that bind is overflow DAMPED to
+                     `(want/bound)^stuff.damp` (sqrt default; 1 = linear).
+                      Detail + knobs: `Attractor_todo.md`.
  - **Verified**: svelte-check at baseline noise (totals drift; no new real errors in edited
     ranges), bundle-fetch compile proof ×3 (Cytui twice, Cyto once).  **Pixels owed**:
     everything from zone_seat onward is unseen-by-shot; eyeball ϕ (grooves gentle, 'Artist name:
      Vox' one line + Track indented, NO post-drag blink, big bold text) AND the tuples face (the
       fallback), AND that the %gang_of blink is gone on a streaming world, AND the radio faces
        unclipped in the 1.5× / top-bottom mold band + sub-face slots where a faced member
-        gangs, AND the hover z-lift surfacing the moused cell's chunk above the pile.
+        gangs, AND the hover z-lift surfacing the moused cell's chunk above the pile, AND
+         (damp round) big shelves nosing out of their cells instead of burying neighbours.
 
 **THE SHIFT LEDGER (PARTs 1–11, 2026-07-14 → 07-17; detail verbatim in
  `history/Voro_todo_parts_2026-07.md`, the faces also in `voro_modes/README.md`).**

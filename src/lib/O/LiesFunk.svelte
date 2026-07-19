@@ -2312,6 +2312,17 @@ await M.eatfunc({
                         H.i_elvisto('Story/Story', 'story_accept_all', {})
                         result = { accepting: bad.length, book: (stW.sc.Book as string) ?? null, note: 'dispatched — re-run to verify' }
                     }
+                } else if (op === 'declare') {
+                    // the same door the explorer's declare button opens (e_story_declare): promote one
+                    //  UNDECLARED sworn into The/step=N/%Assertion (N = where it latched) + save the toc.
+                    //   ask.sentence must match the shelf row byte-for-byte.  Deferred (elvis) like accept.
+                    const stW = H.Lies_runner_story_w()
+                    const sentence = ask.sentence as string | undefined
+                    if (!stW || !sentence) { ok = false; result = { error: !stW ? 'no Story world yet — run a Book first' : 'sentence required' } }
+                    else {
+                        H.i_elvisto('Story/Story', 'story_declare', { sentence })
+                        result = { declaring: sentence, book: (stW.sc.Book as string) ?? null, note: 'dispatched — assertions op to verify' }
+                    }
                 } else if (op === 'steps' || op === 'snap' || op === 'diff' || op === 'snaps' || op === 'trace') {
                     // the READ ops, served from ONE uniform per-step view: ask.uid → the record's frozen
                     //  pins (a past run that's "hanging in there"); no uid → the live This.  So every read

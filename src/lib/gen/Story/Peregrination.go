@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return 'b33cab6322ef6320' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return 'f8b774f7b76f9797~g1' },
 
 
 // PereStaple — the Peeroleum p2p test (the outer test layer), and the first of a
@@ -1139,6 +1139,169 @@ async Lake_order(w) { const H = this;
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)
+
+},
+// ══ PereReborn — the THIRD Book: the reconnect-epoch spine fix (Peeroleum reused-seq collision + the
+//     ping/swarm_hi-borne reset_handshake), the ASYMMETRIC-reload case the 2026-07-05 memo demanded ══════
+//  A reloaded tab restarts its per-Pier outbound seq at 1, but the surviving peer's inbox still holds
+//   finished %unemit rows for those (seq,type) pairs — so every reborn frame books into a FINISHED req and,
+//    before the fix, died undispatched AND unacked: the silent post-reload 20s mute (Cluster reconnect-epoch).
+//     This Book stands ONE link A↔B, handshakes it, flows three app frames (booking finished %unemit rows on
+//      B), then RELOADS A (Peeroleum_reset_handshake(apier) + delete apier.c.seq → the counter back at 1)
+//       while B keeps its stale history untouched — the asymmetry.  The teeth (step 5-6): A resends at the
+//        reused seqs 1..3 and B RE-ACKS each without re-dispatching (its handler never re-runs — the exact-
+//         once counter stays flat — yet A's emits come back acked, no hang).  Then the epoch reset (step 7-8):
+//          Peeroleum_reset_handshake on B's pier — standing in for the ping-borne Lies_pong / swarm_hi boot
+//           detection (browser-side, un-Bookable) — clears B's stale inbox but KEEPS %Ud, so A's fresh frames
+//            (seqs climbing past the collision) book fresh and dispatch: the stream reborn whole.
+//  WHY NO WHITTLE: PereReborn deliberately does NOT arm Peeroleum_arm_whittle.  The reused-seq guard reads
+//   the LIVE inbox %unemit (Peeroleum_book_unemit's oai by seq+type); an armed step-boundary cull would move
+//    each served unemit to %inbox/recent and the collision would never fire (oai would mint a fresh req and
+//     re-dispatch).  B "keeping its stale state" IS the un-armed inbox — the memo's exact precondition.
+//   step 2  link A↔B and seed the per-Pier handshake (holds until hello+trust settle both ways → %Ud each end)
+//   step 3  flow — reset A's seq to 1 and send three app frames (dispatched once each; B serves all three)
+//   step 4  reborn — reload A (reset_handshake + seq→1) while B keeps the finished emits — the asymmetry
+//   step 5  collision — A resends at the reused seqs 1..3
+//   step 6  settle — B re-acked without re-dispatching (handler flat) yet the emits cleared — no silent hang
+//   step 7  epoch — reset B's pier (the boot-detection stand-in) and send fresh frames (seqs 4..5)
+//   step 8  settle — the stale history cleared and the fresh frames dispatch and ack — reborn whole
+// GOTCHA (the world MUST be w:PereReborn — do_fn_for resolves the per-beat handler by world name).
+
+// Run_A_PereReborn — PereReborn's Run recipe (Story_subHouse calls Run_A_<Book> by name); lay its own
+//  actor + world, the role is already 'runner' (mirrors Run_A_PereProof).
+Run_A_PereReborn() {
+    this.c.role ??= 'runner'
+    this._i_drill(this, [{sc: {A: "PereReborn"}}, {sc: {w: "PereReborn"}}])
+
+},
+PereReborn(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.PereReborn_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// PereReborn_drive — the wrangle's own step dispatch (req-local did_step, the Pere* lesson), then the
+//  per-pass tail: pump the two routes' handshake reqs (Lake_pump_handshakes, generic over w's %Peerings),
+//   poll the witness, and re-sort.  Steps 6 and 8 arm nothing — they are settle beats the witness reads.
+async PereReborn_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) {
+            await this.PereReborn_link(w)
+        } else if (n === 3) {
+            await this.PereReborn_flow(w)
+        } else if (n === 4) {
+            await this.PereReborn_reborn(w)
+        } else if (n === 5) {
+            await this.PereReborn_collision(w)
+        } else if (n === 7) {
+            await this.PereReborn_epoch(w)
+        }
+    }
+    await this.Lake_pump_handshakes(w)
+    this.PereReborn_witness(w)
+    await this.Lake_order(w)
+
+},
+// step 2 — the link: ONE Lake_link A↔B (each side a %Peering,name flock with its mock carrier + %Pier),
+//  register the countable app handler, and seed %req:handshake on BOTH routes.  The handshake reqs HOLD
+//   this step until hello+trust settle both ways, stamping %Ud each end — B's %Ud for A is what admits A's
+//    app frames past the pre-Ud gate, and it is the one fact the later reset must KEEP.  No whittle armed.
+async PereReborn_link(w) {
+    w.i({reached: "step_2"})
+    let [apier, bpier] = await this.Lake_link(w, 'a', 'b')
+    // the handler: stamp a %got_reborn per DISPATCH on the receiving Pier (on-snap witness) AND bump an
+    //  exactly-once counter on .c — a re-dispatch would climb it, so the reused-seq re-ack must leave it flat.
+    this.Peeroleum_on(w, 'test_reborn', (cw, pier, frame) => { pier.c.reborn_count = (pier.c.reborn_count || 0) + 1; pier.i({got_reborn: 1, seq: frame.header.seq}) })
+    for (const pier of [apier, bpier]) pier.oai({req: 'handshake'})
+
+},
+// step 3 — the flow: with both ends %Ud'd, reset A's outbound counter (delete apier.c.seq) so the three app
+//  frames occupy seqs 1..3 — the EXACT seqs the reload will hand out again, so the reborn resends land on
+//   B's now-finished %unemit rows.  Each frame dispatches once on B (got_reborn + reborn_count→3) and acks.
+async PereReborn_flow(w) {
+    w.i({reached: "step_3"})
+    let apier = this.Lake_pier(w, 'a')
+    if (!apier) return
+    delete apier.c.seq
+    for (let i = 0; i < 3; i++) {
+        let s = this.Pier_next_seq(apier)
+        this.Peeroleum_send(w, {header: {type: 'test_reborn', from: 'a', to: 'b', seq: s}})
+    }
+
+},
+// step 4 — the reload: drop every connection FACT on A's pier (protocol/outbox/inbox + the handshake %req)
+//  but KEEP %Ud (Peeroleum_reset_handshake), then zero the seq counter so Pier_next_seq restarts at 1.  A
+//   comes back believing it is fresh while B, untouched, still holds the finished emits for the old seqs.
+async PereReborn_reborn(w) {
+    w.i({reached: "step_4"})
+    let apier = this.Lake_pier(w, 'a')
+    if (!apier) return
+    this.Peeroleum_reset_handshake(apier)
+    delete apier.c.seq
+
+},
+// step 5 — the collision: A resends three app frames — Pier_next_seq hands out 1..3 again (reused).  Each
+//  books into B's already-finished %unemit (same seq AND type), so the reused-seq guard re-acks WITHOUT
+//   re-dispatching: the handler never re-runs, and the emits — un-acked forever before the fix — clear.
+async PereReborn_collision(w) {
+    w.i({reached: "step_5"})
+    let apier = this.Lake_pier(w, 'a')
+    if (!apier) return
+    for (let i = 0; i < 3; i++) {
+        let s = this.Pier_next_seq(apier)
+        this.Peeroleum_send(w, {header: {type: 'test_reborn', from: 'a', to: 'b', seq: s}})
+    }
+
+},
+// step 7 — the epoch: apply the reset the transport would drive off a boot signal (ping-borne Lies_pong /
+//  swarm_hi) — Peeroleum_reset_handshake on B's pier clears its stale inbox history yet KEEPS %Ud.  A then
+//   sends two fresh frames; its counter kept climbing from the collision (4..5), never seen before, so they
+//    book fresh and dispatch — proving the reset verb drops inbox/outbox/protocol but the Ud-gated stream lives.
+async PereReborn_epoch(w) {
+    w.i({reached: "step_7"})
+    let apier = this.Lake_pier(w, 'a')
+    let bpier = this.Lake_pier(w, 'b')
+    if (!apier || !bpier) return
+    this.Peeroleum_reset_handshake(bpier)
+    for (let i = 0; i < 2; i++) {
+        let s = this.Pier_next_seq(apier)
+        this.Peeroleum_send(w, {header: {type: 'test_reborn', from: 'a', to: 'b', seq: s}})
+    }
+
+},
+// PereReborn_witness — the sworn assertions (this.story_swear, the current regime; %see is extinct): polled
+//  each pass, each claim latched once the first pass its structural truth holds (idempotent per run, no oa
+//   guards — the Assertioning shelf is checked). Evidence rides the off-snap ave/%Assertioning shelf (zero
+//    fixture bytes); a declared contract lands as a toc step=N/%Assertion line (declare via runner_ask).
+PereReborn_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    let apier = this.Lake_pier(w, 'a')
+    let bpier = this.Lake_pier(w, 'b')
+    if (!apier || !bpier) return
+    let binbox = bpier.o({inbox: 1})[0]
+    let served = binbox ? binbox.o({req: 'unemit'}).filter(u => u.sc.type === 'test_reborn' && u.sc.finished) : []
+    let aob = apier.o({outbox: 1})[0]
+    let acked = (s) => aob && aob.o({emit: 1}).find(e => e.sc.seq == s)?.sc.acked
+    // step 4 (reborn): the three prep frames each dispatched once (reborn_count===3), then A reloaded — its
+    //  pier stripped to a fresh handshake with the seq counter gone (Ud kept) — while B still holds all three
+    //   finished emits AND its %Ud for A.  The asymmetry stands: A believes it is new, B remembers everything.
+    let aReset = !apier.oa({protocol: 1}) && !apier.oa({outbox: 1}) && !apier.oa({inbox: 1}) && !apier.o({req: 'handshake'})[0] && apier.c.seq == null && apier.oa({Ud: 1})
+    let bStale = served.length === 3 && bpier.oa({Ud: 1})
+    if (bpier.c.reborn_count === 3 && aReset && bStale) this.story_swear(w, 'A reloads with its seq counter back at one while B still holds the three finished emits it served — the asymmetry stands')
+    // step 6 (collision settle): A resent at the reused seqs 1..3 — B re-acked each WITHOUT re-dispatching
+    //  (reborn_count still 3 — the handler never re-ran) yet A's outbox emits for those seqs came back acked
+    //   (the new re-ack; before the fix they hung unacked forever).  GATED n>=5: the prep acks (step 3) also
+    //    satisfy reAcked, so without the gate the claim would latch on the ORIGINAL acks and lose its teeth —
+    //     past the reset (step 4) the outbox holds only the collision emits, so this proves the RE-ack.
+    let reAcked = acked(1) && acked(2) && acked(3)
+    if (n >= 5 && bpier.c.reborn_count === 3 && reAcked) this.story_swear(w, 'A resends at the reused seqs and B re-acks without re-dispatching — the handler never re-runs yet the emits clear — no silent hang')
+    // step 8 (epoch settle): the epoch reset cleared B's stale history — the old finished emits are gone, A's
+    //  fresh frames (seqs 4..5) booked and dispatched (reborn_count climbed to 5) and came back acked — reborn whole.
+    let freshServed = served.some(u => u.sc.seq == 4) && served.some(u => u.sc.seq == 5) && !served.some(u => u.sc.seq == 1)
+    if (bpier.c.reborn_count === 5 && freshServed && acked(4) && acked(5)) this.story_swear(w, 'the epoch reset clears B stale history — A fresh frames dispatch and ack — the stream is reborn whole')
 
 },
 

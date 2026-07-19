@@ -46,7 +46,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 //  so the CLI can no longer drift to a worse death criterion than the layer it's questioning.
 import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs'
 
-const OPS = ['ping', 'probe', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'rungos', 'accept', 'release', 'runners', 'reload']
+const OPS = ['ping', 'probe', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -118,7 +118,7 @@ const op    = pos[0]
 const arg   = pos[1]
 const watch = flags.has('--watch')
 if (!op || !OPS.includes(op)) {
-	console.error('usage: node scripts/runner_ask.mjs <ping|probe|run <Book>|state|steps|snap <n>|rungos|accept|release|runners|reload> [@uid] [--runner=<id>] [--watch]')
+	console.error('usage: node scripts/runner_ask.mjs <ping|probe|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload> [@uid] [--runner=<id>] [--watch]')
 	process.exit(2)
 }
 // `runners` — list the Waft:Cluster registry (no relay needed); a discovery aid for --runner=<id>.
@@ -138,6 +138,7 @@ if (runnerSel !== undefined) {
 	TARGET = pub
 }
 if (op === 'run' && !arg)  { console.error('run needs a Book: node scripts/runner_ask.mjs run <Book>'); process.exit(2) }
+if (op === 'declare' && !arg) { console.error('declare needs the sworn sentence (quote it — byte-identical to `assertions` output): node scripts/runner_ask.mjs declare \'<sentence>\''); process.exit(2) }
 if (op === 'snap' && !arg) { console.error('snap needs a step number: node scripts/runner_ask.mjs snap <n>'); process.exit(2) }
 if (op === 'trace' && !arg) { console.error('trace needs a step number: node scripts/runner_ask.mjs trace <n>  (the step\'s beliefs-cycle trace + causal|timeout quiescent label)'); process.exit(2) }
 
@@ -159,6 +160,7 @@ const CLIENT = clientId()
 const ask = { op, client: CLIENT }
 if (op === 'run')  { ask.book = arg; if (bookNeedsAC(arg)) ask.needAC = 1; if (bookNeedsFSA(arg)) ask.needsFSA = 1 }   // Credence-read → runner secures AC / routes to an FSA runner pre-run
 if (op === 'snap' || op === 'trace') ask.n = Number(arg)
+if (op === 'declare') ask.sentence = arg   // the explorer button's CLI twin (e_story_declare)
 if (uid) ask.uid = uid
 
 const HTTP       = process.env.RUNNER_URL || 'http://172.17.0.1:9091'

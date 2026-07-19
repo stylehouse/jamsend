@@ -157,7 +157,7 @@
     }
 </script>
 
-<BootGate {H} who="the piracy-scape" audio_fullscreen={true} />
+<BootGate {H} who="the piracy-scape" audio_fullscreen={true} proactive={true} />
 
 <main class="mound">
     <header class="scape-top">
