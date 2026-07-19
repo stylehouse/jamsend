@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Orig(): string { return '9a0396a4a20027f6~g1' },
+    Ghostmeta_Ghost_M_Orig(): string { return '63f2dbf909bf7640~g1' },
 
 // Orig.g — the %Original / grade-dispatch layer (Radio_spec §2.4).  Ra.g owns the streaming pipeline
 //  (raw length-prefixed opus packets, container DELETED from the wire); THIS ghost is where a real
@@ -280,6 +280,9 @@ async Orig_ogg_export(w, nav, rec, dir, name) {
     let home = rec.c.up || w
     let blob = home.oai({ Blob: 1, id: rec.sc.id, grade: 'ogg128' })
     blob.c.up = home
+    // device-local furniture: the home is now the Mag PAGE (rec.c.up), and pages cross the wire
+    //  whole in a Mag fragment — the export path is this machine's business, never a friend's.
+    blob.c.repli_skip = 1
     let path = dir + '/' + name
     if (path) blob.sc.path = path
     // the byte SIZE is non-reproducible (the opus encode differs run-to-run), so it rides .c for a live

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Radiation(): string { return '453f7686cb2a6421~g1' },
+    Ghostmeta_Ghost_Story_Radiation(): string { return '934c8060fb13958e~g1' },
 
 // Radiation.g — the Ra* PRODUCT Books (rastock → racast → raterm; Radio_todo.md §3), in the
 //  Musuation/Swarmation mould: the file is the artifact; MusuRaStream is the first Book identity.
@@ -920,11 +920,10 @@ async MusuBuddy_flow(w) {
             w.c.origin_mag = mag
             let before = (w.c.tx.c.seq || 0)
             await this.Musica_stand(w, w.c.tx, w.c.dj_pre, w.c.lis_pre, mag, w.c.repli_src, 'draw_one', 1752400000000)
-            let husks = 0
-            for (const rec of srecs) {
-                if (await this.Repli_offer(w, w.c.tx, w.c.dj_pre, w.c.lis_pre, rec)) husks = husks + 1
-            }
-            w.i({ published: 1, cards: this.Musica_cards(mag).length, husks: husks, sent: (w.c.tx.c.seq || 0) - before })
+            // the wire cut (Mag_todo §4.1): the stock's shuffle Mag crosses as ONE husk fragment —
+            //  the mirror wears the paged shape, and every record head rides inside it.
+            let r = await this.Ra_offer_stock(w, w.c.tx, w.c.dj_pre, w.c.lis_pre, w.c.repli_src)
+            w.i({ published: 1, cards: this.Musica_cards(mag).length, mags: r.mags, sent: (w.c.tx.c.seq || 0) - before })
         }
     }
     // LEG 2 — the browse: a %Dogear pinned by TITLE walks the MIRROR magazine (never the origin) down to
@@ -934,7 +933,7 @@ async MusuBuddy_flow(w) {
     let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
     if (vmag && !w.c.browsed) {
         let cards = this.Musica_cards(vmag)
-        let husk_ok = cards.length >= 2 && cards.every((c2) => { let h2 = mir.o({ Record: 1, id: c2.sc.id })[0]; return h2 && +(h2.sc.total || 0) > 0 })
+        let husk_ok = cards.length >= 2 && cards.every((c2) => { let h2 = this.Ra_rec_find(mir, { Record: 1, id: c2.sc.id }); return h2 && +(h2.sc.total || 0) > 0 })
         if (husk_ok) {
             w.c.browsed = 1
             let titles = cards.map((c2) => c2.sc.title).sort()
@@ -952,7 +951,7 @@ async MusuBuddy_flow(w) {
     }
     // LEG 3 — the pull, of the browsed record ONLY: page wants go out want-once per offset; the pulled
     //  row lands once the mirror holds every chunk, carrying the park|release counts the demand claim reads.
-    let rec = (mir && w.c.pick_id) ? mir.o({ Record: 1, id: w.c.pick_id })[0] : null
+    let rec = (mir && w.c.pick_id) ? this.Ra_rec_find(mir, { Record: 1, id: w.c.pick_id }) : null
     if (rec && +(rec.sc.total || 0) > 0 && !w.c.pull_ok) {
         let r = await this.Ra_pull_beat(w, w.c.rx, w.c.lis_pre, w.c.dj_pre, rec)
         if (r.done) {
@@ -971,7 +970,7 @@ async MusuBuddy_flow(w) {
 async MusuBuddy_hear(w) {
     if (w.c.term) return
     let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
-    let rec = (mir && w.c.pick_id) ? mir.o({ Record: 1, id: w.c.pick_id })[0] : null
+    let rec = (mir && w.c.pick_id) ? this.Ra_rec_find(mir, { Record: 1, id: w.c.pick_id }) : null
     if (!rec || !w.c.pull_ok) {
         w.i({ hear_fail: 'nothing pulled' })
         return
@@ -1004,7 +1003,7 @@ async MusuBuddy_hear(w) {
 async MusuBuddy_jam(w) {
     if (w.c.jammed) return
     let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
-    let rec = (mir && w.c.pick_id) ? mir.o({ Record: 1, id: w.c.pick_id })[0] : null
+    let rec = (mir && w.c.pick_id) ? this.Ra_rec_find(mir, { Record: 1, id: w.c.pick_id }) : null
     if (!rec || !w.c.term) { w.i({ jam_fail: 'nothing heard' }); return }
     w.c.jammed = 1
     let kept = w.oai({ Kept: 1, pier: w.c.lis_pre })
@@ -1067,7 +1066,7 @@ MusuBuddy_witness(w) {
     // beat 6: the magazine crossed as the BROWSE SURFACE — and the catalog|stream join is visible: every
     //  card id finds a husk Record beside the mirror magazine wearing a standing chunk promise.
     let cards2 = vmag ? this.Musica_cards(vmag) : []
-    let husked = cards2.length === 2 && cards2.every((c2) => { let h2 = mir.o({ Record: 1, id: c2.sc.id })[0]; return h2 && +(h2.sc.total || 0) > 0 })
+    let husked = cards2.length === 2 && cards2.every((c2) => { let h2 = this.Ra_rec_find(mir, { Record: 1, id: c2.sc.id }); return h2 && +(h2.sc.total || 0) > 0 })
     if (n === 6 && husked && !(w.oa({see: 'the magazine crossed as the browse surface — every card at the follower names a record with a standing chunk promise'}))) w.i({see: 'the magazine crossed as the browse surface — every card at the follower names a record with a standing chunk promise'})
     // beat 6: the browse — the cursor landed on a card whose id names the ORIGIN record wearing the very
     //  title the cursor pinned (the cross-substrate join, not a read-back of the walk's own bookkeeping).
@@ -1082,9 +1081,9 @@ MusuBuddy_witness(w) {
     //  the preview weight — while the unbrowsed husk holds ZERO chunks (the promise unspent — pull is
     //   spent per-card by the browse, never broadcast).
     if (n >= 8 && w.c.pick_id && w.c.other_id) {
-        let mrec = mir ? mir.o({ Record: 1, id: w.c.pick_id })[0] : null
+        let mrec = mir ? this.Ra_rec_find(mir, { Record: 1, id: w.c.pick_id }) : null
         let srcRec = this.Ra_rec_find(lib, { Record: 1, id: w.c.pick_id })
-        let other = mir ? mir.o({ Record: 1, id: w.c.other_id })[0] : null
+        let other = mir ? this.Ra_rec_find(mir, { Record: 1, id: w.c.other_id }) : null
         let whole = false
         if (mrec && srcRec) {
             let T = +(mrec.sc.total || 0)
@@ -1133,7 +1132,7 @@ MusuBuddy_witness(w) {
     //  pulled husk) beside the buddys magazine still in the mirror — a KEEP the listener owns, not a stream.
     let kept = w.o({ Kept: 1, pier: w.c.lis_pre })[0]
     let keptrec = (kept && w.c.pick_id) ? kept.o({ Record: 1, id: w.c.pick_id })[0] : null
-    let husk_still = (mir && w.c.pick_id) ? mir.o({ Record: 1, id: w.c.pick_id })[0] : null
+    let husk_still = (mir && w.c.pick_id) ? this.Ra_rec_find(mir, { Record: 1, id: w.c.pick_id }) : null
     let kept_whole = false
     if (keptrec) {
         let kmap = this.Ra_chunk_map(keptrec)
@@ -1154,6 +1153,254 @@ MusuBuddy_witness(w) {
     let fresh_at_origin = w.c.origin_mag ? this.Musica_cards(w.c.origin_mag).some((c2) => c2.sc.id === 'fresh_after_revoke') : false
     let fresh_at_mirror = vmag ? this.Musica_cards(vmag).some((c2) => c2.sc.id === 'fresh_after_revoke') : false
     if (n === 13 && rv && rv.sc.changed && rv.sc.quiet_wire && !live && fresh_at_origin && !fresh_at_mirror && !(w.oa({see: 'the revoked follower browses a stale magazine — a fresh draw at the origin met the closed gate and never crossed'}))) w.i({see: 'the revoked follower browses a stale magazine — a fresh draw at the origin met the closed gate and never crossed'})
+
+},
+// ══ MusuMag — the WIRE SHAPE: a Mag is the replication unit (Mag_todo §4) ═══════════════════════════
+//  The wire cut proven end to end.  The caster's stock pages under its %Mag:shuffle (the model
+//   migration) and the WHOLE Mag crosses the granted wire as ONE husk fragment — the hearer's mirror
+//    wears the same `%Mag:shuffle > %Cloud,page:N > %Record` shape before a single byte of audio
+//     moves.  Then the §5 listening ramp: the WARM START pulls the opening page of the first two
+//      records (2 records × 2 chunks — autostart-ready), the restock deepens whole previews behind
+//       it, and STARVATION LEGIBILITY (§4.3): a deep want past the transcode frontier PARKS at the
+//        caster and the record wears sc.stage = parked — a legible pipeline position on the
+//         particle, never a bare spinner — until the release beat lets the transcode feed it
+//          (parked → whole → decoded, each stage read back off the snap).
+//   beat 2   STOCK+WIRE — three real tracks stocked paged; identities + transport pair + arms
+//   beat 3   SEAL       — a Music grant minted + redeemed; repli_allow reads it live
+//   (flow)   OFFER      — the shuffle Mag crosses as one husk fragment; the arrival row reads the
+//                          mirror shape with zero bytes held
+//   (flow)   WARM       — Ra_mag_warm pulls 2 × 2; the mag turns warm on record zero's opening page
+//   beat 6+  DEEPEN     — Ra_restock_beat runs behind the warm start; previews fill to previewed
+//   beat 8   STARVE     — a whole-record pull wants past the frontier; the wants PARK and the record
+//                          reads parked across the settle (the pump idles — the starve window)
+//   beat 9   RELEASE    — the pump wakes; the transcode advances and the parks release
+//   beat 10  DECODE     — the pulled bytes become PCM; the record reads decoded
+//
+// CONVENTION (Musu*/Ra*): no Run_A_ recipe — the world MUST be named MusuMag (do_fn_for dispatches
+//  by w.sc.w) or the wrangle silently never fires.
+
+MusuMag(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuMag_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// MusuMag_drive — the family's three skip gates, the pinned beats fired once off step_n, then every
+//  pass: pump the carriers, fire the flow legs on their preconditions.  A brand-new Book runs 'new'
+//   mode, so the drive forces run.sc.total (the GhoghoDrone idiom — idempotent once fixtures stand).
+async MusuMag_drive(w, req) {
+    if (typeof OfflineAudioContext === 'undefined') {
+        if (!w.oa({ skipped: 'no_audio' })) w.i({ skipped: 'no_audio' })
+        return
+    }
+    if (typeof AudioEncoder === 'undefined' || typeof AudioDecoder === 'undefined') {
+        if (!w.oa({ skipped: 'no_webcodecs' })) w.i({ skipped: 'no_webcodecs' })
+        return
+    }
+    let nav = this.Crate_nav()
+    if (!nav || typeof nav.bin_write !== 'function') {
+        if (!w.oa({ skipped: 'no_writable_share' })) w.i({ skipped: 'no_writable_share' })
+        return
+    }
+    if (this.c.run && this.c.run.sc.total !== 10) this.c.run.sc.total = 10
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuMag_stock(w)
+        if (n === 3) await this.MusuMag_seal(w)
+        if (n === 8) await this.MusuMag_starve(w)
+        if (n === 10) await this.MusuMag_decode(w)
+    }
+    for (const peering of w.o({ Peering: 1 })) await peering.do()
+    // the STARVE WINDOW: the caster's encoder idles until the release beat — the pump both advances
+    //  the transcode AND releases parks (Ra_transcode_pump ends in Repli_serve_parked), so running
+    //   it early would heal the starve before a settle could snap the parked stage.
+    if (n != null && n >= 9) await this.Ra_transcode_pump(w)
+    await this.MusuMag_flow(w)
+    await this.Musu_float(w)
+
+},
+// beat 2 — the stock and the wire: Caster + Hearer identities, the transport-real pair, the arms,
+//  the handshake seeds, and THREE real tracks stocked — a page of records for the mag to carry
+//   (paged by construction: Ra_record_from is the one mint funnel).
+async MusuMag_stock(w) {
+    w.c.nav = this.Crate_nav()
+    let dj = await this.SwarmStaple_person(w, 'Caster')
+    let lis = await this.SwarmStaple_person(w, 'Hearer')
+    w.c.dj_pre = dj.sc.prepub
+    w.c.lis_pre = lis.sc.prepub
+    w.c.repli_mirror_pier = lis.sc.prepub
+    let link = await this.Lake_link(w, dj.sc.prepub, lis.sc.prepub)
+    w.c.tx = link[0]
+    w.c.rx = link[1]
+    this.Peeroleum_arm_whittle(w)
+    this.Swarm_arm(w)
+    this.Repli_arm(w)
+    for (const peering of w.o({ Peering: 1 })) {
+        for (const pier of peering.o({ Pier: 1 })) pier.oai({ req: 'handshake' })
+    }
+    let lib = this.Ra_home_self(w, dj.sc.prepub)
+    w.c.repli_src = lib
+    await this.expecting(w, 'mag_stock', 240, async () => {
+        let r = await this.Ra_stock(w, lib, w.c.nav, 'testsounds', 3)
+        let p = { stocked: 'mag', of: r.of }
+        if (r.built + r.stood) p.ready = r.built + r.stood
+        if (r.skipped) p.skipped = r.skipped
+        w.i(p)
+    })
+    w.doai({ req: 'witness', eternal: 1 })?.(async (req) => { this.MusuMag_witness(w); req.sc.ok = 1 })
+
+},
+// beat 3 — the seal over the wire (the Buddy shape): the Caster mints an unbound Music offer, the
+//  Hearer redeems; the consent hook re-asks every leg off the live grant.
+async MusuMag_seal(w) {
+    let dj = this.SwarmStaple_ident(w, 'Caster')
+    let lis = this.SwarmStaple_ident(w, 'Hearer')
+    w.c.iz = await this.Swarm_mint_idzeug(w, dj, { Music: 1, genre: 'Mags' }, 'mag_1')
+    await this.Swarm_redeem(w, lis, w.c.iz)
+    let djp = this.Swarm_peering(dj)
+    w.c.repli_allow = (peer) => { let p = djp.o({ Pier: 1, pub: peer })[0]; return !!(p && this.Swarm_pier_live(p, 'Music')) }
+
+},
+// MusuMag_flow — each leg fires the instant its precondition holds, robust to post_do settling.
+//  OFFER the mag the moment the grant is live and the stock stands; note the ARRIVAL the moment the
+//   mirror wears the heads (frames settle between beats — the arrival row reads the husk state
+//    BEFORE the warm start spends a want); then the live pair — warm first, restock (beat 6 on)
+//     deepening behind it; the FED row lands once the starved record has been fed whole.
+async MusuMag_flow(w) {
+    if (!w.c.repli_allow) return
+    let dj = this.SwarmStaple_ident(w, 'Caster')
+    if (!dj) return
+    let djp = this.Swarm_peering(dj)
+    let grantPier = djp ? djp.o({ Pier: 1, pub: w.c.lis_pre })[0] : null
+    let live = !!(grantPier && this.Swarm_pier_live(grantPier, 'Music'))
+    if (live && !w.c.offered) {
+        let srecs = this.Ra_recs(w.c.repli_src)
+        if (srecs.length >= 3) {
+            w.c.offered = 1
+            let before = (w.c.tx.c.seq || 0)
+            let r = await this.Ra_offer_stock(w, w.c.tx, w.c.dj_pre, w.c.lis_pre, w.c.repli_src)
+            w.i({ offered: 1, mags: r.mags, sent: (w.c.tx.c.seq || 0) - before })
+        }
+    }
+    let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+    if (mir && !w.c.arrived) {
+        let heads = this.Ra_recs(mir)
+        if (heads.length >= 3) {
+            w.c.arrived = 1
+            let held = 0
+            for (const h of heads) {
+                let m2 = this.Ra_chunk_map(h)
+                let s2 = 0
+                while (s2 < +(h.sc.total || 0)) {
+                    if (m2[s2] != null) held = held + 1
+                    s2 = s2 + 1
+                }
+            }
+            let vm = mir.o({ Mag: 'shuffle' })[0]
+            let row = { arrived: 1, heads: heads.length, pages: vm ? vm.o({ Cloud: 1 }).length : 0 }
+            if (held) row.held = held
+            w.i(row)
+        }
+    }
+    let n = (this.c.run)?.c.step_n
+    if (mir && w.c.arrived) {
+        await this.Ra_mag_warm(w, mir)
+        if (n != null && n >= 6) await this.Ra_restock_beat(w, mir, 2)
+    }
+    let vmag = mir ? mir.o({ Mag: 'shuffle' })[0] : null
+    if (vmag && vmag.sc.warm && !w.c.warm_row) {
+        w.c.warm_row = 1
+        let rows = this.Ra_recs(mir)
+        let h0 = 0
+        let h1 = 0
+        if (rows[0]) { let m0 = this.Ra_chunk_map(rows[0]); if (m0[0] != null) h0 = h0 + 1; if (m0[1] != null) h0 = h0 + 1 }
+        if (rows[1]) { let m1 = this.Ra_chunk_map(rows[1]); if (m1[0] != null) h1 = h1 + 1; if (m1[1] != null) h1 = h1 + 1 }
+        let row = { warm: 1 }
+        if (h0) row.held0 = h0
+        if (h1) row.held1 = h1
+        w.i(row)
+    }
+    if (w.c.deep_id && !w.c.fed && mir) {
+        let drec = this.Ra_rec_find(mir, { Record: 1, id: w.c.deep_id })
+        if (drec) {
+            let T2 = +(drec.sc.total || 0)
+            let map2 = this.Ra_chunk_map(drec)
+            let held2 = 0
+            let s3 = 0
+            while (s3 < T2) {
+                if (map2[s3] != null) held2 = held2 + 1
+                s3 = s3 + 1
+            }
+            this.Ra_stage(w, drec)
+            if (T2 > 0 && held2 >= T2) {
+                w.c.fed = 1
+                let row2 = { fed: 1, chunks: held2 }
+                if (w.c.repli_parked) row2.parked = w.c.repli_parked
+                if (w.c.repli_unparked) row2.unparked = w.c.repli_unparked
+                w.i(row2)
+            }
+        }
+    }
+
+},
+// beat 8 — STARVE: want the WHOLE deep record at once (Ra_pull_beat's want-once sweep) while the
+//  pump idles — every offset past the transcode frontier parks at the caster, and the record's
+//   sc.stage reads parked across the settle.  The pick: the first record with a real deep window
+//    (total past the preview) — never a hardcoded index, so the tone set can change under the Book.
+async MusuMag_starve(w) {
+    let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+    let rows = mir ? this.Ra_recs(mir) : []
+    let rec = rows.find((r2) => +(r2.sc.total || 0) > +(r2.sc.preview || 0))
+    if (!rec) {
+        w.i({ starve_fail: 'no deep window' })
+        return
+    }
+    w.c.deep_id = rec.sc.id
+    let r = await this.Ra_pull_beat(w, w.c.rx, w.c.lis_pre, w.c.dj_pre, rec)
+    w.i({ starved: 1, held: r.held })
+
+},
+// beat 10 — DECODE: the fed record's pulled bytes become PCM through the run decoder, and the
+//  terminal stamps the last stage — the pipeline legible end to end on one particle.
+async MusuMag_decode(w) {
+    let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+    let rec = (mir && w.c.deep_id) ? this.Ra_rec_find(mir, { Record: 1, id: w.c.deep_id }) : null
+    if (!rec || !w.c.fed) {
+        w.i({ decode_fail: 'nothing fed' })
+        return
+    }
+    await this.expecting(w, 'mag_decode', 60, async () => {
+        let d = await this.Ra_term_decode_pulled(w, rec, +(rec.sc.total || 0))
+        if (d.fail) {
+            w.i({ decode_fail: d.fail })
+            return
+        }
+        w.i({ decoded: 1, segs: d.segs, seconds: d.seconds })
+    })
+
+},
+// ── the witness — the wire cut's four sworn claims, read off live truth (no commas, no apostrophes) ──
+MusuMag_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+    let vmag = mir ? mir.o({ Mag: 'shuffle' })[0] : null
+    let rows = mir ? this.Ra_recs(mir) : []
+    // S1 — the replication unit: the whole shape crossed in ONE husk — the arrival row read the
+    //  heads with ZERO bytes held, and the mirror wears mag > page > records with nothing flat.
+    let ar = w.o({ arrived: 1 })[0]
+    let shape_ok = vmag && vmag.o({ Cloud: 1 }).length >= 1 && rows.length === 3 && !mir.o({ Record: 1 }).length
+    if (ar && +ar.sc.heads === 3 && !ar.sc.held && shape_ok) this.story_swear(w, 'the mag crosses as one husk — the mirror wears the shuffle mag its cloud page and every record head before a single byte')
+    // S2 — the §5 warm start: two records took their opening page and the mag turned warm on it.
+    let wr = w.o({ warm: 1 })[0]
+    if (wr && vmag && vmag.sc.warm && +(wr.sc.held0 || 0) >= 2 && +(wr.sc.held1 || 0) >= 2) this.story_swear(w, 'the warm start pulls the opening page of the first two records and the mag turns warm the moment record zero holds it')
+    // S3 — starvation legibility LIVE at the starve settle: the deep record READS parked on its own
+    //  sc while its wants stand parked at the caster — the pipeline position on the particle.
+    let drec = (mir && w.c.deep_id) ? this.Ra_rec_find(mir, { Record: 1, id: w.c.deep_id }) : null
+    if (w.o({ starved: 1 })[0] && drec && drec.sc.stage === 'parked') this.story_swear(w, 'a starved track wears its stage on the particle — the deep wants park at the caster and the record reads parked until the transcode feeds it')
+    // S4 — end to end: husk crossed then parked then fed whole then decoded — each stage stamped.
+    if (n >= 10 && w.o({ fed: 1 })[0] && w.o({ decoded: 1 })[0] && drec && drec.sc.stage === 'decoded') this.story_swear(w, 'the pipeline reads back end to end — the record crossed as a husk then parked then fed whole then decoded with each stage stamped as it passed')
 
 },
 // ── GhoghoDrone — a deliberately SLOW drone Book (the GhostHMR live-graffiti probe) ────────────────

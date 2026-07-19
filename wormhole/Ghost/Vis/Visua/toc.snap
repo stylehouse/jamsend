@@ -30,6 +30,14 @@ Waft:Ghost/Vis/Visua
   What:the render
     Doc:src/lib/O/Cytui.svelte
     Doc:src/lib/O/Cyto.svelte
+  What:the new glass
+    Doc:Ghost/V/Vyto.g
+    Point,method:Vyto_board
+    Point,method:e_Vyto_commission
+    Point,method:Vyto_spool_capture
+    Doc:src/lib/O/Vytui.svelte
+    Doc:src/lib/O/spec/Vyto_spec.md
+    Doc:src/lib/O/spec/Vyto_todo.md
   What:docs
     Doc:src/lib/O/spec/Voro_vtuffing.md
     Doc:src/lib/O/spec/Voro_todo.md

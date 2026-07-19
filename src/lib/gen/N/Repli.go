@@ -10,7 +10,7 @@ import { Selection } from "$lib/mostly/Selection.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return 'f7a2665e88399043~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return 'ffecfcdcc39939e5~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -145,6 +145,10 @@ Repli_lines_of(node, d, out, bufmap, opts) {
     out.push(this.enL({ d: d, stringies: stringies, objecties: objecties }))
     for (const child of node.o()) {
         if (opts && opts.husk && this.Repli_chunk_bytes(child) != null) continue
+        // LOCAL FURNITURE never crosses: a child wearing .c.repli_skip (an export %Blob and its
+        //  path, device-local scaffolding) is the sender's own business, whatever fragment its
+        //   holder rides in — the Mag fragment made pages cross whole, so page-homed locals opt out.
+        if (child.c && child.c.repli_skip) continue
         this.Repli_lines_of(child, d + 1, out, bufmap, opts)
     }
     return out
@@ -189,7 +193,12 @@ async Repli_merge(mirrorTop, text) {
         }
         let op = objs.op
         if (op === 'delete') {
-            await parent.rm(pattern)
+            // rm is DIRECT-CHILD-ONLY, but a mirror %Record may sit paged under %Mag/%Cloud (the
+            //  wire cut) — locate through the census and remove from its true holder, so a retire
+            //   reaches a paged card exactly as it reached a flat one.
+            let hit = parent.o(pattern)[0]
+            if (!hit && pattern.Record && typeof this.Ra_rec_find === 'function') hit = this.Ra_rec_find(parent, pattern)
+            if (hit) await ((hit.c && hit.c.up) || parent).rm(pattern)
             continue
         }
         let c = null
@@ -631,9 +640,10 @@ async Repli_sent_se(w, library, pier) {
         trace_sc: { Sent: 1 },
         each_fn: async (D, n, T) => {
             // depth 0 is the library: walk its Records — via the shape-agnostic census, so a
-            //  paged self stock (%Mag:shuffle/%Cloud) serves exactly as the flat shape did: the
-            //   wire flattens, the mirror stays flat until the wire cut carries Mag structure.
-            //    A Record is a leaf of this walk (its %Stream is read at trace time, not traveled).
+            //  paged self stock (%Mag:shuffle/%Cloud) serves exactly as the flat shape did.  The
+            //   Se's D basis stays FLAT by design (a progress tree per Record, not a shelf copy)
+            //    even now that Ra_offer_stock carries the Mag shape across the wire whole.
+            //     A Record is a leaf of this walk (its %Stream is read at trace time, not traveled).
             if (T.c.path.length - 1 === 0) {
                 T.sc.more = this.Ra_recs(n)
             } else {

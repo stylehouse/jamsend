@@ -260,6 +260,9 @@ async Orig_ogg_export(w, nav, rec, dir, name):
     let home = rec.c.up || w
     let blob = home.oai({ Blob: 1, id: rec.sc.id, grade: 'ogg128' })
     blob.c.up = home
+    // device-local furniture: the home is now the Mag PAGE (rec.c.up), and pages cross the wire
+    //  whole in a Mag fragment — the export path is this machine's business, never a friend's.
+    blob.c.repli_skip = 1
     let path = dir + '/' + name
     if (path) blob.sc.path = path
     // the byte SIZE is non-reproducible (the opus encode differs run-to-run), so it rides .c for a live

@@ -970,20 +970,26 @@ async Swarm_share_beat(w, ident):
         if (!route.c.repli_rx) this.Repli_register_rx(w, route)
         // OFFER on change: stock grew, or the peer was reborn (offered_mark carries both).
         //  Presence-gated — husking at silence is litter.  Repli_merge dedups the far side,
-        //   so a re-offer after rebirth is safe, just not free.
+        //   so a re-offer after rebirth is safe, just not free.  The unit is the MAG (the wire
+        //    cut, Mag_todo §4.1): the whole shuffle Mag crosses as ONE husk fragment, so the
+        //     friend's mirror wears the same paged shape — a collection arrives as its rooms.
         if (!p.c.heard_at || (Date.now() - p.c.heard_at) >= 20000) continue
         let n = this.Ra_recs(stock).length
         let mark = String(w.c.station_era || 0) + ':' + String(route.c.peer_era || 0) + ':' + n
         if (route.c.offered_mark !== mark) {
             route.c.offered_mark = mark
-            for (const rec of this.Ra_recs(stock)) await this.Repli_offer(w, route, me, pub, rec)
+            await this.Ra_offer_stock(w, route, me, pub, stock)
         }
     }
     for (const peering of w.o({ Peering: 1 })) await peering.do()
     if (typeof this.Ra_transcode_pump === 'function') await this.Ra_transcode_pump(w)
     for (const home of rw.o({ MusuThem: 1 })) {
         if (!home.sc.pub) continue
-        await this.Ra_restock_beat(w, this.Ra_home_them(rw, String(home.sc.pub)), 2)
+        let shelf = this.Ra_home_them(rw, String(home.sc.pub))
+        // the §5 warm start FIRST (2 records × their opening page — autostart-ready fast),
+        //  then the restock deepens whole previews behind it.
+        await this.Ra_mag_warm(w, shelf)
+        await this.Ra_restock_beat(w, shelf, 2)
     }
     // ── the FULL-LENGTH leg: the radio is playing a FRIEND's record — keep the wire ahead of
     //  the REAL playhead (never the Books' simulated cursor: Ra_term_stream_beat advances its

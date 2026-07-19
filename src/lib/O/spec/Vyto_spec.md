@@ -1,10 +1,12 @@
 # Vyto — the glass, reborn
 
-Drafted 2026-07-19; round 2 the same day, after the human's design payload (hover-holds, the
- settling culture, the focus engine, scopes, semantic space, Zyto, the dictionary).
-  **Unpreened** — this becomes a spec when the human has read it and says so; until then it is
-   the founding argument.  Coined words are gathered in §14; several are the human's and carry
-    proposed meanings awaiting their preen.
+Drafted 2026-07-19; round 2 the same day (hover-holds, the settling culture, the focus
+ engine, scopes, semantic space, the dictionary); round 3 the same evening (the shape
+  catalogue, the pelt, bunching, the board rewritten — Zyto struck as a slip, the o-mark,
+   "the moult").  **Unpreened** — this becomes a spec when the human has read it and says
+    so.  Coined words are gathered in §14.  The machine-level elaborations live in
+     `vyto_workingouts/` (shapes · pelt · calm · spool · commission) — each checked against
+      the live code and each ending in open questions; `Vyto_todo.md` is the working doc.
 
 ## 1. Why a new glass
 
@@ -30,12 +32,12 @@ Two findings force the fork rather than the remodel:
      patch a queue into a fixed point; you have to change what a wave *is* (§3).
 
 So: **Vyto**, a second glass, commissioned per world exactly the way Cyto is, coexisting while
- the fleet migrates.  What freezes is **Cyto.svelte + Cytui.svelte** — the scan-to-cytoscape
-  pipeline and its renderer.  **Voro.g does not freeze**: the fold algorithm, the gang
-   election, the drift's *knowledge* are model-side and become Vyto organs (§9); what dies of
-    Voro is only its scattered magic arming — replaced by the focus engine (§4).  Strangler,
-     not surgery; expressibility only ever goes up (what goes down is the number of ways the
-      system can surprise us — see §12 on "unexpressible").
+ the fleet migrates.  What is eventually shed is **Cyto.svelte + Cytui.svelte** — the
+  scan-to-cytoscape pipeline and its renderer.  **Voro.g is not shed**: the fold algorithm,
+   the gang election, the drift's *knowledge* are model-side and become Vyto organs (§9);
+    what dies of Voro is only its scattered magic arming — replaced by the focus engine (§4).
+     A moult, not surgery (§12); expressibility only ever goes up — what goes down is the
+      number of ways the system can surprise us (§12 on "unexpressible").
 
 ## 2. What Voro really wants
 
@@ -70,48 +72,48 @@ Six wants.  When a design question comes up later, answer it by asking which wan
 
 ## 3. Calm — the foundation under the settling doctrines
 
-The human is right that there will be an ongoing *culture* of settling doctrines — hover
- wants one, flight wants one, focus shifts want one, landmarks want one, and we have not met
-  them all yet.  A culture needs a foundation, not a pile of special cases: **Calm**, the
-   organ that owns stillness.  Its primitive is the **%Hold**.
+There will be an ongoing *culture* of settling doctrines — hover wants one, flight wants one,
+ focus shifts want one, landmarks want one, and we have not met them all yet.  A culture
+  needs a foundation, not a pile of special cases: **Calm**, the organ that owns stillness.
+   Its primitive is the **%Hold**.
 
 A Hold is a declared, composable claim of stillness: *this scope, these channels, this
  strength, while this condition lasts*.  Everything that used to be an ad-hoc trick becomes a
   Hold with a name:
 
-- **The pointer-hold** (the human's ask): the moused-over cell is pinned — the tessellation
-   solves with its seed fixed and its boundary damped, the world rearranges *around* it.
-    Released with an ease-out when the pointer leaves, so un-hovering never snaps.  If the
-     model deletes the hovered particle, deletion wins (matter still goes somewhere) but the
-      departure is choreographed (§4), never a blink under the cursor.
-- **The flight-latch**: membership decisions (crush, gang, tuck, show) latch while any
+- **The pointer-hold**: the moused-over cell is pinned — the tessellation solves with its
+   seed fixed and its boundary damped, the world rearranges *around* it.  Released with an
+    ease-out when the pointer leaves, so un-hovering never snaps.  If the model deletes the
+     hovered particle, deletion wins (matter still goes somewhere) but the departure is
+      choreographed (§4), never a blink under the cursor.
+- **The flight-latch**: membership decisions (crush, gang, tuck, show, bunch) latch while any
    animation involving them is in flight, and may only flip after a settle since their last
-    flip.  This is Law 1 from round 1, re-homed as a Hold on the *membership* channel.
+    flip.
 - **The shift-hold**: during a focus transaction (§4) everything not involved in the delta is
    held still by default.  **Motion is granted, not ambient** — the single sentence that
     sweeps the autosplat tricks away.
-- **The landmark-hold**: while the glass is displaying a blessed moment (§8), live capture
-   continues but display follows nothing — the whole view is one big Hold with a "live"
-    release.
+- **The landmark-hold**: while the glass is displaying a kept or blessed moment (§8), live
+   capture continues but display follows nothing — the whole view is one big Hold with a
+    "live" release.
 
 > **%Hold** shape (furniture under `w:Vyto`, c-side, never snapped): `scope` (a cell, a
 >  scope §5, or the view), `channels` (position | size | membership | face | all),
 >   `strength` (pin | damp:k), `while` (pointer | flight | shift:<id> | seek | predicate),
->    `by` (which organ placed it — Zyto shows this).  Holds compose by priority: pointer
->     beats layout; deletion beats pointer; seek beats everything but the human's own
->      gestures.  Calm exposes one question the whole system asks: `Calm_held(cell,
+>    `by` (which organ placed it — the board shows this).  Holds compose by priority:
+>     pointer beats layout; deletion beats pointer; seek beats everything but the human's
+>      own gestures.  Calm exposes one question the whole system asks: `Calm_held(cell,
 >       channel)` — and one signal: **settled** = `max(cell displacement, boundary vertex
 >        drift) < ε` sustained `SETTLE_FRAMES`, stamped `w.c.settled`, dropped on any new
 >         target, emitted as a `%Settle` tick.  The spool captures at settle; ceremony can
->          await it; the `--why` successor reads it.  Renderer law (Law 2 from round 1):
->           one target per cell, retarget-from-current, superseded targets dropped, never a
->            queue; critically-damped tween, no overshoot.  Inherited visual constants:
->             mold 1.5× unclipped, `mold_max_fit` wall-bind, sqrt-damped overflow
->              (`stuff.damp`), hover z-lift, `document.hidden` → sync-paint.
+>          await it; the `--why` successor reads it.  Renderer law: one target per cell,
+>           retarget-from-current, superseded targets dropped, never a queue;
+>            critically-damped tween, no overshoot.  Inherited visual constants: mold 1.5×
+>             unclipped, `mold_max_fit` wall-bind, sqrt-damped overflow (`stuff.damp`),
+>              hover z-lift, `document.hidden` → sync-paint.
 
 With Calm in place the vanishing loop is not fixed but *unhostable*: the renderer has no
  queue to replay and the model has no permission to churn.  Whatever residual wriggle
-  remains is target churn — visible in the spool, assertable, and Zyto (§9) will show which
+  remains is target churn — visible in the spool, assertable, and the board (§9) shows which
    organ granted the motion.
 
 ## 4. The focus engine — shifts as transactions, explanation as choreography
@@ -129,58 +131,85 @@ A focus change is a **shift** — a transaction with a computed delta:
     are part of "uninvolved" — this is where blink-and-hop dies.
 3. Choreograph: the involved cells move through **intermediary visuals** that explain the
     outcome — a fold *gathers* its members visibly before merging; an eviction *shrinks
-     toward* the gang rep that absorbs it; an arrival *grows from* the parent seam.  The
-      viewer should be able to say afterwards how things ended up where they are.
+     toward* the gang rep that absorbs it; an arrival *grows from* the parent seam, along
+      the pelt (§5).  The viewer should be able to say afterwards how things ended up where
+       they are.
 4. Settle, release holds, capture a moment.
 
 Because moments capture settled states (§8), any explanation can be *replayed*: the
  choreography between two spool moments is derivable from their diff — the same diff the
   panel shows as bytes, the glass shows as motion.  One truth, two renderings.
 
-## 5. Scopes and projection — the compound-subgraph question, answered yes
+## 5. Scopes, shapes, and the pelt
 
-Should subcell sub-graphs be compound nodes holding a subgraph, laid out and projected into
- the cell?  Yes — and it becomes the recursion at the heart of the layout:
+### The recursion
 
 Every cell is (potentially) a **scope**: a local model with its own layout solved in its own
  coordinates, its own settle, its own Holds.  The parent never solves the child's innards; it
   sees only the scope's **envelope** — a size demand and shape preference.  Projection maps
    the solved local layout into the cell's polygon.  Text is fitted *inside the scope*
     ("wiggle until Text fits really nice" is a local relaxation with text metrics as
-     constraints) and glyphs render upright in screen space after projection — positions
-      project, letterforms never shear.
+     constraints) and glyphs render upright in screen space — positions project, letterforms
+      never shear.
 
-The payoffs stack:
+The payoffs stack: settle composes (a parent is settled when its children are and its own
+ motion is under ε — the global signal is the root's); performance follows attention (an
+  unfocused scope freezes its local solve entirely, innards not even ticking); and the
+   organ-bodies of §6 are just scopes whose solver is a dot-mesh.
 
-- **Settle composes.**  A scope reports settled; a parent is settled when its children are
-   and its own motion is under ε.  The global settle signal is the root's.
-- **Performance is the focus engine.**  An unfocused scope freezes its local solve entirely —
-   its innards don't tick, its envelope holds.  Depth of liveness follows attention.
-- **The ▦ gem generalises.**  The sub-graph slice stops being a special face and becomes what
-   every scope *is*.
-- **Organ-bodies fit the same shape.**  The "long bodies of meshed little dots" (§6) are just
-   scopes whose local layout is a dot-mesh soft body; their envelopes pack against sibling
-    envelopes like organs of different sizes claiming space in an abdomen.
+### The shape catalogue
 
-> Scope furniture: `%Scope` on the holder cell (c-side), carrying `layout:` (which organ
->  solves it — fold | slope | mesh | physics | manual), `envelope` (area demand, aspect/shape
->   preference, min text size), `solved` (local positions, local settle flag).  Projection =
->    fit transform (translate/scale, gentle warp allowed for molds), never applied to glyph
->     geometry.  A scope's dots are still particles — Books remain Voro-blind because all of
->      this is c-side view matter.
+Tessellation needs a small closed set of shapes it knows how to cut and pack.  Closed on
+ purpose: a new shape is a spec event, not a Tuesday.
+
+> | shape | how it tessellates | its natural combing |
+> |---|---|---|
+> | **cell** | irregular polygon by seed-and-relax (Fold's own) | radiates from the seed |
+> | **slab** | rectangles by slice-and-dice | parallel to the long axis |
+> | **band** | stacked strips whose order means something (Slope's home) | combed downhill |
+> | **wedge** | radial sectors of a disc | along the radius |
+> | **ring** | orbital lanes around a middle | tangential, orbiting |
+> | **mold** | the rounded organic fit — 1.5× unclipped inside its wall band | along the mold's spine |
+> | **body** | the elongated dot-mesh organ, packed against siblings | along the spine, ribs across |
+
+### The pelt — the tiny hairs are the field
+
+The thing that does "into the cell's polygon" is not a matrix.  It is a **pelt**: a field of
+ tiny hairs over the cell's interior.  One hair is a sample — *at this point, lie in this
+  direction, this strongly*.  One hair is nothing; together they are the field.  The solver
+   that owns the scope combs the pelt (each shape's natural combing, above); everything else
+    reads it:
+
+- **Projection** lays the local layout along the hairs — content flows with the comb instead
+   of being scaled naively into place.
+- **Text baselines** ride hairs.  This is the door Wes-Wilson walks through: lettering
+   combed by its cell, the label flowing to fill the mold.
+- **Mesh grain**: the dots of a body mesh along the pelt — the spine is the pelt's strongest
+   streamline, the ribs its cross-currents.
+- **Choreography** enters and leaves along field lines (§4) — matter arrives with the grain,
+   so even an arrival explains itself.
+- **Flow edges** dock at a boundary along the local hair, so a curvy slide meets its cell
+   like a tangent, never a collision.
+
+> `%Scope` furniture (c-side on the holder cell): `layout:` (fold | slope | mesh | wedge |
+>  ring | manual — which solver owns it), `shape:` (from the catalogue), `pelt:` (the combed
+>   field — sampled hairs `{at, dir, strength}`, combed by the solver at solve time, read by
+>    projection/text/mesh/choreography/flow-docking), `envelope` (area demand, shape
+>     preference, min text size), `solved` (local positions + local settle).  Projection =
+>      field-guided lay-down, gentle warp allowed for molds, never applied to glyph
+>       geometry.  All c-side view matter; Books stay Voro-blind.
 
 ## 6. Semantic space — when position IS meaning
 
 "Seed from live positions" undersold what live positions *are*.  In this app a position can
- be model semantics: the human's shuffle-slope-queue — Piers or their Mags arranged on a
-  slope where height means how much to select, or what plays first — is a layout in which
-   **geometry is the value**.  So every scope declares who owns its positions:
+ be model semantics: the shuffle-slope-queue — Piers or their Mags arranged on a slope where
+  height means how much to select, or what plays first — is a layout in which **geometry is
+   the value**.  So every scope declares who owns its positions:
 
 - **Layout-owned**: the solver places things; positions are view matter (most scopes).
 - **Meaning-owned**: the model places things and *reads them back* — a **%Slope** scope maps
    a model weight to position, and dragging a Mag up the slope writes the weight.  The glass
-    becomes an instrument: arranging the queue is playing it.  This is the ground where the
-     toys join on — mixing from friends' Mags by moving them, what-plays-first as a gesture.
+    becomes an instrument: arranging the queue is playing it.
 
 Edges split into two castes with opposite rendering doctrines:
 
@@ -192,10 +221,28 @@ Edges split into two castes with opposite rendering doctrines:
    own scaffolding.  Drawn like the long straight lines on old maps — faint, straight,
     receding, present enough to explain the geometry and never louder than that.
 
-And more edges should *exist*: a **Relate** organ derives %Flow edges from meaning (same
- artist, co-heist, played-together, freshly-flowed) — c-side, spool-visible, entirely view
-  matter.  Generating relation from meaning is something the glass should do more of, not
-   less; Relate is where that appetite lives.
+**Bunching — when the pull is allowed to mean something.**  A Relate edge (same Artist,
+ played-together, co-heisted) is also an *attraction* the solver honors.  Pull things close
+  enough and the layout layer comes to know them as **neighbours** — the adjacency exists at
+   the graphics solving layer, where vtuffing reads it like any other.  And neighbourhood,
+    where it is determined they can, unlocks **shared expression**: the bunch factors its
+     common bits and says them once — *Artist* written a single time across the group, the
+      way the snap encoding factors a common prefix.  The glass has been imitating the
+       snap-like encoding, badly sometimes; bunching is where the visual stops imitating and
+        **transfigures** it — two dimensions let a bunch share bits-of-expression that the
+         linear snap has to repeat per row.
+
+> the chain, explicitly: Relate mints the edge → the solver honors it as attraction →
+>  proximity becomes tessellation adjacency (the neighbour relation is now a fact the
+>   vtuffing/overlay solving layer can read) → homogeneity is checked (the Repli_crush
+>    instinct: only factor what is truly common) → Express writes the shared bits ONCE for
+>     the **%Bunch**, each member keeping only its differences → un-bunching reverses
+>      without blink: the shared crest splits back into members' own labels as they part.
+>       The flight-latch (§3) covers bunch|unbunch like any membership decision.
+
+And more edges should exist: the **Relate** organ derives %Flow edges from meaning — c-side,
+ spool-visible, entirely view matter.  Generating relation from meaning is something the
+  glass should do more of, not less; Relate is where that appetite lives.
 
 ## 7. Express — the channel bindings
 
@@ -206,79 +253,111 @@ The generalisation of `dose drives area`, and of Matstyle's auto-swatch instinct
 >  quantity), `to:` (area | weight | hue | saturation | z | blur | fg/bg | motion-amplitude |
 >   edge-loudness), `curve:` (lin | log | sqrt | band), `range:`.  Background|foreground is a
 >    first-class channel: systemic matter recedes (blur/desaturate/thin), meaningful matter
->     advances — the map-lines doctrine of §6 is just an Express binding on the %Frame caste.
->      All of it feeds an SVG-native renderer: real strokes, filters, gradients along %Flow
->       paths — the vector look is a *consequence* of channels being declared rather than
->        hand-painted per case.
+>     advances — the map-lines doctrine of §6 is an Express binding on the %Frame caste, and
+>      a %Bunch's shared crest is Express writing factored bits once.  All of it feeds an
+>       SVG-native renderer: real strokes, filters, gradients along %Flow paths — the vector
+>        look is a consequence of channels being declared rather than hand-painted per case.
 
-## 8. The Spool — moments, blessing, landmarks
+## 8. The Spool — moments, the o-mark, blessing
 
-The yore ring as built foundation (round 1) stands: moments captured at settle, ring of ~60,
- drop-oldest, freeze on run-fail, enWaft payload diffable in the Storui machinery, seek is
-  display-only, pips lock to `step_n`, the scrubber walks `yore_n` — spools are clocks with
-   quantize-locks, not lists.
+The yore ring stands as designed: moments captured at settle, ring of ~60, drop-oldest,
+ freeze on run-fail, snap payload diffable in the Storui machinery (the encoder is `snap_H`
+  — the same ref pass the fixtures come from, NOT enWaft, which turned out to be the Waft
+   codec; the workingout caught it), seek is display-only,
+  pips lock to `step_n`, the scrubber walks `yore_n` — spools are clocks with quantize-locks,
+   not lists.
 
-Round 2 adds what the human asked for: **free tagging — anchoring, blessing, tracking.**
+Keeping a moment is a ladder with three rungs, each cheaper than the last:
 
-- Any moment can be **tagged** freely (cheap, plural, disposable — a word stuck to a tick).
-- A moment can be **blessed**: named, pinned outside the ring's retention (a blessed moment
-   never drop-oldests), and pointed — `%Assertion`-style — at what it is mainly about, with
-    the microsnap idiom capturing its subject.  Blessing is the human's act, like the declare
-     door: code mints moments, only the human promotes one to a landmark.
-- A blessed **landmark** is a state we might see again — so it is *watchable for*.  A
-   Situation (§9) can be armed from a landmark: "tell me when the glass is substantially here
-    again," judged by enWaft nearness, and the sighting pins its own moment as evidence.
+- **Tags** — free words stuck to a tick.  Cheap, plural, disposable.
+- **The o-mark** — *we saw it.*  Point at a moment (in the strip, or at the present settle)
+   and mark it `o`: it is kept — exempt from drop-oldest — with nothing typed.  The default
+    capture, like `What:$name` with the name left to default.  Another tap lets it go.  A
+     generous cap keeps o-marks from silently becoming a second unbounded ring.
+- **Blessing** — the human's act, like the declare door: the moment is named, given a
+   sentence (no commas — em-dashes; the assertion sentence laws apply), pointed
+    `%Assertion`-style at what it is mainly about with the microsnap idiom.  A blessed
+     **landmark** is a state we might see again — so it is watchable-for: a Situation (§9)
+      can be armed from it ("tell me when the glass is substantially here again", judged by
+       snap nearness), and the sighting pins its own moment as evidence.
 
-> blessing rides the moment row in `w:Vyto` (off-snap as ever): `bless:<name>`,
->  `sentence:` (no commas — em-dashes; the assertion sentence laws apply), `.c.microsnap` of
->   the subject.  Tags are sc words on the row.  The scrubber strip renders blessed moments
->    as anchored marks (the pip-diamond idiom); seek-to-landmark is one click; landmark-hold
->     (§3) governs display while parked there.
+> the row (in `w:Vyto`, off-snap as ever): tags as sc words; `o:1` for the mark (absent,
+>  never 0 — the snapped-boolean law even off-snap, for habit's sake); blessing adds
+>   `bless:<name>`, `sentence:`, `.c.microsnap`.  The strip renders o-marks as small held
+>    dots and blessings as anchored marks (the pip-diamond idiom); seek-to-landmark is one
+>     click; the landmark-hold (§3) governs display while parked there.
 
-## 9. Zyto — the organ board
+## 9. The board — the glass handled
 
-The glass is now explicitly a body of **organs**: Scan, Fold (Voro.g's algorithm), Gang,
- Focus, Calm, Express, Relate, Slope(s), Flow, Spool, Settle.  **Zyto** is where the body is
-  seen and handled — the toolbar-panel that shows the organs, their links, and their levers.
+There is no third ghost.  ("Zyto" was a slip of the tongue and is struck from the
+ dictionary.)  The glass needs a place to be *handled*, and that place is part of the glass
+  itself: **the board** — a bar of one-word buttons, and a panel behind it, rendered by Vytui
+   like any other face.
 
-Each organ stands as furniture under `w:Vyto` (the `%Tuner` convention generalised): it
- declares its inputs and outputs, its toggles and dials, its current status.  Zyto renders
-  that — and because organs-and-links are themselves particles, the organ graph can be shown
-   *in a Vyto glass*: the machine seen in its own matter, which is the whole bet.
+**The bar.**  About seven buttons.  Each is one coherent word, each toggles one visible
+ doctrine, and the rule that keeps the bar honest is: if a toggle cannot earn a single
+  dictionary word, it cannot be on the bar.  No glyph mystery-meat — what ▦ was becomes a
+   word too.  The opening seven:
 
-Zyto also hosts **Situations** — the human's "similar to Assertions, but looking for
- situations" made crisp.  An Assertion swears a truth once, gating a run.  A **%Situation**
-  is a *standing recognizer*: it watches, run-agnostic, for a describable state of the glass
-   — good or bad — and every recognition mints a **%Sighting** with a pinned spool moment as
-    evidence.  First tenants: the pathologies we're designing away (membership churn above
-     hysteresis, an overlay that moved during a shift-hold, text below its minimum fit, a
-      settle that never came) — and the landmarks (§8).  Situations badge on Zyto; sightings
-       are inspectable with the diff panel.  What Assertions are to a Book's contract,
-        Situations are to the glass's ongoing life.
+> **live** — follow the newest settle | parked where you are (the landmark-hold).
+> **depths** — ▦'s successor: show this scope's innards as notation rows instead of space.
+> **flows** — show | hush the loud edge caste.
+> **frames** — show | hush the quiet one.
+> **holds** — paint every Hold and which organ placed it.
+> **pelt** — comb the hair-field visible: the fur of the glass.
+> **o** — the o-mark: keep this moment, nothing typed (§8).
 
-> Zyto heritage: the ballistics drum pad (struck-on-demand, off-snap) for organ pokes; the
->  Credence board for the at-a-glance status row; the assertion explorer for the
->   sightings list.  All c-side; a Book never sees Zyto.
+**The panel.**  Behind the bar sit the organs, one row each: what it reads, what it decides,
+ what it writes; its few dials; its current status.  Organs declare their links — what they
+  grapple, what they feed — and because organs and links are particles, the panel can be
+   rendered by a small glass: the machine seen in its own matter.
+
+Each organ in one sentence, in one consistent guts-language (*reads → decides → writes*):
+
+> **Scan** reads the grapples' worlds and writes the mirror.
+> **Fold** reads the mirror and decides which subtrees become one cell.
+> **Gang** reads a crowded sibling row and decides who is represented by whom.
+> **Slope** reads a weight and writes a position — and reads the position back as the weight.
+> **Mesh** reads a family and writes a dot-body with a spine.
+> **Calm** reads everything in flight and decides what may move.
+> **Focus** reads attention and decides what matters now.
+> **Relate** reads meaning and writes %Flow edges.
+> **Express** reads quantities and writes channels.
+> **Spool** reads settles and writes moments.
+
+They fall into four families: **solvers** (Fold, Gang, Slope, Mesh — each can own a scope's
+ layout), **governors** (Calm, Focus — they place nothing; they permit), **scribes** (Relate,
+  Express — meaning into visible matter), **chroniclers** (Scan, Spool — capture in, capture
+   out).
+
+**Situations.**  A Situation is a standing sentence about a state of the glass worth
+ noticing: *membership flipped twice within one settle* — *an overlay moved while held* —
+  *the glass is substantially at landmark <name> again*.  The glass checks its Situations as
+   it settles; a match mints a **%Sighting**, which pins the current moment as evidence.
+    Where an Assertion swears once and gates a run, a Situation watches always and gates
+     nothing — it collects.  Sightings queue on the board with a badge; opening one lands in
+      the diff panel with its pinned moment.  The first Situations to write are our own
+       former bugs — the pathologies watched-for are the regression suite the glass carries
+        with it, alive.
 
 ## 10. The commission and the grapple
 
-Corrected per the human: `watch_c(Scannable)` was aimed one joint too high.  The state that
- *feeds* the Scannable lives in bits of gear — stokers, lineups, piers, ledgers — and the
-  Scannable is assembled from them (it will `.r()`).  So Vyto watches **the gear**, and the
-   commission is where it learns what the gear is:
+`watch_c(Scannable)` was aimed one joint too high.  The state that *feeds* the Scannable
+ lives in bits of gear — stokers, lineups, piers, ledgers — and the Scannable is assembled
+  from them (it will `.r()`).  So Vyto watches **the gear**, and the commission is where it
+   learns what the gear is:
 
 - **Plain form**: the commission hands a ready `Scannable` (+ `Styles`, `client_w`) and an
    explicit grapple list — the source Cs to watch.  Default, if no list: watch the Scannable
-    itself (its `.r()`s bump it), which is the degenerate case that still beats today's
-     nothing.
-- **Recipe form** (the human's Sunpit sketch): the commission expresses *how to make* the
-   Scannable — a bundle of **IOexpr**s, each naming a source and a shaping, landing in the
-    **Sunpit**, the staging container where the poured-in sources assemble into the
-     Scannable.  Because the recipe names its sources, Vyto derives the grapple set
-      transitively — *a grapple on what it has a grapple on* — and `watch_c`'s the whole
-       complicated bunch of input.  Radio-protocol specifics ride here naturally: the Radio
-        commissions with a recipe ("my stoker's stock, these piers' Mags shaped as a slope,
-         the trickle's presence"), and the watching follows from the saying.
+    itself, the degenerate case that still beats today's nothing.
+- **Recipe form**: the commission expresses *how to make* the Scannable — a bundle of
+   **IOexpr**s, each naming a source and a shaping, landing in the **Sunpit**, the staging
+    container where the poured-in sources assemble into the Scannable.  Because the recipe
+     names its sources, Vyto derives the grapple set transitively — *a grapple on what it
+      has a grapple on* — and `watch_c`'s the whole complicated bunch of input.
+      Radio-protocol specifics ride here naturally: the Radio commissions with a recipe
+       ("my stoker's stock, these piers' Mags shaped as a slope, the trickle's presence"),
+        and the watching follows from the saying.
 
 > commission sc, v1: `Scannable` | `recipe` (IOexprs), `Styles`, `client_w`, `grapples`
 >  (optional explicit list).  Nothing else: faces and the fold are Vyto's nature, not opts.
@@ -295,29 +374,33 @@ Corrected per the human: `watch_c(Scannable)` was aimed one joint too high.  The
  scopes, spool rows, cell trees.  Indent-is-the-branch means the code's shape mirrors the
   C-tree it builds.  The closure-heavy scan passes stay in TS and are called (the parse-storm
    gotcha); real deps via IMPORT().  **Vytui.svelte** — render side, because it needs markup:
-    SVG/DOM cells, faces as children, the viewport.  Home: `Ghost/V/Vyto.g` beside Voro.g,
-     CREDULER_GHOSTS + overlay, ghost-compiled like family.
+    SVG/DOM cells, faces as children, the viewport, the board.  Home: `Ghost/V/Vyto.g` beside
+     Voro.g, CREDULER_GHOSTS + overlay, ghost-compiled like family.
 
-The human's build instinct is adopted as the plan: **high-level coding first** — the opening
- milestone writes Vyto.g's skeleton with the organs, furniture and dictionary words as named
-  stubs (Zyto listing them from day one), so the vocabulary exists *in the workings* before
-   any rendering is attempted, and the words get worn in while they're still cheap to rename.
+The build starts **high-level first**: the opening milestone writes Vyto.g's skeleton with
+ the organs, furniture and dictionary words as named stubs (the board listing them from day
+  one), so the vocabulary exists *in the workings* before any rendering is attempted, and
+   the words get worn in while they're still cheap to rename.
 
-## 12. The strangler plan
+## 12. The moult
+
+(Previously "the strangler plan" — the human vetoed the name, rightly.  Wrong picture: not a
+ fig throttling a host tree, but a body that grew its new skin inside the old one and sheds
+  the carapace whole.)
 
 - **v1 refuses**: takeTurns, ceremony flags on the commission, cytowave snapping, headless
    anything, relayout-from-nothing.
 - **First tenant**: one Radio world on BigSoundland end-to-end — recipe commission, grapple
    watch, spool, strip, Calm with the pointer-hold, one %Slope.  Fixes "not responding
     later" where it hurts most; hands the abdomen to the reality that should invent it.
-- **What freezes**: Cyto.svelte + Cytui.svelte, maintenance only.  Voro.g lives on as the
-   Fold organ (and lends Gang, and its drift knowledge to Focus).
-- **On "unexpressible", clarified**: expressibility of *intent* goes up — more can be said
-   (holds, shifts, slopes, situations).  What goes down is the expressibility of *failure*:
-    Vyto has no from-scratch relayout, so the diagonal-and-spring cannot be written; no wave
+- **What hardens while the new skin grows**: Cyto.svelte + Cytui.svelte, maintenance only.
+   Voro.g lives on as the Fold organ (and lends Gang, and its drift knowledge to Focus).
+- **On "unexpressible"**: expressibility of *intent* goes up — more can be said (holds,
+   shifts, slopes, pelts, situations).  What goes down is the expressibility of *failure*:
+    Vyto has no relayout-from-nothing, so the diagonal-and-spring cannot be written; no wave
      queue, so the vanishing loop cannot be hosted.  We are not porting those bugs' fixes —
       we are removing the vocabulary they were written in.
-- **The migration tail**, so "supersede" has a definition of done: Storui's seek needs the
+- **The shed**, so "supersede" has a definition of done: Storui's seek needs the
    whichever-glass-is-commissioned dispatch seam (today it elvistos `'Cyto/Cyto'` by name);
     `runner_shot` gets a Vyto twin (easier — the render *is* structured SVG); Books whose
      fixtures carry a cytowave convert or drop it; `--why` re-homes onto %Settle.  When
@@ -331,39 +414,62 @@ All testing is Story Books on the live runner, and the spool is its own best ins
   for every §3/§4 decision.  A model harness in the Voro_model/VoroTest manner asserts the
    doctrines: membership never flips within a settle (adversarial probe: one line removing
     the hysteresis must go red), targets converge when input stops, moments capture only at
-     settle, the ring freezes on fail, a shift-hold really held (the overlay-hopped
-      Situation is *itself* the assertion — the diagnostics and the tests are one
-       vocabulary).  The glass swears with `story_swear` like everyone else; "the glass
+     settle, the ring freezes on fail, a shift-hold really held — and the overlay-hopped
+      Situation is *itself* that assertion: the diagnostics and the tests are one
+       vocabulary.  The glass swears with `story_swear` like everyone else; "the glass
         settled — every cell at rest" is a natural first sentence.
 
 ## 14. Dictionary — the words we are coining
 
-The vocabulary, gathered so it can be preened *before* it hardens into mainkeys.  Mainkey
- candidates need the usual uniqueness check against the fleet before first mint.
+Gathered so they can be preened *before* hardening into mainkeys.  Mainkey candidates need
+ the usual uniqueness check against the fleet before first mint.  ("Zyto" is struck — a slip
+  of the tongue for Vyto; the board is part of the glass, not a third thing.)
+
+**The things:**
 
 | word | kind | proposed meaning |
 |---|---|---|
 | **Vyto** | ghost (.g) | the model side of the new glass: organs, scopes, spool, commission |
-| **Vytui** | ghost (.svelte) | the render side: DOM/SVG cells, faces as children, viewport |
-| **Zyto** | panel/organ | the organ board: organs, links, levers, Situations (the human's coinage) |
-| **Calm** | organ | owns stillness: Holds, the settle signal, motion-is-granted |
+| **Vytui** | ghost (.svelte) | the render side: DOM/SVG cells, faces as children, viewport, the board |
+| **the board** | face | the glass handled: the bar of one-word toggles + the organ panel |
 | **%Hold** | particle | one composable claim of stillness (scope × channels × strength × while) |
-| **%Settle** | tick | the settled-flip signal; capture/ceremony/telemetry all read it |
-| **Focus** | organ | owns "what matters now"; all shifts are its transactions |
+| **%Settle** | tick | the settled-flip signal; capture, ceremony and telemetry all read it |
 | **shift** | transaction | one focus change: collect → hold → choreograph → settle → moment |
-| **%Scope** | particle | a cell's local world: own layout, own settle, envelope to the parent |
+| **%Scope** | particle | a cell's local world: own solver, own settle, envelope to the parent |
 | **envelope** | value | what a parent sees of a scope: area demand + shape preference |
-| **%Slope** | scope-layout | meaning-owned positions: geometry is the value (the shuffle-slope-queue) |
+| **the catalogue** | closed set | cell · slab · band · wedge · ring · mold · body (§5; a new shape is a spec event) |
+| **pelt / hair** | field | tiny oriented samples over a cell's interior; one hair is nothing — together they are the field; solvers comb, everything else reads |
+| **%Slope** | scope-solver | meaning-owned positions: geometry is the value (the shuffle-slope-queue) |
 | **%Flow** | edge caste | meaning-bearing relation: loud, curvy, animated |
 | **%Frame** | edge caste | layout-systemising relation: faint, straight, receding (old-map lines) |
-| **Relate** | organ | derives %Flow edges from meaning (same-artist, co-heist, played-together) |
-| **Express** | organ | declared bindings, model quantity → visual channel (dose→area generalised) |
-| **Spool** | primitive | an ordered series of captured moments; a clock, not a list |
-| **%Moment** | particle | one capture: yore_n, step_n lock, enWaft payload, tags |
-| **bless / landmark** | act / particle | human promotes a moment: named, unforgettable, pointed at its subject |
-| **%Situation** | particle | a standing recognizer — Assertion's run-agnostic sibling (the human's hunch) |
-| **%Sighting** | particle | one recognition by a Situation, with a pinned moment as evidence |
-| **Sunpit** | container | staging pit where a recipe's sources pour in and assemble the Scannable (the human's coinage) |
-| **IOexpr** | value | one recipe line: name a source, shape it (the human's coinage) |
+| **%Bunch** | particle | an adjacency cluster allowed to factor its common expression, said once |
+| **%Moment** | particle | one capture: yore_n, step_n lock, snap_H payload, tags |
+| **o (the o-mark)** | tag/act | *we saw it*: point, mark, kept — nothing typed (a default `What:$name`) |
+| **bless / landmark** | act / particle | the human promotes a moment: named, unforgettable, pointed at its subject |
+| **%Situation** | particle | a standing sentence watched for — Assertion's run-agnostic sibling |
+| **%Sighting** | particle | one recognition by a Situation, pinning a moment as evidence |
+| **Sunpit** | container | staging pit where a recipe's sources pour in and assemble the Scannable |
+| **IOexpr** | value | one recipe line: name a source, shape it |
 | **grapple** | verb/edge | Vyto's watch-hold on a source; transitively, on what the source grapples |
-| **%Seek** | furniture | the seek state holder: open_at, live latch (was "%SeekThing" in the asking) |
+| **%Seek** | furniture | the seek state holder: open_at, live latch |
+| **the moult** | plan | the supersession (§12): grow the new skin inside, shed the carapace whole |
+
+**The organs** (one sentence each in §9; families — *solvers* place, *governors* permit,
+ *scribes* translate, *chroniclers* capture):
+
+| organ | family | sentence |
+|---|---|---|
+| **Scan** | chronicler | reads the grapples' worlds, writes the mirror |
+| **Fold** | solver | reads the mirror, decides which subtrees become one cell |
+| **Gang** | solver | reads a crowded sibling row, decides who represents whom |
+| **Slope** | solver | reads a weight, writes a position — and back |
+| **Mesh** | solver | reads a family, writes a dot-body with a spine |
+| **Calm** | governor | reads everything in flight, decides what may move |
+| **Focus** | governor | reads attention, decides what matters now |
+| **Relate** | scribe | reads meaning, writes %Flow edges |
+| **Express** | scribe | reads quantities, writes channels |
+| **Spool** | chronicler | reads settles, writes moments |
+
+**The bar words** (each toggles one visible doctrine; a toggle that can't earn a word can't
+ be on the bar): **live · depths · flows · frames · holds · pelt · o** — where **depths** is
+  ▦'s successor: this scope's innards as notation rows instead of space.

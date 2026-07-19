@@ -81,6 +81,7 @@
         'Ghost/Story/Swarmation.g',     // the Swarm* tests — SwarmStaple; more pile on here
 
         'Ghost/V/Voro.g',               // the Vis lens — the crush fold policy (Musu drives + ◈ imposition call it)
+        'Ghost/V/Vyto.g',               // the NEW glass, model side — organs/board/spool as named stubs (Vyto_spec.md; the moult)
         'Ghost/Story/Voronation.g',
 
         'Ghost/Story/Sounditron.g',     // the Sounditron — the real-environment diagnostic Book /BigSoundland runs (Opt/wild; assertions are the verdict)

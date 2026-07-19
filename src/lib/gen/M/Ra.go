@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '1cf2771a5937d674~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '46970b6deb995285~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -646,8 +646,11 @@ Ra_library(w, whose) {
 //  one %Mag:shuffle — `%Mag:shuffle > %Cloud,page:N > %Record` — pages riding INSIDE the Mag (the
 //   Waft-style naming ruling: ONE uniquely-named Mag, pages as children), ~Ra_page_size records a
 //    page (§5: a listening ramp, never a scan).  The flat shape stays READABLE — Book scenes still
-//     mint flat, and mirrors stay flat until the wire cut — so the census below is shape-agnostic
-//      and the two shapes coexist while the fleet migrates.
+//     mint flat, and per-record offers still land flat mirrors — so the census below is
+//      shape-agnostic and the two shapes coexist.  THE WIRE (Mag_todo §4, cut 2026-07-19): the Mag
+//       is the replication unit — Ra_offer_stock ships each Mag as ONE husk fragment, so a friend
+//        mirror wears the same `%Mag:shuffle > %Cloud,page:N` shape the sender holds; Ra_mag_warm
+//         is the §5 warm start at the listener; Ra_stage is the starvation-legibility stamp.
 Ra_page_size() {
     return 6
 },
@@ -709,6 +712,141 @@ Ra_pub_of(rec) {
         guard = guard + 1
     }
     return null
+},
+// Ra_offer_stock — the WIRE unit is the Mag (Mag_todo §4.1): each Mag under the shelf crosses as
+//  ONE husk fragment — the Mag head, its %Cloud pages, every %Record head and whatever else is
+//   grouped to a Record in a page — no chunk bytes (Repli's husk skips binary-bearing children;
+//    local furniture like an export %Blob wears .c.repli_skip and never crosses).  Stray FLAT
+//     records (Book scenes, the way-station shape) still cross per-record, so a flat shelf offers
+//      exactly as it always did and its mirror stays flat.  The pages get their wire identity
+//       stamped here (repli_loc = Cloud,page — the Musica cloud idiom): 'page' is not id-ish to
+//        Repli_loc_keys, and without it every page would upsert the mirror's FIRST page.
+//         Returns { mags, flat } — fragments that crossed, by kind.
+async Ra_offer_stock(w, tx, from, to, shelf) {
+    let mags = 0
+    let flat = 0
+    for (const mag of shelf.o({ Mag: 1 })) {
+        for (const cl of mag.o({ Cloud: 1 })) {
+            if (cl.sc.page) cl.c.repli_loc = ['Cloud', 'page']
+        }
+        if (await this.Repli_offer(w, tx, from, to, mag)) mags = mags + 1
+    }
+    for (const rec of shelf.o({ Record: 1 })) {
+        if (await this.Repli_offer(w, tx, from, to, rec)) flat = flat + 1
+    }
+    return { mags: mags, flat: flat }
+},
+// Ra_mag_warm — the §5 WARM START at the listener: the first page's first TWO records get their
+//  opening page of chunks (PAGE=2 — the 2 records × 2 chunks ramp) wanted FIRST, before the
+//   restock deepens whole previews — enough for playback to begin the moment they land.  Fires
+//    once per arrived Mag (mag.c.warmed); the wants ride the shared want-once cursor so the
+//     restock never re-asks them.  When record zero holds its opening page the Mag turns WARM —
+//      sc.warm = 1, the autostart-ready signal the switch-to-this-channel affordance reads
+//       (presentation parked behind the Vyto refactor; the signal is the wire's job).
+async Ra_mag_warm(w, mirror) {
+    if (!mirror) return
+    for (const mag of mirror.o({ Mag: 1 })) {
+        let rows = []
+        for (const rec of mag.o({ Record: 1 })) rows.push(rec)
+        for (const cl of mag.o({ Cloud: 1 })) {
+            for (const rec of cl.o({ Record: 1 })) rows.push(rec)
+        }
+        if (!rows.length) continue
+        if (!mag.c.warmed) {
+            mag.c.warmed = 1
+            w.c.ra_wanted = w.c.ra_wanted || {}
+            let k = 0
+            while (k < 2 && k < rows.length) {
+                let rec = rows[k]
+                k = k + 1
+                if (!(+(rec.sc.total || 0) > 0)) continue
+                if (!rec.c.rx || !rec.c.from || !w.c.repli_mirror_pier) continue
+                let key = rec.sc.id + ':0'
+                if (w.c.ra_wanted[key]) continue
+                w.c.ra_wanted[key] = 1
+                await this.Repli_want_next(w, rec.c.rx, w.c.repli_mirror_pier, rec.c.from, rec.sc.id, 'opus', 0)
+                this.Ra_stage(w, rec)
+            }
+        }
+        // stages stay FRESH: every row re-reads its pipeline position each pass (a stamp left at
+        //  want time would lie the moment the chunks landed), and an unconsidered head reads husk.
+        for (const rec of rows) this.Ra_stage(w, rec)
+        // warm the moment record zero holds its opening page (min(2, total) chunks in hand).
+        if (!mag.sc.warm && +(rows[0].sc.total || 0) > 0) {
+            let map = this.Ra_chunk_map(rows[0])
+            let need = Math.min(2, +(rows[0].sc.total || 0))
+            let held = 0
+            let s = 0
+            while (s < need) {
+                if (map[s] != null) held = held + 1
+                s = s + 1
+            }
+            if (held >= need) {
+                mag.sc.warm = 1
+                mag.bump()
+            }
+        }
+    }
+},
+// Ra_mag_homed — does this record live under a Mag (directly or through a %Cloud page)?  The
+//  stage stamp below rides ONLY the Mag experience — flat scenes (Book piles, heist quarantine
+//   mirrors) stay stampless, so their fixtures never learn a key they did not ask for.
+Ra_mag_homed(rec) {
+    let up = rec.c ? rec.c.up : null
+    if (up && up.sc && up.sc.Mag) return true
+    let up2 = (up && up.c) ? up.c.up : null
+    return !!(up2 && up2.sc && up2.sc.Mag)
+},
+// Ra_stage — STARVATION LEGIBILITY (Mag_todo §4.3): a starved track shows WHERE in the pipeline
+//  it is stuck, on the particle, never a bare spinner.  Derived from the record's own observable
+//   state and stamped as sc.stage so the snap and the glass both read it:
+//    husk       the offer's promise — a head with nothing held and nothing asked
+//    parked     a want past the transcode frontier waits at the caster (igniting its transcode)
+//    pulling    wants in flight inside the free preview window, nothing landed yet
+//    landing    chunks arriving — some held, the rest still crossing
+//    previewed  the free window whole (the dial can start it instantly)
+//    whole      every chunk held
+//   decoded|scheduled are the terminal's marks (Ra_term_decode_pulled | Ra_term_stream_open) and
+//    never downgrade — by settle time the in-flight reads (pulling|landing) have resolved, so a
+//     fixture only ever gates on the stable ones.
+Ra_stage(w, rec) {
+    if (!this.Ra_mag_homed(rec)) return null
+    if (rec.sc.stage === 'decoded' || rec.sc.stage === 'scheduled') return rec.sc.stage
+    let total = +(rec.sc.total || 0)
+    let P = Math.min(+(rec.sc.preview || 0), total)
+    let map = this.Ra_chunk_map(rec)
+    let held = 0
+    let pheld = 0
+    let s = 0
+    while (s < total) {
+        if (map[s] != null) {
+            held = held + 1
+            if (s < P) pheld = pheld + 1
+        }
+        s = s + 1
+    }
+    let PAGE = +(w.c.repli_page || 2)
+    let wanted = w.c.ra_wanted || {}
+    let asked_free = false
+    let asked_deep = false
+    let off = 0
+    while (off < total) {
+        if (map[off] == null && wanted[rec.sc.id + ':' + off]) {
+            if (off < P) { asked_free = true } else { asked_deep = true }
+        }
+        off = off + PAGE
+    }
+    let stage = 'husk'
+    if (total > 0 && held >= total) { stage = 'whole' }
+    else if (asked_deep) { stage = 'parked' }
+    else if (asked_free) { stage = held > 0 ? 'landing' : 'pulling' }
+    else if (P > 0 && pheld >= P) { stage = 'previewed' }
+    else if (held > 0) { stage = 'landing' }
+    if (rec.sc.stage !== stage) {
+        rec.sc.stage = stage
+        rec.bump()
+    }
+    return stage
 },
 //#endregion
 
@@ -1437,6 +1575,11 @@ async Ra_term_decode_pulled(w, rec, limit) {
         if (R) R.set((got.channels[1] || got.channels[0]).subarray(0, n), offs[run.from])
     }
     let channels = R ? [L, R] : [L]
+    // the terminal's stage mark (Mag-homed records only): the pulled bytes became PCM.
+    if (rec.sc.stage !== 'scheduled' && this.Ra_mag_homed(rec)) {
+        rec.sc.stage = 'decoded'
+        rec.bump()
+    }
     return { channels: channels, sr: sr, seconds: +(off / sr).toFixed(3), segs: T, per: per, drops: drops, held: held }
 
 },
@@ -1499,6 +1642,7 @@ async Ra_pull_beat(w, rx, mine, theirs, rec) {
         }
         off = off + PAGE
     }
+    this.Ra_stage(w, rec)
     return { done: held >= total ? 1 : 0, held: held }
 
 },
@@ -1563,6 +1707,7 @@ async Ra_restock_beat(w, mirror, budget) {
             }
         }
         if (whole) warm = warm + 1
+        this.Ra_stage(w, rec)
     }
     return { warm: warm, want: want, of: considered }
 
@@ -1636,6 +1781,11 @@ Ra_term_stream_open(w, rec, opts) {
         prime: +(o.prime ?? 6), play: +(o.play ?? 2), want_left: +(o.want_left ?? 11),
         ahead: +(o.ahead ?? 6), pipeline: +(o.pipeline ?? 3),
         asked: 0, want_next: 0, out: [], stream_want0: null, drops: [], plays: 0 }
+    // the terminal's stage mark (Mag-homed records only): a paced listen begins on this record.
+    if (this.Ra_mag_homed(rec)) {
+        rec.sc.stage = 'scheduled'
+        rec.bump()
+    }
     return w.c.play
 
 },

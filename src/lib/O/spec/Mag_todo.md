@@ -56,6 +56,9 @@ The systems this needs have been getting **dialled in by the Story Books** — o
     autostart. Closest to what is already loaded; a Book (`MusuMag`?) proves it end to end.
 3. **The limbic show|hide** (§6) — retire the flat `%Tuner` mute-index for a crawlable topic-limb
     graph with attention-budget mutex. Render-side; supersedes the currently-broken `Tuner_toggle`.
+    **PARKED 2026-07-19**: Radio's display side is mid-refactor (Voro+Cyto → **Vyto**, the human's
+     cut) — no display-side work until it lands. The wire shape (2) proceeds data-side only, and
+      explode-on-connect's PRESENTATION leg (§6) waits here too.
 
 The docs are a bit senile — where this contradicts `Radio_todo.md`, this wins for the Mag layer.
 
