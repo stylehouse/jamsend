@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '8f1135f0793a56af~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '1cf2771a5937d674~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -572,11 +572,13 @@ async Ra_stock_peek(nav, name) {
 
 },
 // Ra_home_self / Ra_home_them — the Musu homes (Radio_spec §2.2/§2.4, rung 3): per-identity music
-//  homes, each with a `stock/` shelf where the settled %Record/%Original holdings live exactly as
-//   they lived under the old flat %Library.  `%MusuSelf,pub:<me>` is MY holdings; `%MusuThem,pub:<them>`
-//    is what I hold OF a friend (the mirror side).  Both obey the homing law (§2.1) by wearing `pub`.
+//  homes, each with a `stock/` shelf where the settled %Record/%Original holdings live.  Since the
+//   Mag model (Mag_todo §1) MY holdings page under the shelf's %Mag:shuffle (see the mag-model
+//    region below); the flat shape remains readable, and mirrors still lay flat until the wire cut.
+//  `%MusuSelf,pub:<me>` is MY holdings; `%MusuThem,pub:<them>` is what I hold OF a friend (the
+//   mirror side).  Both obey the homing law (§2.1) by wearing `pub`.
 //  Each door returns the SHELF (the stock child), which replaces the old %Library node one-for-one:
-//   the shelf carries `pub` so the two stock readers (Ra_stock_one, Ra_card via rec.c.up.sc.pub) still
+//   the shelf carries `pub` so the stock readers (Ra_stock_one, Ra_card via Ra_pub_of's c.up climb)
 //    resolve WHOSE bytes these are without digging back up to the home.  `oai` is a side-effecting
 //     find-or-create on a plain (non-req) mainkey — the same idiom the old Ra_library used.
 Ra_home_self(w, pub) {
@@ -639,6 +641,77 @@ Ra_library(w, whose) {
     return this.Ra_home_self(w, whose)
 
 },
+//#region mag model — stock IS %Mag**/%Record (Mag_todo §1, ruled 2026-07-19)
+// A holding no longer floats flat under the stock shelf; it lands in the OPEN PAGE of the shelf's
+//  one %Mag:shuffle — `%Mag:shuffle > %Cloud,page:N > %Record` — pages riding INSIDE the Mag (the
+//   Waft-style naming ruling: ONE uniquely-named Mag, pages as children), ~Ra_page_size records a
+//    page (§5: a listening ramp, never a scan).  The flat shape stays READABLE — Book scenes still
+//     mint flat, and mirrors stay flat until the wire cut — so the census below is shape-agnostic
+//      and the two shapes coexist while the fleet migrates.
+Ra_page_size() {
+    return 6
+},
+// Ra_mag_shuffle — the default holding Mag under a stock shelf, find-or-create.
+Ra_mag_shuffle(shelf) {
+    let mag = shelf.oai({ Mag: 'shuffle' })
+    mag.c.up = shelf
+    return mag
+},
+// Ra_mag_page — the OPEN page: the last %Cloud with room; none (or full) mints the next.  Page
+//  numbers are 1-based and ride as strings (the {k:1} wildcard rule keeps numerics out of sc).
+Ra_mag_page(mag) {
+    let pages = mag.o({ Cloud: 1 })
+    let last = pages[pages.length - 1]
+    if (last && last.o({ Record: 1 }).length < this.Ra_page_size()) return last
+    let pg = mag.i({ Cloud: 1, page: '' + (pages.length + 1) })
+    pg.c.up = mag
+    return pg
+},
+// Ra_recs — the shape-agnostic record census of a crate: flat %Record children first (the
+//  way-station shape), then every Mag's rows — directly-held and %Cloud-paged — in child order,
+//   so the census is stable run to run.  EVERY scanning reader goes through here: a direct
+//    shelf.o({Record:1}) sees only the flat leg and starves on a paged shelf.
+Ra_recs(shelf) {
+    if (!shelf) return []
+    let out = shelf.o({ Record: 1 })
+    for (const mag of shelf.o({ Mag: 1 })) {
+        for (const rec of mag.o({ Record: 1 })) out.push(rec)
+        for (const cl of mag.o({ Cloud: 1 })) {
+            for (const rec of cl.o({ Record: 1 })) out.push(rec)
+        }
+    }
+    return out
+},
+// Ra_rec_find — the pinned find over the same three levels.  q is a full o() query wearing the
+//  %Record mainkey ({Record:1, id:…} / {Record:1, artist:…, title:…}); first hit in census order.
+Ra_rec_find(shelf, q) {
+    if (!shelf) return null
+    let hit = shelf.o(q)[0]
+    if (hit) return hit
+    for (const mag of shelf.o({ Mag: 1 })) {
+        hit = mag.o(q)[0]
+        if (hit) return hit
+        for (const cl of mag.o({ Cloud: 1 })) {
+            hit = cl.o(q)[0]
+            if (hit) return hit
+        }
+    }
+    return null
+},
+// Ra_pub_of — WHOSE record: climb c.up to the first node wearing sc.pub (the shelf carried it
+//  when records sat flat; a paged record is two hops further from it).
+Ra_pub_of(rec) {
+    let n = rec
+    let guard = 0
+    while (n && guard < 8) {
+        if (n.sc && n.sc.pub) return n.sc.pub
+        n = n.c ? n.c.up : null
+        guard = guard + 1
+    }
+    return null
+},
+//#endregion
+
 // Ra_pack — the .jam wire.  A one-line JSON header (the resurrection card; sizes[] = each buffer's
 //  byte length) + a single '\n' (JSON.stringify never emits a raw newline, so the FIRST 0x0A is an
 //   unambiguous delimiter) + the buffers back to back.  bufs are Uint8Arrays; info.sizes is filled
@@ -786,8 +859,14 @@ async Ra_stock_standing(nav, pub, enid) {
 //   objecties.ref — "Uint8Array()") — fine on the SNAP plane, FATAL at the STORAGE/toc encoder, so
 //    a library subtree must never ride a Waft toc-persist; the disk home stays this .jam.
 Ra_record_from(lib, info, bufs) {
-    let rec = lib.oai({ Record: 1, id: info.id })
-    rec.c.up = lib
+    // a STANDING record refreshes in place, wherever it sits (flat or paged — Ra_rec_find walks
+    //  both); a NEW holding lands in the open shuffle page, never flat (the Mag model, §1).
+    let rec = this.Ra_rec_find(lib, { Record: 1, id: info.id })
+    if (!rec) {
+        let page = this.Ra_mag_page(this.Ra_mag_shuffle(lib))
+        rec = page.i({ Record: 1, id: info.id })
+        rec.c.up = page
+    }
     rec.sc.title = info.title
     rec.sc.artist = info.artist
     if (info.album) rec.sc.album = info.album
@@ -1059,14 +1138,15 @@ async Ra_proof(nav, pub, id, s) {
 
 // Ra_card — the radiostock card read once per Record (rec.c.card): the transcode needs the source
 //  path|base (they stay OFF the snapped head — comma-hazardous and local) and the resurrection
-//   scalars ride the head already.  The file re-finds by (pub, enid) — pub off the Record's own
-//    shelf (rec.c.up, the `stock/` shelf whose pub key owns the stock); the read filename is remembered
-//     on rec.c.card_file so the dead-source rule can drop exactly the file it loaded.
+//   scalars ride the head already.  The file re-finds by (pub, enid) — pub via Ra_pub_of (the
+//    c.up climb to the shelf that wears it; a paged record sits two hops deeper than the flat one
+//     did); the read filename is remembered on rec.c.card_file so the dead-source rule can drop
+//      exactly the file it loaded.
 async Ra_card(w, rec) {
     if (rec.c.card) return rec.c.card
     let nav = w.c.ra_nav || this.Crate_nav()
     if (!nav) return null
-    let pub = rec.c.up?.sc?.pub
+    let pub = this.Ra_pub_of(rec)
     if (!pub) return null
     let hit = null
     try {
@@ -1437,7 +1517,7 @@ async Ra_pull_beat(w, rx, mine, theirs, rec) {
 async Ra_restock_beat(w, mirror, budget) {
     let B = +(budget || 4)
     let K = this.Ra_keep_ahead(w)
-    let recs = mirror ? mirror.o({ Record: 1 }) : []
+    let recs = this.Ra_recs(mirror)
     if (!recs.length) return { warm: 0, want: 0, of: 0 }
     let playing = w.c.play ? w.c.play.id : null
     let PAGE = +(w.c.repli_page || 2)
@@ -1504,7 +1584,7 @@ async Ra_restock_beat(w, mirror, budget) {
 Ra_dial_next(w, mirror, opts) {
     let o = opts || {}
     let playing = w.c.play ? w.c.play.id : null
-    let recs = mirror ? mirror.o({ Record: 1 }) : []
+    let recs = this.Ra_recs(mirror)
     let cands = []
     for (const rec of recs) {
         if (rec.sc.id === playing) continue

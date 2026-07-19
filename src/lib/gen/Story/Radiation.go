@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Radiation(): string { return 'b7af12f3ca26712c~g1' },
+    Ghostmeta_Ghost_Story_Radiation(): string { return '453f7686cb2a6421~g1' },
 
 // Radiation.g — the Ra* PRODUCT Books (rastock → racast → raterm; Radio_todo.md §3), in the
 //  Musuation/Swarmation mould: the file is the artifact; MusuRaStream is the first Book identity.
@@ -156,7 +156,7 @@ async MusuRaStream_flow(w) {
     let grantPier = djp ? djp.o({ Pier: 1, pub: w.c.lis_pre })[0] : null
     let live = !!(grantPier && this.Swarm_pier_live(grantPier, 'Music'))
     if (live && !w.c.cast_done) {
-        let srecs = w.c.repli_src ? w.c.repli_src.o({ Record: 1 }) : []
+        let srecs = this.Ra_recs(w.c.repli_src)
         if (srecs.length >= 2) {
             w.c.cast_done = 1
             let n2 = 0
@@ -169,8 +169,7 @@ async MusuRaStream_flow(w) {
     // derive the two track ids the moment the src lib has stocked both (expecting is non-blocking, so
     //  they appear over the beats after setup, in deterministic stock order — A first, B to change to).
     if (!w.c.a_id) {
-        let src = w.c.repli_src
-        let srecs = src ? src.o({ Record: 1 }) : []
+        let srecs = this.Ra_recs(w.c.repli_src)
         if (srecs.length >= 2) {
             w.c.a_id = srecs[0].sc.id
             w.c.b_id = srecs[1].sc.id
@@ -295,7 +294,7 @@ async MusuRaStream_measure(w) {
 MusuRaStream_witness(w) {
     let n = (this.c.run)?.c.step_n
     let lib = w.c.repli_src
-    let recs = lib ? lib.o({ Record: 1 }) : []
+    let recs = this.Ra_recs(lib)
     let s = w.c.stream
     let target = this.Ra_target_lufs(w)
     // the session stands: two real Records at the caster — a track to change TO.  n>=2 not ===2: a
@@ -520,7 +519,7 @@ async MusuRaChase_flow(w) {
         let pier = peering ? peering.o({ Pier: 1, pub: w.c.lis_pre })[0] : null
         if (!(pier && this.Swarm_pier_live(pier, 'Music'))) continue
         let lib = w.o({ MusuSelf: 1, pub: pre })[0]?.o({ stock: 1 })[0]
-        let recs = lib ? lib.o({ Record: 1 }) : []
+        let recs = this.Ra_recs(lib)
         if (recs.length < 2) continue
         w.c[flag] = 1
         let tx = (nm === 'Uno') ? w.c.tx_u : w.c.tx_d
@@ -530,7 +529,7 @@ async MusuRaChase_flow(w) {
     }
     if (!w.c.a_id) {
         let src = w.o({ MusuSelf: 1, pub: w.c.uno_pre })[0]?.o({ stock: 1 })[0]
-        let srecs = src ? src.o({ Record: 1 }) : []
+        let srecs = this.Ra_recs(src)
         if (srecs.length >= 1) w.c.a_id = srecs[0].sc.id
     }
     if (!w.c.a_id) return
@@ -712,8 +711,8 @@ MusuRaChase_witness(w) {
     let n = (this.c.run)?.c.step_n
     let libu = w.o({ MusuSelf: 1, pub: w.c.uno_pre })[0]?.o({ stock: 1 })[0]
     let libd = w.o({ MusuSelf: 1, pub: w.c.duo_pre })[0]?.o({ stock: 1 })[0]
-    let recsu = libu ? libu.o({ Record: 1 }) : []
-    let recsd = libd ? libd.o({ Record: 1 }) : []
+    let recsu = this.Ra_recs(libu)
+    let recsd = this.Ra_recs(libd)
     let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
     let mrecs = mir ? mir.o({ Record: 1 }) : []
     let s = w.c.stream
@@ -910,7 +909,7 @@ async MusuBuddy_flow(w) {
     let live = !!(grantPier && this.Swarm_pier_live(grantPier, 'Music'))
     // LEG 1 — the magazine stands and crosses, and every husk follows (the catalog promise; no bytes).
     if (live && !w.c.stand_done) {
-        let srecs = w.c.repli_src ? w.c.repli_src.o({ Record: 1 }) : []
+        let srecs = this.Ra_recs(w.c.repli_src)
         if (srecs.length >= 2) {
             w.c.stand_done = 1
             // the DJ's magazine homes on ITS radiostocking shelf (a machine-drawn draw — GC fodder), not floating
@@ -1042,7 +1041,11 @@ async MusuBuddy_revoke(w) {
 MusuBuddy_witness(w) {
     let n = (this.c.run)?.c.step_n
     let lib = w.c.repli_src
-    let recs = lib ? lib.o({ Record: 1 }) : []
+    let recs = this.Ra_recs(lib)
+    // the Mag model (Mag_todo §1) sworn on the real stock: the SHAPE itself — nothing lays flat on
+    //  the shelf, everything pages under the one %Mag:shuffle, and every page stays bounded.
+    let smag = lib ? lib.o({ Mag: 'shuffle' })[0] : null
+    if (n >= 2 && smag && recs.length >= 2 && !lib.o({ Record: 1 }).length && smag.o({ Cloud: 1 }).every((cl) => cl.o({ Record: 1 }).length <= this.Ra_page_size())) this.story_swear(w, 'the stock pages under the shuffle mag — every record stands in a bounded cloud page never flat on the shelf')
     let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
     let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
     let dj = this.SwarmStaple_ident(w, 'DJ')
@@ -1053,7 +1056,9 @@ MusuBuddy_witness(w) {
     //  source loudnesses pulled toward the one target — uniformity as a spread, not a coincidence).
     let real2 = recs.length === 2 && recs.every((r2) => r2.sc.real && +(r2.sc.total || 0) > +(r2.sc.preview || 0))
     let spread_ok = recs.length === 2 && +recs[0].sc.gain !== +recs[1].sc.gain
-    if (n === 2 && real2 && spread_ok && !(w.oa({see: 'the origin stands real opus stock — two tracks took different gains toward one loudness target'}))) w.i({see: 'the origin stands real opus stock — two tracks took different gains toward one loudness target'})
+    // n >= 2 not ===2 (the MusuRaStream lesson): expecting is a non-blocking ttlilt, so a cold run
+    //  lands the stock past the beat-2 window — the claim is the stock standing, not the beat it landed.
+    if (n >= 2 && real2 && spread_ok && !(w.oa({see: 'the origin stands real opus stock — two tracks took different gains toward one loudness target'}))) w.i({see: 'the origin stands real opus stock — two tracks took different gains toward one loudness target'})
     // beat 3: the second pass recognized the disk truth — everything stood, nothing built.
     let ag = w.o({ stocked: 'again' })[0]
     if (n === 3 && ag && +(ag.sc.stood || 0) === 2 && !ag.sc.built && !(w.oa({see: 'a second stock pass recognized the standing stock and rebuilt nothing'}))) w.i({see: 'a second stock pass recognized the standing stock and rebuilt nothing'})
@@ -1067,7 +1072,7 @@ MusuBuddy_witness(w) {
     // beat 6: the browse — the cursor landed on a card whose id names the ORIGIN record wearing the very
     //  title the cursor pinned (the cross-substrate join, not a read-back of the walk's own bookkeeping).
     let br = w.o({ browsed: 1 })[0]
-    let orec = br ? (lib ? lib.o({ Record: 1, id: br.sc.id })[0] : null) : null
+    let orec = br ? this.Ra_rec_find(lib, { Record: 1, id: br.sc.id }) : null
     if (n === 6 && br && +br.sc.depth === 3 && orec && orec.sc.title === br.sc.title && !(w.oa({see: 'the follower browsed by meaning — a title-pinned cursor walked the mirror magazine and landed on the exact card wearing it'}))) w.i({see: 'the follower browsed by meaning — a title-pinned cursor walked the mirror magazine and landed on the exact card wearing it'})
     // the demand economy observed: the boundary wants PARKED (the stream side did not exist when they
     //  asked) and RELEASED as the transcode advanced — the pulled row carries the counts.
@@ -1078,7 +1083,7 @@ MusuBuddy_witness(w) {
     //   spent per-card by the browse, never broadcast).
     if (n >= 8 && w.c.pick_id && w.c.other_id) {
         let mrec = mir ? mir.o({ Record: 1, id: w.c.pick_id })[0] : null
-        let srcRec = lib ? lib.o({ Record: 1, id: w.c.pick_id })[0] : null
+        let srcRec = this.Ra_rec_find(lib, { Record: 1, id: w.c.pick_id })
         let other = mir ? mir.o({ Record: 1, id: w.c.other_id })[0] : null
         let whole = false
         if (mrec && srcRec) {

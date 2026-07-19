@@ -10,7 +10,7 @@ import { sha256_hex, sha256_incremental } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'a8255bb2b5e0bf1b~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'a7bb2c1468ce6b06~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -161,7 +161,7 @@ async Heist_census(w, lib, nav, base, artists) {
 // <        verdict).  So: dedup by (tag-identity WHEN rich enough) else by path, never drop on a thin
 // <        tag-identity alone.  Unbuilt — rides the cp-landing wave (Radio_todo §12.2).
 Heist_held(lib, artist, title) {
-    return !!(lib && lib.o({ Record: 1, artist: artist, title: title })[0])
+    return !!this.Ra_rec_find(lib, { Record: 1, artist: artist, title: title })
 
 },
 // (The %Tombstone remembered-denials gear was CONDEMNED 2026-07-13 — never asked for, and the only
@@ -243,7 +243,7 @@ Heist_filing_for(job, artist) {
 //      No signer → the heads cross unsigned and the door adopts them gracefully (the MusuHeist path).
 async Heist_offer_all(w, tx, from, to, lib, signer) {
     let crossed = 0
-    for (const rec of (lib ? lib.o({ Record: 1 }) : [])) {
+    for (const rec of this.Ra_recs(lib)) {
         if (signer) await this.Heist_offer_vouch(rec, signer)
         if (await this.Repli_offer(w, tx, from, to, rec)) crossed = crossed + 1
     }
@@ -741,7 +741,7 @@ async Heist_let_ask(w, tx, from, to, letc) {
 Heist_let_answer(w, letc, lib) {
     if (!letc || !lib) return letc
     for (const ask of letc.o({ ask: 1 })) {
-        let rec = lib.o({ Record: 1, id: ask.sc.id })[0]
+        let rec = this.Ra_rec_find(lib, { Record: 1, id: ask.sc.id })
         if (!rec) continue
         // "bytes stand" HONESTLY: the first chunk particle (any mainkey — %Body/%Preview/%Stream share the seq
         //  space) carries its buf.  A census %Record has %Body,seq:0 with a buf; a husk mirror card has the
@@ -832,9 +832,10 @@ async Heist_feel(w, nav, own_lib, mardir, entry, feeling) {
                 if (dl && typeof dl.deleteEntry === 'function') await dl.deleteEntry(filename)
                 if (own_lib) {
                     // the card retires WITH the file — the track leaves the collection cleanly.  No
-                    //  %Tombstone (condemned): nothing durable remembers the drop.
-                    let card = own_lib.o({ Record: 1 }).find((r) => r.sc.path === entry)
-                    if (card) await own_lib.rm({ Record: 1, id: card.sc.id })
+                    //  %Tombstone (condemned): nothing durable remembers the drop.  The rm goes to
+                    //   the card's TRUE holder (a paged card sits under a %Cloud, not the shelf).
+                    let card = this.Ra_recs(own_lib).find((r) => r.sc.path === entry)
+                    if (card) await (card.c.up || own_lib).rm({ Record: 1, id: card.sc.id })
                 }
             }
         } else {
@@ -965,7 +966,7 @@ async Musica_publish(nav, root, prepub, lib, randomic, created_at) {
 async Musica_fold(mag, lib, randomic, created_at) {
     // the live collection's identities — an id set the reconcile and the new-arrival scan both read.
     let have = {}
-    for (const rec of lib.o({ Record: 1 })) have[rec.sc.id] = rec
+    for (const rec of this.Ra_recs(lib)) have[rec.sc.id] = rec
     // RECONCILE: drop any published Record the collection no longer holds; then drop any Cloud left empty.
     let published = {}
     for (const cloud of mag.o({ Cloud: 1 })) {
@@ -976,7 +977,7 @@ async Musica_fold(mag, lib, randomic, created_at) {
         if (!cloud.o({ Card: 1 }).length) await mag.rm({ Cloud: 1, randomic: cloud.sc.randomic })
     }
     // ADD: the collection ids not yet in any Cloud form THIS draw's batch.
-    let fresh = lib.o({ Record: 1 }).filter((r) => !published[r.sc.id])
+    let fresh = this.Ra_recs(lib).filter((r) => !published[r.sc.id])
     if (fresh.length) {
         let cloud = mag.i({ Cloud: 1, randomic: randomic, created_at: created_at })
         cloud.c.up = mag
@@ -1069,11 +1070,11 @@ Musica_zine_tune(z, id) {
     let radio = w.o({ Radio: 1 })[0]
     if (!radio || !id) return false
     let pub = this.Radio_pub(w) || 'me'
-    let rec = this.Ra_home_self(w, pub).o({ Record: 1, id: String(id) })[0]
+    let rec = this.Ra_rec_find(this.Ra_home_self(w, pub), { Record: 1, id: String(id) })
     if (!rec) {
         for (const home of w.o({ MusuThem: 1 })) {
             if (rec) continue
-            rec = this.Ra_home_them(w, String(home.sc.pub)).o({ Record: 1, id: String(id) })[0]
+            rec = this.Ra_rec_find(this.Ra_home_them(w, String(home.sc.pub)), { Record: 1, id: String(id) })
         }
     }
     if (!rec) return false
@@ -1217,7 +1218,7 @@ async Musica_recast_offer(w, tx, from, to, mag, lib, randomic, created_at) {
 //   // <     stand; the roster fan-out is the next M4 rung.
 async Musica_stand(w, tx, from, to, mag, lib, randomic, created_at) {
     let ids = []
-    for (const rec of lib.o({ Record: 1 })) ids.push(rec.sc.id)
+    for (const rec of this.Ra_recs(lib)) ids.push(rec.sc.id)
     ids.sort()
     let fp = ids.join('|')
     if (mag.c.last_census === fp) return { changed: false, gone_records: [], gone_clouds: [] }

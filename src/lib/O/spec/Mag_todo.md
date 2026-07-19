@@ -21,6 +21,10 @@ The systems this needs have been getting **dialled in by the Story Books** — o
    `%MusuThem,pub:<them>` — the per-friend crate, not a merged pile. The Mag layer hangs off THIS.
 - **%Suggest store-and-forward** (SwarmShare): a referring pointer that survives the friend being
    offline and drains on their rebirth greeting. A Mag is the same shape at collection scale.
+   RULING (2026-07-19): the `%Suggest` MAINKEY retires once Mags cross the wire — a suggestion is a
+    one-card Mag `%from` the friend carrying a note. What survives is the DELIVERY PATTERN it proved
+     (pier-stash durable, re-offered on every rebirth greeting until the far side confirms `got`):
+      that pattern BECOMES Mag delivery, not a parallel particle family beside it.
 - **The reconnect-epoch spine** (PereReborn): a reborn peer's stream heals from either side. A Mag
    stream must survive the same reload — the pull resumes, it does not restart.
 - **The no-enumeration meander** (`Crate_nav_meander`): 200k-track-safe wander, `prandle`-seeded.
@@ -35,6 +39,19 @@ The systems this needs have been getting **dialled in by the Story Books** — o
 1. **The model migration** — move the radiostock in-tree shape from flat `stock/%Record` to
     `%Mag:shuffle/…/%Record` (§1). Smallest change with the biggest downstream: it gives the crush
      real structure to fold (kills the Vtuffing misrepresentation) and gives show|hide real limbs.
+    **BUILT 2026-07-19.** The mint moved inside `Ra_record_from` (the one funnel build+resurrect
+     share): a new holding lands in the open page of the shelf's `%Mag:shuffle > %Cloud,page:N`
+      (6 a page, `Ra_page_size`). Every scanning reader rides the shape-agnostic census
+       (`Ra_recs`/`Ra_rec_find` — flat + paged both) so Book scenes and mirrors that still lay flat
+        keep working; no data migrator was needed (the in-tree stock rebuilds off disk each
+         sitting). Sworn + declared on MusuBuddy: *the stock pages under the shuffle mag — every
+          record stands in a bounded cloud page never flat on the shelf.* Re-recorded green ×2:
+           MusuBuddy, MusuRaStream, MusuRaChase, MusuOgg, MusuReap; neutrality held (fixtures
+            unmoved) on MusuReplica, SwarmShare, MusuHeist, MusuFreeze, MusuDoor, MusuCursor.
+    OPEN RULING surfaced by the cut: the OTHER holding mints still lay flat deliberately — the
+     heist census import, the heist cp-landing card, and the Jam keeper (`kept`). A landed heist is
+      an ACTIVATED product (§6b), i.e. curation — its Mag home should come from the Heist's own
+       naming (a landing Mag), NOT the shuffle. Wants its own ruling before those mints page.
 2. **The wire shape** — a Mag as the Repli unit (§4): offer a Mag husk, pull its warm-start chunks,
     autostart. Closest to what is already loaded; a Book (`MusuMag`?) proves it end to end.
 3. **The limbic show|hide** (§6) — retire the flat `%Tuner` mute-index for a crawlable topic-limb
@@ -66,7 +83,20 @@ A **`%Mag`** is a container with a KIND (`shuffle | lineup | faves | culture`) a
      `shuffle` by id; it does not duplicate the holding.
 
 This revises the flat-stock ruling: stock branches now, because the branch IS the curation. The flat
- shelf was a way-station; the Mag is the home.
+ shelf was a way-station; the Mag is the home. **Landed 2026-07-19 (§0.1):** the real shape is
+  `stock/ > %Mag:shuffle > %Cloud,page:N > %Record` — the Mag lives under the stock shelf (the
+   shelf keeps its role as the holdings door; `Ra_home_self` callers never moved), pages are
+    1-based `%Cloud,page` children of the ONE shuffle Mag, and `Ra_pub_of` climbs `c.up` to the
+     shelf that wears `pub`. Friend mirrors stay FLAT until the wire cut carries Mag structure.
+
+**Naming + where a Mag stores (ruled 2026-07-19).** A Mag takes after a Waft: `%Mag:<unique-name>` —
+ the mainkey value IS the name, as `%Waft:<path>` does it — with pages riding INSIDE as children
+  (`/1`, `/2`… the shuffle's `day`/`page` coordinate), never as sibling top-level Mags. Durable Mags
+   STORE AS BERTHED WAFTS — the Berth is already exactly this seam (`Berth_dir`:
+    `<root>/.jamsend/berth/<prepub>/<name>/toc.snap`, the wormhole dir-with-a-toc.snap shape homed
+     under an identity, documents travelling WITH the music; `Musica_publish` and the Faves door
+      berth this way today). Duration (§3) decides berthing: `faves`|authored Mags berth; `shuffle`
+       pages and `culture` draws are tree-only and die by GC. Friend Mags NEVER berth (§6b).
 
 ## 2. The will above the Mag
 
@@ -97,19 +127,42 @@ Mag kinds share the cursor; they differ in **duration** (lifespan):
 | `faves` | durable — kept forever | free selection; no auto-advance |
 | `culture` | GC'd — keep the last 8 draws | read-only trace; no live cursor |
 
+**§3b. Pointing across Mags (ruled 2026-07-19).** A Card may point INTO another Mag — "check this
+ out, it sits in her Faves" — by wearing a `%Dogear` child: the cursor spine opens at the target Mag
+  (`{Mag:'Faves'} → … → {Card,id:X}`) and resolves from the crate its provenance names (§6b: `%from`
+   picks the crate, the cursor walks from there — O(depth), zero search). All scalar, so the pointer
+    snaps, berths and replicates like anything (MusuResume proved the round-trip); C2's `%Renamed`
+     heal follows the target across a reorganise through the same pipe the content came down; and a
+      clean fail IS the husk texture (§4.4) — a pointer into bytes you cannot reach reads honestly as
+       a promise. The bare `id` join stays the 1:1 identity (the Card IS the join); the Dogear is for
+        POSITION — the thing as-it-sits in that other Mag. The one NEW convention the machinery needs
+         is the root rule (resolve from the crate `%from` names); the cursor itself is proven.
+
 ## 4. Mags do Repli — the wire
 
-The Mag is the **replication unit**. It crosses the wire on the existing Repli machinery, husk-first:
+The Mag is the **replication unit** — and (ruled 2026-07-19) the **default sharability**: sharing
+ anything IS sharing a Mag, down to the one-card Mag as the atom (the retired `%Suggest`, §0). The
+  Heist HEISTS; the Mag POINTS — "check this out" — and the pointed-at thing may sit inside another
+   Mag (§3b). It crosses the wire on the existing Repli machinery, husk-first:
 
 1. **Offer** — a `%Mag` husk crosses (`Repli_offer`-shaped): the Mag head + its `%Card`/`%Record`
     heads + each Record's `%Preview,seq` metadata, NO chunk bytes. A friend's whole shelf-of-Mags is
      a cheap catalog however much stock stands behind it.
-2. **Context, when it exists** — a Mag presents "whatever is around the Record in the What": if a
-    Record sits inside a What (a `%Reco` note, a `%Stream` continuation, a surrounding structure), the
-     Mag carries that C** context along. A bare Record carries only its head. Some Mags have structure
-      to present; some are flat sets. Do not force structure that is not there.
+2. **Context, when it exists** — a Mag/What/* is Records; anything ELSE found there exists to be
+    GROUPED TO a Record — that is what non-Record content in a Mag is FOR (ruled 2026-07-19; no
+     speculative inventory of what else might appear). A bare Record carries only its head. Some Mags
+      have structure to present; some are flat sets. Do not force structure that is not there — and
+       the Cursoring stays flexible + UNCONFUSIBLE over both shapes (trees AND big flat lists —
+        proven in the MusuCursor Book: the C1–C3 tree scenes plus the flat/crowd scene). UI:Waft
+         renders a big Mag BOUNDED: deepen chips at the edges (`/*38`, the [zS]tuffing idiom), never
+          an unbounded list.
 3. **Pull** — bytes are lazy: `Repli_want_next` fetches chunks on demand, `%parked_want` survives a
-    reload (PereReborn's reconnect-epoch: the pull RESUMES, never restarts).
+    reload (PereReborn's reconnect-epoch: the pull RESUMES, never restarts). No buffers ride the
+     offer — but the client OPENS by asking for the first two chunks of the first two Records (the
+      §5 warm start) and paces the rest off the playing head. **Starvation legibility par importo**:
+       a starved track must SHOW where in its pipeline it is stuck — want parked | offered | pulling
+        | chunks landing | decoded | scheduled — a legible stage on the particle, never a bare
+         spinner.
 4. **The unknowable** — a `%Card` that resolves to a held `%Record` is *knowable*; one that refers to
     bytes not pulled is a *husk* — a promise. The crate view must render the two textures distinctly
      (§6): honesty about how much of a room you can actually reach is a feature, not a gap.
@@ -135,20 +188,57 @@ The page size (6) and warm depth (2 records × 2 chunks) are the tuning knobs �
 **The headline:** connecting to a Pier EXPLODES their Mags onto the scene. Their `%MusuThem,pub:<them>`
  crate is a shelf-of-Mags; the offer husks them all cheaply; the scene blooms with their curated
   rooms; a shuffle over their collection autostarts. The friend arrives as their *taste*, immediately
-   audible — not a directory you then go spelunking.
+   audible — not a directory you then go spelunking. Ruled 2026-07-19: explode-on-connect is the
+    superpostmodernist `<h1>` — if the page is a tale of what happened, this is its header. In
+     practice it kicks off catching up with their collection, and it PRESENTS as a
+      switch-to-this-channel affordance beside the Radio UI — an arrival, not a takeover.
 
 **show|hide becomes navigation, not a checklist.** The current `%Tuner:'glass'` + `cyto_crew` +
  `Tuner_toggle(t.c.mute[crew])` is a flat mute-index and it is currently broken. Retire it for a
-  **topic-limb graph**: the Mags ARE the rooms; the topic tree they hang off (genre/artist/era/mood
-   — derived from Record metadata + the culture-trace, human-prunable) is the limbs you crawl.
-    Rooms toggle on|off independently, BUT **mutex on space**: a space-hungry room yields when a
-     heavier one opens (an attention budget — LRU-ish, not the hard [s]-style total mutex). This is
-      the "make space" ask realised as a living layout instead of a list.
+  **topic-limb graph** — and the topic tree is NOT only music (ruled 2026-07-19): it is all the
+   parts of the system in play, each subsystem|perception with its particular particles and its
+    particular particle pump. An ATTENTION-SHARING DOMAIN, Housing-like: a dilute top-level view
+     while things get ready, then the usual state is FOCUS — one perception held close, the rest
+      folded. Within the looking-at-lots-of-music perception the limbs derive from Record metadata
+       + the culture trace (terms, since they confused: a *culture-trace draw* = a `Stoker_mag_draw`
+        `%Cloud`, the trail of what a dig landed; *authored* = a human-made list; *blend* =
+         machine-proposed limbs the human prunes|renames). The idiom: an octopus holding a bunch of
+          toys — it holds one up to you for a close look, and when you tap its head it folds the arm
+           away again. Rooms toggle on|off independently, BUT **mutex on space**: a space-hungry room
+            yields when a heavier one opens (an attention budget — LRU-ish, not the hard [s]-style
+             total mutex), and the mutex is an ATTENTION MECHANISM with a sense of navigation — view
+              states the Voro grasps coherently enough to REWIND (the moments|Yore spool is the rail)
+               and to PUSH BACK on: proposing a view-state change, not only obeying toggles. This is
+                the "make space" ask realised as a living layout instead of a list.
 
 **Vtuffing / the crush reads Mags.** The crush misrepresents `%MusuThem/**` today because a flat pile
  has no structure to fold and `Voro_crushable|swarmable` judge nodes in isolation. Fold the MAGS
   (real, curated groupings) and the misrepresentation dissolves — the sub-cell stuffing renders a
    Mag's Cards, honouring husk (unknowable) vs held (knowable). Same move, both problems.
+
+## 6b. Provenance + privacy — a Mag `%from` its creator (ruled 2026-07-19)
+
+Every Mag wears `%from:<prepub>`: curation is authored and the author rides with it. Which makes a
+ friend's Mags PERSONAL DATA — their lists of tracks, their taste, sitting on my disk. The rulings:
+
+- **Friend Mags never berth.** They arrive as husks, live in the runtime tree while the awareness
+   lasts (a high-security time), and are SHAVED OFF rather than hoarded. Reconnect re-explodes them
+    cheaply (§4.1), so persisting them buys nothing but liability.
+- **What persists is the ACTIVATED product of the awareness**: the `%Heist` — its set of track
+   titles, the folder structure it wants to save into, and that Heist's state — plus whatever bytes
+    a grant actually let me pull. Acting IS the consent moment; the Heist is its durable record.
+- **Listening history is the same class of data** (§8): what I heard OF whom. Keep it OBLIQUE —
+   bare ids, no titles|paths — enough to never repeat a track, nothing worth stealing.
+- **Tombstones are untouchable**: `%UnGrant` decision-facts never drop (the revocation law) —
+   privacy shaving removes CONTENT, never decisions.
+- **Provenance is a LOOKUP, never a search (ruled 2026-07-19: owned but not persisted).** Whose a
+   thing is must be readable ON it immediately — the Mag's `%from` + the per-friend crate keying
+    (`%MusuThem,pub:<them>`, the SwarmShare-proven mirror law) — or every "where did this come from"
+     becomes an every-Pier search query. Origin picks the crate; the cursor picks the position;
+      resolution is a walk.
+- <posited> The same ephemerality should reach the whole `%MusuThem` mirror (the husk catalog too) —
+   shaving Mags while the full catalog mirror persists beside them would be theatre. Session matter,
+    re-offered on connect.
 
 ## 7. Scale discipline — 200k tracks, never a jam
 
@@ -162,19 +252,22 @@ The invariant: **no path materialises the whole collection.**
 - **The working set is bounded by Mags** — you hold a page (~6) plus what is pinned; the rest is
    husks (promises) until a will pulls them. Memory is O(open Mags), not O(collection).
 
-## 8. Open questions (for the human to settle)
+## 8. Open questions → rulings (the human, 2026-07-19)
 
-- **The topic tree's source** — derived from metadata, emergent from culture-trace draws, authored,
-   or a blend? (Leaning: machine proposes, human prunes|renames.)
-- **Friend-Mag ownership** — do a friend's Mags cross the wire as THEIR curation (richer than the
-   ive_got count), or do I derive Mags locally over their mirrored stock? (Leaning: both — theirs
-    cross, mine derive-then-optionally-share.)
-- **Migration order** — flat `stock/%Record` → `%Mag:shuffle/**/%Record` touches every fixture that
-   reads a shelf; which Books re-record, and in what order, to keep the sweep green?
-- **The mutex policy** — what makes a room "space-hungry" (cell count? sub-cell depth? a `%want`
-   weight?), and what is the budget (viewport area? an Attractor KNOB)?
-- **Cursor persistence across reload** — the playhead is live state; does it ride `.c` (lost on
-   reload, re-derived) or snap (durable but churny)? Probably `.c` + a durable "last heard" seam.
+- **The topic tree's source** — RULED: machine proposes, human prunes|renames, and the tree spans
+   the whole SYSTEM, not just music (§6 — the attention-sharing domain).
+- **Friend-Mag ownership** — still open in the small (theirs cross vs derived locally over the
+   mirror), but bounded by §6b: however they arrive, they never persist.
+- **Migration order** — RULED "sure, whatever": the agent owns migration TESTING now (which Books,
+   what re-record order, keeping the sweep green) — human eyes only where a diff genuinely needs a
+    mind.
+- **The mutex policy** — RULED in kind: an attention mechanism with a SENSE OF NAVIGATION — view
+   states the Voro can rewind (the moments|Yore spool) and push back on (§6). The budget metric
+    (cell count? viewport area? an Attractor KNOB?) stays open in the small.
+- **Cursor persistence** — RULED: ABSOLUTELY durable. Keep OBLIQUE track (bare ids, §6b) of Records
+   heard and then of whole Mags exhausted, so the shuffle|dial NEVER hands you a duplicate across
+    sessions. The `%Dogear` C3 berth is the seam; `radio.c.heard` is the runtime germ; the
+     graduation is heard-Record ids → exhausted-Mag names.
 
 ---
 

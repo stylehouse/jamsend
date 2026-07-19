@@ -16,8 +16,6 @@ Snap:H
               curs,wild:Cloud,randomic:draw_two
           resolved:hit,depth=3,ok,id:t1
           resolved:cloud,depth=2,ok,randomic:draw_two,cloud_type
-          see:a cursor is a stack of matches — resolving one re-finds every level from the magazine down and lands on the exact record it names
-          see:a cursor can name a level not just a leaf — a two-deep cursor lands on the cloud and stops there
         MusuSelf,pub:Self
           radiostocking,pub:Self
             Mag:Musica

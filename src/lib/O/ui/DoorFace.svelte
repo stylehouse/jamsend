@@ -37,8 +37,10 @@
                     let sug_rec: any = null
                     if (sug && rw) {
                         try {
-                            sug_rec = rw.o({ MusuThem: 1, pub: String(p.sc.pub) })[0]
-                                ?.o({ stock: 1 })?.[0]?.o({ Record: 1, id: String(sug.sc.id) })?.[0] ?? null
+                            const shelf = rw.o({ MusuThem: 1, pub: String(p.sc.pub) })[0]?.o({ stock: 1 })?.[0]
+                            sug_rec = ((H as any)?.Ra_rec_find
+                                ? (H as any).Ra_rec_find(shelf, { Record: 1, id: String(sug.sc.id) })
+                                : shelf?.o({ Record: 1, id: String(sug.sc.id) })?.[0]) ?? null
                         } catch { sug_rec = null }
                     }
                     // presence in three honest rungs off heard_at (their pulse heartbeat, ~5s):

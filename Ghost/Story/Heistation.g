@@ -1209,6 +1209,7 @@ async MusuCursor_drive(w, req):
         if (n === 2) await this.MusuCursor_setup(w)
         if (n === 3) this.MusuCursor_resolve_scene(w)
         if (n === 4) await this.MusuCursor_knockout_scene(w)
+        if (n === 5) this.MusuCursor_flat_scene(w)
     }
     this.MusuCursor_witness(w)
     await this.Musu_float(w)
@@ -1277,7 +1278,41 @@ async MusuCursor_knockout_scene(w):
     if (gone.missing) { row.missing_id = gone.missing.id }
     this.MusuCursor_note(w, row)
 
-// ── the witness — %see gated on TRUTH not beat number, once-noticed under %testing (no commas no apostrophes). ──
+// MusuCursor_flat_scene — the OTHER magazine shape (the human's ruling 2026-07-19: trees AND big flat
+//  lists — the Cursoring flexible and UNCONFUSIBLE over both).  A %Mag:FlatCrowd holds FORTY cards
+//   DIRECTLY — no %Cloud level — and every card shares artist+title, so the id pin is the ONLY
+//    discriminator.  Two cursors resolve: `flat` proves depth is the magazine's business not the
+//     cursor's (a one-level spine under the mag lands clean), `crowd` proves exactness in a crowd
+//      (lands on f23 of the forty near-identicals).  Deterministic loop mint — caveat:0 preserved.
+MusuCursor_flat_scene(w):
+    this.MusuCursor_note(w, { reached: 'step_5' })
+    let shelf = w.c.mag_root
+    let flat = shelf.i({ Mag: 'FlatCrowd' })
+    flat.c.up = shelf
+    let i = 1
+    while (i <= 40) {
+        let id = (i < 10 ? 'f0' : 'f') + i
+        let card = flat.i({ Card: 1, id: id, artist: 'Crowd', title: 'Same', path: 'crate/f/' + id + '.opus' })
+        card.c.up = flat
+        i = i + 1
+    }
+    let T = this.MusuCursor_T(w)
+    let cf = this.Cursor_make(T, 'flat-f07', [{ Mag: 'FlatCrowd' }, { Card: 1, id: 'f07' }])
+    let a = this.Cursor_resolve(cf, shelf)
+    let row2 = { resolved: 'flat', depth: a.depth }
+    if (a.ok) { row2.ok = 1 }
+    if (a.landed) { row2.id = a.landed.sc.id }
+    this.MusuCursor_note(w, row2)
+    let cc = this.Cursor_make(T, 'crowd-f23', [{ Mag: 'FlatCrowd' }, { Card: 1, id: 'f23' }])
+    let b = this.Cursor_resolve(cc, shelf)
+    let row3 = { resolved: 'crowd', depth: b.depth, siblings: flat.o({ Card: 1 }).length }
+    if (b.ok) { row3.ok = 1 }
+    if (b.landed) { row3.id = b.landed.sc.id }
+    this.MusuCursor_note(w, row3)
+
+// ── the witness — %sworn assertions via this.story_swear (the current regime; %see extinct here since
+//  2026-07-19).  Truth-gated on the pinned %testing notes never on beat number; evidence rides the off-snap
+//   ave/%Assertioning shelf and the declared contract is the toc step=N/%Assertion lines (declare via CLI).
 MusuCursor_witness(w):
     let n = (this.c.run)?.c.step_n
     if (!(n >= 3)) return
@@ -1285,14 +1320,22 @@ MusuCursor_witness(w):
     let T = this.MusuCursor_T(w)
     // #1 LANDS: a full cursor re-finds every level from the magazine down and lands on the exact leaf it names.
     let hit = T.o({ resolved: 'hit' })[0]
-    if (hit && +hit.sc.ok === 1 && +hit.sc.depth === 3 && hit.sc.id === 't1' && !T.oa({ see: 'a cursor is a stack of matches — resolving one re-finds every level from the magazine down and lands on the exact record it names' })) this.MusuCursor_note(w, { see: 'a cursor is a stack of matches — resolving one re-finds every level from the magazine down and lands on the exact record it names' })
+    if (hit && +hit.sc.ok === 1 && +hit.sc.depth === 3 && hit.sc.id === 't1') this.story_swear(w, 'a cursor is a stack of matches — resolving one re-finds every level from the magazine down and lands on the exact record it names')
     // #2 A LEVEL NOT A LEAF: a two-deep cursor lands on the cloud and stops there — position is any depth.
     let cl = T.o({ resolved: 'cloud' })[0]
-    if (cl && +cl.sc.ok === 1 && +cl.sc.depth === 2 && cl.sc.randomic === 'draw_two' && +cl.sc.cloud_type === 1 && !T.oa({ see: 'a cursor can name a level not just a leaf — a two-deep cursor lands on the cloud and stops there' })) this.MusuCursor_note(w, { see: 'a cursor can name a level not just a leaf — a two-deep cursor lands on the cloud and stops there' })
+    if (cl && +cl.sc.ok === 1 && +cl.sc.depth === 2 && cl.sc.randomic === 'draw_two' && +cl.sc.cloud_type === 1) this.story_swear(w, 'a cursor can name a level not just a leaf — a two-deep cursor lands on the cloud and stops there')
     // #3 CLEAN FAIL: with the named record gone the cursor fails at that level — it reports the exact match it
     //  could not find and how far it got (depth 2), never a throw.  This verdict is the seam C2 heals through.
     let gone = T.o({ resolved: 'gone' })[0]
-    if (gone && +gone.sc.failed === 1 && +gone.sc.depth === 2 && gone.sc.missing_id === 't1' && !T.oa({ see: 'when a named level is gone the cursor fails cleanly — it reports the exact match it could not find and how far it got not a crash' })) this.MusuCursor_note(w, { see: 'when a named level is gone the cursor fails cleanly — it reports the exact match it could not find and how far it got not a crash' })
+    if (gone && +gone.sc.failed === 1 && +gone.sc.depth === 2 && gone.sc.missing_id === 't1') this.story_swear(w, 'when a named level is gone the cursor fails cleanly — it reports the exact match it could not find and how far it got not a crash')
+    // #4 FLAT (ruled 2026-07-19): a magazine with NO cloud level — a one-level cursor lands on the card
+    //  sitting directly under the mag.  Depth is the magazine's business; the cursor does not care.
+    let fl = T.o({ resolved: 'flat' })[0]
+    if (fl && +fl.sc.ok === 1 && +fl.sc.depth === 2 && fl.sc.id === 'f07') this.story_swear(w, 'a magazine can be flat — a one-level cursor lands on the card sitting directly under the mag with no cloud between')
+    // #5 CROWD: forty siblings sharing every scalar but id|path — the id pin is the only discriminator
+    //  and it lands on exactly the card named.  The unconfusibility claim, adversarially shaped.
+    let cr = T.o({ resolved: 'crowd' })[0]
+    if (cr && +cr.sc.ok === 1 && cr.sc.id === 'f23' && +cr.sc.siblings === 40) this.story_swear(w, 'a cursor is unconfusible in a crowd — among forty near-identical cards it lands on exactly the one it names')
 
 // ══ MusuHeal — C2: a cursor HEALS across a rename via %Renamed redirect-facts ═════════════════════════════
 //  C1 (MusuCursor) proved a cursor lands or fails CLEANLY.  C2 grows the clean-fail into a HEAL: when a named
@@ -2936,7 +2979,7 @@ async MusuOgg_stock(w, nav):
     w.c.lib = lib
     await this.expecting(w, 'ogg_stock', 240, async () => {
         let r = await this.Ra_stock(w, lib, nav, 'testsounds', 1)
-        let rec = lib.o({ Record: 1 })[0]
+        let rec = this.Ra_recs(lib)[0]
         if (!rec) return
         w.c.rec_id = rec.sc.id
         // drive the continuation encode to completion — the direct-drive alternative to parked wants.
@@ -2980,7 +3023,7 @@ MusuOgg_name(id):
 async MusuOgg_export(w, nav):
     let lib = w.c.lib
     if (!lib || !w.c.rec_id) return
-    let rec = lib.o({ Record: 1, id: w.c.rec_id })[0]
+    let rec = this.Ra_rec_find(lib, { Record: 1, id: w.c.rec_id })
     if (!rec) return
     await this.MusuOgg_sweep_dir(nav)
     let dir = this.MusuOgg_dir()
@@ -2996,7 +3039,8 @@ async MusuOgg_export(w, nav):
         let m = this.MusuOgg_note(w, { exported: 1, pages: ex.pages, packets: ex.packets })
         if (raw && raw.byteLength > 0) m.sc.on_disk = 1
         // the %Blob landed beside the Record, wearing its own mainkey + the join id + a path (not bytes)?
-        let blob = lib.o({ Blob: 1, id: rec.sc.id, grade: 'ogg128' })[0]
+        //  "beside" = the record's OWN holder (its shuffle page under the Mag model), so look there.
+        let blob = (rec.c.up || lib).o({ Blob: 1, id: rec.sc.id, grade: 'ogg128' })[0]
         if (blob) {
             if (blob.sc.path) m.sc.blob_path = 1
             if (!blob.sc.buf) m.sc.no_bytes_on_sc = 1
@@ -3011,7 +3055,7 @@ async MusuOgg_export(w, nav):
 async MusuOgg_structural(w, nav):
     let lib = w.c.lib
     if (!lib || !w.c.rec_id) return
-    let rec = lib.o({ Record: 1, id: w.c.rec_id })[0]
+    let rec = this.Ra_rec_find(lib, { Record: 1, id: w.c.rec_id })
     if (!rec) return
     await this.expecting(w, 'ogg_structural', 60, async () => {
         let raw = await nav.bin_read(this.MusuOgg_dir(), this.MusuOgg_name(rec.sc.id))
@@ -3040,7 +3084,7 @@ async MusuOgg_structural(w, nav):
 async MusuOgg_decode(w, nav):
     let lib = w.c.lib
     if (!lib || !w.c.rec_id) return
-    let rec = lib.o({ Record: 1, id: w.c.rec_id })[0]
+    let rec = this.Ra_rec_find(lib, { Record: 1, id: w.c.rec_id })
     if (!rec) return
     await this.expecting(w, 'ogg_decode', 90, async () => {
         let raw = await nav.bin_read(this.MusuOgg_dir(), this.MusuOgg_name(rec.sc.id))
@@ -3231,13 +3275,13 @@ async MusuReap_publish(w, nav):
     await this.expecting(w, 'reap_publish', 240, async () => {
         // era A — stock ONLY the FIRST track, fold it under created_at 1000.
         let ra = await this.Ra_stock(w, lib, nav, 'testsounds', 1, 0)
-        let recs_a = lib.o({ Record: 1 })
+        let recs_a = this.Ra_recs(lib)
         if (recs_a.length !== 1) { this.MusuReap_note(w, { publish_fail: 'stock_a', have: recs_a.length }); return }
         w.c.id_a = recs_a[0].sc.id
         await this.Musica_publish(nav, root, pub, lib, 'reapA', 1000)
         // era B — stock the SECOND track, fold again; only the new id lays under a fresh cloud (2000).
         await this.Ra_stock(w, lib, nav, 'testsounds', 1, 1)
-        let recs_b = lib.o({ Record: 1 })
+        let recs_b = this.Ra_recs(lib)
         if (recs_b.length !== 2) { this.MusuReap_note(w, { publish_fail: 'stock_b', have: recs_b.length }); return }
         w.c.id_b = recs_b.find((r) => r.sc.id !== w.c.id_a).sc.id
         let mag = await this.Musica_publish(nav, root, pub, lib, 'reapB', 2000)

@@ -16,11 +16,17 @@ Snap:H
               curs,wild:Cloud,randomic:draw_two
           resolved:hit,depth=3,ok,id:t1
           resolved:cloud,depth=2,ok,randomic:draw_two,cloud_type
-          see:a cursor is a stack of matches — resolving one re-finds every level from the magazine down and lands on the exact record it names
-          see:a cursor can name a level not just a leaf — a two-deep cursor lands on the cloud and stops there
           reached:step_4
           resolved:gone,depth=2,failed,missing_id:t1
-          see:when a named level is gone the cursor fails cleanly — it reports the exact match it could not find and how far it got not a crash
+          reached:step_5
+          Dogear,of:flat-f07
+            curs,Mag:FlatCrowd
+              curs,wild:Card,id:f07
+          resolved:flat,depth=2,ok,id:f07
+          Dogear,of:crowd-f23
+            curs,Mag:FlatCrowd
+              curs,wild:Card,id:f23
+          resolved:crowd,depth=2,siblings=40,ok,id:f23
         MusuSelf,pub:Self
           radiostocking,pub:Self
             Mag:Musica
@@ -28,3 +34,44 @@ Snap:H
                 Card,id:t2,artist:Bassbin,title:Two,path:crate/b/two.opus
               Cloud,randomic:draw_two,created_at=2000
                 Card,id:t3,artist:Cutter,title:Three,path:crate/c/three.opus
+            Mag:FlatCrowd
+              Card,id:f01,artist:Crowd,title:Same,path:crate/f/f01.opus
+              Card,id:f02,artist:Crowd,title:Same,path:crate/f/f02.opus
+              Card,id:f03,artist:Crowd,title:Same,path:crate/f/f03.opus
+              Card,id:f04,artist:Crowd,title:Same,path:crate/f/f04.opus
+              Card,id:f05,artist:Crowd,title:Same,path:crate/f/f05.opus
+              Card,id:f06,artist:Crowd,title:Same,path:crate/f/f06.opus
+              Card,id:f07,artist:Crowd,title:Same,path:crate/f/f07.opus
+              Card,id:f08,artist:Crowd,title:Same,path:crate/f/f08.opus
+              Card,id:f09,artist:Crowd,title:Same,path:crate/f/f09.opus
+              Card,id:f10,artist:Crowd,title:Same,path:crate/f/f10.opus
+              Card,id:f11,artist:Crowd,title:Same,path:crate/f/f11.opus
+              Card,id:f12,artist:Crowd,title:Same,path:crate/f/f12.opus
+              Card,id:f13,artist:Crowd,title:Same,path:crate/f/f13.opus
+              Card,id:f14,artist:Crowd,title:Same,path:crate/f/f14.opus
+              Card,id:f15,artist:Crowd,title:Same,path:crate/f/f15.opus
+              Card,id:f16,artist:Crowd,title:Same,path:crate/f/f16.opus
+              Card,id:f17,artist:Crowd,title:Same,path:crate/f/f17.opus
+              Card,id:f18,artist:Crowd,title:Same,path:crate/f/f18.opus
+              Card,id:f19,artist:Crowd,title:Same,path:crate/f/f19.opus
+              Card,id:f20,artist:Crowd,title:Same,path:crate/f/f20.opus
+              Card,id:f21,artist:Crowd,title:Same,path:crate/f/f21.opus
+              Card,id:f22,artist:Crowd,title:Same,path:crate/f/f22.opus
+              Card,id:f23,artist:Crowd,title:Same,path:crate/f/f23.opus
+              Card,id:f24,artist:Crowd,title:Same,path:crate/f/f24.opus
+              Card,id:f25,artist:Crowd,title:Same,path:crate/f/f25.opus
+              Card,id:f26,artist:Crowd,title:Same,path:crate/f/f26.opus
+              Card,id:f27,artist:Crowd,title:Same,path:crate/f/f27.opus
+              Card,id:f28,artist:Crowd,title:Same,path:crate/f/f28.opus
+              Card,id:f29,artist:Crowd,title:Same,path:crate/f/f29.opus
+              Card,id:f30,artist:Crowd,title:Same,path:crate/f/f30.opus
+              Card,id:f31,artist:Crowd,title:Same,path:crate/f/f31.opus
+              Card,id:f32,artist:Crowd,title:Same,path:crate/f/f32.opus
+              Card,id:f33,artist:Crowd,title:Same,path:crate/f/f33.opus
+              Card,id:f34,artist:Crowd,title:Same,path:crate/f/f34.opus
+              Card,id:f35,artist:Crowd,title:Same,path:crate/f/f35.opus
+              Card,id:f36,artist:Crowd,title:Same,path:crate/f/f36.opus
+              Card,id:f37,artist:Crowd,title:Same,path:crate/f/f37.opus
+              Card,id:f38,artist:Crowd,title:Same,path:crate/f/f38.opus
+              Card,id:f39,artist:Crowd,title:Same,path:crate/f/f39.opus
+              Card,id:f40,artist:Crowd,title:Same,path:crate/f/f40.opus

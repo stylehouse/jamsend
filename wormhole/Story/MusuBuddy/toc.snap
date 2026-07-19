@@ -5,39 +5,40 @@ story:MusuBuddy
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=1.455
-      sample=1.115,at=1784260909
-      sample=1.009,at=1784260940
-      sample=1.231,at=1784260974
-      sample=1.053,at=1784264548
-      sample=1.476,at=1784275697
+    TimeTotal:beliefs,avg=1.535
       sample=1.476,at=1784275724
       sample=1.476,at=1784275725
       sample=1.421,at=1784275753
       sample=1.045,at=1784275789
       sample=3.245,at=1784436643
-    TimeTotal:step,avg=0.104
-      sample=0.08,at=1784260909
-      sample=0.072,at=1784260940
-      sample=0.088,at=1784260974
-      sample=0.075,at=1784264548
-      sample=0.105,at=1784275697
+      sample=1.262,at=1784452010
+      sample=1.439,at=1784452334
+      sample=1.439,at=1784452348
+      sample=1.339,at=1784452389
+      sample=1.209,at=1784452447
+    TimeTotal:step,avg=0.11
       sample=0.105,at=1784275724
       sample=0.105,at=1784275725
       sample=0.101,at=1784275753
       sample=0.075,at=1784275789
       sample=0.232,at=1784436643
+      sample=0.09,at=1784452010
+      sample=0.103,at=1784452334
+      sample=0.103,at=1784452348
+      sample=0.096,at=1784452389
+      sample=0.086,at=1784452447
   step,dige:b3d94b4565d8f9d0
-  step=2,dige:77b098869d1d7296
-  step=3,dige:60bdc73faa37e8c1
-  step=4,dige:b17e60a1d0dbb2b1
-  step=5,dige:78f16e85a209a7cd
-  step=6,dige:4c54baf3f925807b
-  step=7,dige:fd8b99108e8d333a
-  step=8,dige:391ff82c67db702f
-  step=9,dige:0b7440b51c0618e8
-  step=10,dige:67ce8e59cf0c16c7
-  step=11,dige:9e7b1df528e87d14
-  step=12,dige:ca7b69ebb28b5cb2
-  step=13,dige:90b97a6df1243fcd
-  step=14,dige:eb6facd33d8b74ca
+  step=2,dige:26d645f9dbfac529
+    Assertion:the-stock-pages-under,sentence:the stock pages under the shuffle mag — every record stands in a bounded cloud page never flat on the shelf
+  step=3,dige:48cedbf75bc3455c
+  step=4,dige:8f835020844c382f
+  step=5,dige:4774a1f0fb9e3f8c
+  step=6,dige:6318a002524ff9d9
+  step=7,dige:bb4d5fc47fe214c6
+  step=8,dige:298034e2d1ae2c9b
+  step=9,dige:63120b04b122dda2
+  step=10,dige:4d5595aa8e0c2736
+  step=11,dige:1cd7097cb67efd35
+  step=12,dige:e3f7b974e2650ec3
+  step=13,dige:e49f923b4fdfa356
+  step=14,dige:63c372ac22c4b37f

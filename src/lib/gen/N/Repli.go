@@ -10,7 +10,7 @@ import { Selection } from "$lib/mostly/Selection.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return 'f7973ae850a3a56a~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return 'f7a2665e88399043~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -397,7 +397,8 @@ async Repli_serve_parked(w, pier) {
 Repli_find_record(w, id, lib) {
     let l = lib || w.c.repli_src
     if (!l) return null
-    return l.o({ Record: 1, id: id })[0]
+    // Ra_rec_find walks the Mag model (paged self stock) AND the flat shape (mirrors, Book srcs).
+    return this.Ra_rec_find(l, { Record: 1, id: id })
 
 },
 // Repli_serve_want — A got a `want id/stream/from_idx`: take the page [from_idx, from_idx+PAGE) of the
@@ -629,10 +630,12 @@ async Repli_sent_se(w, library, pier) {
         match_sc: {},
         trace_sc: { Sent: 1 },
         each_fn: async (D, n, T) => {
-            // depth 0 is the library: walk its Records; a Record is a leaf of this walk
-            //  (its %Stream is read at trace time, not traveled).
+            // depth 0 is the library: walk its Records — via the shape-agnostic census, so a
+            //  paged self stock (%Mag:shuffle/%Cloud) serves exactly as the flat shape did: the
+            //   wire flattens, the mirror stays flat until the wire cut carries Mag structure.
+            //    A Record is a leaf of this walk (its %Stream is read at trace time, not traveled).
             if (T.c.path.length - 1 === 0) {
-                T.sc.more = n.o({ Record: 1 })
+                T.sc.more = this.Ra_recs(n)
             } else {
                 T.sc.more = []
             }

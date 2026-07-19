@@ -13,47 +13,49 @@ Snap:H
           see:the export writes one real Ogg file on the nav — a %Blob grade:ogg128 lands beside the Record carrying its path never the giant bytes on sc
         MusuSelf,pub:ogg.shop
           stock,pub:ogg.shop
-            Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
-              Preview,seq:0,head,preskip=312,cid:3ccd2f51f3f3b66e3115ee8cb2d1c43575a42bf9704abf44b8af40d1a8d74d7b	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:1,cid:144cde8bcbf6a150cae10b2f4115f1fd62f97576477adbaaa900bac3cfc53872	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:2,cid:224607ca4d58380a3271f7a0a2621c076034997f83423effb1cabda2252985e3	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:3,cid:bd7e4cd4018af8df29a4ce36cf8cf48ddf14f9265dafc3ce6499e71a5280320a	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:4,cid:e562bac3d0f1dfc9969825f34ffb0ddba65467e2df0ca90f1b224292f3c6154d	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:5,cid:774bf989acb4a0f4d775b5bfbe38c4ceb10372cdaf58dbd2738898a012d0d3fe	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:6,cid:d8bb01b9d2fb794a054c6061e89c76ceb106dab97115ba1821d7def09396f1c1	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:7,cid:95eab5bfd38f7a92de39a3b55fc20b94c189ac99b985f641fc86eebd42613155	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:8,cid:2cc35a04310a7ad42dae8b64cafb15b5f0e8aeb7df88ef49a0fd2c30bea6b43f	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:9,cid:d2349eb37985140aeb5c6569fa2ab4ab0686d04ca04d2906be03c0c813eb0d28	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:10,cid:31def79e6787801b908766a4a114a111239e2ca5f05cbff6439cf001824c56b9	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:11,cid:4a8468642f8ba5b3c7eaf5f7095c26a62795c02dde06dc3cdea6d9a7c9984228	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:12,cid:525a5cfa378c5b2e7e05ed44ed3d6283cb7dc2bb9412200bbb9fdc8fd492b681	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:13,cid:d01bb06dff81abc1b549cc048d6b72c2088e6275ea02d7f82bdc6fa0145202ad	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:14,cid:2850cb9adf1f9f0a22ecd7de7829804b4247a3a225ca45568cbb3af88b69bc44	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:15,cid:3ab52c6af8c8ee61b625c0831f959da0289a33ed976efd9f78e1b8d4547cc4ac	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:16,head,preskip=312,cid:ed207f22625c8065553ff63173dea566c02abab5f89f80b23eec2feb09db7ed0	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:17,cid:941c70d942a007c7409e5ef3a73dc6e058e69f95c2df8b4567533f92fae8c8b6	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:18,cid:4c64b690520ff0944b111f093a56cf69ab3c8205e74af5a93664dbcce1b491ec	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:19,cid:50e05934c926e71d6da02ccb68ccd51bede6e54e1582ea6032bef6e99765299b	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:20,cid:54a79bc272e6be092c26af8fa9f09a3eac8ae1a679e91bf31fb32d55726abd3c	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:21,cid:bb5ada35ec5d19fbd60c4638e3b2576e947bf6c18927e4d195e7f6af2c5dd146	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:22,cid:ced07c3f7477296e0f52f63c859ae3153b73a25c4aff028322c14b1b8dcf7667	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:23,cid:6242ec15385e085ece0767342d38ddeae112560cf67bd567cd8abd30bac85e94	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:24,cid:c2869e7aab4f51f2266bb91f3f874ca3b4b1630a89159a01ab343ce1fefc2177	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:25,cid:9cda2e7ced8372e818a690215bafd0c2f8cd1eaa9d702859ecde7b393440cec1	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:26,cid:5056381b9edcb1760595e115ac3d286ebc7e6ed339960d6b70c352e35e931c2e	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:27,cid:4576ec4d68f23a4ddbc0a4bd37afbe970a83747f4af63fb6ae4a23001f76053b	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:28,cid:0e3724fce1e243e5345d98bc25a35d740e8fcb929de82ba9ec5a09d8706eeebb	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:29,cid:e92af555148770e4f68e459732b640f7bc181519c3de4f46a9e48f46f6b8838e	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:30,cid:9bd89374cb80ff7255269cd2b4284e1efba9ad8b496e8cebff49dc71b807c02a	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:31,cid:a20f8b38904ce316965bb612a41bdcad21742df3a7110922a24a7aa7243a2f99	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:32,cid:a6caf44f9850e435dea9c0d84f30b2650c2e4f668bdae1f9b50e7ebafd7eb8a3	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:33,cid:3c45809c3a0cf0bdbb5c855db1b2de05e5b33dc1c4195eb999b0bc664bb59d8c	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:34,cid:f4b551bd03b55510ed25bbd43c55e243751db6e2c29bdf77d7d8a5d33bc919a4	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:35,cid:df56579fb3fce0cd8d8e677eaf9d9dc0d60ba7df97f6a8bc2984d169c2a7c3f3	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:36,cid:4442952c3bd711d856de035f8e2f309a6d195ef945a4402dee9c676f3099a210	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:37,cid:352856d235a78709722a21e3a349656cdefae0d6d2fa23a307ee0082ffb7eeba	{"ref":{"buf":"Uint8Array()"}}
-              Stream,seq:38,cid:a3c467533ade2d7ea139cc6e90a39d33d4471e568e8b5bbcb2076d0ed9a70da7	{"ref":{"buf":"Uint8Array()"}}
-            Blob,id:d71294dbbcd7b726,grade:ogg128,path:.jamsend/ogg-export/musuogg/sync-d71294dbbcd7b726.ogg
+            Mag:shuffle
+              Cloud,page:1
+                Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
+                  Preview,seq:0,head,preskip=312,cid:3ccd2f51f3f3b66e3115ee8cb2d1c43575a42bf9704abf44b8af40d1a8d74d7b	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:144cde8bcbf6a150cae10b2f4115f1fd62f97576477adbaaa900bac3cfc53872	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:224607ca4d58380a3271f7a0a2621c076034997f83423effb1cabda2252985e3	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:bd7e4cd4018af8df29a4ce36cf8cf48ddf14f9265dafc3ce6499e71a5280320a	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:4,cid:e562bac3d0f1dfc9969825f34ffb0ddba65467e2df0ca90f1b224292f3c6154d	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:5,cid:774bf989acb4a0f4d775b5bfbe38c4ceb10372cdaf58dbd2738898a012d0d3fe	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:6,cid:d8bb01b9d2fb794a054c6061e89c76ceb106dab97115ba1821d7def09396f1c1	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:7,cid:95eab5bfd38f7a92de39a3b55fc20b94c189ac99b985f641fc86eebd42613155	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:8,cid:2cc35a04310a7ad42dae8b64cafb15b5f0e8aeb7df88ef49a0fd2c30bea6b43f	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:9,cid:d2349eb37985140aeb5c6569fa2ab4ab0686d04ca04d2906be03c0c813eb0d28	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:10,cid:31def79e6787801b908766a4a114a111239e2ca5f05cbff6439cf001824c56b9	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:11,cid:4a8468642f8ba5b3c7eaf5f7095c26a62795c02dde06dc3cdea6d9a7c9984228	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:12,cid:525a5cfa378c5b2e7e05ed44ed3d6283cb7dc2bb9412200bbb9fdc8fd492b681	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:13,cid:d01bb06dff81abc1b549cc048d6b72c2088e6275ea02d7f82bdc6fa0145202ad	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:14,cid:2850cb9adf1f9f0a22ecd7de7829804b4247a3a225ca45568cbb3af88b69bc44	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:15,cid:3ab52c6af8c8ee61b625c0831f959da0289a33ed976efd9f78e1b8d4547cc4ac	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:16,head,preskip=312,cid:ed207f22625c8065553ff63173dea566c02abab5f89f80b23eec2feb09db7ed0	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:17,cid:941c70d942a007c7409e5ef3a73dc6e058e69f95c2df8b4567533f92fae8c8b6	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:18,cid:4c64b690520ff0944b111f093a56cf69ab3c8205e74af5a93664dbcce1b491ec	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:19,cid:50e05934c926e71d6da02ccb68ccd51bede6e54e1582ea6032bef6e99765299b	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:20,cid:54a79bc272e6be092c26af8fa9f09a3eac8ae1a679e91bf31fb32d55726abd3c	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:21,cid:bb5ada35ec5d19fbd60c4638e3b2576e947bf6c18927e4d195e7f6af2c5dd146	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:22,cid:ced07c3f7477296e0f52f63c859ae3153b73a25c4aff028322c14b1b8dcf7667	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:23,cid:6242ec15385e085ece0767342d38ddeae112560cf67bd567cd8abd30bac85e94	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:24,cid:c2869e7aab4f51f2266bb91f3f874ca3b4b1630a89159a01ab343ce1fefc2177	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:25,cid:9cda2e7ced8372e818a690215bafd0c2f8cd1eaa9d702859ecde7b393440cec1	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:26,cid:5056381b9edcb1760595e115ac3d286ebc7e6ed339960d6b70c352e35e931c2e	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:27,cid:4576ec4d68f23a4ddbc0a4bd37afbe970a83747f4af63fb6ae4a23001f76053b	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:28,cid:0e3724fce1e243e5345d98bc25a35d740e8fcb929de82ba9ec5a09d8706eeebb	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:29,cid:e92af555148770e4f68e459732b640f7bc181519c3de4f46a9e48f46f6b8838e	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:30,cid:9bd89374cb80ff7255269cd2b4284e1efba9ad8b496e8cebff49dc71b807c02a	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:31,cid:a20f8b38904ce316965bb612a41bdcad21742df3a7110922a24a7aa7243a2f99	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:32,cid:a6caf44f9850e435dea9c0d84f30b2650c2e4f668bdae1f9b50e7ebafd7eb8a3	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:33,cid:3c45809c3a0cf0bdbb5c855db1b2de05e5b33dc1c4195eb999b0bc664bb59d8c	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:34,cid:f4b551bd03b55510ed25bbd43c55e243751db6e2c29bdf77d7d8a5d33bc919a4	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:35,cid:df56579fb3fce0cd8d8e677eaf9d9dc0d60ba7df97f6a8bc2984d169c2a7c3f3	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:36,cid:4442952c3bd711d856de035f8e2f309a6d195ef945a4402dee9c676f3099a210	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:37,cid:352856d235a78709722a21e3a349656cdefae0d6d2fa23a307ee0082ffb7eeba	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:38,cid:a3c467533ade2d7ea139cc6e90a39d33d4471e568e8b5bbcb2076d0ed9a70da7	{"ref":{"buf":"Uint8Array()"}}
+                Blob,id:d71294dbbcd7b726,grade:ogg128,path:.jamsend/ogg-export/musuogg/sync-d71294dbbcd7b726.ogg
         req:ogg_stock,finished
         req:witness,eternal,ok
         req:ogg_export,finished

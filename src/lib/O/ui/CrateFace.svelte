@@ -12,7 +12,10 @@
         const mine = mk === 'MusuSelf'
         const pub = String(n?.sc?.pub ?? '')
         const stock = n?.o?.({ stock: 1 })?.[0]
-        const recs = (stock?.o?.({ Record: 1 }) ?? []).map((r: any) => ({
+        // Ra_recs — the shape-agnostic census: my stock pages under %Mag:shuffle/%Cloud now
+        //  (Mag_todo §1); a friend mirror still lays flat.  Both spread the same here.
+        const rows = ((H as any)?.Ra_recs ? (H as any).Ra_recs(stock) : (stock?.o?.({ Record: 1 }) ?? []))
+        const recs = rows.map((r: any) => ({
             id: String(r.sc.id ?? ''),
             title: (r.sc.title as string) ?? String(r.sc.id ?? '').slice(0, 8),
             artist: r.sc.artist as string | undefined,

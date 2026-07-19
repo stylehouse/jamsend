@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '3f57643db127d9ba~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'bb26eebaf5d55660~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -872,7 +872,7 @@ Swarm_music_census(w, ident) {
     let cw = w.c.census_w || w
     for (const home of cw.o({ MusuSelf: 1, pub: ident.sc.prepub })) {
         for (const shelf of home.o({ stock: 1 })) {
-            for (const r of shelf.o({ Record: 1 })) {
+            for (const r of this.Ra_recs(shelf)) {
                 records = records + 1
                 if (r.sc.artist) artists.add(r.sc.artist)
             }
@@ -1038,11 +1038,11 @@ async Swarm_share_beat(w, ident) {
         //  Presence-gated — husking at silence is litter.  Repli_merge dedups the far side,
         //   so a re-offer after rebirth is safe, just not free.
         if (!p.c.heard_at || (Date.now() - p.c.heard_at) >= 20000) continue
-        let n = stock.o({ Record: 1 }).length
+        let n = this.Ra_recs(stock).length
         let mark = String(w.c.station_era || 0) + ':' + String(route.c.peer_era || 0) + ':' + n
         if (route.c.offered_mark !== mark) {
             route.c.offered_mark = mark
-            for (const rec of stock.o({ Record: 1 })) await this.Repli_offer(w, route, me, pub, rec)
+            for (const rec of this.Ra_recs(stock)) await this.Repli_offer(w, route, me, pub, rec)
         }
     }
     for (const peering of w.o({ Peering: 1 })) await peering.do()

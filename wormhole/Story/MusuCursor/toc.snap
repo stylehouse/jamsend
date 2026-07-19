@@ -4,31 +4,36 @@ story:MusuCursor
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.018
-      sample=0.03,at=1783944893
-      sample=0.024,at=1783951877
-      sample=0.021,at=1783970174
-      sample=0.018,at=1783980988
-      sample=0.02,at=1784024251
-      sample=0.02,at=1784024316
-      sample=0.01,at=1784024322
-      sample=0.012,at=1784274874
-      sample=0.009,at=1784274905
-      sample=0.014,at=1784274923
-    TimeTotal:step,avg=0.003
-      sample=0.005,at=1783944893
-      sample=0.004,at=1783951877
-      sample=0.003,at=1783970174
-      sample=0.003,at=1783980988
-      sample=0.003,at=1784024251
-      sample=0.003,at=1784024316
-      sample=0.002,at=1784024322
-      sample=0.002,at=1784274874
-      sample=0.002,at=1784274905
-      sample=0.002,at=1784274923
+    TimeTotal:beliefs,avg=0.029
+      sample=0.04,at=1784447547
+      sample=0.04,at=1784447560
+      sample=0.04,at=1784447561
+      sample=0.04,at=1784447562
+      sample=0.04,at=1784447563
+      sample=0.021,at=1784447569
+      sample=0.018,at=1784447605
+      sample=0.017,at=1784447613
+      sample=0.016,at=1784451790
+      sample=0.017,at=1784452162
+    TimeTotal:step,avg=0.005
+      sample=0.007,at=1784447547
+      sample=0.007,at=1784447560
+      sample=0.007,at=1784447561
+      sample=0.007,at=1784447562
+      sample=0.007,at=1784447563
+      sample=0.004,at=1784447569
+      sample=0.003,at=1784447605
+      sample=0.003,at=1784447613
+      sample=0.003,at=1784451790
+      sample=0.003,at=1784452162
   step,dige:158a1b1ccb7d3bd1
   step=2,dige:1deab115673e306c
-  step=3,dige:f4e39f666d211c49
-  step=4,dige:8b2b5e651229d84d
-  step=5,dige:045258ebaad8f24d
-  step=6,dige:19f5036c128eae53
+  step=3,dige:2871bc085381e43b
+    Assertion:a-cursor-is-a,sentence:a cursor is a stack of matches — resolving one re-finds every level from the magazine down and lands on the exact record it names
+    Assertion:a-cursor-can-name,sentence:a cursor can name a level not just a leaf — a two-deep cursor lands on the cloud and stops there
+  step=4,dige:96f49234c2d8ec99
+    Assertion:when-a-named-level,sentence:when a named level is gone the cursor fails cleanly — it reports the exact match it could not find and how far it got not a crash
+  step=5,dige:b565f0b2dadd6d62
+    Assertion:a-magazine-can-be,sentence:a magazine can be flat — a one-level cursor lands on the card sitting directly under the mag with no cloud between
+    Assertion:a-cursor-is-unconfusible,sentence:a cursor is unconfusible in a crowd — among forty near-identical cards it lands on exactly the one it names
+  step=6,dige:4e770476ac78b411

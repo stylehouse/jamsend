@@ -430,7 +430,7 @@ Radio_lineup_fill(w, radio):
     let pub = this.Radio_pub(w) || 'me'
     let pools = []
     let mine = []
-    for (const rec of this.Ra_home_self(w, pub).o({ Record: 1 })) {
+    for (const rec of this.Ra_recs(this.Ra_home_self(w, pub))) {
         if (lined[rec.sc.id]) continue
         if (radio && radio.c.heard && radio.c.heard[rec.sc.id]) continue
         mine.push(rec)
@@ -440,7 +440,7 @@ Radio_lineup_fill(w, radio):
         let hp = String(home.sc.pub || '')
         if (!hp) continue
         let frecs = []
-        for (const rec of this.Ra_home_them(w, hp).o({ Record: 1 })) {
+        for (const rec of this.Ra_recs(this.Ra_home_them(w, hp))) {
             if (lined[rec.sc.id]) continue
             if (radio && radio.c.heard && radio.c.heard[rec.sc.id]) continue
             let map = this.Ra_chunk_map(rec)
@@ -519,7 +519,7 @@ Radio_dial_pool(w, radio):
     for (const home of w.o({ MusuThem: 1 })) {
         if (!home.sc.pub) continue
         let shelf = this.Ra_home_them(w, String(home.sc.pub))
-        for (const rec of shelf.o({ Record: 1 })) {
+        for (const rec of this.Ra_recs(shelf)) {
             if (radio.c.heard && radio.c.heard[rec.sc.id]) continue
             let map = this.Ra_chunk_map(rec)
             if (map[0] == null) continue
@@ -659,7 +659,7 @@ async Stoker_look(st, era):
     st.c.churn_asked = 0
     this.Stoker_state(st, 'churning')
     let had = {}
-    for (const r of shelf.o({ Record: 1 })) had[r.sc.id] = 1
+    for (const r of this.Ra_recs(shelf)) had[r.sc.id] = 1
     let digs = 0
     let landed = 0
     while (digs < 8 && st.c.era === era) {
@@ -695,7 +695,7 @@ async Stoker_look(st, era):
 //  when a number moved — the watching glance runs every 3s and must cost the glass nothing.
 Stoker_census(st, shelf, radio):
     let heard = (radio && radio.c.heard) ? radio.c.heard : {}
-    let recs = shelf.o({ Record: 1 })
+    let recs = this.Ra_recs(shelf)
     let fresh = 0
     for (const r of recs) {
         if (!heard[r.sc.id]) fresh = fresh + 1
@@ -711,7 +711,7 @@ Stoker_census(st, shelf, radio):
 //    still stand in radiostock on disk, so a worn record is one resurrection away — dropping
 //     here is memory honesty (32s of opus each), not forgetting.  sc.worn counts it.
 Stoker_cull(st, shelf, radio):
-    let recs = shelf.o({ Record: 1 })
+    let recs = this.Ra_recs(shelf)
     let over = recs.length - 44
     if (over < 1) return
     let heard = (radio && radio.c.heard) ? radio.c.heard : {}
@@ -733,15 +733,15 @@ Stoker_cull(st, shelf, radio):
 // Stoker_mag_draw — the CULTURE trace of a churn (Radio_spec §2.3): every dig round that
 //  landed tracks mints one %Cloud draw of %Card referring rows on the radiostocking %Mag,
 //   so the machine is constantly producing Mag — what got drawn, when, as legible culture
-//    beside the flat stock (the settled shelf stays FLAT by ruling; the Mag REFERS by id).
-//     Ephemeral-shelf law: the draws are GC fodder — keep the last 8, drop the oldest.
+//    beside the stock (which pages under %Mag:shuffle now — Mag_todo §1; this trace Mag still
+//     REFERS by id, never contains).  Ephemeral-shelf law: keep the last 8 draws, drop the oldest.
 Stoker_mag_draw(st, w, shelf, pub, had):
     let sh = this.Ra_home_radiostocking(w, pub)
     let mag = sh.oai({ Mag: 'Musica' })
     let di = (st.c.draw_i || 0) + 1
     st.c.draw_i = di
     let cl = null
-    for (const r of shelf.o({ Record: 1 })) {
+    for (const r of this.Ra_recs(shelf)) {
         if (had[r.sc.id]) continue
         if (!cl) {
             cl = mag.i({ Cloud: 1, randomic: 'dig' + di })
@@ -769,7 +769,7 @@ Stoker_mag_draw(st, w, shelf, pub, had):
 //   entirely — while music/ yielded, the human's new flacs there could never appear.  Music
 //    still leads the cycle; a dry base falls through to the next in rotated order.
 async Stoker_dig(st, w, shelf, nav):
-    let before = shelf.o({ Record: 1 }).length
+    let before = this.Ra_recs(shelf).length
     let bases = ['music', '', 'testsounds']
     let start = (st.c.dig_i || 0) % bases.length
     st.c.dig_i = (st.c.dig_i || 0) + 1
@@ -784,13 +784,13 @@ async Stoker_dig(st, w, shelf, nav):
             let got = null
             try { got = await this.Ra_stock_one(w, shelf, nav, base, p) } catch (er) { got = null }
             if (got && got.id) {
-                let rec = shelf.o({ Record: 1, id: got.id })[0]
+                let rec = this.Ra_rec_find(shelf, { Record: 1, id: got.id })
                 if (rec && rec.sc.title) st.sc.last = this.Radio_clean(rec.sc.title)
             }
         }
         break
     }
-    let after = shelf.o({ Record: 1 }).length
+    let after = this.Ra_recs(shelf).length
     let landed = after - before
     if (landed > 0) {
         st.sc.dug = (+(st.sc.dug || 0)) + landed
@@ -1011,7 +1011,7 @@ Riffle_deal_shelf(ri, home):
     if (!ri.c.dealt) ri.c.dealt = {}
     delete ri.sc.at
     delete ri.sc.folders
-    let all = home.shelf.o({ Record: 1 })
+    let all = this.Ra_recs(home.shelf)
     ri.sc.tracks = String(all.length)
     let recs = []
     for (const r of all) {
@@ -1123,7 +1123,7 @@ async Riffle_tune(card):
     let got = null
     try { got = await this.Ra_stock_one(w, shelf, nav, bs.base, bs.rest) } catch (er) { got = null }
     delete card.sc.tuning
-    let rec = got && got.id ? shelf.o({ Record: 1, id: got.id })[0] : null
+    let rec = got && got.id ? this.Ra_rec_find(shelf, { Record: 1, id: got.id }) : null
     if (rec) {
         card.c.rec = rec
         this.Radio_tune(radio, rec)
