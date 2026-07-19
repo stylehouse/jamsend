@@ -1,0 +1,18 @@
+Snap:H
+  H:VytoStaple,Run
+    A:VytoStaple
+      self,round=8	{"mung":["age"]}
+      w:VytoStaple
+        self,round=8	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Rig:main
+          Cog:alpha,of:main,teeth:12
+          Cog:beta,of:main,teeth:18
+          Cog:gamma,of:main,teeth:36
+        req:board_wait,finished
+        req:scan_wait,finished
+        req:morph_wait,finished
+        see:the glass was commissioned beside the run and its board stood — ten organs and seven bar words named before a cell is drawn
+        see:the scan bit — the seeded gear tree was mirrored row for row into the detached mirror
+        see:the grapple watch fired between beats — a gear change advanced the stir count
+        see:a changed scalar morphed its mirror row in place — same row and same count with no leave and re-enter

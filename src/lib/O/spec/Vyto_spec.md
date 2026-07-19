@@ -36,8 +36,9 @@ So: **Vyto**, a second glass, commissioned per world exactly the way Cyto is, co
   scan-to-cytoscape pipeline and its renderer.  **Voro.g is not shed**: the fold algorithm,
    the gang election, the drift's *knowledge* are model-side and become Vyto organs (§9);
     what dies of Voro is only its scattered magic arming — replaced by the focus engine (§4).
-     A moult, not surgery (§12); expressibility only ever goes up — what goes down is the
-      number of ways the system can surprise us (§12 on "unexpressible").
+     A moult, not surgery (§12); what Vyto can *say* only ever goes up — what goes down is
+      what it can get *wrong*: Vyto has no relayout-from-nothing and no wave queue to
+       deadlock (§12).
 
 ## 2. What Voro really wants
 
@@ -76,6 +77,11 @@ There will be an ongoing *culture* of settling doctrines — hover wants one, fl
  focus shifts want one, landmarks want one, and we have not met them all yet.  A culture
   needs a foundation, not a pile of special cases: **Calm**, the organ that owns stillness.
    Its primitive is the **%Hold**.
+
+(Naming candidate — flagged not settled: the quantity Calm governs may want the name
+ **Stability** (the human 2026-07-20) — the display-side cousin of Story's entropy.  Entropy
+  is change in the evidence you don't care about; stability is change in the geometry you
+   don't want to see.)
 
 A Hold is a declared, composable claim of stillness: *this scope, these channels, this
  strength, while this condition lasts*.  Everything that used to be an ad-hoc trick becomes a
@@ -388,24 +394,54 @@ The build starts **high-level first**: the opening milestone writes Vyto.g's ske
  fig throttling a host tree, but a body that grew its new skin inside the old one and sheds
   the carapace whole.)
 
-- **v1 refuses**: takeTurns, ceremony flags on the commission, cytowave snapping, headless
-   anything, relayout-from-nothing.
-- **First tenant**: one Radio world on BigSoundland end-to-end — recipe commission, grapple
-   watch, spool, strip, Calm with the pointer-hold, one %Slope.  Fixes "not responding
-    later" where it hurts most; hands the abdomen to the reality that should invent it.
-- **What hardens while the new skin grows**: Cyto.svelte + Cytui.svelte, maintenance only.
-   Voro.g lives on as the Fold organ (and lends Gang, and its drift knowledge to Focus).
-- **On "unexpressible"**: expressibility of *intent* goes up — more can be said (holds,
-   shifts, slopes, pelts, situations).  What goes down is the expressibility of *failure*:
-    Vyto has no relayout-from-nothing, so the diagonal-and-spring cannot be written; no wave
-     queue, so the vanishing loop cannot be hosted.  We are not porting those bugs' fixes —
-      we are removing the vocabulary they were written in.
-- **The shed**, so "supersede" has a definition of done: Storui's seek needs the
-   whichever-glass-is-commissioned dispatch seam (today it elvistos `'Cyto/Cyto'` by name);
-    `runner_shot` gets a Vyto twin (easier — the render *is* structured SVG); Books whose
-     fixtures carry a cytowave convert or drop it; `--why` re-homes onto %Settle.  When
-      every commissioned world is on Vyto and those four are done, Cyto and Cytui retire
-       whole to `spec/history/` manners with a historicity notice.
+**Why v1 has to go — the plain indictment.**  The render stack is Cyto.svelte + Cytui.svelte
+ with the Voro glass riding on it, and it is broken in eight concrete ways, none of them a bug
+  with a fix — each is a property of the substrate:
+
+1. **No continuous drive.**  Nothing watches the Scannable; the `watch_c` comments in
+    Cyto.svelte were unbuilt intent and no such watch exists.  After the last step the glass
+     freezes while the faces and Stuffings (live components) keep updating.
+2. **A wave queue with completion handshakes.**  `takeTurns` / `wants_wave_done` /
+    `wants_animation_done` gate the pump: a continuous commission stalls its own pump on a
+     done-flag that never comes, two commissions fight over the flags, and the vanishing-loop
+      bug class lives in that queue.
+3. **Relayout-from-nothing.**  fcose owns positions; `Tuner_toggle` deletes `last_step_n` and
+    the next wave lays out absolute from scratch — the diagonal-and-spring artifact — because
+     no incremental relax exists.
+4. **Two timing constants.**  The 0.4 grawave seed against the scattered 0.3 fallbacks — one
+    motion driven by two clocks that disagree.
+5. **The Voro glass is an overlay on the Cyto canvas.**  Position sync is hand-kept, the
+    rAF-throttle blank-sub-cell bug rides that seam, text is sized in canvas rather than
+     native DOM, and the pixels cannot round-trip a fixture.
+6. **Motion is ambient.**  There are no holds — nothing keeps the moused-over cell still —
+    and no settle signal, so nothing knows when motion ends.
+7. **No memory.**  There is no spool; an overtime failure leaves no evidence of the states
+    that led there.
+8. **Hardwired seams.**  Storui's seek dispatch names `'Cyto/Cyto'` outright.
+
+The cure is a second glass because the fixes are *negative capabilities* — things Vyto simply
+ cannot do: **Vyto has no relayout-from-nothing**, so the diagonal-and-spring cannot be
+  written; **Vyto has no wave queue to deadlock**, so the vanishing loop cannot be hosted;
+   **Vyto has no overlay to fall out of sync**, so the rAF-blank and the drift-and-hop have
+    nowhere to live; **Vyto has no second timing constant**; **Vyto has no ambient motion —
+     motion is granted** (§3).  We are not porting those bugs' fixes — we are removing the
+      vocabulary they were written in.
+
+**How the moult goes.**  Two glasses coexist behind commissions, exactly as Cyto is
+ commissioned per world today.  Cyto keeps the Story-railed Books running unchanged while the
+  new skin grows; Vyto v1 refuses takeTurns and the wave flags on its commission from day one
+   — ceremony, when Story needs it, rides the request (§10).  Voro.g is not shed: it lives on
+    as the Fold organ, lends Gang, and hands its drift knowledge to Focus (§9).  The first
+     tenant is one Radio world on BigSoundland end-to-end — recipe commission, grapple watch,
+      spool, strip, Calm's pointer-hold, one %Slope — fixing "not responding later" where it
+       hurts most.
+
+**The shed**, so "supersede" has a definition of done: Storui's seek needs the
+ whichever-glass-is-commissioned dispatch seam (today it elvistos `'Cyto/Cyto'` by name with
+  `open_at` as a STEP number); `runner_shot` gets a Vyto twin (easier — the render *is*
+   structured SVG); Books whose fixtures carry a cytowave convert or drop it; `--why`
+    re-homes onto %Settle.  When every commissioned world is on Vyto and those four are done,
+     Cyto and Cytui retire whole to `spec/history/` with a historicity notice.
 
 ## 13. Proving it
 

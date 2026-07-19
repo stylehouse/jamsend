@@ -4,3 +4,36 @@ story:MusuMag
   Opt
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
+  TimeSpool
+    TimeTotal:beliefs,avg=1.514
+      sample=1.512,at=1784471831
+      sample=1.334,at=1784472430
+      sample=1.188,at=1784473041
+      sample=1.311,at=1784473309
+      sample=1.889,at=1784473465
+      sample=1.889,at=1784473513
+      sample=1.632,at=1784473561
+      sample=1.359,at=1784473606
+    TimeTotal:step,avg=0.151
+      sample=0.151,at=1784471831
+      sample=0.133,at=1784472430
+      sample=0.119,at=1784473041
+      sample=0.131,at=1784473309
+      sample=0.189,at=1784473465
+      sample=0.189,at=1784473513
+      sample=0.163,at=1784473561
+      sample=0.136,at=1784473606
+  step,dige:66989827a4b139b0
+  step=2,dige:d948bf4626979b20
+  step=3,dige:3154abab853aef54
+    Assertion:the-mag-crosses-as,sentence:the mag crosses as one husk — the mirror wears the shuffle mag its cloud page and every record head before a single byte
+    Assertion:the-warm-start-pulls,sentence:the warm start pulls the opening page of the first two records and the mag turns warm the moment record zero holds it
+  step=4,dige:1be5eac8120b52d6
+  step=5,dige:a94466e484443e8c
+  step=6,dige:0ef754f58f13b7b3
+  step=7,dige:d41a21c3f9202c95
+  step=8,dige:6fa53c17ebae2c14
+    Assertion:a-starved-track-wears,sentence:a starved track wears its stage on the particle — the deep wants park at the caster and the record head reads parked until the transcode feeds it
+  step=9,dige:cf8339a429f4037e
+  step=10,dige:e32767cc1ebb2b2e
+    Assertion:the-pipeline-reads-back,sentence:the pipeline reads back end to end — the record crossed as a husk carrying no bytes then the preview page it pulled decoded to real PCM

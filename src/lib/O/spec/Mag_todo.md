@@ -54,6 +54,32 @@ The systems this needs have been getting **dialled in by the Story Books** — o
        naming (a landing Mag), NOT the shuffle. Wants its own ruling before those mints page.
 2. **The wire shape** — a Mag as the Repli unit (§4): offer a Mag husk, pull its warm-start chunks,
     autostart. Closest to what is already loaded; a Book (`MusuMag`?) proves it end to end.
+    **BUILT + PROVEN 2026-07-20.** One offer verb (`Ra_offer_stock`) stamps `repli_loc:['Cloud','page']`
+     on each paged cloud (so pages upsert by page, not collapse onto the first) and offers the Mag as a
+      husk; a warm primer (`Ra_mag_warm`) wants offset 0 of the first two records and turns the mirror
+       Mag `warm` the moment record zero holds its opening page; a stage stamp (`Ra_stage`, gated to
+        `Ra_mag_homed`) reads the pipeline position onto the record so flat scenes/heist quarantines
+         never learn the key; paged-aware wire delete + `repli_skip` keep device-local furniture off the
+          wire. `MusuMag` proves it end to end — green ×2, **four sworn + declared**: *the mag crosses as
+           one husk*, *the warm start pulls the opening page of the first two records*, *a starved track
+            wears its stage on the particle* (deep wants park at the caster), *the pipeline reads back
+             end to end* (preview page pulled → decoded to real PCM).
+    FINDING (the twin-record split): a mirrored track lands as TWO `%Record`s under one id — a **paged
+     head** (`%Mag>%Cloud>%Record`, carries `preview/total` + the `stage` stamp, NO bytes) and a **flat
+      holder** (a direct `%Record` child of the stock, carries the chunk particles, NO metadata/stage).
+       The origin keeps chunks UNDER the paged record; only the mirror's pull splits them off flat.
+        `Ra_recs`/`Ra_rec_find` list the flat leg FIRST, so readers must take stage off the head and
+         chunks off the holder (MusuMag's `MusuMag_deep` bridges them) — and `Ra_mag_warm`'s warm check
+          was silently reading the chunk-less head (warm never fired anywhere until fixed 2026-07-20).
+           The head's `stage` therefore only ever reflects DEMAND (husk/parked/pulling), never SUPPLY
+            (previewed/whole/decoded), since it holds no bytes. **Model question for the human**: should
+             the mirror land chunks under the paged head (matching the origin, one true record) rather
+              than a flat way-station twin? Deferred — it touches core Repli landing (MusuBuddy lives on
+               the current split); noted, not re-architected.
+    NEUTRALITY SWEEP DONE 2026-07-20 (run singly): MusuBuddy re-recorded green; MusuReplica / SwarmShare /
+     MusuFreeze / MusuSoft / MusuBay / MusuOgg all GREEN caveat:0; MusuBounce accepted (only its known-flaky
+      non-deterministic bouncechunk body_hashes drifted — no wire-cut change). The wire code is neutral to
+       every mirror/replication/export Book.
 3. **The limbic show|hide** (§6) — retire the flat `%Tuner` mute-index for a crawlable topic-limb
     graph with attention-budget mutex. Render-side; supersedes the currently-broken `Tuner_toggle`.
     **PARKED 2026-07-19**: Radio's display side is mid-refactor (Voro+Cyto → **Vyto**, the human's

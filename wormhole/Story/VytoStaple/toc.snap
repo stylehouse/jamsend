@@ -1,0 +1,36 @@
+story:VytoStaple
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.029
+      sample=0.028,at=1784478623
+      sample=0.028,at=1784478626
+      sample=0.028,at=1784478627
+      sample=0.028,at=1784478628
+      sample=0.028,at=1784478630
+      sample=0.028,at=1784478631
+      sample=0.028,at=1784478632
+      sample=0.028,at=1784478633
+      sample=0.038,at=1784478660
+      sample=0.03,at=1784478682
+    TimeTotal:step,avg=0.004
+      sample=0.004,at=1784478623
+      sample=0.004,at=1784478626
+      sample=0.004,at=1784478627
+      sample=0.004,at=1784478628
+      sample=0.004,at=1784478630
+      sample=0.004,at=1784478631
+      sample=0.004,at=1784478632
+      sample=0.004,at=1784478633
+      sample=0.005,at=1784478660
+      sample=0.004,at=1784478682
+  step,dige:48bdcbda351601e4
+  step=2,dige:2654181158ba67f5,desc:seed a gearbox — a Rig root over a join-keyed Cog family
+  step=3,dige:5de20f404562b9ea,desc:mint A:Vyto beside the run and commission it on the gearbox
+  step=4,dige:7b0f285a27e448f2,desc:bump the grapple — the first stir builds the mirror
+  step=5,dige:5c8cef5e3abe8a89,desc:change a Cog scalar — the mirror row morphs in place
+  step=6,dige:4d512cf3dad4c34c,desc:drop a Cog — its mirror row wears the departing escort
+  step=7,dige:206cbd86b529271f,desc:another stir — the escorted row vanishes after its grace
+  step=8,dige:7776eb473b47202c,desc:strike the settle — the spool captures a moment

@@ -82,6 +82,7 @@
 
         'Ghost/V/Voro.g',               // the Vis lens — the crush fold policy (Musu drives + ◈ imposition call it)
         'Ghost/V/Vyto.g',               // the NEW glass, model side — organs/board/spool as named stubs (Vyto_spec.md; the moult)
+        'Ghost/V/Vytonation.g',         // the Vyto demo Books — VytoStaple: commission the glass beside a run and watch its grapple→stir→mirror→moment drive turn
         'Ghost/Story/Voronation.g',
 
         'Ghost/Story/Sounditron.g',     // the Sounditron — the real-environment diagnostic Book /BigSoundland runs (Opt/wild; assertions are the verdict)

@@ -60,6 +60,14 @@ The spec gives three sentences: *pointer beats layout — deletion beats pointer
         captured `%Moment`, so a live deletion never even asks about it — it arrives
          as old truth in the retarget-from-current when **live** resumes.
 
+**The human converged here independently** (2026-07-20).  Musing on deletion, they landed
+ on this same escort from the other side: when the place you stood vanishes — a crushed
+  folder — the view returns *upward*, and we capture and animate that change of existence,
+   "clearly drawing the arcs that the display twists at when animating between steps".
+    That is the departure escort seen from the outside — the retired hold's ease *is* the
+     arc the view rides up out of the vanished place.  So the resolution below (§9.1)
+      leans blessed, pending the explicit word.
+
 What remains is a clean total order over claim sources, highest first:
 
 > ```
@@ -381,10 +389,11 @@ Carried over verbatim — these are rulings already worn in on the current glass
 
 ## 9. Open questions
 
-1. **Deletion's standing**: this workingout takes deletion out of the rank table —
-    a supervening event that converts holds into departure escorts — rather than a
-     rank above gesture.  Same observable behaviour ("deletion beats pointer", still
-      choreographed), cleaner algebra.  Bless or overrule.
+1. **Deletion's standing** — *blessed by the human 2026-07-20 (departure escorts confirmed)*: this workingout
+    takes deletion out of the rank table — a supervening event that converts holds into
+     departure escorts — rather than a rank above gesture.  Same observable behaviour
+      ("deletion beats pointer", still choreographed), cleaner algebra.  The human
+       converged on the same escort independently (§2), so this leans yes — bless to close.
 2. **Damp semantics**: chosen here as an ω-scale (motion allowed, slower).  The
     alternative — blending proposed targets toward current — damps *where things go*
      instead of *how fast*.  The ω-scale is proposed because it keeps Calm entirely
@@ -401,3 +410,6 @@ Carried over verbatim — these are rulings already worn in on the current glass
     (composition; a busy corner must not starve flips elsewhere).  The stricter
      alternative — the root's — is one word of change if the loose version ever
       lets a visible flap through.
+7. **The quantity's name** (flag only — no rename here): the quantity Calm governs may
+    want the name **Stability** rather than anything entropy-flavoured.  Flagged for the
+     human; not acted on.

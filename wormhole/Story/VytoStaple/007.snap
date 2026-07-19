@@ -1,0 +1,18 @@
+Snap:H
+  H:VytoStaple,Run
+    A:VytoStaple
+      self,round=12	{"mung":["age"]}
+      w:VytoStaple
+        self,round=12	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Rig:main
+          Cog:beta,of:main,teeth:18
+          Cog:gamma,of:main,teeth:36
+        req:board_wait,finished
+        req:scan_wait,finished
+        req:morph_wait,finished
+        req:depart_wait,finished
+        req:gone_wait,finished
+        see:the glass was commissioned beside the run and its board stood — ten organs and seven bar words named before a cell is drawn
+        see:the grapple watch fired between beats — a gear change advanced the stir count
+        see:the escorted row then vanished — two stirs of grace and the mirror ring shrank

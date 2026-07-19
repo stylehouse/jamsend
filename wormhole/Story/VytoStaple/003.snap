@@ -1,0 +1,13 @@
+Snap:H
+  H:VytoStaple,Run
+    A:VytoStaple
+      self,round=4	{"mung":["age"]}
+      w:VytoStaple
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Rig:main
+          Cog:alpha,of:main,teeth:12
+          Cog:beta,of:main,teeth:18
+          Cog:gamma,of:main,teeth:24
+        req:board_wait,finished
+        see:the glass was commissioned beside the run and its board stood — ten organs and seven bar words named before a cell is drawn

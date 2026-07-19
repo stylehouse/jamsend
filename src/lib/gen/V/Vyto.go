@@ -10,7 +10,7 @@ import Vytui from "$lib/O/Vytui.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return '1d339f4af67c3f6a~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return '58de4777a5b322db~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -101,6 +101,9 @@ e_Vyto_commission(A, w, e) {
     w.c.Scannable  = req.sc.Scannable
     w.c.Styles     = req.sc.Styles
     w.c.client_w   = req.sc.client_w
+    // the commissioning client supplies the Run House on the req's `.c` (a ref — never sc); the
+    //  Spool reads it to snap the RUN world into each moment's payload (spool.md §2).
+    w.c.Run        = e?.c?.Run ?? req.c?.Run ?? null
     if (w.c.Styles) {
         let ave = this.oai_enroll(this, { watched: 'ave' })
         ave.i(w.c.Styles)
@@ -170,7 +173,119 @@ Vyto_sunpit(w, recipe) {
 //  a graph MIRROR (the CytoStep lesson) — never world C**; display-only time travel falls
 //   out free because the spool archives mirrors.
 Vyto_scan(w) {
-    return
+    // TASK 2 — read grapples defensively: a world with no grapple set is a no-op, never a
+    //  throw (a commission may stand before its gear does).
+    let grapples = w.c.grapples
+    if (!grapples || !grapples.length) return
+    // The mirror lives DETACHED on `.c` (the CytoStep `_C({cyto_root})` precedent — a root C
+    //  minted off the H tree): reachable from nothing in H**, so it never snaps and the Books
+    //   stay Vyto-blind, and it holds a graph MIRROR of scalar reflections, never world C**
+    //    refs woven into sc.  Detached-mint chosen over an attached holder-row precisely so no
+    //     mainkey has to be reserved fleet-wide.
+    if (!w.c.mirror) w.c.mirror = new TheC({ c: {}, sc: { mirror: 1 } })
+    // one generation per scan — every row Scan touches is stamped `seen_at:gen`; the sweep
+    //  reads that stamp to find the rows whose source has vanished.
+    let gen = w.c.scan_gen = (w.c.scan_gen ?? 0) + 1
+    for (const g of grapples) this.Vyto_scan_walk(w, g, w.c.mirror, 0, gen)
+    this.Vyto_scan_sweep(w, w.c.mirror, gen)
+    // the organ goes live the first time it actually writes the mirror — the board row is the
+    //  organ's public face (spec §9), stub until its body lands.
+    let organ = w.o({ Organ: 'Scan' })[0]
+    if (organ && organ.sc.status !== 'live') {
+        organ.sc.status = 'live'
+        organ.bump_version()
+    }
+
+},
+// Vyto_scan_walk — the subtree walk, PLAIN recursion (the .g compiler parse-storms on
+//  closure-heavy helpers): mirror the source particle n under parentMirror, then descend into
+//   its children.  Identity is DETERMINISTIC (spool.md §5.4 — the replay claim depends on it):
+//    a row is a stable function of the source's line identity, so the SAME source maps to the
+//     SAME row across stirs and a value change morphs a row in place rather than minting a new
+//      cell (which cyto_assign_ids' per-walk counter could never promise).
+Vyto_scan_walk(w, n, parentMirror, depth, gen) {
+    if (!n || !n.sc) return
+    let mk = this.mainkey(n)
+    if (!mk) return
+    // The identity token = mainkey + its value + the recognised structural JOIN keys (id of pub
+    //  page seq — the flock joins CLAUDE.md and Ra.g name, plus the Cloud page).  Express-style
+    //   VALUE channels (dose weight fresh hue z area …) are deliberately EXCLUDED so a quantity
+    //    change reuses the same row (a morph) instead of re-keying it (a false leave+enter).
+    //     Ancestry is STRUCTURAL — the row sits under its parent's mirror row — so the token is
+    //      only the LOCAL identity; two byte-identical siblings collapse to one cell, which the
+    //       spec accepts as visually interchangeable.  This join set is Scan's v1 identity
+    //        vocabulary — the future Scan workingout refines the identity|value split.
+    let mkVal = n.sc[mk]
+    let scalarish = mkVal != null && typeof mkVal !== 'object' && typeof mkVal !== 'function' && typeof mkVal !== 'boolean'
+    let nmk = scalarish ? mkVal : 1
+    let tok = mk + ':' + nmk
+    let joins = ['id', 'of', 'pub', 'page', 'seq']
+    for (const k of joins) {
+        if (n.sc[k] != null) tok = tok + '|' + k + ':' + n.sc[k]
+    }
+    // find-or-create by the token on `.c` (a string compare) — NOT an sc query, whose numeric-1
+    //  values wildcard ({seq:1} matches any seq) and would merge distinct siblings.
+    let row = parentMirror.o().find(r => r.c.tok === tok)
+    if (!row) {
+        let seed = {}
+        seed[mk] = nmk
+        row = parentMirror.i(seed)
+    }
+    row.c.tok = tok
+    row.c.source_n = n     // the Cyto source_n backlink — rides .c so there is no encode cost
+    row.c.seen_at = gen
+    // copy the source's scalar sc faithfully, comparing BEFORE writing so nothing churns; guard
+    //  every value — an object|function in sc is fatal at encode, an undefined brands an `undef`
+    //   marker (a mint bug), a boolean rides as 1-or-absent.
+    let changed = 0
+    let desired = {}
+    for (const k of Object.keys(n.sc)) {
+        let v = n.sc[k]
+        if (v === undefined) continue
+        let t = typeof v
+        if (t === 'object' || t === 'function') continue
+        if (t === 'boolean') {
+            if (v) desired[k] = 1
+            continue
+        }
+        desired[k] = v
+    }
+    desired[mk] = nmk    // the mainkey line is identity — kept faithful and never swept below
+    for (const k of Object.keys(desired)) {
+        if (row.sc[k] !== desired[k]) { row.sc[k] = desired[k]; changed = 1 }
+    }
+    for (const k of Object.keys(row.sc)) {
+        // `departing` is mirror-managed (the escort mark) — never a source key, so leave it here
+        if (k === 'departing') continue
+        if (desired[k] === undefined) { delete row.sc[k]; changed = 1 }
+    }
+    // a source that vanished and came back sheds its escort (prefer the tracked path — bare
+    //  delete of an sc key is query+snap safe, and this row never reaches a real snap anyway).
+    if (row.sc.departing) { delete row.sc.departing; changed = 1 }
+    if (changed) row.bump_version()
+    // subtree walk — a depth cap guards against a pathological cycle in a many-placed tree.
+    if (depth < 40) {
+        for (const c of n.o()) this.Vyto_scan_walk(w, c, row, depth + 1, gen)
+    }
+
+},
+// Vyto_scan_sweep — departures.  A mirror row NOT stamped this generation has lost its source.
+//  The human blessed departure escorts (calm.md §9.1 2026-07-20), so a vanished row is NOT
+//   dropped on first sight — it stays alive one grace scan wearing `departing:1` so an escort
+//    can draw its exit arc.  A row STILL missing on the next scan (already `departing`) has had
+//     its two-stir grace and drops mirror-side (parentMirror.drop bumps the parent so a watcher
+//      sees the ring shrink).  Recurse first so a whole vanished subtree escorts leaf-up.
+Vyto_scan_sweep(w, parentMirror, gen) {
+    for (const row of parentMirror.o()) {
+        this.Vyto_scan_sweep(w, row, gen)
+        if (row.c.seen_at === gen) continue
+        if (row.sc.departing) {
+            parentMirror.drop(row)
+        } else {
+            row.sc.departing = 1
+            row.bump_version()
+        }
+    }
 
 },
 // Vyto_fold — solver: reads the mirror and decides which subtrees become one cell.  This
@@ -243,9 +358,9 @@ Vyto_express(w) {
 //   makes it hand-strikeable (the drum-pad idiom) so the spool end of the wire can be
 //    proven before any cell moves.  Settled state is dropped by the renderer on any new
 //     target; here we just count ticks and capture.
-Vyto_settle(w) {
+async Vyto_settle(w) {
     w.c.settled = (w.c.settled ?? 0) + 1
-    this.Vyto_spool_capture(w)
+    await this.Vyto_spool_capture(w)
 
 },
 // Vyto_spool_capture — chronicler Spool: reads settles and writes moments.  TWO CLOCKS:
@@ -255,13 +370,28 @@ Vyto_settle(w) {
 //     snap_H (the SAME ref-pass encoder the fixtures use), NOT enWaft: the spec said
 //      enWaft but the fixtures never came from it, and a moment must diff cleanly against
 //       a fixture (workingouts/spool.md names the exact calls; lands milestone 2).
-Vyto_spool_capture(w, opts) {
+async Vyto_spool_capture(w, opts) {
     let n = w.c.yore_n = (w.c.yore_n ?? 0) + 1
     let row
     if (opts && opts.step_n != null) {
         row = w.i({ Moment: n, step_n: opts.step_n })
     } else {
         row = w.i({ Moment: n })
+    }
+    // the payload — the RUN world snapped by snap_H (the SAME ref-pass encoder the fixtures use,
+    //  so a moment diffs byte-clean against a fixture — spool.md §2).  It rides `.c`: a multi-KB
+    //   string never belongs in sc (it would serialise into every exactly() and fold into every
+    //    trace identity).  A BOUNDED await (a Selection tree walk) is allowed off the beat; an
+    //     unbounded await under the beliefs mutex is the Sounditron deadlock.  w is undefined (a
+    //      resident glass gets the unshaped walk) and Se_home is Vyto's OWN world, so Story's
+    //       changed|is_new trace baseline never advances beneath the real snap_step.
+    if (w.c.Run) {
+        row.c.snap = await this.snap_H(w.c.Run, undefined, w)
+    } else if (!w.c.bare_noted) {
+        // no Run on the commission — moments still chronicle but carry no diffable payload; say
+        //  it ONCE per world so the strip stays honest without flooding the see rows.
+        w.c.bare_noted = 1
+        w.i({ see: 'spool moments ride bare until a commission carries the Run' })
     }
     this.Vyto_spool_cull(w)
     return row

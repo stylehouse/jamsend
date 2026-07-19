@@ -1,0 +1,11 @@
+Snap:H
+  H:VytoStaple,Run
+    A:VytoStaple
+      self,round=2	{"mung":["age"]}
+      w:VytoStaple
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Rig:main
+          Cog:alpha,of:main,teeth:12
+          Cog:beta,of:main,teeth:18
+          Cog:gamma,of:main,teeth:24

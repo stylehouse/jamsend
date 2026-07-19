@@ -7,31 +7,23 @@ The new glass.  Spec: `Vyto_spec.md` (unpreened — three rounds 2026-07-19).  M
 
 ## 0. What to get on with next
 
-The skeleton stands (see "what stands" below) and the vocabulary is in the workings.  The
- arc: **wear the words in → give the glass eyes (Scan) → give it a memory (Spool) → give it
-  a body (the first cell) → hand it the abdomen (the Radio world as first tenant)**.  Next
-   moves, roughly in order:
+The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it a memory (Spool) ✓
+ → give it a body (the first cell) → hand it the abdomen (the Radio world as first
+  tenant)**.  The six rulings landed 2026-07-20 and the build ran the same day: Scan writes
+   the mirror — the spool captures snap_H payloads on Vyto's own Se — and VytoStaple
+    recorded GREEN ×2 on the live runner (the board's first live sighting).  Next moves:
 
-- **The human preens**: the spec, the dictionary (§14 — words are still cheap to rename),
-   and the workingouts' open questions.  The preen-hardest points are gathered below.
-- **Milestone 2a — Scan writes the mirror**: the first real organ body.  Walk the grapples,
-   build the mirror C** under `w.c` (hydrated trees ride `.c` — never a live C ref in sc,
-    the CytoStep habit we are NOT carrying).  Scan must mint **deterministic cell identity**
-     from line identity — the spool's replay claim depends on it (spool workingout §diff).
-- **Milestone 2b — the spool captures for real**: `snap_H` payload on `.c.snap` (NOT enWaft
-   — the workingout caught the spec assuming wrong).  Needs the one-line `Se?` parameter on
-    `snap_H` so a Vyto capture stops sharing `Run.c.snap_Se` (it would advance Story's
-     changed/is_new trace baseline — core Story surface, the human rules first).
-- **VytoStaple — the first Book**: mint `A:Vyto > w:Vyto`, commission with an explicit
-   grapple list, stir once, assert the board stands — "the board stands — every organ
-    listed" is a natural first sentence.  Register on the Credence board
-     (`Storying,of_Book` + `brand_new`, desc no commas).  All testing on the live runner.
-- **Milestone 3 — the first cell**: Vytui grows the viewport; one shape (cell) + the
-   pointer-hold + the critically-damped renderer law (calm workingout has the closed-form
-    step; ω = 6/grawave with ONE constant, not the 0.4-seed/0.3-fallback split Cyto has).
+- **Milestone 3 — the first cell**: Vytui grows the viewport; ONE shape (`cell` — the other
+   six parked by ruling f), the pointer-hold, and the critically-damped renderer law (calm
+    workingout has the closed-form step; ω = 6/grawave with ONE constant, not the
+     0.4-seed/0.3-fallback split Cyto has).  Settle stops being hand-struck: the renderer
+      strikes it and the spool captures for free.
 - **First tenant**: one Radio world on BigSoundland end-to-end — recipe commission (the
    commission workingout §worked-example has the real gear rows), grapple watch, spool,
     strip, Calm's pointer-hold, one %Slope.
+- **Owed engineering** (small, any time): watch_c era-guarded multi-handler + teardown-on-
+   decommission; spool freeze-on-run-fail (watch step verdicts); the step→yore_n shim +
+    whichever-glass seek dispatch for Storui (§12 moult seam).
 
 ## What stands (built 2026-07-19, all live-proven to compile)
 
@@ -52,25 +44,58 @@ The skeleton stands (see "what stands" below) and the vocabulary is in the worki
 - Spec corrected where the workingouts caught it wrong: enWaft → snap_H (×3) + a header
    pointer to the workingouts.
 
-**Not yet seen live**: the board itself — nothing commissions Vyto yet, so no `w:Vyto`
- exists anywhere.  First sighting comes free with VytoStaple (or a drum-pad mint).
+- Milestone 2a+2b (2026-07-20): `Vyto_scan` writes the detached mirror (`w.c.mirror`; find-
+   or-create by `.c.tok` = mainkey + join keys with value channels excluded — a quantity
+    change morphs its row in place instead of faking a leave-and-enter; a vanished source
+     wears `departing:1` one grace stir then drops).  `snap_H` grew `Se_home`
+      (Story.svelte:1255 — the one existing caller unchanged) and `Vyto_spool_capture`
+       stamps `row.c.snap` from the commissioned Run (`req.c.Run`) on Vyto's OWN Se.
+- `Ghost/V/Vytonation.g` — VytoStaple, the first Book (8 steps): seed gear → commission →
+   watch fires between beats → mirror morph-in-place → two-stir departure grace → settle
+    strikes a moment with a full payload.  GREEN ×2 on the live runner 2026-07-20 and on
+     the Credence board.  **The board has been seen live.**
 
-## The preen-hardest points (from the workingouts' open questions)
+## Fresh from the 2026-07-20 round
 
-- **calm**: the spec's priority table is literally cyclic (deletion > pointer, pointer ∈
-   gestures, seek < gestures, seek > everything ∋ deletion).  The workingout resolves it by
-    making deletion a SUPERVENING event (holds convert into departure escorts) — needs the
-     human's blessing.  Also ε = 0.5px / SETTLE_FRAMES = 8 proposed.
-- **spool**: the `Se?` param on snap_H (core Story surface); bless persistence via
-   H.stashed or not; O_CAP 24 for o-marks; freeze must watch step verdicts
-    (`step.sc.unexpected` — a runner NEVER sets `failed_at` mid-run).
-- **shapes**: the cell "seed-and-relax" loop is NEW matter — no relax exists today (fcose
-   owned positions; power_cells only reinterpreted them); Lloyd-with-memory η=0.25 proposed.
-    Plus slab squarify-when-orderless, band overlap-vs-z, who is the middle of wedge/ring.
-- **pelt**: band is the one CROSS-LAID text shape (rows read level while matter flows
-   downhill) — flagged; glyph law = translate + rotate + per-run uniform size ONLY.
-- **commission**: refusal stance (proposed: refuse-the-key + loud %rebuff + still accept);
-   slope write-back (dragging a Mag writes the weight) needs a `Radio_lineup_fill` seam.
+Three flags the human dropped this round, each folded into its workingout:
+
+- **IOexpr are wild speculation** (commission §3): the Scannable recipe form is a guess at
+   what many IOexpr in some locality can achieve — flagged speculation until a tenant proves
+    it.  Coding stance beside it: IOexpr look like the webbing for something bigger around
+     here, so put **lots of structure** in them — structured sc children over clever packed
+      strings.
+- **The pelt may be a two-way medium** (pelt §6): the vtuffing notator may need to *respond*
+   to the shape plan and carry dynamic advice back for the shapes — a negotiation, not a
+    handing-down, with the pelt the plausible surface.  Confirmed beside it: any UI bit or
+     notation is shape-agnostic — erectable inside ANY shape, reading the pelt for
+      orientation.
+- **Deletion's departure-arc** (calm §2): the human converged independently on the escort
+   resolution — when the place you stood vanishes the view returns upward and we animate
+    that change of existence.  Folded into preen (a) below.
+
+## Preen: ruled 2026-07-20
+
+All six answered by the human in one sitting:
+
+- **(a) Deletion.**  BLESSED — a supervening event; holds convert into *departure escorts*
+   that draw the arc and walk the view upward.  (The human: "why not easily yes?" — it
+    nearly was; the only cost is machinery: the mirror must keep a departed row alive until
+     its escort lands, a lifetime rule rather than a rank.)
+- **(b) The word.**  Calm stays.
+- **(c) snap_H's Se parameter.**  YES — core Story surface may be touched; the build
+   proceeds this round.
+- **(d) Persistence.**  Session-only for v1; `H.stashed` waits.
+- **(e) Refusal stance.**  Stands.  (The human: "why would it refuse?" — only ceremony it
+   structurally cannot honor: the wave handshakes ask the glass to pause until a wave is
+    done and Vyto has no waves — honoring them would stall its own drive.  Data is never
+     refused; the rebuff row is there so an old-style client learns at the seam.)
+- **(f) Shapes.**  Parked — milestone 3 ships `cell` alone; the other six (slab · band ·
+   wedge · ring · mold · body) wait for a tenant to demand one.  (The human's "hmmm sure?"
+    was tentative — noting it is reversible any time; a parked shape costs nothing.)
+
+Defaults taken unless vetoed: ε = 0.5 px · drift 0.25 px/frame · SETTLE_FRAMES = 8 ·
+ ω = 6/grawave · η = 0.25 (Lloyd-with-memory) · O_CAP 24 o-marks · spool 60 drop-oldest —
+  all eye-tuned on the first tenant.
 
 ## Hazards the workingouts found (verify-against-live-code laws)
 
@@ -85,3 +110,7 @@ The skeleton stands (see "what stands" below) and the vocabulary is in the worki
    or overtime moments wear the last step's number.
 - Storui's seek dispatch is hardwired `'Cyto/Cyto'` with open_at as a STEP number — the §12
    moult seam; Vyto needs the whichever-glass dispatch + a step→yore_n shim.
+- A Story-run Run House goes QUIESCENT under a ttlilt hold — a debounced watch-flush stir
+   never gets its `clear()` cycle there, so a Book driving the watch across beats must
+    nudge `main()` while it polls (VytoStaple's expecting-poll does).  A resident glass on
+     a live tab never sees this; only Story-railed Books do.

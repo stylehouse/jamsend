@@ -1248,9 +1248,11 @@
     // The H-structure portion of the full snap.
     // Exactly what story_snap used to do — walk Run via Selection,
     // encode each particle as a snap line, return joined string.
-    // snap_Se lives here; traced_fn compares snap_line strings across runs.
+    // snap_Se lives here; traced_fn compares snap_line strings across runs — the Se rides its
+    //  home (default the Run; a second customer — a Vyto moment capture — brings its own home so
+    //   its trace never advances Story's changed/is_new baseline).
 
-    async snap_H(Run: House, w?: TheC): Promise<string> {
+    async snap_H(Run: House, w?: TheC, Se_home?: House | TheC): Promise<string> {
         const lines: TheD[] = []
         const loopy_Cs = new Set<TheC>()   // C** that appeared more than once (loopy)
         // per-test EntropyArrest caps, compiled once per snap into matching rules (§3.2).
@@ -1262,8 +1264,9 @@
         //   its replication fixture clean).  Vanish entirely, like %boring, targeted at that world.
         const dropVoro = w ? Boolean((this as any).The_Opt_val(w, 'dontSnapVoronoiology')) : false
 
-        Run.c.snap_Se ??= new Selection()
-        const Se: Selection = Run.c.snap_Se
+        const Se_at = (Se_home ?? Run) as House
+        Se_at.c.snap_Se ??= new Selection()
+        const Se: Selection = Se_at.c.snap_Se
 
         await Se.process({
             n:                  Run,

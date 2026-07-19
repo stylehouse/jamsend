@@ -299,6 +299,17 @@ Everything above is gated by strength exactly as §1 promised: the landing posit
    between* items bends freely).  A ring label may still sweep 180° — the cap is local
     curvature, not total bend.
 
+**A note, just perhaps — the notator may talk back.**  Everything above runs one way: the
+ shape plan combs the pelt, the readers obey.  But the vtuffing notator may need to
+  *respond* to the shape plan — and may carry **dynamic advice for the shapes** themselves,
+   a two-way negotiation rather than a handing-down.  The pelt is the plausible medium: it
+    is already the shared surface both sides read.  Held as speculation.
+
+And one thing to confirm, not speculate: **any UI bit or vtuffing notation can be erected
+ inside ANY shape** — notation is shape-agnostic.  A notator never asks which of the seven
+  it sits in; it reads the pelt for its orientation — asks the field which way is *along*
+   and how strongly — and lays itself accordingly.
+
 ## 7. Lifecycle and budget
 
 **Combed by the owning solver at solve time** — the last act of a solve, before the

@@ -80,6 +80,12 @@ The plain form is the migration door: any current commissioner can move over by 
 
 ## 3. The recipe form — IOexprs and the Sunpit
 
+> **Flag — this whole form is wild speculation.**  The Scannable recipe is a guess at
+>  what many IOexpr in some locality can achieve — it stays flagged as speculation until a
+>   tenant proves it.  And the coding stance that rides beside it as a law: IOexpr look
+>    like the webbing for something bigger around here, so when you code them put **lots of
+>     structure** in them — structured sc children over clever packed strings.
+
 The recipe says *how to make* the Scannable.  No `Scannable` key rides the commission;
  the **Sunpit** — the staging container where the poured-in sources assemble — *becomes*
   the Scannable.  The Sunpit stands c-side on the glass world (`w.c.sunpit`), `c.up`
