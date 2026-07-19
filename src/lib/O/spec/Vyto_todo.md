@@ -8,22 +8,23 @@ The new glass.  Spec: `Vyto_spec.md` (unpreened — three rounds 2026-07-19).  M
 ## 0. What to get on with next
 
 The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it a memory (Spool) ✓
- → give it a body (the first cell) → hand it the abdomen (the Radio world as first
-  tenant)**.  The six rulings landed 2026-07-20 and the build ran the same day: Scan writes
-   the mirror — the spool captures snap_H payloads on Vyto's own Se — and VytoStaple
-    recorded GREEN ×2 on the live runner (the board's first live sighting).  Next moves:
+ → give it a body (the first cell) ✓ → hand it the abdomen (the Radio world as first
+  tenant)**.  Milestone 3 landed 2026-07-20, same sitting as the rulings: the model solves
+   a real power cut into targets, Vytui springs cells toward them and strikes settle
+    itself, and VytoCell recorded GREEN ×2 beside a green VytoStaple regression.  Next
+     moves:
 
-- **Milestone 3 — the first cell**: Vytui grows the viewport; ONE shape (`cell` — the other
-   six parked by ruling f), the pointer-hold, and the critically-damped renderer law (calm
-    workingout has the closed-form step; ω = 6/grawave with ONE constant, not the
-     0.4-seed/0.3-fallback split Cyto has).  Settle stops being hand-struck: the renderer
-      strikes it and the spool captures for free.
 - **First tenant**: one Radio world on BigSoundland end-to-end — recipe commission (the
    commission workingout §worked-example has the real gear rows), grapple watch, spool,
-    strip, Calm's pointer-hold, one %Slope.
+    strip, Calm's pointer-hold, one %Slope.  CAUTION: the Radio DISPLAY side is
+     mid-refactor by the human (the Voro+Cyto → Vyto move) — the tenant commission lands
+      in exactly that zone, so it waits for the human's word or the human's hand.
 - **Owed engineering** (small, any time): watch_c era-guarded multi-handler + teardown-on-
    decommission; spool freeze-on-run-fail (watch step verdicts); the step→yore_n shim +
     whichever-glass seek dispatch for Storui (§12 moult seam).
+- **Seeing it**: nothing resident commissions Vyto yet, so the first cells are seen by
+   running VytoCell on a visible runner tab — the parked-run gate lifts when the run
+    stops driving and the springs animate the standing world.
 
 ## What stands (built 2026-07-19, all live-proven to compile)
 
@@ -54,6 +55,29 @@ The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it 
    watch fires between beats → mirror morph-in-place → two-stir departure grace → settle
     strikes a moment with a full payload.  GREEN ×2 on the live runner 2026-07-20 and on
      the Credence board.  **The board has been seen live.**
+- Milestone 3 (2026-07-20, same sitting): `src/lib/O/vyto_geometry.ts` (pure power-cut
+   primitives ported from Cytui — clip_halfplane · power_cells · shoelace moments), the
+    model's `Vyto_express` (dose→env_area on `.c`) + `Vyto_solve` (root `cell` solver on a
+     fixed 800×450 frame: deterministic entry seeds, K=2 Lloyd η=0.25, targets
+      `row.c.T={x,y,r}` — everything solver-side rides `.c`, never row sc, which Scan
+       sweeps), Calm's real body (pointer-hold pin+damp rows under detached `w.c.calm`,
+        `Vyto_calm_held` returns k∈[0,1], release tail cubic ease-out then retire), and
+         Vytui's viewport: SVG cells keyed by tok, calm §5 closed-form springs
+          (ω = 6/grawave — ONE constant, seeded ??=0.4 at commission), walls re-derived
+           per frame, settle struck by the renderer (ε=0.5 · drift 0.25 · 8 frames),
+            document.hidden sync-paint, and the **parked-run gate**: while
+             `w.c.Run.c.run.c.driving` the renderer jumps-to-target and never strikes
+              settle, so driven Books stay deterministic.
+- VytoCell (Vytonation.g sibling, 7 steps, GREEN ×2 2026-07-20): three dosed cogs
+   grappled individually cut into distinct cells — express orders sizes by dose — an
+    unchanged world grants no motion (T byte-identical at the fixed point) — a
+     pointer-pinned cell holds its seat while a dose change rearranges the world around
+      it — the released hold eases free and retires.  Two model fixes the Book forced:
+       a COLD BATCH of newcomers now spreads around the frame perimeter at distinct
+        deterministic points (all-at-once arrivals used to pile on one boundary point
+         and power_cells never separates near-coincident seeds), and the T-write carries
+          a settle tolerance EPS = 0.5 px (an exact `!==` rewrites T forever on
+           sub-pixel relax drift — law 1 needs a rest threshold to be byte-true).
 
 ## Fresh from the 2026-07-20 round
 
@@ -114,3 +138,10 @@ Defaults taken unless vetoed: ε = 0.5 px · drift 0.25 px/frame · SETTLE_FRAME
    never gets its `clear()` cycle there, so a Book driving the watch across beats must
     nudge `main()` while it polls (VytoStaple's expecting-poll does).  A resident glass on
      a live tab never sees this; only Story-railed Books do.
+- The driving flag rides `Run.c.run.c.driving` — one hop deeper than the obvious
+   `Run.c.driving` (the run particle hangs off the Run House as `.c.run`).  The
+    parked-run gate and any step_n stamping must take the extra hop.
+- The story_save 1-step toc race (the toc-protection memory) bit VytoCell repeatedly
+   while it was brand_new — an orphaned save collapses a multi-step toc to one line
+    between runs.  Re-seed the step lines, then accept IMMEDIATELY once the Book is
+     right so real diges lock in.

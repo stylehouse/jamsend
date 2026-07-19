@@ -1,0 +1,29 @@
+story:VytoCell
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=1.014
+      sample=0.003,at=1784502611
+      sample=0.962,at=1784502692
+      sample=1.483,at=1784503010
+      sample=1.307,at=1784503173
+      sample=1.307,at=1784503203
+      sample=1.095,at=1784503247
+      sample=0.94,at=1784503291
+    TimeTotal:step,avg=0.145
+      sample=0.003,at=1784502611
+      sample=0.137,at=1784502692
+      sample=0.212,at=1784503010
+      sample=0.187,at=1784503173
+      sample=0.187,at=1784503203
+      sample=0.156,at=1784503247
+      sample=0.134,at=1784503291
+  step,dige:7bb338130606d584
+  step=2,dige:1902b2d06d07af4c,desc:seed three sibling cogs with distinct doses
+  step=3,dige:13185f216eadbf34,desc:mint A:Vyto beside the run and commission it on the three cogs
+  step=4,dige:4f46fc076cb3bca6,desc:bump a grapple — the first stir expresses and solves the cut
+  step=5,dige:eed5695d32e0ef55,desc:stir an unchanged world until it settles and grants no motion
+  step=6,dige:cdb5104321b4eaf1,desc:pin one cell by pointer then rearrange the world around it
+  step=7,dige:e2f06df206fd8f8f,desc:release the pointer — the hold eases to free and retires itself

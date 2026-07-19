@@ -297,3 +297,219 @@ VytoStaple_witness(w):
     if (this.VytoStaple_depart_ready(w)) w.c.saw_departing = 1
     if (this.VytoStaple_gone_ready(w) && w.c.saw_departing && !(oa %see:'the escorted row then vanished — two stirs of grace and the mirror ring shrank')) i %see:'the escorted row then vanished — two stirs of grace and the mirror ring shrank'
     if (this.VytoStaple_moment_ready(w) && !(oa %see:'the spool captured a moment at settle — yore one carried a full snap payload because the commission bore the run')) i %see:'the spool captured a moment at settle — yore one carried a full snap payload because the commission bore the run'
+
+// ══ VytoCell — the FIRST CELL: commission three cogs and watch the cut take distinct seats ═════════
+//  Milestone 3's model seams proven live.  Where VytoStaple proved the DRIVE (grapple→stir→mirror→
+//   spool), VytoCell proves the CUT: Express sizes each cell from its dose (env_area), Solve seats
+//    them in the fixed frame (the power-diagram relax → row.c.T), Calm pins a hovered cell so the
+//     world rearranges AROUND it and eases the hold back to free on release.
+//  KEY (M3 structural fact): each GRAPPLE mirrors as one TOP-LEVEL mirror row and express/solve act
+//   on top-level rows only — so the three cells come from THREE sibling cogs grappled INDIVIDUALLY
+//    (never one rig whose cogs become cells; nested children await the scope milestone).
+//  Same laws as VytoStaple: world named after the Book (w:VytoCell), A:Vyto minted fresh beside the
+//   run each run (the story House persists), the main()-nudge poll (a Story-run House quiesces under
+//    the ttlilt hold), %see sentences comma-free.  Reuses VytoStaple's generic seams (SH/vw/await/
+//     rows/cog_row/stir_n).
+VytoCell(A,w):
+    w oai %req:wrangle,eternal
+        await &VytoCell_drive,w,req
+        req%ok = 1
+
+async VytoCell_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoCell_seed(w)
+        if (n === 3) this.VytoCell_commission(w)
+        if (n === 4) this.VytoCell_prime(w)
+        if (n === 5) this.VytoCell_settle(w)
+        if (n === 6) this.VytoCell_hover(w)
+        if (n === 7) this.VytoCell_release(w)
+    }
+    this.VytoCell_witness(w)
+
+// beat 2 — three sibling %Cog with distinct doses (0 · 1 · 3).  DISTINCT mainkey values so the mirror
+//  keys them apart (a shared value would collapse them to one row); dose rides as a scalar string
+//   (Express reads Number(dose)); Cog is the unclaimed vocabulary VytoStaple proved.
+VytoCell_seed(w):
+    i %desc:'seed three sibling cogs with distinct doses'
+    let a = w.i({ Cog: 'a', of: 'main', dose: '0' })
+    let b = w.i({ Cog: 'b', of: 'main', dose: '1' })
+    let c = w.i({ Cog: 'c', of: 'main', dose: '3' })
+    w.c.cogs = [a, b, c]
+
+// beat 3 — mint A:Vyto fresh beside the run and commission it on the THREE cogs as individual
+//  grapples (each becomes one top-level cell).  Run rides req.c.Run for the spool.
+VytoCell_commission(w):
+    i %desc:'mint A:Vyto beside the run and commission it on the three cogs'
+    let SH = this.VytoStaple_SH(w)
+    if (!SH) { if (!(oa %log:'no runner House beside the run — cannot stand A:Vyto')) i %log:'no runner House beside the run — cannot stand A:Vyto'; return }
+    let oldA = SH.o({ A: 'Vyto' })[0]
+    if (oldA) SH.drop(oldA)
+    SH.i({ A: 'Vyto' }).i({ w: 'Vyto' })
+    let cogs = w.c.cogs
+    let commission = new TheC({ c: {}, sc: { Scannable: cogs[0], client_w: w, grapples: cogs } })
+    commission.c.Run = this
+    SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
+    this.expecting(w, 'board_wait', 8, async () => { await this.VytoStaple_await(w, 8, () => this.VytoCell_board_ready(w)) })
+
+// beat 4 — bump a grapple: the first stir scans the three cogs express-sizes them and solves the cut.
+VytoCell_prime(w):
+    i %desc:'bump a grapple — the first stir expresses and solves the cut'
+    let cogs = w.c.cogs
+    if (cogs && cogs[0]) cogs[0].bump_version()
+    this.expecting(w, 'cut_wait', 8, async () => { await this.VytoStaple_await(w, 8, () => this.VytoCell_solve_ready(w)) })
+
+// beat 5 — DETERMINISM (solver law 1): stir an UNCHANGED world repeatedly until the relax reaches its
+//  fixed point — where a further stir rewrites NO target (the SAME T object references stand).  A
+//   freshly-cut cell is still relaxing (the seed steps a quarter toward its centroid each solve), so
+//    law 1 proves at the SETTLED state: once no motion is granted, the world is byte-stable.  The poll
+//     drives the idempotent stirs (bump a grapple, no gear change) and gates each judgement on the
+//      stir having landed (stir_n advanced) so it never mistakes an un-run stir for stillness.
+VytoCell_settle(w):
+    i %desc:'stir an unchanged world until it settles and grants no motion'
+    let cogs = w.c.cogs
+    if (cogs && cogs[0]) cogs[0].bump_version()
+    this.expecting(w, 'settle_wait', 14, async () => { await this.VytoStaple_await(w, 14, () => this.VytoCell_settled(w)) })
+
+// the convergence poll (side-effecting, off-mutex): once the awaited stir has landed, compare the
+//  three targets to the last poll's — SAME references means the last stir rewrote nothing (settled);
+//   else remember them and stir once more toward the fixed point.  Sets w.c.settled on success.
+VytoCell_settled(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    let ra = this.VytoStaple_cog_row(vw, 'a')
+    let rb = this.VytoStaple_cog_row(vw, 'b')
+    let rc = this.VytoStaple_cog_row(vw, 'c')
+    if (!ra || !rb || !rc || !ra.c.T || !rb.c.T || !rc.c.T) return 0
+    if (ra.c.T === w.c.lt_a && rb.c.T === w.c.lt_b && rc.c.T === w.c.lt_c) {
+        w.c.settled = 1
+        return 1
+    }
+    w.c.lt_a = ra.c.T
+    w.c.lt_b = rb.c.T
+    w.c.lt_c = rc.c.T
+    // force one more solve toward the fixed point.  Direct (not a grapple bump): the watch→flush→
+    //  clear() stir chain fires on SH's own cycles which sit quiescent under the ttlilt hold, so a
+    //   bump here would not reliably land a stir; Vyto_stir is synchronous and touches only vw.c.
+    this.Vyto_stir(vw)
+    return 0
+
+// beat 6 — CALM: pin cell A by pointer (position pin + size damp), stash its seat and B's target,
+//  then change B's dose and bump it.  A must hold its seat while B's cell re-sizes and moves.
+VytoCell_hover(w):
+    i %desc:'pin one cell by pointer then rearrange the world around it'
+    let vw = this.VytoStaple_vw(w)
+    let ra = this.VytoStaple_cog_row(vw, 'a')
+    let tokA = ra?.c?.tok
+    if (tokA) this.Vyto_pointer_enter(vw, tokA)
+    w.c.held_seed = ra?.c?.seed ? { x: ra.c.seed.x, y: ra.c.seed.y } : null
+    let rb = this.VytoStaple_cog_row(vw, 'b')
+    w.c.changed_T = rb?.c?.T
+    let cogs = w.c.cogs
+    if (cogs && cogs[1]) { cogs[1].sc.dose = '5'; cogs[1].bump_version() }
+    this.expecting(w, 'hover_wait', 8, async () => { await this.VytoStaple_await(w, 8, () => this.VytoCell_hover_ready(w)) })
+
+// beat 7 — RELEASE: un-hover; Calm eases the holds 0 → 1 along the ~400ms grawave tail and RETIRES
+//  them.  Poll (main()-nudge covers the tail) until the position hold answers free and no pointer
+//   hold survives on this cell.
+VytoCell_release(w):
+    i %desc:'release the pointer — the hold eases to free and retires itself'
+    let vw = this.VytoStaple_vw(w)
+    let ra = this.VytoStaple_cog_row(vw, 'a')
+    let tokA = ra?.c?.tok
+    if (tokA) this.Vyto_pointer_leave(vw, tokA)
+    w.c.released = 1
+    this.expecting(w, 'release_wait', 8, async () => { await this.VytoStaple_await(w, 8, () => this.VytoCell_release_ready(w)) })
+
+// ── ready-predicates (shared by expecting + witness) ──────────────────────────────────────────────
+
+VytoCell_board_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.commission) return 0
+    if ((vw.c.grapples?.length ?? 0) !== 3) return 0
+    return (vw.o({ Organ: 1 }).length === 10 && vw.o({ Bar: 1 }).length === 7) ? 1 : 0
+
+// the three cells' env_area (or null before Express has written all three).
+VytoCell_areas(vw):
+    let ra = this.VytoStaple_cog_row(vw, 'a')
+    let rb = this.VytoStaple_cog_row(vw, 'b')
+    let rc = this.VytoStaple_cog_row(vw, 'c')
+    if (!ra || !rb || !rc) return null
+    if (ra.c.env_area == null || rb.c.env_area == null || rc.c.env_area == null) return null
+    return [ra.c.env_area, rb.c.env_area, rc.c.env_area]
+
+VytoCell_express_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    let ar = this.VytoCell_areas(vw)
+    if (!ar) return 0
+    if (!(ar[2] > ar[1] && ar[1] > ar[0])) return 0
+    let organ = vw.o({ Organ: 'Express' })[0]
+    return (organ && organ.sc.status === 'live') ? 1 : 0
+
+// the three cells' solved targets (or null before Solve has written all three).
+VytoCell_Ts(vw):
+    let ra = this.VytoStaple_cog_row(vw, 'a')
+    let rb = this.VytoStaple_cog_row(vw, 'b')
+    let rc = this.VytoStaple_cog_row(vw, 'c')
+    if (!ra || !rb || !rc) return null
+    if (!ra.c.T || !rb.c.T || !rc.c.T) return null
+    return [ra.c.T, rb.c.T, rc.c.T]
+
+VytoCell_same_pos(p, q):
+    return (p.x === q.x && p.y === q.y) ? 1 : 0
+
+VytoCell_solve_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    let Ts = this.VytoCell_Ts(vw)
+    if (!Ts) return 0
+    for (const T of Ts) {
+        if (!(T.x >= 0 && T.x <= 800 && T.y >= 0 && T.y <= 450 && T.r > 0)) return 0
+    }
+    if (this.VytoCell_same_pos(Ts[0], Ts[1])) return 0
+    if (this.VytoCell_same_pos(Ts[0], Ts[2])) return 0
+    if (this.VytoCell_same_pos(Ts[1], Ts[2])) return 0
+    return 1
+
+VytoCell_determ_ready(w):
+    return w.c.settled ? 1 : 0
+
+VytoCell_hover_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    let ra = this.VytoStaple_cog_row(vw, 'a')
+    let rb = this.VytoStaple_cog_row(vw, 'b')
+    if (!ra || !rb) return 0
+    if (this.Vyto_calm_held(vw, ra, 'position') !== 0) return 0
+    if (this.Vyto_calm_held(vw, ra, 'size') !== 0.3) return 0
+    let hs = w.c.held_seed
+    if (!hs || !ra.c.seed) return 0
+    if (!(ra.c.seed.x === hs.x && ra.c.seed.y === hs.y)) return 0
+    return (rb.c.T !== w.c.changed_T) ? 1 : 0
+
+VytoCell_calm_holds(vw, tok):
+    if (!vw || !vw.c.calm) return 0
+    let n = 0
+    for (const h of vw.c.calm.o({ Hold: 1 })) { if (h.sc.scope === tok) n = n + 1 }
+    return n
+
+VytoCell_release_ready(w):
+    if (!w.c.released) return 0
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    let ra = this.VytoStaple_cog_row(vw, 'a')
+    if (!ra) return 0
+    if (this.Vyto_calm_held(vw, ra, 'position') !== 1) return 0
+    if (this.Vyto_calm_held(vw, ra, 'size') !== 1) return 0
+    return (this.VytoCell_calm_holds(vw, ra.c.tok) === 0) ? 1 : 0
+
+// ── the witness — %see per truth once its condition holds (VytoStaple's once-noticed idiom) ────────
+VytoCell_witness(w):
+    if (this.VytoCell_board_ready(w) && !(oa %see:'the glass was commissioned on three sibling cogs and stood its board of ten organs and seven bar words')) i %see:'the glass was commissioned on three sibling cogs and stood its board of ten organs and seven bar words'
+    if (this.VytoCell_express_ready(w) && !(oa %see:'the express organ sized each cell by its dose — the fattest dose the widest seat')) i %see:'the express organ sized each cell by its dose — the fattest dose the widest seat'
+    if (this.VytoCell_solve_ready(w) && !(oa %see:'three cells took distinct seats inside the frame and their sizes ordered by dose')) i %see:'three cells took distinct seats inside the frame and their sizes ordered by dose'
+    if (this.VytoCell_determ_ready(w) && !(oa %see:'an unchanged world granted no motion — the targets stood byte-identical')) i %see:'an unchanged world granted no motion — the targets stood byte-identical'
+    if (this.VytoCell_hover_ready(w) && !(oa %see:'the hovered cell held its seat while the world rearranged around it')) i %see:'the hovered cell held its seat while the world rearranged around it'
+    if (this.VytoCell_release_ready(w) && !(oa %see:'the released hold eased back to free and retired itself')) i %see:'the released hold eased back to free and retired itself'

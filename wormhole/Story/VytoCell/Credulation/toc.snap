@@ -1,5 +1,5 @@
-Credulation,of_Book:MusuMag
-  run=0,at=1784499953.126,ok=0,ok_pct=0.2,mode:check
+Credulation,of_Book:VytoCell
+  run=0,at=1784503178.05,ok=0,ok_pct=0.14,mode:check
     uses:Ghost_N_Peeroleum,dige:831035f4b7de0927~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -14,7 +14,7 @@ Credulation,of_Book:MusuMag
     uses:Ghost_M_Ra,dige:480f2dc9b663b4c9~g1
     uses:Ghost_M_Booth,dige:24e06889933090b3
     uses:Ghost_M_Heist,dige:a7bb2c1468ce6b06~g1
-    uses:Ghost_M_Jam,dige:9d89d2f22ccfbc41~g1
+    uses:Ghost_M_Jam,dige:f313f24d5aa84683~g1
     uses:Ghost_M_Orig,dige:63f2dbf909bf7640~g1
     uses:Ghost_M_Radio,dige:19a0bd4b85bbe009~g1
     uses:Ghost_Story_Musuation,dige:d51f5a2297ec8c96~g1
@@ -24,11 +24,11 @@ Credulation,of_Book:MusuMag
     uses:Ghost_S_Swarm,dige:39deae1ef7d17b9b~g1
     uses:Ghost_Story_Swarmation,dige:9eb009b1ff84e6b1~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
-    uses:Ghost_V_Vyto,dige:805a34a9186e76aa~g1
-    uses:Ghost_V_Vytonation,dige:f973d917c6660af8~g1
+    uses:Ghost_V_Vyto,dige:e97b60fa2d6956b2~g1
+    uses:Ghost_V_Vytonation,dige:ba7c766f7cf43ede~g1
     uses:Ghost_Story_Voronation,dige:19b605e62bdd580c~g1
     uses:Ghost_Story_Sounditron,dige:59a99db499b6b826~g1
-  run,at=1784500036.384,ok=0,ok_pct=0.2,mode:check
+  run,at=1784503201.486,ok=0,ok_pct=0.14,mode:check
     uses:Ghost_N_Peeroleum,dige:831035f4b7de0927~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -43,7 +43,7 @@ Credulation,of_Book:MusuMag
     uses:Ghost_M_Ra,dige:480f2dc9b663b4c9~g1
     uses:Ghost_M_Booth,dige:24e06889933090b3
     uses:Ghost_M_Heist,dige:a7bb2c1468ce6b06~g1
-    uses:Ghost_M_Jam,dige:9d89d2f22ccfbc41~g1
+    uses:Ghost_M_Jam,dige:f313f24d5aa84683~g1
     uses:Ghost_M_Orig,dige:63f2dbf909bf7640~g1
     uses:Ghost_M_Radio,dige:19a0bd4b85bbe009~g1
     uses:Ghost_Story_Musuation,dige:d51f5a2297ec8c96~g1
@@ -53,11 +53,11 @@ Credulation,of_Book:MusuMag
     uses:Ghost_S_Swarm,dige:39deae1ef7d17b9b~g1
     uses:Ghost_Story_Swarmation,dige:9eb009b1ff84e6b1~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
-    uses:Ghost_V_Vyto,dige:805a34a9186e76aa~g1
-    uses:Ghost_V_Vytonation,dige:f973d917c6660af8~g1
+    uses:Ghost_V_Vyto,dige:e97b60fa2d6956b2~g1
+    uses:Ghost_V_Vytonation,dige:ba7c766f7cf43ede~g1
     uses:Ghost_Story_Voronation,dige:19b605e62bdd580c~g1
     uses:Ghost_Story_Sounditron,dige:59a99db499b6b826~g1
-  run=2,at=1784500077.069,ok,ok_pct,mode:check
+  run=2,at=1784503244.733,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:831035f4b7de0927~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -72,7 +72,7 @@ Credulation,of_Book:MusuMag
     uses:Ghost_M_Ra,dige:480f2dc9b663b4c9~g1
     uses:Ghost_M_Booth,dige:24e06889933090b3
     uses:Ghost_M_Heist,dige:a7bb2c1468ce6b06~g1
-    uses:Ghost_M_Jam,dige:9d89d2f22ccfbc41~g1
+    uses:Ghost_M_Jam,dige:f313f24d5aa84683~g1
     uses:Ghost_M_Orig,dige:63f2dbf909bf7640~g1
     uses:Ghost_M_Radio,dige:19a0bd4b85bbe009~g1
     uses:Ghost_Story_Musuation,dige:d51f5a2297ec8c96~g1
@@ -82,11 +82,11 @@ Credulation,of_Book:MusuMag
     uses:Ghost_S_Swarm,dige:39deae1ef7d17b9b~g1
     uses:Ghost_Story_Swarmation,dige:9eb009b1ff84e6b1~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
-    uses:Ghost_V_Vyto,dige:805a34a9186e76aa~g1
-    uses:Ghost_V_Vytonation,dige:f973d917c6660af8~g1
+    uses:Ghost_V_Vyto,dige:e97b60fa2d6956b2~g1
+    uses:Ghost_V_Vytonation,dige:ba7c766f7cf43ede~g1
     uses:Ghost_Story_Voronation,dige:19b605e62bdd580c~g1
     uses:Ghost_Story_Sounditron,dige:59a99db499b6b826~g1
-  run=3,at=1784500130.338,ok,ok_pct,mode:check
+  run=3,at=1784503292.012,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:831035f4b7de0927~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -101,7 +101,7 @@ Credulation,of_Book:MusuMag
     uses:Ghost_M_Ra,dige:480f2dc9b663b4c9~g1
     uses:Ghost_M_Booth,dige:24e06889933090b3
     uses:Ghost_M_Heist,dige:a7bb2c1468ce6b06~g1
-    uses:Ghost_M_Jam,dige:9d89d2f22ccfbc41~g1
+    uses:Ghost_M_Jam,dige:f313f24d5aa84683~g1
     uses:Ghost_M_Orig,dige:63f2dbf909bf7640~g1
     uses:Ghost_M_Radio,dige:19a0bd4b85bbe009~g1
     uses:Ghost_Story_Musuation,dige:d51f5a2297ec8c96~g1
@@ -111,7 +111,7 @@ Credulation,of_Book:MusuMag
     uses:Ghost_S_Swarm,dige:39deae1ef7d17b9b~g1
     uses:Ghost_Story_Swarmation,dige:9eb009b1ff84e6b1~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
-    uses:Ghost_V_Vyto,dige:805a34a9186e76aa~g1
-    uses:Ghost_V_Vytonation,dige:f973d917c6660af8~g1
+    uses:Ghost_V_Vyto,dige:e97b60fa2d6956b2~g1
+    uses:Ghost_V_Vytonation,dige:ba7c766f7cf43ede~g1
     uses:Ghost_Story_Voronation,dige:19b605e62bdd580c~g1
     uses:Ghost_Story_Sounditron,dige:59a99db499b6b826~g1

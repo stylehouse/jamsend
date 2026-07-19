@@ -1072,6 +1072,9 @@ MusuBuddy_witness(w):
             unspent = oheld === 0
         }
         if (whole && unspent && !(oa %see:'the browsed card fetched its own audio — the record the cursor named crossed whole and byte-faithful while the unbrowsed husk kept its promise unspent')) i %see:'the browsed card fetched its own audio — the record the cursor named crossed whole and byte-faithful while the unbrowsed husk kept its promise unspent'
+        // SWORN — the pipeline that silently died under the twin split (the enshrined hear_fail):
+        //  pull + hear bound to the run forever, so a frozen pull leg goes RED not quietly green.
+        if (whole && unspent && w.o({ heard: 1 })[0]) this.story_swear(w, 'the browsed card pulled its record whole and byte-faithful — the follower heard real seconds off the crossed chunks while the unbrowsed husk kept its promise unspent')
     }
     // beat 11: the three terminal reads off w.c.term — the PULLED bytes at target loudness, the honest
     //  starve, and the clean gapless render through the SAME spool (the gate is not vacuous).
@@ -1106,6 +1109,9 @@ MusuBuddy_witness(w):
     // COPY not move: the keeper is whole in %Kept AND the original husk still stands in the mirror (a grab that
     //  re-parented the husk would drop husk_still) AND the buddy's magazine is still beside it.
     if (n === 11 && keptrec && kept_whole && husk_still && vmag && !(oa %see:'the grabbed keeper stands whole in the listeners own shelf beside the buddys magazine')) i %see:'the grabbed keeper stands whole in the listeners own shelf beside the buddys magazine'
+    // SWORN — the session history + the keep (the jam leg that died with the pull): ledger in order
+    //  AND the keeper whole AND the husk still standing (a grab is a copy never a move).
+    if (n >= 11 && ledger_ok && keptrec && kept_whole && husk_still) this.story_swear(w, 'the jam ledger reads spin like grab in order and the grabbed keeper stands whole in the listeners own shelf')
     // beat 13: the stale magazine — the origin CHANGED (a fresh card stands in its own magazine) but the
     //  closed gate let nothing cross: zero frames burned and the mirror still shows the pre-revoke draw.
     let rv = w.o({ revoked_stand: 1 })[0]
@@ -1264,17 +1270,16 @@ async MusuMag_flow(w):
     }
     let vmag = mir ? mir.o({ Mag: 'shuffle' })[0] : null
     if (vmag && vmag.sc.warm && !w.c.warm_row) {
-        // read the opening page off each catalog HEAD's flat HOLDER (where the bytes land, not the
-        //  chunk-less head); the mag warms on record zero, but the §5 ramp is TWO records — so hold the
-        //   row until BOTH of the first two hold their opening page, and the two-record claim is honest.
+        // read the opening page off each catalog head — the merge lands pulled chunks under the head
+        //  itself (one true record); the mag warms on record zero, but the §5 ramp is TWO records — so
+        //   hold the row until BOTH of the first two hold their opening page, and the claim is honest.
         let heads = []
         for (const cl of vmag.o({ Cloud: 1 })) {
             for (const r of cl.o({ Record: 1 })) heads.push(r)
         }
         let op = (h) => {
             if (!h) return 0
-            let hd = mir.o({ Record: 1, id: h.sc.id })[0]
-            let m = this.Ra_chunk_map(hd || h)
+            let m = this.Ra_chunk_map(h)
             let c = 0
             if (m[0] != null) c = c + 1
             if (m[1] != null) c = c + 1
@@ -1287,25 +1292,21 @@ async MusuMag_flow(w):
             w.i({ warm: 1, held0: h0, held1: h1 })
         }
     }
-    // keep the deep HEAD's stage fresh each pass — Ra_stage only stamps the Mag-homed head, and the
-    //  head is where the pipeline position reads (the flat holder carries the bytes, no stage) — so the
-    //   starve→release transition stays live on the particle.
+    // keep the deep record's stage fresh each pass — Ra_stage only stamps the Mag-homed record, and
+    //  by settle time the pump has drained the in-flight reads, so the starve→release transition
+    //   stays live on the particle.
     if (w.c.deep_id) {
         let fh = this.MusuMag_deep(w)
-        if (fh.head) this.Ra_stage(w, fh.head)
+        if (fh.rec) this.Ra_stage(w, fh.rec)
     }
 
-// MusuMag_deep — the deep track's two mirror faces under one id (the way-station split): the Mag-homed
-//  HEAD carries the catalog + the stage stamp but no bytes; the flat HOLDER (a direct %Record child of
-//   the stock, listed first by Ra_recs) carries the pulled chunk particles.  Readers take stage off the
-//    head and chunks off the holder — the split Ra_rec_find alone (flat-first) would silently conflate.
+// MusuMag_deep — the deep track's ONE mirror record: Repli_merge lands page fragments through the
+//  census, so the Mag-homed head carries the catalog + the stage stamp AND the pulled chunk particles
+//   — one true record, matching the origin (the flat way-station twin is gone).
 MusuMag_deep(w):
     let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
     if (!mir || !w.c.deep_id) return { mir: mir }
-    let recs = this.Ra_recs(mir).filter((r) => r.sc.id === w.c.deep_id)
-    let head = recs.find((r) => this.Ra_mag_homed(r))
-    let holder = recs.find((r) => !this.Ra_mag_homed(r))
-    return { mir: mir, head: head, holder: holder }
+    return { mir: mir, rec: this.Ra_rec_find(mir, { Record: 1, id: w.c.deep_id }) }
 
 // beat 8 — STARVE: want the WHOLE deep record at once (Ra_pull_beat's want-once sweep) while the
 //  pump idles — every offset past the transcode frontier parks at the caster, and the record's
@@ -1325,18 +1326,18 @@ async MusuMag_starve(w):
 
 // beat 10 — DECODE: the husk carried heads only; by now the release beat (the n>=9 pump) has drained
 //  the parked wants and the PREVIEW PAGE — the prefix that never parks, served the instant it was
-//   wanted — stands pulled on the flat holder.  Read the preview count off the HEAD and the chunk bytes
-//    off the HOLDER, and decode that pulled page to real PCM: a mag crosses empty and plays back honest.
+//   wanted — stands pulled on the record itself (chunks land under the head — one true record).
+//    Decode that pulled page to real PCM: a mag crosses empty and plays back honest.
 //     The preview is a fixed prefix (stable segs/seconds), so the fixture stays put while the deep tail
 //      fills behind it — the deep whole-record feed is timing-bound and stays out of the gate.
 async MusuMag_decode(w):
     let f = this.MusuMag_deep(w)
-    if (!f.head || !f.holder) {
-        w.i({ decode_fail: 'no deep holder' })
+    if (!f.rec) {
+        w.i({ decode_fail: 'no deep record' })
         return
     }
-    let pv = +(f.head.sc.preview || 0)
-    let map = this.Ra_chunk_map(f.holder)
+    let pv = +(f.rec.sc.preview || 0)
+    let map = this.Ra_chunk_map(f.rec)
     let have = 0
     while (have < pv && map[have] != null) have = have + 1
     if (!(pv > 0 && have >= pv)) {
@@ -1346,7 +1347,7 @@ async MusuMag_decode(w):
     if (!w.oa({ fed: 1 })) w.i({ fed: 1, page: have })
     await this.expecting(w, 'mag_decode', 60, async () => {
         if (w.oa({ decoded: 1 })) return
-        let d = await this.Ra_term_decode_pulled(w, f.holder, pv)
+        let d = await this.Ra_term_decode_pulled(w, f.rec, pv)
         if (d.fail) {
             w.i({ decode_fail: d.fail })
             return
@@ -1361,19 +1362,19 @@ MusuMag_witness(w):
     let vmag = mir ? mir.o({ Mag: 'shuffle' })[0] : null
     // S1 — the replication unit: the whole shape crossed in ONE husk.  The arrival row FROZE the proof
     //  the instant the mirror wore the mag — three record heads and a cloud page with zero bytes held
-    //   (the flat holders that carry the pulled chunks only appear once the pulls land, after this).
+    //   (pulled chunks only land under the heads once the warm start spends its wants, after this).
     let ar = w.o({ arrived: 1 })[0]
     if (ar && +ar.sc.heads === 3 && +(ar.sc.pages || 0) >= 1 && !ar.sc.held) this.story_swear(w, 'the mag crosses as one husk — the mirror wears the shuffle mag its cloud page and every record head before a single byte')
     // S2 — the §5 warm start: two records took their opening page and the mag turned warm on it.
     let wr = w.o({ warm: 1 })[0]
     if (wr && vmag && vmag.sc.warm && +(wr.sc.held0 || 0) >= 2 && +(wr.sc.held1 || 0) >= 2) this.story_swear(w, 'the warm start pulls the opening page of the first two records and the mag turns warm the moment record zero holds it')
-    // S3 — starvation legibility LIVE: the deep track's HEAD reads parked while its deep wants stand
-    //  parked at the caster — the pipeline position on the particle even before a byte of the tail (the
-    //   stage lives on the Mag-homed head; the flat holder carries no stage, so we read the head).
+    // S3 — starvation legibility LIVE: the deep track reads parked while its deep wants stand
+    //  parked at the caster — the pipeline position on the particle even before a byte of the tail
+    //   (the stage rides the one Mag-homed record, right beside the chunks it narrates).
     let f = this.MusuMag_deep(w)
-    if (w.o({ starved: 1 })[0] && f.head && f.head.sc.stage === 'parked') this.story_swear(w, 'a starved track wears its stage on the particle — the deep wants park at the caster and the record head reads parked until the transcode feeds it')
-    // S4 — end to end: the husk crossed empty then the preview page it pulled to the holder decoded to
-    //  real PCM — the pipeline read back off the chunk particles that actually landed on the mirror.
+    if (w.o({ starved: 1 })[0] && f.rec && f.rec.sc.stage === 'parked') this.story_swear(w, 'a starved track wears its stage on the particle — the deep wants park at the caster and the record head reads parked until the transcode feeds it')
+    // S4 — end to end: the husk crossed empty then the preview page it pulled decoded to real PCM —
+    //  the pipeline read back off the chunk particles that actually landed on the mirror record.
     if (n >= 10 && w.o({ fed: 1 })[0] && w.o({ decoded: 1 })[0]) this.story_swear(w, 'the pipeline reads back end to end — the record crossed as a husk carrying no bytes then the preview page it pulled decoded to real PCM')
 
 // ── GhoghoDrone — a deliberately SLOW drone Book (the GhostHMR live-graffiti probe) ────────────────

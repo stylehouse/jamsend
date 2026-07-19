@@ -1,0 +1,17 @@
+Snap:H
+  H:VytoCell,Run
+    A:VytoCell
+      self,round=8	{"mung":["age"]}
+      w:VytoCell
+        self,round=8	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:a,of:main,dose:0
+        Cog:b,of:main,dose:1
+        Cog:c,of:main,dose:3
+        req:board_wait,finished
+        req:cut_wait,finished
+        req:settle_wait,finished
+        see:the glass was commissioned on three sibling cogs and stood its board of ten organs and seven bar words
+        see:the express organ sized each cell by its dose — the fattest dose the widest seat
+        see:three cells took distinct seats inside the frame and their sizes ordered by dose
+        see:an unchanged world granted no motion — the targets stood byte-identical

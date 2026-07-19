@@ -185,10 +185,18 @@ async Repli_merge(mirrorTop, text):
             continue
         }
         let c = null
+        let census = null
         if (op === 'dupe') {
             c = parent.i({ ...pattern, ...props })
         } else {
             let found = parent.o(pattern)[0]
+            // ONE TRUE RECORD: a lean page fragment names its %Record at depth 0, but the wire cut
+            //  homes a mirror record under %Mag/%Cloud — locate through the census before minting,
+            //   so pulled chunks land under the paged head itself, never a flat way-station twin.
+            if (!found && pattern.Record && typeof this.Ra_rec_find === 'function') {
+                census = this.Ra_rec_find(parent, pattern)
+                found = census
+            }
             if (found) {
                 c = found
                 for (const k of Object.keys(props)) {
@@ -198,7 +206,8 @@ async Repli_merge(mirrorTop, text):
                 c = parent.i({ ...pattern, ...props })
             }
         }
-        c.c.up = parent
+        // a census-found head keeps its true holder — restamping up here would tear it out of its page.
+        if (!census) c.c.up = parent
         if (objs.buffer != null) {
             c.c.await_buffer = objs.buffer
             if (objs.bufk) c.c.await_bufk = objs.bufk

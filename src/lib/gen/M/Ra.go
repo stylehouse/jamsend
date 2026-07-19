@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return 'd3379ba37d85513f~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '480f2dc9b663b4c9~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -772,13 +772,11 @@ async Ra_mag_warm(w, mirror) {
         //  want time would lie the moment the chunks landed), and an unconsidered head reads husk.
         for (const rec of rows) this.Ra_stage(w, rec)
         // warm the moment record zero holds its opening page (min(2, total) chunks in hand).  Pulled
-        //  chunks land on the flat HOLDER twin (a direct %Record of the shelf carrying the bytes), not
-        //   the paged catalog head — so read the holder where it stands, falling back to the head for an
-        //    origin-shaped hold that carries its own chunks.
+        //  chunks land on the head itself (Repli_merge lands page fragments through the census — one
+        //   true record, matching the origin), so the head is where the bytes stand.
         let head0 = rows[0]
         if (!mag.sc.warm && +(head0.sc.total || 0) > 0) {
-            let holder0 = mirror.o({ Record: 1, id: head0.sc.id })[0]
-            let map = this.Ra_chunk_map(holder0 || head0)
+            let map = this.Ra_chunk_map(head0)
             let need = Math.min(2, +(head0.sc.total || 0))
             let held = 0
             let s = 0

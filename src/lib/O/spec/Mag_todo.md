@@ -64,22 +64,30 @@ The systems this needs have been getting **dialled in by the Story Books** — o
            one husk*, *the warm start pulls the opening page of the first two records*, *a starved track
             wears its stage on the particle* (deep wants park at the caster), *the pipeline reads back
              end to end* (preview page pulled → decoded to real PCM).
-    FINDING (the twin-record split): a mirrored track lands as TWO `%Record`s under one id — a **paged
-     head** (`%Mag>%Cloud>%Record`, carries `preview/total` + the `stage` stamp, NO bytes) and a **flat
-      holder** (a direct `%Record` child of the stock, carries the chunk particles, NO metadata/stage).
-       The origin keeps chunks UNDER the paged record; only the mirror's pull splits them off flat.
-        `Ra_recs`/`Ra_rec_find` list the flat leg FIRST, so readers must take stage off the head and
-         chunks off the holder (MusuMag's `MusuMag_deep` bridges them) — and `Ra_mag_warm`'s warm check
-          was silently reading the chunk-less head (warm never fired anywhere until fixed 2026-07-20).
-           The head's `stage` therefore only ever reflects DEMAND (husk/parked/pulling), never SUPPLY
-            (previewed/whole/decoded), since it holds no bytes. **Model question for the human**: should
-             the mirror land chunks under the paged head (matching the origin, one true record) rather
-              than a flat way-station twin? Deferred — it touches core Repli landing (MusuBuddy lives on
-               the current split); noted, not re-architected.
-    NEUTRALITY SWEEP DONE 2026-07-20 (run singly): MusuBuddy re-recorded green; MusuReplica / SwarmShare /
-     MusuFreeze / MusuSoft / MusuBay / MusuOgg all GREEN caveat:0; MusuBounce accepted (only its known-flaky
-      non-deterministic bouncechunk body_hashes drifted — no wire-cut change). The wire code is neutral to
-       every mirror/replication/export Book.
+    ~~FINDING (the twin-record split)~~ **RESOLVED 2026-07-20 — one true record (the human ruled "do B").**
+     A mirrored track used to land as TWO `%Record`s under one id: the paged head (metadata + `stage`, no
+      bytes) and a flat way-station holder (chunks, no metadata) — because the husk offer ships full
+       `Mag>Cloud>Record` ancestry while the chunk serves ship a lean `d:0` Record fragment, and
+        `Repli_merge`'s direct-child upsert could not see the paged head, so it minted a flat twin.
+         **The cut**: `Repli_merge` now locates a missed `%Record` line through the census (`Ra_rec_find`
+          — the exact mirror of the delete path's paged-aware find) before minting, and a census-found
+           head keeps its true `c.up` (re-rooting would tear it out of its page). Chunks land under the
+            head; the mirror wears the origin's own shape. Fallout, all landed: `Ra_mag_warm` reads the
+             head directly; `MusuMag_deep` returns the ONE record; the head's `stage` now honestly reads
+              SUPPLY (previewed/whole/decoded live in MusuMag's snaps, impossible before); `Jam_grab`
+               skips the `stage` key (pipeline furniture never rides a keeper into `%Kept`).
+    THE TWIN HAD DRAWN BLOOD: the split had silently frozen MusuBuddy's pull leg (the census flip to the
+     total-less holder), and the 2026-07-20 sweep re-record enshrined `hear_fail:nothing pulled` +
+      `jam_fail:nothing heard` in its fixtures — only one sworn claim gated the Book, so it stayed green.
+       Fixed by the cut; MusuBuddy re-recorded green ×2 with the whole back half alive (pulled 38 chunks
+        with park/release counts, heard at target LUFS, Spin/Like/Grab ledger, whole keeper) and TWO NEW
+         sworn + declared claims binding it forever: *the browsed card pulled its record whole and
+          byte-faithful…* (step 10) and *the jam ledger reads spin like grab in order…* (step 11).
+    NEUTRALITY under the census landing: flat shelves hold no Mag, so the fallback never fires there —
+     MusuReplica green on untouched fixtures (caveats = the known heartbeat-round drift only); no other
+      Book's fixtures ever held a naked holder row. MusuMag green ×2. Earlier sweep (pre-cut, 2026-07-20,
+       run singly): MusuReplica / SwarmShare / MusuFreeze / MusuSoft / MusuBay / MusuOgg green; MusuBounce
+        accepted per the human (known-flaky bouncechunk body_hashes).
 3. **The limbic show|hide** (§6) — retire the flat `%Tuner` mute-index for a crawlable topic-limb
     graph with attention-budget mutex. Render-side; supersedes the currently-broken `Tuner_toggle`.
     **PARKED 2026-07-19**: Radio's display side is mid-refactor (Voro+Cyto → **Vyto**, the human's

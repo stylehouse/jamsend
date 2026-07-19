@@ -1,0 +1,10 @@
+Snap:H
+  H:VytoCell,Run
+    A:VytoCell
+      self,round=2	{"mung":["age"]}
+      w:VytoCell
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:a,of:main,dose:0
+        Cog:b,of:main,dose:1
+        Cog:c,of:main,dose:3

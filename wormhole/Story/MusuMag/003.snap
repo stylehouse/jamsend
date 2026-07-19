@@ -9,21 +9,21 @@ Snap:H
           Identity:d70f253aa325f68b,prepub:d70f253aa325f68b,friendly:Caster
             Peering,name:d70f253aa325f68b,friendly:Caster
               Idzeug:mag_1,to:Music,genre:Mags,spent
-              Pier,pub:2ea86ae9ea3556f0,friendly:Hearer,since:1784473440
+              Pier,pub:2ea86ae9ea3556f0,friendly:Hearer,since:1784499925
                 Peering,name:2ea86ae9ea3556f0,friendly:Hearer,pub:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b
-                Grant:Music,by:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,for:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,time:1784473440,sign:4caa54e009f75b08904af353ca8924ec3ab9c89b400696b1780860a35ed972a88c402a476ca25d82903f32ba489e5f14068bf9e441047b9629e1ff6ba154e101,genre:Mags
-                Grant:Music,by:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,for:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,time:1784473440,sign:7c08ec5d12a6c872beb2566e9b2b2da58fca2ad22b40a7af7d0b169a4e47d829a829b6668a5871c7a64997162ad4582886ef5d505216120631458088fc36c201,genre:Mags
+                Grant:Music,by:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,for:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,time:1784499925,sign:55f7c5d889f147d5bc05e2d748513c928f5fe0abc6839990b8a5c815b6e5c952f8f2dd4e2ba2b8f309dee2a232f2e8e5ad889e40806c633e70bf8a92e7a9d60a,genre:Mags
+                Grant:Music,by:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,for:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,time:1784499925,sign:ee23d1ada68fb3702f1a56756be433d230d5636b0eb49db19826952b9923662558fae437db2260d33dab1407bc1a6b655801c2399d43ef27cce76d5e39429908,genre:Mags
             SocialGraph
-              Edge,a:d70f253aa325f68b,b:2ea86ae9ea3556f0,at:1784473440
+              Edge,a:d70f253aa325f68b,b:2ea86ae9ea3556f0,at:1784499925
         Account,of:Hearer
           Identity:2ea86ae9ea3556f0,prepub:2ea86ae9ea3556f0,friendly:Hearer
             Peering,name:2ea86ae9ea3556f0,friendly:Hearer
-              Pier,pub:d70f253aa325f68b,friendly:Caster,since:1784473440
+              Pier,pub:d70f253aa325f68b,friendly:Caster,since:1784499925
                 Peering,name:d70f253aa325f68b,friendly:Caster,pub:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2
-                Grant:Music,by:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,for:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,time:1784473440,sign:7c08ec5d12a6c872beb2566e9b2b2da58fca2ad22b40a7af7d0b169a4e47d829a829b6668a5871c7a64997162ad4582886ef5d505216120631458088fc36c201,genre:Mags
-                Grant:Music,by:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,for:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,time:1784473440,sign:4caa54e009f75b08904af353ca8924ec3ab9c89b400696b1780860a35ed972a88c402a476ca25d82903f32ba489e5f14068bf9e441047b9629e1ff6ba154e101,genre:Mags
+                Grant:Music,by:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,for:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,time:1784499925,sign:ee23d1ada68fb3702f1a56756be433d230d5636b0eb49db19826952b9923662558fae437db2260d33dab1407bc1a6b655801c2399d43ef27cce76d5e39429908,genre:Mags
+                Grant:Music,by:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,for:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,time:1784499925,sign:55f7c5d889f147d5bc05e2d748513c928f5fe0abc6839990b8a5c815b6e5c952f8f2dd4e2ba2b8f309dee2a232f2e8e5ad889e40806c633e70bf8a92e7a9d60a,genre:Mags
             SocialGraph
-              Edge,a:2ea86ae9ea3556f0,b:d70f253aa325f68b,at:1784473440
+              Edge,a:2ea86ae9ea3556f0,b:d70f253aa325f68b,at:1784499925
         Peering,name:d70f253aa325f68b,req=2,ok
           Pier,pub:2ea86ae9ea3556f0,req=2,ok
             req:handshake,finished
@@ -157,14 +157,12 @@ Snap:H
           stock,pub:2ea86ae9ea3556f0
             Mag:shuffle,warm
               Cloud,page:1
-                Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443,stage:pulling
-                Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443,stage:pulling
+                Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443,stage:landing
+                  Preview,seq:0,head,preskip=312,cid:3ccd2f51f3f3b66e3115ee8cb2d1c43575a42bf9704abf44b8af40d1a8d74d7b	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:144cde8bcbf6a150cae10b2f4115f1fd62f97576477adbaaa900bac3cfc53872	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443,stage:landing
+                  Preview,seq:0,head,preskip=312,cid:3457aa775f90150bb7dfee2664537ff0249c76f412150375802373b5dcd6e379	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:24e815ca6fe5761ede36e7deca8327236309956d788d7280dbc8ede8ca0bf23b	{"ref":{"buf":"Uint8Array()"}}
                 Record,id:cf95c97b08584b92,title:Groove G,artist:DJ Oscillo,seconds=66,lufs=-7.83,gain=-6.17,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=33,bytes=517443,stage:husk
-            Record,id:d71294dbbcd7b726
-              Preview,seq:0,head,preskip=312,cid:3ccd2f51f3f3b66e3115ee8cb2d1c43575a42bf9704abf44b8af40d1a8d74d7b	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:1,cid:144cde8bcbf6a150cae10b2f4115f1fd62f97576477adbaaa900bac3cfc53872	{"ref":{"buf":"Uint8Array()"}}
-            Record,id:02cfcb9c15affeaf
-              Preview,seq:0,head,preskip=312,cid:3457aa775f90150bb7dfee2664537ff0249c76f412150375802373b5dcd6e379	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:1,cid:24e815ca6fe5761ede36e7deca8327236309956d788d7280dbc8ede8ca0bf23b	{"ref":{"buf":"Uint8Array()"}}
         arrived,heads=3,pages
         warm,held0=2,held1=2

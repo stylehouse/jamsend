@@ -1,0 +1,12 @@
+Snap:H
+  H:VytoCell,Run
+    A:VytoCell
+      self,round=4	{"mung":["age"]}
+      w:VytoCell
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:a,of:main,dose:0
+        Cog:b,of:main,dose:1
+        Cog:c,of:main,dose:3
+        req:board_wait,finished
+        see:the glass was commissioned on three sibling cogs and stood its board of ten organs and seven bar words

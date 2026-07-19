@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Jam(): string { return '9d89d2f22ccfbc41~g1' },
+    Ghostmeta_Ghost_M_Jam(): string { return 'f313f24d5aa84683~g1' },
 
 // Jam.g — the JAM LEDGER: a session's history, legible on the snap (the human 2026-07-14, reading
 //  MusuBuddy: "I should be able to glance through this snap and see what they played to each other, what
@@ -95,10 +95,11 @@ Jam_grab(jam, rec, kept) {
     let ev = this.Jam_event(jam, 'Grab', rec)
     let dst = kept.oai({ Record: 1, id: rec.sc.id })
     dst.c.up = kept
-    // faithful scalar copy: skip the mainkey (already Record), skip the id (the match key), skip binary values
-    //  (those are chunk bytes — they ride as child particles below, never as a flat scalar).
+    // faithful scalar copy: skip the mainkey (already Record), skip the id (the match key), skip stage
+    //  (the Mag pipeline's session read — a keeper is out of the pipeline, and flat shelves never wear
+    //   the key), skip binary values (those are chunk bytes — they ride as child particles below).
     for (const k of Object.keys(rec.sc)) {
-        if (k === 'Record' || k === 'id') continue
+        if (k === 'Record' || k === 'id' || k === 'stage') continue
         if (this.Repli_is_binary(rec.sc[k])) continue
         dst.sc[k] = rec.sc[k]
     }

@@ -4,13 +4,14 @@
     import { onMount } from "svelte"
 
 import Vytui from "$lib/O/Vytui.svelte"
+import { power_cells, poly_centroid } from "$lib/O/vyto_geometry"
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return '58de4777a5b322db~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return 'e97b60fa2d6956b2~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -98,6 +99,13 @@ e_Vyto_commission(A, w, e) {
         w.i({ rebuff: 'Vyto refuses ceremony on the commission — ceremony rides the request' })
     }
     w.c.commission = req
+    // the ONE timing constant (calm.md §8: one constant, one default — never the 0.4/0.3
+    //  split the current glass fell into).  §5's spring ω derives from it (ω = 6/grawave).
+    w.sc.grawave_duration ??= 0.4
+    // Calm's home — a detached _C hanging off `.c`, unreachable from H** so the whole Hold
+    //  tree never snaps (calm.md §1: Books stay glass-blind by construction, not discipline).
+    //   The mirror's detached-mint precedent; %Hold rows live under here.
+    if (!w.c.calm) w.c.calm = new TheC({ c: {}, sc: { Calm: 1 } })
     w.c.Scannable  = req.sc.Scannable
     w.c.Styles     = req.sc.Styles
     w.c.client_w   = req.sc.client_w
@@ -158,6 +166,7 @@ Vyto_stir(w) {
     this.Vyto_gang(w)
     this.Vyto_relate(w)
     this.Vyto_express(w)
+    this.Vyto_solve(w)
 
 },
 // Vyto_sunpit — the staging pit where a recipe's IOexprs pour in and assemble the
@@ -313,21 +322,111 @@ Vyto_mesh(w, scope) {
     return
 
 },
-// Vyto_calm_held — governor Calm's one public question: is this cell held on this channel?
-//  The %Hold algebra (scope × channels × strength × while, priorities: pointer beats
-//   layout — deletion beats pointer — seek beats everything but the human's own gestures)
-//    is worked out in vyto_workingouts/calm.md.  Skeleton: nothing is held.
+// Vyto_calm_held — governor Calm's one public question, per (cell, channel): how much may
+//  this move THIS frame?  The %Hold algebra (calm.md §2) — walk the Hold rows whose scope
+//   is this cell's tok and which claim the channel (or `all`); each contributes a strength
+//    in [0,1]; a live PIN short-circuits to 0 (nothing moves), otherwise damps STACK
+//     multiplicatively (order-free, k → 0 is pin's limit).  A released hold eases its
+//      strength toward 1 along the cubic tail (§4) so releases are continuous by arithmetic.
+//   Returns the NUMBER k — 0 pinned, 1 free, damped between (the renderer scales the spring's
+//    ω by it).  cell may be a mirror ROW or a tok STRING.  (Contract change from the skeleton,
+//     which returned 0 meaning "not held": k is now the strength, 1 = free.  This ghost is the
+//      only caller of the method as a solve-time pin probe; the renderer is the other caller.)
 Vyto_calm_held(w, cell, channel) {
-    return 0
+    if (!w.c.calm) return 1
+    let tok = (typeof cell === 'string') ? cell : cell?.c?.tok
+    if (!tok) return 1
+    let now = Date.now()
+    let k = 1
+    for (const h of w.c.calm.o({ Hold: 1 })) {
+        if (h.sc.scope !== tok) continue
+        if (!(h.sc[channel] || h.sc.all)) continue
+        let s = this.Vyto_strength_now(w, h, now)
+        if (s === 0) return 0
+        k = k * s
+    }
+    return k
 
 },
-// Vyto_hold — place a %Hold: a declared, composable claim of stillness.  Holds are c-side
-//  view matter; the skeleton keeps them as plain rows on w.c.holds so the board's `holds`
-//   toggle has something to paint the moment the renderer lands.
+// Vyto_strength_now — one hold's live strength (calm.md §2 strength_now).  base = 0 for a
+//  pin, its damp value otherwise; while live that base stands; once released_at is stamped it
+//   eases base → 1 along a cubic ease-out over ease_ms, and when the tail completes (u ≥ 1) the
+//    row RETIRES (dropped from w.c.calm — the .o() snapshot makes the mid-walk drop safe).
+Vyto_strength_now(w, h, now) {
+    let base = h.sc.pin ? 0 : (Number(h.sc.damp) || 0)
+    if (h.sc.released_at == null) return base
+    let ease = Number(h.sc.ease_ms) || 1
+    let u = (now - Number(h.sc.released_at)) / ease
+    if (u < 0) u = 0
+    if (u > 1) u = 1
+    if (u >= 1) {
+        w.c.calm.drop(h)
+        return 1
+    }
+    let inv = 1 - u
+    return base + (1 - base) * (1 - inv * inv * inv)
+
+},
+// Vyto_mirror_find — the mirror row bearing this tok, PLAIN recursion (the .g compiler
+//  parse-storms on closure-heavy helpers) — Vytui hands Calm a tok, never a row.
+Vyto_mirror_find(w, tok) {
+    if (!w.c.mirror) return null
+    return this.Vyto_mirror_find_in(w.c.mirror, tok)
+
+},
+Vyto_mirror_find_in(parent, tok) {
+    for (const r of parent.o()) {
+        if (r.c.tok === tok) return r
+        let found = this.Vyto_mirror_find_in(r, tok)
+        if (found) return found
+    }
+    return null
+
+},
+// Vyto_pointer_enter — Vytui owns the pointer facts (cells are real DOM now); on enter it
+//  pokes Calm, which mints TWO rows on the entered cell (calm.md §1/§3): the seed POSITION
+//   PINNED so the tessellation solves with it fixed and the world rearranges around it, plus
+//    the SIZE DAMPED at 0.3 so the boundary follows sluggishly.  Booleans ride 1-or-absent.
+Vyto_pointer_enter(w, tok) {
+    if (!tok) return
+    if (!w.c.calm) w.c.calm = new TheC({ c: {}, sc: { Calm: 1 } })
+    w.c.calm.i({ Hold: 1, scope: tok, position: 1, pin: 1, while: 'pointer', by: 'Calm' })
+    w.c.calm.i({ Hold: 1, scope: tok, size: 1, damp: 0.3, while: 'pointer', by: 'Calm' })
+    w.c.pointer = tok
+    // flip the Calm organ row live on first mint (the Scan/Express flip idiom — the board row
+    //  is the organ's public face, stub until its body first fires).
+    let organ = w.o({ Organ: 'Calm' })[0]
+    if (organ && organ.sc.status !== 'live') {
+        organ.sc.status = 'live'
+        organ.bump_version()
+    }
+
+},
+// Vyto_pointer_leave — stamp every live pointer hold on this scope with released_at + ease_ms
+//  (= grawave, so the release FEELS like one wave): strength then eases 0 → 1 along the tail and
+//   the ex-hovered cell accelerates gently toward the standing target — un-hovering never snaps
+//    because motion resumes at zero speed.  The row retires itself when the tail completes (§2).
+Vyto_pointer_leave(w, tok) {
+    if (!w.c.calm) return
+    let now = Date.now()
+    let ease = (w.sc.grawave_duration ?? 0.4) * 1000
+    for (const h of w.c.calm.o({ Hold: 1 })) {
+        if (h.sc.while !== 'pointer') continue
+        if (h.sc.scope !== tok) continue
+        if (h.sc.released_at != null) continue
+        h.sc.released_at = now
+        h.sc.ease_ms = ease
+        h.bump_version()
+    }
+    if (w.c.pointer === tok) w.c.pointer = null
+
+},
+// Vyto_hold — place a %Hold directly: a declared, composable claim of stillness under Calm's
+//  home (the same detached tree the pointer holds ride, so the board's `holds` toggle paints
+//   every claim uniformly).  Kept as the generic placer the shift/seek holds will grow into.
 Vyto_hold(w, hold) {
-    w.c.holds = w.c.holds ?? []
-    w.c.holds.push(hold)
-    return hold
+    if (!w.c.calm) w.c.calm = new TheC({ c: {}, sc: { Calm: 1 } })
+    return w.c.calm.i(hold)
 
 },
 // Vyto_focus — governor: reads attention and decides what matters now.  A focus change is
@@ -346,9 +445,192 @@ Vyto_relate(w) {
 },
 // Vyto_express — scribe: reads quantities and writes channels (area, weight, hue, z, blur,
 //  fg/bg, motion amplitude, edge loudness).  The generalisation of dose-drives-area and of
-//   Matstyle's auto-swatch instinct.
+//   Matstyle's auto-swatch instinct.  v1 writes the ONE channel the solver reads — area —
+//    from the row's dose (dose-drives-area generalised): env_area = AREA_BASE·(1 + dose), a
+//     doseless row taking the base.  Everything a mirror row carries for the model rides `.c`
+//      (row.c.env_area, never row.sc): Vyto_scan_walk sweeps unknown sc keys off mirror rows
+//       every scan, so an sc-side channel would be deleted next stir.
 Vyto_express(w) {
-    return
+    if (!w.c.mirror) return
+    let wrote = 0
+    for (const row of w.c.mirror.o()) {
+        if (row.sc.departing) continue
+        // AREA_BASE — 2400 px² at scale 1, eye-tuned once the first tenant has eyes on it.
+        row.c.env_area = 2400 * (1 + (Number(row.sc.dose) || 0))
+        wrote = 1
+    }
+    if (!wrote) return
+    let organ = w.o({ Organ: 'Express' })[0]
+    if (organ && organ.sc.status !== 'live') {
+        organ.sc.status = 'live'
+        organ.bump_version()
+    }
+
+},
+// Vyto_solve — the cut.  For now ONE root scope (the scope milestone comes later): a fixed
+//  frame, the `cell` solver of shapes.md §3 — seed-and-relax over the proven power diagram.
+//   NO board Organ row is struck here: the cut is the root scope's own cell solve, and organ
+//    attribution (a Cell/Fold face owning a solve) waits for the scope milestone, when a real
+//     scope, not this fixed frame, owns it.  Writes each member's spring target on `.c.T`
+//      (never sc — swept) and updates its `.c.seed` (solver state, persists across solves).
+Vyto_solve(w) {
+    if (!w.c.mirror) return
+    let members = w.c.mirror.o().filter(r => !r.sc.departing)
+    if (!members.length) return
+    // the fixed root rectangle [0,0,800,450] — Vytui renders the same viewBox.
+    let frame = [{ x: 0, y: 0 }, { x: 800, y: 0 }, { x: 800, y: 450 }, { x: 0, y: 450 }]
+    // a newcomer (no prior seed) enters at the frame-boundary point nearest the mean of the
+    //  existing seeds — the frame centre when it is the first member.  Deterministic by
+    //   construction (never Math.random — solver law 4); prior seeds ride row.c.seed.
+    let existing = []
+    for (const m of members) { if (m.c.seed) existing.push(m.c.seed) }
+    // a COLD BATCH of newcomers — several arriving at once with NO settled cell to join (the
+    //  multi-grapple commission's first solve) — must SPREAD.  Entering each at the boundary point
+    //   nearest the running mean piles the whole batch on ONE point (the mean of a single boundary
+    //    point is that point, whose nearest boundary is itself), and coincident seeds never separate
+    //     (power_cells skips the wall between seeds < 0.5 apart, so each takes the whole frame and
+    //      the relax pulls them all to the same centroid).  So spread a cold batch around the frame
+    //       perimeter at distinct deterministic points; a lone newcomer joining settled cells keeps
+    //        the original nearest-to-mean entry (VytoStaple's single grapple is unaffected — batch 1).
+    let prior = existing.length
+    let batch = members.filter(m => !m.c.seed).length
+    let placed = 0
+    for (const m of members) {
+        if (m.c.seed) continue
+        let entry
+        if (prior === 0 && batch > 1) {
+            entry = this.Vyto_frame_at(frame, (placed + 0.5) / batch)
+        } else {
+            entry = this.Vyto_frame_nearest(frame, this.Vyto_seed_mean(existing))
+        }
+        m.c.seed = { x: entry.x, y: entry.y }
+        existing.push(m.c.seed)
+        placed = placed + 1
+    }
+    // seeds, radii (rᵢ = sqrt(env_area/π)), and the position-pin per member (a held seed
+    //  keeps fixed through the relax: Calm_held(·,'position') === 0 means pinned).
+    let seeds = []
+    let radii = []
+    let pinned = []
+    for (const m of members) {
+        seeds.push({ x: m.c.seed.x, y: m.c.seed.y })
+        let a = (m.c.env_area != null) ? m.c.env_area : 2400
+        radii.push(Math.sqrt(a / Math.PI))
+        pinned.push(this.Vyto_calm_held(w, m, 'position') === 0)
+    }
+    // K=2 relax toward the centroidal power diagram (shapes.md §3: η=0.25, K=2, gap 2.2) —
+    //  each unpinned seed steps a quarter of the way to its cell's area centroid; a null poly
+    //   (crowded out) skips the pull.  K is small on purpose: convergence rides successive
+    //    solves, so the relax is interruptible by construction.
+    let k = 0
+    while (k < 2) {
+        let polys = power_cells(frame, seeds, radii, 2.2)
+        let i = 0
+        while (i < seeds.length) {
+            if (!pinned[i] && polys[i]) {
+                let c = poly_centroid(polys[i])
+                seeds[i] = { x: seeds[i].x + 0.25 * (c.x - seeds[i].x), y: seeds[i].y + 0.25 * (c.y - seeds[i].y) }
+            }
+            i = i + 1
+        }
+        k = k + 1
+    }
+    // final cut + area-centroid anchors → write targets.  Solver law 1: if the computed T
+    //  equals the standing T (x, y AND r), leave the reference untouched so "no change grants
+    //   no motion" is byte-visible.  A departing row's T is left alone (the renderer ramps it
+    //    out) — those rows were filtered out of `members` above.
+    let finals = power_cells(frame, seeds, radii, 2.2)
+    let j = 0
+    while (j < members.length) {
+        let m = members[j]
+        m.c.seed = { x: seeds[j].x, y: seeds[j].y }
+        let anchor = finals[j] ? poly_centroid(finals[j]) : seeds[j]
+        let r = radii[j]
+        let T = m.c.T
+        // law 1 with a SETTLE TOLERANCE (shapes.md — "no change grants no motion"): a sub-EPS drift
+        //  is NO change.  The relax approaches its fixed point by ever-smaller steps, so an exact
+        //   `!==` rewrites T (and re-animates) on floating-point noise FOREVER — a distinct multi-cell
+        //    cut never stands byte-still.  Once every cell sits within EPS (a hundredth of a pixel —
+        //     imperceptible) of its target, leave the standing reference untouched: the world is at
+        //      rest and a further stir grants no motion, byte-true.  A single-cell solve (VytoStaple's
+        //       lone grapple → the whole frame) matches EXACTLY every solve, so EPS never bites there.
+        let EPS = 0.5
+        if (!T || Math.abs(T.x - anchor.x) > EPS || Math.abs(T.y - anchor.y) > EPS || Math.abs(T.r - r) > EPS) {
+            m.c.T = { x: anchor.x, y: anchor.y, r: r }
+            m.bump_version()
+        }
+        j = j + 1
+    }
+
+},
+// Vyto_seed_mean — the mean of the seeds placed so far, or the frame centre (400,225) when
+//  none stand yet.  Feeds the newcomer's deterministic boundary entry point.
+Vyto_seed_mean(seeds) {
+    if (!seeds.length) return { x: 400, y: 225 }
+    let sx = 0
+    let sy = 0
+    for (const s of seeds) { sx = sx + s.x; sy = sy + s.y }
+    return { x: sx / seeds.length, y: sy / seeds.length }
+
+},
+// Vyto_frame_at — the point at perimeter fraction f (wrapped to [0,1)) around the frame boundary,
+//  walking edges in order.  Feeds the cold-batch spread so simultaneous newcomers enter DISTINCT
+//   points (a lone newcomer never reaches this — the nearest-to-mean entry still governs joins).
+Vyto_frame_at(frame, f) {
+    let lens = []
+    let per = 0
+    let i = 0
+    while (i < frame.length) {
+        let a = frame[i]
+        let b = frame[(i + 1) % frame.length]
+        lens.push(Math.hypot(b.x - a.x, b.y - a.y))
+        per = per + lens[i]
+        i = i + 1
+    }
+    let ff = f - Math.floor(f)
+    let target = ff * per
+    let acc = 0
+    let j = 0
+    while (j < frame.length) {
+        if (acc + lens[j] >= target) {
+            let a = frame[j]
+            let b = frame[(j + 1) % frame.length]
+            let t = (lens[j] > 0) ? (target - acc) / lens[j] : 0
+            return { x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y) }
+        }
+        acc = acc + lens[j]
+        j = j + 1
+    }
+    return { x: frame[0].x, y: frame[0].y }
+
+},
+// Vyto_frame_nearest — the point on the frame boundary nearest p: the closest point over
+//  every edge, first minimum wins (deterministic).
+Vyto_frame_nearest(frame, p) {
+    let best = null
+    let bestD = null
+    let i = 0
+    while (i < frame.length) {
+        let cp = this.Vyto_seg_nearest(frame[i], frame[(i + 1) % frame.length], p)
+        let dx = cp.x - p.x
+        let dy = cp.y - p.y
+        let d = dx * dx + dy * dy
+        if (bestD === null || d < bestD) { bestD = d; best = cp }
+        i = i + 1
+    }
+    return best ?? { x: p.x, y: p.y }
+
+},
+// Vyto_seg_nearest — the closest point on segment a→b to p (clamped projection).
+Vyto_seg_nearest(a, b, p) {
+    let dx = b.x - a.x
+    let dy = b.y - a.y
+    let len2 = dx * dx + dy * dy
+    if (len2 === 0) return { x: a.x, y: a.y }
+    let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2
+    if (t < 0) t = 0
+    if (t > 1) t = 1
+    return { x: a.x + t * dx, y: a.y + t * dy }
 },
 //#endregion
 
