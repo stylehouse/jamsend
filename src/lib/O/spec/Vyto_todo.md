@@ -32,6 +32,31 @@ The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it 
    running VytoCell on a visible runner tab — the parked-run gate lifts when the run
     stops driving and the springs animate the standing world.
 
+- **The migration model — per-Book, from WITHIN the app (the human, 2026-07-21).** The `?VY=1`
+   page-global boot flag (built 2026-07-20) is the WRONG shape — retiring it. The intent, never
+    written down before now (which is exactly why it built wrong): move Cyto→Vyto **one Book at a
+     time**, as a shift in *provenance*, not a component swap.
+  - **Cyto was an observer**: Story, running a Book, casually attaches a Cyto view that scans the
+     Book's tree from outside (`Sounditron_glass` → `Cyto/Cyto e_Cyto_commission` with
+      `Scannable: <the Book/world>`). Cyto's home is Story; it *watches* a Book.
+  - **Vyto is wired from WITHIN the application**: the app commissions its own glass as a
+     first-class part of itself, not a Story-imposed watcher. So "per-Book, one at a time" =
+      convert each app/Book to commission Vyto from within itself, retiring the Story-observer
+       Cyto as each crosses. The Book's own commission IS the per-Book declaration — no global
+        flag, no registry.
+  - **Two gates before Sounditron flips for real** (why it was flagged, not committed):
+    (1) **retire Voro too** — Voro is (suspected — verify) a viewer-imposed overlay riding ATOP
+     the base regardless of Cyto|Vyto, which is why `?VY=1` looked identical to Voro; the
+      migration must drop the overlay, not just swap the base.  (2) **parity** — Vyto v1 is plain
+       cells (no faces, no Gang/crew, no sub-cell world), so a direct swap regresses Sounditron's
+        face-heavy UI. Parity includes a **timeline UI** (the human's ask: step around in time,
+         see the last few places we were, like an ongoing Story) — its data already exists in the
+          Run's step/got_snap history that Storui's timeline reads; point Vyto's timeline at that
+           same source.
+  - **Plan (2026-07-21):** fully move Sounditron to Vyto (commission Vyto from within Sounditron;
+     drop the Cyto+Voro+faces path + the `boot_param('VY')` flag) — **AFTER the ttlilt fixup**
+      (Hovercraft.svelte:548 retract-on-drop, task #53 stage 1).
+
 ## What stands (built 2026-07-19, all live-proven to compile)
 
 - `Ghost/V/Vyto.g` — the skeleton: `Vyto()` worker + `Vyto_plan`, `Vyto_board` (10 organ
