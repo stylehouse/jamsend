@@ -2,6 +2,20 @@
 
 ## 0.
 
+**BUILT 2026-07-21 (scaffold, UNVERIFIED — commit f96d71eb).** Authored and compiles: `Run_A_LakeSearch`
+ + `e_Lies_search_selftest` in Machinery.svelte, `wormhole/Story/LakeSearch/toc.snap` (placeholder dige
+  a0a0…), Credence line (the linter placed it under What:Misc, not What:Lake — cosmetic; the Book still
+   runs via Run_A_ + toc). Needs a first live `--accept` to mint 001.snap + the real step dige; some beats
+    may want corpus tuning. Corrections the build found vs the brief below: (a) `Lies_search` returns
+     `{defs,props,texts,done,total}` — NO `missing` (it lives on the dex handle: `Lies_stemdex(w).missing`);
+      (b) a seeded %Good needs a `known` child for its dige (`good.oai({known:1}).sc.dige=…`) AND a roster
+       `%Doc` node (`Waft>What>Doc:path`) — the Good alone isn't indexed; store = `await H.LiesStore_req(w)`
+        (= `w/req:Store`); (c) quux.ts holds BOTH stems (records→record + frobnitz), so beat 4 KEEPS it and
+         just ranks zorble denser-first — not excluded; (d) Present/toc.snap needs no entry, Credence line
+          is bare. Verify: `runner_ask run LakeSearch --watch`, then `--accept` and green ×2 on the live runner.
+
+Original brief below (kept for the corpus + beat design):
+
 Next move: build **LakeSearch** — the Story Book gate for universal search (Stemdex + Searchbar),
  owed since the feature landed (spec §7 names it). The full plan is below, drafted 2026-07-20 from
   a source-verified research pass (LiesFunk "Stemdex" region 1262–1615, ui/Searchbar.svelte, the
