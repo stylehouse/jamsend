@@ -545,7 +545,13 @@
 
         for (const t of Run.o({ ttlilt: 1 }) as TheC[]) {
             const req = t.sc.req as TheC | undefined
-            if (req?.sc.finished) { Run.drop(t); continue }  // stale: finish() beat cleanup — retract the published copy now
+            // stale: req finished, gone, or DROPPED-without-finishing (host.drop leaves
+            //  c.drop=1 but no %finished) — retract the published copy now.  The publish-side
+            //   visit() already skips a dropped req (o() filters c.drop out), but during an
+            //    expecting() wait no think re-runs that publish, so the poll must retract here
+            //     or a served-then-dropped req's ttlilt holds the world non-quiescent until
+            //      wall-clock timeout (the Sounditron 4→5 stall; task #53's stage-1 root).
+            if (!req || req.sc.finished || req.c.drop) { Run.drop(t); continue }
 
             const until_ts = t.sc.until_ts as number
             if (!t.sc.timed_out && until_ts > now) {
