@@ -319,8 +319,10 @@
             good.oai({ known: 1 }).sc.dige = dige                       // fixed dige → dige gate, no re-hash
             return path
         }
+        // zorble.md: frobnitz on three LINES (postings count lines, not occurrences — ≤6/stem) so it
+        //  strictly outranks quux's single frobnitz line for the beat-4 AND-density claim (no tie).
         const ZORBLE   = seed('zorble',   'SearchW/zorble.md',  'seed-zorble-1',
-            '# Zorblender overview\n\nA recording of the zorbler.\nfrobnitz frobnitz frobnitz\n')
+            '# Zorblender overview\n\nA recording of the zorbler.\nfrobnitz opens the set.\nfrobnitz keeps the groove.\nfrobnitz closes the night.\n')
         const FROBNITZ = seed('frobnitz', 'SearchW/frobnitz.ts', 'seed-frobnitz-1',
             'function frobnicate(x) {\n  const zorbler = (n) => n\n  // sc.gleeb .c.wibble %Zorblet\n  return frobnitz\n}\n')
         const QUUX     = seed('quux',     'SearchW/quux.ts',    'seed-quux-1',
