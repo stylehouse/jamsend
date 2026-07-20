@@ -1,0 +1,11 @@
+story:LakeSearch
+  Styles
+  Plan
+    Prep
+      i_elvisto:Lies,e:Lies_search_selftest
+  Opt
+    For
+      w:Lies
+        dontSnapGhostList
+    quiesce_snap_time=0.4
+  step,dige:a0a0a0a0a0a0a0a0

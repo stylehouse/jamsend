@@ -286,6 +286,87 @@
         gate.bump_version(); w.bump_version()
     },
 //#endregion
+//#region LakeSearch
+    // Universal-search gate — the Stemdex index + Lies_search driven end to end on a coined,
+    //  collision-proof corpus seeded straight into the store: NO disk read fires (content rides
+    //   good.c.content so the scan takes the already-loaded branch; a fixed known.sc.dige takes
+    //    the dige gate).  Three synthetic %Good text/Docs under one backstage equip Waft (folds
+    //     from the snap); markers under SearchGate, snap-fixture diff is the gate.  Corpus tuned
+    //      to the live stemmer (Lies_stem: lowercase + strip ings?/ers?/eds?/es/s, ies→y, len>4):
+    //       recorded|recording|records → record, frobnitz unchanged.  brand_new — needs a first
+    //        --accept to mint 001.snap + the real step dige; some beats may want live tuning.
+
+    Run_A_LakeSearch(this: House) {
+        const H = this
+        H.i({ A: 'Lies'       }).i({ w: 'Lies' })
+        H.i({ A: 'Lang'       }).i({ w: 'Lang' })
+        H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
+        console.log(`🟦 ${H.name} LakeSearch wired`)
+    },
+
+    async e_Lies_search_selftest(this: House, A: TheC, w: TheC, e: TheC) {
+        const H = this
+        const gate = w.oai({ SearchGate: 1 })
+        const gl = w.o({ Waft: 'GhostList' })[0] as TheC | undefined
+        if (gl) gl.sc.dontSnap = 1                                  // fold a volatile GhostList (headless boot only)
+        // ── the coined corpus: each doc is a roster %Doc + a fully-loaded %Good (no disk read) ──
+        const store = await H.LiesStore_req(w)
+        const back  = w.oai({ Waft: 'SearchW' }, { equip: 'Search' })   // backstage → folds from the snap
+        const seed = (name: string, path: string, dige: string, text: string) => {
+            back.oai({ What: name }).oai({ Doc: path })                 // roster: Lies_walk_docs collects sc.Doc
+            const good = store.oai({ Good: 1, type: 'text/Doc', path }) as TheC
+            good.c.content = text                                       // OFF-SNAP → content !== undefined
+            good.oai({ known: 1 }).sc.dige = dige                       // fixed dige → dige gate, no re-hash
+            return path
+        }
+        const ZORBLE   = seed('zorble',   'SearchW/zorble.md',  'seed-zorble-1',
+            '# Zorblender overview\n\nA recording of the zorbler.\nfrobnitz frobnitz frobnitz\n')
+        const FROBNITZ = seed('frobnitz', 'SearchW/frobnitz.ts', 'seed-frobnitz-1',
+            'function frobnicate(x) {\n  const zorbler = (n) => n\n  // sc.gleeb .c.wibble %Zorblet\n  return frobnitz\n}\n')
+        const QUUX     = seed('quux',     'SearchW/quux.ts',    'seed-quux-1',
+            'records the frobnitz once\n')
+
+        // ── beat 0: seed + one real scan pass → the index converged (all three, none missing) ──
+        await H.e_Lies_stemdex_scan(A, w, e)
+        const r0 = H.Lies_search(w, 'zorble', 24)
+        if (r0.total === 3 && r0.done === 3 && H.Lies_stemdex(w).missing === 0) gate.i({ index_converged: 1 })
+
+        // ── beat 1: a method search finds the def by name with file + line ──
+        const d1 = (H.Lies_search(w, 'frobnicate', 24).defs as any[]).find(d => d.name === 'frobnicate')
+        if (d1 && d1.path === FROBNITZ && d1.line > 0) gate.i({ method_search_finds_def: 1 })
+
+        // ── beat 2: a property search covers an sc key AND a %Notation mark alike ──
+        const p2a = (H.Lies_search(w, 'gleeb',   24).props as any[]).some(p => p.path === FROBNITZ)
+        const p2b = (H.Lies_search(w, 'Zorblet', 24).props as any[]).some(p => p.path === FROBNITZ)
+        if (p2a && p2b) gate.i({ prop_search_covers_sc_and_notation: 1 })
+
+        // ── beat 3: a freetext query matches on a shared stem (recorded → recording) ──
+        if ((H.Lies_search(w, 'recorded', 24).texts as any[]).some(t => t.path === ZORBLE))
+            gate.i({ freetext_matches_on_shared_stem: 1 })
+
+        // ── beat 4: two-token AND keeps only docs holding BOTH stems, ranks the denser first.
+        //   frobnitz recording: zorble(frobnitz×3 + recording) outranks quux(frobnitz + records);
+        //    frobnitz.ts holds frobnitz but no record-stem, so AND drops it. ──
+        const t4 = H.Lies_search(w, 'frobnitz recording', 24).texts as any[]
+        if (t4[0]?.path === ZORBLE && t4.some(t => t.path === QUUX) && !t4.some(t => t.path === FROBNITZ))
+            gate.i({ two_token_and_ranks_denser_first: 1 })
+
+        // ── beat 5: a word nowhere in the corpus returns nothing — no false hit ──
+        const r5 = H.Lies_search(w, 'xyloburst', 24)
+        if (!(r5.defs as any[]).length && !(r5.props as any[]).length && !(r5.texts as any[]).length)
+            gate.i({ absent_word_returns_nothing: 1 })
+
+        // ── beat 6: editing a doc + moving its dige reindexes only that doc ──
+        const zg = store.o({ Good: 1, type: 'text/Doc', path: ZORBLE })[0] as TheC
+        zg.c.content = (zg.c.content as string) + 'snarfle\n'
+        ;(zg.o({ known: 1 })[0] as TheC).sc.dige = 'seed-zorble-2'
+        await H.e_Lies_stemdex_scan(A, w, e)
+        if ((H.Lies_search(w, 'snarfle', 24).texts as any[]).some(t => t.path === ZORBLE))
+            gate.i({ dige_move_reindexes: 1 })
+
+        gate.bump_version(); w.bump_version()
+    },
+//#endregion
 //#region LakeFunk
     // Chunk-2 gate — Storying is EVENT-DRIVEN, not pumped.  Drops `run` from FUNK_KINDS.Storying so
     //  instantiate binds no per-tick poll; instead Lies_reflect_storying restamps a cell's verdict
