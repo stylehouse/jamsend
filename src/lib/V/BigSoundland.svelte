@@ -50,10 +50,14 @@
 
     // the Cyto UI (Cytui) is registered by the Cyto ghost on whichever House carries the live graph;
     //  find it across H** and mount it full-bleed.  Its ◈ voronoi mode auto-arms on the crushed world.
+    //  ?VY=1 — THE FIRST TENANT GATE (the Vyto moult): under the gate the page seats the NEW glass
+    //   instead (Vytui, UI:'Vyto', same H prop) and Sounditron_glass commissions Vyto not Cyto; the
+    //    ungated page stands exactly as before.
+    const vy = !!boot_param('VY')
     let cyto = $derived.by(() => {
         for (const house of houses) {
             void house.UIs.version
-            const ui = house.UIs.ob({ UI: 'Cyto' })[0]
+            const ui = house.UIs.ob({ UI: vy ? 'Vyto' : 'Cyto' })[0]
             if (ui) return { house, ui }
         }
         return undefined

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Radiation(): string { return '63822e3afe52d28f~g1' },
+    Ghostmeta_Ghost_Story_Radiation(): string { return '57100009c65a317d~g1' },
 
 // Radiation.g — the Ra* PRODUCT Books (rastock → racast → raterm; Radio_todo.md §3), in the
 //  Musuation/Swarmation mould: the file is the artifact; MusuRaStream is the first Book identity.
@@ -1134,7 +1134,8 @@ MusuBuddy_witness(w) {
     // beat 11: the grabbed keeper STANDS whole in the listeners own %Kept shelf (every chunk copied off the
     //  pulled husk) beside the buddys magazine still in the mirror — a KEEP the listener owns, not a stream.
     let kept = w.o({ Kept: 1, pier: w.c.lis_pre })[0]
-    let keptrec = (kept && w.c.pick_id) ? kept.o({ Record: 1, id: w.c.pick_id })[0] : null
+    // the keeper now pages (Ra_rec_home — the landing-Mag ruling), so the read walks both shapes
+    let keptrec = (kept && w.c.pick_id) ? this.Ra_rec_find(kept, { Record: 1, id: w.c.pick_id }) : null
     let husk_still = (mir && w.c.pick_id) ? this.Ra_rec_find(mir, { Record: 1, id: w.c.pick_id }) : null
     let kept_whole = false
     if (keptrec) {

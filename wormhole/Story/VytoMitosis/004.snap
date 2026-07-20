@@ -1,0 +1,18 @@
+Snap:H
+  H:VytoMitosis,Run
+    A:VytoMitosis
+      self,round=7	{"mung":["age"]}
+      w:VytoMitosis
+        self,round=7	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:Coprosma,dose:4
+        Cog:Veronica,dose:2
+        Cog:Metrosideros,dose:1
+        req:seats_wait,finished
+        Cog:Kunzea,dose:3
+        req:grow_wait,finished
+        Cog:Leptospermum,dose:2
+        Cog:Pittosporum,dose:5
+        req:batch_wait,finished
+        see:the glass was commissioned on a flora of three genera and stood its board
+        see:a batch of genera arrived and spread around the rim — the flora re-seated as six cells

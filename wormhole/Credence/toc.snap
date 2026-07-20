@@ -28,10 +28,15 @@ Waft:Credence
     Funkcion:Storying,of_Book:VoroTest
     Funkcion:Storying,of_Book:VytoStaple,born:2026-07-20,desc:commission the new glass beside a run and watch its grapple-driven mirror and spool turn
     Funkcion:Storying,of_Book:VytoCell,born:2026-07-20,desc:three dosed cogs cut into distinct cells — express sizes them solve seats them and calm pins a hovered one
+    Funkcion:Storying,of_Book:VytoMitosis,born:2026-07-20,desc:VoroMitosis ported — a dosed flora cuts into cells then grows by newcomer and batch and a genus goes extinct
+    Funkcion:Storying,of_Book:VytoRadio,born:2026-07-20,desc:VoroRadio ported — a six-genus tuner flora drifts its doses and the hand pins one cell then lets it ease free
   What:Musu,desc:the music-piracy streaming platform — the rastock racast raterm pipeline of Radio_todo
     Funkcion:StoryTimes
     What:mostly,desc:the stuff we mostly do as jamsend the music app — the rastock racast raterm pipeline on real tracks
-      What:the pipeline,desc:the streaming session on real tracks — a listening ramp and the village chase plus the test-data seeder (stock|cast|play consolidated into MusuBuddy §3.5)
+      What:the wire cut,desc:the CANONICAL paged shape end to end — a Mag crosses as one husk then warm-starts pulls stages and plays back — MusuBuddy the social session and MusuMag the wire proof
+        Funkcion:Storying,of_Book:MusuBuddy,needsFSA:1,needMusic:1,born:2026-07-14
+        Funkcion:Storying,of_Book:MusuMag,needsFSA:1,needMusic:1,born:2026-07-19
+      What:the pipeline,desc:the live listening session on real tracks — the paced playhead and the village chase plus the test-data seeder — NOTE these scenes still ride the pre-Mag FLAT mirror shape — the pacing mechanisms are canonical the scene shape is not
         Funkcion:Storying,of_Book:MusuGenerateTestsMusic,needsFSA:1,unusual:test-data-seeding
         Funkcion:Storying,of_Book:MusuRaStream,needsFSA:1,needMusic:1,born:2026-07-08
         Funkcion:Storying,of_Book:MusuRaChase,needsFSA:1,needMusic:1,born:2026-07-11
@@ -43,11 +48,19 @@ Waft:Credence
         Funkcion:Storying,of_Book:MusuVend,born:2026-07-13
         Funkcion:Storying,of_Book:MusuDoor,born:2026-07-13
         Funkcion:Storying,of_Book:MusuReco,needMusic:1
+        Funkcion:Storying,of_Book:MusuSoft,needsFSA:1,needMusic:1,born:2026-07-17
+        Funkcion:Storying,of_Book:MusuBay,needsFSA:1,needMusic:1,born:2026-07-17
         What:the cursor,desc:a Dogear names a spot in a magazine — resolve then heal across a rename then resume across a reload
           Funkcion:Storying,of_Book:MusuCursor,born:2026-07-13
           Funkcion:Storying,of_Book:MusuHeal,born:2026-07-14
           Funkcion:Storying,of_Book:MusuResume,born:2026-07-14
-      What:replication,desc:paginated C** replication of a music library across two Piers
+      What:standing and forgetting,desc:the collection lifecycle — the standing publish and its quiet wire — recast withdrawals off the paged shape — renames — the forget cascade with bias-to-keep
+        Funkcion:Storying,of_Book:MusuStanding
+        Funkcion:Storying,of_Book:MusuRecast
+        Funkcion:Storying,of_Book:MusuRename
+        Funkcion:Storying,of_Book:MusuFreeze,born:2026-07-17
+        Funkcion:Storying,of_Book:MusuReap
+      What:replication,desc:the wire protocol itself — offers husks wants pages and crush proven on FLAT shelves — flat stays prod-legal for quarantines and strays but the canonical friend mirror is now the paged Mag of the wire cut
         Funkcion:Storying,of_Book:MusuBounce,needMusic:1
         Funkcion:Storying,of_Book:MusuReplica
     What:lowlevels,desc:the ladder of tiny aspect proofs — spec Radio_lowlevel.md — kept for regression hunts not for direction
@@ -80,19 +93,6 @@ Waft:Credence
         What:the network,desc:audio frames and content routing over the real Peeroleum transport
           Funkcion:Storying,of_Book:MusuMesh
           Funkcion:Storying,of_Book:MusuPier
-    Funkcion:Storying,of_Book:MusuRename
-    Funkcion:Storying,of_Book:MusuRecast
-    Funkcion:Storying,of_Book:MusuStanding
-    Funkcion:Storying,of_Book:MusuBuddy,needsFSA:1,needMusic:1,born:2026-07-14
-    Funkcion:Storying,of_Book:MusuBreach
-    Funkcion:Storying,of_Book:MusuReap
-    Funkcion:Storying,of_Book:MusuRaStock
-    Funkcion:Storying,of_Book:MusuRaCast
-    Funkcion:Storying,of_Book:MusuRaTerm
-    Funkcion:Storying,of_Book:MusuSoft,needsFSA:1,needMusic:1,born:2026-07-17
-    Funkcion:Storying,of_Book:MusuBay,needsFSA:1,needMusic:1,born:2026-07-17
-    Funkcion:Storying,of_Book:MusuFreeze,born:2026-07-17
-    Funkcion:Storying,of_Book:MusuMag,needsFSA:1,needMusic:1,born:2026-07-19
   What:Puddle,desc:the lower-level instruments in one puddle — machinery proven once and kept for regression hunts not for relitigating
     Funkcion:StoryTimes
     What:Lake,desc:the editor machine — the Lies compile-run pipeline over Docs Wafts and focus

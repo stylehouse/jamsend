@@ -1,0 +1,34 @@
+story:VytoMitosis
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=1.115
+      sample=0.001,at=1784509809
+      sample=0.001,at=1784509819
+      sample=1.356,at=1784510579
+      sample=1.356,at=1784510605
+      sample=1.356,at=1784510609
+      sample=1.356,at=1784510612
+      sample=1.356,at=1784510614
+      sample=1.356,at=1784510616
+      sample=1.378,at=1784510651
+      sample=1.631,at=1784510695
+    TimeTotal:step,avg=0.186
+      sample=0.001,at=1784509809
+      sample=0.001,at=1784509819
+      sample=0.226,at=1784510579
+      sample=0.226,at=1784510605
+      sample=0.226,at=1784510609
+      sample=0.226,at=1784510612
+      sample=0.226,at=1784510614
+      sample=0.226,at=1784510616
+      sample=0.23,at=1784510651
+      sample=0.272,at=1784510695
+  step,dige:c5d0a3c86638d554
+  step=2,dige:81e902b6ae874330,desc:found a flora of three genera and commission the glass on them
+  step=3,dige:16700e534f64fd5b,desc:grow the flora — newcomers arrive and the cut re-seats
+  step=4,dige:59a5638b1bedb94a,desc:grow the flora — newcomers arrive and the cut re-seats
+  step=5,dige:8cfbb5cd0d9aae63,desc:a genus goes extinct — its cell escorts out and the survivors re-seat
+  step=6,dige:5a0e1e6c70e80667,desc:stir the unchanged world — the settled flora grants no motion

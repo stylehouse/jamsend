@@ -1,9 +1,11 @@
 # Vyto — the working doc
 
 The new glass.  Spec: `Vyto_spec.md` (unpreened — three rounds 2026-07-19).  Machine-level
- elaborations: `vyto_workingouts/` — shapes · pelt · calm · spool · commission, each checked
-  against the LIVE code (not against the spec's hopes), each ending in open questions only
-   the human can rule on.  This doc is the one todo; the workingouts are its appendices.
+ elaborations: `vyto_workingouts/` — shapes · pelt · calm · spool · commission · client,
+  each checked against the LIVE code (not against the spec's hopes), most ending in open
+   questions only the human can rule on.  This doc is the one todo; the workingouts are
+    its appendices.  **`client.md` is the front door for anyone integrating as a Vyto
+     client** — point a fresh agent there first.
 
 ## 0. What to get on with next
 
@@ -14,11 +16,13 @@ The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it 
     itself, and VytoCell recorded GREEN ×2 beside a green VytoStaple regression.  Next
      moves:
 
-- **First tenant**: one Radio world on BigSoundland end-to-end — recipe commission (the
-   commission workingout §worked-example has the real gear rows), grapple watch, spool,
-    strip, Calm's pointer-hold, one %Slope.  CAUTION: the Radio DISPLAY side is
-     mid-refactor by the human (the Voro+Cyto → Vyto move) — the tenant commission lands
-      in exactly that zone, so it waits for the human's word or the human's hand.
+- **First tenant — LIVE, in the other agent's hands (2026-07-20)**: the human's Radio
+   agent is actively integrating Radio as a Vyto client (the Voro+Cyto → Vyto display
+    move).  This side SUPPORTS, never edits display-side: keep `vyto_workingouts/
+     client.md` current (their front door), the teaching Books green (VytoMitosis ·
+      VytoRadio), and take model gaps they hit as requests against Vyto.g rather than
+       letting the model fork.  Two runner tabs on the fleet — ours is the ★claude one;
+        pin `--runner=` always.
 - **Owed engineering** (small, any time): watch_c era-guarded multi-handler + teardown-on-
    decommission; spool freeze-on-run-fail (watch step verdicts); the step→yore_n shim +
     whichever-glass seek dispatch for Storui (§12 moult seam).
@@ -68,6 +72,18 @@ The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it 
             document.hidden sync-paint, and the **parked-run gate**: while
              `w.c.Run.c.run.c.driving` the renderer jumps-to-target and never strikes
               settle, so driven Books stay deterministic.
+- The teaching pair (2026-07-20 evening, gate closed same day): **VytoMitosis** (6 steps)
+   + **VytoRadio** (5 steps), the main two Voro Books ported client-shaped into
+    Vytonation.g with a commented **Vyto client kit** (plant · commission-in-place ·
+     read-cells · rest-poll) — pedagogy for the Radio agent, GREEN ×2 each plus the
+      VytoStaple/VytoCell regression green.  Mitosis: grow (lone newcomer nearest-to-mean
+       then a batch spreading the rim) → extinction (departing escort then survivors
+        re-seat) → fixed point.  Radio: dose drift re-sizes and re-seats across dwells;
+         the hand pins one cell mid-drift (its seed byte-identical while a neighbour's
+          target moved) then release eases free and retires.  Model refinement the pair
+           forced AND verified: the perimeter entry-spread fires for ANY simultaneous
+            batch>1 (not just a cold start) — a mid-run grow batch piled otherwise.
+             The client-integration front door is `vyto_workingouts/client.md`.
 - VytoCell (Vytonation.g sibling, 7 steps, GREEN ×2 2026-07-20): three dosed cogs
    grappled individually cut into distinct cells — express orders sizes by dose — an
     unchanged world grants no motion (T byte-identical at the fixed point) — a
@@ -144,4 +160,10 @@ Defaults taken unless vetoed: ε = 0.5 px · drift 0.25 px/frame · SETTLE_FRAME
 - The story_save 1-step toc race (the toc-protection memory) bit VytoCell repeatedly
    while it was brand_new — an orphaned save collapses a multi-step toc to one line
     between runs.  Re-seed the step lines, then accept IMMEDIATELY once the Book is
-     right so real diges lock in.
+     right so real diges lock in.  A variant bit VytoRadio: after seeding, the runner
+      re-ran off a CACHED 1-step decode — a reload cleared it and the re-run saw all
+       the steps.
+- A settle poll pacing one solve per 200ms overruns runner_ask --watch's 20s
+   dead-detector on multi-cell worlds (a 6-cell settle took ~14s and false-deaded).
+    Burst solves per poll — up to a bounded batch, declaring rest the instant a solve
+     rewrites no target (Vytonation's `Vyto_rest_poll` does).

@@ -1,0 +1,15 @@
+Snap:H
+  H:VytoMitosis,Run
+    A:VytoMitosis
+      self,round=5	{"mung":["age"]}
+      w:VytoMitosis
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:Coprosma,dose:4
+        Cog:Veronica,dose:2
+        Cog:Metrosideros,dose:1
+        req:seats_wait,finished
+        Cog:Kunzea,dose:3
+        req:grow_wait,finished
+        see:the glass was commissioned on a flora of three genera and stood its board
+        see:a lone genus arrived and joined near the crowd — the flora re-seated around a fourth cell

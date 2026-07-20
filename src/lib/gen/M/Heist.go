@@ -10,7 +10,7 @@ import { sha256_hex, sha256_incremental } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'a7bb2c1468ce6b06~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '5aac5007560b34e0~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -121,10 +121,17 @@ async Heist_census(w, lib, nav, base, artists) {
         let ext = (dot < 0) ? '' : filename.slice(dot + 1)
         // album rides the card as a scalar (absent → omitted, never a `false`/empty-string snap wart) so the
         //  landing tree can shelve <genre>/<Artist>/<Album>/<Title> without re-reading the file.
-        let rec = lib.i({ Record: 1, id: hash.slice(0, 16), title: meta.title, artist: meta.artist,
-            path: path, ext: ext, bytes: bytes.length, body_hash: hash, total: total })
+        // the census card mints through the ONE owned door (Ra_rec_home — the landing-Mag ruling):
+        //  every collection holding lives in the shelf's paged Mag, whatever verb minted it.
+        let rec = this.Ra_rec_home(lib, hash.slice(0, 16))
+        rec.sc.title = meta.title
+        rec.sc.artist = meta.artist
+        rec.sc.path = path
+        rec.sc.ext = ext
+        rec.sc.bytes = bytes.length
+        rec.sc.body_hash = hash
+        rec.sc.total = total
         if (meta.album) rec.sc.album = meta.album
-        rec.c.up = lib
         let s = 0
         while (s < total) {
             let b = rec.i({ Body: 1, seq: '' + s })
@@ -509,11 +516,16 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
     // the landed card at ITS OWN path (never the source's) — sc.path IS `rel`, the same string the newlyadded
     //  log carries and the disk holds, so the next heist's dedup + the read-back monitor find it exactly.  Album
     //   rides across when the meta had one, so a re-census of this collection reproduces the same shelf.
-    let card = own_lib.i({ Record: 1, id: rec.sc.id, title: rec.sc.title, artist: rec.sc.artist, path: rel, bytes: size })
+    //    The card mints through the ONE owned door (Ra_rec_home — the landing-Mag ruling): a landed
+    //     track joins the collection's paged Mag like any other holding, never a flat way-station.
+    let card = this.Ra_rec_home(own_lib, rec.sc.id)
+    card.sc.title = rec.sc.title
+    card.sc.artist = rec.sc.artist
+    card.sc.path = rel
+    card.sc.bytes = size
     if (rec.sc.ext) card.sc.ext = rec.sc.ext
     if (rec.sc.body_hash) card.sc.body_hash = rec.sc.body_hash
     if (rec.sc.album) card.sc.album = rec.sc.album
-    card.c.up = own_lib
     job.sc.landed = +(job.sc.landed || 0) + 1
     // SURFACE what the heist TOOK (the landing twin of the held/denied verdict rows): one compact
     //  `took,tune:<Artist — Title>` child per file that crossed and passed the byte gate, pointed at the

@@ -1,0 +1,20 @@
+Snap:H
+  H:VytoMitosis,Run
+    A:VytoMitosis
+      self,round=11	{"mung":["age"]}
+      w:VytoMitosis
+        self,round=11	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:Coprosma,dose:4
+        Cog:Metrosideros,dose:1
+        req:seats_wait,finished
+        Cog:Kunzea,dose:3
+        req:grow_wait,finished
+        Cog:Leptospermum,dose:2
+        Cog:Pittosporum,dose:5
+        req:batch_wait,finished
+        req:death_wait,finished
+        req:close_wait,finished
+        see:the glass was commissioned on a flora of three genera and stood its board
+        see:a genus went extinct — its cell wore the departing escort then the ring shrank and the survivors re-seated
+        see:an unchanged world granted no motion — the settled flora stood byte-identical

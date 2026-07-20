@@ -47,37 +47,90 @@ story:Sounditron
       lematch,w:Sounditron
         lematch,Session,alive
           means,spayer,re:Session.alive={INT},tol:any
+    Entcase:Stock_fold
+      lematch,w:Sounditron
+        lematch,MusuSelf
+          means,spayer,re:MusuSelf.pub:{TOK},tol:any
+          lematch,stock
+            means,dontSnap
+            means,spayer,re:stock.pub:{TOK},tol:any
+    Entcase:Glass_fold
+      lematch,w:Voronoiology
+        means,dontSnap
+    Entcase:Environment_rows
+      lematch,w:Sounditron
+        lematch,Found
+          means,drop
+        lematch,Possibility
+          means,drop
+        lematch,Friend
+          means,drop
+    Entcase:Machine_identity
+      lematch,w:Sounditron
+        lematch,Machine
+          means,spayer,re:Machine(.*),tol:any
+    Entcase:Heartbeat_round
+      lematch,self
+        means,spayer,re:self.round={INT},tol:any
+    Entcase:Ttlilt_fold
+      lematch,ttlilt
+        means,drop
+    Entcase:Lineup_fold
+      lematch,w:Sounditron
+        lematch,Mag:Lineup
+          means,dontSnap
+          means,spayer,re:Mag:Lineup(.*),tol:any
+    Entcase:Pipeline_values
+      lematch,w:Sounditron
+        lematch,Stoker
+          means,spayer,re:Stoker(.*),tol:any
+        lematch,Census
+          means,spayer,re:Census(.*),tol:any
+        lematch,Session
+          means,spayer,re:Session(.*),tol:any
+        lematch,Tally
+          means,spayer,re:Tally(.*),tol:any
+        lematch,Zine
+          means,spayer,re:Zine(.*),tol:any
+        lematch,Audio
+          means,spayer,re:Audio(.*),tol:any
+    Entcase:Heist_face
+      lematch,w:Sounditron
+        lematch,Heist
+          means,spayer,re:Heist:(.*),tol:any
+        lematch,Need
+          means,spayer,re:Need:(.*),tol:any
   TimeSpool
-    TimeTotal:beliefs,avg=0.071
-      sample=0.095,at=1784435785
-      sample=0.092,at=1784437928
-      sample=0.046,at=1784438357
-      sample=0.037,at=1784441738
-      sample=0.038,at=1784442675
-      sample=0.162,at=1784443479
-      sample=0.073,at=1784489025
-      sample=0.059,at=1784498749
-      sample=0.063,at=1784500419
-      sample=0.043,at=1784500500
-    TimeTotal:step,avg=0.01
-      sample=0.014,at=1784435785
-      sample=0.013,at=1784437928
-      sample=0.007,at=1784438357
-      sample=0.005,at=1784441738
-      sample=0.005,at=1784442675
-      sample=0.023,at=1784443479
-      sample=0.01,at=1784489025
-      sample=0.008,at=1784498749
-      sample=0.009,at=1784500419
-      sample=0.006,at=1784500500
-  step,dige:34f0d341711ed73b
-  step=2,dige:aa823764faeb8970,desc:the machine stands
+    TimeTotal:beliefs,avg=0.046
+      sample=0.045,at=1784511457
+      sample=0.045,at=1784511458
+      sample=0.045,at=1784511459
+      sample=0.045,at=1784511460
+      sample=0.045,at=1784511461
+      sample=0.045,at=1784511462
+      sample=0.036,at=1784511505
+      sample=0.042,at=1784511557
+      sample=0.069,at=1784519763
+      sample=0.048,at=1784519836
+    TimeTotal:step,avg=0.006
+      sample=0.006,at=1784511457
+      sample=0.006,at=1784511458
+      sample=0.006,at=1784511459
+      sample=0.006,at=1784511460
+      sample=0.006,at=1784511461
+      sample=0.006,at=1784511462
+      sample=0.005,at=1784511505
+      sample=0.006,at=1784511557
+      sample=0.01,at=1784519763
+      sample=0.007,at=1784519836
+  step,dige:3d46128d8aec4b69
+  step=2,dige:0d2a083ff1d0a860,desc:the machine stands
     Assertion:machine-stood,sentence:the machine stood — an addressable self emerged on the spine
-  step=3,dige:f523ae080918a5bf,desc:the relay answers
+  step=3,dige:0e5b578fe1e4d833,desc:the relay answers
     Assertion:relay-answers,sentence:the relay answers — the channel stood and frames can cross
-  step=4,dige:cd10cdb3616927e2,desc:who could we reach
+  step=4,dige:e67200ee8cff817d,desc:who could we reach
     Assertion:possibilities-surveyed,sentence:the possibilities of peers were surveyed — every known address counted
-  step=5,dige:2d3524b22a6093b6,desc:reach for a peer
-  step=6,dige:468744a3686796ac,desc:does sound run here
-  step=7,dige:f7d96e2df853bc48,desc:sum and report
+  step=5,dige:3d63c0b04bd1afd3,desc:reach for a peer
+  step=6,dige:fe4d9ace34559c0a,desc:does sound run here
+  step=7,dige:429db745271a645b,desc:sum and report
     Assertion:report-stands,sentence:the session summed itself — a report stands ready to travel

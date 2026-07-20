@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '480f2dc9b663b4c9~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '9beac7596c40837a~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -670,6 +670,20 @@ Ra_mag_page(mag) {
     pg.c.up = mag
     return pg
 },
+// Ra_rec_home — THE ONE DOOR every owned mint walks (the landing-Mag ruling, 2026-07-20): a
+//  standing record refreshes in place wherever it sits (flat or paged — Ra_rec_find walks both);
+//   a NEW holding lands in the open shuffle page, never flat.  Stock provisioning, the heist
+//    census, the cp-landing card, and the Jam keeper all come through here — a QUARANTINE
+//     mirror is the one shelf that stays flat (it is not yet a collection, so its minter never
+//      calls this).  Callers stamp their own scalars on the returned record.
+Ra_rec_home(shelf, id) {
+    let rec = this.Ra_rec_find(shelf, { Record: 1, id: id })
+    if (rec) return rec
+    let page = this.Ra_mag_page(this.Ra_mag_shuffle(shelf))
+    rec = page.i({ Record: 1, id: id })
+    rec.c.up = page
+    return rec
+},
 // Ra_recs — the shape-agnostic record census of a crate: flat %Record children first (the
 //  way-station shape), then every Mag's rows — directly-held and %Cloud-paged — in child order,
 //   so the census is stable run to run.  EVERY scanning reader goes through here: a direct
@@ -1000,14 +1014,9 @@ async Ra_stock_standing(nav, pub, enid) {
 //   objecties.ref — "Uint8Array()") — fine on the SNAP plane, FATAL at the STORAGE/toc encoder, so
 //    a library subtree must never ride a Waft toc-persist; the disk home stays this .jam.
 Ra_record_from(lib, info, bufs) {
-    // a STANDING record refreshes in place, wherever it sits (flat or paged — Ra_rec_find walks
-    //  both); a NEW holding lands in the open shuffle page, never flat (the Mag model, §1).
-    let rec = this.Ra_rec_find(lib, { Record: 1, id: info.id })
-    if (!rec) {
-        let page = this.Ra_mag_page(this.Ra_mag_shuffle(lib))
-        rec = page.i({ Record: 1, id: info.id })
-        rec.c.up = page
-    }
+    // find-or-page through the one owned-mint door (Ra_rec_home): a standing record refreshes in
+    //  place wherever it sits; a new holding lands in the open shuffle page, never flat (§1).
+    let rec = this.Ra_rec_home(lib, info.id)
     rec.sc.title = info.title
     rec.sc.artist = info.artist
     if (info.album) rec.sc.album = info.album

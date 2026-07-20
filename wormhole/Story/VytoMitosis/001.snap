@@ -1,0 +1,7 @@
+Snap:H
+  H:VytoMitosis,Run
+    A:VytoMitosis
+      self,round	{"mung":["age"]}
+      w:VytoMitosis
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

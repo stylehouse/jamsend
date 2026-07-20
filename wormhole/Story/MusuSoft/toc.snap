@@ -4,31 +4,31 @@ story:MusuSoft
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.209
-      sample=0.07,at=1784264486
-      sample=0.043,at=1784264500
-      sample=0.272,at=1784273030
-      sample=0.053,at=1784273348
-      sample=0.257,at=1784274596
-      sample=0.257,at=1784274624
-      sample=0.257,at=1784274626
-      sample=0.041,at=1784274636
-      sample=0.056,at=1784274649
+    TimeTotal:beliefs,avg=0.28
       sample=0.779,at=1784489551
-    TimeTotal:step,avg=0.035
-      sample=0.012,at=1784264486
-      sample=0.007,at=1784264500
-      sample=0.045,at=1784273030
-      sample=0.009,at=1784273348
-      sample=0.043,at=1784274596
-      sample=0.043,at=1784274624
-      sample=0.043,at=1784274626
-      sample=0.007,at=1784274636
-      sample=0.009,at=1784274649
+      sample=0.216,at=1784518922
+      sample=0.216,at=1784518951
+      sample=0.216,at=1784518953
+      sample=0.216,at=1784518954
+      sample=0.216,at=1784518956
+      sample=0.216,at=1784518957
+      sample=0.216,at=1784518958
+      sample=0.405,at=1784518981
+      sample=0.1,at=1784519005
+    TimeTotal:step,avg=0.047
       sample=0.13,at=1784489551
+      sample=0.036,at=1784518922
+      sample=0.036,at=1784518951
+      sample=0.036,at=1784518953
+      sample=0.036,at=1784518954
+      sample=0.036,at=1784518956
+      sample=0.036,at=1784518957
+      sample=0.036,at=1784518958
+      sample=0.068,at=1784518981
+      sample=0.017,at=1784519005
   step,dige:bdfbbb9807e93979
-  step=2,dige:5f35b26ba9306b28
-  step=3,dige:c0c564c604edd11f
-  step=4,dige:ac9d27b118dff709
-  step=5,dige:f294fbf22cb2bf1d
-  step=6,dige:251970bb8632c2f6
+  step=2,dige:54036568a024aa3b
+  step=3,dige:55ace61d02794d97
+  step=4,dige:e4db2dc1e1c41f57
+  step=5,dige:2b951e4e00381b3c
+  step=6,dige:d6d54d48fd95285f

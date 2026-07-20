@@ -38,6 +38,8 @@ Waft:Ghost/Vis/Visua
     Doc:Ghost/V/Vytonation.g
     Point,method:VytoStaple_seed
     Point,method:VytoCell_seed
+    Point,method:VytoMitosis_found
+    Point,method:VytoRadio_seed
     Doc:src/lib/O/Vytui.svelte
     Doc:src/lib/O/spec/Vyto_spec.md
     Doc:src/lib/O/spec/Vyto_todo.md

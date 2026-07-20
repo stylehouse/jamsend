@@ -1,6 +1,0 @@
-Snap:H
-  H:MusuRaCast,Run
-    A:MusuRaCast
-      self,round	{"mung":["age"]}
-      w:MusuRaCast
-        self,round	{"mung":["age"]}

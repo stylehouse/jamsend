@@ -3,12 +3,14 @@
     import { TheC } from "$lib/data/Stuff.svelte"
     import { onMount } from "svelte"
 
+import { boot_param } from "$lib/boot"
+
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '59a99db499b6b826~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return 'fc546e9a542bb5eb~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -122,7 +124,10 @@ async Sounditron_machine(w) {
     //  the fixture-checked regime (2026-07-19) needs every frame from here on to carry the
     //   FULL stock shelf — a mid-provisioning snap pins a racing frame no re-run can match
     //    (structural drift, beyond EntropyArrest's reach — it forgives values, never rows).
-    this.expecting(w, 'stoker_wait', 10, async () => { await this.Sounditron_await(w, 10, () => this.Sounditron_stock_settled(w)) })
+    //  30s ceiling (was 10): the runner's REAL share (21 tracks tonight) provisions slower than
+    //   the old window, and a mid-provisioning snap is row drift nothing can forgive; the 300ms
+    //    poll settles the wait the moment the stoker parks, so a warm run never pays the ceiling.
+    this.expecting(w, 'stoker_wait', 30, async () => { await this.Sounditron_await(w, 30, () => this.Sounditron_stock_settled(w)) })
     w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.Sounditron_witness(w); req.sc.ok = 1 })
 
 },
@@ -186,6 +191,30 @@ Sounditron_glass(w) {
     this.Sounditron_trickle(w)
     if (this.c.glass_done) return
     this.c.glass_done = 1
+    // ── THE FIRST TENANT (?VY=1 — the Vyto moult; client.md is the front door) ──────────────
+    //  Under the gate the resident page commissions the NEW GLASS on the world's ORGANS —
+    //   plain form (commission.md §2, the migration door; the recipe form waits for a tenant
+    //    to prove it), each organ an individual grapple = one cell (client.md §3), dose-less
+    //     for now so every organ takes a default seat.  The Voro-Cyto commission stands down
+    //      under the gate; the ungated page is byte-identical to before.  Run rides req.c when
+    //       a Story run drives (the parked-run gate + spool payloads); a pure-resident world
+    //        commissions Run-less and the springs run free.  Same per-tab latch as the Cyto
+    //         path above — one commission per tab, the standing glass watches from then on.
+    if (boot_param('VY')) {
+        let SHv = this.c.up
+        if (!SHv) return
+        if (!SHv.o({ A: 'Vyto' }).length) SHv.i({ A: 'Vyto' }).i({ w: 'Vyto' })
+        let organs = []
+        for (const q of [{ Radio: 1 }, { Stoker: 1 }, { Tuner: 1 }, { Door: 1 }, { Zine: 1 }, { Riffle: 1 }, { Mag: 'Lineup' }, { Machine: 1 }, { Heist: 1 }]) {
+            let row = w.o(q)[0]
+            if (row) organs.push(row)
+        }
+        if (!organs.length) return
+        let commission = new TheC({ c: {}, sc: { Scannable: organs[0], client_w: w, grapples: organs } })
+        if (this.c.run) commission.c.Run = this
+        SHv.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
+        return
+    }
     // the Story rail (toc useCyto+dontSnapCyto+useVoroCyto — live glass, pure-H snaps, the
     //  PROVEN Cytui registration) commissions before step 1; a second commission here would
     //   overwrite its wave flags and wedge the snap wait — stand down when it already rides.

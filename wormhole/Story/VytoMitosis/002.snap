@@ -1,0 +1,13 @@
+Snap:H
+  H:VytoMitosis,Run
+    A:VytoMitosis
+      self,round=3	{"mung":["age"]}
+      w:VytoMitosis
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:Coprosma,dose:4
+        Cog:Veronica,dose:2
+        Cog:Metrosideros,dose:1
+        req:seats_wait,finished
+        see:the glass was commissioned on a flora of three genera and stood its board
+        see:the flora took distinct seats — three genera cut into three cells inside the frame

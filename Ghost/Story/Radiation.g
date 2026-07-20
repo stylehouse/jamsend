@@ -1093,7 +1093,8 @@ MusuBuddy_witness(w):
     // beat 11: the grabbed keeper STANDS whole in the listeners own %Kept shelf (every chunk copied off the
     //  pulled husk) beside the buddys magazine still in the mirror — a KEEP the listener owns, not a stream.
     let kept = w.o({ Kept: 1, pier: w.c.lis_pre })[0]
-    let keptrec = (kept && w.c.pick_id) ? kept.o({ Record: 1, id: w.c.pick_id })[0] : null
+    // the keeper now pages (Ra_rec_home — the landing-Mag ruling), so the read walks both shapes
+    let keptrec = (kept && w.c.pick_id) ? this.Ra_rec_find(kept, { Record: 1, id: w.c.pick_id }) : null
     let husk_still = (mir && w.c.pick_id) ? this.Ra_rec_find(mir, { Record: 1, id: w.c.pick_id }) : null
     let kept_whole = false
     if (keptrec) {

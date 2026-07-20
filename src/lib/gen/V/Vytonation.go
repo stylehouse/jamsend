@@ -10,7 +10,7 @@ import Vytui from "$lib/O/Vytui.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vytonation(): string { return 'ba7c766f7cf43ede~g1' },
+    Ghostmeta_Ghost_V_Vytonation(): string { return '91b0f93ba117a589~g1' },
 
 // Vytonation.g — Vyto's demo Books (the Voronation.g sibling, one directory over in Ghost/V/).
 //  Where Voronation.g proves the CRUSH (the fold policy) on flora and libraries, Vytonation.g
@@ -569,6 +569,390 @@ VytoCell_witness(w) {
     if (this.VytoCell_determ_ready(w) && !(w.oa({see: 'an unchanged world granted no motion — the targets stood byte-identical'}))) w.i({see: 'an unchanged world granted no motion — the targets stood byte-identical'})
     if (this.VytoCell_hover_ready(w) && !(w.oa({see: 'the hovered cell held its seat while the world rearranged around it'}))) w.i({see: 'the hovered cell held its seat while the world rearranged around it'})
     if (this.VytoCell_release_ready(w) && !(w.oa({see: 'the released hold eased back to free and retired itself'}))) w.i({see: 'the released hold eased back to free and retired itself'})
+
+},
+// ══ Vyto CLIENT KIT — the shared seams a Vyto client reaches for (worked-example scaffolding) ═══════
+//  The two Books below PORT the main Voro demos (VoroMitosis · VoroRadio) to Vyto's current
+//   capability — Express sizes cells by dose, Solve seats them, Calm pins one by pointer.  There is
+//    NO crush / fold / gang here (those Vyto organs are still stubs) and no faces; the SCENARIO is
+//     ported, not the Voro assertions.  These helpers are the client vocabulary, copied Vyto-prefixed
+//      (no cross-ghost call into Voronation) so a reader learns from THIS file how to drive the glass.
+
+// Vyto_genera — the flora vocabulary carried over from Voronation for continuity (real Aotearoa
+//  genera).  Each name keys ONE %Cog → one top-level mirror row → one cell.
+Vyto_genera() {
+    return ['Coprosma', 'Veronica', 'Metrosideros', 'Kunzea', 'Leptospermum', 'Pittosporum', 'Podocarpus', 'Olearia', 'Brachyglottis', 'Nothofagus']
+
+},
+// Vyto_plant — the client's SEED: a %Cog keyed by its GENUS (Scan keys top-level rows by the Cog
+//  value so distinct genera become distinct cells) carrying a DOSE as a scalar string (Express reads
+//   Number(dose) → env_area → the cell's area, so a fatter dose is a wider seat).  Returns the cog to
+//    hand the commission as a grapple.
+Vyto_plant(w, genus, dose) {
+    return w.i({ Cog: genus, dose: '' + dose })
+
+},
+// Vyto_commission_on — the ONE door in, the client way.  fresh=1 stands a CLEAN glass beside the run
+//  (drop any prior A:Vyto and re-mint — the per-run reset, since the story House persists across runs);
+//   fresh=0 RE-COMMISSIONS the standing glass IN PLACE — the client's way to change the grapple set
+//    (grow a cell or retire one) WITHOUT resetting: e_Vyto_commission re-derives the grapples and
+//     re-watches but never clears the mirror, so the standing cells keep their seats.  grapples = the
+//      cogs list; the Run rides req.c.Run so the spool can snap it.
+Vyto_commission_on(w, cogs, fresh) {
+    let SH = this.VytoStaple_SH(w)
+    if (!SH) return
+    if (fresh) {
+        let old = SH.o({ A: 'Vyto' })[0]
+        if (old) SH.drop(old)
+        SH.i({ A: 'Vyto' }).i({ w: 'Vyto' })
+    }
+    let commission = new TheC({ c: {}, sc: { Scannable: cogs[0], client_w: w, grapples: cogs.slice() } })
+    commission.c.Run = this
+    SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
+
+},
+// Vyto_cells — the live cells: every top-level mirror row not escorting out.  A client READS the cut
+//  here — row.c.T = {x,y,r} the render target, row.c.seed the solver site, row.c.env_area the
+//   expressed area, row.c.tok the stable identity.
+Vyto_cells(vw) {
+    if (!vw || !vw.c.mirror) return []
+    return vw.c.mirror.o().filter(r => !r.sc.departing)
+
+},
+// Vyto_seated — every live cell wears a target inside the [0,800]×[0,450] frame with a real radius.
+Vyto_seated(vw) {
+    let cells = this.Vyto_cells(vw)
+    if (!cells.length) return 0
+    for (const r of cells) {
+        let T = r.c.T
+        if (!T) return 0
+        if (!(T.x >= 0 && T.x <= 800 && T.y >= 0 && T.y <= 450 && T.r > 0)) return 0
+    }
+    return 1
+
+},
+// Vyto_distinct — no two live cells share a seat (a real cut, never a pile).
+Vyto_distinct(vw) {
+    let cells = this.Vyto_cells(vw)
+    let i = 0
+    while (i < cells.length) {
+        let j = i + 1
+        while (j < cells.length) {
+            if (cells[i].c.T.x === cells[j].c.T.x && cells[i].c.T.y === cells[j].c.T.y) return 0
+            j = j + 1
+        }
+        i = i + 1
+    }
+    return 1
+
+},
+// Vyto_has_tok — is a row with this identity still in the mirror (used to watch a dropped cell GO).
+Vyto_has_tok(vw, tok) {
+    if (!vw || !vw.c.mirror) return 0
+    for (const r of vw.c.mirror.o()) { if (r.c.tok === tok) return 1 }
+    return 0
+
+},
+// Vyto_holds_on — how many of Calm's %Hold rows scope this tok (0 once a released hold has retired).
+Vyto_holds_on(vw, tok) {
+    if (!vw || !vw.c.calm) return 0
+    let n = 0
+    for (const h of vw.c.calm.o({ Hold: 1 })) { if (h.sc.scope === tok) n = n + 1 }
+    return n
+
+},
+// Vyto_rest_reset — clear the per-settle memory before a fresh wait (every beat re-settles the cut).
+Vyto_rest_reset(w) {
+    w.c.settled = 0
+    w.c.last_T = null
+
+},
+// Vyto_rest_poll — the client's WAIT-FOR-REST, DRIVING the glass to its fixed point.  A Story-run
+//  House goes quiescent under a ttlilt hold, so the grapple watch's stir chain will not fire on its
+//   own — a client that needs a settled read STIRS THE GLASS DIRECTLY (Vyto_stir) and watches the
+//    targets stop moving.  A no-op stir on a settled world rewrites nothing (the EPS-tolerant law 1),
+//     so every target reference holds across a stir → at rest.  `want` gates on the cell count so a
+//      grow's newcomer is scanned in and a death's escort has dropped before rest is judged; the
+//       departing escort sighting is stashed for the death demo.
+Vyto_rest_poll(w, want) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    // the FIRST stir builds the mirror (Vyto_scan mints it once the commission's grapples land) —
+    //  drive it even before the mirror exists; a stir with no grapples yet is a harmless no-op, so
+    //   this loop also patiently covers the async commission before the cut appears.
+    if (!vw.c.mirror) { this.Vyto_stir(vw); return 0 }
+    for (const r of vw.c.mirror.o()) { if (r.sc.departing) w.c.saw_departing = 1 }
+    if (w.c.dead_tok && this.Vyto_has_tok(vw, w.c.dead_tok)) { this.Vyto_stir(vw); return 0 }
+    let cells = this.Vyto_cells(vw)
+    for (const r of cells) { if (!r.c.T) { this.Vyto_stir(vw); return 0 } }
+    if (want != null && cells.length !== want) { this.Vyto_stir(vw); return 0 }
+    // BURST the relax: the 200ms poll cadence otherwise caps it at ~5 solves/sec, so a many-cell cut
+    //  would overrun the wait (and --watch's dead-detector).  Run up to 16 solves per poll and declare
+    //   REST the instant a solve rewrites no target (the EPS-tolerant law 1 leaves the references
+    //    standing) — 3-6 cells settle in a poll or two.
+    let b = 0
+    while (b < 16) {
+        cells = this.Vyto_cells(vw)
+        let stable = 1
+        let last = w.c.last_T
+        if (!last) {
+            stable = 0
+        } else {
+            for (const r of cells) { if (last[r.c.tok] !== r.c.T) stable = 0 }
+        }
+        if (stable) { w.c.settled = 1; return 1 }
+        let map = {}
+        for (const r of cells) { map[r.c.tok] = r.c.T }
+        w.c.last_T = map
+        this.Vyto_stir(vw)
+        b = b + 1
+    }
+    return 0
+
+},
+// ══ VytoMitosis — VoroMitosis ported: a flora is cut into cells then GROWS and one genus dies ══════
+//  The abstract-flora demo (Voronation.g #region mitosis) as a Vyto client.  Voro watched the crush
+//   DISCOVER clades from loose leaves; Vyto has no crush yet, so here each genus is grappled
+//    INDIVIDUALLY — one grapple = one top-level mirror row = one cell — and the SCENARIO is what
+//     ports: a cold batch cuts into distinct seats, the flora GROWS (a lone newcomer joins near the
+//      crowd, then a batch spreads around the rim), a genus goes EXTINCT (its cell escorts out then
+//       the ring shrinks and survivors re-seat), and an unchanged world grants no motion.  The dose
+//        stands in for a genus's weight (a richer genus a wider cell).
+VytoMitosis(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VytoMitosis_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VytoMitosis_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoMitosis_found(w)
+        if (n === 3) this.VytoMitosis_grow(w, ['Kunzea'], [3], 'grow_wait', 4)
+        if (n === 4) this.VytoMitosis_grow(w, ['Leptospermum', 'Pittosporum'], [2, 5], 'batch_wait', 6)
+        if (n === 5) this.VytoMitosis_die(w, 'Veronica')
+        if (n === 6) this.VytoMitosis_close(w)
+    }
+    this.VytoMitosis_witness(w)
+
+},
+// beat 2 — FOUND the flora: three genera as a COLD BATCH (grappled individually), commissioned on a
+//  clean glass.  The first cut spreads them around the frame (a batch never piles) into distinct seats.
+async VytoMitosis_found(w) {
+    w.i({desc: 'found a flora of three genera and commission the glass on them'})
+    let cogs = []
+    cogs.push(this.Vyto_plant(w, 'Coprosma', 4))
+    cogs.push(this.Vyto_plant(w, 'Veronica', 2))
+    cogs.push(this.Vyto_plant(w, 'Metrosideros', 1))
+    w.c.cogs = cogs
+    this.Vyto_commission_on(w, w.c.cogs, 1)
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'seats_wait', 14, async () => { await this.VytoStaple_await(w, 14, () => this.Vyto_rest_poll(w, 3)) })
+
+},
+// GROW — new genera arrive mid-run.  Seed each cog then RE-COMMISSION on the expanded grapple set
+//  (fresh=0 keeps the standing cells and adds a watch on each newcomer).  ONE newcomer enters at the
+//   frame boundary nearest the standing cells (it joins the crowd); a BATCH of several spreads around
+//    the rim (simultaneous arrivals never pile).  Then settle so the whole flora re-seats.
+async VytoMitosis_grow(w, genera, doses, wait, want) {
+    w.i({desc: 'grow the flora — newcomers arrive and the cut re-seats'})
+    let gi = 0
+    while (gi < genera.length) {
+        w.c.cogs.push(this.Vyto_plant(w, genera[gi], doses[gi]))
+        gi = gi + 1
+    }
+    this.Vyto_commission_on(w, w.c.cogs, 0)
+    this.Vyto_rest_reset(w)
+    this.expecting(w, wait, 14, async () => { await this.VytoStaple_await(w, 14, () => this.Vyto_rest_poll(w, want)) })
+
+},
+// beat 5 — APOPTOSIS: a genus goes extinct.  Retire its cog from the gear AND re-commission on the
+//  survivors (the client way to drop a grapple — the standing decommission-teardown is owed, so the
+//   reduced grapple list IS the retirement).  Scan then stops walking it: its mirror row loses its
+//    source and wears departing:1 one grace stir before the ring shrinks, and the survivors re-seat.
+async VytoMitosis_die(w, genus) {
+    w.i({desc: 'a genus goes extinct — its cell escorts out and the survivors re-seat'})
+    let cog = w.c.cogs.find(c => c.sc.Cog === genus)
+    if (!cog) return
+    w.c.cogs = w.c.cogs.filter(c => c !== cog)
+    w.drop(cog)
+    w.c.dead_tok = 'Cog:' + genus
+    this.Vyto_commission_on(w, w.c.cogs, 0)
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'death_wait', 14, async () => { await this.VytoStaple_await(w, 14, () => this.Vyto_rest_poll(w, 5)) })
+
+},
+// beat 6 — CLOSE on the fixed point: stir the unchanged world once more — a settled cut grants no
+//  motion (the EPS-tolerant law 1 leaves every target reference standing).
+async VytoMitosis_close(w) {
+    w.i({desc: 'stir the unchanged world — the settled flora grants no motion'})
+    w.c.closing = 1
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'close_wait', 14, async () => { await this.VytoStaple_await(w, 14, () => this.Vyto_rest_poll(w, 5)) })
+
+},
+// ── the witness — %see per truth once its condition holds (the once-noticed idiom), read off Vyto's
+//  world and spoken into the Book's own; sentences comma-free.
+VytoMitosis_witness(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (vw && vw.c.commission && vw.o({ Organ: 1 }).length === 10 && vw.o({ Bar: 1 }).length === 7 && !(w.oa({see: 'the glass was commissioned on a flora of three genera and stood its board'}))) w.i({see: 'the glass was commissioned on a flora of three genera and stood its board'})
+    if (this.Vyto_cells_at(w, 3) && !(w.oa({see: 'the flora took distinct seats — three genera cut into three cells inside the frame'}))) w.i({see: 'the flora took distinct seats — three genera cut into three cells inside the frame'})
+    if (this.Vyto_cells_at(w, 4) && !(w.oa({see: 'a lone genus arrived and joined near the crowd — the flora re-seated around a fourth cell'}))) w.i({see: 'a lone genus arrived and joined near the crowd — the flora re-seated around a fourth cell'})
+    if (this.Vyto_cells_at(w, 6) && !(w.oa({see: 'a batch of genera arrived and spread around the rim — the flora re-seated as six cells'}))) w.i({see: 'a batch of genera arrived and spread around the rim — the flora re-seated as six cells'})
+    if (this.VytoMitosis_extinct(w) && !(w.oa({see: 'a genus went extinct — its cell wore the departing escort then the ring shrank and the survivors re-seated'}))) w.i({see: 'a genus went extinct — its cell wore the departing escort then the ring shrank and the survivors re-seated'})
+    if (w.c.closing && w.c.settled && !(w.oa({see: 'an unchanged world granted no motion — the settled flora stood byte-identical'}))) w.i({see: 'an unchanged world granted no motion — the settled flora stood byte-identical'})
+
+},
+// cells_at — N live cells stand settled distinct and seated (the grow milestones read this).
+Vyto_cells_at(w, want) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    if (!w.c.settled) return 0
+    if (this.Vyto_cells(vw).length !== want) return 0
+    return (this.Vyto_seated(vw) && this.Vyto_distinct(vw)) ? 1 : 0
+
+},
+// extinct — the doomed genus's row has fully dropped after wearing its escort and five survivors rest.
+VytoMitosis_extinct(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !w.c.settled) return 0
+    if (!w.c.saw_departing) return 0
+    if (this.Vyto_has_tok(vw, w.c.dead_tok)) return 0
+    if (this.Vyto_cells(vw).length !== 5) return 0
+    return (this.Vyto_seated(vw) && this.Vyto_distinct(vw)) ? 1 : 0
+
+},
+// ══ VytoRadio — VoroRadio ported: the tuner flora DRIFTS and the HAND holds one cell ═══════════════
+//  The tenant-shaped demo (Voronation.g #region radio) as a Vyto client.  Voro's tuner drifted its
+//   attention across a fixed flora; here the six-genus flora is cut into cells, their DOSES DRIFT
+//    (aging → Express re-sizes → Solve re-seats), then THE HAND pins one cell by pointer (Calm's
+//     position pin) so it HOLDS its seat while the drifting world rearranges around it, and on release
+//      the hold eases back to free and retires from Calm's home.  This is how a client would let a
+//       user grab a cell mid-motion — the interruptibility want (spec §2), proven end to end.
+VytoRadio(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VytoRadio_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VytoRadio_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoRadio_seed(w)
+        if (n === 3) this.VytoRadio_drift(w)
+        if (n === 4) this.VytoRadio_hand(w)
+        if (n === 5) this.VytoRadio_release(w)
+    }
+    this.VytoRadio_witness(w)
+
+},
+// beat 2 — seed the six-genus tuner flora (VoroRadio's list) as individual grapples and commission a
+//  clean glass on them.  The batch spreads into six distinct seats sized by dose.
+async VytoRadio_seed(w) {
+    w.i({desc: 'seed the six-genus tuner flora and commission the glass'})
+    let cogs = []
+    cogs.push(this.Vyto_plant(w, 'Coprosma', 5))
+    cogs.push(this.Vyto_plant(w, 'Veronica', 4))
+    cogs.push(this.Vyto_plant(w, 'Metrosideros', 4))
+    cogs.push(this.Vyto_plant(w, 'Olearia', 3))
+    cogs.push(this.Vyto_plant(w, 'Pittosporum', 4))
+    cogs.push(this.Vyto_plant(w, 'Nothofagus', 3))
+    w.c.cogs = cogs
+    this.Vyto_commission_on(w, w.c.cogs, 1)
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'radio_seats', 16, async () => { await this.VytoStaple_await(w, 16, () => this.Vyto_rest_poll(w, 6)) })
+
+},
+// beat 3 — DRIFT: the tuner ages — doses shift (one genus swells one thins).  A client edits the gear
+//  and re-settles; Scan picks up the new doses, Express re-sizes those cells (env_area), Solve re-seats
+//   the whole flora.  Stash the swelling cell's area before so the witness can see it grow.
+async VytoRadio_drift(w) {
+    w.i({desc: 'the doses drift — the tuner ages and the cells re-size and re-seat'})
+    let vw = this.VytoStaple_vw(w)
+    let ver = this.VytoStaple_cog_row(vw, 'Veronica')
+    w.c.pre_area = ver ? ver.c.env_area : null
+    let vc = w.c.cogs.find(c => c.sc.Cog === 'Veronica')
+    let cc = w.c.cogs.find(c => c.sc.Cog === 'Coprosma')
+    if (vc) vc.sc.dose = '8'
+    if (cc) cc.sc.dose = '1'
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'radio_drift', 16, async () => { await this.VytoStaple_await(w, 16, () => this.Vyto_rest_poll(w, 6)) })
+
+},
+// beat 4 — THE HAND: pin one cell by pointer mid-drift (Vyto_pointer_enter mints Calm's position pin
+//  + size damp on its tok), then drift ANOTHER genus's dose.  The pinned cell HOLDS its seed through
+//   the re-solve while the changed cell re-sizes and moves — the world rearranges AROUND the held one.
+async VytoRadio_hand(w) {
+    w.i({desc: 'the hand pins one cell while the drift rearranges the rest'})
+    let vw = this.VytoStaple_vw(w)
+    let cop = this.VytoStaple_cog_row(vw, 'Coprosma')
+    let tok = cop ? cop.c.tok : null
+    if (tok) this.Vyto_pointer_enter(vw, tok)
+    w.c.hand_tok = tok
+    w.c.held_seed = (cop && cop.c.seed) ? { x: cop.c.seed.x, y: cop.c.seed.y } : null
+    let notho = this.VytoStaple_cog_row(vw, 'Nothofagus')
+    w.c.moved_T = notho ? notho.c.T : null
+    let nc = w.c.cogs.find(c => c.sc.Cog === 'Nothofagus')
+    if (nc) nc.sc.dose = '9'
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'radio_hand', 16, async () => { await this.VytoStaple_await(w, 16, () => this.Vyto_rest_poll(w, 6)) })
+
+},
+// beat 5 — RELEASE: the hand lets go (Vyto_pointer_leave stamps the holds released_at + the grawave
+//  ease).  Poll the wall clock (the ~400ms tail, main()-nudged) until Calm answers the cell FREE and
+//   no pointer hold survives on it — the hold eased to 1 and retired itself from Calm's home.
+async VytoRadio_release(w) {
+    w.i({desc: 'the hand lets go — the hold eases to free and retires itself'})
+    let vw = this.VytoStaple_vw(w)
+    let tok = w.c.hand_tok
+    if (tok) this.Vyto_pointer_leave(vw, tok)
+    w.c.released = 1
+    this.expecting(w, 'radio_release', 10, async () => { await this.VytoStaple_await(w, 10, () => this.VytoRadio_freed(w)) })
+
+},
+VytoRadio_freed(w) {
+    if (!w.c.released) return 0
+    let vw = this.VytoStaple_vw(w)
+    let cop = this.VytoStaple_cog_row(vw, 'Coprosma')
+    if (!vw || !cop) return 0
+    if (this.Vyto_calm_held(vw, cop, 'position') !== 1) return 0
+    if (this.Vyto_calm_held(vw, cop, 'size') !== 1) return 0
+    return (this.Vyto_holds_on(vw, w.c.hand_tok) === 0) ? 1 : 0
+
+},
+VytoRadio_witness(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (vw && vw.c.commission && vw.o({ Organ: 1 }).length === 10 && vw.o({ Bar: 1 }).length === 7 && !(w.oa({see: 'the tuner glass was commissioned on six genera and stood its board'}))) w.i({see: 'the tuner glass was commissioned on six genera and stood its board'})
+    if (this.Vyto_cells_at(w, 6) && !(w.oa({see: 'six genera took distinct seats sized by their dose — the tuner flora cut into the frame'}))) w.i({see: 'six genera took distinct seats sized by their dose — the tuner flora cut into the frame'})
+    if (this.VytoRadio_drifted(w) && !(w.oa({see: 'the doses drifted and the express organ re-sized the cells — the flora re-seated as it aged'}))) w.i({see: 'the doses drifted and the express organ re-sized the cells — the flora re-seated as it aged'})
+    if (this.VytoRadio_held(w) && !(w.oa({see: 'the hand held one cell in its seat while the drifting world rearranged around it'}))) w.i({see: 'the hand held one cell in its seat while the drifting world rearranged around it'})
+    if (this.VytoRadio_freed(w) && !(w.oa({see: 'the hand let go — the hold eased back to free and retired itself'}))) w.i({see: 'the hand let go — the hold eased back to free and retired itself'})
+
+},
+// drifted — Veronica's cell grew (its swelling dose lifted its env_area) and the flora rests distinct.
+VytoRadio_drifted(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !w.c.settled || w.c.pre_area == null) return 0
+    let ver = this.VytoStaple_cog_row(vw, 'Veronica')
+    if (!ver || ver.c.env_area == null) return 0
+    if (!(ver.c.env_area > w.c.pre_area)) return 0
+    return (this.Vyto_cells(vw).length === 6 && this.Vyto_seated(vw) && this.Vyto_distinct(vw)) ? 1 : 0
+
+},
+// held — the pinned cell kept its seed byte-identical through the drift while the changed cell's
+//  target moved (a new reference) — the pin holds the SITE while the world rearranges.
+VytoRadio_held(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !w.c.settled) return 0
+    let cop = this.VytoStaple_cog_row(vw, 'Coprosma')
+    let notho = this.VytoStaple_cog_row(vw, 'Nothofagus')
+    if (!cop || !notho || !cop.c.seed || !w.c.held_seed) return 0
+    if (!(cop.c.seed.x === w.c.held_seed.x && cop.c.seed.y === w.c.held_seed.y)) return 0
+    return (notho.c.T !== w.c.moved_T) ? 1 : 0
 
 },
 

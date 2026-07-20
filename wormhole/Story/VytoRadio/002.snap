@@ -1,0 +1,16 @@
+Snap:H
+  H:VytoRadio,Run
+    A:VytoRadio
+      self,round=3	{"mung":["age"]}
+      w:VytoRadio
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:Coprosma,dose:5
+        Cog:Veronica,dose:4
+        Cog:Metrosideros,dose:4
+        Cog:Olearia,dose:3
+        Cog:Pittosporum,dose:4
+        Cog:Nothofagus,dose:3
+        req:radio_seats,finished
+        see:the tuner glass was commissioned on six genera and stood its board
+        see:six genera took distinct seats sized by their dose — the tuner flora cut into the frame

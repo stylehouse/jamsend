@@ -5,182 +5,20 @@ Snap:H
       w:Sounditron
         self,round=7	{"mung":["age"]}
         req:wrangle,eternal,ok
-        Machine,self:56fbce44
+        Machine,self:3c5238c6,friendly:id-3c5238
         Radio:off,face:Radio
-        Stoker:idle,face:Stoker,crew:Radio,stood=8,stock=8,fresh=8
+        Stoker:idle,face:Stoker,crew:Radio,stood=20,stock=20,fresh=20
         Tuner:glass,face:Tuner
+        Riffle:shut,face:Riffle,crew:Riffle
+        Zine:Faves,face:Zine,crew:Radio,count:0
         Door:open,face:Door
         req:stoker_wait,finished
         req:witness,eternal,ok
-        MusuSelf,pub:56fbce4437d7265c
-          stock,pub:56fbce4437d7265c
-            Record,id:902552d4a0b8b0c1,title:Middle A,artist:The Sines,seconds=64,lufs=-8.13,gain=-5.87,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=32,bytes=517443
-              Preview,seq:0,head,preskip=312,cid:6e8fee072e2343f18dd0b235b6c62337915b64081e19d7a4dceff0a8e5efbf1e	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:1,cid:d50cd9c472da48e0eeb03fb919c290325601dc8feaa72a43a5286fbf842aba6d	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:2,cid:c4ac8f0be26b1e23d318ee2f095c398bc55a02ba92155ad1542776cda066d1c4	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:3,cid:3310b4bb4bd78a392c8892b76eb1ee2b9e6110a35d87a3b8117c358353c8c4bd	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:4,cid:05b51c925fbc8c83a6b8ec950bb08c7e6a108847338b87b448715e26cb3cd546	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:5,cid:99bf3a673887a7f606d2fe486f8cd2104e852ef744f44a62b32d453a118fc1a6	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:6,cid:75b75945f6cb38cad7587cf225764ea9cac39cb721de7544bbbbb64e87c71eba	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:7,cid:573ae7cfa0c46caa62e8e7f967418df9dc721a58a27022946c93b8c91faaca14	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:8,cid:faa313104be00484b8405f4ca141883e0010eb40be6c4bb51c1d1456e9ec905f	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:9,cid:97a832f890932d36c69d93a751120df8a394cb1ca650d0d15b146d500215c768	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:10,cid:448ad34af739797aad3b94e3fd0d1303f044a7b30e00e614c5aa03ce3a7caf55	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:11,cid:bd9630fa06d079b4490db2ae8ababfe24a27db70a420038eeb30e364de340ee9	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:12,cid:9c2d62fcdbdedf21d9392c2916fe87fe811322f2bfacde4533df9f0bf31169c7	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:13,cid:8d9f9ecf72b10382f9e22a43ead9c91875361062c856b1e4090858ca99d41f80	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:14,cid:90571f8a9cd684dd5f87e68c2b496204b81cd0d1f6e8a89201da6ccf7416ad04	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:15,cid:fee3890825f206c1d7cd039a09412e908dbce7f4091fcf4df10b7559758cb22d	{"ref":{"buf":"Uint8Array()"}}
-            Record,id:95f3c03e41e9c007,title:High A,artist:The Sines,seconds=80,lufs=-5.49,gain=-8.51,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=40,bytes=517443
-              Preview,seq:0,head,preskip=312,cid:3a1a8857cf8693aa586a628fe7b12a89e1a38e60a99779435b5b7410b879a64b	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:1,cid:34a18ed058d65a7022a36f7c7c373ab2db64b567fb7d9c21b9b4e628ae65e3a3	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:2,cid:5b4dfeac25ffe52f53e29a51176cb3f79b48cbbb8398af144a96c3d5e8e9ea40	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:3,cid:106a64f6960a37889d35b094b90353ed48dcd139eba00cb919642e484dd9897d	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:4,cid:77db6c58d029e9a60e11694e61d2b16a6fc64dbe3a2f3762ce719ae4bcc0dd24	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:5,cid:117c01313101d64e584e8c7816d5cad739120a0be41fe706073a2aea4ddf2aef	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:6,cid:2e7fb6873778a63b9a41f495d3884474707967f094eac9a09fba136cc9ef6527	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:7,cid:64c94209cb91e0aed0871c258dcb90ab3369b43c2efb29540cae16fa9948f440	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:8,cid:0cf3dab33e199a7f31d85a0a83d2280a374cdc7345db0c7cd3ea9e09d92f4871	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:9,cid:5e3e56c80a46db7448f2c14368d2c6f67160f22c0d74ade18d3a5963c0e4eeca	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:10,cid:35025254044d52fdb5e681a997a46f4558b1bebc64dd97eee37c3e9bcadfa768	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:11,cid:b5d0835534dac6ee047bcd45b286f38f029c24a6c600b451df2f53eeccabcbcb	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:12,cid:1be9361ee1ebcd0a39f638ecdde0cd806f004f3034c7f47ed4a5adb148bc8ae9	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:13,cid:b603442ee0fe19b8d348a77b0bbaf4b8c88ce72ea8fd232a01d9fde1d25fc989	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:14,cid:86626aa4a295ed065dbab23f2940d94ecf7a647f3e5336c8d1ec13173cf42e6f	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:15,cid:f6a9b2338fe8900b6b15e5def698a470bf8b13fc1e62b81db40e467caf8c242e	{"ref":{"buf":"Uint8Array()"}}
-            Record,id:d8a28ada85f2e851,title:Deep A,artist:The Sines,seconds=72,lufs=-8.35,gain=-5.65,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=36,bytes=517443
-              Preview,seq:0,head,preskip=312,cid:6aa477e2e147fb50fc9ce9327e739cfd02d83a7a836d47f6bda6c5cdf258450d	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:1,cid:170495ebc71901de59b36658ce40e5e8921488a703f37b949fe33c7277d565d9	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:2,cid:31e82c482c75fe8bd94bba707e0736900668a574ed61ed10811742f0b982f63f	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:3,cid:4547b49c7d9360349d5f9e013c6a938f9bb1963069486e3cf192494c59aa45f7	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:4,cid:5f7dfd104f116fc6f1d586c009135dba37276852e8af34eebe63131236f0d475	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:5,cid:c2460409fc18b7e44358d2a0a110743be0f9a077c654d89d751aa34f7bf960b4	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:6,cid:3094388965a9fa688196b286f7a620885522b076e5747a5964e6cc12477711e7	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:7,cid:4eea6d12868fd1dd5ac6542b25c8a0cf8d4bc87f83adf5b7b07e267ba0b67b27	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:8,cid:8b61aad694f24de56755817cf505bd56358713de42bb05bff513db2e85f8a0a9	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:9,cid:6c3ab2686749b553989b0a073279693c5b31e215534269258ac72018d585520a	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:10,cid:fc01542a870223c9d8ef7bfd4305f686769ac0469115a020d9c4ed17d7d40d75	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:11,cid:df18271a15a9e7265b5028365cf5d5462147e955fb779408f5e285e6944a83f5	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:12,cid:7e0f82c5ce06193ce6f8f7a817f9b93a0be41e9fe46dfbc0b72572b88f865215	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:13,cid:0db7145617dd1faa354388e2e7d6841d149c6339da56c98e6e972231b83a7c66	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:14,cid:d752ac9a0a3d24d9d413a3ff8f55969daa5309009802b8c4000d60946382eb99	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:15,cid:52a234763d2d739b529869feb7a281566b7ac5510fc02adef5a1ff8ac3a87c74	{"ref":{"buf":"Uint8Array()"}}
-            Record,id:a14602e5ca2e9bd0,title:Echo E,artist:Fourier Four,seconds=60,lufs=-6.61,gain=-7.39,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=30,bytes=517443
-              Preview,seq:0,head,preskip=312,cid:d73857561b57e6569cda7775287a4da127b470b6aa8ccd390477f12807bc54a6	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:1,cid:d9e4bdf1a64c47d9ff2534f6da271339f77c11a53554755406fb54cc89d2d8ff	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:2,cid:1c5b8e965ad2bbffcec126eabbc18d583b7cfbbdcaf397579df45093be3f47f8	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:3,cid:f7a57a2687b9bb06df6739bde706eee8c89369b3848bf39a85314b5c0dd4c716	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:4,cid:c00e57c0f41981517c420ed30aad9af1f3968d1575ca5d4f2ae85d3496ba0734	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:5,cid:dd29300eec3520f760a467da9960037fdba89bda0ea3bfa672b8fc9d1d59750e	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:6,cid:f1d3a89f6f45d2c34162c47249fc33b7bff98a24419cc970d5080974e9bf4657	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:7,cid:28595fcce501daf1f5dd01fb74455d422d14536153346ffeb65c6ad2daddf260	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:8,cid:7fb4e3175f7e9790988f7b434417799eeec838897c336280dca4f6f96cb003cc	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:9,cid:ec31ceb7e98cf916eda908f72767e9200f1ac204f08e5a9b99d0df781826c5f6	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:10,cid:157539d8699b7df93caf6cb8ee42621143c877ff60556a6745cfebfa85656464	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:11,cid:5887061e35a8dbc88be6f68670648ca548245628d67984fb4ebeea7ea5339cb6	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:12,cid:5b2e6a7ef8bcd2770bc36d10ed75e3cd676f3711b7621618c6c2d39016fe68f0	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:13,cid:1d80f64323e91a96388ccea29629ceb60b13b1bd94700433a3c7937a5e8a8887	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:14,cid:d44bb64b6f74a8257b71aa5108c40c67d806809369fc0387d7cae88faa0c5289	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:15,cid:b52ce08b6eb84cb9bc7057299ab2e32e66bad7cf9f8123c80d5bf62cd751c462	{"ref":{"buf":"Uint8Array()"}}
-            Record,id:cf95c97b08584b92,title:Groove G,artist:DJ Oscillo,album:testsounds,seconds=66,lufs=-7.83,gain=-6.17,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=33,bytes=517443
-              Preview,seq:0,head,preskip=312,cid:67419e8fa3c3f4c9ceb889789faa9a0d784acdffc0a788089c370e63e83df478	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:1,cid:2576b7739c6ea2c6579f39be6be0d496c7a34a93cb66d0a0d520dad6271338fa	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:2,cid:05c7fea85acc8edc86000f9f35a115cb00e4eceb903cff4ed181fac0efeba5f8	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:3,cid:193483b45ad507ceba81f9573b8ec23d2defff56d49ff7f51b80120197b3e007	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:4,cid:a5627faec21c811b4757966d5564e800bc6f4893aed00d462b3ce496167dc3c2	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:5,cid:15e4674069ba36484f86f836541726eb20e7d015654f0aa4275c26fa05f4804f	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:6,cid:a6ba3267c4eb2b5d7de63e4469870fe62bc79fc311caa9b695e826c78ba96283	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:7,cid:335e3652a45b14ee842cfa13d03198375321525de26b3855aefd4651e09d8a1f	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:8,cid:d05eeb7a97778d97f422012529898515a896f508dcc17a03bc1074f2523404b3	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:9,cid:8ac5fa66aa776cd1433b74267b30a0c7457e8acae6c9032aacc1b361c2cbfbab	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:10,cid:09667e0f3adc5f864799349f2211d9f6caeecf2607d769b730c9fddcb3039e18	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:11,cid:d9b765be978d816668d76ddce1b673949c0e79ab5c833ebf2114135eb273cd60	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:12,cid:780ea597c104da8b08b14050ab6995a0acfeca2825c61b10fc409e0ba5ed080e	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:13,cid:dd93e13abb139e2bcd23b30729a390b815a7eb81068906521a48696786f43e31	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:14,cid:ef1d506a4bb6944dd66576401f0056784f02a3380c614194767ffdb87290cd36	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:15,cid:dcb0d234b9f7543a4bc0481cc15c28d41e36fa4cd03e1fc34987050f1cb92580	{"ref":{"buf":"Uint8Array()"}}
-            Record,id:370d870166ffe45f,title:Query E,artist:Fourier Four,album:testsounds,seconds=68,lufs=-8.2,gain=-5.8,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=34,bytes=517443
-              Preview,seq:0,head,preskip=312,cid:9d7ede19d1935f9c689da21432cce531973d87b38c974f499c78dd12e3c7061c	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:1,cid:c0f1d76dc901face79957ddd2680cdea8d25f2b25e7aa67c9c2f296f6e890d0e	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:2,cid:448d9251780334e1541da1a4dd340c218abd00d649890068fe4cf0554a667095	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:3,cid:05d166c45a49e5f6ae0ace61ac6519c49a52e66dd5a45e04f89f6e3c950a8470	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:4,cid:56ec845b9d5f325a0e001731dc188ff63cc38ddb43d93ba36df656e7adbe63ac	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:5,cid:efa43f9200905a68d74cbb7e592dd0053f5d6fdd245d28753c310214df9f7264	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:6,cid:c15ea25302d0a6b734d97732d53301a93dbb53d67544494e52c3eee8b2bc4f7c	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:7,cid:088675a58cea20826e2c21764626782e2026d95223fa1f500f07610d48597fd7	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:8,cid:3bbdaa9b457b6906895e3409582d889050f588704c5c2249ff2803524845d9f5	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:9,cid:e7e658451decda4877ede8f5894e60e2ef25ad019a10cf45a6fdb1af523d9486	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:10,cid:8754ea81ec0a46f45ef9ca4a29d9a4a44712505911630bd6b8e0376864d52ffb	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:11,cid:fccaffb84de2bd2d684d7a4c2939f09167ff84f54d67347031e8bcc940d1eafb	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:12,cid:6e654ec46a4c5a4617093c8bf9c95fc243dff395d8076c918241e1db2bb02b1a	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:13,cid:44b7c89e5725e9f4145fe2dbe44553980953fcbc8b898ef1d6cec8b21fc4d575	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:14,cid:92ba74e4f012aed819bce92662216d3b88cbc9dcea4d5f8db6f0371c4a9dac79	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:15,cid:ccc93ce00366cc79d7ccdaa8cea577e3ac042b19fb1d9d7ff0e8443a14183ca0	{"ref":{"buf":"Uint8Array()"}}
-            Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
-              Preview,seq:0,head,preskip=312,cid:3457aa775f90150bb7dfee2664537ff0249c76f412150375802373b5dcd6e379	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:1,cid:24e815ca6fe5761ede36e7deca8327236309956d788d7280dbc8ede8ca0bf23b	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:2,cid:264238c1c63afa12031ca91e07293c7c4c15bb886d1f94e8877bfe0541051a17	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:3,cid:aa9dbc861991e9abee3f88f0308a07e85fefc22daa4d1a816dbd6b7765d27131	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:4,cid:d8b306612ace71a39769d537ad436fd14a8db41f23523dea8e042656395f301f	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:5,cid:df55a0d0259400a835144f5c24fbcc22abdbf2279c8793f801035388489d5aff	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:6,cid:7421c8384159092728bb78fe76d5682ecb026174db64edccab1977888f77f0f4	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:7,cid:d9a2d18f38ffb6bdd34937145c07661db3eec2038149be1c6789ef23a13bd222	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:8,cid:e586d7742fecdc1c937679a523e5706bc668298fc7165c334f392203dc113ade	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:9,cid:35ec8c6044f14e537c8f6e93ef6d52e7def4736a98cd04122dc56529ebba9232	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:10,cid:71b1dca8905cc9b4924814a56978fbeef18307dea496f9a3d509dc45a158bc5d	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:11,cid:f4c6666305796bfc9ad844007c919329eb6968c28221335251b4c0a4dc6a7a22	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:12,cid:728b06eb6b132f11d4580345ab2e8614e0d1f5163a7c2cfb9826f1a603851063	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:13,cid:009ed34af0bea671c1bc2cab4e9a52f2932f89625fad01ecfa27967e9e1e2d97	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:14,cid:819beaabf2ab5742123998ed14ec1b8a6601aab545d4ce893119feca0bdb78a6	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:15,cid:82060ded7c33145ae7de702e7550c7641590f602f69b86c6f8771abf8b815413	{"ref":{"buf":"Uint8Array()"}}
-            Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
-              Preview,seq:0,head,preskip=312,cid:3ccd2f51f3f3b66e3115ee8cb2d1c43575a42bf9704abf44b8af40d1a8d74d7b	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:1,cid:144cde8bcbf6a150cae10b2f4115f1fd62f97576477adbaaa900bac3cfc53872	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:2,cid:224607ca4d58380a3271f7a0a2621c076034997f83423effb1cabda2252985e3	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:3,cid:bd7e4cd4018af8df29a4ce36cf8cf48ddf14f9265dafc3ce6499e71a5280320a	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:4,cid:e562bac3d0f1dfc9969825f34ffb0ddba65467e2df0ca90f1b224292f3c6154d	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:5,cid:774bf989acb4a0f4d775b5bfbe38c4ceb10372cdaf58dbd2738898a012d0d3fe	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:6,cid:d8bb01b9d2fb794a054c6061e89c76ceb106dab97115ba1821d7def09396f1c1	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:7,cid:95eab5bfd38f7a92de39a3b55fc20b94c189ac99b985f641fc86eebd42613155	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:8,cid:2cc35a04310a7ad42dae8b64cafb15b5f0e8aeb7df88ef49a0fd2c30bea6b43f	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:9,cid:d2349eb37985140aeb5c6569fa2ab4ab0686d04ca04d2906be03c0c813eb0d28	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:10,cid:31def79e6787801b908766a4a114a111239e2ca5f05cbff6439cf001824c56b9	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:11,cid:4a8468642f8ba5b3c7eaf5f7095c26a62795c02dde06dc3cdea6d9a7c9984228	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:12,cid:525a5cfa378c5b2e7e05ed44ed3d6283cb7dc2bb9412200bbb9fdc8fd492b681	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:13,cid:d01bb06dff81abc1b549cc048d6b72c2088e6275ea02d7f82bdc6fa0145202ad	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:14,cid:2850cb9adf1f9f0a22ecd7de7829804b4247a3a225ca45568cbb3af88b69bc44	{"ref":{"buf":"Uint8Array()"}}
-              Preview,seq:15,cid:3ab52c6af8c8ee61b625c0831f959da0289a33ed976efd9f78e1b8d4547cc4ac	{"ref":{"buf":"Uint8Array()"}}
+        MusuSelf,pub:3c5238c68a3641c1
+          stock,pub:3c5238c68a3641c1	{"dontSnap":1}
+        Mag:Lineup,face:Lineup,crew:Radio,up_next:20	{"dontSnap":1}
         Relay
         req:relay_wait,finished
         req:muse_wait,finished
-        Possibility:1,via:peering
-        Census,n
-        Found:DJ Oscillo - Cosmic C,dir:testsounds
-        Found:DJ Oscillo - Dorian D,dir:testsounds
-        Found:DJ Oscillo - Groove G,dir:testsounds
-        Found:Fourier Four - Echo E,dir:testsounds
-        Found:Fourier Four - Query E,dir:testsounds
-        Found:The Sines - Deep A,dir:testsounds
-        Found:The Sines - High A,dir:testsounds
-        Found:The Sines - Middle A,dir:testsounds
-      w:Voronoiology,dontGraph
-        Voro,beat=4,level:L1,visible=11,cells:3,gangs=2,folded:1,count:1
-        cell:req,kind:gang,n:5
-        cell:MusuSelf 56fbce4437d7265c,kind:pane,n:1
-        bare:Machine,n:1
-        bare:Radio,n:1
-        bare:Stoker,n:1
-        bare:Tuner,n:1
-        bare:Door,n:1
-        Se:scape,grasped:3,born:1,died:0,loudest:Found,trait:dir: testsounds,regions:2
-        Se:input,arrived:11,left:0
-        Family:req,n:5,kind:gang,order_by:finished,axis:num,from:stoker_wait,to:witness
-          Se:drift,neu:1
-          Loud:eternal,share:2
-          Loud:ok,share:2
-        bare:Relay,n:1
-        cell:Found,kind:gang,n:8
-        bare:Possibility,n:1
-        bare:Census,n:1
-        Family:Found,n:8,kind:gang,order_by:dir,axis:lex,from:DJ Oscillo - Cosmic C,to:The Sines - Middle A
-          Se:drift,neu:9
+        Census,n=0
+      w:Voronoiology,dontGraph	{"dontSnap":1}

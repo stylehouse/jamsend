@@ -10,7 +10,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return '5cd5f0da43d76965~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return 'ad0c17f6593c8628~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -384,7 +384,7 @@ async MusuHeist_flow(w) {
                 if (!raw || !raw.byteLength) continue
                 disks.push({ entry: entry, bytes: raw.byteLength })
                 let hash = await this.Heist_hash(new Uint8Array(raw))
-                let card = b.own.o({ Record: 1 }).find((r) => r.sc.path === entry)
+                let card = this.Ra_recs(b.own).find((r) => r.sc.path === entry)
                 if (card && card.sc.body_hash === hash) ok = ok + 1
             }
         }
@@ -448,7 +448,7 @@ async MusuHeist_logs(w) {
             //    token no longer matches a real landing, so "never a word about the source" is enforced
             //     against provenance generally, not two literals.  Filenames-with-spaces safe (path == path).
             let e = this.Heist_newlyadded_entry(line)
-            if (!side.own.o({ Record: 1 }).find((r) => r.sc.path === e.entry)) clean = 0
+            if (!this.Ra_recs(side.own).find((r) => r.sc.path === e.entry)) clean = 0
         }
     }
     let row = { newlyadded_shape: 1, uno: counts.uno, duo: counts.duo }
@@ -475,7 +475,7 @@ async MusuHeist_deny(w) {
     } catch (er) { raw = null }
     let row = { denied: 1 }
     if (!raw || !raw.byteLength) row.gone = 1
-    if (!w.c.uno_lib.o({ Record: 1 }).find((r) => r.sc.path === drop)) row.carded_off = 1
+    if (!this.Ra_recs(w.c.uno_lib).find((r) => r.sc.path === drop)) row.carded_off = 1
     // the log stayed HONEST about the drop — the dropped entry's newlyadded line now reads `drop`, not a
     //  lie left behind as `fresh`.  Without this the sentence's "log honest" half rode on nothing.
     let post = await this.Heist_newlyadded_read(w.c.nav, w.c.mar_uno)
@@ -544,10 +544,10 @@ MusuHeist_witness(w) {
     if (!uno_lib || !duo_lib) return
     // the divided censuses stand — REAL files walked into %Records whose %Body chunks are whole original
     //  bytes; neither census holds the other's artists.
-    let cok = uno_lib.o({ Record: 1 }).length === 6 && duo_lib.o({ Record: 1 }).length === 3
+    let cok = this.Ra_recs(uno_lib).length === 6 && this.Ra_recs(duo_lib).length === 3
     // BOTH sides checked for whole original bytes (audit #1: the completeness loop used to run over duo
     //  only, so 6 of 8 tracks never had "whole bytes" witnessed — a truncated Sines/Oscillo body passed).
-    for (const rec of uno_lib.o({ Record: 1 })) {
+    for (const rec of this.Ra_recs(uno_lib)) {
         if (!['The Sines', 'DJ Oscillo'].includes(rec.sc.artist)) cok = false
         let map = this.Ra_chunk_map(rec)
         let held = 0
@@ -558,7 +558,7 @@ MusuHeist_witness(w) {
         }
         if (held !== +(rec.sc.total || 0)) cok = false
     }
-    for (const rec of duo_lib.o({ Record: 1 })) {
+    for (const rec of this.Ra_recs(duo_lib)) {
         if (rec.sc.artist !== 'Fourier Four') cok = false
         let map = this.Ra_chunk_map(rec)
         let held = 0
@@ -589,7 +589,7 @@ MusuHeist_witness(w) {
     //  genre (pfx + '-mathrock/'), not a bare substring (audit #5), so a dropped prefix cannot pass.
     if (ha) {
         let filed = 0
-        for (const rec of uno_lib.o({ Record: 1, artist: 'Fourier Four' })) {
+        for (const rec of this.Ra_recs(uno_lib).filter((r) => r.sc.artist === 'Fourier Four')) {
             if (('' + rec.sc.path).includes(w.c.genre_pfx + '-mathrock/')) filed = filed + 1
         }
         if (filed === 3 && !T.oa({ see: 'the landing filed by category — each track under the genre its filing named' })) this.MusuHeist_note(w, { see: 'the landing filed by category — each track under the genre its filing named' })
@@ -600,7 +600,7 @@ MusuHeist_witness(w) {
     //    original filename.  Tags catalogue and dedup; a cp never renames the bytes.  (Was "followed its tags
     //     home" — the tag-tree rename; that shape retired with cp.)
     if (ha && w.c.tag_title) {
-        let card = uno_lib.o({ Record: 1, artist: 'Fourier Four', title: w.c.tag_title })[0]
+        let card = this.Ra_rec_find(uno_lib, { Record: 1, artist: 'Fourier Four', title: w.c.tag_title })
         let cataloged_by_tag = card ? 1 : 0
         let kept_filename = card && ('' + card.sc.path).includes('Bogus Name') ? 1 : 0
         if (cataloged_by_tag === 1 && kept_filename === 1 && !T.oa({ see: 'a mislabeled file kept its own name on disk — the catalog knew the truth from the tags but a cp never renames the file' })) this.MusuHeist_note(w, { see: 'a mislabeled file kept its own name on disk — the catalog knew the truth from the tags but a cp never renames the file' })
@@ -612,10 +612,10 @@ MusuHeist_witness(w) {
     if (hb && +(hb.sc.landed || 0) === 6 && +(hb.sc.faithful || 0) === 6) {
         let chill = 0
         let bang = 0
-        for (const rec of duo_lib.o({ Record: 1, artist: 'The Sines' })) {
+        for (const rec of this.Ra_recs(duo_lib).filter((r) => r.sc.artist === 'The Sines')) {
             if (('' + rec.sc.path).includes(w.c.genre_pfx + '-chillwave/')) chill = chill + 1
         }
-        for (const rec of duo_lib.o({ Record: 1, artist: 'DJ Oscillo' })) {
+        for (const rec of this.Ra_recs(duo_lib).filter((r) => r.sc.artist === 'DJ Oscillo')) {
             if (('' + rec.sc.path).includes(w.c.genre_pfx + '-bangers/')) bang = bang + 1
         }
         if (chill === 3 && bang === 3 && !T.oa({ see: 'the mirror heist landed the other way — each end filed the same disk under its own categories' })) this.MusuHeist_note(w, { see: 'the mirror heist landed the other way — each end filed the same disk under its own categories' })
@@ -662,15 +662,15 @@ MusuHeist_witness(w) {
     //   magazine record still held by the collection: no orphan).
     let mr = T.o({ mag_pub: 'recast' })[0]
     let mag_cards = magR ? this.Musica_cards(magR).length : 0
-    let no_orphan = magR && magR.o({ Cloud: 1 }).every((cl) => cl.o({ Card: 1 }).every((r) => uno_lib.o({ Record: 1, id: r.sc.id }).length === 1))
+    let no_orphan = magR && magR.o({ Cloud: 1 }).every((cl) => cl.o({ Card: 1 }).every((r) => this.Ra_recs(uno_lib).filter((x) => x.sc.id === r.sc.id).length === 1))
     if (mr && +(mr.sc.cards || 0) === 8 && mag_cards === 8 && no_orphan && !T.oa({ see: 'a republish recast the real magazine in step with the collection — the denied track left the magazine too and no orphan stayed behind' })) this.MusuHeist_note(w, { see: 'a republish recast the real magazine in step with the collection — the denied track left the magazine too and no orphan stayed behind' })
     // afterwards nothing attributes: the scaffolding flattened away entirely AND no surviving collection
     //  card carries a source/from breadcrumb (audit #10 — the "nothing attributes who gave what" half was
     //   unwitnessed; a landed card stamped with its origin would have flattened green).  Provenance lives on
     //    the MIRROR cards' .c only (runtime, never snapped) — the landed cards must be attribution-free.
     let no_attribution = 1
-    for (const r of uno_lib.o({ Record: 1 })) { if (r.sc.source || r.sc.from || r.oa({ from: 1 })) no_attribution = 0 }
-    for (const r of duo_lib.o({ Record: 1 })) { if (r.sc.source || r.sc.from || r.oa({ from: 1 })) no_attribution = 0 }
+    for (const r of this.Ra_recs(uno_lib)) { if (r.sc.source || r.sc.from || r.oa({ from: 1 })) no_attribution = 0 }
+    for (const r of this.Ra_recs(duo_lib)) { if (r.sc.source || r.sc.from || r.oa({ from: 1 })) no_attribution = 0 }
     if (T.oa({ flattened: 1 }) && !w.o({ Heist: 1 }).length && no_attribution && !T.oa({ see: 'the scaffolding flattened away — no heist stands and nothing attributes who gave what' })) this.MusuHeist_note(w, { see: 'the scaffolding flattened away — no heist stands and nothing attributes who gave what' })
 
 },
@@ -911,7 +911,7 @@ MusuVend_witness(w) {
     let light = vmag ? 1 : 0
     if (vmag) {
         for (const card of this.Musica_cards(vmag)) { if (card.o().length) { light = 0 } }
-        let heavy = w.c.origin_lib && w.c.origin_lib.o({ Record: 1 }).length && w.c.origin_lib.o({ Record: 1 }).every((r) => r.o({ Stream: 1 }).length)
+        let heavy = w.c.origin_lib && this.Ra_recs(w.c.origin_lib).length && this.Ra_recs(w.c.origin_lib).every((r) => r.o({ Stream: 1 }).length)
         if (!heavy) { light = 0 }
     }
     if (light && !T.oa({ see: 'the magazine is the catalog not the payload — each crossed card is an identity leaf while the library record it sublimed from stays streamable' })) this.MusuVend_note(w, { see: 'the magazine is the catalog not the payload — each crossed card is an identity leaf while the library record it sublimed from stays streamable' })
@@ -3656,7 +3656,7 @@ async MusuSoft_setup(w, nav) {
     this.Repli_register_caster(w, link[0], origin_lib)
     await this.expecting(w, 'soft_census', 90, async () => {
         let cen = await this.Heist_census(w, origin_lib, nav, 'testsounds', ['DJ Oscillo'])
-        let recs = origin_lib.o({ Record: 1 })
+        let recs = this.Ra_recs(origin_lib)
         // pin the chosen card's identity (Cosmic C) so the wish, the Lead, and the discriminator all agree; and
         //  the two decoys so the witness reads them staying unspent.
         let cosmic = recs.find((r) => r.sc.title === 'Cosmic C')
@@ -3757,9 +3757,9 @@ async MusuSoft_condense(w, nav) {
         w.c.seeker_stock = own
         // the hardened wish's `at` becomes the job — reuse the filing the condense pinned; Heist_beat lands the
         //  one record whole (same-world mirror, null wire — the MusuBreach idiom).
-        let landed0 = own.o({ Record: 1 }).length
+        let landed0 = this.Ra_recs(own).length
         await this.Heist_beat(w, null, null, null, wish, own, mir, nav, mardir)
-        let landed = own.o({ Record: 1 })
+        let landed = this.Ra_recs(own)
         let got = landed.find((r) => r.sc.id === w.c.want_id)
         let m = this.MusuSoft_note(w, { pulled: 1, landed: landed.length, took: +(wish.sc.landed || 0) })
         // the wanted track landed WHOLE (body_hash present on the settled card) in the seeker's mirror stock.
@@ -3962,7 +3962,7 @@ async MusuBay_setup(w, nav) {
         // pin the CHOSEN card (Origin1's Cosmic C) so wish, Lead, Heistlet + discriminator all agree; and the
         //  two Origin1 decoys so the witness reads them staying unspent.  A fabricated id the far side LACKS is
         //   the negative control the Heistlet asks about beside the real one.
-        let recs1 = origin1_lib.o({ Record: 1 })
+        let recs1 = this.Ra_recs(origin1_lib)
         let cosmic = recs1.find((r) => r.sc.title === 'Cosmic C')
         if (cosmic) w.c.want_id = cosmic.sc.id
         let decoys = []
@@ -4117,7 +4117,7 @@ async MusuBay_pull(w, nav) {
         let own = this.Ra_home_them(w, wish.sc.at)
         w.c.seeker_stock = own
         await this.Heist_beat(w, null, null, null, wish, own, mir, nav, mardir)
-        let landed = own.o({ Record: 1 })
+        let landed = this.Ra_recs(own)
         let got = landed.find((r) => r.sc.id === w.c.want_id)
         let m = this.MusuBay_note(w, { pulled: 1, landed: landed.length })
         if (got && got.sc.body_hash) m.sc.landed_whole = 1

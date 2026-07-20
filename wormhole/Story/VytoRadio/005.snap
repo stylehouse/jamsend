@@ -1,0 +1,22 @@
+Snap:H
+  H:VytoRadio,Run
+    A:VytoRadio
+      self,round=9	{"mung":["age"]}
+      w:VytoRadio
+        self,round=9	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:Coprosma,dose:1
+        Cog:Veronica,dose:8
+        Cog:Metrosideros,dose:4
+        Cog:Olearia,dose:3
+        Cog:Pittosporum,dose:4
+        Cog:Nothofagus,dose:9
+        req:radio_seats,finished
+        req:radio_drift,finished
+        req:radio_hand,finished
+        req:radio_release,finished
+        see:the tuner glass was commissioned on six genera and stood its board
+        see:six genera took distinct seats sized by their dose — the tuner flora cut into the frame
+        see:the doses drifted and the express organ re-sized the cells — the flora re-seated as it aged
+        see:the hand held one cell in its seat while the drifting world rearranged around it
+        see:the hand let go — the hold eased back to free and retired itself

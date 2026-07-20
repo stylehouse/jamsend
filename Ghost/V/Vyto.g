@@ -447,21 +447,22 @@ Vyto_solve(w):
     //   construction (never Math.random — solver law 4); prior seeds ride row.c.seed.
     let existing = []
     for (const m of members) { if (m.c.seed) existing.push(m.c.seed) }
-    // a COLD BATCH of newcomers — several arriving at once with NO settled cell to join (the
-    //  multi-grapple commission's first solve) — must SPREAD.  Entering each at the boundary point
+    // a BATCH of newcomers — several arriving in the SAME solve (a multi-grapple commission's first
+    //  cut, or several grapples added at once) — must SPREAD.  Entering each at the boundary point
     //   nearest the running mean piles the whole batch on ONE point (the mean of a single boundary
     //    point is that point, whose nearest boundary is itself), and coincident seeds never separate
     //     (power_cells skips the wall between seeds < 0.5 apart, so each takes the whole frame and
-    //      the relax pulls them all to the same centroid).  So spread a cold batch around the frame
-    //       perimeter at distinct deterministic points; a lone newcomer joining settled cells keeps
-    //        the original nearest-to-mean entry (VytoStaple's single grapple is unaffected — batch 1).
-    let prior = existing.length
+    //      the relax pulls them all to the same centroid).  So spread a batch around the frame
+    //       perimeter at distinct deterministic points — whether the frame was empty (a cold start)
+    //        or already holds settled cells (a mid-run arrival: the newcomers enter at the rim and
+    //         relax inward among the standing cut).  A LONE newcomer keeps the original nearest-to-
+    //          mean entry — it joins the crowd — so VytoStaple's single grapple is unaffected (batch 1).
     let batch = members.filter(m => !m.c.seed).length
     let placed = 0
     for (const m of members) {
         if (m.c.seed) continue
         let entry
-        if (prior === 0 && batch > 1) {
+        if (batch > 1) {
             entry = this.Vyto_frame_at(frame, (placed + 0.5) / batch)
         } else {
             entry = this.Vyto_frame_nearest(frame, this.Vyto_seed_mean(existing))
