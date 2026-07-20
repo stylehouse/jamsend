@@ -233,3 +233,26 @@ Defaults taken unless vetoed: ε = 0.5 px · drift 0.25 px/frame · SETTLE_FRAME
    dead-detector on multi-cell worlds (a 6-cell settle took ~14s and false-deaded).
     Burst solves per poll — up to a bounded batch, declaring rest the instant a solve
      rewrites no target (Vytonation's `Vyto_rest_poll` does).
+
+## VYTO REQUESTS — from the wire side (Radio/Sounditron client, 2026-07-21)
+
+Filed by the wire-side agent (licensed by the human) as the parity work that gates Sounditron's
+ full move off Cyto+Voro+faces onto Vyto (see §0 "The migration model").  These are demands ON
+  Vyto.g/Vytui — the wire side won't build them (avoid-zone); they are what Vyto must grow before
+   Sounditron can commission it from within and drop the flag.
+
+1. **A timeline face — step around in time (the human's headline ask).** Like Storui's timeline:
+    a strip that steps back/forward through the run's moments and SHOWS the last few places the
+     world was — an ongoing Story, not just the live frame.  The data already exists: the Run's
+      step/got_snap spool history (`Vyto_spool_*` already captures moments; Storui's step→yore_n
+       seek shim is the model — point the face at that same source).  This is the headline gap —
+        Sounditron's value is the meander through time, which plain live cells don't carry.
+2. **Face / crew parity for the Radio organs.** Vyto v1 is plain cells; Sounditron's UI is
+    face-heavy (RadioFace / TunerFace / StokerFace / DoorFace / … + the Gang/crew crowd + the
+     sub-cell world).  For Sounditron to move without regressing, a Vyto cell needs to host its
+      organ's face (or an equivalent), the Gang needs a crowd rendering, and the sub-cell world
+       needs a home.  Take these as individual requests as they're reached, not one big bang.
+3. **Retire the Voro overlay per-Book.** Suspected reason `?VY=1` looked identical to Voro: the
+    Voro glass rides ATOP the base regardless of Cyto|Vyto.  When a Book commissions Vyto its Voro
+     overlay must not render — the migration drops the overlay, not just swaps the base.  (Wire
+      side will confirm the suspicion at cutover; flagging it so Vyto owns the per-Book off-switch.)
