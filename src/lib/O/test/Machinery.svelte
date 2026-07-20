@@ -328,10 +328,14 @@
         const QUUX     = seed('quux',     'SearchW/quux.ts',    'seed-quux-1',
             'records the frobnitz once\n')
 
-        // ── beat 0: seed + one real scan pass → the index converged (all three, none missing) ──
+        // ── beat 0: seed + one real scan pass → every SEEDED doc converged (indexed, none missing).
+        //   Scoped to the three SearchW paths, NOT the global roster total: the toc's
+        //    Opt/dontSnapGhostList gates the GhostList out of the WORK (Lies.svelte:849 — a bare
+        //     in-Story Lies would otherwise keep that chrome), so never gate on `total`. ──
         await H.e_Lies_stemdex_scan(A, w, e)
-        const r0 = H.Lies_search(w, 'zorble', 24)
-        if (r0.total === 3 && r0.done === 3 && H.Lies_stemdex(w).missing === 0) gate.i({ index_converged: 1 })
+        const dex = H.Lies_stemdex(w)
+        const seeded_indexed = [ZORBLE, FROBNITZ, QUUX].every(p => dex.docs.has(p))
+        if (seeded_indexed && dex.missing === 0) gate.i({ index_converged: 1 })
 
         // ── beat 1: a method search finds the def by name with file + line ──
         const d1 = (H.Lies_search(w, 'frobnicate', 24).defs as any[]).find(d => d.name === 'frobnicate')
