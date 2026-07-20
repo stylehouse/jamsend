@@ -40,6 +40,9 @@ Waft:Ghost/Vis/Visua
     Point,method:VytoCell_seed
     Point,method:VytoMitosis_found
     Point,method:VytoRadio_seed
+    Point,method:VytoTandem_found
+    Point,method:VytoFreeze_stand
+    Point,method:VytoSeek_stand
     Doc:src/lib/O/Vytui.svelte
     Doc:src/lib/O/spec/Vyto_spec.md
     Doc:src/lib/O/spec/Vyto_todo.md

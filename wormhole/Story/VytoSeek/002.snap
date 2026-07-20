@@ -1,0 +1,10 @@
+Snap:H
+  H:VytoSeek,Run
+    A:VytoSeek
+      self,round=3	{"mung":["age"]}
+      w:VytoSeek
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:seek,dose:1
+        req:seek_stand,finished
+        see:the spool stood three moments — two step-tagged and one scrubber-only with no step

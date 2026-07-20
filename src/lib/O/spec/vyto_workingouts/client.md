@@ -112,8 +112,8 @@ While a Story run DRIVES (`Run.c.run.c.driving` truthy) the renderer jumps-to-ta
 - Fold · Gang · Relate are station stubs; no crush, no gangs, no %Seem grasp.
 - No recipe/Sunpit (grapples are an explicit list or the Scannable default), no nested
    scopes (top-level rows only), no `H.stashed` persistence (session-only, ruled).
-- Storui's seek is still hardwired to Cyto — the whichever-glass dispatch + step→yore_n
-   shim are owed engineering, so seeking a Vyto spool from Storui does not work yet.
+- (Storui seek: DONE 2026-07-20 — a commissioned glass now takes the step pip beside Cyto,
+   `e_Vyto_seek` translating step→yore; the Cyto path is byte-unchanged.)
 
 ## Onward
 

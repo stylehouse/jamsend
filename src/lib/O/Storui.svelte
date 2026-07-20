@@ -1011,6 +1011,12 @@
         if (display.open_at) {
             // feebly: a Book without Opt/useCyto has no A:Cyto to seek — no-op, don't throw.
             setTimeout(() => H.feebly_i_elvisto('Cyto/Cyto', 'Cyto_seek', { open_at: display.open_at }), 0)
+            // whichever-glass (§12 moult): a commissioned Vyto glass gets the SAME step pip, routed to
+            //  e_Vyto_seek, which translates the step to the yore_n of the moment carrying that step_n
+            //   (moments with no step_n are scrubber-only, never matched).  feebly → a run with no
+            //    A:Vyto no-ops; the two glasses are mutually-exclusive per run, so the Cyto path is
+            //     byte-unchanged and only the commissioned glass ever responds.
+            setTimeout(() => H.feebly_i_elvisto('Vyto/Vyto', 'Vyto_seek', { step_n: display.open_at }), 0)
         }
     })
     // when the panel opens from outside (server-pushed open_at: end of run,

@@ -1,0 +1,12 @@
+Snap:H
+  H:VytoTandem,Run
+    A:VytoTandem
+      self,round=5	{"mung":["age"]}
+      w:VytoTandem
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:tandem,dose:1
+        req:tandem_setup,finished
+        req:tandem_both,finished
+        see:a plain watcher and a Vyto grapple both took a watch on one gear — the old dedup would have dropped the second
+        see:one bump fired both watchers — the plain hand counted and the Vyto grapple stirred

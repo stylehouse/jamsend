@@ -1,0 +1,7 @@
+Snap:H
+  H:VytoSeek,Run
+    A:VytoSeek
+      self,round	{"mung":["age"]}
+      w:VytoSeek
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

@@ -1,0 +1,10 @@
+Snap:H
+  H:VytoFreeze,Run
+    A:VytoFreeze
+      self,round=3	{"mung":["age"]}
+      w:VytoFreeze
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:freeze,dose:1
+        req:freeze_trim,finished
+        see:the spool over-filled and the cull trimmed the loose ring to its cap while the run stood green

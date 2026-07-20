@@ -1480,18 +1480,33 @@ export class House extends StorableHousing {
     // The debounced flush means handlers always read a fully committed X —
     // they fire ~half a tick after the version bump, well after mutex release.
 
-    watched:   Array<{ C: TheC, handler: () => void | Promise<void> }> = $state([])
-    watched_v: number[] = []
+    // Each entry is one (C, owner) watch: an owner may watch a C at most once, but MANY owners may
+    //  watch the SAME C — the old single-slot dedup (by C alone) silently dropped a second watcher, so
+    //   a resident integration and a Vyto grapple could not both ride one bump.  `v` is the entry's own
+    //    last-seen version (was the parallel watched_v[] — moved onto the entry so a per-owner teardown
+    //     is a clean filter, no index bookkeeping); `dead` is the era guard set at teardown.
+    watched:   Array<{ C: TheC, handler: () => void | Promise<void>, owner?: unknown, v: number, dead?: boolean }> = $state([])
 
     // high level: create|return eg H/%watched:ave to .i(C_to_give_UI)
     watch(channel_name:'UIs'|'ave'|'actions'|'graph') {
-        return this.oai_enroll(this, { watched: channel_name }) 
+        return this.oai_enroll(this, { watched: channel_name })
     }
-    // low level: your handler reacts to ~C
-    watch_c(C: TheC, handler: () => void | Promise<void>) {
-        if (this.watched.some(w => w.C === C)) return
-        this.watched.push({ C, handler })
-        this.watched_v.push(C.version)
+    // low level: your handler reacts to ~C.  Optional `owner` tags the watch so it can be torn down
+    //  later (unwatch_owner) and so a second owner can watch the same C.  Dedup is per (C, owner): an
+    //   OWNERLESS caller (owner undefined — every current caller) dedups by C among ownerless callers
+    //    exactly as before, and coexists with any owned watch on that C.
+    watch_c(C: TheC, handler: () => void | Promise<void>, owner?: unknown) {
+        if (this.watched.some(w => w.C === C && w.owner === owner)) return
+        this.watched.push({ C, handler, owner, v: C.version })
+    }
+
+    // unwatch_owner — tear down every handler this owner placed (the owed teardown-on-decommission;
+    //  until now only House death cleared watches).  ERA-GUARDED: mark the entries dead FIRST so a
+    //   flush already in flight (mid-await on an earlier handler) can never fire a torn-down one, then
+    //    drop them from the list.
+    unwatch_owner(owner: unknown) {
+        for (const w of this.watched) { if (w.owner === owner) w.dead = true }
+        this.watched = this.watched.filter(w => w.owner !== owner)
     }
 
     start_watched_C_effect() {
@@ -1502,17 +1517,21 @@ export class House extends StorableHousing {
         // pending stays true during the wait so rapid bumps share one flush.
         const flush = () => this.clear(async () => {
             pending = false
-            for (let i = 0; i < this.watched.length; i++) {
-                const C = this.watched[i].C
-                const v = C.version
-                if (v !== this.watched_v[i]) {
-                    this.watched_v[i] = v
-                    await this.watched[i].handler()
+            // iterate a STABLE snapshot: a handler (or a concurrent decommission) may mutate
+            //  this.watched across an await, and each entry carries its own last-seen version + dead
+            //   flag, so a torn-down owner never mis-fires and a shifting list never skips a handler.
+            for (const w of this.watched.slice()) {
+                if (w.dead) continue
+                const v = w.C.version
+                if (v !== w.v) {
+                    w.v = v
+                    if (w.dead) continue   // torn down while an earlier handler awaited
+                    await w.handler()
                 }
             }
         })
         $effect(() => {
-            for (const { C } of this.watched) void C.version
+            for (const w of this.watched) void w.C.version
             if (!pending) { pending = true; setTimeout(flush, ANSWER_CALLS_TICK_MS / 2) }
         })
     }
@@ -1526,7 +1545,7 @@ export class House extends StorableHousing {
         }
         for (const H of targets) {
             for (const C of H.o({ watched: 1 }) as TheC[]) {
-                if (this.watched.some(w => w.C === C)) continue
+                if (this.watched.some(w => w.C === C && w.owner === undefined)) continue
                 const key = C.sc.watched as string
                 const fn: Function = C.sc.fn ?? (() => {
                     // Replicate source C's watchables into the dest TheC on H.

@@ -23,9 +23,11 @@ The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it 
       VytoRadio), and take model gaps they hit as requests against Vyto.g rather than
        letting the model fork.  Two runner tabs on the fleet — ours is the ★claude one;
         pin `--runner=` always.
-- **Owed engineering** (small, any time): watch_c era-guarded multi-handler + teardown-on-
-   decommission; spool freeze-on-run-fail (watch step verdicts); the step→yore_n shim +
-    whichever-glass seek dispatch for Storui (§12 moult seam).
+- **Owed engineering — LANDED 2026-07-20** (the three units, all live-gated GREEN, see
+   "what stands"): watch_c era-guarded multi-handler + teardown-on-decommission (Unit 1),
+    spool freeze-on-run-fail (Unit 2), the step→yore_n shim + whichever-glass seek dispatch
+     for Storui (Unit 3).  Awaiting the human's commit + confirmation of the three flagged
+      decisions (below).
 - **Seeing it**: nothing resident commissions Vyto yet, so the first cells are seen by
    running VytoCell on a visible runner tab — the parked-run gate lifts when the run
     stops driving and the springs animate the standing world.
@@ -95,6 +97,41 @@ The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it 
           a settle tolerance EPS = 0.5 px (an exact `!==` rewrites T forever on
            sub-pixel relax drift — law 1 needs a rest threshold to be byte-true).
 
+- **The owed-engineering trio (2026-07-20, all live-gated GREEN ×2)** — the three §0
+   items, landed as one round while the Radio agent integrates:
+  - **Unit 1 — watch_c era-guarded multi-handler + teardown** (`Housing.svelte.ts` core
+     spine, one coherent write): `watched` entries carry an `owner` and their own last-seen
+      `v` (the parallel `watched_v[]` is gone, so per-owner teardown is a clean filter);
+       `watch_c(C, handler, owner?)` dedups per **(C, owner)** — every current ownerless
+        caller stays byte-identical AND now coexists with an owned watch on the same C;
+         new `unwatch_owner(owner)` tears down by owner, era-guarded (marks entries `dead`
+          before filtering; the flush walks a stable snapshot with a `dead` check so a
+           concurrent decommission never mis-fires).  `Vyto.g`: `Vyto_watch` tags each
+            grapple `owner = w`; `Vyto_decommission(w)` → `unwatch_owner(w)`.  Gate:
+             **VytoTandem** GREEN ×2 (two watchers on one C — old dedup dropped the second;
+              decommission leaves only the survivor).  Regression: VytoStaple/Cell/Mitosis/
+               Radio + **LakeTiles** (the Lies `watch_c(waft)` Book) all green — ownerless
+                callers unperturbed.  **Retires the top hazard below.**
+  - **Unit 2 — spool freeze-on-run-fail** (`Vyto.g`): `Vyto_spool_frozen(w)` reads the Run
+     ref's `Run.c.run.sc.failed_at` (the step Story stamps when a run PAUSES at a failing
+      step — the resident/editor forensics path, not a headless flag-and-continue); when
+       frozen, `Vyto_spool_cull` returns early so a failed run's whole ring survives as
+        evidence (extends the o/bless exemption to the ring).  Gate: **VytoFreeze** GREEN
+         ×2 — green run culls to the ~60 cap, a mock Run then lands `failed_at` and a
+          further cull freezes so all 66 survive.
+  - **Unit 3 — Storui whichever-glass seek + step→yore_n shim** (`Storui.svelte`, Story's
+     UI): beside the byte-unchanged `Cyto_seek` elvis sits a feeble `Vyto_seek` one — a
+      commissioned glass gets the same step pip, no-ops for a Cyto-only run (glasses are
+       mutually exclusive per run).  `Vyto.g`: `e_Vyto_seek` → `Vyto_seek_to(w, opts)` — a
+        `yore_n` seek parks directly (byte-unchanged), a `step_n` seek translates to the
+         yore of the moment carrying that step (a scrubber-only moment with no step_n is
+          unreachable — `Number(undefined)` is NaN, matched by nothing; no match parks at
+           live).  Gate: **VytoSeek** GREEN ×2 (step 4 → yore 20; unmatched step +
+            scrubber-only stay unreachable).  Cyto path byte-identical; Storui bundle-proofed
+             200.  Book-gated the resolver; only the `$effect`'s glass-pick is hand-verified
+              (a headless Book can't drive UI reactivity).  **Retires the Storui-seek hazard
+               below.**
+
 ## Fresh from the 2026-07-20 round
 
 Three flags the human dropped this round, each folded into its workingout:
@@ -139,17 +176,21 @@ Defaults taken unless vetoed: ε = 0.5 px · drift 0.25 px/frame · SETTLE_FRAME
 
 ## Hazards the workingouts found (verify-against-live-code laws)
 
-- `watch_c` dedups by C ref per House SILENTLY — one handler per (House, C).  Story already
-   watches The_Styles/The_Opt on the Story House; a Vyto grapple there would no-op.  Owed:
-    era-guarded multi-handler, and teardown (no unwatch exists — only House death).
+- ~~`watch_c` dedups by C ref per House SILENTLY — one handler per (House, C)~~ **RESOLVED
+   Unit 1 (2026-07-20)**: dedup is now per **(C, owner)**; an owned grapple coexists with
+    another ghost's ownerless watch on the same C, and `unwatch_owner` gives real teardown.
+     Ownerless callers (Story ×2, Lies ×2, Auto, &c.) are byte-identical.
 - Version bumps NEVER propagate up the C tree — a shelf watch is blind to cards landing on
    a page.  The transitive `deep:` grapple derivation is load-bearing, not a convenience.
 - Flush handlers run UNDER a fresh beliefs-mutex hold — "off the beat" is not "off the
    mutex"; an unbounded await in a handler starves beats exactly like in a do_fn.
 - `run.c.step_n` is never cleared after a run — step_n stamping must gate on `run.c.driving`
    or overtime moments wear the last step's number.
-- Storui's seek dispatch is hardwired `'Cyto/Cyto'` with open_at as a STEP number — the §12
-   moult seam; Vyto needs the whichever-glass dispatch + a step→yore_n shim.
+- ~~Storui's seek dispatch is hardwired `'Cyto/Cyto'` with open_at as a STEP number~~
+   **RESOLVED Unit 3 (2026-07-20)**: a feeble `Vyto_seek` elvis sits beside the
+    byte-unchanged `Cyto_seek` one; `e_Vyto_seek`/`Vyto_seek_to` translates step→yore.  One
+     remaining hand-verified seam: the `$effect`'s choice of WHICH glass to poke (a headless
+      Book can't drive UI reactivity — the resolver it calls is fully Book-gated).
 - A Story-run Run House goes QUIESCENT under a ttlilt hold — a debounced watch-flush stir
    never gets its `clear()` cycle there, so a Book driving the watch across beats must
     nudge `main()` while it polls (VytoStaple's expecting-poll does).  A resident glass on

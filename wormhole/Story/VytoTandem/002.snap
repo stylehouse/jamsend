@@ -1,0 +1,10 @@
+Snap:H
+  H:VytoTandem,Run
+    A:VytoTandem
+      self,round=3	{"mung":["age"]}
+      w:VytoTandem
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:tandem,dose:1
+        req:tandem_setup,finished
+        see:a plain watcher and a Vyto grapple both took a watch on one gear — the old dedup would have dropped the second

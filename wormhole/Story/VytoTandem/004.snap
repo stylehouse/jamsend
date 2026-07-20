@@ -1,0 +1,14 @@
+Snap:H
+  H:VytoTandem,Run
+    A:VytoTandem
+      self,round=7	{"mung":["age"]}
+      w:VytoTandem
+        self,round=7	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:tandem,dose:1
+        req:tandem_setup,finished
+        req:tandem_both,finished
+        req:tandem_survive,finished
+        see:one bump fired both watchers — the plain hand counted and the Vyto grapple stirred
+        see:decommission tore down the Vyto watches by owner and left the plain hand standing
+        see:a further bump fired only the survivor — the torn-down grapple never stirred again

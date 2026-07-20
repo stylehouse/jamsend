@@ -121,13 +121,27 @@ Vyto_grapples(w, req):
 //  after beliefs settles — but ONCE PER CHANGED C, not once per burst, and under a fresh
 //   mutex hold (workingouts/commission.md, checked against Housing) — so Vyto adds its OWN
 //    trailing-edge latch (Vyto_stir_soon) to fold N grapple bumps into one stir.  watch_c
-//     dedups by C ref per House, SILENTLY: a re-commission over the same gear is idempotent,
-//      but a grapple on a C another ghost already watches would silently no-op — the owed
-//       fix (era-guarded multi-handler) rides Vyto_todo, with teardown-on-decommission.
+//     now dedups per (C, OWNER): a re-commission over the same gear is idempotent, and a grapple on
+//      a C another ghost already watches coexists (the era-guarded multi-handler landed in Housing —
+//       Vyto_todo §0), with teardown-on-decommission via Vyto_decommission (unwatch_owner).
 Vyto_watch(w):
+    // OWNER-KEYED by w (the glass world): watch_c now carries an owner, so this grapple watch coexists
+    //  with any OTHER ghost already watching the same C (the old dedup-by-C silently dropped us — the
+    //   Radio agent's resident integration would have hit that first), and Vyto_decommission tears
+    //    exactly these handlers down by that owner.  Re-commission stays idempotent (same (C, w) dedups).
     for (const g of w.c.grapples ?? []) {
-        this.watch_c(g, () => this.Vyto_stir_soon(w))
+        this.watch_c(g, () => this.Vyto_stir_soon(w), w)
     }
+
+// Vyto_decommission — the teardown seam (was owed on Vyto_todo).  Stand the glass down: drop every
+//  grapple watch it placed (owner = w), era-guarded by Housing.unwatch_owner so a stir can never
+//   fire again after this, and mark the world decommissioned.  `this` is the House the watches live
+//    on (the commissioner's House — the same `this` Vyto_watch ran under), so a client tears down via
+//     <that House>.Vyto_decommission(w).  A later re-commission re-watches fresh.
+Vyto_decommission(w):
+    this.unwatch_owner(w)
+    w.c.grapples = []
+    w.c.decommissioned = 1
 
 // Vyto_stir_soon — the coalescing latch: first bump arms it, the rest of the burst rides
 //  free, and the stir itself runs through clear() — off the flush's own mutex hold, in a
@@ -636,11 +650,21 @@ async Vyto_spool_capture(w, opts):
     this.Vyto_spool_cull(w)
     return row
 
+// Vyto_spool_frozen — has the commissioned run LANDED FAILED?  Read straight off the Run ref's
+//  verdict (Run.c.run.sc.failed_at — the step number Story stamps the instant a run pauses at a
+//   failing step, cleared on accept/forgive).  A frozen spool is EVIDENCE: it must not cull.
+Vyto_spool_frozen(w):
+    let run = w.c.Run?.c?.run
+    return (run && run.sc.failed_at != null) ? 1 : 0
+
 // Vyto_spool_cull — ring management: ~60, drop-oldest; o-marked moments are EXEMPT (kept
 //  without typing — the seen-it rung of the keeping ladder) under their own generous cap;
-//   blessed moments never drop.  FREEZE on run-fail is milestone 2 (the ring must survive
-//    as evidence when a Book goes red).
+//   blessed moments never drop.  FREEZE ON RUN-FAIL (spec §8, milestone 2): once the run lands
+//    failed the ring is the forensic record — NO cull, NO drop-oldest, so every captured moment
+//     survives for inspection (o/bless were already exempt; the freeze extends that to the whole
+//      ring the moment the run reds).
 Vyto_spool_cull(w):
+    if (this.Vyto_spool_frozen(w)) return
     let rows = w.o({ Moment: 1 })
     let loose = rows.filter(m => !m.sc.o && !m.sc.bless)
     while (loose.length > 60) {
@@ -653,9 +677,22 @@ Vyto_spool_cull(w):
 //   parked view).  seek with no yore_n = back to live.  NEVER resumes past C** state —
 //    the spool archives mirrors, so there is nothing to resume INTO.
 e_Vyto_seek(A, w, e):
-    let at = e?.sc.yore_n
-    if (at != null) {
-        w.c.open_at = at
+    this.Vyto_seek_to(w, e?.sc)
+
+// Vyto_seek_to — the seek RESOLVER (spec §12 moult seam).  A yore_n seek parks the glass directly
+//  (the scrubber path — byte-unchanged).  A STEP seek (Storui's pip strip routes the step here, the
+//   same way it hands Cyto a step) translates to the yore_n of the MOMENT carrying that step_n — the
+//    quantize-lock Story pips seek by.  Moments with NO step_n are SCRUBBER-ONLY: a step seek never
+//     lands on them (Number(undefined) is NaN, matches nothing).  No match (or a bare clear) parks
+//      back at live (open_at null).  Factored out so both the elvis and a client|test share it.
+Vyto_seek_to(w, opts):
+    let yore = opts?.yore_n
+    if (yore == null && opts?.step_n != null) {
+        let mom = w.o({ Moment: 1 }).find(m => Number(m.sc.step_n) === Number(opts.step_n))
+        yore = mom ? mom.sc.Moment : null
+    }
+    if (yore != null) {
+        w.c.open_at = yore
     } else {
         w.c.open_at = null
     }

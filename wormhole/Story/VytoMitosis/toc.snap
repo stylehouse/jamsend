@@ -4,28 +4,28 @@ story:VytoMitosis
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=1.115
-      sample=0.001,at=1784509809
-      sample=0.001,at=1784509819
-      sample=1.356,at=1784510579
-      sample=1.356,at=1784510605
+    TimeTotal:beliefs,avg=1.513
       sample=1.356,at=1784510609
       sample=1.356,at=1784510612
       sample=1.356,at=1784510614
       sample=1.356,at=1784510616
       sample=1.378,at=1784510651
       sample=1.631,at=1784510695
-    TimeTotal:step,avg=0.186
-      sample=0.001,at=1784509809
-      sample=0.001,at=1784509819
-      sample=0.226,at=1784510579
-      sample=0.226,at=1784510605
+      sample=1.778,at=1784539845
+      sample=1.608,at=1784541175
+      sample=1.532,at=1784541347
+      sample=1.78,at=1784541531
+    TimeTotal:step,avg=0.252
       sample=0.226,at=1784510609
       sample=0.226,at=1784510612
       sample=0.226,at=1784510614
       sample=0.226,at=1784510616
       sample=0.23,at=1784510651
       sample=0.272,at=1784510695
+      sample=0.296,at=1784539845
+      sample=0.268,at=1784541175
+      sample=0.255,at=1784541347
+      sample=0.297,at=1784541531
   step,dige:c5d0a3c86638d554
   step=2,dige:81e902b6ae874330,desc:found a flora of three genera and commission the glass on them
   step=3,dige:16700e534f64fd5b,desc:grow the flora — newcomers arrive and the cut re-seats

@@ -1,0 +1,25 @@
+story:VytoFreeze
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.108
+      sample=0.01,at=1784540488
+      sample=0.141,at=1784540509
+      sample=0.141,at=1784540523
+      sample=0.141,at=1784540525
+      sample=0.141,at=1784540526
+      sample=0.094,at=1784540543
+      sample=0.091,at=1784540548
+    TimeTotal:step,avg=0.037
+      sample=0.01,at=1784540488
+      sample=0.047,at=1784540509
+      sample=0.047,at=1784540523
+      sample=0.047,at=1784540525
+      sample=0.047,at=1784540526
+      sample=0.031,at=1784540543
+      sample=0.03,at=1784540548
+  step,dige:bcb1936b36d7268f
+  step=2,dige:cc8f5d78f4175696,desc:over-fill the spool with the run green — the cull trims to the cap
+  step=3,dige:c23cea518e1c24a5,desc:the run lands failed — the spool freezes and every moment survives the cull

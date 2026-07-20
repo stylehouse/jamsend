@@ -1,0 +1,13 @@
+Snap:H
+  H:VytoSeek,Run
+    A:VytoSeek
+      self,round=7	{"mung":["age"]}
+      w:VytoSeek
+        self,round=7	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:seek,dose:1
+        req:seek_stand,finished
+        req:seek_resolve,finished
+        req:seek_scrub,finished
+        see:the spool stood three moments — two step-tagged and one scrubber-only with no step
+        see:a step no moment carried landed nothing and the scrubber-only moment stayed unreachable by a step seek

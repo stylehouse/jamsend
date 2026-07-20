@@ -1,4 +1,4 @@
-Credulate,of_Book:VytoRadio
+Credulate,of_Book:VytoFreeze
   GhostInclude:Ghost_N_Peeroleum,dige:831035f4b7de0927~g1
   GhostInclude:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
   GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -23,11 +23,11 @@ Credulate,of_Book:VytoRadio
   GhostInclude:Ghost_S_Swarm,dige:39deae1ef7d17b9b~g1
   GhostInclude:Ghost_Story_Swarmation,dige:9eb009b1ff84e6b1~g1
   GhostInclude:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
-  GhostInclude:Ghost_V_Vyto,dige:baf38f93fc9996e4~g1
-  GhostInclude:Ghost_V_Vytonation,dige:63f26ac99d00678f~g1
+  GhostInclude:Ghost_V_Vyto,dige:862ff6cad2ff19f7~g1
+  GhostInclude:Ghost_V_Vytonation,dige:87b2744bab3525a5~g1
   GhostInclude:Ghost_Story_Voronation,dige:19b605e62bdd580c~g1
   GhostInclude:Ghost_Story_Sounditron,dige:fc546e9a542bb5eb~g1
-  last_ok,at=1784541205.083,ok_pct
+  last_ok,at=1784540548.962,ok_pct
     uses:Ghost_N_Peeroleum,dige:831035f4b7de0927~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -52,7 +52,7 @@ Credulate,of_Book:VytoRadio
     uses:Ghost_S_Swarm,dige:39deae1ef7d17b9b~g1
     uses:Ghost_Story_Swarmation,dige:9eb009b1ff84e6b1~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
-    uses:Ghost_V_Vyto,dige:baf38f93fc9996e4~g1
-    uses:Ghost_V_Vytonation,dige:63f26ac99d00678f~g1
+    uses:Ghost_V_Vyto,dige:862ff6cad2ff19f7~g1
+    uses:Ghost_V_Vytonation,dige:87b2744bab3525a5~g1
     uses:Ghost_Story_Voronation,dige:19b605e62bdd580c~g1
     uses:Ghost_Story_Sounditron,dige:fc546e9a542bb5eb~g1

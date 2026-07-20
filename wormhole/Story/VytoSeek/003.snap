@@ -1,0 +1,12 @@
+Snap:H
+  H:VytoSeek,Run
+    A:VytoSeek
+      self,round=5	{"mung":["age"]}
+      w:VytoSeek
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:seek,dose:1
+        req:seek_stand,finished
+        req:seek_resolve,finished
+        see:the spool stood three moments — two step-tagged and one scrubber-only with no step
+        see:a step pip seek resolved to the yore of the moment carrying that step — the whichever-glass shim landed

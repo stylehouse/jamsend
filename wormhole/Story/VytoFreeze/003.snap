@@ -1,0 +1,11 @@
+Snap:H
+  H:VytoFreeze,Run
+    A:VytoFreeze
+      self,round=5	{"mung":["age"]}
+      w:VytoFreeze
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:freeze,dose:1
+        req:freeze_trim,finished
+        req:freeze_frozen,finished
+        see:the run landed failed and the spool froze — no drop-oldest so every evidence moment survived the cull

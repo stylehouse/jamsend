@@ -866,3 +866,263 @@ VytoRadio_held(w):
     if (!cop || !notho || !cop.c.seed || !w.c.held_seed) return 0
     if (!(cop.c.seed.x === w.c.held_seed.x && cop.c.seed.y === w.c.held_seed.y)) return 0
     return (notho.c.T !== w.c.moved_T) ? 1 : 0
+
+// ══ VytoTandem — PROVE the era-guarded multi-handler watch + teardown (Vyto_todo §0 · UNIT 1) ═══════
+//  The core-change proof in ISOLATION (the core-change law).  TWO watchers ride the SAME gear C — a
+//   plain hand and a Vyto grapple — where the OLD watch_c (dedup by C alone) would have silently
+//    dropped the second.  ONE bump fires BOTH; then the Vyto side decommissions (unwatch_owner keyed
+//     by the glass world) and a further bump fires ONLY the survivor — the torn-down grapple guarded
+//      off the House list.  Reads Housing.watched directly to show the handler list itself change.
+VytoTandem(A,w):
+    w oai %req:wrangle,eternal
+        await &VytoTandem_drive,w,req
+        req%ok = 1
+
+async VytoTandem_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoTandem_found(w)
+        if (n === 3) this.VytoTandem_both(w)
+        if (n === 4) this.VytoTandem_tear(w)
+    }
+    this.VytoTandem_witness(w)
+
+// beat 2 — one gear C, TWO watchers on it: a PLAIN hand (owner 'tandem', counts its fires on w.c)
+//  placed straight onto the House, and a VYTO GRAPPLE (owner = the glass world) placed by the
+//   commission.  The old dedup-by-C would have kept only the first; per (C, owner) both now stand.
+VytoTandem_found(w):
+    i %desc:'place a plain watcher and a Vyto grapple on one gear'
+    let cog = w.i({ Cog: 'tandem', dose: '1' })
+    w.c.cog = cog
+    let SH = this.VytoStaple_SH(w)
+    if (SH) SH.watch_c(cog, () => { w.c.plain_fires = (w.c.plain_fires ?? 0) + 1 }, 'tandem')
+    this.Vyto_commission_on(w, [cog], 1)
+    this.expecting(w, 'tandem_setup', 10, async () => { await this.VytoStaple_await(w, 10, () => this.VytoTandem_setup_ready(w)) })
+
+// beat 3 — ONE bump, BOTH fire: the plain hand's counter ticks AND the grapple stirs the glass.
+VytoTandem_both(w):
+    i %desc:'bump the gear once — both watchers must fire'
+    if (w.c.cog) w.c.cog.bump_version()
+    this.expecting(w, 'tandem_both', 10, async () => { await this.VytoStaple_await(w, 10, () => this.VytoTandem_both_ready(w)) })
+
+// beat 4 — TEAR DOWN the Vyto side (Vyto_decommission → unwatch_owner keyed by the glass world) then
+//  bump again: the Vyto handlers are gone off the House list (era-guarded), the plain hand survives,
+//   and only it fires.  Stash the two counters BEFORE the bump so the witness reads the delta.
+VytoTandem_tear(w):
+    i %desc:'decommission the Vyto side then bump — only the survivor fires'
+    let vw = this.VytoStaple_vw(w)
+    let SH = this.VytoStaple_SH(w)
+    if (SH && vw) SH.Vyto_decommission(vw)
+    w.c.plain_before = w.c.plain_fires ?? 0
+    w.c.stir_before = this.VytoStaple_stir_n(vw)
+    if (w.c.cog) w.c.cog.bump_version()
+    this.expecting(w, 'tandem_survive', 10, async () => { await this.VytoStaple_await(w, 10, () => this.VytoTandem_survivor_ready(w)) })
+
+// ── ready-predicates ──────────────────────────────────────────────────────────────────────────────
+
+// count the House watches on the gear C held by a given owner (reads Housing.watched — a test may).
+VytoTandem_watches(w, owner):
+    let SH = this.VytoStaple_SH(w)
+    if (!SH || !SH.watched) return 0
+    let cog = w.c.cog
+    let n = 0
+    for (const x of SH.watched) { if (x.C === cog && x.owner === owner) n = n + 1 }
+    return n
+
+VytoTandem_setup_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.commission) return 0
+    return (this.VytoTandem_watches(w, 'tandem') >= 1 && this.VytoTandem_watches(w, vw) >= 1) ? 1 : 0
+
+VytoTandem_both_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    return ((w.c.plain_fires ?? 0) >= 1 && this.VytoStaple_stir_n(vw) >= 1) ? 1 : 0
+
+VytoTandem_teardown_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    return (this.VytoTandem_watches(w, vw) === 0 && this.VytoTandem_watches(w, 'tandem') >= 1) ? 1 : 0
+
+VytoTandem_survivor_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    if (!this.VytoTandem_teardown_ready(w)) return 0
+    return ((w.c.plain_fires ?? 0) > (w.c.plain_before ?? 0) && this.VytoStaple_stir_n(vw) === (w.c.stir_before ?? 0)) ? 1 : 0
+
+VytoTandem_witness(w):
+    if (this.VytoTandem_setup_ready(w) && !(oa %see:'a plain watcher and a Vyto grapple both took a watch on one gear — the old dedup would have dropped the second')) i %see:'a plain watcher and a Vyto grapple both took a watch on one gear — the old dedup would have dropped the second'
+    if (this.VytoTandem_both_ready(w) && !(oa %see:'one bump fired both watchers — the plain hand counted and the Vyto grapple stirred')) i %see:'one bump fired both watchers — the plain hand counted and the Vyto grapple stirred'
+    if (this.VytoTandem_teardown_ready(w) && !(oa %see:'decommission tore down the Vyto watches by owner and left the plain hand standing')) i %see:'decommission tore down the Vyto watches by owner and left the plain hand standing'
+    if (this.VytoTandem_survivor_ready(w) && !(oa %see:'a further bump fired only the survivor — the torn-down grapple never stirred again')) i %see:'a further bump fired only the survivor — the torn-down grapple never stirred again'
+
+// ══ VytoFreeze — PROVE the spool freeze-on-run-fail (Vyto_todo §0 · UNIT 2) ═════════════════════════
+//  A Book can't record ITSELF failing, so this gates the MECHANISM: the spool's cull respects the
+//   run's verdict.  Stand a glass whose commission carries a MOCK Run ref (so the freeze has a verdict
+//    to read without a real run reddening — Vyto_spool_frozen reads only Run.c.run.sc.failed_at), fill
+//     the ring PAST its ~60 cap, and cull: GREEN → drop-oldest trims to the cap; then the mock run
+//      LANDS FAILED and a further cull FREEZES — no drop-oldest, every evidence moment survives.
+VytoFreeze(A,w):
+    w oai %req:wrangle,eternal
+        await &VytoFreeze_drive,w,req
+        req%ok = 1
+
+async VytoFreeze_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoFreeze_stand(w)
+        if (n === 3) this.VytoFreeze_fail(w)
+    }
+    this.VytoFreeze_witness(w)
+
+// beat 2 — stand the glass on a MOCK Run (green: no failed_at), then over-fill and cull to the cap.
+VytoFreeze_stand(w):
+    i %desc:'over-fill the spool with the run green — the cull trims to the cap'
+    let SH = this.VytoStaple_SH(w)
+    if (!SH) { if (!(oa %log:'no runner House beside the run')) i %log:'no runner House beside the run'; return }
+    let old = SH.o({ A: 'Vyto' })[0]
+    if (old) SH.drop(old)
+    SH.i({ A: 'Vyto' }).i({ w: 'Vyto' })
+    let gear = w.i({ Cog: 'freeze', dose: '1' })
+    // the MOCK Run: a bare two-level shape matching exactly what the freeze reads
+    //  (Run.c.run.sc.failed_at) — no real run and no snap, GREEN to start.  Stands the verdict up so
+    //   the mechanism can be gated without a Book reddening itself.  Built with .c set after construct
+    //    (the new TheC({c:{},sc}) idiom, then stamp .c) to stay clear of the constructor's c-handling.
+    let mockrun = new TheC({ c: {}, sc: { run: 'mock' } })
+    let mockRun = new TheC({ c: {}, sc: { Run: 1 } })
+    mockRun.c.run = mockrun
+    w.c.mockrun = mockrun
+    let commission = new TheC({ c: {}, sc: { Scannable: gear, client_w: w, grapples: [gear] } })
+    commission.c.Run = mockRun
+    SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
+    this.expecting(w, 'freeze_trim', 8, async () => { await this.VytoStaple_await(w, 8, () => this.VytoFreeze_trimmed_ready(w)) })
+
+// beat 3 — the run LANDS FAILED (stamp the mock verdict) then over-fill again: the cull FREEZES.
+VytoFreeze_fail(w):
+    i %desc:'the run lands failed — the spool freezes and every moment survives the cull'
+    if (w.c.mockrun) w.c.mockrun.sc.failed_at = 3
+    this.expecting(w, 'freeze_frozen', 8, async () => { await this.VytoStaple_await(w, 8, () => this.VytoFreeze_frozen_ready(w)) })
+
+// ── the count of loose|kept moments standing on the glass ─────────────────────────────────────────
+VytoFreeze_moments(vw):
+    return vw ? vw.o({ Moment: 1 }).length : 0
+
+// trimmed: green run — over-fill to 66 loose moments ONCE then cull drops-oldest to the cap of 60.
+VytoFreeze_trimmed_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.commission) return 0
+    if (!w.c.trim_filled) {
+        w.c.trim_filled = 1
+        let k = 0
+        while (k < 66) {
+            w.c.mint_n = (w.c.mint_n ?? 0) + 1
+            vw.i({ Moment: w.c.mint_n })
+            k = k + 1
+        }
+        this.Vyto_spool_cull(vw)
+    }
+    return (this.VytoFreeze_moments(vw) === 60 && !this.Vyto_spool_frozen(vw)) ? 1 : 0
+
+// frozen: failed run — over-fill 6 more ONCE then cull FREEZES, so all 66 stand (no drop-oldest).
+VytoFreeze_frozen_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    if (!this.Vyto_spool_frozen(vw)) return 0
+    if (!w.c.frozen_filled) {
+        w.c.frozen_filled = 1
+        let k = 0
+        while (k < 6) {
+            w.c.mint_n = (w.c.mint_n ?? 0) + 1
+            vw.i({ Moment: w.c.mint_n })
+            k = k + 1
+        }
+        this.Vyto_spool_cull(vw)
+    }
+    return (this.VytoFreeze_moments(vw) === 66) ? 1 : 0
+
+VytoFreeze_witness(w):
+    if (this.VytoFreeze_trimmed_ready(w) && !(oa %see:'the spool over-filled and the cull trimmed the loose ring to its cap while the run stood green')) i %see:'the spool over-filled and the cull trimmed the loose ring to its cap while the run stood green'
+    if (this.VytoFreeze_frozen_ready(w) && !(oa %see:'the run landed failed and the spool froze — no drop-oldest so every evidence moment survived the cull')) i %see:'the run landed failed and the spool froze — no drop-oldest so every evidence moment survived the cull'
+
+// ══ VytoSeek — PROVE the step→yore_n seek shim (Vyto_todo §0 · UNIT 3) ══════════════════════════════
+//  Storui's pip strip now routes a STEP seek to a commissioned Vyto glass (beside the byte-unchanged
+//   Cyto poke).  The resolution — step → the yore_n of the spool moment carrying that step_n, with
+//    scrubber-only moments (no step_n) never matched — lives in Vyto_seek_to, which the Storui $effect
+//     fires via e_Vyto_seek.  A Book can't drive the UI $effect, but it CAN gate the RESOLVER: stamp a
+//      spool with step-tagged and scrubber-only moments and prove a step seek lands the right yore and
+//       a scrubber-only moment stays unreachable.  (The $effect wiring itself is bundle-proven.)
+VytoSeek(A,w):
+    w oai %req:wrangle,eternal
+        await &VytoSeek_drive,w,req
+        req%ok = 1
+
+async VytoSeek_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoSeek_stand(w)
+        if (n === 3) this.VytoSeek_resolve(w)
+        if (n === 4) this.VytoSeek_scrubber(w)
+    }
+    this.VytoSeek_witness(w)
+
+// beat 2 — stand a glass and stamp its spool: two STEP moments (yore 10 at step 2 · yore 20 at step 4)
+//  and one SCRUBBER-ONLY moment (yore 30 · no step_n).
+VytoSeek_stand(w):
+    i %desc:'stand a glass and stamp step-tagged and scrubber-only moments'
+    let SH = this.VytoStaple_SH(w)
+    if (!SH) { if (!(oa %log:'no runner House beside the run')) i %log:'no runner House beside the run'; return }
+    let old = SH.o({ A: 'Vyto' })[0]
+    if (old) SH.drop(old)
+    SH.i({ A: 'Vyto' }).i({ w: 'Vyto' })
+    let gear = w.i({ Cog: 'seek', dose: '1' })
+    let commission = new TheC({ c: {}, sc: { Scannable: gear, client_w: w, grapples: [gear] } })
+    commission.c.Run = this
+    SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
+    this.expecting(w, 'seek_stand', 8, async () => { await this.VytoStaple_await(w, 8, () => this.VytoSeek_stood_ready(w)) })
+
+VytoSeek_stood_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.commission) return 0
+    if (!w.c.stamped) {
+        w.c.stamped = 1
+        vw.i({ Moment: 10, step_n: 2 })
+        vw.i({ Moment: 20, step_n: 4 })
+        vw.i({ Moment: 30 })
+    }
+    return (vw.o({ Moment: 1 }).length === 3) ? 1 : 0
+
+// beat 3 — a STEP seek (step 4) resolves to the yore of the moment carrying step_n 4 (yore 20).
+VytoSeek_resolve(w):
+    i %desc:'seek by step — the pip resolves to the yore of the moment carrying that step'
+    let vw = this.VytoStaple_vw(w)
+    if (vw) this.Vyto_seek_to(vw, { step_n: 4 })
+    this.expecting(w, 'seek_resolve', 6, async () => { await this.VytoStaple_await(w, 6, () => this.VytoSeek_resolved_ready(w)) })
+
+VytoSeek_resolved_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    return (vw && vw.c.open_at === 20) ? 1 : 0
+
+// beat 4 — a step NO moment carries (step 5) lands nothing, and the scrubber-only moment (no step_n)
+//  stays unreachable by a step seek: the glass parks back at live (open_at null).
+VytoSeek_scrubber(w):
+    i %desc:'seek a step no moment carries — the scrubber-only moment stays unreachable'
+    let vw = this.VytoStaple_vw(w)
+    w.c.scrubbed = 1
+    if (vw) this.Vyto_seek_to(vw, { step_n: 5 })
+    this.expecting(w, 'seek_scrub', 6, async () => { await this.VytoStaple_await(w, 6, () => this.VytoSeek_scrubbed_ready(w)) })
+
+VytoSeek_scrubbed_ready(w):
+    if (!w.c.scrubbed) return 0
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    let scrub = vw.o({ Moment: 1 }).find(m => m.sc.Moment == 30)
+    if (!scrub || scrub.sc.step_n != null) return 0
+    return (vw.c.open_at == null) ? 1 : 0
+
+VytoSeek_witness(w):
+    if (this.VytoSeek_stood_ready(w) && !(oa %see:'the spool stood three moments — two step-tagged and one scrubber-only with no step')) i %see:'the spool stood three moments — two step-tagged and one scrubber-only with no step'
+    if (this.VytoSeek_resolved_ready(w) && !(oa %see:'a step pip seek resolved to the yore of the moment carrying that step — the whichever-glass shim landed')) i %see:'a step pip seek resolved to the yore of the moment carrying that step — the whichever-glass shim landed'
+    if (this.VytoSeek_scrubbed_ready(w) && !(oa %see:'a step no moment carried landed nothing and the scrubber-only moment stayed unreachable by a step seek')) i %see:'a step no moment carried landed nothing and the scrubber-only moment stayed unreachable by a step seek'
