@@ -140,23 +140,16 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
     the next track (design seam for deck-UI × invite).
 
 **Posited unknowns (the final figure-out):**
- - **Voucher forgery + replay (VERIFIED 2026-07-21).**  The "I'm really me" proof a friend staples to every
-    live message signs only WHO they are (`Swarm.g:426`), never WHAT they sent, and rides in the clear — so the
-     untrusted relay peels one off a real message and restaples it to a forged one.  It buys: fake a friend's
-      presence (the green dot), put words in their mouth (a forged suggestion/boast), or reset-DoS their link
-       (`Swarm.g:514`).  Sound math, wrong thing signed; LIVE-station only, so no Book catches it.
-        → **YOU DECIDE:** bless the cure — sign each message's own `{seq,type,to,body_hash}` + a replay counter
-         at the Peeroleum seam ("per-frame header-sign").  Core wire change.  (NOT the invite — that's sound,
-          single-use serial.)  Full walk-through + file:lines lives in memory `swarm-voucher-detached`.
- - **Catalog clobber (VERIFIED 2026-07-21).**  Friends' offers legitimately land music in your collection; the
-    bug is the shelf FILES a landing by id (`Ra_rec_home`, `Heist.g:493`) while "already got it?" checks by
-     artist+title (`Heist_held`, `:154/:281`), and nothing re-checks the id matches the audio.  So a lying
-      sealed friend sends a husk with YOUR song's id + a title you lack → dodges dedup → overwrites your catalog
-       card and repoints it at their bytes (your disk original is safe in the staging pen; the catalog POINTER
-        is hijacked).  → **YOU DECIDE:** (a) machine — assert `id === content-fingerprint` at land; (b) design
-         (your instinct) — land incoming music in a provenance-tagged pen you EYEBALL before it merges (the
-          `newlyadded` idea).  The self-consistent-bytes leg is rung-7's already-owed prod signer.  File:lines
-           in memory `heist-landing-clobber`.
+ - **[RETRACTED 2026-07-21 — the "voucher forgery" + "catalog clobber" flags here were WRONG.]**  I audited
+    the `.g` Story-SIMULATION transport (`Swarm.g`/`Peeroleum.g`/`Tribunal.g` — LiesLies' "mock/webrtc/websocket
+     relay" carriers, still a loopback per §10.1) and mistook its `voucher` for production security.  The LIVE
+      p2p is **`src/lib/p2p/Peerily.svelte.ts`**, which **signs every emit with the sender's key** (`emit`:
+       `crypto.sign = Id.sign(json)`; `unemit`: `Ud.verify(crypto.sign, data)`) and builds trust as **per-channel
+        state** (`reset_protocol_state`; hello→trust→trusted; `verify_trust`) exchanged as signed trust tokens —
+         so the relay can't forge or tamper frames.  Standing DESIGN NOTE (not a vuln): when the `.g` rewrite
+          wires a REAL carrier, port Peerily's per-frame emit-signing + per-channel trust tokens; don't ship the
+           detached voucher as the boundary.  (The Heist-landing `id`-homing is a fine code-hardening idea IF
+            incoming records are ever auto-merged — but "eyeball incoming music" is the intended model anyway.)
  - BootGate on a device whose AudioContext never inits: the gate stands forever; fingers-check.
  - watch_c migration for face reactivity (today faces poll H.version + a 1s tick).
  - Scale seams: FSA names-only expand (3000-file dirs); whole-stock husk re-offers want the
