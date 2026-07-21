@@ -1,0 +1,100 @@
+# Reqdrop — draining the dead finished-req rows (working doc)
+
+**Status: ANALYSIS + PLAN, 2026-07-21.** ttlilt **stage 1** is done+proven (Hovercraft.svelte
+ retract-on-drop, gated by the `LakeTtlilt` isolation Book — commit `ff057f76`). This doc is
+  **stage 2**: actually dropping served transient reqs so the snap stops filling with dead
+   `req:…,finished` rows. On investigation stage 2 is **not** a blanket drop — it is a per-family,
+    per-Book deliberate pass with a real blocker. The map below is so the fan-out lands safely.
+
+## 0. What to get on with next
+
+The bet (the human, 2026-07-14): *transient reqs are scaffolding, not ledger — once a `%req` has
+ SERVED, drop it (`host.drop(req)`); leave in the snap only the reqs whose in-flight state is worth
+  SEEING.* The model already in the tree: **`Repli.g:549`** — a LANDED `req:awaitbuf` drops the moment
+   its bytes attach; an UNLANDED one stays (its in-flight state IS the warn-if-late reconciler that
+    `MusuReplica.warns_missing` reads). That selectivity is the whole game: **drop only the finished
+     reqs no claim reads, at a seam after the work is consumed.**
+
+Total dead rows in the fixtures today: **~4576** (survey below). But the two biggest families are
+ **read by claims**, so they are NOT free drops — draining them means also migrating the Books that
+  read them. Do the SAFE families first (§3), leave the read families for a supervised pass (§4).
+
+**The one architectural constraint** (why this can't live in `finish()`): `finish()` keeps the
+ `%finished` req on purpose — `all_finished()` (Stuff.svelte.ts:691) counts `o({req:1}).every(finished)`,
+  so a blanket drop-on-finish makes `o({req:1})` empty and `all_finished()` returns false → the level
+   never rolls up. The drop MUST come at a later owner-seam, after `all_finished()` has been consumed
+    (exactly what `req_handshake` at Peeroleum.g:76 does — `if (all_finished() && !finished) finish(req)`
+     rolls up FIRST; the drop would come after).
+
+## 1. The survey — dead finished-req rows by family
+
+```
+1285  req:unemit          READ  (Peeroleum inbox message; .sc.done/.finished read — §4)
+ 2386  handshake family    READ  (said_hello/heard_hello/said_trust/heard_trust/handshake — §4)
+   63  req:text_loaded     ?     (Lies compile — CLAUDE.md warns re: compile pipeline)
+   63  req:compile         ?     (Lies compile)
+  ~55  req:rachase_stock   scaffold?  (MusuRaChase — high-entropy Book)
+  ~51  req:instrumentation ?     (Understand* Books)
+  ~51  req:ingredients     ?     (Understand* Books)
+  ~50  req:understanding   ?     (Understand* Books)
+  ~44  req:furnishing      ?     (Understand* Books)
+  ~39  req:rastream_stock  scaffold?  (MusuRaStream — high-entropy)
+  …    (make_item, register, listening, listen, keygen, include, repot, dial, board_wait, mag_stock…)
+```
+Regenerate: `grep -rahoE "req:[a-zA-Z_]+,[^ ]*finished" wormhole/ | grep -aoE "req:[a-zA-Z_]+" | sort | uniq -c | sort -rn`
+
+## 2. The two BLOCKERS (why this is a deliberate pass, not an overnight sweep)
+
+- **`peregrination-reads-handshake`** — `Peregrination.g:856-857` reads `pier.o({req:'handshake'})[0]`
+   for its state, and `:950`/`:1219` assert the handshake is ABSENT after a reset. Dropping the
+    handshake on COMPLETE would (a) hand 856-857 an undefined and (b) make the reset-absence assertions
+     pass trivially (absent already), gutting the reset test. Peregrination is THE Book that tests the
+      handshake/reconnect lifecycle, so it legitimately needs to see the req — its assertions must
+       migrate to the RESULT (`pier o protocol/hello/said` etc. + the Grant/Edge/Pier trust artifacts)
+        BEFORE the drop lands.
+- **`musuheist-red-in-blast-radius`** — the handshake blast radius is 10 Books (MusuBuddy, MusuHeist,
+   MusuMag, MusuRaChase, MusuRaStream, PeeringLive, PereReborn, PereStaple, SwarmShare, SwarmWire).
+    **MusuHeist is pre-existing RED** (unpinned wall-clock + Body-chunk drift — see the memory note),
+     so it cannot be cleanly re-recorded green after a handshake drop. Either rehab MusuHeist first
+      (pin its clock + EntropyArrest + re-record the current landing shape — needs the human to confirm
+       that shape is intended) or exclude it from the handshake pass.
+
+## 3. The honest finding: there is NO easy safe family — every one hits a wall
+
+The seam is always the same shape as `Repli.g:549`: at the owner-seam AFTER the work is consumed,
+ `host.drop(req)` the served req (soft-hide `c.drop=1` hides the whole subtree from the snap; the req
+  sweep iterates a fresh `o()` snapshot so a detach never corrupts the live iteration). But I probed
+   every large family for a clean, contained, no-reads first cut and **every one is blocked**:
+
+- **`understanding`/`ingredients`/`instrumentation`/`furnishing`** (≈196) — I first guessed these were a
+   contained "Understand*" family. They are NOT: the names are **dynamically generated by the Lies
+    compile pipeline** (the compile phases), and they accumulate across **14 Lake Books** (Editron,
+     Engage, LakeFlush/Funk/Keep/Lango/Locate/Nets/Search/Surfer/Surprise/Tiles/Ttlilt/WaftMap). Core
+      pipeline (CLAUDE.md: read `Coding_guide.md` first) + wide blast. Not a first cut.
+- **`compile`/`text_loaded`** (≈126) — same compile pipeline, same Books.
+- **stock/measure** (`rachase_stock` etc.) — the streaming Books are high-entropy (caveat 37-55),
+   painful to re-record, and MusuRaChase/RaStream also carry the blocked handshake family.
+- **handshake / unemit** — read-claims + the MusuHeist blocker (§2).
+
+So stage 2 has **no low-risk contained win**: the dead rows live in families that are either read by
+ claims, generated by the compile pipeline, in high-entropy Books, or in the MusuHeist blast radius.
+  This is why it is a supervised deliberate pass — pick a family WITH the human, resolve its specific
+   blocker, then run the §5 discipline. It is not an unsupervised overnight sweep, which is why stage 2
+    landed here as a de-risked plan rather than a fleet of re-records.
+
+## 4. Read families — need Book-assertion migration (supervised)
+
+- **handshake** (§2) — drop at Peeroleum.g:76 after roll-up; migrate Peregrination's assertions to the
+   protocol/trust RESULT; resolve the MusuHeist blocker; re-record 10 Books.
+- **unemit** — `Peeroleum.g` inbox; read by Swarmation:292 (`.sc.done`), Peregrination:852/888/1213
+   (`.sc.done`/`.filter(finished)`). Drop only at a seam past every read, or migrate those reads to the
+    landed RESULT (the `%recent,unemit` marker some scenes already fall back to reads).
+
+## 5. Proof discipline (same as stage 1)
+
+Each family: (a) adversarially confirm NO claim reads the finished req; (b) add the drop at the
+ owner-seam; (c) ghost-compile; (d) run each affected Book — RED expected (rows drained); (e) confirm
+  every `%see` claim still fires + no step `error` (a dropped read shows as a vanished claim, not a
+   diff); (f) accept → green ×2; (g) commit family-by-family. The `LakeTtlilt` Book already gates the
+    drop↔ttlilt interaction; consider a `LakeReqDrop` Book to gate "drop after all_finished keeps the
+     level rolled up" if a family reveals a seam-timing subtlety.
