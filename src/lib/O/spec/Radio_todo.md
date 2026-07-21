@@ -131,7 +131,9 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
     (rung 7's app path — today only Books set a signer).
  - Berth: the `%Rack` + load-on-init; the MusuBerth live-gate.  Heistlet `cursor · backoff`
     legs + a true two-runner return trip.
- - music-metadata swap inside `Crate_meta_from_tags` (keep `Crate_wav_with_tags` — the writer).
+ - ✓ **DONE** — music-metadata swap inside `Crate_meta_from_tags` (`parseBuffer` from music-metadata@11,
+    imported Crate.g:14, drives the field-by-field fallback at Crate.g:383; `Crate_wav_with_tags` writer
+     kept hand-rolled — the lib is read-only).
  - Cloud-model redirect (the human, 2026-07-13): `randomic` → `shuffle|ctime|mtime` partitions
     of ~20 at the real rastock→magazine seam.
  - Captured idea: the invite as the DJ's CUE — an Idzeug redeemed at the deck headphone-monitors
@@ -158,6 +160,12 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
 Known-real problems found in passing that we deliberately DON'T stop the mainline for. Patch them
  opportunistically alongside more relevant work; each names its own proving Book so it lands with a gate.
 
+- ✓ **RESOLVED for the goner-delete (MusuFreeze — Heistation.g:2081).** `Musica_recast_offer` now computes
+   `allowed = this.Repli_allowed(w, to, from)` and gates BOTH goner emissions — the cloud delete (Heist.g:1136)
+    and the record delete (Heist.g:1150) — so a revoked follower's mirror is frozen, not remotely deletable.
+     RESIDUE: the raw `Repli_retire` primitive (Repli.g:308) is still ungated, but gating a Repli **core**
+      primitive is the human's call (its only live caller is a Book); left as-is. Original finding, kept for
+       context:
 - **`Repli_send_lines` bypasses the consent gate — goner DELETES leak to a REVOKED follower.**
    `Repli_offer` (Repli.g:283) is `Repli_allowed`-gated, but `Repli_send_lines` (Repli.g:229) is NOT, and
     `Musica_recast_offer` (Heist.g:706/720) calls it directly for goner `op:delete`s. So the wire refuses to
