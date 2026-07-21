@@ -1,0 +1,24 @@
+story:LakeTtlilt
+  Styles
+  Plan
+    Prep
+      i_elvisto:Lies,e:Lies_ttlilt_selftest
+  Opt
+    For
+      w:Lies
+        dontSnapGhostList
+    quiesce_snap_time=0.4
+  TimeSpool
+    TimeTotal:beliefs,avg=0.031
+      sample=0.03,at=1784598637
+      sample=0.03,at=1784598668
+      sample=0.013,at=1784598672
+      sample=0.063,at=1784598676
+      sample=0.017,at=1784598680
+    TimeTotal:step,avg=0.031
+      sample=0.03,at=1784598637
+      sample=0.03,at=1784598668
+      sample=0.013,at=1784598672
+      sample=0.063,at=1784598676
+      sample=0.017,at=1784598680
+  step,dige:4713ed01195c138d

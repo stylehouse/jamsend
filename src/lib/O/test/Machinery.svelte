@@ -373,6 +373,41 @@
         gate.bump_version(); w.bump_version()
     },
 //#endregion
+//#region LakeTtlilt
+    // ttlilt retract-on-drop gate — proves the belief-loop fix (Hovercraft.svelte:548): a req dropped
+    //  WITHOUT finishing (host.drop → c.drop=1, no %finished) must have its published Run-root ttlilt
+    //   copy RETRACTED by the Story poll, not held to wall-clock timeout.  This is the Sounditron 4→5
+    //    stall in isolation (expecting() hangs its req directly on w).  Claims under TtliltGate; the
+    //     dropped_req_ttlilt_retracts claim is the one that FAILED before the fix.
+
+    Run_A_LakeTtlilt(this: House) {
+        const H = this
+        H.i({ A: 'Lies'       }).i({ w: 'Lies' })
+        H.i({ A: 'Lang'       }).i({ w: 'Lang' })
+        H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
+        console.log(`🟦 ${H.name} LakeTtlilt wired`)
+    },
+
+    async e_Lies_ttlilt_selftest(this: House, A: TheC, w: TheC, e: TheC) {
+        const H = this
+        const gate = w.oai({ TtliltGate: 1 })
+        const gl = w.o({ Waft: 'GhostList' })[0] as TheC | undefined
+        if (gl) gl.sc.dontSnap = 1
+        // a req hung directly on w (the expecting()-on-w shape); c.up stamped so i_req_ttlilt's climb
+        //  reaches the sc.w world and publishes the flat Run-root copy that the poll reads.
+        const req = w.i({ req: 'ttldrop' }); req.c.up = w
+        H.i_req_ttlilt(req, 300)                                      // arm — far-future deadline
+        const my_copy = () => (H.o({ ttlilt: 1 }) as TheC[]).some((t) => t.sc.req === req)
+        // (1) armed → a live published ttlilt copy exists for this req (the world is held)
+        if (my_copy()) gate.i({ armed_ttlilt_holds: 1 })
+        // (2) THE FIX: drop the req WITHOUT finishing, then run one poll pass — the poll must retract
+        //     the published copy on sight (req.c.drop), not hold it to timeout.
+        w.drop(req)
+        H.o_Story_req_ttlilt(H)                                       // one poll pass (retract side-effect)
+        if (!my_copy()) gate.i({ dropped_req_ttlilt_retracts: 1 })
+        gate.bump_version(); w.bump_version()
+    },
+//#endregion
 //#region LakeFunk
     // Chunk-2 gate — Storying is EVENT-DRIVEN, not pumped.  Drops `run` from FUNK_KINDS.Storying so
     //  instantiate binds no per-tick poll; instead Lies_reflect_storying restamps a cell's verdict
