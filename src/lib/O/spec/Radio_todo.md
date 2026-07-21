@@ -140,29 +140,23 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
     the next track (design seam for deck-UI × invite).
 
 **Posited unknowns (the final figure-out):**
- - Voucher gap (VERIFIED 2026-07-21, adversarial audit) — the per-era voucher is a **detached** token: it
-    signs only its own `{control,from,pub,era,ts}` (Swarm.g:426) and is stapled verbatim to every frame
-     (Swarm.g:248), which carries no per-frame sign; the untrusted relay reads it cleartext. So **one captured
-      voucher** buys (a) REPLAY presence — `Swarm_voucher_ok` has no era/nonce freshness (Swarm.g:306, the :308
-       cache path skips crypto), and `heard_at` drives the 30s liveness dot (Radio.g:498); (b) FORGE any frame
-        as a sealed friend — `hear` trusts `swarm.page.prepub` + a valid voucher (Swarm.g:269/278) and the whole
-         frame body is outside the signed envelope; (c) era-reset DoS — a forged `swarm_hi` flips `route.c.peer_era`
-          → `Peeroleum_reset_handshake` + drops `ra_wanted` (Swarm.g:514-518), and swarm_hi is ephemeral so no
-           replay dedup (Peeroleum.g:383/476). **LIVE-station only** (`station_up`; Books run the strict gate, so
-            no Book catches this). The full cure is per-frame header-sign at the Peeroleum seam — sign
-             `{seq,type,to,body_hash}`, give swarm JSON frames a `body_hash`, add a monotonic per-pier seq/era
-              check the relay can't rewind. Core crypto/protocol change → the human's call.
- - Heist landing integrity vs a LYING sealed peer (VERIFIED 2026-07-21, adversarial audit) — two legs.
-    (a) **Catalog clobber:** `Heist_land` homes via `Ra_rec_home(own_lib, rec.sc.id)` (Heist.g:493) on the
-     WIRE-supplied id with no `id===body_hash.slice(0,16)` assert, then overwrites `title/artist/path/bytes`
-      (:494-499); dedup `Heist_held` keys on artist+title NOT id (:154/:281). So a sealed peer who learned my
-       ids (bidirectional share) offers a husk with my id + a title I lack → dodges dedup → `Ra_rec_home` finds
-        MY record → my catalog entry is overwritten & repointed at their bytes (no hash collision needed; disk
-         ORIGINALS are contained to the staging dir, only the CATALOG record is hijackable). (b) **Self-consistent
-          bytes:** body_hash/cid are offerer-supplied and the origin vouch (Heist.g:301) is optional + not
-           trust-anchored — this is rung 7's already-owed prod signer, not new. SOUND: sha256 everywhere +
-            hash-enforced-before-persist. Fix (core, human's call, needs an adversarial proving Book): assert
-             `id===content-hash` at land + require & peer-anchor `by`. Full detail: memory heist-landing-clobber.
+ - **Voucher forgery + replay (VERIFIED 2026-07-21).**  The "I'm really me" proof a friend staples to every
+    live message signs only WHO they are (`Swarm.g:426`), never WHAT they sent, and rides in the clear — so the
+     untrusted relay peels one off a real message and restaples it to a forged one.  It buys: fake a friend's
+      presence (the green dot), put words in their mouth (a forged suggestion/boast), or reset-DoS their link
+       (`Swarm.g:514`).  Sound math, wrong thing signed; LIVE-station only, so no Book catches it.
+        → **YOU DECIDE:** bless the cure — sign each message's own `{seq,type,to,body_hash}` + a replay counter
+         at the Peeroleum seam ("per-frame header-sign").  Core wire change.  (NOT the invite — that's sound,
+          single-use serial.)  Full walk-through + file:lines lives in memory `swarm-voucher-detached`.
+ - **Catalog clobber (VERIFIED 2026-07-21).**  Friends' offers legitimately land music in your collection; the
+    bug is the shelf FILES a landing by id (`Ra_rec_home`, `Heist.g:493`) while "already got it?" checks by
+     artist+title (`Heist_held`, `:154/:281`), and nothing re-checks the id matches the audio.  So a lying
+      sealed friend sends a husk with YOUR song's id + a title you lack → dodges dedup → overwrites your catalog
+       card and repoints it at their bytes (your disk original is safe in the staging pen; the catalog POINTER
+        is hijacked).  → **YOU DECIDE:** (a) machine — assert `id === content-fingerprint` at land; (b) design
+         (your instinct) — land incoming music in a provenance-tagged pen you EYEBALL before it merges (the
+          `newlyadded` idea).  The self-consistent-bytes leg is rung-7's already-owed prod signer.  File:lines
+           in memory `heist-landing-clobber`.
  - BootGate on a device whose AudioContext never inits: the gate stands forever; fingers-check.
  - watch_c migration for face reactivity (today faces poll H.version + a 1s tick).
  - Scale seams: FSA names-only expand (3000-file dirs); whole-stock husk re-offers want the
