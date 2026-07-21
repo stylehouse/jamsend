@@ -25,6 +25,24 @@ Peerily's `emit` (line 672) signs EVERY frame's content with the sender's identi
 
 ---
 
+## Where this sits — the way back to Radios (don't lose the road home)
+
+This crypto/trust audit is **ONE LEG of the main spring, not a side quest.** The living doc for the
+ whole thing is **`Radio_todo.md`** (read its §0 owed-ledger + §1.0 "the machine at a glance"); the
+  mission is **Radiobuddies** — friends' libraries flowing to each other over a *trust-gated* p2p wire
+   (memory: `radiobuddies-shebang-unnamed`, THE MAIN SPRING). Trust matters here precisely because that
+    flow is trust-gated: a friend's music only crosses on a live, rebuilt-per-connect relationship, and
+     an invite is how a stranger becomes a sealed friend — so "trust rebuilds after each connect" (job A)
+      and "an invite is single-use" (job B) are **load-bearing for the actual product**, not abstract crypto.
+
+**After A + B land, go back to `Radio_todo.md`.** The broader arc is there: the real carrier wiring (the
+ `.g` wire is still a loopback, §10.1), the owed live-gates (the two-tab fingers-proof), and the fleet is
+  green except the flagged **PereProof** dige-drift re-record (§0 "health-sweep reds", the human's call).
+   Also parked, un-retracted, still real: the invite **ttl** question (how long an invite may wander before
+    claiming). Don't let the crypto leg become the whole map — it's the trust floor the music stands on.
+
+---
+
 ## 0. What to get on with next
 
 Two jobs, both strictly on the LIVE stack (`p2p/Peerily.svelte.ts` + `Trust.svelte.ts` +
