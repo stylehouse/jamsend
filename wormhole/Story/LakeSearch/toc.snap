@@ -8,4 +8,34 @@ story:LakeSearch
       w:Lies
         dontSnapGhostList
     quiesce_snap_time=0.4
-  step,dige:a0a0a0a0a0a0a0a0
+  EntropyArrest
+    Entcase:Compile_timing
+      lematch,time
+        means,spayer,re:time(.*),tol:any
+    Entcase:Store_want_ts
+      lematch,want
+        means,spayer,re:want(.*),tol:any
+  TimeSpool
+    TimeTotal:beliefs,avg=0.071
+      sample=0.072,at=1784592123
+      sample=0.069,at=1784592128
+      sample=0.052,at=1784592150
+      sample=0.071,at=1784592254
+      sample=0.06,at=1784592258
+      sample=0.06,at=1784592284
+      sample=0.06,at=1784592376
+      sample=0.066,at=1784592380
+      sample=0.118,at=1784592442
+      sample=0.081,at=1784592460
+    TimeTotal:step,avg=0.071
+      sample=0.072,at=1784592123
+      sample=0.069,at=1784592128
+      sample=0.052,at=1784592150
+      sample=0.071,at=1784592254
+      sample=0.06,at=1784592258
+      sample=0.06,at=1784592284
+      sample=0.06,at=1784592376
+      sample=0.066,at=1784592380
+      sample=0.118,at=1784592442
+      sample=0.081,at=1784592460
+  step,dige:f75ff8fdb15bb7c7
