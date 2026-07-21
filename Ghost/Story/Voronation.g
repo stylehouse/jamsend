@@ -965,5 +965,407 @@ VoroTest_witness_quiet(w):
 // Voro_render_map — the stages in order (this ghost's crush, then Cytui's pixels), to walk the pipeline.
 Voro_render_map():
     return ['Voro_crush_scan', 'Vtuff_build', 'voronoi_layout', 'install_nuclei', 'morph_voronoi', 'voronoi_paint_now', 'paint_final']
+//#endregion
+
+//#region Stuff — the regrouping algebra, stho-native (re-home target: Vyto_fold, Vyto.g:294)
+// ══ Stuff_distil — the Stuffing regrouping algebra re-said CLEAN in stho ══════════════════════════
+//  A faithful re-expression of Voro.g Vtuff_keyrows (:1911, the oracle) — the pane-content engine's
+//   distiller lifted out of the crush and stated on its own, so a Book can prove it with no glass.
+//    A bag of member Cs (each an sc of k:v facts) distils into the SAME %Vtuffing/%Vrow/%Vbit tree
+//     Voro emits (keep-the-format, 2026-07-21 — it is already typed k/v and carries wgt|n prosody),
+//      PLUS the one leg Vtuff_keyrows structurally cannot reach: row:vein (a value that crosses keys).
+//   The three legs re-said: ONE distinct value → a fact said once (a bare '1' → a COUNTED presence
+//    fact, only when some-not-all carry it — a universal presence says nothing).  MANY values → a
+//     spread of chips, counted (the ×N multiplicity), ranked most-common-first, capped at 3 + an
+//      honest '+N' tail (never a silent drop).  Render decorations (tag badge · c.members hover) are
+//       DROPPED here — those are paint|hover, not the algebra.  `into` mints the tree attached (a
+//        Book wants it snapped as the proof — Snap data not judgement); Vyto_fold will add the
+//         detached-mint variant (new TheC · Books-invisible) at re-home.
+Stuff_distil(into, members, kind, skips):
+    let k = kind || 'stuff'
+    let n = members ? members.length : 0
+    let root = into.i({ Vtuffing: 1, of: k, n: n })
+    if (!members || !members.length) return root
+    this.Stuff_keyrows(root, members, skips)
+    this.Stuff_veinrows(root, members, skips)
+    return root
+
+// Stuff_keyrows — the key-by-key pass, Vtuff_keyrows re-said (Voro.g:1911).  Union the members'
+//  keys first-seen; per key tally values and carriers; ONE value → fact (or counted presence),
+//   MANY → spread + ranked capped chips.
+Stuff_keyrows(root, members, skips):
+    let keys = []
+    let seen = {}
+    for (const m of members) {
+        for (const kk of Object.keys(m.sc)) {
+            if (!seen[kk]) {
+                seen[kk] = 1
+                keys.push(kk)
+            }
+        }
+    }
+    for (const kk of keys) {
+        if (skips && skips.includes(kk)) continue
+        let vals = {}
+        let order = []
+        let have = 0
+        for (const m of members) {
+            if (!Object.prototype.hasOwnProperty.call(m.sc, kk)) continue
+            have = have + 1
+            let v = '' + m.sc[kk]
+            if (vals[v] == null) {
+                vals[v] = 0
+                order.push(v)
+            }
+            vals[v] = vals[v] + 1
+        }
+        if (!have) continue
+        if (order.length === 1) {
+            if (order[0] === '1') {
+                if (have < members.length) {
+                    let fp = { Vrow: 1, row: 'fact', k: kk, n: have, wgt: 1 }
+                    root.i(fp)
+                }
+            } else {
+                let fq = { Vrow: 1, row: 'fact', k: kk, v: order[0], wgt: 1 }
+                root.i(fq)
+            }
+            continue
+        }
+        order.sort((a, b) => vals[b] - vals[a])
+        let ssc = { Vrow: 1, row: 'spread', k: kk, wgt: 1 }
+        let r = root.i(ssc)
+        let chips = order
+        if (order.length > 4) chips = order.slice(0, 3)
+        for (const v of chips) {
+            let bsc = { Vbit: 1, v: v, n: vals[v] }
+            r.i(bsc)
+        }
+        if (order.length > chips.length) {
+            let tsc = { Vbit: 1, text: '+' + (order.length - chips.length), n: 0 }
+            r.i(tsc)
+        }
+    }
+
+// Stuff_veinrows — THE NEW LEG (proposed 2026-07-21 — HUMAN RULING OWED).  Vtuff_keyrows reads
+//  key-by-key and can NEVER see a value that crosses keys.  The sizing algebra wants it: a value
+//   carried across many keys is a global VEIN — one hue|bearing racing the whole scape — that
+//    deserves saying ONCE and loud.  The dual of spread: spread = one key · many values; vein =
+//     one value · many keys.  Poses large as `v` over `k1|k2`.  Ranked by total carriers; the '1'
+//      presence marker is never a vein value.  wgt:2 (louder than fact|spread) — a cross-key
+//       crossing is a strong shared signal; the exact weight and whether a vein SUPERSEDES or
+//        COEXISTS with the per-key rows it echoes are knobs left for the human.
+Stuff_veinrows(root, members, skips):
+    let vkeys = {}
+    let vn = {}
+    for (const m of members) {
+        for (const kk of Object.keys(m.sc)) {
+            if (skips && skips.includes(kk)) continue
+            let v = '' + m.sc[kk]
+            if (v === '1') continue
+            if (!vkeys[v]) vkeys[v] = {}
+            if (vn[v] == null) vn[v] = 0
+            vkeys[v][kk] = (vkeys[v][kk] || 0) + 1
+            vn[v] = vn[v] + 1
+        }
+    }
+    let veins = []
+    for (const v of Object.keys(vkeys)) {
+        if (Object.keys(vkeys[v]).length >= 2) veins.push(v)
+    }
+    veins.sort((a, b) => vn[b] - vn[a])
+    for (const v of veins) {
+        let r = root.i({ Vrow: 1, row: 'vein', v: v, wgt: 2 })
+        let ks = Object.keys(vkeys[v])
+        ks.sort((a, b) => vkeys[v][b] - vkeys[v][a])
+        for (const kk of ks) r.i({ Vbit: 1, k: kk, n: vkeys[v][kk] })
+    }
+//#endregion
+
+//#region test — Stuffing: the k:v regrouping algebra proven in isolation (no glass, no pixels)
+// ══ Stuffing — feed hand-built bags through Stuff_distil and assert the %Vtuffing tree ════════════
+//  Where VoroTest crushes whole data worlds through the fold|gang RULES, Stuffing isolates the ONE
+//   pane-content step: given a bag of members, what tree does the distiller say?  Five bags, one per
+//    leg; each an %Example holding its members + its distilled %Vtuffing (attached → SNAPPED → the
+//     fixture IS the proof, Snap data not judgement).  The %see are per-beat readable claims on top;
+//      the distilled trees are the durable gate.  Deterministic throughout — hand-built values, no
+//       hash, no wall-clock, no audio, no commission — byte-stable fixtures.  The world MUST be named
+//        Stuffing (do_fn_for dispatches by w.sc.w) — no Run_A_ recipe; Story auto-stands A:Stuffing.
+//   beat 2  the bench is laid — five bags distilled — every leg read
+//   beat 3  the vein RE-BREATHES — a fourth carrier lands on dub — its genre count thickens 2→3
+//   beat 4  a QUIET beat — nothing changes — the trees hold (the distiller is a pure function)
+Stuffing(A,w):
+    w oai %req:wrangle,eternal
+        await &Stuffing_drive,w,req
+        req%ok = 1
+
+async Stuffing_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.Stuffing_bench(w)
+        if (n === 3) this.Stuffing_rebreathe(w)
+    }
+    this.Stuffing_witness(w)
+
+// ── bag builders ─────────────────────────────────────────────────────────────────────────────────
+Stuffing_bag(w, name):
+    return w.i({ Example: 1, name: name })
+
+Stuffing_member(ex, sc):
+    return ex.i(sc)
+
+// distil an Example's EXPLICIT member list into an attached %Vtuffing under it (never re-read
+//  ex.o() — the %Vtuffing child would pollute the member set).
+Stuffing_seal(ex, members):
+    return this.Stuff_distil(ex, members, 'stuff', null)
+
+// ── readers (the witness walks the distilled trees through these) ──────────────────────────────────
+Stuffing_tree(w, name):
+    let ex = w.o({ Example: 1, name: name })[0]
+    return ex ? ex.o({ Vtuffing: 1 })[0] : null
+
+Stuffing_row(tree, rowkind, k):
+    if (!tree) return null
+    return tree.o({ Vrow: 1, row: rowkind, k: k })[0]
+
+Stuffing_vein(tree, v):
+    if (!tree) return null
+    return tree.o({ Vrow: 1, row: 'vein', v: v })[0]
+
+Stuffing_chip(row, v):
+    if (!row) return null
+    return row.o({ Vbit: 1, v: v })[0]
+
+Stuffing_keybit(row, k):
+    if (!row) return null
+    return row.o({ Vbit: 1, k: k })[0]
+
+// ── the bench: five bags one per leg ───────────────────────────────────────────────────────────────
+Stuffing_bench(w):
+    // A — AGREE: five tracks all genre dub (→ fact said once) beside varying titles (→ a spread)
+    let a = this.Stuffing_bag(w, 'agree')
+    let am = []
+    let titles = ['Tide', 'Halo', 'Drift', 'Glow', 'Vane']
+    for (const t of titles) am.push(this.Stuffing_member(a, { Track: 1, title: t, genre: 'dub' }))
+    this.Stuffing_seal(a, am)
+    // B — SPREAD + MULTIPLICITY: year 2007 twice · 1998 once (→ counted ranked chips)
+    let b = this.Stuffing_bag(w, 'spread')
+    let bm = []
+    bm.push(this.Stuffing_member(b, { Track: 1, title: 'Ember', year: '2007' }))
+    bm.push(this.Stuffing_member(b, { Track: 1, title: 'Frost', year: '2007' }))
+    bm.push(this.Stuffing_member(b, { Track: 1, title: 'Gale', year: '1998' }))
+    this.Stuffing_seal(b, bm)
+    // C — VEIN (the new leg): value 'dub' under BOTH genre AND mood (→ one vein two keys)
+    let c = this.Stuffing_bag(w, 'vein')
+    let cm = []
+    cm.push(this.Stuffing_member(c, { Track: 1, title: 'Sway', genre: 'dub' }))
+    cm.push(this.Stuffing_member(c, { Track: 1, title: 'Murk', mood: 'dub' }))
+    cm.push(this.Stuffing_member(c, { Track: 1, title: 'Reed', genre: 'dub' }))
+    this.Stuffing_seal(c, cm)
+    // D — OVERFLOW: one shared title (→ fact) + five distinct labels (→ top three + '+2' tail)
+    let d = this.Stuffing_bag(w, 'overflow')
+    let dm = []
+    let labels = ['blue', 'warp', 'deep', 'on-u', 'wackies']
+    for (const l of labels) dm.push(this.Stuffing_member(d, { Track: 1, title: 'Comp', label: l }))
+    this.Stuffing_seal(d, dm)
+    // E — PRESENCE: remaster:1 on three of five (→ counted fact no value); universal Track → skipped
+    let e = this.Stuffing_bag(w, 'presence')
+    let em = []
+    em.push(this.Stuffing_member(e, { Track: 1, title: 'Alve', remaster: 1 }))
+    em.push(this.Stuffing_member(e, { Track: 1, title: 'Bore', remaster: 1 }))
+    em.push(this.Stuffing_member(e, { Track: 1, title: 'Cusp', remaster: 1 }))
+    em.push(this.Stuffing_member(e, { Track: 1, title: 'Dell' }))
+    em.push(this.Stuffing_member(e, { Track: 1, title: 'Etch' }))
+    this.Stuffing_seal(e, em)
+
+// the vein re-breathes — a fourth carrier lands on dub-via-genre; drop the stale tree and re-seal.
+Stuffing_rebreathe(w):
+    let c = w.o({ Example: 1, name: 'vein' })[0]
+    if (!c) return
+    let old = c.o({ Vtuffing: 1 })[0]
+    if (old) c.drop(old)
+    let cm = c.o({ Track: 1 })
+    cm.push(this.Stuffing_member(c, { Track: 1, title: 'Kelp', genre: 'dub' }))
+    this.Stuffing_seal(c, cm)
+
+// ── the witness — each %see is a per-beat observation gated to its step (flat like VoroScape — a
+//  peel verb inside a nested { } block does not compile); comma-free · em-dash ────────────────────
+Stuffing_witness(w):
+    let n = (this.c.run)?.c.step_n
+    // A — a value everyone agrees on says itself once as a fact (not once per member)
+    let ta = this.Stuffing_tree(w, 'agree')
+    let fa = this.Stuffing_row(ta, 'fact', 'genre')
+    let sa = this.Stuffing_row(ta, 'spread', 'title')
+    if (n === 2 && fa && fa.sc.v === 'dub' && sa && !(oa %see:'a value everyone agrees on is said once as a fact — five dub tracks fold to a single genre dub not five')) i %see:'a value everyone agrees on is said once as a fact — five dub tracks fold to a single genre dub not five'
+    // B — a varying key spreads into counted chips ranked most-common-first (the ×N multiplicity)
+    let tb = this.Stuffing_tree(w, 'spread')
+    let sy = this.Stuffing_row(tb, 'spread', 'year')
+    let c07 = this.Stuffing_chip(sy, '2007')
+    let c98 = this.Stuffing_chip(sy, '1998')
+    let lead = sy ? sy.o({ Vbit: 1 })[0] : null
+    if (n === 2 && c07 && c07.sc.n === 2 && c98 && c98.sc.n === 1 && lead && lead.sc.v === '2007' && !(oa %see:'a key that varies spreads into counted chips ranked most-common-first — 2007 carries two and leads 1998 with one')) i %see:'a key that varies spreads into counted chips ranked most-common-first — 2007 carries two and leads 1998 with one'
+    // C — THE NEW LEG: a value crossing keys folds to one vein said once and loud
+    let tc = this.Stuffing_tree(w, 'vein')
+    let vein = this.Stuffing_vein(tc, 'dub')
+    let vg = this.Stuffing_keybit(vein, 'genre')
+    let vm = this.Stuffing_keybit(vein, 'mood')
+    if (n === 2 && vein && vg && vm && !(oa %see:'the new leg — a value crossing several keys folds to one vein said once and loud — dub spans genre and mood as a single crossing')) i %see:'the new leg — a value crossing several keys folds to one vein said once and loud — dub spans genre and mood as a single crossing'
+    // D — a spread past four keeps its top three and marks the rest as an honest overflow tail
+    let td = this.Stuffing_tree(w, 'overflow')
+    let so = this.Stuffing_row(td, 'spread', 'label')
+    let chips = so ? so.o({ Vbit: 1 }) : []
+    let tail = so ? so.o({ Vbit: 1 }).find(x => x.sc.text != null) : null
+    if (n === 2 && chips.length === 4 && tail && tail.sc.text === '+2' && !(oa %see:'a spread past four values keeps its top three and marks the rest as an honest overflow tail — five labels show three then plus two')) i %see:'a spread past four values keeps its top three and marks the rest as an honest overflow tail — five labels show three then plus two'
+    // E — a presence key on some-not-all rides as a counted fact with no value; universal mainkey says nothing
+    let te = this.Stuffing_tree(w, 'presence')
+    let pr = this.Stuffing_row(te, 'fact', 'remaster')
+    let trk = this.Stuffing_row(te, 'fact', 'Track')
+    if (n === 2 && pr && pr.sc.n === 3 && pr.sc.v == null && !trk && !(oa %see:'a presence key on some-not-all rides as a counted fact with no value while the universal mainkey says nothing — three of five remastered')) i %see:'a presence key on some-not-all rides as a counted fact with no value while the universal mainkey says nothing — three of five remastered'
+    // beat 3 — the field is live: one more carrier and the vein re-breathes (vg now reads the post-rebreathe tree)
+    if (n === 3 && vg && vg.sc.n === 3 && !(oa %see:'add another carrier and the vein re-breathes — dub across genre thickens from two to three without restating the bag')) i %see:'add another carrier and the vein re-breathes — dub across genre thickens from two to three without restating the bag'
+//#endregion
+
+//#region Typescale — the global type-scale (Vyto_sizing_todo §4 / §9 station ④) proven in isolation
+// ══ Typescale — ONE global scale S sizes every text so size(t) = S·φ(importance(t)) ═══════════════
+//  §9 of Vyto_sizing_todo.md names this the law's heart and says to prove it the way Stuffing proved
+//   the distiller: a bag of texts each with an importance, sized under ONE graph-global S — so the
+//    biggest word ANYWHERE is the most important thing anywhere (not an accident of local fit).  φ=√
+//     (a knob — √ compresses a 100× importance range to a 10× size range AND makes area=S²·w so S
+//      solves closed-form S=√(frame/Σw)); a text fills area ∝ size².  A FIRST CUT, no glass — it proves
+//       the INVARIANTS (global ratio · order · frame-spent · floor-fold · re-breathe) that hold for ANY
+//        reasonable φ; the exact φ|area|floor model is the human's to preen (§4).  World named Typescale.
+
+// Typescale_phi — the importance→size compression.  √: importance 100 → 10× the size of importance 1.
+Typescale_phi(wt):
+    return Math.sqrt(wt)
+
+// Typescale_size — size a bag of %Text (each sc.w an importance) under ONE global S, folding any text
+//  that would fall below the legibility floor (folding frees its area → S RISES for the rest → the
+//   re-breathe).  Mints an attached %Scale carrying S (×100 for a clean integer snap) + a %Size per
+//    survivor (px = round(S·φ(w))) + a %Fold per folded text (the honest +N — never a silent shrink).
+Typescale_size(into, texts, frame, floor):
+    let survivors = []
+    for (const t of texts) survivors.push(t)
+    let folded = []
+    let S = 0
+    let guard = 0
+    while (guard < 50) {
+        guard = guard + 1
+        let sumw = 0
+        for (const t of survivors) sumw = sumw + t.sc.w
+        if (sumw <= 0) break
+        S = Math.sqrt(frame / sumw)
+        let lo = null
+        for (const t of survivors) {
+            if (lo == null || t.sc.w < lo.sc.w) lo = t
+        }
+        if (lo == null) break
+        let losize = S * this.Typescale_phi(lo.sc.w)
+        if (losize >= floor || survivors.length <= 1) break
+        folded.push(lo)
+        let keep = []
+        for (const t of survivors) {
+            if (t !== lo) keep.push(t)
+        }
+        survivors = keep
+    }
+    let root = into.i({ Scale: 1, frame: frame, floor: floor, S: Math.round(S * 100) })
+    for (const t of survivors) {
+        let px = Math.round(S * this.Typescale_phi(t.sc.w))
+        root.i({ Size: 1, label: t.sc.label, w: t.sc.w, px: px })
+    }
+    for (const t of folded) {
+        root.i({ Fold: 1, label: t.sc.label, w: t.sc.w })
+    }
+    return root
+
+// Typescale — the Book (world MUST be named Typescale — do_fn_for dispatches by w.sc.w).
+Typescale(A,w):
+    w oai %req:wrangle,eternal
+        await &Typescale_drive,w,req
+        req%ok = 1
+
+async Typescale_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.Typescale_bench(w)
+    }
+    this.Typescale_witness(w)
+
+Typescale_bag(w, name):
+    return w.i({ Example: 1, name: name })
+
+Typescale_text(bag, label, wt):
+    return bag.i({ Text: 1, label: label, w: wt })
+
+Typescale_scale(w, name):
+    let ex = w.o({ Example: 1, name: name })[0]
+    return ex ? ex.o({ Scale: 1 })[0] : null
+
+Typescale_size_of(scale, label):
+    if (!scale) return null
+    return scale.o({ Size: 1, label: label })[0]
+
+// ── the bench: four cases, all integer-clean by construction (frame = perfect-square · Σw) ─────────
+Typescale_bench(w):
+    // A — FILL no fold: importances 16 9 4 1 at frame 1920 floor 8 → S=8 sizes 32 24 16 8 (Σpx²=1920)
+    let a = this.Typescale_bag(w, 'fill')
+    let at = []
+    at.push(this.Typescale_text(a, 'p', 16))
+    at.push(this.Typescale_text(a, 'q', 9))
+    at.push(this.Typescale_text(a, 'r', 4))
+    at.push(this.Typescale_text(a, 's', 1))
+    this.Typescale_size(a, at, 1920, 8)
+    // B — FOLD: same texts at frame 464 → importance 1 folds → survivors S=4 sizes 16 12 8
+    let b = this.Typescale_bag(w, 'fold')
+    let bt = []
+    bt.push(this.Typescale_text(b, 'p', 16))
+    bt.push(this.Typescale_text(b, 'q', 9))
+    bt.push(this.Typescale_text(b, 'r', 4))
+    bt.push(this.Typescale_text(b, 's', 1))
+    this.Typescale_size(b, bt, 464, 8)
+    // C-small — re-breathe reference: importances 16 9 at frame 2500 → S=10 sizes 40 30
+    let cs = this.Typescale_bag(w, 'small')
+    let cst = []
+    cst.push(this.Typescale_text(cs, 'p', 16))
+    cst.push(this.Typescale_text(cs, 'q', 9))
+    this.Typescale_size(cs, cst, 2500, 8)
+    // C-big — the field re-breathes: add importance 75 at the SAME frame → S=5 the shared texts halve
+    let cb = this.Typescale_bag(w, 'big')
+    let cbt = []
+    cbt.push(this.Typescale_text(cb, 'p', 16))
+    cbt.push(this.Typescale_text(cb, 'q', 9))
+    cbt.push(this.Typescale_text(cb, 'z', 75))
+    this.Typescale_size(cb, cbt, 2500, 8)
+
+// ── the witness — flat, gated to n===2; comma-free · em-dash ──────────────────────────────────────
+Typescale_witness(w):
+    let n = (this.c.run)?.c.step_n
+    // A — one global scale: biggest importance = biggest px, ratio is √(importance)
+    let fa = this.Typescale_scale(w, 'fill')
+    let ap = this.Typescale_size_of(fa, 'p')
+    let as = this.Typescale_size_of(fa, 's')
+    if (n === 2 && ap && ap.sc.px === 32 && as && as.sc.px === 8 && !(oa %see:'one global scale sizes every text so the biggest word is the most important thing anywhere — importance 16 takes 32px exactly four times importance 1 at 8px the square-root ratio')) i %see:'one global scale sizes every text so the biggest word is the most important thing anywhere — importance 16 takes 32px exactly four times importance 1 at 8px the square-root ratio'
+    // A — the scale is maximal: the frame is spent to the last pixel
+    if (n === 2 && fa && fa.sc.S === 800 && !(oa %see:'the scale is pushed until the frame is spent — importance summed to thirty fills the frame at scale eight to the last pixel')) i %see:'the scale is pushed until the frame is spent — importance summed to thirty fills the frame at scale eight to the last pixel'
+    // B — floor-fold: the sub-floor text folds and freeing its room clears the survivors
+    let fb = this.Typescale_scale(w, 'fold')
+    let bfold = fb ? fb.o({ Fold: 1, label: 's' })[0] : null
+    let bp = this.Typescale_size_of(fb, 'p')
+    let br = this.Typescale_size_of(fb, 'r')
+    if (n === 2 && bfold && bp && bp.sc.px === 16 && br && br.sc.px === 8 && !(oa %see:'a text that would fall below the legibility floor is folded not shrunk — importance 1 drops to a plus-one door and freeing its room lifts the scale so the survivors all clear eight px')) i %see:'a text that would fall below the legibility floor is folded not shrunk — importance 1 drops to a plus-one door and freeing its room lifts the scale so the survivors all clear eight px'
+    // C — re-breathe: the shared text shrinks when an important newcomer joins the same frame
+    let fcs = this.Typescale_scale(w, 'small')
+    let fcb = this.Typescale_scale(w, 'big')
+    let sp = this.Typescale_size_of(fcs, 'p')
+    let bp2 = this.Typescale_size_of(fcb, 'p')
+    if (n === 2 && sp && sp.sc.px === 40 && bp2 && bp2.sc.px === 20 && !(oa %see:'add an important text and the whole field re-breathes — importance 16 shrinks from 40px to 20px as one global scale rescales to hold the newcomer')) i %see:'add an important text and the whole field re-breathes — importance 16 shrinks from 40px to 20px as one global scale rescales to hold the newcomer'
+//#endregion
 
 //#endregion

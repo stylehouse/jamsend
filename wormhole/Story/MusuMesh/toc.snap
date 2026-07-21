@@ -4,16 +4,18 @@ story:MusuMesh
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.031
+    TimeTotal:beliefs,avg=0.027
       sample=0.026,at=1782800904
       sample=0.026,at=1782800932
       sample=0.02,at=1782800942
       sample=0.051,at=1783396544
-    TimeTotal:step,avg=0.005
+      sample=0.01,at=1784617600
+    TimeTotal:step,avg=0.004
       sample=0.004,at=1782800904
       sample=0.004,at=1782800932
       sample=0.003,at=1782800942
       sample=0.008,at=1783396544
+      sample=0.002,at=1784617600
   step,dige:b8f29b29390ed46f
   step=2,dige:07926f244faae91b
   step=3,dige:5f82634b317a4354

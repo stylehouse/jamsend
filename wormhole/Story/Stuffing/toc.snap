@@ -1,0 +1,24 @@
+story:Stuffing
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.013
+      sample=0.012,at=1784618599
+      sample=0.02,at=1784618704
+      sample=0.01,at=1784618799
+      sample=0.018,at=1784618850
+      sample=0.008,at=1784618875
+      sample=0.009,at=1784620422
+    TimeTotal:step,avg=0.003
+      sample=0.003,at=1784618599
+      sample=0.005,at=1784618704
+      sample=0.003,at=1784618799
+      sample=0.005,at=1784618850
+      sample=0.002,at=1784618875
+      sample=0.002,at=1784620422
+  step,dige:62bd5a5839d30be1
+  step=2,dige:31d6d645af80d7c7
+  step=3,dige:e8a1a572baa6f520
+  step=4,dige:f4ce5f949853d8e1

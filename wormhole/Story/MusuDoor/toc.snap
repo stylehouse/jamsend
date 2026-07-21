@@ -5,7 +5,6 @@ story:MusuDoor
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.026
-      sample=0.025,at=1784274834
       sample=0.024,at=1784274850
       sample=0.027,at=1784274859
       sample=0.038,at=1784453074
@@ -15,8 +14,8 @@ story:MusuDoor
       sample=0.023,at=1784602084
       sample=0.023,at=1784602097
       sample=0.025,at=1784602111
+      sample=0.03,at=1784616410
     TimeTotal:step,avg=0.003
-      sample=0.003,at=1784274834
       sample=0.003,at=1784274850
       sample=0.003,at=1784274859
       sample=0.004,at=1784453074
@@ -26,6 +25,7 @@ story:MusuDoor
       sample=0.003,at=1784602084
       sample=0.003,at=1784602097
       sample=0.003,at=1784602111
+      sample=0.003,at=1784616410
   step,dige:0fc451ce3b8f1d97
   step=2,dige:63cd8721b9a429da
   step=3,dige:84046a425ea37b91

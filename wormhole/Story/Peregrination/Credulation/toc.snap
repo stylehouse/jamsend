@@ -1,28 +1,30 @@
 Credulation,of_Book:Peregrination
-  run=0,at=1784418095.137,ok,ok_pct,mode:check
+  run=0,at=1784616715.751,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:831035f4b7de0927~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-    uses:Ghost_N_Repli,dige:f7973ae850a3a56a~g1
-    uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
+    uses:Ghost_N_Repli,dige:5af7bce2406f4886~g1
+    uses:Ghost_Story_Peregrination,dige:f8b774f7b76f9797~g1
     uses:Ghost_M_Radiola,dige:8786e42c3f3d4c97
     uses:Ghost_M_Sound,dige:f7dbcd82c50033cc
-    uses:Ghost_M_Crate,dige:6dd1625aefbb2ec8~g1
+    uses:Ghost_M_Crate,dige:faa2aff4ba0d184b~g1
     uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
-    uses:Ghost_M_Ra,dige:8f1135f0793a56af~g1
+    uses:Ghost_M_Ra,dige:5b066f8b2d624f31~g1
     uses:Ghost_M_Booth,dige:24e06889933090b3
-    uses:Ghost_M_Heist,dige:a8255bb2b5e0bf1b~g1
-    uses:Ghost_M_Jam,dige:9d89d2f22ccfbc41~g1
-    uses:Ghost_M_Orig,dige:9a0396a4a20027f6~g1
-    uses:Ghost_M_Radio,dige:cd4a4729e0266d50~g1
+    uses:Ghost_M_Heist,dige:023b05a1b2e3c84d~g1
+    uses:Ghost_M_Jam,dige:92834317758c2e6f~g1
+    uses:Ghost_M_Orig,dige:63f2dbf909bf7640~g1
+    uses:Ghost_M_Radio,dige:7d723cf645571c9e~g1
     uses:Ghost_Story_Musuation,dige:d51f5a2297ec8c96~g1
-    uses:Ghost_Story_Radiation,dige:b7af12f3ca26712c~g1
-    uses:Ghost_Story_Heistation,dige:d6c29d7ab8eb0ce8~g1
+    uses:Ghost_Story_Radiation,dige:57100009c65a317d~g1
+    uses:Ghost_Story_Heistation,dige:73b0553da6899a43~g1
     uses:Ghost_Story_Berthation,dige:a90a9afcc3b2ffc4~g1
-    uses:Ghost_S_Swarm,dige:632207c6a357c201~g1
-    uses:Ghost_Story_Swarmation,dige:12c14e001740b184~g1
+    uses:Ghost_S_Swarm,dige:39deae1ef7d17b9b~g1
+    uses:Ghost_Story_Swarmation,dige:9eb009b1ff84e6b1~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
+    uses:Ghost_V_Vyto,dige:baf38f93fc9996e4~g1
+    uses:Ghost_V_Vytonation,dige:63f26ac99d00678f~g1
     uses:Ghost_Story_Voronation,dige:19b605e62bdd580c~g1
-    uses:Ghost_Story_Sounditron,dige:db42ce266f15cb47~g1
+    uses:Ghost_Story_Sounditron,dige:fc546e9a542bb5eb~g1

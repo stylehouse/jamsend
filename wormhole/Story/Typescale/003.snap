@@ -1,0 +1,41 @@
+Snap:H
+  H:Typescale,Run
+    A:Typescale
+      self,round=3	{"mung":["age"]}
+      w:Typescale
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Example,name:fill
+          Text,label:p,w=16
+          Text,label:q,w=9
+          Text,label:r,w=4
+          Text,label:s,w
+          Scale,frame=1920,floor=8,S=800
+            Size,label:p,w=16,px=32
+            Size,label:q,w=9,px=24
+            Size,label:r,w=4,px=16
+            Size,label:s,w,px=8
+        Example,name:fold
+          Text,label:p,w=16
+          Text,label:q,w=9
+          Text,label:r,w=4
+          Text,label:s,w
+          Scale,frame=464,floor=8,S=400
+            Size,label:p,w=16,px=16
+            Size,label:q,w=9,px=12
+            Size,label:r,w=4,px=8
+            Fold,label:s,w
+        Example,name:small
+          Text,label:p,w=16
+          Text,label:q,w=9
+          Scale,frame=2500,floor=8,S=1000
+            Size,label:p,w=16,px=40
+            Size,label:q,w=9,px=30
+        Example,name:big
+          Text,label:p,w=16
+          Text,label:q,w=9
+          Text,label:z,w=75
+          Scale,frame=2500,floor=8,S=500
+            Size,label:p,w=16,px=20
+            Size,label:q,w=9,px=15
+            Size,label:z,w=75,px=43

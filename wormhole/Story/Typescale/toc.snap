@@ -1,0 +1,21 @@
+story:Typescale
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.007
+      sample=0.01,at=1784620260
+      sample=0.007,at=1784620270
+      sample=0.007,at=1784620326
+      sample=0.006,at=1784620386
+      sample=0.004,at=1784620418
+    TimeTotal:step,avg=0.002
+      sample=0.003,at=1784620260
+      sample=0.002,at=1784620270
+      sample=0.002,at=1784620326
+      sample=0.002,at=1784620386
+      sample=0.001,at=1784620418
+  step,dige:c1838fd2066bdc53
+  step=2,dige:25fb9757b84c3db1
+  step=3,dige:4dfb0ce46e3ef8dc

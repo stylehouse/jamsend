@@ -1,0 +1,45 @@
+Snap:H
+  H:Typescale,Run
+    A:Typescale
+      self,round=2	{"mung":["age"]}
+      w:Typescale
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Example,name:fill
+          Text,label:p,w=16
+          Text,label:q,w=9
+          Text,label:r,w=4
+          Text,label:s,w
+          Scale,frame=1920,floor=8,S=800
+            Size,label:p,w=16,px=32
+            Size,label:q,w=9,px=24
+            Size,label:r,w=4,px=16
+            Size,label:s,w,px=8
+        Example,name:fold
+          Text,label:p,w=16
+          Text,label:q,w=9
+          Text,label:r,w=4
+          Text,label:s,w
+          Scale,frame=464,floor=8,S=400
+            Size,label:p,w=16,px=16
+            Size,label:q,w=9,px=12
+            Size,label:r,w=4,px=8
+            Fold,label:s,w
+        Example,name:small
+          Text,label:p,w=16
+          Text,label:q,w=9
+          Scale,frame=2500,floor=8,S=1000
+            Size,label:p,w=16,px=40
+            Size,label:q,w=9,px=30
+        Example,name:big
+          Text,label:p,w=16
+          Text,label:q,w=9
+          Text,label:z,w=75
+          Scale,frame=2500,floor=8,S=500
+            Size,label:p,w=16,px=20
+            Size,label:q,w=9,px=15
+            Size,label:z,w=75,px=43
+        see:one global scale sizes every text so the biggest word is the most important thing anywhere — importance 16 takes 32px exactly four times importance 1 at 8px the square-root ratio
+        see:the scale is pushed until the frame is spent — importance summed to thirty fills the frame at scale eight to the last pixel
+        see:a text that would fall below the legibility floor is folded not shrunk — importance 1 drops to a plus-one door and freeing its room lifts the scale so the survivors all clear eight px
+        see:add an important text and the whole field re-breathes — importance 16 shrinks from 40px to 20px as one global scale rescales to hold the newcomer

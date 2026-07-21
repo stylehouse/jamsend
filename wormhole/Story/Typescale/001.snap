@@ -1,0 +1,7 @@
+Snap:H
+  H:Typescale,Run
+    A:Typescale
+      self,round	{"mung":["age"]}
+      w:Typescale
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

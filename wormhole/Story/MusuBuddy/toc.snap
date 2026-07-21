@@ -5,8 +5,7 @@ story:MusuBuddy
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=1.686
-      sample=1.025,at=1784500693
+    TimeTotal:beliefs,avg=1.753
       sample=1.304,at=1784511924
       sample=2.018,at=1784517657
       sample=2.018,at=1784517699
@@ -16,8 +15,8 @@ story:MusuBuddy
       sample=2.018,at=1784517705
       sample=1.118,at=1784518153
       sample=1.3,at=1784518189
-    TimeTotal:step,avg=0.12
-      sample=0.073,at=1784500693
+      sample=1.7,at=1784616177
+    TimeTotal:step,avg=0.125
       sample=0.093,at=1784511924
       sample=0.144,at=1784517657
       sample=0.144,at=1784517699
@@ -27,6 +26,7 @@ story:MusuBuddy
       sample=0.144,at=1784517705
       sample=0.08,at=1784518153
       sample=0.093,at=1784518189
+      sample=0.121,at=1784616177
   step,dige:b3d94b4565d8f9d0
   step=2,dige:26d645f9dbfac529
     Assertion:the-stock-pages-under,sentence:the stock pages under the shuffle mag — every record stands in a bounded cloud page never flat on the shelf
