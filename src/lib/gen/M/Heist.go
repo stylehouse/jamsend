@@ -10,7 +10,7 @@ import { sha256_hex, sha256_incremental } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '5aac5007560b34e0~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '023b05a1b2e3c84d~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -999,8 +999,12 @@ async Musica_fold(mag, lib, randomic, created_at) {
         //    runtime .c hint (Repli reads it, honoured by any offer of this tree); never snaps.
         cloud.c.repli_loc = ['Cloud', 'randomic']
         for (const rec of fresh) {
-            let card = cloud.i({ Card: 1, id: rec.sc.id, artist: rec.sc.artist, title: rec.sc.title })
+            // bare-mint then GUARD every scalar (never stamp a maybe-undefined sc value — an
+            //  undefined artist/title would brand the card line `undef`); order kept id,artist,title,….
+            let card = cloud.i({ Card: 1, id: rec.sc.id })
             card.c.up = cloud
+            if (rec.sc.artist) card.sc.artist = rec.sc.artist
+            if (rec.sc.title) card.sc.title = rec.sc.title
             if (rec.sc.path) card.sc.path = rec.sc.path
             if (rec.sc.album) card.sc.album = rec.sc.album
             if (rec.sc.body_hash) card.sc.body_hash = rec.sc.body_hash
