@@ -98,6 +98,42 @@ The docs are a bit senile — where this contradicts `Radio_todo.md`, this wins 
 
 ---
 
+## 0b. Residue — landing-Mag loose ends (verify + fix, 2026-07-21)
+
+Small cleanups the landing-Mag cut left behind (they lived only in a task-tracker + memory before
+ now). Each needs a re-record of the Book it touches; the heist-family ones pin to runner **49dee91d**.
+
+### Origin's stock should page, not lie flat · `origin-lib-pages`
+`Heistation.g:772` mints `w.c.origin_lib.oai({ Record: 1, id })` — flat. But `origin_lib =
+ Ra_home_self(w, 'Origin')` (`:734`) is a `%MusuSelf,pub:'Origin'` **stock** shelf — owned holdings,
+  which per the Mag model page under `%Mag:shuffle` (the `Ra_home_self` docstring at `Ra.g:535`, and
+   `§5A rung 1`, call the flat shape a *violation* awaiting migration). Route the flat `oai({Record:1})`
+    mints on origin_lib / repli_src through **`Ra_rec_home`** so Origin's tape pages like everything
+     else. Audit the sibling flat mints first (an overnight agent flagged ~6 across the Heistation
+      scenarios — verify each is a flat Record mint before converting). Re-record Heistation on 49dee91d.
+
+### A digging radio over-counts against a paged twin · `radio-stood-paged-blind`
+`Radio.g:629` guards with `!shelf.oa({ Record: 1, id })` before `Ra_record_from` — a **flat-only**
+ existence check. A record already sitting PAGED (under `Mag > Cloud`) is invisible to it, so it
+  re-records and `st.sc.stood` (`:631`) over-counts. Swap to the shape-agnostic
+   **`Ra_rec_find(shelf, { Record: 1, id })`**.
+
+### A published Card stamps maybe-undefined artist/title · `heist-card-guard-stamps`
+`Heist.g:949` mints `cloud.i({ Card: 1, id, artist, title })` stamping artist/title **inline**, while
+ its own siblings path/album/body_hash (`:951-953`) are each `if`-guarded. A holding with no
+  artist/title writes an `undef` marker into sc (the "never stamp a maybe-undefined sc value" rule).
+   Bare-mint `{ Card: 1, id }`, then guard each stamp.
+
+### `Ra_recs` is fixed-depth, and Mags may go deeper — your call · `ra-recs-recurse-question`
+`Ra_recs` (`Ra.g:638`) and `Ra_rec_find` (`:650`) hard-code exactly three shapes — flat
+ `shelf.o({Record:1})`, `Mag.o({Record:1})`, and `Mag > Cloud.o({Record:1})` — they do **not** recurse.
+  That matches today's built model (`%Mag:shuffle > %Cloud,page:N`, one Cloud layer). But if a Mag is
+   meant to nest arbitrarily deep (Cloud-in-Cloud, Mag-in-Mag), both silently drop the deeper rows.
+    DECIDE: is the Mag model fixed at that one depth, or do these two become a recursive walk over
+     Mag/Cloud? (the human flagged this 2026-07-21.)
+
+---
+
 ## 1. The model — stock IS `%Mag**/%Record`
 
 A holding does not float flat under a shelf; it lives under a **Mag**. The tree branches:
