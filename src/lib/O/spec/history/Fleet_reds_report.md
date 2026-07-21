@@ -1,3 +1,10 @@
+> **HISTORICITY — retired to history/ 2026-07-21 (thinning the small specs).** A **point-in-time
+>  snapshot** of 17 red Books taken 2026-07-07 on the since-merged `perf/gallop-tighten` branch —
+>   most of the reds it classifies were the Voro-guts WIP stale-fixture wave, long since re-recorded.
+>    A reds snapshot goes stale on contact; **current fleet truth = a live `runner_ask` sweep + the
+>     Credence board**, never this file. Kept only for its cause-taxonomy (stub / runner-killer /
+>      stale-fixture / env-gap), which is still a useful lens when triaging a fresh red.
+
 # Fleet reds report — the 17 Books red on the live runner (gallop-independent)
 
 Generated 2026-07-07 (eve) on branch `perf/gallop-tighten`, live :9091 runner. These 17 Books are
