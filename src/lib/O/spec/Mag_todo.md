@@ -116,20 +116,21 @@ All six flat `origin_lib`/`lib` Record mints across the Heistation scenarios now
          pure fixture-move. Re-recorded green ×2 on **49dee91d**: MusuVend, MusuDoor, MusuRename,
           MusuRecast, MusuFreeze, MusuStanding. (Commits `157f9d02` `b9a85bf9` `979e870c` `580c6a1c`.)
 
-### A digging radio over-counts against a paged twin · `radio-stood-paged-blind`
-`Radio.g:629` guards with `!shelf.oa({ Record: 1, id })` before `Ra_record_from` — a **flat-only**
- existence check. A record already sitting PAGED (under `Mag > Cloud`) is invisible to it, so it
-  re-records and `st.sc.stood` (`:631`) over-counts. Swap to the shape-agnostic
-   **`Ra_rec_find(shelf, { Record: 1, id })`**.
+### A digging radio over-counts against a paged twin · `radio-stood-paged-blind` — **DONE 2026-07-21**
+`Radio.g:629`'s flat `!shelf.oa({ Record: 1, id })` now reads the shape-agnostic
+ `!this.Ra_rec_find(shelf, { Record: 1, id })`, so a record already sitting PAGED is seen and
+  `st.sc.stood` no longer over-counts on a re-resurrection. `Ra_record_from` already deduped through
+   `Ra_rec_home`, so nothing could ever DUPLICATE — the bug was purely the count. Neutral (green:
+    MusuRaStream, MusuResume, MusuRaChase — no `stood` moved). Commit `2f991781`.
 
-### A published Card stamps maybe-undefined artist/title · `heist-card-guard-stamps`
-`Heist.g:949` mints `cloud.i({ Card: 1, id, artist, title })` stamping artist/title **inline**, while
- its own siblings path/album/body_hash (`:951-953`) are each `if`-guarded. A holding with no
-  artist/title writes an `undef` marker into sc (the "never stamp a maybe-undefined sc value" rule).
-   Bare-mint `{ Card: 1, id }`, then guard each stamp.
+### A published Card stamps maybe-undefined artist/title · `heist-card-guard-stamps` — **DONE 2026-07-21**
+`Musica_fold`'s card mint (`Heist.g:949`) now bare-mints `{ Card: 1, id }` and `if`-guards artist/title
+ like its path/album/body_hash siblings, so a holding with no artist/title never brands the card line
+  `undef`. Neutral (every test pool sets both — green: MusuVend, MusuRecast; no gated fixture moved).
+   Commit `7e4bddc9`.
 
 ### `Ra_recs` is fixed-depth, and Mags may go deeper — your call · `ra-recs-recurse-question`
-`Ra_recs` (`Ra.g:638`) and `Ra_rec_find` (`:650`) hard-code exactly three shapes — flat
+`Ra_recs` (`Ra.g:649`) and `Ra_rec_find` (`:661`) hard-code exactly three shapes — flat
  `shelf.o({Record:1})`, `Mag.o({Record:1})`, and `Mag > Cloud.o({Record:1})` — they do **not** recurse.
   That matches today's built model (`%Mag:shuffle > %Cloud,page:N`, one Cloud layer). But if a Mag is
    meant to nest arbitrarily deep (Cloud-in-Cloud, Mag-in-Mag), both silently drop the deeper rows.
