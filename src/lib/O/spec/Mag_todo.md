@@ -103,14 +103,18 @@ The docs are a bit senile — where this contradicts `Radio_todo.md`, this wins 
 Small cleanups the landing-Mag cut left behind (they lived only in a task-tracker + memory before
  now). Each needs a re-record of the Book it touches; the heist-family ones pin to runner **49dee91d**.
 
-### Origin's stock should page, not lie flat · `origin-lib-pages`
-`Heistation.g:772` mints `w.c.origin_lib.oai({ Record: 1, id })` — flat. But `origin_lib =
- Ra_home_self(w, 'Origin')` (`:734`) is a `%MusuSelf,pub:'Origin'` **stock** shelf — owned holdings,
-  which per the Mag model page under `%Mag:shuffle` (the `Ra_home_self` docstring at `Ra.g:535`, and
-   `§5A rung 1`, call the flat shape a *violation* awaiting migration). Route the flat `oai({Record:1})`
-    mints on origin_lib / repli_src through **`Ra_rec_home`** so Origin's tape pages like everything
-     else. Audit the sibling flat mints first (an overnight agent flagged ~6 across the Heistation
-      scenarios — verify each is a flat Record mint before converting). Re-record Heistation on 49dee91d.
+### Origin's stock should page, not lie flat · `origin-lib-pages` — **DONE 2026-07-21**
+All six flat `origin_lib`/`lib` Record mints across the Heistation scenarios now go through
+ **`Ra_rec_home`**, so Origin's tape lands under `%Mag:shuffle > %Cloud,page:N` like every real stock
+  shelf. The three fold-only Books (MusuVend `MusuVend_meander`, MusuDoor `MusuDoor_stock`, MusuRename
+   `MusuRename_publish`) needed only the mint swap. The three **goner** Books (MusuRecast, MusuFreeze,
+    MusuStanding) also paired a flat `origin_lib.rm({Record:1,id})` that a paged record is invisible to —
+     so a new removal door **`Ra_rec_drop(shelf, id)`** (`Ra.g`, right after `Ra_rec_home`) finds the
+      holding wherever it sits and detaches it from its actual parent; all six `rm` sites route through
+       it. Downstream was already shape-agnostic (`Musica_fold`/`Musica_recast_offer`/`Musica_stand`
+        all read `Ra_recs`), so the goner receipts (`gone_recs`/`gone_cl`) and every `%see` claim held —
+         pure fixture-move. Re-recorded green ×2 on **49dee91d**: MusuVend, MusuDoor, MusuRename,
+          MusuRecast, MusuFreeze, MusuStanding. (Commits `157f9d02` `b9a85bf9` `979e870c` `580c6a1c`.)
 
 ### A digging radio over-counts against a paged twin · `radio-stood-paged-blind`
 `Radio.g:629` guards with `!shelf.oa({ Record: 1, id })` before `Ra_record_from` — a **flat-only**
