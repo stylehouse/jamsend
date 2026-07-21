@@ -1713,8 +1713,8 @@ async MusuRename_setup(w):
 async MusuRename_publish(w):
     let lib = w.c.origin_lib
     for (const t of w.c.pool) {
-        let rec = lib.oai({ Record: 1, id: t.id })
-        rec.c.up = lib
+        // page through Ra_rec_home so Origin's tape lands under %Mag:shuffle > %Cloud (see MusuVend_meander).
+        let rec = this.Ra_rec_home(lib, t.id)
         rec.sc.artist = t.artist
         rec.sc.title = t.title
         rec.sc.path = t.path

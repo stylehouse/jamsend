@@ -22,9 +22,11 @@ Snap:H
           active_transport,type:mock,open
         MusuSelf,pub:Origin
           stock,pub:Origin
-            Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-            Record,id:t1,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
-            Record,id:t2,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
+            Mag:shuffle
+              Cloud,page:1
+                Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+                Record,id:t1,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+                Record,id:t2,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
           radiostocking,pub:Origin
             Mag:Musica
               Cloud,randomic:dgbl8pe,created_at=1000
