@@ -1,9 +1,9 @@
 Snap:H
   H:MusuVend,Run
     A:MusuVend
-      self,round=11	{"mung":["age"]}
+      self,round=10	{"mung":["age"]}
       w:MusuVend
-        self,round=11	{"mung":["age"]}
+        self,round=10	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -36,18 +36,20 @@ Snap:H
           active_transport,type:mock,open
         MusuSelf,pub:Origin
           stock,pub:Origin
-            Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-              Stream,name:audio,total=8,have=0
-            Record,id:t1,artist:Auteur,title:Meander Two,path:crate/a/Auteur - Meander Two.opus
-              Stream,name:audio,total=8,have=0
-            Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
-              Stream,name:audio,total=8,have=0
-            Record,id:t3,artist:Bassbin,title:Deep Draw,path:crate/b/Bassbin - Deep Draw.opus
-              Stream,name:audio,total=8,have=0
-            Record,id:t4,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
-              Stream,name:audio,total=8,have=0
-            Record,id:t5,artist:Choral,title:Long Draw,path:crate/c/Choral - Long Draw.opus
-              Stream,name:audio,total=8,have=0
+            Mag:shuffle
+              Cloud,page:1
+                Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
+                  Stream,name:audio,total=8,have=0
+                Record,id:t1,artist:Auteur,title:Meander Two,path:crate/a/Auteur - Meander Two.opus
+                  Stream,name:audio,total=8,have=0
+                Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
+                  Stream,name:audio,total=8,have=0
+                Record,id:t3,artist:Bassbin,title:Deep Draw,path:crate/b/Bassbin - Deep Draw.opus
+                  Stream,name:audio,total=8,have=0
+                Record,id:t4,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
+                  Stream,name:audio,total=8,have=0
+                Record,id:t5,artist:Choral,title:Long Draw,path:crate/c/Choral - Long Draw.opus
+                  Stream,name:audio,total=8,have=0
           radiostocking,pub:Origin
             Mag:Musica
               Cloud,randomic:d70fnpn,created_at=1000
