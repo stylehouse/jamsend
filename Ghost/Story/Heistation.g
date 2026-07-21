@@ -1018,8 +1018,8 @@ async MusuDoor_setup(w):
 MusuDoor_stock(w, tracks):
     let ids = []
     for (const t of tracks) {
-        let rec = w.c.origin_lib.oai({ Record: 1, id: t.id })
-        rec.c.up = w.c.origin_lib
+        // page through Ra_rec_home so Origin's tape lands under %Mag:shuffle > %Cloud (see MusuVend_meander).
+        let rec = this.Ra_rec_home(w.c.origin_lib, t.id)
         rec.sc.artist = t.artist
         rec.sc.title = t.title
         rec.sc.path = t.path

@@ -32,10 +32,12 @@ Snap:H
           active_transport,type:mock,open
         MusuSelf,pub:Origin
           stock,pub:Origin
-            Record,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
-              Stream,name:audio,total=8,have=0
-            Record,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
-              Stream,name:audio,total=8,have=0
+            Mag:shuffle
+              Cloud,page:1
+                Record,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
+                  Stream,name:audio,total=8,have=0
+                Record,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
+                  Stream,name:audio,total=8,have=0
           radiostocking,pub:Origin
             Mag:Musica
               Cloud,randomic:draw_hon,created_at=1000

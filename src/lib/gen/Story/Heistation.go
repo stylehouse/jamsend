@@ -10,7 +10,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return '012b2c3909302fa4~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return '9769bcdabb525aa2~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -1066,8 +1066,8 @@ async MusuDoor_setup(w) {
 MusuDoor_stock(w, tracks) {
     let ids = []
     for (const t of tracks) {
-        let rec = w.c.origin_lib.oai({ Record: 1, id: t.id })
-        rec.c.up = w.c.origin_lib
+        // page through Ra_rec_home so Origin's tape lands under %Mag:shuffle > %Cloud (see MusuVend_meander).
+        let rec = this.Ra_rec_home(w.c.origin_lib, t.id)
         rec.sc.artist = t.artist
         rec.sc.title = t.title
         rec.sc.path = t.path
