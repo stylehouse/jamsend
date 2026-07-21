@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '19a0bd4b85bbe009~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '7d723cf645571c9e~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -666,7 +666,9 @@ async Stoker_look(st, era) {
             try { stand = await this.Ra_stock_standing(nav, pub, ls[k].enid) } catch (er) { stand = null }
             if (st.c.era !== era) return
             if (stand && +(stand.info.preview_secs || 0) === this.Ra_preview_secs()) {
-                if (!shelf.oa({ Record: 1, id: ls[k].enid })) {
+                // shape-agnostic existence check — a flat shelf.oa misses a record already sitting
+                //  PAGED (%Mag:shuffle > %Cloud), so it would re-stock it and over-count stood.
+                if (!this.Ra_rec_find(shelf, { Record: 1, id: ls[k].enid })) {
                     this.Ra_record_from(shelf, stand.info, stand.bufs)
                     st.sc.stood = (+(st.sc.stood || 0)) + 1
                 }
