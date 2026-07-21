@@ -1952,8 +1952,8 @@ async MusuRecast_publish(w, which):
     let slice = (which === 'a') ? [0, 1, 2] : [3, 4]
     for (const ix of slice) {
         let t = w.c.pool[ix]
-        let rec = lib.oai({ Record: 1, id: t.id })
-        rec.c.up = lib
+        // page through Ra_rec_home so Origin's tape pages (see MusuVend_meander).
+        let rec = this.Ra_rec_home(lib, t.id)
         rec.sc.artist = t.artist
         rec.sc.title = t.title
         rec.sc.path = t.path
@@ -1981,7 +1981,7 @@ MusuRecast_baseline(w):
 //   follower drops it too.  The note pins what the recast reported it withdrew (gone_recs) — a faithful receipt.
 async MusuRecast_lose_record(w):
     this.MusuRecast_note(w, { reached: 'lose_record' })
-    await w.c.origin_lib.rm({ Record: 1, id: 't1' })
+    await this.Ra_rec_drop(w.c.origin_lib, 't1')
     let out = await this.Musica_recast_offer(w, w.c.tx, 'Origin', 'Follower', w.c.origin_mag, w.c.origin_lib, 'draw_a', 1000)
     this.MusuRecast_note(w, { lost_record: 't1', gone_recs: (out.gone_records || []).join('|'), gone_cl: (out.gone_clouds || []).join('|') })
 
@@ -2007,8 +2007,8 @@ async MusuRecast_after_record(w):
 //   record deletes) so the follower drops the entire cloud at once — the whole reason the %Cloud layer exists.
 async MusuRecast_lose_cloud(w):
     this.MusuRecast_note(w, { reached: 'lose_cloud' })
-    await w.c.origin_lib.rm({ Record: 1, id: 't3' })
-    await w.c.origin_lib.rm({ Record: 1, id: 't4' })
+    await this.Ra_rec_drop(w.c.origin_lib, 't3')
+    await this.Ra_rec_drop(w.c.origin_lib, 't4')
     let out = await this.Musica_recast_offer(w, w.c.tx, 'Origin', 'Follower', w.c.origin_mag, w.c.origin_lib, 'draw_a', 1000)
     this.MusuRecast_note(w, { lost_cloud: 'draw_b', gone_recs: (out.gone_records || []).join('|'), gone_cl: (out.gone_clouds || []).join('|') })
 
@@ -2200,8 +2200,8 @@ async MusuFreeze_publish(w):
         let slice = (which === 'a') ? [0, 1, 2] : [3, 4]
         for (const ix of slice) {
             let t = w.c.pool[ix]
-            let rec = lib.oai({ Record: 1, id: t.id })
-            rec.c.up = lib
+            // page through Ra_rec_home so Origin's tape pages (see MusuVend_meander).
+            let rec = this.Ra_rec_home(lib, t.id)
             rec.sc.artist = t.artist
             rec.sc.title = t.title
             rec.sc.path = t.path
@@ -2231,7 +2231,7 @@ MusuFreeze_baseline(w):
 //    trips intra-beat (the post_do lesson), so it is read a beat later in MusuFreeze_check_revoke.  Pin the
 //     receipt (gone_recs) and the frame count here.
 async MusuFreeze_control(w):
-    await w.c.origin_lib.rm({ Record: 1, id: 't1' })
+    await this.Ra_rec_drop(w.c.origin_lib, 't1')
     let before = (w.c.tx.c.seq || 0)
     let out = await this.Musica_recast_offer(w, w.c.tx, 'Origin', 'Follower', w.c.origin_mag, w.c.origin_lib, 'draw_a', 1000)
     let sent = (w.c.tx.c.seq || 0) - before
@@ -2259,7 +2259,7 @@ async MusuFreeze_check_revoke(w):
 //    dropped it locally) — the origin's own census is real — but nothing crossed the gate.  The mirror effect (that
 //     t2 stayed) is read a beat later in MusuFreeze_frozen.
 async MusuFreeze_probe(w):
-    await w.c.origin_lib.rm({ Record: 1, id: 't2' })
+    await this.Ra_rec_drop(w.c.origin_lib, 't2')
     let before = (w.c.tx.c.seq || 0)
     let out = await this.Musica_recast_offer(w, w.c.tx, 'Origin', 'Follower', w.c.origin_mag, w.c.origin_lib, 'draw_a', 1000)
     let sent = (w.c.tx.c.seq || 0) - before
@@ -2423,8 +2423,8 @@ MusuStanding_add(w, idxs):
     let lib = w.c.origin_lib
     for (const ix of idxs) {
         let t = w.c.pool[ix]
-        let rec = lib.oai({ Record: 1, id: t.id })
-        rec.c.up = lib
+        // page through Ra_rec_home so Origin's tape pages (see MusuVend_meander).
+        let rec = this.Ra_rec_home(lib, t.id)
         rec.sc.artist = t.artist
         rec.sc.title = t.title
         rec.sc.path = t.path
@@ -2454,7 +2454,7 @@ MusuStanding_grow(w):
 // MusuStanding_shrink — a removal: t1 leaves the collection (the census shrinks).  The NEXT stand must cross the goner.
 async MusuStanding_shrink(w):
     this.MusuStanding_note(w, { reached: 'shrink' })
-    await w.c.origin_lib.rm({ Record: 1, id: 't1' })
+    await this.Ra_rec_drop(w.c.origin_lib, 't1')
 
 async MusuStanding_pump(w):
     if (w.c.rx) { await w.c.rx.do() }

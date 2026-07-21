@@ -631,6 +631,17 @@ Ra_rec_home(shelf, id):
     rec = page.i({ Record: 1, id: id })
     rec.c.up = page
     return rec
+// Ra_rec_drop — the removal counterpart to Ra_rec_home: find the holding wherever it sits (flat or
+//  paged — Ra_rec_find walks both) and detach it from its ACTUAL parent.  A flat shelf.rm({Record})
+//   misses a Cloud-paged record, so a paged collection could never lose a track; this removes it from
+//    the page that holds it.  The emptied shuffle page is left standing (way-station furniture — the
+//     magazine's own fold reconcile is what drops emptied Clouds).  Returns 1 if one was dropped, else 0.
+async Ra_rec_drop(shelf, id):
+    let rec = this.Ra_rec_find(shelf, { Record: 1, id: id })
+    if (!rec) return 0
+    let parent = rec.c.up || shelf
+    await parent.rm({ Record: 1, id: id })
+    return 1
 // Ra_recs — the shape-agnostic record census of a crate: flat %Record children first (the
 //  way-station shape), then every Mag's rows — directly-held and %Cloud-paged — in child order,
 //   so the census is stable run to run.  EVERY scanning reader goes through here: a direct
