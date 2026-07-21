@@ -140,7 +140,18 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
     the next track (design seam for deck-UI × invite).
 
 **Posited unknowns (the final figure-out):**
- - Voucher replay window — per-frame header-sign at the Peeroleum seam is the full cure.
+ - Voucher gap (VERIFIED 2026-07-21, adversarial audit) — the per-era voucher is a **detached** token: it
+    signs only its own `{control,from,pub,era,ts}` (Swarm.g:426) and is stapled verbatim to every frame
+     (Swarm.g:248), which carries no per-frame sign; the untrusted relay reads it cleartext. So **one captured
+      voucher** buys (a) REPLAY presence — `Swarm_voucher_ok` has no era/nonce freshness (Swarm.g:306, the :308
+       cache path skips crypto), and `heard_at` drives the 30s liveness dot (Radio.g:498); (b) FORGE any frame
+        as a sealed friend — `hear` trusts `swarm.page.prepub` + a valid voucher (Swarm.g:269/278) and the whole
+         frame body is outside the signed envelope; (c) era-reset DoS — a forged `swarm_hi` flips `route.c.peer_era`
+          → `Peeroleum_reset_handshake` + drops `ra_wanted` (Swarm.g:514-518), and swarm_hi is ephemeral so no
+           replay dedup (Peeroleum.g:383/476). **LIVE-station only** (`station_up`; Books run the strict gate, so
+            no Book catches this). The full cure is per-frame header-sign at the Peeroleum seam — sign
+             `{seq,type,to,body_hash}`, give swarm JSON frames a `body_hash`, add a monotonic per-pier seq/era
+              check the relay can't rewind. Core crypto/protocol change → the human's call.
  - BootGate on a device whose AudioContext never inits: the gate stands forever; fingers-check.
  - watch_c migration for face reactivity (today faces poll H.version + a 1s tick).
  - Scale seams: FSA names-only expand (3000-file dirs); whole-stock husk re-offers want the
