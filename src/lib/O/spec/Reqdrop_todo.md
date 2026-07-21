@@ -6,6 +6,23 @@
    `req:…,finished` rows. On investigation stage 2 is **not** a blanket drop — it is a per-family,
     per-Book deliberate pass with a real blocker. The map below is so the fan-out lands safely.
 
+## HUMAN — the calls that are yours (everything else here is my working map)
+
+Stage 2 is blocked on **your judgment, not more analysis**. Two questions; my pick is the first line of each:
+
+- **Which family first?** → *None yet — settle MusuHeist first (next bullet). The biggest drain by
+   far is the handshake family (2386 rows across 10 Books), and it can't re-record green until
+    MusuHeist is green, so MusuHeist is the real gate on everything worth doing here.*
+- **MusuHeist: rehab or exclude it?** It is **pre-existing RED** — unpinned wall-clock + a Body-chunk
+   landing shape that moved since its fixture ([[musuheist-preexisting-red]]), nothing I did. → *My
+    pick: rehab it (pin the clock + EntropyArrest the signatures). But **the one thing I can't decide
+     for you** is whether the current Body-chunk landing shape is the one you want frozen — I need you
+      to eyeball a live snap and say "yes, record that" before I re-record.*
+- **Or park it.** → *Also a fine answer. The dead rows are cosmetic snap-noise that EntropyArrest
+   already tames; nothing is broken. This doc keeps the whole map warm for whenever you want it.*
+
+Everything below is the map behind those calls — read it only if a "why" above didn't land.
+
 ## 0. What to get on with next
 
 The bet (the human, 2026-07-14): *transient reqs are scaffolding, not ledger — once a `%req` has
@@ -56,8 +73,9 @@ Regenerate: `grep -rahoE "req:[a-zA-Z_]+,[^ ]*finished" wormhole/ | grep -aoE "r
    MusuMag, MusuRaChase, MusuRaStream, PeeringLive, PereReborn, PereStaple, SwarmShare, SwarmWire).
     **MusuHeist is pre-existing RED** (unpinned wall-clock + Body-chunk drift — see the memory note),
      so it cannot be cleanly re-recorded green after a handshake drop. Either rehab MusuHeist first
-      (pin its clock + EntropyArrest + re-record the current landing shape — needs the human to confirm
-       that shape is intended) or exclude it from the handshake pass.
+      (pin its clock + EntropyArrest + re-record the current landing shape) or exclude it from the
+       handshake pass. **HUMAN call** — the rehab needs you to confirm the current Body-chunk landing
+        shape is the one to freeze (see the HUMAN block up top).
 
 ## 3. The honest finding: there is NO easy safe family — every one hits a wall
 
