@@ -1,0 +1,24 @@
+Snap:H
+  H:SwarmBlotter,Run
+    A:SwarmBlotter
+      self,round=2	{"mung":["age"]}
+      w:SwarmBlotter,now=1751800000
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Host
+          Identity:8e0b046f67fbbf1c,prepub:8e0b046f67fbbf1c,friendly:Host
+            Peering,name:8e0b046f67fbbf1c,friendly:Host,online
+        Account,of:Uno
+          Identity:977d35e0a8e0cd0e,prepub:977d35e0a8e0cd0e,friendly:Uno
+            Peering,name:977d35e0a8e0cd0e,friendly:Uno,online
+        Account,of:Dos
+          Identity:3c2569c2c4366c9c,prepub:3c2569c2c4366c9c,friendly:Dos
+            Peering,name:3c2569c2c4366c9c,friendly:Dos,online
+        Account,of:Tres
+          Identity:6077adc818434359,prepub:6077adc818434359,friendly:Tres
+            Peering,name:6077adc818434359,friendly:Tres,online
+        Account,of:Qua
+          Identity:7c5e239685f95f2f,prepub:7c5e239685f95f2f,friendly:Qua
+            Peering,name:7c5e239685f95f2f,friendly:Qua,online
+        req:witness,eternal,ok

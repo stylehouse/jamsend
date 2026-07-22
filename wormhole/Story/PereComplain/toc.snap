@@ -1,0 +1,22 @@
+story:PereComplain
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.019
+      sample=0.022,at=1784683336
+      sample=0.016,at=1784683366
+      sample=0.018,at=1784683384
+    TimeTotal:step,avg=0.005
+      sample=0.006,at=1784683336
+      sample=0.004,at=1784683366
+      sample=0.004,at=1784683384
+  step,dige:a05e1a3ef992cc0c
+  step=2,dige:52606bc9d3a76060
+  step=3,dige:b32a2899eeb5fdd2
+    Assertion:ready-signals-back,sentence:a ready peer hearing an unenabled protocol signals no_protocol back naming the type — the sender learns instead of losing it silently
+    Assertion:complainer-still-acks,sentence:the complainer still acks the original so the sender stops retransmitting — a definitive answer not a silent black hole
+    Assertion:never-ping-pongs,sentence:the back-signal never ping-pongs — a complaint about a missing handler draws no complaint of its own
+  step=4,dige:532c87ab7a9d4724
+    Assertion:startup-holds-silent,sentence:during the handshake startup an unenabled protocol is HELD not complained — the frame waits faulty for retry and the sender hears nothing back

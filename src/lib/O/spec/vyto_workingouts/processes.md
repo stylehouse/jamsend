@@ -9,7 +9,7 @@ Born 2026-07-21 from the human's line: *"more engines for manipulating C/C/C sor
       `Vyto_sizing_todo.md §9` (the pipeline law), `Stuff_todo.md` (the distiller), and
        `Vyto_spec.md §3–§6` (calm · shifts · scopes · bunching) as background.
 
-## HUMAN — RULED 2026-07-22 (recorded so nobody re-asks; one item still open)
+## HUMAN — RULED + STILL-OPEN 2026-07-22 (1–3 ruled so nobody re-asks · 4 parked · 5–8 await your call)
 
 1. **The floor law — RULED with a steer.**  Mechanism stands (Floorlaw Book green); the steer:
     *"we might be overthinking all the different presentations of what I want a pretty accurately
@@ -31,6 +31,43 @@ Born 2026-07-21 from the human's line: *"more engines for manipulating C/C/C sor
 
 *(Earlier ruling, kept on record: the vein SUPERSEDES per-key facts by default with a `coexist`
  knob, vein wgt:1.  2026-07-21, landed green.)*
+
+### STILL OPEN — your calls (night-2 work · lifted here from the session scratchpad so it lives in the repo)
+
+**Where the arc stands:** the whole sizing|structure machine is proven end-to-end in isolation
+ Books — the five joints (J1–J5), distillation COMPOSES (Deepcrest), the READ contract holds as a
+  green gate (Readback), the joints compose in one stack (Surfline), and the first tenant moved into
+   Vyto.g without disturbing the fold stub or the fleet (VytoCrest).  Consolidated sweep GREEN 15/15
+    (book-verified) and **committed 2026-07-22** — `ba534fcc "Vyto the work"` + `759436a6 vyto:
+     wire-side requests` + `68377187 vyto: per-book migration note`.  The ONLY unproven half is the
+      paint choreography — the human's Vytui refactor.  Two shape studies await a taste vote: cards
+       https://claude.ai/code/artifact/cdccea4b-020b-4238-8767-a1c140a0f79c vs pods
+        https://claude.ai/code/artifact/c91a13ec-16d2-486f-9277-dfe47beaca87 (same 58-track library ·
+         same one law · only the shape differs · both ship their geometry as verified `[pure]` code).
+
+5. **The two-leak notation ruling — RECOMMEND YES (found by the Readback keystone).**  The notation
+    has exactly two leaks against the read contract: a valued fact row carries no carrier count (a
+     3-of-5 partial fact reads as 5) and a spread tail counts dropped VALUES not carriers (a `+3` can
+      hide 4 members).  Fix = stamp `n:have` on both in `Stuff_keyrows` (+ mirror in the Voro.g
+       oracle) — closes the contract everywhere.  Cost: re-snaps Stuffing · Floorlaw · Deepcrest and
+        touches the crush's live voice, so do it as ONE batch re-record at preen-hour, not piecemeal.
+         Full detail + the measured leak values: `Cstructures_todo.md §6.4`.
+6. **The shape vote — your taste.**  Cards vs pods (URLs above).  Which one reads as C?  (Pods
+    revealed a tell worth keeping: the same law crosses floors at different depths under circle-
+     packing — the law is constant, the geometry moves the thresholds.)
+7. **Credence — three linked chores, best done together.**  Name the visual sub-What (I suggested
+    "Visually") · consolidate the What:Misc auto-filings the churn scattered · and fix the churn at
+     root.  A foreign tab (another agent — a SwarmChain row shows it shares the tree) re-saves the
+      whole toc from its in-memory copy at its own cadence, eating hand-edited desc'd rows four-to-
+       five times over the night.  RECOMMEND a Shelver MERGE-on-save (or single-writer discipline)
+        so concurrent hand-edits survive.
+8. **Preen to spec-hood when ready — yours to promote.**  `processes.md` (this file), `Cstructures_
+    todo.md`, `Vyto_sizing_todo.md §9` are all working `_todo`s; I have not self-promoted any.
+
+*(The write-fan — item 4 above — stays parked awaiting your appetite; nothing blocks on it.  Two
+ housekeeping notes on the working tree: the ~60 modified `wormhole/Story/*/toc.snap` are benign
+  timing-sample churn from the sweep runs — assertion diges byte-unchanged, `git checkout` or commit
+   at will; and the tree also carries another agent's live Peeroleum/Swarm work, untouched by me.)*
 
 ## 1. The substrate law — every stage is C in, C out
 

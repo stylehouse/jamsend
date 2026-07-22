@@ -1,0 +1,37 @@
+Snap:H
+  H:PereComplain,Run
+    A:PereComplain
+      self,round=6	{"mung":["age"]}
+      w:PereComplain
+        self,round=6	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Peering,name:ada,req=2,ok
+          Pier,pub:bo,req=2,ok
+            outbox
+              emit,type:fancy_proto,seq,sent,acked
+            got_noproto,about:fancy_proto,re_seq
+          active_transport,type:mock,open
+        Peering,name:bo,req=3,ok
+          Pier,pub:ada,req=2,ok
+            Ud,pubkey:ada
+            req:handshake,finished
+            inbox
+              req:unemit,seq,type:fancy_proto,done,to:fancy_proto,finished
+            outbox
+              type:no_protocol,sent	{"undef":["emit","seq"]}
+          active_transport,type:mock,open
+        reached:step_3
+        Peering,name:cy,req=4,ok
+          Pier,pub:di,req=2,ok
+            outbox
+              emit,type:fancy_hold,seq,sent
+          active_transport,type:mock,open
+        Peering,name:di,req=5,ok
+          Pier,pub:cy,req=2,ok
+            Ud,pubkey:cy
+            inbox
+              req:unemit,seq,type:fancy_hold,error:startup-hold,finished
+            faulty
+              unemit,error:startup-hold,seq
+          active_transport,type:mock,open

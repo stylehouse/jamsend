@@ -23,6 +23,40 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**THE INVITE TRILOGY LANDED (2026-07-22) — chain, blotter, back-signal, all green ×2, uncommitted.**
+ The three invite kinds now part cleanly and each is Book-proven on the live runner:
+ - **(1) Re-assignable ReInvite chain** — the SHARE-QR invite that threads A—B—C—D, the TIP (not the
+    issuer) grants each newcomer, `%ChainRoot` is the light lineage ref, `reinvite_ok` is tip-signed.
+     `Ghost/S/Swarm.g #region ReInvite`, Book **SwarmChain** (Swarm_spec §6.3a).
+ - **(2) One-time serial SHEET (blotter)** — `Swarm_mint_blotter` → N plain single-use serials under a
+    `%Blotter`; claimed count DERIVED from members' spend flags (never a snapped counter); legacy `######`
+     door-parse pinned. `Ghost/S/Swarm.g #region blotter`, Book **SwarmBlotter** (Swarm_spec §6.2).
+ - **(3) Protocol back-signal (Peeroleum Robustness Organ 2)** — an unenabled frame type draws a
+    `no_protocol` complaint when the peer is READY (acked so the retry stands down — no wedge), but is
+     HELD (`%faulty` `startup-hold`, no ack) DURING the handshake window so the retx re-delivers once a
+      handler attaches. `Ghost/N/Peeroleum.g` (`Peeroleum_deliver` + `req_unemit`), Book **PereComplain**
+       (reconciled in `Cluster_spec.md §1`). Display side (share icon, blotter A4 QR sheet) is Vyto's.
+
+**FOLLOWER PLAYER commissioned (2026-07-22) — a new sub-build, its own doc `Follow_todo.md`.**
+ A client takes a QR and enters FOLLOW mode: a dumb player mirroring a leader-DJ's playhead (and, later,
+  the DJ's private monitor channel while they play a different main stream). It's a new invite flavor (a
+   `%Follow` Feature grant) riding the `@channel` fan-out + `Peeroleum_offer_stream` handover that already
+    exist. GATED behind the 2026-07-22 invite-crypto QA (harden the mint/grant foundation first). The
+     first-run onboarding UX the human also raised (username + open-share + the BigSoundland speech-bubble
+      reframing the FSA "FaceSucker") is MOSTLY-BUILT Svelte already (`InvitePanel`/`BootGate`/`Shares`) →
+       a UI-orchestration job in Vyto's zone; the wire side is a thin first-run-state contract only.
+
+**INVITE-CRYPTO HARDENED (2026-07-22) — one real HIGH hole found + fixed + proven, uncommitted.**
+ Two Sonnet audits of `Ghost/S/Swarm.g`/`Peeroleum.g`. The load-bearing finding: `Swarm_seal` bound the
+  verified key (`page.pub`) but NEVER the routing address (`page.prepub`), so a `pier_hello` could forge a
+   victim's prepub while holding its own key and HIJACK/overwrite an identity slot (the voucher gate that
+    should stop this exempts pre-seal `pier_hello`). FIX: a `Swarm_page_bound(page)` guard
+     (`prepubOf(page.pub)===page.prepub`) at all 5 seal entries + a `Swarm_seal` backstop, proven RED→GREEN
+      by the adversarial Book **SwarmSpoof** (green×2; the forged `%Pier` seen in bytes then gone) with
+       SwarmChain/Staple/Blotter non-regressed. Also downgrades the audit's F1 (reinvite_honour grant oracle).
+        Follow-up (not done): F3 (`Swarm_station_pier` stamps `%Ud` before verification → forged-hello DoS).
+         NOT touched: F5 voucher-era freshness — the [[Trust_audit_handover]]-retracted wrong-layer item.
+
 **STORY GATES YOUR ORGANS NOW (2026-07-19) — a cross-thread brief from the Story side.**
  Sounditron (the /BigSoundland resident diagnostic: machine → relay → possibilities → peer →
   sound → report, the user a reporting test-probe) hosts the whole Radio family in its run

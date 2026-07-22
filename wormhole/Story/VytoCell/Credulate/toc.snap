@@ -20,14 +20,14 @@ Credulate,of_Book:VytoCell
   GhostInclude:Ghost_Story_Radiation,dige:57100009c65a317d~g1
   GhostInclude:Ghost_Story_Heistation,dige:73b0553da6899a43~g1
   GhostInclude:Ghost_Story_Berthation,dige:a90a9afcc3b2ffc4~g1
-  GhostInclude:Ghost_S_Swarm,dige:3b445e5fb66ae4d8~g1
-  GhostInclude:Ghost_Story_Swarmation,dige:45bb6ec9499a1db3~g1
+  GhostInclude:Ghost_S_Swarm,dige:ebb7b852aec7ea83~g1
+  GhostInclude:Ghost_Story_Swarmation,dige:2a7dde7d90db5207~g1
   GhostInclude:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
   GhostInclude:Ghost_V_Vyto,dige:8298a916547595b9~g1
   GhostInclude:Ghost_V_Vytonation,dige:6c9afa3424e0beea~g1
   GhostInclude:Ghost_Story_Voronation,dige:45e97291a654d0e8~g1
   GhostInclude:Ghost_Story_Sounditron,dige:fc546e9a542bb5eb~g1
-  last_ok,at=1784664786.517,ok_pct
+  last_ok,at=1784682852.427,ok_pct
     uses:Ghost_N_Peeroleum,dige:831035f4b7de0927~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -49,8 +49,8 @@ Credulate,of_Book:VytoCell
     uses:Ghost_Story_Radiation,dige:57100009c65a317d~g1
     uses:Ghost_Story_Heistation,dige:73b0553da6899a43~g1
     uses:Ghost_Story_Berthation,dige:a90a9afcc3b2ffc4~g1
-    uses:Ghost_S_Swarm,dige:3b445e5fb66ae4d8~g1
-    uses:Ghost_Story_Swarmation,dige:45bb6ec9499a1db3~g1
+    uses:Ghost_S_Swarm,dige:ebb7b852aec7ea83~g1
+    uses:Ghost_Story_Swarmation,dige:2a7dde7d90db5207~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
     uses:Ghost_V_Vyto,dige:8298a916547595b9~g1
     uses:Ghost_V_Vytonation,dige:6c9afa3424e0beea~g1

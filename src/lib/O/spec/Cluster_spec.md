@@ -82,9 +82,19 @@ So "Trusting" is not new invention — it is the garden's membership/contact/tru
      (`LiesLies.svelte:291-312`); an unknown/late corr dropped so a slow-but-arrived reply looks lost
       (`RemoteWormholeNav`). *Landed:* an unregistered frame type now **warns loudly**; the drop-returns-seq
        case turned out already-safe (`Lies_send_rungo` gates on `channel_live`, the rungo is booked and
-        `Reliable.g` retx's). *Still owed (deferred, needs live proof):* marking a faulty frame `%faulty` and
-         **not** acking it — held back because it would retx-wedge conditionally-registered handlers
-          (`test_*`/`repli_*`/`audiochunk`/`stream_offer`). A second open: `MusuReplica`'s `%Crush_Tree`
+        `Reliable.g` retx's). **The unregistered-frame back-signal LANDED 2026-07-22 [Book: PereComplain,
+         green ×2]** — and it threads the very needle the deferral feared (the `test_*`/`repli_*`/`audiochunk`/
+          `stream_offer` retx-wedge) by SPLITTING on `Peeroleum_peer_ready`: · **outside** the hello+trust
+           window (peer ready) an unhandled type is a genuinely-unsupported protocol — the spine **acks it**
+            (so the sender's retry stands *down* — no wedge) AND sends a `no_protocol` complaint back naming
+             the type + seq, so the sender LEARNS instead of the frame masquerading as delivered; · **during**
+              startup (peer not ready) the same type is **held** (`%error`/`%faulty` reason `startup-hold`, NOT
+               acked) so the sender's retx re-delivers it once the conditionally-registered handler attaches —
+                exactly the case the blanket don't-ack would have wedged. `no_protocol` is itself a control
+                 frame (handled inline in `Peeroleum_deliver`, never inboxed) so a complaint never draws a
+                  counter-complaint. *Still genuinely owed:* mark-`%faulty`-don't-ack for the *ready-but-truly-
+                   unsupported* wire beyond the courtesy complaint is now moot — the complaint IS the honest
+                    surface. A second open: `MusuReplica`'s `%Crush_Tree`
  husk hides `body_hash`/ack from the delivery layer — decide whether a crushed husk counts as
   "delivered" (and what its ack surface is) before re-recording `MusuReco` (`musureplica-crush`
    memory). The positive template already in the tree:

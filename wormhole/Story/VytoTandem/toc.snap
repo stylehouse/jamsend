@@ -4,10 +4,7 @@ story:VytoTandem
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.372
-      sample=0.36,at=1784539690
-      sample=0.36,at=1784539709
-      sample=0.36,at=1784539711
+    TimeTotal:beliefs,avg=0.392
       sample=0.36,at=1784539714
       sample=0.36,at=1784539717
       sample=0.36,at=1784539722
@@ -15,10 +12,10 @@ story:VytoTandem
       sample=0.485,at=1784539774
       sample=0.401,at=1784621285
       sample=0.33,at=1784664680
-    TimeTotal:step,avg=0.093
-      sample=0.09,at=1784539690
-      sample=0.09,at=1784539709
-      sample=0.09,at=1784539711
+      sample=0.507,at=1784682375
+      sample=0.468,at=1784682408
+      sample=0.304,at=1784682912
+    TimeTotal:step,avg=0.098
       sample=0.09,at=1784539714
       sample=0.09,at=1784539717
       sample=0.09,at=1784539722
@@ -26,6 +23,9 @@ story:VytoTandem
       sample=0.121,at=1784539774
       sample=0.1,at=1784621285
       sample=0.083,at=1784664680
+      sample=0.127,at=1784682375
+      sample=0.117,at=1784682408
+      sample=0.076,at=1784682912
   step,dige:926d35be1065b3a7
   step=2,dige:ca8959dc0938bbe1,desc:place a plain watcher and a Vyto grapple on one gear
   step=3,dige:59ef93de86f1ed71,desc:bump the gear once — both watchers must fire

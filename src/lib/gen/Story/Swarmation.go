@@ -3,12 +3,14 @@
     import { TheC } from "$lib/data/Stuff.svelte"
     import { onMount } from "svelte"
 
+import { mint_grant } from "$lib/O/Funk/Grant.ts"
+
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return '45bb6ec9499a1db3~g1' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return 'f31703265cf1cb63~g1' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -34,6 +36,9 @@
 //  default. The world MUST be named after the Book (do_fn_for dispatches by w.sc.w) or the
 //   wrangle silently never fires.
 
+// Crypto for the adversarial beat (SwarmSpoof): mint_grant lets a Book hand-craft the reciprocal
+//  grant a malicious pier_hello would carry — the same signed-capability atom Swarm.g composes an
+//   Idzeug from. REAL dep (the .g→.ts import idiom), used only to STAGE the attack, never the spine.
 SwarmStaple(A,w) {
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
         await this.SwarmStaple_drive(w,req)
@@ -1412,6 +1417,300 @@ async SwarmChain_order(w) { const H = this;
     let As = H.o({A: 1})
     if (!As.length) return
     let first = (a) => (a.sc.A === 'SwarmChain') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+},
+// ══ SwarmBlotter — the TENTH Book: the one-time serial SHEET (Swarm_spec §6.2) ═══════════════════
+//  The counterpart to SwarmChain. SwarmChain proves the RE-ASSIGNABLE invite (the SHARE QR — one
+//   link threads a chain, tracking a moving tip). SwarmBlotter proves the OTHER kind: a printed
+//    BLOTTER of numbered tickets, each a plain ONE-TIMER. The two invite kinds part at the mint —
+//     Swarm_mint_blotter mints plain serials (never chain:1), and each spends through the exact
+//      single-use door: torn once, remembered spent by its own nonce, a replay refused. The legacy
+//       ###### link is the same species (a one-timer, granting the old ftp atom — never a Feature),
+//        so this Book pins its door-parse too. Mail wire, in-process, five fixed selves; own world.
+//   beat 2  five selves online — a sheet issuer (Host) three serial claimants (Uno Dos Tres) a replayer (Qua)
+//   beat 3  Host prints a sheet of THREE serials; Uno tears serial 1 — a friendship seals spending only it
+//   beat 4  Dos tears serial 2 and Tres serial 3 — three independent friendships the whole sheet claimed
+//   beat 5  Qua replays Uno's spent serial — REFUSED no friendship; and the legacy link still parses at the door
+
+SwarmBlotter(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.SwarmBlotter_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// SwarmBlotter_drive — beat dispatch (req-local did_step), then drain the mail wire and re-sort H/*.
+async SwarmBlotter_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.SwarmBlotter_sides_up(w)
+        if (n === 3) await this.SwarmBlotter_sheet(w)
+        if (n === 4) await this.SwarmBlotter_claims(w)
+        if (n === 5) await this.SwarmBlotter_replay(w)
+    }
+    await this.SwarmBlotter_pump(w)
+    await this.SwarmBlotter_order(w)
+
+},
+// SwarmBlotter_pump — DRAIN the mail wire to a fixed point each pass (the SwarmChain lesson): a claim
+//  is hello→accept (2 frames), a refused replay hello→reject (2 frames); bound the loop so every
+//   exchange settles within the beat that fires it, never an unbounded await in a beat.
+async SwarmBlotter_pump(w) {
+    let guard = 0
+    while (guard < 24) {
+        guard = guard + 1
+        for (const acct of w.o({ Account: 1 })) {
+            for (const ident of acct.o({ Identity: 1 })) await this.Swarm_pump(w, ident)
+        }
+        let pending = 0
+        for (const acct of w.o({ Account: 1 })) {
+            for (const ident of acct.o({ Identity: 1 })) {
+                let inbox = ident.o({ mail: 1 })[0]
+                if (inbox) pending = pending + inbox.o({ frame: 1 }).filter(m => !m.sc.did).length
+            }
+        }
+        if (pending === 0) break
+    }
+
+},
+// SwarmBlotter_person — a fixed self seeded off the name (its own of: tag), brought ONLINE at once.
+async SwarmBlotter_person(w, name) {
+    let acct = w.oai({ Account: 1, of: name })
+    acct.c.up = w
+    let keys = await this.Swarm_mint_keys('SwarmBlotter-' + name)
+    let ident = this.Swarm_identity(acct, keys, name)
+    this.Swarm_online(ident, true)
+    return ident
+
+},
+SwarmBlotter_ident(w, name) {
+    return w.o({ Account: 1, of: name })[0]?.o({ Identity: 1 })[0]
+
+},
+// beat 2 — the cast: five selves, all online. Witness armed last (own swept req) so it reads each
+//  pass's settled state.
+async SwarmBlotter_sides_up(w) {
+    w.i({reached: "step_2"})
+    w.sc.now = 1751800000
+    await this.SwarmBlotter_person(w, 'Host')
+    await this.SwarmBlotter_person(w, 'Uno')
+    await this.SwarmBlotter_person(w, 'Dos')
+    await this.SwarmBlotter_person(w, 'Tres')
+    await this.SwarmBlotter_person(w, 'Qua')
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.SwarmBlotter_witness(w); req.sc.ok = 1 })
+
+},
+// beat 3 — the sheet: Host prints a blotter of THREE serials off one Feature (each plain single-use,
+//  never chain), and Uno tears serial 1. A—B seals like any friendship; the OTHER two serials on the
+//   sheet stay unclaimed — a torn ticket spends only itself.
+async SwarmBlotter_sheet(w) {
+    w.i({reached: "step_3"})
+    w.sc.now = 1751800010
+    let host = this.SwarmBlotter_ident(w, 'Host')
+    w.c.sheet = await this.Swarm_mint_blotter(w, host, { Music: 1, genre: 'Jazz' }, 3, 'sheet_a')
+    await this.Swarm_redeem(w, this.SwarmBlotter_ident(w, 'Uno'), w.c.sheet[0])
+
+},
+// beat 4 — the sheet fills: Dos tears serial 2 and Tres serial 3. Each serial admits its OWN claimant
+//  through its own single-use door — three independent friendships, and the whole sheet reads claimed.
+async SwarmBlotter_claims(w) {
+    w.i({reached: "step_4"})
+    w.sc.now = 1751800020
+    await this.Swarm_redeem(w, this.SwarmBlotter_ident(w, 'Dos'), w.c.sheet[1])
+    await this.Swarm_redeem(w, this.SwarmBlotter_ident(w, 'Tres'), w.c.sheet[2])
+
+},
+// beat 5 — the one-timer bites: Qua replays serial 1 (the very ticket Uno already tore). The door
+//  finds it spent and REFUSES — Qua seals no friendship and the sheet's claimed count never moves.
+//   And the legacy garden link still parses at the door — the old ###### shape, granting ftp not Music.
+async SwarmBlotter_replay(w) {
+    w.i({reached: "step_5"})
+    w.sc.now = 1751800030
+    await this.Swarm_redeem(w, this.SwarmBlotter_ident(w, 'Qua'), w.c.sheet[0])
+
+},
+// SwarmBlotter_witness — %sworn assertions via this.story_swear. Each a happened-FACT of the sheet:
+//  three one-time serials under one blotter, the independent single-use spend, the whole-sheet claim,
+//   the refused replay, and the legacy door-parse. Gated to the beat the truth first holds.
+SwarmBlotter_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    let host = this.SwarmBlotter_ident(w, 'Host')
+    let uno = this.SwarmBlotter_ident(w, 'Uno')
+    let dos = this.SwarmBlotter_ident(w, 'Dos')
+    let tres = this.SwarmBlotter_ident(w, 'Tres')
+    let qua = this.SwarmBlotter_ident(w, 'Qua')
+    if (!host || !uno || !dos || !tres || !qua) return
+    // beat 2: five online selves.
+    if (n === 2 && [host, uno, dos, tres, qua].every(i => this.Swarm_peering(i)?.sc?.online)) this.story_swear(w, 'five selves stand up online — a sheet issuer three serial claimants and a replayer of a torn ticket')
+    let peer = this.Swarm_peering(host)
+    let sheet = peer?.o({ Blotter: 'sheet_a' })[0]
+    let members = peer?.o({ Idzeug: 1, blotter: 'sheet_a' }) ?? []
+    let s1 = peer?.o({ Idzeug: 'sheet_a-1' })[0]
+    let s2 = peer?.o({ Idzeug: 'sheet_a-2' })[0]
+    let s3 = peer?.o({ Idzeug: 'sheet_a-3' })[0]
+    let hostUno = peer?.o({ Pier: 1, pub: uno.sc.prepub })[0]?.o({ Grant: 'Music', by: uno.c.keys?.pub })[0]
+    let unoHost = this.Swarm_peering(uno)?.o({ Pier: 1, pub: host.sc.prepub })[0]?.o({ Grant: 'Music', by: host.c.keys?.pub })[0]
+    // beat 3: a sheet of three plain one-time serials under one blotter; the first torn seals only itself.
+    if (n === 3 && sheet && members.length === 3 && members.every(m => !m.sc.chain)) this.story_swear(w, 'a printed sheet mints three one-time serials under one blotter — each a single-use ticket never a chain')
+    let claimed3 = this.Swarm_blotter_claimed(host, 'sheet_a')
+    if (n === 3 && hostUno && unoHost && s1?.sc?.spent && !s2?.sc?.spent && !s3?.sc?.spent && claimed3.claimed === 1) this.story_swear(w, 'the first torn serial seals a real friendship and spends only itself — its siblings on the sheet stay unclaimed')
+    // beat 4: each serial admits its own claimant — three independent friendships and a fully claimed sheet.
+    let hostDos = peer?.o({ Pier: 1, pub: dos.sc.prepub })[0]?.o({ Grant: 'Music', by: dos.c.keys?.pub })[0]
+    let hostTres = peer?.o({ Pier: 1, pub: tres.sc.prepub })[0]?.o({ Grant: 'Music', by: tres.c.keys?.pub })[0]
+    let dosHost = this.Swarm_peering(dos)?.o({ Pier: 1, pub: host.sc.prepub })[0]?.o({ Grant: 'Music', by: host.c.keys?.pub })[0]
+    let tresHost = this.Swarm_peering(tres)?.o({ Pier: 1, pub: host.sc.prepub })[0]?.o({ Grant: 'Music', by: host.c.keys?.pub })[0]
+    let claimed4 = this.Swarm_blotter_claimed(host, 'sheet_a')
+    if (n === 4 && hostDos && hostTres && dosHost && tresHost && s1?.sc?.spent && s2?.sc?.spent && s3?.sc?.spent && claimed4.claimed === 3 && claimed4.count === 3) this.story_swear(w, 'each serial admits its own claimant — three torn tickets seal three independent friendships and the whole sheet reads fully claimed')
+    // beat 5: the one-timer refuses a second tear; the legacy link still parses granting ftp not Music.
+    let quaRebuff = qua.o({ rebuff: 'rejected_spent' })[0]
+    let hostNoQua = !(peer?.o({ Pier: 1, pub: qua.sc.prepub }).length)
+    let quaNoHost = !(this.Swarm_peering(qua)?.o({ Pier: 1, pub: host.sc.prepub }).length)
+    let claimed5 = this.Swarm_blotter_claimed(host, 'sheet_a')
+    if (n === 5 && quaRebuff && hostNoQua && quaNoHost && claimed5.claimed === 3) this.story_swear(w, 'a torn ticket cannot be torn twice — replaying a spent serial is refused and seals no friendship')
+    let leg = this.Swarm_legacy_of_url('https://jam/#0123456789abcdef-Alice-cafef00d')
+    if (n === 5 && leg && leg.legacy && leg.granted === 'ftp' && leg.granted !== 'Music') this.story_swear(w, 'the old garden link still parses at the door — its hash-fragment shape grants the legacy trust atom never a Music Feature')
+
+},
+// SwarmBlotter_order — float A:SwarmBlotter to the front of H/* so the Run snap stays readable.
+async SwarmBlotter_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'SwarmBlotter') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+},
+// ══ SwarmSpoof — the ELEVENTH Book: the prepub-forgery teeth (crypto audit 2026-07-22) ══════════════
+//  SwarmStaple's beat-4 teeth reject a TAMPERED blob and an OFFLINE redeem. SwarmSpoof adds the tooth
+//   the audit found MISSING: a pier_hello may declare ANY page.prepub while carrying its OWN page.pub
+//    and a self-signed reciprocal grant — nothing bound the routing address (prepub) to the verified
+//     key (pub). Swarm_seal keys the durable %Pier by prepub, so an UNBOUND hello lets a redeemer
+//      plant a contact under — or overwrite — a VICTIM's address (an identity-slot hijack). Here
+//       Mallory holds a REAL Music Idzeug from Alice and dials the door claiming to BE Vic: page =
+//        {pub: Mallory's key, prepub: Vic's address}. The door MUST refuse — no contact under Vic's
+//         address, the live invite unspent — because prepubOf(page.pub) !== page.prepub. Own world
+//          w:SwarmSpoof (dispatch by WORLD NAME). RED until Swarm_page_bound gates the seal.
+SwarmSpoof(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.SwarmSpoof_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// SwarmSpoof_drive — beat dispatch (req-local did_step), then drain the wire and re-sort H/*.
+async SwarmSpoof_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.SwarmSpoof_sides_up(w)
+        if (n === 3) await this.SwarmSpoof_mint(w)
+        if (n === 4) await this.SwarmSpoof_spoof(w)
+    }
+    await this.SwarmSpoof_pump(w)
+    await this.SwarmSpoof_order(w)
+
+},
+// SwarmSpoof_pump — bounded drain (the SwarmBlotter lesson): the attack is a DIRECT Swarm_hello (a
+//  hand-crafted frame, as hear would deliver it), so there is little mail to settle — but keep the
+//   bounded shape so a stray pier_reject to a routeless address never spins a beat.
+async SwarmSpoof_pump(w) {
+    let guard = 0
+    while (guard < 8) {
+        guard = guard + 1
+        for (const acct of w.o({ Account: 1 })) {
+            for (const ident of acct.o({ Identity: 1 })) await this.Swarm_pump(w, ident)
+        }
+        let pending = 0
+        for (const acct of w.o({ Account: 1 })) {
+            for (const ident of acct.o({ Identity: 1 })) {
+                let inbox = ident.o({ mail: 1 })[0]
+                if (inbox) pending = pending + inbox.o({ frame: 1 }).filter(m => !m.sc.did).length
+            }
+        }
+        if (pending === 0) break
+    }
+
+},
+// SwarmSpoof_person — a fixed self seeded off the name (its own of: tag), brought ONLINE at once.
+async SwarmSpoof_person(w, name) {
+    let acct = w.oai({ Account: 1, of: name })
+    acct.c.up = w
+    let keys = await this.Swarm_mint_keys('SwarmSpoof-' + name)
+    let ident = this.Swarm_identity(acct, keys, name)
+    this.Swarm_online(ident, true)
+    return ident
+
+},
+SwarmSpoof_ident(w, name) {
+    return w.o({ Account: 1, of: name })[0]?.o({ Identity: 1 })[0]
+
+},
+// beat 2 — the cast: Alice (the inviter), Mallory (holds a real invite), Vic (the innocent whose
+//  address Mallory forges). All online. Witness armed last so it reads each pass's settled state.
+async SwarmSpoof_sides_up(w) {
+    w.i({reached: "step_2"})
+    w.sc.now = 1759000000
+    await this.SwarmSpoof_person(w, 'Alice')
+    await this.SwarmSpoof_person(w, 'Mallory')
+    await this.SwarmSpoof_person(w, 'Vic')
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.SwarmSpoof_witness(w); req.sc.ok = 1 })
+
+},
+// beat 3 — Alice mints a real single-use Music Idzeug (Jazz). Mallory legitimately holds it (a
+//  shared/leaked link is a normal way to hold one) — the invite is LIVE, so beat 4's refusal is
+//   about the SPOOF, not a dead invite.
+async SwarmSpoof_mint(w) {
+    w.i({reached: "step_3"})
+    w.sc.now = 1759000010
+    let alice = this.SwarmSpoof_ident(w, 'Alice')
+    w.c.iz = await this.Swarm_mint_idzeug(w, alice, { Music: 1, genre: 'Jazz' }, 'spoof_1')
+
+},
+// beat 4 — the attack: Mallory crafts a pier_hello echoing Alice's REAL Idzeug + a reciprocal grant
+//  signed by MALLORY's key, but declares VIC's address as the page prepub. The door hears it as
+//   hear() would deliver it (a direct Swarm_hello on the hand-crafted frame). Nothing Mallory signed
+//    proves the Vic address is theirs — the seal must refuse (today it does not: that is the tooth).
+async SwarmSpoof_spoof(w) {
+    w.i({reached: "step_4"})
+    w.sc.now = 1759000020
+    let alice = this.SwarmSpoof_ident(w, 'Alice')
+    let mal = this.SwarmSpoof_ident(w, 'Mallory')
+    let vic = this.SwarmSpoof_ident(w, 'Vic')
+    let claim = await this.Swarm_verify_idzeug(w.c.iz)
+    let grant = await mint_grant(mal.c.keys, claim.by, claim.to, this.Swarm_iz_params(claim), this.Swarm_now(w))
+    let page = { pub: mal.c.keys.pub, prepub: vic.sc.prepub, friendly: 'Vic' }
+    let frame = { kind: 'pier_hello', iz: w.c.iz, page: page, grant: grant }
+    await this.Swarm_hello(w, alice, frame)
+
+},
+// ── the witness — %sworn assertions via this.story_swear (idempotent per run, shelf-checked) ──────
+SwarmSpoof_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    let alice = this.SwarmSpoof_ident(w, 'Alice')
+    if (!alice) return
+    let aPeering = this.Swarm_peering(alice)
+    let record = aPeering?.o({ Idzeug: 'spoof_1' })[0]
+    // beat 3: the invite is real (Music/Jazz) — a stable claim that does not depend on the later spend.
+    if (n >= 3 && record && record.sc.to === 'Music' && record.sc.genre === 'Jazz') this.story_swear(w, 'Alice mints a real Music Idzeug scoped to Jazz — a single-use invite Mallory carries to the door')
+    // beat 4: THE TOOTH — a page whose prepub its pub does not derive is refused BEFORE any state moves.
+    //  Pairs the POSITIVE (the door rebuffed 'hello_spoofed') with the NEGATIVES (no contact under Vic's
+    //   address, the invite unspent) so it can never pass vacuously — the guard must have actively fired.
+    let vic = this.SwarmSpoof_ident(w, 'Vic')
+    let spoofedPier = vic ? aPeering?.o({ Pier: 1, pub: vic.sc.prepub })[0] : null
+    let spoofRebuff = alice.o({ rebuff: 'hello_spoofed' })[0]
+    if (n >= 4 && spoofRebuff && !spoofedPier && record && !record.sc.spent) this.story_swear(w, 'a hostile hello declaring an address its key cannot derive is refused at the door — no contact seals under the forged address and the live invite stays unspent')
+
+},
+// SwarmSpoof_order — float A:SwarmSpoof to the front of H/* so the Run snap stays readable.
+async SwarmSpoof_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'SwarmSpoof') ? 0 : 1
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)

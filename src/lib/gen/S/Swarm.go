@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '3b445e5fb66ae4d8~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'b30a7dba9e9bfc0b~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -71,6 +71,18 @@ Swarm_peering(ident) {
 Swarm_page(ident) {
     let peering = this.Swarm_peering(ident)
     return { pub: ident.c.keys.pub, prepub: ident.sc.prepub, friendly: peering?.sc?.friendly ?? '' }
+
+},
+// Swarm_page_bound — a wire page's prepub MUST be the address its OWN pub derives. page.pub is proven
+//  by the accompanying grant's signature; prepubOf(pub) is deterministic (the prepub is the pub's
+//   pretty prefix) — so a mismatch is a FORGED prepub: a caller wearing its own key while CLAIMING
+//    another's address. Swarm_seal keys the durable %Pier by prepub, so an unbound page lets a
+//     redeemer plant a contact under — or overwrite — a victim's address (the SwarmSpoof tooth,
+//      crypto audit 2026-07-22). Every seal-minting wire entry checks this BEFORE it spends a nonce,
+//       advances a chain holder, or mints a grant. prepubOf(pub)==the honest page.prepub is ALREADY a
+//        load-bearing equivalence here (Swarm_reinvite_ok gates on it), so this breaks no legit flow.
+Swarm_page_bound(page) {
+    return !!(page && page.pub && page.prepub && prepubOf(page.pub) === page.prepub)
 
 },
 // Swarm_online — the page's reachability flag. In production this is the relay bind (§3 — the
@@ -140,6 +152,50 @@ async Swarm_mint_idzeug(w, ident, feature, nonce, chain) {
 async Swarm_verify_idzeug(iz) {
     let atom = JSON.parse(this.Swarm_unb64(iz))
     return await verify_grant(atom)
+},
+//#endregion
+
+//#region blotter — a printed SHEET of one-time serials (§6.2)
+//  A blotter is a BATCH of plain single-use Idzeugs minted in one act and grouped under a %Blotter
+//   sheet — the "tear-off numbered tickets" face (the A4 page of QR cells, Vyto's display). Each
+//    serial spends INDEPENDENTLY through the exact same single-use door (Swarm_hello spends its
+//     nonce, refuses a replay), so a torn ticket is a one-timer remembered spent by its OWN nonce;
+//      the sheet only GROUPS them so the maker sees the claimed count. NOTHING here is a chain
+//       (§6.3a): the SHARE QR mints chain:1, a blotter never does — the two invite kinds part HERE.
+
+// Swarm_mint_blotter — mint `count` serials <tag>-1..<tag>-count off the SAME Feature, each a plain
+//  (never chain) Idzeug through the proven single-use mint, tagged with the sheet so the maker can
+//   group + count them. Returns the SHEET: the ordered ?Iz= blobs the printed page's QR cells carry.
+//    The %Blotter record holds the sheet SIZE (durable mint data); the CLAIMED count is DERIVED from
+//     the members' spend flags (never a snapped counter — the ledger is each serial's own spend).
+async Swarm_mint_blotter(w, ident, feature, count, tag) {
+    let peering = this.Swarm_peering(ident)
+    let sheet = peering.oai({ Blotter: tag })
+    sheet.c.up = peering
+    sheet.sc.count = String(count)
+    let izzes = []
+    let i = 0
+    while (i < count) {
+        i = i + 1
+        let nonce = String(tag) + '-' + i
+        let iz = await this.Swarm_mint_idzeug(w, ident, feature, nonce)
+        let record = peering.o({ Idzeug: nonce })[0]
+        if (record) record.sc.blotter = tag
+        this.Swarm_iz_stash(ident, nonce, { blotter: tag })
+        izzes.push(iz)
+    }
+    return izzes
+
+},
+// Swarm_blotter_claimed — read a sheet's state: how many serials it holds, how many are spent
+//  (claimed). Members are the %Idzeug records tagged with this sheet; a serial counts claimed once
+//   its own single-use door spent it. Pure read — the maker's panel and the witness both call it,
+//    and it survives reload without a snapped counter (the members + their spend flags rehydrate).
+Swarm_blotter_claimed(ident, tag) {
+    let peering = this.Swarm_peering(ident)
+    let members = peering.o({ Idzeug: 1, blotter: tag })
+    let claimed = members.filter(m => m.sc.spent).length
+    return { count: members.length, claimed: claimed }
 },
 //#endregion
 
@@ -454,6 +510,13 @@ Swarm_iz_rehydrate(w, ident) {
         //  door would re-admit the link as a fresh first claim (§6.3a).
         if (c.chain) record.sc.chain = 1
         if (c.holder) record.sc.holder = c.holder
+        // blotter membership survives reload — the sheet record re-derives its count from members,
+        //  so no snapped counter to drift; the serial just re-declares which sheet it was torn from.
+        if (c.blotter) {
+            record.sc.blotter = c.blotter
+            let sheet = peering.oai({ Blotter: c.blotter })
+            sheet.c.up = peering
+        }
     }
 },
 //#endregion
@@ -671,6 +734,10 @@ async Swarm_hello(w, ident, frame) {
     let record = this.Swarm_peering(ident).o({ Idzeug: claim.nonce })[0]
     if (!record) return deny('unknown')
     if (record.sc.spent) return deny('spent')
+    // the redeemer's page must bind its OWN key to the address it claims (the SwarmSpoof tooth):
+    //  BEFORE we spend the nonce, record a chain holder, or divert a non-holder to reinvite_begin —
+    //   all of which trust frame.page.prepub — refuse a page whose prepub its pub does not derive.
+    if (!this.Swarm_page_bound(frame.page)) return deny('spoofed')
     // ttl door policy (§10.1: validity lives with the MAKER): the ttl on OUR record is the law,
     //  the claim's signed mint time the clock. No ttl on the record = the invite waits forever.
     if (record.sc.ttl && this.Swarm_now(w) > Number(claim.time) + Number(record.sc.ttl)) return deny('expired')
@@ -714,6 +781,10 @@ async Swarm_accept(w, ident, frame) {
     }
     if (claim.for !== ident.c.keys.pub || claim.by !== frame.page.pub) {
         this.Swarm_rebuff(ident, 'accept_mismatch', frame.page?.prepub)
+        return null
+    }
+    if (!this.Swarm_page_bound(frame.page)) {
+        this.Swarm_rebuff(ident, 'accept_spoofed', frame.page?.prepub)
         return null
     }
     let mine = ident.c.offered ? ident.c.offered[claim.by] : null
@@ -781,6 +852,10 @@ async Swarm_reinvite_honour(w, ident, frame, r) {
         this.Swarm_rebuff(ident, 'reinvite_' + why, frame.page?.prepub)
         return null
     }
+    // the tip mints the newcomer's grant for frame.page.pub with NO proof-of-possession (the audit's
+    //  F1): bind the claimed address to that key so the tip can only ever grant the REAL newcomer's
+    //   key — a captor of the plaintext rib can no longer wear its own key while claiming Carol's.
+    if (!this.Swarm_page_bound(frame.page)) return deny('spoofed')
     if (r.tip !== ident.sc.prepub) return deny('not_tip')
     if (r.newcomer !== frame.page.prepub) return deny('newcomer_mismatch')
     if (!this.Swarm_chain_root_ok(ident, r.by)) return deny('unknown_root')
@@ -802,6 +877,7 @@ async Swarm_reinvite_honoured(w, ident, frame) {
         this.Swarm_rebuff(ident, 'honour_' + why, frame.page?.prepub)
         return null
     }
+    if (!this.Swarm_page_bound(frame.page)) return deny('spoofed')
     let bob
     try { bob = await verify_grant(frame.grant) }
     catch (er) { return deny('bad_grant') }
@@ -829,6 +905,7 @@ async Swarm_reinvite_sealed(w, ident, frame) {
         this.Swarm_rebuff(ident, 'sealed_' + why, frame.page?.prepub)
         return null
     }
+    if (!this.Swarm_page_bound(frame.page)) return deny('spoofed')
     let carol
     try { carol = await verify_grant(frame.grant) }
     catch (er) { return deny('bad_grant') }
@@ -908,6 +985,11 @@ Swarm_chainroots_rehydrate(w, ident) {
 //   for them — plus the social-graph edge (§6.6, owner-side: each end's %SocialGraph is the local
 //    view of who-befriended-whom). Idempotent: grants and edges are guarded, a re-seal no-ops.
 Swarm_seal(w, ident, page, theirGrant, myGrant) {
+    // BACKSTOP (the SwarmSpoof tooth): never key a durable %Pier by an unbound address. Every wire
+    //  entry already guards this before reaching here; a rehydrated page satisfies it (bound at its
+    //   original seal), so this fires only on a corrupt stash or a future caller that skipped the wire
+    //    guard — fail closed rather than plant a forged identity.
+    if (!this.Swarm_page_bound(page)) return null
     let peering = this.Swarm_peering(ident)
     let pier = peering.oai({ Pier: 1, pub: page.prepub })
     pier.c.up = peering

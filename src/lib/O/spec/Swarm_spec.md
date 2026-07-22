@@ -226,8 +226,19 @@ An **Idzeug** is a single-use, signed invite carrying the inviter's page, the **
       **single-use**, and the maker **remembers the claimed serial** so a second claim of the same tab
        is refused (`spent` per serial — the old `taken_n`/`Upper_Number` ledger). A torn-off tab admits
         exactly one Pier and is done; it never re-assigns. The **legacy `######`** links are one-time
-         serials too. *(This serial batch is the §6.2 `[want]` the migrator survey named — build it on
-          the nonce ledger.)*
+         serials too. **[built — Book: SwarmBlotter, green ×2]**: `Swarm_mint_blotter(w, ident, feature,
+          count, tag)` (`Swarm.g #region blotter`) mints `count` plain serials `<tag>-1..<tag>-count`
+           — each a normal `Swarm_mint_idzeug` (never `chain:1`), tagged `blotter:<tag>` and grouped
+            under one `%Blotter,<tag>` record. Every serial spends through the *exact same* single-use
+             door (`Swarm_hello` spends its nonce, `deny('spent')` refuses a replay), so the two invite
+              kinds part at the mint, not in the door. The sheet holds only its **size** as durable data;
+               the **claimed count is derived** — `Swarm_blotter_claimed` counts members whose own spend
+                flag is set — never a snapped counter to drift (the ledger is each serial's own `spent`).
+                 The Book proves: three serials under one blotter each admit a *different* claimant into
+                  an independent friendship, a torn tab spends only itself (its siblings stay unclaimed),
+                   a replay of a spent tab is refused with no friendship sealed, and the legacy `######`
+                    link still parses at the door granting `ftp` not a Feature. Membership survives reload
+                     (the iz-stash carries `blotter:<tag>`; the sheet re-derives its count from members).
 - handling the **legacy** set of Idzeugs (the old garden's format) — **rung 1 BUILT 2026-07-07**.
    The concrete shape (surveyed 2026-07-07, `Tyranny.svelte` + `Trust.svelte.ts`): an old link is a
     URL **hash-fragment** `#<13-#-pad><prepub>-<advice>-<sign>` — prepub is the 16-hex address, advice
@@ -382,7 +393,10 @@ The pure sign/verify core is `Swarm_mint_reinvite` / `Swarm_verify_reinvite`; th
   remembered, never re-assigning. The policy rides the `%Idzeug`: `chain:1` with a moving `holder`
    (the tip), versus a plain record that `spent`s on first claim. Existing single-use invites and their
     Books stay untouched (proven: `SwarmStaple` beat 6 still rejects the replayed spent nonce, green).
-     The blotter/legacy *serial batch* is the remaining `[want]` — §6.2.
+     The blotter *serial batch* is now **[built — Book: SwarmBlotter, green ×2]** (`Swarm_mint_blotter`
+      + `%Blotter` + `Swarm_blotter_claimed`, §6.2): a sheet of plain serials, each single-use through
+       the same door, the claimed count derived from members' spend flags. Only the rung-2 legacy
+        **migrator** (lifting the old Dexie ledger + keys into `%Idzeug` records) remains `[want]`.
 
 ### 6.4 Revocation
 
@@ -555,9 +569,11 @@ The owner wants the QR invite maker back ("monkey business vibe") as the front d
     `Swarm_redeem(w, self, iz)` against the live self → `Swarm_seal` births the `%Pier`. Online-scan:
      the inviter is present, so the redeem's dial-home succeeds.
 
-**Still single-use** (one nonce, spent at redeem). Multi-use / serial-numbered / feature-selectable
- invites (the legacy `nRepeating`/`Upper_Number`) remain §6.2 **[want]** — the real build gap once the
-  front door lands.
+**Two invite kinds now** (both proven): a plain nonce spent at redeem, and — since 2026-07-22 — the
+ **serial-numbered batch** (a blotter sheet, `Swarm_mint_blotter`, Book `SwarmBlotter` green ×2, §6.2),
+  each serial single-use through the same door. The re-assignable **chain** is the third (§6.3a, Book
+   `SwarmChain`). Still §6.2 **[want]**: *feature-selectable* invites, and the rung-2 legacy **migrator**
+    (the old `nRepeating`/`Upper_Number` Dexie ledger + signing keys lifted into `%Idzeug` records).
 
 **Proven.** Book `SwarmInvite` (Swarmation.g, green 2026-07-07): mints from Auto's real
  `Clustation_concrete` shape (active-of-two selection), URL round-trip + verify, scan→seal

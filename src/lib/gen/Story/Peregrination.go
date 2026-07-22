@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return 'f8b774f7b76f9797~g1' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return 'fd5fd5b6e1f5bc45~g1' },
 
 
 // PereStaple — the Peeroleum p2p test (the outer test layer), and the first of a
@@ -1302,6 +1302,102 @@ PereReborn_witness(w) {
     //  fresh frames (seqs 4..5) booked and dispatched (reborn_count climbed to 5) and came back acked — reborn whole.
     let freshServed = served.some(u => u.sc.seq == 4) && served.some(u => u.sc.seq == 5) && !served.some(u => u.sc.seq == 1)
     if (bpier.c.reborn_count === 5 && freshServed && acked(4) && acked(5)) this.story_swear(w, 'the epoch reset clears B stale history — A fresh frames dispatch and ack — the stream is reborn whole')
+
+},
+// ══ PereComplain — the protocol back-signal (Peeroleum Robustness Organ 2) ═══════════════════════════
+//  The spine used to ACK-and-LOSE a frame whose header.type had no handler (the "lies upward" bug):
+//   the sender saw an ack and believed the work landed, when it silently vanished. This Book proves the
+//    two-regime cure in Peeroleum_deliver + req_unemit, isolated on synthetic Piers (no live handshake —
+//     %Ud + a finished %req:handshake are stamped by hand, the Lake_reset_arm idiom):
+//   · OUTSIDE the handshake window (peer READY) — an unenabled type draws a `no_protocol` complaint back
+//      naming the type + seq, AND the original is still acked (the retry stands down): a definitive answer,
+//       never a silent hole. And a complaint never itself draws a complaint (no ping-pong).
+//   · DURING startup (peer NOT ready) — the same type is HELD: no ack, no complaint, the frame sits faulty
+//      for the sender's retry to re-deliver once a handler attaches (a protocol not enabled YET, not absent).
+//   beat 2  Ada (ready) sends Bo an unenabled `fancy_proto` — Bo complains back + acks; Ada hears the complaint
+//   beat 3  Cy sends Di (mid-startup handshake) an unenabled `fancy_hold` — Di HOLDS it faulty and says nothing back
+//   beat 4  settle — the witness swears both regimes hold
+
+PereComplain(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.PereComplain_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// PereComplain_drive — beat dispatch (req-local did_step), then pump the Peerings + witness + re-sort each pass.
+async PereComplain_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.PereComplain_ready_arm(w)
+        if (n === 3) await this.PereComplain_hold_arm(w)
+    }
+    await this.Lake_pump_handshakes(w)
+    this.PereComplain_witness(w)
+    await this.PereComplain_order(w)
+
+},
+// beat 2 — OUTSIDE the window: Ada↔Bo, Bo's Pier stamped %Ud + a FINISHED handshake (ready). Register the
+//  no_protocol receipt handler for the whole world (stamps got_noproto on whichever Pier hears a complaint).
+//   Ada sends Bo an unenabled `fancy_proto` (no handler exists for it) — Bo, being ready, complains back.
+async PereComplain_ready_arm(w) {
+    w.i({reached: "step_2"})
+    let [AdaPier, BoPier] = await this.Lake_link(w, 'ada', 'bo')
+    BoPier.i({Ud: 1, pubkey: 'ada'})
+    BoPier.i({req: 'handshake', finished: 1})
+    this.Peeroleum_on(w, 'no_protocol', (cw, pier, frame) => pier.i({got_noproto: 1, about: frame.header.about, re_seq: frame.header.re_seq}))
+    let s = this.Pier_next_seq(AdaPier)
+    AdaPier.c.fancy_seq = s
+    this.Peeroleum_send(w, {header: {type: 'fancy_proto', from: 'ada', to: 'bo', seq: s}})
+
+},
+// beat 3 — DURING startup: Cy↔Di, Di's Pier stamped %Ud (past the pre-Ud gate) but with NO handshake at all
+//  (peer_ready false — mid-startup). Cy sends Di an unenabled `fancy_hold`: Di must HOLD it (faulty, no ack,
+//   no complaint) — a protocol not ENABLED yet, held for the retry, never mistaken for one it will never have.
+async PereComplain_hold_arm(w) {
+    w.i({reached: "step_3"})
+    let [CyPier, DiPier] = await this.Lake_link(w, 'cy', 'di')
+    DiPier.i({Ud: 1, pubkey: 'cy'})
+    let s = this.Pier_next_seq(CyPier)
+    CyPier.c.hold_seq = s
+    this.Peeroleum_send(w, {header: {type: 'fancy_hold', from: 'cy', to: 'di', seq: s}})
+
+},
+// PereComplain_witness — sworn facts of the back-signal. Ready facts gate n>=3 (the complaint round-trip
+//  settles a step after the send); the hold fact gates n>=4 (the held frame's faulty roll-up settles a step
+//   after its send). Each a happened-FACT read off durable Pier state — got_noproto, the acked emit, %faulty.
+PereComplain_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    let adaPier = this.Lake_pier(w, 'ada')
+    let boPier = this.Lake_pier(w, 'bo')
+    let cyPier = this.Lake_pier(w, 'cy')
+    let diPier = this.Lake_pier(w, 'di')
+    // OUTSIDE the window — Bo complained back naming the type, and Ada heard it.
+    if (adaPier && boPier) {
+        let adaHeard = adaPier.o({got_noproto: 1}).find(g => g.sc.about === 'fancy_proto')
+        let adaAcked = adaPier.o({outbox: 1})[0]?.o({emit: 1}).find(e => e.sc.seq == adaPier.c.fancy_seq)?.sc.acked
+        let noPingPong = !boPier.o({got_noproto: 1}).length
+        if (n >= 3 && adaHeard) this.story_swear(w, 'a ready peer hearing an unenabled protocol signals no_protocol back naming the type — the sender learns instead of losing it silently')
+        if (n >= 3 && adaAcked) this.story_swear(w, 'the complainer still acks the original so the sender stops retransmitting — a definitive answer not a silent black hole')
+        if (n >= 3 && adaHeard && noPingPong) this.story_swear(w, 'the back-signal never ping-pongs — a complaint about a missing handler draws no complaint of its own')
+    }
+    // DURING startup — Cy heard NOTHING back and Di holds the frame faulty for retry.
+    if (cyPier && diPier) {
+        let cyQuiet = !cyPier.o({got_noproto: 1}).length
+        let diHeld = diPier.o({faulty: 1})[0]?.o({unemit: 1}).find(u => u.sc.error === 'startup-hold')
+        if (n >= 4 && cyQuiet && diHeld) this.story_swear(w, 'during the handshake startup an unenabled protocol is HELD not complained — the frame waits faulty for retry and the sender hears nothing back')
+    }
+
+},
+// PereComplain_order — float A:PereComplain to the front of H/* so the Run snap stays readable.
+async PereComplain_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'PereComplain') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
 
 },
 

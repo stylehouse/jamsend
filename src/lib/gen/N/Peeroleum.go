@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '831035f4b7de0927~g1' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '3d06e827d2692a5c~g1' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -516,6 +516,11 @@ async Peeroleum_deliver(w, frame) {
     //       feebly_ponder is safe because advertise is editor-inbound only (runners send it to:'editor';
     //        the editor has no Story drive to re-wedge), and it nudges Lies_aim to refresh the roster Brink.
     if (h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase' || h.type === 'advertise' || h.type === 'swarm_hi') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
+    // no_protocol — the back-signal RETURNING (a peer telling us it has NO handler for a type WE sent).
+    //  Ephemeral like ack: dispatch to an optional handler (a consumer surfaces "peer lacks X" + stands
+    //   its own retry down) and RETURN. Critically it books NO inbox item and sends NOTHING back — never
+    //    complain about a complaint, else two handler-less peers ping-pong no_protocol forever.
+    if (h.type === 'no_protocol') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
     // The inbox is a serial %req drain: a booked frame is a %req:unemit (discriminated by the sender's
     //  per-Pier seq) and inbox.do() runs each unemit-req's do_fn (req_unemit) one at a time, in arrival
     //   order, awaiting each — that IS the serial async drain, so the hand-rolled %queued/%handling lock
@@ -626,9 +631,26 @@ async req_unemit(req) {
         if (h.type === 'hello') ok = (await H.hear_hello(w, pier, frame)) !== false
         else if (h.type === 'trust') ok = (await H.hear_trust(w, pier, frame)) !== false
         else if (on) ok = (await on(w, pier, frame)) !== false
-        else if (h.type !== 'noop') console.warn(`🛰⚠ Peeroleum: NO handler for frame type '${h.type}' from ${h.from} — acked but the work is LOST (typo'd handler? an editor-only frame reached a runner or vice-versa?). Robustness_plan Organ 2 — escalate to faulty/dont-ack once a live run proves no legit send-without-handler type retx-wedges.`)
-        // else (noop): nothing to deliver — legitimately done, then acked.  An UNREGISTERED type now
-        //  warns loudly above (was a silent ack — the "lies upward" bug); delivery is unchanged for now.
+        else if (h.type !== 'noop' && h.type !== 'no_protocol') {
+            // an UNREGISTERED app type — the protocol back-signal (Robustness Organ 2), replacing the
+            //  old silent ack-and-lose (the "lies upward" bug). Two regimes, split by whether the
+            //   hello+trust handshake has FINISHED (Peeroleum_peer_ready):
+            //  · DURING startup (peer not ready) — HOLD it: not-ok → no ack, so the sender's ack-gated
+            //     retry re-delivers once our consumer attaches its handler. A protocol we simply have
+            //      not enabled YET must never draw a complaint (nor a loss); the pre-Ud gate already
+            //       holds the earliest frames, this extends the hold to the whole handshake window.
+            //  · OUTSIDE it (ready) — we genuinely lack the protocol: ACK it (stand the retry down;
+            //     retransmitting a protocol we will never have only wedges — the risk the old note
+            //      feared) and send a no_protocol complaint naming the type + seq, so the sender LEARNS
+            //       instead of losing silently. no_protocol is a control frame (handled inline above,
+            //        never inboxed, never itself complained about).
+            if (!H.Peeroleum_peer_ready(pier)) { ok = false; reason = 'startup-hold' } else {
+                let me = pier.c.up.sc.name
+                H.Peeroleum_send(w, {header: {type: 'no_protocol', from: me, to: pier.sc.pub, about: h.type, re_seq: h.seq}})
+                console.warn(`🛰 Peeroleum: no handler for '${h.type}' from ${h.from} — sent no_protocol back (unsupported protocol) instead of losing it silently.`)
+            }
+        }
+        // noop / no_protocol reaching here: nothing to deliver — ok stays true → done + acked below.
     }
     if (ok) {
         req.sc.done = 1

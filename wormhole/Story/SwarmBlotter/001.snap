@@ -1,0 +1,7 @@
+Snap:H
+  H:SwarmBlotter,Run
+    A:SwarmBlotter
+      self,round	{"mung":["age"]}
+      w:SwarmBlotter
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

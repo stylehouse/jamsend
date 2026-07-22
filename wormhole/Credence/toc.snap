@@ -8,6 +8,7 @@ Waft:Credence
     Funkcion:Storying,of_Book:PereProof
     Funkcion:Storying,of_Book:Peregrination
     Funkcion:Storying,of_Book:PereReborn
+    Funkcion:Storying,of_Book:PereComplain,born:2026-07-22,desc:the protocol back-signal — an unenabled frame type draws a no_protocol complaint when the peer is ready but is held silently during the handshake startup window
   What:Swarm,desc:the social sharing layer — signed invites reciprocal grants revocation and portable accounts
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:SwarmStaple
@@ -20,6 +21,8 @@ Waft:Credence
     Funkcion:Storying,of_Book:Swarmation
     Funkcion:Storying,of_Book:SwarmShare
     Funkcion:Storying,of_Book:SwarmChain,born:2026-07-22,desc:the re-assignable ReInvite chain — one invite threads A—B—C—D and the tip not the issuer grants each newcomer capped at the embedded Feature
+    Funkcion:Storying,of_Book:SwarmBlotter,born:2026-07-22,desc:the one-time serial SHEET — a printed blotter of numbered tickets each a single-use invite torn once and refused a replay plus the legacy link door-parse
+    Funkcion:Storying,of_Book:SwarmSpoof,born:2026-07-22,desc:the prepub-forgery teeth — a hostile hello may declare a victim's address while holding its own key and self-signed grant so the door binds the routing prepub to the verified pub or refuses the seal
   What:Voro,desc:the Voronoi-Cyto render — Cyto's force layout reinterpreted as power-diagram cells with the crushed Stuffings molded into a rosette
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:VoroMitosis
