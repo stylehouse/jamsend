@@ -18,6 +18,13 @@ The gap this fills: `Voro_vtuffing.md` has the **gem** (nucleus · belt · rim),
 Candidate next moves (vague on purpose):
 - **read §9 first** — the ordered top-down pipeline is now drafted (2026-07-21, grounded against
    live code); it's the spine the moves below hang on, and it names WHICH stub each installs in;
+- **then `vyto_workingouts/processes.md`** (2026-07-21) — the whole arc broken into C→C engines:
+   the joints (local geometry × global S · the floor law · the crush's voice · nest-solve ·
+    reframe), the risk register, and the five-Book build order.  The re-entry doc for this arc;
+- **the floor law is Book-proven** (`Floorlaw`, Voronation.g, 2026-07-21 — green ×3 + red-gated):
+   a family below the floor is superseded by its `Stuff_distil` crest; one-directional per pass at
+    the exact re-admission point (the flutter defused); un-crush across passes by frame (the surf
+     kernel) and by importance.  Owed: the tenancy into the stir order (processes.md §6 step 2);
 - **②/③ Stuffing landed** — the distiller + a new cross-key `vein` leg are re-said in stho and
    Book-proven (`Stuff_todo.md`); the re-home into `Vyto_fold` (`Vyto.g:294`) is owed;
 - **④ Typescale landed** — the global scale `S` is Book-proven in isolation (`Voronation.g`

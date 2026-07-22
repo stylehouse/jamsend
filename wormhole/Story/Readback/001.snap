@@ -1,0 +1,7 @@
+Snap:H
+  H:Readback,Run
+    A:Readback
+      self,round	{"mung":["age"]}
+      w:Readback
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

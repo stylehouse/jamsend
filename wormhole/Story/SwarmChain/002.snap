@@ -1,0 +1,21 @@
+Snap:H
+  H:SwarmChain,Run
+    A:SwarmChain
+      self,round=2	{"mung":["age"]}
+      w:SwarmChain,now=1751700000
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Dee
+          Identity:73f2fd1bbfb481ca,prepub:73f2fd1bbfb481ca,friendly:Dee
+            Peering,name:73f2fd1bbfb481ca,friendly:Dee,online
+        Account,of:Eli
+          Identity:28e5cd8bd22e98c0,prepub:28e5cd8bd22e98c0,friendly:Eli
+            Peering,name:28e5cd8bd22e98c0,friendly:Eli,online
+        Account,of:Fay
+          Identity:53a0c8a9793da141,prepub:53a0c8a9793da141,friendly:Fay
+            Peering,name:53a0c8a9793da141,friendly:Fay,online
+        Account,of:Gus
+          Identity:052f57a21dbfe922,prepub:052f57a21dbfe922,friendly:Gus
+            Peering,name:052f57a21dbfe922,friendly:Gus,online
+        req:witness,eternal,ok

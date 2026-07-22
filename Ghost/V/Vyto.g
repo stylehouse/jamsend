@@ -294,6 +294,131 @@ Vyto_scan_sweep(w, parentMirror, gen):
 Vyto_fold(w):
     return
 
+// ══ the fold's toolbox — the FIRST TENANT (granted 2026-07-22): the distiller re-homed ════════════
+//  The algebra the crush speaks (Voronation Stuff region = the Book-proven oracle) now LIVES at the
+//   fold station — verbatim: veins first · keyrows supersede the facts a vein crosses unless the
+//    coexist knob keeps them · counted chips · honest +N tail · counted presence.  PLUS the law the
+//     oracle predates — Dip_assign (Cstructures_todo §4): every act of supersession assigns a
+//      countable door.  The crest's FIRST row is `%Vrow,row:dip` carrying `n` (the true subsumed
+//       count — Readback proved a crest without its count renders a family like a lie; same shape
+//        as Voro.g's surf handle) and `.c.members` (the way back in — runtime refs · never
+//         encoded).  Two mints: `Vyto_distil` ATTACHES (a Book snaps it as proof) and
+//          `Vyto_distil_free` mints DETACHED (new TheC · unreachable from H** · Books-invisible —
+//           the display side's working matter).  `Vyto_fold` above stays a stub until the
+//            mirror-side solver lands (the display refactor owns that half); these are its tools.
+Vyto_distil(into, members, kind, skips, coexist):
+    let root = into.i({ Vtuffing: 1, of: kind || 'stuff', n: members ? members.length : 0 })
+    return this.Vyto_distil_fill(root, members, skips, coexist)
+
+Vyto_distil_free(members, kind, skips, coexist):
+    let root = new TheC({ c: {}, sc: { Vtuffing: 1, of: kind || 'stuff', n: members ? members.length : 0 } })
+    return this.Vyto_distil_fill(root, members, skips, coexist)
+
+Vyto_distil_fill(root, members, skips, coexist):
+    this.Vyto_dip_assign(root, members)
+    if (!members || !members.length) return root
+    let veined = this.Vyto_veinrows(root, members, skips)
+    let hide = coexist ? null : veined
+    this.Vyto_keyrows(root, members, skips, hide)
+    return root
+
+// Vyto_dip_assign — the Dip_assign law as a method: the door rides FIRST with the true count and
+//  the members on `.c` (the dip a surf opens; the count present at EVERY register — injectivity).
+Vyto_dip_assign(root, members):
+    let dip = root.i({ Vrow: 1, row: 'dip', n: members ? members.length : 0 })
+    dip.c.members = members ? members.slice() : []
+    return dip
+
+// Vyto_veinrows — one value crossing many keys is a VEIN said once (the oracle's ruling: a vein
+//  SUPERSEDES the per-key facts it subsumes unless coexist keeps them; wgt:1; '1' never a vein).
+Vyto_veinrows(root, members, skips):
+    let vkeys = {}
+    let vn = {}
+    for (const m of members) {
+        for (const kk of Object.keys(m.sc)) {
+            if (skips && skips.includes(kk)) continue
+            let v = '' + m.sc[kk]
+            if (v === '1') continue
+            if (!vkeys[v]) vkeys[v] = {}
+            if (vn[v] == null) vn[v] = 0
+            vkeys[v][kk] = (vkeys[v][kk] || 0) + 1
+            vn[v] = vn[v] + 1
+        }
+    }
+    let veins = []
+    for (const v of Object.keys(vkeys)) {
+        if (Object.keys(vkeys[v]).length >= 2) veins.push(v)
+    }
+    veins.sort((a, b) => vn[b] - vn[a])
+    let veined = {}
+    for (const v of veins) {
+        let r = root.i({ Vrow: 1, row: 'vein', v: v, wgt: 1 })
+        let ks = Object.keys(vkeys[v])
+        ks.sort((a, b) => vkeys[v][b] - vkeys[v][a])
+        for (const kk of ks) {
+            r.i({ Vbit: 1, k: kk, n: vkeys[v][kk] })
+            veined[kk + '|' + v] = 1
+        }
+    }
+    return veined
+
+// Vyto_keyrows — the key-by-key pass: ONE value → a fact said once (a bare '1' → a COUNTED
+//  presence fact when some-not-all carry it) · MANY → a counted ranked spread capped at 3 + '+N'.
+Vyto_keyrows(root, members, skips, hide):
+    let keys = []
+    let seen = {}
+    for (const m of members) {
+        for (const kk of Object.keys(m.sc)) {
+            if (!seen[kk]) {
+                seen[kk] = 1
+                keys.push(kk)
+            }
+        }
+    }
+    for (const kk of keys) {
+        if (skips && skips.includes(kk)) continue
+        let vals = {}
+        let order = []
+        let have = 0
+        for (const m of members) {
+            if (!Object.prototype.hasOwnProperty.call(m.sc, kk)) continue
+            have = have + 1
+            let v = '' + m.sc[kk]
+            if (vals[v] == null) {
+                vals[v] = 0
+                order.push(v)
+            }
+            vals[v] = vals[v] + 1
+        }
+        if (!have) continue
+        if (order.length === 1) {
+            if (order[0] === '1') {
+                if (have < members.length) {
+                    let fp = { Vrow: 1, row: 'fact', k: kk, n: have, wgt: 1 }
+                    root.i(fp)
+                }
+            } else {
+                if (hide && hide[kk + '|' + order[0]]) continue
+                let fq = { Vrow: 1, row: 'fact', k: kk, v: order[0], wgt: 1 }
+                root.i(fq)
+            }
+            continue
+        }
+        order.sort((a, b) => vals[b] - vals[a])
+        let ssc = { Vrow: 1, row: 'spread', k: kk, wgt: 1 }
+        let r = root.i(ssc)
+        let chips = order
+        if (order.length > 4) chips = order.slice(0, 3)
+        for (const v of chips) {
+            let bsc = { Vbit: 1, v: v, n: vals[v] }
+            r.i(bsc)
+        }
+        if (order.length > chips.length) {
+            let tsc = { Vbit: 1, text: '+' + (order.length - chips.length), n: 0 }
+            r.i(tsc)
+        }
+    }
+
 // Vyto_gang — solver: reads a crowded sibling row and decides who represents whom.
 Vyto_gang(w):
     return

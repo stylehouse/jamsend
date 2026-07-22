@@ -1,0 +1,7 @@
+Snap:H
+  H:VytoCrest,Run
+    A:VytoCrest
+      self,round	{"mung":["age"]}
+      w:VytoCrest
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

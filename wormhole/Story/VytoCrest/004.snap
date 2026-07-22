@@ -1,0 +1,24 @@
+Snap:H
+  H:VytoCrest,Run
+    A:VytoCrest
+      self,round=4	{"mung":["age"]}
+      w:VytoCrest
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Brood,name:shoal
+          Track,title:Tide,genre:dub,mood:dub,format:flac,year:2019,live:1
+          Track,title:Halo,genre:dub,mood:dub,format:flac,year:2019,live:1
+          Track,title:Vane,genre:dub,mood:dub,format:flac,year:2007
+          Track,title:Ebb,genre:dub,mood:dub,format:flac,year:1998
+        Crush,fam:shoal
+          Vtuffing,of:crest,n=4
+            Vrow,row:dip,n=4
+            Vrow,row:vein,v:dub,wgt
+              Vbit,k:genre,n=4
+              Vbit,k:mood,n=4
+            Vrow,row:fact,k:format,v:flac,wgt
+            Vrow,row:spread,k:year,wgt
+              Vbit,v:2019,n=2
+              Vbit,v:2007,n
+              Vbit,v:1998,n
+            Vrow,row:fact,k:live,n=2,wgt

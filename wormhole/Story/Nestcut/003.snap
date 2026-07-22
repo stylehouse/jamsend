@@ -1,0 +1,20 @@
+Snap:H
+  H:Nestcut,Run
+    A:Nestcut
+      self,round=3	{"mung":["age"]}
+      w:Nestcut
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Example,name:nest
+          Cell,label:root,area=360000,cx=400,cy=225,misfit=0
+            Cell,label:A,area=136872,cx=168,cy=184,misfit=0
+              Cell,label:A1,area=36917,cx=92,cy=94,misfit=0
+                Cell,label:A1a,area=31016,cx=80,cy=88
+                Cell,label:A1b,area=5900,cx=160,cy=126
+              Cell,label:A2,area=35509,cx=305,cy=89
+              Cell,label:A3,area=64446,cx=136,cy=289
+            Cell,label:B,area=134622,cx=634,cy=184,misfit=0
+              Cell,label:B1,area=53142,cx=538,cy=92
+              Cell,label:B2,area=81480,cx=697,cy=243
+            Cell,label:C,area=88506,cx=403,cy=351
+        see:a scope re-cut its innards inside its standing polygon — the outside held still while the heavier weight grew its share of the same room

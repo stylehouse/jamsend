@@ -1149,3 +1149,158 @@ async SwarmShare_order(w):
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)
+
+
+// ══ SwarmChain — the NINTH Book: the re-assignable ReInvite chain (Swarm_spec §6.3a) ═══════════════
+//  SwarmStaple proves a SINGLE-USE invite; SwarmChain proves the RE-ASSIGNABLE one — an admission
+//   ticket that threads a chain of friendships A—B—C—D. The issuer (Dee) tracks only the current
+//    TIP; each newcomer befriends whoever brought them in, NEVER the issuer, capped at the embedded
+//     Feature (no escalation). The airtight core: a ReInvite EMBEDS Dee's original invite, so both
+//      the tip and the newcomer verify the SAME Dee signature; the TIP (not Dee) signs the grant;
+//       Dee advances her tracker only on the tip's SIGNED confirmation. Mail wire, in-process, four
+//        fixed selves; its own world w:SwarmChain (dispatch by WORLD NAME — the usual bomb).
+//   beat 2  four selves stand up ONLINE — an issuer (Dee) a first tip (Eli) two newcomers (Fay Gus)
+//   beat 3  Dee mints a CHAIN invite; Eli redeems — A—B seals and the tip is TRACKED not spent
+//   beat 4  Fay (holding Eli's link) redeems — ReInvite → Eli honours + grants + seals B—C; tip → Fay
+//   beat 5  Gus (holding Fay's link) redeems — Fay honours via her kept ChainRoot; C—D seals; tip → Gus
+
+SwarmChain(A,w):
+    w oai %req:wrangle,eternal
+        await &SwarmChain_drive,w,req
+        req%ok = 1
+
+// SwarmChain_drive — beat dispatch (req-local did_step, the Pere* lesson), then pump the mail wire
+//  and re-sort H/* every pass. Separate guarded ifs sidestep the bare-else tile mangle.
+async SwarmChain_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.SwarmChain_sides_up(w)
+        if (n === 3) await this.SwarmChain_root(w)
+        if (n === 4) await this.SwarmChain_grow(w)
+        if (n === 5) await this.SwarmChain_grow2(w)
+    }
+    await this.SwarmChain_pump(w)
+    await this.SwarmChain_order(w)
+
+// SwarmChain_pump — DRAIN the mail wire to a fixed point each pass. The chain is ~6 frames end to end
+//  (hello → reinvite → reinvite → honour → seal → ok); the 2-frame hello|accept drains over a beat's
+//   think passes, but a 6-hop chain would settle only across SEVERAL beats (frames ride post-do — the
+//    memory), leaving the witness reading a half-settled world. So we loop the per-account pump until
+//     no undone frame remains (bounded — never an unbounded await in a beat, the Sounditron lesson):
+//      the whole chain completes within the beat that redeems, and the sworn truths hold at that beat.
+async SwarmChain_pump(w):
+    let guard = 0
+    while (guard < 24) {
+        guard = guard + 1
+        for (const acct of w.o({ Account: 1 })) {
+            for (const ident of acct.o({ Identity: 1 })) await this.Swarm_pump(w, ident)
+        }
+        let pending = 0
+        for (const acct of w.o({ Account: 1 })) {
+            for (const ident of acct.o({ Identity: 1 })) {
+                let inbox = ident.o({ mail: 1 })[0]
+                if (inbox) pending = pending + inbox.o({ frame: 1 }).filter(m => !m.sc.did).length
+            }
+        }
+        if (pending === 0) break
+    }
+
+// SwarmChain_person — a fixed self seeded off the name (its own of: tag never collides with a staple
+//  self in another world); brought ONLINE at once — the chain needs everyone reachable to relay.
+async SwarmChain_person(w, name):
+    let acct = w.oai({ Account: 1, of: name })
+    acct.c.up = w
+    let keys = await this.Swarm_mint_keys('SwarmChain-' + name)
+    let ident = this.Swarm_identity(acct, keys, name)
+    this.Swarm_online(ident, true)
+    return ident
+
+SwarmChain_ident(w, name):
+    return w.o({ Account: 1, of: name })[0]?.o({ Identity: 1 })[0]
+
+// beat 2 — the cast: four selves, all online. Witness armed last (own swept req) so it reads each
+//  pass's settled state.
+async SwarmChain_sides_up(w):
+    w i reached:step_2
+    w.sc.now = 1751700000
+    await this.SwarmChain_person(w, 'Dee')
+    await this.SwarmChain_person(w, 'Eli')
+    await this.SwarmChain_person(w, 'Fay')
+    await this.SwarmChain_person(w, 'Gus')
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.SwarmChain_witness(w); req.sc.ok = 1 })
+
+// beat 3 — the chain root: Dee mints a CHAIN invite (chain:1 → tracks a holder, never spends) and
+//  Eli redeems it. A—B seals like any friendship, and Dee records Eli as the tip the chain grows from.
+async SwarmChain_root(w):
+    w i reached:step_3
+    w.sc.now = 1751700010
+    let dee = this.SwarmChain_ident(w, 'Dee')
+    w.c.iz = await this.Swarm_mint_idzeug(w, dee, { Music: 1, genre: 'Classical' }, 'chain_1', 1)
+    await this.Swarm_redeem(w, this.SwarmChain_ident(w, 'Eli'), w.c.iz)
+
+// beat 4 — the chain grows by one: Fay holds the SAME link (Eli passed it out of band) and redeems
+//  it. Dee — hearing a NON-holder — mints a single-use ReInvite naming Eli (tip) + Fay (newcomer);
+//   Fay carries it to Eli; ELI (not Dee) verifies Dee's signature grants Fay the capped Music and
+//    seals B—C; Eli's signed confirmation lets Dee advance her tracker Eli→Fay. Fay never befriends
+//     Dee — she keeps only a light ChainRoot for later.
+async SwarmChain_grow(w):
+    w i reached:step_4
+    w.sc.now = 1751700020
+    await this.Swarm_redeem(w, this.SwarmChain_ident(w, 'Fay'), w.c.iz)
+
+// beat 5 — the chain grows PAST the first tip: Gus holds the link (Fay passed it) and redeems. Dee
+//  mints a ReInvite naming Fay (the NEW tip); Gus carries it to Fay; Fay honours it via the ChainRoot
+//   she kept when she joined — NOT a friendship with Dee — grants Gus and seals C—D. The tracker
+//    advances again Fay→Gus: the proof the chain outlives any single friendship with the issuer.
+async SwarmChain_grow2(w):
+    w i reached:step_5
+    w.sc.now = 1751700030
+    await this.Swarm_redeem(w, this.SwarmChain_ident(w, 'Gus'), w.c.iz)
+
+// SwarmChain_witness — %sworn assertions via this.story_swear (idempotent per run; evidence on the
+//  Assertioning shelf, never snap bytes). Each is a happened-FACT of the chain: the tracked tip, the
+//   tip-not-issuer grant, the non-befriending newcomer, the tracker advance, the ChainRoot hop, the
+//    no-escalation cap. Gated to the beat the truth first holds; the sworn then carries it for the run.
+SwarmChain_witness(w):
+    let n = (this.c.run)?.c.step_n
+    let dee = this.SwarmChain_ident(w, 'Dee')
+    let eli = this.SwarmChain_ident(w, 'Eli')
+    let fay = this.SwarmChain_ident(w, 'Fay')
+    let gus = this.SwarmChain_ident(w, 'Gus')
+    if (!dee || !eli || !fay || !gus) return
+    // beat 2: four online selves.
+    if (n === 2 && [dee, eli, fay, gus].every(i => this.Swarm_peering(i)?.sc?.online)) this.story_swear(w, 'four selves stand up online — an issuer a first tip and two newcomers waiting to chain in')
+    let rec = this.Swarm_peering(dee)?.o({ Idzeug: 'chain_1' })[0]
+    let deeEli = this.Swarm_peering(dee)?.o({ Pier: 1, pub: eli.sc.prepub })[0]
+    let eliDee = this.Swarm_peering(eli)?.o({ Pier: 1, pub: dee.sc.prepub })[0]
+    // beat 3: the chain root — a chain invite (not spent) tracking Eli as the tip; A—B a real friendship.
+    if (n === 3 && rec && rec.sc.chain && !rec.sc.spent && rec.sc.holder === eli.sc.prepub && deeEli && eliDee) this.story_swear(w, 'the chain invite seals its first friend and tracks him as the tip — never spent so the link can move on')
+    // beat 4: B—C sealed by the TIP (mutual Music) — Eli granted Fay and Fay reciprocated.
+    let fayGetsEli = this.Swarm_peering(fay)?.o({ Pier: 1, pub: eli.sc.prepub })[0]?.o({ Grant: 'Music', by: eli.c.keys?.pub })[0]
+    let eliGetsFay = this.Swarm_peering(eli)?.o({ Pier: 1, pub: fay.sc.prepub })[0]?.o({ Grant: 'Music', by: fay.c.keys?.pub })[0]
+    if (n === 4 && fayGetsEli && eliGetsFay) this.story_swear(w, 'a newcomer holding the link grows the chain — the TIP not the issuer grants her and seals a real friendship')
+    // beat 4: the newcomer never befriends the issuer — no Pier at either end — only a light ChainRoot.
+    let fayNotDee = !this.Swarm_peering(fay)?.o({ Pier: 1, pub: dee.sc.prepub }).length
+    let deeNotFay = !this.Swarm_peering(dee)?.o({ Pier: 1, pub: fay.sc.prepub }).length
+    let fayRoot = fay.o({ ChainRoot: 1, pub: dee.c.keys?.pub })[0]
+    if (n === 4 && fayNotDee && deeNotFay && fayRoot) this.story_swear(w, 'the newcomer never befriends the issuer — no grant and no contact only a light chain-root kept for later')
+    // beat 4: the tracker advanced Eli→Fay on the tip's signed confirmation.
+    if (n === 4 && rec && rec.sc.holder === fay.sc.prepub) this.story_swear(w, 'the issuer advances her tracker to the newcomer on the tip signed confirmation')
+    // beat 5: the chain grows PAST the first tip — Fay honoured Gus via the ChainRoot she kept, not a friendship with Dee.
+    let gusGetsFay = this.Swarm_peering(gus)?.o({ Pier: 1, pub: fay.sc.prepub })[0]?.o({ Grant: 'Music', by: fay.c.keys?.pub })[0]
+    let fayGetsGus = this.Swarm_peering(fay)?.o({ Pier: 1, pub: gus.sc.prepub })[0]?.o({ Grant: 'Music', by: gus.c.keys?.pub })[0]
+    if (n === 5 && gusGetsFay && fayGetsGus && fayNotDee) this.story_swear(w, 'the chain grows PAST the first tip — the newcomer honours via the chain-root she kept not a friendship with the issuer')
+    // beat 5: no escalation — the far hop's grant is still exactly the embedded Music Feature.
+    if (n === 5 && gusGetsFay && gusGetsFay.sc.Grant === 'Music') this.story_swear(w, 'no escalation down the chain — the far hop still grants exactly the embedded Music Feature')
+    // beat 5: the tracker advanced again Fay→Gus.
+    if (n === 5 && rec && rec.sc.holder === gus.sc.prepub) this.story_swear(w, 'the tracker advances again to the second newcomer — the chain outlives any single friendship with the issuer')
+
+// SwarmChain_order — float A:SwarmChain to the front of H/* so the Run snap stays readable.
+async SwarmChain_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'SwarmChain') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)

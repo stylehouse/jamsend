@@ -1,0 +1,59 @@
+Snap:H
+  H:Floorlaw,Run
+    A:Floorlaw
+      self,round=2	{"mung":["age"]}
+      w:Floorlaw
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Example,name:crush
+          Text,label:p,w=16
+          Brood,name:shoal
+            Track,title:Kelp,genre:dub,w
+            Track,title:Mist,genre:dub,w
+            Track,title:Foam,genre:dub,w
+            Track,title:Silt,genre:dub,w
+            Track,title:Wrack,genre:dub,w
+          Scale,frame=1152,floor=8,S=800
+            Crush,fam:shoal,freed=3
+              Vtuffing,of:crest,n=5
+                Vrow,row:spread,k:title,wgt
+                  Vbit,v:Kelp,n
+                  Vbit,v:Mist,n
+                  Vbit,v:Foam,n
+                  Vbit,text:+2,n=0
+                Vrow,row:fact,k:genre,v:dub,wgt
+            Size,label:p,w=16,px=32
+            Size,label:shoal,w=2,px=11
+        Example,name:legible
+          Text,label:p,w=16
+          Brood,name:shoal
+            Track,title:Kelp,genre:dub,w
+            Track,title:Mist,genre:dub,w
+            Track,title:Foam,genre:dub,w
+            Track,title:Silt,genre:dub,w
+            Track,title:Wrack,genre:dub,w
+          Scale,frame=5376,floor=8,S=1600
+            Size,label:p,w=16,px=64
+            Size,label:Kelp,w,px=16
+            Size,label:Mist,w,px=16
+            Size,label:Foam,w,px=16
+            Size,label:Silt,w,px=16
+            Size,label:Wrack,w,px=16
+        Example,name:reframe
+          Brood,name:shoal
+            Track,title:Kelp,genre:dub,w
+            Track,title:Mist,genre:dub,w
+            Track,title:Foam,genre:dub,w
+            Track,title:Silt,genre:dub,w
+            Track,title:Wrack,genre:dub,w
+          Scale,frame=320,floor=8,S=800
+            Size,label:Kelp,w,px=8
+            Size,label:Mist,w,px=8
+            Size,label:Foam,w,px=8
+            Size,label:Silt,w,px=8
+            Size,label:Wrack,w,px=8
+        see:a family below the legibility floor is superseded by its distillation — five meek tracks crush to a crest saying genre dub once beside an honest title spread
+        see:the crush holds even though the room it freed would re-admit its members — supersession is one directional within a pass so the field cannot flutter
+        see:the freed demand lifts the global scale to spend the frame — the loud voice takes 32px and the crest itself stays legible at 11px above the floor
+        see:the same family above the floor keeps every member unfolded — crush is a size comparison not a category
+        see:reframe into the family and its members become affordable — the shoal that crushed at the world frame unfolds at its own frame with every member at the floor

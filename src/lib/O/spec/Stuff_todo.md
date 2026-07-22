@@ -4,19 +4,15 @@ The pane-content distiller (what a fold|gang pane SAYS) lifted out of the crush,
  clean in stho, and proven in isolation on a live runner — the first step of "rebuild the Stuffing
   pipeline in stho" (the human, 2026-07-21). A working `_todo`, not a spec.
 
-## HUMAN — one ruling owed (recommendation first)
+## HUMAN — RULED 2026-07-21 (recorded so nobody re-asks)
 
-**The `row:vein` leg is NEW and PROVISIONAL — it needs your yes/no.** Recommendation: **keep it, coexisting**
- with the per-key rows (that is what shipped and is green). The three sub-calls, in case you want to change them:
-- **Add it at all?** — YES (shipped). `Vtuff_keyrows` reads key-by-key and structurally cannot see a value
-   that crosses keys; the sizing algebra wants that "one value · many keys = a global vein" signal. It is the
-    one leg your algebra named (`k1:v k2:v → (k1|k2):v`, the dual of spread) that the old engine never had.
-- **Supersede or coexist?** — currently COEXISTS: the vein Example emits `fact,k:genre,v:dub` AND
-   `fact,k:mood,v:dub` AND `vein,v:dub{genre,mood}` — the same fact said three ways. Cleaner might be for the
-    vein to SUPERSEDE the per-key facts it subsumes. Left as a knob; say which.
-- **Weight?** — `wgt:2` (louder than fact|spread's `wgt:1`), on the "said once and loud" intuition. A guess.
-
-Everything else below is landed and green; only the vein leg's *presentation policy* is open.
+**The vein leg stays, and it SUPERSEDES by default.**  The human: *"of course we supersede a mess of
+ information for nicely compressed|expressed information… we leave it a knob, but defaults to supersede —
+  say more with less."*  Landed and green ×2: a vein drops the per-key facts it subsumes; the `coexist`
+   knob (`Stuff_distil(…, coexist)`) restores them, with a `coexist` Example in the Book proving the knob.
+    And "said once and loud" is DROPPED — vein rides `wgt:1` like fact|spread (real loudness comes from
+     shared-ness in the live stack, not an arbitrary bump).  The ruling generalises further as the
+      **floor law** candidate in `vyto_workingouts/processes.md` (HUMAN 1 there).
 
 ## 0. What to get on with next
 

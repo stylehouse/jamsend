@@ -1,0 +1,24 @@
+story:Readback
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.012
+      sample=0.015,at=1784649010
+      sample=0.01,at=1784649025
+      sample=0.01,at=1784649029
+      sample=0.014,at=1784649055
+      sample=0.015,at=1784649090
+      sample=0.011,at=1784649122
+    TimeTotal:step,avg=0.003
+      sample=0.004,at=1784649010
+      sample=0.003,at=1784649025
+      sample=0.002,at=1784649029
+      sample=0.003,at=1784649055
+      sample=0.004,at=1784649090
+      sample=0.003,at=1784649122
+  step,dige:0de67cc2d4a69257
+  step=2,dige:b7ef72f7933b200f
+  step=3,dige:c5a9de9e750f957c
+  step=4,dige:f2a00890dab4fe13

@@ -1,0 +1,7 @@
+Snap:H
+  H:Floorlaw,Run
+    A:Floorlaw
+      self,round	{"mung":["age"]}
+      w:Floorlaw
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

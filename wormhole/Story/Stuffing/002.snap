@@ -35,15 +35,27 @@ Snap:H
           Track,title:Murk,mood:dub
           Track,title:Reed,genre:dub
           Vtuffing,of:stuff,n=3
+            Vrow,row:vein,v:dub,wgt
+              Vbit,k:genre,n=2
+              Vbit,k:mood,n
+            Vrow,row:spread,k:title,wgt
+              Vbit,v:Sway,n
+              Vbit,v:Murk,n
+              Vbit,v:Reed,n
+        Example,name:coexist
+          Track,title:Sway,genre:dub
+          Track,title:Murk,mood:dub
+          Track,title:Reed,genre:dub
+          Vtuffing,of:stuff,n=3
+            Vrow,row:vein,v:dub,wgt
+              Vbit,k:genre,n=2
+              Vbit,k:mood,n
             Vrow,row:spread,k:title,wgt
               Vbit,v:Sway,n
               Vbit,v:Murk,n
               Vbit,v:Reed,n
             Vrow,row:fact,k:genre,v:dub,wgt
             Vrow,row:fact,k:mood,v:dub,wgt
-            Vrow,row:vein,v:dub,wgt=2
-              Vbit,k:genre,n=2
-              Vbit,k:mood,n
         Example,name:overflow
           Track,title:Comp,label:blue
           Track,title:Comp,label:warp
@@ -72,6 +84,7 @@ Snap:H
             Vrow,row:fact,k:remaster,n=3,wgt
         see:a value everyone agrees on is said once as a fact — five dub tracks fold to a single genre dub not five
         see:a key that varies spreads into counted chips ranked most-common-first — 2007 carries two and leads 1998 with one
-        see:the new leg — a value crossing several keys folds to one vein said once and loud — dub spans genre and mood as a single crossing
+        see:the new leg folds a value crossing several keys into one vein and supersedes the per-key facts it subsumes — dub spans genre and mood said once not as two separate facts
+        see:the knob restores coexistence — the same bag with supersede off keeps genre dub beside the vein for a domain that wants the raw facts too
         see:a spread past four values keeps its top three and marks the rest as an honest overflow tail — five labels show three then plus two
         see:a presence key on some-not-all rides as a counted fact with no value while the universal mainkey says nothing — three of five remastered

@@ -95,7 +95,7 @@ Swarm_iz_params(claim):
 //  %Idzeug under their %Peering; returns the ?Iz= blob. feature = { Music: 1, genre: 'Classical' } —
 //   a mainkey with params, never a bare flag. The blob rides .c (re-derivable — ed25519 is
 //    deterministic); the nonce record is what must survive: it is the spend ledger.
-async Swarm_mint_idzeug(w, ident, feature, nonce):
+async Swarm_mint_idzeug(w, ident, feature, nonce, chain):
     let mainkey = Object.keys(feature)[0]
     let params = { ...feature }
     delete params[mainkey]
@@ -106,7 +106,12 @@ async Swarm_mint_idzeug(w, ident, feature, nonce):
     let record = peering.oai({ Idzeug: nonce, to: mainkey, ...params })
     record.c.up = peering
     record.c.iz = this.Swarm_b64(JSON.stringify(atom))
-    this.Swarm_iz_stash(ident, nonce, { to: mainkey, ...params })
+    // chain policy (§6.3a): a re-assignable invite TRACKS its current holder (the tip) instead of
+    //  spending on the first claim — the SHARE popup's kind. A plain invite (a blotter serial, the
+    //   legacy link) stays single-use (`spent`). The maker's own record is the law (§10.1), so the
+    //    flag lives here and survives reload through the iz-stash.
+    if (chain) record.sc.chain = 1
+    this.Swarm_iz_stash(ident, nonce, chain ? { to: mainkey, chain: 1, ...params } : { to: mainkey, ...params })
     return record.c.iz
 
 // Swarm_verify_idzeug — decode + verify the inviter's signature. THROWS on forgery|garbage; returns
@@ -114,6 +119,39 @@ async Swarm_mint_idzeug(w, ident, feature, nonce):
 async Swarm_verify_idzeug(iz):
     let atom = JSON.parse(this.Swarm_unb64(iz))
     return await verify_grant(atom)
+//#endregion
+
+//#region ReInvite — the re-assignable chain (§6.3a)
+//  A chain invite (Swarm_mint_idzeug with chain:1) never spends; its first claimant is the tracked
+//   HOLDER (the tip). The tip grows the chain via a ReInvite: an Alice-SIGNED capability that EMBEDS
+//    the original invite and names the tip it authorises + the newcomer + the moment. The newcomer
+//     carries it to the tip, who verifies Alice's signature and honours it PEER-TO-PEER — the TIP,
+//      never Alice, grants the newcomer the embedded Feature. Both verify the SAME Alice signature
+//       (her pub rides inside the embedded invite), so neither need have met before. The wire verbs
+//        (honour, tip-advance-on-confirm) ride the handshake region below; THESE two are the pure
+//         sign|verify, reusing the voucher's ed25519 (signHeader|verifyHeader) over an arbitrary key.
+
+// Swarm_mint_reinvite — Alice signs a ReInvite off a HELD chain %Idzeug: it embeds the original invite
+//  blob (so the newcomer learns the Feature AND Alice's pub to check this very signature), names the
+//   current tip it lets grant, the newcomer, a fresh single-use rnonce (seam 2), and the moment. The
+//    signature is by Alice's key — the lineage root both ends verify against.
+async Swarm_mint_reinvite(w, ident, record, newcomer, rnonce):
+    if (!record.sc.chain) throw 'reinvite: not a chain invite'
+    if (!record.sc.holder) throw 'reinvite: unclaimed — no tip to extend from'
+    let c = { tip: record.sc.holder, newcomer: newcomer, iz: record.c.iz, nonce: record.sc.Idzeug, rnonce: rnonce, at: this.Swarm_now(w) }
+    c.sign = await signHeader(c, ident.c.keys.key)
+    return this.Swarm_b64(JSON.stringify(c))
+
+// Swarm_verify_reinvite — decode + verify BOTH signatures and their binding: the embedded invite is a
+//  real Alice grant (verify_grant → her pub), and the ReInvite itself is signed by that SAME Alice pub.
+//   THROWS on forgery|garbage; returns { tip, newcomer, nonce, rnonce, at, by, feature, params } — `by`
+//    is Alice's pub, the lineage root the two ends verify each other against.
+async Swarm_verify_reinvite(rib):
+    let c = JSON.parse(this.Swarm_unb64(rib))
+    let inner = await this.Swarm_verify_idzeug(c.iz)
+    let who = await verifyHeader(c, [inner.by])
+    if (who !== inner.by) throw 'reinvite: bad signature'
+    return { tip: c.tip, newcomer: c.newcomer, nonce: c.nonce, rnonce: c.rnonce, at: c.at, by: inner.by, feature: inner.to, params: this.Swarm_iz_params(inner) }
 //#endregion
 
 //#region front door — the live self, the invite URL (Swarm_spec §10.1: the QR face of the Idzeug)
@@ -290,13 +328,17 @@ Swarm_arm(w):
         if (frame.header.type === 'pier_hello') await this.Swarm_hello(w2, ident, frame.swarm)
         if (frame.header.type === 'pier_accept') await this.Swarm_accept(w2, ident, frame.swarm)
         if (frame.header.type === 'pier_reject') this.Swarm_rejected(w2, ident, frame.swarm)
+        if (frame.header.type === 'reinvite') await this.Swarm_reinvited(w2, ident, frame.swarm)
+        if (frame.header.type === 'reinvite_honour') await this.Swarm_reinvite_honoured(w2, ident, frame.swarm)
+        if (frame.header.type === 'reinvite_seal') await this.Swarm_reinvite_sealed(w2, ident, frame.swarm)
+        if (frame.header.type === 'reinvite_ok') await this.Swarm_reinvite_ok(w2, ident, frame.swarm)
         if (frame.header.type === 'ive_got') this.Swarm_ive_got(w2, ident, frame.swarm)
         if (frame.header.type === 'swarm_hi') this.Swarm_heard_hi(w2, ident, frame)
         if (frame.header.type === 'suggest') this.Swarm_suggested(w2, ident, frame.swarm)
         if (frame.header.type === 'suggest_got') this.Swarm_suggest_got(w2, ident, frame.swarm)
         return true
     }
-    for (const kind of ['pier_hello', 'pier_accept', 'pier_reject', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got']) w.c.on[kind] = hear
+    for (const kind of ['pier_hello', 'pier_accept', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got']) w.c.on[kind] = hear
 
 // Swarm_voucher_ok — is this voucher a valid proof the sealed friend `from` sent the frame?
 //  (1) a cache hit — a voucher whose sign we already proved this era — passes without crypto.
@@ -326,6 +368,10 @@ async Swarm_pump(w, ident):
         if (frame.kind === 'pier_hello') await this.Swarm_hello(w, ident, frame)
         if (frame.kind === 'pier_accept') await this.Swarm_accept(w, ident, frame)
         if (frame.kind === 'pier_reject') this.Swarm_rejected(w, ident, frame)
+        if (frame.kind === 'reinvite') await this.Swarm_reinvited(w, ident, frame)
+        if (frame.kind === 'reinvite_honour') await this.Swarm_reinvite_honoured(w, ident, frame)
+        if (frame.kind === 'reinvite_seal') await this.Swarm_reinvite_sealed(w, ident, frame)
+        if (frame.kind === 'reinvite_ok') await this.Swarm_reinvite_ok(w, ident, frame)
         if (frame.kind === 'ive_got') this.Swarm_ive_got(w, ident, frame)
     }
 
@@ -364,8 +410,13 @@ Swarm_iz_rehydrate(w, ident):
             record = peering.i({ Idzeug: nonce, to: c.to })
             record.c.up = peering
             if (c.ttl) record.sc.ttl = c.ttl
+            if (c.chain) record.sc.chain = 1
         }
         if (c.spent) record.sc.spent = 1
+        // chain tip survives reload too — else a reloaded inviter forgets who holds it and its
+        //  door would re-admit the link as a fresh first claim (§6.3a).
+        if (c.chain) record.sc.chain = 1
+        if (c.holder) record.sc.holder = c.holder
     }
 //#endregion
 
@@ -395,6 +446,7 @@ Swarm_station_up(w, ident):
     if (!w || !ident?.c?.keys) return null
     if (!w.c.iz_rehydrated && this.top_House().stashed) { w.c.iz_rehydrated = 1; this.Swarm_iz_rehydrate(w, ident) }
     if (!w.c.piers_rehydrated && this.top_House().stashed) { w.c.piers_rehydrated = 1; this.Swarm_piers_rehydrate(w, ident) }
+    if (!w.c.roots_rehydrated && this.top_House().stashed) { w.c.roots_rehydrated = 1; this.Swarm_chainroots_rehydrate(w, ident) }
     let station = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
     if (station && w.c.station_up) return station
     if (typeof this.Socket_real !== 'function') return null
@@ -576,12 +628,27 @@ async Swarm_hello(w, ident, frame):
     // ttl door policy (§10.1: validity lives with the MAKER): the ttl on OUR record is the law,
     //  the claim's signed mint time the clock. No ttl on the record = the invite waits forever.
     if (record.sc.ttl && this.Swarm_now(w) > Number(claim.time) + Number(record.sc.ttl)) return deny('expired')
+    // chain policy (§6.3a): a chain invite is not spent on first claim — its first claimant becomes
+    //  the tracked HOLDER (the tip), sealed as a normal friend below. A LATER redeem by a NON-holder
+    //   is the chain GROWING: the newcomer holds the link the tip passed them, so mint a ReInvite and
+    //    let the newcomer carry it to the tip (§6.3a) — the tip, not us, grants + befriends them. The
+    //     tip re-redeeming its OWN link is a benign no-op (deny('held')).
+    if (record.sc.chain && record.sc.holder) {
+        if (frame.page.prepub === record.sc.holder) return deny('held')
+        return await this.Swarm_reinvite_begin(w, ident, record, frame)
+    }
     let theirs
     try { theirs = await verify_grant(frame.grant) }
     catch (er) { return deny('bad_grant') }
     if (theirs.for !== ident.c.keys.pub || theirs.by !== frame.page.pub) return deny('grant_mismatch')
-    record.sc.spent = 1
-    this.Swarm_iz_stash(ident, claim.nonce, { spent: 1 })
+    // a plain invite SPENDS; a chain invite records its first holder (the tip the chain grows from)
+    if (record.sc.chain) {
+        record.sc.holder = frame.page.prepub
+        this.Swarm_iz_stash(ident, claim.nonce, { holder: frame.page.prepub })
+    } else {
+        record.sc.spent = 1
+        this.Swarm_iz_stash(ident, claim.nonce, { spent: 1 })
+    }
     let mine = await mint_grant(ident.c.keys, frame.page.pub, claim.to, this.Swarm_iz_params(claim), this.Swarm_now(w))
     let pier = this.Swarm_seal(w, ident, frame.page, frame.grant, mine)
     this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_accept', grant: mine, page: this.Swarm_page(ident) })
@@ -608,6 +675,175 @@ async Swarm_accept(w, ident, frame):
 // Swarm_rejected — the inviter said no (spent|unknown|forged…): surface it, nothing sealed.
 Swarm_rejected(w, ident, frame):
     this.Swarm_rebuff(ident, 'rejected_' + frame.why, frame.prepub)
+
+// ── the ReInvite chain wire (§6.3a) — Alice tracks, the TIP grants ──────────────────────────
+//  Five frames grow the chain by ONE (A—B already sealed; Bob is the tip):
+//   1. pier_hello   Carol→Alice   Carol redeems Alice's HELD chain link (Swarm_hello diverts here)
+//   2. reinvite     Alice→Carol   Alice mints a single-use ReInvite (tip=Bob, newcomer=Carol)…
+//   3. reinvite     Carol→Bob     …and Carol carries it to Bob, her new friend (same kind, other role)
+//   4. reinvite_honour Bob→Carol  Bob verifies Alice's signature + grants Carol the capped Feature
+//   5. reinvite_seal   Carol→Bob  Carol reciprocates; B—C is now a mutual, durable friendship
+//   6. reinvite_ok     Bob→Alice  Bob confirms → Alice advances her tracker Bob→Carol, spends rnonce
+//  Airtight by signature: the ReInvite EMBEDS Alice's original invite, so BOTH ends verify the SAME
+//   Alice pub (Bob against his A—B friend; Carol against the link she redeemed). Bob — the tip, never
+//    Alice — signs Carol's grant, capped at the embedded Feature (no escalation). Carol never seals
+//     Alice (the transient redeem reference is dropped); she keeps only a LIGHT %ChainRoot so she can
+//      honour a future ReInvite that names HER as tip (Carol→Dave), the chain growing past her.
+
+// Swarm_reinvite_begin — Alice, hearing a NON-holder redeem her held chain link: mint a fresh
+//  single-use ReInvite naming the current tip + this newcomer, remember it pending (seam 1: the
+//   tracker only advances on the tip's later confirmation), and hand it to the newcomer to carry.
+async Swarm_reinvite_begin(w, ident, record, frame):
+    let newcomer = frame.page.prepub
+    record.c.rseq = (record.c.rseq || 0) + 1
+    let rnonce = String(record.sc.Idzeug) + '-r' + record.c.rseq
+    let rib = await this.Swarm_mint_reinvite(w, ident, record, newcomer, rnonce)
+    if (!record.c.pending) record.c.pending = {}
+    record.c.pending[rnonce] = { newcomer: newcomer }
+    this.Swarm_deliver(w, ident, newcomer, { kind: 'reinvite', rib: rib, page: this.Swarm_page(ident) })
+    return null
+
+// Swarm_reinvited — the `reinvite` frame, dispatched by MY role in the embedded credential:
+//  I am the NEWCOMER → Alice just handed me the ReInvite; remember it and carry it to the tip (my
+//   new friend). I am the TIP → the newcomer brought it to me; honour it. Neither → not mine.
+async Swarm_reinvited(w, ident, frame):
+    let r
+    try { r = await this.Swarm_verify_reinvite(frame.rib) }
+    catch (er) { return this.Swarm_rebuff(ident, 'reinvite_forged', frame.page?.prepub) }
+    if (r.newcomer === ident.sc.prepub) {
+        if (!ident.c.rib_in) ident.c.rib_in = {}
+        ident.c.rib_in[r.tip] = r
+        this.Swarm_station_pier(w, ident, r.tip)
+        this.Swarm_deliver(w, ident, r.tip, { kind: 'reinvite', rib: frame.rib, page: this.Swarm_page(ident) })
+        return null
+    }
+    if (r.tip === ident.sc.prepub) return await this.Swarm_reinvite_honour(w, ident, frame, r)
+    return this.Swarm_rebuff(ident, 'reinvite_notmine', frame.page?.prepub)
+
+// Swarm_reinvite_honour — Bob (the tip): the newcomer brought a ReInvite naming me. Validate it is
+//  really mine to honour (tip==me, newcomer==caller), that its lineage root (Alice) is one I know —
+//   a direct friend OR a %ChainRoot I kept from joining — then GRANT the newcomer, capped EXACTLY at
+//    the embedded Feature (no escalation), and seal B—C. Their reciprocal follows in reinvite_seal.
+async Swarm_reinvite_honour(w, ident, frame, r):
+    this.Swarm_station_pier(w, ident, frame.page?.prepub)
+    let deny = (why) => {
+        this.Swarm_rebuff(ident, 'reinvite_' + why, frame.page?.prepub)
+        return null
+    }
+    if (r.tip !== ident.sc.prepub) return deny('not_tip')
+    if (r.newcomer !== frame.page.prepub) return deny('newcomer_mismatch')
+    if (!this.Swarm_chain_root_ok(ident, r.by)) return deny('unknown_root')
+    let mine = await mint_grant(ident.c.keys, frame.page.pub, r.feature, r.params, this.Swarm_now(w))
+    this.Swarm_seal(w, ident, frame.page, null, mine)
+    if (!ident.c.honouring) ident.c.honouring = {}
+    ident.c.honouring[frame.page.prepub] = { root: prepubOf(r.by), rnonce: r.rnonce, nonce: r.nonce }
+    this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'reinvite_honour', grant: mine, page: this.Swarm_page(ident) })
+    return null
+
+// Swarm_reinvite_honoured — Carol (the newcomer): the tip granted me. Verify the grant is really
+//  FOR me, by the very tip the ReInvite named (pub → prepub), and no wider than the chain Feature.
+//   Reciprocate + seal B—C, keep a LIGHT %ChainRoot (the lineage authority, NOT a music contact),
+//    DROP the transient Alice reference, and tell the tip I sealed so Alice can advance.
+async Swarm_reinvite_honoured(w, ident, frame):
+    this.Swarm_station_pier(w, ident, frame.page?.prepub)
+    let deny = (why) => {
+        this.Swarm_rebuff(ident, 'honour_' + why, frame.page?.prepub)
+        return null
+    }
+    let bob
+    try { bob = await verify_grant(frame.grant) }
+    catch (er) { return deny('bad_grant') }
+    if (bob.for !== ident.c.keys.pub) return deny('not_for_me')
+    let pend = ident.c.rib_in ? ident.c.rib_in[frame.page.prepub] : null
+    if (!pend) return deny('unexpected')
+    if (prepubOf(bob.by) !== pend.tip) return deny('tip_mismatch')
+    if (bob.to !== pend.feature) return deny('escalation')
+    let mine = await mint_grant(ident.c.keys, frame.page.pub, pend.feature, pend.params, this.Swarm_now(w))
+    this.Swarm_seal(w, ident, frame.page, frame.grant, mine)
+    let cr = ident.oai({ ChainRoot: 1, pub: pend.by })
+    cr.c.up = ident
+    cr.sc.prepub = prepubOf(pend.by)
+    this.Swarm_chainroot_stash(ident, pend.by)
+    if (ident.c.offered) delete ident.c.offered[pend.by]
+    delete ident.c.rib_in[frame.page.prepub]
+    this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'reinvite_seal', grant: mine, page: this.Swarm_page(ident) })
+    return null
+
+// Swarm_reinvite_sealed — Bob: the newcomer reciprocated. Verify + complete the seal (idempotent —
+//  adds their grant beside mine), then confirm UP the chain to the root (Alice) so she advances.
+async Swarm_reinvite_sealed(w, ident, frame):
+    let deny = (why) => {
+        this.Swarm_rebuff(ident, 'sealed_' + why, frame.page?.prepub)
+        return null
+    }
+    let carol
+    try { carol = await verify_grant(frame.grant) }
+    catch (er) { return deny('bad_grant') }
+    if (carol.for !== ident.c.keys.pub) return deny('not_for_me')
+    let h = ident.c.honouring ? ident.c.honouring[frame.page.prepub] : null
+    if (!h) return deny('unexpected')
+    this.Swarm_seal(w, ident, frame.page, frame.grant, null)
+    // confirm UP the chain to the root (Alice), SIGNED by me — the tip may not be a friend of the
+    //  root (a hop past the first: Carol dropped Alice), so the link is untrusted; my signature +
+    //   prepubOf(pub)==her tracked holder is the credential that lets her advance, not the socket.
+    let ok = { nonce: h.nonce, rnonce: h.rnonce, newcomer: frame.page.prepub, pub: ident.c.keys.pub }
+    ok.sign = await signHeader(ok, ident.c.keys.key)
+    this.Swarm_station_pier(w, ident, h.root)
+    this.Swarm_deliver(w, ident, h.root, { kind: 'reinvite_ok', ok: ok, page: this.Swarm_page(ident) })
+    delete ident.c.honouring[frame.page.prepub]
+    return null
+
+// Swarm_reinvite_ok — Alice: the tip confirmed the newcomer is sealed. VERIFY the tip's signature and
+//  bind its pub to my tracked holder by prepub (only the CURRENT tip may advance — seam 1); the rnonce
+//   is single-use (I minted it, delete the pending) and must match the newcomer I named. Then advance
+//    the tracker to the newcomer (the chain next grows from THEM) and stash the new tip.
+async Swarm_reinvite_ok(w, ident, frame):
+    let ok = frame.ok
+    if (!ok || !ok.sign || !ok.pub) return null
+    let who = await verifyHeader(ok, [ok.pub])
+    if (who !== ok.pub) return null
+    let record = this.Swarm_peering(ident).o({ Idzeug: ok.nonce })[0]
+    if (!record) return null
+    if (prepubOf(ok.pub) !== record.sc.holder) return null
+    let pend = record.c.pending ? record.c.pending[ok.rnonce] : null
+    if (!pend) return null
+    if (pend.newcomer !== ok.newcomer) return null
+    record.sc.holder = pend.newcomer
+    delete record.c.pending[ok.rnonce]
+    this.Swarm_iz_stash(ident, ok.nonce, { holder: pend.newcomer })
+    return null
+
+// Swarm_chain_root_ok — may I honour a ReInvite signed by `rootPub`? Yes iff that root is a friend
+//  I befriended directly (a %Pier whose imported page pub matches) OR a %ChainRoot I recorded when I
+//   joined via their chain. Either way I trust that pub to name the tip — the lineage I stand in.
+Swarm_chain_root_ok(ident, rootPub):
+    let prepub = prepubOf(rootPub)
+    let peering = this.Swarm_peering(ident)
+    let friend = peering?.o({ Pier: 1, pub: prepub }).find(p => p.o({ Peering: 1 })[0]?.sc?.pub === rootPub)
+    if (friend) return true
+    return !!(ident.o({ ChainRoot: 1, pub: rootPub })[0])
+
+// Swarm_chainroot_stash / _rehydrate — the LIGHT lineage reference survives reload (a %ChainRoot is
+//  not a friendship, so the pier stash never carries it): keyed my-prepub → root-pub, prepub beside.
+//   Without it a reloaded Carol would forget Alice's chain authority and deny Carol→Dave 'unknown_root'.
+Swarm_chainroot_stash(ident, rootPub):
+    let live = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (!live || live !== ident) return
+    let st = this.top_House().stashed
+    if (!st) return
+    if (!st.Swarm_roots) st.Swarm_roots = {}
+    if (!st.Swarm_roots[ident.sc.prepub]) st.Swarm_roots[ident.sc.prepub] = {}
+    st.Swarm_roots[ident.sc.prepub][rootPub] = { prepub: prepubOf(rootPub) }
+
+Swarm_chainroots_rehydrate(w, ident):
+    let st = this.top_House().stashed
+    let mine = st?.Swarm_roots?.[ident.sc.prepub]
+    if (!mine) return
+    for (const rootPub of Object.keys(mine)) {
+        let cr = ident.oai({ ChainRoot: 1, pub: rootPub })
+        cr.c.up = ident
+        cr.sc.prepub = mine[rootPub].prepub
+    }
 
 // Swarm_seal — both ends land here: the %Pier durable memory under MY %Peering — their imported
 //  page (the "stashed Peering" reborn), the grant THEY signed for me, my copy of the one I signed

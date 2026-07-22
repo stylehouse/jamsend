@@ -1,0 +1,7 @@
+Snap:H
+  H:Deepcrest,Run
+    A:Deepcrest
+      self,round	{"mung":["age"]}
+      w:Deepcrest
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

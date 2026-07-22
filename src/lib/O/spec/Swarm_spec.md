@@ -218,7 +218,16 @@ An **Idzeug** is a single-use, signed invite carrying the inviter's page, the **
 
 - **delivery** — a `?Iz=<base64>` **query param** (not a URL `#`-fragment; apps handling those links were
    stripping the fragment off). Copy-paste, a link, or a QR — all the same blob.
-- **once** — single-use; the nonce is spent on the one live redeem.
+- **mode** — the invite carries a **policy**, chosen by the UI that mints it, and there are two:
+   - the everyday **SHARE** QR popup mints a **re-assignable chain** (§6.3a): one evolving ticket
+      tracked by its current holder, *no* serial — it is meant to propagate friendship along a social
+       graph (A→B→C→D), so it re-assigns.
+   - a **blotter sheet** mints a *batch* of **one-time serials**: each nonce is a numbered tab,
+      **single-use**, and the maker **remembers the claimed serial** so a second claim of the same tab
+       is refused (`spent` per serial — the old `taken_n`/`Upper_Number` ledger). A torn-off tab admits
+        exactly one Pier and is done; it never re-assigns. The **legacy `######`** links are one-time
+         serials too. *(This serial batch is the §6.2 `[want]` the migrator survey named — build it on
+          the nonce ledger.)*
 - handling the **legacy** set of Idzeugs (the old garden's format) — **rung 1 BUILT 2026-07-07**.
    The concrete shape (surveyed 2026-07-07, `Tyranny.svelte` + `Trust.svelte.ts`): an old link is a
     URL **hash-fragment** `#<13-#-pad><prepub>-<advice>-<sign>` — prepub is the 16-hex address, advice
@@ -258,6 +267,122 @@ The nonce is spent; the Idzeug **proves receipt, it does not stand in for an abs
     `w.c.on[type]` registry; `Swarm_deliver` routes transport-first when the sender holds a station
      (a `%Peering,name:<prepub>` flock), so the same verbs ride a real authenticated link (the pre-Ud
       gate) with ack/retransmit/dedup for free — gated by the **`SwarmWire`** Book (§9).
+
+### 6.3a ReInvite — the re-assignable chain (Alice → Bob → Carol)  **[built — Book: SwarmChain, green ×2]**
+
+> **As built (2026-07-22).** The mechanism below is live in `Ghost/S/Swarm.g` and proven end to end by
+>  the `SwarmChain` Book (Dee→Eli→Fay→Gus, all four beats green on the live runner). One refinement from
+>   the first sketch: there is **no separate `reinvite_ask`/`reinvite_bless` round-trip**. The tip's
+>    consent *is* the act of honouring; Alice advances her tracker only on the tip's **signed**
+>     `reinvite_ok` confirmation. And the "one bit still to shape" — what a future tip keeps to extend the
+>      chain — is now a concrete **`%ChainRoot`** (a light lineage reference, not a friendship). Both are
+>       folded into the sections below.
+
+The base invite (§6.3) is single-use: the nonce spends on Bob's redeem and the Idzeug is done. A
+ **ReInvite** turns that one nonce into a **movable admission ticket** that grows a **chain of
+  friendships** — A—B, B—C, C—D — where each new member befriends *the one who brought them in*, not
+   the original inviter. Alice stays the **authority and tracker-keeper** for the whole lineage — her
+    `%Idzeug` record remembers *which Pier last claimed it* (the tip) — but past the first friendship
+     she is only a **notary whose signature each newcomer verifies**, never a contact they keep. Crucially,
+      it is the **tip who gives out the Grant**, not Alice: the ReInvite is an Alice-signed capability that
+       *embeds the original Invite*, and the tip honours it peer-to-peer.
+
+The move, concretely (Bob, the tip, bringing in Carol):
+
+1. **Carol redeems; Alice issues a ReInvite.** Carol (holding Bob's link) redeems it while Alice is
+    online. Alice's door sees a non-holder on a held chain link and signs a **ReInvite** that **embeds
+     the original Invite** (so it carries the Grant/Feature Alice signed), names **Carol** the newcomer
+      and **Bob** the current tip she joins at, and is timestamped. Alice signs it as she signed the
+       Idzeug; she is the only authority the tracker answers to. (There is no separate "ask Bob first"
+        leg — Bob's consent comes when he chooses to honour, step 3, and Alice only advances on his
+         signed confirmation, step 5.)
+2. **The ReInvite travels back to Carol, who carries it to Bob** — Bob her about-to-be contact.
+3. **Bob honours it.** Bob verifies Alice's signature (he holds Alice's key — Alice is his *persistent*
+    contact from A—B), checks it names him the tip, Carol the newcomer, and is recent, then **grants Carol
+     the embedded Feature** — never more than Bob himself holds (no escalation). Carol reciprocates:
+      **B—C is sealed** (`Swarm_seal` + the pier stash, §6.3).
+4. **Carol validates too, then drops Alice.** Carol verifies the *same* Alice signature — she holds
+    Alice's key only from the invite's embedded page ("the chain she joined with") — which is how she
+     trusts Bob is a real member of the lineage, not an impostor. That Alice-reference is
+      **non-persisted**: once the B—C Pier lands Carol drops it — no `%Grant` crosses A↔C, Carol never
+       saves Alice as a contact.
+5. **Alice advances the tip.** On Bob's confirmation that B—C sealed, Alice moves her tracker Bob →
+    Carol — so the next ReInvite is *to Carol, for Dave*, and the chain grows C—D the same way.
+
+Three properties fall out:
+
+- **The chain is the graph.** A—B, B—C, C—D are the durable friendships; the touches A↔C, A↔D are
+   transient notary meetings that leave no Grant and no saved contact. Alice seeds a lineage without
+    collecting the whole chain as her own Piers.
+- **No escalation.** The Feature is pinned by Alice's signed ReInvite and each ReInviter can only pass
+   what they hold, so every Pier down the chain gets at most what Bob (the first claimer) got —
+    *the first Invitor doesn't grant any more access than the first person who used it.*
+- **The tracker is linear (the lineage never forks).** The tracker is one moving `holder` pointer at
+   Alice, and it advances **at most once per tip**: once Bob's signed `reinvite_ok` moves it Bob → Carol,
+    Bob is no longer the holder, so a *second* completed hop from Bob is refused at Alice
+     (`frame.page.prepub !== record.sc.holder`). The *lineage* — who may be issued the next ReInvite —
+      stays a single thread. (The friendship *graph* may still branch if a tip chooses to honour more than
+       one newcomer before Alice advances: that is the tip spending its own link, each grant capped at the
+        Feature and revocable — Bob's call, not an escalation. Only the one Alice's tracker lands on carries
+         the lineage forward.) As built, the gate is the **tip's honour + the Feature cap + one advance per
+          tip**, not a pre-registered `next`.
+
+**The say/hear feedback (the prior art's shape).** Each leg is a say/hear pair, the way
+ `pier_hello`/`pier_accept`/`pier_reject` already are: Carol *says* redeem (a `pier_hello` on the held
+  chain link) → Alice *hears* a non-holder and *says* a signed ReInvite back → Carol *carries* it to
+   Bob → Bob *hears*, validates Alice's signature, and — by choosing to **honour** — *says* the grant
+    that seals B—C (his honouring **is** his consent, no separate "I believe" leg) → Carol *seals* and
+     *says* her reciprocal → Bob *says* a signed `reinvite_ok` up to Alice → Alice *hears* and advances
+      the tracker. A refusal at any leg answers back so the asker sees why (the `%rebuff` seam).
+
+**The seams that make it airtight (open, resolved at build).**
+- **Tip advance = confirmation, not issue.** Alice moves the tracker Bob → Carol only when Bob
+   *confirms* B—C sealed (a small confirm frame she hears), so the tip always names a member actually
+    in — a failed hop never strands the chain at a phantom Carol.
+- **Each ReInvite spent once, bound to the live tip.** Bob honours a given ReInvite once, and Alice
+   issues one only from her *current* tip — so a stale or replayed ReInvite (an old `Bob→Eve` that
+    never completed) cannot re-fire, and the chain stays linear, no fork.
+- **Carol drops Alice as a contact but keeps a light `%ChainRoot`.** The transient A↔C touch never
+   becomes a friendship: no `%Pier`, no `%Grant`, nothing that puts Alice in Carol's contact book or dial
+    pool. But Carol *does* keep one small thing — a **`%ChainRoot,pub:<Alice>`** referring particle
+     (pub + prepub, no grant, never dialled), durable across reload via `Swarm_chainroot_stash`. It is the
+      **lineage authority**, not a friendship: `Swarm_chain_root_ok` consults it (or a direct `%Pier`) to
+       decide whether to honour a ReInvite — so when a *future* newcomer (Dave) arrives, Carol-the-tip can
+        honour Alice's `Carol→Dave` ReInvite without ever having befriended Alice. This is the "one bit"
+         the first sketch left open, now shaped: the chain outlives every A↔X touch except this feather.
+- **`reinvite_ok` is signed by the tip, not trusted by its link.** Past the first hop the tip (Carol)
+   is *not* a friend of the root (Alice), so the confirmation rides an untrusted channel. The tip signs
+    `{nonce, rnonce, newcomer, pub}` with its identity key; Alice binds `prepubOf(pub)` to her *current*
+     tracked holder and verifies the signature — so only the live tip can advance the tracker, and a wire
+      observer who saw the ReInvite cannot forge the advance.
+
+**The frames (choreography, as built).** Bob gives Carol his chain link out of band. Six frames grow
+ the chain by one:
+1. `pier_hello` **Carol → Alice** — Carol redeems the link; Alice's door (`Swarm_hello`) sees a *held*
+    chain link claimed by a **non-holder** and, instead of `deny('held')`, opens the ReInvite flow
+     (`Swarm_reinvite_begin`): mint a single-use ReInvite (tip = Bob, newcomer = Carol, fresh `rnonce`),
+      remember it *pending*, hand it back.
+2. `reinvite` **Alice → Carol** — the signed ReInvite (it embeds the original Invite). Carol is the
+    newcomer it names, so `Swarm_reinvited` stashes it and forwards.
+3. `reinvite` **Carol → Bob** — same frame kind, other role: Bob is the tip it names, so `Swarm_reinvited`
+    routes to `Swarm_reinvite_honour`.
+4. `reinvite_honour` **Bob → Carol** — Bob verified Alice's signature (via a direct `%Pier` **or** a
+    `%ChainRoot`), granted Carol the embedded Feature (capped — no escalation), and sealed B—C his side.
+5. `reinvite_seal` **Carol → Bob** — Carol verified Bob's grant traces to the named tip and Feature,
+    reciprocated, sealed B—C her side, recorded her `%ChainRoot` to Alice, and dropped the transient.
+6. `reinvite_ok` **Bob → Alice** — signed by Bob; only *now* does Alice advance her tracker Bob → Carol
+    and spend the `rnonce`.
+
+The pure sign/verify core is `Swarm_mint_reinvite` / `Swarm_verify_reinvite`; the wire verbs are
+ `Swarm_reinvite_begin` / `Swarm_reinvited` / `Swarm_reinvite_honour` / `Swarm_reinvite_honoured` /
+  `Swarm_reinvite_sealed` / `Swarm_reinvite_ok`, all registered additively on the Peeroleum on-registry.
+
+**Which invites chain (non-breaking).** Only the everyday **SHARE** QR popup mints a chain; a **blotter
+ sheet** and the **legacy `######`** links are *one-time serials* (§6.2) — each claimed once, its serial
+  remembered, never re-assigning. The policy rides the `%Idzeug`: `chain:1` with a moving `holder`
+   (the tip), versus a plain record that `spent`s on first claim. Existing single-use invites and their
+    Books stay untouched (proven: `SwarmStaple` beat 6 still rejects the replayed spent nonce, green).
+     The blotter/legacy *serial batch* is the remaining `[want]` — §6.2.
 
 ### 6.4 Revocation
 

@@ -1,7 +1,7 @@
 # Vyto — the working doc
 
 The new glass.  Spec: `Vyto_spec.md` (unpreened — three rounds 2026-07-19).  Machine-level
- elaborations: `vyto_workingouts/` — shapes · pelt · calm · spool · commission · client,
+ elaborations: `vyto_workingouts/` — shapes · pelt · calm · spool · commission · client · processes,
   each checked against the LIVE code (not against the spec's hopes), most ending in open
    questions only the human can rule on.  This doc is the one todo; the workingouts are
     its appendices.  **`client.md` is the front door for anyone integrating as a Vyto
@@ -31,6 +31,12 @@ The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it 
 - **Seeing it**: nothing resident commissions Vyto yet, so the first cells are seen by
    running VytoCell on a visible runner tab — the parked-run gate lifts when the run
     stops driving and the springs animate the standing world.
+- **The sizing|structure arc (2026-07-21)** — the Stuffing algebra, the global scale, the
+   nested-C structure ask and the crush|surf are integrated as a catalogue of C→C engines in
+    **`vyto_workingouts/processes.md`** — joints, risk register, and a five-Book build order
+     (VytoBreathe · VytoCrush · VytoNest · VytoSurf + demos).  Its HUMAN block holds four open
+      rulings (the floor law · zoom=reframe · the `Vyto_fold` tenancy go-ahead · the write-fan).
+       Proofs standing: `Stuffing` + `Typescale` Books (Voronation.g), `Vyto_sizing_todo.md §9`.
 
 - **The migration model — per-Book, from WITHIN the app (the human, 2026-07-21).** The `?VY=1`
    page-global boot flag (built 2026-07-20) is the WRONG shape — retiring it. The intent, never

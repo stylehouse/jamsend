@@ -1126,3 +1126,76 @@ VytoSeek_witness(w):
     if (this.VytoSeek_stood_ready(w) && !(oa %see:'the spool stood three moments — two step-tagged and one scrubber-only with no step')) i %see:'the spool stood three moments — two step-tagged and one scrubber-only with no step'
     if (this.VytoSeek_resolved_ready(w) && !(oa %see:'a step pip seek resolved to the yore of the moment carrying that step — the whichever-glass shim landed')) i %see:'a step pip seek resolved to the yore of the moment carrying that step — the whichever-glass shim landed'
     if (this.VytoSeek_scrubbed_ready(w) && !(oa %see:'a step no moment carried landed nothing and the scrubber-only moment stayed unreachable by a step seek')) i %see:'a step no moment carried landed nothing and the scrubber-only moment stayed unreachable by a step seek'
+
+// ═══ VytoCrest — the tenancy proof: the fold's re-homed distiller + the Dip_assign law ═══════════
+//  The FIRST TENANT Book (grant 2026-07-22 — "you're in charge"): Vyto_distil is the oracle's
+//   algebra (Voronation Stuff region · the Stuffing Book gates it) re-homed to the fold station in
+//    Vyto.g — this Book proves the re-homed engine says the SAME rows (vein supersession · shared
+//     fact · counted presence · honest spread) and lands the law the oracle predates: every
+//      supersession assigns its countable door (dip first · n true · members on .c).  Beat 3
+//       proves the DETACHED mint: same saying as a fresh off-tree TheC — rows equal · door counted
+//        · nothing reachable from H** so nothing snaps (the display side's working matter).
+//         World MUST be named VytoCrest (do_fn_for dispatches by w.sc.w).
+//   beat 2  the bench — a four-member shoal distils at the fold with its door
+//   beat 3  the detached mint — same saying off the book
+//   beat 4  a QUIET beat — nothing changes — the trees hold
+
+VytoCrest(A,w):
+    w oai %req:wrangle,eternal
+        await &VytoCrest_drive,w,req
+        req%ok = 1
+
+async VytoCrest_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoCrest_bench(w)
+        if (n === 3) this.VytoCrest_free(w)
+    }
+    this.VytoCrest_witness(w)
+
+// ── beat 2 — the bench: four tracks wearing a vein (dub crosses genre|mood) · a shared fact
+//  (format flac) · a counted presence (live on TWO of four — the some-not-all leg) · a year
+//   spread (2019×2 2007 1998 — three values · all chips · no tail) ───────────────────────────────
+VytoCrest_bench(w):
+    i %desc:'the fold distils a four-member shoal — the re-homed algebra with its door'
+    let fam = w.i({ Brood: 1, name: 'shoal' })
+    fam.i({ Track: 1, title: 'Tide', genre: 'dub', mood: 'dub', format: 'flac', year: '2019', live: '1' })
+    fam.i({ Track: 1, title: 'Halo', genre: 'dub', mood: 'dub', format: 'flac', year: '2019', live: '1' })
+    fam.i({ Track: 1, title: 'Vane', genre: 'dub', mood: 'dub', format: 'flac', year: '2007' })
+    fam.i({ Track: 1, title: 'Ebb', genre: 'dub', mood: 'dub', format: 'flac', year: '1998' })
+    let cr = w.i({ Crush: 1, fam: 'shoal' })
+    this.Vyto_distil(cr, fam.o({ Track: 1 }), 'crest', ['title'], null)
+
+// ── beat 3 — the detached mint: the same members through Vyto_distil_free — the crest rides
+//  w.c only (runtime ref · never encoded · unreachable from H** · invisible to this very snap) ───
+VytoCrest_free(w):
+    i %desc:'the detached mint — the same saying off the book'
+    let fam = w.o({ Brood: 1, name: 'shoal' })[0]
+    if (!fam) return
+    w.c.free = this.Vyto_distil_free(fam.o({ Track: 1 }), 'crest', ['title'], null)
+
+// ── the witness — flat · gated to its beat · comma-free · em-dash ─────────────────────────────────
+VytoCrest_witness(w):
+    let n = (this.c.run)?.c.step_n
+    let cr = w.o({ Crush: 1, fam: 'shoal' })[0]
+    let vt = cr ? cr.o({ Vtuffing: 1 })[0] : null
+    let vein = vt ? vt.o({ Vrow: 1, row: 'vein', v: 'dub' })[0] : null
+    let vg = vein ? vein.o({ Vbit: 1, k: 'genre' })[0] : null
+    let vm = vein ? vein.o({ Vbit: 1, k: 'mood' })[0] : null
+    let gf = vt ? vt.o({ Vrow: 1, row: 'fact', k: 'genre' })[0] : null
+    if (n === 2 && vein && vg && vm && !gf && !(oa %see:'the fold owns the distiller now — the re-homed crest says the vein dub once and supersedes the facts it crossed')) i %see:'the fold owns the distiller now — the re-homed crest says the vein dub once and supersedes the facts it crossed'
+    let dip = vt ? vt.o({ Vrow: 1, row: 'dip' })[0] : null
+    if (n === 2 && dip && dip.sc.n === 4 && dip.c.members && dip.c.members.length === 4 && !(oa %see:'every supersession assigns its door — the dip rides with the true count four and carries the way back in')) i %see:'every supersession assigns its door — the dip rides with the true count four and carries the way back in'
+    let ff = vt ? vt.o({ Vrow: 1, row: 'fact', k: 'format' })[0] : null
+    let lf = vt ? vt.o({ Vrow: 1, row: 'fact', k: 'live' })[0] : null
+    let ys = vt ? vt.o({ Vrow: 1, row: 'spread', k: 'year' })[0] : null
+    let y9 = ys ? ys.o({ Vbit: 1, v: '2019' })[0] : null
+    if (n === 2 && ff && ff.sc.v === 'flac' && lf && lf.sc.n === 2 && ys && y9 && y9.sc.n === 2 && !(oa %see:'the re-homed algebra matches the oracle row for row — the shared fact the counted presence and the honest year spread')) i %see:'the re-homed algebra matches the oracle row for row — the shared fact the counted presence and the honest year spread'
+    let free = w.c.free
+    let fdip = free ? free.o({ Vrow: 1, row: 'dip' })[0] : null
+    let frows = free ? free.o({ Vrow: 1 }).length : 0
+    let arows = vt ? vt.o({ Vrow: 1 }).length : 0
+    if (n === 3 && free && frows === arows && frows === 5 && fdip && fdip.sc.n === 4 && !free.c.up && !(oa %see:'the detached mint says the same crest off the book — five equal rows and the same counted door with nothing reachable to snap')) i %see:'the detached mint says the same crest off the book — five equal rows and the same counted door with nothing reachable to snap'

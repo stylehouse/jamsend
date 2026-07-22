@@ -981,19 +981,22 @@ Voro_render_map():
 //       DROPPED here — those are paint|hover, not the algebra.  `into` mints the tree attached (a
 //        Book wants it snapped as the proof — Snap data not judgement); Vyto_fold will add the
 //         detached-mint variant (new TheC · Books-invisible) at re-home.
-Stuff_distil(into, members, kind, skips):
+Stuff_distil(into, members, kind, skips, coexist):
     let k = kind || 'stuff'
     let n = members ? members.length : 0
     let root = into.i({ Vtuffing: 1, of: k, n: n })
     if (!members || !members.length) return root
-    this.Stuff_keyrows(root, members, skips)
-    this.Stuff_veinrows(root, members, skips)
+    // veins FIRST — they compute which (key|value) facts they subsume; then keyrows SUPERSEDES those
+    //  facts (say more with less — the human's ruling 2026-07-21) unless `coexist` keeps the raw facts.
+    let veined = this.Stuff_veinrows(root, members, skips)
+    let hide = coexist ? null : veined
+    this.Stuff_keyrows(root, members, skips, hide)
     return root
 
 // Stuff_keyrows — the key-by-key pass, Vtuff_keyrows re-said (Voro.g:1911).  Union the members'
 //  keys first-seen; per key tally values and carriers; ONE value → fact (or counted presence),
 //   MANY → spread + ranked capped chips.
-Stuff_keyrows(root, members, skips):
+Stuff_keyrows(root, members, skips, hide):
     let keys = []
     let seen = {}
     for (const m of members) {
@@ -1027,6 +1030,7 @@ Stuff_keyrows(root, members, skips):
                     root.i(fp)
                 }
             } else {
+                if (hide && hide[kk + '|' + order[0]]) continue
                 let fq = { Vrow: 1, row: 'fact', k: kk, v: order[0], wgt: 1 }
                 root.i(fq)
             }
@@ -1047,14 +1051,14 @@ Stuff_keyrows(root, members, skips):
         }
     }
 
-// Stuff_veinrows — THE NEW LEG (proposed 2026-07-21 — HUMAN RULING OWED).  Vtuff_keyrows reads
+// Stuff_veinrows — THE NEW LEG (RULED 2026-07-21).  Vtuff_keyrows reads
 //  key-by-key and can NEVER see a value that crosses keys.  The sizing algebra wants it: a value
 //   carried across many keys is a global VEIN — one hue|bearing racing the whole scape — that
-//    deserves saying ONCE and loud.  The dual of spread: spread = one key · many values; vein =
+//    deserves saying ONCE.  The dual of spread: spread = one key · many values; vein =
 //     one value · many keys.  Poses large as `v` over `k1|k2`.  Ranked by total carriers; the '1'
-//      presence marker is never a vein value.  wgt:2 (louder than fact|spread) — a cross-key
-//       crossing is a strong shared signal; the exact weight and whether a vein SUPERSEDES or
-//        COEXISTS with the per-key rows it echoes are knobs left for the human.
+//      presence marker is never a vein value.  The ruling: a vein SUPERSEDES the per-key facts it
+//       subsumes (say more with less) unless the `coexist` knob keeps them; and it rides wgt:1 like
+//        fact|spread — real loudness comes from shared-ness in the live stack, not a bump.
 Stuff_veinrows(root, members, skips):
     let vkeys = {}
     let vn = {}
@@ -1074,12 +1078,17 @@ Stuff_veinrows(root, members, skips):
         if (Object.keys(vkeys[v]).length >= 2) veins.push(v)
     }
     veins.sort((a, b) => vn[b] - vn[a])
+    let veined = {}
     for (const v of veins) {
-        let r = root.i({ Vrow: 1, row: 'vein', v: v, wgt: 2 })
+        let r = root.i({ Vrow: 1, row: 'vein', v: v, wgt: 1 })
         let ks = Object.keys(vkeys[v])
         ks.sort((a, b) => vkeys[v][b] - vkeys[v][a])
-        for (const kk of ks) r.i({ Vbit: 1, k: kk, n: vkeys[v][kk] })
+        for (const kk of ks) {
+            r.i({ Vbit: 1, k: kk, n: vkeys[v][kk] })
+            veined[kk + '|' + v] = 1
+        }
     }
+    return veined
 //#endregion
 
 //#region test — Stuffing: the k:v regrouping algebra proven in isolation (no glass, no pixels)
@@ -1120,7 +1129,11 @@ Stuffing_member(ex, sc):
 // distil an Example's EXPLICIT member list into an attached %Vtuffing under it (never re-read
 //  ex.o() — the %Vtuffing child would pollute the member set).
 Stuffing_seal(ex, members):
-    return this.Stuff_distil(ex, members, 'stuff', null)
+    return this.Stuff_distil(ex, members, 'stuff', null, null)
+
+// the knob: the SAME distil with coexist ON (the raw per-key facts kept beside the vein)
+Stuffing_seal_coexist(ex, members):
+    return this.Stuff_distil(ex, members, 'stuff', null, 1)
 
 // ── readers (the witness walks the distilled trees through these) ──────────────────────────────────
 Stuffing_tree(w, name):
@@ -1165,6 +1178,13 @@ Stuffing_bench(w):
     cm.push(this.Stuffing_member(c, { Track: 1, title: 'Murk', mood: 'dub' }))
     cm.push(this.Stuffing_member(c, { Track: 1, title: 'Reed', genre: 'dub' }))
     this.Stuffing_seal(c, cm)
+    // C2 — the KNOB: the same cross-key bag with coexist ON keeps genre dub and mood dub beside the vein
+    let c2 = this.Stuffing_bag(w, 'coexist')
+    let c2m = []
+    c2m.push(this.Stuffing_member(c2, { Track: 1, title: 'Sway', genre: 'dub' }))
+    c2m.push(this.Stuffing_member(c2, { Track: 1, title: 'Murk', mood: 'dub' }))
+    c2m.push(this.Stuffing_member(c2, { Track: 1, title: 'Reed', genre: 'dub' }))
+    this.Stuffing_seal_coexist(c2, c2m)
     // D — OVERFLOW: one shared title (→ fact) + five distinct labels (→ top three + '+2' tail)
     let d = this.Stuffing_bag(w, 'overflow')
     let dm = []
@@ -1207,12 +1227,18 @@ Stuffing_witness(w):
     let c98 = this.Stuffing_chip(sy, '1998')
     let lead = sy ? sy.o({ Vbit: 1 })[0] : null
     if (n === 2 && c07 && c07.sc.n === 2 && c98 && c98.sc.n === 1 && lead && lead.sc.v === '2007' && !(oa %see:'a key that varies spreads into counted chips ranked most-common-first — 2007 carries two and leads 1998 with one')) i %see:'a key that varies spreads into counted chips ranked most-common-first — 2007 carries two and leads 1998 with one'
-    // C — THE NEW LEG: a value crossing keys folds to one vein said once and loud
+    // C — THE NEW LEG (supersede default): a cross-key value folds to one vein and REPLACES the facts it subsumes
     let tc = this.Stuffing_tree(w, 'vein')
     let vein = this.Stuffing_vein(tc, 'dub')
     let vg = this.Stuffing_keybit(vein, 'genre')
     let vm = this.Stuffing_keybit(vein, 'mood')
-    if (n === 2 && vein && vg && vm && !(oa %see:'the new leg — a value crossing several keys folds to one vein said once and loud — dub spans genre and mood as a single crossing')) i %see:'the new leg — a value crossing several keys folds to one vein said once and loud — dub spans genre and mood as a single crossing'
+    let cfact = this.Stuffing_row(tc, 'fact', 'genre')
+    if (n === 2 && vein && vg && vm && !cfact && !(oa %see:'the new leg folds a value crossing several keys into one vein and supersedes the per-key facts it subsumes — dub spans genre and mood said once not as two separate facts')) i %see:'the new leg folds a value crossing several keys into one vein and supersedes the per-key facts it subsumes — dub spans genre and mood said once not as two separate facts'
+    // C2 — THE KNOB: coexist on restores the raw per-key facts beside the vein for a domain that wants both
+    let tk = this.Stuffing_tree(w, 'coexist')
+    let kvein = this.Stuffing_vein(tk, 'dub')
+    let kfact = this.Stuffing_row(tk, 'fact', 'genre')
+    if (n === 2 && kvein && kfact && kfact.sc.v === 'dub' && !(oa %see:'the knob restores coexistence — the same bag with supersede off keeps genre dub beside the vein for a domain that wants the raw facts too')) i %see:'the knob restores coexistence — the same bag with supersede off keeps genre dub beside the vein for a domain that wants the raw facts too'
     // D — a spread past four keeps its top three and marks the rest as an honest overflow tail
     let td = this.Stuffing_tree(w, 'overflow')
     let so = this.Stuffing_row(td, 'spread', 'label')
@@ -1368,4 +1394,808 @@ Typescale_witness(w):
     if (n === 2 && sp && sp.sc.px === 40 && bp2 && bp2.sc.px === 20 && !(oa %see:'add an important text and the whole field re-breathes — importance 16 shrinks from 40px to 20px as one global scale rescales to hold the newcomer')) i %see:'add an important text and the whole field re-breathes — importance 16 shrinks from 40px to 20px as one global scale rescales to hold the newcomer'
 //#endregion
 
+//#region Floorlaw — the ONE supersession law (processes.md J2+J3+J5 kernel) proven in isolation
+// ══ Floorlaw — below the floor · superseded by distillation ═══════════════════════════════════════
+//  The floor law generalises Typescale's text-fold to STRUCTURE: a family (a %Brood of members)
+//   whose LOUDEST voice would size below the legibility floor at the global S is superseded by its
+//    distillation — the crest = Stuff_distil of its members (the crush SPEAKS Stuffing — J3: Gang
+//     picks who · Stuffing says what).  Crushing frees demand so S RISES — and the law is
+//      ONE-DIRECTIONAL within a pass: case A lands S exactly AT the members' re-admission point and
+//       the crush must HOLD (the flutter defused by construction — J2).  Un-crush happens only
+//        ACROSS passes: by frame (case C — reframe = re-solve at the scope's own frame · the surf
+//         kernel — J5) or by importance (beat 3 — a member grows loud).  v1 granularity is the
+//          FAMILY (its legibility = its loudest voice; meek siblings ride along) — per-text fold
+//           inside an unfolded family is Typescale's law and composes later in the pipeline.
+//            No glass · no pixels · byte-stable fixtures.  World MUST be named Floorlaw
+//             (do_fn_for dispatches by w.sc.w).
+//   beat 2  the bench — crush at the world frame · legible at a big one · affordable reframed
+//   beat 3  a member grows LOUD — the family un-crushes across passes
+//   beat 4  a QUIET beat — nothing changes — the trees hold (the solve is a pure function)
+
+// Floorlaw_phi — the same compression as Typescale (φ=√ — area=S²·w so S solves closed-form).
+Floorlaw_phi(wt):
+    return Math.sqrt(wt)
+
+// Floorlaw_solve — price the Example's texts under ONE global S with the floor law: loose %Text and
+//  unfolded %Brood members demand w each; a brood whose loudest member would size below the floor
+//   CRUSHES — a %Crush row minted under the %Scale root with the crest %Vtuffing distilled inside it
+//    ('w' skipped — importance is not a fact) — and thereafter demands only its crest rows' count.
+//     Loop one-directional (crush only · never un-crush within the pass · guard 50) exactly like
+//      Typescale's fold loop; then stamp S ×100 and mint a %Size per surviving voice (the crest is
+//       the crushed brood's one voice — it must itself clear the floor to say the family legibly).
+Floorlaw_solve(ex, frame, floor):
+    let old = ex.o({ Scale: 1 })[0]
+    if (old) ex.drop(old)
+    let loose = ex.o({ Text: 1 })
+    let broods = ex.o({ Brood: 1 })
+    let root = ex.i({ Scale: 1, frame: frame, floor: floor })
+    let crushed = {}
+    let crestw = {}
+    let S = 0
+    let guard = 0
+    while (guard < 50) {
+        guard = guard + 1
+        let sumw = 0
+        for (const t of loose) sumw = sumw + t.sc.w
+        for (const b of broods) {
+            if (crushed[b.sc.name]) {
+                sumw = sumw + crestw[b.sc.name]
+            } else {
+                for (const m of b.o({ Track: 1 })) sumw = sumw + m.sc.w
+            }
+        }
+        if (sumw <= 0) break
+        S = Math.sqrt(frame / sumw)
+        let hit = null
+        for (const b of broods) {
+            if (crushed[b.sc.name]) continue
+            let loud = 0
+            for (const m of b.o({ Track: 1 })) {
+                if (m.sc.w > loud) loud = m.sc.w
+            }
+            if (S * this.Floorlaw_phi(loud) < floor) {
+                hit = b
+                break
+            }
+        }
+        if (!hit) break
+        crushed[hit.sc.name] = 1
+        let members = hit.o({ Track: 1 })
+        let memw = 0
+        for (const m of members) memw = memw + m.sc.w
+        let cr = root.i({ Crush: 1, fam: hit.sc.name })
+        this.Stuff_distil(cr, members, 'crest', ['w'], null)
+        let vt = cr.o({ Vtuffing: 1 })[0]
+        let rows = vt ? vt.o({ Vrow: 1 }).length : 1
+        crestw[hit.sc.name] = rows
+        cr.sc.freed = memw - rows
+    }
+    root.sc.S = Math.round(S * 100)
+    for (const t of loose) {
+        root.i({ Size: 1, label: t.sc.label, w: t.sc.w, px: Math.round(S * this.Floorlaw_phi(t.sc.w)) })
+    }
+    for (const b of broods) {
+        if (crushed[b.sc.name]) {
+            let cw = crestw[b.sc.name]
+            root.i({ Size: 1, label: b.sc.name, w: cw, px: Math.round(S * this.Floorlaw_phi(cw)) })
+        } else {
+            for (const m of b.o({ Track: 1 })) {
+                root.i({ Size: 1, label: m.sc.title, w: m.sc.w, px: Math.round(S * this.Floorlaw_phi(m.sc.w)) })
+            }
+        }
+    }
+    return root
+
+// Floorlaw — the Book (world MUST be named Floorlaw — do_fn_for dispatches by w.sc.w).
+Floorlaw(A,w):
+    w oai %req:wrangle,eternal
+        await &Floorlaw_drive,w,req
+        req%ok = 1
+
+async Floorlaw_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.Floorlaw_bench(w)
+        if (n === 3) this.Floorlaw_louden(w)
+    }
+    this.Floorlaw_witness(w)
+
+Floorlaw_bag(w, name):
+    return w.i({ Example: 1, name: name })
+
+Floorlaw_brood(ex, name):
+    return ex.i({ Brood: 1, name: name })
+
+Floorlaw_loose(ex, label, wt):
+    return ex.i({ Text: 1, label: label, w: wt })
+
+Floorlaw_scale(w, name):
+    let ex = w.o({ Example: 1, name: name })[0]
+    return ex ? ex.o({ Scale: 1 })[0] : null
+
+Floorlaw_crushrow(scale, fam):
+    if (!scale) return null
+    return scale.o({ Crush: 1, fam: fam })[0]
+
+Floorlaw_size_of(scale, label):
+    if (!scale) return null
+    return scale.o({ Size: 1, label: label })[0]
+
+// ── the bench: three cases — all integer-clean by construction ────────────────────────────────────
+Floorlaw_bench(w):
+    // A — CRUSH at the world frame: a loud loose voice (w 16) beside a meek five-member brood (w 1
+    //  each).  frame 1152 floor 8: unfolded Σw=21 → S=7.41 → the loudest member sizes 7.41 < 8 →
+    //   crush; the crest says TWO rows (fact genre · spread title) → Σw=18 → S=8 EXACTLY — the
+    //    members would now size AT the floor yet stay crushed (the flutter case · defused).
+    let a = this.Floorlaw_bag(w, 'crush')
+    this.Floorlaw_loose(a, 'p', 16)
+    let ab = this.Floorlaw_brood(a, 'shoal')
+    let titles = ['Kelp', 'Mist', 'Foam', 'Silt', 'Wrack']
+    for (const t of titles) ab.i({ Track: 1, title: t, genre: 'dub', w: 1 })
+    this.Floorlaw_solve(a, 1152, 8)
+    // B — LEGIBLE: the same shape at frame 5376 → S=16 → the loudest member sizes 16 ≥ 8 → no crush.
+    let b2 = this.Floorlaw_bag(w, 'legible')
+    this.Floorlaw_loose(b2, 'p', 16)
+    let bb = this.Floorlaw_brood(b2, 'shoal')
+    for (const t of titles) bb.i({ Track: 1, title: t, genre: 'dub', w: 1 })
+    this.Floorlaw_solve(b2, 5376, 8)
+    // C — REFRAME (the surf kernel): the brood ALONE as root at its own frame 320 → Σw=5 → S=8 →
+    //  every member sizes 8 ≥ 8 → affordable → unfolded.  The same shoal that crushed at the world
+    //   frame — un-crush across passes is legal and zoom is exactly a re-solve at a new frame.
+    let c = this.Floorlaw_bag(w, 'reframe')
+    let cb = this.Floorlaw_brood(c, 'shoal')
+    for (const t of titles) cb.i({ Track: 1, title: t, genre: 'dub', w: 1 })
+    this.Floorlaw_solve(c, 320, 8)
+
+// beat 3 — a member grows LOUD: Kelp w 1→49 in the crush world and the same frame re-solves; the
+//  brood's loudest now sizes 28.6 ≥ 8 so the family UN-CRUSHES across passes (importance re-opens
+//   what the floor closed).  Meek siblings ride at 4px — family granularity v1 (see the header).
+Floorlaw_louden(w):
+    let a = w.o({ Example: 1, name: 'crush' })[0]
+    if (!a) return
+    let sh = a.o({ Brood: 1, name: 'shoal' })[0]
+    let kelp = sh ? sh.o({ Track: 1, title: 'Kelp' })[0] : null
+    if (!kelp) return
+    kelp.sc.w = 49
+    this.Floorlaw_solve(a, 1152, 8)
+
+// ── the witness — flat · gated to its beat · comma-free · em-dash ─────────────────────────────────
+Floorlaw_witness(w):
+    let n = (this.c.run)?.c.step_n
+    // A — the law itself: below the floor → superseded by the distillation and the crest SPEAKS
+    let sa = this.Floorlaw_scale(w, 'crush')
+    let cr = this.Floorlaw_crushrow(sa, 'shoal')
+    let vt = cr ? cr.o({ Vtuffing: 1 })[0] : null
+    let gf = vt ? vt.o({ Vrow: 1, row: 'fact', k: 'genre' })[0] : null
+    if (n === 2 && cr && gf && gf.sc.v === 'dub' && !(oa %see:'a family below the legibility floor is superseded by its distillation — five meek tracks crush to a crest saying genre dub once beside an honest title spread')) i %see:'a family below the legibility floor is superseded by its distillation — five meek tracks crush to a crest saying genre dub once beside an honest title spread'
+    // A — anti-flutter: S lands exactly at the members' re-admission point yet the crush HOLDS
+    if (n === 2 && sa && sa.sc.S === 800 && cr && cr.sc.freed === 3 && !(oa %see:'the crush holds even though the room it freed would re-admit its members — supersession is one directional within a pass so the field cannot flutter')) i %see:'the crush holds even though the room it freed would re-admit its members — supersession is one directional within a pass so the field cannot flutter'
+    // A — say more with less pays in pixels: the loose voice takes 32 and the crest clears the floor
+    let ap = this.Floorlaw_size_of(sa, 'p')
+    let ash = this.Floorlaw_size_of(sa, 'shoal')
+    if (n === 2 && ap && ap.sc.px === 32 && ash && ash.sc.px === 11 && !(oa %see:'the freed demand lifts the global scale to spend the frame — the loud voice takes 32px and the crest itself stays legible at 11px above the floor')) i %see:'the freed demand lifts the global scale to spend the frame — the loud voice takes 32px and the crest itself stays legible at 11px above the floor'
+    // B — the same shape above the floor never crushes: the law is a size comparison
+    let sb = this.Floorlaw_scale(w, 'legible')
+    let bcr = this.Floorlaw_crushrow(sb, 'shoal')
+    let bk = this.Floorlaw_size_of(sb, 'Kelp')
+    if (n === 2 && sb && !bcr && bk && bk.sc.px === 16 && !(oa %see:'the same family above the floor keeps every member unfolded — crush is a size comparison not a category')) i %see:'the same family above the floor keeps every member unfolded — crush is a size comparison not a category'
+    // C — the surf kernel: reframed to its own frame the shoal is affordable
+    let scl = this.Floorlaw_scale(w, 'reframe')
+    let ccr = this.Floorlaw_crushrow(scl, 'shoal')
+    let ck = this.Floorlaw_size_of(scl, 'Kelp')
+    if (n === 2 && scl && scl.sc.S === 800 && !ccr && ck && ck.sc.px === 8 && !(oa %see:'reframe into the family and its members become affordable — the shoal that crushed at the world frame unfolds at its own frame with every member at the floor')) i %see:'reframe into the family and its members become affordable — the shoal that crushed at the world frame unfolds at its own frame with every member at the floor'
+    // beat 3 — importance re-opens what the floor closed (cr re-read above is the RE-SOLVED tree)
+    let k3 = this.Floorlaw_size_of(sa, 'Kelp')
+    if (n === 3 && sa && !cr && k3 && k3.sc.px === 29 && !(oa %see:'a member grown loud un-crushes its family across passes — importance re-opens what the floor closed and the meek siblings ride along')) i %see:'a member grown loud un-crushes its family across passes — importance re-opens what the floor closed and the meek siblings ride along'
+//#endregion
+
+//#region Nestcut — nested power-cut (processes.md J4) proven in isolation
+// ══ Nestcut — a /C solves INSIDE the cell of its C ════════════════════════════════════════════════
+//  The nest-solve joint: the SAME one cut engine recurses — power_cells tessellates a scope's
+//   polygon among its children and each child's polygon becomes the frame its OWN children solve in
+//    (vyto_geometry.ts verbatim — the primitives Vytui and Vyto_solve already share; gap=0 so the
+//     breathe-inset is a no-op and tiling is EXACT).  The snap mirrors the nesting: a %Cell tree —
+//      label · rounded area · centroid — with `misfit` (×1000 of |parent − Σchildren|) carried as
+//       DATA on each parent (snap data not judgement; the witness reads it).  Live polygons ride
+//        `.c.poly` (runtime refs · never encoded) so a later beat can re-cut a scope INSIDE its
+//         standing polygon — beat 3 re-divides family B under new weights while the root cut and
+//          family A hold byte-still: the scope-isolation promise of Vyto_spec §5 shown as data.
+//           No glass · no pixels · byte-stable.  World MUST be named Nestcut.
+//   beat 2  the bench — depth 3 nest cut (root → A B C → A1 A2 A3 · B1 B2 → A1a A1b)
+//   beat 3  family B RE-CUTS its innards inside its standing polygon — outside holds still
+//   beat 4  a QUIET beat — nothing changes — the trees hold
+
+IMPORT()
+    import { power_cells, poly_area, poly_centroid } from "$lib/O/vyto_geometry"
+
+// Nestcut_cut — tessellate `poly` among `kids` (plain {label·x·y·r·kids} rows — solver-side data
+//  until the mint) and mint a %Cell per child under `row`; recurse into any kid carrying kids.
+//   Stashes each cell polygon on the row's `.c.poly` for later re-cuts; stamps the parent's misfit.
+Nestcut_cut(row, poly, kids):
+    let pts = []
+    let radii = []
+    for (const k of kids) {
+        pts.push({ x: k.x, y: k.y })
+        radii.push(k.r)
+    }
+    let cells = power_cells(poly, pts, radii, 0)
+    let parea = Math.abs(poly_area(poly))
+    let sum = 0
+    let i = 0
+    for (const k of kids) {
+        let cell = cells[i]
+        i = i + 1
+        if (!cell) continue
+        let a = Math.abs(poly_area(cell))
+        sum = sum + a
+        let cen = poly_centroid(cell)
+        let crow = row.i({ Cell: 1, label: k.label, area: Math.round(a), cx: Math.round(cen.x), cy: Math.round(cen.y) })
+        crow.c.poly = cell
+        if (k.kids) this.Nestcut_cut(crow, cell, k.kids)
+    }
+    row.sc.misfit = Math.round(Math.abs(parea - sum) * 1000)
+
+// Nestcut — the Book (world MUST be named Nestcut — do_fn_for dispatches by w.sc.w).
+Nestcut(A,w):
+    w oai %req:wrangle,eternal
+        await &Nestcut_drive,w,req
+        req%ok = 1
+
+async Nestcut_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.Nestcut_bench(w)
+        if (n === 3) this.Nestcut_recut(w)
+    }
+    this.Nestcut_witness(w)
+
+Nestcut_cell(row, label):
+    if (!row) return null
+    return row.o({ Cell: 1, label: label })[0]
+
+// ── the bench: an 800×450 root cut into three families — A (heavy r60) holds three members and
+//  its first member holds two grandchildren; seeds hand-placed inside their scopes (the wall
+//   algebra puts A|B at x=402.5 and the A|C wall near x+y=555 — the plan keeps clear of both) ─────
+Nestcut_bench(w):
+    let ex = w.i({ Example: 1, name: 'nest' })
+    let root = ex.i({ Cell: 1, label: 'root', area: 360000, cx: 400, cy: 225 })
+    let frame = []
+    frame.push({ x: 0, y: 0 })
+    frame.push({ x: 800, y: 0 })
+    frame.push({ x: 800, y: 450 })
+    frame.push({ x: 0, y: 450 })
+    root.c.poly = frame
+    let a1 = { label: 'A1', x: 150, y: 100, r: 30, kids: [] }
+    a1.kids.push({ label: 'A1a', x: 130, y: 80, r: 20 })
+    a1.kids.push({ label: 'A1b', x: 180, y: 120, r: 20 })
+    let fa = { label: 'A', x: 200, y: 150, r: 60, kids: [] }
+    fa.kids.push(a1)
+    fa.kids.push({ label: 'A2', x: 250, y: 100, r: 30 })
+    fa.kids.push({ label: 'A3', x: 200, y: 220, r: 50 })
+    let fb = { label: 'B', x: 600, y: 150, r: 40, kids: [] }
+    fb.kids.push({ label: 'B1', x: 550, y: 100, r: 30 })
+    fb.kids.push({ label: 'B2', x: 650, y: 200, r: 30 })
+    let plan = []
+    plan.push(fa)
+    plan.push(fb)
+    plan.push({ label: 'C', x: 400, y: 350, r: 40 })
+    this.Nestcut_cut(root, frame, plan)
+
+// beat 3 — family B re-divides the SAME standing polygon under shifted weights (r 30|30 → 45|15):
+//  only B's child rows re-mint; the root cut and family A are untouched by construction AND the
+//   re-cut must still tile B exactly — the scope seam carries no cost.
+Nestcut_recut(w):
+    let ex = w.o({ Example: 1, name: 'nest' })[0]
+    if (!ex) return
+    let root = ex.o({ Cell: 1, label: 'root' })[0]
+    let brow = root ? root.o({ Cell: 1, label: 'B' })[0] : null
+    if (!brow || !brow.c.poly) return
+    for (const c of brow.o({ Cell: 1 }).slice()) brow.drop(c)
+    let kids = []
+    kids.push({ label: 'B1', x: 550, y: 100, r: 45 })
+    kids.push({ label: 'B2', x: 650, y: 200, r: 15 })
+    this.Nestcut_cut(brow, brow.c.poly, kids)
+
+// ── the witness — flat · gated to its beat · comma-free · em-dash ─────────────────────────────────
+Nestcut_witness(w):
+    let n = (this.c.run)?.c.step_n
+    let ex = w.o({ Example: 1, name: 'nest' })[0]
+    let root = ex ? ex.o({ Cell: 1, label: 'root' })[0] : null
+    let fa = this.Nestcut_cell(root, 'A')
+    let fb = this.Nestcut_cell(root, 'B')
+    let a1 = this.Nestcut_cell(fa, 'A1')
+    let a1a = this.Nestcut_cell(a1, 'A1a')
+    // the recursion IS the ask — a shape means C and another /C is visibly inside it
+    if (n === 2 && a1a && !(oa %see:'the cut recurses — a grandchild cell solves inside a child that solved inside the root and every level is the same one engine')) i %see:'the cut recurses — a grandchild cell solves inside a child that solved inside the root and every level is the same one engine'
+    // exact tiling at every level — misfit is thousandths and reads zero all the way down
+    if (n === 2 && root && root.sc.misfit === 0 && fa && fa.sc.misfit === 0 && a1 && a1.sc.misfit === 0 && fb && fb.sc.misfit === 0 && !(oa %see:'the children tile their parent exactly at every level of the nest — the areas sum with no gap and no overlap down to the grandchildren')) i %see:'the children tile their parent exactly at every level of the nest — the areas sum with no gap and no overlap down to the grandchildren'
+    // the power wall respects weight — the heavier family claims more room
+    if (n === 2 && fa && fb && fa.sc.area > fb.sc.area && !(oa %see:'a heavier seed claims more room — the power wall stands off proportional to weight so importance can drive area')) i %see:'a heavier seed claims more room — the power wall stands off proportional to weight so importance can drive area'
+    // containment reads as monotone areas down the spine
+    if (n === 2 && root && fa && a1 && a1a && a1a.sc.area < a1.sc.area && a1.sc.area < fa.sc.area && fa.sc.area < root.sc.area && !(oa %see:'areas nest monotonically — each cell holds strictly less room than the scope it lives in')) i %see:'areas nest monotonically — each cell holds strictly less room than the scope it lives in'
+    // beat 3 — the scope seam: B re-divided its standing polygon (134622 stands) and the heavier
+    //  re-weight GREW B1 from its beat-2 50872 to exactly 53142 — the wall moved with the weight.
+    //   (NOT b1 > b2: a power weight shifts the wall locally — it never promises global order
+    //    against positional advantage; B2 keeps the big corner.  The first draft asserted the
+    //     stronger false claim and the %see silently never minted — the pinned constant is the
+    //      honest deterministic gate.)
+    let b1 = this.Nestcut_cell(fb, 'B1')
+    if (n === 3 && fb && fb.sc.misfit === 0 && fb.sc.area === 134622 && b1 && b1.sc.area === 53142 && a1a && root && root.sc.misfit === 0 && !(oa %see:'a scope re-cut its innards inside its standing polygon — the outside held still while the heavier weight grew its share of the same room')) i %see:'a scope re-cut its innards inside its standing polygon — the outside held still while the heavier weight grew its share of the same room'
+//#endregion
+
+//#region Deepcrest — distillation composes (processes.md §4 emergent engine №1) proven in isolation
+// ══ Deepcrest — the crest of crests says the deepest shared truth ═════════════════════════════════
+//  When a family of families crushes the members of the outer crush are themselves crests — so the
+//   distiller must accept its OWN OUTPUT as members.  The claim proven here: distillation composes.
+//    A crest re-said as a plain member (Deep_memberise — veins hand their value back to each key
+//     they cross · facts carry over · spreads REFUSE to collapse — a blur never fakes a voice) can
+//      be distilled again and the top crest AGREES with the crest of the raw pool on every family-
+//       uniform key: the same vein · the same shared fact · the same spreads.  What level one
+//        already blurred stays blurred (year) — the recursion loses nothing it had and invents
+//         nothing it lost.  The top door carries the SUM of family counts (Dip_assign — a dip
+//          without its count would render a library of seventeen like a lone particle).  Beat 3:
+//           a dissenting family arrives and the shared truth DEMOTES — fact falls to spread at the
+//            top and in the pool alike and the door recounts.  No glass · no pixels · byte-stable
+//             fixtures.  World MUST be named Deepcrest (do_fn_for dispatches by w.sc.w).
+//   beat 2  the bench — three families distil · memberise · distil again · the pool alongside
+//   beat 3  the annex dissents — format falls from fact to spread · the door recounts to twenty
+
+// Deep_fam — level one: a brood's members distil into a %Deep,lvl:fam holder ('title' skipped —
+//  a name names · it is not a truth).  lvl is a STRING on purpose: a numeric 1 in an o() query is
+//   the presence wildcard and would match every level.
+Deep_fam(ex, brood):
+    let holder = ex.i({ Deep: 1, lvl: 'fam', name: brood.sc.name })
+    this.Stuff_distil(holder, brood.o({ Track: 1 }), 'crest', ['title'], null)
+    return holder
+
+// Deep_memberise — the composing move: read a crest back into ONE plain member (%Gist — a referring
+//  particle wearing its OWN mainkey · it NAMES a distillate and never impersonates a %Track).
+//   A vein hands its value to every key it crosses (the vein IS those facts said once — undoing the
+//    supersession recovers them).  A fact carries straight over.  A spread is DROPPED: level one
+//     already blurred that key and a single stand-in value would be a fake voice at the top.
+Deep_memberise(ex, holder):
+    let sc = { Gist: 1, name: holder.sc.name }
+    let vt = holder.o({ Vtuffing: 1 })[0]
+    if (!vt) return ex.i(sc)
+    for (const r of vt.o({ Vrow: 1 })) {
+        if (r.sc.row === 'vein') {
+            for (const b of r.o({ Vbit: 1 })) sc[b.sc.k] = r.sc.v
+        }
+        if (r.sc.row === 'fact' && r.sc.v != null) sc[r.sc.k] = r.sc.v
+    }
+    return ex.i(sc)
+
+// Deep_top — level two: memberise every family crest and distil the gists.  Rebuilt whole each
+//  call (drop old top and gists first — the solve is a pure function of the families).  The door
+//   count `deep` = Σ family Vtuffing n — the Dip_assign law at height: every act of supersession
+//    assigns a countable door.
+Deep_top(ex):
+    let old = ex.o({ Deep: 1, lvl: 'top' })[0]
+    if (old) ex.drop(old)
+    for (const g of ex.o({ Gist: 1 })) ex.drop(g)
+    let deep = 0
+    for (const f of ex.o({ Deep: 1, lvl: 'fam' })) {
+        let vt = f.o({ Vtuffing: 1 })[0]
+        if (vt) deep = deep + vt.sc.n
+        this.Deep_memberise(ex, f)
+    }
+    let top = ex.i({ Deep: 1, lvl: 'top', deep: deep })
+    this.Stuff_distil(top, ex.o({ Gist: 1 }), 'deep', ['name'], null)
+    return top
+
+// Deep_pool — the referee: every track everywhere distilled FLAT.  The composition claim is judged
+//  against this tree — agreement on every family-uniform key · honest divergence where level one
+//   already blurred (the pool hears nine voices for 2007 · the top hears the one meadow kept).
+Deep_pool(ex):
+    let old = ex.o({ Deep: 1, lvl: 'pool' })[0]
+    if (old) ex.drop(old)
+    let holder = ex.i({ Deep: 1, lvl: 'pool' })
+    let all = []
+    for (const b of ex.o({ Brood: 1 })) {
+        for (const t of b.o({ Track: 1 })) all.push(t)
+    }
+    this.Stuff_distil(holder, all, 'pool', ['title'], null)
+    return holder
+
+// Deepcrest — the Book (world MUST be named Deepcrest — do_fn_for dispatches by w.sc.w).
+Deepcrest(A,w):
+    w oai %req:wrangle,eternal
+        await &Deepcrest_drive,w,req
+        req%ok = 1
+
+async Deepcrest_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.Deepcrest_bench(w)
+        if (n === 3) this.Deepcrest_annex(w)
+    }
+    this.Deepcrest_witness(w)
+
+// ── the bench: three families with engineered truths ──────────────────────────────────────────────
+//  reef (5)   — vein dub crosses genre|mood · format flac · year SPREAD (2019×3 2007×2)
+//  meadow (7) — all facts: flac · folk · hushed · 2007
+//  vault (5)  — all facts: flac · jazz · hushed · 1959
+//  Shared everywhere: format flac (the deepest truth).  Differing: genre (spreads at the top).
+//   Blurred at level one: year in reef (must NEVER fake a fact above).
+Deepcrest_bench(w):
+    let ex = w.i({ Example: 1, name: 'library' })
+    let reef = ex.i({ Brood: 1, name: 'reef' })
+    reef.i({ Track: 1, title: 'Tide', genre: 'dub', mood: 'dub', format: 'flac', year: '2019' })
+    reef.i({ Track: 1, title: 'Halo', genre: 'dub', mood: 'dub', format: 'flac', year: '2019' })
+    reef.i({ Track: 1, title: 'Drift', genre: 'dub', mood: 'dub', format: 'flac', year: '2019' })
+    reef.i({ Track: 1, title: 'Vane', genre: 'dub', mood: 'dub', format: 'flac', year: '2007' })
+    reef.i({ Track: 1, title: 'Ebb', genre: 'dub', mood: 'dub', format: 'flac', year: '2007' })
+    let meadow = ex.i({ Brood: 1, name: 'meadow' })
+    let mnames = ['Root', 'Frond', 'Moss', 'Bloom', 'Seed', 'Bark', 'Fern']
+    for (const t of mnames) meadow.i({ Track: 1, title: t, genre: 'folk', mood: 'hushed', format: 'flac', year: '2007' })
+    let vault = ex.i({ Brood: 1, name: 'vault' })
+    let vnames = ['Blue', 'Modal', 'Vamp', 'Sides', 'Nonet']
+    for (const t of vnames) vault.i({ Track: 1, title: t, genre: 'jazz', mood: 'hushed', format: 'flac', year: '1959' })
+    for (const b of ex.o({ Brood: 1 })) this.Deep_fam(ex, b)
+    this.Deep_pool(ex)
+    this.Deep_top(ex)
+
+// beat 3 — the annex dissents: three mp3 rips join.  The shared truth format flac DEMOTES to a
+//  spread (at the top AND in the pool — composition holds through change) and the door recounts.
+Deepcrest_annex(w):
+    let ex = w.o({ Example: 1, name: 'library' })[0]
+    if (!ex) return
+    let annex = ex.i({ Brood: 1, name: 'annex' })
+    annex.i({ Track: 1, title: 'Byte', genre: 'dub', mood: 'dub', format: 'mp3', year: '1999' })
+    annex.i({ Track: 1, title: 'Rip', genre: 'dub', mood: 'dub', format: 'mp3', year: '1999' })
+    annex.i({ Track: 1, title: 'Cache', genre: 'dub', mood: 'dub', format: 'mp3', year: '1999' })
+    this.Deep_fam(ex, annex)
+    this.Deep_pool(ex)
+    this.Deep_top(ex)
+
+// ── the witness — flat · gated to its beat · comma-free · em-dash ─────────────────────────────────
+Deepcrest_witness(w):
+    let n = (this.c.run)?.c.step_n
+    let ex = w.o({ Example: 1, name: 'library' })[0]
+    let toph = ex ? ex.o({ Deep: 1, lvl: 'top' })[0] : null
+    let top = toph ? toph.o({ Vtuffing: 1 })[0] : null
+    let poolh = ex ? ex.o({ Deep: 1, lvl: 'pool' })[0] : null
+    let pool = poolh ? poolh.o({ Vtuffing: 1 })[0] : null
+    // the deepest shared truth rises: a fact in every family is a fact at the top
+    let tf = top ? top.o({ Vrow: 1, row: 'fact', k: 'format' })[0] : null
+    if (n === 2 && tf && tf.sc.v === 'flac' && !(oa %see:'the shared truth format flac rises intact through two distillations to the top crest')) i %see:'the shared truth format flac rises intact through two distillations to the top crest'
+    // the vein survives the climb — memberise undoes the supersession so the crossing re-enters
+    let tv = top ? top.o({ Vrow: 1, row: 'vein', v: 'dub' })[0] : null
+    let tvg = tv ? tv.o({ Vbit: 1, k: 'genre' })[0] : null
+    let tvm = tv ? tv.o({ Vbit: 1, k: 'mood' })[0] : null
+    if (n === 2 && tv && tvg && tvm && !(oa %see:'the vein dub survives the climb — genre and mood still cross at the top because the crests carried the crossing')) i %see:'the vein dub survives the climb — genre and mood still cross at the top because the crests carried the crossing'
+    // families that differ spread — the top never picks a winner
+    let tg = top ? top.o({ Vrow: 1, row: 'spread', k: 'genre' })[0] : null
+    let tgd = tg ? tg.o({ Vbit: 1, v: 'dub' })[0] : null
+    let tgf = tg ? tg.o({ Vbit: 1, v: 'folk' })[0] : null
+    let tgj = tg ? tg.o({ Vbit: 1, v: 'jazz' })[0] : null
+    if (n === 2 && tg && tgd && tgf && tgj && !(oa %see:'families that differ spread at the top — genre says dub folk jazz side by side')) i %see:'families that differ spread at the top — genre says dub folk jazz side by side'
+    // the blur boundary: what level one spread NEVER fakes a fact above — and the counts tell it
+    let ty = top ? top.o({ Vrow: 1, row: 'spread', k: 'year' })[0] : null
+    let tyf = top ? top.o({ Vrow: 1, row: 'fact', k: 'year' })[0] : null
+    let ty7 = ty ? ty.o({ Vbit: 1, v: '2007' })[0] : null
+    let py = pool ? pool.o({ Vrow: 1, row: 'spread', k: 'year' })[0] : null
+    let py7 = py ? py.o({ Vbit: 1, v: '2007' })[0] : null
+    if (n === 2 && ty && !tyf && ty7 && ty7.sc.n === 1 && py7 && py7.sc.n === 9 && !(oa %see:'a key already blurred at level one never fakes a fact at the top — year stays a spread and the top hears one voice for 2007 where the pool hears nine')) i %see:'a key already blurred at level one never fakes a fact at the top — year stays a spread and the top hears one voice for 2007 where the pool hears nine'
+    // the composition claim judged against the referee
+    let pf = pool ? pool.o({ Vrow: 1, row: 'fact', k: 'format' })[0] : null
+    let pv = pool ? pool.o({ Vrow: 1, row: 'vein', v: 'dub' })[0] : null
+    let pg = pool ? pool.o({ Vrow: 1, row: 'spread', k: 'genre' })[0] : null
+    if (n === 2 && tf && tv && tg && pf && pf.sc.v === 'flac' && pv && pg && !(oa %see:'the crest of crests agrees with the crest of the pool — same dub vein same flac fact same genre spread')) i %see:'the crest of crests agrees with the crest of the pool — same dub vein same flac fact same genre spread'
+    // Dip_assign at height: the door counts what it hides
+    if (n === 2 && toph && toph.sc.deep === 17 && !(oa %see:'the deep count seventeen rides the top door — five and seven and five members held behind one dip')) i %see:'the deep count seventeen rides the top door — five and seven and five members held behind one dip'
+    // beat 3 — dissent demotes: the shared truth falls to a spread everywhere at once
+    let tf3 = top ? top.o({ Vrow: 1, row: 'fact', k: 'format' })[0] : null
+    let ts3 = top ? top.o({ Vrow: 1, row: 'spread', k: 'format' })[0] : null
+    let ps3 = pool ? pool.o({ Vrow: 1, row: 'spread', k: 'format' })[0] : null
+    if (n === 3 && ts3 && !tf3 && ps3 && !(oa %see:'a dissenting family demotes the shared truth — format falls from fact to spread at the top and in the pool alike when the annex arrives carrying mp3')) i %see:'a dissenting family demotes the shared truth — format falls from fact to spread at the top and in the pool alike when the annex arrives carrying mp3'
+    if (n === 3 && toph && toph.sc.deep === 20 && !(oa %see:'the door recounts to twenty when the annex joins — the dip count follows the truth it hides')) i %see:'the door recounts to twenty when the annex joins — the dip count follows the truth it hides'
+//#endregion
+
+//#region Readback — the read contract (Cstructures_todo §6) proven in isolation — THE KEYSTONE
+// ══ Readback — read(render(tree)) ≡ tree modulo declared dips ═════════════════════════════════════
+//  The steer said ACCURATELY READABLE — this Book makes that a contract and measures it.  A NEW
+//   engine `Read_crest` INVERTS a crest: every claim in the %Vtuffing becomes a recovered MARGINAL
+//    (%Marg — k·v·count) and every declared door becomes a counted %Tail stub.  `Read_audit` then
+//     judges each recovered claim against the true family — claimed vs truth as DATA (%Audit rows ·
+//      snap data not judgement).  What the notation states it states EXACTLY (the exact bench —
+//       every audit lands claimed ≡ truth).  Where the notation UNDER-DECLARES the audit says so:
+//        a valued fact carries no carrier count (the leaky bench — the read believes five where
+//         three carry it) and a spread tail counts dropped VALUES not carriers (the tail bench —
+//          plus three values hiding four members).  Both leaks go to the human as candidate
+//           notation fixes (stamp n on valued facts · stamp have on spreads) — fixing them re-snaps
+//            three green Books so it is a MORNING RULING not a night move.  Beat 3 the twins: two
+//             families sharing every marginal but differing in the JOINT wear byte-identical
+//              crests — the crest is marginal BY DESIGN and only the counted door (Read_surf — the
+//               dip opened) tells them apart.  That is §6 injectivity made flesh: the count is the
+//                whole difference between a crest and a lie.  No glass · no pixels · byte-stable.
+//                 World MUST be named Readback (do_fn_for dispatches by w.sc.w).
+//   beat 2  exact|leaky|tail benches — distil · read back · audit · surf the exact door
+//   beat 3  the twins — identical crests over different joints · the door tells them apart
+
+// Read_crest — the inverse engine: walk a crest holder's %Vtuffing and mint what a READER can
+//  recover.  A vein bit hands back k·v·its own count (undoing the supersession).  A valued fact
+//   claims ALL n members (the crest gives a reader no smaller number — that IS the leak the leaky
+//    bench measures).  A counted presence fact keeps its n.  A spread chip keeps its n; a spread
+//     tail becomes a %Tail stub — the declared door with what little it counts.
+Read_crest(ex, holder):
+    let vt = holder.o({ Vtuffing: 1 })[0]
+    let rec = ex.i({ Recovered: 1, name: holder.sc.name, n: vt ? vt.sc.n : 0 })
+    if (!vt) return rec
+    for (const r of vt.o({ Vrow: 1 })) {
+        if (r.sc.row === 'vein') {
+            for (const b of r.o({ Vbit: 1 })) rec.i({ Marg: 1, k: b.sc.k, v: r.sc.v, n: b.sc.n })
+        }
+        if (r.sc.row === 'fact' && r.sc.v != null) rec.i({ Marg: 1, k: r.sc.k, v: r.sc.v, n: vt.sc.n })
+        if (r.sc.row === 'fact' && r.sc.v == null) rec.i({ Marg: 1, k: r.sc.k, v: '1', n: r.sc.n })
+        if (r.sc.row === 'spread') {
+            for (const b of r.o({ Vbit: 1 })) {
+                if (b.sc.v != null) rec.i({ Marg: 1, k: r.sc.k, v: b.sc.v, n: b.sc.n })
+                if (b.sc.text != null) rec.i({ Tail: 1, k: r.sc.k, dropped: b.sc.text })
+            }
+        }
+    }
+    return rec
+
+// Read_audit — the judge: every recovered marginal against the true family.  claimed ≡ truth is
+//  the round trip closing; claimed ≠ truth is a leak the notation owes a count for.
+Read_audit(ex, brood, rec):
+    let tracks = brood.o({ Track: 1 })
+    for (const m of rec.o({ Marg: 1 })) {
+        let truth = 0
+        for (const t of tracks) {
+            if (('' + t.sc[m.sc.k]) === m.sc.v) truth = truth + 1
+        }
+        ex.i({ Audit: 1, fam: brood.sc.name, k: m.sc.k, v: m.sc.v, claimed: m.sc.n, truth: truth })
+    }
+
+// Read_surf — the dip opened: walk from the crest holder back through the family door and count
+//  what is actually there against what the read was promised.
+Read_surf(ex, name):
+    let b = ex.o({ Brood: 1, name: name })[0]
+    let rec = ex.o({ Recovered: 1, name: name })[0]
+    let found = b ? b.o({ Track: 1 }).length : 0
+    ex.i({ Surf: 1, name: name, found: found, promised: rec ? rec.sc.n : 0 })
+
+// Read_saying — a crest normalised to one string (rows sorted · chips as ranked) so two crests can
+//  be compared as SAYINGS.  Ranking ties are broken by insertion so the twin benches use distinct
+//   counts (3|1) to keep chip order canonical.
+Read_saying(ex, name):
+    let h = ex.o({ Deep: 1, lvl: 'fam', name: name })[0]
+    let vt = h ? h.o({ Vtuffing: 1 })[0] : null
+    if (!vt) return ''
+    let lines = []
+    for (const r of vt.o({ Vrow: 1 })) {
+        let line = r.sc.row + '|' + (r.sc.k || '') + '|' + (r.sc.v || '')
+        for (const b of r.o({ Vbit: 1 })) line = line + '·' + (b.sc.k || '') + ':' + (b.sc.v || b.sc.text || '') + 'x' + b.sc.n
+        lines.push(line)
+    }
+    lines.sort()
+    return lines.join(';')
+
+Read_same(ex, n1, n2):
+    let s1 = this.Read_saying(ex, n1)
+    let s2 = this.Read_saying(ex, n2)
+    let tw = ex.i({ Twin: 1, a: n1, b: n2 })
+    if (s1 !== '' && s1 === s2) {
+        tw.sc.verdict = 'same'
+    } else {
+        tw.sc.verdict = 'differ'
+    }
+    return tw
+
+// Readback — the Book (world MUST be named Readback — do_fn_for dispatches by w.sc.w).
+Readback(A,w):
+    w oai %req:wrangle,eternal
+        await &Readback_drive,w,req
+        req%ok = 1
+
+async Readback_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.Readback_bench(w)
+        if (n === 3) this.Readback_twins(w)
+    }
+    this.Readback_witness(w)
+
+// ── the benches: what the notation states · where it under-declares ───────────────────────────────
+//  exact (5) — vein dub crosses genre|mood · year spread 2019×3 2007×2 · NO tail — every claim total
+//  leaky (5) — format flac total · room attic carried by THREE of five (the uncounted valued fact)
+//  tail (11) — city over six values lon×3 par×2 ber×2 rom×2 mad nyc — chips keep 7 · +3 hides FOUR
+Readback_bench(w):
+    let ex = w.i({ Example: 1, name: 'contract' })
+    let exact = ex.i({ Brood: 1, name: 'exact' })
+    exact.i({ Track: 1, title: 'Tide', genre: 'dub', mood: 'dub', year: '2019' })
+    exact.i({ Track: 1, title: 'Halo', genre: 'dub', mood: 'dub', year: '2019' })
+    exact.i({ Track: 1, title: 'Drift', genre: 'dub', mood: 'dub', year: '2019' })
+    exact.i({ Track: 1, title: 'Vane', genre: 'dub', mood: 'dub', year: '2007' })
+    exact.i({ Track: 1, title: 'Ebb', genre: 'dub', mood: 'dub', year: '2007' })
+    let leaky = ex.i({ Brood: 1, name: 'leaky' })
+    leaky.i({ Track: 1, title: 'Attic1', format: 'flac', room: 'attic' })
+    leaky.i({ Track: 1, title: 'Attic2', format: 'flac', room: 'attic' })
+    leaky.i({ Track: 1, title: 'Attic3', format: 'flac', room: 'attic' })
+    leaky.i({ Track: 1, title: 'Bare1', format: 'flac' })
+    leaky.i({ Track: 1, title: 'Bare2', format: 'flac' })
+    let tail = ex.i({ Brood: 1, name: 'tail' })
+    let cities = ['lon', 'lon', 'lon', 'par', 'par', 'ber', 'ber', 'rom', 'rom', 'mad', 'nyc']
+    let ci = 0
+    for (const c of cities) {
+        ci = ci + 1
+        tail.i({ Track: 1, title: 'T' + ci, city: c })
+    }
+    for (const b of ex.o({ Brood: 1 })) {
+        let h = this.Deep_fam(ex, b)
+        let rec = this.Read_crest(ex, h)
+        this.Read_audit(ex, b, rec)
+    }
+    this.Read_surf(ex, 'exact')
+
+// beat 3 — the twins: marginals identical (hue sage×2 teal×2 · tone sage×3 teal×1 in BOTH) but the
+//  joint differs — P holds a teal-teal member and Q holds none.  The asymmetric counts make every
+//   vein-key and chip ranking COUNT-decided (teal is hue×2 tone×1 so the sort canonicalises what a
+//    first-seen tie would leak — the joint must stay invisible in the saying); the one tie left
+//     (hue chips sage2 teal2) first-sees sage in both.
+Readback_twins(w):
+    let ex = w.o({ Example: 1, name: 'contract' })[0]
+    if (!ex) return
+    let p = ex.i({ Brood: 1, name: 'p' })
+    p.i({ Track: 1, title: 'P1', hue: 'sage', tone: 'sage' })
+    p.i({ Track: 1, title: 'P2', hue: 'sage', tone: 'sage' })
+    p.i({ Track: 1, title: 'P3', hue: 'teal', tone: 'teal' })
+    p.i({ Track: 1, title: 'P4', hue: 'teal', tone: 'sage' })
+    let q = ex.i({ Brood: 1, name: 'q' })
+    q.i({ Track: 1, title: 'Q1', hue: 'sage', tone: 'sage' })
+    q.i({ Track: 1, title: 'Q2', hue: 'sage', tone: 'teal' })
+    q.i({ Track: 1, title: 'Q3', hue: 'teal', tone: 'sage' })
+    q.i({ Track: 1, title: 'Q4', hue: 'teal', tone: 'sage' })
+    for (const nm of ['p', 'q']) {
+        let b = ex.o({ Brood: 1, name: nm })[0]
+        let h = this.Deep_fam(ex, b)
+        this.Read_crest(ex, h)
+        this.Read_surf(ex, nm)
+    }
+    this.Read_same(ex, 'p', 'q')
+
+// ── the witness — flat · gated to its beat · comma-free · em-dash ─────────────────────────────────
+Readback_witness(w):
+    let n = (this.c.run)?.c.step_n
+    let ex = w.o({ Example: 1, name: 'contract' })[0]
+    // the round trip closes: every exact-bench audit lands claimed ≡ truth
+    let ag = ex ? ex.o({ Audit: 1, fam: 'exact', k: 'genre', v: 'dub' })[0] : null
+    let am = ex ? ex.o({ Audit: 1, fam: 'exact', k: 'mood', v: 'dub' })[0] : null
+    let a9 = ex ? ex.o({ Audit: 1, fam: 'exact', k: 'year', v: '2019' })[0] : null
+    let a7 = ex ? ex.o({ Audit: 1, fam: 'exact', k: 'year', v: '2007' })[0] : null
+    if (n === 2 && ag && ag.sc.claimed === 5 && ag.sc.truth === 5 && am && am.sc.claimed === 5 && am.sc.truth === 5 && a9 && a9.sc.claimed === 3 && a9.sc.truth === 3 && a7 && a7.sc.claimed === 2 && a7.sc.truth === 2 && !(oa %see:'the crest read back recovers every marginal exactly — counts and all — the round trip closes modulo the declared doors')) i %see:'the crest read back recovers every marginal exactly — counts and all — the round trip closes modulo the declared doors'
+    // the door opens: the dip surf finds exactly what the read was promised
+    let se = ex ? ex.o({ Surf: 1, name: 'exact' })[0] : null
+    if (n === 2 && se && se.sc.found === 5 && se.sc.promised === 5 && !(oa %see:'the door opens — surfing the dip from the crest recovers the five members the count promised')) i %see:'the door opens — surfing the dip from the crest recovers the five members the count promised'
+    // leak one: a valued fact carries no carrier count so the read believes the whole family
+    let al = ex ? ex.o({ Audit: 1, fam: 'leaky', k: 'room', v: 'attic' })[0] : null
+    if (n === 2 && al && al.sc.claimed === 5 && al.sc.truth === 3 && !(oa %see:'the crest under-declares a partial fact — the read believes five carriers of attic where three exist — the one leak the contract names')) i %see:'the crest under-declares a partial fact — the read believes five carriers of attic where three exist — the one leak the contract names'
+    // leak two: the spread tail counts dropped values not carriers
+    let rtl = ex ? ex.o({ Recovered: 1, name: 'tail' })[0] : null
+    let tl = rtl ? rtl.o({ Tail: 1, k: 'city' })[0] : null
+    let tb = ex ? ex.o({ Brood: 1, name: 'tail' })[0] : null
+    let alon = ex ? ex.o({ Audit: 1, fam: 'tail', k: 'city', v: 'lon' })[0] : null
+    if (n === 2 && tl && tl.sc.dropped === '+3' && tb && tb.o({ Track: 1 }).length === 11 && alon && alon.sc.claimed === 3 && alon.sc.truth === 3 && !(oa %see:'a spread tail counts its dropped values but not their carriers — the tail says three values while four members hide behind it')) i %see:'a spread tail counts its dropped values but not their carriers — the tail says three values while four members hide behind it'
+    // the twins: identical sayings over different joints — only the door tells them apart
+    let tw = ex ? ex.o({ Twin: 1, a: 'p' })[0] : null
+    let pb = ex ? ex.o({ Brood: 1, name: 'p' })[0] : null
+    let qb = ex ? ex.o({ Brood: 1, name: 'q' })[0] : null
+    let pj = pb ? pb.o({ Track: 1, hue: 'teal', tone: 'teal' })[0] : null
+    let qj = qb ? qb.o({ Track: 1, hue: 'teal', tone: 'teal' })[0] : null
+    if (n === 3 && tw && tw.sc.verdict === 'same' && pj && !qj && !(oa %see:'two families with one joint difference wear identical crests — the crest is marginal by design and only the counted door tells them apart')) i %see:'two families with one joint difference wear identical crests — the crest is marginal by design and only the counted door tells them apart'
+    let sp = ex ? ex.o({ Surf: 1, name: 'p' })[0] : null
+    let sq = ex ? ex.o({ Surf: 1, name: 'q' })[0] : null
+    if (n === 3 && sp && sp.sc.found === 4 && sp.sc.promised === 4 && sq && sq.sc.found === 4 && sq.sc.promised === 4 && !(oa %see:'the twin doors open to the same counts and different rooms — four members each with the joints differing exactly where the crest stayed silent')) i %see:'the twin doors open to the same counts and different rooms — four members each with the joints differing exactly where the crest stayed silent'
+//#endregion
+
+//#region Surfline — the composed kernel (Nestcut × Floorlaw × reframe) proven in one stack
+// ══ Surfline — the cut prices the rooms · the floor law spends them · the surf re-roots ═══════════
+//  The machine kernel in one Book with NO new engine: `Nestcut_cut` (J4) tessellates the root room
+//   among three scopes and each cell AREA becomes the frame `Floorlaw_solve` (J2) prices — geometry
+//    hands its output straight to the law because both speak C.  The surf (J5) is beat 3: entering
+//     a scope makes its cell the viewport — the SAME solve at the room the reframe grants — and the
+//      shoal that crushed in its corner un-crushes with the whole frame behind it while every room
+//       not surfed keeps its price to the byte (the scope seam again — this time across ENGINES).
+//        All pins hand-derived and integer-anchored: rooms 136872|134622|88506 of 360000 (the
+//         proven Nestcut triple) · A crushed Σw 16+2 → S = √(136872/18) = √7604 → 8720 · B Σw 36 →
+//          √3739.5 → 6115 · surf √(360000/21) → 13093.  No glass · no pixels · byte-stable.
+//           World MUST be named Surfline (do_fn_for dispatches by w.sc.w).
+//   beat 2  cut the chart · price three scopes at their cell frames — crush | legible | crush
+//   beat 3  surf into scope A — un-crush at the granted room · every other price holds still
+//   beat 4  a QUIET beat — nothing changes — the trees hold
+
+// ── the bench: the proven 800×450 triple (A r60 · B r40 · C r40) prices three scopes ──────────────
+//  scopeA — a loud loose head (w16) over five meek minnows (w1): its 136872 room crushes them
+//  scopeB — four whales (w9): loud enough that 134622 keeps every voice legible
+//  scopeC — twelve plankton (w1): the crowd seals to a crest that frees ten voices
+Surfline_bench(w):
+    let ex = w.i({ Example: 1, name: 'chart' })
+    let root = ex.i({ Cell: 1, label: 'root', area: 360000, cx: 400, cy: 225 })
+    let frame = []
+    frame.push({ x: 0, y: 0 })
+    frame.push({ x: 800, y: 0 })
+    frame.push({ x: 800, y: 450 })
+    frame.push({ x: 0, y: 450 })
+    root.c.poly = frame
+    let plan = []
+    plan.push({ label: 'A', x: 200, y: 150, r: 60 })
+    plan.push({ label: 'B', x: 600, y: 150, r: 40 })
+    plan.push({ label: 'C', x: 400, y: 350, r: 40 })
+    this.Nestcut_cut(root, frame, plan)
+    let ca = this.Nestcut_cell(root, 'A')
+    let cb = this.Nestcut_cell(root, 'B')
+    let cc = this.Nestcut_cell(root, 'C')
+    let sa = w.i({ Example: 1, name: 'scopeA' })
+    this.Floorlaw_loose(sa, 'head', 16)
+    let ab = this.Floorlaw_brood(sa, 'minnows')
+    for (const t of ['Fry', 'Roe', 'Smolt', 'Parr', 'Grilse']) ab.i({ Track: 1, title: t, genre: 'dub', w: 1 })
+    let sb = w.i({ Example: 1, name: 'scopeB' })
+    let bb = this.Floorlaw_brood(sb, 'whales')
+    for (const t of ['Blue', 'Fin', 'Sei', 'Gray']) bb.i({ Track: 1, title: t, genre: 'deep', w: 9 })
+    let sc2 = w.i({ Example: 1, name: 'scopeC' })
+    let pb = this.Floorlaw_brood(sc2, 'plankton')
+    for (const t of ['Krill', 'Copepod', 'Mysid', 'Salp', 'Diatom', 'Volvox', 'Ciliate', 'Rotifer', 'Amoeba', 'Spora', 'Algula', 'Nauplius']) pb.i({ Track: 1, title: t, genre: 'algae', w: 1 })
+    if (ca) this.Floorlaw_solve(sa, ca.sc.area, 100)
+    if (cb) this.Floorlaw_solve(sb, cb.sc.area, 100)
+    if (cc) this.Floorlaw_solve(sc2, cc.sc.area, 100)
+
+// beat 3 — the surf: entering scope A grants it the whole 360000 room (its cell becomes the
+//  viewport) and the SAME law re-prices it — nothing else is touched.
+Surfline_surf(w):
+    let sa = w.o({ Example: 1, name: 'scopeA' })[0]
+    if (!sa) return
+    this.Floorlaw_solve(sa, 360000, 100)
+
+// Surfline — the Book (world MUST be named Surfline — do_fn_for dispatches by w.sc.w).
+Surfline(A,w):
+    w oai %req:wrangle,eternal
+        await &Surfline_drive,w,req
+        req%ok = 1
+
+async Surfline_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.Surfline_bench(w)
+        if (n === 3) this.Surfline_surf(w)
+    }
+    this.Surfline_witness(w)
+
+// ── the witness — flat · gated to its beat · comma-free · em-dash ─────────────────────────────────
+Surfline_witness(w):
+    let n = (this.c.run)?.c.step_n
+    let chart = w.o({ Example: 1, name: 'chart' })[0]
+    let root = chart ? chart.o({ Cell: 1, label: 'root' })[0] : null
+    let ca = this.Nestcut_cell(root, 'A')
+    let cb = this.Nestcut_cell(root, 'B')
+    let cc = this.Nestcut_cell(root, 'C')
+    let rooms = ca && ca.sc.area === 136872 && cb && cb.sc.area === 134622 && cc && cc.sc.area === 88506 && root && root.sc.misfit === 0
+    if (n === 2 && rooms && !(oa %see:'the cut prices the rooms — three scopes claim 136872 and 134622 and 88506 of one 360000 frame with nothing lost')) i %see:'the cut prices the rooms — three scopes claim 136872 and 134622 and 88506 of one 360000 frame with nothing lost'
+    let sca = this.Floorlaw_scale(w, 'scopeA')
+    let cra = this.Floorlaw_crushrow(sca, 'minnows')
+    let scb = this.Floorlaw_scale(w, 'scopeB')
+    let crb = this.Floorlaw_crushrow(scb, 'whales')
+    if (n === 2 && sca && sca.sc.S === 8720 && cra && cra.sc.freed === 3 && scb && scb.sc.S === 6115 && !crb && !(oa %see:'the floor law spends each room as the cut priced it — the meek shoal crushes at 8720 in its small room while the loud whales next door stay legible at 6115')) i %see:'the floor law spends each room as the cut priced it — the meek shoal crushes at 8720 in its small room while the loud whales next door stay legible at 6115'
+    let scc = this.Floorlaw_scale(w, 'scopeC')
+    let crc = this.Floorlaw_crushrow(scc, 'plankton')
+    if (n === 2 && crc && crc.sc.freed === 10 && !(oa %see:'the crowded scope seals too — twelve plankton crush to a crest freeing ten voices')) i %see:'the crowded scope seals too — twelve plankton crush to a crest freeing ten voices'
+    if (n === 3 && sca && sca.sc.S === 13093 && !cra && !(oa %see:'surf into the scope and its cell becomes the viewport — the shoal un-crushes at 13093 with the whole room behind it')) i %see:'surf into the scope and its cell becomes the viewport — the shoal un-crushes at 13093 with the whole room behind it'
+    if (n === 3 && scb && scb.sc.S === 6115 && !crb && crc && crc.sc.freed === 10 && !(oa %see:'the seam holds — the rooms not surfed keep their prices — the whales still at 6115 and the plankton crest still freeing ten')) i %see:'the seam holds — the rooms not surfed keep their prices — the whales still at 6115 and the plankton crest still freeing ten'
+    if (n === 3 && rooms && !(oa %see:'the chart never re-cut — the rooms stand while the surf re-prices only the scope it entered')) i %see:'the chart never re-cut — the rooms stand while the surf re-prices only the scope it entered'
 //#endregion

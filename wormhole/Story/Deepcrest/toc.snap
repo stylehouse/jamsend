@@ -1,0 +1,24 @@
+story:Deepcrest
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.011
+      sample=0.016,at=1784642876
+      sample=0.01,at=1784642894
+      sample=0.008,at=1784642898
+      sample=0.013,at=1784642950
+      sample=0.011,at=1784642994
+      sample=0.011,at=1784643051
+    TimeTotal:step,avg=0.003
+      sample=0.004,at=1784642876
+      sample=0.002,at=1784642894
+      sample=0.002,at=1784642898
+      sample=0.003,at=1784642950
+      sample=0.003,at=1784642994
+      sample=0.003,at=1784643051
+  step,dige:7a61353850095164
+  step=2,dige:e0dd4018f052b496
+  step=3,dige:8cb53bb2472c70e1
+  step=4,dige:6804e19758b96614

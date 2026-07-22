@@ -1,0 +1,91 @@
+Snap:H
+  H:Deepcrest,Run
+    A:Deepcrest
+      self,round=2	{"mung":["age"]}
+      w:Deepcrest
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Example,name:library
+          Brood,name:reef
+            Track,title:Tide,genre:dub,mood:dub,format:flac,year:2019
+            Track,title:Halo,genre:dub,mood:dub,format:flac,year:2019
+            Track,title:Drift,genre:dub,mood:dub,format:flac,year:2019
+            Track,title:Vane,genre:dub,mood:dub,format:flac,year:2007
+            Track,title:Ebb,genre:dub,mood:dub,format:flac,year:2007
+          Brood,name:meadow
+            Track,title:Root,genre:folk,mood:hushed,format:flac,year:2007
+            Track,title:Frond,genre:folk,mood:hushed,format:flac,year:2007
+            Track,title:Moss,genre:folk,mood:hushed,format:flac,year:2007
+            Track,title:Bloom,genre:folk,mood:hushed,format:flac,year:2007
+            Track,title:Seed,genre:folk,mood:hushed,format:flac,year:2007
+            Track,title:Bark,genre:folk,mood:hushed,format:flac,year:2007
+            Track,title:Fern,genre:folk,mood:hushed,format:flac,year:2007
+          Brood,name:vault
+            Track,title:Blue,genre:jazz,mood:hushed,format:flac,year:1959
+            Track,title:Modal,genre:jazz,mood:hushed,format:flac,year:1959
+            Track,title:Vamp,genre:jazz,mood:hushed,format:flac,year:1959
+            Track,title:Sides,genre:jazz,mood:hushed,format:flac,year:1959
+            Track,title:Nonet,genre:jazz,mood:hushed,format:flac,year:1959
+          Deep,lvl:fam,name:reef
+            Vtuffing,of:crest,n=5
+              Vrow,row:vein,v:dub,wgt
+                Vbit,k:genre,n=5
+                Vbit,k:mood,n=5
+              Vrow,row:fact,k:format,v:flac,wgt
+              Vrow,row:spread,k:year,wgt
+                Vbit,v:2019,n=3
+                Vbit,v:2007,n=2
+          Deep,lvl:fam,name:meadow
+            Vtuffing,of:crest,n=7
+              Vrow,row:fact,k:genre,v:folk,wgt
+              Vrow,row:fact,k:mood,v:hushed,wgt
+              Vrow,row:fact,k:format,v:flac,wgt
+              Vrow,row:fact,k:year,v:2007,wgt
+          Deep,lvl:fam,name:vault
+            Vtuffing,of:crest,n=5
+              Vrow,row:fact,k:genre,v:jazz,wgt
+              Vrow,row:fact,k:mood,v:hushed,wgt
+              Vrow,row:fact,k:format,v:flac,wgt
+              Vrow,row:fact,k:year,v:1959,wgt
+          Deep,lvl:pool
+            Vtuffing,of:pool,n=17
+              Vrow,row:vein,v:dub,wgt
+                Vbit,k:genre,n=5
+                Vbit,k:mood,n=5
+              Vrow,row:spread,k:genre,wgt
+                Vbit,v:folk,n=7
+                Vbit,v:dub,n=5
+                Vbit,v:jazz,n=5
+              Vrow,row:spread,k:mood,wgt
+                Vbit,v:hushed,n=12
+                Vbit,v:dub,n=5
+              Vrow,row:fact,k:format,v:flac,wgt
+              Vrow,row:spread,k:year,wgt
+                Vbit,v:2007,n=9
+                Vbit,v:1959,n=5
+                Vbit,v:2019,n=3
+          Gist,name:reef,genre:dub,mood:dub,format:flac
+          Gist,name:meadow,genre:folk,mood:hushed,format:flac,year:2007
+          Gist,name:vault,genre:jazz,mood:hushed,format:flac,year:1959
+          Deep,lvl:top,deep=17
+            Vtuffing,of:deep,n=3
+              Vrow,row:vein,v:dub,wgt
+                Vbit,k:genre,n
+                Vbit,k:mood,n
+              Vrow,row:spread,k:genre,wgt
+                Vbit,v:dub,n
+                Vbit,v:folk,n
+                Vbit,v:jazz,n
+              Vrow,row:spread,k:mood,wgt
+                Vbit,v:hushed,n=2
+                Vbit,v:dub,n
+              Vrow,row:fact,k:format,v:flac,wgt
+              Vrow,row:spread,k:year,wgt
+                Vbit,v:2007,n
+                Vbit,v:1959,n
+        see:the shared truth format flac rises intact through two distillations to the top crest
+        see:the vein dub survives the climb — genre and mood still cross at the top because the crests carried the crossing
+        see:families that differ spread at the top — genre says dub folk jazz side by side
+        see:a key already blurred at level one never fakes a fact at the top — year stays a spread and the top hears one voice for 2007 where the pool hears nine
+        see:the crest of crests agrees with the crest of the pool — same dub vein same flac fact same genre spread
+        see:the deep count seventeen rides the top door — five and seven and five members held behind one dip
