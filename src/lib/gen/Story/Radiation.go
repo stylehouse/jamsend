@@ -3,12 +3,14 @@
     import { TheC } from "$lib/data/Stuff.svelte"
     import { onMount } from "svelte"
 
+import { sha256_hex } from "$lib/O/Hashly.ts"
+
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Radiation(): string { return '57100009c65a317d~g1' },
+    Ghostmeta_Ghost_Story_Radiation(): string { return '7038895112234b67~g1' },
 
 // Radiation.g — the Ra* PRODUCT Books (rastock → racast → raterm; Radio_todo.md §3), in the
 //  Musuation/Swarmation mould: the file is the artifact; MusuRaStream is the first Book identity.
@@ -55,6 +57,8 @@
 //   ∼        MEASURE— decode the PULLED chunks of A and B and render each through the SAME spool with
 //                     its REAL play-time drop set — loudness read back off the bytes that crossed
 //
+// Crypto for the RaBreach adversarial beat: sha256_hex content-addresses a chunk's bytes — the same
+//  hash Repli's rung-0 arrival gate (and Heist's landing gate) checks. REAL dep (the .g→.ts idiom).
 // CONVENTION (Musu*/Ra*): no Run_A_ recipe — the world MUST be named MusuRaStream (do_fn_for dispatches by
 //  w.sc.w) or the wrangle silently never fires.
 
@@ -1466,6 +1470,111 @@ async GhoghoDrone_beat(w, n) {
     await this.expecting(w, 'drone_' + n, 12, async () => {
         await new Promise((r) => setTimeout(r, 10000))
     })
+
+},
+// ══ RaBreach — the rung-0 content-address gate on Repli's chunk ARRIVAL (crypto audit R1, 2026-07-22) ═══
+//  Heist checks sha256(bytes)===chunk.cid before LANDING a chunk to disk (Heist.g:130); Repli's own
+//   arrival (Repli_attach_page) did NOT — so a chunk streamed for LIVE PLAYBACK (never landed to disk) was
+//    never content-checked. body_hash proves the FRAME arrived intact from the sender; it can't catch a
+//     sender whose own (cid,bytes) pair drifted (a stale buf, a re-transcode that never re-cid'd, a bad
+//      caster). This Book stages the arrival directly — a mirror chunk awaiting its bytes, as hear→recv_page
+//       would leave it — and delivers BAD bytes (refused: nothing lands, the chunk is marked a breach) then
+//        GOOD bytes (lands cleanly). No audio, no transcode — the gate is the whole subject. World w:RaBreach.
+RaBreach(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.RaBreach_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async RaBreach_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.RaBreach_setup(w)
+        if (n === 3) this.RaBreach_bad(w)
+        if (n === 4) this.RaBreach_good(w)
+    }
+    await this.RaBreach_order(w)
+
+},
+// the fixed content: good bytes hash to the cid both chunks carry; bad bytes do not. sha256 is
+//  deterministic, so the cid (and every snap byte) repeats run to run.
+RaBreach_good_bytes() {
+    return new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8])
+},
+RaBreach_bad_bytes() {
+    return new Uint8Array([9, 9, 9, 9, 9, 9, 9, 9])
+
+},
+// beat 2 — a receiver with a caster route and TWO mirror chunks, each awaiting its bytes under the SAME
+//  content-address (cid = sha256 of the good bytes). No wire, no transcode — just the arrival state a
+//   want→serve would leave: c.await_bufk names the sc key the bytes should land as.
+RaBreach_setup(w) {
+    w.i({reached: "step_2"})
+    w.sc.now = 1759100000
+    let cid = sha256_hex(this.RaBreach_good_bytes())
+    let rx = w.oai({ Account: 1, of: 'Rx' })
+    rx.c.up = w
+    let pier = rx.oai({ Pier: 1, pub: 'caster' })
+    pier.c.up = rx
+    let bad = rx.oai({ Stream: 1, seq: '0' })
+    bad.c.up = rx
+    bad.sc.cid = cid
+    bad.c.await_bufk = 'buf'
+    let good = rx.oai({ Stream: 1, seq: '1' })
+    good.c.up = rx
+    good.sc.cid = cid
+    good.c.await_bufk = 'buf'
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.RaBreach_witness(w); req.sc.ok = 1 })
+
+},
+// beat 3 — the tampered arrival: bytes that do NOT hash to the chunk's cid. The gate must refuse —
+//  no bytes land, the chunk is marked a breach (never silently decoded).
+RaBreach_bad(w) {
+    w.i({reached: "step_3"})
+    w.sc.now = 1759100010
+    let rx = w.o({ Account: 1, of: 'Rx' })[0]
+    let pier = rx.o({ Pier: 1, pub: 'caster' })[0]
+    let bad = rx.o({ Stream: 1, seq: '0' })[0]
+    pier.c.awaiting = { cbad: bad }
+    this.Repli_attach_page(w, pier, 'cbad', this.RaBreach_bad_bytes())
+
+},
+// beat 4 — the honest arrival: bytes that DO hash to the cid. The gate passes them untouched — the
+//  chunk fills (bytes on .sc.buf, muted in the snap).
+RaBreach_good(w) {
+    w.i({reached: "step_4"})
+    w.sc.now = 1759100020
+    let rx = w.o({ Account: 1, of: 'Rx' })[0]
+    let pier = rx.o({ Pier: 1, pub: 'caster' })[0]
+    let good = rx.o({ Stream: 1, seq: '1' })[0]
+    pier.c.awaiting = { cgood: good }
+    this.Repli_attach_page(w, pier, 'cgood', this.RaBreach_good_bytes())
+
+},
+// ── the witness — %sworn assertions via this.story_swear (idempotent per run, shelf-checked) ──────
+RaBreach_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    let rx = w.o({ Account: 1, of: 'Rx' })[0]
+    if (!rx) return
+    let bad = rx.o({ Stream: 1, seq: '0' })[0]
+    let good = rx.o({ Stream: 1, seq: '1' })[0]
+    // beat 3: bad bytes refused — nothing landed (no .sc.buf), the chunk marked a breach. Pairs the
+    //  negative (unfilled) with the positive (breach mark) so it can't pass vacuously.
+    if (n >= 3 && bad && !bad.sc.buf && bad.c.breach === 'cid') this.story_swear(w, 'a chunk whose bytes do not hash to its content-address is refused at arrival — the bytes never land and the chunk is marked a breach rather than silently decoded')
+    // beat 4: good bytes land — the gate passes honest bytes untouched (the check refuses only the tampered).
+    if (n >= 4 && good && good.sc.buf && !good.c.breach) this.story_swear(w, 'an honest chunk whose bytes match its content-address lands cleanly — the rung-0 gate refuses only the tampered and never the honest')
+
+},
+// RaBreach_order — float A:RaBreach to the front of H/* so the Run snap stays readable.
+async RaBreach_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'RaBreach') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
 
 },
 

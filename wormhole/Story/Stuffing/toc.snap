@@ -10,12 +10,14 @@ story:Stuffing
       sample=0.01,at=1784682145
       sample=0.008,at=1784682756
       sample=0.009,at=1784685901
+      sample=0.01,at=1784718160
     TimeTotal:step,avg=0.003
       sample=0.005,at=1784622155
       sample=0.002,at=1784664707
       sample=0.002,at=1784682145
       sample=0.002,at=1784682756
       sample=0.002,at=1784685901
+      sample=0.002,at=1784718160
   step,dige:62bd5a5839d30be1
   step=2,dige:6a5ac3c89b0eef6e
   step=3,dige:9a8d0f448209c32d

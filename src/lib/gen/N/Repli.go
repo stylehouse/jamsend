@@ -4,13 +4,14 @@
     import { onMount } from "svelte"
 
 import { Selection } from "$lib/mostly/Selection.svelte.ts"
+import { sha256_hex } from "$lib/O/Hashly.ts"
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return '5af7bce2406f4886~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return '8f0e78c47213aa32~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -564,7 +565,17 @@ Repli_attach_page(w, pier, id, bytes) {
     if (mirror.c.await_bufk) {
         let u8 = new Uint8Array(bytes.length)
         u8.set(bytes)
-        mirror.sc[mirror.c.await_bufk] = u8
+        // RUNG-0 GATE (the arrival twin of Heist's landing check, Heist.g:130): the bytes MUST hash to
+        //  the chunk's own content-address. body_hash proved the FRAME arrived intact from the sender;
+        //   it can NOT catch a sender whose local (cid,bytes) pair drifted — a stale buf, a re-transcode
+        //    that never re-cid'd, or a bad caster. A mismatch is a BREACH: refuse the bytes, mark it, and
+        //     leave the chunk UNFILLED (presence = fill state, so no garbage ever decodes on the pulled
+        //      path). No cid = the Float32/legacy substrate — nothing to content-address, land as before.
+        if (mirror.sc.cid && sha256_hex(u8) !== mirror.sc.cid) {
+            mirror.c.breach = 'cid'
+        } else {
+            mirror.sc[mirror.c.await_bufk] = u8
+        }
         mirror.c.await_bufk = null
         mirror.c.await_buffer = null
         mirror.bump()

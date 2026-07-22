@@ -55,6 +55,7 @@ Waft:Credence
         Funkcion:Storying,of_Book:MusuGenerateTestsMusic,needsFSA:1,unusual:test-data-seeding
         Funkcion:Storying,of_Book:MusuRaStream,needsFSA:1,needMusic:1,born:2026-07-08
         Funkcion:Storying,of_Book:MusuRaChase,needsFSA:1,needMusic:1,born:2026-07-11
+        Funkcion:Storying,of_Book:RaBreach,born:2026-07-22,desc:the rung-0 content-address gate on Repli chunk arrival — bad bytes that do not hash to the chunk cid are refused and marked a breach while honest bytes land untouched
       What:the magazine,desc:the sharing layer — heist bytes into a collection then berth persist share and browse it across Piers
         Funkcion:Storying,of_Book:MusuHeist,needsFSA:1,needMusic:1,born:2026-07-11
         Funkcion:Storying,of_Book:MusuBreach,needsFSA:1,needMusic:1,born:2026-07-15
@@ -169,3 +170,4 @@ Waft:Credence
     Funkcion:Storying,of_Book:Floorlaw
     Funkcion:Storying,of_Book:Nestcut
     Funkcion:Storying,of_Book:Readback
+    Funkcion:Storying,of_Book:RaBreach

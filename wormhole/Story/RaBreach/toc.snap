@@ -1,0 +1,24 @@
+story:RaBreach
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.008
+      sample=0.012,at=1784716191
+      sample=0.006,at=1784716204
+      sample=0.008,at=1784716224
+      sample=0.009,at=1784716239
+      sample=0.005,at=1784716252
+    TimeTotal:step,avg=0.002
+      sample=0.003,at=1784716191
+      sample=0.001,at=1784716204
+      sample=0.002,at=1784716224
+      sample=0.002,at=1784716239
+      sample=0.001,at=1784716252
+  step,dige:1632dafcb9be88e0
+  step=2,dige:aa6ead12c4b19fc8
+  step=3,dige:e0e6ee0a68dceab5
+    Assertion:a-chunk-whose-bytes,sentence:a chunk whose bytes do not hash to its content-address is refused at arrival — the bytes never land and the chunk is marked a breach rather than silently decoded
+  step=4,dige:99ba0d177a9d0aa1
+    Assertion:an-honest-chunk-whose,sentence:an honest chunk whose bytes match its content-address lands cleanly — the rung-0 gate refuses only the tampered and never the honest

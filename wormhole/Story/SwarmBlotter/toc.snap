@@ -13,6 +13,7 @@ story:SwarmBlotter
       sample=0.033,at=1784682290
       sample=0.046,at=1784703553
       sample=0.066,at=1784703563
+      sample=0.067,at=1784714598
     TimeTotal:step,avg=0.012
       sample=0.015,at=1784682240
       sample=0.015,at=1784682267
@@ -22,6 +23,7 @@ story:SwarmBlotter
       sample=0.007,at=1784682290
       sample=0.009,at=1784703553
       sample=0.013,at=1784703563
+      sample=0.013,at=1784714598
   step,dige:6119c6d27e4e8905
   step=2,dige:1c0d25054543261a
     Assertion:five-selves-stand-up,sentence:five selves stand up online — a sheet issuer three serial claimants and a replayer of a torn ticket

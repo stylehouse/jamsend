@@ -4,29 +4,32 @@ story:SwarmSpoof
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.033
-      sample=0.055,at=1784702593
-      sample=0.036,at=1784703404
-      sample=0.036,at=1784703436
-      sample=0.036,at=1784703439
+    TimeTotal:beliefs,avg=0.024
       sample=0.036,at=1784703440
       sample=0.036,at=1784703441
       sample=0.036,at=1784703442
       sample=0.012,at=1784703450
       sample=0.01,at=1784703466
-    TimeTotal:step,avg=0.008
-      sample=0.014,at=1784702593
-      sample=0.009,at=1784703404
-      sample=0.009,at=1784703436
-      sample=0.009,at=1784703439
+      sample=0.025,at=1784714486
+      sample=0.025,at=1784714512
+      sample=0.025,at=1784714513
+      sample=0.012,at=1784714525
+      sample=0.023,at=1784714539
+    TimeTotal:step,avg=0.006
       sample=0.009,at=1784703440
       sample=0.009,at=1784703441
       sample=0.009,at=1784703442
       sample=0.003,at=1784703450
       sample=0.003,at=1784703466
+      sample=0.006,at=1784714486
+      sample=0.006,at=1784714512
+      sample=0.006,at=1784714513
+      sample=0.003,at=1784714525
+      sample=0.006,at=1784714539
   step,dige:e459d5a3175f7c10
   step=2,dige:68bae842c38d16a4
   step=3,dige:8b387e6c0cec086b
     Assertion:alice-mints-a-real,sentence:Alice mints a real Music Idzeug scoped to Jazz — a single-use invite Mallory carries to the door
-  step=4,dige:fab1a880d04f92c8
+  step=4,dige:06b9796ebc732af7
     Assertion:a-hostile-hello-declaring,sentence:a hostile hello declaring an address its key cannot derive is refused at the door — no contact seals under the forged address and the live invite stays unspent
+    Assertion:the-forged-victim-is,sentence:the forged victim is left untouched — the refused spoof sends no reply so the innocent address the attacker wore is never spammed with a rejection

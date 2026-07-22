@@ -10,7 +10,7 @@ import { mint_grant } from "$lib/O/Funk/Grant.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return 'f31703265cf1cb63~g1' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return 'ab55f8a4195e86fe~g1' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -1704,6 +1704,10 @@ SwarmSpoof_witness(w) {
     let spoofedPier = vic ? aPeering?.o({ Pier: 1, pub: vic.sc.prepub })[0] : null
     let spoofRebuff = alice.o({ rebuff: 'hello_spoofed' })[0]
     if (n >= 4 && spoofRebuff && !spoofedPier && record && !record.sc.spent) this.story_swear(w, 'a hostile hello declaring an address its key cannot derive is refused at the door — no contact seals under the forged address and the live invite stays unspent')
+    // beat 4b: verify-first refuses LOCALLY (no route minted, no reply) — so the innocent address the
+    //  attacker WORE hears nothing back; a spoof cannot be turned into a rejection-spam against a third party.
+    let vicHeard = vic ? vic.o({ rebuff: 1 })[0] : null
+    if (n >= 4 && spoofRebuff && !vicHeard) this.story_swear(w, 'the forged victim is left untouched — the refused spoof sends no reply so the innocent address the attacker wore is never spammed with a rejection')
 
 },
 // SwarmSpoof_order — float A:SwarmSpoof to the front of H/* so the Run snap stays readable.

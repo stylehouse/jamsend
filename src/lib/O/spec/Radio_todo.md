@@ -54,8 +54,16 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
      (`prepubOf(page.pub)===page.prepub`) at all 5 seal entries + a `Swarm_seal` backstop, proven RED→GREEN
       by the adversarial Book **SwarmSpoof** (green×2; the forged `%Pier` seen in bytes then gone) with
        SwarmChain/Staple/Blotter non-regressed. Also downgrades the audit's F1 (reinvite_honour grant oracle).
-        Follow-up (not done): F3 (`Swarm_station_pier` stamps `%Ud` before verification → forged-hello DoS).
-         NOT touched: F5 voucher-era freshness — the [[Trust_audit_handover]]-retracted wrong-layer item.
+        Then a follow-on sweep (human: "check everywhere") + the runners' recovery landed THREE more, all
+         proven/handled: **verify-first** — refuse forged/not_ours/spoofed hellos LOCALLY before minting a
+          transport route (closes F3's forged-hello bloat + stops a spoof spamming the forged victim; SwarmSpoof
+           beat-4b, green×2, whole family non-regressed); **G1** — `Swarm_heard_hi` dropped a forgeable
+            `header.from` fallback that let a page-less hi bypass the voucher gate and poke a real friend's route
+             (fixed + non-regressing; adversarial station-Book proof optional/owed); **R1** — `Repli_attach_page`
+              gained the rung-0 `sha256(bytes)===cid` gate on chunk arrival, mirroring Heist's landing check so a
+               chunk streamed for live playback can't decode tampered bytes silently (Book **RaBreach**, green×2).
+                NOT touched: F5 voucher-era freshness — the [[Trust_audit_handover]]-retracted wrong-layer item.
+                 Full record: memory `swarm-seal-prepub-binding-hole`.
 
 **STORY GATES YOUR ORGANS NOW (2026-07-19) — a cross-thread brief from the Story side.**
  Sounditron (the /BigSoundland resident diagnostic: machine → relay → possibilities → peer →

@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'b30a7dba9e9bfc0b~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '3188ad10b931b30e~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -664,7 +664,11 @@ Swarm_hi_all(w, ident) {
 //     A first hi is answered (they learn MY era) and followed by a fresh boast; a reply isn't.
 Swarm_heard_hi(w, ident, frame) {
     let hi = frame.swarm || {}
-    let from = hi.page?.prepub || frame.header.from
+    // identity is the SIGNED page's prepub ONLY — the same key the hear() voucher gate checks
+    //  (frame.swarm.page.prepub). The old `|| frame.header.from` fallback let a hi that OMITS its
+    //   swarm.page slip the voucher gate (gate saw no page → skipped) and then rebind to the forgeable
+    //    header.from — reopening the very hole the gate closes. No page = malformed = do nothing.
+    let from = hi.page?.prepub
     if (!from) return
     let sealed = this.Swarm_peering(ident)?.o({ Pier: 1, pub: String(from) })[0]
     if (!sealed) return
@@ -717,27 +721,30 @@ async Swarm_redeem(w, ident, iz) {
 //    reciprocal grant, mint our BOUND grant, import their page as a %Pier, log the graph edge, and
 //     answer pier_accept. Every deny answers pier_reject so the redeemer sees why.
 async Swarm_hello(w, ident, frame) {
-    // live first-contact: promote a transport %Pier for the caller the moment the door hears them —
-    //  the pier_accept (and every deny's pier_reject) needs a route to ride back on. No-op without
-    //   a station (the Books' mail wire), so fixtures never see it. Yes, a junk hello also mints
-    //    its caller a Pier — bounded one-per-prepub; the v1 dev-relay surface (spec §10.1).
+    // VERIFY BEFORE WE LEAVE A TRACE (the F3 flood + the SwarmSpoof tooth): a junk / forged /
+    //  misdirected / spoofed hello must mint NO transport route, stamp NO %Ud, and send NO reply —
+    //   replying only confirms us to a spammer and spams the address it forged. So refuse LOCALLY
+    //    until the hello is PROVEN to bear an invite that is genuinely OURS (by === our pub, signature
+    //     re-verified) on a page whose prepub its own pub derives. Only then is there a real redeemer
+    //      to promote a return route for. (station_pier is a no-op without a station, so the Books'
+    //       mail-wire fixtures never see the route either way — this is the live-relay surface, §10.1.)
+    let refuse = (why) => { this.Swarm_rebuff(ident, 'hello_' + why, frame.page?.prepub); return null }
+    let claim
+    try { claim = await this.Swarm_verify_idzeug(frame.iz) }
+    catch (er) { return refuse('forged') }
+    if (claim.by !== ident.c.keys.pub) return refuse('not_ours')
+    if (!this.Swarm_page_bound(frame.page)) return refuse('spoofed')
+    // proven: OUR invite, on a bound page — a real redeemer. NOW promote the return route (the
+    //  pier_accept and every reason below ride it), and answer with denials the honest redeemer can act on.
     this.Swarm_station_pier(w, ident, frame.page?.prepub)
     let deny = (why) => {
         this.Swarm_rebuff(ident, 'hello_' + why, frame.page?.prepub)
         this.Swarm_deliver(w, ident, frame.page?.prepub, { kind: 'pier_reject', why: why, prepub: ident.sc.prepub })
         return null
     }
-    let claim
-    try { claim = await this.Swarm_verify_idzeug(frame.iz) }
-    catch (er) { return deny('forged') }
-    if (claim.by !== ident.c.keys.pub) return deny('not_ours')
     let record = this.Swarm_peering(ident).o({ Idzeug: claim.nonce })[0]
     if (!record) return deny('unknown')
     if (record.sc.spent) return deny('spent')
-    // the redeemer's page must bind its OWN key to the address it claims (the SwarmSpoof tooth):
-    //  BEFORE we spend the nonce, record a chain holder, or divert a non-holder to reinvite_begin —
-    //   all of which trust frame.page.prepub — refuse a page whose prepub its pub does not derive.
-    if (!this.Swarm_page_bound(frame.page)) return deny('spoofed')
     // ttl door policy (§10.1: validity lives with the MAKER): the ttl on OUR record is the law,
     //  the claim's signed mint time the clock. No ttl on the record = the invite waits forever.
     if (record.sc.ttl && this.Swarm_now(w) > Number(claim.time) + Number(record.sc.ttl)) return deny('expired')
@@ -847,7 +854,6 @@ async Swarm_reinvited(w, ident, frame) {
 //   a direct friend OR a %ChainRoot I kept from joining — then GRANT the newcomer, capped EXACTLY at
 //    the embedded Feature (no escalation), and seal B—C. Their reciprocal follows in reinvite_seal.
 async Swarm_reinvite_honour(w, ident, frame, r) {
-    this.Swarm_station_pier(w, ident, frame.page?.prepub)
     let deny = (why) => {
         this.Swarm_rebuff(ident, 'reinvite_' + why, frame.page?.prepub)
         return null
@@ -863,6 +869,8 @@ async Swarm_reinvite_honour(w, ident, frame, r) {
     this.Swarm_seal(w, ident, frame.page, null, mine)
     if (!ident.c.honouring) ident.c.honouring = {}
     ident.c.honouring[frame.page.prepub] = { root: prepubOf(r.by), rnonce: r.rnonce, nonce: r.nonce }
+    // route promoted only now, past every check — a forged reinvite leaves no transport trace (F3)
+    this.Swarm_station_pier(w, ident, frame.page?.prepub)
     this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'reinvite_honour', grant: mine, page: this.Swarm_page(ident) })
     return null
 
@@ -872,7 +880,6 @@ async Swarm_reinvite_honour(w, ident, frame, r) {
 //   Reciprocate + seal B—C, keep a LIGHT %ChainRoot (the lineage authority, NOT a music contact),
 //    DROP the transient Alice reference, and tell the tip I sealed so Alice can advance.
 async Swarm_reinvite_honoured(w, ident, frame) {
-    this.Swarm_station_pier(w, ident, frame.page?.prepub)
     let deny = (why) => {
         this.Swarm_rebuff(ident, 'honour_' + why, frame.page?.prepub)
         return null
@@ -894,6 +901,8 @@ async Swarm_reinvite_honoured(w, ident, frame) {
     this.Swarm_chainroot_stash(ident, pend.by)
     if (ident.c.offered) delete ident.c.offered[pend.by]
     delete ident.c.rib_in[frame.page.prepub]
+    // route promoted only now, past verify_grant + every check — a forged honour leaves no trace (F3)
+    this.Swarm_station_pier(w, ident, frame.page?.prepub)
     this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'reinvite_seal', grant: mine, page: this.Swarm_page(ident) })
     return null
 

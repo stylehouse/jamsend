@@ -14,6 +14,10 @@ This doc is the destination + the bombs + the next move. Keep it current.
 
 ## 0. Get on with next
 
+**DEFERRED by the human 2026-07-22: build this AFTER production, not before.** The scope below stands;
+ it is warm and ready, but do not start the wire build until the human reopens it post-production.
+
+
 **GATE CLEARED (2026-07-22).** The invite-crypto QA (two Sonnet audits) ran; its one real HIGH/CRITICAL
  finding — the prepub↔pub binding hole in `Swarm_seal` — is FIXED + proven green×2 (Book **SwarmSpoof**,
   `Swarm_page_bound` guard at all 5 seal entries; [[swarm-seal-prepub-binding-hole]]). The mint/verify/spend

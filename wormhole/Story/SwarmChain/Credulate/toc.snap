@@ -20,14 +20,14 @@ Credulate,of_Book:SwarmChain
   GhostInclude:Ghost_Story_Radiation,dige:57100009c65a317d~g1
   GhostInclude:Ghost_Story_Heistation,dige:73b0553da6899a43~g1
   GhostInclude:Ghost_Story_Berthation,dige:a90a9afcc3b2ffc4~g1
-  GhostInclude:Ghost_S_Swarm,dige:b30a7dba9e9bfc0b~g1
-  GhostInclude:Ghost_Story_Swarmation,dige:f31703265cf1cb63~g1
+  GhostInclude:Ghost_S_Swarm,dige:3188ad10b931b30e~g1
+  GhostInclude:Ghost_Story_Swarmation,dige:ab55f8a4195e86fe~g1
   GhostInclude:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
   GhostInclude:Ghost_V_Vyto,dige:8298a916547595b9~g1
   GhostInclude:Ghost_V_Vytonation,dige:6c9afa3424e0beea~g1
   GhostInclude:Ghost_Story_Voronation,dige:45e97291a654d0e8~g1
   GhostInclude:Ghost_Story_Sounditron,dige:fc546e9a542bb5eb~g1
-  last_ok,at=1784703497.027,ok_pct
+  last_ok,at=1784714620.013,ok_pct
     uses:Ghost_N_Peeroleum,dige:3d06e827d2692a5c~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -49,8 +49,8 @@ Credulate,of_Book:SwarmChain
     uses:Ghost_Story_Radiation,dige:57100009c65a317d~g1
     uses:Ghost_Story_Heistation,dige:73b0553da6899a43~g1
     uses:Ghost_Story_Berthation,dige:a90a9afcc3b2ffc4~g1
-    uses:Ghost_S_Swarm,dige:b30a7dba9e9bfc0b~g1
-    uses:Ghost_Story_Swarmation,dige:f31703265cf1cb63~g1
+    uses:Ghost_S_Swarm,dige:3188ad10b931b30e~g1
+    uses:Ghost_Story_Swarmation,dige:ab55f8a4195e86fe~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
     uses:Ghost_V_Vyto,dige:8298a916547595b9~g1
     uses:Ghost_V_Vytonation,dige:6c9afa3424e0beea~g1

@@ -17,9 +17,6 @@ Snap:H
         Account,of:Vic
           Identity:574b7ee48ed49ec5,prepub:574b7ee48ed49ec5,friendly:Vic
             Peering,name:574b7ee48ed49ec5,friendly:Vic,online
-            mail
-              frame:pier_reject,did
-            rebuff:rejected_spoofed,say:190ca3cd7b87e425
         req:witness,eternal,ok
         reached:step_3
         reached:step_4

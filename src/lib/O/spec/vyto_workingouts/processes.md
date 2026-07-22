@@ -52,9 +52,88 @@ Born 2026-07-21 from the human's line: *"more engines for manipulating C/C/C sor
        oracle) — closes the contract everywhere.  Cost: re-snaps Stuffing · Floorlaw · Deepcrest and
         touches the crush's live voice, so do it as ONE batch re-record at preen-hour, not piecemeal.
          Full detail + the measured leak values: `Cstructures_todo.md §6.4`.
-6. **The shape vote — your taste.**  Cards vs pods (URLs above).  Which one reads as C?  (Pods
-    revealed a tell worth keeping: the same law crosses floors at different depths under circle-
-     packing — the law is constant, the geometry moves the thresholds.)
+6. **The shape vote — your taste · now THREE studies, and a settled architecture.**  Cards (square)
+    and pods (round) both read as too regular AND both quietly *imposed their own layout* — the real
+     objection. The third study answers it: **foam** https://claude.ai/code/artifact/9c7f1c33-096f-4386-a712-c56f1288775d
+      — a force-directed graph lays out the positions (chaos, driven by real edges — siblings that
+       share meaning pull together) and a voronoi only *skins* those positions into readable tiles.
+        The **division of labour that keeps Cytoscape the layouter** (the human's question, now the
+         rule): Cytoscape/force owns POSITIONS + ROOM (guying = important nodes carry more charge so
+          the sim opens space around them); the voronoi owns only the SKIN (cells nest so containment
+           survives, but the positions inside are the graph's, never a grid/pack); text is puzzled
+            into the room the foam gave it; **focus becomes a fisheye** — magnify the focused
+             territory, ring the rest at the boundary (a VIEW transform over the graph's positions,
+              so still not a relayout).  Verified `[pure]` gate green ×47 (cells tile every parent to
+               0.000% gap = everything not some-not-everything · shared-meaning siblings provably
+                cluster · guying: heavier ⇒ bigger cell · probe-red when the semantic edges are cut).
+                 OPEN TASTE CALL for you: cards vs pods vs foam — and now **foam + focus lens**
+                  https://claude.ai/code/artifact/2249bca7-3f84-4c03-b2a9-fd4e3ccda508 (the "rest to the
+                   boundary" you asked for, BUILT).  It is a **zoom-box** not a point-fisheye (a
+                    point-fisheye magnifies the centroid where a container's children MEET, so it never
+                     opened them — discovered + discarded); instead the focus rectangle expands to fill
+                      the centre and everything outside compresses into a margin ring — present at the
+                       boundary, never clipped.  Piecewise-linear per axis (+ seam-vertex insertion) so
+                        tiling is preserved EXACTLY under the lens too.  Verified `[pure]` gate green ×16
+                         (boundary fixed · nothing clipped · tiling preserved · small-cell focus
+                          magnifies ×3+ = real drill-down · the far branch provably compresses · probe-
+                           red when the lens is neutralised).  HONEST LIMIT surfaced + recorded: a whole
+                            CLOUD's box is inherently big, so focusing one only magnifies ~1.5× — its
+                             artists don't fully open at cloud-level; you drill by clicking down (small
+                              cells magnify hard).  The real win delivered is the human's ask: the rest
+                               RING the boundary instead of being panned off-screen.
+
+   **SEATED LABELS (study three-c, 2026-07-22 — the "puzzle text into the space" ask, BUILT).**  foam +
+    lens + neighbour-aware label seats: https://claude.ai/code/artifact/cf905ba4-5430-4274-b50b-3e985c54647e
+     Instead of centring a label on its cell, each label SEATS at the cell's pole of inaccessibility (the
+      deepest interior point) and fills the horizontal chord it actually owns there.  A voronoi cell shares
+       every edge with exactly one neighbour, so the deepest point steps back from every SHARED edge at
+        once — two touching cells retreat to opposite interiors and their text stops fighting across the
+         seam.  Where a pole's gained room still leaves two labels closer than the old centroid spacing, a
+          reconciliation pass eases the offending pair back toward their centroids until the gap is
+           restored — **concert WINS the tie over roominess** (a deliberate call: the human's headline was
+            "don't fight across a shared edge").  Verified `[pure]` gate green ×21 (every seat inside its
+             cell · ≥ centroid clearance on average — 74/74 cells at least as clear, mean ×1.10 · owns a
+              real chord to fill · deterministic · CONCERT GUARANTEED 17/17 groups, worst shrink 0.00% ·
+               probe-red when the reconciliation pass is disabled → 13/17).  Independent of the layout
+                provider (pure skin), so it rides whatever whispers the positions.  Kept `foam + lens`
+                 (2249bca7) live alongside so you can compare centred vs seated.
+
+   **NESTED BY A READING VECTOR (study four, 2026-07-22 — the big restructure, BUILT).**  foam4:
+    https://claude.ai/code/artifact/8944dcf5-b19c-490b-8020-8290c93e2e04  Answers five human asks at once
+     with ONE primitive — a **reading vector u** (the nesting/indent direction, default down-and-right).
+      (a) THE C KEEPS ITS OWN SEAT: each container CARVES a header band on the −u (outer) side for its own
+       label; its children tile ONLY the +u (inner) region — they can no longer "take over" the parent.
+        (b) SNAP ORDER: because children live on the +u side, every inner seats further along u than its
+         outer — down-and-right, exactly as the snap indents (proven: every inner's seat-projection >
+          its outer's).  (c) TEXT GROWN IN BOTH DIMENSIONS: labels are several chunks (tab · name ·
+           facts/crest), each grown to fill the cell in width (textLength along the baseline b=⟂u) AND
+            height (font-size along u), each skewed differently to puzzle together — the human's "get it
+             REAL up in there · taller not just wider · the whole several-things grows."  (d) DRAW AT ANY
+              ANGLE: the whole construction is written in u, so it is ROTATION-EQUIVARIANT (carve∘rotate =
+               rotate∘carve, residual <1e-6) — `←`/`→` swings u live and the same method redraws; verified
+                the tiling + snap-order hold at 78° AND 58°.  Verified `[pure]` gate green ×10 ×2 (chaos
+                 survives · header ∪ children tile exactly worst-gap 0.00% · header a sane 5–50% seat ·
+                  snap-cascade 74/74 · clouds open+artists fold at rest · faithful Type×N dip · equivariant
+                   · angle-independent) · probe-red (bypass the carve → tiling 25.9% + cascade broken).
+                    LENS DROPPED for this study to isolate the nesting mechanic — it is a pure view that
+                     composes back on top later.  NEW path (foam2 2249bca7 / foam3 cf905ba4 kept live).
+
+   **THE JOINERY (architecture ruling, 2026-07-22 — refines "Cytoscape stays the layouter").**  The
+    two sides are DECOUPLED and Vyto is the joinery that weaves them: a graph-WHISPERER turns the graph
+     into positions, a cell-DRAWER skins those positions into the voronoi — the drawer never knows who
+      whispered.  So the layouter is a **swappable PROVIDER** behind one seam `(kids, poly) → [{x,y}]`.
+       Consequences the human ruled toward: (a) LEAVE `Cyto.svelte` alone — do NOT inherit its
+        rendering shortcomings; (b) "leave Cyto.svelte alone" is NOT "drop cytoscape" — cytoscape runs
+         **headless** (`headless:true` · fcose · no canvas) as a pure layout provider Vyto owns; (c)
+          because it's a swappable seam, the **smartphone** question is low-stakes: desktop → headless-
+           fcose (quality), phone → a tiny OWNED force layout if cytoscape's bundle (hundreds of KB) is
+            too heavy (the studies prove ~50 lines suffices) · lazy-load cytoscape only where it earns
+             its weight.  Voro.g ALREADY carries this split in its own comments ("Cyto stays the LAYOUT
+              engine — fcose decides where the crushed chunks sit" · voronoi is "SVG over the live
+               Cytoscape canvas") — the refinement is to make the provider OWNED + swappable + off
+                Cyto.svelte's canvas.  The foam study now makes the seam explicit (`whisperPositions`
+                 is the only line that changes to swap layouters).  OPEN for the human: is headless-
+                  cytoscape's bundle acceptable on phone, or do we default to the owned light layout?
 7. **Credence — three linked chores, best done together.**  Name the visual sub-What (I suggested
     "Visually") · consolidate the What:Misc auto-filings the churn scattered · and fix the churn at
      root.  A foreign tab (another agent — a SwarmChain row shows it shares the tree) re-saves the
