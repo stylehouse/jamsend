@@ -182,16 +182,17 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
     the next track (design seam for deck-UI × invite).
 
 **Posited unknowns (the final figure-out):**
- - **[RETRACTED 2026-07-21 — the "voucher forgery" + "catalog clobber" flags here were WRONG.]**  I audited
-    the `.g` Story-SIMULATION transport (`Swarm.g`/`Peeroleum.g`/`Tribunal.g` — LiesLies' "mock/webrtc/websocket
-     relay" carriers, still a loopback per §10.1) and mistook its `voucher` for production security.  The LIVE
-      p2p is **`src/lib/p2p/Peerily.svelte.ts`**, which **signs every emit with the sender's key** (`emit`:
-       `crypto.sign = Id.sign(json)`; `unemit`: `Ud.verify(crypto.sign, data)`) and builds trust as **per-channel
-        state** (`reset_protocol_state`; hello→trust→trusted; `verify_trust`) exchanged as signed trust tokens —
-         so the relay can't forge or tamper frames.  Standing DESIGN NOTE (not a vuln): when the `.g` rewrite
-          wires a REAL carrier, port Peerily's per-frame emit-signing + per-channel trust tokens; don't ship the
-           detached voucher as the boundary.  (The Heist-landing `id`-homing is a fine code-hardening idea IF
-            incoming records are ever auto-merged — but "eyeball incoming music" is the intended model anyway.)
+ - **The wire crypto audit → `Trust_audit_handover.md` (rewritten 2026-07-26).**  The `.g` comms suite
+    (`Swarm.g`/`Peeroleum.g`/`Tribunal.g`) IS the production wire (not a sim — an earlier note here mislabelled
+     it; corrected).  Its crypto is **split-personality**: the **society** layer (`Swarm.g` invites/grants/
+      reinvites/vouchers) is **real ed25519** and Book-green (single-use spend + blotter + chain all built); the
+       **transport** layer (`Peeroleum.g` per-frame + hello/trust handshake) is **deliberate mock v1** — no
+        per-frame signature (`header.sign` is a landed-later seam), hello-verify is `startsWith`, trust-verify is
+         a no-op.  `src/lib/p2p/Peerily.svelte.ts` (the previous-gen prototype) is the REFERENCE for the owed
+          port: land per-frame `emit`-signing + a real `verify_trust` onto the Peeroleum handshake (its
+           per-connect rebuild scaffolding — `reset_handshake` keeps `%Ud` — is already correct).  The detached
+            per-era voucher is per-era link-auth by design, not a forgery bug.  (Heist-landing `id`-homing is a
+             fine hardening IF records auto-merge — but "eyeball incoming music" is the intended model anyway.)
  - BootGate on a device whose AudioContext never inits: the gate stands forever; fingers-check.
  - watch_c migration for face reactivity (today faces poll H.version + a 1s tick).
  - Scale seams: FSA names-only expand (3000-file dirs); whole-stock husk re-offers want the
