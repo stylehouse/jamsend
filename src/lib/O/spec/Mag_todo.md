@@ -129,13 +129,48 @@ All six flat `origin_lib`/`lib` Record mints across the Heistation scenarios now
   `undef`. Neutral (every test pool sets both — green: MusuVend, MusuRecast; no gated fixture moved).
    Commit `7e4bddc9`.
 
-### `Ra_recs` is fixed-depth, and Mags may go deeper — your call · `ra-recs-recurse-question`
-`Ra_recs` (`Ra.g:649`) and `Ra_rec_find` (`:661`) hard-code exactly three shapes — flat
- `shelf.o({Record:1})`, `Mag.o({Record:1})`, and `Mag > Cloud.o({Record:1})` — they do **not** recurse.
-  That matches today's built model (`%Mag:shuffle > %Cloud,page:N`, one Cloud layer). But if a Mag is
-   meant to nest arbitrarily deep (Cloud-in-Cloud, Mag-in-Mag), both silently drop the deeper rows.
-    DECIDE: is the Mag model fixed at that one depth, or do these two become a recursive walk over
-     Mag/Cloud? (the human flagged this 2026-07-21.)
+### `Ra_recs`/`Ra_rec_find` now recurse over `Mag**` · `ra-recs-recurse-question` — **RULED + BUILT 2026-07-26**
+The human ruled it: **`Mag**` recurses.** "we'll just look for Record, figure out what the rest of the
+ Mag is to be later." The census reads (`Ra_recs`, `Ra_rec_find`, and the `Ra_mag_warm` row-collect) now
+  walk a Mag's whole subtree — `shelf|Record` first (the flat/way-station leg), then `Mag**/Record` at
+   any depth: `Mag/Record`, `Mag/Cloud/Record`, and Cloud-in-Cloud / Mag-in-Mag when they come. A shared
+    recursive engine (`Ra_recs_deep` / `Ra_rec_find_deep`, `Ra.g`) collects **holdings-first at each
+     level** (a container's direct `%Record` rows before any nested container's) so the census ORDER is
+      byte-identical to the old fixed three-level walk on every shape that exists today — pure neutrality,
+       no fixture should move — while deeper shapes are now found instead of silently dropped. A `%Record`
+        is a leaf (its children are chunk particles, never Records) so the walk prunes at it. Notation
+         corrected throughout to `shelf|Record` and `Mag/Cloud/Record` (the human's, over the old
+          `.o({Record:1})` prose). LocalGen CHECK=1 clean; runner-verify owed (spine ghost — the
+           neutrality sweep is the gate: every Mag-reading Book must stay green with fixtures unmoved).
+    ONE remaining fixed-depth spot, noted in-code: `Ra_offer_stock`'s `repli_loc = Cloud,page` wire-stamp
+     is still depth-1 (only a Mag's own `%Cloud` pages). The husk itself crosses at any depth (`Repli_offer`
+      walks the subtree); only the page-upsert key is depth-1, and nested pages don't exist yet, so nothing
+       is stranded. Generalise that stamp WITH the deeper Mag shape when it is designed (see §9).
+
+---
+
+## 9. A Mag is writeable — tagging + share-as-Invite (ruled 2026-07-26, design)
+
+The recurse ruling came paired with two forward directions. Neither is built; both are the shape the
+ "figure out what the rest of the Mag is later" answer will grow into. Recorded here so the next pull
+  starts from the human's words, not a guess.
+
+- **A Mag can be WRITTEN — lightly.** "some kind of writing must be possible… `%note`? probably not too
+   much." The steer is AGAINST a heavy authored-document Mag. The concrete germ the human reached for:
+    **users go around tagging music, and a tag FAVOURS it slightly** — tags are a light, additive signal
+     that nudges the shuffle/dial weighting (the `prandle` meander already has the branch-weight seam,
+      §5/§7), not a rigid folder taxonomy. So Mag-writing ≈ *tags on Records* (and maybe a thin Mag-level
+       note), feeding the culture-trace weighting — NOT a rich-text limb. Open in the small: does a tag
+        ride the `%Record` (`%Tag,term:…` child) or a Mag-level index; how "slightly" the favour weights.
+- **Sharing a Mag IS a kind of Invite (§4 default-sharability made concrete).** "when you share it
+   specifically (we want this as a type of Invite as well) that cataloguing should be visible via the Mag
+    medium." Two things fuse: the [[invite-front-door]] flow (QR/`?I=` scan-to-join, sealed prepub) and
+     Mag delivery (§4 husk-first). **Sharing a Mag = minting an Invite whose payload is that Mag** — the
+      recipient joins AND the shared Mag's cataloguing (its Records, tags, structure) explodes onto their
+       scene through the Mag medium (§6 explode-on-connect), husk-first so it's cheap. The Invite is the
+        will, the Mag is what arrives. This supersedes ad-hoc "send a link"; a shared collection travels
+         as a first-class, catalogued, joinable thing. Next move: an Invite variant carrying `%Mag,of:…`
+          (or the Mag berthed under the invite), proven by a Book crossing it two-tab.
 
 ---
 
@@ -346,6 +381,62 @@ The invariant: **no path materialises the whole collection.**
    heard and then of whole Mags exhausted, so the shuffle|dial NEVER hands you a duplicate across
     sessions. The `%Dogear` C3 berth is the seam; `radio.c.heard` is the runtime germ; the
      graduation is heard-Record ids → exhausted-Mag names.
+
+---
+
+## 10. The heisted body carries its quality — `%Original | %Lossy` (captured 2026-07-26, EXECUTABLE plan)
+
+The human floated it (exploratory, "how about…?"): **instead of `%Record/%Body` for the whole files we
+ download, `%Record/%Original|%Lossy`** — the whole-file chunk particle's mainkey encodes the source
+  quality, so a holding wears on its face whether it's a lossless master or a lossy copy. Then the format-
+   upgrade dedup (Radio_todo "same track better format") becomes tractable — a `%Lossy` holding meeting an
+    `%Original` offer is a legible upgrade — and a Mag can prefer the master when both exist.
+
+**NOT executed tonight, on purpose.** `%Body` is snapped: `Body,seq:N,cid:…` heads ride the fixtures (bytes
+ elided to `Uint8Array()`), **~1602 lines across 4 Books** — MusuBay, MusuBreach, MusuHeist, MusuSoft. The
+  mainkey rename turns every one of those Books RED until re-recorded, and the re-record is a **live-runner,
+   real-muted-audio, runner-pinned** pass (§0b pinned the heist family to **49dee91d**). Landing the code
+    unattended would leave 4 red Books the human can't tell "expected-stale" from "bug" without the very
+     runner pass that isn't available — and a blind Accept would enshrine whatever the code emits. So: code
+      + fixtures go together in ONE attended runner sitting. This section makes that sitting a paste job.
+
+**The change is SMALL — the transport is already mainkey-blind.** Repli identifies a chunk by its *bytes*,
+ never its mainkey: `Repli_is_binary(v)` tests `v instanceof Uint8Array`, `Repli_chunk_at(rec,s)` iterates
+  `{seq:…}` across any mainkey, and the husk-skip is `Repli_chunk_bytes(child) != null` (Repli.g). So the
+   husk, the pull, the seq-space (`%Preview`/`%Stream` share it), `Radio_map`, `Ra_chunk_map` — **all need
+    zero change.** Only the 4 literal `{Body:1}` sites move:
+
+1. **The signal — `md.format.lossless`, NOT the extension.** `Crate_meta_from_tags` (Crate.g:383) already
+    `parseBuffer`s the bytes; `md.format.lossless` (and `md.format.codec`) sit right beside the `md.common`
+     it reads. Return it: `lossless: !!(md.format && md.format.lossless)` (one line, additive — the return
+      isn't snapped). The extension LIES (`.m4a` is ALAC-lossless OR AAC-lossy; `.ogg` is Vorbis OR FLAC),
+       so classify off the parsed codec; fall back to an ext allowlist (`wav flac aiff aif alac ape wv tta
+        dsf dff`) only when parse gives nothing.
+2. **The mint — Heist.g:122.** `ext`/`meta` are in scope (`rec.sc.ext = ext` at :115). Pick the mainkey:
+    `let bk = meta.lossless ? 'Original' : 'Lossy'` then `rec.i({ [bk]:1, seq:''+s })` — but stho may not
+     take a computed key; use a two-branch `rec.i({ Original:1, … }) / rec.i({ Lossy:1, … })` or a helper
+      `Heist_body_new(rec, bk, s)`. A record is ALL one quality, so one decision per record, not per chunk.
+3. **The offer manifest — Heist.g:250.** `rec.o({ Body:1, seq })[0]` must read the WHOLE-FILE chunk
+    specifically (it shares seq-space with `%Preview`/`%Stream`, so the generic `Repli_chunk_at` could grab
+     the wrong one). Add `Heist_body_at(rec,s)` = `rec.o({Original:1,seq:''+s})[0] || rec.o({Lossy:1,seq:''+s})[0]`
+      and route :250 through it.
+4. **The Book husk-empty probes — Heistation.g:3573, 3916.** `!card.o({ Body:1 }).length` ("no bytes yet =
+    unspent husk") → `!card.o({Original:1}).length && !card.o({Lossy:1}).length`, or a shared
+     `Heist_has_body(card)` helper. These re-record with their Books anyway.
+
+**Fixture re-record list (attended, runner-pinned 49dee91d):** MusuBay · MusuHeist · MusuSoft — straight
+ re-record. **MusuBreach** — this is breach/RaBreach territory; **coordinate with the security agent** (the
+  R1 owner) before moving its fixtures, since it may be mid-flight there.
+
+**The paired question — "will it know all the autogen Mags as one cursor?" → YES, and it's BUILT.** The
+ heard-memory is ONE shared set (`radio.c.heard`, now **bounded to 100** — §8's runtime germ, `Radio_heard_add`),
+  so "have I heard this" is unified across every Mag. Per-Mag *position* is DERIVED, never stored:
+   **`Radio_mag_cursor(radio, mag)`** (Radio.g, built 2026-07-26) walks the recursive census (`Ra_recs_deep`,
+    §0b `Mag**`) and returns the last of the Mag's records that sits in the heard set — how far through THIS
+     Mag you've got. Shape-agnostic, so all the autogen `%Mag:shuffle` pages read through the same one cursor
+      logic off the same one heard-memory. The human's ruling stuck: browsing-history store DROPPED; the
+       cursor is a pure read that can never rot. Graduation to durable (heard-ids → exhausted-Mag names,
+        §8) is still the `%Dogear` berth seam when durable taste earns a home.
 
 ---
 

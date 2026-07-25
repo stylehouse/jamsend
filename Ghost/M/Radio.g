@@ -287,8 +287,7 @@ Radio_open(radio, rec):
     let w = radio.c.w
     this.Ra_term_stream_open(w, rec, {})
     radio.c.rec = rec
-    if (!radio.c.heard) radio.c.heard = {}
-    radio.c.heard[rec.sc.id] = 1
+    this.Radio_heard_add(radio, rec.sc.id)
     radio.c.seq = 0
     radio.c.dec = null
     radio.c.pre = 0
@@ -307,8 +306,56 @@ Radio_open(radio, rec):
     radio.sc.of = Math.round(+(rec.sc.seconds || 0))
     radio.sc.at = 0
     delete radio.sc.note
+    // source attribution — the wire side of "· from X": a friend track names whose music this is,
+    //  my own stock names no one.  play_by rides from the Lineup card (Radio_dial stashes it before
+    //   the card drops); the fallbacks are the snappable origin breadcrumb then the crate-owner climb
+    //    (Ra_pub_of).  Guarded non-undefined + delete-when-mine, so a JS boolean|undef never snaps.
+    let me = this.Radio_pub(w) || 'me'
+    let src = rec.c.play_by || rec.sc.from || this.Ra_pub_of(rec)
+    if (src && src !== me) {
+        radio.sc.by = src
+    } else {
+        delete radio.sc.by
+    }
     radio.bump()
     this.Radio_media_now(radio, rec)
+
+// Radio_heard_cap — the bound on heard-this-sitting: keep the ~100 most-recent record ids, no more.
+//  The set is a dedup memory for the dial (never repeat a track this sitting), NOT a browsing
+//   history — an unbounded map would grow O(tracks-played) forever on a long-running station and,
+//    once graduated toward durable taste, would be a fat privacy liability (Mag_todo §6b: keep
+//     listening OBLIQUE — bare ids, bounded).  100 is plenty of anti-repeat runway for one sitting.
+Radio_heard_cap():
+    return 100
+// Radio_heard_add — mark an id heard, then whittle to the cap.  JS preserves string-key insertion
+//  order, so Object.keys() is oldest-first: evict from the front.  Re-hearing an id is a no-op (it
+//   keeps its original slot — fine, we only ever probe membership, never recency, for the skip).
+Radio_heard_add(radio, id):
+    if (!id) return
+    if (!radio.c.heard) radio.c.heard = {}
+    if (radio.c.heard[id]) return
+    radio.c.heard[id] = 1
+    let ks = Object.keys(radio.c.heard)
+    let over = ks.length - this.Radio_heard_cap()
+    let i = 0
+    while (i < over) {
+        delete radio.c.heard[ks[i]]
+        i = i + 1
+    }
+// Radio_mag_cursor — the DERIVED per-Mag playhead (the human's ruling 2026-07-26: drop the
+//  browsing-history store; instead, given any Mag**, the 'cursor' is the last of its records that
+//   is in the bounded heard set — how far through this Mag the listener has got).  Pure read over
+//    the recursive census (Ra_recs_deep, Mag** at any depth); nothing stored, so it can never rot.
+//     Null = untouched Mag (nothing heard yet).  This is the runtime germ of Mag_todo §8's durable
+//      cursor: graduate heard-ids → exhausted-Mag names when durable taste earns a home.
+Radio_mag_cursor(radio, mag):
+    if (!radio || !mag) return null
+    let heard = radio.c.heard || {}
+    let last = null
+    for (const rec of this.Ra_recs_deep(mag, [])) {
+        if (heard[rec.sc.id]) last = rec
+    }
+    return last
 
 // the supply loop: while the preview plays, transcode the %Stream continuation into being
 //  (the demand-driven encode, self-served — no Repli needed for one's own stock).  A record
@@ -384,6 +431,10 @@ async Radio_dial(radio):
     let head = lu.o({ Card: 1 })[0]
     if (head) {
         let hrec = head.c.rec
+        // carry the card's source across the drop: the %Card wears `by` (the friend crate pub,
+        //  set at fill), the raw %Record does not — stash it so Radio_open can name the source on
+        //   the now-playing datum instead of losing it when the card leaves the lineup.
+        if (hrec && head.sc.by) hrec.c.play_by = head.sc.by
         lu.drop(head)
         lu.bump()
         if (hrec) return hrec
@@ -551,7 +602,20 @@ Radio_nudge(w):
 //  The dig order is music-first: 'testsounds' is a dev fixture crate, and a first-base-wins
 //   wander that starts there plays the same two test tracks forever — the real share leads,
 //    the root is the fallback, testsounds only when nothing else yields.
+// Radio_prod_seed — PROD ONLY: fresh-seed the shuffle wander's PRNG (H.prng, read by
+//  Crate_nav_meander → this.prandle) at radio standup, so every real /BigSoundland boot
+//   shuffles differently.  The DIAL already rolls fresh per boot (w.c.prng via Ra_rand); H.prng
+//    sat at the fixed [1,2,3,4] Housing default, so prod walked the SAME wander every boot.
+//     GATED so a Book NEVER reseeds: a named Book run-world wears w.sc.w (do_fn_for dispatches on
+//      it) and pins H.prng via Musu_seed — only prod (no w.sc.w) rolls fresh.  One seed per House.
+Radio_prod_seed(w):
+    if (w.sc.w) return
+    if (H.c.prng_seeded) return
+    H.c.prng_seeded = 1
+    H.prng = [...crypto.getRandomValues(new Uint32Array(4))]
+
 Stoker_ensure(w):
+    this.Radio_prod_seed(w)
     let st = w.o({ Stoker: 1 })[0]
     if (!st) {
         st = w.i({ Stoker: 'idle', face: 'Stoker', crew: 'Radio' })

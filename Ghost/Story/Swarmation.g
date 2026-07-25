@@ -1132,6 +1132,9 @@ SwarmShare_witness(w):
     let cassMir = w.o({ MusuThem: 1, pub: cass.sc.prepub })[0]?.o({ stock: 1 })[0]
     let debMir = w.o({ MusuThem: 1, pub: deb.sc.prepub })[0]
     if (n === 4 && cassMir && cassMir.o({ Record: 1 }).length === 2 && !debMir) this.story_swear(w, 'the mirror lands keyed by the caster prepub — two records under MusuThem for the friend never merged under the listener key')
+    // OWED (attended — pairs with the Repli.g `c.sc.from` stamp): add a beat-4 swear that each mirrored
+    //  record wears its source prepub as a SNAPPABLE from (query `{ Record:1, from:cass.sc.prepub }`),
+    //   then re-record + declare.  Held with the Repli line so SwarmShare's fixtures move exactly once.
     // beat 5: a suggestion minted while the friend is unreachable stands un-got under my Pier for them — the
     //  store-and-forward promise. Nothing crossed — no mirrored suggestion at Bob yet.
     let aPier = this.Swarm_peering(alice)?.o({ Pier: 1, pub: bob.sc.prepub })[0]

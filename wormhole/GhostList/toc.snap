@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1784701063671
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1784727830607
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -102,6 +102,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Cstructures_todo.md,name:Cstructures_todo.md,noticed_at=1784638494360
     Doc:src/lib/O/spec/Follow_todo.md,name:Follow_todo.md,noticed_at=1784701063671
     Doc:src/lib/O/spec/Onboard_todo.md,name:Onboard_todo.md,noticed_at=1784701063671
+    Doc:src/lib/O/spec/Mag_vs_flatstock_preen.md,name:Mag_vs_flatstock_preen.md,noticed_at=1784727830607
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D

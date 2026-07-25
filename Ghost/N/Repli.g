@@ -488,6 +488,12 @@ async Repli_recv_lines(w, pier, frame):
         if (c.sc && c.sc.Record) {
             c.c.from = frame.header.from
             c.c.rx = pier
+            // OWED (attended, pairs with a SwarmShare re-record): stamp a
+            //  SNAPPABLE twin `c.sc.from = String(frame.header.from)` here, GATED on
+            //   `w.c.repli_mirror_by_from`, so source attribution survives snap+reload+wire (a .c ref
+            //    dies with the process; over the real relay the source is invisible to a reloaded
+            //     face).  Held back tonight because it moves SwarmShare's fixtures and the re-record
+            //      needs a live runner — land the line + re-record + declare in one attended sitting.
         }
     }
     w.c.repli_tick = (w.c.repli_tick || 0) + 1

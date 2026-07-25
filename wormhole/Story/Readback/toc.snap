@@ -13,6 +13,7 @@ story:Readback
       sample=0.011,at=1784649122
       sample=0.011,at=1784682187
       sample=0.01,at=1784682785
+      sample=0.013,at=1784724356
     TimeTotal:step,avg=0.003
       sample=0.004,at=1784649010
       sample=0.003,at=1784649025
@@ -22,6 +23,7 @@ story:Readback
       sample=0.003,at=1784649122
       sample=0.003,at=1784682187
       sample=0.003,at=1784682785
+      sample=0.003,at=1784724356
   step,dige:0de67cc2d4a69257
   step=2,dige:b7ef72f7933b200f
   step=3,dige:c5a9de9e750f957c
