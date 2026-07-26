@@ -4,7 +4,7 @@ story:Deepcrest
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.013
+    TimeTotal:beliefs,avg=0.014
       sample=0.016,at=1784642876
       sample=0.01,at=1784642894
       sample=0.008,at=1784642898
@@ -14,6 +14,7 @@ story:Deepcrest
       sample=0.014,at=1784682181
       sample=0.015,at=1784682779
       sample=0.015,at=1784724335
+      sample=0.024,at=1785029868
     TimeTotal:step,avg=0.003
       sample=0.004,at=1784642876
       sample=0.002,at=1784642894
@@ -24,6 +25,7 @@ story:Deepcrest
       sample=0.004,at=1784682181
       sample=0.004,at=1784682779
       sample=0.004,at=1784724335
+      sample=0.006,at=1785029868
   step,dige:7a61353850095164
   step=2,dige:e0dd4018f052b496
   step=3,dige:8cb53bb2472c70e1

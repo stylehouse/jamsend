@@ -4,34 +4,34 @@ story:MusuBay
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=1.366
-      sample=1.847,at=1784519058
-      sample=1.847,at=1784519059
-      sample=1.847,at=1784519061
-      sample=1.847,at=1784519062
-      sample=1.847,at=1784519063
-      sample=1.847,at=1784519064
-      sample=1.847,at=1784519065
-      sample=0.105,at=1784519090
+    TimeTotal:beliefs,avg=0.309
       sample=0.3,at=1784519118
       sample=0.323,at=1784616482
-    TimeTotal:step,avg=0.152
-      sample=0.205,at=1784519058
-      sample=0.205,at=1784519059
-      sample=0.205,at=1784519061
-      sample=0.205,at=1784519062
-      sample=0.205,at=1784519063
-      sample=0.205,at=1784519064
-      sample=0.205,at=1784519065
-      sample=0.012,at=1784519090
+      sample=0.166,at=1785027439
+      sample=0.166,at=1785027451
+      sample=0.166,at=1785027455
+      sample=0.166,at=1785027456
+      sample=0.166,at=1785027457
+      sample=0.166,at=1785027459
+      sample=0.166,at=1785027460
+      sample=1.302,at=1785027474
+    TimeTotal:step,avg=0.034
       sample=0.033,at=1784519118
       sample=0.036,at=1784616482
+      sample=0.018,at=1785027439
+      sample=0.018,at=1785027451
+      sample=0.018,at=1785027455
+      sample=0.018,at=1785027456
+      sample=0.018,at=1785027457
+      sample=0.018,at=1785027459
+      sample=0.018,at=1785027460
+      sample=0.145,at=1785027474
   step,dige:4b40d922ada17fcc
-  step=2,dige:4658e4907d28ed0c
-  step=3,dige:1e2dd10feb605bc1
-  step=4,dige:d9de942ca5b6f6bc
-  step=5,dige:0616a4d1e27753ac
-  step=6,dige:e5c924076eb7f695
-  step=7,dige:4ff1624f6a0faa27
-  step=8,dige:8be0731fbf09a5fb
-  step=9,dige:d80578af8eb1f5be
+  step=2,dige:e364b6ef61c5215d
+  step=3,dige:14d26be685241816
+  step=4,dige:7149252c9a54a405
+  step=5,dige:1dbe95e113c918ed
+  step=6,dige:36fd24ccfd6f47c1
+  step=7,dige:d0bac6ec9b54d74e
+  step=8,dige:e68253ea773d619b
+  step=9,dige:109a2a7a27b711b0

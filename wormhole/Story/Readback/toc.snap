@@ -4,7 +4,7 @@ story:Readback
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.012
+    TimeTotal:beliefs,avg=0.022
       sample=0.015,at=1784649010
       sample=0.01,at=1784649025
       sample=0.01,at=1784649029
@@ -14,7 +14,8 @@ story:Readback
       sample=0.011,at=1784682187
       sample=0.01,at=1784682785
       sample=0.013,at=1784724356
-    TimeTotal:step,avg=0.003
+      sample=0.107,at=1785029883
+    TimeTotal:step,avg=0.006
       sample=0.004,at=1784649010
       sample=0.003,at=1784649025
       sample=0.002,at=1784649029
@@ -24,6 +25,7 @@ story:Readback
       sample=0.003,at=1784682187
       sample=0.003,at=1784682785
       sample=0.003,at=1784724356
+      sample=0.027,at=1785029883
   step,dige:0de67cc2d4a69257
   step=2,dige:b7ef72f7933b200f
   step=3,dige:c5a9de9e750f957c

@@ -384,21 +384,62 @@ The invariant: **no path materialises the whole collection.**
 
 ---
 
-## 10. The heisted body carries its quality — `%Original | %Lossy` (captured 2026-07-26, EXECUTABLE plan)
+## 10. The heisted body carries its quality — `%Original | %Lossy` (CODE APPLIED + canary-verified 2026-07-26)
 
-The human floated it (exploratory, "how about…?"): **instead of `%Record/%Body` for the whole files we
- download, `%Record/%Original|%Lossy`** — the whole-file chunk particle's mainkey encodes the source
-  quality, so a holding wears on its face whether it's a lossless master or a lossy copy. Then the format-
-   upgrade dedup (Radio_todo "same track better format") becomes tractable — a `%Lossy` holding meeting an
-    `%Original` offer is a legible upgrade — and a Mag can prefer the master when both exist.
+The human floated it, then blessed it ("pat and say good"): **instead of `%Record/%Body` for the whole files
+ we download, `%Record/%Original|%Lossy`** — the whole-file chunk particle's mainkey encodes the source
+  quality, so a holding wears on its face whether it's a lossless master or a lossy copy. Scope (the human
+   tightened it): this is JUST the downloaded/compressed WHOLE file — NOT multi-Pier sourcing of the "same"
+    track. Then the format-upgrade dedup (Radio_todo "same track better format") becomes tractable — a
+     `%Lossy` holding meeting an `%Original` offer is a legible upgrade — and a Mag can prefer the master.
 
-**NOT executed tonight, on purpose.** `%Body` is snapped: `Body,seq:N,cid:…` heads ride the fixtures (bytes
- elided to `Uint8Array()`), **~1602 lines across 4 Books** — MusuBay, MusuBreach, MusuHeist, MusuSoft. The
-  mainkey rename turns every one of those Books RED until re-recorded, and the re-record is a **live-runner,
-   real-muted-audio, runner-pinned** pass (§0b pinned the heist family to **49dee91d**). Landing the code
-    unattended would leave 4 red Books the human can't tell "expected-stale" from "bug" without the very
-     runner pass that isn't available — and a blind Accept would enshrine whatever the code emits. So: code
-      + fixtures go together in ONE attended runner sitting. This section makes that sitting a paste job.
+**`%Original` is NOT a new name — it REALISES Orig.g's reserved master.** `Orig.g` header: "%Original master
+ (rung 3 — the flac source that encodes DOWN to any grade) is later work" — no code minted it yet. A heisted
+  FLAC *is* that master, so minting the lossless body as `%Original` fills the reserved concept; a heisted
+   MP3 is `%Lossy` (never a master). Orig.g's export reads `%Preview|%Stream` (not `%Body`), so **Orig.g's
+    code is untouched** by the rename. The names align by design — a good sign the model is coherent.
+
+**CODE STATUS: applied (uncommitted) + LocalGen-clean + live-canary-verified — fixture re-record OWED.**
+- The signal: `md.format.lossless` via `Crate_meta_from_tags` (Crate.g — added, with a `Crate_ext_lossless`
+   allowlist fallback). Additive (unstamped) → neutral.
+- The mint: Heist.g:122 routes through `Heist_body_new(rec, meta.lossless, s)`; reads through `Heist_body_at`
+   (offer manifest) and `Heist_has_body` (the Heistation husk-probes). Transport unchanged (Repli keys chunks
+    by binary VALUE + seq, mainkey-blind) — grep-confirmed zero other `{Body:1}` readers.
+- **CANARY on the live runner (MusuHeist):** ran RED with `error:null` on every step (pure snap-diff, no
+   exception), and the diff is EXACTLY `Body,seq:N,cid:X → Original,seq:N,cid:X` — **same cid, same seq, same
+    buf** (cid = sha256 of the bytes, unchanged by a type-tag rename). Surgical. The WAV test tracks are
+     lossless → all `%Original` (so `%Lossy` is UNPROVEN by fixtures — see below).
+
+**Fixture re-record STILL OWED — blocked on a clean runner.** `%Body` snaps in ~1602 lines across **MusuBay,
+ MusuHeist, MusuSoft** (+ **MusuBreach** = security/RaBreach territory, coordinate with that agent). The
+  re-record could NOT run tonight: `49dee91d` (★claude) doubles as a live /BigSoundland tab whose **resident
+   Sounditron probe bleeds** — it displaced the held MusuHeist and an `accept` grabbed Sounditron instead
+    (reverted clean; see [[shared-runner-bleed]]). Needs a DEDICATED, non-BigSoundland, FSA-live runner. The
+     accept is then a paste job: run each Book → verify `book`+uid are yours → confirm the diff is only
+      `Body→Original`/`Lossy` → `accept` → rerun green.
+
+**RE-RECORDED GREEN 2026-07-26** on dedicated runner `3c5238c6` (guarded book+uid before each accept —
+ no bleed): **MusuHeist, MusuBay, MusuSoft** all green×1, `Body→Original` (WAV sources = lossless). OWED:
+  **MusuBreach** (RaBreach/security territory — coordinate with that agent before moving its fixtures).
+
+**TWO follow-ups the canary surfaced:**
+1. **`%Lossy` is unproven** — every heist test track is WAV (lossless → `%Original`). To exercise the
+    `%Lossy` branch WITHOUT a lossy encoder in the repo: build a minimal **Ogg/Opus** source with
+     `Orig_ogg_mux` (Opus IS lossy → music-metadata `format.lossless=false` → `%Lossy`), and stamp its
+      `OpusTags` (via `Orig_opus_tags`) with artist/title. Heisting it proves BOTH at once: the `%Lossy`
+       mainkey AND that a lossy file's tags read back (`Crate_meta_from_tags` → `%Record` artist/title in
+        the snap) — the human's "does our %Lossy encoder tag good" answered in the same fixture. Note: the
+         SNAP is the proof (mainkey + tags captured mid-run); you do NOT need to leave the file on disk.
+          The human's "leave the downloaded file" would only be for manual byte-inspection, and it fights
+           `Heist_sweep` (the Book-start sweep of `.jamsend/test-marrauding-of-bookrun` — that IS the
+            "cleans even after abort/crash, on next resume" mechanism); to persist it, land OUTSIDE that
+             swept namespace.
+2. **The `%Lossy` tag-writer gap (the human's "check our %Lossy encoder does tags good").** There is NO lossy
+    whole-file encoder today: `Crate_wav_with_tags` writes tags but only for WAV (lossless); `Ra_encode_*`
+     (WebCodecs Opus) makes untagged STREAM chunks for playback, not a file. So a `%Lossy` holding is only
+      ever a *downloaded* already-lossy source (tags live in the pulled bytes, read back by
+       `Crate_meta_from_tags`) — tags are fine there. The concern only bites IF we add a "compress-it-whole
+        to save space" path; that encoder MUST write tags (ID3/VorbisComment), and none exists yet.
 
 **The change is SMALL — the transport is already mainkey-blind.** Repli identifies a chunk by its *bytes*,
  never its mainkey: `Repli_is_binary(v)` tests `v instanceof Uint8Array`, `Repli_chunk_at(rec,s)` iterates

@@ -383,20 +383,37 @@ Crate_tag_mime(path):
 async Crate_meta_from_tags(bytes, path):
     let fallback = this.Crate_meta_from_path(path)
     let tag = { artist: '', album: '', title: '' }
+    // lossless: the AUTHORITATIVE quality signal for the %Original|%Lossy split (the heisted whole file's
+    //  grade — Mag_todo §10).  music-metadata's md.format.lossless reads the real CODEC (ALAC-in-.m4a is
+    //   lossless, AAC-in-.m4a is not; FLAC-in-.ogg vs Vorbis-in-.ogg), which the extension alone cannot
+    //    tell — so prefer it, and fall back to the ext allowlist only when the parse surfaces nothing.
+    let lossless = null
     try {
         let u8 = (bytes instanceof Uint8Array) ? bytes : new Uint8Array(bytes)
         let md = await parseBuffer(u8, this.Crate_tag_mime(path))
         let common = (md && md.common) || {}
         tag = { artist: common.artist || '', album: common.album || '', title: common.title || '' }
+        if (md && md.format && typeof md.format.lossless === 'boolean') lossless = md.format.lossless
     } catch (er) {
         // a truncated|malformed|unrecognised file rejects here — NOT a crash: leave tag empty so all three
         //  fields fall back to the path, exactly as the old bounds-check-stops-the-walk did.
     }
+    if (lossless == null) lossless = this.Crate_ext_lossless(path)
     return {
         artist: tag.artist || fallback.artist,
         album: tag.album || fallback.album,
         title: tag.title || fallback.title,
+        lossless: lossless,
     }
+
+// Crate_ext_lossless — the FALLBACK quality guess when the codec parse gives nothing: is this path's
+//  extension a lossless container?  A crude last resort (an ext lies — a .m4a can be either), used only
+//   when md.format.lossless was unavailable.  Unknown/absent extension → treat as lossy (the safe
+//    default: never claim master grade we can't prove).
+Crate_ext_lossless(path):
+    let dot = ('' + (path || '')).lastIndexOf('.')
+    let ext = (dot < 0) ? '' : ('' + path).slice(dot + 1).toLowerCase()
+    return ['wav', 'flac', 'aiff', 'aif', 'alac', 'ape', 'wv', 'tta', 'dsf', 'dff'].includes(ext)
 
 // Crate_wav_with_tags — synthesize a COMPLETE tagged WAV (Uint8Array) from Float32Array mono PCM: a 16-bit
 //  PCM file carrying a RIFF LIST/INFO chunk with meta's artist/title/album (IART/INAM/IPRD).  STAYS HAND-ROLLED

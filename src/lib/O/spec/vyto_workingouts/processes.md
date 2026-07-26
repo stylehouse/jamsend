@@ -117,6 +117,55 @@ Born 2026-07-21 from the human's line: *"more engines for manipulating C/C/C sor
                    · angle-independent) · probe-red (bypass the carve → tiling 25.9% + cascade broken).
                     LENS DROPPED for this study to isolate the nesting mechanic — it is a pure view that
                      composes back on top later.  NEW path (foam2 2249bca7 / foam3 cf905ba4 kept live).
+   **study four, REFINED (2026-07-26 — same url 8944dcf5).**  Three human asks landed on foam4, gate now
+    green ×18 (no-spill still holds 183 chunks · 2.21px).  (a) THE ALIGNED MAINKEY: every CONTAINER cell
+     leads with its mainkey tag (Cloud · Genre · Artist), faithful verbatim, so TYPE reads as a rhythm down
+      the graph; kept OFF leaves on purpose (one uniform type — a tag on each Track speck only repeats).
+       (b) THE SNAP SLASH: a folded container reads like the snap — `Artist` / `Voxhall` then a dim `/`
+        then only a GESTURE of what it holds (dip → vein → facts, dimmed + gap-separated), so identity
+         stands clear of its compression.  (c) MOBILE LOD: a `VIEWSCALE = clientWidth/SPACEW` makes FLOOR a
+          RENDERED-pixel legibility floor (`memberDim·VIEWSCALE < FLOOR`) and register depth
+           `round(uExt·VIEWSCALE/26)`, so a phone folds a whole layer (clouds → three crests, tap to dive)
+            and sheds detail rows instead of turning to smudge — "has to fit on a smartphone."  Placement
+             fix banked: seat the NAME on the roomy pole and hug the KEY just above it, gesture cascades
+              DOWN (sheds from the bottom) · split spacing-weight from font-weight so the small tag stays
+               legible.  THE SUNFLOWER/phi IDEA, tested + redirected: the human's "golden-angle lattice of
+                label seeds so disconnected things show as a rhythm discrepancy" — a numeric probe finds the
+                 lattice rhythm IS real (nearest-neighbour offsets cluster on Fibonacci 8·13·21·34 = the
+                  parastichy arms) but it is ANTI-clustering by design (spatial neighbours at index ±13/±21,
+                   never ±1), so packing a group as a block SCATTERS it and an intruder does NOT separate.
+                    The idea's real home is a per-cell signature-ANGLE (the "meander" · "which we could
+                     kinda do with the angling"): on foam4's real layout, adjacent siblings that share
+                      meaning sit 40° apart vs 69° when they share nothing = a 29° visible discrepancy.  So
+                       the force layout already clusters by meaning and an angle would surface intruders —
+                        the lattice would only destroy that.  Human ambivalent · leaning "get back to the
+                         Vyto algorithm"; not built without their word.
+
+   **study five — SIZING THE C TO THE GLASS (2026-07-26 — the human fired the START trigger and REDIRECTED
+    it: "do it · there's no live library data · keep working to VARIOUS SHAPES of C** · SET THE QUANTITY of
+     output for the size of the screen — phone users hardly see many cells but the UI pieces stay COHERENT").**
+      foam5: https://claude.ai/code/artifact/59dff932-199c-4b7b-a442-c73410f74bf8 · gate green ×98.  Reuses
+       foam4's carve/seat/lean/membrane/fit skin VERBATIM and proves ONE skin along three axes.  (a) SHAPE-
+        BLIND across 7 deterministic C** topologies (library · balanced · wide fan · FLAT spray · spine · a
+         PURE single-child DEEP spine to depth 11 · ragged) — the study-four invariants (tiling · snap-cascade
+          · no-spill at two angles · aligned mainkey · membrane) run PER SHAPE and hold.  (b) LAYOUT-BLIND —
+           `whisperPositions` is now the swappable PROVIDER this doc's JOINERY ruling (just below) called for:
+            force · sunflower (the golden-angle phyllotaxis, back as an OPT-IN provider not an imposed lattice)
+             · rings · rows; a provider only hands a seed per child, so tiling/cascade/no-spill hold for every
+              one while only sibling packing changes.  (c) SCREEN-BUDGETED — the quantity is `budgetFor(glass
+               area) = area/QUANTUM²·PACK` → a target cell count (phone ~9 · desktop ~35); the tree folds UP a
+                LADDER per family — OPEN → BUCKETED → CRUSHED — tightest first until it fits, and every survivor
+                 stays big enough to introduce itself (name ≥ MIN_FONT, no specks).  The demoted world-relative
+                  FLOOR=175 gives way to the glass-driven budget + a small COH=44px anti-speck backstop.  KEY
+                   NEW MECHANIC = LEAF BUCKETING: a FLAT family (leaves direct off root, nothing to fold into)
+                    cannot be crushed (it IS the focus) and 30 specks are incoherent, so it distils into buckets
+                     ("year 2019 ×8") — the on-model answer, distillation IS the bet.  Two degenerate-shape
+                      truths the deep spine taught + banked as gate-HONESTY: a speck-tight cell keeps the NAME
+                       over the mainkey tag (the tag may drop; assert "where shown it leads" + rides ≥80%, not
+                        "every"), and a single-child spine is ONE cell so phone==desktop (assert phone ≤ desktop,
+                         strictly < unless degenerate).  Every new gate was adversarially probed red then
+                          reverted.  This is the design basis the Vyto FACE renders from — with no live data it
+                           would draw a synthetic C** the same way.
 
    **THE JOINERY (architecture ruling, 2026-07-22 — refines "Cytoscape stays the layouter").**  The
     two sides are DECOUPLED and Vyto is the joinery that weaves them: a graph-WHISPERER turns the graph

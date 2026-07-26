@@ -13,6 +13,7 @@ story:Typescale
       sample=0.004,at=1784682154
       sample=0.008,at=1784682761
       sample=0.015,at=1784724277
+      sample=0.008,at=1785029812
     TimeTotal:step,avg=0.002
       sample=0.003,at=1784620260
       sample=0.002,at=1784620270
@@ -22,6 +23,7 @@ story:Typescale
       sample=0.001,at=1784682154
       sample=0.003,at=1784682761
       sample=0.005,at=1784724277
+      sample=0.003,at=1785029812
   step,dige:c1838fd2066bdc53
   step=2,dige:25fb9757b84c3db1
   step=3,dige:4dfb0ce46e3ef8dc

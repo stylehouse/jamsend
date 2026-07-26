@@ -12,6 +12,7 @@ story:Floorlaw
       sample=0.011,at=1784682160
       sample=0.009,at=1784682767
       sample=0.012,at=1784724296
+      sample=0.014,at=1785029837
     TimeTotal:step,avg=0.004
       sample=0.002,at=1784633252
       sample=0.013,at=1784633289
@@ -20,6 +21,7 @@ story:Floorlaw
       sample=0.003,at=1784682160
       sample=0.002,at=1784682767
       sample=0.003,at=1784724296
+      sample=0.003,at=1785029837
   step,dige:ff27df045a2aa819
   step=2,dige:ca45ca076d481f89
   step=3,dige:2f2cb13d8edb8a6b

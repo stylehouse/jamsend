@@ -3570,7 +3570,7 @@ async MusuSoft_condense(w, nav):
         let unspent = 0
         for (const id of (w.c.decoy_ids || [])) {
             let card = this.MusuVend_card(mag, id)
-            if (card && !card.o({ Body: 1 }).length) unspent = unspent + 1
+            if (card && !this.Heist_has_body(card)) unspent = unspent + 1
         }
         if (unspent === (w.c.decoy_ids || []).length && unspent === 2) m.sc.decoys_unspent = 1
     })
@@ -3913,7 +3913,7 @@ async MusuBay_pull(w, nav):
         let unspent = 0
         for (const id of (w.c.decoy_ids || [])) {
             let card = this.MusuVend_card(mag, id)
-            if (card && !card.o({ Body: 1 }).length) unspent = unspent + 1
+            if (card && !this.Heist_has_body(card)) unspent = unspent + 1
         }
         if (unspent === (w.c.decoy_ids || []).length && unspent === 2) m.sc.decoys_unspent = 1
     })
