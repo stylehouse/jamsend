@@ -1,3 +1,18 @@
+# Radio_scape_handover — RETIRED 2026-07-26 → spec/history/
+
+> **Historicity notice.** This was the session brief for the *scape* half of the streaming
+>  platform — the Voronoi stained-glass view, the crush that fed it, the two demo Books, and the
+>   `/` (BigSoundland) toplevel that boots them. Both its threads have re-homed, so it no longer
+>    carries live guidance and moves here as arc-of-record:
+> - **the Voro luxury layer** — superseded 2026-07-07 (the crush is now imposed from the toc and
+>    *does* trace the snap); current truth in `Voro_todo.md §0` + memory `voro-imposed-from-above`.
+> - **the scape → Sounditron road** — now the living `Sounditron_todo.md` (the resident diagnostic
+>    Book is built and live-green ×3, with its own active queue).
+>
+> Read below only for the story of how it got here; do not treat any map line as current.
+
+---
+
 # Radio_scape_handover — the music scape, the Voro luxury layer, the road to Sounditron
 
 Session-continuation brief for the **scape** half of the streaming platform: the Voronoi stained-glass
