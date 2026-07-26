@@ -742,6 +742,11 @@ async Stoker_look(st, era):
     }
     this.Stoker_census(st, shelf, radio)
     if (landed > 0) this.Stoker_mag_draw(st, w, shelf, pub, had)
+    // disk stays bounded: a landed churn wrote fresh files, so wear the oldest off past the cap.
+    //  The shelf (Stoker_cull) bounds MEMORY; this bounds DISK — the two caps are independent, and a
+    //   file dropped here is one re-dig from source, never a loss.  No sc telemetry: a gone-count is
+    //    disk-history-dependent and would only be fixture noise (the whole reason radiostock leaks).
+    if (landed > 0 && nav) await this.Ra_stock_gc(nav, pub)
     if (landed > 0) {
         delete st.sc.note
         this.Stoker_state(st, 'watching')

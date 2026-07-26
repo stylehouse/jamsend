@@ -1,0 +1,11 @@
+Snap:H
+  H:VytoBunch,Run
+    A:VytoBunch
+      self,round=2	{"mung":["age"]}
+      w:VytoBunch
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:oak1,of:main,genus:oak
+        Cog:pine,of:main,genus:pine
+        Cog:oak2,of:main,genus:oak
+        Cog:birch,of:main,genus:birch

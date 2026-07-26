@@ -5,10 +5,7 @@ story:MusuMag
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=1.927
-      sample=1.889,at=1784473465
-      sample=1.889,at=1784473513
-      sample=1.632,at=1784473561
+    TimeTotal:beliefs,avg=1.959
       sample=1.359,at=1784473606
       sample=1.974,at=1784499950
       sample=1.974,at=1784500034
@@ -16,10 +13,10 @@ story:MusuMag
       sample=2.433,at=1784500130
       sample=1.564,at=1784519169
       sample=2.63,at=1784616211
-    TimeTotal:step,avg=0.193
-      sample=0.189,at=1784473465
-      sample=0.189,at=1784473513
-      sample=0.163,at=1784473561
+      sample=2.182,at=1785078530
+      sample=1.358,at=1785078570
+      sample=2.198,at=1785078624
+    TimeTotal:step,avg=0.196
       sample=0.136,at=1784473606
       sample=0.197,at=1784499950
       sample=0.197,at=1784500034
@@ -27,17 +24,20 @@ story:MusuMag
       sample=0.243,at=1784500130
       sample=0.156,at=1784519169
       sample=0.263,at=1784616211
+      sample=0.218,at=1785078530
+      sample=0.136,at=1785078570
+      sample=0.22,at=1785078624
   step,dige:66989827a4b139b0
   step=2,dige:d948bf4626979b20
-  step=3,dige:48a1b0dd16276a89
+  step=3,dige:2e7e131186ccc8a1
     Assertion:the-mag-crosses-as,sentence:the mag crosses as one husk — the mirror wears the shuffle mag its cloud page and every record head before a single byte
     Assertion:the-warm-start-pulls,sentence:the warm start pulls the opening page of the first two records and the mag turns warm the moment record zero holds it
-  step=4,dige:5e82b1308a7310cb
-  step=5,dige:1fd9fa78f2bbad06
-  step=6,dige:7bdfe20756c7ca4d
-  step=7,dige:4d84c0d04ea62586
-  step=8,dige:385e965efad60ddc
+  step=4,dige:2e8d6d6a586bdf26
+  step=5,dige:2727f1534434417f
+  step=6,dige:1e90c470e880e2b2
+  step=7,dige:d6a5a4892d1f706a
+  step=8,dige:dd3a6a7778de25a4
     Assertion:a-starved-track-wears,sentence:a starved track wears its stage on the particle — the deep wants park at the caster and the record head reads parked until the transcode feeds it
-  step=9,dige:01b53282fe8e252f
-  step=10,dige:26a2fcecb46b0651
+  step=9,dige:f5010246ccf8ff70
+  step=10,dige:954f152271088daf
     Assertion:the-pipeline-reads-back,sentence:the pipeline reads back end to end — the record crossed as a husk carrying no bytes then the preview page it pulled decoded to real PCM

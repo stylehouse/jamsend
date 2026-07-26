@@ -1,0 +1,22 @@
+Snap:H
+  H:VytoWeb,Run
+    A:VytoWeb
+      self,round=8	{"mung":["age"]}
+      w:VytoWeb
+        self,round=8	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:ash,of:main,metal:brass,teeth:10
+        Cog:birch,of:main,metal:brass,teeth:11
+        Cog:cedar,of:main,metal:brass,teeth:12
+        Cog:douglas,of:main,metal:brass,teeth:13
+        Cog:elm,of:main,metal:iron,teeth:14
+        Cog:fir,of:main,metal:iron,teeth:15
+        Cog:gum,of:main,metal:iron,teeth:16
+        Cog:holly,of:main,metal:iron,teeth:17
+        req:board_wait,finished
+        req:web_wait,finished
+        req:focus_wait,finished
+        see:the glass was commissioned on eight sibling cogs and stood its board
+        see:the gang organ elected metal — the one key that cleaves eight cogs into brass and iron
+        see:the relate organ wove twelve flow edges — every pair sharing a metal and none that do not
+        see:the focus governor swelled the chosen cog to dominance — attention became geometry

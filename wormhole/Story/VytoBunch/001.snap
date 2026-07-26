@@ -1,0 +1,7 @@
+Snap:H
+  H:VytoBunch,Run
+    A:VytoBunch
+      self,round	{"mung":["age"]}
+      w:VytoBunch
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

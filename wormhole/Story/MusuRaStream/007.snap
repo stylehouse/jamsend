@@ -1,30 +1,30 @@
 Snap:H
   H:MusuRaStream,Run
     A:MusuRaStream
-      self,round=23	{"mung":["age"]}
+      self,round=22	{"mung":["age"]}
       w:MusuRaStream
-        self,round=23	{"mung":["age"]}
+        self,round=22	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Account,of:DJ
           Identity:c012850d69de1318,prepub:c012850d69de1318,friendly:DJ
             Peering,name:c012850d69de1318,friendly:DJ
               Idzeug:rastream_1,to:Music,genre:Classical,spent
-              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1784452469
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1785076033
                 Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1784452469,sign:08681f35b9106fd78fb0137730b5db90b2a73a95a03c51e7655c9144eaf12bc0879b516fe8f3a0422a426ea1485131b112c624c7689520232694d1526402d900,genre:Classical
-                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784452469,sign:2dece0d9d6346e252fe474952c1c1e5d6f955232352cc06502492bcf60e71a794844fa86aebe609a7937bb7c787ece47c7b5f50fa60b6dd2fbc1812487b6b301,genre:Classical
+                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1785076033,sign:4f713b28a0cab0fb77a4505465e494182edb1fb9ae7610bc091ca471702cd60f2732de8d8fdd0fb95ec760a76a02d356560e6675a4df0585abe5efcd4a2cb40b,genre:Classical
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1785076033,sign:8bfdb4066a80371007f80c6614a3e5239a91cfd85739010cfb076945ee71d9f983f305c9b50835ba9d527a9853eab8d9b7e0c630be8ee4d6b118ab2d74c7c702,genre:Classical
             SocialGraph
-              Edge,a:c012850d69de1318,b:b317b9a776e39d30,at:1784452469
+              Edge,a:c012850d69de1318,b:b317b9a776e39d30,at:1785076033
         Account,of:Listener
           Identity:b317b9a776e39d30,prepub:b317b9a776e39d30,friendly:Listener
             Peering,name:b317b9a776e39d30,friendly:Listener
-              Pier,pub:c012850d69de1318,friendly:DJ,since:1784452469
+              Pier,pub:c012850d69de1318,friendly:DJ,since:1785076033
                 Peering,name:c012850d69de1318,friendly:DJ,pub:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535
-                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784452469,sign:2dece0d9d6346e252fe474952c1c1e5d6f955232352cc06502492bcf60e71a794844fa86aebe609a7937bb7c787ece47c7b5f50fa60b6dd2fbc1812487b6b301,genre:Classical
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1784452469,sign:08681f35b9106fd78fb0137730b5db90b2a73a95a03c51e7655c9144eaf12bc0879b516fe8f3a0422a426ea1485131b112c624c7689520232694d1526402d900,genre:Classical
+                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1785076033,sign:4f713b28a0cab0fb77a4505465e494182edb1fb9ae7610bc091ca471702cd60f2732de8d8fdd0fb95ec760a76a02d356560e6675a4df0585abe5efcd4a2cb40b,genre:Classical
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1785076033,sign:8bfdb4066a80371007f80c6614a3e5239a91cfd85739010cfb076945ee71d9f983f305c9b50835ba9d527a9853eab8d9b7e0c630be8ee4d6b118ab2d74c7c702,genre:Classical
             SocialGraph
-              Edge,a:b317b9a776e39d30,b:c012850d69de1318,at:1784452469
+              Edge,a:b317b9a776e39d30,b:c012850d69de1318,at:1785076033
         Peering,name:c012850d69de1318,req=2,ok
           Pier,pub:b317b9a776e39d30,req=2,ok
             req:handshake,finished
@@ -63,10 +63,11 @@ Snap:H
                 unemit,type:hello,seq
                 unemit=2,type:trust,seq=2
                 unemit=3,type:pier_hello,seq=3
-                unemit=4,type:repli_want,seq=4
+                unemit=4,type:pier_confirm,seq=4
                 unemit=5,type:repli_want,seq=5
                 unemit=6,type:repli_want,seq=6
-              req:unemit,seq=7,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
+                unemit=7,type:repli_want,seq=7
+              req:unemit,seq=8,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
             Ud,pubkey:b317b9a776e39d30
           active_transport,type:mock,open
         Peering,name:b317b9a776e39d30,req=3,ok
@@ -88,10 +89,11 @@ Snap:H
                 emit,type:hello,seq
                 emit=2,type:trust,seq=2
                 emit=3,type:pier_hello,seq=3
-                emit=4,type:repli_want,seq=4
+                emit=4,type:pier_confirm,seq=4
                 emit=5,type:repli_want,seq=5
                 emit=6,type:repli_want,seq=6
-              emit=7,type:repli_want,seq=7,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
+                emit=7,type:repli_want,seq=7
+              emit=8,type:repli_want,seq=8,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
             inbox
               recent
                 unemit,type:hello,seq

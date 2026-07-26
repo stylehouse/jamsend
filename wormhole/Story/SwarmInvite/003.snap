@@ -17,5 +17,5 @@ Snap:H
             Peering,name:0bd16fbd60d7b3bb,friendly:Phone
         req:witness,eternal,ok
         reached:step_3
-        minted:verified,to:Music,of:5c4b63609cd01594,nonce:invite_1
-        see:the invite is a URL — the blob inside parses back and verifies as a Music offer from the active self
+        minted:parsed,to:Music,of:5c4b63609cd01594,nonce:invite_1,chars:48
+        see:the invite is a URL — the compact token inside parses back to a Music offer under sixty characters

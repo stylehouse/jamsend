@@ -13,7 +13,7 @@ Snap:H
         Account,of:Bob
           Identity:6eb0df4e976acef2,prepub:6eb0df4e976acef2,friendly:Bob
             Peering,name:6eb0df4e976acef2,friendly:Bob,online
-            rebuff:forged,say:verify_grant: bad signature to:Music by:32c1ce7a059129d1
+            rebuff:forged,say:not-a-token-at-all
             rebuff:offline,say:32c1ce7a059129d1
         req:witness,eternal,ok
         reached:step_3

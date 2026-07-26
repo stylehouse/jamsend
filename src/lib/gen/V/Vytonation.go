@@ -4,13 +4,14 @@
     import { onMount } from "svelte"
 
 import Vytui from "$lib/O/Vytui.svelte"
+import { budget_for, fold_ladder, bucket_key_of } from "$lib/O/vyto_foam"
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vytonation(): string { return '6c9afa3424e0beea~g1' },
+    Ghostmeta_Ghost_V_Vytonation(): string { return 'f0961510106d9613~g1' },
 
 // Vytonation.g — Vyto's demo Books (the Voronation.g sibling, one directory over in Ghost/V/).
 //  Where Voronation.g proves the CRUSH (the fold policy) on flora and libraries, Vytonation.g
@@ -1323,6 +1324,586 @@ VytoCrest_witness(w) {
     let frows = free ? free.o({ Vrow: 1 }).length : 0
     let arows = vt ? vt.o({ Vrow: 1 }).length : 0
     if (n === 3 && free && frows === arows && frows === 5 && fdip && fdip.sc.n === 4 && !free.c.up && !(w.oa({see: 'the detached mint says the same crest off the book — five equal rows and the same counted door with nothing reachable to snap'}))) w.i({see: 'the detached mint says the same crest off the book — five equal rows and the same counted door with nothing reachable to snap'})
+
+},
+// ══ VytoWeb — the FOAM organs wake: gang elects · relate weaves · focus tapers ═════════════════════
+//  The foam shape-studies' engine, ported to production as vyto_foam.ts (the pure sibling of
+//   vyto_geometry.ts), wakes three of the named stubs: GANG (bucket_key_of — a crowded sibling row
+//    elects the sc key that partitions it), RELATE (sig_of + group_edges — shared meaning becomes
+//     %Flow edges on w.c.relations), and FOCUS (the taper — a proposed tok swells its power radius
+//      by FOCUS_BOOST while the rest compress by FOCUS_SHRINK, so attention dominates through real
+//       geometry; releasing evens the cut again).  The fold ladder (budget_for + fold_ladder) stands
+//        pure in the same module awaiting Vyto_fold's display-refactor landing — this Book proves
+//         the organs that woke tonight.
+//  Same laws as its siblings: the world is named after the Book (w:VytoWeb) · A:Vyto minted fresh
+//   beside the run · the client kit drives (Vyto_commission_on · Vyto_rest_poll stirs the glass
+//    directly under the ttlilt hold) · every %see comma-free · the focus %see is PER-BEAT (its truth
+//     ends at release so it rides step 5 and honestly drops from step 6).
+//  Eight cogs — four brass four iron with unique teeth — give every organ clean numbers: gang must
+//   elect `metal` (the ONE partitioning key: Cog values all-distinct · of all-same · teeth all-
+//    distinct) and relate must weave EXACTLY twelve edges (the same-metal pairs — of is a join key
+//     and each row's mainkey line is identity so neither may count as kinship).
+
+VytoWeb(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VytoWeb_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VytoWeb_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 6
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoWeb_seed(w)
+        if (n === 3) this.VytoWeb_commission(w)
+        if (n === 4) this.VytoWeb_prime(w)
+        if (n === 5) this.VytoWeb_focus(w)
+        if (n === 6) this.VytoWeb_release(w)
+    }
+    this.VytoWeb_witness(w)
+
+},
+// ── beat 2 — eight sibling cogs: the crowded row (>6 — the foam crowding law) every organ reads ───
+VytoWeb_seed(w) {
+    w.i({desc: 'seed eight sibling cogs — four brass four iron and unique teeth'})
+    let names = ['ash', 'birch', 'cedar', 'douglas', 'elm', 'fir', 'gum', 'holly']
+    let cogs = []
+    let idx = 0
+    while (idx < 8) {
+        let metal = (idx < 4) ? 'brass' : 'iron'
+        cogs.push(w.i({ Cog: names[idx], of: 'main', metal: metal, teeth: '' + (10 + idx) }))
+        idx = idx + 1
+    }
+    w.c.cogs = cogs
+
+},
+// ── beat 3 — the commission: each cog an individual grapple → one top-level mirror row each ───────
+async VytoWeb_commission(w) {
+    w.i({desc: 'mint A:Vyto beside the run and commission it on the eight cogs'})
+    this.Vyto_commission_on(w, w.c.cogs, 1)
+    this.expecting(w, 'board_wait', 8, async () => { await this.VytoStaple_await(w, 8, () => this.VytoWeb_board_ready(w)) })
+
+},
+// ── beat 4 — stir to rest: the stir chain runs gang and relate before every solve ─────────────────
+async VytoWeb_prime(w) {
+    w.i({desc: 'stir to rest — gang elects its key and relate weaves the edges'})
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'web_wait', 14, async () => { await this.VytoStaple_await(w, 14, () => this.VytoWeb_web_drive(w)) })
+
+},
+// ── beat 5 — a focus proposal through the governor DOOR (e_Vyto_focus — the production seam a
+//  pointer or Voro_drift will use) then rest: the solver honors the taper ──────────────────────────
+async VytoWeb_focus(w) {
+    w.i({desc: 'propose focus on one cog through the governor door'})
+    let vw = this.VytoStaple_vw(w)
+    let cells = this.Vyto_cells(vw)
+    let ash = cells.find(r => r.sc.Cog === 'ash')
+    w.c.focus_tok = ash?.c?.tok ?? null
+    let SH = this.VytoStaple_SH(w)
+    if (SH && w.c.focus_tok) SH.i_elvisto('Vyto/Vyto', 'Vyto_focus', { tok: w.c.focus_tok })
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'focus_wait', 14, async () => { await this.VytoStaple_await(w, 14, () => this.VytoWeb_focus_drive(w)) })
+
+},
+// ── beat 6 — release: a bare proposal clears the decision and the cut breathes even again ─────────
+async VytoWeb_release(w) {
+    w.i({desc: 'release the focus — the governor stands down and the cut evens'})
+    let SH = this.VytoStaple_SH(w)
+    if (SH) SH.i_elvisto('Vyto/Vyto', 'Vyto_focus', { release: 1 })
+    w.c.released = 1
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'even_wait', 14, async () => { await this.VytoStaple_await(w, 14, () => this.VytoWeb_release_drive(w)) })
+
+},
+// ── the DRIVING predicates (expecting only — they stir via Vyto_rest_poll; the witness never does) ─
+VytoWeb_web_drive(w) {
+    if (!this.Vyto_rest_poll(w, 8)) return 0
+    if (!this.VytoWeb_gang_ready(w)) return 0
+    return this.VytoWeb_relate_ready(w)
+
+},
+VytoWeb_focus_drive(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    if (!w.c.focus_tok) return 0
+    if (vw.c.focus_tok !== w.c.focus_tok) return 0
+    if (!this.Vyto_rest_poll(w, 8)) return 0
+    return this.VytoWeb_dom_ready(w)
+
+},
+VytoWeb_release_drive(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    if (vw.c.focus_tok != null) return 0
+    if (!this.Vyto_rest_poll(w, 8)) return 0
+    return this.VytoWeb_even_ready(w)
+
+},
+// ── the PURE ready-predicates (shared by expecting and witness — reads only · never a stir) ───────
+VytoWeb_board_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.commission) return 0
+    if ((vw.c.grapples?.length ?? 0) !== 8) return 0
+    return (vw.o({ Organ: 1 }).length === 10 && vw.o({ Bar: 1 }).length === 7) ? 1 : 0
+
+},
+// gang: the election landed `metal` — the decision on w.c.gang_key and each live row's .c.gang_v
+//  cleaving four and four — and the organ's board row flipped live.
+VytoWeb_gang_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || vw.c.gang_key !== 'metal') return 0
+    let cells = this.Vyto_cells(vw)
+    if (cells.length !== 8) return 0
+    let brass = 0
+    let iron = 0
+    for (const r of cells) {
+        if (r.c.gang_v === 'brass') brass = brass + 1
+        if (r.c.gang_v === 'iron') iron = iron + 1
+    }
+    if (!(brass === 4 && iron === 4)) return 0
+    let organ = vw.o({ Organ: 'Gang' })[0]
+    return (organ && organ.sc.status === 'live') ? 1 : 0
+
+},
+// relate: exactly twelve %Flow rows on the detached w.c.relations — every edge joins two cogs of
+//  the SAME metal (shared meaning and nothing else — joins and mainkeys never count) with n '1'.
+VytoWeb_relate_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.relations) return 0
+    let rows = vw.c.relations.o({ Flow: 1 })
+    if (rows.length !== 12) return 0
+    let cells = this.Vyto_cells(vw)
+    for (const e of rows) {
+        let a = cells.find(r => r.c.tok === e.sc.a)
+        let b = cells.find(r => r.c.tok === e.sc.b)
+        if (!a || !b) return 0
+        if (a.sc.metal !== b.sc.metal) return 0
+        if (e.sc.n !== '1') return 0
+    }
+    let organ = vw.o({ Organ: 'Relate' })[0]
+    return (organ && organ.sc.status === 'live') ? 1 : 0
+
+},
+// dominance: the standing focus swelled the chosen cog — its solved radius at least twice every
+//  sibling's (the true ratio is BOOST/SHRINK ≈ 9× — the gate stays loose and honest).  PER-BEAT:
+//   this truth ends at release so its %see rides step 5 only.
+VytoWeb_dom_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !w.c.focus_tok) return 0
+    if (vw.c.focus_tok !== w.c.focus_tok) return 0
+    let cells = this.Vyto_cells(vw)
+    if (cells.length !== 8) return 0
+    let focR = 0
+    let others = 0
+    for (const r of cells) {
+        if (!r.c.T) return 0
+        if (r.c.tok === w.c.focus_tok) { focR = r.c.T.r } else { if (r.c.T.r > others) others = r.c.T.r }
+    }
+    if (!(focR > 0 && others > 0)) return 0
+    return (focR >= others * 2) ? 1 : 0
+
+},
+// even: after release no decision stands and the eight radii sit within the solver's own settle
+//  tolerance of each other — the taper left no residue.
+VytoWeb_even_ready(w) {
+    if (!w.c.released) return 0
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    if (vw.c.focus_tok != null) return 0
+    let cells = this.Vyto_cells(vw)
+    if (cells.length !== 8) return 0
+    let lo = null
+    let hi = null
+    for (const r of cells) {
+        if (!r.c.T) return 0
+        if (lo == null || r.c.T.r < lo) lo = r.c.T.r
+        if (hi == null || r.c.T.r > hi) hi = r.c.T.r
+    }
+    return (hi - lo < 0.6) ? 1 : 0
+
+},
+// ── the witness — two layers per claim: the %see (per-beat observation — the dominance one honestly
+//  drops at release) and the %sworn via story_swear (the durable happened-fact the toc contract reads —
+//   idempotent per run · shelf-checked · never a fixture byte).  Sentences byte-identical across all
+//    three homes: the see · the swear · the toc %Assertion.
+VytoWeb_witness(w) {
+    if (this.VytoWeb_board_ready(w)) {
+        this.story_swear(w, 'the glass was commissioned on eight sibling cogs and stood its board')
+        if (!(w.oa({see: 'the glass was commissioned on eight sibling cogs and stood its board'}))) w.i({see: 'the glass was commissioned on eight sibling cogs and stood its board'})
+    }
+    if (this.VytoWeb_gang_ready(w)) {
+        this.story_swear(w, 'the gang organ elected metal — the one key that cleaves eight cogs into brass and iron')
+        if (!(w.oa({see: 'the gang organ elected metal — the one key that cleaves eight cogs into brass and iron'}))) w.i({see: 'the gang organ elected metal — the one key that cleaves eight cogs into brass and iron'})
+    }
+    if (this.VytoWeb_relate_ready(w)) {
+        this.story_swear(w, 'the relate organ wove twelve flow edges — every pair sharing a metal and none that do not')
+        if (!(w.oa({see: 'the relate organ wove twelve flow edges — every pair sharing a metal and none that do not'}))) w.i({see: 'the relate organ wove twelve flow edges — every pair sharing a metal and none that do not'})
+    }
+    if (this.VytoWeb_dom_ready(w)) {
+        this.story_swear(w, 'the focus governor swelled the chosen cog to dominance — attention became geometry')
+        if (!(w.oa({see: 'the focus governor swelled the chosen cog to dominance — attention became geometry'}))) w.i({see: 'the focus governor swelled the chosen cog to dominance — attention became geometry'})
+    }
+    if (this.VytoWeb_even_ready(w)) {
+        this.story_swear(w, 'released focus let the cut breathe even again — no decision no taper')
+        if (!(w.oa({see: 'released focus let the cut breathe even again — no decision no taper'}))) w.i({see: 'released focus let the cut breathe even again — no decision no taper'})
+    }
+
+},
+// ══ VytoFold — the fold ladder proven direct: the PURE engine gated in the repo ════════════════════
+//  VytoWeb wakes the organs THROUGH the glass (commission · stir · read back).  VytoFold instead
+//   drives the pure engine straight — importing budget_for + fold_ladder from vyto_foam.ts and
+//    asserting their contract on hand-built FoamFold trees.  This is the ONE production surface
+//     VytoWeb cannot reach: Vyto_fold is the display refactor's stub (uncalled), so the fold ladder
+//      — the core of the whole foam (screen budget → OPEN | BUCKETED | CRUSHED) — has no repo gate
+//       at all, only the scratchpad study's headless .mjs that nothing here runs.  This Book makes the
+//        ladder's contract enforceable in the Story system, so a later edit to vyto_foam.ts that
+//         regresses the fold is caught green-to-red.  No world state, no organs, no ttlilt hold: every
+//          truth is a synchronous map (the engine is deterministic — no clock, no randomness), so beat
+//           N computes scenario N and the witness swears it the same pass.  The trees are well-formed
+//            (every container memberDim ≥ COH so nothing folds from the coherence rules at scale 1) —
+//             the numbers were locked against the real engine before a single sentence was sworn.
+//  Six beats · five truths (step 1 settles): budget scales · roomy stays OPEN · least-dominant folds
+//   first · the focus path is shielded · the coherence floor distils vs crushes.
+
+VytoFold(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VytoFold_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VytoFold_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 8
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoFold_budget(w)
+        if (n === 3) this.VytoFold_open(w)
+        if (n === 4) this.VytoFold_least(w)
+        if (n === 5) this.VytoFold_shield(w)
+        if (n === 6) this.VytoFold_cohere(w)
+        if (n === 7) this.VytoFold_gang_same(w)
+        if (n === 8) this.VytoFold_gang_uniq(w)
+    }
+    this.VytoFold_witness(w)
+
+},
+// ── the well-formed tree: root + three flat leaf-families A(6 md90 b2) B(5 md60 b2) C(4 md80 b0).
+//   Every container memberDim ≥ COH(44) so at viewscale 1 the coherence rules never fire — the fold
+//    is driven by the budget alone.  Native visible = 15 leaves.  Built fresh per beat (fold_ladder
+//     never mutates the tree — it reads structure and fills its own Sets — but a fresh tree keeps
+//      each scenario independent and matches the study's per-case construction).
+VytoFold_fam(name, nleaves, buckets, memberDim) {
+    let kids = []
+    let idx = 0
+    while (idx < nleaves) {
+        kids.push({ name: name + '.' + idx, kids: null })
+        idx = idx + 1
+    }
+    return { name: name, memberDim: memberDim, buckets: buckets, kids: kids }
+
+},
+VytoFold_tree(w) {
+    let A = this.VytoFold_fam('A', 6, 2, 90)
+    let B = this.VytoFold_fam('B', 5, 2, 60)
+    let C = this.VytoFold_fam('C', 4, 0, 80)
+    let root = { name: 'root', memberDim: 120, kids: [A, B, C] }
+    return { root: root, A: A, B: B, C: C }
+
+},
+// ── beat 2 — the screen budget: area / QUANTUM² · PACK, floored at 1.  Four times the wall area
+//   introduces four times the cells (12 at 800×450 → 48 at 1600×900).
+VytoFold_budget(w) {
+    w.i({desc: 'the screen budget scales with the glass area'})
+    let small = budget_for(800, 450)
+    let big = budget_for(1600, 900)
+    w.c.fold_budget = (small === 12 && big === 48 && big === 4 * small)
+
+},
+// ── beat 3 — a roomy glass: budget 20 exceeds the 15 native cells so nothing folds (OPEN). ─────────
+VytoFold_open(w) {
+    w.i({desc: 'a roomy glass folds nothing'})
+    let t = this.VytoFold_tree(w)
+    let f = fold_ladder(t.root, 20, null, 1)
+    w.c.fold_open = (f.crush.size === 0 && f.bucket.size === 0)
+
+},
+// ── beat 4 — a tighter glass (budget 14): the ladder folds the LEAST-dominant family first — B
+//   (memberDim 60) collapses while A(90) and C(80) stand open.  The less() key folds smallest md first.
+VytoFold_least(w) {
+    w.i({desc: 'the least-dominant family folds first'})
+    let t = this.VytoFold_tree(w)
+    let f = fold_ladder(t.root, 14, null, 1)
+    w.c.fold_least = (f.crush.has(t.B) && !f.crush.has(t.A) && !f.crush.has(t.C) && f.bucket.size === 0)
+
+},
+// ── beat 5 — the tightest glass (budget 1) with a held focus leaf: the whole path root→A→leaf stays
+//   OPEN (A never folds and root never crushes) while the off-path siblings B and C crush. ──────────
+VytoFold_shield(w) {
+    w.i({desc: 'the path to the focus is shielded from folding'})
+    let t = this.VytoFold_tree(w)
+    let leaf = t.A.kids[0]
+    let f = fold_ladder(t.root, 1, leaf, 1)
+    w.c.fold_shield = (!f.crush.has(t.A) && !f.bucket.has(t.A) && !f.crush.has(t.root) && f.crush.has(t.B) && f.crush.has(t.C))
+
+},
+// ── beat 6 — the coherence floor (viewscale 0.4): every member shrinks below COH.  A and B (which
+//   carry a bucketing) distil to buckets; C (no bucketing) is crushed whole — signal kept where it can be.
+VytoFold_cohere(w) {
+    w.i({desc: 'a sub-floor family distils to buckets while a bucketless one is crushed'})
+    let t = this.VytoFold_tree(w)
+    let f = fold_ladder(t.root, 100, null, 0.4)
+    w.c.fold_cohere = (f.bucket.has(t.A) && f.bucket.has(t.B) && f.crush.has(t.C))
+
+},
+// ── beat 7 — the gang election's honest null: an all-identical crowded row has NO key that
+//   partitions it (every value the same ⇒ 1 distinct < 2) so bucket_key_of returns null — no forced
+//    representative for a uniform family.  Seven members (>6 — the crowding law) all wearing metal:brass.
+VytoFold_gang_same(w) {
+    w.i({desc: 'a crowded row of identical members elects no representative'})
+    let members = []
+    let idx = 0
+    while (idx < 7) {
+        members.push({ Cog: 1, metal: 'brass' })
+        idx = idx + 1
+    }
+    w.c.fold_gang_same = (bucket_key_of(members) == null)
+
+},
+// ── beat 8 — the other honest null: an all-DISTINCT crowded row has no partitioning key either (every
+//   value unique ⇒ distinct count === n) so bucket_key_of returns null — an all-unique family cannot be
+//    ganged without forcing a representative on it (the spec's honest no-representative).
+VytoFold_gang_uniq(w) {
+    w.i({desc: 'a crowded row of all-distinct members elects no representative'})
+    let members = []
+    let idx = 0
+    while (idx < 7) {
+        members.push({ Cog: 1, metal: 'm' + idx })
+        idx = idx + 1
+    }
+    w.c.fold_gang_uniq = (bucket_key_of(members) == null)
+
+},
+// ── the witness — swear + see each truth once its beat has computed it (byte-identical sentences
+//   across the see · the swear · the toc %Assertion; comma-free and apostrophe-free for the peel). ──
+VytoFold_witness(w) {
+    if (w.c.fold_budget) {
+        this.story_swear(w, 'the screen budget grows with the glass — a wall four times the area introduces four times as many cells')
+        if (!(w.oa({see: 'the screen budget grows with the glass — a wall four times the area introduces four times as many cells'}))) w.i({see: 'the screen budget grows with the glass — a wall four times the area introduces four times as many cells'})
+    }
+    if (w.c.fold_open) {
+        this.story_swear(w, 'a roomy glass folds nothing — every family stands open when the budget holds every cell')
+        if (!(w.oa({see: 'a roomy glass folds nothing — every family stands open when the budget holds every cell'}))) w.i({see: 'a roomy glass folds nothing — every family stands open when the budget holds every cell'})
+    }
+    if (w.c.fold_least) {
+        this.story_swear(w, 'the glass folds its least-dominant family first — the smallest-membered row collapses while larger siblings stand open')
+        if (!(w.oa({see: 'the glass folds its least-dominant family first — the smallest-membered row collapses while larger siblings stand open'}))) w.i({see: 'the glass folds its least-dominant family first — the smallest-membered row collapses while larger siblings stand open'})
+    }
+    if (w.c.fold_shield) {
+        this.story_swear(w, 'the path to the focus is never folded — attention holds every cell from the root down to the held leaf open however tight the glass')
+        if (!(w.oa({see: 'the path to the focus is never folded — attention holds every cell from the root down to the held leaf open however tight the glass'}))) w.i({see: 'the path to the focus is never folded — attention holds every cell from the root down to the held leaf open however tight the glass'})
+    }
+    if (w.c.fold_cohere) {
+        this.story_swear(w, 'a family whose members fall below the coherence floor distils to buckets while a bucketless family is crushed whole')
+        if (!(w.oa({see: 'a family whose members fall below the coherence floor distils to buckets while a bucketless family is crushed whole'}))) w.i({see: 'a family whose members fall below the coherence floor distils to buckets while a bucketless family is crushed whole'})
+    }
+    if (w.c.fold_gang_same) {
+        this.story_swear(w, 'a crowded row of identical members elects no representative — a uniform family has none to stand for it')
+        if (!(w.oa({see: 'a crowded row of identical members elects no representative — a uniform family has none to stand for it'}))) w.i({see: 'a crowded row of identical members elects no representative — a uniform family has none to stand for it'})
+    }
+    if (w.c.fold_gang_uniq) {
+        this.story_swear(w, 'a crowded row of all-distinct members elects no representative — an all-unique family has no key that partitions it')
+        if (!(w.oa({see: 'a crowded row of all-distinct members elects no representative — an all-unique family has no key that partitions it'}))) w.i({see: 'a crowded row of all-distinct members elects no representative — an all-unique family has no key that partitions it'})
+    }
+
+},
+// ══ VytoBunch — the Relate attraction: meaning becomes proximity (Vyto_spec §6) ═══════════════════
+//  VytoWeb proved Relate WEAVES the edges; VytoBunch proves the solver HONORS them.  Four cogs are
+//   seeded interleaved — two oak kin (share genus:oak) split by two strangers (pine · birch each a
+//    unique genus) — so at the perimeter batch-entry the kin start APART (a stranger sits between).
+//     Relate weaves exactly one edge (the oaks; of is a join and Cog is identity so neither counts),
+//      the solver's pull_step nudges the two kin seats toward one another each relax, and at rest the
+//       kin sit as the CLOSEST pair of all — meaning transfigured into layout proximity, the first
+//        link of the §6 bunching chain — WITHOUT collapsing (four distinct in-frame cells stand; the
+//         centroidal pull counter-balances the attraction).  The attraction is load-bearing: with it
+//          removed the interleaved seating leaves a stranger nearer than the kin (the adversarial probe).
+//  Same laws as its siblings: world named after the Book · A:Vyto beside the run · client kit drives ·
+//   every claim comma-free.  Positions live on the mirror rows' .c.T (c-side never snapped) so the
+//    proximity claim is a position-DERIVED boolean the witness swears — the fixtures stay Vyto-blind.
+
+VytoBunch(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VytoBunch_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VytoBunch_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoBunch_seed(w)
+        if (n === 3) this.VytoBunch_commission(w)
+        if (n === 4) this.VytoBunch_rest(w)
+        if (n === 5) this.VytoBunch_sever(w)
+    }
+    this.VytoBunch_witness(w)
+
+},
+// ── beat 2 — four cogs interleaved: oak1 · pine · oak2 · birch (the kin split by a stranger) ───────
+VytoBunch_seed(w) {
+    w.i({desc: 'seed four cogs — two oak kin split by the strangers pine and birch'})
+    let cogs = []
+    cogs.push(w.i({ Cog: 'oak1', of: 'main', genus: 'oak' }))
+    cogs.push(w.i({ Cog: 'pine', of: 'main', genus: 'pine' }))
+    cogs.push(w.i({ Cog: 'oak2', of: 'main', genus: 'oak' }))
+    cogs.push(w.i({ Cog: 'birch', of: 'main', genus: 'birch' }))
+    w.c.cogs = cogs
+
+},
+// ── beat 3 — the commission: four individual grapples → four top-level mirror rows ────────────────
+async VytoBunch_commission(w) {
+    w.i({desc: 'mint A:Vyto beside the run and commission it on the four cogs'})
+    this.Vyto_commission_on(w, w.c.cogs, 1)
+    this.expecting(w, 'board_wait', 8, async () => { await this.VytoStaple_await(w, 8, () => this.VytoBunch_board_ready(w)) })
+
+},
+// ── beat 4 — stir to rest: relate weaves the kin edge and the solve settles under the attraction ──
+async VytoBunch_rest(w) {
+    w.i({desc: 'stir to rest — relate weaves the one kin edge and the attraction bunches the oaks'})
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'rest_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoBunch_rested(w)) })
+
+},
+// ── beat 5 — the control: capture the bunched kin distance then SEVER the kinship (retag one oak so
+//   no shared genus remains → no edge → no attraction) and stir to rest again.  The two oaks — the SAME
+//    two cogs at the SAME seats — now rest FREE.  If the attraction was load-bearing the joined rest was
+//     closer than this free rest; with the attraction dead the two are identical and the claim fails.
+async VytoBunch_sever(w) {
+    w.i({desc: 'sever the kinship — retag one oak so the edge drops and the pair rests free'})
+    let vw = this.VytoStaple_vw(w)
+    let o1 = this.VytoBunch_T(vw, 'oak1')
+    let o2 = this.VytoBunch_T(vw, 'oak2')
+    if (o1 && o2) w.c.d_rel = this.VytoBunch_dist(o1, o2)
+    let oak2 = w.c.cogs[2]
+    if (oak2) {
+        oak2.sc.genus = 'maple'
+        oak2.bump_version()
+    }
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'free_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoBunch_freed(w)) })
+
+},
+// the kinship is severed and the pair has re-rested free: zero edges now and the glass at rest.
+VytoBunch_freed(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.relations) return 0
+    if (vw.c.relations.o().length !== 0) return 0
+    return this.Vyto_rest_poll(w, 4)
+
+},
+// the load-bearing differential: the joined rest (w.c.d_rel) sat the oaks measurably CLOSER than the
+//  free rest (their distance now the edge is gone).  A 3px margin guards float noise — the real gap is
+//   ~15px (234 joined vs 249 free at coeff 0.15); with the attraction dead both are 249 and this is false.
+VytoBunch_bunched_ready(w) {
+    if (w.c.d_rel == null) return 0
+    if (!this.VytoBunch_freed(w)) return 0
+    let vw = this.VytoStaple_vw(w)
+    let o1 = this.VytoBunch_T(vw, 'oak1')
+    let o2 = this.VytoBunch_T(vw, 'oak2')
+    if (!o1 || !o2) return 0
+    let d_free = this.VytoBunch_dist(o1, o2)
+    return (w.c.d_rel + 3 < d_free) ? 1 : 0
+
+},
+// ── ready-predicates (shared by expecting + witness) ──────────────────────────────────────────────
+VytoBunch_board_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.commission) return 0
+    if ((vw.c.grapples?.length ?? 0) !== 4) return 0
+    return (vw.o({ Organ: 1 }).length === 10 && vw.o({ Bar: 1 }).length === 7) ? 1 : 0
+
+},
+VytoBunch_rested(w) {
+    return this.Vyto_rest_poll(w, 4)
+
+},
+// the one kin edge: exactly one %Flow row and it joins the two oaks (matched by their mirror toks).
+VytoBunch_edge_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.relations) return 0
+    let edges = vw.c.relations.o()
+    if (edges.length !== 1) return 0
+    let r1 = this.VytoStaple_cog_row(vw, 'oak1')
+    let r2 = this.VytoStaple_cog_row(vw, 'oak2')
+    if (!r1 || !r2) return 0
+    let a = edges[0].sc.a
+    let b = edges[0].sc.b
+    let t1 = r1.c.tok
+    let t2 = r2.c.tok
+    return ((a === t1 && b === t2) || (a === t2 && b === t1)) ? 1 : 0
+
+},
+VytoBunch_T(vw, name) {
+    let r = this.VytoStaple_cog_row(vw, name)
+    return (r && r.c.T) ? r.c.T : null
+
+},
+VytoBunch_dist(p, q) {
+    let dx = p.x - q.x
+    let dy = p.y - q.y
+    return Math.sqrt(dx * dx + dy * dy)
+
+},
+// the four seats are distinct and in-frame — the attraction drew close but never collapsed a cell.
+VytoBunch_distinct_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    let names = ['oak1', 'pine', 'oak2', 'birch']
+    let Ts = []
+    for (const nm of names) {
+        let T = this.VytoBunch_T(vw, nm)
+        if (!T) return 0
+        if (!(T.x >= 0 && T.x <= 800 && T.y >= 0 && T.y <= 450 && T.r > 0)) return 0
+        Ts.push(T)
+    }
+    let a = 0
+    while (a < 4) {
+        let b = a + 1
+        while (b < 4) {
+            if (Ts[a].x === Ts[b].x && Ts[a].y === Ts[b].y) return 0
+            b = b + 1
+        }
+        a = a + 1
+    }
+    return 1
+
+},
+// ── the witness — board at step 3 · edge and distinct at the joined rest (step 4) · the bunching
+//   differential at the free rest (step 5) — every sentence comma-free and apostrophe-free. ────────
+VytoBunch_witness(w) {
+    if (this.VytoBunch_board_ready(w)) {
+        this.story_swear(w, 'the glass was commissioned on four cogs and stood its board')
+        if (!(w.oa({see: 'the glass was commissioned on four cogs and stood its board'}))) w.i({see: 'the glass was commissioned on four cogs and stood its board'})
+    }
+    if (this.VytoBunch_edge_ready(w)) {
+        this.story_swear(w, 'the relate organ wove one kin edge — the two oaks share a genus and the strangers share nothing')
+        if (!(w.oa({see: 'the relate organ wove one kin edge — the two oaks share a genus and the strangers share nothing'}))) w.i({see: 'the relate organ wove one kin edge — the two oaks share a genus and the strangers share nothing'})
+    }
+    if (this.VytoBunch_distinct_ready(w)) {
+        this.story_swear(w, 'the solve seated four distinct cells — the attraction drew the kin close but never collapsed them')
+        if (!(w.oa({see: 'the solve seated four distinct cells — the attraction drew the kin close but never collapsed them'}))) w.i({see: 'the solve seated four distinct cells — the attraction drew the kin close but never collapsed them'})
+    }
+    if (this.VytoBunch_bunched_ready(w)) {
+        this.story_swear(w, 'the shared genus bunched the kin — the two oaks rest closer to each other while joined than once their kinship is severed')
+        if (!(w.oa({see: 'the shared genus bunched the kin — the two oaks rest closer to each other while joined than once their kinship is severed'}))) w.i({see: 'the shared genus bunched the kin — the two oaks rest closer to each other while joined than once their kinship is severed'})
+    }
 
 },
 

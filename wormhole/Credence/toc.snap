@@ -3,26 +3,27 @@ Waft:Credence
   Funkcion:Shelver
   What:Pere,desc:the Peeroleum peer-to-peer transport floor — liveness reliability and trust admission
     Funkcion:StoryTimes
-    Funkcion:Storying,of_Book:PereStaple
+    Funkcion:Storying,of_Book:PereStaple,wire:canonical Peeroleum spine over loopback mock carriers — the real socket is un-Booked
     Funkcion:Storying,of_Book:PereTyrant
     Funkcion:Storying,of_Book:PereProof
     Funkcion:Storying,of_Book:Peregrination
-    Funkcion:Storying,of_Book:PereReborn
+    Funkcion:Storying,of_Book:PereReborn,wire:reconnect-epoch fix over one loopback link — boot-detection stubbed
     Funkcion:Storying,of_Book:PereComplain,born:2026-07-22,desc:the protocol back-signal — an unenabled frame type draws a no_protocol complaint when the peer is ready but is held silently during the handshake startup window
   What:Swarm,desc:the social sharing layer — signed invites reciprocal grants revocation and portable accounts
     Funkcion:StoryTimes
-    Funkcion:Storying,of_Book:SwarmStaple
-    Funkcion:Storying,of_Book:SwarmWire
-    Funkcion:Storying,of_Book:SwarmSteal
-    Funkcion:Storying,of_Book:SwarmInvite
-    Funkcion:Storying,of_Book:SwarmDoor
-    Funkcion:Storying,of_Book:SwarmGot
-    Funkcion:Storying,of_Book:SwarmPolicy
+    Funkcion:Storying,of_Book:SwarmStaple,wire:identity and grant crypto at the model layer — no wire
+    Funkcion:Storying,of_Book:SwarmWire,wire:the handshake over the loopback Peeroleum spine — mock carriers not a socket
+    Funkcion:Storying,of_Book:SwarmSteal,wire:one key in many places at the model layer — no wire
+    Funkcion:Storying,of_Book:SwarmInvite,wire:QR redeem over the in-process mail wire — no socket
+    Funkcion:Storying,of_Book:SwarmDoor,wire:first-contact door over deterministic mock stations — NOT the real websocket
+    Funkcion:Storying,of_Book:SwarmGot,wire:reachable-music tally over the mail wire — no socket
+    Funkcion:Storying,of_Book:SwarmPolicy,wire:door ttl policy over the mail wire — no socket
     Funkcion:Storying,of_Book:Swarmation
-    Funkcion:Storying,of_Book:SwarmShare
+    Funkcion:Storying,of_Book:SwarmShare,wire:live-share keying over two loopback links — no relay
     Funkcion:Storying,of_Book:SwarmChain,born:2026-07-22,desc:the re-assignable ReInvite chain — one invite threads A—B—C—D and the tip not the issuer grants each newcomer capped at the embedded Feature
     Funkcion:Storying,of_Book:SwarmBlotter,born:2026-07-22,desc:the one-time serial SHEET — a printed blotter of numbered tickets each a single-use invite torn once and refused a replay plus the legacy link door-parse
     Funkcion:Storying,of_Book:SwarmSpoof,born:2026-07-22,desc:the prepub-forgery teeth — a hostile hello may declare a victim's address while holding its own key and self-signed grant so the door binds the routing prepub to the verified pub or refuses the seal
+    Funkcion:Storying,of_Book:SwarmDisk
   What:Voro,desc:the Voronoi-Cyto render — Cyto's force layout reinterpreted as power-diagram cells with the crushed Stuffings molded into a rosette
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:VoroMitosis
@@ -45,41 +46,42 @@ Waft:Credence
     Funkcion:Storying,of_Book:VytoFreeze,born:2026-07-20,desc:the spool cull trims to its cap while the run is green then freezes when the run lands failed so every evidence moment survives
     Funkcion:Storying,of_Book:VytoSeek,born:2026-07-20,desc:a step pip seek resolves to the yore of the moment carrying that step_n and scrubber-only moments stay unreachable — the whichever-glass seek shim
     Funkcion:Storying,of_Book:VytoCrest,born:2026-07-22,desc:the first tenant — the distiller re-homed to the fold station says the oracle rows and every supersession assigns its counted door while the detached mint makes the same crest off the book with nothing snapped
+    Funkcion:Storying,of_Book:VytoWeb,born:2026-07-27,desc:the foam organs wake — gang elects the one key that cleaves a crowded row while relate weaves twelve flow edges from shared meaning and a proposed focus swells its cell to dominance then releases even
   What:Musu,desc:the music-piracy streaming platform — the rastock racast raterm pipeline of Radio_todo
     Funkcion:StoryTimes
     What:mostly,desc:the stuff we mostly do as jamsend the music app — the rastock racast raterm pipeline on real tracks
       What:the wire cut,desc:the CANONICAL paged shape end to end — a Mag crosses as one husk then warm-starts pulls stages and plays back — MusuBuddy the social session and MusuMag the wire proof
-        Funkcion:Storying,of_Book:MusuBuddy,needsFSA:1,needMusic:1,born:2026-07-14
-        Funkcion:Storying,of_Book:MusuMag,needsFSA:1,needMusic:1,born:2026-07-19
+        Funkcion:Storying,of_Book:MusuBuddy,needsFSA:1,needMusic:1,born:2026-07-14,wire:the social session over a loopback link — no relay
+        Funkcion:Storying,of_Book:MusuMag,needsFSA:1,needMusic:1,born:2026-07-19,wire:the Mag husk crosses loopback — no relay
       What:the pipeline,desc:the live listening session on real tracks — the paced playhead and the village chase plus the test-data seeder — NOTE these scenes still ride the pre-Mag FLAT mirror shape — the pacing mechanisms are canonical the scene shape is not
         Funkcion:Storying,of_Book:MusuGenerateTestsMusic,needsFSA:1,unusual:test-data-seeding
-        Funkcion:Storying,of_Book:MusuRaStream,needsFSA:1,needMusic:1,born:2026-07-08
-        Funkcion:Storying,of_Book:MusuRaChase,needsFSA:1,needMusic:1,born:2026-07-11
+        Funkcion:Storying,of_Book:MusuRaStream,needsFSA:1,needMusic:1,born:2026-07-08,wire:a real listening session over the loopback wire
+        Funkcion:Storying,of_Book:MusuRaChase,needsFSA:1,needMusic:1,born:2026-07-11,wire:multi-source restock chase over two loopback links
         Funkcion:Storying,of_Book:RaBreach,born:2026-07-22,desc:the rung-0 content-address gate on Repli chunk arrival — bad bytes that do not hash to the chunk cid are refused and marked a breach while honest bytes land untouched
       What:the magazine,desc:the sharing layer — heist bytes into a collection then berth persist share and browse it across Piers
-        Funkcion:Storying,of_Book:MusuHeist,needsFSA:1,needMusic:1,born:2026-07-11
+        Funkcion:Storying,of_Book:MusuHeist,needsFSA:1,needMusic:1,born:2026-07-11,wire:two Piers loopback-linked over one disk — not the real socket
         Funkcion:Storying,of_Book:MusuBreach,needsFSA:1,needMusic:1,born:2026-07-15
         Funkcion:Storying,of_Book:MusuOgg,needsFSA:1,needMusic:1,born:2026-07-17
         Funkcion:Storying,of_Book:MusuBerth,needsFSA:1,born:2026-07-12
-        Funkcion:Storying,of_Book:MusuVend,born:2026-07-13
-        Funkcion:Storying,of_Book:MusuDoor,born:2026-07-13
-        Funkcion:Storying,of_Book:MusuReco,needMusic:1
-        Funkcion:Storying,of_Book:MusuSoft,needsFSA:1,needMusic:1,born:2026-07-17
-        Funkcion:Storying,of_Book:MusuBay,needsFSA:1,needMusic:1,born:2026-07-17
+        Funkcion:Storying,of_Book:MusuVend,born:2026-07-13,wire:two-Pier magazine replication over loopback — grant-gated — no relay
+        Funkcion:Storying,of_Book:MusuDoor,born:2026-07-13,wire:the anti-klepto door over loopback — no real socket
+        Funkcion:Storying,of_Book:MusuReco,needMusic:1,wire:recommend and stream over one loopback link
+        Funkcion:Storying,of_Book:MusuSoft,needsFSA:1,needMusic:1,born:2026-07-17,wire:soft-heist search hardens into a pull over loopback
+        Funkcion:Storying,of_Book:MusuBay,needsFSA:1,needMusic:1,born:2026-07-17,wire:two loopback origins into one seeker — no socket
         Funkcion:Storying,of_Book:MusuLossy,needsFSA:1,born:2026-07-26,desc:the %Original vs %Lossy grade split at census — a compressed opus or mp3 source lands %Lossy with its title read from the codec headers while a lossless wav lands %Original — and the graded chunks reassemble byte-faithfully into a file left on disk
         What:the cursor,desc:a Dogear names a spot in a magazine — resolve then heal across a rename then resume across a reload
           Funkcion:Storying,of_Book:MusuCursor,born:2026-07-13
           Funkcion:Storying,of_Book:MusuHeal,born:2026-07-14
           Funkcion:Storying,of_Book:MusuResume,born:2026-07-14
       What:standing and forgetting,desc:the collection lifecycle — the standing publish and its quiet wire — recast withdrawals off the paged shape — renames — the forget cascade with bias-to-keep
-        Funkcion:Storying,of_Book:MusuStanding
-        Funkcion:Storying,of_Book:MusuRecast
-        Funkcion:Storying,of_Book:MusuRename
-        Funkcion:Storying,of_Book:MusuFreeze,born:2026-07-17
+        Funkcion:Storying,of_Book:MusuStanding,wire:standing diff-publish over loopback — re-offers on change only
+        Funkcion:Storying,of_Book:MusuRecast,wire:goner re-publish crosses loopback — leaves no orphan
+        Funkcion:Storying,of_Book:MusuRename,wire:rename redirect rides the loopback pipe — no socket
+        Funkcion:Storying,of_Book:MusuFreeze,born:2026-07-17,wire:revoked mirror frozen over loopback — no remote edit
         Funkcion:Storying,of_Book:MusuReap
       What:replication,desc:the wire protocol itself — offers husks wants pages and crush proven on FLAT shelves — flat stays prod-legal for quarantines and strays but the canonical friend mirror is now the paged Mag of the wire cut
-        Funkcion:Storying,of_Book:MusuBounce,needMusic:1
-        Funkcion:Storying,of_Book:MusuReplica
+        Funkcion:Storying,of_Book:MusuBounce,needMusic:1,wire:real tracks dribble over one loopback link — receiver skips
+        Funkcion:Storying,of_Book:MusuReplica,wire:repli collection browse over loopback
     What:lowlevels,desc:the ladder of tiny aspect proofs — spec Radio_lowlevel.md — kept for regression hunts not for direction
       Funkcion:StoryTimes
       What:cursor models,desc:pure cursor-arithmetic simulations of the streaming spine — no audio no wire
@@ -163,7 +165,7 @@ Waft:Credence
   What:Misc,inline
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:GhoghoDrone
-    Funkcion:Storying,of_Book:Sounditron,unusual:real-environment
+    Funkcion:Storying,of_Book:Sounditron,unusual:real-environment,wire:probes the REAL relay and live peers — the only real-channel Book — channel liveness not a proven round-trip
     Funkcion:Storying,of_Book:LakeSearch
     Funkcion:Storying,of_Book:LakeTtlilt
     Funkcion:Storying,of_Book:Stuffing
@@ -172,3 +174,6 @@ Waft:Credence
     Funkcion:Storying,of_Book:Nestcut
     Funkcion:Storying,of_Book:Readback
     Funkcion:Storying,of_Book:RaBreach
+    Funkcion:Storying,of_Book:VytoWeb
+    Funkcion:Storying,of_Book:VytoFold
+    Funkcion:Storying,of_Book:VytoBunch

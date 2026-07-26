@@ -20,6 +20,7 @@
 IMPORT()
     import Vytui from "$lib/O/Vytui.svelte"
     import { power_cells, poly_centroid } from "$lib/O/vyto_geometry"
+    import { sig_of, group_edges, bucket_key_of, pull_step, SIG_JOINS, FOCUS_BOOST, FOCUS_SHRINK } from "$lib/O/vyto_foam"
 
 //#region the world — w:Vyto stands, plans, and waits for its commission
 // Vyto — the w:Vyto worker.  Mirrors Cyto()'s shape so a client commissions either glass
@@ -290,7 +291,11 @@ Vyto_scan_sweep(w, parentMirror, gen):
 
 // Vyto_fold — solver: reads the mirror and decides which subtrees become one cell.  This
 //  is Voro.g's crush knowledge re-homed (intensity governor, rosette nucleus); the fold
-//   ITSELF stays in Voro.g until the moult's first tenant proves the seam.
+//   ITSELF stays in Voro.g until the moult's first tenant proves the seam.  The decision
+//   core it will call already stands PURE in vyto_foam.ts — budget_for (the glass sets the
+//    cell count) + fold_ladder (OPEN → BUCKETED → CRUSHED, tightest first, focus shielded) —
+//     gate-proven in the foam studies; this stub stays until the display refactor (which owns
+//      that half) lands the mirror-side wiring.
 Vyto_fold(w):
     return
 
@@ -419,9 +424,28 @@ Vyto_keyrows(root, members, skips, hide):
         }
     }
 
-// Vyto_gang — solver: reads a crowded sibling row and decides who represents whom.
+// Vyto_gang — solver: reads a crowded sibling row and decides who represents whom.  The election
+//  (vyto_foam.bucket_key_of, the foam studies' gate-proven chooser) picks the sc key that PARTITIONS
+//   the row — present in the most members, 2..n−1 distinct values, coarsest wins ties — so K
+//    aggregate representatives could stand for N members.  v1 scope matches Vyto_solve: the ONE
+//     root sibling row.  The DECISION is the write — `w.c.gang_key` + each row's `.c.gang_v` (its
+//      group under that key) — all `.c` matter (an sc write would be swept by the next scan).  An
+//       uncrowded row (≤ 6 — the foam crowding law) needs no representative and clears the key.
 Vyto_gang(w):
-    return
+    if (!w.c.mirror) return
+    let members = w.c.mirror.o().filter(r => !r.sc.departing)
+    if (members.length <= 6) { w.c.gang_key = null; return }
+    let key = bucket_key_of(members.map(m => m.sc))
+    w.c.gang_key = key
+    if (!key) return
+    for (const m of members) {
+        m.c.gang_v = (m.sc[key] != null) ? '' + m.sc[key] : null
+    }
+    let organ = w.o({ Organ: 'Gang' })[0]
+    if (organ && organ.sc.status !== 'live') {
+        organ.sc.status = 'live'
+        organ.bump_version()
+    }
 
 // Vyto_slope — solver: reads a weight and writes a position — and reads the position back
 //  as the weight.  Meaning-owned geometry (spec §6): dragging a Mag up the slope WRITES
@@ -534,17 +558,59 @@ Vyto_hold(w, hold):
     if (!w.c.calm) w.c.calm = new TheC({ c: {}, sc: { Calm: 1 } })
     return w.c.calm.i(hold)
 
-// Vyto_focus — governor: reads attention and decides what matters now.  A focus change is
-//  a SHIFT — a transaction: collect → hold → choreograph → settle → moment (spec §4).
-//   Voro_drift becomes a client of this organ; it proposes, it never touches layout.
+// Vyto_focus — governor: reads attention and decides what matters now.  A proposal names a tok
+//  (or nothing — release); the governor STANDS the decision on w.c.focus_tok and stirs, and the
+//   solver honors it as the foam taper: the focused member's power radius swells by FOCUS_BOOST,
+//    every off-focus sibling compresses by FOCUS_SHRINK, so attention dominates through real
+//     geometry.  No standing focus ⇒ every mag is 1 ⇒ the untouched base cut, byte-identical
+//      (the studies' warp gate — existing fixtures never move).  The full SHIFT transaction
+//       (collect → hold → choreograph → settle → moment, spec §4) rides this seam later;
+//        Voro_drift becomes a client of this organ — it proposes, it never touches layout.
 Vyto_focus(w, proposal):
-    return
+    w.c.focus_tok = proposal?.tok ?? null
+    let organ = w.o({ Organ: 'Focus' })[0]
+    if (organ && organ.sc.status !== 'live') {
+        organ.sc.status = 'live'
+        organ.bump_version()
+    }
+    this.Vyto_stir_soon(w)
+
+// e_Vyto_focus — the proposal door (the e_Vyto_commission idiom): a client anywhere dispatches
+//  i_elvisto('Vyto/Vyto' 'Vyto_focus' {tok}) and the governor decides.  Story drives it the same
+//   way a pointer or Voro_drift will.
+e_Vyto_focus(A, w, e):
+    this.Vyto_focus(w, e?.sc)
 
 // Vyto_relate — scribe: reads meaning and writes %Flow edges (same Artist, played-together,
 //  co-heisted).  A Relate edge is also an ATTRACTION the solver honors — the first link of
-//   the bunching chain (spec §6).
+//   the bunching chain (spec §6; the solver's spring read is the next milestone — the edges
+//    STAND first so Vytui and the Books can see them).  Meaning = the foam signature: every
+//     shared `k=v` atom between two sibling rows EXCEPT the structural join keys (of:main across
+//      a family is plumbing, not kinship) and each row's own mainkey line (identity, not meaning).
+//       The edges live DETACHED on w.c.relations — c-side, spool-visible, entirely view matter,
+//        never a snap — as %Flow rows `a`/`b` (the two toks) + `n` (shared-atom count, a string —
+//         a bare numeric 1 would wildcard).  Rebuilt whole each stir: root-scope edge sets are
+//          tiny, and a rebuild can never leak a stale affinity.
 Vyto_relate(w):
-    return
+    if (!w.c.mirror) return
+    let members = w.c.mirror.o().filter(r => !r.sc.departing)
+    if (!w.c.relations) w.c.relations = new TheC({ c: {}, sc: { Relations: 1 } })
+    for (const e of w.c.relations.o()) w.c.relations.drop(e)
+    let sigs = []
+    for (const m of members) {
+        let skips = SIG_JOINS.concat(['departing', this.mainkey(m)])
+        sigs.push(sig_of(m.sc, skips))
+    }
+    let edges = group_edges(sigs)
+    for (const e of edges) {
+        w.c.relations.i({ Flow: 1, a: members[e.i].c.tok, b: members[e.j].c.tok, n: '' + e.w })
+    }
+    if (!edges.length) return
+    let organ = w.o({ Organ: 'Relate' })[0]
+    if (organ && organ.sc.status !== 'live') {
+        organ.sc.status = 'live'
+        organ.bump_version()
+    }
 
 // Vyto_express — scribe: reads quantities and writes channels (area, weight, hue, z, blur,
 //  fg/bg, motion amplitude, edge loudness).  The generalisation of dose-drives-area and of
@@ -618,13 +684,45 @@ Vyto_solve(w):
     for (const m of members) {
         seeds.push({ x: m.c.seed.x, y: m.c.seed.y })
         let a = (m.c.env_area != null) ? m.c.env_area : 2400
-        radii.push(Math.sqrt(a / Math.PI))
+        // the focus taper (governor Focus's standing decision): the focused member's radius swells
+        //  by FOCUS_BOOST and every other compresses by FOCUS_SHRINK — attention as geometry.  No
+        //   standing focus ⇒ mag 1 ⇒ this line is byte-invisible to every focus-free world.
+        let mag = 1
+        if (w.c.focus_tok != null) mag = (m.c.tok === w.c.focus_tok) ? FOCUS_BOOST : FOCUS_SHRINK
+        radii.push(Math.sqrt(a / Math.PI) * mag)
         pinned.push(this.Vyto_calm_held(w, m, 'position') === 0)
     }
-    // K=2 relax toward the centroidal power diagram (shapes.md §3: η=0.25, K=2, gap 2.2) —
-    //  each unpinned seed steps a quarter of the way to its cell's area centroid; a null poly
-    //   (crowded out) skips the pull.  K is small on purpose: convergence rides successive
-    //    solves, so the relax is interruptible by construction.
+    // the Relate attraction (Vyto_spec §6 — meaning becomes proximity becomes tessellation adjacency):
+    //  read the %Flow edges the scribe wrote onto w.c.relations and build the per-seat neighbour list the
+    //   relax nudges toward.  Left NULL when no edge references a live seat — the relation-free solve then
+    //    hands pull_step nothing and its seeds come back verbatim (the focus-taper byte-neutral discipline:
+    //     no edges ⇒ this whole apparatus is invisible and every relate-free fixture stands to the byte).
+    let nbrs = null
+    if (w.c.relations) {
+        let tokAt = {}
+        let ti = 0
+        while (ti < members.length) { tokAt[members[ti].c.tok] = ti; ti = ti + 1 }
+        for (const e of w.c.relations.o()) {
+            let ai = tokAt[e.sc.a]
+            let bi = tokAt[e.sc.b]
+            if (ai == null) continue
+            if (bi == null) continue
+            if (!nbrs) {
+                nbrs = []
+                let z = 0
+                while (z < members.length) { nbrs.push([]); z = z + 1 }
+            }
+            let wgt = Number(e.sc.n) || 1
+            nbrs[ai].push({ j: bi, w: wgt })
+            nbrs[bi].push({ j: ai, w: wgt })
+        }
+    }
+    // K=2 relax toward the centroidal power diagram (shapes.md §3: η=0.25, K=2, gap 2.2) — each unpinned
+    //  seed steps a quarter of the way to its cell's area centroid; a null poly (crowded out) skips the
+    //   pull.  When Relate wrote edges, each iteration ALSO nudges related seats toward one another
+    //    (pull_step) so meaning bunches into adjacency; the centroidal pull counter-balances so the
+    //     equilibrium is proximity not collapse.  K is small on purpose: convergence rides successive
+    //      solves, so the relax is interruptible by construction.
     let k = 0
     while (k < 2) {
         let polys = power_cells(frame, seeds, radii, 2.2)
@@ -636,6 +734,7 @@ Vyto_solve(w):
             }
             i = i + 1
         }
+        if (nbrs) seeds = pull_step(seeds, nbrs, pinned, 0.15)
         k = k + 1
     }
     // final cut + area-centroid anchors → write targets.  Solver law 1: if the computed T

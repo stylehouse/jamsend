@@ -9,21 +9,21 @@ Snap:H
           Identity:d70f253aa325f68b,prepub:d70f253aa325f68b,friendly:Caster
             Peering,name:d70f253aa325f68b,friendly:Caster
               Idzeug:mag_1,to:Music,genre:Mags,spent
-              Pier,pub:2ea86ae9ea3556f0,friendly:Hearer,since:1784499925
+              Pier,pub:2ea86ae9ea3556f0,friendly:Hearer,since:1785078506
                 Peering,name:2ea86ae9ea3556f0,friendly:Hearer,pub:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b
-                Grant:Music,by:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,for:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,time:1784499925,sign:55f7c5d889f147d5bc05e2d748513c928f5fe0abc6839990b8a5c815b6e5c952f8f2dd4e2ba2b8f309dee2a232f2e8e5ad889e40806c633e70bf8a92e7a9d60a,genre:Mags
-                Grant:Music,by:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,for:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,time:1784499925,sign:ee23d1ada68fb3702f1a56756be433d230d5636b0eb49db19826952b9923662558fae437db2260d33dab1407bc1a6b655801c2399d43ef27cce76d5e39429908,genre:Mags
+                Grant:Music,by:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,for:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,time:1785078506,sign:9c7f35cfdac1675bb1c6912bb2b315c35fcb007aa4553816b48834055cab854034f11a3aa31628d871d0dffa5c602cd8dae95a7c2a5726fd4f0604212f92a900,genre:Mags
+                Grant:Music,by:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,for:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,time:1785078506,sign:f3e12c5a70395cb5330b447a069fc4d4c1b7536483274a6228edd4ac1dd9250213866fe9f347a31c77162159037b0c9f5d105621bded0e11f496b6c4b34af70a,genre:Mags
             SocialGraph
-              Edge,a:d70f253aa325f68b,b:2ea86ae9ea3556f0,at:1784499925
+              Edge,a:d70f253aa325f68b,b:2ea86ae9ea3556f0,at:1785078506
         Account,of:Hearer
           Identity:2ea86ae9ea3556f0,prepub:2ea86ae9ea3556f0,friendly:Hearer
             Peering,name:2ea86ae9ea3556f0,friendly:Hearer
-              Pier,pub:d70f253aa325f68b,friendly:Caster,since:1784499925
+              Pier,pub:d70f253aa325f68b,friendly:Caster,since:1785078506
                 Peering,name:d70f253aa325f68b,friendly:Caster,pub:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2
-                Grant:Music,by:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,for:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,time:1784499925,sign:ee23d1ada68fb3702f1a56756be433d230d5636b0eb49db19826952b9923662558fae437db2260d33dab1407bc1a6b655801c2399d43ef27cce76d5e39429908,genre:Mags
-                Grant:Music,by:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,for:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,time:1784499925,sign:55f7c5d889f147d5bc05e2d748513c928f5fe0abc6839990b8a5c815b6e5c952f8f2dd4e2ba2b8f309dee2a232f2e8e5ad889e40806c633e70bf8a92e7a9d60a,genre:Mags
+                Grant:Music,by:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,for:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,time:1785078506,sign:9c7f35cfdac1675bb1c6912bb2b315c35fcb007aa4553816b48834055cab854034f11a3aa31628d871d0dffa5c602cd8dae95a7c2a5726fd4f0604212f92a900,genre:Mags
+                Grant:Music,by:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,for:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,time:1785078506,sign:f3e12c5a70395cb5330b447a069fc4d4c1b7536483274a6228edd4ac1dd9250213866fe9f347a31c77162159037b0c9f5d105621bded0e11f496b6c4b34af70a,genre:Mags
             SocialGraph
-              Edge,a:2ea86ae9ea3556f0,b:d70f253aa325f68b,at:1784499925
+              Edge,a:2ea86ae9ea3556f0,b:d70f253aa325f68b,at:1785078506
         Peering,name:d70f253aa325f68b,req=2,ok
           Pier,pub:2ea86ae9ea3556f0,req=2,ok
             req:handshake,finished
@@ -62,7 +62,6 @@ Snap:H
                 emit=76,type:repli_page,seq=76
             inbox
               recent
-                unemit=8,type:repli_want,seq=8
                 unemit=9,type:repli_want,seq=9
                 unemit=10,type:repli_want,seq=10
                 unemit=11,type:repli_want,seq=11
@@ -82,6 +81,7 @@ Snap:H
                 unemit=25,type:repli_want,seq=25
                 unemit=26,type:repli_want,seq=26
                 unemit=27,type:repli_want,seq=27
+                unemit=28,type:repli_want,seq=28
             Ud,pubkey:2ea86ae9ea3556f0
           active_transport,type:mock,open
         Peering,name:2ea86ae9ea3556f0,req=3,ok
@@ -100,7 +100,6 @@ Snap:H
                 heard
             outbox
               recent
-                emit=8,type:repli_want,seq=8
                 emit=9,type:repli_want,seq=9
                 emit=10,type:repli_want,seq=10
                 emit=11,type:repli_want,seq=11
@@ -120,6 +119,7 @@ Snap:H
                 emit=25,type:repli_want,seq=25
                 emit=26,type:repli_want,seq=26
                 emit=27,type:repli_want,seq=27
+                emit=28,type:repli_want,seq=28
             inbox
               recent
                 unemit=57,type:repli_page,seq=57

@@ -4,43 +4,44 @@ story:SwarmStaple
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.045
-      sample=0.043,at=1784377597
-      sample=0.044,at=1784377908
-      sample=0.044,at=1784377912
-      sample=0.044,at=1784377916
-      sample=0.044,at=1784377917
-      sample=0.044,at=1784377918
-      sample=0.04,at=1784377927
-      sample=0.046,at=1784422505
-      sample=0.053,at=1784703519
-      sample=0.045,at=1784714592
-    TimeTotal:step,avg=0.006
-      sample=0.005,at=1784377597
-      sample=0.006,at=1784377908
-      sample=0.006,at=1784377912
-      sample=0.006,at=1784377916
-      sample=0.006,at=1784377917
-      sample=0.006,at=1784377918
-      sample=0.005,at=1784377927
-      sample=0.006,at=1784422505
-      sample=0.007,at=1784703519
-      sample=0.006,at=1784714592
+    TimeTotal:beliefs,avg=0.039
+      sample=0.055,at=1785075155
+      sample=0.055,at=1785075168
+      sample=0.055,at=1785075243
+      sample=0.043,at=1785075253
+      sample=0.037,at=1785075284
+      sample=0.032,at=1785094769
+      sample=0.032,at=1785094798
+      sample=0.025,at=1785094805
+      sample=0.028,at=1785094833
+      sample=0.026,at=1785094842
+    TimeTotal:step,avg=0.005
+      sample=0.007,at=1785075155
+      sample=0.007,at=1785075168
+      sample=0.007,at=1785075243
+      sample=0.005,at=1785075253
+      sample=0.005,at=1785075284
+      sample=0.004,at=1785094769
+      sample=0.004,at=1785094798
+      sample=0.003,at=1785094805
+      sample=0.004,at=1785094833
+      sample=0.003,at=1785094842
   step,dige:857b7f27f55187b6
   step=2,dige:8c658e1450d254fb
     Assertion:two-selves,sentence:two selves stand — each an Identity owning its Peering page — keys ride .c only
   step=3,dige:f05dfb0492b0d481
     Assertion:idzeug-minted,sentence:Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical
-  step=4,dige:8bebe0e452a3c6fc
-    Assertion:offline-redeem-fails,sentence:redeeming with the inviter offline fails — the Idzeug is proof of receipt not an offline token
-    Assertion:tamper-rejected,sentence:a tampered Idzeug fails verification — one flipped signature byte and it is rejected
-  step=5,dige:cf63a752581a5f2e
+  step=4,dige:3aab3d2d108242f9
+    Assertion:offline-redeem-fails,sentence:redeeming with the inviter offline fails — the token is proof of receipt not an offline capability
+    Assertion:mangled-token-rebuffed,sentence:a mangled token is rebuffed at the redeemer — it never parses and no frame crosses
+  step=5,dige:d1deb79f08d1a5af
+    Assertion:presig-flip-door,sentence:a flipped presig refuses locally at the door — only the issuer key can wear the MAC — and the true token still seals behind it
     Assertion:friendship-edge,sentence:the friendship is an edge logged in the social graph at both ends
     Assertion:reciprocity-sealed,sentence:each Pier carries a Music grant the OTHER signed — Classical only — reciprocity sealed
     Assertion:page-imported,sentence:Bob imported the page of Alice — the stashed Peering reborn under his Pier
-  step=6,dige:6c0a149712d3a8fc
+  step=6,dige:dec3447fb00ec61d
     Assertion:single-use-spent,sentence:the Idzeug is single-use — a second redeem finds the nonce spent and is rebuffed
-  step=7,dige:3ee91586202d6b80
+  step=7,dige:88ed1e77ed402e4a
     Assertion:notgrant-retires,sentence:a NotGrant under the Pier retires it at use — the other end stands until told
-  step=8,dige:7357d21df1c736a7
+  step=8,dige:455e59964971e370
     Assertion:account-roundtrip,sentence:the account survives export and import byte for byte — Pier and grants and keys intact

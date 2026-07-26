@@ -1,9 +1,9 @@
 Snap:H
   H:MusuRaChase,Run
     A:MusuRaChase
-      self,round=9	{"mung":["age"]}
+      self,round=8	{"mung":["age"]}
       w:MusuRaChase,keep_ahead=3
-        self,round=9	{"mung":["age"]}
+        self,round=8	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Account,of:Uno

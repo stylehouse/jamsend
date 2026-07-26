@@ -418,6 +418,14 @@ async Ra_decode_packets(packets, nch, skip):
 Ra_stock_dir():
     return '.jamsend/radiostock'
 
+// Ra_stock_cap — how many files THIS Peering keeps on disk before the oldest wear off (Ra_stock_gc).
+//  radiostock is a WORKING cache for the speedy run-around, not the archive — so it is bounded, like
+//   the shelf (Stoker_cull, 44 live) and the mag draws (Stoker_mag_draw, 8).  Generously above the
+//    shelf so nothing recently stood is ever evicted from disk before its shelf life ends; past it a
+//     dropped file is one re-dig from source, never a loss (Ra_stock_one is idempotent).  Tune here.
+Ra_stock_cap():
+    return 256
+
 // Ra_stock_name — ONE file per record, <ts>-<pub>-<enid>.jamsend_radiostock, NOT one per chunk.
 //  '.jamsend/' lives INSIDE the user's music library, so nothing here may read as media: the
 //   deliberately awkward extension defeats any scanner's guess, and a file that opens with '{' is
@@ -502,6 +510,25 @@ async Ra_stock_find(nav, pub, enid):
     if (!mine.length) return null
     for (const old of mine.slice(1)) await this.Ra_stock_drop(nav, old.name)
     return mine[0]
+
+// Ra_stock_gc — the disk twin of Stoker_cull: keep only this pub's newest Ra_stock_cap() files, wear
+//  the oldest off (Ra_stock_ls is newest-first, so slice(cap) is the tail — the oldest by mint ts).
+//   Deliberately NO reference-tracing: we do NOT read the Mags to spare what's referred to, because a
+//    dropped byte-cache is one re-dig from source (Ra_stock_one idempotent) and a Mag %Card refers by
+//     id, never contains the bytes — so keeping-what's-referenced would be needless bookkeeping for a
+//      cache that regenerates.  Per-pub (Ra_stock_ls already filters), so a shared .jamsend never has
+//       one identity evict another's shelf.  Best-effort: Ra_stock_drop no-ops on a read-only proxy.
+//        Returns the count dropped.  Runs once per churn that landed (Radio.g), never per look.
+async Ra_stock_gc(nav, pub):
+    let mine = await this.Ra_stock_ls(nav, pub)
+    let cap = this.Ra_stock_cap()
+    if (mine.length <= cap) return 0
+    let dropped = 0
+    for (const old of mine.slice(cap)) {
+        await this.Ra_stock_drop(nav, old.name)
+        dropped = dropped + 1
+    }
+    return dropped
 
 // Ra_stock_peek — the card line only (~600 bytes of JSON before the first '\n'): read_range where
 //  the nav can seek, whole-file where it can't.  For the GC's is-this-my-path question — never pay

@@ -4,28 +4,28 @@ story:SwarmSpoof
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.024
-      sample=0.036,at=1784703440
-      sample=0.036,at=1784703441
-      sample=0.036,at=1784703442
-      sample=0.012,at=1784703450
-      sample=0.01,at=1784703466
+    TimeTotal:beliefs,avg=0.02
       sample=0.025,at=1784714486
       sample=0.025,at=1784714512
       sample=0.025,at=1784714513
       sample=0.012,at=1784714525
       sample=0.023,at=1784714539
-    TimeTotal:step,avg=0.006
-      sample=0.009,at=1784703440
-      sample=0.009,at=1784703441
-      sample=0.009,at=1784703442
-      sample=0.003,at=1784703450
-      sample=0.003,at=1784703466
+      sample=0.018,at=1785075867
+      sample=0.018,at=1785075875
+      sample=0.011,at=1785075883
+      sample=0.024,at=1785075893
+      sample=0.02,at=1785094866
+    TimeTotal:step,avg=0.005
       sample=0.006,at=1784714486
       sample=0.006,at=1784714512
       sample=0.006,at=1784714513
       sample=0.003,at=1784714525
       sample=0.006,at=1784714539
+      sample=0.004,at=1785075867
+      sample=0.004,at=1785075875
+      sample=0.002,at=1785075883
+      sample=0.005,at=1785075893
+      sample=0.004,at=1785094866
   step,dige:e459d5a3175f7c10
   step=2,dige:68bae842c38d16a4
   step=3,dige:8b387e6c0cec086b
@@ -33,3 +33,5 @@ story:SwarmSpoof
   step=4,dige:06b9796ebc732af7
     Assertion:a-hostile-hello-declaring,sentence:a hostile hello declaring an address its key cannot derive is refused at the door — no contact seals under the forged address and the live invite stays unspent
     Assertion:the-forged-victim-is,sentence:the forged victim is left untouched — the refused spoof sends no reply so the innocent address the attacker wore is never spammed with a rejection
+  step=5,dige:818758fe530ac2f0
+    Assertion:presig-mac-teeth,sentence:a guessed serial and a forged presig both refuse locally — no reply and no spend and no contact — only the issuer key can wear the MAC

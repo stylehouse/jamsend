@@ -1,9 +1,9 @@
 Snap:H
   H:MusuBuddy,Run
     A:MusuBuddy
-      self,round=6	{"mung":["age"]}
+      self,round=7	{"mung":["age"]}
       w:MusuBuddy
-        self,round=6	{"mung":["age"]}
+        self,round=7	{"mung":["age"]}
         req:wrangle,eternal,ok
         Account,of:DJ
           Identity:c012850d69de1318,prepub:c012850d69de1318,friendly:DJ

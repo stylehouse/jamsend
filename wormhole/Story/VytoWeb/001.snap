@@ -1,0 +1,7 @@
+Snap:H
+  H:VytoWeb,Run
+    A:VytoWeb
+      self,round	{"mung":["age"]}
+      w:VytoWeb
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

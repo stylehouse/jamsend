@@ -1,45 +1,45 @@
 Snap:H
   H:MusuRaChase,Run
     A:MusuRaChase
-      self,round=119	{"mung":["age"]}
+      self,round=117	{"mung":["age"]}
       w:MusuRaChase,keep_ahead=3
-        self,round=119	{"mung":["age"]}
+        self,round=117	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Account,of:Uno
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
               Idzeug:rachase_u,to:Music,genre:Chase,spent
-              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1784452629
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1785077846
                 Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1784452629,sign:5cd8a381b0b5d3ea8e250f2a4f055a32bcc5454f40e3f80509ea36a6a7f83ebcfe6b7e254a9311af0545907fca29b8e95b473f25434b61df837de1a05835c200,genre:Chase
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784452629,sign:8c0ea88c81cba4efe06b0929abe37a2b2d74ba880efcafb61feaae1ddbbe1f861c91c85bcf74e65ca928c0c9e024f2fe59b3b08fb3693623e05f12d1ac23fa0c,genre:Chase
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1785077846,sign:86691f780c72617af5d36955f033cf771627962e0a8391a95c411bb86500998b08b33c8c71cea723ec264e5c9727f1da6523ac81275c5d55c5377440dcc30905,genre:Chase
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1785077846,sign:71e4a92b3018687e47e6b61aef4815874992598a29642d6b9341c39a91ab365f9d10c9ae26bff96a2715aad9f3d8b40329e4b5c9846f2ff6b8d30a6fdc4e4300,genre:Chase
             SocialGraph
-              Edge,a:4e09f34f5a6ab900,b:b317b9a776e39d30,at:1784452629
+              Edge,a:4e09f34f5a6ab900,b:b317b9a776e39d30,at:1785077846
         Account,of:Duo
           Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
             Peering,name:be0dab3303037ad2,friendly:Duo
               Idzeug:rachase_d,to:Music,genre:Chase,spent
-              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1784452629
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1785077846
                 Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1784452629,sign:c2f72779d0c451549d35eab34df7dd892258b92b03f188ecfdc4f8aa3bb71f40317451efcd99d556ea499684bb0b98e5e6f2de7eac8131f631345ec84bcbf10f,genre:Chase
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784452629,sign:8bc64a2d64daebde8c038b9440847da8efa87b0819e303b9f799d1864cfc36dbf6237e5dd7a456add53962fa3956eab00b8ea32d3313a97c53ce4fd8906ee603,genre:Chase
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1785077846,sign:9ee00cf4a7f0cc129c883c87ef204e60a348f528072ef4f3133af7066a58918803d073760d5080bf32a2d6753eaf7e21dba496067bfd9a540b572e1705820f0f,genre:Chase
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1785077846,sign:965d36434eb2aa80de441f1feb4241c0c8ac6e96915ece22e7bfe4367b8fe734b7055e7edf918385659241764d4ca8e85abaf971c1d4853dcc770140cfdbac0d,genre:Chase
             SocialGraph
-              Edge,a:be0dab3303037ad2,b:b317b9a776e39d30,at:1784452629
+              Edge,a:be0dab3303037ad2,b:b317b9a776e39d30,at:1785077846
         Account,of:Listener
           Identity:b317b9a776e39d30,prepub:b317b9a776e39d30,friendly:Listener
             Peering,name:b317b9a776e39d30,friendly:Listener
-              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1784452629
+              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1785077846
                 Peering,name:4e09f34f5a6ab900,friendly:Uno,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784452629,sign:8c0ea88c81cba4efe06b0929abe37a2b2d74ba880efcafb61feaae1ddbbe1f861c91c85bcf74e65ca928c0c9e024f2fe59b3b08fb3693623e05f12d1ac23fa0c,genre:Chase
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1784452629,sign:5cd8a381b0b5d3ea8e250f2a4f055a32bcc5454f40e3f80509ea36a6a7f83ebcfe6b7e254a9311af0545907fca29b8e95b473f25434b61df837de1a05835c200,genre:Chase
-              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1784452630
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1785077846,sign:86691f780c72617af5d36955f033cf771627962e0a8391a95c411bb86500998b08b33c8c71cea723ec264e5c9727f1da6523ac81275c5d55c5377440dcc30905,genre:Chase
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1785077846,sign:71e4a92b3018687e47e6b61aef4815874992598a29642d6b9341c39a91ab365f9d10c9ae26bff96a2715aad9f3d8b40329e4b5c9846f2ff6b8d30a6fdc4e4300,genre:Chase
+              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1785077846
                 Peering,name:be0dab3303037ad2,friendly:Duo,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784452629,sign:8bc64a2d64daebde8c038b9440847da8efa87b0819e303b9f799d1864cfc36dbf6237e5dd7a456add53962fa3956eab00b8ea32d3313a97c53ce4fd8906ee603,genre:Chase
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1784452629,sign:c2f72779d0c451549d35eab34df7dd892258b92b03f188ecfdc4f8aa3bb71f40317451efcd99d556ea499684bb0b98e5e6f2de7eac8131f631345ec84bcbf10f,genre:Chase
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1785077846,sign:9ee00cf4a7f0cc129c883c87ef204e60a348f528072ef4f3133af7066a58918803d073760d5080bf32a2d6753eaf7e21dba496067bfd9a540b572e1705820f0f,genre:Chase
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1785077846,sign:965d36434eb2aa80de441f1feb4241c0c8ac6e96915ece22e7bfe4367b8fe734b7055e7edf918385659241764d4ca8e85abaf971c1d4853dcc770140cfdbac0d,genre:Chase
             SocialGraph
-              Edge,a:b317b9a776e39d30,b:4e09f34f5a6ab900,at:1784452629
-              Edge,a:b317b9a776e39d30,b:be0dab3303037ad2,at:1784452630
+              Edge,a:b317b9a776e39d30,b:4e09f34f5a6ab900,at:1785077846
+              Edge,a:b317b9a776e39d30,b:be0dab3303037ad2,at:1785077846
         Peering,name:4e09f34f5a6ab900,req=2,ok
           Pier,pub:b317b9a776e39d30,req=2,ok
             req:handshake,finished
@@ -78,9 +78,8 @@ Snap:H
                 emit=59,type:repli_page,seq=59
             inbox
               recent
-                unemit=2,type:trust,seq=2
                 unemit=3,type:pier_hello,seq=3
-                unemit=4,type:repli_want,seq=4
+                unemit=4,type:pier_confirm,seq=4
                 unemit=5,type:repli_want,seq=5
                 unemit=6,type:repli_want,seq=6
                 unemit=7,type:repli_want,seq=7
@@ -98,6 +97,7 @@ Snap:H
                 unemit=19,type:repli_want,seq=19
                 unemit=20,type:repli_want,seq=20
                 unemit=21,type:repli_want,seq=21
+                unemit=22,type:repli_want,seq=22
             Ud,pubkey:b317b9a776e39d30
           active_transport,type:mock
         Peering,name:b317b9a776e39d30,req=3,ok
@@ -116,9 +116,8 @@ Snap:H
                 heard
             outbox
               recent
-                emit=2,type:trust,seq=2
                 emit=3,type:pier_hello,seq=3
-                emit=4,type:repli_want,seq=4
+                emit=4,type:pier_confirm,seq=4
                 emit=5,type:repli_want,seq=5
                 emit=6,type:repli_want,seq=6
                 emit=7,type:repli_want,seq=7
@@ -136,6 +135,7 @@ Snap:H
                 emit=19,type:repli_want,seq=19
                 emit=20,type:repli_want,seq=20
                 emit=21,type:repli_want,seq=21
+                emit=22,type:repli_want,seq=22
             inbox
               recent
                 unemit=40,type:repli_page,seq=40
@@ -175,7 +175,6 @@ Snap:H
                 heard
             outbox
               recent
-                emit=7,type:repli_want,seq=7
                 emit=8,type:repli_want,seq=8
                 emit=9,type:repli_want,seq=9
                 emit=10,type:repli_want,seq=10
@@ -195,9 +194,10 @@ Snap:H
                 emit=24,type:repli_want,seq=24
                 emit=25,type:repli_want,seq=25
                 emit=26,type:repli_want,seq=26
-              emit=27,type:repli_want,seq=27,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
+                emit=27,type:repli_want,seq=27
               emit=28,type:repli_want,seq=28,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
               emit=29,type:repli_want,seq=29,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
+              emit=30,type:repli_want,seq=30,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
             inbox
               recent
                 unemit=55,type:repli_page,seq=55
@@ -278,7 +278,6 @@ Snap:H
               emit=83,type:repli_page,seq=83,sent,body_hash:dd29300eec3520f760a467da9960037fdba89bda0ea3bfa672b8fc9d1d59750e,body_len=32300,acked
             inbox
               recent
-                unemit=7,type:repli_want,seq=7
                 unemit=8,type:repli_want,seq=8
                 unemit=9,type:repli_want,seq=9
                 unemit=10,type:repli_want,seq=10
@@ -298,9 +297,10 @@ Snap:H
                 unemit=24,type:repli_want,seq=24
                 unemit=25,type:repli_want,seq=25
                 unemit=26,type:repli_want,seq=26
-              req:unemit,seq=27,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
+                unemit=27,type:repli_want,seq=27
               req:unemit,seq=28,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
               req:unemit,seq=29,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
+              req:unemit,seq=30,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
             Ud,pubkey:b317b9a776e39d30
           active_transport,type:mock,open
         MusuSelf,pub:4e09f34f5a6ab900

@@ -1,30 +1,30 @@
 Snap:H
   H:MusuBuddy,Run
     A:MusuBuddy
-      self,round=57	{"mung":["age"]}
+      self,round=60	{"mung":["age"]}
       w:MusuBuddy
-        self,round=57	{"mung":["age"]}
+        self,round=60	{"mung":["age"]}
         req:wrangle,eternal,ok
         Account,of:DJ
           Identity:c012850d69de1318,prepub:c012850d69de1318,friendly:DJ
             Peering,name:c012850d69de1318,friendly:DJ
               Idzeug:buddy_1,to:Music,genre:Buddies,spent
-              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1784517633
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1785078383
                 Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1784517633,sign:2867cd8ee590d601915ced97ef4c7b297be7a1f147aca8d703e1332622d3fa9293e8f593a8d6cc2b838d5058e3832d9033b267e842a3cae339e8fac4e59f5605,genre:Buddies
-                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784517633,sign:f8ff032b2e0e8bbf347f15a13dc865a812d335f7d94a0a6a0aa60877dd8876ec1d04e7fffe7fd7f76bc58629c35da7f1442593cea282367df6b45a7e5bbb1e02,genre:Buddies
-                NotGrant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784517656,sign:c2995e92c019c352ac9a699aa9d585c11627df2acb08bd82c8705d69eb33510da3a691b4e1000fb5022a80904dc4c1a0275c3ee608e00ffa0399cdf8e697390b
+                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1785078383,sign:10cde8cda619479a7459d4bd2483a09a278d9ed1e3e8bfad888ad92c2057816356eafd5bee7a2bb5362806aaa15ce696f32de4468ddf2ce4cc6c5f2e4a676509,genre:Buddies
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1785078383,sign:d096887dd558e6eb644b75a44910d8821a4e1ccced33b3ec004e189cf51debe3d2a6dadc12d4517514f1b1d7d1b191cd23a82ce0b77c5b7f5186ebb931087504,genre:Buddies
+                NotGrant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1785078400,sign:6aca9bd94589c5ab12f6493c3fba7e29e9723302b386e4fc4b77a56b0bbb7774820228a90aed79cfe5378f9ecb9411cdb8f55b54332d1f25f7c515cc9966f20f
             SocialGraph
-              Edge,a:c012850d69de1318,b:b317b9a776e39d30,at:1784517633
+              Edge,a:c012850d69de1318,b:b317b9a776e39d30,at:1785078383
         Account,of:Listener
           Identity:b317b9a776e39d30,prepub:b317b9a776e39d30,friendly:Listener
             Peering,name:b317b9a776e39d30,friendly:Listener
-              Pier,pub:c012850d69de1318,friendly:DJ,since:1784517633
+              Pier,pub:c012850d69de1318,friendly:DJ,since:1785078383
                 Peering,name:c012850d69de1318,friendly:DJ,pub:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535
-                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1784517633,sign:f8ff032b2e0e8bbf347f15a13dc865a812d335f7d94a0a6a0aa60877dd8876ec1d04e7fffe7fd7f76bc58629c35da7f1442593cea282367df6b45a7e5bbb1e02,genre:Buddies
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1784517633,sign:2867cd8ee590d601915ced97ef4c7b297be7a1f147aca8d703e1332622d3fa9293e8f593a8d6cc2b838d5058e3832d9033b267e842a3cae339e8fac4e59f5605,genre:Buddies
+                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1785078383,sign:10cde8cda619479a7459d4bd2483a09a278d9ed1e3e8bfad888ad92c2057816356eafd5bee7a2bb5362806aaa15ce696f32de4468ddf2ce4cc6c5f2e4a676509,genre:Buddies
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1785078383,sign:d096887dd558e6eb644b75a44910d8821a4e1ccced33b3ec004e189cf51debe3d2a6dadc12d4517514f1b1d7d1b191cd23a82ce0b77c5b7f5186ebb931087504,genre:Buddies
             SocialGraph
-              Edge,a:b317b9a776e39d30,b:c012850d69de1318,at:1784517633
+              Edge,a:b317b9a776e39d30,b:c012850d69de1318,at:1785078383
         Peering,name:c012850d69de1318,req=2,ok
           Pier,pub:b317b9a776e39d30,req=2,ok
             req:handshake,finished
@@ -63,8 +63,7 @@ Snap:H
                 emit=62,type:repli_page,seq=62
             inbox
               recent
-                unemit=3,type:pier_hello,seq=3
-                unemit=4,type:repli_want,seq=4
+                unemit=4,type:pier_confirm,seq=4
                 unemit=5,type:repli_want,seq=5
                 unemit=6,type:repli_want,seq=6
                 unemit=7,type:repli_want,seq=7
@@ -83,6 +82,7 @@ Snap:H
                 unemit=20,type:repli_want,seq=20
                 unemit=21,type:repli_want,seq=21
                 unemit=22,type:repli_want,seq=22
+                unemit=23,type:repli_want,seq=23
             Ud,pubkey:b317b9a776e39d30
           active_transport,type:mock,open
         Peering,name:b317b9a776e39d30,req=3,ok
@@ -101,8 +101,7 @@ Snap:H
                 heard
             outbox
               recent
-                emit=3,type:pier_hello,seq=3
-                emit=4,type:repli_want,seq=4
+                emit=4,type:pier_confirm,seq=4
                 emit=5,type:repli_want,seq=5
                 emit=6,type:repli_want,seq=6
                 emit=7,type:repli_want,seq=7
@@ -121,6 +120,7 @@ Snap:H
                 emit=20,type:repli_want,seq=20
                 emit=21,type:repli_want,seq=21
                 emit=22,type:repli_want,seq=22
+                emit=23,type:repli_want,seq=23
             inbox
               recent
                 unemit=43,type:repli_page,seq=43

@@ -23,6 +23,103 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**THE WIRE-CROSSING RUNG SCOPED (2026-07-26) — music over the REAL relay is a PORT, not a build.**
+ A three-agent investigation nailed the carrier layer. The swappable-carrier seam ALREADY EXISTS:
+  `%Peering.active_transport.c.connection` (interface = `send(frame)` + inbound→`Peeroleum_deliver`,
+   optional `reliable`/`claim`/`subscribe`), and `Tribunal_activate_websocket` already does the one-line
+    swap `at.c.connection = ws.c.port`. `Socket_real` (`Tribunal.g:57`) is the REAL relay carrier —
+     binary-framed (`[header JSON]\n[raw buffer]`), auto-reconnect, carrying editor↔runner DAILY; friends
+      already seal live tab-to-tab over it (2026-07-07, SwarmDoor manual). The gap is narrow: **the
+       music-repli flow has only EVER run over `Lake_link`**, an in-process by-reference loopback that is a
+        Story-test mock (`Peregrination.g:202` — its "Lake" name a Peregrination theme, UNRELATED to the
+         LakeTiles Lies/Lang family; genuinely rename-worthy). No Book installs `Socket_real`; Sounditron
+          alone touches the real relay and only proves channel *capability* ("frames CAN cross"), not a
+           round-trip. **THE NON-OBVIOUS RISK:** every music Book settles frames "over post_do between beats"
+            (the reliable mock) — the repli/want machinery has NEVER faced a mid-beat round-trip, while the
+             real relay is async, ~400–900ms RTT, reconnect-mid-stream. THAT is the load-bearing gate, not a
+              formality.
+ THE RUNG (one coupled move): stand the MusuVend-style husk→preview→stream flow over `Socket_real` between
+  two real tabs; the instant frames cross the untrusted relay, land `header.sign` on emit + real
+   `verify_trust` on the handshake (the `Peerily.svelte.ts` 672/1011 port, reusing the Idento key that
+    already signs grants). Signing a loopback is theater; over the relay it is the point — the crypto is
+     UNBLOCKED the moment any flow runs over the relay. Prove MANUALLY with fingers first (does it survive
+      RTT + reconnect?), THEN a distributed two-runner Book (Cluster_spec §5) as the durable gate — don't
+       block the first "real" on building distributed-Story. BONUS: a working `verify_trust` on the
+        handshake IS Peeroleum §5's Tyrant seam → filling it makes the mock Tyrant doubly obsolete; this
+         goes AHEAD of the Tyrant cleanup. COORDINATION: the carrier swap is plain wire-side (mine to
+          drive); the sign/verify half touches the trust layer → coordinate with the security thread first.
+ THE CONCRETE LADDER — "two BigSoundland tabs each running Book:Sounditron, talking" (mapped 2026-07-26):
+  The gap made precise: **Sounditron never sends-and-asserts-arrival.** Its beats are liveness+census only —
+   beat 3 `Sounditron_channel_live` (`Sounditron.g:70`) returns a boolean "socket up"; beat 4 counts
+    addressable `%Possibility` rows ("the choose-which-peer layer that does not exist yet"); beat 5
+     `Sounditron_peer_live` (`:296`) = "someone holds an engagement lease OR a warm Runner row exists". Its
+      sworn sentences say frames **"can cross"** (`:473`), never *did*. The ONLY real tab↔tab traffic in the
+       whole file is the detached, **fire-and-forget presence pulse** in `Sounditron_trickle_look` (`:230`,
+        `Swarm_pulse_all` — which by contract runs "never in a Book"), whose sole "proof" is the far side's
+         hear-funnel stamping `heard_at` (`Swarm.g:380`) which `Sounditron_friends` (`:365`) reads into a
+          `here` UI dot. THAT un-asserted pulse is the rung to make real. Anchors: real carrier `Socket_real`
+           (`Tribunal.g:57`, send `:112`/recv `:146`→`Peeroleum_deliver`); `Peeroleum_deliver` DROPS a
+            `to:<prepub>` frame unless a `%Pier` exists — first contact only via `pier_hello` (`Peeroleum.g:441`);
+             the ONLY real seal path is the manual **InvitePanel join** (`InvitePanel.svelte:204` →
+              `Swarm_station_up`→`Swarm_redeem`→`pier_hello`→`Swarm_hello` mutual `%Pier`+cross-signed grants).
+   The three rungs, in order:
+   - **(R1) MANUAL FINGERS PROOF (needs the human — I can't open/seal tabs).** Open two `/BigSoundland` tabs
+      (page is `src/lib/V/BigSoundland.svelte` — NOTE moved from `L/`; `?B=Sounditron` default, `role:'sound'`
+       runner), InvitePanel-join them (the live seal), watch each light the OTHER's `here` dot. This proves the
+        real relay carries tab↔tab bidirectionally TODAY — it just isn't asserted. Cheapest first real.
+   - **(R2) THE ASSERTED ECHO ROUND-TRIP (the actual new rung).** There is NO delivery-assert primitive today
+      and NO scriptable seal/echo — `runner_ask` ops are read/run/state/declare/…, none pulse or seal. So R2
+       needs: a tiny echo frame type (A→B `echo?`, B→A `echo!`) over the sealed Pier (model it on the
+        corr-routed `runner_ack` reply, `LiesFunk.svelte:2494` — the one genuine real-wire request/reply that
+         already works, but CLI↔runner not tab↔tab), + a Sounditron beat that sends it and SWEARS receipt
+          (`got_echo_from:<prepub>`), superseding the "can cross" sentence with "did cross". This is new wire
+           surface on the trust boundary → build WITH the security thread (it wants `header.sign`+`verify_trust`
+            landing here anyway — R2 and the crypto are the same touch).
+   - **(R3) DISTRIBUTED TWO-RUNNER BOOK (durable gate, deferred).** Cluster_spec §5. Drive two sealed tabs as
+      two `runner_ask --runner=<A>`/`--runner=<B>` calls (no built-in cross-runner choreography — the harness
+       gives independent addressing, `ping.self`=prepub, not a duet). Don't block the first real on building
+        distributed-Story. A scriptable `redeem` op would also unblock automated R1/R2 but is itself a
+         security-coordinated build (it scripts the seal).
+   SPLIT: carrier/observe + the echo beat = mine to draft; the seal-scripting + sign/verify = security-thread;
+    two LIVE sealed tabs for R1 = the human. NEXT PHYSICAL MOVE = ask the human to do R1 (two tabs + join +
+     watch the dots), which both proves the wire tab↔tab and de-risks R2's frame shape before any code lands.
+ SIDE-LANDINGS this session (the "state of Radio" review): (a) every wire-relevant Book now carries a terse
+  `wire:` clause in `wormhole/Credence/toc.snap` (least-churn home vs a per-Book `Waft:Cluster` which is
+   max-churn) — the census made the sim/real line legible: loopback/mock everywhere, Sounditron the lone
+    real-channel Book. (b) The Sounditron "disk accumulates" nondeterminism got a real primitive, not a
+     bless: `spec/Story_hygiene_todo.md` — a pre-Story `The/Hygiene/%Reset` sweep (an Assertion's inverse),
+      landed opt-in in `Story.svelte`, PROVEN live (MusuLossy green ×3 + a planted decoy deleted at step-1
+       start); Sounditron is the WRONG first customer (pin the probe, don't wipe the user's cache) — the
+        heist/Musu family is.
+
+**RADIOSTOCK ZOMBIE-PROOFED (2026-07-26) — a plain per-pub disk cap, no reference-tracing.**
+ The on-disk `radiostock/` was the one monotonic leak: `Stoker_cull` bounds the in-memory SHELF (44 live)
+  and `Ra_stock_find` culls same-enid TWINS, but nothing bounded the DIR — one file per distinct track ever
+   dug, forever. Now `Ra_stock_gc(nav,pub)` (`Ra.g`, called once per landed churn in `Radio.g` beside
+    `Stoker_mag_draw`) keeps only this pub's newest `Ra_stock_cap()`=**256** files and wears the oldest off
+     (`Ra_stock_ls` is newest-first → `slice(cap)` is the oldest tail). The human's ruling made it SIMPLE:
+      **no Mag-reference-tracing** — a `%Card` refers by id and the byte-cache regenerates (a dropped file is
+       one re-dig from source; `Ra_stock_one` is idempotent, Radio.g:832), so keep-what's-referenced would be
+        needless bookkeeping. Per-pub (a shared `.jamsend` never lets one identity evict another's shelf);
+         best-effort (no-ops on a read-only proxy via `Ra_stock_drop`); NO sc telemetry (a gone-count is
+          disk-history-dependent = fixture noise). Proven: MusuStock green ×2, MusuWear + MusuStanding green —
+           the cap is a **no-op below 256** so no test that digs <256 tracks is perturbed. NOTE this bounds
+            PRODUCTION disk; it does NOT make TESTS deterministic (they never reach 256) — test determinism is
+             the hygiene hook's job. `radiostock` remains the ONLY timestamped disk filename in the whole
+              codebase (verified) — every other disk write is deterministic-named + overwrite-idempotent, so
+               once radiostock is handled, disk determinism has no other timestamp source.
+ **HOW MANY BOOKS SHOULD USE THE HYGIENE HOOK (the survey):** a HANDFUL, not the suite. The natural customer
+  set is the ~8 heist/marauding Books that ALREADY hand-code a `Heist_sweep(test-marrauding-of-<X>)` at
+   start+end — **MusuHeist, MusuBreach, MusuBreach_wire, MusuOgg, MusuReap, MusuSoft, MusuBay, MusuLossy**
+    (+ the Berthation Books) — for them the hook is a DECLARATIVE cleanup of a sweep they already run (moves
+     it from imperative-in-step-1 to a toc-resident `%Reset`, an Assertion's inverse), plus uniform
+      abortive-safety; it is NOT a bug-fix (they're already deterministic via the hand-coded start-sweep).
+       Everything else needs NOTHING: most Books write deterministic-named idempotent-overwrite files (e.g.
+        MusuLossy's wav/opus/mp3), and radiostock (the only timestamped path) the human has ruled we TOLERATE
+         in tests (differently-named, non-colliding, already absorbed by the EntropyArrest Entcases). So:
+          convert ONE heist Book first to prove the pattern end-to-end, then roll the ~8; do NOT touch
+           Sounditron (real user cache) or the broad suite.
+
 **THE INVITE TRILOGY LANDED (2026-07-22) — chain, blotter, back-signal, all green ×2, uncommitted.**
  The three invite kinds now part cleanly and each is Book-proven on the live runner:
  - **(1) Re-assignable ReInvite chain** — the SHARE-QR invite that threads A—B—C—D, the TIP (not the

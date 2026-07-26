@@ -4,8 +4,7 @@ story:VytoCell
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=1.023
-      sample=1.056,at=1784539647
+    TimeTotal:beliefs,avg=1.047
       sample=1.082,at=1784541131
       sample=1.075,at=1784541314
       sample=1.095,at=1784541492
@@ -15,8 +14,8 @@ story:VytoCell
       sample=1.028,at=1784682350
       sample=0.923,at=1784682852
       sample=0.968,at=1785030046
-    TimeTotal:step,avg=0.146
-      sample=0.151,at=1784539647
+      sample=1.29,at=1785095308
+    TimeTotal:step,avg=0.15
       sample=0.155,at=1784541131
       sample=0.154,at=1784541314
       sample=0.156,at=1784541492
@@ -26,6 +25,7 @@ story:VytoCell
       sample=0.147,at=1784682350
       sample=0.132,at=1784682852
       sample=0.138,at=1785030046
+      sample=0.184,at=1785095308
   step,dige:7bb338130606d584
   step=2,dige:1902b2d06d07af4c,desc:seed three sibling cogs with distinct doses
   step=3,dige:13185f216eadbf34,desc:mint A:Vyto beside the run and commission it on the three cogs

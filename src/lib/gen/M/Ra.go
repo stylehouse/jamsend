@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '5b066f8b2d624f31~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return 'a8889e47e3d9c472~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -452,6 +452,15 @@ Ra_stock_dir() {
     return '.jamsend/radiostock'
 
 },
+// Ra_stock_cap — how many files THIS Peering keeps on disk before the oldest wear off (Ra_stock_gc).
+//  radiostock is a WORKING cache for the speedy run-around, not the archive — so it is bounded, like
+//   the shelf (Stoker_cull, 44 live) and the mag draws (Stoker_mag_draw, 8).  Generously above the
+//    shelf so nothing recently stood is ever evicted from disk before its shelf life ends; past it a
+//     dropped file is one re-dig from source, never a loss (Ra_stock_one is idempotent).  Tune here.
+Ra_stock_cap() {
+    return 256
+
+},
 // Ra_stock_name — ONE file per record, <ts>-<pub>-<enid>.jamsend_radiostock, NOT one per chunk.
 //  '.jamsend/' lives INSIDE the user's music library, so nothing here may read as media: the
 //   deliberately awkward extension defeats any scanner's guess, and a file that opens with '{' is
@@ -541,6 +550,26 @@ async Ra_stock_find(nav, pub, enid) {
     if (!mine.length) return null
     for (const old of mine.slice(1)) await this.Ra_stock_drop(nav, old.name)
     return mine[0]
+
+},
+// Ra_stock_gc — the disk twin of Stoker_cull: keep only this pub's newest Ra_stock_cap() files, wear
+//  the oldest off (Ra_stock_ls is newest-first, so slice(cap) is the tail — the oldest by mint ts).
+//   Deliberately NO reference-tracing: we do NOT read the Mags to spare what's referred to, because a
+//    dropped byte-cache is one re-dig from source (Ra_stock_one idempotent) and a Mag %Card refers by
+//     id, never contains the bytes — so keeping-what's-referenced would be needless bookkeeping for a
+//      cache that regenerates.  Per-pub (Ra_stock_ls already filters), so a shared .jamsend never has
+//       one identity evict another's shelf.  Best-effort: Ra_stock_drop no-ops on a read-only proxy.
+//        Returns the count dropped.  Runs once per churn that landed (Radio.g), never per look.
+async Ra_stock_gc(nav, pub) {
+    let mine = await this.Ra_stock_ls(nav, pub)
+    let cap = this.Ra_stock_cap()
+    if (mine.length <= cap) return 0
+    let dropped = 0
+    for (const old of mine.slice(cap)) {
+        await this.Ra_stock_drop(nav, old.name)
+        dropped = dropped + 1
+    }
+    return dropped
 
 },
 // Ra_stock_peek — the card line only (~600 bytes of JSON before the first '\n'): read_range where
@@ -696,34 +725,53 @@ async Ra_rec_drop(shelf, id) {
     await parent.rm({ Record: 1, id: id })
     return 1
 },
-// Ra_recs — the shape-agnostic record census of a crate: flat %Record children first (the
-//  way-station shape), then every Mag's rows — directly-held and %Cloud-paged — in child order,
-//   so the census is stable run to run.  EVERY scanning reader goes through here: a direct
-//    shelf.o({Record:1}) sees only the flat leg and starves on a paged shelf.
-Ra_recs(shelf) {
-    if (!shelf) return []
-    let out = shelf.o({ Record: 1 })
-    for (const mag of shelf.o({ Mag: 1 })) {
-        for (const rec of mag.o({ Record: 1 })) out.push(rec)
-        for (const cl of mag.o({ Cloud: 1 })) {
-            for (const rec of cl.o({ Record: 1 })) out.push(rec)
-        }
+// Ra_recs_deep — collect every %Record in a container's SUBTREE, holdings-first at each level so
+//  the census order is identical to the old fixed three-level walk (a level's direct %Record rows
+//   before any nested container's), then recurse every non-Record child.  A %Record is a leaf here
+//    — its children are chunk particles (%Preview/%Stream/%Body), never Records, so we prune at it
+//     rather than descend.  This is what makes `Mag**` recurse (ruled 2026-07-26): a Mag may nest
+//      arbitrarily deep — Cloud/Cloud/Record, Mag/Mag/Record, or whatever the Mag grows into later
+//       — and a holding is found wherever it sits.  Push-into-out so a caller can seed the array.
+Ra_recs_deep(n, out) {
+    for (const rec of n.o({ Record: 1 })) out.push(rec)
+    for (const ch of n.o({})) {
+        if (this.mainkey(ch) === 'Record') continue
+        this.Ra_recs_deep(ch, out)
     }
     return out
 },
-// Ra_rec_find — the pinned find over the same three levels.  q is a full o() query wearing the
-//  %Record mainkey ({Record:1, id:…} / {Record:1, artist:…, title:…}); first hit in census order.
+// Ra_recs — the shape-agnostic record census of a crate: flat shelf|Record holdings first (the
+//  way-station shape), then every Mag's subtree — Mag/Record and Mag/Cloud/Record and deeper — in
+//   child order, so the census is stable run to run.  EVERY scanning reader goes through here: a
+//    direct shelf|Record read sees only the flat leg and starves on a paged (or nested) shelf.
+Ra_recs(shelf) {
+    if (!shelf) return []
+    let out = shelf.o({ Record: 1 })
+    for (const mag of shelf.o({ Mag: 1 })) this.Ra_recs_deep(mag, out)
+    return out
+},
+// Ra_rec_find_deep — the pinned recursive twin of Ra_recs_deep: first hit in the same census order
+//  (a level's direct %Record match before any nested container's), pruning at a %Record.
+Ra_rec_find_deep(n, q) {
+    let hit = n.o(q)[0]
+    if (hit) return hit
+    for (const ch of n.o({})) {
+        if (this.mainkey(ch) === 'Record') continue
+        hit = this.Ra_rec_find_deep(ch, q)
+        if (hit) return hit
+    }
+    return null
+},
+// Ra_rec_find — the pinned find over the same subtree.  q is a full o() query wearing the %Record
+//  mainkey ({Record:1, id:…} / {Record:1, artist:…, title:…}); first hit in census order, at any
+//   depth under a Mag (shelf|Record, then Mag**/Record).
 Ra_rec_find(shelf, q) {
     if (!shelf) return null
     let hit = shelf.o(q)[0]
     if (hit) return hit
     for (const mag of shelf.o({ Mag: 1 })) {
-        hit = mag.o(q)[0]
+        hit = this.Ra_rec_find_deep(mag, q)
         if (hit) return hit
-        for (const cl of mag.o({ Cloud: 1 })) {
-            hit = cl.o(q)[0]
-            if (hit) return hit
-        }
     }
     return null
 },
@@ -748,6 +796,11 @@ Ra_pub_of(rec) {
 //       stamped here (repli_loc = Cloud,page — the Musica cloud idiom): 'page' is not id-ish to
 //        Repli_loc_keys, and without it every page would upsert the mirror's FIRST page.
 //         Returns { mags, flat } — fragments that crossed, by kind.
+//  DEPTH NOTE (the readers now recurse — Ra_recs/Ra_rec_find over Mag**, 2026-07-26): the whole
+//   Mag husk already crosses at any depth (Repli_offer walks the subtree), but this repli_loc
+//    page-stamp is still depth-1 — only a Mag's own %Cloud pages are stamped.  Nested pages
+//     (Cloud-in-Cloud / Mag-in-Mag) don't exist yet, so nothing is stranded; when the Mag grows a
+//      deeper shape, generalise this stamp with it (recurse Ra_stamp-style, keyed off the design).
 async Ra_offer_stock(w, tx, from, to, shelf) {
     let mags = 0
     let flat = 0
@@ -772,11 +825,7 @@ async Ra_offer_stock(w, tx, from, to, shelf) {
 async Ra_mag_warm(w, mirror) {
     if (!mirror) return
     for (const mag of mirror.o({ Mag: 1 })) {
-        let rows = []
-        for (const rec of mag.o({ Record: 1 })) rows.push(rec)
-        for (const cl of mag.o({ Cloud: 1 })) {
-            for (const rec of cl.o({ Record: 1 })) rows.push(rec)
-        }
+        let rows = this.Ra_recs_deep(mag, [])
         if (!rows.length) continue
         if (!mag.c.warmed) {
             mag.c.warmed = 1

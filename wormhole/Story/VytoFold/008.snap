@@ -1,0 +1,14 @@
+Snap:H
+  H:VytoFold,Run
+    A:VytoFold
+      self,round=8	{"mung":["age"]}
+      w:VytoFold
+        self,round=8	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        see:the screen budget grows with the glass — a wall four times the area introduces four times as many cells
+        see:a roomy glass folds nothing — every family stands open when the budget holds every cell
+        see:the glass folds its least-dominant family first — the smallest-membered row collapses while larger siblings stand open
+        see:the path to the focus is never folded — attention holds every cell from the root down to the held leaf open however tight the glass
+        see:a family whose members fall below the coherence floor distils to buckets while a bucketless family is crushed whole
+        see:a crowded row of identical members elects no representative — a uniform family has none to stand for it
+        see:a crowded row of all-distinct members elects no representative — an all-unique family has no key that partitions it

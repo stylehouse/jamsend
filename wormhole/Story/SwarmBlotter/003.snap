@@ -15,10 +15,11 @@ Snap:H
               Idzeug:sheet_a-3,to:Music,genre:Jazz,blotter:sheet_a
               Pier,pub:977d35e0a8e0cd0e,friendly:Uno,since:1751800010
                 Peering,name:977d35e0a8e0cd0e,friendly:Uno,pub:977d35e0a8e0cd0e54748ee7c5147940207e4039fa498fa3d5a9e5fc9fc636a8
-                Grant:Music,by:977d35e0a8e0cd0e54748ee7c5147940207e4039fa498fa3d5a9e5fc9fc636a8,for:8e0b046f67fbbf1cc1b105f417142e0f1b66ff055c4a57173d986729fca3a354,time:1751800010,sign:2500da0c51ad3e32875655720e101fc8760570eeb98cd7a576bf5f2446c65d0ad801a7a72f2488250b84c6c45015efbb9ca2a48bad919e985439841bc14d3808,genre:Jazz
                 Grant:Music,by:8e0b046f67fbbf1cc1b105f417142e0f1b66ff055c4a57173d986729fca3a354,for:977d35e0a8e0cd0e54748ee7c5147940207e4039fa498fa3d5a9e5fc9fc636a8,time:1751800010,sign:3a53e97cce0da9158d991a239ff0810c6e0f43a6d19c912f02b4e1e9511ccd9a487cf8951421acad64472934ea8214e5b37abd40a9c2997f392fd9015cc0ff00,genre:Jazz
+                Grant:Music,by:977d35e0a8e0cd0e54748ee7c5147940207e4039fa498fa3d5a9e5fc9fc636a8,for:8e0b046f67fbbf1cc1b105f417142e0f1b66ff055c4a57173d986729fca3a354,time:1751800010,sign:2500da0c51ad3e32875655720e101fc8760570eeb98cd7a576bf5f2446c65d0ad801a7a72f2488250b84c6c45015efbb9ca2a48bad919e985439841bc14d3808,genre:Jazz
             mail
               frame:pier_hello,did
+              frame:pier_confirm,did
             SocialGraph
               Edge,a:8e0b046f67fbbf1c,b:977d35e0a8e0cd0e,at:1751800010
         Account,of:Uno

@@ -12,10 +12,11 @@ Snap:H
               Idzeug:chain_1,to:Music,genre:Classical,chain,holder:052f57a21dbfe922
               Pier,pub:28e5cd8bd22e98c0,friendly:Eli,since:1751700010
                 Peering,name:28e5cd8bd22e98c0,friendly:Eli,pub:28e5cd8bd22e98c0f192ae98d4453d29a359ab211f7855aa4263c93cdd939281
-                Grant:Music,by:28e5cd8bd22e98c0f192ae98d4453d29a359ab211f7855aa4263c93cdd939281,for:73f2fd1bbfb481ca101b6e256253c009d4002f958f55276feee6d145fff3f80e,time:1751700010,sign:e910aedcd851eb1fff07fa5648e2d853728671974823b0fa064c767c05f6a4872a308fecbb59dadd49bad8f823724a7fbddd208a8f0c13ad6fe3a876a0739403,genre:Classical
                 Grant:Music,by:73f2fd1bbfb481ca101b6e256253c009d4002f958f55276feee6d145fff3f80e,for:28e5cd8bd22e98c0f192ae98d4453d29a359ab211f7855aa4263c93cdd939281,time:1751700010,sign:8f72552a3c7681107f5b10019dc7bb65dc1af1382f1dd2c31ae1b9b28943d036282ff9d7fb83bda9e6caa2ff5fa9cb897f44c1dc0ea7a59b44a0a89a644d670a,genre:Classical
+                Grant:Music,by:28e5cd8bd22e98c0f192ae98d4453d29a359ab211f7855aa4263c93cdd939281,for:73f2fd1bbfb481ca101b6e256253c009d4002f958f55276feee6d145fff3f80e,time:1751700010,sign:e910aedcd851eb1fff07fa5648e2d853728671974823b0fa064c767c05f6a4872a308fecbb59dadd49bad8f823724a7fbddd208a8f0c13ad6fe3a876a0739403,genre:Classical
             mail
               frame:pier_hello,did
+              frame:pier_confirm,did
               frame:pier_hello,did
               frame:reinvite_ok,did
               frame:pier_hello,did

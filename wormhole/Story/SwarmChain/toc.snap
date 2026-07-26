@@ -4,38 +4,38 @@ story:SwarmChain
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.062
-      sample=0.056,at=1784641255
-      sample=0.059,at=1784641599
-      sample=0.059,at=1784641619
-      sample=0.059,at=1784641623
+    TimeTotal:beliefs,avg=0.059
       sample=0.059,at=1784641624
       sample=0.064,at=1784641629
       sample=0.075,at=1784641657
       sample=0.065,at=1784703496
       sample=0.049,at=1784714563
       sample=0.07,at=1784714619
+      sample=0.053,at=1785075771
+      sample=0.053,at=1785075783
+      sample=0.067,at=1785075791
+      sample=0.033,at=1785075799
     TimeTotal:step,avg=0.012
-      sample=0.011,at=1784641255
-      sample=0.012,at=1784641599
-      sample=0.012,at=1784641619
-      sample=0.012,at=1784641623
       sample=0.012,at=1784641624
       sample=0.013,at=1784641629
       sample=0.015,at=1784641657
       sample=0.013,at=1784703496
       sample=0.01,at=1784714563
       sample=0.014,at=1784714619
+      sample=0.011,at=1785075771
+      sample=0.011,at=1785075783
+      sample=0.013,at=1785075791
+      sample=0.007,at=1785075799
   step,dige:3f54c9d90c03365b
   step=2,dige:e9c5e4013999dd0a
     Assertion:four-selves-stand-up,sentence:four selves stand up online — an issuer a first tip and two newcomers waiting to chain in
-  step=3,dige:39a78c8a27c38559
+  step=3,dige:f6572d127685ab5b
     Assertion:the-chain-invite-seals,sentence:the chain invite seals its first friend and tracks him as the tip — never spent so the link can move on
-  step=4,dige:5044a33ee0c8ea28
+  step=4,dige:863def3556b89244
     Assertion:a-newcomer-holding-the,sentence:a newcomer holding the link grows the chain — the TIP not the issuer grants her and seals a real friendship
     Assertion:the-newcomer-never-befriends,sentence:the newcomer never befriends the issuer — no grant and no contact only a light chain-root kept for later
     Assertion:the-issuer-advances-her,sentence:the issuer advances her tracker to the newcomer on the tip signed confirmation
-  step=5,dige:b71735b41c6d889a
+  step=5,dige:2cf24014770c42ac
     Assertion:the-chain-grows-past,sentence:the chain grows PAST the first tip — the newcomer honours via the chain-root she kept not a friendship with the issuer
     Assertion:no-escalation-down-the,sentence:no escalation down the chain — the far hop still grants exactly the embedded Music Feature
     Assertion:the-tracker-advances-again,sentence:the tracker advances again to the second newcomer — the chain outlives any single friendship with the issuer

@@ -1593,6 +1593,41 @@
         //    they carry no useVoroCyto and Story imposes nothing on them.
     },
 
+    async Story_hygiene(w: TheC, Run: House, run: TheC) {
+        // The pre-Story hygiene sweep — the INVERSE of an Assertion.  An Assertion is a declared
+        //  observation about the world AFTER a beat ("must be true — its absence complains"); a
+        //   Hygiene reset is a declared imperative about the world BEFORE the run ("this disk target
+        //    must be reset — its litter is swept").  Same toc-resident/human-accepted machinery,
+        //     opposite verb, opposite side of the run.
+        // Runs OFF the Atime mutex, under an expecting() ttlilt armed at step 1 (do_step) — NEVER awaited
+        //  inline: a bare await would freeze the belief loop the Wormhole needs to service disk, and every
+        //   watcher besides.  The ttlilt holds step 1 from ADVANCING until this resolves, so a Book stages
+        //    its swept-disk reads at step 2+ and they never race the wipe; overrun 10s → the ttlilt times
+        //     out and Story complains (on_step_ending 'timeout').
+        // OPT-IN: only a Book that declares a The/Hygiene bucket arms the expecting; the Books without one
+        //  arm nothing (the do_step gate is a falsy sync find) — byte-identical, no ttlilt, no I/O.
+        // ABORTIVE-RUN SAFE: the reset is at run-START, so a crashed prior run's litter is cleaned by
+        //  the NEXT run's sweep — a run never depends on its own end-sweep firing (the radiostock leak
+        //   no per-Book end-sweep covers today, Ra.g's '.jamsend/radiostock', finally has a home).
+        const H  = this as any
+        const The = w.c.The as TheC | undefined
+        const hy  = The && (The.o({ Hygiene: 1 })[0] as TheC | undefined)
+        if (!hy) return
+        // BEST-EFFORT: Heist_sweep deletes FILES ONLY (never the dir skeleton — a deleted dir kills
+        //  the nav's cached FSA handle) and no-ops when the nav can't delete (a proxy runner has no
+        //   deleteEntry), so on a read-only share the sweep silently does nothing rather than throwing.
+        const nav = H.Crate_nav ? H.Crate_nav() : null
+        if (!nav || typeof nav.dir_at !== 'function') return
+        // Each %Reset,path:<disk path> names a working-area target to empty (e.g. .jamsend/radiostock).
+        //  This SUBSUMES the Heist_sweep the heist Books hand-code in their census beat — declare it here.
+        for (const reset of hy.o({ Reset: 1 }) as TheC[]) {
+            const path = reset.sc.path as string | undefined
+            if (!path) continue
+            Run.trace('hygiene', path)
+            await H.Heist_sweep(nav, path)
+        }
+    },
+
     push_opt_to_run(w: TheC) {
         // Walk The/Opt/For/* and for each {w:Name} bucket, find the matching
         // worker particle in Run (%A/%w:Name) and w.i() each option child into it.
@@ -2135,6 +2170,18 @@
             Run.c.runtime = true          // feebly_ponder and ponder are now live
             Run.trace_enable()
             Run.trace('step', String(n))
+            // Pre-Story hygiene: opt-in, once at Story-beginning.  NON-BLOCKING — armed through expecting()
+            //  so the sweep runs OFF the Atime mutex.  A bare `await` here would freeze the belief loop for
+            //   the sweep's whole extent — and Atime is exactly what the Wormhole needs to think and get
+            //    back to us (plus every watcher/req besides).  expecting() hangs a finishing %req:hygiene +
+            //     ttlilt: the ttlilt holds step 1 from ADVANCING until the sweep resolves (so a Book stages
+            //      its swept-disk reads at step 2+ and they never race the wipe), and TIMES OUT → complains
+            //       (on_step_ending 'timeout') if the sweep overruns 10s.  The gate is a cheap sync find →
+            //        falsy for every Book without a The/Hygiene bucket, so they arm nothing.
+            if (n === 1 && !run.c.hygiene_armed && (w.c.The as TheC | undefined)?.o({ Hygiene: 1 })[0]) {
+                run.c.hygiene_armed = true
+                this.expecting(w, 'hygiene', 10, () => this.Story_hygiene(w, Run, run))
+            }
             await this.Story_prepare_Prep(w,Run,run)
             setTimeout(() => { if (run.c.driving) Run.i_elvisto(Run, 'think') }, 1)
             setTimeout(poll_step, TICK_MS)

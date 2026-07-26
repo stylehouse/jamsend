@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '3188ad10b931b30e~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'dd6a46c6bb2ea9fa~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -98,17 +98,77 @@ Swarm_online(ident, yes) {
 },
 //#endregion
 
-//#region Idzeug — the single-use signed invite (§6.2)
-//  An Idzeug is an UNBOUND %Grant (for:'*') carrying the Feature it offers (Music + params), a
-//   nonce, and the inviter's page — proof your link reached the other Pier, NOT an offline
-//    capability token: both Piers must be online, the live handshake (below) mints the BOUND grants.
+//#region Idzeug — the single-use invite (§6.2), worn as the COMPACT token
+//  An Idzeug is an offer of a Feature (Music + params) under a single-use serial — proof your link
+//   reached the other Pier, NOT an offline capability token: both Piers must be online, the live
+//    handshake (below) mints the BOUND grants.
+//  The QR face is the compact token <prepub>*<serial>*<n>*<presig16> (~45 chars against the old
+//   428-char signed atom): no issuer pub (pier_accept reveals it), no expiry (single-use by serial
+//    is the whole law), no third-party-checkable signature — the presig is an ISSUER-side MAC
+//     (ed25519 is deterministic: the door re-signs its OWN ledger record and prefix-matches; 64
+//      bits is ample for an online, single-use check). The full signed atom still rides the
+//       maker's record (.c.iz) — the chain's lineage (§6.3a) keeps third-party verify; the QR
+//        does not need it.
 
-// Swarm_b64|Swarm_unb64 — the ?Iz= blob codec (UTF-8-safe base64; a friendly name may be non-ASCII).
+// Swarm_b64|Swarm_unb64 — the full-atom blob codec (UTF-8-safe base64; a friendly name may be
+//  non-ASCII). The QR stopped wearing this — it rides the chain's embedded atoms + ReInvite ribs.
 Swarm_b64(js) {
     return btoa(unescape(encodeURIComponent(js)))
 },
 Swarm_unb64(b) {
     return decodeURIComponent(escape(atob(b)))
+
+},
+// Swarm_token_n — the token's $n leg: the Feature mainkey + its params, tilde-joined (Music, or
+//  Music~genre~Classical). '~' survives encodeURIComponent and never appears in a mainkey.
+Swarm_token_n(to, params) {
+    let bits = [String(to)]
+    for (const k of Object.keys(params || {})) {
+        bits.push(k)
+        bits.push(String(params[k]))
+    }
+    return bits.join('~')
+
+},
+Swarm_token_n_parse(n) {
+    let bits = String(n).split('~')
+    let params = {}
+    let i = 1
+    while (i < bits.length - 1) {
+        params[bits[i]] = bits[i + 1]
+        i = i + 2
+    }
+    return { to: bits[0], params: params }
+
+},
+// Swarm_presig — the issuer-side MAC over the token's domain: a deterministic ed25519 signature
+//  (signHeader — sorted-key JSON) truncated to 16 hex. Not third-party-verifiable BY DESIGN:
+//   only the issuer's key can regenerate it, and regeneration IS the door's check (§6.2).
+async Swarm_presig(keys, prepub, serial, n) {
+    let sig = await signHeader({ prepub: String(prepub), serial: String(serial), n: String(n) }, keys.key)
+    return String(sig).slice(0, 16)
+
+},
+// Swarm_token|Swarm_token_parse — the compact QR codec: <prepub16>*<serial>*<n>*<presig16>.
+//  '*' survives encodeURIComponent AND QR encoding; a serial may carry any user text (a blotter
+//   tag), so the parse re-joins inner '*'s back into the serial instead of faulting. Null on
+//    anything that isn't a token (an old base64 blob, a mangled scan) — never a throw.
+Swarm_token(prepub, serial, n, presig) {
+    return [prepub, serial, n, presig].join('*')
+
+},
+Swarm_token_parse(token) {
+    let parts = String(token || '').split('*')
+    if (parts.length < 4) return null
+    let prepub = parts[0]
+    let presig = parts[parts.length - 1]
+    let n = parts[parts.length - 2]
+    let serial = parts.slice(1, parts.length - 2).join('*')
+    if (!/^[0-9a-f]{16}$/.test(prepub)) return null
+    if (!/^[0-9a-f]{16}$/.test(presig)) return null
+    if (!serial || !n) return null
+    let picked = this.Swarm_token_n_parse(n)
+    return { prepub: prepub, serial: serial, n: n, presig: presig, to: picked.to, params: picked.params }
 
 },
 // Swarm_iz_params — the Feature params riding a claim: every key that isn't the claim's envelope.
@@ -123,10 +183,24 @@ Swarm_iz_params(claim) {
     return params
 
 },
-// Swarm_mint_idzeug — the inviter signs the offer and remembers its nonce (single-use) as an
-//  %Idzeug under their %Peering; returns the ?Iz= blob. feature = { Music: 1, genre: 'Classical' } —
-//   a mainkey with params, never a bare flag. The blob rides .c (re-derivable — ed25519 is
-//    deterministic); the nonce record is what must survive: it is the spend ledger.
+// Swarm_record_params — the Feature params riding a LEDGER record: every sc key that isn't the
+//  record's envelope (the mint wrote {Idzeug, to, ...params}; the spend|chain|blotter flags land
+//   later). The door's presig regeneration and its grant mint both read THIS — the maker's own
+//    record is the law (§10.1), never the carried $n.
+Swarm_record_params(record) {
+    let params = {}
+    for (const k of Object.keys(record.sc)) {
+        if (!['Idzeug', 'to', 'ttl', 'chain', 'holder', 'spent', 'blotter'].includes(k)) params[k] = String(record.sc[k])
+    }
+    return params
+
+},
+// Swarm_mint_idzeug — the inviter remembers the offer's serial (single-use) as an %Idzeug under
+//  their %Peering; returns the COMPACT token (§6.2). feature = { Music: 1, genre: 'Classical' } —
+//   a mainkey with params, never a bare flag. The record keeps the FULL signed atom on .c.iz —
+//    the chain's lineage (§6.3a third-party verify) — while the QR wears only the token; both
+//     ride .c (re-derivable — ed25519 is deterministic). The serial record is what must survive:
+//      it is the spend ledger.
 async Swarm_mint_idzeug(w, ident, feature, nonce, chain) {
     let mainkey = Object.keys(feature)[0]
     let params = { ...feature }
@@ -138,17 +212,21 @@ async Swarm_mint_idzeug(w, ident, feature, nonce, chain) {
     let record = peering.oai({ Idzeug: nonce, to: mainkey, ...params })
     record.c.up = peering
     record.c.iz = this.Swarm_b64(JSON.stringify(atom))
+    let n = this.Swarm_token_n(mainkey, params)
+    record.c.token = this.Swarm_token(page.prepub, nonce, n, await this.Swarm_presig(ident.c.keys, page.prepub, nonce, n))
     // chain policy (§6.3a): a re-assignable invite TRACKS its current holder (the tip) instead of
     //  spending on the first claim — the SHARE popup's kind. A plain invite (a blotter serial, the
     //   legacy link) stays single-use (`spent`). The maker's own record is the law (§10.1), so the
     //    flag lives here and survives reload through the iz-stash.
     if (chain) record.sc.chain = 1
     this.Swarm_iz_stash(ident, nonce, chain ? { to: mainkey, chain: 1, ...params } : { to: mainkey, ...params })
-    return record.c.iz
+    return record.c.token
 
 },
-// Swarm_verify_idzeug — decode + verify the inviter's signature. THROWS on forgery|garbage; returns
+// Swarm_verify_idzeug — decode + verify a FULL signed atom. THROWS on forgery|garbage; returns
 //  the claim (by = the inviter's full pub, to = the Feature mainkey, + params/nonce/prepub/friendly).
+//   The QR token no longer carries one — this is the CHAIN's lineage verify (Swarm_verify_reinvite's
+//    inner atom); the door proves a token by presig regeneration instead (Swarm_hello).
 async Swarm_verify_idzeug(iz) {
     let atom = JSON.parse(this.Swarm_unb64(iz))
     return await verify_grant(atom)
@@ -257,15 +335,16 @@ Swarm_live_self() {
 
 },
 // Swarm_invite_url — the front door itself: mint the single-use Idzeug from `ident` and dress it as
-//  the URL the QR carries — <base>?Iz=<blob>. Live, base = location.origin + the toplevel path (the
+//  the URL the QR carries — <base>?Iz=<token>. Live, base = location.origin + the toplevel path (the
 //   scanning phone lands on the SAME app); a Book pins it. The URL is the whole invite.
 async Swarm_invite_url(w, ident, feature, nonce, base) {
     let iz = await this.Swarm_mint_idzeug(w, ident, feature, nonce)
     return base + '?Iz=' + encodeURIComponent(iz)
 
 },
-// Swarm_iz_of_url — the boot handler's core, isolated pure: pull the ?Iz= blob back out of a scanned
-//  URL. encodeURIComponent above ↔ URLSearchParams here — the base64's +/= survive the round trip.
+// Swarm_iz_of_url — the boot handler's core, isolated pure: pull the ?Iz= token back out of a
+//  scanned URL. encodeURIComponent above ↔ URLSearchParams here — the token's *|~|- survive the
+//   round trip untouched (none decodes as a space).
 Swarm_iz_of_url(href) {
     if (!href) return null
     let at = href.indexOf('?')
@@ -415,6 +494,7 @@ async Swarm_arm(w) {
         if (sealed) sealed.c.heard_at = Date.now()
         if (frame.header.type === 'pier_hello') await this.Swarm_hello(w2, ident, frame.swarm)
         if (frame.header.type === 'pier_accept') await this.Swarm_accept(w2, ident, frame.swarm)
+        if (frame.header.type === 'pier_confirm') await this.Swarm_confirmed(w2, ident, frame.swarm)
         if (frame.header.type === 'pier_reject') this.Swarm_rejected(w2, ident, frame.swarm)
         if (frame.header.type === 'reinvite') await this.Swarm_reinvited(w2, ident, frame.swarm)
         if (frame.header.type === 'reinvite_honour') await this.Swarm_reinvite_honoured(w2, ident, frame.swarm)
@@ -426,7 +506,7 @@ async Swarm_arm(w) {
         if (frame.header.type === 'suggest_got') this.Swarm_suggest_got(w2, ident, frame.swarm)
         return true
     }
-    for (const kind of ['pier_hello', 'pier_accept', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got']) w.c.on[kind] = hear
+    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got']) w.c.on[kind] = hear
 
 },
 // Swarm_voucher_ok — is this voucher a valid proof the sealed friend `from` sent the frame?
@@ -457,6 +537,7 @@ async Swarm_pump(w, ident) {
         let frame = m.c.frame
         if (frame.kind === 'pier_hello') await this.Swarm_hello(w, ident, frame)
         if (frame.kind === 'pier_accept') await this.Swarm_accept(w, ident, frame)
+        if (frame.kind === 'pier_confirm') await this.Swarm_confirmed(w, ident, frame)
         if (frame.kind === 'pier_reject') this.Swarm_rejected(w, ident, frame)
         if (frame.kind === 'reinvite') await this.Swarm_reinvited(w, ident, frame)
         if (frame.kind === 'reinvite_honour') await this.Swarm_reinvite_honoured(w, ident, frame)
@@ -504,6 +585,11 @@ Swarm_iz_rehydrate(w, ident) {
             record.c.up = peering
             if (c.ttl) record.sc.ttl = c.ttl
             if (c.chain) record.sc.chain = 1
+            // Feature params survive too — the door's presig regeneration and its grant mint read
+            //  the RECORD (never a carried $n), so a reloaded ledger must re-wear them exactly.
+            for (const k of Object.keys(c)) {
+                if (!['to', 'ttl', 'chain', 'spent', 'holder', 'blotter'].includes(k)) record.sc[k] = String(c[k])
+            }
         }
         if (c.spent) record.sc.spent = 1
         // chain tip survives reload too — else a reloaded inviter forgets who holds it and its
@@ -690,50 +776,52 @@ Swarm_heard_hi(w, ident, frame) {
 
 //#region handshake — live, both online (§6.3)
 
-// Swarm_redeem — the invitee opens the ?Iz= link WHILE ONLINE: verify the signature, then prove
-//  receipt by dialing the inviter with a pier_hello that ECHOES the Idzeug — carrying our page and
-//   our reciprocal Feature grant (the claim names the inviter's pub, so the reciprocal mints NOW
-//    and rides the hello; two frames seal the friendship). The inviter offline → the redeem simply
-//     FAILS (%rebuff,offline): the Idzeug proves receipt, it does not stand in for an absent party.
+// Swarm_redeem — the invitee opens the ?Iz= link WHILE ONLINE: parse the compact token and prove
+//  receipt by dialing the issuer with a pier_hello that ECHOES it — carrying our page and NOTHING
+//   else. The token no longer names the issuer's full pub, so our reciprocal grant cannot mint
+//    here: it DEFERS to Swarm_accept (their pier_accept reveals page.pub) and rides back as
+//     pier_confirm — THREE frames seal the friendship (§6.3, the ReInvite honour→seal shape).
+//      The issuer offline → the redeem simply FAILS (%rebuff,offline): the token proves receipt,
+//       it does not stand in for an absent party.
 async Swarm_redeem(w, ident, iz) {
-    let claim
-    try { claim = await this.Swarm_verify_idzeug(iz) }
-    catch (er) {
-        this.Swarm_rebuff(ident, 'forged', er)
+    let t = this.Swarm_token_parse(iz)
+    if (!t) {
+        this.Swarm_rebuff(ident, 'forged', iz)
         return null
     }
-    let grant = await mint_grant(ident.c.keys, claim.by, claim.to, this.Swarm_iz_params(claim), this.Swarm_now(w))
-    let hello = { kind: 'pier_hello', iz: iz, page: this.Swarm_page(ident), grant: grant }
-    if (!this.Swarm_deliver(w, ident, claim.prepub, hello)) {
-        this.Swarm_rebuff(ident, 'offline', claim.prepub)
+    let hello = { kind: 'pier_hello', iz: iz, page: this.Swarm_page(ident) }
+    if (!this.Swarm_deliver(w, ident, t.prepub, hello)) {
+        this.Swarm_rebuff(ident, 'offline', t.prepub)
         return null
     }
-    // remember what we offered so the accept can seal our copy beside theirs (runtime memory —
-    //  losing it costs only the my-copy convenience, never the friendship)
-    if (!ident.c.offered) ident.c.offered = {}
-    ident.c.offered[claim.by] = grant
-    return claim
+    return t
 
 },
-// Swarm_hello — the inviter hears a pier_hello: the old Idzeugnosis seat with the peer its OWN
-//  authority. Valid = the echoed Idzeug is OURS (by === our pub — signature freshly re-verified)
-//   and its nonce is on our %Peering UNSPENT. Then the seal: spend the nonce, keep their verified
-//    reciprocal grant, mint our BOUND grant, import their page as a %Pier, log the graph edge, and
-//     answer pier_accept. Every deny answers pier_reject so the redeemer sees why.
+// Swarm_hello — the issuer hears a pier_hello: the old Idzeugnosis seat with the peer its OWN
+//  authority. Valid = the echoed token names OUR address, its serial is on our %Peering ledger,
+//   and its presig REGENERATES from our own record (the issuer-side MAC — ed25519 is deterministic,
+//    so we re-sign the domain and prefix-match; a guessed serial can never wear it). Then the seal:
+//     spend the serial, mint our BOUND grant, seal ONE-SIDED (their reciprocal follows as
+//      pier_confirm), import their page as a %Pier, and answer pier_accept.
 async Swarm_hello(w, ident, frame) {
     // VERIFY BEFORE WE LEAVE A TRACE (the F3 flood + the SwarmSpoof tooth): a junk / forged /
-    //  misdirected / spoofed hello must mint NO transport route, stamp NO %Ud, and send NO reply —
-    //   replying only confirms us to a spammer and spams the address it forged. So refuse LOCALLY
-    //    until the hello is PROVEN to bear an invite that is genuinely OURS (by === our pub, signature
-    //     re-verified) on a page whose prepub its own pub derives. Only then is there a real redeemer
-    //      to promote a return route for. (station_pier is a no-op without a station, so the Books'
-    //       mail-wire fixtures never see the route either way — this is the live-relay surface, §10.1.)
+    //  misdirected / spoofed / UNKNOWN-serial hello must mint NO transport route, stamp NO %Ud,
+    //   and send NO reply — replying only confirms us to a spammer, and serials are GUESSABLE
+    //    (a blotter counts <tag>-1, <tag>-2…), so unlike the old full-signature door even an
+    //     unknown serial refuses LOCALLY: without a ledger record there is nothing that proves
+    //      the caller ever held OUR link. Only a presig-proven redeemer gets a route and a
+    //       reasoned deny. (station_pier is a no-op without a station, so the Books' mail-wire
+    //        fixtures never see the route either way — this is the live-relay surface, §10.1.)
     let refuse = (why) => { this.Swarm_rebuff(ident, 'hello_' + why, frame.page?.prepub); return null }
-    let claim
-    try { claim = await this.Swarm_verify_idzeug(frame.iz) }
-    catch (er) { return refuse('forged') }
-    if (claim.by !== ident.c.keys.pub) return refuse('not_ours')
+    let t = this.Swarm_token_parse(frame.iz)
+    if (!t) return refuse('forged')
+    if (t.prepub !== ident.sc.prepub) return refuse('not_ours')
     if (!this.Swarm_page_bound(frame.page)) return refuse('spoofed')
+    let record = this.Swarm_peering(ident).o({ Idzeug: t.serial })[0]
+    if (!record) return refuse('unknown')
+    let n = this.Swarm_token_n(String(record.sc.to), this.Swarm_record_params(record))
+    let presig = await this.Swarm_presig(ident.c.keys, ident.sc.prepub, t.serial, n)
+    if (presig !== t.presig) return refuse('forged')
     // proven: OUR invite, on a bound page — a real redeemer. NOW promote the return route (the
     //  pier_accept and every reason below ride it), and answer with denials the honest redeemer can act on.
     this.Swarm_station_pier(w, ident, frame.page?.prepub)
@@ -742,12 +830,7 @@ async Swarm_hello(w, ident, frame) {
         this.Swarm_deliver(w, ident, frame.page?.prepub, { kind: 'pier_reject', why: why, prepub: ident.sc.prepub })
         return null
     }
-    let record = this.Swarm_peering(ident).o({ Idzeug: claim.nonce })[0]
-    if (!record) return deny('unknown')
     if (record.sc.spent) return deny('spent')
-    // ttl door policy (§10.1: validity lives with the MAKER): the ttl on OUR record is the law,
-    //  the claim's signed mint time the clock. No ttl on the record = the invite waits forever.
-    if (record.sc.ttl && this.Swarm_now(w) > Number(claim.time) + Number(record.sc.ttl)) return deny('expired')
     // chain policy (§6.3a): a chain invite is not spent on first claim — its first claimant becomes
     //  the tracked HOLDER (the tip), sealed as a normal friend below. A LATER redeem by a NON-holder
     //   is the chain GROWING: the newcomer holds the link the tip passed them, so mint a ReInvite and
@@ -757,28 +840,25 @@ async Swarm_hello(w, ident, frame) {
         if (frame.page.prepub === record.sc.holder) return deny('held')
         return await this.Swarm_reinvite_begin(w, ident, record, frame)
     }
-    let theirs
-    try { theirs = await verify_grant(frame.grant) }
-    catch (er) { return deny('bad_grant') }
-    if (theirs.for !== ident.c.keys.pub || theirs.by !== frame.page.pub) return deny('grant_mismatch')
     // a plain invite SPENDS; a chain invite records its first holder (the tip the chain grows from)
     if (record.sc.chain) {
         record.sc.holder = frame.page.prepub
-        this.Swarm_iz_stash(ident, claim.nonce, { holder: frame.page.prepub })
+        this.Swarm_iz_stash(ident, t.serial, { holder: frame.page.prepub })
     } else {
         record.sc.spent = 1
-        this.Swarm_iz_stash(ident, claim.nonce, { spent: 1 })
+        this.Swarm_iz_stash(ident, t.serial, { spent: 1 })
     }
-    let mine = await mint_grant(ident.c.keys, frame.page.pub, claim.to, this.Swarm_iz_params(claim), this.Swarm_now(w))
-    let pier = this.Swarm_seal(w, ident, frame.page, frame.grant, mine)
+    let mine = await mint_grant(ident.c.keys, frame.page.pub, String(record.sc.to), this.Swarm_record_params(record), this.Swarm_now(w))
+    let pier = this.Swarm_seal(w, ident, frame.page, null, mine)
     this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_accept', grant: mine, page: this.Swarm_page(ident) })
     return pier
 
 },
-// Swarm_accept — the redeemer hears pier_accept: verify the inviter's bound grant is really theirs
-//  and really FOR US, then seal our own %Pier. The friendship is now MUTUAL — and both being
-//   online, the living connection can stand up at once (.c.live — the transport layer links it
-//    when this seam rides Peeroleum).
+// Swarm_accept — the redeemer hears pier_accept: verify the issuer's bound grant is really theirs
+//  and really FOR US, then seal our own %Pier AND mint the DEFERRED reciprocal (§6.3): the compact
+//   token never carried their full pub — HERE the accept's own page.pub names them (bound and
+//    grant-proven above), so our grant mints now, seals beside theirs, and rides back as
+//     pier_confirm — the third frame. Both being online, the living connection stands at once.
 async Swarm_accept(w, ident, frame) {
     let claim
     try { claim = await verify_grant(frame.grant) }
@@ -794,13 +874,34 @@ async Swarm_accept(w, ident, frame) {
         this.Swarm_rebuff(ident, 'accept_spoofed', frame.page?.prepub)
         return null
     }
-    let mine = ident.c.offered ? ident.c.offered[claim.by] : null
-    return this.Swarm_seal(w, ident, frame.page, frame.grant, mine)
+    let mine = await mint_grant(ident.c.keys, frame.page.pub, claim.to, this.Swarm_iz_params(claim), this.Swarm_now(w))
+    let pier = this.Swarm_seal(w, ident, frame.page, frame.grant, mine)
+    this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_confirm', grant: mine, page: this.Swarm_page(ident) })
+    return pier
 
 },
-// Swarm_rejected — the inviter said no (spent|unknown|forged…): surface it, nothing sealed.
+// Swarm_rejected — the inviter said no (spent|held|bad_grant…): surface it, nothing sealed.
 Swarm_rejected(w, ident, frame) {
     this.Swarm_rebuff(ident, 'rejected_' + frame.why, frame.prepub)
+
+},
+// Swarm_confirmed — the issuer hears pier_confirm: the redeemer's DEFERRED reciprocal (§6.3, the
+//  third frame; mirrors Swarm_reinvite_sealed). Only an ALREADY-SEALED redeemer may confirm —
+//   Swarm_hello minted the %Pier one-sided, so a confirm from a stranger is a probe, not a seal:
+//    rebuff locally, never reply, and never let Swarm_seal mint a fresh pier here. Idempotent —
+//     the seal dedups grants, a re-delivered confirm no-ops.
+async Swarm_confirmed(w, ident, frame) {
+    let deny = (why) => {
+        this.Swarm_rebuff(ident, 'confirm_' + why, frame.page?.prepub)
+        return null
+    }
+    if (!this.Swarm_page_bound(frame.page)) return deny('spoofed')
+    if (!this.Swarm_peering(ident).o({ Pier: 1, pub: frame.page.prepub })[0]) return deny('unexpected')
+    let theirs
+    try { theirs = await verify_grant(frame.grant) }
+    catch (er) { return deny('bad_grant') }
+    if (theirs.for !== ident.c.keys.pub || theirs.by !== frame.page.pub) return deny('grant_mismatch')
+    return this.Swarm_seal(w, ident, frame.page, frame.grant, null)
 
 },
 // ── the ReInvite chain wire (§6.3a) — Alice tracks, the TIP grants ──────────────────────────
@@ -1454,9 +1555,10 @@ Swarm_pier_live(pier, feature) {
 
 //#region portability — export | import (§4 pt 3: the "copy their snap in|out", thawEnteredStashed reborn)
 //  The account's PORTABLE form is its C-snap — one blob that is the backup, the device-move, and the
-//   shareable contact, depending on what you point it at. A JSON envelope {v, kind, snap, keys?}
-//    rides over the enWaft snap; `keys` only when the owner asks for a SECRET export of their own
-//     %Identity (the snap itself never carries the key — .c never encodes).
+//   shareable contact, depending on what you point it at. A JSON envelope {v, kind, snap} rides over
+//    the enWaft snap.  An `account` snap carries its keypair INLINE (two hex sc scalars on the Identity
+//     root) — the owner-local .jamsend law means the backup must be self-sufficient; a `page`/`contact`
+//      carries pub-only, so a shared face never leaks a key.  See Swarm_export for the live-node guard.
 
 // Swarm_protocol — the SWARM_PROTOCOL rule set (§6.5): the Swarm vocabulary with session keys
 //  omitted (online is the relay's truth, never the snap's), wire husks and rebuffs skipped.
@@ -1484,28 +1586,48 @@ Swarm_protocol(kind) {
 
 },
 // Swarm_export — a subtree as ONE pasteable blob. The root's mainkey names the kind: an %Identity
-//  is an `account`, a %Pier a `contact`, a %Peering a `page` (pruned). opt.secret on an account
-//   folds .c.keys into the envelope — a REAL backup: guard the blob like the key it carries.
+//  is an `account`, a %Pier a `contact`, a %Peering a `page` (pruned). An account export IS the
+//   private backup, so its keypair rides IN THE SNAP (§ owner-local .jamsend law — the human 2026-07-27:
+//    "Swarm_(ex|im)port doesn't need to env.keys — just put them in the snap"): two hex sc scalars on
+//     the Identity root line, no sidecar field, so the blob is self-sufficient.  Guard it like the key
+//      it carries.  (Every LIVE node still keeps "keys ride .c only": Swarm_page is hand-built pub-only
+//       so no wire frame carries the key, and the embed is export-only — import thaws + strips it back.)
 async Swarm_export(n, opt) {
     let mk = Object.keys(n.sc)[0]
     let kind = mk === 'Identity' ? 'account' : (mk === 'Pier' ? 'contact' : 'page')
     let out = await this.enWaft(n, { matching: this.Swarm_protocol(kind) })
     if (out.errors?.length) throw 'Swarm_export: ' + out.errors.join('; ')
-    let env = { v: '1', kind: kind, snap: out.snap }
-    if (opt?.secret && mk === 'Identity' && n.c.keys) env.keys = { pub: n.c.keys.pub, key: n.c.keys.key }
-    return JSON.stringify(env)
+    let snap = out.snap
+    if (mk === 'Identity' && n.c.keys) snap = this.Swarm_snap_keyed(snap, n.c.keys)
+    return JSON.stringify({ v: '1', kind: kind, snap: snap })
+
+},
+// Swarm_snap_keyed — fold the keypair onto the account snap's Identity ROOT line as two sc scalars.
+//  pub/key are pure hex (no encode/escape hazard), so a plain line-append round-trips through
+//   decode_wh_lines as sc.  Exactly one Identity roots an account export; a missing root is a mint
+//    bug, not furniture, so it throws rather than silently dropping the key.
+Swarm_snap_keyed(snap, keys) {
+    let lines = snap.split('\n')
+    let at = lines.findIndex(l => /^\s*Identity:/.test(l))
+    if (at < 0) throw 'Swarm_export: account snap has no Identity root to key'
+    lines[at] = lines[at] + ',pub:' + keys.pub + ',key:' + keys.key
+    return lines.join('\n')
 
 },
 // Swarm_import — paste a blob, get particles: decode the snap and GRAFT it into `container`,
-//  idempotently. An envelope with keys restores signing power onto .c.keys (never via the snap).
+//  idempotently.  An account snap carries its keypair inline; import THAWS it back onto .c.keys and
+//   STRIPS the two scalars off sc, so the live node keeps the "keys ride .c only" invariant — only
+//    the on-disk/transit snap ever bore them.
 Swarm_import(container, blob) {
     let env = JSON.parse(blob)
     let got = this.decode_wh_lines(env.snap)
     if (!got.C) throw 'Swarm_import: ' + (got.errors?.join('; ') || 'bad snap')
     let n = this.Swarm_graft(container, got.C)
-    if (env.keys?.pub) {
-        n.c.keys = { pub: env.keys.pub, key: env.keys.key }
-        n.sc.prepub = env.keys.pub.slice(0, 16)
+    if (n.sc.pub && n.sc.key) {
+        n.c.keys = { pub: n.sc.pub, key: n.sc.key }
+        n.sc.prepub = String(n.sc.pub).slice(0, 16)
+        delete n.sc.pub
+        delete n.sc.key
     }
     return n
 
@@ -1531,6 +1653,136 @@ Swarm_graft(parent, node) {
     twin.c.up = parent
     for (const child of node.o()) this.Swarm_graft(twin, child)
     return twin
+
+},
+// ── the .jamsend disk homes (§5 boot ladder — owner-local) ─────────────────────────────────────
+//  Two homes under the share's private corner (Heist_meta_dir = '.jamsend').  Everyone uses the SAME
+//   FSA point (the human 2026-07-27), so the <prepub> path segment is what keeps two owners apart —
+//    no per-device root.  `root` is the durable collection ('' = the share root); a Book passes its
+//     marrauding root so its writes sweep with the run.
+Swarm_account_dir(root, prepub) {
+    return (root || '') + '/.jamsend/account/' + prepub
+},
+Swarm_roster_dir(root) {
+    return (root || '') + '/.jamsend/identities'
+
+},
+// Swarm_account_save — persist the account as its export snap (keypair embedded) at
+//  account/<prepub>/toc.snap.  Reuses Swarm_export whole, so the disk file IS the canonical portable
+//   account — the same artifact a paste-backup carries, minus the JSON envelope — and stays Waft-editable
+//    in the grid (the "editable on disk as Waft" stance).  Whole-file replace; accounts are small.
+//  ⚠ LANDMINE — this writes the PRIVATE KEY in the clear to disk.  It is safe ONLY while THREE
+//   invariants all hold (owner-local .jamsend law): (1) `.jamsend` is never peer-readable; (2)
+//    `Crate_nav_paths` returns AUDIO files only, so a share walk never surfaces this toc.snap; (3)
+//     Repli replicates C PARTICLES, never raw disk files.  Break any one — a non-audio return, a
+//      peer-readable share, a raw-file cast — and this key LEAKS.  A change to Crate/Repli/share-scope
+//       MUST revisit key-at-rest (encrypt, or move the key back to Dexie-only).
+async Swarm_account_save(nav, root, ident) {
+    if (!nav || !ident?.c?.keys) return null
+    let env = JSON.parse(await this.Swarm_export(ident))
+    await nav.write_file(this.Swarm_account_dir(root, ident.sc.prepub), 'toc.snap', env.snap)
+    return env.snap
+
+},
+// Swarm_account_load — read account/<prepub>/toc.snap and Swarm_import it into `container` (thaws the
+//  keypair onto .c, strips it off sc).  Returns the live %Identity able to SIGN, or null when no
+//   account sits on disk OR the file is CORRUPT.  Rewraps the bare snap in the export envelope so ONE
+//    import path serves both paste-restore and disk-seed.  A present-but-corrupt snap (half-written,
+//     hand-mangled) makes Swarm_import THROW — caught here to null (treated as absent) so a bad file
+//      degrades to a fresh mint at the boot seam rather than bricking the boot with an unhandled throw.
+async Swarm_account_load(nav, root, prepub, container) {
+    if (!nav) return null
+    let snap = null
+    try { snap = await nav.read_file(this.Swarm_account_dir(root, prepub), 'toc.snap') } catch (er) { snap = null }
+    if (!snap) return null
+    try {
+        return this.Swarm_import(container, JSON.stringify({ v: '1', kind: 'account', snap: snap }))
+    } catch (er) {
+        console.log('🚪 account load: corrupt snap for ' + prepub + ' — ' + String(er).slice(0, 60))
+        return null
+    }
+
+},
+// Swarm_account_list — the prepubs that have an account on disk.  The account DIRS themselves are the
+//  source of truth for "who lives here" (never a cache that can drift); the roster below is only a
+//   friendly-name convenience.  Empty when no share, no dir, or no dir_at (a nav without listing).
+async Swarm_account_list(nav, root) {
+    if (!nav?.dir_at) return []
+    let dl = null
+    try { dl = await nav.dir_at((root || '') + '/.jamsend/account') } catch (er) { dl = null }
+    if (!dl) return []
+    await dl.expand()
+    return dl.directories.map(d => d.name)
+
+},
+// Swarm_roster_open — the recognition roster as a %Waft at identities/toc.snap.  A DERIVED cache of
+//  "who lives here" (one %Identity row per owner: prepub + pub + friendly + born — pub-only, NEVER a
+//   key), so a fresh browser can name its owners without importing (and thawing) every account.  A
+//    drift heals on the next roster_save; existence's truth is Swarm_account_list, not this.
+async Swarm_roster_open(nav, root) {
+    let dir = this.Swarm_roster_dir(root)
+    let snap = null
+    try { snap = await nav.read_file(dir, 'toc.snap') } catch (er) { snap = null }
+    let waft = null
+    if (snap) {
+        let dec = this.deWaft(snap, 'identities')
+        waft = dec.Waft
+    }
+    if (!waft) waft = new TheC({ c: {}, sc: { Waft: 'identities' } })
+    waft.c.roster_dir = dir
+    return waft
+
+},
+// Swarm_roster_save — upsert one owner's recognition row and write the roster whole.  Pub-only by
+//  construction: the roster never carries a key, so it stays safe even if the owner-local law is ever
+//   relaxed for this ONE file.
+async Swarm_roster_save(nav, root, ident) {
+    if (!nav || !ident?.c?.keys) return null
+    let waft = await this.Swarm_roster_open(nav, root)
+    let row = waft.oai({ Identity: ident.sc.prepub })
+    row.c.up = waft
+    row.sc.pub = ident.c.keys.pub
+    let peering = this.Swarm_peering(ident)
+    if (peering?.sc?.friendly) row.sc.friendly = peering.sc.friendly
+    if (ident.sc.born) row.sc.born = ident.sc.born
+    let enc = await this.enWaft(waft)
+    await nav.write_file(waft.c.roster_dir, 'toc.snap', enc.snap)
+    return waft
+
+},
+// Swarm_persist — one call to mirror an identity to BOTH homes: the account (agency, keyed) and the
+//  roster row (recognition, pub-only).  The write-through seam (§4 stream rule: Dexie is the working
+//   store, this throttled mirror the durable one) — a caller invokes it on a Waft:Account version bump.
+async Swarm_persist(nav, root, ident) {
+    if (!nav || !ident?.c?.keys) return null
+    await this.Swarm_account_save(nav, root, ident)
+    await this.Swarm_roster_save(nav, root, ident)
+    return ident
+
+},
+// Swarm_boot_seed — §5 step 3: a browser with NO Dexie state but a share present reads its owner(s)
+//  back off disk.  Enumerate the account dirs, pick the target (`want` = a ?I= prepub if given and
+//   present; else the sole account; else the first — multi-identity is ?I=-explicit, "not well
+//    supported" by design, the human 2026-07-27), and load it into `container` (keys thawed, grants +
+//     piers + iz ledger reborn).  Returns { ident, prepub, others } or null when disk is bare.
+//   PURE by design: session activation (sc.active) and the Dexie re-mirror are the app-boot caller's
+//    (Auto ensure_identity → adopt this before minting a parallel self), so a Book can prove the
+//     disk→identity→signing lift without fighting the House-global active-self.  The Auto wiring is
+//      the one seam whose only real proof is a live reboot (the two-tab fingers-test) — see
+//       Identity_persist_todo §3.
+async Swarm_boot_seed(nav, root, container, want) {
+    let prepubs = await this.Swarm_account_list(nav, root)
+    if (!prepubs.length) return null
+    // try the preferred (a ?I= want) FIRST, then the rest — so ONE corrupt|unreadable account never
+    //  strands the others (Swarm_account_load returns null on a bad file, so we just fall through).
+    let order = []
+    if (want && prepubs.includes(want)) order.push(want)
+    for (const p of prepubs) { if (p !== want) order.push(p) }
+    for (const prepub of order) {
+        let ident = await this.Swarm_account_load(nav, root, prepub, container)
+        if (ident) return { ident: ident, prepub: prepub, others: prepubs }
+    }
+    return null
 },
 //#endregion
 

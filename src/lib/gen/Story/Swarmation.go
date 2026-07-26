@@ -3,14 +3,14 @@
     import { TheC } from "$lib/data/Stuff.svelte"
     import { onMount } from "svelte"
 
-import { mint_grant } from "$lib/O/Funk/Grant.ts"
+import { mint_grant, verify_grant } from "$lib/O/Funk/Grant.ts"
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return 'ab55f8a4195e86fe~g1' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return '84f6e4b24b0b1d44~g1' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -103,8 +103,8 @@ async SwarmStaple_sides_up(w) {
     w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.SwarmStaple_witness(w); req.sc.ok = 1 })
 
 },
-// beat 3 — Alice mints the Idzeug: the unbound Music offer (Classical only), single-use nonce.
-//  The ?Iz= blob parks on w.c for the later beats (re-derivable — nothing durable rides it).
+// beat 3 — Alice mints the Idzeug: the Music offer (Classical only), single-use serial.
+//  The compact token parks on w.c for the later beats (re-derivable — nothing durable rides it).
 async SwarmStaple_mint(w) {
     w.i({reached: "step_3"})
     w.sc.now = 1751500010
@@ -112,27 +112,34 @@ async SwarmStaple_mint(w) {
     w.c.iz = await this.Swarm_mint_idzeug(w, alice, { Music: 1, genre: 'Classical' }, 'staple_1')
 
 },
-// beat 4 — the two rebuffs, teeth first: a tampered blob (one signature byte flipped) must fail
-//  verification; the TRUE blob redeemed while Alice is offline must fail delivery — proof of
-//   receipt needs the party present.
+// beat 4 — the two rebuffs, teeth first: a MANGLED token (nothing like prepub*serial*n*presig)
+//  must rebuff at the redeemer before a single frame crosses; the TRUE token redeemed while Alice
+//   is offline must fail delivery — proof of receipt needs the party present. (The subtler tamper —
+//    a flipped presig on a well-formed token — is beat 5's door tooth: only the ISSUER can check a
+//     presig, so client-side verification is no longer a thing to prove.)
 async SwarmStaple_rebuffs(w) {
     w.i({reached: "step_4"})
     w.sc.now = 1751500020
     let bob = this.SwarmStaple_ident(w, 'Bob')
     this.Swarm_online(bob, true)
-    let atom = JSON.parse(this.Swarm_unb64(w.c.iz))
-    atom.sign = atom.sign.slice(0, -1) + (atom.sign.endsWith('0') ? '1' : '0')
-    await this.Swarm_redeem(w, bob, this.Swarm_b64(JSON.stringify(atom)))
+    await this.Swarm_redeem(w, bob, 'not-a-token-at-all')
     await this.Swarm_redeem(w, bob, w.c.iz)
 
 },
-// beat 5 — the seal: Alice comes online, Bob redeems for real. hello → accept plays out through
-//  the pump within this beat's passes; both ends land a %Pier + cross grants + an edge.
+// beat 5 — the seal: Alice comes online. FIRST a tampered token knocks — the last presig hex
+//  flipped: well-formed, real serial, but the door regenerates its OWN presig and the prefix
+//   mismatches → refuse('forged') LOCALLY (nothing spends, Bob hears silence). THEN Bob redeems
+//    for real: hello → accept → confirm play out through the pump within this beat's passes; both
+//     ends land a %Pier + cross grants + an edge. The THIRD frame (pier_confirm) carries Bob's
+//      DEFERRED reciprocal — Alice holding Bob's grant IS the proof it crossed.
 async SwarmStaple_seal(w) {
     w.i({reached: "step_5"})
     w.sc.now = 1751500030
     this.Swarm_online(this.SwarmStaple_ident(w, 'Alice'), true)
-    await this.Swarm_redeem(w, this.SwarmStaple_ident(w, 'Bob'), w.c.iz)
+    let bob = this.SwarmStaple_ident(w, 'Bob')
+    let tam = w.c.iz.slice(0, -1) + (w.c.iz.endsWith('0') ? '1' : '0')
+    await this.Swarm_redeem(w, bob, tam)
+    await this.Swarm_redeem(w, bob, w.c.iz)
 
 },
 // beat 6 — the replay: a third self redeems the SPENT blob. The signature verifies (it is a real
@@ -194,12 +201,15 @@ SwarmStaple_witness(w) {
     // beat 3: the offer exists as a nonce record — FOR the Music Feature scoped to Classical.
     let record = aPeering?.o({ Idzeug: 1 })[0]
     if (record && record.sc.to === 'Music' && record.sc.genre === 'Classical') this.story_swear(w, 'Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical')
-    // beat 4: teeth — the flipped byte was rejected at verify; the offline redeem failed delivery.
-    if (bob.o({ rebuff: 'forged' })[0]) this.story_swear(w, 'a tampered Idzeug fails verification — one flipped signature byte and it is rejected')
-    if (bob.o({ rebuff: 'offline' })[0]) this.story_swear(w, 'redeeming with the inviter offline fails — the Idzeug is proof of receipt not an offline token')
-    // beat 5: the mutual seal — read both Piers once, claim import + reciprocity + the graph.
+    // beat 4: teeth — the mangled token rebuffed at the parse; the offline redeem failed delivery.
+    if (bob.o({ rebuff: 'forged' })[0]) this.story_swear(w, 'a mangled token is rebuffed at the redeemer — it never parses and no frame crosses')
+    if (bob.o({ rebuff: 'offline' })[0]) this.story_swear(w, 'redeeming with the inviter offline fails — the token is proof of receipt not an offline capability')
+    // beat 5: the tamper tooth then the mutual seal — read both Piers once, claim import +
+    //  reciprocity + the graph. Alice holding the grant BOB signed is the third frame's own
+    //   receipt: the deferred reciprocal only ever crosses as pier_confirm.
     let aPier = aPeering?.o({ Pier: 1, pub: bob.sc.prepub })[0]
     let bPier = bPeering?.o({ Pier: 1, pub: alice.sc.prepub })[0]
+    if (alice.o({ rebuff: 'hello_forged' })[0] && aPier) this.story_swear(w, 'a flipped presig refuses locally at the door — only the issuer key can wear the MAC — and the true token still seals behind it')
     if (bPier && bPier.o({ Peering: 1 })[0]?.sc?.friendly === 'Alice') this.story_swear(w, 'Bob imported the page of Alice — the stashed Peering reborn under his Pier')
     let aGot = aPier?.o({ Grant: 'Music', by: bob.c.keys?.pub })[0]
     let bGot = bPier?.o({ Grant: 'Music', by: alice.c.keys?.pub })[0]
@@ -289,10 +299,10 @@ async SwarmWire_handshake(w) {
     for (const peering of w.o({ Peering: 1 })) await peering.do()
 
 },
-// beat 4 — the seal, over the wire: Alice mints (fresh nonce, pinned clock), Bob redeems — the
-//  hello rides his station's outbox to her inbox, her accept rides back, both accounts land a
-//   %Pier with the cross-signed grants. Deliverance chose the spine on its own: the stations
-//    exist, so the mail fallback never fires.
+// beat 4 — the seal, over the wire: Alice mints (fresh serial, pinned clock), Bob redeems — the
+//  hello rides his station's outbox to her inbox, her accept rides back, his pier_confirm carries
+//   the deferred reciprocal, both accounts land a %Pier with the cross-signed grants. Deliverance
+//    chose the spine on its own: the stations exist, so the mail fallback never fires.
 async SwarmWire_seal(w) {
     w.sc.now = 1751600030
     let alice = this.SwarmStaple_ident(w, 'Alice')
@@ -329,7 +339,7 @@ SwarmWire_witness(w) {
     if (n === 3 && this.Peeroleum_peer_ready(aPier) && this.Peeroleum_peer_ready(bPier)) this.story_swear(w, 'the link authenticated first — hello and trust both ways before any swarm frame')
     // beat 4: the hello and accept each crossed as a real DONE inbox item, and the friendship sealed.
     let heard = (pier, kind) => pier.o({ inbox: 1 })[0]?.o({ req: 'unemit' }).some(u => u.sc.to === kind && u.sc.done)
-    if (n === 4 && heard(aPier, 'pier_hello') && heard(bPier, 'pier_accept')) this.story_swear(w, 'pier_hello and pier_accept crossed as real frames — booked through outbox and inbox')
+    if (n === 4 && heard(aPier, 'pier_hello') && heard(bPier, 'pier_accept') && heard(aPier, 'pier_confirm')) this.story_swear(w, 'pier_hello and pier_accept and pier_confirm crossed as real frames — booked through outbox and inbox')
     let aGot = this.Swarm_peering(alice)?.o({ Pier: 1, pub: bob.sc.prepub })[0]?.o({ Grant: 'Music', by: bob.c.keys?.pub })[0]
     let bGot = this.Swarm_peering(bob)?.o({ Pier: 1, pub: alice.sc.prepub })[0]?.o({ Grant: 'Music', by: alice.c.keys?.pub })[0]
     if (n === 4 && aGot && bGot) this.story_swear(w, 'the friendship sealed over the wire — mutual Music grants at both ends')
@@ -487,11 +497,11 @@ async SwarmSteal_order(w) { const H = this;
 //       w:SwarmInvite (dispatch by world name, the usual bomb); pinned clock, seeded keys.
 //   beat 2  the machine stands — TWO identities concreted by Clustation_concrete, so only the
 //            second is ACTIVE (its contract) — plus the Phone, a stranger with its own keys
-//   beat 3  the mint — Swarm_invite_url from the ACTIVE self → <base>?Iz=<blob>; the beat itself
-//            re-parses and re-verifies the URL (async crypto stamps %minted for the sync witness)
-//   beat 4  the scan — the Phone pulls the blob out of the URL (Swarm_iz_of_url, the boot handler's
-//            core) and redeems: hello → accept over the mail wire → mutual %Pier + Music grants
-//   beat 5  the photograph — Eve scans the SAME QR later: the nonce is spent, the door refuses
+//   beat 3  the mint — Swarm_invite_url from the ACTIVE self → <base>?Iz=<token>; the beat itself
+//            re-parses the URL (the compact token — under sixty chars — stamps %minted for the witness)
+//   beat 4  the scan — the Phone pulls the token out of the URL (Swarm_iz_of_url, the boot handler's
+//            core) and redeems: hello → accept → confirm over the mail wire → mutual %Pier + grants
+//   beat 5  the photograph — Eve scans the SAME QR later: the serial is spent, the door refuses
 
 SwarmInvite(A,w) {
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
@@ -535,8 +545,9 @@ async SwarmInvite_stand(w) {
 },
 // beat 3 — the mint: the front door resolves the ACTIVE self and dresses the Idzeug as the URL the
 //  QR will carry (base pinned — live it is location.origin + the toplevel path). The beat then does
-//   the round trip itself — parse the URL back, verify the blob — and stamps %minted with what the
-//    crypto SAW, so the sync witness reads a stamp, not an await.
+//   the round trip itself — pull the token back out of the URL, parse it — and stamps %minted with
+//    what the parse SAW (plus the token LENGTH: the whole point of the compact form is a QR a phone
+//     grabs across a table), so the sync witness reads a stamp, not an await.
 async SwarmInvite_mint(w) {
     w.i({reached: "step_3"})
     w.sc.now = 1751800010
@@ -545,8 +556,8 @@ async SwarmInvite_mint(w) {
     this.Swarm_online(ident, true)
     w.c.url = await this.Swarm_invite_url(w, ident, { Music: 1 }, 'invite_1', 'https://jamsend.example/BigSoundland')
     let back = this.Swarm_iz_of_url(w.c.url)
-    let claim = await this.Swarm_verify_idzeug(back)
-    w.i({ minted: 'verified', to: claim.to, of: claim.prepub, nonce: claim.nonce })
+    let t = this.Swarm_token_parse(back)
+    if (t) w.i({ minted: 'parsed', to: t.to, of: t.prepub, nonce: t.serial, chars: String(back.length) })
 
 },
 // beat 4 — the scan: the Phone does exactly what the ?Iz= boot handler will — pull the blob out of
@@ -560,7 +571,7 @@ async SwarmInvite_scan(w) {
     await this.Swarm_redeem(w, phone, this.Swarm_iz_of_url(w.c.url))
 
 },
-// beat 5 — the photograph: Eve shot the QR over a shoulder and opens it later. The signature is
+// beat 5 — the photograph: Eve shot the QR over a shoulder and opens it later. The token is
 //  real, but the machine's spend ledger says no — the QR on the screen is single-use.
 async SwarmInvite_photograph(w) {
     w.i({reached: "step_5"})
@@ -581,10 +592,11 @@ SwarmInvite_witness(w) {
     //  only-one-active contract held: the older self stands by deactivated.
     let actives = acct.o({ Identity: 1 }).filter(i => i.sc.active)
     if (n === 2 && ident && ident.c.keys?.key && ident.sc.nick && this.Swarm_peering(ident) && actives.length === 1 && acct.o({ Identity: 1 }).length === 2 && !(w.oa({see: 'the machine self is made by its real maker — keys and nick and Peering — and only one identity is active'}))) w.i({see: 'the machine self is made by its real maker — keys and nick and Peering — and only one identity is active'})
-    // beat 3: the invite IS a URL — parseable back to a blob the crypto verified as a Music offer
-    //  from the active self (the %minted stamp is the crypto's own sighting).
-    let minted = w.o({ minted: 'verified' })[0]
-    if (n === 3 && String(w.c.url).startsWith('https://jamsend.example/BigSoundland?Iz=') && minted && minted.sc.to === 'Music' && minted.sc.of === ident?.sc?.prepub && !(w.oa({see: 'the invite is a URL — the blob inside parses back and verifies as a Music offer from the active self'}))) w.i({see: 'the invite is a URL — the blob inside parses back and verifies as a Music offer from the active self'})
+    // beat 3: the invite IS a URL — the compact token inside parses back to the Music offer from
+    //  the active self AND stays small enough for an easy QR (the %minted stamp is the parse's own
+    //   sighting; only the ISSUER could verify further, and beat 4 proves that at the door).
+    let minted = w.o({ minted: 'parsed' })[0]
+    if (n === 3 && String(w.c.url).startsWith('https://jamsend.example/BigSoundland?Iz=') && minted && minted.sc.to === 'Music' && minted.sc.of === ident?.sc?.prepub && Number(minted.sc.chars) < 60 && !(w.oa({see: 'the invite is a URL — the compact token inside parses back to a Music offer under sixty characters'}))) w.i({see: 'the invite is a URL — the compact token inside parses back to a Music offer under sixty characters'})
     // beat 4: the scan sealed it — the Phone holds a Pier for the machine with the machine's signed
     //  Music grant, and the machine holds the mirror Pier for the Phone.
     let pPier = this.Swarm_peering(phone)?.o({ Pier: 1, pub: ident?.sc?.prepub })[0]
@@ -943,20 +955,21 @@ async SwarmGot_order(w) { const H = this;
     await this.place({}, ordered)
 
 },
-// ══ SwarmPolicy — the SEVENTH Book: door policy (Swarm_spec §10.1 ttl + §6.2 rung 1 legacy) ═════
+// ══ SwarmPolicy — the SEVENTH Book: door policy (Swarm_spec §10.1 no-clock + §6.2 rung 1 legacy) ═════
 //  Validity lives with the MAKER: what the door honours is ITS OWN %Idzeug record, checked at
 //   hello-time. Two policies get teeth here:
-//    ttl — a maker-side expiry riding the record (never the sealed grants — grants stay infinite,
-//     Swarm_iz_params strips ttl): inside the window an invite seals as ever; beyond it the door
-//      says deny('expired') and the nonce stays UNSPENT (an expired invite was never received).
+//    no-clock — an invite works INDEFINITELY until its first claim: the compact token carries no
+//     time, the door keeps no ttl, and single-use-by-serial is the WHOLE law. No sealed grant ever
+//      carries an expiry either — grants are infinite by design (the inverse is a %NotGrant).
 //    legacy — the old garden's `#<pad><prepub>-<advice>-<sign>` links parse at the new door
 //     (Swarm_legacy_of_url — rung 1, pure): prepub|name|n lifted, granted='ftp' surfaced so nobody
-//      transcodes it as Music. NOT verified — the old ledger and key live in the old Dexie until
-//       the rung-2 migrator; garbage and modern links refuse with null, never a crash.
+//      transcodes it as Music. NOT verified — the old ledger and key live in the old garden's
+//       IndexedDB (`Trust` v2) until the rung-2 migrator; garbage and modern links refuse with
+//        null, never a crash.
 //   beat 2  Vera + Otto stand on the mail wire — Vera online (the door that answers)
-//   beat 3  a ttl invite INSIDE its window seals as ever (the policy is not a tax on the living)
-//   beat 4  a second ttl invite waits — sixty seconds of welcome on its face
-//   beat 5  the clock leaps past the welcome — the door refuses expired and the nonce stays unspent
+//   beat 3  a fresh invite seals as ever — and no sealed grant carries any expiry
+//   beat 4  a second invite waits — no clock on its face
+//   beat 5  the clock leaps a hundred seconds — the invite STILL seals and spends
 //   beat 6  the relics — the old link parses (fields lifted) and the mangled|modern refuse null
 
 SwarmPolicy(A,w) {
@@ -973,7 +986,7 @@ async SwarmPolicy_drive(w, req) {
         if (n === 2) await this.SwarmPolicy_stand(w)
         if (n === 3) await this.SwarmPolicy_fresh(w)
         if (n === 4) await this.SwarmPolicy_second(w)
-        if (n === 5) await this.SwarmPolicy_expire(w)
+        if (n === 5) await this.SwarmPolicy_leap(w)
         if (n === 6) await this.SwarmPolicy_relics(w)
     }
     await this.SwarmStaple_pump(w)
@@ -990,27 +1003,28 @@ async SwarmPolicy_stand(w) {
     w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.SwarmPolicy_witness(w); req.sc.ok = 1 })
 
 },
-// beat 3 — a ttl invite redeemed INSIDE its window: the mail wire settles within the beat (the
+// beat 3 — a fresh invite redeemed at once: the mail wire settles within the beat (the
 //  SwarmStaple precedent), so the seal is witnessed this same beat.
 async SwarmPolicy_fresh(w) {
     w.sc.now = 1751920010
     let vera = this.SwarmStaple_ident(w, 'Vera')
     let otto = this.SwarmStaple_ident(w, 'Otto')
     this.Swarm_online(otto, true)
-    let iz = await this.Swarm_mint_idzeug(w, vera, { Music: 1, genre: 'Baroque', ttl: 60 }, 'pol_1')
+    let iz = await this.Swarm_mint_idzeug(w, vera, { Music: 1, genre: 'Baroque' }, 'pol_1')
     await this.Swarm_redeem(w, otto, iz)
 
 },
-// beat 4 — the second ttl invite is minted and left waiting.
+// beat 4 — the second invite is minted and left waiting: no clock on its face, none anywhere.
 async SwarmPolicy_second(w) {
     w.sc.now = 1751920020
     let vera = this.SwarmStaple_ident(w, 'Vera')
-    w.c.iz2 = await this.Swarm_mint_idzeug(w, vera, { Music: 1, genre: 'Baroque', ttl: 60 }, 'pol_2')
+    w.c.iz2 = await this.Swarm_mint_idzeug(w, vera, { Music: 1, genre: 'Baroque' }, 'pol_2')
 
 },
-// beat 5 — the clock leaps a hundred seconds (past 020+60) and Otto redeems the stale invite:
-//  the door must refuse expired — and the nonce must stay UNSPENT.
-async SwarmPolicy_expire(w) {
+// beat 5 — the clock leaps a hundred seconds and Otto redeems the waiting invite: it MUST still
+//  seal and spend — a token works indefinitely until its first claim; no clock ever kills a
+//   standing welcome (the door that once said deny('expired') no longer exists).
+async SwarmPolicy_leap(w) {
     w.sc.now = 1751920120
     let otto = this.SwarmStaple_ident(w, 'Otto')
     await this.Swarm_redeem(w, otto, w.c.iz2)
@@ -1029,17 +1043,18 @@ SwarmPolicy_witness(w) {
     if (!vera || !otto) return
     let vPier = this.Swarm_peering(vera)?.o({ Pier: 1, pub: otto.sc.prepub })[0]
     let oPier = this.Swarm_peering(otto)?.o({ Pier: 1, pub: vera.sc.prepub })[0]
-    // beat 3: the fresh ttl invite sealed — the policy is no tax on the living; and no grant
-    //  carries the ttl (it was invite policy, stripped before minting).
+    // beat 3: the fresh invite sealed — and no sealed grant carries any expiry field (grants are
+    //  infinite; invite validity is the serial, never a clock). Vera holding OTTO's grant is the
+    //   pier_confirm receipt — the deferred reciprocal crossed.
     let vGot = vPier?.o({ Grant: 'Music', by: otto.c.keys?.pub })[0]
     let ttlLeak = vPier?.o({ Grant: 1, ttl: 1 })[0] ?? oPier?.o({ Grant: 1, ttl: 1 })[0]
-    if (n === 3 && vGot && oPier && !ttlLeak && !(w.oa({see: 'a ttl invite inside its window seals as ever — and no sealed grant carries the expiry'}))) w.i({see: 'a ttl invite inside its window seals as ever — and no sealed grant carries the expiry'})
-    // beat 4: the second invite waits with sixty seconds of welcome on its face.
+    if (n === 3 && vGot && oPier && !ttlLeak && !(w.oa({see: 'a fresh invite seals as ever — and no sealed grant carries any expiry'}))) w.i({see: 'a fresh invite seals as ever — and no sealed grant carries any expiry'})
+    // beat 4: the second invite waits with NO clock on its face.
     let rec2 = this.Swarm_peering(vera)?.o({ Idzeug: 'pol_2' })[0]
-    if (n === 4 && rec2 && Number(rec2.sc.ttl) === 60 && !rec2.sc.spent && !(w.oa({see: 'a second invite waits — sixty seconds of welcome on its face'}))) w.i({see: 'a second invite waits — sixty seconds of welcome on its face'})
-    // beat 5: the door refused expired — the rebuff landed at the redeemer and the nonce stays
-    //  UNSPENT (an expired invite was never received; spending it would be theft by clock).
-    if (n === 5 && otto.o({ rebuff: 'rejected_expired' })[0] && rec2 && !rec2.sc.spent && !(w.oa({see: 'an expired invite dies at the door — refused and the nonce stays unspent'}))) w.i({see: 'an expired invite dies at the door — refused and the nonce stays unspent'})
+    if (n === 4 && rec2 && !rec2.sc.ttl && !rec2.sc.spent && !(w.oa({see: 'a second invite waits — no clock on its face'}))) w.i({see: 'a second invite waits — no clock on its face'})
+    // beat 5: the leap changed nothing — a hundred seconds on and the invite still sealed and
+    //  spent: infinite-until-first-claim IS the policy.
+    if (n === 5 && rec2 && rec2.sc.spent && !(w.oa({see: 'the clock never kills an invite — a hundred seconds later it still seals and spends'}))) w.i({see: 'the clock never kills an invite — a hundred seconds later it still seals and spends'})
     // beat 6: the relics. The old garden link parses — prepub|name|n lifted, granted=ftp surfaced —
     //  while garbage and a modern ?Iz= link refuse with null.
     let relic = this.Swarm_legacy_of_url('https://jam.example/BigSoundland#############a1b2c3d4e5f60718-Elder+Gardener.n~7-deadbeefdeadbeef')
@@ -1229,6 +1244,9 @@ SwarmShare_witness(w) {
     let cassMir = w.o({ MusuThem: 1, pub: cass.sc.prepub })[0]?.o({ stock: 1 })[0]
     let debMir = w.o({ MusuThem: 1, pub: deb.sc.prepub })[0]
     if (n === 4 && cassMir && cassMir.o({ Record: 1 }).length === 2 && !debMir) this.story_swear(w, 'the mirror lands keyed by the caster prepub — two records under MusuThem for the friend never merged under the listener key')
+    // OWED (attended — pairs with the Repli.g `c.sc.from` stamp): add a beat-4 swear that each mirrored
+    //  record wears its source prepub as a SNAPPABLE from (query `{ Record:1, from:cass.sc.prepub }`),
+    //   then re-record + declare.  Held with the Repli line so SwarmShare's fixtures move exactly once.
     // beat 5: a suggestion minted while the friend is unreachable stands un-got under my Pier for them — the
     //  store-and-forward promise. Nothing crossed — no mirrored suggestion at Bob yet.
     let aPier = this.Swarm_peering(alice)?.o({ Pier: 1, pub: bob.sc.prepub })[0]
@@ -1595,6 +1613,11 @@ async SwarmBlotter_order(w) { const H = this;
 //        {pub: Mallory's key, prepub: Vic's address}. The door MUST refuse — no contact under Vic's
 //         address, the live invite unspent — because prepubOf(page.pub) !== page.prepub. Own world
 //          w:SwarmSpoof (dispatch by WORLD NAME). RED until Swarm_page_bound gates the seal.
+//  RE-EXPRESSED for the compact token (2026-07-27): the hello carries no grant any more and the
+//   token no third-party signature — so beat 5 mounts the two attacks the compact form invites:
+//    a GUESSED serial (they count — a blotter is <tag>-1, <tag>-2…) and a FORGED presig on the
+//     real serial. Both refuse LOCALLY (no reply, no spend, no contact): the presig is a per-serial
+//      MAC only the issuer's key regenerates.
 SwarmSpoof(A,w) {
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
         await this.SwarmSpoof_drive(w,req)
@@ -1610,6 +1633,7 @@ async SwarmSpoof_drive(w, req) {
         if (n === 2) await this.SwarmSpoof_sides_up(w)
         if (n === 3) await this.SwarmSpoof_mint(w)
         if (n === 4) await this.SwarmSpoof_spoof(w)
+        if (n === 5) await this.SwarmSpoof_guess(w)
     }
     await this.SwarmSpoof_pump(w)
     await this.SwarmSpoof_order(w)
@@ -1671,21 +1695,39 @@ async SwarmSpoof_mint(w) {
     w.c.iz = await this.Swarm_mint_idzeug(w, alice, { Music: 1, genre: 'Jazz' }, 'spoof_1')
 
 },
-// beat 4 — the attack: Mallory crafts a pier_hello echoing Alice's REAL Idzeug + a reciprocal grant
-//  signed by MALLORY's key, but declares VIC's address as the page prepub. The door hears it as
-//   hear() would deliver it (a direct Swarm_hello on the hand-crafted frame). Nothing Mallory signed
-//    proves the Vic address is theirs — the seal must refuse (today it does not: that is the tooth).
+// beat 4 — the attack: Mallory crafts a pier_hello echoing Alice's REAL token, but declares VIC's
+//  address as the page prepub. The door hears it as hear() would deliver it (a direct Swarm_hello
+//   on the hand-crafted frame). Nothing Mallory carries proves the Vic address is theirs — the
+//    seal must refuse: prepubOf(page.pub) !== page.prepub. (No grant rides a hello any more — the
+//     compact seal defers the reciprocal to pier_confirm, so the forged-reciprocal leg of the old
+//      attack simply has no seam left to land on.)
 async SwarmSpoof_spoof(w) {
     w.i({reached: "step_4"})
     w.sc.now = 1759000020
     let alice = this.SwarmSpoof_ident(w, 'Alice')
     let mal = this.SwarmSpoof_ident(w, 'Mallory')
     let vic = this.SwarmSpoof_ident(w, 'Vic')
-    let claim = await this.Swarm_verify_idzeug(w.c.iz)
-    let grant = await mint_grant(mal.c.keys, claim.by, claim.to, this.Swarm_iz_params(claim), this.Swarm_now(w))
     let page = { pub: mal.c.keys.pub, prepub: vic.sc.prepub, friendly: 'Vic' }
-    let frame = { kind: 'pier_hello', iz: w.c.iz, page: page, grant: grant }
+    let frame = { kind: 'pier_hello', iz: w.c.iz, page: page }
     await this.Swarm_hello(w, alice, frame)
+
+},
+// beat 5 — the guesser: Mallory wears her OWN page now (bound — nothing forged there) and probes
+//  the door twice: an INVENTED serial with a junk presig, then the REAL serial with a forged
+//   presig. Serials are guessable by construction; the presig is the per-serial MAC only Alice's
+//    key regenerates — both probes must refuse LOCALLY: no reply confirms the door exists, nothing
+//     spends, no contact forms.
+async SwarmSpoof_guess(w) {
+    w.i({reached: "step_5"})
+    w.sc.now = 1759000030
+    let alice = this.SwarmSpoof_ident(w, 'Alice')
+    let mal = this.SwarmSpoof_ident(w, 'Mallory')
+    let page = { pub: mal.c.keys.pub, prepub: mal.sc.prepub, friendly: 'Mallory' }
+    let guessed = this.Swarm_token(alice.sc.prepub, 'spoof_99', 'Music', 'deadbeefdeadbeef')
+    await this.Swarm_hello(w, alice, { kind: 'pier_hello', iz: guessed, page: page })
+    let t = this.Swarm_token_parse(w.c.iz)
+    let forged = this.Swarm_token(t.prepub, t.serial, t.n, 'deadbeefdeadbeef')
+    await this.Swarm_hello(w, alice, { kind: 'pier_hello', iz: forged, page: page })
 
 },
 // ── the witness — %sworn assertions via this.story_swear (idempotent per run, shelf-checked) ──────
@@ -1708,6 +1750,13 @@ SwarmSpoof_witness(w) {
     //  attacker WORE hears nothing back; a spoof cannot be turned into a rejection-spam against a third party.
     let vicHeard = vic ? vic.o({ rebuff: 1 })[0] : null
     if (n >= 4 && spoofRebuff && !vicHeard) this.story_swear(w, 'the forged victim is left untouched — the refused spoof sends no reply so the innocent address the attacker wore is never spammed with a rejection')
+    // beat 5: the presig teeth — a guessed serial refuses hello_unknown and a forged presig refuses
+    //  hello_forged, both LOCALLY: Mallory hears nothing, nothing spends, no contact forms even on
+    //   her honestly-bound page. Only the issuer key can wear the MAC.
+    let mal = this.SwarmSpoof_ident(w, 'Mallory')
+    let malPier = mal ? aPeering?.o({ Pier: 1, pub: mal.sc.prepub })[0] : null
+    let malHeard = mal ? mal.o({ rebuff: 1 })[0] : null
+    if (n >= 5 && alice.o({ rebuff: 'hello_unknown' })[0] && alice.o({ rebuff: 'hello_forged' })[0] && !malPier && record && !record.sc.spent && !malHeard) this.story_swear(w, 'a guessed serial and a forged presig both refuse locally — no reply and no spend and no contact — only the issuer key can wear the MAC')
 
 },
 // SwarmSpoof_order — float A:SwarmSpoof to the front of H/* so the Run snap stays readable.
@@ -1715,6 +1764,257 @@ async SwarmSpoof_order(w) { const H = this;
     let As = H.o({A: 1})
     if (!As.length) return
     let first = (a) => (a.sc.A === 'SwarmSpoof') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+},
+// ══ SwarmDisk — the TWELFTH Book: identity persisted to .jamsend (Identity_persist_todo, 2026-07-27) ══
+//  The other Swarm Books prove the LIVE machine; SwarmDisk proves it SURVIVES a fresh browser.  Two
+//   strangers become friends, the owner's whole account is mirrored to the owner-local .jamsend disk
+//    (account/<prepub>/toc.snap — the export snap with the keypair embedded, the human's ruling: keys
+//     ride the snap; identities/toc.snap — the pub-only recognition roster), then a FRESH container
+//      with no prior state reseeds the owner off that disk alone: the friendship reborn, the thawed
+//       private key both verifies her old grant and signs a new one, and a re-save is byte-identical.
+//   The nav is an IN-MEMORY double of the 7-method contract (dirs/read_file/write_file/dir_at): the
+//    account round-trip logic is what changed, and the real FSA backend is already proven by the
+//     Heist|Musu Books over the SAME contract — so this Book runs on ANY runner, no FSA grant, and a
+//      reload never strands it (the two-tab fingers-test is the remaining real-disk proof, §3).
+//   Own world w:SwarmDisk (dispatch by WORLD NAME — the usual bomb); seeded keys, pinned clock.
+SwarmDisk(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.SwarmDisk_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// SwarmDisk_drive — beat dispatch (req-local did_step), then drain the mail wire and re-sort H/*.
+async SwarmDisk_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.SwarmDisk_sides_up(w)
+        if (n === 3) await this.SwarmDisk_befriend(w)
+        if (n === 4) await this.SwarmDisk_persist_beat(w)
+        if (n === 5) await this.SwarmDisk_reseed(w)
+        if (n === 6) await this.SwarmDisk_multi(w)
+        if (n === 7) await this.SwarmDisk_revoke(w)
+    }
+    await this.SwarmDisk_pump(w)
+    await this.SwarmDisk_order(w)
+
+},
+// SwarmDisk_pump — bounded mail drain (the SwarmBlotter lesson): let the 3-frame seal settle across
+//  passes without spinning a beat.
+async SwarmDisk_pump(w) {
+    let guard = 0
+    while (guard < 8) {
+        guard = guard + 1
+        for (const acct of w.o({ Account: 1 })) {
+            for (const ident of acct.o({ Identity: 1 })) await this.Swarm_pump(w, ident)
+        }
+        let pending = 0
+        for (const acct of w.o({ Account: 1 })) {
+            for (const ident of acct.o({ Identity: 1 })) {
+                let inbox = ident.o({ mail: 1 })[0]
+                if (inbox) pending = pending + inbox.o({ frame: 1 }).filter(m => !m.sc.did).length
+            }
+        }
+        if (pending === 0) break
+    }
+
+},
+// SwarmDisk_memnav — an in-memory double of the nav contract used by the persistence helpers.  Keyed
+//  dirs[dirpath][filename] = content; dir_at lists the immediate child dir names below a path (the
+//   only listing Swarm_account_list needs).  Rides w.c.nav (never encoded), so the disk store never
+//    pollutes the got_snap — the fixture sees only the live C tree.
+SwarmDisk_memnav() {
+    let dirs = {}
+    let nav = { dirs: dirs }
+    nav.read_file = async (dir, filename) => {
+        if (dirs[dir] && dirs[dir][filename] != null) return dirs[dir][filename]
+        return null
+    }
+    nav.write_file = async (dir, filename, content) => {
+        if (!dirs[dir]) dirs[dir] = {}
+        dirs[dir][filename] = content
+    }
+    nav.dir_at = async (path) => {
+        let base = String(path).split('/').filter(Boolean)
+        let kids = new Set()
+        for (const dp of Object.keys(dirs)) {
+            let segs = dp.split('/').filter(Boolean)
+            if (base.length < segs.length && base.every((s, i) => segs[i] === s)) kids.add(segs[base.length])
+        }
+        let names = [...kids]
+        return { directories: names.map(z => ({ name: z })), files: [], expand: async () => {} }
+    }
+    return nav
+
+},
+// SwarmDisk_person — a fixed self seeded off the name, brought ONLINE at once.
+async SwarmDisk_person(w, name) {
+    let acct = w.oai({ Account: 1, of: name })
+    acct.c.up = w
+    let keys = await this.Swarm_mint_keys('SwarmDisk-' + name)
+    let ident = this.Swarm_identity(acct, keys, name)
+    this.Swarm_online(ident, true)
+    return ident
+
+},
+SwarmDisk_ident(w, name) {
+    return w.o({ Account: 1, of: name })[0]?.o({ Identity: 1 })[0]
+
+},
+// beat 2 — the cast: Alice + Bob, both online, and the in-memory disk stood up on w.c.nav.  Witness
+//  armed last (own swept req) so it reads each pass's settled state.
+async SwarmDisk_sides_up(w) {
+    w.i({reached: "step_2"})
+    w.sc.now = 1759100010
+    w.c.nav = this.SwarmDisk_memnav()
+    w.c.root = ''
+    await this.SwarmDisk_person(w, 'Alice')
+    await this.SwarmDisk_person(w, 'Bob')
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.SwarmDisk_witness(w); req.sc.ok = 1 })
+
+},
+// beat 3 — the friendship: Alice mints a single-use Music Idzeug (Jazz), Bob redeems it, the 3-frame
+//  seal crosses.  Now Alice's account carries a real Pier + a cross-signed grant + a spent iz record
+//   — a non-trivial thing to persist.
+async SwarmDisk_befriend(w) {
+    w.i({reached: "step_3"})
+    w.sc.now = 1759100020
+    let alice = this.SwarmDisk_ident(w, 'Alice')
+    let bob = this.SwarmDisk_ident(w, 'Bob')
+    w.c.iz = await this.Swarm_mint_idzeug(w, alice, { Music: 1, genre: 'Jazz' }, 'disk_1')
+    await this.Swarm_redeem(w, bob, w.c.iz)
+
+},
+// beat 4 — the mirror: Alice's whole account is written to the owner-local disk (keys embedded) and
+//  her recognition row to the roster (pub-only).  Read the raw artifacts back onto .c so the witness
+//   can assert what LANDED without re-importing.
+async SwarmDisk_persist_beat(w) {
+    w.i({reached: "step_4"})
+    w.sc.now = 1759100030
+    let alice = this.SwarmDisk_ident(w, 'Alice')
+    w.c.saved_snap = await this.Swarm_account_save(w.c.nav, w.c.root, alice)
+    await this.Swarm_roster_save(w.c.nav, w.c.root, alice)
+    w.c.disk_acct = await w.c.nav.read_file(this.Swarm_account_dir(w.c.root, alice.sc.prepub), 'toc.snap')
+    w.c.disk_roster = await w.c.nav.read_file(this.Swarm_roster_dir(w.c.root), 'toc.snap')
+
+},
+// beat 5 — the fresh browser: a container with NO prior state reseeds the owner off disk alone.  Prove
+//  the thawed key SIGNS (mint a fresh grant, verify it) and that a re-save is byte-identical (the
+//   §4 robustness claim, now through the nav).
+async SwarmDisk_reseed(w) {
+    w.i({reached: "step_5"})
+    w.sc.now = 1759100040
+    let vault = w.oai({ Account: 1, of: 'AliceReseed' })
+    vault.c.up = w
+    let seed = await this.Swarm_boot_seed(w.c.nav, w.c.root, vault, null)
+    if (!seed) return
+    let ok = 0
+    try {
+        let fresh = await mint_grant(seed.ident.c.keys, '*', 'Music', {}, 1759100040)
+        await verify_grant(fresh)
+        ok = 1
+        w.c.fresh_by = fresh.by
+    } catch (er) { ok = 0 }
+    w.c.fresh_ok = ok
+    let resnap = await this.Swarm_account_save(w.c.nav, w.c.root, seed.ident)
+    w.c.reseed_identical = (resnap === w.c.saved_snap) ? 1 : 0
+
+},
+// beat 6 — the shared FSA point: a SECOND owner (Carol) persists to the same disk (no friendship
+//  needed — a bare account is enough to test enumeration + the ?I= pick).  Swarm_account_list finds
+//   BOTH; Swarm_boot_seed(want=Carol) picks CAROL not the first; the roster names both pub-only.  This
+//    is the multi-identity path the human flagged (?I= selects; weakly supported by design).
+async SwarmDisk_multi(w) {
+    w.i({reached: "step_6"})
+    w.sc.now = 1759100050
+    let carol = await this.SwarmDisk_person(w, 'Carol')
+    await this.Swarm_persist(w.c.nav, w.c.root, carol)
+    w.c.acct_list = await this.Swarm_account_list(w.c.nav, w.c.root)
+    let vault = w.oai({ Account: 1, of: 'CarolReseed' })
+    vault.c.up = w
+    let seed = await this.Swarm_boot_seed(w.c.nav, w.c.root, vault, carol.sc.prepub)
+    if (seed) w.c.picked = seed.prepub
+    w.c.roster_snap = await w.c.nav.read_file(this.Swarm_roster_dir(w.c.root), 'toc.snap')
+
+},
+// beat 7 — write-through UPDATE + tombstone durability: Alice REVOKES Bob (a %NotGrant, synchronous —
+//  no wire), re-persists the whole account (whole-file replace, so the disk TRACKS the mutation not just
+//   the first write), and a FRESH reseed must carry the revocation across disk — a reload never silently
+//    re-grants (the durable-tombstone law, now across the disk round-trip).
+async SwarmDisk_revoke(w) {
+    w.i({reached: "step_7"})
+    w.sc.now = 1759100060
+    let alice = this.SwarmDisk_ident(w, 'Alice')
+    let bob = this.SwarmDisk_ident(w, 'Bob')
+    let pier = this.Swarm_peering(alice)?.o({ Pier: 1, pub: bob.sc.prepub })[0]
+    if (pier) await this.Swarm_revoke(w, alice, pier, 'Music')
+    w.c.saved_snap2 = await this.Swarm_account_save(w.c.nav, w.c.root, alice)
+    let vault = w.oai({ Account: 1, of: 'AliceRevoked' })
+    vault.c.up = w
+    await this.Swarm_boot_seed(w.c.nav, w.c.root, vault, alice.sc.prepub)
+
+},
+// SwarmDisk_witness — %sworn assertions via this.story_swear.  Each a happened-FACT: the friendship,
+//  the self-sufficient account snap, the pub-only roster, the reborn owner, the still-signing thawed
+//   key, and the byte-identical disk round trip.  Gated to the beat the truth first holds; every claim
+//    pairs a positive with the guard that makes it un-vacuous (a key IS on the account, is NOT on the
+//     roster; the reseeded key EQUALS the original; the re-save EQUALS the saved snap).
+SwarmDisk_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    let alice = this.SwarmDisk_ident(w, 'Alice')
+    let bob = this.SwarmDisk_ident(w, 'Bob')
+    if (!alice || !bob) return
+    let aPeering = this.Swarm_peering(alice)
+    let bPeering = this.Swarm_peering(bob)
+    let key = alice.c.keys?.key
+    let pub = alice.c.keys?.pub
+    // beat 3: Alice and Bob become friends — a Pier each carrying the OTHER's signed Music grant.
+    let aGrant = aPeering?.o({ Pier: 1, pub: bob.sc.prepub })[0]?.o({ Grant: 'Music', by: bob.c.keys?.pub })[0]
+    let bGrant = bPeering?.o({ Pier: 1, pub: alice.sc.prepub })[0]?.o({ Grant: 'Music', by: pub })[0]
+    if (n >= 3 && aGrant && bGrant) this.story_swear(w, 'Alice and Bob become friends — each Pier carries a Music grant the other signed — a real account to persist')
+    // beat 4: the account snap stands alone (grant + pub + private key inline); the roster is pub-only.
+    let acct = w.c.disk_acct
+    let roster = w.c.disk_roster
+    if (n >= 4 && acct && key && pub && acct.includes('Grant') && acct.includes(key) && acct.includes(pub)) this.story_swear(w, 'the account persists to disk — its snap carries the friendship grant and the keypair inline so the owner-local backup stands alone')
+    if (n >= 4 && roster && pub && key && roster.includes(pub) && !roster.includes(key)) this.story_swear(w, 'the roster names its owner for recognition — pub and friendly on disk and never the private key')
+    // beat 5: a fresh container reseeds the owner off disk — friendship + thawed key reborn, still
+    //  signs, and a re-save is byte-identical.
+    let vault = w.o({ Account: 1, of: 'AliceReseed' })[0]
+    let rAlice = vault?.o({ Identity: 1 })[0]
+    let rGrant = this.Swarm_peering(rAlice)?.o({ Pier: 1, pub: bob.sc.prepub })[0]?.o({ Grant: 'Music', by: bob.c.keys?.pub })[0]
+    let thawed = rAlice?.c?.keys?.key
+    if (n >= 5 && rGrant && thawed && thawed === key) this.story_swear(w, 'a fresh browser reseeds its owner off disk — the friendship and the private key reborn from the account snap alone')
+    if (n >= 5 && w.c.fresh_ok === 1 && w.c.fresh_by === pub) this.story_swear(w, 'the reseeded key still signs — a new grant minted after the disk round trip verifies under the same public key')
+    if (n >= 5 && w.c.reseed_identical === 1) this.story_swear(w, 'the account survives the disk round trip byte for byte — the reseeded self re-saves to the very same snap')
+    // beat 6: two owners share the one FSA point; enumeration finds both and a ?I= pick lands the
+    //  requested owner (not merely the first) with her own key thawed.
+    let carol = this.SwarmDisk_ident(w, 'Carol')
+    let list = w.c.acct_list
+    let both = carol && list && list.includes(alice.sc.prepub) && list.includes(carol.sc.prepub)
+    if (n >= 6 && both && list.length === 2) this.story_swear(w, 'two owners share the one FSA point — enumeration finds both accounts on disk keyed by prepub')
+    let cVault = w.o({ Account: 1, of: 'CarolReseed' })[0]
+    let rCarol = cVault?.o({ Identity: 1 })[0]
+    if (n >= 6 && carol && w.c.picked === carol.sc.prepub && rCarol?.c?.keys?.key === carol.c.keys?.key) this.story_swear(w, 'the requested owner is the one reseeded — a named pick lands Carol not merely the first account and her own key thaws')
+    let rs = w.c.roster_snap
+    if (n >= 6 && rs && carol && rs.includes(alice.c.keys?.pub) && rs.includes(carol.c.keys?.pub) && !rs.includes(key) && !rs.includes(carol.c.keys?.key)) this.story_swear(w, 'the roster names both owners for recognition — each pub and friendly on disk and neither private key')
+    // beat 7: a mutation (revoke) re-saves the WHOLE account (update not append), and the %NotGrant
+    //  tombstone survives the disk round trip — a reseeded account can never silently re-grant.
+    let rvAlice = w.o({ Account: 1, of: 'AliceRevoked' })[0]?.o({ Identity: 1 })[0]
+    let rvNot = this.Swarm_peering(rvAlice)?.o({ Pier: 1, pub: bob.sc.prepub })[0]?.o({ NotGrant: 1 })[0]
+    if (n >= 7 && w.c.saved_snap2 && w.c.saved_snap && w.c.saved_snap2 !== w.c.saved_snap) this.story_swear(w, 'the account write-through is an update not an append — a revocation re-saves the whole snap so disk tracks the live account')
+    if (n >= 7 && rvNot) this.story_swear(w, 'a revocation survives the disk round trip — the reseeded account carries the NotGrant tombstone so a reload never silently re-grants')
+
+},
+// SwarmDisk_order — float A:SwarmDisk to the front of H/* so the Run snap stays readable.
+async SwarmDisk_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'SwarmDisk') ? 0 : 1
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)

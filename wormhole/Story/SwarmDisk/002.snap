@@ -1,0 +1,15 @@
+Snap:H
+  H:SwarmDisk,Run
+    A:SwarmDisk
+      self,round=2	{"mung":["age"]}
+      w:SwarmDisk,now=1759100010
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Alice
+          Identity:de6421a43276961e,prepub:de6421a43276961e,friendly:Alice
+            Peering,name:de6421a43276961e,friendly:Alice,online
+        Account,of:Bob
+          Identity:3084d341784e948c,prepub:3084d341784e948c,friendly:Bob
+            Peering,name:3084d341784e948c,friendly:Bob,online
+        req:witness,eternal,initialdo

@@ -70,10 +70,11 @@ Snap:H
               Idzeug:share_ab,to:Music,genre:Jazz,spent
               Pier,pub:6eb0df4e976acef2,friendly:Bob,since:1751940000
                 Peering,name:6eb0df4e976acef2,friendly:Bob,pub:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7
-                Grant:Music,by:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7,for:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213,time:1751940000,sign:a38ea7fa0a739ad65b2161d9c1d408e793c86e78e44d80423c53b0e2483c2d26b248d66d21170d8aaa7823c8dc9a2c9fb9662cd737763dcd7e1e71838bb0c705,genre:Jazz
                 Grant:Music,by:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213,for:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7,time:1751940000,sign:9c979d083f4ed861459089b641a3962dd6d51c6a06e7bd69375e06d469cb399e9883648adedcd0a877df43e4b0256adb3754c44e5a4250e3d92edcba47a0650f,genre:Jazz
+                Grant:Music,by:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7,for:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213,time:1751940000,sign:a38ea7fa0a739ad65b2161d9c1d408e793c86e78e44d80423c53b0e2483c2d26b248d66d21170d8aaa7823c8dc9a2c9fb9662cd737763dcd7e1e71838bb0c705,genre:Jazz
             mail
               frame:pier_hello,did
+              frame:pier_confirm,did
             SocialGraph
               Edge,a:32c1ce7a059129d1,b:6eb0df4e976acef2,at:1751940000
         Account,of:Bob

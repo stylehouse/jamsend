@@ -1,0 +1,10 @@
+Snap:H
+  H:VytoFold,Run
+    A:VytoFold
+      self,round=4	{"mung":["age"]}
+      w:VytoFold
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        see:the screen budget grows with the glass — a wall four times the area introduces four times as many cells
+        see:a roomy glass folds nothing — every family stands open when the budget holds every cell
+        see:the glass folds its least-dominant family first — the smallest-membered row collapses while larger siblings stand open

@@ -1,0 +1,17 @@
+Snap:H
+  H:VytoBunch,Run
+    A:VytoBunch
+      self,round=8	{"mung":["age"]}
+      w:VytoBunch
+        self,round=8	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:oak1,of:main,genus:oak
+        Cog:pine,of:main,genus:pine
+        Cog:oak2,of:main,genus:maple
+        Cog:birch,of:main,genus:birch
+        req:board_wait,finished
+        req:rest_wait,finished
+        req:free_wait,finished
+        see:the glass was commissioned on four cogs and stood its board
+        see:the solve seated four distinct cells — the attraction drew the kin close but never collapsed them
+        see:the shared genus bunched the kin — the two oaks rest closer to each other while joined than once their kinship is severed

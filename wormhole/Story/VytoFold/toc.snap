@@ -1,0 +1,43 @@
+story:VytoFold
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.017
+      sample=0.007,at=1785094214
+      sample=0.011,at=1785094228
+      sample=0.013,at=1785094327
+      sample=0.053,at=1785094488
+      sample=0.014,at=1785097654
+      sample=0.014,at=1785097664
+      sample=0.012,at=1785097673
+      sample=0.019,at=1785097688
+      sample=0.017,at=1785098053
+      sample=0.014,at=1785098093
+    TimeTotal:step,avg=0.003
+      sample=0.001,at=1785094214
+      sample=0.002,at=1785094228
+      sample=0.002,at=1785094327
+      sample=0.009,at=1785094488
+      sample=0.002,at=1785097654
+      sample=0.002,at=1785097664
+      sample=0.001,at=1785097673
+      sample=0.002,at=1785097688
+      sample=0.002,at=1785098053
+      sample=0.002,at=1785098093
+  step,dige:b5d16e38357626bf
+  step=2,dige:0db474df303ae9ca,desc:the screen budget scales with the glass area
+    Assertion:budget-scales-with-glass,sentence:the screen budget grows with the glass — a wall four times the area introduces four times as many cells
+  step=3,dige:86c14c6a1dc747d5,desc:a roomy glass folds nothing
+    Assertion:roomy-glass-folds-nothing,sentence:a roomy glass folds nothing — every family stands open when the budget holds every cell
+  step=4,dige:6fdddd06b3001ede,desc:the least-dominant family folds first
+    Assertion:least-dominant-folds-first,sentence:the glass folds its least-dominant family first — the smallest-membered row collapses while larger siblings stand open
+  step=5,dige:c49ac28be1b13cbd,desc:the path to the focus is shielded from folding
+    Assertion:focus-path-shielded,sentence:the path to the focus is never folded — attention holds every cell from the root down to the held leaf open however tight the glass
+  step=6,dige:2ad9cb5bc8a3ec0c,desc:a sub-floor family distils to buckets while a bucketless one is crushed
+    Assertion:coherence-floor-distils,sentence:a family whose members fall below the coherence floor distils to buckets while a bucketless family is crushed whole
+  step=7,dige:69189849553b0dcd,desc:a crowded row of identical members elects no representative
+    Assertion:gang-uniform-null,sentence:a crowded row of identical members elects no representative — a uniform family has none to stand for it
+  step=8,dige:3f68e2f4a45cd1b4,desc:a crowded row of all-distinct members elects no representative
+    Assertion:gang-unique-null,sentence:a crowded row of all-distinct members elects no representative — an all-unique family has no key that partitions it

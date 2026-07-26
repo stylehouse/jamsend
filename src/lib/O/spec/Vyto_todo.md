@@ -16,6 +16,30 @@ The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it 
     itself, and VytoCell recorded GREEN ×2 beside a green VytoStaple regression.  Next
      moves:
 
+- **Foam engine gated + Relate given teeth — LANDED 2026-07-27 (overnight, uncommitted; two Books
+   GREEN×2, both adversarially proven, model-side only — no display edit).** After the port
+    (`vyto_foam.ts` + Gang/Relate/Focus filled, VytoWeb green — see [[vyto-foam-port-landed]]):
+  - **VytoFold** (`Ghost/V/Vytonation.g` + `wormhole/Story/VytoFold`) gates the PURE fold engine —
+     `budget_for`+`fold_ladder`, which `Vyto_fold` will call but currently does NOT, so it had no repo
+      gate at all (only the scratchpad study's `.mjs`). 7 truths: budget scales ×4 with area · roomy=OPEN ·
+       the least-`memberDim` family folds FIRST via CRUSH (the `less()` key beats bucket — the doc comment
+        "prefer bucket over crush" is imprecise) · focus path shielded · coherence floor distils-vs-crushes ·
+         plus the gang election's honest NULL (an all-identical OR all-unique crowded row elects no
+          representative — `bucket_key_of` returns null rather than force one). **So `Vyto_fold` can now
+           wire `fold_ladder` against a proven contract** — that wiring stays the human's (the display/fold
+            station).
+  - **VytoBunch** (+ `wormhole/Story/VytoBunch`) makes the Relate %Flow edges DO something: a new pure
+     `pull_step` in `vyto_foam.ts` nudges meaning-related seats toward one another INSIDE `Vyto_solve`'s
+      K-relax (spec §6 "the solver honors the edge as an attraction" — the BLESSED *incremental* nudge,
+       NOT the forbidden relayout-from-nothing of §10.3). Byte-neutral when no edges (guard `if(nbrs)`;
+        VytoWeb/Staple/Cell regression GREEN). Proven by an A/B DIFFERENTIAL: joined kin rest 234 <
+         severed-kin rest 247 (neuter the pull ⇒ exactly that assertion reds). **HUMAN KNOB: `coeff 0.15`
+          in `Vyto_solve` — deliberately gentle (~6% pull, the centroid relax counter-balances); bump it
+           for tighter bunching.**
+  - Remaining §6 chain (DEFERRED — bigger / display-adjacent, wants the human first): proximity →
+     tessellation ADJACENCY as a *latched* fact → **%Bunch** shared-expression factoring (Express writes
+      the common bits once, members keep their diffs). The flight-latch is §3 (granted-motion), so this
+       is display-adjacent. The **SHIFT transaction on Focus** likewise.
 - **First tenant — LIVE, in the other agent's hands (2026-07-20)**: the human's Radio
    agent is actively integrating Radio as a Vyto client (the Voro+Cyto → Vyto display
     move).  This side SUPPORTS, never edits display-side: keep `vyto_workingouts/

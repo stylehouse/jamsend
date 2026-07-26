@@ -5,10 +5,11 @@
     //    Clustation_concrete stood up — never a parallel self), mint a single-use invite, show it
     //     as a scannable QR. The inviter stays on this screen; the invite is online-scan (the
     //      handshake needs both present — a photographed QR is dead after its first scan).
-    //   LAND — this page was OPENED from a scanned ?Iz= link: verify the blob, show who's
-    //    inviting, and offer JOIN — which stands our own station, promotes a %Pier to the
-    //     inviter's prepub, and redeems over the REAL relay (Swarm_spec §10.1's frontier rung:
-    //      the two BigSoundlands become for each other).
+    //   LAND — this page was OPENED from a scanned ?Iz= link: parse the compact token (the
+    //    presig only the ISSUER can check — the door proves it, not us), show the offer, and
+    //     offer JOIN — which stands our own station, promotes a %Pier to the issuer's prepub,
+    //      and redeems over the REAL relay (Swarm_spec §10.1's frontier rung: the two
+    //       BigSoundlands become for each other).
     //  The mint→URL→parse→seal→spent arc is PROVEN by Book SwarmInvite (green, deterministic);
     //   this panel is only the eyes and buttons over those verbs.
     import InviteQR from "$lib/O/ui/micro/InviteQR.svelte"
@@ -165,15 +166,15 @@
 
     // ── LAND (?Iz= in this page's own URL) ────────────────────────────────────────────────────
     let iz = boot_param('Iz')
-    let invite = $state<any>(null)       // the verified claim {to, by, prepub, friendly, ...}
+    let invite = $state<any>(null)       // the parsed token {prepub, serial, to, params} — the offer's face
     let iz_err = $state('')
     let joined = $state('')
     $effect(() => {
         void H?.version
-        if (!iz || invite || iz_err || typeof H?.Swarm_verify_idzeug !== 'function') return
-        H.Swarm_verify_idzeug(iz)
-            .then((claim: any) => invite = claim)
-            .catch((e: any) => iz_err = 'the invite did not verify — ' + String(e).slice(0, 80))
+        if (!iz || invite || iz_err || typeof H?.Swarm_token_parse !== 'function') return
+        const t = H.Swarm_token_parse(iz)
+        if (t) invite = t
+        else iz_err = 'the invite did not parse — ask for a fresh QR'
     })
     // AUTO-JOIN — a self BORN TODAY landing on a scanned invite joins by itself: the scan was
     //  the intent, and a brand-new visitor has no reason to hesitate at a button.  An older
