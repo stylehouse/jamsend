@@ -1,4 +1,4 @@
-Credulate,of_Book:MusuHeist
+Credulate,of_Book:MusuLossy
   GhostInclude:Ghost_N_Peeroleum,dige:3d06e827d2692a5c~g1
   GhostInclude:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
   GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -27,7 +27,7 @@ Credulate,of_Book:MusuHeist
   GhostInclude:Ghost_V_Vytonation,dige:6c9afa3424e0beea~g1
   GhostInclude:Ghost_Story_Voronation,dige:45e97291a654d0e8~g1
   GhostInclude:Ghost_Story_Sounditron,dige:fc546e9a542bb5eb~g1
-  last_ok,at=1785046243.671,ok_pct
+  last_ok,at=1785046170.266,ok_pct
     uses:Ghost_N_Peeroleum,dige:3d06e827d2692a5c~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71

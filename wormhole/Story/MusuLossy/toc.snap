@@ -1,0 +1,26 @@
+story:MusuLossy
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.332
+      sample=0.129,at=1785044404
+      sample=0.846,at=1785044573
+      sample=0.522,at=1785044724
+      sample=0.522,at=1785044774
+      sample=0.078,at=1785044786
+      sample=0.053,at=1785044817
+      sample=0.173,at=1785046170
+    TimeTotal:step,avg=0.083
+      sample=0.032,at=1785044404
+      sample=0.212,at=1785044573
+      sample=0.13,at=1785044724
+      sample=0.13,at=1785044774
+      sample=0.02,at=1785044786
+      sample=0.013,at=1785044817
+      sample=0.043,at=1785046170
+  step,dige:5b3c49ef84cdf079
+  step=2,dige:287bb0ccbf6e7dd6
+  step=3,dige:d984de2c2bdb55d7
+  step=4,dige:e45f1a1a4f44c957

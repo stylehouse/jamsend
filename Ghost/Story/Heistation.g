@@ -3958,3 +3958,246 @@ MusuBay_witness(w):
     let pl = T.o({ pulled: 1 })[0]
     let hardened = wish && wish.sc.at ? 1 : 0
     if (pl && hardened && pl.sc.landed_whole && pl.sc.only_wanted && pl.sc.decoys_unspent && !T.oa({ see: 'the confirmed ask hardened and pulled exactly that one card whole into the seeker stock while the two unchosen cards stayed unspent husks — the bay confirmed before a byte moved' })) this.MusuBay_note(w, { see: 'the confirmed ask hardened and pulled exactly that one card whole into the seeker stock while the two unchosen cards stayed unspent husks — the bay confirmed before a byte moved' })
+
+// ══ MusuLossy — the %Original|%Lossy grade split at census (Mag_todo §10) ═══════════════════════════════
+//  The three heist Books prove a lossless WAV lands %Original.  This Book proves the OTHER fork: a COMPRESSED
+//   source lands %Lossy, its tags read straight from the compressed headers, and the split discriminates BOTH
+//    ways in ONE census.  Three synthetic sources are planted into an isolated marrauding dir and censused
+//     together (Heist_census — hashes+slices, never decodes); each exercises a DISTINCT grade-decision road
+//      (Crate_meta_from_tags → meta.lossless → Heist_body_new):
+//       WAV  (Crate_wav_with_tags) — RIFF INFO tags — a lossless container → %Original (extension allowlist).
+//       Opus (Orig mux primitives) — OpusTags — music-metadata gives Opus NO lossless verdict (undefined), so
+//              the grade falls to the EXTENSION (.opus not lossless) → %Lossy.  This IS the road a live .opus
+//               library takes (verified: a real /music .opus reads lossless:undefined too).
+//       MP3  (hand-built ID3v2.3 + MPEG1-Layer3 frames) — music-metadata reads the codec as MPEG 1 Layer 3 →
+//              lossless:FALSE (the AUTHORITATIVE signal Crate.g prefers over the extension) → %Lossy.
+//  A final beat REASSEMBLES the opus record's %Lossy chunks back into a whole file LEFT ON DISK under
+//   .jamsend/lossy-proof/ — deliberately OUTSIDE any test-marrauding-of-* namespace so the per-Book start-sweep
+//    never touches it (the one Book that keeps its artifact — the human asked for a test that leaves its
+//     download on disk) — and proves the graded chunks reconstruct the source byte-for-byte (sha256 ==
+//      body_hash).  All synthetic + deterministic, so the SNAP is the whole proof.  needsFSA gate (bin_write);
+//       NO audio API (the census never decodes).  CONVENTION (Musu*): no Run_A_ recipe — the world MUST be
+//        named MusuLossy (do_fn_for dispatches by w.sc.w).
+
+MusuLossy(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuLossy_drive,w,req
+        req%ok = 1
+
+// MusuLossy_T / MusuLossy_note — the one %testing subtree: every observation hangs here, off the design tree
+//  (the shop library + its censused %Records live on w as first-class C).  c.up stamped so a mint snaps.
+MusuLossy_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+MusuLossy_note(w, sc):
+    let t = this.MusuLossy_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+// MusuLossy_drive — the one skip gate (no writable share — the plant needs bin_write), then ONE move per step
+//  off step_n (req-local did_step, Musu style); the witness runs EVERY pass so each %see fires the first pass
+//   its truth holds.  step 2 plants+censuses the three sources, step 3 leaves the reassembled lossy file on disk.
+async MusuLossy_drive(w, req):
+    let nav = this.Crate_nav()
+    if (!nav || typeof nav.bin_write !== 'function') {
+        if (!this.MusuLossy_T(w).oa({ skipped: 'no_writable_share' })) this.MusuLossy_note(w, { skipped: 'no_writable_share' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuLossy_census(w, nav)
+        if (n === 3) await this.MusuLossy_materialize(w, nav)
+    }
+    this.MusuLossy_witness(w)
+    await this.Musu_float(w)
+
+// MusuLossy_census — beat 2: plant the three synthetic sources into an isolated marrauding dir (swept at start
+//  so a re-run is fresh), then census them TOGETHER off the disk (no whittle — take all three).  The census
+//   hashes+slices+reads-tags: each card lands with its real title|artist and its whole-file chunk wears the
+//    grade its codec earned.
+async MusuLossy_census(w, nav):
+    this.MusuLossy_note(w, { reached: 'step_2' })
+    this.Ra_seed(w, 'MusuLossy')
+    w.c.nav = nav
+    let root = this.Heist_marrauding('lossy', 'shop')
+    w.c.root = root
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-lossy')
+    // the lossless control — a short mono sine in a tagged RIFF WAV (the MusuHeist plant idiom, deterministic).
+    let sr = 8000
+    let nsamp = 4000
+    let pcm = new Float32Array(nsamp)
+    let i = 0
+    while (i < nsamp) {
+        pcm[i] = Math.sin(2 * Math.PI * 300 * i / sr) * 0.5
+        i = i + 1
+    }
+    let wav = this.Crate_wav_with_tags(pcm, sr, { artist: 'Riff Master', title: 'Lossless One', album: 'Grade Split' })
+    await nav.bin_write(root, 'Riff Master - Lossless One.wav', wav)
+    // the two lossy sources — a real Ogg/Opus container and a real MPEG1-Layer3 stream, each carrying tags.
+    let opus = this.MusuLossy_opus_bytes({ title: 'Lossy Opus', artist: 'Opus Codec', album: 'Grade Split' })
+    await nav.bin_write(root, 'Opus Codec - Lossy Opus.opus', opus)
+    let mp3 = this.MusuLossy_mp3_bytes({ title: 'Lossy Mp3', artist: 'Mpeg Codec', album: 'Grade Split' })
+    await nav.bin_write(root, 'Mpeg Codec - Lossy Mp3.mp3', mp3)
+    let lib = this.Ra_home_self(w, 'lossy')
+    w.c.lib = lib
+    await this.expecting(w, 'lossy_census', 60, async () => {
+        let cen = await this.Heist_census(w, lib, nav, root, null)
+        let recs = this.Ra_recs(lib)
+        let m = this.MusuLossy_note(w, { censused: cen.built + cen.stood, recs: recs.length })
+        if (cen.built) m.sc.built = cen.built
+        w.c.censused = 1
+    })
+
+// MusuLossy_rec — the censused %Record for one tag-artist (Ra_recs recurses the shelf Mag).
+MusuLossy_rec(w, artist):
+    let lib = w.c.lib
+    if (!lib) return null
+    return this.Ra_recs(lib).find((r) => r.sc.artist === artist)
+
+// MusuLossy_materialize — beat 3: reassemble the opus record's %Lossy chunks in seq order back into a whole
+//  file and WRITE it to .jamsend/lossy-proof/ — OUTSIDE the marrauding namespace so the start-of-Book sweep
+//   leaves it standing.  Proves the chunks reconstruct the source byte-faithfully (sha256 == body_hash).
+async MusuLossy_materialize(w, nav):
+    this.MusuLossy_note(w, { reached: 'step_3' })
+    let rec = this.MusuLossy_rec(w, 'Opus Codec')
+    if (!rec) return
+    let total = +(rec.sc.total || 0)
+    let parts = []
+    let s = 0
+    while (s < total) {
+        let ch = rec.o({ Lossy: 1, seq: '' + s })[0]
+        if (!ch || !ch.sc.buf) break
+        parts.push(ch.sc.buf)
+        s = s + 1
+    }
+    let len = 0
+    for (const p of parts) len = len + p.length
+    let out = new Uint8Array(len)
+    let o = 0
+    for (const p of parts) {
+        out.set(p, o)
+        o = o + p.length
+    }
+    let dir = this.Heist_meta_dir() + '/lossy-proof'
+    let name = 'left-on-disk.opus'
+    await nav.bin_write(dir, name, out)
+    let faithful = ((await this.Heist_hash(out)) === rec.sc.body_hash) ? 1 : 0
+    let m = this.MusuLossy_note(w, { materialized: 1, path: dir + '/' + name, bytes: out.length })
+    if (faithful) m.sc.faithful = 1
+    w.c.left_on_disk = 1
+
+// MusuLossy_witness — the %see truths, gated on live particle reads (the censused records' grade mainkey, their
+//  tags, the reassembled file), never a beat number.  NO COMMAS in a sentence (the peel parser splits on them —
+//   em-dashes instead).
+MusuLossy_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 2)) return
+    if (!w.c.censused) return
+    let T = this.MusuLossy_T(w)
+    let wavr = this.MusuLossy_rec(w, 'Riff Master')
+    let opusr = this.MusuLossy_rec(w, 'Opus Codec')
+    let mp3r = this.MusuLossy_rec(w, 'Mpeg Codec')
+    let wav_orig = wavr && wavr.o({ Original: 1 }).length && !wavr.o({ Lossy: 1 }).length ? 1 : 0
+    let opus_lossy = opusr && opusr.o({ Lossy: 1 }).length && !opusr.o({ Original: 1 }).length ? 1 : 0
+    let mp3_lossy = mp3r && mp3r.o({ Lossy: 1 }).length && !mp3r.o({ Original: 1 }).length ? 1 : 0
+    // #1 the split discriminates both ways — the WAV wears %Original the two compressed sources wear %Lossy.
+    let split_ok = wav_orig && opus_lossy && mp3_lossy ? 1 : 0
+    if (split_ok && !T.oa({ see: 'one census split three files by grade — the lossless wav wears %Original while the opus and the mp3 each wear %Lossy — the whole-file chunk carries its quality as its mainkey' })) this.MusuLossy_note(w, { see: 'one census split three files by grade — the lossless wav wears %Original while the opus and the mp3 each wear %Lossy — the whole-file chunk carries its quality as its mainkey' })
+    // #2 a compressed file keeps its identity — read straight from OpusTags and ID3 by music-metadata.
+    let tags_ok = opusr && mp3r && opusr.sc.title === 'Lossy Opus' && opusr.sc.artist === 'Opus Codec' && mp3r.sc.title === 'Lossy Mp3' && mp3r.sc.artist === 'Mpeg Codec' ? 1 : 0
+    if (tags_ok && !T.oa({ see: 'a lossy source keeps its identity — the opus card reads title Lossy Opus off its OpusTags and the mp3 card reads title Lossy Mp3 off its ID3 — the compressed headers catalogue as truly as a RIFF' })) this.MusuLossy_note(w, { see: 'a lossy source keeps its identity — the opus card reads title Lossy Opus off its OpusTags and the mp3 card reads title Lossy Mp3 off its ID3 — the compressed headers catalogue as truly as a RIFF' })
+    // #3 the two lossy sources reached %Lossy by DIFFERENT roads — mp3 by codec (lossless false authoritative)
+    //  the opus by extension (music-metadata gives Opus no lossless verdict) — same grade either way.
+    let grades_ok = opus_lossy && mp3_lossy ? 1 : 0
+    if (grades_ok && !T.oa({ see: 'the two compressed files earned %Lossy by different roads — the mp3 off the codec verdict and the opus off the extension where the codec stayed silent — both land the same grade' })) this.MusuLossy_note(w, { see: 'the two compressed files earned %Lossy by different roads — the mp3 off the codec verdict and the opus off the extension where the codec stayed silent — both land the same grade' })
+    // #4 the retired %Body mainkey is gone — every whole-file chunk now wears a grade.
+    let nobody = wavr && opusr && mp3r && !wavr.o({ Body: 1 }).length && !opusr.o({ Body: 1 }).length && !mp3r.o({ Body: 1 }).length ? 1 : 0
+    if (nobody && !T.oa({ see: 'no record wears the retired %Body mainkey — every whole-file chunk now wears a grade %Original or %Lossy and the old flat tag is gone' })) this.MusuLossy_note(w, { see: 'no record wears the retired %Body mainkey — every whole-file chunk now wears a grade %Original or %Lossy and the old flat tag is gone' })
+    // #5 the reassembled lossy file left on disk reconstructs the source byte-faithfully.
+    let ma = T.o({ materialized: 1 })[0]
+    if (ma && ma.sc.faithful && !T.oa({ see: 'the opus %Lossy chunks reassemble into the whole file left on disk under .jamsend/lossy-proof — its sha256 matches the record body hash so the graded chunks carry the source byte for byte' })) this.MusuLossy_note(w, { see: 'the opus %Lossy chunks reassemble into the whole file left on disk under .jamsend/lossy-proof — its sha256 matches the record body hash so the graded chunks carry the source byte for byte' })
+
+// ── the synthetic lossy source builders (FLAT raw JS — owner's law: closure-heavy .g parse-storms) ──────────
+// MusuLossy_opus_bytes — a minimal REAL Ogg/Opus container (RFC 7845): an OpusHead page + an OpusTags page
+//  carrying title|artist|album + one tiny audio page (music-metadata needs an audio page AFTER the tags to
+//   surface them).  Reuses Orig.g's page|head|tags primitives.  Opus IS lossy so the census grades it %Lossy.
+MusuLossy_opus_bytes(tags):
+    let table = this.Orig_crc_table()
+    let head = this.Orig_opus_head(1, 312, 48000)
+    let tagrec = { sc: { title: tags.title, artist: tags.artist, album: tags.album } }
+    let tb = this.Orig_opus_tags(tagrec, 'jamsend Lossy proof')
+    let pkt = new Uint8Array(2)
+    let p0 = this.Orig_ogg_page([head], 0x02, 0, 1, 0, table)
+    let p1 = this.Orig_ogg_page([tb], 0x00, 0, 1, 1, table)
+    let p2 = this.Orig_ogg_page([pkt], 0x04, 960, 1, 2, table)
+    let total = p0.length + p1.length + p2.length
+    let out = new Uint8Array(total)
+    out.set(p0, 0)
+    out.set(p1, p0.length)
+    out.set(p2, p0.length + p1.length)
+    return out
+
+// MusuLossy_mp3_bytes — a minimal REAL MP3: an ID3v2.3 tag (TIT2|TPE1|TALB) + eight MPEG1-Layer3 frame headers
+//  (0xFF 0xFB 0x90 0x00 — 128kbps 44.1kHz).  music-metadata reads the ID3 tags and classifies the codec as
+//   MPEG 1 Layer 3 → lossless:false (the authoritative grade signal).  ID3 total size is syncsafe; the frame
+//    sizes inside are plain big-endian (v2.3, not the syncsafe of v2.4 — see MusuLossy_id3_frame).
+MusuLossy_mp3_bytes(tags):
+    let frames = []
+    if (tags.title) frames.push(this.MusuLossy_id3_frame('TIT2', tags.title))
+    if (tags.artist) frames.push(this.MusuLossy_id3_frame('TPE1', tags.artist))
+    if (tags.album) frames.push(this.MusuLossy_id3_frame('TALB', tags.album))
+    let flen = 0
+    for (const f of frames) flen = flen + f.length
+    let head = new Uint8Array(10)
+    head[0] = 0x49
+    head[1] = 0x44
+    head[2] = 0x33
+    head[3] = 3
+    head[6] = (flen >> 21) & 0x7f
+    head[7] = (flen >> 14) & 0x7f
+    head[8] = (flen >> 7) & 0x7f
+    head[9] = flen & 0x7f
+    let FL = 417
+    let nframes = 8
+    let audio = new Uint8Array(FL * nframes)
+    let fi = 0
+    while (fi < nframes) {
+        let ao = fi * FL
+        audio[ao] = 0xff
+        audio[ao + 1] = 0xfb
+        audio[ao + 2] = 0x90
+        audio[ao + 3] = 0x00
+        fi = fi + 1
+    }
+    let total = head.length + flen + audio.length
+    let out = new Uint8Array(total)
+    out.set(head, 0)
+    let o = head.length
+    for (const f of frames) {
+        out.set(f, o)
+        o = o + f.length
+    }
+    out.set(audio, o)
+    return out
+
+// MusuLossy_id3_frame — one ID3v2.3 text frame: 4-char id + u32be(bodylen) + 2 flag bytes + encoding byte
+//  (0 = ISO-8859-1) + the text.  v2.3 frame sizes are plain big-endian (not the syncsafe of v2.4).
+MusuLossy_id3_frame(id, text):
+    let tb = new TextEncoder().encode(text)
+    let bodylen = tb.length + 1
+    let out = new Uint8Array(10 + bodylen)
+    out[0] = id.charCodeAt(0)
+    out[1] = id.charCodeAt(1)
+    out[2] = id.charCodeAt(2)
+    out[3] = id.charCodeAt(3)
+    out[4] = (bodylen >> 24) & 0xff
+    out[5] = (bodylen >> 16) & 0xff
+    out[6] = (bodylen >> 8) & 0xff
+    out[7] = bodylen & 0xff
+    out[10] = 0
+    out.set(tb, 11)
+    return out

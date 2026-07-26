@@ -10,7 +10,7 @@ import { sha256_hex, sha256_incremental } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '023b05a1b2e3c84d~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'c4ebed5079bd0834~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -43,6 +43,31 @@ Heist_chunk_bytes() {
     return 262144
 
 },
+//#region body quality — the whole-file chunk wears its grade as its mainkey (%Original|%Lossy, Mag_todo §10)
+// One record is ALL one quality (the source file is one file), so the split is a per-record decision
+//  made once at mint (off meta.lossless), never per chunk.  These three are the ONLY seam the rename
+//   needs beyond the mint: everything else reads the seq-space mainkey-blind (Repli_chunk_at/bytes,
+//    Ra_chunk_map, Radio_map).  %Original = the lossless master (the grade-dispatch source Orig.g
+//     reserves); %Lossy = an already-compressed copy heisted whole.
+// Heist_body_new — mint the whole-file chunk at seq s under its quality mainkey.
+Heist_body_new(rec, lossless, s) {
+    if (lossless) return rec.i({ Original: 1, seq: '' + s })
+    return rec.i({ Lossy: 1, seq: '' + s })
+},
+// Heist_body_at — the whole-file chunk at seq s, whichever quality it wears (%Original master or %Lossy
+//  copy).  A record holds ONE quality, so at most one branch ever hits; ordered Original-first only for
+//   a stable read.  Distinct from Repli_chunk_at (which is quality-AND-preview-blind) — this names the
+//    whole-file body specifically, not a %Preview/%Stream sharing the seq space.
+Heist_body_at(rec, s) {
+    return rec.o({ Original: 1, seq: '' + s })[0] || rec.o({ Lossy: 1, seq: '' + s })[0]
+},
+// Heist_has_body — count of whole-file body chunks a record|card holds, either quality (0 = a husk with
+//  no bytes pulled yet).  The mainkey-agnostic replacement for the old flat `o({Body:1}).length`.
+Heist_has_body(n) {
+    return n.o({ Original: 1 }).length + n.o({ Lossy: 1 }).length
+},
+//#endregion
+
 // Heist_meta_dir — the app's private corner inside the share (the radiostock convention): ALL meta,
 //  never media bytes at its top level.
 Heist_meta_dir() {
@@ -134,7 +159,12 @@ async Heist_census(w, lib, nav, base, artists) {
         if (meta.album) rec.sc.album = meta.album
         let s = 0
         while (s < total) {
-            let b = rec.i({ Body: 1, seq: '' + s })
+            // the whole-file chunk wears its QUALITY as its mainkey (Mag_todo §10): %Original when the
+            //  source is a lossless master (the grade-dispatch source Orig.g reserves — a heisted flac IS
+            //   that master), %Lossy when it's an already-compressed copy.  One quality per record, decided
+            //    once off meta.lossless (Crate_meta_from_tags' codec read, ext fallback).  Transport is
+            //     mainkey-blind (Repli keys chunks by their binary value + seq), so this rides for free.
+            let b = this.Heist_body_new(rec, meta.lossless, s)
             b.c.up = rec
             // the %Body chunk's content-address (rung 0): the full sha256 of exactly the bytes this seq
             //  carries.  It rides the census card so a landing (Heist_land) verifies each chunk against the
@@ -269,7 +299,7 @@ async Heist_offer_vouch(rec, signer) {
     let s = 0
     let total = +(rec.sc.total || 0)
     while (s < total) {
-        let ch = rec.o({ Body: 1, seq: '' + s })[0]
+        let ch = this.Heist_body_at(rec, s)
         if (ch && ch.sc.cid) cids.push(ch.sc.cid)
         s = s + 1
     }

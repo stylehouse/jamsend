@@ -1,0 +1,25 @@
+Snap:H
+  H:MusuLossy,Run
+    A:MusuLossy
+      self,round=3	{"mung":["age"]}
+      w:MusuLossy
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          censused=3,recs=3,built=3
+          see:one census split three files by grade — the lossless wav wears %Original while the opus and the mp3 each wear %Lossy — the whole-file chunk carries its quality as its mainkey
+          see:a lossy source keeps its identity — the opus card reads title Lossy Opus off its OpusTags and the mp3 card reads title Lossy Mp3 off its ID3 — the compressed headers catalogue as truly as a RIFF
+          see:the two compressed files earned %Lossy by different roads — the mp3 off the codec verdict and the opus off the extension where the codec stayed silent — both land the same grade
+          see:no record wears the retired %Body mainkey — every whole-file chunk now wears a grade %Original or %Lossy and the old flat tag is gone
+        MusuSelf,pub:lossy
+          stock,pub:lossy
+            Mag:shuffle
+              Cloud,page:1
+                Record,id:4f90bda07e0c5df7,title:Lossy Mp3,artist:Mpeg Codec,path:Mpeg Codec - Lossy Mp3.mp3,ext:mp3,bytes=3409,body_hash:4f90bda07e0c5df746b3c0a02e9940d242f48525a1cca47d52f183a1f5137ade,total,album:Grade Split
+                  Lossy,seq:0,cid:4f90bda07e0c5df746b3c0a02e9940d242f48525a1cca47d52f183a1f5137ade	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:bd3b255fdead1aea,title:Lossy Opus,artist:Opus Codec,path:Opus Codec - Lossy Opus.opus,ext:opus,bytes=202,body_hash:bd3b255fdead1aea0f1cdaabbc0094f8dea24c9abf267c266f23152f17bdbac0,total,album:Grade Split
+                  Lossy,seq:0,cid:bd3b255fdead1aea0f1cdaabbc0094f8dea24c9abf267c266f23152f17bdbac0	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:00f2776406676667,title:Lossless One,artist:Riff Master,path:Riff Master - Lossless One.wav,ext:wav,bytes=8118,body_hash:00f2776406676667684b934883ffddd87cb29bf3894c8f1b5913090b8e973f1f,total,album:Grade Split
+                  Original,seq:0,cid:00f2776406676667684b934883ffddd87cb29bf3894c8f1b5913090b8e973f1f	{"ref":{"buf":"Uint8Array()"}}
+        req:lossy_census,finished

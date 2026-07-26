@@ -384,7 +384,7 @@ The invariant: **no path materialises the whole collection.**
 
 ---
 
-## 10. The heisted body carries its quality — `%Original | %Lossy` (CODE APPLIED + canary-verified 2026-07-26)
+## 10. The heisted body carries its quality — `%Original | %Lossy` (PROVEN green×2 2026-07-26 — split + %Lossy + tags)
 
 The human floated it, then blessed it ("pat and say good"): **instead of `%Record/%Body` for the whole files
  we download, `%Record/%Original|%Lossy`** — the whole-file chunk particle's mainkey encodes the source
@@ -419,21 +419,36 @@ The human floated it, then blessed it ("pat and say good"): **instead of `%Recor
       `Body→Original`/`Lossy` → `accept` → rerun green.
 
 **RE-RECORDED GREEN 2026-07-26** on dedicated runner `3c5238c6` (guarded book+uid before each accept —
- no bleed): **MusuHeist, MusuBay, MusuSoft** all green×1, `Body→Original` (WAV sources = lossless). OWED:
-  **MusuBreach** (RaBreach/security territory — coordinate with that agent before moving its fixtures).
+ no bleed): **MusuHeist, MusuBay, MusuSoft** all green (`Body→Original`, WAV sources = lossless) — since
+  BANKED by the human in `4f1e659a`. OWED: **MusuBreach** (RaBreach/security territory — coordinate with
+   that agent before moving its fixtures).
+
+**`%Lossy` PROVEN — new Book `MusuLossy` green×2 2026-07-26** (`3c5238c6`, dedicated). A census-only proof
+ (no two-Pier heist needed — the grade decision lives in `Heist_census`'s mint): it plants THREE synthetic,
+  deterministic sources into an isolated marrauding dir and censuses them together, each exercising a DISTINCT
+   grade road — **WAV** (`Crate_wav_with_tags`, RIFF tags) → `%Original` via the ext allowlist; **Opus** (a
+    real minimal Ogg/Opus built from Orig.g's `Orig_ogg_page`/`_opus_head`/`_opus_tags`, carrying OpusTags) →
+     `%Lossy` because music-metadata gives Opus `lossless:undefined` so the grade falls to the extension (THE
+      real production road for a live `.opus` library — a real `/music` `.opus` reads `undefined` too); **MP3**
+       (hand-built ID3v2.3 + MPEG1-L3 frame headers) → `%Lossy` off `md.format.lossless===false`, the
+        AUTHORITATIVE codec signal. The snap shows `%Record>%Lossy,seq:0` + `title`/`artist` read straight from
+         the compressed headers — so the split AND the tag read-back are proven in ONE fixture. A 4th beat
+          REASSEMBLES the opus `%Lossy` chunks into a whole file **left on disk** at `.jamsend/lossy-proof/`
+           (OUTSIDE any `test-marrauding-of-*` namespace, so the Book-start sweep never touches it — the
+            human's "leave the downloaded file" honoured) and proves `sha256 == body_hash` (chunks
+             reconstruct the source byte-faithfully). Registered in Credence (magazine group, `brand_new:1`).
+              See [[story-books-catalog]], [[new-book-cli-record-recipe]].
 
 **TWO follow-ups the canary surfaced:**
-1. **`%Lossy` is unproven** — every heist test track is WAV (lossless → `%Original`). To exercise the
-    `%Lossy` branch WITHOUT a lossy encoder in the repo: build a minimal **Ogg/Opus** source with
-     `Orig_ogg_mux` (Opus IS lossy → music-metadata `format.lossless=false` → `%Lossy`), and stamp its
-      `OpusTags` (via `Orig_opus_tags`) with artist/title. Heisting it proves BOTH at once: the `%Lossy`
-       mainkey AND that a lossy file's tags read back (`Crate_meta_from_tags` → `%Record` artist/title in
-        the snap) — the human's "does our %Lossy encoder tag good" answered in the same fixture. Note: the
-         SNAP is the proof (mainkey + tags captured mid-run); you do NOT need to leave the file on disk.
-          The human's "leave the downloaded file" would only be for manual byte-inspection, and it fights
-           `Heist_sweep` (the Book-start sweep of `.jamsend/test-marrauding-of-bookrun` — that IS the
-            "cleans even after abort/crash, on next resume" mechanism); to persist it, land OUTSIDE that
-             swept namespace.
+1. **`%Lossy` is unproven** — ✅ **DONE — `MusuLossy` green×2** (see the block above). One correction to the
+    original plan: music-metadata@11 gives Opus `format.lossless:undefined` (NOT `false`), so the opus lands
+     `%Lossy` via the EXTENSION fallback, not the codec verdict — which is the real production road anyway.
+      The MP3 branch is what exercises `format.lossless===false` (the authoritative codec signal). The Book
+       also LEAVES the file on disk (`.jamsend/lossy-proof/`, outside the swept namespace) per the human's
+        ask, though the SNAP is the real proof. **The gen-staleness gotcha bit here:** the runner loads the
+         committed `gen/*.go`, and `gen/M/Heist.go` at HEAD still minted `%Body` (the split source was
+          committed but its gen never regenerated) — the first run landed `%Body` until `LocalGen` rewrote
+           `gen/M/{Crate,Heist}.go` + `gen/Story/Heistation.go` and the runner reloaded. Revert gen after.
 2. **The `%Lossy` tag-writer gap (the human's "check our %Lossy encoder does tags good").** There is NO lossy
     whole-file encoder today: `Crate_wav_with_tags` writes tags but only for WAV (lossless); `Ra_encode_*`
      (WebCodecs Opus) makes untagged STREAM chunks for playback, not a file. So a `%Lossy` holding is only

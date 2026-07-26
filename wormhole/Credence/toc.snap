@@ -66,6 +66,7 @@ Waft:Credence
         Funkcion:Storying,of_Book:MusuReco,needMusic:1
         Funkcion:Storying,of_Book:MusuSoft,needsFSA:1,needMusic:1,born:2026-07-17
         Funkcion:Storying,of_Book:MusuBay,needsFSA:1,needMusic:1,born:2026-07-17
+        Funkcion:Storying,of_Book:MusuLossy,needsFSA:1,born:2026-07-26,desc:the %Original vs %Lossy grade split at census — a compressed opus or mp3 source lands %Lossy with its title read from the codec headers while a lossless wav lands %Original — and the graded chunks reassemble byte-faithfully into a file left on disk
         What:the cursor,desc:a Dogear names a spot in a magazine — resolve then heal across a rename then resume across a reload
           Funkcion:Storying,of_Book:MusuCursor,born:2026-07-13
           Funkcion:Storying,of_Book:MusuHeal,born:2026-07-14

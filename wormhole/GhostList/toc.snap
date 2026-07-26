@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1784727830607
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1785046026242
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -70,7 +70,6 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Perf_todo.md,name:Perf_todo.md,noticed_at=1782964492065
     Doc:src/lib/O/spec/Stemdex_spec.md,name:Stemdex_spec.md,noticed_at=1783057968719
     Doc:src/lib/O/spec/Story_future_directions.md,name:Story_future_directions.md,noticed_at=1783185074390
-    Doc:src/lib/O/spec/Radio_scape_handover.md,name:Radio_scape_handover.md,noticed_at=1783238361714
     Doc:src/lib/O/spec/Radiobuddies_handover.md,name:Radiobuddies_handover.md,noticed_at=1783240483093
     Doc:src/lib/O/spec/Voro_todo.md,name:Voro_todo.md,noticed_at=1783258987985
     Doc:src/lib/O/spec/Voro_svg_stuffing.md,name:Voro_svg_stuffing.md,noticed_at=1783265884788
