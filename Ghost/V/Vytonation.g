@@ -543,7 +543,7 @@ Vyto_plant(w, genus, dose):
 //  A 4th arg `priced` (optional, default plain) commissions the glass on the global type-scale
 //   (Vyto_sizing_todo §9 ④+⑤ — cell area is a share of the frame, not an absolute dose box); every
 //    existing caller passes three args → undefined → the byte-identical plain cut.
-Vyto_commission_on(w, cogs, fresh, priced, nested):
+Vyto_commission_on(w, cogs, fresh, priced, nested, folded):
     let SH = this.VytoStaple_SH(w)
     if (!SH) return
     if (fresh) {
@@ -554,6 +554,7 @@ Vyto_commission_on(w, cogs, fresh, priced, nested):
     let commission = new TheC({ c: {}, sc: { Scannable: cogs[0], client_w: w, grapples: cogs.slice() } })
     if (priced) commission.sc.priced = 1
     if (nested) commission.sc.nested = 1
+    if (folded) commission.sc.folded = 1
     commission.c.Run = this
     SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
 
@@ -2028,4 +2029,163 @@ VytoNest_witness(w):
     if (this.VytoNest_flat_ready(w)) {
         this.story_swear(w, 'the nesting is load-bearing — commissioned flat the same tree seats only the root and its children get no target at all')
         if (!(oa %see:'the nesting is load-bearing — commissioned flat the same tree seats only the root and its children get no target at all')) i %see:'the nesting is load-bearing — commissioned flat the same tree seats only the root and its children get no target at all'
+    }
+
+// ══ VytoCrush — the CRUSH tenanted: a crowded scope self-distils into legible crest cells ══════════
+//   (Voro's signature rosette, matched · Vyto_sizing_todo J2 · processes.md §6 step 2 · the granted
+//    Vyto_fold seam).  A FOLDED commission runs the live fold: when a scope's members exceed the
+//     frame budget (budget_for), the elected key (bucket_key_of) partitions them and each group
+//      distils to ONE crest cell with its counted dip (Vyto_distil).  Opt-in and additive — a plain
+//       glass never crushes (byte-identical).  Proven by a DIFFERENTIAL: twenty cogs across three
+//        genera draw THREE crest cells folded (each carrying its true count) but TWENTY cells plain.
+//   World named VytoCrush.
+VytoCrush(A,w):
+    w oai %req:wrangle,eternal
+        await &VytoCrush_drive,w,req
+        req%ok = 1
+
+async VytoCrush_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoCrush_seed(w)
+        if (n === 3) this.VytoCrush_fold(w)
+        if (n === 4) this.VytoCrush_plain(w)
+    }
+    this.VytoCrush_witness(w)
+
+// ── beat 2 — seed twenty cogs across three genera (8 oak · 7 pine · 5 birch) ───────────────────────
+//  distinct Cog values (each its own cell) sharing a `genus` atom — the key the crush groups by.
+VytoCrush_seed(w):
+    i %desc:'seed twenty cogs across three genera — eight oak seven pine five birch'
+    let cogs = []
+    let spec = [['oak', 8], ['pine', 7], ['birch', 5]]
+    for (const s of spec) {
+        let k = 0
+        while (k < s[1]) {
+            cogs.push(w.i({ Cog: s[0] + (k + 1), of: 'main', genus: s[0] }))
+            k = k + 1
+        }
+    }
+    w.c.cogs = cogs
+
+// ── beat 3 — commission FOLDED: the twenty crush to three crest cells ──────────────────────────────
+VytoCrush_fold(w):
+    i %desc:'commission the glass folded on the twenty cogs — the crowd crushes to its crests'
+    this.Vyto_commission_on(w, w.c.cogs, 1, 0, 0, 1)
+    w.c.last_vis = null
+    this.expecting(w, 'fold_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoCrush_crushed_ready(w)) })
+
+// ── beat 4 — the control: re-commission PLAIN → all twenty draw as cells with no crest ─────────────
+VytoCrush_plain(w):
+    i %desc:'re-commission the same cogs plain — no fold so twenty cells stand and no crest is minted'
+    this.Vyto_commission_on(w, w.c.cogs, 1, 0, 0, 0)
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'plain_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoCrush_plain_ready(w)) })
+
+// ── readers ────────────────────────────────────────────────────────────────────────────────────────
+// a crest cell for a genus group (minted by the fold, `of:genus=<g>`), or null.
+VytoCrush_crest(vw, g):
+    if (!vw || !vw.c.mirror) return null
+    return vw.c.mirror.o().find(r => r.sc.Vtuffing != null && r.sc.of === 'genus=' + g) ?? null
+
+// the visible cells: top-level mirror rows wearing a target and not folded away (crests + open cogs).
+VytoCrush_visible(vw):
+    if (!vw || !vw.c.mirror) return 0
+    let n = 0
+    for (const r of vw.c.mirror.o()) { if (!r.sc.departing && !r.c.folded && r.c.T) n = n + 1 }
+    return n
+
+// how many source cogs the fold marked folded away.
+VytoCrush_folded(vw):
+    if (!vw || !vw.c.mirror) return 0
+    let n = 0
+    for (const r of vw.c.mirror.o()) { if (r.sc.Vtuffing == null && r.c.folded) n = n + 1 }
+    return n
+
+// ── the fold-aware rest: Vyto_rest_poll counts folded members (which never get a T) so it would
+//   never settle a crushed world — drive stirs here and watch the VISIBLE cells stop moving. ────────
+VytoCrush_rested(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    if (!vw.c.mirror) { this.Vyto_stir(vw); return 0 }
+    let b = 0
+    while (b < 16) {
+        let vis = vw.c.mirror.o().filter(r => !r.sc.departing && !r.c.folded)
+        let ready = vis.length > 0
+        for (const r of vis) { if (!r.c.T) ready = 0 }
+        let last = w.c.last_vis
+        let stable = ready && last != null
+        if (stable) {
+            for (const r of vis) { if (last[r.c.tok] !== r.c.T) stable = 0 }
+        }
+        if (stable) return 1
+        let map = {}
+        for (const r of vis) { map[r.c.tok] = r.c.T }
+        w.c.last_vis = map
+        this.Vyto_stir(vw)
+        b = b + 1
+    }
+    return 0
+
+// ── ready-predicates ─────────────────────────────────────────────────────────────────────────────
+VytoCrush_board_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.commission) return 0
+    if (!vw.c.folded) return 0
+    if ((vw.c.grapples?.length ?? 0) !== 20) return 0
+    return (vw.o({ Organ: 1 }).length === 10 && vw.o({ Bar: 1 }).length === 7) ? 1 : 0
+
+// crushed: three crest cells stand and every one of the twenty source cogs is folded away.
+VytoCrush_crushed_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.folded) return 0
+    if (!this.VytoCrush_rested(w)) return 0
+    let oak = this.VytoCrush_crest(vw, 'oak')
+    let pine = this.VytoCrush_crest(vw, 'pine')
+    let birch = this.VytoCrush_crest(vw, 'birch')
+    if (!oak || !pine || !birch) return 0
+    if (!(oak.c.T && pine.c.T && birch.c.T)) return 0
+    if (this.VytoCrush_visible(vw) !== 3) return 0
+    return (this.VytoCrush_folded(vw) === 20) ? 1 : 0
+
+// counts: each crest's dip carries the TRUE subsumed count (oak 8 · pine 7 · birch 5).
+VytoCrush_counts_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.folded) return 0
+    if (!this.VytoCrush_rested(w)) return 0
+    let oak = this.VytoCrush_crest(vw, 'oak')
+    let pine = this.VytoCrush_crest(vw, 'pine')
+    let birch = this.VytoCrush_crest(vw, 'birch')
+    if (!oak || !pine || !birch) return 0
+    return (Number(oak.sc.n) === 8 && Number(pine.sc.n) === 7 && Number(birch.sc.n) === 5) ? 1 : 0
+
+// plain control: commissioned plain the same twenty cogs draw twenty cells and mint no crest.
+VytoCrush_plain_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    if (vw.c.folded) return 0
+    if (!this.Vyto_rest_poll(w, 20)) return 0
+    if (this.VytoCrush_crest(vw, 'oak')) return 0
+    return (this.VytoCrush_visible(vw) === 20) ? 1 : 0
+
+// ── the witness — story_swear + once-noticed %see · comma-free · apostrophe-free ───────────────────
+VytoCrush_witness(w):
+    if (this.VytoCrush_board_ready(w)) {
+        this.story_swear(w, 'the glass was commissioned folded on twenty cogs and stood its board')
+        if (!(oa %see:'the glass was commissioned folded on twenty cogs and stood its board')) i %see:'the glass was commissioned folded on twenty cogs and stood its board'
+    }
+    if (this.VytoCrush_crushed_ready(w)) {
+        this.story_swear(w, 'a crowded scope self-distils — twenty cogs crush to three crest cells one per genus and every source cog is folded away behind them')
+        if (!(oa %see:'a crowded scope self-distils — twenty cogs crush to three crest cells one per genus and every source cog is folded away behind them')) i %see:'a crowded scope self-distils — twenty cogs crush to three crest cells one per genus and every source cog is folded away behind them'
+    }
+    if (this.VytoCrush_counts_ready(w)) {
+        this.story_swear(w, 'each crest carries its true subsumed count — the oak crest speaks for eight the pine for seven and the birch for five')
+        if (!(oa %see:'each crest carries its true subsumed count — the oak crest speaks for eight the pine for seven and the birch for five')) i %see:'each crest carries its true subsumed count — the oak crest speaks for eight the pine for seven and the birch for five'
+    }
+    if (this.VytoCrush_plain_ready(w)) {
+        this.story_swear(w, 'the crush is load-bearing — commissioned plain the same twenty cogs draw twenty cells and no crest is minted')
+        if (!(oa %see:'the crush is load-bearing — commissioned plain the same twenty cogs draw twenty cells and no crest is minted')) i %see:'the crush is load-bearing — commissioned plain the same twenty cogs draw twenty cells and no crest is minted'
     }

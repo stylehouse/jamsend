@@ -8,26 +8,26 @@ story:Editron
     For
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=5.072
-      sample=6.353,at=1785119866
-      sample=5.224,at=1785120523
-      sample=5.124,at=1785121177
-      sample=4.745,at=1785121833
-      sample=4.868,at=1785122498
-      sample=4.08,at=1785123187
-      sample=3.616,at=1785123847
-      sample=4.492,at=1785124508
-      sample=6.394,at=1785125207
-      sample=5.826,at=1785125545
-    TimeTotal:step,avg=5.072
-      sample=6.353,at=1785119866
-      sample=5.224,at=1785120523
-      sample=5.124,at=1785121177
-      sample=4.745,at=1785121833
-      sample=4.868,at=1785122498
-      sample=4.08,at=1785123187
-      sample=3.616,at=1785123847
-      sample=4.492,at=1785124508
-      sample=6.394,at=1785125207
-      sample=5.826,at=1785125545
+    TimeTotal:beliefs,avg=7.837
+      sample=4.557,at=1785129171
+      sample=3.88,at=1785129833
+      sample=4.167,at=1785130516
+      sample=4.802,at=1785131173
+      sample=3.774,at=1785131839
+      sample=3.69,at=1785132499
+      sample=5.139,at=1785133175
+      sample=36.638,at=1785143279
+      sample=5.712,at=1785143509
+      sample=6.013,at=1785144156
+    TimeTotal:step,avg=7.837
+      sample=4.557,at=1785129171
+      sample=3.88,at=1785129833
+      sample=4.167,at=1785130516
+      sample=4.802,at=1785131173
+      sample=3.774,at=1785131839
+      sample=3.69,at=1785132499
+      sample=5.139,at=1785133175
+      sample=36.638,at=1785143279
+      sample=5.712,at=1785143509
+      sample=6.013,at=1785144156
   step,dige:d3ecdc2521dfa412

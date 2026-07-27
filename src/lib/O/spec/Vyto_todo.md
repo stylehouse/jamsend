@@ -16,10 +16,37 @@ The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it 
     itself, and VytoCell recorded GREEN ×2 beside a green VytoStaple regression.  Next
      moves:
 
-- **Nest-solve (J4) tenanted — CODE-COMPLETE 2026-07-27, UNRECORDED (`VytoNest`, `Vytonation.g`);
-   correct-by-construction + compiled + gated OFF, but its fixtures are NOT yet baked — the ★claude
-    runner was monopolised by another client for the whole record window (accept refused busy on
-     repeat; the run itself DID execute all 4 beats and progressed all 5 assertions via fire-and-poll).**
+- **THE FACE RAIL — LANDED 2026-07-27 (`src/lib/O/Vytui.svelte`; the headline — Vyto renders Radio's
+   real UI now, not a labelled bubble diagram).**  Per the three-agent survey, the #1 blocker to
+    "Radio builds its UI on Vyto like Cyto+Voro" was that Vytui drew only SVG cells + one ident label —
+     NO faces.  Now each cell whose mirror row wears `sc.face:'X'` (WORN) or whose mainkey the viewer
+      imposes a face on (`FACE_MAINKEYS`) mounts the SAME glass component Cyto does (`glass_kinds.ts`:
+       Radio/Stoker/Tuner/Door/Riffle/Zine/Lineup/Crate/Heist) — props `{ n: row.c.source_n, H }`,
+        handed the LIVE source particle not the scalar mirror row.  Rendered as an HTML overlay molded
+         to each cell in viewBox PERCENTAGES (tracks the responsive SVG exactly — no pixel measurement,
+          no overlay-sync bug class — which is itself the "better than Voro" win: real DOM faces, not a
+           canvas-overlay mold).  Each face is wrapped in a `<svelte:boundary>` so a throwing face
+            degrades to its label instead of white-screening the glass.  Faceless rows (Cogs) keep the
+             ident label ⇒ every existing Book renders byte-identical.  Compile-proven (bundle-fetch 200,
+              symbols present).  **REVIEW IT: open `/BigSoundland?VY=1`** — Sounditron commissions Vyto
+               on its nine organs, each now a real face.  HONEST GAP: I could NOT pixel-verify — runner_shot
+                is Cyto-only (`cy.png()`), there is no Vyto screenshot path, so the render is verified by
+                 compile + reuse-of-Cyto's-exact-faces + your eyes.  Owed next: face SIZING/legibility in
+                  small cells (Cyto does affine text scaling — Vyto just molds+clips today), the crew-tuck
+                   (hide the `system` crew so `%Machine` does not clutter), kind chrome.
+- **Live CRUSH tenanted — `VytoCrush` (`Vytonation.g`), CODE-COMPLETE + compiled, bake PENDING (runner
+   contention).**  `Vyto_fold` is no longer a stub: a `w.c.folded` (opt-in, 6th arg to
+    `Vyto_commission_on`) glass crushes a crowded scope — `budget_for` sets the cell budget,
+     `bucket_key_of` elects the partition key, and each ≥2 group distils to ONE crest cell with its
+      counted dip (`Vyto_distil`); crushed members wear `.c.folded` and lose their T so Solve skips
+       them.  Voro's signature rosette, matched — the seam Agent C called "the single blocking gap for
+        large-data legibility."  Touches only Fold + Solve (crests survive Scan's sweep via a `seen_at`
+         stamp — Scan's core UNtouched).  It RAN to done:4 (all beats, no crash) after fixing a missing
+          `budget_for` import; only the accept/verify is blocked by contention.  Gated OFF ⇒ fleet
+           byte-identical.  Finish: fire-and-poll record (see below).
+- **Nest-solve (J4) tenanted — GREEN×2 2026-07-27 (`VytoNest`, `Vytonation.g`); recorded + regression
+   green.**  Was code-complete/unrecorded earlier this session; baked via fire-and-poll once the runner
+    freed.  correct-by-construction + compiled + gated OFF.
       `Vyto_solve` now recurses into every scope when `w.c.nested` (opt-in, 5th arg to
        `Vyto_commission_on`): after the flat top cut stands, each cell becomes the frame for its own
         mirror children (`Vyto_solve_scope`, gap=0 so a scope FILLS its parent), to any depth; Express

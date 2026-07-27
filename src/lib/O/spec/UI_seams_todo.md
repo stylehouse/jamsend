@@ -28,10 +28,11 @@ Pick from, roughly in ascending effort:
 1. **S4 — now-playing provenance.** The smallest, and you explicitly asked for it
     ("know which Pier a given track playing is coming from"). The data is already on
      `radio.sc.by`; `RadioFace` just doesn't read it. ~4-line display diff in the appendix.
-2. **S1 — quiet the resident glass.** Move the Stoker and the posed Heist out of the
-    resident crews so they stop leaking into the clean glass, and never mount `Storui`
-     for a `humdinger`. This is what "less shite… what do I care about stoker" actually
-      resolves to. Appendix has the crew one-liners.
+2. **S1 — quiet the resident glass.** Two crew-value edits move the Stoker and the posed
+    Heist off the *drawn* clean glass — that's the everyday "what do I care about stoker"
+     clutter, and the whole of the ready paste. (The raw `%desc`/`%sworn`/Storui the human
+      sees is a separate *stall* fallback, not the working glass; an optional `?diag` gate
+       covers it — see S1/Appendix A.) Appendix has both.
 3. **S2 — a face for the Mag/Cloud layer** so the Crate reads as collapsible per-Pier
     magazines ("open one at a time per Pier"), not a flat capped chip-pile.
 4. **S3 — make heist a real action.** The engine is built and green; there is *no live
@@ -40,6 +41,14 @@ Pick from, roughly in ascending effort:
 
 S5 (roster page) and S6 (legacy Dexie migrator) are lower priority — S6 degrades
  gracefully already.
+
+**Explicitly DEPRIORITISED — "Sharing a Mag" (human, 2026-07-27).** Do not build a bespoke
+ "share this Mag" feature. It is just an **Invite carrying extra signed data** that says
+  "try this Mag first" — and that same signed-payload slot generalises to "run this code" or
+   "assume this role temporarily". So the real thing (later) is a **capability invite**: one
+    signed-payload mechanism on the existing invite rail, of which try-this-Mag is the
+     smallest instance. Building Mag-share on its own would bake a one-off where a general
+      slot belongs. Parked until the payload abstraction is designed — see the note after S6.
 
 ## The arc
 
@@ -79,8 +88,11 @@ Two things **do** genuinely leak into the *clean* glass, because they're dressed
  face and crewed to a resident crew rather than `system`:
 - **Stoker** (`crew:'Radio'`, `Ghost/M/Radio.g:621`) — provisioning telemetry
    (stock/fresh/dug/stood/worn). This is the "what do I care about stoker" leak. Real.
-- **Posed Heist** (`crew:'Heist'`, `Ghost/Story/Sounditron.g:411`) — a fabricated demo
-   nugget, inert (no button, see S3).
+- **Posed Heist** (`Ghost/Story/Sounditron.g:411`, `{Heist:'…',posed:1}`) — a fabricated
+   demo nugget, inert (no button, see S3). It has **no `sc.crew`**; it draws because
+    `cyto_crew` (`Cyto.svelte:759`) falls through to its face-kind `FACE_MAINKEYS[Heist]='Heist'`
+     (`glass_faces.ts:9`) — a non-`system` crew, so it isn't tucked. The fix is therefore to
+      *add* `crew:'system'`, not edit a crew line that doesn't exist.
 
 ---
 
@@ -122,24 +134,32 @@ The engines below are all proven by recorded golden fixtures. But the human's co
 *The human: "less shite… what do I care about %desc or stoker… I don't care about these %sworn bits."*
 
 - **Built / current:** clean glass already tucks `%desc`/`%sworn` under `system`
-   (primer above). But Storui mounts on every glass-stall (`BigSoundland.svelte:255`),
-    and the Stoker + posed Heist leak into the clean glass.
-- **Gap:** (a) a `humdinger` (role set `BigSoundland.svelte:46`) should never mount
-   `run_uis`/Storui — it's a listener, not a test node; (b) Stoker & posed Heist should
-    sit in `system`, not a resident crew; (c) the Tuner show/hide chrome
-     (`Cyto.svelte:771-779`) and the raw Book name in the header (`BigSoundland.svelte:169`)
-      are developer chrome a listener doesn't need.
-- **The move (wire-side, tiny):**
-  - `Ghost/M/Radio.g:621` — Stoker `crew:'Radio'` → `crew:'system'` (or gate the face on
-     a non-humdinger role). Hides the telemetry face from the clean glass; snap unchanged
-      *except* the crew value, so Sounditron needs a re-record (it's the resident probe —
-       do this with you watching, not while you're out).
-  - `Ghost/Story/Sounditron.g:411` — posed Heist `crew` → `system` (or stop seating it
-     entirely once S3 lands a real one).
-  - `BigSoundland.svelte:255` — guard the `run_uis`/Storui mount on `!humdinger`.
-- **Risk:** the crew edits change the Sounditron snap → re-record on `★claude`, green×2.
-   **Do not do this while you're using the live glass** (it churns your view). Diff in
-    appendix A.
+   (primer above). The **everyday** noise on the *drawn* clean glass is just two dressed
+    leaks: the **Stoker** telemetry (`crew:'Radio'`) and the **posed Heist** (crewed to
+     `'Heist'` by face-kind). The raw `%desc`/`%sworn`/Storui the human sees is **not** on
+      the working glass at all — it's the stall fallback (next bullet).
+- **Two distinct gaps, don't conflate them:**
+  - **(a) the everyday leaks** — Stoker & posed Heist draw on the *working* clean glass
+     because they carry a non-`system` crew. This is the real "what do I care about stoker"
+      clutter, and it's a two-value fix.
+  - **(b) the stall fallback** — `run_uis` (which includes **Storui**, with its raw
+     `%desc`/`%sworn`/`%see`) mounts **only** in the `{:else}` branch when the glass hasn't
+      drawn (`BigSoundland.svelte:236-261`; the each-loop at `:255`). Once `cyto` draws it's
+       gone. There is **no `humdinger` boolean** to gate on — every BigSoundland is role
+        `'sound'` (`:46`). So a listener sees this only while the glass is stalling; a real
+         gate means an opt-in (`?diag`), not a one-word guard (see Appendix A).
+- **The move (wire-side, tiny — gap (a)):**
+  - `Ghost/M/Radio.g:621` — Stoker mint `{Stoker:'idle',face:'Stoker',crew:'Radio'}`:
+     change `crew:'Radio'` → `crew:'system'`. Hides the telemetry face from the clean glass.
+  - `Ghost/Story/Sounditron.g:411` — posed Heist mint `{Heist:'…',posed:1}`: **add**
+     `crew:'system'` (or stop seating it entirely once S3 lands a real one).
+- **Gap (b) is a design call, not a paste:** default a plain listener to the calm
+   "gathering the glass…" line and gate the verbose `run_uis`/Storui dump behind `?diag=1`.
+    Optional, and it trades away debug visibility on a stall — decide with the glass in front
+     of you.
+- **Risk:** the two crew edits change the Sounditron snap (the `crew` value) → re-record on
+   `★claude`, green×2. **Do not do this while you're using the live glass** (it churns your
+    view). Diff in appendix A.
 
 ### S2 — The Mag / Cloud structure has no face
 *The human: "we haven't adapted the UI at all to Mags… I should have to open the Crate, one at a time per Pier."*
@@ -165,6 +185,13 @@ The engines below are all proven by recorded golden fixtures. But the human's co
 - **The move (display + a new face):** a `MagFace`/`CloudFace` in `src/lib/O/glass_kinds.ts`
    + `glass_faces.ts`, reading `%Mag:shuffle`/`%Cloud,page` instead of flattening. Medium
     effort; belongs with Vyto glass work. Not started.
+- **⚠ Depends on an unruled model question — read `spec/Mag_vs_flatstock_preen.md §4`
+   first.** The human's own preen (this session) is decision-ready: promote `Mag_todo §1`
+    to spec, but **rule whether a Mag nests deeper than one Cloud** before building on it —
+     `Ra_recs`/`Ra_rec_find` hard-code exactly three depths (flat / `Mag>Record` /
+      `Mag>Cloud>Record`) and **silently drop anything deeper**. A `CloudFace` that assumes
+       one Cloud layer is fine *if* §4 pins it there; if the model goes recursive, the face
+        (and the census) must walk. Don't design the depth into the face until §4 is ruled.
 
 ### S3 — Heist has no live trigger (the engine is built and idle)
 *The human: "I don't see how to heist."*
@@ -200,8 +227,9 @@ The engines below are all proven by recorded golden fixtures. But the human's co
 
 - **Built:** `Radio_open` stamps the source onto the particle —
    `src = rec.c.play_by || rec.sc.from || Ra_pub_of(rec)`, then `radio.sc.by = src`
-    (deleted when it's my own stock) — `Ghost/M/Radio.g:337-343`. Carried across the
-     lineup drop (`:465-468`), and `%Card.by` is the friend crate's pub (`:560`). The
+    (deleted when it's my own stock) — `Ghost/M/Radio.g:314-318`. Carried onto the
+     now-playing datum as a card leaves the lineup (`:437`, `hrec.c.play_by = head.sc.by`),
+      and `%Card.by` is the friend crate's pub (`:527`). The
       prepub→friendly resolver already exists and works:
        `Swarm_peering(self)?.o({Pier:1,pub})[0]?.sc?.friendly`.
 - **Current UI:** `LineupFace` (up-next) **already shows** `· {who(by)}` per card
@@ -238,13 +266,36 @@ The engines below are all proven by recorded golden fixtures. But the human's co
      migrator** lifts them into `%Idzeug` records (`:135-138`, `Swarm.go:356-364` —
       confirmed not built). Degrades gracefully; lowest priority.
 
+### (deferred, not a seam yet) — the capability invite
+*The human, 2026-07-27: "Sharing a Mag… it's just an Invite with some extra (signed) data
+ to say 'try this Mag first', which could become 'run this code' or 'assume this role
+  temporarily'."*
+
+Not on the build list — recorded so it isn't rebuilt piecemeal. The insight: **an invite is
+ already a signed capability grant** (compact token + 3-frame seal, [[invite]]); the natural
+  generalisation is a **signed payload slot** on that same rail. Its instances, in ascending
+   trust:
+- **try-this-Mag** — a data pointer (a `%Mag`/`stock` id + "start here"). The smallest; this
+   is what "sharing a Mag" collapses to. Deprioritised precisely *because* it's the trivial
+    case of the slot.
+- **run-this-code** — a signed `.g`/gen fragment or dock; touches the Lies compile|run rail
+   and the runner-fleet's signed `%Rungo` claim/lease (`Cluster_spec §2-7`).
+- **assume-this-role-temporarily** — a scoped, time-boxed role delegation; touches
+   cluster-trust (sign on the crypto identity) and the C2 dispatch seam.
+
+Design consequence: **don't bake a Mag-specific share path.** When the payload slot is
+ designed (what's signed, how the receiver's trust gate scopes/expires it, how it rides the
+  token vs a follow-up frame), try-this-Mag falls out for free — and the far more valuable
+   run-code / assume-role land on the same tooth. Owner's call when to open it; the seams
+    above come first.
+
 ---
 
 ## Wire-side vs display-side (who does what, so I don't stray into the Vyto zone)
 
 | Seam | Kind | Safe for me (wire/`.g`/Book) | Yours / Vyto glass (display face) |
 |---|---|---|---|
-| S1 declutter | mixed | crew one-liners in `Radio.g`/`Sounditron.g`, `!humdinger` mount guard | — |
+| S1 declutter | mixed | two crew-value edits in `Radio.g`/`Sounditron.g`; optional `?diag` stall gate | — |
 | S2 Mag face | display | (data already there) | new `MagFace`/`CloudFace` |
 | S3 live heist | wire | `Heist_wish` trigger + `Heist_beat` driver + Book | wiring the button state in `HeistFace` |
 | S4 provenance | display | (data already there) | `RadioFace` reads `sc.by` |
@@ -255,35 +306,49 @@ The engines below are all proven by recorded golden fixtures. But the human's co
 
 ## Appendix A — S1 declutter, ready to apply (do with the glass in front of you)
 
-Stop the Stoker telemetry leaking into the clean glass — `Ghost/M/Radio.g:621`:
+**1.** Stop the Stoker telemetry leaking into the clean glass — `Ghost/M/Radio.g:621`
+ (the line reads `st = w.i({ Stoker: 'idle', face: 'Stoker', crew: 'Radio' })`):
 ```
--  crew: 'Radio',
-+  crew: 'system',   // provisioning telemetry — tuck it; a listener reveals it via the Tuner
+-        st = w.i({ Stoker: 'idle', face: 'Stoker', crew: 'Radio' })
++        st = w.i({ Stoker: 'idle', face: 'Stoker', crew: 'system' })  // telemetry — tuck it; reveal via the Tuner
 ```
-Move the posed Heist out of the resident crew — `Ghost/Story/Sounditron.g:411`:
+**2.** Tuck the posed Heist — `Ghost/Story/Sounditron.g:411`. It has no `crew` key, so
+ **add** one to the mint (the line reads `let h = w.oai({ Heist: 'the one they played last night', posed: 1 })`):
 ```
--  crew: 'Heist',
-+  crew: 'system',   // demo pose, inert until S3 lands a real heist; keep it off the clean glass
+-    let h = w.oai({ Heist: 'the one they played last night', posed: 1 })
++    let h = w.oai({ Heist: 'the one they played last night', posed: 1, crew: 'system' })  // demo pose, off the clean glass until S3
 ```
-Never mount Storui for a listener — `src/lib/V/BigSoundland.svelte` (the `run_uis` block ~`:255`):
+Both `.g` edits change the Sounditron snap (the added/changed `crew` value) → re-record on
+ `★claude` (49dee91d) and converge green×2. **Not while you're using the live glass** (it
+  churns your view).
+
+**3.** *(optional, gap (b) — not a mandatory paste)* Gate the stall-fallback Storui dump
+ behind an opt-in so a plain listener isn't dropped into raw `%desc`/`%sworn` when the glass
+  stalls. `src/lib/V/BigSoundland.svelte` — add a boot flag near `:56`
+   (`const vy = !!boot_param('VY')`):
 ```
-   {#each run_uis as ru}
-+    {#if !humdinger}
-       ...the diag-tagged UI...
-+    {/if}
-   {/each}
++    const diag = !!boot_param('diag')   // a plain listener stays calm on a stall; ?diag=1 shows the machine
 ```
-Both `.g` edits change the Sounditron snap (the `crew` value) → re-record on `★claude`
- (49dee91d) and converge green×2. **Not while you're using the live glass.**
+then wrap the each-loop at `:255` (`{#each run_uis as { house, ui } (keyser(ui.sc))}`):
+```
++            {#if diag}
+             {#each run_uis as { house, ui } (keyser(ui.sc))}
+                 ...the diag-tagged UI...
+             {/each}
++            {/if}
+```
+This only affects the `{:else}` stall branch — it never touches the drawn clean glass.
+ There is **no `humdinger` variable** to guard on; this opt-in is the real gate. It trades
+  away debug visibility on a stall, so it's your call, not an auto-apply.
 
 ## Appendix B — S4 now-playing provenance, ready to apply (display-only)
 
 Verified against the live `src/lib/O/ui/RadioFace.svelte` (124 lines).
 
-**1.** Add `by` to the face `return {...}` (the block ends at `:42` with `stock,`):
+**1.** Add `by` to the face `return {...}` (the block ends at `:41` with `stock,`):
 ```
              note:   sc.note as string | undefined,
-+            by:     sc.by as string | undefined,   // source prepub Radio_open stamped (Radio.g:337-343)
++            by:     sc.by as string | undefined,   // source prepub Radio_open stamped (Radio.g:314-318)
              first:  ((sc.Radio ?? 'off') === 'off') && !sc.title && !+(sc.played ?? 0),
              stock,
 ```
@@ -306,4 +371,4 @@ Verified against the live `src/lib/O/ui/RadioFace.svelte` (124 lines).
 `.rf-from` can reuse `.rf-note`'s styling (small, dim). `sc.by` is a *prepub*; `who()`
  degrades to `pub.slice(0,8)` when no `%Pier` matches (a non-friend source), so it's always
   renderable. Note `radio.sc.by` is *deleted* when the track is your own stock
-   (`Radio.g:342`), so the tag simply won't render for your own music — correct.
+   (`Radio.g:318`), so the tag simply won't render for your own music — correct.

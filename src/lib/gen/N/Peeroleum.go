@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '3f0c6cd245632060~g1' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return 'b547d2bf75c9c191~g1' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -555,7 +555,7 @@ async Peeroleum_deliver(w, frame) {
             H.feebly_ponder()
             return
         }
-        await inbox.do(); H.Peeroleum_rollup_faulty(pier); H.feebly_ponder(); return
+        await inbox.do(); await H.Peeroleum_rollup_faulty(pier); H.feebly_ponder(); return
     }
     // ── inbound seq discipline (Reliable.g: inseq_admit) — LOSSY carriers only ──
     pier.c.inseq = pier.c.inseq || {last: 0, buffered: []}
@@ -583,7 +583,7 @@ async Peeroleum_deliver(w, frame) {
         if (f) H.Peeroleum_book_unemit(inbox, w, pier, f)
     }
     await inbox.do()
-    H.Peeroleum_rollup_faulty(pier)
+    await H.Peeroleum_rollup_faulty(pier)
     H.feebly_ponder()
 
 },
@@ -688,13 +688,19 @@ Peeroleum_take_ack(w, pier, h) {
 // Peeroleum_rollup_faulty — rebuild %faulty from the inbox's %error items (spec §9).
 //  A roll-up present only while something is wrong; the detail stays on the unemit. Run
 //   on every fault and at the step boundary, so a cleared inbox drops a stale %faulty.
-Peeroleum_rollup_faulty(pier) {
+//  ASYNC and MUST be awaited by every caller. It does a faulty.r() (a replace transaction),
+//   and faulty is replaced HERE and nowhere else — so two un-awaited rollups on the same
+//    faulty overlap into a "nested replace() transactions" throw (the batch-drain in
+//     Lies_deliver_soon fires deliver per frame; back-to-back frames from one peer race).
+//    The internal await matters too: r() clears {unemit:1} then the loop refills, so the
+//     clear must SETTLE before the refill or the rebuild races its own transaction.
+async Peeroleum_rollup_faulty(pier) {
     let inbox = pier.o({inbox:1})[0]
     let errs = inbox ? inbox.o({req:'unemit'}).filter(u => u.sc.error) : []
     let faulty = pier.o({faulty:1})[0]
     if (!errs.length) { if (faulty) pier.drop(faulty); return }
     faulty ||= pier.i({faulty:1})
-    faulty.r({unemit:1}, {})
+    await faulty.r({unemit:1}, {})
     for (const u of errs) faulty.i({unemit:u.sc.seq, error:u.sc.error, seq:u.sc.seq})
 
 },
@@ -820,12 +826,12 @@ Peeroleum_liveness_sweep(w) {
 //  The body is try/caught so a throw in any sweep can NEVER skip rearm(): a frozen heartbeat silently
 //   strands every later frame on this w (the freeze-scare, handover §8). The cause surfaces (console), and
 //    the next boundary still sweeps — strictly safer than the bare chain that froze once.
-Peeroleum_arm_whittle(w) {
+async Peeroleum_arm_whittle(w) {
     const H = this
     if (w.c._whittle_armed) return
     w.c._whittle_armed = 1
     let rearm = () => H.Runstepped(async () => {
-        try { H.Peeroleum_retx_sweep(w); H.Peeroleum_liveness_sweep(w); H.Peeroleum_runstepped(w) }
+        try { H.Peeroleum_retx_sweep(w); H.Peeroleum_liveness_sweep(w); await H.Peeroleum_runstepped(w) }
         catch (e) { console.error('⚠ Peeroleum whittle sweep threw — rearming anyway', e) }
         rearm()
     })
@@ -838,7 +844,7 @@ Peeroleum_arm_whittle(w) {
 //    %recent items carry only their emit|unemit/type/seq — no flags, no time (record order
 //     is the order). This is the one place outbox/inbox items vanish, so the snap taken
 //      *before* this boundary always shows the step's traffic (spec §12.1).
-Peeroleum_runstepped(w) {
+async Peeroleum_runstepped(w) {
     const H = this
     for (const peering of w.o({Peering:1})) {
         for (const pier of peering.o({Pier:1})) {
@@ -860,7 +866,7 @@ Peeroleum_runstepped(w) {
                 }
                 H.whittle_N(recent.o({unemit:1}), 20)
             }
-            H.Peeroleum_rollup_faulty(pier)
+            await H.Peeroleum_rollup_faulty(pier)
         }
     }
 

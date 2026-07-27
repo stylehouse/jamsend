@@ -20,7 +20,7 @@
 IMPORT()
     import Vytui from "$lib/O/Vytui.svelte"
     import { power_cells, poly_centroid, poly_area } from "$lib/O/vyto_geometry"
-    import { sig_of, group_edges, bucket_key_of, pull_step, SIG_JOINS, FOCUS_BOOST, FOCUS_SHRINK } from "$lib/O/vyto_foam"
+    import { sig_of, group_edges, bucket_key_of, pull_step, budget_for, SIG_JOINS, FOCUS_BOOST, FOCUS_SHRINK } from "$lib/O/vyto_foam"
 
 //#region the world — w:Vyto stands, plans, and waits for its commission
 // Vyto — the w:Vyto worker.  Mirrors Cyto()'s shape so a client commissions either glass
@@ -105,6 +105,10 @@ e_Vyto_commission(A, w, e):
     //  scope — a cluster of UI bits is a scope whose children solve INSIDE its cell.  Default off ⇒ the
     //   flat top-only cut every existing Book stands on, byte-identical.
     w.c.nested     = req.sc.nested ? 1 : 0
+    // FOLDED opt-in: a folded glass crushes a crowded scope to its budget (Vyto_fold).  Default off ⇒
+    //  every cell drawn as-is, byte-identical.  The three flags compose (priced sizes · nested recurses
+    //   · folded crushes) but each is independently gated.
+    w.c.folded     = req.sc.folded ? 1 : 0
     // the commissioning client supplies the Run House on the req's `.c` (a ref — never sc); the
     //  Spool reads it to snap the RUN world into each moment's payload (spool.md §2).
     w.c.Run        = e?.c?.Run ?? req.c?.Run ?? null
@@ -305,8 +309,66 @@ Vyto_scan_sweep(w, parentMirror, gen):
 //    cell count) + fold_ladder (OPEN → BUCKETED → CRUSHED, tightest first, focus shielded) —
 //     gate-proven in the foam studies; this stub stays until the display refactor (which owns
 //      that half) lands the mirror-side wiring.
+// TENANTED 2026-07-27 (the grant executed): a PRICED-style opt-in `w.c.folded` glass crushes a
+//  crowded scope so a big tree stays legible (Voro's signature rosette, matched).  The decision uses
+//   the pure `budget_for` (how many cells the frame affords) + `bucket_key_of` (which key partitions
+//    the crowd) + the re-homed distiller (`Vyto_distil` mints the crest with its counted dip).  Default
+//     off ⇒ a plain glass never crushes and every existing fixture stands byte-identical.
 Vyto_fold(w):
-    return
+    if (!w.c.mirror) return
+    if (!w.c.folded) return
+    this.Vyto_fold_scope(w, w.c.mirror)
+    let organ = w.o({ Organ: 'Fold' })[0]
+    if (organ && organ.sc.status !== 'live') {
+        organ.sc.status = 'live'
+        organ.bump_version()
+    }
+
+// Vyto_fold_scope — crush a crowded scope into legible cells.  If its source members exceed the
+//  frame's budget, elect the partitioning key and distil each ≥2 group into ONE crest cell carrying
+//   its counted dip; singletons stay open.  The scope then renders at most (groups + singletons)
+//    cells instead of N specks.  RE-DERIVED every stir but STABLE: a crest is found-or-created by its
+//     `of` group tok (so its seed persists and Solve rests it), refilled only when its group count
+//      changes, and stamped `seen_at = scan_gen` so Scan's sweep keeps it (a group that stops
+//       qualifying has its crest dropped — un-crush).  Members of a crushed group wear `.c.folded`
+//        and lose their `.c.T`, so Solve skips them and the renderer never springs them.
+Vyto_fold_scope(w, scope):
+    let all = scope.o()
+    let members = all.filter(r => !r.sc.departing && r.sc.Vtuffing == null)
+    for (const m of members) { if (m.c.folded) { m.c.folded = 0; m.c.T = null; m.bump_version() } }
+    let budget = budget_for(800, 450)
+    let groups = {}
+    if (members.length > budget) {
+        let key = bucket_key_of(members.map(m => m.sc))
+        if (key) {
+            for (const m of members) {
+                if (m.sc[key] == null) continue
+                let ofk = key + '=' + m.sc[key]
+                if (!groups[ofk]) groups[ofk] = []
+                groups[ofk].push(m)
+            }
+        }
+    }
+    for (const c of all) {
+        if (c.sc.Vtuffing == null) continue
+        let g = groups[c.sc.of]
+        if (!g || g.length < 2) scope.drop(c)
+    }
+    for (const ofk of Object.keys(groups)) {
+        let grp = groups[ofk]
+        if (grp.length < 2) continue
+        let crest = scope.o({ Vtuffing: 1, of: ofk })[0]
+        if (!crest) {
+            crest = this.Vyto_distil(scope, grp, ofk, [], 0)
+        } else if (crest.sc.n !== grp.length) {
+            for (const vr of crest.o()) crest.drop(vr)
+            crest.sc.n = grp.length
+            this.Vyto_distil_fill(crest, grp, [], 0)
+        }
+        crest.c.seen_at = w.c.scan_gen
+        if (crest.sc.dose !== '' + grp.length) { crest.sc.dose = '' + grp.length; crest.bump_version() }
+        for (const m of grp) { if (!m.c.folded) { m.c.folded = 1; m.c.T = null; m.bump_version() } }
+    }
 
 // ══ the fold's toolbox — the FIRST TENANT (granted 2026-07-22): the distiller re-homed ════════════
 //  The algebra the crush speaks (Voronation Stuff region = the Book-proven oracle) now LIVES at the
@@ -701,7 +763,8 @@ Vyto_express_rows(w, rows):
 //      (never sc — swept) and updates its `.c.seed` (solver state, persists across solves).
 Vyto_solve(w):
     if (!w.c.mirror) return
-    let members = w.c.mirror.o().filter(r => !r.sc.departing)
+    // a crushed member (Fold marked `.c.folded`) is off the cut — its group's crest cell stands for it.
+    let members = w.c.mirror.o().filter(r => !r.sc.departing && !r.c.folded)
     if (!members.length) return
     // the fixed root rectangle [0,0,800,450] — Vytui renders the same viewBox.
     let frame = [{ x: 0, y: 0 }, { x: 800, y: 0 }, { x: 800, y: 450 }, { x: 0, y: 450 }]
@@ -842,7 +905,7 @@ Vyto_solve(w):
 //     areas| so a Book can assert the seam carries no cost.  Seeds spread deterministically around the
 //      parent polygon perimeter (Vyto_frame_at) and persist on `.c.seed`, so re-cuts stay stable.
 Vyto_solve_scope(w, parent, poly):
-    let kids = parent.o().filter(r => !r.sc.departing)
+    let kids = parent.o().filter(r => !r.sc.departing && !r.c.folded)
     if (!kids.length) return
     let seeds = []
     let radii = []

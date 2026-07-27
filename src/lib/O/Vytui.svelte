@@ -13,8 +13,29 @@
     import { TheC }   from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { power_cells, type Pt } from "$lib/O/vyto_geometry"
+    import { GLASS_KINDS } from "$lib/O/glass_kinds"
+    import { FACE_MAINKEYS } from "$lib/O/glass_faces"
 
     let { H } = $props()
+
+    // ── the FACE rail (Cyto parity — glass_kinds.ts) ──────────────────────────────────────
+    //  A cell whose mirror row wears `sc.face:'X'` (WORN) or whose mainkey the viewer imposes a
+    //   face on (FACE_MAINKEYS — Heist · Musu*→Crate) mounts the SAME Svelte face component Cyto
+    //    does — props { n, H } — molded into its cell.  This is what makes the glass a real UI
+    //     (play/pause, track decks, friend liveness) and not a labelled bubble diagram.  The face
+    //      is handed the SOURCE particle `row.c.source_n` (the live gear the face reads), NEVER the
+    //       scalar mirror row.  A row with no resolvable face keeps its ident label (the old paint),
+    //        so every faceless Book (Cogs) renders byte-identical.
+    function face_of(row: TheC): { comp: any, source: TheC } | null {
+        if (!row || !row.sc) return null
+        const mk = Object.keys(row.sc)[0]
+        const kind = (row.sc as any).face || (mk ? FACE_MAINKEYS[mk] : null)
+        if (!kind) return null
+        const comp = GLASS_KINDS[kind]
+        const source: any = (row.c as any).source_n
+        if (!comp || !source) return null
+        return { comp, source }
+    }
 
     // the glass worlds on this House — A:Vyto > w:Vyto (the A:Cyto precedent).  ob() reads
     //  vers so the walk re-runs when worlds arrive; called from the template, never from a
@@ -57,7 +78,21 @@
 
     type Spring = { x: number, y: number, r: number, vx: number, vy: number, vr: number }
     type PaintCell = { tok: string, ident: string, x: number, y: number, r: number,
-                       kind: 'poly' | 'disc', d: string, departing: boolean, lift: boolean }
+                       kind: 'poly' | 'disc', d: string, departing: boolean, lift: boolean,
+                       bx: number, by: number, bw: number, bh: number,
+                       face: any | null, source: TheC | null }
+
+    // the axis-aligned bounding box of a cell polygon (viewBox units) — the box a molded face fills.
+    function bbox_of(poly: Pt[]): { bx: number, by: number, bw: number, bh: number } {
+        let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity
+        for (const p of poly) {
+            if (p.x < minx) minx = p.x
+            if (p.x > maxx) maxx = p.x
+            if (p.y < miny) miny = p.y
+            if (p.y > maxy) maxy = p.y
+        }
+        return { bx: minx, by: miny, bw: Math.max(0, maxx - minx), bh: Math.max(0, maxy - miny) }
+    }
 
     // per-world render state, keyed by the world C — plain, not reactive.
     const springs      = new Map<TheC, Map<string, Spring>>()   // tok → sprung scalars
@@ -155,12 +190,23 @@
             if (!row) continue
             const ident = ident_of(row)
             const lift = liftTok === tok
+            const f = face_of(row)
+            const face = f ? f.comp : null
+            const source = f ? f.source : null
             if ((row.sc as any).departing) {
-                cells.push({ tok, ident, x: s.x, y: s.y, r: Math.max(0, s.r), kind: 'disc', d: '', departing: true, lift })
+                const r = Math.max(0, s.r)
+                cells.push({ tok, ident, x: s.x, y: s.y, r, kind: 'disc', d: '', departing: true, lift,
+                             bx: s.x - r, by: s.y - r, bw: 2 * r, bh: 2 * r, face, source })
             } else {
                 const poly = polyByTok.get(tok)
-                if (poly) cells.push({ tok, ident, x: s.x, y: s.y, r: s.r, kind: 'poly', d: path_of(poly), departing: false, lift })
-                else      cells.push({ tok, ident, x: s.x, y: s.y, r: 6, kind: 'disc', d: '', departing: false, lift })
+                if (poly) {
+                    const bb = bbox_of(poly)
+                    cells.push({ tok, ident, x: s.x, y: s.y, r: s.r, kind: 'poly', d: path_of(poly), departing: false, lift,
+                                 bx: bb.bx, by: bb.by, bw: bb.bw, bh: bb.bh, face, source })
+                } else {
+                    cells.push({ tok, ident, x: s.x, y: s.y, r: 6, kind: 'disc', d: '', departing: false, lift,
+                                 bx: s.x - 6, by: s.y - 6, bw: 12, bh: 12, face, source })
+                }
             }
         }
         cells.sort((a, b) => (a.lift === b.lift ? 0 : a.lift ? 1 : -1))
@@ -386,21 +432,49 @@
             {/each}
         </div>
         {#if show_viewport(w)}
-            <svg class="viewport" viewBox="0 0 800 450" preserveAspectRatio="xMidYMid meet">
-                {#each viewport_cells(w) as cell (cell.tok)}
-                    {#if cell.kind === 'poly'}
-                        <path class="cell" class:departing={cell.departing} class:lift={cell.lift} d={cell.d}
-                              onpointerenter={() => on_enter(w, cell.tok)}
-                              onpointerleave={() => on_leave(w, cell.tok)}></path>
-                    {:else}
-                        <circle class="cell disc" class:departing={cell.departing} class:lift={cell.lift}
-                                cx={cell.x} cy={cell.y} r={cell.r}
-                                onpointerenter={() => on_enter(w, cell.tok)}
-                                onpointerleave={() => on_leave(w, cell.tok)}></circle>
-                    {/if}
-                    <text class="ident" x={cell.x} y={cell.y} text-anchor="middle" dominant-baseline="middle">{cell.ident}</text>
-                {/each}
-            </svg>
+            <div class="stage">
+                <svg class="viewport" viewBox="0 0 800 450" preserveAspectRatio="xMidYMid meet">
+                    {#each viewport_cells(w) as cell (cell.tok)}
+                        {#if cell.kind === 'poly'}
+                            <path class="cell" class:departing={cell.departing} class:lift={cell.lift} class:faced={!!cell.face} d={cell.d}
+                                  onpointerenter={() => on_enter(w, cell.tok)}
+                                  onpointerleave={() => on_leave(w, cell.tok)}></path>
+                        {:else}
+                            <circle class="cell disc" class:departing={cell.departing} class:lift={cell.lift}
+                                    cx={cell.x} cy={cell.y} r={cell.r}
+                                    onpointerenter={() => on_enter(w, cell.tok)}
+                                    onpointerleave={() => on_leave(w, cell.tok)}></circle>
+                        {/if}
+                        {#if !cell.face}
+                            <text class="ident" x={cell.x} y={cell.y} text-anchor="middle" dominant-baseline="middle">{cell.ident}</text>
+                        {/if}
+                    {/each}
+                </svg>
+                <!-- the FACE overlay: an HTML layer molded to the SVG in viewBox percentages (the SVG
+                     keeps its 800×450 aspect at width:100%, so a % box tracks its cell exactly — no
+                     pixel measurement, no overlay-sync drift).  Each faced cell mounts its glass
+                     component handed the live source particle + the House. -->
+                <div class="faces">
+                    {#each viewport_cells(w) as cell (cell.tok)}
+                        {#if cell.face && !cell.departing}
+                            {@const Face = cell.face}
+                            <div class="face-mold" class:lift={cell.lift}
+                                 style="left:{(cell.bx / 800) * 100}%; top:{(cell.by / 450) * 100}%; width:{(cell.bw / 800) * 100}%; height:{(cell.bh / 450) * 100}%;"
+                                 onpointerenter={() => on_enter(w, cell.tok)}
+                                 onpointerleave={() => on_leave(w, cell.tok)}>
+                                <div class="face-scroll">
+                                    <svelte:boundary>
+                                        <Face n={cell.source} H={H} />
+                                        {#snippet failed(error)}
+                                            <div class="face-err" title={String(error)}>{cell.ident}</div>
+                                        {/snippet}
+                                    </svelte:boundary>
+                                </div>
+                            </div>
+                        {/if}
+                    {/each}
+                </div>
+            </div>
         {/if}
         {#if bar_on(w, 'holds')}
             <div class="holds">
@@ -422,7 +496,7 @@
         font: 12px/1.5 system-ui, sans-serif;
         background: #1b1b22; color: #cfcfd8;
         border: 1px solid #33333f; border-radius: 6px;
-        padding: 6px 8px; margin: 4px; max-width: 46em;
+        padding: 6px 8px; margin: 4px; max-width: 68em;
     }
     .bar { display: flex; gap: 4px; align-items: baseline; }
     .crest { color: #8a8aa0; font-weight: 600; margin-right: 4px; }
@@ -449,8 +523,9 @@
     .tick.blessed { background: #4ad07a; border-radius: 2px; }
 
     /* the viewport — the fixed root scope, one cell per mirror row */
+    .stage { position: relative; margin-top: 6px; }
     .viewport {
-        display: block; width: 100%; height: auto; margin-top: 6px;
+        display: block; width: 100%; height: auto;
         background: #16161c; border: 1px solid #2a2a35; border-radius: 4px;
     }
     .cell {
@@ -460,6 +535,27 @@
     .cell.disc { fill: #33334a; }
     .cell.departing { opacity: 0.35; }
     .cell.lift { fill: #3a3a58; stroke: #a8a8f0; }
+    /* a faced cell is a quiet frame — the mounted face draws the content over it */
+    .cell.faced { fill: #17171f; stroke: #3d3d55; }
+
+    /* the FACE overlay — molded to cells in viewBox percentages, so it tracks the responsive SVG */
+    .faces { position: absolute; inset: 0; pointer-events: none; }
+    .face-mold {
+        position: absolute; pointer-events: auto; overflow: hidden;
+        border-radius: 4px; box-sizing: border-box;
+        box-shadow: inset 0 0 0 1px #3d3d55;
+        transition: box-shadow 120ms ease;
+    }
+    .face-mold.lift { box-shadow: inset 0 0 0 1px #a8a8f0, 0 2px 10px rgba(0,0,0,0.5); z-index: 5; }
+    .face-scroll {
+        width: 100%; height: 100%; overflow: auto;
+        font-size: 11px; line-height: 1.35;
+        scrollbar-width: thin;
+    }
+    .face-err {
+        padding: 4px 6px; color: #d08a8a; font-weight: 600;
+        font: 600 11px/1.3 system-ui, sans-serif;
+    }
     .ident {
         fill: #e6e6f2; font: 600 14px/1 system-ui, sans-serif;   /* 14px legibility floor */
         pointer-events: none; user-select: none;
