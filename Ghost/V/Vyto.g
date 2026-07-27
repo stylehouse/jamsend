@@ -19,7 +19,7 @@
 
 IMPORT()
     import Vytui from "$lib/O/Vytui.svelte"
-    import { power_cells, poly_centroid } from "$lib/O/vyto_geometry"
+    import { power_cells, poly_centroid, poly_area } from "$lib/O/vyto_geometry"
     import { sig_of, group_edges, bucket_key_of, pull_step, SIG_JOINS, FOCUS_BOOST, FOCUS_SHRINK } from "$lib/O/vyto_foam"
 
 //#region the world — w:Vyto stands, plans, and waits for its commission
@@ -96,6 +96,15 @@ e_Vyto_commission(A, w, e):
     w.c.Scannable  = req.sc.Scannable
     w.c.Styles     = req.sc.Styles
     w.c.client_w   = req.sc.client_w
+    // ④+⑤ opt-in (Vyto_sizing_todo §9): a PRICED glass sizes cells by the ONE global scale (see
+    //  Vyto_express) instead of the absolute dose box.  Read afresh every commission, so a
+    //   re-commission can flip a world priced or plain.  Default OFF ⇒ every existing commission
+    //    keeps the byte-identical local cut (the studies' warp discipline — no fixture moves).
+    w.c.priced     = req.sc.priced ? 1 : 0
+    // NESTED opt-in (Vyto_sizing_todo J4 · Nestcut proven): a nested glass recurses the cut into every
+    //  scope — a cluster of UI bits is a scope whose children solve INSIDE its cell.  Default off ⇒ the
+    //   flat top-only cut every existing Book stands on, byte-identical.
+    w.c.nested     = req.sc.nested ? 1 : 0
     // the commissioning client supplies the Run House on the req's `.c` (a ref — never sc); the
     //  Spool reads it to snap the RUN world into each moment's payload (spool.md §2).
     w.c.Run        = e?.c?.Run ?? req.c?.Run ?? null
@@ -612,27 +621,76 @@ Vyto_relate(w):
         organ.bump_version()
     }
 
+// Vyto_importance — the ONE composable importance number the global scale prices (Vyto_sizing_todo
+//  §3).  A blend, never a single binding:
+//  · 1 + dose — the base loudness (the +1 keeps a doseless row present; dose-drives-area lifted in).
+//  · + a KINSHIP lift (§3 shared-ness · §9③ "a relation lifts BOTH endpoints' importance") — sum the
+//     %Flow edge weights the Relate scribe already wove onto w.c.relations incident on this row's tok.
+//      Relate runs BEFORE Express in Vyto_stir, so the edges stand when this reads them.  This is the
+//       one thing raw dose can NEVER say: a value shared across the graph (a vein) makes every carrier
+//        bigger EVERYWHERE — importance becomes graph-global, not merely local.  Coefficient 0.5: each
+//         unit of shared meaning adds half a dose of loudness (eye-tuned — the COMPOSITION is the point
+//          not the constant).  A relation-free row adds nothing, so a priced glass with no edges is
+//           byte-identical to the plain dose box.  Intra-cell rank (§3) composes in here likewise later.
+Vyto_importance(w, row):
+    let imp = 1 + (Number(row.sc.dose) || 0)
+    if (w.c.relations) {
+        let tie = 0
+        for (const e of w.c.relations.o()) {
+            if (e.sc.a === row.c.tok) tie = tie + (Number(e.sc.n) || 1)
+            if (e.sc.b === row.c.tok) tie = tie + (Number(e.sc.n) || 1)
+        }
+        imp = imp + 0.5 * tie
+    }
+    return imp
+
 // Vyto_express — scribe: reads quantities and writes channels (area, weight, hue, z, blur,
 //  fg/bg, motion amplitude, edge loudness).  The generalisation of dose-drives-area and of
-//   Matstyle's auto-swatch instinct.  v1 writes the ONE channel the solver reads — area —
-//    from the row's dose (dose-drives-area generalised): env_area = AREA_BASE·(1 + dose), a
-//     doseless row taking the base.  Everything a mirror row carries for the model rides `.c`
-//      (row.c.env_area, never row.sc): Vyto_scan_walk sweeps unknown sc keys off mirror rows
-//       every scan, so an sc-side channel would be deleted next stir.
+//   Matstyle's auto-swatch instinct.  It writes the ONE channel the solver reads — area — onto
+//   `.c` (row.c.env_area, never row.sc: Vyto_scan_walk sweeps unknown sc keys off mirror rows
+//    every scan, so an sc-side channel would be deleted next stir).  TWO regimes:
+//  · PLAIN (default) — env_area = AREA_BASE·(1 + dose), a doseless row the base.  ABSOLUTE and
+//     LOCAL: a cell is blind to the rest of the graph, so adding a cell never re-breathes the
+//      standing ones.  Every pre-pricing Book stands to the byte on this path.
+//  · PRICED (opt-in, Vyto_sizing_todo §9 stations ④+⑤) — area demanded by the row's global
+//     IMPORTANCE (Vyto_importance: dose blended with the graph-global shared-meaning lift), not raw
+//      dose.  ABSOLUTE scale (the same AREA_BASE) on purpose: the power diagram reads only RELATIVE
+//       radii, so the priced signal must ride the IMPORTANCE — a bigger number for a better-connected
+//        cell — never a frame re-normalisation (env_area·k re-scales every radius identically and the
+//         cut only shifts because r² are additive weights, which DEGRADES the importance ordering —
+//          the wrong lever).  So env_area = AREA_BASE·importance: a well-connected cell is a bigger
+//           cell, comparably across the whole graph.  A row with no kin ⇒ importance = 1+dose ⇒
+//            byte-identical to the plain path (the priced signal is purely additive on connection).
 Vyto_express(w):
     if (!w.c.mirror) return
-    let wrote = 0
-    for (const row of w.c.mirror.o()) {
-        if (row.sc.departing) continue
+    let rows = w.c.mirror.o().filter(r => !r.sc.departing)
+    if (!rows.length) return
+    if (w.c.nested) {
+        // a nested glass sizes EVERY row in the tree (the scope solve reads a child's env_area for its
+        //  radius inside the parent), so walk the whole mirror — not just the top row.  Plain dose box
+        //   per row (pricing×nesting is a later compose; keep the first nest tenancy one-variable).
+        this.Vyto_express_rows(w, rows)
+    } else if (w.c.priced) {
+        for (const row of rows) { row.c.imp = this.Vyto_importance(w, row); row.c.env_area = 2400 * row.c.imp }
+    } else {
         // AREA_BASE — 2400 px² at scale 1, eye-tuned once the first tenant has eyes on it.
-        row.c.env_area = 2400 * (1 + (Number(row.sc.dose) || 0))
-        wrote = 1
+        for (const row of rows) { row.c.env_area = 2400 * (1 + (Number(row.sc.dose) || 0)) }
     }
-    if (!wrote) return
     let organ = w.o({ Organ: 'Express' })[0]
     if (organ && organ.sc.status !== 'live') {
         organ.sc.status = 'live'
         organ.bump_version()
+    }
+
+// Vyto_express_rows — the nested express: size a bag of sibling rows (dose box) then recurse into each
+//  row's own children, so EVERY scope in the tree has an env_area for its scope solve to read.  Only a
+//   nested glass calls this; a flat glass never leaves the top row.
+Vyto_express_rows(w, rows):
+    for (const row of rows) {
+        if (row.sc.departing) continue
+        row.c.env_area = 2400 * (1 + (Number(row.sc.dose) || 0))
+        let kids = row.o()
+        if (kids.length) this.Vyto_express_rows(w, kids)
     }
 
 // Vyto_solve — the cut.  For now ONE root scope (the scope milestone comes later): a fixed
@@ -763,6 +821,75 @@ Vyto_solve(w):
         }
         j = j + 1
     }
+    // NESTED scopes (opt-in, Vyto_sizing_todo J4 · Nestcut proven in isolation): the root cut stands
+    //  above — now each top cell BECOMES the frame for its own mirror children, recursing to any depth.
+    //   ADDITIVE + gated: a flat glass never enters here, so every flat fixture stands to the byte.  The
+    //    top polys come from `finals` (the cut just computed) — no re-cut of the root.
+    if (w.c.nested) {
+        let p = 0
+        while (p < members.length) {
+            let m = members[p]
+            m.c.poly = finals[p] ?? null
+            if (m.c.poly) this.Vyto_solve_scope(w, m, m.c.poly)
+            p = p + 1
+        }
+    }
+
+// Vyto_solve_scope — the scope recursion: tessellate `poly` among `parent`'s live mirror children,
+//  write each child's spring target T (EPS-tolerant law 1, so a settled scope stands byte-still) and
+//   its cell polygon on `.c.poly`, then recurse.  gap=0 — a scope FILLS its parent (tiling is the scope
+//    property, unlike the top cut's visual 2.2 gap); stamps parent.c.misfit = |parent area − Σ child
+//     areas| so a Book can assert the seam carries no cost.  Seeds spread deterministically around the
+//      parent polygon perimeter (Vyto_frame_at) and persist on `.c.seed`, so re-cuts stay stable.
+Vyto_solve_scope(w, parent, poly):
+    let kids = parent.o().filter(r => !r.sc.departing)
+    if (!kids.length) return
+    let seeds = []
+    let radii = []
+    let i = 0
+    while (i < kids.length) {
+        let k = kids[i]
+        if (!k.c.seed) k.c.seed = this.Vyto_frame_at(poly, (i + 0.5) / kids.length)
+        seeds.push({ x: k.c.seed.x, y: k.c.seed.y })
+        let a = (k.c.env_area != null) ? k.c.env_area : 2400
+        radii.push(Math.sqrt(a / Math.PI))
+        i = i + 1
+    }
+    let kk = 0
+    while (kk < 2) {
+        let polys = power_cells(poly, seeds, radii, 0)
+        let z = 0
+        while (z < seeds.length) {
+            if (polys[z]) {
+                let c = poly_centroid(polys[z])
+                seeds[z] = { x: seeds[z].x + 0.25 * (c.x - seeds[z].x), y: seeds[z].y + 0.25 * (c.y - seeds[z].y) }
+            }
+            z = z + 1
+        }
+        kk = kk + 1
+    }
+    let finals = power_cells(poly, seeds, radii, 0)
+    let parea = Math.abs(poly_area(poly))
+    let sum = 0
+    let j = 0
+    while (j < kids.length) {
+        let k = kids[j]
+        k.c.seed = { x: seeds[j].x, y: seeds[j].y }
+        let cell = finals[j]
+        let anchor = cell ? poly_centroid(cell) : seeds[j]
+        let r = radii[j]
+        if (cell) sum = sum + Math.abs(poly_area(cell))
+        let T = k.c.T
+        let EPS = 0.5
+        if (!T || Math.abs(T.x - anchor.x) > EPS || Math.abs(T.y - anchor.y) > EPS || Math.abs(T.r - r) > EPS) {
+            k.c.T = { x: anchor.x, y: anchor.y, r: r }
+            k.bump_version()
+        }
+        k.c.poly = cell ?? null
+        if (cell) this.Vyto_solve_scope(w, k, cell)
+        j = j + 1
+    }
+    parent.c.misfit = Math.abs(parea - sum)
 
 // Vyto_seed_mean — the mean of the seeds placed so far, or the frame centre (400,225) when
 //  none stand yet.  Feeds the newcomer's deterministic boundary entry point.

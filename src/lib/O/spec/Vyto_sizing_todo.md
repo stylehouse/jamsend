@@ -254,6 +254,27 @@ The read confirmed §1 against code and sharpened it into **three structural fac
         into `Vyto_express` (⑤, replacing dose) and the taper (⑥); and the human's preen of the φ|area|
          floor model this first cut committed to.
 
+**⑤ WIRE LANDED — the `VytoBreathe` Book (2026-07-27, `Vytonation.g`; Credence `What:Vyto`; GREEN×2
+ + full Vyto* regression green).**  The wire into `Vyto_express` is in, model-side, OPT-IN (a PRICED
+  commission — `w.c.priced`, default off, so every existing Book stands byte-identical).  **A reframe
+   this build FORCED and the human should note:** the §9-draft's literal *frame-share* (`env_area =
+    frame·importance/Σimportance`, S=√(frame/Σw)) is **vacuous for CELLS** — the power diagram reads only
+     RELATIVE radii, and for `importance = 1+dose` the frame-share gives the SAME relative radii as the
+      absolute dose box, so "priced" would change nothing geometric (frame-normalising even DEGRADES the
+       importance ordering, since r² are additive weights and scaling all radii shrinks their spread).
+        "Push S until the frame is spent" is a TEXT-packing idea (Σpx²=frame, Typescale's abstract budget)
+         — cells always tile the frame, so that invariant is automatic, not an env_area property.  So the
+          honest ④ content for cells is **§3's graph-GLOBAL importance**: `Vyto_importance` = `1+dose` PLUS
+           a **kinship lift** — the sum of the Relate scribe's `%Flow` edge weights incident on the row
+            (§9③ "a relation lifts BOTH endpoints' importance"), on the ABSOLUTE `AREA_BASE·importance`
+             scale (radii stay in range).  So a value SHARED across the graph (a vein) makes every carrier
+              a bigger cell EVERYWHERE — the one thing raw dose can never say.  Proven by a 2-D DIFFERENTIAL
+               (the size effect needs BOTH pricing AND kinship): three oak kin (shared genus) outsize a lone
+                pine at the same dose · UNPRICE them and they equalise · re-price but SEVER the kinship and
+                 they equalise.  **Still owed:** the shared-ness could also read the mirror directly (not
+                  only via Relate edges) · intra-cell rank (§2) as a third importance summand · the taper (⑥
+                   — untouched) · the human's preen of the `AREA_BASE`/coefficient (`0.5` kinship, eye-tuned).
+
 ---
 
 **Cross-refs:** `Voro_vtuffing.md` (gem · growth spell · fill_fs · veins), `vyto_workingouts/

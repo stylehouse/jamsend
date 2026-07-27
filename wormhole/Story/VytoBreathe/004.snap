@@ -1,0 +1,14 @@
+Snap:H
+  H:VytoBreathe,Run
+    A:VytoBreathe
+      self,round=6	{"mung":["age"]}
+      w:VytoBreathe
+        self,round=6	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:oak1,of:main,genus:oak
+        Cog:oak2,of:main,genus:oak
+        Cog:oak3,of:main,genus:oak
+        Cog:pine,of:main,genus:pine
+        req:price_wait,finished
+        req:unprice_wait,finished
+        see:without the scale shared meaning buys no size — the same kin cogs take equal base seats when the glass is priced plainly

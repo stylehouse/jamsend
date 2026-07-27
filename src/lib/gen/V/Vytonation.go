@@ -11,7 +11,7 @@ import { budget_for, fold_ladder, bucket_key_of } from "$lib/O/vyto_foam"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vytonation(): string { return 'f0961510106d9613~g1' },
+    Ghostmeta_Ghost_V_Vytonation(): string { return '91b650ebccc36b0a~g1' },
 
 // Vytonation.g — Vyto's demo Books (the Voronation.g sibling, one directory over in Ghost/V/).
 //  Where Voronation.g proves the CRUSH (the fold policy) on flora and libraries, Vytonation.g
@@ -599,7 +599,10 @@ Vyto_plant(w, genus, dose) {
 //    (grow a cell or retire one) WITHOUT resetting: e_Vyto_commission re-derives the grapples and
 //     re-watches but never clears the mirror, so the standing cells keep their seats.  grapples = the
 //      cogs list; the Run rides req.c.Run so the spool can snap it.
-Vyto_commission_on(w, cogs, fresh) {
+//  A 4th arg `priced` (optional, default plain) commissions the glass on the global type-scale
+//   (Vyto_sizing_todo §9 ④+⑤ — cell area is a share of the frame, not an absolute dose box); every
+//    existing caller passes three args → undefined → the byte-identical plain cut.
+Vyto_commission_on(w, cogs, fresh, priced, nested) {
     let SH = this.VytoStaple_SH(w)
     if (!SH) return
     if (fresh) {
@@ -608,6 +611,8 @@ Vyto_commission_on(w, cogs, fresh) {
         SH.i({ A: 'Vyto' }).i({ w: 'Vyto' })
     }
     let commission = new TheC({ c: {}, sc: { Scannable: cogs[0], client_w: w, grapples: cogs.slice() } })
+    if (priced) commission.sc.priced = 1
+    if (nested) commission.sc.nested = 1
     commission.c.Run = this
     SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
 
@@ -1903,6 +1908,327 @@ VytoBunch_witness(w) {
     if (this.VytoBunch_bunched_ready(w)) {
         this.story_swear(w, 'the shared genus bunched the kin — the two oaks rest closer to each other while joined than once their kinship is severed')
         if (!(w.oa({see: 'the shared genus bunched the kin — the two oaks rest closer to each other while joined than once their kinship is severed'}))) w.i({see: 'the shared genus bunched the kin — the two oaks rest closer to each other while joined than once their kinship is severed'})
+    }
+
+},
+// ══ VytoBreathe — a RELATION lifts SIZE: the global type-scale tenanted so shared meaning prices ════
+//   a bigger cell (Vyto_sizing_todo §9 stations ④+⑤ · §3 shared-ness · processes.md §6 step 1).  The
+//    honest content of ④: importance is graph-GLOBAL, not local — a value carried across the graph (a
+//     vein) makes every carrier bigger EVERYWHERE, which raw dose can never say.  Vyto_importance blends
+//      dose with the Relate scribe's %Flow edge weight, and a PRICED Vyto_express sizes each cell by that
+//       importance.  Opt-in and byte-neutral: an unpriced glass keeps the dose box, and a priced glass
+//        with no kin is byte-identical too — the lift is purely additive on connection.  Proven by a
+//         2-D DIFFERENTIAL — the size effect needs BOTH pricing AND kinship: remove either and the kin
+//          cells fall back to the lone seat.  World named VytoBreathe.  Four cogs at the SAME dose:
+//           three oaks share a genus (kin) · one pine is alone — only the kinship differs.
+VytoBreathe(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VytoBreathe_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VytoBreathe_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 5
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoBreathe_seed(w)
+        if (n === 3) this.VytoBreathe_price(w)
+        if (n === 4) this.VytoBreathe_unprice(w)
+        if (n === 5) this.VytoBreathe_sever(w)
+    }
+    this.VytoBreathe_witness(w)
+
+},
+// ── beat 2 — seed four cogs at the SAME dose: three oak kin (shared genus) + one lone pine ──────────
+//  distinct Cog values so each is its own cell (Vyto_plant keys by genus and would collapse the kin);
+//   the SHARED genus atom is what Relate weaves into edges (of:main is plumbing — a SIG_JOIN skipped).
+VytoBreathe_seed(w) {
+    w.i({desc: 'seed four cogs — three oak kin sharing a genus and a lone pine all at the same dose'})
+    let cogs = []
+    cogs.push(w.i({ Cog: 'oak1', of: 'main', genus: 'oak' }))
+    cogs.push(w.i({ Cog: 'oak2', of: 'main', genus: 'oak' }))
+    cogs.push(w.i({ Cog: 'oak3', of: 'main', genus: 'oak' }))
+    cogs.push(w.i({ Cog: 'pine', of: 'main', genus: 'pine' }))
+    w.c.cogs = cogs
+
+},
+// ── beat 3 — commission PRICED (kin intact): the connected oaks outsize the lone pine ──────────────
+async VytoBreathe_price(w) {
+    w.i({desc: 'commission the glass priced on the four cogs and stir to rest'})
+    this.Vyto_commission_on(w, w.c.cogs, 1, 1)
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'price_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoBreathe_step3_ready(w)) })
+
+},
+// ── beat 4 — the same KIN cogs re-commissioned UNPRICED → shared meaning buys no size (pricing off) ─
+async VytoBreathe_unprice(w) {
+    w.i({desc: 're-commission the same kin cogs unpriced — shared meaning now buys no size'})
+    this.Vyto_commission_on(w, w.c.cogs, 1, 0)
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'unprice_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoBreathe_unpriced_equal_ready(w)) })
+
+},
+// ── beat 5 — re-commission PRICED but SEVER the kinship → with no shared genus the oaks shrink back ─
+async VytoBreathe_sever(w) {
+    w.i({desc: 'sever the kinship then re-commission priced — with no shared genus the oaks shrink to the pine'})
+    let cogs = w.c.cogs
+    if (cogs[1]) { cogs[1].sc.genus = 'maple'; cogs[1].bump_version() }
+    if (cogs[2]) { cogs[2].sc.genus = 'birch'; cogs[2].bump_version() }
+    this.Vyto_commission_on(w, cogs, 1, 1)
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'sever_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoBreathe_severed_equal_ready(w)) })
+
+},
+// ── readers ────────────────────────────────────────────────────────────────────────────────────────
+VytoBreathe_area(vw, name) {
+    let r = this.VytoStaple_cog_row(vw, name)
+    return (r && r.c.env_area != null) ? r.c.env_area : null
+
+},
+VytoBreathe_edges(vw) {
+    return (vw && vw.c.relations) ? vw.c.relations.o().length : 0
+
+},
+// ── ready-predicates — each DRIVES to rest first (Vyto_rest_poll builds the mirror and settles it)
+//   then checks the numbers; the count gate rides rest_poll's `want`, never a pre-check that bails
+//    before driving.  Robust to the 0.5 kinship coefficient: every claim is RELATIONAL (bigger · even
+//     · equal), never a sworn absolute that would hard-code the eye-tuned constant. ───────────────────
+VytoBreathe_board_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.commission) return 0
+    if (!vw.c.priced) return 0
+    if ((vw.c.grapples?.length ?? 0) !== 4) return 0
+    return (vw.o({ Organ: 1 }).length === 10 && vw.o({ Bar: 1 }).length === 7) ? 1 : 0
+
+},
+// kin-bigger: PRICED and the kin edges stand — each oak (shared genus) outsizes the unrelated pine.
+VytoBreathe_kin_bigger_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.priced) return 0
+    if (!this.Vyto_rest_poll(w, 4)) return 0
+    if (this.VytoBreathe_edges(vw) < 1) return 0
+    let ao = this.VytoBreathe_area(vw, 'oak1')
+    let ap = this.VytoBreathe_area(vw, 'pine')
+    if (ao == null || ap == null) return 0
+    return (ao > ap + 1) ? 1 : 0
+
+},
+// kin-even: the three kin cells carry the SAME lift so they take equal seats larger than the pine.
+VytoBreathe_kin_even_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.priced) return 0
+    if (!this.Vyto_rest_poll(w, 4)) return 0
+    if (this.VytoBreathe_edges(vw) < 1) return 0
+    let a1 = this.VytoBreathe_area(vw, 'oak1')
+    let a2 = this.VytoBreathe_area(vw, 'oak2')
+    let a3 = this.VytoBreathe_area(vw, 'oak3')
+    let ap = this.VytoBreathe_area(vw, 'pine')
+    if (a1 == null || a2 == null || a3 == null || ap == null) return 0
+    return (Math.abs(a1 - a2) < 0.01 && Math.abs(a2 - a3) < 0.01 && a1 > ap + 1) ? 1 : 0
+
+},
+// step 3 combined gate — hold the beat open until board · kin-bigger · kin-even all stand.
+VytoBreathe_step3_ready(w) {
+    return (this.VytoBreathe_board_ready(w) && this.VytoBreathe_kin_bigger_ready(w) && this.VytoBreathe_kin_even_ready(w)) ? 1 : 0
+
+},
+// unpriced-equal (beat 4): the SAME kin cogs (edges still woven) but UNPRICED — every cell the base seat.
+VytoBreathe_unpriced_equal_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    if (vw.c.priced) return 0
+    if (!this.Vyto_rest_poll(w, 4)) return 0
+    let ao = this.VytoBreathe_area(vw, 'oak1')
+    let ap = this.VytoBreathe_area(vw, 'pine')
+    return (ao != null && ap != null && Math.abs(ao - 2400) < 0.01 && Math.abs(ap - 2400) < 0.01) ? 1 : 0
+
+},
+// severed-equal (beat 5): PRICED again but the kinship severed — zero edges so every cell the base seat.
+VytoBreathe_severed_equal_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.priced) return 0
+    if (!this.Vyto_rest_poll(w, 4)) return 0
+    if (this.VytoBreathe_edges(vw) !== 0) return 0
+    let ao = this.VytoBreathe_area(vw, 'oak1')
+    let ap = this.VytoBreathe_area(vw, 'pine')
+    return (ao != null && ap != null && Math.abs(ao - 2400) < 0.01 && Math.abs(ap - 2400) < 0.01) ? 1 : 0
+
+},
+// ── the witness — story_swear (the sworn contract) + a once-noticed %see, every sentence comma-free
+//   and apostrophe-free.  Read off w:Vyto into w:VytoBreathe's own record — the glass never snaps. ───
+VytoBreathe_witness(w) {
+    if (this.VytoBreathe_board_ready(w)) {
+        this.story_swear(w, 'the glass was commissioned priced on four cogs and stood its board')
+        if (!(w.oa({see: 'the glass was commissioned priced on four cogs and stood its board'}))) w.i({see: 'the glass was commissioned priced on four cogs and stood its board'})
+    }
+    if (this.VytoBreathe_kin_bigger_ready(w)) {
+        this.story_swear(w, 'a cell tied by shared meaning is a bigger cell — each oak sharing its genus outsizes the unrelated pine though every cog carries the same dose')
+        if (!(w.oa({see: 'a cell tied by shared meaning is a bigger cell — each oak sharing its genus outsizes the unrelated pine though every cog carries the same dose'}))) w.i({see: 'a cell tied by shared meaning is a bigger cell — each oak sharing its genus outsizes the unrelated pine though every cog carries the same dose'})
+    }
+    if (this.VytoBreathe_kin_even_ready(w)) {
+        this.story_swear(w, 'the three kin cells are sized evenly — each oak carries the same shared-meaning lift so the three take equal seats larger than the lone pine')
+        if (!(w.oa({see: 'the three kin cells are sized evenly — each oak carries the same shared-meaning lift so the three take equal seats larger than the lone pine'}))) w.i({see: 'the three kin cells are sized evenly — each oak carries the same shared-meaning lift so the three take equal seats larger than the lone pine'})
+    }
+    if (this.VytoBreathe_unpriced_equal_ready(w)) {
+        this.story_swear(w, 'without the scale shared meaning buys no size — the same kin cogs take equal base seats when the glass is priced plainly')
+        if (!(w.oa({see: 'without the scale shared meaning buys no size — the same kin cogs take equal base seats when the glass is priced plainly'}))) w.i({see: 'without the scale shared meaning buys no size — the same kin cogs take equal base seats when the glass is priced plainly'})
+    }
+    if (this.VytoBreathe_severed_equal_ready(w)) {
+        this.story_swear(w, 'sever the kinship and the size follows — with no shared genus the priced oaks shrink back to the lone pine seat')
+        if (!(w.oa({see: 'sever the kinship and the size follows — with no shared genus the priced oaks shrink back to the lone pine seat'}))) w.i({see: 'sever the kinship and the size follows — with no shared genus the priced oaks shrink back to the lone pine seat'})
+    }
+
+},
+// ══ VytoNest — the SCOPE RECURSION tenanted: a cluster of UI bits is a scope whose children solve ════
+//   INSIDE its cell (Vyto_sizing_todo J4 · processes.md §6 step 3 · Nestcut proved the geometry in
+//    isolation).  A NESTED commission recurses `Vyto_solve` into every scope: once the root cut stands,
+//     each cell BECOMES the frame for its own mirror children, to any depth.  Opt-in and additive — a
+//      flat glass never recurses so every existing fixture stands byte-identical.  Proven by a
+//       DIFFERENTIAL: nested ⇒ children tessellate their parent exactly (misfit ~0) at TWO depths and
+//        every nested cell takes a seat · flat ⇒ the same tree seats only the root — the children get no
+//         target at all.  World named VytoNest.  Tree: a Rig over cogs A B C · A holds grandchildren A1 A2.
+VytoNest(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VytoNest_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VytoNest_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoNest_seed(w)
+        if (n === 3) this.VytoNest_nest(w)
+        if (n === 4) this.VytoNest_flat(w)
+    }
+    this.VytoNest_witness(w)
+
+},
+// ── beat 2 — seed a two-level gear tree: Rig > (A B C) and A > (A1 A2) ─────────────────────────────
+VytoNest_seed(w) {
+    w.i({desc: 'seed a two-level rig — three cogs under the root and two grandchildren under the first'})
+    let rig = w.i({ Rig: 'main' })
+    let a = rig.i({ Cog: 'A', of: 'main', dose: '3' })
+    a.i({ Cog: 'A1', of: 'A', dose: '1' })
+    a.i({ Cog: 'A2', of: 'A', dose: '1' })
+    rig.i({ Cog: 'B', of: 'main', dose: '1' })
+    rig.i({ Cog: 'C', of: 'main', dose: '2' })
+    w.c.rig = rig
+
+},
+// ── beat 3 — commission NESTED: the recursion fills every scope ────────────────────────────────────
+async VytoNest_nest(w) {
+    w.i({desc: 'commission the glass nested on the rig and stir to rest'})
+    this.Vyto_commission_on(w, [w.c.rig], 1, 0, 1)
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'nest_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoNest_nested_ready(w)) })
+
+},
+// ── beat 4 — the control: re-commission FLAT → only the root is seated, children get no target ─────
+async VytoNest_flat(w) {
+    w.i({desc: 're-commission the same tree flat — only the root is cut and the children get no target'})
+    this.Vyto_commission_on(w, [w.c.rig], 1, 0, 0)
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'flat_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoNest_flat_ready(w)) })
+
+},
+// ── readers ────────────────────────────────────────────────────────────────────────────────────────
+VytoNest_rig(vw) {
+    if (!vw || !vw.c.mirror) return null
+    let rows = this.VytoStaple_rows(vw.c.mirror, [])
+    return rows.find(r => r.sc.Rig === 'main') ?? null
+
+},
+VytoNest_seated(vw, name) {
+    let r = this.VytoStaple_cog_row(vw, name)
+    if (!r || !r.c.T) return 0
+    let T = r.c.T
+    return (T.x >= 0 && T.x <= 800 && T.y >= 0 && T.y <= 450 && T.r > 0) ? 1 : 0
+
+},
+// ── ready-predicates — drive to rest first (top cell settles; the nested cut tiles EXACTLY on the
+//   first solve so misfit is convergence-independent), then check the numbers. ──────────────────────
+VytoNest_board_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.commission) return 0
+    if (!vw.c.nested) return 0
+    if ((vw.c.grapples?.length ?? 0) !== 1) return 0
+    return (vw.o({ Organ: 1 }).length === 10 && vw.o({ Bar: 1 }).length === 7) ? 1 : 0
+
+},
+// root-tiles: the three cogs tessellate the whole frame — the root scope misfit is ~0.
+VytoNest_root_tiles_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.nested) return 0
+    if (!this.Vyto_rest_poll(w, 1)) return 0
+    let rig = this.VytoNest_rig(vw)
+    if (!rig || rig.c.misfit == null) return 0
+    return (rig.c.misfit < 1) ? 1 : 0
+
+},
+// deep-tiles: A's two grandchildren tessellate A's cell exactly — a scope inside a scope, misfit ~0.
+VytoNest_deep_tiles_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.nested) return 0
+    if (!this.Vyto_rest_poll(w, 1)) return 0
+    let a = this.VytoStaple_cog_row(vw, 'A')
+    if (!a || a.c.misfit == null) return 0
+    return (a.c.misfit < 1) ? 1 : 0
+
+},
+// seated: every child and grandchild wears an in-frame target with a real radius.
+VytoNest_all_seated_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.nested) return 0
+    if (!this.Vyto_rest_poll(w, 1)) return 0
+    let names = ['A', 'B', 'C', 'A1', 'A2']
+    for (const nm of names) { if (!this.VytoNest_seated(vw, nm)) return 0 }
+    return 1
+
+},
+// combined beat-3 gate.
+VytoNest_nested_ready(w) {
+    return (this.VytoNest_board_ready(w) && this.VytoNest_root_tiles_ready(w) && this.VytoNest_deep_tiles_ready(w) && this.VytoNest_all_seated_ready(w)) ? 1 : 0
+
+},
+// flat control: commissioned unnested the same tree solves only the root — child A wears no target.
+VytoNest_flat_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    if (vw.c.nested) return 0
+    if (!this.Vyto_rest_poll(w, 1)) return 0
+    let a = this.VytoStaple_cog_row(vw, 'A')
+    if (!a) return 0
+    return (a.c.T == null) ? 1 : 0
+
+},
+// ── the witness — story_swear + once-noticed %see · comma-free · apostrophe-free · read off w:Vyto ──
+VytoNest_witness(w) {
+    if (this.VytoNest_board_ready(w)) {
+        this.story_swear(w, 'the glass was commissioned nested on one rig and stood its board')
+        if (!(w.oa({see: 'the glass was commissioned nested on one rig and stood its board'}))) w.i({see: 'the glass was commissioned nested on one rig and stood its board'})
+    }
+    if (this.VytoNest_root_tiles_ready(w)) {
+        this.story_swear(w, 'the scope recursion fills the frame — the three cogs tessellate the whole root cell so the parent area equals the sum of its children')
+        if (!(w.oa({see: 'the scope recursion fills the frame — the three cogs tessellate the whole root cell so the parent area equals the sum of its children'}))) w.i({see: 'the scope recursion fills the frame — the three cogs tessellate the whole root cell so the parent area equals the sum of its children'})
+    }
+    if (this.VytoNest_deep_tiles_ready(w)) {
+        this.story_swear(w, 'the recursion goes deeper — the two grandchildren tessellate their parent cog cell exactly so a scope nests inside a scope')
+        if (!(w.oa({see: 'the recursion goes deeper — the two grandchildren tessellate their parent cog cell exactly so a scope nests inside a scope'}))) w.i({see: 'the recursion goes deeper — the two grandchildren tessellate their parent cog cell exactly so a scope nests inside a scope'})
+    }
+    if (this.VytoNest_all_seated_ready(w)) {
+        this.story_swear(w, 'every nested cell took a seat inside the frame — each child and grandchild wears a target with a real radius')
+        if (!(w.oa({see: 'every nested cell took a seat inside the frame — each child and grandchild wears a target with a real radius'}))) w.i({see: 'every nested cell took a seat inside the frame — each child and grandchild wears a target with a real radius'})
+    }
+    if (this.VytoNest_flat_ready(w)) {
+        this.story_swear(w, 'the nesting is load-bearing — commissioned flat the same tree seats only the root and its children get no target at all')
+        if (!(w.oa({see: 'the nesting is load-bearing — commissioned flat the same tree seats only the root and its children get no target at all'}))) w.i({see: 'the nesting is load-bearing — commissioned flat the same tree seats only the root and its children get no target at all'})
     }
 
 },

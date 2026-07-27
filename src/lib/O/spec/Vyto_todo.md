@@ -16,6 +16,33 @@ The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it 
     itself, and VytoCell recorded GREEN ×2 beside a green VytoStaple regression.  Next
      moves:
 
+- **Nest-solve (J4) tenanted — CODE-COMPLETE 2026-07-27, UNRECORDED (`VytoNest`, `Vytonation.g`);
+   correct-by-construction + compiled + gated OFF, but its fixtures are NOT yet baked — the ★claude
+    runner was monopolised by another client for the whole record window (accept refused busy on
+     repeat; the run itself DID execute all 4 beats and progressed all 5 assertions via fire-and-poll).**
+      `Vyto_solve` now recurses into every scope when `w.c.nested` (opt-in, 5th arg to
+       `Vyto_commission_on`): after the flat top cut stands, each cell becomes the frame for its own
+        mirror children (`Vyto_solve_scope`, gap=0 so a scope FILLS its parent), to any depth; Express
+         grows a tree-walk (`Vyto_express_rows`) so nested rows are sized.  **This is the "cluster of UI
+          bits" spine** — a cluster IS a scope whose children solve inside its cell.  ADDITIVE + gated,
+           so the flat/priced paths are byte-identical (same safe pattern as VytoBreathe) — but the
+            VytoNest `Vyto_solve`/Express edits have NOT had a fresh full-regression re-run with their
+             gen (blocked by the same contention).  **TO FINISH (≈5 min on a free runner):** the record
+              cycle keeps refusing under `--watch` (false-deads/hangs on a busy runner) — use FIRE-AND-POLL
+               instead: `runner_ask run VytoNest` (no --watch) then poll `runner_ask state` to `failed`
+                → `accept` (patient, 150s+, NEVER kill mid-flight) → poll idle → fire-run again → poll to
+                 `done`.  Then re-run the fleet (VytoCell/Staple at least) to close the regression bar.
+- **Sizing ④+⑤ tenanted — LANDED 2026-07-27 (`VytoBreathe`, `Vytonation.g`, GREEN×2 + full Vyto*
+   regression green; model-side only — no display edit).**  The global type-scale is wired into
+    `Vyto_express` as an OPT-IN priced commission (`w.c.priced`, default off → every existing Book
+     byte-identical).  The build FORCED a reframe worth reading: the §9-draft *frame-share* is
+      **vacuous for cells** (power diagrams read only relative radii — normalising to the frame changes
+       nothing and even degrades the ordering).  So the honest ④ is §3's **graph-global importance** —
+        `Vyto_importance` = `1+dose` + a **kinship lift** (the Relate scribe's `%Flow` edge weights on
+         the row, §9③), so a value shared across the graph makes every carrier a bigger cell everywhere.
+          2-D differential (needs BOTH pricing AND kinship): kin oaks outsize a lone pine at equal dose ·
+           unprice → equal · sever kinship → equal.  Detail + owed work in `Vyto_sizing_todo.md §9` (the
+            ⑤-WIRE-LANDED block): taper ⑥ untouched · intra-cell rank owed · preen the `0.5` coefficient.
 - **Foam engine gated + Relate given teeth — LANDED 2026-07-27 (overnight, uncommitted; two Books
    GREEN×2, both adversarially proven, model-side only — no display edit).** After the port
     (`vyto_foam.ts` + Gang/Relate/Focus filled, VytoWeb green — see [[vyto-foam-port-landed]]):

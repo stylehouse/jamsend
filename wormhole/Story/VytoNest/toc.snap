@@ -1,0 +1,23 @@
+story:VytoNest
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.414
+      sample=0.354,at=1785124312
+      sample=0.28,at=1785124374
+      sample=0.608,at=1785124640
+    TimeTotal:step,avg=0.103
+      sample=0.088,at=1785124312
+      sample=0.07,at=1785124374
+      sample=0.152,at=1785124640
+  step,dige:lie
+  step=2,dige:lie,desc:seed a two-level rig — three cogs under the root and two grandchildren under the first
+  step=3,dige:lie,desc:commission the glass nested on the rig and stir to rest
+    Assertion:board-nested,sentence:the glass was commissioned nested on one rig and stood its board
+    Assertion:root-tiles,sentence:the scope recursion fills the frame — the three cogs tessellate the whole root cell so the parent area equals the sum of its children
+    Assertion:deep-tiles,sentence:the recursion goes deeper — the two grandchildren tessellate their parent cog cell exactly so a scope nests inside a scope
+    Assertion:all-seated,sentence:every nested cell took a seat inside the frame — each child and grandchild wears a target with a real radius
+  step=4,dige:lie,desc:re-commission the same tree flat — only the root is cut and the children get no target
+    Assertion:nesting-load-bearing,sentence:the nesting is load-bearing — commissioned flat the same tree seats only the root and its children get no target at all

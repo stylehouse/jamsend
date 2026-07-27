@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1785075429459
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1785120164119
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -105,6 +105,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Story_hygiene_todo.md,name:Story_hygiene_todo.md,noticed_at=1785049776712
     Doc:src/lib/O/spec/Swarm_compact_invite_todo.md,name:Swarm_compact_invite_todo.md,noticed_at=1785073399092
     Doc:src/lib/O/spec/Identity_persist_todo.md,name:Identity_persist_todo.md,noticed_at=1785075429459
+    Doc:src/lib/O/spec/UI_seams_todo.md,name:UI_seams_todo.md,noticed_at=1785120164119
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D

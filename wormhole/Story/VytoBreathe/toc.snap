@@ -1,0 +1,38 @@
+story:VytoBreathe
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.924
+      sample=0.761,at=1785121264
+      sample=0.996,at=1785121842
+      sample=0.996,at=1785121862
+      sample=0.996,at=1785121873
+      sample=0.996,at=1785121880
+      sample=0.996,at=1785121886
+      sample=0.996,at=1785121892
+      sample=0.996,at=1785121898
+      sample=0.746,at=1785122512
+      sample=0.761,at=1785122542
+    TimeTotal:step,avg=0.185
+      sample=0.152,at=1785121264
+      sample=0.199,at=1785121842
+      sample=0.199,at=1785121862
+      sample=0.199,at=1785121873
+      sample=0.199,at=1785121880
+      sample=0.199,at=1785121886
+      sample=0.199,at=1785121892
+      sample=0.199,at=1785121898
+      sample=0.149,at=1785122512
+      sample=0.152,at=1785122542
+  step,dige:08c079fb057ec915
+  step=2,dige:336786be1da5bd2f,desc:seed four cogs — three oak kin sharing a genus and a lone pine all at the same dose
+  step=3,dige:ad26071a007f0094,desc:commission the glass priced on the four cogs and stir to rest
+    Assertion:board-priced,sentence:the glass was commissioned priced on four cogs and stood its board
+    Assertion:kin-bigger,sentence:a cell tied by shared meaning is a bigger cell — each oak sharing its genus outsizes the unrelated pine though every cog carries the same dose
+    Assertion:kin-even,sentence:the three kin cells are sized evenly — each oak carries the same shared-meaning lift so the three take equal seats larger than the lone pine
+  step=4,dige:7aa1019761fc82f6,desc:re-commission the same kin cogs unpriced — shared meaning now buys no size
+    Assertion:unpriced-equal,sentence:without the scale shared meaning buys no size — the same kin cogs take equal base seats when the glass is priced plainly
+  step=5,dige:b74b31fac7199475,desc:sever the kinship then re-commission priced — with no shared genus the oaks shrink to the pine
+    Assertion:severed-equal,sentence:sever the kinship and the size follows — with no shared genus the priced oaks shrink back to the lone pine seat

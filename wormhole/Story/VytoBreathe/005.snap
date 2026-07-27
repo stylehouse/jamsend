@@ -1,0 +1,16 @@
+Snap:H
+  H:VytoBreathe,Run
+    A:VytoBreathe
+      self,round=8	{"mung":["age"]}
+      w:VytoBreathe
+        self,round=8	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:oak1,of:main,genus:oak
+        Cog:oak2,of:main,genus:maple
+        Cog:oak3,of:main,genus:birch
+        Cog:pine,of:main,genus:pine
+        req:price_wait,finished
+        req:unprice_wait,finished
+        req:sever_wait,finished
+        see:the glass was commissioned priced on four cogs and stood its board
+        see:sever the kinship and the size follows — with no shared genus the priced oaks shrink back to the lone pine seat
