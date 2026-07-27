@@ -471,7 +471,9 @@ await M.eatfunc({
     //     signed %Grant (Funk/Grant.ts) off the editor's Rundar rack; the runner holds the grant and
     //      presents it back with every rw-op, which the editor re-verifies and serves against its OWN
     //       handle.  See spec/Cluster_spec.md "beg through the Brink".  All four verbs are additive
-    //        Peeroleum frames (no .g spine change); bytes ride base64 for now (TODO: binary frame).
+    //        Peeroleum frames (no .g spine change); bytes ride an addressed BINARY frame now
+    //         (Lies_send_binary_to — [header]\n[raw buffer], body_hash-integrity, NO base64), with
+    //          base64 kept only for the no-grantee-pub degenerate fallback.
 
     // the held grant atom for THIS runner.  ONE durable home: local .stashed (per Chrome profile,
     //  readable on restart WITHOUT a working nav — the Waft:Cluster copy can't bootstrap, it loads
@@ -2077,8 +2079,14 @@ await M.eatfunc({
                 const state = ac.state
                 const osc = ac.createOscillator()
                 const an  = ac.createAnalyser(); an.fftSize = 2048
+                // the analyser must HEAR the tone (that IS the probe) but the SPEAKER must NOT play it:
+                //  osc → analyser → gain(0) → destination.  The graph is still pulled from the destination
+                //   (so the analyser processes and rms reads the tone, tapped BEFORE the gain), but the zero
+                //    gain downstream means nothing is audible.  The "annoying 1s tone blast / dementia" was
+                //     this probe routing 440Hz straight to ac.destination for 1.5s on every run.
+                const silent = ac.createGain(); silent.gain.value = 0
                 osc.frequency.value = 440
-                osc.connect(an); an.connect(ac.destination)
+                osc.connect(an); an.connect(silent); silent.connect(ac.destination)
                 osc.start()
                 const wall0 = performance.now()
                 await new Promise(r => setTimeout(r, 1500))

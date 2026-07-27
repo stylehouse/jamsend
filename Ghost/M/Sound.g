@@ -46,6 +46,28 @@ Sound_synth(seq):
 Sound_silence():
     return new Float32Array(2400)
 
+// Sound_searching — the SOFT CUE for "no real source yet": a low breathing hum (one ~110Hz sine under a
+//  slow quarter-Hz tremolo, quiet at ~0.06) — NOT the synth CHORD the human rightly called a terrible
+//   bleep-on-error.  A DISTINCT kind from 'synth' on purpose: the entropy-measure Books keep synth's wide
+//    histogram untouched, while the app installs {kind:'searching'} as its radiostock WHILE it digs, and a
+//     real record landing replaces it the instant bytes arrive.  Deterministic (seeded dither, no Math.random).
+Sound_searching(seq):
+    let CHUNK = 2400
+    let SR = 48000
+    let buf = new Float32Array(CHUNK)
+    let base = seq * CHUNK
+    let r = (((seq + 1) * 2654435761) >>> 0)
+    let i = 0
+    while (i < CHUNK) {
+        let t = (base + i) / SR
+        let s = Math.sin(2 * Math.PI * 110 * t) * 0.06 * (0.5 + 0.5 * Math.sin(2 * Math.PI * 0.25 * t))
+        r = (r * 1664525 + 1013904223) >>> 0
+        s += (r / 4294967296 - 0.5) * 0.004
+        buf[i] = Math.max(-1, Math.min(1, s))
+        i = i + 1
+    }
+    return buf
+
 // ── radiostock: the audio SOURCE seam (synth today; real directory-walked records | an override
 //  collection tomorrow).  The caster + the measure-Books pull chunks THROUGH this, so swapping in real
 //   records (or a test-fixture override) re-grounds EVERY audio test at once — no Book learns where its
@@ -56,6 +78,7 @@ Sound_silence():
 //    for the real music-directory walk.
 Sound_radiostock(kind):
     if (kind === 'silence') return { kind: 'silence' }
+    if (kind === 'searching') return { kind: 'searching' }
     let over = H.c.radiostock_override
     if (over) return over
     return { kind: 'synth' }
@@ -65,6 +88,7 @@ Sound_radiostock(kind):
 Sound_stock_chunk(stock, seq):
     if (!stock || stock.kind === 'synth') return this.Sound_synth(seq)
     if (stock.kind === 'silence') return this.Sound_silence()
+    if (stock.kind === 'searching') return this.Sound_searching(seq)
     if (typeof stock.chunk === 'function') return stock.chunk(seq)
     if (stock.chunks) return stock.chunks[seq % stock.chunks.length]
     return this.Sound_synth(seq)

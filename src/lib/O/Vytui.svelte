@@ -104,6 +104,9 @@
     let paint_tick = $state(0)     // the template reads this to re-pull paintMap
     let raf_id = 0                 // 0 = loop stopped
     let last_ts = 0
+    // local UItime chrome state (never snapped): the organ panel is DEV/inspection readout —
+    //  collapsed by default, revealed by the bar toggle.  Room to grow into real layout controls.
+    let show_organs = $state(false)
 
     const grawave = (w: TheC) => Number((w.sc as any).grawave_duration) || 0.4
     const commissioned = (w: TheC) => !!(w.c as any).commission
@@ -301,7 +304,16 @@
 
     // adopt current targets: sync springs to the live member set, reset settle on a real move,
     //  and either jump (parked / hidden tab) or ensure the rAF loop is spinning.
+    //  THE IDLE GATE (the resident-glass CPU fix): a resident world grapples LIVE organs whose
+    //   VALUES churn every heartbeat (Stoker levels, Session counters, Heist), so this effect
+    //    re-fires every stir — but the CELLS sit still (no dose ⇒ constant radii ⇒ the cut is a
+    //     fixed point).  paint_tick MUST bump only when the geometry actually MOVES; an
+    //      unconditional bump re-pulls viewport_cells and re-diffs all nine real-DOM faces every
+    //       heartbeat (and each face, reading its live source, re-renders — the churn feeds
+    //        itself: a core pinned on a standing picture).  So track `changed` and gate the bump.
+    //         Faces stay live regardless: each reads its own source reactively, off paint_tick.
     function adopt(ws: TheC[]) {
+        let changed = false
         for (const w of ws) {
             if (!commissioned(w)) continue
             if (!springs.has(w)) springs.set(w, new Map())
@@ -323,45 +335,65 @@
                     moved = true
                 }
             }
-            for (const tok of [...sp.keys()]) if (!present.has(tok)) sp.delete(tok)
+            let removed = false
+            for (const tok of [...sp.keys()]) if (!present.has(tok)) { sp.delete(tok); removed = true }
 
-            if (parked(w)) { jump_to_target(w); paint_world(w); continue }
+            // parked (a Story run drives) and hidden (a ?B= runner) keep painting unconditionally —
+            //  their determinism and jump-landing depend on it, and neither is a visible CPU burn.
+            if (parked(w)) { jump_to_target(w); paint_world(w); changed = true; continue }
             if (moved) { settleCount.set(w, 0); settledState.set(w, false) }
             if (document.hidden) {
                 // rAF is frozen in a hidden tab (every ?B= runner): land at t→∞, paint, and strike
                 //  settle synchronously (a jump-landing has no wriggle for SETTLE_FRAMES to debounce).
-                jump_to_target(w); paint_world(w)
+                jump_to_target(w); paint_world(w); changed = true
                 if (moved) {
                     settleCount.set(w, SETTLE_FRAMES); settledState.set(w, true)
                     queueMicrotask(() => (H as any).Vyto_settle?.(w))
                 }
-            } else if (moved && raf_id === 0) {
-                last_ts = 0; raf_id = requestAnimationFrame(frame)
+            } else {
+                // the VISIBLE resident path: only a real move or a membership change is worth a
+                //  re-pull.  A move (re)starts the rAF loop, which paints every frame until settle;
+                //   a bare removal needs one paint to drop the departed cell.
+                if (moved && raf_id === 0) { last_ts = 0; raf_id = requestAnimationFrame(frame) }
+                if (moved || removed) changed = true
             }
         }
-        paint_tick++
+        if (changed) paint_tick++
     }
 
-    // the drive: re-run when the model version moves (worlds arrive, the mirror re-scans, a row's
-    //  T retargets).  A row's bump_version on a T change bumps only the ROW, so the walk touches each
-    //   row's vers.  The WORLD's own vers is watched ONLY until Scan mints the mirror — that first
-    //    creation bumps w.vers and is how we pick the glass up.  Once the mirror stands we do NOT read
-    //     w.vers, because the spool's own w.i({Moment}) bumps it on every settle: re-reading it here
-    //      re-armed this effect from its own downstream write — the unbuffered Atime-zap loop
-    //       (reactivity_docs: a sub-particle vers read bypasses the flush gate; the marching-readout
-    //        class).  Membership still re-fires us through mirror.vers; targets through each row's.
+    // the drive: THE REACTION IS THROWN OUT OF THE EFFECT (a trailing-edge setTimeout latch).
+    //  Atime and UItime are NOT as cleanly gated as reactivity_docs implies — H.ave.vers and
+    //   vyto_worlds()'s own H.ob/A.ob reads still leak Atime-frequency bumps — so chasing a
+    //    perfectly gated signal is a losing game.  Instead keep the effect BODY trivial: subscribe
+    //     broadly (so we never miss a change) and just re-arm a timer.  The heavy adopt runs in the
+    //      setTimeout callback, OUTSIDE the reactive context, so (a) its reads take NO subscription
+    //       and can't re-arm the effect (no feedback), and (b) a burst of N bumps folds into ONE
+    //        adopt per REACT_MS window (the Vyto_stir_soon idiom, render side).  The rAF spring loop
+    //         runs at 60fps BETWEEN windows, so motion stays smooth though targets refresh at ~8Hz.
+    //          Hidden ?B= runners stay SYNCHRONOUS: setTimeout is throttled to ~1s in a background
+    //           tab, and a Book's determinism wants adopt inline (rAF is frozen there anyway).
+    let react_pending: any = 0
+    const REACT_MS = 120
+    function react_soon() {
+        if (typeof document !== 'undefined' && document.hidden) { adopt(vyto_worlds()); return }
+        if (react_pending) return
+        react_pending = setTimeout(() => { react_pending = 0; adopt(vyto_worlds()) }, REACT_MS)
+    }
     $effect(() => {
-        const ws = vyto_worlds()
-        for (const w of ws) {
+        // subscribe broadly — the body is O(1)-cheap, so a marching-readout here is harmless: the
+        //  first fire arms the timer, every other fire in the window early-returns.
+        void H?.ave?.vers
+        for (const w of vyto_worlds()) {
             const mirror: any = (w.c as any).mirror
-            if (!mirror) { void w.vers; continue }
-            void mirror.vers
-            for (const r of (mirror.o() as TheC[])) void r.vers
+            if (mirror) void mirror.vers; else void w.vers
         }
-        adopt(ws)
+        react_soon()
     })
-    // teardown: always release the frame loop (calm.md §5's cancelAnimationFrame-on-teardown).
-    $effect(() => () => { if (raf_id) cancelAnimationFrame(raf_id); raf_id = 0 })
+    // teardown: release the frame loop AND the pending reaction (calm.md §5's cancel-on-teardown).
+    $effect(() => () => {
+        if (raf_id) cancelAnimationFrame(raf_id); raf_id = 0
+        if (react_pending) clearTimeout(react_pending); react_pending = 0
+    })
 
     // ── template readers (each reads paint_tick so the snapshot re-pulls) ──────────────────
     function show_viewport(w: TheC): boolean {
@@ -413,17 +445,22 @@
                 <button class="word" class:on={!!b.sc.on} class:act={b.sc.kind === 'act'}
                         title={b.sc.doctrine} onclick={() => press(w, b)}>{b.sc.Bar}</button>
             {/each}
+            <button class="word organs-btn" class:on={show_organs}
+                    title="the organ panel — reads/decides/writes per station (dev; layout controls to come)"
+                    onclick={() => (show_organs = !show_organs)}>organs</button>
         </div>
-        <div class="panel">
-            {#each w.ob({ Organ: 1 }) as o (o.sc.Organ)}
-                <div class="organ">
-                    <span class="name">{o.sc.Organ}</span>
-                    <span class="family">{o.sc.family}</span>
-                    <span class="guts">{sentence(o)}</span>
-                    <span class="status">{o.sc.status}</span>
-                </div>
-            {/each}
-        </div>
+        {#if show_organs}
+            <div class="panel">
+                {#each w.ob({ Organ: 1 }) as o (o.sc.Organ)}
+                    <div class="organ">
+                        <span class="name">{o.sc.Organ}</span>
+                        <span class="family">{o.sc.family}</span>
+                        <span class="guts">{sentence(o)}</span>
+                        <span class="status">{o.sc.status}</span>
+                    </div>
+                {/each}
+            </div>
+        {/if}
         <div class="strip">
             {#each w.ob({ Moment: 1 }) as m (m.sc.Moment)}
                 <span class="tick" class:o={!!m.sc.o} class:blessed={!!m.sc.bless}
@@ -507,6 +544,7 @@
     }
     .word.on  { color: #e8e8f2; border-color: #7a7ad0; background: #26263a; }
     .word.act { border-style: dashed; }
+    .organs-btn { margin-left: auto; }   /* chrome control — sits at the far end of the bar */
     .panel { margin-top: 6px; }
     .organ { display: flex; gap: 8px; align-items: baseline; padding: 1px 0; }
     .organ .name   { width: 4.5em; font-weight: 600; color: #d8d8e8; }

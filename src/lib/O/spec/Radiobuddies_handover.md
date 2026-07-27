@@ -7,6 +7,17 @@ Companions: `Radio_todo.md` (the M-cluster living doc), `Radio_spec.md` (the 9 p
  `Swarm_spec.md` / `Cluster_spec.md` (identity + coordination). This doc sits *above* all of them —
   it is about the seam between the product and the test machine, which no single one of them owns.
 
+> **Orienting header (2026-07-27) — kept, not retired (human).** Read this doc in two halves.
+>  **DONE / historical:** the §5 REGROUP has largely landed — `Ghost/M/Sound.g` and `Ghost/N/Repli.g`
+>   exist (the two slabs were extracted from `Musuation.g`); the audio pipeline has since been reborn
+>    *again* into `Ghost/M/Ra.g` (`rastock→racast→raterm`), which postdates this doc, so the §3 family
+>     table's `Radiola`/`Sound_*` names have partly diverged from the shipped `Ra_*`.
+>  **STILL LIVE and why it's kept:** §0-1 — the name **Radiobuddies** and the destination *"the app
+>   runs with `Ghost/Story/*` deleted"* (the Layer-0 goal directly behind the open question "run
+>    `w:Sounditron` without Story around it", see `Sounditron_todo §0.C`); and §6 — the frontier
+>     (audio-plays-across-the-wire, two-runner multicast, share-by-identity discovery), which is the
+>      same cross-machine gate now mapped in `Frontier.md`. So: concept compost, not history.
+
 ---
 
 ## 0 — The name

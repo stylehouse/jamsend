@@ -297,6 +297,37 @@
         return prepub ? { prepub, nick: (ident!.sc.nick as string) || cluster_name(prepub) } : undefined
     },
 
+    // Clustation_roster — the identities THIS machine holds, for the Invite panel's SEE + SWITCH.
+    //  Every stored identity Thang, deduped to one row per prepub (a rename stores the SAME identity
+    //   under both its prepub tag AND its role tag, so the same key appears twice — collapse them,
+    //    preferring the row that carries a friendly).  PUBLIC bits only — never the secret key.  The
+    //     active one is flagged so the panel can mark "you are here".  Read-only: a switch is a
+    //      ?I=<prepub> boot (a fresh fork is ?I=new), not a mutation here.
+    Clustation_roster(this: House, H?: House): Array<{ prepub: string; nick: string; friendly?: string; born?: string; active: boolean }> {
+        H = (H ?? this) as House
+        const top = (H.top_House?.() ?? H) as House
+        const A = (top.o({ A: 'Clustation' }) as TheC[])[0]
+        if (!A) return []
+        const active = (top.c as any)?.active_identity?.sc?.prepub
+            ?? (A.o({ Identity: 1 }) as TheC[]).find(i => i.sc.active)?.sc?.prepub
+        const wT = (A.o({ w: 'Thangs', thangs: 'identities' }) as TheC[])[0]
+        const by = new Map<string, { prepub: string; nick: string; friendly?: string; born?: string; active: boolean }>()
+        for (const t of (wT ? (wT.o({ thang: 1 }) as TheC[]) : [])) {
+            const s = (t.sc as any)?.stashed
+            if (!s?.prepub || !s?.pub) continue               // a real, keyed identity only
+            const had = by.get(s.prepub)
+            if (had && !(s.friendly && !had.friendly)) continue
+            by.set(s.prepub, {
+                prepub: s.prepub,
+                nick: cluster_name(s.prepub),
+                friendly: s.friendly,
+                born: s.born ? new Date(s.born).toISOString().slice(0, 10) : undefined,
+                active: s.prepub === active,
+            })
+        }
+        return [...by.values()]
+    },
+
     // Clustation_ensure_default — "this page always has an identity."  When a toplevel opts in
     //  (boot_qualand stamps H.c.id_role + assume_identity) and no ?I= was given and none is active yet,
     //   RESUME the identity stored under this page's ROLE (sound|word|runner|editor), or mint a fresh one

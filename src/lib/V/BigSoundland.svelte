@@ -53,14 +53,46 @@
     //  ?VY=1 — THE FIRST TENANT GATE (the Vyto moult): under the gate the page seats the NEW glass
     //   instead (Vytui, UI:'Vyto', same H prop) and Sounditron_glass commissions Vyto not Cyto; the
     //    ungated page stands exactly as before.
-    const vy = !!boot_param('VY')
+    // The glass — mount whichever the WORLD commissioned, Vyto PREFERRED.  The ?VY=1 URL gate is
+    //  RETIRED (2026-07-27): a world chooses its own glass (Sounditron commissions Vyto; another Book
+    //   may still commission Cyto) and the page just reflects that choice.  The badge reports which
+    //    actually stood.  Vyto wins across ALL houses before any Cyto fallback is taken.
     let cyto = $derived.by(() => {
+        let fallback
         for (const house of houses) {
             void house.UIs.version
-            const ui = house.UIs.ob({ UI: vy ? 'Vyto' : 'Cyto' })[0]
-            if (ui) return { house, ui }
+            const vyto = house.UIs.ob({ UI: 'Vyto' })[0]
+            if (vyto) return { house, ui: vyto }
+            const cy = house.UIs.ob({ UI: 'Cyto' })[0]
+            if (cy && !fallback) fallback = { house, ui: cy }
         }
-        return undefined
+        return fallback
+    })
+
+    // ?VY=1 TRACE — when the badge is stuck at "no glass yet", walk for the A:Vyto world the
+    //  commission stands and report what REALLY happened, the one thing the badge can't:
+    //   • stood  — the A:Vyto>w:Vyto world exists (Sounditron_glass ran its VY block)
+    //   • landed — w:Vyto.c.commission is set (e_Vyto_commission actually PROCESSED — the
+    //               deferred elvis was pumped; if this stays false the world is off the pump)
+    //   • rows   — its error/rebuff/see breadcrumbs (a fired-but-refused commission shows here)
+    //  Diagnostic-only ($derived, cheap), and only meaningful under VY.
+    let vyto_trace = $derived.by(() => {
+        if (cyto?.ui.sc.UI === 'Vyto') return undefined   // Vyto is up — nothing to trace
+        for (const house of houses) {
+            void house.version
+            const a = house.o?.({ A: 'Vyto' })?.[0]
+            if (!a) continue
+            void a.version
+            const vw = a.o?.({ w: 'Vyto' })?.[0]
+            if (!vw) return { where: house.name, stood: false, landed: false, rows: [] as string[] }
+            void vw.version
+            const rows: string[] = []
+            for (const key of ['error', 'rebuff', 'see']) {
+                for (const r of (vw.o?.({ [key]: 1 }) ?? [])) rows.push(`${key}: ${r.sc[key]}`)
+            }
+            return { where: house.name, stood: true, landed: !!vw.c?.commission, rows }
+        }
+        return { where: null, stood: false, landed: false, rows: [] as string[] }
     })
 
     // the spine shims — the load-bearing plumbing.  A runner ACQUIRES each spine ghost by enrolling a
@@ -167,6 +199,17 @@
     <header class="scape-top">
         <span class="scape-name" title="BigSoundland — the music scape: Voronoi stained glass graphs of music (the /BigSoundland route)">◈ BigSoundland</span>
         <span class="scape-book">{book}</span>
+        <!-- WHICH GLASS is actually mounted — the definitive VYTO/CYTO tell.  Under ?VY=1 the page
+             seats UI:'Vyto' instead of Cyto; both draw voronoi cells and look alike, so without this
+              badge "is it Vyto?" is a guess.  It reports what REALLY rendered: the mounted component's
+               own UI key, or (when VY is asked but nothing seated) that the Vyto glass hasn't stood up. -->
+        {#if cyto}
+            <span class="scape-glass-badge" class:vy={cyto.ui.sc.UI === 'Vyto'}
+                  title="the glass component mounted full-bleed below (its House: {cyto.house?.name})">{cyto.ui.sc.UI === 'Vyto' ? '◇ VYTO' : '◈ CYTO'}</span>
+        {:else}
+            <span class="scape-glass-badge waiting"
+                  title="no glass has registered yet — the world hasn't commissioned one (Sounditron commissions Vyto).  The diagnostic below shows the boot state.">◇ no glass yet</span>
+        {/if}
         {#if sprawl}
             <!-- the jump toc — one chip per House with UIs; click scrolls to its section + arms its actions -->
             <nav class="scape-toc">
@@ -239,7 +282,10 @@
             <div class="diag-line">
                 <span class="diag-dot" class:on={boot_state.story_stood}></span>
                 {#if boot_state.story_stood}
-                    the run stood up — waiting for its graph to draw as glass
+                    the run stood up — waiting for the world to commission its glass.  Sounditron
+                     commissions <b>Vyto</b> on its organs (Radio · Stoker · Tuner · Door · Zine ·
+                      Riffle …); if this persists the commission didn't seat a <code>UI:'Vyto'</code> —
+                       the trace below says where it's stuck.
                 {:else if boot_state.creduler_up}
                     ⏳ the Creduler is loading the spine — a plain / tab with no identity / share / relay
                      may never acquire it (see the header note)
@@ -252,6 +298,19 @@
                     <span class="diag-h" class:on={h.started}>{h.name}</span>
                 {/each}
             </div>
+            <!-- the VY commission trace — pins WHERE the Vyto glass is stuck (see vyto_trace) -->
+            {#if vyto_trace}
+                <div class="vyto-trace">
+                    <span class="vt-flag" class:ok={vyto_trace.stood}>{vyto_trace.stood ? '✓' : '✗'} A:Vyto world stood{#if vyto_trace.where} · under {vyto_trace.where}{/if}</span>
+                    <span class="vt-flag" class:ok={vyto_trace.landed}>{vyto_trace.landed ? '✓' : '✗'} e_Vyto_commission processed (commission set)</span>
+                    {#each vyto_trace.rows as row}
+                        <span class="vt-row">{row}</span>
+                    {/each}
+                    {#if vyto_trace.stood && !vyto_trace.landed}
+                        <span class="vt-row hint">world stood but commission never processed — the A:Vyto world is off the think pump (c.up / deferred-elvis race)</span>
+                    {/if}
+                </div>
+            {/if}
             {#each run_uis as { house, ui } (keyser(ui.sc))}
                 <div class="diag-ui">
                     <span class="diag-tag">{house.name} · {ui.sc.UI}</span>
@@ -311,6 +370,25 @@
         color: #9fb2d8; text-shadow: 0 0 14px rgba(140, 170, 230, 0.4);
     }
     .scape-book { font-size: 0.75rem; color: rgba(150, 170, 205, 0.6); }
+
+    /* the glass badge — which stained glass actually mounted.  Cyto (◈, cool blue) is the standing
+       default; Vyto (◇, warm amber) is the moult — deliberately a DIFFERENT hue + glyph so the two
+        voronoi glasses are never confused at a glance.  `.waiting` = VY asked, nothing seated yet. */
+    .scape-glass-badge {
+        font-size: 0.72rem; letter-spacing: 0.12em; font-family: monospace;
+        padding: 0.08rem 0.5rem; border-radius: 999px;
+        color: #bcd0f2; border: 1px solid rgba(150, 190, 240, 0.45);
+        background: rgba(120, 150, 210, 0.12);
+    }
+    .scape-glass-badge.vy {
+        color: #ffd9a0; border-color: rgba(240, 190, 120, 0.6);
+        background: rgba(210, 160, 90, 0.16);
+        box-shadow: 0 0 12px rgba(230, 180, 110, 0.35);
+    }
+    .scape-glass-badge.waiting {
+        color: rgba(240, 200, 150, 0.75); border-color: rgba(240, 190, 120, 0.35);
+        background: none; border-style: dashed;
+    }
 
     /* the jump toc — chips that scroll to each House's section (sprawl only) */
     .scape-toc { display: flex; align-items: baseline; gap: 0.15rem; flex-wrap: wrap; min-width: 0; }
@@ -406,6 +484,18 @@
         padding: 0.05rem 0.4rem;
     }
     .diag-h.on { color: #cfe0ff; border-color: rgba(150, 190, 240, 0.5); }
+
+    /* the VY commission trace — a small ledger of where the Vyto glass got stuck */
+    .vyto-trace {
+        display: flex; flex-direction: column; gap: 0.2rem;
+        padding: 0.5rem 0.7rem; border-radius: 8px;
+        background: rgba(210, 160, 90, 0.07); border: 1px solid rgba(230, 180, 110, 0.22);
+        font-family: monospace; font-size: 0.72rem;
+    }
+    .vt-flag { color: rgba(230, 150, 120, 0.85); }
+    .vt-flag.ok { color: #8fd6a2; }
+    .vt-row { color: rgba(200, 210, 230, 0.7); padding-left: 0.9rem; }
+    .vt-row.hint { color: rgba(240, 200, 150, 0.8); font-style: italic; }
     .diag-ui { position: relative; padding-top: 1.1rem; }
     .diag-tag {
         position: absolute; top: 0; left: 0.15rem;

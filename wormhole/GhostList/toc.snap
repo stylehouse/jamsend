@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1785120164119
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1785147790520
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -106,6 +106,13 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Swarm_compact_invite_todo.md,name:Swarm_compact_invite_todo.md,noticed_at=1785073399092
     Doc:src/lib/O/spec/Identity_persist_todo.md,name:Identity_persist_todo.md,noticed_at=1785075429459
     Doc:src/lib/O/spec/UI_seams_todo.md,name:UI_seams_todo.md,noticed_at=1785120164119
+    Doc:src/lib/O/spec/Vyto_client.md,name:Vyto_client.md,noticed_at=1785146198836
+    Doc:src/lib/O/spec/Frontier.md,name:Frontier.md,noticed_at=1785147316827
+    Doc:src/lib/O/spec/Heist_design.md,name:Heist_design.md,noticed_at=1785147387491
+    Doc:src/lib/O/spec/Mag_design.md,name:Mag_design.md,noticed_at=1785147475859
+    Doc:src/lib/O/spec/CodeReview_todo.md,name:CodeReview_todo.md,noticed_at=1785147790520
+    Doc:src/lib/O/spec/Radio_design.md,name:Radio_design.md,noticed_at=1785147790520
+    Doc:src/lib/O/spec/Sharing_design.md,name:Sharing_design.md,noticed_at=1785147790520
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D

@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return '8f0e78c47213aa32~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return '045de2c844510424~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -524,6 +524,12 @@ async Repli_recv_lines(w, pier, frame) {
         if (c.sc && c.sc.Record) {
             c.c.from = frame.header.from
             c.c.rx = pier
+            // OWED (attended, pairs with a SwarmShare re-record): stamp a
+            //  SNAPPABLE twin `c.sc.from = String(frame.header.from)` here, GATED on
+            //   `w.c.repli_mirror_by_from`, so source attribution survives snap+reload+wire (a .c ref
+            //    dies with the process; over the real relay the source is invisible to a reloaded
+            //     face).  Held back tonight because it moves SwarmShare's fixtures and the re-record
+            //      needs a live runner — land the line + re-record + declare in one attended sitting.
         }
     }
     w.c.repli_tick = (w.c.repli_tick || 0) + 1
@@ -562,6 +568,7 @@ Repli_attach_page(w, pier, id, bytes) {
     pier.c.awaiting = pier.c.awaiting || {}
     let mirror = pier.c.awaiting[id]
     if (!mirror) return
+    let landed = 0
     if (mirror.c.await_bufk) {
         let u8 = new Uint8Array(bytes.length)
         u8.set(bytes)
@@ -575,6 +582,7 @@ Repli_attach_page(w, pier, id, bytes) {
             mirror.c.breach = 'cid'
         } else {
             mirror.sc[mirror.c.await_bufk] = u8
+            landed = 1
         }
         mirror.c.await_bufk = null
         mirror.c.await_buffer = null
@@ -586,7 +594,18 @@ Repli_attach_page(w, pier, id, bytes) {
         mirror.c.await_buffer = null
         mirror.sc.got = (+(mirror.sc.got || 0)) + 1
         mirror.bump()
+        landed = 1
     }
+    // LANDING SIGNAL (generic; music-agnostic): a real chunk just filled.  A consumer that wants to
+    //  react the instant bytes cross — the radio waking a digging playhead mid-poll, never waiting out
+    //   its 3s dig look — registers w.c.repli_on_land; unset, this costs nothing.  A breach (bytes
+    //    refused, chunk still UNFILLED) does NOT fire it: presence is fill state, so nothing plays.
+    //  FIRE ON THE MIRROR WORLD: in the live share Repli_arm runs on the STATION world, but the mirror
+    //   crates AND the radio (which registered the hook in Radio_ensure) live in w.c.repli_mirror_w —
+    //    the run/radio world.  Without this hop the wake lands on the wrong world and never nudges
+    //     (the audit's CRITICAL).  Solo/no-share: repli_mirror_w is unset, so it falls back to w itself.
+    let land_w = w.c.repli_mirror_w || w
+    if (landed && land_w.c.repli_on_land) { try { land_w.c.repli_on_land(land_w, mirror) } catch (er) {} }
     delete pier.c.awaiting[id]
     if (pier.c.bufs) delete pier.c.bufs[id]
     // the holding req has SERVED: its bytes landed, so RETIRE it whole rather than leave a landed+finished

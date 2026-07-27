@@ -39,6 +39,13 @@ Radio_ensure(w):
     // heard-this-sitting: the ids the dial already played (runtime memory, never snapped —
     //  a radio forgets on reload, honestly; durable taste is the Booth's job, not this).
     if (!radio.c.heard) radio.c.heard = {}
+    // WAKE ON A CROSS-PIER LANDING (the missing twin of the stoker's Radio_nudge): the local dig
+    //  nudges a digging radio the moment a track stands (Stoker_look), but a friend's chunk crossing
+    //   the wire had NO such wake — it landed and the playhead waited out its 3s dig poll (the "why
+    //    isn't it audible in a second" gap).  Repli fires w.c.repli_on_land when an inbound chunk
+    //     fills; nudge on it, so a friend's first preview starts the instant it crosses.  Idempotent
+    //      (Radio_nudge no-ops unless the radio is 'digging'); re-registered per ensure is harmless.
+    w.c.repli_on_land = (ww) => { try { this.Radio_nudge(ww) } catch (er) {} }
     return radio
 
 Radio_state(radio, state):
@@ -366,6 +373,14 @@ async Radio_supply_go(radio, era, rec):
     let total = +(rec.sc.total || 0)
     let P = +(rec.sc.preview || 0)
     if (!(total > P)) return
+    // a FRIEND's record (rec.c.from set) is supplied over the WIRE, not by a local transcode: its
+    //  source lives on THEIR disk, so Ra_transcode_ensure here ALWAYS fails and used to CAP the track
+    //   at its 32s preview ("preview only — source unreadable" — a lie: it IS readable, over the wire).
+    //    That cap is exactly "friend tracks cut at 32s / doesn't play well".  Leave the continuation to
+    //     the remote pull (Swarm_share_beat keeps the wire ahead of the real playhead, head+16); the
+    //      pump plays what lands and starve-splices any gap.  NEVER cap a wire record — no local source
+    //       to read, and capping it throws away the pages the wire is already pulling.
+    if (rec.c.from) return
     while (radio.c.era === era && radio.c.rec === rec) {
         let m = this.Radio_map(rec)
         let missing = 0

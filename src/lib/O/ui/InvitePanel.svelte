@@ -164,6 +164,27 @@
         } catch (e) { name_err = 'not saved — ' + String(e).slice(0, 60) }
     }
 
+    // ── RENAME ANYTIME + SWITCH IDENTITY ─────────────────────────────────────────────────────
+    //  A name is not a one-time gate: the ✎ re-opens the editor whenever, persisting the same way
+    //   (Clustation_friendly).  The roster shows WHICH self this tab is and the others this machine
+    //    holds; a switch is a ?I=<prepub> boot (a fresh fork is ?I=new), so it RELOADS as that Pier
+    //     with the address bar carrying it — the way to be two Piers on one machine (presence needs
+    //      two distinct pubs; a role-default page shares one identity across every tab).
+    let renaming = $state(false)
+    function rename_open() { name_draft = self?.sc?.friendly || ''; name_err = ''; renaming = true }
+    async function rename_save() { await name_save(); if (!name_err) renaming = false }
+    let roster = $derived.by(() => {
+        void H?.version
+        try { return typeof H?.Clustation_roster === 'function' ? (H.Clustation_roster() as any[]) : [] } catch { return [] }
+    })
+    function go_identity(tag: string) {
+        if (typeof window === 'undefined') return
+        const u = new URL(window.location.href)
+        u.searchParams.set('I', tag)
+        u.searchParams.delete('Iz')     // a deliberate switch drops any stale landing token
+        window.location.assign(u.toString())
+    }
+
     // ── LAND (?Iz= in this page's own URL, OR a link pasted below) ────────────────────────────
     //  `iz` is the token we'll redeem — seeded from a scan-landing ?Iz, but the paste-a-link row
     //   (below) can REPLACE it so you accept an invite as the identity you're ALREADY booted as
@@ -205,6 +226,27 @@
     $effect(() => {
         if (H?.c) H.c.door = { iz: !!iz, landed: !!invite, from: invite?.friendly || invite?.prepub || '', note: joined || iz_err || '' }
     })
+    // strip_iz — drop the spent-or-complete invite token from the address bar (the human: "the
+    //  Invite should be removed from the page location if spent or complete").  A single-use ?Iz
+    //   that has been redeemed — successfully OR refused — is DEAD, and a reload that re-presented
+    //    it only ever showed "did not verify".  So drop it on every terminal state, not just the
+    //     pinned-success path that used to gate it.  Optionally pin the identity onto the bar in the
+    //      same replaceState (?I=<prepub>) so the reload resumes as this self, never a role stranger.
+    function strip_iz(pin_prepub?: string) {
+        if (typeof window === 'undefined' || !window.history?.replaceState) return
+        const u = new URL(window.location.href)
+        if (!u.searchParams.has('Iz')) return
+        u.searchParams.delete('Iz')
+        if (pin_prepub) u.searchParams.set('I', pin_prepub)
+        window.history.replaceState(null, '', u.toString())
+    }
+    // a landed ?Iz that will not parse is a DEAD token (malformed, or a single-use blob already
+    //  spent on an earlier scan) — clean it out of the bar so a reload starts fresh instead of
+    //   re-surfacing the same dead offer.  Only the URL's OWN token (landed_url); a pasted one
+    //    lives in the paste row, not the location.
+    $effect(() => {
+        if (iz_err && landed_url) strip_iz()
+    })
     // JOIN — the frontier rung, live: our own station up, a %Pier promoted to the inviter's
     //  prepub, the ws open + hello-bound, then the proven redeem. The seal (their pier_accept)
     //   lands asynchronously — watch for the account %Pier so "joined" means SEALED, not just
@@ -222,22 +264,18 @@
         }
         await sleep(400)   // one beat for the signed hello-bind to land at the relay
         const claim = await H.Swarm_redeem(w, self, iz)
-        if (!claim) { joined = '✗ the inviter refused or is unreachable — the rebuff rides the identity'; return }
+        // SPENT even on refusal: a single-use ?Iz is consumed by the attempt, so drop it either way
+        //  — a lingering dead blob only re-fails on reload.
+        if (!claim) { strip_iz(); joined = '✗ the inviter refused or is unreachable — the rebuff rides the identity'; return }
         // the ?Iz is SPENT the moment the redeem lands — swap the address bar to ?I=<prepub>
         //  RIGHT HERE, not after the seal-watch: gating the swap on an 8s seal window stranded
         //   ?Iz whenever the seal ran late, and a reload then re-presented a dead blob ("did
         //    not verify").  PIN first (Clustation_pin's why): a role-tagged default self is
         //     stored only under its role, and an unpinned ?I=<prepub> reload would mint a
-        //      stranger — the friendship left on the old key.
-        if (self?.sc?.prepub && typeof window !== 'undefined' && window.history?.replaceState) {
-            const pinned = await H.Clustation_pin?.()
-            if (pinned) {
-                const u = new URL(window.location.href)
-                u.searchParams.delete('Iz')
-                u.searchParams.set('I', String(self.sc.prepub))
-                window.history.replaceState(null, '', u.toString())
-            }
-        }
+        //      stranger — the friendship left on the old key.  Pin gates only the ?I= SET; the
+        //      ?Iz DROP is unconditional (a spent token must never survive, pinned or not).
+        const pinned = self?.sc?.prepub ? await H.Clustation_pin?.() : null
+        strip_iz(pinned ? String(self.sc.prepub) : undefined)
         joined = '… hello delivered — waiting for the seal'
         const sealed = await wait_for(() => H.Swarm_peering(self)?.o({ Pier: 1, pub: invite.prepub })[0], 8000)
         // no seal — the inviter's pier_reject (heard by the station) rides the identity as a
@@ -315,7 +353,31 @@
     {/if}
     {#if self}
         <div class="ip-mint">
-            <span class="ip-title">⨳ <b>{self.sc.friendly || self.sc.nick || self.sc.prepub}</b></span>
+            <span class="ip-title">
+                ⨳ <b>{self.sc.friendly || self.sc.nick || self.sc.prepub}</b>
+                <span class="ip-pub" title="your address (prepub) — this is who you are on the wire">{String(self.sc.prepub ?? '').slice(0, 8)}</span>
+                {#if !renaming}<button class="ip-pen" onclick={rename_open} title="change your name — friends see this">✎</button>{/if}
+            </span>
+            {#if renaming}
+                <span class="ip-row">
+                    <input class="ip-name" bind:value={name_draft} placeholder="your name"
+                        onkeydown={(e) => { if (e.key === 'Enter') rename_save(); if (e.key === 'Escape') renaming = false }} />
+                    <button class="ip-act" onclick={rename_save} title="save">✓</button>
+                    <button class="ip-act" onclick={() => renaming = false} title="cancel">✕</button>
+                </span>
+                {#if name_err}<span class="ip-note">⚠ {name_err}</span>{/if}
+            {/if}
+            <!-- SWITCH IDENTITY — which self this tab is, and the others this machine holds.  A
+                 switch RELOADS as ?I=<prepub> (fork = ?I=new): the way to run two Piers on one
+                 machine, since a role-default page shares one identity across every tab. -->
+            <span class="ip-row ip-ids">
+                {#each roster.filter(r => !r.active) as r}
+                    <button class="ip-idchip" onclick={() => go_identity(r.prepub)}
+                        title="switch this tab to be {r.friendly || r.nick} · {r.prepub}">↪ {r.friendly || r.nick}</button>
+                {/each}
+                <button class="ip-idchip fork" onclick={() => go_identity('new')}
+                    title="fork a fresh identity — this tab becomes a brand-new Pier (?I=new)">＋ new identity</button>
+            </span>
             {#if !named && !iz}
                 {@render namer('what do friends call you? the name rides your invites')}
             {/if}
@@ -404,6 +466,20 @@
         border-radius: 5px; font-size: 0.78rem; padding: 0.15rem 0.5rem; width: 11rem;
     }
     .ip-name:focus { border-color: #77a; outline: none; }
+    .ip-pub { font-size: 0.66rem; color: #778; font-family: monospace; margin-left: 0.35rem; }
+    .ip-pen {
+        background: none; border: none; color: #889; cursor: pointer;
+        font-size: 0.72rem; padding: 0 0.25rem;
+    }
+    .ip-pen:hover { color: #fff; }
+    .ip-ids { flex-wrap: wrap; gap: 0.3rem; }
+    .ip-idchip {
+        background: #1a1a26; border: 1px solid #383850; color: #99a;
+        cursor: pointer; font-size: 0.68rem; padding: 0.1rem 0.45rem; border-radius: 5px;
+    }
+    .ip-idchip:hover { border-color: #77a; color: #fff; }
+    .ip-idchip.fork { border-style: dashed; color: #8a8; }
+    .ip-idchip.fork:hover { border-color: #7a7; color: #dfd; }
     .ip-friends { display: flex; flex-direction: column; gap: 0.25rem; align-self: center; }
     .ip-friend {
         font-size: 0.75rem; color: #cb9; white-space: nowrap;

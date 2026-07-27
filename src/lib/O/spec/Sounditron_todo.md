@@ -8,6 +8,111 @@ The one living doc for the Sounditron thread: /BigSoundland's resident Book that
 
 ## 0. What to get on with next
 
+**2026-07-28 — CONTINUOUS MUSIC (Stream B) EXECUTED overnight (human's go: "play the trick · fold
+ onto BigSoundland · soft searching cue" + "get on with it").  Compile-proven, NOT yet live-verified
+  (two-Pier proof needs the human — see the recipe).**
+
+*The real diagnosis (from Righto/Lefto Step:7 snaps the human pasted).* The bytes were NEVER the
+ problem: two BigSoundland tabs are two JS contexts, so they cross the **relay** (Socket_real), not
+  the in-process loopback — and the snaps PROVE the cross-Pier preview pull works over it (each side
+   holds the other's `%Preview` chunks, `stage:previewed`). The bug was `Radio:off` on both: the
+    previews landed and just sat there — nothing pressed play, nothing dialed the friend's previewed
+     record. NOT slowness, NOT the carrier. (This is also the "one gate" of `Frontier.md §1` more
+      crossed than that doc admits — two distinct Piers exchanged real chunks over the relay.)
+
+*What landed (all four `.g`/`.svelte` compile clean; gen written; InvitePanel bundle-proof HTTP 200):*
+- **The missing wake (`Repli.g` + `Radio.g`).** The local dig nudges a digging radio the instant a
+   track stands (`Radio_nudge`, `Stoker_look`) — but a friend's chunk crossing the wire had NO such
+    wake, so the playhead waited out its 3s dig poll (the "why isn't it audible in a second" gap).
+     `Repli_attach_page` now fires a generic `w.c.repli_on_land` on a real landing (breach = no fire);
+      `Radio_ensure` subscribes it to `Radio_nudge`. Cross-Pier landing now wakes the radio at once.
+- **Sounditron plays the trick (`Sounditron.g`).** Beat 6 now presses the radio **muted + detached**
+   (`Radio_go opts.mute`; detached because `Sound_gat`'s resume pends on a gestureless tab — the
+    step-6 deadlock law), aimed at a friend's previewed record (`Radio_dial_pool` → `tune_rec`, played
+     first). The decode+schedule pipeline runs gesture-free (AudioDecoder needs no resume), so
+      `radio.c.seq` advances — the snap-provable trick — even where muted output reaches no speaker.
+       New witness lines: `the music played — record chunks decoded onto the live timeline` (contract)
+        and `music from a friend played — their track streamed off their shelf over Repli`
+         (opportunistic — latches only with a peer online). The **4th Heist Need** ("the pull itself"),
+          never-checked before, now goes `met` when a friend record holds its first chunk
+           (`Sounditron_pulled`). A `slow to sound` %log fires if time-to-first-chunk > 2s.
+- **The soft searching cue (`Sound.g`).** New `Sound_searching` (a low ~110Hz breathing hum at ~0.06,
+   the human's "not dead-silent" pick) + a DISTINCT `searching` radiostock kind, so the entropy-measure
+    Books keep synth's wide histogram untouched. NOTE the app path never actually installs synth
+     (only Musuation test Books + Mixer do) — a no-share tab digs SILENT today, so the cue is a
+      primitive **still to be wired into the dial** (see owed, below).
+- **Invite leaves the URL when spent OR complete (`InvitePanel.svelte`).** `strip_iz` now drops `?Iz`
+   on a refused redeem and on a dead/unparseable landed token too — not only the pinned-success path
+    that used to gate it (a reload no longer re-presents a dead blob).
+
+**→ THE HUMAN'S NEXT MOVES (live-runner gestures I can't do solo):**
+1. **Hard-reload Righto + Lefto** (they hold pre-change gen; the NEW methods `Sounditron_listen`/
+    `_pulled` need a reload, not HMR). Run Sounditron on both. Expect: `Radio` flips to `playing`,
+     `radio.sc.title` shows a friend's track, seq advances, the 4th Heist Need goes `met`. THAT is the
+      trick, witnessed.
+2. **Fixtures: the committed (solo) ones stay GREEN — no re-record needed.** `Sounditron_listen`
+    early-returns unless a friend's previewed track is actually ready (`Radio_dial_pool`), so a
+     solo/CI run is byte-identical to before (radio stays off, no new rows, the new %sworn don't
+      fire). Only the TWO-PIER environment (Righto/Lefto, each other's peer) presses play → adds
+       `Radio:playing`+title+seq — but that environment already reds the solo shelf's fixtures by
+        construction (the Book's stated regime), so nothing regressed. Record the two-Pier state as a
+         fixture only if you WANT it as a gate ([[force-clean-rerecord]]); otherwise leave it.
+3. **Declare the 3 new %sworn** via the declare door (`runner_ask declare`) so they're contract, not
+    undeclared caveats ([[sworn-assertioning-rulings]]).
+4. **Owed — wire the searching cue into the dial** (Stream B tail): a no-share/ digging radio should
+    play `Sound_searching` (mint a searching-record, or a dial fallback) instead of dead silence,
+     superseded by real records on landing. Touches the radio dial/caster → the Vyto-adjacent zone +
+      needs AUDIBLE verification (a gesture), so left for the human to steer.
+
+**2026-07-27 — the human's fresh asks: FASTER STEPS + CONTINUOUS MUSIC (write-down + parallel
+ plan; do NOT execute — human still reading).**  *(Stream B now executed above, 2026-07-28; Stream A
+  step-speed + Stream C standalone still owed.)*
+
+**A. The steps take too long.** Likely the Story step-*driver*, not the organs: `story_drive`'s
+ `poll_step` re-arms at 50ms with no visibility gate (~20 belief passes/sec while `run.c.driving`),
+  and event-paced beats sit on their wait ceilings (`stoker_wait` 30s, `peer_wait` 12s) until real
+   state changes — a never-settling `expecting()`/ttlilt holds the run open. Levers, cheapest
+    first: (1) shorten/parallelise wait ceilings where a beat waits on something already knowable;
+     (2) hunt a never-settling expecting (a live ttlilt in `got_snap` = timed out); (3) a
+      `document.hidden` gate on `poll_step` — **CORE SEAM, needs the human's blessing**
+       ([[fight-back-on-core-changes]]). Connects to C below — the driver overhead is exactly what
+        Story adds.
+
+**B. It's a 1s bleep, not continuous music.** Two independent causes to run down:
+- **Source ladder.** The production dig tries bases `['music','',testsounds']` (`Radio.g:844`) —
+   root IS searched, `testsounds/` is only the last-resort fallback. **But Sounditron's own ladder
+    is `['testsounds','music','']` (`Sounditron.g:371`) — it tries `testsounds` FIRST**, which is
+     why the resident probe favours the 8-track fixture. Open FSA at `/music` (files at the root)
+      and it still falls through to `''` root when no `testsounds/`/`music/` subdir is present — but
+       reordering Sounditron's ladder (or dropping `testsounds` for the resident probe) is the
+        direct lever.
+- **Synth vs real-file.** Separately, `Sound.g`'s `Sound_synth` is a generated PCM source ("synth
+   today, real directory-walked collection tomorrow" — `Sound.g:9/54/61`); a generated ~1s chord is
+    itself a candidate for the "bleep." **Confirm which path feeds the live player** — the Ra.g
+     real-file stream (`Crate_nav_meander`→`Ra_stock`→`rastock→racast→raterm`) or `Sound_synth`.
+      Continuous real music = the live player on the real-file dig + the gapless pump ([LIVE]) not
+       bleeping.
+
+**C. Run `w:Sounditron` without Story around it** (the human's question). Sounditron today is a
+ Book — its beats are driven by the Story step-runner; it does not need a fixed step *count*, but
+  the world only progresses because the driver runs belief passes. Booting the world standalone is
+   the **Layer-0 destination in `Radiobuddies_handover §1`** ("the app runs with `Ghost/Story/*`
+    deleted") — a real build (decouple the organs from the beat-driver so they self-tick), not a
+     "hit the world" switch. Doing it also removes the (A) overhead — A and C are the same lever
+      from two ends.
+
+**Parallelisation (disjoint code → safe to run concurrently, on the human's go):**
+- **Stream A — step-speed diagnosis** (read-only first): trace where the wall-clock goes (wait
+   ceilings vs `poll_step` vs a stuck expecting). No core edit without blessing.
+- **Stream B — continuous music**: the Sounditron source ladder + synth-vs-real-file source-of-truth
+   + gapless confirm. Needs the human to confirm which path feeds the live player.
+- **Stream C — the cross-machine crossing** (`Frontier.md §1`): needs the human for R1 (seal two
+   tabs).
+A (perf/driver), B (audio source), C (transport) touch disjoint code — genuinely parallel. Gated on
+ the human's go; not started.
+
+---
+
 **THE WEDGE IS DEAD — Sounditron is LIVE-GREEN ×3** (2026-07-18: uids 3d6cc6b2/0f8830d8/173ef364
  on runner 3c5238, 7/7 ok, gaps empty, descs riding the steps op, the latched set in snap 7).
   ROOT CAUSE (named by the human's console eyes — step 5 good, hang during 6, "doesn't seem to do

@@ -5,6 +5,15 @@ A cross-spec sweep of what is in motion and what is deferred-but-load-bearing,
   at the bottom — this is the everything-*else* picture. Correct anything stale;
    this is a snapshot, not canon.
 
+**2026-07-27 additions (doc-sweep + human triage):**
+- **LakeSearch — review it.** The universal-search Story Book is *recorded*
+   (`wormhole/Story/LakeSearch/001.snap`) but the human has **not seen it run** — verify it on a
+    live runner. Search v1 is LIVE (`Lies_search` in `LiesFunk.svelte` + `Searchbar.svelte`); the
+     owed follow-on is Stemdex v2 (region-partitioned scan + `%Errand` reindex, `Stemdex_spec §3-4`).
+- **The Lies+Lang frontier is real but PARKED ("not the day for it" — human):** P7
+   collapse-the-cursor (`Lies_handover §7`), Stemdex v2, and wiring the built `LangSion` IOing
+    oracle into `LangCompiling`. Not this push — catalogued in `Frontier.md §5`.
+
 ## Notes for whoever picks this up
 
 - Stuff and Housing are the central two — everything orbits them; read them first.

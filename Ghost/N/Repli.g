@@ -529,6 +529,7 @@ Repli_attach_page(w, pier, id, bytes):
     pier.c.awaiting = pier.c.awaiting || {}
     let mirror = pier.c.awaiting[id]
     if (!mirror) return
+    let landed = 0
     if (mirror.c.await_bufk) {
         let u8 = new Uint8Array(bytes.length)
         u8.set(bytes)
@@ -542,6 +543,7 @@ Repli_attach_page(w, pier, id, bytes):
             mirror.c.breach = 'cid'
         } else {
             mirror.sc[mirror.c.await_bufk] = u8
+            landed = 1
         }
         mirror.c.await_bufk = null
         mirror.c.await_buffer = null
@@ -553,7 +555,18 @@ Repli_attach_page(w, pier, id, bytes):
         mirror.c.await_buffer = null
         mirror.sc.got = (+(mirror.sc.got || 0)) + 1
         mirror.bump()
+        landed = 1
     }
+    // LANDING SIGNAL (generic; music-agnostic): a real chunk just filled.  A consumer that wants to
+    //  react the instant bytes cross — the radio waking a digging playhead mid-poll, never waiting out
+    //   its 3s dig look — registers w.c.repli_on_land; unset, this costs nothing.  A breach (bytes
+    //    refused, chunk still UNFILLED) does NOT fire it: presence is fill state, so nothing plays.
+    //  FIRE ON THE MIRROR WORLD: in the live share Repli_arm runs on the STATION world, but the mirror
+    //   crates AND the radio (which registered the hook in Radio_ensure) live in w.c.repli_mirror_w —
+    //    the run/radio world.  Without this hop the wake lands on the wrong world and never nudges
+    //     (the audit's CRITICAL).  Solo/no-share: repli_mirror_w is unset, so it falls back to w itself.
+    let land_w = w.c.repli_mirror_w || w
+    if (landed && land_w.c.repli_on_land) { try { land_w.c.repli_on_land(land_w, mirror) } catch (er) {} }
     delete pier.c.awaiting[id]
     if (pier.c.bufs) delete pier.c.bufs[id]
     // the holding req has SERVED: its bytes landed, so RETIRE it whole rather than leave a landed+finished

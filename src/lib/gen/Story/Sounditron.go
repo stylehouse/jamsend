@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return 'fc546e9a542bb5eb~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return 'd8ea4789f9b6ea7d~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -57,6 +57,10 @@ async Sounditron_drive(w, req) {
     let n = (this.c.run)?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
+        // stand the GLASS at the very FIRST step (the human: "some Vyto output from the very first
+        //  Sounditron step") — organs + the Vyto commission, so the world is drawing before the machine
+        //   even reports.  Idempotent (glass_done + find-or-create organs), so beat 2's call is a no-op.
+        if (n === 1) this.Sounditron_glass(w)
         if (n === 2) await this.Sounditron_machine(w)
         if (n === 3) await this.Sounditron_relay(w)
         if (n === 4) await this.Sounditron_possibilities(w)
@@ -183,48 +187,36 @@ Sounditron_glass(w) {
         door = w.i({ Door: 'open', face: 'Door' })
         door.c.up = w
     }
-    let SH = this.c.up
+    // the glass sits BESIDE the run — A:Vyto on SH, the Run House's PARENT (where A:Story lives),
+    //  reached by the `.up` PROPERTY subHouse sets, NOT `.c.up`.  Vytonation §"the seams" is explicit:
+    //   `.c.up` is the un-pumped resident seam — standing the world there left the DEFERRED commission
+    //    elvis unprocessed, so e_Vyto_commission never ran and no UI:'Vyto' registered (the "no glass
+    //     yet" hang).  `.up` is the seam the green Vyto Books stand on and pump.  Beside the run ⇒
+    //      w:Vyto is OUTSIDE the Run-House subtree snap_H walks, so the glass is snap-blind by
+    //       placement — Sounditron's recorded fixtures (002–007) never see it.
+    let SH = this.up ?? this.top_House()
     if (!SH) return
-    // the TRICKLE rides every commissioned context (idempotent per tab — a fresh era each
-    //  run hands the loop the new w; the stale loop dies on its next look).  Above the
-    //   glass_done latch: the liveness must keep flowing on an already-commissioned tab.
+    // the TRICKLE rides every commissioned context (idempotent per tab; above the glass_done latch so
+    //  the liveness keeps flowing on an already-commissioned tab).
     this.Sounditron_trickle(w)
     if (this.c.glass_done) return
-    this.c.glass_done = 1
-    // ── THE FIRST TENANT (?VY=1 — the Vyto moult; client.md is the front door) ──────────────
-    //  Under the gate the resident page commissions the NEW GLASS on the world's ORGANS —
-    //   plain form (commission.md §2, the migration door; the recipe form waits for a tenant
-    //    to prove it), each organ an individual grapple = one cell (client.md §3), dose-less
-    //     for now so every organ takes a default seat.  The Voro-Cyto commission stands down
-    //      under the gate; the ungated page is byte-identical to before.  Run rides req.c when
-    //       a Story run drives (the parked-run gate + spool payloads); a pure-resident world
-    //        commissions Run-less and the springs run free.  Same per-tab latch as the Cyto
-    //         path above — one commission per tab, the standing glass watches from then on.
-    if (boot_param('VY')) {
-        let SHv = this.c.up
-        if (!SHv) return
-        if (!SHv.o({ A: 'Vyto' }).length) SHv.i({ A: 'Vyto' }).i({ w: 'Vyto' })
-        let organs = []
-        for (const q of [{ Radio: 1 }, { Stoker: 1 }, { Tuner: 1 }, { Door: 1 }, { Zine: 1 }, { Riffle: 1 }, { Mag: 'Lineup' }, { Machine: 1 }, { Heist: 1 }]) {
-            let row = w.o(q)[0]
-            if (row) organs.push(row)
-        }
-        if (!organs.length) return
-        let commission = new TheC({ c: {}, sc: { Scannable: organs[0], client_w: w, grapples: organs } })
-        if (this.c.run) commission.c.Run = this
-        SHv.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
-        return
+    // ── THE GLASS — Vyto, unconditionally.  ?VY RETIRED (2026-07-27): the glass is just what Sounditron
+    //  does, and Cyto is GONE from here (its toc rail is off too).  Commissioned on the world's ORGANS,
+    //   each an individual grapple = one cell (Vyto_client.md §1–3), dose-less so every organ takes a
+    //    default seat.  Stood the way VytoStaple_commission does (beside the run, on SH) so the deferred
+    //     commission is PUMPED and e_Vyto_commission registers UI:'Vyto'.  glass_done latches only AFTER
+    //      dispatch, so a not-yet-ready tick (organs not ensured) retries next tick instead of stranding.
+    let organs = []
+    for (const q of [{ Radio: 1 }, { Stoker: 1 }, { Tuner: 1 }, { Door: 1 }, { Zine: 1 }, { Riffle: 1 }, { Mag: 'Lineup' }, { Machine: 1 }, { Heist: 1 }]) {
+        let row = w.o(q)[0]
+        if (row) organs.push(row)
     }
-    // the Story rail (toc useCyto+dontSnapCyto+useVoroCyto — live glass, pure-H snaps, the
-    //  PROVEN Cytui registration) commissions before step 1; a second commission here would
-    //   overwrite its wave flags and wedge the snap wait — stand down when it already rides.
-    let cw = SH.o({ A: 'Cyto' })[0]?.o({ w: 'Cyto' })[0]
-    if (cw?.c?.commission) return
-    if (!SH.o({ A: 'Cyto' }).length) SH.i({ A: 'Cyto' }).i({ w: 'Cyto' })
-    let stw = SH.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0]
-    let styles = stw && SH.The_Styles ? SH.The_Styles(stw) : null
-    let commission = new TheC({ c: {}, sc: { Scannable: this, Styles: styles, client_w: w, useVoroCyto: 1, useFaces: 1 } })
-    SH.i_elvisto('Cyto/Cyto', 'Cyto_commission', { req: commission })
+    if (!organs.length) return                    // organs not ensured yet — retry next tick, DON'T latch
+    if (!SH.o({ A: 'Vyto' }).length) SH.i({ A: 'Vyto' }).i({ w: 'Vyto' })
+    this.c.glass_done = 1                          // commit — one Vyto commission per tab
+    let commission = new TheC({ c: {}, sc: { Scannable: organs[0], client_w: w, grapples: organs } })
+    commission.c.Run = this
+    SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
 
 },
 // the TRICKLE — the live page's slow think (the human 2026-07-19: "that model may need to be
@@ -321,6 +313,19 @@ async Sounditron_peer(w) {
 },
 Sounditron_peer_live(w) {
     let M = this.top_House()
+    // THE MUSIC PEER (the friend the trick needs): a sealed pier with a live Music grant we've HEARD
+    //  from lately (the pulse stamps `heard_at`).  The old check only asked about a Lies editor/runner
+    //   lease — which never stands between two BigSoundland MUSIC tabs, so `peer_live` was ALWAYS false
+    //    and `peer_wait` timed out at its full 12s ceiling EVERY run (a real slice of "still slow", and
+    //     why the peer assertions never latched with Righto/Lefto both up).
+    let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
+    if (ident && M.Swarm_peering && M.Swarm_pier_live) {
+        for (const pier of (M.Swarm_peering(ident)?.o({ Pier: 1 }) ?? [])) {
+            if (!M.Swarm_pier_live(pier, 'Music')) continue
+            if (pier.c.heard_at && (Date.now() - pier.c.heard_at) < 30000) return true
+        }
+    }
+    // fallback: the runner-fleet lease still counts as a reachable peer (a warm editor↔runner engagement).
     let lw = this.Sounditron_lies_w(w)
     let lease = lw && M.Lies_engagement ? M.Lies_engagement(lw) : null
     let warm = lw ? lw.o({ Runner: 1 }).filter(r => r.sc.ready) : []
@@ -338,6 +343,46 @@ async Sounditron_sound(w) {
     let M = this.top_House()
     w.oai({ Audio: 1 })
     this.expecting(w, 'sound_wait', 6, async () => { await this.Sounditron_probe(w, M) })
+    // and PLAY THE TRICK: press the radio (muted) so a friend's pulled track decodes onto the live
+    //  timeline — the thing Jamsend exists to do.  Detached, so the beat never waits on it (autoplay).
+    this.Sounditron_listen(w)
+
+},
+// Sounditron_listen — the trick, exercised: aim the playhead at a FRIEND's previewed track (a peer's
+//  music over the wire, not my own shelf) and press play MUTED.  MUTED = a Book's silent listen
+//   (Radio_go opts.mute); DETACHED (no await) because Radio_go awaits Sound_gat and a gestureless
+//    tab's AudioContext resume PENDS FOREVER — awaiting it under the beliefs mutex is the step-6
+//     deadlock.  The decode+schedule pipeline runs regardless (AudioDecoder needs no gesture), so
+//      radio.c.seq advances — the snap-provable trick — even where the muted output reaches no speaker.
+Sounditron_listen(w) {
+    let MR = this.top_House()
+    if (!MR.Radio_ensure || !MR.Radio_go || !MR.Radio_dial_pool) return
+    let radio = MR.Radio_ensure(w)
+    // IDEMPOTENT: once the radio is going, never re-press — Radio_go bumps the era + restarts the pump,
+    //  so a second call mid-play would cut the voice.  This lets the witness RETRY the press every pass
+    //   (beat 6 fires once, the pull is ongoing), safely: the first pass stock is ready wins, then no-op.
+    let s = radio.sc.Radio
+    if (s === 'playing' || s === 'digging' || s === 'starved') return
+    // AUTO-START (the human: "radio should auto-start"): press play as soon as there is ANYTHING to hear
+    //  — a friend's previewed track (the trick, AIMED first via tune_rec) or my own dug shelf.  With no
+    //   stock at all, stay off (nothing to play; no fixture moves).  DETACHED (Sound_gat's resume pends on
+    //    a gestureless tab — the step-6 deadlock law), and UN-MUTED so the music actually flows: Radio_go
+    //     raises the BootGate audio tap via AudioContext_wanted, and the one tap the user makes anyway
+    //      resumes the AC — no ▶ hunt.  radio.c.seq still advances gesture-free, so the trick stays proven.
+    let friend = MR.Radio_dial_pool(w, radio)
+    let haveOwn = false
+    if (MR.Ra_recs && MR.Ra_home_self && MR.Radio_pub) {
+        haveOwn = MR.Ra_recs(MR.Ra_home_self(w, MR.Radio_pub(w) || 'me')).length > 0
+    }
+    if (!friend && !haveOwn) return
+    // tune_rec outranks the dial and is consumed once (Radio_pump): so a FRIEND's track plays FIRST,
+    //  making "a peer's music played" deterministic when one is online.
+    if (friend) {
+        radio.c.tune_rec = friend
+        w.c.listen_target = { id: String(friend.sc.id), title: this.Sounditron_clean(friend.sc.title || friend.sc.id), by: String(friend.c.from || '').slice(0, 8) }
+    }
+    w.c.play_at = Date.now()
+    MR.Radio_go(radio, null).catch((er) => {})
 
 },
 async Sounditron_probe(w, M) {
@@ -461,8 +506,26 @@ Sounditron_heist_met(w) {
         if (text.indexOf('grant') >= 0 && f?.sc?.music) met = 1
         if (text.indexOf('online') >= 0 && this.Sounditron_peer_live(w)) met = 1
         if (text.indexOf('counted') >= 0 && f && Number(f.sc.records) > 0) met = 1
+        // the pull ITSELF: real bytes crossed — a friend's record holds its first playable chunk
+        //  (presence IS fill state; a husk is all metadata, no bytes).  This was the never-checked
+        //   Need — the heist's whole point, now honest.
+        if (text.indexOf('pull') >= 0 && this.Sounditron_pulled(w)) met = 1
         if (met && !need.sc.met) need.sc.met = 1
     }
+
+},
+// Sounditron_pulled — did real bytes actually cross?  Any friend record whose first chunk stands
+//  (Ra_chunk_map[0] present) — the husk→previewed transition IS the pull landing.
+Sounditron_pulled(w) {
+    let M = this.top_House()
+    if (!M.Ra_recs || !M.Ra_home_them || !M.Ra_chunk_map) return 0
+    for (const home of w.o({ MusuThem: 1 })) {
+        if (!home.sc.pub) continue
+        for (const rec of M.Ra_recs(M.Ra_home_them(w, String(home.sc.pub)))) {
+            if (M.Ra_chunk_map(rec)[0] != null) return 1
+        }
+    }
+    return 0
 
 },
 // Sounditron_await — the wait INSIDE an expecting: poll a condition to the deadline, mint
@@ -524,6 +587,29 @@ Sounditron_witness(w) {
     }
     if (audioRow?.sc?.real) this.story_swear(w, 'the sound system answered — a real AudioContext ran here', audioRow)
     if (n != null && n === 6 && probe && !probe.realtime && !(w.oa({log: 'no live audio — the context never ticked in real time'}))) w.i({log: 'no live audio — the context never ticked in real time'})
+    // RETRY the press every pass from beat 6 on: beat 6's one-shot fires before the friend's preview may
+    //  have landed (the pull is ongoing), and an off radio can't be woken by the landing nudge.
+    //   Sounditron_listen is idempotent (no-op once going) + scoped (no-op with no friend track ready),
+    //    so this is a cheap poll that catches the first pass a peer's track stands playable.
+    if (n != null && n >= 6) this.Sounditron_listen(w)
+    // THE TRICK, witnessed.  radio.c.seq advances as the pump feeds chunks THROUGH the decoder — the
+    //  gesture-free half of playback (an AudioDecoder needs no resume), so this latches even on the
+    //   muted/suspended runner tab where no speaker ever sounds.  The clock: time-to-first-chunk from
+    //    the press (the user-patience measure), stamped once; a slow start photographs itself as a
+    //     %log rather than gating the fixture (a threshold red belongs to the human once tuned).
+    let radio = w.o({ Radio: 1 })[0]
+    let seq = radio ? (+(radio.c.seq || 0)) : 0
+    if (radio && seq > 0 && w.c.play_at && w.c.ttf == null) w.c.ttf = Date.now() - w.c.play_at
+    if (radio && (radio.sc.Radio === 'playing' || radio.sc.Radio === 'starved') && seq > 0) {
+        this.story_swear(w, 'the music played — record chunks decoded onto the live timeline', radio)
+    }
+    // the WHOLE trick: what played came off a FRIEND's shelf (in radio.c.heard once the pump opened
+    //  it).  Opportunistic — latches only when a peer stood online with previews pulled.
+    let lt = w.c.listen_target
+    if (radio && lt && radio.c.heard && radio.c.heard[lt.id]) {
+        this.story_swear(w, 'music from a friend played — their track streamed off their shelf over Repli', radio)
+    }
+    if (n != null && n >= 6 && w.c.ttf != null && w.c.ttf > 2000 && !(w.oa({log: 'slow to sound — music took over two seconds to begin'}))) w.i({log: 'slow to sound — music took over two seconds to begin'})
     if (w.o({ Session: 1 })[0]) this.story_swear(w, 'the session summed itself — a report stands ready to travel', w.o({ Session: 1 })[0])
 
 },

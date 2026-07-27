@@ -50,6 +50,41 @@ S5 (roster page) and S6 (legacy Dexie migrator) are lower priority — S6 degrad
      smallest instance. Building Mag-share on its own would bake a one-off where a general
       slot belongs. Parked until the payload abstraction is designed — see the note after S6.
 
+## The Vytui north-star (human, 2026-07-27) — the inverse allowlist
+
+The UX bet: **Vytui is the only surface most users ever see.** It FaceSuckers you (prompts the
+ FSA grant) and presents *simply* — "one huge thing and a few smaller things" (the sizing algebra
+  + fold). The machinery — the chronicler/solver/governor/scribe layer, Storui, `%desc`, the
+   diagnostic tables — is **hidden by default**, reachable only via a **secret FaceSucker release
+    switch** (the dev/diagnostic escape). This *inverts* S1: rather than tucking machinery
+     item-by-item, the simple view is an **allowlist** — only a few named user-faces draw,
+      everything else defaults to `system` (already the allowlist-inversion behaviour,
+       `Cyto.svelte:444-452`). "Not too much at once" + "fold a tree around as they want it" is
+        already designed in the **Vyto foam study**: screen-budget `budget_for`, `fold_ladder`,
+         dive/zoom/ancestor-crack, focus-warp — `Vyto_todo.md` + `vyto_workingouts/processes.md` +
+          `Vyto_sizing_todo.md`, and [[vyto-foam]]. So the "fold" the human wants isn't owed — it's
+           built in the foam layer, waiting to be the *default* presentation.
+
+Concrete near-term asks under this star (all display = the human's Vyto zone; wire noted):
+- **Presence first — "is the other Pier online?"** *Largely BUILT.* `pier.c.heard_at` is stamped
+   on every inbound frame from a sealed pier (`Swarm.g:453`, c-side, never snapped), and
+    **`DoorFace.svelte` already renders a liveness dot** — green within 12 s of their ~5 s pulse,
+     dim beyond (`:10/:46/:49`). Seam = surface that dot *prominently* in the simple Vyto view.
+      Display placement, **no new wiring**.
+- **Self-rename in the Invite panel.** *Wire ready.* `Clustation_friendly` already re-persists a
+   new name (`Auto.svelte`, `thang_put` under prepub+role); the only blocker is the InvitePanel
+    **latch** that closes the name-ask once you're named ("a rename never un-names",
+     `InvitePanel.svelte:151-155`). Seam = a small edit affordance that re-opens the namer →
+      `Clustation_friendly(new)`. Tiny display edit; wire done. *(Reading: the Pier renames
+       *itself* — its own `friendly`, which friends see. If instead you meant relabelling a
+        *friend* locally, say so — that's a different `%Pier.friendly` write.)*
+- **The machinery-table tuck** — the chronicler/solver/governor/scribe archetypes. No literal
+   mainkeys by those four names exist in code (grep-checked); they read as the req/Story/Lang/Vyto
+    machinery (`CREW_MAINKEYS` already tucks `req`/`Machine`/`Relay`/`Census`/`Session`/`Storyrun`/…
+     → `system`). The tuck is the same allowlist. To hide a *specific* table precisely, point at the
+      surface it shows on (a face? the diagnostic fallback? the sprawl?) — under the Vytui allowlist
+       it stops drawing by default anyway.
+
 ## The arc
 
 jamsend's bet is that every kind of state becomes the same legible living matter. The
@@ -185,13 +220,14 @@ The engines below are all proven by recorded golden fixtures. But the human's co
 - **The move (display + a new face):** a `MagFace`/`CloudFace` in `src/lib/O/glass_kinds.ts`
    + `glass_faces.ts`, reading `%Mag:shuffle`/`%Cloud,page` instead of flattening. Medium
     effort; belongs with Vyto glass work. Not started.
-- **⚠ Depends on an unruled model question — read `spec/Mag_vs_flatstock_preen.md §4`
-   first.** The human's own preen (this session) is decision-ready: promote `Mag_todo §1`
-    to spec, but **rule whether a Mag nests deeper than one Cloud** before building on it —
-     `Ra_recs`/`Ra_rec_find` hard-code exactly three depths (flat / `Mag>Record` /
-      `Mag>Cloud>Record`) and **silently drop anything deeper**. A `CloudFace` that assumes
-       one Cloud layer is fine *if* §4 pins it there; if the model goes recursive, the face
-        (and the census) must walk. Don't design the depth into the face until §4 is ruled.
+- **✔ The nest-depth question is already RULED + BUILT (2026-07-26) — not a blocker.** An
+   earlier draft of this seam warned that a `CloudFace` had to wait on the preen's §4 recurse
+    ruling. That's stale: `Ra_recs`/`Ra_rec_find` now recurse over `Mag**` via
+     `Ra_recs_deep`/`Ra_rec_find_deep` (Ra.g:679/697; DEPTH NOTE Ra.g:738; `Mag_todo.md:132`
+      "RULED + BUILT"). A `%Record` is the leaf, deeper rows are **found, not dropped**. So a
+       face may lean on the census walking any depth — S2 is a clean display build, not gated.
+        (The one residual fixed-depth spot is `Ra_offer_stock`'s `repli_loc:['Cloud','page']`
+         wire stamp, harmless until nested Mags actually exist — a wire concern, not a face one.)
 
 ### S3 — Heist has no live trigger (the engine is built and idle)
 *The human: "I don't see how to heist."*
@@ -366,9 +402,12 @@ Verified against the live `src/lib/O/ui/RadioFace.svelte` (124 lines).
 **3.** Render it in `.rf-mid`, right after the note line (`:61`):
 ```
              {#if face.note}<div class="rf-note">{face.note}</div>{/if}
-+            {#if face.by}<div class="rf-from">· from {who(face.by)}</div>{/if}
++            {#if face.by}<div class="rf-via">· via {who(face.by)}</div>{/if}
 ```
-`.rf-from` can reuse `.rf-note`'s styling (small, dim). `sc.by` is a *prepub*; `who()`
+`.rf-via` can reuse `.rf-note`'s styling (small, dim). **The word is "via", not "from"**
+ (human 2026-07-27): `sc.by` is the **Pier this copy came *through*** — the carrier — not the
+  track's author; "from Steve" would wrongly imply Steve made it. Same correction applies to
+   `LineupFace`'s live text if it reads "from". `sc.by` is a *prepub*; `who()`
  degrades to `pub.slice(0,8)` when no `%Pier` matches (a non-friend source), so it's always
   renderable. Note `radio.sc.by` is *deleted* when the track is your own stock
    (`Radio.g:318`), so the tag simply won't render for your own music — correct.

@@ -1,5 +1,13 @@
 # Workingout — being a Vyto client
 
+> **Superseded as the front door (2026-07-27) by `spec/Vyto_client.md`.**  Two things here
+>  have DRIFTED and will mislead: §1's address `elvisto('V/Vyto', …)` is wrong — the live
+>   call is `i_elvisto('Vyto/Vyto', …)`; and §9's "does NOT do yet" list is stale — faces,
+>    nested scopes, gangs, relate-edges, priced sizing and crush have all landed since.
+>     The DRIVE machinery below (grapple laws §3, the unbidden stir §4, Calm §5, the parked
+>      gate §6, the Book rails §7) is still current — read `Vyto_client.md` for the accurate
+>       capability picture and the face rail, and use this for the deeper mechanics only.
+
 The front door for anyone pointing a world at the new glass.  Everything here is checked
  against the LIVE code (Ghost/V/Vyto.g · src/lib/O/Vytui.svelte), not against the spec's
   hopes.  Deeper machinery routes onward at the bottom; the living examples are the
