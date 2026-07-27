@@ -4,10 +4,7 @@ story:PereProof
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=1.248
-      sample=2.562,at=1782623381
-      sample=2.31,at=1782641872
-      sample=2.227,at=1783063355
+    TimeTotal:beliefs,avg=0.637
       sample=1.004,at=1783170618
       sample=0.823,at=1783257183
       sample=0.739,at=1783353148
@@ -15,10 +12,10 @@ story:PereProof
       sample=0.454,at=1784436497
       sample=0.223,at=1784616705
       sample=0.369,at=1784616820
-    TimeTotal:step,avg=0.039
-      sample=0.085,at=1782623381
-      sample=0.075,at=1782641872
-      sample=0.067,at=1783063355
+      sample=0.346,at=1785116611
+      sample=0.35,at=1785116722
+      sample=0.289,at=1785116995
+    TimeTotal:step,avg=0.019
       sample=0.03,at=1783170618
       sample=0.025,at=1783257183
       sample=0.022,at=1783353148
@@ -26,6 +23,9 @@ story:PereProof
       sample=0.014,at=1784436497
       sample=0.007,at=1784616705
       sample=0.011,at=1784616820
+      sample=0.01,at=1785116611
+      sample=0.011,at=1785116722
+      sample=0.009,at=1785116995
   step,dige:2b47705062f8bd28
   step=2,dige:bdd4925163038acc
   step=3,dige:1c73da90f22fb363

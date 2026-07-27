@@ -513,7 +513,7 @@ async Peeroleum_deliver(w, frame):
             H.feebly_ponder()
             return
         }
-        await inbox.do(); H.feebly_ponder(); return
+        await inbox.do(); H.Peeroleum_rollup_faulty(pier); H.feebly_ponder(); return
     }
     // ── inbound seq discipline (Reliable.g: inseq_admit) — LOSSY carriers only ──
     pier.c.inseq = pier.c.inseq || {last: 0, buffered: []}
@@ -541,6 +541,7 @@ async Peeroleum_deliver(w, frame):
         if (f) H.Peeroleum_book_unemit(inbox, w, pier, f)
     }
     await inbox.do()
+    H.Peeroleum_rollup_faulty(pier)
     H.feebly_ponder()
 
 // Peeroleum_book_unemit — book ONE inbound frame as a %req:unemit under the inbox (discriminated by
@@ -617,7 +618,11 @@ async req_unemit(req):
     } else {
         req.sc.error = reason
         inbox.finish(req)
-        H.Peeroleum_rollup_faulty(pier)
+        // the %faulty roll-up is NOT done here: req_unemit is inbox.do()'s do_fn, so it runs INSIDE the
+        //  req machine's replace() transaction, and Peeroleum_rollup_faulty does a faulty.r() — a nested
+        //   replace (the "nested replace() transactions" throw). Peeroleum_deliver rolls up ONCE after
+        //    inbox.do() returns (outside the transaction), which also rebuilds %faulty from the WHOLE
+        //     drain's error items in one pass, as spec §9 intends.
     }
 
 // Peeroleum_take_ack — an inbound ack names a seq we sent (spec §7.2): stamp that

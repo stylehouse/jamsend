@@ -4,7 +4,7 @@
     import { onMount } from "svelte"
 
 import { Idento, peel } from "$lib/Y.svelte.ts"
-import { mint_grant, verify_grant, grant_to_C, mint_revoke } from "$lib/O/Funk/Grant.ts"
+import { mint_grant, verify_grant, grant_to_C, grant_of_C, mint_revoke } from "$lib/O/Funk/Grant.ts"
 import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
 
     let { H } = $props()
@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'dd6a46c6bb2ea9fa~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '34bb34f90a884a4a~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -1159,35 +1159,74 @@ Swarm_pier_stash(ident, page, grants, nots) {
 Swarm_piers_rehydrate(w, ident) {
     let st = this.top_House().stashed
     let mine = st?.Swarm_piers?.[ident.sc.prepub]
-    if (!mine) return
-    for (const theirPrepub of Object.keys(mine)) {
-        let e = mine[theirPrepub]
-        if (!e?.page?.prepub) continue
-        let pier = this.Swarm_seal(w, ident, e.page, e.grants?.[0] ?? null, e.grants?.[1] ?? null)
-        let gi = 2
-        while (gi < (e.grants?.length || 0)) {
-            let g = e.grants[gi]
-            if (g && !pier.o({ Grant: g.to, by: g.by })[0]) grant_to_C(pier, g)
-            gi = gi + 1
-        }
-        for (const a of (e.nots || [])) {
-            if (!pier.o({ NotGrant: a.not, by: a.by, for: a.for }).some(x => x.sc.sign === a.sign)) {
-                pier.i({ NotGrant: a.not, by: a.by, for: a.for, time: a.time, sign: a.sign })
+    // (a) re-seal every pier the Dexie stash remembers — the WARM-reload rail, when the C tree below
+    //  Clustation wasn't itself auto-saved (piers are runtime particles).
+    if (mine) {
+        for (const theirPrepub of Object.keys(mine)) {
+            let e = mine[theirPrepub]
+            if (!e?.page?.prepub) continue
+            let pier = this.Swarm_seal(w, ident, e.page, e.grants?.[0] ?? null, e.grants?.[1] ?? null)
+            let gi = 2
+            while (gi < (e.grants?.length || 0)) {
+                let g = e.grants[gi]
+                if (g && !pier.o({ Grant: g.to, by: g.by })[0]) grant_to_C(pier, g)
+                gi = gi + 1
+            }
+            for (const a of (e.nots || [])) {
+                if (!pier.o({ NotGrant: a.not, by: a.by, for: a.for }).some(x => x.sc.sign === a.sign)) {
+                    pier.i({ NotGrant: a.not, by: a.by, for: a.for, time: a.time, sign: a.sign })
+                }
+            }
+            for (const s of (e.suggests || [])) {
+                if (!s?.id || !s?.by) continue
+                let sug = pier.oai({ Suggest: 1, id: String(s.id), by: String(s.by) })
+                sug.c.up = pier
+                if (s.title && !sug.sc.title) sug.sc.title = s.title
+                if (s.artist && !sug.sc.artist) sug.sc.artist = s.artist
+                if (s.note && !sug.sc.note) sug.sc.note = s.note
+                if (s.got) sug.sc.got = 1
             }
         }
-        for (const s of (e.suggests || [])) {
-            if (!s?.id || !s?.by) continue
-            let sug = pier.oai({ Suggest: 1, id: String(s.id), by: String(s.by) })
-            sug.c.up = pier
-            if (s.title && !sug.sc.title) sug.sc.title = s.title
-            if (s.artist && !sug.sc.artist) sug.sc.artist = s.artist
-            if (s.note && !sug.sc.note) sug.sc.note = s.note
-            if (s.got) sug.sc.got = 1
-        }
     }
+    // (b) CONVERGE — a disk-SEEDED account (Swarm_boot_seed → Swarm_import → Swarm_graft) arrives with
+    //  live grafted piers but an EMPTY Dexie stash: graft rebuilds the particles, it never routes through
+    //   Swarm_pier_stash the way Swarm_seal does.  Left there, the friends would vanish on the NEXT
+    //    reload (this rail reads Dexie, which never learned them).  Mirror every live pier into the stash
+    //     now — idempotent, and guarded to the live self inside pier_stash, so a Book's puppets and a
+    //      foreign tab never pollute the House stash.
+    this.Swarm_restash_piers(ident)
 },
 //#endregion
 
+// Swarm_pier_entry — the durable Dexie shape for ONE live %Pier: its page (pub-derived prepub + the
+//  friend's pub + friendly) plus its raw grant + revocation atoms, re-derived straight from the
+//   particle (grant_of_C is Grant.ts's swap-OUT reverse; a %NotGrant's sc IS its atom).  PURE, so a
+//    Book can assert a disk-GRAFTED pier reconstructs to the exact same entry a SEALED one stashed —
+//     the proof that grafted piers are stash-worthy without touching the House-global live guard.
+Swarm_pier_entry(pier) {
+    let peer = pier.o({ Peering: 1 })[0]
+    let page = { prepub: pier.sc.pub, pub: peer?.sc?.pub, friendly: pier.sc.friendly }
+    let grants = pier.o({ Grant: 1 }).map(g => grant_of_C(g))
+    let nots = pier.o({ NotGrant: 1 }).map(a => ({ not: a.sc.NotGrant, by: a.sc.by, for: a.sc.for, time: a.sc.time, sign: a.sc.sign }))
+    return { page: page, grants: grants, nots: nots }
+
+},
+// Swarm_restash_piers — mirror an identity's LIVE %Pier children into the Dexie stash.  The
+//  convergence half of Swarm_piers_rehydrate: reconstruct each pier's entry and hand it to the
+//   (idempotent, live-self-guarded) Swarm_pier_stash, so a grafted friend is remembered exactly as a
+//    sealed one is.  Returns the count mirrored.
+Swarm_restash_piers(ident) {
+    let peering = this.Swarm_peering(ident)
+    if (!peering) return 0
+    let n = 0
+    for (const pier of peering.o({ Pier: 1 })) {
+        let e = this.Swarm_pier_entry(pier)
+        this.Swarm_pier_stash(ident, e.page, e.grants, e.nots)
+        n = n + 1
+    }
+    return n
+
+},
 //#region suggestion — "you'd love this": durable, store-and-forward, async to their being online
 //  A %Suggest is a REFERRING particle (enid + display scalars + note — never a second %Record)
 //   living under the friendship %Pier on BOTH sides and in the pier stash (reload-proof).

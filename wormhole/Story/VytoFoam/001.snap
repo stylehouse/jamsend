@@ -1,7 +1,7 @@
 Snap:H
-  H:Nestcut,Run
-    A:Nestcut
+  H:VytoFoam,Run
+    A:VytoFoam
       self,round	{"mung":["age"]}
-      w:Nestcut
+      w:VytoFoam
         self,round	{"mung":["age"]}
         req:wrangle,eternal,ok

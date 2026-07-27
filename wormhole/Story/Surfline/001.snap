@@ -1,7 +1,0 @@
-Snap:H
-  H:Surfline,Run
-    A:Surfline
-      self,round	{"mung":["age"]}
-      w:Surfline
-        self,round	{"mung":["age"]}
-        req:wrangle,eternal,ok

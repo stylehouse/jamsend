@@ -2006,6 +2006,17 @@ export class House extends StorableHousing {
             if (!nav) { done({ error: '📭 nav not ready' }); return }
 
             const run_op = async (): Promise<any> => {
+                // SECURITY — the owner-local .jamsend law (Swarm_account_save's invariant 1): .jamsend
+                //  holds account snaps with the identity PRIVATE KEY in the clear, and THIS handler is
+                //   the only seam a remote request reaches our real disk through.  Refuse ANY op whose
+                //    path touches a `.jamsend` segment, whatever grant the caller holds — a peer (or even
+                //     our own runner) must never read, list, or overwrite an owner's key over the relay.
+                //      Defence in depth beside Crate_nav_paths' dot-dir skip (invariant 2).
+                for (const p of [req.sc.rw_dir, req.sc.rw_name]) {
+                    if (p && String(p).split('/').some((seg: string) => seg === '.jamsend')) {
+                        return { error: '🔒 .jamsend is owner-local — never served over the wire' }
+                    }
+                }
                 try {
                     const parts    = name.split('/').filter(Boolean)
                     const filename = parts.pop()!

@@ -164,8 +164,13 @@
         } catch (e) { name_err = 'not saved — ' + String(e).slice(0, 60) }
     }
 
-    // ── LAND (?Iz= in this page's own URL) ────────────────────────────────────────────────────
-    let iz = boot_param('Iz')
+    // ── LAND (?Iz= in this page's own URL, OR a link pasted below) ────────────────────────────
+    //  `iz` is the token we'll redeem — seeded from a scan-landing ?Iz, but the paste-a-link row
+    //   (below) can REPLACE it so you accept an invite as the identity you're ALREADY booted as
+    //    (the enclosing page's ?I), never a fresh role-default.  `landed_url` remembers we opened
+    //     FROM a scan, so only that path auto-joins / hides the paste row.
+    const landed_url = !!boot_param('Iz')
+    let iz = $state<string>(boot_param('Iz') || '')
     let invite = $state<any>(null)       // the parsed token {prepub, serial, to, params} — the offer's face
     let iz_err = $state('')
     let joined = $state('')
@@ -188,7 +193,9 @@
     $effect(() => {
         // NAMED gates the auto-join: the newborn tells us who they are first, THEN the door
         //  handles the invite by itself — the one question a brand-new visitor must answer.
-        if (!invite || !self || !stood || !born_today || !named || auto_fired || joined) return
+        //  Only a SCAN-landing (?Iz in the URL) auto-joins: a pasted link is already a deliberate
+        //   act, so it keeps the explicit JOIN button rather than firing under the paster's hands.
+        if (!landed_url || !invite || !self || !stood || !born_today || !named || auto_fired || joined) return
         auto_fired = true
         joined = '… joining by itself'
         join()
@@ -241,6 +248,30 @@
             : denied
                 ? '✗ the inviter denied the invite: ' + String(denied.sc.rebuff).slice(9) + ' — ask for a fresh QR'
                 : '… hello delivered, but no accept yet — is the inviter tab still open?'
+    }
+
+    // ── PASTE A LINK — accept an invite as the identity you're ALREADY booted as ─────────────────
+    //  The invite URL carries a ?Iz the SENDER minted; opening it cold would boot a role-default
+    //   self (fine for testing, wrong for a real user who already IS someone here).  Instead paste
+    //    the link HERE: we lift its ?Iz onto our live `self` and surface the same landing face +
+    //     JOIN.  Accepts a full URL, a `?Iz=…` tail, or a bare token.
+    let paste = $state('')
+    let paste_err = $state('')
+    function iz_from(text: string): string {
+        const s = String(text || '').trim()
+        if (!s) return ''
+        try { const p = new URL(s).searchParams.get('Iz'); if (p) return p } catch {}
+        const m = s.match(/[?&]Iz=([^&\s]+)/)
+        if (m) return decodeURIComponent(m[1])
+        return s   // assume a bare token
+    }
+    function paste_load() {
+        paste_err = ''
+        const tok = iz_from(paste)
+        if (!tok) { paste_err = 'paste an invite link (or its ?Iz token)'; return }
+        const t = H?.Swarm_token_parse?.(tok)
+        if (!t) { paste_err = 'that link’s invite did not parse — ask for a fresh one'; return }
+        iz = tok; invite = t; iz_err = ''; joined = ''; auto_fired = false
     }
 </script>
 
@@ -301,6 +332,17 @@
                 </span>
             {/if}
             {#if err}<span class="ip-note">{err}</span>{/if}
+            <!-- paste-a-link: accept an invite as THIS identity (the enclosing ?I), never a fresh
+                 role-default.  Hidden when we OPENED from a scan (the landing face already has it)
+                 or an offer is already on screen. -->
+            {#if !landed_url && !invite}
+                <span class="ip-row">
+                    <input class="ip-name" bind:value={paste} placeholder="paste an invite link"
+                        onkeydown={(e) => { if (e.key === 'Enter') paste_load() }} />
+                    <button class="ip-act" onclick={paste_load} title="accept an invite as this identity — not a fresh one">accept</button>
+                </span>
+                {#if paste_err}<span class="ip-note">⚠ {paste_err}</span>{/if}
+            {/if}
             <!-- the door speaks: every failed hello|redeem is a %rebuff on the identity — show the
                  recent ones so a denied scan is a NAMED event here, not silence (hello_unknown
                  was invisible through the whole 2026-07-18 two-tab session) -->

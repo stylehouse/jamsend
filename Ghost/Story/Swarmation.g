@@ -1778,6 +1778,22 @@ async SwarmDisk_reseed(w):
     w.c.fresh_ok = ok
     let resnap = await this.Swarm_account_save(w.c.nav, w.c.root, seed.ident)
     w.c.reseed_identical = (resnap === w.c.saved_snap) ? 1 : 0
+    // grafted piers are STASH-WORTHY (the fix for "grafted piers never hit the Dexie stash"): the
+    //  reseeded Alice's %Pier to Bob arrived via Swarm_graft, never Swarm_seal, so it was never
+    //   stashed.  Swarm_restash_piers now mirrors it at standup — prove the mechanism here by
+    //    reconstructing that grafted pier's durable entry and re-verifying its grant atom off the
+    //     signature alone (a valid entry is what the next warm reload rehydrates from).
+    let bob = this.SwarmDisk_ident(w, 'Bob')
+    let rpier = this.Swarm_peering(seed.ident)?.o({ Pier: 1, pub: bob?.sc?.prepub })[0]
+    if (rpier) {
+        let e = this.Swarm_pier_entry(rpier)
+        w.c.restash_page = (e.page.prepub === bob.sc.prepub && e.page.pub === bob.c.keys?.pub) ? 1 : 0
+        let gok = 0
+        try {
+            if (e.grants[0]) { await verify_grant(e.grants[0]); gok = (e.grants[0].to === 'Music') ? 1 : 0 }
+        } catch (er) { gok = 0 }
+        w.c.restash_grant_ok = gok
+    }
 
 // beat 6 — the shared FSA point: a SECOND owner (Carol) persists to the same disk (no friendship
 //  needed — a bare account is enough to test enumeration + the ?I= pick).  Swarm_account_list finds
@@ -1843,6 +1859,7 @@ SwarmDisk_witness(w):
     if (n >= 5 && rGrant && thawed && thawed === key) this.story_swear(w, 'a fresh browser reseeds its owner off disk — the friendship and the private key reborn from the account snap alone')
     if (n >= 5 && w.c.fresh_ok === 1 && w.c.fresh_by === pub) this.story_swear(w, 'the reseeded key still signs — a new grant minted after the disk round trip verifies under the same public key')
     if (n >= 5 && w.c.reseed_identical === 1) this.story_swear(w, 'the account survives the disk round trip byte for byte — the reseeded self re-saves to the very same snap')
+    if (n >= 5 && w.c.restash_page === 1 && w.c.restash_grant_ok === 1) this.story_swear(w, 'a disk-grafted Pier is stash-worthy — its durable entry rebuilds the friend page and a Music grant that still verifies — so the reseeded friend survives the next warm reload')
     // beat 6: two owners share the one FSA point; enumeration finds both and a ?I= pick lands the
     //  requested owner (not merely the first) with her own key thawed.
     let carol = this.SwarmDisk_ident(w, 'Carol')

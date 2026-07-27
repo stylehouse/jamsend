@@ -297,14 +297,20 @@
     }
 
     // the drive: re-run when the model version moves (worlds arrive, the mirror re-scans, a row's
-    //  T retargets).  Subscribes to each world's own version and every mirror row's — a row's
-    //   bump_version on a T change bumps only the ROW, so the walk must touch each row's vers.
+    //  T retargets).  A row's bump_version on a T change bumps only the ROW, so the walk touches each
+    //   row's vers.  The WORLD's own vers is watched ONLY until Scan mints the mirror — that first
+    //    creation bumps w.vers and is how we pick the glass up.  Once the mirror stands we do NOT read
+    //     w.vers, because the spool's own w.i({Moment}) bumps it on every settle: re-reading it here
+    //      re-armed this effect from its own downstream write — the unbuffered Atime-zap loop
+    //       (reactivity_docs: a sub-particle vers read bypasses the flush gate; the marching-readout
+    //        class).  Membership still re-fires us through mirror.vers; targets through each row's.
     $effect(() => {
         const ws = vyto_worlds()
         for (const w of ws) {
-            void w.vers
             const mirror: any = (w.c as any).mirror
-            if (mirror) { void mirror.vers; for (const r of (mirror.o() as TheC[])) void r.vers }
+            if (!mirror) { void w.vers; continue }
+            void mirror.vers
+            for (const r of (mirror.o() as TheC[])) void r.vers
         }
         adopt(ws)
     })

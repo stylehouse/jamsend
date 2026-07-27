@@ -190,7 +190,16 @@ async Crate_nav_paths(nav, base):
         for (const f of dl.files) {
             if (this.Crate_is_audio(this.Crate_ext(f.name))) out.push(rel ? (rel + '/' + f.name) : f.name)
         }
-        for (const d of dl.directories) queue.push(rel ? (rel + '/' + d.name) : d.name)
+        for (const d of dl.directories) {
+            // NEVER descend a dot-dir (.jamsend holds owner-private account snaps carrying the identity
+            //  key in the clear — Swarm_account_save) or node_modules: the census is for MUSIC.  This is
+            //   the ENFORCED half of the owner-local .jamsend law (its invariant 2) — a share walk can't
+            //    surface the private corner even if the audio filter is ever relaxed — and matches
+            //     Crate_nav_meander's own dot-dir skip.
+            let nm = String(d.name || '')
+            if (!nm || nm[0] === '.' || nm === 'node_modules') continue
+            queue.push(rel ? (rel + '/' + nm) : nm)
+        }
     }
     out.sort()
     return out

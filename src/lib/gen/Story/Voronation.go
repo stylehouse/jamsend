@@ -10,7 +10,7 @@ import { power_cells, poly_area, poly_centroid } from "$lib/O/vyto_geometry"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Voronation(): string { return '45e97291a654d0e8~g1' },
+    Ghostmeta_Ghost_Story_Voronation(): string { return 'a8a9737169608630~g1' },
 
 
 //#region radio — VoroRadio: the tuner PROVEN (📻 drift as a deterministic Story Book)
@@ -1192,13 +1192,7 @@ Stuff_veinrows(root, members, skips) {
 //   beat 2  the bench is laid — five bags distilled — every leg read
 //   beat 3  the vein RE-BREATHES — a fourth carrier lands on dub — its genre count thickens 2→3
 //   beat 4  a QUIET beat — nothing changes — the trees hold (the distiller is a pure function)
-Stuffing(A,w) {
-    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
-        await this.Stuffing_drive(w,req)
-        req.sc.ok = 1
 
-    })
-},
 async Stuffing_drive(w, req) {
     let run = this.c.run
     if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
@@ -1415,13 +1409,7 @@ Typescale_size(into, texts, frame, floor) {
 
 },
 // Typescale — the Book (world MUST be named Typescale — do_fn_for dispatches by w.sc.w).
-Typescale(A,w) {
-    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
-        await this.Typescale_drive(w,req)
-        req.sc.ok = 1
 
-    })
-},
 async Typescale_drive(w, req) {
     let run = this.c.run
     if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
@@ -1604,13 +1592,7 @@ Floorlaw_solve(ex, frame, floor) {
 
 },
 // Floorlaw — the Book (world MUST be named Floorlaw — do_fn_for dispatches by w.sc.w).
-Floorlaw(A,w) {
-    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
-        await this.Floorlaw_drive(w,req)
-        req.sc.ok = 1
 
-    })
-},
 async Floorlaw_drive(w, req) {
     let run = this.c.run
     if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
@@ -1766,13 +1748,7 @@ Nestcut_cut(row, poly, kids) {
 
 },
 // Nestcut — the Book (world MUST be named Nestcut — do_fn_for dispatches by w.sc.w).
-Nestcut(A,w) {
-    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
-        await this.Nestcut_drive(w,req)
-        req.sc.ok = 1
 
-    })
-},
 async Nestcut_drive(w, req) {
     let run = this.c.run
     if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
@@ -1942,13 +1918,7 @@ Deep_pool(ex) {
 
 },
 // Deepcrest — the Book (world MUST be named Deepcrest — do_fn_for dispatches by w.sc.w).
-Deepcrest(A,w) {
-    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
-        await this.Deepcrest_drive(w,req)
-        req.sc.ok = 1
 
-    })
-},
 async Deepcrest_drive(w, req) {
     let run = this.c.run
     if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
@@ -2143,13 +2113,7 @@ Read_same(ex, n1, n2) {
 
 },
 // Readback — the Book (world MUST be named Readback — do_fn_for dispatches by w.sc.w).
-Readback(A,w) {
-    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
-        await this.Readback_drive(w,req)
-        req.sc.ok = 1
 
-    })
-},
 async Readback_drive(w, req) {
     let run = this.c.run
     if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
@@ -2318,13 +2282,7 @@ Surfline_surf(w) {
 
 },
 // Surfline — the Book (world MUST be named Surfline — do_fn_for dispatches by w.sc.w).
-Surfline(A,w) {
-    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
-        await this.Surfline_drive(w,req)
-        req.sc.ok = 1
 
-    })
-},
 async Surfline_drive(w, req) {
     let run = this.c.run
     if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
@@ -2358,6 +2316,69 @@ Surfline_witness(w) {
     if (n === 3 && sca && sca.sc.S === 13093 && !cra && !(w.oa({see: 'surf into the scope and its cell becomes the viewport — the shoal un-crushes at 13093 with the whole room behind it'}))) w.i({see: 'surf into the scope and its cell becomes the viewport — the shoal un-crushes at 13093 with the whole room behind it'})
     if (n === 3 && scb && scb.sc.S === 6115 && !crb && crc && crc.sc.freed === 10 && !(w.oa({see: 'the seam holds — the rooms not surfed keep their prices — the whales still at 6115 and the plankton crest still freeing ten'}))) w.i({see: 'the seam holds — the rooms not surfed keep their prices — the whales still at 6115 and the plankton crest still freeing ten'})
     if (n === 3 && rooms && !(w.oa({see: 'the chart never re-cut — the rooms stand while the surf re-prices only the scope it entered'}))) w.i({see: 'the chart never re-cut — the rooms stand while the surf re-prices only the scope it entered'})
+},
+//#endregion
+
+//#region VytoFoam — the seven algebra laws distilled into ONE Book (the Vyto-side re-expression of
+//  the distiller developed in Voro).  Merges Stuffing|Typescale|Floorlaw|Nestcut|Deepcrest|Readback|
+//   Surfline: every law is name-scoped (distinct %Example names · distinct scale names) so all seven
+//    share one world without collision — benches at beat 2, each law's dynamic move at beat 3, every
+//     witness each tick.  The snapped trees are the gate; the %see are per-beat laws.  Deterministic —
+//      no hash no wall-clock no audio no commission — byte-stable.  The world MUST be named VytoFoam
+//       (do_fn_for dispatches by w.sc.w); Story auto-stands A:VytoFoam.
+//   beat 2  every bench laid — all seven laws read
+//   beat 3  each law's dynamic move — the vein re-breathes · a voice loudens · a scope re-cuts · an
+//            annex lands · the twins split · the surf re-prices
+//   beat 4  a QUIET beat — nothing changes — every crest holds (the algebra is a pure function)
+VytoFoam(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VytoFoam_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VytoFoam_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoFoam_bench(w)
+        if (n === 3) this.VytoFoam_stir(w)
+    }
+    this.VytoFoam_witness(w)
+
+},
+// beat 2 — lay every law's bench (each builds under its own name-scoped root)
+VytoFoam_bench(w) {
+    this.Stuffing_bench(w)
+    this.Typescale_bench(w)
+    this.Floorlaw_bench(w)
+    this.Nestcut_bench(w)
+    this.Deepcrest_bench(w)
+    this.Readback_bench(w)
+    this.Surfline_bench(w)
+
+},
+// beat 3 — each law's one dynamic move (Typescale has none — its field is static)
+VytoFoam_stir(w) {
+    this.Stuffing_rebreathe(w)
+    this.Floorlaw_louden(w)
+    this.Nestcut_recut(w)
+    this.Deepcrest_annex(w)
+    this.Readback_twins(w)
+    this.Surfline_surf(w)
+
+},
+// every tick — each law's witness reads its own scoped trees and emits its per-beat %see
+VytoFoam_witness(w) {
+    this.Stuffing_witness(w)
+    this.Typescale_witness(w)
+    this.Floorlaw_witness(w)
+    this.Nestcut_witness(w)
+    this.Deepcrest_witness(w)
+    this.Readback_witness(w)
+    this.Surfline_witness(w)
 },
 //#endregion
 

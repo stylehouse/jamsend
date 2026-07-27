@@ -9,7 +9,7 @@ import { parseBuffer } from "music-metadata"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Crate(): string { return '70c700623cfd2020~g1' },
+    Ghostmeta_Ghost_M_Crate(): string { return '6780f66df7e7886d~g1' },
 
 // Crate.g — rifling through a music collection.  A modern port of the old Directory.svelte tree-walk +
 //  Agency.svelte's meander() random-walk, redesigned for THIS platform: raw File System Access API (no
@@ -211,7 +211,16 @@ async Crate_nav_paths(nav, base) {
         for (const f of dl.files) {
             if (this.Crate_is_audio(this.Crate_ext(f.name))) out.push(rel ? (rel + '/' + f.name) : f.name)
         }
-        for (const d of dl.directories) queue.push(rel ? (rel + '/' + d.name) : d.name)
+        for (const d of dl.directories) {
+            // NEVER descend a dot-dir (.jamsend holds owner-private account snaps carrying the identity
+            //  key in the clear — Swarm_account_save) or node_modules: the census is for MUSIC.  This is
+            //   the ENFORCED half of the owner-local .jamsend law (its invariant 2) — a share walk can't
+            //    surface the private corner even if the audio filter is ever relaxed — and matches
+            //     Crate_nav_meander's own dot-dir skip.
+            let nm = String(d.name || '')
+            if (!nm || nm[0] === '.' || nm === 'node_modules') continue
+            queue.push(rel ? (rel + '/' + nm) : nm)
+        }
     }
     out.sort()
     return out
