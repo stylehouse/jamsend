@@ -655,6 +655,36 @@ Swarm_station_routes(w, ident):
         if (!pier.sc.pub) continue
         if (this.Swarm_station_pier(w, ident, String(pier.sc.pub))) n = n + 1
     }
+    this.Swarm_reaccept_incomplete(w, ident)
+    return n
+
+// Swarm_reaccept_incomplete — the SEAL SELF-HEAL (the human 2026-07-28: the pairing came out ONE-WAY —
+//  Righto held a %Pier for Lefto but Lefto held NONE.  The single `pier_accept` frame builds the
+//   redeemer's WHOLE %Pier, and if it's lost or seq-collision-muted after a reload NOTHING ever re-drives
+//    it — every redial path iterates existing %Piers, so the side with none is invisible to all healing).
+//   Cure, driven from the ISSUER (the side that reliably HOLDS a %Pier and can detect the gap): on every
+//    redial, for each of my %Piers that lacks the friend's RECIPROCAL grant, re-send `pier_accept` reusing
+//     my ALREADY-SIGNED grant atom (grant_of_C — never re-mint/re-sign).  Swarm_accept rebuilds the
+//      redeemer's %Pier from scratch and re-confirms; the reciprocal grant lands, the predicate flips false,
+//       the re-send stops.  Signature-safe: `page` is unsigned + bind-checked at the far end, the grant atom
+//        is REUSED (the redeemer re-runs verify_grant and it checks out).  Cannot false-positive: a redeemer's
+//         %Pier is born with BOTH grants (Swarm_accept), so only an issuer half-seal ever matches.
+Swarm_reaccept_incomplete(w, ident):
+    let me = ident.c.keys ? ident.c.keys.pub : null
+    if (!me) return 0
+    let n = 0
+    for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+        if (!pier.sc.pub) continue
+        let peer = pier.o({ Peering: 1 })[0]
+        let theirPub = peer ? peer.sc.pub : null
+        if (!theirPub) continue
+        if (String(theirPub) === String(me)) continue                  // never re-drive the self-pier
+        if (pier.o({ Grant: 1, by: String(theirPub) })[0]) continue     // already complete — has the reciprocal grant
+        let mineC = pier.o({ Grant: 1, by: String(me) })[0]
+        if (!mineC) continue                                            // no own grant to reuse — not an issuer half-seal
+        this.Swarm_deliver(w, ident, String(pier.sc.pub), { kind: 'pier_accept', grant: grant_of_C(mineC), page: this.Swarm_page(ident) })
+        n = n + 1
+    }
     return n
 
 // ── the rebirth greeting (swarm_hi) ─────────────────────────────────────────────────────────
@@ -710,6 +740,7 @@ Swarm_heard_hi(w, ident, frame):
     if (hi.era && route.c.peer_era && route.c.peer_era !== hi.era) {
         this.Peeroleum_reset_handshake(route)
         delete w.c.ra_wanted
+        delete w.c.ra_want_ts
     }
     if (hi.era) route.c.peer_era = hi.era
     if (!hi.reply) {
@@ -1419,6 +1450,9 @@ async Swarm_share_beat(w, ident):
         if (!p.sc.pub) continue
         if (!this.Swarm_pier_live(p, 'Music')) continue
         let pub = String(p.sc.pub)
+        // never treat my OWN Pier as a friend: a self-offer echoes back and Repli_mirror_lib would mint a
+        //  spurious %MusuThem,pub:<me> right beside my %MusuSelf — the self-mirror the human saw on Righto.
+        if (pub === me) continue
         let route = this.Swarm_station_pier(w, ident, pub)
         if (!route) continue
         if (!route.c.repli_src) this.Repli_register_caster(w, route, stock)
@@ -1462,12 +1496,24 @@ async Swarm_share_beat(w, ident):
         let PAGE = +(w.c.repli_page || 2)
         let map = this.Ra_chunk_map(playing)
         w.c.ra_wanted = w.c.ra_wanted || {}
+        w.c.ra_want_ts = w.c.ra_want_ts || {}
+        let nowms = Date.now()
         let asked = 0
         let off = head - (head % PAGE)
         while (off < total && off < head + 16 && asked < 3) {
             if (map[off] == null) {
                 let key = String(playing.sc.id) + ':' + off
-                if (!w.c.ra_wanted[key]) {
+                // RE-ASKABLE live-window want (the starve fix, the human 2026-07-28 "both go into 'the
+                //  next piece hasn't arrived' mode after a little while"): a want lost to the wire (a
+                //   dropped reply, a reused-seq inbox collision — the Peeroleum hazards) used to be
+                //    re-askable ONLY on a full peer rebirth, so ONE lost page starved the live playhead
+                //     until reconnect — a hole that never clears.  Re-ask a still-missing live-window
+                //      page every 4s (bounded by asked<3/beat + the head+16 window), so a lost page
+                //       self-heals in a few seconds instead of dropping the audio.  ra_want_ts carries
+                //        the last-ask stamp beside the once-cursor; both clear on the same rebirth reset.
+                let last = w.c.ra_want_ts[key] || 0
+                if (nowms - last > 4000) {
+                    w.c.ra_want_ts[key] = nowms
                     w.c.ra_wanted[key] = 1
                     await this.Repli_want_next(w, playing.c.rx, me, String(playing.c.from), String(playing.sc.id), 'opus', off)
                     asked = asked + 1
@@ -1475,6 +1521,14 @@ async Swarm_share_beat(w, ident):
             }
             off = off + PAGE
         }
+    }
+    // the ⇊ heist gesture's follow-through rides the same beat (the human 2026-07-28): serve friends'
+    //  folder-describe asks, and carry my own %Keeps wanted→choosing→committing→done (pull the chosen
+    //   tracks into the collection).  Cheap when no keep stands; the routes it needs were registered above.
+    //   Guarded (the Ra_transcode_pump idiom) AND try-wrapped so a heist bug can NEVER break the radio
+    //    share beat — the keep driver is additive follow-through, never a dependency of the share itself.
+    if (typeof this.Heist_keep_beat === 'function') {
+        try { await this.Heist_keep_beat(w, ident) } catch (er) { w.c.heist_beat_why = '' + (er && er.message || er) }
     }
 //#endregion
 

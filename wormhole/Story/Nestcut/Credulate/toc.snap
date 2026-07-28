@@ -1,4 +1,4 @@
-Credulate,of_Book:VytoNest
+Credulate,of_Book:Nestcut
   GhostInclude:Ghost_N_Peeroleum,dige:b547d2bf75c9c191~g1
   GhostInclude:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
   GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -12,7 +12,7 @@ Credulate,of_Book:VytoNest
   GhostInclude:Ghost_M_Mesh,dige:286eb98843f6e7f9
   GhostInclude:Ghost_M_Ra,dige:1fbe9a31ddbf3899~g1
   GhostInclude:Ghost_M_Booth,dige:24e06889933090b3
-  GhostInclude:Ghost_M_Heist,dige:d3a56bc198de3786~g1
+  GhostInclude:Ghost_M_Heist,dige:196134d15dac9f0a~g1
   GhostInclude:Ghost_M_Jam,dige:92834317758c2e6f~g1
   GhostInclude:Ghost_M_Orig,dige:63f2dbf909bf7640~g1
   GhostInclude:Ghost_M_Radio,dige:91f6050d55e4b8ce~g1
@@ -26,8 +26,8 @@ Credulate,of_Book:VytoNest
   GhostInclude:Ghost_V_Vyto,dige:c19ca2cb624cd035~g1
   GhostInclude:Ghost_V_Vytonation,dige:ad22ec7f09583c2e~g1
   GhostInclude:Ghost_Story_Voronation,dige:a8a9737169608630~g1
-  GhostInclude:Ghost_Story_Sounditron,dige:bab9a19b81974693~g1
-  last_ok,at=1785241505.382,ok_pct
+  GhostInclude:Ghost_Story_Sounditron,dige:6a5ec0223a031fef~g1
+  last_ok,at=1785237077.222,ok_pct
     uses:Ghost_N_Peeroleum,dige:b547d2bf75c9c191~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -41,7 +41,7 @@ Credulate,of_Book:VytoNest
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
     uses:Ghost_M_Ra,dige:1fbe9a31ddbf3899~g1
     uses:Ghost_M_Booth,dige:24e06889933090b3
-    uses:Ghost_M_Heist,dige:d3a56bc198de3786~g1
+    uses:Ghost_M_Heist,dige:196134d15dac9f0a~g1
     uses:Ghost_M_Jam,dige:92834317758c2e6f~g1
     uses:Ghost_M_Orig,dige:63f2dbf909bf7640~g1
     uses:Ghost_M_Radio,dige:91f6050d55e4b8ce~g1
@@ -55,4 +55,4 @@ Credulate,of_Book:VytoNest
     uses:Ghost_V_Vyto,dige:c19ca2cb624cd035~g1
     uses:Ghost_V_Vytonation,dige:ad22ec7f09583c2e~g1
     uses:Ghost_Story_Voronation,dige:a8a9737169608630~g1
-    uses:Ghost_Story_Sounditron,dige:bab9a19b81974693~g1
+    uses:Ghost_Story_Sounditron,dige:6a5ec0223a031fef~g1

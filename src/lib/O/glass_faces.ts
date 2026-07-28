@@ -7,6 +7,8 @@
 //    chose to dress a %Heist).  glass_kinds.ts maps the KIND to its component for Cytui.
 export const FACE_MAINKEYS: Record<string, string> = {
     Heist: 'Heist',       // the Pirating flow — posed needs | soft wish → %Leads → choose
+    Keep: 'Keep',         // the ⇊ keep-what-you're-hearing cell (imposed by mainkey; no %Keep wears sc.face)
+    Diag: 'Diag',         // the diagnostics toggle cell (imposed by mainkey)
     MusuSelf: 'Crate',    // my music home — the record collection, spread out to gaze across
     MusuThem: 'Crate',    // a friend's music as I hold it — same spread, worn with their name
 }

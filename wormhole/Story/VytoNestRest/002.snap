@@ -1,0 +1,13 @@
+Snap:H
+  H:VytoNestRest,Run
+    A:VytoNestRest
+      self,round=2	{"mung":["age"]}
+      w:VytoNestRest
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Rig:main
+          Cog:A,of:main,dose:3
+            Cog:A1,of:A,dose:1
+            Cog:A2,of:A,dose:1
+          Cog:B,of:main,dose:1
+          Cog:C,of:main,dose:2

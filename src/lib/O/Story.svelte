@@ -1882,7 +1882,9 @@
                 console.warn(`⚠ disk snap missing n=${n}`)
             }
             delete run.sc.check_snap
-            step.sc.checking = false   // unblocks poll_check (snap_checking ok path only)
+            delete step.sc.checking   // unblocks poll_check (only reader tests truthiness) — DELETE not
+                                      //  `= false`: a 1-or-absent gate throws at encode as `false`, latent
+                                      //   until a Step gets snapped (Vyto_spool_capture snaps the session shelf).
             H.story_analysis(w)
         }
 
@@ -2362,7 +2364,10 @@
             Run.trace('snapped', String(n))
 
             const step = H.i_step(w, n)
-            step.sc.unrun = false
+            delete step.sc.unrun   // this step has now run — CLEAR the flag, never `= false`: a snapped
+                                   //  boolean is 1-or-absent, and `false` throws at encode (it decodes back
+                                   //   as the truthy string "false" and inverts the flag).  Latent until a
+                                   //    Step got snapped — Vyto_spool_capture is the first thing to snap one.
             step.sc.Run_trace = Run.trace_drain()
             step.bump_version()
 

@@ -9,7 +9,7 @@ import { parseBuffer } from "music-metadata"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Crate(): string { return '6780f66df7e7886d~g1' },
+    Ghostmeta_Ghost_M_Crate(): string { return '8be0988907323407~g1' },
 
 // Crate.g — rifling through a music collection.  A modern port of the old Directory.svelte tree-walk +
 //  Agency.svelte's meander() random-walk, redesigned for THIS platform: raw File System Access API (no
@@ -308,7 +308,16 @@ async Crate_nav_payload(nav, base, path) {
 //     MADE (real artist/album/title/seconds/loudness).  want/have/pool + the in-flight %reading + the
 //      %record rows all snap — the picture finally describes what's happening.
 
-// Crate_meta_from_path — real artist/album/title from a nested path "Artist/Album/NN Title.ext".
+// Crate_meta_from_path — title (always) + artist (ONLY from a flat "Artist - Title" filename) from a path.
+//  It NO LONGER guesses artist/album from FOLDER names.  The old code stamped artist = the top folder and
+//   album = the second folder for anything nested 3+ deep — so every track under a catch-all music folder
+//    came out artist:"muchOther" with "- west / - folks" albums (the human 2026-07-28: "guessing the artist
+//     name? the folder? give that up, just say artist+title").  A missing filename artist now yields EMPTY
+//      (title alone), never a folder.  Real tags still win upstream: the Heist census reads id3/vorbis first
+//       (Crate_meta_from_tags) and only falls back here; the radio stocker has no tags, so a nested file just
+//        shows its title.  A flat "Artist - Title.ext" (the whittle's planted tones) still resolves its own
+//         filename artist, so the Heist Book stays green.  (Already-minted stock keeps its baked-in folder
+//          artist until a clean re-record — this only fixes fresh mints.)
 Crate_meta_from_path(path) {
     let segs = path.split('/')
     let file = segs[segs.length - 1]
@@ -317,8 +326,8 @@ Crate_meta_from_path(path) {
     let clean = stem.replace(/_/g, ' ').trim()
     let parts = clean.split(' - ')
     let title = parts[parts.length - 1].replace(/^[0-9]+\s+/, '').trim()
-    let artist = (segs.length >= 3) ? segs[0] : (parts.length > 1 ? parts[0].trim() : '')
-    let album = (segs.length >= 3) ? segs[1] : ((segs.length === 2) ? segs[0] : '')
+    let artist = (parts.length > 1) ? parts[0].trim() : ''
+    let album = ''
     return { artist: artist, album: album, title: title }
 
 },
@@ -419,7 +428,7 @@ Crate_tag_mime(path) {
 //  // <      authority.  Parked until an oracle exists; today we read no pictures at all — the safe floor.
 async Crate_meta_from_tags(bytes, path) {
     let fallback = this.Crate_meta_from_path(path)
-    let tag = { artist: '', album: '', title: '' }
+    let tag = { artist: '', album: '', title: '', genre: '' }
     // lossless: the AUTHORITATIVE quality signal for the %Original|%Lossy split (the heisted whole file's
     //  grade — Mag_todo §10).  music-metadata's md.format.lossless reads the real CODEC (ALAC-in-.m4a is
     //   lossless, AAC-in-.m4a is not; FLAC-in-.ogg vs Vorbis-in-.ogg), which the extension alone cannot
@@ -429,7 +438,10 @@ async Crate_meta_from_tags(bytes, path) {
         let u8 = (bytes instanceof Uint8Array) ? bytes : new Uint8Array(bytes)
         let md = await parseBuffer(u8, this.Crate_tag_mime(path))
         let common = (md && md.common) || {}
-        tag = { artist: common.artist || '', album: common.album || '', title: common.title || '' }
+        // genre: music-metadata surfaces common.genre as a string[] (a file can carry several) — take the
+        //  first as the FILING DEFAULT the heist chooser shows (the human accepts or re-files it, 2026-07-28
+        //   "decide on a genre to keep|change we might file it under").  Absent → '' → the UI reads 'Unfiled'.
+        tag = { artist: common.artist || '', album: common.album || '', title: common.title || '', genre: (common.genre && common.genre[0]) || '' }
         if (md && md.format && typeof md.format.lossless === 'boolean') lossless = md.format.lossless
     } catch (er) {
         // a truncated|malformed|unrecognised file rejects here — NOT a crash: leave tag empty so all three
@@ -440,6 +452,7 @@ async Crate_meta_from_tags(bytes, path) {
         artist: tag.artist || fallback.artist,
         album: tag.album || fallback.album,
         title: tag.title || fallback.title,
+        genre: tag.genre,
         lossless: lossless,
     }
 

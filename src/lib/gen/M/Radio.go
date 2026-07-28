@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '2e38ecb7f99835a6~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '91f6050d55e4b8ce~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -69,6 +69,22 @@ Radio_state(radio, state) {
 // commas cut snap lines; long titles cut cells.  Same sanitizer stance as Sounditron_clean.
 Radio_clean(s) {
     return String(s == null ? '' : s).split(',').join(' ·').slice(0, 48)
+
+},
+// Radio_trace — the SUPPLY-PIPELINE tap (the human 2026-07-28: "chart|log the supply pipeline like
+//  socklog so you can finely analyse what happens when").  A capped ring on the top House of tiny
+//   {t, ev, id, ...} stage marks — dial → open → supply-start → transcode-ensure/advance → first-feed →
+//    first-sound → starve/unstarve — surfaced by the runner_ask `world` op (which computes inter-event
+//     deltas so the 20s shows up as the gap between two marks).  Cheap (tiny objects, capped 300) so it
+//      rides always-on; wall clock via Date.now() (already used across this ghost).
+Radio_trace(radio, entry) {
+    let M = this.top_House()
+    let log = M.c.supply_trace || []
+    entry.t = Date.now()
+    entry.id = (radio && radio.c.rec) ? String(radio.c.rec.sc.id || '').slice(0, 8) : null
+    log.push(entry)
+    if (log.length > 300) log.splice(0, log.length - 300)
+    M.c.supply_trace = log
 },
 //#endregion
 
@@ -215,13 +231,14 @@ async Radio_pump(radio, era) {
         // a tuned pick (the riffle's audition) outranks the dial — consumed exactly once
         let pick = radio.c.tune_rec || null
         radio.c.tune_rec = null
+        this.Radio_trace(radio, { ev: 'dial' })
         rec = pick || await this.Radio_dial(radio)
         if (radio.c.era !== era) return
         if (!rec) {
             // nothing to play YET — the stoker was poked (Radio_dial did); show the dig
             //  and look again soon: music starts the moment the first stock lands.
             this.Radio_state(radio, 'digging')
-            this.Radio_pump_soon(radio, era, 3000)
+            this.Radio_pump_soon(radio, era, 800)
             return
         }
         this.Radio_open(radio, rec)
@@ -260,6 +277,10 @@ async Radio_pump(radio, era) {
         this.Radio_dec_feed(radio.c.dec, this.Ra_chunk_packets(m.bytes[s]))
         radio.c.seq = s + 1
         fed = fed + 1
+        if (!radio.c.first_feed) {
+            radio.c.first_feed = 1
+            this.Radio_trace(radio, { ev: 'first-feed', seq: s })
+        }
     }
     if (fed > 0) await new Promise((r) => setTimeout(r, 30))
     if (radio.c.era !== era) return
@@ -269,7 +290,14 @@ async Radio_pump(radio, era) {
     //  drop — the show goes on; the decoder re-opens dirty on the far side, real dropout sound)
     if (radio.c.seq < total && m.bytes[radio.c.seq] == null) {
         if ((radio.c.end || 0) < now + 1) {
-            if (!radio.c.starved_at) radio.c.starved_at = now
+            // STALLING (silent): the chunk we need is missing AND the decoded timeline has run out.  Mark
+            //  the radio 'starved' the instant the grace starts (#2) — the pump keeps running (its guard
+            //   accepts 'starved') but the face stops LYING 'playing' through a dead-silent dropout.
+            if (!radio.c.starved_at) {
+                radio.c.starved_at = now
+                if (radio.sc.Radio === 'playing') this.Radio_state(radio, 'starved')
+                this.Radio_trace(radio, { ev: 'starve', seq: radio.c.seq, wire: radio.c.rec && radio.c.rec.c.from ? 1 : 0 })
+            }
             if (now - radio.c.starved_at > 6) {
                 radio.c.seq = radio.c.seq + 1
                 radio.sc.drops = (+(radio.sc.drops || 0)) + 1
@@ -277,12 +305,29 @@ async Radio_pump(radio, era) {
                     this.Radio_dec_close(radio.c.dec)
                     radio.c.dec = null
                 }
-                radio.c.starved_at = 0
+                // #3: DON'T reset starved_at on the splice — a RUN of consecutive holes (still silent, still
+                //  seq++'ing) shares ONE 6s grace and bursts through, instead of paying a fresh 6s PER hole
+                //   (the "quite a bit of gappage" a multi-chunk gap used to cause).  A continuous gap keeps
+                //    end < now+1, so the else below never fires until real recovery — the clock persists
+                //     only as long as the silence actually does.
                 radio.bump()
             }
         } else {
-            radio.c.starved_at = 0
+            // chunk still missing but the buffer is HEALTHY again (an earlier chunk decoded ahead) —
+            //  playback recovered, so CLEAR the stall clock and un-starve.  This reset (kept, not removed)
+            //   is what makes a LATER independent stall earn its own fresh 6s grace rather than inherit a
+            //    stale starved_at and splice with zero grace (the adversarial-review catch).
+            if (radio.c.starved_at) {
+                radio.c.starved_at = 0
+                if (radio.sc.Radio === 'starved') this.Radio_state(radio, 'playing')
+                this.Radio_trace(radio, { ev: 'unstarve', seq: radio.c.seq })
+            }
         }
+    } else if (radio.c.starved_at) {
+        // the awaited chunk is now present (or seq reached the track end) — recovery: clear + un-starve.
+        radio.c.starved_at = 0
+        if (radio.sc.Radio === 'starved') this.Radio_state(radio, 'playing')
+        this.Radio_trace(radio, { ev: 'unstarve', seq: radio.c.seq })
     }
     // the end: drain the decoder's last frames once, and when the timeline reaches the
     //  frontier the dial turns — rec drops, the next look picks fresh, the chain is seamless.
@@ -326,6 +371,9 @@ Radio_open(radio, rec) {
     radio.c.cap = 0
     radio.c.drained = 0
     radio.c.starved_at = 0
+    radio.c.first_feed = 0
+    radio.c.first_sound = 0
+    this.Radio_trace(radio, { ev: 'open', total: +(rec.sc.total || 0), preview: +(rec.sc.preview || 0), wire: rec.c.from ? 1 : 0 })
     radio.c.nch = Math.min(2, +(rec.sc.nch || 1))
     radio.sc.title = this.Radio_clean(rec.sc.title || rec.sc.id || 'unknown')
     let artist = this.Radio_clean(rec.sc.artist || '')
@@ -345,11 +393,23 @@ Radio_open(radio, rec) {
     let src = rec.c.play_by || rec.sc.from || this.Ra_pub_of(rec)
     if (src && src !== me) {
         radio.sc.by = src
+        radio.sc.by_name = this.Radio_friendly(w, src)   // the friendly to SHOW ("from Lefto"), not a hex pub
     } else {
         delete radio.sc.by
+        delete radio.sc.by_name
     }
     radio.bump()
     this.Radio_media_now(radio, rec)
+
+},
+// Radio_friendly — a source pub → the friend's chosen name (%Pier.friendly under my Peering), the SAME
+//  lookup Riffle_homes and the lineup error already use; falls back to a short pub when the Pier isn't
+//   sealed yet.  The human 2026-07-28 wanted "to know which Pier we're streaming from" — this names it.
+Radio_friendly(w, pub) {
+    let M = this.top_House()
+    let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
+    let pier = (ident && M.Swarm_peering) ? M.Swarm_peering(ident)?.o({ Pier: 1, pub: String(pub) })[0] : null
+    return pier?.sc?.friendly ? String(pier.sc.friendly) : String(pub).slice(0, 8)
 
 },
 // Radio_heard_cap — the bound on heard-this-sitting: keep the ~100 most-recent record ids, no more.
@@ -409,6 +469,8 @@ async Radio_supply_go(radio, era, rec) {
     //      pump plays what lands and starve-splices any gap.  NEVER cap a wire record — no local source
     //       to read, and capping it throws away the pages the wire is already pulling.
     if (rec.c.from) return
+    this.Radio_trace(radio, { ev: 'supply-start', total: total, preview: P })
+    let passes = 0
     while (radio.c.era === era && radio.c.rec === rec) {
         let m = this.Radio_map(rec)
         let missing = 0
@@ -422,15 +484,19 @@ async Radio_supply_go(radio, era, rec) {
         }
         if (!missing) return
         let ra = null
+        this.Radio_trace(radio, { ev: 'transcode-ensure', pass: passes })
         try { ra = await this.Ra_transcode_ensure(w, rec) } catch (er) { ra = null }
         if (radio.c.era !== era || radio.c.rec !== rec) return
         if (!ra) {
+            this.Radio_trace(radio, { ev: 'transcode-fail' })
             radio.c.cap = P
             radio.sc.note = 'preview only — source unreadable'
             radio.bump()
             return
         }
+        this.Radio_trace(radio, { ev: 'transcode-advance', pass: passes })
         try { await this.Ra_transcode_advance(w, rec) } catch (er) {}
+        passes = passes + 1
         await new Promise((r) => setTimeout(r, 150))
     }
 
@@ -474,30 +540,98 @@ async Radio_dial(radio) {
     //    a consumed card drops, the programme advances.
     this.Radio_lineup_fill(w, radio)
     let lu = this.Radio_lineup_ensure(w)
-    let head = lu.o({ Card: 1 })[0]
-    if (head) {
+    let heard = radio.c.heard || {}
+    // consume the lineup head — but SKIP any card already heard this sitting (#6): the user may have
+    //  riffle-auditioned a track that was already queued, and the dial reaching its stale card would
+    //   replay it, breaking "never repeat a track this sitting".  Drop-and-continue past heard heads.
+    for (const head of lu.o({ Card: 1 })) {
         let hrec = head.c.rec
-        // carry the card's source across the drop: the %Card wears `by` (the friend crate pub,
-        //  set at fill), the raw %Record does not — stash it so Radio_open can name the source on
-        //   the now-playing datum instead of losing it when the card leaves the lineup.
-        if (hrec && head.sc.by) hrec.c.play_by = head.sc.by
+        let hby = head.sc.by                        // the %Card wears the friend crate pub; the raw %Record does not
         lu.drop(head)
+        lu.sc.up_next = String(lu.o({ Card: 1 }).length)   // #7: keep the printed count live at consume-time (was only set at fill)
         lu.bump()
-        if (hrec) return hrec
+        if (hrec && heard[String(hrec.sc.id)]) continue    // already heard — drop the repeat, keep looking
+        if (hrec) {
+            if (hby) hrec.c.play_by = hby           // stash the source so Radio_open names it once the card is gone
+            return hrec
+        }
     }
-    // no lineup (empty crates) — the old direct dial as the fallback ladder
-    let fresh = this.Ra_dial_next(w, shelf, { skip_ids: radio.c.heard || {} })
+    // no lineup (empty crates) — the direct dial as the fallback ladder, SOURCE-EXCLUSIVE.
+    //  The human 2026-07-28: the tabs are "meant to be listening to each other's collections
+    //   exclusively, unless they click to do so, or Pier finding|connection totally fails, and
+    //    we tell the user there's nobody online".  So: FRIENDS by default; own stock ONLY when
+    //     the listener flipped radio.sc.own (the RadioFace source switch).  Friend-only with
+    //      nothing playable ⇒ an HONEST park — Radio_reason writes the "nobody online / gathering"
+    //       note and we return null (the pump shows it) — NEVER a silent own-replay that masked a
+    //        dead share and had both tabs quietly playing their own records.
+    if (radio.sc.own) {
+        let fresh = this.Ra_dial_next(w, shelf, { skip_ids: radio.c.heard || {} })
+        if (fresh) return fresh
+        this.Stoker_churn(stoker)
+        let again = this.Ra_dial_next(w, shelf, {})
+        if (again) {
+            radio.sc.replays = (+(radio.sc.replays || 0)) + 1
+            radio.bump()
+        }
+        return again
+    }
     let pool = this.Radio_dial_pool(w, radio)
-    if (fresh && pool) return (this.Ra_rand(w, 2) === 0) ? fresh : pool
-    if (fresh) return fresh
     if (pool) return pool
-    this.Stoker_churn(stoker)
-    let again = this.Ra_dial_next(w, shelf, {})
-    if (again) {
-        radio.sc.replays = (+(radio.sc.replays || 0)) + 1
+    this.Radio_reason(w, radio)
+    return null
+
+},
+// Radio_reason — friend-exclusive and nothing playable: say WHY, plainly, on radio.sc.note
+//  (RadioFace renders it as the standing line, and it clears itself the instant a track opens —
+//   Radio_open deletes note).  Three honest cases, in order of "closer to hearing music":
+//    a peer live but every track a husk ⇒ "gathering from <name>" (the bytes are owed);
+//     a peer known but offline ⇒ "friends are offline"; no Pier at all ⇒ "nobody online yet".
+Radio_reason(w, radio) {
+    let M = this.top_House()
+    let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
+    let liveName = null
+    let anyPier = 0
+    let me = String(ident?.sc?.prepub || '')
+    if (ident && M.Swarm_peering) {
+        for (const p of M.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+            if (!p.sc.pub) continue
+            if (me && String(p.sc.pub) === me) continue   // skip the self-pier — "gathering from Righto" on Righto is the same self-mirror bug
+            anyPier = 1
+            if (M.Swarm_pier_live && M.Swarm_pier_live(p, 'Music')) {
+                liveName = p.sc.friendly ? String(p.sc.friendly) : String(p.sc.pub).slice(0, 8)
+            }
+        }
+    }
+    let note = liveName
+        ? ('gathering music from ' + liveName + ' — nothing has arrived yet')
+        : (anyPier
+            ? 'your friends are offline — nobody online to play right now'
+            : 'nobody online yet — connect a friend to hear their music')
+    if (radio.sc.note !== note) {
+        radio.sc.note = note
         radio.bump()
     }
-    return again
+
+},
+// Radio_source_toggle — the RadioFace source switch: flip between the friends' collections
+//  (the default) and your OWN records.  Wipes the lineup (it's full of the old source's cards)
+//   and the note so the next dial fills fresh from the chosen side; the current track finishes.
+Radio_source_toggle(radio) {
+    let w = radio.c.w
+    if (radio.sc.own) {
+        delete radio.sc.own
+    } else {
+        radio.sc.own = 1
+    }
+    let lu = w ? w.o({ Mag: 'Lineup' })[0] : null
+    if (lu) {
+        for (const c of lu.o({ Card: 1 })) lu.drop(c)
+        lu.c.fill_i = 0
+        lu.sc.up_next = '0'
+        lu.bump()
+    }
+    delete radio.sc.note
+    radio.bump()
 
 },
 //#region lineup — the STANDING PROGRAMME: a rolling %Mag the radio plays through
@@ -528,27 +662,34 @@ Radio_lineup_fill(w, radio) {
     for (const c2 of lu.o({ Card: 1 })) lined[c2.sc.id] = 1
     let pub = this.Radio_pub(w) || 'me'
     let pools = []
-    let mine = []
-    for (const rec of this.Ra_recs(this.Ra_home_self(w, pub))) {
-        if (lined[rec.sc.id]) continue
-        if (radio && radio.c.heard && radio.c.heard[rec.sc.id]) continue
-        mine.push(rec)
-    }
-    if (mine.length) pools.push({ key: 'mine', recs: mine })
-    for (const home of w.o({ MusuThem: 1 })) {
-        let hp = String(home.sc.pub || '')
-        if (!hp) continue
-        let frecs = []
-        for (const rec of this.Ra_recs(this.Ra_home_them(w, hp))) {
+    // SOURCE-EXCLUSIVE (the human 2026-07-28): the lineup draws from ONE side — the friends'
+    //  collections by default, or your OWN only once you've flipped radio.sc.own.  It never
+    //   round-robins the two together: that co-equal mix (own always full via the stoker, friend
+    //    mirrors wire-dependent) is exactly why both tabs played mostly their own records.
+    if (radio && radio.sc.own) {
+        let mine = []
+        for (const rec of this.Ra_recs(this.Ra_home_self(w, pub))) {
             if (lined[rec.sc.id]) continue
             if (radio && radio.c.heard && radio.c.heard[rec.sc.id]) continue
-            let map = this.Ra_chunk_map(rec)
-            if (map[0] == null) continue
-            frecs.push(rec)
+            mine.push(rec)
         }
-        if (frecs.length) pools.push({ key: hp, recs: frecs })
+        if (mine.length) pools.push({ key: 'mine', recs: mine })
+    } else {
+        for (const home of w.o({ MusuThem: 1 })) {
+            let hp = String(home.sc.pub || '')
+            if (!hp) continue
+            let frecs = []
+            for (const rec of this.Ra_recs(this.Ra_home_them(w, hp))) {
+                if (lined[rec.sc.id]) continue
+                if (radio && radio.c.heard && radio.c.heard[rec.sc.id]) continue
+                let map = this.Ra_chunk_map(rec)
+                if (map[0] == null) continue
+                frecs.push(rec)
+            }
+            if (frecs.length) pools.push({ key: hp, recs: frecs })
+        }
+        this.Radio_lineup_errors(w, lu, pools)
     }
-    this.Radio_lineup_errors(w, lu, pools)
     if (!pools.length) return lu
     let pi = lu.c.fill_i || 0
     let guard = 0
@@ -587,8 +728,10 @@ Radio_lineup_errors(w, lu, pools) {
     let M = this.top_House()
     let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
     if (!ident || !M.Swarm_peering) return
+    let me = String(ident.sc.prepub || '')
     for (const p of M.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
         if (!p.sc.pub) continue
+        if (me && String(p.sc.pub) === me) continue   // never blame MYSELF for "no music coming across" (the self-pier)
         if (!M.Swarm_pier_live(p, 'Music')) continue
         let hp = String(p.sc.pub)
         let has = 0
@@ -702,7 +845,16 @@ Stoker_wake(st) {
 //  fresh stock stands again.  A flag the next look consumes; the wake covers the parked case.
 Stoker_churn(st) {
     st.c.churn_asked = 1
-    this.Stoker_wake(st)
+    if (st.c.awake) {
+        // already looping but resting on a long timer (spent=15s / watching=3s) — the shovel means "dig
+        //  NOW", so cut the wait: a fresh era makes the pending stale timer a safe no-op (the era-guard),
+        //   and a 50ms re-look starts the dig at once instead of up to 15s later ("⛏ digs now" now true).
+        let era = (st.c.era || 0) + 1
+        st.c.era = era
+        this.Stoker_soon(st, era, 50)
+    } else {
+        this.Stoker_wake(st)
+    }
 
 },
 // Stoker_preheat — PRE-EMPT the dig: one churn at glass-commission time, while the radio is
@@ -744,6 +896,7 @@ async Stoker_look(st, era) {
         if (st.c.era !== era) return
         let k = 0
         let stood0 = +(st.sc.stood || 0)
+        let nudged = 0
         while (k < ls.length && k < 24) {
             let stand = null
             try { stand = await this.Ra_stock_standing(nav, pub, ls[k].enid) } catch (er) { stand = null }
@@ -754,11 +907,22 @@ async Stoker_look(st, era) {
                 if (!this.Ra_rec_find(shelf, { Record: 1, id: ls[k].enid })) {
                     this.Ra_record_from(shelf, stand.info, stand.bufs)
                     st.sc.stood = (+(st.sc.stood || 0)) + 1
+                    // start sounding on record #1 — DON'T wait for all 24 whole-file reads to finish
+                    //  (that post-loop-only nudge was ~seconds of dead air on a warm disk).  The rest
+                    //   resurrect behind the playing track.
+                    if (!nudged) {
+                        nudged = 1
+                        this.Radio_nudge(w)
+                        // stamp the census NOW so stock>0 the instant track #1 stands — the Sounditron
+                        //  boot's stock gate (Sounditron_stock_settled) settles on this, not after all
+                        //   24 reads finish.  Cheap: census bumps only when a number actually moved.
+                        this.Stoker_census(st, shelf, radio)
+                    }
                 }
             }
             k = k + 1
         }
-        // resurrection landed — a digging radio should start sounding NOW, not next poll
+        // backstop nudge for any later stands past the first
         if (+(st.sc.stood || 0) > stood0) this.Radio_nudge(w)
     }
     this.Stoker_census(st, shelf, radio)
@@ -1157,14 +1321,26 @@ Riffle_deal_shelf(ri, home) {
     delete ri.sc.at
     delete ri.sc.folders
     let all = this.Ra_recs(home.shelf)
-    ri.sc.tracks = String(all.length)
-    let recs = []
+    // deal only PLAYABLE tracks — a husk (no chunk 0) has no bytes yet, so its ▶ would starve+skip and its
+    //  ★ would fave a copy that plays nothing.  A friend's crate fills husk-first over the wire, so this is
+    //   what keeps the deck honest for a peer (the same husk-gate Radio_dial_pool / lineup already apply).
+    let playable = []
     for (const r of all) {
+        if (this.Ra_chunk_map(r)[0] == null) continue
+        playable.push(r)
+    }
+    // COUNT the playable ones, not the raw shelf — else the deck claims "N tracks below" while dealing zero
+    //  cards (all husks), a blank spread with no explanation.  When a friend crate is metadata-only so far,
+    //   SAY the bytes are still coming rather than show an unexplained empty deck.
+    ri.sc.tracks = String(playable.length)
+    if (!playable.length && all.length) { ri.sc.note = 'their tracks are still arriving over the wire' } else { delete ri.sc.note }
+    let recs = []
+    for (const r of playable) {
         if (!ri.c.dealt[r.sc.id]) recs.push(r)
     }
-    if (!recs.length && all.length) {
+    if (!recs.length && playable.length) {
         ri.c.dealt = {}
-        recs = all.slice()
+        recs = playable.slice()
     }
     let dealt = 0
     while (dealt < 6 && recs.length) {
@@ -1195,6 +1371,10 @@ async Riffle_deal_dir(ri) {
     let dl = null
     try { dl = await nav.dir_at(rel) } catch (er) { dl = null }
     if (!dl && rel) {
+        // the folder we tried to open is gone (deleted mid-session / a transient FSA hiccup) — recover to
+        //  the root, but SAY SO instead of teleporting silently (the module's honesty stance for the other
+        //   nav failures).  Cleared by the `delete ri.sc.note` at the top of the next deal.
+        ri.sc.note = 'that folder went away — back to the top'
         ri.c.path = ''
         ri.c.deep = null
         rel = ''
@@ -1320,6 +1500,36 @@ async Radio_mag_pop(w, rec) {
     if (typeof this.Musica_pop !== 'function') return false
     await this.Musica_pop(nav, '', String(pub), 'Faves', rec)
     return true
+
+},
+// Radio_keep — the HEIST gesture (the human 2026-07-28 "keep what you're hearing... keeping it grabs
+//  the whole folder it came from"): capture the currently-playing FRIEND track as a durable %Keep intent
+//   in MY loading zone (Ra_home_shop).  The %Keep is the SEED the chooser inflates (Heist_rummage_ask →
+//    the source describes the folder it came from) and the driver condenses into a real %Heist job
+//     (Heist_keep_go → Heist_beat → Heist_land).  Own tracks are already held, so the ⇊ button only shows
+//      on a friend track (radio.sc.by set) — this guards on n.sc.by too.  Minting the intent is SAFE +
+//       ADDITIVE (a new %Keep mainkey, no hot-path touch); the pull+land completes where the wire is live.
+//        Idempotent: a second press on the same seed no-ops (a keep already stands).  n.c.kept mirrors the
+//         seed for the face's ✓ (runtime .c, never snapped — the "did my click land" tell).
+async Radio_keep(n) {
+    let w = n.c.w
+    let rec = n.c.rec
+    if (!w || !rec) return false
+    let friend = n.sc.by
+    if (!friend) return false            // your own record — nothing to heist, you already hold it
+    let me = this.Radio_pub(w) || 'me'
+    let seed = String(rec.sc.id)
+    let shop = this.Ra_home_shop(w, me)
+    n.c.kept = n.c.kept || {}
+    n.c.kept[seed] = 1
+    if (shop.o({ Keep: 1, seed: seed })[0]) { n.bump(); return true }
+    let keep = shop.i({ Keep: this.Radio_clean(rec.sc.title || 'this'), seed: seed, at: String(friend), state: 'primed' })
+    keep.c.up = shop
+    keep.sc.from_name = this.Radio_friendly(w, friend)
+    if (rec.sc.artist) keep.sc.artist = this.Radio_clean(rec.sc.artist)
+    keep.bump()
+    n.bump()
+    return true
 },
 //#endregion
 
@@ -1439,6 +1649,10 @@ Radio_place(radio, got) {
     }
     radio.c.end = aud.schedule(buf, at, 1)
     radio.c.sched = (radio.c.sched || 0) + n
+    if (!radio.c.first_sound) {
+        radio.c.first_sound = 1
+        this.Radio_trace(radio, { ev: 'first-sound', n: n })
+    }
 
 },
 Radio_spill(radio) {

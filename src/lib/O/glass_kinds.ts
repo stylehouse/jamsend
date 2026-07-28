@@ -11,18 +11,26 @@ import RadioFace from './ui/RadioFace.svelte'
 import StokerFace from './ui/StokerFace.svelte'
 import TunerFace from './ui/TunerFace.svelte'
 import HeistFace from './ui/HeistFace.svelte'
+import KeepFace from './ui/KeepFace.svelte'
+import DiagFace from './ui/DiagFace.svelte'
 import DoorFace from './ui/DoorFace.svelte'
 import RiffleFace from './ui/RiffleFace.svelte'
 import RiffFace from './ui/RiffFace.svelte'
 import ZineFace from './ui/ZineFace.svelte'
 import LineupFace from './ui/LineupFace.svelte'
 import CrateFace from './ui/CrateFace.svelte'
+import UptimeFace from './ui/UptimeFace.svelte'
+import BeatFace from './ui/BeatFace.svelte'
 
 export const GLASS_KINDS: Record<string, any> = {
+    Beat: BeatFace,       // the session HUD — beat N/7 + the live countdown for the wait we're in
+    Uptime: UptimeFace,   // the live heartbeat — how long this tab's been alive, ticks every second
     Radio: RadioFace,     // the continuous listen — play/pause/skip, now-playing
     Stoker: StokerFace,   // the provisioning organ — watch the digs crank, poke a churn
     Tuner: TunerFace,     // the glass's dial — which crews of cells are shown
     Heist: HeistFace,     // the Pirating flow — posed needs | soft wish → leads → take
+    Keep: KeepFace,       // the ⇊ keep-what-you're-hearing cell — folder nodes, tweak genre, folds down on start
+    Diag: DiagFace,       // the diagnostics toggle — reveals/hides beat·uptime·door; grabs attention when open
     Door: DoorFace,       // who am I + who's with me — identity, landings, pulse liveness
     Riffle: RiffleFace,   // rifle a collection — the deck: crates, folders, deal/sweep
     Riff: RiffFace,       // one dealt card — a track (▶ tunes) or a folder (open descends)

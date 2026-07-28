@@ -24,26 +24,53 @@
             .map((k) => ({ crew: k, count: census[k], hidden: !!mute[k] }))
     })
     let hidden_n = $derived(crews.filter((c) => c.hidden).length)
+
+    // the SOURCE switch (the human 2026-07-28): choosing a friend's collection vs your own crate lives
+    //  HERE, not on the player.  friends' music is the default (radio.sc.own absent); your own crate is
+    //   the opt-in.  Radio_source_toggle flips the mode + re-fills the lineup from the chosen side.
+    let source = $derived.by(() => {
+        void H?.version
+        void tick
+        const radio = (n?.c?.w?.o?.({ Radio: 1 }) ?? [])[0]
+        return { radio, own: !!(radio?.sc?.own) }
+    })
+    const pick_source = (own: boolean) => {
+        if (!source.radio || source.own === own) return
+        ;(H as any)?.Radio_source_toggle?.(source.radio)
+    }
 </script>
 
 <!-- a bare census renders NOTHING: "tuner — no crews yet" meant nothing to anyone
      (the human 2026-07-19); this face only speaks when there is something to show/hide. -->
-{#if crews.length}
+{#if crews.length || source.radio}
 <div class="tf">
-    <div class="tf-title">👁 show / hide</div>
-    <div class="tf-list">
-        {#each crews as c (c.crew)}
-            <button class="tf-crew" class:hid={c.hidden}
-                onclick={() => (H as any)?.Tuner_toggle?.(n, c.crew)}
-                title={c.hidden ? 'show the ' + c.crew + ' cells' : 'tuck the ' + c.crew + ' cells away'}>
-                <span class="tf-box">{c.hidden ? '☐' : '▣'}</span>
-                <span class="tf-name">{c.crew}</span>
-                <span class="tf-count">×{c.count}</span>
-            </button>
-        {/each}
-    </div>
-    {#if hidden_n > 0}
-        <div class="tf-note">{hidden_n} tucked away</div>
+    {#if source.radio}
+        <div class="tf-title">👂 listening to</div>
+        <div class="tf-src">
+            <button class="tf-srcbtn" class:on={!source.own}
+                onclick={() => pick_source(false)}
+                title="play your friends' collections">⚯ friends</button>
+            <button class="tf-srcbtn" class:on={source.own}
+                onclick={() => pick_source(true)}
+                title="play your own crate">💿 my crate</button>
+        </div>
+    {/if}
+    {#if crews.length}
+        <div class="tf-title">👁 show / hide</div>
+        <div class="tf-list">
+            {#each crews as c (c.crew)}
+                <button class="tf-crew" class:hid={c.hidden}
+                    onclick={() => (H as any)?.Tuner_toggle?.(n, c.crew)}
+                    title={c.hidden ? 'show the ' + c.crew + ' cells' : 'tuck the ' + c.crew + ' cells away'}>
+                    <span class="tf-box">{c.hidden ? '☐' : '▣'}</span>
+                    <span class="tf-name">{c.crew}</span>
+                    <span class="tf-count">×{c.count}</span>
+                </button>
+            {/each}
+        </div>
+        {#if hidden_n > 0}
+            <div class="tf-note">{hidden_n} tucked away</div>
+        {/if}
     {/if}
 </div>
 {/if}
@@ -59,6 +86,22 @@
         text-align: left;
     }
     .tf-title { font-size: 11px; font-weight: 700; margin-bottom: 3px; }
+    .tf-src { pointer-events: auto; display: flex; gap: 4px; margin-bottom: 7px; }
+    .tf-srcbtn {
+        pointer-events: auto;
+        cursor: pointer;
+        flex: 1;
+        background: #12222b;
+        color: #9fb6c8;
+        border: 1px solid #24404d;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 10px;
+        padding: 4px 6px;
+        white-space: nowrap;
+    }
+    .tf-srcbtn:hover { border-color: #6fb3d9; }
+    .tf-srcbtn.on { background: #d9a026; color: #04202a; border-color: #d9a026; font-weight: 700; }
     .tf-list {
         pointer-events: auto;
         max-height: 150px;

@@ -17,6 +17,11 @@ export class SoundSystem {
     //      or encoded); gain=0 mirrors Audiolet.mute so it is inaudible and never touches the music path.
     awakeOsc:  OscillatorNode | null = null
     awakeGain: GainNode | null = null
+    // every voice this device hands out (new_audiolet), so the tab can bring ALL of them down at once.
+    //  A voice is otherwise un-enumerable — new_audiolet just returned one and forgot it — which is the
+    //   root of "stuck listening": an orphaned pump, a wrong-world voice, or an HMR leftover kept playing
+    //    with nothing able to reach it.  Registered on mint, dropped on close().
+    voices: Set<Audiolet> = new Set()
     constructor(opt) {
         Object.assign(this,opt)
     }
@@ -102,7 +107,16 @@ export class SoundSystem {
     new_audiolet(opt={}):Audiolet {
         let aud = new Audiolet({gat:this,...opt})
         if (!aud.gat) throw "!aud.gat"
+        this.voices.add(aud)
         return aud
+    }
+    // silence_all — the panic: close EVERY voice this device handed out (music dies instantly — each
+    //  gainNode graph severed) WITHOUT closing the AudioContext, so the keep-awake source survives.  The
+    //   one authoritative "stop everything" that reaches a stuck listener no matter which world, era, or
+    //    HMR-orphan owns the voice.  Sound_panic calls this.
+    silence_all() {
+        for (const a of [...this.voices]) { try { a.close() } catch (e) {} }
+        this.voices.clear()
     }
     // if they transcode, what to
     bitrate = 160
@@ -114,6 +128,9 @@ export class Audiolet {
     gainNode2: GainNode
     outputNode?: MediaStreamAudioDestinationNode
     bitrate?
+    // set by close()/silence_all — a spent voice must never take new work, so schedule() no-ops on it:
+    //  an orphaned pump that keeps scheduling onto a closed graph then creates no dead nodes and no sound.
+    closed = false
     constructor(opt={}) {
         Object.assign(this,opt)
         this.setupAudiolet();
@@ -177,10 +194,17 @@ export class Audiolet {
     //   Radios.svelte:344): at rate<1 the chunk lasts `duration/rate`, so the returned end is later —
     //    the playhead advances slower, backing away from the live edge.  Glide_decide picks the rate.
     schedule(decoded: AudioBuffer, when: number, rate = 1): number {
+        if (this.closed) return when + decoded.duration / rate   // spent voice takes no new work (silent)
         let src = this.gat.AC!.createBufferSource()
         src.buffer = decoded
         src.playbackRate.value = rate
         src.connect(this.gainNode)
+        // a streamed radio lays a new source every chunk and NEVER replays one — so cut each loose the
+        //  instant it finishes.  Left connected, a spent one-shot source pins its ~0.75MB buffer (and its
+        //   own node) alive on the graph forever: minutes of playback pile up hundreds of dead nodes and
+        //    the renderer OOM-fatals (V8 CHECK → SIGILL).  onended fires after the tail plays out, so the
+        //     drop is inaudible; an early close() tears the whole graph down regardless.
+        src.onended = () => { try { src.disconnect() } catch (e) {} }
         src.start(when)
         return when + decoded.duration / rate
     }
@@ -197,6 +221,8 @@ export class Audiolet {
     }
     // < use this
     close() {
+        this.closed = true
+        this.gat?.voices?.delete(this)      // drop from the device registry so the Set never leaks
         // Stop and disconnect all audio nodes
         this.gainNode?.disconnect();
         this.gainNode2?.disconnect();

@@ -10,7 +10,7 @@ import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Sound(): string { return '8827ac387e64b159~g1' },
+    Ghostmeta_Ghost_M_Sound(): string { return 'e74dd6665cd2abd0~g1' },
 
 // Sound.g — the AUDIO ENGINE.  Extracted from Ghost/Story/Musuation.g's //#region reality (the
 //  Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md §5): shared, real software,
@@ -238,6 +238,24 @@ async Sound_gat() { const H = this;
         await g.init()
     }
     return g.AC_ready ? g : null
+
+},
+// Sound_panic — the always-reachable STOP, the cure for "stuck listening to a background track the UI lost".
+//  silence_all() brings down EVERY voice on the tab at once (an orphaned pump, a wrong-world voice, an HMR
+//   leftover — none can hide from it), so sound dies instantly no matter what owns it.  Handed the radio the
+//    user can actually see, it also kills that one's detached pump (era bump), closes its voice, and parks
+//     its state so the face stops lying 'playing'.  Safe to call with no radio (pure silence).  Bound to the
+//      ⏹ on RadioFace; a NEW verb, so a live tab must reload once before the button reaches it.
+Sound_panic(radio) { const H = this;
+    let g = H.top_House().c.musu_gat
+    if (g && g.silence_all) { try { g.silence_all() } catch (er) {} }
+    if (radio) {
+        radio.c.era = (radio.c.era || 0) + 1
+        if (radio.c.aud) { try { radio.c.aud.close() } catch (er) {} }
+        radio.c.aud = null
+        if (radio.sc.Radio && radio.sc.Radio !== 'off') radio.sc.Radio = 'paused'
+        radio.bump()
+    }
 
 },
 // Sound_real_stream — REALITY, now literal: play `total` synth chunks through the real voice and measure

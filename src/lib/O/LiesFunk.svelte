@@ -2257,6 +2257,31 @@ await M.eatfunc({
                     }
                 } else if (op === 'probe') {
                     result = await H.Lies_audio_probe()   // real-audio one-shot: real-time? analyser-heard? (fleet capability)
+                } else if (op === 'world') {
+                    // READ-ONLY diagnostic of the LIVE RESIDENT world — the music tab as it stands NOW, no
+                    //  test run required (the read ops below serve a Storyrun's steps; a plain playing tab has
+                    //   none).  The human 2026-07-28 asked to diagnose either Sounditron straight from a snap.
+                    //    Two lenses: (1) the SEAL state — every %Pier of the live identity with its grant count
+                    //     (2 = mutually sealed; 1 = a one-way half-seal, the bug); (2) a depth-bounded enWaft of
+                    //      the resident world so Radio/Musu/MusuThem show without diving the paged record clouds.
+                    const ident = (H as any).Swarm_live_self?.()
+                    const peering = ident ? (H as any).Swarm_peering?.(ident) : null
+                    const piers = peering ? ((peering.o({ Pier: 1 }) as TheC[]).map((p: TheC) => {
+                        const gs = (p.o({ Grant: 1 }) as TheC[])
+                        return {
+                            pub: String(p.sc.pub ?? '').slice(0, 16),
+                            friendly: (p.sc.friendly as string) ?? null,
+                            grants: gs.map((g: TheC) => ({ to: String(g.sc.Grant ?? '').slice(0, 12), by: String(g.sc.by ?? '').slice(0, 12) })),
+                            mutual: gs.length >= 2 ? 1 : 0,
+                        }
+                    })) : []
+                    const stW = H.Lies_runner_story_w()
+                    let world_snap: string | null = null
+                    if (stW) {
+                        try { world_snap = (await (H as any).enWaft(stW, { max_child_depth: 6 }))?.snap ?? null } catch (e) { world_snap = `enWaft failed: ${String((e as any)?.message ?? e)}` }
+                    }
+                    const supply_trace = ((H.top_House().c.supply_trace as any[]) ?? []).slice(-120)
+                    result = { self: String((H as any).Lies_self?.(w)?.prepub ?? ident?.sc?.prepub ?? '').slice(0, 16), sealed_piers: piers.filter((p: any) => p.mutual).length, piers, supply_trace, world_snap }
                 } else if (op === 'run') {
                     // engage the runner for THIS client first (the don't-steal gate): refuse if another
                     //  client holds a live lease; else stamp our lease (GC'ing any prior client's runs) and
@@ -2450,18 +2475,23 @@ await M.eatfunc({
                     //   Cytui face) — prefer the one actually SPEAKING (most <text> labels), then
                     //    the most-populated; `cands` reports every candidate's children/labels so a
                     //     wrong pick is visible from the caller side instead of a silent blank glass.
-                    const cands = Array.from(document.querySelectorAll('svg.cytui-voronoi')) as SVGSVGElement[]
+                    //  The NEW glass (Vytui, `.vyto svg.viewport`) is a candidate too — it superseded
+                    //   the legacy Cytui voronoi, so a Vyto-only runner (Sounditron, VytoNest) has NO
+                    //    .cytui-voronoi at all and this used to blank; now the same --svg SEES Vytui,
+                    //     which is the only way a headless caller can confirm the tessellation (nested
+                    //      cells included) short of a human's eyes.
+                    const cands = Array.from(document.querySelectorAll('svg.cytui-voronoi, .vyto svg.viewport')) as SVGSVGElement[]
                     const el = cands.sort((a, b) =>
                         (b.querySelectorAll('text').length - a.querySelectorAll('text').length)
                         || (b.childElementCount - a.childElementCount))[0]
-                    if (!el || !el.childElementCount) { ok = false; result = { error: 'no populated .cytui-voronoi svg — is a useCyto Book mounted with ◈ armed?' } }
+                    if (!el || !el.childElementCount) { ok = false; result = { error: 'no populated glass svg (.cytui-voronoi or .vyto .viewport) — is a useCyto Book armed, or a Vyto world commissioned?' } }
                     else {
                         let css = ''
                         for (const sh of Array.from(document.styleSheets)) {
                             let rules: CSSRuleList | undefined
                             try { rules = sh.cssRules } catch { continue }   // cross-origin sheet — none of ours
                             for (const r of Array.from(rules ?? []))
-                                if (/cytui-voronoi|cytui-veil|cytui-subgraph|vsub-/.test((r as CSSStyleRule).selectorText ?? '')) css += r.cssText + '\n'
+                                if (/cytui-voronoi|cytui-veil|cytui-subgraph|vsub-|\.cell|\.ident|\.viewport/.test((r as CSSStyleRule).selectorText ?? '')) css += r.cssText + '\n'
                         }
                         const wpx = Math.round(el.clientWidth || el.getBoundingClientRect().width)
                         const hpx = Math.round(el.clientHeight || el.getBoundingClientRect().height)

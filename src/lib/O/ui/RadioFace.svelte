@@ -25,7 +25,11 @@
         //  the radio dials across them too, and the face says so only when it's true.
         let pool = 0
         for (const home of (n?.c?.w?.o?.({ MusuThem: 1 }) ?? [])) {
-            pool += home?.o?.({ stock: 1 })?.[0]?.o?.({ Record: 1 })?.length ?? 0
+            // a friend's mirror is PAGED (%Mag:shuffle › %Cloud › %Record), not flat — so count via the
+            //  shape-agnostic Ra_recs census (what Radio_dial_pool / Radio_lineup_fill / CrateFace all use),
+            //   NOT a flat stock.o({Record}) which reads 0 on every real peer and hid the whole friend pool.
+            const stock = home?.o?.({ stock: 1 })?.[0]
+            pool += ((H as any)?.Ra_recs ? (H as any).Ra_recs(stock) : (stock?.o?.({ Record: 1 }) ?? [])).length
         }
         return {
             pool,
@@ -37,8 +41,14 @@
             played: +(sc.played ?? 0),
             drops:  +(sc.drops ?? 0),
             note:   sc.note as string | undefined,
+            by:     sc.by as string | undefined,
+            byName: (sc.by_name as string) ?? '',
+            own:    !!sc.own,   // the source switch: true = playing MY records, false = friends' (default)
             first:  ((sc.Radio ?? 'off') === 'off') && !sc.title && !+(sc.played ?? 0),
             stock,
+            // the heist gesture's ✓ tell (the human 2026-07-28 "keep what you're hearing"): Radio_keep
+            //  stamps n.c.kept[seed] (runtime, never snapped) so the ⇊ reads back as kept for this track.
+            keptThis: !!(n?.c?.kept && n?.c?.rec?.sc?.id && n.c.kept[n.c.rec.sc.id]),
         }
     })
 
@@ -50,33 +60,52 @@
 </script>
 
 <div class="rf" class:on={face.state === 'playing'}>
-    <div class="rf-row">
+    <!-- transport on its OWN row: a long title can no longer occlude the next/★ buttons —
+         the title lives below, on its own line, where it only ever occludes itself. -->
+    <div class="rf-transport">
         <button class="rf-btn" onclick={() => (H as any)?.Radio_toggle?.(n)}
             title={face.state === 'playing' ? 'pause' : 'play'}>
             {face.state === 'playing' || face.state === 'digging' || face.state === 'starved' ? '⏸' : '▶'}
         </button>
-        <div class="rf-mid">
-            <div class="rf-title">{ICON[face.state] ?? '📻'} {face.title ?? 'the radio'}</div>
-            {#if face.artist}<div class="rf-artist">{face.artist}</div>{/if}
-            {#if face.note}<div class="rf-note">{face.note}</div>{/if}
-        </div>
         <button class="rf-btn rf-skip" onclick={() => (H as any)?.Radio_skip?.(n)} title="next">⏭</button>
+        <!-- NO stop button and NO source switch here (the human 2026-07-28): the player never lets you
+             STOP or ESCAPE your friend's collection — choosing a different friend or your own crate lives
+             in the Tuner (👂 listening to), away from the player. -->
         {#if face.title}
             <button class="rf-btn rf-skip" onclick={() => (H as any)?.Radio_mag_pop?.(n?.c?.w, n?.c?.rec)}
                 title="pop this track into your Faves mag">★</button>
         {/if}
+        <!-- the HEIST gesture (the human 2026-07-28 "keep what you're hearing"): only on a FRIEND'S track
+             (face.by) — your own you already hold.  ONE CLICK: ⇊ mints a %Keep and that's it — no popup.
+             It lingers, then DOWNLOADS the original at end-of-track (while the next plays) straight into
+             music/<genre>/.  ✓ is the tell it's kept (n.c.kept, runtime). -->
+        {#if face.by}
+            <button class="rf-btn rf-skip rf-keep" class:kept={face.keptThis}
+                onclick={() => { (H as any)?.Radio_keep?.(n) }}
+                title={face.keptThis ? 'kept — the original downloads when this track ends' : "keep this — the original lands in your collection when the track ends"}>{face.keptThis ? '✓' : '⇊'}</button>
+        {/if}
     </div>
+    <div class="rf-title">{ICON[face.state] ?? '📻'} {face.title ?? 'the radio'}</div>
+    {#if face.artist}<div class="rf-artist">{face.artist}</div>{/if}
+    <!-- provenance: whose Pier this track streams from, or that it's your OWN record — the human 2026-07-28
+         wanted to always know the source, and for it to be clear when just playing your own music. -->
+    {#if face.by}<div class="rf-from">⚯ from {face.byName || 'a friend'}</div>{:else if face.title && face.state !== 'off' && face.state !== 'digging'}<div class="rf-from rf-own">♪ your own record</div>{/if}
+    {#if face.note}<div class="rf-note">{face.note}</div>{/if}
+    <!-- the "why is it silent" line: a starved radio holds a loaded track but the next piece hasn't
+         arrived over the wire, so the bar freezes.  Say so — the human asked that the page never go
+         quiet WITHOUT explaining itself.  It resumes itself the instant the piece lands (no user action). -->
+    {#if face.state === 'starved'}<div class="rf-note">the next piece hasn't arrived yet — holding the line, it'll resume itself</div>{/if}
     {#if face.of > 0}
         <div class="rf-bar"><div class="rf-fill" style="width:{Math.min(100, 100 * face.at / face.of)}%"></div></div>
         <div class="rf-time">{mmss(face.at)} / {mmss(face.of)}
             {#if face.played > 0}&nbsp;· {face.played} played{/if}
             {#if face.drops > 0}&nbsp;· {face.drops} drops{/if}</div>
-    {:else if face.state === 'digging'}
-        <div class="rf-time">digging the crates…</div>
+    {:else if face.state === 'digging' && !face.note}
+        <div class="rf-time">{face.own ? 'digging your crates…' : 'looking for a friend to play…'}</div>
     {:else if face.first}
-        <div class="rf-time">{face.pool > 0 ? `▶ plays the pool — ${face.stock} of yours + ${face.pool} from friends` : face.stock > 0 ? `▶ plays your music — ${face.stock} records stand ready` : '▶ starts the radio — the stoker will dig your share'}</div>
+        <div class="rf-time">{face.pool > 0 ? `▶ plays your friends' music — ${face.pool} ${face.pool === 1 ? 'track' : 'tracks'} ready` : face.stock > 0 ? '▶ waiting for a friend — your own crate is in the Tuner' : '▶ waiting for a friend to come online'}</div>
     {/if}
-    {#if face.pool > 0 && !face.first}
+    {#if face.pool > 0 && !face.first && !face.own}
         <div class="rf-time">⚯ {face.pool} friend {face.pool === 1 ? 'track rides' : 'tracks ride'} the dial</div>
     {/if}
 </div>
@@ -91,7 +120,7 @@
         color: #e8dcc0;
         text-align: left;
     }
-    .rf-row { display: flex; align-items: center; gap: 8px; }
+    .rf-transport { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
     .rf-btn {
         pointer-events: auto;
         cursor: pointer;
@@ -107,10 +136,13 @@
     }
     .rf-btn:hover { background: #d9a026; color: #04202a; }
     .rf-skip { width: 26px; height: 26px; font-size: 10px; }
-    .rf-mid { min-width: 90px; }
-    .rf-title { font-size: 12px; font-weight: 700; }
+    .rf-keep.kept { background: #2e6b3a; border-color: #57c777; color: #eafff0; }
+    .rf-keep.kept:hover { background: #57c777; color: #04202a; }
+    .rf-title { font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
     .rf-artist { font-size: 10px; opacity: 0.8; }
     .rf-note { font-size: 9px; opacity: 0.6; font-style: italic; }
+    .rf-from { font-size: 9px; opacity: 0.85; margin-top: 2px; color: #c9b6e8; }
+    .rf-from.rf-own { opacity: 0.5; color: #b6c9a8; }
     .rf-bar {
         margin-top: 6px;
         height: 3px;

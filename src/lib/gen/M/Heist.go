@@ -10,7 +10,7 @@ import { sha256_hex, sha256_incremental } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'c4ebed5079bd0834~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'd3a56bc198de3786~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -157,6 +157,9 @@ async Heist_census(w, lib, nav, base, artists) {
         rec.sc.body_hash = hash
         rec.sc.total = total
         if (meta.album) rec.sc.album = meta.album
+        // genre rides the husk as a scalar (guarded — absent tag → omitted, never an empty-string snap wart)
+        //  so the heist chooser can show the source's own filing as the default genre folder to keep|change.
+        if (meta.genre) rec.sc.genre = meta.genre
         let s = 0
         while (s < total) {
             // the whole-file chunk wears its QUALITY as its mainkey (Mag_todo §10): %Original when the
@@ -821,6 +824,580 @@ Heist_let_adopt(w, heist, bay, letMirror) {
 },
 //#endregion
 
+//#region raheist — the PRODUCTION heist (scope A, Heist_design.md §"Scope A"): keep the FOLDER the track
+//  you're hearing came from.  The klepto regions above point at a whole Pier; RaHeist points at ONE played
+//   track and inflates its SOURCE FOLDER.  The bomb (design §frontier #1): a radio %Record carries only its
+//    content-id (Ra_record_from omits the comma-hazardous source path), and a friend only shared a meandered
+//     subset — so the folder can ONLY be resolved by the SOURCE, off its own radiostock card.  Hence the
+//      inflate is a wire round-trip: ask → the source resolves id→folder + censuses it → offers the husks
+//       back → the asker's chooser (KeepFace) picks → condense to a %Heist job → the existing engine pulls.
+//   PERF (2026-07-28, the human's 30%-CPU / "runs out at 32s" pain): the describe walk is METADATA-ONLY
+//    (Heist_census_heads — zero file reads); the bytes of a CHOSEN track are read ONCE, on demand, by
+//     Heist_materialise_one at pull.  The old Heist_census read+hashed the WHOLE folder (twice) inside
+//      Swarm_share_beat, starving that same beat's Ra_transcode_pump so a listener's continuation wants
+//       parked and playback died at the 32-chunk preview — and it pinned a folder of bytes in RAM.
+
+// Heist_keep_id — a STABLE keep-id for a source file, off the source pub + folder-relative path.  DISTINCT
+//  from the streaming content-id on purpose: a materialised ORIGINAL must land as its OWN mirror rec, never
+//   upsert onto the seed's opus-chunk rec (that collision was the old review's blocker).  16 hex, id-space.
+Heist_keep_id(me, base, path) {
+    return sha256_hex(new TextEncoder().encode(String(me) + '|' + String(base || '') + '/' + String(path))).slice(0, 16)
+
+},
+// Heist_register_serve_lib — enroll a (dontSnap) census|materialise lib as a serve source so Repli_find_record
+//  hands the asker its ORIGINAL bytes (searched before the opus radio stock).  Time-stamped + bounded; the
+//   Heist_keep_beat sweep DETACHES an aged one so its %Body bytes GC (never just filters the list).
+Heist_register_serve_lib(w, lib) {
+    lib.c.born = Date.now()
+    w.c.rummage_libs = w.c.rummage_libs || []
+    if (!w.c.rummage_libs.includes(lib)) {
+        w.c.rummage_libs.push(lib)
+        if (w.c.rummage_libs.length > 8) {
+            let gone = w.c.rummage_libs.shift()
+            try { if (gone) (gone.c.up || w).drop(gone) } catch (er) {}
+        }
+    }
+
+},
+// Heist_census_heads — the METADATA-ONLY folder walk: one chunkless husk per audio file from its PATH alone,
+//  NO bin_read, NO hash, NO chunk particles.  Crate_nav_paths already extension-gates to audio (kid-safe:
+//   listing a filename copies nothing; the real byte-sniff rides the materialise read).  Husk id = keep-id;
+//    husk:1 marks "not materialised" (no total/body_hash/bytes yet).  Idempotent by keep-id.  Returns count.
+// `seedRel`/`seed`: the husk whose path IS the heard track carries `re:<seed content-id>` so the ASKER can
+//  identify its own seed among the folder nodes (keep-ids are source-minted, opaque to the asker) and default-
+//   keep it.  Every other husk is a plain folder sibling wearing its keep-id.
+// `walkdir` is the on-disk folder to census; `base` + `prefix` build each husk's path as BASE-RELATIVE (so it
+//  carries the Artist/Album dirs above the album, not just the bare filename — the human 2026-07-28 "we download
+//   whole albums, with the artist folder hierarchy above them" / "the folder name is just '.'").  keep-id and the
+//    materialise read both compose off (base + this base-relative path), so display, id, and disk all agree.
+async Heist_census_heads(w, lib, nav, walkdir, base, me, prefix, seedName, seed) {
+    let paths = await this.Crate_nav_paths(nav, walkdir)
+    let built = 0
+    for (const rel of paths) {
+        let path = prefix ? (prefix + '/' + rel) : rel
+        let pmeta = this.Crate_meta_from_path(path)
+        let id = this.Heist_keep_id(me, base, path)
+        let rec = this.Ra_rec_home(lib, id)
+        rec.sc.title = pmeta.title
+        rec.sc.artist = pmeta.artist
+        rec.sc.path = path
+        let dot = path.lastIndexOf('.')
+        if (dot >= 0) rec.sc.ext = path.slice(dot + 1)
+        rec.sc.husk = 1
+        if (seed && seedName && rel === seedName) rec.sc.re = String(seed)
+        rec.bump()
+        built = built + 1
+    }
+    lib.bump()
+    return built
+
+},
+// Heist_materialise_one — the ON-DEMAND single-file inflate: resolve `ref` → the one source file, read it
+//  ONCE, and chunk it (incremental body_hash fed per slice + per-chunk cid — a SINGLE pass, not the old
+//   census's body-hash-then-re-slice double read).  `ref` resolves two ways: (a) a describe husk already
+//    minted under this keep-id (a chosen folder sibling — path off the husk); (b) a stocked content-id (the
+//     SEED itself — Ra_stock_ls → card → base+path), materialised under a fresh keep-id carrying `re:<seed>`
+//      so the asker matches the arriving head back to its keep.  Idempotent: a re-ask over an already-full
+//       rec returns it without re-reading.  Returns the materialised %Record (total/body_hash stamped), or null.
+async Heist_materialise_one(w, nav, me, ref) {
+    if (!nav || !ref) return null
+    let rec = null
+    let base = null
+    let path = null
+    for (const rl of (w.c.rummage_libs || [])) {
+        let hit = this.Ra_rec_find(rl, { Record: 1, id: ref })
+        if (hit) { rec = hit; path = hit.sc.path; base = rl.c.base || ''; break }
+    }
+    if (!rec) {
+        let stocked = (await this.Ra_stock_ls(nav, me)).find((p) => p.enid === ref)
+        if (!stocked) return null
+        let card = await this.Ra_stock_peek(nav, stocked.name)
+        if (!card || !card.path) return null
+        base = card.base || ''
+        path = card.path
+        let id = this.Heist_keep_id(me, base, path)
+        let lib = w.oai({ RummageLib: id, dontSnap: 1 })
+        lib.c.up = w
+        lib.c.base = base
+        this.Heist_register_serve_lib(w, lib)
+        rec = this.Ra_rec_home(lib, id)
+        rec.sc.path = path
+        rec.sc.re = String(ref)
+        let pm = this.Crate_meta_from_path(path)
+        rec.sc.title = pm.title
+        rec.sc.artist = pm.artist
+    }
+    if (+(rec.sc.total || 0) > 0 && this.Heist_has_body(rec) >= +(rec.sc.total || 0)) return rec
+    let parts = ((base ? base + '/' : '') + path).split('/').filter(Boolean)
+    let filename = parts.pop()
+    let raw = await nav.bin_read(parts.join('/'), filename)
+    if (!raw || !raw.byteLength) return null
+    let bytes = new Uint8Array(raw)
+    let meta = await this.Crate_meta_from_tags(bytes, path)
+    rec.sc.title = meta.title
+    rec.sc.artist = meta.artist
+    if (meta.album) rec.sc.album = meta.album
+    if (meta.genre) rec.sc.genre = meta.genre
+    let dot = filename.lastIndexOf('.')
+    if (dot >= 0) rec.sc.ext = filename.slice(dot + 1)
+    let CH = this.Heist_chunk_bytes()
+    let total = Math.ceil(bytes.length / CH)
+    let wire = sha256_incremental()
+    let s = 0
+    while (s < total) {
+        let slice = bytes.slice(s * CH, Math.min(bytes.length, (s + 1) * CH))
+        let b = this.Heist_body_new(rec, meta.lossless, s)
+        b.c.up = rec
+        b.sc.buf = slice
+        b.sc.cid = sha256_hex(slice)
+        wire.update(slice)
+        s = s + 1
+    }
+    rec.sc.bytes = bytes.length
+    rec.sc.body_hash = wire.hex()
+    rec.sc.total = total
+    delete rec.sc.husk
+    rec.bump()
+    return rec
+
+},
+// Heist_rummage_folder — the SOURCE side resolves a heard track's SEED content-id → the folder it came from
+//  on MY OWN disk, and censuses that folder into husk-able %Records (the "what else is in this folder" the
+//   asker will choose from).  id→folder: my radiostock shelf lists every card I stocked (Ra_stock_ls); the
+//    seed is one of them (I shared its preview), and its card carries base+path (Ra_stock_peek) — the same
+//     base+dirname(path) idiom Ra_source_pcm uses (Ra.g:1327).  Then Heist_census (the inflate payload
+//      builder that already exists) walks that folder into one chunkless-offerable %Record per audio file,
+//       kid-safe non-audio skipped.  Returns the scoped RummageLib, or null when the seed is unknown here or
+//        its source folder is gone.  Read-only against disk; mints only the (dontSnap) scratch lib.
+async Heist_rummage_folder(w, nav, me, seed) {
+    if (!nav || !seed) return null
+    let hit = (await this.Ra_stock_ls(nav, me)).find((p) => p.enid === seed)
+    if (!hit) return null
+    let card = await this.Ra_stock_peek(nav, hit.name)
+    if (!card || !card.path) return null
+    let base = card.base || ''
+    let cparts = String(card.path).split('/').filter(Boolean)
+    let seedName = cparts[cparts.length - 1]                     // "01.flac" — relative to the album folder
+    let prefix = cparts.slice(0, cparts.length - 1).join('/')    // "Artist/Album" — the hierarchy above the album
+    let walkdir = (base ? base + '/' : '') + prefix              // "music/Artist/Album" — the on-disk folder to census
+    let lib = w.oai({ RummageLib: seed, dontSnap: 1 })
+    lib.c.up = w
+    lib.c.base = base                                            // materialise reads base + the base-relative husk.path
+    // METADATA ONLY (2026-07-28): mint chunkless heads off the paths — NO bin_read, NO hash (the storm the
+    //  old Heist_census inflicted on the share beat).  A chosen sibling's bytes read once, at pull, on demand.
+    //   The seed's own husk carries re:<content-id> so the asker can spot + default-keep it among the nodes.
+    await this.Heist_census_heads(w, lib, nav, walkdir, base, me, prefix, seedName, seed)
+    // TAG each folder husk with the seed(s) it answers (a husk-crossing scalar): the answer lands in the
+    //  asker's EXISTING friend mirror (mixed with the radio share — the live routing is sender-keyed, not
+    //   per-request), so the chooser filters this folder out by the tag and the pull drives only the chosen
+    //    recs.  MULTI-VALUED (comma-joined): two ⇊-keeps of tracks in the SAME folder both tag the shared
+    //     records, so neither clobbers the other's scoping (the review's finding).  A sha256 id never has a
+    //      comma, so split(',') is unambiguous.
+    for (const rec of this.Ra_recs(lib)) {
+        let cur = rec.sc.rummage ? String(rec.sc.rummage).split(',') : []
+        if (!cur.includes(seed)) cur.push(seed)
+        rec.sc.rummage = cur.join(',')
+        rec.bump()
+    }
+    // REGISTER this census as a serve source so the source can hand the asker the ORIGINAL bytes it promised
+    //  (Repli_find_record searches these first — the route's caster only serves the opus radio stock).  Bounded
+    //   + time-stamped; Heist_keep_beat sweeps + DETACHES stale ones so an original never shadows the opus long.
+    this.Heist_register_serve_lib(w, lib)
+    return lib
+
+},
+// Heist_rummage_recs — the folder husks tagged for THIS seed, read the PAGED-aware way (Ra_recs walks the
+//  Mag model, not a flat o() which misses records that merged onto the friend's paged radio mirror — the
+//   review's finding).  The tag is multi-valued, so match by membership.
+Heist_rummage_recs(mir, seed) {
+    let out = []
+    if (!mir) return out
+    for (const rec of this.Ra_recs(mir)) {
+        let tag = rec.sc.rummage
+        if (tag && String(tag).split(',').includes(String(seed))) out.push(rec)
+    }
+    return out
+
+},
+// Heist_rummage_ask — the ASKER mints the travelling folder-describe ask in the source pier's bay and
+//  Repli_offers it across the granted wire (the %Heistlet pattern, Heist_let_mint/ask — a chunkless husk,
+//   consent-gated inside Repli_offer).  Unlike a Heistlet (which comes back with in-place have/held marks),
+//    the answer is a SET of records that land in the asker's mirror (Heist_rummage_answer offers them back).
+//     Idempotent per seed.  `tx` is the asker→source caster route; me/them are the two pubs.
+// `want` (optional): a MATERIALISE-ONE ask — "read + serve me the ORIGINAL of this ref" (a content-id for the
+//  seed the asker is streaming, or a keep-id for a chosen folder sibling).  Absent = the folder-DESCRIBE ask
+//   (metadata heads).  A want ask and a describe ask are DISTINCT particles (different keys) so neither upserts
+//    onto the other at the mirror.
+async Heist_rummage_ask(w, tx, me, them, seed, want) {
+    let bay = this.Ra_home_bay(w, me, them)
+    let key = want ? { Rummage: 1, want: String(want), pier: them } : { Rummage: 1, seed: seed, pier: them }
+    let ask = bay.o(key)[0]
+    if (!ask) {
+        ask = bay.i(key)
+        ask.c.up = bay
+        // locate on the wire by (Rummage, want|seed, pier) — without this a second Rummage upserts onto the
+        //  first at the mirror (a bare value is not id-ish to Repli_loc_keys); a runtime hint, never snapped.
+        ask.c.repli_loc = want ? ['Rummage', 'want', 'pier'] : ['Rummage', 'seed', 'pier']
+    }
+    ask.bump()
+    return await this.Repli_offer(w, tx, me, them, ask)
+
+},
+// Heist_rummage_answer — the SOURCE answers a landed folder-describe ask: resolve its seed → folder + census
+//  (Heist_rummage_folder), then offer the folder's husks BACK over the reverse wire (Heist_offer_all — heads
+//   only, %Body bufs cross only when a chosen record is pulled).  `me` is THIS pier's own pub (the ask crossed
+//    TO me), `asker` is who to serve the folder back to, `tx` the source→asker caster route.  Returns the count
+//     of folder records offered (0 = seed unknown here / folder gone).  No signer tonight (the MusuHeist path
+//      adopts unsigned heads gracefully); a keyed origin-vouch is the rung-7 upgrade when the crossing lands.
+async Heist_rummage_answer(w, tx, me, asker, rummageMirror, nav) {
+    // WANT: materialise ONE file (read + chunk on demand) and offer its FULL head back — total/body_hash now
+    //  present, so the asker's Ra_pull_beat (which bails on total==0) can pull.  This is the ONLY read-side
+    //   cost of a keep, bounded to the chosen tracks, and it rides a track boundary (the deferred pull).
+    if (rummageMirror.sc.want) {
+        let rec = await this.Heist_materialise_one(w, nav, me, String(rummageMirror.sc.want))
+        if (!rec) return 0
+        return (await this.Repli_offer(w, tx, me, asker, rec)) ? 1 : 0
+    }
+    // DESCRIBE: the folder's metadata heads (Heist_census_heads — no reads).
+    let lib = await this.Heist_rummage_folder(w, nav, me, String(rummageMirror.sc.seed))
+    if (!lib) return 0
+    return await this.Heist_offer_all(w, tx, me, asker, lib, null)
+
+},
+// ── the LIVE keep→choose→pull driver (the ⇊ gesture's follow-through, the human 2026-07-28: "clicked the
+//  downdowns, they turn into a tick, but nothing else happens — whoosh the whole UI into the Heist setup").
+//   Radio_keep mints a %Keep,state:wanted; this driver — pumped from Swarm_share_beat every beat — carries
+//    it: wanted→ask the source to describe the folder it came from → choosing (HeistSetup shows the folder's
+//     husks, tagged rummage:<seed>) → committing (the human's %Picks pull + land under <genre>/) → done.
+//      SYMMETRIC: the same node also SERVES friends' asks (a landed %Rummage → Heist_rummage_answer).  It
+//       reuses the PROVEN engine (offer→beat→land, MusuHeist) — the only new matter is this glue + the tag.
+
+// Heist_music_root — the PRODUCTION landing root (the human's 2026-07-28 ruling: land straight into the real
+//  collection under <genre>/, NOT a test namespace).  `music` is the nav base the stoker digs (Radio bases
+//   ['music','','testsounds']), so a kept folder is picked up by the next census and just appears in the
+//    radio.  Heist_land nests the <genre> subdir itself (nav.bin_write creates the path).
+Heist_music_root() {
+    return 'music'
+
+},
+// Heist_keep_beat — one pass, both roles: SERVE friends' folder-describe asks, then GO (carry my own %Keeps
+//  forward).  Pumped from Swarm_share_beat, so the routes it needs are already registered for live friends;
+//   it re-registers defensively (idempotent) in case a keep outlives a share cycle.  Cheap when idle.
+async Heist_keep_beat(w, ident) {
+    if (!ident) return
+    let me = String(ident.sc.prepub)
+    let rw = this.top_House().c.radio_w || w
+    let nav = this.Crate_nav ? this.Crate_nav() : null
+    // SWEEP stale serve-libs (bound the window where a served-original id can shadow the radio opus): a lib
+    //  stays servable ~2 min — long enough for the asker to pull it, then gone.  DETACH an aged one so its
+    //   materialised %Body bytes GC (a filter alone leaves the byte-laden lib hanging under w forever — the
+    //    retained-RAM half of the 30%-CPU pain).
+    if (w.c.rummage_libs && w.c.rummage_libs.length) {
+        let now = Date.now()
+        let live = []
+        for (const rl of w.c.rummage_libs) {
+            if (rl && rl.c && (now - (rl.c.born || now)) < 600000) {
+                live.push(rl)
+            } else if (rl) {
+                try { (rl.c.up || w).drop(rl) } catch (er) {}
+            }
+        }
+        w.c.rummage_libs = live
+    }
+    // SERVE: a %Rummage that landed in my mirror-of-a-friend is their "describe the folder track X came from".
+    for (const home of rw.o({ MusuThem: 1 })) {
+        if (!home.sc.pub) continue
+        let asker = String(home.sc.pub)
+        if (asker === me) continue
+        let mir = this.Ra_home_them(rw, asker)
+        let asks = mir.o({ Rummage: 1 })
+        if (!asks.length) continue
+        let route = this.Swarm_station_pier(w, ident, asker)
+        if (!route) continue
+        if (!route.c.repli_src) this.Repli_register_caster(w, route, this.Ra_home_self(rw, me))
+        if (!route.c.repli_rx) this.Repli_register_rx(w, route)
+        for (const ask of asks) {
+            // re-answer a FEW times (a lost answer frame is the documented Peeroleum drop hazard — the asker
+            //  re-asks every 4s; re-answering is idempotent).  Bounded: ≤3 answers, ≥5s apart — heals a
+            //   dropped answer without re-censusing the folder forever after the asker flipped to choosing.
+            let n = +(ask.c.answers || 0)
+            if (n >= 3) continue
+            if (n > 0 && Date.now() - (ask.c.answer_ts || 0) < 5000) continue
+            ask.c.answers = n + 1
+            ask.c.answer_ts = Date.now()
+            try { await this.Heist_rummage_answer(w, route, me, asker, ask, nav) }
+            catch (er) { ask.c.answers = n }
+        }
+    }
+    // GO: carry each of my %Keeps one step.
+    let shop = this.Ra_home_shop(rw, me)
+    for (const keep of shop.o({ Keep: 1 })) {
+        try { await this.Heist_keep_step(w, rw, ident, me, nav, keep, shop) }
+        catch (er) { keep.c.last_why = '' + (er && er.message || er) }
+    }
+
+},
+// Heist_keep_step — one %Keep, one edge (the human 2026-07-28: "I DO want the Heist UI ... it can be left to
+//  sit there, you don't have to click start, it'll assume that at some point ... it folds down when started").
+//   primed: DESCRIBE the folder (metadata, cheap) so KeepFace shows the node tree; default-keep the heard
+//    track; DOSE the cell UP (space-favoured in the clutter); LINGER until the seed stops playing.  pulling:
+//     FOLD down (dose off); materialise + pull + land every %Pick (default = the seed).  choosing/committing
+//      are the legacy Panel path (dormant on the one-click default).
+async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
+    let state = keep.sc.state || 'primed'
+    if (state === 'choosing') return
+    if (state === 'done') {
+        // the ✓ lingers a few seconds, then the keep DROPS itself — the cell falls out of the glass and the
+        //  finished transient leaves the snap (a done %Keep is scaffolding, not ledger).
+        if (!keep.c.done_ts) keep.c.done_ts = Date.now()
+        if (Date.now() - keep.c.done_ts > 8000) {
+            try { (keep.c.up || shop).rm({ Keep: 1, seed: keep.sc.seed }) } catch (er) {}
+        }
+        return
+    }
+    let seed = String(keep.sc.seed)
+    let at = String(keep.sc.at)
+    let route = this.Swarm_station_pier(w, ident, at)
+    if (!route) return
+    if (!route.c.repli_src) this.Repli_register_caster(w, route, this.Ra_home_self(rw, me))
+    if (!route.c.repli_rx) this.Repli_register_rx(w, route)
+    let srcmir = this.Ra_home_them(rw, at)
+    if (state === 'primed' || state === 'wanted' || state === 'asking') {
+        // SPACE-FAVOUR the cell while it sits in the clutter (dose → Vyto env_area); folded down on pull.
+        if (keep.sc.dose !== '2') { keep.sc.dose = '2'; keep.bump() }
+        // DESCRIBE the folder (metadata heads only — cheap, no reads) so KeepFace shows the node tree to tweak.
+        //  Throttled.  Once described, default-keep the heard track (its own husk wears re:<seed content-id>).
+        if (!this.Heist_rummage_recs(srcmir, seed).length) {
+            let last = keep.c.desc_ts || 0
+            if (Date.now() - last > 4000) {
+                keep.c.desc_ts = Date.now()
+                keep.sc.asks = +(keep.sc.asks || 0) + 1
+                keep.bump()
+                await this.Heist_rummage_ask(w, route, me, at, seed)
+            }
+        } else {
+            this.Heist_keep_default_pick(keep, srcmir, seed)
+        }
+        // DEFER (the human: "hangs in there until the end of the track then downloads it while the next plays").
+        //  While the seed still plays the keep only lingers — no pull, never fighting the live stream.
+        let playing = (rw.c.play && rw.c.play.id) || (w.c.play && w.c.play.id) || null
+        if (playing && String(playing) === seed) return
+        keep.sc.state = 'pulling'
+        keep.bump()
+        state = 'pulling'
+    }
+    if (state === 'pulling') {
+        if (keep.sc.dose) { delete keep.sc.dose; keep.bump() }   // FOLD the cell down once it starts
+        this.Heist_keep_default_pick(keep, srcmir, seed)         // ensure at least the heard track is kept
+        let picks = keep.o({ Pick: 1 })
+        let own = this.Ra_home_self(rw, me)
+        let job = keep.c.job || shop.o({ Heist: 1, at: keep.sc.at })[0]
+        if (!job) job = this.Heist_job(w, keep.sc.at, this.Heist_keep_filings(keep), { home: shop })
+        keep.c.job = job
+        let left = 0
+        let landed = 0
+        for (const pick of picks) {
+            let ref = String(pick.sc.ref || pick.sc.id)
+            if (pick.sc.landed) { landed = landed + 1; continue }
+            // the ORIGINAL materialised under this keep-id (Heist_materialise_one, upserted onto the husk with
+            //  total).  Not full yet ⇒ (re)ask the source to materialise it (throttled 4s, the lost-frame heal).
+            let rec = this.Ra_rec_find(srcmir, { Record: 1, id: ref })
+            if (!rec) rec = this.Ra_rec_find(srcmir, { Record: 1, re: ref })
+            if (!rec || !(+(rec.sc.total || 0) > 0)) {
+                let plast = pick.c.ask_ts || 0
+                if (Date.now() - plast > 4000) {
+                    pick.c.ask_ts = Date.now()
+                    keep.sc.asks = +(keep.sc.asks || 0) + 1
+                    keep.bump()
+                    await this.Heist_rummage_ask(w, route, me, at, seed, ref)
+                }
+                left = left + 1
+                continue
+            }
+            let r = await this.Ra_pull_beat(w, rec.c.rx || route, me, String(rec.c.from || keep.sc.at), rec)
+            if (r && r.done) {
+                await this.Heist_land(w, nav, job, own, srcmir, rec, this.Heist_music_root())
+                pick.sc.landed = 1
+                pick.bump()
+                landed = landed + 1
+            } else {
+                left = left + 1
+            }
+        }
+        keep.sc.landed_n = landed
+        keep.sc.total_n = picks.length
+        keep.bump()
+        if (!left && picks.length) {
+            keep.sc.state = 'done'
+            keep.bump()
+            try { (job.c.up || shop).rm({ Heist: 1, at: keep.sc.at }) } catch (er) {}
+        }
+        return
+    }
+    if (state === 'committing') {
+        await this.Heist_keep_pull(w, rw, ident, me, nav, keep, shop, srcmir, route)
+    }
+
+},
+// Heist_keep_default_pick — the DEFAULT "keep what you're hearing": once the folder is described, ensure a
+//  %Pick for the heard track (its husk wears re:<seed>).  No-op if any pick already stands (respects the
+//   human's un/keep edits in the cell).  ref = the seed husk's KEEP-ID (the pull's uniform id-space).
+// DEFAULT = THE WHOLE ALBUM (the human 2026-07-28 "default to heisting whole albums at a time"): once the folder
+//  is described, keep EVERY track in it.  Runs ONCE (keep.sc.defaulted, snapped so it survives reload) — after
+//   that the human's un/keep edits + select-all/none stand.
+Heist_keep_default_pick(keep, srcmir, seed) {
+    if (keep.sc.defaulted) return
+    let husks = srcmir ? this.Heist_rummage_recs(srcmir, String(seed)) : []
+    if (!husks.length) return
+    keep.sc.defaulted = 1
+    for (const h of husks) {
+        if (keep.o({ Pick: 1, ref: String(h.sc.id) })[0]) continue
+        let pick = keep.i({ Pick: 1, ref: String(h.sc.id) })
+        pick.c.up = keep
+        if (h.sc.title) pick.sc.title = h.sc.title
+        if (h.sc.artist) pick.sc.artist = h.sc.artist
+    }
+    keep.bump()
+
+},
+// Heist_keep_pick_all / _none — the KeepFace select-all|none buttons.
+Heist_keep_pick_all(keep) {
+    let rw = this.top_House().c.radio_w
+    let srcmir = (rw && keep.sc.at) ? this.Ra_home_them(rw, String(keep.sc.at)) : null
+    if (!srcmir) return
+    keep.sc.defaulted = 1
+    for (const h of this.Heist_rummage_recs(srcmir, String(keep.sc.seed))) {
+        if (keep.o({ Pick: 1, ref: String(h.sc.id) })[0]) continue
+        let pick = keep.i({ Pick: 1, ref: String(h.sc.id) })
+        pick.c.up = keep
+        if (h.sc.title) pick.sc.title = h.sc.title
+        if (h.sc.artist) pick.sc.artist = h.sc.artist
+    }
+    keep.bump()
+},
+Heist_keep_pick_none(keep) {
+    keep.sc.defaulted = 1
+    for (const p of keep.o({ Pick: 1 })) keep.drop(p)
+    keep.bump()
+
+},
+// Heist_keep_start — the "▶ start" button (the human 2026-07-28 "heist should have a start button, with a
+//  'will auto-' before it"): begin the pull NOW instead of waiting for the track to end.  Just flips to pulling;
+//   Heist_keep_step does the rest next beat.
+Heist_keep_start(keep) {
+    let s = keep.sc.state || 'primed'
+    if (s === 'primed' || s === 'wanted' || s === 'asking') {
+        keep.sc.state = 'pulling'
+        keep.bump()
+    }
+
+},
+// Heist_keep_pick_toggle — the KeepFace cell's un/keep of one folder node (ref = its keep-id).  Present ⇒ drop
+//  it; absent ⇒ add it, lifting title/artist off the described husk.
+Heist_keep_pick_toggle(keep, ref) {
+    let have = keep.o({ Pick: 1, ref: String(ref) })[0]
+    if (have) { keep.drop(have); keep.bump(); return }
+    let rw = this.top_House().c.radio_w
+    let srcmir = (rw && keep.sc.at) ? this.Ra_home_them(rw, String(keep.sc.at)) : null
+    let hit = srcmir ? this.Ra_rec_find(srcmir, { Record: 1, id: String(ref) }) : null
+    let pick = keep.i({ Pick: 1, ref: String(ref) })
+    pick.c.up = keep
+    if (hit && hit.sc.title) pick.sc.title = hit.sc.title
+    if (hit && hit.sc.artist) pick.sc.artist = hit.sc.artist
+    keep.bump()
+
+},
+// Heist_keep_set_genre — the cell's filing-genre tweak (one folder for the whole keep; Heist_keep_filings
+//  prefers it over each pick's own tag).
+Heist_keep_set_genre(keep, v) {
+    keep.sc.genre = String(v || 'Unfiled')
+    keep.bump()
+
+},
+// Heist_keep_pull — the commit's engine: mint the %Heist job ONCE (its filings pinned from the picks'
+//  per-artist genres), then each beat pull every not-yet-landed %Pick's chunks (Ra_pull_beat) and, when a
+//   record's every chunk arrived, Heist_land it under <genre>/ into the real collection.  Progress rides the
+//    keep's sc for the face.  All picks landed → done + the scaffolding job flattens.
+async Heist_keep_pull(w, rw, ident, me, nav, keep, shop, srcmir, route) {
+    let picks = keep.o({ Pick: 1 })
+    if (!picks.length) { keep.sc.state = 'choosing'; keep.bump(); return }
+    // FIND-or-create the job (the review's reload finding): keep.c.job is runtime-only, so after a reload
+    //  with state:'committing' persisted a bare create would mint a SECOND %Heist beside the orphaned first.
+    let job = keep.c.job || shop.o({ Heist: 1, at: keep.sc.at })[0]
+    if (!job) job = this.Heist_job(w, keep.sc.at, this.Heist_keep_filings(keep), { home: shop })
+    keep.c.job = job
+    let own = this.Ra_home_self(rw, me)
+    let left = 0
+    for (const pick of picks) {
+        if (pick.sc.landed) continue
+        let rec = this.Ra_rec_find(srcmir, { Record: 1, id: pick.sc.id })   // paged-aware (mirror is a Mag)
+        if (!rec) { left = left + 1; continue }
+        let r = await this.Ra_pull_beat(w, rec.c.rx || route, me, String(rec.c.from || keep.sc.at), rec)
+        if (r && r.done) {
+            await this.Heist_land(w, nav, job, own, srcmir, rec, this.Heist_music_root())
+            pick.sc.landed = 1
+            pick.bump()
+        } else {
+            left = left + 1
+        }
+    }
+    keep.sc.landed_n = picks.filter((p) => p.sc.landed).length
+    keep.sc.total_n = picks.length
+    keep.bump()
+    if (!left) {
+        keep.sc.state = 'done'
+        keep.bump()
+        try { if (job) await (job.c.up || shop).rm({ Heist: 1, at: keep.sc.at }) } catch (er) {}
+    }
+
+},
+// Heist_keep_filings — the per-artist filing decisions the picks name (dedup by artist, first genre wins):
+//  the [{artist,genre}] Heist_job pins and Heist_filing_for → Heist_rel_for read at land time.
+Heist_keep_filings(keep) {
+    let seen = {}
+    let out = []
+    for (const p of keep.o({ Pick: 1 })) {
+        let a = p.sc.artist || 'misc'
+        if (seen[a]) continue
+        seen[a] = 1
+        out.push({ artist: a, genre: keep.sc.genre || p.sc.genre || 'Unfiled' })
+    }
+    return out
+
+},
+// Heist_keep_commit — the chooser's GO: record the human's ticked tracks as %Pick,id children (artist+title
+//  +chosen genre) and flip the keep to committing; the driver mints the job + pulls + lands.  Re-commit
+//   clears prior picks.  Returns the pick count (0 = nothing ticked, stays choosing).
+Heist_keep_commit(w, keep, choices) {
+    if (!keep) return false
+    for (const p of keep.o({ Pick: 1 })) keep.drop(p)
+    let n = 0
+    for (const c of (choices || [])) {
+        if (!c || !c.keep) continue
+        let pick = keep.i({ Pick: 1, id: String(c.id) })
+        pick.c.up = keep
+        pick.sc.artist = c.artist || 'misc'
+        if (c.title) pick.sc.title = c.title
+        pick.sc.genre = c.genre || 'Unfiled'
+        pick.bump()
+        n = n + 1
+    }
+    if (!n) return false
+    keep.sc.state = 'committing'
+    keep.bump()
+    return n
+
+},
+// Heist_keep_cancel — close the chooser without pulling: drop the whole %Keep intent (a re-press re-seeds it).
+Heist_keep_cancel(w, keep) {
+    if (!keep) return
+    let shop = keep.c.up || this.Ra_home_shop(w, this.Radio_pub(w) || 'me')
+    // drop any in-flight job too (an abandon from 'committing' must not leave a live %Heist pulling).
+    if (keep.sc.at) { try { shop.rm({ Heist: 1, at: keep.sc.at }) } catch (er) {} }
+    shop.rm({ Keep: 1, seed: keep.sc.seed })
+},
+//#endregion
+
 //#region newlyadded — probation as metadata: the log that shuffles new music into the listening diet
 // One text file per marrauding namespace: `<seq> <feeling> <category/filename…>` per line — the
 //  ENTRY comes LAST and takes the rest of the line, because real filenames carry spaces (the
@@ -1116,11 +1693,17 @@ Musica_zine_tune(z, id) {
     let radio = w.o({ Radio: 1 })[0]
     if (!radio || !id) return false
     let pub = this.Radio_pub(w) || 'me'
+    // whoever holds the BYTES plays — accept only a copy whose chunk 0 stands.  A husk (bytes not landed
+    //  yet, the normal transient for a fave popped before sync) would just STARVE the pump 6s then auto-skip
+    //   to a different track, so ▶ would silently play the wrong thing; return false instead (ZineFace then
+    //    says nothing-played) — the Radio_dial_pool / lineup husk-gate stance, applied here too.
     let rec = this.Ra_rec_find(this.Ra_home_self(w, pub), { Record: 1, id: String(id) })
+    if (rec && this.Ra_chunk_map(rec)[0] == null) rec = null
     if (!rec) {
         for (const home of w.o({ MusuThem: 1 })) {
             if (rec) continue
-            rec = this.Ra_rec_find(this.Ra_home_them(w, String(home.sc.pub)), { Record: 1, id: String(id) })
+            let hit = this.Ra_rec_find(this.Ra_home_them(w, String(home.sc.pub)), { Record: 1, id: String(id) })
+            if (hit && this.Ra_chunk_map(hit)[0] != null) rec = hit
         }
     }
     if (!rec) return false

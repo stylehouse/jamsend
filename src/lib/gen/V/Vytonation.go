@@ -11,7 +11,7 @@ import { budget_for, fold_ladder, bucket_key_of } from "$lib/O/vyto_foam"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vytonation(): string { return 'ad22ec7f09583c2e~g1' },
+    Ghostmeta_Ghost_V_Vytonation(): string { return 'ab3e06ef674500c6~g1' },
 
 // Vytonation.g — Vyto's demo Books (the Voronation.g sibling, one directory over in Ghost/V/).
 //  Where Voronation.g proves the CRUSH (the fold policy) on flora and libraries, Vytonation.g
@@ -2231,6 +2231,33 @@ VytoNest_witness(w) {
         this.story_swear(w, 'the nesting is load-bearing — commissioned flat the same tree seats only the root and its children get no target at all')
         if (!(w.oa({see: 'the nesting is load-bearing — commissioned flat the same tree seats only the root and its children get no target at all'}))) w.i({see: 'the nesting is load-bearing — commissioned flat the same tree seats only the root and its children get no target at all'})
     }
+
+},
+// ══ VytoNestRest — VytoNest's nested state left STANDING at done so the nested glass is SHOOTABLE ═══
+//   VytoNest proves the nested SOLVE then re-commissions FLAT as its beat-4 control — so its `done` is
+//    always flat and a headless `runner_shot --svg` only ever catches the lone root cell (the render's
+//     nested GATE, but never the descent itself).  This twin seeds the SAME two-level rig and rests
+//      NESTED as its FINAL beat (no flat control), so a post-done shot captures the descended child+
+//       grandchild panes — the render's tree-draw, the one thing a snap can never carry (pixels do not
+//        round-trip a fixture).  Same geometry as VytoNest beat 3; reuses its seed+nest+witness
+//         verbatim.  World MUST be named VytoNestRest (do_fn_for dispatches by w.sc.w).
+VytoNestRest(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VytoNestRest_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VytoNestRest_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoNest_seed(w)
+        if (n === 3) this.VytoNest_nest(w)
+    }
+    this.VytoNest_witness(w)
 
 },
 // ══ VytoCrush — the CRUSH tenanted: a crowded scope self-distils into legible crest cells ══════════

@@ -2031,6 +2031,30 @@ VytoNest_witness(w):
         if (!(oa %see:'the nesting is load-bearing — commissioned flat the same tree seats only the root and its children get no target at all')) i %see:'the nesting is load-bearing — commissioned flat the same tree seats only the root and its children get no target at all'
     }
 
+// ══ VytoNestRest — VytoNest's nested state left STANDING at done so the nested glass is SHOOTABLE ═══
+//   VytoNest proves the nested SOLVE then re-commissions FLAT as its beat-4 control — so its `done` is
+//    always flat and a headless `runner_shot --svg` only ever catches the lone root cell (the render's
+//     nested GATE, but never the descent itself).  This twin seeds the SAME two-level rig and rests
+//      NESTED as its FINAL beat (no flat control), so a post-done shot captures the descended child+
+//       grandchild panes — the render's tree-draw, the one thing a snap can never carry (pixels do not
+//        round-trip a fixture).  Same geometry as VytoNest beat 3; reuses its seed+nest+witness
+//         verbatim.  World MUST be named VytoNestRest (do_fn_for dispatches by w.sc.w).
+VytoNestRest(A,w):
+    w oai %req:wrangle,eternal
+        await &VytoNestRest_drive,w,req
+        req%ok = 1
+
+async VytoNestRest_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoNest_seed(w)
+        if (n === 3) this.VytoNest_nest(w)
+    }
+    this.VytoNest_witness(w)
+
 // ══ VytoCrush — the CRUSH tenanted: a crowded scope self-distils into legible crest cells ══════════
 //   (Voro's signature rosette, matched · Vyto_sizing_todo J2 · processes.md §6 step 2 · the granted
 //    Vyto_fold seam).  A FOLDED commission runs the live fold: when a scope's members exceed the

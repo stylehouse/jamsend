@@ -46,7 +46,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 //  so the CLI can no longer drift to a worse death criterion than the layer it's questioning.
 import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs'
 
-const OPS = ['ping', 'probe', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload']
+const OPS = ['ping', 'probe', 'world', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -291,6 +291,28 @@ else if (op === 'snap' && reply.result?.got_snap) {
 		for (const l of String(s.microsnap).split('\n')) console.log(`      ${l}`)
 	}
 	if (r.gaps.length) exitCode = 1
+} else if (op === 'world' && reply.result && Array.isArray(reply.result.piers)) {
+	// the live-resident diagnostic: the seal state (Piers + grant count) to stdout; the bulky
+	//  depth-bounded world snap to a file so it greps without flooding the terminal.
+	const r = reply.result
+	console.log(`world: self ${r.self} — ${r.piers.length} pier${r.piers.length === 1 ? '' : 's'}, ${r.sealed_piers} mutually sealed`)
+	for (const p of r.piers) console.log(`  ${p.mutual ? '⇄ MUTUAL' : '→ one-way (half-seal)'}  ${p.friendly ? p.friendly + ' ' : ''}${p.pub}  grants:[${p.grants.map(g => `${g.by}→${g.to}`).join(', ')}]`)
+	if (!r.piers.length) console.log('  (no Piers — this tab knows no friends: nothing to play, shows "nobody online")')
+	// the SUPPLY PIPELINE timeline (the human's "socklog for supply"): each stage mark with the
+	//  delta from the previous mark, so a 20s gap between two marks names exactly what's slow.
+	const tr = Array.isArray(r.supply_trace) ? r.supply_trace : []
+	if (tr.length) {
+		console.log(`\nsupply pipeline (last ${tr.length} marks; Δ = ms since previous mark):`)
+		let prev = null
+		for (const e of tr) {
+			const d = prev == null ? 0 : e.t - prev
+			prev = e.t
+			const extra = Object.keys(e).filter(k => k !== 't' && k !== 'ev' && k !== 'id').map(k => `${k}=${e[k]}`).join(' ')
+			const flag = d >= 2000 ? '  ⟵ SLOW' : (d >= 500 ? '  ⟵ slow' : '')
+			console.log(`  +${String(d).padStart(6)}ms  ${e.ev.padEnd(18)} ${e.id ? '['+e.id+'] ' : ''}${extra}${flag}`)
+		}
+	} else console.log('\n(no supply-pipeline marks yet — hit play in the tab, then re-run `world`)')
+	if (r.world_snap) { writeFileSync('/tmp/runner_world.snap', r.world_snap); console.error(`  world snap (depth 6) → /tmp/runner_world.snap  (${r.world_snap.length} bytes) — grep it for Radio/MusuThem`) }
 } else if (reply.ok === false) {
 	// a refused/failed op — surface the runner's reason on stderr (busy lease, GC'd run, unknown Book…)
 	console.error(`✗ ${op}: ${reply.result?.error ?? 'failed'}`)

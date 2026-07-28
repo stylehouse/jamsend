@@ -54,6 +54,10 @@ async Sounditron_drive(w, req):
         if (n === 5) await this.Sounditron_peer(w)
         if (n === 6) await this.Sounditron_sound(w)
         if (n === 7) await this.Sounditron_report(w)
+        // stamp the BEAT HUD (runtime — never snapped): BeatFace lights dot n and names it (NAMES[n]),
+        //  and the wait we just armed (if any) parks its countdown on beat.c.wait via Sounditron_await.
+        let bhud = w.o({ Beat: 1 })[0]
+        if (bhud) bhud.c.beat = n
     }
 // NOTE the finished relay_wait/peer_wait reqs are LEFT STANDING for now — a sweep that dropped
 //  them here stalled the live run at the 4→5 corridor (suspect: the Run-republished ttlilt row
@@ -106,24 +110,36 @@ async Sounditron_machine(w):
     if (ident?.sc?.friendly) m.sc.friendly = this.Sounditron_clean(ident.sc.friendly)
     if (!self && !(oa %log:'no identity yet — the tab has no addressable self')) i %log:'no identity yet — the tab has no addressable self'
     this.Sounditron_glass(w)
-    // hold the step until the Stoker SETTLES (preheat churn done + parked + census stamped):
-    //  the fixture-checked regime (2026-07-19) needs every frame from here on to carry the
-    //   FULL stock shelf — a mid-provisioning snap pins a racing frame no re-run can match
-    //    (structural drift, beyond EntropyArrest's reach — it forgives values, never rows).
-    //  30s ceiling (was 10): the runner's REAL share (21 tracks tonight) provisions slower than
-    //   the old window, and a mid-provisioning snap is row drift nothing can forgive; the 300ms
-    //    poll settles the wait the moment the stoker parks, so a warm run never pays the ceiling.
-    this.expecting(w, 'stoker_wait', 30, async () => { await this.Sounditron_await(w, 30, () => this.Sounditron_stock_settled(w)) })
+    // hold the step only until the shelf holds ENOUGH TO START — one playable track — NOT until the whole
+    //  batch is provisioned (the human 2026-07-28 "make it fast", the heart-of-hearts cut).  THE OLD BUG
+    //   (confirmed against the 002-004 fixtures + the Stoker loop): during beats 2-4 the radio is off so
+    //    the stoker DOES park at idle — but an era-race that interrupts the first look BEFORE its census
+    //     (Radio.g Stoker_look returns early on `st.c.era !== era`, and the census sits after the resurrect
+    //      loop) leaves `st.sc.stock == null` even though records stood.  The old gate's own `stock==null →
+    //       return 0` then never cleared → beat 2 BURNED its full 30s ceiling every boot (the ~20s-to-relay
+    //        hang, the "ttlilt never resolves" bug).  The paired Radio.g fix stamps the census SYNCHRONOUSLY
+    //         at first-stand (before any await can be interrupted), so stock is >0 the instant a track stands
+    //          and this settles at once; the stoker keeps digging the rest in its detached loop while the
+    //           radio plays track #1 through beats 3-7.  15s ceiling (was 30): warm boots settle in one
+    //            file-read; only a genuinely COLD first-dig-from-source approaches it, and a timeout is
+    //             graceful (the detached stoker keeps digging, the boot proceeds, assertions still latch).
+    this.expecting(w, 'stoker_wait', 15, async () => { await this.Sounditron_await(w, 15, () => this.Sounditron_stock_settled(w), 'the stoker to fill the shelf') })
     w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.Sounditron_witness(w); req.sc.ok = 1 })
 
-// the settle truth: the Stoker parked (idle — radio off with the churn consumed — or spent)
-//  WITH its census stamped; stock==null is the pre-first-look frame, still mid-flight.
-//   No Stoker ghost at all (Radio.g absent) settles trivially — nothing will ever land.
+// the settle truth: ENOUGH-TO-START, not fully-provisioned.  stock==null is the pre-first-census frame
+//  (an era-race can leave it null with records already stood — the old-bug's hang; the Radio.g
+//   census-at-first-stand closes that window).  stock>0 means a playable track stands — proceed at once;
+//    the startup assertions still latch (the machine has music), the exact shelf count is now environment
+//     value-wobble (EntropyArrest's job) and the fixtures want a re-record on the live runner (run twice
+//      to confirm the recorded set is stable — CLAUDE.md's re-run law).  With no stock yet, only a LIVE
+//       churn keeps us waiting — an at-rest stoker (spent/idle on a dry or disk-less share, or NO Stoker
+//        ghost at all) settles so an empty crate never hangs to the ceiling.
 Sounditron_stock_settled(w):
     let st = w.o({ Stoker: 1 })[0]
     if (!st) return 1
     if (st.sc.stock == null) return 0
-    return (st.sc.Stoker === 'idle' || st.sc.Stoker === 'spent') ? 1 : 0
+    if (+(st.sc.stock || 0) > 0) return 1
+    return st.sc.Stoker === 'churning' ? 0 : 1
 
 // the glass — commissioned by the WORLD itself, not a toc Opt (the step-time cut, the human
 //  2026-07-17): Cyto watch_c's the Scannable and rescans on ANY version bump — no
@@ -167,6 +183,26 @@ Sounditron_glass(w):
         door = w.i({ Door: 'open', face: 'Door' })
         door.c.up = w
     }
+    // the UPTIME heartbeat (the human: "an uptime counter somewhere I can see continuously update in
+    //  the Vyto") — a cell whose UptimeFace ticks every second off its own timer (no world bump, so
+    //   the layout never re-tessellates for it).  `since` on .c (runtime, never snapped): uptime is a
+    //    liveness fact that SHOULD reset on reload — its near-zero reading right after a hard reload is
+    //     the "did my reload land?" tell that makes overnight reloading legible.
+    let uptime = w.o({ Uptime: 1 })[0]
+    if (!uptime) {
+        uptime = w.i({ Uptime: 1, face: 'Uptime' })
+        uptime.c.up = w
+    }
+    if (!uptime.c.since) uptime.c.since = Date.now()
+    // the BEAT HUD (the human: "we should be observing a few snaps just waiting and waiting") — a cell
+    //  whose BeatFace shows beat N/7 + a live countdown for the wait we're in.  All the moving data rides
+    //   .c (beat · doing · wait), stamped by the drive + Sounditron_await, so the snap stays clean and the
+    //    face self-ticks its own clock (no world bump, the UptimeFace law).  Only `face` is snapped here.
+    let beat = w.o({ Beat: 1 })[0]
+    if (!beat) {
+        beat = w.i({ Beat: 1, face: 'Beat' })
+        beat.c.up = w
+    }
     // the glass sits BESIDE the run — A:Vyto on SH, the Run House's PARENT (where A:Story lives),
     //  reached by the `.up` PROPERTY subHouse sets, NOT `.c.up`.  Vytonation §"the seams" is explicit:
     //   `.c.up` is the un-pumped resident seam — standing the world there left the DEFERRED commission
@@ -186,17 +222,90 @@ Sounditron_glass(w):
     //    default seat.  Stood the way VytoStaple_commission does (beside the run, on SH) so the deferred
     //     commission is PUMPED and e_Vyto_commission registers UI:'Vyto'.  glass_done latches only AFTER
     //      dispatch, so a not-yet-ready tick (organs not ensured) retries next tick instead of stranding.
+    if (!this.Sounditron_commission(w)) return    // organs not ensured yet — retry next tick, DON'T latch
+    this.c.glass_done = 1                          // first commission committed; friend-shelf re-commissions ride the trickle
+
+// Sounditron_commission — build the grapple set (the organ cells + every friend %MusuThem shelf) and
+//  dispatch the Vyto glass.  RE-CALLABLE by design: Vyto_grapples snapshots the list ONCE per commission
+//   (Vyto.g), but a friend's shelf mirrors in AFTER the first commission (beat 5+, once a peer connects) —
+//    so the trickle re-commissions when the MusuThem set GROWS.  Re-commission is idempotent for gear
+//     already watched (watch_c dedups per (C, OWNER), Vyto.g) — it just adds the new friend crate.  Returns
+//      1 once dispatched, 0 when the organs aren't ensured yet (caller retries, never latches).
+Sounditron_commission(w):
+    let SH = this.up ?? this.top_House()
+    if (!SH) return 0
     let organs = []
-    for (const q of [{ Radio: 1 }, { Stoker: 1 }, { Tuner: 1 }, { Door: 1 }, { Zine: 1 }, { Riffle: 1 }, { Mag: 'Lineup' }, { Machine: 1 }, { Heist: 1 }]) {
+    // NB %Machine is deliberately NOT grappled: it carries no `face` (nor a FACE_MAINKEYS entry), so it
+    //  rendered as a faceless GREY cell that the colour hook can't reach (cell_ground needs a face-resolved
+    //   source) — the one organ that wouldn't take its jewel tone.  Its "the machine stands" info is now
+    //    carried by the Beat HUD (beat 2) + Door (identity), so the cell is redundant; the row still stands
+    //     for the witness's `story_swear`.  Every grappled organ below is both faced and coloured.
+    // the LEAN organ set (the human 2026-07-28: "the stoker I don't care to see or interact with. or
+    //  faves").  %Stoker (the provisioning crank) and %Zine (the Faves Berth) are dropped from the glass —
+    //   they still WORK (the stoker digs, the ★ still pops a fave), they're just not cells cluttering the
+    //    view.  Kept: the narrator, the heartbeat, the radio itself, the dial, identity, the deck, up-next,
+    //     and the heist.  A later "explore" reveal (via the Tuner) can bring the hidden crews back on demand.
+    // ALWAYS-ON: the music itself + the dial + the heist.
+    for (const q of [{ Radio: 1 }, { Tuner: 1 }, { Heist: 1 }]) {
         let row = w.o(q)[0]
         if (row) organs.push(row)
     }
-    if (!organs.length) return                    // organs not ensured yet — retry next tick, DON'T latch
+    // the DECK + UP-NEXT close while a heist is open (the human 2026-07-28 "I want to close up-next|riffle etc
+    //  when Heists are open") — the Heist gets the room; they grapple back when the last keep leaves.
+    let anyKeep = false
+    let krw0 = this.top_House().c.radio_w || w
+    let kme0 = this.Radio_pub ? this.Radio_pub(krw0) : null
+    let kshop0 = kme0 ? this.Ra_home_shop(krw0, kme0) : null
+    if (kshop0 && kshop0.o({ Keep: 1 }).length) anyKeep = true
+    if (!anyKeep) {
+        for (const q of [{ Riffle: 1 }, { Mag: 'Lineup' }]) {
+            let row = w.o(q)[0]
+            if (row) organs.push(row)
+        }
+    }
+    // the DIAGNOSTICS toggle cell (always present) + the three it gates (Beat · Uptime · Door), grappled ONLY
+    //  when the user has opened diagnostics (w.c.show_diag) — the human 2026-07-28 "three diagnostic-flavoured
+    //   cells ... under a diagnostics cell you have to open to see them".  Flat for now (Option 3); a true
+    //    nested "diagnostics cell CONTAINING the three" waits on the Vyto agent's nested renderer.
+    let diag = w.oai({ Diag: 1, dontSnap: 1 })
+    organs.push(diag)
+    if (w.c.show_diag) {
+        for (const q of [{ Beat: 1 }, { Uptime: 1 }, { Door: 1 }]) {
+            let row = w.o(q)[0]
+            if (row) organs.push(row)
+        }
+    }
+    // the ⇊ KEEP cells (the human 2026-07-28 "I DO want the Heist UI ... in a few Vyto cells ... it folds
+    //  down when started"): every active %Keep in the shop grapples as its OWN cell (KeepFace) — folder nodes
+    //   to tweak while primed, folded to a progress strip on pull.  They come + go with the gesture, so
+    //    Sounditron_trickle_look re-commissions on the keep fingerprint.  Live under Ra_home_shop, not w.
+    let krw = this.top_House().c.radio_w || w
+    let kme = this.Radio_pub ? this.Radio_pub(krw) : null
+    if (kme) {
+        let kshop = this.Ra_home_shop(krw, kme)
+        if (kshop) for (const keep of kshop.o({ Keep: 1 })) organs.push(keep)
+    }
+    // a friend's shelf is NO LONGER its own cell.  Two friend Crates spread the ~10 organs so thin every
+    //  jewel turned unreadably tiny (the human 2026-07-28: "lets not show us the two Crates because that's
+    //   way too much info on the screen and everything gets tiny").  Friends stay REACHABLE through the
+    //    Radio + Riffle faces — their pools read %MusuThem directly, off the glass — so the tessellation
+    //     keeps the FIXED organ set and each cell stays a legible size no matter how many friends arrive.
+    if (!organs.length) return 0
     if (!SH.o({ A: 'Vyto' }).length) SH.i({ A: 'Vyto' }).i({ w: 'Vyto' })
-    this.c.glass_done = 1                          // commit — one Vyto commission per tab
     let commission = new TheC({ c: {}, sc: { Scannable: organs[0], client_w: w, grapples: organs } })
     commission.c.Run = this
     SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
+    return 1
+
+// Sounditron_diag_toggle — the DiagFace cell's click: flip the diagnostics-open flag (runtime .c — resets on
+//  reload, which is right for a view toggle) and re-commission so the three cells grapple in / fall out.
+Sounditron_diag_toggle(w):
+    if (w.c.show_diag) {
+        delete w.c.show_diag
+    } else {
+        w.c.show_diag = 1
+    }
+    this.Sounditron_commission(w)
 
 // the TRICKLE — the live page's slow think (the human 2026-07-19: "that model may need to be
 //  driven at some fps along with some trickle think"): a detached era-guarded loop (the stoker's
@@ -233,6 +342,34 @@ async Sounditron_trickle_look(w, era):
             w.c.trickle_fp = fp
             w.bump()
         }
+        // (a friend arriving no longer mints its own cell — the glass is the fixed organ set now — so
+        //  there's no growth re-commission here; the fp-bump above already refreshes the friend liveness
+        //   the Radio/Riffle faces read.)
+        // the ⇊ KEEP cells DO come + go: re-commission when the keep set (or a state, for the fold-down /
+        //  the leave-on-done) changes, so a fresh keep appears as a cell and a dropped|done one falls away.
+        let kme = this.Radio_pub ? this.Radio_pub(w) : null
+        let kshop = kme ? this.Ra_home_shop(w, kme) : null
+        let keptN = kshop ? kshop.o({ Keep: 1 }).length : 0
+        // fingerprint the GRAPPLE-SET-affecting facts ONLY (diagnostics open + keep count), NOT per-keep state:
+        //  a keep's primed→pulling fold-down rides its own dose bump (re-express), never a full re-commission —
+        //   the human's "diagnostics and heist-spawning seem slow" was partly re-commissioning on every tick.
+        let kfp = (w.c.show_diag ? 'D' : '') + keptN
+        if (w.c.keep_fp !== kfp) {
+            w.c.keep_fp = kfp
+            // ATTENTION (the human 2026-07-28 "diminish all the other UI cells when we open the Heist, except
+            //  the nowplaying bit"): a live %Keep grabs the room — the always-on SECONDARY organs shrink via a
+            //   negative dose (Vyto env_area), Radio (now-playing) + the Diag toggle stay full, the Keep cells
+            //    dose themselves UP.  When the last keep leaves the dose clears and the glass springs back.  The
+            //     three diagnostics are hidden-by-default now, so they're not in this set.
+            let dim = keptN ? '-0.62' : null
+            for (const q of [{ Tuner: 1 }, { Riffle: 1 }, { Mag: 'Lineup' }, { Heist: 1 }]) {
+                let org = w.o(q)[0]
+                if (!org) continue
+                if (dim) { if (org.sc.dose !== dim) { org.sc.dose = dim; org.bump() } }
+                else if (org.sc.dose) { delete org.sc.dose; org.bump() }
+            }
+            this.Sounditron_commission(w)
+        }
     }
     setTimeout(() => { this.Sounditron_trickle_look(w, era) }, 2500)
 
@@ -240,7 +377,7 @@ async Sounditron_trickle_look(w, era):
 async Sounditron_relay(w):
     i %desc:'the relay answers'
     let r = w.oai({ Relay: 1 })
-    this.expecting(w, 'relay_wait', 10, async () => { await this.Sounditron_await(w, 10, () => this.Sounditron_channel_live(w)) })
+    this.expecting(w, 'relay_wait', 10, async () => { await this.Sounditron_await(w, 10, () => this.Sounditron_channel_live(w), 'the relay to answer') })
 
 // beat 4 — THE POSSIBILITIES OF PEERS: survey every address we know a way toward — station
 //  Peering/Pier rows, the editor-channel %Runner roster, the courting client.  This census is
@@ -283,7 +420,32 @@ async Sounditron_possibilities(w):
 async Sounditron_peer(w):
     i %desc:'reach for a peer'
     this.Sounditron_heist(w)
-    this.expecting(w, 'peer_wait', 12, async () => { await this.Sounditron_await(w, 12, () => this.Sounditron_peer_live(w)) })
+    // RELIABILITY (2026-07-28, root-caused): a peer that IS online kept reading offline, so this wait
+    //  burned its full ceiling and the friend features never fired ("doesn't keep working reliably").
+    //   The cause was an ordering bug between two live constants — the ambient self-heal that re-greets a
+    //    stale peer (Swarm_pulse_all's quiet-triggered swarm_hi) only fires once heard_at is >15s stale,
+    //     but this wait GAVE UP at 12s — 12 < 15, so the rescue could never land in time.  Fix, two parts:
+    //  (1) KICK swarm_hi NOW (collision-immune/ephemeral → dodges the reused-seq inbox collision that made
+    //       a reloaded tab invisible; Peeroleum) so a stale-but-online peer is re-greeted at once instead of
+    //        waiting on the trickle's 15s-quiet phase — a real peer then refreshes in a round-trip and the
+    //         wait settles EARLY.  (2) widen the ceiling to 20 (the file's own Swarm_share window magnitude)
+    //          so that round-trip actually lands before we quit.  Best-effort + try/caught: worst case a no-op.
+    let M = this.top_House()
+    let sw = M.Swarm_station_world ? M.Swarm_station_world() : null
+    let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
+    if (sw && ident && M.Swarm_hi_all) { try { M.Swarm_hi_all(sw, ident) } catch (er) {} }
+    // NO-FRIENDS fast-path (the human 2026-07-28 "make it fast"): the 20s ceiling exists to give a
+    //  sealed-but-stale peer time to self-heal (swarm_hi round-trip inside the >15s trickle window).
+    //   The window is worth paying ONLY for a friend peer_live could actually accept — a pier holding a
+    //    MUSIC grant (Swarm_pier_live(pier,'Music')).  A pier with only a non-Music grant can NEVER satisfy
+    //     peer_live, so it must not buy the slow path; and with no Music-granted pier at all "nobody online"
+    //      is known instantly — settle in 2s rather than hang the boot 20s at "reach for a peer".
+    let musicFriends = 0
+    for (const pier of ((ident && M.Swarm_peering) ? (M.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) : [])) {
+        if (pier.o({ Grant: 'Music' })[0]) musicFriends = musicFriends + 1
+    }
+    let secs = musicFriends ? 20 : 2
+    this.expecting(w, 'peer_wait', secs, async () => { await this.Sounditron_await(w, secs, () => this.Sounditron_peer_live(w), 'a peer to come online') })
 
 Sounditron_peer_live(w):
     let M = this.top_House()
@@ -494,12 +656,23 @@ Sounditron_pulled(w):
 // Sounditron_await — the wait INSIDE an expecting: poll a condition to the deadline, mint
 //  nothing (the witness does the seeing, in Atime).  The ttlilt riding the expecting req holds
 //   the snap; when the truth lands early we settle early.
-async Sounditron_await(w, secs, truth_fn):
+async Sounditron_await(w, secs, truth_fn, note):
+    // park a live countdown on the Beat HUD (.c — never snapped) so the wait is VISIBLE while it polls:
+    //  BeatFace self-ticks the bar from `since` toward `budget`.  Cleared the instant truth lands (early)
+    //   or the deadline passes, so a settled snap never carries a racing bar.  `settled` narrates the
+    //    outcome (met vs timed out) for the tick after.
+    let bhud = w.o({ Beat: 1 })[0]
+    let label = note || 'settling'
+    if (bhud) bhud.c.wait = { for: label, since: Date.now(), budget: secs }
     let deadline = Date.now() + secs * 1000
     while (Date.now() < deadline) {
-        if (truth_fn()) return
+        if (truth_fn()) {
+            if (bhud) { bhud.c.wait = null; bhud.c.settled = '✓ ' + label }
+            return
+        }
         await new Promise(r => setTimeout(r, 300))
     }
+    if (bhud) { bhud.c.wait = null; bhud.c.settled = '✕ ' + label + ' — timed out' }
 
 // ── the witness — every pass, in Atime.  this.story_swear is the latch: idempotent per run
 //  (it reads the Assertioning shelf), so no oa guard rides a sentence; the subject param

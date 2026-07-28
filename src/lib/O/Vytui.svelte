@@ -77,9 +77,14 @@
     const GAP = 2.2           // the breath between cells (shapes.md §0)
 
     type Spring = { x: number, y: number, r: number, vx: number, vy: number, vr: number }
-    type PaintCell = { tok: string, ident: string, x: number, y: number, r: number,
+    // key: a TREE-unique identity (tok at the root, parentKey>tok below) — springs, lift, and the
+    //  keyed {#each} are all keyed by it, because a mirror tok is only LOCALLY unique (two byte-
+    //   identical cousins share a tok).  depth/hasKids drive the nested look: a cell that is a scope
+    //    (its children tile it) suppresses its OWN label + face and renders as a bare frame.
+    type PaintCell = { tok: string, key: string, depth: number, hasKids: boolean,
+                       ident: string, x: number, y: number, r: number,
                        kind: 'poly' | 'disc', d: string, departing: boolean, lift: boolean,
-                       bx: number, by: number, bw: number, bh: number,
+                       bx: number, by: number, bw: number, bh: number, clip: string,
                        face: any | null, source: TheC | null }
 
     // the axis-aligned bounding box of a cell polygon (viewBox units) — the box a molded face fills.
@@ -92,6 +97,24 @@
             if (p.y > maxy) maxy = p.y
         }
         return { bx: minx, by: miny, bw: Math.max(0, maxx - minx), bh: Math.max(0, maxy - miny) }
+    }
+
+    // (clip_of removed: the "let them overflow" occlusion revert stopped reading cell.clip, so the
+    //  per-cell clip-path string is no longer computed — the coloured <path class="cell"> polygon is the
+    //   visible cell wall now.  The `clip` field stays on PaintCell as always-'' until the renderer refactor
+    //    sweeps it.)
+
+    // per-cell colour from Matstyle (the human: "colour each of them somehow"): mainkey → a jewel
+    //  ground via matstyle_ground (the Style subagent seeded the organs + a deterministic string-hash
+    //   for any future mainkey).  Guarded — if Matstyle isn't mixed on yet it returns null and the cell
+    //    keeps its default .cell.faced fill, so this can only ADD colour, never regress.
+    const cell_ground = (cell: any): { bg: string, color: string, border: string } | null => {
+        try {
+            const sc = cell?.source?.sc
+            if (!sc) return null
+            const mk = Object.keys(sc)[0]
+            return (H as any)?.matstyle_ground?.(mk) ?? null
+        } catch { return null }
     }
 
     // per-world render state, keyed by the world C — plain, not reactive.
@@ -111,9 +134,38 @@
     const grawave = (w: TheC) => Number((w.sc as any).grawave_duration) || 0.4
     const commissioned = (w: TheC) => !!(w.c as any).commission
 
-    function all_rows(w: TheC): TheC[] {
+    // ── the mirror TREE (nested render) ────────────────────────────────────────────────────
+    //  A Node wraps one mirror row with its tree-unique `key` and its drawable `kids`.  The walk is
+    //   GATED twice, so a flat glass is byte-and-cost identical to before:
+    //    · descent only when `w.c.nested` — a flat commission never enters the recursion, so `roots`
+    //       carry empty `kids` and the layout cuts one power diagram over the top rows exactly as it did;
+    //    · a kid is drawn only if the MODEL solved it (`.c.T`) — Vyto_solve_scope writes `.c.T` on the
+    //       kids it tessellates, so depth is exactly the solve's reach and a deep-but-unsolved mirror
+    //        subtree (a scan that walked into an organ's guts) is never descended into.
+    type Node = { row: TheC, tok: string, key: string, depth: number, kids: Node[] }
+    function tree_nodes(w: TheC): { roots: Node[], all: Node[] } {
+        const roots: Node[] = []
+        const all: Node[] = []
         const mirror: any = (w.c as any).mirror
-        return mirror ? (mirror.o() as TheC[]) : []
+        if (!mirror) return { roots, all }
+        const nested = !!(w.c as any).nested
+        const build = (row: TheC, parentKey: string, depth: number): Node | null => {
+            const tok: string = (row.c as any).tok
+            if (!tok) return null
+            const key = parentKey ? parentKey + '>' + tok : tok
+            const node: Node = { row, tok, key, depth, kids: [] }
+            all.push(node)
+            if (nested && depth < 40) {
+                for (const k of row.o() as TheC[]) {
+                    if (!(k.c as any).T && !(k.sc as any).departing) continue
+                    const kn = build(k, key, depth + 1)
+                    if (kn) node.kids.push(kn)
+                }
+            }
+            return node
+        }
+        for (const row of mirror.o() as TheC[]) { const n = build(row, '', 0); if (n) roots.push(n) }
+        return { roots, all }
     }
 
     function ident_of(row: TheC): string {
@@ -171,48 +223,63 @@
         const curWalls = new Map<string, Pt[]>()
         const sp = springs.get(w)
         if (!sp) return { cells, curWalls }
-        const rowByTok = new Map<string, TheC>()
-        for (const row of all_rows(w)) { const tok = (row.c as any).tok; if (tok) rowByTok.set(tok, row) }
-        const liveToks: string[] = []
-        const seeds: Pt[] = []
-        const radii: number[] = []
-        for (const [tok, s] of sp) {
-            const row = rowByTok.get(tok)
-            if (!row || (row.sc as any).departing) continue
-            liveToks.push(tok); seeds.push({ x: s.x, y: s.y }); radii.push(s.r)
-        }
-        const polys = power_cells(FRAME, seeds, radii, GAP)
-        const polyByTok = new Map<string, Pt[] | null>()
-        for (let i = 0; i < liveToks.length; i++) {
-            polyByTok.set(liveToks[i], polys[i])
-            if (polys[i]) curWalls.set(liveToks[i], polys[i] as Pt[])
-        }
-        const liftTok = lifted.get(w)
-        for (const [tok, s] of sp) {
-            const row = rowByTok.get(tok)
-            if (!row) continue
-            const ident = ident_of(row)
-            const lift = liftTok === tok
-            const f = face_of(row)
-            const face = f ? f.comp : null
-            const source = f ? f.source : null
-            if ((row.sc as any).departing) {
-                const r = Math.max(0, s.r)
-                cells.push({ tok, ident, x: s.x, y: s.y, r, kind: 'disc', d: '', departing: true, lift,
-                             bx: s.x - r, by: s.y - r, bw: 2 * r, bh: 2 * r, face, source })
-            } else {
-                const poly = polyByTok.get(tok)
+        const { roots } = tree_nodes(w)
+        const liftKey = lifted.get(w)
+
+        // lay out ONE sibling group inside `framePoly`: cut the power diagram from the siblings' sprung
+        //  seeds, emit a PaintCell each (in lifted-last order so the hovered cell + its whole subtree
+        //   paint on top), then recurse into each cell — a child scope's frame IS its parent's cell poly,
+        //    tiled with gap 0 (a scope FILLS its parent; the visual GAP is a top-cut property only).  Parent-
+        //     before-child emit order = SVG paint order, so children sit above their container.
+        const layout = (nodes: Node[], framePoly: Pt[], gap: number): void => {
+            const live: Node[] = []
+            const seeds: Pt[] = []
+            const radii: number[] = []
+            for (const n of nodes) {
+                const s = sp.get(n.key)
+                if (!s || (n.row.sc as any).departing) continue
+                live.push(n); seeds.push({ x: s.x, y: s.y }); radii.push(s.r)
+            }
+            const polys = power_cells(framePoly, seeds, radii, gap)
+            const polyByKey = new Map<string, Pt[] | null>()
+            for (let i = 0; i < live.length; i++) {
+                polyByKey.set(live[i].key, polys[i])
+                if (polys[i]) curWalls.set(live[i].key, polys[i] as Pt[])
+            }
+            // emit order: lifted sibling last (its subtree follows, so it all paints on top).
+            const order = [...nodes].sort((a, b) => (a.key === liftKey ? 1 : 0) - (b.key === liftKey ? 1 : 0))
+            for (const n of order) {
+                const s = sp.get(n.key)
+                if (!s) continue
+                const row = n.row
+                const ident = ident_of(row)
+                const lift = liftKey === n.key
+                const f = face_of(row)
+                const face = f ? f.comp : null
+                const source = f ? f.source : null
+                if ((row.sc as any).departing) {
+                    const r = Math.max(0, s.r)
+                    cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids: false, ident,
+                                 x: s.x, y: s.y, r, kind: 'disc', d: '', departing: true, lift,
+                                 bx: s.x - r, by: s.y - r, bw: 2 * r, bh: 2 * r, clip: '', face, source })
+                    continue
+                }
+                const poly = polyByKey.get(n.key)
                 if (poly) {
                     const bb = bbox_of(poly)
-                    cells.push({ tok, ident, x: s.x, y: s.y, r: s.r, kind: 'poly', d: path_of(poly), departing: false, lift,
-                                 bx: bb.bx, by: bb.by, bw: bb.bw, bh: bb.bh, face, source })
+                    const hasKids = n.kids.length > 0
+                    cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids, ident,
+                                 x: s.x, y: s.y, r: s.r, kind: 'poly', d: path_of(poly), departing: false, lift,
+                                 bx: bb.bx, by: bb.by, bw: bb.bw, bh: bb.bh, clip: '', face, source })
+                    if (hasKids) layout(n.kids, poly, 0)
                 } else {
-                    cells.push({ tok, ident, x: s.x, y: s.y, r: 6, kind: 'disc', d: '', departing: false, lift,
-                                 bx: s.x - 6, by: s.y - 6, bw: 12, bh: 12, face, source })
+                    cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids: false, ident,
+                                 x: s.x, y: s.y, r: 6, kind: 'disc', d: '', departing: false, lift,
+                                 bx: s.x - 6, by: s.y - 6, bw: 12, bh: 12, clip: '', face, source })
                 }
             }
         }
-        cells.sort((a, b) => (a.lift === b.lift ? 0 : a.lift ? 1 : -1))
+        layout(roots, FRAME, GAP)
         return { cells, curWalls }
     }
 
@@ -226,11 +293,9 @@
     //  hidden-tab jump, and the parked-run jump).
     function jump_to_target(w: TheC) {
         const sp = springs.get(w); if (!sp) return
-        const rowByTok = new Map<string, TheC>()
-        for (const row of all_rows(w)) { const tok = (row.c as any).tok; if (tok) rowByTok.set(tok, row) }
-        for (const [tok, s] of sp) {
-            const row = rowByTok.get(tok); const T = row ? target_of(row) : null
-            if (!T) continue
+        for (const n of tree_nodes(w).all) {
+            const s = sp.get(n.key); if (!s) continue
+            const T = target_of(n.row); if (!T) continue
             s.x = T.x; s.y = T.y; s.r = T.r; s.vx = 0; s.vy = 0; s.vr = 0
         }
     }
@@ -241,11 +306,11 @@
         const sp = springs.get(w)
         if (!sp || sp.size === 0) return false
         if (parked(w)) { jump_to_target(w); paint_world(w); return false }
-        const rowByTok = new Map<string, TheC>()
-        for (const row of all_rows(w)) { const tok = (row.c as any).tok; if (tok) rowByTok.set(tok, row) }
+        const rowByKey = new Map<string, TheC>()
+        for (const n of tree_nodes(w).all) rowByKey.set(n.key, n.row)
         const omega = 6 / grawave(w)
-        for (const [tok, s] of sp) {
-            const row = rowByTok.get(tok)
+        for (const [key, s] of sp) {
+            const row = rowByKey.get(key)
             const T = row ? target_of(row) : null
             if (!T) continue
             // position governs x and y; size governs r (calm.md §5).  k defaults free if the
@@ -260,8 +325,8 @@
         paintMap.set(w, cells)
         // settle: max cell displacement (position and radius) and max derived-wall vertex drift.
         let disp = 0
-        for (const [tok, s] of sp) {
-            const row = rowByTok.get(tok); const T = row ? target_of(row) : null
+        for (const [key, s] of sp) {
+            const row = rowByKey.get(key); const T = row ? target_of(row) : null
             if (!T) continue
             disp = Math.max(disp, Math.hypot(s.x - T.x, s.y - T.y), Math.abs(s.r - T.r))
         }
@@ -273,7 +338,10 @@
             for (let v = 0; v < poly.length; v++) drift = Math.max(drift, Math.hypot(poly[v].x - prev[v].x, poly[v].y - prev[v].y))
         }
         prevWalls.set(w, curWalls)
-        const calm_frame = disp < EPS && drift < DRIFT_EPS
+        // negated so a NON-finite disp/drift (a NaN that slipped past the radius clamp) counts as CALM and
+        //  STOPS the loop, instead of `NaN < EPS === false` pinning requestAnimationFrame at 60fps forever
+        //   (a dead-silent CPU burn that eventually OOM-kills the tab).  Finite frames behave identically.
+        const calm_frame = !(disp >= EPS) && !(drift >= DRIFT_EPS)
         let cnt = (settleCount.get(w) ?? 0)
         cnt = calm_frame ? cnt + 1 : 0
         settleCount.set(w, cnt)
@@ -320,23 +388,21 @@
             const sp = springs.get(w) as Map<string, Spring>
             const present = new Set<string>()
             let moved = false
-            for (const row of all_rows(w)) {
-                const tok: string = (row.c as any).tok
-                if (!tok) continue
-                const T = target_of(row)
+            for (const n of tree_nodes(w).all) {
+                const T = target_of(n.row)
                 if (!T) continue
-                present.add(tok)
-                let s = sp.get(tok)
+                present.add(n.key)
+                let s = sp.get(n.key)
                 if (!s) {
                     // a newcomer springs from x,y AT target with r 0 — the radius ramp IS the entrance.
-                    sp.set(tok, { x: T.x, y: T.y, r: 0, vx: 0, vy: 0, vr: 0 })
+                    sp.set(n.key, { x: T.x, y: T.y, r: 0, vx: 0, vy: 0, vr: 0 })
                     moved = true
                 } else if (Math.hypot(s.x - T.x, s.y - T.y) > EPS || Math.abs(s.r - T.r) > EPS) {
                     moved = true
                 }
             }
             let removed = false
-            for (const tok of [...sp.keys()]) if (!present.has(tok)) { sp.delete(tok); removed = true }
+            for (const key of [...sp.keys()]) if (!present.has(key)) { sp.delete(key); removed = true }
 
             // parked (a Story run drives) and hidden (a ?B= runner) keep painting unconditionally —
             //  their determinism and jump-landing depend on it, and neither is a visible CPU burn.
@@ -370,12 +436,27 @@
     //       and can't re-arm the effect (no feedback), and (b) a burst of N bumps folds into ONE
     //        adopt per REACT_MS window (the Vyto_stir_soon idiom, render side).  The rAF spring loop
     //         runs at 60fps BETWEEN windows, so motion stays smooth though targets refresh at ~8Hz.
-    //          Hidden ?B= runners stay SYNCHRONOUS: setTimeout is throttled to ~1s in a background
-    //           tab, and a Book's determinism wants adopt inline (rAF is frozen there anyway).
+    //          Hidden ?B= runners can't use the setTimeout latch (throttled to ~1s in a background
+    //           tab) and a Book's determinism wants adopt prompt — but the OLD shortcut (adopt()
+    //            straight from the effect body) ran it INSIDE the reactive context, so adopt's own
+    //             reads (tree_nodes/target_of + Matstyle swatch autoviv on H.ave, which this effect
+    //              reads) subscribed the effect to itself; a heist's husk churn then re-armed the
+    //               effect from within its own run → effect_update_depth_exceeded (the human,
+    //                2026-07-28: "spinning only while heisting").  Fix: run the hidden adopt in a
+    //                 MICROTASK — outside the reactive context (no feedback, same as the visible
+    //                  path) yet still prompt: queueMicrotask is NOT throttled in a bg tab and it
+    //                   flushes before the next paint/snap, so Book determinism holds.
     let react_pending: any = 0
+    let react_micro = false
+    let react_alive = true
     const REACT_MS = 120
     function react_soon() {
-        if (typeof document !== 'undefined' && document.hidden) { adopt(vyto_worlds()); return }
+        if (typeof document !== 'undefined' && document.hidden) {
+            if (react_micro) return
+            react_micro = true
+            queueMicrotask(() => { react_micro = false; if (react_alive) adopt(vyto_worlds()) })
+            return
+        }
         if (react_pending) return
         react_pending = setTimeout(() => { react_pending = 0; adopt(vyto_worlds()) }, REACT_MS)
     }
@@ -391,6 +472,7 @@
     })
     // teardown: release the frame loop AND the pending reaction (calm.md §5's cancel-on-teardown).
     $effect(() => () => {
+        react_alive = false
         if (raf_id) cancelAnimationFrame(raf_id); raf_id = 0
         if (react_pending) clearTimeout(react_pending); react_pending = 0
     })
@@ -422,17 +504,19 @@
         }))
     }
 
-    // pointer facts (cells are real DOM now — the polygon hit-test retires): poke Calm to place
-    //  or release the pointer-hold, lift the cell above the pile, and kick the loop so the
-    //   release ease plays out.
-    function on_enter(w: TheC, tok: string) {
-        lifted.set(w, tok)
-        ;(H as any).Vyto_pointer_enter?.(w, tok)
+    // pointer facts (cells are real DOM now — the polygon hit-test retires): lift the cell above the
+    //  pile by its tree-unique key, poke Calm to place|release the pointer-hold, and kick the loop so
+    //   the release ease plays out.  The MODEL hold is keyed by a mirror tok (Calm's %Hold scope),
+    //    which is only LOCALLY unique — so fire it for TOP cells only (key===tok); a nested cell lifts
+    //     VISUALLY (local `lifted`) but places no tok-scoped hold that would over-pin a same-tok cousin.
+    function on_enter(w: TheC, key: string, tok: string) {
+        lifted.set(w, key)
+        if (key === tok) (H as any).Vyto_pointer_enter?.(w, tok)
         kick(w); paint_tick++
     }
-    function on_leave(w: TheC, tok: string) {
-        if (lifted.get(w) === tok) lifted.delete(w)
-        ;(H as any).Vyto_pointer_leave?.(w, tok)
+    function on_leave(w: TheC, key: string, tok: string) {
+        if (lifted.get(w) === key) lifted.delete(w)
+        if (key === tok) (H as any).Vyto_pointer_leave?.(w, tok)
         kick(w); paint_tick++
     }
 </script>
@@ -471,18 +555,21 @@
         {#if show_viewport(w)}
             <div class="stage">
                 <svg class="viewport" viewBox="0 0 800 450" preserveAspectRatio="xMidYMid meet">
-                    {#each viewport_cells(w) as cell (cell.tok)}
+                    {#each viewport_cells(w) as cell (cell.key)}
+                        {@const g = cell_ground(cell)}
                         {#if cell.kind === 'poly'}
-                            <path class="cell" class:departing={cell.departing} class:lift={cell.lift} class:faced={!!cell.face} d={cell.d}
-                                  onpointerenter={() => on_enter(w, cell.tok)}
-                                  onpointerleave={() => on_leave(w, cell.tok)}></path>
+                            <path class="cell" class:departing={cell.departing} class:lift={cell.lift}
+                                  class:faced={!!cell.face && !cell.hasKids} class:nested={cell.depth > 0} class:scope={cell.hasKids} d={cell.d}
+                                  style={g ? `fill:${g.bg}; stroke:${g.border};` : undefined}
+                                  onpointerenter={() => on_enter(w, cell.key, cell.tok)}
+                                  onpointerleave={() => on_leave(w, cell.key, cell.tok)}></path>
                         {:else}
-                            <circle class="cell disc" class:departing={cell.departing} class:lift={cell.lift}
+                            <circle class="cell disc" class:departing={cell.departing} class:lift={cell.lift} class:nested={cell.depth > 0}
                                     cx={cell.x} cy={cell.y} r={cell.r}
-                                    onpointerenter={() => on_enter(w, cell.tok)}
-                                    onpointerleave={() => on_leave(w, cell.tok)}></circle>
+                                    onpointerenter={() => on_enter(w, cell.key, cell.tok)}
+                                    onpointerleave={() => on_leave(w, cell.key, cell.tok)}></circle>
                         {/if}
-                        {#if !cell.face}
+                        {#if !cell.face && !cell.hasKids}
                             <text class="ident" x={cell.x} y={cell.y} text-anchor="middle" dominant-baseline="middle">{cell.ident}</text>
                         {/if}
                     {/each}
@@ -492,13 +579,13 @@
                      pixel measurement, no overlay-sync drift).  Each faced cell mounts its glass
                      component handed the live source particle + the House. -->
                 <div class="faces">
-                    {#each viewport_cells(w) as cell (cell.tok)}
-                        {#if cell.face && !cell.departing}
+                    {#each viewport_cells(w) as cell (cell.key)}
+                        {#if cell.face && !cell.departing && !cell.hasKids}
                             {@const Face = cell.face}
                             <div class="face-mold" class:lift={cell.lift}
                                  style="left:{(cell.bx / 800) * 100}%; top:{(cell.by / 450) * 100}%; width:{(cell.bw / 800) * 100}%; height:{(cell.bh / 450) * 100}%;"
-                                 onpointerenter={() => on_enter(w, cell.tok)}
-                                 onpointerleave={() => on_leave(w, cell.tok)}>
+                                 onpointerenter={() => on_enter(w, cell.key, cell.tok)}
+                                 onpointerleave={() => on_leave(w, cell.key, cell.tok)}>
                                 <div class="face-scroll">
                                     <svelte:boundary>
                                         <Face n={cell.source} H={H} />
@@ -575,20 +662,33 @@
     .cell.lift { fill: #3a3a58; stroke: #a8a8f0; }
     /* a faced cell is a quiet frame — the mounted face draws the content over it */
     .cell.faced { fill: #17171f; stroke: #3d3d55; }
+    /* NESTED (depth>0): a child wall reads finer than its container so the tree is legible; a
+       SCOPE cell (its children tile it) is a bare frame — transparent fill, faint outline — so the
+       children carry the ink.  Both ADD onto the flat look; a flat glass never emits either class. */
+    .cell.nested { stroke-width: 0.7; }
+    .cell.scope { fill: none; stroke: #4a4a66; }
+    .cell.scope.lift { fill: none; stroke: #a8a8f0; }
 
     /* the FACE overlay — molded to cells in viewBox percentages, so it tracks the responsive SVG */
     .faces { position: absolute; inset: 0; pointer-events: none; }
+    /* "let them overflow" (the human's choice): no polygon clip-path (was cutting the face content
+       at the slanted cell walls) and overflow:visible, so a taller face spills past its cell rather
+       than being occluded.  The grey inset box is dropped too — unclipped it would read as a bare
+       rectangle; the coloured <path class="cell"> polygon is the cell wall now. */
+    /* pointer-events:NONE, not auto — with overflow visible the mold is a RECTANGLE at the cell's
+       bbox, and voronoi bboxes overlap heavily, so an auto mold's transparent corner floats over a
+       neighbour's button and eats the click ("pause is impossible to click sometimes").  The mold
+       must never catch: every face root is itself pointer-events:none and its buttons re-arm auto
+       (glass_kinds contract), and an auto descendant still hit-tests its OWN small box even under a
+       none ancestor — so the buttons stay live while the dead overflow steals nothing. */
     .face-mold {
-        position: absolute; pointer-events: auto; overflow: hidden;
-        border-radius: 4px; box-sizing: border-box;
-        box-shadow: inset 0 0 0 1px #3d3d55;
-        transition: box-shadow 120ms ease;
+        position: absolute; pointer-events: none; overflow: visible;
+        box-sizing: border-box;
     }
     .face-mold.lift { box-shadow: inset 0 0 0 1px #a8a8f0, 0 2px 10px rgba(0,0,0,0.5); z-index: 5; }
     .face-scroll {
-        width: 100%; height: 100%; overflow: auto;
+        width: 100%; height: 100%; overflow: visible;
         font-size: 11px; line-height: 1.35;
-        scrollbar-width: thin;
     }
     .face-err {
         padding: 4px 6px; color: #d08a8a; font-weight: 600;

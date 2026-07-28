@@ -382,6 +382,16 @@ async Repli_serve_parked(w, pier):
 // Repli_find_record — locate a source Record by id: in the given library, or the legacy single-pair
 //  w.c.repli_src when none is passed (a multi-caster caller resolves the shelf via Repli_src_for first).
 Repli_find_record(w, id, lib):
+    // HEIST folder census takes precedence (RaHeist, 2026-07-28): a rummage pull promised the ORIGINAL
+    //  file bytes off the source's scratch RummageLib, but the route's caster serves the OPUS radio stock
+    //   of the same id — search the (usually-empty) rummage libs FIRST so an id there is served original.
+    //    Additive + safe: no rummage libs (every Book, the idle app) ⇒ byte-identical to the plain lookup.
+    //     The libs are time-swept (Heist_keep_beat) so a served-original id can shadow the radio opus for
+    //      at most the sweep window — bounded, and the seed the asker is streaming is excluded chooser-side.
+    for (const rl of (w.c.rummage_libs || [])) {
+        let hit = this.Ra_rec_find(rl, { Record: 1, id: id })
+        if (hit) return hit
+    }
     let l = lib || w.c.repli_src
     if (!l) return null
     // Ra_rec_find walks the Mag model (paged self stock) AND the flat shape (mirrors, Book srcs).
@@ -470,6 +480,10 @@ async Repli_serve_chunks(w, pier, h, rec):
 //    transport world the frames ride: the station world is plumbing, the crates are furniture.
 Repli_mirror_lib(w, from):
     let mw = w.c.repli_mirror_w || w
+    // a frame whose SENDER is ME (a relay echo, or a self-Pier casting to itself) must not mint a friend
+    //  crate of myself: in live by-from mode w.c.repli_mirror_pier IS my own prepub, so from===it means
+    //   "my own stock coming back" — fold it into my OWN shelf (idempotent dedup), never %MusuThem,pub:<me>.
+    if (w.c.repli_mirror_by_from && from && String(from) === String(w.c.repli_mirror_pier)) return this.Ra_home_self(mw, String(from))
     let key = (w.c.repli_mirror_by_from && from) ? String(from) : (w.c.repli_mirror_pier || 'Crowd')
     return this.Ra_home_them(mw, key)
 

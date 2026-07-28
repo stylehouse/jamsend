@@ -7,6 +7,20 @@ import { grap, grep, tex, throttle } from "$lib/Y.svelte"
 import { mount_opfs_github_nav, JAMSEND_SOURCE } from "./WormholeOpfs.svelte.ts";
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
+// concat_chunks — join a file's reader chunks into ONE ArrayBuffer in a single linear pass.
+//  Sum the sizes, allocate once, copy each chunk in at a running offset — O(total bytes).  The prior
+//   chunks.reduce((a,b)=>new Uint8Array(a+b)…) re-grew AND re-copied the whole accumulated buffer PER
+//    chunk, i.e. O(N²): a multi-MB track arriving in small reader chunks recopied tens of GB, burning
+//     ~12s of o.set() (seen in a live profile) and OOM-fatalling the renderer mid-playback (→ SIGILL).
+function concat_chunks(chunks: ArrayBuffer[]): ArrayBuffer {
+    let total = 0
+    for (const c of chunks) total += c.byteLength
+    const out = new Uint8Array(total)
+    let off = 0
+    for (const c of chunks) { out.set(new Uint8Array(c), off); off += c.byteLength }
+    return out.buffer
+}
+
 const V: Record<string, any> = {}
 V.organise =  0  // set >0 to enable answer_calls/beliefs/organise logs
 V.beliefs = 0
@@ -2208,12 +2222,7 @@ export class WormholeNav {
         const reader = await dir.getReader(filename)
         const chunks: ArrayBuffer[] = []
         for await (const chunk of reader.iterate()) chunks.push(chunk)
-        const buf = chunks.reduce((a, b) => {
-            const o = new Uint8Array(a.byteLength + b.byteLength)
-            o.set(new Uint8Array(a)); o.set(new Uint8Array(b), a.byteLength)
-            return o.buffer
-        })
-        return new TextDecoder().decode(buf)
+        return new TextDecoder().decode(concat_chunks(chunks))
     }
 
     // bin_read — read_file's binary twin: the same chunk-concat, but returns the raw ArrayBuffer instead
@@ -2228,11 +2237,7 @@ export class WormholeNav {
         const reader = await dir.getReader(filename)
         const chunks: ArrayBuffer[] = []
         for await (const chunk of reader.iterate()) chunks.push(chunk)
-        return chunks.reduce((a, b) => {
-            const o = new Uint8Array(a.byteLength + b.byteLength)
-            o.set(new Uint8Array(a)); o.set(new Uint8Array(b), a.byteLength)
-            return o.buffer
-        }, new ArrayBuffer(0) as ArrayBuffer)
+        return concat_chunks(chunks)
     }
 
     // read_range — bin_read's SEEKABLE twin: bytes [offset, offset+len) only, never the whole file.

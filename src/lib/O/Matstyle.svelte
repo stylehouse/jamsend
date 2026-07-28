@@ -249,6 +249,44 @@
                                        S('shape','ellipse'); S('width',20) },
             Kept:              () => { S('background-color','#182838'); S('color','#a0c8f0')
                                        S('shape','round-rectangle'); S('width',26) },
+            // ── the Sounditron ORGAN cells (Vyto glass; Sounditron_glass grapples one cell per
+            //     organ mainkey).  A music-app FAMILY: dark jewel grounds, light readable text, a
+            //      1px wall in the organ's own accent — and each cell's hue HARMONISES with its
+            //       mounted face's accent (RadioFace gold, StokerFace teal, DoorFace violet, …) so
+            //        the glass reads as one instrument with individually identifiable stations.
+            //   Any future organ mainkey with no hand-tuned seed here still gets a coherent, stable
+            //    colour for free via matstyle_ground(key) — the string-hash below.  These are the
+            //     hand-tuned overrides.  All are round-rectangle organ panels, dose-less.
+            Radio:             () => { S('background-color','#2e2412'); S('color','#ffd27a')
+                                       S('shape','round-rectangle'); S('width',30)
+                                       S('border-color','#d9a026'); S('border-width',1) },
+            Stoker:            () => { S('background-color','#102a22'); S('color','#8fe6c4')
+                                       S('shape','round-rectangle'); S('width',30)
+                                       S('border-color','#4fae8a'); S('border-width',1) },
+            Tuner:             () => { S('background-color','#12212e'); S('color','#8fd0ec')
+                                       S('shape','round-rectangle'); S('width',30)
+                                       S('border-color','#5aa8d0'); S('border-width',1) },
+            Door:              () => { S('background-color','#241a2e'); S('color','#d9c2f0')
+                                       S('shape','round-rectangle'); S('width',30)
+                                       S('border-color','#8a6fae'); S('border-width',1) },
+            Zine:              () => { S('background-color','#2a2612'); S('color','#e6d28a')
+                                       S('shape','round-rectangle'); S('width',30)
+                                       S('border-color','#a08a4f'); S('border-width',1) },
+            Riffle:            () => { S('background-color','#1c1a30'); S('color','#b8b8ee')
+                                       S('shape','round-rectangle'); S('width',30)
+                                       S('border-color','#7a7ad0'); S('border-width',1) },
+            Riff:              () => { S('background-color','#24223a'); S('color','#c4c4f0')
+                                       S('shape','round-rectangle'); S('width',22)
+                                       S('border-color','#8a8ad0'); S('border-width',1) },
+            Machine:           () => { S('background-color','#1c2430'); S('color','#b0c4dc')
+                                       S('shape','round-rectangle'); S('width',30)
+                                       S('border-color','#6f8ab0'); S('border-width',1) },
+            Heist:             () => { S('background-color','#2e1420'); S('color','#f0a8c4')
+                                       S('shape','round-rectangle'); S('width',30)
+                                       S('border-color','#d94f7a'); S('border-width',1) },
+            Uptime:            () => { S('background-color','#142a18'); S('color','#9ce6b0')
+                                       S('shape','round-rectangle'); S('width',30)
+                                       S('border-color','#6fd08a'); S('border-width',1) },
         }
         seeds[key]?.()
     },
@@ -323,6 +361,45 @@
             return Math.round(v * 255).toString(16).padStart(2, '0')
         }
         return `#${f(0)}${f(8)}${f(4)}`
+    },
+
+    // ── colour a mainkey FROM ITS NAME (so any future type gets a coherent colour for free) ──
+    //   matstyle_hue is the same deterministic string-hash CrateFace uses per record: a stable
+    //    0..360 hue keyed only on the mainkey string, no palette index, no creation-order
+    //     dependence.  matstyle_ground turns that hue into a music-app CELL triple — deep jewel
+    //      ground, light readable text, a mid wall — at fixed S/L so every derived cell sits in the
+    //       same family.  The seeded Sounditron organs above are hand-tuned overrides of this; an
+    //        unseeded organ (or a Vyto renderer that wants a fill without a seed) can call
+    //         matstyle_ground(mainkey) directly and land in the same palette.  Nothing here touches
+    //          the golden-angle MATSTYLE_PALETTE fallback in matstyle_get_or_create — existing
+    //           non-organ swatches are byte-identical.
+    // the known Sounditron organs get HAND-PLACED hues, well-separated around the wheel and aligned
+    //  to the Cyto seeds above (Radio amber · Stoker teal · Door violet · Heist pink) so the two views
+    //   agree.  The raw string-hash CLUSTERED them (Tuner 346 / Beat 350 / Stoker 2 all one red; Door
+    //    and MusuThem hashed to the SAME 134 green) — the human's "colour each of them somehow" only
+    //     half-met.  This table is consulted ONLY for these exact mainkeys; every other key (a record
+    //      id in CrateFace, any future type) still falls through to the deterministic hash unchanged.
+    matstyle_organ_hue(key: string): number | null {
+        const H: Record<string, number> = {
+            MusuThem: 5, Zine: 22, Radio: 40, Mag: 95, Uptime: 128, Stoker: 165,
+            Tuner: 192, Beat: 210, Machine: 240, Riffle: 262, Door: 288, Heist: 332,
+        }
+        return H[key] ?? null
+    },
+    matstyle_hue(key: string): number {
+        const seeded = this.matstyle_organ_hue(key)
+        if (seeded != null) return seeded
+        let h = 0
+        for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) % 360
+        return h
+    },
+    matstyle_ground(key: string): { bg: string, color: string, border: string } {
+        const h = this.matstyle_hue(key)
+        return {
+            bg:     this.hsl_to_hex(h, 34, 13),   // deep jewel ground
+            color:  this.hsl_to_hex(h, 60, 78),   // light readable text
+            border: this.hsl_to_hex(h, 46, 52),   // the wall accent
+        }
     },
 
     // Label format — new %meta:label,fmt:"%s",keys:"w" 

@@ -32,6 +32,7 @@ import StoryTimes, { storytimes_run } from "$lib/O/Funk/StoryTimes.svelte"
 import CreduFunk, { credufunk_run } from "$lib/O/Funk/CreduFunk.svelte"
 import Shelver, { shelver_run } from "$lib/O/Funk/Shelver.svelte"
 import IdHatch from "$lib/O/Funk/IdHatch.svelte"
+import HeistSetup from "$lib/O/Funk/HeistSetup.svelte"
 import Rundar, { runner_run } from "$lib/O/Funk/Rundar.svelte"
 import Relay, { relay_run } from "$lib/O/Funk/Relay.svelte"
 import Sound from "$lib/O/Funk/Sound.svelte"
@@ -60,6 +61,7 @@ export const FUNK_KINDS: Record<string, FunkKind> = {
     CreduFunk:  { run: credufunk_run,  component: CreduFunk },  // container: holds Storying cells + journals their Credulates (coherence)
     Shelver:    { run: shelver_run,    component: Shelver },    // librarian: walks wormhole/Story, auto-files new Books onto its board by prefix
     IdHatch:    { comp_Panel: IdHatch },                        // face-only: the cluster-identity hatch, a global Lens:Panel
+    HeistSetup: { comp_Panel: HeistSetup },                     // face-only: the ⇊ keep-what-you're-hearing chooser (folder pick + genre + collisions), a fullscreen Lens:Panel
     Rundar:     { run: runner_run, comp_Brink: Rundar, comp_MiniBrink: Rundar }, // %Aim runner-RADAR: fleet rack (1:1 %HostedIdentity roster) + single-pair view, Lens:Brink; comp_MiniBrink = the collapsed one-row dots
     Relay:      { run: relay_run,  comp_Brink: Relay,  comp_MiniBrink: Relay },   // %Aim watcher: the relay ping (channel carrier), Lens:Brink; comp_MiniBrink = one carrier dot
     Upkeep:     { comp_Brink: Upkeep, comp_MiniBrink: Upkeep }, // %Upkeep ledger: live %Errands (compiles, sweeps) hoisted as Lens:Brink; comp_MiniBrink = ONLY the audio beg, popping out of the collapse (the Sound-bubble idiom)

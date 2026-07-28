@@ -48,6 +48,7 @@ Waft:Credence
     Funkcion:Storying,of_Book:VytoBreathe,born:2026-07-27,desc:a relation lifts size — a cell tied by shared meaning is a bigger cell so importance is graph-global not merely local
     Funkcion:Storying,of_Book:VytoNest,born:2026-07-27,desc:the scope recursion — a nested glass cuts each cell into its own childrens cells to any depth so a cluster of UI bits nests as scopes
     Funkcion:Storying,of_Book:VytoCrush
+    Funkcion:Storying,of_Book:VytoNestRest
   What:Musu,desc:the music-piracy streaming platform — the rastock racast raterm pipeline of Radio_todo
     Funkcion:StoryTimes
     What:mostly,desc:the stuff we mostly do as jamsend the music app — the rastock racast raterm pipeline on real tracks
@@ -170,3 +171,4 @@ Waft:Credence
     Funkcion:Storying,of_Book:LakeSearch
     Funkcion:Storying,of_Book:LakeTtlilt
     Funkcion:Storying,of_Book:RaBreach
+    Funkcion:Storying,of_Book:Nestcut

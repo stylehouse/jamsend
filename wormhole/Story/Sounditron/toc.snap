@@ -38,6 +38,7 @@ story:Sounditron
   Opt
     report
     For
+    trickle
   EntropyArrest
     Entcase:Session_alive
       lematch,w:Sounditron
@@ -97,28 +98,28 @@ story:Sounditron
         lematch,Need
           means,spayer,re:Need:(.*),tol:any
   TimeSpool
-    TimeTotal:beliefs,avg=0.258
-      sample=0.237,at=1785156199
-      sample=0.054,at=1785156367
-      sample=0.098,at=1785156546
-      sample=0.151,at=1785156712
-      sample=1.357,at=1785159524
-      sample=0.089,at=1785159660
-      sample=0.166,at=1785159773
-      sample=0.176,at=1785159931
-      sample=0.165,at=1785161206
-      sample=0.086,at=1785161382
+    TimeTotal:beliefs,avg=0.26
+      sample=0.654,at=1785230113
+      sample=0.29,at=1785233234
+      sample=0.645,at=1785233271
+      sample=0.157,at=1785237402
+      sample=0.153,at=1785237690
+      sample=0.095,at=1785237792
+      sample=0.143,at=1785239026
+      sample=0.156,at=1785240313
+      sample=0.211,at=1785241145
+      sample=0.091,at=1785241272
     TimeTotal:step,avg=0.037
-      sample=0.034,at=1785156199
-      sample=0.008,at=1785156367
-      sample=0.014,at=1785156546
-      sample=0.022,at=1785156712
-      sample=0.194,at=1785159524
-      sample=0.013,at=1785159660
-      sample=0.024,at=1785159773
-      sample=0.025,at=1785159931
-      sample=0.024,at=1785161206
-      sample=0.012,at=1785161382
+      sample=0.093,at=1785230113
+      sample=0.041,at=1785233234
+      sample=0.092,at=1785233271
+      sample=0.022,at=1785237402
+      sample=0.022,at=1785237690
+      sample=0.014,at=1785237792
+      sample=0.02,at=1785239026
+      sample=0.022,at=1785240313
+      sample=0.03,at=1785241145
+      sample=0.013,at=1785241272
   step,dige:3d46128d8aec4b69
   step=2,dige:0d08a6f68a6d825d,desc:the machine stands
     Assertion:machine-stood,sentence:the machine stood — an addressable self emerged on the spine

@@ -12,7 +12,7 @@ import { sig_of, group_edges, bucket_key_of, pull_step, budget_for, SIG_JOINS, F
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return '37ece912d3e8d395~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return 'c19ca2cb624cd035~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -779,10 +779,10 @@ Vyto_express(w) {
         //   per row (pricing×nesting is a later compose; keep the first nest tenancy one-variable).
         this.Vyto_express_rows(w, rows)
     } else if (w.c.priced) {
-        for (const row of rows) { row.c.imp = this.Vyto_importance(w, row); row.c.env_area = 2400 * row.c.imp }
+        for (const row of rows) { row.c.imp = this.Vyto_importance(w, row); row.c.env_area = Math.max(1, 2400 * row.c.imp) }
     } else {
         // AREA_BASE — 2400 px² at scale 1, eye-tuned once the first tenant has eyes on it.
-        for (const row of rows) { row.c.env_area = 2400 * (1 + (Number(row.sc.dose) || 0)) }
+        for (const row of rows) { row.c.env_area = Math.max(1, 2400 * (1 + (Number(row.sc.dose) || 0))) }
     }
     let organ = w.o({ Organ: 'Express' })[0]
     if (organ && organ.sc.status !== 'live') {
@@ -797,7 +797,7 @@ Vyto_express(w) {
 Vyto_express_rows(w, rows) {
     for (const row of rows) {
         if (row.sc.departing) continue
-        row.c.env_area = 2400 * (1 + (Number(row.sc.dose) || 0))
+        row.c.env_area = Math.max(1, 2400 * (1 + (Number(row.sc.dose) || 0)))
         let kids = row.o()
         if (kids.length) this.Vyto_express_rows(w, kids)
     }
@@ -852,7 +852,11 @@ Vyto_solve(w) {
     let pinned = []
     for (const m of members) {
         seeds.push({ x: m.c.seed.x, y: m.c.seed.y })
-        let a = (m.c.env_area != null) ? m.c.env_area : 2400
+        // env_area is clamped ≥1 at every write above, but floor it here too: a NON-finite or ≤0 area
+        //  makes rᵢ = sqrt(a/π) NaN, which corrupts EVERY power_cells wall (t goes NaN, the cut empties
+        //   to a 6px disc) AND pins the render's settle loop forever (NaN disp never falls below EPS).
+        //    One byte-invisible floor here keeps radii finite no matter how a future env_area is priced.
+        let a = Math.max(1, (m.c.env_area != null) ? m.c.env_area : 2400)
         // the focus taper (governor Focus's standing decision): the focused member's radius swells
         //  by FOCUS_BOOST and every other compresses by FOCUS_SHRINK — attention as geometry.  No
         //   standing focus ⇒ mag 1 ⇒ this line is byte-invisible to every focus-free world.

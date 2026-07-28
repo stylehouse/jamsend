@@ -26,7 +26,10 @@
             homes: homes.map((h: any) => ({
                 key: h.key as string,
                 name: h.name as string,
-                count: h.shelf?.o?.({ Record: 1 })?.length ?? 0,
+                // a shelf's stock is PAGED (%Mag:shuffle › %Cloud › %Record), so count via the shape-agnostic
+                //  Ra_recs census (what CrateFace/Riffle_deal_shelf use) — a flat .o({Record}) reads 0 on real
+                //   stock and wrongly fired the "nothing here yet" empty-crate note over a full crate.
+                count: ((H as any)?.Ra_recs ? (H as any).Ra_recs(h.shelf) : (h.shelf?.o?.({ Record: 1 }) ?? []))?.length ?? 0,
             })),
         }
     })

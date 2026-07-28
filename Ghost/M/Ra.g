@@ -570,6 +570,9 @@ async Ra_stock_peek(nav, name):
 Ra_home_self(w, pub):
     return this.Ra_home_shelf(w, w.oai({ MusuSelf: 1, pub: pub }), pub, 'stock')
 Ra_home_them(w, pub):
+    // last-line self-guard: if I already hold THIS pub as MY OWN (%MusuSelf,pub), a "them" request for it
+    //  is really me — hand back my own shelf, never a %MusuThem,pub:<me> twin beside it (the self-mirror bug).
+    if (w.oa({ MusuSelf: 1, pub: pub })) return this.Ra_home_self(w, pub)
     return this.Ra_home_shelf(w, w.oai({ MusuThem: 1, pub: pub }), pub, 'stock')
 // Ra_home_shop — the LOADING ZONE shelf beside stock/ (Radio_spec §2.4): what is mid-transfer in either
 //  direction, and ONLY while in motion — a %Heist (my active pull) lives here, not on the world floor.
@@ -1094,19 +1097,28 @@ async Ra_stock_one(w, lib, nav, src_base, path):
         channels.push(decoded.getChannelData(ch))
         ch = ch + 1
     }
-    // — measure loudness, then BAKE the gain into the PCM so every downstream reader is already uniform —
-    let lufs = await this.Ra_lufs(channels, 48000)
-    let gain = this.Ra_gain_for(w, lufs, this.Ra_peak(channels))
-    this.Ra_bake(channels, gain.linear)
-    // — ONE continuous encode over the preview window, cut at the 2s grid.  Only the preview encodes
-    //    here: the continuation stays in the source until a listener's want parks for it —
+    // — the preview WINDOW first: how many 2s segments the 32s preview holds, and its sample end —
     let SEG = this.Ra_seg_secs() * 48000
     let total = channels[0].length
     let segs = Math.ceil(total / SEG)
     let P = Math.min(segs, Math.ceil(this.Ra_preview_secs() / this.Ra_seg_secs()))
+    let end = Math.min(total, P * SEG)
+    // — measure loudness on the PREVIEW WINDOW ONLY, then BAKE that gain (the human 2026-07-28: "we cannot
+    //    make people wait 20s").  The whole-track Ra_lufs render (an OfflineAudioContext over the ENTIRE
+    //     track) was the dominant cold-stock cost — and it GATES the boot: Sounditron beat 2 holds until the
+    //      stoker settles, so a slow dig = a 20s wait before the relay beat even shows.  The preview is what
+    //       plays first, so measure ITS loudness; the %Stream continuation bakes with the SAME stored
+    //        card.gain (Ra_source_pcm), so there is no seam volume jump.  Render shrinks whole-track → ~32s.
+    //         Row-preserving (same records, same chunk count) — only the baked gain VALUE moves. —
+    let pre = []
+    for (const c2 of channels) pre.push(c2.subarray(0, end))
+    let lufs = await this.Ra_lufs(pre, 48000)
+    let gain = this.Ra_gain_for(w, lufs, this.Ra_peak(pre))
+    this.Ra_bake(pre, gain.linear)
+    // — ONE continuous encode over the preview window, cut at the 2s grid.  Only the preview encodes
+    //    here: the continuation stays in the source until a listener's want parks for it —
     let st = this.Ra_encode_open(nch, this.Ra_bitrate())
     if (!st) return null
-    let end = Math.min(total, P * SEG)
     let at = 0
     while (at < end) {
         let to = Math.min(end, at + SEG)
@@ -1384,11 +1396,26 @@ async Ra_transcode_ensure(w, rec):
     let total = +(rec.sc.total || 0)
     let P = +(rec.sc.preview || 0)
     if (!(total > P)) return null
-    let pcm = await this.Ra_source_pcm(w, rec)
-    if (!pcm) return null
-    let st = this.Ra_encode_open(pcm.length, +(rec.sc.br || this.Ra_bitrate()))
+    // NON-BLOCKING DECODE (2026-07-28, the residual "runs out at 32s"): Ra_source_pcm whole-file-decodes the
+    //  original (bin_read + decodeAudioData + a per-sample bake).  AWAITED here it froze the share beat under
+    //   the beliefs mutex for seconds at the preview→stream seam — starving THIS pump + inbound frame delivery
+    //    (the same bug class as the just-fixed heist census storm).  Kick the decode off DETACHED (never
+    //     awaited under the beat) and bow out this beat; a later pump finds rec.c.pcm ready and opens the
+    //      encoder.  The pcm_pending latch stops a second beat re-firing the decode (the await-gap race).
+    if (!rec.c.pcm) {
+        if (!rec.c.pcm_pending) {
+            rec.c.pcm_pending = 1
+            this.Ra_source_pcm(w, rec).then((p) => { rec.c.pcm_pending = 0 }).catch((er) => { rec.c.pcm_pending = 0; rec.c.pcm_why = '' + (er && er.message || er) })
+        }
+        return null
+    }
+    let st = this.Ra_encode_open(rec.c.pcm.length, +(rec.sc.br || this.Ra_bitrate()))
     if (!st) return null
     rec.c.ra = { st: st, next: P, at: P * (this.Ra_seg_secs() * 48000), done: 0 }
+    // track the open transcode so Ra_transcode_pump runs its frontier AHEAD of demand (the lead pass) instead
+    //  of the old break-even 2-chunks-only-when-a-want-is-currently-parked (~0.5 chunks/s = the consume rate).
+    w.c.ra_hot = w.c.ra_hot || []
+    if (!w.c.ra_hot.includes(rec)) w.c.ra_hot.push(rec)
     return rec.c.ra
 
 // Ra_transcode_advance — ONE advance of the open stream encode: feed a page-stride of source PCM,
@@ -1458,6 +1485,39 @@ async Ra_transcode_pump(w):
             await this.Ra_transcode_advance(w, rec)
         }
         await this.Repli_serve_parked(w, pier)
+    }
+    // LEAD PASS (2026-07-28): keep every OPEN transcode running AHEAD of what's been served, so the producer
+    //  builds a real buffer instead of the break-even 2-chunks-only-when-a-want-is-parked (~0.5 chunks/s, the
+    //   exact consume rate — any wire hiccup starved it permanently, the "runs out at 32s" residual #2).  The
+    //    frontier chases LEAD chunks past the served offset, capped per beat so no single beat runs long; a
+    //     finished encode drops off ra_hot (Ra_transcode_advance frees its pcm at done), and a track dialed
+    //      away is freed when it ages past the cap.  Then re-serve the parked wants the new frontier covers.
+    if (w.c.ra_hot && w.c.ra_hot.length) {
+        let LEAD = +(w.c.ra_lead || 24)          // ~48s of buffer ahead of the served frontier
+        let CAP = +(w.c.ra_lead_cap || 6)        // max advance calls per rec per beat (~2 chunks each)
+        let still = []
+        for (const rec of w.c.ra_hot) {
+            let ra = rec.c.ra
+            if (!ra || ra.done) continue
+            let served = +(rec.c.sent || 0)
+            let base = served > 0 ? served : +(rec.sc.preview || 0)
+            let target = Math.min(+(rec.sc.total || 0), base + LEAD)
+            let calls = 0
+            while (ra.next < target && !ra.done && calls < CAP) {
+                await this.Ra_transcode_advance(w, rec)
+                calls = calls + 1
+            }
+            if (!ra.done) still.push(rec)
+        }
+        // bound the retained decoded-PCM: a track dialed away mid-transcode would otherwise pin its whole-file
+        //  pcm forever.  Keep the most-recent few (the playing + next); free the rest (encoder + the big pcm).
+        while (still.length > 4) {
+            let old = still.shift()
+            if (old && old.c.ra) { try { this.Ra_encode_close(old.c.ra.st) } catch (er) {} }
+            if (old) { old.c.ra = null; old.c.pcm = null }
+        }
+        w.c.ra_hot = still
+        for (const pier of piers) await this.Repli_serve_parked(w, pier)
     }
 //#endregion
 
