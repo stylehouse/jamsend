@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return 'bab9a19b81974693~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return 'c56cca7a93ef91e4~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -266,18 +266,28 @@ Sounditron_commission(w) {
     //   they still WORK (the stoker digs, the ★ still pops a fave), they're just not cells cluttering the
     //    view.  Kept: the narrator, the heartbeat, the radio itself, the dial, identity, the deck, up-next,
     //     and the heist.  A later "explore" reveal (via the Tuner) can bring the hidden crews back on demand.
-    // ALWAYS-ON: the music itself + the dial + the heist.
-    for (const q of [{ Radio: 1 }, { Tuner: 1 }, { Heist: 1 }]) {
+    // where the KEEPS live — computed ONCE (the anyKeep gate below reuses it, and so does the keep-cell
+    //  grapple loop).  A keep only exists with a friend, under Ra_home_shop, never on w.
+    let krw = this.top_House().c.radio_w || w
+    let kme = this.Radio_pub ? this.Radio_pub(krw) : null
+    let kshop = kme ? this.Ra_home_shop(krw, kme) : null
+    let keeps = kshop ? kshop.o({ Keep: 1 }) : []
+    let anyKeep = keeps.length > 0
+    // ALWAYS-ON: the music itself + the dial.  The %Heist FLOW organ (HeistFace) grapples ONLY when no keep
+    //  is open — under the NESTED glass a keep turns on (each %Keep tessellates into its KeepBar + track
+    //   chips), and the flow organ's constraint/Lead/filing children would draw as stray cells; besides, the
+    //    %Keep cells ARE the heist UI then.  The ⇊-to-keep gesture lives on RadioFace (always up), so nothing
+    //     is lost.  With no keep it grapples exactly as before (Sounditron fixtures byte-identical).
+    for (const q of [{ Radio: 1 }, { Tuner: 1 }]) {
         let row = w.o(q)[0]
         if (row) organs.push(row)
     }
+    if (!anyKeep) {
+        let h = w.o({ Heist: 1 })[0]
+        if (h) organs.push(h)
+    }
     // the DECK + UP-NEXT close while a heist is open (the human 2026-07-28 "I want to close up-next|riffle etc
     //  when Heists are open") — the Heist gets the room; they grapple back when the last keep leaves.
-    let anyKeep = false
-    let krw0 = this.top_House().c.radio_w || w
-    let kme0 = this.Radio_pub ? this.Radio_pub(krw0) : null
-    let kshop0 = kme0 ? this.Ra_home_shop(krw0, kme0) : null
-    if (kshop0 && kshop0.o({ Keep: 1 }).length) anyKeep = true
     if (!anyKeep) {
         for (const q of [{ Riffle: 1 }, { Mag: 'Lineup' }]) {
             let row = w.o(q)[0]
@@ -297,15 +307,10 @@ Sounditron_commission(w) {
         }
     }
     // the ⇊ KEEP cells (the human 2026-07-28 "I DO want the Heist UI ... in a few Vyto cells ... it folds
-    //  down when started"): every active %Keep in the shop grapples as its OWN cell (KeepFace) — folder nodes
-    //   to tweak while primed, folded to a progress strip on pull.  They come + go with the gesture, so
-    //    Sounditron_trickle_look re-commissions on the keep fingerprint.  Live under Ra_home_shop, not w.
-    let krw = this.top_House().c.radio_w || w
-    let kme = this.Radio_pub ? this.Radio_pub(krw) : null
-    if (kme) {
-        let kshop = this.Ra_home_shop(krw, kme)
-        if (kshop) for (const keep of kshop.o({ Keep: 1 })) organs.push(keep)
-    }
+    //  down when started"): every active %Keep grapples as its OWN cell — under the nested glass it goes BARE
+    //   and tessellates into a KeepBar controls cell + one Pick chip per kept track.  They come + go with the
+    //    gesture, so Sounditron_trickle_look re-commissions on the keep fingerprint.  Live under Ra_home_shop.
+    for (const keep of keeps) organs.push(keep)
     // a friend's shelf is NO LONGER its own cell.  Two friend Crates spread the ~10 organs so thin every
     //  jewel turned unreadably tiny (the human 2026-07-28: "lets not show us the two Crates because that's
     //   way too much info on the screen and everything gets tiny").  Friends stay REACHABLE through the
@@ -314,6 +319,16 @@ Sounditron_commission(w) {
     if (!organs.length) return 0
     if (!SH.o({ A: 'Vyto' }).length) SH.i({ A: 'Vyto' }).i({ w: 'Vyto' })
     let commission = new TheC({ c: {}, sc: { Scannable: organs[0], client_w: w, grapples: organs } })
+    // NESTED glass while a keep is open — each %Keep cell would descend into its KeepBar + track chips.  GATED
+    //  OFF by default (the human 2026-07-29 "branchy Vyto seems to burn CPU then crash"): the renderer's
+    //   power_cells is O(M²) per scope recomputed EVERY rAF frame with no memo, and a whole-album keep (12-20
+    //    picks) is far over the ~12-cell budget → CPU pegged → OOM.  So a keep renders FLAT (the working
+    //     KeepFace) until the Vyto owner lands the renderer fixes (memoize + relative child sizing + settle-
+    //      drift guard + per-scope ceiling — see Vyto_perf handoff).  Flip M.c.heist_nested to try nested once
+    //       those land.  The KeepBar/Pick faces stay registered + dormant, ready.  w.c.nested is GLOBAL so it
+    //        can only ride the whole commission — never nest ONLY the keep — which is the other reason to wait.
+    let M = this.top_House ? this.top_House() : null
+    if (anyKeep && M && M.c.heist_nested) commission.sc.nested = 1
     commission.c.Run = this
     SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
     return 1
@@ -527,6 +542,14 @@ Sounditron_listen(w) {
     //   (beat 6 fires once, the pull is ongoing), safely: the first pass stock is ready wins, then no-op.
     let s = radio.sc.Radio
     if (s === 'playing' || s === 'digging' || s === 'starved') return
+    // RESPECT A DELIBERATE PAUSE (the human 2026-07-29 "pause is not remaining after one think — when trickle
+    //  is on I notice it — start-playing-on-startup should be disabled after one success"): once the radio has
+    //   ACTUALLY played (a real chunk fed the decoder — radio.c.ever_played, set in Radio_pump; .c so a reload
+    //    re-arms), NEVER auto-press again.  The trickle re-drives this every tick, and without the latch a
+    //     paused radio was re-started each think.  The user's ▶ resumes directly (Radio_toggle→Radio_go),
+    //      bypassing this.  Before the first success it still retries each pass, so a gestureless tab that
+    //       finally gets a friend track (or an AudioContext gesture) starts once, on its own.
+    if (radio.c.ever_played) return
     // AUTO-START (the human: "radio should auto-start"): press play as soon as there is ANYTHING to hear
     //  — a friend's previewed track (the trick, AIMED first via tune_rec) or my own dug shelf.  With no
     //   stock at all, stay off (nothing to play; no fixture moves).  DETACHED (Sound_gat's resume pends on

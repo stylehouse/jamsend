@@ -1,0 +1,157 @@
+<script lang="ts">
+    // KeepBarFace — the CONTROLS cell of a nested %Keep (the human 2026-07-28 "one for the hierarchy, one for
+    //  the list of tracks").  Under the nested glass the %Keep parent goes BARE (Vytui suppresses a scope's own
+    //   face), so the chrome KeepFace used to carry — the title/from header, the filing genre, the destination
+    //    path, select all|none, ▶ start, ✕ cancel, and the fold-down progress strip — lives HERE, in a
+    //     %KeepBar,dontSnap child minted beside the %Pick track chips.  Props { n, H } — n is the LIVE %KeepBar;
+    //      n.c.up is its %Keep (stamped in Heist_keep_step).  It reads + drives the KEEP, never itself.
+    let { n, H } = $props()
+    const A = H as any
+
+    // the describe round-trip + the pull both land off the beat; a bare H.version derive can miss between
+    //  bumps — poll a slow clock beside it (the KeepFace idiom this splits off from).
+    let tick = $state(0)
+    $effect(() => { const iv = setInterval(() => { tick++ }, 500); return () => clearInterval(iv) })
+
+    const safe = (s: string) => String(s || '').replace(/[^\w .&()-]+/g, '_').replace(/\s+/g, ' ').trim() || 'Unfiled'
+
+    let face = $derived.by(() => {
+        void H?.version
+        void tick
+        const keep = n?.c?.up
+        const sc = keep?.sc ?? {}
+        const state = String(sc.state || 'primed')
+        const seed = String(sc.seed || '')
+        const at = String(sc.at || '')
+        const rw = A?.top_House?.()?.c?.radio_w
+        const mir = (rw && at) ? A?.Ra_home_them?.(rw, at) : null
+        const husks = (mir && A?.Heist_rummage_recs) ? A.Heist_rummage_recs(mir, seed) : []
+        const picks = keep?.o?.({ Pick: 1 }) ?? []
+        const genre = String(sc.genre || 'Unfiled')
+        return {
+            state,
+            title: String(sc.Keep || 'this track'),
+            from: String(sc.from_name || 'a friend'),
+            genre,
+            dest: 'music/' + safe(genre) + '/',
+            asks: +(sc.asks || 0),
+            nTracks: husks.length,
+            picked: picks.length,
+            described: husks.length > 0,
+            landed_n: +(sc.landed_n || 0),
+            total_n: +(sc.total_n || 0),
+            folded: state === 'pulling' || state === 'committing' || state === 'done',
+        }
+    })
+
+    const CATEGORIES = ['Ambient', 'Jazz', 'Electronic', 'Rock', 'Hip Hop', 'Folk', 'Classical']
+    const keep = () => n?.c?.up
+    // local-state category edit — see KeepFace: don't drive value= from the per-trickle derive (snaps shut).
+    let catDraft = $state('')
+    let catActive = $state(false)
+    $effect(() => { if (!catActive) catDraft = face.genre })
+    function commitCategory() { A?.post_do?.(() => { A?.Heist_keep_set_genre?.(keep(), catDraft) }, { see: 'keep category' }) }
+    function cancel() { A?.post_do?.(() => { A?.Heist_keep_cancel?.(A?.top_House?.()?.c?.radio_w, keep()) }, { see: 'keep cancel' }) }
+    function nabAlbum() { A?.post_do?.(() => { A?.Heist_keep_pick_all?.(keep()) }, { see: 'nab album' }) }
+    function nabTrack() { A?.post_do?.(() => { A?.Heist_keep_pick_seed?.(keep()) }, { see: 'nab track' }) }
+    function start() { A?.post_do?.(() => { A?.Heist_keep_start?.(keep()) }, { see: 'keep start' }) }
+</script>
+
+<div class="kb" class:folded={face.folded}>
+    <div class="kb-head">
+        <span class="kb-badge">{face.state === 'done' ? '✓' : '⇊'}</span>
+        <span class="kb-title" title={face.title}>{face.title}</span>
+        <span class="kb-from">from {face.from}</span>
+    </div>
+
+    {#if face.folded}
+        <!-- FOLDED: it started — a compact progress strip; the track chips carry the per-track ✓ -->
+        <div class="kb-prog">
+            {#if face.state === 'done'}
+                ✓ kept {face.landed_n} → {face.dest}
+            {:else}
+                downloading {face.landed_n}/{face.total_n || face.picked || '?'} → {face.dest}
+            {/if}
+        </div>
+    {:else}
+        <!-- PRIMED: tweakable until it auto-starts at end-of-track -->
+        <div class="kb-file">
+            <span class="kb-dim">category</span>
+            <input class="kb-genre" list="kb-cats" bind:value={catDraft} placeholder="(none — keep source folders)"
+                onfocus={() => catActive = true}
+                onblur={() => { catActive = false; commitCategory() }} />
+            <datalist id="kb-cats">{#each CATEGORIES as g}<option value={g}></option>{/each}</datalist>
+        </div>
+        <div class="kb-dest" title="where these land — the artist/album folders ride underneath">⤓ {face.dest}<span class="kb-dim"> …artist / album</span></div>
+        {#if face.described}
+            <div class="kb-sel">
+                <span class="kb-dim">{face.picked} of {face.nTracks}</span>
+                <button class="kb-mini" onclick={nabAlbum} title="keep every track in the album">nab album</button>
+                <button class="kb-mini" onclick={nabTrack} title="keep only the track you're hearing">nab track</button>
+            </div>
+        {:else}
+            <div class="kb-note">
+                {#if face.asks > 1}looking through the album… ({face.asks}){:else}reading the album it came from…{/if}
+            </div>
+        {/if}
+        <div class="kb-foot">
+            <button class="kb-start" onclick={start} title="download now instead of waiting for the track to end">▶ start</button>
+            <span class="kb-dim">auto-starts at track end</span>
+            <button class="kb-x" onclick={cancel} title="don't keep — drop this">✕</button>
+        </div>
+    {/if}
+</div>
+
+<style>
+    /* the voronoi cell bbox overlaps its neighbours, so the ROOT must not eat pointer events; each
+       control re-arms pointer-events (the KeepFace hard contract this splits off from). */
+    .kb {
+        pointer-events: none;
+        width: max-content;
+        max-width: 260px;
+        padding: 6px 10px;
+        font-family: ui-rounded, 'Trebuchet MS', sans-serif;
+        color: #e0cfd8;
+        text-align: left;
+    }
+    .kb.folded { max-width: 210px; opacity: 0.92; }
+    .kb-head { display: flex; align-items: baseline; gap: 6px; }
+    .kb-badge { font-size: 12px; color: #7fe8bf; }
+    .kb-title { font-size: 12px; font-weight: 700; color: #e8a9c0; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .kb-from { font-size: 9px; opacity: 0.6; }
+    .kb-prog { font-size: 10px; opacity: 0.85; color: #7fe8bf; margin-top: 3px; }
+    .kb-file { display: flex; align-items: center; gap: 5px; margin-top: 4px; }
+    .kb-dim { font-size: 9px; opacity: 0.55; }
+    .kb-genre {
+        pointer-events: auto;
+        background: #241820;
+        color: #f0dbe6;
+        border: 1px solid #66495a;
+        border-radius: 6px;
+        font-size: 10px;
+        padding: 1px 6px;
+        width: 110px;
+    }
+    .kb-dest { font-size: 9px; margin-top: 3px; color: #7fe8bf; font-family: monospace; }
+    .kb-sel { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
+    .kb-mini {
+        pointer-events: auto; cursor: pointer;
+        background: #241820; color: #cbb; border: 1px solid #66495a; border-radius: 6px;
+        font-size: 9px; padding: 0 6px; line-height: 1.5;
+    }
+    .kb-mini:hover { background: #66495a; color: #fff; }
+    .kb-note { font-size: 9px; opacity: 0.6; font-style: italic; margin-top: 3px; }
+    .kb-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 5px; }
+    .kb-start {
+        pointer-events: auto; cursor: pointer;
+        background: #1f3a2a; color: #9fe8bf; border: 1px solid #3f9a6a; border-radius: 8px;
+        font-size: 10px; padding: 1px 9px; line-height: 1.4; flex: none; font-weight: 600;
+    }
+    .kb-start:hover { background: #57c777; color: #04202a; }
+    .kb-x {
+        pointer-events: auto; cursor: pointer;
+        background: #38141f; color: #e8a9c0; border: 1px solid #a03f5a; border-radius: 7px;
+        font-size: 9px; padding: 0 6px; line-height: 1.5; flex: none;
+    }
+    .kb-x:hover { background: #d94f7a; color: #1a0810; }
+</style>

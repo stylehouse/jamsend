@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '1fbe9a31ddbf3899~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '07a8c877a274c619~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1399,6 +1399,8 @@ async Ra_card(w, rec) {
 //     is litter — drop the file; a later pass re-stocks whatever the collection now holds.
 async Ra_source_pcm(w, rec) {
     if (rec.c.pcm) return rec.c.pcm
+    let t0 = Date.now()
+    let tid = String(rec.sc.id || '').slice(0, 8)
     let card = await this.Ra_card(w, rec)
     if (!card || !card.path) return null
     let nav = w.c.ra_nav || this.Crate_nav()
@@ -1411,6 +1413,9 @@ async Ra_source_pcm(w, rec) {
     } catch (er) {
         raw = null
     }
+    // split the decode timeline: the disk|wormhole read (bin_read) vs the decodeAudioData — the "minute"
+    //  is one or the other, and only a timestamped split tells which.  read-fail drops the dead source below.
+    this.Radio_trace(null, { ev: 'pcm-read', id: tid, bytes: raw ? raw.byteLength : 0, ms: Date.now() - t0 })
     if (!raw || !raw.byteLength) {
         if (rec.c.card_file) {
             await this.Ra_stock_drop(nav, rec.c.card_file)
@@ -1419,11 +1424,13 @@ async Ra_source_pcm(w, rec) {
         }
         return null
     }
+    let tdec = Date.now()
     let ctx = new OfflineAudioContext(1, 1, 48000)
     let decoded = null
     try {
         decoded = await ctx.decodeAudioData(raw)
     } catch (er) {
+        this.Radio_trace(null, { ev: 'pcm-decode-fail', id: tid, why: '' + (er && er.message || er) })
         return null
     }
     let nch = Math.min(2, decoded.numberOfChannels)
@@ -1435,6 +1442,9 @@ async Ra_source_pcm(w, rec) {
     }
     this.Ra_bake(channels, Math.pow(10, (+card.gain || 0) / 20))
     rec.c.pcm = channels
+    // decode DONE — the mark whose delta from `pcm-decode-start` IS the whole-file decode cost (the prime
+    //  suspect for "gets stuck trying to start a Stream").  `dec` = decodeAudioData alone; `secs` = track length.
+    this.Radio_trace(null, { ev: 'pcm-decode-done', id: tid, dec: Date.now() - tdec, ms: Date.now() - t0, secs: +(decoded.duration || 0).toFixed(1), len: channels[0] ? channels[0].length : 0 })
     return channels
 
 },
@@ -1486,6 +1496,11 @@ async Ra_transcode_ensure(w, rec) {
     if (!rec.c.pcm) {
         if (!rec.c.pcm_pending) {
             rec.c.pcm_pending = 1
+            // the SOURCE-SIDE timeline the live diagnosis reads (the human 2026-07-28 "figure out the %Stream
+            //  thing ... debug that remotely"): mark the decode kick-off so the `world` op's inter-event deltas
+            //   show whether the "takes a minute" is the whole-file decode (start→done gap) or the pump cadence
+            //    (done→first stream-chunk gap).  Cheap, always-on, additive — never touches the transcode logic.
+            this.Radio_trace(null, { ev: 'pcm-decode-start', id: String(rec.sc.id || '').slice(0, 8) })
             this.Ra_source_pcm(w, rec).then((p) => { rec.c.pcm_pending = 0 }).catch((er) => { rec.c.pcm_pending = 0; rec.c.pcm_why = '' + (er && er.message || er) })
         }
         return null
@@ -1528,6 +1543,9 @@ async Ra_transcode_advance(w, rec) {
         let cut = this.Ra_chunk_cut(ra.st, final ? 1 : 0)
         for (const buf of cut) {
             let hp = (ra.next === +(rec.sc.preview || 0)) ? ra.st.preskip : null
+            // the FIRST %Stream chunk crossing the preview seam — its delta from `pcm-decode-done` is the pump
+            //  cadence cost (how long after PCM was ready did production actually start).  One mark, not per-chunk.
+            if (ra.next === +(rec.sc.preview || 0)) this.Radio_trace(null, { ev: 'stream-first-chunk', id: String(rec.sc.id || '').slice(0, 8), seq: ra.next })
             this.Ra_chunk_mint(rec, ra.next, buf, hp)
             ra.next = ra.next + 1
             made = made + 1
@@ -1763,14 +1781,34 @@ async Ra_pull_beat(w, rx, mine, theirs, rec) {
         if (map[s] != null) held = held + 1
         s = s + 1
     }
+    // CLIENT-DRIVEN BACKPRESSURE (the human 2026-07-29 "once downloading we've got the other Pier unable to
+    //  get any more music from it" — the repli_want STORM in the console).  The OLD loop dumped a want for
+    //   EVERY missing page of the WHOLE record in ONE beat, gated only by a SET-ONCE latch — so (a) it flooded
+    //    the wire (wants ≫ lines, the seq 1120→1156 burst) drowning the other Pier's stream, and (b) a want
+    //     lost to a dropped|parked serve was NEVER re-asked, so that page became a permanent hole and the
+    //      record wedged forever (nothing ever `done`, nothing ever lands).  BOUND it exactly like the proven
+    //       siblings — Ra_restock_beat's per-beat budget (want < B) + Swarm's stream-pull window & 4s re-ask
+    //        (ra_want_ts): ask only the next LEAD missing pages past the held frontier, at most B per beat, and
+    //         re-ask a page at most every 4s so a lost want SELF-HEALS instead of stalling.  The source's
+    //          transcode frontier + serve then keep pace and the wire is SHARED with the live listen, not
+    //           drowned.  ra_want_ts rides beside ra_wanted (both cleared on rebirth — Swarm_share_beat).
+    let B = +(w.c.heist_want_budget || 6)
+    let LEAD = +(w.c.heist_want_lead || 32)
     w.c.ra_wanted = w.c.ra_wanted || {}
+    w.c.ra_want_ts = w.c.ra_want_ts || {}
+    let nowms = Date.now()
+    let sent = 0
+    let seen = 0
     let off = 0
-    while (off < total) {
+    while (off < total && sent < B && seen < LEAD) {
         if (map[off] == null) {
+            seen = seen + 1
             let key = rec.sc.id + ':' + off
-            if (!w.c.ra_wanted[key]) {
+            if (nowms - (w.c.ra_want_ts[key] || 0) > 4000) {
+                w.c.ra_want_ts[key] = nowms
                 w.c.ra_wanted[key] = 1
                 await this.Repli_want_next(w, rx, mine, theirs, rec.sc.id, 'opus', off)
+                sent = sent + 1
             }
         }
         off = off + PAGE

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '91f6050d55e4b8ce~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return 'd52e28940c8497de~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -81,7 +81,9 @@ Radio_trace(radio, entry) {
     let M = this.top_House()
     let log = M.c.supply_trace || []
     entry.t = Date.now()
-    entry.id = (radio && radio.c.rec) ? String(radio.c.rec.sc.id || '').slice(0, 8) : null
+    // a source-side caller (Ra_transcode_pump has no `radio`, only the rec being served) supplies its
+    //  own `id` in the entry — honour it; only stamp from the playing radio when the caller didn't.
+    if (entry.id == null) entry.id = (radio && radio.c.rec) ? String(radio.c.rec.sc.id || '').slice(0, 8) : null
     log.push(entry)
     if (log.length > 300) log.splice(0, log.length - 300)
     M.c.supply_trace = log
@@ -281,6 +283,10 @@ async Radio_pump(radio, era) {
             radio.c.first_feed = 1
             this.Radio_trace(radio, { ev: 'first-feed', seq: s })
         }
+        // ONE-SUCCESS LATCH (the human 2026-07-29 "start-playing-on-startup should be disabled after one
+        //  success"): a real chunk has now fed the decoder — playback genuinely happened.  Sounditron_listen
+        //   reads this to STOP re-pressing play after a deliberate pause.  .c so a reload re-arms the auto-start.
+        radio.c.ever_played = 1
     }
     if (fed > 0) await new Promise((r) => setTimeout(r, 30))
     if (radio.c.era !== era) return

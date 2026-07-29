@@ -9,6 +9,12 @@
     let { n, H } = $props()
     const A = H as any
 
+    // sanitise a category into a filesystem-safe folder segment (the KeepBarFace idiom this split off from —
+    //  it MUST be defined here too: face_of mounts KeepFace, whose `face` derive calls safe() to build dest;
+    //   when this helper was dropped in the split the derive threw `safe is not defined`, the Vytui face
+    //    boundary caught it, and the cell rendered its bare ident label "Keep:<title>" instead of the face).
+    const safe = (s: string) => String(s || '').replace(/[^\w .&()-]+/g, '_').replace(/\s+/g, ' ').trim() || 'Unfiled'
+
     // the describe round-trip + the pull both land off the beat (a C-tree mutation on the tick), which a
     //  bare H.version derive can miss between bumps — poll a slow clock beside it (the HeistFace/IdHatch idiom).
     let tick = $state(0)
@@ -73,19 +79,29 @@
         }
     })
 
-    // the genre a track files under — one keystroke (a datalist), applied to the pull's filing decision.
-    const GENRES = ['Unfiled', 'Ambient', 'Jazz', 'Electronic', 'Rock', 'Hip Hop', 'Folk', 'Classical']
-    function setGenre(v: string) {
-        A?.post_do?.(() => { A?.Heist_keep_set_genre?.(n, v) }, { see: 'keep genre' })
-    }
+    // the CATEGORY the album files under (the human 2026-07-29 "'file under' should really be 'category'") — a
+    //  genre-ish top folder (it lands as a `- <name>` sort-topward folder; see Heist_category_seg).  A few
+    //   staples in a datalist; source categories fold in too.
+    const CATEGORIES = ['Ambient', 'Jazz', 'Electronic', 'Rock', 'Hip Hop', 'Folk', 'Classical']
+    // FIX THE SNAP-SHUT (the human 2026-07-29 "reactivity_docs should help prevent that form field rendering
+    //  every trickle think ... the field snaps shut, same as UI:Waft"): the input's value was driven by the
+    //   per-trickle `face` $derived, so every H.version/tick bump re-set it and clobbered mid-type.  Hold the
+    //    edit in LOCAL $state and only commit on blur; re-seed from the model ONLY when NOT focused, so a
+    //     trickle can never reset the field while you're typing (reactivity_docs "Liesui form closing").
+    let catDraft = $state('')
+    let catActive = $state(false)
+    $effect(() => { if (!catActive) catDraft = face.genre })
+    function commitCategory() { A?.post_do?.(() => { A?.Heist_keep_set_genre?.(n, catDraft) }, { see: 'keep category' }) }
     function toggle(ref: string) {
         A?.post_do?.(() => { A?.Heist_keep_pick_toggle?.(n, ref) }, { see: 'keep pick' })
     }
     function cancel() {
         A?.post_do?.(() => { A?.Heist_keep_cancel?.(A?.top_House?.()?.c?.radio_w, n) }, { see: 'keep cancel' })
     }
-    function pickAll() { A?.post_do?.(() => { A?.Heist_keep_pick_all?.(n) }, { see: 'keep all' }) }
-    function pickNone() { A?.post_do?.(() => { A?.Heist_keep_pick_none?.(n) }, { see: 'keep none' }) }
+    // TWO BUTTONS (the human 2026-07-29 "no options about all|none ... basically two buttons, nab the album or
+    //  nab the track"): nab album = keep every track in the folder; nab track = keep just the one you're hearing.
+    function nabAlbum() { A?.post_do?.(() => { A?.Heist_keep_pick_all?.(n) }, { see: 'nab album' }) }
+    function nabTrack() { A?.post_do?.(() => { A?.Heist_keep_pick_seed?.(n) }, { see: 'nab track' }) }
     function start() { A?.post_do?.(() => { A?.Heist_keep_start?.(n) }, { see: 'keep start' }) }
 </script>
 
@@ -108,17 +124,18 @@
     {:else}
         <!-- PRIMED: sits in the clutter, tweakable, until it auto-starts at end-of-track -->
         <div class="kf-file">
-            <span class="kf-dim">file under</span>
-            <input class="kf-genre" list="kf-genres" value={face.genre}
-                onchange={(e: any) => setGenre(e.currentTarget.value)} />
-            <datalist id="kf-genres">{#each GENRES as g}<option value={g}></option>{/each}</datalist>
+            <span class="kf-dim">category</span>
+            <input class="kf-genre" list="kf-cats" bind:value={catDraft} placeholder="(none — keep source folders)"
+                onfocus={() => catActive = true}
+                onblur={() => { catActive = false; commitCategory() }} />
+            <datalist id="kf-cats">{#each CATEGORIES as g}<option value={g}></option>{/each}</datalist>
         </div>
         <div class="kf-dest" title="where these land — the artist/album folders ride underneath">⤓ {face.dest}<span class="kf-dim"> …artist / album</span></div>
         {#if face.tree.length}
             <div class="kf-sel">
                 <span class="kf-dim">{face.picked} of {face.nTracks}</span>
-                <button class="kf-mini" onclick={pickAll} title="keep every track">all</button>
-                <button class="kf-mini" onclick={pickNone} title="keep none">none</button>
+                <button class="kf-mini" onclick={nabAlbum} title="keep every track in the album">nab album</button>
+                <button class="kf-mini" onclick={nabTrack} title="keep only the track you're hearing">nab track</button>
             </div>
             {#each face.tree as grp}
                 <div class="kf-dir">📁 {grp.label}</div>

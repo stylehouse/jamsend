@@ -74,6 +74,13 @@
     const EPS = 0.5           // settle displacement floor, px (calm.md §6)
     const DRIFT_EPS = 0.25    // settle wall-vertex drift floor, px/frame
     const SETTLE_FRAMES = 8   // consecutive calm frames before a settle strikes (~130ms @60fps)
+    // ANTI-FREEZE WATCHDOG (2026-07-29): a hard ceiling on CONTINUOUS rAF motion.  No matter what
+    //  pathology keeps a world "moving" (the vertex-count flicker that used to pin drift→never-settle,
+    //   a target that chases itself, a NaN), the loop MUST land within this many frames — force the
+    //    jump-to-target, strike settle, and SHOUT once (the human: "get clearly fatal about insanity").
+    //     ~4s @60fps: far beyond any real settle (<1s), so a healthy layout never trips it; a sick one
+    //      can no longer peg the main thread → freeze the tab → kill the peer heartbeat.
+    const MAX_MOTION_FRAMES = 240
     const GAP = 2.2           // the breath between cells (shapes.md §0)
 
     type Spring = { x: number, y: number, r: number, vx: number, vy: number, vr: number }
@@ -121,6 +128,7 @@
     const springs      = new Map<TheC, Map<string, Spring>>()   // tok → sprung scalars
     const prevWalls    = new Map<TheC, Map<string, Pt[]>>()      // last frame's polys, for drift
     const settleCount  = new Map<TheC, number>()                 // consecutive calm frames
+    const motionFrames = new Map<TheC, number>()                 // frames of continuous motion (watchdog)
     const settledState = new Map<TheC, boolean>()                // struck-this-rest latch
     const lifted       = new Map<TheC, string>()                 // the hovered (z-lifted) tok
     const paintMap     = new Map<TheC, PaintCell[]>()            // the published snapshot
@@ -334,7 +342,14 @@
         const pw = prevWalls.get(w)
         for (const [tok, poly] of curWalls) {
             const prev = pw?.get(tok)
-            if (!prev || prev.length !== poly.length) { drift = Math.max(drift, 1e9); continue }
+            // a cell ENTERING/LEAVING (no prev, or a vertex-count change as an oversized/undersized seed
+            //  crosses a power-cell degeneracy) must NOT hard-fail settle.  Its SEED motion is already in
+            //   `disp`; forcing drift→1e9 here was THE freeze bug — a dose-shrunk organ flickering
+            //    null↔poly at the crowd-out threshold pinned drift high EVERY frame → settle never struck →
+            //     rAF ran at 60fps forever → the tab froze → its beat stopped → the peer went dark ("the
+            //      Sounditrons stop talking after a Heist is started").  Skip its wall drift; when its seed
+            //       stops moving, `disp` settles it.  (Vyto_perf_todo §3.)
+            if (!prev || prev.length !== poly.length) continue
             for (let v = 0; v < poly.length; v++) drift = Math.max(drift, Math.hypot(poly[v].x - prev[v].x, poly[v].y - prev[v].y))
         }
         prevWalls.set(w, curWalls)
@@ -345,13 +360,25 @@
         let cnt = (settleCount.get(w) ?? 0)
         cnt = calm_frame ? cnt + 1 : 0
         settleCount.set(w, cnt)
-        if (cnt >= SETTLE_FRAMES) {
+        // WATCHDOG: count continuous-motion frames; a settle resets it.  If the loop ever runs past the
+        //  ceiling without landing, something is insane — LAND IT ANYWAY and shout, so a render pathology
+        //   can never again peg the main thread.  (Reset only on a real settle, never from adopt, so this
+        //    is a true ceiling on unbroken rAF spinning regardless of model churn re-arming targets.)
+        const mf = (motionFrames.get(w) ?? 0) + 1
+        if (cnt >= SETTLE_FRAMES || mf >= MAX_MOTION_FRAMES) {
+            if (mf >= MAX_MOTION_FRAMES && cnt < SETTLE_FRAMES) {
+                if (typeof console !== 'undefined') console.warn('[Vyto] watchdog: forced settle after', mf,
+                    'frames of unbroken motion — a cell never stopped moving (disp/drift pinned). Landing anyway.', { w })
+                jump_to_target(w); paint_world(w)
+            }
+            motionFrames.set(w, 0)
             if (!(settledState.get(w) ?? false)) {
                 settledState.set(w, true)
                 if (!parked(w)) queueMicrotask(() => (H as any).Vyto_settle?.(w))   // §7: off the frame, once per transition
             }
             return false
         }
+        motionFrames.set(w, mf)
         return true
     }
 

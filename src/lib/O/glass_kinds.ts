@@ -12,6 +12,8 @@ import StokerFace from './ui/StokerFace.svelte'
 import TunerFace from './ui/TunerFace.svelte'
 import HeistFace from './ui/HeistFace.svelte'
 import KeepFace from './ui/KeepFace.svelte'
+import KeepBarFace from './ui/KeepBarFace.svelte'
+import PickFace from './ui/PickFace.svelte'
 import DiagFace from './ui/DiagFace.svelte'
 import DoorFace from './ui/DoorFace.svelte'
 import RiffleFace from './ui/RiffleFace.svelte'
@@ -30,6 +32,8 @@ export const GLASS_KINDS: Record<string, any> = {
     Tuner: TunerFace,     // the glass's dial — which crews of cells are shown
     Heist: HeistFace,     // the Pirating flow — posed needs | soft wish → leads → take
     Keep: KeepFace,       // the ⇊ keep-what-you're-hearing cell — folder nodes, tweak genre, folds down on start
+    KeepBar: KeepBarFace, // a NESTED keep's controls cell — genre · dest · all|none · ▶ start · ✕ · progress
+    Pick: PickFace,       // one kept track chip in a nested keep — ✓/♪/⇊, click un-keeps
     Diag: DiagFace,       // the diagnostics toggle — reveals/hides beat·uptime·door; grabs attention when open
     Door: DoorFace,       // who am I + who's with me — identity, landings, pulse liveness
     Riffle: RiffleFace,   // rifle a collection — the deck: crates, folders, deal/sweep

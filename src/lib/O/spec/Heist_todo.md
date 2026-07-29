@@ -2,6 +2,65 @@
 
 ## 0. Next move (read first)
 
+### 2026-07-29 EVENING (overnight solo) — downloads FIXED, nested GATED OFF, Heist UI polished. Read THIS first.
+
+Everything below is NOT committed (working tree). All Book-verified GREEN on the FSA runner (MusuHeist 22/22,
+ Sounditron 1/1). The human left me on overnight with a pile of feedback; here's the arc.
+
+**THE BIG WIN — peer downloads were fully wedged; FIXED.** The human's console showed a `repli_want` STORM
+ (wants ≫ lines) and "neither can download anything". Root cause: `Ra_pull_beat` (Ra.g) was an unbounded,
+  backpressure-free pull — every beat it fired a want for EVERY missing page of the WHOLE record, gated only by
+   a set-once latch (never re-asked → a dropped/parked want = permanent hole → record never completes). FIX:
+    client-driven backpressure copied from the proven siblings — per-beat budget `B`(6) + `LEAD`(32) window +
+     4s `ra_want_ts` re-ask (self-heal). Knobs `w.c.heist_want_budget`/`heist_want_lead`. See
+      [[heist-pull-want-storm-fix]]. **Owed:** the SERVE side still drains under the beliefs mutex — the
+       prototype ran the source reader DETACHED + self-gated; that's the deeper follow-up. LIVE two-tab repro
+        of the storm needs two connected tabs (not a Book).
+
+**BRANCHY (nested) Vyto CRASHED → GATED OFF.** My nested-Heist (task done last turn) turns `w.c.nested` on when
+ a keep opens — but the renderer's `power_cells` is O(M²)/scope recomputed EVERY frame with no memo, so a
+  whole-album keep (12-20 picks, over the 12-cell budget) pegs CPU → OOM. Also never settles + overlaps + too
+   small. Gated: `Sounditron_commission` now `if (anyKeep && M.c.heist_nested)` — DEFAULT OFF ⇒ flat KeepFace
+    (works). The four renderer fixes are the **Vyto owner's** — written up with line refs in
+     **`spec/Vyto_perf_todo.md`**. Flip `M.c.heist_nested` to test nested once those land. Also cut the
+      per-beat keep-root re-stir churn (progress bumps only when `landed` advances). See [[vyto-nested-is-global-grapple]].
+
+**HEIST UI polish (the human's feedback, all done):** "file under"→**category** (a `- <name>` sort-topward
+ folder, nests via `/`, `Heist_cat_path`); **two buttons nab-album/nab-track** (new `Heist_keep_pick_seed`) not
+  all/none; **field snaps-shut FIXED** (local `$state` + commit-on-blur — the reactivity_docs/UI:Waft bug);
+   **no `music/Unfiled/` prepend** — source folders land as-is (+ `Heist_music_root` `M.c.heist_root` test-
+    isolation param); **pause sticks** (`radio.c.ever_played` latch stops the trickle re-pressing play). See
+     [[heist-ui-category-pause]].
+
+**NEXT (needs the human / live tabs):**
+1. **Fullscreen HeistSetup rebuild** to the Peerily prototype (`src/lib/mostly/Pirate.svelte`): path broken into
+    slash-separated places, a `nab` on the album-dir place vs the track-blob place, per-segment category toggles
+     + existing-check. `HeistSetup.svelte` is currently ORPHANED (nothing raises it). Prototype spec fully captured.
+2. **Vyto owner** lands `spec/Vyto_perf_todo.md` → then flip `M.c.heist_nested` on and watch a keep nest.
+3. **Live-verify the download fix** on two connected tabs (`world --runner=<source>` should show the storm gone).
+4. Branchy Vyto to SHOW a friend's live download (the human's ask) — unblocked once #2 lands.
+
+### 2026-07-29 UPDATE — nested render is LIVE; %Stream reframed. Read THIS first (supersedes stale bits below).
+
+**Nested Vyto render SHIPPED by the Vyto agent** (`VytoNestRest` green; Vytui descends the tree). The "Nesting
+ is NOT shipped yet" line below is now stale. BUT nesting the Heist is a **coordinated change, not a flip** —
+  `w.c.nested` is GLOBAL, every grapple's whole subtree draws, and a nested parent renders BARE (face suppressed).
+   The `%Keep`'s `%Pick` children + the grappled `Heist` organ's `constraint/Lead/filing` children would surface
+    as stray/grey cells. Full contract + the safe 4-step plan (decouple picks → move controls to a `%KeepBar`
+     child → guard the flip on `anyKeep` + drop the `{Heist:1}` grapple → prove in isolation) is in memory
+      `vyto-nested-is-global-grapple.md`. **DO IT WITH A LIVE SOUNDITRON** (the pick-decouple has reload-semantics
+       to verify) — deferred this session because only Book runners were up, no live BigSoundland tab.
+
+**%Stream "takes a minute" REFRAMED — it is NOT the source decode.** Instrumented the friend-serve producer
+ (which had zero trace marks) with `pcm-decode-start/read/decode-done/stream-first-chunk` (Ra.g+Radio.g, compiled
+  Ra.go @2db4814 / Radio.go @a9d763c5; marks live on `M.c.supply_trace`, `.c`-only so snap-safe). Ran MusuRaStream
+   live: want→first-stream-chunk ≈ **334–415ms** (decode ~160–206ms). The source producer is FAST. So the live
+    minute is the **WIRE** (friend across the relay; the Book source was local) or **Vyto mutex-contention**
+     (the churn-cut targets this). NEXT: when a real Sounditron is up, `world --runner=<source>` and read the new
+      marks — fast there ⇒ chase the wire (`ra_wanted`/park/serve timing, `Swarm_share_present`); slow ⇒ source.
+   ALSO: MusuRaStream steps 13–40 go RED = fixture DRIFT (snap diff, `error:null`; the lead pass makes more chunks
+    ahead than the old fixtures) — streaming is healthy; **re-record owed on a live runner** (confirm with human).
+
 ### THE VYTO SPLIT (ruled 2026-07-28 night by the human + the Vyto agent). Read this before any glass work.
 
 **The Vyto agent owns the renderer (Vytui core); the Radio agent (me) feeds C** trees + builds faces.** Two

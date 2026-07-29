@@ -243,12 +243,15 @@ Heist_job(w, at, filings, opts):
     }
     return job
 
-// Heist_filing_for — the category an artist files under, per the job's pinned decisions.  Nothing
-//  pinned = 'misc' (the app would surface an interactive filing there; a Book pins everything).
+// Heist_filing_for — the category an artist files under, per the job's pinned decisions.  Nothing pinned =
+//  '' (NO category prepend — the human 2026-07-29 "I don't want anything prepended there"): the source's own
+//   folder structure lands as-is under the music root.  A UI/Book that WANTS a category pins one explicitly
+//    (the ⇊ chooser's category toggles, MusuHeist's per-artist genre).  Empty root ⇒ Heist_rel_for drops the
+//     level (Heist_safe_seg already "collapses an empty name to nothing so the caller can drop the level").
 Heist_filing_for(job, artist):
     let fl = job.o({ filing: 1, artist: artist })[0]
-    if (fl) return fl.sc.genre
-    return 'misc'
+    if (fl && fl.sc.genre) return fl.sc.genre
+    return ''
 
 // Heist_offer_all — the SOURCE side casts its catalog at the heister: every census card crosses as a
 //  husk (chunkless — %Body bufs cross only when wanted).  Consent-gated per card inside Repli_offer.
@@ -376,8 +379,23 @@ Heist_cp_path(rec):
 //   top folder"), and the source's own relative path rides underneath UNCHANGED (a cp, no rename).  Shared
 //    by Heist_land (what to write) and Heist_manifest (what WOULD be written, look-before-you-commit).
 Heist_rel_for(job, rec):
-    let root = this.Heist_safe_seg(this.Heist_filing_for(job, rec.sc.artist)) || 'misc'
-    return root + '/' + this.Heist_cp_path(rec)
+    // NO default category (the human 2026-07-29 "I don't want anything prepended"): an unfiled artist lands
+    //  under the music root with its SOURCE path intact — no 'misc'/'Unfiled' shim.  A pinned category prepends,
+    //   and may NEST (0 chill/0 very chill) — Heist_cat_path splits + safe-segs each level.
+    let root = this.Heist_cat_path(this.Heist_filing_for(job, rec.sc.artist))
+    return (root ? root + '/' : '') + this.Heist_cp_path(rec)
+
+// Heist_cat_path — a category may NEST (the human 2026-07-29 "they go within each other, ie 0 chill/0 very
+//  chill"): split on `/`, make each level filesystem-safe, drop empties, rejoin.  A plain single-level category
+//   (MusuHeist's '4t-mathrock') passes through byte-identical (one segment, no `/`), so no fixture drifts.
+Heist_cat_path(cat):
+    let parts = ('' + (cat || '')).split('/')
+    let out = []
+    for (const p of parts) {
+        let s = this.Heist_safe_seg(('' + p).trim())
+        if (s) out.push(s)
+    }
+    return out.join('/')
 
 // Heist_land — STRAIGHT INTO THE COLLECTION: assemble the pulled %Body chunks, verify the bytes are
 //  the original (body_hash — a mismatch lands nothing and stamps the breach), file under the genre
@@ -1024,7 +1042,12 @@ async Heist_rummage_answer(w, tx, me, asker, rummageMirror, nav):
 //   ['music','','testsounds']), so a kept folder is picked up by the next census and just appears in the
 //    radio.  Heist_land nests the <genre> subdir itself (nav.bin_write creates the path).
 Heist_music_root():
-    return 'music'
+    // PROD lands in the real 'music' collection (the stoker digs it, so a kept track just appears in the
+    //  radio).  A test/Book redirects to an ISOLATED root via the top House's `heist_root` (the human
+    //   2026-07-29 "there is a param for a test or two to make them save somewhere isolated") so a Book never
+    //    writes into the real library.  .c on the top House → the Book sets it once; prod leaves it unset.
+    let M = this.top_House ? this.top_House() : null
+    return (M && M.c.heist_root) || 'music'
 
 // Heist_keep_beat — one pass, both roles: SERVE friends' folder-describe asks, then GO (carry my own %Keeps
 //  forward).  Pumped from Swarm_share_beat, so the routes it needs are already registered for live friends;
@@ -1090,6 +1113,14 @@ async Heist_keep_beat(w, ident):
 //      are the legacy Panel path (dormant on the one-click default).
 async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
     let state = keep.sc.state || 'primed'
+    // the CONTROLS cell of the NESTED keep (KeepBarFace — the human 2026-07-28 "one for the hierarchy, one for
+    //  the list of tracks").  Under the nested glass a %Keep goes BARE (a scope suppresses its own face), so
+    //   the chrome KeepFace carried — genre · dest · all|none · ▶ start · ✕ · progress — rides HERE, in a
+    //    dontSnap child beside the %Pick track chips.  find-or-create is idempotent (no churn); `dontSnap`
+    //     keeps it out of the keep's snap (one pruned `KeepBar,dontSnap` marker at most); `.c.up` lets the
+    //      face reach back to this keep.  Byte-nothing when no keep exists — a keep only lives with a friend.
+    let bar = keep.oai({ KeepBar: 1, dontSnap: 1 })
+    if (bar.c.up !== keep) bar.c.up = keep
     if (state === 'choosing') return
     if (state === 'done') {
         // the ✓ lingers a few seconds, then the keep DROPS itself — the cell falls out of the glass and the
@@ -1169,9 +1200,17 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
                 left = left + 1
             }
         }
-        keep.sc.landed_n = landed
-        keep.sc.total_n = picks.length
-        keep.bump()
+        // PROGRESS without churn (Vyto CPU/settle diagnosis 2026-07-29, Proposal 2): bump the GRAPPLED keep
+        //  ROOT only when progress ACTUALLY advanced.  An idle pull-beat (chunks still trickling, `landed`
+        //   unchanged) used to bump every ~600ms → the Vyto grapple watcher re-stirred the WHOLE glass →
+        //    "continuously adjusting every few seconds".  Now it re-stirs once per landing, not per beat.  The
+        //     faces poll a 500ms tick (and H.version churns from the landing activity) so display stays live;
+        //      the snap reads the sc value either way.  Layout-affecting bumps (dose/state/fold) still fire.
+        if (landed !== +(keep.sc.landed_n || 0) || picks.length !== +(keep.sc.total_n || 0)) {
+            keep.sc.landed_n = landed
+            keep.sc.total_n = picks.length
+            keep.bump()
+        }
         if (!left && picks.length) {
             keep.sc.state = 'done'
             keep.bump()
@@ -1222,6 +1261,30 @@ Heist_keep_pick_none(keep):
     for (const p of keep.o({ Pick: 1 })) keep.drop(p)
     keep.bump()
 
+// Heist_keep_pick_seed — the "nab TRACK" button (the human 2026-07-29 "basically two buttons — nab the album
+//  or nab the track"): keep ONLY the track you're hearing (the seed), dropping the rest of the album.  The
+//   seed husk is the one whose `re` (or id) is the seed content-id; fall back to the first husk.  "nab album"
+//    is Heist_keep_pick_all (keep every husk).
+Heist_keep_pick_seed(keep):
+    keep.sc.defaulted = 1
+    let rw = this.top_House().c.radio_w
+    let srcmir = (rw && keep.sc.at) ? this.Ra_home_them(rw, String(keep.sc.at)) : null
+    let seed = String(keep.sc.seed)
+    let husks = srcmir ? this.Heist_rummage_recs(srcmir, seed) : []
+    let seedHusk = null
+    for (const h of husks) {
+        if (String(h.sc.re || '') === seed || String(h.sc.id) === seed) { seedHusk = h; break }
+    }
+    if (!seedHusk && husks.length) seedHusk = husks[0]
+    for (const p of keep.o({ Pick: 1 })) keep.drop(p)
+    if (seedHusk) {
+        let pick = keep.i({ Pick: 1, ref: String(seedHusk.sc.id) })
+        pick.c.up = keep
+        if (seedHusk.sc.title) pick.sc.title = seedHusk.sc.title
+        if (seedHusk.sc.artist) pick.sc.artist = seedHusk.sc.artist
+    }
+    keep.bump()
+
 // Heist_keep_start — the "▶ start" button (the human 2026-07-28 "heist should have a start button, with a
 //  'will auto-' before it"): begin the pull NOW instead of waiting for the track to end.  Just flips to pulling;
 //   Heist_keep_step does the rest next beat.
@@ -1246,10 +1309,17 @@ Heist_keep_pick_toggle(keep, ref):
     if (hit && hit.sc.artist) pick.sc.artist = hit.sc.artist
     keep.bump()
 
-// Heist_keep_set_genre — the cell's filing-genre tweak (one folder for the whole keep; Heist_keep_filings
-//  prefers it over each pick's own tag).
+// Heist_keep_set_genre — the cell's CATEGORY tweak (one top folder for the whole keep; Heist_keep_filings
+//  prefers it over each pick's own tag).  A category is a `- <name>` (or `0 <name>`) folder that sorts TOPWARD
+//   (the human 2026-07-29 "'file under' should really be 'category' ... becomes a `- ${name}` folder that we
+//    interpret as such (`0 ${name}` too)").  Store it WITH the sort-prefix so it lands as a category; an EMPTY
+//     category CLEARS it (no prepend — keep the source structure, [[heist no-prepend]]).  A name the user
+//      already prefixed (- / 0) is kept verbatim; a `/` nests (0 chill/0 very chill), split per-level by
+//       Heist_cat_path at landing.  Only the UI path runs this — MusuHeist pins genres via choices, untouched.
 Heist_keep_set_genre(keep, v):
-    keep.sc.genre = String(v || 'Unfiled')
+    let n = ('' + (v || '')).trim()
+    if (n && !n.match(/^(-|0) /)) n = '- ' + n
+    keep.sc.genre = n
     keep.bump()
 
 // Heist_keep_pull — the commit's engine: mint the %Heist job ONCE (its filings pinned from the picks'
@@ -1297,7 +1367,7 @@ Heist_keep_filings(keep):
         let a = p.sc.artist || 'misc'
         if (seen[a]) continue
         seen[a] = 1
-        out.push({ artist: a, genre: keep.sc.genre || p.sc.genre || 'Unfiled' })
+        out.push({ artist: a, genre: keep.sc.genre || p.sc.genre || '' })
     }
     return out
 

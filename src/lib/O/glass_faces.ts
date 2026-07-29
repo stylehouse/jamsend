@@ -8,6 +8,11 @@
 export const FACE_MAINKEYS: Record<string, string> = {
     Heist: 'Heist',       // the Pirating flow — posed needs | soft wish → %Leads → choose
     Keep: 'Keep',         // the ⇊ keep-what-you're-hearing cell (imposed by mainkey; no %Keep wears sc.face)
+    // the NESTED keep (the human 2026-07-28 "one for the hierarchy, one for the list of tracks"): under the
+    //  nested glass a %Keep goes BARE (a scope suppresses its own face) and tessellates into its %KeepBar
+    //   controls cell + one %Pick chip per kept track.  A flat (non-nested) %Keep still wears Keep above.
+    KeepBar: 'KeepBar',   // the keep's controls cell — genre · dest · all|none · ▶ start · ✕ · progress
+    Pick: 'Pick',         // one kept track in the nested keep — ✓/♪/⇊, click un-keeps
     Diag: 'Diag',         // the diagnostics toggle cell (imposed by mainkey)
     MusuSelf: 'Crate',    // my music home — the record collection, spread out to gaze across
     MusuThem: 'Crate',    // a friend's music as I hold it — same spread, worn with their name
