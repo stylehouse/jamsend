@@ -296,7 +296,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 // jump: foreground that Trail for the strip, then land precisely on its Doc
                 //  (a later want wins over Lies_foreground_waft's land-on-first, which no-ops
                 //   once the cursor is already inside the Waft).
-                H.feebly_i_elvisto('Lang/Lang', 'Lang_foreground', { kind: 'Trail', waft: found.waft_key })   // feeble: a runner (no editor) has no Trail strip to foreground — no-op, don't throw
+                H.vaguely_ponder('Lang/Lang', 'Lang_foreground', { kind: 'Trail', waft: found.waft_key })   // feeble: a runner (no editor) has no Trail strip to foreground — no-op, don't throw
                 H.i_elvisto(w, 'Lies_want', { src: found.doc, kind: 'click' })   // deliberate ghost-click → wins the verdict
                 return
             }
@@ -336,7 +336,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         H.Lies_waft_save(w, aside)                           // persist — survives reload
         w.bump_version()
         H.i_elvisto(w, 'Lies_want', { src: moment, kind: 'click' })   // deliberate ghost-throw → wins the verdict
-        if (point) H.feebly_i_elvisto('Lang/Lang', 'Dock_open', { path, point })   // and land ON it — feeble: a runner has no dock to open, no-op don't throw
+        if (point) H.vaguely_ponder('Lang/Lang', 'Dock_open', { path, point })   // and land ON it — feeble: a runner has no dock to open, no-op don't throw
     },
 
     // ── Lies_desire_land_cursor ───────────────────────────────────────────────
@@ -816,7 +816,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 // auto-flushes any in-scope drift into the working clone tree.
                 // Cross-ghost, so it goes by elvis; Lang gates on whether its
                 // armed target lives in this Waft.
-                H.feebly_i_elvisto('Lang/Lang', 'Lies_waft_mutated', { waft_key: waft.sc.Waft })
+                H.vaguely_ponder('Lang/Lang', 'Lies_waft_mutated', { waft_key: waft.sc.Waft })
             })
 
             // From nothing: a not_found Waft starts empty in memory (content === null) — in the

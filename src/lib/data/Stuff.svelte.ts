@@ -5,6 +5,10 @@ import { armap, ex, exactly, hakd, isar, map, tex, throttle } from "$lib/Y.svelt
 import type { Matchy } from "$lib/mostly/Structure.svelte";
 
 const OPTIMISE_FOR_DX = true
+// DROP_COMPACT_AT — after this many un-reindexed drop()s on one C, its index auto-compacts (rebuilds
+//  from live children).  Well under the i_z 6000 "giant stuff" ceiling and small enough that a
+//   drop-churned parent's o_query never scans a long tail of dead rows.  The human's ~500.
+const DROP_COMPACT_AT = 500
 
 let spec = `
 
@@ -92,6 +96,7 @@ export class TheX {
     v?: []
     vs?: []
     z?: TheN
+    pending_drops?: number   // un-reindexed drop()s since the last compact() — the auto-compact trigger
 
     // < tried to make .z state but... it loses the first row? but is reactive
     serial_i = $state(1)
@@ -243,7 +248,39 @@ class StuffIO {
         n ||= this
         if (!n.sc) throw "!drop(C)"
         n.c.drop = 1
+        // AUTO-COMPACT on drop-count (the human 2026-07-29: "fire a replace() that replaces everything
+        //  with everything when that gets ~500 long … keep track of how many un-reindexed drop()s").
+        //   drop() only MARKS c.drop and leaves the row in this parent's index; o_query hides it but the
+        //    index LENGTH keeps growing (a live-for-minutes networked pier %outbox: an emit booked per
+        //     frame, dropped on ack, never reclaimed → the 6000 "giant stuff" fatal + an O(deadN) scan
+        //      per query).  So count the un-reindexed drops HERE (the one chokepoint every drop flows
+        //       through) and, once enough have piled, rebuild the index from the LIVE children only —
+        //        making a 6000-wide spike structurally impossible for ANY drop-churned C, not just this one.
+        if (this.X) {
+            this.X.pending_drops = (this.X.pending_drops || 0) + 1
+            if (this.X.pending_drops >= DROP_COMPACT_AT) this.compact()
+        }
         this.X?.bump_version()
+    }
+
+    // compact — reclaim a drop-churned index: rebuild z + every /$k and /$k/$v bucket from the LIVE
+    //  children only, discarding the drop()'d rows for real.  o_query already HIDES dropped rows, so this
+    //   changes NO query result — it just stops the index length growing without bound.  SYNCHRONOUS and
+    //    transaction-free on purpose: unlike replace() it re-indexes the SAME child C identities (no atom
+    //     materialisation, no resolve() pairing, no X_before), so it is safe to fire from inside drop() —
+    //      which replace() is NOT (it throws "nested replace() transactions" inside a do_fn).  Version
+    //       continuity is preserved (serial_i carried over) so observers see one clean bump, not a reset.
+    compact() {
+        const X = this.X
+        if (!X || !Array.isArray(X.z)) return
+        const live = X.z.filter((m: any) => m && m.c && !m.c.drop)
+        if (live.length === X.z.length) { X.pending_drops = 0; return }   // all live — nothing to reclaim
+        const keep = X.serial_i
+        this.X = null as any
+        this.Xify()                     // fresh empty index (host re-stamped)
+        this.X.serial_i = keep          // …but keep the version line unbroken for $effect observers
+        for (const c of live) this.i(c as TheC)   // re-key each survivor via the SAME i() path that built it
+        this.X.bump_version()
     }
 
     // attachment, materialisation. indexes build up, forming X/.../$n to be with

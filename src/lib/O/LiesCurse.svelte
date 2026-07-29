@@ -124,7 +124,7 @@
         await H.Lies_arm_engaged(examining, src)
 
         // feebly: a runner with no editor has no Lang to tell — the cursor still moves.
-        H.feebly_i_elvisto('Lang/Lang', 'Lang_lango', { src })
+        H.vaguely_ponder('Lang/Lang', 'Lang_lango', { src })
     },
 
 //#endregion

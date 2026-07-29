@@ -250,11 +250,14 @@ async Repli_send_lines(w, tx, from, to, text, bufmap):
     let bh = await this.Peeroleum_body_digest(body)
     let seq = this.Pier_next_seq(tx)
     this.Peeroleum_send(w, { header: { type: 'repli_lines', from: from, to: to, seq: seq, body_hash: bh, body_len: body.length }, buffer: body })
+    let txb = body.length
     for (const page of (bufmap.list || [])) {
         let ph = await this.Peeroleum_body_digest(page.bytes)
         let pseq = this.Pier_next_seq(tx)
         this.Peeroleum_send(w, { header: { type: 'repli_page', from: from, to: to, seq: pseq, bufferid: page.id, body_hash: ph, body_len: page.bytes.length }, buffer: page.bytes })
+        txb = txb + page.bytes.length
     }
+    this.Repli_meter(w, 'tx', 1 + (bufmap.list || []).length, txb)
 
 // Repli_allowed — the consent hook as a question (racast_allow generalised — the Keep's seam, §9.7).
 //  Open only when no predicate is wired (a bare demo); otherwise exactly what w.c.repli_allow answers
@@ -397,6 +400,55 @@ Repli_find_record(w, id, lib):
     // Ra_rec_find walks the Mag model (paged self stock) AND the flat shape (mirrors, Book srcs).
     return this.Ra_rec_find(l, { Record: 1, id: id })
 
+// Repli_serve_miss — the SILENT-DEATH tell (the human 2026-07-29 "higher level Repli cursor moving info"): a
+//  want we cannot serve USED to `return` with no trace, so the asker re-asks every 4s forever and the download
+//   stalls with a QUIET console (exactly the landed_n=0 the Download_stall handover chases).  Surface it,
+//    throttled per (id) so a re-asked hole logs ~once/5s, not per want.  Off-snap; no version bump.  This fires
+//     on the SOURCE tab (whoever HOLDS the bytes) — if a sink stalls, look at the friend's console for this.
+Repli_serve_miss(w, h, why):
+    let id = h && h.id != null ? String(h.id) : '?'
+    w.c.serve_miss_ts = w.c.serve_miss_ts || {}
+    let nowms = Date.now()
+    if (nowms - (w.c.serve_miss_ts[id] || 0) < 5000) return
+    w.c.serve_miss_ts[id] = nowms
+    let from = h && h.from ? String(h.from).slice(0, 8) : '?'
+    console.log(`◈✗ serve want id=${id.slice(0, 8)}@${+(h && h.from_idx || 0)} ← ${from} — ${why}`)
+
+// Repli_land_warn — the SINK-side attach probe (the human 2026-07-29 "downloader says 0/13 ... can you figure
+//  out why"): bytes arrive at the source's tx-meter rate but never STICK — a cid breach refuses them, or a page
+//   lands with no awaiter — leaving the chunk UNFILLED, so held never climbs and the pull re-asks forever (the
+//    re-serve storm the uploader melts under).  Both were silent; surface them, throttled per (key) ~once/5s.
+Repli_land_warn(w, key, why):
+    w.c.land_warn_ts = w.c.land_warn_ts || {}
+    let nowms = Date.now()
+    if (nowms - (w.c.land_warn_ts[key] || 0) < 5000) return
+    w.c.land_warn_ts[key] = nowms
+    console.log(`◈✗ land ${why}`)
+
+// Repli_meter — the HIGHER-LEVEL Repli line (the human 2026-07-29 "say higher level things about Repli"): the
+//  raw repli_page/repli_lines frames log one line per 32KB chunk and drown the console, so they are gated
+//   (wire_verbose) and this coalesces them into ONE rollup per ~1.5s of activity — how much moved each way and
+//    at what rate — the "cursor is turning, this fast" signal.  `dir` is 'rx'|'tx'; off-snap counter on w.c,
+//     no version bump.  Silent when nothing flowed (only prints on real traffic).
+Repli_meter(w, dir, frames, bytes):
+    let nowms = Date.now()
+    let m = w.c.repli_meter
+    if (!m) { m = w.c.repli_meter = { rxf: 0, rxb: 0, txf: 0, txb: 0, since: nowms } }
+    if (dir === 'rx') { m.rxf = m.rxf + frames; m.rxb = m.rxb + bytes } else { m.txf = m.txf + frames; m.txb = m.txb + bytes }
+    // a cumulative, never-reset rx byte odometer (off-snap on .c) so a downstream reader can sample a DELTA over
+    //  its own window — the live-flow dial (Heist pulling branch) reads this every 0.3s to jiggle with real
+    //   packet arrival.  Cheap (one add per meter call), no bump; distinct from the 1.5s rollup counters above
+    //    which reset each print.
+    if (dir === 'rx') w.c.repli_rx_total = (w.c.repli_rx_total || 0) + bytes
+    let dt = nowms - m.since
+    if (dt < 1500) return
+    if (m.rxf || m.txf) {
+        let kb = (n) => Math.round(n / 1024)
+        let rate = kb((m.rxb + m.txb) * 1000 / dt)
+        console.log(`◈ Repli  rx ${m.rxf}p/${kb(m.rxb)}KB  tx ${m.txf}p/${kb(m.txb)}KB  ${rate}KB/s`)
+    }
+    m.rxf = 0; m.rxb = 0; m.txf = 0; m.txb = 0; m.since = nowms
+
 // Repli_serve_want — A got a `want id/stream/from_idx`: take the page [from_idx, from_idx+PAGE) of the
 //  Record's chunks, stage the bytes, and ship a lean page fragment (Record identity + a %Stream update whose
 //   have advances and whose objecties.buffer carries the bytes).  drop_next fakes a lost page (the warn test):
@@ -404,12 +456,15 @@ Repli_find_record(w, id, lib):
 //     PAGE is a knob (w.c.repli_page, default 2 chunks); a want the transcode frontier hasn't reached
 //      PARKS rather than fails (see Repli_page_ready / Repli_park_want).
 async Repli_serve_want(w, pier, frame):
-    let lib = this.Repli_src_for(w, pier)
-    if (!lib) return
     let h = frame.header
-    if (!this.Repli_allowed(w, h.from, h.to)) return
+    let lib = this.Repli_src_for(w, pier)
+    if (!lib) { this.Repli_serve_miss(w, h, 'no serve source for this pier'); return }
+    if (!this.Repli_allowed(w, h.from, h.to)) { this.Repli_serve_miss(w, h, 'consent refused — grant revoked or wrong peer'); return }
     let rec = this.Repli_find_record(w, h.id, lib)
-    if (!rec) return
+    if (!rec) { this.Repli_serve_miss(w, h, 'no record for id — materialise gone / wrong id-space'); return }
+    // last-wanted stamp (Evening 5 A2): the release-after-serve sweep frees a rec's bytes only once its wants
+    //  have gone idle, so an actively-asking sink (serve OR park) keeps its bytes held.  .c-only, inert for opus.
+    rec.c.want_ts = Date.now()
     if (!rec.c.chunks) { await this.Repli_serve_chunks(w, pier, h, rec); return }
     let chunks = rec.c.chunks || []
     let from = +(h.from_idx || 0)
@@ -464,7 +519,22 @@ async Repli_serve_chunks(w, pier, h, rec):
         this.Repli_lines_of(this.Repli_chunk_at(rec, s), 1, out, bufmap)
         s = s + 1
     }
-    if (end > +(rec.c.sent || 0)) rec.c.sent = end
+    if (end > +(rec.c.sent || 0)) {
+        rec.c.sent = end
+        // source-side supply mark (the human: "the uploader should know what's going out"): a world-visible
+        //  serve cursor, gated to a real frontier advance + a 2s throttle so the 4s re-asks and the per-PAGE
+        //   cadence never flood the capped ring.  Pairs with the sink's heist-open/done/stall.
+        //  ONLY a HEIST body chunk (%Original|%Lossy) marks — this same serve path ALSO ships on-demand
+        //   %Stream/%Preview opus for the LIVE CAST, whose slow transcode rate (pcm-decode) must never
+        //    masquerade as a heist serve.  Heist_body_at is null for a stream/preview record → no mark.
+        if (this.Heist_body_at(rec, from) != null) {
+            let now_serve = Date.now()
+            if (end >= total || now_serve - (rec.c.serve_mark_ts || 0) > 2000) {
+                rec.c.serve_mark_ts = now_serve
+                this.Radio_trace(null, { ev: 'heist-serve', id: String(rec.sc.id || '').slice(0, 8), n: end, of: total, to: String(h.from || '').slice(0, 8) })
+            }
+        }
+    }
     await this.Repli_send_lines(w, pier, h.to, h.from, out.join('\n'), bufmap)
 
 // ─── receiver (Pier B) ───
@@ -491,6 +561,7 @@ Repli_mirror_lib(w, from):
 //  referenced objecties.buffer, open a holding %req:awaitbuf under the Pier (the extra unemit processing).
 async Repli_recv_lines(w, pier, frame):
     if (!this.Repli_rx_ok(w, pier)) return
+    this.Repli_meter(w, 'rx', 1, frame.buffer ? frame.buffer.length : 0)
     let text = new TextDecoder().decode(frame.buffer)
     let lib = this.Repli_mirror_lib(w, frame.header.from)
     let touched = await this.Repli_merge(lib, text)
@@ -516,9 +587,21 @@ async Repli_recv_lines(w, pier, frame):
 //  and reconcile against any mirror particle waiting on it.
 Repli_recv_page(w, pier, frame):
     if (!this.Repli_rx_ok(w, pier)) return
+    this.Repli_meter(w, 'rx', 1, frame.buffer ? frame.buffer.length : 0)
     let id = frame.header.bufferid
     pier.c.bufs = pier.c.bufs || {}
     pier.c.bufs[id] = frame.buffer
+    // CAP the page stash (Evening 5 A4): a page whose lines were lost FOREVER (never re-sent under this same
+    //  bufferid) would otherwise pin its ~256KB in pier.c.bufs indefinitely under a ws-churn storm.  Bound it
+    //   drop-oldest (insertion-ordered keys) so a genuine orphan can't leak.  The 4s app-layer re-ask re-serves
+    //    the page under a FRESH bufferid + fresh lines, so dropping a stale stashed id loses nothing recoverable.
+    let bufkeys = Object.keys(pier.c.bufs)
+    let BUFCAP = +(w.c.repli_buf_cap || 64)
+    if (bufkeys.length > BUFCAP) {
+        let goners = bufkeys.slice(0, bufkeys.length - BUFCAP)
+        for (const gk of goners) delete pier.c.bufs[gk]
+        this.Repli_land_warn(w, 'buf-stash-cap', `page stash > ${BUFCAP} — dropped ${goners.length} stale orphan page(s) (lines lost forever; a re-ask re-serves under a fresh id)`)
+    }
     this.Repli_attach_page(w, pier, id, frame.buffer)
 
 // Repli_open_awaitbuf — the holding req: finishes when the page's bytes arrive (attaching them to the mirror's
@@ -542,7 +625,14 @@ Repli_open_awaitbuf(w, pier, mirror, id):
 Repli_attach_page(w, pier, id, bytes):
     pier.c.awaiting = pier.c.awaiting || {}
     let mirror = pier.c.awaiting[id]
-    if (!mirror) return
+    if (!mirror) {
+        // page arrived AHEAD of its lines (normal under wire reordering): the bytes are already STASHED in
+        //  pier.c.bufs (Repli_recv_page, above) and Repli_open_awaitbuf attaches them the moment the lines land —
+        //   NOT a loss.  (The old `bytes dropped` warn was a false alarm that flooded under ws churn; this is the
+        //    ONLY caller that can reach a null mirror, and it always stashed first.  A truly orphaned page — lines
+        //     lost forever — is bounded by the stash cap in Repli_recv_page, which warns for real.)
+        return
+    }
     let landed = 0
     if (mirror.c.await_bufk) {
         let u8 = new Uint8Array(bytes.length)
@@ -553,8 +643,10 @@ Repli_attach_page(w, pier, id, bytes):
         //    that never re-cid'd, or a bad caster. A mismatch is a BREACH: refuse the bytes, mark it, and
         //     leave the chunk UNFILLED (presence = fill state, so no garbage ever decodes on the pulled
         //      path). No cid = the Float32/legacy substrate — nothing to content-address, land as before.
-        if (mirror.sc.cid && sha256_hex(u8) !== mirror.sc.cid) {
+        let got = mirror.sc.cid ? sha256_hex(u8) : null
+        if (mirror.sc.cid && got !== mirror.sc.cid) {
             mirror.c.breach = 'cid'
+            this.Repli_land_warn(w, 'cid-breach', `cid breach seq=${mirror.sc.seq} got=${String(got).slice(0, 8)} want=${String(mirror.sc.cid).slice(0, 8)} — bytes REFUSED, chunk unfilled → held stalls → re-ask storm`)
         } else {
             mirror.sc[mirror.c.await_bufk] = u8
             landed = 1

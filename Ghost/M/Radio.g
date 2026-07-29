@@ -471,7 +471,18 @@ async Radio_supply_go(radio, era, rec):
             return
         }
         this.Radio_trace(radio, { ev: 'transcode-advance', pass: passes })
-        try { await this.Ra_transcode_advance(w, rec) } catch (er) {}
+        try { await this.Ra_transcode_advance(w, rec) } catch (er) {
+            // a transcode-advance throw used to VANISH here → the loop re-ensures + re-advances (throws again),
+            //  a quiet spin producing zero new chunks while the peer's parked wants starve.  SHOUT it (throttled)
+            //   so the stall is visible; the ensure-fail sibling above (transcode-fail / "preview only") still
+            //    owns the give-up path — this only stops the ADVANCE throw being invisible.  .c writes, no throw.
+            let enow = Date.now()
+            if (enow - (radio.c.adv_warn_ts || 0) > 2000) {
+                radio.c.adv_warn_ts = enow
+                this.Radio_trace(radio, { ev: 'transcode-throw', pass: passes })
+                console.warn(`⚠ Ra_transcode_advance threw — stream starving, no new chunks (pass ${passes})`, er)
+            }
+        }
         passes = passes + 1
         await new Promise((r) => setTimeout(r, 150))
     }
@@ -1457,14 +1468,40 @@ async Radio_keep(n):
     let shop = this.Ra_home_shop(w, me)
     n.c.kept = n.c.kept || {}
     n.c.kept[seed] = 1
-    if (shop.o({ Keep: 1, seed: seed })[0]) { n.bump(); return true }
+    if (shop.o({ Keep: 1, seed: seed })[0]) { n.bump(); this.Radio_pop_glass(); this.feebly_ponder(); return true }
     let keep = shop.i({ Keep: this.Radio_clean(rec.sc.title || 'this'), seed: seed, at: String(friend), state: 'primed' })
     keep.c.up = shop
     keep.sc.from_name = this.Radio_friendly(w, friend)
     if (rec.sc.artist) keep.sc.artist = this.Radio_clean(rec.sc.artist)
     keep.bump()
     n.bump()
+    // POP THE CELL NOW (the human 2026-07-29 "the heist UI cell isn't popping up anymore ... the tick still
+    //  appears"): the glass ONLY re-commissions on the Sounditron trickle (a 2.5s loop, and AFTER an awaited
+    //   friend-refresh) — so a fresh %Keep's KeepFace cell turned up sluggishly, or not at all under load.  A
+    //    keep is minted on THIS gesture, so re-commission the glass on THIS gesture too (below), not the next
+    //     trickle.
+    this.Radio_pop_glass()
+    // WAKE the loop now (the human 2026-07-29 "downdown click doesn't always turn into tick immediately"): the ✓
+    //  stamp + the %Keep are minted synchronously, but a quiesced belief loop won't flush them to UItime — nor
+    //   pump Heist_keep_beat to carry the Keep into Vyto — until something nudges it.  feebly_ponder is Runtime-
+    //    gated (no-op off-think) so it is safe + cheap; it turns "sometime" into "next cycle".
+    this.feebly_ponder()
     return true
+
+// Radio_pop_glass — re-commission the Sounditron glass NOW so a just-minted %Keep's cell mounts on the gesture
+//  (bug: the cell "isn't popping up anymore").  Reaches the resident RUN House by the handle Sounditron_trickle
+//   stashes on the top House (c.sounditron_run), and calls its Sounditron_commission with the radio world — the
+//    CORRECT `this` binding (the run's `.up` is where A:Vyto sits) that a cross-ghost `this.` call couldn't get.
+//     Re-commission is idempotent (Vyto watch_c dedups), so this is safe to fire beside the trickle's own pass.
+//      Guarded + try-wrapped: a headless/Book context with no resident run just falls back to the trickle.
+Radio_pop_glass():
+    let M = this.top_House ? this.top_House() : null
+    if (!M) return
+    let run = M.c.sounditron_run
+    let sw = M.c.radio_w
+    if (run && sw && typeof run.Sounditron_commission === 'function') {
+        try { run.Sounditron_commission(sw) } catch (er) {}
+    }
 //#endregion
 
 //#region dec — ONE persistent AudioDecoder per encode run, fed as chunks schedule

@@ -33,6 +33,14 @@
     let face = $derived.by(() => {
         void H?.version
         void tick
+        // SKELETON-FIRST reactivity (the human 2026-07-29 "the heist cell should appear IMMEDIATELY as a
+        //  skeleton ... WITHOUT waiting for the folder contents"): read the keep's OWN vers so every
+        //   keep.bump() (state primed→wanted→asking→pulling→done, asks++, dose, landed_n) repaints AT the
+        //    beat, not on the 500ms poll; and query the picks with .ob() so a freshly-minted %Pick child
+        //     (keep.i({Pick}) bumps keep.vers) trickles the row in-place with no reload jump (reactivity_docs
+        //      "use .ob() when a derived depends on a particle's CHILDREN").  The husks still ride the mirror
+        //       (not the keep's children), so H.version + tick stay the honest catch for the describe landing.
+        void n?.vers
         const sc = n?.sc ?? {}
         const state = String(sc.state || 'primed')
         const seed = String(sc.seed || '')
@@ -42,7 +50,7 @@
         // the folder husks the SOURCE described back (metadata-only, tagged rummage:<seed>).  Nodulate by
         //  DIRECTORY: group tracks under their folder node instead of a flat right-aligned filename list.
         const husks = (mir && A?.Heist_rummage_recs) ? A.Heist_rummage_recs(mir, seed) : []
-        const picks = n?.o?.({ Pick: 1 }) ?? []
+        const picks = n?.ob?.({ Pick: 1 }) ?? []
         const pickedRefs = new Set(picks.map((p: any) => String(p.sc.ref ?? p.sc.id)))
         const groups: Record<string, any[]> = {}
         for (const r of husks) {
@@ -66,6 +74,7 @@
         return {
             state,
             title: String(sc.Keep || 'this track'),
+            artist: String(sc.artist || ''),
             from: String(sc.from_name || 'a friend'),
             genre,
             dest: 'music/' + safe(genre) + '/',
@@ -75,6 +84,8 @@
             picked: pickedRefs.size,
             landed_n: +(sc.landed_n || 0),
             total_n: +(sc.total_n || 0),
+            // still reading the source folder: the shell stands, the guts are a skeleton (no husks yet).
+            describing: state === 'primed' || state === 'wanted' || state === 'asking',
             folded: state === 'pulling' || state === 'committing' || state === 'done',
         }
     })
@@ -109,6 +120,7 @@
     <div class="kf-head">
         <span class="kf-badge">{face.state === 'done' ? '✓' : '⇊'}</span>
         <span class="kf-title" title={face.title}>{face.title}</span>
+        {#if face.artist}<span class="kf-artist">{face.artist}</span>{/if}
         <span class="kf-from">from {face.from}</span>
     </div>
 
@@ -122,7 +134,7 @@
             {/if}
         </div>
     {:else}
-        <!-- PRIMED: sits in the clutter, tweakable, until it auto-starts at end-of-track -->
+        <!-- PRIMED: the setup form — sits in the clutter, tweakable, until you press ▶ start (no auto-start) -->
         <div class="kf-file">
             <span class="kf-dim">category</span>
             <input class="kf-genre" list="kf-cats" bind:value={catDraft} placeholder="(none — keep source folders)"
@@ -148,13 +160,21 @@
                 {/each}
             {/each}
         {:else}
-            <div class="kf-note">
-                {#if face.asks > 1}looking through the album… ({face.asks}){:else}reading the album it came from…{/if}
+            <!-- SKELETON: the shell already stands (head · category · dest above); this is the guts still
+                 arriving.  A describing line + a few shimmer rows read as "loading the track list", and the
+                 REAL folder tree replaces them in place the moment the first husk lands (face.tree fills). -->
+            <div class="kf-skel" aria-busy="true">
+                <div class="kf-note">
+                    {#if face.asks > 1}looking through the album… ({face.asks}){:else}finding the folder…{/if}
+                </div>
+                <div class="kf-shim"></div>
+                <div class="kf-shim"></div>
+                <div class="kf-shim short"></div>
             </div>
         {/if}
         <div class="kf-foot">
-            <button class="kf-start" onclick={start} title="download now instead of waiting for the track to end">▶ start</button>
-            <span class="kf-dim">will auto-start at track end</span>
+            <button class="kf-start" onclick={start} title="start downloading these tracks into your collection">▶ start</button>
+            <span class="kf-dim">nothing downloads until you start</span>
             <button class="kf-x" onclick={cancel} title="don't keep — drop this">✕</button>
         </div>
     {/if}
@@ -176,6 +196,7 @@
     .kf-head { display: flex; align-items: baseline; gap: 6px; }
     .kf-badge { font-size: 12px; color: #7fe8bf; }
     .kf-title { font-size: 12px; font-weight: 700; color: #e8a9c0; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .kf-artist { font-size: 9px; opacity: 0.7; color: #cfc0d8; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .kf-from { font-size: 9px; opacity: 0.6; }
     .kf-prog { font-size: 10px; opacity: 0.85; color: #7fe8bf; margin-top: 3px; }
     .kf-file { display: flex; align-items: center; gap: 5px; margin-top: 4px; }
@@ -226,6 +247,22 @@
     .kf-tick { width: 8px; color: #7fe8bf; }
     .kf-tname { max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .kf-note { font-size: 9px; opacity: 0.6; font-style: italic; margin-top: 3px; }
+    /* the loading skeleton — shimmer rows standing in for the track list until the folder describes.
+       pointer-events stay off (only buttons re-arm); the pulse is the DoorFace breathe idiom. */
+    .kf-skel { margin-top: 3px; }
+    .kf-shim {
+        height: 8px; margin: 4px 0 0 10px; max-width: 180px;
+        border-radius: 4px;
+        background: linear-gradient(90deg, #2c1d27 0%, #3a2733 50%, #2c1d27 100%);
+        animation: kf-shim 1.4s ease-in-out infinite;
+    }
+    .kf-shim.short { max-width: 110px; }
+    .kf-shim:nth-child(3) { animation-delay: 0.2s; }
+    .kf-shim:nth-child(4) { animation-delay: 0.4s; }
+    @keyframes kf-shim {
+        0%, 100% { opacity: 0.35; }
+        50%      { opacity: 0.8; }
+    }
     .kf-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 5px; }
     .kf-x {
         pointer-events: auto;

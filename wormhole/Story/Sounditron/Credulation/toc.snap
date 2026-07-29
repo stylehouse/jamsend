@@ -1,30 +1,31 @@
 Credulation,of_Book:Sounditron
-  run=0,at=1785290427.423,ok=0,ok_pct=0,mode:check
-    uses:Ghost_N_Peeroleum,dige:b547d2bf75c9c191~g1
+  run=0,at=1785326041.209,ok=0,ok_pct=0,mode:check
+    uses:Ghost_N_Peeroleum,dige:2e025f91d491400c~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
-    uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
+    uses:Ghost_N_Tribunal,dige:70e81c4372d9cd19~g1
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-    uses:Ghost_N_Repli,dige:e640229d50ee8f56~g1
+    uses:Ghost_N_Repli,dige:a609783de0f8c5b9~g1
     uses:Ghost_Story_Peregrination,dige:fd5fd5b6e1f5bc45~g1
     uses:Ghost_M_Radiola,dige:8786e42c3f3d4c97
     uses:Ghost_M_Sound,dige:e74dd6665cd2abd0~g1
     uses:Ghost_M_Crate,dige:8be0988907323407~g1
     uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
-    uses:Ghost_M_Ra,dige:07a8c877a274c619~g1
+    uses:Ghost_M_Ra,dige:edcac0c2b617421c~g1
     uses:Ghost_M_Booth,dige:24e06889933090b3
-    uses:Ghost_M_Heist,dige:41c539dfd9004a08~g1
+    uses:Ghost_M_Heist,dige:5eafc9f9f30e38d6~g1
     uses:Ghost_M_Jam,dige:92834317758c2e6f~g1
     uses:Ghost_M_Orig,dige:63f2dbf909bf7640~g1
-    uses:Ghost_M_Radio,dige:d52e28940c8497de~g1
+    uses:Ghost_M_Radio,dige:38775cd4563f8842~g1
     uses:Ghost_Story_Musuation,dige:d51f5a2297ec8c96~g1
     uses:Ghost_Story_Radiation,dige:7038895112234b67~g1
     uses:Ghost_Story_Heistation,dige:4226aedea77b47d9~g1
     uses:Ghost_Story_Berthation,dige:a90a9afcc3b2ffc4~g1
-    uses:Ghost_S_Swarm,dige:ce170377ce591466~g1
+    uses:Ghost_Story_Errchannelation,dige:5a56eb7fcd0eff11~g1
+    uses:Ghost_S_Swarm,dige:f58c3c41aacabd13~g1
     uses:Ghost_Story_Swarmation,dige:e8214adec4c59ae8~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
     uses:Ghost_V_Vyto,dige:9b60b11a84ffa90b~g1
     uses:Ghost_V_Vytonation,dige:ab3e06ef674500c6~g1
     uses:Ghost_Story_Voronation,dige:a8a9737169608630~g1
-    uses:Ghost_Story_Sounditron,dige:c56cca7a93ef91e4~g1
+    uses:Ghost_Story_Sounditron,dige:c3015dc40975b487~g1

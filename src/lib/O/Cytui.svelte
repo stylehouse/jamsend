@@ -339,8 +339,11 @@
     //   after the throw point (the "cells but no panes" mystery, 2026-07-14).  Bounded ring
     //    like everything here; window-level, armed once per mount.
     $effect(() => {
-        const oe = (e: ErrorEvent) => vlog('jserr', { m: String(e.message ?? e.error ?? '?').slice(0, 140) })
-        const or = (e: PromiseRejectionEvent) => vlog('jserr', { m: ('rej: ' + String(e.reason)).slice(0, 140) })
+        // ERROR CHANNEL (spec/Error_channel_todo.md): the truly-uncaught net — a bare setTimeout throw or a
+        //  render-effect tear that no belief-loop catch sees — ALSO feeds the Story channel through this one
+        //   existing window listener (no second listener).  Guarded: H may not carry the Story ghost.
+        const oe = (e: ErrorEvent) => { const m = String(e.message ?? e.error ?? '?').slice(0, 140); vlog('jserr', { m }); (H as any).Story_error?.('error', 'window', m) }
+        const or = (e: PromiseRejectionEvent) => { const m = ('rej: ' + String(e.reason)).slice(0, 140); vlog('jserr', { m }); (H as any).Story_error?.('error', 'window', m) }
         window.addEventListener('error', oe)
         window.addEventListener('unhandledrejection', or)
         return () => { window.removeEventListener('error', oe); window.removeEventListener('unhandledrejection', or) }

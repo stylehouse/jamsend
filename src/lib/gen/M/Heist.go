@@ -3,14 +3,14 @@
     import { TheC } from "$lib/data/Stuff.svelte"
     import { onMount } from "svelte"
 
-import { sha256_hex, sha256_incremental } from "$lib/O/Hashly.ts"
+import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.ts"
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '41c539dfd9004a08~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '5eafc9f9f30e38d6~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -223,6 +223,25 @@ Heist_release_buf(ch) {
     for (const k of Object.keys(sc)) {
         if (this.Repli_is_binary(sc[k])) { delete ch.sc[k]; ch.bump(); return }
     }
+
+},
+// Heist_release_rec — SOURCE-side free of a served rec's whole-file %Body bytes by DROPPING the body particles
+//  (Evening 5 A2 — the memory fix's other half; the human 2026-07-29: the uploader holding all the music is
+//   wrong).  NOT the buf-only Heist_release_buf: Heist_has_body counts PARTICLES, and Heist_materialise_one's
+//    idempotence gate is has_body >= total, so a buf-only release would let a re-ask slip the gate and never
+//     re-read → permanent wedge; and re-materialising over surviving husk particles would DUPLICATE seqs
+//      (Heist_body_new is a bare i(), reads take o()[0] → the stale bufless twin serves first).  Dropping the
+//       particles makes has_body honestly 0, so the A3 parked-want producer re-reads the file on demand.  The
+//        rec HEAD (id/total/body_hash/path/re) is untouched — the offer's promise stands, only the bytes go.
+//         drop() feeds the general compactor at 500 ([[drop-leaves-index-giant-stuff]]); ~95 drops/track is fine.
+Heist_release_rec(rec) {
+    let bodies = rec.o({ Original: 1 })
+    for (const ch of rec.o({ Lossy: 1 })) bodies.push(ch)
+    if (!bodies.length) return
+    for (const ch of bodies) { try { rec.drop(ch) } catch (er) {} }
+    rec.c.released = Date.now()
+    if (this.Radio_trace) this.Radio_trace(null, { ev: 'heist-release', id: String(rec.sc.id || '').slice(0, 8), of: +(rec.sc.total || 0) })
+    console.log(`◈↯ freed ${rec.sc.title || rec.sc.id} (${bodies.length} chunks) — served, bytes released`)
 
 },
 // Heist_unlink — best-effort delete of one file (the breach cleanup: a streamed-but-wrong body must not
@@ -522,7 +541,16 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
         //    Kept unconditional on purpose: cheap correctness beats cleverness, and the invariant is "bytes
         //     ON DISK, not bytes intended".  The tripwire shaved the read-back off the FAILURE path (the
         //      breach case); the success path still earns its landing by the honest disk check.
-        let raw = await nav.bin_read(dir, filename)
+        // native single-slice read (read_range), NOT bin_read's per-chunk iterate — this read-back
+        //  runs on EVERY landed track's success path, and under want-storm congestion the iterate
+        //   stretched a 66MB read to ~60s (see Ra_source_pcm), stalling the heist at each landing.
+        let raw = null
+        if (nav.read_range) {
+            let got = await nav.read_range(dir, filename, 0)
+            raw = got ? got.buffer : null
+        } else {
+            raw = await nav.bin_read(dir, filename)
+        }
         let hash = await this.Heist_hash(new Uint8Array(raw || new ArrayBuffer(0)))
         if (hash !== rec.sc.body_hash) {
             // a byte-mismatch READ BACK OFF DISK: the job tallies its OWN breach (design state on the
@@ -949,7 +977,14 @@ async Heist_materialise_one(w, nav, me, ref) {
     if (+(rec.sc.total || 0) > 0 && this.Heist_has_body(rec) >= +(rec.sc.total || 0)) return rec
     let parts = ((base ? base + '/' : '') + path).split('/').filter(Boolean)
     let filename = parts.pop()
-    let raw = await nav.bin_read(parts.join('/'), filename)
+    // native single-slice read (read_range), not bin_read's per-chunk iterate (the 64s-under-congestion read).
+    let raw = null
+    if (nav.read_range) {
+        let got = await nav.read_range(parts.join('/'), filename, 0)
+        raw = got ? got.buffer : null
+    } else {
+        raw = await nav.bin_read(parts.join('/'), filename)
+    }
     if (!raw || !raw.byteLength) return null
     let bytes = new Uint8Array(raw)
     let meta = await this.Crate_meta_from_tags(bytes, path)
@@ -961,19 +996,23 @@ async Heist_materialise_one(w, nav, me, ref) {
     if (dot >= 0) rec.sc.ext = filename.slice(dot + 1)
     let CH = this.Heist_chunk_bytes()
     let total = Math.ceil(bytes.length / CH)
-    let wire = sha256_incremental()
+    // NATIVE hashing (2026-07-29 perf: materialise was 51.8% of the frame in pure-JS noble sha256 — a ~5s
+    //  freeze per file that STALLED the source's serving, so the sink's heist sat at 0/13 until the mutex
+    //   cleared).  sha256_hex_fast is native WebCrypto, byte-identical to noble (the Hashly format contract),
+    //    so cids + body_hash keep matching source→sink.  Per-chunk cid stays in the loop; the whole-file
+    //     body_hash replaces the noble streaming hasher — the slices tile `bytes` exactly (contiguous,
+    //      non-overlapping, covering [0,len)), so sha256(concat(slices)) === sha256(bytes), ONE native call.
     let s = 0
     while (s < total) {
         let slice = bytes.slice(s * CH, Math.min(bytes.length, (s + 1) * CH))
         let b = this.Heist_body_new(rec, meta.lossless, s)
         b.c.up = rec
         b.sc.buf = slice
-        b.sc.cid = sha256_hex(slice)
-        wire.update(slice)
+        b.sc.cid = await sha256_hex_fast(slice)
         s = s + 1
     }
     rec.sc.bytes = bytes.length
-    rec.sc.body_hash = wire.hex()
+    rec.sc.body_hash = await sha256_hex_fast(bytes)
     rec.sc.total = total
     delete rec.sc.husk
     rec.bump()
@@ -1118,15 +1157,50 @@ async Heist_keep_beat(w, ident) {
     //    retained-RAM half of the 30%-CPU pain).
     if (w.c.rummage_libs && w.c.rummage_libs.length) {
         let now = Date.now()
+        // A2 now GCs bytes PER-REC (release-after-serve), so a lib can outlive a long serialized heist cheaply
+        //  (husk recs, no bufs) — TTL widened to 30min so a lib isn't swept out from under an in-flight pull.
+        let LIB_TTL = +(w.c.rummage_lib_ttl || 1800000)
+        let RELEASE_IDLE = +(w.c.heist_release_idle || 20000)
+        let HOLD_CAP = +(w.c.heist_hold_cap || 268435456)   // ~256MB belt — never hit in serialized health (~2 tracks)
         let live = []
+        let held_recs = []
+        let held_bytes = 0
         for (const rl of w.c.rummage_libs) {
-            if (rl && rl.c && (now - (rl.c.born || now)) < 600000) {
+            if (rl && rl.c && (now - (rl.c.born || now)) < LIB_TTL) {
                 live.push(rl)
+                // RELEASE-AFTER-SERVE (Evening 5 A2): a materialised rec whose every page has crossed at least
+                //  once (rec.c.sent >= total) and whose last want is idle drops its %Body bytes.  The source then
+                //   holds only the ~2 in-flight tracks (~50MB), not all 13 (~3GB → GC thrash → ws storm).  A late
+                //    re-ask re-parks and the A3 producer re-reads the file (has_body is honestly 0 — the release
+                //     DROPS the body particles, never just the bufs: Heist_has_body counts PARTICLES, so a
+                //      buf-only release would slip Heist_materialise_one's idempotence gate and wedge forever).
+                for (const rec of this.Ra_recs(rl)) {
+                    let tot = +(rec.sc.total || 0)
+                    let bod = this.Heist_has_body(rec)
+                    if (bod > 0 && tot > 0 && +(rec.c.sent || 0) >= tot && now - (rec.c.want_ts || 0) > RELEASE_IDLE) {
+                        this.Heist_release_rec(rec)
+                    } else if (bod > 0) {
+                        held_recs.push(rec)
+                        held_bytes = held_bytes + (+(rec.sc.bytes || 0))
+                    }
+                }
             } else if (rl) {
                 try { (rl.c.up || w).drop(rl) } catch (er) {}
             }
         }
         w.c.rummage_libs = live
+        // BYTE-CAP BELT: if the still-held bufs blow the cap (a future parallel regression, or many mid-flight),
+        //  release the OLDEST-served first until under it.  Makes the 3GB cliff structurally unreachable; silent
+        //   in serialized health.  A released-but-still-wanted rec re-parks + re-materialises (A3), so it heals.
+        if (held_bytes > HOLD_CAP && held_recs.length) {
+            held_recs.sort((a, b) => (+(a.c.want_ts || 0)) - (+(b.c.want_ts || 0)))
+            let i = 0
+            while (held_bytes > HOLD_CAP && i < held_recs.length) {
+                held_bytes = held_bytes - (+(held_recs[i].sc.bytes || 0))
+                this.Heist_release_rec(held_recs[i])
+                i = i + 1
+            }
+        }
     }
     // SERVE: a %Rummage that landed in my mirror-of-a-friend is their "describe the folder track X came from".
     for (const home of rw.o({ MusuThem: 1 })) {
@@ -1210,13 +1284,14 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
         } else {
             this.Heist_keep_default_pick(keep, srcmir, seed)
         }
-        // DEFER (the human: "hangs in there until the end of the track then downloads it while the next plays").
-        //  While the seed still plays the keep only lingers — no pull, never fighting the live stream.
-        let playing = (rw.c.play && rw.c.play.id) || (w.c.play && w.c.play.id) || null
-        if (playing && String(playing) === seed) return
-        keep.sc.state = 'pulling'
-        keep.bump()
-        state = 'pulling'
+        // WAIT FOR THE HUMAN'S ▶ START (the human 2026-07-29: "the setup form is skipped ... it went straight
+        //  to 0/13 tracks" + "if you skip the track it ... turns immediately into downloading").  primed→pulling
+        //   is USER-CONFIRMED ONLY now — Heist_keep_start (the ▶ button) does that flip; here the keep just SITS
+        //    primed as a tweakable setup form (category · dest · nab album|track · ▶ start) until confirmed.
+        //     The OLD auto-flip on seed-stops-playing was the shared root of BOTH bugs: a Radio track-skip nulls
+        //      the playhead → the seed is no longer "playing" → the keep auto-flipped into the downloading view
+        //       (and a natural track-end skipped the form the same way).  Independent of track-skip by design.
+        return
     }
     if (state === 'pulling') {
         if (keep.sc.dose) { delete keep.sc.dose; keep.bump() }   // FOLD the cell down once it starts
@@ -1226,11 +1301,34 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
         let job = keep.c.job || shop.o({ Heist: 1, at: keep.sc.at })[0]
         if (!job) job = this.Heist_job(w, keep.sc.at, this.Heist_keep_filings(keep), { home: shop })
         keep.c.job = job
+        // SERIALIZE + OVERLAP (Evening 5 A1 — the human 2026-07-29: "doing every track in parallel or holding
+        //  more than a reasonable amount of the music is wrong ... we could overlap them a little bit but only
+        //   for a few seconds, to beat a latency ... where we ask for another while nothing is coming").  The
+        //    OLD loop drove Ra_pull_beat for EVERY un-landed pick each beat → all 13 tracks pulled at once → the
+        //     SOURCE materialised all 13 (~25MB bufs each → ~3GB → GC thrash → ws 1006 storm → orphan pages →
+        //      landed_n stuck 0).  Now walk picks IN ORDER and drive at most `heist_inflight` (2): slot 1 is the
+        //       first un-landed pick; a 2nd slot opens ONLY when the active track is within `heist_overlap` (24)
+        //        chunks of done, so the next track pre-asks a few seconds early (no dead handoff gap) yet the
+        //         source never holds more than ~2 tracks' bytes.  A pick still awaiting materialise, or not-near-
+        //          done, CLOSES the window behind it — one materialise (a 25MB disk read) at a time on the source.
         let left = 0
         let landed = 0
+        let sum_held = 0
+        let INFLIGHT = +(w.c.heist_inflight || 2)
+        let OVERLAP = +(w.c.heist_overlap || 24)
+        let inflight = 0
+        let drove_any = 0
+        let tnow0 = Date.now()
         for (const pick of picks) {
             let ref = String(pick.sc.ref || pick.sc.id)
             if (pick.sc.landed) { landed = landed + 1; continue }
+            // a wedged pick (driven but nothing landing ~45s) is BENCHED 60s so one bad file can't hold the
+            //  whole album hostage; skipped while benched, retried after.  A whole pass that drives NOTHING with
+            //   picks left clears the benches below (never a permanent give-up).
+            if (pick.c.bench_until && tnow0 < pick.c.bench_until) { left = left + 1; continue }
+            // WINDOW GATE: the in-flight cap.  A pick past the cap just waits its turn — no ask fires, so the
+            //  source is never asked to materialise it, which is the whole memory fix.
+            if (inflight >= INFLIGHT) { left = left + 1; continue }
             // the ORIGINAL materialised under this keep-id (Heist_materialise_one, upserted onto the husk with
             //  total).  Not full yet ⇒ (re)ask the source to materialise it (throttled 4s, the lost-frame heal).
             let rec = this.Ra_rec_find(srcmir, { Record: 1, id: ref })
@@ -1243,18 +1341,45 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
                     keep.bump()
                     await this.Heist_rummage_ask(w, route, me, at, seed, ref)
                 }
+                drove_any = 1                                // this pick IS in flight (awaiting the source's read)
+                inflight = INFLIGHT                          // a pending materialise closes the window (one read)
                 left = left + 1
                 continue
             }
+            drove_any = 1
+            let rtot = +(rec.sc.total || 0)
             let r = await this.Ra_pull_beat(w, rec.c.rx || route, me, String(rec.c.from || keep.sc.at), rec)
+            let rheld = (r && r.held) || 0
+            sum_held = sum_held + rheld
             if (r && r.done) {
                 await this.Heist_land(w, nav, job, own, srcmir, rec, this.Heist_music_root())
                 pick.sc.landed = 1
                 pick.bump()
                 landed = landed + 1
-            } else {
-                left = left + 1
+                pick.c.bench_held = 0
+                pick.c.bench_ts = 0
+                continue                                     // a landed track frees its slot for the next pick
             }
+            left = left + 1
+            inflight = inflight + 1                           // this track is actively pulling
+            // BENCH WATCHDOG: held must climb.  Reset the clock on any advance; bench after ~45s frozen.
+            if (rheld > (pick.c.bench_held || 0)) {
+                pick.c.bench_held = rheld
+                pick.c.bench_ts = tnow0
+            } else if (pick.c.bench_ts && tnow0 - pick.c.bench_ts > 45000) {
+                pick.c.bench_until = tnow0 + 60000
+                console.warn(`⇊⚠ heist pick BENCHED 60s — ${rec.sc.title || ref} frozen ${rheld}/${rtot} (one stuck track won't hold the album)`)
+            } else if (!pick.c.bench_ts) {
+                pick.c.bench_ts = tnow0
+                pick.c.bench_held = rheld
+            }
+            // OVERLAP: hold the window CLOSED behind a track that is NOT near done; open a slot for the next
+            //  pick to pre-ask only once this one is within OVERLAP chunks of complete.
+            if ((rtot - rheld) > OVERLAP) inflight = INFLIGHT
+        }
+        // never give up: a pass that drove nothing (every candidate benched) with picks left clears the benches.
+        if (!drove_any && left > 0) {
+            for (const pick of picks) { if (pick.c.bench_until) { pick.c.bench_until = 0; pick.c.bench_ts = 0 } }
         }
         // PROGRESS without churn (Vyto CPU/settle diagnosis 2026-07-29, Proposal 2): bump the GRAPPLED keep
         //  ROOT only when progress ACTUALLY advanced.  An idle pull-beat (chunks still trickling, `landed`
@@ -1266,6 +1391,51 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
             keep.sc.landed_n = landed
             keep.sc.total_n = picks.length
             keep.bump()
+        }
+        // ── SINK-SIDE HEIST WATCHDOG (2026-07-29, the human: "downloads stay 0/13, there should be some more
+        //  indicators if it has started") ── the per-RECORD marks live in Ra_pull_beat, but a whole KEEP that
+        //   asks and asks yet lands NOTHING had no shout: landed_n=0 is gated OUT of Ra's stall warn (it needs
+        //    held>0, added to stop a per-record "stuck 0/N" flood for queued tracks), so a stuck heist sat
+        //     SILENT until a far-tab outbox-backstop warn much later.  Per KEEP: announce the START once, then
+        //      if `landed` fails to advance for 15s SHOUT it (throttled 10s) with the counts and a pointer to
+        //       the SOURCE console — where a crashed/quiet source (◈✗ / 🛰⚠ unemit NOT acked) actually shows.
+        //        All on keep.c (never snapped); the mark rides the supply-trace ring like the per-record ones.
+        let tnow = Date.now()
+        if (!keep.c.pull_started_ts) {
+            keep.c.pull_started_ts = tnow
+            keep.c.pull_progress_ts = tnow
+            keep.c.pull_seen_landed = 0
+            if (this.Radio_trace) this.Radio_trace(null, { ev: 'heist-start', at: String(keep.sc.at || '').slice(0, 8), of: picks.length })
+            console.log(`⇊ heist STARTED — ${picks.length} track${picks.length === 1 ? '' : 's'} from ${String(keep.sc.from_name || keep.sc.at || '').slice(0, 8)}`)
+        }
+        // PROGRESS = a whole track landed OR the summed held frontier climbed (Evening 5 A1): serialized, a big
+        //  track lands slower than the 15s bark, so counting only whole-track landings would false-alarm every
+        //   long track.  Chunks arriving IS progress; the shout only fires when NOTHING moves — a truly dead source.
+        let progressed = (landed > (keep.c.pull_seen_landed || 0)) || (sum_held > (keep.c.pull_seen_held || 0))
+        if (progressed) {
+            keep.c.pull_seen_landed = landed
+            keep.c.pull_seen_held = sum_held
+            keep.c.pull_progress_ts = tnow
+            keep.c.pull_stall_warned = 0
+        } else if (landed < picks.length && tnow - (keep.c.pull_progress_ts || tnow) > 15000 && tnow - (keep.c.pull_stall_warned || 0) > 10000) {
+            keep.c.pull_stall_warned = tnow
+            let secs = Math.round((tnow - keep.c.pull_progress_ts) / 1000)
+            if (this.Radio_trace) this.Radio_trace(null, { ev: 'heist-noprogress', at: String(keep.sc.at || '').slice(0, 8), asked: +(keep.sc.asks || 0), landed: landed, of: picks.length, secs: secs })
+            console.warn(`⇊⚠ heist NO PROGRESS ${secs}s — ${landed}/${picks.length} landed after ${+(keep.sc.asks || 0)} asks — the SOURCE may have crashed/gone; check its console (◈✗ / 🛰⚠ unemit NOT acked)`)
+        }
+        // LIVE FLOW DIAL (the human 2026-07-29 "jiggling dials that turn up when packets are actually coming"):
+        //  a 0.3s-throttled % off the REAL rx byte rate.  keep.c.flow is RUNTIME (never snapped → no fixture
+        //   churn) and written with NO bump — a bump every 0.3s would re-stir the whole Vyto grapple, the exact
+        //    churn the progress-bump guard above exists to avoid; the download cell's face reads keep.c.flow on
+        //     its OWN poll.  Jumps on traffic, eases toward 0 (half each idle window) when the wire goes quiet,
+        //      so the dial jiggles ONLY while bytes actually land.  SCALE: ~900KB inside one 0.3s window (a full
+        //       ~3MB/s pull) reads as 100%; a trickle reads low; silence decays to 0.
+        if (tnow - (keep.c.flow_ts || 0) > 300) {
+            let rxtot = +(w.c.repli_rx_total || 0)
+            let win = Math.min(100, Math.round((rxtot - (keep.c.flow_seen || 0)) / 9000))
+            keep.c.flow = Math.max(win, Math.round((keep.c.flow || 0) * 0.5))
+            keep.c.flow_seen = rxtot
+            keep.c.flow_ts = tnow
         }
         if (!left && picks.length) {
             keep.sc.state = 'done'

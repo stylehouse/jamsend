@@ -1540,6 +1540,18 @@
         //  would make story_swear refuse to re-latch (its idempotence reads the shelf).
         this.story_assertioning_reset(w)
 
+        // ── the ERROR CHANNEL resets per run (empty in health) ─────────
+        // Clear the top-House ring so a previous run's throws can't bleed into this run's fixture, and drop
+        //  any %Err carried over on a re-run's Errlog.  err_run names the active run for any external capturer
+        //   that wants to scope (Story_error itself is world-agnostic — it just fills the ring).
+        {
+            const M: any = this.top_House ? this.top_House() : null
+            if (M) { M.c.err_ring = []; M.c.err_run = run }
+            const fw = (this as any).Story_errlog_world(Run) as TheC | undefined
+            const log = fw?.o({ Errlog: 1 })[0] as TheC | undefined
+            if (log) { for (const c of log.o({ Err: 1 })) log.drop(c) }
+        }
+
         // ── commission Cyto ───────────────────────────────────────────
         // Stand up this Story's OWN Cyto world (e.g. the Leaf* tests) on demand, gated
         //  by The/Opt/useCyto.  This must run AFTER the toc is decoded — Story_plan runs
@@ -1599,6 +1611,98 @@
         //  Exception BY SUBJECT: VoroMitosis (the fold) and VoroRadio (the radio that eats the fold)
         //   DRIVE Voro_crush_scan inline in their own do_fn — a test of the fold drives the fold — so
         //    they carry no useVoroCyto and Story imposes nothing on them.
+    },
+
+    // ── the Story ERROR CHANNEL (spec/Error_channel_todo.md) ──────────────────────────────────────────
+    // The systemic answer to the silent-failure class (the download-stall hunt kept hitting it): today an
+    //  error hides three ways — a swallowed catch(er){}, a snap that never particles it, a console line
+    //   nobody watches.  This channel closes all three.  It captures the INVISIBLE class — THROWS — plus the
+    //    global-uncaught net; it does NOT tee the console (Radios.svelte warns ~40×/run in HEALTHY streaming,
+    //     which would flood "empty in health" and kill the gate).  Errors gate red; warnings SHOW but never
+    //      fail (frequently benign-operational here).  The crux is ring-then-drain-at-snap: a catch NEVER
+    //       mutates the tree (the nested-replace-in-do-fn hazard) — it pushes a plain object onto a capped
+    //        .c ring; the tree is minted ONLY at the snap seam (Story_errlog_drain), where trace_drain already
+    //         safely does the same.  Home is the Run world w (snap_H walks it), so the fixture diff gates it.
+    //  LAZY: a clean Book NEVER mints an Errlog particle (the ring stays empty → drain no-ops) → ZERO fixture
+    //   churn, no re-record.  Only a Book that ERRORED grows w/%Errlog/%Err lines → its dige changes → red.
+    //    (The design's always-present empty `Errlog:1` "proof it was watched" was dropped for exactly this —
+    //     minting it under every Book would have re-recorded the whole suite.  Storui synthesises the calm
+    //      green ✓ from the Errlog's ABSENCE instead — same UX, no snap byte.)
+
+    // Story_error — the capture door.  Bulletproof (a fault in the channel must never itself throw).  kind:
+    //  'error' (gates red) | 'warn' (shows, never fails).  where: a short origin tag (beliefs/window/unemit…).
+    //   msg sanitised to a clean scalar (≤140, commas/newlines stripped — the peel parser splits on commas).
+    //    Deduped by full signature → count++, so a per-beat thrower is ONE ring row, not a flood.  The ring
+    //     lives on the TOP House (like supply_trace), reachable from any ghost's catch via this.top_House().
+    Story_error(kind: string, where: string, msg: any) {
+        try {
+            const M: any = this.top_House ? this.top_House() : null
+            if (!M) return
+            const k  = String(kind || 'error')
+            const wh = String(where || '?').slice(0, 40)
+            let m = String(msg == null ? '' : (msg && msg.message != null ? msg.message : msg))
+            m = m.replace(/[,\n\r]+/g, ' ').slice(0, 140)
+            const full = k + '|' + wh + '|' + m
+            M.c.err_ring = M.c.err_ring || []
+            const ring = M.c.err_ring as any[]
+            for (const e of ring) { if (e.full === full) { e.count = (e.count || 1) + 1; return } }
+            ring.push({ full, kind: k, where: wh, msg: m, count: 1 })
+            if (ring.length > 120) ring.splice(0, ring.length - 120)
+        } catch (er) { /* the channel is the last thing that may throw */ }
+    },
+
+    // Story_errlog_world — the Book's RUN world (Run → A → w): the world snap_H actually walks, so a particle
+    //  minted here rides into the got_snap.  NOT the driver Story world (Story_plan's `w`, which holds
+    //   The/This/run and is NEVER in a got_snap — story_harvest_desc's law: "a %desc emitted on the Book's
+    //    world would leak into the snap", i.e. the Book's world IS the snapped one).  Homing the Errlog here is
+    //     what makes the fixture-diff gate real; homing on the driver w would silently never snap.
+    Story_errlog_world(Run: House): TheC | undefined {
+        for (const A of (Run?.o ? Run.o({ A: 1 }) : []) as TheC[]) {
+            const fw = A.o({ w: 1 })[0] as TheC | undefined
+            if (fw) return fw
+        }
+        return undefined
+    },
+
+    // Story_errlog_drain — move the top-House err ring into the Book's run-world %Errlog as %Err particles, at
+    //  the snap seam and BEFORE story_snap (so a captured throw rides into the step fixture — gate #2 catches a
+    //   NEW one for free via the dige diff).  Upsert by a short signature so a repeat thrower updates its count,
+    //    never a fresh row.  Lazy: an empty ring mints nothing (clean Book ⇒ zero fixture churn).  Also stamps
+    //     run.sc.err_n/warn_n (run session state — verified NEVER in a got_snap, so off-fixture) so Storui's run
+    //      bar reads the counts through story_analysis's run_sc spread.  Returns {errors,warns}.  Bulletproof.
+    Story_errlog_drain(w: TheC, run: TheC, Run: House, n: number): { errors: number, warns: number } {
+        let errors = 0, warns = 0
+        try {
+            const M: any = this.top_House ? this.top_House() : null
+            const ring: any[] = (M && M.c.err_ring) || []
+            const fw = (this as any).Story_errlog_world(Run) as TheC | undefined
+            if (!fw) return { errors, warns }
+            if (ring.length && !fw.o({ Errlog: 1 })[0]) fw.oai({ Errlog: 1 })
+            const log = fw.o({ Errlog: 1 })[0] as TheC | undefined
+            if (!log) return { errors, warns }
+            for (const e of ring) {
+                // short stable key (a 32-bit string hash of the full signature → base36): keeps the %Err
+                //  find-or-create key tiny instead of indexing the whole message string.
+                let h = 0; const f = String(e.full || '')
+                for (let i = 0; i < f.length; i++) h = ((h << 5) - h + f.charCodeAt(i)) | 0
+                const sig = (h >>> 0).toString(36)
+                const er = log.oai({ Err: 1, sig })
+                er.c.up = log
+                er.sc.kind  = e.kind
+                er.sc.where = e.where
+                er.sc.msg   = e.msg
+                if (er.sc.n == null) er.sc.n = String(n)   // the step it was first seen (identity, off timing)
+                er.sc.count = String(e.count || 1)
+                er.bump_version()
+            }
+            for (const c of log.o({ Err: 1 })) { if (c.sc.kind === 'warn') warns++; else errors++ }
+        } catch (er) { /* never let the channel break the snap */ }
+        // off-fixture counts for the run bar (run.sc is session state — never encoded into a got_snap)
+        try {
+            if (errors) run.sc.err_n = String(errors); else delete run.sc.err_n
+            if (warns)  run.sc.warn_n = String(warns);  else delete run.sc.warn_n
+        } catch (er) { /* off-fixture bookkeeping, never fatal */ }
+        return { errors, warns }
     },
 
     async Story_hygiene(w: TheC, Run: House, run: TheC) {
@@ -2367,6 +2471,10 @@
             const n = run.c.step_n as number
             H.story_harvest_desc(w, Run, n)   // %desc → The-side, BEFORE the encode (never snap bytes)
             ;(H as any).story_harvest_sworn(w, Run, n)   // %sworn → the Assertioning shelf, same law
+            // ERROR CHANNEL: drain the ring → w/%Errlog/%Err BEFORE the encode so a captured throw rides into
+            //  the fixture (gate #2 catches a new one via the dige diff).  Lazy — no throw ⇒ no Errlog ⇒ no
+            //   fixture byte moves for a clean Book.  The counts feed the verdict below (gate #1).
+            const drained = (H as any).Story_errlog_drain(w, run, Run, n) as { errors: number, warns: number }
             const snap     = await this.story_snap(w, run, Run)
             const got_dige = await dig(snap)
             Run.trace('snapped', String(n))
@@ -2425,6 +2533,15 @@
                 step.sc.dige = got_dige
                 step.sc.ok = true
                 step.sc.accepted = true
+                // DIRTY-RECORD GUARD (Errlog gate #3): a RECORDING run that threw is about to BAKE the %Err
+                //  into the fixture as the accepted baseline.  Don't do it silently — flag the run (off-snap)
+                //   and shout, so a dirty record can't quietly become the truth.  (A Book that DELIBERATELY
+                //    tests error-capture — the proof Book — expects this and reads the flag as confirmation.)
+                // expect_errors Books RECORD the %Err on purpose (it IS the fixture proof) — no dirty flag.
+                if (drained.errors > 0 && !H.The_Opt_val(w, 'expect_errors')) {
+                    run.sc.dirty_record = String(n)
+                    console.warn(`⛔ Story: RECORDING step ${H.pad(n)} with ${drained.errors} error(s) in the channel — the fixture will bake them; NOT a clean record (review before accepting)`)
+                }
                 H.The_step(w, n).sc.dige = got_dige
                 H.story_analysis(w)
                 await update_status(`recording ${H.pad(n)}/${H.pad(run.sc.total)}`, 'save')
@@ -2457,6 +2574,19 @@
                 step.sc.ok = ok
                 step.bump_version()   // verdict (ok/caveat) settled — wake the pip now, this step
                 H.story_analysis(w)
+
+                // BUILT-IN ERROR VERDICT (Errlog gate #1): ANY kind:error captured this run taints the whole
+                //  run's verdict — cumulative, no authoring.  A LATCH only (never halts the drive): the dige-
+                //   mismatch path below owns halting, and a new error already mismatches (gate #2).  This belt
+                //    reddens the run bar + Cred_run_outcome even when entropy_forgive masked the dige (a throw
+                //     must never be forgiven as value-noise).  Warnings SHOW but never latch (benign-operational).
+                // A Book that DELIBERATELY tests error-capture opts in with The/Opt/{expect_errors:1}: the %Err
+                //  still rides into the fixture (the dige diff IS the capture proof), but the run is NOT latched
+                //   red, so the proof Book stays green while proving the channel works.  Every other Book reds.
+                if (drained.errors > 0 && run.sc.failed_at == null && !H.The_Opt_val(w, 'expect_errors')) {
+                    run.sc.failed_at = n
+                    console.warn(`⛔ Story: step ${H.pad(n)} — run tainted by ${drained.errors} error(s) in the channel (see w/%Errlog)`)
+                }
 
                 if (!ok && !w.c.lenient && !is_runner()) {
                     run.c.driving = false

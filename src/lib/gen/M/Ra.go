@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '07a8c877a274c619~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return 'edcac0c2b617421c~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1142,7 +1142,15 @@ async Ra_stock_one(w, lib, nav, src_base, path) {
     //   nothing, and rebuild — the raw material is already in hand either way.
     let parts = (src_base + '/' + path).split('/').filter(Boolean)
     let fname = parts.pop()
-    let raw = await nav.bin_read(parts.join('/'), fname)
+    // ONE native slice, not bin_read's per-chunk `for await` iterate (which congestion-stretches a
+    //  66MB read to ~60s — see Ra_source_pcm).  read_range len-omitted = whole file; bin_read fallback.
+    let raw = null
+    if (nav.read_range) {
+        let got = await nav.read_range(parts.join('/'), fname, 0)
+        raw = got ? got.buffer : null
+    } else {
+        raw = await nav.bin_read(parts.join('/'), fname)
+    }
     if (!raw) return null
     let src_size = raw.byteLength
     let enid = await this.Ra_enid(raw)
@@ -1409,7 +1417,18 @@ async Ra_source_pcm(w, rec) {
     let fname = parts.pop()
     let raw = null
     try {
-        raw = await nav.bin_read(parts.join('/'), fname)
+        // read the WHOLE source in ONE native slice (read_range, len omitted → EOF), NOT bin_read's
+        //  per-chunk `for await` iterate.  Under event-loop congestion (the repli_want storm) that loop's
+        //   ~1000 awaits stretched a 66MB read to 64s — stalling the transcode frontier so every REMOTE
+        //    track starved right at its preview boundary (seq=16), which re-armed the want-storm: a feedback
+        //     loop.  read_range is the seekable native twin already used for big assets (Ra_stock_peek;
+        //      its contract: "a 1.4GB asset never crosses whole").  bin_read stays the fallback.
+        if (nav.read_range) {
+            let got = await nav.read_range(parts.join('/'), fname, 0)
+            raw = got ? got.buffer : null
+        } else {
+            raw = await nav.bin_read(parts.join('/'), fname)
+        }
     } catch (er) {
         raw = null
     }
@@ -1581,6 +1600,21 @@ async Ra_transcode_pump(w) {
             seen[id] = 1
             let rec = this.Repli_find_record(w, id, lib)
             if (!rec) continue
+            // HEIST re-materialise (Evening 5 A3): a parked want over a RELEASED heist body (A2 dropped its bufs
+            //  after serving; body_hash promises the file, has_body now < total) re-reads the file on demand —
+            //   the heist twin of the opus transcode producer.  Throttled ~5s/rec so a re-ask storm can't re-read
+            //    the disk every beat; Repli_serve_parked (below) ships it once the bytes are back.  Intercept
+            //     BEFORE Ra_transcode_ensure (which would mis-kick Ra_source_pcm on this non-stock rec).
+            if (rec.sc.body_hash && +(rec.sc.total || 0) > 0 && this.Heist_has_body && this.Heist_has_body(rec) < +(rec.sc.total || 0)) {
+                if (Date.now() - (rec.c.rematz || 0) > 5000) {
+                    rec.c.rematz = Date.now()
+                    let hnav = this.Crate_nav ? this.Crate_nav() : null
+                    if (hnav && this.Heist_materialise_one) {
+                        try { await this.Heist_materialise_one(w, hnav, String(w.c.repli_mirror_pier || ''), String(rec.sc.id)) } catch (er) {}
+                    }
+                }
+                continue
+            }
             let ra = await this.Ra_transcode_ensure(w, rec)
             if (!ra) continue
             await this.Ra_transcode_advance(w, rec)
@@ -1812,6 +1846,32 @@ async Ra_pull_beat(w, rx, mine, theirs, rec) {
             }
         }
         off = off + PAGE
+    }
+    // CURSOR (the human 2026-07-29 "higher level Repli cursor moving info"): one terse line when the held
+    //  frontier ACTUALLY advances — the download visibly moving — and a throttled STUCK tell when we keep
+    //   asking but nothing lands (the source isn't serving; its console carries the ◈✗ serve-miss reason).
+    //    Gated on progress|8s so it never joins the want radiation.  Off-snap marks, no version bump.
+    let title = rec.sc.title || rec.sc.id
+    let id8 = String(rec.sc.id || '').slice(0, 8)
+    rec.c.pull_ts = rec.c.pull_ts || nowms
+    if (held !== (rec.c.pull_held || 0)) {
+        // world-visible supply marks (the human: "reactive speed monitoring … at both ends", "the uploader
+        //  should know what's going out"): the heist land cursor rides the SAME capped ring as the stream
+        //   marks, so `runner_ask world` reports download convergence at a glance — the Keep sits below the
+        //    world snap's depth reach, but a top-House mark doesn't. heist-open (first bytes land), heist-done
+        //     (track complete), heist-stall (started then froze) — all one-shot/throttled, never a flood.
+        if (!rec.c.heist_open_marked) { rec.c.heist_open_marked = 1; this.Radio_trace(null, { ev: 'heist-open', id: id8, of: total }) }
+        rec.c.pull_held = held; rec.c.pull_ts = nowms
+        console.log(`◈ pull ${title} ${held}/${total}${held >= total ? ' ✓' : ''}`)
+        if (held >= total && !rec.c.heist_done_marked) { rec.c.heist_done_marked = 1; this.Radio_trace(null, { ev: 'heist-done', id: id8, of: total }) }
+    } else if (held > 0 && sent > 0 && nowms - rec.c.pull_ts > 12000) {
+        this.Radio_trace(null, { ev: 'heist-stall', id: id8, at: held, of: total, asked: sent })
+        // ONLY warn a track that STARTED then stalled (held>0) — a whole collection heist leaves a dozen
+        //  records queued at 0/N waiting their turn on a source that serves roughly one at a time, and one
+        //   "stuck 0/N" line per queued record per beat was itself a flood.  A mid-track plateau (held>0,
+        //    frozen 12s) is the real tell — usually the source outbox crashed (see ive_got giant-stuff).
+        rec.c.pull_ts = nowms
+        console.log(`◈… ${title} stalled ${held}/${total} — asked +${sent}, nothing landing (check source console: ◈✗ / giant stuff)`)
     }
     this.Ra_stage(w, rec)
     return { done: held >= total ? 1 : 0, held: held }

@@ -2262,8 +2262,10 @@ await M.eatfunc({
                     //  test run required (the read ops below serve a Storyrun's steps; a plain playing tab has
                     //   none).  The human 2026-07-28 asked to diagnose either Sounditron straight from a snap.
                     //    Two lenses: (1) the SEAL state — every %Pier of the live identity with its grant count
-                    //     (2 = mutually sealed; 1 = a one-way half-seal, the bug); (2) a depth-bounded enWaft of
-                    //      the resident world so Radio/Musu/MusuThem show without diving the paged record clouds.
+                    //     (2 = mutually sealed; 1 = a one-way half-seal, the bug); (2) a FULL enWaft of the
+                    //      resident world so Radio/Musu/MusuThem show.  This WAS depth-bounded (max_child_depth:6)
+                    //       to skip the paged record clouds, but the human never agreed to a snap depth limit —
+                    //        a silent cut is worse than a big reply, so it encodes the WHOLE tree now (uncapped).
                     const ident = (H as any).Swarm_live_self?.()
                     const peering = ident ? (H as any).Swarm_peering?.(ident) : null
                     const piers = peering ? ((peering.o({ Pier: 1 }) as TheC[]).map((p: TheC) => {
@@ -2278,7 +2280,7 @@ await M.eatfunc({
                     const stW = H.Lies_runner_story_w()
                     let world_snap: string | null = null
                     if (stW) {
-                        try { world_snap = (await (H as any).enWaft(stW, { max_child_depth: 6 }))?.snap ?? null } catch (e) { world_snap = `enWaft failed: ${String((e as any)?.message ?? e)}` }
+                        try { world_snap = (await (H as any).enWaft(stW))?.snap ?? null } catch (e) { world_snap = `enWaft failed: ${String((e as any)?.message ?? e)}` }
                     }
                     const supply_trace = ((H.top_House().c.supply_trace as any[]) ?? []).slice(-120)
                     result = { self: String((H as any).Lies_self?.(w)?.prepub ?? ident?.sc?.prepub ?? '').slice(0, 16), sealed_piers: piers.filter((p: any) => p.mutual).length, piers, supply_trace, world_snap }

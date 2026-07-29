@@ -16,8 +16,10 @@
     let face = $derived.by(() => {
         void H?.version
         void tick
+        void n?.vers                    // the pick's own bumps — pick.bump() flips landed at the beat, not the poll
         const sc = n?.sc ?? {}
         const keep = n?.c?.up
+        void keep?.vers
         const seed = keep ? String(keep.sc?.seed ?? '') : ''
         const ref = String(sc.ref ?? '')
         return {

@@ -561,6 +561,11 @@
     )
     let run_paused = $derived(!!display.run_sc?.paused)
     let run_failed = $derived(display.run_sc?.failed_at as number | undefined)
+    // the Story error channel's run-bar counts (spec/Error_channel_todo.md).  run.sc.err_n/warn_n are stamped
+    //  at the snap seam and ride the story_analysis run_sc spread (both off the got_snap — session state, never
+    //   a fixture byte).  errors gate red (also latch failed_at); warnings show but never fail.
+    let run_err  = $derived(+((display.run_sc?.err_n  as any) ?? 0))
+    let run_warn = $derived(+((display.run_sc?.warn_n as any) ?? 0))
 
     // playhead_n: pip that gets the red downward triangle.
     // Points to the frontier when set, otherwise the first hollow pip.
@@ -1010,13 +1015,13 @@
     $effect(() => {
         if (display.open_at) {
             // feebly: a Book without Opt/useCyto has no A:Cyto to seek — no-op, don't throw.
-            setTimeout(() => H.feebly_i_elvisto('Cyto/Cyto', 'Cyto_seek', { open_at: display.open_at }), 0)
+            setTimeout(() => H.vaguely_ponder('Cyto/Cyto', 'Cyto_seek', { open_at: display.open_at }), 0)
             // whichever-glass (§12 moult): a commissioned Vyto glass gets the SAME step pip, routed to
             //  e_Vyto_seek, which translates the step to the yore_n of the moment carrying that step_n
             //   (moments with no step_n are scrubber-only, never matched).  feebly → a run with no
             //    A:Vyto no-ops; the two glasses are mutually-exclusive per run, so the Cyto path is
             //     byte-unchanged and only the commissioned glass ever responds.
-            setTimeout(() => H.feebly_i_elvisto('Vyto/Vyto', 'Vyto_seek', { step_n: display.open_at }), 0)
+            setTimeout(() => H.vaguely_ponder('Vyto/Vyto', 'Vyto_seek', { step_n: display.open_at }), 0)
         }
     })
     // when the panel opens from outside (server-pushed open_at: end of run,
@@ -1244,6 +1249,14 @@
                     sworn {assert_latched}/{assert_entries.length}{#if undeclared.length}&nbsp;◇{undeclared.length}{/if}
                 </button>
             {/if}
+            <!-- err channel: the Story error channel's run-bar tell (spec/Error_channel_todo.md).  ✓ green in
+                 health — empty is the WHOLE point, UI'd as such; ⛔ red with the count when a throw was captured
+                 (throws + the uncaught net); ⚠ amber for warnings-only.  The bar also reddens via failed_at
+                 (gate #1); this cell names WHY — an error vs a plain dige mismatch — and surfaces warns. -->
+            <span class="sr-err" class:err={run_err > 0} class:warn={run_err === 0 && run_warn > 0}
+                  title="Story error channel — {run_err} error(s){run_warn ? ', ' + run_warn + ' warning(s)' : ''} captured this run (throws + the uncaught net); errors gate red, warnings show but never fail">
+                {run_err > 0 ? '⛔' : (run_warn > 0 ? '⚠' : '✓')}&nbsp;{run_err || run_warn || 0}
+            </span>
             {#if run_failed}
                 <span class="sr-status fail">✗ {String(run_failed).padStart(3,'0')}</span>
             {:else if run_paused}
@@ -1843,6 +1856,9 @@
 .sr-status.ok      { color: #4a9; }
 .sr-status.fail    { color: #c55; }
 .sr-status.running { color: #77a; }
+.sr-err     { font-size: 11px; font-weight: 600; color: #4a9; opacity: 0.55; }
+.sr-err.err  { color: #c55; opacity: 1; }
+.sr-err.warn { color: #c93; opacity: 1; }
 .sr-bar.is-fail    { border-bottom-color: #4a1a1a; }
 .sr-bar.is-new   .sr-mode { color: #6a9; }
 .sr-bar.is-check .sr-mode { color: #79b; }

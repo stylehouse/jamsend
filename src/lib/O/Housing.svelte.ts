@@ -220,24 +220,23 @@ abstract class Housing extends TheC {
     }
 
     // -------------------------------------------------------------------------
-    // _find_house: resolve a string|Housing target to the owning House.
-    // If target is a Housing instance, walk .up to root House.
-    // If target is a string, search every_House() for the one owning A:Aname.
+    // _house_of: the shared, NON-THROWING resolver — the House owning `target`, or null if none
+    //  is stood up here.  This is the GUTS of _find_house, factored out so the optional existence
+    //   check (_target_present) can reuse the exact same walk WITHOUT a throw.
+    //    Housing instance → walk .up to the root House.  String → search every House up the tree
+    //     for one owning A:Aname.
     // -------------------------------------------------------------------------
-    _find_house(target: string | TheC | Housing): House {
+    _house_of(target: string | TheC | Housing): House | null {
         if (target instanceof TheC) {
-            // walk w.c.up -> A.c.up -> H
-            let h: any = target
+            let h: any = target                       // walk w.c.up -> A.c.up -> H
             while (h.c?.up) h = h.c.up
-            if (!(h instanceof House)) throw `_find_house: TheC chain didn't reach House`
-            return h
+            return (h instanceof House) ? h : null
         }
         if (target instanceof Housing) {
             let h: Housing = target
             while (h.up && !(h instanceof House)) h = h.up
-            return h as House
+            return (h instanceof House) ? h : null
         }
-        // string — walk upward from this, prefer nearer subtrees
         const Aname = (target as string).split('/')[0]
         let h: Housing = this
         while (h) {
@@ -248,7 +247,35 @@ abstract class Housing extends TheC {
             }
             h = h.up!
         }
-        throw `i_elvisto: no House has A:${Aname} (target=${target})`
+        return null
+    }
+
+    // _find_house: the FATAL form — guaranteed non-null.  An INSISTING caller (i_elvisto's deferred
+    //  targeting) relies on that; a mis-target is a real error worth surfacing.  The OPTIONAL path never
+    //   reaches here — vaguely_ponder gates on _target_present() first — so this throw only fires when
+    //    someone genuinely insisted on a target that isn't there.
+    _find_house(target: string | TheC | Housing): House {
+        const h = this._house_of(target)
+        if (!h) {
+            const Aname = (typeof target === 'string') ? (target as string).split('/')[0] : target
+            throw `i_elvisto: no House has A:${Aname} (target=${target})`
+        }
+        return h
+    }
+
+    // _target_present: NON-THROWING check — is the full A/w target actually stood up here?  Some House
+    //  up the tree must own A:Aname AND (for a named A/w string) its w must be commissioned under that A.
+    //   A QUESTION, not an error: returns a boolean and throws nothing (caught-ly or otherwise), so a
+    //    missing target never trips devtools "pause on exceptions" nor reads as a failure in the console.
+    _target_present(target: string | TheC | Housing): boolean {
+        const h = this._house_of(target)
+        if (!h) return false
+        if (typeof target === 'string') {
+            const [Aname, w0] = target.split('/')
+            const A = h.o({ A: Aname })[0] as TheC | undefined
+            if (!A || !A.o({ w: w0 || Aname })[0]) return false
+        }
+        return true
     }
 
     // ── Awo: climb the A/w path by name ─────────────────────────────────
@@ -623,40 +650,28 @@ export class House extends StorableHousing {
             h._push_todo(e)
         })
 
-        // target-may-not-exist modulation.  Targeting is DEFERRED to Runtime (clear → all_clear):
-        //  the elvis launches in-time, but by the time it resolves the target ghost/world may not be
-        //   stood up in this context.  A poke stamped `feebly` — an OPTIONAL "keep Cyto in the loop of
-        //    this activity" ping — then silently drops.  An UNstamped miss is a real mis-target: stay
-        //     loud (rethrow, so genuine insanity surfaces).  Either way this must not be a wedging
-        //      unhandled rejection for the feeble case — that (with devtools "pause on exceptions")
-        //       PAUSED the tab and halted the editor's compile loop ("no House has A:Cyto froze
-        //        everything").  A caller that MUST insist can also `await e.c.targeting`.
-        ;(e.c.targeting as Promise<void>).catch(err => {
-            if (e.sc.feebly) return
-            throw err
-        })
+        // If the deferred targeting can't resolve — the target ghost/world isn't stood up in this context —
+        //  do NOT rethrow.  A fire-and-forget rethrow becomes an UNHANDLED REJECTION, and with devtools
+        //   "pause on exceptions" it PAUSES the tab and halts the editor's compile loop (the "no House has
+        //    A:Cyto froze everything" wedge).  Log loudly (named) instead.  An OPTIONAL poke must check its
+        //     target UPFRONT via vaguely_ponder so it never spawns a doomed elvis here in the first place;
+        //      a caller that MUST sequence can `await e.c.targeting` and take the throw at its own seam.
+        ;(e.c.targeting as Promise<void>).catch(err =>
+            console.error(`⨳ i_elvisto could not target ${Aw}·${method} — ${err}`))
 
         return e
     }
 
-    // feebly_i_elvisto: best-effort i_elvisto — fire only if the target A is up the tree,
-    //   else a silent no-op.  Sibling of feebly_ponder: "feebly" = it won't insist.  For
-    //   pokes that inform an OPTIONAL collaborator — Lies telling Lang the cursor moved /
-    //   a dock landed / the Waft mutated — when that ghost isn't stood up (a runner with no
-    //   editor) there's simply no one to tell, and i_elvisto's "no House has A" throw would
-    //   be wrong.  Probes via _find_house (the same resolver i_elvisto defers to), so the
-    //   throw becomes a return-null here rather than an async unhandled rejection.
-    //   Returns the elvis e if it fired, else null.
-    feebly_i_elvisto(target: string | TheC | Housing, method: string, extra: Partial<TheUniversal> = {}): TheC | null {
-        // "feebly" = target-may-not-exist.  We're pinning together a distributed mind: try to keep
-        //  the other side in sync, but we've no idea whether now is the moment, or whether that side
-        //   even exists here (a runner with no editor, a sibling glass, a view torn down since).  So
-        //    do NOT gate on a sync existence-probe — it can pass and THEN the elvis, which targets
-        //     later at Runtime (clear → all_clear), lands on a target that's since gone (the wedge:
-        //      "in time so it launched, but the target no longer exists").  Instead stamp the elvis
-        //       `feebly` and let i_elvisto's DEFERRED targeting silently drop it when the target
-        //        isn't there at resolve-time.  An unstamped elvis still insists (loud, real bug).
-        return this.i_elvisto(target, method, { ...extra, feebly: 1 })
+    // vaguely_ponder: a best-effort cross-ghost poke that fires ONLY if the target A/w is actually stood
+    //   up here — else it GIVES UP cleanly, spawning NO elvis at all.  We're pinning together a distributed
+    //   mind: keep the other side in sync, but we've no idea whether it even exists in this context (a
+    //   runner with no editor, a sibling glass instead of Cyto, a view torn down since — Lies telling Lang
+    //   the cursor moved, Storui seeking a glass that isn't commissioned).  Gate on _target_present() — a
+    //   plain boolean question — so nothing throws (caught-ly or otherwise) and no doomed elvis is ever
+    //   spawned.  Returns the elvis if it fired, else null.  (Was feebly_i_elvisto — renamed 2026-07-29.)
+    vaguely_ponder(target: string | TheC | Housing, method: string, extra: Partial<TheUniversal> = {}): TheC | null {
+        if (!this._target_present(target)) return null   // not stood up here → give up, spawn no elvis
+        return this.i_elvisto(target, method, extra)
     }
 
     // -------------------------------------------------------------------------
@@ -980,6 +995,11 @@ export class House extends StorableHousing {
             beliefs_threw = true
             console.error(`_really_answer_calls: uncaught error in beliefs:`, err)
             this.trace('beliefs', `Exception ❌ ${err}`)
+            // ERROR CHANNEL (spec/Error_channel_todo.md): the single biggest silent swallow — a throw ANYWHERE
+            //  in a belief cycle (do_step / snap_step / req pumps / mutex-driven Peeroleum drains) was console-
+            //   only, with no step attribution, and the drive would silently stall.  Record it so the snap
+            //    particles it and the run gates red.  Optional-chained: a House without the Story ghost no-ops.
+            this.Story_error?.('error', 'beliefs', err)
         } finally {
             if (!beliefs_threw) this.trace('beliefs', 'done')
             this.c.finished_run = now_in_seconds_with_ms()
@@ -1330,6 +1350,9 @@ export class House extends StorableHousing {
             } catch (err) {
                 w.i({ error: String(err) })
                 V.beliefs && console.error(`💭 ${A.sc.A}/${w.sc.w}:`, err)
+                // ERROR CHANNEL: also capture into the Story channel (capped / deduped / snap-gated / UI'd) —
+                //  the bare w.i({error}) above is the uncapped, un-UI'd proto-channel this supersedes.
+                this.Story_error?.('error', `${A.sc.A}/${w.sc.w}`, err)
             } finally {
                 delete w.c.e
             }

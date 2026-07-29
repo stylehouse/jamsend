@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return 'c56cca7a93ef91e4~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return 'c3015dc40975b487~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -357,6 +357,10 @@ Sounditron_trickle(w) {
     let M = this.top_House()
     let era = (M.c.trickle_era || 0) + 1
     M.c.trickle_era = era
+    // stash THIS run-House handle on the top House so a gesture that mints a %Keep (Radio_pop_glass) can
+    //  re-commission the glass NOW with the correct `this` binding — the resident cell mounts on the gesture
+    //   instead of waiting for the next trickle (the human 2026-07-29 "the heist UI cell isn't popping up").
+    M.c.sounditron_run = this
     this.Sounditron_trickle_look(w, era)
 
 },

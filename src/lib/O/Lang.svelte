@@ -221,7 +221,7 @@
         // feebly so a context with no Cyto ghost (headless runner / non-useCyto Story) no-ops
         //  instead of throwing "no House has A:Cyto".  Lang is a Cyto *client* — it commissions
         //   one if present, never creates it (unlike Story the owner).  Mirrors the other feebly Cyto sites.
-        H.feebly_i_elvisto(`Cyto/Cyto`, 'Cyto_commission', { req: commission })
+        H.vaguely_ponder(`Cyto/Cyto`, 'Cyto_commission', { req: commission })
 
         // ── %Languinio — Lang's reactive signal particle ────────────
         // Parallel to %examining on w:Lies; enrolled in ave so UItime (Langui, DocMinimap)
@@ -1383,7 +1383,7 @@
                 }
                 // feebly: Cyto is opt-in now — when no A:Cyto is stood up there's simply
                 //  no graph to animate, so no-op rather than throwing "no House has A:Cyto".
-                H.feebly_i_elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
+                H.vaguely_ponder('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
             }
             else {
                 // txt path — nested Lezer hierarchy under model/Line:N/<NodeName>/… for the Story

@@ -77,12 +77,12 @@
         {/if}
         <!-- the HEIST gesture (the human 2026-07-28 "keep what you're hearing"): only on a FRIEND'S track
              (face.by) — your own you already hold.  ONE CLICK: ⇊ mints a %Keep and that's it — no popup.
-             It lingers, then DOWNLOADS the original at end-of-track (while the next plays) straight into
-             music/<genre>/.  ✓ is the tell it's kept (n.c.kept, runtime). -->
+             It becomes a %Keep you OPEN and START (▶) from the keep panel — the original then downloads
+             straight into music/<genre>/.  ✓ is the tell it's kept (n.c.kept, runtime). -->
         {#if face.by}
             <button class="rf-btn rf-skip rf-keep" class:kept={face.keptThis}
                 onclick={() => { (H as any)?.Radio_keep?.(n) }}
-                title={face.keptThis ? 'kept — the original downloads when this track ends' : "keep this — the original lands in your collection when the track ends"}>{face.keptThis ? '✓' : '⇊'}</button>
+                title={face.keptThis ? 'kept — open the keep and press ▶ to start the download' : "keep this — queues a download you start (▶) from the keep panel"}>{face.keptThis ? '✓' : '⇊'}</button>
         {/if}
     </div>
     <div class="rf-title">{ICON[face.state] ?? '📻'} {face.title ?? 'the radio'}</div>

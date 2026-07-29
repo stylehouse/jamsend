@@ -14,6 +14,8 @@ export const FACE_MAINKEYS: Record<string, string> = {
     KeepBar: 'KeepBar',   // the keep's controls cell — genre · dest · all|none · ▶ start · ✕ · progress
     Pick: 'Pick',         // one kept track in the nested keep — ✓/♪/⇊, click un-keeps
     Diag: 'Diag',         // the diagnostics toggle cell (imposed by mainkey)
+    Errlog: 'Errlog',     // the Story error channel (spec/Error_channel_todo.md) — lazy-minted, so this cell
+                          //  only ever appears when a run captured a throw; loud-when-broken, no snap byte to dress it
     MusuSelf: 'Crate',    // my music home — the record collection, spread out to gaze across
     MusuThem: 'Crate',    // a friend's music as I hold it — same spread, worn with their name
 }

@@ -18,7 +18,13 @@
     let face = $derived.by(() => {
         void H?.version
         void tick
+        void n?.vers                    // the %KeepBar's own bumps
         const keep = n?.c?.up
+        // SKELETON-FIRST reactivity (see KeepFace): read the KEEP's vers so every keep.bump() (state,
+        //  asks, dose, landed_n) repaints at the beat not the 500ms poll, and query picks with .ob() so a
+        //   freshly-minted %Pick trickles the sel row in-place.  Husks ride the mirror, so H.version + tick
+        //    stay the honest catch for the describe landing.
+        void keep?.vers
         const sc = keep?.sc ?? {}
         const state = String(sc.state || 'primed')
         const seed = String(sc.seed || '')
@@ -26,11 +32,12 @@
         const rw = A?.top_House?.()?.c?.radio_w
         const mir = (rw && at) ? A?.Ra_home_them?.(rw, at) : null
         const husks = (mir && A?.Heist_rummage_recs) ? A.Heist_rummage_recs(mir, seed) : []
-        const picks = keep?.o?.({ Pick: 1 }) ?? []
+        const picks = keep?.ob?.({ Pick: 1 }) ?? []
         const genre = String(sc.genre || 'Unfiled')
         return {
             state,
             title: String(sc.Keep || 'this track'),
+            artist: String(sc.artist || ''),
             from: String(sc.from_name || 'a friend'),
             genre,
             dest: 'music/' + safe(genre) + '/',
@@ -61,6 +68,7 @@
     <div class="kb-head">
         <span class="kb-badge">{face.state === 'done' ? '✓' : '⇊'}</span>
         <span class="kb-title" title={face.title}>{face.title}</span>
+        {#if face.artist}<span class="kb-artist">{face.artist}</span>{/if}
         <span class="kb-from">from {face.from}</span>
     </div>
 
@@ -74,7 +82,7 @@
             {/if}
         </div>
     {:else}
-        <!-- PRIMED: tweakable until it auto-starts at end-of-track -->
+        <!-- PRIMED: the setup form — tweakable until you press ▶ start (no auto-start on track-end / skip) -->
         <div class="kb-file">
             <span class="kb-dim">category</span>
             <input class="kb-genre" list="kb-cats" bind:value={catDraft} placeholder="(none — keep source folders)"
@@ -90,13 +98,20 @@
                 <button class="kb-mini" onclick={nabTrack} title="keep only the track you're hearing">nab track</button>
             </div>
         {:else}
-            <div class="kb-note">
-                {#if face.asks > 1}looking through the album… ({face.asks}){:else}reading the album it came from…{/if}
+            <!-- SKELETON: the controls shell stands; the track chips arrive as their OWN cells once picks
+                 land.  A describing line + shimmer stand in for the list until the folder describes; when the
+                 first husk lands face.described flips and the sel row (with counts) replaces this in place. -->
+            <div class="kb-skel" aria-busy="true">
+                <div class="kb-note">
+                    {#if face.asks > 1}looking through the album… ({face.asks}){:else}finding the folder…{/if}
+                </div>
+                <div class="kb-shim"></div>
+                <div class="kb-shim short"></div>
             </div>
         {/if}
         <div class="kb-foot">
-            <button class="kb-start" onclick={start} title="download now instead of waiting for the track to end">▶ start</button>
-            <span class="kb-dim">auto-starts at track end</span>
+            <button class="kb-start" onclick={start} title="start downloading these tracks into your collection">▶ start</button>
+            <span class="kb-dim">nothing downloads until you start</span>
             <button class="kb-x" onclick={cancel} title="don't keep — drop this">✕</button>
         </div>
     {/if}
@@ -118,6 +133,7 @@
     .kb-head { display: flex; align-items: baseline; gap: 6px; }
     .kb-badge { font-size: 12px; color: #7fe8bf; }
     .kb-title { font-size: 12px; font-weight: 700; color: #e8a9c0; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .kb-artist { font-size: 9px; opacity: 0.7; color: #cfc0d8; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .kb-from { font-size: 9px; opacity: 0.6; }
     .kb-prog { font-size: 10px; opacity: 0.85; color: #7fe8bf; margin-top: 3px; }
     .kb-file { display: flex; align-items: center; gap: 5px; margin-top: 4px; }
@@ -141,6 +157,21 @@
     }
     .kb-mini:hover { background: #66495a; color: #fff; }
     .kb-note { font-size: 9px; opacity: 0.6; font-style: italic; margin-top: 3px; }
+    /* the loading skeleton — shimmer bars standing in for the track list until the folder describes.
+       pointer-events stay off (only controls re-arm); the pulse is the DoorFace breathe idiom. */
+    .kb-skel { margin-top: 3px; }
+    .kb-shim {
+        height: 8px; margin: 4px 0 0 8px; max-width: 160px;
+        border-radius: 4px;
+        background: linear-gradient(90deg, #2c1d27 0%, #3a2733 50%, #2c1d27 100%);
+        animation: kb-shim 1.4s ease-in-out infinite;
+    }
+    .kb-shim.short { max-width: 100px; }
+    .kb-shim:nth-child(3) { animation-delay: 0.25s; }
+    @keyframes kb-shim {
+        0%, 100% { opacity: 0.35; }
+        50%      { opacity: 0.8; }
+    }
     .kb-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 5px; }
     .kb-start {
         pointer-events: auto; cursor: pointer;

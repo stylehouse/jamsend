@@ -95,10 +95,20 @@ Socket_real(w):
         return { header, buffer: bytes.subarray(nl + 1) }   // buffer is a view — near-zero-copy
     }
     let wire = (frame) => { if (frame && frame.buffer) ws.send(encode_binary(frame)); else ws.send(JSON.stringify(frame)) }
-    // Heartbeat traffic floods the console once the channel is healthy — log everything BUT
-    //  ping/pong/ack, so dock_push/run_result/hello/trust still show. (A buffered send is
-    //   always logged: it only happens before the socket opens, which is worth seeing.)
-    let noisy = (h) => h && (h.type === 'ping' || h.type === 'pong' || h.type === 'ack')
+    // AMBIENT RADIATION is filtered by default (it floods the console once the channel is healthy) but
+    //  re-shown when w.c.wire_verbose is set — a live console toggle for deep wire debugging (the human
+    //   2026-07-29 "these transport messages ... could be behind a verbosity flag").  Two families:
+    //    presence (pulse = Swarm_pulse_all heartbeat, swarm_hi = rebirth greeting, advertise = beacon) and
+    //     self-correcting transport (ping/pong/ack + repli_want, the PULL re-asks every wanted offset every
+    //      4s so logging each buried the real events — ~3000 info lines/min drowned the console).  The DATA
+    //       frames themselves (repli_page/repli_lines) are gated too now — one line per 32KB chunk drowned
+    //        everything (the human 2026-07-29 "quiet all them ... say higher level things about Repli") — and
+    //         are REPLACED by the coalesced Repli meter + the per-track ◈ cursor (Repli_meter / Ra_pull_beat).
+    //          Real EVENTS (hello/trust/run_result/dock_push) always log.  (A buffered send is always logged:
+    //           it only happens before the socket opens, which is worth seeing.)
+    let verbose = !!(w && w.c && w.c.wire_verbose)
+    let ambient = { ping: 1, pong: 1, ack: 1, repli_want: 1, repli_page: 1, repli_lines: 1, pulse: 1, swarm_hi: 1, advertise: 1 }
+    let noisy = (h) => !verbose && h && !!ambient[h.type]
     // note — mirror a carrier event to the browser console AND ring it onto w.c.relay_log (off-snap,
     //  capped) so the Relay Brink can surface a live event log in-UI. NO version bump: the Brink polls the
     //   ring on its 1s tick, so high-frequency traffic never re-pumps the House (the run_phase lesson).
@@ -150,7 +160,7 @@ Socket_real(w):
             let frame
             try { frame = decode_binary(ev.data) } catch (e) { console.warn('🛰 ws RECV binary decode failed', e); return }
             let bh = frame.header
-            console.log(`🛰 ws RECV ${bh.type} seq=${bh.seq} +buf=${frame.buffer.length} ← ${bh.from}`)
+            if (!noisy(bh)) console.log(`🛰 ws RECV ${bh.type} seq=${bh.seq} +buf=${frame.buffer.length} ← ${bh.from}`)
             deliver_soon(frame)
             return
         }

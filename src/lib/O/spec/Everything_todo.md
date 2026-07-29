@@ -5,6 +5,16 @@ A cross-spec sweep of what is in motion and what is deferred-but-load-bearing,
   at the bottom — this is the everything-*else* picture. Correct anything stale;
    this is a snapshot, not canon.
 
+**2026-07-29 addition:** **Snap depth limit — the `max_child_depth` scare, resolved.**
+ The human never agreed to a snap depth limit, so the cap on the one snap/world view was
+  **REMOVED**: `LiesFunk` `world_snap` (`runner_ask world`) now encodes the full tree
+   uncapped. Recorded fixtures (`toc.snap` via `encode_toc_snap`, numbered `got_snap` via
+    `snap_H`) were **never** capped — **no re-record needed** (full Story suite to be run
+     once live to confirm empirically). The `max_child_depth` PARAMETER stays as a legit
+      option; one deliberate cap survives — LangHold `Seem_toString` depth-0, the Lang
+       push-state equality comparator (NOT a snap; uncapping breaks edit-detection),
+        flagged for the human. Full blast radius in `spec/Snap_depth_todo.md`.
+
 **2026-07-27 additions (doc-sweep + human triage):**
 - **LakeSearch — review it.** The universal-search Story Book is *recorded*
    (`wormhole/Story/LakeSearch/001.snap`) but the human has **not seen it run** — verify it on a

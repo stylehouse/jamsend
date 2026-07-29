@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1785252423631
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1785325310274
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -40,6 +40,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:Ghost/Story/Heistation.g,name:Heistation,noticed_at=1783759683660
     Doc:Ghost/Story/Berthation.g,name:Berthation,noticed_at=1783854682761
     Doc:Ghost/Story/Sounditron.g,name:Sounditron,noticed_at=1784294810150
+    Doc:Ghost/Story/Errchannelation.g,name:Errchannelation,noticed_at=1785325310274
   open_dir:src/lib/O/spec
   group:src/lib/O/spec,dir:src/lib/O/spec
     Doc:src/lib/O/spec/Covenant_design.md,name:Covenant_design.md,noticed_at=1782180409139
@@ -115,6 +116,9 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Sharing_design.md,name:Sharing_design.md,noticed_at=1785147790520
     Doc:src/lib/O/spec/Heist_todo.md,name:Heist_todo.md,noticed_at=1785221260715
     Doc:src/lib/O/spec/Vyto_perf_todo.md,name:Vyto_perf_todo.md,noticed_at=1785252423631
+    Doc:src/lib/O/spec/Download_stall_handover.md,name:Download_stall_handover.md,noticed_at=1785296840212
+    Doc:src/lib/O/spec/Snap_depth_todo.md,name:Snap_depth_todo.md,noticed_at=1785304811197
+    Doc:src/lib/O/spec/Error_channel_todo.md,name:Error_channel_todo.md,noticed_at=1785314082970
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D

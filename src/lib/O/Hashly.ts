@@ -17,6 +17,25 @@ export function sha256_hex(bytes: Uint8Array): string {
     return bytesToHex(sha256(bytes));
 }
 
+// sha256_hex_fast — the ASYNC one-shot for HOT BULK hashing (audio chunks, wire body_hash): native
+//  WebCrypto (crypto.subtle) when present, which runs SHA-256 in native code — ~10-50× faster than noble's
+//   pure-JS sha256 over MBs of audio.  This is the source's 5s materialise cliff (2026-07-29 perf trace:
+//    51.8% of the frame in noble sha2), NOT a correctness gap: native SHA-256 == noble SHA-256 == the old
+//     SubtleCrypto path, so the digest is BYTE-IDENTICAL and every pinned body_hash/cid keeps matching (the
+//      FORMAT CONTRACT above holds).  Falls back to the sync noble path where crypto.subtle is absent (an odd
+//       harness), so the output is identical either way.  Async because subtle.digest is — use ONLY where the
+//        caller already awaits (Heist_materialise_one's per-chunk cid + whole-file body_hash).  bytesToHex is
+//         the SAME encoder the sync path uses, so there is no padStart/case drift.  The SYNC sha256_hex stays
+//          for the many non-awaiting callers (small inputs — Ra_enid, cid re-verify, keep-id).
+export async function sha256_hex_fast(bytes: Uint8Array): Promise<string> {
+    const subtle = (typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.subtle) || null;
+    if (subtle) {
+        const digest = await subtle.digest('SHA-256', bytes);
+        return bytesToHex(new Uint8Array(digest));
+    }
+    return sha256_hex(bytes);
+}
+
 // sha256_incremental — a fresh streaming hasher: `.update(chunk)` per slice as bytes flow, then
 //  `.hex()` once for the same 64-char lowercase digest the one-shot would give over the concatenation.
 //   The heist landing feeds it each %Body chunk as it writes to disk, so the wire-side digest is ready

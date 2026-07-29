@@ -1209,6 +1209,15 @@ Swarm_suggest(w, ident, prepub, rec, note):
     this.Swarm_suggest_send(w, ident, String(prepub), sug)
     return true
 
+// RELIABILITY (2026-07-29 audit — see Peeroleum_send's FRAME RELIABILITY POLICY): suggest/suggest_got are
+//  RELIABLE, NOT ephemeral gossip, and deliberately so.  Unlike pulse/ive_got/repli_want they are NOT re-sent
+//   every beat — a suggest fires on the user's act and is re-offered ONLY when the friend's rebirth greeting
+//    arrives (Swarm_suggest_resend off Swarm_heard_hi), bounded to the un-`got` set (stash-capped at 24/friend),
+//     and retired the moment suggest_got lands (`sug.sc.got`).  A delivered suggest's emit is acked-then-culled
+//      like any app data; only an UNdelivered one (stalled peer) leaves an emit, and at most ~24 — nowhere near
+//       the outbox cliff, and the structural backstop caps even that.  It NEEDS in-session redelivery (a drop to
+//        an already-connected friend must resend before the next reconnect — that is the transport emit's job),
+//         so making it ephemeral would silently lose suggestions.  Durable store-and-forward = reliable.
 Swarm_suggest_send(w, ident, prepub, sug):
     if (sug.sc.got) return false
     let body = { kind: 'suggest', page: this.Swarm_page(ident), id: String(sug.sc.id) }

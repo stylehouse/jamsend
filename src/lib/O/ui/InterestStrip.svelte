@@ -113,7 +113,7 @@
     }
 
     const foreground = (r: Row) =>
-        H.feebly_i_elvisto('Lang/Lang', 'Lang_foreground', { kind: r.kind, ...(r.waft ? { waft: r.waft } : {}) })   // feeble: no editor on a runner to foreground into, no-op don't throw
+        H.vaguely_ponder('Lang/Lang', 'Lang_foreground', { kind: r.kind, ...(r.waft ? { waft: r.waft } : {}) })   // feeble: no editor on a runner to foreground into, no-op don't throw
 
     // The open|edit mode — the step JUST BEYOND being foregrounded.  Tapping a cap that
     //  isn't the foreground foregrounds it; tapping the one that already IS opens its

@@ -244,7 +244,7 @@
         // drop any pending cold subscribe (we are about to satisfy it), then push.
         for (const sub of good.o({ subscribe: 1 }) as TheC[]) good.drop(sub)
         // feebly: with no Lang up the tree (runner, no editor) there's no dock to hand to.
-        H.feebly_i_elvisto('Lang/Lang', 'dock_content', { Good: good, ...(opts?.force_compile ? { force_compile: 1 } : {}) })
+        H.vaguely_ponder('Lang/Lang', 'dock_content', { Good: good, ...(opts?.force_compile ? { force_compile: 1 } : {}) })
     },
 
     // ── Lies_spawn_look_waft ──────────────────────────────────────────────────
@@ -1020,7 +1020,7 @@
             const wake = sub.sc.wake as string | undefined
             // feebly: a subscriber whose ghost is no longer stood up just isn't notified.
             //  force_compile (a ghost_compile job) rides through to e_Lang_dock_content.
-            if (Aw && wake) H.feebly_i_elvisto(Aw, wake, { Good: good, ...(sub.sc.force_compile ? { force_compile: 1 } : {}) })
+            if (Aw && wake) H.vaguely_ponder(Aw, wake, { Good: good, ...(sub.sc.force_compile ? { force_compile: 1 } : {}) })
             good.drop(sub)
         }
     },
