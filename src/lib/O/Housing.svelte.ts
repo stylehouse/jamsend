@@ -656,8 +656,12 @@ export class House extends StorableHousing {
         //    A:Cyto froze everything" wedge).  Log loudly (named) instead.  An OPTIONAL poke must check its
         //     target UPFRONT via vaguely_ponder so it never spawns a doomed elvis here in the first place;
         //      a caller that MUST sequence can `await e.c.targeting` and take the throw at its own seam.
-        ;(e.c.targeting as Promise<void>).catch(err =>
-            console.error(`⨳ i_elvisto could not target ${Aw}·${method} — ${err}`))
+        ;(e.c.targeting as Promise<void>).catch(err => {
+            console.error(`⨳ i_elvisto could not target ${Aw}·${method} — ${err}`)
+            // also ring it (Story_error) — a mis-target that only console.errors is invisible over the
+            //  CLI, and a swallowed resetStory IS the begun-wedge (2026-07-30): make it readable remotely.
+            ;(this as any).Story_error?.('error', 'elvisto', `${Aw}·${method} — ${err}`)
+        })
 
         return e
     }
@@ -767,6 +771,17 @@ export class House extends StorableHousing {
     post_do(fn: () => Promise<void>, extra: Partial<TheUniversal> = {}) {
         const e = new TheC({ c: {}, sc: { fn, ...extra } })
         this._push_todo(e)
+    }
+
+    // diag — TEMPORARY checkpoint trace for the begun-wedge hunt (2026-07-30).  Lives entirely on
+    //  .c (never .sc), so it NEVER rides a snap or touches any Book's fixture — safe to sprinkle
+    //  anywhere, unlike Story_error (which a Book's own drain can mint into its got_snap).  Read via
+    //  the `world` CLI op.  Remove once the wedge is found.
+    diag(label: string) {
+        const M = this.top_House() as any
+        const arr = (M.c.diag_trace ??= []) as string[]
+        arr.push(`${label} @${Date.now() % 100000}`)
+        if (arr.length > 60) arr.splice(0, arr.length - 60)
     }
 
     // -------------------------------------------------------------------------
@@ -1963,6 +1978,7 @@ export class House extends StorableHousing {
     }
 
     async Wormhole(A: TheC, w: TheC, e: TheC, AT: TheC, wT: TheC) {
+        this.diag(`Wormhole() ticked on House=${(this as House).name} DL=${!!A.c.DL} nav=${!!A.c.nav}`)
         if (!A.c.nav && A.c.DL) {
             const DL = A.c.DL
             if (!DL.expanded) await DL.expand()
@@ -1977,7 +1993,9 @@ export class House extends StorableHousing {
         //   (the elvis req + its finish live in .c, not sc).  fs.do(fn) pumps them.
         const fs = w.oai({ fs_op: 1 })
 
-        for (const { req, finish } of H.o_elvis_req(w, 'wh_op')) {
+        const wh_pending = H.o_elvis_req(w, 'wh_op')
+        if (wh_pending.length) this.diag(`Wormhole() sees ${wh_pending.length} pending wh_op req(s)`)
+        for (const { req, finish } of wh_pending) {
             if (!(fs.o({ req: 1 }) as TheC[]).some(fr => fr.c.for === req)) {
                 const fs_req = fs.oai({ req: 1 })   // anonymous %req → always mints a fresh serial
                 fs_req.c.for    = req
@@ -1997,12 +2015,17 @@ export class House extends StorableHousing {
 
             const done = (reply: any) => { finish(reply); fs_req.sc.finished = 1 }
 
-            if (!nav) { w.i({ see: '📭 nav not ready' }); return }
+            if (!nav) {
+                this.diag(`Wormhole wh_op=${op} path=${path} STALLED — nav not ready (A.c.DL=${!!A.c.DL} A.c.nav=${!!A.c.nav})`)
+                w.i({ see: '📭 nav not ready' }); return
+            }
 
             const run_op = async (): Promise<any> => {
                 try {
                     if (op === 'read_toc') {
+                        this.diag(`read_toc CALLING nav.read_file(${path}, toc.snap)`)
                         let snap = await nav.read_file(path, 'toc.snap')
+                        this.diag(`read_toc nav.read_file RETURNED len=${snap?.length ?? 'null'}`)
                         return snap ? { toc_snap: snap } : { not_found: true, toc_snap: '' }
 
                     } else if (op === 'write_toc') {

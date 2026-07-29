@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return 'edcac0c2b617421c~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '12fc2bd3db2aeba5~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1862,6 +1862,9 @@ async Ra_pull_beat(w, rx, mine, theirs, rec) {
         //     (track complete), heist-stall (started then froze) — all one-shot/throttled, never a flood.
         if (!rec.c.heist_open_marked) { rec.c.heist_open_marked = 1; this.Radio_trace(null, { ev: 'heist-open', id: id8, of: total }) }
         rec.c.pull_held = held; rec.c.pull_ts = nowms
+        // transfer HUD: the sink's active pull — track + held/total, for the %Transfer cell + runner_ask world.
+        let x = this.Repli_xfer_get ? this.Repli_xfer_get() : null
+        if (x) { x.ts = nowms; x.pulls[id8] = { title: title, held: held, total: total, ts: nowms, done: held >= total ? 1 : 0 } }
         console.log(`◈ pull ${title} ${held}/${total}${held >= total ? ' ✓' : ''}`)
         if (held >= total && !rec.c.heist_done_marked) { rec.c.heist_done_marked = 1; this.Radio_trace(null, { ev: 'heist-done', id: id8, of: total }) }
     } else if (held > 0 && sent > 0 && nowms - rec.c.pull_ts > 12000) {

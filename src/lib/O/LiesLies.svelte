@@ -41,7 +41,7 @@
     // the channel-liveness thresholds live in ONE place now (shared with the runner_ask CLI, which
     //  can't import a .ts) — see runner_liveness.mjs.  Was three inline literals that could drift.
     import { SLUGGISH_MS, DEAD_MS, LIVE_MS, PIER_CULL_MS } from "$lib/O/runner_liveness.mjs"
-    import { sockcap_lines, sockcap_count, SOCKCAP_BOOT } from "$lib/O/sockcap"   // TEMP: relay-socket dump
+    import { sockcap_lines, sockcap_count, SOCKCAP_BOOT, socklog_armed } from "$lib/O/sockcap"   // TEMP: relay-socket dump
     import { ghost_ledger_of } from "$lib/O/lang/compile"   // GhostLedger version identity (become_book version-gate)
 
     let { M } = $props()
@@ -972,6 +972,16 @@
             }
         },
 
+        // Creduler_diag — READ-ONLY: is Creduler_pending stuck, and on what ghost(s)?  Added while
+        //  hunting the begun-wedge (2026-07-30): Story() gates every run behind %Creduler_pending
+        //   (Story.svelte:1812, "waits:loadingcoding") with no timeout — if a ghost's Pantheate-
+        //    include component never mounts, this reads stuck forever with no error anywhere.
+        Creduler_diag(): { pending: boolean, unmet: string[], total: number } {
+            const H = this as House
+            const unmet = CREDULER_GHOSTS.filter(p => !H.Lies_ghost_get(p))
+            return { pending: !!H.oa({ Creduler_pending: 1 }), unmet, total: CREDULER_GHOSTS.length }
+        },
+
         // Lies_deliver_soon — coalesce inbound frames into ONE Atime drain instead of one post_do per
         //  packet.  The real carrier (Tribunal on_message) used to wrap EVERY frame in H.post_do → H.todo,
         //   drained one-per-50ms under the beliefs mutex — the pile that death-spiralled the editor at 100+
@@ -1139,6 +1149,10 @@
             //  traffic a human reads in DevTools is readable off /app too (and survives the &watch reload).
             //   In-think (safe to mint the rw_op req); ~10s throttled; remove with the rest of the scaffold.
             ;(H as any).Lies_dump_socklog(w)
+            // The SUPPLY|HEIST trace (Radio_trace's ring) to disk on the SAME FSA path — the exfil
+            //  that survives a relay outage, because a heisting tab runs on a LOCAL FSA share (never
+            //   the remoteWormhole proxy), so this write never touches the relay.  Armed with socklog.
+            ;(H as any).Lies_dump_supply(w)
         },
         // Lies_dump_socklog — write the browser's relay-socket ring (sockcap) to wormhole/_socklog/<role>-
         //  <bootid>.jsonl.  One file per page life (SOCKCAP_BOOT), overwritten each beat, so a reload's
@@ -1166,6 +1180,36 @@
             const path = `wormhole/_socklog/${role}-${pub}-${SOCKCAP_BOOT}.jsonl`
             const rw   = w.oai({ rw_queue: 1 })
             const req  = await rw.oai({ req: 1, rw_name: path, rw_op: 'write', rw_data: sockcap_lines() })
+            H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
+        },
+        // Lies_dump_supply — persist the SUPPLY|HEIST pipeline trace (top_House().c.supply_trace, the
+        //  Radio_trace ring: dial→open→transcode→first-feed→first-sound→starve + heist-open/serve/
+        //   stall/done/release) to wormhole/_trace/<role>-<pub>-<boot>.jsonl, so its timestamped marks
+        //    are readable off /app WITHOUT the relay.  This is the exfil that keeps working when the
+        //     relay drops / the CPU burns: it rides the SAME rw_op:'write' → Wormhole path as
+        //      Lies_dump_socklog, and a HEISTING tab runs on a LOCAL FSA share (Lies_book_needsfsa
+        //       refuses the remoteWormhole proxy — "each read/write there crosses a relay hop"), so the
+        //        write lands straight on disk via FSA, no relay hop.  Marks are timestamped at CREATE
+        //         (Radio_trace stamps entry.t), so a throttled/CPU-delayed flush still preserves timing.
+        //  Armed with the SAME localStorage flag as socklog (the 🪪 hatch toggle / ?socklog / ?watch) —
+        //   but needs NO reload, since it reads M.c.supply_trace directly, not the sockcap socket tap.
+        //    ~5s throttle; overwrites the per-page-life file each beat (the ring is capped at 300).
+        async Lies_dump_supply(w: TheC) {
+            const H = this as House
+            if (typeof window === 'undefined') return
+            if (!socklog_armed()) return
+            const role = H.Lies_role(w)
+            if (role !== 'editor' && role !== 'runner') return
+            const trace = (H.top_House().c.supply_trace as any[]) || []
+            if (!trace.length) return
+            const now = Date.now()
+            if (w.c.last_supplylog && now - (w.c.last_supplylog as number) < 5000) return
+            w.c.last_supplylog = now
+            const pub  = (H as any).Lies_self?.(w)?.prepub ?? 'anon'
+            const path = `wormhole/_trace/${role}-${pub}-${SOCKCAP_BOOT}.jsonl`
+            const data = trace.map((c) => JSON.stringify(c)).join('\n')
+            const rw   = w.oai({ rw_queue: 1 })
+            const req  = await rw.oai({ req: 1, rw_name: path, rw_op: 'write', rw_data: data })
             H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
         },
         // Lies_keepalive — the channel keepalive: the three-state liveness watchdog + the ping cadence.

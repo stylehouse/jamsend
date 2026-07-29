@@ -645,6 +645,7 @@
             const bname = (ev.sc.Book as string)
                 ?? (Li ? (Li.o({ Book: 1, active: 1 }) as TheC[])[0]?.sc.Book : undefined)
                 ?? (H.c.book as string | undefined)
+            H.diag(`resetStory elvis received bname=${bname}`)
             if (bname) picks_a_book(bname)
         }
         // ── quitStory elvis ── a clean hang-up (Lies_engage_release): tear the Story world down to
@@ -731,6 +732,7 @@
     auto_reset_story(bname: string) {
         const H = this as House
         console.log(`🔄 auto_reset_story → ${bname}`)
+        H.diag(`auto_reset_story called bname=${bname}`)
         // signal Otro to re-open its restore window
         H.top_House().c.restore_window_until = Date.now() + 3000
 
@@ -739,6 +741,7 @@
 
         // create fresh Story house in a post_do so ghosts are available
         H.post_do(async () => {
+            H.diag(`post_do(activate ${bname}) fired`)
             const S = H.subHouse('Story')
             S.sc.Run = undefined   // clear any stale flag
             S.i({ A: 'Story' }).i({ w: 'Story', Book: bname })
@@ -746,6 +749,7 @@
             //  only when the Book opts in via Opt/useCyto, so a Book that doesn't want its own
             //   Cyto never creates the world nor pays for it ticking.
             S.i_elvisto(S, 'think')
+            H.diag(`subHouse created + think posted for ${bname}`)
             console.log(`▶ Story subHouse created for ${bname}`)
         }, { see: `activate ${bname}` })
     },

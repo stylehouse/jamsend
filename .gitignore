@@ -33,6 +33,8 @@ logs
 
 # investigation scaffold (relay-socket dumps) — TEMP
 wormhole/_socklog/
+# supply|heist pipeline trace dumps (Lies_dump_supply — relay-free heist debugging) — TEMP
+wormhole/_trace/
 
 # dev-instance marker — flips Dev_instance.md's commit relaxation on; must never travel to the construction site
 .dev-instance

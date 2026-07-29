@@ -243,21 +243,34 @@ The occasion: the human found the live glass an "unstructured flap-puddle — no
 
 - **P0 — name the constant.** `AREA_BASE = 2400` once; five literal sites (ledger #7) read it.
    No new Book — full fleet green + byte-identical IS the proof.
-- **P1 — `VytoMemo` (perf §1).** Memoize each scope's walls keyed on (seeds ⊕ radii); skip the
-   re-cut unchanged; a SETTLED world derives no walls at all. Probe counter on `w.c` (off-snap).
-   `%see:'a settled glass cuts no new walls across a held minute — the memo holds'`
+- **P1 — `VytoMemo` (perf §1).** Memoize each scope's walls keyed on (membership ⊕ seeds ⊕ radii ⊕
+   frame, quantised 0.01px); skip the re-cut unchanged; a SETTLED world derives no walls at all.
+   Probe `w.c.wall_cuts` (off-snap) counts only REAL cuts.
+   `%see:'a settled glass cuts no new walls across a held dwell — the memo holds'`
+   `%see:'the wall counter is alive — the drive to rest cut real walls before the hold began'`
    Adversarial: break the memo key → red. Witness: two `--svg` shots 5s apart byte-identical.
-- **P2 — `VytoNeed` (the need floor — HUMAN call 1).** Post-mount Vytui measures `face-scroll`
-   natural `scrollWidth/Height` → viewBox units (×800/stage px) → `row.c.need_area` (`.c` never
-    `sc`) → `Vyto_express` floors `env_area = max(algebra, need·1.15)`. Grow-only within a
-     settle (no flutter).
-   `%see:'the fat face cell grew to hold its measured content — the need floor is honored'`
-   `%see:'a doseless label cell stays byte-identical while the floor is armed'`
+   **2026-07-30 CODE LANDED** (`Vytui.svelte` wallMemo/cut_sig in build_cells; ungated — the sig
+    covers every input, the fleet is the regression) + Book authored/Credence-registered; green×2 +
+     shot-pair OWED (the runner tab went dark mid-verification — see the build log below).
+- **P2 — `VytoNeed` (the need floor — HUMAN call 1).** Vytui measures each LEAF widget's natural
+   box post-flush — an ident label by getBBox (already viewBox units); a face by the Cytui:3256
+    firstElementChild offset trick (a box-stretched `width:100%` child is SKIPPED — measuring it
+     would spiral) — stamps `row.c.need_area` (`.c` never `sc`) grow-only with a 2% dead-band →
+      `Vyto_express` floors `env_area = max(algebra, need·1.15)` under commission opt-in
+       `need_floor:1`. A floor-free glass skips the whole pass (cost-additive too).
+   `%see:'the wide label cell grew to hold its measured content — the need floor is honored'`
+   `%see:'with the floor unarmed the same label keeps its plain dose box — the gate is additive'`
    Adversarial: neuter the floor → red. Witness: shot greps the fat cell's area ≥ its need box.
-- **P3 — `VytoDepth` (perf §2).** Scale child radii by √(parent cell area / frame area) in
-   `Vyto_solve_scope` (or Σ child ≤ parent); the `parent.c.misfit` stamp (`Vyto.g:959`) already
-    waits to assert on.
+   **2026-07-30 CODE LANDED** (`Vyto.g` need_floor/Vyto_need_of; `Vytui.svelte` measure pass) +
+    Book authored/Credence-registered; green×2 + shot OWED (same runner outage).
+- **P3 — `VytoDepth` (perf §2).** Scale each scope's child radii by √(parent cell area / frame
+   area) in `Vyto_solve_scope` — the r² wall differentials shrink WITH the parent, so children
+    contest a small cell as gently as tops contest the frame. Nested is already the opt-in gate;
+     flat worlds byte-identical. The `parent.c.misfit` stamp already waits to assert on.
    `%see:'six children tile their small parent with no crowd-out — depth scaling holds'`
+   `%see:'a nested child wears a radius scaled to its parent share — not the frame absolute'`
+   **2026-07-30 CODE LANDED** (`Vyto.g` depth_k in solve_scope) + Book authored/Credence-registered;
+    green×2 OWED (same runner outage).
 - **P4 — `VytoCeiling` (perf §4 — HUMAN call 3).** `budget_for` on the cell's OWN bbox;
    overflow crushes to one crest via the proven `fold_ladder` — its first tenancy.
    `%see:'a twenty-child scope shows at most its budget with one crest counting the rest'`
@@ -274,6 +287,19 @@ The occasion: the human found the live glass an "unstructured flap-puddle — no
   P3 then P4 make nested survivable; P5/P6 are the human's taste and preen gates; P7 is the point.
 **After every P:** ghost-compile → runner RELOAD (new .g methods) → full Vyto* fleet green →
  byte-identical with the new gate off → Credence row. Never commit; the human reviews the diff.
+
+**BUILD LOG 2026-07-30 (owner side).** P0 found already landed+committed (`vyto_foam.ts:83`
+ AREA_BASE; all five sites read it). P1/P2/P3 code + Books landed as above — but NO station is DONE:
+  every Book run wedged at phase `begun` (VytoNestRest control too, at clean HEAD gens — both my gen
+   and the Radios agent's uncommitted gens exonerated by revert-tests), then the ★claude runner tab
+    went dark entirely; the human was Telegram-asked to revive it. The wedge fits a silently
+     swallowed `resetStory` elvis: `Lies_become_book_drive` fires `i_elvisto('Auto/Auto','resetStory')`
+      right after phase begun, and the 23:57 Housing change turned a targeting miss from a THROW
+       into a console.error — invisible over the CLI. Instrumented while hunting (both additive):
+        the `world` op now returns the top-House `err_ring` (+ runner_ask prints it), and the
+         i_elvisto targeting .catch now ALSO rings `Story_error('error','elvisto',…)`. Next boot
+          NAMES the wedge. Verification queue once the runner returns: VytoMemo → VytoNeed →
+           VytoDepth (each: red-fixture run → accept → green×2 → sabotage red → revert → shot).
 
 ## What stands (built 2026-07-19, all live-proven to compile)
 

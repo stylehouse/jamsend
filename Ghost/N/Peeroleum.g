@@ -556,6 +556,13 @@ async Peeroleum_deliver(w, frame):
             dwarn[dkey] = dnow
             console.warn(`🛰⚠ deliver: no Pier for ${h.type} seq=${h.seq} from=${String(h.from || '').slice(0, 8)} to=${String(h.to || '').slice(0, 8)} — DROPPED${h.type === 'ack' ? ' — a dropped ack strands the sender emit' : ''}`)
         }
+        // transfer HUD (the human 2026-07-30 "track why it's not working great"): count the drops that STALL a
+        //  transfer — a repli_want/data/ack dropped on a torn socket is exactly the "next piece hasn't arrived"
+        //   the human sees.  Skip the benign presence chatter (pulse/pong/swarm_hi).  Runtime .c, no snap byte.
+        if (h.type !== 'pulse' && h.type !== 'pong' && h.type !== 'swarm_hi' && h.type !== 'advertise') {
+            let xd = this.Repli_xfer_get ? this.Repli_xfer_get() : null
+            if (xd) { xd.drops = (xd.drops || 0) + 1; xd.last_drop = h.type; xd.drop_ts = dnow }
+        }
         return
     }
     // inbound-silence liveness (Reliable.g twin of the outbound %stalled): stamp the LOGICAL tick we last

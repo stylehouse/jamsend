@@ -472,3 +472,83 @@ Re-records (SwarmShare 005-009, MusuReco 005-011, +MusuHeist only if keep_step-d
  full-suite confirm; KeepBarFace flow-bar render (display side); %Keep persist/resume (.jamsend —
   human-attended); `hashC`-over-buf dige cliff (prove in isolation); live retx sweep; stream-vs-heist
    priority arbitration (likely moot once serialized — measure first).
+
+## Evening 6 — LIVE-CONFIRMED, the ive_got throttle, the Transfer HUD lands, and a SILENT breach loop found (2026-07-30)
+
+**A1+A2 are LIVE-CONFIRMED** (two real tabs, real pull): `He Lays in the Reins 12/95 → 95/95 ✓` on the
+ sink, `◈↯ freed He Lays in the Reins (95 chunks) — served, bytes released` on the source. The 3GB/
+  nothing-lands wall from Evening 4 is gone.
+
+**ive_got self-heal throttled (`Swarm.g` `Swarm_pulse_all`).** `heard_at` is stamped ONLY by swarm-protocol
+ frames (pulse/hi/ive_got…), never by bulk `repli_page`/`repli_lines` — so a heavy pull leaves swarm frames
+  queued behind bulk data for its whole duration, `quiet` stays true continuously, and the self-heal used to
+   re-fire `Swarm_hi_one` every ~5s trickle tick for as long as that lasted, each kick answered by a full
+    `Swarm_gossip_music` reply on the far end. That's the likely source of the "ive_got gossip flood" behind
+     the ws 1006 storm during a big keep. Now cooled down to one kick per staleness episode
+      (`pier.c.hi_kick_at`, same 15s clock as `quiet` itself) instead of every tick. Not yet live-confirmed
+       to reduce 1006s — needs a big-album pull to watch.
+
+**Transfer HUD now actually draws.** The %Transfer cell (`Heist_keep_beat`) was minted but never added to
+ `Sounditron_commission`'s `grapples` set — Vyto only draws what's grappled (`%Machine`'s fate, Sounditron.g
+  line ~238, is the standing cautionary tale). Fixed: always-on organ alongside Radio/Tuner. Needs a hard
+   reload of the human's tab to appear (HMR doesn't remount a newly-grappled cell); not forced since their
+    tab was mid-heist when this landed — will appear on their next natural reload.
+
+**`runner_ask world` now prints `xfer`** (rates, active pulls/serves, drops, breaches, frees) — readable
+ from the CLI without a screenshot; same numbers TransferFace draws.
+
+**THE NEW FINDING — a landing breach was 100% silent.** The human watched
+ `music/.../01 - He Lays in the Reins.flac` cycle through partial-write → near-complete → a fresh
+  `.crswap` restarting from a few MB, repeatedly, never landing — while other tracks in the same album
+   landed clean. `Heist_land` (Heist.g:426+) has FIVE breach exits (per-chunk cid gate ×2, wire-digest
+    mismatch, disk read-back mismatch, fallback whole-hash) and every one of them, until tonight, only
+     incremented `job.sc.breached` — no console output, nothing in the UI, nothing in the xfer HUD. A
+      breach also releases every chunk buf already written (`Heist_release_buf` runs inside the streaming
+       loop, before the wire/disk checks that might fail it), so a breached record has to re-pull from
+        NOTHING — and with `pick.sc.landed` never set, `Heist_keep_pull`'s next beat tried `Heist_land`
+         again immediately. **A tight, silent, disk-and-wire-hammering retry loop with zero visible cause
+          is exactly what the human's `ls` snapshots show.**
+
+**Fixed (all `.g`, LocalGen-green):**
+- `Heist_xfer_breach(rec, reason)` (new, Heist.g ~228): every breach site now calls it — `console.warn`
+   naming the track + reason + running breach count, stamps `rec.c.breach_at`, and feeds the xfer HUD
+    (`xf.breaches`/`last_breach`/`breach_ts` — new fields on `Repli_xfer_get`'s shape). TransferFace and
+     `runner_ask world` both surface it (a red "✗ N landing breaches" tell, same shape as the drops tell).
+- **Breach cooldown** in `Heist_keep_pull` (`w.c.heist_breach_cooldown`, default 5s): `Ra_pull_beat` still
+   runs every beat (needed to refill a breached record's chunks), but `Heist_land` is held off until the
+    cooldown clears — so a persistent breach re-attempts every 5s instead of every beat, and now SAYS why
+     each time.
+
+**Root cause of the breaches themselves — NOT YET FOUND, only made visible.** Leading theory (unconfirmed):
+ A3's parked-want producer re-materialising a track whose body A2 already released, racing a late/duplicate
+  `repli_want` from before A1 serialized the pulls, could hand the sink a second, slightly different chunk
+   stream for a record it's already assembling — but this is a guess, not a read finding. **Next real step:
+    reproduce with the new breach logging live and read what it actually says** (which of the 5 sites fires,
+     how often, whether `job.sc.breach_seq` names the same seq every time on that track — a fixed seq points
+      at a specific bad chunk|cid; a moving seq points at a race).
+
+**Stray `.crswap` orphans — the human spotted one beside an already-landed track.** Confirmed by grep:
+ nothing in the `.g` engine ever touches `.crswap` (Chrome's `createWritable()` atomic-write journal,
+  renamed over the target on a clean `close()`). The LEGACY `lib/ghost/Records.svelte`'s `tidy_crswap()`
+   (called from `Pirating.svelte` before landing) did exactly this and was never ported. Fixed the
+    forward-looking half: `Heist_land` now `Heist_unlink`s `<filename>.crswap` right before it starts
+     streaming a fresh chunk 0 — best-effort, silent on the common case (nothing there). This does NOT
+      retroactively sweep orphans already sitting on disk from before tonight (that target's pick is
+       already `landed`, so nothing will touch that path again) — a one-time collection-wide sweep is a
+        separate, more invasive ask (walking the whole tree deleting matches) and wasn't done unprompted.
+
+**Resumable heists — BUILT (2026-07-30, same night, the human: "a resuming heist must happen!").** The
+ design that landed is the human's own correction to my first instinct: **resume at the LIST level, never
+  inside a file.** "Heists are about the list of files to download, and into what structure" — not a byte
+   offset within one. `Heist_resume_sync` (new, Heist.g, called once per job from `Heist_keep_pull` before
+    the first pull): for every not-yet-landed pick, check whether its landing path already holds the right
+     byte count (cheap — `nav.read_range(dir, filename, 0, 0)` for size only, no read). Trust that for every
+      candidate EXCEPT the LAST one in pick order, which gets a real digest — the human's refinement:
+       "size-compared and the last one digested as well," because that file is the one most likely to have
+        been mid-write, or just-closed but not durably flushed (a power-loss tail), when whatever
+         interrupted the prior session hit. A miss anywhere — missing, wrong size, or the boundary digest
+          failing — leaves that pick simply NOT landed, falling through to the existing from-scratch pull:
+           "don't trust a partial file across restarts... restart the latest non-finished one, and check
+            it." Verified tracks skip straight to the same catalog tail a fresh land uses (extracted into
+             `Heist_catalog_land`, shared by both paths) — `console.log('◈⟲ resume: N tracks already on
+              disk — skipped, not re-pulled')`. (The `.crswap` tidy above landed alongside this, same night.)

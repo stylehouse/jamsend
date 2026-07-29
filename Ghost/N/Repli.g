@@ -444,10 +444,31 @@ Repli_meter(w, dir, frames, bytes):
     if (dt < 1500) return
     if (m.rxf || m.txf) {
         let kb = (n) => Math.round(n / 1024)
-        let rate = kb((m.rxb + m.txb) * 1000 / dt)
-        console.log(`◈ Repli  rx ${m.rxf}p/${kb(m.rxb)}KB  tx ${m.txf}p/${kb(m.txb)}KB  ${rate}KB/s`)
+        let rx_kbps = Math.round(m.rxb * 1000 / dt / 1024)
+        let tx_kbps = Math.round(m.txb * 1000 / dt / 1024)
+        console.log(`◈ Repli  rx ${m.rxf}p/${kb(m.rxb)}KB  tx ${m.txf}p/${kb(m.txb)}KB  ${rx_kbps + tx_kbps}KB/s`)
+        // LIVE TRANSFER TELEMETRY (the human 2026-07-30 "more transfer visual feedback but I don't see any"):
+        //  feed the shared xfer object the %Transfer glass HUD + `runner_ask world` both read — the rates and a
+        //   rolling spark of rx.  All .c/runtime, no snap byte.
+        let x = this.Repli_xfer_get()
+        if (x) {
+            x.ts = nowms; x.rx_kbps = rx_kbps; x.tx_kbps = tx_kbps
+            x.spark.push(rx_kbps); if (x.spark.length > 32) x.spark.shift()
+        }
     }
     m.rxf = 0; m.rxb = 0; m.txf = 0; m.txb = 0; m.since = nowms
+
+// Repli_xfer_get — the shared LIVE transfer snapshot on the top House (top_House().c.xfer), find-or-create.
+//  The one place the wire's motion is legible: rates + a rolling rx spark (Repli_meter), the active pulls
+//   (Ra_pull_beat), the source's serves (Repli_serve_chunks), recent releases (Heist_release_rec), dropped
+//    frames (Peeroleum_deliver's no-Pier path), and landing breaches (Heist_land — a byte gate failing on
+//     the sink side, until 2026-07-30 silent). All runtime .c — never a snap byte. Read by the %Transfer
+//      HUD face and surfaced in `runner_ask world`.
+Repli_xfer_get():
+    let top = this.top_House ? this.top_House() : null
+    if (!top) return null
+    if (!top.c.xfer) top.c.xfer = { ts: 0, rx_kbps: 0, tx_kbps: 0, spark: [], pulls: {}, serves: {}, freed: [], drops: 0, last_drop: '', drop_ts: 0, breaches: 0, last_breach: '', breach_ts: 0 }
+    return top.c.xfer
 
 // Repli_serve_want — A got a `want id/stream/from_idx`: take the page [from_idx, from_idx+PAGE) of the
 //  Record's chunks, stage the bytes, and ship a lean page fragment (Record identity + a %Stream update whose
@@ -533,6 +554,9 @@ async Repli_serve_chunks(w, pier, h, rec):
                 rec.c.serve_mark_ts = now_serve
                 this.Radio_trace(null, { ev: 'heist-serve', id: String(rec.sc.id || '').slice(0, 8), n: end, of: total, to: String(h.from || '').slice(0, 8) })
             }
+            // transfer HUD: the source's live serve cursor (uploader side) — what's going out, to whom.
+            let x = this.Repli_xfer_get()
+            if (x) { x.ts = now_serve; x.serves[String(rec.sc.id || '').slice(0, 8)] = { title: rec.sc.title || rec.sc.id, n: end, total: total, to: String(h.from || '').slice(0, 8), ts: now_serve } }
         }
     }
     await this.Repli_send_lines(w, pier, h.to, h.from, out.join('\n'), bufmap)

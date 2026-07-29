@@ -12,7 +12,7 @@ import { sig_of, group_edges, bucket_key_of, pull_step, budget_for, SIG_JOINS, F
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return '9b60b11a84ffa90b~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return '68efec7316c8f097~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -123,6 +123,12 @@ e_Vyto_commission(A, w, e) {
     //  every cell drawn as-is, byte-identical.  The three flags compose (priced sizes · nested recurses
     //   · folded crushes) but each is independently gated.
     w.c.folded     = req.sc.folded ? 1 : 0
+    // NEED-FLOOR opt-in (Vyto_todo THE PIN P2 — the measure seam, Cytui:3256 ported): the render
+    //  measures each leaf widget's natural box and stamps row.c.need_area; Vyto_express then FLOORS
+    //   env_area at need·1.15, so no cell is ever smaller than the box its widget was measured to
+    //    need.  Importance still ranks ABOVE the floor.  Default off ⇒ the algebra alone — and the
+    //     render skips the measure entirely — byte-identical.
+    w.c.need_floor = req.sc.need_floor ? 1 : 0
     // the commissioning client supplies the Run House on the req's `.c` (a ref — never sc); the
     //  Spool reads it to snap the RUN world into each moment's payload (spool.md §2).
     w.c.Run        = e?.c?.Run ?? req.c?.Run ?? null
@@ -779,10 +785,10 @@ Vyto_express(w) {
         //   per row (pricing×nesting is a later compose; keep the first nest tenancy one-variable).
         this.Vyto_express_rows(w, rows)
     } else if (w.c.priced) {
-        for (const row of rows) { row.c.imp = this.Vyto_importance(w, row); row.c.env_area = Math.max(1, AREA_BASE * row.c.imp) }
+        for (const row of rows) { row.c.imp = this.Vyto_importance(w, row); row.c.env_area = Math.max(1, AREA_BASE * row.c.imp, this.Vyto_need_of(w, row)) }
     } else {
         // AREA_BASE·(1 + dose) — the PLAIN regime base (see vyto_foam AREA_BASE).
-        for (const row of rows) { row.c.env_area = Math.max(1, AREA_BASE * (1 + (Number(row.sc.dose) || 0))) }
+        for (const row of rows) { row.c.env_area = Math.max(1, AREA_BASE * (1 + (Number(row.sc.dose) || 0)), this.Vyto_need_of(w, row)) }
     }
     let organ = w.o({ Organ: 'Express' })[0]
     if (organ && organ.sc.status !== 'live') {
@@ -797,10 +803,22 @@ Vyto_express(w) {
 Vyto_express_rows(w, rows) {
     for (const row of rows) {
         if (row.sc.departing) continue
-        row.c.env_area = Math.max(1, AREA_BASE * (1 + (Number(row.sc.dose) || 0)))
+        row.c.env_area = Math.max(1, AREA_BASE * (1 + (Number(row.sc.dose) || 0)), this.Vyto_need_of(w, row))
         let kids = row.o()
         if (kids.length) this.Vyto_express_rows(w, kids)
     }
+
+},
+// Vyto_need_of — THE NEED FLOOR (THE PIN P2): the measured widget box as a lower bound on env_area.
+//  Reads row.c.need_area — stamped by the RENDER (Vytui measure pass: an ident label by getBBox or a
+//   face child by the Cytui offset trick) — and returns need·1.15 (breathing room past the tight
+//    box).  Zero when the floor is unarmed or nothing measured, so the Math.max above is
+//     byte-invisible to every floor-free world (the additive-gate law).
+Vyto_need_of(w, row) {
+    if (!w.c.need_floor) return 0
+    let need = Number(row.c.need_area)
+    if (!need || !(need > 0)) return 0
+    return need * 1.15
 
 },
 // Vyto_solve — the cut.  For now ONE root scope (the scope milestone comes later): a fixed
@@ -962,13 +980,21 @@ Vyto_solve_scope(w, parent, poly) {
     if (!kids.length) return
     let seeds = []
     let radii = []
+    // DEPTH SCALING (Vyto_todo THE PIN P3 · Vyto_perf_todo §2): a child radius was ABSOLUTE —
+    //  √(env_area/π) is sized for the whole 800×450 frame — then dropped into a parent cell maybe
+    //   an eighth that wide, so a gentle dose difference became violent (the big sibling claimed
+    //    the cell and small siblings crowded out to null).  Scale the WHOLE scope's radii by
+    //     √(parent share of the frame): the r² wall differentials then shrink WITH the parent, so
+    //      children contest a small cell as gently as tops contest the frame.  Relative order is
+    //       untouched — express still speaks through env_area; this only fits the voice to the room.
+    let depth_k = Math.sqrt(Math.abs(poly_area(poly)) / (800 * 450))
     let i = 0
     while (i < kids.length) {
         let k = kids[i]
         if (!k.c.seed) k.c.seed = this.Vyto_frame_at(poly, (i + 0.5) / kids.length)
         seeds.push({ x: k.c.seed.x, y: k.c.seed.y })
         let a = (k.c.env_area != null) ? k.c.env_area : AREA_BASE
-        radii.push(Math.sqrt(a / Math.PI))
+        radii.push(Math.sqrt(a / Math.PI) * depth_k)
         i = i + 1
     }
     let kk = 0

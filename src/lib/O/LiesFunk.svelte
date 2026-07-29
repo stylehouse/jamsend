@@ -1885,6 +1885,20 @@ await M.eatfunc({
         //    open the durable run-record, stash awaiting_verdict{book}, and resetStory onto it.
         async Lies_become_book_drive(w: TheC, book: string, needAC = false, needsFSA = false, ledger_dige?: string, pins?: { name: string, dige: string }[]) {
             const H = this as House
+            // DUPLICATE-DISPATCH GUARD (the begun-wedge root cause, 2026-07-30 — see Vyto_todo THE PIN
+            //  BUILD LOG): runner_ask.mjs retries the SAME `run` ask on a lost/delayed ack (its own
+            //   client-side "insisting N/5" loop resends verbatim) — a shared/contended runner drops
+            //    acks often enough that the retry lands too, and each landing re-fired resetStory,
+            //     tearing the in-flight Story world down before it ever reached step 1.  A run already
+            //      in flight for the SAME book (not yet done|failed) is that duplicate — accept it
+            //       silently rather than re-driving; the FIRST dispatch is the one that gets to finish.
+            {
+                const inflight = H.Lies_rungo_record(w)
+                if (inflight && inflight.sc.Storyrun === book && inflight.sc.phase !== 'done' && inflight.sc.phase !== 'failed') {
+                    H.tlog(`↺ become_book ${book} — a run is already in flight (phase ${inflight.sc.phase}); duplicate dispatch ignored`)
+                    return
+                }
+            }
             // the needsFSA gate (FIRST — a proxy-only runner can secure nothing usefully): a disk-heavy Book
             //  must run on a LOCAL FSA share, never the remoteWormhole proxy (each read/write there crosses a
             //   belief-loop beat, so a per-beat Book overruns its budget).  Only the proxy here ⇒
@@ -2283,7 +2297,20 @@ await M.eatfunc({
                         try { world_snap = (await (H as any).enWaft(stW))?.snap ?? null } catch (e) { world_snap = `enWaft failed: ${String((e as any)?.message ?? e)}` }
                     }
                     const supply_trace = ((H.top_House().c.supply_trace as any[]) ?? []).slice(-120)
-                    result = { self: String((H as any).Lies_self?.(w)?.prepub ?? ident?.sc?.prepub ?? '').slice(0, 16), sealed_piers: piers.filter((p: any) => p.mutual).length, piers, supply_trace, world_snap }
+                    // live TRANSFER telemetry (the human 2026-07-30 "more ways to track"): rates + active pulls/
+                    //  serves + recent releases, the same object the %Transfer glass HUD reads.  A glance at the
+                    //   wire's motion without deep-tree reading — pulls climbing = it's moving, all idle = stalled.
+                    const xfer = ((H.top_House().c as any).xfer as any) ?? null
+                    // the error-channel ring (Story_error) — the tab's captured throws, readable over the CLI
+                    //  so a boot/step wedge shows its cause without VNC (the begun-wedge hunt, 2026-07-30).
+                    const err_ring = (((H.top_House().c as any).err_ring as any[]) ?? []).slice(-40)
+                    // Creduler diagnostic (the begun-wedge hunt, 2026-07-30): Story() gates every run
+                    //  behind %Creduler_pending with no timeout — if it's stuck, THIS names the ghost(s).
+                    const creduler = (H as any).Creduler_diag?.() ?? null
+                    // TEMPORARY checkpoint trace (H.diag) — the begun-wedge hunt, 2026-07-30.  .c-only,
+                    //  never snapped; pinpoints exactly which link in resetStory→story_drive→do_step fired.
+                    const diag_trace = ((H.top_House().c as any).diag_trace as string[]) ?? []
+                    result = { self: String((H as any).Lies_self?.(w)?.prepub ?? ident?.sc?.prepub ?? '').slice(0, 16), sealed_piers: piers.filter((p: any) => p.mutual).length, piers, supply_trace, xfer, err_ring, creduler, diag_trace, world_snap }
                 } else if (op === 'run') {
                     // engage the runner for THIS client first (the don't-steal gate): refuse if another
                     //  client holds a live lease; else stamp our lease (GC'ing any prior client's runs) and

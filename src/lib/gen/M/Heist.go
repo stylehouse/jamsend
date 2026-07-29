@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '5eafc9f9f30e38d6~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '3528121a13ff8810~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -241,7 +241,22 @@ Heist_release_rec(rec) {
     for (const ch of bodies) { try { rec.drop(ch) } catch (er) {} }
     rec.c.released = Date.now()
     if (this.Radio_trace) this.Radio_trace(null, { ev: 'heist-release', id: String(rec.sc.id || '').slice(0, 8), of: +(rec.sc.total || 0) })
+    // transfer HUD: note the release so the human SEES the source shedding bytes (the memory fix made visible).
+    let xf = this.Repli_xfer_get ? this.Repli_xfer_get() : null
+    if (xf) { xf.ts = Date.now(); xf.freed.unshift({ title: rec.sc.title || rec.sc.id, chunks: bodies.length, ts: Date.now() }); if (xf.freed.length > 6) xf.freed.pop(); delete xf.serves[String(rec.sc.id || '').slice(0, 8)] }
     console.log(`◈↯ freed ${rec.sc.title || rec.sc.id} (${bodies.length} chunks) — served, bytes released`)
+
+},
+// Heist_xfer_breach — feed a landing breach to the shared transfer HUD (the human 2026-07-30, watching a
+//  track cycle unlink→restart with no console trace at all: every Heist_land breach path used to tally
+//   job.sc.breached and say nothing else). Sets rec.c.breach_at too — Heist_keep_pull reads that to hold
+//    off the next Heist_land attempt (BREACH_COOLDOWN) instead of re-hammering the very next beat.
+Heist_xfer_breach(rec, reason) {
+    rec.c.breach_at = Date.now()
+    let xf = this.Repli_xfer_get ? this.Repli_xfer_get() : null
+    if (xf) { xf.ts = Date.now(); xf.breaches = +(xf.breaches || 0) + 1; xf.last_breach = String(rec.sc.title || rec.sc.id || ''); xf.breach_ts = Date.now() }
+    if (this.Radio_trace) this.Radio_trace(null, { ev: 'heist-breach', id: String(rec.sc.id || '').slice(0, 8), why: reason.slice(0, 80) })
+    console.warn(`◈✗ breach: ${rec.sc.title || rec.sc.id} — ${reason}`)
 
 },
 // Heist_unlink — best-effort delete of one file (the breach cleanup: a streamed-but-wrong body must not
@@ -481,6 +496,12 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
     //    plain node harness) keeps the whole-buffer path — probed by `typeof nav.bin_append`, never a
     //     silent partial.  Either path lands the same byte-faithful file or stamps the same breach.
     let size = 0
+    // TIDY a stray swap file (the human 2026-07-30, spotting a `<name>.flac.crswap` sitting beside an
+    //  already-landed `<name>.flac`): createWritable()'s own atomic-write journal, left behind whenever a
+    //   prior attempt at THIS SAME path crashed|reloaded mid-write instead of closing clean. The legacy
+    //    `Pirating.svelte`'s `tidy_crswap()` did exactly this before landing; the `.g` engine never picked
+    //     it up. Best-effort — Heist_unlink swallows a missing file, which is the common case.
+    await this.Heist_unlink(nav, dir, filename + '.crswap')
     if (typeof nav.bin_append === 'function') {
         // STREAM: chunk 0 truncates|creates the file (bin_write), the rest append at the growing offset.
         //  Each chunk's mirror buf is RELEASED the instant its bytes are on disk (Heist_release_buf), so the
@@ -512,6 +533,7 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
                 //    says "chunk 2 is wrong" before chunks 3+ ever write.  A diagnostic scalar — flattens with
                 //     the job, never ledger.
                 job.sc.breach_seq = '' + s
+                this.Heist_xfer_breach(rec, `chunk ${s}/${total} failed the origin cid gate — job breach #${job.sc.breached}`)
                 await this.Heist_unlink(nav, dir, filename)
                 return
             }
@@ -532,6 +554,7 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
         //     mirror" as the disk gate below; just cheaper on the failure path.
         if (wire.hex() !== rec.sc.body_hash) {
             job.sc.breached = +(job.sc.breached || 0) + 1
+            this.Heist_xfer_breach(rec, `wire digest mismatch after ${total} chunks — job breach #${job.sc.breached}`)
             await this.Heist_unlink(nav, dir, filename)
             return
         }
@@ -557,6 +580,7 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
             //  %Heist), the bad file is DELETED (a streamed partial|wrong file must never linger as a
             //   landing), and the record stays in the mirror.  The engine stamps nothing on the world tree.
             job.sc.breached = +(job.sc.breached || 0) + 1
+            this.Heist_xfer_breach(rec, `disk read-back mismatch — bytes on disk don't hash to body_hash — job breach #${job.sc.breached}`)
             await this.Heist_unlink(nav, dir, filename)
             return
         }
@@ -579,6 +603,7 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
             if (ch && ch.sc.cid && sha256_hex(cb) !== ch.sc.cid) {
                 job.sc.breached = +(job.sc.breached || 0) + 1
                 job.sc.breach_seq = '' + s
+                this.Heist_xfer_breach(rec, `chunk ${s}/${total} failed the origin cid gate (fallback path) — job breach #${job.sc.breached}`)
                 return
             }
             bytes.set(cb, at)
@@ -588,10 +613,20 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
         let hash = await this.Heist_hash(bytes)
         if (hash !== rec.sc.body_hash) {
             job.sc.breached = +(job.sc.breached || 0) + 1
+            this.Heist_xfer_breach(rec, `whole-file hash mismatch (fallback path) — job breach #${job.sc.breached}`)
             return
         }
         await nav.bin_write(dir, filename, bytes)
     }
+    await this.Heist_catalog_land(nav, mardir, job, own_lib, mir, rec, rel, size)
+
+},
+// Heist_catalog_land — the shared tail of a successful landing: note the arrival, mint the catalog card,
+//  bump the job tally, surface a `took` row, drop the spent mirror card.  Shared between `Heist_land`'s own
+//   fresh-pull success path and `Heist_resume_sync`'s accept path (a file already correctly on disk from a
+//    prior attempt earns the exact same bookkeeping as one just streamed — the human 2026-07-30 "a resuming
+//     heist must happen").
+async Heist_catalog_land(nav, mardir, job, own_lib, mir, rec, rel, size) {
     await this.Heist_newlyadded_note(nav, mardir, rel)
     // the landed card at ITS OWN path (never the source's) — sc.path IS `rel`, the same string the newlyadded
     //  log carries and the disk holds, so the next heist's dedup + the read-back monitor find it exactly.  Album
@@ -1151,6 +1186,21 @@ async Heist_keep_beat(w, ident) {
     let me = String(ident.sc.prepub)
     let rw = this.top_House().c.radio_w || w
     let nav = this.Crate_nav ? this.Crate_nav() : null
+    // TRANSFER HUD (the human 2026-07-30 "I keep wanting more transfer visual feedback but I don't see any"):
+    //  a persistent dontSnap %Transfer cell in the radio world — the glass imposes TransferFace on it by mainkey
+    //   (no snap byte).  It reads the live top_House().c.xfer (rates/pulls/serves/freed) on its own poll.  Here
+    //    we just keep the cell present + PRUNE stale pulls/serves (a completed or abandoned entry >8s old) so the
+    //     HUD never shows a ghost.  Cheap: one oai + a small object walk per beat.
+    if (rw && rw.oai) {
+        let cell = rw.oai({ Transfer: 1, dontSnap: 1 })
+        if (cell.c.up !== rw) cell.c.up = rw
+        let x = this.Repli_xfer_get ? this.Repli_xfer_get() : null
+        if (x) {
+            let cut = Date.now() - 8000
+            for (const id of Object.keys(x.pulls)) { if ((x.pulls[id].ts || 0) < cut) delete x.pulls[id] }
+            for (const id of Object.keys(x.serves)) { if ((x.serves[id].ts || 0) < cut) delete x.serves[id] }
+        }
+    }
     // SWEEP stale serve-libs (bound the window where a served-original id can shadow the radio opus): a lib
     //  stays servable ~2 min — long enough for the asker to pull it, then gone.  DETACH an aged one so its
     //   materialised %Body bytes GC (a filter alone leaves the byte-laden lib hanging under w forever — the
@@ -1301,6 +1351,14 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
         let job = keep.c.job || shop.o({ Heist: 1, at: keep.sc.at })[0]
         if (!job) job = this.Heist_job(w, keep.sc.at, this.Heist_keep_filings(keep), { home: shop })
         keep.c.job = job
+        // RESUME (the human 2026-07-30 — the Sounditron pages auto-reload every ~10min, no persisted
+        //  %Keep/%Pick state yet survives that, so every reload used to mean pulling every track again
+        //   from nothing): before driving anything, check whether any not-yet-landed pick's file is
+        //    ALREADY correctly on disk from before the reload — cheap size-stat all, digest the boundary
+        //     one — and skip straight to landed for whatever verifies. THIS is the live 'pulling' branch
+        //      (not the dormant Heist_keep_pull below, which nothing live ever reaches — state never
+        //       becomes 'committing' on the one-click flow); resume must run HERE to matter.
+        await this.Heist_resume_sync(w, nav, job, own, srcmir, picks, this.Heist_music_root())
         // SERIALIZE + OVERLAP (Evening 5 A1 — the human 2026-07-29: "doing every track in parallel or holding
         //  more than a reasonable amount of the music is wrong ... we could overlap them a little bit but only
         //   for a few seconds, to beat a latency ... where we ask for another while nothing is coming").  The
@@ -1316,6 +1374,13 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
         let sum_held = 0
         let INFLIGHT = +(w.c.heist_inflight || 2)
         let OVERLAP = +(w.c.heist_overlap || 24)
+        // BREACH COOLDOWN (the human 2026-07-30, watching a track's file cycle unlink→restart over and
+        //  over): a breached record loses every chunk (Heist_release_buf ran before the failing check), so
+        //   it must re-pull from nothing anyway — but with no pause a bad breach re-attempted Heist_land
+        //    THE VERY NEXT BEAT, hammering disk + wire on a loop with, until tonight, no visible cause
+        //     (Heist_xfer_breach now logs it). Ra_pull_beat above still runs every beat — it needs to, to
+        //      refill — only the expensive land+verify is held off until the cooldown clears.
+        let BREACH_COOLDOWN = +(w.c.heist_breach_cooldown || 5000)
         let inflight = 0
         let drove_any = 0
         let tnow0 = Date.now()
@@ -1351,7 +1416,8 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
             let r = await this.Ra_pull_beat(w, rec.c.rx || route, me, String(rec.c.from || keep.sc.at), rec)
             let rheld = (r && r.held) || 0
             sum_held = sum_held + rheld
-            if (r && r.done) {
+            let cooling = rec.c.breach_at && (Date.now() - rec.c.breach_at) < BREACH_COOLDOWN
+            if (r && r.done && !cooling) {
                 await this.Heist_land(w, nav, job, own, srcmir, rec, this.Heist_music_root())
                 pick.sc.landed = 1
                 pick.bump()
@@ -1556,6 +1622,61 @@ Heist_keep_set_genre(keep, v) {
     keep.bump()
 
 },
+// Heist_resume_sync — RESUME AT THE LIST LEVEL, never inside a file (the human 2026-07-30: "a resuming
+//  heist must happen" — but "don't trust a partial file across restarts... Heists are about the list of
+//   files to download, and into what structure"). Runs ONCE per job, before the first pull: for every
+//    not-yet-landed pick, ask whether its landing path ALREADY holds the right bytes (a prior session
+//     landed it, then the keep's own runtime state — %Keep/%Pick aren't berthed yet — was lost to a reload
+//      or a crash). A byte-size match is the cheap check and is trusted for every candidate EXCEPT the
+//       LAST one in pick order: that one gets a real digest, because it's the file most likely to have
+//        been mid-write (or just-closed but not yet durably flushed — a power-loss tail) when whatever
+//         interrupted the prior session hit. A miss anywhere (missing file, wrong size, or the last
+//          candidate failing its digest) is simply left NOT landed — it falls through to the existing
+//           from-scratch pull below, restarted whole, exactly as an ordinary retry always has. No byte-
+//            offset resume, ever: only "already fully there, verified" or "not there, pull it fresh."
+async Heist_resume_sync(w, nav, job, own_lib, mir, picks, mardir) {
+    if (job.c.resume_synced) return
+    job.c.resume_synced = 1
+    if (typeof nav.read_range !== 'function') return   // no cheap stat on this backend — skip, not guess
+    let candidates = []
+    for (const pick of picks) {
+        if (pick.sc.landed) continue
+        // a live pick's identifying field is `ref` (Heist_keep_default_pick / _pick_all / _pick_seed /
+        //  _pick_toggle all mint `ref:`, never `id:` — only the dormant chooser path's Heist_keep_commit
+        //   sets `id:`), and the record it names may carry that value as its OWN id, or as its `re`
+        //    provenance (a default seed pick's ref is the SEED track's id, which a differently-encoded
+        //     mirror record can point back to via `re:<seed>`) — same double lookup the live pull loop
+        //      uses (Heist_keep_step's 'pulling' branch), so resume-sync finds exactly what a fresh pull
+        //       would find.
+        let ref = String(pick.sc.ref || pick.sc.id)
+        let rec = this.Ra_rec_find(mir, { Record: 1, id: ref })
+        if (!rec) rec = this.Ra_rec_find(mir, { Record: 1, re: ref })
+        if (!rec || !(+(rec.sc.bytes || 0) > 0)) continue
+        let rel = this.Heist_rel_for(job, rec)
+        let relparts = rel.split('/').filter(Boolean)
+        let filename = relparts.pop()
+        let dir = mardir + '/' + relparts.join('/')
+        let got = null
+        try { got = await nav.read_range(dir, filename, 0, 0) } catch (er) { got = null }
+        if (got && got.size === +rec.sc.bytes) candidates.push({ pick, rec, rel, dir, filename, size: got.size })
+    }
+    if (!candidates.length) return
+    // the boundary check: digest ONLY the last size-matched candidate (cheap for a whole album — hashing
+    //  every already-present file would be the very cost this design avoids); a miss drops just that one.
+    let last = candidates[candidates.length - 1]
+    let full = null
+    try { full = await nav.read_range(last.dir, last.filename, 0) } catch (er) { full = null }
+    let hash = full ? await this.Heist_hash(new Uint8Array(full.buffer)) : null
+    if (hash !== last.rec.sc.body_hash) candidates.pop()
+    for (const c of candidates) {
+        await this.Heist_catalog_land(nav, mardir, job, own_lib, mir, c.rec, c.rel, c.size)
+        c.pick.sc.landed = 1
+        c.pick.bump()
+    }
+    if (this.Radio_trace) this.Radio_trace(null, { ev: 'heist-resume', n: candidates.length })
+    console.log(`◈⟲ resume: ${candidates.length} track${candidates.length === 1 ? '' : 's'} already on disk — skipped, not re-pulled`)
+
+},
 // Heist_keep_pull — the commit's engine: mint the %Heist job ONCE (its filings pinned from the picks'
 //  per-artist genres), then each beat pull every not-yet-landed %Pick's chunks (Ra_pull_beat) and, when a
 //   record's every chunk arrived, Heist_land it under <genre>/ into the real collection.  Progress rides the
@@ -1569,13 +1690,22 @@ async Heist_keep_pull(w, rw, ident, me, nav, keep, shop, srcmir, route) {
     if (!job) job = this.Heist_job(w, keep.sc.at, this.Heist_keep_filings(keep), { home: shop })
     keep.c.job = job
     let own = this.Ra_home_self(rw, me)
+    await this.Heist_resume_sync(w, nav, job, own, srcmir, picks, this.Heist_music_root())
     let left = 0
+    // BREACH COOLDOWN (the human 2026-07-30, watching a track's file cycle unlink→restart over and over):
+    //  a breached record loses every chunk (Heist_release_buf ran before the failing check), so it must
+    //   re-pull from nothing anyway — but with no pause a bad breach used to re-attempt Heist_land THE VERY
+    //    NEXT BEAT, hammering disk + wire on a loop that was never going to converge without a console.warn
+    //     to say why. Ra_pull_beat still runs every beat (it needs to, to refill), only the expensive
+    //      land+verify is held off until the cooldown clears.
+    let BREACH_COOLDOWN = +(w.c.heist_breach_cooldown || 5000)
     for (const pick of picks) {
         if (pick.sc.landed) continue
         let rec = this.Ra_rec_find(srcmir, { Record: 1, id: pick.sc.id })   // paged-aware (mirror is a Mag)
         if (!rec) { left = left + 1; continue }
         let r = await this.Ra_pull_beat(w, rec.c.rx || route, me, String(rec.c.from || keep.sc.at), rec)
-        if (r && r.done) {
+        let cooling = rec.c.breach_at && (Date.now() - rec.c.breach_at) < BREACH_COOLDOWN
+        if (r && r.done && !cooling) {
             await this.Heist_land(w, nav, job, own, srcmir, rec, this.Heist_music_root())
             pick.sc.landed = 1
             pick.bump()

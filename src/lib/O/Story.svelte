@@ -1809,14 +1809,15 @@
         // Stall — visibly, greppably — while the Creduler is still loading the runtime
         //  ghosts: the editor's compiled code must be live on H before any Story begins
         //   (Run_A_<Book> itself is one of those loaded methods).
-        if (H.oa({ Creduler_pending: 1 })) return w.i({ waits: 'loadingcoding' })
+        if (H.oa({ Creduler_pending: 1 })) { H.diag('Story() blocked — Creduler_pending'); return w.i({ waits: 'loadingcoding' }) }
         const sub  = H.Story_subHouse(A, w)
-        if (!sub) return
+        if (!sub) { H.diag('Story() blocked — Story_subHouse returned falsy'); return }
         const { Run, book } = sub
+        H.diag(`Story() entered book=${book}`)
 
         // Story_plan runs once — creates everything. If run exists, everything else does too.
         let run = w.o({ run: book })[0]
-        if (!run) run = H.Story_plan(A, w, book)
+        if (!run) { run = H.Story_plan(A, w, book); H.diag(`Story_plan ran book=${book}`) }
         // < what's vanishing ave/Styles? when ~open_at it vanishes momentarily
         const ave = this.oai_enroll(this, { watched: 'ave' })
         if (!ave.oa({ Styles: 1 })) ave.i(this.The_Styles(w))
@@ -2153,6 +2154,7 @@
 
     story_drive(Run: House, w: TheC, run: TheC) {
         Run.c.run = run
+        ;(this as any).diag(`story_drive entered driving=${run.c.driving} awaiting_wave=${run.c.awaiting_wave_done} awaiting_anim=${run.c.awaiting_anim_done}`)
         if (run.c.driving) return
         if (run.c.awaiting_wave_done || run.c.awaiting_anim_done) {
             console.log(`⏸ story_drive called while awaiting_*; ignored`)
@@ -2220,6 +2222,7 @@
 
         // Phase 1: do_step
         const do_step = async () => {
+            H.diag(`do_step entered driving=${run.c.driving} paused=${run.sc.paused}`)
             if (!run.c.driving || run.sc.paused) {
                 console.log(`⏸ do_step skipped: driving=${run.c.driving} paused=${run.sc.paused}`)
                 schedule(); return
@@ -2656,10 +2659,11 @@
         }
 
         const schedule = () => {
-            if (!run.c.driving) return
+            if (!run.c.driving) { H.diag('schedule() early-return — not driving'); return }
             V.Story && console.log(`⏭ schedule driving=${run.c.driving} paused=${run.sc.paused}`)
             setTimeout(() => {
-                if (!run.c.driving) return
+                if (!run.c.driving) { H.diag('schedule setTimeout fired — not driving, skipped post_do'); return }
+                H.diag('schedule setTimeout fired — posting do_step')
                 H.post_do(do_step, { see: 'story_step' })
             }, 200)
         }
@@ -2668,6 +2672,7 @@
         run.c.snap_step_after_wave = snap_step_after_wave
         run.c.snap_step_finish     = snap_step_finish
 
+        H.diag(`story_drive() called, invoking schedule()`)
         schedule()
         console.log(`▶ Story: drive started for ${run.sc.run}`)
     },

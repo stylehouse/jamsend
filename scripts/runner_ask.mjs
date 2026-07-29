@@ -312,6 +312,34 @@ else if (op === 'snap' && reply.result?.got_snap) {
 			console.log(`  +${String(d).padStart(6)}ms  ${e.ev.padEnd(18)} ${e.id ? '['+e.id+'] ' : ''}${extra}${flag}`)
 		}
 	} else console.log('\n(no supply-pipeline marks yet — hit play in the tab, then re-run `world`)')
+	// the error-channel ring (Story_error's top-House capture) — the tab's throws over the CLI,
+	//  so a boot/step wedge names its cause without VNC (the begun-wedge hunt, 2026-07-30).
+	const er = Array.isArray(r.err_ring) ? r.err_ring : []
+	if (er.length) {
+		console.log(`\nerror-channel ring (last ${er.length}):`)
+		for (const e of er) console.log(`  ${e.kind === 'warn' ? '⚠' : '✗'} ×${e.count}  [${e.where}] ${e.msg}`)
+	}
+	// Creduler diagnostic (the begun-wedge hunt, 2026-07-30) — Story() gates every run behind
+	//  %Creduler_pending with no timeout; if it's stuck, this names which ghost(s) never went live.
+	if (r.creduler) {
+		const cd = r.creduler
+		if (cd.pending) console.log(`\n⛔ Creduler_pending STUCK — ${cd.unmet.length}/${cd.total} ghost(s) never went live:\n${cd.unmet.map(u => `    ${u}`).join('\n')}`)
+		else console.log(`\n✓ Creduler ready — all ${cd.total} ghosts live`)
+	}
+	// TEMPORARY checkpoint trace (H.diag) — the begun-wedge hunt, 2026-07-30.
+	const dt = Array.isArray(r.diag_trace) ? r.diag_trace : []
+	if (dt.length) { console.log(`\ndiag trace (last ${dt.length}):`); for (const d of dt) console.log(`  · ${d}`) }
+	// the transfer HUD feed (top_House().c.xfer) — the same numbers TransferFace draws,
+	//  readable here without a screenshot: rates, the active pull/serve, drops, recent frees.
+	if (r.xfer) {
+		const x = r.xfer
+		const pulls = Object.values(x.pulls ?? {})
+		const serves = Object.values(x.serves ?? {})
+		console.log(`\nxfer: ${x.rx_kbps ?? 0}↓ / ${x.tx_kbps ?? 0}↑ KB/s${x.drops ? `, ${x.drops} dropped (last: ${x.last_drop})` : ``}${x.breaches ? `, ${x.breaches} breach${x.breaches === 1 ? `` : `es`} (last: ${x.last_breach})` : ``}`)
+		for (const p of pulls) console.log(`  ⇊ ${p.title} ${p.held}/${p.total}${p.done ? ` ✓` : ``}`)
+		for (const s of serves) console.log(`  ⇈ ${s.title} ${s.n}/${s.total} →${s.to}`)
+		for (const f of (x.freed ?? []).slice(0, 3)) console.log(`  ↯ freed ${f.title}`)
+	}
 	if (r.world_snap) { writeFileSync('/tmp/runner_world.snap', r.world_snap); console.error(`  world snap (depth 6) → /tmp/runner_world.snap  (${r.world_snap.length} bytes) — grep it for Radio/MusuThem`) }
 } else if (reply.ok === false) {
 	// a refused/failed op — surface the runner's reason on stderr (busy lease, GC'd run, unknown Book…)

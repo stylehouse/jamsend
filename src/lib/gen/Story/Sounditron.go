@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return 'c3015dc40975b487~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '388f60942406fc0c~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -281,6 +281,18 @@ Sounditron_commission(w) {
     for (const q of [{ Radio: 1 }, { Tuner: 1 }]) {
         let row = w.o(q)[0]
         if (row) organs.push(row)
+    }
+    // the transfer HUD (the human 2026-07-30 "I keep wanting more transfer visual feedback but I don't see
+    //  any"): Heist_keep_beat mints and keeps current a persistent dontSnap %Transfer cell on the radio
+    //   world, but a cell only draws once it's in this commission's grapple set — same law as every other
+    //    organ (the %Machine note above is the cautionary tale). Always on, tiny, and idle-looking at rest
+    //     (TransferFace shows "idle · no transfer"), so it costs no attention when the wire is quiet and
+    //      lights up the moment a pull or serve starts. oai here too, not just in Heist_keep_beat, so the
+    //       cell exists even before the first heist beat has run.
+    let xfer = krw && krw.oai ? krw.oai({ Transfer: 1, dontSnap: 1 }) : null
+    if (xfer) {
+        if (xfer.c.up !== krw) xfer.c.up = krw
+        organs.push(xfer)
     }
     if (!anyKeep) {
         let h = w.o({ Heist: 1 })[0]

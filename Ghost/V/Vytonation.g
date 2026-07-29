@@ -38,7 +38,8 @@
 
 IMPORT()
     import Vytui from "$lib/O/Vytui.svelte"
-    import { budget_for, fold_ladder, bucket_key_of } from "$lib/O/vyto_foam"
+    import { budget_for, fold_ladder, bucket_key_of, AREA_BASE } from "$lib/O/vyto_foam"
+    import { poly_area } from "$lib/O/vyto_geometry"
 
 VytoStaple(A,w):
     w oai %req:wrangle,eternal
@@ -543,7 +544,7 @@ Vyto_plant(w, genus, dose):
 //  A 4th arg `priced` (optional, default plain) commissions the glass on the global type-scale
 //   (Vyto_sizing_todo §9 ④+⑤ — cell area is a share of the frame, not an absolute dose box); every
 //    existing caller passes three args → undefined → the byte-identical plain cut.
-Vyto_commission_on(w, cogs, fresh, priced, nested, folded):
+Vyto_commission_on(w, cogs, fresh, priced, nested, folded, needful):
     let SH = this.VytoStaple_SH(w)
     if (!SH) return
     if (fresh) {
@@ -555,6 +556,7 @@ Vyto_commission_on(w, cogs, fresh, priced, nested, folded):
     if (priced) commission.sc.priced = 1
     if (nested) commission.sc.nested = 1
     if (folded) commission.sc.folded = 1
+    if (needful) commission.sc.need_floor = 1
     commission.c.Run = this
     SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
 
@@ -2054,6 +2056,248 @@ async VytoNestRest_drive(w, req):
         if (n === 3) this.VytoNest_nest(w)
     }
     this.VytoNest_witness(w)
+
+// ══ VytoMemo — a settled glass derives no walls: the render memo proven by a frozen cut counter ════
+//   (Vyto_todo THE PIN P1 · Vyto_perf_todo §1.)  The render side re-derives every scope's power cut
+//    in build_cells on EVERY paint — and on a hidden runner tab every model bump paints (adopt's
+//     parked/hidden path) — so before the memo a resident glass re-clipped O(M²) walls per heartbeat
+//      with nothing moving.  The memo keys each scope's cut on (membership ⊕ sprung seeds ⊕ radii ⊕
+//       frame) and the probe vw.c.wall_cuts (off-snap `.c`) counts only REAL cuts.
+//   The Book: seed VytoNest's two-level rig — commission NESTED and drive to rest (two live scopes
+//    exercise the memo through the recursion) — then THE HOLD: record the counter and force repaints
+//     through the REAL reactive chain (a mirror bump + a no-op stir per poke — the resident
+//      heartbeat in miniature) — the counter must not advance.  The pokes make the claim
+//       non-vacuous: a quiet world cuts nothing whether or not the memo exists, and the sabotage
+//        law would out an unpokeable Book as unfailable.  Born RED before the memo landed.
+//   Rests nested at done (the NestRest posture) so a post-done shot-pair can witness the settled
+//    glass byte-still.  World MUST be named VytoMemo (do_fn_for dispatches by w.sc.w).
+VytoMemo(A,w):
+    w oai %req:wrangle,eternal
+        await &VytoMemo_drive,w,req
+        req%ok = 1
+
+async VytoMemo_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoNest_seed(w)
+        if (n === 3) this.VytoNest_nest(w)
+        if (n === 4) this.VytoMemo_hold(w)
+    }
+    this.VytoMemo_witness(w)
+
+// ── beat 4 — THE HOLD: the settled glass suffers forced repaints and cuts nothing ──────────────────
+VytoMemo_hold(w):
+    i %desc:'hold the settled glass under forced repaints — the wall counter must stand still'
+    let vw = this.VytoStaple_vw(w)
+    w.c.cuts_at_rest = (vw && vw.c.wall_cuts != null) ? vw.c.wall_cuts : null
+    w.c.pokes = 0
+    w.c.memo_held = 0
+    this.expecting(w, 'memo_wait', 14, async () => { await this.VytoStaple_await(w, 14, () => this.VytoMemo_held_ready(w)) })
+
+// held_ready — six pokes through the reactive chain (each lands a parked-path paint on the runner),
+//  then the counter must equal its at-rest reading.  cuts_at_rest ≥ 2 is the liveness gate: the
+//   drive to rest must have cut REAL walls (a dead counter must not green the hold vacuously);
+//    null (the counter never minted — the pre-memo render) can never pass.
+VytoMemo_held_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.mirror) return 0
+    if (w.c.cuts_at_rest == null || w.c.cuts_at_rest < 2) return 0
+    if ((w.c.pokes ?? 0) < 6) {
+        vw.c.mirror.bump_version()
+        this.Vyto_stir(vw)
+        w.c.pokes = (w.c.pokes ?? 0) + 1
+        return 0
+    }
+    if (vw.c.wall_cuts !== w.c.cuts_at_rest) return 0
+    w.c.memo_held = 1
+    return 1
+
+// ── the witness — story_swear + once-noticed %see · comma-free · apostrophe-free ───────────────────
+VytoMemo_witness(w):
+    if (w.c.cuts_at_rest != null && w.c.cuts_at_rest >= 2) {
+        this.story_swear(w, 'the wall counter is alive — the drive to rest cut real walls before the hold began')
+        if (!(oa %see:'the wall counter is alive — the drive to rest cut real walls before the hold began')) i %see:'the wall counter is alive — the drive to rest cut real walls before the hold began'
+    }
+    if (w.c.memo_held) {
+        this.story_swear(w, 'a settled glass cuts no new walls across a held dwell — the memo holds')
+        if (!(oa %see:'a settled glass cuts no new walls across a held dwell — the memo holds')) i %see:'a settled glass cuts no new walls across a held dwell — the memo holds'
+    }
+
+// ══ VytoNeed — the NEED FLOOR: the browser measures the widget and the diagram honors the box ═════
+//   (Vyto_todo THE PIN P2 — HUMAN call 1 blessed · Cytui:3256 ported to the power diagram.)  The
+//    flap-puddle's root sin was zero bottom-up feedback: NOTHING measured a component and the
+//     algebra happily starved real UI.  Now the render measures each leaf widget's NATURAL box —
+//      an ident label by getBBox (already viewBox units) or a face child by the Cytui offset trick
+//       (feedback-free: a max-content face reads intrinsic; a box-stretched child is skipped) —
+//        stamps row.c.need_area (off-snap `.c`) grow-only, and Vyto_express FLOORS
+//         env_area = max(algebra, need·1.15).  Importance still ranks ABOVE the floor.
+//   The Book: three DOSELESS cogs — one wearing a preposterously long name (the fat label IS the
+//    widget) — commissioned NEED-FLOORED grow the fat cell past its measured box while the plain
+//     re-commission keeps the exact AREA_BASE dose box (the gate is additive).  World VytoNeed.
+VytoNeed(A,w):
+    w oai %req:wrangle,eternal
+        await &VytoNeed_drive,w,req
+        req%ok = 1
+
+async VytoNeed_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoNeed_seed(w)
+        if (n === 3) this.VytoNeed_floor(w)
+        if (n === 4) this.VytoNeed_plain(w)
+    }
+    this.VytoNeed_witness(w)
+
+// ── beat 2 — seed three doseless cogs; one wears the fat label ─────────────────────────────────────
+VytoNeed_seed(w):
+    i %desc:'seed three doseless cogs — one wearing a preposterously long name'
+    let a = w.i({ Cog: 'the-grand-orchestrion-of-unreasonable-length-and-splendour', of: 'root' })
+    let b = w.i({ Cog: 'b', of: 'root' })
+    let c = w.i({ Cog: 'c', of: 'root' })
+    w.c.cogs = [a, b, c]
+
+// ── beat 3 — commission NEED-FLOORED: the measured label box floors the cell ───────────────────────
+VytoNeed_floor(w):
+    i %desc:'commission the glass need-floored — the measured label must lift its cell'
+    this.Vyto_commission_on(w, w.c.cogs, 1, 0, 0, 0, 1)
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'floor_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoNeed_floored_ready(w)) })
+
+// ── beat 4 — the control: re-commission PLAIN — the same label lifts nothing ───────────────────────
+VytoNeed_plain(w):
+    i %desc:'re-commission plain — the same fat label keeps the bare dose box'
+    this.Vyto_commission_on(w, w.c.cogs, 1)
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'plain_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoNeed_plain_ready(w)) })
+
+// ── readers ────────────────────────────────────────────────────────────────────────────────────────
+VytoNeed_fat(vw):
+    if (!vw || !vw.c.mirror) return null
+    for (const r of vw.c.mirror.o()) { if (r.sc.Cog === 'the-grand-orchestrion-of-unreasonable-length-and-splendour') return r }
+    return null
+
+// floored: the render MEASURED (need_area stamped) and express honored it — the fat cell rose to at
+//  least need·1.15 AND above the bare AREA_BASE box a doseless cog would otherwise wear.
+VytoNeed_floored_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.need_floor) return 0
+    if (!this.Vyto_rest_poll(w, 3)) return 0
+    let fat = this.VytoNeed_fat(vw)
+    if (!fat) return 0
+    let need = Number(fat.c.need_area) || 0
+    if (!(need > 0)) return 0
+    let area = Number(fat.c.env_area) || 0
+    if (!(area >= need * 1.15)) return 0
+    if (!(area > AREA_BASE)) return 0
+    w.c.saw_lift = 1
+    return 1
+
+// plain control: floor unarmed — the fat cog wears EXACTLY the doseless AREA_BASE box (additive gate).
+VytoNeed_plain_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || vw.c.need_floor) return 0
+    if (!this.Vyto_rest_poll(w, 3)) return 0
+    let fat = this.VytoNeed_fat(vw)
+    if (!fat) return 0
+    if (Number(fat.c.env_area) !== AREA_BASE) return 0
+    w.c.saw_plain = 1
+    return 1
+
+// ── the witness — story_swear + once-noticed %see · comma-free · apostrophe-free ───────────────────
+VytoNeed_witness(w):
+    if (w.c.saw_lift) {
+        this.story_swear(w, 'the wide label cell grew to hold its measured content — the need floor is honored')
+        if (!(oa %see:'the wide label cell grew to hold its measured content — the need floor is honored')) i %see:'the wide label cell grew to hold its measured content — the need floor is honored'
+    }
+    if (w.c.saw_plain) {
+        this.story_swear(w, 'with the floor unarmed the same label keeps its plain dose box — the gate is additive')
+        if (!(oa %see:'with the floor unarmed the same label keeps its plain dose box — the gate is additive')) i %see:'with the floor unarmed the same label keeps its plain dose box — the gate is additive'
+    }
+
+// ══ VytoDepth — child radii scale to the parent share: six kids tile a small cell with no crowd-out ═
+//   (Vyto_todo THE PIN P3 · Vyto_perf_todo §2.)  A nested child radius was √(env_area/π) ABSOLUTE —
+//    frame-sized — dropped into a parent cell an eighth as wide: the big sibling claimed the room
+//     and the rest crowded out to null (the 6px disc fallback).  Vyto_solve_scope now scales each
+//      scope's radii by √(parent area / frame area) so the wall differentials shrink with the room.
+//   The Book: a rig where a MODEST parent (dose 1 beside a dose-6 heavy and a dose-2 mid — its cell
+//    is small on purpose) carries SIX doseless subcogs.  Commissioned nested: all six must wear a
+//     REAL cell polygon (zero crowd-outs) — the parent tiles (misfit under one) — and one child
+//      radius must equal its frame-absolute radius times the parent share root (the scale is the
+//       law, not an accident).  World VytoDepth.
+VytoDepth(A,w):
+    w oai %req:wrangle,eternal
+        await &VytoDepth_drive,w,req
+        req%ok = 1
+
+async VytoDepth_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoDepth_seed(w)
+        if (n === 3) this.VytoDepth_nest(w)
+    }
+    this.VytoDepth_witness(w)
+
+// ── beat 2 — seed: a modest parent of six beside a heavy and a mid ─────────────────────────────────
+VytoDepth_seed(w):
+    i %desc:'seed a rig — a modest six-child parent beside a heavy sibling and a mid one'
+    let rig = w.i({ Rig: 'main' })
+    let a = rig.i({ Cog: 'A', of: 'main', dose: '1' })
+    a.i({ Cog: 'A1', of: 'A' })
+    a.i({ Cog: 'A2', of: 'A' })
+    a.i({ Cog: 'A3', of: 'A' })
+    a.i({ Cog: 'A4', of: 'A' })
+    a.i({ Cog: 'A5', of: 'A' })
+    a.i({ Cog: 'A6', of: 'A' })
+    rig.i({ Cog: 'B', of: 'main', dose: '6' })
+    rig.i({ Cog: 'C', of: 'main', dose: '2' })
+    w.c.rig = rig
+
+// ── beat 3 — commission NESTED and drive to rest: the small parent must hold all six ───────────────
+VytoDepth_nest(w):
+    i %desc:'commission nested — six children must all take real cells inside the small parent'
+    this.Vyto_commission_on(w, [w.c.rig], 1, 0, 1)
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'depth_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoDepth_ready(w)) })
+
+// ── readers ────────────────────────────────────────────────────────────────────────────────────────
+VytoDepth_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.nested) return 0
+    if (!this.Vyto_rest_poll(w, 1)) return 0
+    let a = this.VytoStaple_cog_row(vw, 'A')
+    if (!a || !a.c.poly) return 0
+    let kids = a.o().filter(r => !r.sc.departing)
+    if (kids.length !== 6) return 0
+    for (const k of kids) { if (!k.c.poly) return 0 }
+    if (a.c.misfit == null || !(a.c.misfit < 1)) return 0
+    w.c.saw_tiling = 1
+    // the scale law on one child: r === √(env_area/π) · √(parent area / frame area) within EPS
+    let k1 = kids[0]
+    if (k1.c.T && k1.c.env_area != null) {
+        let expect = Math.sqrt(k1.c.env_area / Math.PI) * Math.sqrt(Math.abs(poly_area(a.c.poly)) / (800 * 450))
+        if (Math.abs(k1.c.T.r - expect) <= 0.5) w.c.saw_scale = 1
+    }
+    return w.c.saw_scale ? 1 : 0
+
+// ── the witness — story_swear + once-noticed %see · comma-free · apostrophe-free ───────────────────
+VytoDepth_witness(w):
+    if (w.c.saw_tiling) {
+        this.story_swear(w, 'six children tile their small parent with no crowd-out — depth scaling holds')
+        if (!(oa %see:'six children tile their small parent with no crowd-out — depth scaling holds')) i %see:'six children tile their small parent with no crowd-out — depth scaling holds'
+    }
+    if (w.c.saw_scale) {
+        this.story_swear(w, 'a nested child wears a radius scaled to its parent share — not the frame absolute')
+        if (!(oa %see:'a nested child wears a radius scaled to its parent share — not the frame absolute')) i %see:'a nested child wears a radius scaled to its parent share — not the frame absolute'
+    }
 
 // ══ VytoCrush — the CRUSH tenanted: a crowded scope self-distils into legible crest cells ══════════
 //   (Voro's signature rosette, matched · Vyto_sizing_todo J2 · processes.md §6 step 2 · the granted

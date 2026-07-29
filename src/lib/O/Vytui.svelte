@@ -92,7 +92,7 @@
                        ident: string, x: number, y: number, r: number,
                        kind: 'poly' | 'disc', d: string, departing: boolean, lift: boolean,
                        bx: number, by: number, bw: number, bh: number, clip: string,
-                       face: any | null, source: TheC | null }
+                       face: any | null, source: TheC | null, row: TheC }
 
     // the axis-aligned bounding box of a cell polygon (viewBox units) — the box a molded face fills.
     function bbox_of(poly: Pt[]): { bx: number, by: number, bw: number, bh: number } {
@@ -104,6 +104,17 @@
             if (p.y > maxy) maxy = p.y
         }
         return { bx: minx, by: miny, bw: Math.max(0, maxx - minx), bh: Math.max(0, maxy - miny) }
+    }
+
+    // the memo key for one scope's cut — order-preserving (keys ride beside their coordinates), so a
+    //  hit guarantees polys[i] belongs to live[i].  Quantum 0.01px: a sub-centipixel wriggle reuses
+    //   the standing walls (visually identical; the spring disp still judges settle off the raw floats).
+    function cut_sig(framePoly: Pt[], keys: string[], seeds: Pt[], radii: number[], gap: number): string {
+        let s = String(gap)
+        for (const p of framePoly) s += '|' + Math.round(p.x * 100) + ',' + Math.round(p.y * 100)
+        for (let i = 0; i < keys.length; i++)
+            s += '§' + keys[i] + '@' + Math.round(seeds[i].x * 100) + ',' + Math.round(seeds[i].y * 100) + '~' + Math.round(radii[i] * 100)
+        return s
     }
 
     // (clip_of removed: the "let them overflow" occlusion revert stopped reading cell.clip, so the
@@ -127,6 +138,15 @@
     // per-world render state, keyed by the world C — plain, not reactive.
     const springs      = new Map<TheC, Map<string, Spring>>()   // tok → sprung scalars
     const prevWalls    = new Map<TheC, Map<string, Pt[]>>()      // last frame's polys, for drift
+    // THE WALL MEMO (Vyto_todo THE PIN P1 · Vyto_perf_todo §1): each scope's power cut, keyed by the
+    //  exact inputs that shape it — membership ⊕ sprung seeds ⊕ radii ⊕ frame ⊕ gap, quantised to
+    //   0.01px (two orders under DRIFT_EPS, so a reused cut is the same cut to the eye AND to the
+    //    drift judge).  A paint whose scope inputs stand still reuses the standing polys, so the
+    //     resident/hidden-tab churn (adopt paints on every model bump) costs O(M) string checks, not
+    //      O(M²) half-plane clips — and a SETTLED glass cuts no walls at all.  w.c.wall_cuts counts
+    //       only REAL cuts (off-snap `.c` — the VytoMemo Book's probe); stale scope keys prune each
+    //        build so a reshaped tree cannot pool dead polys.
+    const wallMemo     = new Map<TheC, Map<string, { sig: string, polys: (Pt[] | null)[] }>>()
     const settleCount  = new Map<TheC, number>()                 // consecutive calm frames
     const motionFrames = new Map<TheC, number>()                 // frames of continuous motion (watchdog)
     const settledState = new Map<TheC, boolean>()                // struck-this-rest latch
@@ -233,22 +253,38 @@
         if (!sp) return { cells, curWalls }
         const { roots } = tree_nodes(w)
         const liftKey = lifted.get(w)
+        if (!wallMemo.has(w)) wallMemo.set(w, new Map())
+        const wm = wallMemo.get(w) as Map<string, { sig: string, polys: (Pt[] | null)[] }>
+        const seenScopes = new Set<string>()
 
         // lay out ONE sibling group inside `framePoly`: cut the power diagram from the siblings' sprung
         //  seeds, emit a PaintCell each (in lifted-last order so the hovered cell + its whole subtree
         //   paint on top), then recurse into each cell — a child scope's frame IS its parent's cell poly,
         //    tiled with gap 0 (a scope FILLS its parent; the visual GAP is a top-cut property only).  Parent-
         //     before-child emit order = SVG paint order, so children sit above their container.
-        const layout = (nodes: Node[], framePoly: Pt[], gap: number): void => {
+        const layout = (nodes: Node[], framePoly: Pt[], gap: number, scopeKey: string): void => {
             const live: Node[] = []
             const seeds: Pt[] = []
             const radii: number[] = []
+            const keys: string[] = []
             for (const n of nodes) {
                 const s = sp.get(n.key)
                 if (!s || (n.row.sc as any).departing) continue
-                live.push(n); seeds.push({ x: s.x, y: s.y }); radii.push(s.r)
+                live.push(n); keys.push(n.key); seeds.push({ x: s.x, y: s.y }); radii.push(s.r)
             }
-            const polys = power_cells(framePoly, seeds, radii, gap)
+            // the memo consult: unchanged inputs reuse the standing polys (same references — the drift
+            //  judge shortcuts them to zero); changed inputs cut fresh and count one REAL cut.
+            seenScopes.add(scopeKey)
+            const sig = cut_sig(framePoly, keys, seeds, radii, gap)
+            const had = wm.get(scopeKey)
+            let polys: (Pt[] | null)[]
+            if (had && had.sig === sig) {
+                polys = had.polys
+            } else {
+                polys = power_cells(framePoly, seeds, radii, gap)
+                wm.set(scopeKey, { sig, polys })
+                ;(w.c as any).wall_cuts = (((w.c as any).wall_cuts as number) || 0) + 1
+            }
             const polyByKey = new Map<string, Pt[] | null>()
             for (let i = 0; i < live.length; i++) {
                 polyByKey.set(live[i].key, polys[i])
@@ -269,7 +305,7 @@
                     const r = Math.max(0, s.r)
                     cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids: false, ident,
                                  x: s.x, y: s.y, r, kind: 'disc', d: '', departing: true, lift,
-                                 bx: s.x - r, by: s.y - r, bw: 2 * r, bh: 2 * r, clip: '', face, source })
+                                 bx: s.x - r, by: s.y - r, bw: 2 * r, bh: 2 * r, clip: '', face, source, row })
                     continue
                 }
                 const poly = polyByKey.get(n.key)
@@ -278,16 +314,17 @@
                     const hasKids = n.kids.length > 0
                     cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids, ident,
                                  x: s.x, y: s.y, r: s.r, kind: 'poly', d: path_of(poly), departing: false, lift,
-                                 bx: bb.bx, by: bb.by, bw: bb.bw, bh: bb.bh, clip: '', face, source })
-                    if (hasKids) layout(n.kids, poly, 0)
+                                 bx: bb.bx, by: bb.by, bw: bb.bw, bh: bb.bh, clip: '', face, source, row })
+                    if (hasKids) layout(n.kids, poly, 0, n.key)
                 } else {
                     cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids: false, ident,
                                  x: s.x, y: s.y, r: 6, kind: 'disc', d: '', departing: false, lift,
-                                 bx: s.x - 6, by: s.y - 6, bw: 12, bh: 12, clip: '', face, source })
+                                 bx: s.x - 6, by: s.y - 6, bw: 12, bh: 12, clip: '', face, source, row })
                 }
             }
         }
-        layout(roots, FRAME, GAP)
+        layout(roots, FRAME, GAP, '')
+        for (const k of [...wm.keys()]) if (!seenScopes.has(k)) wm.delete(k)
         return { cells, curWalls }
     }
 
@@ -349,6 +386,7 @@
             //     rAF ran at 60fps forever → the tab froze → its beat stopped → the peer went dark ("the
             //      Sounditrons stop talking after a Heist is started").  Skip its wall drift; when its seed
             //       stops moving, `disp` settles it.  (Vyto_perf_todo §3.)
+            if (prev === poly) continue   // a memo-reused wall is the SAME array — zero drift, free
             if (!prev || prev.length !== poly.length) continue
             for (let v = 0; v < poly.length; v++) drift = Math.max(drift, Math.hypot(poly[v].x - prev[v].x, poly[v].y - prev[v].y))
         }
@@ -453,6 +491,66 @@
         }
         if (changed) paint_tick++
     }
+
+    // ── THE MEASURE (Vyto_todo THE PIN P2 — the need floor's render half) ──────────────────
+    //  After each template flush, read every leaf cell's NATURAL widget box and stamp it on the
+    //   mirror row as `row.c.need_area` (viewBox units², off-snap `.c`) for Vyto_express to floor.
+    //    Two widget kinds, both FEEDBACK-FREE (the Cytui:3256 discipline):
+    //     · an ident label — SVG getBBox, already in viewBox units, intrinsic by nature (text never
+    //        stretches to its cell);
+    //     · a face — the face-scroll's firstElementChild offset box (a max-content face reads its
+    //        intrinsic size whether it fits or overflows); a child whose width EQUALS the mold's is
+    //         box-stretched (width:100%) and is SKIPPED — measuring it would feed the cell back to
+    //          itself and spiral.  Stamps are GROW-ONLY with a 2% dead-band so the wall never
+    //           flutters; each real stamp pokes Vyto_stir_soon so express re-floors on the model's
+    //            own latch.  The whole pass runs ONLY on a need_floor world — a floor-free glass
+    //             pays nothing (the additive-gate law, cost included).
+    const stageEls = new Map<TheC, HTMLElement>()
+    function reg_stage(el: HTMLElement, w: TheC) {
+        stageEls.set(w, el)
+        return { destroy() { if (stageEls.get(w) === el) stageEls.delete(w) } }
+    }
+    function stamp_need(w: TheC, row: TheC, area: number) {
+        if (!(area > 0)) return
+        const cur = (row.c as any).need_area as number | undefined
+        if (cur != null && area <= cur * 1.02) return
+        ;(row.c as any).need_area = area
+        ;(H as any).Vyto_stir_soon?.(w)
+    }
+    function measure_world(w: TheC) {
+        if (!(w.c as any).need_floor) return
+        const stage = stageEls.get(w); if (!stage) return
+        const svg = stage.querySelector('svg.viewport') as SVGSVGElement | null
+        if (!svg) return
+        const srect = svg.getBoundingClientRect()
+        if (!(srect.width > 0) || !(srect.height > 0)) return
+        const sx = 800 / srect.width, sy = 450 / srect.height
+        const byKey = new Map<string, PaintCell>()
+        for (const c of paintMap.get(w) ?? []) byKey.set(c.key, c)
+        for (const t of stage.querySelectorAll('text.ident')) {
+            const cell = byKey.get((t as Element).getAttribute('data-key') ?? '')
+            if (!cell || cell.departing) continue
+            try {
+                const bb = (t as SVGGraphicsElement).getBBox()
+                stamp_need(w, cell.row, bb.width * bb.height)
+            } catch { /* an unrendered node has no box — skip */ }
+        }
+        for (const m of stage.querySelectorAll('.face-mold')) {
+            const cell = byKey.get((m as Element).getAttribute('data-key') ?? '')
+            if (!cell || cell.departing) continue
+            const scroll = (m as Element).querySelector('.face-scroll') as HTMLElement | null
+            const child = scroll?.firstElementChild as HTMLElement | null
+            if (!scroll || !child || typeof child.offsetWidth !== 'number') continue
+            if (Math.abs(child.offsetWidth - scroll.clientWidth) <= 1) continue   // box-stretched — skip
+            stamp_need(w, cell.row, (child.offsetWidth * sx) * (child.offsetHeight * sy))
+        }
+    }
+    $effect(() => {
+        void paint_tick
+        // measure AFTER the flush carrying this paint (microtask chain — runs in hidden tabs too,
+        //  where the whole runner lives); reads no tracked state, so no feedback into the effect.
+        Promise.resolve().then(() => { for (const w of springs.keys()) measure_world(w) })
+    })
 
     // the drive: THE REACTION IS THROWN OUT OF THE EFFECT (a trailing-edge setTimeout latch).
     //  Atime and UItime are NOT as cleanly gated as reactivity_docs implies — H.ave.vers and
@@ -580,7 +678,7 @@
             {/each}
         </div>
         {#if show_viewport(w)}
-            <div class="stage">
+            <div class="stage" use:reg_stage={w}>
                 <svg class="viewport" viewBox="0 0 800 450" preserveAspectRatio="xMidYMid meet">
                     {#each viewport_cells(w) as cell (cell.key)}
                         {@const g = cell_ground(cell)}
@@ -597,7 +695,7 @@
                                     onpointerleave={() => on_leave(w, cell.key, cell.tok)}></circle>
                         {/if}
                         {#if !cell.face && !cell.hasKids}
-                            <text class="ident" x={cell.x} y={cell.y} text-anchor="middle" dominant-baseline="middle">{cell.ident}</text>
+                            <text class="ident" data-key={cell.key} x={cell.x} y={cell.y} text-anchor="middle" dominant-baseline="middle">{cell.ident}</text>
                         {/if}
                     {/each}
                 </svg>
@@ -609,7 +707,7 @@
                     {#each viewport_cells(w) as cell (cell.key)}
                         {#if cell.face && !cell.departing && !cell.hasKids}
                             {@const Face = cell.face}
-                            <div class="face-mold" class:lift={cell.lift}
+                            <div class="face-mold" class:lift={cell.lift} data-key={cell.key}
                                  style="left:{(cell.bx / 800) * 100}%; top:{(cell.by / 450) * 100}%; width:{(cell.bw / 800) * 100}%; height:{(cell.bh / 450) * 100}%;"
                                  onpointerenter={() => on_enter(w, cell.key, cell.tok)}
                                  onpointerleave={() => on_leave(w, cell.key, cell.tok)}>

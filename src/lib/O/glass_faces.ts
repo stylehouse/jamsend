@@ -16,6 +16,8 @@ export const FACE_MAINKEYS: Record<string, string> = {
     Diag: 'Diag',         // the diagnostics toggle cell (imposed by mainkey)
     Errlog: 'Errlog',     // the Story error channel (spec/Error_channel_todo.md) — lazy-minted, so this cell
                           //  only ever appears when a run captured a throw; loud-when-broken, no snap byte to dress it
+    Transfer: 'Transfer', // the live transfer HUD — a persistent dontSnap cell the wire feeds (top_House().c.xfer);
+                          //  jiggling rx/tx bars + per-track pull/serve progress so bytes-in-flight are VISIBLE
     MusuSelf: 'Crate',    // my music home — the record collection, spread out to gaze across
     MusuThem: 'Crate',    // a friend's music as I hold it — same spread, worn with their name
 }

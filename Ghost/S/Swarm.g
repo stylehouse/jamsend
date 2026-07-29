@@ -1331,8 +1331,20 @@ Swarm_pulse_all(w, ident):
         // self-heal: a friend we haven't heard for a while gets the rebirth greeting too —
         //  ephemeral, collision-immune, so it lands even when the booked lane is muted (their
         //   stale inbox history, our stale one, either way the hi exchange resets the stream).
+        //    throttled (the human 2026-07-30, "ive_got gossip flood"): heard_at is stamped only by
+        //     swarm-protocol frames (pulse/hi/ive_got/…), never by bulk repli_page/repli_lines traffic —
+        //      so a heavy pull can leave swarm frames queued behind bulk data for its whole duration,
+        //       `quiet` stays true continuously, and this self-heal used to re-fire every ~5s trickle
+        //        tick for as long as that lasted, each kick answered by a full `Swarm_gossip_music`
+        //         reply on the far end (Swarm_heard_hi) — traffic added exactly when the wire is already
+        //          stressed, and the likely source of the flood-driven ws 1006 storm during a big keep.
+        //           one kick per staleness episode, not per tick: cool down on the same 15s clock.
         let quiet = !pier.c.heard_at || (Date.now() - pier.c.heard_at) > 15000
-        if (quiet && w.c.station_up) this.Swarm_hi_one(w, ident, String(pier.sc.pub), 0)
+        let cooled = !pier.c.hi_kick_at || (Date.now() - pier.c.hi_kick_at) > 15000
+        if (quiet && cooled && w.c.station_up) {
+            pier.c.hi_kick_at = Date.now()
+            this.Swarm_hi_one(w, ident, String(pier.sc.pub), 0)
+        }
     }
     return sent
 
