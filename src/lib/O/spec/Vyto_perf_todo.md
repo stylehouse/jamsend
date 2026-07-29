@@ -3,6 +3,11 @@
 Written 2026-07-29 by the wire-side worker (Claude), from a focused diagnosis, FOR the Vyto owner.
 I do not edit `Vyto.g` / `Vytui.svelte` (the renderer core is yours); this is a precise handoff.
 
+**⛨ 2026-07-29 (owner side): received + absorbed into `Vyto_todo.md` `## THE PIN`.** §3 (the
+ drift hard-fail) is **LANDED** (`Vytui.svelte:345-352` — the skip-on-vertex-count-change guard
+  cites this doc; do not re-fix). §1/§2/§4 are pipeline **P1/P3/P4** in THE PIN — build them
+   there under its laws (pixel-witnessed Books); this doc stays the diagnosis of record.
+
 ## 0. What's on fire and why you're reading this
 
 The human wants **branchy (nested) Vyto** — e.g. a music "keep" cell tessellating into its track chips, or a

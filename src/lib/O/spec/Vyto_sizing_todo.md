@@ -15,6 +15,11 @@ The gap this fills: `Voro_vtuffing.md` has the **gem** (nucleus · belt · rim),
     in the whole graph**, not just within its own pane.  That is what makes size a
      *legible* signal instead of "whatever fit locally".
 
+**⛨ 2026-07-29: the display execution contract now lives in `Vyto_todo.md` `## THE PIN`** —
+ stations ⑤-text/⑥/⑧ are its P6; the need floor (content measured by the browser → a floor
+  under `env_area`) is its P2. Read THE PIN before building ANY station; land claims as
+   ledger rows there the same session (its LAW C).
+
 Candidate next moves (vague on purpose):
 - **read §9 first** — the ordered top-down pipeline is now drafted (2026-07-21, grounded against
    live code); it's the spine the moves below hang on, and it names WHICH stub each installs in;

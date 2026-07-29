@@ -623,8 +623,18 @@ export class House extends StorableHousing {
             h._push_todo(e)
         })
 
-        // callers don't await us, but devtools may be open
-        ;(e.c.targeting as Promise<void>).catch(err => { throw err })
+        // target-may-not-exist modulation.  Targeting is DEFERRED to Runtime (clear → all_clear):
+        //  the elvis launches in-time, but by the time it resolves the target ghost/world may not be
+        //   stood up in this context.  A poke stamped `feebly` — an OPTIONAL "keep Cyto in the loop of
+        //    this activity" ping — then silently drops.  An UNstamped miss is a real mis-target: stay
+        //     loud (rethrow, so genuine insanity surfaces).  Either way this must not be a wedging
+        //      unhandled rejection for the feeble case — that (with devtools "pause on exceptions")
+        //       PAUSED the tab and halted the editor's compile loop ("no House has A:Cyto froze
+        //        everything").  A caller that MUST insist can also `await e.c.targeting`.
+        ;(e.c.targeting as Promise<void>).catch(err => {
+            if (e.sc.feebly) return
+            throw err
+        })
 
         return e
     }
@@ -638,8 +648,15 @@ export class House extends StorableHousing {
     //   throw becomes a return-null here rather than an async unhandled rejection.
     //   Returns the elvis e if it fired, else null.
     feebly_i_elvisto(target: string | TheC | Housing, method: string, extra: Partial<TheUniversal> = {}): TheC | null {
-        try { this._find_house(target) } catch { return null }
-        return this.i_elvisto(target, method, extra)
+        // "feebly" = target-may-not-exist.  We're pinning together a distributed mind: try to keep
+        //  the other side in sync, but we've no idea whether now is the moment, or whether that side
+        //   even exists here (a runner with no editor, a sibling glass, a view torn down since).  So
+        //    do NOT gate on a sync existence-probe — it can pass and THEN the elvis, which targets
+        //     later at Runtime (clear → all_clear), lands on a target that's since gone (the wedge:
+        //      "in time so it launched, but the target no longer exists").  Instead stamp the elvis
+        //       `feebly` and let i_elvisto's DEFERRED targeting silently drop it when the target
+        //        isn't there at resolve-time.  An unstamped elvis still insists (loud, real bug).
+        return this.i_elvisto(target, method, { ...extra, feebly: 1 })
     }
 
     // -------------------------------------------------------------------------

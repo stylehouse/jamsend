@@ -20,7 +20,7 @@
 IMPORT()
     import Vytui from "$lib/O/Vytui.svelte"
     import { power_cells, poly_centroid, poly_area } from "$lib/O/vyto_geometry"
-    import { sig_of, group_edges, bucket_key_of, pull_step, budget_for, SIG_JOINS, FOCUS_BOOST, FOCUS_SHRINK } from "$lib/O/vyto_foam"
+    import { sig_of, group_edges, bucket_key_of, pull_step, budget_for, SIG_JOINS, FOCUS_BOOST, FOCUS_SHRINK, AREA_BASE } from "$lib/O/vyto_foam"
 
 //#region the world — w:Vyto stands, plans, and waits for its commission
 // Vyto — the w:Vyto worker.  Mirrors Cyto()'s shape so a client commissions either glass
@@ -733,10 +733,10 @@ Vyto_express(w):
         //   per row (pricing×nesting is a later compose; keep the first nest tenancy one-variable).
         this.Vyto_express_rows(w, rows)
     } else if (w.c.priced) {
-        for (const row of rows) { row.c.imp = this.Vyto_importance(w, row); row.c.env_area = Math.max(1, 2400 * row.c.imp) }
+        for (const row of rows) { row.c.imp = this.Vyto_importance(w, row); row.c.env_area = Math.max(1, AREA_BASE * row.c.imp) }
     } else {
-        // AREA_BASE — 2400 px² at scale 1, eye-tuned once the first tenant has eyes on it.
-        for (const row of rows) { row.c.env_area = Math.max(1, 2400 * (1 + (Number(row.sc.dose) || 0))) }
+        // AREA_BASE·(1 + dose) — the PLAIN regime base (see vyto_foam AREA_BASE).
+        for (const row of rows) { row.c.env_area = Math.max(1, AREA_BASE * (1 + (Number(row.sc.dose) || 0))) }
     }
     let organ = w.o({ Organ: 'Express' })[0]
     if (organ && organ.sc.status !== 'live') {
@@ -750,7 +750,7 @@ Vyto_express(w):
 Vyto_express_rows(w, rows):
     for (const row of rows) {
         if (row.sc.departing) continue
-        row.c.env_area = Math.max(1, 2400 * (1 + (Number(row.sc.dose) || 0)))
+        row.c.env_area = Math.max(1, AREA_BASE * (1 + (Number(row.sc.dose) || 0)))
         let kids = row.o()
         if (kids.length) this.Vyto_express_rows(w, kids)
     }
@@ -808,7 +808,7 @@ Vyto_solve(w):
         //  makes rᵢ = sqrt(a/π) NaN, which corrupts EVERY power_cells wall (t goes NaN, the cut empties
         //   to a 6px disc) AND pins the render's settle loop forever (NaN disp never falls below EPS).
         //    One byte-invisible floor here keeps radii finite no matter how a future env_area is priced.
-        let a = Math.max(1, (m.c.env_area != null) ? m.c.env_area : 2400)
+        let a = Math.max(1, (m.c.env_area != null) ? m.c.env_area : AREA_BASE)
         // the focus taper (governor Focus's standing decision): the focused member's radius swells
         //  by FOCUS_BOOST and every other compresses by FOCUS_SHRINK — attention as geometry.  No
         //   standing focus ⇒ mag 1 ⇒ this line is byte-invisible to every focus-free world.
@@ -918,7 +918,7 @@ Vyto_solve_scope(w, parent, poly):
         let k = kids[i]
         if (!k.c.seed) k.c.seed = this.Vyto_frame_at(poly, (i + 0.5) / kids.length)
         seeds.push({ x: k.c.seed.x, y: k.c.seed.y })
-        let a = (k.c.env_area != null) ? k.c.env_area : 2400
+        let a = (k.c.env_area != null) ? k.c.env_area : AREA_BASE
         radii.push(Math.sqrt(a / Math.PI))
         i = i + 1
     }

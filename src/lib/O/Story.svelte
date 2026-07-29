@@ -1411,9 +1411,17 @@
         // Cyto is commissioned in Story_settingoff (just before step 1) and watches
         // Scannable (=Run) for version changes, so its wave is already current by the
         // time we snap.  No need to prod it here.
-        // useCyto is guaranteed here (snap_H returned early above when off), so the world
-        //  exists — Awo throws loudly if that invariant ever breaks.
-        const cyto_w = H.Awo('Cyto') as TheC
+        // useCyto is opted-in here (snap_H returned early above when off).  The world SHOULD
+        //  be commissioned, but the H/A/w slope is in-progress: an A:Cyto can stand with its
+        //   w:Cyto un-commissioned (sibling glass took the run, or a mid-transition tab).  Don't
+        //    hard-throw the whole snap red over a missing VIEW — fall back to the pure-H snap,
+        //     exactly as the useCyto-off branch does, and warn so it's not silent.
+        let cyto_w: TheC
+        try { cyto_w = H.Awo('Cyto') as TheC }
+        catch (er) {
+            console.warn('snap_H: useCyto set but w:Cyto not commissioned — H-only snap', er)
+            return this.enL({ d: 0, stringies: { Snap: 'H' } }) + '\n' + h_block
+        }
 
         const wave     = cyto_w.c.gn?.sc.wave as any
         if (!wave) throw "!wave"

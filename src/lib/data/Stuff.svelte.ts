@@ -116,11 +116,26 @@ export class TheX {
         if (!n) return;
         kf = kf || 'z';
         this.bump_version()
-        const N = this[kf] = this[kf] || [];
+        let N = this[kf] = this[kf] || [];
         if (!Array.isArray(N)) throw "!ar";
         N.push(n);
-        // robustly
-        if (N.length > 6000) throw "giant stuff";
+        // AUTO-GC BEFORE THE FATAL (the human 2026-07-29 "perhaps it could just automatically do that?"):
+        //  drop() only MARKS a child c.drop=1 and LEAVES its row in this ordered list; o_query re-scans the
+        //   whole list every call and just filters the dropped ones out.  So a hot parent whose children
+        //    churn — a Pier %outbox (a retx emit per frame), a req shelf — accretes DEAD rows without bound
+        //     until the length trips the ceiling and whatever is appending throws.  That is the exact fault
+        //      the human hit: the share beat's next outbox emit threw "giant stuff" → the beat died → the
+        //       Sounditrons stopped talking (and the O(deadN) re-scan was choking the tab long before).
+        //  So when the list nears the ceiling, PURGE the dropped rows in place first (only c.drop rows go;
+        //   live rows and their order are untouched — this is the replace() the human said we "must" do,
+        //    made automatic).  Every z self-heals the same way (the /$k and /$k/$v buckets are TheX too).
+        //     Only rows that are genuinely LIVE and still over the ceiling are truly insane — those alone
+        //      still go fatal, now with a message that NAMES the offending index instead of a bare string.
+        if (N.length > 5000) {
+            let live = N.filter(m => !m || !m.c || !m.c.drop);
+            if (live.length < N.length) N = this[kf] = live;
+        }
+        if (N.length > 6000) throw "giant stuff: index '" + kf + "' reached " + N.length + " LIVE rows — a single C cannot hold this many (compaction found nothing dropped to reclaim); the collection must be bounded/paged";
     }
 
     // X/$v +$n

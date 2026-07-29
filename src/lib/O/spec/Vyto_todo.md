@@ -16,6 +16,10 @@ The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it 
     itself, and VytoCell recorded GREEN ×2 beside a green VytoStaple regression.  Next
      moves:
 
+- **⛨ READ `## THE PIN` FIRST (2026-07-29, below)** — the display-correctness contract: why
+   built ≠ spec'd (the flap-puddle autopsy) · the laws (pixels or it didn't land · proof-first
+    Books · the claim ledger · read-the-shelf) · the pinned fact ledger · the ordered P0→P7
+     build to the target. **All display work routes through its ledger now.**
 - **THE FACE RAIL — LANDED 2026-07-27 (`src/lib/O/Vytui.svelte`; the headline — Vyto renders Radio's
    real UI now, not a labelled bubble diagram).**  Per the three-agent survey, the #1 blocker to
     "Radio builds its UI on Vyto like Cyto+Voro" was that Vytui drew only SVG cells + one ident label —
@@ -140,6 +144,136 @@ The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it 
   - **Plan (2026-07-21):** fully move Sounditron to Vyto (commission Vyto from within Sounditron;
      drop the Cyto+Voro+faces path + the `boot_param('VY')` flag) — **AFTER the ttlilt fixup**
       (Hovercraft.svelte:548 retract-on-drop, task #53 stage 1).
+
+## THE PIN — why built ≠ spec'd, and the contract that ends it (2026-07-29)
+
+**Read this before any display work. This section is the enforcement arm of every Vyto doc:
+ a claim not rowed in its ledger is not done — no matter what any other doc says.**
+The occasion: the human found the live glass an "unstructured flap-puddle — no reasoning about
+ the size of the UI components in its cells and no treeing" after months of designed-and-proven
+  model work. The treeing half was fixed and pixel-proven 2026-07-29 (VytoNestRest below); the
+   sizing half is genuinely absent; and the *pattern* that produced both gaps was still running
+    (see the autopsy). This section pins the target, the facts, the laws, and the ordered build
+     so the next run cannot miss.
+
+### HUMAN — five calls (recommendation first; nothing in P0–P3 waits on you)
+
+1. **Bless the browser→model measure seam (P2 — the need floor).** REC: **yes.** It is
+    Cytui's content-box floor (`Cytui:3256` per `Vyto_sizing_todo`) ported to the power
+     diagram: the browser MEASURES each face's natural box (the thing it does for free —
+      your "could have just display:inline-block" point — weaponised) and `Vyto_express`
+       honors it as a floor under `env_area`. One-directional per pass + grow-only hysteresis
+        within a settle so no wall-flutter (§4 of the sizing doc). Importance still ranks
+         ABOVE the floor — the algebra is untouched; it just can't starve a widget anymore.
+2. **Wall policy (P5 — spill vs clip vs shrink).** REC: **restore the polygon clip** once the
+    floor lands. `Vytui.svelte:701` records your "let them overflow" choice — made when clipping
+     amputated content inside cells cut too small. The floor removes the cause; re-decide the cure.
+3. **The crest/ceiling wiring (P4) is the fold tenancy you reserved** (`Vyto_fold` calling the
+    VytoFold-proven `fold_ladder`). REC: release the WIRING to the run (the contract is
+     Book-proven); keep the LOOK — crest chrome and the "+N more" face — for your eye.
+4. **The φ / AREA_BASE preen** (`Vyto_sizing_todo §0`) gates **P6 only** — text riding the
+    global scale. P0–P4 are geometry and floors; they neither read nor change φ.
+5. **The This/Step snap-scope core fix** (Story session shelf reaching Vyto's spool — the
+    `ok`/`disk_ok=false` latent traps) stays a SEPARATE thread — Story core, not this pipeline.
+
+### The target — the sentence that must not be missed
+
+**Every particle a cell; every cell real DOM UI; the C** tree tessellated to any depth; no cell
+ ever smaller than the measured box its widget needs; above that floor size speaks graph-global
+  importance; the glass settles and STAYS settled; and every one of those clauses is witnessed
+   in rendered pixels by a Book on the live runner.** That is what all the design was FOR.
+
+### The autopsy — three named failure modes (name them so they can be policed)
+
+- **F1 · WITNESS ASYMMETRY.** The proof harness was pixel-blind until 2026-07-29 (`runner_shot`
+   was `cy.png()` = Cyto-only). Everything provable by snap — solver, algebra, importance,
+    crush — thrived, because proof was cheap. Every station needing the BROWSER in the loop —
+     descend the tree, measure the content, hold a settle — starved. The tell, preserved above
+      in this very doc: the face rail "LANDED" carrying its own confession — *"HONEST GAP: I
+       could NOT pixel-verify… verified by compile + your eyes."* Accepted as done. The harness
+        selected the organism's shape.
+- **F2 · SPIN-OUT WITHOUT MERGE-BACK.** Sub-topics fork into docs and execution follows
+   whichever doc the session has open. Exhibits: station ⑧ (fit) drafted in `Vyto_sizing_todo
+    §9` 2026-07-21 — never built; `Vyto_perf_todo.md` written 2026-07-29 03:26 by the wire-side
+     worker and nearly unread by the owner side the SAME DAY; the workingouts end in "open
+      questions only the human can rule on" and stall there.
+- **F3 · NO CLAIM LEDGER.** Nothing bound spec'd-sentence → code → Book → pixel witness, so
+   "built" drifted from "spec'd" invisibly: the face rail landed real components that were
+    unsized (fixed 11px) · unclipped (AABB molds) · unfloored (the diagram never hears the
+     widget) — each piece individually recorded as a choice or an owed station; the composition
+      a flap-puddle.
+
+### The laws — the anti-backslide contract
+
+- **LAW A — PIXELS OR IT DIDN'T LAND.** A display station is DONE only when its Book runs green
+   ×2 on the LIVE runner (pinned `--runner=`) **and** a `runner_shot --svg` assertion greps the
+    rendered DOM for the station's signature. "Compile-proven" and "review it with your eyes"
+     are BANNED as done-states. The rail exists: VytoNestRest is the template — a Book that
+      RESTS in the state under test so the shot lands at `done`.
+- **LAW B — PROOF-FIRST.** The Book's name and its `%see` sentences are written in the ledger
+   BEFORE the station's code. World named after the Book (the dispatch law — or the wrangle
+    silently never fires). Register on the Credence board at birth.
+- **LAW C — THE LEDGER ENFORCES.** One row per display claim: **claim | code | Book | pixel
+   witness**. An empty cell = NOT DONE. Any new sub-topic doc must land its claims as rows here
+    in the SAME session it is written — the F2 antidote: spin out freely, merge back same-day.
+- **LAW D — ADDITIVE GATES + ADVERSARIAL PROOF.** Every station opt-in; the Vyto* fleet
+   byte-identical with gates off; every Book proven ABLE to fail (one-line sabotage → red →
+    revert) before its green is believed.
+- **LAW E — READ THE SHELF FIRST.** Session start: `ls -lt src/lib/O/spec/*.md | head -15` —
+   any Vyto-adjacent doc newer than your knowledge is read BEFORE code. This law exists because
+    `Vyto_perf_todo.md` went a day unread by the side it was addressed to.
+
+### The fact ledger — pinned 2026-07-29 (every row verified against live code this session)
+
+| # | claim | code | Book | pixel witness |
+|---|-------|------|------|---------------|
+| 1 | render descends the C** tree | `Vytui.svelte` `tree_nodes` — double-gated (`w.c.nested` + kid has `.c.T`) | **VytoNestRest** GREEN 3/3 caveat:0 | ✅ SVG: 6 paths — `Rig:main`=`.cell.scope` · `Cog:A`=`.cell.nested.scope` · A1 A2 B C=`.cell.nested` |
+| 2 | settle survives cells entering/leaving | `Vytui.svelte:345-352` — vertex-count change skips wall drift (perf §3 **LANDED** — do not re-fix) | fleet regression | owed a shot-pair (P1) |
+| 3 | face box is the AABB of the poly — `clip` always `''` | `bbox_of` `Vytui.svelte:98-106`; `:272,281,286` | — | — (P5 re-decides) |
+| 4 | spill is a recorded CHOICE, not a bug | `Vytui.svelte:701-710` ("let them overflow" + the pointer-events shield) | — | — (P5) |
+| 5 | face content is flat 11px — no floor, no scale | `.face-scroll` `Vytui.svelte:716-719`; SVG idents alone get the 14px floor `:724-725` | — | — (P6) |
+| 6 | NOTHING measures a component — zero content feedback | grep `measure/intrinsic/clientWidth/getBBox` over `Ghost/V/*.g` + `Vytui.svelte` = comments only | — | **THE GAP** → P2 |
+| 7 | cell size = `2400·(1+dose)` or `2400·imp` — literal ×5, no constant | `Vyto.g:736,739,753,811,921`; "AREA_BASE" exists only in comments `:714,738` | VytoBreathe (⑤ wire) | — (P0 names it) |
+| 8 | child radii are absolute + depth-blind — violence inside small parents | `Vyto_solve_scope` reads absolute `env_area` (`Vyto.g:908-959`; perf §2) | Nestcut proves geometry — NOT proportion | — → P3 |
+| 9 | walls re-derived O(M²) per scope EVERY animating frame — no memo | `power_cells` `vyto_geometry.ts:39`; per-frame from `integrate_world` (`Vytui.svelte:332`; perf §1) | — | — → P1 |
+| 10 | no per-scope cell ceiling; fold crushes top only; `fold_ladder` PROVEN but UNWIRED | perf §4; `budget_for` = 12 legible at 800×450 (`vyto_foam.ts:88`); VytoFold contract stands | VytoFold | — → P4 |
+| 11 | nested is gated OFF at the wire | Sounditron sets `commission.sc.nested` only on `M.c.heist_nested` (perf §5); KeepBar/Pick faces registered DORMANT | — | P7 flips it |
+
+### The build plan — P0→P7, each Book named BEFORE its code (LAW B)
+
+- **P0 — name the constant.** `AREA_BASE = 2400` once; five literal sites (ledger #7) read it.
+   No new Book — full fleet green + byte-identical IS the proof.
+- **P1 — `VytoMemo` (perf §1).** Memoize each scope's walls keyed on (seeds ⊕ radii); skip the
+   re-cut unchanged; a SETTLED world derives no walls at all. Probe counter on `w.c` (off-snap).
+   `%see:'a settled glass cuts no new walls across a held minute — the memo holds'`
+   Adversarial: break the memo key → red. Witness: two `--svg` shots 5s apart byte-identical.
+- **P2 — `VytoNeed` (the need floor — HUMAN call 1).** Post-mount Vytui measures `face-scroll`
+   natural `scrollWidth/Height` → viewBox units (×800/stage px) → `row.c.need_area` (`.c` never
+    `sc`) → `Vyto_express` floors `env_area = max(algebra, need·1.15)`. Grow-only within a
+     settle (no flutter).
+   `%see:'the fat face cell grew to hold its measured content — the need floor is honored'`
+   `%see:'a doseless label cell stays byte-identical while the floor is armed'`
+   Adversarial: neuter the floor → red. Witness: shot greps the fat cell's area ≥ its need box.
+- **P3 — `VytoDepth` (perf §2).** Scale child radii by √(parent cell area / frame area) in
+   `Vyto_solve_scope` (or Σ child ≤ parent); the `parent.c.misfit` stamp (`Vyto.g:959`) already
+    waits to assert on.
+   `%see:'six children tile their small parent with no crowd-out — depth scaling holds'`
+- **P4 — `VytoCeiling` (perf §4 — HUMAN call 3).** `budget_for` on the cell's OWN bbox;
+   overflow crushes to one crest via the proven `fold_ladder` — its first tenancy.
+   `%see:'a twenty-child scope shows at most its budget with one crest counting the rest'`
+- **P5 — WALL POLICY (HUMAN call 2).** Re-decide `Vytui:701` with the floor in place.
+- **P6 — text rides the global scale (HUMAN call 4 gates).** Faces stop being flat 11px: font
+   rides S (Typescale — proven alone) with a legibility floor; then taper ⑥; then ⑧ fit·paint
+    places at rightful size (`Vyto_sizing_todo §9`).
+- **P7 — THE TENANT FLIP (the target).** `M.c.heist_nested` on: a keep tessellates its album
+   picks on the live glass — KeepBar/Pick faces wake.
+   `%see:'a keep cell tessellates into its picks and the glass stays settled'`
+
+**Order rationale:** P1 first — you cannot pixel-witness a glass that never rests, and every later
+ Book leans on LAW A shots. P2 next — flat-provable immediately, kills the starved-widget class.
+  P3 then P4 make nested survivable; P5/P6 are the human's taste and preen gates; P7 is the point.
+**After every P:** ghost-compile → runner RELOAD (new .g methods) → full Vyto* fleet green →
+ byte-identical with the new gate off → Credence row. Never commit; the human reviews the diff.
 
 ## What stands (built 2026-07-19, all live-proven to compile)
 

@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'bd105f17f5f4904c~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'ce170377ce591466~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -1521,11 +1521,55 @@ async Swarm_share_loop(w, ident) {
         if (era !== w.c.share_era || !w.c.share_up) return
         this.post_do(async () => {
             if (era !== w.c.share_era) return
-            try { await this.Swarm_share_beat(w, ident) } catch (er) { console.warn('⨳ share beat', er) }
+            try { await this.Swarm_share_beat(w, ident) } catch (er) { this.Swarm_share_why(w, er) }
         })
         setTimeout(tick, 600)
     }
     setTimeout(tick, 600)
+
+},
+// Swarm_share_why — LOUD on a share-beat throw (the human 2026-07-29: "I want to KNOW what's going wrong",
+//  "be fatal about insanity", "fragility!").  The beat used to swallow the error into a bare one-line warn;
+//   now it prints the real error + STACK plus a size CENSUS of every collection that can silently accrue
+//    dead/dropped entries without GC — so the giant one NAMES ITSELF on the throw instead of us guessing.
+//     Pure diagnosis: every probe is wrapped so the census can never itself throw and mask the real error.
+Swarm_share_why(w, er) {
+    let awaitreqs = 0
+    let awaiting = 0
+    let bufs = 0
+    let piers = 0
+    try {
+        for (const pg of w.o({ Peering: 1 })) {
+            for (const p of pg.o({ Pier: 1 })) {
+                piers = piers + 1
+                try { awaitreqs = awaitreqs + p.o({ req: 'awaitbuf' }).length } catch (e) {}
+                try { if (p.c.awaiting) awaiting = awaiting + Object.keys(p.c.awaiting).length } catch (e) {}
+                try { if (p.c.bufs) bufs = bufs + Object.keys(p.c.bufs).length } catch (e) {}
+            }
+        }
+    } catch (e) {}
+    let wanted = 0
+    let wantts = 0
+    try { if (w.c.ra_wanted) wanted = Object.keys(w.c.ra_wanted).length } catch (e) {}
+    try { if (w.c.ra_want_ts) wantts = Object.keys(w.c.ra_want_ts).length } catch (e) {}
+    let mirrecs = 0
+    let pcmpages = 0
+    let chunks = 0
+    try {
+        let rw = this.top_House().c.radio_w || w
+        for (const home of rw.o({ MusuThem: 1 })) {
+            try {
+                let shelf = this.Ra_home_them(rw, String(home.sc.pub))
+                for (const rec of this.Ra_recs(shelf)) {
+                    mirrecs = mirrecs + 1
+                    try { if (rec.c.pages) pcmpages = pcmpages + rec.c.pages.length } catch (e) {}
+                    try { chunks = chunks + rec.o({ seq: 1 }).length } catch (e) {}
+                }
+            } catch (e) {}
+        }
+    } catch (e) {}
+    let census = 'piers=' + piers + ' awaitbuf_reqs=' + awaitreqs + ' awaiting=' + awaiting + ' bufs=' + bufs + ' ra_wanted=' + wanted + ' ra_want_ts=' + wantts + ' mirror_recs=' + mirrecs + ' pcm_pages=' + pcmpages + ' chunks=' + chunks
+    console.error('⨳ SHARE BEAT THREW —', (er && er.message) || er, '\n  census:', census, '\n  stack:', (er && er.stack) || '(no stack)')
 
 },
 // one beat, all idempotent + bounded: enroll every granted friend both ways, husk-offer my

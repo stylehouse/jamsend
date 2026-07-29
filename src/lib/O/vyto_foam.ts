@@ -76,6 +76,11 @@ export function bucket_key_of(members: Record<string, any>[]): string | null {
 //    geometry.  No focus ⇒ 1 ⇒ the untouched base cut, byte-identical (the studies' warp gate).
 export const FOCUS_BOOST = 3.2
 export const FOCUS_SHRINK = 0.34
+// AREA_BASE — the base cell area (px² at scale 1), eye-tuned once the first tenant had eyes
+//  on it.  env_area is priced off it: PLAIN = AREA_BASE·(1 + dose); IMPORTANCE = AREA_BASE·imp;
+//   an unpriced cell falls back to a bare AREA_BASE.  Was a literal 2400 at five sites in Vyto.g
+//    (Vyto_todo ## THE PIN P0 · ledger #7) — named here so the sizing pipeline has ONE lever.
+export const AREA_BASE = 2400
 export function focus_mag(onPath: boolean, focused: boolean): number {
     if (focused || onPath) return FOCUS_BOOST
     return FOCUS_SHRINK
