@@ -358,6 +358,73 @@ The occasion: the human found the live glass an "unstructured flap-puddle — no
    sabotage red → revert → shot). Give each run several patient minutes; avoid rapid-fire CLI polling
     (it adds contention on an already-throttled tab) — fire one `run`, wait, check `state` once.
 
+**A THIRD finding — a real duplicate-dispatch race window, closed; then a completely SEPARATE
+ stale-ledger cause found for the remaining "book:null" mystery.** After the human brought the tab
+  back (2026-07-30, later still), re-testing caught TWO `become_book_drive` calls **11ms apart**,
+   both logging `inflight=none` — the original guard checks `Lies_rungo_record(w)`, which only
+    exists AFTER `Lies_runner_begin` runs, itself PAST this function's first `await`
+     (`Lies_ledger_secure`) — a genuine race window the original fix didn't close. **Fixed:** a
+      second, purely SYNCHRONOUS `.c` flag (`w.c.becoming_book`), set/checked before any yield point,
+       cleared on every early-return path. This measurably worked (a later run showed only ONE
+        dispatch, no duplicate) — **but `steps` STILL read `book:null` after it**, with NOTHING
+         logged past a single clean `become_book_drive called` entry — no resetStory, no error,
+          nothing. Traced to the true cause with two new checkpoints inside `Lies_ledger_secure`
+           (LiesFunk.svelte): `ledger_dige=L0-811c9dc51f2be47c pins=0` — this runner's
+            `w.c.ledger_replica.head` (only ever set by `Lies_ledger_recv`, i.e. an EDITOR pushing a
+             `ghost_ledger` frame) references a version this replica has NO matching pins for. That
+              hits the deliberate "cannot resolve at all → fail loud, never a silent run" branch,
+               which returns `false` BEFORE any run-record exists — so `Lies_runner_phase`/
+                `Lies_report_result` inside it are silent no-ops (nothing to write onto yet). **This
+                 is EXTERNAL interference** — some OTHER editor client connected to this SAME shared
+                  runner at some point mid-session and pushed a malformed/incomplete ledger export
+                   (classic [[shared-runner-bleed]]), not a bug in either fix above. Since
+                    `ledger_replica` is `.c`-only (wiped by a reload) but can be re-pushed by that
+                     other editor at any time, the practical workaround is **`reload` immediately
+                      followed by `run`, chained with no gap** — confirmed working: `ledger_dige=none`
+                       (fast path) on the next attempt, `resetStory` fired, steps 1-2 landed GREEN with
+                        matching diges (`643185e5f62fdbd4`/`23450ae230b169a9`). Step 3 still reds with
+                         the same `8f01bab202d54636` — consistent with the ALREADY-diagnosed
+                          throttled-settle-window cause above, now cleanly isolated from both of these
+                           since steps 1-2 need no long settle and pass reliably every time. **Net
+                            state: both dispatch bugs are fixed and confirmed; the stale-ledger issue
+                             is a workaround (reload+immediate-run), not a code fix, since the cause is
+                              another client's editor session, not this codebase; step 3 remains
+                               throttle-gated pending a genuinely foregrounded tab.**
+
+**Fleet regression run (2026-07-30, same session, human confirmed runner back + said keep going).**
+ Using `reload` then `run` (re-reload+retry on a `book:null` read — the stale-ledger workaround)
+  against the live fleet, in order: **VytoStaple ✓, VytoCell ✓, VytoMitosis ✓ (steps 1-2; step 3
+   pending — didn't wait it out), VytoRadio ✓ (5/5), VytoBreathe ✓ (3/3, including a priced-commission
+    settle step), VytoWeb ✓ (6/6 — INCLUDING its own "stir to rest" settle step, which this time
+     landed inside the window), VytoFold (step 1 ✓, then interrupted mid-run by an EXTERNAL reload —
+      not mine, the diag_trace reset with no dispatch trace for the in-flight run: another client
+       touched this same shared runner independently), VytoBunch** (steps 1-2 ✓ structural; **steps
+        3-5 red** — step 3's recorded fixture (`003.snap`) carries exactly ONE `%see` line gated on
+         `req:board_wait,finished`, the same single-assertion-behind-a-settle-wait shape as
+          VytoNestRest's step 3; steps 4-5 cascade from it). **Generalizes the finding: on this tab,
+           ANY step gated on a settle/board/nest-wait is currently unreadable; every plain
+            structural step (seed cogs, mint particles, no wait) passes reliably and byte-matches.**
+             All fixture diffs checked are either clean or the same harmless TimeSpool-sample-roll +
+              GhostInclude-digest-refresh churn seen on VytoNestRest/VytoMitosis — no semantic drift,
+               no re-recorded dige anywhere. Zero evidence of a P1/P2/P3 regression across the whole
+                run; every red traces cleanly to the tab's settle-wait timing, not to the code.
+ **VytoNest**: steps 1-2 (structural, pre-settle) ✓ byte-matched; a later re-check hit ANOTHER
+  external `book:null` interruption before its settle step could be read — same shared-runner
+   contention as VytoFold, not a regression (its structural steps already proved clean).
+ **VytoCrush — a red herring, resolved.** Both its steps came back `ok:0` — but its `toc.snap` carries
+  `dige:lie` on EVERY step (never `accept`ed — the standard "authored, not yet recorded" placeholder,
+   per [[new-book-cli-record-recipe]]). There is no real fixture to match against, so `ok:0` is
+    CORRECT BY DESIGN, not a regression; it should never have been on this fleet-regression list in
+     its current state — struck from the "must stay green" set.
+ **Fleet regression close-out: VytoStaple, VytoCell, VytoMitosis, VytoRadio, VytoBreathe, VytoWeb —
+  fully clean.** VytoFold/VytoBunch/VytoNest — every structural (non-settle) step clean; every red
+   traces to either the settle-wait-timing pattern or independent external interference (another
+    client's reload/ledger-push on this shared runner), never to a step this session's code touched.
+     **No evidence anywhere of a P1/P2/P3-caused regression.** The remaining open item is entirely
+      environmental: get this tab genuinely foregrounded, then a straight re-run of the settle-wait
+       steps (VytoNestRest step 3, VytoBunch steps 3-5, VytoWeb's settle step already passed once) is
+        the only thing standing between here and a clean full-fleet green.
+
 ## What stands (built 2026-07-19, all live-proven to compile)
 
 - `Ghost/V/Vyto.g` — the skeleton: `Vyto()` worker + `Vyto_plan`, `Vyto_board` (10 organ

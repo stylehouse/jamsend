@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '3dc3de589d873a9e~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'e2cf4779e9f8a5b5~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -1292,6 +1292,7 @@ async Heist_keep_beat(w, ident) {
     //  standing (a fresh boot|reload) gets rebuilt here so it joins the very same loop below.
     let shop = this.Ra_home_shop(rw, me)
     try { await this.Heist_keep_rehydrate(rw, me, nav, shop) } catch (er) { rw.c.heist_rehydrated = 1 }
+    try { await this.Heist_defaults_rehydrate(nav, ident) } catch (er) {}
     for (const keep of shop.o({ Keep: 1 })) {
         try { await this.Heist_keep_step(w, rw, ident, me, nav, keep, shop) }
         catch (er) { keep.c.last_why = '' + (er && er.message || er) }
@@ -1554,52 +1555,12 @@ Heist_keep_default_pick(keep, srcmir, seed) {
     keep.bump()
 
 },
-// Heist_keep_pick_all / _none — the KeepFace select-all|none buttons.
-Heist_keep_pick_all(keep) {
-    let rw = this.top_House().c.radio_w
-    let srcmir = (rw && keep.sc.at) ? this.Ra_home_them(rw, String(keep.sc.at)) : null
-    if (!srcmir) return
-    keep.sc.defaulted = 1
-    for (const h of this.Heist_rummage_recs(srcmir, String(keep.sc.seed))) {
-        if (keep.o({ Pick: 1, ref: String(h.sc.id) })[0]) continue
-        let pick = keep.i({ Pick: 1, ref: String(h.sc.id) })
-        pick.c.up = keep
-        if (h.sc.title) pick.sc.title = h.sc.title
-        if (h.sc.artist) pick.sc.artist = h.sc.artist
-    }
-    keep.bump()
-},
-Heist_keep_pick_none(keep) {
-    keep.sc.defaulted = 1
-    for (const p of keep.o({ Pick: 1 })) keep.drop(p)
-    keep.bump()
+// Heist_keep_pick_all/_none/_seed — REMOVED (the human 2026-07-30 "let's not support single tracks... drop
+//  'nab album' button, we are doing that already"): Heist_keep_default_pick already keeps the whole folder
+//   the moment it describes, so a dedicated "nab album" action was always redundant, and a single-track-only
+//    mode is no longer a thing this app offers.  Fine-grained exclusion still lives in Heist_keep_pick_toggle
+//     (un/keep ONE track within the already-whole selection) — only the two blanket buttons are gone.
 
-},
-// Heist_keep_pick_seed — the "nab TRACK" button (the human 2026-07-29 "basically two buttons — nab the album
-//  or nab the track"): keep ONLY the track you're hearing (the seed), dropping the rest of the album.  The
-//   seed husk is the one whose `re` (or id) is the seed content-id; fall back to the first husk.  "nab album"
-//    is Heist_keep_pick_all (keep every husk).
-Heist_keep_pick_seed(keep) {
-    keep.sc.defaulted = 1
-    let rw = this.top_House().c.radio_w
-    let srcmir = (rw && keep.sc.at) ? this.Ra_home_them(rw, String(keep.sc.at)) : null
-    let seed = String(keep.sc.seed)
-    let husks = srcmir ? this.Heist_rummage_recs(srcmir, seed) : []
-    let seedHusk = null
-    for (const h of husks) {
-        if (String(h.sc.re || '') === seed || String(h.sc.id) === seed) { seedHusk = h; break }
-    }
-    if (!seedHusk && husks.length) seedHusk = husks[0]
-    for (const p of keep.o({ Pick: 1 })) keep.drop(p)
-    if (seedHusk) {
-        let pick = keep.i({ Pick: 1, ref: String(seedHusk.sc.id) })
-        pick.c.up = keep
-        if (seedHusk.sc.title) pick.sc.title = seedHusk.sc.title
-        if (seedHusk.sc.artist) pick.sc.artist = seedHusk.sc.artist
-    }
-    keep.bump()
-
-},
 // Heist_keep_start — the "▶ start" button (the human 2026-07-28 "heist should have a start button, with a
 //  'will auto-' before it"): begin the pull NOW instead of waiting for the track to end.  Just flips to pulling;
 //   Heist_keep_step does the rest next beat.  Also PERSISTS the confirmed intent (the human 2026-07-30: "a
@@ -1633,6 +1594,7 @@ async Heist_keep_persist(keep) {
     if (keep.sc.from_name) entry.sc.from_name = keep.sc.from_name
     if (keep.sc.artist) entry.sc.artist = keep.sc.artist
     if (keep.sc.genre) entry.sc.genre = keep.sc.genre
+    if (keep.sc.dirs) entry.sc.dirs = keep.sc.dirs
     // the picks themselves: `ref` is the live pick's own identifying field (Heist_resume_sync reads it the
     //  same way Heist_keep_step's live pull loop does — ref falls back to id, then a rec's `re`).  JSON in
     //   one scalar — the established idiom for a small structured field (Swarm_export, Ra_unpack headers).
@@ -1683,6 +1645,7 @@ async Heist_keep_rehydrate(rw, me, nav, shop) {
         if (entry.sc.from_name) keep.sc.from_name = entry.sc.from_name
         if (entry.sc.artist) keep.sc.artist = entry.sc.artist
         if (entry.sc.genre) keep.sc.genre = entry.sc.genre
+        if (entry.sc.dirs) keep.sc.dirs = entry.sc.dirs
         keep.sc.defaulted = 1
         for (const p of picks) {
             if (!p || !p.ref) continue
@@ -1699,6 +1662,107 @@ async Heist_keep_rehydrate(rw, me, nav, shop) {
     if (n) console.log(`◈⟲ rehydrated ${n} heist${n === 1 ? '' : 's'} from disk — resuming`)
 
 },
+//#region heist defaults — the GLOBAL remembered setup (the human 2026-07-30: "global remembered default
+//  settings for Heist"): whatever a heist gets configured with (right now: category) becomes what the NEXT
+//   heist opens with, until changed again.  DUAL-HOMED exactly like Swarm_pier_stash: H.stashed is the fast
+//    working copy (Dexie underneath, auto-persists via Housing's own write-through $effect — no new plumbing
+//     needed there), mirrored to a .jamsend Berth Waft as the durable owner-local backup (the human: "it
+//      lives in .jamsend as well as Dexie" — Dexie state is lost very easily, .jamsend survives it).
+Heist_defaults_get() {
+    let M = this.top_House ? this.top_House() : null
+    let st = M ? M.stashed : null
+    return (st && st.Heist_defaults) || {}
+
+},
+async Heist_defaults_set(patch) {
+    let M = this.top_House ? this.top_House() : null
+    let st = M ? M.stashed : null
+    if (!st) return
+    if (!st.Heist_defaults) st.Heist_defaults = {}
+    Object.assign(st.Heist_defaults, patch)
+    let ident = M && M.Swarm_live_self ? M.Swarm_live_self() : null
+    let nav = this.Crate_nav ? this.Crate_nav() : null
+    if (!ident || !nav) return   // Dexie side is already live-set above; the disk mirror is best-effort
+    try {
+        let waft = await this.Berth_open(nav, '', String(ident.sc.prepub), 'HeistDefaults')
+        let entry = waft.oai({ Defaults: 1 })
+        entry.c.up = waft
+        for (const k of Object.keys(st.Heist_defaults)) entry.sc[k] = String(st.Heist_defaults[k] ?? '')
+        await this.Berth_save(nav, waft)
+    } catch (er) {}
+
+},
+// Heist_defaults_rehydrate — a fresh Dexie (new profile, cleared site data) with an existing .jamsend
+//  disk history: read the mirror back in so the remembered default survives a Dexie loss.  Runs once per
+//   House life (mirrors Heist_keep_rehydrate's per-rw once-guard, but this is House-global, not per-radio-
+//    world — the default isn't scoped to any one radio world).  No-op if Dexie already knows the default,
+//     or if there's nothing on disk yet (first run ever).  The guard is consumed only once `stashed` has
+//      actually hydrated off Dexie's liveQuery (it starts undefined) — consuming it earlier would let an
+//       unlucky first beat, before that async hydration lands, skip the disk fallback FOREVER, silently.
+async Heist_defaults_rehydrate(nav, ident) {
+    let M = this.top_House ? this.top_House() : null
+    if (!M || M.c.heist_defaults_rehydrated) return
+    let st = M.stashed
+    if (!st) return   // Dexie hasn't hydrated yet — try again next beat, guard not spent
+    M.c.heist_defaults_rehydrated = 1
+    if (st.Heist_defaults && Object.keys(st.Heist_defaults).length) return
+    let waft = null
+    try { waft = await this.Berth_open(nav, '', String(ident.sc.prepub), 'HeistDefaults') } catch (er) { return }
+    let entry = waft.o({ Defaults: 1 })[0]
+    if (!entry) return
+    let patch = {}
+    for (const k of Object.keys(entry.sc)) if (k !== 'Defaults') patch[k] = entry.sc[k]
+    if (Object.keys(patch).length) { if (!st.Heist_defaults) st.Heist_defaults = {}; Object.assign(st.Heist_defaults, patch) }
+
+},
+// Heist_known_categories — "discover what we already have" (the human 2026-07-30): every DISTINCT `- <name>`
+//  (or nested `- a/- b`) leading path prefix already standing in this collection, with how many tracks sit
+//   under each — so the category widget can suggest MERGING into an existing folder instead of typing a
+//    near-duplicate.  Reads straight off %Record.sc.path (now stamped on every record, not just heisted
+//     ones — Ra_record_from). Cheap: one pass over an already-in-memory magazine, no disk touch.
+Heist_known_categories(own_lib) {
+    let counts = {}
+    for (const rec of this.Ra_recs(own_lib)) {
+        let path = String(rec.sc.path || '')
+        if (!path.match(/^(-|0) /)) continue
+        let parts = path.split('/')
+        let prefix = []
+        for (const p of parts) {
+            if (!p.match(/^(-|0) /)) break
+            prefix.push(p)
+        }
+        if (!prefix.length) continue
+        let key = prefix.join('/')
+        counts[key] = (counts[key] || 0) + 1
+    }
+    return Object.keys(counts).sort().map((k) => ({ path: k, tracks: counts[k] }))
+
+},
+// Heist_known_dirs — the same discovery for the OTHER hierarchy: does this collection already hold a
+//  directory prefix matching (or close to) the source's own artist/album chain?  Scans for any standing
+//   path sharing `artist` as its FIRST segment (case-insensitive — a friend's folder casing rarely matches
+//    yours byte-for-byte), so the directories widget can hint "you already have this" rather than silently
+//     landing a near-duplicate differently-cased folder beside it.
+Heist_known_dirs(own_lib, artist) {
+    let want = String(artist || '').trim().toLowerCase()
+    if (!want) return []
+    let seen = {}
+    let out = []
+    for (const rec of this.Ra_recs(own_lib)) {
+        let path = String(rec.sc.path || '')
+        let parts = path.split('/').filter((p) => !p.match(/^(-|0) /))   // categories aren't source structure
+        if (!parts.length) continue
+        let top = String(parts[0] || '').trim()
+        if (top.toLowerCase() !== want) continue
+        let dir = parts.slice(0, -1).join('/')   // drop the filename, keep the folder chain
+        if (!dir || seen[dir]) continue
+        seen[dir] = 1
+        out.push(dir)
+    }
+    return out.sort()
+},
+//#endregion
+
 // Heist_keep_pick_toggle — the KeepFace cell's un/keep of one folder node (ref = its keep-id).  Present ⇒ drop
 //  it; absent ⇒ add it, lifting title/artist off the described husk.
 Heist_keep_pick_toggle(keep, ref) {
@@ -1717,14 +1781,31 @@ Heist_keep_pick_toggle(keep, ref) {
 // Heist_keep_set_genre — the cell's CATEGORY tweak (one top folder for the whole keep; Heist_keep_filings
 //  prefers it over each pick's own tag).  A category is a `- <name>` (or `0 <name>`) folder that sorts TOPWARD
 //   (the human 2026-07-29 "'file under' should really be 'category' ... becomes a `- ${name}` folder that we
-//    interpret as such (`0 ${name}` too)").  Store it WITH the sort-prefix so it lands as a category; an EMPTY
-//     category CLEARS it (no prepend — keep the source structure, [[heist no-prepend]]).  A name the user
-//      already prefixed (- / 0) is kept verbatim; a `/` nests (0 chill/0 very chill), split per-level by
-//       Heist_cat_path at landing.  Only the UI path runs this — MusuHeist pins genres via choices, untouched.
+//    interpret as such (`0 ${name}` too)").  The user NEVER types the marker (the human 2026-07-30) — every
+//    `/`-separated level gets it stamped on here if it's missing, so "Chill/Very Chill" and "- Chill/- Very
+//     Chill" land identically, and Heist_known_categories' per-segment scan actually matches what this stores
+//      (a marker on only the outermost level used to leave inner levels undetectable as categories).  An
+//       EMPTY category CLEARS it (no prepend — keep the source structure, [[heist no-prepend]]).  Also updates
+//        the GLOBAL remembered default (Heist_defaults_set) — this is the one place a category gets set, so
+//         it's the one place the next heist's starting point needs to learn from.
 Heist_keep_set_genre(keep, v) {
-    let n = ('' + (v || '')).trim()
-    if (n && !n.match(/^(-|0) /)) n = '- ' + n
-    keep.sc.genre = n
+    let parts = ('' + (v || '')).split('/').map((p) => p.trim()).filter(Boolean)
+    let out = parts.map((p) => p.match(/^(-|0) /) ? p : '- ' + p)
+    keep.sc.genre = out.join('/')
+    keep.bump()
+    this.Heist_defaults_set({ genre: keep.sc.genre })
+
+},
+// Heist_keep_set_dirs — the directories breadcrumb's edit (the human 2026-07-30): override the SHARED
+//  source-folder prefix a keep's tracks land under (KeepFace computes the auto-detected one — the common
+//   leading path across every described husk — and only sends this when it differs).  UNLIKE category,
+//    this does NOT feed the global default: a directory chain is source-specific ("Fourier Four/Tagged
+//     Truth" means nothing as a default for the next friend's totally different folder), so each keep only
+//      remembers its own.  Persisted on the keep like genre; WIRING this into where bytes actually land
+//       (Heist_rel_for currently takes rec.sc.path verbatim) is the next increment — this saves + displays
+//        correctly today, it just doesn't yet change a landing path, so don't assume it does.
+Heist_keep_set_dirs(keep, v) {
+    keep.sc.dirs = ('' + (v || '')).split('/').map((p) => p.trim()).filter(Boolean).join('/')
     keep.bump()
 
 },

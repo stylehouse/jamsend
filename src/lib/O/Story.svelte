@@ -2478,8 +2478,32 @@
             //  the fixture (gate #2 catches a new one via the dige diff).  Lazy — no throw ⇒ no Errlog ⇒ no
             //   fixture byte moves for a clean Book.  The counts feed the verdict below (gate #1).
             const drained = (H as any).Story_errlog_drain(w, run, Run, n) as { errors: number, warns: number }
-            const snap     = await this.story_snap(w, run, Run)
-            const got_dige = await dig(snap)
+
+            // the encode itself can throw (enLine faults on a snapped `false` boolean rather than
+            //  mis-decode it — Coding_guide's house rule).  Uncontained, that throw propagates out
+            //   through the post_do wrapper in _really_answer_calls: it logs the throw but knows
+            //    nothing of THIS run, so driving is left true with nothing left scheduled — a
+            //     permanent wedge, not a crash.  Halt the same way a dige mismatch does below, so
+            //      it reads as a stopped step a human can see and fix, not a hang.
+            let snap: string, got_dige: string
+            try {
+                snap     = await this.story_snap(w, run, Run)
+                got_dige = await dig(snap)
+            } catch (err) {
+                console.error(`⛔ Story: step ${H.pad(n)} threw while encoding the snap — halting the run:`, err)
+                ;(H as any).Story_error?.('error', 'story_snap', err)
+                run.c.driving     = false
+                run.sc.paused     = 2
+                run.sc.failed_at  = n
+                run.sc.frontier   = n
+                run.sc.snap_error = String((err as any)?.message ?? err).slice(0, 200)
+                if (run.sc.open_at == null) run.sc.open_at = n
+                H.The_set_frontier(w, n)
+                H.story_analysis(w)
+                await update_status(`⛔ step ${H.pad(n)} snap threw`, 'stop')
+                H.main()
+                return
+            }
             Run.trace('snapped', String(n))
 
             const step = H.i_step(w, n)

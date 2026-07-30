@@ -21,6 +21,7 @@
     import { type TheC } from "$lib/data/Stuff.svelte"
     import { type House } from "$lib/O/Housing.svelte"
     import { onMount }    from "svelte"
+    import { now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte"
 
     let { M } = $props()
 
@@ -277,19 +278,36 @@
     //    the ttlilt holds the snap from fire right through the record, never dropping
     //    early (an early finish here is exactly the half-rolled-snap bug it would cause).
     //
+    //   req_sent re-arm: i_elvisto's targeting resolves async (deferred to UItime), so a
+    //    resetStory/become_book mid-flight can tear w:Pantheate down between the send and
+    //     that resolution — the elvis then lands nowhere, silently (i_elvisto only consoles,
+    //      never rethrows), and req_sent stays latched with no reply ever coming.  Left alone
+    //       that is a permanent zombie: the ttlilt below re-arms every pass forever, holding
+    //        Story open on a run that will never land.  PANTHEATE_REPLY_GRACE_S gives a live
+    //         target time to actually reply before we call it dead; only once BOTH that's
+    //          elapsed AND the target is confirmed genuinely absent right now (not just still
+    //           resolving) do we drop req_sent, so a fresh send fires next pass — either
+    //            immediately if Pantheate is already back, or the next time this grace window
+    //             re-elapses.  A live in-flight run is never double-fired by this.
+    //
     //   req.c.up = req:Rundown
     //   req.c.up.c.up = req:Cortex
     //   req.c.up.c.up.c.up = w:Lies
     async req_BlatDo(req: TheC) {
         const H = this as House
+        const PANTHEATE_REPLY_GRACE_S = 3
 
-        // fire the run command once — req_sent guards re-entry
         if (!req.oa({ req_sent: 1 })) {
             req.i({ req_sent: 1 })
+            req.c.sent_at = now_in_seconds_with_ms()
             H.i_elvisto('Pantheate/Pantheate', 'Pantheate_run_method', {
                 method: req.sc.run_method as string,
                 req,
             })
+        } else if (now_in_seconds_with_ms() - ((req.c.sent_at as number) ?? 0) > PANTHEATE_REPLY_GRACE_S
+                   && !H._target_present('Pantheate/Pantheate')) {
+            req.o({ req_sent: 1 }).map((m: TheC) => req.drop(m))
+            req.c.sent_at = undefined
         }
         // hold the snap open across the whole run slice; Rundown reaps us at the record.
         H.i_req_ttlilt(req, 0.5, { waiting: 'run' })

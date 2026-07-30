@@ -2,6 +2,64 @@
 
 ## 0. Next move (read first)
 
+### 2026-07-30 LATER — the real Heist UI: two breadcrumbs, global defaults, single-track mode GONE. Read
+###  this before touching KeepFace.svelte or anything category/directory-shaped.
+
+`KeepFace.svelte`'s old free-text category field + destination-preview line + nab-album/nab-track buttons are
+ GONE, replaced per the human's direction:
+- **section** (mine) and **directories** (theirs) are now TWO separate, never-merged, never-enclosing
+   breadcrumbs (`/segment/segment/`, neutral slashes, accent segment text) — click either to edit it in place
+    (the established local-draft/commit-on-blur technique, nothing more elaborate). `section` is the optional
+     nestable `- <name>` category (marker auto-stamped, never typed — `Heist_keep_set_genre` in Heist.g).
+      `directories` is the shared source-folder prefix across the described tracks (`Heist_marrauding`-style
+       commonPrefix, computed in the Svelte face); editing it persists (`Heist_keep_set_dirs`,
+        `keep.sc.dirs`) but does **NOT YET** change where bytes land — `Heist_rel_for`/`Heist_cp_path` still
+         take `rec.sc.path` verbatim. Wiring the override into the actual landing computation (shared-prefix
+          substitution, careful not to collide multi-disc filenames — see `Heist_cp_path`'s own comment on
+           why source folder layout survives unchanged) is the next real increment here, not done yet.
+- **"discover what we already have."** `Heist_known_categories(own_lib)` / `Heist_known_dirs(own_lib, artist)`
+   scan the library's own `%Record.sc.path` for existing category prefixes / matching artist folders, feeding
+    each breadcrumb's datalist while editing — so a near-duplicate folder is a visible choice, not an accident.
+     This only works now because `%Record.sc.path` rides on EVERY record (`Ra_record_from`), not just
+      heist-landed ones — the old "comma in a path is a snap hazard" reasoning was wrong (`Text.svelte`'s
+       `enLine` already JSON-falls-back on any unsafe value); fixed 2026-07-30.
+- **single-track mode is GONE.** `Heist_keep_pick_all`/`_none`/`_seed` (the old nab-album/nab-track buttons)
+   are deleted outright — `Heist_keep_default_pick` already keeps the WHOLE described folder the moment it
+    describes, so "nab album" was always redundant, and the human ruled out a single-track-only mode entirely.
+     Per-track fine exclusion still works (`Heist_keep_pick_toggle`, click a track chip to skip just it).
+- **global remembered defaults.** `Heist_defaults_get/_set/_rehydrate` in Heist.g: the category a heist gets
+   set to becomes the default the NEXT heist opens with (`Radio_keep` seeds `keep.sc.genre` from it). Dual-
+    homed like `Swarm_pier_stash` — `H.stashed.Heist_defaults` (Dexie, auto-persists, no new plumbing) mirrored
+     to a `.jamsend/berth/<prepub>/HeistDefaults` Waft for durability (the human: "it lives in .jamsend as
+      well as Dexie"). `directories` deliberately does NOT feed this — a source folder chain means nothing as
+       a default for a different friend's totally different structure.
+- **track tree**: a folder group with more than 5 tracks collapses by default (a real `<details>`, click to
+   open); 5 or fewer stays expanded inline. An opened group shows every real track — no "… N more" summary
+    row (that was a mockup shortcut in an early sketch, never meant to ship).
+- **NOT YET LIVE-VERIFIED.** Everything above is compiled + bundle-verified clean and self-reviewed (a
+   datalist per-segment marker-strip bug, a known-scan running every tick instead of gated to editing state,
+    and a `stashed`-not-yet-hydrated guard-consumption bug were all found and fixed in review) — but the
+     runner was unreachable (flaky relay, `state`/`run` timing out while `ping` intermittently answered) the
+      whole session this landed in, so none of it has had eyes on a real render yet. First move next session
+       with a live tab: open a keep, actually click both breadcrumbs, confirm the collapse and the datalists.
+
+### 2026-07-30 — `music/` prefix REMOVED FOR GOOD. Every `/music`, `Heist_music_root()`, `job.sc.root` mention
+###  below this point is STALE. Read THIS first, then skip past them.
+
+`Heist_root` / `job.sc.root` / `Heist_music_root()` / the never-wired `M.c.heist_root` test hook — ALL DELETED
+ (the human: "the entire Heist_root thing is bullshit and distracting... FUCK YOU. not heist_root! remove all
+  of that"). It was scar tissue: `M.c.heist_root` was never set anywhere, and Book isolation already runs
+   through each Book's own explicit `mardir` param, never through this. A heist now lands at the TRUE FSA
+    root directly (`''`), unconditionally, in dev AND prod — no `music/` prefix, no per-job root field, no
+     getter. Every `/music`-prefixed landing path described further down this doc (SHIP 1, SHIP 2, the
+      Superseded section's "Landing dir = `/music` directly" ruling) is describing a design that no longer
+       exists — read those as history, not current behavior.
+
+**If a dev-only "prefix downloads so I can find them" convenience is wanted again**, it does NOT go back into
+ this backend plumbing. The human's ruling: it's a small, explicit, untickable-like-any-other-suggestion block
+  living entirely inside the Heist setup UI flow — see the Categories work below (§ "the staircase"). Nothing
+   backend-side should ever again default-prepend a folder onto a landing path.
+
 ### 2026-07-29 EVENING (overnight solo) — downloads FIXED, nested GATED OFF, Heist UI polished. Read THIS first.
 
 Everything below is NOT committed (working tree). All Book-verified GREEN on the FSA runner (MusuHeist 22/22,
@@ -28,8 +86,9 @@ Everything below is NOT committed (working tree). All Book-verified GREEN on the
 **HEIST UI polish (the human's feedback, all done):** "file under"→**category** (a `- <name>` sort-topward
  folder, nests via `/`, `Heist_cat_path`); **two buttons nab-album/nab-track** (new `Heist_keep_pick_seed`) not
   all/none; **field snaps-shut FIXED** (local `$state` + commit-on-blur — the reactivity_docs/UI:Waft bug);
-   **no `music/Unfiled/` prepend** — source folders land as-is (+ `Heist_music_root` `M.c.heist_root` test-
-    isolation param); **pause sticks** (`radio.c.ever_played` latch stops the trickle re-pressing play). See
+   **no `music/Unfiled/` prepend** — source folders land as-is (the `Heist_music_root`/`M.c.heist_root` test-
+    isolation param this leant on is GONE now — see the 2026-07-30 note at the top of this file, landing is
+     the true root unconditionally, no param needed); **pause sticks** (`radio.c.ever_played` latch stops the trickle re-pressing play). See
      [[heist-ui-category-pause]].
 
 **NEXT (needs the human / live tabs):**

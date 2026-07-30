@@ -1487,6 +1487,10 @@ async Radio_keep(n):
     keep.c.up = shop
     keep.sc.from_name = this.Radio_friendly(w, friend)
     if (rec.sc.artist) keep.sc.artist = this.Radio_clean(rec.sc.artist)
+    // seed the category from the GLOBAL remembered default (Heist_defaults_get) — whatever the last heist
+    //  was filed under is where this one starts too, until the human edits it.
+    let defaultGenre = this.Heist_defaults_get ? this.Heist_defaults_get().genre : null
+    if (defaultGenre) keep.sc.genre = defaultGenre
     keep.bump()
     n.bump()
     // POP THE CELL NOW (the human 2026-07-29 "the heist UI cell isn't popping up anymore ... the tick still

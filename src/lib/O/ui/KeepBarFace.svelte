@@ -59,8 +59,6 @@
     $effect(() => { if (!catActive) catDraft = face.genre })
     function commitCategory() { A?.post_do?.(() => { A?.Heist_keep_set_genre?.(keep(), catDraft) }, { see: 'keep category' }) }
     function cancel() { A?.post_do?.(() => { A?.Heist_keep_cancel?.(A?.top_House?.()?.c?.radio_w, keep()) }, { see: 'keep cancel' }) }
-    function nabAlbum() { A?.post_do?.(() => { A?.Heist_keep_pick_all?.(keep()) }, { see: 'nab album' }) }
-    function nabTrack() { A?.post_do?.(() => { A?.Heist_keep_pick_seed?.(keep()) }, { see: 'nab track' }) }
     function start() { A?.post_do?.(() => { A?.Heist_keep_start?.(keep()) }, { see: 'keep start' }) }
 </script>
 
@@ -93,9 +91,7 @@
         <div class="kb-dest" title="where these land — the artist/album folders ride underneath">⤓ {face.dest}<span class="kb-dim"> …artist / album</span></div>
         {#if face.described}
             <div class="kb-sel">
-                <span class="kb-dim">{face.picked} of {face.nTracks}</span>
-                <button class="kb-mini" onclick={nabAlbum} title="keep every track in the album">nab album</button>
-                <button class="kb-mini" onclick={nabTrack} title="keep only the track you're hearing">nab track</button>
+                <span class="kb-dim">{face.picked} of {face.nTracks} — the whole folder, click a track to skip one</span>
             </div>
         {:else}
             <!-- SKELETON: the controls shell stands; the track chips arrive as their OWN cells once picks
@@ -150,12 +146,6 @@
     }
     .kb-dest { font-size: 9px; margin-top: 3px; color: #7fe8bf; font-family: monospace; }
     .kb-sel { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
-    .kb-mini {
-        pointer-events: auto; cursor: pointer;
-        background: #241820; color: #cbb; border: 1px solid #66495a; border-radius: 6px;
-        font-size: 9px; padding: 0 6px; line-height: 1.5;
-    }
-    .kb-mini:hover { background: #66495a; color: #fff; }
     .kb-note { font-size: 9px; opacity: 0.6; font-style: italic; margin-top: 3px; }
     /* the loading skeleton — shimmer bars standing in for the track list until the folder describes.
        pointer-events stay off (only controls re-arm); the pulse is the DoorFace breathe idiom. */

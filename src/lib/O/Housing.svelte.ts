@@ -2334,25 +2334,40 @@ export class WormholeNav {
     //   test-music generator Book to lay pure-tone WAVs into a served collection (static/testsounds).
     async bin_write(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer): Promise<void> {
         const parts = dir_path.split('/').filter(Boolean)
-        try {
-            const dir = await this.mkdirp(...parts)
+        const once = async (dir: DirectoryListing) => {
             const writer = await dir.getWriter(filename)
-            await writer.write(bytes as BufferSource)
-            await writer.close()
+            try {
+                await writer.write(bytes as BufferSource)
+                await writer.close()
+            } catch (e: any) {
+                // an un-aborted writable stream keeps its exclusive lock on the file — leaving it
+                //  dangling here means every LATER write to this exact filename dies with
+                //   NoModificationAllowedError (not just NotFoundError), until a full page reload
+                //    finally releases it.  abort() is best-effort: a stream that already failed
+                //     mid-write can itself refuse to abort cleanly, and that's fine — the lock still
+                //      goes with it either way.
+                await writer.abort().catch(() => {})
+                throw e
+            }
             this._cache.delete(parts.join('/'))
             await dir.expand()
+        }
+        try {
+            await once(await this.mkdirp(...parts))
         } catch (e: any) {
             // SELF-HEAL (the wedge fix): a dir-deleting run poisons the handle cache, so every later
             //  landing dies with NotFoundError on a dead directory handle.  Re-walk FORCE-expanding each
             //   level (mkdirp_fresh refreshes handles from the live disk), then retry ONCE.  A second
             //    failure is a real fault and propagates.  This is what makes a runner leave-up-able.
-            if (!this._is_stale(e)) throw e
-            const dir = await this.mkdirp_fresh(...parts)
-            const writer = await dir.getWriter(filename)
-            await writer.write(bytes as BufferSource)
-            await writer.close()
-            this._cache.delete(parts.join('/'))
-            await dir.expand()
+            if (!this._is_stale(e)) {
+                // a real disk fault (quota, permission, …), not a missing directory — nothing to
+                //  re-walk.  Still evict the cache entry so the NEXT attempt re-verifies the chain
+                //   fresh rather than trusting whatever state it was in when this write started;
+                //    THIS attempt genuinely failed and the caller must see that.
+                this._cache.delete(parts.join('/'))
+                throw e
+            }
+            await once(await this.mkdirp_fresh(...parts))
         }
     }
 
@@ -2375,15 +2390,25 @@ export class WormholeNav {
             try { size = (await (await (dir as any).handle.getFileHandle(filename)).getFile()).size }
             catch { size = 0 }
             const writer = await dir.getWriter(filename, true)   // keepExistingData — don't truncate
-            await (writer as any).write({ type: 'write', position: size, data: bytes as BufferSource })
-            await writer.close()
+            try {
+                await (writer as any).write({ type: 'write', position: size, data: bytes as BufferSource })
+                await writer.close()
+            } catch (e: any) {
+                // same dangling-lock hazard as bin_write — release it on ANY write error, not only a
+                //  stale-handle one, or every later append to this file dies NoModificationAllowedError.
+                await writer.abort().catch(() => {})
+                throw e
+            }
             this._cache.delete(parts.join('/'))
             await dir.expand()
         }
         try {
             await once(await this.mkdirp(...parts))
         } catch (e: any) {
-            if (!this._is_stale(e)) throw e
+            if (!this._is_stale(e)) {
+                this._cache.delete(parts.join('/'))
+                throw e
+            }
             await once(await this.mkdirp_fresh(...parts))
         }
     }

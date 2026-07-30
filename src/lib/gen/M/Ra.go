@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return 'a45085b7ee3f4357~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '69dcbd58808602fd~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1096,9 +1096,12 @@ Ra_record_from(lib, info, bufs) {
     rec.sc.real = 1
     // origin breadcrumb on the portable %Record: col (one FSA per Pier ⇒ 1 — the share identity a
     //  future multi-share world widens without a card migration).  The id IS the content hash now,
-    //   so no separate src_hash rides; the full origin path stays in the radiostock card (local, and
-    //    comma-hazardous as a snapped sc key).
+    //   so no separate src_hash rides.  path DOES ride here too (the human 2026-07-30: a comma in it
+    //    is not a hazard — Text.svelte's enLine already falls back to JSON whenever a value doesn't
+    //     peel-encode safely) so any %Record can anchor a later re-open of its source structure, not
+    //      just heist-landed ones.
     if (info.col != null && info.col !== '') rec.sc.col = +info.col
+    if (info.path) rec.sc.path = info.path
     rec.sc.sr = 48000
     rec.sc.br = +info.br
     rec.sc.seg_secs = +info.seg_secs
