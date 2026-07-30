@@ -12,7 +12,7 @@ import { poly_area } from "$lib/O/vyto_geometry"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vytonation(): string { return '26093733ff9ab103~g1' },
+    Ghostmeta_Ghost_V_Vytonation(): string { return '4db58120ea3b7e4a~g1' },
 
 // Vytonation.g — Vyto's demo Books (the Voronation.g sibling, one directory over in Ghost/V/).
 //  Where Voronation.g proves the CRUSH (the fold policy) on flora and libraries, Vytonation.g
@@ -603,7 +603,7 @@ Vyto_plant(w, genus, dose) {
 //  A 4th arg `priced` (optional, default plain) commissions the glass on the global type-scale
 //   (Vyto_sizing_todo §9 ④+⑤ — cell area is a share of the frame, not an absolute dose box); every
 //    existing caller passes three args → undefined → the byte-identical plain cut.
-Vyto_commission_on(w, cogs, fresh, priced, nested, folded, needful) {
+Vyto_commission_on(w, cogs, fresh, priced, nested, folded, needful, depthscale) {
     let SH = this.VytoStaple_SH(w)
     if (!SH) return
     if (fresh) {
@@ -616,6 +616,7 @@ Vyto_commission_on(w, cogs, fresh, priced, nested, folded, needful) {
     if (nested) commission.sc.nested = 1
     if (folded) commission.sc.folded = 1
     if (needful) commission.sc.need_floor = 1
+    if (depthscale) commission.sc.depth_scale = 1
     commission.c.Run = this
     SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
 
@@ -2489,7 +2490,7 @@ VytoDepth_seed(w) {
 // ── beat 3 — commission NESTED and drive to rest: the small parent must hold all six ───────────────
 async VytoDepth_nest(w) {
     w.i({desc: 'commission nested — six children must all take real cells inside the small parent'})
-    this.Vyto_commission_on(w, [w.c.rig], 1, 0, 1)
+    this.Vyto_commission_on(w, [w.c.rig], 1, 0, 1, 0, 0, 1)
     this.Vyto_rest_reset(w)
     this.expecting(w, 'depth_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoDepth_ready(w)) })
 

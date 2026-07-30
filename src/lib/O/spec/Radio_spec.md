@@ -517,7 +517,9 @@ Walk a music library into a track list. Real today by DISCOVERING it through the
    manifest, no fetch — a collection is a folder of files, like real music.
 - [done] directory-tree walk over nested artist/album/track (`Crate_nav_paths`, sorted for determinism).
 - [done] a real source via Wormhole `bin_read` — not a static symlink or served fetch.
-- [todo] metadata from tags (music-metadata) not just the filename.
+- [done] metadata from tags (music-metadata) not just the filename — `Crate_nav_payload` now reads
+   id3/vorbis/RIFF via `Crate_meta_from_tags` (2026-07-30), the same reader the Heist census already used;
+    `Crate_meta_from_path` is purely the fallback for an untagged file now.
 - [todo] the picker path (`Crate_open`/`Crate_meander` over a raw FileSystemHandle) for an arbitrary user
    library OUTSIDE the project tree — still the raw-handle route, not yet unified onto the nav.
 - [caveat] discovery awaits the nav INLINE — fine for local navs, but a remote `atime_async` nav must route

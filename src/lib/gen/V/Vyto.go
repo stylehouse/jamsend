@@ -12,7 +12,7 @@ import { sig_of, group_edges, bucket_key_of, pull_step, budget_for, SIG_JOINS, F
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return '68efec7316c8f097~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return 'f1a205f2a0c2877d~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -129,6 +129,11 @@ e_Vyto_commission(A, w, e) {
     //    need.  Importance still ranks ABOVE the floor.  Default off ⇒ the algebra alone — and the
     //     render skips the measure entirely — byte-identical.
     w.c.need_floor = req.sc.need_floor ? 1 : 0
+    // DEPTH-SCALE opt-in (Vyto_todo THE PIN P3): a nested scope's child radii scale by √(parent cell
+    //  area / frame area) instead of staying frame-absolute — fixes crowd-out in a small parent cell
+    //   (VytoDepth proves it).  Default off ⇒ Vyto_solve_scope's depth_k is 1 (no-op), so every
+    //    EXISTING nested Book (VytoNestRest predates P3) keeps its byte-identical recorded geometry.
+    w.c.depth_scale = req.sc.depth_scale ? 1 : 0
     // the commissioning client supplies the Run House on the req's `.c` (a ref — never sc); the
     //  Spool reads it to snap the RUN world into each moment's payload (spool.md §2).
     w.c.Run        = e?.c?.Run ?? req.c?.Run ?? null
@@ -987,7 +992,7 @@ Vyto_solve_scope(w, parent, poly) {
     //     √(parent share of the frame): the r² wall differentials then shrink WITH the parent, so
     //      children contest a small cell as gently as tops contest the frame.  Relative order is
     //       untouched — express still speaks through env_area; this only fits the voice to the room.
-    let depth_k = Math.sqrt(Math.abs(poly_area(poly)) / (800 * 450))
+    let depth_k = w.c.depth_scale ? Math.sqrt(Math.abs(poly_area(poly)) / (800 * 450)) : 1
     let i = 0
     while (i < kids.length) {
         let k = kids[i]

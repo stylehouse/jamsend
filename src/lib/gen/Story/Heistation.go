@@ -10,7 +10,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return '4226aedea77b47d9~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return 'd96cf9c8cfbe84aa~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -38,7 +38,7 @@ import { Idento } from "$lib/Y.svelte.ts"
 //  The dedup trap (each Pier already "has" everything the other offers) is dissolved by the census
 //   whittle: Uno holds The Sines + DJ Oscillo, Duo holds Fourier Four — each seems to hold different
 //    music, and each files what it heists under DIFFERENT genre categories at its own end.  A
-//     per-Pier .jamsend/test-marrauding-of-bookrun/<nick> namespace holds meta + newlyadded +
+//     per-Pier .jamsend/test-marrauding-of-MusuHeist/<nick> namespace holds meta + newlyadded +
 //      landings, swept at start so re-runs are deterministic (runid pinned by the Book; the app
 //       passes a real uid).  The wire is the transport-real Lake_link pair, sealed by a real Idzeug
 //        redeem, every leg gated by the mutual Music grant (w.c.repli_allow → Swarm_pier_live).
@@ -155,7 +155,7 @@ async MusuHeist_phase(w) {
         //   so it alters NO snap: the %testing on_disk records stand as the proof-of-landing (captured at
         //    land time), while the bytes themselves are gone; the dirs persist empty (deleting them would
         //     poison the next run's FSA handle cache).  Mirrors the start sweep at census — one at each end.
-        await this.Heist_sweep(w.c.nav, this.Heist_meta_dir() + '/test-marrauding-of-bookrun')
+        await this.Heist_sweep(w.c.nav, this.Heist_meta_dir() + '/test-marrauding-of-MusuHeist')
         // DROP the planted tagged WAV out of the base share too — the sweep only cleans the marrauding
         //  namespace, but MusuHeist_plant_tagged wrote into testsounds itself, so the next run must find the
         //   base 6/2 (else it censuses 6/4).  Best-effort file delete, DISK-only, alters no snap (the tagged
@@ -183,9 +183,9 @@ async MusuHeist_census(w) {
     let duo = await this.SwarmStaple_person(w, 'Duo')
     w.c.uno_pre = uno.sc.prepub
     w.c.duo_pre = duo.sc.prepub
-    w.c.mar_uno = this.Heist_marrauding('bookrun', 'uno')
-    w.c.mar_duo = this.Heist_marrauding('bookrun', 'duo')
-    await this.Heist_sweep(w.c.nav, this.Heist_meta_dir() + '/test-marrauding-of-bookrun')
+    w.c.mar_uno = this.Heist_marrauding('MusuHeist', 'uno')
+    w.c.mar_duo = this.Heist_marrauding('MusuHeist', 'duo')
+    await this.Heist_sweep(w.c.nav, this.Heist_meta_dir() + '/test-marrauding-of-MusuHeist')
     // Lake_link is NOT idempotent (each call mints a fresh transport pair) — guard so a census RETRY
     //  reuses the standing ports instead of doubling the wire.
     if (!w.c.port_uno) {
@@ -373,8 +373,8 @@ async MusuHeist_flow(w) {
         let disks = []
         let ok = 0
         if (landed) {
-            for (const line of await this.Heist_newlyadded_read(w.c.nav, b.mar)) {
-                let entry = this.Heist_newlyadded_entry(line).entry
+            for (const card of await this.Heist_newlyadded_list(w.c.nav, b.mar)) {
+                let entry = String(card.sc.of || '')
                 let cut = entry.split('/')
                 let filename = cut.pop()
                 let raw = null
@@ -384,8 +384,8 @@ async MusuHeist_flow(w) {
                 if (!raw || !raw.byteLength) continue
                 disks.push({ entry: entry, bytes: raw.byteLength })
                 let hash = await this.Heist_hash(new Uint8Array(raw))
-                let card = this.Ra_recs(b.own).find((r) => r.sc.path === entry)
-                if (card && card.sc.body_hash === hash) ok = ok + 1
+                let held = this.Ra_recs(b.own).find((r) => r.sc.path === entry)
+                if (held && held.sc.body_hash === hash) ok = ok + 1
             }
         }
         // the heisted:<nick> observation minted whole: counts as properties, on_disk monitoring as
@@ -428,27 +428,30 @@ async MusuHeist_flow(w) {
     return true
 
 },
-// the probation ledger read back: every line `<seq> <feeling> <category/filename>`, every feeling still
-//  fresh (the deny comes later), and NEVER a source — neither prepub appears anywhere in either file.
-//   Shape breaches stamp loudly (in %testing) instead of passing silently.
+// the probation ledger read back: every %Probation card carries a real feeling + a numbered arrival, and
+//  NEVER a source — neither prepub appears anywhere in either collection's cards.  Shape breaches stamp
+//   loudly (in %testing) instead of passing silently.  (Mag-native rebuild 2026-07-30 — the human: "this
+//    music/newlyadded thing is supposed to be a Mag… I want it coded nicer, with Mag nativity where
+//     possible" — was a hand-rolled text line before, now Berth-persisted %Probation,of: cards.)
 async MusuHeist_logs(w) {
     this.MusuHeist_note(w, { reached: 'logs' })
-    let shape = /^[0-9]+ (fresh|love|drop) .+$/
+    let FEELINGS = { fresh: 1, love: 1, drop: 1 }
     let clean = 1
     let counts = {}
     for (const side of [{ nick: 'uno', mar: w.c.mar_uno, own: w.c.uno_lib }, { nick: 'duo', mar: w.c.mar_duo, own: w.c.duo_lib }]) {
-        let lines = await this.Heist_newlyadded_read(w.c.nav, side.mar)
-        counts[side.nick] = lines.length
-        for (const line of lines) {
-            if (!shape.test(line)) clean = 0
-            if (line.includes(w.c.uno_pre) || line.includes(w.c.duo_pre)) clean = 0
+        let cards = await this.Heist_newlyadded_list(w.c.nav, side.mar)
+        counts[side.nick] = cards.length
+        for (const card of cards) {
+            let entry = String(card.sc.of || '')
+            if (!FEELINGS[card.sc.feeling]) clean = 0
+            if (!(+card.sc.seq > 0)) clean = 0
+            if (entry.includes(w.c.uno_pre) || entry.includes(w.c.duo_pre)) clean = 0
             // POSITIVE provenance guard (audit #8): the old check only forbade the two run-specific prepub
             //  strings — a leak in ANY other form (a nick, a source path, an appended `from:` field) passed.
             //   Instead require every entry to EXACTLY equal a held card's path: an entry carrying any extra
             //    token no longer matches a real landing, so "never a word about the source" is enforced
             //     against provenance generally, not two literals.  Filenames-with-spaces safe (path == path).
-            let e = this.Heist_newlyadded_entry(line)
-            if (!this.Ra_recs(side.own).find((r) => r.sc.path === e.entry)) clean = 0
+            if (!this.Ra_recs(side.own).find((r) => r.sc.path === entry)) clean = 0
         }
     }
     let row = { newlyadded_shape: 1, uno: counts.uno, duo: counts.duo }
@@ -461,10 +464,10 @@ async MusuHeist_logs(w) {
 //   stays honest about the drop.  The verdict observation goes to %testing.
 async MusuHeist_deny(w) {
     this.MusuHeist_note(w, { reached: 'deny' })
-    let lines = await this.Heist_newlyadded_read(w.c.nav, w.c.mar_uno)
-    if (lines.length < 2) { this.MusuHeist_note(w, { deny_starved: 1 }); return }
-    let love = this.Heist_newlyadded_entry(lines[0]).entry
-    let drop = this.Heist_newlyadded_entry(lines[1]).entry
+    let cards = await this.Heist_newlyadded_list(w.c.nav, w.c.mar_uno)
+    if (cards.length < 2) { this.MusuHeist_note(w, { deny_starved: 1 }); return }
+    let love = String(cards[0].sc.of || '')
+    let drop = String(cards[1].sc.of || '')
     await this.Heist_feel(w, w.c.nav, w.c.uno_lib, w.c.mar_uno, love, 'love')
     await this.Heist_feel(w, w.c.nav, w.c.uno_lib, w.c.mar_uno, drop, 'drop')
     let cut = drop.split('/')
@@ -476,11 +479,11 @@ async MusuHeist_deny(w) {
     let row = { denied: 1 }
     if (!raw || !raw.byteLength) row.gone = 1
     if (!this.Ra_recs(w.c.uno_lib).find((r) => r.sc.path === drop)) row.carded_off = 1
-    // the log stayed HONEST about the drop — the dropped entry's newlyadded line now reads `drop`, not a
+    // the log stayed HONEST about the drop — the dropped entry's probation card now reads `drop`, not a
     //  lie left behind as `fresh`.  Without this the sentence's "log honest" half rode on nothing.
-    let post = await this.Heist_newlyadded_read(w.c.nav, w.c.mar_uno)
-    let dline = post.find((l) => this.Heist_newlyadded_entry(l).entry === drop)
-    if (dline && this.Heist_newlyadded_entry(dline).feeling === 'drop') row.log_dropped = 1
+    let post = await this.Heist_newlyadded_list(w.c.nav, w.c.mar_uno)
+    let dcard = post.find((c) => String(c.sc.of || '') === drop)
+    if (dcard && dcard.sc.feeling === 'drop') row.log_dropped = 1
     this.MusuHeist_note(w, row)
 
 },
@@ -2734,13 +2737,13 @@ async MusuBreach_census(w, nav) {
         if (!this.MusuBreach_T(w).oa({ skipped: 'no_testsounds' })) this.MusuBreach_note(w, { skipped: 'no_testsounds' })
         return
     }
-    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-breachrun')
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-MusuBreach-run')
     let mir = this.Ra_home_them(w, 'breach.mirror')
     let own = this.Ra_home_self(w, 'breach.own')
     await this.Heist_census(w, mir, nav, 'testsounds', ['The Sines', 'DJ Oscillo'])
     w.c.mir = mir
     w.c.own = own
-    w.c.mardir = this.Heist_marrauding('breachrun', 'solo')
+    w.c.mardir = this.Heist_marrauding('MusuBreach-run', 'solo')
     w.c.job = this.Heist_job(w, 'breachpier', [{ artist: 'The Sines', genre: 'breachtest' }, { artist: 'DJ Oscillo', genre: 'breachtest' }], { home: this.Ra_home_shop(w, 'breach.own') })
     // COVERAGE fact: every chunk of every censused record carries a cid (the origin's per-seq promise).  The
     //  library shrinks as lands consume records, so capture the fact NOW as a %testing marker the witness reads.
@@ -2821,7 +2824,7 @@ async MusuBreach_poison(w, nav) {
 //   observations captured at land time stand as the proof, while the bytes themselves go.  The poison file is
 //    already gone (the breach unlinked it); this clears the honest control's landing.
 async MusuBreach_sweep(w, nav) {
-    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-breachrun')
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-MusuBreach-run')
     this.MusuBreach_note(w, { swept: 1 })
 
 },
@@ -2922,7 +2925,7 @@ async MusuBreach_wire_origin() {
 //     record; two jobs; the honest job files The Sines, the forged job files DJ Oscillo.  (The trim keeps the
 //      scene deterministic and the assertions exact: one land, one refusal.)
 async MusuBreach_wire_census(w, nav) {
-    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-breachwire')
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-MusuBreach-wire')
     let hmir = this.Ra_home_them(w, 'breach.wire.honest.mirror')
     let hown = this.Ra_home_self(w, 'breach.wire.honest.own')
     let fmir = this.Ra_home_them(w, 'breach.wire.forged.mirror')
@@ -2936,8 +2939,8 @@ async MusuBreach_wire_census(w, nav) {
     w.c.whown = hown
     w.c.wfmir = fmir
     w.c.wfown = fown
-    w.c.whmardir = this.Heist_marrauding('breachwire', 'honest')
-    w.c.wfmardir = this.Heist_marrauding('breachwire', 'forged')
+    w.c.whmardir = this.Heist_marrauding('MusuBreach-wire', 'honest')
+    w.c.wfmardir = this.Heist_marrauding('MusuBreach-wire', 'forged')
     w.c.whjob = this.Heist_job(w, 'breachwirehonest', [{ artist: 'The Sines', genre: 'breachtest' }], { home: this.Ra_home_shop(w, 'breach.wire.honest.own') })
     w.c.wfjob = this.Heist_job(w, 'breachwireforged', [{ artist: 'DJ Oscillo', genre: 'breachtest' }], { home: this.Ra_home_shop(w, 'breach.wire.forged.own') })
     this.MusuBreach_note(w, { wire_census: 1, honest: hmir.o({ Record: 1 }).length, forged: fmir.o({ Record: 1 }).length })
@@ -3024,7 +3027,7 @@ async MusuBreach_wire_forged(w, nav) {
 // MusuBreach_wire_sweep — drop the wire scene's landed bytes off the shared disk (the honest offer's landing);
 //  the forged offer never wrote.  Same hygiene as MusuBreach_sweep — the repo never keeps WAV bytes.
 async MusuBreach_wire_sweep(w, nav) {
-    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-breachwire')
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-MusuBreach-wire')
     this.MusuBreach_note(w, { wire_swept: 1 })
 
 },
@@ -3455,12 +3458,12 @@ async MusuReap_publish(w, nav) {
         if (!this.MusuReap_T(w).oa({ skipped: 'no_testsounds' })) this.MusuReap_note(w, { skipped: 'need_two_tracks' })
         return
     }
-    let root = this.Heist_marrauding('reap', 'shop')
+    let root = this.Heist_marrauding('MusuReap', 'shop')
     w.c.root = root
     let pub = this.MusuReap_pub()
     // start-of-run hygiene: our shelf clean AND our berth clean, so a re-run is deterministic.
     await this.MusuReap_sweep_shelf(w, nav)
-    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-reap')
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-MusuReap')
     let lib = this.Ra_home_self(w, pub)
     w.c.lib = lib
     await this.expecting(w, 'reap_publish', 240, async () => {
@@ -3520,7 +3523,7 @@ async MusuReap_forget(w, nav) {
 //   reads it), then a live re-list confirms the shelf is clear of this pub.
 async MusuReap_sweep(w, nav) {
     let swept = await this.MusuReap_sweep_shelf(w, nav)
-    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-reap')
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-MusuReap')
     let remain = (await this.Ra_stock_ls(nav, this.MusuReap_pub())).length
     let m = this.MusuReap_note(w, { swept: 1, count: swept })
     if (remain === 0) m.sc.shelf_clear = 1
@@ -3564,7 +3567,7 @@ MusuReap_witness(w) {
 //       6  sweep + float.
 //  REAL AUDIO ONLY FOR THE BYTES: the census (Heist_census) hashes+slices the raw file into %Body chunks — no
 //   decode — so the culture side runs fast; the pull lands the ORIGINAL bytes and the body_hash gate is real.
-//    ISOLATION: a DISTINCT marrauding namespace (test-marrauding-of-soft) swept at start + end so a re-run is
+//    ISOLATION: a DISTINCT marrauding namespace (test-marrauding-of-MusuSoft) swept at start + end so a re-run is
 //     deterministic; needsFSA (a writable share) + needMusic (testsounds present) gate the run.  CONVENTION
 //      (Musu*): no Run_A_ recipe — the world MUST be named MusuSoft (do_fn_for dispatches by w.sc.w).
 
@@ -3650,9 +3653,9 @@ async MusuSoft_setup(w, nav) {
     //  / Groove G — the whittle to ONE artist gives three DISTINCT titles, so a wish word can hit exactly one).
     //   Heist_census hashes+slices (no decode): each card carries its real identity AND its %Body bufs, so the
     //    pull side (step 5) has the original bytes and the match side has real title|artist.
-    let root = this.Heist_marrauding('soft', 'origin')
+    let root = this.Heist_marrauding('MusuSoft', 'origin')
     w.c.root = root
-    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-soft')
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-MusuSoft')
     let origin_lib = this.Ra_home_self(w, 'Origin')
     w.c.origin_lib = origin_lib
     this.Repli_register_caster(w, link[0], origin_lib)
@@ -3747,7 +3750,7 @@ async MusuSoft_condense(w, nav) {
     // harden — stamp at + the filing for the chosen card (artist off the tune, genre a Book-pinned category).
     this.Heist_condense(wish, lead, 'DJ Oscillo', 'softtest')
     w.c.condensed_at = wish.sc.at
-    let mardir = this.Heist_marrauding('soft', 'seeker')
+    let mardir = this.Heist_marrauding('MusuSoft', 'seeker')
     w.c.mardir = mardir
     await this.expecting(w, 'soft_pull', 90, async () => {
         // the pull mirror: census ONLY the chosen card's track into a them-shelf (its %Body bufs present), then
@@ -3782,7 +3785,7 @@ async MusuSoft_condense(w, nav) {
 //  drop them (files-only, dirs kept — the dead-handle-safe reset).  The %testing proof-of-landing stands; the
 //   bytes go.
 async MusuSoft_sweep(w, nav) {
-    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-soft')
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-MusuSoft')
     this.MusuSoft_note(w, { swept: 1 })
 
 },
@@ -3846,7 +3849,7 @@ MusuSoft_witness(w) {
 //              that card's bytes spend (the decoys stay unspent husks — the MusuSoft economy discriminator).
 //          9  sweep + float.
 //  REAL AUDIO for the bytes (Heist_census hashes+slices — no decode); ISOLATION: a DISTINCT marrauding
-//   namespace (test-marrauding-of-bay) swept at start + end.  needsFSA + needMusic gate.  CONVENTION (Musu*):
+//   namespace (test-marrauding-of-MusuBay) swept at start + end.  needsFSA + needMusic gate.  CONVENTION (Musu*):
 //    no Run_A_ recipe — the world MUST be named MusuBay (do_fn_for dispatches by w.sc.w).
 
 MusuBay(A,w) {
@@ -3952,7 +3955,7 @@ async MusuBay_setup(w, nav) {
     w.c.origin2_lib = origin2_lib
     this.Repli_register_caster(w, w.c.tx1, origin1_lib)
     this.Repli_register_caster(w, w.c.tx2, origin2_lib)
-    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-bay')
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-MusuBay')
     // the grant: ON for both directions (Seeker↔Origin1, Seeker↔Origin2).  Repli_allowed asks (peer=to, at=from)
     //  at every leg — a Heistlet Seeker→Origin1 asks grant(Origin1, Seeker); the return leg asks grant(Seeker,
     //   Origin1).  Both open so both legs cross.
@@ -4109,7 +4112,7 @@ async MusuBay_pull(w, nav) {
     let wish = w.c.wish
     if (!wish || !w.c.set_up || !w.c.chose_lead) return
     this.Heist_condense(wish, w.c.chose_lead, 'DJ Oscillo', 'baytest')
-    let mardir = this.Heist_marrauding('bay', 'seeker')
+    let mardir = this.Heist_marrauding('MusuBay', 'seeker')
     w.c.mardir = mardir
     await this.expecting(w, 'bay_pull', 90, async () => {
         // the pull mirror: census ONLY Origin1's tracks into a them-shelf, then trim to exactly the had record.
@@ -4138,7 +4141,7 @@ async MusuBay_pull(w, nav) {
 // MusuBay_sweep — leave the shared share clean — the pull landed real bytes into a marrauding namespace, so
 //  drop them (files-only, dirs kept — the dead-handle-safe reset).  The %testing proof stands; the bytes go.
 async MusuBay_sweep(w, nav) {
-    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-bay')
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-MusuBay')
     this.MusuBay_note(w, { swept: 1 })
 
 },
@@ -4247,9 +4250,9 @@ async MusuLossy_census(w, nav) {
     this.MusuLossy_note(w, { reached: 'step_2' })
     this.Ra_seed(w, 'MusuLossy')
     w.c.nav = nav
-    let root = this.Heist_marrauding('lossy', 'shop')
+    let root = this.Heist_marrauding('MusuLossy', 'shop')
     w.c.root = root
-    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-lossy')
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-MusuLossy')
     // the lossless control — a short mono sine in a tagged RIFF WAV (the MusuHeist plant idiom, deterministic).
     let sr = 8000
     let nsamp = 4000

@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '6b41f98a3246ca51~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '286147eeb3ed335f~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -1535,15 +1535,32 @@ Swarm_share_up(w, ident) {
 },
 // the pump loop: ~600ms cadence, era-guarded (a re-up cancels the stale chain — the Radio
 //  loop law), each beat a post_do so the req drains ride the mutex like a carrier delivery.
+//   BUSY-GUARDED (the human 2026-07-30, watching a heist double-write a landed file — "spastic as
+//    fuck"): `tick` used to fire `setTimeout(tick, 600)` UNCONDITIONALLY, regardless of whether the
+//     post_do'd beat from the PREVIOUS tick had actually finished — post_do queues, it doesn't await,
+//      so a beat that runs longer than 600ms (any real Heist pull, streaming megabytes) let a SECOND
+//       Swarm_share_beat start — and with it a second, concurrent Heist_keep_step — while the first was
+//        still mid-stream into the SAME destination file.  Two overlapping writers explains everything
+//         that was seen: a landed file doubling in size, a .crswap reappearing beside an already-complete
+//          .flac, sizes climbing then dropping non-monotonically.  `share_beat_running` skips firing a
+//           new beat while one is still in flight — the 600ms check keeps ticking so the very next free
+//            tick catches up immediately, no added latency once beats are fast again.
 async Swarm_share_loop(w, ident) {
     w.c.share_era = (w.c.share_era || 0) + 1
     let era = w.c.share_era
     const tick = () => {
         if (era !== w.c.share_era || !w.c.share_up) return
-        this.post_do(async () => {
-            if (era !== w.c.share_era) return
-            try { await this.Swarm_share_beat(w, ident) } catch (er) { this.Swarm_share_why(w, er) }
-        })
+        if (w.c.share_beat_running) {
+            w.c.share_beat_skipped = (w.c.share_beat_skipped || 0) + 1
+            if (w.c.share_beat_skipped % 10 === 1) console.warn(`⏳ Swarm_share_beat still running past 600ms — skipping this tick (×${w.c.share_beat_skipped} so far) instead of overlapping it`)
+        } else {
+            w.c.share_beat_running = true
+            this.post_do(async () => {
+                if (era !== w.c.share_era) { w.c.share_beat_running = false; return }
+                try { await this.Swarm_share_beat(w, ident) } catch (er) { this.Swarm_share_why(w, er) }
+                w.c.share_beat_running = false
+            })
+        }
         setTimeout(tick, 600)
     }
     setTimeout(tick, 600)

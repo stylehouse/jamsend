@@ -723,7 +723,23 @@ abstract class StuffAware extends StuffIO {
         if (handler) {
             // first do(): expose the birth-stamped initial-do as %initialdo
             if (req.c.initialdo) { delete req.c.initialdo; req.sc.initialdo = 1 }
-            await handler(req)
+            try {
+                await handler(req)
+            } catch (err) {
+                // a throwing do_fn used to propagate straight out of do()'s for-loop, aborting it — every
+                //  req after this one at the same maz level never ran that pass, and (since do() itself
+                //  then threw) whatever iterated MULTIPLE hosts calling do() (reqdo_sweep over every
+                //  Agency→world, the Waftica Funkcion pump) stopped at this host too, forever, on every
+                //  future pass. Contain the fault to THIS req: log it loudly, let the sweep keep moving —
+                //  the req stays !finished so the NEXT do() naturally retries it (no cooldown here: that's
+                //  a bigger, riskier change to make in the single most central path in the system without
+                //  the human's own review).
+                req.c.req_error_count = (req.c.req_error_count || 0) + 1
+                let H2: any = this
+                while (H2 && typeof H2.do_fn_for !== 'function') H2 = H2.c?.up
+                console.error(`⚠ req do_fn threw (${Object.keys(req.sc)[0]}, attempt ${req.c.req_error_count}):`, err)
+                H2?.Story_error?.('error', 'req_do_fn:' + Object.keys(req.sc)[0], err)
+            }
             delete req.sc.initialdo   // comes off again after the do() — never snaps
         }
         delete req.sc.mutated   // after the handler — a mutated_fn reads it

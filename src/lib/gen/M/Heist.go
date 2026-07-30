@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '3528121a13ff8810~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '3dc3de589d873a9e~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -483,6 +483,30 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
     let relparts = rel.split('/').filter(Boolean)
     let filename = relparts.pop()
     let dir = mardir + '/' + relparts.join('/')
+    // REENTRANCY GUARD (the human 2026-07-30 — a landed file doubling in size, a .crswap flapping beside
+    //  an already-complete .flac): belt-and-suspenders on top of the Swarm_share_loop busy-guard fix — if
+    //   ANY caller ever lands the same destination path twice concurrently, refuse the second loudly rather
+    //    than let two writers race the same file.  Keyed on the top House so it holds across worlds/callers.
+    let M = this.top_House ? this.top_House() : null
+    let landkey = dir + '/' + filename
+    if (M) {
+        if (!M.c.heist_landing) M.c.heist_landing = new Set()
+        if (M.c.heist_landing.has(landkey)) {
+            console.warn(`⇊⚠ Heist_land REFUSED — already landing "${landkey}" (a concurrent caller tried to start a second write)`)
+            return
+        }
+        M.c.heist_landing.add(landkey)
+    }
+    console.log(`⇊ landing "${filename}" → ${dir} (${total} chunks)`)
+    try {
+        await this.Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, rel)
+    } finally {
+        if (M) M.c.heist_landing.delete(landkey)
+    }
+
+},
+async Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, rel) {
+    let total = +(rec.sc.total || 0)
     // STREAM-TO-DISK (Radio_todo §10.2 #1).  The chunks land straight onto the file in seq order rather
     //  than assembling one Uint8Array(size) copy of the whole asset beside the mirror bufs (the old ~2×
     //   high-water).  Byte-faithfulness stays CENTRAL and unchanged: the file is read back WHOLE and
@@ -1165,19 +1189,6 @@ async Heist_rummage_answer(w, tx, me, asker, rummageMirror, nav) {
 //      SYMMETRIC: the same node also SERVES friends' asks (a landed %Rummage → Heist_rummage_answer).  It
 //       reuses the PROVEN engine (offer→beat→land, MusuHeist) — the only new matter is this glue + the tag.
 
-// Heist_music_root — the PRODUCTION landing root (the human's 2026-07-28 ruling: land straight into the real
-//  collection under <genre>/, NOT a test namespace).  `music` is the nav base the stoker digs (Radio bases
-//   ['music','','testsounds']), so a kept folder is picked up by the next census and just appears in the
-//    radio.  Heist_land nests the <genre> subdir itself (nav.bin_write creates the path).
-Heist_music_root() {
-    // PROD lands in the real 'music' collection (the stoker digs it, so a kept track just appears in the
-    //  radio).  A test/Book redirects to an ISOLATED root via the top House's `heist_root` (the human
-    //   2026-07-29 "there is a param for a test or two to make them save somewhere isolated") so a Book never
-    //    writes into the real library.  .c on the top House → the Book sets it once; prod leaves it unset.
-    let M = this.top_House ? this.top_House() : null
-    return (M && M.c.heist_root) || 'music'
-
-},
 // Heist_keep_beat — one pass, both roles: SERVE friends' folder-describe asks, then GO (carry my own %Keeps
 //  forward).  Pumped from Swarm_share_beat, so the routes it needs are already registered for live friends;
 //   it re-registers defensively (idempotent) in case a keep outlives a share cycle.  Cheap when idle.
@@ -1277,8 +1288,10 @@ async Heist_keep_beat(w, ident) {
             catch (er) { ask.c.answers = n }
         }
     }
-    // GO: carry each of my %Keeps one step.
+    // GO: carry each of my %Keeps one step.  REHYDRATE first — a Berth-persisted heist with no live %Keep
+    //  standing (a fresh boot|reload) gets rebuilt here so it joins the very same loop below.
     let shop = this.Ra_home_shop(rw, me)
+    try { await this.Heist_keep_rehydrate(rw, me, nav, shop) } catch (er) { rw.c.heist_rehydrated = 1 }
     for (const keep of shop.o({ Keep: 1 })) {
         try { await this.Heist_keep_step(w, rw, ident, me, nav, keep, shop) }
         catch (er) { keep.c.last_why = '' + (er && er.message || er) }
@@ -1304,8 +1317,12 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
     if (state === 'choosing') return
     if (state === 'done') {
         // the ✓ lingers a few seconds, then the keep DROPS itself — the cell falls out of the glass and the
-        //  finished transient leaves the snap (a done %Keep is scaffolding, not ledger).
-        if (!keep.c.done_ts) keep.c.done_ts = Date.now()
+        //  finished transient leaves the snap (a done %Keep is scaffolding, not ledger).  FORGET the Berth
+        //   entry the instant it's done, not on the 8s drop — nothing left to resume.
+        if (!keep.c.done_ts) {
+            keep.c.done_ts = Date.now()
+            try { await this.Heist_keep_forget(keep) } catch (er) {}
+        }
         if (Date.now() - keep.c.done_ts > 8000) {
             try { (keep.c.up || shop).rm({ Keep: 1, seed: keep.sc.seed }) } catch (er) {}
         }
@@ -1358,7 +1375,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
         //     one — and skip straight to landed for whatever verifies. THIS is the live 'pulling' branch
         //      (not the dormant Heist_keep_pull below, which nothing live ever reaches — state never
         //       becomes 'committing' on the one-click flow); resume must run HERE to matter.
-        await this.Heist_resume_sync(w, nav, job, own, srcmir, picks, this.Heist_music_root())
+        await this.Heist_resume_sync(w, nav, job, own, srcmir, picks, '', keep)
         // SERIALIZE + OVERLAP (Evening 5 A1 — the human 2026-07-29: "doing every track in parallel or holding
         //  more than a reasonable amount of the music is wrong ... we could overlap them a little bit but only
         //   for a few seconds, to beat a latency ... where we ask for another while nothing is coming").  The
@@ -1418,12 +1435,13 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
             sum_held = sum_held + rheld
             let cooling = rec.c.breach_at && (Date.now() - rec.c.breach_at) < BREACH_COOLDOWN
             if (r && r.done && !cooling) {
-                await this.Heist_land(w, nav, job, own, srcmir, rec, this.Heist_music_root())
+                await this.Heist_land(w, nav, job, own, srcmir, rec, '')
                 pick.sc.landed = 1
                 pick.bump()
                 landed = landed + 1
                 pick.c.bench_held = 0
                 pick.c.bench_ts = 0
+                try { await this.Heist_keep_persist(keep) } catch (er) {}   // Berth must know THIS one is done before the next reload
                 continue                                     // a landed track frees its slot for the next pick
             }
             left = left + 1
@@ -1584,13 +1602,101 @@ Heist_keep_pick_seed(keep) {
 },
 // Heist_keep_start — the "▶ start" button (the human 2026-07-28 "heist should have a start button, with a
 //  'will auto-' before it"): begin the pull NOW instead of waiting for the track to end.  Just flips to pulling;
-//   Heist_keep_step does the rest next beat.
-Heist_keep_start(keep) {
+//   Heist_keep_step does the rest next beat.  Also PERSISTS the confirmed intent (the human 2026-07-30: "a
+//    resuming heist must happen" — this is the moment the list-of-files-and-structure becomes fixed, so it's
+//     the moment worth saving; see Heist_keep_persist).
+async Heist_keep_start(keep) {
     let s = keep.sc.state || 'primed'
     if (s === 'primed' || s === 'wanted' || s === 'asking') {
         keep.sc.state = 'pulling'
         keep.bump()
+        try { await this.Heist_keep_persist(keep) } catch (er) {}
     }
+
+},
+// Heist_keep_persist — save a keep's LIST-LEVEL intent (which files, into what structure — never a byte
+//  offset, [[Heist_resume_sync]] verifies bytes separately) to a Berth Waft, so Heist_keep_rehydrate can
+//   rebuild the identical %Keep+%Picks after a reload. Berth's `root`/`prepub` are the app's OWN durable
+//    identity (Berth_dir: /.jamsend/berth/<my-prepub>/Heists/toc.snap) — this collection's own home,
+//     not the friend's. Best-effort: no identity|nav yet (very early boot, or a Book) just skips — the
+//      keep still pulls fine in-session, it just won't survive THIS particular reload.
+async Heist_keep_persist(keep) {
+    let M = this.top_House ? this.top_House() : null
+    let ident = M && M.Swarm_live_self ? M.Swarm_live_self() : null
+    let nav = this.Crate_nav ? this.Crate_nav() : null
+    if (!ident || !nav) return
+    let waft = await this.Berth_open(nav, '', String(ident.sc.prepub), 'Heists')
+    let entry = waft.oai({ HeistSeed: 1, seed: String(keep.sc.seed) })
+    entry.c.up = waft
+    entry.sc.at = String(keep.sc.at || '')
+    if (keep.sc.Keep) entry.sc.title = String(keep.sc.Keep)
+    if (keep.sc.from_name) entry.sc.from_name = keep.sc.from_name
+    if (keep.sc.artist) entry.sc.artist = keep.sc.artist
+    if (keep.sc.genre) entry.sc.genre = keep.sc.genre
+    // the picks themselves: `ref` is the live pick's own identifying field (Heist_resume_sync reads it the
+    //  same way Heist_keep_step's live pull loop does — ref falls back to id, then a rec's `re`).  JSON in
+    //   one scalar — the established idiom for a small structured field (Swarm_export, Ra_unpack headers).
+    //    `landed` rides too (the human 2026-07-30, spotting newlyadded logging the same finished track on
+    //     every ~10min reload): without it every rehydrate replayed picks as if NONE had landed yet, so
+    //      resume-sync re-verified + re-logged an already-finished file forever.  Absent when falsy — the
+    //       house rule against snapping a bare `false` (a plain JSON blob here, not a C.sc field, but the
+    //        same discipline: JSON.stringify drops an explicit `undefined` key on its own).
+    entry.sc.picks = JSON.stringify(keep.o({ Pick: 1 }).map((p) => ({ ref: String(p.sc.ref || p.sc.id || ''), artist: p.sc.artist, title: p.sc.title, genre: p.sc.genre, landed: p.sc.landed ? 1 : undefined })).filter((p) => p.ref))
+    await this.Berth_save(nav, waft)
+
+},
+// Heist_keep_forget — drop a keep's Berth-persisted intent once it's done or cancelled, so a later reload
+//  doesn't try to resurrect an album that already fully landed (or was explicitly abandoned).
+async Heist_keep_forget(keep) {
+    let M = this.top_House ? this.top_House() : null
+    let ident = M && M.Swarm_live_self ? M.Swarm_live_self() : null
+    let nav = this.Crate_nav ? this.Crate_nav() : null
+    if (!ident || !nav) return
+    let waft = await this.Berth_open(nav, '', String(ident.sc.prepub), 'Heists')
+    if (!waft.o({ HeistSeed: 1, seed: String(keep.sc.seed) })[0]) return   // nothing persisted — no-op save
+    waft.rm({ HeistSeed: 1, seed: String(keep.sc.seed) })
+    await this.Berth_save(nav, waft)
+
+},
+// Heist_keep_rehydrate — on boot|reload, resurrect any Berth-persisted heist with no LIVE %Keep standing
+//  yet (the human 2026-07-30: Sounditron pages auto-reload every ~10min, unattended overnight — "I think it
+//   basically should be able to resume a heist in the background").  Re-mints straight into 'pulling' (skips
+//    'primed' — the human already confirmed, before whatever reloaded), replays the exact persisted picks
+//     (never re-derives a default — `defaulted:1` blocks Heist_keep_default_pick's safety-net call from
+//      double-dipping), then Heist_resume_sync does the honest work of finding what's already correctly on
+//       disk. Runs once per radio-world life (rw.c gate — cheap after the first beat either way: one Berth
+//        read, empty the common case).
+async Heist_keep_rehydrate(rw, me, nav, shop) {
+    if (rw.c.heist_rehydrated) return
+    rw.c.heist_rehydrated = 1
+    let waft = null
+    try { waft = await this.Berth_open(nav, '', me, 'Heists') } catch (er) { return }
+    let n = 0
+    for (const entry of waft.o({ HeistSeed: 1 })) {
+        let seedv = String(entry.sc.seed || '')
+        if (!seedv || shop.o({ Keep: 1, seed: seedv })[0]) continue
+        let picks = []
+        try { picks = JSON.parse(entry.sc.picks || '[]') } catch (er) { picks = [] }
+        if (!picks.length) continue
+        let keep = shop.i({ Keep: entry.sc.title || 'resumed', seed: seedv, at: entry.sc.at || '', state: 'pulling' })
+        keep.c.up = shop
+        if (entry.sc.from_name) keep.sc.from_name = entry.sc.from_name
+        if (entry.sc.artist) keep.sc.artist = entry.sc.artist
+        if (entry.sc.genre) keep.sc.genre = entry.sc.genre
+        keep.sc.defaulted = 1
+        for (const p of picks) {
+            if (!p || !p.ref) continue
+            let pick = keep.i({ Pick: 1, ref: String(p.ref) })
+            pick.c.up = keep
+            if (p.artist) pick.sc.artist = p.artist
+            if (p.title) pick.sc.title = p.title
+            if (p.genre) pick.sc.genre = p.genre
+            if (p.landed) pick.sc.landed = 1   // carry the finished picks forward — resume-sync must not re-log them
+        }
+        keep.bump()
+        n = n + 1
+    }
+    if (n) console.log(`◈⟲ rehydrated ${n} heist${n === 1 ? '' : 's'} from disk — resuming`)
 
 },
 // Heist_keep_pick_toggle — the KeepFace cell's un/keep of one folder node (ref = its keep-id).  Present ⇒ drop
@@ -1634,13 +1740,26 @@ Heist_keep_set_genre(keep, v) {
 //          candidate failing its digest) is simply left NOT landed — it falls through to the existing
 //           from-scratch pull below, restarted whole, exactly as an ordinary retry always has. No byte-
 //            offset resume, ever: only "already fully there, verified" or "not there, pull it fresh."
-async Heist_resume_sync(w, nav, job, own_lib, mir, picks, mardir) {
+async Heist_resume_sync(w, nav, job, own_lib, mir, picks, mardir, keep) {
     if (job.c.resume_synced) return
     job.c.resume_synced = 1
     if (typeof nav.read_range !== 'function') return   // no cheap stat on this backend — skip, not guess
     let candidates = []
     for (const pick of picks) {
-        if (pick.sc.landed) continue
+        if (pick.sc.landed) {
+            // BACKFILL a missing probation note (the human 2026-07-30 — "multiple resumed heists", a track
+            //  fully landed on disk with no matching newlyadded entry: "drop the tracking... not the
+            //   having"). A pick's `landed` flag rides forward across every reload once persisted, but
+            //    nothing else ever re-checks an already-landed pick — if its ORIGINAL Heist_catalog_land
+            //     call predates this session's Probation-card rewrite (or hit an earlier bug), the two drift
+            //      apart silently forever. Cheap: Heist_newlyadded_note is already idempotent (skips a
+            //       duplicate 'fresh' card), so this is a no-op the common case, a silent repair the rare one.
+            if (pick.sc.artist || pick.sc.title) {
+                let held = this.Ra_recs(own_lib).find((r) => r.sc.artist === pick.sc.artist && r.sc.title === pick.sc.title)
+                if (held && held.sc.path) { try { await this.Heist_newlyadded_note(nav, mardir, held.sc.path) } catch (er) {} }
+            }
+            continue
+        }
         // a live pick's identifying field is `ref` (Heist_keep_default_pick / _pick_all / _pick_seed /
         //  _pick_toggle all mint `ref:`, never `id:` — only the dormant chooser path's Heist_keep_commit
         //   sets `id:`), and the record it names may carry that value as its OWN id, or as its `re`
@@ -1673,6 +1792,10 @@ async Heist_resume_sync(w, nav, job, own_lib, mir, picks, mardir) {
         c.pick.sc.landed = 1
         c.pick.bump()
     }
+    // RE-PERSIST the now-landed picks (the human 2026-07-30 duplicate-newlyadded finding): without this the
+    //  Berth still says every pick is un-landed until the keep's own state next changes, so a SECOND reload
+    //   before that happens would resume-sync the exact same candidates all over again.
+    if (keep) { try { await this.Heist_keep_persist(keep) } catch (er) {} }
     if (this.Radio_trace) this.Radio_trace(null, { ev: 'heist-resume', n: candidates.length })
     console.log(`◈⟲ resume: ${candidates.length} track${candidates.length === 1 ? '' : 's'} already on disk — skipped, not re-pulled`)
 
@@ -1690,7 +1813,7 @@ async Heist_keep_pull(w, rw, ident, me, nav, keep, shop, srcmir, route) {
     if (!job) job = this.Heist_job(w, keep.sc.at, this.Heist_keep_filings(keep), { home: shop })
     keep.c.job = job
     let own = this.Ra_home_self(rw, me)
-    await this.Heist_resume_sync(w, nav, job, own, srcmir, picks, this.Heist_music_root())
+    await this.Heist_resume_sync(w, nav, job, own, srcmir, picks, '', keep)
     let left = 0
     // BREACH COOLDOWN (the human 2026-07-30, watching a track's file cycle unlink→restart over and over):
     //  a breached record loses every chunk (Heist_release_buf ran before the failing check), so it must
@@ -1706,7 +1829,7 @@ async Heist_keep_pull(w, rw, ident, me, nav, keep, shop, srcmir, route) {
         let r = await this.Ra_pull_beat(w, rec.c.rx || route, me, String(rec.c.from || keep.sc.at), rec)
         let cooling = rec.c.breach_at && (Date.now() - rec.c.breach_at) < BREACH_COOLDOWN
         if (r && r.done && !cooling) {
-            await this.Heist_land(w, nav, job, own, srcmir, rec, this.Heist_music_root())
+            await this.Heist_land(w, nav, job, own, srcmir, rec, '')
             pick.sc.landed = 1
             pick.bump()
         } else {
@@ -1761,79 +1884,79 @@ Heist_keep_commit(w, keep, choices) {
 
 },
 // Heist_keep_cancel — close the chooser without pulling: drop the whole %Keep intent (a re-press re-seeds it).
-Heist_keep_cancel(w, keep) {
+async Heist_keep_cancel(w, keep) {
     if (!keep) return
     let shop = keep.c.up || this.Ra_home_shop(w, this.Radio_pub(w) || 'me')
     // drop any in-flight job too (an abandon from 'committing' must not leave a live %Heist pulling).
     if (keep.sc.at) { try { shop.rm({ Heist: 1, at: keep.sc.at }) } catch (er) {} }
+    try { await this.Heist_keep_forget(keep) } catch (er) {}
     shop.rm({ Keep: 1, seed: keep.sc.seed })
 },
 //#endregion
 
 //#region newlyadded — probation as metadata: the log that shuffles new music into the listening diet
-// One text file per marrauding namespace: `<seq> <feeling> <category/filename…>` per line — the
-//  ENTRY comes LAST and takes the rest of the line, because real filenames carry spaces (the
-//   truncated-ghost-file lesson: a space-delimited middle field silently verified files that never
-//    existed).  Feelings start 'fresh'; the first week or two decides — grow to love it (→ the koha
-//     list, things to give back for) or drop it completely.  NEVER a source: graduation later feeds
-//      blog-writing and freer classification, not attribution.  seq is a per-file ordinal, not a
-//       wall clock — the log orders arrivals without smuggling a timestamp a fixture would churn on.
-async Heist_newlyadded_read(nav, mardir) {
-    let raw = null
-    try {
-        raw = await nav.bin_read(mardir, 'newlyadded')
-    } catch (er) { raw = null }
-    if (!raw || !raw.byteLength) return []
-    let text = new TextDecoder().decode(raw)
-    return text.split('\n').filter(Boolean)
-
-},
-async Heist_newlyadded_write(nav, mardir, lines) {
-    await nav.bin_write(mardir, 'newlyadded', new TextEncoder().encode(lines.join('\n') + '\n'))
+// A %Probation,of:<path> per arrival — MANY:1 (many probation events can exist for one track path over
+//  its lifetime: love, drop, then a later re-download starts a fresh probation), the project's own
+//   referring-particle rule for that shape (an `of:` pointer, never a second mainkey wearing the
+//    holding's shape).  Persisted the SAME way as every other Pier document — Berth's Waft/enWaft/
+//     toc.snap (the human 2026-07-30: "it's got to be snap|enWaft… you can't just make up formats" —
+//      the old shape was a hand-rolled `<seq> <feeling> <category/filename…>` text line, pre-existing
+//       from 2026-07-12, not this session's doing, but real all the same).  Collection-scoped, no
+//        prepub — many friends' heists land in ONE shared newlyadded, never split by who gave what
+//         (the same "never a source" rule the old text log kept).  Feelings start 'fresh'; the first
+//          week or two decides — grow to love it (→ the koha list) or drop it completely.  seq is a
+//           per-arrival ordinal, not a wall clock — the log orders arrivals without smuggling a
+//            timestamp a fixture would churn on.
+async Heist_newlyadded_waft(nav, mardir) {
+    return await this.Berth_open(nav, mardir, '', 'Newlyadded')
 
 },
 async Heist_newlyadded_note(nav, mardir, entry) {
-    let lines = await this.Heist_newlyadded_read(nav, mardir)
-    lines.push((lines.length + 1) + ' fresh ' + entry)
-    await this.Heist_newlyadded_write(nav, mardir, lines)
+    let waft = await this.Heist_newlyadded_waft(nav, mardir)
+    // IDEMPOTENT-APPEND (the human 2026-07-30, spotting the same track logged 'fresh' seven times over
+    //  as many reloads): a still-'fresh' card for this exact path is a REPLAY of Heist_resume_sync's
+    //   accept path re-verifying an already-landed pick, never a new arrival — skip.  A 'love'd or
+    //    'drop'd path reappearing (a re-download after a drop) IS new — mints a fresh card.  Belt-and-
+    //     suspenders on top of the real fix (Heist_keep_persist now carries `landed` through a reload).
+    if (waft.o({ Probation: 1, of: entry, feeling: 'fresh' })[0]) return
+    let card = waft.i({ Probation: 1, of: entry, seq: String(waft.o({ Probation: 1 }).length + 1) })
+    card.c.up = waft
+    card.sc.feeling = 'fresh'
+    await this.Berth_save(nav, waft)
 
 },
-// Heist_newlyadded_entry — one line parsed: {seq, feeling, entry} (entry = the rest of the line).
-Heist_newlyadded_entry(line) {
-    let parts = line.split(' ')
-    return { seq: parts[0], feeling: parts[1], entry: parts.slice(2).join(' ') }
+// Heist_newlyadded_list — every probation card, oldest arrival first (seq is stamped in mint order
+//  already, but o() promises no ordering — sort explicitly so a reader can trust arrival order).
+async Heist_newlyadded_list(nav, mardir) {
+    let waft = await this.Heist_newlyadded_waft(nav, mardir)
+    return waft.o({ Probation: 1 }).sort((a, b) => (+a.sc.seq || 0) - (+b.sc.seq || 0))
 
 },
 // Heist_feel — the listener's verdict on a probation entry.  'love' graduates in place; 'drop' is
 //  DENY: the file leaves the collection (deleted off the disk) and its catalog card retires.  The drop
-//   leaves NO durable trace (the %Tombstone was condemned 2026-07-13): a later heist re-offering the same
-//    identity finds it no longer held and may re-download it — accepted, a wrong re-download costs one
-//     delete, not a ledger.  The log line stays honest about the drop.
+//   leaves NO durable trace beyond this one probation card (the %Tombstone was condemned 2026-07-13): a
+//    later heist re-offering the same identity finds it no longer held and may re-download it —
+//     accepted, a wrong re-download costs one delete, not a ledger.  The probation card stays — honest
+//      about the drop, same as the old log line used to.
 async Heist_feel(w, nav, own_lib, mardir, entry, feeling) {
-    let lines = await this.Heist_newlyadded_read(nav, mardir)
-    let out = []
-    for (const line of lines) {
-        let e = this.Heist_newlyadded_entry(line)
-        if (e.entry === entry) {
-            out.push(e.seq + ' ' + feeling + ' ' + e.entry)
-            if (feeling === 'drop') {
-                let cut = entry.split('/')
-                let filename = cut.pop()
-                let dl = await nav.dir_at(mardir + '/' + cut.join('/'))
-                if (dl && typeof dl.deleteEntry === 'function') await dl.deleteEntry(filename)
-                if (own_lib) {
-                    // the card retires WITH the file — the track leaves the collection cleanly.  No
-                    //  %Tombstone (condemned): nothing durable remembers the drop.  The rm goes to
-                    //   the card's TRUE holder (a paged card sits under a %Cloud, not the shelf).
-                    let card = this.Ra_recs(own_lib).find((r) => r.sc.path === entry)
-                    if (card) await (card.c.up || own_lib).rm({ Record: 1, id: card.sc.id })
-                }
-            }
-        } else {
-            out.push(line)
+    let waft = await this.Heist_newlyadded_waft(nav, mardir)
+    let card = waft.o({ Probation: 1, of: entry, feeling: 'fresh' })[0] || waft.o({ Probation: 1, of: entry })[0]
+    if (!card) return
+    card.sc.feeling = feeling
+    if (feeling === 'drop') {
+        let cut = entry.split('/')
+        let filename = cut.pop()
+        let dl = await nav.dir_at(mardir + '/' + cut.join('/'))
+        if (dl && typeof dl.deleteEntry === 'function') await dl.deleteEntry(filename)
+        if (own_lib) {
+            // the card retires WITH the file — the track leaves the collection cleanly.  No
+            //  %Tombstone (condemned): nothing durable remembers the drop.  The rm goes to
+            //   the card's TRUE holder (a paged card sits under a %Cloud, not the shelf).
+            let rcard = this.Ra_recs(own_lib).find((r) => r.sc.path === entry)
+            if (rcard) await (rcard.c.up || own_lib).rm({ Record: 1, id: rcard.sc.id })
         }
     }
-    await this.Heist_newlyadded_write(nav, mardir, out)
+    await this.Berth_save(nav, waft)
 
 },
 // Heist_sweep — empty a standing marrauding namespace: recurse the tree and delete every FILE, but
@@ -1872,7 +1995,9 @@ async Heist_sweep(nav, path) {
 //       its marrauding namespace, so Heist_sweep empties every berth for free — reset-with-the-Story falls
 //        out of homing, no new reset mechanism.
 Berth_dir(root, prepub, name) {
-    return root + '/.jamsend/berth/' + prepub + '/' + name
+    // prepub is OPTIONAL — an identity-less Waft (Heist_newlyadded_waft's collection-scoped Newlyadded,
+    //  never split by who gave what) homes one level shallower: <root>/.jamsend/berth/<name>.
+    return root + '/.jamsend/berth/' + (prepub ? prepub + '/' : '') + name
 
 },
 // Berth_open — deWaft the Waft's toc.snap into a live C tree, or MINT an empty %Waft when absent (a first
@@ -1880,7 +2005,7 @@ Berth_dir(root, prepub, name) {
 //   never snaps) so Berth_save needs only the waft.  path is the logical Waft key the tree carries.
 async Berth_open(nav, root, prepub, name) {
     let dir = this.Berth_dir(root, prepub, name)
-    let path = 'berth/' + prepub + '/' + name
+    let path = 'berth/' + (prepub ? prepub + '/' : '') + name
     let snap = null
     try {
         snap = await nav.read_file(dir, 'toc.snap')

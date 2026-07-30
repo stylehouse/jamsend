@@ -1243,6 +1243,7 @@ export class House extends StorableHousing {
             await handler.call(this, undefined, undefined, e)
         } catch (err) {
             console.warn(`targeted e:${elvis} errored:`, err)
+            this.Story_error?.('error', 'reqyonciliation', err)
         }
     }
 

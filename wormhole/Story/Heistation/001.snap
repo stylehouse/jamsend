@@ -1,0 +1,6 @@
+Snap:H
+  H:Heistation,Run
+    A:Heistation
+      self,round	{"mung":["age"]}
+      w:Heistation
+        self,round	{"mung":["age"]}

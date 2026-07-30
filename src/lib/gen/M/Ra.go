@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '12fc2bd3db2aeba5~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return 'a45085b7ee3f4357~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -820,19 +820,23 @@ async Ra_offer_stock(w, tx, from, to, shelf) {
 },
 // Ra_mag_warm — the §5 WARM START at the listener: the first page's first TWO records get their
 //  opening page of chunks (PAGE=2 — the 2 records × 2 chunks ramp) wanted FIRST, before the
-//   restock deepens whole previews — enough for playback to begin the moment they land.  Fires
-//    once per arrived Mag (mag.c.warmed); the wants ride the shared want-once cursor so the
-//     restock never re-asks them.  When record zero holds its opening page the Mag turns WARM —
-//      sc.warm = 1, the autostart-ready signal the switch-to-this-channel affordance reads
-//       (presentation parked behind the Vyto refactor; the signal is the wire's job).
+//   restock deepens whole previews — enough for playback to begin the moment they land.  RE-ASKS
+//    (the self-healing survey, 2026-07-30 — a permanent want-once cursor with no re-ask timer meant
+//     one dropped want-reply frame stalled Ra_stage at 'pulling'/'landing' forever and mag.sc.warm
+//      never armed): keeps trying, throttled 4s per key, until the mag actually goes warm — the
+//       proven ra_want_ts pattern Ra_pull_beat already uses, not a one-shot boolean.  When record
+//        zero holds its opening page the Mag turns WARM — sc.warm = 1, the autostart-ready signal
+//         the switch-to-this-channel affordance reads (presentation parked behind the Vyto refactor;
+//          the signal is the wire's job).
 async Ra_mag_warm(w, mirror) {
     if (!mirror) return
     for (const mag of mirror.o({ Mag: 1 })) {
         let rows = this.Ra_recs_deep(mag, [])
         if (!rows.length) continue
-        if (!mag.c.warmed) {
-            mag.c.warmed = 1
+        if (!mag.sc.warm) {
             w.c.ra_wanted = w.c.ra_wanted || {}
+            w.c.ra_want_ts = w.c.ra_want_ts || {}
+            let nowms = Date.now()
             let k = 0
             while (k < 2 && k < rows.length) {
                 let rec = rows[k]
@@ -840,7 +844,8 @@ async Ra_mag_warm(w, mirror) {
                 if (!(+(rec.sc.total || 0) > 0)) continue
                 if (!rec.c.rx || !rec.c.from || !w.c.repli_mirror_pier) continue
                 let key = rec.sc.id + ':0'
-                if (w.c.ra_wanted[key]) continue
+                if (nowms - (w.c.ra_want_ts[key] || 0) < 4000) continue
+                w.c.ra_want_ts[key] = nowms
                 w.c.ra_wanted[key] = 1
                 await this.Repli_want_next(w, rec.c.rx, w.c.repli_mirror_pier, rec.c.from, rec.sc.id, 'opus', 0)
                 this.Ra_stage(w, rec)

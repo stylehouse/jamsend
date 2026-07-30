@@ -289,17 +289,74 @@ The occasion: the human found the live glass an "unstructured flap-puddle — no
  byte-identical with the new gate off → Credence row. Never commit; the human reviews the diff.
 
 **BUILD LOG 2026-07-30 (owner side).** P0 found already landed+committed (`vyto_foam.ts:83`
- AREA_BASE; all five sites read it). P1/P2/P3 code + Books landed as above — but NO station is DONE:
-  every Book run wedged at phase `begun` (VytoNestRest control too, at clean HEAD gens — both my gen
-   and the Radios agent's uncommitted gens exonerated by revert-tests), then the ★claude runner tab
-    went dark entirely; the human was Telegram-asked to revive it. The wedge fits a silently
-     swallowed `resetStory` elvis: `Lies_become_book_drive` fires `i_elvisto('Auto/Auto','resetStory')`
-      right after phase begun, and the 23:57 Housing change turned a targeting miss from a THROW
-       into a console.error — invisible over the CLI. Instrumented while hunting (both additive):
-        the `world` op now returns the top-House `err_ring` (+ runner_ask prints it), and the
-         i_elvisto targeting .catch now ALSO rings `Story_error('error','elvisto',…)`. Next boot
-          NAMES the wedge. Verification queue once the runner returns: VytoMemo → VytoNeed →
-           VytoDepth (each: red-fixture run → accept → green×2 → sabotage red → revert → shot).
+ AREA_BASE; all five sites read it). P1/P2/P3 code + Books landed as above.
+
+**The begun-wedge — ROOT CAUSE FOUND + FIXED.** Every Book run (VytoNestRest control included, at
+ clean HEAD gens) wedged at phase `begun` forever. NOT the elvis-targeting theory first suspected —
+  a checkpoint trace (`H.diag()`, temporary, `.c`-only so it never rides a snap — Housing.svelte.ts)
+   walked the whole chain live and named the real cause: `runner_ask.mjs`'s own client-side retry
+    (`for (attempt=1;;attempt++) sendAsk(...)`, the "insisting N/5" loop) resends the IDENTICAL `run`
+     ask on a lost/delayed ack. On a contended/slow runner the retry LANDS server-side too — and
+      `Lies_become_book_drive` had no idempotency guard, so each landing re-fired `resetStory`,
+       tearing the in-flight Story world down (`auto_teardown_story` + a fresh `subHouse('Story')`)
+        before it ever reached step 1. The disk read itself was never the problem — `nav.read_file`
+         was traced returning real toc bytes every time; the WORLD holding that progress kept getting
+          destroyed out from under it. **Fix (LiesFunk.svelte, `Lies_become_book_drive`):** a
+           duplicate-dispatch guard — `Lies_rungo_record(w)` already `begun`/`stepping` for the SAME
+            book ⇒ accept the duplicate silently, don't re-drive. Confirmed: with the guard, a
+             duplicate landing shows `become_book_drive GUARD BLOCKED` in the trace and the ORIGINAL
+              run finished — VytoNestRest green, step 1 `ok=1` dige matching the recorded fixture.
+ **Residual: this runner tab is severely throttled** (matches a backgrounded/unfocused browser tab —
+  Chrome deprioritises timers+JS for background tabs). Symptoms: Wormhole() ticks land many seconds
+   to tens-of-seconds apart instead of the ~200ms AMBIENT_MAIN_TICK_MS; an already-fired elvis takes
+    ~20s to actually reach Auto's think(); nearly every CLI op needs 2-4 "insisting" retries. This
+     makes a full green run take minutes and makes back-to-back confirmation runs flaky, NOT because
+      the fix is wrong — the one clean confirmation obtained (green, matching dige) stands. Asked the
+       human (Telegram) to bring the runner tab to the foreground; the fix does not depend on that,
+        only fast/repeated re-verification does.
+
+**A SECOND, separate finding — P3 depth-scaling was ungated, now fixed.** Re-running VytoNestRest
+ post-fix surfaced steps 1-2 green but step 3 ("commission the glass nested on the rig and stir to
+  rest") RED — its recorded fixture carries 4 `%see` lines (e.g. "each child and grandchild wears a
+   target with a real radius") that the live got_snap emits NONE of. Root: P3's `depth_k` in
+    `Vyto_solve_scope` (Vyto.g) applied UNCONDITIONALLY to every `w.c.nested` world, unlike P2's
+     `need_floor` which got its own opt-in — so it silently changed geometry for EVERY pre-existing
+      nested Book, VytoNestRest included, violating LAW D (additive gates). **Fixed:** gated behind a
+       new `depth_scale` commission flag (`Vyto_commission_on`'s 8th arg → `w.c.depth_scale`;
+        `depth_k` is `1` — a no-op — unless set); `VytoDepth` now passes it explicitly, every other
+         caller defaults off. **BUT gating it off did NOT change VytoNestRest's step-3 dige at all**
+          (byte-identical to the un-gated run) — so P3 was never actually the cause of this red. The
+           real suspect: `VytoNestRest`'s settle-wait (`expecting(w,'nest_wait', 18, …)`) is an
+            18-SECOND window, and this tab has measured ~20s+ just to deliver an already-fired elvis
+             — the settle almost certainly never finishes before the window closes, so the assertions
+              that fire AT settle never fire. Same root cause as the begun-wedge saga: a severely
+               throttled tab, not a code defect. The depth_scale gating fix stands regardless (it was
+                a real law violation independent of this red) — but step 3's true pass/fail can't be
+                 honestly read until the tab is un-throttled.
+ **Checked and ruled out (2026-07-30, later same session):** the Organ/Bar board counts
+  `VytoNest_board_ready` hardcodes (10/7) are UNCHANGED — `Vyto_board` mints exactly 10 Organs + 7
+   Bars, none touched by P2/P3 — so it's not a board-count regression. Re-ran VytoNestRest again
+    once the tab looked more responsive (`ping`/`run`/`steps` all came back with zero "insisting"
+     retries) and step 3 STILL landed the identical dige `8f01bab202d54636` (steps 1-2 stayed
+      byte-matched at `643185e5f62fdbd4`/`23450ae230b169a9`).
+ **CONFIRMED (not just theorised): a `world` diag_trace read now shows the exact throttling
+  signature.** `Wormhole()` ticks arrive in tight bursts (~100ms apart within a burst) separated by a
+   very consistent **~15 SECOND** gap between bursts — precisely Chrome's background-tab timer-
+    throttling behaviour (batch timers, release them periodically rather than continuously), not
+     general/random slowness. Clean WS round-trips (`ping` et al., a DIFFERENT code path — the raw
+      relay message handler, not the Svelte-effect-driven belief loop) can look fast while the STORY
+       belief loop itself is still batched this way; that's why "ping came back clean" didn't mean
+        the tab had actually sped up. Against that ~15s burst period, an 18s `nest_wait` window is a
+         near-guaranteed miss almost every time — which is exactly the repeat-identical dige observed.
+          **Conclusion stands: step 3's red is the tab's background-throttling, not a code defect.**
+           Re-verify once the tab is genuinely foregrounded (the diag_trace burst-gap collapsing to
+            ~200ms is the check that it actually worked, not just a clean `ping`).
+
+ **Verification queue (once the tab is foregrounded/stable): green×2 for VytoNestRest (all 3 steps,
+  not just step 1 — an early `state` read can catch mid-run and misreport total), then fleet
+  regression, then VytoMemo → VytoNeed → VytoDepth** (each: red-fixture run → accept → green×2 →
+   sabotage red → revert → shot). Give each run several patient minutes; avoid rapid-fire CLI polling
+    (it adds contention on an already-throttled tab) — fire one `run`, wait, check `state` once.
 
 ## What stands (built 2026-07-19, all live-proven to compile)
 

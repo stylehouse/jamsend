@@ -977,10 +977,11 @@ Rung 1 (loopback) is BUILT and live-gate-pending: `Ghost/M/Heist.g` (the pure en
 
 **The edge — what's `<` unbuilt:**
 
-- `<` **Metadata from tags.** Artist/title/album come from the FILENAME (`Crate_meta_from_path` splits
-   `Artist - Title.ext` / `Artist/Album/NN Title`). Nothing reads a container tag, and the test tones carry
-    none. Real path: read RIFF `INFO`/ID3 where present, fall back to filename — or filename-first with tags as
-     an override.
+- ✓ **DONE — metadata from tags.** Stale by the time this was read (2026-07-30): `Heist_census` (Heist.g)
+   and `Crate_nav_payload` (the radio-stocker, Ghost/M/Crate.g) both now read id3/vorbis/RIFF via
+    `Crate_meta_from_tags` (music-metadata@11) first, falling back to `Crate_meta_from_path`'s filename split
+     only for an untagged file. The test tones carry real IART/INAM tags agreeing with their filenames
+      (`LiesFunk.svelte` `Musu_gen_testsounds`) precisely so this could land without a fixture re-record.
 - `<` **A real `$artist/$album/$track` landing tree.** Landings file under `<seeded-prefix>-<genre>/`
    (the `4t-...` you saw — a placeholder so a test can't collide with real curation). The real destination is the
     tag/name-derived hierarchy.
@@ -1025,8 +1026,8 @@ Rung 1 (loopback) is BUILT and live-gate-pending: `Ghost/M/Heist.g` (the pure en
 **Proposed roadmap** (the order I'd sort the `<` — pending your read):
 
 1. `<` **stream-to-disk** — bounded, and it pays off the awaitbuf waste + memory high-water.
-2. `<` **metadata**: filename-first + tag override, and the real `$artist/$album/$track` landing tree
-    (retires the `4t-` prefix).
+2. tag-vs-filename metadata ✓ done (see above); `<` the real `$artist/$album/$track` landing tree still
+    stands (retires the `4t-` prefix).
 3. `<` **merge-into-existing** + "already have" surfacing + the directory-listing confirmable — these
     three are one feature: a real library tree the heist reconciles against.
 4. `<` **single-track play/skip/decide** session.

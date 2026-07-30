@@ -301,6 +301,10 @@ import { lang, lang_for_path } from "./lang/lang"
             const settle = w.oai({ req: 'compiled_is_settled', path })
             if (ev.sc.write_ms != null)     settle.sc.write_ms     = ev.sc.write_ms
             if (ev.sc.source_dige != null)  settle.sc.source_dige  = ev.sc.source_dige
+            // a disk write failure (LiesStore req_Store Phase 1 → LiesCortex req_Codebit) settles
+            //  here too now, instead of hanging — carry the message so a dock/editor reader can show
+            //   it instead of a silently-stuck spinner.
+            if (ev.sc.error != null)        settle.sc.error        = ev.sc.error
             // ghost_compile verdict-reply: .go landed → tell the asking CLI. gc_acks is on H.c
             //  (shared with the Lies-side recv that stashed it; this drain runs on w:Lang, a
             //   different w); gc.w is the channel w:Lies the reply rides down.

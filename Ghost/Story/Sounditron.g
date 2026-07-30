@@ -362,6 +362,21 @@ async Sounditron_trickle_look(w, era):
         if (M.Swarm_pulse_all && tick % 2 === 0) {
             let sw = M.Swarm_station_world ? M.Swarm_station_world() : null
             if (sw) { try { M.Swarm_pulse_all(sw, ident) } catch (er) {} }
+            // RETX + LIVENESS + CULL (the self-healing survey, 2026-07-30): Peeroleum_arm_whittle's own
+            //  rearm chain rides Runstepped, which only fires when a Story STEP commits — a live resident
+            //   like this one boots once and then runs on detached loops, never stepping again, so that
+            //    chain was queued once (if at all) and never actually drained. A lost pier_accept|
+            //     reinvite_seal|suggest (the RELIABLE frame kinds — the hot heist path is ALL ephemeral:
+            //      repli_want/repli_lines/repli_page/ive_got/pulse never touch this outbox) then just sat
+            //       un-acked forever, nothing ever retrying it. Drive the three sweeps directly off this
+            //        same wall-clock cadence instead of the broken-for-live Runstepped path.
+            if (sw && M.Peeroleum_retx_sweep) {
+                try {
+                    M.Peeroleum_retx_sweep(sw)
+                    if (M.Peeroleum_liveness_sweep) M.Peeroleum_liveness_sweep(sw)
+                    if (M.Peeroleum_runstepped) await M.Peeroleum_runstepped(sw)
+                } catch (er) {}
+            }
         }
         try { await this.Sounditron_friends(w) } catch (er) {}
         if (M.c.trickle_era !== era) return

@@ -9,7 +9,7 @@ import { parseBuffer } from "music-metadata"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Crate(): string { return '8be0988907323407~g1' },
+    Ghostmeta_Ghost_M_Crate(): string { return 'e0aa6c667a289a25~g1' },
 
 // Crate.g — rifling through a music collection.  A modern port of the old Directory.svelte tree-walk +
 //  Agency.svelte's meander() random-walk, redesigned for THIS platform: raw File System Access API (no
@@ -266,7 +266,7 @@ async Crate_nav_meander(nav, base, want) {
 
 },
 // Crate_nav_payload — read ONE track's bytes through the nav, decode FROM THE START (OfflineAudioContext —
-//  no gesture), keep the first ~PREVIEW chunks, derive loudness + path metadata.  The nav twin of the old
+//  no gesture), keep the first ~PREVIEW chunks, derive loudness + real tag metadata.  The nav twin of the old
 //   fetch-based reader.  Returns a plain payload (no particle) or null on unreadable/undecodable.
 async Crate_nav_payload(nav, base, path) {
     if (typeof OfflineAudioContext === 'undefined' || !nav) return null
@@ -274,6 +274,11 @@ async Crate_nav_payload(nav, base, path) {
     let filename = parts.pop()
     let raw = await nav.bin_read(parts.join('/'), filename)
     if (!raw) return null
+    // read tags off the raw bytes BEFORE decode — decodeAudioData owns the buffer once it's handed over,
+    //  so parsing after the fact would be racing an implementation that may detach it.  Same reader the
+    //   Heist census already uses (Crate_meta_from_tags), so this path stops being the one place that
+    //    only ever saw a filename.
+    let meta = await this.Crate_meta_from_tags(raw, path)
     let ctx = new OfflineAudioContext(1, 1, 48000)
     let decoded = null
     try {
@@ -297,7 +302,6 @@ async Crate_nav_payload(nav, base, path) {
         j = j + 1
     }
     let rms = Math.sqrt(sumSq / Math.max(1, i))
-    let meta = this.Crate_meta_from_path(path)
     return { chunks: chunks, seconds: +decoded.duration.toFixed(2), loudness: +rms.toFixed(4), artist: meta.artist, album: meta.album, title: meta.title, nchunks: chunks.length }
 
 },
@@ -313,10 +317,10 @@ async Crate_nav_payload(nav, base, path) {
 //   album = the second folder for anything nested 3+ deep — so every track under a catch-all music folder
 //    came out artist:"muchOther" with "- west / - folks" albums (the human 2026-07-28: "guessing the artist
 //     name? the folder? give that up, just say artist+title").  A missing filename artist now yields EMPTY
-//      (title alone), never a folder.  Real tags still win upstream: the Heist census reads id3/vorbis first
-//       (Crate_meta_from_tags) and only falls back here; the radio stocker has no tags, so a nested file just
-//        shows its title.  A flat "Artist - Title.ext" (the whittle's planted tones) still resolves its own
-//         filename artist, so the Heist Book stays green.  (Already-minted stock keeps its baked-in folder
+//      (title alone), never a folder.  Real tags win everywhere upstream: both the Heist census AND the radio
+//       stocker (Crate_nav_payload) read id3/vorbis first (Crate_meta_from_tags) and only fall back here on
+//        a nested untagged file — this is now purely the FALLBACK.  A flat "Artist - Title.ext" (the whittle's
+//         planted tones) still resolves its own filename artist, so the Heist Book stays green.  (Already-minted stock keeps its baked-in folder
 //          artist until a clean re-record — this only fixes fresh mints.)
 Crate_meta_from_path(path) {
     let segs = path.split('/')

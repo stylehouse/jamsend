@@ -1,0 +1,11 @@
+story:Heistation
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.002
+      sample=0.002,at=1785367899
+    TimeTotal:step,avg=0.002
+      sample=0.002,at=1785367899
+  step,dige:805e50cb4dd9cfaa

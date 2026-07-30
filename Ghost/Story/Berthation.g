@@ -76,7 +76,7 @@ MusuBerth_prepub():
 MusuBerth_name():
     return 'Taste'
 MusuBerth_root():
-    return this.Heist_marrauding('bookrun', 'berth')
+    return this.Heist_marrauding('MusuBerth', 'berth')
 MusuBerth_tune():
     return 'Fourier Four — Tagged Truth'
 
@@ -99,7 +99,7 @@ async MusuBerth_open_write(w):
     let name = this.MusuBerth_name()
     // sweep the marrauding namespace clean so a re-run's first open reads a truly-empty berth (the pinned-
     //  runid stance — mirrors MusuHeist's start sweep).  Best-effort; a missing dir is not an error.
-    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-bookrun')
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-MusuBerth')
     // a first open of a never-written berth MINTS an empty %Waft (absent toc.snap is not an error) — note
     //  that the freshly-opened tree holds NO card, the baseline the persistence proof stands against.
     let fresh = await this.Berth_open(nav, root, prepub, name)
@@ -156,7 +156,7 @@ async MusuBerth_sweep_story(w):
     let before = (await this.Berth_open(nav, root, prepub, name)).o({ Card: 1 }).length
     // the Book's OWN start/end sweep of the marrauding namespace — the coarse reset.  Empties every
     //  toc.snap under the root (Heist_sweep keeps the dir skeleton), so the berth's toc.snap is emptied too.
-    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-bookrun')
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-MusuBerth')
     let after = (await this.Berth_open(nav, root, prepub, name)).o({ Card: 1 }).length
     let row = { swept_story: 1, before: before, after: after }
     if (before >= 1 && after === 0) row.reset_with_story = 1

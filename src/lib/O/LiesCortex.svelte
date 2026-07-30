@@ -266,6 +266,17 @@
         //    with fresh initialdo and immediately cleared it, so the landing never fired.
         if (!req.sc.write_finished) return
 
+        // WRITE FAILED (LiesStore's req_Store Phase 1, on a real disk error): don't import a file
+        //  that was never actually written, but still settle — Lies_compile_settled must fire either
+        //   way or the spinner hangs forever. The error rides through so the editor can show it
+        //    instead of a silent stall.
+        if (req.sc.write_error) {
+            H.vaguely_ponder('Lang/Lang', 'Lies_compile_settled', { path, error: req.sc.write_error })
+            H.tlog(`🔪 Codebit write FAILED: ${path} — ${req.sc.write_error}`)
+            cortex.finish(req)
+            return
+        }
+
         const write_ms = req.c.write_t0
             ? Date.now() - (req.c.write_t0 as number)
             : undefined

@@ -194,9 +194,23 @@ Radio_media_off():
 Radio_pump_soon(radio, era, ms):
     setTimeout(() => { this.Radio_pump(radio, era) }, ms)
 
+// Radio_pump — the self-perpetuating loop's entry point: run one look, catch anything it throws.  The
+//  chain lives ONLY in Radio_pump_tick's own tail call to Radio_pump_soon — a throw ANYWHERE in a look
+//  (a malformed packet reaching Radio_dec_feed's AudioDecoder, a disk read in Radio_dial, …) used to mean
+//  that tail call never runs, so "the radio that never stops" would silently, permanently stop.  Reschedule
+//  on catch instead of dying; the next look gets a fresh look at whatever state caused the throw.
+async Radio_pump(radio, era):
+    try {
+        await this.Radio_pump_tick(radio, era)
+    } catch (er) {
+        console.warn(`📻⚠ Radio_pump threw — rescheduling instead of stopping silently:`, er)
+        if (this.Story_error) this.Story_error('error', 'Radio_pump', er)
+        if (radio.c.era === era) this.Radio_pump_soon(radio, era, 400)
+    }
+
 // one look of the loop: dial if empty-handed, feed the decoder up to the ahead-window, spill
 //  what decoded onto the timeline, splice past a starved hole, advance at the end.
-async Radio_pump(radio, era):
+async Radio_pump_tick(radio, era):
     if (radio.c.era !== era) return
     let s0 = radio.sc.Radio
     if (s0 !== 'playing' && s0 !== 'digging' && s0 !== 'starved') return

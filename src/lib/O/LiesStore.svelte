@@ -414,6 +414,22 @@
 
             if (reply?.error) {
                 console.error(`💾 LiesStore write error on ${path}:`, reply.error)
+                // SELF-HEAL: the Cortex handoff below only ran on the success path — a real disk
+                //  error (or the nav-not-ready early-boot race) left the waiting req:Codebit parked
+                //   on write_finished forever, so the compile spinner never settled and nothing told
+                //    the editor (CLAUDE.md's own stated contract — "errors thread back through
+                //     Codebit%of_dock" — wasn't actually true on this path). Hand off anyway, marked
+                //      failed: req_Codebit reads write_error and settles the compile as failed
+                //       instead of importing a file that was never actually written.
+                const write_gen_path = wr.sc.path as string
+                const cortex = w.o({ req: 'Cortex' })[0] as TheC | undefined
+                const codebit = (cortex?.o({ req: 'Codebit' }) as TheC[] | undefined)
+                    ?.find(r => r.sc.gen_path === write_gen_path && !r.sc.finished && !r.sc.write_finished)
+                if (codebit) {
+                    codebit.sc.write_error = String(reply.error).slice(0, 200)
+                    codebit.sc.write_finished = 1
+                    H.i_elvisto(w, 'think')
+                }
             } else {
                 // Stamp the write dige onto Good,type:'text/Doc'/known so
                 //  writeCarefully's base_dige gate and DocRow see it.

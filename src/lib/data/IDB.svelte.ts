@@ -53,14 +53,23 @@ export class IndexedDBStorage<T = any> {
             // console.log(`Opening IndexedDB: ${this.dbName}, store: ${this.storeName}, version: ${this.version}`)
             const request = indexedDB.open(this.dbName, this.version)
             
+            const connectionKey = `${this.dbName}:${this.version}`
+
             request.onerror = () => {
                 console.error(`IndexedDB open error for ${this.dbName}:`, request.error)
+                dbConnections.delete(connectionKey)   // let the next getDB() try again instead of replaying this rejection forever
                 reject(request.error)
             }
-            
+
             request.onblocked = () => {
-                throw `IndexedDB open blocked for ${this.dbName}. Close other tabs or instances.`
-                // Could implement retry logic or user notification here
+                // a throw inside an IDB event handler does NOT reject the enclosing Promise (resolve/reject
+                //  are just never called) — getDB() would hang forever, and dbConnections caches that hung
+                //   promise for every future caller too. Reject properly, and clear the cache so a later
+                //    getDB() (once the blocking tab closes or upgrades) gets a fresh open attempt.
+                const err = new Error(`IndexedDB open blocked for ${this.dbName} — another tab holds an older version open`)
+                console.error(err.message)
+                dbConnections.delete(connectionKey)
+                reject(err)
             }
             
             request.onsuccess = () => {

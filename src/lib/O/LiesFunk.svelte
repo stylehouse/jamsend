@@ -1894,16 +1894,29 @@ await M.eatfunc({
             //       silently rather than re-driving; the FIRST dispatch is the one that gets to finish.
             {
                 const inflight = H.Lies_rungo_record(w)
+                H.diag(`become_book_drive called book=${book} inflight=${inflight ? `${inflight.sc.Storyrun}/${inflight.sc.phase}` : 'none'}`)
                 if (inflight && inflight.sc.Storyrun === book && inflight.sc.phase !== 'done' && inflight.sc.phase !== 'failed') {
                     H.tlog(`↺ become_book ${book} — a run is already in flight (phase ${inflight.sc.phase}); duplicate dispatch ignored`)
+                    H.diag(`become_book_drive GUARD BLOCKED book=${book} phase=${inflight.sc.phase}`)
                     return
                 }
+                // the SAME guard's race window (2026-07-30): Lies_rungo_record only sees a record AFTER
+                //  Lies_runner_begin runs below, which is PAST this function's first await (Lies_ledger_
+                //  secure) — a retry landing in that narrow gap sees inflight=none too and slips through
+                //  (caught live: two calls 6ms apart, both "inflight=none").  Close it with a plain
+                //  SYNCHRONOUS `.c` flag, set before any yield point, checked first on every entry.
+                if (w.c.becoming_book === book) {
+                    H.diag(`become_book_drive PRE-RECORD RACE BLOCKED book=${book}`)
+                    return
+                }
+                w.c.becoming_book = book
             }
             // the needsFSA gate (FIRST — a proxy-only runner can secure nothing usefully): a disk-heavy Book
             //  must run on a LOCAL FSA share, never the remoteWormhole proxy (each read/write there crosses a
             //   belief-loop beat, so a per-beat Book overruns its budget).  Only the proxy here ⇒
             //    REFUSE cleanly (nothing tried, not a failure) so the authority re-routes to an fsa-live runner.
             if (needsFSA && !H.Lies_has_fsa(w)) {
+                w.c.becoming_book = undefined   // refused, nothing in flight — don't wedge future attempts
                 H.Lies_runner_phase(w, 'fsa_blocked', { book })
                 H.tlog(`⌛ become_book ${book} blocked — needs a local FSA share; this runner has only the remote proxy (nothing tried)`)
                 return
@@ -1911,6 +1924,7 @@ await M.eatfunc({
             if (needAC && !(await H.Lies_secure_audio(w, book))) {
                 // not granted within the window — refuse to begin.  Nothing was tried; report blocked so
                 //  the run authority (%rungo / editor Brink) reads "couldn't run here", not a failure.
+                w.c.becoming_book = undefined
                 H.Lies_runner_phase(w, 'audio_blocked', { book })
                 H.tlog(`⌛ become_book ${book} blocked — AudioContext not granted (nothing tried)`)
                 return
@@ -1921,6 +1935,7 @@ await M.eatfunc({
             if (H.Lies_book_needmusic(w, book)) {
                 const sec = await H.Lies_secure_collection(w, book, 'testsounds', 1)
                 if (!sec.ok) {
+                    w.c.becoming_book = undefined
                     H.Lies_runner_phase(w, 'collection_blocked', { book })
                     H.Upkeep_errand(`needMusic:${book}`, { kind: 'disk', label: `${book} — ${sec.why}`, phase: 'failed' }); H.Lies_upkeep(w)
                     H.tlog(`⌛ become_book ${book} blocked — ${sec.why} (${sec.reason}; nothing tried)`)
@@ -1930,8 +1945,9 @@ await M.eatfunc({
             // the VERSION GATE — HOLD (pre-run, before any step clock) until this runner has every ghost the
             //  editor pinned live; else refuse cleanly with a named Ghost_version_ledger_timeout.  A stale
             //   runner can no longer give a silent green — it catches up (pushed gen lands) or reddens.
-            if (!(await H.Lies_ledger_secure(w, book, ledger_dige, pins))) return
+            if (!(await H.Lies_ledger_secure(w, book, ledger_dige, pins))) { w.c.becoming_book = undefined; return }
             w.c.awaiting_verdict = { book }
+            w.c.becoming_book = undefined   // the real record (below) is the guard from here on
             H.Lies_runner_begin(w, book)   // open the durable run-record (the become_book twin of rungo)
             H.top_House().i_elvisto('Auto/Auto', 'resetStory', { Book: book })
             H.Lies_runner_phase(w, 'story_begun', { book })   // blip: Run kicked (Book sweep / cell click)
@@ -1958,6 +1974,7 @@ await M.eatfunc({
                     if (hv) { pins = hv.pins as { name: string, dige: string }[]; ledger_dige = rep.head }
                 }
             }
+            H.diag(`Lies_ledger_secure book=${book} ledger_dige=${ledger_dige ?? 'none'} pins=${pins?.length ?? 0}`)
             // a referenced version we cannot resolve AT ALL (thin frame + no matching replica version) — the
             //  "super weird, shouldn't happen" case: fail LOUD with a distinct fatal, never a silent run.
             if (ledger_dige && !pins?.length) {
@@ -1969,6 +1986,7 @@ await M.eatfunc({
             if (!ledger_dige || !pins?.length) return true   // nothing pinned → nothing to gate
             let unmet = H.Lies_ledger_check(pins)
             if (!unmet.length) return true
+            H.diag(`Lies_ledger_secure ENTERING 20s poll book=${book} unmet=${unmet.length}`)
             H.Lies_runner_phase(w, 'awaiting_ledger', { book })
             H.Upkeep_errand(`ledger:${book}`, { kind: 'version', label: `${book} — ${unmet.length} ghost(s) behind`, phase: 'running' }); H.Lies_upkeep(w)
             const deadline = Date.now() + 20000

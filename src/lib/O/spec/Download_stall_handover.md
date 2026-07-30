@@ -527,6 +527,46 @@ Re-records (SwarmShare 005-009, MusuReco 005-011, +MusuHeist only if keep_step-d
      how often, whether `job.sc.breach_seq` names the same seq every time on that track — a fixed seq points
       at a specific bad chunk|cid; a moving seq points at a race).
 
+**CRITICAL, same night: `Heist_keep_pull` turned out to be DEAD CODE.** Everything above (resume_sync,
+ breach cooldown) was first wired into `Heist_keep_pull`, which is only reached when `keep.sc.state ===
+  'committing'` — a state NOTHING live ever sets (`Heist_keep_commit`, the only function that sets it, is
+   called from zero `.svelte` files — grepped to confirm). The REAL live path is `Heist_keep_step`'s inline
+    `if (state === 'pulling')` branch (the one carrying the A1 serialize/overlap/bench code), reached via
+     `Heist_keep_start` (the actual ▶ button). The two branches resolve a pick's record DIFFERENTLY: live
+      picks (`Heist_keep_default_pick`/`_pick_all`/`_pick_seed`/`_pick_toggle`) all mint `sc.ref`, never
+       `sc.id`; the live loop derives `ref = pick.sc.ref || pick.sc.id` and tries `{id:ref}` then `{re:ref}`.
+        `Heist_resume_sync`'s first draft queried raw `pick.sc.id` (always `undefined` on a live pick) —
+         verified via the `Stuff.svelte.ts` matcher that this fails CLOSED (no match, not a wrong match).
+          **Fixed:** `Heist_resume_sync` now uses the same ref/id/re resolution and is called from the live
+           'pulling' branch; the breach cooldown gate is now ALSO in the live inline loop. Full detail +
+            the general lesson (two diverged same-shaped functions, one dead) in memory
+             `heist-download-crash-ive-got.md`.
+
+**Resumable heists now survive a page reload too, not just a mid-track hiccup (2026-07-30, the human: "the
+ Sounditron pages are on 10 minute reloads... it should basically be able to resume a heist in the
+  background").** `%Keep`/`%Pick` lived only in runtime state — a reload lost the whole heist INTENT (which
+   files, into what structure), even though `Heist_resume_sync` could already verify bytes already on disk.
+    Built the missing half on the proven-but-previously-dormant Berth mechanism (`Heist.g` `//#region berth`
+     — until tonight only ever exercised by Story Books, never a live path): `Heist_keep_persist` (saves the
+      committed pick list — id/artist/title/genre per pick, plus the keep's own genre override — to a
+       `Waft:Heists` entry the moment `Heist_keep_start` fires — the list is fixed the instant the human
+        confirms it), `Heist_keep_rehydrate` (on boot, for any Berth entry with no live %Keep standing,
+         re-mints straight into 'pulling' with the exact persisted picks — skips 'primed', the human already
+          confirmed before whatever reloaded — then `Heist_resume_sync` does the honest disk-verification
+           work), `Heist_keep_forget` (drops the Berth entry on done|cancel). All wrapped in try/catch (the
+            self-healing survey below flagged exactly this class of risk — one throw stopping a beat's whole
+             GO loop forever — so a Berth I/O hiccup degrades to "doesn't survive this one reload," never a
+              wedge). Compiles clean, bundle-verified. NOT yet live-confirmed (needs an actual reload+resume
+               cycle to watch — the human's tab is unattended overnight, so the natural 10-min cycle IS the
+                test).
+
+**Vyto got a small, safe C** hierarchy piece tonight too** (a background agent, under strict instructions
+ not to touch the known-crash nested-render engine given the human's tab is live+unattended): `CrateFace.svelte`
+  now groups a shelf's `%Record`s by `artist + album` (data already read — `rec.sc.album`) instead of one
+   flat pill spread, with an untagged-tracks catch-all bucket. The nested `power_cells` engine itself (P1-P3
+    perf fixes) is landed-but-verification-owed per `Vyto_todo.md` THE PIN — still gated behind `M.c.heist_nested`,
+     deliberately untouched.
+
 **Stray `.crswap` orphans — the human spotted one beside an already-landed track.** Confirmed by grep:
  nothing in the `.g` engine ever touches `.crswap` (Chrome's `createWritable()` atomic-write journal,
   renamed over the target on a clean `close()`). The LEGACY `lib/ghost/Records.svelte`'s `tidy_crswap()`
