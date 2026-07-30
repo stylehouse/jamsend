@@ -363,6 +363,7 @@ Repli_park_want(w, pier, h):
         p.c.counted = 1
         p.c.reply_to = h.from
         p.c.reply_from = h.to
+        p.c.parked_at = Date.now()
         w.c.repli_parked = (w.c.repli_parked || 0) + 1
     }
 

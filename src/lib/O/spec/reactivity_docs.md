@@ -281,6 +281,33 @@ Solution: I'm not sure exactly, try H.ave -> H.clear({} setting your state })
 ```
 Test: is fairly untamed, unexplained: ReactiveWaft
 
+### A non-keyed `{#each}` over a live-reshaping derive, inside an open editor
+
+Found + fixed (unverified live) 2026-07-30, `Download_stall_handover.md` "Evening 8" / `KeepFace.svelte`
+ `dirsSegs`/`dirsSegsFrozen`.
+
+Bug: an editing UI is a row of chips, one `<input>`/`<span>` pair per segment of an array, via a plain
+ `{#each arr as seg, i}` (no key — there's nothing stable to key on, a segment is just a string). `arr` is a
+  `$derived` that recomputes from live, still-changing upstream data (here: `commonPrefix` over a growing set
+   of husks). While the editor is open, every recompute that SHRINKS `arr` destroys the TRAILING DOM nodes
+    (Svelte reconciles a non-keyed each by position). If the human's focus/in-progress typing was in one of
+     those trailing nodes, it vanishes mid-keystroke — reading as "the editor closed," even though no
+      component was destroyed and no boolean "is it open" flag ever flipped. A sibling editor backed by a
+       STABLE derive (a persisted scalar that never reshapes on its own) never shows this, which is the
+        confusing part: two editors built the exact same way, only one breaks, and the difference is entirely
+         in whether the array *content* moves under the user, not in the open/close mechanism at all.
+
+Solution: freeze the array (and anything else the edit needs, e.g. a value substituted at commit time) into
+ local `$state` the moment the editor opens; read/write ONLY the frozen copy while it's open; let the resting
+  (closed) view keep reading the live derive. The freeze updates locally on every user edit (insert/remove),
+   so the edit session sees its own changes immediately without waiting on a round-trip through the model.
+
+This is a DIFFERENT, confirmed mechanism from the "Liesui Waft/+Doc form closing" case below (that one is a
+ real component teardown, mechanism still unknown; this one never destroys the component — it destroys DOM
+  *inside* it). Both read as "the form closed" from the outside. If a future case doesn't fit either — check
+   for a `<svelte:boundary>` (Vytui.svelte:715) swallowing a genuine throw and showing its fallback tile
+    instead, a third way to make a UI silently vanish.
+
 ## Open unknowns — to be chased with tests
 
 But are all low priority now Liesui panned out...

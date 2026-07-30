@@ -152,6 +152,12 @@
     const settledState = new Map<TheC, boolean>()                // struck-this-rest latch
     const lifted       = new Map<TheC, string>()                 // the hovered (z-lifted) tok
     const paintMap     = new Map<TheC, PaintCell[]>()            // the published snapshot
+    // DIAGNOSTIC (2026-07-30, KeepFace mount/destroy thrash — Download_stall_handover.md "Evening 8"):
+    //  mirror row + spring both proven stable by sibling logs, yet the Face keeps remounting on ANY
+    //   bump of the source Keep. Last remaining candidate: face_of(row)'s returned {comp,source} pair
+    //    going null, or `source` (the prop identity `<Face n={cell.source}>` binds) changing reference
+    //     between renders — either would remount even with a stable key. Gated to Keep rows.
+    const lastFaceOkByKey = new Map<string, any>()
     let paint_tick = $state(0)     // the template reads this to re-pull paintMap
     let raf_id = 0                 // 0 = loop stopped
     let last_ts = 0
@@ -301,6 +307,16 @@
                 const f = face_of(row)
                 const face = f ? f.comp : null
                 const source = f ? f.source : null
+                if (n.key.indexOf('Keep:') === 0) {
+                    if (!f) {
+                        console.log('◈ Vyto layout: face_of NULL for', n.key, 'source_n present=', !!(row.c as any).source_n, 'sc=', JSON.stringify(row.sc))
+                    } else {
+                        const prev = lastFaceOkByKey.get(n.key)
+                        if (prev !== undefined && prev.face !== face) console.log('◈ Vyto layout: FACE COMPONENT REFERENCE CHANGED for', n.key)
+                        if (prev !== undefined && prev.source !== source) console.log('◈ Vyto layout: SOURCE REFERENCE CHANGED for', n.key)
+                        lastFaceOkByKey.set(n.key, { face, source })
+                    }
+                }
                 if ((row.sc as any).departing) {
                     const r = Math.max(0, s.r)
                     cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids: false, ident,
@@ -453,12 +469,23 @@
             const sp = springs.get(w) as Map<string, Spring>
             const present = new Set<string>()
             let moved = false
+            // DIAGNOSTIC (2026-07-30, chasing the KeepFace mount/destroy thrash — see
+            //  Download_stall_handover.md "Evening 8"): the mirror row is confirmed STABLE (a sibling
+            //   Vyto.g log never re-mints/drops it), yet the Face keeps remounting once per trickle —
+            //    so the churn must be HERE, in whether this row gets a spring each adopt() pass. Gated
+            //     to Keep rows only.
+            const sawKeep = new Set<string>()
             for (const n of tree_nodes(w).all) {
+                if (n.key.indexOf('Keep:') === 0) sawKeep.add(n.key)
                 const T = target_of(n.row)
-                if (!T) continue
+                if (!T) {
+                    if (n.key.indexOf('Keep:') === 0) console.log('◈ Vyto adopt: row.c.T MISSING for', n.key)
+                    continue
+                }
                 present.add(n.key)
                 let s = sp.get(n.key)
                 if (!s) {
+                    if (n.key.indexOf('Keep:') === 0) console.log('◈ Vyto adopt: NEW spring (entrance ramp) for', n.key, 'T=', JSON.stringify(T))
                     // a newcomer springs from x,y AT target with r 0 — the radius ramp IS the entrance.
                     sp.set(n.key, { x: T.x, y: T.y, r: 0, vx: 0, vy: 0, vr: 0 })
                     moved = true
@@ -466,8 +493,14 @@
                     moved = true
                 }
             }
+            for (const key of [...sp.keys()]) {
+                if (key.indexOf('Keep:') === 0 && !sawKeep.has(key)) console.log('◈ Vyto adopt: row ABSENT from tree_nodes().all for', key, '(not just T-less — gone from the walk entirely)')
+            }
             let removed = false
-            for (const key of [...sp.keys()]) if (!present.has(key)) { sp.delete(key); removed = true }
+            for (const key of [...sp.keys()]) if (!present.has(key)) {
+                if (key.indexOf('Keep:') === 0) console.log('◈ Vyto adopt: spring REMOVED for', key)
+                sp.delete(key); removed = true
+            }
 
             // parked (a Story run drives) and hidden (a ?B= runner) keep painting unconditionally —
             //  their determinism and jump-landing depend on it, and neither is a visible CPU burn.

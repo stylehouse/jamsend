@@ -351,6 +351,13 @@ Gold standard remains a live watch of both consoles: no `giant stuff`, tracks re
      bounded to the ~1-2 in-flight tracks. Today `rummage_libs` caps at 8 libs and never releases per-track
       bytes → the hold grows. (`Heist_register_serve_lib` / the `Heist_keep_beat` sweep is where a lib
        detaches; make it byte-releasing + tied to landing, not just count-capped.)
+   **MEMORY MODEL (the human 2026-07-30 "we don't hold the entire track in memory at once right?" — we DO):**
+    BOTH ends currently hold a WHOLE track at once — the source reads the entire file in one `read_range(…,0)`
+     into `bytes` + holds every `b.sc.buf` slice (`Heist_materialise_one`, ~2× the file); the sink accumulates
+      ALL `%Original,seq` chunks in the mirror before `Heist_land` assembles them. Serializing to 1 track
+       bounds it to ~1 track/end (~25-50MB). The IDEAL (bigger change, the real answer to the human's Q) is
+        TRUE chunk-streaming: source reads/hashes/ships a chunk then RELEASES it; sink writes/releases per
+         chunk — never more than a few chunks resident. That is the memory-correct end state.
 3. **Orphan-page robustness (secondary):** `Repli_recv_page` stashes by `pier.c.bufs[id]`, yet `◈✗ … no
     awaiter … bytes dropped` (`Repli.g` ~460) still fires under ws churn — a page arrives, its line was lost
      on a reconnect, and the stash isn't catching it. Once memory is bounded and the ws stabilises this should
@@ -560,6 +567,152 @@ Re-records (SwarmShare 005-009, MusuReco 005-011, +MusuHeist only if keep_step-d
                cycle to watch — the human's tab is unattended overnight, so the natural 10-min cycle IS the
                 test).
 
+## Evening 7 — the real Heist UI lands; ⇒ FRESH SESSION: the directories-editor snap-shut bug is the bomb (2026-07-30 late)
+
+**Destination reached today:** the whole KeepFace setup form got rebuilt from scratch, live, with the human
+ testing on their real BigSoundland tab between nearly every change (`?I=` identity, the tab `runner_ask`
+  without `--runner=` happens to reach — see the runner note below). What shipped, all `.g`/`.svelte`,
+   LocalGen-compiled + bundle-verified, MusuHeist re-run green (22/22, ok_pct 1.0) after the riskier pieces:
+
+- **`section`/`directories` are two chip rows, not text fields.** Each existing segment is its own pill with
+   a real `DeleteX` (arm-then-confirm) to remove it; a tiny "+" gap before/between/after every chip (N segs
+    ⇒ N+1 gaps) inserts a new segment at that exact position on Enter. Went through THREE shapes live before
+     landing here — a single blob input (wrong, "way too big a fucking input field"), a checkbox+template
+      exploded panel (too complicated), this (right). `section` auto-stamps the category marker (`0 <name>`
+       now, migrated from `-` — both still READ everywhere, only new writes changed); `directories` is the
+        commonPrefix of the described husks' folders, editable, with `Heist_known_categories`/`_dirs`
+         (scanning `%Record.sc.path`, which rides on EVERY record now via `Ra_record_from` — the old "comma
+          in a path is a snap hazard" belief was wrong, `Text.svelte`'s `enLine` already JSON-falls-back)
+           feeding each one's datalist so a near-duplicate folder is a visible choice.
+- **directories is WIRED into landing, not decorative.** `Heist_keep_set_dirs(keep, v, auto)` freezes both
+   the override and the auto-detected value at edit time onto the keep; `Heist_job` stamps both onto the
+    job; `Heist_rel_for` substitutes `dirs_auto → dirs` at the FRONT of a pick's cp-path only, and only when
+     the record's own path still starts with that frozen prefix — a multi-disc keep's CD1/CD2 divergence
+      (and filenames) below the shared prefix survive untouched. Re-verified live after landing this.
+- **Picks unwrapped from a JSON blob into real `%Pick` children** of the Berth `%HeistSeed` (the human
+   caught this reading their own persisted Waft: "a big fat data thing in picks... all complex data
+    shouldn't exist... should be unwrapped into Waft/HeistSeed/Pick"). `Heist_keep_persist` now syncs real
+     child particles (add/update/remove to match the live keep's picks); `Heist_keep_rehydrate` reads them
+      directly. **Migration included**: an entry with the OLD `sc.picks` JSON string and no children parses
+       it once, mints the real particles, drops the old field — self-heals on first touch so an in-flight
+        real heist (the human's own, on disk right now) doesn't just stop resuming the moment this shipped.
+- **Focus/fold, not N cells fighting for room.** The human: "how do the Heists fold down if we seem
+   disinterested... they should group... one big list... solve that grouping BEFORE the layer of data we
+    chuck into Vyto." Answer: they didn't fold down AT ALL before today (grepped it — the old auto-flip-on-
+     track-end was deliberately removed in favour of a manual ▶ start with nothing replacing the "ignored"
+      case). Fixed at the DATA layer, no new mainkey, no Vyto grapple/commission change (the human explicitly
+       steered away from `.c`-heavy or component-shaped solutions toward "just C properties, standardly
+        labelled"): every `%Keep` gets `c.last_touch` bumped on mint + every interaction; `Heist_keep_step`
+         compares it across primed/wanted/asking siblings under the same shop and only the most-recently-
+          touched one keeps the dose boost; KeepFace folds every other one to a one-line "queued — N of M
+           tracks" row, click to refocus (`Heist_keep_touch`). Single-keep case is its own trivial max — zero
+            behaviour change there.
+- **Real flow bar ported to the component that's actually live.** `keep.c.flow` (0-100 off the real repli rx
+   byte rate, throttled/eased, no-bump/no-snap) was already computed in Heist.g and already had a face — but
+    only in `KeepBarFace.svelte`, the NESTED variant that's gated off (`M.c.heist_nested` default OFF). The
+     flat `KeepFace.svelte` everyone actually sees never got it. Ported the same sweep-band-glow treatment in.
+- **Single-track mode removed entirely** (`Heist_keep_pick_all`/`_none`/`_seed` deleted — `Heist_keep_default_pick`
+   already keeps the whole folder, so "nab album" was always redundant, and the human ruled out a track-only
+    mode outright); **a diagnostics-gated reset-all button** (`DiagFace.svelte`, real `DeleteX` confirm,
+     `Heist_keep_reset_all` — cancels every standing keep through the same path a single ✕ already used);
+      **global remembered category default** (`Heist_defaults_get/_set/_rehydrate`, dual-homed like
+       `Swarm_pier_stash` — `H.stashed` (Dexie) + a `.jamsend/berth/<prepub>/HeistDefaults` Waft mirror,
+        because the human pointed out Dexie state is lost easily and asked for the same dual-home pattern);
+         **collapse >5** applied uniformly (folder groups AND the flat/loose bucket — a folder with ≤5 stays
+          inline, expanded shows every real track, never a "… N more" placeholder); **newlyadded album
+           grouping, the safe half only** — every landed track's Probation card now carries `sc.dir` (its
+            folder) and `Heist_newlyadded_grouped` folds same-dir cards into one row for a future reader;
+             deliberately did NOT touch `Heist_feel`'s per-file drop/delete path (no live runner to verify a
+              riskier redesign against, and nothing consumes newlyadded in the UI yet anyway — zero risk).
+
+**Bugs found + fixed live, in order, each one from the human actually clicking on their own tab:**
+1. `bind:value={arr[i]}` inside an `{#each}` — not a valid Svelte bind target here; switched to
+    `value=`+`oninput`.
+2. Datalist option stripped the category marker off only the FIRST nested segment (`stripMark(whole).split`
+    instead of `split.map(stripMark)`).
+3. `Heist_known_categories`/`_dirs` (full-library scans) were running every 500ms tick regardless of state —
+    gated to only run while the respective editor is actually open.
+4. A duplicate `let catDraft`/`catEditing` declaration from a mid-edit reorder — would not have compiled.
+5. `Heist_defaults_rehydrate`'s once-guard could be consumed before `H.stashed` finished hydrating off
+    Dexie's async liveQuery, permanently skipping the disk fallback — reordered so the guard is only spent
+     once `stashed` is actually present.
+6. Directories/section breadcrumbs truncated with an ellipsis instead of wrapping — fixed to wrap by
+    whole "bit" (segment + its trailing `/`, one atomic inline-block) via `min-width:0` on the flex path span
+     (the classic flexbox shrink gotcha).
+7. The `×N tracks` collapsed-group `<summary>` didn't expand on click — `pointer-events: auto` was missing
+    on it specifically; the `.kf` root sets `pointer-events: none` and every interactive child must re-arm it
+     explicitly (the established KeepFace/HeistFace hard contract) — this one was just missed.
+8. A redundant "N of M tracks — the whole folder" line duplicated what the group/collapse summaries already
+    said — removed.
+9. The chip `×` buttons were plain immediate-delete — swapped for the real `O/ui/micro/DeleteX` component
+    (arm-then-confirm), matching what's used everywhere else destructive in this UI.
+
+**⇒ THE BOMB — still open, needs fresh eyes:** clicking into `directories` to edit it works, but **the next
+ Story trickle snaps the editor shut again** (the human's own words, live, twice, after two different
+  attempted fixes). This is NOT diagnosed, only worked around by analogy:
+- First attempt: move the "is it open" flag off component-local `$state` onto the particle (`n.c.dirs_editing`),
+   reasoning that if Vytui is destroying+recreating the Svelte component instance on each trickle (a
+    documented-but-never-root-caused bug class — see `reactivity_docs.md`'s "Liesui Waft/+Doc form closing",
+     fixed once before with an uncertain `H.clear` workaround, "mechanism unknown" even in the original
+      write-up), state hung on the PARTICLE (same object reference handed back in via props either way)
+       would survive even if the component wrapper doesn't. The human pushed back before this was even tried
+        live ("dunno about .c, try avoid them?", then "why would that help? I don't think you understand") —
+         reverted, unconfirmed either way whether it would have worked.
+- Second attempt: plain local `$state`, matching exactly how `category`'s editor already works (which does
+   NOT exhibit this symptom, per the human's own report). Compiled clean. **Live-tested by the human: STILL
+    snaps shut.** This is the single most useful clue nobody has chased yet: **`section` and `directories`
+     use the IDENTICAL local-`$state` open/close mechanism, and only `directories` breaks.** That rules out a
+      blanket "the whole component remounts every trickle" theory (category would break too) and points at
+       something SPECIFIC to directories' own data — the leading suspect, never confirmed, is that `dirsAuto`
+        (recomputed live every trickle from `commonPrefix` over the currently-described husks — an async,
+         growing/shrinking list) reshapes `face.dirsSegs` out from under the open editor in a way that reads
+          as "closed," where `catSegs` (a stable persisted scalar, `sc.genre`) never does.
+- **Concrete next step, not another guess:** open directories editing on a keep where the folder has ALREADY
+   fully described (husks stable, no more arriving) and watch whether it STILL snaps shut on the next
+    trickle. If it doesn't, the husks-reshaping-`dirsSegs` theory is confirmed and the fix is to freeze the
+     segment list being edited at open-time instead of reading the live `face.dirsSegs`. If it still snaps
+      shut even with stable husks, the theory is wrong and it really is a remount/reactivity issue worth
+       actually instrumenting (a console log in the component's top-level script body — not inside the
+        derived — would prove or disprove "does this instance actually get destroyed" directly, faster than
+         any more analogy-reasoning).
+
+**Runner/process findings, worth knowing before the next session reaches for `runner_ask`:**
+- Plain `runner_ask`/`story_repl` calls with NO `--runner=` reach the human's OWN real BigSoundland tab, not
+   a dedicated sandbox (confirmed via `world`: real Peering/supply-pipeline state). Running a Story Book
+    there spins up an isolated `H:<Book>,Run` world ALONGSIDE the resident session in the same tab/process —
+     doesn't corrupt the resident state, but does share CPU/memory with it. `/Otro?I=49dee91d61a9de64`
+      (`★claude` in the Cluster registry) is the intended dedicated test runner instead — but it was
+       reproducibly DEAD for `run` this session even after the documented `reload --runner=` heal: `ping`
+        answered, `world` showed the ask arriving and `Story_plan` running and the toc reading clean, then
+         nothing — no step ever begins. Not chased further (didn't want to hammer a tab already showing signs
+          of being stuck); worth a fresh look with actual eyes on that tab, not just remote diagnostics.
+- `story_repl.mjs diff <n>` (not `runner_ask snap <n>`, which only dumps raw content) is the tool for seeing
+   WHY a step differs from its fixture. Used it this session to resolve the long-open MusuHeist "stall": it
+    wasn't stalling at all post the earlier TDZ fix — 16/16 `%see` assertions fired, full arc reached — the
+     red was pure fixture staleness (a known non-deterministic Grant-timestamp issue plus a belief-loop
+      pacing shift from the `Swarm_share_loop` reentrancy fix earlier this session). `accept`ed fresh, reran
+       green. Worth reaching for `diff` before assuming a red run is a real regression.
+- Also recovered and landed (from a KILLED background agent's abandoned worktree, reviewed line-by-line
+   before merging): the FSA `bin_write`/`bin_append` writer-lock leak fix (an un-aborted stream keeps its
+    exclusive lock, poisoning every later write to that filename), the LiesRun `req_BlatDo` zombie re-arm
+     (a torn-down mid-flight elvis target left `req_sent` latched forever with no reply coming), and a
+      Story.svelte snap-encode-throw halt (an uncaught throw during `story_snap` used to wedge a run silently
+       instead of reading as a stopped step). All three in `Housing.svelte.ts`/`LiesRun.svelte`/`Story.svelte`,
+        verified against real (pre-existing) APIs, compiled + bundle-verified clean.
+
+**Still open, unchanged from before today or newly surfaced:**
+- Task #21 (`Heist_land` breach root cause) — still not found; the human's real tab's error-channel ring was
+   empty when checked, so no fresh evidence surfaced this session either.
+- The ErrChannel proof Book (`Ghost/Story/Errchannelation.g`, §"Then B" above) — still fully designed, still
+   compiles, still never recorded. Needed: hand-author/record its toc, `declare` its three sworn sentences,
+    register on the credence board, verify green. Blocked on a live runner that actually responds to `run`.
+- `Heist_feel`'s drop path still deletes per-file only (deliberately, see above) — extending album-grouping
+   to the destructive path is real future work, not started.
+- KeepBarFace (the nested nested variant) got the flow-bar and the "whole folder" copy update earlier but
+   NOT today's chip/gap editor or focus/fold treatment — it's still gated off (`M.c.heist_nested`), so this
+    wasn't chased, but if nesting ever comes back on, KeepBarFace is now behind KeepFace on this generation
+     of the UI.
+
 **Vyto got a small, safe C** hierarchy piece tonight too** (a background agent, under strict instructions
  not to touch the known-crash nested-render engine given the human's tab is live+unattended): `CrateFace.svelte`
   now groups a shelf's `%Record`s by `artist + album` (data already read — `rec.sc.album`) instead of one
@@ -592,3 +745,83 @@ Re-records (SwarmShare 005-009, MusuReco 005-011, +MusuHeist only if keep_step-d
             it." Verified tracks skip straight to the same catalog tail a fresh land uses (extracted into
              `Heist_catalog_land`, shared by both paths) — `console.log('◈⟲ resume: N tracks already on
               disk — skipped, not re-pulled')`. (The `.crswap` tidy above landed alongside this, same night.)
+
+## Evening 8 — THE BOMB has a fix (unverified live) + safe nice-ups, solo session, no live tab interaction (2026-07-30)
+
+**Scope of this pass:** the human asked to go all-over this doc and do whatever's possible without them,
+ reactivity problem first. No heist was in flight (`world` read-only: 0↓/0↑, no pier transfer) so nothing was
+  at risk of hijack, but there is still no way for this session to CLICK the human's tab — every fix below is
+   compile-verified (LocalGen + bundle-fetch) only, not live-click-verified. Treat it as ready-to-test, not
+    ready-to-close.
+
+**Evening 7's bomb, root-caused by static reading (no browser needed) — three theories tested against code:**
+1. **Ruled OUT: whole-component remount via Vytui's nested-scope recursion.** `Vytui.svelte`'s `tree_nodes`
+    only descends into a mirror row's children when `w.c.nested` is true for the WHOLE world
+     (`Vytui.svelte:179,186`) — and `heist_nested` defaults OFF ([[vyto-nested-is-global-grapple]]). So
+      `hasKids` is `false` for every cell, always, while nested is off — `cell.face` is never suppressed in
+       favour of a child recursion (`Vytui.svelte:708`), and the `{#each viewport_cells(w) as cell (cell.key)}`
+        key (`Vytui.svelte:707`) never changes identity for a standing Keep. The KeepFace instance is not being
+         destroyed. Confirmed by reading, not assumed — don't re-chase this branch.
+2. **Ruled OUT: something explicitly resetting `dirsEditing`.** Grepped the whole tree — the ONLY write site
+    for the outer `dirsEditing`/`catEditing` `$state` is each editor's own "✓ done" button. No other code path
+     touches it.
+3. **CONFIRMED (by a sibling file's own comment, not guesswork): a live-shifting derive reshaping an editing
+    UI mid-edit.** `KeepBarFace.svelte:61` — the NESTED variant's OWN comment on its category-edit draft —
+     names the mechanism precisely: *"don't drive value= from the per-trickle derive (snaps shut)"*. In
+      `KeepFace.svelte`, `dirsSegs` (unlike `catSegs`, which echoes the persisted `sc.genre` and never moves)
+       falls back to the LIVE `commonPrefix` over still-materialising husks whenever `sc.dirs` is unset — i.e.
+        exactly the state of a FRESH keep the instant you open the editor, before you've typed anything. The
+         `$effect` that resizes `dirsGaps` to `dirsSegs.length+1` fires on every reshape; the template's
+          `{#each face.dirsSegs as seg, i}` is NON-KEYED, so a shrink (the common prefix narrowing as more
+           divergent husks describe) destroys TRAILING chip+gap DOM nodes — if the human's cursor was in one
+            of them, that exact input vanishes from the DOM mid-keystroke. That reads as "the editor closed,"
+             even though `dirsEditing` itself never flipped and the wrapping `{#if}` never left. `category`
+              never shows this because `catSegs` never reshapes on its own.
+
+**THE FIX (`KeepFace.svelte`, compiled via bundle-fetch, zero svelte-check regressions in the edited range):**
+ freeze `dirsSegs` (→ `dirsSegsFrozen`) and the `auto` prefix an edit substitutes (→ `dirsAutoFrozen`) at
+  `openDirs()` time, and update the freeze LOCALLY on every insert/remove instead of re-reading the live
+   derive. The chip row, the gap-resize effect, and `dirsInsertAt`/`dirsRemoveAt` all now read/write the frozen
+    snapshot while `dirsEditing` is true; the CLOSED breadcrumb view is untouched (still reads live
+     `face.dirsSegs`/`dirsAuto`, correctly reflecting what a landing will actually use). `category` was left
+      alone — it never had the hazard, no reason to touch working code.
+ **A confirmed, independent bug fixed alongside it:** `face`'s `$derived.by` had `const catEditing =
+  !!n?.c?.cat_editing` / `const dirsEditing = !!n?.c?.dirs_editing` shadowing the REAL outer `$state` booleans
+   — dead reads from Evening 7's first (reverted) `.c`-based attempt at the open/close flag, left behind when
+    that attempt reverted to local `$state`. Since `n.c.cat_editing`/`dirs_editing` are never set ANYWHERE
+     (grepped), `catKnown`/`dirsKnown` — the known-category/known-dirs datalist suggestions — were silently
+      **always empty**, regardless of whether the editor was actually open. Removed the two dead lines so the
+       identifiers resolve to the real outer state; the suggestions should now actually populate.
+ **Instrumentation added as a backstop** (top-level `$effect`, no dependencies — runs once on mount, once on
+  destroy): `◈ KeepFace mount <id>` / `◈ KeepFace destroy <id>`. If the fix above doesn't fully clear the
+   symptom, the human's next click-test will show directly whether a destroy fires around the moment it
+    "snaps shut" — settles it in one look instead of another guess-round.
+
+**NEXT MOVE (needs the human's fingers, not more reading):** open directories editing on a fresh keep (still
+ materialising, `sc.dirs` unset) and watch it across several trickles. Expect: the chip row now holds steady
+  regardless of how the live auto-prefix shifts underneath; typing survives; `console` shows no `KeepFace
+   destroy` between mount and the human's own "✓ done" click. If it STILL snaps shut with no destroy logged,
+    the mount/destroy tell has ruled out remount and this write-up's mechanism both — the next suspect would
+     be Svelte's `<svelte:boundary>` in `Vytui.svelte:715` catching a genuine throw from something touched by
+      this edit (check the `.face-err` fallback tile in place of the cell) rather than a state issue at all.
+
+**Safe nice-ups landed alongside (all additive/loud-only or byte-identical, all LocalGen compile-green, no
+ fixture churn expected — none touch a live/hot path's behavior, so none needed a live click-test):**
+- **L3 — the source-side twin of L1** (flagged NOT-built in Evening 5's deferred list): `Repli_park_want`
+   (`Ghost/N/Repli.g`) now stamps `p.c.parked_at` once per parked want; `Ra_transcode_pump` (`Ghost/M/Ra.g`)
+    warns (throttled, re-barks every 10s like L1) once a parked want has sat >20s without the transcode
+     frontier reaching it — `◈⚠ transcode STALLED`. A stuck encoder on the SOURCE side used to be silent same
+      as everything else this whole handover has been about; now it isn't.
+- **The one remaining `bin_read` in the hot congestion class** (flagged "left — verify it's hot first" in
+   Evening 3): `Heist_census` (`Heist.g:107`, the per-NEW-file whole-file read during a directory census) now
+    prefers `read_range(dir,f,0)` (one native slice) over `bin_read`'s per-chunk `for await` loop, same
+     substitution already proven at three other call sites in this same file and in `Ra.g`. Byte-identical
+      output either path — no fixture risk, just avoids the same 64s-under-congestion class Fix #1 solved for
+       `Ra_source_pcm` if a census ever runs while the wire is busy.
+- **NOT touched (explicitly deferred, higher risk / needs coordination or a live runner, matching how the
+   handover already flagged them):** A#3 recv-wrapper honesty (`Repli_arm`'s three handlers still unconditionally
+    `return true` — behavioral, changes ack semantics, the handover itself says do it "verified"); the
+     ErrChannel proof Book (fully built, bundle-verified, just needs recording+declaring on a live runner —
+      a bigger, more permanent action than this pass's fixes, left for an attended session); the `hashC`-over-
+       `buf` dige cliff and the live retx sweep (both explicitly flagged "prove in isolation" / "higher risk
+        than an additive guard").

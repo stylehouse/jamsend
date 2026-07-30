@@ -2,46 +2,73 @@
 
 ## 0. Next move (read first)
 
-### 2026-07-30 LATER — the real Heist UI: two breadcrumbs, global defaults, single-track mode GONE. Read
-###  this before touching KeepFace.svelte or anything category/directory-shaped.
+### 2026-07-30 EVENING 8 — the directories-editor "snaps shut" bomb from the entry below has a fix, UNVERIFIED
+###  LIVE (solo session, no browser click access). Full root-cause reasoning + the safe nice-ups landed
+###   alongside it: `Download_stall_handover.md` § "Evening 8". Short version: `dirsSegs` fell back to a
+###    LIVE-recomputing auto-prefix whenever `sc.dirs` was unset, and the non-keyed chip `{#each}` destroyed
+###     trailing DOM nodes (incl. a focused input) whenever that prefix narrowed mid-edit — froze it at
+###      `openDirs()` time instead. Also fixed a dead-code bug (`n.c.cat_editing`/`dirs_editing`, leftover
+###       from a reverted earlier attempt) that silently zeroed the known-category/known-dirs datalist
+###        suggestions. **NEXT: the human needs to actually click into directories on a still-materialising
+###         keep across a few trickles and watch — mount/destroy console instrumentation is in place if it
+###          still breaks.**
+
+### 2026-07-30 LATEST — the real Heist UI: chip+gap breadcrumbs, directories WIRED into landing, marker is
+###  `0` now, a reset button, LIVE-VERIFIED on the human's own real tab. Read this before touching
+###   KeepFace.svelte or anything category/directory-shaped.
 
 `KeepFace.svelte`'s old free-text category field + destination-preview line + nab-album/nab-track buttons are
- GONE, replaced per the human's direction:
-- **section** (mine) and **directories** (theirs) are now TWO separate, never-merged, never-enclosing
-   breadcrumbs (`/segment/segment/`, neutral slashes, accent segment text) — click either to edit it in place
-    (the established local-draft/commit-on-blur technique, nothing more elaborate). `section` is the optional
-     nestable `- <name>` category (marker auto-stamped, never typed — `Heist_keep_set_genre` in Heist.g).
-      `directories` is the shared source-folder prefix across the described tracks (`Heist_marrauding`-style
-       commonPrefix, computed in the Svelte face); editing it persists (`Heist_keep_set_dirs`,
-        `keep.sc.dirs`) but does **NOT YET** change where bytes land — `Heist_rel_for`/`Heist_cp_path` still
-         take `rec.sc.path` verbatim. Wiring the override into the actual landing computation (shared-prefix
-          substitution, careful not to collide multi-disc filenames — see `Heist_cp_path`'s own comment on
-           why source folder layout survives unchanged) is the next real increment here, not done yet.
+ GONE, replaced per the human's direction — corrected TWICE this round after live-testing on their own real
+  BigSoundland tab caught what the first pass got wrong (a single blob input instead of segments):
+- **section** (mine) and **directories** (theirs) are two separate, never-merged, never-enclosing hierarchies.
+   At rest each is a calm `/segment/segment/` breadcrumb (neutral slashes, accent segment text). Click to
+    edit: NOT one text field — a row of small chips, one per segment with its own × to remove it, and a tiny
+     "+" gap before/between/after every chip (N segments ⇒ N+1 gaps) that grows as you type and inserts a new
+      segment at exactly that position on Enter. `section` stamps the category marker automatically (never
+       typed by the user); `directories` is the shared source-folder prefix across the described tracks
+        (commonPrefix of the husks' folders, computed in the Svelte face).
+- **directories IS wired into landing now.** Editing it calls `Heist_keep_set_dirs(keep, v, auto)`, which
+   freezes BOTH the override (`keep.sc.dirs`) and the auto-detected value AT EDIT TIME (`keep.sc.dirs_auto`)
+    onto the keep. `Heist_job` stamps both onto the minted job; `Heist_rel_for` substitutes dirs_auto → dirs
+     at the FRONT of each pick's cp-path only, and ONLY when the record's own path still starts with that
+      frozen dirs_auto — never a blind rename, so a multi-disc keep's CD1 vs CD2 divergence (and filenames)
+       below the shared prefix survive untouched. Re-verified MusuHeist live after this change (still 22/22
+        green, ok_pct 1.0) — the substitution is a pure no-op for any job that never set dirs, so nothing
+         that doesn't use this feature can be affected by it.
+- **category marker migrated `-` → `0`.** `Heist_keep_set_genre` now stamps `0 <name>` on every write; both
+   `-` and `0` still READ as a category everywhere (nothing on disk needs touching for old folders), but any
+    category that passes back through editing normalizes to `0` on the spot — a collection migrates one
+     touched category at a time, not a background file-rename job.
 - **"discover what we already have."** `Heist_known_categories(own_lib)` / `Heist_known_dirs(own_lib, artist)`
    scan the library's own `%Record.sc.path` for existing category prefixes / matching artist folders, feeding
     each breadcrumb's datalist while editing — so a near-duplicate folder is a visible choice, not an accident.
-     This only works now because `%Record.sc.path` rides on EVERY record (`Ra_record_from`), not just
-      heist-landed ones — the old "comma in a path is a snap hazard" reasoning was wrong (`Text.svelte`'s
-       `enLine` already JSON-falls-back on any unsafe value); fixed 2026-07-30.
+     Only works because `%Record.sc.path` rides on EVERY record now (`Ra_record_from`), not just heist-landed
+      ones — the old "comma in a path is a snap hazard" reasoning was wrong (`Text.svelte`'s `enLine` already
+       JSON-falls-back on any unsafe value).
 - **single-track mode is GONE.** `Heist_keep_pick_all`/`_none`/`_seed` (the old nab-album/nab-track buttons)
    are deleted outright — `Heist_keep_default_pick` already keeps the WHOLE described folder the moment it
-    describes, so "nab album" was always redundant, and the human ruled out a single-track-only mode entirely.
-     Per-track fine exclusion still works (`Heist_keep_pick_toggle`, click a track chip to skip just it).
+    describes. Per-track fine exclusion still works (`Heist_keep_pick_toggle`, click a track chip to skip it).
 - **global remembered defaults.** `Heist_defaults_get/_set/_rehydrate` in Heist.g: the category a heist gets
    set to becomes the default the NEXT heist opens with (`Radio_keep` seeds `keep.sc.genre` from it). Dual-
-    homed like `Swarm_pier_stash` — `H.stashed.Heist_defaults` (Dexie, auto-persists, no new plumbing) mirrored
-     to a `.jamsend/berth/<prepub>/HeistDefaults` Waft for durability (the human: "it lives in .jamsend as
-      well as Dexie"). `directories` deliberately does NOT feed this — a source folder chain means nothing as
-       a default for a different friend's totally different structure.
-- **track tree**: a folder group with more than 5 tracks collapses by default (a real `<details>`, click to
-   open); 5 or fewer stays expanded inline. An opened group shows every real track — no "… N more" summary
-    row (that was a mockup shortcut in an early sketch, never meant to ship).
-- **NOT YET LIVE-VERIFIED.** Everything above is compiled + bundle-verified clean and self-reviewed (a
-   datalist per-segment marker-strip bug, a known-scan running every tick instead of gated to editing state,
-    and a `stashed`-not-yet-hydrated guard-consumption bug were all found and fixed in review) — but the
-     runner was unreachable (flaky relay, `state`/`run` timing out while `ping` intermittently answered) the
-      whole session this landed in, so none of it has had eyes on a real render yet. First move next session
-       with a live tab: open a keep, actually click both breadcrumbs, confirm the collapse and the datalists.
+    homed like `Swarm_pier_stash` — `H.stashed.Heist_defaults` (Dexie) mirrored to a
+     `.jamsend/berth/<prepub>/HeistDefaults` Waft for durability. `directories` deliberately does NOT feed
+      this — source-specific, means nothing as a default for a different friend's structure.
+- **reset heist state button.** `DiagFace.svelte`, behind the 🔧 diagnostics toggle (destructive action, opt-
+   in gate): a real confirm-before-delete (`O/ui/micro/DeleteX`) that calls `Heist_keep_reset_all(w)` —
+    cancels every standing `%Keep` through the same `Heist_keep_cancel` path a single ✕ already used.
+- **track tree**: a folder group with more than 5 tracks collapses by default (a real `<details>`); 5 or
+   fewer stays expanded inline, every real track shown, no "… N more" placeholder.
+- **LIVE-VERIFIED, twice.** The runner was flaky most of this session (ping answering, run/state timing out)
+   but came good — ran MusuHeist for real, it went red, diffed the actual mismatch with `story_repl.mjs diff`
+    instead of stopping at "red": all 16 `%see` assertions fired, the whole story arc completed, and the red
+     was pure fixture staleness (the already-known non-deterministic Grant timestamps + a belief-loop pacing
+      shift from the `Swarm_share_loop` reentrancy fix). `accept`ed fresh, reran: 22/22 green. Separately
+       discovered the runner I'd been driving via plain `runner_ask`/`story_repl` (no `--runner=`) IS the
+        human's own real BigSoundland tab (`world` showed real supply-pipeline + Peering state) — Story Books
+         run there ALONGSIDE the resident session in an isolated `H:<Book>,Run` world, not inside it, so this
+          is safe, but worth knowing: a `run <Book>` on the un-targeted default reaches their live tab, not a
+           dedicated sandbox. The chip/gap UI itself got corrected live, in real time, off the human's own
+            testing on that exact tab — first the whole-blob-field bug, then the visual too-busy pass.
 
 ### 2026-07-30 — `music/` prefix REMOVED FOR GOOD. Every `/music`, `Heist_music_root()`, `job.sc.root` mention
 ###  below this point is STALE. Read THIS first, then skip past them.

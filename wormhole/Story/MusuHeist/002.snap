@@ -30,8 +30,6 @@ Snap:H
                 said,seq=2,acked
                 heard
             outbox
-              emit,type:hello,seq,sent,acked
-              emit=2,type:trust,seq=2,sent,acked
             inbox
               req:unemit,seq,type:hello,done,to:hello,finished
               req:unemit,seq=2,type:trust,done,to:trust,finished
@@ -52,8 +50,6 @@ Snap:H
                 said,seq=2,acked
                 heard
             outbox
-              emit,type:hello,seq,sent,acked
-              emit=2,type:trust,seq=2,sent,acked
             inbox
               req:unemit,seq,type:hello,done,to:hello,finished
               req:unemit,seq=2,type:trust,done,to:trust,finished

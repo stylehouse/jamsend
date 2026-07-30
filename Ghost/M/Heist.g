@@ -104,7 +104,17 @@ async Heist_census(w, lib, nav, base, artists):
         if (this.Heist_held(lib, pmeta.artist, pmeta.title)) { stood = stood + 1; continue }
         let parts = (base + '/' + path).split('/').filter(Boolean)
         let filename = parts.pop()
-        let raw = await nav.bin_read(parts.join('/'), filename)
+        // native single-slice read (read_range), not bin_read's per-chunk iterate — the SAME 64s-under-
+        //  congestion class Fix #1 solved for Ra_source_pcm/Ra_stock_one/Heist read-back-verify
+        //   (Download_stall_handover.md Evening 1); census hits it too, once per NEW file (Heist_held
+        //    above already skips every file already standing).
+        let raw = null
+        if (nav.read_range) {
+            let got = await nav.read_range(parts.join('/'), filename, 0)
+            raw = got ? got.buffer : null
+        } else {
+            raw = await nav.bin_read(parts.join('/'), filename)
+        }
         if (!raw || !raw.byteLength) { skipped = skipped + 1; continue }
         let bytes = new Uint8Array(raw)
         // <  probe the BYTES really are audio media before censusing — the extension gate alone lies;
@@ -269,6 +279,11 @@ Heist_job(w, at, filings, opts):
     //  supplied (an undefined would brand the snap {"undef":["hid"]}); a %Heistlet,of:<hid> refers by it.
     if (opts && opts.hid) job.sc.hid = opts.hid
     if (!opts || !opts.believe_directories) job.sc.disbelieve_directories = 1
+    // the directories breadcrumb's edit (KeepFace, the human 2026-07-30): dirs is what the human typed,
+    //  dirs_auto is the auto-detected shared prefix AT THE MOMENT they edited it (frozen — see
+    //   Heist_keep_set_dirs) — Heist_rel_for substitutes one for the other in each pick's landing path.
+    //    Both or neither: a bare dirs with no frozen auto to diff against can't safely substitute anything.
+    if (opts && opts.dirs && opts.dirs_auto != null) { job.sc.dirs = opts.dirs; job.sc.dirs_auto = opts.dirs_auto }
     for (const f of (filings || [])) {
         let fl = job.i({ filing: 1, artist: f.artist, genre: f.genre })
         fl.c.up = job
@@ -410,12 +425,26 @@ Heist_cp_path(rec):
 //  job: the filing decision picks the DEST-ROOT (the believe/disbelieve %filing design shrinks to "which
 //   top folder"), and the source's own relative path rides underneath UNCHANGED (a cp, no rename).  Shared
 //    by Heist_land (what to write) and Heist_manifest (what WOULD be written, look-before-you-commit).
+//  DIRECTORIES OVERRIDE (the human 2026-07-30): if the job carries a frozen dirs/dirs_auto pair (stamped by
+//   Heist_job off the keep's edited breadcrumb), substitute dirs_auto → dirs at the FRONT of the cp path only
+//    — never a blind rename: if this record's own leading segments don't match dirs_auto (the shared prefix
+//     at edit time), leave it untouched entirely rather than guess.  This is what keeps a multi-disc keep's
+//      CD1 vs CD2 divergence (and its filenames) intact even when the shared ancestor above them gets renamed.
 Heist_rel_for(job, rec):
     // NO default category (the human 2026-07-29 "I don't want anything prepended"): an unfiled artist lands
     //  under the music root with its SOURCE path intact — no 'misc'/'Unfiled' shim.  A pinned category prepends,
     //   and may NEST (0 chill/0 very chill) — Heist_cat_path splits + safe-segs each level.
     let root = this.Heist_cat_path(this.Heist_filing_for(job, rec.sc.artist))
-    return (root ? root + '/' : '') + this.Heist_cp_path(rec)
+    let cp = this.Heist_cp_path(rec)
+    if (job.sc.dirs && job.sc.dirs_auto) {
+        let auto = job.sc.dirs_auto
+        if (cp === auto || cp.indexOf(auto + '/') === 0) {
+            let rest = cp.slice(auto.length).replace(/^\//, '')
+            let over = this.Heist_cat_path(job.sc.dirs)
+            cp = rest ? (over ? over + '/' + rest : rest) : over
+        }
+    }
+    return (root ? root + '/' : '') + cp
 
 // Heist_cat_path — a category may NEST (the human 2026-07-29 "they go within each other, ie 0 chill/0 very
 //  chill"): split on `/`, make each level filesystem-safe, drop empties, rejoin.  A plain single-level category
@@ -1278,8 +1307,23 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
     if (!route.c.repli_rx) this.Repli_register_rx(w, route)
     let srcmir = this.Ra_home_them(rw, at)
     if (state === 'primed' || state === 'wanted' || state === 'asking') {
-        // SPACE-FAVOUR the cell while it sits in the clutter (dose → Vyto env_area); folded down on pull.
-        if (keep.sc.dose !== '2') { keep.sc.dose = '2'; keep.bump() }
+        // FOCUS, not a free-for-all (the human 2026-07-30 — "how do the Heists fold down if we seem
+        //  disinterested... they should group... one big list", "solve that grouping BEFORE the layer of
+        //   data we chuck into Vyto"): SPACE-FAVOUR only the sibling %Keep you're actually touching right
+        //    now (max c.last_touch among shop's other primed|wanted|asking keeps) — every other one drops
+        //     its dose so it folds to a compact row (KeepFace reads state+focus, not a new mainkey — plain
+        //      .c properties, standardly labelled, decided HERE before Vyto ever grapples anything).  A
+        //       single keep is trivially its own max, so nothing changes for the common one-keep case.
+        let siblings = shop.o({ Keep: 1 }).filter((k) => { let s2 = k.sc.state || 'primed'; return s2 === 'primed' || s2 === 'wanted' || s2 === 'asking' })
+        let focused = keep
+        for (const k of siblings) { if (+(k.c.last_touch || 0) > +(focused.c.last_touch || 0)) focused = k }
+        let isFocused = focused === keep
+        if (isFocused) {
+            if (keep.sc.dose !== '2') { keep.sc.dose = '2'; keep.bump() }
+        } else if (keep.sc.dose) {
+            delete keep.sc.dose
+            keep.bump()
+        }
         // DESCRIBE the folder (metadata heads only — cheap, no reads) so KeepFace shows the node tree to tweak.
         //  Throttled.  Once described, default-keep the heard track (its own husk wears re:<seed content-id>).
         if (!this.Heist_rummage_recs(srcmir, seed).length) {
@@ -1308,7 +1352,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
         let picks = keep.o({ Pick: 1 })
         let own = this.Ra_home_self(rw, me)
         let job = keep.c.job || shop.o({ Heist: 1, at: keep.sc.at })[0]
-        if (!job) job = this.Heist_job(w, keep.sc.at, this.Heist_keep_filings(keep), { home: shop })
+        if (!job) job = this.Heist_job(w, keep.sc.at, this.Heist_keep_filings(keep), { home: shop, dirs: keep.sc.dirs, dirs_auto: keep.sc.dirs_auto })
         keep.c.job = job
         // RESUME (the human 2026-07-30 — the Sounditron pages auto-reload every ~10min, no persisted
         //  %Keep/%Pick state yet survives that, so every reload used to mean pulling every track again
@@ -1533,15 +1577,30 @@ async Heist_keep_persist(keep):
     if (keep.sc.artist) entry.sc.artist = keep.sc.artist
     if (keep.sc.genre) entry.sc.genre = keep.sc.genre
     if (keep.sc.dirs) entry.sc.dirs = keep.sc.dirs
-    // the picks themselves: `ref` is the live pick's own identifying field (Heist_resume_sync reads it the
-    //  same way Heist_keep_step's live pull loop does — ref falls back to id, then a rec's `re`).  JSON in
-    //   one scalar — the established idiom for a small structured field (Swarm_export, Ra_unpack headers).
-    //    `landed` rides too (the human 2026-07-30, spotting newlyadded logging the same finished track on
-    //     every ~10min reload): without it every rehydrate replayed picks as if NONE had landed yet, so
-    //      resume-sync re-verified + re-logged an already-finished file forever.  Absent when falsy — the
-    //       house rule against snapping a bare `false` (a plain JSON blob here, not a C.sc field, but the
-    //        same discipline: JSON.stringify drops an explicit `undefined` key on its own).
-    entry.sc.picks = JSON.stringify(keep.o({ Pick: 1 }).map((p) => ({ ref: String(p.sc.ref || p.sc.id || ''), artist: p.sc.artist, title: p.sc.title, genre: p.sc.genre, landed: p.sc.landed ? 1 : undefined })).filter((p) => p.ref))
+    if (keep.sc.dirs_auto) entry.sc.dirs_auto = keep.sc.dirs_auto
+    // the picks themselves — REAL %Pick children of this %HeistSeed (the human 2026-07-30: a JSON blob in
+    //  one scalar is exactly the complex-data-in-.sc shape this project doesn't allow; "unwrapped into
+    //   Waft/HeistSeed/Pick" is the house shape everything else already uses).  `ref` is the live pick's
+    //    own identifying field (Heist_resume_sync reads it the same way Heist_keep_step's live pull loop
+    //     does — ref falls back to id, then a rec's `re`).  `landed` rides too (the human 2026-07-30,
+    //      spotting newlyadded logging the same finished track on every ~10min reload): without it every
+    //       rehydrate replayed picks as if NONE had landed yet, so resume-sync re-verified + re-logged an
+    //        already-finished file forever.  Sync, not append-only: a pick the human un-toggled since the
+    //         last persist must actually disappear here too, or a stale entry outlives the live intent.
+    let livePicks = keep.o({ Pick: 1 })
+    let liveRefs = new Set(livePicks.map((p) => String(p.sc.ref || p.sc.id || '')).filter(Boolean))
+    for (const pe of entry.o({ Pick: 1 })) { if (!liveRefs.has(String(pe.sc.ref || ''))) entry.rm({ Pick: 1, ref: pe.sc.ref }) }
+    for (const p of livePicks) {
+        let ref = String(p.sc.ref || p.sc.id || '')
+        if (!ref) continue
+        let pe = entry.oai({ Pick: 1, ref: ref })
+        pe.c.up = entry
+        if (p.sc.artist) pe.sc.artist = p.sc.artist
+        if (p.sc.title) pe.sc.title = p.sc.title
+        if (p.sc.genre) pe.sc.genre = p.sc.genre
+        if (p.sc.landed) pe.sc.landed = 1
+        else if (pe.sc.landed) delete pe.sc.landed
+    }
     await this.Berth_save(nav, waft)
 
 // Heist_keep_forget — drop a keep's Berth-persisted intent once it's done or cancelled, so a later reload
@@ -1559,11 +1618,12 @@ async Heist_keep_forget(keep):
 // Heist_keep_rehydrate — on boot|reload, resurrect any Berth-persisted heist with no LIVE %Keep standing
 //  yet (the human 2026-07-30: Sounditron pages auto-reload every ~10min, unattended overnight — "I think it
 //   basically should be able to resume a heist in the background").  Re-mints straight into 'pulling' (skips
-//    'primed' — the human already confirmed, before whatever reloaded), replays the exact persisted picks
-//     (never re-derives a default — `defaulted:1` blocks Heist_keep_default_pick's safety-net call from
-//      double-dipping), then Heist_resume_sync does the honest work of finding what's already correctly on
-//       disk. Runs once per radio-world life (rw.c gate — cheap after the first beat either way: one Berth
-//        read, empty the common case).
+//    'primed' — the human already confirmed, before whatever reloaded), replays the persisted %Pick
+//     CHILDREN of the %HeistSeed directly (real particles now, not a JSON blob — never re-derives a
+//      default: `defaulted:1` blocks Heist_keep_default_pick's safety-net call from double-dipping), then
+//       Heist_resume_sync does the honest work of finding what's already correctly on disk. Runs once per
+//        radio-world life (rw.c gate — cheap after the first beat either way: one Berth read, empty the
+//         common case).
 async Heist_keep_rehydrate(rw, me, nav, shop):
     if (rw.c.heist_rehydrated) return
     rw.c.heist_rehydrated = 1
@@ -1573,24 +1633,44 @@ async Heist_keep_rehydrate(rw, me, nav, shop):
     for (const entry of waft.o({ HeistSeed: 1 })) {
         let seedv = String(entry.sc.seed || '')
         if (!seedv || shop.o({ Keep: 1, seed: seedv })[0]) continue
-        let picks = []
-        try { picks = JSON.parse(entry.sc.picks || '[]') } catch (er) { picks = [] }
-        if (!picks.length) continue
+        // MIGRATION (2026-07-30, the JSON-blob-in-picks → real %Pick children fix): an entry saved by the
+        //  old shape carries no %Pick children yet, only the legacy entry.sc.picks JSON string — read it
+        //   ONCE as a fallback so an in-flight real heist doesn't just stop resuming the moment this code
+        //    ships, then drop the old field; the very next Heist_keep_persist writes it out the new way.
+        let persisted = entry.o({ Pick: 1 })
+        if (!persisted.length && entry.sc.picks) {
+            let legacy = []
+            try { legacy = JSON.parse(entry.sc.picks) } catch (er) { legacy = [] }
+            for (const p of legacy) {
+                if (!p || !p.ref) continue
+                let pe = entry.oai({ Pick: 1, ref: String(p.ref) })
+                pe.c.up = entry
+                if (p.artist) pe.sc.artist = p.artist
+                if (p.title) pe.sc.title = p.title
+                if (p.genre) pe.sc.genre = p.genre
+                if (p.landed) pe.sc.landed = 1
+            }
+            delete entry.sc.picks
+            persisted = entry.o({ Pick: 1 })
+            if (persisted.length) { try { await this.Berth_save(nav, waft) } catch (er) {} }
+        }
+        if (!persisted.length) continue
         let keep = shop.i({ Keep: entry.sc.title || 'resumed', seed: seedv, at: entry.sc.at || '', state: 'pulling' })
         keep.c.up = shop
         if (entry.sc.from_name) keep.sc.from_name = entry.sc.from_name
         if (entry.sc.artist) keep.sc.artist = entry.sc.artist
         if (entry.sc.genre) keep.sc.genre = entry.sc.genre
         if (entry.sc.dirs) keep.sc.dirs = entry.sc.dirs
+        if (entry.sc.dirs_auto) keep.sc.dirs_auto = entry.sc.dirs_auto
         keep.sc.defaulted = 1
-        for (const p of picks) {
-            if (!p || !p.ref) continue
-            let pick = keep.i({ Pick: 1, ref: String(p.ref) })
+        for (const pe of persisted) {
+            if (!pe.sc.ref) continue
+            let pick = keep.i({ Pick: 1, ref: String(pe.sc.ref) })
             pick.c.up = keep
-            if (p.artist) pick.sc.artist = p.artist
-            if (p.title) pick.sc.title = p.title
-            if (p.genre) pick.sc.genre = p.genre
-            if (p.landed) pick.sc.landed = 1   // carry the finished picks forward — resume-sync must not re-log them
+            if (pe.sc.artist) pick.sc.artist = pe.sc.artist
+            if (pe.sc.title) pick.sc.title = pe.sc.title
+            if (pe.sc.genre) pick.sc.genre = pe.sc.genre
+            if (pe.sc.landed) pick.sc.landed = 1   // carry the finished picks forward — resume-sync must not re-log them
         }
         keep.bump()
         n = n + 1
@@ -1693,9 +1773,17 @@ Heist_known_dirs(own_lib, artist):
     return out.sort()
 //#endregion
 
+// Heist_keep_touch — bring a folded, unfocused sibling keep back into focus (click its compact row).  No
+//  state change, just the same last_touch bump every other interaction makes — Heist_keep_step's next beat
+//   sees it's now the most-recently-touched and hands it the dose back.
+Heist_keep_touch(keep):
+    keep.c.last_touch = Date.now()
+    keep.bump()
+
 // Heist_keep_pick_toggle — the KeepFace cell's un/keep of one folder node (ref = its keep-id).  Present ⇒ drop
 //  it; absent ⇒ add it, lifting title/artist off the described husk.
 Heist_keep_pick_toggle(keep, ref):
+    keep.c.last_touch = Date.now()
     let have = keep.o({ Pick: 1, ref: String(ref) })[0]
     if (have) { keep.drop(have); keep.bump(); return }
     let rw = this.top_House().c.radio_w
@@ -1708,32 +1796,39 @@ Heist_keep_pick_toggle(keep, ref):
     keep.bump()
 
 // Heist_keep_set_genre — the cell's CATEGORY tweak (one top folder for the whole keep; Heist_keep_filings
-//  prefers it over each pick's own tag).  A category is a `- <name>` (or `0 <name>`) folder that sorts TOPWARD
-//   (the human 2026-07-29 "'file under' should really be 'category' ... becomes a `- ${name}` folder that we
-//    interpret as such (`0 ${name}` too)").  The user NEVER types the marker (the human 2026-07-30) — every
-//    `/`-separated level gets it stamped on here if it's missing, so "Chill/Very Chill" and "- Chill/- Very
-//     Chill" land identically, and Heist_known_categories' per-segment scan actually matches what this stores
-//      (a marker on only the outermost level used to leave inner levels undetectable as categories).  An
-//       EMPTY category CLEARS it (no prepend — keep the source structure, [[heist no-prepend]]).  Also updates
-//        the GLOBAL remembered default (Heist_defaults_set) — this is the one place a category gets set, so
-//         it's the one place the next heist's starting point needs to learn from.
+//  prefers it over each pick's own tag).  MARKER MIGRATION (the human 2026-07-30): `0 <name>` is now the
+//   ONE marker this stamps — `-` was the original ("'file under' should really be 'category'"), but every
+//    NEW write goes out as `0` from here on.  `-` and `0` both still READ as a category everywhere
+//     (Heist_known_categories, Heist_cp_path, the marker regex below) — old `- `-filed folders keep working,
+//      nothing on disk gets touched — but any category that passes back through THIS verb (the only place
+//       one gets set) migrates to `0` on the spot, marker included: "Chill", "- Chill", and "0 Chill" all
+//        normalize to `0 Chill` here, so editing a category is what carries a collection over to the new
+//         marker, one touch at a time.  The user NEVER types the marker itself — every `/`-separated level
+//          gets it stamped on if missing (or re-stamped if it was the old one), so nesting keeps working
+//           identically regardless of which marker the caller happened to pass in.  An EMPTY category
+//            CLEARS it (no prepend — keep the source structure, [[heist no-prepend]]).  Also updates the
+//             GLOBAL remembered default (Heist_defaults_set) — this is the one place a category gets set,
+//              so it's the one place the next heist's starting point needs to learn from.
 Heist_keep_set_genre(keep, v):
+    keep.c.last_touch = Date.now()
     let parts = ('' + (v || '')).split('/').map((p) => p.trim()).filter(Boolean)
-    let out = parts.map((p) => p.match(/^(-|0) /) ? p : '- ' + p)
+    let out = parts.map((p) => '0 ' + p.replace(/^(-|0) /, ''))
     keep.sc.genre = out.join('/')
     keep.bump()
     this.Heist_defaults_set({ genre: keep.sc.genre })
 
 // Heist_keep_set_dirs — the directories breadcrumb's edit (the human 2026-07-30): override the SHARED
-//  source-folder prefix a keep's tracks land under (KeepFace computes the auto-detected one — the common
-//   leading path across every described husk — and only sends this when it differs).  UNLIKE category,
-//    this does NOT feed the global default: a directory chain is source-specific ("Fourier Four/Tagged
-//     Truth" means nothing as a default for the next friend's totally different folder), so each keep only
-//      remembers its own.  Persisted on the keep like genre; WIRING this into where bytes actually land
-//       (Heist_rel_for currently takes rec.sc.path verbatim) is the next increment — this saves + displays
-//        correctly today, it just doesn't yet change a landing path, so don't assume it does.
-Heist_keep_set_dirs(keep, v):
+//  source-folder prefix a keep's tracks land under.  `auto` is KeepFace's own live-computed shared prefix
+//   (the common leading path across every described husk) AT THE MOMENT of this edit — frozen onto the keep
+//    as dirs_auto so Heist_rel_for can substitute dirs_auto → dirs at land time reliably even as the live
+//     auto-detected value keeps recomputing afterward (new husks describing, tree changing shape).  UNLIKE
+//      category, this does NOT feed the global default: a directory chain is source-specific ("Fourier
+//       Four/Tagged Truth" means nothing as a default for the next friend's totally different folder), so
+//        each keep only remembers its own.
+Heist_keep_set_dirs(keep, v, auto):
+    keep.c.last_touch = Date.now()
     keep.sc.dirs = ('' + (v || '')).split('/').map((p) => p.trim()).filter(Boolean).join('/')
+    if (auto) keep.sc.dirs_auto = auto
     keep.bump()
 
 // Heist_resume_sync — RESUME AT THE LIST LEVEL, never inside a file (the human 2026-07-30: "a resuming
@@ -1817,7 +1912,7 @@ async Heist_keep_pull(w, rw, ident, me, nav, keep, shop, srcmir, route):
     // FIND-or-create the job (the review's reload finding): keep.c.job is runtime-only, so after a reload
     //  with state:'committing' persisted a bare create would mint a SECOND %Heist beside the orphaned first.
     let job = keep.c.job || shop.o({ Heist: 1, at: keep.sc.at })[0]
-    if (!job) job = this.Heist_job(w, keep.sc.at, this.Heist_keep_filings(keep), { home: shop })
+    if (!job) job = this.Heist_job(w, keep.sc.at, this.Heist_keep_filings(keep), { home: shop, dirs: keep.sc.dirs, dirs_auto: keep.sc.dirs_auto })
     keep.c.job = job
     let own = this.Ra_home_self(rw, me)
     await this.Heist_resume_sync(w, nav, job, own, srcmir, picks, '', keep)
@@ -1895,6 +1990,18 @@ async Heist_keep_cancel(w, keep):
     if (keep.sc.at) { try { shop.rm({ Heist: 1, at: keep.sc.at }) } catch (er) {} }
     try { await this.Heist_keep_forget(keep) } catch (er) {}
     shop.rm({ Keep: 1, seed: keep.sc.seed })
+
+// Heist_keep_reset_all — the diagnostics "reset heist state" button (the human 2026-07-30, studying several
+//  Sounditrons and needing a clean slate between runs without hand-editing disk): cancel EVERY standing
+//   %Keep at once, each through the SAME Heist_keep_cancel a single ✕ already uses — no parallel drop path,
+//    so it inherits that verb's correctness (in-flight job dropped, Berth entry forgotten, live particle
+//     gone) for free.  Returns how many were cleared, so the UI can say something concrete.
+async Heist_keep_reset_all(w):
+    let me = this.Radio_pub(w) || 'me'
+    let shop = this.Ra_home_shop(w, me)
+    let keeps = shop.o({ Keep: 1 }).slice()
+    for (const keep of keeps) { try { await this.Heist_keep_cancel(w, keep) } catch (er) {} }
+    return keeps.length
 //#endregion
 
 //#region newlyadded — probation as metadata: the log that shuffles new music into the listening diet
@@ -1924,6 +2031,14 @@ async Heist_newlyadded_note(nav, mardir, entry):
     let card = waft.i({ Probation: 1, of: entry, seq: String(waft.o({ Probation: 1 }).length + 1) })
     card.c.up = waft
     card.sc.feeling = 'fresh'
+    // ALBUM GROUPING (the human — newlyadded should read per-album when a whole album landed, per-track
+    //  only for a genuine loose file): stays PER-FILE here on purpose — `of:` is still the one exact path
+    //   Heist_feel's drop deletes, so that destructive path is untouched.  `dir` just tags which folder
+    //    this file landed under (empty = loose, straight under mardir); Heist_newlyadded_grouped folds
+    //     same-dir cards together for a reader/UI, without changing what a single card mints or deletes.
+    let dirpart = entry.split('/'); dirpart.pop()
+    let dir = dirpart.join('/')
+    if (dir) card.sc.dir = dir
     await this.Berth_save(nav, waft)
 
 // Heist_newlyadded_list — every probation card, oldest arrival first (seq is stamped in mint order
@@ -1931,6 +2046,27 @@ async Heist_newlyadded_note(nav, mardir, entry):
 async Heist_newlyadded_list(nav, mardir):
     let waft = await this.Heist_newlyadded_waft(nav, mardir)
     return waft.o({ Probation: 1 }).sort((a, b) => (+a.sc.seq || 0) - (+b.sc.seq || 0))
+
+// Heist_newlyadded_grouped — the album-level READ of the same per-file cards: every card sharing a `dir`
+//  folds into one row {dir, cards, feeling} (feeling = 'fresh' if ANY card in the group still is, since
+//   one track loved/dropped out of an album doesn't retire the whole album's freshness); a dir-less
+//    (loose) card stays its own row.  Pure aggregation — mints nothing, deletes nothing, so a UI can show
+//     "Fourier Four — Tagged Truth (12 tracks)" as one entry while Heist_feel keeps working per-file
+//      underneath if the human drops one bad track out of an otherwise-kept album.
+async Heist_newlyadded_grouped(nav, mardir):
+    let cards = await this.Heist_newlyadded_list(nav, mardir)
+    let groups = {}
+    let order = []
+    let out = []
+    for (const card of cards) {
+        let dir = String(card.sc.dir || '')
+        if (!dir) { out.push({ dir: '', cards: [card], feeling: card.sc.feeling, seq: +(card.sc.seq || 0) }); continue }
+        if (!groups[dir]) { groups[dir] = { dir, cards: [], feeling: card.sc.feeling, seq: +(card.sc.seq || 0) }; order.push(dir) }
+        groups[dir].cards.push(card)
+        if (card.sc.feeling === 'fresh') groups[dir].feeling = 'fresh'
+    }
+    for (const dir of order) out.push(groups[dir])
+    return out.sort((a, b) => a.seq - b.seq)
 
 // Heist_feel — the listener's verdict on a probation entry.  'love' graduates in place; 'drop' is
 //  DENY: the file leaves the collection (deleted off the disk) and its catalog card retires.  The drop

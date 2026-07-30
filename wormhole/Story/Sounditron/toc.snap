@@ -98,28 +98,28 @@ story:Sounditron
         lematch,Need
           means,spayer,re:Need:(.*),tol:any
   TimeSpool
-    TimeTotal:beliefs,avg=0.166
-      sample=0.237,at=1785381603
-      sample=0.203,at=1785382208
-      sample=0.099,at=1785382803
-      sample=0.096,at=1785383409
-      sample=0.118,at=1785384009
-      sample=0.229,at=1785384609
-      sample=0.075,at=1785385212
-      sample=0.073,at=1785385719
-      sample=0.224,at=1785385827
-      sample=0.306,at=1785385935
-    TimeTotal:step,avg=0.024
-      sample=0.034,at=1785381603
-      sample=0.029,at=1785382208
-      sample=0.014,at=1785382803
-      sample=0.014,at=1785383409
-      sample=0.017,at=1785384009
-      sample=0.033,at=1785384609
-      sample=0.011,at=1785385212
-      sample=0.01,at=1785385719
-      sample=0.032,at=1785385827
-      sample=0.044,at=1785385935
+    TimeTotal:beliefs,avg=0.206
+      sample=0.315,at=1785403828
+      sample=0.176,at=1785403918
+      sample=0.147,at=1785403988
+      sample=0.208,at=1785404372
+      sample=0.285,at=1785404434
+      sample=0.196,at=1785404764
+      sample=0.167,at=1785405035
+      sample=0.145,at=1785405371
+      sample=0.214,at=1785407120
+      sample=0.202,at=1785408040
+    TimeTotal:step,avg=0.03
+      sample=0.045,at=1785403828
+      sample=0.025,at=1785403918
+      sample=0.021,at=1785403988
+      sample=0.03,at=1785404372
+      sample=0.041,at=1785404434
+      sample=0.028,at=1785404764
+      sample=0.024,at=1785405035
+      sample=0.021,at=1785405371
+      sample=0.031,at=1785407120
+      sample=0.029,at=1785408040
   step,dige:3d46128d8aec4b69
   step=2,dige:a18046af8a7f21db,desc:the machine stands
     Assertion:machine-stood,sentence:the machine stood — an addressable self emerged on the spine

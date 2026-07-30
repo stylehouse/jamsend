@@ -1,9 +1,9 @@
 Snap:H
   H:MusuHeist,Run
     A:MusuHeist
-      self,round=65	{"mung":["age"]}
+      self,round=49	{"mung":["age"]}
       w:MusuHeist
-        self,round=65	{"mung":["age"]}
+        self,round=49	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -41,21 +41,21 @@ Snap:H
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
               Idzeug:heist_1,to:Music,genre:Heist,spent
-              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1785078758
+              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1785386565
                 Peering,name:be0dab3303037ad2,friendly:Duo,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1785078758,sign:740f43ec8cad6a05a467918a29933a2b06da9ddbbe59750a8ab8cb48a148377999ead3e7bce38a4d93cbafdb8c48fa656143c991db15c25bde8cb0b3bc1d3505,genre:Heist
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1785078758,sign:cbe4a5e91ca852b4e0732ad5d43c480ff888b4b6b2d9f300b920d58351fa11981aac08a91911460339b46bc764db73ad8328911fc7a1285c12dcd3a7da94870b,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1785386565,sign:4caa7c4114cfaf7c1ffcea12b6a9d77da7d492e0cac4e2dd04c40ffdc9a89383560a2a5d34f04ae8c8578e08fb5bf2846a28042f11df6d2725fd29e86735d805,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1785386565,sign:40cc3fdfd5c0edf3de7d6145954579b165179a9dddef4a6a3d3908eae6a37743c8227cf3a3fbb13bed3bf3a9e8e63a6f28ca2aea15fc8cbbc5f125554c528708,genre:Heist
             SocialGraph
-              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1785078758
+              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1785386565
         Account,of:Duo
           Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
             Peering,name:be0dab3303037ad2,friendly:Duo
-              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1785078758
+              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1785386565
                 Peering,name:4e09f34f5a6ab900,friendly:Uno,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1785078758,sign:740f43ec8cad6a05a467918a29933a2b06da9ddbbe59750a8ab8cb48a148377999ead3e7bce38a4d93cbafdb8c48fa656143c991db15c25bde8cb0b3bc1d3505,genre:Heist
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1785078758,sign:cbe4a5e91ca852b4e0732ad5d43c480ff888b4b6b2d9f300b920d58351fa11981aac08a91911460339b46bc764db73ad8328911fc7a1285c12dcd3a7da94870b,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1785386565,sign:4caa7c4114cfaf7c1ffcea12b6a9d77da7d492e0cac4e2dd04c40ffdc9a89383560a2a5d34f04ae8c8578e08fb5bf2846a28042f11df6d2725fd29e86735d805,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1785386565,sign:40cc3fdfd5c0edf3de7d6145954579b165179a9dddef4a6a3d3908eae6a37743c8227cf3a3fbb13bed3bf3a9e8e63a6f28ca2aea15fc8cbbc5f125554c528708,genre:Heist
             SocialGraph
-              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1785078758
+              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1785386565
         Peering,name:4e09f34f5a6ab900,req=2,ok
           Pier,pub:be0dab3303037ad2,req=2,ok
             req:handshake,finished
@@ -72,48 +72,28 @@ Snap:H
                 heard
             outbox
               recent
-                emit=45,type:repli_page,seq=45
-                emit=46,type:repli_lines,seq=46
-                emit=47,type:repli_page,seq=47
-                emit=48,type:repli_page,seq=48
-                emit=49,type:repli_lines,seq=49
-                emit=50,type:repli_page,seq=50
-                emit=51,type:repli_lines,seq=51
-                emit=52,type:repli_page,seq=52
-                emit=53,type:repli_page,seq=53
-                emit=54,type:repli_lines,seq=54
-                emit=55,type:repli_page,seq=55
-                emit=56,type:repli_page,seq=56
-                emit=57,type:repli_lines,seq=57
-                emit=58,type:repli_page,seq=58
-                emit=59,type:repli_lines,seq=59
-                emit=60,type:repli_page,seq=60
-                emit=61,type:repli_page,seq=61
-                emit=62,type:repli_lines,seq=62
-                emit=63,type:repli_page,seq=63
-                emit=64,type:repli_page,seq=64
             inbox
               recent
+                unemit=4,type:pier_confirm,seq=4
+                unemit=5,type:repli_lines,seq=5
+                unemit=6,type:repli_lines,seq=6
+                unemit=7,type:repli_lines,seq=7
+                unemit=8,type:repli_lines,seq=8
+                unemit=9,type:repli_page,seq=9
+                unemit=10,type:repli_lines,seq=10
+                unemit=11,type:repli_page,seq=11
+                unemit=12,type:repli_page,seq=12
+                unemit=13,type:repli_lines,seq=13
+                unemit=14,type:repli_page,seq=14
+                unemit=15,type:repli_page,seq=15
+                unemit=16,type:repli_lines,seq=16
+                unemit=17,type:repli_page,seq=17
+                unemit=18,type:repli_page,seq=18
+                unemit=19,type:repli_lines,seq=19
+                unemit=20,type:repli_page,seq=20
                 unemit=21,type:repli_page,seq=21
                 unemit=22,type:repli_lines,seq=22
                 unemit=23,type:repli_page,seq=23
-                unemit=24,type:repli_want,seq=24
-                unemit=25,type:repli_want,seq=25
-                unemit=26,type:repli_want,seq=26
-                unemit=27,type:repli_want,seq=27
-                unemit=28,type:repli_want,seq=28
-                unemit=29,type:repli_want,seq=29
-                unemit=30,type:repli_want,seq=30
-                unemit=31,type:repli_want,seq=31
-                unemit=32,type:repli_want,seq=32
-                unemit=33,type:repli_want,seq=33
-                unemit=34,type:repli_want,seq=34
-                unemit=35,type:repli_want,seq=35
-                unemit=36,type:repli_want,seq=36
-                unemit=37,type:repli_want,seq=37
-                unemit=38,type:repli_want,seq=38
-                unemit=39,type:repli_want,seq=39
-                unemit=40,type:repli_want,seq=40
               req:unemit,seq=41,type:repli_lines,body_hash:7390c8fb3a6522c76c3c0c3f7e79a5e2b9cb6e19141cb97e21f994998eecbdfc,body_len=224,done,to:repli_lines,finished
               req:unemit,seq=42,type:repli_lines,body_hash:8639a3c7e1736ade0e2261b602622c203037dfbd96f057994b5ccdcf6d32b09b,body_len=218,done,to:repli_lines,finished
               req:unemit,seq=43,type:repli_lines,body_hash:6966711b0d7b922fb80b71b96c6dd7172f9beff6ec4a6dcf0cd10a1c72cd3997,body_len=221,done,to:repli_lines,finished
@@ -141,35 +121,6 @@ Snap:H
                 heard
             outbox
               recent
-                emit=21,type:repli_page,seq=21
-                emit=22,type:repli_lines,seq=22
-                emit=23,type:repli_page,seq=23
-                emit=24,type:repli_want,seq=24
-                emit=25,type:repli_want,seq=25
-                emit=26,type:repli_want,seq=26
-                emit=27,type:repli_want,seq=27
-                emit=28,type:repli_want,seq=28
-                emit=29,type:repli_want,seq=29
-                emit=30,type:repli_want,seq=30
-                emit=31,type:repli_want,seq=31
-                emit=32,type:repli_want,seq=32
-                emit=33,type:repli_want,seq=33
-                emit=34,type:repli_want,seq=34
-                emit=35,type:repli_want,seq=35
-                emit=36,type:repli_want,seq=36
-                emit=37,type:repli_want,seq=37
-                emit=38,type:repli_want,seq=38
-                emit=39,type:repli_want,seq=39
-                emit=40,type:repli_want,seq=40
-              emit=41,type:repli_lines,seq=41,sent,body_hash:7390c8fb3a6522c76c3c0c3f7e79a5e2b9cb6e19141cb97e21f994998eecbdfc,body_len=224,acked
-              emit=42,type:repli_lines,seq=42,sent,body_hash:8639a3c7e1736ade0e2261b602622c203037dfbd96f057994b5ccdcf6d32b09b,body_len=218,acked
-              emit=43,type:repli_lines,seq=43,sent,body_hash:6966711b0d7b922fb80b71b96c6dd7172f9beff6ec4a6dcf0cd10a1c72cd3997,body_len=221,acked
-              emit=44,type:repli_lines,seq=44,sent,body_hash:e92208f62d4403d5a3835f13cb706b6e5c047875bb38bb583b763d06a3595bed,body_len=222,acked
-              emit=45,type:repli_lines,seq=45,sent,body_hash:d1a3664cb32ac10949397f647b84f06ae6ed30760734bf660772863fb8f133bc,body_len=222,acked
-              emit=46,type:repli_lines,seq=46,sent,body_hash:f76f7c48b0595cbd183e30ea65050488fe1c02c3f773d97bee1595854015ae22,body_len=222,acked
-              emit=47,type:repli_lines,seq=47,sent,body_hash:288658579159f6fac754303c99777ed733609a4c8d76bee657bdfa0e732ee2c3,body_len=218,acked
-              emit=48,type:repli_lines,seq=48,sent,body_hash:8655014fb4f662236499baefb92275682a9d0732062aa3a5b9044469466c3303,body_len=218,acked
-              emit=49,type:repli_lines,seq=49,sent,body_hash:b8f5875c3139b8e3fe82380cd65bac4e8ff4d157977320f3f69acbbb8d920fc4,body_len=222,acked
             inbox
               recent
                 unemit=45,type:repli_page,seq=45

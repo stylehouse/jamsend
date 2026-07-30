@@ -47,6 +47,11 @@
             described: husks.length > 0,
             landed_n: +(sc.landed_n || 0),
             total_n: +(sc.total_n || 0),
+            // LIVE FLOW (keep.c.flow, 0-100, off the real rx byte rate — Heist.g pulling branch): drives the
+            //  data-stream pizzazz below.  On .c (never snapped, no bump), re-read each 500ms tick.  trackPct is
+            //   the discrete tracks-landed fill; flow is the "bytes moving RIGHT NOW" heat that makes it blaze.
+            flow: Math.max(0, Math.min(100, +(keep?.c?.flow ?? 0))),
+            trackPct: (+(sc.total_n || 0) > 0) ? Math.min(100, Math.round(+(sc.landed_n || 0) / +(sc.total_n || 1) * 100)) : 0,
             folded: state === 'pulling' || state === 'committing' || state === 'done',
         }
     })
@@ -79,6 +84,16 @@
                 downloading {face.landed_n}/{face.total_n || face.picked || '?'} → {face.dest}
             {/if}
         </div>
+        {#if face.state !== 'done'}
+            <!-- the data-stream bar (the human 2026-07-30 "a little more pizzazz as its transferring"): a solid
+                 fill = tracks landed; a bright band SWEEPS across, its glow scaled by the live flow % so it
+                 blazes while bytes land and calms to nothing when the wire stalls (honest — doubles as the
+                 "is it actually flowing?" tell beside the ⇊⚠ NO PROGRESS watchdog). -->
+            <div class="kb-flow" class:live={face.flow > 4} style="--flow:{face.flow}">
+                <div class="kb-flow-fill" style="width:{face.trackPct}%"></div>
+                <div class="kb-flow-stream"></div>
+            </div>
+        {/if}
     {:else}
         <!-- PRIMED: the setup form — tweakable until you press ▶ start (no auto-start on track-end / skip) -->
         <div class="kb-file">
@@ -132,6 +147,31 @@
     .kb-artist { font-size: 9px; opacity: 0.7; color: #cfc0d8; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .kb-from { font-size: 9px; opacity: 0.6; }
     .kb-prog { font-size: 10px; opacity: 0.85; color: #7fe8bf; margin-top: 3px; }
+    /* the data-stream pizzazz — a progress track (tracks-landed fill) with a sweeping band overlay whose glow
+       is driven by --flow (keep.c.flow 0-100).  The sweep runs continuously in CSS (smooth regardless of the
+       500ms value poll); only its OPACITY breathes with the live rate, so it blazes on real traffic and fades
+       to calm when the wire goes quiet — no fake motion when nothing is landing. */
+    .kb-flow {
+        position: relative; height: 5px; margin-top: 4px;
+        border-radius: 3px; background: #241820; overflow: hidden;
+    }
+    .kb-flow-fill {
+        position: absolute; top: 0; bottom: 0; left: 0;
+        background: linear-gradient(90deg, #3f9a6a, #7fe8bf);
+        border-radius: 3px; transition: width 0.5s ease;
+    }
+    .kb-flow-stream {
+        position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+        background: linear-gradient(90deg, transparent 0%, rgba(159, 232, 191, 0.95) 50%, transparent 100%);
+        background-size: 42% 100%; background-repeat: no-repeat;
+        opacity: calc(var(--flow, 0) / 130);   /* flow 100 → ~0.77 blaze; flow 0 → invisible */
+        animation: kb-stream 1s linear infinite;
+    }
+    .kb-flow.live { box-shadow: 0 0 5px rgba(127, 232, 191, calc(var(--flow, 0) / 260)); }
+    @keyframes kb-stream {
+        0%   { background-position: -42% 0; }
+        100% { background-position: 142% 0; }
+    }
     .kb-file { display: flex; align-items: center; gap: 5px; margin-top: 4px; }
     .kb-dim { font-size: 9px; opacity: 0.55; }
     .kb-genre {

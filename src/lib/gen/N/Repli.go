@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return 'ea75565c5b7f40e6~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return '98e6694ab59c6b11~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -393,6 +393,7 @@ Repli_park_want(w, pier, h) {
         p.c.counted = 1
         p.c.reply_to = h.from
         p.c.reply_from = h.to
+        p.c.parked_at = Date.now()
         w.c.repli_parked = (w.c.repli_parked || 0) + 1
     }
 

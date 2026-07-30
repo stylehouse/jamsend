@@ -15,21 +15,46 @@
     //       never repeated up here.
     //  Both sit calm as a `/segment/segment/` breadcrumb; click to edit the whole thing in place (the
     //   existing genre-field technique: local draft, commit on blur — no elaborate exploded form).
+    import { tick as afterRender } from 'svelte'
+    import DeleteX from './micro/DeleteX.svelte'
     let { n, H } = $props()
     const A = H as any
 
     let tick = $state(0)
     $effect(() => { const iv = setInterval(() => { tick++ }, 500); return () => clearInterval(iv) })
 
-    // in-place editing state — declared BEFORE `face` below, which reads catEditing/dirsEditing to gate
-    //  the known-category|dirs library scan.  Order matters here: a $derived closure only ever RUNS after
-    //   the whole script has executed once, so a forward reference would actually be safe either way — but
-    //    this session already shipped one real TDZ bug from a same-block ordering assumption, so this one
-    //     reads top-to-bottom on purpose, no reliance on Svelte's lazy-eval timing to save it.
-    let catDraft = $state('')
+    // MOUNT/DESTROY TELL (Download_stall_handover.md Evening 7's "the bomb" — the directories editor
+    //  snapping shut on a Story trickle): a top-level, no-dependency $effect runs its body once on mount
+    //  and its cleanup once on destroy, so if this instance is being torn down and recreated under a
+    //  trickle (rather than the dirs-freeze above just needing a live-shifting derive tamed) these two
+    //  lines say so directly — no more inferring it from symptoms.
+    $effect(() => {
+        const who = String(n?.sc?.Keep || n?.sc?.id || '?')
+        console.log('◈ KeepFace mount', who)
+        console.trace('◈ KeepFace mount TRACE', who)
+        return () => console.log('◈ KeepFace destroy', who)
+    })
+
+    // in-place editing — SEGMENTS, not one field (the human 2026-07-30, correcting a prior over-
+    //  simplification): editing either hierarchy is a row of small chips (one per segment, its own × to
+    //   remove it) with a small "+" gap BEFORE the first, BETWEEN every pair, and AFTER the last — N
+    //    segments, N+1 gaps, each gap its own tiny input that inserts a new segment at exactly that
+    //     position. catGaps/dirsGaps hold each gap's in-progress typing, resized to segs.length+1 whenever
+    //      the segment count changes.
     let catEditing = $state(false)
-    let dirsDraft = $state('')
     let dirsEditing = $state(false)
+    let catGaps = $state<string[]>([''])
+    let dirsGaps = $state<string[]>([''])
+    let catFirstInput: HTMLInputElement | undefined = $state()
+    // directories' segment list is FROZEN at open time (openDirs), unlike category's: catSegs echoes a
+    //  persisted scalar (sc.genre) so it never moves under the user, but dirsSegs falls back to the LIVE
+    //  commonPrefix over still-materialising husks whenever sc.dirs is unset — editing off that moving
+    //  target is the leading suspect for "the editor snaps shut" (Download_stall_handover.md Evening 7).
+    //  Freezing the segments (and the auto prefix an edit substitutes onto the keep) at open time, then
+    //  updating the freeze locally on every insert/remove, keeps the edit session's display stable
+    //  regardless of what the live derive does underneath it.
+    let dirsSegsFrozen = $state<string[]>([])
+    let dirsAutoFrozen = $state('')
 
     // sanitise a category into a filesystem-safe folder segment — still needed for the FOLDED progress
     //  strip's "→ dest" line (untouched by this pass; only the PRIMED preview line was the noise).
@@ -76,11 +101,10 @@
         const pickedRefs = new Set(picks.map((p: any) => String(p.sc.ref ?? p.sc.id)))
 
         // ── section (category) — a plain nested name, marker stamped elsewhere (Heist_keep_set_genre) ──
+        //  the human 2026-07-30: no suggestions here (it's a personal name, not a lookup) — a plain typed
+        //   field, auto-focused the moment you open it with nothing set yet (see openCat).
         const catRaw = String(sc.genre || '')
         const catSegs = catRaw.split('/').map(stripMark).filter(Boolean)
-        // known-category discovery scans the WHOLE library — only worth paying for while the field the
-        //  suggestions feed is actually open, not on every 500ms tick regardless of state.
-        const catKnown = (catEditing && own && A?.Heist_known_categories) ? A.Heist_known_categories(own) : []
 
         // ── directories — the shared source prefix, or the human's override ─────────────────────────────
         const dirsAuto = commonPrefix(husks.map((h: any) => dirOf(String(h.sc.path || ''))))
@@ -125,26 +149,80 @@
             from: String(sc.from_name || 'a friend'),
             dest: 'music/' + safe(genre) + '/',
             asks: +(sc.asks || 0),
-            catRaw, catSegs, catKnown,
-            dirsRaw, dirsSegs, dirsKnown,
+            catRaw, catSegs,
+            dirsRaw, dirsSegs, dirsKnown, dirsAuto,
             flat, tree,
             nTracks: husks.length,
             picked: pickedRefs.size,
             landed_n: +(sc.landed_n || 0),
             total_n: +(sc.total_n || 0),
+            // LIVE FLOW (the human 2026-07-30 "a little more pizzazz as its transferring") — keep.c.flow is
+            //  the real thing, not decoration: a 0.3s-throttled % off the actual rx byte rate (Heist.g's
+            //   pulling branch), already built and already driving KeepBarFace's nested variant; this is
+            //    that same bar wired into the flat KeepFace everyone actually sees today.
+            flow: Math.max(0, Math.min(100, +(n?.c?.flow ?? 0))),
+            trackPct: (+(sc.total_n || 0) > 0) ? Math.min(100, Math.round(+(sc.landed_n || 0) / +(sc.total_n || 1) * 100)) : 0,
             describing: state === 'primed' || state === 'wanted' || state === 'asking',
             folded: state === 'pulling' || state === 'committing' || state === 'done',
+            // UNFOCUSED (the human 2026-07-30 — several keeps shouldn't fight for room): Heist_keep_step
+            //  already decided this — dose only rides on the one sibling most recently touched. A single
+            //  keep is trivially its own focus, so this is false whenever there's nothing to compete with.
+            unfocused: (state === 'primed' || state === 'wanted' || state === 'asking') && sc.dose !== '2',
         }
     })
 
-    // in-place editing — local draft + commit-on-blur (the established genre-field technique: a live
-    //  trickle can never reset the field mid-edit because the draft only re-seeds from the model when NOT
-    //   focused).  Kept deliberately simple — one text field per hierarchy, not an exploded gap-form.
-    //   (catDraft/catEditing/dirsDraft/dirsEditing are declared above, before `face` — see that comment.)
-    function openCat() { catDraft = face.catRaw; catEditing = true }
-    function commitCat() { catEditing = false; A?.post_do?.(() => { A?.Heist_keep_set_genre?.(n, catDraft) }, { see: 'keep category' }) }
-    function openDirs() { dirsDraft = face.dirsRaw; dirsEditing = true }
-    function commitDirs() { dirsEditing = false; A?.post_do?.(() => { A?.Heist_keep_set_dirs?.(n, dirsDraft) }, { see: 'keep directories' }) }
+    // keep the gap-draft arrays sized to segs.length+1, preserving whatever's mid-typed by position.
+    $effect(() => {
+        const want = face.catSegs.length + 1
+        if (catGaps.length !== want) catGaps = Array.from({ length: want }, (_, i) => catGaps[i] ?? '')
+    })
+    $effect(() => {
+        const want = dirsSegsFrozen.length + 1
+        if (dirsGaps.length !== want) dirsGaps = Array.from({ length: want }, (_, i) => dirsGaps[i] ?? '')
+    })
+
+    async function openCat() {
+        catEditing = true
+        // nothing set yet — put the cursor straight in the field instead of making them click twice
+        //  (the human 2026-07-30: "an input field selected immediately when there's nothing yet").
+        if (!face.catSegs.length) {
+            await afterRender()
+            catFirstInput?.focus()
+        }
+    }
+    function openDirs() {
+        dirsSegsFrozen = face.dirsSegs.slice()
+        dirsAutoFrozen = face.dirsAuto
+        dirsEditing = true
+    }
+    function catInsertAt(i: number) {
+        const v = (catGaps[i] || '').trim()
+        if (!v) return
+        const segs = face.catSegs.slice()
+        segs.splice(i, 0, v)
+        catGaps[i] = ''
+        A?.post_do?.(() => { A?.Heist_keep_set_genre?.(n, segs.join('/')) }, { see: 'keep category insert' })
+    }
+    function catRemoveAt(i: number) {
+        const segs = face.catSegs.slice()
+        segs.splice(i, 1)
+        A?.post_do?.(() => { A?.Heist_keep_set_genre?.(n, segs.join('/')) }, { see: 'keep category remove' })
+    }
+    function dirsInsertAt(i: number) {
+        const v = (dirsGaps[i] || '').trim()
+        if (!v) return
+        const segs = dirsSegsFrozen.slice()
+        segs.splice(i, 0, v)
+        dirsGaps[i] = ''
+        dirsSegsFrozen = segs
+        A?.post_do?.(() => { A?.Heist_keep_set_dirs?.(n, segs.join('/'), dirsAutoFrozen) }, { see: 'keep directories insert' })
+    }
+    function dirsRemoveAt(i: number) {
+        const segs = dirsSegsFrozen.slice()
+        segs.splice(i, 1)
+        dirsSegsFrozen = segs
+        A?.post_do?.(() => { A?.Heist_keep_set_dirs?.(n, segs.join('/'), dirsAutoFrozen) }, { see: 'keep directories remove' })
+    }
 
     function toggle(ref: string) {
         A?.post_do?.(() => { A?.Heist_keep_pick_toggle?.(n, ref) }, { see: 'keep pick' })
@@ -153,9 +231,10 @@
         A?.post_do?.(() => { A?.Heist_keep_cancel?.(A?.top_House?.()?.c?.radio_w, n) }, { see: 'keep cancel' })
     }
     function start() { A?.post_do?.(() => { A?.Heist_keep_start?.(n) }, { see: 'keep start' }) }
+    function focus() { A?.post_do?.(() => { A?.Heist_keep_touch?.(n) }, { see: 'keep focus' }) }
 </script>
 
-<div class="kf" class:folded={face.folded}>
+<div class="kf" class:folded={face.folded || face.unfocused}>
     <div class="kf-head">
         <span class="kf-badge">{face.state === 'done' ? '✓' : '⇊'}</span>
         <span class="kf-title" title={face.title}>{face.title}</span>
@@ -163,7 +242,13 @@
         <span class="kf-from">from {face.from}</span>
     </div>
 
-    {#if face.folded}
+    {#if face.unfocused}
+        <!-- QUEUED, not the one you're touching right now — several keeps read as a compact list instead
+             of everyone fighting for the same room.  Click to bring this one into focus. -->
+        <button class="kf-queued" onclick={focus} title="click to work on this one">
+            queued — {face.nTracks ? `${face.picked} of ${face.nTracks} tracks` : 'finding the folder…'}
+        </button>
+    {:else if face.folded}
         <!-- FOLDED: it started — a compact progress strip, no browsing -->
         <div class="kf-prog">
             {#if face.state === 'done'}
@@ -172,32 +257,62 @@
                 downloading {face.landed_n}/{face.total_n || '?'} tracks → {face.dest}
             {/if}
         </div>
+        {#if face.state !== 'done'}
+            <!-- the data-stream pizzazz: a solid fill = tracks landed; a bright band SWEEPS across, its glow
+                 scaled by the live flow % so it blazes while bytes actually land and calms when the wire
+                 stalls — no fake motion when nothing is transferring. -->
+            <div class="kf-flow" class:live={face.flow > 4} style="--flow:{face.flow}">
+                <div class="kf-flow-fill" style="width:{face.trackPct}%"></div>
+                <div class="kf-flow-stream"></div>
+            </div>
+        {/if}
     {:else}
         <!-- PRIMED: sits in the clutter, tweakable, until you press ▶ start (no auto-start) -->
 
-        <!-- SECTION — mine, optional, nestable. click the whole breadcrumb to edit it in place. -->
+        <!-- SECTION — mine, optional, nestable. click the breadcrumb to edit; editing = one chip per
+             segment (its own × to remove) with a small "+" gap before/between/after every chip, each gap
+             its own tiny input that inserts a new segment right there. -->
         {#if catEditing}
-            <input class="kf-stair-edit" bind:value={catDraft} list="kf-cat-known" autofocus
-                onblur={commitCat} onkeydown={(e) => { if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur(); if (e.key === 'Escape') catEditing = false }}
-                placeholder="no section — type one, or nest with /" />
-            <datalist id="kf-cat-known">
-                {#each face.catKnown as k}<option value={k.path.split('/').map(stripMark).join('/')}>{k.tracks} tracks already</option>{/each}
-            </datalist>
+            <div class="kf-chips">
+                {#each face.catSegs as seg, i}
+                    <input class="kf-gap" placeholder="+" value={catGaps[i]}
+                        oninput={(e) => { catGaps[i] = (e.currentTarget as HTMLInputElement).value }}
+                        onkeydown={(e) => { if (e.key === 'Enter') catInsertAt(i) }} />
+                    <span class="kf-chip cat">{seg}<DeleteX ondelete={() => catRemoveAt(i)} title="remove this category level" /></span>
+                {/each}
+                <input class="kf-gap" placeholder="+" value={catGaps[face.catSegs.length]}
+                    bind:this={catFirstInput}
+                    oninput={(e) => { catGaps[face.catSegs.length] = (e.currentTarget as HTMLInputElement).value }}
+                    onkeydown={(e) => { if (e.key === 'Enter') catInsertAt(face.catSegs.length) }} />
+                <button class="kf-chips-done" onclick={() => catEditing = false} title="done editing">✓</button>
+            </div>
         {:else}
             <button class="kf-stair" onclick={openCat} title="click to edit">
                 <span class="kf-stair-lbl">section</span>
                 <span class="kf-stair-path">
-                    <span class="sl">/</span>{#each face.catSegs as seg}<span class="seg cat">{seg}</span><span class="sl">/</span>{/each}
+                    {#each face.catSegs as seg, i}
+                        <span class="bit">{#if i === 0}<span class="sl">/</span>{/if}<span class="seg cat">{seg}</span><span class="sl">/</span></span>
+                    {/each}
                     {#if !face.catSegs.length}<span class="kf-stair-empty">none</span>{/if}
                 </span>
             </button>
         {/if}
 
-        <!-- DIRECTORIES — theirs: the shared source prefix. same breadcrumb, different accent, never a box
-             around the track list (that's what "spilled out" below is for). -->
+        <!-- DIRECTORIES — theirs: the shared source prefix, same chip+gap editing, different accent, never
+             a box around the track list (that's what "spilled out" below is for). -->
         {#if dirsEditing}
-            <input class="kf-stair-edit dirs" bind:value={dirsDraft} list="kf-dirs-known" autofocus
-                onblur={commitDirs} onkeydown={(e) => { if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur(); if (e.key === 'Escape') dirsEditing = false }} />
+            <div class="kf-chips">
+                {#each dirsSegsFrozen as seg, i}
+                    <input class="kf-gap dirs" placeholder="+" list="kf-dirs-known" value={dirsGaps[i]}
+                        oninput={(e) => { dirsGaps[i] = (e.currentTarget as HTMLInputElement).value }}
+                        onkeydown={(e) => { if (e.key === 'Enter') dirsInsertAt(i) }} />
+                    <span class="kf-chip dirs">{seg}<DeleteX ondelete={() => dirsRemoveAt(i)} title="remove this directory level" /></span>
+                {/each}
+                <input class="kf-gap dirs" placeholder="+" list="kf-dirs-known" value={dirsGaps[dirsSegsFrozen.length]}
+                    oninput={(e) => { dirsGaps[dirsSegsFrozen.length] = (e.currentTarget as HTMLInputElement).value }}
+                    onkeydown={(e) => { if (e.key === 'Enter') dirsInsertAt(dirsSegsFrozen.length) }} />
+                <button class="kf-chips-done" onclick={() => dirsEditing = false} title="done editing">✓</button>
+            </div>
             <datalist id="kf-dirs-known">
                 {#each face.dirsKnown as d}<option value={d}></option>{/each}
             </datalist>
@@ -206,7 +321,9 @@
                 <span class="kf-stair-lbl">directories</span>
                 <span class="kf-stair-path">
                     {#if face.dirsSegs.length}
-                        <span class="sl">/</span>{#each face.dirsSegs as seg}<span class="seg dirs">{seg}</span><span class="sl">/</span>{/each}
+                        {#each face.dirsSegs as seg, i}
+                            <span class="bit">{#if i === 0}<span class="sl">/</span>{/if}<span class="seg dirs">{seg}</span><span class="sl">/</span></span>
+                        {/each}
                     {:else}
                         <span class="kf-stair-empty">…</span>
                     {/if}
@@ -215,12 +332,19 @@
         {/if}
 
         {#if face.nTracks}
-            <div class="kf-total"><span class="kf-dim">{face.picked} of {face.nTracks} tracks — the whole folder, click one to skip it</span></div>
-        {/if}
-
-        {#if face.nTracks}
             <div class="kf-tree">
-                {#if face.flat.length}
+                {#if face.flat.length > 5}
+                    <details class="kf-group">
+                        <summary class="kf-dir"><span class="kf-car">▸</span> ×{face.flat.length} tracks</summary>
+                        {#each face.flat as t}
+                            <button class="kf-track" class:kept={t.kept} class:seed={t.seed} onclick={() => toggle(t.ref)}
+                                title={t.seed ? 'the track you\'re hearing' : (t.kept ? 'keeping — click to skip' : 'skipped — click to keep')}>
+                                <span class="kf-tick">{t.kept ? '✓' : '·'}</span>
+                                <span class="kf-tname">{t.title}{#if t.seed} ♪{/if}</span>
+                            </button>
+                        {/each}
+                    </details>
+                {:else if face.flat.length}
                     {#each face.flat as t}
                         <button class="kf-track" class:kept={t.kept} class:seed={t.seed} onclick={() => toggle(t.ref)}
                             title={t.seed ? 'the track you\'re hearing' : (t.kept ? 'keeping — click to skip' : 'skipped — click to keep')}>
@@ -292,6 +416,12 @@
     .kf-artist { font-size: 9px; opacity: 0.7; color: #cfc0d8; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .kf-from { font-size: 9px; opacity: 0.6; }
     .kf-prog { font-size: 10px; opacity: 0.85; color: #7fe8bf; margin-top: 3px; }
+    .kf-queued {
+        pointer-events: auto; cursor: pointer; width: 100%; text-align: left;
+        background: none; border: none; color: #a894a0; font: inherit;
+        font-size: 10px; opacity: 0.75; margin-top: 3px; padding: 0;
+    }
+    .kf-queued:hover { color: #e0cfd8; opacity: 1; text-decoration: underline; text-decoration-color: #55414f; }
     .kf-dim { font-size: 9px; opacity: 0.55; }
 
     /* section / directories — a calm, non-enclosing breadcrumb; slashes stay neutral so the eye reads
@@ -302,7 +432,8 @@
         cursor: pointer;
         display: flex;
         align-items: baseline;
-        gap: 5px;
+        flex-wrap: wrap;
+        gap: 2px 5px;
         width: 100%;
         background: transparent;
         border: none;
@@ -311,34 +442,51 @@
         font: inherit;
         color: inherit;
     }
-    .kf-stair:hover .kf-stair-path { text-decoration: underline; text-decoration-color: #66495a; }
+    .kf-stair:hover .kf-stair-path .bit { text-decoration: underline; text-decoration-color: #66495a; }
     .kf-stair-lbl { font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.45; flex: none; }
-    .kf-stair-path { font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* wrap between path bits, never inside one — min-width:0 is the flexbox fix that lets this shrink
+       and wrap instead of overflowing its row (a flex item won't shrink below content size otherwise). */
+    .kf-stair-path { font-size: 10.5px; flex: 1 1 auto; min-width: 0; white-space: normal; }
+    .kf-stair-path .bit { display: inline-block; white-space: nowrap; }
     .kf-stair-path .sl { color: #6b5a68; }
     .kf-stair-path .seg.cat { color: #7fe8bf; }
     .kf-stair-path .seg.dirs { color: #c9a5e8; }
     .kf-stair-empty { color: #6b5a68; font-style: italic; }
-    .kf-stair-edit {
-        pointer-events: auto;
-        width: 100%;
-        margin-top: 3px;
-        background: #241820;
-        color: #f0dbe6;
-        border: 1px solid #66495a;
-        border-radius: 6px;
-        font-size: 10.5px;
-        padding: 2px 7px;
-        font-family: inherit;
-    }
-    .kf-stair-edit.dirs { border-color: #6a5580; }
-    .kf-stair-edit::placeholder { color: #6b5a68; }
 
-    .kf-total { margin-top: 6px; }
+    /* chip + gap editing — small, inline, no restated summary alongside it (the rest-view breadcrumb
+       above is hidden while this shows).  Gaps are DELIBERATELY tiny (a "+" you grow by typing into),
+       not full-width boxes — the segments themselves carry the visual weight, not the empty slots. */
+    .kf-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; margin-top: 3px; pointer-events: auto; }
+    .kf-gap {
+        width: 16px;
+        background: transparent;
+        color: #f0dbe6;
+        border: 1px dashed #55414f;
+        border-radius: 5px;
+        font-size: 10px;
+        text-align: center;
+        padding: 2px 1px;
+        font-family: inherit;
+        transition: width 0.12s;
+    }
+    .kf-gap:focus, .kf-gap:not(:placeholder-shown) { width: 64px; text-align: left; padding-left: 5px; }
+    .kf-gap.dirs { border-color: #52456a; }
+    .kf-gap::placeholder { color: #6b5a68; }
+    .kf-chip {
+        display: inline-flex; align-items: center; gap: 3px;
+        background: #241820; border-radius: 6px; padding: 2px 3px 2px 7px;
+        font-size: 10.5px; color: #7fe8bf; white-space: nowrap;
+    }
+    .kf-chip.dirs { color: #c9a5e8; }
+    .kf-chips-done {
+        cursor: pointer; background: none; border: none; color: #57c777;
+        font-size: 11px; padding: 0 2px; line-height: 1;
+    }
 
     .kf-tree { margin-top: 6px; display: flex; flex-direction: column; gap: 1px; }
     .kf-group { border-radius: 5px; }
     .kf-dir, .kf-dir-flat { font-size: 9px; opacity: 0.7; margin-top: 3px; color: #cfc0d8; display: flex; align-items: center; gap: 5px; cursor: default; }
-    summary.kf-dir { cursor: pointer; list-style: none; }
+    summary.kf-dir { pointer-events: auto; cursor: pointer; list-style: none; }
     summary.kf-dir::-webkit-details-marker { display: none; }
     .kf-car { font-size: 8px; opacity: 0.6; }
     details[open] > summary.kf-dir .kf-car { transform: rotate(90deg); display: inline-block; }

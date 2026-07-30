@@ -1523,6 +1523,14 @@ async Ra_transcode_pump(w):
             let id = p.sc.id
             if (seen[id]) continue
             seen[id] = 1
+            // L3 — the source-side twin of Heist's sink watchdog (L1, Heist.g pulling branch): a
+            //  %parked_want only disappears once Repli_serve_parked answers it, so its mere continued
+            //   existence past a threshold means the transcode frontier truly never reached it — a stuck
+            //    encoder, not just a slow one. Loud-only, throttled like L1 (bark, then re-bark every 10s).
+            if (p.c.parked_at && Date.now() - p.c.parked_at > 20000 && Date.now() - (p.c.warned_at || 0) > 10000) {
+                p.c.warned_at = Date.now()
+                console.warn(`◈⚠ transcode STALLED — parked want id=${id} from_idx=${p.sc.from_idx} waiting ${Math.round((Date.now() - p.c.parked_at) / 1000)}s — the encoder frontier never reached it`)
+            }
             let rec = this.Repli_find_record(w, id, lib)
             if (!rec) continue
             // HEIST re-materialise (Evening 5 A3): a parked want over a RELEASED heist body (A2 dropped its bufs

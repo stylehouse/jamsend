@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '69dcbd58808602fd~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '32cdb6d9295f65da~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1606,6 +1606,14 @@ async Ra_transcode_pump(w) {
             let id = p.sc.id
             if (seen[id]) continue
             seen[id] = 1
+            // L3 — the source-side twin of Heist's sink watchdog (L1, Heist.g pulling branch): a
+            //  %parked_want only disappears once Repli_serve_parked answers it, so its mere continued
+            //   existence past a threshold means the transcode frontier truly never reached it — a stuck
+            //    encoder, not just a slow one. Loud-only, throttled like L1 (bark, then re-bark every 10s).
+            if (p.c.parked_at && Date.now() - p.c.parked_at > 20000 && Date.now() - (p.c.warned_at || 0) > 10000) {
+                p.c.warned_at = Date.now()
+                console.warn(`◈⚠ transcode STALLED — parked want id=${id} from_idx=${p.sc.from_idx} waiting ${Math.round((Date.now() - p.c.parked_at) / 1000)}s — the encoder frontier never reached it`)
+            }
             let rec = this.Repli_find_record(w, id, lib)
             if (!rec) continue
             // HEIST re-materialise (Evening 5 A3): a parked want over a RELEASED heist body (A2 dropped its bufs

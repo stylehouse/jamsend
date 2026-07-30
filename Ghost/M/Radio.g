@@ -1485,6 +1485,12 @@ async Radio_keep(n):
     if (shop.o({ Keep: 1, seed: seed })[0]) { n.bump(); this.Radio_pop_glass(); this.feebly_ponder(); return true }
     let keep = shop.i({ Keep: this.Radio_clean(rec.sc.title || 'this'), seed: seed, at: String(friend), state: 'primed' })
     keep.c.up = shop
+    // FOCUS (the human 2026-07-30 — "how do the Heists fold down if we seem disinterested... they should
+    //  group... one big list"): last_touch marks which keep is the one you're actually engaging with right
+    //   now. Heist_keep_step reads it against every sibling %Keep — only the most-recently-touched one gets
+    //    the space-favouring dose; every other primed keep folds to a compact row, so racking up several
+    //     albums while tearing through a friend's collection reads as one list, not N cells fighting for room.
+    keep.c.last_touch = Date.now()
     keep.sc.from_name = this.Radio_friendly(w, friend)
     if (rec.sc.artist) keep.sc.artist = this.Radio_clean(rec.sc.artist)
     // seed the category from the GLOBAL remembered default (Heist_defaults_get) — whatever the last heist

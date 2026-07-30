@@ -18,21 +18,21 @@ Snap:H
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
               Idzeug:heist_1,to:Music,genre:Heist,spent
-              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1785078758
+              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1785386565
                 Peering,name:be0dab3303037ad2,friendly:Duo,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1785078758,sign:740f43ec8cad6a05a467918a29933a2b06da9ddbbe59750a8ab8cb48a148377999ead3e7bce38a4d93cbafdb8c48fa656143c991db15c25bde8cb0b3bc1d3505,genre:Heist
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1785078758,sign:cbe4a5e91ca852b4e0732ad5d43c480ff888b4b6b2d9f300b920d58351fa11981aac08a91911460339b46bc764db73ad8328911fc7a1285c12dcd3a7da94870b,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1785386565,sign:4caa7c4114cfaf7c1ffcea12b6a9d77da7d492e0cac4e2dd04c40ffdc9a89383560a2a5d34f04ae8c8578e08fb5bf2846a28042f11df6d2725fd29e86735d805,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1785386565,sign:40cc3fdfd5c0edf3de7d6145954579b165179a9dddef4a6a3d3908eae6a37743c8227cf3a3fbb13bed3bf3a9e8e63a6f28ca2aea15fc8cbbc5f125554c528708,genre:Heist
             SocialGraph
-              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1785078758
+              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1785386565
         Account,of:Duo
           Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
             Peering,name:be0dab3303037ad2,friendly:Duo
-              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1785078758
+              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1785386565
                 Peering,name:4e09f34f5a6ab900,friendly:Uno,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1785078758,sign:740f43ec8cad6a05a467918a29933a2b06da9ddbbe59750a8ab8cb48a148377999ead3e7bce38a4d93cbafdb8c48fa656143c991db15c25bde8cb0b3bc1d3505,genre:Heist
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1785078758,sign:cbe4a5e91ca852b4e0732ad5d43c480ff888b4b6b2d9f300b920d58351fa11981aac08a91911460339b46bc764db73ad8328911fc7a1285c12dcd3a7da94870b,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1785386565,sign:4caa7c4114cfaf7c1ffcea12b6a9d77da7d492e0cac4e2dd04c40ffdc9a89383560a2a5d34f04ae8c8578e08fb5bf2846a28042f11df6d2725fd29e86735d805,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1785386565,sign:40cc3fdfd5c0edf3de7d6145954579b165179a9dddef4a6a3d3908eae6a37743c8227cf3a3fbb13bed3bf3a9e8e63a6f28ca2aea15fc8cbbc5f125554c528708,genre:Heist
             SocialGraph
-              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1785078758
+              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1785386565
         Peering,name:4e09f34f5a6ab900,req=2,ok
           Pier,pub:be0dab3303037ad2,req=2,ok
             req:handshake,finished
@@ -49,9 +49,6 @@ Snap:H
                 heard
             outbox
               recent
-                emit,type:hello,seq
-                emit=2,type:trust,seq=2
-                emit=3,type:pier_accept,seq=3
             inbox
               recent
                 unemit,type:hello,seq
@@ -76,10 +73,6 @@ Snap:H
                 heard
             outbox
               recent
-                emit,type:hello,seq
-                emit=2,type:trust,seq=2
-                emit=3,type:pier_hello,seq=3
-                emit=4,type:pier_confirm,seq=4
             inbox
               recent
                 unemit,type:hello,seq
