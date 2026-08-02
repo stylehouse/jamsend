@@ -1,0 +1,18 @@
+---
+name: lakerace-compiler-fast
+description: "LakeRace headless ghost_compile harness; proves the one-round-lag fix + that the stho compiler is fast (transport is the 18s, not compile)"
+metadata: 
+  node_type: memory
+  type: project
+  originSessionId: 4c70ad5a-6ab8-4d46-a931-c5c1f71d8040
+---
+
+LakeRace (`scripts/LakeRace.spec.ts` + `scripts/LakeRace.run.mjs` + `scripts/LakeRace.vitest.config.mjs`) is a headless harness that emulates the CLI's ghost_compile against the REAL `Ghost/N/Peeroleum.g`. Run: `node scripts/LakeRace.run.mjs` (3 tests: lag-proof, cost curve, recv-handover). It boots the whole ghost machine in node (Story_cli shell) and drives the compile spine directly. The vitest config overrides `cacheDir` → `/tmp/lakerace-vite` (the root-run dev server leaves `/app/node_modules/.vite` root-owned → EACCES; `--root` does NOT work — breaks bare `svelte` resolution).
+
+**The one-round-lag fix (THE reason it exists).** ghost_compile force-loads the changed .g, but the editor's CodeMirror buffer (`dock.c.state`) reseats ASYNCHRONOUSLY, so a compile reading `dock.c.state` lands the PREVIOUS edit ("locked in at one round"). Fix: the compile SOURCE is now a parameter — `Lang_compile_dock(w, dock, stateOverride?)` — and ghost_compile builds it straight from the fresh disk text via `Lang_compile_source_state(dock, text, path)` (LangCompiling.svelte): editor mounted → reuse its config, swap the doc (`cur.update({changes}).state`); no editor → build via `lang(path)` + `EditorState.create` (the DOM-free bridge, also what makes it headless-runnable). Wired in `Lang.e_Lang_dock_content`'s force_active branch (NOT in Langui — that was a reverted timing hack). The fix never touches `dock.c.state`, which point-nav/region-folding/offsets all read. Proven headless on real Peeroleum.g: warm (stale buffer) AND cold both emit the NEW dige; the old `dock.c.state` path emitted the OLD one.
+
+**Story_cli can't mount CodeMirror** — it mounts `Ghost.svelte` (logic only); the editor UI is behind `Otro.svelte`, not in the headless tree. So `dock.c.state` is never populated headless and the disk_rev reseat `$effect` early-returns on `!view`. That's why "there is no headless compile" was literally true for the NORMAL path — but the decoupled state bridge lets a ghost_compile run headless anyway. (`o_elvis` reads `w.c.e`, which only the beliefs drive sets; to fire a handler by hand, `await e.c.targeting` then set `w.c.e = e`.)
+
+**Finding: the compiler is fast.** ~0.07–0.12ms/line linear; real Peeroleum.g (409 lines) compiles in ~30ms sync. So ghost-compile's 18s loop (round-trip 18405ms, "channel silent 22s — forcing reconnect") is **entirely transport/HMR/runner**, not compile. "Make a more performant compiler" → the compiler doesn't need it; optimize the channel. UPDATE: a later session settled the channel to **~2–5s wall** and the loop now CLOSES (`✓ compiled @ <dige>` via the `done` ack); the 18s is historical. Human's call: "is ok" → latency PARKED as optional, road ahead is Peeroleum (see [[ghost-compile]], `spec/GhostCompile_feedback_handover.md`).
+
+Gotcha: the dock key MUST end in `.g` — `Lies_gen_path` reads the codetype off the extension (`GEN_ABLE_CODETYPES=['g']`), so a suffix like `foo.g#warm` makes `Lang_compile_dock` a silent no-op (hit this twice — use `path.replace(/\.g$/, '_tag.g')`). A per-run *path* only changes the Ghostmeta name (not source_dige) → looks like nondeterminism but isn't (see [[ghost-compile]] dige bomb #3 = editor-CM-buffer-vs-CLI-disk-bytes hashing). Still NOT a real Story Book (toc.snap-driven, Lake* series) — that packaging is the open follow-up; the user prefers Books.

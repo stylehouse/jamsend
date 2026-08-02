@@ -3,6 +3,34 @@
 Continuation brief for the p2p music **heist DOWNLOAD** not working. Fold into `Heist_todo.md` /
  `Radio_todo.md` once triaged; retire to `spec/history/` when the download is proven end-to-end.
 
+## NEXT — the reload-recovery gap (2026-08-02, not yet fixed; gated on a live 2-tab repro)
+
+**Symptom (the human):** reload tab B (the downloader) and tab A stops sending it NEW music.
+ A Repli session *should* recover from a Pier refresh — and mostly does — but the "new music" lane
+  has one fragile link. Traced (agent sweep, file:line below); the fix is small and additive but
+   touches the Swarm/Peeroleum core seam, so PROVE it on two live tabs before trusting it.
+
+- **What already recovers (don't re-fix):** B's identity is a **durable** ed25519 prepub persisted to
+   `.jamsend/account/<prepub>/toc.snap` and rehydrated on boot (`Swarm.g:33, 1767`) — byte-identical
+    across a reload. A's `%Pier` for B is keyed by that prepub and is never torn down on B's drop
+     (no `pier.rm`/`pier.drop` of a Pier anywhere on disconnect). B's re-pulls (`repli_want`) bypass
+      the seq-mute entirely (`Peeroleum.g:601`), so heist DOWNLOADS self-heal.
+- **The fragile link (root cause of "no NEW music"):** the whole re-arm — both un-muting B's booked
+   frames AND re-offering A's catalog (`offered_mark`, `Swarm.g:1548`) — fires only when A learns B's
+    **new epoch** (`station_era`), and that rides a **single fire-and-forget `swarm_hi`** with no ack,
+     no retransmit (`Peeroleum.g:382`). Its only retry (`Swarm_pulse_all`, `Swarm.g:1342`) is gated on
+      the peer being "quiet >15s" — but B's own reconnected pulse/`repli_want` traffic re-warms A's
+       `pier.c.heard_at`, so `quiet` stays false and the retry never fires. Lose that one `swarm_hi`
+        and A keeps B's OLD era forever → never re-offers stock → "A stops sending new music."
+- **Fix direction (pointer, not yet built):** give the epoch a self-healing carrier. Piggyback
+   `station_era` onto the `pulse` heartbeat (already re-sent ~5s, already the thing that warms
+    `heard_at`) and run the same era-change reset + re-offer on hearing a pulse; OR decouple the
+     `Swarm_pulse_all` re-greet from `heard_at` so an unconfirmed era keeps getting re-sent.
+- **Secondary hazard:** A RELEASES a track's bytes once `rec.c.sent >= total` (`Heist.g:1212` →
+   `Heist_release_rec`), and the scratch rummage-lib rec is time-swept (~30 min, `Heist_keep_beat`).
+    A B that reloads and re-pulls AFTER that sweep hits `Repli_find_record`→null and the want dies
+     silently (`Repli.g:485`). The re-materialise heal (`Ra.g:1536`) only covers the pre-sweep window.
+
 ## Destination
 
 Two live BigSoundland/Sounditron tabs, mutually sealed (friends). One presses ⇊ on the other's

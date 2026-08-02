@@ -1,0 +1,141 @@
+- [Radiobuddies](radiobuddies-shebang-unnamed.md) — MAIN SPRING; run-node+share-by-identity; regroup Musuation→family
+- [Self-healing sweep 2026-07-30](self-healing-sweep-2026-07-30.md) — 12 findings, 7 landed (req-machine isolation, Radio_pump, IDB, Peeroleum retx, Ra_mag_warm, LiesStore write-error); 5 open (Cytui/Story/LiesRun/FSA/Vytui)
+- [New-Book CLI record](new-book-cli-record-recipe.md) — hand-author toc dige:lie+Assertion→run→accept→rerun; new .g method→RELOAD
+- [Accept drops proof](accept-drops-proof-in-entropy-zone.md) — Accept drops %see inside fuzz-tolerance; RATIOS not counts
+- [Cluster identity nick](cluster-identity-nick.md) — cluster_name=cosmetic; NEVER route/trust on it
+- [Revocation tombstone](revocation-tombstone-durable.md) — %UnGrant=negative decision-fact; GC NEVER drops a tombstone
+- [Repli_send_lines consent](repli-send-lines-consent-gap.md) — goner-delete FIXED; Repli_retire STILL EXPOSED; core-seam=human's
+- [Lies humdinger room](lies-humdinger-enduser-room.md) — Big*land=full Lies stack, INVISIBLE to editor grid
+- [Stale-code tells](hmr-socket-dead-tell.md) — dead HMR ws serves STALE Cytui (HARD reload); "!method:" flood=stale gen
+- [Reload seq gaps](reconnect-epoch-seq-collision.md) — seq-collision mute: SWARM FIXED; editor↔runner still send-side retry
+- [needsFSA dispatch gate](needsfsa-dispatch-gate.md) — disk-heavy Books→LOCAL-FSA runner, REFUSED on proxy
+- [Credence board](credence-board-desc-brandnew.md) — REGISTER every new Book (Storying,of_Book+brand_new); desc NO COMMAS
+- [req not mandatory](req-not-mandatory.md) — req=TREES of transient moves; plain sync is fine
+- [LocalGen compile](localgen-browserless-compile.md) — scripts/LocalGen.spec.ts compiles .g→gen .go, zero browser
+- [ttlilt laws](ttlilt-rides-finishing-req.md) — rides a FINISHING req (never eternal); one-shot; live in got_snap=TIMED OUT
+- [BlatDo drive Rundown](blatdo-drive-rundown.md) — DRIVE Rundown at run-landing, don't finish BlatDo early
+- [EntropySamples fuzz-ok](entropy-samples-fuzzok.md) — caveat taken-as-ok→green+tagged (≈N); never load a snap mid-run
+- [Force clean re-record](force-clean-rerecord.md) — reset toc→lie + rm snaps→RED→accept records fresh
+- [oai laws](oai-req-mainkey-only.md) — %req machine only on req MAINKEY/req:1; consumers read o()[0]/oa()
+- [Story Books catalog](story-books-catalog.md) — what each Book tests; dispatch Run_A_<Book>; Credence board
+- [Running check](running-check-in-container.md) — svelte-check/vitest work; root-owned .svelte-kit gotcha
+- [Verify via live runner](verify-via-live-runner.md) — headless Story_cli BANNED; verify via runner_ask.mjs on :9091
+- [Live runner persists fixtures](live-runner-persists-fixtures.md) — a `run` is also a `save`: re-records numbered snaps + bumps tocs; git-checkout your accidental re-records after verify
+- [allowed-hosts env](allowed-hosts-env.md) — vite allowedHosts from ALLOWED_HOSTS env; don't expose unauthed
+- [Comment style](comment-style.md) — eternal comments; indent is the branch; no random mid-sentence CAPS for emphasis
+- [Label HUMAN decisions](human-scan-label-decisions.md) — top-of-doc ## HUMAN block, recommendation first
+- [Shared-runner bleed](shared-runner-bleed.md) — ★claude runner SHARED; sweeps bleed→false-reds; re-check reds SOLO
+- [Two p2p stacks](p2p-two-stacks-proto-vs-g.md) — PROTOTYPE=Peerily; PROD/audit=.g (Swarm/Peeroleum/Tribunal)
+- [Sign real carrier](sign-real-carrier-not-loopback.md) — MAIN-SPRING; per-frame sign+verify_trust w/ real carrier
+- [Call them the human](call-them-the-human.md) — address the user as "the human"
+- [Peeroleum family](peeroleum-bootstrap.md) — p2p rewrite (PeerJS not libp2p); @channel multicast; spec/Peeroleum_handover.md
+- [stho/.g primer](stho-primer.md) — prose primer spec/stho_primer.md; canon LakeTiles.g
+- [LangTiles peel syntax](langtiles-peel-syntax.md) — reserved chars; $ row-capture; & calls; H receiver
+- [g-capture oai needs let](g-capture-oai-needs-let.md) — $:cap binds create-chain legs only, NOT an oai verb result
+- [DSL over raw JS](dsl-over-raw-js.md) — prefer LangTiles DSL; extend the language
+- [.g can import .ts](g-import-ts-module.md) — top-level IMPORT() verbatim into gen header; REAL deps only
+- [.g is home](g-over-scattered-ts.md) — fold logic into .g; new ghost→CREDULER_GHOSTS+overlay
+- [utilities are Books](one-off-utilities-are-books.md) — one-shot node scripts BANNED; every utility=a Book
+- [testing is Story Books](testing-is-story-books.md) — no vitest specs; ALL testing=a Book on a LIVE runner
+- [.g authoring gotchas](g-authoring-gotchas.md) — bare else mangled (use } else {); parse-storms on closure-heavy JS
+- [grep binary spec docs](grep-binary-spec-docs.md) — spec .md needs grep -a (UTF-8→binary)
+- [o() wildcards on 1](o-query-wildcards-on-1.md) — o({k:1}) matches ANY value; exactly() for literal 1
+- [Story step lines](story-step-lines-drive-steps.md) — toc step=N,dige lines decide steps run; add one per Prep
+- [Elvis handler verbatim](elvis-handler-name-verbatim.md) — i_elvisto name→e_<name> verbatim; mismatch silently no-ops
+- [Snap inclusion vs pump](snap-inclusion-vs-pump.md) — snapped iff reachable in H** tree; off-pump ≠ snap-exclusion
+- [nested req needs c.up](nested-req-needs-cup-stamped.md) — a %req below w never pumps unless c.up hand-stamped
+- [Aw/req level uniformity](aw-req-level-uniformity.md) — reqdo_sweep enters ONLY at w level
+- [delete sc key safe](delete-sc-key-query-safe.md) — delete n.sc.key is query+snap safe
+- [ignore gen/*.go](ignore-gen-go.md) — generated output; never edit, exclude from greps
+- [Otro H-effect](otro-h-effect-no-read-H.md) — reading $state H in construction $effect self-retriggers→OOM
+- [Host commits mid-session](host-commits-midsession.md) — host commits can revert my edits; re-check after HEAD moves
+- [Stuff+Housing central](central-stuff-housing-hovercraft.md) — Housing.beliefs() was agency_think(); check Housing first
+- [Creduler runner arch](creduler-runner-architecture.md) — runner ACQUIRES spine via Creduler_ensure; ?E=/?B= roles
+- [OPFS illegal dev boot](opfs-illegal-under-dev-boot.md) — ?E=/?B= forbid OPFS shadow disk; H.c.disk_gated
+- [todo docs overstate](todo-docs-overstate.md) — items shrink on contact; verify against live code first
+- [LiesFunk home](lieswaft-dynamic-web-home.md) — RENAMED LiesWaft→LiesFunk; owns Funkcion runtime/Ballistics
+- [Lies/Lang re-cleave](lies-lang-recleave-by-layer.md) — LiesHold/LiesFunk/LiesRun/LiesCortex by layer
+- [cluster-trust](cluster-trust.md) — sign gen_write/frames with cluster Idento; Cluster_spec §2
+- [Clustation identity](clustation-identity-layer.md) — %Peering id in Auto; ?I=new idle; advertise non-ephemeral
+- [Two tabs share identity](two-tabs-share-identity.md) — same-origin tabs=SAME Pier; presence=?I=new fork
+- [Engage C2 dispatch](engage-c2-dispatch.md) — to:<prepub> dispatch BUILT (oai Pier+c.up+Ud, no handshake)
+- [runner-fleet goal](runner-fleet-goal.md) — flock→remote %Rungo; Cluster_spec §2-7; signed claim/lease
+- [ui/micro + MiniWaft](ui-micro-form-bits.md) — O/ui/micro/ form scraps; MiniWaft=bounded Travel+deepen chips
+- [Trope shared entropy](trope-entropy-profile-sharing.md) — Lake* share Entcases via Waft:Trope+EntropyProfile,Wref:
+- [Lens primitive](lens-primitive.md) — Lens:<Kind>,of_Funkcion+comp_<LensKind> faces; Plank NOT a Lens
+- [Svelte comment tag gotcha](svelte-comment-tag-gotcha.md) — literal style/script tag in comment→false "left open"
+- [%Upkeep/%Errand Brink](upkeep-errand-brink.md) — background-work layer (Errand:<key>, Brink face)
+- [LakeRace compile lag](lakerace-compiler-fast.md) — compile source=fresh disk text param (not dock.c.state)
+- [ghost-compile habit](ghost-compile-after-g-round.md) — npm run ghost-compile -- <file.g> after .g edits
+- [Music cluster kickoff](music-cluster-kickoff.md) — Ghost/M/*; BOMB: run world MUST be named after the Book
+- [Fight back on core changes](fight-back-on-core-changes.md) — a tentative "maybe?" is NOT a mandate; prove in ISOLATION
+- [Build their corrected design](build-their-corrected-design.md) — a specific correction to MY hedge IS the mandate; build it, don't re-litigate
+- [lib/mostly is legacy](architecture-lib-mostly-legacy.md) — OUT OF BOUNDS; new UI in O/ui/
+- [%see laws](see-assertion-layer.md) — per-beat observation DROPS after step; %seen/%log split BUILT
+- [Sworn/Assertioning](sworn-assertioning-rulings.md) — Storui+declare door (runner_ask declare→%Assertion); %seen extinct
+- [Music real-audio pivot](music-real-audio-pivot.md) — Musu tests use REAL muted Web-Audio (Audiolet), browser-only
+- [Adversarial test agent](adversarial-test-agent.md) — PROVE a test can fail; probe=one-line should-break change
+- [remoteWormhole](remotewormhole-no-binwrite.md) — 7-method nav contract ALL 4 backends; grant=live crypto+.stashed; Wormhole_park
+- [reactap census](reactap-reactivity-census.md) — scripts/reactap.mjs bump census on LIVE tab; tab must reload
+- [no paper-pushing](no-paper-pushing-groove.md) — skip ceremony; tell the coherent story of a change
+- [Idle/frozen lifecycle](editor-think-quiesce-decay.md) — idle editor stops thinking; freeze→ready:0; dispatch GATES on ready
+- [Wedged tab + reload heal](runner-wedge-begun.md) — begun-wedge; heal via `runner_ask reload --runner=` (ALWAYS --runner=); runner_shot --svg sees Vytui
+- [gen cross-wire](gen-crosswire-runner-dead.md) — editor green + runners "relay down"=cross-wired gen
+- [Repli protocol](repli-protocol.md) — streaming C** replication: deL/enL, PULL; %Sent_Tree
+- [Frames ride post_do](transport-frames-post-do.md) — frames settle BETWEEN beats; do_fn never sees a round trip
+- [Big*lands](bigwordland-toplevel.md) — /BigWordland (L/) editor; /BigSoundland (V/) default ?B=Sounditron; audio via BootGate
+- [runner_ask false RED](runner-watch-false-red.md) — DEAD_MS=20s; NEVER HMR mid-run; wedge→RELEASE+wait
+- [Ra chunk rebuild](musurastream-real-streaming.md) — chunks=%Preview|%Stream,seq; preview CONST 32
+- [radiostock disk cap](radiostock-disk-cap.md) — Ra_stock_gc per-pub cap 256; NO ref-tracing (re-digs)
+- [Rung 0 per-chunk cid](rung0-per-chunk-cid.md) — cid=sha256/chunk+[RUNG7-WIRE] both seams ×2; owed prod signer
+- [Ra Book practices](musu-ra-book-entropy-reaccept.md) — sealed Books need Wref:Trope/Ra/AudibleEntropy
+- [Invite front door](invite.md) — compact token+3-frame seal CANONICAL; ?Iz pin-then-rewrite
+- [toc protection](toc-collapse-orphaned-save.md) — orphaned story_save can 1-step a toc (git diff first); expand race fixed
+- [Voro legacy glass](voro.md) — superseded by Vyto (VY=1 retiring); fold=viewer at snap-time; ▦ face 6=the gem
+- [full contract no gaps](full-contract-no-subset-gaps.md) — FULL multi-backend contract or capability-probe the seam
+- [roles divide addrs deliver](roles-divide-addresses-deliver.md) — role addr=ONE socket NOT fan-out
+- [Radio pipeline + Opus](radio-pipeline-opus.md) — rastock→racast→raterm; OPUS not AAC; 2s segments; LUFS baked
+- [%Stream 32s starve FIX](stream-continuation-starve-fix.md) — FIXED lead pump; 2026-07-29 decode is FAST(~350ms), live minute=WIRE/mutex not decode; source-side traced
+- [Vyto nested is global](vyto-nested-is-global-grapple.md) — nested render LIVE but w.c.nested GLOBAL; nested Heist v1 SHIPPED (Keep→%KeepBar+%Pick chips faced not hidden; drop {Heist} grapple+nested when anyKeep); pixels owed on live tab
+- [RNG canonisation](rng-canonisation-sweep.md) — DONE; H.prng(Radio_prod_seed)+w.c.prng(Ra_seed) prod-fresh/test-det; Vyto=NO RNG
+- [no_advertise param](no-advertise-param.md) — Big*land pages never advertise
+- [Heist rulings](heist-rulings.md) — PROD heist=SIMPLE directory grab; klepto PARKED; %Tombstone STRUCK
+- [Check package.json first](check-package-json-first.md) — read deps before hand-rolling; music-metadata@11 shipped
+- [Snap data not judgement](snap-data-not-judgement.md) — fixtures carry DATA, not count/flag verdict rows
+- [Mag model](mag.md) — stock>%Mag:shuffle>%Cloud,page:N (6/page); Mag=Repli unit; %Card≠%Record
+- [Paged-mirror husk-gate](paged-mirror-husk-gate.md) — shelf readers: Ra_recs paged + Ra_chunk_map[0]!=null husk-gate
+- [MusuLossy %Lossy](musulossy-lossy-proof.md) — %Original|%Lossy split PROVEN green×2; GEN-STALENESS-on-reload gotcha
+- [MusuDoor sabotage wall](musu-door-sabotage-wall.md) — D1b GREEN; wire-grafted %req inert; NEXT=D1a crypto door
+- [%Dogear cursor DONE](musu-cursor-c1-built.md) — C1-C3 GREEN×2; wild:<Type> dodges Cloud:1
+- [Never stash shared tree](never-stash-shared-tree.md) — git stash swept the human's work; compare via git show
+- [rAF-throttle blanks cells](raf-throttle-blank-subcells.md) — bg tab pauses rAF; fix=document.hidden sync-paint
+- [Sounditron](sounditron.md) — /BigSoundland resident real-env probe; mega-vague (rows=proof values=env); mutex law
+- [Radio cross-Pier wake](radio-cross-pier-wake.md) — 2 tabs cross RELAY; w.c.repli_on_land→Radio_nudge
+- [Svelte edit bundle-proof](svelte-edit-bundle-proof.md) — after ANY .svelte edit, bundle-fetch compile proof
+- [Radio brain + faces](radio-brain-glass-faces.md) — Radio.g continuous listen+%Stoker; faces=sc.face|FACE_MAINKEYS
+- [Live share WIRED](live-share-wired.md) — Swarm_share_up: stock husks→per-friend %MusuThem; Radio_dial_pool
+- [Glass allowlist inversion](glass-allowlist-inversion.md) — use_faces worlds tuck undressed holders→system; TUNER needs H>A>w hop
+- [Vyto avoid-display zone](vyto-refactor-avoid-display.md) — Radio DISPLAY side→Vyto (human); NO display edits; wire side proceeds
+- [Vyto process engines](vyto-process-engines.md) — processes.md=arc; C→C engines+joints; Floorlaw+Nestcut PROVE J2/J3/J4
+- [Vyto foam](vyto-foam.md) — foam→PROD port (Gang/Relate/Focus; VytoWeb/Fold/Bunch/Foam+VytoBreathe green×2)
+- [High autonomy overnight](high-autonomy-overnight.md) — human wants HIGH autonomy; run the queue, don't check in; never commit
+- [Jamsend state survey](jamsend-state-survey.md) — NEW machine Book-proven but LOOPBACK-ONLY; TWO connect stacks; epoch=cross ONE wire
+- [Things vs identity track](identity-thing-jamsend-track.md) — identity+friendship persist owner-local .jamsend BUILT+GREEN
+- [Nested replace in do_fn](nested-replace-in-do-fn.md) — replace inside a req do_fn THROWS; hoist rollups AFTER inbox.do()
+- [Heist seal one-way](heist-seal-one-way.md) — ONE-WAY seal FIXED Swarm_reaccept on redial; `world` op snaps live tab
+- [Radio friend-exclusive](radio-friend-exclusive.md) — plays FRIENDS' collections (own on 💿); Radio_reason note
+- [SIGILL=bin_read O(N²)](sigill-bin-read-nsquared.md) — browser SIGILL mid-play=V8 OOM; file concat MUST be linear (concat_chunks)
+- [Crossing is LIVE](crossing-is-live-not-loopback.md) — Socket_real signed+voucher CROSSES real relay today
+- [Perf cliffs latent](perf-cliffs-latent.md) — 5 cliffs latent; #1 power_cells O(N²)/frame GATED behind Vyto
+- [Heist keep→choose→pull](heist-keep-chooser-built.md) — census METADATA-ONLY+materialise-on-demand+%Keep; fullscreen=Panel Lens (face-only kinds.ts comp_Panel; NOT a Vyto node)
+- [Heist want-storm fix](heist-pull-want-storm-fix.md) — Ra_pull_beat was unbounded flood→backpressure (budget+LEAD window+4s re-ask); MusuHeist green 22/22
+- [Heist UI/category/pause](heist-ui-category-pause.md) — category=`- name` folder nestable; nab-album/track 2 buttons; snaps-shut FIXED; no-prepend; pause latch; fullscreen rebuild OWED
+- [Vyto nested render BUILT](vyto-nested-render-built.md) — Vytui now DRAWS the tree (recursive, gated additive, cellKey); VytoNestRest GREEN+SVG-shot
+- [Vyto THE PIN contract](vyto-the-pin-contract.md) — Vyto_todo `## THE PIN`=display-correctness law+ledger+P0→P7; perf §3 LANDED don't re-fix; ALL display work routes through it
+- [Step false-flags encode](story-step-false-flags-encode.md) — `.sc.X=false` on This/Step THROWS at encode; unrun/checking FIXED; ok/disk_ok 3-state; prune This OWED
+- [Vytui face crash shows ident](vytui-face-crash-shows-ident.md) — bare `Mainkey:value` cell w/ a registered face = the face THREW (boundary fallback); KeepFace `safe` FIXED
+- [drop leaves index / giant stuff](drop-leaves-index-giant-stuff.md) — drop()=soft→index grows to 6000 fatal; FIXED GENERAL: drop() counts→compact() @500 (sync, i()-path, NOT replace()); outbox: repli_want ephemeral + ack drops emit + log gated
+- [heist download crash = ive_got](heist-download-crash-ive-got.md) — Heist_keep_pull=DEAD CODE, live loop is Heist_keep_step's inline 'pulling'; resume_sync+breach-cooldown now wired THERE; cause TBD
+- [instrument before guessing](instrument-before-guessing.md) — SILENT failure→make LOUD+re-run to read trigger BEFORE fixing; no premature victory; complete not half-fixes; error channel=spec/Error_channel_todo.md
+- [Error channel built](error-channel-built.md) — throws→w/%Errlog/%Err at snap seam, fixture-gated; HOME=Book's run world NOT driver w; lazy-mint=no re-record; req_unemit wrap kills inbox wedge
+- [Telegram ask channel](telegram-ask-channel.md) — async Q's to the human: scripts/telegram.mjs ask "…" --as=Ariel in BACKGROUND→woken on reply; ONE bot+mutex+Shakespeare tags; token ~/.jamsend_telegram; substantial Q's only

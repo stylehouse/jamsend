@@ -35,7 +35,7 @@ services:
       #  needs the PUBLIC pubs (env_file'd above), so mask the co-located claude secret with a blank
       #   file (same pattern as the .env.chrome-profiles masks on the claude service). Foreign role
       #    files (editor/runner) belong on their own hosts and should not sit in this /app at all.
-      - ./.claude/.blank:/app/.env.cluster-claude:ro
+      - ./.claude/.blank/.blank:/app/.env.cluster-claude:ro
     ports:
       # a bare "9091:9091" binds ALL interfaces (LAN-exposed) — avoid.  Publish to
       #  two explicit addresses instead:

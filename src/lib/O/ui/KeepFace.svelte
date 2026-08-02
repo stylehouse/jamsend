@@ -1,3 +1,10 @@
+<script module lang="ts">
+    // instance serial — increments once per REAL component creation (module scope, shared across every
+    //  KeepFace instance).  Pairs with the onMount/onDestroy tells below to tell a genuine keyed-each
+    //   teardown apart from a mere $effect re-run (which re-fires cleanup+body with NO real remount).
+    let __kf_serial = 0
+</script>
+
 <script lang="ts">
     // KeepFace — the ⇊ "keep what you're hearing" heist AS A TIDY VYTO CELL (the human 2026-07-28: "I DO
     //  want the Heist UI ... in a few Vyto cells ... nodulate down the folder hierarchy ... it can be left
@@ -15,7 +22,7 @@
     //       never repeated up here.
     //  Both sit calm as a `/segment/segment/` breadcrumb; click to edit the whole thing in place (the
     //   existing genre-field technique: local draft, commit on blur — no elaborate exploded form).
-    import { tick as afterRender } from 'svelte'
+    import { tick as afterRender, onMount, onDestroy } from 'svelte'
     import DeleteX from './micro/DeleteX.svelte'
     let { n, H } = $props()
     const A = H as any
@@ -28,12 +35,24 @@
     //  and its cleanup once on destroy, so if this instance is being torn down and recreated under a
     //  trickle (rather than the dirs-freeze above just needing a live-shifting derive tamed) these two
     //  lines say so directly — no more inferring it from symptoms.
-    $effect(() => {
-        const who = String(n?.sc?.Keep || n?.sc?.id || '?')
-        console.log('◈ KeepFace mount', who)
-        console.trace('◈ KeepFace mount TRACE', who)
-        return () => console.log('◈ KeepFace destroy', who)
-    })
+    // (the old $effect mount/destroy+console.trace tell was REMOVED 2026-08-02 — it read the `n`
+    //  prop so it re-fired on every dep bump, spamming 22k trace lines of PHANTOM re-runs.  The
+    //   lifecycle-true ◈◈ tell below is the only honest one, and the GATE-FLIP probe in Vytui names
+    //    the cause.)
+    // LIFECYCLE-TRUE TELL (2026-08-02): the $effect above READS the `n` prop, so it is NOT the
+    //  "no-dependency" tell its old comment claimed — Svelte re-fires an $effect's cleanup+body on
+    //   every dep bump, spamming destroy→mount with NO real remount (and .sc reads are plain-object,
+    //    non-reactive, so `n?.sc?.Keep` subscribes to nothing — only the bare `n` prop read does).
+    //     These three lines CANNOT be fooled: the script body runs exactly once per REAL instance (so
+    //      myId is that instance's serial), and onMount/onDestroy fire exactly once per real DOM
+    //       mount/unmount.  Read the two side by side next repro:
+    //        · ◈◈ REAL SILENT while ◈ spams          ⟹ PHANTOM — no remount; "editor snaps shut" is a
+    //           derive moving under the edit (tame with the dirs freeze), not a teardown.
+    //        · ◈◈ REAL mount N / destroy N, N CLIMBS ⟹ genuine keyed-each teardown; chase the each
+    //           identity (cell.key / ancestor {#if} / <svelte:boundary>), not component-local state.
+    const myId = ++__kf_serial
+    onMount(()   => console.log('◈◈ KeepFace REAL mount',   myId, String(n?.sc?.Keep || n?.sc?.id || '?')))
+    onDestroy(() => console.log('◈◈ KeepFace REAL destroy', myId, String(n?.sc?.Keep || n?.sc?.id || '?')))
 
     // in-place editing — SEGMENTS, not one field (the human 2026-07-30, correcting a prior over-
     //  simplification): editing either hierarchy is a row of small chips (one per segment, its own × to

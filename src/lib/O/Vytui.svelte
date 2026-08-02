@@ -1,3 +1,10 @@
+<script module lang="ts">
+    // Vytui instance serial (module scope) — answers "is Vytui itself remounting?".  If ▣▣ climbs in
+    //  step with KeepFace's ◈◈ serial, the teardown is ABOVE Vytui (its parent / the UIs registry
+    //   re-mounting the whole glass); if ▣▣ stays at 1 while ◈◈ climbs, the churn is INSIDE Vytui.
+    let __vytui_serial = 0
+</script>
+
 <script lang="ts">
     // Vytui.svelte — the render side of the NEW glass (spec: Vyto_spec.md, unpreened;
     //  model side: Ghost/V/Vyto.g).  Tessellation-first cells as real DOM/SVG, faces as
@@ -15,8 +22,14 @@
     import { power_cells, type Pt } from "$lib/O/vyto_geometry"
     import { GLASS_KINDS } from "$lib/O/glass_kinds"
     import { FACE_MAINKEYS } from "$lib/O/glass_faces"
+    import { onMount, onDestroy } from 'svelte'
 
     let { H } = $props()
+
+    // LIFECYCLE BRACKET (2026-08-02): is the whole glass remounting, or just KeepFace inside it?
+    const __vy_id = ++__vytui_serial
+    onMount(()   => console.log('▣▣ Vytui REAL mount',   __vy_id))
+    onDestroy(() => console.log('▣▣ Vytui REAL destroy', __vy_id))
 
     // ── the FACE rail (Cyto parity — glass_kinds.ts) ──────────────────────────────────────
     //  A cell whose mirror row wears `sc.face:'X'` (WORN) or whose mainkey the viewer imposes a
@@ -158,6 +171,14 @@
     //    going null, or `source` (the prop identity `<Face n={cell.source}>` binds) changing reference
     //     between renders — either would remount even with a stable key. Gated to Keep rows.
     const lastFaceOkByKey = new Map<string, any>()
+    // GATE-FLIP probe (2026-08-02): the ◈◈ REAL serial climbs → genuine keyed-each teardown, but every
+    //  face/source/key check keyed by n.key is BLIND to a key flip (a changed key makes prev undefined →
+    //   silent).  Key THIS one by the STABLE ident (mk:val, immune to tok/join churn) and capture EVERY
+    //    input to the two structural gates ({#if show_viewport} and {#if cell.face && !departing &&
+    //     !hasKids}); log the first that flips.  One repro then NAMES the culprit instead of dumping.
+    const lastGateByIdent = new Map<string, any>()
+    const lastKeepEmit = new Map<TheC, Set<string>>()   // last build's emitted Keep-cell keys, per world
+    const lastShow = new Map<TheC, boolean>()            // show_viewport's last value per world (stage {#if} toggle detector)
     let paint_tick = $state(0)     // the template reads this to re-pull paintMap
     let raf_id = 0                 // 0 = loop stopped
     let last_ts = 0
@@ -307,15 +328,24 @@
                 const f = face_of(row)
                 const face = f ? f.comp : null
                 const source = f ? f.source : null
-                if (n.key.indexOf('Keep:') === 0) {
-                    if (!f) {
-                        console.log('◈ Vyto layout: face_of NULL for', n.key, 'source_n present=', !!(row.c as any).source_n, 'sc=', JSON.stringify(row.sc))
-                    } else {
-                        const prev = lastFaceOkByKey.get(n.key)
-                        if (prev !== undefined && prev.face !== face) console.log('◈ Vyto layout: FACE COMPONENT REFERENCE CHANGED for', n.key)
-                        if (prev !== undefined && prev.source !== source) console.log('◈ Vyto layout: SOURCE REFERENCE CHANGED for', n.key)
-                        lastFaceOkByKey.set(n.key, { face, source })
+                if (String(ident).indexOf('Keep:') === 0) {
+                    // capture EVERY structural-gate input, keyed by the stable ident so a KEY flip is
+                    //  itself caught (prev survives a tok change).  faceNull|face|source feed the inner
+                    //   {#if cell.face}; departing|hasKids feed its other two clauses; key feeds the each.
+                    const gate = { key: n.key, faceNull: !f, face, source,
+                                   departing: !!(row.sc as any).departing, hasKids: n.kids.length > 0 }
+                    const prev = lastGateByIdent.get(ident)
+                    if (prev) {
+                        const d: string[] = []
+                        if (prev.key !== gate.key)             d.push(`KEY ${prev.key}→${gate.key}`)
+                        if (prev.faceNull !== gate.faceNull)   d.push(`FACE_NULL ${prev.faceNull}→${gate.faceNull}`)
+                        if (prev.face !== gate.face)           d.push('FACE_REF changed')
+                        if (prev.source !== gate.source)       d.push('SOURCE_REF changed')
+                        if (prev.departing !== gate.departing) d.push(`DEPARTING ${prev.departing}→${gate.departing}`)
+                        if (prev.hasKids !== gate.hasKids)     d.push(`HASKIDS ${prev.hasKids}→${gate.hasKids}`)
+                        if (d.length) console.log('◈ Vyto GATE FLIP', ident, '::', d.join(' | '))
                     }
+                    lastGateByIdent.set(ident, gate)
                 }
                 if ((row.sc as any).departing) {
                     const r = Math.max(0, s.r)
@@ -340,6 +370,21 @@
             }
         }
         layout(roots, FRAME, GAP, '')
+        // OMISSION DETECTOR (2026-08-02): the real remount mechanism is a Keep cell being OMITTED from
+        //  `cells` (no spring → `layout` continues past it), so its key LEAVES the keyed {#each} and
+        //   KeepFace is torn down; back next build → remount.  The GATE-FLIP probe sits AFTER the
+        //    `if(!s)continue` so it is blind to this.  Diff the emitted Keep-key SET vs last build and
+        //     log ONLY the transitions — exactly one line per remount — with WHY (walk / spring / T).
+        const sp2 = springs.get(w)
+        const tnKeep = tree_nodes(w).all.filter(nn => nn.key.indexOf('Keep:') === 0)
+        const emitted = new Set(cells.filter(c => c.key.indexOf('Keep:') === 0).map(c => c.key))
+        const lastEmit = lastKeepEmit.get(w) ?? new Set<string>()
+        for (const k of lastEmit) if (!emitted.has(k)) {
+            const node = tnKeep.find(nn => nn.key === k)
+            console.log('◈ Vyto CELL LEFT each →', k, '| inWalk=', !!node, 'spring=', !!sp2?.get(k), 'T=', !!(node && target_of(node.row)))
+        }
+        for (const k of emitted) if (!lastEmit.has(k)) console.log('◈ Vyto CELL ENTERED each →', k)
+        lastKeepEmit.set(w, emitted)
         for (const k of [...wm.keys()]) if (!seenScopes.has(k)) wm.delete(k)
         return { cells, curWalls }
     }
@@ -638,6 +683,27 @@
     // ── template readers (each reads paint_tick so the snapshot re-pulls) ──────────────────
     function show_viewport(w: TheC): boolean {
         void paint_tick
+        const r = show_viewport_calc(w)
+        // TOGGLE DETECTOR (2026-08-02): this {#if} gates the ENTIRE stage (svg + faces + every KeepFace).
+        //  If it flips false↔true it tears the whole stage down and rebuilds it — invisible to the cell-
+        //   array probes (build_cells keeps emitting the cell regardless).  Log ONLY on a flip, with why.
+        const prev = lastShow.get(w)
+        if (prev !== undefined && prev !== r) {
+            const mirror: any = (w.c as any).mirror
+            const rows = mirror ? (mirror.ob() as TheC[]) : []
+            const live = rows.filter(x => !(x.sc as any).departing).length
+            console.log('▣ Vyto show_viewport TOGGLE', prev, '→', r, '| commissioned=', commissioned(w),
+                        'mirror=', !!mirror, 'rows=', rows.length, 'nonDeparting=', live)
+            // ALSO land it in the supply_trace ring → wormhole/_trace/ (relay-free disk read via
+            //  scripts/tracelog.mjs), so this is self-serve without console copying.  Direct push (not
+            //   Radio_trace) so it works even if the Radio ghost isn't mounted on this House.
+            const M: any = (H as any).top_House?.()
+            if (M) { const log = M.c.supply_trace || (M.c.supply_trace = []); log.push({ t: Date.now(), ev: 'vyto-show-toggle', to: r ? 1 : 0, comm: commissioned(w) ? 1 : 0, rows: rows.length, live }); if (log.length > 300) log.splice(0, log.length - 300) }
+        }
+        lastShow.set(w, r)
+        return r
+    }
+    function show_viewport_calc(w: TheC): boolean {
         if (!commissioned(w)) return false
         const mirror: any = (w.c as any).mirror
         if (!mirror) return false
