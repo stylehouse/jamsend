@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_test_Story_Lake_Idzeuzia(): string { return 'f894a5ff10d26203' },
+    Ghostmeta_Ghost_test_Story_Lake_Idzeuzia(): string { return 'f894a5ff10d26203~g1' },
 
 //#region uploadConsoleLogs()
     log_Console(A,w) {
