@@ -75,6 +75,7 @@ async MusuRaStream_drive(w, req):
         return
     }
     let n = (this.c.run)?.c.step_n
+    w.sc.now = 1751980000 + 10 * (+n || 0)     // pin the swarm clock — see MusuBuddy_drive, Mag_todo §0.2c
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) await this.MusuRaStream_setup(w)
@@ -374,6 +375,7 @@ async MusuRaChase_drive(w, req):
         return
     }
     let n = (this.c.run)?.c.step_n
+    w.sc.now = 1751990000 + 10 * (+n || 0)     // pin the swarm clock — see MusuBuddy_drive, Mag_todo §0.2c
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) await this.MusuRaChase_setup(w)
@@ -795,6 +797,15 @@ async MusuBuddy_drive(w, req):
         return
     }
     let n = (this.c.run)?.c.step_n
+    // DETERMINISM: pin the swarm clock, stepped per beat (Mag_todo §0.2c).  Swarm_now(w) is
+    //  `w.sc.now ?? wall clock`, and EVERY signed swarm fact flows through it — %Pier,since,
+    //   %Edge,at, and %Grant,time with the ed25519 `sign` computed OVER that time.  Unpinned, this
+    //    Book recorded a moment: its fixture could never match again, so it has been red since the
+    //     day it was written on everything except its subject.  Swarmation.g's law, its header:
+    //      "a pinned clock (w.sc.now stepped per beat) … so every signature, every grant, every snap
+    //       byte repeats run to run".  Set EVERY pass, not only on a new beat — the pumps below run
+    //        every pass and a Pier stamped before the first dispatch would take the wall clock.
+    w.sc.now = 1751960000 + 10 * (+n || 0)
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) await this.MusuBuddy_stock(w)
@@ -1173,6 +1184,7 @@ async MusuMag_drive(w, req):
     }
     if (this.c.run && this.c.run.sc.total !== 10) this.c.run.sc.total = 10
     let n = (this.c.run)?.c.step_n
+    w.sc.now = 1751970000 + 10 * (+n || 0)     // pin the swarm clock — see MusuBuddy_drive, Mag_todo §0.2c
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) await this.MusuMag_stock(w)

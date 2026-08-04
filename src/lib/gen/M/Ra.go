@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '32cdb6d9295f65da~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '53d4848b94f3de9e~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -614,9 +614,15 @@ Ra_home_self(w, pub) {
     return this.Ra_home_shelf(w, w.oai({ MusuSelf: 1, pub: pub }), pub, 'stock')
 },
 Ra_home_them(w, pub) {
-    // last-line self-guard: if I already hold THIS pub as MY OWN (%MusuSelf,pub), a "them" request for it
-    //  is really me — hand back my own shelf, never a %MusuThem,pub:<me> twin beside it (the self-mirror bug).
-    if (w.oa({ MusuSelf: 1, pub: pub })) return this.Ra_home_self(w, pub)
+    // NO self-guard here, deliberately (removed 2026-08-05).  A "last-line" guard reading
+    //  `w.oa({MusuSelf:1, pub})` asked "does a MusuSelf for this pub exist HERE?" when it meant "is this
+    //   pub ME?" — the same question only in a world holding ONE identity.  In a world holding several
+    //    (every swarm Book, and any live tab that mirrors a peer who also appears as a self) it folded a
+    //     FRIEND's mirror into that friend's own shelf and the %MusuThem,pub:<them> crate never minted:
+    //      two different things merged into one particle, silently.  Ra_home_them cannot answer "is this
+    //       me?" — it is handed a pub and knows no identity — so the check belongs where `me` is actually
+    //        known: Repli_mirror_lib's `from === w.c.repli_mirror_pier` (Repli.g), added the same day
+    //         (deb35c44) and correct.  Keep the self-mirror question upstream of the homing verb.
     return this.Ra_home_shelf(w, w.oai({ MusuThem: 1, pub: pub }), pub, 'stock')
 },
 // Ra_home_shop — the LOADING ZONE shelf beside stock/ (Radio_spec §2.4): what is mid-transfer in either
@@ -687,6 +693,30 @@ Ra_page_size() {
     return 6
 },
 // Ra_mag_shuffle — the default holding Mag under a stock shelf, find-or-create.
+//  `pub` is the mag's WIRE IDENTITY (Mag_todo §0.1 item 2, ruled 2026-08-05): the prepub of the Pier
+//   who created and serves it, so `loc = ['Mag','pub']` and two Piers' collections stay two
+//    particles even when they land in the same shelf.  Until this key existed, EVERY mag crossed as
+//     pattern {Mag:<name>} and origin survived only by CONTAINER — which is precisely what the
+//      Ra_home_them self-guard used to break (this file, above).  Now it is defence in depth: a
+//       container fault becomes misfiling, not merging.
+//  Stamped SEPARATELY from the oai(), not folded into the query, for two reasons.  (i) MIGRATION: a
+//   live tab reloading a snap that predates this key holds a bare `Mag:shuffle`; querying on
+//    {Mag:'shuffle',pub} would miss it and mint a SECOND mag beside it.  Find on the stable key,
+//     then stamp.  (ii) It is idempotent — a mag that already carries a pub is left alone, so this
+//      never rewrites a MIRRORED mag's pub with the local shelf's.
+//  (§0.1 item 2 warns that the identity key must be minted SECOND because sc key order is insertion
+//   order.  That constraint is DISSOLVED by the identity table: Repli_loc_for selects listed keys by
+//    presence, not position.  Order no longer decides identity.)
+//  NOT LANDED on the night of 2026-08-05, deliberately — the one-line stamp is written out below and
+//   was measured, not skipped.  The key appears in `%Mag` lines across **21 Books / ~250 fixture
+//    snaps**, and FIVE of those (MusuBuddy, MusuMag, MusuRaStream, MusuHeist, MusuRaChase) cannot be
+//     re-recorded at all until their clock is pinned (Mag_todo §0.2c) — so landing it would turn the
+//      whole suite red while leaving the new key unverifiable in exactly the Books that carry the
+//       most Mags.  It is also a NEW WIRE KEY: that re-record is the visible evidence of it and the
+//        human should review it, not find it already done.  Land it as its own change:
+//         `if (shelf.sc.pub && !mag.sc.pub) mag.sc.pub = String(shelf.sc.pub)`
+//          plus the twin in Stoker_mag_draw, plus flipping `Mag: []` → `Mag: ['pub']` in
+//           Repli_identity_keys.  See Mag_v1_handover.md "next move" step 3.
 Ra_mag_shuffle(shelf) {
     let mag = shelf.oai({ Mag: 'shuffle' })
     mag.c.up = shelf

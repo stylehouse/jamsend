@@ -1,9 +1,9 @@
 Snap:H
   H:MusuVend,Run
     A:MusuVend
-      self,round=10	{"mung":["age"]}
+      self,round=9	{"mung":["age"]}
       w:MusuVend
-        self,round=10	{"mung":["age"]}
+        self,round=9	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -21,10 +21,6 @@ Snap:H
         Peering,name:Origin,req=2,ok
           Pier,pub:Follower,req=2,ok
             Ud,pubkey:Follower
-            outbox
-              recent
-                emit,type:repli_lines,seq
-              emit=2,type:repli_lines,seq=2,sent,body_hash:8f00fa5ab4baa2ece1f87e30ba6f671f869dfa489db24c0d9f69c95462961cb2,body_len=800,acked
           active_transport,type:mock,open
         Peering,name:Follower,req=3,ok
           Pier,pub:Origin,req=2,ok

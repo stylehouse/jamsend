@@ -10,7 +10,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return 'd96cf9c8cfbe84aa~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return '691667c3f4059a7c~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -92,6 +92,7 @@ async MusuHeist_drive(w, req) {
         return
     }
     let n = (this.c.run)?.c.step_n
+    w.sc.now = 1752000000 + 10 * (+n || 0)     // pin the swarm clock — see MusuBuddy_drive, Mag_todo §0.2c
     // census is RETRYABLE: gate on its OUTPUT (census_ready), not a one-shot flag — a one-shot guard set
     //  BEFORE the work strands setup half-done on a transient throw.  Its steps are find-or-create
     //   idempotent; Lake_link guards on w.c.port_uno so it never doubles.
@@ -3160,7 +3161,26 @@ async MusuOgg_stock(w, nav) {
         if (!rec) return
         w.c.rec_id = rec.sc.id
         // drive the continuation encode to completion — the direct-drive alternative to parked wants.
+        // WAIT FOR THE DETACHED DECODE FIRST (fixed 2026-08-05).  Ra_transcode_ensure went NON-BLOCKING
+        //  on 2026-07-28 (read its comment in Ra.g): when the source PCM is not decoded yet it kicks the
+        //   decode off DETACHED and returns null, expecting "a later pump" to find rec.c.pcm ready.
+        //    THIS BOOK IS THE PUMP — it drives the encode itself rather than riding parked wants — so a
+        //     single ensure() took that null, the advance loop below never ran ONCE, and not one %Stream
+        //      chunk minted.  Every later beat then failed off it: have stuck at the 16 preview chunks,
+        //       then export_fail,gap=16 → structural_fail:no_file → decode_fail:no_file.  The Book had
+        //        been red on this since the day the decode went detached.
+        //  THE SLEEP IS LOAD-BEARING, not politeness: ensure()'s null path has no await in it, so a bare
+        //   retry loop would spin the MICROTASK queue and starve the very macrotask decode it is waiting
+        //    on.  Yield for real.  Bounded at 60s inside this beat's 240s expecting() ttlilt, and it
+        //     bails on pcm_why so a decode that THREW reports instead of re-kicking forever.
         let ra = await this.Ra_transcode_ensure(w, rec)
+        let wait = 0
+        while (!ra && !rec.c.pcm_why && wait < 600) {
+            await new Promise((r) => setTimeout(r, 100))
+            ra = await this.Ra_transcode_ensure(w, rec)
+            wait = wait + 1
+        }
+        if (!ra && rec.c.pcm_why) this.MusuOgg_note(w, { pcm_fail: 1, why: String(rec.c.pcm_why).slice(0, 60) })
         let guard = 0
         while (ra && !ra.done && guard < 4000) {
             await this.Ra_transcode_advance(w, rec)

@@ -2,6 +2,6 @@ Snap:H
   H:MusuHeist,Run
     A:MusuHeist
       self,round	{"mung":["age"]}
-      w:MusuHeist
+      w:MusuHeist,now=1752000010
         self,round	{"mung":["age"]}
         req:wrangle,eternal,ok

@@ -1,9 +1,9 @@
 Snap:H
   H:SwarmShare,Run
     A:SwarmShare
-      self,round=9	{"mung":["age"]}
+      self,round=8	{"mung":["age"]}
       w:SwarmShare,now=1751940010
-        self,round=9	{"mung":["age"]}
+        self,round=8	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Account,of:Cass
@@ -29,8 +29,6 @@ Snap:H
             outbox
               emit,type:hello,seq,sent,acked
               emit=2,type:trust,seq=2,sent,acked
-              emit=3,type:repli_lines,seq=3,sent,body_hash:203a0cf5ce2c73a0c51d6fe13899ce140755b0b2ade7e953ba17de0212c70ac6,body_len=67,acked
-              emit=4,type:repli_lines,seq=4,sent,body_hash:8f7d4422509ccdfb55b74abcc7fc9d7ee8680d46b9d31f1e154fa63639571abb,body_len=63,acked
             inbox
               req:unemit,seq,type:hello,done,to:hello,finished
               req:unemit,seq=2,type:trust,done,to:trust,finished

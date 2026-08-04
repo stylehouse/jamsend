@@ -1,9 +1,9 @@
 Snap:H
   H:MusuDoor,Run
     A:MusuDoor
-      self,round=9	{"mung":["age"]}
+      self,round=8	{"mung":["age"]}
       w:MusuDoor
-        self,round=9	{"mung":["age"]}
+        self,round=8	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -15,10 +15,6 @@ Snap:H
         Peering,name:Origin,req=2,ok
           Pier,pub:Follower,req=2,ok
             Ud,pubkey:Follower
-            outbox
-              recent
-                emit,type:repli_lines,seq
-              emit=2,type:repli_lines,seq=2,sent,body_hash:820b8c4055dc534b0dd210db6ebd4b514aa9eb731b2285c0193da5a782a04643,body_len=530,acked
           active_transport,type:mock,open
         Peering,name:Follower,req=3,ok
           Pier,pub:Origin,req=2,ok
@@ -26,7 +22,7 @@ Snap:H
             inbox
               recent
                 unemit,type:repli_lines,seq
-              req:unemit,seq=2,type:repli_lines,body_hash:820b8c4055dc534b0dd210db6ebd4b514aa9eb731b2285c0193da5a782a04643,body_len=530,done,to:repli_lines,finished
+              req:unemit,seq=2,type:repli_lines,body_hash:69dcfbe39c314cbf802b0926a4988b8fcb2d42ce111f88f136212153a1e41db7,body_len=546,done,to:repli_lines,finished
           active_transport,type:mock,open
         MusuSelf,pub:Origin
           stock,pub:Origin

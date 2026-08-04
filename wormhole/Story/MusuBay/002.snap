@@ -12,8 +12,6 @@ Snap:H
         Peering,name:Origin1,req=2,ok
           Pier,pub:Seeker,req=2,ok
             Ud,pubkey:Seeker
-            outbox
-              emit,type:repli_lines,seq,sent,body_hash:acd7738a4c96527d0f67da866b9fb4f6f59b79c41e93735c1d5e5d0add0c2c8a,body_len=677,acked
           active_transport,type:mock,open
         Peering,name:Seeker,req=3,ok
           Pier,pub:Origin1,req=2,ok
@@ -29,8 +27,6 @@ Snap:H
         Peering,name:Origin2,req=4,ok
           Pier,pub:Seeker,req=2,ok
             Ud,pubkey:Seeker
-            outbox
-              emit,type:repli_lines,seq,sent,body_hash:f4e2a83a8205a7b8201db5e6d77d72387b535780c8a04b8e05bfe18f411d0f52,body_len=663,acked
           active_transport,type:mock,open
         MusuSelf,pub:Origin1
           stock,pub:Origin1

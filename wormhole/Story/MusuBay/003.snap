@@ -1,9 +1,9 @@
 Snap:H
   H:MusuBay,Run
     A:MusuBay
-      self,round=8	{"mung":["age"]}
+      self,round=7	{"mung":["age"]}
       w:MusuBay
-        self,round=8	{"mung":["age"]}
+        self,round=7	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -15,11 +15,8 @@ Snap:H
         Peering,name:Origin1,req=2,ok
           Pier,pub:Seeker,req=2,ok
             Ud,pubkey:Seeker
-            outbox
-              recent
-                emit,type:repli_lines,seq
             inbox
-              req:unemit,seq=2,type:repli_lines,body_hash:52a0171cfa2140110cf6c1b2f360710d94331d3947b7a98afd24e5583d9aaf5b,body_len=50,done,to:repli_lines,finished
+              req:unemit,seq=2,type:repli_lines,body_hash:939ba3fdb158b0066238c8aa55cee336e83fed1e6218394bb7ee96e791308ffa,body_len=63,done,to:repli_lines,finished
           active_transport,type:mock,open
         Peering,name:Seeker,req=3,ok
           Pier,pub:Origin1,req=2,ok
@@ -27,25 +24,18 @@ Snap:H
             inbox
               recent
                 unemit,type:repli_lines,seq
-            outbox
-              emit=2,type:repli_lines,seq=2,sent,body_hash:52a0171cfa2140110cf6c1b2f360710d94331d3947b7a98afd24e5583d9aaf5b,body_len=50,acked
           active_transport,type:mock,open
           Pier,pub:Origin2,req=3,ok
             Ud,pubkey:Origin2
             inbox
               recent
                 unemit,type:repli_lines,seq
-            outbox
-              emit=2,type:repli_lines,seq=2,sent,body_hash:52a0171cfa2140110cf6c1b2f360710d94331d3947b7a98afd24e5583d9aaf5b,body_len=50,acked
           active_transport,type:mock,open
         Peering,name:Origin2,req=4,ok
           Pier,pub:Seeker,req=2,ok
             Ud,pubkey:Seeker
-            outbox
-              recent
-                emit,type:repli_lines,seq
             inbox
-              req:unemit,seq=2,type:repli_lines,body_hash:52a0171cfa2140110cf6c1b2f360710d94331d3947b7a98afd24e5583d9aaf5b,body_len=50,done,to:repli_lines,finished
+              req:unemit,seq=2,type:repli_lines,body_hash:939ba3fdb158b0066238c8aa55cee336e83fed1e6218394bb7ee96e791308ffa,body_len=63,done,to:repli_lines,finished
           active_transport,type:mock,open
         MusuSelf,pub:Origin1
           stock,pub:Origin1

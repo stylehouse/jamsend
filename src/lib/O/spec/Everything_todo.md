@@ -255,6 +255,30 @@ Graduated to prod (gate LakeSurprise); the real Lang↔Lies channel is live.  Th
 One low-priority unknown (`reactivity_docs.md`):
 - Sub-particle `vers` gating bypasses the flush gate (Atime bumps `exa.vers`
    directly); whether it causes mid-cycle re-reads is untested.
+- (vague, 2026-08-05, the owner: "maybe we've outgrown that") `replace()` is a
+   whole-container transaction that `empty()`s the House's children AND bumps
+    mid-transaction, so the House is visibly childless across two awaits. Atime
+     shields tick-participants, but a `$effect` watcher is UItime — the
+      mid-transaction bump invites it to re-read at the worst moment (the
+       `reset_interval` fault, `Mag_v1_handover.md`: Vytui destroyed its whole
+        subtree ~17×/min off exactly this window). Either `replace()` holds its
+         bump until the children are back, or its surviving callers migrate to
+          `oai` merge-in-place and `replace()` retires. NOTE the shaping-up
+           pattern that may already be the answer (`reactivity_docs.md:71`,
+            "same shape Langui uses"), stated by the owner 2026-08-05 as three
+             stages: **reactive read → queue casual read at a sane time ASAP →
+              unpacking into $state for the UI proper.** That is: (1) the
+               `$effect` reads only `vers` — a cheap subscription, never the
+                tree; (2) it queues the real read into `H.UItime()`, which
+                 waits on the Atime mutex for settled state; (3) the settled
+                  snapshot is unpacked into plain `$state`, and render code
+                   reads ONLY that. Under this rule the childless-`replace()`
+                    window becomes unobservable by construction (render never
+                     touches transacting state) — the remaining cost is only
+                      wasted wakeups from mid-transaction bumps. Vytui's sin
+                       was collapsing the three stages into one. If this gets
+                        blessed as the rule, it wants reconciling with
+                         `Wire_spec.md`'s `%subscribe`/wake vocabulary.
 
 Resolved (was a rumour): Stuffing no longer over-creates instances. One
  `Stuffing` per component lifetime (`Stuffing.svelte:30`); components

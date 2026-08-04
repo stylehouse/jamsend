@@ -1,9 +1,9 @@
 Snap:H
   H:MusuHeist,Run
     A:MusuHeist
-      self,round=15	{"mung":["age"]}
-      w:MusuHeist
-        self,round=15	{"mung":["age"]}
+      self,round=13	{"mung":["age"]}
+      w:MusuHeist,now=1752000050
+        self,round=13	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -19,21 +19,21 @@ Snap:H
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
               Idzeug:heist_1,to:Music,genre:Heist,spent
-              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1785386565
+              Pier,pub:be0dab3303037ad2,friendly:Duo,since:1752000030
                 Peering,name:be0dab3303037ad2,friendly:Duo,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1785386565,sign:4caa7c4114cfaf7c1ffcea12b6a9d77da7d492e0cac4e2dd04c40ffdc9a89383560a2a5d34f04ae8c8578e08fb5bf2846a28042f11df6d2725fd29e86735d805,genre:Heist
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1785386565,sign:40cc3fdfd5c0edf3de7d6145954579b165179a9dddef4a6a3d3908eae6a37743c8227cf3a3fbb13bed3bf3a9e8e63a6f28ca2aea15fc8cbbc5f125554c528708,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1752000030,sign:3563d28e03d63cdd1130d3d6ad581cc78385f2b542cfdc00dd7d64826225a136a199b1699007e1ff3e260faaae57c1db829d3c7a7c5d52e42e74e7e7b9dbcc0e,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1752000030,sign:ea5a0dd6a411387d4d264d7dd7e5f83da2b7bf2e8e6a093fd085da801ac4ddccac4e480655660b4ef8f57d683750723b6dba09f456b018071bfe57cb070bc403,genre:Heist
             SocialGraph
-              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1785386565
+              Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1752000030
         Account,of:Duo
           Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
             Peering,name:be0dab3303037ad2,friendly:Duo
-              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1785386565
+              Pier,pub:4e09f34f5a6ab900,friendly:Uno,since:1752000030
                 Peering,name:4e09f34f5a6ab900,friendly:Uno,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
-                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1785386565,sign:4caa7c4114cfaf7c1ffcea12b6a9d77da7d492e0cac4e2dd04c40ffdc9a89383560a2a5d34f04ae8c8578e08fb5bf2846a28042f11df6d2725fd29e86735d805,genre:Heist
-                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1785386565,sign:40cc3fdfd5c0edf3de7d6145954579b165179a9dddef4a6a3d3908eae6a37743c8227cf3a3fbb13bed3bf3a9e8e63a6f28ca2aea15fc8cbbc5f125554c528708,genre:Heist
+                Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1752000030,sign:3563d28e03d63cdd1130d3d6ad581cc78385f2b542cfdc00dd7d64826225a136a199b1699007e1ff3e260faaae57c1db829d3c7a7c5d52e42e74e7e7b9dbcc0e,genre:Heist
+                Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1752000030,sign:ea5a0dd6a411387d4d264d7dd7e5f83da2b7bf2e8e6a093fd085da801ac4ddccac4e480655660b4ef8f57d683750723b6dba09f456b018071bfe57cb070bc403,genre:Heist
             SocialGraph
-              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1785386565
+              Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1752000030
         Peering,name:4e09f34f5a6ab900,req=2,ok
           Pier,pub:be0dab3303037ad2,req=2,ok
             req:handshake,finished
@@ -50,6 +50,9 @@ Snap:H
                 heard
             outbox
               recent
+                emit,type:hello,seq
+                emit=2,type:trust,seq=2
+                emit=3,type:pier_accept,seq=3
             inbox
               recent
                 unemit,type:hello,seq
@@ -77,6 +80,10 @@ Snap:H
                 heard
             outbox
               recent
+                emit,type:hello,seq
+                emit=2,type:trust,seq=2
+                emit=3,type:pier_hello,seq=3
+                emit=4,type:pier_confirm,seq=4
             inbox
               recent
                 unemit,type:hello,seq

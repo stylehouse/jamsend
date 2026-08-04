@@ -9,14 +9,12 @@ Snap:H
         Peering,name:DJ,req=2,ok
           Pier,pub:Crowd,req=2,ok
             Ud,pubkey:Crowd
-            outbox
-              emit,type:repli_lines,seq,sent,body_hash:74378263a1673f692726c4e53979546fd81f10b44423df9629bf4893b7cbc49e,body_len=322,acked
           active_transport,type:mock,open
         Peering,name:Crowd,req=3,ok
           Pier,pub:DJ,req=2,ok
             Ud,pubkey:DJ
             inbox
-              req:unemit,seq,type:repli_lines,body_hash:74378263a1673f692726c4e53979546fd81f10b44423df9629bf4893b7cbc49e,body_len=322,done,to:repli_lines,finished
+              req:unemit,seq,type:repli_lines,body_hash:5afe667bc59a66bb3f274eb517b26e6b43025e20843c4dd2dbb91977d7ea46bf,body_len=339,done,to:repli_lines,finished
           active_transport,type:mock,open
         MusuSelf,pub:DJ
           stock,pub:DJ

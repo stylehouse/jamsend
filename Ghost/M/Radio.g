@@ -1015,6 +1015,9 @@ Stoker_cull(st, shelf, radio):
 Stoker_mag_draw(st, w, shelf, pub, had):
     let sh = this.Ra_home_radiostocking(w, pub)
     let mag = sh.oai({ Mag: 'Musica' })
+    // OWED, with Ra_mag_shuffle's twin (Mag_todo §0.1 item 2, measured but not landed 2026-08-05):
+    //  `if (pub && !mag.sc.pub) mag.sc.pub = String(pub)` — the mag's wire identity.  Find on the
+    //   stable key then stamp, so a pre-existing bare mag migrates instead of gaining a twin.
     let di = (st.c.draw_i || 0) + 1
     st.c.draw_i = di
     let cl = null

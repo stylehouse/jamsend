@@ -1,9 +1,9 @@
 Snap:H
   H:MusuBay,Run
     A:MusuBay
-      self,round=15	{"mung":["age"]}
+      self,round=12	{"mung":["age"]}
       w:MusuBay
-        self,round=15	{"mung":["age"]}
+        self,round=12	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -23,10 +23,6 @@ Snap:H
         Peering,name:Origin1,req=2,ok
           Pier,pub:Seeker,req=2,ok
             Ud,pubkey:Seeker
-            outbox
-              recent
-                emit,type:repli_lines,seq
-              emit,type:repli_lines,seq,sent,body_hash:9ad4788ec23688d171a4357880e570a10c2978db85c32867f09949315a8268bd,body_len=150,acked
             inbox
               recent
                 unemit=2,type:repli_lines,seq=2
@@ -38,27 +34,17 @@ Snap:H
             inbox
               recent
                 unemit,type:repli_lines,seq
-              req:unemit,seq,type:repli_lines,body_hash:9ad4788ec23688d171a4357880e570a10c2978db85c32867f09949315a8268bd,body_len=150,done,to:repli_lines,finished
-            outbox
-              recent
-                emit=2,type:repli_lines,seq=2
-                emit=3,type:repli_lines,seq=3
+              req:unemit,seq,type:repli_lines,body_hash:527f39778689bbc5c54e0c5f3ca35ba627e8ed335a4b886c214e1fcd3a01ef89,body_len=162,done,to:repli_lines,finished
           active_transport,type:mock,open
           Pier,pub:Origin2,req=3,ok
             Ud,pubkey:Origin2
             inbox
               recent
                 unemit,type:repli_lines,seq
-            outbox
-              recent
-                emit=2,type:repli_lines,seq=2
           active_transport,type:mock,open
         Peering,name:Origin2,req=4,ok
           Pier,pub:Seeker,req=2,ok
             Ud,pubkey:Seeker
-            outbox
-              recent
-                emit,type:repli_lines,seq
             inbox
               recent
                 unemit=2,type:repli_lines,seq=2

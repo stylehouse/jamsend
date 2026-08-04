@@ -11,8 +11,6 @@ Snap:H
         Peering,name:Origin,req=2,ok
           Pier,pub:Follower,req=2,ok
             Ud,pubkey:Follower
-            outbox
-              emit,type:repli_lines,seq,sent,body_hash:7c44f200d16f5f166d24a8836f8c7fd07c5219a90b1c3532ad96e066a371cdfe,body_len=412,acked
           active_transport,type:mock,open
         Peering,name:Follower,req=3,ok
           Pier,pub:Origin,req=2,ok

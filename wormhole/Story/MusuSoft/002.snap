@@ -12,8 +12,6 @@ Snap:H
         Peering,name:Origin,req=2,ok
           Pier,pub:Seeker,req=2,ok
             Ud,pubkey:Seeker
-            outbox
-              emit,type:repli_lines,seq,sent,body_hash:6d94c054c991d0e9b7e83e1e4d8950d3d7ee8010dae68f817ef1af9e05c09b69,body_len=667,acked
           active_transport,type:mock,open
         Peering,name:Seeker,req=3,ok
           Pier,pub:Origin,req=2,ok

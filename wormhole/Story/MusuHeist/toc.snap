@@ -5,47 +5,47 @@ story:MusuHeist
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=12.114
-      sample=11.488,at=1785078835
-      sample=9.298,at=1785078882
-      sample=10.084,at=1785078936
-      sample=8.838,at=1785120463
-      sample=16.27,at=1785386604
-      sample=17.955,at=1785386891
-      sample=19.84,at=1785390815
+    TimeTotal:beliefs,avg=6.61
       sample=11.401,at=1785400310
       sample=10.273,at=1785827156
       sample=5.693,at=1785840357
-    TimeTotal:step,avg=0.551
-      sample=0.522,at=1785078835
-      sample=0.423,at=1785078882
-      sample=0.458,at=1785078936
-      sample=0.402,at=1785120463
-      sample=0.74,at=1785386604
-      sample=0.816,at=1785386891
-      sample=0.902,at=1785390815
+      sample=8.396,at=1785852772
+      sample=4.822,at=1785853351
+      sample=4.816,at=1785854555
+      sample=4.865,at=1785854839
+      sample=5.236,at=1785871007
+      sample=5.236,at=1785871026
+      sample=5.36,at=1785871061
+    TimeTotal:step,avg=0.301
       sample=0.518,at=1785400310
       sample=0.467,at=1785827156
       sample=0.259,at=1785840357
-  step,dige:3557d6c52e0e2c8d
-  step=2,dige:327b0ecfd4f23071
-  step=3,dige:0a6d88bf0f3f294b
-  step=4,dige:e83117a52dd54fc4
-  step=5,dige:478f8fbc8b1438a3
-  step=6,dige:8abf757fd65d28f0
-  step=7,dige:e4b7cfc297cd7d8c
-  step=8,dige:e662d5a914d74f07
-  step=9,dige:670b89d48bba94aa
-  step=10,dige:cf135e735b368ccb
-  step=11,dige:a3d2d8536fa8935e
-  step=12,dige:f64a2128c805c3eb
-  step=13,dige:b77a2c2a34438798
-  step=14,dige:987d19fac46477b9
-  step=15,dige:d1a14e75afa75148
-  step=16,dige:d1431a7dba608d4d
-  step=17,dige:2a20a55681eda1be
-  step=18,dige:4aa364656cad981c
-  step=19,dige:8a06d1a7afb33251
-  step=20,dige:08db69865dd28710
-  step=21,dige:0d0b42c813a37640
-  step=22,dige:e44c97e53cd653c8
+      sample=0.382,at=1785852772
+      sample=0.219,at=1785853351
+      sample=0.219,at=1785854555
+      sample=0.221,at=1785854839
+      sample=0.238,at=1785871007
+      sample=0.238,at=1785871026
+      sample=0.244,at=1785871061
+  step,dige:d2effa20514897c8
+  step=2,dige:847d949aeba33ef8
+  step=3,dige:ac8cc8211fef8343
+  step=4,dige:161abd97768bd559
+  step=5,dige:bf9b9f6ba0032ec6
+  step=6,dige:de55d0b5203a4a5b
+  step=7,dige:640d8a8680ff6d64
+  step=8,dige:29f5d789794f3509
+  step=9,dige:7af33f56a6667143
+  step=10,dige:d94defad55589e05
+  step=11,dige:abcadd694b5d78b3
+  step=12,dige:6f9ae1456f638418
+  step=13,dige:0c2efda49c09174d
+  step=14,dige:3ae979c945ddfc14
+  step=15,dige:4b0c9955875bd0fe
+  step=16,dige:81febf9ca4cb8dba
+  step=17,dige:54f65530fb4b7cc0
+  step=18,dige:01d6c01f2b9532f6
+  step=19,dige:bd29e45216f8ab87
+  step=20,dige:e6f0b1ec6292bb84
+  step=21,dige:d3a6451f77bd2ddd
+  step=22,dige:ca6531ab951abe24

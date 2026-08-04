@@ -1,9 +1,9 @@
 Snap:H
   H:MusuBay,Run
     A:MusuBay
-      self,round=17	{"mung":["age"]}
+      self,round=13	{"mung":["age"]}
       w:MusuBay
-        self,round=17	{"mung":["age"]}
+        self,round=13	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -26,10 +26,6 @@ Snap:H
         Peering,name:Origin1,req=2,ok
           Pier,pub:Seeker,req=2,ok
             Ud,pubkey:Seeker
-            outbox
-              recent
-                emit,type:repli_lines,seq
-                emit,type:repli_lines,seq
             inbox
               recent
                 unemit=2,type:repli_lines,seq=2
@@ -42,26 +38,16 @@ Snap:H
               recent
                 unemit,type:repli_lines,seq
                 unemit,type:repli_lines,seq
-            outbox
-              recent
-                emit=2,type:repli_lines,seq=2
-                emit=3,type:repli_lines,seq=3
           active_transport,type:mock,open
           Pier,pub:Origin2,req=3,ok
             Ud,pubkey:Origin2
             inbox
               recent
                 unemit,type:repli_lines,seq
-            outbox
-              recent
-                emit=2,type:repli_lines,seq=2
           active_transport,type:mock,open
         Peering,name:Origin2,req=4,ok
           Pier,pub:Seeker,req=2,ok
             Ud,pubkey:Seeker
-            outbox
-              recent
-                emit,type:repli_lines,seq
             inbox
               recent
                 unemit=2,type:repli_lines,seq=2

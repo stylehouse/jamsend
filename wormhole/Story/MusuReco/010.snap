@@ -1,58 +1,14 @@
 Snap:H
   H:MusuReco,Run
     A:MusuReco
-      self,round=49	{"mung":["age"]}
+      self,round=24	{"mung":["age"]}
       w:MusuReco
-        self,round=49	{"mung":["age"]}
+        self,round=24	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
           Pier,pub:Crowd,req=2,ok
             Ud,pubkey:Crowd
-            outbox
-              recent
-                emit=42,type:repli_lines,seq=42
-                emit=43,type:repli_page,seq=43
-                emit=44,type:repli_lines,seq=44
-                emit=45,type:repli_page,seq=45
-                emit=46,type:repli_lines,seq=46
-                emit=47,type:repli_page,seq=47
-                emit=48,type:repli_lines,seq=48
-                emit=49,type:repli_page,seq=49
-                emit=50,type:repli_lines,seq=50
-                emit=51,type:repli_page,seq=51
-                emit=52,type:repli_lines,seq=52
-                emit=53,type:repli_page,seq=53
-                emit=54,type:repli_lines,seq=54
-                emit=55,type:repli_page,seq=55
-                emit=56,type:repli_lines,seq=56
-                emit=57,type:repli_page,seq=57
-                emit=58,type:repli_lines,seq=58
-                emit=59,type:repli_page,seq=59
-                emit=60,type:repli_lines,seq=60
-                emit=61,type:repli_page,seq=61
-            inbox
-              recent
-                unemit=11,type:repli_want,seq=11
-                unemit=12,type:repli_want,seq=12
-                unemit=13,type:repli_want,seq=13
-                unemit=14,type:repli_want,seq=14
-                unemit=15,type:repli_want,seq=15
-                unemit=16,type:repli_want,seq=16
-                unemit=17,type:repli_want,seq=17
-                unemit=18,type:repli_want,seq=18
-                unemit=19,type:repli_want,seq=19
-                unemit=20,type:repli_want,seq=20
-                unemit=21,type:repli_want,seq=21
-                unemit=22,type:repli_want,seq=22
-                unemit=23,type:repli_want,seq=23
-                unemit=24,type:repli_want,seq=24
-                unemit=25,type:repli_want,seq=25
-                unemit=26,type:repli_want,seq=26
-                unemit=27,type:repli_want,seq=27
-                unemit=28,type:repli_want,seq=28
-                unemit=29,type:repli_want,seq=29
-                unemit=30,type:repli_want,seq=30
           active_transport,type:mock,open
         Peering,name:Crowd,req=3,ok
           Pier,pub:DJ,req=2,ok
@@ -79,28 +35,6 @@ Snap:H
                 unemit=59,type:repli_page,seq=59
                 unemit=60,type:repli_lines,seq=60
                 unemit=61,type:repli_page,seq=61
-            outbox
-              recent
-                emit=11,type:repli_want,seq=11
-                emit=12,type:repli_want,seq=12
-                emit=13,type:repli_want,seq=13
-                emit=14,type:repli_want,seq=14
-                emit=15,type:repli_want,seq=15
-                emit=16,type:repli_want,seq=16
-                emit=17,type:repli_want,seq=17
-                emit=18,type:repli_want,seq=18
-                emit=19,type:repli_want,seq=19
-                emit=20,type:repli_want,seq=20
-                emit=21,type:repli_want,seq=21
-                emit=22,type:repli_want,seq=22
-                emit=23,type:repli_want,seq=23
-                emit=24,type:repli_want,seq=24
-                emit=25,type:repli_want,seq=25
-                emit=26,type:repli_want,seq=26
-                emit=27,type:repli_want,seq=27
-                emit=28,type:repli_want,seq=28
-                emit=29,type:repli_want,seq=29
-                emit=30,type:repli_want,seq=30
           active_transport,type:mock,open
         MusuSelf,pub:DJ
           stock,pub:DJ

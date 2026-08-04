@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return '579065ad6a706d8d~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return '86d0da48d6a01719~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -66,12 +66,106 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
 
 // ─── encode: a C** subtree → enWaft-shaped line fragment (+ a bufmap of out-of-band buffer pages) ───
 
-// Repli_loc_keys — the default locatory split: the mainkey, plus a following id-ish key (id|name|seq|pier|kind)
-//  if present.  Everything after those is a merge prop.  A source particle may override via .c.repli_loc.
-Repli_loc_keys(keys) {
+// ── THE IDENTITY TABLE (Mag_todo §0.1 item 5, the v1.0 step; §0.2 is the evidence) ──────────────
+// Repli_identity_keys — which sc keys make a particle THAT particle on the wire, declared per mainkey
+//  by whoever authored the shape, instead of GUESSED from key spelling.  `loc` is the UPSERT KEY:
+//   Repli_merge splits an incoming line into `pattern` (the loc keys) and `props` (all the rest),
+//    then `parent.o(pattern)[0]` — hit ⇒ write each prop key THE LINE CARRIES onto what it found,
+//     miss ⇒ mint.  Only carried keys are touched: the hit particle's other sc keys, its children
+//      and its siblings are all left alone (children merge by their own lines at their own depth).
+//       The asymmetry to know: ABSENCE IS NOT DELETION — a key cleared at the source stays set on
+//        the mirror forever (so the `1`-or-absent boolean idiom cannot be UN-set over this wire;
+//         op:delete removes a whole particle, nothing removes one key).  And a loc that is too
+//          NARROW makes two different things silently become one.
+//
+// WHAT THIS REPLACES, and why the replacement is not a refactor.  The old Repli_loc_keys took the
+//  mainkey plus a following key if that key was SPELLED one of id|name|seq|pier|kind.  That list
+//   covers the HOLDINGS Ra mints and covers NONE of the referring particles — `of`, the codebase's
+//    documented many:1 join key (CLAUDE.md: "%Spin,of:X / %Like,of:X … many events per track"), was
+//     never on it, nor `with`, `by`, `key`, `wish`, `page`, `pub`.  So the wire could address what a
+//      peer HAS and could not address any statement a peer MADE about it: every %Spin in a friend's
+//       %Jam ledger upserted onto the first, and the mirror's Jam_tally read {spins:1} forever no
+//        matter how many tracks played.  Invisible because every Book mints exactly one of each.
+//   It had already been hand-patched SEVEN times in production (.c.repli_loc at Ra.g, Heist.g ×4,
+//    Radio.g, each with a comment describing the disaster it averts), and THREE of those want a
+//     three-key loc the old helper structurally could not return — it only ever produced one or two.
+//
+// THE RULE: identity = the mainkey, PLUS every listed key that is actually PRESENT on this particle.
+//  "Present" rather than "required" is what lets one entry cover a shape that varies:
+//   - %Cloud carries `page` (a real coordinate) or `randomic` (the machine-draw marker §0.0 drops) —
+//      one entry retires four separate hand-stamps.
+//   - %Rummage's loc was CONDITIONAL in code (`want ? [Rummage,want,pier] : [Rummage,seed,pier]`);
+//      listing all three subsumes the branch, because a Rummage wears one of want|seed and a pier.
+//   - %Stream is POLYSEMOUS and honestly declared so — see the note on its row.
+//
+// THE FALLBACK for an unlisted mainkey is ALL of its keys, which SPLITS rather than merges.  That is
+//  deliberate and it matches the receiver's own default (Repli_merge: `loc` absent ⇒ locKeys = every
+//   key) — the protocol was already fail-CLOSED and it was this helper that turned the safe default
+//    into an unsafe one.  A too-wide loc mints a new row where it should have updated one: churn,
+//     visible in a snap, recoverable.  A too-narrow loc loses data silently.  Wide is the safe way to
+//      be wrong.  The console warn fires once per unknown mainkey so the table gap announces itself
+//       instead of hiding for a month, which is exactly how the last four instances got in.
+Repli_identity_keys(mainkey) {
+    let T = {
+        // ── holdings: what a peer HAS.  These were already right under the old heuristic. ──
+        Record: ['id'], Card: ['id'], ask: ['id'],
+        Preview: ['seq'], Original: ['seq'], Lossy: ['seq'],
+        // %Blob is keyed by (id, GRADE) at its mint — `home.oai({Blob:1, id, grade:'ogg128'})`
+        //  (Orig.g:261).  The old heuristic stopped at ['Blob','id'], so a SECOND export grade of the
+        //   same track would have upserted onto the first.  Latent, not yet fired: one grade exists.
+        Blob: ['id', 'grade'],
+        // ── the Musu shelves.  Each is `home.oai({<name>:1, pub})` via Ra_home_shelf, so `pub` is
+        //  half its identity — one per (home, name) today, which is why nothing has bitten. ──
+        stock: ['pub'], shop: ['pub'], bay: ['pub'], radiostocking: ['pub'], the: ['pub'],
+        // %Stream names TWO different particles — `Stream,seq,cid` is one opus packet (a MEMBER,
+        //  many per Record, minted Ra.g); `Stream,name:'audio',total,have` is the Float32-page
+        //   path's fill COUNTER (one per Record, minted Crate.g, sent Repli_serve_want).  Listing
+        //    both keys resolves each shape correctly, and says out loud that the mainkey is
+        //     overloaded.  It survived the old heuristic only because `name` and `seq` were BOTH on
+        //      the spelling list — luck, not design.  Mag_todo §0.2b: splitting this name is a
+        //       PREREQUISITE for moving identity into the protocol rule set post-1.0, because a
+        //        per-mainkey declaration cannot describe two different particles at once.
+        Stream: ['seq', 'name'],
+        // ── the publication: Mag > Cloud > Card/Record ──
+        // %Mag has NO identity key yet — every mag crosses as pattern {Mag:<name>}, so two Piers'
+        //  collections stay apart only by the container they land in.  §0.1 item 2 ruled the key
+        //   (`Mag,pub`, pub = the prepub of the Pier who serves it).  **This row becomes ['pub'] in
+        //    the same change that MINTS the key, never before** — a loc naming a key the line does
+        //     not carry patterns on `undefined` and would mint a fresh mag every frame.  When it is
+        //      minted, the row also degrades safely by PRESENCE: the local-UI `%Mag:'Lineup'` on the
+        //       world floor (Radio.g) carries no pub and keeps loc ['Mag'], which is right — it
+        //        never crosses.  Cost of landing it, measured 2026-08-05: 21 Books / ~250 fixture
+        //         snaps re-record.  See Ra_mag_shuffle and Mag_v1_handover.md next-move step 3.
+        Mag: [],
+        Cloud: ['page', 'randomic'],
+        // ── the referring particles: what a peer SAYS.  `of` is the many:1 pointer. ──
+        Spin: ['of'], Like: ['of'], Grab: ['of'], Jam: ['with'],
+        Heistlet: ['of', 'pier'], Rummage: ['want', 'seed', 'pier'],
+        Heist: ['at', 'wish', 'hid'], Renamed: ['key', 'from'],
+        // %Reco is keyed by WHO recommended — `rec.oai({Reco:1, by})` (this file, Repli_reco_*).
+        //  Read it off the mint, not off the Books: two Books do `rec.o({Reco:1})[0]`, which reads
+        //   like a 1:1 and is only "the first one".  Inferring ['Reco'] from that would have shipped
+        //    a fresh instance of the very bug this table exists to kill — two people recommending
+        //     one track, merged into one row on arrival.
+        Reco: ['by'],
+    }
+    return T[mainkey] || null
+
+},
+// Repli_loc_for — resolve one particle's loc: an explicit .c.repli_loc wins (it can narrow OR widen),
+//  else the table, else every key with a one-shot warn.  `keys` is the particle's stringy sc keys in
+//   order, so keys[0] is the mainkey.
+Repli_loc_for(node, keys) {
+    if (node && node.c && node.c.repli_loc) return node.c.repli_loc
     if (!keys.length) return []
-    if (keys.length > 1 && ['id', 'name', 'seq', 'pier', 'kind'].includes(keys[1])) return [keys[0], keys[1]]
-    return [keys[0]]
+    let listed = this.Repli_identity_keys(keys[0])
+    if (listed) return [keys[0]].concat(listed.filter((k) => keys.includes(k)))
+    let seen = (this.c.repli_unknown_mk = this.c.repli_unknown_mk || {})
+    if (!seen[keys[0]]) {
+        seen[keys[0]] = 1
+        console.warn(`🛰⚠ repli: no identity declared for mainkey %${keys[0]} (keys: ${keys.join(',')}) — falling back to ALL keys, which SPLITS. Add a row to Repli_identity_keys.`)
+    }
+    return keys.slice()
 
 },
 // Repli_is_binary — an .sc value that is raw bytes.  The chunk-particle principle (owner 2026-07-10:
@@ -128,7 +222,7 @@ Repli_lines_of(node, d, out, bufmap, opts) {
         stringies[k] = sc[k]
     }
     let objecties = {}
-    objecties.loc = (node.c && node.c.repli_loc) ? node.c.repli_loc : this.Repli_loc_keys(Object.keys(stringies))
+    objecties.loc = this.Repli_loc_for(node, Object.keys(stringies))
     if (node.c && node.c.repli_op) objecties.op = node.c.repli_op
     if (bufk) {
         let id = (bufmap.tx.c.bufseq = (bufmap.tx.c.bufseq || 0) + 1)
