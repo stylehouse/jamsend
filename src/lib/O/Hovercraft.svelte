@@ -43,21 +43,42 @@
 
     // when starting a new time, set the next ambient tick
     async reset_interval() {
-        // the universal %interval persists through time, may be adjusted
-        let n: TheC
-        let int = this.o({ mo: 'main', interval: 1 })[0]
-        let interval = int?.sc.interval || 3.6
-        let id; id = setTimeout(() => {
-            // if we are still the current callback
-            if (n != this.o({ mo: 'main', interval: 1 })[0]) return
+        // the universal %interval persists through time, may be adjusted.
+        //
+        // ONE stable %mo:main,interval row, merged in place — deliberately NOT a replace().
+        //  replace() is a WHOLE-CONTAINER transaction: it empty()s this House (Stuff.empty →
+        //   `X = null` + Xify's version BUMP) and only puts the children back after `await fn()`
+        //    and `await resolve()`.  So swapping this one timer particle left the House visibly
+        //     CHILDLESS across two awaits, every 3.6s — ~17 times a minute, forever, on every
+        //      live tab.  Everything that reads an H child re-ran on the bump and saw nothing:
+        //       Vytui's `{#each vyto_worlds() as w (w)}` got an empty list and destroyed its
+        //        entire subtree (`◈ Vyto WORLDS 1 → 0 | A:Vyto rows= 0`), then rebuilt it 6-35ms
+        //         later with the SAME w object (`same=1`) — the exact signature the 2026-08-04
+        //          WORLDS PROBE was added to catch.  It is also the `empty()` note next door
+        //           ("it also breaks Otro or so, only H:Mundo appears") and Story's standing
+        //            "what's vanishing ave/Styles? when ~open_at it vanishes momentarily".
+        //
+        // WHY NO BOOK EVER SAW IT.  A Story Run sets `c.no_interval` (Story.svelte ~1447) so it
+        //  never arms this timer at all, and Housing gates on that (`!this.c.no_interval`).  The
+        //   fault is LIVE-APP-ONLY and needs a tab left running for seconds — precisely the class
+        //    `Download_stall_handover.md` warns the suite structurally cannot reach.
+        //
+        // THE GUARD MOVED.  The old "if we are still the current callback" test compared particle
+        //  IDENTITY, and only worked because replace() minted a fresh row each tick.  With one
+        //   stable row that test can never fail, so a superseded timer would fire main() anyway.
+        //    The guard is now the timer handle itself, held in `.c` — a handle is a runtime ref,
+        //     and keeping it out of `.sc` also stops a fresh id churning the snap each tick.
+        const cur      = this.o({ mo: 'main', interval: 1 })[0]
+        const interval = cur?.sc.interval || 3.6
+        clearTimeout(this.c.main_timer)
+        const id = setTimeout(() => {
+            if (this.c.main_timer !== id) return   // superseded by a later reset_interval
             if (this.stopped) return
             if (this.S && !this.S.started) return
             this.main()
         }, 1000 * interval)
-
-        await this.replace({ mo: 'main', interval: 1 }, async () => {
-            n = this.i({ mo: 'main', interval, id })
-        })
+        this.c.main_timer = id
+        this.oai({ mo: 'main', interval: 1 }, { interval })
     },
 
     async w_forgets_problems(w: TheC) {

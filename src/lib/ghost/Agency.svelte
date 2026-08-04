@@ -435,24 +435,29 @@
     async reset_interval() {
         // the universal %interval persists through time, may be adjusted
         // our current %mo,interval row, a singleton
-        let n
-        let int = this.o({mo:'main',interval:1})[0]
-        let interval = int?.sc.interval || 3.6
-        let id; id = setTimeout(() => {
-            // if we are still the current callback
-            if (n != this.o({mo:'main',interval:1})[0]) return
+        //
+        // Modus's copy of Hovercraft's reset_interval — keep the two in step.  The long WHY
+        //  lives on the Hovercraft one; the short version: replace() is a whole-container
+        //   transaction that empty()s this House and only restores its children after two
+        //    awaits, so swapping this single timer row left the House CHILDLESS every 3.6s and
+        //     tore down every view keyed off an H child.  oai merges the row in place instead,
+        //      and the "am I still current" guard moves from particle identity (which only
+        //       worked because replace() minted a fresh row) to the timer handle in `.c`.
+        const cur      = this.o({mo:'main',interval:1})[0]
+        const interval = cur?.sc.interval || 3.6
+        clearTimeout(this.c.main_timer)
+        const id = setTimeout(() => {
+            if (this.c.main_timer !== id) return   // superseded by a later reset_interval
             // if the UI:Modus still exists
             if (this.stopped) return
             // thing above can stop
             if (this.S && !this.S.started) return
 
             this.main()
-            
-        },1000*interval)
 
-        await this.replace({mo:'main',interval:1}, async () => {
-            n = this.i({mo:'main',interval,id})
-        })
+        },1000*interval)
+        this.c.main_timer = id
+        this.oai({mo:'main',interval:1}, {interval})
     },
 
     async self_timekeeping(C:TheC) {
