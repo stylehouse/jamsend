@@ -35,7 +35,30 @@ export const ANSWER_CALLS_TICK_MS = 50
 export const AMBIENT_MAIN_TICK_MS = 200
 // see also reset_interval() 3600ms
 
-V.gallop = 0     // Technique A master switch — flip to 0 (+ HMR) to disarm for an A/B arm
+// ── Technique A — the gallop: ONE axis, default ON ───────────────────────────────────────────
+//  WHICH Houses gallop is the only real question, and it is answered by ONE presence-keyed opt-OUT
+//   mark, c.no_gallop — Story sets it on a Run whose Book carries The/Opt/{no_gallop:1} (the
+//    cadence-sensitive warming-observers, LakeTiles + LakeWaftMap).  Everything else gallops.
+//     That is the end-state Perf_todo names: "under the intended universal-on end-state, no_gallop
+//      is the permanent opt-out for warming-observer Books."
+//  GALLOP_DISARM below is an ESCAPE HATCH, not a second axis: it kills the technique dead for a
+//   perf A/B arm (scripts/perf_ab.mjs — edit + HMR between arms) or to bisect a regression.  It is
+//    never how you configure which Houses gallop.
+//
+//  WHY THIS IS SPELT OUT.  Until 2026-08-04 the gate was `V.gallop && this.c.gallop` — TWO
+//   enable-gates ANDed, of two entirely different kinds: a per-House opt-in (real policy) and an
+//    experiment switch that lived in `V`, the debug-VERBOSITY namespace where every member is
+//     0-means-quiet by convention (V.organise, V.beliefs, V.req_legs).  A behaviour feature parked
+//      in the debug drawer inherited the drawer's default.  So Technique A shipped to main on
+//       2026-07-08 — measured -13/-14%, fleet-verified 46/65 green armed, its two caused-reds
+//        resolved via The/Opt, declared "pull-ready" — and was INERT for a month, because
+//         `V.gallop = 0` is indistinguishable from the resting state of a debug log level.
+//   Two lessons, both cheap: an enable-gate that defaults OFF makes "shipped" and "doing nothing"
+//    look identical, so a kill switch defaults ARMED and says so; and a feature flag never lives in
+//     a namespace whose convention is that everything in it is off.
+//   The tell we HAD and didn't read: a standing todo of 8-11 on the editor — above GALLOP_DEPTH,
+//    i.e. past the engage-NOW fast path — with the gallop trace never once firing.
+export const GALLOP_DISARM = false
 
 // Technique A — gallop-tighten (Story_future_directions.md §3; Perf_todo.md re-rank #A).
 //  When H.todo is OCCUPIED at gate after gate the machine is visibly mid-settle, and the
@@ -45,8 +68,8 @@ V.gallop = 0     // Technique A master switch — flip to 0 (+ HMR) to disarm fo
 //      a standing-depth trigger never fires; the §3 "20-40 deep" sketch is the occupancy
 //       integrated over time, not a standing pile.  So the trigger is sustained OCCUPANCY
 //        (an item waiting at GALLOP_SUSTAIN consecutive drain gates), with standing depth
-//         ≥ GALLOP_DEPTH as an engage-now fast path.  A c.gallop-marked House (opt-in,
-//          designated-system: Story marks each Run unless the Book carries
+//         ≥ GALLOP_DEPTH as an engage-now fast path.  Any House not marked c.no_gallop
+//          (universal-on; Story marks a Run only when its Book carries
 //           The/Opt/{no_gallop:1}) drains such a settle at GALLOP_TICK_MS instead,
 //            relaxing back the moment the todo runs dry.  Each item still runs in its own
 //             macrotask under the beliefs mutex, so i_elvisto's UItime targeting lands
@@ -177,25 +200,43 @@ abstract class Housing extends TheC {
         return checks.length > 0 && checks.every(Boolean)
     }
 
-    async mutex(label: string, fn: () => Promise<void>) {
+    // `who` names the holder for the wedge readout — free-form, e.g. "H:Editron think Lies/Lies".
+    //  EVERY House drains under the TOP House's single beliefs mutex, and all_clear() awaits it, so
+    //   one `fn` that never settles freezes the whole machine: no House drains, no UItime lands, and
+    //    the tab still looks alive because the socket stamps ride off-think (Lies_deliver_soon).  That
+    //     state used to be entirely UNOBSERVABLE — no holder, no age, no alarm, and `trace('wait')`
+    //      only records when trace_log happens to be enabled.  So stamp WHO and SINCE WHEN, always.
+    //  Pure `.c` (never encoded, never snapped) and two assignments per lock — safe on this hot path.
+    async mutex(label: string, fn: () => Promise<void>, who = '') {
         const key = `_mutex_${label}`
         if (this.c[key]) {
             this.trace('wait', label)
             await this.c[key]
-            return this.mutex(label, fn)
+            return this.mutex(label, fn, who)
         }
         let release: () => void
         this.c[key] = new Promise(r => release = r)
+        this.c[`${key}_at`]  = Date.now()
+        this.c[`${key}_who`] = who
         if (label === 'beliefs') this.believing = true
-        this.trace('lock', label) 
+        this.trace('lock', label)
         try {
             await fn()
         } finally {
             delete this.c[key]
+            delete this.c[`${key}_at`]
+            delete this.c[`${key}_who`]
             release!()
             if (label === 'beliefs') this.believing = false
             this.trace('unlock', label)
         }
+    }
+    // mutex_held — {who, ms} while the named mutex is held, else null.  The readout behind the todo
+    //  popover's wedge line; ask the TOP House, that's where the beliefs mutex lives.
+    mutex_held(label = 'beliefs'): { who: string, ms: number } | null {
+        const at = this.c[`_mutex_${label}_at`] as number | undefined
+        if (!this.c[`_mutex_${label}`] || !at) return null
+        return { who: (this.c[`_mutex_${label}_who`] as string) || '?', ms: Date.now() - at }
     }
 
     // -------------------------------------------------------------------------
@@ -924,7 +965,10 @@ export class House extends StorableHousing {
     //    between hop N finishing and hop N+1's UItime targeting, or a serial chain would
     //     flap the gallop off every item.
     _gallop_sample(depth: number) {
-        if (!V.gallop || !this.c.gallop) {
+        // ONE opt-OUT mark + the escape hatch.  Presence-keyed (`c.no_gallop` set or absent), never
+        //  a 0/1 value — a snapped `gallop:0` reads back as the truthy string "0", the footgun the
+        //   Book-facing The/Opt vocabulary already avoids.
+        if (GALLOP_DISARM || this.c.no_gallop) {
             this._gallop_streak = 0
             this._gallop_on = false
             return
@@ -941,7 +985,7 @@ export class House extends StorableHousing {
     }
 
     // _gallop_gate_ms: choose a drain-gate's length off the current gallop state.
-    //  Unmarked House (no c.gallop) = the stock 50 ms gate, byte-identical behaviour.
+    //  A House that opted out (c.no_gallop) or a disarmed build = the stock 50 ms gate.
     _gallop_gate_ms(): number {
         if (!this._gallop_on) return ANSWER_CALLS_TICK_MS
         // budget: a burst never monopolises the thread past GALLOP_BUDGET_MS — one
@@ -956,10 +1000,16 @@ export class House extends StorableHousing {
 
 
     async _really_answer_calls() {
-        if (!this.started) return
+        // WHY each bail stamps a reason: a standing todo that never shifts is the machine's worst
+        //  failure mode (the whole tab processes nothing while looking alive), and every exit below
+        //   used to be silent.  `.c` only — the popover reads it, nothing snaps it.
+        this.c.drain_tried_at = Date.now()
+        if (!this.started) { this.c.drain_why = 'House not started'; return }
         let H = this.top_House()
         if (H.c._mutex_beliefs) {
             V.organise && console.log(`answer_calls: H:${this.name} beliefs mutex locked (by H:${H.name}), yielding`)
+            const held = H.mutex_held('beliefs')
+            this.c.drain_why = held ? `beliefs mutex held ${Math.round(held.ms / 1000)}s by ${held.who}` : 'beliefs mutex held'
             // mid-gallop an item's work outlasts the 4 ms gate, so this retry is the
             //  common re-drive — retry tight or the gallop pays 50 ms per item anyway
             setTimeout(() => this.answer_calls(), this._gallop_on ? GALLOP_TICK_MS : ANSWER_CALLS_TICK_MS)
@@ -967,7 +1017,11 @@ export class House extends StorableHousing {
         }
         this._gallop_sample(this.todo.length)   // pre-shift occupancy, mutex known free
         let e = this.todo.shift()
-        if (!e) return
+        if (!e) { delete this.c.drain_why; return }
+        // an item actually moved — the ONE fact that says this House is alive.  A standing queue
+        //  with a stale drain_at is the wedge; a standing queue with a fresh one is just a backlog.
+        this.c.drain_at = Date.now()
+        delete this.c.drain_why
         // we should come back to the rest of them
         this.todo_version++
         if (e.sc.elvis == 'think') {
@@ -1005,7 +1059,7 @@ export class House extends StorableHousing {
                     // plain elvis — beliefs() acquires mutex; $effect handles remaining todo
                     await this.beliefs(e)
                 }
-            })
+            }, `H:${this.name} ${e.sc.elvis ?? (e.sc.fn ? `fn:${e.sc.see ?? '?'}` : '—')}${e.sc.Aw ? ' ' + e.sc.Aw : ''}`)
         } catch (err) {
             beliefs_threw = true
             console.error(`_really_answer_calls: uncaught error in beliefs:`, err)
@@ -1960,13 +2014,26 @@ export class House extends StorableHousing {
     // op: 'write_snap' → writes wh_data to NNN.snap
     //                    reply: { ok: true }
     
-    // Wormhole_park — run one queue op OFF Atime, for an Atime-async backend (nav.atime_async:
-    //  method:remoteWormhole, whose promises settle off an INBOUND frame that itself needs Atime
-    //   to deliver — so an inline await under the beliefs mutex starves its own reply, and every
-    //    op sits its full timeout with the machine seized).  Launch once — one op in flight per
-    //     queue, preserving do()'s serial order — stash the settled reply on the wrapper's .c
-    //      (off-snap; mutating .c from a promise outside the mutex is the A.c.cloud_* pattern),
-    //       wake a pass, and hand the reply to done() on that later pass, back inside Atime.
+    // Wormhole_park — run one queue op OFF Atime.  Launch once — one op in flight per queue,
+    //  preserving do()'s serial order — stash the settled reply on the wrapper's .c (off-snap;
+    //   mutating .c from a promise outside the mutex is the A.c.cloud_* pattern), wake a pass, and
+    //    hand the reply to done() on that later pass, back inside Atime.
+    //
+    //  WHICH BACKENDS NEED THIS: **all of them**.  This header used to say "for an Atime-async
+    //   backend (nav.atime_async: method:remoteWormhole)", which reads as though the remote proxy is
+    //    the hazard and a local nav is safe.  It is not, and the usual nav here is the LOCAL FSA one.
+    //     The two failure modes differ only in how they look:
+    //      • remote (atime_async) — a GUARANTEED SELF-DEADLOCK.  Its promise settles off an inbound
+    //         frame that itself needs Atime to deliver, so an inline await starves its own reply and
+    //          every op sits its full timeout.  Deterministic, so it got noticed and got this fix.
+    //      • LOCAL FSA — an UNBOUNDED STALL.  read_file/getFile/createWritable are permission-gated
+    //         user-space browser calls with no timeout; they are not memory.  Usually microseconds,
+    //          which is exactly why inline looked safe — and then one hung handle holds the global
+    //           beliefs mutex forever, no House drains, all_clear() never returns, and the tab keeps
+    //            LOOKING alive because socket_heard is stamped off-think (2026-08-04: a wedge held by
+    //             `H:Mundo rw_op` beside a "read STUCK 278s — no reply landed at all"; same event).
+    //  So do not read the atime_async branch below as "remote is the dangerous one".  Read it as:
+    //   remote CANNOT work inline, local MERELY USUALLY DOES.  Rare-but-fatal is still fatal.
     Wormhole_park(queue: TheC, wrap: TheC, run_op: () => Promise<any>, done: (reply: any) => void) {
         if (wrap.c.reply) { done(wrap.c.reply); return }
         if (wrap.c.inflight || queue.c.inflight) return   // ours still settling, or another op holds the slot
@@ -2051,6 +2118,9 @@ export class House extends StorableHousing {
                 }
             }
 
+            // ⚠ same wedge as the rw_op actor below — the inline branch awaits under the global
+            //  beliefs mutex, and the usual nav here is LOCAL FSA, not the remote proxy.  Wormhole_park's
+            //   header has the two failure modes.
             if ((nav as any).atime_async) this.Wormhole_park(fs, fs_req, run_op, done)
             else done(await run_op())
         })
@@ -2142,9 +2212,12 @@ export class House extends StorableHousing {
                 }
             }
 
-            // An Atime-async backend must never be awaited here — this whole actor runs under the
-            //  beliefs mutex, and its replies arrive as inbound frames that need that mutex to
-            //   deliver (Wormhole_park's header tells the full story).  Disk navs stay inline.
+            // ⚠ THE INLINE BRANCH BELOW IS THE KNOWN WEDGE (2026-08-04) — see Wormhole_park's header.
+            //  This whole actor runs under the global beliefs mutex.  atime_async (remote) MUST park or
+            //   it deadlocks on its own reply; the LOCAL FSA nav — which is what this usually is —
+            //    merely usually returns fast, and when it doesn't it holds the mutex unbounded and the
+            //     whole machine stops.  "Disk navs stay inline" (what this comment used to say) is a bet
+            //      on a permission-gated browser API never hanging.  It hangs.
             if ((nav as any).atime_async) this.Wormhole_park(rw, rw_req, run_op, done)
             else done(await run_op())
         })

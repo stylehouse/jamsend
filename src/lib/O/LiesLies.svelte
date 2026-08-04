@@ -263,6 +263,13 @@
             const H = this as House
             const role = H.Lies_role(w)
             if (role !== 'editor' && role !== 'runner') return        // bare: no channel
+            // ARREST (Auto.svelte, 2026-08-04): a named ?I=<tag> this browser can't resume leaves the
+            //  top House flagged identity_pending until a human resolves it via the IdHatch the miss
+            //   popped. Stay dark here too — Lies_cluster_idento would otherwise sign the hello with
+            //    whatever legacy/default key happens to be lying around (or none), opening the channel
+            //     under an identity that isn't the one the tab claims to be, which is exactly the
+            //      "wrong Pier, gen_write REJECTED" cascade the arrest exists to prevent.
+            if (((H as any).top_House?.() ?? H).c.identity_pending) return
 
             // Reconcile the latch against the live transport ghost — don't just trust it.  channel_up
             //  is stamped once at standup; if a later HMR remix (or a torn-down sub-House) strips
@@ -1316,10 +1323,23 @@
             //      prepub; editor-side, promote its Pier and answer IT.  Role broadcast stays for the
             //       runner→editor direction (one editor per relay) and an identity-less pinger.
             const pinger = String(fr?.from ?? '').trim()
+            // SIGN the echo with our own prepub, exactly as the ping is signed.  A pong used to carry only
+            //  `t`, so a role-broadcast ping (`to:"runner"`, correct — the editor wants ANY of that kind)
+            //   came home as N indistinguishable pongs and Lies_pong_recv had no way to say WHICH runner
+            //    answered: one editor ping → two runners → two pongs, both filed in the single aggregate
+            //     slot, last writer wins (the 2026-08-04 socklog).  This is the mirror of the fix above —
+            //      that one gave the addressed direction its `to`, this gives the broadcast direction its
+            //       `from`, so a fan-out answer is still individually attributable.
+            //  Same HUMDINGER guard as Lies_ping: an end-user music page must never announce WHO on the
+            //   heartbeat (that leak once enrolled a /BigSoundland into the editor's dispatch pool).  It
+            //    costs nothing here — attribution only ever REFINES an existing roster row, it can't mint
+            //     one; advertise remains the sole enrollment authority.
+            const me = (H.Lies_humdinger(w) ? undefined : H.Lies_self(w)?.prepub)
+            const echo = { t: fr?.t, ...(me ? { from: me } : {}) }
             if (H.Lies_role(w) === 'editor' && /^[0-9a-f]{16}$/.test(pinger) && (H as any).Lies_runner_pier(w, pinger))
-                (H as any).Peeroleum_send_to(w, pinger, 'pong', { t: fr?.t })   // echo first — keep the peer's RTT honest
+                (H as any).Peeroleum_send_to(w, pinger, 'pong', echo)   // echo first — keep the peer's RTT honest
             else
-                (H as any).Peeroleum_send_consumer(w, 'pong', { t: fr?.t })
+                (H as any).Peeroleum_send_consumer(w, 'pong', echo)
             const peer = H.Lies_role(w) === 'editor' ? 'runner' : 'editor'
             // ── boot-epoch (the reconnect-seq-collision cure, Lies-channel half): the ping carries
             //  the pinger's page-life id.  A CHANGED boot on a Pier we hold stream state for = the
@@ -1371,7 +1391,23 @@
             //  own version — which Liesui's badge $effect doesn't track (it keys off w:Lies via
             //   examining/watch_c).  roai drops+recreates the child, bumping w:Lies, so the $effect
             //    re-runs and the badge's "● runner 414ms" actually ticks instead of freezing.
+            //  %channel_peer stays deliberately AGGREGATE and role-keyed: "a pong came home from
+            //   somebody of that kind" is a CARRIER fact (our send leg works), and the keepalive
+            //    watchdog is right to read it that way — one live runner is enough to prove the socket.
+            //     Attribution is a different question, answered below.
             await w.roai({ channel_peer: peer }, { rtt, last: Date.now() })
+            // PER-RUNNER attribution: file this round-trip on the %Runner roster row of whoever actually
+            //  answered.  The roster is already 1:1 with the runners (Lies_runner_roster) and is where the
+            //   rack reads — so a fleet's RTTs land in the one place that has room for N of them, instead
+            //    of N runners overwriting one aggregate slot.  Volatile timing rides `.c` off-snap, the
+            //     rule the roster sets for last_heard/sent, so the ~5s heartbeat never churns the snap.
+            //  NEVER mints: `o`, not `oai`.  An unknown prepub is simply not attributed — advertise is the
+            //   sole enrollment authority (the HUMDINGER leak), and a pong must not be a back door to it.
+            const who = String(fr?.from ?? '').trim()
+            if (H.Lies_role(w) === 'editor' && /^[0-9a-f]{16}$/.test(who)) {
+                const rn = w.o({ Runner: who })[0] as TheC | undefined
+                if (rn) { rn.c.rtt = rtt; rn.c.last = Date.now(); w.bump_version() }
+            }
         },
 
         // ── advertise — a runner-on-the-grid announces itself to the editor (the bootstrap

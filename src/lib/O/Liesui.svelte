@@ -30,12 +30,21 @@
 
     let { H }: { H: House } = $props()
 
-    // Warn when this editor tab can't sign: the cluster is enforced (trusted pubs baked in) but no
-    //  cluster signing key is on the top House's .stashed, so every gen_write is rejected. Reactive to
-    //   .stashed, so the warning clears the moment a key is set.
+    // Warn when this editor tab can't sign: the cluster is enforced (trusted pubs baked in) but this
+    //  tab resolves NO cluster signing key, so every gen_write is rejected.
+    //  Ask the ONE resolver everything else asks — Lies_self (= Lies_cluster_idento: Clustation-active
+    //   ?? legacy .stashed ?? node env).  It used to read `.stashed.cluster_idento` DIRECTLY, which the
+    //    Clustation path has not written since identity became a first-class %Identity — so this badge
+    //     screamed "no cluster identity" at exactly the editors that HAD one, while the 🪪 hatch beside
+    //      it read "active · ✅ trusted" off the real resolver (2026-08-04).  A readout must never keep
+    //       its own private notion of who we are; that is the same species of bug as the Relay Brink's
+    //        stale lens.c.w, and as the silent-mint the arrest exists to stop.
+    //  Polled on the shared `now` tick: the active %Identity lands as a C-tree/.c mutation, which a
+    //   $derived off H.version would not catch (same reason IdHatch polls).
     const no_cluster_key = $derived.by(() => {
+        void now
         if (role !== 'editor' || !browserTrustedPubs().length) return false
-        return !((H.top_House?.() as any)?.stashed?.cluster_idento)   // top House's stashed (the 🪪 Id hatch sets it)
+        return !(H as any).Lies_self?.(Lies)?.prepub
     })
     // The 🪪 Id action — the SAME off-snap recipe Auto registered on the top House (its fn opens the
     //  IdHatch). Fed to <Actions> so the popup carries the button itself, not just a "click Id" hint.

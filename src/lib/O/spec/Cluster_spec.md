@@ -327,6 +327,48 @@ This is deliberately coarse, and right for now: the flock is a handful of keys t
     models trust the garden way (`%trust,grants` + maz-ordered `%req:policy` leaves), crypto deferred —
      **not** a new privileged frame and **not** certs. Until then: trusted = trusted.
 
+### 2.8a The trust boundary is the FSA grant — the flock is self-certifying inside it
+*(indexed as awkwardness §9.1)*
+*(noted 2026-08-04, the human: "it's weird how they can write their own .env on security, it's all one
+ security bubble where the FSA can reach, for now")*
+
+Read §2.8 and it sounds like `CLUSTER_TRUSTED_PUBS` is the security perimeter. **It is not.** The real
+ perimeter is one layer lower and worth stating plainly, because the signing layer above it is otherwise
+  easy to over-read:
+
+- `Lies_cluster_setup` (the IdHatch "Set up cluster trust" button) writes `.env.cluster-pubs` — the
+   allowlist itself — through **the editor tab's own Wormhole/FSA handle**, deliberately *not* through
+    the relay's `gen_write` gate. It has to: an untrusted editor must be able to bootstrap itself, and
+     that is the documented cold-start (§2.2a).
+- So **any tab holding the FSA grant can enrol itself.** It mints a keypair (`Clustation_mint`), writes
+   its own pub into the allowlist, and after a dev-server restart it is trusted. There is no step in that
+    chain that a second party checks. The signature layer proves *which key* sent a frame; it never
+     proves that key was supposed to be in the flock.
+- Therefore: **the trust flock is not an authorization boundary, it is a routing/identification
+   convenience inside a boundary already drawn by the OS file-picker.** The human granting a directory
+    handle to a tab IS the security decision. Everything downstream is bookkeeping among parties who all
+     already have write access to the repo.
+
+**Why that is acceptable for now.** The FSA grant is a deliberate, per-origin, human gesture over a
+ checkout on the developer's own machine; a hostile party inside it can already rewrite the source, so
+  gating the allowlist against them buys nothing. The flock earns its keep by preventing *accidents* and
+   *crossed wires* (a stale runner pushing a bad `gen_write`, a foreign tab compiling into your tree),
+    not attacks.
+
+**What would have to change to make it a real boundary** — none of it built, listed so the shape is on
+ record: the allowlist would need a writer that is *not* the FSA (a server-side endpoint, or a file the
+  dev server owns and the browser cannot reach); enrolment would need a second-party confirmation rather
+   than a self-write; and `.env.cluster-*` secrets would need to stop being readable by anything holding
+    the same handle. Until then, treat "trusted" as meaning **"inside the FSA bubble"** and nothing more.
+
+**Consequence for the identity UI** (2026-08-04): IdHatch's paste-a-`.env.cluster-<role>` import was
+ REMOVED. Hand-carrying a secret through a textarea implied a trust ceremony that does not exist — a tab
+  that can paste a key can equally just write the allowlist — while adding a second way to acquire an
+   identity nobody deliberately chose. Minting in the hatch is now the one way in. The known cost: **no
+    cross-browser/cross-machine identity transfer, and the only exit from an identity arrest (§3.2a) is
+     minting a new one.** `Clustation_adopt` survives as a verb (Auto's legacy `.stashed` migration still
+      calls it), so re-surfacing an import is a UI job — but it wants a real design, not the old textarea.
+
 ---
 
 ## 3. The runner flock — Ids, addressing, the restart service
@@ -409,6 +451,28 @@ The relay binds each verified Idento pub → its socket on the signed hello, and
        — and since `prepubOf(prepub) === prepub`, one expression addresses both new full-pub grants and old
         prefix grants. Fully **feature-detected + back-compatible**: an old beacon (no `pub`) → the editor
          grants the prepub as before; the runner's for-check accepts either via `prepubOf(atom.for)`.
+
+**A named `?I=<tag>` this browser can't resume ARRESTS the boot — it never substitutes** (2026-08-04, the
+ reload-identity incident; `Clustation_ensure_identity`, Auto.svelte). A prepub is a PUBLIC address, so the
+  private half can never be reconstructed from it — yet the resume path used to call `Clustation_mint(tag)`
+   on a Dexie miss, and `Clustation_mint` **takes no argument**, so the tag was silently swallowed: it minted
+    an UNRELATED keypair and filed it under the tag you asked for. Two failures came out of that, both silent:
+- a stale/foreign `?I=` link quietly became a *different live identity*, with the address bar still showing
+   the old one (the `'new'` branch `replaceState`s the URL to the real prepub; the resume branch never did);
+- worse, the **mismatched row persists**, and `Clustation_concrete(A, tag, stored)` files `%Identity:<tag>`
+   while taking the address from `stored.prepub` — so the tab lays `%Peering,name:<other prepub>` and
+    hello-binds under it. The relay then holds a live socket under a name nobody is addressing: every
+     `--runner=<tag>` call times out with `no reply` (NOT `undeliverable` — the socket is real), and the far
+      side logs `no Pier for pong … to:<other prepub> — DROPPED`. Note this defeats the §3.2a invariant above
+       from *outside* it: advertised ≡ hello-bound still holds — both are the wrong address, consistently.
+
+Now both cases (no row, **and** a row whose stored `prepub` ≠ its tag) stamp `identity_pending` on the top
+ House and stop. Three gates read it: `Auto` returns before the Creduler/Story/Library regions, so nothing
+  boots; `Lies_channel_up` returns before the socket, so the tab never signs a hello with a wrong or absent
+   key; IdHatch pops with the reason and the two explicit exits — paste-import is gone (§2.8a), so the exit is
+    **Generate a new identity**, which mints under its OWN prepub and `replaceState`s `?I=` to match. Flags
+     clear on resolution and are re-checked each tick, so boot resumes with no reload. The law: **a prepub can
+      be DISCOVERED from a mint, never CHOSEN** — anything that appears to choose one is minting a stranger.
 
 **Roles divide, addresses deliver — the mature address+role model.** A **role** (editor|runner) is a
  *kind*: it gates behavior, filters candidates, decides WHO should act. An **address** (the prepub) is an
@@ -979,3 +1043,55 @@ What's still **MISSING**: the CLIENT half of `to:<pub>` (a peer emitting the sig
 - **Wormhole-grant = a fourth lease hat or its own frame?** (3.5/3.8): is `%Grant,scope:Wormhole` the
    same relay-arbitrated `%Claim`/lease as affinity/mutex/restart, or an app-level grant the two peers
     agree over the spine (the "no new privileged frames" stance)? Leaning app-level, Brink-surfaced.
+
+---
+
+## 9. Known awkwardnesses — mechanisms that WORK but read wrong
+
+Collected here so they can be refactored away as a set rather than rediscovered one incident at a time
+ (the human, 2026-08-04: *"hopefully we can refactor them all away later"*). Each is live, load-bearing
+  code — this is not a bug list. What they share is a shape: **a thing named as a boundary that is not
+   one, or a token whose empty case is indistinguishable from its absent case.**
+
+### 9.1 The trust flock is not the trust boundary — the FSA grant is
+Full treatment in **§2.8a**. In one line: `Lies_cluster_setup` writes `CLUSTER_TRUSTED_PUBS` through the
+ editor tab's *own* FSA, so any tab holding the directory handle can enrol itself; the allowlist is
+  bookkeeping inside a perimeter the OS file-picker already drew. Reads like authorization, is not.
+
+### 9.2 The empty GhostLedger is indistinguishable from a missing one (the `L0` brick)
+*(found 2026-08-04 while trying to run any Book at all; fixed in `Lies_ledger_secure`, LiesFunk.svelte)*
+
+`ghost_ledger_of(entries)` mints the version token `L<count>-<hash>`. For an editor that has compiled
+ **nothing** this session, `entries` is legitimately `[]` — both `Lies_ledger_pins` and
+  `credufunk_ledger` say so explicitly (*"an unedited editor pins nothing → nothing to gate"*, *"a fresh
+   editor with no edits pins nothing → every Book fires"*). But `ghost_ledger_of([])` still returns a
+    perfectly real-looking head: **`L0-811c9dc51ff5aa1e`** — the FNV-1a seed unmixed, i.e. the canonical
+     hash-of-nothing. `credufunk_ledger` then journals a `%Ledger` version for it carrying **zero**
+      `%GhostInclude` children, and broadcasts that as the export head.
+
+On the runner, `Lies_ledger_secure` resolved that head, took `pins = []`, and hit its own fatal:
+
+```
+if (ledger_dige && !pins?.length) → Ghost_version_ledger_missing
+if (!ledger_dige || !pins?.length) return true   // ← "nothing pinned → nothing to gate"
+```
+
+Two adjacent lines reading the same condition to opposite conclusions, with the fatal winning. So **a
+ freshly-restarted editor bricked every Book on every runner** — `✗ become_book <Book> —
+  Ghost_version_ledger_missing: L0-811c9dc51`, the run never starting, `run:null` with an engagement
+   lease still held. The fatal's own comment says it is for *"a referenced version we cannot resolve AT
+    ALL"* — but `L0` resolves fine; it resolves to nothing, which is different.
+
+**The fix** is a `resolved` flag: fatal only when the head could not be matched to a version at all; a
+ head that *was* found but carries zero pins falls through to "nothing to gate". **The awkwardness that
+  remains:** `L0-…` is still a truthy, plausible-looking token for "no ledger", so any *other* reader
+   that gates on `if (ledger_dige)` inherits the same trap. The real refactor is to make the empty
+    ledger's identity falsy (or absent) rather than a hash of the empty string.
+
+### 9.3 A `--watch` run polls to its full budget when the run never starts
+Same incident, second-order. When `become_book` fails before opening a run-record, `state` answers
+ `{run: null, outcome: null}` forever while the engagement lease stays held — so `runner_ask … --watch`
+  cannot tell "not started yet" from "failed to start" and spins `state` every ~700ms for the whole
+   `RUNNER_WATCH_MS`, flooding the runner console with `📥 runner_ask state → ok` and burying the one
+    line that mattered (the `✗ become_book` tlog). It also reports `run settled` on exit, which reads as
+     success. A failed become_book should surface as a terminal phase the watcher can stop on.

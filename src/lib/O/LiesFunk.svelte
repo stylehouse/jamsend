@@ -877,12 +877,20 @@ await M.eatfunc({
         if (role === 'runner' && H.top_House().c.remote_wormhole) void H.Lies_remote_wormhole_reconcile(w)
 
         // Relay — a single face, both roles (the relay carrier's own health).
+        //  RE-STAMP lens.c.w EVERY tick, outside the mint guard (as the Rundar rack below already does).
+        //   The lens lives on the TOP House's %Lenses bag; `w` is w:Lies, a different tree — so a w that
+        //    is re-decoded or re-minted (an HMR remix, a torn-down sub-House) leaves the surviving lens
+        //     pointing at a DEAD w, and `.c` is never encoded so a decoded bag has no `.c.w` at all.
+        //      Relay.svelte then reads channel_up/active_transport off nothing and paints "⚠ relay down"
+        //       forever while the socket pumps happily — the 2026-08-04 false badge.  A once-at-mint
+        //        backlink is a latch, and every latch in this file has needed the same reconcile
+        //         (Robustness_plan Organ 1: don't just trust the latch, re-derive it).
         if (on) {
-            if (!bag.oa({ Lens: 'Brink', of_Funkcion: 'Relay' })) {
-                const funk = cluster?.o({ Funkcion: 'Relay' })[0] as TheC | undefined
-                const lens = H.Lies_lens_suggest('Brink', 'Relay', { altitude: 25 }, funk) as TheC
-                lens.c.w = w
-            }
+            const funk = cluster?.o({ Funkcion: 'Relay' })[0] as TheC | undefined
+            const lens = (bag.o({ Lens: 'Brink', of_Funkcion: 'Relay' })[0] as TheC | undefined)
+                ?? (H.Lies_lens_suggest('Brink', 'Relay', { altitude: 25 }, funk) as TheC)
+            lens.c.w = w
+            if (funk && !lens.c.funk) lens.c.funk = funk
         } else H.Lies_lens_dismiss('Brink', 'Relay')
 
         // Sound — the "tap for sound" audio-gate beg, on BOTH roles' Brinks: an AudioContext grant is
@@ -1967,17 +1975,32 @@ await M.eatfunc({
             // resolve the pins to gate on: INLINE (an editor become_book) → else the pushed replica HEAD, so a
             //  runner_ask run (which carries none of its own) still self-checks its live ghosts against the
             //   editor's head over the cheap CLI — the whole no-VNC point.
+            // `resolved` = we FOUND the referenced version in the replica (even if it legitimately carries
+            //  zero pins).  It is the discriminator the fatal below needs: "resolved to nothing to gate" and
+            //   "could not resolve at all" both read as `!pins.length`, and conflating them bricked every run
+            //    (2026-08-04) — see the fatal's own note.
+            let resolved = false
             if (!pins?.length) {
                 const rep = (w.c as any).ledger_replica as { head?: string, versions?: any[] } | undefined
                 if (rep?.head) {
                     const hv = (rep.versions ?? []).find(v => v.dige === rep.head)
-                    if (hv) { pins = hv.pins as { name: string, dige: string }[]; ledger_dige = rep.head }
+                    if (hv) { pins = (hv.pins ?? []) as { name: string, dige: string }[]; ledger_dige = rep.head; resolved = true }
                 }
             }
-            H.diag(`Lies_ledger_secure book=${book} ledger_dige=${ledger_dige ?? 'none'} pins=${pins?.length ?? 0}`)
+            H.diag(`Lies_ledger_secure book=${book} ledger_dige=${ledger_dige ?? 'none'} pins=${pins?.length ?? 0} resolved=${resolved}`)
             // a referenced version we cannot resolve AT ALL (thin frame + no matching replica version) — the
             //  "super weird, shouldn't happen" case: fail LOUD with a distinct fatal, never a silent run.
-            if (ledger_dige && !pins?.length) {
+            //  MUST NOT fire on the EMPTY LEDGER (2026-08-04).  An editor that has compiled nothing this
+            //   session pins nothing by design (Lies_ledger_pins: "an unedited editor pins nothing → nothing
+            //    to gate"; credufunk_ledger: "a fresh editor with no edits pins nothing → every Book fires").
+            //     ghost_ledger_of([]) still mints a real head — `L0-811c9dc5…`, the FNV-1a seed unmixed, the
+            //      canonical hash-of-nothing — and credufunk_ledger journals a version for it with zero
+            //       GhostInclude children, then broadcasts it.  The runner resolved that head, took pins=[],
+            //        and fell straight into this fatal: so a freshly-restarted editor BRICKED every Book on
+            //         every runner with Ghost_version_ledger_missing, which is the precise opposite of the
+            //          intent one line below.  Gate on `!resolved` so only a genuinely unresolvable version
+            //           is fatal; an empty-but-found one falls through to "nothing to gate".
+            if (ledger_dige && !pins?.length && !resolved) {
                 H.Lies_runner_phase(w, 'ledger_missing', { book })
                 H.Lies_report_result(w, { book, ok: false, errors: [`Ghost_version_ledger_missing — ledger ${String(ledger_dige).slice(0, 12)} carries no pins and no matching replica version on this runner`] })
                 H.tlog(`✗ become_book ${book} — Ghost_version_ledger_missing: ${String(ledger_dige).slice(0, 12)}`)

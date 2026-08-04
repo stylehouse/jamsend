@@ -64,7 +64,7 @@
     //   and renders a single titled box — a row per known runner + the anon single-pair peer.  The
     //    single-pair {:else} mode below serves a runner's view of its editor (→EDITOR).
     let is_rack = $derived(!!lens?.sc?.rack)
-    let rack = $state<{ pub: string, heard: number, ready: boolean, book: string, engaged: string, sent: string, sent_at: number, begs: boolean, granted: boolean, ac: boolean, role: string }[]>([])
+    let rack = $state<{ pub: string, heard: number, rtt: number, ready: boolean, book: string, engaged: string, sent: string, sent_at: number, begs: boolean, granted: boolean, ac: boolean, role: string }[]>([])
     // the live w:Lies (for the rack's grant control) + this runner's remote-Wormhole acquire state.
     let w_lies = $state<TheC | undefined>(undefined)
     let wormhole_state = $state('')
@@ -97,7 +97,14 @@
             //   doesn't churn on the ~15s beacon.  Read both halves here.
             if (rack_mode) rack = (w.o({ Runner: 1 }) as TheC[]).map(rn => ({
                 pub:      (rn.sc.Runner as string) ?? '',
-                heard:    Number(rn.c?.last_heard ?? 0),
+                // liveness folds the ADVERTISE beacon (last_heard, ~15s) with this runner's own
+                //  pong-come-home (.c.last, ~5s) — a runner answering the heartbeat is live even if a
+                //   beacon is late, which is exactly the "channel live · beacons stale" case below.
+                heard:    Math.max(Number(rn.c?.last_heard ?? 0), Number(rn.c?.last ?? 0)),
+                // per-runner round trip, attributed by the pong's `from` (Lies_pong_recv).  Before that
+                //  landed, N runners' pongs all overwrote the ONE aggregate %channel_peer slot and the
+                //   rack could show no RTT at all — the rack is where N of them finally have room.
+                rtt:      Number(rn.c?.rtt ?? 0),
                 ready:    !!rn.sc.ready,
                 book:     (rn.sc.book as string) ?? '',
                 engaged:  (rn.sc.engaged as string) ?? '',
@@ -249,6 +256,11 @@
                 {#if v.role}<span class="rp-kind" title="page-role — a {v.role} toplevel">{v.role}</span>{/if}
                 <span class="rp-role rp-pub" title={v.pub}>{v.pub || '?'}</span>
                 <span class="rp-txt">{lk.text}</span>
+                <!-- THIS runner's own round-trip (not the fleet aggregate) — only while it's actually
+                     live, so a dead row doesn't display a fossil RTT as if it were current. -->
+                {#if v.rtt && v.heard && now - v.heard < LIVE_MS}
+                    <span class="rp-rtt" title="this runner's own ping→pong round trip, attributed by the pong's `from`">{v.rtt}ms</span>
+                {/if}
                 <!-- remote-Wormhole grant control: a begging runner gets a grant button; a granted one a tick.
                      mint+sign a %Grant (Lies_grant_wormhole) keyed by this runner's prepub (v.pub). -->
                 {#if v.granted}
@@ -349,6 +361,7 @@
         padding: 0 4px; line-height: 14px; flex: none;
     }
     .rp-txt { font-variant-numeric: tabular-nums; }
+    .rp-rtt { font-family: monospace; font-size: 0.85em; opacity: 0.55; font-variant-numeric: tabular-nums; }
     .rp-live    .rp-dot { color: #6ad0a0; }
     .rp-sent    .rp-dot { color: #79b0d0; }   /* ☎ a dispatched job ringing — not yet acked */
     .rp-engaged .rp-dot { color: #7aa0d8; }   /* reserved (lease held), idle between runs */

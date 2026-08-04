@@ -32,17 +32,26 @@
     const _tick = setInterval(() => { now = Date.now() }, 1000)
     onDestroy(() => clearInterval(_tick))
 
-    let live = $state(false)
+    // Which w:Lies are we watching?  lens.c.w is the backlink Lies_aim re-stamps EVERY tick (it used to
+    //  be stamped once at mint, so a re-minted w left this face reading a dead tree and painting "relay
+    //   down" over a live socket).  `examining` is the standalone fallback.
     let wref = $state<TheC | undefined>(undefined)
     $effect(() => {
         const w = (lens?.c?.w ?? H.ave.ob({ examining: 1 })[0]?.c?.w) as TheC | undefined
         if (!w) return
-        wref = w
         w.ob()
-        H.clear(async () => {
-            const at = w.o({ active_transport: 1 })[0] as TheC | undefined
-            live = !!(w.c?.channel_up && at?.c?.connection)
-        })
+        wref = w
+    })
+    // Liveness is POLLED on the 1s tick, not computed in the $effect above.  `channel_up` is a pure `.c`
+    //  stamp with NO version bump (Lies_channel_up, end) — so an effect keyed on w.ob() may never re-run
+    //   after standup and the badge stays stuck at whatever it read first.  Same reason `log` polls: the
+    //    carrier's state lives off-snap by design, so the only honest way to read it is to look again.
+    let live = $derived.by(() => {
+        void now
+        const w = wref
+        if (!w) return false
+        const at = w.o({ active_transport: 1 })[0] as TheC | undefined
+        return !!(w.c?.channel_up && at?.c?.connection)
     })
 
     // the relay/carrier event stream — relay control:log lines + the carrier's SEND/RECV/dial events,

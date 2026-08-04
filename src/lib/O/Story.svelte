@@ -2170,12 +2170,15 @@
         //   Falls back to the default 1.5×TICK threshold when absent.
         const quiesce_snap_time = H.The_Opt_val(w, 'quiesce_snap_time') ?? (TICK_MS / 1000) * 1.5
 
-        // gallop-tighten opt-in (Technique A, Housing GALLOP_*): this Run's drain may go
-        //  near-greedy while its todo is deep+sustained.  Presence-keyed opt-OUT — a Book
-        //   asserting on mid-settle progress sets The/Opt/{no_gallop:1} to keep the loose
-        //    50 ms cadence (a snapped `gallop:0` would read back as truthy "0" — avoid).
-        if (H.The_Opt_val(w, 'no_gallop')) delete Run.c.gallop
-        else Run.c.gallop = 1
+        // gallop-tighten (Technique A, Housing GALLOP_*): this Run's drain goes near-greedy while
+        //  its todo is deep+sustained.  UNIVERSAL-ON now, so there is nothing to opt IN — the Book's
+        //   The/Opt/{no_gallop:1} simply carries straight through to the House mark of the same
+        //    name, and a Book asserting on mid-settle progress keeps the loose 50 ms cadence.
+        //  Presence-keyed both ends (set-or-delete, never 0/1): a snapped `gallop:0` would read back
+        //   as the truthy string "0".  Re-evaluated per Run, so re-running a Book after editing its
+        //    The/Opt honours the change without a reload.
+        if (H.The_Opt_val(w, 'no_gallop')) Run.c.no_gallop = 1
+        else delete Run.c.no_gallop
 
         const update_status = async (label: string, cls = 'default') => {
             const wa = () => H.o({ watched: 'actions' })[0]

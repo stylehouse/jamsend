@@ -105,6 +105,29 @@
 
         go_busily()
     })
+
+    // ── the todo popover — which House's drain queue is open (its c.ip), or null ─────────────
+    //  One at a time: these are diagnostic, they overlap the headers below them, and two open at
+    //   once is unreadable.  Keyed by c.ip rather than an index so it survives houses re-sorting.
+    let todo_open: string | null = $state(null)
+    // elvis_label — the headline for one queued item.  Two shapes ride H.todo (see _push_todo):
+    //  a PLAIN elvis (sc.elvis = the method name, sc.Aw = the A/w it targets) and a post_do BLOCK
+    //   (sc.fn = a closure, sc.see = its label).  A fn-carrying e never enters beliefs() at all —
+    //    it runs directly — so naming which kind it is matters when you're reading a stuck queue.
+    //  Mirrors the tag _push_todo traces, so the popup, the trace and the V.organise log agree.
+    const elvis_label = (e: any) => e?.sc?.fn ? `fn:${e.sc.see ?? '?'}` : (e?.sc?.elvis ?? '?')
+    // Ages tick on their OWN interval, armed only while a popover is open.  They must not ride the
+    //  House's version or H.clear() — both of which STOP under the very wedge this is here to show,
+    //   which would freeze the readout at the exact moment it matters (and read as "0s ago", a lie).
+    let pop_now = $state(0)
+    $effect(() => {
+        if (!todo_open) return
+        const iv = setInterval(() => pop_now = Date.now(), 500)
+        return () => clearInterval(iv)
+    })
+    const age_s = (at: number) => { void pop_now; const s = Math.round((Date.now() - at) / 1000); return s < 1 ? 'just now' : `${s}s ago` }
+    // the top House's beliefs mutex, live — held by ANY House's item, freezing them all.
+    let wedge = $derived.by(() => { void pop_now; return todo_open ? (H?.top_House?.() as any)?.mutex_held?.('beliefs') ?? null : null })
     $effect(() => {
         if (!setup_done) return
         houses = H.all_House
@@ -156,8 +179,51 @@
                     onclick={hasActions ? () => scrollToHouseIdx(i) : null}>
                     {house.name}
                     {#if !house.started}<span class='ungood'>off</span>{/if}
-                    <span class="todo-count">{house.todo.length || ''}</span>
+                    <!-- the drain queue, and a way IN to it.  The count alone said "8" without ever
+                         saying eight of WHAT — click it for the standing elvises.  stopPropagation:
+                         the h2 itself navigates, and inspecting a queue must not also scroll you away. -->
+                    <span class="todo-count" class:open={todo_open === house.c.ip}
+                        title={house.todo.length
+                            ? `${house.todo.length} elvis${house.todo.length === 1 ? '' : 'es'} waiting to drain — click to see them`
+                            : 'todo drained'}
+                        onclick={(ev) => { ev.stopPropagation(); todo_open = todo_open === house.c.ip ? null : house.c.ip }}
+                    >{house.todo.length || (todo_open === house.c.ip ? '0' : '')}</span>
                 </h2>
+                {#if todo_open === house.c.ip}
+                    <!-- LIVE, not a snapshot: the queue drains under you (at GALLOP_TICK_MS once the
+                         gallop engages), and watching it empty is most of the diagnostic value.  Each
+                         row is the elvis's headline + keyser(e) — the same `e%k:v, k:v` line
+                         _push_todo already writes under V.organise, so the popup and the console log
+                         read identically. -->
+                    <div class="todo-pop" role="dialog" aria-label="{house.name} todo queue">
+                        <div class="todo-pop-hd">
+                            <span>H:{house.name} · todo {house.todo.length}{#if house.c.drain_at} · last drained {age_s(house.c.drain_at)}{/if}</span>
+                            <span class="todo-pop-x" title="close" onclick={() => todo_open = null}>✕</span>
+                        </div>
+                        <!-- THE WEDGE LINE.  Every House drains under the TOP House's one beliefs mutex
+                             and all_clear() awaits it, so a single `fn` that never settles freezes the
+                             whole machine — and the tab keeps LOOKING alive because the socket stamps
+                             ride off-think.  A standing queue with a fresh `last drained` is an ordinary
+                             backlog; a standing queue with a stale one and a holder named here is the
+                             wedge, and this is the line that finally says which elvis is sitting on it. -->
+                        {#if wedge}
+                            <div class="todo-wedge" role="alert">⚠ beliefs mutex held {Math.round(wedge.ms / 1000)}s by <b>{wedge.who}</b> — no House can drain until it settles</div>
+                        {:else if house.todo.length && house.c.drain_why}
+                            <div class="todo-why">◍ not draining: {house.c.drain_why}</div>
+                        {/if}
+                        {#each house.todo as e, ti (ti)}
+                            <div class="todo-row">
+                                <span class="todo-i">{ti}</span>
+                                <span class="todo-elvis">{elvis_label(e)}</span>
+                                {#if e.sc?.Aw}<span class="todo-aw">{e.sc.Aw}</span>{/if}
+                                <span class="todo-keys">{keyser(e)}</span>
+                            </div>
+                        {/each}
+                        {#if !house.todo.length}
+                            <div class="todo-empty">drained — nothing waiting</div>
+                        {/if}
+                    </div>
+                {/if}
                 <div class="house-nav">
                     <span class="arrow arrow-up" title="navigate to the previous House"
                         class:disabled={i === 0}
@@ -237,6 +303,7 @@
         padding: 0 0.5rem;
         min-height: 1.75rem;
         z-index: 100;
+        position: relative;   /* the anchor .todo-pop hangs off */
     }
     .house-header.sticky {
         position: sticky;
@@ -258,7 +325,56 @@
         font-size: 0.7em;
         opacity: 0.5;
         margin-left: auto;
+        cursor: pointer;
+        /* a hit area even at one digit — the resting look is unchanged (transparent border) */
+        padding: 0 0.25em;
+        border: 1px solid transparent;
+        border-radius: 3px;
     }
+    .todo-count:hover { opacity: 0.95; border-color: #3a3a4a; }
+    .todo-count.open  { opacity: 1; border-color: #4a5a7a; background: #1a1a24; }
+
+    /* the queue popover — absolutely placed so it OVERLAYS what follows rather than shoving the
+       House list around while you read it (a diagnostic must not move its own subject).  The
+       header is position:relative for this; z-index clears the sticky headers below. */
+    .todo-pop {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        z-index: 3000;
+        max-width: min(56rem, 92vw);
+        max-height: 22rem;
+        overflow: auto;
+        background: #14141c;
+        border: 1px solid #3a3a4a;
+        border-radius: 4px;
+        padding: 0.3rem 0.4rem;
+        box-shadow: 0 4px 14px #0009;
+        font-family: monospace;
+        font-size: 0.72rem;
+        text-align: left;
+        cursor: default;
+    }
+    .todo-pop-hd {
+        display: flex; justify-content: space-between; gap: 1rem;
+        opacity: 0.65; padding-bottom: 0.25rem; margin-bottom: 0.25rem;
+        border-bottom: 1px solid #2a2a36;
+        position: sticky; top: -0.3rem; background: #14141c;
+    }
+    .todo-pop-x { cursor: pointer; }
+    .todo-pop-x:hover { color: #d68a90; }
+    .todo-row { display: flex; gap: 0.5rem; align-items: baseline; padding: 0.1rem 0; white-space: nowrap; }
+    .todo-i     { opacity: 0.35; min-width: 1.5em; text-align: right; }
+    .todo-elvis { color: #7fb3ff; }
+    .todo-aw    { color: #b48ead; }
+    /* the full %k:v line can be long — let IT scroll inside the row, never the page */
+    .todo-keys  { opacity: 0.5; overflow: hidden; text-overflow: ellipsis; }
+    .todo-empty { opacity: 0.4; padding: 0.2rem 0; }
+    .todo-wedge {
+        color: #f0c674; background: #2a2013; border: 1px solid #5a4a20;
+        border-radius: 3px; padding: 0.2rem 0.35rem; margin-bottom: 0.25rem; white-space: normal;
+    }
+    .todo-why { opacity: 0.6; padding: 0.1rem 0 0.25rem; white-space: normal; }
 
     .house-nav {
         flex: 0 0 auto;

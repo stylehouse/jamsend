@@ -120,6 +120,10 @@ The old ranking below was written from the causal map (structure), not from meas
 
 ## Where we are — the scorecard (2026-07-08)
 
+> ⚠ **Read the 2026-08-04 status entry before trusting this scorecard.**  Technique A is listed below as
+>  shipped — the code merged, but a stray `V.gallop = 0` left it INERT until 2026-08-04.  It is armed now
+>   (one axis, universal-on, `c.no_gallop` the opt-out) and a fleet re-verify is OWED.
+
 **Done + shipped to main** (branch merged 2026-07-08): #1 `V.req_legs` off · #2 graft cache key ·
  #6 `Lang_build_mapules` gate · **#A / Technique A — the gallop** (`perf/gallop-tighten`, −13/−14% on a
   warm Lies+Lang step, the biggest measured slice; two cadence-sensitive Books opted out via
@@ -182,6 +186,33 @@ Two forward-looking sections left this doc for **`Story_future_directions.md`** 
     UItime "one pass later" deferral).
 
 ## Status log
+
+- **2026-08-04** — **Technique A was INERT the whole time it was "shipped".**  The human, watching the
+   per-House todo counts in Otro's headings: *"they have been hovering at 8 or 11 or 1, not sure why not
+    flying down as they are supposed to."*  They never flew because the gate was `V.gallop && this.c.gallop`
+     — **two** enable-gates ANDed — and `V.gallop` sat at `0`, the disarmed A/B arm, from the merge on
+      2026-07-08 onward.  So every House everywhere drained at the flat `ANSWER_CALLS_TICK_MS = 50`, one
+       elvis per gate, a hard 20/s ceiling; a standing 8-11 is ~400-550 ms of pure queue latency, and it is
+        *above* `GALLOP_DEPTH = 6`, i.e. past the engage-NOW fast path, which had therefore never once fired.
+  - **Root cause is a naming/namespace fault, not a logic one.**  `V` is the debug-VERBOSITY namespace,
+     where every member is 0-means-quiet by convention (`V.organise`, `V.beliefs`, `V.req_legs` — all `0`).
+      A *behaviour* switch parked in that drawer inherited the drawer's default, and "disarmed for one A/B
+       arm" became indistinguishable from "resting state of a log level".  The scorecard above kept saying
+        **Done + shipped**, truthfully about the code and falsely about the effect.
+  - **FIXED to the one-axis end-state this doc already named** ("under the intended universal-on end-state,
+     `no_gallop` is the permanent opt-out for warming-observer Books").  `V.gallop` is **gone**.  The gate is
+      now a single presence-keyed **opt-OUT**, `c.no_gallop`, universal-on: `Story` sets it on a Run only
+       when the Book carries `The/Opt/{no_gallop:1}` (LakeTiles + LakeWaftMap), everything else gallops.
+        `GALLOP_DISARM` (exported, **defaults `false`**) survives as an explicit **escape hatch** for a
+         `perf_ab` arm or a bisect — never as configuration.
+  - **Two rules earned, worth keeping:** an enable-gate that defaults OFF makes "shipped" and "doing
+     nothing" look identical, so a kill switch defaults ARMED and says so in its name; and a feature flag
+      never lives in a namespace whose convention is that everything in it is off.
+  - **⚠ OWED: a fleet re-verify.**  Arming this is a real cadence change for every Book, and the last fleet
+     evidence (46/65 green armed) is from 2026-07-08 — fixtures have moved a long way since.  The two
+      known cadence-sensitive Books are already opted out and that mark carries through unchanged, but a
+       sweep is owed before trusting a red.  One-line hold if it needs sequencing behind other fixture
+        work: `GALLOP_DISARM = true`.
 
 - **2026-07-07 (eve)** — **Technique A BUILT + MEASURED** (branch `perf/gallop-tighten`, stacked on
    `perf/mapules-digest-gate` for the trace/perf_ab tooling): the answer_calls drain gallop-tightens,

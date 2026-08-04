@@ -108,10 +108,37 @@
         return { pub: f.pub as string, key: f.key as string, prepub, born: Date.now() }
     },
 
+    // Clustation_mint_named — mint a REAL fresh keypair and persist+concrete+URL-sync it under its
+    //  OWN prepub (a prepub can only be DISCOVERED from a mint, never CHOSEN — so this never accepts
+    //   a tag to mint "as"). Shared by ?I=new and the pending-arrest "Generate a new identity" button
+    //    (Clustation_generate_for_pending) so both paths mint exactly one way. replaceState (not
+    //     assign) rewrites ?I= to the real prepub so a reload RESUMES this identity instead of minting
+    //      another — no navigation, just the address bar + a reload's worth of memory.
+    async Clustation_mint_named(this: House, H: House, A: TheC, wT: TheC): Promise<{ pub: string; key: string; prepub: string; born?: number }> {
+        const stored = await (H as any).Clustation_mint()
+        await (H as any).thang_add(wT, stored.prepub, stored)
+        ;(H as any).Clustation_concrete(A, stored.prepub, stored)
+        if (typeof window !== 'undefined' && window.history?.replaceState) {
+            const url = new URL(window.location.href)
+            url.searchParams.set('I', stored.prepub)
+            window.history.replaceState(null, '', url.toString())
+        }
+        return stored
+    },
+
     // Clustation_ensure_identity — resolve ?I= and stand up the active %Identity (+ its %Peering)
     //  under A:Clustation, persisted as an `identities` Thang. Idempotent per session (the Auto
     //   caller guards on H.c.identity_up). Async, but no liveQuery race: thang_add/thang_peek hit
     //    Dexie directly and the %Identity is concreted here-and-now, not awaited off a subscription.
+    //  A NAMED ?I=<tag> this browser holds no key for is a MISS (2026-08-04, the reload-identity
+    //   incident): there is no private half to reconstruct from a bare public prepub, so this used to
+    //    silently mint an UNRELATED fresh identity and store it under the requested tag — a stale or
+    //     foreign ?I= link then quietly became a different live identity with zero signal, and every-
+    //      thing downstream (Pier routing, gen_write signing) broke against the wrong key with no
+    //       visible cause. Now a miss ARRESTS instead: it stamps identity_pending on the top House
+    //        (Auto's caller reads it to stop past this point, and Lies_channel_up reads it too, so the
+    //         wire itself stays silent — no hello signs with a wrong/missing key) and pops the IdHatch
+    //          so a human explicitly resolves it — paste the real key, or Generate a new identity.
     async Clustation_ensure_identity(this: House, H?: House): Promise<boolean> {
         H = (H ?? this) as House
         const param = boot_param('I')
@@ -124,30 +151,57 @@
                 || A.i({ w: 'Thangs', thangs: 'identities' })
         wT.c.up = A
 
-        let tag: string
-        let stored: { pub: string; key: string; prepub: string } | undefined
         if (param === 'new') {
-            stored = await (H as any).Clustation_mint()
-            tag = stored!.prepub                       // a fresh identity is named by its own prepub
-            await (H as any).thang_add(wT, tag, stored)
-        } else {
-            tag = param
-            const peeked = await (H as any).thang_peek('identities', tag)
-            if (peeked?.pub && peeked?.key) stored = peeked
-            else { stored = await (H as any).Clustation_mint(tag); await (H as any).thang_add(wT, tag, stored) }
+            const stored = await (H as any).Clustation_mint_named(H, A, wT)
+            console.log(`🪪 Identity minted ${cluster_name(stored.prepub)} (${stored.prepub})`)
+            return true
         }
 
-        ;(H as any).Clustation_concrete(A, tag, stored!)
-        // ?I=new minted a fresh self — rewrite the URL to ?I=<prepub> so this tab BECOMES that identity:
-        //  a reload now RESUMES it (the peek branch finds the Thang we just stored under <prepub>) instead
-        //   of minting yet another fresh one.  ?I=<tag> already resumes, so only 'new' needs the rewrite.
-        //    replaceState (not assign) — no navigation, just the address bar + a reload's worth of memory.
-        if (param === 'new' && typeof window !== 'undefined' && window.history?.replaceState) {
-            const url = new URL(window.location.href)
-            url.searchParams.set('I', stored!.prepub)
-            window.history.replaceState(null, '', url.toString())
+        const peeked = await (H as any).thang_peek('identities', param)
+        // A row is only USABLE if its stored prepub IS the tag it is filed under. The old silent-mint
+        //  bug wrote MISMATCHED rows — a freshly-minted keypair stored under the tag you ASKED for —
+        //   and such a row is a trap, not a resume: Clustation_concrete files %Identity:<tag> but takes
+        //    the ADDRESS from stored.prepub, so the tab binds its %Peering (and its relay hello) to a
+        //     prepub that isn't the one in the URL. Everything then addresses it by the tag and reaches
+        //      nobody — the "no Pier for pong ... to=<other prepub> — DROPPED" cascade, with the tab
+        //       looking perfectly healthy from the inside. Refuse it exactly like a miss, and say which.
+        const usable = peeked?.pub && peeked?.key && peeked?.prepub === param
+        if (usable) {
+            ;(H as any).Clustation_concrete(A, param, peeked)
+            console.log(`🪪 Identity active ${cluster_name(peeked.prepub)} (${peeked.prepub})`)
+            return true
         }
-        console.log(`🪪 Identity ${param === 'new' ? 'minted' : 'active'} ${cluster_name(stored!.prepub)} (${stored!.prepub})`)
+
+        // MISS (or a corrupt mismatched row) — arrest, don't substitute (see the doc comment above).
+        const why = (peeked?.pub && peeked?.key)
+            ? `stored row is CORRUPT — filed under ${param} but holds the keypair for ${peeked.prepub} (the old silent-mint bug). Generating a new identity is the clean fix; delete the bad row if you want the tag freed.`
+            : `no key for ${param} is stored in this browser.`
+        const top = ((H as any).top_House?.() ?? H) as House
+        if ((top.c as any).identity_pending !== param) {
+            (top.c as any).identity_pending = param
+            ;(top.c as any).identity_pending_why = why
+            console.warn(`🪪⚠ identity ARRESTED — ${why} Boot is held; resolve via the 🪪 hatch.`)
+            const bag = (H as any).Lies_lens_bag?.()
+            if (bag && !bag.oa({ Lens: 'Panel', of_Funkcion: 'IdHatch' })) (H as any).Lies_lens_toggle?.('Panel', 'IdHatch', { altitude: 88 })
+        }
+        return false
+    },
+
+    // Clustation_generate_for_pending — the human's explicit "yes, make me a new one" for an
+    //  ?I=<tag> this browser could not resume (the arrest above). A no-op unless a miss is actually
+    //   pending, so a stray call (e.g. a stale button re-render) can't mint an unwanted identity.
+    async Clustation_generate_for_pending(this: House, H?: House): Promise<boolean> {
+        H = (H ?? this) as House
+        const top = ((H as any).top_House?.() ?? H) as House
+        if (!(top.c as any).identity_pending) return false
+        if (typeof (H as any).thang_add !== 'function') return false
+        const A  = H.o({ A: 'Clustation' })[0] || H.i({ A: 'Clustation' })
+        const wT = A.o({ w: 'Thangs', thangs: 'identities' })[0]
+                || A.i({ w: 'Thangs', thangs: 'identities' })
+        wT.c.up = A
+        await (H as any).Clustation_mint_named(H, A, wT)
+        delete (top.c as any).identity_pending
+        delete (top.c as any).identity_pending_why
         return true
     },
 
@@ -252,6 +306,10 @@
         // put, not add: re-adopting the same pasted key is a refresh, not a duplicate.
         await (H as any).thang_put(wT, prepub, stored)
         ;(H as any).Clustation_concrete(A, prepub, stored)
+        // pasting a real key is the OTHER way to answer a pending ?I= arrest (Clustation_ensure_identity) —
+        //  lift it here too, not just from Clustation_generate_for_pending.
+        const top = ((H as any).top_House?.() ?? H) as House
+        if ((top.c as any).identity_pending) { delete (top.c as any).identity_pending; delete (top.c as any).identity_pending_why }
         console.log(`🪪 Identity adopted ${prepub}`)
         return true
     },
@@ -504,6 +562,14 @@
             //  so a boot tick that raced the ghost mount retries next pass instead of latching empty.
             if (await (H as any).Clustation_ensure_identity(H)) H.c.identity_up = true
         }
+        // ARREST (2026-08-04): a named ?I=<tag> this browser can't resume leaves the top House flagged
+        //  identity_pending (Clustation_ensure_identity, above). Nothing past this point runs — no
+        //   Creduler-driven Story, no Library page — until a human resolves it via the IdHatch the miss
+        //    already popped (paste the real key, or Generate a new identity). Re-checked every tick, so
+        //     resolving it (either path clears identity_pending) resumes normal boot on the very next
+        //      pass — no reload needed. Lies_channel_up carries the matching gate so the wire itself
+        //       stays silent too (no hello signs with a wrong/missing key).
+        if (((H as any).top_House?.() ?? H).c.identity_pending) return
 
         // Legacy migration (Robustness_plan Organ 4, the 9→2 collapse): a peer holding only a bare
         //  .stashed.cluster_idento (the pre-%Identity home — a 🪪-hatch paste that skipped adopt, or an
