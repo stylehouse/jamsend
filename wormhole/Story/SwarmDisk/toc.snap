@@ -4,9 +4,7 @@ story:SwarmDisk
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=6.257
-      sample=0.034,at=1785097158
-      sample=0.04,at=1785106588
+    TimeTotal:beliefs,avg=6.259
       sample=0.055,at=1785107793
       sample=0.055,at=1785107847
       sample=0.055,at=1785108160
@@ -15,9 +13,9 @@ story:SwarmDisk
       sample=61.948,at=1785837194
       sample=0.055,at=1785837205
       sample=0.102,at=1785837242
+      sample=0.053,at=1785839001
+      sample=0.041,at=1785839016
     TimeTotal:step,avg=0.894
-      sample=0.005,at=1785097158
-      sample=0.006,at=1785106588
       sample=0.008,at=1785107793
       sample=0.008,at=1785107847
       sample=0.008,at=1785108160
@@ -26,19 +24,21 @@ story:SwarmDisk
       sample=8.85,at=1785837194
       sample=0.008,at=1785837205
       sample=0.015,at=1785837242
+      sample=0.008,at=1785839001
+      sample=0.006,at=1785839016
   step,dige:46ec288dbaeec02c
-  step=2,dige:2e07aacb8c0f5d96
-  step=3,dige:25eceda189879ca3
+  step=2,dige:47cf9713e36761ff
+  step=3,dige:ed2731e9668212f6
     Assertion:friends,sentence:Alice and Bob become friends — each Pier carries a Music grant the other signed — a real account to persist
-  step=4,dige:701c68a2f13b914e
+  step=4,dige:d24614583b6a1955
     Assertion:account-alone,sentence:the account persists to disk — its snap carries the friendship grant and the keypair inline so the owner-local backup stands alone
     Assertion:roster-pub-only,sentence:the roster names its owner for recognition — pub and friendly on disk and never the private key
-  step=5,dige:ecd9ebcc1b88d998
+  step=5,dige:4ce23e9a351a9e2b
     Assertion:reseed-reborn,sentence:a fresh browser reseeds its owner off disk — the friendship and the private key reborn from the account snap alone
     Assertion:reseed-signs,sentence:the reseeded key still signs — a new grant minted after the disk round trip verifies under the same public key
     Assertion:reseed-identical,sentence:the account survives the disk round trip byte for byte — the reseeded self re-saves to the very same snap
     Assertion:grafted-stashed,sentence:a disk-grafted Pier is stash-worthy — its durable entry rebuilds the friend page and a Music grant that still verifies — so the reseeded friend survives the next warm reload
-  step=6,dige:1104cd13b30596dc
+  step=6,dige:1f83d31f345a0e6c
     Assertion:two-owners,sentence:two owners share the one FSA point — enumeration finds both accounts on disk keyed by prepub
     Assertion:named-pick,sentence:the requested owner is the one reseeded — a named pick lands Carol not merely the first account and her own key thaws
     Assertion:roster-both,sentence:the roster names both owners for recognition — each pub and friendly on disk and neither private key

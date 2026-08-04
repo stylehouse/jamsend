@@ -65,39 +65,39 @@ story:MusuReplica
     waitCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.199
-      sample=0.107,at=1784261291
-      sample=0.196,at=1784275896
-      sample=0.309,at=1784436420
-      sample=0.158,at=1784451871
-      sample=0.19,at=1784473844
+    TimeTotal:beliefs,avg=0.181
       sample=0.277,at=1784489341
       sample=0.144,at=1784500763
       sample=0.16,at=1784618006
       sample=0.258,at=1785818709
       sample=0.191,at=1785837421
-    TimeTotal:step,avg=0.014
-      sample=0.008,at=1784261291
-      sample=0.014,at=1784275896
-      sample=0.022,at=1784436420
-      sample=0.011,at=1784451871
-      sample=0.014,at=1784473844
+      sample=0.187,at=1785838765
+      sample=0.153,at=1785838851
+      sample=0.149,at=1785838916
+      sample=0.149,at=1785838924
+      sample=0.142,at=1785838988
+    TimeTotal:step,avg=0.013
       sample=0.02,at=1784489341
       sample=0.01,at=1784500763
       sample=0.011,at=1784618006
       sample=0.018,at=1785818709
       sample=0.014,at=1785837421
+      sample=0.013,at=1785838765
+      sample=0.011,at=1785838851
+      sample=0.011,at=1785838916
+      sample=0.011,at=1785838924
+      sample=0.01,at=1785838988
   step,dige:50568e7a78216459
   step=2,dige:d5a5e6cc7586cea7
-  step=3,dige:10691044dce040d9
-  step=4,dige:5ec3a4d52fadd573
-  step=5,dige:fdb2f72ed81b0369
-  step=6,dige:d28d9c59a107096c
-  step=7,dige:33e33a64456f7985
-  step=8,dige:57f80226717ac279
-  step=9,dige:aa7792964e2e43a7
-  step=10,dige:04f377fa724c1f11
-  step=11,dige:e19f9adb29cf6dd9
-  step=12,dige:3cdbc176cad5bb21
-  step=13,dige:2504be821a9d599b
-  step=14,dige:7e57689929293477
+  step=3,dige:5a73db020c7a3ac1
+  step=4,dige:9c2834c0d8b18d57
+  step=5,dige:1ab871151ad48fcf
+  step=6,dige:add1ce45df57135c
+  step=7,dige:405d2774881f5f16
+  step=8,dige:3145e89c95ba22fd
+  step=9,dige:f45986c2ac48efcc
+  step=10,dige:041b2ff7bc8407fa
+  step=11,dige:1da53b8024745ec4
+  step=12,dige:34bd0225c3979305
+  step=13,dige:396cad2e25e0bbfe
+  step=14,dige:f18b146a633c98b4

@@ -1,9 +1,9 @@
 Snap:H
   H:MusuRecast,Run
     A:MusuRecast
-      self,round=10	{"mung":["age"]}
+      self,round=8	{"mung":["age"]}
       w:MusuRecast
-        self,round=10	{"mung":["age"]}
+        self,round=8	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -12,10 +12,6 @@ Snap:H
         Peering,name:Origin,req=2,ok
           Pier,pub:Follower,req=2,ok
             Ud,pubkey:Follower
-            outbox
-              recent
-                emit,type:repli_lines,seq
-                emit=2,type:repli_lines,seq=2
           active_transport,type:mock,open
         Peering,name:Follower,req=3,ok
           Pier,pub:Origin,req=2,ok

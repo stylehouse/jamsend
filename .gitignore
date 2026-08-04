@@ -38,3 +38,4 @@ wormhole/_trace/
 
 # dev-instance marker — flips Dev_instance.md's commit relaxation on; must never travel to the construction site
 .dev-instance
+/0 spawn

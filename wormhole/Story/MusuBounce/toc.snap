@@ -4,30 +4,30 @@ story:MusuBounce
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=9.229
-      sample=1.189,at=1783418428
-      sample=1.189,at=1783418543
-      sample=1.96,at=1783418561
-      sample=2.086,at=1784489372
+    TimeTotal:beliefs,avg=9.139
       sample=2.086,at=1784489492
       sample=1.508,at=1784617162
       sample=20.344,at=1785835508
       sample=20.749,at=1785835595
       sample=21.596,at=1785836173
       sample=19.581,at=1785836783
-    TimeTotal:step,avg=1.846
-      sample=0.238,at=1783418428
-      sample=0.238,at=1783418543
-      sample=0.392,at=1783418561
-      sample=0.417,at=1784489372
+      sample=1.435,at=1785837787
+      sample=1.396,at=1785837814
+      sample=1.396,at=1785838009
+      sample=1.295,at=1785838021
+    TimeTotal:step,avg=1.828
       sample=0.417,at=1784489492
       sample=0.302,at=1784617162
       sample=4.069,at=1785835508
       sample=4.15,at=1785835595
       sample=4.319,at=1785836173
       sample=3.916,at=1785836783
+      sample=0.287,at=1785837787
+      sample=0.279,at=1785837814
+      sample=0.279,at=1785838009
+      sample=0.259,at=1785838021
   step,dige:27129568c2f727ef
   step=2,dige:cd4203f321303fc1
-  step=3,dige:75443ec9a60ba680
-  step=4,dige:db01449f5b73d302
-  step=5,dige:75c142eb67605518
+  step=3,dige:f50022838caedff7
+  step=4,dige:1418a6728f23b5aa
+  step=5,dige:2baba645ca06e7be

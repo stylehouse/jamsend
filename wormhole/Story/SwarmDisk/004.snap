@@ -30,6 +30,6 @@ Snap:H
               frame:pier_accept,did
             SocialGraph
               Edge,a:3084d341784e948c,b:de6421a43276961e,at:1759100020
-        req:witness,eternal,initialdo
+        req:witness,eternal,ok
         reached:step_3
         reached:step_4

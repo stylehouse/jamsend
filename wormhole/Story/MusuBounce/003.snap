@@ -1,9 +1,9 @@
 Snap:H
   H:MusuBounce,Run
     A:MusuBounce
-      self,round=43	{"mung":["age"]}
+      self,round=20	{"mung":["age"]}
       w:MusuBounce
-        self,round=43	{"mung":["age"]}
+        self,round=20	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
@@ -138,7 +138,7 @@ Snap:H
           active_transport,type:mock,open
         reached:step_3
         req:bounce,finished
-        track=0,tone=0
-        track,tone=0,skipped
-        track=2,tone=0
-        report,crossed=60,played=2,heard=0,skipped,silent_skips
+        track=0,tone=1047,heard
+        track,tone=587,skipped
+        track=2,tone=784,heard
+        report,crossed=60,played=2,heard=2,skipped,silent_skips

@@ -12,4 +12,4 @@ Snap:H
         Account,of:Bob
           Identity:3084d341784e948c,prepub:3084d341784e948c,friendly:Bob
             Peering,name:3084d341784e948c,friendly:Bob,online
-        req:witness,eternal,initialdo
+        req:witness,eternal,ok

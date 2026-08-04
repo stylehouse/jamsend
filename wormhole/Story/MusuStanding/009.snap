@@ -1,9 +1,9 @@
 Snap:H
   H:MusuStanding,Run
     A:MusuStanding
-      self,round=15	{"mung":["age"]}
+      self,round=13	{"mung":["age"]}
       w:MusuStanding
-        self,round=15	{"mung":["age"]}
+        self,round=13	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -20,12 +20,6 @@ Snap:H
         Peering,name:Origin,req=2,ok
           Pier,pub:Follower,req=2,ok
             Ud,pubkey:Follower
-            outbox
-              recent
-                emit,type:repli_lines,seq
-                emit=2,type:repli_lines,seq=2
-              emit=3,type:repli_lines,seq=3,sent,body_hash:d0938fe1422b3c28f5a989df7145fcc7dede78ea6321694de422a12cc76cfd66,body_len=472,acked
-              emit=4,type:repli_lines,seq=4,sent,body_hash:5a0f061ecffee99979ec6ebe486056e64c72299b8dc2917db5b4fa69432ae038,body_len=126,acked
           active_transport,type:mock,open
         Peering,name:Follower,req=3,ok
           Pier,pub:Origin,req=2,ok

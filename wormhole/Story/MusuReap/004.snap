@@ -19,7 +19,7 @@ Snap:H
           stock,pub:reap.shop
             Mag:shuffle
               Cloud,page:1
-                Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
+                Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,path:DJ Oscillo - Cosmic C.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
                   Preview,seq:0,head,preskip=312,cid:3ccd2f51f3f3b66e3115ee8cb2d1c43575a42bf9704abf44b8af40d1a8d74d7b	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:1,cid:144cde8bcbf6a150cae10b2f4115f1fd62f97576477adbaaa900bac3cfc53872	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:2,cid:224607ca4d58380a3271f7a0a2621c076034997f83423effb1cabda2252985e3	{"ref":{"buf":"Uint8Array()"}}
@@ -36,7 +36,7 @@ Snap:H
                   Preview,seq:13,cid:d01bb06dff81abc1b549cc048d6b72c2088e6275ea02d7f82bdc6fa0145202ad	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:14,cid:2850cb9adf1f9f0a22ecd7de7829804b4247a3a225ca45568cbb3af88b69bc44	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:15,cid:3ab52c6af8c8ee61b625c0831f959da0289a33ed976efd9f78e1b8d4547cc4ac	{"ref":{"buf":"Uint8Array()"}}
-                Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
+                Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,path:DJ Oscillo - Dorian D.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
                   Preview,seq:0,head,preskip=312,cid:3457aa775f90150bb7dfee2664537ff0249c76f412150375802373b5dcd6e379	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:1,cid:24e815ca6fe5761ede36e7deca8327236309956d788d7280dbc8ede8ca0bf23b	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:2,cid:264238c1c63afa12031ca91e07293c7c4c15bb886d1f94e8877bfe0541051a17	{"ref":{"buf":"Uint8Array()"}}

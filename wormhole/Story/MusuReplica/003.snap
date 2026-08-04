@@ -1,18 +1,14 @@
 Snap:H
   H:MusuReplica,Run
     A:MusuReplica
-      self,round=6	{"mung":["age"]}
+      self,round=5	{"mung":["age"]}
       w:MusuReplica
-        self,round=6	{"mung":["age"]}
+        self,round=5	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
           Pier,pub:Crowd,req=2,ok
             Ud,pubkey:Crowd
-            outbox
-              emit,type:repli_lines,seq,sent,body_hash:e23f64572fa552ca3804b14820503a487347e4de494ceb12d504f5bd7bc9e3d9,body_len=160,acked
-              emit=2,type:repli_lines,seq=2,sent,body_hash:10ebc47d04f51634a25f62703d7941e6e7de1e53b786be43f2a8b9d634cfd016,body_len=160,acked
-              emit=3,type:repli_lines,seq=3,sent,body_hash:4b3b462e8a76d5ed04a3cbda574a28d19e4c3f6fb8af357e9ab1b89dafa1e192,body_len=160,acked
           active_transport,type:mock,open
         Peering,name:Crowd,req=3,ok
           Pier,pub:DJ,req=2,ok
