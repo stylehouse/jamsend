@@ -11,6 +11,12 @@
     import { boot_param } from "$lib/boot";
     import BootGate from "./ui/BootGate.svelte";
     import { sockcap_install, socklog_armed } from "$lib/O/sockcap";   // ALMOST-GONER: relay-socket tap (dumped via Wormhole) — sockcap.ts header
+    // TEMP — CPU-attribution experiment (?cpu_legs=1): cycles which Lies/Lang/Cyto/Story panel
+    //  is mounted, announcing the leg on screen + console, so CPU readings taken externally
+    //  (Activity Monitor / Task Manager) can be attributed to a panel. Inert unless armed —
+    //  see CpuLegs.svelte.ts. Remove once the experiment's table is in.
+    import { cpu_leg_hides } from "$lib/O/ui/CpuLegs.svelte";
+    import CpuLegBanner from "$lib/O/ui/CpuLegBanner.svelte";
 
     //#region H:Mundo
     // ── all House construction inside $effect ─────────────────────────────────
@@ -182,7 +188,9 @@
                 </div>
             </div>
             {#each house.UIs.ob({ UI: 1 }) as uiC (keyser(uiC.sc))}
-                <svelte:component this={uiC.sc.component} H={house} />
+                {#if !cpu_leg_hides(uiC.sc.UI)}
+                    <svelte:component this={uiC.sc.component} H={house} />
+                {/if}
             {/each}
             {#if house.stashed?.showC}
                 <Stuffing mem={house.imem('current')} stuff={house} H={house} M={house} />
@@ -190,6 +198,9 @@
         {/each}
     {/snippet}
 </NaviScroll>
+
+
+<CpuLegBanner />
 
 {#if H}
     <Lens {H} kind="Panel" />

@@ -410,6 +410,15 @@ Swarm_deliver(w, ident, prepub, frame):
         let seq = this.Pier_next_seq(route)
         // attach the per-era voucher so the sealed receiver can prove it was US (the relay won't)
         if (w.c.station_voucher) frame.voucher = w.c.station_voucher
+        // THE EPOCH RIDES EVERY SWARM FRAME (2026-08-04) — exactly like the voucher above, and for a
+        //  kindred reason: a fact the far side MUST have cannot depend on one frame surviving.  `era`
+        //   announces my incarnation, `saw` echoes theirs so they learn I hold it.  Both are read by
+        //    Swarm_note_era in the hear funnel.  A station-less world (every Book) has no station_era,
+        //     stamps nothing, and is byte-identical — the mail wire never sees this.
+        if (w.c.station_era) {
+            frame.era = w.c.station_era
+            if (route.c.peer_era) frame.saw = route.c.peer_era
+        }
         this.Peeroleum_send(w, { header: { type: frame.kind, from: ident.sc.prepub, to: prepub, seq: seq }, swarm: frame })
         return true
     }
@@ -451,6 +460,19 @@ Swarm_arm(w):
         //   the same law as ive_got: gossip never opens a door.  The 'pulse' kind exists ONLY to
         //    generate this traffic (Swarm_pulse_all); it needs no verb of its own.
         if (sealed) sealed.c.heard_at = Date.now()
+        // THE EPOCH, off ANY vouched frame (2026-08-04): a reborn peer announces itself on every
+        //  swarm frame it sends (Swarm_deliver stamps era+saw), so recovery no longer hangs on one
+        //   greeting surviving.  THE GATE — `may_reset` is 1 only for the EPHEMERAL-lane kinds
+        //    (pulse, swarm_hi: dispatched straight from Peeroleum_deliver, never booked).  A BOOKED
+        //     kind (ive_got/suggest/pier_*) runs inside inbox.do(), where Peeroleum_reset_handshake
+        //      would drop the very inbox being drained and strand every later frame — so there we
+        //       only RECORD the era; the pulse lane acts on it within ~5s.  Sealed friends only:
+        //        gossip never opens a door, and an era is a door onto our stream state.
+        if (sealed && frame.swarm && frame.swarm.era) {
+            let eroute = this.Swarm_station_pier(w2, ident, String(from))
+            let ephemeral_lane = frame.header.type === 'pulse' || frame.header.type === 'swarm_hi'
+            if (eroute) this.Swarm_note_era(w2, eroute, frame.swarm, ephemeral_lane ? 1 : 0)
+        }
         if (frame.header.type === 'pier_hello') await this.Swarm_hello(w2, ident, frame.swarm)
         if (frame.header.type === 'pier_accept') await this.Swarm_accept(w2, ident, frame.swarm)
         if (frame.header.type === 'pier_confirm') await this.Swarm_confirmed(w2, ident, frame.swarm)
@@ -628,6 +650,12 @@ Swarm_station_up(w, ident):
     }
     this.Tribunal_activate_websocket(w)
     w.c.station_up = 1
+    // mint the era HERE, at standup, not lazily at first greeting: Swarm_deliver stamps it on every
+    //  swarm frame but only `if (w.c.station_era)`, so a station whose voucher/greeting paths both
+    //   failed (relay slow, sign threw) would otherwise pulse era-less forever and no friend could
+    //    ever confirm it.  One assignment closes that.  LIVE-ONLY: the Books stamp station_up by hand
+    //     rather than through this verb, so no fixture sees an era it did not see before.
+    this.Swarm_era(w)
     this.Swarm_station_routes(w, ident)
     return station
 
@@ -697,14 +725,73 @@ Swarm_reaccept_incomplete(w, ident):
 //        %Ud kept) so the reborn peer's frames book fresh.  Sent on every socket (re)open and
 //         whenever a pulse pass finds a friend silent — the link self-heals from EITHER side.
 
+// ── the EPOCH, made un-loseable (2026-08-04) ────────────────────────────────────────────────
+//  The greeting above was the ONLY carrier of the era, and the recovery it drives depended on a
+//   chain of five conditionals — lose any one and the pair strands ("A stops sending B new music"):
+//    (1) the single fire-and-forget swarm_hi on socket (re)open; (2) its only retry gated on
+//     heard_at >15s stale; (3) but heard_at is warmed by the peer's OWN pulses, so `quiet` never
+//      trips; (4) and `pulse` was NOT receive-side ephemeral, so a reborn peer's low seqs hit the
+//       reused-seq collision and never dispatched at all — heard_at then never stamped, the
+//        opposite failure; (5) even once the era lands, the re-offer needs both a presence gate and
+//         an offered_mark change.  Sounditron already ate this shape once (its `12 < 15` ordering
+//          bug, Sounditron.g's beat-5 comment) — the tell that a silence window is the wrong primitive.
+//  THE CURE, in three parts, none of which adds a frame to the wire:
+//   (a) the era rides EVERY swarm frame (Swarm_deliver stamps it exactly like the voucher), so any
+//        surviving frame from a reborn peer announces the rebirth — pulse, ive_got, suggest, hi.
+//   (b) `saw:` echoes the last era I heard from YOU, so a frame proves whether you hold MY current
+//        era.  That is the actual fact the re-arm needs; `quiet` was only ever a proxy for it.
+//   (c) one central Swarm_note_era does the check — Swarm_heard_hi delegates to it, so there is
+//        exactly ONE implementation of "the peer restarted" rather than two that can drift.
+//  Converges in one pulse round-trip (~5s) instead of depending on a 15s silence that busy traffic
+//   suppresses.  All .c/runtime — no snap byte, and a Book (no station_era) stamps nothing and
+//    checks nothing, so the mail-wire fixtures are byte-identical.
+
+// Swarm_era — my station era, minted lazily on first use (a fresh boot = a fresh era, which is the
+//  whole point: it is the thing that says "I am not the me you were talking to").
+Swarm_era(w):
+    w.c.station_era = w.c.station_era || Date.now()
+    return w.c.station_era
+
+// Swarm_note_era — hear an era from a sealed friend.  A CHANGED era means they restarted: reset the
+//  route's stream state (Peeroleum_reset_handshake — stream history gone, %Ud kept) so their fresh
+//   seqs book instead of colliding with our stale inbox history, and clear the want-once cursors (a
+//    vanished want must be re-askable after a rebirth, else ra_wanted holds every lost pull as a
+//     permanent hole).  Also records whether THEY hold MY current era (`saw`), which is what stands
+//      the re-greet backoff down — an unconfirmed epoch keeps getting re-announced, a confirmed one
+//       goes quiet.  Returns true if this was a rebirth (the caller may want to re-offer at once).
+//  SAFE TO RESET FROM: every carrier of an era is on the EPHEMERAL lane (swarm_hi and, as of this
+//   pass, pulse), so this never runs inside inbox.do() — dropping the inbox mid-drain would strand
+//    the very frames the reset exists to unblock.  A booked frame's era is RECORDED, never acted on
+//     (see the gate in the hear funnel), and the pulse lane resolves it within ~5s regardless.
+Swarm_note_era(w, route, sf, may_reset):
+    if (!route || !sf || !sf.era) return false
+    let reborn = !!(route.c.peer_era && route.c.peer_era !== sf.era)
+    if (reborn && may_reset) {
+        this.Peeroleum_reset_handshake(route)
+        delete w.c.ra_wanted
+        delete w.c.ra_want_ts
+        // a rebirth invalidates what we believe we have OFFERED them: their mirror is empty again.
+        //  Clearing the mark makes the next share beat re-husk the whole shelf without waiting for
+        //   the floor timer below — the fast path for the case we can actually detect.
+        delete route.c.offered_mark
+    }
+    if (reborn || !route.c.peer_era) route.c.era_seen_at = Date.now()
+    route.c.peer_era = sf.era
+    // do they hold MY era?  `saw` is their echo of the last era they heard from me.  This is the
+    //  ONLY affirmative proof the re-arm has landed on their side; everything else is a guess.
+    route.c.era_confirmed = !!(sf.saw && String(sf.saw) === String(w.c.station_era || ''))
+    if (route.c.era_confirmed) route.c.era_kicks = 0
+    return reborn
+
 // one greeting to one friend; reply:1 marks an answer (answers are never re-answered).
 Swarm_hi_one(w, ident, prepub, reply):
     let route = this.Swarm_station_pier(w, ident, prepub)
     if (!route) return false
     let station = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
     if (!w.c.station_up || !this.Peeroleum_carrier(station, w)) return false
-    w.c.station_era = w.c.station_era || Date.now()
-    let hi = { kind: 'swarm_hi', era: w.c.station_era, page: this.Swarm_page(ident) }
+    let hi = { kind: 'swarm_hi', era: this.Swarm_era(w), page: this.Swarm_page(ident) }
+    // echo THEIR era back so they learn we hold it (the confirmation half of the epoch handshake)
+    if (route.c.peer_era) hi.saw = route.c.peer_era
     if (reply) hi.reply = 1
     // swarm_hi rides Peeroleum_send DIRECTLY (not Swarm_deliver), so carry the voucher itself —
     //  a sealed friend gates swarm_hi like every other frame (it isn't pier_hello).
@@ -737,12 +824,14 @@ Swarm_heard_hi(w, ident, frame):
     if (!sealed) return
     let route = this.Swarm_station_pier(w, ident, String(from))
     if (!route) return
-    if (hi.era && route.c.peer_era && route.c.peer_era !== hi.era) {
-        this.Peeroleum_reset_handshake(route)
-        delete w.c.ra_wanted
-        delete w.c.ra_want_ts
-    }
-    if (hi.era) route.c.peer_era = hi.era
+    // the ONE epoch implementation.  Swarm_arm's hear funnel normally runs Swarm_note_era on every
+    //  vouched swarm frame BEFORE dispatching here (swarm_hi is ephemeral-lane ⇒ may_reset:1), which
+    //   makes this call a no-op — note_era is idempotent, a re-note of an already-noted era reads
+    //    reborn:false and resets nothing.  It stays because this verb is ALSO called DIRECTLY, not
+    //     only through the funnel (SwarmShare beat 9 feeds a raw rebirth frame at it), and the era
+    //      reset is the whole point of that path — routing it through the funnel only would silently
+    //       drop the restart signal for every non-funnel caller.
+    this.Swarm_note_era(w, route, hi, 1)
     if (!hi.reply) {
         this.Swarm_hi_one(w, ident, String(from), 1)
         this.Swarm_gossip_music(w, ident)
@@ -1339,10 +1428,34 @@ Swarm_pulse_all(w, ident):
         //         reply on the far end (Swarm_heard_hi) — traffic added exactly when the wire is already
         //          stressed, and the likely source of the flood-driven ws 1006 storm during a big keep.
         //           one kick per staleness episode, not per tick: cool down on the same 15s clock.
+        // ── the re-greet, now driven by the EPOCH rather than by silence (2026-08-04) ──
+        //  The old gate was `quiet` alone: re-greet a friend we have not heard from in 15s.  That is a
+        //   PROXY for the thing we actually care about — "does this friend hold my current era?" — and
+        //    it is the wrong way round: a friend who IS talking to us (so never quiet) but is talking
+        //     from a stale epoch is precisely the stranded case, and the proxy can never see it.  Now
+        //      the era rides every swarm frame and `saw` echoes it back (Swarm_note_era), so we know
+        //       the fact directly.  BOTH triggers stand:
+        //   · quiet — unchanged, the dead-link probe (no frames at all ⇒ nothing could carry an era).
+        //   · unconfirmed — they have never echoed my current era back.  This is the reload case.
+        //  BOUNDED so an old peer that never echoes `saw` cannot become a flood: the unconfirmed kick
+        //   backs off 5s→10s→20s→40s→60s and settles there, and a confirmation zeroes the counter
+        //    (Swarm_note_era).  The kick is one tiny ephemeral frame; it is the BACKSTOP now, not the
+        //     primary path — the pulse itself carries the era, so the normal case converges with no
+        //      extra frame at all and never reaches this branch.
         let quiet = !pier.c.heard_at || (Date.now() - pier.c.heard_at) > 15000
-        let cooled = !pier.c.hi_kick_at || (Date.now() - pier.c.hi_kick_at) > 15000
-        if (quiet && cooled && w.c.station_up) {
+        // NON-MINTING lookup (the Swarm_deliver idiom), NOT Swarm_station_pier: a heartbeat must never
+        //  have the side effect of promoting a transport route.  No route yet ⇒ nothing to confirm,
+        //   and Swarm_hi_one (which does mint, deliberately) is still reachable via the `quiet` arm.
+        let hstation = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
+        let route = hstation && hstation.o({ Pier: 1 }).find(p => p.sc.pub === pier.sc.pub)
+        let unconfirmed = !!(route && !route.c.era_confirmed)
+        let kicks = (route && route.c.era_kicks) || 0
+        let backoff = Math.min(5000 * Math.pow(2, kicks), 60000)
+        let waited = Date.now() - ((route && route.c.hi_kick_at) || 0)
+        let cooled = quiet ? (!pier.c.hi_kick_at || (Date.now() - pier.c.hi_kick_at) > 15000) : (waited > backoff)
+        if ((quiet || unconfirmed) && cooled && w.c.station_up) {
             pier.c.hi_kick_at = Date.now()
+            if (route) { route.c.hi_kick_at = Date.now(); route.c.era_kicks = kicks + 1 }
             this.Swarm_hi_one(w, ident, String(pier.sc.pub), 0)
         }
     }
@@ -1546,8 +1659,19 @@ async Swarm_share_beat(w, ident):
         if (!p.c.heard_at || (Date.now() - p.c.heard_at) >= 20000) continue
         let n = this.Ra_recs(stock).length
         let mark = String(w.c.station_era || 0) + ':' + String(route.c.peer_era || 0) + ':' + n
-        if (route.c.offered_mark !== mark) {
+        // ── THE RE-OFFER FLOOR (2026-08-04) — the last-resort backstop under the whole epoch machine ──
+        //  Everything above makes "A learns B was reborn" robust; this makes "A stops sending B new
+        //   music" structurally impossible even if all of it fails.  The mark is CHANGE-triggered, so a
+        //    mark that is wrong-but-stable (a missed era, a mirror that lost the husks, a stock count
+        //     that happens to match) is a silent permanent hole with no self-heal at all.  A floor turns
+        //      any such hole into a delay of at most one interval.  Cheap: husk fragments only (no
+        //       bytes), and Repli_merge dedups the whole thing at the far side — a re-offer costs the
+        //        wire one catalog fragment per friend per minute, and buys an unconditional guarantee.
+        let floor = +(w.c.swarm_offer_floor_ms || 60000)
+        let stale = !route.c.offered_at || (Date.now() - route.c.offered_at) > floor
+        if (route.c.offered_mark !== mark || stale) {
             route.c.offered_mark = mark
+            route.c.offered_at = Date.now()
             await this.Ra_offer_stock(w, route, me, pub, stock)
         }
     }

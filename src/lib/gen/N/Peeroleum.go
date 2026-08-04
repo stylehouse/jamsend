@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '82da490e27b02e36~g1' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '4010cf1dde33ebd1~g1' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -626,7 +626,24 @@ async Peeroleum_deliver(w, frame) {
     //      endless wedge (the 48s).  advertise joins them so a beacon never books/acks either — and the
     //       feebly_ponder is safe because advertise is editor-inbound only (runners send it to:'editor';
     //        the editor has no Story drive to re-wedge), and it nudges Lies_aim to refresh the roster Brink.
-    if (h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase' || h.type === 'advertise' || h.type === 'swarm_hi') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
+    //  pulse (Swarm_pulse_all's presence heartbeat) JOINS THEM (2026-08-04) — it was already ephemeral
+    //   on SEND but still booked an inbox unemit here, which cost it three ways.  (i) THE RELOAD BUG: a
+    //    reborn peer restarts its per-Pier seq at 1, so its pulses land on our stale finished %unemit
+    //     rows, hit the reused-seq collision path below, get re-acked and NEVER DISPATCHED — so
+    //      heard_at was never stamped, the friend read as dead, and Swarm_share_beat's presence gate
+    //       skipped them: "A stops sending B new music", from the presence side rather than the era
+    //        side.  Ephemeral is collision-immune by lane, so the heartbeat always lands.  (ii) it now
+    //         CARRIES THE EPOCH (Swarm_deliver stamps era+saw on every swarm frame), and the era check
+    //          may run Peeroleum_reset_handshake — which drops this Pier's inbox.  Doing that from
+    //           inside inbox.do() would tear down the container mid-drain and strand every later frame;
+    //            on the ephemeral lane it is outside any drain, exactly like swarm_hi.  (iii) it was
+    //             costing an unemit + an ack + a whole-inbox Peeroleum_rollup_faulty walk per friend
+    //              per 5s, forever, for a frame that is best-effort by contract and asks nothing.
+    //  AWAITED now (it was not): these handlers are async (the Swarm hear funnel awaits its voucher
+    //   verify), so the old bare call let the epoch reset land in an unsequenced microtask — a frame
+    //    delivered right behind a rebirth pulse could book BEFORE the reset that was meant to clear the
+    //     way for it.  Awaiting keeps the delivery path serial, which is what the rest of it assumes.
+    if (h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase' || h.type === 'advertise' || h.type === 'swarm_hi' || h.type === 'pulse') { let on = w.c.on && w.c.on[h.type]; if (on) await on(w, pier, frame); H.feebly_ponder(); return }
     // no_protocol — the back-signal RETURNING (a peer telling us it has NO handler for a type WE sent).
     //  Ephemeral like ack: dispatch to an optional handler (a consumer surfaces "peer lacks X" + stands
     //   its own retry down) and RETURN. Critically it books NO inbox item and sends NOTHING back — never

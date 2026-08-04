@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { lifewatch } from './micro/lifetell'   // DIAGNOSTIC — strip with the rest of the remount probes
     // DoorFace — WHO AM I and WHO'S WITH ME, floating in the glass: the identity + front-door
     //  arc as the prioritised, for-the-user's-eyes face (the human's ?Iz ask, 2026-07-19).
     //   Mounted by Cytui on the %Door particle (glass_kinds.ts).  Everything here reads LIVE
@@ -10,6 +11,11 @@
     //        liveness dot (pier.c.heard_at — green within 12s, dim beyond: a reloaded tab
     //         goes dim HERE, in the other client's glass)
     let { n, H } = $props()
+
+    // DIAGNOSTIC (2026-08-04, the KeepFace remount hunt — strip with the rest of the probes): the
+    //  second CONTROL rung, a face whose source particle the DOWNLOAD never touches.  If Door's
+    //   serial climbs too, nothing about the churn is Repli-data-driven — it's the glass rebuilding.
+    lifewatch(H, 'face:Door', () => 'door')
 
     let tick = $state(0)
     $effect(() => {

@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { lifewatch } from './micro/lifetell'   // DIAGNOSTIC — strip with the rest of the remount probes
     // TransferFace — the LIVE transfer HUD (the human 2026-07-30 "I keep wanting more transfer visual feedback
     //  but I don't see any").  Mounted by Cytui on a %Transfer particle (imposed by mainkey, glass_faces.ts —
     //   no snap byte).  Reads the shared top_House().c.xfer that the wire feeds (Repli_meter rates + rolling rx
@@ -7,6 +8,13 @@
     //      so the bars JIGGLE with real packet arrival and ease to rest when the wire goes quiet.
     //  Pointer-events:none root (no buttons) so the glass stays pannable.
     let { n, H } = $props()
+
+    // DIAGNOSTIC (2026-08-04, the KeepFace remount hunt — strip with the rest of the probes): a
+    //  CONTROL rung on the life ladder.  This face sits in the same glass, under the same stage and
+    //   the same cell {#each}, and is mounted throughout a download — so if Keep's serial climbs
+    //    while THIS one stays flat, the teardown is Keep-row-specific (its key/gate/source), not
+    //     structural; if both climb together, the whole faces layer is being rebuilt.
+    lifewatch(H, 'face:Transfer', () => 'xfer')
 
     let tick = $state(0)
     $effect(() => {

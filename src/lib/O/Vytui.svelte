@@ -22,6 +22,7 @@
     import { power_cells, type Pt } from "$lib/O/vyto_geometry"
     import { GLASS_KINDS } from "$lib/O/glass_kinds"
     import { FACE_MAINKEYS } from "$lib/O/glass_faces"
+    import { lifetell } from "$lib/O/ui/micro/lifetell"   // DIAGNOSTIC — strip with the rest of the remount probes
     import { onMount, onDestroy } from 'svelte'
 
     let { H } = $props()
@@ -58,8 +59,30 @@
         const out: TheC[] = []
         for (const A of H.ob({ A: 'Vyto' }) as TheC[])
             for (const w of A.ob({ w: 'Vyto' }) as TheC[]) out.push(w)
+        // WORLDS PROBE (2026-08-04): the life ladder proved the `{#each vyto_worlds() as w (w)}`
+        //  block is recreated every tick while the `w` OBJECT stays stable (springs/paintMap, both
+        //   Map<TheC,…> keyed by w, keep hitting — one entrance ramp in a whole run, not one per
+        //    tick).  Stable key + recreated block ⟹ the each is being handed a transiently EMPTY
+        //     list: one render with 0 worlds destroys the subtree, the next brings the same object
+        //      back and rebuilds it.  Every other probe is blind to that render because they all
+        //       live INSIDE the world (build_cells / show_viewport simply never run).  This logs the
+        //        count transition and whether identity survived it — one line per gap, naming which
+        //         half went missing (the A:Vyto actor, or the w:Vyto under it).
+        const prevN = lastWorldsN
+        if (prevN !== undefined && prevN !== out.length) {
+            const nA = (H.ob({ A: 'Vyto' }) as TheC[]).length
+            const same = out.length === 1 && lastWorldObj === out[0]
+            console.log('◈ Vyto WORLDS', prevN, '→', out.length, '| A:Vyto rows=', nA,
+                        'sameObject=', same, '(false on a 0-render is expected — nothing to compare)')
+            const M: any = (H as any).top_House?.()
+            if (M) { const log = M.c.supply_trace || (M.c.supply_trace = []); log.push({ t: Date.now(), ev: 'vyto-worlds', id: 'Vyto', from: prevN, to: out.length, actors: nA, same: same ? 1 : 0 }); if (log.length > 300) log.splice(0, log.length - 300) }
+        }
+        lastWorldsN = out.length
+        if (out.length) lastWorldObj = out[0]
         return out
     }
+    let lastWorldsN: number | undefined = undefined   // DIAGNOSTIC — strip with the life ladder
+    let lastWorldObj: TheC | null = null
 
     // a bar press: `o` is an ACT (o-mark the newest moment); every other word is a toggle —
     //  on rides as 1-or-absent, deleted not zeroed (the snapped-boolean law, kept as habit
@@ -746,7 +769,12 @@
 </script>
 
 {#each vyto_worlds() as w (w)}
-    <div class="vyto">
+    <!-- LIFE LADDER (2026-08-04, the KeepFace remount hunt): four nested lifecycle-true tells —
+         world > stage > faces > mold — read against KeepFace's own ◈◈ REAL serial.  The OUTERMOST
+         serial that climbs in lockstep with KeepFace is the culprit; a level that stays SILENT is
+         proven stable, which is the half the value-comparison probes can't report.  See
+         ui/micro/lifetell.ts for the ladder, and read it with `tracelog.mjs --watch --life`. -->
+    <div class="vyto" use:lifetell={{ H, what: 'world', id: String((w.sc as any)?.w ?? '?') }}>
         <div class="bar">
             <span class="crest">Vyto</span>
             {#each w.ob({ Bar: 1 }) as b (b.sc.Bar)}
@@ -777,7 +805,7 @@
             {/each}
         </div>
         {#if show_viewport(w)}
-            <div class="stage" use:reg_stage={w}>
+            <div class="stage" use:reg_stage={w} use:lifetell={{ H, what: 'stage', id: String((w.sc as any)?.w ?? '?') }}>
                 <svg class="viewport" viewBox="0 0 800 450" preserveAspectRatio="xMidYMid meet">
                     {#each viewport_cells(w) as cell (cell.key)}
                         {@const g = cell_ground(cell)}
@@ -802,11 +830,12 @@
                      keeps its 800×450 aspect at width:100%, so a % box tracks its cell exactly — no
                      pixel measurement, no overlay-sync drift).  Each faced cell mounts its glass
                      component handed the live source particle + the House. -->
-                <div class="faces">
+                <div class="faces" use:lifetell={{ H, what: 'faces', id: String((w.sc as any)?.w ?? '?') }}>
                     {#each viewport_cells(w) as cell (cell.key)}
                         {#if cell.face && !cell.departing && !cell.hasKids}
                             {@const Face = cell.face}
                             <div class="face-mold" class:lift={cell.lift} data-key={cell.key}
+                                 use:lifetell={{ H, what: 'mold', id: cell.key }}
                                  style="left:{(cell.bx / 800) * 100}%; top:{(cell.by / 450) * 100}%; width:{(cell.bw / 800) * 100}%; height:{(cell.bh / 450) * 100}%;"
                                  onpointerenter={() => on_enter(w, cell.key, cell.tok)}
                                  onpointerleave={() => on_leave(w, cell.key, cell.tok)}>

@@ -12,6 +12,9 @@
 //    node scripts/tracelog.mjs                 # newest _trace file, whole ring, one shot
 //    node scripts/tracelog.mjs --watch         # live tail: re-read ~1s, print only new marks
 //    node scripts/tracelog.mjs --heist         # only heist-* marks (+ the stream/transcode kin)
+//    node scripts/tracelog.mjs --watch --life  # only the mount/destroy ladder (ui/micro/lifetell.ts)
+//                                              #  — world > stage > faces > mold > face:<Kind>.
+//                                              #  Outermost climbing serial = the real teardown.
 //    node scripts/tracelog.mjs --file <path>   # a specific dump (a fleet has one file per pub/boot)
 //    node scripts/tracelog.mjs --list          # list the dump files (role · pub · boot · marks · age)
 //
@@ -27,11 +30,17 @@ const val  = (f) => { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : n
 
 const WATCH = has('--watch')
 const HEIST = has('--heist')
+const LIFE  = has('--life')
 const FILE  = val('--file')
 const LIST  = has('--list')
 
 // heist filter: the acquisition marks + the stream/transcode kin that feed a pull.
 const heisty = (ev) => /^heist-/.test(ev) || /^(transcode-|stream-|pcm-)/.test(ev)
+// life filter: the lifecycle ladder (ui/micro/lifetell.ts) + the stage-gate toggle it pairs with —
+//  a remount hunt wants ONLY these, because the ring is capped 300 and a busy download drowns them.
+const lifey = (ev) => /^life-/.test(ev) || ev === 'vyto-show-toggle'
+// one predicate, so --watch and the one-shot path can never drift apart.
+const keep = (e) => (!HEIST || heisty(e.ev)) && (!LIFE || lifey(e.ev))
 
 function dumps() {
 	let names
@@ -85,9 +94,10 @@ if (!path) {
 }
 
 if (!WATCH) {
-	const m = (HEIST ? marks(path).filter((e) => heisty(e.ev)) : marks(path))
-	if (!m.length) { console.error(`(${path}: no${HEIST ? ' heist' : ''} marks yet)`); process.exit(1) }
-	console.log(`${path} — ${m.length} mark${m.length === 1 ? '' : 's'}${HEIST ? ' (heist)' : ''}  (Δ = ms since previous mark):`)
+	const m = marks(path).filter(keep)
+	const tag = HEIST ? ' heist' : LIFE ? ' life' : ''
+	if (!m.length) { console.error(`(${path}: no${tag} marks yet)`); process.exit(1) }
+	console.log(`${path} — ${m.length} mark${m.length === 1 ? '' : 's'}${tag ? ` (${tag.trim()})` : ''}  (Δ = ms since previous mark):`)
 	let prev = null
 	for (const e of m) { console.log(fmt(e, prev)); prev = e.t }
 	process.exit(0)
@@ -103,7 +113,7 @@ let cur = path
 function tick() {
 	const p = FILE || (dumps()[0]?.path ?? cur)
 	cur = p
-	const m = marks(p).filter((e) => e.t > seen && (!HEIST || heisty(e.ev)))
+	const m = marks(p).filter((e) => e.t > seen && keep(e))
 	if (m.length) {
 		let prev = seen === -Infinity ? null : seen
 		for (const e of m) { console.log(fmt(e, prev)); prev = e.t }

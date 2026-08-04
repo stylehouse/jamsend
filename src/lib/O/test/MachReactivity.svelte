@@ -6,6 +6,7 @@
     import { armap, depeel, enhex, Idento, nex, peel, sex } from "$lib/Y.svelte";
     import { onMount } from "svelte";
     import ReactiveWaft from "./ReactiveWaft.svelte"
+    import ReactiveInline from "./ReactiveInline.svelte"
 
     let {M} = $props()
 
@@ -51,8 +52,11 @@
 
             H.logger(w)
 
-            H.oai_enroll(H, { watched: 'UIs' })
-                .oai({ UI: 'ReactiveWaft', component: ReactiveWaft })
+            // BOTH twins mount over the SAME tree — the gated list and the ungated one — so a
+            //  single run says which shape survives a replace window and which one doesn't.
+            const UIs = H.oai_enroll(H, { watched: 'UIs' })
+            UIs.oai({ UI: 'ReactiveWaft',   component: ReactiveWaft })
+            UIs.oai({ UI: 'ReactiveInline', component: ReactiveInline })
         }
 
         await H.on_step({
@@ -79,6 +83,36 @@
             },
             5: async () => {
                 lies.c.be_weird = false
+            },
+            // ── the ungated-twin reproduction (2026-08-04) ───────────────────────────────────
+            //  With be_weird back OFF, the GATED twin is in its good configuration: it assigns
+            //   all_wafts inside H.clear(), so its list is only ever read from settled state.  The
+            //    UNGATED twin (ReactiveInline) reads the same list from a template expression on
+            //     every render, gate or no gate.  Open a replace window across BOTH of them and
+            //      the difference is the whole finding: same tree, same keys, same objects — only
+            //       the read discipline differs.
+            6: async () => {
+                li?.('replace under both twins')
+                const before = ((H as any).c.__remounts ||= {})
+                ;(H as any).c.__remounts_before = { mount: before.mount || 0, imount: before.imount || 0 }
+                await w.oai({ Waft: 'test2' }).r(
+                    { Doc: 1, path: 'x.g' },
+                    { Doc: 1, path: 'xx.g' },
+                )
+                ave.bump_version()
+            },
+            7: () => {
+                const now: any    = (H as any).c.__remounts || {}
+                const before: any = (H as any).c.__remounts_before || { mount: 0, imount: 0 }
+                const gated   = (now.mount  || 0) - (before.mount  || 0)
+                const ungated = (now.imount || 0) - (before.imount || 0)
+                li?.('remounts across the window', { gated, ungated })
+                // ONCE-NOTICED (no commas — the peel parser splits on them).  The claim is the
+                //  comparison itself: it is not that a keyed each is fragile but that reading the
+                //   list from a template expression is what makes it fragile.
+                const said = 'a replace window tore down every child of the template-read list while the clear-gated list kept its instances — the keys never moved so only a lifecycle tell can see it'
+                if (ungated > gated && !w.oa({ see: said })) w.i({ see: said })
+                w.i({ ReactiveWindow: 1, gated, ungated })
             },
         })
     },

@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '23147afe3620ca46~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'ebde2d335f44cddb~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -1103,6 +1103,70 @@ async Heist_materialise_one(w, nav, me, ref) {
     rec.sc.body_hash = await sha256_hex_fast(bytes)
     rec.sc.total = total
     delete rec.sc.husk
+    rec.bump()
+    // remember how to REBUILD this rec after its scratch lib is swept — the reload-recovery heal below.
+    this.Heist_keep_remember(w, rec, base)
+    return rec
+
+},
+// ── the post-sweep serve heal (2026-08-04) — the SECOND half of reload recovery ──────────────
+//  The epoch machinery (Swarm.g) makes the source learn that a reloaded sink is a new incarnation.
+//   This closes the other reload hole, on the SOURCE side: a materialised original lives in a
+//    scratch %RummageLib that is time-swept (LIB_TTL, Heist_keep_beat) and count-bounded (8 libs,
+//     Heist_register_serve_lib).  A sink that reloads and re-pulls AFTER its lib went misses at
+//      Repli_find_record → the want dies with only a Repli_serve_miss line and the sink re-asks
+//       every 4s forever.  Note this is NOT the release-after-serve path, which already self-heals
+//        (the release drops %Body particles but keeps the rec, so Ra's A3 re-materialise finds it)
+//         — the hole is only when the whole LIB goes, taking the (keep-id → base+path) mapping with
+//          it, which is the one fact that cannot be reconstructed from the id alone.
+//  So remember it.  A tiny bounded runtime memo (id → the sc a rec needs to be re-servable) costs a
+//   few hundred bytes per track and outlives any number of lib sweeps.  All .c — no snap byte.
+
+// Heist_keep_remember — memoise a materialised rec's rebuild recipe, keyed by its keep-id.  Bounded
+//  drop-oldest (insertion-ordered keys, the Repli_recv_page idiom) so a long-running station cannot
+//   accrete without limit.  Only the PROMISE is kept (total/body_hash/bytes) — never the bytes.
+Heist_keep_remember(w, rec, base) {
+    if (!w || !rec || !rec.sc.id || !rec.sc.path) return
+    let memo = (w.c.keep_memo = w.c.keep_memo || {})
+    memo[String(rec.sc.id)] = {
+        base: String(base || ''), path: String(rec.sc.path),
+        total: +(rec.sc.total || 0), body_hash: rec.sc.body_hash, bytes: +(rec.sc.bytes || 0),
+        title: rec.sc.title, artist: rec.sc.artist, album: rec.sc.album, genre: rec.sc.genre, ext: rec.sc.ext,
+    }
+    let keys = Object.keys(memo)
+    let CAP = +(w.c.keep_memo_cap || 2000)
+    if (keys.length > CAP) { for (const k of keys.slice(0, keys.length - CAP)) delete memo[k] }
+
+},
+// Heist_reheal_id — a want arrived for a keep-id whose serve lib is gone: rebuild the husk from the
+//  memo so the ORDINARY machinery takes it from here.  Deliberately does NOT read the disk — it
+//   re-mints the scratch lib and a rec carrying the PROMISE (total + body_hash, no %Body particles),
+//    which is exactly the shape Ra's A3 re-materialise already knows how to fill: the want then
+//     PARKS (Repli_page_ready false, from < total), Ra_transcode_pump sees body_hash && has_body <
+//      total, calls Heist_materialise_one — which finds this rec by path and re-reads the file — and
+//       Repli_serve_parked ships it.  No new producer, no inline read on the serve path (a disk read
+//        inside Repli_serve_want is the 64s stall this codebase already paid for once).
+//  Returns the rebuilt %Record, or null when the id was never ours to serve.
+Heist_reheal_id(w, id) {
+    let memo = w && w.c.keep_memo
+    let m = memo && memo[String(id)]
+    if (!m || !m.total) return null
+    let lib = w.oai({ RummageLib: String(id), dontSnap: 1 })
+    lib.c.up = w
+    lib.c.base = m.base
+    this.Heist_register_serve_lib(w, lib)
+    let rec = this.Ra_rec_home(lib, String(id))
+    rec.sc.path = m.path
+    rec.sc.total = m.total
+    rec.sc.body_hash = m.body_hash
+    if (m.bytes) rec.sc.bytes = m.bytes
+    // guarded stamps: an absent memo field must never write `undefined` into sc (the encoder brands
+    //  the line {"undef":[...]} — a mint bug, not furniture).
+    if (m.title) rec.sc.title = m.title
+    if (m.artist) rec.sc.artist = m.artist
+    if (m.album) rec.sc.album = m.album
+    if (m.genre) rec.sc.genre = m.genre
+    if (m.ext) rec.sc.ext = m.ext
     rec.bump()
     return rec
 

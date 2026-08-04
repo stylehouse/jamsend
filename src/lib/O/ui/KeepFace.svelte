@@ -1,10 +1,3 @@
-<script module lang="ts">
-    // instance serial — increments once per REAL component creation (module scope, shared across every
-    //  KeepFace instance).  Pairs with the onMount/onDestroy tells below to tell a genuine keyed-each
-    //   teardown apart from a mere $effect re-run (which re-fires cleanup+body with NO real remount).
-    let __kf_serial = 0
-</script>
-
 <script lang="ts">
     // KeepFace — the ⇊ "keep what you're hearing" heist AS A TIDY VYTO CELL (the human 2026-07-28: "I DO
     //  want the Heist UI ... in a few Vyto cells ... nodulate down the folder hierarchy ... it can be left
@@ -24,6 +17,7 @@
     //   existing genre-field technique: local draft, commit on blur — no elaborate exploded form).
     import { tick as afterRender, onMount, onDestroy } from 'svelte'
     import DeleteX from './micro/DeleteX.svelte'
+    import { lifewatch } from './micro/lifetell'   // DIAGNOSTIC — strip with the rest of the remount probes
     let { n, H } = $props()
     const A = H as any
 
@@ -50,9 +44,12 @@
     //           derive moving under the edit (tame with the dirs freeze), not a teardown.
     //        · ◈◈ REAL mount N / destroy N, N CLIMBS ⟹ genuine keyed-each teardown; chase the each
     //           identity (cell.key / ancestor {#if} / <svelte:boundary>), not component-local state.
-    const myId = ++__kf_serial
-    onMount(()   => console.log('◈◈ KeepFace REAL mount',   myId, String(n?.sc?.Keep || n?.sc?.id || '?')))
-    onDestroy(() => console.log('◈◈ KeepFace REAL destroy', myId, String(n?.sc?.Keep || n?.sc?.id || '?')))
+    // (2026-08-04) this tell now rides `lifewatch` (ui/micro/lifetell.ts) — same lifecycle truth,
+    //  but it ALSO lands each mount/destroy in the supply_trace ring, so the repro is read off disk
+    //   with `node scripts/tracelog.mjs --watch --life` instead of copying console.  It is the
+    //    INNERMOST rung of the life ladder Vytui now brackets around it (world > stage > faces >
+    //     mold > this); whichever OUTER rung climbs alongside it is the actual teardown.
+    lifewatch(H, 'face:Keep', () => String(n?.sc?.Keep || n?.sc?.id || '?'))
 
     // in-place editing — SEGMENTS, not one field (the human 2026-07-30, correcting a prior over-
     //  simplification): editing either hierarchy is a row of small chips (one per segment, its own × to

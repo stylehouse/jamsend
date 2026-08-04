@@ -3,14 +3,22 @@
     import type { TheC }  from "$lib/data/Stuff.svelte"
     import { onMount }    from "svelte"
 
-    let { H, waft }: { H: House; waft: TheC } = $props()
+    // `tag` names which twin this instance belongs to, so one log tells the GATED list
+    //  (ReactiveWaft, `mount`) apart from the UNGATED one (ReactiveInline, `imount`).  It
+    //   defaults to 'mount', so the original single-twin run logs byte-identically.
+    let { H, waft, tag = 'mount' }: { H: House; waft: TheC; tag?: string } = $props()
 
     const li = () => (H as any).c?.loggeri as ((end: string, sc?: Record<string,any>) => void) | undefined
 
     let adding_doc = $state<{ text: string } | null>(null)
 
     onMount(() => {
-        li()?.('mount', { Waft: waft.sc.Waft })
+        li()?.(tag, { Waft: waft.sc.Waft })
+        // a lifecycle-true remount TALLY the Book can assert on — onMount fires exactly once per
+        //  real instance, so a climbing count is a climbing number of teardowns.  Off-snap on .c
+        //   (runtime bookkeeping, never a snapped byte); the Book reads it in a later step.
+        const c = ((H as any).c.__remounts ||= {})
+        c[tag] = (c[tag] || 0) + 1
     })
 
     $effect(() => {

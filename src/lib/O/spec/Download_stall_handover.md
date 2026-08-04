@@ -3,7 +3,79 @@
 Continuation brief for the p2p music **heist DOWNLOAD** not working. Fold into `Heist_todo.md` /
  `Radio_todo.md` once triaged; retire to `spec/history/` when the download is proven end-to-end.
 
-## NEXT — the reload-recovery gap (2026-08-02, not yet fixed; gated on a live 2-tab repro)
+## NEXT — the reload-recovery gap: FIX LANDED 2026-08-04, **LIVE 2-TAB PROOF OWED**
+
+**Status:** built + LocalGen-green + fixture-reasoned, **zero live verification**. The whole class
+ only shows up on a busy networked system running for minutes (see The bomb, below) — so this is
+  *unproven* until two tabs do it. Uncommitted, in `Ghost/S/Swarm.g`, `Ghost/N/Peeroleum.g`,
+   `Ghost/M/Heist.g`, `Ghost/N/Repli.g` (+ their four `.go`).
+
+**The diagnosis got bigger than the entry below.** It is not one fragile link — it is a CHAIN of
+ five conditionals, and any single one strands the pair. The original entry (kept verbatim below,
+  it is still accurate as far as it goes) named links 1–3. Two more were found on the way in:
+- **(4) `pulse` was not receive-side ephemeral.** It was ephemeral on SEND but still booked an inbox
+   `%unemit` — so a reborn peer's seq-from-1 pulses hit the reused-seq collision (`Peeroleum.g` ~625),
+    got re-acked and **never dispatched**, so `heard_at` never stamped at all, the friend read as
+     dead, and `Swarm_share_beat`'s presence gate skipped them. That is the SAME symptom ("A stops
+      sending B new music") arriving from the presence side rather than the era side — and it is the
+       *opposite* failure mode to link 3, so which one you get depends on seq history. Either way
+        the pair strands.
+- **(5) `offered_mark` is change-triggered only** (`Swarm.g` ~1548), so a mark that is
+   wrong-but-stable is a silent permanent hole with no self-heal of any kind.
+
+**The fix — make the epoch un-loseable rather than adding another retry.** No new frame types; the
+ era rides carriers that already exist and already repeat:
+- **`Swarm_era` / `Swarm_note_era`** (`Swarm.g`) — ONE implementation of "the peer restarted",
+   replacing the copy that lived inside `Swarm_heard_hi`. `Swarm_heard_hi` still calls it (idempotent)
+    because **SwarmShare beat 9 feeds it a raw frame directly, bypassing the funnel** — routing the
+     era through the funnel alone would have silently dropped the restart signal there. That Book is
+      the regression gate for this whole change.
+- **The era rides EVERY swarm frame** — `Swarm_deliver` stamps `era` + `saw` exactly like it already
+   stamps `voucher`. Any surviving frame from a reborn peer announces the rebirth.
+- **`saw:` is the confirmation half** — it echoes the last era heard from you, so a frame proves
+   whether the peer holds *my* current era. That is the fact the re-arm actually needs; `quiet` was
+    only ever a proxy for it, and a proxy that is blind to the exact stranded case (a friend who IS
+     talking, from a stale epoch).
+- **The re-greet is now epoch-driven, not silence-driven** (`Swarm_pulse_all`) — `quiet` stays as the
+   dead-link probe, `unconfirmed` is the new trigger, backed off 5s→60s and zeroed on confirmation.
+    It is a BACKSTOP: the pulse itself carries the era, so the normal case converges in ~5s with no
+     extra frame. Uses a NON-minting route lookup — a heartbeat must not promote a Pier as a side effect.
+- **`pulse` joins the ephemeral receive lane** (`Peeroleum.g`) — collision-immune (fixes link 4),
+   safe to run the epoch reset from (a reset drops the inbox; doing that inside `inbox.do()` would
+    strand the very frames it exists to unblock), and it stops costing an unemit + ack + a whole-inbox
+     `rollup_faulty` walk per friend per 5s. **The `may_reset` gate is load-bearing:** only the
+      ephemeral-lane kinds (`pulse`, `swarm_hi`) may reset; a booked kind only RECORDS the era.
+- **A re-offer floor** (`w.c.swarm_offer_floor_ms`, 60s) — fixes link 5. Turns any undetectable hole
+   into a delay of at most one interval, for one husk fragment per friend per minute.
+- **The secondary hazard is closed too** — `Heist_keep_remember` / `Heist_reheal_id` (`Heist.g`) is a
+   bounded runtime memo of (keep-id → base+path+total+body_hash), so a want arriving after the scratch
+    serve-lib was swept rebuilds the husk and PARKS instead of dying silently at `Repli_find_record`.
+     Deliberately no disk read on the serve path — it re-mints the promise and lets Ra's existing A3
+      re-materialise fill it. Wired in at `Repli_serve_want`'s `!rec` branch, `typeof`-guarded so a
+       Heist-less world is unchanged.
+
+**Fixture reasoning (no Book was run — this is the argument, not the proof):** Books never call
+ `Swarm_pulse_all`/`Swarm_hi_all`/`Swarm_share_beat` (pulse is "never in a Book" by contract) and never
+  route `swarm_hi` through the hear funnel; Swarmation stamps `station_up` **by hand**, not through
+   `Swarm_station_up`, so no Book mints an era; every new field is `.c`. The one Book that exercises
+    the era is **SwarmShare** (beats 7 + 9) and it calls `Swarm_heard_hi` directly — handled above.
+     **Sounditron is the one to actually watch**: it is the only caller of `Swarm_pulse_all`, and
+      pulse leaving the inbox means no `%unemit`/`%recent` pulse rows in its snap.
+
+**THE NEXT MOVE (the whole point):**
+1. Hard-reload BOTH tabs (gen is stale until then — [[hmr-socket-dead-tell]]).
+2. Seal them, start a heist, then **reload B mid-transfer** and watch A keep feeding it.
+3. `runner_ask world` on both; the tell of success is A re-offering within ~5s of B's reload
+    rather than never.
+4. Re-run **SwarmShare** (the era-reset gate) + the Swarmation family. Run each several times —
+    a race shows as a flip-flopping `ok_pct`, never as one red (Coding_guide § "Verify by RE-RUNNING").
+5. Owed after that: the traffic-lane classification + the shared upload cap (designed, not built —
+    the cap must NEVER meter the presence lane, or the speed limit becomes a new instance of this
+     very bug).
+
+---
+
+### The original diagnosis (2026-08-02) — links 1–3, still accurate
 
 **Symptom (the human):** reload tab B (the downloader) and tab A stops sending it NEW music.
  A Repli session *should* recover from a Pier refresh — and mostly does — but the "new music" lane

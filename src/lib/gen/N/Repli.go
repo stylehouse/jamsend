@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return '98e6694ab59c6b11~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return '579065ad6a706d8d~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -520,6 +520,17 @@ async Repli_serve_want(w, pier, frame) {
     if (!lib) { this.Repli_serve_miss(w, h, 'no serve source for this pier'); return }
     if (!this.Repli_allowed(w, h.from, h.to)) { this.Repli_serve_miss(w, h, 'consent refused — grant revoked or wrong peer'); return }
     let rec = this.Repli_find_record(w, h.id, lib)
+    // RELOAD-RECOVERY HEAL (2026-08-04): a miss here USED to be terminal — the want died with one
+    //  throttled log line and the sink re-asked every 4s forever, which is exactly what a sink that
+    //   reloads and re-pulls AFTER its scratch serve-lib was swept hits.  Ask the Heist layer whether
+    //    it remembers how to rebuild this keep-id (Heist_reheal_id — a bounded runtime memo of
+    //     base+path+total+body_hash, outliving any lib sweep) and let the ordinary park→re-materialise
+    //      →serve-parked path take it from there.  Optional-by-typeof like Heist_body_at below: Repli
+    //       never imports Heist, and a world with no Heist (every Book, the plain radio) is unchanged.
+    if (!rec && typeof this.Heist_reheal_id === 'function') {
+        rec = this.Heist_reheal_id(w, h.id)
+        if (rec) this.Repli_serve_miss(w, h, 'serve lib swept — rebuilt husk from memo, re-materialising')
+    }
     if (!rec) { this.Repli_serve_miss(w, h, 'no record for id — materialise gone / wrong id-space'); return }
     // last-wanted stamp (Evening 5 A2): the release-after-serve sweep frees a rec's bytes only once its wants
     //  have gone idle, so an actively-asking sink (serve OR park) keeps its bytes held.  .c-only, inert for opus.
