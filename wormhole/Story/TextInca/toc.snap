@@ -28,9 +28,7 @@ story:TextInca
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.01
-      sample=0.02,at=1779067355
-      sample=0.008,at=1779622879
+    TimeTotal:beliefs,avg=0.011
       sample=0.01,at=1781146919
       sample=0.008,at=1781587298
       sample=0.008,at=1781587310
@@ -39,9 +37,13 @@ story:TextInca
       sample=0.009,at=1782718080
       sample=0.014,at=1782718839
       sample=0.006,at=1783255970
-    TimeTotal:step,avg=0.009
+      sample=0.023,at=1785833429
+      sample=0.01,at=1785835344
+    TimeTotal:step,avg=0.011
       sample=0.007,at=1782709858
       sample=0.009,at=1782718080
       sample=0.014,at=1782718839
       sample=0.006,at=1783255970
+      sample=0.023,at=1785833429
+      sample=0.01,at=1785835344
   step,dige:0d57c95cdee9ab11

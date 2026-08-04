@@ -47,8 +47,15 @@ Swarm_identity(container, keys, friendly):
     return ident
 
 // Swarm_peering — the identity's own page (1:1 for now — the 1:N door is §2's deferred hold).
+//  NULL-SAFE IN THE ARGUMENT, not just the result (2026-08-04).  Every caller already treats a missing
+//   peering as ordinary — `Swarm_address` reads `peering?.sc`, `Swarm_restash_piers` does `if (!peering)
+//    return 0`, `SwarmDisk_witness` writes `Swarm_peering(x)?.o(…)` — but that `?.` guards the RETURN,
+//     so an undefined `ident` still threw one frame earlier and took the whole req down.  The tell was a
+//      witness that reads "each pass's settled state" being called at a beat where its subject does not
+//       exist yet (SwarmDisk beat 2 asking after the beat-5 AliceReseed vault).  That is not a caller
+//        bug: a not-yet-born identity HAS no page, which is exactly what undefined means here.
 Swarm_peering(ident):
-    return ident.o({ Peering: 1 })[0]
+    return ident ? ident.o({ Peering: 1 })[0] : undefined
 
 // Swarm_page — the PRUNED public face that crosses the wire: pub + prepub + friendly and nothing
 //  else. The %Pier children (your contact list) stay private by CONSTRUCTION — the page is built,

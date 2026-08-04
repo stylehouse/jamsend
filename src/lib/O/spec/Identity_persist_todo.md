@@ -6,7 +6,56 @@ The "big deal" thread (the human, 2026-07-27): *"getting Identity to be persiste
    the build plan. Parallel to the compact-invite cut (`Swarm_compact_invite_todo.md`), touching none
     of its seams.
 
-## 0. State — BUILT + GREEN (2026-07-27)
+## 0. State — BUILT + GREEN (2026-07-27) · SEAM CUT, AWAITING ITS LIVE PROOF (2026-08-04)
+
+> **UPDATE, 2026-08-04 (later the same day) — the seam below is now WIRED.** Auto
+>  `Clustation_ensure_identity` no longer arrests straight off a Dexie miss: it tries the disk first
+>   via `Swarm_boot_seed(nav, '', vault, param)`, and on a hit concretes the identity AND mirrors the
+>    row back into Dexie so the next boot is a plain Dexie hit. The arrest is now the LAST resort it
+>     was always meant to be. Three guards, each load-bearing — read them in the code comment before
+>      touching this:
+>  - **nav not up yet → retry, don't arrest** (`A:Wormhole/c.nav` is null until the disk stands up),
+>     bounded by `SEED_WAIT_MS = 5000` so a browser with no share still reaches the hatch;
+>  - **remote nav → refused.** `.jamsend` cannot cross the wire (so a remote nav *cannot* answer this
+>     read), and awaiting an `atime_async` nav here would deadlock under the beliefs mutex anyway —
+>      `Crate_nav`'s own caveat. Do not "fix" a failing seed by relaxing either half;
+>  - **attempted once**, not once per boot pass — an arrest returns false and Auto re-enters every
+>     pass, so an un-guarded read would hammer the disk forever (`identity_seed_tried`).
+>
+> **What is proven and what is not.** Type-clean (svelte-check 3408/123, the standing baseline) and
+>  the disk layer's own Book is unaffected — but `SwarmDisk` exercises `Swarm_boot_seed` against an
+>   IN-MEMORY nav double (`SwarmDisk_memnav`), so *nothing yet proves the real FSA path*. **This still
+>    needs the two-tab fingers-test with a human**: mint on one tab, clear IndexedDB on another,
+>     reload with the same `?I=`, and watch for `🪪 Identity RESTORED from disk`. That is the one
+>      thing a Book cannot buy.
+>
+> **Known gap, deliberately not closed here.** The seed grafts into a DETACHED vault (an unattached
+>  `_C` snaps nothing), so only the KEYPAIR is adopted — the identity's piers/grants are not.
+>   `Swarm_piers_rehydrate` owns that rail and reads Dexie, which is empty in exactly this scenario,
+>    so a disk-restored owner comes back friendless. The key is what the arrest is about; the friends
+>     are a follow-on (`Swarm_restash_piers` is the converse half and already exists).
+
+> **Escalation, 2026-08-04 — do this seam next.** The editor lost its identity **twice in one
+>  session**: `?I=49dee91d61a9de64` (resolved by minting a new one through the IdHatch arrest) and
+>   then again a few hours later, now booting as `?I=cdbe098c044e6806`. The human: *"editor lost its
+>    crypto again!? weird. we really need to get our shit together."*
+>
+> This is exactly the failure `Swarm_boot_seed` exists to prevent, and the only reason it still
+>  happens is that the wiring below was never cut. Dexie is currently the SOLE home of a browser's
+>   keypair, so anything that clears site data — a profile wipe, an origin change, a quota eviction,
+>    a hand-cleared IndexedDB — destroys an identity that is already sitting safely on disk in
+>     `.jamsend/account/<prepub>/toc.snap`. **The keys are persisted; nothing reads them at boot.**
+>
+> Two consequences that make it worse than "re-mint and move on", both seen today:
+>  - a re-mint changes the tab's addressable prepub, so **cluster trust must be re-granted** (the
+>     relay rejects `gen_write` from an untrusted pub) and every runner's roster entry is stale;
+>  - the identity ARREST (Auto `Clustation_ensure_identity`, Cluster_spec §3.2a) correctly HOLDS the
+>     boot rather than silently minting a stranger — which is right, but it means a lost key is a
+>      hard stop for the tab, not a degradation. Reading disk first would make the arrest rare.
+>
+> Scope reminder so this doesn't sprawl: `.jamsend` is owner-local and the Wormhole REFUSES to serve
+>  any path with a `.jamsend` segment over the wire (Housing `rw_op`, invariant 1) — that guard is
+>   what makes an on-disk private key acceptable at all. Do NOT relax it to make boot-seed easier.
 
 The disk layer is CUT and proven on the live runner (`SwarmDisk` green×2, runner 20e3476b). What
  stands, and the one seam still owed:

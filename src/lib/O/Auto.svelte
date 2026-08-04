@@ -172,6 +172,64 @@
             return true
         }
 
+        // DEXIE MISS → TRY THE DISK before arresting (2026-08-04, the second lost-identity of the day).
+        //  The keys were never gone: Swarm_account_save has been writing the whole account (keypair
+        //   embedded) to .jamsend/account/<prepub>/toc.snap all along, and Swarm_boot_seed reads it back.
+        //    Nothing called it at boot, so a browser with a cleared Dexie arrested next to its own key.
+        //  This is Identity_persist_todo §3's "one owed seam". Guards, each load-bearing:
+        //   NAV NOT UP YET → return false, do NOT arrest. Auto re-enters ensure_identity every boot pass
+        //    (the thang_add guard above uses the same retry), and A:Wormhole/c.nav is null until the disk
+        //     stands up. Bounded by SEED_WAIT_MS so a browser with no share at all still reaches the
+        //      arrest instead of retrying forever — silence must degrade to the hatch, never to a hang.
+        //   REMOTE NAV → REFUSED, and not merely as policy. .jamsend is owner-local: the Wormhole will
+        //    not serve any path with a .jamsend segment over the wire, so a remote nav CANNOT answer this
+        //     read — and awaiting an atime_async nav here would deadlock anyway (Crate_nav's own caveat:
+        //      its promise settles off an inbound relay frame whose delivery itself needs Atime, and we
+        //       are under the beliefs mutex). Do not "fix" a failing seed by relaxing either half.
+        //  The seed grafts into a DETACHED vault, never the live tree: we want the keypair, and an
+        //   unattached C snaps nothing. Piers/grants under the seeded identity are therefore NOT adopted
+        //    here — Swarm_piers_rehydrate owns that rail and reads Dexie, which is empty in exactly this
+        //     scenario. Friends still need a re-graft pass; the key (what the arrest is about) is restored.
+        //  ONCE, not once-per-pass: on an arrest ensure_identity returns false and Auto re-enters it on
+        //   EVERY boot pass, so an un-guarded read here would hammer the disk forever. identity_seed_tried
+        //    is stamped as soon as a real attempt completes (nav present, found or not) — a second read
+        //     could not answer differently. The nav-not-up branch deliberately does NOT stamp it: that is
+        //      the one case where waiting genuinely changes the answer.
+        const SEED_WAIT_MS = 5000
+        const topH = ((H as any).top_House?.() ?? H) as House
+        if (typeof (H as any).Swarm_boot_seed === 'function' && typeof (H as any).Crate_nav === 'function'
+            && !(topH.c as any).identity_seed_tried) {
+            const nav = (H as any).Crate_nav()
+            if (!nav) {
+                // disk not up yet — hold the arrest open for a beat, then fall through to it.
+                const t0 = (topH.c as any).identity_seed_since ??= Date.now()
+                if (Date.now() - t0 < SEED_WAIT_MS) return false
+            } else if ((nav as any).atime_async) {
+                ;(topH.c as any).identity_seed_tried = 1
+                console.warn(`🪪 identity disk-seed skipped — nav is REMOTE; .jamsend never crosses the wire.`)
+            } else {
+                ;(topH.c as any).identity_seed_tried = 1
+                try {
+                    const vault = _C({ Account: 1, of: 'BootSeed' })
+                    const seed  = await (H as any).Swarm_boot_seed(nav, '', vault, param)
+                    const keys  = seed?.ident?.c?.keys
+                    if (keys?.pub && keys?.key && seed.prepub === param) {
+                        const stored = { pub: keys.pub, key: keys.key, prepub: seed.prepub,
+                                         born: seed.ident.sc.born, friendly: seed.ident.sc.friendly }
+                        await (H as any).thang_add(wT, stored.prepub, stored)   // so the NEXT boot is a Dexie hit
+                        ;(H as any).Clustation_concrete(A, param, stored)
+                        delete (topH.c as any).identity_seed_since
+                        console.log(`🪪 Identity RESTORED from disk ${cluster_name(stored.prepub)} (${stored.prepub}) — .jamsend/account`)
+                        return true
+                    }
+                    if (seed?.prepub && seed.prepub !== param)
+                        console.warn(`🪪 disk holds ${seed.others?.length ?? 0} account(s) but none is ${param}.`)
+                } catch (er) {
+                    console.warn(`🪪 identity disk-seed failed — ${String(er).slice(0, 120)}`)
+                }
+            }
+        }
+
         // MISS (or a corrupt mismatched row) — arrest, don't substitute (see the doc comment above).
         const why = (peeked?.pub && peeked?.key)
             ? `stored row is CORRUPT — filed under ${param} but holds the keypair for ${peeked.prepub} (the old silent-mint bug). Generating a new identity is the clean fix; delete the bad row if you want the tag freed.`

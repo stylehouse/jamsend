@@ -35,6 +35,15 @@ export const ANSWER_CALLS_TICK_MS = 50
 export const AMBIENT_MAIN_TICK_MS = 200
 // see also reset_interval() 3600ms
 
+// ── Wormhole op retry (Wormhole_park) ────────────────────────────────────────────────────────
+//  How long ONE disk/proxy op may run before we stop waiting on it and try again.  Comfortably
+//   above a healthy local FSA op (microseconds) and above a relay round-trip, so a timeout means
+//    something is genuinely wrong rather than merely slow.
+export const WH_OP_TIMEOUT_MS = 5000
+export const WH_OP_TRIES      = 4      // attempts before the caller is told it failed
+export const WH_OP_RETRY_MS   = 250    // linear backoff: attempt N waits N×this
+export const WH_OP_PARALLEL   = 8      // concurrent READS per queue; writes always run alone
+
 // ── Technique A — the gallop: ONE axis, default ON ───────────────────────────────────────────
 //  WHICH Houses gallop is the only real question, and it is answered by ONE presence-keyed opt-OUT
 //   mark, c.no_gallop — Story sets it on a Run whose Book carries The/Opt/{no_gallop:1} (the
@@ -848,6 +857,23 @@ export class House extends StorableHousing {
     feebly_ponder() {
         if (!this.c.runtime) return
         this.main(true)
+    }
+
+    // ponder_now: an UNTHROTTLED think push, for a real event that must not wait out the ambient
+    //  throttle.  main()/feebly_ponder()/ponder() all funnel through main_throttle at
+    //   AMBIENT_MAIN_TICK_MS (200 ms) — deliberately, because ambient chatter SHOULD collapse.
+    //    But "the disk answered" is not chatter, and paying 200 ms per settle caps a parked
+    //     Wormhole queue at 5 ops/sec — WORSE than the ~20/sec of the inline path it replaces,
+    //      which is almost certainly why local navs were left awaiting under the mutex instead.
+    //   Safe against storming: the serial slot means at most one op settles per queue at a time,
+    //    and _really_answer_calls collapses adjacent %think at the head of the todo anyway.
+    //  Use ONLY on a genuine settle — never on a poll, or the throttle exists for nothing.
+    //  Bypasses no_ambient, exactly as the main(true) it replaces did: a Story run sets no_ambient
+    //   to keep ambient chatter out of its cadence, but a settled disk reply is the very thing the
+    //    run is waiting for — gating it there would hang every Book that reads a file.
+    ponder_now() {
+        if (this.stopped) return
+        this._push_todo(new TheC({ c: {}, sc: { elvis: 'think', Aw: '' } }))
     }
 
     // ponder: bypasses no_ambient AND asserts Runtime.
@@ -2034,14 +2060,89 @@ export class House extends StorableHousing {
     //             `H:Mundo rw_op` beside a "read STUCK 278s — no reply landed at all"; same event).
     //  So do not read the atime_async branch below as "remote is the dangerous one".  Read it as:
     //   remote CANNOT work inline, local MERELY USUALLY DOES.  Rare-but-fatal is still fatal.
-    Wormhole_park(queue: TheC, wrap: TheC, run_op: () => Promise<any>, done: (reply: any) => void) {
+    //
+    //  RETRY (2026-08-04) — "so writes can assume they worked".  An op that overruns
+    //   WH_OP_TIMEOUT_MS is ABANDONED and tried again, up to WH_OP_TRIES, with a linear backoff;
+    //    only then does the caller get an error.  Three holes this closes, all of which used to
+    //     end in a permanent silent stall:
+    //      • an op that never settles held `queue.c.inflight` FOREVER — one hung FSA handle and
+    //         that whole Wormhole queue was dead for the life of the tab, with nothing to see.
+    //      • a stale slot is now freed by WHICHEVER op the pump reaches first, not only by the
+    //         stuck op itself — otherwise the queue stays hostage until the pump comes back round.
+    //      • an abandoned attempt that settles LATE can no longer clobber a newer one: each launch
+    //         carries a generation, and a settle from a superseded generation is dropped.
+    //   Retry is for TRANSIENT failure only.  `not_found` is a valid answer, not an error, and a
+    //    reply marked `fatal` (a .jamsend refusal, an unknown op) is a decision — neither is retried.
+    Wormhole_park(queue: TheC, wrap: TheC, run_op: () => Promise<any>, done: (reply: any) => void, label = '', exclusive = false) {
         if (wrap.c.reply) { done(wrap.c.reply); return }
-        if (wrap.c.inflight || queue.c.inflight) return   // ours still settling, or another op holds the slot
-        queue.c.inflight = wrap
+        const H = this as House
+        const now = Date.now()
+        // WHICH op — a retry line that doesn't name its subject is no better than silence (the first
+        //  cut of this printed a bare "wormhole op overran 5000ms" and left you guessing).  Stamped on
+        //   the wrap too, so it reads off the queue in a snap as well as in the console.
+        if (label && !wrap.c.label) wrap.c.label = label
+        const what = (wrap.c.label as string) || '?'
+
+        // The in-flight set is RECOMPUTED from the queue each pass, never carried in a counter or a
+        //  single `queue.c.inflight` slot: a counter drifts the moment one abandon path is missed, and
+        //   drift here means a permanently-throttled Wormhole with nothing to see.  Reaping a stale
+        //    peer HERE also means a hung op is cleared by whichever wrapper the pump reaches first,
+        //     rather than only by itself.
+        const peers = (queue.o({ req: 1 }) as TheC[]).filter(r => r !== wrap && r.c.inflight)
+        for (const p of peers) {
+            if (now - Number(p.c.started_at ?? now) > WH_OP_TIMEOUT_MS) {
+                p.c.gen = Number(p.c.gen ?? 0) + 1
+                p.c.inflight = undefined
+            }
+        }
+        const live = peers.filter(p => p.c.inflight)
+
+        if (wrap.c.inflight) {
+            if (now - Number(wrap.c.started_at ?? now) < WH_OP_TIMEOUT_MS) return   // still within its window
+            // OVERRUN — abandon this attempt.  The underlying promise may still settle much later;
+            //  the generation bump is what makes that harmless.
+            wrap.c.gen = Number(wrap.c.gen ?? 0) + 1
+            wrap.c.inflight = undefined
+            wrap.c.timed_out = Number(wrap.c.timed_out ?? 0) + 1
+            console.warn(`🗂 wormhole ${what} overran ${WH_OP_TIMEOUT_MS}ms — retrying (attempt ${Number(wrap.c.tries ?? 0) + 1}/${WH_OP_TRIES})`)
+        }
+
+        // CONCURRENCY — reads fan out, writes run alone.
+        //  The first cut of this parked ONE op per queue, inheriting the remote proxy's serial
+        //   discipline.  For local disk that was a throughput DISASTER: do() pumps every req at a
+        //    level in ONE pass (`for (const req of level) await this._req_do_one(...)`), so the old
+        //     inline path drained the WHOLE queue per pass — and one-at-a-time turned N reads into
+        //      ~2N passes (launch on one, deliver on the next).  That was "why does it suck at reading
+        //       from FSA now" (2026-08-04), and it was self-inflicted.
+        //  Ordering is kept where it actually matters: an exclusive op (any write) waits for reads to
+        //   drain and blocks everything while it runs, so a read can never overtake a write to the
+        //    same path.  Independent reads have no such hazard and shouldn't queue behind each other.
+        if (live.some(p => p.c.exclusive)) return                      // a write holds the queue
+        if (exclusive && live.length) return                           // drain reads before writing
+        if (!exclusive && live.length >= WH_OP_PARALLEL) return        // fan-out ceiling
+        if (wrap.c.retry_at && now < Number(wrap.c.retry_at)) return   // backing off between attempts
+
+        const tries = Number(wrap.c.tries ?? 0)
+        if (tries >= WH_OP_TRIES) {
+            done({ error: `wormhole ${what} failed after ${tries} attempts (${Number(wrap.c.timed_out ?? 0)} timed out)`, fatal: 1 })
+            return
+        }
+
+        const gen = Number(wrap.c.gen ?? 0)
+        wrap.c.tries = tries + 1
+        wrap.c.started_at = now
+        wrap.c.exclusive = exclusive ? 1 : undefined   // read by the peers scan above, not by a queue-level slot
         wrap.c.inflight = run_op().then(r => r ?? {}, e => ({ error: String(e) })).then(reply => {
+            if (Number(wrap.c.gen ?? 0) !== gen) return           // superseded — we already gave up on this attempt
+            wrap.c.inflight = undefined
+            // transient failure with attempts left → back off and let the pump have another go
+            if (reply?.error && !reply.fatal && Number(wrap.c.tries ?? 0) < WH_OP_TRIES) {
+                wrap.c.retry_at = Date.now() + WH_OP_RETRY_MS * Number(wrap.c.tries ?? 1)
+                H.ponder_now()
+                return
+            }
             wrap.c.reply = reply
-            if (queue.c.inflight === wrap) queue.c.inflight = undefined
-            ;(this as House).main(true)
+            H.ponder_now()
         })
     }
 
@@ -2111,18 +2212,15 @@ export class House extends StorableHousing {
                         return { ok: true }
 
                     } else {
-                        return { error: `unknown op: ${op}` }
+                        return { error: `unknown op: ${op}`, fatal: 1 }   // a decision, not a transient failure — never retried
                     }
                 } catch (err) {
                     return { error: String(err) }
                 }
             }
 
-            // ⚠ same wedge as the rw_op actor below — the inline branch awaits under the global
-            //  beliefs mutex, and the usual nav here is LOCAL FSA, not the remote proxy.  Wormhole_park's
-            //   header has the two failure modes.
-            if ((nav as any).atime_async) this.Wormhole_park(fs, fs_req, run_op, done)
-            else done(await run_op())
+            // ALWAYS park — same law as the rw_op actor below.  Never await disk under Atime.
+            this.Wormhole_park(fs, fs_req, run_op, done, `${op} ${path}`, /write|mkdir|delete/i.test(op))
         })
         // drop settled wrappers so the queue doesn't accrete (do() never drops)
         ;(fs.o({ req: 1, finished: 1 }) as TheC[]).forEach(fr => fs.drop(fr))
@@ -2162,7 +2260,7 @@ export class House extends StorableHousing {
                 //      Defence in depth beside Crate_nav_paths' dot-dir skip (invariant 2).
                 for (const p of [req.sc.rw_dir, req.sc.rw_name]) {
                     if (p && String(p).split('/').some((seg: string) => seg === '.jamsend')) {
-                        return { error: '🔒 .jamsend is owner-local — never served over the wire' }
+                        return { error: '🔒 .jamsend is owner-local — never served over the wire', fatal: 1 }   // a refusal, never retried
                     }
                 }
                 try {
@@ -2205,21 +2303,20 @@ export class House extends StorableHousing {
                         ]
                         return { entries }
                     } else {
-                        return { error: `unknown rw op: ${op}` }
+                        return { error: `unknown rw op: ${op}`, fatal: 1 }   // a decision, not a transient failure — never retried
                     }
                 } catch (err) {
                     return { error: String(err) }
                 }
             }
 
-            // ⚠ THE INLINE BRANCH BELOW IS THE KNOWN WEDGE (2026-08-04) — see Wormhole_park's header.
-            //  This whole actor runs under the global beliefs mutex.  atime_async (remote) MUST park or
-            //   it deadlocks on its own reply; the LOCAL FSA nav — which is what this usually is —
-            //    merely usually returns fast, and when it doesn't it holds the mutex unbounded and the
-            //     whole machine stops.  "Disk navs stay inline" (what this comment used to say) is a bet
-            //      on a permission-gated browser API never hanging.  It hangs.
-            if ((nav as any).atime_async) this.Wormhole_park(rw, rw_req, run_op, done)
-            else done(await run_op())
+            // ALWAYS park — never await here.  This actor runs under the global beliefs mutex, and
+            //  the law is now unconditional: the Wormhole does its waiting in its OWN loop, so no
+            //   disk or proxy latency can ever hold Atime.  (Was `atime_async ? park : await`, which
+            //    read as "remote is the dangerous one".  It isn't the dangerous one, it's the OBVIOUS
+            //     one: remote self-deadlocks deterministically, local FSA merely usually returns fast
+            //      — and "usually" held the whole machine on 2026-08-04.)
+            this.Wormhole_park(rw, rw_req, run_op, done, `${op} ${name}`, /write|mkdir|delete/i.test(op))
         })
         ;(rw.o({ req: 1, finished: 1 }) as TheC[]).forEach(rr => rw.drop(rr))
 

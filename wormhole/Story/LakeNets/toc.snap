@@ -67,9 +67,7 @@ story:LakeNets
     quiesce_snap_time=0.4
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=1.471
-      sample=3.209,at=1782991008
-      sample=1.703,at=1783003107
+    TimeTotal:beliefs,avg=1.047
       sample=1.652,at=1783254931
       sample=1.603,at=1783255160
       sample=1.336,at=1783255185
@@ -78,9 +76,9 @@ story:LakeNets
       sample=1.065,at=1783450388
       sample=1.165,at=1783450417
       sample=1.154,at=1785822230
-    TimeTotal:step,avg=0.113
-      sample=0.247,at=1782991008
-      sample=0.131,at=1783003107
+      sample=0.424,at=1785834956
+      sample=0.251,at=1785834993
+    TimeTotal:step,avg=0.081
       sample=0.127,at=1783254931
       sample=0.123,at=1783255160
       sample=0.103,at=1783255185
@@ -89,6 +87,8 @@ story:LakeNets
       sample=0.082,at=1783450388
       sample=0.09,at=1783450417
       sample=0.089,at=1785822230
+      sample=0.033,at=1785834956
+      sample=0.019,at=1785834993
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:wants_want

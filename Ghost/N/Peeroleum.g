@@ -810,11 +810,35 @@ async req_unemit(req):
 Peeroleum_take_ack(w, pier, h):
     let box = pier.o({outbox:1})[0]
     let emit = box?.o({emit:1}).find(e => e.sc.seq == h.ack)
-    // stamp acked (a ref-holder still reads it) AND drop the emit off the outbox: a booked emit is DONE
-    //  once acked, but nothing reclaimed it — acked rows piled forever in the live app (no Story-step
-    //   reset), a co-cause of the 6000 giant-stuff.  box.drop() feeds the outbox's drop-count auto-compactor
-    //    (Stuff.drop → compact) so the %outbox stays exactly the un-acked set.
-    if (emit) { emit.sc.acked = 1; box.drop(emit); pier.bump() }
+    // stamp acked and LEAVE the emit on the outbox — Peeroleum_runstepped promotes it to %outbox/recent
+    //  at the step boundary.  The two-phase shape is spec §12.1 and it is load-bearing: the snap taken
+    //   *before* the boundary shows the step's traffic in full (flags and all), the one after shows the
+    //    whittled ledger.  A Story fixture asserts BOTH halves (SwarmDoor 004 wants `emit,…,sent,acked`
+    //     still in the outbox; 005 wants it under %recent), so collapsing them loses real test signal.
+    //
+    // WHY THIS IS NOT A PLAIN box.drop(emit) ANY MORE (2026-08-04).  It used to be, and that drop
+    //  silently killed the ledger it was meant to feed.  runstepped's cull reads
+    //   `outbox.o({emit:1}).filter(e => e.sc.acked)` — but nothing acked was ever still ON the outbox by
+    //    then, so the filter matched NOTHING.  Two things fell out, both invisible for a month:
+    //     - the cull was dead code and %outbox/recent (spec §7.4) quietly stopped existing;
+    //     - the Story snap lost its send-side evidence outright — a Pier that sent and got acked 60
+    //        chunks snapped an EMPTY outbox, indistinguishable from one that never sent anything.
+    //
+    // THE PILE-UP THE DROP WAS RIGHT ABOUT.  Acked rows really did pile forever in the live app (no
+    //  Story-step reset ever runs there), a co-cause of the 6000 giant-stuff.  So bound the ACKED set
+    //   here instead of evicting it: whittle acked emits to ACKED_KEEP, oldest-first.  This is NOT the
+    //    2000 structural backstop's job — that one counts every emit and drops the OLDEST regardless of
+    //     state, so letting acked rows accumulate toward it would crowd out genuinely in-flight un-acked
+    //      bytes.  Whittling only the acked ones keeps the backstop's headroom for real traffic.
+    //   ACKED_KEEP is generous (a step's whole traffic survives to be snapped — MusuBounce books 60) and
+    //    still hard-bounded per Pier, an order of magnitude under the backstop.
+    if (emit) {
+        emit.sc.acked = 1
+        let ACKED_KEEP = 200
+        let done = box.o({emit:1}).filter(e => e.sc.acked)
+        if (done.length > ACKED_KEEP) this.whittle_N(done, ACKED_KEEP)
+        pier.bump()
+    }
     let hit = !!emit
     let proto = pier.o({protocol:1})[0]
     for (const kind of ['hello','trust']) {
@@ -977,6 +1001,12 @@ Peeroleum_arm_whittle(w):
 //    %recent items carry only their emit|unemit/type/seq — no flags, no time (record order
 //     is the order). This is the one place outbox/inbox items vanish, so the snap taken
 //      *before* this boundary always shows the step's traffic (spec §12.1).
+//  THIS IS LIVE CODE AGAIN AS OF 2026-08-04 — it was dead for a month.  Peeroleum_take_ack
+//   had started dropping the acked emit on the spot, so the `.filter(e => e.sc.acked)` below
+//    could never match and %outbox/recent was never built.  take_ack now leaves the emit in
+//     place (bounding the acked set instead), so the promote below is once more the ONLY path
+//      onto the ledger.  If you are tempted to reclaim an acked emit earlier than this
+//       boundary, read spec §12.1 first: a Story fixture asserts the pre-boundary shape too.
 async Peeroleum_runstepped(w):
     const H = this
     for (const peering of w.o({Peering:1})) {

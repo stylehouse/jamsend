@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '7bdd57f139dc0122~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'ad26ac61b5a0e90b~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -61,8 +61,15 @@ Swarm_identity(container, keys, friendly) {
 
 },
 // Swarm_peering — the identity's own page (1:1 for now — the 1:N door is §2's deferred hold).
+//  NULL-SAFE IN THE ARGUMENT, not just the result (2026-08-04).  Every caller already treats a missing
+//   peering as ordinary — `Swarm_address` reads `peering?.sc`, `Swarm_restash_piers` does `if (!peering)
+//    return 0`, `SwarmDisk_witness` writes `Swarm_peering(x)?.o(…)` — but that `?.` guards the RETURN,
+//     so an undefined `ident` still threw one frame earlier and took the whole req down.  The tell was a
+//      witness that reads "each pass's settled state" being called at a beat where its subject does not
+//       exist yet (SwarmDisk beat 2 asking after the beat-5 AliceReseed vault).  That is not a caller
+//        bug: a not-yet-born identity HAS no page, which is exactly what undefined means here.
 Swarm_peering(ident) {
-    return ident.o({ Peering: 1 })[0]
+    return ident ? ident.o({ Peering: 1 })[0] : undefined
 
 },
 // Swarm_page — the PRUNED public face that crosses the wire: pub + prepub + friendly and nothing
