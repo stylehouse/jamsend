@@ -220,11 +220,30 @@ This touches the SwarmSpoof-hardened seal. The plan keeps the anti-spoof propert
 
 ## 9. TODO / HALF-DESIGN — the Invite OUTLIVES its handshake (a standing two-sided req)
 
-**Status: half-design, not built. Invent the rest before cutting.** The human 2026-08-06, on being shown
- the one-way pairing: *"we should remember the Invite until both parties have agreed they have fully
-  processed it? so we can keep giving all the Grants until done"* — and, on scope: *"it's kind of leaving
-   infrastructure for more complicated apps and possibilities to reuse, but not too much that we get
-    confused."* So: build the **shape**, not a negotiation language.
+**Status: rungs 1–2 LANDED as a repair; rungs 3–5 (the actual enhancement) NOT BUILT — low priority,
+ the human 2026-08-06.** Their own framing, and it is the right one: *"so this is a hack not an Invite
+  process enhancement that won't quit the original task whatever it was until fulfilled?"* — **yes.**
+   What shipped is a self-heal that fires at station standup and patches a pier that came out wrong.
+    What is OWED is the standing req: an invite that does not FINISH until both ends confirm, so no
+     repair pass is needed because the task never quit. Do not let the green tabs retire this section.
+
+**What landed (2026-08-06, `Swarm.g` `Swarm_reaccept_incomplete`, verified live on both tabs going
+ `⇄ MUTUAL`):** rung 2's wholeness predicate (holds BOTH grants — replacing the "do I hold theirs?"
+  test whose stated invariant the live tabs disproved) and rung 1's local re-mint (a side missing its
+   OWN grant re-signs it with its own key — no wire, no security surface). The one-way pier that had
+    been standing for over a week healed on the next standup.
+
+**Why that is still a hack.** It runs on a REDIAL, not on the invite. Nothing remembers that a seal was
+ in progress, so: a pair that never redials stays broken; a fresh invite that half-lands is broken until
+  something unrelated bounces the socket; and the glass can only report the damage after the fact, never
+   *"still sealing, 1 of 2"*. The repair also cannot know what the invite MEANT — rung 1 guesses the
+    Feature from the other side's grant and falls back to `'Music'`, which is right today only because
+     Music is the only Feature. A second Feature makes that guess wrong, silently.
+
+The human 2026-08-06, on being shown the one-way pairing: *"we should remember the Invite until both
+ parties have agreed they have fully processed it? so we can keep giving all the Grants until done"* —
+  and, on scope: *"it's kind of leaving infrastructure for more complicated apps and possibilities to
+   reuse, but not too much that we get confused."* So: build the **shape**, not a negotiation language.
 
 ### 9.0 The diagnosis in one line
 
@@ -254,74 +273,103 @@ The compact 3-frame seal is strictly faster and strictly **muter**. When it half
  says so — which is exactly why §7c sat in a doc for ten days while the tabs were quietly one-way. Restore
   the narration; keep the speed when the wire is good.
 
-### 9.2 The shape (the reusable bit, kept small)
+### 9.2 The design (settled with the human 2026-08-06 — build this)
 
-One particle per counterparty-in-progress, worked by the req machine until both ends say done.
+**One `req:Seal` on the redeemer's `%Pier`, driven only while the peer is online, holding the list of
+ what is still missing, finished when the peer's `seal_confirm` says they are whole too.** That is the
+  whole machine. Each clause was a decision; the reasoning is inline so nobody re-opens it by accident.
 
-- **`req:Seal`, one per in-flight pairing**, under the `%Peering` beside the `%Pier` it is building
-   (open question, §9.5). Same particle shape for both roles; `sc.role` distinguishes issuer|redeemer.
-   `needs_work` while `!self_whole || !peer_whole`. Persisted, so it survives the reload that eats a frame.
-- **The req carries a list of what this side must come to HOLD** — `%Want,of:<kind>` children. Today the
-   list is exactly two Grants, and `Grant` is just the first `of:` kind. That list is the whole extension
-    point: a later app adds `%Want,of:profile` / `of:receipt` / `of:challenge` without touching the seal
-     spine. **Do not** invent the other kinds now — one kind, and a list that can hold more.
-- **`Swarm_pier_whole(pier, me, theirs)`** — the single predicate both half-seals fall out of:
-   holds `Grant by:me` AND `Grant by:theirs`. This is the test `Swarm_reaccept_incomplete` should have
-    been asking all along (§7c). Write it first; it is small and it retires a bespoke predicate.
-- **Re-driving is the req's ordinary tick, not a special repair path.** No new frame kinds are needed for
-   the basic cure: all three existing frames are already idempotent (`Swarm_seal` dedups grants at :951;
-    `Swarm_confirmed` is documented idempotent at :961). Issuer missing theirs → re-send `pier_accept`
-     (reusing the signed atom, never re-mint — the existing rule). Redeemer missing theirs → re-send
-      `pier_confirm`. Redeemer missing its OWN → **no frame at all**, re-mint locally (§9.4 rung 1).
+**Where — on the `%Pier`, redeemer-side only.**
+> *"this should be obviously in… Pier, the persisted Pier… that's our relationship to one other peer.
+>  so our pending Invites hang there, only on the redeemer side I guess… it keeps trying, can be part
+>   of the way through and skip early steps (ie the first Grant)"*
 
-### 9.3 "Both parties agree they are done" — the termination bit
+The `%Pier` IS the relationship; a pending invite is a fact about that relationship, so it hangs there
+ and persists with it — no new home to invent, nothing to garbage-collect separately. (Two earlier
+  candidates are rejected: a particle under the `%Peering`, and folding into the issuer's `%Idzeug`
+   ledger row.) The issuer keeps no req at all: once it has answered `pier_accept`, everything
+    outstanding is the redeemer's to drive. That asymmetry is the point — only one side needs state.
 
-This is the part the human actually asked for, and it is cheap: **stamp what you hold on a frame you are
- already sending.** The `pulse`/`swarm_hi` pair runs anyway; give it a tiny `seal:` digest — e.g. the
-  count of grants held for this pier, or a 4-hex hash of their sorted `by`s. Then:
+**Born the moment the invite is KNOWN — at `?Iz=` parse, not at `pier_accept`** (the human, same day:
+ *"it persists once the Invite is known about (got from a URL) once right?"*). This matters: if the req
+  only appeared at frame 2, a `pier_hello` that never got answered would leave nothing behind at all —
+   the exact silent hole §7c's third bullet describes, where a dead serial and a live seal-in-flight look
+    identical. So the redeem path mints a **grantless `%Pier` shell** keyed by the token's `prepub` and
+     hangs the req on it immediately.
+ That key is available: the compact token carries `prepub` (§1), and `prepub` is precisely what
+  `Swarm_seal` keys `%Pier` by — so the shell and the sealed Pier are the same particle, and
+   `pier_accept` fills it in rather than replacing it.
+ **Security is unchanged, and deliberately so.** A grantless `%Pier` is not a capability — `Swarm_pier_live`
+  requires grants, so the shell authorises nothing. The peer's `page` is NOT stored at parse time (we hold
+   only a 16-hex prepub, never their full pub), so `Swarm_page_bound` still runs for the first time at
+    `pier_accept` exactly as today: the SwarmSpoof tooth bites in the same place. And minting the shell is
+     user-initiated (you opened the link), never remote-triggered. The shell must be visibly distinct from
+      a sealed friend wherever Piers are listed — it is a pending invite, not a contact.
 
-    finished  ⟺  self_whole  ∧  peer_says_whole
+**When — presence-gated, and that is the whole throttle.**
+> *"they should only appear when that Pier is online right? so then they'd resolve quite promptly I
+>  think? sheesh, how much more robust do we need to be..."*
 
-Neither side stops re-driving on its own say-so; it stops when the *other* end has confirmed it holds
- everything too. No new round trip, no new frame kind, and it is the generic two-party termination the
-  human means by *"until both parties have agreed they have fully processed it"*. A peer that never says
-   whole keeps the req alive and visible rather than silently half-paired — which is the failure we had.
+Drive the seal **only while the peer is online**, reusing the `heard_at` gate `Swarm_share_beat` already
+ applies before re-offering stock. No clock, no backoff ladder, no three-strikes, no TTL, no dismissal
+  UI — and nothing to retire, because an unfinished req against an offline peer simply *is not driven*.
+   The moment they appear it resolves in a round trip. This is what keeps §1's no-expiry stance intact:
+    no timer ever touches an invite. It is also why this design is smaller than the old garden's.
 
-**Backoff, not hammering.** The re-drive wants the same measured-RTO manners as the rest of the wire
- (`Backpressure_todo` §5.5), not a fixed retry: seconds early, minutes later, forever-ish. An invite
-  that takes an hour because the other tab is shut is *correct behaviour*, not a fault.
+**What — a list of what is still MISSING, not a script.** `%Want,of:<kind>` children, each naming
+ something this side must come to hold. Landed steps leave the list and are never re-driven; only the
+  outstanding ones go again. That is the "can be part of the way through and skip early steps" clause,
+   and it is what makes the req *resumable* rather than a restart. Today the only kind is `of:Grant`;
+    the list is the extension point where a later app adds `of:profile` / `of:receipt` / `of:challenge`
+     without touching the seal spine. **Do not invent the other kinds now** — one kind, and a list shaped
+      to hold more.
 
-### 9.4 Rungs (do them in this order; each stands alone)
+**Whole — one predicate, `Swarm_pier_whole(pier, me, theirs)`:** holds `Grant by:me` AND `Grant by:theirs`.
+ Both half-seals fall out of it, and it retires the bespoke predicate that was blind to one of them (§7c).
+  Already built (rung 2).
 
-1. **Local wholeness re-mint.** Any side missing its OWN grant re-mints it from its own key and seals.
-    No wire, no protocol change, no security surface (you are signing your own capability, exactly as
-     `Swarm_accept:949` already does). Cures the observed Righto state and can ship today.
-2. **`Swarm_pier_whole` + fix `Swarm_reaccept_incomplete`'s predicate** to "is this pier whole?", so the
-    existing healer covers BOTH half-seals instead of one, and delete the false invariant at Swarm.g:706.
-3. **`req:Seal`** — lift 1+2 out of the redial path into a standing, snapped req with `%Want` children.
-4. **The `seal:` digest on pulse/swarm_hi** → mutual `finished` (§9.3).
-5. **Narration** — `waits:`-style reasons on the req, surfaced through `Diag_trouble` (Swarm.g) which
-    DiagFace already renders. *"sealing with Lefto — 1 of 2 grants, 40s"* is exactly its register, and it
-     is the thing the old garden had and we lost.
+**Done — an explicit `seal_confirm` frame**, carrying the grant set the sender holds:
 
-### 9.5 Open questions (deliberately unresolved)
+    finished  ⟺  self_whole  ∧  their seal_confirm says they are whole
 
-- **Where does `req:Seal` live** — under the `%Peering`, under the half-built `%Pier`, or in `w`? The
-   redeemer-side case argues for the Peering (the Pier may not exist yet at all).
-- **Is the issuer's `%Idzeug` ledger row already the issuer-side req?** It is per-serial, persisted, and
-   knows `spent`. Folding rather than adding would be the smaller machine — check it against §6.2's
-    single-use semantics before assuming.
-- **What retires a req that will never finish?** Tyranny's three-strikes-then-drop, a long TTL, or never
-   (a hand-dismissed row in the glass). Note §1 deliberately removed `time` from the token — do not
-    smuggle an expiry back in through the req.
-- **Does a `%Want` list need an ORDER** (challenge before grant) for any real second kind, or is
-   unordered-until-all-satisfied enough? Unordered is enough for grants; leave it unordered until a
-    second kind actually demands otherwise.
+A side never stops on its own say-so — that is precisely today's failure mode, where each end believes
+ itself finished and the pair is silently one-way. The explicit frame costs a kind and a round trip and
+  buys a wire event that is legible in a Book and assertable as a `%see:` claim; a digest piggybacked on
+   `pulse`/`swarm_hi` would have been free but untestable, and was rejected for that.
 
-### 9.6 Non-goals (the "not so much that we get confused" line)
+**Re-driving needs no new frame kinds beyond that one.** The existing three are already idempotent
+ (`Swarm_seal` dedups grants; `Swarm_confirmed` is documented idempotent), so the req's ordinary tick
+  re-sends them safely: missing THEIRS → re-send `pier_confirm`; missing MY OWN → **no frame at all**,
+   re-mint locally (rung 1, already built).
+
+### 9.3 What is still owed (rungs 1–2 shipped; these are the enhancement)
+
+3. **`req:Seal` on the `%Pier`** — lift the healing out of the redial path into a standing, persisted req
+    with `%Want` children, presence-gated, resumable. This is the rung that makes the invite *not quit
+     until fulfilled*, and it retires `Swarm_reaccept_incomplete` as a special case.
+4. **The `seal_confirm` frame** → mutual `finished`. New kind; wire into dispatch beside `pier_confirm`.
+5. **Narration** — `waits:`-style reasons on the req, surfaced through `Diag_trouble`, which DiagFace
+    already renders. *"sealing with Lefto — 1 of 2 grants"* is exactly its register: the thing the old
+     garden had (§9.1) and the compact seal lost.
+6. **Move the `?Iz=` drop from redeem to FINISH** — and only now, because rung 3 is what makes it safe.
+    The human asked for this originally, and §6 records that we moved AWAY from it: `InvitePanel.svelte`
+     :270-276 drops the token the moment the redeem lands, because gating on the 8s seal window
+      *"stranded `?Iz` whenever the seal ran late, and a reload then re-presented a dead blob"*. That
+       objection was sound while the **URL was the only record of the invite**. Once the req persists on
+        the `%Pier` (rung 3), the URL stops being the record, a late seal strands nothing, and a reload
+         resumes from the req instead of re-presenting a blob — so the swap can wait for `finished`,
+          which is what the human wanted in the first place: *"remove it from the browser location if
+           it's in there when it finishes"*. **Order matters: do NOT do this before rung 3** — on its own
+            it reinstates the exact stranding §6 warns about. The `?I=<prepub>` pin-gating stays as-is.
+
+**Still genuinely open** (small, decide in the code): whether the `%Want` list needs ORDER for a future
+ second kind. Unordered is enough for grants — leave it unordered until something demands otherwise.
+
+### 9.4 Non-goals (the "not so much that we get confused" line)
 
 No Tyrant / third-party officiation (§6 already ruled that out — it ran ~90% red). No capability
  *negotiation* language — the `%Want` list is declarative, each side states what it must hold, and there
-  is no bargaining. No expiry (§1). No new frame kinds for rungs 1–3. And nothing here weakens §4's
-   invariants: re-drives reuse already-signed atoms, `Swarm_page_bound` still gates every entry, and a
-    re-expressed **SwarmSpoof staying green is the gate** on any of it (§8).
+  is no bargaining. No expiry, and no backoff ladder either — presence is the throttle (§9.2). No new
+   frame kinds except `seal_confirm`. And nothing here weakens §4's invariants: re-drives reuse
+    already-signed atoms, `Swarm_page_bound` still gates every entry, and a re-expressed **SwarmSpoof
+     staying green is the gate** on any of it (§8).

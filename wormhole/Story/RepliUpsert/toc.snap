@@ -4,8 +4,7 @@ story:RepliUpsert
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.017
-      sample=0.021,at=1785890690
+    TimeTotal:beliefs,avg=0.016
       sample=0.021,at=1785890695
       sample=0.021,at=1785890698
       sample=0.021,at=1785890698
@@ -15,8 +14,8 @@ story:RepliUpsert
       sample=0.009,at=1785890860
       sample=0.016,at=1785905147
       sample=0.02,at=1785907074
+      sample=0.011,at=1785941568
     TimeTotal:step,avg=0.002
-      sample=0.003,at=1785890690
       sample=0.003,at=1785890695
       sample=0.003,at=1785890698
       sample=0.003,at=1785890698
@@ -26,6 +25,7 @@ story:RepliUpsert
       sample=0.001,at=1785890860
       sample=0.002,at=1785905147
       sample=0.003,at=1785907074
+      sample=0.002,at=1785941568
   step,dige:000a8b1dea2cc438
   step=2,dige:388581e7beda9d8e
     Assertion:first-mint,sentence:the first fragment minted the record and its child reco at a mirror where nothing pre-existed

@@ -165,7 +165,13 @@ Socket_real(w):
                     bulkQ.shift()
                     bulk_dropped = bulk_dropped + 1
                     if (w && w.c) w.c.relay_bulk_dropped = bulk_dropped
-                    if (bulk_dropped === 1 || bulk_dropped % 25 === 0) note(`🛰⚠ ws bulk lane SHED ${bulk_dropped} page(s) — queue over ${BULK_CAP} while the wire is behind; the sink re-asks, so this is congestion not loss — but "sent" now overcounts by this much`)
+                    // "the sink re-asks" is a PROMISE THIS LANE DEPENDS ON, and it was false for a month
+                    //  (fixed 2026-08-06, Ra_page_hole in Ra.g).  Each chunk rides its OWN repli_page frame,
+                    //   so a shed takes chunks out of the MIDDLE of a page — and every pull loop tested only
+                    //    the stride-aligned chunk, read the page as held, and never asked again.  Shedding is
+                    //     only sound while the re-ask is page-wide; if that ever regresses, this lane silently
+                    //      becomes permanent data loss again.  Say so here, where the shedding happens.
+                    if (bulk_dropped === 1 || bulk_dropped % 25 === 0) note(`🛰⚠ ws bulk lane SHED ${bulk_dropped} page(s) — queue over ${BULK_CAP} while the wire is behind; the sink re-asks PAGE-WIDE (Ra_page_hole), so this is congestion not loss — but "sent" now overcounts by this much`)
                 }
                 note_bulk_depth()
                 if (!bulk_pump_armed) { bulk_pump_armed = true; setTimeout(pump_bulk, 30) }

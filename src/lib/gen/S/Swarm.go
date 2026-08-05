@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '8bed4b0590160d17~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '2bb04ddad43f1de2~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -740,7 +740,8 @@ Swarm_station_routes(w, ident) {
         if (!pier.sc.pub) continue
         if (this.Swarm_station_pier(w, ident, String(pier.sc.pub))) n = n + 1
     }
-    this.Swarm_reaccept_incomplete(w, ident)
+    // async now (rung 1 mints locally) — fire-and-forget from this sync seam; failures say why.
+    this.Swarm_reaccept_incomplete(w, ident).catch((er) => console.log(`⨳⚠ pier heal failed: ${er && er.message || er}`))
     return n
 
 },
@@ -748,14 +749,20 @@ Swarm_station_routes(w, ident) {
 //  Righto held a %Pier for Lefto but Lefto held NONE.  The single `pier_accept` frame builds the
 //   redeemer's WHOLE %Pier, and if it's lost or seq-collision-muted after a reload NOTHING ever re-drives
 //    it — every redial path iterates existing %Piers, so the side with none is invisible to all healing).
-//   Cure, driven from the ISSUER (the side that reliably HOLDS a %Pier and can detect the gap): on every
-//    redial, for each of my %Piers that lacks the friend's RECIPROCAL grant, re-send `pier_accept` reusing
-//     my ALREADY-SIGNED grant atom (grant_of_C — never re-mint/re-sign).  Swarm_accept rebuilds the
-//      redeemer's %Pier from scratch and re-confirms; the reciprocal grant lands, the predicate flips false,
-//       the re-send stops.  Signature-safe: `page` is unsigned + bind-checked at the far end, the grant atom
-//        is REUSED (the redeemer re-runs verify_grant and it checks out).  Cannot false-positive: a redeemer's
-//         %Pier is born with BOTH grants (Swarm_accept), so only an issuer half-seal ever matches.
-Swarm_reaccept_incomplete(w, ident) {
+//  The predicate is WHOLENESS (Swarm_compact_invite_todo §9 rungs 1-2, 2026-08-06): a %Pier stands iff it
+//   holds BOTH grants.  The first cut tested only "do I hold THEIRS?" on the stated invariant "a redeemer's
+//    %Pier is born with BOTH grants" — which the human's live tabs DISPROVED (Righto: 1 pier, holding
+//     theirs, missing its OWN — the redeemer half-seal, the mirror this healer was blind to).
+//  Two cures, cheapest first:
+//   · missing MY OWN grant → re-mint it LOCALLY (rung 1 — it is my signature; no wire, no security
+//      surface, exactly the mint Swarm_accept does at seal).  to+params derive from THEIR grant's claim,
+//       the same source Swarm_accept mints from; a pier with NEITHER grant falls back to Feature 'Music'.
+//       Swarm_seal (idempotent, dedups by to+by) lands it AND stashes it durable.
+//   · missing THEIRS while holding mine → re-send `pier_accept` reusing my ALREADY-SIGNED atom
+//      (grant_of_C — never re-mint/re-sign).  Swarm_accept at the far end verifies, seals, and answers
+//       pier_confirm; the reciprocal lands, the pier is whole, the re-send stops.  Signature-safe: `page`
+//        is unsigned + bind-checked at the far end, and both handlers are idempotent (seal dedups).
+async Swarm_reaccept_incomplete(w, ident) {
     let me = ident.c.keys ? ident.c.keys.pub : null
     if (!me) return 0
     let n = 0
@@ -765,11 +772,26 @@ Swarm_reaccept_incomplete(w, ident) {
         let theirPub = peer ? peer.sc.pub : null
         if (!theirPub) continue
         if (String(theirPub) === String(me)) continue                  // never re-drive the self-pier
-        if (pier.o({ Grant: 1, by: String(theirPub) })[0]) continue     // already complete — has the reciprocal grant
         let mineC = pier.o({ Grant: 1, by: String(me) })[0]
-        if (!mineC) continue                                            // no own grant to reuse — not an issuer half-seal
-        this.Swarm_deliver(w, ident, String(pier.sc.pub), { kind: 'pier_accept', grant: grant_of_C(mineC), page: this.Swarm_page(ident) })
-        n = n + 1
+        let theirsC = pier.o({ Grant: 1, by: String(theirPub) })[0]
+        if (mineC && theirsC) continue                                  // WHOLE — nothing to heal
+        if (!mineC) {
+            // rung 1 — the local re-mint.  Their page rides the pier (Swarm_seal stored it); page_bound
+            //  is re-checked inside Swarm_seal, so a corrupt stash fails closed, never plants a forgery.
+            let page = { prepub: String(pier.sc.pub), pub: String(theirPub), friendly: pier.sc.friendly }
+            let to = theirsC ? String(theirsC.sc.Grant) : 'Music'
+            let params = theirsC ? this.Swarm_iz_params(grant_of_C(theirsC)) : {}
+            let mine = await mint_grant(ident.c.keys, String(theirPub), to, params, this.Swarm_now(w))
+            if (this.Swarm_seal(w, ident, page, null, mine)) {
+                mineC = pier.o({ Grant: 1, by: String(me) })[0]
+                console.log(`⨳⟲ pier heal: re-minted my own missing grant for ${String(pier.sc.pub).slice(0, 8)} (redeemer half-seal — §9 rung 1, no wire)`)
+                n = n + 1
+            }
+        }
+        if (!theirsC && mineC) {
+            this.Swarm_deliver(w, ident, String(pier.sc.pub), { kind: 'pier_accept', grant: grant_of_C(mineC), page: this.Swarm_page(ident) })
+            n = n + 1
+        }
     }
     return n
 
@@ -831,6 +853,13 @@ Swarm_note_era(w, route, sf, may_reset) {
         delete w.c.ra_wanted
         delete w.c.ra_want_ts
         delete w.c.ra_parked   // §5.3: a rebirth means the far side forgot every park too — nothing to suspend for
+        // §5.5: every in-flight ask is gone with them, so nothing is ambiguous any more — the Karn marks
+        //  and the backoff ladders must go with the wants they describe, else the first want after a
+        //   rebirth is un-sampleable and waits out a ×8 rung for an ask that no longer exists.
+        //    (pier.c.rtt SURVIVES on purpose: the PATH outlives the peer's boot, and a one-boot-old
+        //     srtt is a better prior than starting blind.)
+        delete w.c.ra_retx
+        delete w.c.ra_tries
         // a rebirth invalidates what we believe we have OFFERED them: their mirror is empty again.
         //  Clearing the mark makes the next share beat re-husk the whole shelf without waiting for
         //   the floor timer below — the fast path for the case we can actually detect.
@@ -1826,6 +1855,9 @@ async Swarm_share_beat(w, ident) {
         let asked = 0
         let off = head - (head % PAGE)
         while (off < total && off < head + 16 && asked < 3) {
+            // PAGE-WIDE, not the stride-aligned chunk alone (Ra_page_hole, Ra.g).  A live-window page
+            //  that lost ONE of its chunks to the relay's bulk-lane shed read as held here, so the
+            //   playhead ran into a hole this loop had already decided was filled — and re-asked nothing.
             if (map[off] == null) {
                 let key = String(playing.sc.id) + ':' + off
                 // RE-ASKABLE live-window want (the starve fix, the human 2026-07-28 "both go into 'the

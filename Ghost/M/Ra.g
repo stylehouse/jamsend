@@ -811,8 +811,26 @@ async Ra_mag_warm(w, mirror):
                 k = k + 1
                 if (!(+(rec.sc.total || 0) > 0)) continue
                 if (!rec.c.rx || !rec.c.from || !w.c.repli_mirror_pier) continue
+                // ASK FOR WHAT IS MISSING, NOT FOR WHAT THE TIMER FORGOT.  This loop used to lean on the
+                //  4s stamp ALONE as its memo, with no presence check at all — it re-asked page 0 on a
+                //   cadence until the mag happened to go warm, held down only by the timer being long.
+                //    That was always a duplicate ask waiting to happen, and §5.5 made it happen: the
+                //     arrival seam now CLEARS the stamp on landing (so a stamp means "outstanding"), which
+                //      reads here as "never asked" and fires again the very next pass.  The honest gate is
+                //       the one Ra_pull_beat has always had — the page is IN HAND, so there is nothing to
+                //        want.  (Seen as +2 served pages in MusuMag's step 3, 2026-08-06.)
+                if (this.Repli_page_ready(rec, 0, +(w.c.repli_page || 2))) continue
                 let key = rec.sc.id + ':0'
-                if (nowms - (w.c.ra_want_ts[key] || 0) < 4000) continue
+                // §5.5: the SAME measured timer the pull beat uses (Repli_rto — 4000 until the path has
+                //  spoken), with the same Karn mark on a re-ask so the arrival seam declines to sample a
+                //   page that could be answering either ask.  This is the warm start's re-ask, and it is
+                //    the one a listener FEELS: it gates how long a mag sits un-warm after a dropped want.
+                w.c.ra_retx = w.c.ra_retx || {}
+                w.c.ra_tries = w.c.ra_tries || {}
+                let asked_at = w.c.ra_want_ts[key] || 0
+                let tries = w.c.ra_tries[key] || 0
+                if (nowms - asked_at < this.Repli_rto(rec) * Math.pow(2, Math.min(tries, 3))) continue
+                if (asked_at) { w.c.ra_retx[key] = 1; w.c.ra_tries[key] = tries + 1 }
                 w.c.ra_want_ts[key] = nowms
                 w.c.ra_wanted[key] = 1
                 await this.Repli_want_next(w, rec.c.rx, w.c.repli_mirror_pier, rec.c.from, rec.sc.id, 'opus', 0)
@@ -883,6 +901,8 @@ Ra_stage(w, rec):
     let asked_deep = false
     let off = 0
     while (off < total) {
+        // PAGE-WIDE (Ra_page_hole): the stride-aligned test made a record with an intra-page hole read
+        //  as nothing-outstanding, so its stage settled on 'previewed' while the pull was in fact stuck.
         if (map[off] == null && wanted[rec.sc.id + ':' + off]) {
             if (off < P) { asked_free = true } else { asked_deep = true }
         }
@@ -1654,6 +1674,34 @@ Ra_chunk_have(rec):
     }
     return have
 
+// Ra_page_hole — is ANY seq of the page [off, off+PAGE) still missing?  The unit of ASKING is a page,
+//  so the unit of "do I still need this" must be a page too.
+//  WHY IT EXISTS (2026-08-06, the human "disconnects a lot! burning CPU!"): every pull loop here tested
+//   `map[off] == null` — the STRIDE-ALIGNED chunk alone — as its stand-in for "is this page missing".
+//    That silently assumes a page lands all-or-nothing, and it does NOT: Repli_serve_chunks lifts EACH
+//     chunk into its own buffer, so each rides its own repli_page frame, and three separate mechanisms
+//      drop them one at a time — the relay's bulk-lane SHED (Tribunal.g:156, whose own comment promises
+//       "the sink re-asks, so this is congestion not loss"), a cid breach refusing one chunk's bytes
+//        (Repli_attach_page), and the page-stash cap orphaning a page whose lines were lost.  Any of
+//         them can take seq off+1 while off survives — and then the ask loop reads the page as HELD and
+//          never asks again.  A permanent hole, invisible: the trace showed 252/255, 104/109, 104/119
+//           frozen for the rest of the session with `landed:0` on every row, because `done` is
+//            `held >= total` and held could never climb.  That is the whole "it comes and goes" —
+//             nothing lands ⇒ nothing releases ⇒ chunk particles pile up ⇒ the beat degrades ⇒ the
+//              event loop stalls past the relay's 15s reaper ⇒ the socket is cut.  The shed was never
+//               the bug; the promise it relied on was.
+//  Re-asking a partly-held page re-delivers the chunks already in hand.  That is fine and deliberate:
+//   the stride is FIXED (Repli_page_ready's contract), so a hole cannot be asked for on its own, and a
+//    re-landed chunk is idempotent — same bytes, same cid, attach overwrites with itself.
+Ra_page_hole(map, off, PAGE, total):
+    let end = Math.min(off + PAGE, total)
+    let s = off
+    while (s < end) {
+        if (map[s] == null) return 1
+        s = s + 1
+    }
+    return 0
+
 // Ra_term_decode_pulled — the terminal decodes WHAT IT HOLDS: the chunk particles present [0..limit),
 //  a MISSING chunk contributing its nominal 2s span of SILENCE and its index to drops[] — the spool's
 //   honest hole read off the particles that actually landed, never off local disk.  Contiguous runs of
@@ -1813,23 +1861,76 @@ async Ra_pull_beat(w, rx, mine, theirs, rec):
     //    instead of holding the hole open forever. Cleared wholesale on rebirth (Swarm_note_era).
     let PARK_CEIL = +(w.c.heist_park_ceiling || 20000)
     let nowms = Date.now()
+    // §5.5 (Backpressure_todo.md): the re-ask timer is MEASURED, not guessed.  The flat 4s was a
+    //  worst-case guess standing in for a number nobody took: on a local wire a page answers in tens of
+    //   milliseconds, so a lost want sat idle for a hundred round trips before anyone asked again — §3.1's
+    //    tail stall, in one constant.  Repli_rto reads the Jacobson/Karels estimator kept on the source
+    //     Pier (Repli_land_rtt samples it at the arrival seam) and returns 4000 until the path has spoken,
+    //      so an unmeasured path behaves exactly as it did.
+    //  BACKOFF, per key: a want that keeps expiring doubles its wait (×2 per try, capped ×8).  The
+    //   measured RTO is tight by design, and tight + unconditional is a hammering metronome against a
+    //    source that is wedged rather than merely slow.  The LEGITIMATE slow case already has its own
+    //     signal (§5.3's park), so the ladder only ever punishes silence.  Cleared on land (Repli_land_rtt).
+    let RTO = typeof this.Repli_rto === 'function' ? this.Repli_rto(rec) : 4000
+    w.c.ra_retx = w.c.ra_retx || {}
+    w.c.ra_tries = w.c.ra_tries || {}
     let sent = 0
     let seen = 0
     let off = 0
+    let last_asked = null
     while (off < total && sent < B && seen < LEAD) {
+        // PAGE-WIDE, not stride-aligned-chunk (Ra_page_hole's header for what the old test cost).
         if (map[off] == null) {
             seen = seen + 1
             let key = rec.sc.id + ':' + off
             let parkedAt = w.c.ra_parked && w.c.ra_parked[key]
             let parked = parkedAt && (nowms - parkedAt < PARK_CEIL)
-            if (!parked && nowms - (w.c.ra_want_ts[key] || 0) > 4000) {
+            let asked_at = w.c.ra_want_ts[key] || 0
+            let tries = w.c.ra_tries[key] || 0
+            let wait = RTO * Math.pow(2, Math.min(tries, 3))
+            if (!parked && nowms - asked_at > wait) {
+                // KARN'S RULE bookkeeping: this is a RE-ask (a stamp was already standing), so the page
+                //  that eventually lands cannot be attributed to either ask — mark the key and the
+                //   arrival seam will decline to sample it.  A first ask stays clean and measurable.
+                if (asked_at) { w.c.ra_retx[key] = 1; w.c.ra_tries[key] = tries + 1 }
                 w.c.ra_want_ts[key] = nowms
                 w.c.ra_wanted[key] = 1
                 await this.Repli_want_next(w, rx, mine, theirs, rec.sc.id, 'opus', off)
                 sent = sent + 1
+                last_asked = off
             }
         }
         off = off + PAGE
+    }
+    if (last_asked != null) rec.c.last_asked_off = last_asked
+    // TAIL LOSS PROBE (§5.5).  The RTO is the LAST resort, and the tail is where it hurts most: when the
+    //  final want of a record is the one that goes missing there is no later arrival to reveal the loss,
+    //   so the whole transfer sits out a full timeout with everything else already in hand — the human's
+    //    "still a bit stally at the end".  TCP's answer is to probe early: if nothing at all has landed
+    //     for ~2·srtt while a want is genuinely outstanding, re-ask the newest hole once, rather than
+    //      wait for the timer.  Floored at the 600ms beat, which IS this timer's resolution (§7.1: the
+    //       retransmit clock is an ambient tick, never a ttlilt).
+    //  GATED HARD, because a probe that fires on a quiet-but-healthy record is just a duplicate ask: the
+    //   offset must still be missing, must still carry OUR stamp (so it is outstanding, not landed —
+    //    Repli_land_rtt clears the stamp on arrival), and must not be parked (the source already said
+    //     "not lost").  One probe per quiet spell: tlp_ts must fall behind the last landing to re-arm.
+    let tlp_off = rec.c.last_asked_off
+    let TLP_ON = w.c.heist_tlp == null ? 1 : +w.c.heist_tlp      // knob, default on — one line to silence live
+    if (TLP_ON && tlp_off != null && map[tlp_off] == null && held < total) {
+        let key = rec.sc.id + ':' + tlp_off
+        let parkedAt = w.c.ra_parked && w.c.ra_parked[key]
+        let parked = parkedAt && (nowms - parkedAt < PARK_CEIL)
+        let quiet = nowms - (rec.c.last_land_ts || rec.c.pull_ts || nowms)
+        let probe_after = Math.max(2 * (typeof this.Repli_srtt === 'function' ? this.Repli_srtt(rec) : 0), 600)
+        let armed = !rec.c.tlp_ts || rec.c.tlp_ts <= (rec.c.last_land_ts || 0)
+        if (!parked && armed && w.c.ra_want_ts[key] && quiet > probe_after) {
+            rec.c.tlp_ts = nowms
+            w.c.ra_retx[key] = 1          // a probe is by definition a re-ask: no RTT sample off its reply
+            w.c.ra_want_ts[key] = nowms   // and it owns the ordinary gate's stamp, so the two never double-fire
+            await this.Repli_want_next(w, rx, mine, theirs, rec.sc.id, 'opus', tlp_off)
+            sent = sent + 1
+            rec.c.tlps = (rec.c.tlps || 0) + 1
+        }
     }
     // CURSOR (the human 2026-07-29 "higher level Repli cursor moving info"): one terse line when the held
     //  frontier ACTUALLY advances — the download visibly moving — and a throttled STUCK tell when we keep
@@ -1857,6 +1958,13 @@ async Ra_pull_beat(w, rx, mine, theirs, rec):
             entry.goodput_kbps = goodput_kbps
             entry.asked = g.asked
             entry.landed = landedChunks
+            // §5.5's first consumer (§5.2 asked for it): the MEASURED path beside the measured goodput.
+            //  Read them together — a climbing srtt with flat goodput is a queue filling somewhere,
+            //   and an rto far above srtt is a jittery path, which is exactly when the flat 4s used to
+            //    be least wrong and the tail probe earns its keep.
+            let rtt = rec.c.rx && rec.c.rx.c && rec.c.rx.c.rtt
+            if (rtt && rtt.n > 0) { entry.srtt = Math.round(rtt.srtt); entry.rto = rtt.rto }
+            if (rec.c.tlps) entry.tlps = rec.c.tlps
         }
         g.since = nowms; g.held0 = held; g.asked = 0
     }
@@ -1934,6 +2042,9 @@ async Ra_restock_beat(w, mirror, budget):
         let whole = true
         let off = 0
         while (off < P) {
+            // PAGE-WIDE (Ra_page_hole).  This loop used to test the stride-aligned chunk only, so a
+            //  preview with a hole at off+1 asked for NOTHING while the second pass below still marked
+            //   it un-whole — the code already knew the truth and only spent it on a counter.
             if (map[off] == null) {
                 whole = false
                 let key = rec.sc.id + ':' + off
@@ -1945,13 +2056,8 @@ async Ra_restock_beat(w, mirror, budget):
             }
             off = off + PAGE
         }
-        if (whole) {
-            let s = 0
-            while (s < P) {
-                if (map[s] == null) whole = false
-                s = s + 1
-            }
-        }
+        // (the per-seq re-check that used to stand here is gone: the page loop above now covers every
+        //  seq in [0,P) — the pages tile it exactly, Ra_page_hole clamping the last one to P.)
         if (whole) warm = warm + 1
         this.Ra_stage(w, rec)
     }

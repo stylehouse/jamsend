@@ -21,16 +21,25 @@ Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribu
 
 ## 0. Next move (read first)
 
-1. **Egress classes on the relay socket** (§5.1) — smallest, self-contained, independently
-    testable, and the likeliest cure for BOTH the reconnect storm and the "looking through the
-     album" census stall. Do this first; it needs no refactor.
-2. **Close the sensor gap** (§5.2). The wire rate IS measured (the `%Transfer` HUD's up/down
-    graph + drop messages — `Repli_meter`). What's missing is per-haul **goodput** and any
-     *consumer* of the signal: today the loop is open — a human watches the graph and edits
-      constants.
-3. **Then the req refactor** (§4) — `%Haul` grows a real req pile so ask and land stop being
-    sequential statements in one beat.
-4. **§7 is ruled on, not open.** The five design questions were decided by the human on the
+1. **DONE (2026-08-06): §5.1, §5.3, §5.4's narrow cut, and §5.2's attribution half.** Egress
+    lanes carry bulk behind control with confessed shedding; a park signals the sink; the
+     landing left the beat via `expecting()`; `Ra_pull_beat` samples per-haul goodput into the
+      HUD (`rec.c.gp`). Each section carries its own landed-note — read those before re-planning.
+2. **DONE (2026-08-06): §5.5.** The arrival seam MEASURES: `Repli_land_rtt` samples the path at the
+    moment a page completes, Jacobson/Karels keeps `srtt`/`rttvar`/`rto` on the source Pier, and both
+     hardcoded 4s re-asks now read it (with Karn's rule, a per-key backoff ladder, and a tail probe).
+      Read §5.5's landed-note before building on it — especially the rule it cost a red to learn:
+       **`ra_want_ts` is now an OUTSTANDING marker, so every reader must pair it with a presence
+        check.**
+3. **NEXT: the self-clocking half of §5.6** — the same seam learns to DRIVE: a landed page issues the
+    next want (the ack-clock), so throughput stops being bound by 6 wants × 2 chunks ÷ 600ms. The
+     worked build plan, traps included, is inline in §5.6 (2026-08-06); §5.5's arrival bookkeeping
+      is the accounting it reads. This one MOVES chunk-path fixtures — re-record task #11's two
+       Books green BEFORE landing it, so each red has one suspect.
+4. **Then §5.6's AIMD half** (the window becomes a variable the loop moves — one variable,
+    by construction of the clock stage) and the fuller req shape of §4 only if the beat still
+     misbehaves once the clock runs.
+5. **§7 is ruled on, not open.** The five design questions were decided by the human on the
     evening of 2026-08-05 — build on them rather than re-opening them. Two carry weight beyond
      this doc: the retransmit timer is **an ambient tick, never a ttlilt** (§7.1), and **`req` is
       a better home for state than a string on a particle** (§7.5).
@@ -521,6 +530,98 @@ Replace the fixed 4s with the Jacobson/Karels estimator: EWMA `srtt`/`rttvar`,
      rather than sitting out the full RTO — the TLP move, aimed at exactly the §3.1 tail. Lands
       cleanly only after 5.4, because before that the beat lies about time.
 
+**BUILD PLAN (worked 2026-08-06 — estimator + Karn discipline + TLP; sink-local, no new frames).**
+
+*Where the state lives:* per source Pier, off-snap — `pier.c.rtt = { srtt, rttvar, rto }`. This
+ is a measurement, not model state: no particle, no snap byte, no version bump — the same stance
+  as `repli_meter`. (§7.5's req-beats-a-string ruling is about TRANSPORT state; a rate estimate
+   is telemetry.)
+
+*The sample.* `w.c.ra_want_ts[key]` (key = `id:page_off`) already stamps every want at send —
+ that IS the departure half, for free. The arrival half is `Repli_attach_page`'s chunk-particle
+  branch (`landed == 1` under `await_bufk`): the page offset comes off `mirror.sc.seq`
+   (`seq - seq % PAGE`), the rec off `mirror.c.up`, and if the key holds a stamp:
+    `sample = now − ts`. Then **CLEAR the stamp** — today `ra_want_ts` is never cleared on
+     landing, it only goes stale; clearing on land is what makes "a stamp exists" MEAN
+      "outstanding", which §5.6's window accounting then reads directly. (Do NOT touch
+       `ra_wanted` — that is `Ra_restock_beat`'s want-once cursor and must persist.)
+ **Karn**: never sample a re-asked key. Every re-ask site — `Ra_pull_beat`'s expiry path,
+  `Ra_mag_warm`'s warm retry, the TLP below — stamps `w.c.ra_retx[key] = 1`; the attach seam
+   skips the sample when set, and clears it alongside the stamp. A key landing out of a PARK
+    (`w.c.ra_parked[key]` present) is ALSO no sample — its elapsed time measures the far
+     transcoder, not the path — and clear the park entry right there too: today it only ages
+      out, so it lingers as a 20s re-ask suppressor after the bytes already landed.
+ **The estimator**, Jacobson/Karels verbatim: first sample `srtt = s; rttvar = s/2`; after,
+  `rttvar = ¾·rttvar + ¼·|srtt − s|`, `srtt = ⅞·srtt + ⅛·s`, `rto = clamp(srtt + 4·rttvar,
+   250, 8000)`. Init `rto = 4000` — today's constant — so behaviour before the first sample is
+    byte-identical to today; the change can only tighten, never loosen.
+
+*Who reads it:* the two hardcoded `4000`s — `Ra_pull_beat`'s re-ask gate and `Ra_mag_warm`'s
+ warm retry — become `(rec.c.rx?.c.rtt?.rto || 4000)`. Add per-key exponential backoff on
+  repeated expiry (`w.c.ra_tries[key]`, effective timeout `rto << min(tries, 3)`, cleared on
+   land): a wedged source gets a doubling ladder, not a hammering metronome — the park signal
+    (§5.3) already covers the LEGITIMATE slow case.
+
+*The tail probe.* Per rec: `rec.c.last_land_ts` (stamped at attach) and `rec.c.last_asked_off`.
+ On the beat, when the rec has outstanding stamps and `now − last_land_ts > max(2·srtt, 600)`:
+  re-ask `last_asked_off` once per quiet spell (mark `ra_retx`, stamp `ra_want_ts` so the
+   ordinary gate doesn't double-fire). §3.1's tail hole today costs a serial 4s each; under TLP
+    it costs ~2·srtt, floored by the 600ms beat resolution — that floor is intended (§7.1: the
+     beat IS the retransmit clock's resolution).
+
+*Rebirth:* `Swarm_note_era` already wipes `ra_wanted`/`ra_want_ts`/`ra_parked` — the new maps
+ (`ra_retx`, `ra_tries`) MUST join that wipe, and per-rec outstanding counts (§5.6) reset with
+  them. `pier.c.rtt` SURVIVES rebirth: the path outlives the peer's boot, and a one-boot-old
+   srtt is a better prior than none.
+
+*Surface it* (§5.2's first consumer): `srtt`/`rto` join `Repli_xfer_get`'s per-pull entries so
+ the HUD and `runner_ask world` show the measured path beside goodput.
+
+*Fixture cost: none expected.* No new frame types (§9.1's two lists untouched), no snap keys.
+ In Books the mock wire drops nothing, so the RTO virtually never fires and the estimator is
+  inert cargo. Re-run MusuHeist + the chunk-path Books as regression; claims must not move.
+
+**LANDED 2026-08-06.** `Repli_land_rtt` + `Repli_rtt_note` + the `Repli_rto`/`Repli_srtt` readers
+ (Repli.g, at the arrival seam), the measured gate + per-key backoff + the tail probe in
+  `Ra_pull_beat`, the same gate in `Ra_mag_warm`, `ra_retx`/`ra_tries` joining `Swarm_note_era`'s
+   rebirth wipe, and `srtt`/`rto`/`tlps` on the pull's HUD entry. Knob: `w.c.heist_tlp` (default on).
+   Three things the build learned that the plan above did not know:
+
+- **The sample falls when the PAGE completes, not when a chunk lands.** A want asks for a page —
+   PAGE chunks, PAGE frames — so clearing the stamp on the first arrival would leave the second
+    chunk in flight with nothing behind it, and an out-of-order pair would re-ask a page that was
+     already arriving. `Repli_page_ready` (the source-side helper, substrate-aware) reads the mirror
+      just as well, so it is the gate. It also makes the sample the honest one: the RTO governs
+       "when do I give up on this PAGE", not on one frame.
+- **Clearing the stamp broke `Ra_mag_warm`, and that is the generalisable lesson.** That loop had
+   NO presence check — it re-asked page 0 on a cadence until the mag happened to go warm, held down
+    only by the 4s timer being long. Once a landing clears the stamp, "no stamp" reads as "never
+     asked" and it fired every pass: +2 served pages in MusuMag's step 3, caught by the fixture, not
+      by review. **Every reader of `ra_want_ts` must now pair it with a presence check** — the stamp
+       is an OUTSTANDING marker, no longer a want-once memo. `Ra_pull_beat` always had one
+        (`map[off] == null`); `Ra_mag_warm` now does too. §5.6's window accounting inherits the rule.
+- **The tail probe was innocent and is still unproven.** Suspected in MusuMag's remaining red, gated
+   off, re-run — no change; the red survives a full revert of this section (see below). So the TLP
+    costs nothing in Books, which also means no Book yet EXERCISES it: nothing here drops a page.
+     Its first real evidence will be live, on `tlps` in the HUD during a lossy pull.
+
+*Verified on the live runner (never `Story_cli_run.mjs`):* MusuHeist 22/22, MusuReplica 14/14 (the
+ Float32 control — unmoved, so the substrate split held), MusuReco 11/11, RepliShadow 5/5,
+  RepliSplit 5/5, RepliUpsert 7/7, MusuStock 5/5. (**`caveat` counts are run-to-run noise, not a
+   signal** — MusuHeist returned 1, then 21, then 1 on identical code. A caveat is a mismatch
+    FORGIVEN as acknowledged value-noise, so whether a step mismatches at all rides the wall clock.
+     Read `ok_pct`; ignore the caveat tally unless a claim moved.) **MusuMag (0.7, steps 8–10) and Sounditron (0.0)
+   are red at EXACT parity with a baseline run taken with `Ra.g` + `Repli.g` reverted to HEAD** —
+    both pre-existing, neither caused here. That revert-and-re-run is the only thing that settles
+     causation while the tree also carries someone else's uncommitted work; the fixture diff alone
+      (2 extra pump rounds + 6 `repli_parked` unemit rows at step 8) reads exactly like a transport
+       regression and is not one. Do that before believing a red is yours.
+
+*Still unproven:* a real RTT sample. Books land pages inside a tick, so `s` is often 0 (guarded, no
+ sample) and `rto` stays at the 4000 fallback — the estimator is genuinely inert cargo there, which
+  is why the fixtures did not move. Its first honest reading needs two peers and a real heist:
+   watch `srtt`/`rto` beside `goodput_kbps` in `runner_ask world`.
+
 ### 5.6 A window that breathes
 Replace the constant `B` with a byte window under **AIMD** — additive increase on timely arrival,
  multiplicative decrease (halve) on RTO, floor ~2 pages — the Chiu-Jain result being that AIMD is
@@ -531,6 +632,63 @@ Replace the constant `B` with a byte window under **AIMD** — additive increase
       lives. (A rate-based alternative — pace directly off §5.2's measured delivery rate,
        BBR-style, with the window as backstop — is worth a paragraph in review; AIMD is the
         simpler first loop and the signals it needs exist after 5.1.)
+
+**BUILD PLAN (worked 2026-08-06) — the SELF-CLOCKING half lands now, with §5.5; the AIMD half
+ stays deferred until the clock has run live.** This is the "landing off the share beat" item:
+  today a landed page does NOTHING until the next 600ms beat deigns to notice it — arrival, the
+   one event that proves the pipe has capacity, is the one event that drives nothing.
+
+*The shape:* one new optional hook, `w.c.repli_clock`, registered by the pull side (Ra) and
+ fired by `Repli_attach_page` after a landed chunk on the chunk-particle path only (`landed == 1`
+  under `await_bufk`, beside `repli_on_land` — which is the radio's wake and stays the radio's).
+   Unregistered — every Float32 Book, the idle app — nothing fires: byte-identical.
+
+*The discipline that makes it safe:* the attach seam runs INSIDE the inbox drain, inside the
+ beliefs mutex (§7.3, §5.8) — the hook does O(1) bookkeeping and NOTHING else inline. It
+  decrements the rec's outstanding count when the landed page's LAST chunk is present (an
+   O(PAGE) presence check), stamps `last_land_ts`, and arms ONE coalesced `post_do` issuance
+    per rec (`rec.c.clock_armed` — the `bulk_pump_armed` pattern from Tribunal's lane). The
+     issuance fn then runs as its own Atime pass: while `outstanding < W` and the ask cursor
+      (`rec.c.ask_next`, the lowest never-asked page offset) still has pages, send wants —
+       addressed off the same breadcrumbs `Ra_restock_beat` uses (`rec.c.rx`, `rec.c.from`,
+        `w.c.repli_mirror_pier`), stamping `ra_want_ts` exactly as the beat does, so the
+         estimator and the recovery timer see clock-issued wants identically. `repli_want` is
+          already ephemeral in Peeroleum (§9.1), so the clock cannot melt the outbox.
+
+*Division of labour, precisely TCP's own:* the CLOCK sends new data; the BEAT recovers.
+ `Ra_pull_beat` keeps its B=6 budget as BOOTSTRAP (a fresh rec has nothing outstanding — no
+  arrivals, so the clock is silent) and as RECOVERY (RTO re-asks + TLP; holes BEHIND the
+   cursor are its property, the cursor AHEAD is the clock's). A total arrival stall — every
+    outstanding want lost — starves the clock, and the beat's RTO re-ask is what restarts it:
+     the timer-restarts-the-ack-clock shape, verbatim.
+
+*The window is FIXED in this stage:* `W = w.c.heist_window`, default modest — 16 pages = 8MB
+ outstanding (LEAD=32's 16MB is the ceiling, not the target) — because removing the issue-rate
+  throttle promotes the REAL constraints (the sink's per-frame drain inside the mutex, the
+   source's pack+hash, the relay's bulk lane) to operating limits for the first time. Watch the
+    source's `relay_bulk_dropped` and the `beat` electrode while raising it. PARKED offsets
+     count as outstanding: a parked frontier must HOLD the window — asking further ahead of a
+      transcoding source only parks more.
+ *Then AIMD is one variable:* W becomes `rec.c.win` — +1 page per clean RTT round, halve on
+  RTO expiry, floor 2, with maybe a BBR-flavoured cap off §5.2's goodput later. Nothing in this
+   stage's shape moves to admit that; building the clock first is what buys the one-variable
+    retrofit. *(Tribunal.g needs NOTHING this stage — its `relay_bulk_queued`/`relay_bulk_dropped`
+     are already surfaced; they become the loop's INPUTS only when AIMD lands.)*
+
+*What it buys, in §1.1's own terms:* the binder stops being `6 × 2 × 256KB ÷ 0.6s = 5MB/s`
+ and becomes `min(W ÷ RTT, wire, drain)` — on local-local, wire/drain-bound at last; the 65MB
+  flac that was ~13s of pure ask-pacing becomes wire-limited.
+
+*Fixture cost: REAL, unlike §5.5's.* Arrival-clocked wants change how many pages land per Story
+ step, so held-counts in snaps can move for the chunk-path Books — MusuRaStream/MusuRaChase (the
+  two already un-accepted: re-record them green FIRST, one suspect per red) and possibly
+   Heistation/Sounditron. Claim-diff gate as ever: bytes may move, `witnessed:`/`see:` claims
+    may not. MusuReplica/MusuReco are Float32-path — no hook registered — and must not move at
+     all; drift there means the gate leaked.
+
+*Prove live:* time the 65MB pull before/after; goodput vs wire-rate in the HUD (they should
+ CONVERGE — a widening gap under the clock means duplicate asks, i.e. the accounting is wrong);
+  `skips` ~0 on the `beat` electrode mid-pull; `relay_bulk_dropped` flat at W=16.
 
 ### 5.7 Negotiated chunk size
 256KB is fixed everywhere. The latency argument against big frames is serialization delay —

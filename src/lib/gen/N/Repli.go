@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return 'bdbc88fbc8506792~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return '923f1b557e9833fd~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -930,6 +930,14 @@ Repli_attach_page(w, pier, id, bytes) {
     //     (the audit's CRITICAL).  Solo/no-share: repli_mirror_w is unset, so it falls back to w itself.
     let land_w = w.c.repli_mirror_w || w
     if (landed && land_w.c.repli_on_land) { try { land_w.c.repli_on_land(land_w, mirror) } catch (er) {} }
+    // §5.5 (Backpressure_todo.md): the ARRIVAL half of the RTT sample.  This is the one place a landed
+    //  page is known, and until now it told the pull layer NOTHING — the sink learned that a want had
+    //   been answered only by noticing, four seconds later, that it no longer needed re-asking.  The
+    //    departure half already exists (Ra's w.c.ra_want_ts stamp at send), so a measurement costs one
+    //     subtraction.  Same world by construction: Repli_arm and Ra_pull_beat both ride the STATION w
+    //      (Swarm_share_up arms here, Heist_keep_step/Ra_mag_warm are called with the same w) — the
+    //       repli_mirror_w hop above is for the radio's hook, not for the pull cursors.
+    if (landed) this.Repli_land_rtt(w, pier, mirror)
     delete pier.c.awaiting[id]
     if (pier.c.bufs) delete pier.c.bufs[id]
     // the holding req has SERVED: its bytes landed, so RETIRE it whole rather than leave a landed+finished
@@ -940,6 +948,78 @@ Repli_attach_page(w, pier, id, bytes) {
     //      req sweep iterates a fresh o() snapshot array, so detaching a req never corrupts the live iteration.
     let req = pier.o({ req: 'awaitbuf', bufferid: String(id) })[0]
     if (req) pier.drop(req)
+
+},
+// Repli_land_rtt — §5.5's sink-side bookkeeping at the moment a page COMPLETES: take an RTT sample if
+//  this arrival is unambiguous, then clear the per-key pull state so "a stamp exists" MEANS "outstanding"
+//   (which is the accounting §5.6's window then reads directly).  O(PAGE) and allocation-free — it runs
+//    inside the Peeroleum inbox drain, inside the beliefs mutex, so it must never do real work here.
+//  PER PAGE, NOT PER CHUNK: a want asks for a page (PAGE chunks, PAGE frames), so the stamp may only fall
+//   when the LAST of them is in.  Clearing on the first chunk would leave the second in flight with no
+//    stamp behind it — and if the pair landed out of order, the very next beat would see map[off]==null
+//     with an expired timer and re-ask a page that was already arriving.  A completed page is also the
+//      honest thing to time: the RTO governs "when should I give up on this PAGE", not on one frame.
+//  KARN'S RULE: an arrival for a re-asked (id, offset) is ambiguous — it may answer either ask — so a key
+//   marked ra_retx yields no sample.  A key landing out of a PARK is likewise no sample: its elapsed time
+//    measures the far transcoder waking up, not the path.  Either way the state still clears.
+Repli_land_rtt(w, pier, mirror) {
+    let rec = mirror.c && mirror.c.up
+    if (!rec || !rec.sc || rec.sc.id == null || mirror.sc.seq == null) return
+    if (rec.c.chunks) return                                    // Float32 staging path — no page cursor rides it
+    let PAGE = +(w.c.repli_page || 2)
+    let seq = +mirror.sc.seq
+    let off = seq - (seq % PAGE)
+    if (!this.Repli_page_ready(rec, off, PAGE)) return           // the page's other chunk(s) are still crossing
+    let key = rec.sc.id + ':' + off
+    let nowms = Date.now()
+    let ts = w.c.ra_want_ts && w.c.ra_want_ts[key]
+    let ambiguous = (w.c.ra_retx && w.c.ra_retx[key]) || (w.c.ra_parked && w.c.ra_parked[key])
+    if (ts && !ambiguous) this.Repli_rtt_note(pier, nowms - ts)
+    // CLEAR ALL FOUR TOGETHER.  Two of these leaked before this line existed: ra_want_ts only went stale
+    //  (so a landed page still read as "asked recently"), and ra_parked only aged out — lingering as a
+    //   20s re-ask SUPPRESSOR for an offset whose bytes were already in hand.
+    if (w.c.ra_want_ts) delete w.c.ra_want_ts[key]
+    if (w.c.ra_retx) delete w.c.ra_retx[key]
+    if (w.c.ra_parked) delete w.c.ra_parked[key]
+    if (w.c.ra_tries) delete w.c.ra_tries[key]                  // a clean landing resets the backoff ladder
+    rec.c.last_land_ts = nowms                                  // the tail probe's quiet-clock (Ra_pull_beat)
+
+},
+// Repli_rtt_note — Jacobson/Karels, verbatim, per source Pier: srtt tracks the mean, rttvar the mean
+//  deviation, and RTO = srtt + 4·rttvar leaves room for the jitter a mean alone hides (the 1988 result:
+//   a variance-blind timer retransmits a merely-slow path and makes congestion worse).  Off-snap on .c —
+//    this is a MEASUREMENT, not model state, the same stance as repli_meter; no particle, no version bump.
+//     `rto` starts at 4000, today's hardcoded constant, so behaviour before the first sample is
+//      byte-identical to what it replaces: the estimator can only ever TIGHTEN the timer, never loosen it.
+//   The state survives a rebirth (Swarm_note_era wipes the want cursors, not this): the PATH outlives the
+//    peer's boot, and a one-boot-old srtt is a better prior than starting blind again.
+Repli_rtt_note(pier, s) {
+    if (!pier || !(s > 0) || s > 60000) return                   // a wild sample (tab slept, clock jumped) is not a path
+    let r = pier.c.rtt
+    if (!r) { r = pier.c.rtt = { srtt: s, rttvar: s / 2, rto: 4000, n: 0 } }
+    else if (r.n === 0) { r.srtt = s; r.rttvar = s / 2 }
+    else {
+        r.rttvar = 0.75 * r.rttvar + 0.25 * Math.abs(r.srtt - s)
+        r.srtt = 0.875 * r.srtt + 0.125 * s
+    }
+    r.n = r.n + 1
+    r.last = s
+    r.rto = Math.max(250, Math.min(8000, Math.round(r.srtt + 4 * r.rttvar)))
+
+},
+// Repli_rto — the measured retransmit timeout for a record's source path, with the 4s fallback for a
+//  path that has never yielded a sample (a fresh pull's very first want, or a record with no rx
+//   breadcrumb).  The ONE reader for every re-ask gate; the two hardcoded 4000s used to be the policy.
+Repli_rto(rec) {
+    let r = rec && rec.c && rec.c.rx && rec.c.rx.c && rec.c.rx.c.rtt
+    return (r && r.n > 0) ? r.rto : 4000
+
+},
+// Repli_srtt — the smoothed round trip for a record's path, or 0 when unmeasured (the tail probe falls
+//  back to its beat-resolution floor).
+Repli_srtt(rec) {
+    let r = rec && rec.c && rec.c.rx && rec.c.rx.c && rec.c.rx.c.rtt
+    return (r && r.n > 0) ? r.srtt : 0
 
 },
 // Repli_awaitbuf_do — pumped each pass while the req is open: attach if the bytes are here now, else WARN once
