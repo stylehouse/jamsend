@@ -1424,9 +1424,9 @@
             {@const caveat     = !!(Step && Step.sc.caveat)}
             {@const dige       = String(Step && Step.sc.dige || ts_sel && ts_sel.dige || '').slice(0, 8)}
             <!-- A disk-stale step is ok against toc but its NNN.snap fixture on disk
-                 drifted (disk_ok===false) — Accept rewrites the fixture, so offer it
+                 drifted (H.disk_bad) — Accept rewrites the fixture, so offer it
                  here too, not just for outright mismatches. -->
-            {@const can_accept = !hollow && (!ok || Step.sc.disk_ok === false)}
+            {@const can_accept = !hollow && (!ok || H.disk_bad(Step))}
             {@const step_notes = display.notes[n] ?? []}
             <!-- trace_span: ms from first to last trace event — the step's wall clock -->
             {@const trace_events = Step?.sc.Run_trace as TraceEvent[] | undefined}
@@ -1455,9 +1455,9 @@
                     {:else if !ok}
                         <span class="sr-plabel mm">mismatch</span>
                     {/if}
-                    <!-- disk_ok=false: NNN.snap on disk doesn't match toc.snap dige;
+                    <!-- disk_bad: NNN.snap on disk doesn't match toc.snap dige;
                          set by check_snap both for mismatches and snap_checking steps -->
-                    {#if Step && Step.sc.disk_ok === false}
+                    {#if H.disk_bad(Step)}
                         <span class="sr-warn" title="NNN.snap on disk does not match toc.snap dige">⚠ disk stale</span>
                     {/if}
 

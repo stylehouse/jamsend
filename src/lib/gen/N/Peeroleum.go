@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return 'c7b29c9e6d2ba3e8~g1' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return 'fccbebf3a99c21c6~g1' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -822,6 +822,19 @@ Peeroleum_served_before(inbox, h) {
 //     the boundary cull stays the thing Books actually exercise.
 Peeroleum_bound_inbox(inbox, w, pier) {
     const H = this
+    // THE STRIDE (2026-08-05, the same DevTools-pause hunt as the rollup gate).  This does THREE
+    //  whole-inbox walks — two `o({req:'unemit'})` scans plus the `recent` whittle — and it ran after
+    //   EVERY booked frame.  A booked frame includes every 256KB `repli_page`, so at heist rates that is
+    //    thousands of full particle walks per second, each allocating its own array, purely to discover
+    //     that nothing needs trimming yet.  Trimming is bookkeeping, not correctness: it is allowed to
+    //      run LATE, just never never.
+    //  So amortise it.  Both bounds keep their meaning, they just overshoot by at most one stride: `done`
+    //   settles around 200-250 instead of exactly 200, and the 2000 backstop can reach ~2050 — still an
+    //    order of magnitude below the 6000 index ceiling (Stuff.i_z) it exists to stay under, which is
+    //     the only hard limit in here.  Everything else was a preference expressed once per frame.
+    let stride = +(pier.c.bound_stride || 0) + 1
+    if (stride < 50) { pier.c.bound_stride = stride; return }
+    pier.c.bound_stride = 0
     let DONE_KEEP = 200
     let done = inbox.o({req: 'unemit'}).filter(u => u.sc.done)
     if (done.length > DONE_KEEP) {
@@ -829,7 +842,12 @@ Peeroleum_bound_inbox(inbox, w, pier) {
         for (const u of cull) { H.Peeroleum_inbox_ledger(inbox, u); inbox.drop(u) }
     }
     let recent = inbox.o({recent: 1})[0]
-    if (recent) H.whittle_N(recent.o({unemit: 1}), 200)        // RECENT_KEEP — must be >= DONE_KEEP
+    // RECENT_KEEP — must be >= the HIGH-WATER `done` reaches, which with the stride above is
+    //  DONE_KEEP + one stride, not DONE_KEEP.  Sized well clear of it: the ledger is what
+    //   Peeroleum_served_before reads once a served req has been dropped from the live inbox, so a
+    //    recent shorter than the done window would open a re-dispatch hole for exactly the frames
+    //     that just fell out of it.  Cheap to be generous — these are seq+type rows, not frames.
+    if (recent) H.whittle_N(recent.o({unemit: 1}), 400)
     // structural backstop: no single Pier inbox reaches the 6000 index ceiling (Stuff.i_z) and
     //  throws inside the delivery that is trying to drain it.  Drops the OLDEST regardless of
     //   state, so a flood of never-finishing reqs can still not pin the pump.
@@ -916,6 +934,11 @@ async req_unemit(req) {
         H.Peeroleum_send(w, {header:{type:'ack', from:me, to:pier.sc.pub, ack:h.seq}})
     } else {
         req.sc.error = reason
+        // ARM THE ROLLUP (2026-08-05).  This is the ONLY place an unemit is ever stamped with an error, so
+        //  it is the only place a %faulty rollup can become owed.  Peeroleum_rollup_faulty reads this and
+        //   skips its whole-inbox walk when nothing is owed — see the note there for why that walk was
+        //    burning the downloader's CPU.  `.c`, off-snap: it is a cursor, not a fact about the peer.
+        pier.c.faulty_owed = 1
         inbox.finish(req)
         // LOUD no-ack (2026-07-29): the error branch draws NO ack, so the sender's emit strands — the exact
         //  SILENT "frame not acked" that stalled the heist download (chunks re-asked forever, the console quiet,
@@ -997,10 +1020,24 @@ Peeroleum_take_ack(w, pier, h) {
 //     Lies_deliver_soon fires deliver per frame; back-to-back frames from one peer race).
 //    The internal await matters too: r() clears {unemit:1} then the loop refills, so the
 //     clear must SETTLE before the refill or the rebuild races its own transaction.
+//  THE HOT-PATH GATE (2026-08-05, the human pausing DevTools at random and landing here).  This walk is
+//   O(inbox) and it ran after EVERY booked frame — and `repli_page` (the 256KB bulk data frames, hundreds
+//    per track) is a booked frame.  That is precisely the O(N²) melt the repli_want note in
+//     Peeroleum_deliver describes ("the inbox grew and the rollup went O(N²), melting the uploader's CPU
+//      in Peeroleum_deliver"): the 2026-07-29 pass cured it for the little control frame and left it
+//       standing on the bulk one, which is the path that actually carries the bytes.
+//  Nothing is owed unless an unemit has been stamped with an error (req_unemit, the ONE site) or a
+//   %faulty already stands and might now want dropping.  In the overwhelmingly common case — a healthy
+//    transfer — both are false and we return without touching the inbox at all.  Semantics are unchanged:
+//     every path that could make a rollup owed sets the flag first, and the flag is only cleared here,
+//      after the rebuild that consumes it.
 async Peeroleum_rollup_faulty(pier) {
+    let faulty0 = pier.o({faulty:1})[0]
+    if (!pier.c.faulty_owed && !faulty0) return
+    pier.c.faulty_owed = 0
     let inbox = pier.o({inbox:1})[0]
     let errs = inbox ? inbox.o({req:'unemit'}).filter(u => u.sc.error) : []
-    let faulty = pier.o({faulty:1})[0]
+    let faulty = faulty0
     if (!errs.length) { if (faulty) pier.drop(faulty); return }
     faulty ||= pier.i({faulty:1})
     await faulty.r({unemit:1}, {})

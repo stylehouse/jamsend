@@ -1,104 +1,28 @@
 Snap:H
   H:Sounditron,Run
     A:Sounditron
-      self,round=5	{"mung":["age"]}
+      self,round=13	{"mung":["age"]}
       w:Sounditron
-        self,round=5	{"mung":["age"]}
+        self,round=13	{"mung":["age"]}
         req:wrangle,eternal,ok
-        Machine,self:56fbce44,friendly:Righto
         Radio:off,face:Radio
-        Stoker:idle,face:Stoker,crew:Radio,stood=6
+        Stoker:idle,face:Stoker,crew:Radio,stood=16,stock=16,fresh=16,last:Deep A
         Tuner:glass,face:Tuner
         Riffle:shut,face:Riffle,crew:Riffle
-        Zine:Faves,face:Zine,crew:Radio,count:1
+        Zine:Faves,face:Zine,crew:Radio,count:0
         Door:open,face:Door
+        Uptime,face:Uptime
+        Beat,face:Beat
+        MusuSelf,pub:f5da6599b8505881
+          shop,pub:f5da6599b8505881
+          stock,pub:f5da6599b8505881	{"dontSnap":1}
+        Transfer,dontSnap
+        Diag,dontSnap
+        Mag:Lineup,face:Lineup,crew:Radio	{"dontSnap":1}
+        Machine,self:f5da6599,friendly:Righto
         req:stoker_wait,finished
         req:witness,eternal,ok
-        MusuSelf,pub:56fbce4437d7265c
-          stock,pub:56fbce4437d7265c	{"dontSnap":1}
-        MusuThem,pub:56fbce4437d7265c
-          stock,pub:56fbce4437d7265c
-            Mag:shuffle,warm
-              Cloud,page:1
-                Record,id:0df43bb998d96877,title:Solar Eclipse,artist:muchOther,album:- electro,seconds=947.47,lufs=-19.01,gain=-0.74,capped,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=474,bytes=497955,stage:previewed
-                  Preview,seq:0,head,preskip=312,cid:2c760739834a5c634599863fa41a7f97ca90a50293371f8b88f8f17b5543db09	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:1,cid:6ef62be5df154778bbb82a28e73de643ee72216b2f9d0d9f3337abf15981e428	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:2,cid:08fbf8b51322281a5d81c48b056973b3802001d3aeae7c08f1d35059a5ceee62	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:3,cid:fe9543e93d541d03e7970202a9f3ea0184b33e1f0830a46161e8ab517c3aa12d	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:4,cid:6570ec6d0e36381be5012f67416277a436a167f1965316fef7938e91ec89fa09	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:5,cid:eee1314ff9f3aa28246fd593bd01513a58759719372faf5029a07a44981d05d9	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:6,cid:e650421cd7900477aeba8c0a648bd81d66b3f9f5bbeaad7d8e1579e21abf4432	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:7,cid:01c61b991ff6a649026f720c235499b42865afac85504fab23a22294af2ba808	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:8,cid:f69fa2bb0f214e68549422f32f3f6f8355a2446c294cb6bb0af84d2b86a0c433	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:9,cid:01330f2c0d199dccc51175aff9b64b166679422630bd263058979d4b03ad9f6b	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:10,cid:5a2426862b747f8bca67f6169a4dae03685eb2662142daede2c21e37c66b9da3	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:11,cid:207d5facd74dd27b293f1cf6cac09491175f6a37b5e96b7e32260c279426e980	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:12,cid:8ca20cc3454e7f9784f2390a10f83a0986546ed289913cd83311f19a5c659a9f	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:13,cid:952cfade1475c43d71c1f5ed3803eeb674cb3b3915ac0d960c130d0a9377f274	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:14,cid:055dd1b052044a2117fd42e449b92df96f27a8bc7b7664e97af5c7b7215cce7f	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:15,cid:5f9ddf69b541a6e3de736c40f51903412481550572ec43bda32a067a9c7c8af8	{"ref":{"buf":"Uint8Array()"}}
-                Record,id:db1115dd8628af25,title:Triumphant Discovery,artist:muchOther,album:- electro,seconds=396.32,lufs=-20.93,gain=6.45,capped,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=199,bytes=517443,stage:previewed
-                  Preview,seq:0,head,preskip=312,cid:760d1ba189caa20240804289b26022a2ac2f46193b1d75d380e305c98f4d3292	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:1,cid:3fcfa535fe1275ceb2a90432bd172c471850b0bd3aed2d3f77ba2104c7ecfc2b	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:2,cid:1e9716236888d622b59ddf291eaf5d1628f5bab049da6f206f40164fbd2b0a2f	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:3,cid:fcee1811b62e600a70aa1d05b2294bca4cd426a001a9f41bf39b1a18bbe26148	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:4,cid:e21e21817af459dcdc20c0a3d56645fe1fce7e4aac41950b9ff78bea020f72e6	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:5,cid:659eea522adfc9120163a7165bdcb477c694164359c5acca451bb93e5c417772	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:6,cid:ef850dab319bb46efd5692c0a072f46db22a9fe08fd8dc332016fe584e6dadf2	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:7,cid:bad4b8a71a5fa2b24bf9a6ed24329243e4132e6551aa8c181a15a33b60372047	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:8,cid:95e271330cae1edcf0628757e0cf7bf85463c35eb2c482d139f28b3a3d06eecb	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:9,cid:23560bbf1b35afe22a19d2ce2e90e482ddd8b36e77ce19701b5739626ce74679	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:10,cid:9800c91fe8004d42e41a78794434fa740c0cb47592ef71c7211ed98ee8b8b391	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:11,cid:527b6ddd211c42d2f9beff79930d0f26e0913ff9ad050a83819465168f2434e6	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:12,cid:9bb99fa94ce9f206b757571cdaa6dffb7c59e2d1525410dcb881b30279252388	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:13,cid:4b92ce1264144cdcd265c760c9a0d7c41a9f210548a136dd8d9e779e56a6c263	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:14,cid:fe90264c241c55a37f925ed7e15c4b1251402fa4731bc8591bb3a5c395d46fd8	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:15,cid:e1fe1e58a4e18f577844b3bd523034d2251c73cfa54ef417325afd4cbf10a192	{"ref":{"buf":"Uint8Array()"}}
-                Record,id:15384c7524bdfc4f,title:He Lays In The Reins (stripped-down live version),artist:muchOther,album:- west,seconds=332.96,lufs=-13.69,gain=-0.31,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=167,bytes=517443,stage:landing
-                  Preview,seq:0,head,preskip=312,cid:9cc5593283dac7b8801bdb1a619e021c364f0cddace46637dcab3c62543c44ac	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:1,cid:61c41822b000a702cc2c1a026a74d4ba22630b2da726ef296c3188c70b04ce74	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:2,cid:a039603799a837a2cd28d22e925d605fccee52634178bcf3e0d86a1ecc861059	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:3,cid:2879ae5cde01bc2fb60df7a05647953753a1851e0d43ef8d1deac22edf5205f4	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:4,cid:69a2b7eeee30de64c50e7955217834b139e57759a37ae59d0818aa4c1bf48b8e	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:5,cid:cb65f20b30c8012d8e72e3958795233b99a48bbed4061d5542a364f56129ed92
-                  Preview,seq:12,cid:2a9f99c74360aa370d8794cfcb1fdc09b7fb0ba7ce33538442ba8e3305f6a7dc	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:13,cid:53ba9796a8295a6da6e2371e137f0248b9b4ec9182c1c7f60628faedb48cda26	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:14,cid:47e55459c94e7457cdcada53e451b68cf7dec9a3e8572afc4bb98c2308275cbc	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:15,cid:b97ac3a0ae9bbca685e2419ca72dcc3eba5e10df886bc2eb96e46560c3ca857d	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:6,cid:d9778252d9ad83239b77d3d5a8902d0649f69d698c794e7102c772a0fb6791bb	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:7,cid:1b748840a2ba131a3184789778a07d0bb7c1b016d4440ccb6d8b06af5e691463	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:8,cid:b661471d96cc370cf6d1d53f2538b6b8487fa0d5c6526d7e62fa09366249e947	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:9,cid:d168261a3a929999daf8bddcdeb3edd57bc50feaa6dbd808506acea8ec807b65	{"ref":{"buf":"Uint8Array()"}}
-                Record,id:9a2b18cca1410052,title:18.Mazamir (Bonus),artist:muchOther,album:- folks,seconds=174.62,lufs=-10.27,gain=-3.73,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=88,bytes=517032,stage:landing
-                  Preview,seq:0,head,preskip=312,cid:657a45f5bdfc2e3b50fd5fa913e34b061180604996764effdb6445e987594ec7	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:1,cid:8268bbacbd81a618acd744556583b8a8d6c3b92ee9aac82e98681fa5867aa61e	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:2,cid:b71bef8cf843faa2b78e973bd29cab37797a211912e8745c2859c10fe65312bb	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:3,cid:34482f547900a2b3515002d5f3347b000bc9df9f54f0e4bfe6e2d0d5ff505e44	{"ref":{"buf":"Uint8Array()"}}
-                Record,id:1451de590a9f6a1d,title:14.Pale Baleine,artist:muchOther,album:- folks,seconds=165.12,lufs=-10.73,gain=-3.27,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=83,bytes=517443,stage:husk
-                Record,id:86252363c0cc1c05,title:01. Tayyara Warak,artist:muchOther,album:- folks,seconds=168.1,lufs=-10.24,gain=-3.76,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=85,bytes=517443,stage:husk
-              Cloud,page:2
-                Record,id:14e305effa9ef4e9,title:Burn That Broken Bed (stripped-down live version),artist:muchOther,album:- folks,seconds=407.01,lufs=-15.96,gain=-0.1,capped,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=204,bytes=517443,stage:husk
-                Record,id:fb674b60acc64644,title:Separate Self,artist:muchOther,album:- electro,seconds=486.71,lufs=-20.31,gain=4.53,capped,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=244,bytes=517443,stage:husk
-                Record,id:ac3792da766a129d,title:The Final 5,artist:muchOther,album:- electro,seconds=354.71,lufs=-14.86,gain=-0.74,capped,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=178,bytes=517267,stage:husk
-                {"Record":1,"id":"ff3bc9452ca44d34","title":"1-02 Thirsty Girl, or, the Tale of the Storm Crow","artist":"muchOther","album":"- folks","seconds":281.41,"lufs":-15.58,"gain":-0.32,"capped":1,"real":1,"col":1,"sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":141,"bytes":517305,"stage":"husk"}
-                {"Record":1,"id":"ab011f3df68c149e","title":"1-03 Hammer, Anvil and Stirrups","artist":"muchOther","album":"- folks","seconds":267.88,"lufs":-13.19,"gain":-1.02,"capped":1,"real":1,"col":1,"sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":134,"bytes":517315,"stage":"husk"}
-                Record,id:799da6ed308fde40,title:Burn That Broken Bed,artist:muchOther,album:- west,seconds=306.27,lufs=-13.22,gain=-1.15,capped,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=154,bytes=517430,stage:husk
-              Cloud,page:3
-                Record,id:c39b0c34945d961c,title:02. Commencer La-Bas,artist:muchOther,album:- folks,seconds=253.62,lufs=-9.06,gain=-4.94,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=127,bytes=517443,stage:husk
-                Record,id:5258f4a7f4b56ef3,title:03. Flat Foot,artist:muchOther,album:- folks,seconds=162.25,lufs=-9.97,gain=-4.03,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=82,bytes=517441,stage:husk
-                Record,id:99d5cf27622bc5b1,title:Prison on Route 41,artist:muchOther,album:- west,seconds=250.99,lufs=-14.62,gain=-0.65,capped,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=126,bytes=517246,stage:husk
-                Record,id:e9c567e73ac38e76,title:Prison On Route 41 (stripped-down live version),artist:muchOther,album:- west,seconds=256.93,lufs=-18.46,gain=1.91,capped,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=129,bytes=517271,stage:husk
-                Record,id:bfcc24fc75526b01,title:Wild Horses,artist:muchOther,album:- west,seconds=388.2,lufs=-14.21,gain=0.21,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=195,bytes=517280,stage:husk
-                Record,id:b76676e77312cfbf,title:A History of Lovers,artist:testsounds,album:muchOther,seconds=189.68,lufs=-10.68,gain=-3.32,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=95,bytes=517309,stage:husk
-              Cloud,page:4
-                Record,id:471f2b96dfef0778,title:Dead Man's Will,artist:muchOther,album:- west,seconds=197.45,lufs=-13.52,gain=-0.48,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=99,bytes=517443,stage:husk
-                Record,id:865c4e215e47176a,title:A History Of Lovers (stripped-down live version),artist:muchOther,album:- west,seconds=223.09,lufs=-16.64,gain=0.72,capped,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=112,bytes=517443,stage:husk
-                Record,id:4acecabbc3fe2320,title:All Tomorrow's Parties,artist:muchOther,album:- west,seconds=296.21,lufs=-15.55,gain=0.33,capped,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=149,bytes=517443,stage:husk
-                Record,id:90eb2d53d77e0c1c,title:He Lays in the Reins,artist:muchOther,album:- west,seconds=223.77,lufs=-11.71,gain=-2.29,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=112,bytes=517443,stage:husk
-                {"Record":1,"id":"c9d04a9a0e477516","title":"Sixteen, Maybe Less","artist":"muchOther","album":"- west","seconds":289.17,"lufs":-12.92,"gain":-1.23,"capped":1,"real":1,"col":1,"sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":145,"bytes":517401,"stage":"husk"}
-                Record,id:794aa24e237b344d,title:Gradriel,artist:muchOther,album:- electro,seconds=582.49,lufs=-17.55,gain=-0.74,capped,real,col,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=292,bytes=517270,stage:husk
         Relay
         req:relay_wait,finished
-        req:muse_wait
-        Census,n=3
-      w:Voronoiology,dontGraph	{"dontSnap":1}
+        req:muse_wait,finished
+        Census,n=2

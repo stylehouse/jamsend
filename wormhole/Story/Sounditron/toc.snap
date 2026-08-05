@@ -39,6 +39,7 @@ story:Sounditron
     report
     For
     trickle
+    waitVyto
   EntropyArrest
     Entcase:Session_alive
       lematch,w:Sounditron
@@ -98,36 +99,36 @@ story:Sounditron
         lematch,Need
           means,spayer,re:Need:(.*),tol:any
   TimeSpool
-    TimeTotal:beliefs,avg=0.108
-      sample=0.093,at=1785896779
-      sample=0.103,at=1785896965
-      sample=0.119,at=1785905220
-      sample=0.094,at=1785906232
-      sample=0.078,at=1785911987
-      sample=0.103,at=1785913457
-      sample=0.12,at=1785914269
-      sample=0.123,at=1785914402
-      sample=0.087,at=1785914529
-      sample=0.162,at=1785914897
-    TimeTotal:step,avg=0.015
-      sample=0.013,at=1785896779
-      sample=0.015,at=1785896965
-      sample=0.017,at=1785905220
-      sample=0.013,at=1785906232
-      sample=0.011,at=1785911987
-      sample=0.015,at=1785913457
-      sample=0.017,at=1785914269
-      sample=0.018,at=1785914402
-      sample=0.012,at=1785914529
-      sample=0.023,at=1785914897
-  step,dige:3d46128d8aec4b69
-  step=2,dige:a18046af8a7f21db,desc:the machine stands
+    TimeTotal:beliefs,avg=0.097
+      sample=0.055,at=1785917325
+      sample=0.059,at=1785918634
+      sample=0.122,at=1785921357
+      sample=0.128,at=1785921800
+      sample=0.057,at=1785924103
+      sample=0.098,at=1785924823
+      sample=0.11,at=1785925059
+      sample=0.11,at=1785925070
+      sample=0.136,at=1785925319
+      sample=0.092,at=1785926061
+    TimeTotal:step,avg=0.014
+      sample=0.008,at=1785917325
+      sample=0.008,at=1785918634
+      sample=0.017,at=1785921357
+      sample=0.018,at=1785921800
+      sample=0.008,at=1785924103
+      sample=0.014,at=1785924823
+      sample=0.016,at=1785925059
+      sample=0.016,at=1785925070
+      sample=0.019,at=1785925319
+      sample=0.013,at=1785926061
+  step,dige:de2ef2f8340767ce
+  step=2,dige:e49e368d8b363352,desc:the machine stands
     Assertion:machine-stood,sentence:the machine stood — an addressable self emerged on the spine
-  step=3,dige:f253cd9869732b3e,desc:the relay answers
+  step=3,dige:c98ed387508742ba,desc:the relay answers
     Assertion:relay-answers,sentence:the relay answers — the channel stood and frames can cross
-  step=4,dige:851fbae6b05b15af,desc:who could we reach
+  step=4,dige:76860bd3071fb946,desc:who could we reach
     Assertion:possibilities-surveyed,sentence:the possibilities of peers were surveyed — every known address counted
-  step=5,dige:45df27a20506da6b,desc:reach for a peer
-  step=6,dige:5b635470f11e1b02,desc:does sound run here
-  step=7,dige:ecd0d21fa629b790,desc:sum and report
+  step=5,dige:a4527d7805253864,desc:reach for a peer
+  step=6,dige:a1e03b5bea77dfd6,desc:does sound run here
+  step=7,dige:88823efdeb09f31b,desc:sum and report
     Assertion:report-stands,sentence:the session summed itself — a report stands ready to travel

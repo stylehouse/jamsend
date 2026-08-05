@@ -735,6 +735,57 @@ await M.eatfunc({
                     await nav.bin_write(dir_path, filename, whole)
                 }
                 replyJSON({ ok: true })
+            } else if (op === 'bin_open' || op === 'bin_chunk' || op === 'bin_close' || op === 'bin_abort') {
+                // ── THE HELD WRITER (2026-08-05, the 31-second landing).  bin_append is correct but pays a
+                //  FULL-FILE COPY per chunk: createWritable copies the existing file into a `.crswap` on every
+                //   open, so an N-chunk landing copies N²/2 chunks of bytes.  Measured on a 27MB/109-chunk
+                //    track: 31.1s of writing, against 64ms to read that same file back whole.
+                //  So the wire gets a SESSION instead of N independent appends: bin_open mints a writer the
+                //   editor holds, bin_chunk writes into it POSITIONALLY, bin_close commits (one swap), and
+                //    bin_abort drops it.  One swap file per landing instead of one per chunk.
+                //  POSITIONAL, not append-at-EOF, and that is not fussiness: RemoteWormholeNav re-emits an
+                //   un-acked request with a fresh seq, so a chunk CAN land twice.  An explicit `pos` makes
+                //    the write idempotent — a double-land rewrites the same bytes at the same offset, where
+                //     an EOF append would silently duplicate them and fail the body_hash.
+                if (claim.mode === 'ro') return void replyJSON({ error: 'grant is read-only' })
+                const wid = String(frame.wid ?? '')
+                if (!wid) return void replyJSON({ error: `${op}: no wid` })
+                const live = ((H as any)._rw_writers ||= new Map<string, { w: any, at: number }>())
+                // stale sweep: a runner that reloaded mid-landing never sends its bin_close, and an
+                //  un-aborted writable keeps an EXCLUSIVE lock — every later write to that filename would
+                //   die NoModificationAllowedError until the editor tab reloads.  Any op sweeps writers
+                //    untouched for 2 minutes (far beyond a healthy landing, which touches its writer every
+                //     few hundred ms).  Best-effort abort; a writer that refuses still goes with the entry.
+                for (const [k, v] of live) {
+                    if (Date.now() - v.at > 120_000) {
+                        live.delete(k)
+                        console.warn(`🕳🧹 wormhole: aborting stale held writer ${k} (untouched 2min — runner reloaded mid-landing?)`)
+                        await v.w.abort?.().catch(() => {})
+                    }
+                }
+                if (op === 'bin_open') {
+                    if (!nav.bin_writer) return void replyJSON({ error: 'editor nav cannot bin_writer' })
+                    if (live.has(wid))   return void replyJSON({ error: `bin_open: wid ${wid} already open` })
+                    live.set(wid, { w: await nav.bin_writer(dir_path, filename), at: Date.now() })
+                    replyJSON({ ok: true })
+                } else {
+                    const held = live.get(wid)
+                    // a chunk for a wid we don't hold is the reload case above (or a sweep that beat us).
+                    //  Name it rather than throwing a bare Map error — the runner degrades to bin_append.
+                    if (!held) return void replyJSON({ error: `${op}: no held writer for wid ${wid} (closed, swept, or editor reloaded)` })
+                    held.at = Date.now()
+                    if (op === 'bin_chunk') {
+                        const buf = frame.buffer
+                        if (buf == null) return void replyJSON({ error: 'bin_chunk: frame carried no buffer' })
+                        await held.w.write(buf instanceof Uint8Array ? buf : new Uint8Array(buf), Number(frame.pos ?? 0))
+                        replyJSON({ ok: true })
+                    } else {
+                        live.delete(wid)
+                        if (op === 'bin_close') await held.w.close()
+                        else                    await held.w.abort()
+                        replyJSON({ ok: true })
+                    }
+                }
             } else replyJSON({ error: `unknown op ${op}` })
         } catch (e) { replyJSON({ error: String(e) }) }
     },
@@ -2411,7 +2462,7 @@ await M.eatfunc({
                     if (!stW) { ok = false; result = { error: 'no Story world yet — run a Book first' } }
                     else {
                         const This = stW.c.This as TheC | undefined
-                        const bad  = (This ? (This.o({ Step: 1 }) as TheC[]) : []).filter(s => !s.sc.ok || s.sc.disk_ok === false)
+                        const bad  = (This ? (This.o({ Step: 1 }) as TheC[]) : []).filter(s => !s.sc.ok || H.disk_bad(s))
                         H.i_elvisto('Story/Story', 'story_accept_all', {})
                         result = { accepting: bad.length, book: (stW.sc.Book as string) ?? null, note: 'dispatched — re-run to verify' }
                     }

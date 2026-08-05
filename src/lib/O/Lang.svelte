@@ -250,7 +250,8 @@
         // auto_push on by default — changey working drift with a stable origin flushes
         //   straight back to the Waft (the OC is the working set, touring sheds nothing).
         //   Opt nopush turns it off so a test can see the changey|push truthiness unhidden.
-        workon.sc.auto_push = !!H.o_Opt_val(w, 'nopush') ? 0 : 1
+        if (H.o_Opt_val(w, 'nopush')) delete workon.sc.auto_push
+        else workon.sc.auto_push = 1
 
         // Stage reqs — %permanent so a signature roai un-finishes them with a fresh lease.
         //  maz orders the pipeline understanding(3)→ingredients(2)→instrumentation(1); a stage

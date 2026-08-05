@@ -249,7 +249,7 @@ await M.eatfunc({
             prev.sc.label_r = `step ${n}`
             const cursor_p  = dm.oai({ cursor: 1 })
             cursor_p.sc.step_n  = n
-            cursor_p.sc.loading = 0
+            cursor_p.sc.loaded  = 1
         }
 
         if (exp_n) {
@@ -258,7 +258,10 @@ await M.eatfunc({
             exp.sc.label_l = `step ${n} exp`
             exp.sc.label_r = `step ${n} got`
             const Step_n = This.o({ Step: n })[0] as TheC | undefined
-            if (Step_n) Step_n.sc.ok = exp_n === got_n ? 1 : 0
+            if (Step_n) {
+                if (exp_n === got_n) Step_n.sc.ok = 1
+                else delete Step_n.sc.ok
+            }
         }
 
         if (got_np1) {
@@ -286,7 +289,7 @@ await M.eatfunc({
         const dm = w.o({ Diffmatic: 1 })[0] as TheC
         const cursor = dm.oai({ cursor: 1 })
         cursor.sc.step_n  = n
-        cursor.sc.loading = 1
+        delete cursor.sc.loaded
         for (const d of dm.o({ diff: 1 }) as TheC[]) dm.drop(d)
         dm.oai({ spinner: 'diff' })   // dropped by req_showing when diffs land
         dm.bump_version()

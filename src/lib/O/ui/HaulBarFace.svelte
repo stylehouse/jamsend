@@ -28,7 +28,7 @@
         const sc = keep?.sc ?? {}
         const state = String(sc.state || 'primed')
         const seed = String(sc.seed || '')
-        const at = String(sc.at || '')
+        const at = String(sc.pub || sc.at || '')   // `pub` since 2026-08-05; `at` fallback for a particle minted pre-rename
         const rw = A?.top_House?.()?.c?.radio_w
         const mir = (rw && at) ? A?.Ra_home_them?.(rw, at) : null
         const husks = (mir && A?.Heist_rummage_recs) ? A.Heist_rummage_recs(mir, seed) : []

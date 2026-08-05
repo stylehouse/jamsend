@@ -1169,7 +1169,7 @@
         const existing = D.o({ Dip: scheme })[0] as TheC | undefined
         if (existing) {
             T.sc[tsc_key]    = existing.sc.value
-            T.sc[tsc_is_new] = false
+            delete T.sc[tsc_is_new]
             return existing.sc.value as string
         }
 

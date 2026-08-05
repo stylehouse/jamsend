@@ -767,6 +767,21 @@
     // Called after every mutation that should surface in the UI.
     // Steps and swatches are not serialised here — they are live children of
     // This/swatchC inside ave, re-read fresh by the UI on every bump.
+    // disk_ok is a real tri-state (never checked / checked-ok / checked-bad), which a
+    //  single snapped boolean can't carry cleanly (false decodes back as truthy "false" —
+    //  see enLine's guard).  Split across two 1-or-absent keys instead: disk_checked marks
+    //  that a compare ran at all, disk_ok marks that it passed.  set_disk_ok stamps both
+    //  together; disk_bad(step) is the read-side equivalent of the old `disk_ok === false`.
+    set_disk_ok(step: TheC, ok: boolean) {
+        step.sc.disk_checked = 1
+        if (ok) step.sc.disk_ok = 1
+        else delete step.sc.disk_ok
+    },
+
+    disk_bad(step: TheC | undefined): boolean {
+        return !!(step && step.sc.disk_checked && !step.sc.disk_ok)
+    },
+
     story_analysis(w: TheC) {
         const run      = w.o({ run: 1 })[0]
         const The      = w.c.The
@@ -798,9 +813,9 @@
             .sort((a, b) => a.n - b.n)
 
         // A step is "bad" (offerable to Accept All) when it mismatches OR when it
-        //  passed against toc but its on-disk NNN.snap fixture drifted (disk_ok===false).
+        //  passed against toc but its on-disk NNN.snap fixture drifted (disk_bad).
         const bad_count = thisC ? (thisC.o({ Step: 1 }) as any[])
-            .filter(s => !s.sc.accepted && (!s.sc.ok || s.sc.disk_ok === false)).length : 0
+            .filter(s => !s.sc.accepted && (!s.sc.ok || this.disk_bad(s))).length : 0
 
         const an        = ave.oai({ story_analysis: 1 })
         an.sc.run_sc    = run ? { ...run.sc } : null
@@ -842,9 +857,9 @@
         const H   = this
         const run = w.o({ run: 1 })[0]
         if (!run) return
-        // !ok mismatches plus disk-stale ok steps (disk_ok===false) — Accept All
+        // !ok mismatches plus disk-stale ok steps (disk_bad) — Accept All
         //  rewrites the drifted fixtures alongside the genuine mismatches.
-        const allBad = (w.c.This?.o({ Step: 1 }) ?? []).filter(s => !s.sc.ok || s.sc.disk_ok === false)
+        const allBad = (w.c.This?.o({ Step: 1 }) ?? []).filter(s => !s.sc.ok || H.disk_bad(s))
         ;V.Story && console.log(`✅ story_accept_all: ${allBad.length} steps`)
         for (const step of allBad) {
             const n = step.sc.Step
@@ -1311,8 +1326,10 @@
             },
 
             traced_fn: async (D: TheD, bD: TheD | undefined) => {
-                D.sc.changed = bD?.sc.snap_line != null && D.sc.snap_line !== bD.sc.snap_line
-                D.sc.is_new  = !bD
+                if (bD?.sc.snap_line != null && D.sc.snap_line !== bD.sc.snap_line) D.sc.changed = true
+                else delete D.sc.changed
+                if (!bD) D.sc.is_new = true
+                else delete D.sc.is_new
             },
         })
 
@@ -1961,13 +1978,13 @@
             //     (the eventually-ok signal goes through — line ~1407 re-drives once paused
             //      clears, and do_step advances to n+1).  Nothing is re-recorded; the snap
             //       on disk stays honest.  In-app twin of the runner forgive in Story_cli.
-            const forgiven = !!disk_snap && step.sc.ok === false && !!step.sc.got_snap
+            const forgiven = !!disk_snap && !step.sc.ok && !!step.sc.got_snap
                 && H.entropy_forgive(w, step.sc.got_snap as string, disk_snap as string, n)
 
             if (forgiven) {
                 const disk_dige   = await dig(disk_snap as string)
                 step.sc.disk_dige = disk_dige
-                step.sc.disk_ok   = disk_dige === H.The_step_dige(w, n)  // honest: fixture vs toc
+                H.set_disk_ok(step, disk_dige === H.The_step_dige(w, n))  // honest: fixture vs toc
                 step.sc.ok        = true
                 step.sc.caveat    = true
                 delete run.sc.failed_at
@@ -1981,7 +1998,7 @@
                 const disk_dige = await dig(disk_snap)
                 const exp_dige  = H.The_step_dige(w, n)
                 const ok        = disk_dige === exp_dige
-                step.sc.disk_ok   = ok
+                H.set_disk_ok(step, ok)
                 step.sc.disk_dige = disk_dige
                 if (!ok) {
                     // promote disk version into The so fetch_snap / diff already loaded correctly
@@ -1990,7 +2007,7 @@
                 }
             } else {
                 // file missing entirely — toc.snap claims a dige but NNN.snap is gone
-                step.sc.disk_ok   = false
+                H.set_disk_ok(step, false)
                 step.sc.disk_dige = null
                 console.warn(`⚠ disk snap missing n=${n}`)
             }
@@ -2021,7 +2038,7 @@
                 && H.entropy_forgive(w, step.sc.got_snap as string, disk_snap, n)) {
                 const disk_dige   = await dig(disk_snap)
                 step.sc.disk_dige = disk_dige
-                step.sc.disk_ok   = disk_dige === H.The_step_dige(w, n)   // honest: fixture vs toc
+                H.set_disk_ok(step, disk_dige === H.The_step_dige(w, n))   // honest: fixture vs toc
                 step.sc.ok        = true
                 step.sc.caveat    = true
                 delete step.sc.unexpected
@@ -2519,7 +2536,7 @@
 
             // Trim (got|exp)_snap 5 steps behind — best-effort GC.
             //   ok+!accepted:   already on disk unchanged, safe to drop —
-            //                   UNLESS disk_ok===false: the fixture drifted and
+            //                   UNLESS disk_bad(old): the fixture drifted and
             //                   Accept needs got_snap to rewrite it, so keep it.
             //   accepted+saved: written by story_save, safe to drop.
             //   exp_snap:       display-only, always safe to drop.
@@ -2527,7 +2544,7 @@
             const trim_n = n - 5
             if (trim_n >= 1 && !w.c.keep_snaps) {
                 const old = H.i_step(w, trim_n)
-                if (old.sc.ok && !old.sc.accepted && old.sc.disk_ok !== false) delete old.sc.got_snap
+                if (old.sc.ok && !old.sc.accepted && !H.disk_bad(old)) delete old.sc.got_snap
                 if (old.sc.accepted && old.sc.saved)  delete old.sc.got_snap
                 // first_snap is a session diff anchor paired with got_snap
                 if (!old.sc.got_snap)                 delete old.sc.first_snap
@@ -2546,7 +2563,7 @@
                 ;(w.c as any).step_blocked = null
                 step.sc.got_snap = snap
                 step.sc.dige = got_dige
-                step.sc.ok = false
+                delete step.sc.ok
                 step.sc.untried = true
                 step.sc.error = why
                 delete step.sc.caveat
@@ -2601,7 +2618,8 @@
                     const exp = (w.c.exp_snaps as Record<number, string | null> | undefined)?.[n]
                     if (exp && H.entropy_forgive(w, snap, exp, n)) { ok = true; step.sc.caveat = true }
                 }
-                step.sc.ok = ok
+                if (ok) step.sc.ok = true
+                else delete step.sc.ok
                 step.bump_version()   // verdict (ok/caveat) settled — wake the pip now, this step
                 H.story_analysis(w)
 
@@ -2683,7 +2701,61 @@
                 }, dwell_ms + 3000 + 2000)
                 return
             }
+            if (H.The_Opt_val(w, 'waitVyto')) { wait_vyto_settle(); return }
             advance()
+        }
+
+        // ── waitVyto: advance when the glass has stopped moving ──────────────────────────
+        // waitCyto's twin, but it cannot borrow waitCyto's shape.  Cyto ANSWERS — it fires
+        //  e:Cyto_animation_done because the commission asked it to (wants_animation_done), and
+        //   Story parks on that event.  Vyto refuses that deal outright: e_Vyto_commission rebuffs
+        //    `wants_animation_done` with "Vyto refuses ceremony on the commission — ceremony rides
+        //     the request".  So the waiting lives HERE, reading the glass's own two clocks:
+        //       stir_n   — bumped when the grapple watch sees the model change (the glass has work)
+        //       settled  — bumped by Vyto_settle when the renderer strikes rest (the work is done)
+        //  NOT settle, and this is the whole subtlety.  `parked(w)` in Vytui means *a Story run drives*,
+        //   and a parked world JUMP-LANDS its springs every adopt and never animates — so it never
+        //    strikes a settle at all while a Book is running.  Waiting on Vyto_settle would take the
+        //     8s ceiling on every single step: strictly slower than no gate, which is the opposite of
+        //      the point.  (That is also why waitCyto's event-park shape can't be copied: Cyto answers
+        //       because its commission asked it to; Vyto rebuffs `wants_animation_done` outright.)
+        //  So the condition is stir→paint: `stir_n` counts the model changes the glass has been told
+        //   about, `vyto_painted_stir` records which stir the CURRENT picture shows.  When the second
+        //    catches the first, the glass has re-solved and repainted for everything this step did, and
+        //     the next step is authored against a picture that is actually up to date.
+        //  A RESIDENT glass churns (Sounditron grapples live organs — Stoker levels, Session counters,
+        //   the Heist — that move every heartbeat), so stir_n keeps climbing on its own.  The chase
+        //    still converges: each stir is followed by an adopt+paint, so equality comes round within a
+        //     poll or two.  Deliberately a chase and not a latch — a latch would go stale on exactly
+        //      the Book this exists for.
+        //  ONE POLL OF GRACE before the first look: the step's mutation schedules Vyto_stir on a
+        //   setTimeout(0), so a same-tick read would see stir_n from BEFORE the step, find it already
+        //    painted, and advance on a stale picture.
+        //  THE CEILING is the WEDGE CEILING discipline from waitCyto above, and non-negotiable for the
+        //   same reason: advance() is the ONLY caller of _resolve_runstepped(), so a wait that never
+        //    resolves doesn't merely stall this Book — every Runstepped sweep dies with it.  A stuck
+        //     render must never wedge the Run.
+        const wait_vyto_settle = () => {
+            const POLL_MS = 60
+            const CEIL_MS = 8000        // a glass that never catches up drives on anyway; loud, never fatal
+            let vw: TheC | undefined
+            try { vw = H.Awo('Vyto') as TheC } catch { vw = undefined }
+            // no glass reachable (a toc carrying waitVyto on a run that stands no A:Vyto) — nothing to
+            //  wait for.  Silent: an absent glass is a legitimate shape here, not a fault.
+            if (!vw) { advance(); return }
+            const t0 = Date.now()
+            const poll = () => {
+                if (!run.c.driving) return          // paused|failed under us — the wait dies with the drive
+                const stir    = (vw!.c.stir_n as number) ?? 0
+                const painted = (vw!.c.vyto_painted_stir as number) ?? -1
+                if (painted >= stir) { V.Story && console.log(`🫧 waitVyto: glass painted stir ${stir} after ${Date.now() - t0}ms`); advance(); return }
+                if (Date.now() - t0 > CEIL_MS) {
+                    console.warn(`⏱ Story: waitVyto — glass still behind for step ${run.sc.done} after ${CEIL_MS}ms (painted ${painted} < stir ${stir}) — ceiling reached, driving on`)
+                    advance(); return
+                }
+                setTimeout(poll, POLL_MS)
+            }
+            setTimeout(poll, POLL_MS)
         }
 
         const poll_check = () => {
@@ -2691,8 +2763,8 @@
             const n = run.c.step_n as number
             const check_step = H.i_step(w, n)
             if (check_step.sc.checking) { setTimeout(poll_check, TICK_MS); return }
-            if (check_step.sc.disk_ok === false) {
-                check_step.sc.ok = false
+            if (H.disk_bad(check_step)) {
+                delete check_step.sc.ok
                 run.c.driving = false
                 run.sc.paused = 2
                 run.sc.failed_at = n
@@ -2882,7 +2954,7 @@
         // Toggle actions backed by w.c.* and optionally H.stashed.* (stashed:true).
         //   snap_checking: after each ok step, fetch NNN.snap from disk and verify its
         //     dige against toc.snap.  Adds one beliefs round per step (rarely needed).
-        //     Surfaces corruption as step.sc.disk_ok===false in Storui.
+        //     Surfaces corruption as disk_bad(step) in Storui.
         //   keep_snaps: suppress the 5-step trim of (got|exp)_snap.  Useful when you
         //     want to inspect snap content across many steps in the same session.
         await this.i_actions_to_c(w, 'snap_checking', { stashed: true, label: 'verify snaps' })
@@ -2910,6 +2982,18 @@
         } else {
             await wa.rm({ action: 1, role: 'waitCyto' })
             await wa.rm({ action: 1, role: 'dontSnapCyto' })
+        }
+        // waitVyto — waitCyto's twin for the OTHER glass (§12 moult).  Same promise: after each snap,
+        //  pause until the glass has finished reacting to what this step changed, so the next step is
+        //   authored against a picture that has stopped moving.  Different gate, because Vyto is not
+        //    commissioned by a toc Opt: a Vyto Book (Sounditron) stands its glass from the WORLD, so
+        //     there is no useVyto to hang this off.  The honest condition is simply "is there a glass
+        //      to wait for" — an A:Vyto beside the run — and when there isn't, rm() sweeps the button
+        //       away exactly as the useCyto-off branch does for waitCyto.
+        if (this.o({ A: 'Vyto' }).length) {
+            await this.i_actions_to_C(Opt, 'waitVyto', { label: 'waitVyto' })
+        } else {
+            await wa.rm({ action: 1, role: 'waitVyto' })
         }
         // trickle: when toggled on, stores the current Book name (not boolean true).
         // This means only this Book gets the trickle treatment — other Books in

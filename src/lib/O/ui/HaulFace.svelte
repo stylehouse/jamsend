@@ -49,7 +49,7 @@
     //   with `node scripts/tracelog.mjs --watch --life` instead of copying console.  It is the
     //    INNERMOST rung of the life ladder Vytui now brackets around it (world > stage > faces >
     //     mold > this); whichever OUTER rung climbs alongside it is the actual teardown.
-    lifewatch(H, 'face:Keep', () => String(n?.sc?.Haul || n?.sc?.id || '?'))
+    lifewatch(H, 'face:Haul', () => String(n?.sc?.Haul || n?.sc?.id || '?'))
 
     // in-place editing — SEGMENTS, not one field (the human 2026-07-30, correcting a prior over-
     //  simplification): editing either hierarchy is a row of small chips (one per segment, its own × to
@@ -115,7 +115,7 @@
         const sc = n?.sc ?? {}
         const state = String(sc.state || 'primed')
         const seed = String(sc.seed || '')
-        const at = String(sc.at || '')
+        const at = String(sc.pub || sc.at || '')   // `pub` since 2026-08-05; `at` fallback for a particle minted pre-rename
         const rw = A?.top_House?.()?.c?.radio_w
         const mir = (rw && at) ? A?.Ra_home_them?.(rw, at) : null
         const me = rw ? (A?.Radio_pub?.(rw) || 'me') : 'me'
@@ -293,6 +293,15 @@
     function cancel() {
         A?.post_do?.(() => { A?.Heist_keep_cancel?.(A?.top_House?.()?.c?.radio_w, n) }, { see: 'keep cancel' })
     }
+    // SCRUB = cancel + delete what landed.  Two-press arm rather than a window.confirm: the confirm dialog
+    //  blocks the belief loop while it sits open, and this button lives on a cell that is actively pulling.
+    //   The armed state is deliberately per-cell local — it must never survive a re-render into a click.
+    let scrubArmed = $state(false)
+    function scrub() {
+        scrubArmed = false
+        A?.post_do?.(() => { A?.Heist_keep_scrub?.(A?.top_House?.()?.c?.radio_w, n) }, { see: 'keep scrub' })
+    }
+
     function start() { A?.post_do?.(() => { A?.Heist_keep_start?.(n) }, { see: 'keep start' }) }
     function focus() { A?.post_do?.(() => { A?.Heist_keep_touch?.(n) }, { see: 'keep focus' }) }
 </script>
@@ -329,6 +338,27 @@
                 <div class="kf-flow-stream"></div>
             </div>
         {/if}
+        <!-- CANCEL A RUNNING HEIST (the human 2026-08-05).  A started heist had NO way out at all — the ✕
+             lived only in the primed footer below, so once it folded down your only options were to let it
+             finish or reload.  Two distinct exits, because they are genuinely different intentions:
+             ✕ stops asking for more and KEEPS what already landed (a half album you decided is enough);
+             🗑 stops AND takes back every file this heist wrote, which is the one you want when testing. -->
+        <div class="kf-foot">
+            <span class="kf-dim">{face.landed_n ? `${face.landed_n} track${face.landed_n === 1 ? '' : 's'} already on disk` : 'nothing landed yet'}</span>
+            <span class="kf-exits">
+                <button class="kf-x" onclick={cancel} title="stop this heist — keep the tracks that already landed">✕ stop</button>
+                {#if face.landed_n}
+                    {#if scrubArmed}
+                        <button class="kf-scrub armed" onclick={scrub}
+                            title="really delete the {face.landed_n} landed file{face.landed_n === 1 ? '' : 's'}">delete {face.landed_n}?</button>
+                        <button class="kf-x" onclick={() => (scrubArmed = false)} title="never mind">↩</button>
+                    {:else}
+                        <button class="kf-scrub" onclick={() => (scrubArmed = true)}
+                            title="stop this heist AND delete what it already downloaded">🗑 undo</button>
+                    {/if}
+                {/if}
+            </span>
+        </div>
     {:else}
         <!-- PRIMED: sits in the clutter, tweakable, until you press ▶ start (no auto-start) -->
 
@@ -463,7 +493,19 @@
         <div class="kf-foot">
             <button class="kf-start" onclick={start} title="start downloading these tracks into your collection">▶ start</button>
             <span class="kf-dim">nothing downloads until you start</span>
-            <button class="kf-x" onclick={cancel} title="don't keep — drop this">✕</button>
+            <span class="kf-exits">
+                {#if face.landed_n}
+                    {#if scrubArmed}
+                        <button class="kf-scrub armed" onclick={scrub}
+                            title="really delete the {face.landed_n} landed file{face.landed_n === 1 ? '' : 's'}">delete {face.landed_n}?</button>
+                        <button class="kf-x" onclick={() => (scrubArmed = false)} title="never mind">↩</button>
+                    {:else}
+                        <button class="kf-scrub" onclick={() => (scrubArmed = true)}
+                            title="drop this AND delete what it already downloaded">🗑 undo</button>
+                    {/if}
+                {/if}
+                <button class="kf-x" onclick={cancel} title="don't keep — drop this">✕</button>
+            </span>
         </div>
     {/if}
 </div>
@@ -632,4 +674,14 @@
         flex: none;
     }
     .kf-x:hover { background: #d94f7a; color: #1a0810; }
+    /* the two exits sit together at the right of the footer — stop (keep the files) beside undo (delete
+       them).  `undo` stays quiet until armed, then goes loud: a destructive verb should look like one
+       only once it is actually one click from happening. */
+    .kf-exits { display: flex; align-items: center; gap: 6px; }
+    .kf-scrub {
+        border: 1px solid #6b3a4a; background: transparent; color: #c98ea0;
+        border-radius: 5px; padding: 2px 7px; font-size: 11px; cursor: pointer; white-space: nowrap;
+    }
+    .kf-scrub:hover { border-color: #d94f7a; color: #ffd7e2; }
+    .kf-scrub.armed { background: #d94f7a; border-color: #d94f7a; color: #1a0810; font-weight: 600; }
 </style>

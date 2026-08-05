@@ -424,6 +424,15 @@
         const { cells, curWalls } = build_cells(w)
         paintMap.set(w, cells)
         prevWalls.set(w, curWalls)
+        // WHICH STIR THIS PICTURE SHOWS — the one outward signal Story's waitVyto can wait on.
+        //  Note what it is NOT: settle.  During a run the glass is PARKED (parked(w) === "a Story run
+        //   drives"), and a parked world jump-lands its springs and never animates, so it never strikes
+        //    a settle at all — a settle-based gate would take the ceiling on every step.  What a driving
+        //     Book actually wants is "has the glass re-solved and repainted since the step changed the
+        //      model", and that is exactly stir→paint.  Stamped here because this is the single site
+        //       every path funnels through (parked jump, hidden-tab jump, the visible resident path).
+        //  `.c`, never encoded: view timing is not model state and must not reach a fixture.
+        ;(w as any).c.vyto_painted_stir = ((w.c as any).stir_n ?? 0)
     }
 
     // land every spring on its target at rest — the t→∞ limit of the closed form (calm.md §8's

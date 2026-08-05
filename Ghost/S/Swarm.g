@@ -1590,6 +1590,12 @@ Swarm_share_loop(w, ident):
                 if (era !== w.c.share_era) { w.c.share_beat_running = false; return }
                 let t0 = Date.now()
                 try { await this.Swarm_share_beat(w, ident) } catch (er) { this.Swarm_share_why(w, er) }
+                // RELEASE THE GUARD FIRST, ALWAYS.  Anything that runs between the beat and this line is a
+                //  potential permanent freeze: a throw here never reaches the reset, `share_beat_running`
+                //   stays true, and the busy guard skips EVERY subsequent tick — the share loop, and with it
+                //    the whole heist, stops dead with no error anyone sees.  (Learned the hard way the same
+                //     day the electrode below was added.)  Instrumentation goes AFTER the reset, wrapped.
+                w.c.share_beat_running = false
                 // ELECTRODE (2026-08-05) — BEAT HEALTH, and it is silent in health.  A beat that outruns the
                 //  600ms cadence makes the NEXT tick get skipped by the busy guard above, which is how a long
                 //   landing steals the very window the OVERLAP pre-ask needed.  `ms` is this beat, `skips` is
@@ -1598,9 +1604,8 @@ Swarm_share_loop(w, ident):
                 //      heist's own `ready` mark for the source round trip).
                 let ms = Date.now() - t0
                 if (ms > 600 && typeof this.Radio_trace === 'function') {
-                    this.Radio_trace(null, { ev: 'beat', ms: ms, skips: +(w.c.share_beat_skipped || 0) })
+                    try { this.Radio_trace(null, { ev: 'beat', ms: ms, skips: +(w.c.share_beat_skipped || 0) }) } catch (er) {}
                 }
-                w.c.share_beat_running = false
             })
         }
         setTimeout(tick, 600)
@@ -1717,7 +1722,10 @@ async Swarm_share_beat(w, ident):
         let head = Math.floor((+(radio.sc.at || 0)) / seg_s)
         let total = +(playing.sc.total || 0)
         let PAGE = +(w.c.repli_page || 2)
-        let map = this.Ra_chunk_map(playing)
+        // presence only (2026-08-05): this loop tests `map[off] == null` and nothing else.  Ra_chunk_map
+        //  COPIED every held chunk of the playing record on EVERY beat — inside the very beat the console
+        //   was reporting as overrunning 600ms ("skipping this tick ×71").
+        let map = this.Ra_chunk_have(playing)
         w.c.ra_wanted = w.c.ra_wanted || {}
         w.c.ra_want_ts = w.c.ra_want_ts || {}
         let nowms = Date.now()

@@ -1302,7 +1302,9 @@ Riffle_deal_shelf(ri, home):
     //   what keeps the deck honest for a peer (the same husk-gate Radio_dial_pool / lineup already apply).
     let playable = []
     for (const r of all) {
-        if (this.Ra_chunk_map(r)[0] == null) continue
+        // was Ra_chunk_map(r)[0] — building (and COPYING) the whole seq→bytes map of every record
+        //  on the shelf just to ask whether chunk 0 exists.  Repli_chunk_at finds the one particle.
+        if (this.Repli_chunk_at(r, 0) == null) continue
         playable.push(r)
     }
     // COUNT the playable ones, not the raw shelf — else the deck claims "N tracks below" while dealing zero

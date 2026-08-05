@@ -2607,6 +2607,58 @@ export class WormholeNav {
             await once(await this.mkdirp_fresh(...parts))
         }
     }
+
+    // bin_writer — bin_append's HELD twin, and the fix for the landing that ate 31s of a 32s beat.
+    //  Chrome's createWritable({keepExistingData:true}) does NOT extend the file in place: it copies the
+    //   whole existing file into a `.crswap` sibling, lets you write into the copy, and swaps it in on
+    //    close().  So a per-chunk bin_append pays a FULL-FILE COPY every chunk — landing an N-chunk file
+    //     copies N²/2 chunks of bytes.  Measured (electrode `land`, 2026-08-05): a 27MB/109-chunk track
+    //      spent wr:31080ms of ms:31777, while reading that same file back WHOLE took rb:64ms.  The disk
+    //       was never slow; we were rewriting the file 109 times.  ~1.5GB copied per track — which is
+    //        also the "lots of server memory use" and the CPU burn on the downloader.
+    //  One writer, held open for the whole landing: ONE swap file (created empty — we always stream from
+    //   seq 0), N positioned writes into it, ONE close.  The listing changes exactly once (the file
+    //    appears), so the cache-evict + re-expand moves to close() instead of running per chunk.
+    //  Contract (the same honest-subset discipline as bin_append): a backend that cannot hold a positioned
+    //   writer simply does not define bin_writer, and the caller falls back to bin_append.  `abort()` must
+    //    be safe to call after close() and must release the lock — an un-aborted stream keeps its
+    //     exclusive lock and every later write to that filename dies NoModificationAllowedError.
+    //  `write(bytes, at?)`: `at` names the byte offset explicitly (the wire session uses it so a re-emitted
+    //   chunk rewrites the same bytes rather than duplicating them); omitted, the writer appends at its own
+    //    running position.  Either way the write is positioned — nothing ever depends on the file's EOF.
+    async bin_writer(dir_path: string, filename: string): Promise<{ write(bytes: Uint8Array | ArrayBuffer, at?: number): Promise<void>, close(): Promise<void>, abort(): Promise<void> }> {
+        const parts = dir_path.split('/').filter(Boolean)
+        const dir = await this.mkdirp(...parts)
+        // keepExistingData:false — the landing always streams from chunk 0, so the swap file starts EMPTY
+        //  and nothing is ever copied into it.  (This is the whole win; passing true here would reinstate
+        //   the copy, once, and quietly cost a full file read on open.)
+        const writer = await dir.getWriter(filename, false)
+        let position = 0
+        let done = false
+        const self = this
+        return {
+            async write(bytes: Uint8Array | ArrayBuffer, at?: number) {
+                if (done) throw new Error('bin_writer: write after close')
+                const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)
+                const pos = at == null ? position : at
+                await (writer as any).write({ type: 'write', position: pos, data: b as BufferSource })
+                position = pos + b.byteLength
+            },
+            async close() {
+                if (done) return
+                done = true
+                await writer.close()
+                // the listing gained a file — invalidate ONCE, here, not once per chunk.
+                self._cache.delete(parts.join('/'))
+                await dir.expand()
+            },
+            async abort() {
+                if (done) return
+                done = true
+                await writer.abort().catch(() => {})
+            },
+        }
+    }
 }
 
 //#endregion

@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'bf431efe5cfc1148~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'cab047216fcbd425~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -302,6 +302,17 @@ async Heist_unlink(nav, dir, filename) {
     try {
         await dl.deleteEntry(filename)
     } catch (er) {}
+
+},
+// Heist_writer_drop — release a held bin_writer on ANY landing exit that isn't a clean commit.  Best-effort
+//  and null-safe, because every caller is already on a failure path and must not fail differently: a nav
+//   with no bin_writer passes null, an already-closed writer no-ops, and a writer that refuses to abort
+//    still goes with the reference.  Why it matters: an un-aborted writable stream keeps an EXCLUSIVE lock
+//     on the file, so skipping this doesn't just leak — it makes every LATER attempt at that same path die
+//      NoModificationAllowedError until a full reload (the dangling-lock hazard bin_write documents).
+async Heist_writer_drop(writer) {
+    if (!writer) return
+    try { await writer.abort() } catch (er) {}
 },
 //#endregion
 
@@ -598,10 +609,18 @@ async Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, r
     //      wire-side incremental digest (fed per chunk) is an EARLY tripwire ahead of that gate: a corrupt
     //       chunk breaches without paying the read-back re-materialize; the disk read-back still stands as
     //        the final honest check (it alone catches a backend that dropped bytes we handed it).
-    //  Backend truth: streaming rides nav.bin_append (positioned FSA/disk write — the live runner's
-    //   backend).  A backend without it (a remote wormhole whose editor-side serve has no append op, or a
-    //    plain node harness) keeps the whole-buffer path — probed by `typeof nav.bin_append`, never a
-    //     silent partial.  Either path lands the same byte-faithful file or stamps the same breach.
+    //  Backend truth: streaming rides nav.bin_writer — ONE held writer for the whole landing — falling back
+    //   to per-chunk nav.bin_append, and then to the whole-buffer path.  All three are probed by `typeof`,
+    //    never a silent partial, and all three land the same byte-faithful file or stamp the same breach.
+    //  WHY THE HELD WRITER (2026-08-05, the "downloader is slow + burns CPU" hunt).  bin_append is correct
+    //   but each call does createWritable({keepExistingData:true}), and that does not extend the file in
+    //    place — it COPIES the whole existing file into a `.crswap` sibling first.  So landing an N-chunk
+    //     file copies N²/2 chunks of bytes.  The `land` electrode caught it exactly: a 27MB/109-chunk track
+    //      spent wr:31080ms of a ms:31777 landing, against rb:64ms to read that same file back WHOLE and
+    //       wire:397ms of actual transfer.  ~1.5GB copied per track — the CPU burn, the memory high-water,
+    //        and (because this runs inside Swarm_share_beat) the `beat ms:32318 skips:53` stall, all one
+    //         bug.  A held writer opens ONE empty swap, writes each chunk positionally into it, and commits
+    //          once.  The memory design is untouched: buffers still release per chunk, nothing accumulates.
     let size = 0
     // TIDY a stray swap file (the human 2026-07-30, spotting a `<name>.flac.crswap` sitting beside an
     //  already-landed `<name>.flac`): createWritable()'s own atomic-write journal, left behind whenever a
@@ -609,7 +628,7 @@ async Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, r
     //    `Pirating.svelte`'s `tidy_crswap()` did exactly this before landing; the `.g` engine never picked
     //     it up. Best-effort — Heist_unlink swallows a missing file, which is the common case.
     await this.Heist_unlink(nav, dir, filename + '.crswap')
-    if (typeof nav.bin_append === 'function') {
+    if (typeof nav.bin_append === 'function' || typeof nav.bin_writer === 'function') {
         // STREAM: chunk 0 truncates|creates the file (bin_write), the rest append at the growing offset.
         //  Each chunk's mirror buf is RELEASED the instant its bytes are on disk (Heist_release_buf), so the
         //   peak is the shrinking mirror + one chunk — never a second whole-file copy.  A throw mid-stream
@@ -632,7 +651,16 @@ async Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, r
         let t_wr = 0
         let t_wire = 0
         let t0 = Date.now()
+        // THE HELD WRITER, opened once for the whole landing (see the header note).  `writer` stays null on a
+        //  backend that only has bin_append, and the loop below takes the per-chunk path unchanged — so an
+        //   old editor, a node harness, or any nav that can't hold a positioned stream still lands the file.
+        //  It MUST be released on every exit: an un-aborted writable keeps an exclusive lock and every later
+        //   write to this path dies NoModificationAllowedError until a reload (the same dangling-lock hazard
+        //    bin_write documents).  Hence `Heist_writer_drop` at each breach return and in the catch.
+        let writer = null
+        if (typeof nav.bin_writer === 'function') writer = await nav.bin_writer(dir, filename)
         let s = 0
+        try {
         while (s < total) {
             let ch = this.Repli_chunk_at(rec, s)
             // O(N²) FIXED (2026-08-05).  This read `this.Ra_chunk_map(rec)[s]` — rebuilding the WHOLE
@@ -668,11 +696,19 @@ async Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, r
                 //     the job, never ledger.
                 job.sc.breach_seq = '' + s
                 this.Heist_xfer_breach(rec, `chunk ${s}/${total} failed the origin cid gate — job breach #${job.sc.breached}`)
+                // drop the held writer BEFORE the unlink: the file can't be removed while a writable still
+                //  holds it, and leaving one open would poison every later attempt at this same path.
+                await this.Heist_writer_drop(writer)
                 await this.Heist_unlink(nav, dir, filename)
                 return
             }
             let t_w0 = Date.now()
-            if (s === 0) {
+            if (writer) {
+                // ONE swap file for the whole landing.  `size` is the byte offset this chunk starts at, passed
+                //  explicitly so a re-emitted chunk (the remote nav re-sends an un-acked request) rewrites the
+                //   same bytes instead of duplicating them at EOF.
+                await writer.write(bytes, size)
+            } else if (s === 0) {
                 await nav.bin_write(dir, filename, bytes)
             } else {
                 await nav.bin_append(dir, filename, bytes)
@@ -684,6 +720,20 @@ async Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, r
             size = size + bytes.length
             if (ch) this.Heist_release_buf(ch)
             s = s + 1
+        }
+        // COMMIT: close() is where the swap file is atomically swapped in, so the bytes are only truly on
+        //  disk after this — and it must happen BEFORE the read-back gate below, which reads the real file.
+        //   Counted into `wr` so the electrode still measures the whole cost of writing.
+        let t_cl0 = Date.now()
+        if (writer) await writer.close()
+        t_wr = t_wr + (Date.now() - t_cl0)
+        } catch (er) {
+            // a throw mid-stream (a transient FSA hiccup, a wire timeout, an editor reload).  Release the
+            //  writer's exclusive lock or every later attempt at this path dies NoModificationAllowedError,
+            //   then re-throw: the caller's existing handling stands, the record stays in the mirror with
+            //    some chunks released, and the next beat re-wants them and re-runs from a fresh chunk 0.
+            await this.Heist_writer_drop(writer)
+            throw er
         }
         // EARLY TRIPWIRE (roadmap §10.2 #1, the memory-high-water fix's teeth): the wire digest is done the
         //  moment the last chunk writes.  A mismatch here means the bytes we streamed are NOT the promised
@@ -1644,8 +1694,31 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
                 let plast = pick.c.ask_ts || 0
                 if (Date.now() - plast > 4000) {
                     pick.c.ask_ts = Date.now()
+                    pick.c.asks_out = +(pick.c.asks_out || 0) + 1
                     keep.sc.asks = +(keep.sc.asks || 0) + 1
                     keep.bump()
+                    // RE-CENSUS HEAL (2026-08-05, the human: "seems slow so far" — it was not slow, it was
+                    //  DEAD).  A resumed heist asks for its picks by KEEP-ID, and the source can only resolve
+                    //   a keep-id from `w.c.rummage_libs` / `w.c.keep_memo` — BOTH runtime-only `.c`.  So a
+                    //    SOURCE-side reload wipes the source's ability to answer, permanently: the asker's own
+                    //     Berth resume works perfectly, re-asks every 4s forever, and nothing ever comes back.
+                    //      Silent, and invisible without the trace (asked:9 landed:0 of:8).
+                    //  The heal: after 3 unanswered asks, re-send the DESCRIBE ask.  That re-runs the folder
+                    //   census on the source, which re-registers the rummage lib — and because a keep-id is
+                    //    DETERMINISTIC (sha256 of pub+base+path) the very same ids come back, so the standing
+                    //     picks resolve again with no re-mapping and no re-choosing.  Throttled hard (20s): a
+                    //      census is the expensive verb, and this is a repair, not a heartbeat.
+                    //  PROPER FIX, owed: make the source's keep_memo durable (it is the Dexie ↔ .jamsend sync
+                    //   item in miniature).  Until then this heals it in one round trip instead of never.
+                    if (+(pick.c.asks_out || 0) >= 3 && Date.now() - (keep.c.recensus_ts || 0) > 20000) {
+                        keep.c.recensus_ts = Date.now()
+                        if (typeof this.Radio_trace === 'function') {
+                            this.Radio_trace(null, { ev: 'reheal', id: String(ref).slice(0, 8),
+                                                     unanswered: +(pick.c.asks_out || 0) })
+                        }
+                        console.warn(`⇊⟲ ${pick.c.asks_out} unanswered materialise asks — re-censusing the source folder (its keep-id map is runtime-only and a reload wipes it)`)
+                        await this.Heist_rummage_ask(w, route, me, at, seed)
+                    }
                     await this.Heist_rummage_ask(w, route, me, at, seed, ref)
                 }
                 drove_any = 1                                // this pick IS in flight (awaiting the source's read)
@@ -1662,6 +1735,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
             //      `wait` under a long gap means the ask went out LATE, i.e. the landing beat ate the window.
             if (pick.c.ask_ts && !pick.c.ready_ts) {
                 pick.c.ready_ts = Date.now()
+                pick.c.asks_out = 0                          // answered — the re-census heal stands down
                 if (typeof this.Radio_trace === 'function') {
                     this.Radio_trace(null, { ev: 'ready', id: String(ref).slice(0, 8),
                                              wait: pick.c.ready_ts - pick.c.ask_ts, tot: +(rec.sc.total || 0) })
@@ -1677,6 +1751,11 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
             if (r && r.done && !cooling) {
                 await this.Heist_land(w, nav, job, own, srcmir, rec, this.Heist_mardir(w))
                 pick.sc.landed = 1
+                // REMEMBER EXACTLY WHAT WE WROTE (2026-08-05), so a cancel can take back precisely these
+                //  files and nothing else.  Same string Heist_land computed as `rel` and the same one a
+                //   %Probation card is keyed by — relative to mardir, so it survives a mardir change.
+                //    Without it, cancelling could only guess at paths, and guessing at a delete is unthinkable.
+                pick.sc.landed_at = this.Heist_rel_for(job, rec)
                 pick.bump()
                 landed = landed + 1
                 pick.c.bench_held = 0
@@ -1748,7 +1827,15 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
         // PROGRESS = a whole track landed OR the summed held frontier climbed (Evening 5 A1): serialized, a big
         //  track lands slower than the 15s bark, so counting only whole-track landings would false-alarm every
         //   long track.  Chunks arriving IS progress; the shout only fires when NOTHING moves — a truly dead source.
-        let progressed = (landed > (keep.c.pull_seen_landed || 0)) || (sum_held > (keep.c.pull_seen_held || 0))
+        // CHANGED, not CLIMBED (2026-08-05).  `sum_held` was compared against a HIGH-WATER, but it is
+        //  inherently sawtooth: every landing releases that track's buffers (Heist_release_buf), so the sum
+        //   collapses the instant a track lands and the next track has to climb past the PREVIOUS track's
+        //    peak before it counts as progress at all.  A 153-chunk track following a 196-chunk one
+        //     therefore never registers — the console barked "NO PROGRESS … the SOURCE may have
+        //      crashed/gone" through an entire healthy pull with `◈ pull … 136/153` scrolling beside it.
+        //  Any MOVEMENT is progress; only a frozen frontier is a dead source, and a dead source freezes
+        //   sum_held exactly.  Direction was never the signal — it was noise we mistook for one.
+        let progressed = (landed > (keep.c.pull_seen_landed || 0)) || (sum_held !== keep.c.pull_seen_held)
         if (progressed) {
             keep.c.pull_seen_landed = landed
             keep.c.pull_seen_held = sum_held
@@ -1873,6 +1960,8 @@ async Heist_keep_persist(keep) {
         if (p.sc.genre) pe.sc.genre = p.sc.genre
         if (p.sc.landed) pe.sc.landed = 1
         else if (pe.sc.landed) delete pe.sc.landed
+        // the landing path rides to disk too: a cancel AFTER a reload must still know what to take back
+        if (p.sc.landed_at) pe.sc.landed_at = String(p.sc.landed_at)
     }
     await this.Berth_save(nav, waft)
 
@@ -1974,6 +2063,7 @@ async Heist_keep_rehydrate(rw, me, nav, shop) {
             if (pe.sc.title) pick.sc.title = pe.sc.title
             if (pe.sc.genre) pick.sc.genre = pe.sc.genre
             if (pe.sc.landed) pick.sc.landed = 1   // carry the finished picks forward — resume-sync must not re-log them
+            if (pe.sc.landed_at) pick.sc.landed_at = String(pe.sc.landed_at)
         }
         keep.bump()
         n = n + 1
@@ -2213,6 +2303,7 @@ async Heist_resume_sync(w, nav, job, own_lib, mir, picks, mardir, keep) {
     for (const c of candidates) {
         await this.Heist_catalog_land(nav, mardir, job, own_lib, mir, c.rec, c.rel, c.size)
         c.pick.sc.landed = 1
+        c.pick.sc.landed_at = c.rel   // what is on disk, so a cancel can take it back
         c.pick.bump()
     }
     // RE-PERSIST the now-landed picks (the human 2026-07-30 duplicate-newlyadded finding): without this the
@@ -2254,6 +2345,7 @@ async Heist_keep_pull(w, rw, ident, me, nav, keep, shop, srcmir, route) {
         if (r && r.done && !cooling) {
             await this.Heist_land(w, nav, job, own, srcmir, rec, this.Heist_mardir(w))
             pick.sc.landed = 1
+            pick.sc.landed_at = this.Heist_rel_for(job, rec)   // what we wrote, so a cancel can take it back
             pick.bump()
         } else {
             left = left + 1
@@ -2314,6 +2406,40 @@ async Heist_keep_cancel(w, keep) {
     if (keep.sc.pub) { try { shop.rm({ Heist: 1, at: keep.sc.pub }) } catch (er) {} }
     try { await this.Heist_keep_forget(keep) } catch (er) {}
     shop.rm({ Haul: 1, seed: keep.sc.seed })
+
+},
+// Heist_keep_scrub — CANCEL AND UNDO: drop the heist AND take back every track it already landed, so the
+//  collection is exactly as it was before you pressed ⇊ (the human 2026-08-05: "I want to cancel a Heist!
+//   ... delete what was downloaded from it. handy for testing now").  Plain cancel keeps the files — a
+//    half-finished album you decided to stop but want to keep is a real case — so this is a SEPARATE verb
+//     behind its own confirm, never the ✕'s silent behaviour.
+//  Deletes only what THIS heist recorded writing (`pick.sc.landed_at`, stamped at land time and carried
+//   through the Berth), one track at a time through the same Heist_scrub_one the newlyadded 'drop' verdict
+//    uses — file gone, catalog card retired, no tombstone.  A pick with no landed_at (landed before this
+//     shipped) is SKIPPED, never guessed at: an unknown path is not a licence to delete something.
+//  Returns how many files actually went, so the UI can say something concrete instead of "done".
+async Heist_keep_scrub(w, keep) {
+    if (!keep) return 0
+    let nav = this.Crate_nav ? this.Crate_nav() : null
+    let M = this.top_House ? this.top_House() : null
+    let rw = (M && M.c.radio_w) || w
+    let me = this.Radio_pub(rw) || 'me'
+    let own = this.Ra_home_self(rw, me)
+    // the landing used the SWARM world's mardir; the face hands us radio_w.  Both are '' in production, so
+    //  take whichever is set rather than assume which world the caller had.
+    let mardir = this.Heist_mardir(w) || this.Heist_mardir(rw)
+    let gone = 0
+    let skipped = 0
+    if (nav) {
+        for (const pick of keep.o({ Pick: 1 })) {
+            if (!pick.sc.landed) continue
+            if (!pick.sc.landed_at) { skipped = skipped + 1; continue }
+            gone = gone + (await this.Heist_scrub_one(nav, own, mardir, String(pick.sc.landed_at)))
+        }
+    }
+    await this.Heist_keep_cancel(w, keep)
+    console.log(`⇊✖ heist cancelled — ${gone} landed file${gone === 1 ? '' : 's'} deleted${skipped ? `, ${skipped} skipped (no recorded path)` : ''}`)
+    return gone
 
 },
 // Heist_keep_reset_all — the diagnostics "reset heist state" button (the human 2026-07-30, studying several
@@ -2409,20 +2535,37 @@ async Heist_feel(w, nav, own_lib, mardir, entry, feeling) {
     let card = waft.o({ Probation: 1, of: entry, feeling: 'fresh' })[0] || waft.o({ Probation: 1, of: entry })[0]
     if (!card) return
     card.sc.feeling = feeling
-    if (feeling === 'drop') {
-        let cut = entry.split('/')
+    if (feeling === 'drop') await this.Heist_scrub_one(nav, own_lib, mardir, entry)
+    await this.Berth_save(nav, waft)
+
+},
+// Heist_scrub_one — TAKE ONE LANDED TRACK BACK OFF THE DISK: delete the file and retire its catalog card,
+//  so the collection is exactly as it was before that landing.  Extracted from Heist_feel's 'drop' branch
+//   (2026-08-05) because CANCELLING A HEIST wants the identical effect per track, and a second delete path
+//    would be a second thing to get wrong.  `entry` is the landing path RELATIVE TO mardir — the same
+//     string a %Probation card is keyed by and the same one Heist_land computed as `rel`.
+//  No %Tombstone (condemned 2026-07-13): nothing durable remembers the removal, so a later heist offering
+//   the same identity finds it no longer held and may re-download it.  Accepted — a wrong re-download costs
+//    one delete, not a ledger.  BEST-EFFORT: a missing file or a stale dir handle must never abort a scrub
+//     part-way, or a cancel would leave half the album behind with no way to ask again.
+async Heist_scrub_one(nav, own_lib, mardir, entry) {
+    if (!nav || !entry) return 0
+    let gone = 0
+    try {
+        let cut = String(entry).split('/')
         let filename = cut.pop()
         let dl = await nav.dir_at(mardir + '/' + cut.join('/'))
-        if (dl && typeof dl.deleteEntry === 'function') await dl.deleteEntry(filename)
-        if (own_lib) {
-            // the card retires WITH the file — the track leaves the collection cleanly.  No
-            //  %Tombstone (condemned): nothing durable remembers the drop.  The rm goes to
-            //   the card's TRUE holder (a paged card sits under a %Cloud, not the shelf).
+        if (dl && typeof dl.deleteEntry === 'function') { await dl.deleteEntry(filename); gone = 1 }
+    } catch (er) {}
+    if (own_lib) {
+        // the card retires WITH the file — the track leaves the collection cleanly.  The rm goes to the
+        //  card's TRUE holder (a paged card sits under a %Cloud, not the shelf).
+        try {
             let rcard = this.Ra_recs(own_lib).find((r) => r.sc.path === entry)
             if (rcard) await (rcard.c.up || own_lib).rm({ Record: 1, id: rcard.sc.id })
-        }
+        } catch (er) {}
     }
-    await this.Berth_save(nav, waft)
+    return gone
 
 },
 // Heist_sweep — empty a standing marrauding namespace: recurse the tree and delete every FILE, but

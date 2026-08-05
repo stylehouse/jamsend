@@ -1072,9 +1072,23 @@ Vyto_seg_nearest(a, b, p):
 //   makes it hand-strikeable (the drum-pad idiom) so the spool end of the wire can be
 //    proven before any cell moves.  Settled state is dropped by the renderer on any new
 //     target; here we just count ticks and capture.
+// THE SECOND CLOCK, WIRED (2026-08-05).  Vyto_spool_capture has always accepted opts.step_n — "step
+//  captures ALSO carry step_n, the quantize-lock Story pips seek by" — but NOTHING ever passed it, so
+//   every Moment was scrubber-only and Storui's step pip (Storui.svelte, e_Vyto_seek with {step_n})
+//    could never resolve: Vyto_seek_to looks for a Moment whose step_n matches and there were none.
+//  The settle is exactly where the step is known, so read it here, off the commissioned Run (the same
+//   `w.c.Run?.c?.run` ref Vyto_spool_frozen reads the verdict from).  IN FLIGHT ONLY: `driving` with a
+//    live step_n.  A settle struck between steps, or in a resident glass with no Run, stamps NOTHING —
+//     an absent key, never `undefined` (an undef marker in a snap is a mint bug, not furniture).
 async Vyto_settle(w):
     w.c.settled = (w.c.settled ?? 0) + 1
-    await this.Vyto_spool_capture(w)
+    let run = w.c.Run?.c?.run
+    let step_n = (run && run.c.driving && run.c.step_n != null) ? run.c.step_n : null
+    if (step_n == null) {
+        await this.Vyto_spool_capture(w)
+    } else {
+        await this.Vyto_spool_capture(w, { step_n: step_n })
+    }
 
 // Vyto_spool_capture — chronicler Spool: reads settles and writes moments.  TWO CLOCKS:
 //  every capture gets monotonic yore_n; step captures ALSO carry step_n (the quantize-lock

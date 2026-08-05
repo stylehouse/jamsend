@@ -127,6 +127,33 @@ export class OpfsOverlayNav {
         await w.close()
     }
 
+    // bin_writer — bin_append's HELD twin (the WormholeNav.bin_writer shape, over OPFS).  Same reason:
+    //  createWritable copies the existing file into a `.crswap` on EVERY open, so a per-chunk append pays
+    //   a full-file copy per chunk (N²/2 total).  Hold ONE writer for the whole landing instead — the swap
+    //    starts empty (keepExistingData omitted ⇒ we stream from seq 0), N positioned writes, one close.
+    //     Writes land in scratch, same layer as bin_write|bin_append.
+    //  `write(bytes, at?)`: `at` names the offset explicitly (the wire session uses it so a re-emitted chunk
+    //   rewrites rather than duplicates); omitted, it appends at the writer's own running position.
+    async bin_writer(dir_path: string, filename: string): Promise<{ write(bytes: Uint8Array | ArrayBuffer, at?: number): Promise<void>, close(): Promise<void>, abort(): Promise<void> }> {
+        const parts = dir_path.split('/').filter(Boolean)
+        const d = await walk(this.scratch, parts, true)
+        const fh = await d!.getFileHandle(filename, { create: true })
+        const w = await fh.createWritable()
+        let position = 0
+        let done = false
+        return {
+            async write(bytes: Uint8Array | ArrayBuffer, at?: number) {
+                if (done) throw new Error('bin_writer: write after close')
+                const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)
+                const pos = at == null ? position : at
+                await w.write({ type: 'write', position: pos, data: b as BufferSource })
+                position = pos + b.byteLength
+            },
+            async close() { if (done) return; done = true; await w.close() },
+            async abort() { if (done) return; done = true; await w.abort().catch(() => {}) },
+        }
+    }
+
     // dir_at — dir() from a single '/'-joined path string (the discovery-site convenience).
     async dir_at(path: string) { return this.dir(...path.split('/').filter(Boolean)) }
     // a DirectoryListing-shaped probe: the worker calls .expand() then reads

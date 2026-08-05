@@ -399,7 +399,8 @@ await M.eatfunc({
         //   land within one tick and the UI correctly never sees it.
         const job = dock.o({ Compile: 1 })[0] as TheC | undefined
         const err = dock.oa({ compile_error: 1 }) || job?.oa({ compile_error: 1 })
-        req.sc.have_Map = job?.oa({ Map: 1 }) ? 1 : 0
+        if (job?.oa({ Map: 1 })) req.sc.have_Map = 1
+        else delete req.sc.have_Map
         if (!req.sc.have_Map && !err) {
             // Wait for the index ONLY for a doc that will actually produce one — a
             //  compilable .g (Lies_gen_path) or a points-only dock (.md/.ts/.svelte,

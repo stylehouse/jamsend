@@ -228,6 +228,65 @@ export class RemoteWormholeNav {
         await this.bin_write(dir_path, filename, whole)
     }
 
+    // bin_writer — bin_append's HELD twin over the wire, and the fix for the 31-second landing.
+    //  bin_append is one round trip AND one full-file `.crswap` copy per chunk (createWritable copies the
+    //   existing file every open), so an N-chunk landing copies N²/2 chunks of bytes on the EDITOR's disk.
+    //    Measured over this exact nav: a 27MB/109-chunk track spent wr:31080ms inside a ms:31777 landing,
+    //     while reading the whole file back took rb:64ms.  The wire was never the cost (wire:397ms) — the
+    //      repeated copying was, which is also where the CPU burn and the memory high-water came from.
+    //  So we open a SESSION: bin_open mints a writer the editor holds, each bin_chunk writes into it at an
+    //   explicit offset, bin_close commits.  One swap file per landing.  The offset is what makes a chunk
+    //    idempotent under `send`'s un-acked re-emit — an EOF append would duplicate the bytes instead.
+    //  COMPAT, same shape as bin_append's: an editor predating these ops answers {error:'unknown op …'}, so
+    //   we remember it and hand back a shim that degrades to bin_append per chunk.  The caller writes one
+    //    code path either way and only loses the speed, never the landing.
+    private _no_wire_writer = false
+    private _wid = 0
+    async bin_writer(dir_path: string, filename: string): Promise<{ write(bytes: Uint8Array | ArrayBuffer, at?: number): Promise<void>, close(): Promise<void>, abort(): Promise<void> }> {
+        // the degraded shim: per-chunk bin_append, close|abort are no-ops (nothing is held).  `at` is
+        //  ignored here — bin_append lands at EOF, which is the pre-session behaviour exactly.
+        const fallback = () => ({
+            write: async (bytes: Uint8Array | ArrayBuffer, _at?: number) => { await this.bin_append(dir_path, filename, bytes) },
+            close: async () => {},
+            abort: async () => {},
+        })
+        if (this._no_wire_writer) return fallback()
+        const me = this.H.Lies_self?.(this.w)?.prepub ?? 'r'
+        const wid = `${me}-${Date.now()}-w${++this._wid}`
+        const opened = await this.send('bin_open', { dir_path, filename, wid })
+        if (opened.error) {
+            // an editor that predates the session ops, OR one whose own nav can't hold a writer — either
+            //  way the honest move is the same: remember, and stream the slow-but-correct way.
+            if (!/unknown op\b|cannot bin_writer\b/.test(String(opened.error))) throw opened.error
+            this._no_wire_writer = true
+            console.warn(`🕳↓ remoteWormhole: editor has no held-writer session (${opened.error}) — degrading to per-chunk bin_append for ${dir_path}/${filename}`)
+            return fallback()
+        }
+        let position = 0
+        let done = false
+        return {
+            write: async (bytes: Uint8Array | ArrayBuffer, at?: number) => {
+                if (done) throw new Error('bin_writer: write after close')
+                const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)
+                const pos = at == null ? position : at
+                const r = await this.send('bin_chunk', { wid, pos }, b)
+                if (r.error) throw r.error
+                position = pos + b.byteLength
+            },
+            close: async () => {
+                if (done) return
+                done = true
+                const r = await this.send('bin_close', { wid })
+                if (r.error) throw r.error
+            },
+            abort: async () => {
+                if (done) return
+                done = true
+                await this.send('bin_abort', { wid }).catch(() => {})
+            },
+        }
+    }
+
     async bin_read(dir_path: string, filename: string): Promise<ArrayBuffer | null> {
         const r = await this.send('bin', { dir_path, filename })
         if (r.error || r.not_found) return null

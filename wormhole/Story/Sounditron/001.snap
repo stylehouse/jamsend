@@ -5,4 +5,17 @@ Snap:H
       w:Sounditron
         self,round	{"mung":["age"]}
         req:wrangle,eternal,ok
-      w:Voronoiology,dontGraph	{"dontSnap":1}
+        Radio:off,face:Radio
+        Stoker:churning,face:Stoker,crew:Radio,stood=16,stock=16,fresh=16,last:Cosmic C
+        Tuner:glass,face:Tuner
+        Riffle:shut,face:Riffle,crew:Riffle
+        Zine:Faves,face:Zine,crew:Radio,count:0
+        Door:open,face:Door
+        Uptime,face:Uptime
+        Beat,face:Beat
+        MusuSelf,pub:f5da6599b8505881
+          shop,pub:f5da6599b8505881
+          stock,pub:f5da6599b8505881	{"dontSnap":1}
+        Transfer,dontSnap
+        Diag,dontSnap
+        Mag:Lineup,face:Lineup,crew:Radio	{"dontSnap":1}

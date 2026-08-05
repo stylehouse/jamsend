@@ -619,7 +619,8 @@
                 const entry   = what_point.find(e => e.spec === spec)
                 if (now_acc) {
                     pt.sc.accepted = 1
-                    pt.sc.showing  = entry?.showing ? 1 : 0
+                    if (entry?.showing) pt.sc.showing = 1
+                    else delete pt.sc.showing
                 } else {
                     delete pt.sc.accepted
                     delete pt.sc.showing

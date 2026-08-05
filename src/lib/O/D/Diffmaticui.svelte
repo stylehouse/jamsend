@@ -63,7 +63,7 @@ $effect(() => {
     intro        = (toc_p?.sc.intro      as string)  ?? ''
     step_count   = (toc_p?.sc.step_count as number)  ?? 0
     cursor_n     = (cursor_p?.sc.step_n  as number | undefined) ?? null
-    loading      = !!(cursor_p?.sc.loading ?? true)
+    loading      = !cursor_p?.sc.loaded
     toc_loading  = spin_ps.some(s => s.sc.spinner === 'toc')
     diff_loading = spin_ps.some(s => s.sc.spinner === 'diff')
 

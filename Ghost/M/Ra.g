@@ -866,7 +866,7 @@ Ra_stage(w, rec):
     if (rec.sc.stage === 'decoded' || rec.sc.stage === 'scheduled') return rec.sc.stage
     let total = +(rec.sc.total || 0)
     let P = Math.min(+(rec.sc.preview || 0), total)
-    let map = this.Ra_chunk_map(rec)
+    let map = this.Ra_chunk_have(rec)   // presence only — this is a fill-state probe, not a decode
     let held = 0
     let pheld = 0
     let s = 0
@@ -1638,6 +1638,22 @@ Ra_chunk_map(rec):
     }
     return map
 
+// Ra_chunk_have — WHICH seqs are held, as presence only.  The same walk as Ra_chunk_map WITHOUT the byte
+//  materialisation: no `new Uint8Array(b)`, so nothing is copied.  For any caller asking "do I have this
+//   page yet" — which is what backpressure and progress are — the bytes are irrelevant.
+//  WHY IT EXISTS (2026-08-05, the human: "lot of CPU burn on downloader", "dropped some repli_lines
+//   frames"): Ra_pull_beat built a full Ra_chunk_map EVERY BEAT purely to test `map[s] != null`, and that
+//    map COPIES every held chunk whose stored value isn't already a Uint8Array.  Mid-heist with two records
+//     of several hundred chunks each, at the ~600ms beat, that is tens of MB memcpy'd per second — burning
+//      CPU on the downloader and churning GC hard enough to drop wire frames, which then look like a
+//       NETWORK problem and get chased in entirely the wrong place.  Presence costs nothing; keep it that way.
+Ra_chunk_have(rec):
+    let have = []
+    for (const ch of rec.o({ seq: 1 })) {
+        if (this.Repli_chunk_bytes(ch) != null) have[+ch.sc.seq] = 1
+    }
+    return have
+
 // Ra_term_decode_pulled — the terminal decodes WHAT IT HOLDS: the chunk particles present [0..limit),
 //  a MISSING chunk contributing its nominal 2s span of SILENCE and its index to drops[] — the spool's
 //   honest hole read off the particles that actually landed, never off local disk.  Contiguous runs of
@@ -1767,7 +1783,9 @@ async Ra_pull_beat(w, rx, mine, theirs, rec):
     let total = +(rec.sc.total || 0)
     if (!(total > 0)) return { done: 0, held: 0 }
     let PAGE = +(w.c.repli_page || 2)
-    let map = this.Ra_chunk_map(rec)
+    // PRESENCE, not bytes — this beat only asks "which pages do I have".  Was Ra_chunk_map, which copied
+    //  every held chunk on every beat (see Ra_chunk_have's header for what that cost).
+    let map = this.Ra_chunk_have(rec)
     let held = 0
     let s = 0
     while (s < total) {
@@ -1876,7 +1894,7 @@ async Ra_restock_beat(w, mirror, budget):
         let P = Math.min(+(rec.sc.preview || 0), +(rec.sc.total || 0))
         if (!(P > 0)) continue
         considered = considered + 1
-        let map = this.Ra_chunk_map(rec)
+        let map = this.Ra_chunk_have(rec)   // presence only — never reads the bytes below
         let whole = true
         let off = 0
         while (off < P) {
