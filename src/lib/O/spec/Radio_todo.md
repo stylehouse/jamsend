@@ -1671,7 +1671,7 @@ Nothing built is thrown away; each existing gear has a §12 home waiting:
 ## 13. The toplevel — /BigSoundland, where it all comes together
 
 The one place every spring above surfaces as a page a human actually touches: `src/lib/V/BigSoundland.svelte`
- (the scape) + the glass under it (Vytui, `%Keep`/`%Radio`/`%Stoker`/… faces) + the InvitePanel strip. Every
+ (the scape) + the glass under it (Vytui, `%Haul`/`%Radio`/`%Stoker`/… faces) + the InvitePanel strip. Every
   other section here builds an organ; this is the body they get worn on. Items land here when they are about
    the **assembly** — what a person sees when the parts are all present — rather than about one engine.
 

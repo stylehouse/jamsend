@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return 'a8d91d1f3b2a30bc~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return 'bc209346881335cd~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -271,12 +271,12 @@ Sounditron_commission(w) {
     let krw = this.top_House().c.radio_w || w
     let kme = this.Radio_pub ? this.Radio_pub(krw) : null
     let kshop = kme ? this.Ra_home_shop(krw, kme) : null
-    let keeps = kshop ? kshop.o({ Keep: 1 }) : []
+    let keeps = kshop ? kshop.o({ Haul: 1 }) : []
     let anyKeep = keeps.length > 0
     // ALWAYS-ON: the music itself + the dial.  The %Heist FLOW organ (HeistFace) grapples ONLY when no keep
-    //  is open — under the NESTED glass a keep turns on (each %Keep tessellates into its KeepBar + track
+    //  is open — under the NESTED glass a keep turns on (each %Haul tessellates into its HaulBar + track
     //   chips), and the flow organ's constraint/Lead/filing children would draw as stray cells; besides, the
-    //    %Keep cells ARE the heist UI then.  The ⇊-to-keep gesture lives on RadioFace (always up), so nothing
+    //    %Haul cells ARE the heist UI then.  The ⇊-to-keep gesture lives on RadioFace (always up), so nothing
     //     is lost.  With no keep it grapples exactly as before (Sounditron fixtures byte-identical).
     for (const q of [{ Radio: 1 }, { Tuner: 1 }]) {
         let row = w.o(q)[0]
@@ -319,8 +319,8 @@ Sounditron_commission(w) {
         }
     }
     // the ⇊ KEEP cells (the human 2026-07-28 "I DO want the Heist UI ... in a few Vyto cells ... it folds
-    //  down when started"): every active %Keep grapples as its OWN cell — under the nested glass it goes BARE
-    //   and tessellates into a KeepBar controls cell + one Pick chip per kept track.  They come + go with the
+    //  down when started"): every active %Haul grapples as its OWN cell — under the nested glass it goes BARE
+    //   and tessellates into a HaulBar controls cell + one Pick chip per kept track.  They come + go with the
     //    gesture, so Sounditron_trickle_look re-commissions on the keep fingerprint.  Live under Ra_home_shop.
     for (const keep of keeps) organs.push(keep)
     // a friend's shelf is NO LONGER its own cell.  Two friend Crates spread the ~10 organs so thin every
@@ -331,13 +331,13 @@ Sounditron_commission(w) {
     if (!organs.length) return 0
     if (!SH.o({ A: 'Vyto' }).length) SH.i({ A: 'Vyto' }).i({ w: 'Vyto' })
     let commission = new TheC({ c: {}, sc: { Scannable: organs[0], client_w: w, grapples: organs } })
-    // NESTED glass while a keep is open — each %Keep cell would descend into its KeepBar + track chips.  GATED
+    // NESTED glass while a keep is open — each %Haul cell would descend into its HaulBar + track chips.  GATED
     //  OFF by default (the human 2026-07-29 "branchy Vyto seems to burn CPU then crash"): the renderer's
     //   power_cells is O(M²) per scope recomputed EVERY rAF frame with no memo, and a whole-album keep (12-20
     //    picks) is far over the ~12-cell budget → CPU pegged → OOM.  So a keep renders FLAT (the working
-    //     KeepFace) until the Vyto owner lands the renderer fixes (memoize + relative child sizing + settle-
+    //     HaulFace) until the Vyto owner lands the renderer fixes (memoize + relative child sizing + settle-
     //      drift guard + per-scope ceiling — see Vyto_perf handoff).  Flip M.c.heist_nested to try nested once
-    //       those land.  The KeepBar/Pick faces stay registered + dormant, ready.  w.c.nested is GLOBAL so it
+    //       those land.  The HaulBar/Pick faces stay registered + dormant, ready.  w.c.nested is GLOBAL so it
     //        can only ride the whole commission — never nest ONLY the keep — which is the other reason to wait.
     let M = this.top_House ? this.top_House() : null
     if (anyKeep && M && M.c.heist_nested) commission.sc.nested = 1
@@ -369,7 +369,7 @@ Sounditron_trickle(w) {
     let M = this.top_House()
     let era = (M.c.trickle_era || 0) + 1
     M.c.trickle_era = era
-    // stash THIS run-House handle on the top House so a gesture that mints a %Keep (Radio_pop_glass) can
+    // stash THIS run-House handle on the top House so a gesture that mints a %Haul (Radio_pop_glass) can
     //  re-commission the glass NOW with the correct `this` binding — the resident cell mounts on the gesture
     //   instead of waiting for the next trickle (the human 2026-07-29 "the heist UI cell isn't popping up").
     M.c.sounditron_run = this
@@ -419,7 +419,7 @@ async Sounditron_trickle_look(w, era) {
         //  the leave-on-done) changes, so a fresh keep appears as a cell and a dropped|done one falls away.
         let kme = this.Radio_pub ? this.Radio_pub(w) : null
         let kshop = kme ? this.Ra_home_shop(w, kme) : null
-        let keptN = kshop ? kshop.o({ Keep: 1 }).length : 0
+        let keptN = kshop ? kshop.o({ Haul: 1 }).length : 0
         // fingerprint the GRAPPLE-SET-affecting facts ONLY (diagnostics open + keep count), NOT per-keep state:
         //  a keep's primed→pulling fold-down rides its own dose bump (re-express), never a full re-commission —
         //   the human's "diagnostics and heist-spawning seem slow" was partly re-commissioning on every tick.
@@ -427,7 +427,7 @@ async Sounditron_trickle_look(w, era) {
         if (w.c.keep_fp !== kfp) {
             w.c.keep_fp = kfp
             // ATTENTION (the human 2026-07-28 "diminish all the other UI cells when we open the Heist, except
-            //  the nowplaying bit"): a live %Keep grabs the room — the always-on SECONDARY organs shrink via a
+            //  the nowplaying bit"): a live %Haul grabs the room — the always-on SECONDARY organs shrink via a
             //   negative dose (Vyto env_area), Radio (now-playing) + the Diag toggle stay full, the Keep cells
             //    dose themselves UP.  When the last keep leaves the dose clears and the glass springs back.  The
             //     three diagnostics are hidden-by-default now, so they're not in this set.

@@ -1205,14 +1205,23 @@
             const H = this as House
             if (typeof window === 'undefined') return
             if (!socklog_armed()) return
-            const role = H.Lies_role(w)
-            if (role !== 'editor' && role !== 'runner') return
+            // A PLAIN APP TAB MAY DUMP (2026-08-05).  This used to require role editor|runner, and Lies_role is
+            //  undefined on a bare BigSoundland tab — which is exactly the tab a human HEISTS in.  So the marks
+            //   piled up in memory and NOTHING ever reached wormhole/_trace/, silently: you armed the toggle,
+            //    got no file, and had no way to tell that from "nothing happened".  socklog_armed() is already
+            //     the real opt-in, so the role test was only ever belt-and-braces.  What we DO still exclude is
+            //      a Lies inside a Story Run (the compiler-under-test — it is not the channel participant, and
+            //       a Book must not accrete trace files), which is the actual thing the role gate was buying.
+            if ((H as any).Lies_inside_story?.()) return
             const trace = (H.top_House().c.supply_trace as any[]) || []
             if (!trace.length) return
             const now = Date.now()
             if (w.c.last_supplylog && now - (w.c.last_supplylog as number) < 5000) return
             w.c.last_supplylog = now
             const pub  = (H as any).Lies_self?.(w)?.prepub ?? 'anon'
+            // a bare app tab has no role — name it `app` rather than `undefined`, so a fleet of tabs still
+            //  writes distinguishable files and the filename says which kind of tab produced the marks.
+            const role = H.Lies_role(w) ?? 'app'
             const path = `wormhole/_trace/${role}-${pub}-${SOCKCAP_BOOT}.jsonl`
             const data = trace.map((c) => JSON.stringify(c)).join('\n')
             const rw   = w.oai({ rw_queue: 1 })

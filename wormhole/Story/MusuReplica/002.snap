@@ -17,8 +17,8 @@ Snap:H
         MusuSelf,pub:DJ
           stock,pub:DJ
             Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
-              Fill,name:audio,total=6,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000
             Record,id:rec1,title:Tone-1,artist:Synthetic,seconds=0.3,nchunks=6
-              Fill,name:audio,total=6,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000
             Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
-              Fill,name:audio,total=6,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000

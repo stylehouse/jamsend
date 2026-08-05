@@ -7,11 +7,15 @@
 //    chose to dress a %Heist).  glass_kinds.ts maps the KIND to its component for Cytui.
 export const FACE_MAINKEYS: Record<string, string> = {
     Heist: 'Heist',       // the Pirating flow — posed needs | soft wish → %Leads → choose
-    Keep: 'Keep',         // the ⇊ keep-what-you're-hearing cell (imposed by mainkey; no %Keep wears sc.face)
-    // the NESTED keep (the human 2026-07-28 "one for the hierarchy, one for the list of tracks"): under the
-    //  nested glass a %Keep goes BARE (a scope suppresses its own face) and tessellates into its %KeepBar
-    //   controls cell + one %Pick chip per kept track.  A flat (non-nested) %Keep still wears Keep above.
-    KeepBar: 'KeepBar',   // the keep's controls cell — genre · dest · all|none · ▶ start · ✕ · progress
+    // %Haul,pub:<their prepub> — the ⇊ keep-what-you're-hearing cell (imposed by mainkey; no %Haul wears
+    //  sc.face).  Was %Keep until 2026-08-05 (the human: "%Keep is too weak a word"); %Heist could not take
+    //   the name because it is already the JOB particle this haul condenses into, and two shapes under one
+    //    mainkey is the tell.  The arrangement the human named is the resulting tree: Haul,pub / Heist.
+    Haul: 'Haul',
+    // the NESTED haul (the human 2026-07-28 "one for the hierarchy, one for the list of tracks"): under the
+    //  nested glass a %Haul goes BARE (a scope suppresses its own face) and tessellates into its %HaulBar
+    //   controls cell + one %Pick chip per kept track.  A flat (non-nested) %Haul still wears Haul above.
+    HaulBar: 'HaulBar',   // the haul's controls cell — genre · dest · all|none · ▶ start · ✕ · progress
     Pick: 'Pick',         // one kept track in the nested keep — ✓/♪/⇊, click un-keeps
     Diag: 'Diag',         // the diagnostics toggle cell (imposed by mainkey)
     Errlog: 'Errlog',     // the Story error channel (spec/Error_channel_todo.md) — lazy-minted, so this cell

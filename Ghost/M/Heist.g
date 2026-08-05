@@ -58,25 +58,45 @@ Heist_has_body(n):
 Heist_meta_dir():
     return '.jamsend'
 
-// Heist_marrauding — the per-Pier per-run TEST namespace: meta + newlyadded + landing categories all
-//  live under it, so the run's work deletes cleanly (one rm -r of test-marrauding-of-<runid> on the
-//   shared disk).  The APP passes a real run uid; a Book PINS runid so its snaps stay deterministic
-//    and sweeps the standing dir at start instead.
+// Heist_marrauding — the per-Pier per-run namespace a heist LANDS UNDER: meta + newlyadded + landing
+//  categories all live below it, so a run's work deletes cleanly (one sweep of test-marrauding-of-<runid>
+//   on the shared disk).  A Book PINS its runid so snaps stay deterministic and sweeps the standing dir
+//    at start.
+//  CORRECTION (2026-08-05): this used to claim "the APP passes a real run uid" — it does NOT.  Both live
+//   landing calls passed a literal '' (land straight in the collection root), so the namespace was
+//    test-only in practice, and a heist run from a live tab was indistinguishable from real music and
+//     could not be swept without touching the real collection.  Heist_mardir below is the seam that fixes
+//      that: production still lands at the root (nothing set ⇒ ''), but anything that wants a sweepable
+//       namespace — a test tab, a probe, a Book driving the live path — sets ONE knob and inherits the
+//        whole existing landing + newlyadded + Heist_sweep story for free.
+//  SPELLING: `marrauding` (double-r) is a typo, carried by the on-disk directory name, this verb, and the
+//   literals in Heistation.g / Berthation.g.  NO recorded fixture contains the string (verified), so the
+//    rename is safe whenever someone wants it — it is left alone here only because those Book files are
+//     open in another thread and a cross-file rename would collide.
 Heist_marrauding(runid, nick):
     return this.Heist_meta_dir() + '/test-marrauding-of-' + runid + '/' + nick
+
+// Heist_mardir — WHERE THIS WORLD LANDS.  '' means the collection root (production, and every existing
+//  caller's behaviour byte-for-byte).  Set `w.c.mardir` — most usefully to a Heist_marrauding(...) path —
+//   and every landing, every newlyadded note and every berth for that world re-homes under it, sweepable
+//    in one Heist_sweep.  Runtime-only (`.c`), so no snap anywhere changes.
+Heist_mardir(w):
+    return (w && w.c.mardir) ? w.c.mardir : ''
 //#endregion
 
 //#region census — a collection walked into heist-servable %Records (the §9.1 slice the heist forces)
 // Heist_hash — full sha256 hex of raw bytes: the body_hash pinning byte identity source→landing.
 //  (Ra_enid is its first-16 slice — content identity for shelf keys; the heist asserts the WHOLE hash.)
-//  Now noble's SYNC sha256 (sha256_hex) — byte-for-byte the same lowercase-hex the old SubtleCrypto
-//   loop produced (empty / leading-zero / multi-KB all verified identical), so every pinned body_hash
-//    keeps matching.  The `async` stays for call-site symmetry (every caller awaits it, and the census
-//     computes body_hash through this same door); the digest itself no longer awaits SubtleCrypto nor
-//      re-materializes the bytes into a fresh ArrayBuffer.  `raw` is a Uint8Array here (census slices
-//       one; the landing passes the read-back bytes) — noble hashes it in place.
+//  NATIVE since 2026-08-05 (`sha256_hex_fast`): crypto.subtle where present, noble's pure JS only as the
+//   fallback.  Output is byte-identical either way (Hashly's FORMAT CONTRACT — verified over empty /
+//    leading-zero / multi-KB), so every pinned body_hash keeps matching.  This door previously called the
+//     SYNC noble path, which is ~10-50× slower over MBs and runs ON THE MAIN THREAD — the same pure-JS
+//      sha2 that a 2026-07-29 perf trace caught eating 51.8% of the frame on the SOURCE side.  The source
+//       got the native path then; the DOWNLOADER's landing was left behind, so a heist burned CPU hashing
+//        every landed track's whole file in JS.  Every caller already awaits (the verb was always async),
+//         so this is a drop-in.
 async Heist_hash(raw):
-    return sha256_hex(raw)
+    return await sha256_hex_fast(raw)
 
 // Heist_census — walk REAL files off the share into a library of heist-servable %Records: each card
 //  carries identity (id = enid16 of the bytes), catalog identity (artist/title/album), the byte promise
@@ -279,7 +299,7 @@ Heist_job(w, at, filings, opts):
     //  supplied (an undefined would brand the snap {"undef":["hid"]}); a %Heistlet,of:<hid> refers by it.
     if (opts && opts.hid) job.sc.hid = opts.hid
     if (!opts || !opts.believe_directories) job.sc.disbelieve_directories = 1
-    // the directories breadcrumb's edit (KeepFace, the human 2026-07-30): dirs is what the human typed,
+    // the directories breadcrumb's edit (HaulFace, the human 2026-07-30): dirs is what the human typed,
     //  dirs_auto is the auto-detected shared prefix AT THE MOMENT they edited it (frozen — see
     //   Heist_keep_set_dirs) — Heist_rel_for substitutes one for the other in each pick's landing path.
     //    Both or neither: a bare dirs with no frozen auto to diff against can't safely substitute anything.
@@ -406,8 +426,13 @@ async Heist_beat(w, rx, mine, theirs, job, own_lib, mir, nav, mardir):
 //   tree, so both become '-'; everything else — SPACES, punctuation, unicode, mixed case — is KEPT, because
 //    the tree is meant to read like a record shelf ("The Sines/Deep A.wav", not "the_sines/deep_a").  An
 //     empty|absent name collapses to nothing so the caller can drop the level.
+//  LEADING DASH → '0 ' (the human 2026-08-05): "it's impossible to give a file starting with a dash as a
+//   non-flag to a command in the shell" — `- chill` becomes `0 chill` at land time, transparently, matching
+//    what HaulFace's `deshell` already shows and commits in the breadcrumb editor.  DIRECTORY LEVELS ONLY:
+//     the only caller is Heist_cat_path, and Heist_cp_path (the source's own FILENAME) deliberately does
+//      NOT come through here — the cp-landing ruling says a heist never renames the file it copies.
 Heist_safe_seg(name):
-    return ('' + (name || '')).replace(/[\/\x00]/g, '-')
+    return ('' + (name || '')).replace(/[\/\x00]/g, '-').replace(/^-(?= )/, '0')
 
 // Heist_cp_path — the SOURCE's own relative path (name + any subdirs), made SAFE to land under a dest-root.
 //  cp-landing (the human's 2026-07-13 ruling): a heist is a COPY, so the source's own filename and folder
@@ -446,24 +471,31 @@ Heist_rel_for(job, rec):
     }
     return this.Heist_spawn_swap(job, (root ? root + '/' : '') + cp)
 
-// Heist_spawn_swap — ⚠ TEST-RIG HACK (the human 2026-08-05), hard-coded on purpose, RIP IT OUT when the
-//  rig no longer needs it.  Our test music all lives under the category `0 spawn`, so a test heist lands
-//   back into the SAME folder its source came from and you cannot tell whose copy is whose — nor sweep the
-//    results without touching the real collection.  Any path segment named `spawn` (marker-blind, so
-//     `spawn` | `- spawn` | `0 spawn` all match) becomes `0 heisted-<from>-<to>`, making a landed test copy
-//      self-labelling by PAIR and deletable in one gesture.
-//  SAFETY: it fires ONLY on a segment that is exactly `spawn` — no real collection is touched, and no
-//   recorded fixture carries such a folder (verified 2026-08-05, so no Book churns).  If either pub is
-//    unknown it returns the path UNCHANGED rather than writing `undefined` into a filename.  Pubs are cut
-//     to 8 hex — enough to tell a pair apart, short enough to stay a readable folder name.
+// Heist_spawn_swap — THE MANUAL-TESTING NAMESPACE, and deliberately NOT the Book one.  Two different
+//  things land heists on this disk and they want opposite treatment:
+//   · a Book lands under a FAUX ROOT (`Heist_marrauding` → .jamsend/test-marrauding-of-<runid>/<nick>)
+//      and sweeps it at start and end — those downloads SHOULD be deleted.
+//   · the human tests the app the way a user will (Book:Sounditron, real tab, real friend) and those
+//      downloads must SURVIVE — it is the exemplar runtime picture, not a test artifact.
+//  What that second case lacked was any way to TELL its landings apart from real music: our test music
+//   all lives under `0 spawn`, so a heist landed back into the very folder it came from.  So: any path
+//    segment that is exactly `spawn` (marker-blind — `spawn` | `- spawn` | `0 spawn` all match) becomes
+//     `0 heisted-<from>-<to>`, a place that springs up per PAIR.  The rest of the folder structure below
+//      it is untouched, so the album tree still reads true.
+//  It is inert everywhere else BY CONSTRUCTION: only a segment named exactly `spawn` fires, and no
+//   recorded fixture anywhere carries such a folder (verified), so no Book sees this and none churns.
+//    If either pub is unknown it returns the path UNCHANGED — never write `undefined` into a filename.
+//     Pubs cut to 8 hex: enough to tell a pair apart, short enough to stay a readable folder name.
 Heist_spawn_swap(job, rel):
     if (('' + rel).indexOf('spawn') < 0) return rel
-    // `from` is the job's own `at` (the source Pier's pub — the job IS the relationship); `to` is me.
+    // `from` is the job's own `at` (the source Pier — the job IS the relationship); `to` is me.
     let from = '' + ((job && job.sc.at) || '')
+    // typeof-guarded: Radio is a SIBLING ghost, so a world without it (a bare Book) must fall through
+    //  to the unchanged path rather than throw on an undefined method.
     let rw = this.top_House()?.c?.radio_w
-    let to = rw ? this.Radio_pub(rw) : ''
+    let to = (rw && typeof this.Radio_pub === 'function') ? this.Radio_pub(rw) : ''
     if (!from || !to) return rel
-    let tag = '0 heisted-' + ('' + from).slice(0, 8) + '-' + ('' + to).slice(0, 8)
+    let tag = '0 heisted-' + from.slice(0, 8) + '-' + to.slice(0, 8)
     return ('' + rel).split('/').map((p) => (p.replace(/^(-|0) /, '') === 'spawn') ? tag : p).join('/')
 
 // Heist_cat_path — a category may NEST (the human 2026-07-29 "they go within each other, ie 0 chill/0 very
@@ -554,16 +586,43 @@ async Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, r
         //    hashes the bytes we HANDED the backend, which is why the read-back below still stands (a short
         //     write the backend silently dropped agrees with the wire hash yet loses bytes on disk).
         let wire = sha256_incremental()
+        // ELECTRODES (2026-08-05, the downloader-burns-CPU hunt).  ONE mark per LANDED TRACK — never per
+        //  chunk, so it cannot itself become the cost, and it survives the 300-cap ring alongside a 1Hz
+        //   `dial`.  Phase millis, because the whole question is WHICH pass eats the frame: `cid` (per-chunk
+        //    gate), `wr` (the actual disk writes), `wire` (the streaming JS digest), `rb` (reading the whole
+        //     file back), `rbh` (hashing that read-back).  Read with `node scripts/tracelog.mjs --watch`.
+        let t_cid = 0
+        let t_wr = 0
+        let t_wire = 0
+        let t0 = Date.now()
         let s = 0
         while (s < total) {
             let ch = this.Repli_chunk_at(rec, s)
-            let bytes = this.Ra_chunk_map(rec)[s]
+            // O(N²) FIXED (2026-08-05).  This read `this.Ra_chunk_map(rec)[s]` — rebuilding the WHOLE
+            //  seq→bytes map on EVERY chunk, just to index one entry.  Each rebuild walks all N chunk
+            //   particles, runs Repli_chunk_bytes (an Object.keys scan) on each, and materialises a fresh
+            //    Uint8Array for any buf not already one — so landing an N-chunk file did O(N²) particle
+            //     walks and could copy the whole file N times over.  Same shape as the bin_read reduce
+            //      that pinned the main thread into a SIGILL (Sounditron_todo §0).  It also quietly
+            //       fought the memory design right below it: the per-chunk Heist_release_buf exists to
+            //        keep the high-water at "shrinking mirror + one chunk", and a full-map rebuild
+            //         re-touched every un-released buf on every pass.
+            //  We already hold the particle for this seq — take its bytes straight off it, normalised
+            //   exactly as Ra_chunk_map did (so `undefined` for an absent chunk, unchanged semantics).
+            let raw_b = ch ? this.Repli_chunk_bytes(ch) : null
+            let bytes = (raw_b == null) ? undefined : ((raw_b instanceof Uint8Array) ? raw_b : new Uint8Array(raw_b))
             // PER-CHUNK GATE (rung 0): the bytes must hash to the origin's promised cid BEFORE they touch
             //  disk — a localized breach that names the seq, ahead of the whole-file wire+read-back gates
             //   below (which still stand as the final honest checks).  A chunk minted before cids existed
             //    carries none and falls through unchanged — backward compatible.  Same tally + unlink as a
             //     whole-file breach; the unlink is a no-op when nothing has written yet (seq 0).
-            if (ch && ch.sc.cid && sha256_hex(bytes) !== ch.sc.cid) {
+            // NATIVE (2026-08-05): this gate hashes EVERY chunk of every landed track, so the sync noble
+            //  path made it a per-chunk main-thread stall.  sha256_hex_fast is crypto.subtle where present,
+            //   same hex out — and we already await inside this loop (bin_append), so awaiting costs nothing.
+            let t_c0 = Date.now()
+            let cid_bad = ch && ch.sc.cid && (await sha256_hex_fast(bytes)) !== ch.sc.cid
+            t_cid = t_cid + (Date.now() - t_c0)
+            if (cid_bad) {
                 job.sc.breached = +(job.sc.breached || 0) + 1
                 // NAME THE SEQ: what makes a per-chunk gate worth more than the whole-file body_hash is that it
                 //  says WHERE — the localized breach records the offending seq on the job (last one wins; one
@@ -575,12 +634,16 @@ async Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, r
                 await this.Heist_unlink(nav, dir, filename)
                 return
             }
+            let t_w0 = Date.now()
             if (s === 0) {
                 await nav.bin_write(dir, filename, bytes)
             } else {
                 await nav.bin_append(dir, filename, bytes)
             }
+            t_wr = t_wr + (Date.now() - t_w0)
+            let t_wi0 = Date.now()
             wire.update(bytes)
+            t_wire = t_wire + (Date.now() - t_wi0)
             size = size + bytes.length
             if (ch) this.Heist_release_buf(ch)
             s = s + 1
@@ -606,13 +669,25 @@ async Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, r
         //  runs on EVERY landed track's success path, and under want-storm congestion the iterate
         //   stretched a 66MB read to ~60s (see Ra_source_pcm), stalling the heist at each landing.
         let raw = null
+        let t_rb0 = Date.now()
         if (nav.read_range) {
             let got = await nav.read_range(dir, filename, 0)
             raw = got ? got.buffer : null
         } else {
             raw = await nav.bin_read(dir, filename)
         }
+        let t_rb = Date.now() - t_rb0
+        let t_rbh0 = Date.now()
         let hash = await this.Heist_hash(new Uint8Array(raw || new ArrayBuffer(0)))
+        let t_rbh = Date.now() - t_rbh0
+        // the one mark: what this landing cost, phase by phase.  `n` = chunks, `kb` = bytes landed.
+        //  Radio_trace is a SIBLING ghost's verb and takes a null radio by contract (a source-side caller
+        //   supplies its own id); typeof-guarded so a Radio-less world just doesn't record.
+        if (typeof this.Radio_trace === 'function') {
+            this.Radio_trace(null, { ev: 'land', id: String(rec.sc.id || '').slice(0, 8), n: total,
+                                     kb: Math.round(size / 1024), ms: Date.now() - t0,
+                                     cid: t_cid, wr: t_wr, wire: t_wire, rb: t_rb, rbh: t_rbh })
+        }
         if (hash !== rec.sc.body_hash) {
             // a byte-mismatch READ BACK OFF DISK: the job tallies its OWN breach (design state on the
             //  %Heist), the bad file is DELETED (a streamed partial|wrong file must never linger as a
@@ -935,7 +1010,7 @@ Heist_let_adopt(w, heist, bay, letMirror):
 //    content-id (Ra_record_from omits the comma-hazardous source path), and a friend only shared a meandered
 //     subset — so the folder can ONLY be resolved by the SOURCE, off its own radiostock card.  Hence the
 //      inflate is a wire round-trip: ask → the source resolves id→folder + censuses it → offers the husks
-//       back → the asker's chooser (KeepFace) picks → condense to a %Heist job → the existing engine pulls.
+//       back → the asker's chooser (HaulFace) picks → condense to a %Heist job → the existing engine pulls.
 //   PERF (2026-07-28, the human's 30%-CPU / "runs out at 32s" pain): the describe walk is METADATA-ONLY
 //    (Heist_census_heads — zero file reads); the bytes of a CHOSEN track are read ONCE, on demand, by
 //     Heist_materialise_one at pull.  The old Heist_census read+hashed the WHOLE folder (twice) inside
@@ -1236,13 +1311,13 @@ async Heist_rummage_answer(w, tx, me, asker, rummageMirror, nav):
 
 // ── the LIVE keep→choose→pull driver (the ⇊ gesture's follow-through, the human 2026-07-28: "clicked the
 //  downdowns, they turn into a tick, but nothing else happens — whoosh the whole UI into the Heist setup").
-//   Radio_keep mints a %Keep,state:wanted; this driver — pumped from Swarm_share_beat every beat — carries
+//   Radio_keep mints a %Haul,state:wanted; this driver — pumped from Swarm_share_beat every beat — carries
 //    it: wanted→ask the source to describe the folder it came from → choosing (HeistSetup shows the folder's
 //     husks, tagged rummage:<seed>) → committing (the human's %Picks pull + land under <genre>/) → done.
 //      SYMMETRIC: the same node also SERVES friends' asks (a landed %Rummage → Heist_rummage_answer).  It
 //       reuses the PROVEN engine (offer→beat→land, MusuHeist) — the only new matter is this glue + the tag.
 
-// Heist_keep_beat — one pass, both roles: SERVE friends' folder-describe asks, then GO (carry my own %Keeps
+// Heist_keep_beat — one pass, both roles: SERVE friends' folder-describe asks, then GO (carry my own %Hauls
 //  forward).  Pumped from Swarm_share_beat, so the routes it needs are already registered for live friends;
 //   it re-registers defensively (idempotent) in case a keep outlives a share cycle.  Cheap when idle.
 async Heist_keep_beat(w, ident):
@@ -1341,48 +1416,55 @@ async Heist_keep_beat(w, ident):
             catch (er) { ask.c.answers = n }
         }
     }
-    // GO: carry each of my %Keeps one step.  REHYDRATE first — a Berth-persisted heist with no live %Keep
+    // GO: carry each of my %Hauls one step.  REHYDRATE first — a Berth-persisted heist with no live %Haul
     //  standing (a fresh boot|reload) gets rebuilt here so it joins the very same loop below.
     let shop = this.Ra_home_shop(rw, me)
-    try { await this.Heist_keep_rehydrate(rw, me, nav, shop) } catch (er) { rw.c.heist_rehydrated = 1 }
+    // the catch is bounded, NOT a latch: a throw from inside rehydrate used to permanently disable resume
+    //  for the page life, turning any transient boot-order hiccup into "it never resumed" (same 2026-08-05
+    //   bug as the nav gate above).  Ten strikes, then stop trying.
+    try { await this.Heist_keep_rehydrate(rw, me, nav, shop) }
+    catch (er) {
+        rw.c.heist_rehydrate_tries = (rw.c.heist_rehydrate_tries || 0) + 1
+        if (rw.c.heist_rehydrate_tries >= 10) rw.c.heist_rehydrated = 1
+    }
     try { await this.Heist_defaults_rehydrate(nav, ident) } catch (er) {}
-    for (const keep of shop.o({ Keep: 1 })) {
+    for (const keep of shop.o({ Haul: 1 })) {
         try { await this.Heist_keep_step(w, rw, ident, me, nav, keep, shop) }
         catch (er) { keep.c.last_why = '' + (er && er.message || er) }
     }
 
-// Heist_keep_step — one %Keep, one edge (the human 2026-07-28: "I DO want the Heist UI ... it can be left to
+// Heist_keep_step — one %Haul, one edge (the human 2026-07-28: "I DO want the Heist UI ... it can be left to
 //  sit there, you don't have to click start, it'll assume that at some point ... it folds down when started").
-//   primed: DESCRIBE the folder (metadata, cheap) so KeepFace shows the node tree; default-keep the heard
+//   primed: DESCRIBE the folder (metadata, cheap) so HaulFace shows the node tree; default-keep the heard
 //    track; DOSE the cell UP (space-favoured in the clutter); LINGER until the seed stops playing.  pulling:
 //     FOLD down (dose off); materialise + pull + land every %Pick (default = the seed).  choosing/committing
 //      are the legacy Panel path (dormant on the one-click default).
 async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
     let state = keep.sc.state || 'primed'
-    // the CONTROLS cell of the NESTED keep (KeepBarFace — the human 2026-07-28 "one for the hierarchy, one for
-    //  the list of tracks").  Under the nested glass a %Keep goes BARE (a scope suppresses its own face), so
-    //   the chrome KeepFace carried — genre · dest · all|none · ▶ start · ✕ · progress — rides HERE, in a
+    // the CONTROLS cell of the NESTED keep (HaulBarFace — the human 2026-07-28 "one for the hierarchy, one for
+    //  the list of tracks").  Under the nested glass a %Haul goes BARE (a scope suppresses its own face), so
+    //   the chrome HaulFace carried — genre · dest · all|none · ▶ start · ✕ · progress — rides HERE, in a
     //    dontSnap child beside the %Pick track chips.  find-or-create is idempotent (no churn); `dontSnap`
-    //     keeps it out of the keep's snap (one pruned `KeepBar,dontSnap` marker at most); `.c.up` lets the
+    //     keeps it out of the keep's snap (one pruned `HaulBar,dontSnap` marker at most); `.c.up` lets the
     //      face reach back to this keep.  Byte-nothing when no keep exists — a keep only lives with a friend.
-    let bar = keep.oai({ KeepBar: 1, dontSnap: 1 })
+    let bar = keep.oai({ HaulBar: 1, dontSnap: 1 })
     if (bar.c.up !== keep) bar.c.up = keep
     if (state === 'choosing') return
     if (state === 'done') {
         // the ✓ lingers a few seconds, then the keep DROPS itself — the cell falls out of the glass and the
-        //  finished transient leaves the snap (a done %Keep is scaffolding, not ledger).  FORGET the Berth
+        //  finished transient leaves the snap (a done %Haul is scaffolding, not ledger).  FORGET the Berth
         //   entry the instant it's done, not on the 8s drop — nothing left to resume.
         if (!keep.c.done_ts) {
             keep.c.done_ts = Date.now()
             try { await this.Heist_keep_forget(keep) } catch (er) {}
         }
         if (Date.now() - keep.c.done_ts > 8000) {
-            try { (keep.c.up || shop).rm({ Keep: 1, seed: keep.sc.seed }) } catch (er) {}
+            try { (keep.c.up || shop).rm({ Haul: 1, seed: keep.sc.seed }) } catch (er) {}
         }
         return
     }
     let seed = String(keep.sc.seed)
-    let at = String(keep.sc.at)
+    let at = String(keep.sc.pub)
     let route = this.Swarm_station_pier(w, ident, at)
     if (!route) return
     if (!route.c.repli_src) this.Repli_register_caster(w, route, this.Ra_home_self(rw, me))
@@ -1391,12 +1473,12 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
     if (state === 'primed' || state === 'wanted' || state === 'asking') {
         // FOCUS, not a free-for-all (the human 2026-07-30 — "how do the Heists fold down if we seem
         //  disinterested... they should group... one big list", "solve that grouping BEFORE the layer of
-        //   data we chuck into Vyto"): SPACE-FAVOUR only the sibling %Keep you're actually touching right
+        //   data we chuck into Vyto"): SPACE-FAVOUR only the sibling %Haul you're actually touching right
         //    now (max c.last_touch among shop's other primed|wanted|asking keeps) — every other one drops
-        //     its dose so it folds to a compact row (KeepFace reads state+focus, not a new mainkey — plain
+        //     its dose so it folds to a compact row (HaulFace reads state+focus, not a new mainkey — plain
         //      .c properties, standardly labelled, decided HERE before Vyto ever grapples anything).  A
         //       single keep is trivially its own max, so nothing changes for the common one-keep case.
-        let siblings = shop.o({ Keep: 1 }).filter((k) => { let s2 = k.sc.state || 'primed'; return s2 === 'primed' || s2 === 'wanted' || s2 === 'asking' })
+        let siblings = shop.o({ Haul: 1 }).filter((k) => { let s2 = k.sc.state || 'primed'; return s2 === 'primed' || s2 === 'wanted' || s2 === 'asking' })
         let focused = keep
         for (const k of siblings) { if (+(k.c.last_touch || 0) > +(focused.c.last_touch || 0)) focused = k }
         let isFocused = focused === keep
@@ -1406,7 +1488,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
             delete keep.sc.dose
             keep.bump()
         }
-        // DESCRIBE the folder (metadata heads only — cheap, no reads) so KeepFace shows the node tree to tweak.
+        // DESCRIBE the folder (metadata heads only — cheap, no reads) so HaulFace shows the node tree to tweak.
         //  Throttled.  Once described, default-keep the heard track (its own husk wears re:<seed content-id>).
         if (!this.Heist_rummage_recs(srcmir, seed).length) {
             let last = keep.c.desc_ts || 0
@@ -1433,17 +1515,17 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
         this.Heist_keep_default_pick(keep, srcmir, seed)         // ensure at least the heard track is kept
         let picks = keep.o({ Pick: 1 })
         let own = this.Ra_home_self(rw, me)
-        let job = keep.c.job || shop.o({ Heist: 1, at: keep.sc.at })[0]
-        if (!job) job = this.Heist_job(w, keep.sc.at, this.Heist_keep_filings(keep), { home: shop, dirs: keep.sc.dirs, dirs_auto: keep.sc.dirs_auto })
+        let job = keep.c.job || shop.o({ Heist: 1, at: keep.sc.pub })[0]
+        if (!job) job = this.Heist_job(w, keep.sc.pub, this.Heist_keep_filings(keep), { home: shop, dirs: keep.sc.dirs, dirs_auto: keep.sc.dirs_auto })
         keep.c.job = job
         // RESUME (the human 2026-07-30 — the Sounditron pages auto-reload every ~10min, no persisted
-        //  %Keep/%Pick state yet survives that, so every reload used to mean pulling every track again
+        //  %Haul/%Pick state yet survives that, so every reload used to mean pulling every track again
         //   from nothing): before driving anything, check whether any not-yet-landed pick's file is
         //    ALREADY correctly on disk from before the reload — cheap size-stat all, digest the boundary
         //     one — and skip straight to landed for whatever verifies. THIS is the live 'pulling' branch
         //      (not the dormant Heist_keep_pull below, which nothing live ever reaches — state never
         //       becomes 'committing' on the one-click flow); resume must run HERE to matter.
-        await this.Heist_resume_sync(w, nav, job, own, srcmir, picks, '', keep)
+        await this.Heist_resume_sync(w, nav, job, own, srcmir, picks, this.Heist_mardir(w), keep)
         // SERIALIZE + OVERLAP (Evening 5 A1 — the human 2026-07-29: "doing every track in parallel or holding
         //  more than a reasonable amount of the music is wrong ... we could overlap them a little bit but only
         //   for a few seconds, to beat a latency ... where we ask for another while nothing is coming").  The
@@ -1469,6 +1551,18 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
         let inflight = 0
         let drove_any = 0
         let tnow0 = Date.now()
+        // ELECTRODE (2026-08-05, "the progress bars are at wildly different positions"): collect what each
+        //  DRIVEN pick's fill actually is this beat, so the bar positions become data instead of an
+        //   impression.  The window cap is per-KEEP and caps ASKING, not what is already in flight — so the
+        //    two things this distinguishes are (a) one keep genuinely driving >INFLIGHT tracks (a cap bug)
+        //     and (b) many partly-filled tracks sitting at frozen positions from earlier asks|benches, which
+        //      looks identical on screen and is not the same problem at all.
+        let pulls = []
+        // WHY THE WINDOW SHUT — the census used to say the window was closed but never which of the three
+        //  causes closed it, and they want opposite fixes: 'mat' = waiting on a source materialise (pre-ask
+        //   earlier), 'over' = the active track is not yet within OVERLAP of done (the gate is working as
+        //    designed), 'cap' = INFLIGHT genuinely full (raise the cap, or it is a leak).  First cause wins.
+        let shut = ''
         for (const pick of picks) {
             let ref = String(pick.sc.ref || pick.sc.id)
             if (pick.sc.landed) { landed = landed + 1; continue }
@@ -1478,7 +1572,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
             if (pick.c.bench_until && tnow0 < pick.c.bench_until) { left = left + 1; continue }
             // WINDOW GATE: the in-flight cap.  A pick past the cap just waits its turn — no ask fires, so the
             //  source is never asked to materialise it, which is the whole memory fix.
-            if (inflight >= INFLIGHT) { left = left + 1; continue }
+            if (inflight >= INFLIGHT) { if (!shut) shut = 'cap'; left = left + 1; continue }
             // the ORIGINAL materialised under this keep-id (Heist_materialise_one, upserted onto the husk with
             //  total).  Not full yet ⇒ (re)ask the source to materialise it (throttled 4s, the lost-frame heal).
             let rec = this.Ra_rec_find(srcmir, { Record: 1, id: ref })
@@ -1493,17 +1587,32 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
                 }
                 drove_any = 1                                // this pick IS in flight (awaiting the source's read)
                 inflight = INFLIGHT                          // a pending materialise closes the window (one read)
+                if (!shut) shut = 'mat'
                 left = left + 1
                 continue
             }
+            // ELECTRODE (2026-08-05) — THE MATERIALISE ROUND TRIP, the single number the between-tracks rest
+            //  turns on.  We asked at `ask_ts` and a `total` has now appeared: `wait` is the source reading the
+            //   whole file + hashing it + the answer crossing the wire.  Marked ONCE per pick (ready_ts latch),
+            //    so it is silent for the rest of that track.  Read it against the ~600ms beat and the `land` ms:
+            //     a big `wait` means the source is the cost and OVERLAP pre-asking is what needs fixing; a small
+            //      `wait` under a long gap means the ask went out LATE, i.e. the landing beat ate the window.
+            if (pick.c.ask_ts && !pick.c.ready_ts) {
+                pick.c.ready_ts = Date.now()
+                if (typeof this.Radio_trace === 'function') {
+                    this.Radio_trace(null, { ev: 'ready', id: String(ref).slice(0, 8),
+                                             wait: pick.c.ready_ts - pick.c.ask_ts, tot: +(rec.sc.total || 0) })
+                }
+            }
             drove_any = 1
             let rtot = +(rec.sc.total || 0)
-            let r = await this.Ra_pull_beat(w, rec.c.rx || route, me, String(rec.c.from || keep.sc.at), rec)
+            let r = await this.Ra_pull_beat(w, rec.c.rx || route, me, String(rec.c.from || keep.sc.pub), rec)
             let rheld = (r && r.held) || 0
             sum_held = sum_held + rheld
+            pulls.push(rheld + '/' + rtot)
             let cooling = rec.c.breach_at && (Date.now() - rec.c.breach_at) < BREACH_COOLDOWN
             if (r && r.done && !cooling) {
-                await this.Heist_land(w, nav, job, own, srcmir, rec, '')
+                await this.Heist_land(w, nav, job, own, srcmir, rec, this.Heist_mardir(w))
                 pick.sc.landed = 1
                 pick.bump()
                 landed = landed + 1
@@ -1527,7 +1636,20 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
             }
             // OVERLAP: hold the window CLOSED behind a track that is NOT near done; open a slot for the next
             //  pick to pre-ask only once this one is within OVERLAP chunks of complete.
-            if ((rtot - rheld) > OVERLAP) inflight = INFLIGHT
+            if ((rtot - rheld) > OVERLAP) { inflight = INFLIGHT; if (!shut) shut = 'over' }
+        }
+        // the in-flight census, throttled to ~2s per keep so it can never itself become the load: how many
+        //  picks this keep DROVE this beat and where each one sits.  `cap` is the configured window, so a
+        //   `drove` above it is a cap bug in plain sight; `at` reads like `44/120,118/120` — the actual bar
+        //    positions.  Several keeps each drive their own window, so compare `drove` per keep id, not the
+        //     total on screen.
+        if (pulls.length && (Date.now() - (keep.c.census_ts || 0) > 2000)) {
+            keep.c.census_ts = Date.now()
+            if (typeof this.Radio_trace === 'function') {
+                this.Radio_trace(null, { ev: 'pulls', id: String(keep.sc.seed || '').slice(0, 8), cap: INFLIGHT,
+                                         drove: pulls.length, left: left, landed: landed, at: pulls.join(','),
+                                         why: shut || 'open' })
+            }
         }
         // never give up: a pass that drove nothing (every candidate benched) with picks left clears the benches.
         if (!drove_any && left > 0) {
@@ -1557,8 +1679,8 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
             keep.c.pull_started_ts = tnow
             keep.c.pull_progress_ts = tnow
             keep.c.pull_seen_landed = 0
-            if (this.Radio_trace) this.Radio_trace(null, { ev: 'heist-start', at: String(keep.sc.at || '').slice(0, 8), of: picks.length })
-            console.log(`⇊ heist STARTED — ${picks.length} track${picks.length === 1 ? '' : 's'} from ${String(keep.sc.from_name || keep.sc.at || '').slice(0, 8)}`)
+            if (this.Radio_trace) this.Radio_trace(null, { ev: 'heist-start', at: String(keep.sc.pub || '').slice(0, 8), of: picks.length })
+            console.log(`⇊ heist STARTED — ${picks.length} track${picks.length === 1 ? '' : 's'} from ${String(keep.sc.from_name || keep.sc.pub || '').slice(0, 8)}`)
         }
         // PROGRESS = a whole track landed OR the summed held frontier climbed (Evening 5 A1): serialized, a big
         //  track lands slower than the 15s bark, so counting only whole-track landings would false-alarm every
@@ -1572,7 +1694,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
         } else if (landed < picks.length && tnow - (keep.c.pull_progress_ts || tnow) > 15000 && tnow - (keep.c.pull_stall_warned || 0) > 10000) {
             keep.c.pull_stall_warned = tnow
             let secs = Math.round((tnow - keep.c.pull_progress_ts) / 1000)
-            if (this.Radio_trace) this.Radio_trace(null, { ev: 'heist-noprogress', at: String(keep.sc.at || '').slice(0, 8), asked: +(keep.sc.asks || 0), landed: landed, of: picks.length, secs: secs })
+            if (this.Radio_trace) this.Radio_trace(null, { ev: 'heist-noprogress', at: String(keep.sc.pub || '').slice(0, 8), asked: +(keep.sc.asks || 0), landed: landed, of: picks.length, secs: secs })
             console.warn(`⇊⚠ heist NO PROGRESS ${secs}s — ${landed}/${picks.length} landed after ${+(keep.sc.asks || 0)} asks — the SOURCE may have crashed/gone; check its console (◈✗ / 🛰⚠ unemit NOT acked)`)
         }
         // LIVE FLOW DIAL (the human 2026-07-29 "jiggling dials that turn up when packets are actually coming"):
@@ -1592,7 +1714,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
         if (!left && picks.length) {
             keep.sc.state = 'done'
             keep.bump()
-            try { (job.c.up || shop).rm({ Heist: 1, at: keep.sc.at }) } catch (er) {}
+            try { (job.c.up || shop).rm({ Heist: 1, at: keep.sc.pub }) } catch (er) {}
         }
         return
     }
@@ -1641,7 +1763,7 @@ async Heist_keep_start(keep):
 
 // Heist_keep_persist — save a keep's LIST-LEVEL intent (which files, into what structure — never a byte
 //  offset, [[Heist_resume_sync]] verifies bytes separately) to a Berth Waft, so Heist_keep_rehydrate can
-//   rebuild the identical %Keep+%Picks after a reload. Berth's `root`/`prepub` are the app's OWN durable
+//   rebuild the identical %Haul+%Picks after a reload. Berth's `root`/`prepub` are the app's OWN durable
 //    identity (Berth_dir: /.jamsend/berth/<my-prepub>/Heists/toc.snap) — this collection's own home,
 //     not the friend's. Best-effort: no identity|nav yet (very early boot, or a Book) just skips — the
 //      keep still pulls fine in-session, it just won't survive THIS particular reload.
@@ -1653,8 +1775,11 @@ async Heist_keep_persist(keep):
     let waft = await this.Berth_open(nav, '', String(ident.sc.prepub), 'Heists')
     let entry = waft.oai({ HeistSeed: 1, seed: String(keep.sc.seed) })
     entry.c.up = waft
-    entry.sc.at = String(keep.sc.at || '')
-    if (keep.sc.Keep) entry.sc.title = String(keep.sc.Keep)
+    // %pub IS A PIER'S PREPUB (the human 2026-08-05, standardising the vocabulary) — the field was `at`.
+    //  Written as `pub` from here on; Heist_keep_rehydrate still READS the legacy `at` so a heist already
+    //   persisted on disk under the old key resumes rather than silently vanishing.
+    entry.sc.pub = String(keep.sc.pub || '')
+    if (keep.sc.Haul) entry.sc.title = String(keep.sc.Haul)
     if (keep.sc.from_name) entry.sc.from_name = keep.sc.from_name
     if (keep.sc.artist) entry.sc.artist = keep.sc.artist
     if (keep.sc.genre) entry.sc.genre = keep.sc.genre
@@ -1697,7 +1822,7 @@ async Heist_keep_forget(keep):
     waft.rm({ HeistSeed: 1, seed: String(keep.sc.seed) })
     await this.Berth_save(nav, waft)
 
-// Heist_keep_rehydrate — on boot|reload, resurrect any Berth-persisted heist with no LIVE %Keep standing
+// Heist_keep_rehydrate — on boot|reload, resurrect any Berth-persisted heist with no LIVE %Haul standing
 //  yet (the human 2026-07-30: Sounditron pages auto-reload every ~10min, unattended overnight — "I think it
 //   basically should be able to resume a heist in the background").  Re-mints straight into 'pulling' (skips
 //    'primed' — the human already confirmed, before whatever reloaded), replays the persisted %Pick
@@ -1708,13 +1833,40 @@ async Heist_keep_forget(keep):
 //         common case).
 async Heist_keep_rehydrate(rw, me, nav, shop):
     if (rw.c.heist_rehydrated) return
-    rw.c.heist_rehydrated = 1
+    // NAV-NOT-READY IS NOT AN ANSWER (the human 2026-08-05, straight after a reload: "neither Heist has
+    //  actually begun resuming yet").  The one-shot gate used to be burnt on the FIRST LINE, BEFORE the
+    //   Berth read — so the first beat after a reload, when Crate_nav() is still null (the FSA handle
+    //    restore is async, and a fresh grant waits on a human click), spent the single shot against a null
+    //     nav, and resume was dead for the WHOLE PAGE LIFE.  Burn the gate only once the shelf has actually
+    //      been READ; otherwise come back next beat.  Bounded, so a genuinely broken Berth can't churn the
+    //       600ms beat forever.
+    if (!nav) {
+        // ELECTRODE (2026-08-05) — mark the nav wait ONCE, so "resume never started" is distinguishable from
+        //  "resume ran and found nothing".  This is the exact window the resume bug hid in: it is normal to
+        //   sit here for a beat or two after a reload, and pathological to sit here forever (no FSA grant).
+        if (!rw.c.resume_navwait_ts) {
+            rw.c.resume_navwait_ts = Date.now()
+            if (typeof this.Radio_trace === 'function') this.Radio_trace(null, { ev: 'resume', why: 'nav-wait' })
+        }
+        return
+    }
     let waft = null
-    try { waft = await this.Berth_open(nav, '', me, 'Heists') } catch (er) { return }
+    try { waft = await this.Berth_open(nav, '', me, 'Heists') }
+    catch (er) {
+        let tries = (rw.c.heist_rehydrate_tries || 0) + 1
+        rw.c.heist_rehydrate_tries = tries
+        if (tries >= 10) {
+            rw.c.heist_rehydrated = 1
+            console.log('◈⟲ heist rehydrate gave up after 10 tries —', er)
+        }
+        return
+    }
+    if (!waft) return
+    rw.c.heist_rehydrated = 1
     let n = 0
     for (const entry of waft.o({ HeistSeed: 1 })) {
         let seedv = String(entry.sc.seed || '')
-        if (!seedv || shop.o({ Keep: 1, seed: seedv })[0]) continue
+        if (!seedv || shop.o({ Haul: 1, seed: seedv })[0]) continue
         // MIGRATION (2026-07-30, the JSON-blob-in-picks → real %Pick children fix): an entry saved by the
         //  old shape carries no %Pick children yet, only the legacy entry.sc.picks JSON string — read it
         //   ONCE as a fallback so an in-flight real heist doesn't just stop resuming the moment this code
@@ -1737,7 +1889,8 @@ async Heist_keep_rehydrate(rw, me, nav, shop):
             if (persisted.length) { try { await this.Berth_save(nav, waft) } catch (er) {} }
         }
         if (!persisted.length) continue
-        let keep = shop.i({ Keep: entry.sc.title || 'resumed', seed: seedv, at: entry.sc.at || '', state: 'pulling' })
+        // `pub` is the standard key now; `at` is the legacy one a pre-2026-08-05 Berth entry still wears.
+        let keep = shop.i({ Haul: entry.sc.title || 'resumed', seed: seedv, pub: entry.sc.pub || entry.sc.at || '', state: 'pulling' })
         keep.c.up = shop
         if (entry.sc.from_name) keep.sc.from_name = entry.sc.from_name
         if (entry.sc.artist) keep.sc.artist = entry.sc.artist
@@ -1758,6 +1911,13 @@ async Heist_keep_rehydrate(rw, me, nav, shop):
         n = n + 1
     }
     if (n) console.log(`◈⟲ rehydrated ${n} heist${n === 1 ? '' : 's'} from disk — resuming`)
+    // the OUTCOME, once per page life: how many Berth entries were on the shelf, how many became live hauls,
+    //  and how long we waited on nav to show up.  `seen>0, made:0` is the honest "already standing" case;
+    //   `seen:0` says the shelf really is empty, which is a DIFFERENT bug from never having read it.
+    if (typeof this.Radio_trace === 'function') {
+        this.Radio_trace(null, { ev: 'resume', why: 'read', seen: waft.o({ HeistSeed: 1 }).length, made: n,
+                                 navwait: rw.c.resume_navwait_ts ? (Date.now() - rw.c.resume_navwait_ts) : 0 })
+    }
 
 //#region heist defaults — the GLOBAL remembered setup (the human 2026-07-30: "global remembered default
 //  settings for Heist"): whatever a heist gets configured with (right now: category) becomes what the NEXT
@@ -1862,14 +2022,14 @@ Heist_keep_touch(keep):
     keep.c.last_touch = Date.now()
     keep.bump()
 
-// Heist_keep_pick_toggle — the KeepFace cell's un/keep of one folder node (ref = its keep-id).  Present ⇒ drop
+// Heist_keep_pick_toggle — the HaulFace cell's un/keep of one folder node (ref = its keep-id).  Present ⇒ drop
 //  it; absent ⇒ add it, lifting title/artist off the described husk.
 Heist_keep_pick_toggle(keep, ref):
     keep.c.last_touch = Date.now()
     let have = keep.o({ Pick: 1, ref: String(ref) })[0]
     if (have) { keep.drop(have); keep.bump(); return }
     let rw = this.top_House().c.radio_w
-    let srcmir = (rw && keep.sc.at) ? this.Ra_home_them(rw, String(keep.sc.at)) : null
+    let srcmir = (rw && keep.sc.pub) ? this.Ra_home_them(rw, String(keep.sc.pub)) : null
     let hit = srcmir ? this.Ra_rec_find(srcmir, { Record: 1, id: String(ref) }) : null
     let pick = keep.i({ Pick: 1, ref: String(ref) })
     pick.c.up = keep
@@ -1900,7 +2060,7 @@ Heist_keep_set_genre(keep, v):
     this.Heist_defaults_set({ genre: keep.sc.genre })
 
 // Heist_keep_set_dirs — the directories breadcrumb's edit (the human 2026-07-30): override the SHARED
-//  source-folder prefix a keep's tracks land under.  `auto` is KeepFace's own live-computed shared prefix
+//  source-folder prefix a keep's tracks land under.  `auto` is HaulFace's own live-computed shared prefix
 //   (the common leading path across every described husk) AT THE MOMENT of this edit — frozen onto the keep
 //    as dirs_auto so Heist_rel_for can substitute dirs_auto → dirs at land time reliably even as the live
 //     auto-detected value keeps recomputing afterward (new husks describing, tree changing shape).  UNLIKE
@@ -1917,7 +2077,7 @@ Heist_keep_set_dirs(keep, v, auto):
 //  heist must happen" — but "don't trust a partial file across restarts... Heists are about the list of
 //   files to download, and into what structure"). Runs ONCE per job, before the first pull: for every
 //    not-yet-landed pick, ask whether its landing path ALREADY holds the right bytes (a prior session
-//     landed it, then the keep's own runtime state — %Keep/%Pick aren't berthed yet — was lost to a reload
+//     landed it, then the keep's own runtime state — %Haul/%Pick aren't berthed yet — was lost to a reload
 //      or a crash). A byte-size match is the cheap check and is trusted for every candidate EXCEPT the
 //       LAST one in pick order: that one gets a real digest, because it's the file most likely to have
 //        been mid-write (or just-closed but not yet durably flushed — a power-loss tail) when whatever
@@ -1993,11 +2153,11 @@ async Heist_keep_pull(w, rw, ident, me, nav, keep, shop, srcmir, route):
     if (!picks.length) { keep.sc.state = 'choosing'; keep.bump(); return }
     // FIND-or-create the job (the review's reload finding): keep.c.job is runtime-only, so after a reload
     //  with state:'committing' persisted a bare create would mint a SECOND %Heist beside the orphaned first.
-    let job = keep.c.job || shop.o({ Heist: 1, at: keep.sc.at })[0]
-    if (!job) job = this.Heist_job(w, keep.sc.at, this.Heist_keep_filings(keep), { home: shop, dirs: keep.sc.dirs, dirs_auto: keep.sc.dirs_auto })
+    let job = keep.c.job || shop.o({ Heist: 1, at: keep.sc.pub })[0]
+    if (!job) job = this.Heist_job(w, keep.sc.pub, this.Heist_keep_filings(keep), { home: shop, dirs: keep.sc.dirs, dirs_auto: keep.sc.dirs_auto })
     keep.c.job = job
     let own = this.Ra_home_self(rw, me)
-    await this.Heist_resume_sync(w, nav, job, own, srcmir, picks, '', keep)
+    await this.Heist_resume_sync(w, nav, job, own, srcmir, picks, this.Heist_mardir(w), keep)
     let left = 0
     // BREACH COOLDOWN (the human 2026-07-30, watching a track's file cycle unlink→restart over and over):
     //  a breached record loses every chunk (Heist_release_buf ran before the failing check), so it must
@@ -2010,10 +2170,10 @@ async Heist_keep_pull(w, rw, ident, me, nav, keep, shop, srcmir, route):
         if (pick.sc.landed) continue
         let rec = this.Ra_rec_find(srcmir, { Record: 1, id: pick.sc.id })   // paged-aware (mirror is a Mag)
         if (!rec) { left = left + 1; continue }
-        let r = await this.Ra_pull_beat(w, rec.c.rx || route, me, String(rec.c.from || keep.sc.at), rec)
+        let r = await this.Ra_pull_beat(w, rec.c.rx || route, me, String(rec.c.from || keep.sc.pub), rec)
         let cooling = rec.c.breach_at && (Date.now() - rec.c.breach_at) < BREACH_COOLDOWN
         if (r && r.done && !cooling) {
-            await this.Heist_land(w, nav, job, own, srcmir, rec, '')
+            await this.Heist_land(w, nav, job, own, srcmir, rec, this.Heist_mardir(w))
             pick.sc.landed = 1
             pick.bump()
         } else {
@@ -2026,7 +2186,7 @@ async Heist_keep_pull(w, rw, ident, me, nav, keep, shop, srcmir, route):
     if (!left) {
         keep.sc.state = 'done'
         keep.bump()
-        try { if (job) await (job.c.up || shop).rm({ Heist: 1, at: keep.sc.at }) } catch (er) {}
+        try { if (job) await (job.c.up || shop).rm({ Heist: 1, at: keep.sc.pub }) } catch (er) {}
     }
 
 // Heist_keep_filings — the per-artist filing decisions the picks name (dedup by artist, first genre wins):
@@ -2064,24 +2224,24 @@ Heist_keep_commit(w, keep, choices):
     keep.bump()
     return n
 
-// Heist_keep_cancel — close the chooser without pulling: drop the whole %Keep intent (a re-press re-seeds it).
+// Heist_keep_cancel — close the chooser without pulling: drop the whole %Haul intent (a re-press re-seeds it).
 async Heist_keep_cancel(w, keep):
     if (!keep) return
     let shop = keep.c.up || this.Ra_home_shop(w, this.Radio_pub(w) || 'me')
     // drop any in-flight job too (an abandon from 'committing' must not leave a live %Heist pulling).
-    if (keep.sc.at) { try { shop.rm({ Heist: 1, at: keep.sc.at }) } catch (er) {} }
+    if (keep.sc.pub) { try { shop.rm({ Heist: 1, at: keep.sc.pub }) } catch (er) {} }
     try { await this.Heist_keep_forget(keep) } catch (er) {}
-    shop.rm({ Keep: 1, seed: keep.sc.seed })
+    shop.rm({ Haul: 1, seed: keep.sc.seed })
 
 // Heist_keep_reset_all — the diagnostics "reset heist state" button (the human 2026-07-30, studying several
 //  Sounditrons and needing a clean slate between runs without hand-editing disk): cancel EVERY standing
-//   %Keep at once, each through the SAME Heist_keep_cancel a single ✕ already uses — no parallel drop path,
+//   %Haul at once, each through the SAME Heist_keep_cancel a single ✕ already uses — no parallel drop path,
 //    so it inherits that verb's correctness (in-flight job dropped, Berth entry forgotten, live particle
 //     gone) for free.  Returns how many were cleared, so the UI can say something concrete.
 async Heist_keep_reset_all(w):
     let me = this.Radio_pub(w) || 'me'
     let shop = this.Ra_home_shop(w, me)
-    let keeps = shop.o({ Keep: 1 }).slice()
+    let keeps = shop.o({ Haul: 1 }).slice()
     for (const keep of keeps) { try { await this.Heist_keep_cancel(w, keep) } catch (er) {} }
     return keeps.length
 //#endregion
@@ -2401,13 +2561,18 @@ Musica_zine_tune(z, id):
     //  yet, the normal transient for a fave popped before sync) would just STARVE the pump 6s then auto-skip
     //   to a different track, so ▶ would silently play the wrong thing; return false instead (ZineFace then
     //    says nothing-played) — the Radio_dial_pool / lineup husk-gate stance, applied here too.
+    // "does it hold anything?" is a ONE-CHUNK question (2026-08-05): these read
+    //  `Ra_chunk_map(x)[0]`, which builds the entire seq→bytes map — walking every chunk particle and
+    //   materialising a fresh Uint8Array per buf — only to look at seq 0. Repli_chunk_at answers the
+    //    same question in O(1) with no byte copies. Identical semantics: chunk_at returns the particle
+    //     only when its bytes are non-null, which is exactly what map[0] != null meant.
     let rec = this.Ra_rec_find(this.Ra_home_self(w, pub), { Record: 1, id: String(id) })
-    if (rec && this.Ra_chunk_map(rec)[0] == null) rec = null
+    if (rec && this.Repli_chunk_at(rec, 0) == null) rec = null
     if (!rec) {
         for (const home of w.o({ MusuThem: 1 })) {
             if (rec) continue
             let hit = this.Ra_rec_find(this.Ra_home_them(w, String(home.sc.pub)), { Record: 1, id: String(id) })
-            if (hit && this.Ra_chunk_map(hit)[0] != null) rec = hit
+            if (hit && this.Repli_chunk_at(hit, 0) != null) rec = hit
         }
     }
     if (!rec) return false

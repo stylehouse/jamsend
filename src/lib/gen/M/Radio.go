@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return 'ae6be9d356ea5d68~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '23132725da5df7ae~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -85,7 +85,12 @@ Radio_trace(radio, entry) {
     //  own `id` in the entry — honour it; only stamp from the playing radio when the caller didn't.
     if (entry.id == null) entry.id = (radio && radio.c.rec) ? String(radio.c.rec.sc.id || '').slice(0, 8) : null
     log.push(entry)
-    if (log.length > 300) log.splice(0, log.length - 300)
+    // CAP (raised 300 → 1200, 2026-08-05): at the ~1 Hz `dial` cadence 300 marks was only ~4.5 minutes of
+    //  history, and every electrode added since eats into that — a heist gap you notice and THEN go looking
+    //   for has usually already scrolled out.  Tiny objects, so 1200 is still nothing; `M.c.supply_trace_cap`
+    //    overrides for a long unattended sit.
+    let CAP = +(M.c.supply_trace_cap || 1200)
+    if (log.length > CAP) log.splice(0, log.length - CAP)
     M.c.supply_trace = log
 },
 //#endregion
@@ -1538,12 +1543,12 @@ async Radio_mag_pop(w, rec) {
 
 },
 // Radio_keep — the HEIST gesture (the human 2026-07-28 "keep what you're hearing... keeping it grabs
-//  the whole folder it came from"): capture the currently-playing FRIEND track as a durable %Keep intent
-//   in MY loading zone (Ra_home_shop).  The %Keep is the SEED the chooser inflates (Heist_rummage_ask →
+//  the whole folder it came from"): capture the currently-playing FRIEND track as a durable %Haul intent
+//   in MY loading zone (Ra_home_shop).  The %Haul is the SEED the chooser inflates (Heist_rummage_ask →
 //    the source describes the folder it came from) and the driver condenses into a real %Heist job
 //     (Heist_keep_go → Heist_beat → Heist_land).  Own tracks are already held, so the ⇊ button only shows
 //      on a friend track (radio.sc.by set) — this guards on n.sc.by too.  Minting the intent is SAFE +
-//       ADDITIVE (a new %Keep mainkey, no hot-path touch); the pull+land completes where the wire is live.
+//       ADDITIVE (a new %Haul mainkey, no hot-path touch); the pull+land completes where the wire is live.
 //        Idempotent: a second press on the same seed no-ops (a keep already stands).  n.c.kept mirrors the
 //         seed for the face's ✓ (runtime .c, never snapped — the "did my click land" tell).
 async Radio_keep(n) {
@@ -1557,12 +1562,12 @@ async Radio_keep(n) {
     let shop = this.Ra_home_shop(w, me)
     n.c.kept = n.c.kept || {}
     n.c.kept[seed] = 1
-    if (shop.o({ Keep: 1, seed: seed })[0]) { n.bump(); this.Radio_pop_glass(); this.feebly_ponder(); return true }
-    let keep = shop.i({ Keep: this.Radio_clean(rec.sc.title || 'this'), seed: seed, at: String(friend), state: 'primed' })
+    if (shop.o({ Haul: 1, seed: seed })[0]) { n.bump(); this.Radio_pop_glass(); this.feebly_ponder(); return true }
+    let keep = shop.i({ Haul: this.Radio_clean(rec.sc.title || 'this'), seed: seed, pub: String(friend), state: 'primed' })
     keep.c.up = shop
     // FOCUS (the human 2026-07-30 — "how do the Heists fold down if we seem disinterested... they should
     //  group... one big list"): last_touch marks which keep is the one you're actually engaging with right
-    //   now. Heist_keep_step reads it against every sibling %Keep — only the most-recently-touched one gets
+    //   now. Heist_keep_step reads it against every sibling %Haul — only the most-recently-touched one gets
     //    the space-favouring dose; every other primed keep folds to a compact row, so racking up several
     //     albums while tearing through a friend's collection reads as one list, not N cells fighting for room.
     keep.c.last_touch = Date.now()
@@ -1576,19 +1581,19 @@ async Radio_keep(n) {
     n.bump()
     // POP THE CELL NOW (the human 2026-07-29 "the heist UI cell isn't popping up anymore ... the tick still
     //  appears"): the glass ONLY re-commissions on the Sounditron trickle (a 2.5s loop, and AFTER an awaited
-    //   friend-refresh) — so a fresh %Keep's KeepFace cell turned up sluggishly, or not at all under load.  A
+    //   friend-refresh) — so a fresh %Haul's HaulFace cell turned up sluggishly, or not at all under load.  A
     //    keep is minted on THIS gesture, so re-commission the glass on THIS gesture too (below), not the next
     //     trickle.
     this.Radio_pop_glass()
     // WAKE the loop now (the human 2026-07-29 "downdown click doesn't always turn into tick immediately"): the ✓
-    //  stamp + the %Keep are minted synchronously, but a quiesced belief loop won't flush them to UItime — nor
+    //  stamp + the %Haul are minted synchronously, but a quiesced belief loop won't flush them to UItime — nor
     //   pump Heist_keep_beat to carry the Keep into Vyto — until something nudges it.  feebly_ponder is Runtime-
     //    gated (no-op off-think) so it is safe + cheap; it turns "sometime" into "next cycle".
     this.feebly_ponder()
     return true
 
 },
-// Radio_pop_glass — re-commission the Sounditron glass NOW so a just-minted %Keep's cell mounts on the gesture
+// Radio_pop_glass — re-commission the Sounditron glass NOW so a just-minted %Haul's cell mounts on the gesture
 //  (bug: the cell "isn't popping up anymore").  Reaches the resident RUN House by the handle Sounditron_trickle
 //   stashes on the top House (c.sounditron_run), and calls its Sounditron_commission with the radio world — the
 //    CORRECT `this` binding (the run's `.up` is where A:Vyto sits) that a cross-ghost `this.` call couldn't get.

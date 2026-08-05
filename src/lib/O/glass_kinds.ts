@@ -11,8 +11,8 @@ import RadioFace from './ui/RadioFace.svelte'
 import StokerFace from './ui/StokerFace.svelte'
 import TunerFace from './ui/TunerFace.svelte'
 import HeistFace from './ui/HeistFace.svelte'
-import KeepFace from './ui/KeepFace.svelte'
-import KeepBarFace from './ui/KeepBarFace.svelte'
+import HaulFace from './ui/HaulFace.svelte'
+import HaulBarFace from './ui/HaulBarFace.svelte'
 import PickFace from './ui/PickFace.svelte'
 import DiagFace from './ui/DiagFace.svelte'
 import ErrlogFace from './ui/ErrlogFace.svelte'
@@ -33,8 +33,8 @@ export const GLASS_KINDS: Record<string, any> = {
     Stoker: StokerFace,   // the provisioning organ — watch the digs crank, poke a churn
     Tuner: TunerFace,     // the glass's dial — which crews of cells are shown
     Heist: HeistFace,     // the Pirating flow — posed needs | soft wish → leads → take
-    Keep: KeepFace,       // the ⇊ keep-what-you're-hearing cell — folder nodes, tweak genre, folds down on start
-    KeepBar: KeepBarFace, // a NESTED keep's controls cell — genre · dest · all|none · ▶ start · ✕ · progress
+    Haul: HaulFace,       // the ⇊ keep-what-you're-hearing cell — folder nodes, tweak genre, folds down on start
+    HaulBar: HaulBarFace, // a NESTED haul's controls cell — genre · dest · all|none · ▶ start · ✕ · progress
     Pick: PickFace,       // one kept track chip in a nested keep — ✓/♪/⇊, click un-keeps
     Diag: DiagFace,       // the diagnostics toggle — reveals/hides beat·uptime·door; grabs attention when open
     Errlog: ErrlogFace,   // the Story error channel — calm ✓ green empty, RED w/ count+latest lines when a throw landed

@@ -2658,6 +2658,29 @@
                 run.c.awaiting_anim_done = true
                 run.c.driving = false
                 V.Story && console.log(`⏸ snap_step finished, paused for Cyto_animation_done`)
+                // WEDGE CEILING (2026-08-05).  waitCyto HOLDS everywhere, runner included — the wave
+                //  is test data, not decoration, and Voro wants its beat.  But a resume that never
+                //   comes must never be fatal.  On a headless runner e:Cyto_animation_done does not
+                //    arrive (the render lands — runner_shot --why says `landed step:N` — and the
+                //     Run's todo shows nothing after `snapped N`, so it is never FIRED, not fired-
+                //      and-lost; the false side of `client && w.c.wants_animation_done` at
+                //       Cyto.svelte:1554 is the open question).  The Run then sat in phase
+                //        "stepping" forever, and since advance() is the ONLY caller of
+                //         _resolve_runstepped(), every Runstepped sweep died with it — that, not
+                //          Peeroleum, is why MusuReplica's Pier inbox never culled.  VoroScape
+                //           wedged at step 1, MusuReplica at step 3.
+                //  Cyto already holds this belief on its own side ("a stuck render can never wedge
+                //   the Run", the CEIL_MS at Cyto.svelte:1547); this is the same ceiling on the
+                //    WAITING side, where it actually protects the drive.  We call the real handler
+                //     rather than advance() so there is exactly one resume path: it re-checks
+                //      awaiting_anim_done itself, so a genuine event that beat the timer makes this
+                //       a no-op.  Budget mirrors Cyto's own ceiling (wave + dwell + 3s) plus slack.
+                const dwell_ms = ((w.sc.grawave_duration as number) ?? 0.3) * 1000 + 750
+                setTimeout(() => {
+                    if (!run.c.awaiting_anim_done) return          // the real event landed — nothing owed
+                    console.warn(`⏱ Story: no e:Cyto_animation_done for step ${run.sc.done} — ceiling reached, driving on`)
+                    ;(H as any).e_Cyto_animation_done(null, w, null)
+                }, dwell_ms + 3000 + 2000)
                 return
             }
             advance()

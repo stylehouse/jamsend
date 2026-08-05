@@ -14,43 +14,43 @@ Snap:H
           Pier,pub:DJ,req=2,ok
             Ud,pubkey:DJ
             inbox
-              req:unemit,seq,type:repli_lines,body_hash:3fbe99fbecab2addfca4159919af309061217dd2754f8cea13d1445258986025,body_len=156,done,to:repli_lines,finished
-              req:unemit,seq=2,type:repli_lines,body_hash:3ba37aa7b948dc4377e75bf8074029a412ec121337a35f2e8e39c3fc9b4f8c71,body_len=156,done,to:repli_lines,finished
-              req:unemit,seq=3,type:repli_lines,body_hash:b515698d4c461626f4d43c7a7eedef794b1b80e7e22d9e1f83b72644d02b88b7,body_len=156,done,to:repli_lines,finished
-              req:unemit,seq=4,type:repli_lines,body_hash:73223156865b02290230794477807f2876e548376f4fdc8e89318e1e89881de7,body_len=128,done,to:repli_lines,finished
-              req:unemit,seq=5,type:repli_lines,body_hash:6be21a5341363223fbee7a21f188e17e1954b81629cd6750c32e826090e7b465,body_len=128,done,to:repli_lines,finished
+              req:unemit,seq,type:repli_lines,body_hash:1d45ae9cb2076e43a90c49faac82e655a7d2a204bfba8419bbe789338ee81837,body_len=148,done,to:repli_lines,finished
+              req:unemit,seq=2,type:repli_lines,body_hash:b7fc7a55a64ca731eab177e8bfb4da764aa038de778c15c1f0c9c13a95a90dbf,body_len=148,done,to:repli_lines,finished
+              req:unemit,seq=3,type:repli_lines,body_hash:92dd13f8f04bc1f47657594cec304221e054517292d991a4d185edf4aaaaa419,body_len=148,done,to:repli_lines,finished
+              req:unemit,seq=4,type:repli_lines,body_hash:692fe3b38105fbdae4118c182407f7667c0e501bbafaa3542eee3a6539c49fcd,body_len=98,done,to:repli_lines,finished
+              req:unemit,seq=5,type:repli_lines,body_hash:f0cd6bfd76d9ce5f2f10d2f3e63b5db3370cd050881217cfe71e21536ddf79e9,body_len=98,done,to:repli_lines,finished
               req:unemit,seq=6,type:repli_page,body_hash:6758c814fa64781c9fd2b2b295952bdd776f1b0ca2c5a941ac99a8978987693f,body_len=19200,done,to:repli_page,finished
-              req:unemit,seq=7,type:repli_lines,body_hash:164a21324e7ee93f98dfd9947e937af2c41f98a6cd8cba25e98afdeee25a3294,body_len=128,done,to:repli_lines,finished
+              req:unemit,seq=7,type:repli_lines,body_hash:abf884458e7a08b8f9e38272b0fd7247e828797eb24834a9b32c7f4361df294b,body_len=98,done,to:repli_lines,finished
               req:unemit,seq=8,type:repli_page,body_hash:6116e70369c0d589a0a4ea46e154989128cf79a8610a4f107c891fc85444df42,body_len=19200,done,to:repli_page,finished
-              req:unemit,seq=9,type:repli_lines,body_hash:8f8dbbe385f816eb34c8b130508b142bbb86e3a62c217da7418ddeaf0cb09f15,body_len=128,done,to:repli_lines,finished
+              req:unemit,seq=9,type:repli_lines,body_hash:835fed61f743df10c277c3e50e4456e7369c61570959d83ac3167c1b37b141e0,body_len=98,done,to:repli_lines,finished
               req:unemit,seq=10,type:repli_page,body_hash:ca447d51ab5c94fe8e70ded9da0b88b70a88f5b7d3063775278d8ac37e82a2d1,body_len=19200,done,to:repli_page,finished
-              req:unemit,seq=11,type:repli_lines,body_hash:36d821042609602a7bb8214e75a7d0afdf94b590b49127f77380f49606c23d40,body_len=128,done,to:repli_lines,finished
+              req:unemit,seq=11,type:repli_lines,body_hash:8b56aba5add801f78bd2cefb45aa82e1d9d855ce88b18e3db4d2be491da0896d,body_len=98,done,to:repli_lines,finished
               req:unemit,seq=12,type:repli_page,body_hash:189706fb12ce704f3ac145d58a63b3362f7585c5073f4adb951a457402125e0d,body_len=19200,done,to:repli_page,finished
-              req:unemit,seq=13,type:repli_lines,body_hash:bbf28cf4aa5634592a44311558e28de5bf6446ee4a3e5c3b339ed9c4dc67f2be,body_len=128,done,to:repli_lines,finished
+              req:unemit,seq=13,type:repli_lines,body_hash:d916896a5773c59fc255859e88cf9d87a3bf258b019d23f6d2bf8615e18d45b5,body_len=98,done,to:repli_lines,finished
               req:unemit,seq=14,type:repli_page,body_hash:534b8205964c3389621cd65f61045283a8c229635975556747b45bd72ef75d7f,body_len=19200,done,to:repli_page,finished
-              req:unemit,seq=15,type:repli_lines,body_hash:a53fbaff76556d9c191377b8bca932e94d4f46ff8dd23f617bdc15c24c575583,body_len=128,done,to:repli_lines,finished
+              req:unemit,seq=15,type:repli_lines,body_hash:4e8180a23f5ede067b801f340fce8c5ab7c030ba8dcc22310f6bf17f5698a707,body_len=98,done,to:repli_lines,finished
               req:unemit,seq=16,type:repli_page,body_hash:1a7cb2b5cae7347bc59e915fdd53a34d981faae1a298f6511e3f431802bf0ab5,body_len=19200,done,to:repli_page,finished
-            req:awaitbuf,bufferid
+            req:awaitbuf,bufferid:1
               warned:buffer_late
           active_transport,type:mock,open
         MusuSelf,pub:DJ
           stock,pub:DJ
             Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
-              Fill,name:audio,total=6,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000
             Record,id:rec1,title:Tone-1,artist:Synthetic,seconds=0.3,nchunks=6
-              Fill,name:audio,total=6,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000
             Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
-              Fill,name:audio,total=6,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000
         reached:step_3
         Sent_Tree,pier:DJ,dontSnap
         MusuThem,pub:Crowd
           stock,pub:Crowd
             Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
-              Fill,name:audio,total=6,have=6,sr=48000,page_from=4,page_to=6,got=3
+              Fill,name:audio,have=6,sr=48000,got=3
             Record,id:rec1,title:Tone-1,artist:Synthetic,seconds=0.3,nchunks=6
-              Fill,name:audio,total=6,have=6,sr=48000,page_from=4,page_to=6,got=3
+              Fill,name:audio,have=6,sr=48000,got=3
             Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
-              Fill,name:audio,total=6,have=2,sr=48000,page_from=0,page_to=2
+              Fill,name:audio,have=2,sr=48000
         reached:step_4
         Sent_Tree,pier:Crowd,dontSnap
         reached:step_11

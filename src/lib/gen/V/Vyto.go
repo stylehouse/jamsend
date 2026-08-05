@@ -12,7 +12,7 @@ import { sig_of, group_edges, bucket_key_of, pull_step, budget_for, SIG_JOINS, F
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return '3937d99577fac194~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return '104ec58a356d0926~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -281,7 +281,7 @@ Vyto_scan_walk(w, n, parentMirror, depth, gen) {
         //   FOUND every later scan by the same tok. Repeated minting for the same title means the tok
         //    (or the row itself) isn't surviving between scans — the actual remount mechanism, not
         //     component-local state. Gated to Keep only — every other mainkey stays silent.
-        if (mk === 'Keep') console.log('◈ Vyto mirror MINT (no existing row matched)', tok, 'gen', gen)
+        if (mk === 'Haul') console.log('◈ Vyto mirror MINT (no existing row matched)', tok, 'gen', gen)
         let seed = {}
         seed[mk] = nmk
         row = parentMirror.i(seed)
@@ -336,7 +336,7 @@ Vyto_scan_sweep(w, parentMirror, gen) {
         if (row.c.seen_at === gen) continue
         // DIAGNOSTIC twin of the MINT log above — a Keep row missed this scan (its source wasn't
         //  re-walked): first miss marks departing, second miss (still departing) actually drops it.
-        if (String(row.c.tok || '').indexOf('Keep:') === 0) {
+        if (String(row.c.tok || '').indexOf('Haul:') === 0) {
             console.log(row.sc.departing ? '◈ Vyto mirror DROP (missed 2nd scan)' : '◈ Vyto mirror DEPART (missed this scan)', row.c.tok, 'gen', gen)
         }
         if (row.sc.departing) {

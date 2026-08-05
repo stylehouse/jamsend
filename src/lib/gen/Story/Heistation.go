@@ -10,7 +10,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return 'f078122c8859a7bf~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return 'cfd17513c473f2ed~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -4337,7 +4337,15 @@ async MusuLossy_materialize(w, nav) {
     let faithful = ((await this.Heist_hash(out)) === rec.sc.body_hash) ? 1 : 0
     let m = this.MusuLossy_note(w, { materialized: 1, path: dir + '/' + name, bytes: out.length })
     if (faithful) m.sc.faithful = 1
-    w.c.left_on_disk = 1
+    // END SWEEP (2026-08-05) — MusuLossy was the ONE heist Book that swept only at START: a green run left
+    //  its three planted sources and the reassembled file sitting on disk until the next run's sweep.  Every
+    //   sibling (MusuHeist, MusuBreach-run|wire, MusuReap, MusuSoft, MusuBay, MusuBerth, MusuOgg) sweeps both
+    //    ends, so this now does too.  Beat 3 is the last beat and nothing reads the files after this point —
+    //     the old `w.c.left_on_disk` marker this replaces was written and never read anywhere (verified), a
+    //      note-to-self that the mess was known.  Files only: the dir skeleton is kept ON PURPOSE (see
+    //       Heist_sweep's header — a deleted-then-recreated dir strands the nav's cached FSA handle).
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-MusuLossy')
+    w.c.swept_at_end = 1
 
 },
 // MusuLossy_witness — the %see truths, gated on live particle reads (the censused records' grade mainkey, their

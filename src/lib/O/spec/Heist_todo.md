@@ -1,358 +1,271 @@
-# Heist_todo.md — the keep-what-you're-hearing build (2026-07-28)
+# Heist_todo.md — hauling music off a friend
 
-## 0. Next move (read first)
+You hear a track on a friend's radio, you press ⇊, and the original file lands in your collection
+ under a folder you chose. That is the whole feature. This doc states how it works now, straight —
+  the dated build strata it replaces are at `spec/history/Heist_todo_strata.md`, kept for the
+   reasoning (the census rewrite, the `music/` teardown, the seven-bug adversarial review, the
+    %Stream starve) rather than for anything current.
 
-### 2026-08-05 — the snap-shut bomb is DEAD (root cause was not ours), plus a KeepFace batch. One ruling owed.
-
-**The "snaps shut" bug was never a Heist bug** and Evening 8's freeze (below) was not what fixed it. Root
- cause: `replace()` publishes the empty half of its own transaction, and `agency_officing`
-  (`Hovercraft.svelte:133`) replaces every actor's `w:` children every tick — so Vytui's
-   `{#each vyto_worlds() as w (w)}` got a 0-length list once per tick and destroyed every face in the glass,
-    KeepFace included. Fixed at the reader (`ui/micro/hold.ts` + both Vytui structural gates);
-     `reactivity_docs.md` § "The transacting-empty render" has the chain and the three cures. **Confirmed
-      live by the human**. Evening 8's dirs-freeze stays — it was a real second hazard, just not this one.
-
-**Landed alongside, in `KeepFace.svelte`** (live-testing owed on all four): ✓ now COMMITS whatever is in the
- boxes instead of only closing the editor (typed-but-not-ENTERed text was being silently dropped — the
-  human's report); each directories chunk is EDITABLE in place rather than remove-and-retype; directories
-   chunks break inside a name so one long source folder stops setting the cell's width; and group labels in
-    the track tree no longer restate the directories row — the prefix match is now MARKER-BLIND, so
-     `- chill` / `0 chill` / `chill` are one directory and the strip actually happens.
-
-**THE ONE RULING OWED — automatic `- ` → `0 ` at land time.** A folder whose name starts with a dash cannot
- be handed to a shell command as a non-flag, so `0 ` is the marker we write (as `Heist_keep_set_genre`
-  already does for categories, `Heist.g:1877`). KeepFace now shows and commits the shell-safe form, which
-   makes the rename real **for any keep whose directories are ticked** — opening the editor and pressing ✓
-    with no other change is enough, because the dirs/dirs_auto substitution in `Heist_rel_for` lands it. An
-     UNTOUCHED keep still lands the source's own `- name` folder. Making it automatic means a leading-dash
-      rule in `Heist_cp_path`, which bends the explicit cp-landing ruling — *"the source's own filename and
-       folder layout survive UNCHANGED"* — and would churn every Book fixture that asserts a landing path.
-        **That is the human's call, not a display edit's.** If yes: put it in `Heist_safe_seg` (the one
-         chokepoint, already the home of the `/`-and-NUL rule) and budget the Accept.
-
-### 2026-07-30 EVENING 8 — the directories-editor "snaps shut" bomb from the entry below has a fix, UNVERIFIED
-###  LIVE (solo session, no browser click access). Full root-cause reasoning + the safe nice-ups landed
-###   alongside it: `Download_stall_handover.md` § "Evening 8". Short version: `dirsSegs` fell back to a
-###    LIVE-recomputing auto-prefix whenever `sc.dirs` was unset, and the non-keyed chip `{#each}` destroyed
-###     trailing DOM nodes (incl. a focused input) whenever that prefix narrowed mid-edit — froze it at
-###      `openDirs()` time instead. Also fixed a dead-code bug (`n.c.cat_editing`/`dirs_editing`, leftover
-###       from a reverted earlier attempt) that silently zeroed the known-category/known-dirs datalist
-###        suggestions. **NEXT: the human needs to actually click into directories on a still-materialising
-###         keep across a few trickles and watch — mount/destroy console instrumentation is in place if it
-###          still breaks.**
-
-### 2026-07-30 LATEST — the real Heist UI: chip+gap breadcrumbs, directories WIRED into landing, marker is
-###  `0` now, a reset button, LIVE-VERIFIED on the human's own real tab. Read this before touching
-###   KeepFace.svelte or anything category/directory-shaped.
-
-`KeepFace.svelte`'s old free-text category field + destination-preview line + nab-album/nab-track buttons are
- GONE, replaced per the human's direction — corrected TWICE this round after live-testing on their own real
-  BigSoundland tab caught what the first pass got wrong (a single blob input instead of segments):
-- **section** (mine) and **directories** (theirs) are two separate, never-merged, never-enclosing hierarchies.
-   At rest each is a calm `/segment/segment/` breadcrumb (neutral slashes, accent segment text). Click to
-    edit: NOT one text field — a row of small chips, one per segment with its own × to remove it, and a tiny
-     "+" gap before/between/after every chip (N segments ⇒ N+1 gaps) that grows as you type and inserts a new
-      segment at exactly that position on Enter. `section` stamps the category marker automatically (never
-       typed by the user); `directories` is the shared source-folder prefix across the described tracks
-        (commonPrefix of the husks' folders, computed in the Svelte face).
-- **directories IS wired into landing now.** Editing it calls `Heist_keep_set_dirs(keep, v, auto)`, which
-   freezes BOTH the override (`keep.sc.dirs`) and the auto-detected value AT EDIT TIME (`keep.sc.dirs_auto`)
-    onto the keep. `Heist_job` stamps both onto the minted job; `Heist_rel_for` substitutes dirs_auto → dirs
-     at the FRONT of each pick's cp-path only, and ONLY when the record's own path still starts with that
-      frozen dirs_auto — never a blind rename, so a multi-disc keep's CD1 vs CD2 divergence (and filenames)
-       below the shared prefix survive untouched. Re-verified MusuHeist live after this change (still 22/22
-        green, ok_pct 1.0) — the substitution is a pure no-op for any job that never set dirs, so nothing
-         that doesn't use this feature can be affected by it.
-- **category marker migrated `-` → `0`.** `Heist_keep_set_genre` now stamps `0 <name>` on every write; both
-   `-` and `0` still READ as a category everywhere (nothing on disk needs touching for old folders), but any
-    category that passes back through editing normalizes to `0` on the spot — a collection migrates one
-     touched category at a time, not a background file-rename job.
-- **"discover what we already have."** `Heist_known_categories(own_lib)` / `Heist_known_dirs(own_lib, artist)`
-   scan the library's own `%Record.sc.path` for existing category prefixes / matching artist folders, feeding
-    each breadcrumb's datalist while editing — so a near-duplicate folder is a visible choice, not an accident.
-     Only works because `%Record.sc.path` rides on EVERY record now (`Ra_record_from`), not just heist-landed
-      ones — the old "comma in a path is a snap hazard" reasoning was wrong (`Text.svelte`'s `enLine` already
-       JSON-falls-back on any unsafe value).
-- **single-track mode is GONE.** `Heist_keep_pick_all`/`_none`/`_seed` (the old nab-album/nab-track buttons)
-   are deleted outright — `Heist_keep_default_pick` already keeps the WHOLE described folder the moment it
-    describes. Per-track fine exclusion still works (`Heist_keep_pick_toggle`, click a track chip to skip it).
-- **global remembered defaults.** `Heist_defaults_get/_set/_rehydrate` in Heist.g: the category a heist gets
-   set to becomes the default the NEXT heist opens with (`Radio_keep` seeds `keep.sc.genre` from it). Dual-
-    homed like `Swarm_pier_stash` — `H.stashed.Heist_defaults` (Dexie) mirrored to a
-     `.jamsend/berth/<prepub>/HeistDefaults` Waft for durability. `directories` deliberately does NOT feed
-      this — source-specific, means nothing as a default for a different friend's structure.
-- **reset heist state button.** `DiagFace.svelte`, behind the 🔧 diagnostics toggle (destructive action, opt-
-   in gate): a real confirm-before-delete (`O/ui/micro/DeleteX`) that calls `Heist_keep_reset_all(w)` —
-    cancels every standing `%Keep` through the same `Heist_keep_cancel` path a single ✕ already used.
-- **track tree**: a folder group with more than 5 tracks collapses by default (a real `<details>`); 5 or
-   fewer stays expanded inline, every real track shown, no "… N more" placeholder.
-- **LIVE-VERIFIED, twice.** The runner was flaky most of this session (ping answering, run/state timing out)
-   but came good — ran MusuHeist for real, it went red, diffed the actual mismatch with `story_repl.mjs diff`
-    instead of stopping at "red": all 16 `%see` assertions fired, the whole story arc completed, and the red
-     was pure fixture staleness (the already-known non-deterministic Grant timestamps + a belief-loop pacing
-      shift from the `Swarm_share_loop` reentrancy fix). `accept`ed fresh, reran: 22/22 green. Separately
-       discovered the runner I'd been driving via plain `runner_ask`/`story_repl` (no `--runner=`) IS the
-        human's own real BigSoundland tab (`world` showed real supply-pipeline + Peering state) — Story Books
-         run there ALONGSIDE the resident session in an isolated `H:<Book>,Run` world, not inside it, so this
-          is safe, but worth knowing: a `run <Book>` on the un-targeted default reaches their live tab, not a
-           dedicated sandbox. The chip/gap UI itself got corrected live, in real time, off the human's own
-            testing on that exact tab — first the whole-blob-field bug, then the visual too-busy pass.
-
-### 2026-07-30 — `music/` prefix REMOVED FOR GOOD. Every `/music`, `Heist_music_root()`, `job.sc.root` mention
-###  below this point is STALE. Read THIS first, then skip past them.
-
-`Heist_root` / `job.sc.root` / `Heist_music_root()` / the never-wired `M.c.heist_root` test hook — ALL DELETED
- (the human: "the entire Heist_root thing is bullshit and distracting... FUCK YOU. not heist_root! remove all
-  of that"). It was scar tissue: `M.c.heist_root` was never set anywhere, and Book isolation already runs
-   through each Book's own explicit `mardir` param, never through this. A heist now lands at the TRUE FSA
-    root directly (`''`), unconditionally, in dev AND prod — no `music/` prefix, no per-job root field, no
-     getter. Every `/music`-prefixed landing path described further down this doc (SHIP 1, SHIP 2, the
-      Superseded section's "Landing dir = `/music` directly" ruling) is describing a design that no longer
-       exists — read those as history, not current behavior.
-
-**If a dev-only "prefix downloads so I can find them" convenience is wanted again**, it does NOT go back into
- this backend plumbing. The human's ruling: it's a small, explicit, untickable-like-any-other-suggestion block
-  living entirely inside the Heist setup UI flow — see the Categories work below (§ "the staircase"). Nothing
-   backend-side should ever again default-prepend a folder onto a landing path.
-
-### 2026-07-29 EVENING (overnight solo) — downloads FIXED, nested GATED OFF, Heist UI polished. Read THIS first.
-
-Everything below is NOT committed (working tree). All Book-verified GREEN on the FSA runner (MusuHeist 22/22,
- Sounditron 1/1). The human left me on overnight with a pile of feedback; here's the arc.
-
-**THE BIG WIN — peer downloads were fully wedged; FIXED.** The human's console showed a `repli_want` STORM
- (wants ≫ lines) and "neither can download anything". Root cause: `Ra_pull_beat` (Ra.g) was an unbounded,
-  backpressure-free pull — every beat it fired a want for EVERY missing page of the WHOLE record, gated only by
-   a set-once latch (never re-asked → a dropped/parked want = permanent hole → record never completes). FIX:
-    client-driven backpressure copied from the proven siblings — per-beat budget `B`(6) + `LEAD`(32) window +
-     4s `ra_want_ts` re-ask (self-heal). Knobs `w.c.heist_want_budget`/`heist_want_lead`. See
-      [[heist-pull-want-storm-fix]]. **Owed:** the SERVE side still drains under the beliefs mutex — the
-       prototype ran the source reader DETACHED + self-gated; that's the deeper follow-up. LIVE two-tab repro
-        of the storm needs two connected tabs (not a Book).
-
-**BRANCHY (nested) Vyto CRASHED → GATED OFF.** My nested-Heist (task done last turn) turns `w.c.nested` on when
- a keep opens — but the renderer's `power_cells` is O(M²)/scope recomputed EVERY frame with no memo, so a
-  whole-album keep (12-20 picks, over the 12-cell budget) pegs CPU → OOM. Also never settles + overlaps + too
-   small. Gated: `Sounditron_commission` now `if (anyKeep && M.c.heist_nested)` — DEFAULT OFF ⇒ flat KeepFace
-    (works). The four renderer fixes are the **Vyto owner's** — written up with line refs in
-     **`spec/Vyto_perf_todo.md`**. Flip `M.c.heist_nested` to test nested once those land. Also cut the
-      per-beat keep-root re-stir churn (progress bumps only when `landed` advances). See [[vyto-nested-is-global-grapple]].
-
-**HEIST UI polish (the human's feedback, all done):** "file under"→**category** (a `- <name>` sort-topward
- folder, nests via `/`, `Heist_cat_path`); **two buttons nab-album/nab-track** (new `Heist_keep_pick_seed`) not
-  all/none; **field snaps-shut FIXED** (local `$state` + commit-on-blur — the reactivity_docs/UI:Waft bug);
-   **no `music/Unfiled/` prepend** — source folders land as-is (the `Heist_music_root`/`M.c.heist_root` test-
-    isolation param this leant on is GONE now — see the 2026-07-30 note at the top of this file, landing is
-     the true root unconditionally, no param needed); **pause sticks** (`radio.c.ever_played` latch stops the trickle re-pressing play). See
-     [[heist-ui-category-pause]].
-
-**NEXT (needs the human / live tabs):**
-1. **Fullscreen HeistSetup rebuild** to the Peerily prototype (`src/lib/mostly/Pirate.svelte`): path broken into
-    slash-separated places, a `nab` on the album-dir place vs the track-blob place, per-segment category toggles
-     + existing-check. `HeistSetup.svelte` is currently ORPHANED (nothing raises it). Prototype spec fully captured.
-2. **Vyto owner** lands `spec/Vyto_perf_todo.md` → then flip `M.c.heist_nested` on and watch a keep nest.
-3. **Live-verify the download fix** on two connected tabs (`world --runner=<source>` should show the storm gone).
-4. Branchy Vyto to SHOW a friend's live download (the human's ask) — unblocked once #2 lands.
-
-### 2026-07-29 UPDATE — nested render is LIVE; %Stream reframed. Read THIS first (supersedes stale bits below).
-
-**Nested Vyto render SHIPPED by the Vyto agent** (`VytoNestRest` green; Vytui descends the tree). The "Nesting
- is NOT shipped yet" line below is now stale. BUT nesting the Heist is a **coordinated change, not a flip** —
-  `w.c.nested` is GLOBAL, every grapple's whole subtree draws, and a nested parent renders BARE (face suppressed).
-   The `%Keep`'s `%Pick` children + the grappled `Heist` organ's `constraint/Lead/filing` children would surface
-    as stray/grey cells. Full contract + the safe 4-step plan (decouple picks → move controls to a `%KeepBar`
-     child → guard the flip on `anyKeep` + drop the `{Heist:1}` grapple → prove in isolation) is in memory
-      `vyto-nested-is-global-grapple.md`. **DO IT WITH A LIVE SOUNDITRON** (the pick-decouple has reload-semantics
-       to verify) — deferred this session because only Book runners were up, no live BigSoundland tab.
-
-**%Stream "takes a minute" REFRAMED — it is NOT the source decode.** Instrumented the friend-serve producer
- (which had zero trace marks) with `pcm-decode-start/read/decode-done/stream-first-chunk` (Ra.g+Radio.g, compiled
-  Ra.go @2db4814 / Radio.go @a9d763c5; marks live on `M.c.supply_trace`, `.c`-only so snap-safe). Ran MusuRaStream
-   live: want→first-stream-chunk ≈ **334–415ms** (decode ~160–206ms). The source producer is FAST. So the live
-    minute is the **WIRE** (friend across the relay; the Book source was local) or **Vyto mutex-contention**
-     (the churn-cut targets this). NEXT: when a real Sounditron is up, `world --runner=<source>` and read the new
-      marks — fast there ⇒ chase the wire (`ra_wanted`/park/serve timing, `Swarm_share_present`); slow ⇒ source.
-   ALSO: MusuRaStream steps 13–40 go RED = fixture DRIFT (snap diff, `error:null`; the lead pass makes more chunks
-    ahead than the old fixtures) — streaming is healthy; **re-record owed on a live runner** (confirm with human).
-
-### THE VYTO SPLIT (ruled 2026-07-28 night by the human + the Vyto agent). Read this before any glass work.
-
-**The Vyto agent owns the renderer (Vytui core); the Radio agent (me) feeds C** trees + builds faces.** Two
- agents in Vytui all night = the HMR wedges — so it's a hard seam, no clobbering. **Nesting is NOT shipped
-  yet** — Vytui paints top-level cells only (`all_rows` = `mirror.o()`); `Vyto_solve_scope` computes child
-   `.c.poly`/`.c.T` that nothing draws. The Vyto agent hardens the base first (live-green, the clip-vs-inscribe
-    overlap decision, layout convergence, HMR) THEN owns the nested render. Until then: **ship FLAT (Option 3)**,
-     keep building the Heist C** tree + KeepTree/KeepList/diagnostics faces so they light up the moment the
-      nested draw lands — but DON'T gate any feature on the renderer.
-
-### SHIPPED FLAT this turn (compiled, NOT committed):
-- **Name self-pier bug** — `Radio_lineup_errors` + `Radio_reason` skip the self-pier ("no music coming across
-   from Righto" on Righto is gone). Bug still open: a friend with no `friendly` name shows its prepub (needs a
-    friendly, or the small nick the Vyto agent is adding — left alone to avoid colliding).
-- **Attention dimming** — a live `%Keep` shrinks the always-on secondary organs (Tuner·Riffle·Lineup·Heist) via
-   a negative `sc.dose`; Radio (now-playing) + the Diag toggle stay full; the Keep doses itself up; clears when
-    the last keep leaves (Sounditron trickle).
-- **Diagnostics toggle** — the three diagnostic-flavoured organs (Beat·Uptime·Door — a GUESS, easy to change)
-   are hidden by default and grapple back only when the `🔧 diagnostics` cell (`DiagFace`) is opened
-    (`w.c.show_diag`, `Sounditron_diag_toggle`). Flat; the true nested "diagnostics cell CONTAINING the three"
-     waits on the Vyto renderer.
-- **Deferred (needs the nested renderer or a dose-conflict fix):** opening diagnostics dis-enlarging the Heist;
-   the Heist as a real hierarchy-cell + tracks-cell under one parent (the single `KeepFace` shows dir-grouped
-    hierarchy + tracks in one cell for now).
-
-### THE %STREAM 32s STARVE — FIXED (2026-07-28 night, compiled, NOT committed). The blocker.
-
-Chasing "still fails at 32s" past the census fix turned up the REAL cause (a separate, same-class bug in the
- core streaming producer, reproduced with no heist): the friend-track continuation transcode (a) whole-file
-  DECODED on the beat under the beliefs mutex (seconds of freeze at the seq-16 seam) and (b) produced at
-   break-even 2-chunks/beat (~0.5 chunks/s = the consume rate — zero margin). FIX in **Ra.g**: non-blocking
-    detached decode (`Ra_transcode_ensure`) + a lead-ahead pump (`Ra_transcode_pump` runs the frontier ~48s
-     ahead of the served offset). **Reload both tabs, play a friend track past 32s; re-run `runner_ask.mjs
-      world --runner=<listener>` — the seq-16 `starve` line should be gone.** Full detail + residual suspects:
-       memory `stream-continuation-starve-fix.md`. THIS is the thing to verify first — music must play through.
-
-### SHIP 2 — the Heist as tidy Vyto cells (2026-07-28 night, compiled, NOT committed).
-
-The human's UI vision, built: ⇊ mints a %Keep that appears as its OWN Vyto cell (`KeepFace.svelte`, registered
- in glass_kinds/glass_faces) grappled into the resident `Sounditron_commission`. While PRIMED it sits in the
-  clutter, dose-boosted (`sc.dose='2'`), showing the folder NODULATED by directory (not right-aligned filenames)
-   with a genre datalist to tweak the filing dir + per-track un/keep (seed marked ♪); at end-of-track it auto-
-    starts, FOLDS DOWN (dose deleted) to a progress strip, pulls each %Pick's original into `music/<genre>/`,
-     then the done keep drops itself. `Sounditron_trickle_look` re-commissions on the keep fingerprint so cells
-      appear/leave. RadioFace ⇊ no longer opens the Panel (HeistSetup dormant — retire later). ⚠ Sounditron.g is
-       the human's Vyto-refactor zone — additive, may need reconcile; the visual is a FIRST DRAFT (pixel-blind).
-
-### SHIP 1 — the perf + one-click rewrite (2026-07-28 night, compiled, NOT committed). RELOAD BOTH TABS.
-
-**The whole heist was throttling live playback.** `Heist_rummage_folder` → `Heist_census` read+hashed the
- WHOLE source folder (twice: body_hash + per-chunk cid) INSIDE `Swarm_share_beat`, holding the tick mutex for
-  seconds and starving the same beat's `Ra_transcode_pump` (Swarm.g:1474) — so the listener's continuation
-   wants parked unanswered and **playback ran out at the 32-chunk preview ("runs out at 32s")**, the source tab
-    sat at **30% CPU**, and a folder of bytes pinned in RAM. The continuation mechanism itself (Swarm.g:1483,
-     the head+16 live-window pull) is SOUND; it was being starved. One cause, three symptoms.
-
-**The fix — census is now METADATA-ONLY; bytes read once, on demand, at pull:**
-- `Heist_census_heads(w, lib, nav, base, me)` — walks paths only (Crate_nav_paths already audio-gates), mints
-   chunkless husks (`husk:1`) under a **keep-id** = `Heist_keep_id(me, base, path)` (sha256 of pub+path,
-    DISTINCT from the streaming content-id so a materialised original never upserts onto the seed's opus rec —
-     that was the old review's collision blocker, now dissolved by construction, seed exclusion GONE). ZERO reads.
-- `Heist_materialise_one(w, nav, me, ref)` — the ON-DEMAND single-file inflate: resolve `ref` (a stocked
-   content-id → Ra_stock_ls→card→path, or a describe husk's keep-id → its path), read that ONE file, chunk it
-    with a SINGLE incremental-hash pass (body_hash + per-chunk cid), stamp total, `re:<ref>` back-ref. Idempotent.
-- `Heist_rummage_ask(...,want)` / `Heist_rummage_answer` gained a **`want:<ref>`** mode = "materialise + offer
-   me the ORIGINAL of this one ref" (vs the describe mode = metadata heads). The answer offers the FULL head
-    (total present) so the asker's `Ra_pull_beat` (which bails on total==0) can pull.
-- The serve-lib sweep now **DETACHES** an aged lib (`(rl.c.up||w).drop(rl)`) so its %Body bytes GC — not just
-   filters the list (the retained-RAM half of the 30% CPU).
-
-**The state machine is now ONE-CLICK + DEFERRED** (`Radio_keep` mints `state:'primed'`; ⇊ no longer opens the
- Panel — RadioFace is a clean one-click, the ✓ tick is the only feedback):
-- `primed` → while the seed is STILL the playing track, LINGER (no ask, no pull — never fight the live stream).
-   Once the seed stops playing → `pulling`. (Legacy `wanted`/`asking` keeps route here too.)
-- `pulling` → materialise-ask the seed DIRECTLY (`want:<seed>`, no folder census on the default path), then
-   `Ra_pull_beat` the arriving original + `Heist_land` into `music/<genre>/<source-path>` → `done` (job drops).
-- The **default keep is the seed track only**; the folder-browse (describe) machinery stays wired but DORMANT
-   (no describe asks are sent on the default path) — it becomes SHIP 2's tidy-cell "add more from this folder".
-
-**HUMAN VERIFY (needs two live BigSoundland tabs — reload BOTH, esp. the source, for the new gen):** play a
- friend's track past 32s (continuation should now flow — CPU on the source should be near-idle), click ⇊, let
-  the track END, and confirm the original lands in `/music/<genre>/` while the next track plays. If 32s STILL
-   cuts after a clean reload, the starvation hypothesis is wrong and it's a separate %Stream bug to chase.
-
-**KNOWN v1 edges (follow-ups, not blockers):** the one-file materialise (source) + the land read-back-hash
- (asker) still run on the beat — a bounded ~100-300ms hitch per kept track at a track boundary (time-slice
-  off-mutex later if noticed). A source `path` with a COMMA is a latent encode hazard (Ra_record_from omits
-   path for exactly this reason; the heist NEEDS it for cp-landing — the old census had the same exposure).
-
-### SHIP 2 — the tidy on-screen cell (the human's vision, NOT YET BUILT)
-
-"we show the Heist on screen, it has to be tidy" + "group the same bits of the filenames" (as the prototype did).
- The Vyto renderer is FLAT (one cell per top-level grapple; sub-cells are solved but never painted — extending
-  that is the human's Radio→Vyto refactor zone). So: ONE `KeepFace` cell (the HeistFace-renders-its-children
-   pattern), the `%Keep` grappled into the resident radio commission, `sc.dose` space-favouring it while active,
-    tracks GROUPED by common filename prefix (album-ish). Retire the Panel (`HeistSetup`) once the cell renders.
+**Vocabulary changed 2026-08-05.** The intent particle was `%Keep`; the human ruled it "too weak a
+ word". It is **`%Haul`** now, and its pier field is **`pub:`**, not `at:`. `%Heist` could not take
+  the name — it is already the JOB particle a haul condenses into, and two shapes under one mainkey
+   is the tell CLAUDE.md warns about. The arrangement the human named — `Haul,pub / Heist` — is
+    therefore just what the tree already looks like. Method names are still `Heist_keep_*`: a
+     cosmetic follow-on, cross-file, not worth a churn on its own.
 
 ---
 
-## Superseded — the earlier Panel-Lens build (kept for the engine history below)
+## 0. Next move (read first)
 
-**The whole ⇊ keep→choose→pull arc is now BUILT end-to-end (2026-07-28 evening) and compiled green.**
- What's left is the human's two-tab live verify (an agent can't seal two tabs, `Frontier §3.1 R1`) and
-  reacting to what that shows. The three OPEN questions the earlier handoff parked were RESOLVED by the human:
-1. **Landing dir = `/music` directly** (the human's ruling, overriding the earlier `.jamsend/kept/` rec):
-    "SHOULD be writing into /music directly — with the directory structure agreed upon." → `Heist_music_root()`
-     returns `'music'` (the nav base the stoker digs), landing at `music/<genre>/<source-file>` via the
-      existing `Heist_rel_for` = `<filing-genre>/<cp-path>`. A kept folder is picked up by the next census
-       (`Crate_nav_paths` walks `/music` RECURSIVELY, dot-dirs skipped) — so it just appears in the radio.
-        Every landed byte is still cid + body_hash gated; `Heist_held` (artist+title) dedups already-owned.
-2. **Mirror-scoping = a `rummage:<seed>` TAG** (not a routing change, not a separate manifest). The source's
-    `Heist_rummage_folder` stamps each folder husk `rec.sc.rummage = seed`; it crosses the husk head like
-     title/artist/genre. The husks land MIXED in the friend's `%MusuThem` mirror (live routing is sender-keyed),
-      but the chooser filters `o({Record:1, rummage:seed})` and the pull drives ONLY the chosen `%Pick` recs
-       (each keeps its own `c.rx`/`c.from`). No invasive `Repli_merge` change.
-3. **Chooser home = the Panel Lens, NOT Vyto** (display-neutral, sidesteps the Vyto refactor zone). It's a
-    face-only `Lens:Panel` Funk — `src/lib/O/Funk/HeistSetup.svelte` + one line in `Funk/kinds.ts`, hosted by
-     the global `<Lens kind="Panel">` already mounted in `BigSoundland.svelte`. ⇊ opens it via
-      `Lies_lens_suggest('Panel','HeistSetup',{altitude:88})` (RadioFace.svelte); it closes via
-       `Lies_lens_dismiss`. Copied the `IdHatch.svelte` pattern (FaceSucker fullscreen).
+1. **Live-test the 2026-08-05 batch** (all compiled, none verified on a real tab): the `%Haul`
+    rename, the resume fix in §7, the `- `→`0 ` land rule in §5, and the four HaulFace fixes in §6.
+     Two piers hauling from each other is the test the human has set up.
+2. **`%pub` standardisation, part 2.** `%pub` means a pier's prepub — true everywhere except four
+    identity carriers that put a FULL key under `pub`: the roster `%Identity` row (`Swarm.g:1946`),
+     `%Peering` (`Swarm.g:1171`), `%HostedIdentity` and `%Runner` (`LiesLies.svelte:1593/1607`).
+      Those want `fullpub`. Deliberately NOT in the same batch as the haul rename: it lands in the
+       grant-verification path (`prepubOf(pub) === the HostedIdentity key`) and churns the Cluster
+        fixtures, so a red there would have two suspects. Reads must fall back to `pub` for
+         migration; the WIRE `page.pub` should stay as-is (renaming it breaks an older peer).
+3. **The inter-track rest** (§4) — the pre-ask is supposed to hide the source's materialise behind
+    the tail of the current track, and observably doesn't always. The `ev:'pulls'` electrode was
+     added to show `cap` vs `drove` per haul; it needs a run with the trace armed (§9).
+4. **A general `Dexie/$somewhere ↔ .jamsend/$somewhere` sync.** Haul persistence (§7) is one bespoke
+    pipe; identity has its own bespoke half (`Identity_persist_todo.md` steps 3-4, `Swarm_spec.md
+     §171`, both `[want]`). The human's read: these want to be ONE named-store-each-side mechanism.
+      Not started, likely the next drift.
+5. **`marrauding` is a typo** (double-r) living in the on-disk dir name, the verb, and literals in
+    `Heistation.g` / `Berthation.g`. No recorded fixture contains the string, so the rename is safe
+     whenever wanted — left alone only because those Book files are open in another thread.
 
-**The live state machine** (`%Keep,state`): `wanted` → (driver asks the source to describe the folder,
- throttled 4s) → `asking` → (folder husks land tagged) → `choosing` (HeistSetup shows them) → (human picks
-  genres + tracks, commit writes `%Pick` children) → `committing` (driver pulls + lands each) → `done`.
-   Both roles ride `Swarm_share_beat` → `Heist_keep_beat` (SERVE friends' asks + GO my keeps).
+---
 
-**Adversarial-reviewed (2026-07-28 eve) — 1 blocker + 6 real bugs found and FIXED:**
-- **#1 (blocker) the pull was served from the wrong library.** `Ra_pull_beat`/`Repli_serve_want` serve from the
-   route's caster = the source's OPUS radio stock (`Ra_home_self`), but a rummage husk promises the ORIGINAL
-    file bytes off the source's scratch `RummageLib` — so an unstocked folder track found nothing (spin) and a
-     stocked one served opus that breached `Heist_land`'s hash gate. FIX: `Heist_rummage_folder` registers its
-      census in `w.c.rummage_libs`; `Repli_find_record` searches those FIRST (additive — empty for every Book /
-       idle app); a 120s sweep bounds the window where a served-original id could shadow the radio opus.
-- **#2** lost answer-frame → keep stuck in `asking` (one-shot latch). FIX: re-answer ≤3×, ≥5s apart.
-- **#3** two ⇊-keeps of the SAME folder clobbered each other's `rummage` tag. FIX: multi-valued comma tag +
-   `Heist_rummage_recs` membership filter.
-- **#4** paged mirror records (incl. the seed) invisible to the flat `o()` gate/chooser. FIX: `Heist_rummage_recs`
-   walks `Ra_recs` (Mag-aware); the chooser EXCLUDES the seed (streaming it live — pulling mid-stream fights the
-    radio for the same record/want-cursor).
-- **#5** `committing` had no abandon. FIX: Abandon button + `Heist_keep_cancel` drops the job too.
-- **#6** reload mid-`committing` double-minted the job. FIX: find-or-create `shop.o({Heist,at})`.
-- **#7** landed rows vanished from progress. FIX: progress list reads the `%Pick` children, not the husks.
+## 1. The arc — ⇊ to bytes on disk
 
-**Next move for the next session:** human seals two BigSoundland tabs, plays a friend's track, clicks ⇊, watches
- the chooser fill, commits, confirms files land in `/music/<genre>/`. Suspects if it stalls: `%Rummage` not
-  landing where SERVE looks (`Ra_home_them(rw,asker).o({Rummage:1})`) — trace with the `world` runner_ask op.
-   Known-but-parked: literal same-path clashes at `music/<genre>/<file>` only guarded by `Heist_held` identity
-    dedup (add a disk-exists 'clash' verdict if overwrites happen, Heist.g Heist_held ~178); snap litter
-     (answered `%Rummage` + bay asks not dropped); the 120s rummage-lib shadow window (a rare radio-vs-heist
-      byte glitch for the same track pulled two ways from one source — self-heals on sweep).
+`RadioFace.svelte:84` → `Radio_keep` (`Radio.g:1477`) mints
+ `%Haul:<title>,seed:<content-id>,pub:<their prepub>,state:'primed'` under my own loading zone
+  (`Ra_home_shop`). Idempotent: a second press on the same seed no-ops. Own tracks are already held,
+   so ⇊ only shows on a friend's track.
 
-## What shipped this session (compiled, in the working tree, NOT committed)
+The states:
 
-- **Boot speed** (`Sounditron.go 43695c`, `Radio.go 73981c`): the ~20s-to-relay hang was `Sounditron_
-   stock_settled` waiting for the stoker to reach `idle|spent` while an era-race left `st.sc.stock == null`
-    (the first look returns before its census). Fix: settle on `stock>0` (census now stamped SYNCHRONOUSLY
-     at first resurrect-stand, before any await can interrupt); ceiling 30→15; peer_wait 20→2 when no
-      **Music**-granted friend. **⚠ RE-RECORD the Sounditron fixtures on a live runner + run twice** — the
-       early settle makes the `%Record` shelf count a race (structural drift EntropyArrest won't forgive);
-        the 4 contract assertions still latch. (Adversarial-reviewed; see Findings 1-5 in the session notes.)
-- **Starve self-heal** (`Swarm.go 108977c`): the live cross-relay pull re-asks a still-missing live-window
-   page every 4s (`w.c.ra_want_ts` beside the once-cursor) instead of never-reask — a want lost to the wire
-    (dropped reply / reused-seq collision) used to starve the playhead until a full peer rebirth. This is
-     LIVE-crossing hardening (the human's "both go into 'next piece hasn't arrived' after a little while").
-- **Heist Move 1 (gesture)** (`Radio.go`): `Radio_keep(n)` mints `%Keep,seed,at,state:wanted` under the
-   asker's `Ra_home_shop`; the ⇊ button on RadioFace (friend tracks only, `face.by`) shows ✓ once kept AND
-    opens the chooser (`Lies_lens_suggest('Panel','HeistSetup',...)`).
-- **Heist Move 2 (inflate)** (`Heist.go`, `//#region raheist`): `Heist_rummage_folder` resolves a heard
-   track's content-id → its SOURCE FOLDER (only the source can — a %Record carries no path; `Ra_stock_ls`+
-    `Ra_stock_peek` read the card's base+path), censuses it, and TAGS each husk `rummage:<seed>`. `Heist_
-     rummage_ask`/`Heist_rummage_answer` are the wire verbs (%Heistlet request→reply, reply = folder husks).
-- **Heist Moves 3-4 (choose + pull → /music)** (`Heist.go`, `Swarm.go`, `HeistSetup.svelte`, `kinds.ts`,
-   `RadioFace.svelte`): `Heist_keep_beat` (pumped from `Swarm_share_beat`, guarded) SERVEs friends' asks and
-    GOes each `%Keep` through wanted→asking→choosing→committing→done; `Heist_keep_commit`/`_cancel` are the
-     chooser's verbs; `Heist_keep_pull` mints the job once + pulls each `%Pick` + `Heist_land`s into
-      `music/<genre>/<file>` (`Heist_music_root()='music'`). `HeistSetup.svelte` is the fullscreen chooser
-       (per-artist genre with a datalist, per-track keep/skip + `Heist_held` collision badge, live progress).
-- **Genre capture** (`Crate.go`): `Crate_meta_from_tags` now reads `common.genre[0]` and `Heist_census`
-   stamps it (guarded) so the chooser's default filing is the source's own tag.
+- **primed** — the seed is still the track you are listening to. LINGER: describe the folder
+   (metadata heads only, cheap, no reads) so the face can show a track tree to tweak, default-keep
+    the whole described folder, and dose the cell up so it is space-favoured in the clutter. Never
+     ask for bytes while the seed is playing — that fights the live stream for the same wire.
+- **wanted / asking** — legacy entry points, route into the same branch as primed.
+- **pulling** — the seed stopped playing. Fold down (dose deleted), then materialise + pull + land
+   every `%Pick` through the window in §4.
+- **done** — the ✓ lingers ~8s, the Berth entry is forgotten immediately, then the haul drops
+   itself. A finished haul is scaffolding, not ledger.
+- **choosing / committing** — the dormant `HeistSetup.svelte` chooser path. See the landmine in §4.
 
-## The klepto engine (scope B) stays BUILT + PARKED (Heist_design.md §"Scope B"). Production = scope A above.
+## 2. The particles
+
+    %Haul:<title>,seed:<content-id>,pub:<their prepub>,state:…   the standing intent, under Ra_home_shop
+      %HaulBar,dontSnap                                          the controls cell (HaulBarFace)
+      %Pick,ref:<id>[,artist,title,genre,landed]                 one track, one chip
+      %Heist,at:<their prepub>                                   the JOB — filing decision + landing
+    %Rummage                                                     an ask, in the mirror of whoever asked
+    %Record,husk:1,rummage:<seed>                                a described folder track, not yet materialised
+
+`%Haul` is imposed a face by mainkey (`glass_faces.ts`), so no snap ever changes because the glass
+ chose to dress it. Under the nested glass a `%Haul` goes BARE and tessellates into its `%HaulBar`
+  plus one `%Pick` chip per track.
+
+A **haul-id** (`Heist_keep_id(me, base, path)`, sha256 of pub+path) is deliberately DISTINCT from the
+ streaming content-id, so a materialised original can never upsert onto the seed's opus record.
+
+## 3. The pump — there is no req pile
+
+The heist is **not** driven by the req machine. No ttlilt, no maz level, no todo gate. It rides
+ `Swarm_share_loop` (`Swarm.g:1578`): a plain detached `setTimeout` chain at **~600ms**,
+  era-guarded, and **busy-guarded** — if the previous beat is still running the tick is SKIPPED, not
+   overlapped (added 2026-07-30 after two concurrent steps double-wrote a landing).
+
+Each tick: `post_do` → `Swarm_share_beat` → `Heist_keep_beat` (`Swarm.g:1742`, typeof-guarded and
+ try-wrapped so a heist bug cannot break the radio share) → `Heist_keep_step` per haul.
+
+**600ms is the heartbeat of the whole feature.** Every state transition costs at least one tick, and
+ a beat that overruns costs more than one.
+
+`Heist_keep_beat` also does the source-side housekeeping each beat: prune the `%Transfer` HUD's stale
+ entries, sweep aged serve-libs (30min TTL, DETACHED so their `%Body` bytes GC), release
+  after-serve any rec whose every page has crossed and whose last want is idle, and a ~256MB
+   byte-cap belt that releases oldest-served-first. Those three together are what killed the 3GB
+    source-side cliff.
+
+## 4. The window — backpressure, and the rest between tracks
+
+In the `pulling` branch (`Heist.g:~1528`):
+
+- `heist_inflight` = **2** — at most two picks being worked at once.
+- `heist_overlap` = **24** — open the second slot when the active track is within 24 chunks of done,
+   so the next track's materialise starts while the current one finishes.
+- A pick whose husk has no `total` fires `Heist_rummage_ask`, **throttled 4s**, and shuts the window
+   (a pending materialise is one whole source-side file read).
+- 45s bench watchdog, 5s breach cooldown.
+
+**Why it still rests between tracks.** Three costs, each at least one 600ms tick apart:
+
+1. The landing runs INSIDE the beat. A big track's land (read-back + hash) overruns 600ms, and the
+    busy guard then skips ticks — so the beat that should have pre-asked track N+1 is the beat still
+     finishing track N.
+2. N+1 then has no `total`, so it must ask and wait for the source to materialise. That is the
+    "filehandle takes time to start retrieving".
+3. That ask is throttled 4s, so a mistimed one costs four seconds flat.
+
+The fix is not a bigger `OVERLAP` — it is making the pre-ask independent of the landing beat.
+
+**LANDMINE.** There are two pulling loops. `state:'pulling'` uses the gated one above.
+ `state:'committing'` (`Heist.g:1670`) calls `Heist_keep_pull` — the legacy **ungated** loop that
+  drives `Ra_pull_beat` for every un-landed pick every beat, which is the all-parallel behaviour
+   that ate 3GB on the source. Only reachable from `HeistSetup.svelte:139`, the chooser path the
+    code itself calls dormant. If every progress bar ever advances at once, that is where you are.
+
+## 5. Landing
+
+`Heist_land` → `Heist_land_stream`, per chunk: cid gate, `bin_write`/`bin_append`, release the buf.
+ Then the wire digest, then a whole-file read-back + hash against `body_hash`. A mismatch lands
+  nothing and stamps the breach.
+
+**Paths.** A heist is a **cp**: the source's own filename and folder layout survive unchanged — tags
+ catalog and display a track but never rename the file. `Heist_rel_for` picks the dest-root from the
+  filing decision and the source's relative path rides underneath. If the haul carries a frozen
+   `dirs`/`dirs_auto` pair, `dirs_auto` → `dirs` is substituted at the FRONT of the cp path **only
+    when that record's own leading segments still match** — never a blind rename, so a multi-disc
+     haul's CD1/CD2 divergence below the shared prefix survives.
+
+**Segment safety** (`Heist_safe_seg`, directory levels only — `Heist_cp_path` does not come through
+ it, per the cp ruling): `/` and NUL become `-`; everything else — spaces, punctuation, unicode,
+  mixed case — is KEPT, because the tree should read like a record shelf. And since 2026-08-05, a
+   **leading dash becomes `0 `**: a file or folder whose name starts with `-` cannot be handed to a
+    shell command as a non-flag. `- chill` lands as `0 chill`, matching what the face already shows.
+
+There is no `music/` prefix and no per-job root. Landing is the true FSA root, unconditionally, in
+ dev and prod — except for the mardir seam in §8.
+
+**Categories** sort topward with the same `0 ` marker (`Heist_cat_path`, nests via `/`). Both `-`
+ and `0` still READ as a category everywhere, so nothing on disk needs touching; a collection
+  migrates one touched category at a time.
+
+## 6. The face
+
+`HaulFace.svelte` (was `KeepFace.svelte`). Two separate, never-merged, never-enclosing hierarchies:
+
+- **section** — mine. The category. Stamps its marker automatically, never typed.
+- **directories** — theirs. The shared source-folder prefix across the described tracks. Wired into
+   landing via `Heist_keep_set_dirs`, which freezes BOTH the override and the auto-detected value at
+    edit time.
+
+At rest each is a calm `/segment/segment/` breadcrumb. Click to edit: a row of chips, one per
+ segment, each with its own × and now **editable in place**; a "+" gap before/between/after every
+  chip (N segments ⇒ N+1 gaps) inserts at exactly that position. The ✓ **commits whatever is in the
+   boxes** — it used to only close the editor, silently dropping typed-but-not-ENTERed text.
+    Directories chunks word-break inside a name so one long source folder cannot set the cell's
+     width. Group labels in the track tree no longer restate the directories row: the prefix match
+      is MARKER-BLIND, so `- chill` / `0 chill` / `chill` are one directory.
+
+`Heist_known_categories` / `Heist_known_dirs` scan the library's own `%Record.sc.path` to feed each
+ breadcrumb's datalist, so a near-duplicate folder is a visible choice rather than an accident.
+
+Global remembered defaults (`Heist_defaults_get/_set/_rehydrate`): the category a haul is set to
+ becomes the next haul's default, dual-homed in `H.stashed` (Dexie) and a `HeistDefaults` Berth
+  Waft. `directories` deliberately does not feed this — it is source-specific and means nothing for
+   a different friend's structure.
+
+A folder group of more than 5 tracks collapses by default (a real `<details>`).
+
+**The face used to snap shut, and that was never a heist bug.** `replace()` publishes the empty half
+ of its own transaction, and `agency_officing` (`Hovercraft.svelte:133`) replaces every actor's `w:`
+  children every tick — so Vytui's `{#each vyto_worlds() as w (w)}` got a 0-length list once per
+   tick and destroyed every face in the glass. Fixed at the READER: `ui/micro/hold.ts` plus both
+    Vytui structural gates. Full chain and the three cures: `reactivity_docs.md`, first section.
+     Confirmed live by the human 2026-08-05.
+
+## 7. Persistence and resume
+
+`Heist_keep_persist` writes `%HeistSeed,seed:` with real `%Pick` CHILDREN into the Berth at
+ `.jamsend/berth/<prepub>/Heists`. `Heist_keep_rehydrate` replays them on boot straight into
+  `pulling` (the human already confirmed the haul, before whatever reloaded), then
+   `Heist_resume_sync` does the honest work of finding what is already correctly on disk. Resume is
+    at the LIST level, never inside a file.
+
+**The 2026-08-05 resume bug, and why it matters beyond itself.** Rehydrate ran once per radio-world
+ life, and burnt that one shot on its FIRST LINE — before the Berth read. `nav` comes from
+  `Crate_nav()`, and on the first beat after a reload it is null: the FSA handle restore is async and
+   a fresh grant waits on a human click. So the first beat spent the single shot against a null nav
+    and resume was dead for the entire page life, silently. Now: `if (!nav) return` without burning
+     the gate, the gate burns only after the shelf is actually READ, and a throwing `Berth_open`
+      counts to 10 rather than latching. Same treatment for the caller's `catch`, which had the
+       identical shape.
+
+The general lesson: **a one-shot gate must be spent on success, not on attempt.** Anything gated
+ `if (x) return; x = 1` at the top of an async boot-order-sensitive function has this bug latent.
+
+Berth entries write `pub` from 2026-08-05 and READ `pub || at`, so a heist already persisted under
+ the old key still resumes.
+
+## 8. The test namespace — mardir and sweep
+
+`Heist_mardir(w)` returns `w.c.mardir` or `''`. **`''` means the collection root** — production, and
+ every existing path. Every live landing / newlyadded / resume-sync call routes through it.
+
+This is a seam, not machinery. There are three small things and nothing schedules any of them:
+ `Heist_meta_dir()` (returns `'.jamsend'`), `Heist_marrauding(runid, nick)` (builds
+  `.jamsend/test-marrauding-of-<runid>/<nick>`), and `Heist_sweep()` (14 lines: recurse,
+   `deleteEntry` every file, keep the dir skeleton). Books hand-call the sweep at start and end.
+
+Until 2026-08-05 the marauding header claimed the app passed a real run uid. It did not — both live
+ landing calls passed a literal `''`, so a heist from a live tab landed indistinguishably in the real
+  collection, unsweepable. Setting one runtime knob now buys a sweepable namespace with landing,
+   newlyadded and sweep all unchanged. Runtime-only (`.c`), so no snap moves and production is
+    byte-identical.
+
+`Heist_spawn_swap(job, rel)` rides alongside for the human's own app-testing: any path segment equal
+ to `spawn` (marker-blind, so `- spawn` / `0 spawn` / `spawn` all match) is rewritten to
+  `0 heisted-<from8>-<to8>`.
+
+**Sweeps do not delete directories, on purpose.** A deleted-then-recreated directory strands the
+ nav's cached FSA handle — "the landing that never lands". Aborted runs therefore leave an empty
+  skeleton. Changing this means chasing the handle cache first; it is a real ask, not a one-liner.
+
+## 9. Verifying
+
+Books, always on a LIVE runner (`scripts/runner_ask.mjs`), never `Story_cli_run.mjs`: **MusuHeist**
+ is the end-to-end haul, **Sounditron** the resident-session picture, **MusuLossy** the sweep. The
+  snap-fixture diff is the gate; when a run goes red, diff the actual mismatch with
+   `story_repl.mjs diff` rather than stopping at "red" — the last two reds were both pure fixture
+    staleness.
+
+The supply/heist trace ring (`Radio_trace` → `M.c.supply_trace`, capped 300, ~1 Hz `dial` mark, so
+ only ~4.5 min of history) carries `land` and `pulls` marks for this feature. It flushes to
+  `wormhole/_trace/` via `Lies_dump_supply`, armed by the **same** `socklog_armed()` flag as socklog
+   (the 🪪 hatch toggle / `?socklog` / `?watch`), no reload needed.
+
+**Caveat that will waste your afternoon:** both dumps early-return unless `Lies_role(w)` is `editor`
+ or `runner`, and a plain app tab has no role. Marks pile up in memory and never reach disk. Heist
+  in a runner-booted tab, or drop the role gate on the supply dump.
+
+`scripts/runner_shot.mjs` is the only way to see the render — pixels never round-trip a fixture.
+
+## 10. Performance, as of 2026-08-05
+
+Two real fixes landed after the human reported the downloader burning CPU and the uploader holding
+ comparable memory:
+
+- **O(N²) gone.** `Heist_land_stream` called `Ra_chunk_map(rec)[s]` per chunk — rebuilding the whole
+   map for every chunk of every file. Now `Repli_chunk_bytes(ch)` off the chunk directly. Two
+    sibling probes in `Radio_play_id` went to `Repli_chunk_at(x, 0)` for the same reason. (Still
+     open elsewhere: `Radio.g:1299` has an `Ra_chunk_map(r)[0]` probe inside a loop over every
+      record in `Riffle_deal_shelf` — flagged for that thread, not touched here.)
+- **Native hashing.** `Heist_hash` and the per-chunk cid gate use `sha256_hex_fast` (crypto.subtle)
+   rather than the pure-JS noble path that was 51.8% of the frame. The FORMAT CONTRACT is
+    byte-identical between the two — see `Hashly.ts`. There is no native STREAMING api, so the
+     incremental wire digest is still the one pure-JS pass; whether to drop it is an owed ruling.
+
+## 11. Parked
+
+The klepto engine (scope B, `Heist_design.md`) stays BUILT and PARKED. Production is scope A, above.
+ `HeistSetup.svelte` — the fullscreen chooser Lens — is orphaned; nothing raises it, and the
+  `choosing`/`committing` states exist only to serve it. Retire both together, mind the §4 landmine.

@@ -533,7 +533,60 @@ The owner's brief: *"everything else there sounds munted, can you do a big job f
 - **A throwing sweep is now visible** (`Peeroleum.g`): `%sweep_err` stamps on `w` instead of the cause
    living only in a console nobody reads during a recorded run.
 
-### 9.2 §8.2 is NOT solved — and the first two hypotheses are dead
+### 9.2 §8.2 IS SOLVED — and it was never a Peeroleum bug (2026-08-05, later)
+
+**MusuReplica's inbox never drained because MusuReplica never finished a step.** The Book wedged on the
+ `waitCyto` gate and sat in phase `stepping` forever; nothing downstream of the gate ever ran.
+
+The chain, all in `Story.svelte`:
+
+    snap_step_finish   ── waitCyto && useCyto ─→  awaiting_anim_done = true;  driving = false
+                                                  …parked, waiting for e:Cyto_animation_done
+    e_Cyto_animation_done ─→ story_drive ─→ advance()
+    advance()          ── the ONLY caller of ─→  Run._resolve_runstepped()
+    _resolve_runstepped ── drains ─→ every Runstepped callback, incl. Peeroleum_arm_whittle's sweep
+
+So: no resume → no `advance()` → no `_resolve_runstepped()` → **no whittle sweep, ever**. The un-draining
+ inbox and the never-appearing `%recent` were both one symptom of one wedge, one layer down. `Peeroleum_
+ arm_whittle` was armed correctly the whole time and the cull was correct code that was never reached.
+
+**Both §9.2 hypotheses were right and useless.** "The sweep is not throwing" — true. "`Peeroleum_runstepped`
+ is never CALLED" — true. Neither pointed upstream far enough, because both looked inside Peeroleum. The
+  answer was that MusuReco (which drains) has `waitCyto` **without** `useCyto`, so its gate is false and it
+   walks straight to `advance()`; MusuReplica has both. That one-Opt difference was the whole answer, and
+    §9.2 said as much ("the difference between those two Books is the whole answer") while looking in the
+     wrong file for it.
+
+**The class, not the instance.** Every `useCyto` + `waitCyto` Book was unrunnable on a runner:
+ MusuReplica, VoroScape, VoroClinic, VoroMitosis, LeafFarm, LeafJuggle. Verified independently on
+  VoroScape — nothing to do with Repli, Peeroleum or Crate — which is what proved the cause was the gate
+   and not this session's protocol work.
+
+**The fix: a ceiling on the WAITING side** (`Story.svelte`, `snap_step_finish`). `waitCyto` still holds
+ everywhere, runner included — the wave is test data, not decoration, and Voro wants its beat. But a
+  resume that never comes must never be fatal, so the gate now arms a timer (wave + dwell + 3s + 2s
+   slack) that calls `e_Cyto_animation_done` itself. It is the real handler, not a second resume path:
+    the handler re-checks `awaiting_anim_done`, so a genuine event that beat the timer makes the timer a
+     no-op. Cyto already holds this belief on its own side ("a stuck render can never wedge the Run",
+      the `CEIL_MS` at `Cyto.svelte:1547`); this is the same ceiling where it actually protects the drive.
+
+  A first attempt bypassed the gate outright on a runner (`&& !is_runner()`). It worked, and it was
+   wrong — the human's objection is the correct one: the wave is data, Voro may want to compute across
+    it, and a bypass silently gives runner runs a different world from editor runs. Reverted for the
+     ceiling.
+
+**Still open — why the event never fires.** The render lands (`runner_shot --why` reports `landed step:N`)
+ and the Run House's todo shows *nothing* after `snapped N`, so `e:Cyto_animation_done` is never FIRED,
+  not fired-and-lost. That means `client && w.c.wants_animation_done` (`Cyto.svelte:1554`) is false on a
+   runner. Not chased — the ceiling makes it non-fatal, and Voro/Cyto is being superseded by Vyto.
+    A theory that `_push_todo` appends without waking the House was tested and **disproved** (VoroScape
+     stayed wedged with a wake added); it is not the cause and the wake is not in the tree.
+
+**Result:** MusuReplica runs all 14 steps, all 14 claims identical to the fixture, re-recorded, green on
+ two consecutive verifications. MusuReco (no `useCyto`, untouched path) stayed green — the regression check
+  on the `Story.svelte` edit.
+
+### 9.2b The original §8.2 write-up, kept for the record
 
 MusuReplica still does not drain. Two candidate explanations are now **ruled out by evidence**, which is
  worth more than the guesses were:
@@ -552,6 +605,9 @@ MusuReplica still does not drain. Two candidate explanations are now **ruled out
 Next move: probe whether `Peeroleum_arm_whittle` is reached at all, then whether its queued callback
  fires, comparing against MusuReco — same file, same protocol, armed identically, drains correctly. The
   difference between those two Books is the whole answer.
+
+*(Superseded by §9.2 above — the difference was `useCyto`, and the answer was not in Peeroleum at all.
+ The `w.r()`-in-arm_whittle trap above is still real and still worth heeding.)*
 
 ### 9.3 Fixture churn this creates
 

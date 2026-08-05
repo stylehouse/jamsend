@@ -1,10 +1,10 @@
 <script lang="ts">
-    // KeepFace — the ⇊ "keep what you're hearing" heist AS A TIDY VYTO CELL (the human 2026-07-28: "I DO
+    // HaulFace — the ⇊ "keep what you're hearing" heist AS A TIDY VYTO CELL (the human 2026-07-28: "I DO
     //  want the Heist UI ... in a few Vyto cells ... nodulate down the folder hierarchy ... it can be left
     //   to sit there, you don't have to click start, it'll assume that at some point ... it folds down when
-    //    started").  One face per %Keep (FACE_MAINKEYS/glass_kinds, imposed by mainkey — no %Keep wears
+    //    started").  One face per %Haul (FACE_MAINKEYS/glass_kinds, imposed by mainkey — no %Haul wears
     //     sc.face).  NOT fullscreen: it sits in the clutter while PRIMED, then FOLDS DOWN to a compact
-    //      progress strip once it auto-starts pulling.  Props { n, H } — n is the LIVE %Keep particle.
+    //      progress strip once it auto-starts pulling.  Props { n, H } — n is the LIVE %Haul particle.
     //
     // TWO SEPARATE HIERARCHIES (the human 2026-07-30), never merged, never enclosing the track list they
     //  describe (that would duplicate the folder names the tree below already shows):
@@ -36,7 +36,7 @@
     // LIFECYCLE-TRUE TELL (2026-08-02): the $effect above READS the `n` prop, so it is NOT the
     //  "no-dependency" tell its old comment claimed — Svelte re-fires an $effect's cleanup+body on
     //   every dep bump, spamming destroy→mount with NO real remount (and .sc reads are plain-object,
-    //    non-reactive, so `n?.sc?.Keep` subscribes to nothing — only the bare `n` prop read does).
+    //    non-reactive, so `n?.sc?.Haul` subscribes to nothing — only the bare `n` prop read does).
     //     These three lines CANNOT be fooled: the script body runs exactly once per REAL instance (so
     //      myId is that instance's serial), and onMount/onDestroy fire exactly once per real DOM
     //       mount/unmount.  Read the two side by side next repro:
@@ -49,7 +49,7 @@
     //   with `node scripts/tracelog.mjs --watch --life` instead of copying console.  It is the
     //    INNERMOST rung of the life ladder Vytui now brackets around it (world > stage > faces >
     //     mold > this); whichever OUTER rung climbs alongside it is the actual teardown.
-    lifewatch(H, 'face:Keep', () => String(n?.sc?.Keep || n?.sc?.id || '?'))
+    lifewatch(H, 'face:Keep', () => String(n?.sc?.Haul || n?.sc?.id || '?'))
 
     // in-place editing — SEGMENTS, not one field (the human 2026-07-30, correcting a prior over-
     //  simplification): editing either hierarchy is a row of small chips (one per segment, its own × to
@@ -173,7 +173,7 @@
         const genre = catRaw
         return {
             state,
-            title: String(sc.Keep || 'this track'),
+            title: String(sc.Haul || 'this track'),
             artist: String(sc.artist || ''),
             from: String(sc.from_name || 'a friend'),
             dest: 'music/' + safe(genre) + '/',
@@ -187,8 +187,8 @@
             total_n: +(sc.total_n || 0),
             // LIVE FLOW (the human 2026-07-30 "a little more pizzazz as its transferring") — keep.c.flow is
             //  the real thing, not decoration: a 0.3s-throttled % off the actual rx byte rate (Heist.g's
-            //   pulling branch), already built and already driving KeepBarFace's nested variant; this is
-            //    that same bar wired into the flat KeepFace everyone actually sees today.
+            //   pulling branch), already built and already driving HaulBarFace's nested variant; this is
+            //    that same bar wired into the flat HaulFace everyone actually sees today.
             flow: Math.max(0, Math.min(100, +(n?.c?.flow ?? 0))),
             trackPct: (+(sc.total_n || 0) > 0) ? Math.min(100, Math.round(+(sc.landed_n || 0) / +(sc.total_n || 1) * 100)) : 0,
             describing: state === 'primed' || state === 'wanted' || state === 'asking',

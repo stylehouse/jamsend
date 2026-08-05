@@ -359,7 +359,7 @@
                 const f = face_of(row)
                 const face = f ? f.comp : null
                 const source = f ? f.source : null
-                if (String(ident).indexOf('Keep:') === 0) {
+                if (String(ident).indexOf('Haul:') === 0) {
                     // capture EVERY structural-gate input, keyed by the stable ident so a KEY flip is
                     //  itself caught (prev survives a tok change).  faceNull|face|source feed the inner
                     //   {#if cell.face}; departing|hasKids feed its other two clauses; key feeds the each.
@@ -407,8 +407,8 @@
         //    `if(!s)continue` so it is blind to this.  Diff the emitted Keep-key SET vs last build and
         //     log ONLY the transitions — exactly one line per remount — with WHY (walk / spring / T).
         const sp2 = springs.get(w)
-        const tnKeep = tree_nodes(w).all.filter(nn => nn.key.indexOf('Keep:') === 0)
-        const emitted = new Set(cells.filter(c => c.key.indexOf('Keep:') === 0).map(c => c.key))
+        const tnKeep = tree_nodes(w).all.filter(nn => nn.key.indexOf('Haul:') === 0)
+        const emitted = new Set(cells.filter(c => c.key.indexOf('Haul:') === 0).map(c => c.key))
         const lastEmit = lastKeepEmit.get(w) ?? new Set<string>()
         for (const k of lastEmit) if (!emitted.has(k)) {
             const node = tnKeep.find(nn => nn.key === k)
@@ -550,18 +550,18 @@
             //   Vyto.g log never re-mints/drops it), yet the Face keeps remounting once per trickle —
             //    so the churn must be HERE, in whether this row gets a spring each adopt() pass. Gated
             //     to Keep rows only.
-            const sawKeep = new Set<string>()
+            const sawHaul = new Set<string>()
             for (const n of tree_nodes(w).all) {
-                if (n.key.indexOf('Keep:') === 0) sawKeep.add(n.key)
+                if (n.key.indexOf('Haul:') === 0) sawHaul.add(n.key)
                 const T = target_of(n.row)
                 if (!T) {
-                    if (n.key.indexOf('Keep:') === 0) console.log('◈ Vyto adopt: row.c.T MISSING for', n.key)
+                    if (n.key.indexOf('Haul:') === 0) console.log('◈ Vyto adopt: row.c.T MISSING for', n.key)
                     continue
                 }
                 present.add(n.key)
                 let s = sp.get(n.key)
                 if (!s) {
-                    if (n.key.indexOf('Keep:') === 0) console.log('◈ Vyto adopt: NEW spring (entrance ramp) for', n.key, 'T=', JSON.stringify(T))
+                    if (n.key.indexOf('Haul:') === 0) console.log('◈ Vyto adopt: NEW spring (entrance ramp) for', n.key, 'T=', JSON.stringify(T))
                     // a newcomer springs from x,y AT target with r 0 — the radius ramp IS the entrance.
                     sp.set(n.key, { x: T.x, y: T.y, r: 0, vx: 0, vy: 0, vr: 0 })
                     moved = true
@@ -570,11 +570,11 @@
                 }
             }
             for (const key of [...sp.keys()]) {
-                if (key.indexOf('Keep:') === 0 && !sawKeep.has(key)) console.log('◈ Vyto adopt: row ABSENT from tree_nodes().all for', key, '(not just T-less — gone from the walk entirely)')
+                if (key.indexOf('Haul:') === 0 && !sawHaul.has(key)) console.log('◈ Vyto adopt: row ABSENT from tree_nodes().all for', key, '(not just T-less — gone from the walk entirely)')
             }
             let removed = false
             for (const key of [...sp.keys()]) if (!present.has(key)) {
-                if (key.indexOf('Keep:') === 0) console.log('◈ Vyto adopt: spring REMOVED for', key)
+                if (key.indexOf('Haul:') === 0) console.log('◈ Vyto adopt: spring REMOVED for', key)
                 sp.delete(key); removed = true
             }
 

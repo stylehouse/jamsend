@@ -1588,7 +1588,18 @@ Swarm_share_loop(w, ident):
             w.c.share_beat_running = true
             this.post_do(async () => {
                 if (era !== w.c.share_era) { w.c.share_beat_running = false; return }
+                let t0 = Date.now()
                 try { await this.Swarm_share_beat(w, ident) } catch (er) { this.Swarm_share_why(w, er) }
+                // ELECTRODE (2026-08-05) — BEAT HEALTH, and it is silent in health.  A beat that outruns the
+                //  600ms cadence makes the NEXT tick get skipped by the busy guard above, which is how a long
+                //   landing steals the very window the OVERLAP pre-ask needed.  `ms` is this beat, `skips` is
+                //    the running skip count — a gap in the heist with `ms` spiking here and `skips` climbing is
+                //     that story; a gap with beats staying under 600ms means the cost is elsewhere (see the
+                //      heist's own `ready` mark for the source round trip).
+                let ms = Date.now() - t0
+                if (ms > 600 && typeof this.Radio_trace === 'function') {
+                    this.Radio_trace(null, { ev: 'beat', ms: ms, skips: +(w.c.share_beat_skipped || 0) })
+                }
                 w.c.share_beat_running = false
             })
         }

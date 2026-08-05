@@ -45,11 +45,11 @@
         // the active keep: the furthest-along one (a chooser open on 'choosing' beats a stale 'done').
         const rank: Record<string, number> = { choosing: 4, committing: 3, done: 2, asking: 1, wanted: 0 }
         let keep: any = null
-        for (const k of shop.o({ Keep: 1 })) {
+        for (const k of shop.o({ Haul: 1 })) {
             if (!keep || (rank[k.sc.state] ?? -1) > (rank[keep.sc.state] ?? -1)) keep = k
         }
         if (!keep) return null
-        const them = String(keep.sc.at)
+        const them = String(keep.sc.pub)
         const seed = String(keep.sc.seed)
         const ownlib = A?.Ra_home_self?.(w, me)
         const mir = A?.Ra_home_them?.(w, them)
@@ -89,7 +89,7 @@
         return {
             keep, state: String(keep.sc.state || 'wanted'), them,
             themName: String(keep.sc.from_name || 'a friend'),
-            seedTitle: String(keep.sc.Keep || 'this track'),
+            seedTitle: String(keep.sc.Haul || 'this track'),
             seed, rows, pickRows, seedDropped,
             asks: +(keep.sc.asks || 0),
             landed_n: +(keep.sc.landed_n || 0), total_n: +(keep.sc.total_n || 0),

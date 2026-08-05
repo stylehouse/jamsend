@@ -65,39 +65,39 @@ story:MusuReplica
     waitCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.13
-      sample=0.149,at=1785838916
-      sample=0.149,at=1785838924
-      sample=0.142,at=1785838988
-      sample=0.152,at=1785856120
-      sample=0.203,at=1785856350
-      sample=0.099,at=1785890046
-      sample=0.088,at=1785890307
+    TimeTotal:beliefs,avg=0.139
       sample=0.088,at=1785890376
       sample=0.139,at=1785896459
       sample=0.095,at=1785896583
-    TimeTotal:step,avg=0.009
-      sample=0.011,at=1785838916
-      sample=0.011,at=1785838924
-      sample=0.01,at=1785838988
-      sample=0.011,at=1785856120
-      sample=0.014,at=1785856350
-      sample=0.007,at=1785890046
-      sample=0.006,at=1785890307
+      sample=0.123,at=1785910852
+      sample=0.104,at=1785911650
+      sample=0.073,at=1785911669
+      sample=0.292,at=1785912987
+      sample=0.292,at=1785913012
+      sample=0.103,at=1785913039
+      sample=0.083,at=1785913067
+    TimeTotal:step,avg=0.01
       sample=0.006,at=1785890376
       sample=0.01,at=1785896459
       sample=0.007,at=1785896583
+      sample=0.009,at=1785910852
+      sample=0.007,at=1785911650
+      sample=0.005,at=1785911669
+      sample=0.021,at=1785912987
+      sample=0.021,at=1785913012
+      sample=0.007,at=1785913039
+      sample=0.006,at=1785913067
   step,dige:50568e7a78216459
-  step=2,dige:4d38f8af75bd0b23
-  step=3,dige:ad23aae74454b2cc
-  step=4,dige:09088b05eefea17c
-  step=5,dige:e012a0f74876c9da
-  step=6,dige:7a1237529dbd350b
-  step=7,dige:dc67a69de337009d
-  step=8,dige:a767012626781d64
-  step=9,dige:3b75bdfa56e2f182
-  step=10,dige:1bf38ea90fdb219d
-  step=11,dige:6fc17d37076975d3
-  step=12,dige:49cfb86abe5583f2
-  step=13,dige:019273f9c2afedb2
-  step=14,dige:500539f30efeeda4
+  step=2,dige:2bd93bb8cbaefb4a
+  step=3,dige:17216b2527b05e7b
+  step=4,dige:aea116e25ceb1403
+  step=5,dige:cd4398c1cb64b79a
+  step=6,dige:fe2b99a67b81eb51
+  step=7,dige:6612c9195648be54
+  step=8,dige:8eddd200a2900987
+  step=9,dige:5b2c9d5f028b7a87
+  step=10,dige:a1f13800a94318ca
+  step=11,dige:84e426696acbf0de
+  step=12,dige:1566949eb8f248ea
+  step=13,dige:3ba2a39cf763c263
+  step=14,dige:80fe891f5fab4f04

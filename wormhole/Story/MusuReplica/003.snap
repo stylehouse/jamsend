@@ -14,25 +14,25 @@ Snap:H
           Pier,pub:DJ,req=2,ok
             Ud,pubkey:DJ
             inbox
-              req:unemit,seq,type:repli_lines,body_hash:3fbe99fbecab2addfca4159919af309061217dd2754f8cea13d1445258986025,body_len=156,done,to:repli_lines,finished
-              req:unemit,seq=2,type:repli_lines,body_hash:3ba37aa7b948dc4377e75bf8074029a412ec121337a35f2e8e39c3fc9b4f8c71,body_len=156,done,to:repli_lines,finished
-              req:unemit,seq=3,type:repli_lines,body_hash:b515698d4c461626f4d43c7a7eedef794b1b80e7e22d9e1f83b72644d02b88b7,body_len=156,done,to:repli_lines,finished
+              req:unemit,seq,type:repli_lines,body_hash:1d45ae9cb2076e43a90c49faac82e655a7d2a204bfba8419bbe789338ee81837,body_len=148,done,to:repli_lines,finished
+              req:unemit,seq=2,type:repli_lines,body_hash:b7fc7a55a64ca731eab177e8bfb4da764aa038de778c15c1f0c9c13a95a90dbf,body_len=148,done,to:repli_lines,finished
+              req:unemit,seq=3,type:repli_lines,body_hash:92dd13f8f04bc1f47657594cec304221e054517292d991a4d185edf4aaaaa419,body_len=148,done,to:repli_lines,finished
           active_transport,type:mock,open
         MusuSelf,pub:DJ
           stock,pub:DJ
             Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
-              Fill,name:audio,total=6,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000
             Record,id:rec1,title:Tone-1,artist:Synthetic,seconds=0.3,nchunks=6
-              Fill,name:audio,total=6,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000
             Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
-              Fill,name:audio,total=6,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000
         reached:step_3
         Sent_Tree,pier:DJ,dontSnap
         MusuThem,pub:Crowd
           stock,pub:Crowd
             Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
-              Fill,name:audio,total=6,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000
             Record,id:rec1,title:Tone-1,artist:Synthetic,seconds=0.3,nchunks=6
-              Fill,name:audio,total=6,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000
             Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
-              Fill,name:audio,total=6,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000
