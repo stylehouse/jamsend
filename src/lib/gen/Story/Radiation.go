@@ -10,7 +10,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Radiation(): string { return 'c52b73d1af91b8ca~g1' },
+    Ghostmeta_Ghost_Story_Radiation(): string { return '6c5f3b61f40e0634~g1' },
 
 // Radiation.g — the Ra* PRODUCT Books (rastock → racast → raterm; Radio_todo.md §3), in the
 //  Musuation/Swarmation mould: the file is the artifact; MusuRaStream is the first Book identity.
@@ -968,10 +968,35 @@ async MusuBuddy_flow(w) {
     //  row lands once the mirror holds every chunk, carrying the park|release counts the demand claim reads.
     let rec = (mir && w.c.pick_id) ? this.Ra_rec_find(mir, { Record: 1, id: w.c.pick_id }) : null
     if (rec && +(rec.sc.total || 0) > 0 && !w.c.pull_ok) {
+        // THE SHED PUNCH (2026-08-06, Backpressure_todo §3.1b).  A page does NOT land all-or-nothing:
+        //  each chunk rides its own repli_page frame, so the relay's bulk lane can shed seq off+1 while
+        //   off survives.  Every pull loop used to test the STRIDE-ALIGNED chunk alone as its stand-in for
+        //    "is this page missing", so that hole read as held and was NEVER re-asked — the track froze a
+        //     few chunks short forever (252/255 live, landed:0 on every row).  Nothing in the family could
+        //      catch it: a loopback Book never sheds, so every page always landed whole and the blind
+        //       predicate was always right BY ACCIDENT.
+        //  So punch the hole ON PURPOSE, once, mid-pull: drop an ODD seq from the mirror — never
+        //   stride-aligned while PAGE is even — and require the pull to still reach done.  This is the
+        //    regression gate for Ra_page_hole; with the old test the Book hangs here and never pulls.
+        if (!w.c.punched && +(rec.c.pull_held || 0) > 4) {
+            let PAGE = +(w.c.repli_page || 2)
+            let hole = null
+            let k = 1
+            while (k < +(rec.sc.total || 0)) {
+                if (k % PAGE !== 0 && this.Repli_chunk_at(rec, k)) { hole = k; k = +(rec.sc.total) }
+                k = k + 1
+            }
+            if (hole != null) {
+                w.c.punched = hole
+                rec.drop(this.Repli_chunk_at(rec, hole))
+                w.i({ punched: 1, seq: hole, page_at: hole - (hole % PAGE) })
+            }
+        }
         let r = await this.Ra_pull_beat(w, w.c.rx, w.c.lis_pre, w.c.dj_pre, rec)
         if (r.done) {
             w.c.pull_ok = 1
             let row = { pulled: 1, chunks: r.held }
+            if (w.c.punched != null) row.healed = w.c.punched
             if (w.c.repli_parked) row.parked = w.c.repli_parked
             if (w.c.repli_unparked) row.unparked = w.c.repli_unparked
             w.i(row)
@@ -1092,6 +1117,12 @@ MusuBuddy_witness(w) {
     //  asked) and RELEASED as the transcode advanced — the pulled row carries the counts.
     let pulled = w.o({ pulled: 1 })[0]
     if (n >= 8 && pulled && +(pulled.sc.parked || 0) > 0 && +(pulled.sc.unparked || 0) > 0 && !(w.oa({see: 'the stream chunks did not exist until asked — boundary wants parked at the frontier and released as the transcode advanced'}))) w.i({see: 'the stream chunks did not exist until asked — boundary wants parked at the frontier and released as the transcode advanced'})
+    // LOSS RECOVERY (Backpressure_todo §3.1b): a chunk was dropped from the MIDDLE of a page on purpose
+    //  (the shed punch in LEG 3) at a seq the stride never lands on.  The pull still finished — so the
+    //   re-ask asks PAGE-WIDE and a hole behind a present stride-aligned chunk is still visible to it.
+    //    With the old map[off] test this claim can never be emitted: the pull never reaches done at all.
+    let punched = w.o({ punched: 1 })[0]
+    if (n >= 8 && pulled && punched && +(pulled.sc.healed || 0) > 0 && !(w.oa({see: 'a chunk shed from the middle of a page was noticed and re-asked — the pull finished whole rather than freezing a few chunks short'}))) w.i({see: 'a chunk shed from the middle of a page was noticed and re-asked — the pull finished whole rather than freezing a few chunks short'})
     // the browsed card fetched ITS OWN audio: the named record whole at the mirror and byte-faithful on
     //  the preview weight — while the unbrowsed husk holds ZERO chunks (the promise unspent — pull is
     //   spent per-card by the browse, never broadcast).

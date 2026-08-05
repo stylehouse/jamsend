@@ -21,6 +21,13 @@ Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribu
 
 ## 0. Next move (read first)
 
+0. **READ §3.1b FIRST (found + fixed 2026-08-06).** Every pull loop tested the *stride-aligned
+    chunk* as its stand-in for "is this page missing", so a page that lost ONE chunk to the relay's
+     bulk-lane shed read as held and was **never re-asked** — a permanent invisible hole, `landed:0`
+      forever. The human's "disconnects a lot! burning CPU!" and the 48s decode were **downstream of
+       that single predicate**, not independent problems. Fixed by `Ra_page_hole`. The rule it
+        leaves — *the unit of asking is a page, so the unit of needing must be a page* — governs
+         anything §5.6 builds on this seam. Do not chase `Ra_source_pcm` on the old evidence.
 1. **DONE (2026-08-06): §5.1, §5.3, §5.4's narrow cut, and §5.2's attribution half.** Egress
     lanes carry bulk behind control with confessed shedding; a park signals the sink; the
      landing left the beat via `expecting()`; `Ra_pull_beat` samples per-haul goodput into the
@@ -128,7 +135,7 @@ The Peeroleum leg deserves its own sentence, because it is the stack's ingress q
 
 ---
 
-## 3. The three defects this shape produces
+## 3. The defects this shape produces
 
 ### 3.1 The tail stall ("still a bit stally at the end")
 
@@ -154,6 +161,55 @@ So the tail is where loss recovery is at its worst *and* where we schedule the l
  operation. The crswap fix (§6) shrank the second one ~28× — the `land` electrode's own numbers:
   `wr:31080ms` of a `ms:31777` landing against `wire:397ms` of actual transfer, now ~19ms/chunk —
    which is why "stalls" became "a bit stally". The barrier is smaller; it is still a barrier.
+
+### 3.1b The re-ask was blind to intra-page holes — shedding was silently permanent loss
+ *(FOUND + FIXED 2026-08-06; this is the one that actually caused "disconnects a lot! burning CPU!")*
+
+Every pull loop in the tree tested **`map[off] == null`** — the stride-aligned chunk *alone* — as its
+ stand-in for "is this page still missing". That silently assumes a page lands **all-or-nothing**.
+  It does not: `Repli_serve_chunks` lifts EACH chunk into its own buffer, so each rides its own
+   `repli_page` frame, and three separate mechanisms drop them **one at a time** —
+
+- the relay's **bulk-lane shed** (`Tribunal.g:156`), whose own comment promised *"the sink re-asks,
+   so this is congestion not loss"*;
+- a **cid breach** refusing one chunk's bytes (`Repli_attach_page`);
+- the **page-stash cap** orphaning a page whose lines were lost.
+
+Any of them can take seq `off+1` while `off` survives. The loop then reads the page as held and
+ **never asks again**. `done` is `held >= total`, so the track can never complete — a permanent,
+  invisible hole. This is not a slow path; it is an unreachable one.
+
+**The evidence** (`wormhole/_trace/runner-f5da6599b8505881-1785939454928.jsonl`): `landed:0` on
+ **every** `pulls` row for the entire session, with tracks frozen at `252/255`, `104/109`, `104/119`
+  — climbing normally, then stopping a few chunks short and sitting there through bench, re-ask and
+   reheal, forever.
+
+**Why it read as a network/CPU problem** — the cascade is worth keeping, because every step of it
+ points somewhere other than the cause:
+  nothing lands ⇒ nothing releases ⇒ ~8 tracks of chunk particles accumulate ⇒ the beat degrades
+   (`beat ms=1319 skips=7→8→9`) ⇒ the event loop stalls ⇒ a whole-file read that costs **88ms** and
+    **226ms** on healthy tracks takes **42418ms** ⇒ mark gaps reach 21–23s ⇒ past the relay's **15s**
+     reaper ⇒ socket cut ⇒ reconnect ⇒ in-flight ephemeral pages lost ⇒ *more* tail holes. The
+      disconnects, the CPU burn, and the 48s "decode" were all **downstream of this one predicate**.
+       `Ra_source_pcm` is a victim here, not a culprit — do not go windowing it on this evidence.
+
+**The fix**: `Ra_page_hole(map, off, PAGE, total)` — is ANY seq of `[off, off+PAGE)` missing? — at
+ all five sites (`Ra_pull_beat`'s ask loop and its tail probe, `Ra_stage`'s classifier,
+  `Ra_restock_beat`'s preview loop, `Swarm_share_beat`'s live window). Re-asking a partly-held page
+   re-delivers chunks already in hand; that is deliberate and safe — the stride is FIXED by
+    `Repli_page_ready`'s contract, so a hole *cannot* be asked for on its own, and a re-landed chunk
+     is idempotent (same bytes, same cid).
+
+**The standing rule this leaves:** *the unit of asking is a PAGE, so the unit of "do I still need
+ this" must be a page too.* Any future loop that tests one chunk's presence to decide a page's fate
+  re-opens this. And **shedding is only sound while the re-ask is page-wide** — `Tribunal.g` now
+   says so at the point where it sheds, because that lane's correctness depends on it.
+
+*Attribution note:* `MusuRaChase` is red 56/56 both with and without this change, with **byte-identical
+ step diges** either way — verified by a controlled revert-compile-run on the same runner. Its red is
+  pre-existing (un-accepted fixtures), not this. The general reason no Book moves: `Ra_page_hole` and
+   `map[off]==null` differ *only* when a page has a hole with its first chunk present, which local
+    Book transfers never produce.
 
 ### 3.2 The sink is blind to why a want went unanswered — a timeout is the weakest signal
 

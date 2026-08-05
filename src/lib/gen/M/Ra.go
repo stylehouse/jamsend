@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '67a5e53a68151540~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return 'ffc2a4f47ed28216~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -967,7 +967,7 @@ Ra_stage(w, rec) {
     while (off < total) {
         // PAGE-WIDE (Ra_page_hole): the stride-aligned test made a record with an intra-page hole read
         //  as nothing-outstanding, so its stage settled on 'previewed' while the pull was in fact stuck.
-        if (map[off] == null && wanted[rec.sc.id + ':' + off]) {
+        if (this.Ra_page_hole(map, off, PAGE, total) && wanted[rec.sc.id + ':' + off]) {
             if (off < P) { asked_free = true } else { asked_deep = true }
         }
         off = off + PAGE
@@ -1969,7 +1969,7 @@ async Ra_pull_beat(w, rx, mine, theirs, rec) {
     let last_asked = null
     while (off < total && sent < B && seen < LEAD) {
         // PAGE-WIDE, not stride-aligned-chunk (Ra_page_hole's header for what the old test cost).
-        if (map[off] == null) {
+        if (this.Ra_page_hole(map, off, PAGE, total)) {
             seen = seen + 1
             let key = rec.sc.id + ':' + off
             let parkedAt = w.c.ra_parked && w.c.ra_parked[key]
@@ -2005,7 +2005,7 @@ async Ra_pull_beat(w, rx, mine, theirs, rec) {
     //     "not lost").  One probe per quiet spell: tlp_ts must fall behind the last landing to re-arm.
     let tlp_off = rec.c.last_asked_off
     let TLP_ON = w.c.heist_tlp == null ? 1 : +w.c.heist_tlp      // knob, default on — one line to silence live
-    if (TLP_ON && tlp_off != null && map[tlp_off] == null && held < total) {
+    if (TLP_ON && tlp_off != null && this.Ra_page_hole(map, tlp_off, PAGE, total) && held < total) {
         let key = rec.sc.id + ':' + tlp_off
         let parkedAt = w.c.ra_parked && w.c.ra_parked[key]
         let parked = parkedAt && (nowms - parkedAt < PARK_CEIL)
@@ -2135,7 +2135,7 @@ async Ra_restock_beat(w, mirror, budget) {
             // PAGE-WIDE (Ra_page_hole).  This loop used to test the stride-aligned chunk only, so a
             //  preview with a hole at off+1 asked for NOTHING while the second pass below still marked
             //   it un-whole — the code already knew the truth and only spent it on a counter.
-            if (map[off] == null) {
+            if (this.Ra_page_hole(map, off, PAGE, P)) {
                 whole = false
                 let key = rec.sc.id + ':' + off
                 if (want < B && !w.c.ra_wanted[key] && rec.c.rx && rec.c.from && w.c.repli_mirror_pier) {

@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '2bb04ddad43f1de2~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'dd2b315dd1bee52e~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -1858,7 +1858,7 @@ async Swarm_share_beat(w, ident) {
             // PAGE-WIDE, not the stride-aligned chunk alone (Ra_page_hole, Ra.g).  A live-window page
             //  that lost ONE of its chunks to the relay's bulk-lane shed read as held here, so the
             //   playhead ran into a hole this loop had already decided was filled — and re-asked nothing.
-            if (map[off] == null) {
+            if (this.Ra_page_hole(map, off, PAGE, total)) {
                 let key = String(playing.sc.id) + ':' + off
                 // RE-ASKABLE live-window want (the starve fix, the human 2026-07-28 "both go into 'the
                 //  next piece hasn't arrived' mode after a little while"): a want lost to the wire (a
