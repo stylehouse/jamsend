@@ -2129,7 +2129,7 @@ export class House extends StorableHousing {
             wrap.c.gen = Number(wrap.c.gen ?? 0) + 1
             wrap.c.inflight = undefined
             wrap.c.timed_out = Number(wrap.c.timed_out ?? 0) + 1
-            console.warn(`🗂 wormhole ${what} overran ${WH_OP_TIMEOUT_MS}ms — retrying (attempt ${Number(wrap.c.tries ?? 0) + 1}/${WH_OP_TRIES})`)
+            console.log(`🗂⚠ wormhole ${what} overran ${WH_OP_TIMEOUT_MS}ms — retrying (attempt ${Number(wrap.c.tries ?? 0) + 1}/${WH_OP_TRIES})`)
         }
 
         // CONCURRENCY — reads fan out, writes run alone.

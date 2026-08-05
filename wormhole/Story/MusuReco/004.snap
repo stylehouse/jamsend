@@ -1,9 +1,9 @@
 Snap:H
   H:MusuReco,Run
     A:MusuReco
-      self,round=6	{"mung":["age"]}
+      self,round=7	{"mung":["age"]}
       w:MusuReco
-        self,round=6	{"mung":["age"]}
+        self,round=7	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
@@ -47,6 +47,35 @@ Snap:H
                 unemit:1,type:repli_lines,seq:1,body_len:325
               req:unemit,seq=2,type:repli_lines,body_hash:83cebabfa2acc490215f8d60c7d4789a074f86dc3bd2a66673badfa6bd1e3094,body_len=98,done,to:repli_lines,finished
               req:unemit,seq=3,type:repli_page,body_hash:6c75b45bac3b7e2e2d8e5844f0e34745ee31fd7cab98d3b9d5b51d316dd072ab,body_len=76800,done,to:repli_page,finished
+              req:unemit,seq=4,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=5,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=6,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=7,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=8,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=9,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=10,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=11,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=12,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=13,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=14,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=15,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=16,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=17,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=18,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=19,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=20,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=21,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=22,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=23,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=24,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=25,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=26,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=27,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=28,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=29,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=30,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=31,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
+              req:unemit,seq=32,type:repli_parked,body_hash:bbe7d3d2e328e1f6bfda920a268b216d1e22bf41bd028cdf6162bfcd2b826178,body_len=6,done,to:repli_parked,finished
           active_transport,type:mock,open
         MusuSelf,pub:DJ
           stock,pub:DJ

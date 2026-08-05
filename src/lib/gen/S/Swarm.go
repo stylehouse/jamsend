@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '06cd7c3f25d2657e~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '8bed4b0590160d17~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -683,7 +683,7 @@ async Swarm_station_up(w, ident) {
                 let header = { control: 'hello', from: ident.sc.prepub, pub: ident.c.keys.pub, ts: Date.now() }
                 let sign = await signHeader(header, ident.c.keys.key)
                 port.ws?.send(JSON.stringify(Object.assign({}, header, { sign: sign })))
-            } catch (e) { console.warn('⨳ station hello failed (relay down?)', e) }
+            } catch (e) { console.log('⨳⚠ station hello failed (relay down?)', e) }
             // the per-era VOUCHER: the relay authenticates the LINK (the hello above) but ROUTES
             //  on header.to alone and never checks header.from against the key we sealed, so a
             //   spoofer on any socket could forge a friend's prepub.  We sign a tiny proof our
@@ -695,7 +695,7 @@ async Swarm_station_up(w, ident) {
                 let vh = { control: 'voucher', from: ident.sc.prepub, pub: ident.c.keys.pub, era: w.c.station_era, ts: Date.now() }
                 vh.sign = await signHeader(vh, ident.c.keys.key)
                 w.c.station_voucher = vh
-            } catch (e) { console.warn('⨳ station voucher failed', e) }
+            } catch (e) { console.log('⨳⚠ station voucher failed', e) }
             // the rebirth greeting rides every (re)connect, right behind the hello-bind — same
             //  socket, ordered, so the relay routes it the moment the bind lands.  Routes first:
             //   a reconnect may follow a reload that hasn't re-minted them yet.
@@ -830,6 +830,7 @@ Swarm_note_era(w, route, sf, may_reset) {
         this.Peeroleum_reset_handshake(route)
         delete w.c.ra_wanted
         delete w.c.ra_want_ts
+        delete w.c.ra_parked   // §5.3: a rebirth means the far side forgot every park too — nothing to suspend for
         // a rebirth invalidates what we believe we have OFFERED them: their mirror is empty again.
         //  Clearing the mark makes the next share beat re-husk the whole shelf without waiting for
         //   the floor timer below — the fast path for the case we can actually detect.
@@ -1674,7 +1675,7 @@ async Swarm_share_loop(w, ident) {
         if (era !== w.c.share_era || !w.c.share_up) return
         if (w.c.share_beat_running) {
             w.c.share_beat_skipped = (w.c.share_beat_skipped || 0) + 1
-            if (w.c.share_beat_skipped % 10 === 1) console.warn(`⏳ Swarm_share_beat still running past 600ms — skipping this tick (×${w.c.share_beat_skipped} so far) instead of overlapping it`)
+            if (w.c.share_beat_skipped % 10 === 1) console.log(`⏳ Swarm_share_beat still running past 600ms — skipping this tick (×${w.c.share_beat_skipped} so far) instead of overlapping it`)
         } else {
             w.c.share_beat_running = true
             this.post_do(async () => {
@@ -2199,6 +2200,93 @@ Swarm_steal_back(ident, taken) {
     delete peering.sc.stolen
     peering.bump()
     return addr
+},
+//#endregion
+
+//#region diag — "what is actually wrong right now?", answered once, for the glass
+// Diag_trouble — the single reader behind the trouble badge.  Every entry is a LIVE RE-DERIVATION,
+//  never a stored status: a trouble stops being reported because the CONDITION is gone, not because
+//   someone remembered to clear a flag.  That matters more than it sounds — a badge that can go stale
+//    red teaches the human to ignore the badge, which is worse than having no badge at all.
+//  Ordered worst-first, pure read, and defensively wrapped: a diagnostic that can throw takes down the
+//   glass it was meant to explain, so EVERY probe is independently caught and a broken probe simply
+//    reports itself rather than silencing its siblings.
+//  lvl: 'x' = will not self-heal without intervention;  '!' = degraded but self-healing.
+Diag_trouble(w) {
+    let out = []
+    if (!w) return out
+
+    // ── the consent state of each link.  A HALF-SEALED %Pier is the cruellest failure we have: every
+    //     outbound ask still leaves, the peer still answers, and the answers are dropped on arrival for
+    //      want of a Pier to route them through.  Both ends therefore look merely SLOW — which is why
+    //       this one deserves the top of the list and a sentence that names the asymmetry out loud.
+    try {
+        let self = this.Swarm_live_self()
+        let peering = self ? this.Swarm_peering(self) : null
+        let mine = self ? String(self.sc.pub || '') : ''
+        for (const pier of (peering ? peering.o({ Pier: 1 }) : [])) {
+            let peer = pier.o({ Peering: 1 })[0]
+            let theirs = peer ? String(peer.sc.pub || '') : ''
+            if (!theirs || (mine && theirs === mine)) continue
+            let got_mine = mine ? pier.o({ Grant: 1, by: mine })[0] : null
+            let got_theirs = pier.o({ Grant: 1, by: theirs })[0]
+            if (got_mine && got_theirs) continue
+            let who = pier.sc.friendly || theirs.slice(0, 8)
+            out.push({ lvl: 'x', key: 'halfseal', text: `half-sealed link to ${who} — ${got_theirs ? 'we never granted back' : 'they never granted us'}. Asks leave, answers get dropped; it looks like slowness, it is consent.` })
+        }
+    } catch (er) { out.push({ lvl: '!', key: 'probe', text: 'seal probe failed: ' + (er && er.message || er) }) }
+
+    // ── frames that reached us and died on the doorstep.  Counted at Peeroleum_deliver's no-Pier drop.
+    try {
+        let wd = w.c.wire_drop
+        if (wd) {
+            let total = 0
+            let kinds = []
+            for (const k of Object.keys(wd)) { total = total + (+wd[k] || 0); kinds.push(k + '×' + wd[k]) }
+            if (total > 0) out.push({ lvl: 'x', key: 'wiredrop', text: `${total} frame(s) dropped on arrival — no Pier to route them (${kinds.slice(0, 3).join(' ')})` })
+        }
+    } catch (er) {}
+
+    // ── a heist that is asking and asking and landing nothing.  The single most common shape of "it's
+    //     stuck and I don't know why", and the one the human should never have to read a console for.
+    try {
+        let shop = this.Ra_home_shop(w, this.Radio_pub(w) || 'me')
+        for (const keep of (shop ? shop.o({ Haul: 1 }) : [])) {
+            let asks = +(keep.sc.asks || 0)
+            if (asks < 3) continue
+            let picks = keep.o({ Pick: 1 })
+            let landed = picks.filter((p) => p.sc.landed).length
+            if (landed >= picks.length && picks.length) continue
+            if (landed === 0) out.push({ lvl: 'x', key: 'heist', text: `"${keep.sc.seed || 'heist'}" — 0 of ${picks.length} landed after ${asks} asks. Nothing is arriving.` })
+        }
+    } catch (er) {}
+
+    // ── the wire is behind: pages queued locally, or shed to stay bounded (see Backpressure §5.1 —
+    //     a shed MUST confess, because "sent" upstream has already overcounted by exactly this much).
+    try {
+        let shed = +(w.c.relay_bulk_dropped || 0)
+        let q = +(w.c.relay_bulk_queued || 0)
+        if (shed > 0) out.push({ lvl: '!', key: 'shed', text: `${shed} page(s) shed — the wire fell behind. The sink re-asks, but "sent" overcounts by this much.` })
+        if (q > 0) out.push({ lvl: '!', key: 'queued', text: `${q} page(s) queued behind the wire — congested, not stalled` })
+    } catch (er) {}
+
+    // ── the source parked our want: it is not lost, the encoder frontier just hasn't reached it.
+    try {
+        let parked = w.c.ra_parked ? Object.keys(w.c.ra_parked).length : 0
+        if (parked > 0) out.push({ lvl: '!', key: 'parked', text: `${parked} want(s) parked at the source — waiting on its encoder, not on the wire` })
+    } catch (er) {}
+
+    // ── silence where music should be.
+    try {
+        let radio = w.o({ Radio: 1 })[0]
+        if (radio) {
+            let drops = +(radio.sc.drops || 0)
+            if (radio.sc.Radio === 'starved') out.push({ lvl: 'x', key: 'starved', text: 'the radio is starved — the chunk it needs never arrived and the timeline ran dry' })
+            if (drops > 0) out.push({ lvl: '!', key: 'drops', text: `${drops} dropout(s) spliced — real gaps you would have heard` })
+        }
+    } catch (er) {}
+
+    return out
 },
 //#endregion
 

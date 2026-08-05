@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '29fe0377abdef896~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return 'db67cd18672d02cd~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1642,7 +1642,7 @@ async Ra_transcode_pump(w) {
             //    encoder, not just a slow one. Loud-only, throttled like L1 (bark, then re-bark every 10s).
             if (p.c.parked_at && Date.now() - p.c.parked_at > 20000 && Date.now() - (p.c.warned_at || 0) > 10000) {
                 p.c.warned_at = Date.now()
-                console.warn(`◈⚠ transcode STALLED — parked want id=${id} from_idx=${p.sc.from_idx} waiting ${Math.round((Date.now() - p.c.parked_at) / 1000)}s — the encoder frontier never reached it`)
+                console.log(`◈⚠ transcode STALLED — parked want id=${id} from_idx=${p.sc.from_idx} waiting ${Math.round((Date.now() - p.c.parked_at) / 1000)}s — the encoder frontier never reached it`)
             }
             let rec = this.Repli_find_record(w, id, lib)
             if (!rec) continue
@@ -1895,6 +1895,11 @@ async Ra_pull_beat(w, rx, mine, theirs, rec) {
     let LEAD = +(w.c.heist_want_lead || 32)
     w.c.ra_wanted = w.c.ra_wanted || {}
     w.c.ra_want_ts = w.c.ra_want_ts || {}
+    // §5.3 (Backpressure_todo.md): a repli_parked reply suspends the re-ask for that (id, offset) —
+    //  the source has already said "not lost, stop spending" — but only up to a generous ceiling, so
+    //   a park that never resolves (a dead transcoder) still falls back to the ordinary 4s re-ask
+    //    instead of holding the hole open forever. Cleared wholesale on rebirth (Swarm_note_era).
+    let PARK_CEIL = +(w.c.heist_park_ceiling || 20000)
     let nowms = Date.now()
     let sent = 0
     let seen = 0
@@ -1903,7 +1908,9 @@ async Ra_pull_beat(w, rx, mine, theirs, rec) {
         if (map[off] == null) {
             seen = seen + 1
             let key = rec.sc.id + ':' + off
-            if (nowms - (w.c.ra_want_ts[key] || 0) > 4000) {
+            let parkedAt = w.c.ra_parked && w.c.ra_parked[key]
+            let parked = parkedAt && (nowms - parkedAt < PARK_CEIL)
+            if (!parked && nowms - (w.c.ra_want_ts[key] || 0) > 4000) {
                 w.c.ra_want_ts[key] = nowms
                 w.c.ra_wanted[key] = 1
                 await this.Repli_want_next(w, rx, mine, theirs, rec.sc.id, 'opus', off)
@@ -1919,6 +1926,28 @@ async Ra_pull_beat(w, rx, mine, theirs, rec) {
     let title = rec.sc.title || rec.sc.id
     let id8 = String(rec.sc.id || '').slice(0, 8)
     rec.c.pull_ts = rec.c.pull_ts || nowms
+    // GOODPUT (Backpressure_todo.md §5.2): bytes actually landed for THIS haul vs wire throughput —
+    //  the wire-rate graph (Repli_meter) goes up on a duplicate ask, a re-serve, or a breach-refused
+    //   page; this doesn't. Sampled every ~1.5s like Repli_meter, INDEPENDENT of the held-changed gate
+    //    below, so a re-ask storm with zero landing still shows: wire rate climbing, goodput flat —
+    //     exactly the gap §1.1 says "the graph goes up while the transfer gets worse".
+    let g = rec.c.gp
+    if (!g) g = rec.c.gp = { since: nowms, held0: held, asked: 0 }
+    g.asked = g.asked + sent
+    let gdt = nowms - g.since
+    if (gdt >= 1500) {
+        let landedChunks = held - g.held0
+        let avgChunk = total > 0 ? (+(rec.sc.bytes || 0)) / total : 0
+        let goodput_kbps = avgChunk > 0 ? Math.round(landedChunks * avgChunk * 1000 / gdt / 1024) : 0
+        let xg = this.Repli_xfer_get ? this.Repli_xfer_get() : null
+        if (xg) {
+            let entry = xg.pulls[id8] || (xg.pulls[id8] = { title: title, held: held, total: total, ts: nowms })
+            entry.goodput_kbps = goodput_kbps
+            entry.asked = g.asked
+            entry.landed = landedChunks
+        }
+        g.since = nowms; g.held0 = held; g.asked = 0
+    }
     if (held !== (rec.c.pull_held || 0)) {
         // world-visible supply marks (the human: "reactive speed monitoring … at both ends", "the uploader
         //  should know what's going out"): the heist land cursor rides the SAME capped ring as the stream
@@ -1928,8 +1957,15 @@ async Ra_pull_beat(w, rx, mine, theirs, rec) {
         if (!rec.c.heist_open_marked) { rec.c.heist_open_marked = 1; this.Radio_trace(null, { ev: 'heist-open', id: id8, of: total }) }
         rec.c.pull_held = held; rec.c.pull_ts = nowms
         // transfer HUD: the sink's active pull — track + held/total, for the %Transfer cell + runner_ask world.
+        //  MERGE, don't replace: the goodput sample above may have written goodput_kbps/asked/landed onto
+        //   this same entry earlier in this beat, and a fresh object here would silently drop them.
         let x = this.Repli_xfer_get ? this.Repli_xfer_get() : null
-        if (x) { x.ts = nowms; x.pulls[id8] = { title: title, held: held, total: total, ts: nowms, done: held >= total ? 1 : 0 } }
+        if (x) {
+            x.ts = nowms
+            let entry = x.pulls[id8] || (x.pulls[id8] = {})
+            entry.title = title; entry.held = held; entry.total = total; entry.ts = nowms
+            entry.done = held >= total ? 1 : 0
+        }
         console.log(`◈ pull ${title} ${held}/${total}${held >= total ? ' ✓' : ''}`)
         if (held >= total && !rec.c.heist_done_marked) { rec.c.heist_done_marked = 1; this.Radio_trace(null, { ev: 'heist-done', id: id8, of: total }) }
     } else if (held > 0 && sent > 0 && nowms - rec.c.pull_ts > 12000) {

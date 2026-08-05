@@ -45,10 +45,39 @@ Snap:H
                 unemit:1,type:repli_lines,seq:1,body_len:325
                 unemit:2,type:repli_lines,seq:2,body_len:98
                 unemit:3,type:repli_page,seq:3,body_len:76800
-              req:unemit,seq=4,type:repli_lines,body_hash:1e14791d64bc94044561b59a392f46aad91525d8e4967b6cada4fd52a03c44cd,body_len=99,done,to:repli_lines,finished
-              req:unemit,seq=5,type:repli_page,body_hash:cefaa2b894127e8fd045dacb2ffd36c4f67f8c5a2d96648e43f870ea314aa1a4,body_len=76800,done,to:repli_page,finished
-              req:unemit,seq=6,type:repli_lines,body_hash:c72e741be00bce1a146eae90e9b4822640a05e452bcd6ecca77c1cff090676bb,body_len=99,done,to:repli_lines,finished
-              req:unemit,seq=7,type:repli_page,body_hash:35afe47cdee604d8ce245bfdf2cc4e70b9e990310bde3bc153a17cb2cc32efc6,body_len=76800,done,to:repli_page,finished
+                unemit:4,type:repli_parked,seq:4,body_len:6
+                unemit:5,type:repli_parked,seq:5,body_len:6
+                unemit:6,type:repli_parked,seq:6,body_len:6
+                unemit:7,type:repli_parked,seq:7,body_len:6
+                unemit:8,type:repli_parked,seq:8,body_len:6
+                unemit:9,type:repli_parked,seq:9,body_len:6
+                unemit:10,type:repli_parked,seq:10,body_len:6
+                unemit:11,type:repli_parked,seq:11,body_len:6
+                unemit:12,type:repli_parked,seq:12,body_len:6
+                unemit:13,type:repli_parked,seq:13,body_len:6
+                unemit:14,type:repli_parked,seq:14,body_len:6
+                unemit:15,type:repli_parked,seq:15,body_len:6
+                unemit:16,type:repli_parked,seq:16,body_len:6
+                unemit:17,type:repli_parked,seq:17,body_len:6
+                unemit:18,type:repli_parked,seq:18,body_len:6
+                unemit:19,type:repli_parked,seq:19,body_len:6
+                unemit:20,type:repli_parked,seq:20,body_len:6
+                unemit:21,type:repli_parked,seq:21,body_len:6
+                unemit:22,type:repli_parked,seq:22,body_len:6
+                unemit:23,type:repli_parked,seq:23,body_len:6
+                unemit:24,type:repli_parked,seq:24,body_len:6
+                unemit:25,type:repli_parked,seq:25,body_len:6
+                unemit:26,type:repli_parked,seq:26,body_len:6
+                unemit:27,type:repli_parked,seq:27,body_len:6
+                unemit:28,type:repli_parked,seq:28,body_len:6
+                unemit:29,type:repli_parked,seq:29,body_len:6
+                unemit:30,type:repli_parked,seq:30,body_len:6
+                unemit:31,type:repli_parked,seq:31,body_len:6
+                unemit:32,type:repli_parked,seq:32,body_len:6
+              req:unemit,seq=33,type:repli_lines,body_hash:1e14791d64bc94044561b59a392f46aad91525d8e4967b6cada4fd52a03c44cd,body_len=99,done,to:repli_lines,finished
+              req:unemit,seq=34,type:repli_page,body_hash:cefaa2b894127e8fd045dacb2ffd36c4f67f8c5a2d96648e43f870ea314aa1a4,body_len=76800,done,to:repli_page,finished
+              req:unemit,seq=35,type:repli_lines,body_hash:c72e741be00bce1a146eae90e9b4822640a05e452bcd6ecca77c1cff090676bb,body_len=99,done,to:repli_lines,finished
+              req:unemit,seq=36,type:repli_page,body_hash:35afe47cdee604d8ce245bfdf2cc4e70b9e990310bde3bc153a17cb2cc32efc6,body_len=76800,done,to:repli_page,finished
           active_transport,type:mock,open
         MusuSelf,pub:DJ
           stock,pub:DJ

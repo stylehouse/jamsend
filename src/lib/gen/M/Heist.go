@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'cab047216fcbd425~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '2d7363ddfd6fe36f~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -287,7 +287,7 @@ Heist_xfer_breach(rec, reason) {
     let xf = this.Repli_xfer_get ? this.Repli_xfer_get() : null
     if (xf) { xf.ts = Date.now(); xf.breaches = +(xf.breaches || 0) + 1; xf.last_breach = String(rec.sc.title || rec.sc.id || ''); xf.breach_ts = Date.now() }
     if (this.Radio_trace) this.Radio_trace(null, { ev: 'heist-breach', id: String(rec.sc.id || '').slice(0, 8), why: reason.slice(0, 80) })
-    console.warn(`◈✗ breach: ${rec.sc.title || rec.sc.id} — ${reason}`)
+    console.log(`◈☠ breach: ${rec.sc.title || rec.sc.id} — ${reason}`)
 
 },
 // Heist_unlink — best-effort delete of one file (the breach cleanup: a streamed-but-wrong body must not
@@ -586,14 +586,18 @@ async Heist_land(w, nav, job, own_lib, mir, rec, mardir) {
     if (M) {
         if (!M.c.heist_landing) M.c.heist_landing = new Set()
         if (M.c.heist_landing.has(landkey)) {
-            console.warn(`⇊⚠ Heist_land REFUSED — already landing "${landkey}" (a concurrent caller tried to start a second write)`)
+            console.log(`⇊⚠ Heist_land REFUSED — already landing "${landkey}" (a concurrent caller tried to start a second write)`)
             return
         }
         M.c.heist_landing.add(landkey)
     }
     console.log(`⇊ landing "${filename}" → ${dir} (${total} chunks)`)
     try {
-        await this.Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, rel)
+        // §5.4 (Backpressure_todo.md): the caller needs to KNOW whether this landed or breached —
+        //  Heist_land_stream returns true only past its final success tail (Heist_catalog_land),
+        //   false/undefined off every early-return breach path. Was silently discarded before
+        //    (every caller stamped success unconditionally); now a caller can tell the difference.
+        return await this.Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, rel)
     } finally {
         if (M) M.c.heist_landing.delete(landkey)
     }
@@ -819,6 +823,7 @@ async Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, r
         await nav.bin_write(dir, filename, bytes)
     }
     await this.Heist_catalog_land(nav, mardir, job, own_lib, mir, rec, rel, size)
+    return true
 
 },
 // Heist_catalog_land — the shared tail of a successful landing: note the arrival, mint the catalog card,
@@ -1716,7 +1721,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
                             this.Radio_trace(null, { ev: 'reheal', id: String(ref).slice(0, 8),
                                                      unanswered: +(pick.c.asks_out || 0) })
                         }
-                        console.warn(`⇊⟲ ${pick.c.asks_out} unanswered materialise asks — re-censusing the source folder (its keep-id map is runtime-only and a reload wipes it)`)
+                        console.log(`⇊⟲ ${pick.c.asks_out} unanswered materialise asks — re-censusing the source folder (its keep-id map is runtime-only and a reload wipes it)`)
                         await this.Heist_rummage_ask(w, route, me, at, seed)
                     }
                     await this.Heist_rummage_ask(w, route, me, at, seed, ref)
@@ -1749,19 +1754,70 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
             pulls.push(rheld + '/' + rtot)
             let cooling = rec.c.breach_at && (Date.now() - rec.c.breach_at) < BREACH_COOLDOWN
             if (r && r.done && !cooling) {
-                await this.Heist_land(w, nav, job, own, srcmir, rec, this.Heist_mardir(w))
-                pick.sc.landed = 1
-                // REMEMBER EXACTLY WHAT WE WROTE (2026-08-05), so a cancel can take back precisely these
-                //  files and nothing else.  Same string Heist_land computed as `rel` and the same one a
-                //   %Probation card is keyed by — relative to mardir, so it survives a mardir change.
-                //    Without it, cancelling could only guess at paths, and guessing at a delete is unthinkable.
-                pick.sc.landed_at = this.Heist_rel_for(job, rec)
-                pick.bump()
-                landed = landed + 1
-                pick.c.bench_held = 0
-                pick.c.bench_ts = 0
-                try { await this.Heist_keep_persist(keep) } catch (er) {}   // Berth must know THIS one is done before the next reload
-                continue                                     // a landed track frees its slot for the next pick
+                // §5.4 (Backpressure_todo.md): LANDING LEAVES THE BEAT.  This used to `await Heist_land`
+                //  right here — write+wire-digest+read-back+hash inline, freezing every OTHER pick, this
+                //   keep's own re-ask timer, and every SIBLING %Haul's own Heist_keep_step call for the
+                //    whole cost of one landing (§3.1's tail stall).  expecting() is the "issue, return,
+                //     complete via continuation" primitive Housing.svelte.ts/LiesCortex already ride for
+                //      exactly this shape (Coding_guide.md: hold with an unfinished req, not a bare
+                //       timeout) — its hosted req stays unfinished until the write settles, so a Story
+                //        snap can never catch a half-landed pick, and callers elsewhere already treat it
+                //         as fire-and-forget (no caller awaits its side effects, only its liveness).
+                //  left counts this pick — NOT inflight, NOT the bench watchdog below: a landing pick is
+                //   done pulling (no network slot to hold) but is NOT yet 'landed', and the keep must not
+                //    read as `!left` and flip to state:'done' — which DROPS the keep (Heist_keep_step
+                //     above, the `done` branch) — while its own write is still in flight underneath it.
+                //      pick.c.landing is the single-flight latch: re-entering this pick before the async
+                //       finishes must never kick a second concurrent write at the same path.
+                left = left + 1
+                if (!pick.c.landing) {
+                    pick.c.landing = 1
+                    let landReq
+                    landReq = this.expecting(w, 'heist_land_' + at + '_' + seed + '_' + ref, 120, async () => {
+                        try {
+                            // Heist_land now returns true only past its real success tail (the disk
+                            //  read-back hash gate) — false/undefined on every breach path, which used to
+                            //   be silently discarded so a breach still stamped `landed` on a deleted file.
+                            //    Stamp ONLY on true, exactly mirroring what the inline call always MEANT to
+                            //     do. A breach already re-fires Heist_land next beat via BREACH_COOLDOWN,
+                            //      unchanged.
+                            let ok = await this.Heist_land(w, nav, job, own, srcmir, rec, this.Heist_mardir(w))
+                            if (ok) {
+                                pick.sc.landed = 1
+                                // REMEMBER EXACTLY WHAT WE WROTE (2026-08-05), so a cancel can take back
+                                //  precisely these files and nothing else.  Same string Heist_land computed
+                                //   as `rel` and the same one a %Probation card is keyed by — relative to
+                                //    mardir, so it survives a mardir change.  Without it, cancelling could
+                                //     only guess at paths, and guessing at a delete is unthinkable.
+                                pick.sc.landed_at = this.Heist_rel_for(job, rec)
+                                pick.bump()
+                                pick.c.bench_held = 0
+                                pick.c.bench_ts = 0
+                                // LIVENESS GUARD — a hazard THIS restructuring opens, not one it inherits:
+                                //  a landing that now spans multiple beats can outlive a user's ✕
+                                //   (Heist_keep_cancel rm's the Haul + Heist_keep_forget wipes the Berth
+                                //    entry). Heist_keep_persist's Berth entry is oai (find-or-create), so an
+                                //     unguarded persist from a stale continuation would RESURRECT the very
+                                //      entry the cancel just deleted. Only persist if this keep is still the
+                                //       live one under shop — the disk file itself is left standing either
+                                //        way (a landed track after cancel is a harmless extra file, the same
+                                //         tolerant stance Heist_held's dedup already takes on a re-download).
+                                if (shop.o({ Haul: 1, seed: keep.sc.seed })[0] === keep) {
+                                    try { await this.Heist_keep_persist(keep) } catch (er) {}   // Berth must know THIS one is done before the next reload
+                                }
+                            }
+                        } catch (er) {
+                            keep.c.last_why = '' + (er && er.message || er)
+                        } finally {
+                            pick.c.landing = 0
+                            // scaffolding, not ledger (CLAUDE.md: "an owner drops its finished transient
+                            //  reqs") — one of these mints per LANDED TRACK, so leaving it unswept is
+                            //   exactly the dead-row pile the law warns about, at real heist scale.
+                            if (landReq) { try { w.drop(landReq) } catch (e2) {} }
+                        }
+                    })
+                }
+                continue
             }
             left = left + 1
             inflight = inflight + 1                           // this track is actively pulling
@@ -1771,7 +1827,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
                 pick.c.bench_ts = tnow0
             } else if (pick.c.bench_ts && tnow0 - pick.c.bench_ts > 45000) {
                 pick.c.bench_until = tnow0 + 60000
-                console.warn(`⇊⚠ heist pick BENCHED 60s — ${rec.sc.title || ref} frozen ${rheld}/${rtot} (one stuck track won't hold the album)`)
+                console.log(`⇊⚠ heist pick BENCHED 60s — ${rec.sc.title || ref} frozen ${rheld}/${rtot} (one stuck track won't hold the album)`)
             } else if (!pick.c.bench_ts) {
                 pick.c.bench_ts = tnow0
                 pick.c.bench_held = rheld
@@ -1814,7 +1870,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
         //    held>0, added to stop a per-record "stuck 0/N" flood for queued tracks), so a stuck heist sat
         //     SILENT until a far-tab outbox-backstop warn much later.  Per KEEP: announce the START once, then
         //      if `landed` fails to advance for 15s SHOUT it (throttled 10s) with the counts and a pointer to
-        //       the SOURCE console — where a crashed/quiet source (◈✗ / 🛰⚠ unemit NOT acked) actually shows.
+        //       the SOURCE console — where a crashed/quiet source (◈☠ / 🛰⚠ unemit NOT acked) actually shows.
         //        All on keep.c (never snapped); the mark rides the supply-trace ring like the per-record ones.
         let tnow = Date.now()
         if (!keep.c.pull_started_ts) {
@@ -1845,7 +1901,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
             keep.c.pull_stall_warned = tnow
             let secs = Math.round((tnow - keep.c.pull_progress_ts) / 1000)
             if (this.Radio_trace) this.Radio_trace(null, { ev: 'heist-noprogress', at: String(keep.sc.pub || '').slice(0, 8), asked: +(keep.sc.asks || 0), landed: landed, of: picks.length, secs: secs })
-            console.warn(`⇊⚠ heist NO PROGRESS ${secs}s — ${landed}/${picks.length} landed after ${+(keep.sc.asks || 0)} asks — the SOURCE may have crashed/gone; check its console (◈✗ / 🛰⚠ unemit NOT acked)`)
+            console.log(`⇊☠ heist NO PROGRESS ${secs}s — ${landed}/${picks.length} landed after ${+(keep.sc.asks || 0)} asks — the SOURCE may have crashed/gone; check its console (◈☠ / 🛰⚠ unemit NOT acked)`)
         }
         // LIVE FLOW DIAL (the human 2026-07-29 "jiggling dials that turn up when packets are actually coming"):
         //  a 0.3s-throttled % off the REAL rx byte rate.  keep.c.flow is RUNTIME (never snapped → no fixture

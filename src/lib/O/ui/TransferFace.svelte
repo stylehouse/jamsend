@@ -48,6 +48,7 @@
             breaches: +(x.breaches ?? 0),
             breachRecent,
             lastBreach: String(x.last_breach ?? ''),
+            bulkQueued: +(x.bulk_queued ?? 0),
         }
     })
 
@@ -87,7 +88,7 @@
                 <div class="tf-row" class:done={p.done}>
                     <span class="tf-glyph">⇊</span>
                     <span class="tf-name">{p.title}</span>
-                    <span class="tf-n">{p.held}/{p.total}</span>
+                    <span class="tf-n">{p.held}/{p.total}{p.goodput_kbps != null ? ` · ${p.goodput_kbps}KB/s` : ''}</span>
                     <div class="tf-track"><div class="tf-fill tf-fill-rx" style="width:{pct(p.held, p.total)}%"></div></div>
                 </div>
             {/each}
@@ -113,6 +114,10 @@
 
     {#if view.breaches > 0}
         <div class="tf-drops" class:hot={view.breachRecent}>✗ {view.breaches} landing breach{view.breaches === 1 ? '' : 'es'}{view.lastBreach ? ` · ${view.lastBreach}` : ''}{view.breachRecent ? ' — bytes on disk failed the hash check, retrying' : ''}</div>
+    {/if}
+
+    {#if view.bulkQueued > 0}
+        <div class="tf-drops hot">⇥ {view.bulkQueued} page{view.bulkQueued === 1 ? '' : 's'} queued behind the wire — congested, not stalled</div>
     {/if}
 
     {#if view.freed.length}

@@ -506,7 +506,7 @@
         const mf = (motionFrames.get(w) ?? 0) + 1
         if (cnt >= SETTLE_FRAMES || mf >= MAX_MOTION_FRAMES) {
             if (mf >= MAX_MOTION_FRAMES && cnt < SETTLE_FRAMES) {
-                if (typeof console !== 'undefined') console.warn('[Vyto] watchdog: forced settle after', mf,
+                if (typeof console !== 'undefined') console.log('▣⚠ Vyto watchdog: forced settle after', mf,
                     'frames of unbroken motion — a cell never stopped moving (disp/drift pinned). Landing anyway.', { w })
                 jump_to_target(w); paint_world(w)
             }

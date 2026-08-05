@@ -18,64 +18,93 @@ Snap:H
                 unemit:1,type:repli_lines,seq:1,body_len:325
                 unemit:2,type:repli_lines,seq:2,body_len:98
                 unemit:3,type:repli_page,seq:3,body_len:76800
-                unemit:4,type:repli_lines,seq:4,body_len:99
-                unemit:5,type:repli_page,seq:5,body_len:76800
-                unemit:6,type:repli_lines,seq:6,body_len:99
-                unemit:7,type:repli_page,seq:7,body_len:76800
-                unemit:8,type:repli_lines,seq:8,body_len:99
-                unemit:9,type:repli_page,seq:9,body_len:76800
-                unemit:10,type:repli_lines,seq:10,body_len:99
-                unemit:11,type:repli_page,seq:11,body_len:76800
-                unemit:12,type:repli_lines,seq:12,body_len:99
-                unemit:13,type:repli_page,seq:13,body_len:76800
-                unemit:14,type:repli_lines,seq:14,body_len:99
-                unemit:15,type:repli_page,seq:15,body_len:76800
-                unemit:16,type:repli_lines,seq:16,body_len:99
-                unemit:17,type:repli_page,seq:17,body_len:76800
-                unemit:18,type:repli_lines,seq:18,body_len:99
-                unemit:19,type:repli_page,seq:19,body_len:76800
-                unemit:20,type:repli_lines,seq:20,body_len:100
-                unemit:21,type:repli_page,seq:21,body_len:76800
-                unemit:22,type:repli_lines,seq:22,body_len:100
-                unemit:23,type:repli_page,seq:23,body_len:76800
-                unemit:24,type:repli_lines,seq:24,body_len:100
-                unemit:25,type:repli_page,seq:25,body_len:76800
-                unemit:26,type:repli_lines,seq:26,body_len:101
-                unemit:27,type:repli_page,seq:27,body_len:76800
-                unemit:28,type:repli_lines,seq:28,body_len:101
-                unemit:29,type:repli_page,seq:29,body_len:76800
-                unemit:30,type:repli_lines,seq:30,body_len:101
-                unemit:31,type:repli_page,seq:31,body_len:76800
-                unemit:32,type:repli_lines,seq:32,body_len:101
-                unemit:33,type:repli_page,seq:33,body_len:76800
-                unemit:34,type:repli_lines,seq:34,body_len:101
-                unemit:35,type:repli_page,seq:35,body_len:76800
-                unemit:36,type:repli_lines,seq:36,body_len:101
-                unemit:37,type:repli_page,seq:37,body_len:76800
-                unemit:38,type:repli_lines,seq:38,body_len:101
-                unemit:39,type:repli_page,seq:39,body_len:76800
-                unemit:40,type:repli_lines,seq:40,body_len:101
-                unemit:41,type:repli_page,seq:41,body_len:76800
-                unemit:42,type:repli_lines,seq:42,body_len:101
-                unemit:43,type:repli_page,seq:43,body_len:76800
-                unemit:44,type:repli_lines,seq:44,body_len:101
-                unemit:45,type:repli_page,seq:45,body_len:76800
-                unemit:46,type:repli_lines,seq:46,body_len:101
-                unemit:47,type:repli_page,seq:47,body_len:76800
-                unemit:48,type:repli_lines,seq:48,body_len:101
-                unemit:49,type:repli_page,seq:49,body_len:76800
-                unemit:50,type:repli_lines,seq:50,body_len:101
-                unemit:51,type:repli_page,seq:51,body_len:76800
-                unemit:52,type:repli_lines,seq:52,body_len:101
-                unemit:53,type:repli_page,seq:53,body_len:76800
-                unemit:54,type:repli_lines,seq:54,body_len:101
-                unemit:55,type:repli_page,seq:55,body_len:76800
-                unemit:56,type:repli_lines,seq:56,body_len:101
-                unemit:57,type:repli_page,seq:57,body_len:76800
-                unemit:58,type:repli_lines,seq:58,body_len:101
-                unemit:59,type:repli_page,seq:59,body_len:76800
-                unemit:60,type:repli_lines,seq:60,body_len:101
-                unemit:61,type:repli_page,seq:61,body_len:76800
+                unemit:4,type:repli_parked,seq:4,body_len:6
+                unemit:5,type:repli_parked,seq:5,body_len:6
+                unemit:6,type:repli_parked,seq:6,body_len:6
+                unemit:7,type:repli_parked,seq:7,body_len:6
+                unemit:8,type:repli_parked,seq:8,body_len:6
+                unemit:9,type:repli_parked,seq:9,body_len:6
+                unemit:10,type:repli_parked,seq:10,body_len:6
+                unemit:11,type:repli_parked,seq:11,body_len:6
+                unemit:12,type:repli_parked,seq:12,body_len:6
+                unemit:13,type:repli_parked,seq:13,body_len:6
+                unemit:14,type:repli_parked,seq:14,body_len:6
+                unemit:15,type:repli_parked,seq:15,body_len:6
+                unemit:16,type:repli_parked,seq:16,body_len:6
+                unemit:17,type:repli_parked,seq:17,body_len:6
+                unemit:18,type:repli_parked,seq:18,body_len:6
+                unemit:19,type:repli_parked,seq:19,body_len:6
+                unemit:20,type:repli_parked,seq:20,body_len:6
+                unemit:21,type:repli_parked,seq:21,body_len:6
+                unemit:22,type:repli_parked,seq:22,body_len:6
+                unemit:23,type:repli_parked,seq:23,body_len:6
+                unemit:24,type:repli_parked,seq:24,body_len:6
+                unemit:25,type:repli_parked,seq:25,body_len:6
+                unemit:26,type:repli_parked,seq:26,body_len:6
+                unemit:27,type:repli_parked,seq:27,body_len:6
+                unemit:28,type:repli_parked,seq:28,body_len:6
+                unemit:29,type:repli_parked,seq:29,body_len:6
+                unemit:30,type:repli_parked,seq:30,body_len:6
+                unemit:31,type:repli_parked,seq:31,body_len:6
+                unemit:32,type:repli_parked,seq:32,body_len:6
+                unemit:33,type:repli_lines,seq:33,body_len:99
+                unemit:34,type:repli_page,seq:34,body_len:76800
+                unemit:35,type:repli_lines,seq:35,body_len:99
+                unemit:36,type:repli_page,seq:36,body_len:76800
+                unemit:37,type:repli_lines,seq:37,body_len:99
+                unemit:38,type:repli_page,seq:38,body_len:76800
+                unemit:39,type:repli_lines,seq:39,body_len:99
+                unemit:40,type:repli_page,seq:40,body_len:76800
+                unemit:41,type:repli_lines,seq:41,body_len:99
+                unemit:42,type:repli_page,seq:42,body_len:76800
+                unemit:43,type:repli_lines,seq:43,body_len:99
+                unemit:44,type:repli_page,seq:44,body_len:76800
+                unemit:45,type:repli_lines,seq:45,body_len:99
+                unemit:46,type:repli_page,seq:46,body_len:76800
+                unemit:47,type:repli_lines,seq:47,body_len:99
+                unemit:48,type:repli_page,seq:48,body_len:76800
+                unemit:49,type:repli_lines,seq:49,body_len:100
+                unemit:50,type:repli_page,seq:50,body_len:76800
+                unemit:51,type:repli_lines,seq:51,body_len:100
+                unemit:52,type:repli_page,seq:52,body_len:76800
+                unemit:53,type:repli_lines,seq:53,body_len:100
+                unemit:54,type:repli_page,seq:54,body_len:76800
+                unemit:55,type:repli_lines,seq:55,body_len:101
+                unemit:56,type:repli_page,seq:56,body_len:76800
+                unemit:57,type:repli_lines,seq:57,body_len:101
+                unemit:58,type:repli_page,seq:58,body_len:76800
+                unemit:59,type:repli_lines,seq:59,body_len:101
+                unemit:60,type:repli_page,seq:60,body_len:76800
+                unemit:61,type:repli_lines,seq:61,body_len:101
+                unemit:62,type:repli_page,seq:62,body_len:76800
+                unemit:63,type:repli_lines,seq:63,body_len:101
+                unemit:64,type:repli_page,seq:64,body_len:76800
+                unemit:65,type:repli_lines,seq:65,body_len:101
+                unemit:66,type:repli_page,seq:66,body_len:76800
+                unemit:67,type:repli_lines,seq:67,body_len:101
+                unemit:68,type:repli_page,seq:68,body_len:76800
+                unemit:69,type:repli_lines,seq:69,body_len:101
+                unemit:70,type:repli_page,seq:70,body_len:76800
+                unemit:71,type:repli_lines,seq:71,body_len:101
+                unemit:72,type:repli_page,seq:72,body_len:76800
+                unemit:73,type:repli_lines,seq:73,body_len:101
+                unemit:74,type:repli_page,seq:74,body_len:76800
+                unemit:75,type:repli_lines,seq:75,body_len:101
+                unemit:76,type:repli_page,seq:76,body_len:76800
+                unemit:77,type:repli_lines,seq:77,body_len:101
+                unemit:78,type:repli_page,seq:78,body_len:76800
+                unemit:79,type:repli_lines,seq:79,body_len:101
+                unemit:80,type:repli_page,seq:80,body_len:76800
+                unemit:81,type:repli_lines,seq:81,body_len:101
+                unemit:82,type:repli_page,seq:82,body_len:76800
+                unemit:83,type:repli_lines,seq:83,body_len:101
+                unemit:84,type:repli_page,seq:84,body_len:76800
+                unemit:85,type:repli_lines,seq:85,body_len:101
+                unemit:86,type:repli_page,seq:86,body_len:76800
+                unemit:87,type:repli_lines,seq:87,body_len:101
+                unemit:88,type:repli_page,seq:88,body_len:76800
+                unemit:89,type:repli_lines,seq:89,body_len:101
+                unemit:90,type:repli_page,seq:90,body_len:76800
           active_transport,type:mock,open
         MusuSelf,pub:DJ
           stock,pub:DJ
@@ -106,8 +135,10 @@ Snap:H
         witnessed:refused_unstarted
         witnessed:started_early
         witnessed:outran_then_served
+        witnessed:parked_signalled
         witnessed:complete
         witnessed:real_music
         see:the note crossed with the record — one fragment carried the knowledge and the thing
         see:streaming began while the transcode still ran — nobody waited for the preview set
         see:a want that outran the transcoder parked and was served when the frontier passed it
+        see:the sink was told by wire when its want got parked — not left to infer it from silence

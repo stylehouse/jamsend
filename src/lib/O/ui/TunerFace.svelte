@@ -45,7 +45,10 @@
 {#if crews.length || source.radio}
 <div class="tf">
     {#if source.radio}
-        <div class="tf-title">👂 listening to</div>
+        <!-- the "👂 listening to" title is gone (the human 2026-08-06: "there's not much room"). It was
+             labelling two buttons that already say what they are — ⚯ friends / 💿 my crate — so it spent a
+             whole row to add nothing. Same rule as BeatFace's farewell: in scarce space, a caption that
+             only restates its controls is furniture. -->
         <div class="tf-src">
             <button class="tf-srcbtn" class:on={!source.own}
                 onclick={() => pick_source(false)}

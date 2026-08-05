@@ -23,6 +23,79 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**THE SEAL SELF-HEAL CANNOT SEE THE HALF-SEAL IT IS STANDING IN (2026-08-06) — live blocker.**
+ A heist sat at *0 of 3 landed after 100 asks, 425s*, while Repli reported a cheerful 50KB/s both ways.
+  `runner_ask world` named it in one line: `1 pier, 0 mutually sealed` →
+   `→ one-way (half-seal) Lefto 96d0cf88 grants:[96d0cf885265→Music]`. **Our %Pier holds only THEIR
+    grant.** So asks leave (outbound needs nothing), the source answers, and the answers die on our
+     doorstep — `🛰☠ deliver: no Pier` — which is why both ends read as merely SLOW rather than broken.
+ **Why it never heals.** `Swarm_reaccept_incomplete` (`Swarm.g:707`) is exactly the cure for a half-seal,
+  but its first test is `if (pier.o({Grant:1, by: theirPub})[0]) continue  // already complete`. Ours HAS
+   their grant, so it is judged complete and skipped — it never reaches the `mineC` probe. The function's
+    own comment states the assumption it rests on: *"Cannot false-positive: a redeemer's %Pier is born
+     with BOTH grants (Swarm_accept), so only an issuer half-seal ever matches."* That invariant is
+      violated here. This is the MIRROR of the bug the healer was written for, and the healer is blind to
+       it by construction.
+ **The lesson worth more than the patch:** the healer tests for *the half it expected to be missing*, not
+  for *completeness*. A repair keyed to one direction of an asymmetry will sail past the other direction
+   forever. The predicate should be "do I hold BOTH grants?" — the same question `world` already asks to
+    print `mutually sealed`, which is why the CLI could see in one line what the healer could not.
+ NOT YET FIXED — the fix is a Swarm consent primitive and the human's call. Reproduce with
+  `runner_ask world --runner=<id>`; the tell is `0 mutually sealed` with a non-zero pier count.
+
+**THE PUMP WAS UNKILLABLE; THE DECODER WAS NOT (2026-08-06).**
+ `📻⚠ Radio_pump threw … Cannot call 'decode' on a closed codec` every 400ms forever, radio stuck
+  `starved`, real dead air. Not a wire fault: **WebCodecs closes an `AudioDecoder` ITSELF when a decode
+   errors**, delivering the error to the callback — `Radio_dec_open` latched it (`st.bad = e`) and
+    *nothing in the file ever read it*. So `radio.c.dec` kept pointing at a corpse, and since every
+     re-open branch is guarded `if (!radio.c.dec)`, a dead decoder is strictly WORSE than no decoder —
+      it is the one state that can never heal. `Radio_pump`'s own comment had already reasoned about
+       "a malformed packet reaching `Radio_dec_feed`'s AudioDecoder" and made the **loop** survive it;
+        the missing half was making the **decoder** survive it. The loop's survival is what hid it:
+         a healthy-looking retry cadence with zero progress behind it.
+ Cure (landed): `Radio_dec_dead(st)` — `st.bad` OR `st.dec.state === 'closed'` — checked at the top of
+  the feed loop; drop the corpse, count a drop, let the existing branches re-open dirty. Plus a
+   **poison guard**: if the same `seq` kills a SECOND fresh decoder the packet is bad, not the codec,
+    so splice past it (`dec_bad_at`), because re-opening forever on a bad chunk is the very
+     never-progresses shape, only churning objects.
+ **The bomb for the next person:** a `.c` latch that nobody reads is not diagnostics, it is a silent
+  failure mode with a comment on it. Grep for the other write-only latches before trusting one.
+**MusuRaChase/MusuRaStream ARE RED FOR A DULLER REASON — STALE FIXTURES, NOT A REGRESSION (2026-08-06).**
+ Chased as a §5.x backpressure regression, then as a knock-on of the decoder corpse above. It is
+  neither. `MusuRaChase_drive` (`Radiation.g:378`) pins the swarm clock — `w.sc.now = 1751990000 + 10*n`,
+   the same determinism cure MusuBuddy got — and that pin landed **2026-08-05 in `7935704a`
+    "reductionistic Repli?"** *without a re-record*. **No MusuRaChase fixture carries `now=` at all**
+     (`grep -l 'w:MusuRaChase,now=' … | wc -l` → 0). The world-root line is in EVERY snap, so every one
+      of the 56 steps mismatches on that single key: step 1's whole diff is
+       `w:MusuRaChase` vs `w:MusuRaChase,now=1751990010`, `error:null` throughout.
+ **The trap this sets:** 0% with no errors reads like catastrophe and invites a hunt for a deep
+  regression — but "red from step 1, identical one-key diff, no errors" is the signature of a fixture
+   that predates a deliberate source change. **Diff step 1 FIRST**; it costs one call and would have
+    saved two sessions of suspicion. Corollary: a determinism pin is a fixture-invalidating edit —
+     re-record in the same commit or the Book is dark until someone does.
+ **THE CLAIM IS FINE — that scare is dead.** `%see:'the playhead crossed the first boundary…'`
+  (`Radiation.g:719`) is PRESENT in the live snaps at 14, 30 and 56, exactly as in the fixtures. The
+   earlier "a claim went missing" reading came from a comparison already invalid at step 1; it was
+    wrong, and nothing is lost. Two consecutive runs also produced identical diges (`edd9f464`,
+     `37e6902f`, …), so the pin achieved what it was for: the Book is deterministic again.
+ **The residue decomposes into FOUR committed changes, none of them from the backpressure work** —
+  swept over all 56 steps, then categorised by mainkey (`unemit` 255, `emit` 90, `Stream` 29 at the
+   step-56 plateau):
+   1. the clock pin above — `now=`, `Pier,since:`, `Grant,time:` **and its ed25519 `sign:` recomputed
+       over that time**, `Edge,at:`, `self,round=`;
+   2. `path:` now stamped on EVERY `%Record`, not just heisted ones (`Heist.g:2120`);
+   3. `Peeroleum.g:761` `String(u.sc.seq)` — rows encode `unemit:2` (string) where fixtures hold
+       `unemit=2` (number). One committed edit, 255 diff lines;
+   4. `repli_page`/`repli_lines` reclassified EPHEMERAL (`c72d9613`, 2026-07-29) — **`emit` rows
+       80 → 10**, i.e. the stranded reliable-emit backlog the policy was written to kill.
+  And a behavioural delta on top: **`Stream` chunks landed by step 56 went 16 → 45.**
+ **Why these are still NOT accepted, despite the claim being safe.** A re-record now would bake that
+  16→45 / 80→10 improvement into the fixtures while the tree still holds UNCOMMITTED backpressure
+   work — so the snaps would encode a mix of four committed changes and four uncommitted ones, and
+    no later reader could tell which caused what. **Fixtures follow the code decision; they do not
+     precede it.** Re-record after the working tree is committed, in the same commit, and the
+      accept becomes honest.
+
 **THE GLASS STOPPED TEARING ITSELF DOWN (2026-08-05) — and §13 is new.**
  The bug that made the Keep/directories editor "snap shut" mid-typing was never a Heist bug: `replace()`
   PUBLISHES the empty half of its transaction, `agency_officing` (`Hovercraft.svelte:133`) replaces every
@@ -321,6 +394,51 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
 Known-real problems found in passing that we deliberately DON'T stop the mainline for. Patch them
  opportunistically alongside more relevant work; each names its own proving Book so it lands with a gate.
 
+- **THE INVITE SHOULD OUTLIVE ITS HANDSHAKE — the human's cure for the half-seal (2026-08-06).**
+   *"we should remember the Invite until both parties have agreed they have fully processed it, so we can
+    keep giving all the Grants until done."* That is the right shape and it is bigger than the bug. Today an
+     invite is a MOMENT: `pier_accept` fires once, builds the far side's whole %Pier, and is then forgotten —
+      so any single lost frame strands the pair forever, and `Swarm_reaccept_incomplete` is a patch that
+       re-drives one specific half from one specific side (and is blind to the other, see §0). A remembered
+        invite inverts it: the invite becomes a **standing req** — a thing with liveness that is not finished
+         until BOTH ends confirm they hold BOTH grants — and the re-send stops being a special-case repair and
+          becomes the ordinary behaviour of an unfinished req. That is the house idiom ([[req-is-where-state-
+           belongs]]): *prefer a req over a status string; it carries its own liveness.* It also gives the glass
+            something true to show ("sealing with Lefto — 1 of 2 grants confirmed") instead of a link that
+             silently half-works. Design owed: what "fully processed" means on the wire (an explicit
+              seal_confirm carrying the grant set you hold?), and when the req may finally retire.
+   **HALF-DESIGNED + MOVED (2026-08-06) → `Swarm_compact_invite_todo.md` §9** (that doc already owns the
+    3-frame seal, and its §7c predicted this exact half-seal on 2026-07-27). Five rungs, each standing
+     alone; **rung 1 needs no wire at all** — a side missing its OWN grant re-mints it from its own key.
+      The old garden's `Tyranny.svelte` (`Idzeuganise`) is the reference for a handshake that is allowed
+       to be slow as long as it narrates what it waits on. Leave this bullet as the pointer; design lives there.
+- **UI trims the human asked for 2026-08-06 (space is the scarce resource on the glass).**
+   Vyto has too many cells: **drop the "a peer to come online" cell** and **the Crates cell** for now — the
+    glass should be about the music, and a cell that is usually idle is spending permanent space on an
+     occasional message. **Move the time-alive/uptime readout INTO the list of Piers** — it is networky, it
+      belongs beside the peers rather than owning a cell. (`BeatFace` / `CrateFace` / `DoorFace` are the
+       organs; `DiagFace` is the opt-in gate they already sit behind.)
+- **Transfer graph: floor the vertical extent at 200KB/s, and drop the separate up|down bars.**
+   Today the graph autoscales to whatever is flowing, so 3KB/s of ack chatter draws the same mountain as a
+    real 3MB/s pull — the shape lies about magnitude, which is the one thing a graph is for. A fixed 200KB/s
+     floor makes **tiny amounts look tiny**. The split up/down bars go: they are two competing readings of one
+      link and the human calls them distracting.
+- **SLOW: sprinkle the OLDER Books with `%see:` assertions about clear pointables.** The early Ra*/Musu*
+   rungs were written when the snap-fixture diff WAS the whole gate, so most of them assert nothing by name —
+    they only claim "these 532 lines are what happened". That is a brittle, illegible gate: it reds on any
+     deliberate source change (see §0's four-cause MusuRaChase autopsy — a clock pin, a `path:` stamp, a
+      `String()` and an ephemeral reclassification, none of them regressions), and it says nothing about WHAT
+       the Book proves. Where a Book crosses a boundary a human can name, name it. The model is
+        `Radiation.g:719` — `%see:'the playhead crossed the first boundary onto chunks transcoded on demand'`,
+         gated on `fed.sc.held > 0`: a once-noticed, self-describing claim that survives re-records because it
+          is about MEANING, not bytes. Obvious pointables owed one: the `%Preview`→`%Stream` seam (the
+           encode boundary Radio drains and re-opens a decoder across), first-sound, the resume cursor landing
+            on the chunk the listener actually reached, a grant going live, a mirror freezing on revoke.
+   WHY IT MATTERS BEYOND TIDINESS: a named claim is the only part of a fixture that survives a re-record with
+    its meaning intact — so it is what lets us ACCEPT a legitimately-churned snap without the accept being an
+     act of faith. Every one added makes the next re-record cheaper and the next autopsy shorter.
+   NOT a sweep — do a few whenever you are already inside a Book for another reason. No commas in the
+    sentence (the peel parser splits on them; use an em-dash).
 - ✓ **RESOLVED for the goner-delete (MusuFreeze — Heistation.g:2081).** `Musica_recast_offer` now computes
    `allowed = this.Repli_allowed(w, to, from)` and gates BOTH goner emissions — the cloud delete (Heist.g:1136)
     and the record delete (Heist.g:1150) — so a revoked follower's mirror is frozen, not remotely deletable.

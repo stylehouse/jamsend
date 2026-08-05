@@ -19,6 +19,23 @@
 
     let open = $derived.by(() => { void H?.version; void tick; return !!A?.top_House?.()?.c?.radio_w?.c?.show_diag })
 
+    // THE BADGE. The human 2026-08-06: "'diagnostics' is kinda nothingy... upgrade the UI so I can see
+    //  what kind of crazy BS is going down". A label that says the same word whether the machine is
+    //   perfectly healthy or has been dropping every frame for seven minutes is worse than no label —
+    //    it occupies the exact space where the answer should be. So the cell now SPEAKS its worst news.
+    //  The whole judgement lives in the ghost (Diag_trouble, Swarm.g) — this face only renders it, so
+    //   the console and the glass can never disagree about what is wrong.
+    let trouble = $derived.by(() => {
+        void H?.version; void tick
+        try {
+            const w = A?.top_House?.()?.c?.radio_w
+            if (!w || typeof A?.Diag_trouble !== 'function') return []
+            return (A.Diag_trouble(w) ?? []) as { lvl: string, key: string, text: string }[]
+        } catch (er) { return [] }
+    })
+    let worst = $derived(trouble.find(t => t.lvl === 'x') ?? trouble[0] ?? null)
+    let bad = $derived(trouble.some(t => t.lvl === 'x'))
+
     function toggle() {
         const w = A?.top_House?.()?.c?.radio_w
         if (!w) return
@@ -40,11 +57,23 @@
 </script>
 
 <div class="df">
-    <button class="df-btn" class:open onclick={toggle}
-        title={open ? 'hide diagnostics (beat · uptime · door)' : 'show diagnostics (beat · uptime · door)'}>
-        🔧 diagnostics {open ? '▾' : '▸'}
+    <button class="df-btn" class:open class:bad class:warn={!bad && !!worst} onclick={toggle}
+        title={trouble.length ? trouble.map(t => (t.lvl === 'x' ? '☠ ' : '⚠ ') + t.text).join('\n') : 'nothing wrong — open for beat · uptime · door'}>
+        {#if worst}
+            <span class="df-glyph">{bad ? '☠' : '⚠'}</span>{worst.text}{#if trouble.length > 1}<span class="df-more"> +{trouble.length - 1}</span>{/if}
+        {:else}
+            <span class="df-glyph df-ok">✓</span>nothing wrong
+        {/if}
+        {open ? '▾' : '▸'}
     </button>
     {#if open}
+        {#if trouble.length}
+            <ul class="df-list">
+                {#each trouble as t (t.key + t.text)}
+                    <li class:x={t.lvl === 'x'}>{t.lvl === 'x' ? '☠' : '⚠'} {t.text}</li>
+                {/each}
+            </ul>
+        {/if}
         <div class="df-reset">
             <span class="df-reset-lbl">{resetMsg || 'reset heist state'}</span>
             <DeleteX ondelete={resetHeists} title="drop every standing heist + its saved intent" glyph="🗑" />
@@ -67,6 +96,22 @@
     }
     .df-btn.open { background: #26324a; color: #d7e6f8; border-color: #5877a0; }
     .df-btn:hover { background: #34435f; color: #eaf3ff; }
+    /* the badge wears its severity. Capped width so a long sentence can't shove the glass around —
+       the full set is always in the title, and opening the cell shows every line in full. */
+    .df-btn { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+    .df-btn.warn { background: #33290f; color: #e8cf92; border-color: #7a6224; }
+    .df-btn.bad { background: #3a1620; color: #f3b3bf; border-color: #8d3348; }
+    .df-btn.bad:hover { background: #4d1c2a; color: #ffd9e1; }
+    .df-glyph { margin-right: 4px; }
+    .df-glyph.df-ok { color: #6fbf8a; }
+    .df-more { opacity: 0.7; }
+    .df-list {
+        pointer-events: auto;
+        margin: 4px 0 0; padding: 0; list-style: none;
+        max-width: 300px; font-size: 10px; line-height: 1.45; color: #e8cf92;
+    }
+    .df-list li { padding: 2px 0; border-top: 1px solid #2b3446; white-space: normal; }
+    .df-list li.x { color: #f3b3bf; }
     .df-reset {
         pointer-events: auto;
         display: flex;

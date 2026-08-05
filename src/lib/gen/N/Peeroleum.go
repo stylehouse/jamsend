@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return 'fccbebf3a99c21c6~g1' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '61175420be859024~g1' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -465,6 +465,12 @@ Peeroleum_send(w, frame) {
     //          it only piled the %outbox until the backstop dropped REAL in-flight bytes (the sink stuck at "2
     //           of 95").  Ephemeral = no emit, no flood; the receiver still inboxes + sha256-verifies + acks.
     ephemeral = ephemeral || h.type === 'repli_lines' || h.type === 'repli_page'
+    // repli_parked (Backpressure_todo.md §5.3) joins for the identical reason repli_page/repli_lines
+    //  do: it is the RESPONSE to a self-re-asking want (Repli_park_want), so a reliability emit against
+    //   it would buy nothing the sink's own 4s re-ask timer doesn't already provide, and — with no live
+    //    retx sweep — would only be one more unbounded-%outbox hazard. Ephemeral = no emit, no per-send
+    //     log; still sent + still dispatched (the sink still suspends its RTO for that offset).
+    ephemeral = ephemeral || h.type === 'repli_parked'
     // ── FRAME RELIABILITY POLICY (the full classification; the `ephemeral = …` lines above ARE the gate) ──
     //  ONE law: a frame that OPENS A DOOR (a handshake) or carries PUSHED APP DATA (no re-ask behind it) is
     //   RELIABLE (books an %outbox/emit, culled on ack, retransmitted until acked); a frame that is GOSSIP /
@@ -485,7 +491,8 @@ Peeroleum_send(w, frame) {
     //    (presence heartbeat);  repli_want (pull re-asks every 4s);  ive_got (shelf boast, re-sent every gossip
     //     beat — the frame that DETONATED the live heist);  no_protocol (fire-and-forget control back-signal);
     //      repli_lines, repli_page (the pull RESPONSE data — the pull re-asks any un-merged offset every 4s, so
-    //       a transport retransmit is redundant and, with no live retx sweep, pure %outbox flood).
+    //       a transport retransmit is redundant and, with no live retx sweep, pure %outbox flood);  repli_parked
+    //        (the PARK response — "not lost, stop spending"; the sink's own re-ask timer is the fallback).
     //  CLI control (runner_ask, ghost_compile) is dispatched ephemerally on RECEIVE (no Pier to ack through);
     //   its reply rides the relay's corr-route, never a per-Pier outbox.
     if (pier && !ephemeral) {
@@ -513,7 +520,7 @@ Peeroleum_send(w, frame) {
             let nowms = Date.now()
             if (nowms - (w.c.outbox_cap_warn_ts || 0) > 1000) {
                 w.c.outbox_cap_warn_ts = nowms
-                console.warn(`🛰⚠ outbox backstop: pier ${h.to} holds ${live.length} un-acked emits (cap 2000) — dropped oldest seq=${live[0]?.sc?.seq} type=${live[0]?.sc?.type}; a reliable type is not being acked (peer stalled/gone)`)
+                console.log(`🛰☠ outbox backstop: pier ${h.to} holds ${live.length} un-acked emits (cap 2000) — dropped oldest seq=${live[0]?.sc?.seq} type=${live[0]?.sc?.type}; a reliable type is not being acked (peer stalled/gone)`)
             }
         }
         let emit = box.i(esc)
@@ -594,9 +601,18 @@ async Peeroleum_deliver(w, frame) {
         let dnow = Date.now()
         let dwarn = (w.c.nopier_warn = w.c.nopier_warn || {})
         let dkey = h.type + ':' + String(h.from || '').slice(0, 8)
+        // COUNT EVERY DROP — OUTSIDE the log throttle. A no-Pier drop is the most consequential silent
+        //  failure on the wire (it eats acks and pull responses alike, so BOTH ends look merely slow), and
+        //   until now it existed only as console spray — invisible to the glass, so the human's first clue
+        //    was a heist that never finished. The throttle below is a LOG-VOLUME policy; letting it also
+        //     gate the counter would make the tally undercount by the throttle ratio and quietly reproduce
+        //      the very "sent ≠ arrived" lie this counter exists to expose. .c, so the snap pays nothing.
+        if (!w.c.wire_drop) w.c.wire_drop = {}
+        w.c.wire_drop[h.type] = (+(w.c.wire_drop[h.type] || 0)) + 1
+        w.c.wire_drop_at = dnow
         if (dnow - (dwarn[dkey] || 0) > 2000) {
             dwarn[dkey] = dnow
-            console.warn(`🛰⚠ deliver: no Pier for ${h.type} seq=${h.seq} from=${String(h.from || '').slice(0, 8)} to=${String(h.to || '').slice(0, 8)} — DROPPED${h.type === 'ack' ? ' — a dropped ack strands the sender emit' : ''}`)
+            console.log(`🛰☠ deliver: no Pier for ${h.type} seq=${h.seq} from=${String(h.from || '').slice(0, 8)} to=${String(h.to || '').slice(0, 8)} — DROPPED${h.type === 'ack' ? ' — a dropped ack strands the sender emit' : ''}`)
         }
         // transfer HUD (the human 2026-07-30 "track why it's not working great"): count the drops that STALL a
         //  transfer — a repli_want/data/ack dropped on a torn socket is exactly the "next piece hasn't arrived"
@@ -703,7 +719,7 @@ async Peeroleum_deliver(w, frame) {
             pier.c.reseq_warn_ts = pier.c.reseq_warn_ts || {}
             if (nowms - (pier.c.reseq_warn_ts[h.type] || 0) > 1000) {
                 pier.c.reseq_warn_ts[h.type] = nowms
-                console.warn(`🛰⚠ reused-seq collision seq=${h.seq} type=${h.type} from=${h.from} — re-acked, not re-dispatched (stale inbox history; a reborn peer wants the epoch reset)`)
+                console.log(`🛰⚠ reused-seq collision seq=${h.seq} type=${h.type} from=${h.from} — re-acked, not re-dispatched (stale inbox history; a reborn peer wants the epoch reset)`)
             }
             H.feebly_ponder()
             return
@@ -724,7 +740,7 @@ async Peeroleum_deliver(w, frame) {
             pier.c.held[seq] = frame
             // a hold must be LOUD, never silent: on a lossy carrier it is legitimate (retransmit will fill the
             //  gap), but on anything else it is the wedge this whole gate exists to prevent — so it screams.
-            console.warn(`⚠ inseq HOLDING seq=${seq} type=${h.type} — gap above last=${pier.c.inseq.last} (need ${pier.c.inseq.last + 1}); legitimate only on a lossy carrier, else a wedge`)
+            console.log(`🛰⚠ inseq HOLDING seq=${seq} type=${h.type} — gap above last=${pier.c.inseq.last} (need ${pier.c.inseq.last + 1}); legitimate only on a lossy carrier, else a wedge`)
         }
         H.feebly_ponder()
         return
@@ -857,7 +873,7 @@ Peeroleum_bound_inbox(inbox, w, pier) {
         let nowms = Date.now()
         if (nowms - (w.c.inbox_cap_warn_ts || 0) > 1000) {
             w.c.inbox_cap_warn_ts = nowms
-            console.warn(`🛰⚠ inbox backstop: pier ${pier%pub} holds ${live.length} unemits (cap 2000) — dropped oldest seq=${live[0]?.sc?.seq} type=${live[0]?.sc?.type}; frames are arriving faster than they finish`)
+            console.log(`🛰☠ inbox backstop: pier ${pier%pub} holds ${live.length} unemits (cap 2000) — dropped oldest seq=${live[0]?.sc?.seq} type=${live[0]?.sc?.type}; frames are arriving faster than they finish`)
         }
     }
 
@@ -915,7 +931,7 @@ async req_unemit(req) {
             if (!H.Peeroleum_peer_ready(pier)) { ok = false; reason = 'startup-hold' } else {
                 let me = pier.c.up.sc.name
                 H.Peeroleum_send(w, {header: {type: 'no_protocol', from: me, to: pier.sc.pub, about: h.type, re_seq: h.seq}})
-                console.warn(`🛰 Peeroleum: no handler for '${h.type}' from ${h.from} — sent no_protocol back (unsupported protocol) instead of losing it silently.`)
+                console.log(`🛰⚠ Peeroleum: no handler for '${h.type}' from ${h.from} — sent no_protocol back (unsupported protocol) instead of losing it silently.`)
             }
         }
         // noop / no_protocol reaching here: nothing to deliver — ok stays true → done + acked below.
@@ -956,7 +972,7 @@ async req_unemit(req) {
             if (nowms - (warned[wkey] || 0) > 1000) {
                 warned[wkey] = nowms
                 let extra = reason === 'bad-body-hash' ? ` got_len=${frame.buffer && frame.buffer.length} want=${h.body_len}` : (reason === 'handler-threw' ? ` — ${req.c.threw_msg || ''}` : '')
-                console.warn(`🛰⚠ unemit NOT acked seq=${h.seq} type=${h.type} from=${String(h.from || '').slice(0, 8)} — ${reason}${extra}; sender's emit strands (self-heals via the app-layer re-ask)`)
+                console.log(`🛰⚠ unemit NOT acked seq=${h.seq} type=${h.type} from=${String(h.from || '').slice(0, 8)} — ${reason}${extra}; sender's emit strands (self-heals via the app-layer re-ask)`)
             }
         }
         // the %faulty roll-up is NOT done here: req_unemit is inbox.do()'s do_fn, so it runs INSIDE the

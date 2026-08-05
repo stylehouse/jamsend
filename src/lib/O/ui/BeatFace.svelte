@@ -48,7 +48,11 @@
 
 <div class="bf">
     {#if face.done}
-        <div class="bf-now bf-done">all set — the machine’s alive and listening</div>
+        <!-- Boot finished: say NOTHING. The human 2026-08-06: "the 'all set — the machine's alive…' I
+             could do without, there's not much room." A narrator that keeps talking after its story has
+             ended is just furniture, and here it was furniture parked in the scarcest space on the glass.
+             The settled note still earns its line; the "nothing is wrong" reassurance is DiagFace's job
+             now, and it says it in three words while also being able to say when something IS wrong. -->
         {#if face.settled}<div class="bf-trail">{face.settled}</div>{/if}
     {:else}
         <!-- the living tail: after a few seconds the clause admits it's "still" at it, and a faint elapsed
@@ -75,7 +79,6 @@
     /* the living clause — the sentence that's currently opening */
     .bf-now { font-size: 12px; font-weight: 700; line-height: 1.3; }
     .bf-now.waiting { color: #e6c48a; }
-    .bf-done { color: #a8e0b0; }
     .bf-wt { font-size: 10px; font-weight: 400; opacity: 0.6; font-variant-numeric: tabular-nums; }
     .bf-wt.over { color: #e0a86a; opacity: 0.9; }
     /* the trail of what already came up — small, quiet, wraps as it grows */

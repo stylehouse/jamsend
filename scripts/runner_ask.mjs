@@ -335,8 +335,8 @@ else if (op === 'snap' && reply.result?.got_snap) {
 		const x = r.xfer
 		const pulls = Object.values(x.pulls ?? {})
 		const serves = Object.values(x.serves ?? {})
-		console.log(`\nxfer: ${x.rx_kbps ?? 0}↓ / ${x.tx_kbps ?? 0}↑ KB/s${x.drops ? `, ${x.drops} dropped (last: ${x.last_drop})` : ``}${x.breaches ? `, ${x.breaches} breach${x.breaches === 1 ? `` : `es`} (last: ${x.last_breach})` : ``}`)
-		for (const p of pulls) console.log(`  ⇊ ${p.title} ${p.held}/${p.total}${p.done ? ` ✓` : ``}`)
+		console.log(`\nxfer: ${x.rx_kbps ?? 0}↓ / ${x.tx_kbps ?? 0}↑ KB/s${x.drops ? `, ${x.drops} dropped (last: ${x.last_drop})` : ``}${x.breaches ? `, ${x.breaches} breach${x.breaches === 1 ? `` : `es`} (last: ${x.last_breach})` : ``}${x.bulk_queued ? `, ${x.bulk_queued} page(s) queued behind the wire (§5.1 bulk lane — congested, not stalled)` : ``}`)
+		for (const p of pulls) console.log(`  ⇊ ${p.title} ${p.held}/${p.total}${p.done ? ` ✓` : ``}${p.goodput_kbps != null ? `  goodput=${p.goodput_kbps}KB/s asked=${p.asked ?? 0} landed=${p.landed ?? 0}` : ``}`)
 		for (const s of serves) console.log(`  ⇈ ${s.title} ${s.n}/${s.total} →${s.to}`)
 		for (const f of (x.freed ?? []).slice(0, 3)) console.log(`  ↯ freed ${f.title}`)
 	}

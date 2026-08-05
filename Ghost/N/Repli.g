@@ -151,7 +151,7 @@ Repli_loc_for(node, keys):
     let seen = (this.c.repli_unknown_mk = this.c.repli_unknown_mk || {})
     if (!seen[keys[0]]) {
         seen[keys[0]] = 1
-        console.warn(`🛰⚠ repli: no identity declared for mainkey %${keys[0]} (keys: ${keys.join(',')}) — falling back to ALL keys, which SPLITS. Add a row to Repli_identity_keys.`)
+        console.log(`🛰☠ repli: no identity declared for mainkey %${keys[0]} (keys: ${keys.join(',')}) — falling back to ALL keys, which SPLITS. Add a row to Repli_identity_keys.`)
     }
     return keys.slice()
 
@@ -473,7 +473,7 @@ Repli_page_ready(rec, from, PAGE):
 //  serving Pier (a plain particle, not a %req — there is nothing to pump; the transcoder's advance is the
 //   event that serves it).  oai keeps a re-asked offset one particle; w.c.repli_parked counts fresh parks
 //    for the witnesses.  from_idx rides as a string so a literal query never trips the {k:1} wildcard.
-Repli_park_want(w, pier, h):
+async Repli_park_want(w, pier, h):
     let p = pier.oai({ parked_want: 1, id: h.id, stream: h.stream, from_idx: '' + (+(h.from_idx || 0)) })
     p.c.up = pier
     if (!p.c.counted) {
@@ -482,7 +482,28 @@ Repli_park_want(w, pier, h):
         p.c.reply_from = h.to
         p.c.parked_at = Date.now()
         w.c.repli_parked = (w.c.repli_parked || 0) + 1
+        // §5.3 (Backpressure_todo.md): tell the sink it's not lost — ECN semantics, "not lost, stop
+        //  spending" — instead of leaving it to guess against an ambiguous 4s timeout. Ephemeral by the
+        //   FRAME RELIABILITY POLICY (Peeroleum.g): it is the response to a self-re-asking want, so
+        //    losing it costs nothing — the sink just falls back to the timer it already has. MUST ride
+        //     Peeroleum_send's ephemeral set AND Tribunal's ambient log map (§9.1) or it re-creates the
+        //      outbox melt / log flood those two lists exist to prevent.
+        let seq = this.Pier_next_seq(pier)
+        let body = new TextEncoder().encode('parked')
+        let bh = await this.Peeroleum_body_digest(body)
+        this.Peeroleum_send(w, { header: { type: 'repli_parked', from: h.to, to: h.from, id: h.id, stream: h.stream, from_idx: h.from_idx, seq: seq, body_hash: bh, body_len: body.length }, buffer: body })
     }
+
+// Repli_recv_parked — the SINK hearing its want got parked, not lost: suspend the RTO for this
+//  (id, offset) rather than let it burn re-ask budget against a source that has already answered.
+//   w.c.ra_parked rides beside ra_want_ts/ra_wanted (Ra_pull_beat) — same key shape, cleared together
+//    on rebirth (Swarm_note_era). The suspension is bounded (Ra_pull_beat's PARK_CEIL), not indefinite:
+//     a park that never resolves (a dead transcoder) must still fall back to the ordinary re-ask.
+Repli_recv_parked(w, frame):
+    let h = frame.header
+    if (h.id == null) return
+    w.c.ra_parked = w.c.ra_parked || {}
+    w.c.ra_parked[h.id + ':' + (+(h.from_idx || 0))] = Date.now()
 
 // Repli_serve_parked — the transcoder advanced: every parked want whose page is NOW ready re-enters
 //  Repli_serve_want with its remembered addressing, and the spent %parked_want goes; the rest keep
@@ -580,6 +601,12 @@ Repli_meter(w, dir, frames, bytes):
         if (x) {
             x.ts = nowms; x.rx_kbps = rx_kbps; x.tx_kbps = tx_kbps
             x.spark.push(rx_kbps); if (x.spark.length > 32) x.spark.shift()
+            // the §5.1 bulk-lane depth (Tribunal.g's port.send) — the first genuine congestion signal
+            //  on the path we actually use, once control has its own lane: a non-zero queue here means
+            //   the wire itself is the limit, not self-inflicted head-of-line. Read straight off the
+            //    world particle Tribunal already stamps it on; §5.6's AIMD wants this as its RTO trigger.
+            x.bulk_queued = +(w.c.relay_bulk_queued || 0)
+            x.bulk_dropped = +(w.c.relay_bulk_dropped || 0)   // how far "sent" overcounts "arrived"
         }
     }
     m.rxf = 0; m.rxb = 0; m.txf = 0; m.txb = 0; m.since = nowms
@@ -632,7 +659,7 @@ async Repli_serve_want(w, pier, frame):
     //   fail — it PARKS, and Repli_serve_parked answers it the moment the frontier passes.  Eager by
     //    construction: the first full page serves the moment it exists; nobody waits for the set.
     if (!this.Repli_page_ready(rec, from, PAGE)) {
-        if (from < +(rec.sc.nchunks || 0)) this.Repli_park_want(w, pier, h)
+        if (from < +(rec.sc.nchunks || 0)) await this.Repli_park_want(w, pier, h)
         return
     }
     let end = Math.min(from + PAGE, chunks.length)
@@ -670,7 +697,7 @@ async Repli_serve_chunks(w, pier, h, rec):
     let PAGE = +(w.c.repli_page || 2)
     let total = +(rec.sc.total || 0)
     if (!this.Repli_page_ready(rec, from, PAGE)) {
-        if (from < total) this.Repli_park_want(w, pier, h)
+        if (from < total) await this.Repli_park_want(w, pier, h)
         return
     }
     let end = Math.min(from + PAGE, total)
@@ -915,6 +942,7 @@ Repli_arm(w):
     this.Peeroleum_on(w, 'repli_want', async (cw, pier, frame) => { await this.Repli_serve_want(w, pier, frame); return true })
     this.Peeroleum_on(w, 'repli_lines', async (cw, pier, frame) => { await this.Repli_recv_lines(w, pier, frame); return true })
     this.Peeroleum_on(w, 'repli_page', (cw, pier, frame) => { this.Repli_recv_page(w, pier, frame); return true })
+    this.Peeroleum_on(w, 'repli_parked', (cw, pier, frame) => { this.Repli_recv_parked(w, frame); return true })
 
 // Repli_sent_se — the D** progress mirror as a REAL Selection.process: one Se per library
 //  (library.c.sent_se), one %Sent_Tree per side (keyed pier:), a %Sent D per Record carrying

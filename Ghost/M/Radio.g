@@ -208,7 +208,7 @@ async Radio_pump(radio, era):
     try {
         await this.Radio_pump_tick(radio, era)
     } catch (er) {
-        console.warn(`📻⚠ Radio_pump threw — rescheduling instead of stopping silently:`, er)
+        console.log(`📻⚠ Radio_pump threw — rescheduling instead of stopping silently:`, er)
         if (this.Story_error) this.Story_error('error', 'Radio_pump', er)
         if (radio.c.era === era) this.Radio_pump_soon(radio, era, 400)
     }
@@ -249,6 +249,28 @@ async Radio_pump_tick(radio, era):
     let fed = 0
     while (((radio.c.end || now) - now) < 8 && fed < 4 && radio.c.seq < total && m.bytes[radio.c.seq] != null) {
         let s = radio.c.seq
+        // A decoder the UA closed under us is WORSE than no decoder: the branches below only open
+        //  one when c.dec is falsy, so a corpse sits there and poisons every look.  Drop it here and
+        //   let them re-open dirty — the same convergence the mid-encode resume path already accepts.
+        if (this.Radio_dec_dead(radio.c.dec)) {
+            let why = '' + ((radio.c.dec.bad && radio.c.dec.bad.message) || 'closed codec')
+            this.Radio_dec_close(radio.c.dec)
+            radio.c.dec = null
+            radio.sc.drops = (+(radio.sc.drops || 0)) + 1
+            radio.bump()
+            if (radio.c.dec_bad_at === s) {
+                // POISON: this same chunk has now killed a SECOND fresh decoder, so the packet is bad,
+                //  not the codec.  Splice past it (the starved-hole doctrine — an honest drop, the show
+                //   goes on) instead of re-opening on it forever, which would be the very
+                //    never-progresses shape we are here to fix, only with more objects churned.
+                this.Radio_trace(radio, { ev: 'dec-poison', seq: s, why: why })
+                radio.c.dec_bad_at = -1
+                radio.c.seq = s + 1
+                continue
+            }
+            this.Radio_trace(radio, { ev: 'dec-dead', seq: s, why: why })
+            radio.c.dec_bad_at = s
+        }
         if (m.heads[s] != null) {
             // an encode opens here (%Preview→%Stream seam): drain the old decoder's tail
             //  onto the timeline first, then a fresh decoder with this encode's preskip.
@@ -366,6 +388,7 @@ Radio_open(radio, rec):
     this.Radio_heard_add(radio, rec.sc.id)
     radio.c.seq = 0
     radio.c.dec = null
+    radio.c.dec_bad_at = -1
     radio.c.pre = 0
     radio.c.sched = 0
     radio.c.cap = 0
@@ -499,7 +522,7 @@ async Radio_supply_go(radio, era, rec):
             if (enow - (radio.c.adv_warn_ts || 0) > 2000) {
                 radio.c.adv_warn_ts = enow
                 this.Radio_trace(radio, { ev: 'transcode-throw', pass: passes })
-                console.warn(`⚠ Ra_transcode_advance threw — stream starving, no new chunks (pass ${passes})`, er)
+                console.log(`📻⚠ Ra_transcode_advance threw — stream starving, no new chunks (pass ${passes})`, er)
             }
         }
         passes = passes + 1
@@ -1614,6 +1637,19 @@ async Radio_dec_drain(st):
 Radio_dec_close(st):
     if (!st) return
     try { st.dec.close() } catch (er) {}
+
+// Is this decoder a CORPSE?  WebCodecs closes an AudioDecoder ITSELF when a decode errors — the
+//  error callback lands in st.bad and the codec's state goes 'closed'.  Nothing used to read
+//   either, so radio.c.dec kept pointing at the dead thing and every later feed threw
+//    "Cannot call 'decode' on a closed codec" forever: the pump SURVIVED (Radio_pump catches and
+//     reschedules) but could never make progress again — permanent dead air behind a loop that
+//      looked healthy in the log.  Half the lesson of Radio_pump's own comment had landed: the
+//       LOOP was made unkillable, the DECODER was not.
+Radio_dec_dead(st):
+    if (!st) return 0
+    if (st.bad) return 1
+    if (st.dec && st.dec.state === 'closed') return 1
+    return 0
 
 // lay harvested PCM on the timeline at the frontier (max(end, now) — a late landing past the
 //  frontier is a REAL gap the audio clock opened; count it).  Preskip pending from the last

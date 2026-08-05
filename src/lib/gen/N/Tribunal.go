@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tribunal(): string { return '70e81c4372d9cd19~g1' },
+    Ghostmeta_Ghost_N_Tribunal(): string { return '0b5c2797a8465da8~g1' },
 
 
 // Tribunal — a peer connection's reputation, constantly on trial (spec §4.1, §11.2).
@@ -121,8 +121,29 @@ async Socket_real(w) {
     //          Real EVENTS (hello/trust/run_result/dock_push) always log.  (A buffered send is always logged:
     //           it only happens before the socket opens, which is worth seeing.)
     let verbose = !!(w && w.c && w.c.wire_verbose)
-    let ambient = { ping: 1, pong: 1, ack: 1, repli_want: 1, repli_page: 1, repli_lines: 1, pulse: 1, swarm_hi: 1, advertise: 1 }
+    let ambient = { ping: 1, pong: 1, ack: 1, repli_want: 1, repli_page: 1, repli_lines: 1, repli_parked: 1, pulse: 1, swarm_hi: 1, advertise: 1 }
     let noisy = (h) => !verbose && h && !!ambient[h.type]
+    // ── bulk lane (Backpressure_todo.md §5.1) — the only type carrying six-figure byte bodies is
+    //  repli_page (folder-describe rides repli_lines, not this — see the doc's classification note),
+    //   so it is the only type that may queue LOCALLY behind ws.bufferedAmount; every other frame is
+    //    EXPRESS, sent unconditionally, never behind a page. This is the actual cure for pong
+    //     starvation → the 15s reaper → the reconnect storm: a pong no longer sits in ws's OWN send
+    //      buffer behind a queued page, because it never enters that buffer at all. "You can only
+    //       reorder a queue you hold" — ws.bufferedAmount is the one real queue on this path, and this
+    //        lane is how we hold it instead of handing everything straight to it.
+    let BULK_HIGH = +(w && w.c && w.c.relay_bulk_high || 1048576)   // unflushed bytes before new bulk queues locally
+    let BULK_CAP = 96          // bounded + shed, like the outbox/inbox — a dropped page self-heals (the sink re-asks)
+    let bulkQ = []
+    let bulk_dropped = 0       // cumulative shed count — the gap between "sent" and "arrived"
+    let bulk_pump_armed = false
+    let note_bulk_depth = () => { if (w && w.c) w.c.relay_bulk_queued = bulkQ.length }   // off-snap congestion signal for §5.2
+    let pump_bulk = () => {
+        bulk_pump_armed = false
+        if (!ws || ws.readyState !== WebSocket.OPEN) return   // socket is down; onclose already cleared bulkQ
+        while (bulkQ.length && ws.bufferedAmount < BULK_HIGH) wire(bulkQ.shift())
+        note_bulk_depth()
+        if (bulkQ.length) { bulk_pump_armed = true; setTimeout(pump_bulk, 30) }
+    }
     // note — mirror a carrier event to the browser console AND ring it onto w.c.relay_log (off-snap,
     //  capped) so the Relay Brink can surface a live event log in-UI. NO version bump: the Brink polls the
     //   ring on its 1s tick, so high-frequency traffic never re-pumps the House (the run_phase lesson).
@@ -140,6 +161,28 @@ async Socket_real(w) {
                 //  is sent next tick — so DROP them while down; only real frames buffer, capped, so a
                 //   long outage can't grow `pending` without bound.
                 if (!noisy(h) && !(h && h.type === 'run_phase')) { pending.push(frame); if (pending.length > 200) pending.shift(); console.log(`🛰 ws SEND buffered (socket not open): ${h && h.type}`) }
+                return
+            }
+            // bulk lane: a repli_page queues locally rather than piling into ws's own send buffer, so a
+            //  page never sits ahead of a pong there. Order preserved — once anything is queued, later
+            //   pages queue too even if bufferedAmount has since dipped, so pages never reorder past
+            //    each other (Repli's cid gate would refuse a reordered page anyway, but no sense inviting it).
+            if (h && h.type === 'repli_page' && (bulkQ.length || ws.bufferedAmount >= BULK_HIGH)) {
+                bulkQ.push(frame)
+                if (bulkQ.length > BULK_CAP) {
+                    // SHED, AND SAY SO. The shed itself is sound (bounded like the outbox/inbox; the sink
+                    //  re-asks). What was NOT sound was doing it silently: port.send has already returned
+                    //   "sent" to Repli, which counts the page as away, so a silent shed makes the source
+                    //    read "273/300 sent" while the sink holds 25 — the counters disagree by exactly the
+                    //     frames we dropped and NOTHING says so. A shed that is invisible is indistinguishable
+                    //      from a bug in the sink, and that is where the hunt goes. Count it and name it.
+                    bulkQ.shift()
+                    bulk_dropped = bulk_dropped + 1
+                    if (w && w.c) w.c.relay_bulk_dropped = bulk_dropped
+                    if (bulk_dropped === 1 || bulk_dropped % 25 === 0) note(`🛰⚠ ws bulk lane SHED ${bulk_dropped} page(s) — queue over ${BULK_CAP} while the wire is behind; the sink re-asks, so this is congestion not loss — but "sent" now overcounts by this much`)
+                }
+                note_bulk_depth()
+                if (!bulk_pump_armed) { bulk_pump_armed = true; setTimeout(pump_bulk, 30) }
                 return
             }
             if (!noisy(h)) note(`🛰 ws SEND ${h ? h.type + (frame.buffer ? ' +buf=' + frame.buffer.length : '') + ' seq=' + h.seq + ' → ' + h.to : '(control)'}`)
@@ -172,7 +215,7 @@ async Socket_real(w) {
         //  (a booked frame — Peeroleum_deliver books + inbox.do() under the mutex, which the batcher provides).
         if (ev.data instanceof ArrayBuffer) {
             let frame
-            try { frame = decode_binary(ev.data) } catch (e) { console.warn('🛰 ws RECV binary decode failed', e); return }
+            try { frame = decode_binary(ev.data) } catch (e) { console.log('🛰☠ ws RECV binary decode failed', e); return }
             let bh = frame.header
             if (!noisy(bh)) console.log(`🛰 ws RECV ${bh.type} seq=${bh.seq} +buf=${frame.buffer.length} ← ${bh.from}`)
             deliver_soon(frame)
@@ -192,7 +235,7 @@ async Socket_real(w) {
                 return
             }
             note(`🛰 ws RECV control:${frame.control}${frame.role ? ' role=' + frame.role : ''}`)
-            if (frame.control === 'error') console.warn('relay refused:', frame.error)
+            if (frame.control === 'error') console.log('🛰☠ relay refused:', frame.error)
             return
         }
         let h = frame && frame.header
@@ -212,6 +255,10 @@ async Socket_real(w) {
         }
         ws.onclose = (ev) => {
             note(`🛰 ws CLOSE code=${ev.code} clean=${ev.wasClean}${intentional ? ' (intentional)' : ''}`)
+            // the bulk lane is pure repli_page — ephemeral, worthless once stale, self-heals via the
+            //  sink's own re-ask — so it drops on close exactly like the noisy/run_phase frames above,
+            //   rather than surviving into `pending` and re-sending stale pages after a long outage.
+            if (bulkQ.length) { note(`🛰 ws bulk lane dropped ${bulkQ.length} queued page(s) on close (ephemeral — the sink re-asks)`); bulkQ.length = 0; note_bulk_depth() }
             if (intentional) return
             // backoff 0.5s→1→2…capped 15s, + jitter so a relay/dev-server restart (which drops every
             //  browser at once) doesn't thunder back in lockstep. The relay re-binds our addr on the

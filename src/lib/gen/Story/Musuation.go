@@ -10,7 +10,7 @@ import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return '81a29636b3be71f9~g1' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return '0d2936b7422f55a8~g1' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Radio_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -2984,7 +2984,7 @@ async MusuReplica_witness_retire(w) {
 //         beat 9      FINISH    — the transcoder completes; the last parked want serves; B pulls to total
 //         beat 10     settle    — the tail lands
 //         beat 11     witness   — recommended / refused_unstarted / started_early / outran_then_served /
-//                                 complete / real_music (+ the %see claims)
+//                                 parked_signalled / complete / real_music (+ the %see claims)
 MusuReco(A,w) {
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
         await this.MusuReco_drive(w,req)
@@ -3153,6 +3153,12 @@ MusuReco_witness(w) {
     // outran_then_served: the chase parked wants at the frontier and every one was later served.
     let parked_left = w.c.tx ? w.c.tx.o({ parked_want: 1 }).length : 99
     if ((w.c.repli_parked || 0) >= 2 && (w.c.repli_unparked || 0) >= 2 && parked_left === 0 && !(w.oa({witnessed: "outran_then_served"}))) w.i({witnessed: "outran_then_served"})
+    // parked_signalled (Backpressure_todo.md §5.3): each park drew a repli_parked frame across the wire,
+    //  not just a local server-side count — w.c.ra_parked is the SINK's own record, written only by
+    //   Repli_recv_parked off an arrived frame, so this proves the signal crossed, not merely that the
+    //    source counted a park. (w.c.repli_parked above is the source's local tally; this is its echo.)
+    let parked_signals = w.c.ra_parked ? Object.keys(w.c.ra_parked).length : 0
+    if (parked_signals >= 2 && !(w.oa({witnessed: "parked_signalled"}))) w.i({witnessed: "parked_signalled"})
     // complete: the whole track crossed — have==total and the reassembled samples EXACTLY match the decode.
     let got_samples = 0
     if (s && s.c.pages) { for (const p of s.c.pages) got_samples = got_samples + p.length }
@@ -3165,6 +3171,7 @@ MusuReco_witness(w) {
     if (reco && sreco && reco.sc.note === sreco.sc.note && !(w.oa({see: 'the note crossed with the record — one fragment carried the knowledge and the thing'}))) w.i({see: 'the note crossed with the record — one fragment carried the knowledge and the thing'})
     if (w.oa({ early: 'before_transcode_done' }) && s && rec && +(s.sc.have || 0) === +(rec.sc.nchunks || 0) && +(rec.sc.nchunks || 0) > 0 && !(w.oa({see: 'streaming began while the transcode still ran — nobody waited for the preview set'}))) w.i({see: 'streaming began while the transcode still ran — nobody waited for the preview set'})
     if ((w.c.repli_unparked || 0) >= 2 && parked_left === 0 && !(w.oa({see: 'a want that outran the transcoder parked and was served when the frontier passed it'}))) w.i({see: 'a want that outran the transcoder parked and was served when the frontier passed it'})
+    if (parked_signals >= 2 && !(w.oa({see: 'the sink was told by wire when its want got parked — not left to infer it from silence'}))) w.i({see: 'the sink was told by wire when its want got parked — not left to infer it from silence'})
 },
 //#endregion
 
