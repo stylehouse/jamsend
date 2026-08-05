@@ -5,26 +5,26 @@ story:Educarium
     For
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=1.95
-      sample=1.041,at=1783220526
-      sample=1.101,at=1783225881
-      sample=4.138,at=1783232677
-      sample=2.247,at=1783235576
-      sample=2.168,at=1783236542
-      sample=2.093,at=1783242886
-      sample=1.265,at=1783244371
-      sample=1.157,at=1785824055
-      sample=1.165,at=1785824276
+    TimeTotal:beliefs,avg=2.947
       sample=3.129,at=1785884990
-    TimeTotal:step,avg=1.95
-      sample=1.041,at=1783220526
-      sample=1.101,at=1783225881
-      sample=4.138,at=1783232677
-      sample=2.247,at=1783235576
-      sample=2.168,at=1783236542
-      sample=2.093,at=1783242886
-      sample=1.265,at=1783244371
-      sample=1.157,at=1785824055
-      sample=1.165,at=1785824276
+      sample=1.28,at=1785895776
+      sample=1.583,at=1785895825
+      sample=1.279,at=1785895873
+      sample=1.237,at=1785896727
+      sample=2.113,at=1785896915
+      sample=8.949,at=1785906045
+      sample=2.238,at=1785906079
+      sample=3.708,at=1785906135
+      sample=3.956,at=1785906179
+    TimeTotal:step,avg=2.947
       sample=3.129,at=1785884990
+      sample=1.28,at=1785895776
+      sample=1.583,at=1785895825
+      sample=1.279,at=1785895873
+      sample=1.237,at=1785896727
+      sample=2.113,at=1785896915
+      sample=8.949,at=1785906045
+      sample=2.238,at=1785906079
+      sample=3.708,at=1785906135
+      sample=3.956,at=1785906179
   step,dige:0000000000000000

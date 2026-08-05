@@ -38,26 +38,26 @@ Snap:H
             Ud,pubkey:DJ
             inbox
               recent
-                unemit,type:repli_lines,seq
-                unemit=2,type:repli_lines,seq=2
-                unemit=3,type:repli_page,seq=3
-                unemit=4,type:repli_lines,seq=4
-                unemit=5,type:repli_page,seq=5
-                unemit=6,type:repli_lines,seq=6
-                unemit=7,type:repli_page,seq=7
-                unemit=8,type:repli_lines,seq=8
-                unemit=9,type:repli_page,seq=9
-                unemit=10,type:repli_lines,seq=10
-                unemit=11,type:repli_page,seq=11
-                unemit=12,type:repli_lines,seq=12
-                unemit=13,type:repli_page,seq=13
-              req:unemit,seq=14,type:repli_lines,body_hash:43d4e8a7a80c81d74a898ee6915e990acb9dc4f325e3214620def19cec6f75a8,body_len=133,done,to:repli_lines,finished
+                unemit:1,type:repli_lines,seq:1,body_len:325
+                unemit:2,type:repli_lines,seq:2,body_len:98
+                unemit:3,type:repli_page,seq:3,body_len:76800
+                unemit:4,type:repli_lines,seq:4,body_len:99
+                unemit:5,type:repli_page,seq:5,body_len:76800
+                unemit:6,type:repli_lines,seq:6,body_len:99
+                unemit:7,type:repli_page,seq:7,body_len:76800
+                unemit:8,type:repli_lines,seq:8,body_len:99
+                unemit:9,type:repli_page,seq:9,body_len:76800
+                unemit:10,type:repli_lines,seq:10,body_len:99
+                unemit:11,type:repli_page,seq:11,body_len:76800
+                unemit:12,type:repli_lines,seq:12,body_len:99
+                unemit:13,type:repli_page,seq:13,body_len:76800
+              req:unemit,seq=14,type:repli_lines,body_hash:3d6de24be77ebd9015455fd4bc9046a9f875d46dd534316df05b9ae3f7160f87,body_len=99,done,to:repli_lines,finished
               req:unemit,seq=15,type:repli_page,body_hash:3594949d611278fb4191188dd10d5052e8efbb52ab0b611561bb56550a79433a,body_len=76800,done,to:repli_page,finished
           active_transport,type:mock,open
         MusuSelf,pub:DJ
           stock,pub:DJ
             Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
-              Fill,name:audio,total=240,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000
               preview,seq=0,from=0,to=12
               Reco,by:DJ,note:this one grows — stay past the second chord
               preview,seq,from=12,to=24
@@ -65,13 +65,13 @@ Snap:H
               preview,seq=3,from=36,to=48
               preview,seq=4,from=48,to=60
             Record,id:trk1,title:Dorian D,artist:DJ Oscillo,seconds=76,loudness=0.1413,nchunks=240,real
-              Fill,name:audio,total=240,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000
         reached:step_3
         refused:not_started
         MusuThem,pub:Crowd
           stock,pub:Crowd
             Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
-              Fill,name:audio,total=240,have=56,sr=48000,page_from=48,page_to=56,got=7
+              Fill,name:audio,have=56,sr=48000,got=7
               preview,seq=0,from=0,to=12
               Reco,by:DJ,note:this one grows — stay past the second chord
         reached:step_4

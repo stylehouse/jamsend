@@ -5,27 +5,27 @@ story:SwarmDoor
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.039
-      sample=0.025,at=1785075551
-      sample=0.029,at=1785075563
-      sample=0.019,at=1785075572
-      sample=0.063,at=1785836493
       sample=0.061,at=1785836581
       sample=0.052,at=1785837254
       sample=0.031,at=1785841489
       sample=0.038,at=1785853975
       sample=0.029,at=1785855464
       sample=0.043,at=1785856210
+      sample=0.048,at=1785906240
+      sample=0.048,at=1785906241
+      sample=0.016,at=1785906245
+      sample=0.023,at=1785906250
     TimeTotal:step,avg=0.008
-      sample=0.005,at=1785075551
-      sample=0.006,at=1785075563
-      sample=0.004,at=1785075572
-      sample=0.013,at=1785836493
       sample=0.012,at=1785836581
       sample=0.01,at=1785837254
       sample=0.006,at=1785841489
       sample=0.008,at=1785853975
       sample=0.006,at=1785855464
       sample=0.009,at=1785856210
+      sample=0.01,at=1785906240
+      sample=0.01,at=1785906241
+      sample=0.003,at=1785906245
+      sample=0.005,at=1785906250
   step,dige:8aeed028b37708e0
   step=2,dige:d094ca16c2b337bd
     Assertion:two-bare-stations-stand,sentence:two bare stations stand on the spine — a carrier each — and neither holds a Pier yet
@@ -33,5 +33,5 @@ story:SwarmDoor
     Assertion:the-inviter-holds-a,sentence:the inviter holds a single-use Idzeug — its station still routes to no one
   step=4,dige:94caba0328b118d4
     Assertion:the-joiner-promotes-a,sentence:the joiner promotes a transport Pier to the inviter before dialing — the redeemer knows the target
-  step=5,dige:c5792df20117397d
+  step=5,dige:95a55adcf4e01fc8
     Assertion:readiness-rode-station-up,sentence:readiness rode station_up — neither transport Pier ran a handshake yet the frames crossed and sealed

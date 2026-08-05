@@ -1,9 +1,9 @@
 Snap:H
   H:MusuBounce,Run
     A:MusuBounce
-      self,round=21	{"mung":["age"]}
+      self,round=22	{"mung":["age"]}
       w:MusuBounce
-        self,round=21	{"mung":["age"]}
+        self,round=22	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
@@ -37,26 +37,66 @@ Snap:H
             Ud,pubkey:DJ
             inbox
               recent
-                unemit=41,type:bouncechunk,seq=41
-                unemit=42,type:bouncechunk,seq=42
-                unemit=43,type:bouncechunk,seq=43
-                unemit=44,type:bouncechunk,seq=44
-                unemit=45,type:bouncechunk,seq=45
-                unemit=46,type:bouncechunk,seq=46
-                unemit=47,type:bouncechunk,seq=47
-                unemit=48,type:bouncechunk,seq=48
-                unemit=49,type:bouncechunk,seq=49
-                unemit=50,type:bouncechunk,seq=50
-                unemit=51,type:bouncechunk,seq=51
-                unemit=52,type:bouncechunk,seq=52
-                unemit=53,type:bouncechunk,seq=53
-                unemit=54,type:bouncechunk,seq=54
-                unemit=55,type:bouncechunk,seq=55
-                unemit=56,type:bouncechunk,seq=56
-                unemit=57,type:bouncechunk,seq=57
-                unemit=58,type:bouncechunk,seq=58
-                unemit=59,type:bouncechunk,seq=59
-                unemit=60,type:bouncechunk,seq=60
+                unemit:1,type:bouncechunk,seq:1,body_len:9600
+                unemit:2,type:bouncechunk,seq:2,body_len:9600
+                unemit:3,type:bouncechunk,seq:3,body_len:9600
+                unemit:4,type:bouncechunk,seq:4,body_len:9600
+                unemit:5,type:bouncechunk,seq:5,body_len:9600
+                unemit:6,type:bouncechunk,seq:6,body_len:9600
+                unemit:7,type:bouncechunk,seq:7,body_len:9600
+                unemit:8,type:bouncechunk,seq:8,body_len:9600
+                unemit:9,type:bouncechunk,seq:9,body_len:9600
+                unemit:10,type:bouncechunk,seq:10,body_len:9600
+                unemit:11,type:bouncechunk,seq:11,body_len:9600
+                unemit:12,type:bouncechunk,seq:12,body_len:9600
+                unemit:13,type:bouncechunk,seq:13,body_len:9600
+                unemit:14,type:bouncechunk,seq:14,body_len:9600
+                unemit:15,type:bouncechunk,seq:15,body_len:9600
+                unemit:16,type:bouncechunk,seq:16,body_len:9600
+                unemit:17,type:bouncechunk,seq:17,body_len:9600
+                unemit:18,type:bouncechunk,seq:18,body_len:9600
+                unemit:19,type:bouncechunk,seq:19,body_len:9600
+                unemit:20,type:bouncechunk,seq:20,body_len:9600
+                unemit:21,type:bouncechunk,seq:21,body_len:9600
+                unemit:22,type:bouncechunk,seq:22,body_len:9600
+                unemit:23,type:bouncechunk,seq:23,body_len:9600
+                unemit:24,type:bouncechunk,seq:24,body_len:9600
+                unemit:25,type:bouncechunk,seq:25,body_len:9600
+                unemit:26,type:bouncechunk,seq:26,body_len:9600
+                unemit:27,type:bouncechunk,seq:27,body_len:9600
+                unemit:28,type:bouncechunk,seq:28,body_len:9600
+                unemit:29,type:bouncechunk,seq:29,body_len:9600
+                unemit:30,type:bouncechunk,seq:30,body_len:9600
+                unemit:31,type:bouncechunk,seq:31,body_len:9600
+                unemit:32,type:bouncechunk,seq:32,body_len:9600
+                unemit:33,type:bouncechunk,seq:33,body_len:9600
+                unemit:34,type:bouncechunk,seq:34,body_len:9600
+                unemit:35,type:bouncechunk,seq:35,body_len:9600
+                unemit:36,type:bouncechunk,seq:36,body_len:9600
+                unemit:37,type:bouncechunk,seq:37,body_len:9600
+                unemit:38,type:bouncechunk,seq:38,body_len:9600
+                unemit:39,type:bouncechunk,seq:39,body_len:9600
+                unemit:40,type:bouncechunk,seq:40,body_len:9600
+                unemit:41,type:bouncechunk,seq:41,body_len:9600
+                unemit:42,type:bouncechunk,seq:42,body_len:9600
+                unemit:43,type:bouncechunk,seq:43,body_len:9600
+                unemit:44,type:bouncechunk,seq:44,body_len:9600
+                unemit:45,type:bouncechunk,seq:45,body_len:9600
+                unemit:46,type:bouncechunk,seq:46,body_len:9600
+                unemit:47,type:bouncechunk,seq:47,body_len:9600
+                unemit:48,type:bouncechunk,seq:48,body_len:9600
+                unemit:49,type:bouncechunk,seq:49,body_len:9600
+                unemit:50,type:bouncechunk,seq:50,body_len:9600
+                unemit:51,type:bouncechunk,seq:51,body_len:9600
+                unemit:52,type:bouncechunk,seq:52,body_len:9600
+                unemit:53,type:bouncechunk,seq:53,body_len:9600
+                unemit:54,type:bouncechunk,seq:54,body_len:9600
+                unemit:55,type:bouncechunk,seq:55,body_len:9600
+                unemit:56,type:bouncechunk,seq:56,body_len:9600
+                unemit:57,type:bouncechunk,seq:57,body_len:9600
+                unemit:58,type:bouncechunk,seq:58,body_len:9600
+                unemit:59,type:bouncechunk,seq:59,body_len:9600
+                unemit:60,type:bouncechunk,seq:60,body_len:9600
           active_transport,type:mock,open
         reached:step_3
         req:bounce,finished

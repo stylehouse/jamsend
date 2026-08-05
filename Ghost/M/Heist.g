@@ -444,7 +444,27 @@ Heist_rel_for(job, rec):
             cp = rest ? (over ? over + '/' + rest : rest) : over
         }
     }
-    return (root ? root + '/' : '') + cp
+    return this.Heist_spawn_swap(job, (root ? root + '/' : '') + cp)
+
+// Heist_spawn_swap — ⚠ TEST-RIG HACK (the human 2026-08-05), hard-coded on purpose, RIP IT OUT when the
+//  rig no longer needs it.  Our test music all lives under the category `0 spawn`, so a test heist lands
+//   back into the SAME folder its source came from and you cannot tell whose copy is whose — nor sweep the
+//    results without touching the real collection.  Any path segment named `spawn` (marker-blind, so
+//     `spawn` | `- spawn` | `0 spawn` all match) becomes `0 heisted-<from>-<to>`, making a landed test copy
+//      self-labelling by PAIR and deletable in one gesture.
+//  SAFETY: it fires ONLY on a segment that is exactly `spawn` — no real collection is touched, and no
+//   recorded fixture carries such a folder (verified 2026-08-05, so no Book churns).  If either pub is
+//    unknown it returns the path UNCHANGED rather than writing `undefined` into a filename.  Pubs are cut
+//     to 8 hex — enough to tell a pair apart, short enough to stay a readable folder name.
+Heist_spawn_swap(job, rel):
+    if (('' + rel).indexOf('spawn') < 0) return rel
+    // `from` is the job's own `at` (the source Pier's pub — the job IS the relationship); `to` is me.
+    let from = '' + ((job && job.sc.at) || '')
+    let rw = this.top_House()?.c?.radio_w
+    let to = rw ? this.Radio_pub(rw) : ''
+    if (!from || !to) return rel
+    let tag = '0 heisted-' + ('' + from).slice(0, 8) + '-' + ('' + to).slice(0, 8)
+    return ('' + rel).split('/').map((p) => (p.replace(/^(-|0) /, '') === 'spawn') ? tag : p).join('/')
 
 // Heist_cat_path — a category may NEST (the human 2026-07-29 "they go within each other, ie 0 chill/0 very
 //  chill"): split on `/`, make each level filesystem-safe, drop empties, rejoin.  A plain single-level category

@@ -1,9 +1,9 @@
 Snap:H
   H:MusuBuddy,Run
     A:MusuBuddy
-      self,round=19	{"mung":["age"]}
+      self,round=21	{"mung":["age"]}
       w:MusuBuddy,now=1751960060
-        self,round=19	{"mung":["age"]}
+        self,round=21	{"mung":["age"]}
         req:wrangle,eternal,ok
         Account,of:DJ
           Identity:c012850d69de1318,prepub:c012850d69de1318,friendly:DJ
@@ -45,10 +45,10 @@ Snap:H
                 emit=3,type:pier_accept,seq=3
             inbox
               recent
-                unemit,type:hello,seq
-                unemit=2,type:trust,seq=2
-                unemit=3,type:pier_hello,seq=3
-                unemit=4,type:pier_confirm,seq=4
+                unemit:1,type:hello,seq:1
+                unemit:2,type:trust,seq:2
+                unemit:3,type:pier_hello,seq:3
+                unemit:4,type:pier_confirm,seq:4
             Ud,pubkey:b317b9a776e39d30
           active_transport,type:mock,open
         Peering,name:b317b9a776e39d30,req=3,ok
@@ -73,26 +73,68 @@ Snap:H
                 emit=4,type:pier_confirm,seq=4
             inbox
               recent
-                unemit=43,type:repli_page,seq=43
-                unemit=44,type:repli_page,seq=44
-                unemit=45,type:repli_lines,seq=45
-                unemit=46,type:repli_page,seq=46
-                unemit=47,type:repli_page,seq=47
-                unemit=48,type:repli_lines,seq=48
-                unemit=49,type:repli_page,seq=49
-                unemit=50,type:repli_page,seq=50
-                unemit=51,type:repli_lines,seq=51
-                unemit=52,type:repli_page,seq=52
-                unemit=53,type:repli_page,seq=53
-                unemit=54,type:repli_lines,seq=54
-                unemit=55,type:repli_page,seq=55
-                unemit=56,type:repli_page,seq=56
-                unemit=57,type:repli_lines,seq=57
-                unemit=58,type:repli_page,seq=58
-                unemit=59,type:repli_page,seq=59
-                unemit=60,type:repli_lines,seq=60
-                unemit=61,type:repli_page,seq=61
-                unemit=62,type:repli_page,seq=62
+                unemit:1,type:hello,seq:1
+                unemit:2,type:trust,seq:2
+                unemit:3,type:pier_accept,seq:3
+                unemit:4,type:repli_lines,seq:4,body_len:336
+                unemit:5,type:repli_lines,seq:5,body_len:523
+                unemit:6,type:repli_lines,seq:6,body_len:337
+                unemit:7,type:repli_page,seq:7,body_len:32620
+                unemit:8,type:repli_page,seq:8,body_len:32300
+                unemit:9,type:repli_lines,seq:9,body_len:320
+                unemit:10,type:repli_page,seq:10,body_len:32300
+                unemit:11,type:repli_page,seq:11,body_len:32300
+                unemit:12,type:repli_lines,seq:12,body_len:320
+                unemit:13,type:repli_page,seq:13,body_len:32300
+                unemit:14,type:repli_page,seq:14,body_len:32300
+                unemit:15,type:repli_lines,seq:15,body_len:320
+                unemit:16,type:repli_page,seq:16,body_len:32300
+                unemit:17,type:repli_page,seq:17,body_len:32300
+                unemit:18,type:repli_lines,seq:18,body_len:321
+                unemit:19,type:repli_page,seq:19,body_len:32300
+                unemit:20,type:repli_page,seq:20,body_len:32300
+                unemit:21,type:repli_lines,seq:21,body_len:324
+                unemit:22,type:repli_page,seq:22,body_len:32300
+                unemit:23,type:repli_page,seq:23,body_len:32300
+                unemit:24,type:repli_lines,seq:24,body_len:324
+                unemit:25,type:repli_page,seq:25,body_len:32300
+                unemit:26,type:repli_page,seq:26,body_len:32300
+                unemit:27,type:repli_lines,seq:27,body_len:324
+                unemit:28,type:repli_page,seq:28,body_len:32300
+                unemit:29,type:repli_page,seq:29,body_len:32623
+                unemit:30,type:repli_lines,seq:30,body_len:337
+                unemit:31,type:repli_page,seq:31,body_len:32620
+                unemit:32,type:repli_page,seq:32,body_len:32300
+                unemit:33,type:repli_lines,seq:33,body_len:320
+                unemit:34,type:repli_page,seq:34,body_len:32300
+                unemit:35,type:repli_page,seq:35,body_len:32300
+                unemit:36,type:repli_lines,seq:36,body_len:320
+                unemit:37,type:repli_page,seq:37,body_len:32300
+                unemit:38,type:repli_page,seq:38,body_len:32300
+                unemit:39,type:repli_lines,seq:39,body_len:320
+                unemit:40,type:repli_page,seq:40,body_len:32300
+                unemit:41,type:repli_page,seq:41,body_len:32286
+                unemit:42,type:repli_lines,seq:42,body_len:320
+                unemit:43,type:repli_page,seq:43,body_len:32302
+                unemit:44,type:repli_page,seq:44,body_len:32288
+                unemit:45,type:repli_lines,seq:45,body_len:320
+                unemit:46,type:repli_page,seq:46,body_len:32251
+                unemit:47,type:repli_page,seq:47,body_len:32293
+                unemit:48,type:repli_lines,seq:48,body_len:320
+                unemit:49,type:repli_page,seq:49,body_len:32279
+                unemit:50,type:repli_page,seq:50,body_len:32293
+                unemit:51,type:repli_lines,seq:51,body_len:320
+                unemit:52,type:repli_page,seq:52,body_len:32231
+                unemit:53,type:repli_page,seq:53,body_len:32275
+                unemit:54,type:repli_lines,seq:54,body_len:320
+                unemit:55,type:repli_page,seq:55,body_len:32292
+                unemit:56,type:repli_page,seq:56,body_len:32311
+                unemit:57,type:repli_lines,seq:57,body_len:320
+                unemit:58,type:repli_page,seq:58,body_len:32222
+                unemit:59,type:repli_page,seq:59,body_len:32257
+                unemit:60,type:repli_lines,seq:60,body_len:320
+                unemit:61,type:repli_page,seq:61,body_len:32305
+                unemit:62,type:repli_page,seq:62,body_len:39645
             Ud,pubkey:c012850d69de1318
           active_transport,type:mock,open
         MusuSelf,pub:c012850d69de1318

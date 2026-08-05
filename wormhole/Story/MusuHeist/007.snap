@@ -1,9 +1,9 @@
 Snap:H
   H:MusuHeist,Run
     A:MusuHeist
-      self,round=17	{"mung":["age"]}
+      self,round=16	{"mung":["age"]}
       w:MusuHeist,now=1752000070
-        self,round=17	{"mung":["age"]}
+        self,round=16	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -56,26 +56,29 @@ Snap:H
                 emit=3,type:pier_accept,seq=3
             inbox
               recent
-                unemit=4,type:pier_confirm,seq=4
-                unemit=5,type:repli_lines,seq=5
-                unemit=6,type:repli_lines,seq=6
-                unemit=7,type:repli_lines,seq=7
-                unemit=8,type:repli_lines,seq=8
-                unemit=9,type:repli_page,seq=9
-                unemit=10,type:repli_lines,seq=10
-                unemit=11,type:repli_page,seq=11
-                unemit=12,type:repli_page,seq=12
-                unemit=13,type:repli_lines,seq=13
-                unemit=14,type:repli_page,seq=14
-                unemit=15,type:repli_page,seq=15
-                unemit=16,type:repli_lines,seq=16
-                unemit=17,type:repli_page,seq=17
-                unemit=18,type:repli_page,seq=18
-                unemit=19,type:repli_lines,seq=19
-                unemit=20,type:repli_page,seq=20
-                unemit=21,type:repli_page,seq=21
-                unemit=22,type:repli_lines,seq=22
-                unemit=23,type:repli_page,seq=23
+                unemit:1,type:hello,seq:1
+                unemit:2,type:trust,seq:2
+                unemit:3,type:pier_hello,seq:3
+                unemit:4,type:pier_confirm,seq:4
+                unemit:5,type:repli_lines,seq:5,body_len:224
+                unemit:6,type:repli_lines,seq:6,body_len:218
+                unemit:7,type:repli_lines,seq:7,body_len:221
+                unemit:8,type:repli_lines,seq:8,body_len:187
+                unemit:9,type:repli_page,seq:9,body_len:8110
+                unemit:10,type:repli_lines,seq:10,body_len:324
+                unemit:11,type:repli_page,seq:11,body_len:262144
+                unemit:12,type:repli_page,seq:12,body_len:262144
+                unemit:13,type:repli_lines,seq:13,body_len:324
+                unemit:14,type:repli_page,seq:14,body_len:262144
+                unemit:15,type:repli_page,seq:15,body_len:173672
+                unemit:16,type:repli_lines,seq:16,body_len:324
+                unemit:17,type:repli_page,seq:17,body_len:262144
+                unemit:18,type:repli_page,seq:18,body_len:262144
+                unemit:19,type:repli_lines,seq:19,body_len:324
+                unemit:20,type:repli_page,seq:20,body_len:262144
+                unemit:21,type:repli_page,seq:21,body_len:262144
+                unemit:22,type:repli_lines,seq:22,body_len:188
+                unemit:23,type:repli_page,seq:23,body_len:39528
             Ud,pubkey:be0dab3303037ad2
           active_transport,type:mock,open
         Peering,name:be0dab3303037ad2,req=3,ok
@@ -100,9 +103,9 @@ Snap:H
                 emit=4,type:pier_confirm,seq=4
             inbox
               recent
-                unemit,type:hello,seq
-                unemit=2,type:trust,seq=2
-                unemit=3,type:pier_accept,seq=3
+                unemit:1,type:hello,seq:1
+                unemit:2,type:trust,seq:2
+                unemit:3,type:pier_accept,seq:3
             Ud,pubkey:4e09f34f5a6ab900
           active_transport,type:mock,open
         MusuSelf,pub:4e09f34f5a6ab900

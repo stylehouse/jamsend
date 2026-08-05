@@ -1,9 +1,9 @@
 Snap:H
   H:MusuBuddy,Run
     A:MusuBuddy
-      self,round=7	{"mung":["age"]}
+      self,round=8	{"mung":["age"]}
       w:MusuBuddy,now=1751960030
-        self,round=7	{"mung":["age"]}
+        self,round=8	{"mung":["age"]}
         req:wrangle,eternal,ok
         Account,of:DJ
           Identity:c012850d69de1318,prepub:c012850d69de1318,friendly:DJ
@@ -31,8 +31,8 @@ Snap:H
                 emit=2,type:trust,seq=2
             inbox
               recent
-                unemit,type:hello,seq
-                unemit=2,type:trust,seq=2
+                unemit:1,type:hello,seq:1
+                unemit:2,type:trust,seq:2
             Ud,pubkey:b317b9a776e39d30
           active_transport,type:mock,open
         Peering,name:b317b9a776e39d30,req=3,ok
@@ -55,8 +55,8 @@ Snap:H
                 emit=2,type:trust,seq=2
             inbox
               recent
-                unemit,type:hello,seq
-                unemit=2,type:trust,seq=2
+                unemit:1,type:hello,seq:1
+                unemit:2,type:trust,seq:2
             Ud,pubkey:c012850d69de1318
           active_transport,type:mock,open
         MusuSelf,pub:c012850d69de1318

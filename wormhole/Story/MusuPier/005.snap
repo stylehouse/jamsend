@@ -1,22 +1,22 @@
 Snap:H
   H:MusuPier,Run
     A:MusuPier
-      self,round=12	{"mung":["age"]}
+      self,round=10	{"mung":["age"]}
       w:MusuPier
-        self,round=12	{"mung":["age"]}
+        self,round=10	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:caster,req=2,ok
           Pier,pub:listener,req=2,ok
             Ud,pubkey:listener
             outbox
-              emit=6,type:audiochunk,seq=6,sent,body_hash:c18852b30d2cfd96ded23f8c7a1f95a9a8b1f7f1ea9ca878aeb08a54d9306c15,body_len=9600,resent=2
               recent
                 emit,type:audiochunk,seq
                 emit=2,type:audiochunk,seq=2
                 emit=3,type:audiochunk,seq=3
                 emit=4,type:audiochunk,seq=4
                 emit=5,type:audiochunk,seq=5
+                emit=6,type:audiochunk,seq=6
           active_transport,type:mock,open
         Peering,name:listener,req=3,ok
           Pier,pub:caster,req=2,ok
@@ -24,11 +24,11 @@ Snap:H
             inbox
               req:unemit,seq=6,type:audiochunk,body_hash:c18852b30d2cfd96ded23f8c7a1f95a9a8b1f7f1ea9ca878aeb08a54d9306c15,body_len=9600,error:bad-body-hash,finished
               recent
-                unemit,type:audiochunk,seq
-                unemit=2,type:audiochunk,seq=2
-                unemit=3,type:audiochunk,seq=3
-                unemit=4,type:audiochunk,seq=4
-                unemit=5,type:audiochunk,seq=5
+                unemit:1,type:audiochunk,seq:1,body_len:9600
+                unemit:2,type:audiochunk,seq:2,body_len:9600
+                unemit:3,type:audiochunk,seq:3,body_len:9600
+                unemit:4,type:audiochunk,seq:4,body_len:9600
+                unemit:5,type:audiochunk,seq:5,body_len:9600
             faulty
               unemit=6,error:bad-body-hash,seq=6
           active_transport,type:mock,open
@@ -47,7 +47,7 @@ Snap:H
             Ud,pubkey:sender
             inbox
               recent
-                unemit,type:audiochunk,seq
+                unemit:1,type:audiochunk,seq:1,body_len:9600
               req:unemit,seq=2,type:audiochunk,body_hash:c18852b30d2cfd96ded23f8c7a1f95a9a8b1f7f1ea9ca878aeb08a54d9306c15,body_len=9600,done,to:audiochunk,finished
               req:unemit,seq=3,type:audiochunk,body_hash:0037d9b100b1be3f590807e0b8943a1761f3c56c3acfa33394fcb377fe36cbdb,body_len=9600,done,to:audiochunk,finished
               req:unemit,seq=4,type:audiochunk,body_hash:801e28b3b087f1ad182bfe047b9f2d5b41bf60ee54bd71aa7255e955114cb7e8,body_len=9600,done,to:audiochunk,finished

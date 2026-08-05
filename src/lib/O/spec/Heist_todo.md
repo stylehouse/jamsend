@@ -2,6 +2,34 @@
 
 ## 0. Next move (read first)
 
+### 2026-08-05 — the snap-shut bomb is DEAD (root cause was not ours), plus a KeepFace batch. One ruling owed.
+
+**The "snaps shut" bug was never a Heist bug** and Evening 8's freeze (below) was not what fixed it. Root
+ cause: `replace()` publishes the empty half of its own transaction, and `agency_officing`
+  (`Hovercraft.svelte:133`) replaces every actor's `w:` children every tick — so Vytui's
+   `{#each vyto_worlds() as w (w)}` got a 0-length list once per tick and destroyed every face in the glass,
+    KeepFace included. Fixed at the reader (`ui/micro/hold.ts` + both Vytui structural gates);
+     `reactivity_docs.md` § "The transacting-empty render" has the chain and the three cures. **Confirmed
+      live by the human**. Evening 8's dirs-freeze stays — it was a real second hazard, just not this one.
+
+**Landed alongside, in `KeepFace.svelte`** (live-testing owed on all four): ✓ now COMMITS whatever is in the
+ boxes instead of only closing the editor (typed-but-not-ENTERed text was being silently dropped — the
+  human's report); each directories chunk is EDITABLE in place rather than remove-and-retype; directories
+   chunks break inside a name so one long source folder stops setting the cell's width; and group labels in
+    the track tree no longer restate the directories row — the prefix match is now MARKER-BLIND, so
+     `- chill` / `0 chill` / `chill` are one directory and the strip actually happens.
+
+**THE ONE RULING OWED — automatic `- ` → `0 ` at land time.** A folder whose name starts with a dash cannot
+ be handed to a shell command as a non-flag, so `0 ` is the marker we write (as `Heist_keep_set_genre`
+  already does for categories, `Heist.g:1877`). KeepFace now shows and commits the shell-safe form, which
+   makes the rename real **for any keep whose directories are ticked** — opening the editor and pressing ✓
+    with no other change is enough, because the dirs/dirs_auto substitution in `Heist_rel_for` lands it. An
+     UNTOUCHED keep still lands the source's own `- name` folder. Making it automatic means a leading-dash
+      rule in `Heist_cp_path`, which bends the explicit cp-landing ruling — *"the source's own filename and
+       folder layout survive UNCHANGED"* — and would churn every Book fixture that asserts a landing path.
+        **That is the human's call, not a display edit's.** If yes: put it in `Heist_safe_seg` (the one
+         chokepoint, already the home of the `/`-and-NUL rule) and budget the Accept.
+
 ### 2026-07-30 EVENING 8 — the directories-editor "snaps shut" bomb from the entry below has a fix, UNVERIFIED
 ###  LIVE (solo session, no browser click access). Full root-cause reasoning + the safe nice-ups landed
 ###   alongside it: `Download_stall_handover.md` § "Evening 8". Short version: `dirsSegs` fell back to a

@@ -23,17 +23,17 @@ Snap:H
             Ud,pubkey:Origin
             inbox
               recent
-                unemit,type:repli_lines,seq
-                unemit=2,type:repli_lines,seq=2
+                unemit:1,type:repli_lines,seq:1,body_len:311
+                unemit:2,type:repli_lines,seq:2,body_len:546
           active_transport,type:mock,open
         MusuSelf,pub:Origin
           stock,pub:Origin
             Mag:shuffle
               Cloud,page:1
-                Record,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
-                  Fill,name:audio,total=8,have=0
-                Record,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
-                  Fill,name:audio,total=8,have=0
+                Record,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus,nchunks=8
+                  Fill,name:audio,have=0
+                Record,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus,nchunks=8
+                  Fill,name:audio,have=0
           radiostocking,pub:Origin
             Mag:Musica
               Cloud,randomic:draw_hon,created_at=1000

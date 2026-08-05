@@ -23,6 +23,18 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**THE GLASS STOPPED TEARING ITSELF DOWN (2026-08-05) — and §13 is new.**
+ The bug that made the Keep/directories editor "snap shut" mid-typing was never a Heist bug: `replace()`
+  PUBLISHES the empty half of its transaction, `agency_officing` (`Hovercraft.svelte:133`) replaces every
+   actor's `w:` children every tick, and Vytui's `{#each vyto_worlds() as w (w)}` therefore got a 0-length
+    list once per tick — destroying stage + faces + every face in the family's glass, once per tick, all
+     along. Fixed at the reader (`ui/micro/hold.ts`, both Vytui structural gates); `replace()` untouched
+      by ruling. Chain + the three cures + the light-cone note: `reactivity_docs.md` § "The transacting-empty
+       render". **Live proof owed** (type in a fresh keep's directories editor across several trickles).
+        Worth knowing for every face this family draws — any UI that walks `A`/`w` during render has been
+         eating this. NEW: **§13** is the toplevel/BigSoundland assembly zone (the ActionButtons ask lives
+          there, filed behind settling the dev-vs-end-user views).
+
 **THE WIRE-CROSSING RUNG SCOPED (2026-07-26) — music over the REAL relay is a PORT, not a build.**
  A three-agent investigation nailed the carrier layer. The swappable-carrier seam ALREADY EXISTS:
   `%Peering.active_transport.c.connection` (interface = `send(frame)` + inbound→`Peeroleum_deliver`,
@@ -1653,3 +1665,38 @@ Nothing built is thrown away; each existing gear has a §12 home waiting:
     generalizes from chunk legs to magazine serving.
  What DIES: the tombstone (ripped, §10.2) — then offer retires at M2, and klepto "everything you
   offer" demotes to one mode at S3.
+
+---
+
+## 13. The toplevel — /BigSoundland, where it all comes together
+
+The one place every spring above surfaces as a page a human actually touches: `src/lib/V/BigSoundland.svelte`
+ (the scape) + the glass under it (Vytui, `%Keep`/`%Radio`/`%Stoker`/… faces) + the InvitePanel strip. Every
+  other section here builds an organ; this is the body they get worn on. Items land here when they are about
+   the **assembly** — what a person sees when the parts are all present — rather than about one engine.
+
+Expect this section to want an ironing-out pass of its own before long (owner, 2026-08-05: "it probably
+ needs another ironing out soon but not yet") — the two view modes below have drifted apart and no single
+  ruling governs what shows in which. Don't do that pass piecemeal; do it as one sitting, with the page open.
+
+### 13.1 The two views, and the ActionButtons (owner, 2026-08-05)
+
+**The ask: show the ActionButtons for each H automatically — "they are too useful."** Today the rack is
+ triple-gated at `BigSoundland.svelte:247` — `{#if sprawl && show_actions && active}` — so it needs the ▦
+  sprawl, then the ⚙ cog, and even then shows only the *active* House's actions. Ungating it to
+   one-rack-per-House is small; the reason it is filed rather than done is that it lands on the wrong side
+    of an unsettled line:
+
+- **The dev/working view** — where the ActionButtons belong, on sight, per House, no cog.
+- **The end-user view** — "everything invisible except the Vyto and the Invite interface, the only non-Vyto
+   thing hovering over the top, as the actual users will find it." The owner reports this as a mode that is
+    **default off**. It is NOT in the tree under any name I could find: the nearest thing is sprawl-*off*,
+     which is already the default and still shows the header bar, the glass badge, the House chips, the
+      InvitePanel and the whole diagnostic surface. So either the mode is remembered from elsewhere, or it
+       is owed — and it has to exist before "show everything useful by default" is safe, because it is what
+        keeps the useful clutter off a real user's screen.
+
+So the order is: **settle the two views first, then ungate the rack into the dev one.** Doing the rack
+ first just moves clutter into the view that has no escape hatch. Related and already mapped:
+  `UI_seams_todo.md` S1 (quiet the resident glass) is the same question asked of the Vyto cells, and its
+   `?diag` gate proposal is a candidate shape for the end-user mode.

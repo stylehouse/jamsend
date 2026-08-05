@@ -1,22 +1,21 @@
 Snap:H
   H:PereProof,Run
     A:PereProof
-      self,round=65	{"mung":["age"]}
+      self,round=34	{"mung":["age"]}
       w:PereProof
-        self,round=65	{"mung":["age"]}
+        self,round=34	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:cad,req=2,ok
           Pier,pub:cob,req=2,ok
             outbox
-              emit,type:noop,seq,sent,body_hash:0000000000000000000000000000000000000000000000000000000000000000,body_len=4,resent=4
               recent
+                emit,type:noop,seq
           active_transport,type:mock,open
         Peering,name:cob,req=3,ok
           Pier,pub:cad,req=2,ok
             inbox
               req:unemit,seq,type:noop,body_hash:0000000000000000000000000000000000000000000000000000000000000000,body_len=4,error:bad-body-hash,finished
-              recent
             faulty
               unemit,error:bad-body-hash,seq
           active_transport,type:mock,open
@@ -33,7 +32,7 @@ Snap:H
             Ud,pubkey:fin
             inbox
               recent
-                unemit,type:test_dup,seq
+                unemit:1,type:test_dup,seq:1
           active_transport,type:mock,open
         witnessed:dedup
         reached:step_6
@@ -48,8 +47,8 @@ Snap:H
           Pier,pub:hal,req=2,ok
             inbox
               recent
-                unemit,type:noop,seq
-                unemit=2,type:noop,seq=2
+                unemit:1,type:noop,seq:1
+                unemit:2,type:noop,seq:2
           active_transport,type:mock,open
         witnessed:reorder_held
         reached:step_7
@@ -64,14 +63,13 @@ Snap:H
         Peering,name:uma,req=9,ok
           Pier,pub:val,req=2,ok
             outbox
-              emit,type:test_preud,seq,sent,resent=3
               recent
+                emit,type:test_preud,seq
           active_transport,type:mock,open
         Peering,name:val,req=10,ok
           Pier,pub:uma,req=2,ok
             inbox
               req:unemit,seq,type:test_preud,error:pre-Ud,finished
-              recent
             faulty
               unemit,error:pre-Ud,seq
           active_transport,type:mock,open
@@ -88,7 +86,7 @@ Snap:H
             Ud,pubkey:sib
             inbox
               recent
-                unemit,type:test_cull,seq
+                unemit:1,type:test_cull,seq:1
           active_transport,type:mock,open
         witnessed:dedup_cull
         reached:step_15
@@ -107,10 +105,10 @@ Snap:H
             Ud,pubkey:que
             inbox
               recent
-                unemit,type:test_storm,seq
-                unemit=2,type:test_storm,seq=2
-                unemit=3,type:test_storm,seq=3
-                unemit=4,type:test_storm,seq=4
+                unemit:1,type:test_storm,seq:1
+                unemit:2,type:test_storm,seq:2
+                unemit:3,type:test_storm,seq:3
+                unemit:4,type:test_storm,seq:4
           active_transport,type:mock,open
         witnessed:storm
         reached:step_21

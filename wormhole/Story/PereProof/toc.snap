@@ -4,10 +4,7 @@ story:PereProof
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.636
-      sample=0.823,at=1783257183
-      sample=0.739,at=1783353148
-      sample=1.77,at=1783353830
+    TimeTotal:beliefs,avg=0.353
       sample=0.454,at=1784436497
       sample=0.223,at=1784616705
       sample=0.369,at=1784616820
@@ -15,10 +12,10 @@ story:PereProof
       sample=0.35,at=1785116722
       sample=0.289,at=1785116995
       sample=0.992,at=1785143855
-    TimeTotal:step,avg=0.019
-      sample=0.025,at=1783257183
-      sample=0.022,at=1783353148
-      sample=0.054,at=1783353830
+      sample=0.175,at=1785906327
+      sample=0.175,at=1785906335
+      sample=0.16,at=1785906367
+    TimeTotal:step,avg=0.011
       sample=0.014,at=1784436497
       sample=0.007,at=1784616705
       sample=0.011,at=1784616820
@@ -26,36 +23,39 @@ story:PereProof
       sample=0.011,at=1785116722
       sample=0.009,at=1785116995
       sample=0.03,at=1785143855
+      sample=0.005,at=1785906327
+      sample=0.005,at=1785906335
+      sample=0.005,at=1785906367
   step,dige:2b47705062f8bd28
   step=2,dige:bdd4925163038acc
-  step=3,dige:1c73da90f22fb363
-  step=4,dige:d8005e2a96360235
-  step=5,dige:e779d9c6e51efe17
-  step=6,dige:e15b114360dbf828
-  step=7,dige:c4e617779069809b
-  step=8,dige:e789b65161b888ae
-  step=9,dige:59cf91cf15f6a42a
-  step=10,dige:e65c3db00450a98d
-  step=11,dige:0fc048d0b98ca8f4
-  step=12,dige:acf94a15e3b31566
-  step=13,dige:96c9c445b8011f96
-  step=14,dige:dffff0598430d9d2
-  step=15,dige:6fe736ea3bf2eef4
-  step=16,dige:c46a60093650b425
-  step=17,dige:a99025bed18c08a8
-  step=18,dige:9550ebac5cc05e6d
-  step=19,dige:f2bbdf17a74a87e7
-  step=20,dige:70914ab4667917e9
-  step=21,dige:aa0dac153b478be8
-  step=22,dige:acf74028638561ce
-  step=23,dige:57edce3012802272
-  step=24,dige:9a4436579535715f
-  step=25,dige:f961b4d2e17af002
-  step=26,dige:c019ac18b853edb7
-  step=27,dige:8098010884b43a2c
-  step=28,dige:5698fb3229d498e3
-  step=29,dige:827145da1705d228
-  step=30,dige:ff24afb90595e622
-  step=31,dige:470b00138ec4af21
-  step=32,dige:d8c1b8602fbfb8b2
-  step=33,dige:ec9f397928bb67a4
+  step=3,dige:50cfceee05855f03
+  step=4,dige:4f5261b93bf2d030
+  step=5,dige:89589dc2c9e11c1c
+  step=6,dige:085afb1afc279c51
+  step=7,dige:210eb14dc73b4f40
+  step=8,dige:3d5d873192c9e28e
+  step=9,dige:9e681e5731c21067
+  step=10,dige:8021288802a9d4a3
+  step=11,dige:0e6e8b4b088155f0
+  step=12,dige:999d6753d979d95a
+  step=13,dige:e82d9ff2ca474254
+  step=14,dige:caf3276c4b1d13cb
+  step=15,dige:65008a52e4ccc77f
+  step=16,dige:12c89e98de7c34b3
+  step=17,dige:50eb57125d9eccb6
+  step=18,dige:6afaeecdbec8f391
+  step=19,dige:49a4d4dee756a332
+  step=20,dige:414bdcaaf3ff826b
+  step=21,dige:a20c4570508ff6ef
+  step=22,dige:967bfda8f86de406
+  step=23,dige:3b788dacb33fcda9
+  step=24,dige:89793e76cf838e96
+  step=25,dige:11d73ce5c892bb7f
+  step=26,dige:9c5b0784f424f10c
+  step=27,dige:2895249cc65541a8
+  step=28,dige:30512741266303ea
+  step=29,dige:9f9a64c1f26f2d86
+  step=30,dige:285c0c23ed6ffc70
+  step=31,dige:b308ece092dc9790
+  step=32,dige:d14e8c736da5cea2
+  step=33,dige:ebe3bee556c59e97

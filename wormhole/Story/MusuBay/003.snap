@@ -23,13 +23,13 @@ Snap:H
             Ud,pubkey:Origin1
             inbox
               recent
-                unemit,type:repli_lines,seq
+                unemit:1,type:repli_lines,seq:1,body_len:677
           active_transport,type:mock,open
           Pier,pub:Origin2,req=3,ok
             Ud,pubkey:Origin2
             inbox
               recent
-                unemit,type:repli_lines,seq
+                unemit:1,type:repli_lines,seq:1,body_len:663
           active_transport,type:mock,open
         Peering,name:Origin2,req=4,ok
           Pier,pub:Seeker,req=2,ok

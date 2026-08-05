@@ -18,6 +18,4 @@ Snap:H
             req:handshake,finished
             inbox
               req:unemit,seq,type:fancy_proto,done,to:fancy_proto,finished
-            outbox
-              type:no_protocol,sent	{"undef":["emit","seq"]}
           active_transport,type:mock,open

@@ -99,7 +99,31 @@ Two options, use both for safety:
 
 ## 5. Live work threads (the load-bearing state)
 
-### 5A. KeepFace remount — ONE signal from root cause
+### 5A. KeepFace remount — **ROOT-CAUSED + FIX LANDED 2026-08-05, live proof owed**
+
+**The answer, and it was already half-written in the tree.** The `{#each vyto_worlds() as w (w)}`
+ block is handed a **transiently empty list** once per tick, which destroys stage + faces + every
+  KeepFace and rebuilds them next render with the same objects. The emptier is
+   `agency_officing` (`Hovercraft.svelte:133`): `A.replace({w:1}, …)` per actor per tick, re-adding
+    the same worlds so Stuffing notices sc changes. `replace()` **publishes** the empty half of its
+     transaction — `empty()` → `Xify()` → `bump_version()` on a `$state()` X. Full chain, the
+      container sweep that bounds it, and the three cures: `reactivity_docs.md` § "The transacting-empty
+       render". The leading hypothesis below (the `{#if show_viewport}` stage gate) was the right
+        *shape* but one level too deep — the stage never got the chance to run.
+
+**Fix landed:** `ui/micro/hold.ts` (`hold_list`/`hold_true`) + both Vytui structural gates
+ (`vyto_worlds`, `show_viewport`) buffer what they took and only believe an emptiness that outlasts
+  the hold. Compile-verified (bundle-proof 200); **not yet clicked live** — the proof is the human
+   opening directories-editing on a fresh keep and typing through several trickles. `replace()` was
+    deliberately NOT touched (the human's call).
+
+**The instrumentation can go once that proof lands** — the whole life ladder, the GATE-FLIP probe,
+ the CELL LEFT/ENTERED detector, the WORLDS probe. Keep the WORLDS probe *last*: it is the one that
+  says how often the hold is saving us.
+
+The original entry, kept — it is the reasoning that got there:
+
+### 5A (original). KeepFace remount — ONE signal from root cause
 
 **Symptom:** the Heist/Keep glass cell (`KeepFace.svelte`, rendered through the Vyto glass) tears
  down and remounts repeatedly; the "directories editor snaps shut" as you type in it.

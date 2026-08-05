@@ -19,18 +19,18 @@ Snap:H
             Ud,pubkey:Origin
             inbox
               recent
-                unemit,type:repli_lines,seq
+                unemit:1,type:repli_lines,seq:1,body_len:416
           active_transport,type:mock,open
         MusuSelf,pub:Origin
           stock,pub:Origin
             Mag:shuffle
               Cloud,page:1
-                Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
-                  Fill,name:audio,total=8,have=0
-                Record,id:t1,artist:Auteur,title:Meander Two,path:crate/a/Auteur - Meander Two.opus
-                  Fill,name:audio,total=8,have=0
-                Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
-                  Fill,name:audio,total=8,have=0
+                Record,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus,nchunks=8
+                  Fill,name:audio,have=0
+                Record,id:t1,artist:Auteur,title:Meander Two,path:crate/a/Auteur - Meander Two.opus,nchunks=8
+                  Fill,name:audio,have=0
+                Record,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus,nchunks=8
+                  Fill,name:audio,have=0
           radiostocking,pub:Origin
             Mag:Musica
               Cloud,randomic:d70fnpn,created_at=1000

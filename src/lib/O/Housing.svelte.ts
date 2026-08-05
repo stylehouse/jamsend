@@ -35,6 +35,19 @@ export const ANSWER_CALLS_TICK_MS = 50
 export const AMBIENT_MAIN_TICK_MS = 200
 // see also reset_interval() 3600ms
 
+// ── Beliefs-mutex wedge → the Error channel (spec/Error_channel_todo.md) ─────────────────────
+//  A belief cycle that THROWS is already captured (_really_answer_calls' catch → Story_error).
+//   A belief cycle that HANGS was not: it only stamped `.c.drain_why`, which nothing but the todo
+//    popover reads — so the machine's WORST failure mode ("no House can drain until it settles")
+//     wore its WEAKEST reporting.  Seen live 2026-08-05: `beliefs mutex held 120s by H:MusuBounce
+//      think`, which silently ate a whole Book sweep — the runner looked alive the entire time,
+//       exactly the "tab still looks alive" the mutex() comment warns about.
+//  Past this age the holder is reported ONCE per lock episode through the same door as every other
+//   error, so it particles into %Errlog, reddens the run, and shows in the run bar instead of
+//    living in a popover.  Generous: a legitimate belief cycle is milliseconds, and a heavy Book
+//     step is seconds — 30s is already pathological, so this never fires on a healthy run.
+export const MUTEX_WEDGE_MS = 30000
+
 // ── Wormhole op retry (Wormhole_park) ────────────────────────────────────────────────────────
 //  How long ONE disk/proxy op may run before we stop waiting on it and try again.  Comfortably
 //   above a healthy local FSA op (microseconds) and above a relay round-trip, so a timeout means
@@ -1036,6 +1049,18 @@ export class House extends StorableHousing {
             V.organise && console.log(`answer_calls: H:${this.name} beliefs mutex locked (by H:${H.name}), yielding`)
             const held = H.mutex_held('beliefs')
             this.c.drain_why = held ? `beliefs mutex held ${Math.round(held.ms / 1000)}s by ${held.who}` : 'beliefs mutex held'
+            // THE WEDGE GOES DOWN THE ERROR CHANNEL TOO (2026-08-05).  Reported from HERE rather than
+            //  from a watchdog timer in mutex(): this branch already detects the wedge and already has
+            //   the holder + age, so it costs nothing on the hot path — mutex() stays at its documented
+            //    two assignments per lock, and no timer is armed per belief cycle.
+            //  ONCE PER LOCK EPISODE, keyed on the lock's own start stamp: every gated House re-enters
+            //   this branch every few ms while wedged, so an unkeyed report would be a flood, and a
+            //    plain boolean would stay latched and miss the NEXT wedge.
+            if (held && held.ms > MUTEX_WEDGE_MS && H.c._mutex_wedge_told !== H.c._mutex_beliefs_at) {
+                H.c._mutex_wedge_told = H.c._mutex_beliefs_at
+                ;(H as any).Story_error?.('error', 'mutex',
+                    `beliefs mutex held ${Math.round(held.ms / 1000)}s by ${held.who} — no House can drain until it settles`)
+            }
             // mid-gallop an item's work outlasts the 4 ms gate, so this retry is the
             //  common re-drive — retry tight or the gallop pays 50 ms per item anyway
             setTimeout(() => this.answer_calls(), this._gallop_on ? GALLOP_TICK_MS : ANSWER_CALLS_TICK_MS)

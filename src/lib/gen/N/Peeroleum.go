@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return 'a934209a71c1c94f~g1' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return 'c7b29c9e6d2ba3e8~g1' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -680,8 +680,14 @@ async Peeroleum_deliver(w, frame) {
     let reliable = conn?.reliable !== false   // default reliable; only an explicit false engages inseq
     let seq = Number(h.seq)
     if (reliable || !Number.isFinite(seq)) {   // reliable carrier, or a frame with no seq → book straight, never hold
-        let ureq = H.Peeroleum_book_unemit(inbox, w, pier, frame)
-        if (ureq.sc.finished) {
+        // THE LEDGER HALF OF THE REUSED-SEQ GUARD, checked BEFORE booking.  Once the inbox bound
+        //  promotes a served req onto %inbox/recent and drops it, `ureq.sc.finished` below can no
+        //   longer see it — and booking first would mint a FRESH req for an already-served frame and
+        //    dispatch it (the re-dispatch this guard exists to stop).  So ask the ledger first, and
+        //     don't book at all on a hit.
+        let served = H.Peeroleum_served_before(inbox, h)
+        let ureq = served ? null : H.Peeroleum_book_unemit(inbox, w, pier, frame)
+        if (served || ureq.sc.finished) {
             // reused-seq collision: this (seq,type) already served a PREVIOUS incarnation (or the
             //  transport re-delivered a served frame).  Silence here was the 20s wormhole mute —
             //   RE-ACK so the sender's ack-gated retry stands down; the boot-epoch reset (ping-borne
@@ -702,7 +708,7 @@ async Peeroleum_deliver(w, frame) {
             H.feebly_ponder()
             return
         }
-        await inbox.do(); await H.Peeroleum_rollup_faulty(pier); H.feebly_ponder(); return
+        await inbox.do(); await H.Peeroleum_rollup_faulty(pier); H.Peeroleum_bound_inbox(inbox, w, pier); H.feebly_ponder(); return
     }
     // ── inbound seq discipline (Reliable.g: inseq_admit) — LOSSY carriers only ──
     pier.c.inseq = pier.c.inseq || {last: 0, buffered: []}
@@ -731,6 +737,7 @@ async Peeroleum_deliver(w, frame) {
     }
     await inbox.do()
     await H.Peeroleum_rollup_faulty(pier)
+    H.Peeroleum_bound_inbox(inbox, w, pier)
     H.feebly_ponder()
 
 },
@@ -747,6 +754,94 @@ Peeroleum_book_unemit(inbox, w, pier, frame) {
     ureq.c.w = w
     ureq.c.pier = pier
     return ureq
+
+},
+// ── THE INBOX BOUND (2026-08-05) and the guard it must not weaken ──────────────────────────────
+// The inbox books a %req:unemit per arriving frame and, until now, NOTHING bounded it: the outbox
+//  got both its bounds in the 2026-07-29 pass (ACKED_KEEP + the 2000 backstop) and the inbox got
+//   neither.  Its only cull was Peeroleum_runstepped, reachable solely via Peeroleum_arm_whittle,
+//    which is Book-only by design — so LIVE, a Pier's inbox grew forever, and since every arrival
+//     also runs Peeroleum_rollup_faulty (a WHOLE-inbox scan) the cost went O(N²) on the sink side:
+//      exactly the melt the want-bypass fixed on the source side, still live on the response leg.
+//
+// WHY BOUND RATHER THAN BYPASS (the owner's call, 2026-08-05: "cap it dont bypass").  repli_want
+//  could skip the inbox entirely because a want re-asks itself every 4s, so ordering and delivery
+//   are both free.  repli_lines / repli_page are NOT self-re-asking — they ride the inseq ordering
+//    path and the body_hash verify — so bypassing them would trade a memory leak for a correctness
+//     hole.  Bounding keeps every frame on the same verified, ordered path and simply stops the
+//      SERVED ones from accumulating.
+//
+// THE GUARD THIS MUST NOT BREAK ("it must work as perfectly as possible" — the owner).  The reused-
+//  seq collision check in Peeroleum_deliver works by finding a FINISHED %req:unemit still standing
+//   on the inbox: that standing req IS the memory of "I already served this frame", and re-acking
+//    off it is what stands a sender's retry down instead of re-dispatching (a 2nd hear_trust /
+//     dock_push is the corruption at stake).  Culling those reqs would blind that check — so the
+//      cull PROMOTES each one into the %inbox/recent ledger first, and the check consults the
+//       ledger too (Peeroleum_served_before).  The guard's reach is therefore unchanged by the
+//        bound; only where it reads from changes.
+//   KEEP THE TWO BOUNDS IN STEP: RECENT_KEEP >= DONE_KEEP, always.  If the ledger were the shorter
+//    of the two, a served req could fall off it while its retransmit window is still open, which is
+//     precisely the blindness this exists to prevent.
+
+// Peeroleum_inbox_ledger — the ONE promotion path from a served %req:unemit onto %inbox/recent.
+//  Both cullers route through here, so the two can never disagree about what the ledger holds.
+//   Rows carry (seq, type, body_len).  DELIBERATELY NOT body_hash: 64 hex chars × the retained set
+//    would bloat every snap to sharpen a single vanishing case — a reborn peer re-issuing a
+//     DIFFERENT frame at an identical seq AND type AND byte-length.  That case degrades to "treated
+//      as already served" → re-acked, not re-dispatched, which is the SAFE direction: the failure
+//       this guards is a re-DISPATCH, and a wrongly-suppressed frame is recovered by the sender's
+//        app-layer re-ask.  body_len rides along free and kills the accidental half of that overlap.
+Peeroleum_inbox_ledger(inbox, u) {
+    let recent = inbox.oai({recent: 1})
+    // seq rides as a STRING in mint and probe alike, so a seq of 1 can never read as the {k:1}
+    //  presence wildcard (the house idiom — Repli_chunk_at:195, Repli_park_want:475).
+    let row = {unemit: String(u.sc.seq), type: u.sc.type, seq: String(u.sc.seq)}
+    if (u.sc.body_len != null) row.body_len = String(u.sc.body_len)
+    recent.i(row)
+    return recent
+
+},
+// Peeroleum_served_before — the ledger half of the reused-seq guard: has this exact frame already
+//  been served AND culled off the live inbox?  Returns true only on a full identity match, so a
+//   genuinely new frame is never suppressed by it.
+Peeroleum_served_before(inbox, h) {
+    let recent = inbox.o({recent: 1})[0]
+    if (!recent) return false
+    let probe = {unemit: String(h.seq), type: h.type, seq: String(h.seq)}
+    if (h.body_len != null) probe.body_len = String(h.body_len)
+    return recent.oa(probe)
+
+},
+// Peeroleum_bound_inbox — the live-path bound, mirroring the outbox's two exactly (:835 and :469).
+//  DONE_KEEP whittles only the SERVED (%done) reqs, promoting each onto the ledger on its way out;
+//   the structural backstop counts everything and is the belt-and-suspenders for a pathological
+//    peer.  Faulty reqs are never culled here — Peeroleum_rollup_faulty rebuilds %faulty from them.
+//  DONE_KEEP is generous ON PURPOSE (200): spec §12.1 promises that the snap taken BEFORE a step
+//   boundary shows that step's whole traffic, and Story fixtures assert it.  The heaviest Book step
+//    on record books 46, so this bound never fires in a Book — it is a production-only ceiling, and
+//     the boundary cull stays the thing Books actually exercise.
+Peeroleum_bound_inbox(inbox, w, pier) {
+    const H = this
+    let DONE_KEEP = 200
+    let done = inbox.o({req: 'unemit'}).filter(u => u.sc.done)
+    if (done.length > DONE_KEEP) {
+        let cull = done.slice(0, done.length - DONE_KEEP)      // o() is z-order: oldest first
+        for (const u of cull) { H.Peeroleum_inbox_ledger(inbox, u); inbox.drop(u) }
+    }
+    let recent = inbox.o({recent: 1})[0]
+    if (recent) H.whittle_N(recent.o({unemit: 1}), 200)        // RECENT_KEEP — must be >= DONE_KEEP
+    // structural backstop: no single Pier inbox reaches the 6000 index ceiling (Stuff.i_z) and
+    //  throws inside the delivery that is trying to drain it.  Drops the OLDEST regardless of
+    //   state, so a flood of never-finishing reqs can still not pin the pump.
+    let live = inbox.o({req: 'unemit'})
+    if (live.length >= 2000) {
+        if (live[0]) inbox.drop(live[0])
+        let nowms = Date.now()
+        if (nowms - (w.c.inbox_cap_warn_ts || 0) > 1000) {
+            w.c.inbox_cap_warn_ts = nowms
+            console.warn(`🛰⚠ inbox backstop: pier ${pier%pub} holds ${live.length} unemits (cap 2000) — dropped oldest seq=${live[0]?.sc?.seq} type=${live[0]?.sc?.type}; frames are arriving faster than they finish`)
+        }
+    }
 
 },
 // req_unemit — the inbox do_fn (spec §7.3): handle ONE inbound frame, booked as %req:unemit by
@@ -1040,7 +1135,17 @@ async Peeroleum_arm_whittle(w) {
     w.c._whittle_armed = 1
     let rearm = () => H.Runstepped(async () => {
         try { H.Peeroleum_retx_sweep(w); H.Peeroleum_liveness_sweep(w); await H.Peeroleum_runstepped(w) }
-        catch (e) { console.error('⚠ Peeroleum whittle sweep threw — rearming anyway', e) }
+        catch (e) {
+            // STAMP IT, don't just log it (2026-08-05).  A sweep that throws every boundary strands
+            //  the cull silently: MusuReplica's inbox climbed to 17 rows over 14 steps with %recent
+            //   never once appearing, and NOTHING in any snap said why — the cause lived in a console
+            //    nobody reads during a recorded run.  Peeroleum_retx_sweep already stamps %stall_err
+            //     for its own inner throw (:945); this is the same courtesy for the outer chain.  One
+            //      stamp per w (not per boundary) so a persistent thrower is a fact, not a flood.
+            let msg = (e && e.message || String(e)).slice(0, 80)
+            if (!w.o({sweep_err:1})[0]) w.i({sweep_err:1, msg})
+            console.error('⚠ Peeroleum whittle sweep threw — rearming anyway', e)
+        }
         rearm()
     })
     rearm()
@@ -1073,12 +1178,15 @@ async Peeroleum_runstepped(w) {
             }
             let inbox = pier.o({inbox:1})[0]
             if (inbox) {
-                let recent = inbox.oai({recent:1})
+                // routed through Peeroleum_inbox_ledger so the boundary cull and the live bound
+                //  (Peeroleum_bound_inbox) can never disagree about the ledger's shape — the ledger
+                //   is the reused-seq guard's memory once a req leaves the live inbox.
                 for (const u of inbox.o({req:'unemit'}).filter(u => u.sc.done)) {
-                    recent.i({unemit:u.sc.seq, type:u.sc.type, seq:u.sc.seq})
+                    H.Peeroleum_inbox_ledger(inbox, u)
                     inbox.drop(u)
                 }
-                H.whittle_N(recent.o({unemit:1}), 20)
+                let recent = inbox.o({recent:1})[0]
+                if (recent) H.whittle_N(recent.o({unemit:1}), 200)   // RECENT_KEEP, in step with DONE_KEEP
             }
             await H.Peeroleum_rollup_faulty(pier)
         }

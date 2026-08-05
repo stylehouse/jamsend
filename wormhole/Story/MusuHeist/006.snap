@@ -1,9 +1,9 @@
 Snap:H
   H:MusuHeist,Run
     A:MusuHeist
-      self,round=16	{"mung":["age"]}
+      self,round=15	{"mung":["age"]}
       w:MusuHeist,now=1752000060
-        self,round=16	{"mung":["age"]}
+        self,round=15	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -56,13 +56,13 @@ Snap:H
                 emit=3,type:pier_accept,seq=3
             inbox
               recent
-                unemit,type:hello,seq
-                unemit=2,type:trust,seq=2
-                unemit=3,type:pier_hello,seq=3
-                unemit=4,type:pier_confirm,seq=4
-                unemit=5,type:repli_lines,seq=5
-                unemit=6,type:repli_lines,seq=6
-                unemit=7,type:repli_lines,seq=7
+                unemit:1,type:hello,seq:1
+                unemit:2,type:trust,seq:2
+                unemit:3,type:pier_hello,seq:3
+                unemit:4,type:pier_confirm,seq:4
+                unemit:5,type:repli_lines,seq:5,body_len:224
+                unemit:6,type:repli_lines,seq:6,body_len:218
+                unemit:7,type:repli_lines,seq:7,body_len:221
               req:unemit,seq=8,type:repli_lines,body_hash:d0c7a89e6ea2693a706da3a344315e5c93da8ecf6639d6b739e0d44e126f7a0a,body_len=187,done,to:repli_lines,finished
               req:unemit,seq=9,type:repli_page,body_hash:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d,body_len=8110,done,to:repli_page,finished
               req:unemit,seq=10,type:repli_lines,body_hash:b889e364de2a4eeff95e6803e4746077ee02c84530289241b5daa70709e2784f,body_len=324,done,to:repli_lines,finished
@@ -103,9 +103,9 @@ Snap:H
                 emit=4,type:pier_confirm,seq=4
             inbox
               recent
-                unemit,type:hello,seq
-                unemit=2,type:trust,seq=2
-                unemit=3,type:pier_accept,seq=3
+                unemit:1,type:hello,seq:1
+                unemit:2,type:trust,seq:2
+                unemit:3,type:pier_accept,seq:3
             Ud,pubkey:4e09f34f5a6ab900
           active_transport,type:mock,open
         MusuSelf,pub:4e09f34f5a6ab900

@@ -334,9 +334,11 @@ async Crate_transcode_begin(lib, nav, base, path, id):
     rec.sc.real = 1
     rec.c.raw_chunks = res.chunks
     rec.c.chunks = []
+    // %Fill carries PROGRESS ONLY (have/got/sr).  The PROMISE lives on the Record — sc.nchunks for
+    //  this Float32 substrate, sc.total for the chunk-particle one (Repli_page_ready:450-452) — and
+    //   used to be copied here as fill.sc.total too, one number under two names that could disagree.
     let fill = rec.oai({ Fill: 1, name: 'audio' })
     fill.c.up = rec
-    fill.sc.total = res.nchunks
     fill.sc.have = 0
     fill.sc.sr = 48000
     rec.bump()
@@ -357,6 +359,16 @@ Crate_transcode_release(rec, n):
     while (i < end) { chunks.push(raw[i]); i = i + 1 }
     let pv = rec.i({ preview: 1, seq: rec.o({ preview: 1 }).length, from: from, to: end })
     pv.c.up = rec
+    // DO NOT advance fill.sc.have here.  It looks frozen-at-zero and it is SUPPOSED to be (2026-08-05,
+    //  tried and reverted — MusuReco lost witnessed:complete).  %Fill REPLICATES: it rides the offer
+    //   fragment as a child of the Record, so whatever the source writes into `have` LANDS ON THE MIRROR
+    //    and overwrites the mirror's own count.  `have` means "how much I have", which on the receiving
+    //     side is arrival progress — the source stamping its transcode frontier there makes the mirror
+    //      believe it already holds chunks it has never been sent, and MusuReco_pull (which starts at
+    //       `from = have`) then skips those pages for good: got fell 30 → 29 and the completeness proof
+    //        died.  The source's own frontier is rec.c.chunks.length, and Repli_sent_se reads n.c.sent —
+    //         neither needs this field.  This is %Fill.have carrying two meanings across one wire, the
+    //          same disease %Stream had; see Repli_design §9.4.
     if (end >= raw.length) rec.sc.transcoded = 1
     rec.bump()
     return end

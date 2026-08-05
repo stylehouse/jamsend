@@ -1,29 +1,29 @@
 Snap:H
   H:MusuMag,Run
     A:MusuMag
-      self,round=17	{"mung":["age"]}
-      w:MusuMag
-        self,round=17	{"mung":["age"]}
+      self,round=11	{"mung":["age"]}
+      w:MusuMag,now=1751970040
+        self,round=11	{"mung":["age"]}
         req:wrangle,eternal,ok
         Account,of:Caster
           Identity:d70f253aa325f68b,prepub:d70f253aa325f68b,friendly:Caster
             Peering,name:d70f253aa325f68b,friendly:Caster
               Idzeug:mag_1,to:Music,genre:Mags,spent
-              Pier,pub:2ea86ae9ea3556f0,friendly:Hearer,since:1785078506
+              Pier,pub:2ea86ae9ea3556f0,friendly:Hearer,since:1751970030
                 Peering,name:2ea86ae9ea3556f0,friendly:Hearer,pub:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b
-                Grant:Music,by:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,for:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,time:1785078506,sign:9c7f35cfdac1675bb1c6912bb2b315c35fcb007aa4553816b48834055cab854034f11a3aa31628d871d0dffa5c602cd8dae95a7c2a5726fd4f0604212f92a900,genre:Mags
-                Grant:Music,by:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,for:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,time:1785078506,sign:f3e12c5a70395cb5330b447a069fc4d4c1b7536483274a6228edd4ac1dd9250213866fe9f347a31c77162159037b0c9f5d105621bded0e11f496b6c4b34af70a,genre:Mags
+                Grant:Music,by:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,for:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,time:1751970030,sign:9996e5583bdba2823338be2288f062158f7e8b750768f4d8553c8011ed5b2fa57a4bdac8aa9cf71a37ecb00e46f32838f20cd5d10eeebc2d424baf5dfab6620d,genre:Mags
+                Grant:Music,by:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,for:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,time:1751970030,sign:33f2746725ff882521e2b7d401e9b9278cec06fa01f71f2f4478c0d45dbef691182c526287122edcbe649434cb196b866b27f4b6d67708ba77243d0205299409,genre:Mags
             SocialGraph
-              Edge,a:d70f253aa325f68b,b:2ea86ae9ea3556f0,at:1785078506
+              Edge,a:d70f253aa325f68b,b:2ea86ae9ea3556f0,at:1751970030
         Account,of:Hearer
           Identity:2ea86ae9ea3556f0,prepub:2ea86ae9ea3556f0,friendly:Hearer
             Peering,name:2ea86ae9ea3556f0,friendly:Hearer
-              Pier,pub:d70f253aa325f68b,friendly:Caster,since:1785078506
+              Pier,pub:d70f253aa325f68b,friendly:Caster,since:1751970030
                 Peering,name:d70f253aa325f68b,friendly:Caster,pub:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2
-                Grant:Music,by:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,for:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,time:1785078506,sign:9c7f35cfdac1675bb1c6912bb2b315c35fcb007aa4553816b48834055cab854034f11a3aa31628d871d0dffa5c602cd8dae95a7c2a5726fd4f0604212f92a900,genre:Mags
-                Grant:Music,by:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,for:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,time:1785078506,sign:f3e12c5a70395cb5330b447a069fc4d4c1b7536483274a6228edd4ac1dd9250213866fe9f347a31c77162159037b0c9f5d105621bded0e11f496b6c4b34af70a,genre:Mags
+                Grant:Music,by:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,for:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,time:1751970030,sign:9996e5583bdba2823338be2288f062158f7e8b750768f4d8553c8011ed5b2fa57a4bdac8aa9cf71a37ecb00e46f32838f20cd5d10eeebc2d424baf5dfab6620d,genre:Mags
+                Grant:Music,by:2ea86ae9ea3556f02a392015cbd3c365fe260d283997635f4cdaea7aaf692b4b,for:d70f253aa325f68ba546a5c514d897be985d21458e134600255673de48647ae2,time:1751970030,sign:33f2746725ff882521e2b7d401e9b9278cec06fa01f71f2f4478c0d45dbef691182c526287122edcbe649434cb196b866b27f4b6d67708ba77243d0205299409,genre:Mags
             SocialGraph
-              Edge,a:2ea86ae9ea3556f0,b:d70f253aa325f68b,at:1785078506
+              Edge,a:2ea86ae9ea3556f0,b:d70f253aa325f68b,at:1751970030
         Peering,name:d70f253aa325f68b,req=2,ok
           Pier,pub:2ea86ae9ea3556f0,req=2,ok
             req:handshake,finished
@@ -43,21 +43,12 @@ Snap:H
                 emit,type:hello,seq
                 emit=2,type:trust,seq=2
                 emit=3,type:pier_accept,seq=3
-                emit=4,type:repli_lines,seq=4
-                emit=5,type:repli_lines,seq=5
-                emit=6,type:repli_page,seq=6
-                emit=7,type:repli_page,seq=7
-                emit=8,type:repli_lines,seq=8
-                emit=9,type:repli_page,seq=9
-                emit=10,type:repli_page,seq=10
             inbox
               recent
-                unemit,type:hello,seq
-                unemit=2,type:trust,seq=2
-                unemit=3,type:pier_hello,seq=3
-                unemit=4,type:pier_confirm,seq=4
-                unemit=5,type:repli_want,seq=5
-                unemit=6,type:repli_want,seq=6
+                unemit:1,type:hello,seq:1
+                unemit:2,type:trust,seq:2
+                unemit:3,type:pier_hello,seq:3
+                unemit:4,type:pier_confirm,seq:4
             Ud,pubkey:2ea86ae9ea3556f0
           active_transport,type:mock,open
         Peering,name:2ea86ae9ea3556f0,req=3,ok
@@ -80,27 +71,25 @@ Snap:H
                 emit=2,type:trust,seq=2
                 emit=3,type:pier_hello,seq=3
                 emit=4,type:pier_confirm,seq=4
-                emit=5,type:repli_want,seq=5
-                emit=6,type:repli_want,seq=6
             inbox
               recent
-                unemit,type:hello,seq
-                unemit=2,type:trust,seq=2
-                unemit=3,type:pier_accept,seq=3
-                unemit=4,type:repli_lines,seq=4
-                unemit=5,type:repli_lines,seq=5
-                unemit=6,type:repli_page,seq=6
-                unemit=7,type:repli_page,seq=7
-                unemit=8,type:repli_lines,seq=8
-                unemit=9,type:repli_page,seq=9
-                unemit=10,type:repli_page,seq=10
+                unemit:1,type:hello,seq:1
+                unemit:2,type:trust,seq:2
+                unemit:3,type:pier_accept,seq:3
+                unemit:4,type:repli_lines,seq:4,body_len:751
+                unemit:5,type:repli_lines,seq:5,body_len:337
+                unemit:6,type:repli_page,seq:6,body_len:32620
+                unemit:7,type:repli_page,seq:7,body_len:32300
+                unemit:8,type:repli_lines,seq:8,body_len:337
+                unemit:9,type:repli_page,seq:9,body_len:32620
+                unemit:10,type:repli_page,seq:10,body_len:32300
             Ud,pubkey:d70f253aa325f68b
           active_transport,type:mock,open
         MusuSelf,pub:d70f253aa325f68b
           stock,pub:d70f253aa325f68b
             Mag:shuffle
               Cloud,page:1
-                Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
+                Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,path:DJ Oscillo - Cosmic C.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
                   Preview,seq:0,head,preskip=312,cid:3ccd2f51f3f3b66e3115ee8cb2d1c43575a42bf9704abf44b8af40d1a8d74d7b	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:1,cid:144cde8bcbf6a150cae10b2f4115f1fd62f97576477adbaaa900bac3cfc53872	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:2,cid:224607ca4d58380a3271f7a0a2621c076034997f83423effb1cabda2252985e3	{"ref":{"buf":"Uint8Array()"}}
@@ -117,7 +106,7 @@ Snap:H
                   Preview,seq:13,cid:d01bb06dff81abc1b549cc048d6b72c2088e6275ea02d7f82bdc6fa0145202ad	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:14,cid:2850cb9adf1f9f0a22ecd7de7829804b4247a3a225ca45568cbb3af88b69bc44	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:15,cid:3ab52c6af8c8ee61b625c0831f959da0289a33ed976efd9f78e1b8d4547cc4ac	{"ref":{"buf":"Uint8Array()"}}
-                Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
+                Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,path:DJ Oscillo - Dorian D.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
                   Preview,seq:0,head,preskip=312,cid:3457aa775f90150bb7dfee2664537ff0249c76f412150375802373b5dcd6e379	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:1,cid:24e815ca6fe5761ede36e7deca8327236309956d788d7280dbc8ede8ca0bf23b	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:2,cid:264238c1c63afa12031ca91e07293c7c4c15bb886d1f94e8877bfe0541051a17	{"ref":{"buf":"Uint8Array()"}}
@@ -134,7 +123,7 @@ Snap:H
                   Preview,seq:13,cid:009ed34af0bea671c1bc2cab4e9a52f2932f89625fad01ecfa27967e9e1e2d97	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:14,cid:819beaabf2ab5742123998ed14ec1b8a6601aab545d4ce893119feca0bdb78a6	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:15,cid:82060ded7c33145ae7de702e7550c7641590f602f69b86c6f8771abf8b815413	{"ref":{"buf":"Uint8Array()"}}
-                Record,id:cf95c97b08584b92,title:Groove G,artist:DJ Oscillo,seconds=66,lufs=-7.83,gain=-6.17,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=33,bytes=517443
+                Record,id:cf95c97b08584b92,title:Groove G,artist:DJ Oscillo,seconds=66,lufs=-7.83,gain=-6.17,real,col,path:DJ Oscillo - Groove G.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=33,bytes=517443
                   Preview,seq:0,head,preskip=312,cid:67419e8fa3c3f4c9ceb889789faa9a0d784acdffc0a788089c370e63e83df478	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:1,cid:2576b7739c6ea2c6579f39be6be0d496c7a34a93cb66d0a0d520dad6271338fa	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:2,cid:05c7fea85acc8edc86000f9f35a115cb00e4eceb903cff4ed181fac0efeba5f8	{"ref":{"buf":"Uint8Array()"}}
@@ -159,12 +148,12 @@ Snap:H
           stock,pub:2ea86ae9ea3556f0
             Mag:shuffle,warm
               Cloud,page:1
-                Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443,stage:landing
+                Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,path:DJ Oscillo - Cosmic C.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443,stage:landing
                   Preview,seq:0,head,preskip=312,cid:3ccd2f51f3f3b66e3115ee8cb2d1c43575a42bf9704abf44b8af40d1a8d74d7b	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:1,cid:144cde8bcbf6a150cae10b2f4115f1fd62f97576477adbaaa900bac3cfc53872	{"ref":{"buf":"Uint8Array()"}}
-                Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443,stage:landing
+                Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,path:DJ Oscillo - Dorian D.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443,stage:landing
                   Preview,seq:0,head,preskip=312,cid:3457aa775f90150bb7dfee2664537ff0249c76f412150375802373b5dcd6e379	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:1,cid:24e815ca6fe5761ede36e7deca8327236309956d788d7280dbc8ede8ca0bf23b	{"ref":{"buf":"Uint8Array()"}}
-                Record,id:cf95c97b08584b92,title:Groove G,artist:DJ Oscillo,seconds=66,lufs=-7.83,gain=-6.17,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=33,bytes=517443,stage:husk
+                Record,id:cf95c97b08584b92,title:Groove G,artist:DJ Oscillo,seconds=66,lufs=-7.83,gain=-6.17,real,col,path:DJ Oscillo - Groove G.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=33,bytes=517443,stage:husk
         arrived,heads=3,pages
         warm,held0=2,held1=2

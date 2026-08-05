@@ -76,6 +76,15 @@
     //  strip's "→ dest" line (untouched by this pass; only the PRIMED preview line was the noise).
     const safe = (s: string) => String(s || '').replace(/[^\w .&()-]+/g, '_').replace(/\s+/g, ' ').trim() || 'Unfiled'
     const stripMark = (s: string) => String(s || '').replace(/^(-|0) /, '')
+    // deshell — a leading '- ' is SHELL-HOSTILE: a file or folder whose name starts with a dash cannot be
+    //  handed to a shell command as a non-flag (the human 2026-08-05).  '0 ' is the marker we write, which
+    //   is already what the category verb migrates to (Heist_keep_set_genre, Heist.g:1877); this carries a
+    //    DIRECTORY segment over the same way.  UI-SIDE ONLY, deliberately: the swap becomes real on disk the
+    //     moment a keep's directories are committed (Heist_rel_for substitutes dirs_auto → dirs at land
+    //      time), but an UNTOUCHED keep still lands the source's own '- name' folder.  Making that automatic
+    //       means a leading-dash rule in Heist_cp_path, which would bend the cp-landing ruling ("the source's
+    //        own filename and folder layout survive UNCHANGED") — the human's call, not a display edit's.
+    const deshell = (s: string) => String(s || '').replace(/^- /, '0 ')
 
     function dirOf(path: string): string {
         const parts = String(path || '').split('/').filter(Boolean)
@@ -131,11 +140,15 @@
 
         // ── the track tree — grouped by whatever's LEFT after the directories prefix, so a group never
         //     repeats what the breadcrumb above it already said ──────────────────────────────────────────
-        const prefixParts = dirsRaw.split('/').filter(Boolean)
+        // the prefix match is MARKER-BLIND (2026-08-05): '- chill', '0 chill' and 'chill' are one directory
+        //  as far as "has this level already been said above?" goes.  An exact-string compare failed at the
+        //   FIRST segment whenever the breadcrumb and the source disagreed about the marker, so nothing
+        //    stripped and every group label restated the whole path the directories row had just shown.
+        const prefixParts = dirsRaw.split('/').filter(Boolean).map(stripMark)
         function remainderOf(dir: string): string {
             const parts = dir.split('/').filter(Boolean)
             let i = 0
-            while (i < prefixParts.length && parts[i] === prefixParts[i]) i++
+            while (i < prefixParts.length && stripMark(parts[i]) === prefixParts[i]) i++
             return parts.slice(i).join('/')
         }
         const groups: Record<string, any[]> = {}
@@ -153,7 +166,7 @@
         }
         const flat = (groups[''] || []).sort((a: any, b: any) => a.file.localeCompare(b.file))
         const tree = Object.keys(groups).filter((k) => k !== '').sort().map((rem) => ({
-            label: rem.split('/').filter(Boolean).join(' › '),
+            label: rem.split('/').filter(Boolean).map(deshell).join(' › '),
             tracks: groups[rem].sort((a: any, b: any) => a.file.localeCompare(b.file)),
         }))
 
@@ -207,7 +220,8 @@
         }
     }
     function openDirs() {
-        dirsSegsFrozen = face.dirsSegs.slice()
+        // the draft opens in the shell-safe form, so what you see in the boxes is what will be written
+        dirsSegsFrozen = face.dirsSegs.map(deshell)
         dirsAutoFrozen = face.dirsAuto
         dirsEditing = true
     }
@@ -238,6 +252,39 @@
         segs.splice(i, 1)
         dirsSegsFrozen = segs
         A?.post_do?.(() => { A?.Heist_keep_set_dirs?.(n, segs.join('/'), dirsAutoFrozen) }, { see: 'keep directories remove' })
+    }
+
+    // ── committing an edit ────────────────────────────────────────────────────────────────────────
+    // THE TICK COMMITS (the human 2026-08-05: "the user would assume clicking the tick would enter
+    //  whatever's in the box").  It used to only close the editor, so anything typed into a gap and not
+    //   confirmed with ENTER was silently dropped — the worst kind of small bug, because the human watched
+    //    themselves type it.  foldGaps weaves every pending gap into its position in one pass, so ✓ is
+    //     "enter everything, in order" rather than N remembered keystrokes.
+    function foldGaps(segs: string[], gaps: string[]): string[] {
+        const out: string[] = []
+        for (let i = 0; i < segs.length; i++) {
+            const g = (gaps[i] || '').trim()
+            if (g) out.push(g)
+            out.push(segs[i])
+        }
+        const tail = (gaps[segs.length] || '').trim()
+        if (tail) out.push(tail)
+        return out.map((s) => s.trim()).filter(Boolean)
+    }
+    function commitCat() {
+        const segs = foldGaps(face.catSegs, catGaps)
+        catGaps = ['']
+        catEditing = false
+        A?.post_do?.(() => { A?.Heist_keep_set_genre?.(n, segs.join('/')) }, { see: 'keep category commit' })
+    }
+    function commitDirs() {
+        // deshell on the way OUT: whatever the human left in the boxes, what gets written is the
+        //  shell-safe form (see deshell above).
+        const segs = foldGaps(dirsSegsFrozen, dirsGaps).map(deshell)
+        dirsGaps = ['']
+        dirsSegsFrozen = segs
+        dirsEditing = false
+        A?.post_do?.(() => { A?.Heist_keep_set_dirs?.(n, segs.join('/'), dirsAutoFrozen) }, { see: 'keep directories commit' })
     }
 
     function toggle(ref: string) {
@@ -300,7 +347,7 @@
                     bind:this={catFirstInput}
                     oninput={(e) => { catGaps[face.catSegs.length] = (e.currentTarget as HTMLInputElement).value }}
                     onkeydown={(e) => { if (e.key === 'Enter') catInsertAt(face.catSegs.length) }} />
-                <button class="kf-chips-done" onclick={() => catEditing = false} title="done editing">✓</button>
+                <button class="kf-chips-done" onclick={commitCat} title="done — enters whatever's in the boxes">✓</button>
             </div>
         {:else}
             <button class="kf-stair" onclick={openCat} title="click to edit">
@@ -322,12 +369,20 @@
                     <input class="kf-gap dirs" placeholder="+" list="kf-dirs-known" value={dirsGaps[i]}
                         oninput={(e) => { dirsGaps[i] = (e.currentTarget as HTMLInputElement).value }}
                         onkeydown={(e) => { if (e.key === 'Enter') dirsInsertAt(i) }} />
-                    <span class="kf-chip dirs">{seg}<DeleteX ondelete={() => dirsRemoveAt(i)} title="remove this directory level" /></span>
+                    <!-- the chunk itself is EDITABLE (the human 2026-08-05) — a directory level is usually
+                         nearly right, so retyping it whole through remove+insert was the wrong gesture.  It
+                         edits the frozen draft; ENTER or ✓ commits the row. -->
+                    <span class="kf-chip dirs">
+                        <input class="kf-chipin" bind:value={dirsSegsFrozen[i]} size={Math.max(2, seg.length)}
+                            title="edit this directory level"
+                            onkeydown={(e) => { if (e.key === 'Enter') commitDirs() }} />
+                        <DeleteX ondelete={() => dirsRemoveAt(i)} title="remove this directory level" />
+                    </span>
                 {/each}
                 <input class="kf-gap dirs" placeholder="+" list="kf-dirs-known" value={dirsGaps[dirsSegsFrozen.length]}
                     oninput={(e) => { dirsGaps[dirsSegsFrozen.length] = (e.currentTarget as HTMLInputElement).value }}
                     onkeydown={(e) => { if (e.key === 'Enter') dirsInsertAt(dirsSegsFrozen.length) }} />
-                <button class="kf-chips-done" onclick={() => dirsEditing = false} title="done editing">✓</button>
+                <button class="kf-chips-done" onclick={commitDirs} title="done — enters whatever's in the boxes">✓</button>
             </div>
             <datalist id="kf-dirs-known">
                 {#each face.dirsKnown as d}<option value={d}></option>{/each}
@@ -338,7 +393,7 @@
                 <span class="kf-stair-path">
                     {#if face.dirsSegs.length}
                         {#each face.dirsSegs as seg, i}
-                            <span class="bit">{#if i === 0}<span class="sl">/</span>{/if}<span class="seg dirs">{seg}</span><span class="sl">/</span></span>
+                            <span class="bit dirs">{#if i === 0}<span class="sl">/</span>{/if}<span class="seg dirs">{deshell(seg)}</span><span class="sl">/</span></span>
                         {/each}
                     {:else}
                         <span class="kf-stair-empty">…</span>
@@ -464,6 +519,11 @@
        and wrap instead of overflowing its row (a flex item won't shrink below content size otherwise). */
     .kf-stair-path { font-size: 10.5px; flex: 1 1 auto; min-width: 0; white-space: normal; }
     .kf-stair-path .bit { display: inline-block; white-space: nowrap; }
+    /* DIRECTORIES break INSIDE a chunk (the human 2026-08-05: "word-breaky chunks").  Theirs are source
+       folder names — '2009 Resonating Earth (2009) [WEB, Album, NL, …]' — routinely wider than the whole
+       cell, so nowrap made one segment decide the cell's width.  Section names are the human's own short
+       words and keep the tidy never-break-a-name rule. */
+    .kf-stair-path .bit.dirs { white-space: normal; overflow-wrap: anywhere; }
     .kf-stair-path .sl { color: #6b5a68; }
     .kf-stair-path .seg.cat { color: #7fe8bf; }
     .kf-stair-path .seg.dirs { color: #c9a5e8; }
@@ -493,7 +553,17 @@
         background: #241820; border-radius: 6px; padding: 2px 3px 2px 7px;
         font-size: 10.5px; color: #7fe8bf; white-space: nowrap;
     }
-    .kf-chip.dirs { color: #c9a5e8; }
+    .kf-chip.dirs { color: #c9a5e8; white-space: normal; overflow-wrap: anywhere; max-width: 100%; }
+    /* the in-place chunk editor: an input that looks like the chip's own text (no box, no chrome) until
+       it has focus, so the row still reads as chips rather than a form.  `size` on the element keeps it
+       content-width; max-width lets a long one wrap-shrink instead of pushing the cell wide. */
+    .kf-chipin {
+        background: transparent; border: none; padding: 0; margin: 0;
+        color: inherit; font: inherit; font-size: 10.5px; max-width: 100%;
+        border-bottom: 1px solid transparent;
+    }
+    .kf-chipin:hover { border-bottom-color: #52456a; }
+    .kf-chipin:focus { outline: none; border-bottom-color: #c9a5e8; }
     .kf-chips-done {
         cursor: pointer; background: none; border: none; color: #57c777;
         font-size: 11px; padding: 0 2px; line-height: 1;

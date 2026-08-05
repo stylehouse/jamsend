@@ -2,6 +2,6 @@ Snap:H
   H:MusuMag,Run
     A:MusuMag
       self,round	{"mung":["age"]}
-      w:MusuMag
+      w:MusuMag,now=1751970010
         self,round	{"mung":["age"]}
         req:wrangle,eternal,ok

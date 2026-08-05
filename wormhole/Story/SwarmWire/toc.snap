@@ -4,10 +4,7 @@ story:SwarmWire
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.095
-      sample=0.038,at=1784377940
-      sample=0.038,at=1784377941
-      sample=0.038,at=1784377942
+    TimeTotal:beliefs,avg=0.098
       sample=0.06,at=1784377949
       sample=0.459,at=1784382438
       sample=0.068,at=1784714557
@@ -15,10 +12,10 @@ story:SwarmWire
       sample=0.059,at=1785075426
       sample=0.084,at=1785075433
       sample=0.043,at=1785075444
-    TimeTotal:step,avg=0.019
-      sample=0.008,at=1784377940
-      sample=0.008,at=1784377941
-      sample=0.008,at=1784377942
+      sample=0.055,at=1785906295
+      sample=0.055,at=1785906296
+      sample=0.037,at=1785906302
+    TimeTotal:step,avg=0.02
       sample=0.012,at=1784377949
       sample=0.092,at=1784382438
       sample=0.014,at=1784714557
@@ -26,13 +23,16 @@ story:SwarmWire
       sample=0.012,at=1785075426
       sample=0.017,at=1785075433
       sample=0.009,at=1785075444
+      sample=0.011,at=1785906295
+      sample=0.011,at=1785906296
+      sample=0.007,at=1785906302
   step,dige:707011a29fe51dc1
   step=2,dige:e738796eb352e55b
     Assertion:stations-stand,sentence:two stations stand on the spine — the swarm frame kinds armed on the world
-  step=3,dige:be559dbe91bbbd13
+  step=3,dige:2317da8a911dd360
     Assertion:link-authenticated,sentence:the link authenticated first — hello and trust both ways before any swarm frame
-  step=4,dige:65949e75dbc097fc
+  step=4,dige:bdd53a9781d71ea3
     Assertion:friendship-sealed,sentence:the friendship sealed over the wire — mutual Music grants at both ends
     Assertion:frames-crossed,sentence:pier_hello and pier_accept and pier_confirm crossed as real frames — booked through outbox and inbox
-  step=5,dige:c6627476f7535141
+  step=5,dige:76046b023a20e429
     Assertion:spent-nonce-refuses,sentence:the spent nonce refuses over the wire too — a pier_reject crossed back

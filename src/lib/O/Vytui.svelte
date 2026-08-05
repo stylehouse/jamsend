@@ -23,6 +23,7 @@
     import { GLASS_KINDS } from "$lib/O/glass_kinds"
     import { FACE_MAINKEYS } from "$lib/O/glass_faces"
     import { lifetell } from "$lib/O/ui/micro/lifetell"   // DIAGNOSTIC — strip with the rest of the remount probes
+    import { hold_list, hold_true } from "$lib/O/ui/micro/hold"
     import { onMount, onDestroy } from 'svelte'
 
     let { H } = $props()
@@ -79,8 +80,15 @@
         }
         lastWorldsN = out.length
         if (out.length) lastWorldObj = out[0]
-        return out
+        // THE HOLD (2026-08-05, the fix the probe above earned).  The gap is REAL and it is standard:
+        //  `agency_officing` (Hovercraft.svelte:133) replaces every actor's `w:` children every tick,
+        //   and replace() publishes the empty half of its transaction (ui/micro/hold.ts has the chain).
+        //    So we buffer what we took and iterate the BUFFER — a transacting A:Vyto reads as unchanged,
+        //     and only an emptiness that OUTLASTS the hold is believed and torn down.  The probe above
+        //      still logs every raw gap, so this stays honest: the log says how often it saves us.
+        return worlds_hold(out)
     }
+    const worlds_hold = hold_list<TheC>()
     let lastWorldsN: number | undefined = undefined   // DIAGNOSTIC — strip with the life ladder
     let lastWorldObj: TheC | null = null
 
@@ -724,8 +732,12 @@
             if (M) { const log = M.c.supply_trace || (M.c.supply_trace = []); log.push({ t: Date.now(), ev: 'vyto-show-toggle', to: r ? 1 : 0, comm: commissioned(w) ? 1 : 0, rows: rows.length, live }); if (log.length > 300) log.splice(0, log.length - 300) }
         }
         lastShow.set(w, r)
-        return r
+        // THE HOLD — this {#if} gates the ENTIRE stage, so a false that lasts one render costs every
+        //  face its DOM (and the human their half-typed directory).  Arriving is instant; LEAVING must
+        //   persist past the hold.  Keyed per world, and the detector above still reports raw flips.
+        return stage_hold(r, w)
     }
+    const stage_hold = hold_true()
     function show_viewport_calc(w: TheC): boolean {
         if (!commissioned(w)) return false
         const mirror: any = (w.c as any).mirror

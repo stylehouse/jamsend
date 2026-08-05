@@ -1,16 +1,16 @@
 Snap:H
   H:MusuPier,Run
     A:MusuPier
-      self,round=9	{"mung":["age"]}
+      self,round=7	{"mung":["age"]}
       w:MusuPier
-        self,round=9	{"mung":["age"]}
+        self,round=7	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:caster,req=2,ok
           Pier,pub:listener,req=2,ok
             Ud,pubkey:listener
             outbox
-              emit=6,type:audiochunk,seq=6,sent,body_hash:c18852b30d2cfd96ded23f8c7a1f95a9a8b1f7f1ea9ca878aeb08a54d9306c15,body_len=9600,resent=2
+              emit=6,type:audiochunk,seq=6,sent,body_hash:c18852b30d2cfd96ded23f8c7a1f95a9a8b1f7f1ea9ca878aeb08a54d9306c15,body_len=9600,resent=2,acked
               recent
                 emit,type:audiochunk,seq
                 emit=2,type:audiochunk,seq=2
@@ -24,11 +24,11 @@ Snap:H
             inbox
               req:unemit,seq=6,type:audiochunk,body_hash:c18852b30d2cfd96ded23f8c7a1f95a9a8b1f7f1ea9ca878aeb08a54d9306c15,body_len=9600,error:bad-body-hash,finished
               recent
-                unemit,type:audiochunk,seq
-                unemit=2,type:audiochunk,seq=2
-                unemit=3,type:audiochunk,seq=3
-                unemit=4,type:audiochunk,seq=4
-                unemit=5,type:audiochunk,seq=5
+                unemit:1,type:audiochunk,seq:1,body_len:9600
+                unemit:2,type:audiochunk,seq:2,body_len:9600
+                unemit:3,type:audiochunk,seq:3,body_len:9600
+                unemit:4,type:audiochunk,seq:4,body_len:9600
+                unemit:5,type:audiochunk,seq:5,body_len:9600
             faulty
               unemit=6,error:bad-body-hash,seq=6
           active_transport,type:mock,open

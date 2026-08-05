@@ -846,6 +846,18 @@ Re-records (SwarmShare 005-009, MusuReco 005-011, +MusuHeist only if keep_step-d
              `Heist_catalog_land`, shared by both paths) — `console.log('◈⟲ resume: N tracks already on
               disk — skipped, not re-pulled')`. (The `.crswap` tidy above landed alongside this, same night.)
 
+## Evening 9 — THE BOMB is root-caused: `replace()` publishes its own empty half (2026-08-05)
+
+Evening 8's freeze was a real hazard but not this bug. The lifecycle-true probe (2026-08-02) proved a
+ **real teardown**, and the 2026-08-04 WORLDS probe named it: `{#each vyto_worlds() as w (w)}` gets a
+  transiently EMPTY list once per tick, destroying stage + faces + every KeepFace. The emptier is
+   `agency_officing` (`Hovercraft.svelte:133`) — `A.replace({w:1}, …)` per actor per tick, re-adding the
+    same worlds — and `replace()` **publishes** the empty half of its transaction (`empty()` → `Xify()` →
+     `bump_version()` on a `$state()` X). Chain + cures: `reactivity_docs.md` § "The transacting-empty
+      render". FIX: `ui/micro/hold.ts` buffering both Vytui structural gates; `replace()` untouched by
+       ruling. Compile-verified, **live proof owed** — type in the directories editor of a fresh keep
+        across several trickles.
+
 ## Evening 8 — THE BOMB has a fix (unverified live) + safe nice-ups, solo session, no live tab interaction (2026-07-30)
 
 **Scope of this pass:** the human asked to go all-over this doc and do whatever's possible without them,

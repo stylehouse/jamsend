@@ -1,9 +1,9 @@
 Snap:H
   H:SwarmWire,Run
     A:SwarmWire
-      self,round=7	{"mung":["age"]}
+      self,round=6	{"mung":["age"]}
       w:SwarmWire,now=1751600000
-        self,round=7	{"mung":["age"]}
+        self,round=6	{"mung":["age"]}
         req:wrangle,eternal,ok
         Account,of:Alice
           Identity:32c1ce7a059129d1,prepub:32c1ce7a059129d1,friendly:Alice
@@ -31,8 +31,8 @@ Snap:H
                 emit=2,type:trust,seq=2
             inbox
               recent
-                unemit,type:hello,seq
-                unemit=2,type:trust,seq=2
+                unemit:1,type:hello,seq:1
+                unemit:2,type:trust,seq:2
             Ud,pubkey:6eb0df4e976acef2
           active_transport,type:mock,open
         Peering,name:6eb0df4e976acef2,req=3,ok
@@ -55,8 +55,8 @@ Snap:H
                 emit=2,type:trust,seq=2
             inbox
               recent
-                unemit,type:hello,seq
-                unemit=2,type:trust,seq=2
+                unemit:1,type:hello,seq:1
+                unemit:2,type:trust,seq:2
             Ud,pubkey:32c1ce7a059129d1
           active_transport,type:mock,open
         req:witness,eternal,ok

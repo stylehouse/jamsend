@@ -24,8 +24,8 @@ Snap:H
             Ud,pubkey:Origin
             inbox
               recent
-                unemit,type:repli_lines,seq
-                unemit=2,type:repli_lines,seq=2
+                unemit:1,type:repli_lines,seq:1,body_len:411
+                unemit:2,type:repli_lines,seq:2,body_len:580
           active_transport,type:mock,open
         MusuSelf,pub:Origin
           stock,pub:Origin

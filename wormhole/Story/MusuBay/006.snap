@@ -25,29 +25,29 @@ Snap:H
             Ud,pubkey:Seeker
             inbox
               recent
-                unemit=2,type:repli_lines,seq=2
-                unemit=3,type:repli_lines,seq=3
+                unemit:2,type:repli_lines,seq:2,body_len:63
+                unemit:3,type:repli_lines,seq:3,body_len:157
           active_transport,type:mock,open
         Peering,name:Seeker,req=3,ok
           Pier,pub:Origin1,req=2,ok
             Ud,pubkey:Origin1
             inbox
               recent
-                unemit,type:repli_lines,seq
+                unemit:1,type:repli_lines,seq:1,body_len:677
               req:unemit,seq,type:repli_lines,body_hash:527f39778689bbc5c54e0c5f3ca35ba627e8ed335a4b886c214e1fcd3a01ef89,body_len=162,done,to:repli_lines,finished
           active_transport,type:mock,open
           Pier,pub:Origin2,req=3,ok
             Ud,pubkey:Origin2
             inbox
               recent
-                unemit,type:repli_lines,seq
+                unemit:1,type:repli_lines,seq:1,body_len:663
           active_transport,type:mock,open
         Peering,name:Origin2,req=4,ok
           Pier,pub:Seeker,req=2,ok
             Ud,pubkey:Seeker
             inbox
               recent
-                unemit=2,type:repli_lines,seq=2
+                unemit:2,type:repli_lines,seq:2,body_len:63
           active_transport,type:mock,open
         MusuSelf,pub:Origin1
           stock,pub:Origin1

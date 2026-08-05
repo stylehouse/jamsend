@@ -41,32 +41,32 @@ Snap:H
             Ud,pubkey:DJ
             inbox
               recent
-                unemit,type:repli_lines,seq
-                unemit=2,type:repli_lines,seq=2
-                unemit=3,type:repli_page,seq=3
-                unemit=4,type:repli_lines,seq=4
-                unemit=5,type:repli_page,seq=5
-                unemit=6,type:repli_lines,seq=6
-                unemit=7,type:repli_page,seq=7
-              req:unemit,seq=8,type:repli_lines,body_hash:700969a86c98bae0c76162692384e8fb2030499fb77ea2986b60abc5fb7f30ee,body_len=133,done,to:repli_lines,finished
+                unemit:1,type:repli_lines,seq:1,body_len:325
+                unemit:2,type:repli_lines,seq:2,body_len:98
+                unemit:3,type:repli_page,seq:3,body_len:76800
+                unemit:4,type:repli_lines,seq:4,body_len:99
+                unemit:5,type:repli_page,seq:5,body_len:76800
+                unemit:6,type:repli_lines,seq:6,body_len:99
+                unemit:7,type:repli_page,seq:7,body_len:76800
+              req:unemit,seq=8,type:repli_lines,body_hash:966ae150581d4489736eb8c213aff2b3bf1637a797dfa4c31391762c454bda82,body_len=99,done,to:repli_lines,finished
               req:unemit,seq=9,type:repli_page,body_hash:ab97a4e8119acadaea563d6df9519842b55053dd56d2852afc45a21e3d9dc352,body_len=76800,done,to:repli_page,finished
           active_transport,type:mock,open
         MusuSelf,pub:DJ
           stock,pub:DJ
             Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
-              Fill,name:audio,total=240,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000
               preview,seq=0,from=0,to=12
               Reco,by:DJ,note:this one grows — stay past the second chord
               preview,seq,from=12,to=24
               preview,seq=2,from=24,to=36
             Record,id:trk1,title:Dorian D,artist:DJ Oscillo,seconds=76,loudness=0.1413,nchunks=240,real
-              Fill,name:audio,total=240,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000
         reached:step_3
         refused:not_started
         MusuThem,pub:Crowd
           stock,pub:Crowd
             Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
-              Fill,name:audio,total=240,have=32,sr=48000,page_from=24,page_to=32,got=4
+              Fill,name:audio,have=32,sr=48000,got=4
               preview,seq=0,from=0,to=12
               Reco,by:DJ,note:this one grows — stay past the second chord
         reached:step_4

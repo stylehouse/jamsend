@@ -495,3 +495,170 @@ type:no_protocol,sent	{"undef":["emit","seq"]}
 - `{"mung":["age"]}` on `self,round=N` — uniform across every snap of the Books that have it; reads as a
    stable encoder note. **This is the one marker class the sweep could not chase to a writer** — treat as
     unresolved rather than cleared.
+
+---
+
+## 9. What landed on 2026-08-05, and what is still open
+
+The owner's brief: *"everything else there sounds munted, can you do a big job fixing it up nice?"*, with
+ the Seem standardisation (§3) explicitly deferred and the inbox ruled **cap, don't bypass**.
+
+### 9.1 Landed in code (all five ghosts compile)
+
+- **The inbox is bounded, and the guard survives it** (`Peeroleum.g`). `Peeroleum_bound_inbox` mirrors
+   the outbox's two bounds exactly — `DONE_KEEP = 200` whittling only SERVED reqs, plus the 2000
+    structural backstop — and runs from `Peeroleum_deliver`, so it works LIVE, not just in Books (the
+     boundary cull was Book-only, which is why production never culled at all).
+  The part that needed care: the reused-seq guard's memory IS the finished req standing on the inbox, so
+   culling would blind it. Now every cull PROMOTES through one path (`Peeroleum_inbox_ledger`) onto
+    `%inbox/recent`, and `Peeroleum_served_before` consults that ledger BEFORE booking — checked before,
+     because booking first would mint a fresh req for an already-served frame and dispatch it, which is
+      the exact re-dispatch the guard exists to stop. Ledger rows carry (seq, type, body_len); the
+       deliberate omission of body_hash and its safe-direction failure mode are argued at the call site.
+- **`%Fill` is progress-only** (`Repli.g`, `Crate.g`, both Story ghosts). `total`, `page_from` and
+   `page_to` are gone; the promise reads off the Record per substrate (`nchunks` / `total`). And
+    `Crate_transcode_release` now advances `fill.sc.have`, so a transcoded record no longer snaps
+     `nchunks=240 … have=0`. Book assertions that compared `have` to `Fill.total` now compare against
+      `Record.nchunks`.
+- **The vacuous gate says what it means** (`Musuation.g`). `!r.oa({landed:1})` — a marker with no writer
+   — became `rx.o({req:'awaitbuf'}).length > 0`, which is what it had silently degraded to.
+- **Orphaned awaitbufs are swept two ways** (`Repli.g`). The BUFCAP page-drop now also drops the matching
+   req and its `pier.c.awaiting` entry (they could never be served — the re-ask returns under a fresh
+    bufferid), and a generous age-out retires a req whose page never arrived at all. `req.c.armed`, written
+     since forever and never read, finally has a job.
+- **`bufferid` rides as a string** (`Repli.g`), so `bufferid: 1` can no longer trip the `{k:1}` presence
+   wildcard — the footgun this file already dodges twice on purpose elsewhere.
+- **`w.c.serve_miss_ts` is pruned** (`Repli.g`) — it is keyed by track id, so unlike its siblings its key
+   space grew with every distinct track ever missed.
+- **A throwing sweep is now visible** (`Peeroleum.g`): `%sweep_err` stamps on `w` instead of the cause
+   living only in a console nobody reads during a recorded run.
+
+### 9.2 §8.2 is NOT solved — and the first two hypotheses are dead
+
+MusuReplica still does not drain. Two candidate explanations are now **ruled out by evidence**, which is
+ worth more than the guesses were:
+
+1. **The sweep is not throwing.** With `%sweep_err` in place, a full 14-step run produced no stamp.
+2. **`Peeroleum_runstepped` is never CALLED for this w** — not "called and finding nothing". The old cull
+    created `%recent` eagerly the moment it reached an inbox, and MusuReplica's fixtures have never had
+     one, in any step, ever. So the break is upstream of the cull: either `Peeroleum_arm_whittle`'s
+      callback never fires for this w, or it fires against a different Run than the one Story resolves.
+
+**A trap to avoid on the next attempt** (cost a cycle here): a probe that calls `w.r()` from inside
+ `Peeroleum_arm_whittle` is INVALID — `r()` needs Atime, and arm_whittle is called synchronously from
+  Book setup, so the probe itself can throw and abort the setup it was meant to observe. Probe with
+   plain `i()` there. (`w.r()` inside `Peeroleum_runstepped` is fine — that one runs inside `clear()`.)
+
+Next move: probe whether `Peeroleum_arm_whittle` is reached at all, then whether its queued callback
+ fires, comparing against MusuReco — same file, same protocol, armed identically, drains correctly. The
+  difference between those two Books is the whole answer.
+
+### 9.3 Fixture churn this creates
+
+`%Fill` losing three keys touches **MusuReplica, MusuReco, MusuDoor, MusuVend**. The ledger gaining
+ `body_len`, and `RECENT_KEEP` going 20 → 200, touches **every Book with a `%recent`** — 22 of them,
+  including the three already-stale ones. Snaps get modestly longer where a Book's traffic exceeded the
+   old 20-row whittle (MusuReco books 46 in a step); that is honest growth, not noise, but it is a lot of
+    re-recording and **none of it is verified yet**.
+
+**Do not accept any of it on a diff you have not audited.** The method that works: normalise the expected
+ change through `sed` and require the residue to be exactly zero — that is what separates "only the
+  intended thing moved" from "the intended thing moved and so did something else".
+
+### 9.4 §8.3 was HALF WRONG — `%Fill.have` is not the source's to write
+
+The audit reported "a source-side counter frozen at zero" as a bug. It is not. **It is frozen because
+ it belongs to the receiver**, and the fix for it was tried, caught by a Book, and reverted the same day.
+
+What happened: `Crate_transcode_release` was changed to advance `fill.sc.have` alongside the frontier.
+ That looks obviously right — a fully transcoded record snapping `nchunks=240 … have=0` reads like a lie.
+  But **`%Fill` REPLICATES**: it rides the offer fragment as a child of its `%Record`, so whatever the
+   source writes into `have` lands on the mirror and overwrites the mirror's own count. `have` means
+    *"how much I have"*, which on the receiving side is ARRIVAL progress. The source stamping its
+     transcode frontier there made the mirror believe it already held chunks nobody had sent it, and
+      `MusuReco_pull` — which starts at `from = have` — skipped those pages permanently:
+
+```
+mirror   Fill,name:audio,have=12,sr=48000     ← source's frontier, clobbering the mirror's 0
+         got fell 30 → 29,  witnessed:complete DIED
+```
+
+The proof caught it: MusuReco's assertion set lost exactly one line. Reverted, the assertions came back
+ byte-identical.
+
+**This is `%Fill.have` carrying two meanings across one wire** — source frontier vs receiver arrival —
+ which is the same disease `%Stream` had before it was split (the owner: *"there's only one of anything"*).
+  The difference is that `%Stream`'s two meanings sat in one mainkey; `%Fill`'s two meanings sit in one
+   KEY, on a particle that crosses. Nothing declares which side owns it.
+
+### 9.5 So: do we need `%Fill` at all? No — and the codebase already said so
+
+The case for it is entirely legacy. `Ra.g:15`, written during the chunk-particle rebuild:
+
+> *particle presence IS fill state — **have= counters died with the old `rec.c.segs` side-array***
+
+On the modern substrate there is deliberately no fill counter, because a chunk's presence on the
+ observable plane IS its fill state. `%Fill` exists for one reason: the **Float32 staging path** keeps its
+  payload in `.c.chunks` / `.c.pages`, which never snap — it has no observable plane, so a counter has to
+   stand in for one. Field by field:
+
+| key | verdict |
+|---|---|
+| `have` | doubly-owned across the wire (§9.4). Dead on the modern path by design. |
+| `total` | was a duplicate of `Record.nchunks`; removed 2026-08-05. |
+| `page_from`/`page_to` | zero readers repo-wide; `page_to` was the same variable as `have`. Removed. |
+| `sr` | already on the Record — `Ra.g:1063` writes `rec.sc.sr`, `Orig.g:253` reads it. Pure duplication. |
+| `got` | mirror-side page count; meaningful only to the Float32 page path. |
+
+And its users are precisely the legacy demos: `Repli.g:31` names *"MusuReplica/MusuReco"* as the Float32
+ substrate. **`%Fill` is a tombstone for a substrate already being retired** — it should die with the
+  Float32 path when disk-becomes-a-Mag lands, not be invested in. The cheap move available NOW is dropping
+   `sr` from it (pure duplication, no wire meaning). The rest should go as a unit with the substrate.
+
+**The general lesson, which outlives `%Fill`:** a replicated particle needs a stated OWNER per key.
+ Repli's whole design is one-way — the sender is the sole writer — and `%Fill.have` quietly broke that by
+  being written on both ends. Any future "progress" field on a crossing particle wants the same question
+   asked out loud: *which side writes this, and what happens to the other side's copy when it lands?*
+
+### 9.6 The re-record sweep — what went green, and the two that did NOT
+
+Method that made this safe: an automated gate that, for each Book, diffs its **claim set**
+ (`witnessed:` / `see:` / `reached:` / `skipped:` / `refused:`) between fixture and live run, and
+  **refuses to `accept` if any claim changed**. Fixture bytes may move freely; a claim disappearing means
+   a real behaviour was lost. This is what caught §9.4 — without it the `%Fill.have` regression would have
+    been accepted as ordinary churn and buried in 200-odd re-recorded snaps.
+
+**Accepted, green on two consecutive verifications (21):** MusuReco, MusuDoor, MusuVend, MusuPier,
+ MusuBay, MusuBuddy, MusuBounce, MusuSoft, MusuFreeze, MusuHeist, MusuRecast, MusuRename, MusuStanding,
+  SwarmDoor, SwarmGot, SwarmWire, PereProof, PereStaple, MusuMag, LakeSurfer, PereComplain.
+
+**Zero fixture movement (proof the protocol changes were contained):** RepliUpsert, RepliSplit,
+ RepliShadow — the three Repli Books have no numbered-snap changes at all, and stayed green throughout.
+
+**Two §8.5 items CLEARED:**
+- The corpus's only three `{"undef":[...]}` markers are **gone** (PereComplain re-recorded).
+- Stale `repli_want` inbox bookings: **96 snaps → 34**, MusuMag fixed.
+
+**NOT accepted — MusuRaStream and MusuRaChase.** Both lose the SAME two claims:
+
+```
+see:the next track played its capped cycle clean — the transcoder kept ahead of a fresh playhead
+see:the playhead crossed the boundary onto transcoded chunks that arrived on demand
+```
+
+Conditions are `s.b_heard <= 3` and `fed.sc.held > 0` (`Radiation.g:301,309`) — and in a live run the
+ `fed` / `stream_want` particles are **absent entirely**, so the streaming chase never reaches that stage.
+  `Radiation.g` is untouched by this work.
+
+**Causation is NOT established, and should not be assumed either way.** What is known:
+- These two Books have been un-re-recordable since **2026-07-29** (the `repli_want` bypass), while their
+   fixtures date from **2026-07-27** — so they were already stale before any of this.
+- They report `needsFSA:true`, and the runner does have real music (real opus Records with real paths),
+   so a missing FSA share is NOT the explanation.
+- 21 other Books re-recorded with claims intact, including the chunk/Heist-path Books (MusuVend, MusuBay,
+   MusuHeist). If the Repli changes had broken chunk streaming, those would have lost claims too.
+
+That is suggestive, not conclusive. **The clean way to settle it** is to revert the three protocol ghosts,
+ recompile, and run MusuRaStream. Tried once and ABORTED: `ghost_compile` went half-open mid-batch and left
+  gen/ inconsistent (Crate reverted-compiled while Repli/Peeroleum were not). If you attempt it, back the
+   files up first, compile ONE ghost at a time, and verify each hash before running anything.

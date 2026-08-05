@@ -1,9 +1,9 @@
 Snap:H
   H:PereStaple,Run
     A:PereStaple
-      self,round=8	{"mung":["age"]}
+      self,round=7	{"mung":["age"]}
       w:PereStaple
-        self,round=8	{"mung":["age"]}
+        self,round=7	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:alice,req=2,ok
@@ -34,7 +34,7 @@ Snap:H
           Pier,pub:alice,req=2,ok
             inbox
               recent
-                unemit,type:noop,seq
+                unemit:1,type:noop,seq:1
               req:unemit,seq=2,type:hello,done,to:hello,finished
               req:unemit,seq=3,type:trust,done,to:trust,finished
             req:handshake,finished

@@ -34,7 +34,7 @@ Snap:H
             Ud,pubkey:Origin
             inbox
               recent
-                unemit,type:repli_lines,seq
+                unemit:1,type:repli_lines,seq:1,body_len:412
               req:unemit,seq=2,type:repli_lines,body_hash:462783eaec54cf06eaf1cc9a33e59ce9fb0e4c4f36bad2bebcc4f9ffab402e0f,body_len=592,done,to:repli_lines,finished
           active_transport,type:mock,open
         MusuSelf,pub:Origin

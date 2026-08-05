@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return 'ede2ad954e44b086~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return '519bf27ce371815f~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -563,6 +563,14 @@ Repli_serve_miss(w, h, why) {
     w.c.serve_miss_ts = w.c.serve_miss_ts || {}
     let nowms = Date.now()
     if (nowms - (w.c.serve_miss_ts[id] || 0) < 5000) return
+    // PRUNE while we're here.  This throttle is keyed by RECORD ID, so unlike its siblings
+    //  (land_warn_ts keyed by a fixed key set, reseq_warn_ts by frame type) its key space grows with
+    //   every distinct track ever missed — a slow unbounded map on a long-lived w.  Entries older than
+    //    the 5s window can never gate anything again, so drop them; the map stays the size of the
+    //     active miss set instead of the session's whole history.
+    for (const k of Object.keys(w.c.serve_miss_ts)) {
+        if (nowms - w.c.serve_miss_ts[k] > 60000) delete w.c.serve_miss_ts[k]
+    }
     w.c.serve_miss_ts[id] = nowms
     let from = h && h.from ? String(h.from).slice(0, 8) : '?'
     console.log(`◈✗ serve want id=${id.slice(0, 8)}@${+(h && h.from_idx || 0)} ← ${from} — ${why}`)
@@ -675,7 +683,12 @@ async Repli_serve_want(w, pier, frame) {
     out.push(this.enL({ d: 0, stringies: { Record: 1, id: rec.sc.id }, objecties: { loc: ['Record', 'id'] } }))
     // total is the PROMISE (sc.nchunks), not the frontier — a mid-transcode page must not shrink the
     //  mirror's idea of the whole track (its pull window clamps on total).
-    let sline = { Fill: 1, name: h.stream, total: +(rec.sc.nchunks || chunks.length), have: end, page_from: from, page_to: end }
+    // PROGRESS ONLY.  This line used to also carry `total` (a copy of the Record's own nchunks, which
+    //  crosses in the same fragment) plus page_from/page_to — and page_to was the SAME local `end` as
+    //   have, one value under two names.  Nothing ever read either page_* key; a repo-wide grep found
+    //    only this write.  They mattered because ABSENCE IS NOT DELETION on this wire: once landed on
+    //     a mirror %Fill they could never be cleared again.
+    let sline = { Fill: 1, name: h.stream, have: end }
     let drop = w.c.repli_drop && w.c.repli_drop === (rec.sc.id + ':' + from)
     // the lines PROMISE the buffer either way (objecties.buffer=id); a drop withholds only the BYTES frame,
     //  so B opens an awaitbuf that never lands — the missing-buffer condition the reconciler must warn on.
@@ -795,8 +808,19 @@ Repli_recv_page(w, pier, frame) {
     let BUFCAP = +(w.c.repli_buf_cap || 64)
     if (bufkeys.length > BUFCAP) {
         let goners = bufkeys.slice(0, bufkeys.length - BUFCAP)
-        for (const gk of goners) delete pier.c.bufs[gk]
-        this.Repli_land_warn(w, 'buf-stash-cap', `page stash > ${BUFCAP} — dropped ${goners.length} stale orphan page(s) (lines lost forever; a re-ask re-serves under a fresh id)`)
+        for (const gk of goners) {
+            delete pier.c.bufs[gk]
+            // ORPHAN THE REQ TOO (2026-08-05).  Dropping the stashed page left its %req:awaitbuf and
+            //  its pier.c.awaiting entry standing forever: the re-ask returns under a FRESH bufferid
+            //   (see the note above), so the old req can NEVER be served — it just gets pumped for the
+            //    rest of the session and sits in every snap.  Swarm_share_why (Swarm.g:1604) already
+            //     censuses exactly these three collections as things that accrue without GC; nobody
+            //      had added the sweep.  Clear all three together or the leak just moves.
+            if (pier.c.awaiting) delete pier.c.awaiting[gk]
+            let orphan = pier.o({ req: 'awaitbuf', bufferid: String(gk) })[0]
+            if (orphan) pier.drop(orphan)
+        }
+        this.Repli_land_warn(w, 'buf-stash-cap', `page stash > ${BUFCAP} — dropped ${goners.length} stale orphan page(s) + their awaitbuf reqs (lines lost forever; a re-ask re-serves under a fresh id)`)
     }
     this.Repli_attach_page(w, pier, id, frame.buffer)
 
@@ -807,11 +831,18 @@ Repli_recv_page(w, pier, frame) {
 Repli_open_awaitbuf(w, pier, mirror, id) {
     pier.c.awaiting = pier.c.awaiting || {}
     pier.c.awaiting[id] = mirror
-    let req = pier.oai({ req: 'awaitbuf', bufferid: id })
+    // bufferid rides as a STRING in mint and query alike.  bufseq starts at 1, so a numeric
+    //  `bufferid: 1` would read as the {k:1} PRESENCE WILDCARD and match any awaitbuf at all —
+    //   the same footgun this file already dodges twice on purpose (Repli_chunk_at:195 "seq rides
+    //    as a STRING everywhere", Repli_park_want:475 for from_idx).  Mostly self-cancelling while
+    //     bufseq climbs monotonically, but bufseq lives on .c and does NOT survive a reload while
+    //      unlanded awaitbuf reqs do — so post-reload, id 1 comes round again to a populated shelf.
+    let bid = String(id)
+    let req = pier.oai({ req: 'awaitbuf', bufferid: bid })
     req.c.up = pier
     req.c.mirror = mirror
     if (req.c.armed == null) req.c.armed = (w.c.repli_tick || 0)
-    let set = pier.doai({ req: 'awaitbuf', bufferid: id })
+    let set = pier.doai({ req: 'awaitbuf', bufferid: bid })
     if (set) set(async (rq) => { this.Repli_awaitbuf_do(w, pier, rq) })
     if (pier.c.bufs && pier.c.bufs[id] != null) this.Repli_attach_page(w, pier, id, pier.c.bufs[id])
 
@@ -879,7 +910,7 @@ Repli_attach_page(w, pier, id, bytes) {
     //    pull + the warn-if-late reconciler), and MusuReplica's warns_missing reads only the unlanded set, so
     //     the cull is invisible to the missing-buffer proof.  Safe from inside a sibling's OR its own do: the
     //      req sweep iterates a fresh o() snapshot array, so detaching a req never corrupts the live iteration.
-    let req = pier.o({ req: 'awaitbuf', bufferid: id })[0]
+    let req = pier.o({ req: 'awaitbuf', bufferid: String(id) })[0]
     if (req) pier.drop(req)
 
 },
@@ -897,6 +928,22 @@ Repli_awaitbuf_do(w, pier, req) {
     if (req.c.waited > 1 && !req.oa({ warned: 1 })) {
         req.i({ warned: 'buffer_late' })
         req.bump()
+    }
+    // AGE-OUT, the time-based half of the orphan sweep.  The BUFCAP path above catches an orphan whose
+    //  stashed page we dropped; this catches the other shape — lines that promised a buffer whose page
+    //   never arrived at all, so there is nothing in pier.c.bufs to evict and nothing will ever finish
+    //    this req.  GENEROUS on purpose: the warn fires at 2 pumps and MusuReplica's warns_missing proof
+    //     reads the UNLANDED set, so the threshold sits far beyond any Book's reach (the longest runs ~14
+    //      steps) — this is a production ceiling, not a Book-visible behaviour.  req.c.armed (the arming
+    //       tick, written since forever and never once read) is what makes the age legible in a debugger.
+    //  500, not 60: `waited` counts PUMPS (every belief pass), not steps, so a 14-step Book can rack
+    //   up hundreds — and MusuReplica's warns_missing proof needs its stuck awaitbuf to survive to the
+    //    last step.  A page that has not arrived in 500 pumps is dead by any measure.
+    let AWAIT_MAX = +(w.c.repli_await_max || 500)
+    if (req.c.waited > AWAIT_MAX) {
+        if (pier.c.awaiting) delete pier.c.awaiting[id]
+        this.Repli_land_warn(w, 'awaitbuf-aged', `awaitbuf bufferid=${id} waited ${req.c.waited} pumps since tick ${req.c.armed} with no page — retired (its lines are lost; a re-ask re-serves under a fresh id)`)
+        pier.drop(req)
     }
 
 },
@@ -971,7 +1018,10 @@ async Repli_sent_se(w, library, pier) {
             }
             let D = uD.i({ Sent: 1, id: n.sc.id, name: n.sc.title || n.sc.id,
                 have: have,
-                total: +(n.sc.total || (fill ? fill.sc.total : 0) || 0),
+                // the promise reads off the RECORD, per substrate: sc.total for chunk particles,
+                //  sc.nchunks for the Float32 staging array.  (It used to fall back to fill.sc.total,
+                //   the duplicate that no longer exists.)
+                total: +(n.sc.total || n.sc.nchunks || 0),
                 got: +(fill ? (fill.sc.got || 0) : 0) })
             D.c.rec = n
             n.c.Sent_D = D

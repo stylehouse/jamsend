@@ -10,7 +10,7 @@ import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return 'e6ab8dc4d87c714f~g1' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return '81a29636b3be71f9~g1' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Radio_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -2831,7 +2831,7 @@ async MusuReplica_setup(w) {
         let rec = src.i({ Record: 1, id: 'rec' + ti, title: 'Tone-' + ti, artist: 'Synthetic', seconds: 0.3, nchunks: 6 })
         rec.c.up = src
         rec.c.chunks = chunks
-        let stream = rec.i({ Fill: 1, name: 'audio', total: 6, have: 0, sr: 48000 })
+        let stream = rec.i({ Fill: 1, name: 'audio', have: 0, sr: 48000 })
         stream.c.up = rec
         ti = ti + 1
     }
@@ -2907,7 +2907,7 @@ MusuReplica_witness(w) {
     // reconciled: a page's objecties.buffer resolved to real bytes attached at the mirror (got > 0).
     if (s0 && +(s0.sc.got || 0) > 0 && !(w.oa({witnessed: "reconciled"}))) w.i({witnessed: "reconciled"})
     // complete: rec0 fully replicated — have==total and every page's bytes reassembled (3 pages of 2 chunks).
-    if (s0 && +(s0.sc.have || 0) === +(s0.sc.total || 0) && +(s0.sc.total || 0) > 0 && s0.c.pages && s0.c.pages.length >= 3 && !(w.oa({witnessed: "complete"}))) w.i({witnessed: "complete"})
+    if (s0 && rec0 && +(s0.sc.have || 0) === +(rec0.sc.nchunks || 0) && +(rec0.sc.nchunks || 0) > 0 && s0.c.pages && s0.c.pages.length >= 3 && !(w.oa({witnessed: "complete"}))) w.i({witnessed: "complete"})
     // bytes_faithful: rec0's reassembled pages hold EXACTLY the source's sample count — the buffer crossed whole.
     let got_samples = 0
     if (s0 && s0.c.pages) { for (const p of s0.c.pages) got_samples = got_samples + p.length }
@@ -2919,7 +2919,11 @@ MusuReplica_witness(w) {
     if (anySent && !(w.oa({witnessed: "tracked"}))) w.i({witnessed: "tracked"})
     // warns_missing: rec2's dropped page left an awaitbuf that never landed (and warned) — the reconciler
     //  detected the promised buffer that never arrived.  Read the fact directly, not just the warn stamp.
-    let stuck = rx ? rx.o({ req: 'awaitbuf' }).some(r => !r.oa({ landed: 1 })) : false
+    //  A LANDED awaitbuf is DROPPED outright (Repli_attach_page), so a req still STANDING is exactly an
+    //   unlanded one.  This used to probe `!r.oa({landed:1})` — a marker NO writer has stamped since that
+    //    cull landed, which made the test quietly equivalent to the line below: right by accident, and
+    //     silently un-tightenable.  Say what it actually means.
+    let stuck = rx ? rx.o({ req: 'awaitbuf' }).length > 0 : false
     let warned = rx ? rx.o({ req: 'awaitbuf' }).some(r => r.oa({ warned: 1 })) : false
     if ((stuck || warned) && !(w.oa({witnessed: "warns_missing"}))) w.i({witnessed: "warns_missing"})
     // the crush is no longer MusuReplica's concern: the fold is IMPOSED by Story (%useVoroCyto) and
@@ -3074,7 +3078,7 @@ async MusuReco_pull(w) {
     let PAGE = +(w.c.repli_page || 2)
     w.c.reco_wanted = w.c.reco_wanted || {}
     let have = +(s.sc.have || 0)
-    let total = +(s.sc.total || 0)
+    let total = +(rec.sc.nchunks || 0)      // the promise lives on the Record, not the %Fill
     let from = have
     while (total > 0 && from < total) {
         if (!w.c.reco_wanted[from]) {
@@ -3154,12 +3158,12 @@ MusuReco_witness(w) {
     if (s && s.c.pages) { for (const p of s.c.pages) got_samples = got_samples + p.length }
     let want_samples = 0
     if (src0 && src0.c.raw_chunks) { for (const c of src0.c.raw_chunks) want_samples = want_samples + c.length }
-    if (s && +(s.sc.have || 0) === +(s.sc.total || 0) && +(s.sc.total || 0) > 0 && want_samples > 0 && got_samples === want_samples && !(w.oa({witnessed: "complete"}))) w.i({witnessed: "complete"})
+    if (s && rec && +(s.sc.have || 0) === +(rec.sc.nchunks || 0) && +(rec.sc.nchunks || 0) > 0 && want_samples > 0 && got_samples === want_samples && !(w.oa({witnessed: "complete"}))) w.i({witnessed: "complete"})
     // real_music: the tracks are decoded FILES off the nav walk — real flag, real duration, real artist.
     if (src0 && src0.sc.real && +(src0.sc.seconds || 0) >= 2 && (src0.sc.artist || '') !== '' && !(w.oa({witnessed: "real_music"}))) w.i({witnessed: "real_music"})
     // the claims, once-noticed.
     if (reco && sreco && reco.sc.note === sreco.sc.note && !(w.oa({see: 'the note crossed with the record — one fragment carried the knowledge and the thing'}))) w.i({see: 'the note crossed with the record — one fragment carried the knowledge and the thing'})
-    if (w.oa({ early: 'before_transcode_done' }) && s && +(s.sc.have || 0) === +(s.sc.total || 0) && !(w.oa({see: 'streaming began while the transcode still ran — nobody waited for the preview set'}))) w.i({see: 'streaming began while the transcode still ran — nobody waited for the preview set'})
+    if (w.oa({ early: 'before_transcode_done' }) && s && rec && +(s.sc.have || 0) === +(rec.sc.nchunks || 0) && +(rec.sc.nchunks || 0) > 0 && !(w.oa({see: 'streaming began while the transcode still ran — nobody waited for the preview set'}))) w.i({see: 'streaming began while the transcode still ran — nobody waited for the preview set'})
     if ((w.c.repli_unparked || 0) >= 2 && parked_left === 0 && !(w.oa({see: 'a want that outran the transcoder parked and was served when the frontier passed it'}))) w.i({see: 'a want that outran the transcoder parked and was served when the frontier passed it'})
 },
 //#endregion

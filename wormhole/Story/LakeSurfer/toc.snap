@@ -13,10 +13,7 @@ story:LakeSurfer
         wantPantheate
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.546
-      sample=0.644,at=1783450443
-      sample=0.644,at=1783450443
-      sample=0.644,at=1783450444
+    TimeTotal:beliefs,avg=0.456
       sample=0.438,at=1783450450
       sample=0.605,at=1785816820
       sample=0.963,at=1785820095
@@ -24,10 +21,10 @@ story:LakeSurfer
       sample=0.07,at=1785833482
       sample=0.699,at=1785834904
       sample=0.65,at=1785839704
-    TimeTotal:step,avg=0.273
-      sample=0.322,at=1783450443
-      sample=0.322,at=1783450443
-      sample=0.322,at=1783450444
+      sample=0.619,at=1785906870
+      sample=0.209,at=1785906876
+      sample=0.212,at=1785906881
+    TimeTotal:step,avg=0.228
       sample=0.219,at=1783450450
       sample=0.302,at=1785816820
       sample=0.482,at=1785820095
@@ -35,6 +32,9 @@ story:LakeSurfer
       sample=0.035,at=1785833482
       sample=0.349,at=1785834904
       sample=0.325,at=1785839704
+      sample=0.309,at=1785906870
+      sample=0.105,at=1785906876
+      sample=0.106,at=1785906881
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
   step,dige:db5d91ef11bea1e6

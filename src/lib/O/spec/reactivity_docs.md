@@ -2,6 +2,68 @@
 
 Check out `Langui` for layered `$effect()` and `Lies` for void ex.ob() ... food for thought.
 
+## The hold — reading a container that is mid-transaction (ROOT-CAUSED 2026-08-05)
+
+The general case behind three years of "the form closed by itself", and the tech to reach for. Read
+ this first — the two cases under § Failure modes are instances of it (or were mistaken for it).
+
+**The mechanism, verifiable by reading, no browser needed.** `replace()` is a transaction with no
+ transactional *visibility*:
+
+- `replace()` (`Stuff.svelte.ts:952`) — `Xify(); X_before = X; empty()`, then `await fn()`.
+- `empty()` (`:900`) — nulls `X` and re-`Xify()`s.
+- `Xify()` (`:212`) — with `X_before` set, calls `bump_version()` under the comment *"X is being
+   created fresh — if replace() is mid-flight, inherit the version so observers don't miss a beat."*
+- `X` is `$state()`.
+
+So the container does not merely *pass through* an empty state — it **publishes it**. Svelte is told
+ "I have no children", renders that, and only then does the awaited `fn()` put them back. Observers
+  don't miss a beat; they are guaranteed to catch the empty one.
+
+**Why it destroys DOM rather than blinking.** A keyed `{#each}` handed a 0-length list destroys the
+ whole subtree; the next render brings the same objects back and rebuilds it. Same for an `{#if}`
+  whose predicate walks a container. Nothing "remounts" in any way a probe can see — the component,
+   the objects, and every `Map` keyed by them stay stable. Only the *block* is recreated. Every probe
+    that lives inside the block is structurally blind to the render that kills it.
+
+**The instance that cost weeks** (the KeepFace / "directories editor snaps shut" hunt): `agency_officing`
+ (`Hovercraft.svelte:133`) runs `A.replace({w:1}, …)` for **every actor every tick**, re-adding the
+  *same* world objects, purely so Stuffing notices sc changes — its own comment says *"so the Stuffing
+   … doesn't snap shut"*, the same phrase one layer down. Vytui's `{#each vyto_worlds() as w (w)}`
+    therefore got a 0-length list once per tick and tore down stage + faces + every KeepFace.
+
+**Which containers actually transact** (the sweep that bounds the exposure): tally the mainkeys passed
+ to `.replace({…})`/`.r({…})` across the tree. `A` and `w` are both on it — which is exactly the pair
+  every toplevel UI walks to find its world. `UI` is **not** on it, which is why the glass mount itself
+   (`BigSoundland.svelte`'s `cyto`, reading `house.UIs.ob(…)`) was never at risk. Re-run that tally
+    before adding a hold anywhere: hold what transacts, leave the rest alone.
+
+**The three cures, in order of preference:**
+
+1. **`H.ave`** — the already-buffered channel. Housing's `flush()` (`Housing.svelte.ts:1668`) writes it
+    inside `this.clear(…)`, i.e. after `all_clear()`, so a UI reading `H.ave.ob({…})` in an `$effect`
+     sees only settled state. Storui's `This` rides this and is safe *by construction*. Prefer it.
+2. **`H.clear(async () => { …read again, assign into $state… })`** — for a UI with its own `$effect`:
+    track reactively outside, re-read and buffer inside the UItime gate, iterate the `$state`. This is
+     the `Liesui.svelte:52` +Doc fix, and it's the idiom the frontier section above is groping toward.
+3. **`ui/micro/hold.ts`** — `hold_list` / `hold_true`, for a UI that reads containers **during render**
+    rather than from an effect (Vytui does this deliberately — see its `vyto_worlds` comment on the
+     Otro H-effect lesson). Buffers the last non-empty result and only believes an emptiness that
+      outlasts a hold window. Applied at Vytui's two structural gates (`vyto_worlds`, `show_viewport`).
+
+**Why we did not fix `replace()` itself** (the human, 2026-08-05): `replace()` is standard and stays
+ standard — the UIs are what need to stop spazzing out about it. A real fix means deferring the version
+  bump to commit, and more than that it means **a light cone around the part of reality being rewritten**:
+   a way to mediate who is allowed to see the new data, so a reader can be told "not yet" instead of
+    being handed the hole. We have no such concept. Until we do, buffer at the reader.
+
+**The open edge:** a buffered UI is deliberately a little stale, and that is fine for a list of worlds.
+ It is *not* obviously fine for a form open on a C that genuinely changes underneath it — holding the
+  old C there trades a teardown for an edit against stale data. That case (the Waft-form shape) wants a
+   different answer than a timer, and hasn't got one yet.
+
+---
+
 ## the frontier
 
 Atime and UItime are basically the same thing, both share an H** global mutex lock.

@@ -13,6 +13,8 @@ story:RepliUpsert
       sample=0.011,at=1785890708
       sample=0.019,at=1785890805
       sample=0.009,at=1785890860
+      sample=0.016,at=1785905147
+      sample=0.02,at=1785907074
     TimeTotal:step,avg=0.002
       sample=0.003,at=1785890690
       sample=0.003,at=1785890695
@@ -22,6 +24,8 @@ story:RepliUpsert
       sample=0.002,at=1785890708
       sample=0.003,at=1785890805
       sample=0.001,at=1785890860
+      sample=0.002,at=1785905147
+      sample=0.003,at=1785907074
   step,dige:000a8b1dea2cc438
   step=2,dige:388581e7beda9d8e
     Assertion:first-mint,sentence:the first fragment minted the record and its child reco at a mirror where nothing pre-existed

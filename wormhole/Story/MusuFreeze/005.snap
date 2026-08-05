@@ -21,8 +21,8 @@ Snap:H
             Ud,pubkey:Origin
             inbox
               recent
-                unemit,type:repli_lines,seq
-                unemit=2,type:repli_lines,seq=2
+                unemit:1,type:repli_lines,seq:1,body_len:415
+                unemit:2,type:repli_lines,seq:2,body_len:692
               req:unemit,seq=3,type:repli_lines,body_hash:9c8572c53ef40a6100d7898ae6c05f4847a0bdba4be30951e982ea95d3ceb530,body_len=584,done,to:repli_lines,finished
               req:unemit,seq=4,type:repli_lines,body_hash:ecd57d5f249c99e9676caf143b751e532478037f9323eac7182b47c01b8a8676,body_len=130,done,to:repli_lines,finished
           active_transport,type:mock,open

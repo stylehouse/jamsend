@@ -1,9 +1,9 @@
 Snap:H
   H:PereStaple,Run
     A:PereStaple
-      self,round=12	{"mung":["age"]}
+      self,round=11	{"mung":["age"]}
       w:PereStaple
-        self,round=12	{"mung":["age"]}
+        self,round=11	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:alice,req=2,ok
@@ -29,8 +29,8 @@ Snap:H
                 heard
             inbox
               recent
-                unemit,type:hello,seq
-                unemit=2,type:trust,seq=2
+                unemit:1,type:hello,seq:1
+                unemit:2,type:trust,seq:2
             Ud,pubkey:bob
           active_transport,type:websocket,open
           transport,type:webrtc,faulty,reason:no-ack
@@ -39,9 +39,9 @@ Snap:H
           Pier,pub:alice,req=2,ok
             inbox
               recent
-                unemit,type:noop,seq
-                unemit=2,type:hello,seq=2
-                unemit=3,type:trust,seq=3
+                unemit:1,type:noop,seq:1
+                unemit:2,type:hello,seq:2
+                unemit:3,type:trust,seq:3
               req:unemit,seq=5,type:noop,done,to:noop,finished
             req:handshake,finished
               req:said_hello,maz=4,finished

@@ -29,10 +29,10 @@ Snap:H
             Ud,pubkey:Origin
             inbox
               recent
-                unemit,type:repli_lines,seq
-                unemit=2,type:repli_lines,seq=2
-                unemit=3,type:repli_lines,seq=3
-                unemit=4,type:repli_lines,seq=4
+                unemit:1,type:repli_lines,seq:1,body_len:415
+                unemit:2,type:repli_lines,seq:2,body_len:692
+                unemit:3,type:repli_lines,seq:3,body_len:584
+                unemit:4,type:repli_lines,seq:4,body_len:130
           active_transport,type:mock,open
         MusuSelf,pub:Origin
           stock,pub:Origin

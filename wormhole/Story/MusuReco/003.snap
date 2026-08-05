@@ -14,21 +14,21 @@ Snap:H
           Pier,pub:DJ,req=2,ok
             Ud,pubkey:DJ
             inbox
-              req:unemit,seq,type:repli_lines,body_hash:707ec2568dff8e65fc79b7398aa7245d7fccd9c4c1d286b259511ae3dc3a0058,body_len=335,done,to:repli_lines,finished
+              req:unemit,seq,type:repli_lines,body_hash:1fd5f79900191fae40022ac1f2f2775d182bad5e579e72aa7817c14fed0c9149,body_len=325,done,to:repli_lines,finished
           active_transport,type:mock,open
         MusuSelf,pub:DJ
           stock,pub:DJ
             Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
-              Fill,name:audio,total=240,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000
               preview,seq=0,from=0,to=12
               Reco,by:DJ,note:this one grows — stay past the second chord
             Record,id:trk1,title:Dorian D,artist:DJ Oscillo,seconds=76,loudness=0.1413,nchunks=240,real
-              Fill,name:audio,total=240,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000
         reached:step_3
         refused:not_started
         MusuThem,pub:Crowd
           stock,pub:Crowd
             Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
-              Fill,name:audio,total=240,have=0,sr=48000
+              Fill,name:audio,have=0,sr=48000
               preview,seq=0,from=0,to=12
               Reco,by:DJ,note:this one grows — stay past the second chord

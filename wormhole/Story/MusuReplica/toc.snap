@@ -65,9 +65,7 @@ story:MusuReplica
     waitCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.141
-      sample=0.187,at=1785838765
-      sample=0.153,at=1785838851
+    TimeTotal:beliefs,avg=0.13
       sample=0.149,at=1785838916
       sample=0.149,at=1785838924
       sample=0.142,at=1785838988
@@ -76,9 +74,9 @@ story:MusuReplica
       sample=0.099,at=1785890046
       sample=0.088,at=1785890307
       sample=0.088,at=1785890376
-    TimeTotal:step,avg=0.01
-      sample=0.013,at=1785838765
-      sample=0.011,at=1785838851
+      sample=0.139,at=1785896459
+      sample=0.095,at=1785896583
+    TimeTotal:step,avg=0.009
       sample=0.011,at=1785838916
       sample=0.011,at=1785838924
       sample=0.01,at=1785838988
@@ -87,6 +85,8 @@ story:MusuReplica
       sample=0.007,at=1785890046
       sample=0.006,at=1785890307
       sample=0.006,at=1785890376
+      sample=0.01,at=1785896459
+      sample=0.007,at=1785896583
   step,dige:50568e7a78216459
   step=2,dige:4d38f8af75bd0b23
   step=3,dige:ad23aae74454b2cc

@@ -1,9 +1,9 @@
 Snap:H
   H:SwarmGot,Run
     A:SwarmGot
-      self,round=16	{"mung":["age"]}
+      self,round=13	{"mung":["age"]}
       w:SwarmGot,now=1751910050
-        self,round=16	{"mung":["age"]}
+        self,round=13	{"mung":["age"]}
         req:wrangle,eternal,ok
         Account,of:Ella
           Identity:fe3e32fea4a2a33e,prepub:fe3e32fea4a2a33e,friendly:Ella
@@ -35,13 +35,11 @@ Snap:H
             outbox
               recent
                 emit,type:pier_accept,seq
-                emit=2,type:ive_got,seq=2
-              emit=3,type:ive_got,seq=3,sent
             inbox
               req:unemit,seq=2,type:pier_confirm,error:not-them,finished
-              recent
-                unemit=4,type:ive_got,seq=4
               req:unemit,seq=3,type:ive_got,error:not-them,finished
+              recent
+                unemit:4,type:ive_got,seq:4
             faulty
               unemit=2,error:not-them,seq=2
               unemit=3,error:not-them,seq=3
@@ -53,11 +51,9 @@ Snap:H
               recent
                 emit,type:pier_hello,seq
                 emit=2,type:pier_confirm,seq=2
-                emit=3,type:ive_got,seq=3
-                emit=4,type:ive_got,seq=4
             inbox
               recent
-                unemit,type:pier_accept,seq
+                unemit:1,type:pier_accept,seq:1
               req:unemit,seq=2,type:ive_got,error:not-them,finished
               req:unemit,seq=3,type:ive_got,error:not-them,finished
             faulty

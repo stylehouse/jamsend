@@ -31,7 +31,7 @@ Snap:H
             Ud,pubkey:Origin
             inbox
               recent
-                unemit,type:repli_lines,seq
+                unemit:1,type:repli_lines,seq:1,body_len:412
           active_transport,type:mock,open
         MusuSelf,pub:Origin
           stock,pub:Origin
