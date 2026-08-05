@@ -9,7 +9,7 @@ import { parseBuffer } from "music-metadata"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Crate(): string { return 'e0aa6c667a289a25~g1' },
+    Ghostmeta_Ghost_M_Crate(): string { return '850d5dc1deefdd47~g1' },
 
 // Crate.g — rifling through a music collection.  A modern port of the old Directory.svelte tree-walk +
 //  Agency.svelte's meander() random-walk, redesigned for THIS platform: raw File System Access API (no
@@ -28,7 +28,7 @@ import { parseBuffer } from "music-metadata"
 //    %Crate   — one opened collection.  c.handle = FileSystemDirectoryHandle, sc.name.
 //    %dir     — a subdirectory.         c.handle = FileSystemDirectoryHandle, sc.name|nib:dir|walked.
 //    %blob    — an audio file.          c.handle = FileSystemFileHandle,      sc.name|ext.
-//    %record  — a decoded track.        c.chunks = [Float32Array],            sc.artist|title|loudness|seconds|nchunks.
+//    %PCM     — a decoded track (was %record; Mag_todo §0.1 item 1).        c.chunks = [Float32Array],            sc.artist|title|loudness|seconds|nchunks.
 //
 //  WHAT MODERNISED vs the old code: old DL.expand()/n.sc.DL  → handle.values() + c.handle; old
 //   parseBuffer(music-metadata) + LoudnessMeter(LUFS)        → filename metadata + coarse RMS (proper
@@ -109,7 +109,7 @@ async Crate_meander(crate) {
 
 },
 // Crate_decode — modern record build: read a %blob's file, decode it, slice channel 0 into CHUNK-sized
-//  mono Float32Array pieces, derive a coarse RMS loudness + filename metadata, and stamp a %record on the
+//  mono Float32Array pieces, derive a coarse RMS loudness + filename metadata, and stamp a %PCM on the
 //   blob.  Decoded chunks ride .c; scalars snap.  Decode uses an OfflineAudioContext (no gesture needed,
 //    deterministic).  Headless / undecodable → null.
 async Crate_decode(blob) {
@@ -136,7 +136,7 @@ async Crate_decode(blob) {
     }
     let rms = Math.sqrt(sumSq / Math.max(1, data.length))
     let meta = this.Crate_meta_from_name(blob.sc.name)
-    let rec = blob.oai({ record: 1, name: blob.sc.name })
+    let rec = blob.oai({ PCM: 1, name: blob.sc.name })
     rec.c.up = blob
     rec.c.chunks = chunks
     rec.sc.artist = meta.artist
@@ -157,7 +157,7 @@ Crate_meta_from_name(name) {
     return { artist: base.slice(0, dash), title: base.slice(dash + 3) }
 
 },
-// Crate_radiostock — wrap a decoded %record's chunks as a radiostock SOURCE for the override seam
+// Crate_radiostock — wrap a decoded %PCM's chunks as a radiostock SOURCE for the override seam
 //  (Sound_stock_chunk reads {kind, chunks}).  Set H.c.radiostock_override = this and every audio Book
 //   streams THIS real track instead of synth.  null if the record isn't decoded.
 Crate_radiostock(rec) {
@@ -308,9 +308,9 @@ async Crate_nav_payload(nav, base, path) {
 // ── req:rastock — the radiostock builder, as a VISIBLE process ─────────────────────────────────────
 //  Mirrors Radios' radiostock: a thing that DESIRES `want` records and fills itself by reading the
 //   collection.  Driven one notch per Story beat (so each snap narrates a stage): ISSUE a read (a %reading
-//    goes out), the read COMES BACK (read+decode resolves onto the %reading's .c, off-snap), a %record gets
+//    goes out), the read COMES BACK (read+decode resolves onto the %reading's .c, off-snap), a %PCM gets
 //     MADE (real artist/album/title/seconds/loudness).  want/have/pool + the in-flight %reading + the
-//      %record rows all snap — the picture finally describes what's happening.
+//      %PCM rows all snap — the picture finally describes what's happening.
 
 // Crate_meta_from_path — title (always) + artist (ONLY from a flat "Artist - Title" filename) from a path.
 //  It NO LONGER guesses artist/album from FOLDER names.  The old code stamped artist = the top folder and
@@ -344,7 +344,7 @@ Crate_meta_from_path(path) {
 
 // Crate_transcode_begin — read + decode ONE real track through the nav (bin_read → OfflineAudioContext,
 //  gesture-free) into an UN-transcoded %Record under `lib`: real path metadata, the full decode staged
-//   on c.raw_chunks, c.chunks EMPTY (nothing released yet), and a %Stream that PROMISES the full total.
+//   on c.raw_chunks, c.chunks EMPTY (nothing released yet), and a %Fill that PROMISES the full total.
 //    real:1 is only ever stamped here — a synth record can't earn it.  null on unreadable/undecodable.
 async Crate_transcode_begin(lib, nav, base, path, id) {
     let res = await this.Crate_nav_payload(nav, base, path)
@@ -359,11 +359,11 @@ async Crate_transcode_begin(lib, nav, base, path, id) {
     rec.sc.real = 1
     rec.c.raw_chunks = res.chunks
     rec.c.chunks = []
-    let stream = rec.oai({ Stream: 1, name: 'audio' })
-    stream.c.up = rec
-    stream.sc.total = res.nchunks
-    stream.sc.have = 0
-    stream.sc.sr = 48000
+    let fill = rec.oai({ Fill: 1, name: 'audio' })
+    fill.c.up = rec
+    fill.sc.total = res.nchunks
+    fill.sc.have = 0
+    fill.sc.sr = 48000
     rec.bump()
     return rec
 

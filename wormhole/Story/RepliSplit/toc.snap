@@ -1,0 +1,33 @@
+story:RepliSplit
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.007
+      sample=0.007,at=1785890713
+      sample=0.007,at=1785890715
+      sample=0.007,at=1785890717
+      sample=0.007,at=1785890718
+      sample=0.007,at=1785890722
+      sample=0.007,at=1785890727
+      sample=0.009,at=1785890814
+      sample=0.007,at=1785890864
+    TimeTotal:step,avg=0.001
+      sample=0.001,at=1785890713
+      sample=0.001,at=1785890715
+      sample=0.001,at=1785890717
+      sample=0.001,at=1785890718
+      sample=0.001,at=1785890722
+      sample=0.001,at=1785890727
+      sample=0.002,at=1785890814
+      sample=0.001,at=1785890864
+  step,dige:60ef9808456910e1
+  step=2,dige:5cb54eeceaa8482e
+    Assertion:spine-crosses-whole,sentence:the fragment climbed in whole — one mag one cloud one card stand at the mirror
+  step=3,dige:d0d727c098e147ae
+    Assertion:spine-locates-itself,sentence:the second pass located the standing mag and cloud spine — and only the new card was minted into it
+  step=4,dige:938c59d7843e6270
+    Assertion:many-to-one-stays-many,sentence:two spins of different tracks stayed two — while the re-spun track updated its own row in place
+  step=5,dige:3f4fdd0e0edcbbad
+    Assertion:undeclared-splits-visibly,sentence:an undeclared mainkey fell back to all keys and split into a visible twin — churn you can see and never a silent merge

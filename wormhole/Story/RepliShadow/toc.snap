@@ -1,0 +1,35 @@
+story:RepliShadow
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.009
+      sample=0.01,at=1785890732
+      sample=0.01,at=1785890735
+      sample=0.01,at=1785890737
+      sample=0.01,at=1785890737
+      sample=0.01,at=1785890738
+      sample=0.009,at=1785890741
+      sample=0.009,at=1785890747
+      sample=0.005,at=1785890819
+      sample=0.006,at=1785890870
+    TimeTotal:step,avg=0.002
+      sample=0.002,at=1785890732
+      sample=0.002,at=1785890735
+      sample=0.002,at=1785890737
+      sample=0.002,at=1785890737
+      sample=0.002,at=1785890738
+      sample=0.002,at=1785890741
+      sample=0.002,at=1785890747
+      sample=0.001,at=1785890819
+      sample=0.001,at=1785890870
+  step,dige:631507a4b6eece04
+  step=2,dige:1f5b8eb7d48cd473
+    Assertion:first-send-needs-no-identity,sentence:an undeclared mainkey minted cleanly under the seem — a first send needs no identity at all
+  step=3,dige:8e64adf525d85d63
+    Assertion:identity-observed,sentence:a changed line under the seem updated its own row — identity observed from what held still — no declaration anywhere
+  step=4,dige:8ed3c052a62b745b
+    Assertion:shadow-self-matching,sentence:an unchanged line under the seem resent itself and landed on itself
+  step=5,dige:6a43ba85aef63021
+    Assertion:shadow-carried-it,sentence:the same change without the seem split into a twin — the shadow is what carried the identity

@@ -1,0 +1,7 @@
+Snap:H
+  H:RepliUpsert,Run
+    A:RepliUpsert
+      self,round	{"mung":["age"]}
+      w:RepliUpsert
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

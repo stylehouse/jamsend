@@ -1,0 +1,13 @@
+Snap:H
+  H:RepliUpsert,Run
+    A:RepliUpsert
+      self,round=7	{"mung":["age"]}
+      w:RepliUpsert
+        self,round=7	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        src
+          Card,id:c9,title:Twin
+        mir
+          Reco,by:DJ,note:lovely
+          Card,id:c9,title:Twin
+          Card,id:c9,title:Twin

@@ -244,12 +244,24 @@ The engines below are all proven by recorded golden fixtures. But the human's co
      `HeistFace.svelte`'s **"take" button renders only for a *soft* heist**
       (`:58-60`, `soft = sc.wish && !sc.at`, `:32`) — and the posed node has no `wish`, so
        **no button shows**. It is inert.
-- **Gap — the decisive one:** an exhaustive grep shows the **only callers** of
-   `Heist_wish/job/beat/land/...` are in Books (`Ghost/Story/Heistation.g`). **No live
-    code mints a real `%Heist` or drives the pull.** Contrast live-share
-     (`Swarm_share_up`, `Ghost/S/Swarm.g:1378`) which *is* auto-armed at
-      `InvitePanel.svelte:53-58` — but that's stream/browse (friends listen via
-       `RiffleFace` + `Radio_dial_pool`, `Radio.g:566`), **not** copy-into-my-Crate.
+- **Gap — HALF-STALE, corrected 2026-08-05 (full zombie audit that day):** the claim "No
+   live code mints a real `%Heist`" is now **wrong for the HARD path** — the ⇊ Keep flow
+    landed 2026-07-28/30: `RadioFace.svelte:84` → `Radio_keep` (`Radio.g:1477`) →
+     `Heist_keep_start` → `Swarm_share_beat` pumps `Heist_keep_beat` (`Swarm.g:1742`) →
+      `Heist_job` (`Heist.g:1417`), ids-first the whole way (`at` = the friend's pub and
+       `seed` = the record id from the first gesture — nothing ever resolves a name to a
+        pier). It remains RIGHT for the SOFT path: `Heist_wish`/`%Lead`/`Heist_condense`
+         have zero app producers (Books only — MusuSoft, MusuBay), `Heist_soft` has zero
+          callers anywhere (HeistFace re-implements the predicate inline at `:32`), the
+           `hid` leg of `Heist_job` (`Heist.g:280`) has never been passed by any caller,
+            and a wish hardened by HeistFace's take button would be driven by NOTHING
+             (`Heist_keep_beat` iterates `{Keep:1}`, not `{Heist:1}`). The owner's read
+              2026-08-05 — "I think wish is dead — we have more robust paths, we already
+               know for sure where it is" — is confirmed for the product as built; the
+                soft arc is a half-built parallel answer the id-first Keep flow grew
+                 around. Whether to retire it (2 Books, 11 fixtures, the `%Lead` face)
+                  is the owner's ruling. The line numbers in the bullets above predate
+                   the 07-28 rework and no longer match `Heist.g`.
 - **The move (wire-side, needs a Book):** mirror the `MusuSoft` Book in live code —
    (1) a button/effect that calls `Heist_wish(w, Ra_home_shop(w, me), sentence, …)` then
     `Heist_ask`/`Heist_match` over the friend wire to populate `%Lead`s (so `HeistFace`

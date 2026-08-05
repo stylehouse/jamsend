@@ -1342,7 +1342,7 @@ MusuRadio_load(w):
 //    voice, play it audibly.  Accumulates spins/helped/elapsed across beats.  Wall clock via performance.now
 //     — the online AC clock needs a gesture, this doesn't, so the show runs either way.
 async MusuRadio_play(w, secs):
-    let recs = w.o({record: 1})
+    let recs = w.o({PCM: 1})
     if (!recs.length) return
     let radio = w.oai({Radio: 1, name: 'on-air'})
     let gat = await this.Sound_gat()
@@ -1388,7 +1388,7 @@ MusuRadio_witness(w):
     let elapsed = (radio.c.elapsed || 0)
     let spins = +(radio.sc.spins ?? 0)
     let helped = +(radio.sc.helped ?? 0)
-    let recs = w.o({record: 1}).length
+    let recs = w.o({PCM: 1}).length
     // ready: a few synth records were instantly available (no files, no decode).
     if (recs >= 3 && !(oa %witnessed:ready)) i %witnessed:ready
     // sustained: a real stretch of wall-clock activity unfolded (~24s) -- the real-time showcase ran, not an
@@ -2658,7 +2658,7 @@ async MusuReplica_setup(w):
         let rec = src.i({ Record: 1, id: 'rec' + ti, title: 'Tone-' + ti, artist: 'Synthetic', seconds: 0.3, nchunks: 6 })
         rec.c.up = src
         rec.c.chunks = chunks
-        let stream = rec.i({ Stream: 1, name: 'audio', total: 6, have: 0, sr: 48000 })
+        let stream = rec.i({ Fill: 1, name: 'audio', total: 6, have: 0, sr: 48000 })
         stream.c.up = rec
         ti = ti + 1
     }
@@ -2716,7 +2716,7 @@ MusuReplica_witness(w):
     let lib = this.Repli_mirror_lib(w)
     let recs = lib.o({ Record: 1 })
     let rec0 = lib.o({ Record: 1, id: 'rec0' })[0]
-    let s0 = rec0 ? rec0.o({ Stream: 1 })[0] : null
+    let s0 = rec0 ? rec0.o({ Fill: 1 })[0] : null
     let src0 = w.c.repli_src ? w.c.repli_src.o({ Record: 1, id: 'rec0' })[0] : null
     let tree = w.o({ Sent_Tree: 1, pier: 'Crowd' })[0]
     let rx = w.c.rx
@@ -2883,7 +2883,7 @@ async MusuReco_pull(w):
     let lib = this.Repli_mirror_lib(w)
     let rec = lib.o({ Record: 1, id: 'trk0' })[0]
     if (!rec) return
-    let s = rec.o({ Stream: 1 })[0]
+    let s = rec.o({ Fill: 1 })[0]
     if (!s) return
     let PAGE = +(w.c.repli_page || 2)
     w.c.reco_wanted = w.c.reco_wanted || {}
@@ -2948,7 +2948,7 @@ MusuReco_witness(w):
     let rec = lib.o({ Record: 1, id: 'trk0' })[0]
     let reco = rec ? rec.o({ Reco: 1 })[0] : null
     let sreco = src0 ? src0.o({ Reco: 1 })[0] : null
-    let s = rec ? rec.o({ Stream: 1 })[0] : null
+    let s = rec ? rec.o({ Fill: 1 })[0] : null
     // recommended: the reco crossed INSIDE the record's fragment — B holds the note, byte-faithful.
     if (reco && sreco && reco.sc.note === sreco.sc.note && reco.sc.by === 'DJ' && !(oa %witnessed:recommended)) i %witnessed:recommended
     // refused_unstarted: the gate held — the un-started track was refused AND nothing of it crossed.
@@ -3102,3 +3102,276 @@ async MusuConceal_order(w):
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)
 //#endregion
+
+//#region repliprotocol — the wire law proven BARE (the owner 2026-08-05: "get sure of the behaviour
+//  with a bunch of new tests — Repli only").  No Piers, no Peeroleum, no Lake_link: each beat pumps
+//   fragments STRAIGHT from Repli_fragment into Repli_merge — the first Books to gate the protocol's
+//    own semantics with no wire underneath (RaBreach's hand-staging, one rung barer).  %src and %mir
+//     are two plain children of the world; the tx is a bufseq holder, nothing more.
+
+// RepliBooks_pump — pump every top child of %src into %mir, one fragment per child, exactly as the
+//  serve paths do (a fragment is subtree-rooted).  Shared by both protocol Books.
+async RepliBooks_pump(w):
+    let src = w.o({ src: 1 })[0]
+    let mir = w.o({ mir: 1 })[0]
+    let tx = (w.c.pump_tx = w.c.pump_tx || { c: {} })
+    for (const kid of src.o()) {
+        let frag = this.Repli_fragment(kid, tx)
+        await this.Repli_merge(mir, frag.text)
+    }
+
+RepliUpsert(A,w):
+    w oai %req:wrangle,eternal
+        await &RepliUpsert_drive,w,req
+        req%ok = 1
+
+async RepliUpsert_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.RepliUpsert_mint(w)
+        if (n === 3) await this.RepliUpsert_resend(w)
+        if (n === 4) await this.RepliUpsert_mutate(w)
+        if (n === 5) await this.RepliUpsert_absence(w)
+        if (n === 6) await this.RepliUpsert_delete(w)
+        if (n === 7) await this.RepliUpsert_dupe(w)
+    }
+    await this.Musu_float(w)
+
+// beat 2 — a source record (with a child reco) crosses into an empty mirror: the first pump MINTS.
+async RepliUpsert_mint(w):
+    let src = w.i({ src: 1 })
+    let mir = w.i({ mir: 1 })
+    let rec = src.i({ Record: 1, id: 'r1', title: 'One Kite' })
+    rec.i({ Reco: 1, by: 'DJ', note: 'lovely' })
+    await this.RepliBooks_pump(w)
+    let mrec = mir.o({ Record: 1, id: 'r1' })[0]
+    let mreco = mrec ? mrec.o({ Reco: 1, by: 'DJ' })[0] : null
+    if (mir.o({ Record: 1 }).length === 1 && mreco && mreco.sc.note === 'lovely') {
+        this.story_swear(w, 'the first fragment minted the record and its child reco at a mirror where nothing pre-existed')
+    }
+
+// beat 3 — the identical fragment again: it LOCATES itself (self-matching resend) and nothing doubles.
+async RepliUpsert_resend(w):
+    await this.RepliBooks_pump(w)
+    let mir = w.o({ mir: 1 })[0]
+    let recs = mir.o({ Record: 1 })
+    let recos = recs.length === 1 ? recs[0].o({ Reco: 1 }) : []
+    if (recs.length === 1 && recos.length === 1) {
+        this.story_swear(w, 'an identical resend located itself and changed nothing — no twin was minted')
+    }
+
+// beat 4 — one prop changes at the source; the hit writes ONLY the carried keys, so a mirror-local
+//  key rides through untouched (and a new key crosses, to be the subject of beat 5).
+async RepliUpsert_mutate(w):
+    let src = w.o({ src: 1 })[0]
+    let mir = w.o({ mir: 1 })[0]
+    let rec = src.o({ Record: 1, id: 'r1' })[0]
+    rec.sc.title = 'Two Kites'
+    rec.sc.mood = 'sunny'
+    rec.bump()
+    let mrec = mir.o({ Record: 1, id: 'r1' })[0]
+    mrec.sc.kept = 'mirror-local'
+    mrec.bump()
+    await this.RepliBooks_pump(w)
+    if (mir.o({ Record: 1 }).length === 1 && mrec.sc.title === 'Two Kites' && mrec.sc.mood === 'sunny' && mrec.sc.kept === 'mirror-local') {
+        this.story_swear(w, 'a changed title overwrote on the hit — while a mirror-local key rode through untouched')
+    }
+
+// beat 5 — the asymmetry, snapped: mood is deleted at the source and the pump carries its absence —
+//  which is NOT deletion, so the mirror keeps sunny forever (the 1-or-absent idiom cannot un-set).
+async RepliUpsert_absence(w):
+    let src = w.o({ src: 1 })[0]
+    let rec = src.o({ Record: 1, id: 'r1' })[0]
+    delete rec.sc.mood
+    rec.bump()
+    await this.RepliBooks_pump(w)
+    let mir = w.o({ mir: 1 })[0]
+    let mrec = mir.o({ Record: 1, id: 'r1' })[0]
+    if (rec.sc.mood == null && mrec && mrec.sc.mood === 'sunny') {
+        this.story_swear(w, 'a key deleted at the source stayed standing at the mirror — absence is not deletion on this wire')
+    }
+
+// beat 6 — op:delete locates by identity and removes; the source drops its copy too, so nothing
+//  resurrects the row on a later pump.
+async RepliUpsert_delete(w):
+    let src = w.o({ src: 1 })[0]
+    let rec = src.o({ Record: 1, id: 'r1' })[0]
+    rec.c.repli_op = 'delete'
+    await this.RepliBooks_pump(w)
+    await src.rm({ Record: 1, id: 'r1' })
+    let mir = w.o({ mir: 1 })[0]
+    if (mir.o({ Record: 1, id: 'r1' }).length === 0) {
+        this.story_swear(w, 'an op delete line located the record by its identity and removed it from the mirror')
+    }
+
+// beat 7 — op:dupe forces a mint where plain upsert would land on the first: pump twice, two cards.
+async RepliUpsert_dupe(w):
+    let src = w.o({ src: 1 })[0]
+    let card = src.i({ Card: 1, id: 'c9', title: 'Twin' })
+    card.c.repli_op = 'dupe'
+    await this.RepliBooks_pump(w)
+    await this.RepliBooks_pump(w)
+    let mir = w.o({ mir: 1 })[0]
+    if (mir.o({ Card: 1, id: 'c9' }).length === 2) {
+        this.story_swear(w, 'op dupe forced a second card where a plain upsert would have landed on the first')
+    }
+
+RepliSplit(A,w):
+    w oai %req:wrangle,eternal
+        await &RepliSplit_drive,w,req
+        req%ok = 1
+
+async RepliSplit_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.RepliSplit_spine(w)
+        if (n === 3) await this.RepliSplit_climb(w)
+        if (n === 4) await this.RepliSplit_spins(w)
+        if (n === 5) await this.RepliSplit_unknown(w)
+    }
+    await this.Musu_float(w)
+
+// beat 2 — a whole Mag > Cloud > Card spine crosses in one fragment.
+async RepliSplit_spine(w):
+    let src = w.i({ src: 1 })
+    let mir = w.i({ mir: 1 })
+    let mag = src.i({ Mag: 'shuffle' })
+    let cloud = mag.i({ Cloud: 1, page: '1' })
+    cloud.i({ Card: 1, id: 'a', title: 'First' })
+    await this.RepliBooks_pump(w)
+    let mmag = mir.o({ Mag: 1 })[0]
+    let mcloud = mmag ? mmag.o({ Cloud: 1 })[0] : null
+    let mcards = mcloud ? mcloud.o({ Card: 1 }) : []
+    if (mmag && mcloud && mcards.length === 1) {
+        this.story_swear(w, 'the fragment climbed in whole — one mag one cloud one card stand at the mirror')
+    }
+
+// beat 3 — the reason loc exists at all for append-mostly traffic: the SPINE must locate itself, so
+//  the new card lands inside the standing mag and cloud instead of a reminted twin spine.
+async RepliSplit_climb(w):
+    let src = w.o({ src: 1 })[0]
+    let cloud = src.o({ Mag: 1 })[0].o({ Cloud: 1 })[0]
+    cloud.i({ Card: 1, id: 'b', title: 'Second' })
+    await this.RepliBooks_pump(w)
+    let mir = w.o({ mir: 1 })[0]
+    let mags = mir.o({ Mag: 1 })
+    let clouds = mags.length === 1 ? mags[0].o({ Cloud: 1 }) : []
+    let cards = clouds.length === 1 ? clouds[0].o({ Card: 1 }) : []
+    if (mags.length === 1 && clouds.length === 1 && cards.length === 2) {
+        this.story_swear(w, 'the second pass located the standing mag and cloud spine — and only the new card was minted into it')
+    }
+
+// beat 4 — the many:one law on the wire: %Spin is identified by of — different ofs stay apart while
+//  a re-crossed of updates its own row (the exact bug the old heuristic shipped — every spin merging
+//   onto the first — now gated).
+async RepliSplit_spins(w):
+    let src = w.o({ src: 1 })[0]
+    let s1 = src.i({ Spin: 1, of: 'a', times: '1' })
+    await this.RepliBooks_pump(w)
+    s1.sc.times = '2'
+    s1.bump()
+    src.i({ Spin: 1, of: 'b', times: '1' })
+    await this.RepliBooks_pump(w)
+    let mir = w.o({ mir: 1 })[0]
+    let spins = mir.o({ Spin: 1 })
+    let sa = mir.o({ Spin: 1, of: 'a' })[0]
+    if (spins.length === 2 && sa && sa.sc.times === '2') {
+        this.story_swear(w, 'two spins of different tracks stayed two — while the re-spun track updated its own row in place')
+    }
+
+// beat 5 — fail-closed: an UNDECLARED mainkey falls back to all keys, so a changed line SPLITS into
+//  a visible twin instead of silently merging two different things (wide is the safe way to be wrong).
+async RepliSplit_unknown(w):
+    let src = w.o({ src: 1 })[0]
+    let giz = src.i({ gizmo: 1, serial: 'g1', hue: 'red' })
+    await this.RepliBooks_pump(w)
+    giz.sc.hue = 'blue'
+    giz.bump()
+    await this.RepliBooks_pump(w)
+    let mir = w.o({ mir: 1 })[0]
+    if (mir.o({ gizmo: 1 }).length === 2) {
+        this.story_swear(w, 'an undeclared mainkey fell back to all keys and split into a visible twin — churn you can see and never a silent merge')
+    }
+//#endregion
+
+// ── RepliShadow — the Seem experiment gated: identity OBSERVED from a sent-shadow, no schema.  The
+//  same undeclared mainkey that SPLITS in RepliSplit beat 5 UPDATES here, because the shadow knows
+//   which keys held still.  A negative control without the shadow proves the shadow carried it.
+RepliShadow(A,w):
+    w oai %req:wrangle,eternal
+        await &RepliShadow_drive,w,req
+        req%ok = 1
+
+async RepliShadow_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.RepliShadow_mint(w)
+        if (n === 3) await this.RepliShadow_update(w)
+        if (n === 4) await this.RepliShadow_resend(w)
+        if (n === 5) await this.RepliShadow_control(w)
+    }
+    await this.Musu_float(w)
+
+// RepliShadow_pump — the bare pump with the shadow on.
+async RepliShadow_pump(w):
+    let src = w.o({ src: 1 })[0]
+    let mir = w.o({ mir: 1 })[0]
+    let tx = (w.c.pump_tx = w.c.pump_tx || { c: {} })
+    for (const kid of src.o()) {
+        let frag = this.Repli_fragment(kid, tx, { shadow_loc: 1 })
+        await this.Repli_merge(mir, frag.text)
+    }
+
+// beat 2 — an UNDECLARED mainkey crosses under the shadow: first send, all keys, a clean mint.
+async RepliShadow_mint(w):
+    let src = w.i({ src: 1 })
+    let mir = w.i({ mir: 1 })
+    src.i({ gizmo: 1, serial: 'g1', hue: 'red' })
+    await this.RepliShadow_pump(w)
+    if (mir.o({ gizmo: 1 }).length === 1) {
+        this.story_swear(w, 'an undeclared mainkey minted cleanly under the seem — a first send needs no identity at all')
+    }
+
+// beat 3 — the money shot: the same change that splits without a shadow UPDATES with one, because
+//  loc derives as the keys that held still.  No table row, no hand-stamp, no schema anywhere.
+async RepliShadow_update(w):
+    let src = w.o({ src: 1 })[0]
+    let giz = src.o({ gizmo: 1 })[0]
+    giz.sc.hue = 'blue'
+    giz.bump()
+    await this.RepliShadow_pump(w)
+    let mir = w.o({ mir: 1 })[0]
+    let mgiz = mir.o({ gizmo: 1 })
+    if (mgiz.length === 1 && mgiz[0].sc.hue === 'blue') {
+        this.story_swear(w, 'a changed line under the seem updated its own row — identity observed from what held still — no declaration anywhere')
+    }
+
+// beat 4 — unchanged resend still lands on itself (all keys still match the mirror).
+async RepliShadow_resend(w):
+    await this.RepliShadow_pump(w)
+    let mir = w.o({ mir: 1 })[0]
+    let mgiz = mir.o({ gizmo: 1 })
+    if (mgiz.length === 1 && mgiz[0].sc.hue === 'blue') {
+        this.story_swear(w, 'an unchanged line under the seem resent itself and landed on itself')
+    }
+
+// beat 5 — negative control: the SAME shape without the shadow splits on change, proving the shadow
+//  is what carried the identity (and that the fail-closed floor never went away).
+async RepliShadow_control(w):
+    let src = w.o({ src: 1 })[0]
+    let mir = w.o({ mir: 1 })[0]
+    let tx = (w.c.pump_tx = w.c.pump_tx || { c: {} })
+    let wid = src.i({ widget: 1, serial: 'w1', hue: 'red' })
+    let frag = this.Repli_fragment(wid, tx)
+    await this.Repli_merge(mir, frag.text)
+    wid.sc.hue = 'blue'
+    wid.bump()
+    let frag2 = this.Repli_fragment(wid, tx)
+    await this.Repli_merge(mir, frag2.text)
+    if (mir.o({ widget: 1 }).length === 2) {
+        this.story_swear(w, 'the same change without the seem split into a twin — the shadow is what carried the identity')
+    }
+// (end of the repli protocol Books — RepliUpsert / RepliSplit / RepliShadow)

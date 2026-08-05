@@ -1,0 +1,10 @@
+Snap:H
+  H:RepliUpsert,Run
+    A:RepliUpsert
+      self,round=6	{"mung":["age"]}
+      w:RepliUpsert
+        self,round=6	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        src
+        mir
+          Reco,by:DJ,note:lovely

@@ -1,0 +1,11 @@
+Snap:H
+  H:RepliShadow,Run
+    A:RepliShadow
+      self,round=4	{"mung":["age"]}
+      w:RepliShadow
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        src
+          gizmo,serial:g1,hue:blue
+        mir
+          gizmo,serial:g1,hue:blue

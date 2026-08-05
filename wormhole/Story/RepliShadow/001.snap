@@ -1,0 +1,7 @@
+Snap:H
+  H:RepliShadow,Run
+    A:RepliShadow
+      self,round	{"mung":["age"]}
+      w:RepliShadow
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

@@ -10,7 +10,7 @@ import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Sound(): string { return 'e74dd6665cd2abd0~g1' },
+    Ghostmeta_Ghost_M_Sound(): string { return 'f5416c732f736632~g1' },
 
 // Sound.g — the AUDIO ENGINE.  Extracted from Ghost/Story/Musuation.g's //#region reality (the
 //  Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md §5): shared, real software,
@@ -132,7 +132,7 @@ Sound_synth_tone(seq, root) {
     return buf
 
 },
-// Sound_synth_records — instantly mint `n` READY %record sources, each a distinct synth timbre and `secs`
+// Sound_synth_records — instantly mint `n` READY %PCM sources, each a distinct synth timbre and `secs`
 //  long, with all PCM pre-synthesised on c.chunks.  SAME shape Crate_decode produces, so they feed the
 //   radiostock identically to real files (Crate_radiostock(rec) wraps either) — but with zero files, zero
 //    decode, zero wait.  Returns the records.
@@ -151,7 +151,7 @@ Sound_synth_records(w, n, secs) {
             chunks.push(this.Sound_synth_tone(s, root))
             s = s + 1
         }
-        let rec = w.i({ record: 1, name: 'synth-' + Math.round(root) + 'hz', artist: 'Synth', title: Math.round(root) + 'Hz', nchunks: nchunks, seconds: +secs.toFixed(2) })
+        let rec = w.i({ PCM: 1, name: 'synth-' + Math.round(root) + 'hz', artist: 'Synth', title: Math.round(root) + 'Hz', nchunks: nchunks, seconds: +secs.toFixed(2) })
         rec.c.up = w
         rec.c.chunks = chunks
         recs.push(rec)

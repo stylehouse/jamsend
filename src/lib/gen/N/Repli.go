@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return '86d0da48d6a01719~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return 'ede2ad954e44b086~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -117,15 +117,15 @@ Repli_identity_keys(mainkey) {
         // ── the Musu shelves.  Each is `home.oai({<name>:1, pub})` via Ra_home_shelf, so `pub` is
         //  half its identity — one per (home, name) today, which is why nothing has bitten. ──
         stock: ['pub'], shop: ['pub'], bay: ['pub'], radiostocking: ['pub'], the: ['pub'],
-        // %Stream names TWO different particles — `Stream,seq,cid` is one opus packet (a MEMBER,
-        //  many per Record, minted Ra.g); `Stream,name:'audio',total,have` is the Float32-page
-        //   path's fill COUNTER (one per Record, minted Crate.g, sent Repli_serve_want).  Listing
-        //    both keys resolves each shape correctly, and says out loud that the mainkey is
-        //     overloaded.  It survived the old heuristic only because `name` and `seq` were BOTH on
-        //      the spelling list — luck, not design.  Mag_todo §0.2b: splitting this name is a
-        //       PREREQUISITE for moving identity into the protocol rule set post-1.0, because a
-        //        per-mainkey declaration cannot describe two different particles at once.
-        Stream: ['seq', 'name'],
+        // %Stream is ONE thing again (the owner, 2026-08-05: "it's obviously not a %Stream"):
+        //  `Stream,seq,cid` — one opus packet, a MEMBER, many per Record (minted Ra.g).  The
+        //   Float32-page fill counter that squatted under this mainkey is now %Fill (below).
+        Stream: ['seq'],
+        // %Fill — the Float32-page path's fill counter, one per Record (minted Crate.g's
+        //  transcode-begin + the Book stocks; sent hand-built in Repli_serve_want, which is why
+        //   this row is belt-and-braces).  Named for what it is: the fill state of a pour of
+        //    samples.  Destined to home under %PCM when the disk-becomes-a-Mag restructure lands.
+        Fill: ['name'],
         // ── the publication: Mag > Cloud > Card/Record ──
         // %Mag has NO identity key yet — every mag crosses as pattern {Mag:<name>}, so two Piers'
         //  collections stay apart only by the container they land in.  §0.1 item 2 ruled the key
@@ -166,6 +166,22 @@ Repli_loc_for(node, keys) {
         console.warn(`🛰⚠ repli: no identity declared for mainkey %${keys[0]} (keys: ${keys.join(',')}) — falling back to ALL keys, which SPLITS. Add a row to Repli_identity_keys.`)
     }
     return keys.slice()
+
+},
+// Repli_loc_shadow — the sent-shadow loc: compare this particle's stringies against what was last
+//  sent (.c.repli_sent_sc, runtime-only), refresh the shadow, and derive loc.  No shadow (first
+//   send, or a reload — .c never persists) ⇒ all keys, fail-closed: worst case a stale mirror row
+//    splits into a visible twin, never a silent merge.  Everything unchanged ⇒ all keys (they all
+//     still match the mirror).  Something changed ⇒ the UNCHANGED keys are the pattern; if nothing
+//      held still it is not the same thing any more — all keys, let it split.
+Repli_loc_shadow(node, stringies) {
+    let keys = Object.keys(stringies)
+    let shadow = node.c && node.c.repli_sent_sc
+    node.c.repli_sent_sc = { ...stringies }
+    if (!shadow) return keys
+    let same = keys.filter((k) => shadow[k] === stringies[k])
+    if (!same.length || same.length === keys.length) return keys
+    return same
 
 },
 // Repli_is_binary — an .sc value that is raw bytes.  The chunk-particle principle (owner 2026-07-10:
@@ -223,6 +239,15 @@ Repli_lines_of(node, d, out, bufmap, opts) {
     }
     let objecties = {}
     objecties.loc = this.Repli_loc_for(node, Object.keys(stringies))
+    // THE SEEM EXPERIMENT (the owner 2026-08-05: identity OBSERVED, not declared — "I want the Seem
+    //  that tracks the Repli to notice there's no big deal most of the time, and set op and or loc
+    //   when things are complicated").  With opts.shadow_loc, loc derives from a per-particle
+    //    sent-shadow instead of the table: an unchanged line patterns on ALL keys (self-matching
+    //     resend — it lands on its own last transmission); a changed line patterns on the keys that
+    //      did NOT change (identity is what holds still — the sender is the sole writer, so the
+    //       mirror's copy equals the shadow).  No table, no stamps, no schema.  Gated to the
+    //        RepliShadow Book until ruled; see Mag_todo §0.2e.
+    if (opts && opts.shadow_loc) objecties.loc = this.Repli_loc_shadow(node, stringies)
     if (node.c && node.c.repli_op) objecties.op = node.c.repli_op
     if (bufk) {
         let id = (bufmap.tx.c.bufseq = (bufmap.tx.c.bufseq || 0) + 1)
@@ -650,11 +675,11 @@ async Repli_serve_want(w, pier, frame) {
     out.push(this.enL({ d: 0, stringies: { Record: 1, id: rec.sc.id }, objecties: { loc: ['Record', 'id'] } }))
     // total is the PROMISE (sc.nchunks), not the frontier — a mid-transcode page must not shrink the
     //  mirror's idea of the whole track (its pull window clamps on total).
-    let sline = { Stream: 1, name: h.stream, total: +(rec.sc.nchunks || chunks.length), have: end, page_from: from, page_to: end }
+    let sline = { Fill: 1, name: h.stream, total: +(rec.sc.nchunks || chunks.length), have: end, page_from: from, page_to: end }
     let drop = w.c.repli_drop && w.c.repli_drop === (rec.sc.id + ':' + from)
     // the lines PROMISE the buffer either way (objecties.buffer=id); a drop withholds only the BYTES frame,
     //  so B opens an awaitbuf that never lands — the missing-buffer condition the reconciler must warn on.
-    let sobj = { loc: ['Stream', 'name'], buffer: id }
+    let sobj = { loc: ['Fill', 'name'], buffer: id }
     out.push(this.enL({ d: 1, stringies: sline, objecties: sobj }))
     let bufmap = { list: drop ? [] : [{ id: id, bytes: bytes }] }
     await this.Repli_send_lines(w, pier, h.to, h.from, out.join('\n'), bufmap)
@@ -930,10 +955,10 @@ async Repli_sent_se(w, library, pier) {
             }
         },
         trace_fn: async (uD, n, T) => {
-            let stream = n.o({ Stream: 1 })[0]
+            let fill = n.o({ Fill: 1 })[0]
             // the sender's truth is what it has SERVED (rec.c.sent); the mirror's is what has ARRIVED —
             //  chunk particles COUNTED (presence is fill state) where the Record carries them, else the
-            //   %Stream head's have — each side's tree reads its own adjusted reality.
+            //   %Fill counter's have — each side's tree reads its own adjusted reality.
             let have = 0
             if (n.c.sent != null) {
                 have = +n.c.sent
@@ -942,12 +967,12 @@ async Repli_sent_se(w, library, pier) {
                 for (const ch of n.o({ seq: 1 })) {
                     if (this.Repli_chunk_bytes(ch) != null) held = held + 1
                 }
-                if (held) { have = held } else { have = stream ? +(stream.sc.have || 0) : 0 }
+                if (held) { have = held } else { have = fill ? +(fill.sc.have || 0) : 0 }
             }
             let D = uD.i({ Sent: 1, id: n.sc.id, name: n.sc.title || n.sc.id,
                 have: have,
-                total: +(n.sc.total || (stream ? stream.sc.total : 0) || 0),
-                got: +(stream ? (stream.sc.got || 0) : 0) })
+                total: +(n.sc.total || (fill ? fill.sc.total : 0) || 0),
+                got: +(fill ? (fill.sc.got || 0) : 0) })
             D.c.rec = n
             n.c.Sent_D = D
             return D

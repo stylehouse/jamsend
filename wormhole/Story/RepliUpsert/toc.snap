@@ -1,0 +1,37 @@
+story:RepliUpsert
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.017
+      sample=0.021,at=1785890690
+      sample=0.021,at=1785890695
+      sample=0.021,at=1785890698
+      sample=0.021,at=1785890698
+      sample=0.01,at=1785890703
+      sample=0.011,at=1785890708
+      sample=0.019,at=1785890805
+      sample=0.009,at=1785890860
+    TimeTotal:step,avg=0.002
+      sample=0.003,at=1785890690
+      sample=0.003,at=1785890695
+      sample=0.003,at=1785890698
+      sample=0.003,at=1785890698
+      sample=0.001,at=1785890703
+      sample=0.002,at=1785890708
+      sample=0.003,at=1785890805
+      sample=0.001,at=1785890860
+  step,dige:000a8b1dea2cc438
+  step=2,dige:388581e7beda9d8e
+    Assertion:first-mint,sentence:the first fragment minted the record and its child reco at a mirror where nothing pre-existed
+  step=3,dige:73d695d77b48e694
+    Assertion:self-matching-resend,sentence:an identical resend located itself and changed nothing — no twin was minted
+  step=4,dige:57db2b39e886a668
+    Assertion:hit-writes-carried-keys,sentence:a changed title overwrote on the hit — while a mirror-local key rode through untouched
+  step=5,dige:d843a73ec42eb16c
+    Assertion:absence-not-deletion,sentence:a key deleted at the source stayed standing at the mirror — absence is not deletion on this wire
+  step=6,dige:fc6aa567baec41cf
+    Assertion:op-delete,sentence:an op delete line located the record by its identity and removed it from the mirror
+  step=7,dige:0e74fed8198dc0a6
+    Assertion:op-dupe,sentence:op dupe forced a second card where a plain upsert would have landed on the first

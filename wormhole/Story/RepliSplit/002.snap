@@ -1,0 +1,15 @@
+Snap:H
+  H:RepliSplit,Run
+    A:RepliSplit
+      self,round=2	{"mung":["age"]}
+      w:RepliSplit
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        src
+          Mag:shuffle
+            Cloud,page:1
+              Card,id:a,title:First
+        mir
+          Mag:shuffle
+            Cloud,page:1
+              Card,id:a,title:First

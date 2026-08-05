@@ -4,34 +4,34 @@ story:MusuRadio
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=36.14
-      sample=61.449,at=1782731672
-      sample=61.63,at=1782828347
-      sample=61.789,at=1782828822
-      sample=25.069,at=1782830498
-      sample=24.824,at=1782830555
+    TimeTotal:beliefs,avg=25.038
       sample=24.824,at=1782830561
       sample=24.735,at=1782830601
       sample=27.475,at=1782957753
       sample=24.848,at=1782968162
       sample=24.755,at=1783393533
-    TimeTotal:step,avg=4.016
-      sample=6.828,at=1782731672
-      sample=6.848,at=1782828347
-      sample=6.865,at=1782828822
-      sample=2.785,at=1782830498
-      sample=2.758,at=1782830555
+      sample=24.809,at=1785891886
+      sample=24.809,at=1785891959
+      sample=24.772,at=1785891994
+      sample=24.699,at=1785892025
+      sample=24.651,at=1785892143
+    TimeTotal:step,avg=2.782
       sample=2.758,at=1782830561
       sample=2.748,at=1782830601
       sample=3.053,at=1782957753
       sample=2.761,at=1782968162
       sample=2.751,at=1783393533
+      sample=2.757,at=1785891886
+      sample=2.757,at=1785891959
+      sample=2.752,at=1785891994
+      sample=2.744,at=1785892025
+      sample=2.739,at=1785892143
   step,dige:285dbe809a010513
-  step=2,dige:53faf3608b7eb47c
-  step=3,dige:8831e704d130053b
-  step=4,dige:3d084d2205dd2c1d
-  step=5,dige:8f462403f9dceb35
-  step=6,dige:8a185337d52389d8
-  step=7,dige:bfc5a995e22f54d5
-  step=8,dige:126cfa4379a6aa99
-  step=9,dige:92168e114ae44b1f
+  step=2,dige:52816748b3178caf
+  step=3,dige:5c5dca0d4439937d
+  step=4,dige:f2c886e5abe6f02c
+  step=5,dige:1e7da4e38c7bccdf
+  step=6,dige:fcc0c4c8e543ed4c
+  step=7,dige:1ad0bab27155b692
+  step=8,dige:32a2a92046f8ffd1
+  step=9,dige:92541cc0854cd65c

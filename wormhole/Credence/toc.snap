@@ -9,6 +9,11 @@ Waft:Credence
     Funkcion:Storying,of_Book:Peregrination
     Funkcion:Storying,of_Book:PereReborn,wire:reconnect-epoch fix over one loopback link — boot-detection stubbed
     Funkcion:Storying,of_Book:PereComplain,born:2026-07-22,desc:the protocol back-signal — an unenabled frame type draws a no_protocol complaint when the peer is ready but is held silently during the handshake startup window
+  What:Repli,desc:the C** replication protocol bare — no piers no wire — fragments pumped straight from Repli_fragment into Repli_merge
+    Funkcion:StoryTimes
+    Funkcion:Storying,of_Book:RepliUpsert,born:2026-08-05,wire:no wire — a bare source and mirror in one world,desc:the upsert law — mint then self-matching resend then overwrite-only-carried-keys then absence-is-not-deletion then op delete and dupe
+    Funkcion:Storying,of_Book:RepliSplit,born:2026-08-05,wire:no wire — a bare source and mirror in one world,desc:the spine locates itself — many to one stays many — an undeclared mainkey splits visibly and never silently merges
+    Funkcion:Storying,of_Book:RepliShadow,born:2026-08-05,wire:no wire — a bare source and mirror in one world,desc:the seem experiment — identity observed from a sent-shadow with no schema — a shadowless negative control splits beside it
   What:Swarm,desc:the social sharing layer — signed invites reciprocal grants revocation and portable accounts
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:SwarmStaple,wire:identity and grant crypto at the model layer — no wire

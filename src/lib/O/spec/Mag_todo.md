@@ -498,7 +498,22 @@ RECOMMENDED (the human names it — naming here is the human's craft): the chunk
 UPDATE 2026-08-05 (§0.2e): the "BLOCKED" above holds only for a per-MAINKEY table. Under
  mint-declared identity — §0.2e's recommendation — each mint states its own pattern, so the
   polysemy stops blocking anything and this split reverts to what it really is: the `%PCM`
-   cleanup on its own merits. Still worth doing; no longer a prerequisite.
+   cleanup on its own merits.
+
+**LANDED 2026-08-05, same day (the owner: "the second definition of %Stream is an abomination
+ … move the piece of crap under PCM — I don't want to see it — and name it properly").** The
+  counter is now **`%Fill,name,total,have,sr`** — named for what it is, the fill state of a
+   pour of samples — with its own identity row (`Fill: ['name']`) and `%Stream` back to ONE
+    thing (`Stream: ['seq']`, the opus packet). Touched: the mint (`Crate.g` transcode-begin),
+     the hand-built sender (`Repli_serve_want`), the Sent-tree trace, the Book stocks
+      (Heistation ×2, Musuation ×1) and readers (×3 + MusuVend's heavy-check). The
+       **`%record → %PCM`** rename (§0.1 item 1) landed in the same pass: 2 mints
+        (`Crate_decode`, `Sound_synth_records`), 2 Book queries. `%Fill`'s HOMING under
+         `%PCM` still waits on disk-becomes-a-Mag — today it stays a sibling on the
+          `%Record`, because on the transcode path no `%PCM` particle exists to home it
+           under. Fixture re-records: MusuReplica, MusuReco, MusuDoor, MusuVend (counter),
+            MusuRadio (%PCM). The name `%Fill` is mine under the owner's order — rename
+             freely if it reads wrong.
 
 ### 0.2c Four Books are red on WALL CLOCK, and cannot ever go green as recorded
 
@@ -848,7 +863,28 @@ The owner's challenge, same day the table landed: *"one way replication without 
       once, not twice (Q3). Optional: `Repli_merge` stamps merged mirrors' loc so identity
        survives multi-hop re-serves.
 
-**Rulings only the human can make:** (1) is "the pattern I was found by" a C-level fact (one
+**SUPERSEDED IN PART, same day — the owner melted it further ("this oai_loc thing sounds like
+ crappy design and isn't reductionist … I want the Seem that tracks the Repli to notice there's
+  no big deal most of the time, and set op and or loc when things are complicated").** The
+   resulting design — **identity OBSERVED, not declared** — is now prototyped behind
+    `opts.shadow_loc` (`Repli_loc_shadow`, Repli.g, beside the table which stays the default):
+     a per-particle sent-shadow (`.c.repli_sent_sc`) of the stringies last transmitted; an
+      unchanged line patterns on ALL keys (self-matching resend); a changed line patterns on
+       **the keys that held still**.  Sound because the sender is the sole writer (one-way
+        replication — "the Mag doesn't mutate at the client end"), so the mirror's copy equals
+         the shadow.  No table, no mint stamps, no schema, and the tripwire warn loses its
+          reason to exist.  Gated by the **RepliShadow** Book: the same undeclared mainkey that
+           SPLITS in RepliSplit beat 5 UPDATES under the shadow, with a shadowless negative
+            control beside it.  The one honest weakness: `.c` never persists, so the first
+             send after a reload has no shadow and falls back to all keys — a particle that
+              MUTATED across the reload splits into a visible twin at the mirror (fail-closed
+               churn, never silent loss; and `%Record`, the shape this matters most for,
+                already has the receiver-side census fallback that locates by id regardless).
+                 Migration if ruled in: shadow becomes the primary, the table shrinks to a
+                  reload-bridging fallback for the five mutating shapes, then dies with them.
+
+**Rulings only the human can make:** (0, NEW) rule the Seem design in as the destination?
+ (1) is "the pattern I was found by" a C-level fact (one
  line in `_foc`, TheC core — the floor) or a Repli-only oai variant (re-opens forgetting)?
   (2) is `hid` part of %Heist's wire identity; can two Heists share a `wish`? (3) Stage 2
    scheduling — with item 5's move, or folded into `Mag,pub`'s re-record? (4) rule the invariant

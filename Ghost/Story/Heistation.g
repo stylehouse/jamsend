@@ -780,7 +780,7 @@ MusuVend_meander(w, from, count):
         rec.sc.artist = t.artist
         rec.sc.title = t.title
         rec.sc.path = t.path
-        let st = rec.oai({ Stream: 1, name: 'audio' })
+        let st = rec.oai({ Fill: 1, name: 'audio' })
         st.c.up = rec
         st.sc.total = 8
         st.sc.have = 0
@@ -876,7 +876,7 @@ MusuVend_witness(w):
     let light = vmag ? 1 : 0
     if (vmag) {
         for (const card of this.Musica_cards(vmag)) { if (card.o().length) { light = 0 } }
-        let heavy = w.c.origin_lib && this.Ra_recs(w.c.origin_lib).length && this.Ra_recs(w.c.origin_lib).every((r) => r.o({ Stream: 1 }).length)
+        let heavy = w.c.origin_lib && this.Ra_recs(w.c.origin_lib).length && this.Ra_recs(w.c.origin_lib).every((r) => r.o({ Fill: 1 }).length)
         if (!heavy) { light = 0 }
     }
     if (light && !T.oa({ see: 'the magazine is the catalog not the payload — each crossed card is an identity leaf while the library record it sublimed from stays streamable' })) this.MusuVend_note(w, { see: 'the magazine is the catalog not the payload — each crossed card is an identity leaf while the library record it sublimed from stays streamable' })
@@ -1027,7 +1027,7 @@ MusuDoor_stock(w, tracks):
         rec.sc.artist = t.artist
         rec.sc.title = t.title
         rec.sc.path = t.path
-        let st = rec.oai({ Stream: 1, name: 'audio' })
+        let st = rec.oai({ Fill: 1, name: 'audio' })
         st.c.up = rec
         st.sc.total = 8
         st.sc.have = 0

@@ -1,0 +1,13 @@
+Snap:H
+  H:RepliUpsert,Run
+    A:RepliUpsert
+      self,round=3	{"mung":["age"]}
+      w:RepliUpsert
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        src
+          Record,id:r1,title:One Kite
+            Reco,by:DJ,note:lovely
+        mir
+          Record,id:r1,title:One Kite
+            Reco,by:DJ,note:lovely
