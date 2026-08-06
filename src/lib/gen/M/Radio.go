@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return 'b1c74ab780a3b70e~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return 'b0cb6f5dca555416~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -308,6 +308,20 @@ async Radio_pump_tick(radio, era) {
             return
         }
         this.Radio_open(radio, rec)
+        // LAY THE PRIMED PCM DOWN IMMEDIATELY (Radio_prime).  Before the map, before the feed loop,
+        //  before the 30ms harvest wait — this is the whole point of priming: the first sound is
+        //   already decoded, so it reaches the audiolet on this very tick.  The fresh audiolet exists
+        //    by now (Radio_skip made it), which is exactly why the prime holds raw Float32 rather
+        //     than anything scheduled.
+        if (radio.c.primed_use) {
+            let pu = radio.c.primed_use
+            radio.c.primed_use = null
+            radio.c.pre = +(pu.pre || 0)
+            this.Radio_place(radio, pu.got)
+            radio.c.first_feed = 1
+            radio.c.ever_played = 1
+            this.Radio_trace(radio, { ev: 'primed-open', id: pu.id.slice(0, 8), seq: pu.seq })
+        }
         this.Radio_supply_go(radio, era, rec)
         if (radio.sc.Radio !== 'playing') this.Radio_state(radio, 'playing')
     }
@@ -445,6 +459,11 @@ async Radio_pump_tick(radio, era) {
         }
     }
     this.Radio_face_tick(radio, AC)
+    // KEEP ONE READY.  Only while the timeline is comfortable (>4s decoded ahead), so priming never
+    //  competes for CPU with the track actually playing — the next track's readiness must never be
+    //   the reason this one stutters.  Cheap when already primed: two property reads.
+    if (((radio.c.end || 0) - now) > 4) await this.Radio_prime(radio, era)
+    if (radio.c.era !== era) return
     this.Radio_pump_soon(radio, era, 400)
 
 },
@@ -461,6 +480,74 @@ async Radio_pump_tick(radio, era) {
 //   path, convergence-dirty for about a packet and documented there as honest.
 //  HUMDINGER-GATED: an end-user page tunes in, a Book keeps the 0 it recorded, so no fixture moves.
 //   Ra_rand (not prandle) so a Book that DID want this could still pin it.
+// Radio_peek_next — WHICH RECORD THE DIAL WILL PICK, without picking it.  Radio_dial consumes the
+//  lineup head (dropping cards as it walks), so priming cannot just call it — that would eat the
+//   programme.  This is the same walk, read-only: the first standing card whose record has not been
+//    heard this sitting.  null when the lineup is empty (nothing to prime; the dial will fall through
+//     to its own ladder and the prime is simply skipped that time).
+Radio_peek_next(radio) {
+    let w = radio.c.w
+    let lu = w.o({ Mag: 'Lineup' })[0]
+    if (!lu) return null
+    let heard = radio.c.heard || {}
+    for (const card of lu.o({ Card: 1 })) {
+        let rec = card.c.rec
+        if (!rec) continue
+        if (heard[String(rec.sc.id)]) continue
+        return rec
+    }
+    return null
+
+},
+// Radio_prime — KEEP THE NEXT TRACK READY TO GO (the owner 2026-08-07: "try to always have one very
+//  ready to go — there's a lag between click and sound coming out").
+//  The lag is real and it is DECODE.  Pressing skip tears down the audiolet, dials, opens, maps, feeds
+//   the first packets to a brand-new AudioDecoder and only then waits a tick for frames to arrive —
+//    all of it after the keypress.  So do the expensive half EARLY: while the current track is playing
+//     comfortably, decode the next one's opening chunks into plain planar Float32 and hold them.
+//  RAW PCM, NOT SCHEDULED AUDIO — that is the whole trick.  A skip replaces radio.c.aud with a fresh
+//   audiolet, so anything already scheduled would die with the old one.  Float32 belongs to nobody, so
+//    it survives the teardown and Radio_place drops it onto the NEW audiolet the instant it exists.
+//  It also fixes the start seq at prime time (Radio_start_seq is random), so the track we primed is
+//   the track we play — prime and open cannot disagree about where the needle lands.
+//  Era-guarded across its awaits like every other async in this pump, and single-flight (c.priming):
+//   a second prime racing the first would decode the same chunks twice and hand back the loser.
+async Radio_prime(radio, era) {
+    // END-USER PAGES ONLY — the same humdinger gate Radio_start_seq uses, and for a sharper reason.
+    //  Priming is a FEEL optimisation: it decodes ahead and then opens the next track from PCM that
+    //   already exists, which changes when decoding happens and where the pump's first feed begins.
+    //    A Book must see the plain deterministic path or its recorded snaps stop matching — measured
+    //     the hard way, MusuHeist going red the first time this ran ungated.
+    if (!this.top_House().c.humdinger) return
+    if (radio.c.priming || radio.c.ready) return
+    let rec = this.Radio_peek_next(radio)
+    if (!rec || !rec.sc.id) return
+    let m = this.Radio_map(rec)
+    let start = this.Radio_start_seq(radio, rec)
+    if (m.bytes[start] == null) return
+    let nch = Math.min(2, +(rec.sc.nch || 1))
+    let dec = this.Radio_dec_open(nch)
+    if (!dec) return
+    radio.c.priming = 1
+    let PRIME = 3
+    let s = start
+    let fed = 0
+    while (fed < PRIME && m.bytes[s] != null) {
+        this.Radio_dec_feed(dec, this.Ra_chunk_packets(m.bytes[s]))
+        s = s + 1
+        fed = fed + 1
+    }
+    let got = null
+    try { got = await this.Radio_dec_drain(dec) } catch (er) { got = null }
+    this.Radio_dec_close(dec)
+    radio.c.priming = 0
+    if (radio.c.era !== era) return
+    if (!got || !(got.n > 0)) return
+    radio.c.ready = { id: String(rec.sc.id), start: start, seq: s, nch: nch,
+        pre: +(m.heads[start] || 0), at0: start * (+(rec.sc.seg_secs || 2)), got: got }
+    this.Radio_trace(radio, { ev: 'primed', id: String(rec.sc.id).slice(0, 8), start: start, chunks: fed })
+
+},
 Radio_start_seq(radio, rec) {
     if (!this.top_House().c.humdinger) return 0
     let total = +(rec.sc.total || 0)
@@ -480,11 +567,19 @@ Radio_open(radio, rec) {
     this.Ra_term_stream_open(w, rec, {})
     radio.c.rec = rec
     this.Radio_heard_add(radio, rec.sc.id)
-    let start = this.Radio_start_seq(radio, rec)
-    radio.c.seq = start
+    // SPEND THE PRIMED TRACK if this is the one we prepared (Radio_prime).  Its chunks are already
+    //  decoded, so the sound starts on THIS tick instead of after a fresh decoder has been opened,
+    //   fed and waited on.  A prime for a different record is stale — drop it and let the pump
+    //    prepare the new next one.
+    let ready = radio.c.ready
+    radio.c.ready = null
+    if (ready && ready.id !== String(rec.sc.id)) ready = null
+    let start = ready ? ready.start : this.Radio_start_seq(radio, rec)
+    radio.c.seq = ready ? ready.seq : start
     // the true position in the track, which Radio_face_tick adds to the scheduled-sample count and
     //  Swarm_share_beat reads to aim its want-ahead window.  Zero unless we tuned in late.
     radio.c.at0 = start * (+(rec.sc.seg_secs || 2))
+    radio.c.primed_use = ready || null
     radio.c.dec = null
     radio.c.dec_bad_at = -1
     radio.c.pre = 0
@@ -1301,7 +1396,19 @@ async Stoker_tour(w, shelf) {
     // never race the churn — Stoker_look's own dig loop is on the same shelf, and a second
     //  meander mid-churn would just fight it for the nav.  The churn is already filling.
     if (st.sc.Stoker === 'churning') return 0
-    let floor = +(w.c.tour_floor_ms || 90000)
+    // TWO GEARS (the owner 2026-08-07: "more radiostock needs to be cranked out!").  FILLING and
+    //  CRUISING are different jobs and deserve different rates.  Below the window there is a real
+    //   shortage — the listener has little to hear and every track is progress, so tour often and dig
+    //    several rounds.  AT the window the shelf is healthy and the tour is only rotating the
+    //     collection, so one gentle round on a long timer is exactly right: cranking there would
+    //      transcode constantly for no gain, since every track in costs a track out.
+    // 40, not 24 (2026-08-07, "more radiostock needs to be cranked out!") — the window IS how much
+    //  music exists to hear at any moment, and 24 was a first guess made before anything ran.  Kept
+    //   UNDER Stoker_cull's 44 memory cap deliberately: above it the two bounds would fight, with
+    //    the cull dropping heard records the tour still counted as its window.
+    let W = +(w.c.tour_window || 40)
+    let filling = this.Ra_recs(shelf).length < W
+    let floor = +(filling ? (w.c.tour_fill_ms || 20000) : (w.c.tour_floor_ms || 90000))
     if (st.c.tour_at && (Date.now() - st.c.tour_at) < floor) return 0
     st.c.tour_at = Date.now()
     let nav = this.Crate_nav ? this.Crate_nav() : null
@@ -1325,14 +1432,59 @@ async Stoker_tour(w, shelf) {
     if (barren) {
         for (const k of Object.keys(barren)) skip[k] = 1
     }
+    // ROUNDS: keep digging while there is genuine shortage.  One dig yields at most `want` (2)
+    //  tracks, so a filling shelf crawled up two at a time on a long timer — the trickle the owner
+    //   noticed.  Stops on the FIRST dry round (nothing new out there right now, so hammering the
+    //    disk cannot help) and the moment the window is reached.  A breath between rounds, the same
+    //     250ms Stoker_look uses, so a burst of transcodes never crowds the track actually playing.
+    let rounds = 0
+    let MAXR = filling ? +(w.c.tour_rounds || 4) : 1
     let dug = 0
-    try { dug = await this.Stoker_dig(st, w, shelf, nav, skip) } catch (er) { dug = 0 }
+    while (rounds < MAXR) {
+        rounds = rounds + 1
+        let got = 0
+        try { got = await this.Stoker_dig(st, w, shelf, nav, skip) } catch (er) { got = 0 }
+        dug = dug + got
+        if (got < 1) break
+        if (this.Ra_recs(shelf).length >= W) break
+        // the shelf moved, so the skip set is stale — a round that re-offered what round one just
+        //  stocked would waste a whole file read to land nothing (and then mark it barren, wrongly).
+        for (const r of this.Ra_recs(shelf)) {
+            if (r.sc.path) skip[String(r.sc.path)] = 1
+        }
+        await new Promise((r) => setTimeout(r, 250))
+    }
     // WHITTLE OFF THE TOP: back down to the window, oldest first.  Ra_recs walks the pages in
     //  order, so recs[0] IS the oldest holding — and it returns a fresh array, so dropping as we
     //   walk it never disturbs the live children (the lesson Ra_shuffle_cull paid for).
-    let W = +(w.c.tour_window || 24)
     let recs = this.Ra_recs(shelf)
     let over = recs.length - W
+    // ROLL EVEN WHEN NOT FULL (2026-08-07, the owner: "still stuck in a small pool of radiostock that
+    //  wont roll over").  The first cut whittled only what was OVER the window, which quietly made the
+    //   window a HIGH-WATER MARK rather than a moving one: a shelf that never reaches W never drops
+    //    anything, so the same records sit there forever and the friend hears one small pool for the
+    //     whole session.  Both players read exactly that — `dropped=0 held=0` on every single tour,
+    //      stock flat at 23 and 36 against a window of 40.  Raising W to crank more stock is what
+    //       switched the conveyor off, which is a fair warning about the whole shape: the wheel must
+    //        turn on its own clock, not as a side effect of being full.
+    //  Retiring a record is not a loss — Ra_rec_drop un-barrens its path just below, so the track goes
+    //   straight back into the pool the wander draws from.  In a SMALL collection that is the entire
+    //    point: drop the oldest, and a later turn may deal it again in a different place.  The floor
+    //     keeps the shelf from rolling itself down to nothing when the wander is dry.
+    //  CONDITIONED ON THE DIG HAVING PRODUCED (`dug > 0`), which is the difference between rotating a
+    //   shelf and starving one.  A tour whose wander came up dry has learned there is nothing else out
+    //    there to hear right now, and dropping a record in that state is pure loss: the listener's
+    //     choice shrinks and the same track is simply re-dug on a later turn.  When the dig IS
+    //      producing, supply exists, so retiring the oldest is real turnover — and the shelf still
+    //       grows, since `dug` is 2-per-round against a roll of 1.
+    //  `dug > 1`, NOT `dug > 0` — the roll must stay STRICTLY SLOWER than the dig or it cancels it.
+    //   Measured live within minutes of the first cut: `dug=1 dropped=1` on every tour with stock
+    //    pinned at 20 against a window of 40, so the shelf could never climb and the conveyor had
+    //     quietly become a cap at wherever the shelf happened to be standing.  Requiring two in
+    //      before one goes out guarantees net growth while the shelf is below the window, and the
+    //       ordinary over-the-window whittle takes over once it gets there.
+    let FLOOR = +(w.c.tour_floor_stock || 16)
+    if (over < 1 && dug > 1 && recs.length > FLOOR) over = +(w.c.tour_roll || 1)
     let radio = w.o({ Radio: 1 })[0]
     let playing = radio ? radio.c.rec : null
     // NO PIER MAY BE ON THIS RECORD WHEN WE WHITTLE IT (the owner, 2026-08-07: "no Pier can be
@@ -1354,12 +1506,76 @@ async Stoker_tour(w, shelf) {
     let nowms = Date.now()
     let held = 0
     let dropped = 0
+    // WHICH ALBUM A RECORD BELONGS TO, free and local.  `sc.album` is stamped from the file's tags
+    //  but only `if (info.album)` (Ra.g:1157), so an untagged track has none — fall back to the
+    //   directory the path sits in, which is what "album" means on disk anyway.  Loose tracks at a
+    //    share's root all share the '' bucket, which is the right answer: they are one pile.
+    const album_of = (r) => {
+        if (r.sc.album) return String(r.sc.album)
+        let p = String(r.sc.path || '')
+        let i = p.lastIndexOf('/')
+        return i > 0 ? p.slice(0, i) : ''
+    }
+    // DROP FROM THE FATTEST ALBUM, NOT THE GLOBAL HEAD (2026-08-07, from simulating the algorithm
+    //  against the owner's report that "two of them only have one track each" in a 5-album crate).
+    //  A plain oldest-first whittle is ALBUM-BLIND, and that single fact — not the meander, not the
+    //   weights — is what starves small albums.  The shelf is a moving window, so its composition is
+    //    an EQUILIBRIUM rather than an accumulation: album i gains at its draw probability p_i and
+    //     loses at held_i/W, which settles at held_i = W·p_i.  With p_i proportional to album size,
+    //      a [40,20,12,4,2] collection at W=24 settles at [12.3, 6.2, 3.7, 1.2, 0.6] — simulation
+    //       measured [12.5, 6.2, 3.7, 1.05, 0.48], the owner's symptom to the decimal.
+    //  This also kills the obvious fix: weighting the DRAW by each album's remaining tracks changes
+    //   nothing, because at equilibrium remaining is itself proportional to total, so it reduces to
+    //    the same proportional rule.  No draw weighting can fix an album-blind whittle — but making
+    //     the whittle fair fixes it under EVERY weighting, and costs the big album nothing: the
+    //      simulated shelf lands on [6,6,6,3,2] and the time-with-≤1-track goes 52%/75% → 0%/0%.
+    //  Equalising is a max-min allocation done the cheap way: each turn, retire the oldest record of
+    //   whichever album currently has the most on the shelf.  Counts come from the LIVE shelf (not
+    //    the droppable subset) because representation is the thing being equalised, and the shelf is
+    //     bounded at 44, so recounting per drop is trivial beside the file IO this verb already does.
+    let droppable = []
     for (const r of recs) {
-        if (over < 1) break
         if (r === playing) continue
         if (r.c.want_ts && (nowms - r.c.want_ts) < hold) {
             held = held + 1
             continue
+        }
+        droppable.push(r)
+    }
+    while (over > 0 && droppable.length) {
+        let counts = {}
+        for (const r of this.Ra_recs(shelf)) {
+            let a = album_of(r)
+            counts[a] = (counts[a] || 0) + 1
+        }
+        // strictly-greater, so among equally-fat albums the FIRST wins — and droppable is in shelf
+        //  order, oldest first, so this is the oldest record of the most-represented album.
+        let best = -1
+        let bi = -1
+        let i = 0
+        while (i < droppable.length) {
+            let c = +(counts[album_of(droppable[i])] || 0)
+            if (c > best) { best = c; bi = i }
+            i = i + 1
+        }
+        if (bi < 0) break
+        let r = droppable.splice(bi, 1)[0]
+        // UN-BARREN THE PATH WE ARE LETTING GO OF.  A path gets marked barren when stocking it added
+        //  no record — and the commonest reason for that is simply that WE ALREADY HOLD IT.  That
+        //   reason expires the instant we whittle the holding away.  Without this the two mechanisms
+        //    quietly eat the collection: every path gets marked while its record sits on the shelf,
+        //     the wheel then whittles the record, and the track can never be found again.  Fine
+        //      tonight, a crate that starves itself over a week — the worst kind of bug to ship.
+        //  Records carry a base-relative path and barren is keyed fully qualified, so clear the bare
+        //   key and any base-prefixed form of it.  Bounded by the 4096 cap, once per 90s.
+        if (r.sc.path) {
+            let bar = this.top_House().c.dig_barren
+            let want = String(r.sc.path)
+            if (bar) {
+                for (const k of Object.keys(bar)) {
+                    if (k === want || k.endsWith('/' + want)) delete bar[k]
+                }
+            }
         }
         await this.Ra_rec_drop(shelf, String(r.sc.id))
         over = over - 1
@@ -1379,9 +1595,32 @@ async Stoker_tour(w, shelf) {
     //  `dug=0` is the honest and interesting reading: the meander found nothing the shelf did not
     //   already hold.  That is the signal that the tour has run out of collection to tour, and it
     //    should be visible rather than inferred from an absence.
+    // HOW BIG IS THE COLLECTION, ACTUALLY.  Every stall on this page has been ambiguous in the same
+    //  way: a tour reporting dug=0 looks identical whether the crate holds 23 tracks (nothing to find,
+    //   working perfectly) or 2000 (the wander cannot reach them).  The meander's learn map already
+    //    holds the answer for free — it records the true `audio` count of every directory it has ever
+    //     stood in — so read it out beside the shelf.  `dirs` is how much of the tree has been seen at
+    //      all, `known` how much music was found there, `open` how much of that is still drawable.
+    //       known ≈ stock means a small collection; known >> stock with open>0 means starvation.
+    let ml = this.top_House().c.meander_learn || {}
+    let mdirs = 0
+    let mknown = 0
+    let mopen = 0
+    for (const k of Object.keys(ml)) {
+        mdirs = mdirs + 1
+        mknown = mknown + (+(ml[k].audio || 0))
+        mopen = mopen + (+(ml[k].open == null ? ml[k].audio || 0 : ml[k].open))
+    }
+    // NAME THE RICHEST PLACES THE WANDER HAS STOOD.  `dirs=37 known=24` says the walk is in a tree of
+    //  mostly-empty directories, but not WHICH tree — and "the wander is exploring the wrong place"
+    //   and "the crate really is small" are indistinguishable without the names.  Three keys is
+    //    enough to recognise a music library, or to see that we are wandering a source repo.
+    let top = Object.keys(ml).filter((k) => (+(ml[k].audio || 0)) > 0).sort((a, b) => (+(ml[b].audio || 0)) - (+(ml[a].audio || 0))).slice(0, 3)
     this.Radio_trace(null, { ev: 'tour', dug: dug, dropped: dropped, held: held, stock: this.Ra_recs(shelf).length,
+        dirs: mdirs, known: mknown, open: mopen, top: top.map((k) => (k || '/') + ':' + ml[k].audio).join(' '),
         skip: Object.keys(skip).length, base: st.c.dig_base, picks: +(st.c.dig_picks || 0), got: +(st.c.dig_got || 0),
-        hit: +(st.c.dig_hit || 0), dup: +(st.c.dig_dup || 0), err: st.c.dig_err || '' })
+        hit: +(st.c.dig_hit || 0), dup: +(st.c.dig_dup || 0), bad: +(st.c.dig_bad || 0), rounds: rounds,
+        barren: Object.keys(this.top_House().c.dig_barren || {}).length, err: st.c.dig_err || '' })
     return dropped
 
 },
@@ -1427,13 +1666,54 @@ Stoker_mag_draw(st, w, shelf, pub, had) {
 //  The starting base ROTATES per dig (st.c.dig_i): a first-base-wins ladder STARVED testsounds
 //   entirely — while music/ yielded, the human's new flacs there could never appear.  Music
 //    still leads the cycle; a dry base falls through to the next in rotated order.
+// Stoker_barren — remember a source path that can never grow the shelf (a duplicate of audio we
+//  already hold, or a file that will not read|decode).  Fully qualified, because the same relative
+//   path under two bases is two different files.  On the House so it outlives a stoker rebuild,
+//    bounded like meander_learn — past the cap we stop LEARNING, never stop walking.
+Stoker_barren(base, p) {
+    let barren = this.top_House().c.dig_barren || (this.top_House().c.dig_barren = {})
+    if (Object.keys(barren).length < 4096) barren[(base ? base + '/' : '') + p] = 1
+
+},
 async Stoker_dig(st, w, shelf, nav, skip) {
     let before = this.Ra_recs(shelf).length
-    // the ids we ALREADY hold, so a pick can be judged individually.  A track's identity is the sha256
-    //  of its bytes, so the same audio reachable by a second path stocks "successfully" and re-finds
-    //   the standing record — indistinguishable from a fresh find unless we ask this question.
-    let had = {}
-    for (const r of this.Ra_recs(shelf)) had[String(r.sc.id)] = 1
+    // A DIG WITHOUT A SKIP SET IS ALWAYS A MISTAKE, so build the default here rather than trusting
+    //  every caller to remember.  Stoker_look's own dig loop passes none, and an unfiltered meander
+    //   does two harmful things at once: it re-reads whole audio files we already hold (the enid is a
+    //    sha256 of the bytes, so a duplicate is only discovered after the entire read), and — since
+    //     the learn map records `open` from the FILTERED pool — it writes every branch back to
+    //      "fully open", wiping the openness the tour just learned.  One sleeping caller was enough
+    //       to undo the weighting whenever it woke.  Same set the tour builds: what we hold, plus
+    //        what has been learned barren.
+    //  Live pages only (`humdinger`), the same predicate the weighting and hop budget use: handing a
+    //   driven world a skip set it never used to get would change the meander's pool and therefore
+    //    every stocking Book's draw sequence.  MusuStock is exactly that Book.
+    if (!skip && this.top_House().c.humdinger) {
+        skip = {}
+        for (const r of this.Ra_recs(shelf)) {
+            if (r.sc.path) skip[String(r.sc.path)] = 1
+        }
+        let bar0 = this.top_House().c.dig_barren
+        if (bar0) {
+            for (const k0 of Object.keys(bar0)) skip[k0] = 1
+        }
+    }
+    // RESET THE ELECTRODES HERE, NOT INSIDE THE BASE BLOCK (2026-08-07).  They used to be zeroed
+    //  after `if (!picks.length) continue`, so a dig where EVERY base returned nothing never touched
+    //   them and the trace kept reporting the last successful dig's numbers — for hours.  That is
+    //    precisely the state a WORKING barren filter produces (everything nearby is already held or
+    //     known fruitless), so the instrument reported `dup=2 picks=2 base=testsounds` frozen in
+    //      amber and I read it as the filter failing.  It was not: testsounds has eight files, all
+    //       eight were marked, and the wander had correctly run out of places to look.
+    //  A stale reading is worse than no reading, because it is indistinguishable from a live one.
+    //   Same lesson as the silent dry tour and the mirror-merge mark, for the third time tonight.
+    st.c.dig_base = ''
+    st.c.dig_picks = 0
+    st.c.dig_got = 0
+    st.c.dig_hit = 0
+    st.c.dig_dup = 0
+    st.c.dig_bad = 0
+    st.c.dig_err = ''
     let bases = ['music', '', 'testsounds']
     let start = (st.c.dig_i || 0) % bases.length
     st.c.dig_i = (st.c.dig_i || 0) + 1
@@ -1466,9 +1746,16 @@ async Stoker_dig(st, w, shelf, nav, skip) {
             }
         }
         st.c.dig_dup = 0
+        st.c.dig_bad = 0
         for (const p of picks) {
+            // the shelf count ACROSS THIS ONE CALL is the exact test for "did this pick add anything",
+            //  and it needs no assumption about id shapes.  The previous version compared the returned
+            //   id against a pre-built map and read `dup=0` while the shelf visibly refused to grow —
+            //    a measurement that disagreed with the thing it was measuring, so it went.
+            let n0 = this.Ra_recs(shelf).length
             let got = null
             try { got = await this.Ra_stock_one(w, shelf, nav, base, p) } catch (er) { got = null; st.c.dig_err = String((er && er.message) || er).slice(0, 60) }
+            let n1 = this.Ra_recs(shelf).length
             if (got && got.id) st.c.dig_got = (st.c.dig_got || 0) + 1
             // LEARN THE BARREN PATH.  This pick stocked fine and its id was already on the shelf — so
             //  this file is a second copy of audio we hold, and wandering onto it again can only ever
@@ -1477,17 +1764,35 @@ async Stoker_dig(st, w, shelf, nav, skip) {
             //     wander looks past it forever after.  This is what actually stalled the conveyor:
             //      `hit=0` proved the path filter was working, and the shelf still would not grow.
             //  On the House, not the stoker, so it outlives a stoker rebuild; bounded like meander_learn.
-            if (got && got.id && had[String(got.id)]) {
+            // BARREN COVERS BOTH KINDS OF NOTHING.  A pick that stocked but added no record is a
+            //  duplicate of audio we hold; a pick that returned NULL could not be read or decoded at
+            //   all (Ra_stock_one's `if (!raw) return null`, or an undecodable payload).  Either way
+            //    this path can never grow the shelf, and either way re-picking it costs a full file
+            //     read to learn that again.  Measured on Righto: `picks=1 got=0` every single turn —
+            //      one unreadable file, re-read every 90s forever, with the conveyor reporting dry.
+            //       That is the same silent-infinite-retry shape as the hopeless decode above, just
+            //        cheaper; the cure is the same one — remember, and stop asking.
+            if (got && got.id && n1 === n0) {
                 st.c.dig_dup = (st.c.dig_dup || 0) + 1
-                let barren = this.top_House().c.dig_barren || (this.top_House().c.dig_barren = {})
-                if (Object.keys(barren).length < 4096) barren[(base ? base + '/' : '') + p] = 1
+                this.Stoker_barren(base, p)
+            } else if (!got || !got.id) {
+                st.c.dig_bad = (st.c.dig_bad || 0) + 1
+                this.Stoker_barren(base, p)
             }
             if (got && got.id) {
                 let rec = this.Ra_rec_find(shelf, { Record: 1, id: got.id })
                 if (rec && rec.sc.title) st.sc.last = this.Radio_clean(rec.sc.title)
             }
         }
-        break
+        // A BASE THAT YIELDED NOTHING IS NOT A BASE THAT ANSWERED (2026-08-07).  This used to `break`
+        //  on the first base that returned any picks at all — so once the wander settled into a crate
+        //   we already hold entirely, every turn ended there and the other bases were never reached.
+        //    Measured on Lefto: four turns running `base=testsounds picks=2 got=2 dug=0` against a
+        //     testsounds of EIGHT files, all shelved — then the one turn that happened to use base ''
+        //      dug 2 immediately (stock 17→19). The wander was fine; the ladder stopped one rung early.
+        //  Break only on a base that actually ADDED something; otherwise fall through and try the next.
+        //   Bounded by the same three-base loop, so a fully-stocked share still costs at most one pass.
+        if (this.Ra_recs(shelf).length > before) break
     }
     let after = this.Ra_recs(shelf).length
     let landed = after - before

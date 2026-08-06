@@ -23,6 +23,64 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**2026-08-07 — THE SMALL POOL THAT WOULDN'T ROLL OVER. THE ANSWER WAS THE WHITTLE, NOT THE MEANDER.**
+
+The owner: *"it should be easy to find every album in a 5 album collection like this but somehow two of
+ them only have one track each"*, then *"still stuck in a small pool of radiostock that wont roll over"*.
+Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs` / `window_sim.mjs`), and
+ the simulation **refuted the standing hypothesis** — the draw weighting was never the cause.
+
+- **The shelf is a moving window, so its composition is an EQUILIBRIUM, not an accumulation.** Album *i*
+   gains at its draw probability p_i and loses at held_i/W, because the whittle drops the globally oldest
+    record and knows nothing about albums. That settles at **held_i = W·p_i**. For [40,20,12,4,2] at W=24
+     the algebra predicts [12.3, 6.2, 3.7, **1.2**, **0.6**]; simulation measured [12.5, 6.2, 3.7, **1.05**,
+      **0.48**] — the owner's report to the decimal. With an unbounded shelf every scheme collects every
+       album, so the meander was never the illness.
+- **This kills the obvious fix.** Weighting the draw by each album's REMAINING tracks changes nothing: at
+   equilibrium remaining is itself proportional to total, so it reduces to the same proportional rule. No
+    draw weighting can fix an album-blind whittle — but a fair whittle fixes it under EVERY weighting, and
+     costs the big album nothing (shelf → [6,6,6,3,2], P(album ≤ 1 track) 52%/75% → 0%/0%).
+- **Landed: `Stoker_tour` retires the oldest record of whichever album is currently fattest** (`sc.album`,
+   or the path's dirname when untagged). Max-min allocation done the cheap way.
+- **THE CRATE IS BIG AND DEEP — the "small collection" read was wrong.** The tour mark now carries
+   `dirs`/`known`/`open`/`top` off the meander's own learn map, and `top` named the tree:
+    `0 spawn/- folks/- west/Calexico and Iron & Wine In the Reins:13`. Five levels down. A 12-hop budget
+     that RESET TO THE ROOT on every dead end could barely reach an album at all. Now 24 hops, and a dead
+      end steps UP one level instead of unwinding — both behind the `learn` (humdinger) predicate, since
+       they change the draw sequence and a driven world must keep walking byte-identically.
+- **Three defects found by simulation, not by reading**, all pulling the wander into empty structure:
+   the learn map keyed one directory two ways depending on base (so a third of digs saw an explored tree
+    as unvisited); `est` floored at 1 PER DIRECTORY, so barren structure out-weighed real music; and past
+     depth 6 it returned the unvisited prior instead of what it had learned.
+- **THE INSTRUMENT-WAS-THE-BUG CLASS CLAIMED TWO MORE.** (a) `learn[here] = {...}` sat BELOW the
+   `if (!branches)` guard, so a spent leaf album and a genuinely empty directory — the two cases the map
+    exists to record — were the two it never wrote. `open` could never reach 0; empty folders kept the
+     prior of 8 for ever. Moving the write above the guard: picks=0 26% → 10%, throughput +22%.
+      (b) The first roll fired on `dug > 0`, and live it read `dug=1 dropped=1` on every tour with stock
+       pinned at 20 against a window of 40 — the conveyor had become a CAP. The roll must stay strictly
+        slower than the dig (`dug > 1`) or it cancels it. **That is five for five this week: every one
+         of these looked like normal operation from the outside.**
+- **A spent branch returns in proportion to what it holds**: floor `ceil(sqrt(true tracks))`, not 1, so a
+   momentarily-shelved 200-track album isn't priced like an empty folder. Best measured revisit latency of
+    four floors tried (20.5 → 9.7 tours). Integer by construction — `prandle` is `floor(random*n)`, so a
+     fractional weight would collapse its remainder into the last bucket and bias the final branch.
+- **NEXT SESSION, two live threads left open by the readings, both cheap to start on.**
+   (a) **`known` sometimes ticks DOWN** — Lefto 46 → 45, Righto 50 → 49 across consecutive tours. It
+    should be monotonic: learn entries are only added or refreshed, and `audio` is the true count. A
+     one-track dip on re-visit points at `dl.expand()` returning a PARTIAL file listing, which would
+      mean the wander intermittently under-counts a directory it is standing in — a real supply leak,
+       and one the weights would faithfully propagate. Confirm by logging `audio_all.length` for one
+        known-size album across repeat visits before theorising.
+   (b) **Lefto walks 163 directories for 48 tracks; Righto 128 for 49.** Empty dirs are now LEARNED
+    (`audio:0, open:0`) instead of holding the prior of 8, so they should de-weight themselves as they
+     are visited — but that is the simulation's prediction, not yet an observation. If Lefto's ratio
+      does not improve over a long session, the dead-end/step-up walk is favouring structure over music
+       and wants the `top` readout widened to name the directories being burned.
+- **Still open:** `open` fixes wasted hops, NOT coverage — the simulation is explicit that only the fair
+   whittle moves shelf composition. The coverage claim rests on the whittle change and wants more live
+    turns than it has had. And the visualise-the-scrolling-Mag idea is untouched (face work, unprovable
+     from the container — pixels or it didn't land).
+
 **2026-08-07 — "ONLY 3 TRACKS COME OVER". TWO BUGS, BOTH MEASURED, BOTH FIXED, BOTH LIVE-PROVEN.**
  The owner's report was exact and the two causes are independent — one at each end of the wire. Between
   them a listener heard the first three tracks of a friend's crate and then nothing new, forever, while
@@ -82,6 +140,33 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
        disagree — we observe our OWN serving and draw the obvious conclusion. A quiet Pier simply stops
         holding records. If every record is held the wheel does not turn that time and the Mag grows a
          little; that is the safe direction to fail in. `held=N` rides the tour mark.
+ · **THE CONVEYOR THEN STALLED — and the electrodes named it in two reads, which is the point of them.**
+    First read: `picks=2 got=2 dug=0` — the wander returns tracks, they stock fine, the shelf does not
+     grow. Two causes fit that equally and want opposite fixes, so the second electrode was ONE number
+      (`hit` — picks that were in the skip set) to separate them. Read: **`hit=0`** — the path filter
+       was working perfectly; the picks were genuinely not already-shelved paths.
+    THE CAUSE, from `p0`: the wander at **base `''`** returns `testsounds/The Sines - Deep A.wav`, while
+     those same records were shelved under base `testsounds` with `sc.path` = the BARE filename. Same
+      file, two path spellings, so no path-keyed skip can ever match — and the identity is a sha256 of
+       the BYTES, so the duplicate is unknowable until the whole file has been read. The tour re-read
+        the same audio every 90s to land nothing.
+    FIXED with the only thing that can work here: **learn the barren path**. When a pick stocks and its
+     id was already held, remember that path (fully qualified, on the House, bounded 4096) and the
+      wander looks past it forever after. Self-correcting, needs no new sc key, and covers every path
+       spelling by construction rather than by enumerating them. `dup=N` rides the tour mark.
+    (The meander also now tests BOTH a bare and a fully-qualified key, which catches the easy half
+     directly. Records carry no base, so that alone could never have been sufficient.)
+    **AND THE LADDER STOPPED ONE RUNG EARLY — the actual reason it stayed stuck.** `Stoker_dig` walks
+     three bases (`music`, ``, `testsounds`) and used to `break` on the first that returned ANY picks,
+      regardless of whether they landed. So once the wander settled into a crate already held in full,
+       every turn ended there and the other bases were never reached. Measured on Lefto: four turns of
+        `base=testsounds picks=2 got=2 dug=0` against a testsounds of EIGHT files, all shelved — then
+         the one turn that happened to start at base `''` dug 2 immediately (17→19). **The wander was
+          never the problem.** Now it breaks only on a base that actually added something.
+    The barren test also changed to the honest one: the shelf count ACROSS A SINGLE `Ra_stock_one`
+     call, rather than comparing the returned id against a pre-built map. That map read `dup=0` while
+      the shelf visibly refused to grow — a measurement disagreeing with the thing it measured, which
+       is never worth keeping. [[comments-assert-unmeasured-properties]]
  · **A DRY TOUR USED TO BE SILENT — fixed within the hour, and it is the same bug as everything above.**
     The first cut marked only `dug > 0 || dropped > 0`, so a tour whose wander found nothing left no
      trace, and a conveyor that had quietly stopped looked identical to one running fine. Caught by
@@ -97,6 +182,48 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
         mark's own comment false: "records actually landing" describes a BIRTH, and a re-touch is not
          one. One `.c` latch. The chunk path keeps its own once-each marks (`page-first`,
           `stream-first-chunk`). [[comments-assert-unmeasured-properties]]
+
+**2026-08-07, same sitting — THE PLAYER'S FEEL: four owner rulings, landed.** ("the players" is now the
+ owner's word for the Sounditron tabs.)
+ · **⎵ skips, ⏎ heists** — page-level in BigSoundland, because on a radio your hands are not on a
+    widget and hunting for the ⏭ button is the thing the keys exist to remove. Guarded against
+     stealing a typed key: any editable target (input/textarea/select/contenteditable) or a modified
+      press passes straight through, else ⎵ would skip a track per word while renaming a friend.
+ · **⏎ takes the ALBUM, and that is the settled model, not a shortcut.** `Heist_keep_pick_all/_none/
+    _seed` were REMOVED 2026-07-30 ("let's not support single tracks... we are doing that already") —
+     a %Haul seeds on ONE record id and `Heist_keep_default_pick` keeps the whole folder it describes.
+      `Radio_heist_now` mints the keep **primed, not pulling**: the beat rummages and default-picks,
+       the human still presses ▶. A key you can hit by accident must not start writing files into a
+        collection. Idempotent per record — the seed IS the identity.
+ · **Tracks tune in part-way through** (`Radio_start_seq`) — a radio you switch on is already mid-song;
+    every track opening at 0:00 is the tell of a playlist. ONLY inside chunks already held, never past
+     the first half of them, always leaving runway: a start that had to fetch its own first chunk would
+      trade the feel for a stall. The pump already supported a non-zero entry (the mid-encode resume
+       path). **The non-obvious half:** `radio.sc.at` is not cosmetic — `Swarm_share_beat` derives its
+        want-ahead window from it (`head = at / seg_s`), so tuning in late had to carry a `c.at0`
+         offset or every full-length pull would have aimed at the wrong part of the song.
+ · **The next track is decoded before you ask for it** (`Radio_prime` / `Radio_peek_next`) — the owner:
+    "try to always have one very ready to go, there's a lag between click and sound". The lag is
+     DECODE, all of it after the keypress. So while the current track has >4s decoded ahead, the next
+      one's opening chunks are decoded into plain planar Float32 and held. **RAW PCM, NOT SCHEDULED
+       AUDIO, is the whole trick**: a skip replaces `radio.c.aud` with a fresh audiolet, so anything
+        already scheduled would die with it — Float32 belongs to nobody and lands on the new audiolet
+         the instant it exists. Priming also FIXES the random start seq, so prime and open cannot
+          disagree about where the needle lands. `Radio_peek_next` walks the lineup READ-ONLY (the dial
+           consumes its head, so priming must never call it). Marks: `primed`, `primed-open`.
+
+**PROVEN LIVE ON BOTH PLAYERS at the end of the 2026-08-07 sitting** — the marks to look for, and what
+ a healthy pair reads like:
+ · `tour dug=N dropped=N held=N stock=24 skip=32 dup=2 barren=9` — the conveyor turning, the whittle
+    HOLDING records a Pier is pulling, and the barren set genuinely learning (skip = records + barren).
+ · `primed [id] start=1 chunks=3` then `primed-open [id] seq=4` — the next track decoded before it was
+    asked for, and then SPENT at open. Both marks on both players is the lag actually being gone.
+ · Lefto grew 17 → 24 and stopped at the window; Righto sits at 23–24 whittling. Flat `records=N` in
+    `advertise` for minutes on end is the tell that the stoker has gone back to sleep.
+ **Books at close:** LakeTiles 9/9, MusuRadio 9/9 c0, MusuStock 5/5, SwarmShare 9/9, RepliUpsert 7/7 —
+  all `ok_pct=1`. MusuHeist reads `ok_pct=0.95` while every one of its 22 steps reports `ok=1` and **not
+   one of its 001–022 fixtures moved** — an aggregate disagreeing with its own per-step reading, worth
+    chasing someday as a REPORTING bug, not a regression. Attribute by fixtures, never by ok_pct alone.
 
 **THE SERVE SIDE RETRIES A HOPELESS DECODE FOREVER — found live 2026-08-06 by the new lane, minutes
  after arming it. THIS IS THE NEXT REAL FIX.**

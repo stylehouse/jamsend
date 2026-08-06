@@ -9,7 +9,7 @@ import { parseBuffer } from "music-metadata"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Crate(): string { return 'e94b8d01014cb4f5~g1' },
+    Ghostmeta_Ghost_M_Crate(): string { return 'c263fb8b2d75b9b3~g1' },
 
 // Crate.g — rifling through a music collection.  A modern port of the old Directory.svelte tree-walk +
 //  Agency.svelte's meander() random-walk, redesigned for THIS platform: raw File System Access API (no
@@ -256,20 +256,68 @@ async Crate_nav_meander(nav, base, want, skip) {
     //         Book's prandle sequence stays byte-identical — no re-records.
     let learn = null
     if (this.top_House().c.humdinger) learn = this.top_House().c.meander_learn || (this.top_House().c.meander_learn = {})
+    // 24 hops, not 12, ON A LIVE PAGE (2026-08-07): a hop is one cached directory listing, and the
+    //  owner's crate needs five descents to stand in an album — `0 spawn/- folks/- west/<album>/` —
+    //   so a 12-hop budget spent most of itself just getting down there.  The deep wander
+    //    (Crate_wander above) already uses 24 for exactly this reason.
+    //  Gated on `learn` — the SAME predicate as the weighting — because the hop budget and the
+    //   dead-end rule both change the DRAW SEQUENCE, and a driven world must keep walking exactly as
+    //    it always has or every Book that stocks needs re-recording.  Sounditron's re-record is
+    //     blocked on stock nondeterminism, so that bill is one we cannot currently pay.
+    if (learn) GIVE_UP = 24
     // estimate a subtree's track count from the learned map alone (no IO): known audio here plus
     //  the recursive estimate of known subdirs; unvisited → prior 8; a fully-learned musicless
     //   branch floors at 1 so dead ends are nearly-never drawn but stay reachable (still learning).
+    //  WEIGH WHAT IS STILL OPEN, NOT WHAT EXISTS (2026-08-07, the owner: "still stuck in a small pool
+    //   of radiostock that wont roll over", and "somehow two of them only have one track each").  The
+    //    first cut weighed `audio` — the TRUE count — so an album whose every track was already
+    //     shelved kept its full weight forever, won draw after draw, and each win was a WASTED HOP:
+    //      the filtered pool at that level is empty, so `branches` collapses and the walk resets.
+    //       Twelve hops of that and the tour returns picks=0 with a collection still full of music.
+    //        Measured on the pair: Lefto picks=0 on every tour with barren=0 and only 23 records held.
+    //  Meanwhile a 2-track album with both tracks going spare competed at weight 2 against that
+    //   exhausted 20 — hence small albums landing exactly one track and then never being reached.
+    //  So `open` (drawable as of the last visit) drives the draw and `audio` (what is really there)
+    //   stays the honest record.  `open` goes stale — whittling un-barrens paths and re-opens a
+    //    branch — so it is only ever a hint: the `|| 1` floor keeps a spent branch rare but reachable,
+    //     and one visit refreshes it.  Self-correcting in the safe direction.
+    //  FLOOR THE BRANCH, NOT EVERY NODE.  `s || 1` inside the recursion charged ONE POINT PER BARREN
+    //   DIRECTORY, so a subtree of 40 music-less folders weighed 40 against a real album — and a share
+    //    root full of non-music structure quietly out-drew the music.  Measured live: a player that
+    //     had stood in 37 directories and found 24 audio files in all of them.  The floor belongs at
+    //      the call site, where it does what its comment always claimed: a spent branch weighs 1 in
+    //       total — nearly never drawn, never unreachable.
+    //  And past the depth cutoff, return what was LEARNED rather than the unvisited prior: pricing a
+    //   known-barren deep folder as a fresh 8-track album is the same bug wearing a hat.  Only a
+    //    genuinely unvisited path gets the prior, which is the one place a guess is honest.
     const est = (p, depth) => {
         let e = learn[p]
-        if (!e || depth > 6) return 8
-        let s = e.audio
+        if (!e) return 8
+        let s = (e.open == null ? e.audio : e.open)
+        if (depth > 6) return s
         for (const sp of e.subs) s = s + est(sp, depth + 1)
-        return s || 1
+        return s
+    }
+    // the same walk over what a subtree really HOLDS, ignoring what is currently shelved.  Only the
+    //  spent-branch floor above needs it: how much we would regret writing this branch off.
+    const est_true = (p, depth) => {
+        let e = learn[p]
+        if (!e) return 8
+        let s = +(e.audio || 0)
+        if (depth > 6) return s
+        for (const sp of e.subs) s = s + est_true(sp, depth + 1)
+        return s
     }
     while (hops < GIVE_UP) {
         hops = hops + 1
         let dl = await nav.dir_at(rel ? (base + '/' + rel) : base)
-        if (!dl) { rel = ''; continue }
+        // BACK UP ONE LEVEL AT A DEAD END, DON'T FALL BACK TO THE ROOT (2026-08-07).  The owner's
+        //  library turned out to be five levels deep — `0 spawn/- folks/- west/<album>/` — so a reset
+        //   to base threw away four successful descents and the 12-hop budget could almost never
+        //    reach an album at all.  Stepping up tries the sibling albums of the place we just failed,
+        //     which is where the music actually is, and a walk that keeps failing still unwinds to the
+        //      root one level at a time.  Costs nothing: same hop, better starting point.
+        if (!dl) { rel = (learn && rel.indexOf('/') > -1) ? rel.slice(0, rel.lastIndexOf('/')) : ''; continue }
         await dl.expand()
         // audio_all is what IS here (what the learned weights must remember — see below); `audio` is
         //  what is still worth drawing.  Keeping them apart matters: learning the FILTERED count would
@@ -295,16 +343,39 @@ async Crate_nav_meander(nav, base, want, skip) {
         //  Noise dirs (dot-dirs, node_modules) never draw: a repo-root share is a working
         //   tree, and the wander is for MUSIC.
         let dirs = dl.directories.filter(d => { let nm = String(d.name || ''); return nm && nm[0] !== '.' && nm !== 'node_modules' })
+        // LEARN BEFORE THE DEAD-END GUARD, NOT AFTER (2026-08-07).  The write used to live below the
+        //  `!branches` bail, so the two kinds of directory the map most needs to know about were the
+        //   exact two it never recorded: a SPENT LEAF ALBUM (every track skipped, no subdirs) and a
+        //    GENUINELY EMPTY directory both have branches===0 and left one line early.  So `open` was
+        //     only ever written when at least one track was still drawable — it could never reach 0,
+        //      the value it exists to hold — and an empty folder kept the unvisited prior of 8 for
+        //       ever.  Simulated on a deep share: twelve music-less folders weighing 288 against the
+        //        music branch, and picks=0 on 26% of digs.  Learning here instead: 26% → 10%.
+        //  This is the same shape as every other bug tonight — the instrument (here, the map) not
+        //   recording the case it was built for, so the failure reads as normal operation.
+        let here = (base + (rel ? '/' + rel : '')).replace(/^\/+/, '')
+        if (learn && (Object.keys(learn).length < 4096 || learn[here])) learn[here] = { audio: audio_all.length, open: audio.length, subs: dirs.map(d => here + '/' + String(d.name)) }
         let branches = dirs.length + (audio.length ? 1 : 0)
-        if (!branches) { rel = ''; continue }
+        if (!branches) { rel = (learn && rel.indexOf('/') > -1) ? rel.slice(0, rel.lastIndexOf('/')) : ''; continue }
         let k
         if (learn) {
-            // remember this level (bounded: past the cap we stop LEARNING, never stop walking)
-            let here = base + (rel ? '/' + rel : '')
-            if (Object.keys(learn).length < 4096 || learn[here]) learn[here] = { audio: audio_all.length, subs: dirs.map(d => here + '/' + String(d.name)) }
             // weighted draw: each subdir by its learned subtree estimate, the local pool by its
             //  actual track count — ONE prandle draw per hop, same as uniform, different spread.
-            let weights = dirs.map(d => est(here + '/' + String(d.name), 0))
+            //  A SPENT BRANCH COMES BACK IN PROPORTION TO WHAT IT HOLDS.  When the drawable estimate
+            //   is 0 the branch still needs SOME weight, or a directory that happens to be fully
+            //    shelved right now can never be revisited to notice it has been whittled free again.
+            //     Flooring every such branch at 1 makes a spent 200-track album worth exactly as much
+            //      as an empty folder, which is the wrong regret: sqrt of what is really down there
+            //       prices it at 15 instead, and measured best small-album revisit latency of the four
+            //        floors tried (mean 20.5 → 9.7 tours) at no cost in wasted hops.
+            //  prandle is Math.floor(random*n), so a FRACTIONAL total would collapse its remainder
+            //   into the last bucket and silently bias the final branch — every weight here stays an
+            //    integer, which is why it is ceil() and not the bare sqrt.
+            let weights = dirs.map(d => {
+                let p = here + '/' + String(d.name)
+                let o = est(p, 0)
+                return o > 0 ? o : Math.max(1, Math.ceil(Math.sqrt(est_true(p, 0))))
+            })
             if (audio.length) weights.push(audio.length)
             let total = 0
             for (const x of weights) total = total + x
