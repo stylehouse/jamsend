@@ -4,8 +4,7 @@ story:RepliShadow
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.01
-      sample=0.01,at=1785890737
+    TimeTotal:beliefs,avg=0.011
       sample=0.01,at=1785890737
       sample=0.01,at=1785890738
       sample=0.009,at=1785890741
@@ -15,8 +14,8 @@ story:RepliShadow
       sample=0.022,at=1785905155
       sample=0.013,at=1785907081
       sample=0.008,at=1785941558
+      sample=0.018,at=1785996795
     TimeTotal:step,avg=0.002
-      sample=0.002,at=1785890737
       sample=0.002,at=1785890737
       sample=0.002,at=1785890738
       sample=0.002,at=1785890741
@@ -26,6 +25,7 @@ story:RepliShadow
       sample=0.004,at=1785905155
       sample=0.003,at=1785907081
       sample=0.002,at=1785941558
+      sample=0.004,at=1785996795
   step,dige:631507a4b6eece04
   step=2,dige:1f5b8eb7d48cd473
     Assertion:first-send-needs-no-identity,sentence:an undeclared mainkey minted cleanly under the seem — a first send needs no identity at all

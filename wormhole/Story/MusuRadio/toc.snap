@@ -4,8 +4,7 @@ story:MusuRadio
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=25.038
-      sample=24.824,at=1782830561
+    TimeTotal:beliefs,avg=25.046
       sample=24.735,at=1782830601
       sample=27.475,at=1782957753
       sample=24.848,at=1782968162
@@ -15,8 +14,8 @@ story:MusuRadio
       sample=24.772,at=1785891994
       sample=24.699,at=1785892025
       sample=24.651,at=1785892143
-    TimeTotal:step,avg=2.782
-      sample=2.758,at=1782830561
+      sample=24.908,at=1785999115
+    TimeTotal:step,avg=2.783
       sample=2.748,at=1782830601
       sample=3.053,at=1782957753
       sample=2.761,at=1782968162
@@ -26,6 +25,7 @@ story:MusuRadio
       sample=2.752,at=1785891994
       sample=2.744,at=1785892025
       sample=2.739,at=1785892143
+      sample=2.768,at=1785999115
   step,dige:285dbe809a010513
   step=2,dige:52816748b3178caf
   step=3,dige:5c5dca0d4439937d

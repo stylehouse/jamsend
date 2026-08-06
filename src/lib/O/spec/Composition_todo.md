@@ -289,6 +289,53 @@ The load-bearing claim is **the beat never overruns its cadence for a run of tic
 
 ---
 
+## 3.5 The metronome: an anti-freeze watchdog is pacing the whole machine (2026-08-06, MEASURED)
+
+**`Vytui.svelte:127`, `MAX_MOTION_FRAMES = 240`, ~4s @60fps.** Its own header says it is unreachable:
+
+> *"far beyond any real settle (<1s), so a healthy layout never trips it; a sick one can no longer peg
+> the main thread → freeze the tab → kill the peer heartbeat."*
+
+It trips on **every step of Sounditron**. The glass never settles on its own, so the watchdog is not a
+backstop — it is the clock the Book runs on.
+
+**How the account was closed.** Sounditron: 7 steps, ~7.75s each. MusuReco: 11 steps, ~1.1s each, same
+runner, same minute. Five electrodes, each added because the previous one exonerated its suspect:
+
+| span | mark | cost | verdict |
+|---|---|---|---|
+| the five boot waits | `boot` | **1.5s for the whole run** | innocent — every truth-fn settles at 0ms |
+| `waitVyto` | `vyto-wait` | **60–180ms** | innocent (prime suspect) |
+| quiescence | `quiesce` | **0.15–0.25s** | innocent |
+| snap encode/compare/store | `snap-cost` | **16–103ms** | innocent |
+| `advance` → next step | `advance` | **3801ms, ±7ms over 7 samples** | **the thief** |
+
+`resolve:0` — the Runstepped callbacks are free. A dead-constant 3.8s is a *timer*, not contention.
+`post_do` is documented **"Does NOT call beliefs()"**: it pushes onto `H.todo` and waits for something
+ambient to drive the loop. On a world with a resident Vyto glass the only thing regularly driving it is
+the 240-frame force-settle. **`post_do` is called twice per step** (once for `snap_step`, once for
+`do_step`) — 2 × 3.8s = the 7.6s.
+
+**Three consequences, in ascending order of importance.**
+1. Sounditron is slow because its glass never rests, not because anything it waits for is slow. Every
+   ceiling it was blamed on was settling instantly.
+2. **This is very likely the unexplained 3–5s single-call block in `deliver`** (§2's open question, and
+   the one thing the 20-analyst competition could not account for). A glass in continuous rAF motion
+   pegs the main thread in ~4s bursts — which is precisely the failure its own comment predicts, written
+   by someone who believed the branch was unreachable.
+3. **Third instance today of the same pattern**, and it is now the most reliable thing in this document:
+   `waitVyto`'s *"the chase still converges"*, `Swarm_gossip_music` computing three numbers and returning
+   one, and now *"a healthy layout never trips it"*. Each is a **comment asserting a runtime property
+   nobody measured**, each was false, each cost real time. §2's rule — *the comment is not evidence* —
+   should probably be promoted from an observation to the thing this document is about.
+
+**Next move (do NOT skip to a fix).** The question is now *why does Sounditron's voronoi never reach
+`SETTLE_FRAMES = 8` consecutive calm frames* — a vertex-count flicker pinning `drift`, a target chasing
+itself, or a NaN, all three named as suspects at `Vytui.svelte:121`. `runner_shot --why` reads the
+render telemetry film strip (gate + wave/morph/settle ring) and is the right instrument. Find the cell
+whose `disp`/`drift` stays pinned. **Do not raise `MAX_MOTION_FRAMES` and do not lower it** — it is
+doing its job; the layout under it is not.
+
 ## 4. Open, grouped by where the work is
 
 **4.1 The startup wait.** Boot electrode with phase timings first; the era-confirm ladder

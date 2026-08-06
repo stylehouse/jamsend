@@ -19,8 +19,7 @@ story:VoroClinic
     useVoroCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.1
-      sample=0.102,at=1783920452
+    TimeTotal:beliefs,avg=0.094
       sample=0.102,at=1783920455
       sample=0.102,at=1783920456
       sample=0.102,at=1783920457
@@ -30,8 +29,8 @@ story:VoroClinic
       sample=0.102,at=1783920460
       sample=0.102,at=1783920462
       sample=0.078,at=1785822461
-    TimeTotal:step,avg=0.011
-      sample=0.011,at=1783920452
+      sample=0.048,at=1785997065
+    TimeTotal:step,avg=0.01
       sample=0.011,at=1783920455
       sample=0.011,at=1783920456
       sample=0.011,at=1783920457
@@ -41,6 +40,7 @@ story:VoroClinic
       sample=0.011,at=1783920460
       sample=0.011,at=1783920462
       sample=0.009,at=1785822461
+      sample=0.005,at=1785997065
   step,dige:291fbd443ba3a33e
   step=2,dige:32a795b95de5d259
   step=3,dige:b0f4acf0e8f8c926

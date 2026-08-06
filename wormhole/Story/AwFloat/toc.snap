@@ -20,6 +20,7 @@ story:AwFloat
       sample=0.001,at=1783244240
       sample=0.002,at=1783256377
       sample=0.002,at=1783256397
+      sample=0.001,at=1785996961
     TimeTotal:step,avg=0.003
       sample=0.005,at=1782448668
       sample=0.005,at=1782449510
@@ -27,4 +28,5 @@ story:AwFloat
       sample=0.001,at=1783244240
       sample=0.002,at=1783256377
       sample=0.002,at=1783256397
+      sample=0.001,at=1785996961
   step,dige:a0a0a0a0a0a0a0a0

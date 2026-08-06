@@ -704,8 +704,15 @@ Radio_lineup_fill(w, radio):
             for (const rec of this.Ra_recs(this.Ra_home_them(w, hp))) {
                 if (lined[rec.sc.id]) continue
                 if (radio && radio.c.heard && radio.c.heard[rec.sc.id]) continue
-                let map = this.Ra_chunk_map(rec)
-                if (map[0] == null) continue
+                // husk gate by PRESENCE, not by materialising the record (the Radio_deal idiom, below).
+                // WHY (2026-08-06, the human "downloader is still CPU burning ... goes away when Heist
+                //  finishes"): this ran Ra_chunk_map — which COPIES every held chunk into a fresh
+                //   Uint8Array — over every record of every friend crate, just to test chunk 0.  And it
+                //    runs PER LANDED CHUNK: Repli_attach_page fires repli_on_land → Radio_nudge →
+                //     Radio_pump_tick → Radio_dial while the radio is 'digging', which is exactly the
+                //      state a listener sits in during a heist.  Tens of MB memcpy'd per chunk × ~250
+                //       chunks: the burn that starts with the heist and ends with it.
+                if (this.Repli_chunk_at(rec, 0) == null) continue
                 frecs.push(rec)
             }
             if (frecs.length) pools.push({ key: hp, recs: frecs })
@@ -785,8 +792,8 @@ Radio_dial_pool(w, radio):
         let shelf = this.Ra_home_them(w, String(home.sc.pub))
         for (const rec of this.Ra_recs(shelf)) {
             if (radio.c.heard && radio.c.heard[rec.sc.id]) continue
-            let map = this.Ra_chunk_map(rec)
-            if (map[0] == null) continue
+            // presence, not materialisation — the same per-landed-chunk burn as Radio_lineup_fill above.
+            if (this.Repli_chunk_at(rec, 0) == null) continue
             cands.push(rec)
         }
     }

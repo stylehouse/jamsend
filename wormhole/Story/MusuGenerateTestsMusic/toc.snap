@@ -5,7 +5,6 @@ story:MusuGenerateTestsMusic
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.435
-      sample=0.483,at=1783443762
       sample=0.395,at=1783859075
       sample=0.373,at=1783902207
       sample=0.392,at=1783905814
@@ -15,8 +14,8 @@ story:MusuGenerateTestsMusic
       sample=0.396,at=1783906350
       sample=0.462,at=1783915303
       sample=0.583,at=1784618138
-    TimeTotal:step,avg=0.218
-      sample=0.242,at=1783443762
+      sample=0.479,at=1785999671
+    TimeTotal:step,avg=0.217
       sample=0.198,at=1783859075
       sample=0.186,at=1783902207
       sample=0.196,at=1783905814
@@ -26,5 +25,6 @@ story:MusuGenerateTestsMusic
       sample=0.198,at=1783906350
       sample=0.231,at=1783915303
       sample=0.291,at=1784618138
+      sample=0.239,at=1785999671
   step,dige:f18e9578f7a37b50
   step=2,dige:395fa4ffe2aa8b8b

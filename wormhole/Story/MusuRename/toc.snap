@@ -4,8 +4,7 @@ story:MusuRename
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.04
-      sample=0.058,at=1785853635
+    TimeTotal:beliefs,avg=0.037
       sample=0.033,at=1785854279
       sample=0.049,at=1785854792
       sample=0.055,at=1785855540
@@ -15,8 +14,8 @@ story:MusuRename
       sample=0.033,at=1785906376
       sample=0.029,at=1785906386
       sample=0.037,at=1785906393
+      sample=0.027,at=1785996349
     TimeTotal:step,avg=0.004
-      sample=0.006,at=1785853635
       sample=0.004,at=1785854279
       sample=0.005,at=1785854792
       sample=0.006,at=1785855540
@@ -26,6 +25,7 @@ story:MusuRename
       sample=0.004,at=1785906376
       sample=0.003,at=1785906386
       sample=0.004,at=1785906393
+      sample=0.003,at=1785996349
   step,dige:5b4e6da36eae7f35
   step=2,dige:60f3591a370b5f93
   step=3,dige:feeec136815cdce4

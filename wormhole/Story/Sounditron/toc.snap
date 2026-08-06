@@ -99,28 +99,28 @@ story:Sounditron
         lematch,Need
           means,spayer,re:Need:(.*),tol:any
   TimeSpool
-    TimeTotal:beliefs,avg=0.096
-      sample=0.082,at=1785965280
-      sample=0.146,at=1785966333
-      sample=0.113,at=1785966671
-      sample=0.15,at=1785966815
-      sample=0.109,at=1785967041
-      sample=0.07,at=1785973019
-      sample=0.065,at=1785975239
-      sample=0.067,at=1785981843
-      sample=0.069,at=1785982085
-      sample=0.094,at=1785982203
-    TimeTotal:step,avg=0.014
-      sample=0.012,at=1785965280
-      sample=0.021,at=1785966333
-      sample=0.016,at=1785966671
-      sample=0.021,at=1785966815
-      sample=0.016,at=1785967041
-      sample=0.01,at=1785973019
-      sample=0.009,at=1785975239
-      sample=0.01,at=1785981843
-      sample=0.01,at=1785982085
-      sample=0.013,at=1785982203
+    TimeTotal:beliefs,avg=0.091
+      sample=0.063,at=1785993442
+      sample=0.129,at=1785993887
+      sample=0.097,at=1785994108
+      sample=0.09,at=1785994472
+      sample=0.125,at=1785994652
+      sample=0.088,at=1785995195
+      sample=0.047,at=1785997900
+      sample=0.073,at=1785999173
+      sample=0.056,at=1785999801
+      sample=0.141,at=1786000121
+    TimeTotal:step,avg=0.013
+      sample=0.009,at=1785993442
+      sample=0.018,at=1785993887
+      sample=0.014,at=1785994108
+      sample=0.013,at=1785994472
+      sample=0.018,at=1785994652
+      sample=0.013,at=1785995195
+      sample=0.007,at=1785997900
+      sample=0.01,at=1785999173
+      sample=0.008,at=1785999801
+      sample=0.02,at=1786000121
   step,dige:de2ef2f8340767ce
   step=2,dige:ce660bf998e69495,desc:the machine stands
     Assertion:machine-stood,sentence:the machine stood — an addressable self emerged on the spine
@@ -130,5 +130,5 @@ story:Sounditron
     Assertion:possibilities-surveyed,sentence:the possibilities of peers were surveyed — every known address counted
   step=5,dige:25bd5de49e83ae71,desc:reach for a peer
   step=6,dige:ba5c26f536bcd570,desc:does sound run here
-  step=7,dige:cd1ca1dceae5c253,desc:sum and report
+  step=7,dige:88823efdeb09f31b,desc:sum and report
     Assertion:report-stands,sentence:the session summed itself — a report stands ready to travel

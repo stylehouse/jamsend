@@ -414,6 +414,23 @@ Swarm_deliver(w, ident, prepub, frame):
         //     strict gate unchanged. The real per-Pier handshake at the door is the owed upgrade.
         let ready = this.Peeroleum_peer_ready(route) || (w.c.station_up && !!this.Peeroleum_carrier(station, w))
         if (!ready) return false
+        // HOLD AN UNVOUCHED FRAME THROUGH THE STANDUP WINDOW (2026-08-06).  station_up is set
+        //  SYNCHRONOUSLY at the end of Swarm_station_up, but station_voucher is minted inside the
+        //   socket's async on_open, behind two awaited signHeader calls.  In that gap we send frames
+        //    with no voucher — and a sealed peer whose own station is up REFUSES them outright
+        //     (Swarm_arm's gate: no heard_at, no era, no dispatch) and books a rebuff, whose count
+        //      drives the era-kick backoff.  Caught live: our station up at t, an ive_got rebuffed
+        //       `unvouched_ive_got` at t+862ms with the electrode reading `vpub:""` — the frame
+        //        genuinely carried nothing.  So the frame was never going to land; sending it only
+        //         bought a rebuff.  Return false instead and let the caller's beat re-send once the
+        //          voucher exists (which is milliseconds away, in the same on_open).
+        //  BOUNDED, not indefinite: if the mint THREW ("⨳⚠ station voucher failed") we must degrade
+        //   to the old behaviour rather than go permanently mute — after the window we send unvouched
+        //    exactly as before.  pier_hello is exempt here for the same reason it is exempt at the
+        //     receiving gate: it arrives BEFORE the seal, carrying its own Idzeug proof.
+        //  Books never set station_up, so no fixture sees this.
+        if (w.c.station_up && !w.c.station_voucher && frame.kind !== 'pier_hello'
+            && (Date.now() - (w.c.station_up_at || 0)) < 10000) return false
         let seq = this.Pier_next_seq(route)
         // attach the per-era voucher so the sealed receiver can prove it was US (the relay won't)
         if (w.c.station_voucher) frame.voucher = w.c.station_voucher
@@ -456,7 +473,7 @@ Swarm_arm(w):
         //      downstream; pier_hello is EXEMPT (it arrives BEFORE the seal, with its Idzeug proof).
         //       Books never set station_up, so the mail-wire fixtures never see this gate.
         if (sealed && w2.c.station_up && frame.header.type !== 'pier_hello') {
-            let ok = await this.Swarm_voucher_ok(sealed, from, frame.swarm?.voucher)
+            let ok = await this.Swarm_voucher_ok(sealed, from, frame.swarm?.voucher, ident)
             if (!ok) {
                 this.Swarm_rebuff(ident, 'unvouched_' + frame.header.type, from)
                 return false
@@ -501,14 +518,36 @@ Swarm_arm(w):
 //   (2) otherwise: prepubOf(vh.pub) must equal the claimed sender, vh.pub must equal the pub we
 //    IMPORTED at seal (their %Pier's %Peering page), and the ed25519 signature must verify against
 //     vh.pub.  All three hold ⇒ cache the sign and accept; any fail ⇒ reject (caller rebuffs).
-async Swarm_voucher_ok(sealed, from, vh):
-    if (!vh || !vh.sign || !vh.pub) return false
+async Swarm_voucher_ok(sealed, from, vh, ident):
+    // ELECTRODE (2026-08-06, the human "it seems super easy for our requests for rummage or the radio
+    //  channel to break over time … hanging around is fatal?"): this gate is DEAD-SILENT about which of
+    //   its four arms rejected, and the caller only records `unvouched_<type>`.  A rejection here kills
+    //    the frame outright — no heard_at, no era, no dispatch — so a gate that starts failing is exactly
+    //     the shape of "a tab that has been up a while stops being able to talk".  `.c`-only, so no
+    //      fixture moves.  SUSPECT NAMED: line ~1196 resolves a friend with
+    //       `.find(p => p.o({Peering:1})[0]?.sc?.pub === rootPub)` because SEVERAL %Pier can share one
+    //        prepub (a peer that regenerated its root key) — but the hear funnel picks `[0]` blindly, so
+    //         `held` below may be the STALE twin's pub while the voucher carries the live one.  `piers`
+    //          and `held_i` below say whether that is what happened; `piers > 1` is the tell.
+    let nope = (why) => {
+        if (typeof this.Radio_trace !== 'function') return false
+        try {
+            let all = this.Swarm_peering(ident)?.o({ Pier: 1, pub: from }) ?? []
+            this.Radio_trace(null, { ev: 'voucher-no', why: why, at: String(from || '').slice(0, 8),
+                piers: all.length, held_i: all.indexOf(sealed),
+                held: String(sealed?.o({ Peering: 1 })[0]?.sc?.pub || '').slice(0, 8),
+                vpub: String(vh?.pub || '').slice(0, 8), era: vh?.era })
+        } catch (er) {}
+        return false
+    }
+    if (!vh || !vh.sign || !vh.pub) return nope('no voucher')
     if (sealed.c.voucher_ok && sealed.c.voucher_ok === vh.sign) return true
-    if (prepubOf(vh.pub) !== from) return false
+    if (prepubOf(vh.pub) !== from) return nope('prepub mismatch')
     let held = sealed.o({ Peering: 1 })[0]?.sc?.pub
-    if (!held || held !== vh.pub) return false
+    if (!held) return nope('no held pub')
+    if (held !== vh.pub) return nope('held pub differs')
     let who = await verifyHeader(vh, [vh.pub])
-    if (who !== vh.pub) return false
+    if (who !== vh.pub) return nope('signature bad')
     sealed.c.voucher_ok = vh.sign
     return true
 
@@ -665,6 +704,7 @@ Swarm_station_up(w, ident):
     }
     this.Tribunal_activate_websocket(w)
     w.c.station_up = 1
+    w.c.station_up_at = Date.now()   // when the gate armed — Swarm_deliver holds unvouched frames for a bounded window after this
     // mint the era HERE, at standup, not lazily at first greeting: Swarm_deliver stamps it on every
     //  swarm frame but only `if (w.c.station_era)`, so a station whose voucher/greeting paths both
     //   failed (relay slow, sign threw) would otherwise pulse era-less forever and no friend could

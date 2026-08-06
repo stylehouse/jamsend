@@ -9,16 +9,20 @@ story:LakeTtlilt
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.031
+    TimeTotal:beliefs,avg=0.029
       sample=0.03,at=1784598637
       sample=0.03,at=1784598668
       sample=0.013,at=1784598672
       sample=0.063,at=1784598676
       sample=0.017,at=1784598680
-    TimeTotal:step,avg=0.031
+      sample=0.02,at=1785994668
+      sample=0.03,at=1785995638
+    TimeTotal:step,avg=0.029
       sample=0.03,at=1784598637
       sample=0.03,at=1784598668
       sample=0.013,at=1784598672
       sample=0.063,at=1784598676
       sample=0.017,at=1784598680
+      sample=0.02,at=1785994668
+      sample=0.03,at=1785995638
   step,dige:4713ed01195c138d

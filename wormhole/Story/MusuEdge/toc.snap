@@ -4,7 +4,7 @@ story:MusuEdge
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.57
+    TimeTotal:beliefs,avg=0.571
       sample=0.481,at=1782801014
       sample=0.481,at=1782801034
       sample=0.529,at=1782801042
@@ -13,6 +13,7 @@ story:MusuEdge
       sample=0.572,at=1783181061
       sample=0.552,at=1783218616
       sample=0.823,at=1784617575
+      sample=0.58,at=1785996100
     TimeTotal:step,avg=0.143
       sample=0.12,at=1782801014
       sample=0.12,at=1782801034
@@ -22,6 +23,7 @@ story:MusuEdge
       sample=0.143,at=1783181061
       sample=0.138,at=1783218616
       sample=0.206,at=1784617575
+      sample=0.145,at=1785996100
   step,dige:3868ff867a10bbb7
   step=2,dige:833f24d65144c980
   step=3,dige:65f09fd4c898881c

@@ -845,7 +845,7 @@ async Ra_mag_warm(w, mirror):
         //   true record, matching the origin), so the head is where the bytes stand.
         let head0 = rows[0]
         if (!mag.sc.warm && +(head0.sc.total || 0) > 0) {
-            let map = this.Ra_chunk_map(head0)
+            let map = this.Ra_chunk_have(head0)   // presence only — the warm test reads `map[s] != null`
             let need = Math.min(2, +(head0.sc.total || 0))
             let held = 0
             let s = 0
@@ -2159,7 +2159,10 @@ Ra_term_stream_open(w, rec, opts):
 async Ra_term_stream_beat(w, rx, mine, theirs, rec):
     let p = w.c.play
     if (!p) return { done: 1 }
-    let segs = this.Ra_chunk_map(rec)
+    // PRESENCE — this beat reads `segs[i] != null` and nothing else, so the bytes are never touched.
+    //  Ra_chunk_map copied every held chunk EVERY BEAT here (the Ra_pull_beat burn, Ra.g:1669, in the
+    //   stream beat's clothing).
+    let segs = this.Ra_chunk_have(rec)
     let lead = 0
     while (segs[p.head + lead] != null) { lead = lead + 1 }
     p.out = p.out.filter((o2) => segs[o2] == null)

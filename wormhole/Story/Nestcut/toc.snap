@@ -6,6 +6,8 @@ story:Nestcut
   TimeSpool
     TimeTotal:beliefs,avg=0.001
       sample=0.001,at=1785237058
+      sample=0.001,at=1785996829
     TimeTotal:step,avg=0.001
       sample=0.001,at=1785237058
+      sample=0.001,at=1785996829
   step,dige:9f7d15e86d9f8a94

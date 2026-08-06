@@ -351,7 +351,13 @@ else if (op === 'snap' && reply.result?.got_snap) {
 	// A needAC Book stalls PRE-run asking for a gesture (the run record only opens once AC lands).  Surface
 	//  that — out of the blue if you never read Credence — so you know to go grant it in the runner tab.
 	if (op === 'run' && reply.result?.needAC) console.error(`🎤 ${arg} needs AudioContext — grant it in the runner tab${watch ? ' (watching for the grant below; blocks in ~60s if not)' : '; add --watch to see the grant, or it blocks in ~60s'}`)
-	if (op === 'run' && reply.result?.needsFSA) console.error(`📁 ${arg} needs a local FSA share — the editor routes it to an fsa-live runner; a proxy-only runner refuses (open a share there if it blocks)`)
+	// NO needsFSA NOTE (2026-08-06).  `needsFSA` in this reply is the BOOK's declaration echoed back
+	//  (LiesFunk.svelte builds the run result from `ask.needsFSA`), NOT a refusal — it sits right beside
+	//   `accepted:true`.  Printing a warning for it taught two readers in one day that the Book could not
+	//    run, and a 69-Book sweep wrote off 16 Books on that basis; MusuHeist then ran 22/22 green on the
+	//     same runner.  Runners essentially always have a share now, so the note was noise in the common
+	//      case and a lie in the rest.  A REAL refusal now arrives as `state.refused` and is reported in
+	//       the watch loop below, with the runner's own reason.
 }
 
 // --watch (run|state): poll state until the Storyrun phase settles done|failed, narrating each change.
@@ -382,6 +388,15 @@ if (watch && (op === 'run' || op === 'state') && reply.control === 'runner_ack')
 		}
 		heard = Date.now()
 		const run = s.result?.run, out = s.result?.outcome
+		// A PRE-RUN GATE REFUSED (fsa | audio | collection): the runner declined before opening a run
+		//  record, so there is no phase to watch and polling would just time out looking like a hang.
+		//   Only ours — same Book, and stamped after we asked.  Name the reason and stop.
+		const ref = s.result?.refused
+		if (ref && ref.book === arg && ref.at >= t0) {
+			console.error(`✗ ${arg} REFUSED by the runner — ${ref.why}`)
+			console.error(`  nothing was tried; this is a capability block, not a test failure.`)
+			exitCode = 1; break
+		}
 		// needAC: no run record yet ⇒ still stalling for the AC gesture (Lies_become_book_drive opens the
 		//  record only AFTER AC is secured).  Keep the operator informed; cap the wait at ~65s (the runner's
 		//   own 60s window) rather than the full WATCH_MS, and report BLOCKED/untried on lapse.

@@ -1976,6 +1976,7 @@ await M.eatfunc({
             //    REFUSE cleanly (nothing tried, not a failure) so the authority re-routes to an fsa-live runner.
             if (needsFSA && !H.Lies_has_fsa(w)) {
                 w.c.becoming_book = undefined   // refused, nothing in flight — don't wedge future attempts
+                H.Lies_book_refuse(w, book, 'needs a local FSA share; this runner has only the remote proxy')
                 H.Lies_runner_phase(w, 'fsa_blocked', { book })
                 H.tlog(`⌛ become_book ${book} blocked — needs a local FSA share; this runner has only the remote proxy (nothing tried)`)
                 return
@@ -1984,6 +1985,7 @@ await M.eatfunc({
                 // not granted within the window — refuse to begin.  Nothing was tried; report blocked so
                 //  the run authority (%rungo / editor Brink) reads "couldn't run here", not a failure.
                 w.c.becoming_book = undefined
+                H.Lies_book_refuse(w, book, 'AudioContext not granted — needs a gesture in the runner tab')
                 H.Lies_runner_phase(w, 'audio_blocked', { book })
                 H.tlog(`⌛ become_book ${book} blocked — AudioContext not granted (nothing tried)`)
                 return
@@ -1995,6 +1997,7 @@ await M.eatfunc({
                 const sec = await H.Lies_secure_collection(w, book, 'testsounds', 1)
                 if (!sec.ok) {
                     w.c.becoming_book = undefined
+                    H.Lies_book_refuse(w, book, `${sec.why} (${sec.reason})`)
                     H.Lies_runner_phase(w, 'collection_blocked', { book })
                     H.Upkeep_errand(`needMusic:${book}`, { kind: 'disk', label: `${book} — ${sec.why}`, phase: 'failed' }); H.Lies_upkeep(w)
                     H.tlog(`⌛ become_book ${book} blocked — ${sec.why} (${sec.reason}; nothing tried)`)
@@ -2429,6 +2432,12 @@ await M.eatfunc({
                         outcome: (H as any).Cred_run_outcome() ?? null,
                         run: sr ? { book: sr.sc.Storyrun, phase: sr.sc.phase, uid: sr.sc.uid, n: sr.sc.n ?? null, total: sr.sc.total ?? null, done: sr.sc.done ?? null } : null,
                         engagement: H.Lies_engagement(w) ?? null,
+                        // a pre-run gate refusal (fsa | audio | collection) — see Lies_book_refuse.  Without
+                        //  this a refusal had no reader at all and looked like a run that never started.
+                        refused: (() => {
+                            const rf = w.o({ Refused_Book: 1 })[0] as TheC | undefined
+                            return rf ? { book: rf.sc.Refused_Book, why: rf.sc.why, at: +rf.sc.at } : null
+                        })(),
                     }
                 } else if (op === 'rungos') {
                     // the runs the runner is "hanging in there" with — each addressable by uid.  pinned =
@@ -2875,7 +2884,30 @@ await M.eatfunc({
         //    the editor keeps the latest blip off-snap on w.c.run_phase.  No-op for a bare|editor
         //     Lies or a down channel — same gate as Lies_report_result, so it's safe to call from
         //      anywhere a run progresses (Story stepping included).
+        // Lies_book_refuse — record WHY a become_book was refused before it began, somewhere a client
+        //  can actually read it.  WHY THIS EXISTS (2026-08-06, the human: "that's a confusing place to
+        //   have needsFSA, surely it should be a clear failure mode with that reason"): the three
+        //    pre-run gates (fsa_blocked | audio_blocked | collection_blocked) each called
+        //     Lies_runner_phase, but they fire BEFORE Lies_runner_begin opens the run record — and
+        //      Lies_runner_track opens with `const sr = Lies_rungo_record(w); if (!sr) return`.  So the
+        //       refusal was DISCARDED every time: the durable sink did not exist yet.  A real refusal
+        //        was therefore indistinguishable from a run that never started, and the only thing a CLI
+        //         ever saw was the Book's own `needsFSA` DECLARATION echoed back beside `accepted:true`
+        //          — which reads as a refusal and is not one.  That cost a 69-Book sweep 16 Books
+        //           written off as un-runnable when the runner could run them all.
+        //  A %Refused_Book PARTICLE, not a `.c` blob: the mainkey IS what the thing is and carries the
+        //   Book it refused, `why` and `at` ride beside it.  One at a time — drop any standing refusal
+        //    before minting, so this never accretes.  It snaps, and that is right: a refusal is exactly
+        //     the kind of in-flight state worth SEEING.
+        Lies_book_refuse(w: TheC, book: string, why: string) {
+            for (const old of (w.o({ Refused_Book: 1 }) as TheC[])) w.drop(old)
+            w.i({ Refused_Book: book, why, at: String(Date.now()) })
+        },
+
         Lies_runner_phase(w: TheC, phase: string, extra?: { n?: number, total?: number, secs?: number, book?: string, path?: string, seq?: number }) {
+            // a phase means this attempt got PAST the pre-run gates — drop any standing refusal so an
+            //  old block never explains a fresh run.
+            if (phase === 'story_begun' || phase === 'rungo_ack') for (const old of (w.o({ Refused_Book: 1 }) as TheC[])) w.drop(old)
             const H = this as House
             // write the step's feedback THROUGH onto the durable run-record first — role-agnostic, so
             //  the snap (and any client) reads live progress even with the channel down or on a bare

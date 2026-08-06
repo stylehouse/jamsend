@@ -123,7 +123,16 @@ async Sounditron_machine(w):
     //           radio plays track #1 through beats 3-7.  15s ceiling (was 30): warm boots settle in one
     //            file-read; only a genuinely COLD first-dig-from-source approaches it, and a timeout is
     //             graceful (the detached stoker keeps digging, the boot proceeds, assertions still latch).
-    this.expecting(w, 'stoker_wait', 15, async () => { await this.Sounditron_await(w, 15, () => this.Sounditron_stock_settled(w), 'the stoker to fill the shelf') })
+    // the why: the two ways this burns its ceiling are INDISTINGUISHABLE from the outside and want
+    //  opposite fixes — `stock==null` means the census never got stamped (the old era-race, a Radio.g
+    //   bug), whereas `stock=0 churning` means the shelf really is empty and the stoker really is still
+    //    digging (a slow disk, our own gate behaving correctly).  Name which one before touching either.
+    this.expecting(w, 'stoker_wait', 15, async () => { await this.Sounditron_await(w, 15, () => this.Sounditron_stock_settled(w), 'the stoker to fill the shelf', () => {
+        let st = w.o({ Stoker: 1 })[0]
+        if (!st) return 'no Stoker ghost'
+        if (st.sc.stock == null) return 'stock==null — census never stamped'
+        return 'stock=' + st.sc.stock + ' Stoker=' + (st.sc.Stoker || '?')
+    }) })
     w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.Sounditron_witness(w); req.sc.ok = 1 })
 
 // the settle truth: ENOUGH-TO-START, not fully-provisioned.  stock==null is the pre-first-census frame
@@ -423,7 +432,11 @@ async Sounditron_trickle_look(w, era):
 async Sounditron_relay(w):
     i %desc:'the relay answers'
     let r = w.oai({ Relay: 1 })
-    this.expecting(w, 'relay_wait', 10, async () => { await this.Sounditron_await(w, 10, () => this.Sounditron_channel_live(w), 'the relay to answer') })
+    this.expecting(w, 'relay_wait', 10, async () => { await this.Sounditron_await(w, 10, () => this.Sounditron_channel_live(w), 'the relay to answer', () => {
+        let lw = this.Sounditron_lies_w(w)
+        if (!lw) return 'no Lies world — nothing to ask about the channel'
+        return this.top_House().Lies_channel_live ? 'channel down' : 'no Lies_channel_live verb'
+    }) })
 
 // beat 4 — THE POSSIBILITIES OF PEERS: survey every address we know a way toward — station
 //  Peering/Pier rows, the editor-channel %Runner roster, the courting client.  This census is
@@ -433,7 +446,7 @@ async Sounditron_relay(w):
 async Sounditron_possibilities(w):
     i %desc:'who could we reach'
     await this.Sounditron_friends(w)
-    this.expecting(w, 'muse_wait', 4, async () => { await this.Sounditron_muse(w) })
+    this.expecting(w, 'muse_wait', 4, async () => { let tm = Date.now(); await this.Sounditron_muse(w); this.Sounditron_boot_mark(w, 'muse_wait', 4, Date.now() - tm, 1, '') })
     let M = this.top_House()
     let lw = this.Sounditron_lies_w(w)
     let sw = M.Swarm_station_world ? M.Swarm_station_world() : null
@@ -491,7 +504,21 @@ async Sounditron_peer(w):
         if (pier.o({ Grant: 'Music' })[0]) musicFriends = musicFriends + 1
     }
     let secs = musicFriends ? 20 : 2
-    this.expecting(w, 'peer_wait', secs, async () => { await this.Sounditron_await(w, secs, () => this.Sounditron_peer_live(w), 'a peer to come online') })
+    // the why: with a music friend on the shelf this waits 20s, and the ONLY thing that can win it is
+    //  the friend's own pulse stamping heard_at.  So the diagnosis has to say whether we have ever heard
+    //   that friend at all (never → their tab is shut, and no amount of waiting was ever going to work:
+    //    this is the settled-by-absence case) or heard them but stale (→ a live link that went quiet,
+    //     which is a transport question, not a discovery one).  Two different bugs, one 20s silence.
+    this.expecting(w, 'peer_wait', secs, async () => { await this.Sounditron_await(w, secs, () => this.Sounditron_peer_live(w), 'a peer to come online', () => {
+        if (!musicFriends) return 'no music friend sealed — nothing could ever answer'
+        let best = null
+        for (const pier of ((ident && M.Swarm_peering) ? (M.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) : [])) {
+            if (!pier.o({ Grant: 'Music' })[0]) continue
+            if (pier.c.heard_at && (best == null || pier.c.heard_at > best)) best = pier.c.heard_at
+        }
+        if (best == null) return musicFriends + ' music friend(s) — NEVER heard from'
+        return musicFriends + ' music friend(s) — last heard ' + Math.round((Date.now() - best) / 1000) + 's ago'
+    }) })
 
 Sounditron_peer_live(w):
     let M = this.top_House()
@@ -523,7 +550,10 @@ async Sounditron_sound(w):
     i %desc:'does sound run here'
     let M = this.top_House()
     w.oai({ Audio: 1 })
-    this.expecting(w, 'sound_wait', 6, async () => { await this.Sounditron_probe(w, M) })
+    // this wait does its own work rather than polling a truth-fn, so it has no why — but it still owes
+    //  the ledger its DURATION.  A row missing from the ledger entirely is the loudest signal available:
+    //   it means the body never returned, which no HUD state distinguishes from "settled instantly".
+    this.expecting(w, 'sound_wait', 6, async () => { let tp = Date.now(); await this.Sounditron_probe(w, M); this.Sounditron_boot_mark(w, 'sound_wait', 6, Date.now() - tp, 1, '') })
     // and PLAY THE TRICK: press the radio (muted) so a friend's pulled track decodes onto the live
     //  timeline — the thing Jamsend exists to do.  Detached, so the beat never waits on it (autoplay).
     this.Sounditron_listen(w)
@@ -698,11 +728,12 @@ Sounditron_heist_met(w):
 //  (Ra_chunk_map[0] present) — the husk→previewed transition IS the pull landing.
 Sounditron_pulled(w):
     let M = this.top_House()
-    if (!M.Ra_recs || !M.Ra_home_them || !M.Ra_chunk_map) return 0
+    if (!M.Ra_recs || !M.Ra_home_them || !M.Repli_chunk_at) return 0
     for (const home of w.o({ MusuThem: 1 })) {
         if (!home.sc.pub) continue
         for (const rec of M.Ra_recs(M.Ra_home_them(w, String(home.sc.pub)))) {
-            if (M.Ra_chunk_map(rec)[0] != null) return 1
+            // presence, not materialisation — this belief polls, so the copy was per-poll per-record.
+            if (M.Repli_chunk_at(rec, 0) != null) return 1
         }
     }
     return 0
@@ -710,7 +741,28 @@ Sounditron_pulled(w):
 // Sounditron_await — the wait INSIDE an expecting: poll a condition to the deadline, mint
 //  nothing (the witness does the seeing, in Atime).  The ttlilt riding the expecting req holds
 //   the snap; when the truth lands early we settle early.
-async Sounditron_await(w, secs, truth_fn, note):
+// Sounditron_boot_mark — record ONE boot wait on a .c ledger and in the trace ring.  The boot's cost
+//  was previously unattributable: every wait stamped the Beat HUD with met-vs-timed-out and then threw
+//   the numbers away, so "the boot takes 41s" could be read off a stopwatch but "WHICH wait, and why it
+//    could not be won" could not be read at all.  A timeout here is graceful BY DESIGN — nothing throws,
+//     nothing reds — which is exactly why a wrong truth-fn costs its full ceiling on every boot forever
+//      and nobody notices (it has already happened twice: the old `stock==null` 30s burn, and peer_live
+//       reading a Lies lease that never stands between two music tabs).  `why` is the load-bearing field:
+//        the ledger exists to name the thief, and a timeout with no diagnosis just moves the guessing.
+//  .c ONLY — `ms` is wall clock and would make every fixture nondeterministic if it were ever snapped.
+Sounditron_boot_mark(w, label, secs, ms, met, why):
+    let led = w.c.boot_ledger || []
+    led.push({ label: label, secs: secs, ms: ms, met: met ? 1 : 0, why: why || '' })
+    w.c.boot_ledger = led
+    let M = this.top_House()
+    if (typeof M.Radio_trace === 'function') {
+        try { M.Radio_trace(null, { ev: 'boot', wait: label, ms: ms, budget: secs * 1000,
+            met: met ? 1 : 0, why: String(why || '').slice(0, 60) }) } catch (er) {}
+    }
+
+// why_fn (optional) is called ONLY on timeout and returns a short diagnosis of the state that failed to
+//  become true — see Sounditron_boot_mark for why that field is the point of the whole ledger.
+async Sounditron_await(w, secs, truth_fn, note, why_fn):
     // park a live countdown on the Beat HUD (.c — never snapped) so the wait is VISIBLE while it polls:
     //  BeatFace self-ticks the bar from `since` toward `budget`.  Cleared the instant truth lands (early)
     //   or the deadline passes, so a settled snap never carries a racing bar.  `settled` narrates the
@@ -718,15 +770,20 @@ async Sounditron_await(w, secs, truth_fn, note):
     let bhud = w.o({ Beat: 1 })[0]
     let label = note || 'settling'
     if (bhud) bhud.c.wait = { for: label, since: Date.now(), budget: secs }
-    let deadline = Date.now() + secs * 1000
+    let t0 = Date.now()
+    let deadline = t0 + secs * 1000
     while (Date.now() < deadline) {
         if (truth_fn()) {
             if (bhud) { bhud.c.wait = null; bhud.c.settled = '✓ ' + label }
+            this.Sounditron_boot_mark(w, label, secs, Date.now() - t0, 1, '')
             return
         }
         await new Promise(r => setTimeout(r, 300))
     }
     if (bhud) { bhud.c.wait = null; bhud.c.settled = '✕ ' + label + ' — timed out' }
+    let why = ''
+    if (why_fn) { try { why = why_fn() } catch (er) { why = 'why threw: ' + (er && er.message || er) } }
+    this.Sounditron_boot_mark(w, label, secs, Date.now() - t0, 0, why)
 
 // ── the witness — every pass, in Atime.  this.story_swear is the latch: idempotent per run
 //  (it reads the Assertioning shelf), so no oa guard rides a sentence; the subject param

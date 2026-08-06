@@ -96,6 +96,24 @@ export class TheX {
     v?: []
     vs?: []
     z?: TheN
+    // value → its index in the matching `vs`-style array: the O(1) twin of that array, keyed by the
+    //  array's own name so it stays generic (2026-08-06 — what i_refer's "< value array should be a
+    //   WeakMap, preventing the need for two indexes" note asked for, as far as a Map can go; a WeakMap
+    //    can't hold the primitive sc values these actually are).  i_refer is the ONLY writer of `vs`
+    //     (via i_v, its one caller) and compact() rebuilds a FRESH TheX through i(), so this cannot
+    //      drift from the array it mirrors.
+    vmaps?: Record<string, Map<any, number>>
+
+    // v_index — where `v` sits in `vs`, in O(1).  Falls back to the array scan if no map has been built
+    //  on this x yet, so an X reached by any other route still answers correctly.
+    //  (Map matches `indexOf`'s === for every value these arrays hold — sc values are primitives.  The
+    //   one divergence, NaN, is unreachable: the only numeric route in is o_kv's coercion, which guards
+    //    with Number.isNaN.)
+    v_index(v: any): number {
+        const vm = this.vmaps && this.vmaps['vs']
+        if (vm) { const i = vm.get(v); return i === undefined ? -1 : i }
+        return this.vs ? (this.vs as any[]).indexOf(v) : -1
+    }
     pending_drops?: number   // un-reindexed drop()s since the last compact() — the auto-compact trigger
 
     // < tried to make .z state but... it loses the first row? but is reactive
@@ -161,10 +179,17 @@ export class TheX {
         
         // by id of the value
         const fs = this[kfs] = this[kfs] || [];
-        let vi = fs.indexOf(v);
-        
+        // O(1), not indexOf (2026-08-06).  `seq`, `cid`, `bufferid` are UNIQUE per chunk|frame, so this
+        //  scanned an array that grew by one per landed chunk — O(N) per mint, O(N²) per track — and in
+        //   a .svelte.ts the compiler rewrites `.indexOf` into its proxy-aware helper, so every one of
+        //    those comparisons paid a get_proxied_value on top (the human's mid-heist profile:
+        //     array_prototype2.indexOf 319ms self, get_proxied_value 79.7% of total).
+        const maps = this.vmaps = this.vmaps || {};
+        const vm = maps[kfs] = maps[kfs] || new Map();
+        let vi = vm.has(v) ? vm.get(v) as number : -1;
+
         // if $n=null you will inflate an empty /$n space
-        if (vi < 0) vi = fs.push(v) - 1;
+        if (vi < 0) { vi = fs.push(v) - 1; vm.set(v, vi) }
         
         const f = this[kf] = this[kf] || [];
         const x: TheX = f[vi] = f[vi] || new TheX();
@@ -181,13 +206,17 @@ export class TheX {
         // wildcard where {$k:1}, leaving us where there are more /$n
         if (x && (v != 1 || typeof v == 'string' || q?.notwild)) {
             // Find the value index
-            let vi = x.vs ? x.vs.indexOf(v) : -1;
+            // O(1) via the value map (2026-08-06) — was `x.vs.indexOf(v)`, an O(N) scan per lookup on an
+            //  array with one entry per distinct value.  Repli_chunk_at does this PAGE times per landed
+            //   chunk over a `seq` array holding one entry per chunk, which is the O(N²) behind the pull
+            //    getting slower the further it gets.  Same answer, same coercion retry.
+            let vi = x.v_index(v);
             if (vi < 0 && typeof v == 'string') {
                 // o(exactly(sc)) for when you really mean %step:1 only
                 //  may be trying to locate a string when it needs to use a number
                 v = v * 1
                 if (!Number.isNaN(v)) {
-                    vi = x.vs ? x.vs.indexOf(v) : -1;
+                    vi = x.v_index(v);
                 }
             }
             if (vi < 0) return; // continues to next iteration
@@ -428,10 +457,22 @@ class StuffIO {
                 let x = q.X.o_kv(k,v);
                 // start resulting with items here in x.z
                 //  x.z = the /$n at the end of whatever expression
+                // WAS O(M²) THROUGH THE SVELTE PROXY (2026-08-06) — the twin of the `amongst` fix below,
+                //  which this one was left behind by.  `M.includes(n)` linear-scans the result for every
+                //   accepted row, so a broad first key — `{seq:1}` over a record's chunks, `{req:'awaitbuf'}`
+                //    over a Pier, `{Original:1}` in Repli_merge — costs N²/2 comparisons that GROW as a pull
+                //     does.  The profile (the human's devtools, mid-heist) put `array_prototype2.includes`
+                //      at 83.1% of total time with `get_proxied_value` under it at 79.7%: these arrays are
+                //       reactive proxies, so every single comparison paid a proxy dispatch.  Not merely
+                //        quadratic — quadratic times the proxy.
+                //  A Set gives the IDENTICAL dedup (both compare by identity, same rows in the same order)
+                //   at O(1) per row, and touches the proxy once per row instead of once per pair.  Seeded
+                //    from M so it stays exact if M is ever non-empty on entry.
+                const seen = new Set(M);
                 (x && x.z || []).forEach(n => {
                     if (this.n_matches_kv(n,k,v)) {
                         // includes result
-                        if (!M.includes(n)) M.push(n)
+                        if (!seen.has(n)) { seen.add(n); M.push(n) }
                     }
                 });
             }

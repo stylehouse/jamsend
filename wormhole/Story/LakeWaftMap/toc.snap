@@ -5,26 +5,26 @@ story:LakeWaftMap
     no_gallop
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.215
-      sample=0.13,at=1783253712
-      sample=0.192,at=1783333920
-      sample=0.142,at=1783334309
-      sample=0.142,at=1783334315
+    TimeTotal:beliefs,avg=0.969
       sample=0.114,at=1783400360
       sample=0.114,at=1783400369
       sample=0.205,at=1783416321
       sample=0.532,at=1783416326
       sample=0.287,at=1783416330
       sample=0.287,at=1783416668
-    TimeTotal:step,avg=0.215
-      sample=0.13,at=1783253712
-      sample=0.192,at=1783333920
-      sample=0.142,at=1783334309
-      sample=0.142,at=1783334315
+      sample=1.695,at=1785994646
+      sample=4.248,at=1785994703
+      sample=0.018,at=1785995642
+      sample=2.186,at=1785995795
+    TimeTotal:step,avg=0.969
       sample=0.114,at=1783400360
       sample=0.114,at=1783400369
       sample=0.205,at=1783416321
       sample=0.532,at=1783416326
       sample=0.287,at=1783416330
       sample=0.287,at=1783416668
+      sample=1.695,at=1785994646
+      sample=4.248,at=1785994703
+      sample=0.018,at=1785995642
+      sample=2.186,at=1785995795
   step,dige:dc022040d632576f

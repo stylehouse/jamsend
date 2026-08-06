@@ -2236,7 +2236,16 @@
                 run.sc.paused = 2
             }
             if (run.sc.paused) { run.c.driving = false; return }
+            // ELECTRODE (2026-08-06) — the LAST unmeasured span, and by elimination the big one.  Per
+            //  Sounditron step: quiescence 0.25s + snap 0.04s + waitVyto 0.06s + schedule's fixed 200ms
+            //   ≈ 0.6s of a 7.75s step.  The rest is here — either _resolve_runstepped (the Runstepped
+            //    callbacks) or post_do waiting for a slot in the belief loop.  `resolve` splits them:
+            //     a big `resolve` blames the callbacks, a small one with a big `to_step` blames the
+            //      single-threaded mutex, and those are completely different problems.
+            const t_adv = Date.now()
             await Run._resolve_runstepped()   // snap committed — fire Runstepped callbacks on Run
+            run.c.adv_t0 = Date.now()
+            run.c.adv_resolve = run.c.adv_t0 - t_adv
             schedule()
         }
 
@@ -2250,6 +2259,19 @@
             { const lp = w.c.live_poll as TheC | undefined   // fresh step (or run-end) — lower the monitor
               if (lp?.c.on) { lp.c.on = false; lp.bump_version() } }
             const n = ((run.sc.done ?? 0) as number) + 1
+            // paired with the t_adv electrode in advance(): `resolve` is the Runstepped callbacks,
+            //  `to_step` is everything after them (schedule's fixed 200ms + the wait for post_do to be
+            //   granted a belief-loop slot).  to_step minus 200 is the mutex queue, straight up.
+            if (run.c.adv_t0) {
+                try {
+                    const M = (H as any).top_House ? (H as any).top_House() : H
+                    if (typeof M?.Radio_trace === 'function') {
+                        M.Radio_trace(null, { ev: 'advance', step: n,
+                            resolve: run.c.adv_resolve, to_step: Date.now() - (run.c.adv_t0 as number) })
+                    }
+                } catch (er) {}
+                run.c.adv_t0 = undefined
+            }
             ;V.Story && console.log(`▷ do_step n=${n} mode=${run.sc.mode}`)
             ;V.Story && console.log(`The at n=${n}:`, (w.c.The)?.o({step:1}).map((s:any)=>s.sc.step+'→'+(s.sc.dige?s.sc.dige.slice(0,6):'no-dige')).join(', '))
             ;V.Story && console.log(`The_step_dige(${n}) =`, H.The_step_dige(w, n))
@@ -2376,7 +2398,26 @@
                 && dont_want_Atime
                 && dont_leave_running()
                 && !ttlilt_held()
-            
+            // ELECTRODE (2026-08-06) — WHICH of the four holds the step, counted in polls.  A step's
+            //  cost is `quiescent` being false for a while, and the four reasons want four different
+            //   fixes, but from the outside they are one indistinguishable pause.  Measured on
+            //    Sounditron: ~7.7s per step against MusuReco's ~1.1s on the same runner in the same
+            //     minute, with waitVyto (the prime suspect) proven innocent at 60-180ms.  Counting
+            //      polls rather than timing each condition keeps this free — it rides a loop that was
+            //       already running at TICK_MS.
+            if (!quiescent) {
+                const blame = run.c.quiesce_blame as Record<string, number> || {}
+                // re-derives leave_running by READING rather than re-calling dont_leave_running() —
+                //  that helper mutates wants_left_running/was_left_running, and the && above is
+                //   short-circuit, so calling it again here would both double-fire those side effects
+                //    and fire them on polls where the original never ran.  Blame must not change what
+                //     it measures.  (If we got past dont_want_Atime, the real call already happened.)
+                const k = !long_after_Atime ? 'in_Atime' : !dont_want_Atime ? 'todo'
+                    : ((Run.c.leave_running_until as number) > now_in_seconds_with_ms()) ? 'leave_running' : 'ttlilt'
+                blame[k] = (blame[k] || 0) + 1
+                run.c.quiesce_blame = blame
+            }
+
             if (!quiescent) {
                 // watchdog — actively re-drive a dropped wakeup so a stall can never harden into a
                 //  permanent wedge.  The drive otherwise TRUSTS that a non-empty Run.todo will drain
@@ -2449,6 +2490,21 @@
 
 
             let ago = (now_in_seconds_with_ms() - (f as number))
+            // publish the blame histogram for the step that just ended, then re-arm.  Polls, not ms —
+            //  multiply by TICK_MS for a rough duration.  Emitted at quiescence rather than at snap so
+            //   it describes the WAIT, not the snap that follows it.
+            {
+                const blame = run.c.quiesce_blame as Record<string, number> | undefined
+                run.c.quiesce_blame = undefined
+                try {
+                    const M = (H as any).top_House ? (H as any).top_House() : H
+                    if (blame && typeof M?.Radio_trace === 'function') {
+                        M.Radio_trace(null, { ev: 'quiesce', step: run.c.step_n, tick: TICK_MS,
+                            secs: +(now_in_seconds_with_ms() - (run.c.began_step as number)).toFixed(2),
+                            ...blame })
+                    }
+                } catch (er) {}
+            }
             Run.trace('quiescent', timed_out ? `${ago.toFixed(3)} timeout` : ago.toFixed(3))
             ;V.Story && console.log(`⏱ poll_step quiescent n=${run.c.step_n} since ${ago.toFixed(3)} TICK=${TICK_MS}`)
             // on_step_ending: called once at quiescence, before the snap.
@@ -2461,6 +2517,7 @@
         const snap_step = async () => {
             if (!run.c.driving) return
             const n = run.c.step_n as number
+            run.c.snap_t0 = Date.now()      // bracketed by the 'snap-cost' mark in snap_step_finish
             run.sc.done = n
             run.c.stall_blipped = undefined            // this step landed — re-arm stall detection
             run.c.rekicked      = undefined            // …and the watchdog rekick-trace throttle
@@ -2672,6 +2729,19 @@
         // Post-snap phase: pause for animation if waitCyto, else advance directly.
         // Reached from snap_step_after_wave (both modes) and poll_check.
         const snap_step_finish = async () => {
+            // ELECTRODE (2026-08-06) — what the SNAP costs, which is the last unmeasured span in a step.
+            //  Everything either side of it is now instrumented and cheap: quiescence 0.15-0.25s (the
+            //   'quiesce' mark), waitVyto 60-180ms (the 'vyto-wait' mark), boot waits 1.5s for a whole
+            //    run (the 'boot' marks).  Yet Sounditron's steps land 7.7s apart against MusuReco's 1.1s.
+            //     By elimination the encode|compare|store is eating ~7.4s of every Sounditron step, and
+            //      this closes the account rather than leaving it an inference.
+            try {
+                const M = (H as any).top_House ? (H as any).top_House() : H
+                if (run.c.snap_t0 && typeof M?.Radio_trace === 'function') {
+                    M.Radio_trace(null, { ev: 'snap-cost', step: run.sc.done,
+                        ms: Date.now() - (run.c.snap_t0 as number) })
+                }
+            } catch (er) {}
             if (H.The_Opt_val(w, 'waitCyto') && H.The_Opt_val(w, 'useCyto')) {
                 run.c.awaiting_anim_done = true
                 run.c.driving = false
@@ -2735,6 +2805,20 @@
         //   same reason: advance() is the ONLY caller of _resolve_runstepped(), so a wait that never
         //    resolves doesn't merely stall this Book — every Runstepped sweep dies with it.  A stuck
         //     render must never wedge the Run.
+        // ELECTRODE (2026-08-06) — what this wait actually COSTS, per step, in the trace ring.  It was
+        //  measurable only by subtraction (Sounditron 7 steps ≈ 7.7s each, MusuReco 11 steps ≈ 1.1s each
+        //   on the same runner in the same minute — waitVyto vs waitCyto being the only difference), and
+        //    subtraction cannot tell "the glass took 7s to paint" apart from "the 8s ceiling was hit".
+        //     Those want opposite fixes, so measure the wait itself.  `ceil` is the discriminator.
+        const vyto_mark = (ms: number, target: number, painted: number, ceil: number) => {
+            try {
+                const M = (H as any).top_House ? (H as any).top_House() : H
+                if (typeof M?.Radio_trace === 'function') {
+                    M.Radio_trace(null, { ev: 'vyto-wait', ms: ms, target: target, painted: painted,
+                        ceil: ceil, step: run.sc.done })
+                }
+            } catch (er) {}
+        }
         const wait_vyto_settle = () => {
             const POLL_MS = 60
             const CEIL_MS = 8000        // a glass that never catches up drives on anyway; loud, never fatal
@@ -2744,13 +2828,32 @@
             //  wait for.  Silent: an absent glass is a legitimate shape here, not a fault.
             if (!vw) { advance(); return }
             const t0 = Date.now()
+            // WAIT FOR THIS STEP'S STIR, not for the glass to fall silent.  `target` latches the stir
+            //  count on the FIRST poll — i.e. after the one tick of grace, so the step's own
+            //   setTimeout(0) Vyto_stir is already counted — and the wait ends when the picture has
+            //    caught THAT number.  Everything the step did is on screen; churn that arrives after
+            //     it belongs to the next step and is not this wait's business.
+            // ── 2026-08-06: was `painted >= stir`, re-read every poll ──────────────────────────────
+            //  Chasing a live value cannot terminate against a glass that stirs faster than it paints,
+            //   and Sounditron is exactly that glass — it grapples Stoker levels, Session counters and
+            //    the Heist, all of which move every heartbeat.  The old header claimed "the chase still
+            //     converges ... equality comes round within a poll or two"; measured, it never came
+            //      round at all and EVERY step took the full 8000ms ceiling.  Five boot electrodes on
+            //       one run showed the waits they were blamed on costing 1.5s between them while the
+            //        gaps BETWEEN beats sat at 7.7–9.3s — the ceiling, seven times over.  A latch was
+            //         rejected in the original design as "would go stale on exactly the Book this
+            //          exists for"; the opposite is true — a chase that never converges shows the next
+            //           step an arbitrarily stale picture AND charges 8s for it.
+            let target = -1
             const poll = () => {
                 if (!run.c.driving) return          // paused|failed under us — the wait dies with the drive
                 const stir    = (vw!.c.stir_n as number) ?? 0
                 const painted = (vw!.c.vyto_painted_stir as number) ?? -1
-                if (painted >= stir) { V.Story && console.log(`🫧 waitVyto: glass painted stir ${stir} after ${Date.now() - t0}ms`); advance(); return }
+                if (target < 0) target = stir
+                if (painted >= target) { V.Story && console.log(`🫧 waitVyto: glass painted stir ${target} after ${Date.now() - t0}ms`); vyto_mark(Date.now() - t0, target, painted, 0); advance(); return }
                 if (Date.now() - t0 > CEIL_MS) {
                     console.warn(`⏱ Story: waitVyto — glass still behind for step ${run.sc.done} after ${CEIL_MS}ms (painted ${painted} < stir ${stir}) — ceiling reached, driving on`)
+                    vyto_mark(Date.now() - t0, target, painted, 1)
                     advance(); return
                 }
                 setTimeout(poll, POLL_MS)

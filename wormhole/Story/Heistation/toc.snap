@@ -6,6 +6,8 @@ story:Heistation
   TimeSpool
     TimeTotal:beliefs,avg=0.002
       sample=0.002,at=1785367899
+      sample=0.001,at=1785995730
     TimeTotal:step,avg=0.002
       sample=0.002,at=1785367899
+      sample=0.001,at=1785995730
   step,dige:805e50cb4dd9cfaa

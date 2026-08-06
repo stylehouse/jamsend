@@ -27,7 +27,12 @@
             title: (r.sc.title as string) ?? String(r.sc.id ?? '').slice(0, 8),
             artist: r.sc.artist as string | undefined,
             album: r.sc.album as string | undefined,
-            playable: (H as any)?.Ra_chunk_map ? (H as any).Ra_chunk_map(r)?.[0] != null : false,
+            // presence, NOT materialisation.  This $derived re-runs on every H.version bump, and a
+            //  heist bumps it once per landed chunk — so Ra_chunk_map here COPIED every held chunk of
+            //   every record in the crate, on the main thread, per chunk (2026-08-06, the human:
+            //    "downloader is still CPU burning", "goes away when Heist finishes").  Only chunk 0's
+            //     existence is ever read, which is one particle lookup.
+            playable: (H as any)?.Repli_chunk_at ? (H as any).Repli_chunk_at(r, 0) != null : false,
             rec: r,
         }))
         const shown = recs.slice(0, 18)   // same display cap as before — grouping re-shapes, doesn't grow, the render cost

@@ -67,44 +67,44 @@ story:LakeNets
     quiesce_snap_time=0.4
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.949
-      sample=1.603,at=1783255160
-      sample=1.336,at=1783255185
-      sample=0.757,at=1783416260
-      sample=1.065,at=1783450351
+    TimeTotal:beliefs,avg=0.68
       sample=1.065,at=1783450388
       sample=1.165,at=1783450417
       sample=1.154,at=1785822230
       sample=0.424,at=1785834956
       sample=0.251,at=1785834993
       sample=0.67,at=1785839725
-    TimeTotal:step,avg=0.073
-      sample=0.123,at=1783255160
-      sample=0.103,at=1783255185
-      sample=0.058,at=1783416260
-      sample=0.082,at=1783450351
+      sample=0.659,at=1785995513
+      sample=0.516,at=1785998309
+      sample=0.516,at=1785998324
+      sample=0.377,at=1785998529
+    TimeTotal:step,avg=0.053
       sample=0.082,at=1783450388
       sample=0.09,at=1783450417
       sample=0.089,at=1785822230
       sample=0.033,at=1785834956
       sample=0.019,at=1785834993
       sample=0.052,at=1785839725
+      sample=0.051,at=1785995513
+      sample=0.04,at=1785998309
+      sample=0.04,at=1785998324
+      sample=0.029,at=1785998529
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:wants_want
       lematch,req:wants
         lematch,want,kind
           means,spayer,re:want={INT}.kind,tol:band,factor=1.5
-  step,dige:af94f744d529e0d9
-  step=2,dige:c5123976b9b7f39b
-  step=3,dige:49279790b69fac39
-  step=4,dige:9500d96a2aa14bf4
-  step=5,dige:42420f43ba51a48c
-  step=6,dige:89793ff20e6acc16
-  step=7,dige:28cd087de1ca9f49
-  step=8,dige:6d4a6d805ddcc3cf
-  step=9,dige:633e2b6023c5160c
-  step=10,dige:6f3d876a3fae67ea
-  step=11,dige:c9601c4af9fa90cf
-  step=12,dige:d54c5bf4a78caaf7
-  step=13,dige:4e6a334c0bfc42d7
+  step,dige:aae68a9f80c2dd3b
+  step=2,dige:2686f9083b19cdde
+  step=3,dige:13090640f7acb3b7
+  step=4,dige:f514204245814fdb
+  step=5,dige:b92d018c8b2aeeca
+  step=6,dige:c00dca7f0669ac20
+  step=7,dige:0fc7e088aa504e2b
+  step=8,dige:9955dcd28a307f25
+  step=9,dige:93e2dfcb2b59f388
+  step=10,dige:b45567fddf1616e1
+  step=11,dige:e0c4ef2c42420f38
+  step=12,dige:c6a12f2aca29aae5
+  step=13,dige:2bb53a8b6b9ff095
