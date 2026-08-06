@@ -414,6 +414,19 @@ The cure is the oldest one in networking — **class-based priority queueing** (
 That second one is the whole refactor in a sentence: **make ask and land siblings under one host
  so `do()` drives both, instead of sequential statements in one beat where the second `await`s.**
 
+**The evidence base for why (censused 2026-08-06, parked here for when this section is picked up):**
+ the three transport ghosts (`Heist.g`/`Ra.g`/`Repli.g`) carry **29 distinct hand-rolled `.c`
+  throttle/attempt stamps** — `answer_ts, answers, ask_ts, bench_ts, breach_at, census_ts, desc_ts,
+   done_ts, flow_ts, heist_rehydrate_tries, land_warn_ts, last_land_ts, parked_at, pull_progress_ts,
+    pull_started_ts, pull_ts, ra_tries, ra_want_ts, ready_ts, recensus_ts, rematz, reserve_mark_ts,
+     resume_navwait_ts, serve_mark_ts, serve_miss_ts, tlp_ts, told_at, want_ts, warned_at`. Every one
+      privately answers the same three questions a req answers structurally (already running? ran
+       recently? ran too often?), several have already produced bugs (the §4.1-Heist deaf budget, the
+        `ra_want_ts` two-readers red, the human's recurring *"we did this expensive thing five
+         times"*), and none is visible in a snap. The refactor's cheap first cut: make MATERIALISE a
+          `%req:materialise,of:<id>` — the most expensive verb in the system, currently guarded by a
+           bare 5s stamp with the release sweep pulling the other way (`Heist_todo` §4.2).
+
 ### 4.2 The proposed shape
 
 ```

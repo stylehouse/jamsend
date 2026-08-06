@@ -15,6 +15,8 @@
 //    node scripts/tracelog.mjs --watch --life  # only the mount/destroy ladder (ui/micro/lifetell.ts)
 //                                              #  — world > stage > faces > mold > face:<Kind>.
 //                                              #  Outermost climbing serial = the real teardown.
+//    node scripts/tracelog.mjs --runner=<pub>  # newest dump for THAT tab (pub prefix ok) — never
+//                                              #  someone else's ring
 //    node scripts/tracelog.mjs --file <path>   # a specific dump (a fleet has one file per pub/boot)
 //    node scripts/tracelog.mjs --list          # list the dump files (role · pub · boot · marks · age)
 //
@@ -25,14 +27,37 @@ import { join } from 'node:path'
 
 const DIR  = 'wormhole/_trace'
 const args = process.argv.slice(2)
-const has  = (f) => args.includes(f)
-const val  = (f) => { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : null }
 
-const WATCH = has('--watch')
-const HEIST = has('--heist')
-const LIFE  = has('--life')
-const FILE  = val('--file')
-const LIST  = has('--list')
+// STRICT parse — an unknown arg REFUSES instead of falling on the floor.  The old permissive
+//  `args.includes` cost an evening on 2026-08-06: `--runner=X` (then unsupported) was silently
+//   ignored, pick() served the newest file BY MTIME, and an idle grid runner's honest `starved
+//    why=nobody` got attributed to a different tab for hours.  Valued flags take `=` OR a space.
+const FLAGS = { '--watch': 0, '--heist': 0, '--life': 0, '--list': 0, '--file': 1, '--runner': 1 }
+const opt = {}
+for (let i = 0; i < args.length; i++) {
+	const a = args[i]
+	const eq = a.indexOf('=')
+	const name = eq >= 0 ? a.slice(0, eq) : a
+	if (!(name in FLAGS)) {
+		console.error(`tracelog: unknown arg ${a}\n  known: ${Object.keys(FLAGS).join(' ')}  (valued flags take = or a space)`)
+		process.exit(2)
+	}
+	if (FLAGS[name] === 0) {
+		if (eq >= 0) { console.error(`tracelog: ${name} takes no value`); process.exit(2) }
+		opt[name] = true
+	} else {
+		const v = eq >= 0 ? a.slice(eq + 1) : args[++i]
+		if (v == null || v === '' || (eq < 0 && v.startsWith('--'))) { console.error(`tracelog: ${name} needs a value`); process.exit(2) }
+		opt[name] = v
+	}
+}
+
+const WATCH  = !!opt['--watch']
+const HEIST  = !!opt['--heist']
+const LIFE   = !!opt['--life']
+const FILE   = opt['--file'] ?? null
+const LIST   = !!opt['--list']
+const RUNNER = opt['--runner'] ?? null
 
 // heist filter: the acquisition marks + the stream/transcode kin that feed a pull.
 const heisty = (ev) => /^heist-/.test(ev) || /^(transcode-|stream-|pcm-)/.test(ev)
@@ -46,8 +71,27 @@ function dumps() {
 	let names
 	try { names = readdirSync(DIR).filter((n) => n.endsWith('.jsonl')) } catch { return [] }
 	return names
-		.map((n) => ({ n, path: join(DIR, n), mtime: statSync(join(DIR, n)).mtimeMs }))
+		.map((n) => {
+			const [role, pub, boot] = n.replace(/\.jsonl$/, '').split('-')
+			return { n, role, pub: pub || '', boot: boot || '', path: join(DIR, n), mtime: statSync(join(DIR, n)).mtimeMs }
+		})
 		.sort((a, b) => b.mtime - a.mtime)
+}
+
+// --runner filter: match the PUB segment of <role>-<pub>-<boot>.jsonl by prefix.  A miss is an
+//  ERROR that names what IS on disk — never a silent fall-through to somebody else's ring.
+function dumps_for(runner) {
+	const d = dumps()
+	if (!runner) return d
+	const hit = d.filter((f) => f.pub.startsWith(runner))
+	if (!hit.length) {
+		console.error(`tracelog: no dump for --runner=${runner} in ${DIR}/`)
+		const pubs = [...new Set(d.map((f) => `${f.role} ${f.pub}`))]
+		for (const p of pubs) console.error(`  have: ${p}`)
+		if (!d.length) console.error('  (none at all — arm socklog on the tab first)')
+		process.exit(1)
+	}
+	return hit
 }
 
 function marks(path) {
@@ -78,21 +122,20 @@ function fmt(e, prev) {
 }
 
 if (LIST) {
-	const d = dumps()
+	const d = dumps_for(RUNNER)
 	if (!d.length) { console.error(`(no ${DIR}/*.jsonl — arm socklog on the tab, then play/heist)`); process.exit(1) }
 	const now = Date.now()
 	for (const f of d) {
 		const m = marks(f.path)
 		const age = Math.round((now - f.mtime) / 1000)
-		const [role, pub] = f.n.replace(/\.jsonl$/, '').split('-')
-		console.log(`  ${role.padEnd(6)} ${(pub || '').slice(0, 12).padEnd(12)}  ${String(m.length).padStart(4)} marks  ${age}s ago  ${f.n}`)
+		console.log(`  ${f.role.padEnd(6)} ${f.pub.slice(0, 12).padEnd(12)}  ${String(m.length).padStart(4)} marks  ${age}s ago  ${f.n}`)
 	}
 	process.exit(0)
 }
 
 function pick() {
 	if (FILE) return FILE
-	const d = dumps()
+	const d = dumps_for(RUNNER)
 	return d.length ? d[0].path : null
 }
 
@@ -120,7 +163,7 @@ console.log(`tail ${path}  (watching ${DIR}; Ctrl-C to stop)`)
 let seen = -Infinity
 let cur = path
 function tick() {
-	const p = FILE || (dumps()[0]?.path ?? cur)
+	const p = FILE || (dumps_for(RUNNER)[0]?.path ?? cur)
 	cur = p
 	const m = marks(p).filter((e) => e.t > seen && keep(e))
 	if (m.length) {

@@ -138,4 +138,4 @@
 - [heist download crash = ive_got](heist-download-crash-ive-got.md) — Heist_keep_pull=DEAD CODE, live loop is Heist_keep_step's inline 'pulling'; resume_sync+breach-cooldown now wired THERE; cause TBD
 - [instrument before guessing](instrument-before-guessing.md) — SILENT failure→make LOUD+re-run to read trigger BEFORE fixing; no premature victory; complete not half-fixes; error channel=spec/Error_channel_todo.md
 - [Error channel built](error-channel-built.md) — throws→w/%Errlog/%Err at snap seam, fixture-gated; HOME=Book's run world NOT driver w; lazy-mint=no re-record; req_unemit wrap kills inbox wedge
-- [Telegram ask channel](telegram-ask-channel.md) — async Q's to the human: scripts/telegram.mjs ask "…" --as=Ariel in BACKGROUND→woken on reply; ONE bot+mutex+Shakespeare tags; token ~/.jamsend_telegram; substantial Q's only
+- [Telegram ask channel](telegram-ask-channel.md) — async Q's to the human: scripts/telegram.mjs ask "…" --as=Ariel in BACKGROUND→woken on reply; ONE bot+mutex+Shakespeare tags; token repo-root .env.telegrambot (gitignored); substantial Q's only

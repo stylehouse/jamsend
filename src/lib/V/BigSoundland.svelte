@@ -191,7 +191,34 @@
         view = ip
         document.getElementById('sp-' + ip)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
+    // ── THE TWO RADIO KEYS (the owner 2026-08-07: "the space key should go the next track, and enter
+    //  key should heist") — page-level, because this is a RADIO: your hands are not on a particular
+    //   widget, and hunting for the ⏭ button is the thing the keys exist to remove.
+    //  NEVER STEAL A TYPED KEY.  Space is the single most-typed character there is, and this page
+    //   carries real text fields (invite paste, friend rename, heist category + directories).  So we
+    //    bail on any editable target — input, textarea, select, or anything contenteditable — and on
+    //     a modified press (⌘/ctrl/alt), which belongs to the browser.  Without that guard "rename
+    //      Lefto" would skip a track per word and never insert a space.
+    //  preventDefault ONLY once we have decided to act: space would otherwise scroll the page.
+    const radio_of = (h: any) => { const rw = h?.top_House?.()?.c?.radio_w; return rw?.o?.({ Radio: 1 })?.[0] ?? null }
+    function radio_key(e: KeyboardEvent) {
+        if (e.metaKey || e.ctrlKey || e.altKey) return
+        const t = e.target as HTMLElement | null
+        const tag = t?.tagName
+        if (t?.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+        if (e.key !== ' ' && e.key !== 'Enter') return
+        const A: any = H
+        const n = radio_of(A)
+        if (!n) return
+        e.preventDefault()
+        // through post_do like every other UI verb, so the write rides the House mutex rather than
+        //  racing the pump — the same discipline HaulFace/RadioFace already use.
+        if (e.key === ' ') A?.post_do?.(() => { A?.Radio_skip?.(n) }, { see: 'radio skip (space)' })
+        else A?.post_do?.(() => { A?.Radio_heist_now?.(n) }, { see: 'radio heist (enter)' })
+    }
 </script>
+
+<svelte:window onkeydown={radio_key} />
 
 <BootGate {H} who="the piracy-scape" audio_fullscreen={true} proactive={true} />
 

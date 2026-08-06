@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '7cf87988b460b9f0~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '746876d5425b4f09~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -321,8 +321,16 @@ Sounditron_commission(w) {
     //    nested "diagnostics cell CONTAINING the three" waits on the Vyto agent's nested renderer.
     let diag = w.oai({ Diag: 1, dontSnap: 1 })
     organs.push(diag)
+    // TRIMMED to Door alone (the human's §0.9 ruling, 2026-08-06: "space is the scarce resource on
+    //  the glass").  %Beat carried the "waiting for a peer to come online" line — a cell that is
+    //   usually IDLE, spending permanent space on an occasional message; %Uptime's time-alive
+    //    reading has MOVED into the Piers list inside DoorFace, where it belongs (it is networky,
+    //     and it now reads beside the friends' own here/fading/away rungs as one liveness picture).
+    //  Both rows still STAND in the world — the witness's story_swear reads them, and BeatFace is
+    //   still registered in glass_kinds — they are simply no longer cells.  Fixtures are unmoved:
+    //    this whole branch is behind `show_diag`, which no Book turns on.
     if (w.c.show_diag) {
-        for (const q of [{ Beat: 1 }, { Uptime: 1 }, { Door: 1 }]) {
+        for (const q of [{ Door: 1 }]) {
             let row = w.o(q)[0]
             if (row) organs.push(row)
         }

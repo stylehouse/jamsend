@@ -39,6 +39,17 @@ const flags = new Set(argv.filter(a => a.startsWith('--') && !a.includes('=')))
 const kv    = Object.fromEntries(argv.filter(a => a.startsWith('--') && a.includes('=')).map(a => a.slice(2).split('=')))
 const out   = argv.find(a => !a.startsWith('-')) || '/tmp/runner_shot.png'
 
+// A BARE SUBCOMMAND IS A TYPO, NOT A FILENAME (guarded 2026-08-06).  The modes are FLAGS
+//  (`--svg`, `--why`, `--arm`); the lone positional is the OUTPUT PATH.  So `runner_shot.mjs svg`
+//   silently took `svg` as a filename, ran the default `shot` op, and failed with "no Cytoscape
+//    canvas" — an error about the wrong thing entirely, which is the expensive kind.  Same class as
+//     tracelog's mtime footgun: an arg that falls on the floor is worse than one that is rejected.
+if (['svg', 'why', 'arm', 'shot', 'face'].includes(out)) {
+    console.error(`runner_shot: '${out}' is a MODE, not a filename — did you mean --${out}?`)
+    console.error(`  usage: node scripts/runner_shot.mjs [--svg|--why|--arm] [out.png] [--runner=<full-prepub>]`)
+    process.exit(2)
+}
+
 // TARGET — the runner runner_ask last courted (sticky), so a shot lands on the tab you just ran on;
 //  --runner=<id> overrides; else the role broadcast 'runner' (first ack wins — fine with one tab up).
 // Unlike runner_ask, this script does NOT court — the relay routes `to:` by FULL prepub (or the

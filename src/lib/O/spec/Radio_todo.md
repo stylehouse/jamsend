@@ -23,6 +23,135 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**2026-08-07 — "ONLY 3 TRACKS COME OVER". TWO BUGS, BOTH MEASURED, BOTH FIXED, BOTH LIVE-PROVEN.**
+ The owner's report was exact and the two causes are independent — one at each end of the wire. Between
+  them a listener heard the first three tracks of a friend's crate and then nothing new, forever, while
+   every instrument said the share was healthy. **This is the shape to remember: the CATALOG crossed in
+    full and the dial looked fine; only the BYTES were pinned.** A census of what arrived would have
+     shown 15 records and declared victory.
+ · **(1) THE KEEP_AHEAD WINDOW NEVER ROTATED — a two-world read.** `Ra_restock_beat` anchors its
+    rotation on `w.c.play`, which is the PACED LISTEN's playhead (`Ra_term_stream_open`) — the Books'
+     cursor. Live there is no paced listen: the real playhead is `radio.c.rec`, and **the radio lives in
+      the RADIO world while the share beat calls the restock with the STATION world.** Two different
+       particles, so `w.c.play` was permanently undefined, `at` stuck at 0, and the window sat pinned to
+        the first four records of the catalog for the whole session.
+    MEASURED: Righto mirrored 15 of Lefto's records and fired exactly **four `want-first` marks** — all
+     within four seconds of boot — then never wanted another. Three of the four ever played.
+    FIXED: `Ra_playing_id(w)` — paced-listen cursor first (so every Book keeps its pinned cursor and no
+     fixture moves), the live radio second, null if neither stands. One line at the call site.
+    PROVEN: four NEW `want-first` marks in the first three minutes after the fix.
+ · **(2) BOTH STOKERS HAD GONE PERMANENTLY TO SLEEP — the wrong organ was asked about sharing.**
+    `Stoker_look` digs only while `fresh < 8`, where `fresh` counts records MY radio has not heard this
+     sitting. But the default radio is SOURCE-EXCLUSIVE (friends' collections, not my own), so my own
+      records are never heard, `fresh` never falls, and **the dig gate never opens again**. The gate is
+       right for what it guards — my own listening never running dry — it is simply the wrong question
+        to ask about what I SERVE.
+    MEASURED: `advertise records=21` on Righto and `records=15` on Lefto, dead flat for entire sessions,
+     with the collection barely sampled.
+    FIXED: **`Stoker_tour` — the conveyor.** The owner's ruling: *"Mag:shuffle seems to have an end, but
+     it can spawn more at the end constantly, and whittle off the top."* One ordinary dig, then whittle
+      the oldest back to a window of 24 (`w.c.tour_window`), every 90s (`w.c.tour_floor_ms`). The Mag
+       stops being a list that fills once and freezes and becomes a MOVING WINDOW over the collection.
+    PROVEN: stock 21 → 23 → 24 within three minutes, `advertise records=` moving for the first time.
+ · **NO CURSORS, and none were needed** (the owner: *"the old cursors were terrible, careful with that.
+    wearing out tracks, etc."*). The old `Radios.svelte` machine kept a per-client cursor on the
+     broadcaster, `KEEP_AHEAD=5` against `co_cursor_N_least_left`, `orecord` remote-cursor reports every
+      other seq, and a wear-out ledger. **The conveyor needs none of it**: the supplier rotates its own
+       window on a plain clock and the ordinary catalog diff tells every friend what came and went — no
+        per-listener state, nothing to get out of step, nothing to resume. A listener who misses a track
+         meets it again on a later turn of the wheel. Keep it this way.
+ · **Live-only by construction, deliberately with ONE gate.** `Stoker_tour`'s only caller is the share
+    beat, which cannot run in a Book (`Swarm_share_up` is reached only behind `!w.sc.w` and from
+     InvitePanel's `$effect`, which no Book mounts) — the same argument `Ra_shuffle_cull` already rests
+      on. A humdinger check was written and then REMOVED: humdinger is the end-user-PAGE stamp, so a tab
+       booted `?B=` — which the owner's own pair answers to — would silently never tour, and that failure
+        looks exactly like the bug being fixed. One gate, in one place, checkable.
+ · The offer `mark` gained the tour count: add-one-drop-one leaves the record count identical, so a
+    pure-count mark would call a completely different catalog "unchanged" and sit on it until the 60s
+     floor tripped.
+ · **THE WHITTLE HOLD — "no Pier can be cursoring that Record before we can whittle it" (the owner,
+    same sitting). And it needed NO cursor.** The fact was already ours, locally: `rec.c.want_ts` is
+     stamped by `Repli_serve_want` every time any Pier asks for a page of that record (it exists for
+      the release-after-serve sweep, which holds a rec's bytes while a sink is still asking). So the
+       whittle skips any record wanted within `w.c.tour_hold_ms` (default 10 min — a listener pulls a
+        whole preview then plays it for minutes without asking again, so a tight hold would whittle
+         the very track they are mid-way through).
+    **THIS IS THE WHOLE DIFFERENCE FROM THE OLD MACHINE.** `Radios.svelte` kept a per-client cursor ON
+     THE BROADCASTER, advanced by `orecord` reports over the wire, and got out of step exactly as often
+      as the wire did. Here nothing crosses, nothing is remembered per listener, and nothing can
+       disagree — we observe our OWN serving and draw the obvious conclusion. A quiet Pier simply stops
+        holding records. If every record is held the wheel does not turn that time and the Mag grows a
+         little; that is the safe direction to fail in. `held=N` rides the tour mark.
+ · **A DRY TOUR USED TO BE SILENT — fixed within the hour, and it is the same bug as everything above.**
+    The first cut marked only `dug > 0 || dropped > 0`, so a tour whose wander found nothing left no
+     trace, and a conveyor that had quietly stopped looked identical to one running fine. Caught by
+      reading the live ring: `advertise` still beating (so the share beat, and therefore the tour, was
+       certainly running) with not one `tour` mark behind it. Now every turn marks, `dug=0` included —
+        that is the honest signal that the tour has run out of collection to tour. ~40 marks an hour
+         against a 1200 ring; the silence was never worth the room it saved.
+ · **LANDED, same sitting — `mirror-merge` now counts BIRTHS, not touches.** It counted every Record a
+    frame touched, and a CHUNK frame touches its record too, so it fired ~1/sec for the life of a tab
+     and said `recs=1` every time. The ring caps at 1200 marks, so ~20 minutes of ordinary transfer
+      traffic evicted every advertise/tour/want-first/page-first behind it — the marks that carry the
+       story (read live: **37 `mirror-merge` against 4 `want-first` in one dump**). It also made the
+        mark's own comment false: "records actually landing" describes a BIRTH, and a re-touch is not
+         one. One `.c` latch. The chunk path keeps its own once-each marks (`page-first`,
+          `stream-first-chunk`). [[comments-assert-unmeasured-properties]]
+
+**THE SERVE SIDE RETRIES A HOPELESS DECODE FOREVER — found live 2026-08-06 by the new lane, minutes
+ after arming it. THIS IS THE NEXT REAL FIX.**
+ Measured on Righto (read-only): **1087 `pcm-decode-start` marks against 2 `pcm-decode-done`**, while
+  two of the asker's wants sat `park-stall off=16 secs=480` — eight minutes. Both dead records now say
+   why in one word: **`pcm-nosource why="no card"`**.
+ THE CHAIN: `Ra_source_pcm`'s first gate is `Ra_card(w, rec)`, which is `Ra_stock_find(nav, pub, id)` —
+  no radiostock file ⇒ null. It returned null **with no mark, no latch and no memory**, and
+   `Ra_transcode_ensure`'s `.then()` clears `pcm_pending` UNCONDITIONALLY, so the next pump beat re-kicks
+    the same doomed decode ~600ms later, forever. The want stays parked; the ASKER sees only a want that
+     never lands. A serve that can NEVER succeed is indistinguishable from a slow one — the §0 silent-fact
+      shape exactly, and a fourth sibling of the decoder corpse.
+ **THE DEEPER ONE, and it indicts a documented safety property.** `Ra_stock_gc` caps radiostock at 256
+  files per pub and wears the oldest off; the ruling that made that safe (§0, 2026-07-26) is *"a dropped
+   file is one re-dig from source — `Ra_stock_one` is idempotent"*. **Nothing on this path re-digs.**
+    `Ra_source_pcm` just fails at the gate. So the GC's stated regenerate-on-demand property is asserted
+     in a comment and not implemented here — [[comments-assert-unmeasured-properties]] again. (PROVEN: the
+      stock file is absent and the retry is unbounded. NOT proven: *why* it is absent — GC eviction vs the
+       dead-source `Ra_stock_drop` in this same function vs never minted. Electrode that, don't guess.)
+ **LANDED:** `pcm-nosource` — the fact made visible, once per record per reason, the latch read by the
+  next line so it cannot rot into a write-only one. **NOT landed, deliberately — the design call is the
+   human's:** (a) the retry policy (a hard latch would make a genuinely transient missing-nav permanent —
+    wants backoff, not a stop), (b) **re-dig instead of fail**, which is what the GC ruling already
+     promises, and (c) TELL THE ASKER — `repli_missed` (landed 2026-08-06) is the ready-made lane and this
+      is precisely its meaning.
+
+**LATE 2026-08-06 (a second thread, "Puck") — the two-tab-loop build. ALL COMPILED (LocalGen) and
+ live-proven on the pair; nothing committed.** The plan (approved): iterate the live pair with minimal
+  human gestures — HMR ghost-compile needs NO tab reload, so the tap tax only falls on reloads.
+ **PROVEN THIS SESSION: a `.g` edit reaches the human's MANUAL tabs with no reload and no gesture** —
+  the new marks appeared in Righto's live ring minutes after LocalGen wrote the gen. That is the whole
+   iteration loop, and it costs the human nothing.
+ · **Both §0 items below are now CODE, awaiting compile+live proof:** (a)'s trace gap got the
+    **crate-birth lane** — `boast-heard` (Swarm_ive_got) → `crate-born` (Repli_mirror_lib) →
+     `mirror-merge recs=N` (Repli_recv_lines) → `want-first` (Repli_want_next, the one funnel) →
+      `page-first` (Repli_attach_page, latches `rec.c.first_page_t`) — one unbroken ring story from
+       advertise to dial; (b)'s meander now draws **weighted by lazily-learned subtree counts**
+        (`M.c.meander_learn`, zero extra IO, unvisited→prior 8) — GATED to `humdinger` pages so every
+         Book's prandle sequence is byte-identical, **no re-record needed** (dodges the fixture CARE).
+ · **The live wander was never random — the owner's hunch was exact.** `Radio_prod_seed`'s gate
+    `if (w.sc.w) return` short-circuits on /BigSoundland because the resident world IS `w:Sounditron`
+     (BigQualand stamps the default), so every real boot walked the fixed `[1,2,3,4]` wander. Fixed:
+      the predicate is now the PAGE not the world — `top_House().c.humdinger` (boot_qualand's
+       end-user stamp) seeds crypto entropy; machine tabs (editor, ?B=, grid) keep the pin.
+ · **Instruments hardened:** `tracelog.mjs` now REFUSES unknown args (the evening-costing mtime
+    footgun), takes `--runner=<pub-prefix>` + both `--file` forms — verified against the live dumps.
+     `runner_ask` grew CLI plumbing for three new ops — `socklog [on|off] [--reload]`, `dump` (skip
+      the ~5s throttle), `poke <allowlisted verb>` — the runner-side `Lies_runner_ask_recv` branches
+       are WRITTEN INTO THE PLAN but not yet landed (LiesFunk HMRs into live tabs; held with compiles).
+ · **Rig facts worth keeping:** an end-user page = `humdinger` is the durable prod-vs-driven
+    predicate; `pw_drive.mjs --cdp` + the flock droids (`--autoplay-policy=no-user-gesture-required`,
+     remoteWormhole grant is one-time+infinite) are the path to a ZERO-gesture pair when the manual
+      loop gets annoying. Commit points: (1) tracelog+runner_ask CLI, (2) the .g trio once compiled
+       and live-proven.
+
 **NEXT SESSION STARTS HERE (2026-08-06, end of day).** Two items, in this order.
 
 **(a) GET REAL RADIO TRACES — the owner's ask, and the tooling now mostly supports it.**
@@ -556,11 +685,11 @@ Known-real problems found in passing that we deliberately DON'T stop the mainlin
      occasional message. **Move the time-alive/uptime readout INTO the list of Piers** — it is networky, it
       belongs beside the peers rather than owning a cell. (`BeatFace` / `CrateFace` / `DoorFace` are the
        organs; `DiagFace` is the opt-in gate they already sit behind.)
-- **Transfer graph: floor the vertical extent at 200KB/s, and drop the separate up|down bars.**
-   Today the graph autoscales to whatever is flowing, so 3KB/s of ack chatter draws the same mountain as a
-    real 3MB/s pull — the shape lies about magnitude, which is the one thing a graph is for. A fixed 200KB/s
-     floor makes **tiny amounts look tiny**. The split up/down bars go: they are two competing readings of one
-      link and the human calls them distracting.
+- ✓ **DONE — Transfer graph: floor the vertical extent at 200KB/s, and drop the separate up|down bars.**
+   Landed in `TransferFace.svelte` (`FLOOR_KBPS = 200` at :60, applied in `sparkPath`; the split bars
+    removed, only the merged spark + the numeric `rx↓ · tx↑` head remain). Kept for the rationale:
+     autoscaling made 3KB/s of ack chatter draw the same mountain as a real 3MB/s pull — a fixed floor
+      makes **tiny amounts look tiny**.
 - **SLOW: sprinkle the OLDER Books with `%see:` assertions about clear pointables.** The early Ra*/Musu*
    rungs were written when the snap-fixture diff WAS the whole gate, so most of them assert nothing by name —
     they only claim "these 532 lines are what happened". That is a brittle, illegible gate: it reds on any

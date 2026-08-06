@@ -9,7 +9,7 @@ import { parseBuffer } from "music-metadata"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Crate(): string { return '130175c70a510a31~g1' },
+    Ghostmeta_Ghost_M_Crate(): string { return 'e94b8d01014cb4f5~g1' },
 
 // Crate.g — rifling through a music collection.  A modern port of the old Directory.svelte tree-walk +
 //  Agency.svelte's meander() random-walk, redesigned for THIS platform: raw File System Access API (no
@@ -231,16 +231,61 @@ async Crate_nav_paths(nav, base) {
 //   construction, the no-enumeration law) until a directory with audio turns up, then hand back up
 //    to `want` of its tracks as base-relative paths.  A dead end climbs back to base and tries
 //     elsewhere; GIVE_UP bounds a trackless share.  prandle keeps a seeded run reproducible.
-async Crate_nav_meander(nav, base, want) {
+//  `skip` (optional, 2026-08-07) — a plain map of base-relative paths the caller ALREADY HOLDS, so
+//   the wander can look past them instead of handing back what it just handed back.  Without it a
+//    settled crate is a treadmill: the pick is uniform over the whole local pool, so a shelf that
+//     already holds a level's tracks keeps drawing them, and the caller only finds out AFTER
+//      Ra_stock_one has read the entire file — the enid is a sha256 of the bytes, so duplicate
+//       detection costs a full read.  Measured live: `tour dug=0 dropped=0 stock=24` every turn,
+//        two whole audio files re-read each time to learn nothing.  Filtering here is free.
+//  A level whose audio is entirely skipped reads as a level with NO audio, so the walk descends or
+//   climbs away instead of stopping there — which is exactly the behaviour that finds new material.
+//  Books never pass it (undefined ⇒ null ⇒ the draw is byte-identical), so no fixture moves.
+async Crate_nav_meander(nav, base, want, skip) {
     let GIVE_UP = 12
     let rel = ''
     let hops = 0
+    // LEARNED WEIGHTS (live only, 2026-08-06 — §3.x #33): the uniform draw below samples BRANCHES,
+    //  not TRACKS — a deep 200-track album and a sparse twig were equally likely, so whole albums
+    //   that are ⅔ of the collection were never reached by pressing next (the owner's report).
+    //    True subtree counts would need the full scan the no-enumeration law bans; instead LEARN
+    //     lazily — every hop already expand()s one directory, so remember {audio, subs} per visited
+    //      path and weight future draws by what's known (unvisited → an album-ish prior).  Biased
+    //       at first, honest over time, zero extra IO.  GATED to end-user pages (Lies%humdinger,
+    //        the same predicate as Radio_prod_seed): a machine tab keeps the uniform draw so every
+    //         Book's prandle sequence stays byte-identical — no re-records.
+    let learn = null
+    if (this.top_House().c.humdinger) learn = this.top_House().c.meander_learn || (this.top_House().c.meander_learn = {})
+    // estimate a subtree's track count from the learned map alone (no IO): known audio here plus
+    //  the recursive estimate of known subdirs; unvisited → prior 8; a fully-learned musicless
+    //   branch floors at 1 so dead ends are nearly-never drawn but stay reachable (still learning).
+    const est = (p, depth) => {
+        let e = learn[p]
+        if (!e || depth > 6) return 8
+        let s = e.audio
+        for (const sp of e.subs) s = s + est(sp, depth + 1)
+        return s || 1
+    }
     while (hops < GIVE_UP) {
         hops = hops + 1
         let dl = await nav.dir_at(rel ? (base + '/' + rel) : base)
         if (!dl) { rel = ''; continue }
         await dl.expand()
-        let audio = dl.files.filter(f => this.Crate_is_audio(this.Crate_ext(f.name)))
+        // audio_all is what IS here (what the learned weights must remember — see below); `audio` is
+        //  what is still worth drawing.  Keeping them apart matters: learning the FILTERED count would
+        //   teach the map that a fully-stocked album is empty, and the weights would then steer every
+        //    future wander away from the richest part of the collection.  Learn the truth, draw the rest.
+        let audio_all = dl.files.filter(f => this.Crate_is_audio(this.Crate_ext(f.name)))
+        let audio = audio_all
+        // TWO KEYS, because the caller knows two different things.  A shelved %Record carries only its
+        //  BASE-RELATIVE path (`rec.sc.path`) and no base, so it can only be offered as a bare key.  A
+        //   path LEARNED barren (see Stoker_dig) was learned while digging a known base, so it is
+        //    offered fully qualified — which it must be, since the same relative path under two bases
+        //     is two different files.  Testing both lets one map carry both without either lying.
+        if (skip) audio = audio_all.filter(f => {
+            let r = rel ? (rel + '/' + f.name) : f.name
+            return !skip[r] && !skip[(base ? base + '/' : '') + r]
+        })
         // the local audio pool is ONE branch beside each subdir, drawn uniformly.  The old
         //  audio-first return STOPPED at the first level holding any audio, so a share with
         //   tracks at its root STARVED everything below (testsounds/muchOther/** — the human's
@@ -252,7 +297,23 @@ async Crate_nav_meander(nav, base, want) {
         let dirs = dl.directories.filter(d => { let nm = String(d.name || ''); return nm && nm[0] !== '.' && nm !== 'node_modules' })
         let branches = dirs.length + (audio.length ? 1 : 0)
         if (!branches) { rel = ''; continue }
-        let k = this.prandle(branches)
+        let k
+        if (learn) {
+            // remember this level (bounded: past the cap we stop LEARNING, never stop walking)
+            let here = base + (rel ? '/' + rel : '')
+            if (Object.keys(learn).length < 4096 || learn[here]) learn[here] = { audio: audio_all.length, subs: dirs.map(d => here + '/' + String(d.name)) }
+            // weighted draw: each subdir by its learned subtree estimate, the local pool by its
+            //  actual track count — ONE prandle draw per hop, same as uniform, different spread.
+            let weights = dirs.map(d => est(here + '/' + String(d.name), 0))
+            if (audio.length) weights.push(audio.length)
+            let total = 0
+            for (const x of weights) total = total + x
+            let r = this.prandle(total)
+            k = 0
+            while (k < weights.length - 1 && r >= weights[k]) { r = r - weights[k]; k = k + 1 }
+        } else {
+            k = this.prandle(branches)
+        }
         if (audio.length && k === dirs.length) {
             let picks = []
             let pool = [...audio]

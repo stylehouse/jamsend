@@ -303,6 +303,24 @@ and `loc` stops being computed by a helper reading `.c` — it's **read off a re
     remaining job is the first send after a reload for the five mutating shapes. That's a small enough
      job to argue either way.
 
+**A partial ruling on #2, from the human (2026-08-05, verbatim, unabsorbed — kept here so it cannot
+ be lost with a session):** *"so the D%\* properties mirror the n%\* properties, then what were we
+  planning to do with K? all other spheres (O, K for now) attach to D as such, rather than another D.
+   I have literally lost what the plot of that was... slaving other eg K\*\* trees over time with a
+    D\*\* tree for its basis is central to Seem, it just hasn't got complex enough use cases on it yet
+     to express that as a multitude. I'm messing with heists. O and K are two other classes of
+      information, layers, overlaid on the original n. there's a weird space of deformity between the
+       n\*\* sphere and a K\*\* sphere, etc... and it's all really just graph data, not tree data per
+        se... strange expansions. I'd like to make it more of a biological space where things float
+         along and react, or derive that kind of visual from whatever is happening."*
+ What this settles and what it doesn't: K and O are LAYERS over the original n (classes of
+  information), not siblings of D — they attach to D, which alone mirrors n. The multitude (many K
+   trees slaved over time to one D basis) is central to Seem but deliberately awaits richer use
+    cases. Still open: the names' meanings, one-kind-or-two, and the graph-not-tree "space of
+     deformity" framing — which reads as a *rendering* wish (a biological space where things float
+      and react) as much as a data-model claim. §5's rewrite stays blocked on a fuller ruling, but
+       any draft should start from this quote, not from zero.
+
 ---
 
 ## 7. What is actually proven, as of 2026-08-05

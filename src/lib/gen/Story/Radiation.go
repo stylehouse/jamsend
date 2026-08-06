@@ -10,7 +10,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Radiation(): string { return '6c5f3b61f40e0634~g1' },
+    Ghostmeta_Ghost_Story_Radiation(): string { return '68c7f05fb8bb317d~g1' },
 
 // Radiation.g — the Ra* PRODUCT Books (rastock → racast → raterm; Radio_todo.md §3), in the
 //  Musuation/Swarmation mould: the file is the artifact; MusuRaStream is the first Book identity.
@@ -134,6 +134,29 @@ async MusuRaStream_setup(w) {
     //   here synchronously would find the library still empty.
     await this.expecting(w, 'rastream_stock', 240, async () => { await this.Ra_stock(w, lib, w.c.nav, 'testsounds', 2) })
     w.doai({ req: 'witness', eternal: 1 })?.(async (req) => { this.MusuRaStream_witness(w); req.sc.ok = 1 })
+    // THE CROSSING HOLD (2026-08-06) — the fix for a month of red, and Coding_guide.md's opening
+    //  lesson in the flesh.  MusuRaStream_beat advances the playhead ONCE PER STEP (drive's
+    //   `n !== req.c.did_step` gate), while the transport pumps — peering.do, Ra_transcode_pump,
+    //    MusuRaStream_flow — run on EVERY pass.  So "has the boundary chunk arrived by the time we
+    //     snap?" was decided by how many passes happened to fit inside a step, i.e. by TAB WARMTH.
+    //      Radiation.g's `p.head > p.preview` test at the fed: row is a pure OBSERVATION with no hold
+    //       behind it: warm, the row is minted at step 14 and the %see fires; cold, self,round lands
+    //        36 instead of 37, the row slips a step or two, and since w.c.fed_a also gates the track
+    //         switch, B's whole cycle and the measure shift with it — steps 1-13 pass and 14-40 all
+    //          fail, error:null throughout (MusuRaChase identically 13 of 56).
+    //  A snapped ROW cannot be rescued the way MusuBuddy rescued a %see at :1058 (`n >= 2` not
+    //   `=== 2`, "the MusuRaStream lesson") — tolerating a late claim does not move where the row
+    //    lands.  Only a HOLD makes the step index deterministic again, and a hold WORKS here
+    //     precisely because the pumps are pass-driven: delaying quiescence buys real arrivals, it
+    //      does not just idle.  This is why re-recording never converged — two clean accepts (40/40
+    //       and 56/56) still verified 0.33 and 0.23.  You cannot record your way out of a race.
+    //  BOUNDED on purpose: a genuine starve must still red the step rather than hang the Book to
+    //   ledger_timeout, so the hold gives up after `waited` passes and lets the snap land WITHOUT
+    //    the fed: row — which is the honest failure signal, not a papered-over one.
+    w.doai({ req: 'crossing', eternal: 1 })?.(async (req) => {
+        if (!w.c.sess || w.c.fed_a || +(req.c.waited || 0) >= 400) { req.sc.ok = 1; return }
+        req.c.waited = (+(req.c.waited || 0)) + 1
+    })
 
 },
 // beat 4 — the seal over the wire: DJ mints an unbound Music offer, the Listener redeems; both ends land a

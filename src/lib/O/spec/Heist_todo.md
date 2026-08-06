@@ -30,6 +30,23 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
              not as verified.
    **Next on this thread:** the regression gate §4.1 says is owed, and the repeated
     `heist-release` in §4.2.
+1b. **Three rummage realisations from the §4.1 session (2026-08-06), parked here so they survive it:**
+    - **Derive, don't remember.** `Heist_keep_id(me, base, path)` is a pure sha256 — the source's
+       keep-id map is a *cache of a pure function*, not unknowable state. If the ask carried `path`
+        (already a scalar riding the husk, `Heist.g:166`), the source could VERIFY instead of look up:
+         recompute the id, check it matches, check the path sits inside a granted base. Stateless
+          across reloads — it obsoletes the 20s re-census, the 3-strike counter, `keep_memo`, and the
+           §4.1 answer budget in one move. The strongest candidate for the "source reload mid-heist is
+            still a cliff" complaint; needs a human look at the path-disclosure surface (the asker
+             already holds the path, so nothing new crosses the wire).
+    - **`RummageLib` → `RummagedThrough`** (the human's name, 2026-08-06): the census result is
+       distinct from both `%Rummage` (the ask) and `%Library` (the holding), and the current name
+        falsely claims kinship with the latter. The rename is FREE — the string appears in zero
+         fixtures and zero Books. (`Census` as a mainkey is taken, `Sounditron.g:462`.)
+    - **The `dontSnap` blind spot needs a flag, not a UI.** `dontSnap` prunes at ONE encoder seam
+       (`Text.svelte:809`); an opt-in "descend dontSnap" mode on `runner_ask world`'s snap would
+        expose every `%RummageLib` and parked `.c` want through the CLI that already exists — no
+         Vyto stretch.
 2. **`%pub` standardisation, part 2.** `%pub` means a pier's prepub — true everywhere except four
     identity carriers that put a FULL key under `pub`: the roster `%Identity` row (`Swarm.g:1946`),
      `%Peering` (`Swarm.g:1171`), `%HostedIdentity` and `%Runner` (`LiesLies.svelte:1593/1607`).

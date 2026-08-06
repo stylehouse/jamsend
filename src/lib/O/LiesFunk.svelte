@@ -33,6 +33,7 @@ import { browserTrustedPubs, prepubOf } from "$lib/p2p/cluster_trust"
 import { RemoteWormholeNav } from "$lib/O/RemoteWormholeNav.svelte"
 import { Dexie } from "dexie"
 import { onMount } from "svelte"
+import { socklog_arm, socklog_armed } from "$lib/O/sockcap"
 
 let { M } = $props()
 
@@ -2654,6 +2655,74 @@ await M.eatfunc({
                     //      breath later so the ack survives the socket.
                     if (!H.Lies_is_runner(w)) { ok = false; result = { error: 'not a runner — refusing to reload an editor tab' } }
                     else { result = { reloading: true }; setTimeout(() => location.reload(), 400) }
+                } else if (op === 'socklog') {
+                    // ARM THE TRACE DUMP REMOTELY.  Until now the only way to get a tab writing
+                    //  wormhole/_trace/*.jsonl was a human clicking 🪪 Id hatch → socklog on that tab —
+                    //   so every trace session started with "please go tick the box", and the human
+                    //    cannot run node on their host to check it took.  The flag is plain
+                    //     localStorage (sockcap.ts ARM_KEY), read synchronously at boot.
+                    //  TWO HALVES, and they land at DIFFERENT times: the RING dump (Lies_dump_supply)
+                    //   reads the flag every heartbeat, so it starts within ~5s with no reload; the
+                    //    SOCKET tap (sockcap_install) must be in place before the ws opens, so it needs
+                    //     the reload.  --reload asks for it explicitly rather than doing it silently —
+                    //      a reload costs the human an AudioContext tap on a manual tab.
+                    const on = (ask as any).on !== 0
+                    socklog_arm(on)
+                    const willReload = !!(ask as any).reload && H.Lies_is_runner(w)
+                    result = { armed: socklog_armed(), ring: 'live within ~5s (no reload needed)',
+                        tap: on ? (willReload ? 'installs on the reload below' : 'needs a reload to install')
+                               : 'off at next reload',
+                        reloading: willReload }
+                    if (willReload) setTimeout(() => location.reload(), 400)
+                } else if (op === 'dump') {
+                    // FORCE A TRACE DUMP NOW.  Lies_dump_supply throttles to ~5s (w.c.last_supplylog), so
+                    //  a CLI reading wormhole/_trace/ right after an event sees an up-to-5s-stale ring and
+                    //   the freshest marks — the ones you just caused — are exactly the missing ones.
+                    //    Clearing the stamp and calling it makes the disk view match the live ring.
+                    delete (w.c as any).last_supplylog
+                    await (H as any).Lies_dump_supply(w)
+                    const n = ((H.top_House().c.supply_trace as any[]) || []).length
+                    result = { dumped: socklog_armed(), marks: n,
+                        note: socklog_armed() ? 'wormhole/_trace/<role>-<pub>-<boot>.jsonl written' : 'socklog NOT armed — nothing written (run: runner_ask socklog on)' }
+                } else if (op === 'poke') {
+                    // THE ALLOWLISTED UI VERB.  A live radio rig needs "press next" from the CLI — the
+                    //  human is not always at the tab, and on a manual pair every fingers-request costs
+                    //   them a trip.  This is deliberately NOT a generic elvis/eval op: the relay is
+                    //    UNTRUSTED (Swarm_spec's standing ruling) and an arbitrary-action door on it is
+                    //     the security thread's call, not this lane's.  So: a fixed allowlist of
+                    //      user-pressable radio verbs, each already reachable by a human clicking the
+                    //       glass — no new authority, only a new hand on the same buttons.  Anything
+                    //        that seals, grants, writes fixtures or moves bytes stays OUT.
+                    const POKES: Record<string, string> = {
+                        Radio_toggle: 'Radio', Radio_skip: 'Radio', Radio_source_toggle: 'Radio',
+                        Sounditron_diag_toggle: 'w',
+                    }
+                    const verb = String((ask as any).verb ?? '')
+                    const kind = POKES[verb]
+                    const rw = H.top_House().c.radio_w as TheC | undefined
+                    if (!kind) { ok = false; result = { error: `poke ${verb || '(none)'} not allowlisted — allowed: ${Object.keys(POKES).join(', ')}` } }
+                    else if (typeof (H as any)[verb] !== 'function') { ok = false; result = { error: `${verb}: no such verb on this tab (ghost not live?)` } }
+                    else if (!rw) { ok = false; result = { error: 'no radio world on this tab (c.radio_w unset — has the dial ever stood?)' } }
+                    else {
+                        // the radio verbs take the %Radio particle; the world verbs take the world.
+                        const radio = rw.o({ Radio: 1 })[0] as TheC | undefined
+                        if (kind === 'Radio' && !radio) { ok = false; result = { error: 'no %Radio particle in the radio world' } }
+                        else {
+                            // report the state the verb ACTUALLY moves: a Radio verb moves the dial,
+                            //  a world verb moves the world.  Reporting the dial for a world verb
+                            //   printed a truthful-but-irrelevant `"off" → "off"`, which reads as
+                            //    "nothing happened" — the exact ambiguity these ops exist to remove.
+                            const snapshot = () => kind === 'Radio'
+                                ? String(rw.o({ Radio: 1 })[0]?.sc?.Radio ?? '')
+                                : `show_diag=${(rw.c as any).show_diag ? 1 : 0}`
+                            const before = snapshot()
+                            await (H as any)[verb](kind === 'Radio' ? radio : rw)
+                            const after = rw.o({ Radio: 1 })[0]?.sc
+                            result = { poked: verb, was: before, now: snapshot(),
+                                title: kind === 'Radio' ? (after?.title ?? null) : null,
+                                note: kind === 'Radio' ? (after?.note ?? null) : null }
+                        }
+                    }
                 } else { ok = false; result = { error: `unknown op ${op}` } }
             } catch (e) { ok = false; result = { error: String((e as Error).message) } }
             const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any

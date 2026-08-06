@@ -7,6 +7,43 @@ The new glass.  Spec: `Vyto_spec.md` (unpreened — three rounds 2026-07-19).  M
     its appendices.  **`client.md` is the front door for anyone integrating as a Vyto
      client** — point a fresh agent there first.
 
+## 0.0 THE LOOK — the owner's ruling, 2026-08-06 (read before designing any face)
+
+*"ideally this whole program looks like a child's pasta and paint artwork — we can see what the
+ player is plugged into in the Mag, tiny ants moving buffer into the Record there, etc."*
+
+That is a **design constraint, not a mood**, and it cuts against the default this glass keeps
+ drifting toward. The default is a DASHBOARD: cells full of numbers, each organ reporting its own
+  state in text. What is asked for is a MADE THING — visibly hand-assembled, and above all
+   **showing the machine's RELATIONS and its MOVEMENT**, which numbers cannot do:
+
+- **"what the player is plugged into"** — the radio↔Record relation should be VISIBLE as a
+   connection, not inferred by reading a title in one cell and matching it against a list in
+    another. The dial is plugged into a Record which lives in a Mag: draw the plug.
+- **"tiny ants moving buffer into the Record"** — a transfer should be seen as MOTION ALONG THAT
+   RELATION, per Record. Today the same fact is a KB/s number in TransferFace (`x.pulls[].held/total`)
+    — true, and invisible as a happening. The ants are that data, drawn as travel.
+- **"pasta and paint"** — irregular, physical, made-by-hand. The voronoi foam is already the right
+   instinct; the faces inside it are the part that still reads like a control panel.
+
+**What this rules OUT:** answering "the glass should show X" by adding another cell with another
+ readout. Cells are the scarce resource (the 2026-07-28 ruling that killed the friend Crates: two
+  more cells made every jewel unreadably tiny) — so new understanding should arrive as **relations
+   drawn between things already on the glass**, and as **motion**, not as new boxes of text.
+
+**What it needs from the wire, and what already exists.** The relation and the flow are both
+ already computed and thrown away at the face boundary:
+ - what the player is plugged into: `radio.c.rec` (the live %Record) — a `.c` ref, so a face can
+    follow it to the Record and to the Mag holding it.
+ - the ants: the per-Record transfer state the CLI already prints — `top_House().c.xfer.pulls[]`
+    (`held/total/goodput_kbps/asked/landed`), plus the crate-birth lane's `want-first` / `page-first`
+     ring marks (2026-08-06), which are literally "a buffer arrived at this Record" events with an id.
+ - the caution: all of it rides `.c`, which never bumps a version, so a face must self-tick
+    (the RadioFace/TransferFace 250ms–1s pattern) — that is the EXISTING idiom, not a new problem.
+
+Related: `Vyto_sizing_todo.md` (the type scale), `## THE PIN` below (display-correctness law —
+ pixels or it didn't land, which this section makes harder and more necessary).
+
 ## 0. What to get on with next
 
 The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it a memory (Spool) ✓

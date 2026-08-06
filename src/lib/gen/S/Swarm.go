@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '5560377b4cae869b~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '362a527757d98adf~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -1772,6 +1772,13 @@ Swarm_ive_got(w, ident, frame) {
     }
     this.Swarm_ive_got_fact(pier, 'records', frame.records)
     this.Swarm_ive_got_fact(pier, 'artists', frame.artists)
+    // BOAST-HEARD electrode (2026-08-06, the trace lane): the sink half of `advertise` — without
+    //  it, "the boast never arrived" and "the boast arrived but the husks didn't" read identically
+    //   on the sink's ring.  With it the birth story is one unbroken line: advertise (their ring) →
+    //    boast-heard → crate-born → mirror-merge → want-first → page-first → dial (this ring).
+    if (typeof this.Radio_trace === 'function') {
+        try { this.Radio_trace(null, { ev: 'boast-heard', of: String(frame.page?.prepub || '').slice(0, 8), records: +(frame.records || 0) }) } catch (er) {}
+    }
     return pier
 
 },
@@ -1971,6 +1978,21 @@ async Swarm_share_beat(w, ident) {
     if (!rw) return
     let me = String(ident.sc.prepub)
     let stock = this.Ra_home_self(rw, me)
+    // BEFORE IT GOES OUT (the human's v1.0 ruling, 2026-08-06): check every Record in the shuffle
+    //  Mag still has its source, and delete the ones that don't.  Here rather than inside
+    //   Ra_offer_stock deliberately — that verb is also a Book's (Radiation.g:904/1291), and a
+    //    disk-touching cull in it would move fixtures; the share beat is live-only, so this stays
+    //     out of every Book by construction.  Once per beat (self-throttled to 30s inside), ahead
+    //      of the friend loop: the Mag is the same for every friend, so checking it per friend
+    //       would only repeat the work.  The drop shrinks the record count, which changes the
+    //        offer `mark` below — so a cull re-offers by itself and the friend's mirror learns.
+    await this.Ra_shuffle_cull(rw, stock)
+    // AND KEEP THE WINDOW MOVING (the owner's conveyor, 2026-08-07): spawn at the end, whittle off
+    //  the top, so a friend tours the whole collection instead of its first rooms.  Here beside the
+    //   cull for the same reason that one is here — the share beat is the live-only seam, so no
+    //    Book can ever see a spontaneous dig — and BEFORE the offer below, so a turn of the wheel
+    //     re-offers on the same beat it happens rather than waiting out the floor.
+    await this.Stoker_tour(rw, stock)
     this.Swarm_boast_floor(w, ident)
     for (const p of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
         if (!p.sc.pub) continue
@@ -1990,7 +2012,11 @@ async Swarm_share_beat(w, ident) {
         //     friend's mirror wears the same paged shape — a collection arrives as its rooms.
         if (!p.c.heard_at || (Date.now() - p.c.heard_at) >= 20000) continue
         let n = this.Ra_recs(stock).length
-        let mark = String(w.c.station_era || 0) + ':' + String(route.c.peer_era || 0) + ':' + n
+        // the tour count rides the mark because the count ALONE cannot see a rotation: a turn of the
+        //  wheel that adds one and drops one leaves `n` identical, so a pure-count mark would call a
+        //   completely different catalog "unchanged" and sit on it until the 60s floor tripped.
+        let tour = String(rw.o({ Stoker: 1 })[0]?.sc?.toured || 0)
+        let mark = String(w.c.station_era || 0) + ':' + String(route.c.peer_era || 0) + ':' + n + ':' + tour
         // ── THE RE-OFFER FLOOR (2026-08-04) — the last-resort backstop under the whole epoch machine ──
         //  Everything above makes "A learns B was reborn" robust; this makes "A stops sending B new
         //   music" structurally impossible even if all of it fails.  The mark is CHANGE-triggered, so a

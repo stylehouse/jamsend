@@ -5,7 +5,7 @@
 //    thin CLI, no deps, node's built-in fetch.
 //
 // ONE shared bot, serialised. Both agent threads use the SAME bot, so the human watches one chat.
-//  A file mutex (~/.jamsend_telegram.lock) means only one thread has a question OUTSTANDING at a
+//  A file mutex (.env.telegrambot.lock) means only one thread has a question OUTSTANDING at a
 //   time: a second `ask` waits for the first to be answered before it sends, so the two never
 //    fight over Telegram's single-consumer getUpdates. Prefix every message with a name
 //     (--as=Ariel) so the human can tell the threads apart.

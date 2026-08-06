@@ -87,6 +87,27 @@ Ra_peak_ceiling():
 //     never a boundary — the fan-out clamps to each record's preview window by construction.
 Ra_keep_ahead(w):
     return +(w?.sc?.keep_ahead ?? 4)
+
+// Ra_playing_id — WHICH RECORD THE LISTENER IS ACTUALLY ON, asked in a way that survives the
+//  two-world split.  `w.c.play` is the PACED LISTEN's playhead (Ra_term_stream_open) — the Books'
+//   cursor, and the only one Ra_restock_beat ever consulted.  But live there is no paced listen:
+//    the real playhead is the radio's own `radio.c.rec`, and the radio lives in the RADIO world
+//     (top.c.radio_w) while the share beat calls the restock with the STATION world.  Two different
+//      particles.  So live `w.c.play` was permanently undefined, `at` stuck at 0, and the KEEP_AHEAD
+//       window sat pinned to the first four records of the friend's catalog FOREVER.
+//  MEASURED (2026-08-07, the pair): Righto mirrored 15 of Lefto's records and fired exactly FOUR
+//   `want-first` marks — 7324854e, cb8d05c4, 0df43bb9 and one more — in the first four seconds of
+//    the boot, then never wanted another for the rest of the session.  Three of those four ever
+//     played, which is precisely the owner's report: "only 3 tracks come over".  The catalog
+//      crossed in full; the BYTES only ever came for the head of it.
+//  Order matters: the paced listen wins when it exists, so every Book keeps the cursor it pins and
+//   no fixture moves.  Live falls through to the radio.  Neither standing = null, the old answer.
+Ra_playing_id(w):
+    if (w.c.play) return w.c.play.id
+    let rw = this.top_House().c.radio_w
+    if (!rw) return null
+    let radio = rw.o({ Radio: 1 })[0]
+    return (radio && radio.c.rec) ? radio.c.rec.sc.id : null
 //#endregion
 
 //#region entropy — the ONE randomness seam: a radio is SUPPOSED to be random, a Book must be able to pin it
@@ -669,6 +690,73 @@ Ra_mag_shuffle(shelf):
     let mag = shelf.oai({ Mag: 'shuffle' })
     mag.c.up = shelf
     return mag
+// Ra_source_alive — does this holding's ORIGINAL still exist on disk?  The per-Record question the
+//  last prototype asked as a record went out, restored here (the human's ruling, 2026-08-06).
+//   Returns 'ok' | 'no card' | 'gone' | 'unknown' — and the FOURTH value is the important one: a nav
+//    hiccup must never read as a deleted track, so anything we cannot judge is 'unknown' and the
+//     caller leaves the record alone.  Cheap in bulk: the nav caches directory listings, so a whole
+//      album's worth of records costs ONE directory read.
+async Ra_source_alive(w, nav, rec):
+    let card = await this.Ra_card(w, rec)
+    if (!card || !card.path) return 'no card'
+    let parts = ((card.base ? card.base + '/' : '') + card.path).split('/').filter(Boolean)
+    let fname = parts.pop()
+    let dl = null
+    try { dl = await nav.dir_at(parts.join('/')) } catch (er) { return 'unknown' }
+    if (!dl) return 'gone'
+    try { await dl.expand() } catch (er) { return 'unknown' }
+    return dl.files.find(f => f.name === fname) ? 'ok' : 'gone'
+
+// Ra_shuffle_cull — BE GRACEFUL WHEN A SOURCE DISAPPEARS (the human's v1.0 ruling, 2026-08-06).
+//  Check every Record in the shuffle Mag before the Mag goes out; a record whose source is gone is
+//   DELETED from the Mag.  **Mag:shuffle ONLY** — every other Mag is somebody else's use case (a
+//    Jam ledger, a mirror, a trace Mag) and a sweep that wandered into those would be deleting
+//     another organ's furniture.
+//  WHY DELETE RATHER THAN HEAL: an unservable holding is not merely useless, it is ACTIVELY
+//   harmful — it is advertised, asked for, and then re-attempts its doomed decode every ~600ms
+//    forever while the asker's want parks (measured 2026-08-06: 1087 `pcm-decode-start` against 2
+//     `pcm-decode-done`, wants stalled 480s). Dropping it ends the loop, shrinks the boast to the
+//      truth, and lets the ordinary Se goner-diff tell the friend their mirror copy is dead too.
+//       Self-healing (re-dig the stock, re-home the original) is deliberately NOT v1.0 — and it is
+//        partly free anyway: a dropped record that still has a real file is re-found by the next
+//         stoker wander through the ordinary mint door.
+//  THROTTLED (30s): the share beat runs at 600ms and this touches the disk. The floor means "the
+//   Mag that went out was checked within the last 30s", which is the honest reading of the ruling
+//    without a stat storm. Never culls without a nav — a closed share is not a missing track.
+async Ra_shuffle_cull(w, shelf):
+    if (!shelf) return 0
+    let floor = +(w.c.ra_cull_floor_ms || 30000)
+    if (w.c.ra_cull_at && (Date.now() - w.c.ra_cull_at) < floor) return 0
+    w.c.ra_cull_at = Date.now()
+    let mag = shelf.o({ Mag: 'shuffle' })[0]
+    if (!mag) return 0
+    let nav = w.c.ra_nav || this.Crate_nav()
+    if (!nav) return 0
+    // collect THEN drop — Ra_rec_drop detaches from the page we would still be iterating.
+    let goners = []
+    let seen = 0
+    for (const page of mag.o({ Cloud: 1 })) {
+        for (const rec of page.o({ Record: 1 })) {
+            seen = seen + 1
+            let why = await this.Ra_source_alive(w, nav, rec)
+            if (why === 'ok' || why === 'unknown') continue
+            goners.push({ id: String(rec.sc.id || ''), why: why })
+        }
+    }
+    // a legacy/migrated Mag may hold records flat beside its pages — same Mag, same ruling.
+    for (const rec of mag.o({ Record: 1 })) {
+        seen = seen + 1
+        let why = await this.Ra_source_alive(w, nav, rec)
+        if (why === 'ok' || why === 'unknown') continue
+        goners.push({ id: String(rec.sc.id || ''), why: why })
+    }
+    for (const g of goners) {
+        await this.Ra_rec_drop(shelf, g.id)
+        this.Radio_trace(null, { ev: 'source-gone', id: g.id.slice(0, 8), why: g.why })
+    }
+    if (goners.length) this.Radio_trace(null, { ev: 'shuffle-cull', seen: seen, dropped: goners.length })
+    return goners.length
+
 // Ra_mag_page — the OPEN page: the last %Cloud with room; none (or full) mints the next.  Page
 //  numbers are 1-based and ride as strings (the {k:1} wildcard rule keeps numerics out of sc).
 Ra_mag_page(mag):
@@ -1388,10 +1476,36 @@ async Ra_source_pcm(w, rec):
     if (rec.c.pcm) return rec.c.pcm
     let t0 = Date.now()
     let tid = String(rec.sc.id || '').slice(0, 8)
+    // THE TWO SILENT DEATHS (named 2026-08-06 by the crate-birth lane, on the live pair).  Both of
+    //  these returned null with no mark, no latch and no memory — and `Ra_transcode_ensure` clears
+    //   `pcm_pending` unconditionally in its .then(), so the very next pump beat re-fires the decode.
+    //    Measured on Righto: **1087 `pcm-decode-start` marks against 2 `pcm-decode-done`** — two
+    //     records re-kicked ~1085 times at the ~600ms pump cadence while their wants sat `park-stall
+    //      off=16 secs=480`, and the ASKING side saw only a want that never landed.  A serve that can
+    //       never succeed looked exactly like a slow one, which is the §0 shape: one side knows the
+    //        fact, no path carries it, and the repair infers it from a timeout.
+    //  This mark is the fact made visible, ONCE per record per reason (the latch is read by the very
+    //   next line, so it is diagnostics that cannot rot into a write-only latch).  It does NOT stop
+    //    the retry — a missing nav at boot is genuinely transient and a hard latch would turn that
+    //     permanent; the retry policy + telling the asker (`repli_missed` is the ready-made lane) is
+    //      the owed cure, deliberately left to a design pass rather than guessed at here.
     let card = await this.Ra_card(w, rec)
-    if (!card || !card.path) return null
+    if (!card || !card.path) {
+        if (rec.c.pcm_dead !== 'card') {
+            rec.c.pcm_dead = 'card'
+            this.Radio_trace(null, { ev: 'pcm-nosource', id: tid, why: card ? 'card has no path' : 'no card' })
+        }
+        return null
+    }
     let nav = w.c.ra_nav || this.Crate_nav()
-    if (!nav) return null
+    if (!nav) {
+        if (rec.c.pcm_dead !== 'nav') {
+            rec.c.pcm_dead = 'nav'
+            this.Radio_trace(null, { ev: 'pcm-nosource', id: tid, why: 'no nav — share not open' })
+        }
+        return null
+    }
+    rec.c.pcm_dead = null
     let parts = ((card.base ? card.base + '/' : '') + card.path).split('/').filter(Boolean)
     let fname = parts.pop()
     let raw = null
@@ -2025,7 +2139,10 @@ async Ra_restock_beat(w, mirror, budget):
     let K = this.Ra_keep_ahead(w)
     let recs = this.Ra_recs(mirror)
     if (!recs.length) return { warm: 0, want: 0, of: 0 }
-    let playing = w.c.play ? w.c.play.id : null
+    // the ROTATION ANCHOR — Ra_playing_id, not w.c.play (see its comment): live the two are
+    //  different worlds and the raw read was always undefined, which pinned this window to the
+    //   catalog head for the whole session.  This one line is what makes the fan-out FOLLOW.
+    let playing = this.Ra_playing_id(w)
     let PAGE = +(w.c.repli_page || 2)
     w.c.ra_wanted = w.c.ra_wanted || {}
     let at = 0

@@ -30,6 +30,14 @@
 //                                                           #   the only sanctioned re-record path (never headless)
 //    node scripts/runner_ask.mjs release                 # hang up: drop our engagement lease + GC the runs,
 //                                                          #  tearing the runner's Story world down to H:Mundo (idle)
+//    node scripts/runner_ask.mjs socklog [on|off] [--reload]  # arm the tab's trace-ring disk dump (the 🪪 hatch
+//                                                          #  toggle, remotely); --reload re-boots it so the
+//                                                           #   socket tap also lands (the ring dump needs no reload)
+//    node scripts/runner_ask.mjs dump                    # force an immediate trace dump (skip the ~5s throttle),
+//                                                          #  so tracelog.mjs reads NOW, not up-to-5s-ago
+//    node scripts/runner_ask.mjs poke Radio_skip         # fire an ALLOWLISTED UI verb on the live tab (the
+//                                                          #  runner-side allowlist is the authority; see
+//                                                           #   Lies_runner_ask_recv op:'poke')
 //
 //  ENGAGEMENT: `run` takes a soft 10-min lease on the runner, keyed by this CLI's stable client id (the
 //   claude cluster prepub from .env.cluster-claude, or RUNNER_CLIENT).  A second client is refused while the
@@ -46,7 +54,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 //  so the CLI can no longer drift to a worse death criterion than the layer it's questioning.
 import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs'
 
-const OPS = ['ping', 'probe', 'world', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload']
+const OPS = ['ping', 'probe', 'world', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -118,7 +126,7 @@ const op    = pos[0]
 const arg   = pos[1]
 const watch = flags.has('--watch')
 if (!op || !OPS.includes(op)) {
-	console.error('usage: node scripts/runner_ask.mjs <ping|probe|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload> [@uid] [--runner=<id>] [--watch]')
+	console.error('usage: node scripts/runner_ask.mjs <ping|probe|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|poke <verb>> [@uid] [--runner=<id>] [--watch]')
 	process.exit(2)
 }
 // `runners` — list the Waft:Cluster registry (no relay needed); a discovery aid for --runner=<id>.
@@ -138,6 +146,8 @@ if (runnerSel !== undefined) {
 	TARGET = pub
 }
 if (op === 'run' && !arg)  { console.error('run needs a Book: node scripts/runner_ask.mjs run <Book>'); process.exit(2) }
+if (op === 'poke' && !arg) { console.error('poke needs a verb: node scripts/runner_ask.mjs poke <Radio_toggle|Radio_skip|Radio_source_toggle|Sounditron_diag_toggle> [--runner=<id>]'); process.exit(2) }
+if (op === 'socklog' && arg && arg !== 'on' && arg !== 'off') { console.error('socklog takes on|off (default on): node scripts/runner_ask.mjs socklog [on|off] [--reload] [--runner=<id>]'); process.exit(2) }
 if (op === 'declare' && !arg) { console.error('declare needs the sworn sentence (quote it — byte-identical to `assertions` output): node scripts/runner_ask.mjs declare \'<sentence>\''); process.exit(2) }
 if (op === 'snap' && !arg) { console.error('snap needs a step number: node scripts/runner_ask.mjs snap <n>'); process.exit(2) }
 if (op === 'trace' && !arg) { console.error('trace needs a step number: node scripts/runner_ask.mjs trace <n>  (the step\'s beliefs-cycle trace + causal|timeout quiescent label)'); process.exit(2) }
@@ -161,6 +171,8 @@ const ask = { op, client: CLIENT }
 if (op === 'run')  { ask.book = arg; if (bookNeedsAC(arg)) ask.needAC = 1; if (bookNeedsFSA(arg)) ask.needsFSA = 1 }   // Credence-read → runner secures AC / routes to an FSA runner pre-run
 if (op === 'snap' || op === 'trace') ask.n = Number(arg)
 if (op === 'declare') ask.sentence = arg   // the explorer button's CLI twin (e_story_declare)
+if (op === 'socklog') { ask.on = arg === 'off' ? 0 : 1; if (flags.has('--reload')) ask.reload = 1 }   // arm the tab's trace dump remotely (was: 🪪 hatch only)
+if (op === 'poke') ask.verb = arg          // allowlisted UI verb (runner-side allowlist is the authority)
 if (uid) ask.uid = uid
 
 const HTTP       = process.env.RUNNER_URL || 'http://172.17.0.1:9091'

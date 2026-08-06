@@ -17,7 +17,7 @@ metadata:
   timeout, re-issue). Also `send "…" --as=Ariel` (fire-and-forget) and `poll` (peek, no wait).
 
 **Shape (why it's built the way it is):** ONE shared bot (`@ClodJamsendbot`) across both agent
- threads, so the human watches one chat. A file mutex (`~/.jamsend_telegram.lock`) serialises asks —
+ threads, so the human watches one chat. A file mutex (`.env.telegrambot.lock`) serialises asks —
   only one thread has a question OUTSTANDING at a time; a 2nd `ask` waits for the 1st to be answered.
    This is deliberate: Telegram's `getUpdates` is single-consumer, so two concurrent pollers 409 and
     steal each other's replies — NEVER bypass the mutex with a concurrent poll/ask. Prefix every

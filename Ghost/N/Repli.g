@@ -846,7 +846,16 @@ Repli_mirror_lib(w, from):
     //   "my own stock coming back" — fold it into my OWN shelf (idempotent dedup), never %MusuThem,pub:<me>.
     if (w.c.repli_mirror_by_from && from && String(from) === String(w.c.repli_mirror_pier)) return this.Ra_home_self(mw, String(from))
     let key = (w.c.repli_mirror_by_from && from) ? String(from) : (w.c.repli_mirror_pier || 'Crowd')
-    return this.Ra_home_them(mw, key)
+    // CRATE-BIRTH electrode (2026-08-06, the trace lane): the %MusuThem home minting is the exact
+    //  moment the dial's `homes` count goes 0→1 — the seam between `advertise homes=1` (the census
+    //   of MY OWN shelf) and `starved homes=0` (the dial's count of THESE).  Mark the birth, once,
+    //    so the ring can say whether a "gathering" tab ever grew a friend crate at all.  .c-only.
+    let had = mw.oa({ MusuThem: 1, pub: key })
+    let shelf = this.Ra_home_them(mw, key)
+    if (!had && typeof this.Radio_trace === 'function') {
+        try { this.Radio_trace(null, { ev: 'crate-born', of: String(key).slice(0, 8) }) } catch (er) {}
+    }
+    return shelf
 
 // Repli_recv_lines — B got a repli_lines frame: decode + merge into the mirror; for every merged particle that
 //  referenced objecties.buffer, open a holding %req:awaitbuf under the Pier (the extra unemit processing).
@@ -856,12 +865,20 @@ async Repli_recv_lines(w, pier, frame):
     let text = new TextDecoder().decode(frame.buffer)
     let lib = this.Repli_mirror_lib(w, frame.header.from)
     let touched = await this.Repli_merge(lib, text)
+    let nrec = 0
+    let born = 0
     for (const c of touched) {
         if (c.c.await_buffer != null) this.Repli_open_awaitbuf(w, pier, c, c.c.await_buffer)
         // the SOURCE breadcrumb (runtime-only, .c never snaps): which Pier this mirror Record came
         //  through and whose shelf it lives on — the multi-source pull addresses its wants by these
         //   (rec.c.rx to ride, rec.c.from to ask), and the chase knows which source a track is FROM.
         if (c.sc && c.sc.Record) {
+            nrec = nrec + 1
+            // BIRTH, not touch — the latch the mark below needs (see it for why).
+            if (!c.c.mirror_seen) {
+                c.c.mirror_seen = 1
+                born = born + 1
+            }
             c.c.from = frame.header.from
             c.c.rx = pier
             // OWED (attended, pairs with a SwarmShare re-record): stamp a
@@ -871,6 +888,21 @@ async Repli_recv_lines(w, pier, frame):
             //     face).  Held back tonight because it moves SwarmShare's fixtures and the re-record
             //      needs a live runner — land the line + re-record + declare in one attended sitting.
         }
+    }
+    // MIRROR-MERGE electrode (2026-08-06, the trace lane): records actually landing on the mirror —
+    //  the dial's `recs` count moving.  Marked only when a Record was among the touched (lines frames
+    //   also carry clouds/cards — those aren't the birth story).  .c-only, one mark per frame.
+    //  COUNTS BIRTHS, NOT TOUCHES (2026-08-07).  It counted `nrec` — every Record the frame touched —
+    //   and a CHUNK frame touches its record too (that is what the await_buffer branch above is), so
+    //    this fired roughly once a second for the whole life of a tab and said `recs=1` every time.
+    //     The ring caps at 1200 marks, so ~20 minutes of ordinary transfer traffic evicted every
+    //      advertise, tour, want-first and page-first behind it — the marks that carry the story.
+    //       Read one on 2026-08-07: 37 `mirror-merge` in a single dump against 4 `want-first`.
+    //  It also made the comment above FALSE — "records actually landing" described a birth, and a
+    //   re-touch is not one.  This is the honest reading, and it costs one `.c` latch per record.
+    //    The chunk path is not lost: `page-first` and `stream-first-chunk` already mark it, once each.
+    if (born && typeof this.Radio_trace === 'function') {
+        try { this.Radio_trace(null, { ev: 'mirror-merge', recs: born, of: String(frame.header.from || '').slice(0, 8) }) } catch (er) {}
     }
     w.c.repli_tick = (w.c.repli_tick || 0) + 1
 
@@ -959,6 +991,15 @@ Repli_attach_page(w, pier, id, bytes):
         } else {
             mirror.sc[mirror.c.await_bufk] = u8
             landed = 1
+            // PAGE-FIRST electrode (2026-08-06, the trace lane): the first bytes ever to land on this
+            //  record — a husk becoming playable, the moment `byted` goes 0→1 in the starve electrode's
+            //   terms.  The latch is ON the record (.c, runtime-only) and IS read: by this mark, and by
+            //    anyone asking "did anything ever arrive?" — not a write-only latch.
+            let rec = mirror.c && mirror.c.up
+            if (rec && !rec.c.first_page_t && typeof this.Radio_trace === 'function') {
+                rec.c.first_page_t = Date.now()
+                try { this.Radio_trace(null, { ev: 'page-first', id: String(rec.sc.id || '').slice(0, 8), seq: mirror.sc.seq }) } catch (er) {}
+            }
         }
         mirror.c.await_bufk = null
         mirror.c.await_buffer = null
@@ -1103,6 +1144,18 @@ Repli_awaitbuf_do(w, pier, req):
 
 // Repli_want_next — B asks A for the next page of a Record's stream (the PULL).
 async Repli_want_next(w, rx, from, to, id, stream, fromIdx):
+    // WANT-FIRST electrode (2026-08-06, the trace lane): every pull path funnels through here, so
+    //  the FIRST want per record is one latch in one place — the moment a husk stopped being merely
+    //   admired and was actually asked for.  Between `mirror-merge` and this mark lives every
+    //    "records stood but nobody asked" bug; between this and `page-first` lives every serve/land
+    //     bug.  Latch on the top House .c (runtime-only; the record id keys it).
+    if (typeof this.Radio_trace === 'function') {
+        let wf = this.top_House().c.want_first || (this.top_House().c.want_first = {})
+        if (!wf[id]) {
+            wf[id] = 1
+            try { this.Radio_trace(null, { ev: 'want-first', id: String(id).slice(0, 8), at: fromIdx, of: String(to || '').slice(0, 8) }) } catch (er) {}
+        }
+    }
     let body = new TextEncoder().encode('want')
     let bh = await this.Peeroleum_body_digest(body)
     let seq = this.Pier_next_seq(rx)
