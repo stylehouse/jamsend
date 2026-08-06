@@ -537,6 +537,14 @@ async Swarm_pump(w, ident):
 Swarm_rebuff(ident, why, say):
     console.log('🚪 rebuff %' + why + (say ? ' — ' + String(say).slice(0, 60) : ''))
     ident.i({ rebuff: why, say: String(say ?? '').slice(0, 60) })
+    // ELECTRODE (2026-08-06) — every door slam, in the file rather than only in a console nobody
+    //  was watching at the time.  The rebuff is the single funnel for "we refused a stranger" AND
+    //   "we could not reach the issuer" (redeem's `offline`) AND "the token was junk" — so a pairing
+    //    that never completes leaves its reason HERE and nowhere else.  Trace, don't move: the
+    //     console line stays for the human watching live.
+    if (typeof this.Radio_trace === 'function') {
+        try { this.Radio_trace(null, { ev: 'rebuff', why: why, say: String(say ?? '').slice(0, 16) }) } catch (er) {}
+    }
 
 // ── the invite ledger survives reload ───────────────────────────────────────────────────────
 //  The %Idzeug records under the %Peering are runtime particles, so mint-then-reload made the
@@ -663,7 +671,17 @@ Swarm_station_up(w, ident):
     //    ever confirm it.  One assignment closes that.  LIVE-ONLY: the Books stamp station_up by hand
     //     rather than through this verb, so no fixture sees an era it did not see before.
     this.Swarm_era(w)
-    this.Swarm_station_routes(w, ident)
+    let routed = this.Swarm_station_routes(w, ident)
+    // ELECTRODE (2026-08-06) — STANDUP, the t=0 every other discovery mark is relative to.  Without
+    //  it a trace file opens mid-story and you cannot tell a peer that never appeared from one that
+    //   appeared before the ring's window.  `era` is the identity of THIS boot, so it is also how you
+    //    tell your own restart apart from theirs when reading a `rebirth` further down the file.
+    //     `routed` vs `piers` is the reload wound (Swarm_station_routes' own header): friendships that
+    //      survived but links that did not show up here as a shortfall, before any frame is sent.
+    if (typeof this.Radio_trace === 'function') {
+        try { this.Radio_trace(null, { ev: 'station-up', era: w.c.station_era, routed: routed,
+            piers: (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).length }) } catch (er) {}
+    }
     return station
 
 // Swarm_station_pier — promote first-contact into a transport route: the station's %Pier keyed by
@@ -796,6 +814,19 @@ Swarm_note_era(w, route, sf, may_reset):
     if (!route || !sf || !sf.era) return false
     let reborn = !!(route.c.peer_era && route.c.peer_era !== sf.era)
     if (reborn && may_reset) {
+        // ELECTRODE (2026-08-06) — REBIRTH, the largest state event in the system and until now
+        //  entirely invisible.  This branch discards the stream history, every want cursor, every
+        //   park, both retx ladders and the offer mark, so a rebirth landing mid-heist presents as
+        //    "the transfer stopped for no reason".  Read it FIRST when a gap has no other cause:
+        //     a `rebirth` at the head of the gap means the peer restarted and nothing downstream is
+        //      at fault.  Counts are taken BEFORE the deletes — after them they are all zero.
+        if (typeof this.Radio_trace === 'function') {
+            try { this.Radio_trace(null, { ev: 'rebirth', at: String(route.sc.pub || '').slice(0, 8),
+                era: sf.era, was: route.c.peer_era,
+                wanted: Object.keys(w.c.ra_wanted || {}).length,
+                parked: Object.keys(w.c.ra_parked || {}).length,
+                retx: Object.keys(w.c.ra_retx || {}).length }) } catch (er) {}
+        }
         this.Peeroleum_reset_handshake(route)
         delete w.c.ra_wanted
         delete w.c.ra_want_ts
@@ -896,6 +927,15 @@ async Swarm_redeem(w, ident, iz):
     if (!this.Swarm_deliver(w, ident, t.prepub, hello)) {
         this.Swarm_rebuff(ident, 'offline', t.prepub)
         return null
+    }
+    // ELECTRODE (2026-08-06) — a pairing STARTING, which brackets the `seal` mark at the other end.
+    //  Both failure arms above already funnel through Swarm_rebuff (traced), so the three outcomes of
+    //   a redeem are now all in the file: forged, offline, or this.  A `redeem` with no `seal` after
+    //    it is the pairing that got as far as the wire and then died silently on the issuer's side —
+    //     previously indistinguishable from a redeem that was never attempted.
+    if (typeof this.Radio_trace === 'function') {
+        try { this.Radio_trace(null, { ev: 'redeem', to: String(t.prepub || '').slice(0, 8),
+            serial: String(t.serial || '').slice(0, 8) }) } catch (er) {}
     }
     return t
 
@@ -1191,6 +1231,7 @@ Swarm_seal(w, ident, page, theirGrant, myGrant):
     if (!this.Swarm_page_bound(page)) return null
     let peering = this.Swarm_peering(ident)
     let pier = peering.oai({ Pier: 1, pub: page.prepub })
+    let re_seal = pier.sc.since ? 1 : 0   // read BEFORE the since-stamp below, for the electrode at the tail
     pier.c.up = peering
     pier.sc.friendly = page.friendly
     // since = when the friendship BEGAN — a re-seal (redial, rehydrate) never resets it
@@ -1208,6 +1249,17 @@ Swarm_seal(w, ident, page, theirGrant, myGrant):
         graph.i({ Edge: 1, a: ident.sc.prepub, b: page.prepub, at: String(this.Swarm_now(w)) })
     }
     this.Swarm_pier_stash(ident, page, [theirGrant, myGrant], null)
+    // ELECTRODE (2026-08-06) — a friendship reaching durable storage.  `grants` is the half-seal
+    //  tell WITHOUT waiting for a badge: this verb is reached from both wire entries and from the
+    //   standup rehydrate, and a pier that only ever seals with ONE grant is the one-way pairing
+    //    (the 2026-07-28 Righto/Lefto shape) caught at the moment it forms rather than hours later.
+    //     `re` distinguishes a fresh seal from an idempotent rehydrate — a storm of re-seals for one
+    //      peer means the self-heal is looping, which reads as nothing at all in the UI.
+    if (typeof this.Radio_trace === 'function') {
+        try { this.Radio_trace(null, { ev: 'seal', at: String(page.prepub || '').slice(0, 8),
+            who: String(page.friendly || '').slice(0, 12),
+            grants: pier.o({ Grant: 1 }).length, re: re_seal }) } catch (er) {}
+    }
     return pier
 
 // ── the FRIENDSHIP survives reload (the iz-ledger disease, second organ) ────────────────────
@@ -1493,6 +1545,17 @@ Swarm_pulse_all(w, ident):
         if ((quiet || unconfirmed) && cooled && w.c.station_up) {
             pier.c.hi_kick_at = Date.now()
             if (route) { route.c.hi_kick_at = Date.now(); route.c.era_kicks = kicks + 1 }
+            // ELECTRODE (2026-08-06) — the EPOCH BACKSTOP firing.  In the healthy case this branch is
+            //  never reached at all: the era rides every pulse and converges in one round trip.  So a
+            //   kick is already a mild anomaly, and `kicks` CLIMBING (5s→10s→…→60s, then stuck at the
+            //    ceiling) is the stranded pair — the link carries frames but the far side never echoes
+            //     `saw`, which is exactly the case the old `quiet` proxy could not see.  `why` separates
+            //      a dead link (quiet: nothing arriving) from a live-but-stale one (unconfirmed).
+            if (typeof this.Radio_trace === 'function') {
+                try { this.Radio_trace(null, { ev: 'era-kick', at: String(pier.sc.pub || '').slice(0, 8),
+                    why: quiet ? 'quiet' : 'unconfirmed', kicks: kicks + 1, backoff: backoff,
+                    route: route ? 1 : 0 }) } catch (er) {}
+            }
             this.Swarm_hi_one(w, ident, String(pier.sc.pub), 0)
         }
     }
@@ -1505,10 +1568,24 @@ Swarm_pulse_all(w, ident):
 Swarm_gossip_music(w, ident):
     let counts = this.Swarm_music_census(w, ident)
     let told = 0
-    for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+    let piers = this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []
+    let granted = 0
+    for (const pier of piers) {
         if (!this.Swarm_pier_live(pier, 'Music')) continue
+        granted = granted + 1
         let frame = { kind: 'ive_got', page: this.Swarm_page(ident), records: counts.records, artists: counts.artists }
         if (this.Swarm_deliver(w, ident, pier.sc.pub, frame)) told = told + 1
+    }
+    // ELECTRODE (2026-08-06) — THE ADVERTISE RATIO, and it is three numbers because the boast can
+    //  die at three different places that all look identical from the outside ("they can't see my
+    //   music").  piers → granted is the GRANT gate (revoked, or a half-seal that never got a Music
+    //    grant); granted → told is the TRANSPORT gate (Swarm_deliver found no carrier — offline, or
+    //     no route minted).  `records` is what we were boasting; a census of 0 means the shelf is the
+    //      problem and neither gate matters.  This verb previously returned `told` to a caller that
+    //       discarded it, so all three facts existed for one stack frame and were never once seen.
+    if (typeof this.Radio_trace === 'function') {
+        try { this.Radio_trace(null, { ev: 'advertise', piers: piers.length, granted: granted, told: told,
+            records: +(counts.records || 0), artists: +(counts.artists || 0) }) } catch (er) {}
     }
     return told
 
@@ -2134,15 +2211,27 @@ Diag_trouble(w):
     //     outbound ask still leaves, the peer still answers, and the answers are dropped on arrival for
     //      want of a Pier to route them through.  Both ends therefore look merely SLOW — which is why
     //       this one deserves the top of the list and a sentence that names the asymmetry out loud.
+    //  MY OWN pub rides `.c.keys`, NEVER `sc` (the human 2026-08-06: BOTH ends of the same link read
+    //   "we never granted back" — a symmetric accusation nobody can act on, and impossible if it were
+    //    true).  `Swarm_identity` puts the pair on `.c.keys` and only `prepub` in sc, and `Swarm_import`
+    //     explicitly DELETES sc.pub/sc.key after thawing — so `self.sc.pub` is undefined on every live
+    //      identity there has ever been.  `mine` was therefore always '', `got_mine` always null, and
+    //       every whole pier holding their grant got reported half-sealed forever.  The same read burned
+    //        `Radio_pub` (its comment: "the old c.keys.prepub read was ALWAYS undefined") in the other
+    //         direction — sc has the prepub, .c.keys has the pub, and neither store has both.
+    //  Read it the way the SELF-HEALER does (`Swarm_reaccept_incomplete`: `ident.c.keys.pub`) — which is
+    //   also why the condition never healed: the healer was looking at the real grant and finding it
+    //    present, while the badge was looking at a blank string and finding nothing.  With no live keys
+    //     at all we cannot judge consent, so say nothing rather than accuse both ends (`bail`).
     try {
         let self = this.Swarm_live_self()
         let peering = self ? this.Swarm_peering(self) : null
-        let mine = self ? String(self.sc.pub || '') : ''
-        for (const pier of (peering ? peering.o({ Pier: 1 }) : [])) {
+        let mine = self && self.c.keys ? String(self.c.keys.pub || '') : ''
+        for (const pier of (mine && peering ? peering.o({ Pier: 1 }) : [])) {
             let peer = pier.o({ Peering: 1 })[0]
             let theirs = peer ? String(peer.sc.pub || '') : ''
-            if (!theirs || (mine && theirs === mine)) continue
-            let got_mine = mine ? pier.o({ Grant: 1, by: mine })[0] : null
+            if (!theirs || theirs === mine) continue
+            let got_mine = pier.o({ Grant: 1, by: mine })[0]
             let got_theirs = pier.o({ Grant: 1, by: theirs })[0]
             if (got_mine && got_theirs) continue
             let who = pier.sc.friendly || theirs.slice(0, 8)

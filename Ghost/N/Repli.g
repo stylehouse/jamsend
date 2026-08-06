@@ -482,12 +482,37 @@ async Repli_park_want(w, pier, h):
         p.c.reply_from = h.to
         p.c.parked_at = Date.now()
         w.c.repli_parked = (w.c.repli_parked || 0) + 1
-        // §5.3 (Backpressure_todo.md): tell the sink it's not lost — ECN semantics, "not lost, stop
-        //  spending" — instead of leaving it to guess against an ambiguous 4s timeout. Ephemeral by the
-        //   FRAME RELIABILITY POLICY (Peeroleum.g): it is the response to a self-re-asking want, so
-        //    losing it costs nothing — the sink just falls back to the timer it already has. MUST ride
-        //     Peeroleum_send's ephemeral set AND Tribunal's ambient log map (§9.1) or it re-creates the
-        //      outbox melt / log flood those two lists exist to prevent.
+        // TRACE (2026-08-06, the human watching a live heist wedge at 254/255: "where it's rattling").
+        //  The park is rung 2 of the source-side ladder and until now it was INVISIBLE off-tab: the world
+        //   snap only carries the Story world, so a Pier's %parked_want children are unreachable from
+        //    `runner_ask world`, and the only other tell (Ra's L3 bark) is a console.log nobody can read
+        //     remotely. Mark it on the supply ring instead, where it gets a timestamp and an inter-mark
+        //      delta for free. FIRST park only — this sits inside the !counted latch, so a re-asked
+        //       offset marks once, not per want (the flood the throttles elsewhere exist to prevent).
+        if (typeof this.Radio_trace === 'function') {
+            this.Radio_trace(null, { ev: 'serve-park', id: String(h.id || '').slice(0, 8),
+                                     off: +(h.from_idx || 0), waiting: +(w.c.repli_parked || 0) })
+        }
+    }
+    // §5.3 (Backpressure_todo.md): tell the sink it's not lost — ECN semantics, "not lost, stop
+    //  spending" — instead of leaving it to guess against an ambiguous 4s timeout. Ephemeral by the
+    //   FRAME RELIABILITY POLICY (Peeroleum.g): it is the response to a self-re-asking want, so
+    //    losing it costs nothing — the sink just falls back to the timer it already has. MUST ride
+    //     Peeroleum_send's ephemeral set AND Tribunal's ambient log map (§9.1) or it re-creates the
+    //      outbox melt / log flood those two lists exist to prevent.
+    //  ANSWER EVERY RE-ASK, not just the first (the human 2026-08-06, a heist frozen at 120/137 with the
+    //   source showing nothing going out).  This send used to sit INSIDE the !counted latch, so the second
+    //    and every later ask for the same offset got total SILENCE — and silence is the one thing the sink
+    //     cannot read: its park suspension is bounded (PARK_CEIL), so it expires, the sink re-asks, and the
+    //      answer is nothing at all.  From the sink's side that is indistinguishable from a dead source, and
+    //       it burns the backoff ladder to ×8 against a source that is working perfectly and just slow.  The
+    //        latch was right to keep the COUNTER and the trace one-shot (that is the flood it exists to
+    //         prevent); it was wrong to gate the reply.  Throttled instead, well under PARK_CEIL so a
+    //          suspension always gets refreshed before it lapses.
+    let PARK_REPLY_MS = +(w.c.repli_park_reply_ms || 2000)
+    let nowp = Date.now()
+    if (nowp - (p.c.told_at || 0) > PARK_REPLY_MS) {
+        p.c.told_at = nowp
         let seq = this.Pier_next_seq(pier)
         let body = new TextEncoder().encode('parked')
         let bh = await this.Peeroleum_body_digest(body)
@@ -560,6 +585,15 @@ Repli_serve_miss(w, h, why):
     w.c.serve_miss_ts[id] = nowms
     let from = h && h.from ? String(h.from).slice(0, 8) : '?'
     console.log(`◈✗ serve want id=${id.slice(0, 8)}@${+(h && h.from_idx || 0)} ← ${from} — ${why}`)
+    // TRACE (2026-08-06): rung 1 of the source ladder — the want ARRIVED and could not be answered.
+    //  Rides the same 5s-per-id throttle as the log above, so it costs one mark per stuck track per 5s.
+    //   Distinguishing this from `serve-park` is the whole point: a MISS means the source cannot find the
+    //    record at all (id-space or a swept lib), a PARK means it found it and is waiting on bytes. They
+    //     look identical from the sink — both are simply silence — and they want opposite fixes.
+    if (typeof this.Radio_trace === 'function') {
+        this.Radio_trace(null, { ev: 'serve-miss', id: id.slice(0, 8), off: +(h && h.from_idx || 0),
+                                 from: from, why: String(why || '').slice(0, 40) })
+    }
 
 // Repli_land_warn — the SINK-side attach probe (the human 2026-07-29 "downloader says 0/13 ... can you figure
 //  out why"): bytes arrive at the source's tx-meter rate but never STICK — a cid breach refuses them, or a page
@@ -726,6 +760,32 @@ async Repli_serve_chunks(w, pier, h, rec):
             // transfer HUD: the source's live serve cursor (uploader side) — what's going out, to whom.
             let x = this.Repli_xfer_get()
             if (x) { x.ts = now_serve; x.serves[String(rec.sc.id || '').slice(0, 8)] = { title: rec.sc.title || rec.sc.id, n: end, total: total, to: String(h.from || '').slice(0, 8), ts: now_serve } }
+        }
+    } else if (this.Heist_body_at(rec, from) != null) {
+        // RE-SERVE (2026-08-06) — the mark that was missing when it was most needed. `heist-serve` above is
+        //  gated on a FRONTIER ADVANCE (end > sent), which is right for a progress cursor and exactly wrong
+        //   for a retransmit: the source answering a re-ask for a page it already sent leaves NO mark at all.
+        //    So the live wedge (sink at 254/255, source traced n=255 of=255 then went silent) could not be
+        //     told apart from the source never hearing the re-ask — the two ends of the ladder, one silence.
+        //      Throttled per rec like its sibling; a healthy transfer never re-serves, so this ring stays quiet.
+        let now_re = Date.now()
+        if (now_re - (rec.c.reserve_mark_ts || 0) > 2000) {
+            rec.c.reserve_mark_ts = now_re
+            this.Radio_trace(null, { ev: 'heist-reserve', id: String(rec.sc.id || '').slice(0, 8),
+                                     at: from, n: end, of: total, to: String(h.from || '').slice(0, 8) })
+        }
+        // ...AND ON THE HUD (the human 2026-08-06: the stuck track "disappeared from the uploaded side").
+        //  The serve row only ever got written on a FRONTIER ADVANCE, so a source doing nothing BUT retransmits
+        //   — precisely the state worth watching — left its row's ts frozen, and TransferFace shows the four
+        //    most-recent serves, so it sank out of sight behind healthier transfers.  The uploader looked idle
+        //     while it was working hardest.  `re` marks it a retransmit so the row reads as repair, not progress.
+        let xr = this.Repli_xfer_get()
+        if (xr) {
+            let k = String(rec.sc.id || '').slice(0, 8)
+            let e = xr.serves[k] || (xr.serves[k] = {})
+            e.title = rec.sc.title || rec.sc.id; e.n = Math.max(+(e.n || 0), end); e.total = total
+            e.to = String(h.from || '').slice(0, 8); e.ts = now_re; e.re = (+(e.re || 0)) + 1
+            xr.ts = now_re
         }
     }
     await this.Repli_send_lines(w, pier, h.to, h.from, out.join('\n'), bufmap)

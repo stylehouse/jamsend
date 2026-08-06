@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return 'ffc2a4f47ed28216~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return 'e5898a2b9b1719cf~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1663,6 +1663,14 @@ async Ra_transcode_pump(w) {
             if (p.c.parked_at && Date.now() - p.c.parked_at > 20000 && Date.now() - (p.c.warned_at || 0) > 10000) {
                 p.c.warned_at = Date.now()
                 console.log(`◈⚠ transcode STALLED — parked want id=${id} from_idx=${p.sc.from_idx} waiting ${Math.round((Date.now() - p.c.parked_at) / 1000)}s — the encoder frontier never reached it`)
+                // TRACE (2026-08-06): the L3 bark on the supply ring, so a wedged park is legible from
+                //  `runner_ask world` instead of only in a console nobody can read remotely. Same 10s
+                //   re-bark throttle, so a permanently stuck park is a slow drumbeat, not a flood.
+                if (typeof this.Radio_trace === 'function') {
+                    this.Radio_trace(null, { ev: 'park-stall', id: String(id || '').slice(0, 8),
+                                             off: +(p.sc.from_idx || 0),
+                                             secs: Math.round((Date.now() - p.c.parked_at) / 1000) })
+                }
             }
             let rec = this.Repli_find_record(w, id, lib)
             if (!rec) continue

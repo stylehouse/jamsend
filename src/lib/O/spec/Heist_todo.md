@@ -17,9 +17,19 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
 
 ## 0. Next move (read first)
 
-1. **Live-test the 2026-08-05 batch** (all compiled, none verified on a real tab): the `%Haul`
-    rename, the resume fix in §7, the `- `→`0 ` land rule in §5, and the four HaulFace fixes in §6.
-     Two piers hauling from each other is the test the human has set up.
+1. **The two-pier live test HAPPENED (2026-08-06) and it was worth it — read §4.1 first.** The human
+    ran a real 8-track haul between two tabs. It wedged twice, at two different rungs, and both were
+     real bugs invisible to every Book: an intra-page hole that was never re-asked
+      (`Backpressure_todo.md` §3.1b, fixed — the haul went from frozen at 254/255 to landing the
+       track) and then the source going **permanently deaf after three answers** (§4.1, fixed). What
+        this says about the shape of the coverage: **no Book anywhere mentions `rummage`**, so the
+         whole materialise-ask protocol is untested, and both bugs needed a real multi-track haul
+          against a real peer to appear at all. The 2026-08-05 batch (the `%Haul` rename, §7's resume
+           fix, §5's `- `→`0 ` land rule, §6's four HaulFace fixes) rode along in that run without
+            surfacing anything, but none of them was checked *individually* — treat them as exercised,
+             not as verified.
+   **Next on this thread:** the regression gate §4.1 says is owed, and the repeated
+    `heist-release` in §4.2.
 2. **`%pub` standardisation, part 2.** `%pub` means a pier's prepub — true everywhere except four
     identity carriers that put a FULL key under `pub`: the roster `%Identity` row (`Swarm.g:1946`),
      `%Peering` (`Swarm.g:1171`), `%HostedIdentity` and `%Runner` (`LiesLies.svelte:1593/1607`).
@@ -122,6 +132,72 @@ The fix is not a bigger `OVERLAP` — it is making the pre-ask independent of th
   drives `Ra_pull_beat` for every un-landed pick every beat, which is the all-parallel behaviour
    that ate 3GB on the source. Only reachable from `HeistSetup.svelte:139`, the chooser path the
     code itself calls dormant. If every progress bar ever advances at once, that is where you are.
+
+### 4.1 The source went permanently deaf after three answers
+ *(FOUND + FIXED 2026-08-06, on the human's live two-pier heist)*
+
+The ask above is only half a round trip. The other half — `Heist_rummage_answer`, driven from the
+ source's `%Rummage` sweep (`Heist.g:~1461`) — bounded its work with
+
+```
+let n = +(ask.c.answers || 0)
+if (n >= 3) continue                 // "re-answer a FEW times"
+```
+
+whose comment says it exists to heal **one lost answer frame**. That is an *episode*-scoped
+ concern, but it was keyed to a **session**-scoped particle:
+
+- `Heist_rummage_ask` is **idempotent by key** — `bay.o(key)[0]`, and only `.bump()`s an existing ask.
+- It carries `repli_loc ['Rummage','want','pier']`, so at the source each re-ask **upserts onto the
+   same mirror particle**. By design; the header says so.
+- `.c.answers` therefore lives on a particle that is never replaced and never reset.
+
+So the bound was really *"answer this peer about this ref three times per session, ever"*. Ask #4
+ onward was silently dropped while the asker re-asked every 4s and re-censused every 20s **forever**.
+
+**The evidence.** Sink trace: `reheal [088fda97] unanswered=51 … 121` climbing, and
+ `heist-noprogress asked=124 landed=1 of=8 secs=267`. Source trace over the identical window:
+  **nothing** — no `heist-serve`, no census, no answer of any kind. One track had completed; the
+   other seven could never start, because a pending materialise shuts the window (§4 above), so the
+    whole 8-track haul was held by one deaf ref.
+
+**Why nothing caught it.** Grep the tree: **no Book anywhere mentions `rummage`.** The entire
+ describe-folder / materialise-one-file protocol — the path by which every real multi-track heist
+  gets its tracks — has *zero* fixture coverage. It only manifests past the third ask, i.e. only on
+   a real multi-track haul against a real peer, which is exactly what no Book does.
+
+**The fix.** The asker now stamps a monotonic attempt number, `ask.sc.n`, and the source re-arms its
+ ≤3 budget when that number moves (`ask.c.answered_epi`). The ≤3 / ≥5s throttle still holds *within*
+  one episode, which is all it was ever for. An asker too old to stamp `n` pins at `'0'` and keeps
+   the old behaviour, so it is safe against a stale peer. No fixture carries a `%Rummage`, so this
+    moved no snap; the seven-Book transport set is at exact parity across the change.
+
+**The standing rule:** *a bound meant to survive one lost frame must be scoped to the ask, not to
+ the particle the ask lands on* — because an idempotent-by-key ask **has no arrival event** to hang
+  a reset on. An upsert whose `sc` did not change does not even bump a version, so "the peer asked
+   again" and "nothing happened" are the same observation unless the asker makes them different.
+
+**Still owed:** a regression gate. It needs a Book with two piers that asks the same ref four times
+ and requires the fourth to be answered — the shape `MusuBuddy`'s deliberate shed punch uses for
+  §3.1b of `Backpressure_todo.md`. `MusuHeist` has the two piers but never touches the rummage path.
+
+### 4.2 `heist-release` fired four times for one record — OPEN
+ *(observed 2026-08-06, same run; not diagnosed, not fixed)*
+
+The source's trace carried `heist-release [54fef1fc] of=255` **four times** for the one record,
+ 28s / 20s / 14s / 62s apart. `Heist_release_rec` returns early when the rec has no
+  `%Original`/`%Lossy` children, so for it to fire again the bodies must have come **back** between
+   releases — i.e. A3's parked-want producer re-materialised the file (`pcm-read bytes=66631692`,
+    a 65MB read plus hash) and the 20s idle sweep dropped it again, repeatedly.
+
+That is a plausible second contributor to the human's *"burning CPU!"* which §3.1b does **not**
+ explain: a track the sink has already completed being re-read off disk every 20-60s.
+
+Check it against the two fixes above before chasing it — with intra-page holes healed (§3.1b) and
+ the source no longer deaf (§4.1), the re-ask that re-parks the want may simply stop, and this with
+  it. If it survives, the release gate (`sent >= tot && want_ts idle > RELEASE_IDLE`) is asserting
+   "I have sent it all" where it means "they have got it all", and wants a confirmed term — which is
+    `Backpressure_todo.md` §5.6's ack-clock, not a local patch.
 
 ## 5. Landing
 

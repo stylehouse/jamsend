@@ -52,12 +52,15 @@
         }
     })
 
-    // bar height %: log-ish scale so a trickle still shows and a full ~3MB/s pull pins near the top.
-    const barPct = (kbps: number) => Math.max(0, Math.min(100, Math.round(Math.log2(1 + Math.max(0, kbps)) * 11)))
     const pct = (held: number, total: number) => total > 0 ? Math.round(held * 100 / total) : 0
+    // THE FLOOR (the human 2026-08-06, twice): the graph used to autoscale to whatever was flowing, so
+    //  3KB/s of ack chatter drew the same mountain as a real 3MB/s pull — "the shape lies about magnitude,
+    //   which is the one thing a graph is for".  Floor the vertical extent at 200KB/s so a trickle draws a
+    //    trickle; only a transfer that genuinely exceeds the floor is allowed to rescale past it.
+    const FLOOR_KBPS = 200
     const sparkPath = (s: number[]) => {
         if (!s.length) return ''
-        const max = Math.max(1, ...s)
+        const max = Math.max(FLOOR_KBPS, ...s)
         const w = 100 / Math.max(1, s.length - 1)
         return s.map((v, i) => `${i === 0 ? 'M' : 'L'}${(i * w).toFixed(1)},${(18 - (v / max) * 16).toFixed(1)}`).join(' ')
     }
@@ -71,12 +74,9 @@
     </div>
 
     <div class="tf-meters">
-        <div class="tf-bar-wrap" title="download rate">
-            <div class="tf-bar tf-rx" style="height:{barPct(view.rx)}%"></div>
-        </div>
-        <div class="tf-bar-wrap" title="upload rate">
-            <div class="tf-bar tf-tx" style="height:{barPct(view.tx)}%"></div>
-        </div>
+        <!-- the split up|down bars are GONE (the human 2026-08-06): two competing readings of one link,
+             and distracting.  The numbers in the head already say both directions; the spark says the
+             shape.  One reading of one link. -->
         <svg class="tf-spark" viewBox="0 0 100 18" preserveAspectRatio="none">
             <path d={sparkPath(view.spark)} />
         </svg>
@@ -101,7 +101,9 @@
                 <div class="tf-row">
                     <span class="tf-glyph tf-up">⇈</span>
                     <span class="tf-name">{s.title}</span>
-                    <span class="tf-n">{s.n}/{s.total} →{s.to}</span>
+                    <!-- ↻ = retransmits: the source re-sending pages it already sent. A row that only ever
+                         shows ↻ climbing is repair, not progress — the shape of a sink stuck near the end. -->
+                    <span class="tf-n">{s.n}/{s.total}{s.re ? ` ↻${s.re}` : ''} →{s.to}</span>
                     <div class="tf-track"><div class="tf-fill tf-fill-tx" style="width:{pct(s.n, s.total)}%"></div></div>
                 </div>
             {/each}
@@ -153,10 +155,7 @@
     .tf-rate { font-size: 11px; font-weight: 700; margin-left: auto; color: #eafff0; }
     .tf-u { font-size: 8px; opacity: 0.6; }
     .tf-meters { display: flex; align-items: flex-end; gap: 4px; height: 20px; margin-bottom: 4px; }
-    .tf-bar-wrap { width: 8px; height: 20px; background: #0a1418; border-radius: 2px; display: flex; align-items: flex-end; overflow: hidden; flex: none; }
-    .tf-bar { width: 100%; border-radius: 2px 2px 0 0; transition: height 0.22s ease-out; }
-    .tf-rx { background: #57c777; }
-    .tf-tx { background: #5aa9e6; }
+    /* .tf-bar-wrap/.tf-bar/.tf-rx/.tf-tx went with the split up|down bars (2026-08-06) */
     .tf-spark { flex: 1; height: 20px; }
     .tf-spark path { fill: none; stroke: #57c777; stroke-width: 1; opacity: 0.7; vector-effect: non-scaling-stroke; }
     .tf-sec { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }

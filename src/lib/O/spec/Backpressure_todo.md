@@ -19,7 +19,47 @@ Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribu
 
 ---
 
+**Scope note (2026-08-06):** this doc owns the **transfer control loop** — pacing, the clocks, the
+ req shape, the defects in §3. The evening of 2026-08-06 produced a pile of failures that are NOT
+  that (the boot wait, one-sided reload, Vyto never settling, a starved radio, dropped continuations,
+   an `ive_got` storm) and they live in **`Composition_todo.md`**, together with the symptom ledger in
+    the human's own words and the one repeated mistake behind most of §3. Read that first if you are
+     here because "it all falls apart when everything runs at once"; read this if you are here because
+      "the pull is paced wrong".
+
 ## 0. Next move (read first)
+
+00. **BUILD `MusuNeGrind` — the composition Book (the human 2026-08-06: "perhaps we need a two-tab
+     bulky-binary-Repli situation to see how much of the problematics come with us there").** This is
+      the top item and it is not a convenience, it is a **missing test level**. Every defect found on
+       2026-08-06 — §3.1b, §3.1c, §3.1d, the landing race, the `ive_got` storm — lived in COMPOSITION,
+        and not one of them was reachable by any `Musu*` Book, because each of those runs one mechanism
+         in a quiet world. The human's own verdict: *"all these Musu\* tests really didn't prepare us
+          too well for the clusterfuck of them all together."* Correct, and structural.
+
+    **Shape** (copy `MusuVend`'s scaffold, `Heistation.g:653` — `Lake_link` loopback, two Piers, no FSA,
+     `Musu*` naming convention so `do_fn_for` dispatches by `w.sc.w`):
+     - Origin holds a %Library of a FEW records with MANY chunk particles each (enough that pages tile
+        and `Ra_pull_beat` runs over many beats — the single-page Books never exercise the pull loop).
+     - Follower pulls them while the radio plays and a %Mag replicates: all three at once, which is the
+        entire point.
+     - Then INJECT the stressors deliberately, each of which is a bug already paid for:
+        punch a chunk out of the middle of a page (§3.1b); release a source rec while a want is parked
+        on it (§3.1c); let a landing run while the puller is still beating (the landing race).
+
+    **Assert INVARIANTS, not a snap.** The fixture will be nondeterministic exactly like MusuBuddy
+     (real clock, real pacing), so the 500-line diff cannot be the gate — `%see` claims are:
+     - `held` never DECREASES except while that pick is landing
+     - no rec is released while a want is parked on it
+     - every asked page eventually lands or is explicitly parked
+     - **the beat never overruns 600ms for N consecutive ticks** ← the load-bearing one. Everything
+        else degrades *through* the beat, so this single claim would have caught the landing race, the
+         park/release livelock, and the `ive_got` storm. `Swarm_share_beat`'s skip counter already
+          measures it (`⏳ … skipping this tick (×221 so far)`); nothing asserts on it.
+
+    **A real two-TAB version needs two runners over the relay**, not one runner with two Piers — that
+     is the follow-on, and it is what would catch the one-sided-reload wedge (item 3 below). Build the
+      one-runner version first: it is deterministic enough to iterate on and needs no human present.
 
 0. **READ §3.1b FIRST (found + fixed 2026-08-06).** Every pull loop tested the *stride-aligned
     chunk* as its stand-in for "is this page missing", so a page that lost ONE chunk to the relay's
@@ -28,6 +68,18 @@ Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribu
        that single predicate**, not independent problems. Fixed by `Ra_page_hole`. The rule it
         leaves — *the unit of asking is a page, so the unit of needing must be a page* — governs
          anything §5.6 builds on this seam. Do not chase `Ra_source_pcm` on the old evidence.
+0b. **THEN §3.1c (found + fixed 2026-08-06, same day, from a live report).** §3.1b was not the last
+     of its family. The *source* freed a track's bytes while the sink was 17 chunks short, because
+      `rec.c.sent >= total` is a **high-water frontier standing in for coverage** — §3.1b's exact
+       mistake wearing the other hat — and because `PARK_CEIL` and `RELEASE_IDLE` were both 20000, so
+        the quiet a park *instructs* read as the disinterest a release *requires*. Fixed by making a
+         standing `%parked_want` veto the release, deriving `RELEASE_IDLE` from `PARK_CEIL`, and
+          answering every re-park instead of only the first. The rule: **a park is a contract, not a
+           hint** — anything that frees or evicts bytes must ask whether it promised them. §3.1d is the
+            small sibling (the overlap slot opened for a *stuck* track, not a *finishing* one).
+    **If you are hunting a new stall, grep for the pattern before you grep for the symptom:** a
+     high-water cursor (`sent`, `have`, `frontier`, `last_asked`) being asked a question about
+      coverage. That single shape has now produced three distinct bugs in two days.
 1. **DONE (2026-08-06): §5.1, §5.3, §5.4's narrow cut, and §5.2's attribution half.** Egress
     lanes carry bulk behind control with confessed shedding; a park signals the sink; the
      landing left the beat via `expecting()`; `Ra_pull_beat` samples per-haul goodput into the
@@ -210,6 +262,74 @@ Any of them can take seq `off+1` while `off` survives. The loop then reads the p
   pre-existing (un-accepted fixtures), not this. The general reason no Book moves: `Ra_page_hole` and
    `map[off]==null` differ *only* when a page has a hole with its first chunk present, which local
     Book transfers never produce.
+
+### 3.1c The source freed the bytes it had just promised to serve — the park/release collision
+ *(FOUND + FIXED 2026-08-06, the live report: "120/137 downloaded side, disappeared from the uploaded
+  side, but hasn't started turning up on disk yet! not even as a chrswap")*
+
+Read that report literally and it names its own cause. **"Disappeared from the uploaded side" IS
+ `Heist_release_rec`** — that function ends with `delete xf.serves[id8]`, so the row vanishing from the
+  transfer HUD is the source freeing the record's `%Body` bytes. It freed a track the sink was still
+   seventeen chunks short of. And nothing reached disk because landing is gated on `held >= total`, so
+    a pull that can never complete never writes — not even a `.crswap`.
+
+**Three faults compose into a livelock**, and each is individually defensible:
+
+1. **`rec.c.sent >= tot` is a high-water frontier, not coverage.** `Repli_serve_chunks` only ever
+    raises it (`if (end > sent) sent = end`), so it means *"the last page I shipped touched the end"*,
+     never *"every page has crossed at least once"* as the release sweep's comment claimed. This is
+      **§3.1b's mistake wearing the other hat** — there, a frontier stood in for coverage on the
+       *asking* side; here it does on the *freeing* side. One shed page out of the middle and the
+        frontier still reads `total`.
+
+2. **`PARK_CEIL` and `RELEASE_IDLE` were both 20000.** That is not a chosen relationship, it is a
+    collision. A park *instructs* the sink to go quiet for up to `PARK_CEIL` (§5.3 — "not lost, stop
+     spending"), and the release sweep reads that same enforced quiet as *"nobody wants these bytes"*.
+      **The source frees exactly what it promised, at roughly the moment the sink is allowed to ask
+       again.**
+
+3. **A re-park answered with total silence.** `Repli_park_want`'s `!p.c.counted` latch was right to
+    make the counter and the trace one-shot — that is the flood it exists to prevent — but the
+     `repli_parked` *reply* sat inside it too. So the second and every later ask for the same offset
+      got nothing back at all. The sink's suspension is bounded, so it expires, the sink re-asks, and
+       hears silence — **indistinguishable from a dead source**, and it burns the backoff ladder to
+        ×8 against a source that is working perfectly and merely slow.
+
+The cycle: release → sink re-asks → park (silent) → A3 re-materialises the file (**a 25MB disk read,
+ re-chunk and re-hash, every 5s**) → serves a page → 20s quiet → release again. That is the CPU burn,
+  and it is *caused* by the release rather than relieved by it: keeping the bytes would have made every
+   retry a memory hit.
+
+**The fix** — an outstanding promise outranks a memory policy:
+- `Heist_parked_ids(w)` (built **once per sweep**, never per rec) — any rec with a standing
+   `%parked_want` on a caster Pier **vetoes** its own release.
+- `RELEASE_IDLE` is now *derived* (`PARK_CEIL * 2 + 5000`), not restated, so the two constants cannot
+   drift back into agreement. A sink is owed its whole suspension plus a round trip to re-ask in.
+- The byte-cap belt sorts **promised last**. It must still be able to shed everything — it is what makes
+   the 3GB cliff structurally unreachable, so it can never be vetoed outright — but it gets to choose.
+- `Repli_park_want` answers **every** re-ask (throttled 2s, well under `PARK_CEIL`), so a suspension is
+   always refreshed before it lapses. Counter and trace stay one-shot.
+
+**The standing rule:** *a park is a contract, not a hint.* Anything that frees, evicts or expires bytes
+ must ask whether it has promised them first. The mirror of §3.1b's rule, and it generalises the same
+  way — **do not let a high-water mark answer a question about coverage.**
+
+*Also fixed in passing:* the HUD's serve row was only written on a **frontier advance**, so a source
+ doing nothing but retransmits — precisely the state worth watching — left its `ts` frozen and sank out
+  of the four-most-recent list. The uploader looked idle while it was working hardest. Re-serves now
+   write the row with a `↻n` retransmit count, so *repair* and *progress* are visibly different things.
+
+### 3.1d The overlap slot opened for a track that was stuck, not finishing
+ *(FIXED 2026-08-06, the live report: "downloads overlap a bit much now")*
+
+The in-flight window (`INFLIGHT` 2) opens a second slot once the active track is within `OVERLAP` (24)
+ chunks of done, to pre-ask the next one and beat the handoff latency. But *near done* was the whole
+  test. A track **wedged** near the end — the 120/137 shape above — satisfies it permanently, so it
+   propped the window open for as long as it stayed stuck, and the source was asked to materialise a
+    second 25MB track while it still owed bytes on the first. Two half-finished bars, twice the source
+     memory, neither finishing sooner. The slot now also requires the track to be **moving** (an advance
+      within 3s); *stalled* is the bench watchdog's job (45s → 60s off), not the overlap slot's. The
+       `pulls` electrode gained a `why:'frozen'` cause so the two are distinguishable in the ring.
 
 ### 3.2 The sink is blind to why a want went unanswered — a timeout is the weakest signal
 

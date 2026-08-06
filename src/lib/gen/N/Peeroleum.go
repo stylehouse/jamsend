@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '61175420be859024~g1' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '0fb8e946048f516f~g1' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -547,7 +547,48 @@ Peeroleum_send(w, frame) {
 //    serial inbox as %unemit,queued (its raw frame stashed on .c for the handler) and
 //     inbox.do() drains it (req_unemit per frame). feebly_ponder re-drives a think (Runtime asserted —
 //      we run inside the carrier's post_do) so a watching do_fn reacts this same run.
+// ── THE DELIVER ELECTRODE (2026-08-06, the human: "still burning CPU (downloader side) and likes pausing
+//     in Peeroleum_deliver / Peeroleum_book_unemit").  Pausing DevTools at random and landing in a function
+//      is a SAMPLE: it says where the time is without saying how much, or why — and the two candidate whys
+//       here want opposite fixes.  If the cost is per-FRAME work (the body digest, the inbox req drain) the
+//        answer is to move or batch it.  If it scales with INBOX DEPTH the answer is the bound, because
+//         `oai`/`served_before` both search that inbox per frame and the whole shape goes quadratic again
+//          exactly as it did before the 2026-08-05 pass — which is the failure mode worth catching early,
+//           since it looks identical from a stack sample and is a completely different bug.
+//  So report both together on the supply ring: frames/s, mean+max ms inside, inbox depth, and the percentage
+//   of wall clock this function owned.  Once a second, only while the wire is genuinely busy (>8 frames), and
+//    the per-frame cost is two Date.now() calls — a probe must never become the load it is measuring.
+//  A WRAPPER, not inline accounting: the body has a dozen early `return`s (ack, ephemeral, repli_want, the
+//   no-Pier drop, the inseq hold), and instrumenting each is how a probe ends up measuring five of them and
+//    silently missing the sixth — which would be the expensive one.  try/finally catches every exit, thrown
+//     ones included.  A nested delivery (a handler that delivers) double-counts into `ms`; none does today.
 async Peeroleum_deliver(w, frame) {
+    let dv = (w.c.dv = w.c.dv || { n: 0, ms: 0, max: 0, since: Date.now(), deep: 0, probe: 0 })
+    let dv_t0 = Date.now()
+    if (dv_t0 - dv.since >= 1000) {
+        // SILENT WHEN HEALTHY.  The ring is capped at 300 marks and it is the instrument every OTHER
+        //  diagnosis reads — a mark per second through a five-minute download would evict the heist
+        //   marks with its own telemetry and blind the next investigation to buy this one nothing.
+        //    So report only what is worth reporting: this function owning ≥10% of wall clock, or a
+        //     single delivery blocking ≥50ms (a frame-drop's worth). A healthy wire says nothing.
+        let busy = Math.round(dv.ms * 100 / (dv_t0 - dv.since))
+        if (dv.n > 8 && (busy >= 10 || dv.max >= 50) && typeof this.Radio_trace === 'function') {
+            this.Radio_trace(null, { ev: 'deliver', n: dv.n, ms: Math.round(dv.ms), mean: +(dv.ms / dv.n).toFixed(2),
+                                     max: Math.round(dv.max), inbox: dv.deep, busy: busy })
+        }
+        dv.n = 0; dv.ms = 0; dv.max = 0; dv.since = dv_t0; dv.probe = 1
+    }
+    dv.n = dv.n + 1
+    try {
+        return await this.Peeroleum_deliver_do(w, frame)
+    } finally {
+        let d = Date.now() - dv_t0
+        dv.ms = dv.ms + d
+        if (d > dv.max) dv.max = d
+    }
+
+},
+async Peeroleum_deliver_do(w, frame) {
     const H = this
     let h = frame.header
     // ── multicast: a to:@channel frame is a TOPIC broadcast, not a 1:1 Pier message (spec §18) ──
@@ -660,6 +701,16 @@ async Peeroleum_deliver(w, frame) {
     //    delivered right behind a rebirth pulse could book BEFORE the reset that was meant to clear the
     //     way for it.  Awaiting keeps the delivery path serial, which is what the rest of it assumes.
     if (h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase' || h.type === 'advertise' || h.type === 'swarm_hi' || h.type === 'pulse') { let on = w.c.on && w.c.on[h.type]; if (on) await on(w, pier, frame); H.feebly_ponder(); return }
+    // ive_got is DELIBERATELY NOT in this list, though it IS ephemeral on SEND (:420).  Adding it here —
+    //  tried 2026-08-06, backed out the same evening — turned SwarmGot (the Book that IS this frame) to
+    //   0.33 while SwarmShare/SwarmWire/SwarmChain stayed green, which is well past the fixture drift the
+    //    move alone would explain.  The asymmetry is the point and it is not an oversight: the SENDER may
+    //     skip reliability for a boast that supersedes itself, but the RECEIVER still books it, so the
+    //      reused-seq guard keeps its memory of having served it.  Before trying this again, settle whether
+    //       SwarmGot asserts on the boast being BOOKED (then Book and change move together) or on it being
+    //        DELIVERED (then this is simply wrong).  The duplicate-RECV storm in the human's log is NOT
+    //         sender retransmits — :420 already ruled those out — so look for it in the relay fan-out or in
+    //          Swarm_gossip_music, which fires on EVERY swarm_hi (Swarm_hi_hear) and is unthrottled.
     // no_protocol — the back-signal RETURNING (a peer telling us it has NO handler for a type WE sent).
     //  Ephemeral like ack: dispatch to an optional handler (a consumer surfaces "peer lacks X" + stands
     //   its own retry down) and RETURN. Critically it books NO inbox item and sends NOTHING back — never
@@ -681,6 +732,10 @@ async Peeroleum_deliver(w, frame) {
     //     drains overlap, so no in-flight guard is needed. The inseq gate below decides WHICH frames book.
     let inbox = pier.oai({inbox: 1})
     inbox.c.up = pier   // do() climbs c.up to the House to resolve req_unemit; stamp the inbox→pier link
+    // the depth half of the electrode: ONE walk per second (the window sets `probe`, this consumes it), not
+    //  one per frame — a depth probe that walked the inbox per frame would be the very cost it is looking for.
+    let dvd = w.c.dv
+    if (dvd && dvd.probe) { dvd.probe = 0; dvd.deep = inbox.o({req: 'unemit'}).length }
     // ── transport-gating: engage the seq discipline ONLY on a lossy carrier ──
     // A reliable+ordered carrier (the ws relay, the clean mock) already delivers in order, exactly once,
     //  so an ordering layer on top is redundant — and the redundancy is what bites. An ephemeral (ack/ping/
@@ -724,7 +779,7 @@ async Peeroleum_deliver(w, frame) {
             H.feebly_ponder()
             return
         }
-        await inbox.do(); await H.Peeroleum_rollup_faulty(pier); H.Peeroleum_bound_inbox(inbox, w, pier); H.feebly_ponder(); return
+        await inbox.do(); await H.Peeroleum_rollup_faulty(pier); H.Peeroleum_bound_safe(inbox, w, pier); H.feebly_ponder(); return
     }
     // ── inbound seq discipline (Reliable.g: inseq_admit) — LOSSY carriers only ──
     pier.c.inseq = pier.c.inseq || {last: 0, buffered: []}
@@ -753,7 +808,7 @@ async Peeroleum_deliver(w, frame) {
     }
     await inbox.do()
     await H.Peeroleum_rollup_faulty(pier)
-    H.Peeroleum_bound_inbox(inbox, w, pier)
+    H.Peeroleum_bound_safe(inbox, w, pier)
     H.feebly_ponder()
 
 },
@@ -836,6 +891,36 @@ Peeroleum_served_before(inbox, h) {
 //   boundary shows that step's whole traffic, and Story fixtures assert it.  The heaviest Book step
 //    on record books 46, so this bound never fires in a Book — it is a production-only ceiling, and
 //     the boundary cull stays the thing Books actually exercise.
+// Peeroleum_bound_safe — the ONE way the delivery path is allowed to call the bound.  Trimming is
+//  BOOKKEEPING, not correctness — the bound's own header says so ("it is allowed to run LATE, just
+//   never never") — so a throw in it must not be able to damage the delivery it runs beside.  One bad
+//    log line threw a ReferenceError and did exactly that (see the note at the backstop below).
+//  WHAT IT ACTUALLY COST, corrected 2026-08-06 after review — the first write-up of this said "every
+//   arriving frame died with it", and that is WRONG.  Both call sites (:739, :768) run this AFTER
+//    `await inbox.do()` and `Peeroleum_rollup_faulty`, so the frame was already booked, dispatched and
+//     acked; the throw lost the TRIMMING, the trailing `feebly_ponder()` wake, and left the deliver
+//      promise rejected.  That is still bad — untrimmed is how the inbox ran to 3400 unemits and every
+//       per-frame inbox query went O(depth) — but it is a slow strangle, not frame loss.
+//  Worth naming plainly: that first write-up was a comment asserting a property the code did not
+//   support, which is the exact failure Composition_todo §2 warns about in its own last line ("the
+//    comment is not evidence").  Written by the person who wrote the rule, one file away from it.
+//  The asymmetry is deliberate and worth keeping straight: `inbox.do()` and `Peeroleum_rollup_faulty`
+//   above are NOT wrapped, because those ARE the delivery — a throw there is a real failure and must
+//    stay loud. This one is housekeeping running in the same breath, and housekeeping gets a net.
+//  The catch is loud + throttled, never silent: a permanently-throwing bound means the inbox is no
+//   longer being trimmed, which is a slow leak toward the 6000 index ceiling — survivable for now,
+//    but nobody should have to find it by watching memory.
+Peeroleum_bound_safe(inbox, w, pier) {
+    try { this.Peeroleum_bound_inbox(inbox, w, pier) }
+    catch (er) {
+        let nowms = Date.now()
+        if (nowms - (w.c.bound_throw_ts || 0) > 5000) {
+            w.c.bound_throw_ts = nowms
+            console.log(`🛰⚠ inbox bound THREW (delivery survived — trimming did not): ${er && er.message || er}`)
+        }
+    }
+
+},
 Peeroleum_bound_inbox(inbox, w, pier) {
     const H = this
     // THE STRIDE (2026-08-05, the same DevTools-pause hunt as the rollup gate).  This does THREE
@@ -869,11 +954,42 @@ Peeroleum_bound_inbox(inbox, w, pier) {
     //   state, so a flood of never-finishing reqs can still not pin the pump.
     let live = inbox.o({req: 'unemit'})
     if (live.length >= 2000) {
-        if (live[0]) inbox.drop(live[0])
+        // DRAIN TO THE CAP, not one row per visit (2026-08-06, from the human's own `deliver` electrode:
+        //  `inbox` climbing 3071 → 3431 monotonically across 22 minutes, i.e. 70% past a cap that was
+        //   supposedly enforced).  This dropped exactly ONE unemit, and only on the 1-in-50 stride above,
+        //    so the backstop's maximum drain rate was one row per fifty frames — while the very line it
+        //     prints says "frames are arriving faster than they finish".  It diagnosed the flood correctly
+        //      and then shed at ~2% of the rate needed to answer it, so depth grew without bound.
+        //  That is a RUNAWAY, not a leak: every per-frame inbox query is O(depth) (the first key hits the
+        //   X index, every later key is a linear filter over the result — Stuff.o_query), so a deeper
+        //    inbox makes each frame slower, which makes the inbox deeper.  The electrode's other half is
+        //     the same story from the other end — one deliver call blocking 3–5s with `max ≈ ms`.
+        //  A bound whose drain rate does not scale with the overshoot is decorative.  Shed the whole
+        //   excess in one pass: it is O(excess) once, against O(depth) on every frame forever.
+        let excess = live.length - 2000
+        let k = 0
+        while (k < excess) { if (live[k]) inbox.drop(live[k]); k = k + 1 }
         let nowms = Date.now()
         if (nowms - (w.c.inbox_cap_warn_ts || 0) > 1000) {
             w.c.inbox_cap_warn_ts = nowms
-            console.log(`🛰☠ inbox backstop: pier ${pier%pub} holds ${live.length} unemits (cap 2000) — dropped oldest seq=${live[0]?.sc?.seq} type=${live[0]?.sc?.type}; frames are arriving faster than they finish`)
+            // `%` SUGAR DOES NOT SURVIVE A TEMPLATE LITERAL (the human 2026-08-06, live crash:
+            //  `deliver threw ReferenceError: pub is not defined at Peeroleum_bound_inbox`).  This read
+            //   `${pier%pub}`; the compiler leaves `%` alone inside a backtick string, so it emitted the
+            //    JS `pier % pub` — modulo against an undeclared name — and THREW.  Lift it to a plain
+            //     local first; `%` outside a literal compiles fine, which is why every other use is safe
+            //      (a repo-wide grep finds this was the only one).
+            //  WHY IT MATTERED SO MUCH FOR ONE LOG LINE: this branch runs ONLY at the 2000 cap, i.e. only
+            //   once the inbox is already melting — no Book ever reaches it. So the STRUCTURAL BACKSTOP,
+            //    the thing whose whole job is to keep the pump alive through a flood, instead threw on
+            //     every visit once the flood arrived — and the one thing it exists to do, TRIM, was the
+            //      one thing that stopped happening. The inbox then grew unbounded, and since every
+            //       per-frame inbox query is O(depth), each frame got slower as it grew. A safety net
+            //        that only runs in the emergency is a safety net nothing ever tests.
+            //  (Corrected 2026-08-06: the first version of this note claimed the frame was LOST. It was
+            //   not — :739/:768 call the bound after `inbox.do()`, so the frame was already dispatched
+            //    and acked. The damage was the missing trim, not a dropped frame. See Peeroleum_bound_safe.)
+            let who = String(pier.sc.pub || '').slice(0, 8)
+            console.log(`🛰☠ inbox backstop: pier ${who} holds ${live.length} unemits (cap 2000) — dropped oldest seq=${live[0]?.sc?.seq} type=${live[0]?.sc?.type}; frames are arriving faster than they finish`)
         }
     }
 

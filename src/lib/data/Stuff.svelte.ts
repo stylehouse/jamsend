@@ -436,13 +436,21 @@ class StuffIO {
                 });
             }
             else {
-                // filter results we are already joined to
-                amongst.forEach(n => {
-                    if (!this.n_matches_kv(n,k,v)) {
-                        // disincludes results
-                        M = M.filter(out => out != n)
-                    }
-                });
+                // filter results we are already joined to.
+                // WAS O(M²) (2026-08-06, the human "burning CPU … likes pausing in Peeroleum_deliver /
+                //  Peeroleum_book_unemit").  The old shape walked `amongst` and, for EVERY row that failed,
+                //   rebuilt the whole result with `M = M.filter(out => out != n)` — one full array scan and
+                //    allocation per REJECTED row.  Only the first key of a query is indexed (o_kv above);
+                //     every later key lands here, so a query whose first key is broad and whose second key is
+                //      narrow — which is exactly `inbox.oai({req:'unemit', seq, type, body_hash, body_len})`,
+                //       where `req:'unemit'` matches the entire inbox and `seq` matches one row — rejects
+                //        nearly everything and pays the quadratic in full, per frame, at heist rates.
+                //  `n_matches_kv` is pure and this keeps the same rows in the same order, so the rewrite is
+                //   exact; it is the identical filter, expressed once instead of once per rejection.
+                //  NOTE for anyone here about to reorder a query to put the narrow key first: you cannot do
+                //   that on an oai()/i(), because the FIRST key of an sc is the particle's MAINKEY. Fixing
+                //    the primitive was the only move that did not change what gets created.
+                M = amongst.filter(n => this.n_matches_kv(n,k,v))
             }
             
             amongst = M;

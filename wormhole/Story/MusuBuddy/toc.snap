@@ -5,42 +5,42 @@ story:MusuBuddy
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=0.741
-      sample=0.763,at=1785869331
-      sample=0.627,at=1785869387
-      sample=0.796,at=1785870786
-      sample=0.555,at=1785870855
-      sample=0.555,at=1785870864
-      sample=0.57,at=1785870894
-      sample=0.919,at=1785905962
-      sample=0.919,at=1785905966
-      sample=0.856,at=1785905988
+    TimeTotal:beliefs,avg=0.781
       sample=0.849,at=1785945181
-    TimeTotal:step,avg=0.053
-      sample=0.054,at=1785869331
-      sample=0.045,at=1785869387
-      sample=0.057,at=1785870786
-      sample=0.04,at=1785870855
-      sample=0.04,at=1785870864
-      sample=0.041,at=1785870894
-      sample=0.066,at=1785905962
-      sample=0.066,at=1785905966
-      sample=0.061,at=1785905988
+      sample=0.849,at=1785945516
+      sample=0.81,at=1785945659
+      sample=0.81,at=1785945681
+      sample=0.81,at=1785945685
+      sample=0.81,at=1785945685
+      sample=0.724,at=1785945719
+      sample=0.634,at=1785945735
+      sample=0.769,at=1785949102
+      sample=0.741,at=1785949372
+    TimeTotal:step,avg=0.056
       sample=0.061,at=1785945181
+      sample=0.061,at=1785945516
+      sample=0.058,at=1785945659
+      sample=0.058,at=1785945681
+      sample=0.058,at=1785945685
+      sample=0.058,at=1785945685
+      sample=0.052,at=1785945719
+      sample=0.045,at=1785945735
+      sample=0.055,at=1785949102
+      sample=0.053,at=1785949372
   step,dige:e1a5aeca98f024c8
   step=2,dige:5c227881b271e616
     Assertion:the-stock-pages-under,sentence:the stock pages under the shuffle mag — every record stands in a bounded cloud page never flat on the shelf
   step=3,dige:0276f02d5fc3d4b7
-  step=4,dige:010cee310604bc4b
-  step=5,dige:20e8f0a77d7f0cf6
-  step=6,dige:cd32a32d065365cd
-  step=7,dige:317f5c8994bb9474
-  step=8,dige:53cba7a5f49bda42
-  step=9,dige:6ec8c72c2bea150f
-  step=10,dige:08087c8695995075
+  step=4,dige:070b1a38841283d1
+  step=5,dige:2c2f91519732c262
+  step=6,dige:a4d8659a1ea7c262
+  step=7,dige:16e98155fb57b7f2
+  step=8,dige:ce9340d6e1a6995b
+  step=9,dige:f350859bc4c1d8d6
+  step=10,dige:239c8e4b5cc50b01
     Assertion:the-browsed-card-pulled,sentence:the browsed card pulled its record whole and byte-faithful — the follower heard real seconds off the crossed chunks while the unbrowsed husk kept its promise unspent
-  step=11,dige:0539b16ad4f6d7aa
+  step=11,dige:33996142a8911847
     Assertion:the-jam-ledger-reads,sentence:the jam ledger reads spin like grab in order and the grabbed keeper stands whole in the listeners own shelf
-  step=12,dige:d15a59f7d39440da
-  step=13,dige:3414a9a0e0f76883
-  step=14,dige:8c0021eec5f6ae6a
+  step=12,dige:d6a32351b7e152f9
+  step=13,dige:d4c498f51c5c54ef
+  step=14,dige:83555a52b6548294

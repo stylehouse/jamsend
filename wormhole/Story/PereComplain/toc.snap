@@ -4,7 +4,7 @@ story:PereComplain
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.019
+    TimeTotal:beliefs,avg=0.02
       sample=0.022,at=1784683336
       sample=0.016,at=1784683366
       sample=0.018,at=1784683384
@@ -12,6 +12,7 @@ story:PereComplain
       sample=0.016,at=1785906885
       sample=0.014,at=1785906891
       sample=0.01,at=1785906895
+      sample=0.026,at=1785966254
     TimeTotal:step,avg=0.005
       sample=0.006,at=1784683336
       sample=0.004,at=1784683366
@@ -20,6 +21,7 @@ story:PereComplain
       sample=0.004,at=1785906885
       sample=0.004,at=1785906891
       sample=0.003,at=1785906895
+      sample=0.007,at=1785966254
   step,dige:a05e1a3ef992cc0c
   step=2,dige:9bb8da310bbc56ff
   step=3,dige:abea2ef97b9a79f3

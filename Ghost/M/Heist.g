@@ -243,6 +243,21 @@ Heist_release_buf(ch):
 //       particles makes has_body honestly 0, so the A3 parked-want producer re-reads the file on demand.  The
 //        rec HEAD (id/total/body_hash/path/re) is untouched — the offer's promise stands, only the bytes go.
 //         drop() feeds the general compactor at 500 ([[drop-leaves-index-giant-stuff]]); ~95 drops/track is fine.
+// Heist_parked_ids — the ids a source has an OUTSTANDING PROMISE on: every %parked_want standing on any
+//  caster Pier.  A park is not a hint, it is a contract ("not lost, stop spending" — the repli_parked the
+//   sink suspends its RTO on), and the release sweep must not free the very bytes it has promised to ship.
+//  Built ONCE per sweep, never per rec: the piers are few and the parks are few, but the sweep walks every
+//   rec of every serve-lib, and a per-rec re-walk is how an O(N) guard becomes an O(N²) one.
+Heist_parked_ids(w):
+    let ids = {}
+    let piers = []
+    if (w.c.tx) piers.push(w.c.tx)
+    for (const cp of (w.c.repli_casters || [])) { if (!piers.includes(cp)) piers.push(cp) }
+    for (const pier of piers) {
+        for (const p of pier.o({ parked_want: 1 })) { if (p.sc.id != null) ids[String(p.sc.id)] = 1 }
+    }
+    return ids
+
 Heist_release_rec(rec):
     let bodies = rec.o({ Original: 1 })
     for (const ch of rec.o({ Lossy: 1 })) bodies.push(ch)
@@ -1340,6 +1355,15 @@ async Heist_rummage_ask(w, tx, me, them, seed, want):
         //  first at the mirror (a bare value is not id-ish to Repli_loc_keys); a runtime hint, never snapped.
         ask.c.repli_loc = want ? ['Rummage', 'want', 'pier'] : ['Rummage', 'seed', 'pier']
     }
+    // ASK EPISODE (2026-08-06) — a monotonic attempt number, so the SOURCE can tell a genuinely fresh
+    //  ask from the identical particle it already answered.  It cannot otherwise: this ask is idempotent
+    //   by key (bay.o(key)[0] above), it rides `repli_loc` so the landing UPSERTS onto the same mirror
+    //    particle, and an upsert whose sc did not change does not even bump — a re-ask is therefore
+    //     indistinguishable from silence.  That turned the source's ≤3 answer budget, meant to heal ONE
+    //      lost answer frame, into "answer this peer about this ref three times per session, ever".
+    //  A plain incrementing string, so it stays a clean scalar; nothing queries by it, and no fixture
+    //   in the tree carries a %Rummage, so this moves no snap.
+    ask.sc.n = '' + (+(ask.sc.n || 0) + 1)
     ask.bump()
     return await this.Repli_offer(w, tx, me, them, ask)
 
@@ -1403,11 +1427,22 @@ async Heist_keep_beat(w, ident):
         // A2 now GCs bytes PER-REC (release-after-serve), so a lib can outlive a long serialized heist cheaply
         //  (husk recs, no bufs) — TTL widened to 30min so a lib isn't swept out from under an in-flight pull.
         let LIB_TTL = +(w.c.rummage_lib_ttl || 1800000)
-        let RELEASE_IDLE = +(w.c.heist_release_idle || 20000)
+        // RELEASE_IDLE MUST CLEAR PARK_CEIL (the human 2026-08-06: "120/137 downloaded side, disappeared from
+        //  the uploaded side, but hasn't started turning up on disk").  That disappearance is literally this
+        //   sweep — Heist_release_rec deletes the HUD's serve row — and the two constants were both 20000, which
+        //    is not a coincidence anyone chose, it is a collision.  A park TELLS the sink to go quiet for up to
+        //     PARK_CEIL (Ra_pull_beat), and this sweep reads that same enforced quiet as "nobody wants these
+        //      bytes any more".  So the source frees exactly what it has just promised to serve, at roughly the
+        //       moment the sink is allowed to ask again.  Derive it from the ceiling instead of restating the
+        //        number, so the two can never drift back into agreement: a sink is owed its whole suspension
+        //         PLUS a round trip to re-ask in before its bytes are fair game.
+        let PARK_CEIL = +(w.c.heist_park_ceiling || 20000)
+        let RELEASE_IDLE = +(w.c.heist_release_idle || (PARK_CEIL * 2 + 5000))
         let HOLD_CAP = +(w.c.heist_hold_cap || 268435456)   // ~256MB belt — never hit in serialized health (~2 tracks)
         let live = []
         let held_recs = []
         let held_bytes = 0
+        let parked_ids = this.Heist_parked_ids(w)
         for (const rl of w.c.rummage_libs) {
             if (rl && rl.c && (now - (rl.c.born || now)) < LIB_TTL) {
                 live.push(rl)
@@ -1420,9 +1455,18 @@ async Heist_keep_beat(w, ident):
                 for (const rec of this.Ra_recs(rl)) {
                     let tot = +(rec.sc.total || 0)
                     let bod = this.Heist_has_body(rec)
-                    if (bod > 0 && tot > 0 && +(rec.c.sent || 0) >= tot && now - (rec.c.want_ts || 0) > RELEASE_IDLE) {
+                    // `rec.c.sent >= tot` is a HIGH-WATER FRONTIER, not coverage (Repli_serve_chunks only ever
+                    //  raises it: `if (end > sent) sent = end`).  So it means "the last page I shipped touched
+                    //   the end", NOT "every page has crossed at least once" as the note below used to claim —
+                    //    the exact frontier-standing-in-for-coverage mistake Ra_page_hole fixed on the ASKING
+                    //     side (Backpressure_todo §3.1b).  One page shed out of the middle and the frontier still
+                    //      reads total.  It stays as the "we have done our visible job" half of the gate, but it
+                    //       cannot be the whole gate, so an outstanding PARK now vetoes the release outright.
+                    let promised = parked_ids[String(rec.sc.id || '')]
+                    if (!promised && bod > 0 && tot > 0 && +(rec.c.sent || 0) >= tot && now - (rec.c.want_ts || 0) > RELEASE_IDLE) {
                         this.Heist_release_rec(rec)
                     } else if (bod > 0) {
+                        rec.c.promised = promised ? 1 : 0
                         held_recs.push(rec)
                         held_bytes = held_bytes + (+(rec.sc.bytes || 0))
                     }
@@ -1436,7 +1480,12 @@ async Heist_keep_beat(w, ident):
         //  release the OLDEST-served first until under it.  Makes the 3GB cliff structurally unreachable; silent
         //   in serialized health.  A released-but-still-wanted rec re-parks + re-materialises (A3), so it heals.
         if (held_bytes > HOLD_CAP && held_recs.length) {
-            held_recs.sort((a, b) => (+(a.c.want_ts || 0)) - (+(b.c.want_ts || 0)))
+            // PROMISED LAST.  The belt must still be able to shed everything (it is what makes the 3GB cliff
+            //  structurally unreachable, so it can never be vetoed outright), but it gets to CHOOSE, and a rec
+            //   with a parked want outstanding is the worst possible choice — freeing it strands a sink that
+            //    has been told to stop asking.  Shed the unpromised oldest-served first; only a cap breached by
+            //     promises alone reaches a promised rec, and that one re-materialises through A3.
+            held_recs.sort((a, b) => (+(a.c.promised || 0)) - (+(b.c.promised || 0)) || (+(a.c.want_ts || 0)) - (+(b.c.want_ts || 0)))
             let i = 0
             while (held_bytes > HOLD_CAP && i < held_recs.length) {
                 held_bytes = held_bytes - (+(held_recs[i].sc.bytes || 0))
@@ -1461,6 +1510,16 @@ async Heist_keep_beat(w, ident):
             // re-answer a FEW times (a lost answer frame is the documented Peeroleum drop hazard — the asker
             //  re-asks every 4s; re-answering is idempotent).  Bounded: ≤3 answers, ≥5s apart — heals a
             //   dropped answer without re-censusing the folder forever after the asker flipped to choosing.
+            // …but the budget is per ASK EPISODE, not per session.  `ask.sc.n` is the asker's attempt
+            //  counter (Heist_rummage_ask); when it moves, this is a NEW ask and the ≤3 re-arms.  It used
+            //   to hang off `ask.c.answers` alone, on a particle that is upserted in place and never
+            //    replaced — so after three answers the source went permanently DEAF to that peer about
+            //     that ref, while the sink re-asked every 4s and re-censused every 20s forever.  Live
+            //      2026-08-06: sink `reheal unanswered=121`, source trace empty across the same window,
+            //       heist frozen at landed=1 of=8.  An asker too old to stamp `n` keeps the old
+            //        lifetime behaviour (epi pins at '0'), so this is safe against a stale peer.
+            let epi = '' + (ask.sc.n || 0)
+            if (ask.c.answered_epi !== epi) { ask.c.answered_epi = epi; ask.c.answers = 0 }
             let n = +(ask.c.answers || 0)
             if (n >= 3) continue
             if (n > 0 && Date.now() - (ask.c.answer_ts || 0) < 5000) continue
@@ -1482,6 +1541,19 @@ async Heist_keep_beat(w, ident):
         if (rw.c.heist_rehydrate_tries >= 10) rw.c.heist_rehydrated = 1
     }
     try { await this.Heist_defaults_rehydrate(nav, ident) } catch (er) {}
+    // THE CAP IS GLOBAL, NOT PER-HAUL (the human 2026-08-06: "are there any complications like overlapping
+    //  downloads we can switch off while sorting this out?" — and the honest answer was that turning the knob
+    //   down did not turn the overlap off).  `heist_inflight` is enforced INSIDE Heist_keep_step, so it bounds
+    //    one %Haul; this loop then runs it once per Haul, and N standing Hauls give N concurrent tracks no
+    //     matter what the knob says.  The census electrode already warned about this shape in words ("several
+    //      keeps each drive their own window, so compare `drove` per keep id, not the total") — it was a known
+    //       reading hazard that nobody turned into a bound.
+    //  A budget carried ACROSS the loop is the whole fix: each step reports what it drove, and once the global
+    //   allowance is spent the remaining Hauls are stepped with zero allowance — they still run (rehydrate,
+    //    census, land continuations, cancel, the state machine) but start no new pull. Order is z-order, so
+    //     the oldest Haul keeps priority instead of the newest starving it.
+    let GLOBAL = +(w.c.heist_inflight_total || w.c.heist_inflight || 1)
+    rw.c.heist_budget = GLOBAL
     for (const keep of shop.o({ Haul: 1 })) {
         try { await this.Heist_keep_step(w, rw, ident, me, nav, keep, shop) }
         catch (er) { keep.c.last_why = '' + (er && er.message || er) }
@@ -1593,7 +1665,26 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
         let left = 0
         let landed = 0
         let sum_held = 0
-        let INFLIGHT = +(w.c.heist_inflight || 2)
+        // ONE AT A TIME (the human 2026-08-06: "lets un-overlap the downloads, we should start simple and
+        //  then work up once not spinning").  Was 2.  The overlap slot buys a handoff latency and costs a
+        //   second track's worth of source memory, sink mirror, disk and wire — a good trade only once the
+        //    single-track path is quiet, and it plainly is not yet.  So take the simple shape back: strictly
+        //     serialized, one track in flight, and the two gates below (`cap`, then `over`/`frozen`) are then
+        //      both closed for every later pick by construction.  Raise `w.c.heist_inflight` to re-enable
+        //       overlap once a lone track lands clean — that is the order to re-earn it in, not both at once.
+        //  THE ALLOWANCE IS THE GLOBAL ONE, NOT THIS KEEP'S (2026-08-06 — finishing a fix that was written
+        //   and never wired).  Heist_keep_beat computes `GLOBAL` and stamps `rw.c.heist_budget` before the
+        //    per-Haul loop, but nothing ever READ it: this line re-read `w.c.heist_inflight` locally, so the
+        //     cap still bounded ONE %Haul and N standing Hauls still gave N concurrent tracks — exactly the
+        //      defect the stamp was added to fix, left in place by a half-landed edit.  A written bound that
+        //       nothing reads is worse than no bound: the comment above it says the problem is solved.
+        //  So: take what the global allowance has LEFT.  Spent down to zero, a later Haul is stepped with
+        //   INFLIGHT 0 — the `inflight >= INFLIGHT` gate below is then closed on its first pick, so it still
+        //    rehydrates, censuses, lands continuations and cancels, and simply starts no NEW pull.  z-order
+        //     means the oldest Haul spends the allowance first rather than the newest starving it.
+        //  The fallback keeps a direct caller honest: a Book (or any path that does not come through
+        //   Heist_keep_beat) stamps no budget, reads `null`, and gets the old per-keep knob unchanged.
+        let INFLIGHT = (rw && rw.c.heist_budget != null) ? Math.max(0, +rw.c.heist_budget) : +(w.c.heist_inflight || 1)
         let OVERLAP = +(w.c.heist_overlap || 24)
         // BREACH COOLDOWN (the human 2026-07-30, watching a track's file cycle unlink→restart over and
         //  over): a breached record loses every chunk (Heist_release_buf ran before the failing check), so
@@ -1682,6 +1773,26 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
                                              wait: pick.c.ready_ts - pick.c.ask_ts, tot: +(rec.sc.total || 0) })
                 }
             }
+            // A LANDING PICK IS DONE PULLING — DO NOT RACE THE WRITER (the human 2026-08-06, log in hand:
+            //  `◈ pull Cosmic Hweeldi 142/196` … `141` … `138` … `135` … `132` … `BENCHED 60s — frozen`).
+            //   `held` going DOWN is the whole tell, and it is not loss: `Heist_land_stream` calls
+            //    `Heist_release_buf` on each chunk THE INSTANT its bytes reach disk, and presence IS fill
+            //     state — so a landing eats its own mirror from the front, by design.
+            //  That was harmless while the landing was `await`ed inline. §5.4 moved it off the beat
+            //   (`expecting`), and nothing taught the PULLER about the new concurrency: every beat still
+            //    re-entered here, re-counted a mirror the writer was consuming, and drew three wrong
+            //     conclusions at once —
+            //      · `Ra_page_hole` sees fresh holes behind the writer and RE-ASKS them, so the sink
+            //         re-downloads, re-hashes and re-attaches a file it is at that moment writing to disk
+            //          (the ~1MB/s of `rx` in the log buying nothing, on both ends, plus the cid gate twice);
+            //      · `r.done` goes false again, so `left`/`inflight` misread and the window mis-opens;
+            //      · the bench watchdog wants `rheld` to CLIMB, and a landing guarantees it falls — so a
+            //         perfectly healthy landing is benched 60s for the crime of succeeding.
+            //  The done-branch below already states the rule ("a landing pick is done pulling"); it just
+            //   never held on the NEXT beat. Hold it here, before the pull, which is the only place it can
+            //    be held. `left` so the keep cannot read `!left` and drop itself mid-write; no `inflight`,
+            //     because a landing holds no network slot — that is what lets the next track start cleanly.
+            if (pick.c.landing) { left = left + 1; drove_any = 1; continue }
             drove_any = 1
             let rtot = +(rec.sc.total || 0)
             let r = await this.Ra_pull_beat(w, rec.c.rx || route, me, String(rec.c.from || keep.sc.pub), rec)
@@ -1757,8 +1868,17 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
             }
             left = left + 1
             inflight = inflight + 1                           // this track is actively pulling
+            // ...and it spends one slot of the GLOBAL allowance, so the next %Haul in the loop sees a
+            //  smaller window.  Only HERE: the two `inflight = INFLIGHT` sentinels (the pending-materialise
+            //   read above, the overlap gate below) shut this keep's local window without any track having
+            //    started, and charging the global for them would starve the siblings for nothing.
+            if (rw && rw.c.heist_budget != null) rw.c.heist_budget = Math.max(0, +rw.c.heist_budget - 1)
             // BENCH WATCHDOG: held must climb.  Reset the clock on any advance; bench after ~45s frozen.
-            if (rheld > (pick.c.bench_held || 0)) {
+            // ANY CHANGE IS PROGRESS, not just a climb.  The watchdog exists to catch FROZEN, and `held`
+            //  can legitimately fall (a landing consuming its mirror, a breach clearing it) — a falling
+            //   number never satisfied `rheld > bench_held`, so the 45s clock kept running from a stale
+            //    stamp and benched a track that was demonstrably doing something. `!==` is the honest test.
+            if (rheld !== (pick.c.bench_held || 0)) {
                 pick.c.bench_held = rheld
                 pick.c.bench_ts = tnow0
             } else if (pick.c.bench_ts && tnow0 - pick.c.bench_ts > 45000) {
@@ -1770,7 +1890,17 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
             }
             // OVERLAP: hold the window CLOSED behind a track that is NOT near done; open a slot for the next
             //  pick to pre-ask only once this one is within OVERLAP chunks of complete.
-            if ((rtot - rheld) > OVERLAP) { inflight = INFLIGHT; if (!shut) shut = 'over' }
+            //  NEAR-DONE IS NOT ENOUGH — IT MUST ALSO BE MOVING (the human 2026-08-06: "downloads overlap a
+            //   bit much now").  The slot exists to beat a LATENCY: pre-ask the next track a few seconds early
+            //    so there is no dead gap at the handoff.  That reasoning only holds for a track that is
+            //     genuinely about to finish.  A track WEDGED near the end — the 120/137 shape, 17 short and
+            //      frozen — satisfies `within OVERLAP of done` permanently, so it propped the window open for
+            //       as long as it stayed stuck, and the source was asked to materialise a second 25MB track
+            //        while it still owed bytes on the first.  Two half-finished bars, twice the source memory,
+            //         and neither one finishing any sooner.  Stalled is the BENCH's job (45s → 60s off), not
+            //          the overlap slot's; until the bench takes it, hold the window shut behind it.
+            let moving = (tnow0 - (pick.c.bench_ts || tnow0)) < +(w.c.heist_overlap_moving || 3000)
+            if ((rtot - rheld) > OVERLAP || !moving) { inflight = INFLIGHT; if (!shut) shut = ((rtot - rheld) > OVERLAP ? 'over' : 'frozen') }
         }
         // the in-flight census, throttled to ~2s per keep so it can never itself become the load: how many
         //  picks this keep DROVE this beat and where each one sits.  `cap` is the configured window, so a

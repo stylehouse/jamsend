@@ -99,36 +99,36 @@ story:Sounditron
         lematch,Need
           means,spayer,re:Need:(.*),tol:any
   TimeSpool
-    TimeTotal:beliefs,avg=0.089
-      sample=0.059,at=1785937392
-      sample=0.094,at=1785939515
-      sample=0.059,at=1785940708
-      sample=0.092,at=1785940788
-      sample=0.088,at=1785941371
-      sample=0.106,at=1785941477
-      sample=0.091,at=1785941651
-      sample=0.133,at=1785941918
-      sample=0.062,at=1785942308
-      sample=0.107,at=1785944491
-    TimeTotal:step,avg=0.013
-      sample=0.008,at=1785937392
-      sample=0.013,at=1785939515
-      sample=0.008,at=1785940708
-      sample=0.013,at=1785940788
-      sample=0.013,at=1785941371
-      sample=0.015,at=1785941477
-      sample=0.013,at=1785941651
-      sample=0.019,at=1785941918
-      sample=0.009,at=1785942308
-      sample=0.015,at=1785944491
+    TimeTotal:beliefs,avg=0.096
+      sample=0.082,at=1785965280
+      sample=0.146,at=1785966333
+      sample=0.113,at=1785966671
+      sample=0.15,at=1785966815
+      sample=0.109,at=1785967041
+      sample=0.07,at=1785973019
+      sample=0.065,at=1785975239
+      sample=0.067,at=1785981843
+      sample=0.069,at=1785982085
+      sample=0.094,at=1785982203
+    TimeTotal:step,avg=0.014
+      sample=0.012,at=1785965280
+      sample=0.021,at=1785966333
+      sample=0.016,at=1785966671
+      sample=0.021,at=1785966815
+      sample=0.016,at=1785967041
+      sample=0.01,at=1785973019
+      sample=0.009,at=1785975239
+      sample=0.01,at=1785981843
+      sample=0.01,at=1785982085
+      sample=0.013,at=1785982203
   step,dige:de2ef2f8340767ce
-  step=2,dige:e49e368d8b363352,desc:the machine stands
+  step=2,dige:ce660bf998e69495,desc:the machine stands
     Assertion:machine-stood,sentence:the machine stood — an addressable self emerged on the spine
-  step=3,dige:c98ed387508742ba,desc:the relay answers
+  step=3,dige:b0cbdf770a3f7009,desc:the relay answers
     Assertion:relay-answers,sentence:the relay answers — the channel stood and frames can cross
-  step=4,dige:76860bd3071fb946,desc:who could we reach
+  step=4,dige:d5c6504624bb6aa3,desc:who could we reach
     Assertion:possibilities-surveyed,sentence:the possibilities of peers were surveyed — every known address counted
-  step=5,dige:a4527d7805253864,desc:reach for a peer
-  step=6,dige:a1e03b5bea77dfd6,desc:does sound run here
-  step=7,dige:88823efdeb09f31b,desc:sum and report
+  step=5,dige:25bd5de49e83ae71,desc:reach for a peer
+  step=6,dige:ba5c26f536bcd570,desc:does sound run here
+  step=7,dige:cd1ca1dceae5c253,desc:sum and report
     Assertion:report-stands,sentence:the session summed itself — a report stands ready to travel

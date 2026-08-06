@@ -103,39 +103,69 @@ Snap:H
                 unemit:27,type:repli_lines,seq:27,body_len:324
                 unemit:28,type:repli_page,seq:28,body_len:32300
                 unemit:29,type:repli_page,seq:29,body_len:32623
-                unemit:30,type:repli_lines,seq:30,body_len:337
-                unemit:31,type:repli_page,seq:31,body_len:32620
-                unemit:32,type:repli_page,seq:32,body_len:32300
-                unemit:33,type:repli_lines,seq:33,body_len:320
-                unemit:34,type:repli_page,seq:34,body_len:32300
-                unemit:35,type:repli_page,seq:35,body_len:32300
-                unemit:36,type:repli_lines,seq:36,body_len:320
-                unemit:37,type:repli_page,seq:37,body_len:32300
-                unemit:38,type:repli_page,seq:38,body_len:32300
-                unemit:39,type:repli_lines,seq:39,body_len:320
-                unemit:40,type:repli_page,seq:40,body_len:32300
-                unemit:41,type:repli_page,seq:41,body_len:32286
-                unemit:42,type:repli_lines,seq:42,body_len:320
-                unemit:43,type:repli_page,seq:43,body_len:32302
-                unemit:44,type:repli_page,seq:44,body_len:32288
+                unemit:30,type:repli_parked,seq:30,body_len:6
+                unemit:31,type:repli_parked,seq:31,body_len:6
+                unemit:32,type:repli_parked,seq:32,body_len:6
+                unemit:33,type:repli_parked,seq:33,body_len:6
+                unemit:34,type:repli_lines,seq:34,body_len:339
+                unemit:35,type:repli_page,seq:35,body_len:32620
+                unemit:36,type:repli_page,seq:36,body_len:32300
+                unemit:37,type:repli_parked,seq:37,body_len:6
+                unemit:38,type:repli_parked,seq:38,body_len:6
+                unemit:39,type:repli_parked,seq:39,body_len:6
+                unemit:40,type:repli_parked,seq:40,body_len:6
+                unemit:41,type:repli_parked,seq:41,body_len:6
+                unemit:42,type:repli_lines,seq:42,body_len:337
+                unemit:43,type:repli_page,seq:43,body_len:32620
+                unemit:44,type:repli_page,seq:44,body_len:32300
                 unemit:45,type:repli_lines,seq:45,body_len:320
-                unemit:46,type:repli_page,seq:46,body_len:32251
-                unemit:47,type:repli_page,seq:47,body_len:32293
+                unemit:46,type:repli_page,seq:46,body_len:32300
+                unemit:47,type:repli_page,seq:47,body_len:32300
                 unemit:48,type:repli_lines,seq:48,body_len:320
-                unemit:49,type:repli_page,seq:49,body_len:32279
-                unemit:50,type:repli_page,seq:50,body_len:32293
+                unemit:49,type:repli_page,seq:49,body_len:32300
+                unemit:50,type:repli_page,seq:50,body_len:32300
                 unemit:51,type:repli_lines,seq:51,body_len:320
-                unemit:52,type:repli_page,seq:52,body_len:32231
-                unemit:53,type:repli_page,seq:53,body_len:32275
+                unemit:52,type:repli_page,seq:52,body_len:32300
+                unemit:53,type:repli_page,seq:53,body_len:32286
                 unemit:54,type:repli_lines,seq:54,body_len:320
-                unemit:55,type:repli_page,seq:55,body_len:32292
-                unemit:56,type:repli_page,seq:56,body_len:32311
+                unemit:55,type:repli_page,seq:55,body_len:32302
+                unemit:56,type:repli_page,seq:56,body_len:32288
                 unemit:57,type:repli_lines,seq:57,body_len:320
-                unemit:58,type:repli_page,seq:58,body_len:32222
-                unemit:59,type:repli_page,seq:59,body_len:32257
+                unemit:58,type:repli_page,seq:58,body_len:32251
+                unemit:59,type:repli_page,seq:59,body_len:32293
                 unemit:60,type:repli_lines,seq:60,body_len:320
-                unemit:61,type:repli_page,seq:61,body_len:32305
-                unemit:62,type:repli_page,seq:62,body_len:39645
+                unemit:61,type:repli_page,seq:61,body_len:32279
+                unemit:62,type:repli_page,seq:62,body_len:32293
+                unemit:63,type:repli_lines,seq:63,body_len:339
+                unemit:64,type:repli_page,seq:64,body_len:32620
+                unemit:65,type:repli_page,seq:65,body_len:32300
+                unemit:66,type:repli_lines,seq:66,body_len:320
+                unemit:67,type:repli_page,seq:67,body_len:32302
+                unemit:68,type:repli_page,seq:68,body_len:32288
+                unemit:69,type:repli_lines,seq:69,body_len:320
+                unemit:70,type:repli_page,seq:70,body_len:32251
+                unemit:71,type:repli_page,seq:71,body_len:32293
+                unemit:72,type:repli_lines,seq:72,body_len:320
+                unemit:73,type:repli_page,seq:73,body_len:32279
+                unemit:74,type:repli_page,seq:74,body_len:32293
+                unemit:75,type:repli_lines,seq:75,body_len:320
+                unemit:76,type:repli_page,seq:76,body_len:32231
+                unemit:77,type:repli_page,seq:77,body_len:32275
+                unemit:78,type:repli_lines,seq:78,body_len:320
+                unemit:79,type:repli_page,seq:79,body_len:32292
+                unemit:80,type:repli_page,seq:80,body_len:32311
+                unemit:81,type:repli_lines,seq:81,body_len:320
+                unemit:82,type:repli_page,seq:82,body_len:32222
+                unemit:83,type:repli_page,seq:83,body_len:32257
+                unemit:84,type:repli_lines,seq:84,body_len:320
+                unemit:85,type:repli_page,seq:85,body_len:32305
+                unemit:86,type:repli_page,seq:86,body_len:39645
+                unemit:87,type:repli_lines,seq:87,body_len:320
+                unemit:88,type:repli_page,seq:88,body_len:32222
+                unemit:89,type:repli_page,seq:89,body_len:32257
+                unemit:90,type:repli_lines,seq:90,body_len:320
+                unemit:91,type:repli_page,seq:91,body_len:32305
+                unemit:92,type:repli_page,seq:92,body_len:39645
             Ud,pubkey:c012850d69de1318
           active_transport,type:mock,open
         MusuSelf,pub:c012850d69de1318
@@ -223,7 +253,6 @@ Snap:H
                 Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,path:DJ Oscillo - Cosmic C.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
                 Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,path:DJ Oscillo - Dorian D.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443,stage:decoded
                   Preview,seq:0,head,preskip=312,cid:3457aa775f90150bb7dfee2664537ff0249c76f412150375802373b5dcd6e379	{"ref":{"buf":"Uint8Array()"}}
-                  Preview,seq:1,cid:24e815ca6fe5761ede36e7deca8327236309956d788d7280dbc8ede8ca0bf23b	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:2,cid:264238c1c63afa12031ca91e07293c7c4c15bb886d1f94e8877bfe0541051a17	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:3,cid:aa9dbc861991e9abee3f88f0308a07e85fefc22daa4d1a816dbd6b7765d27131	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:4,cid:d8b306612ace71a39769d537ad436fd14a8db41f23523dea8e042656395f301f	{"ref":{"buf":"Uint8Array()"}}
@@ -238,6 +267,7 @@ Snap:H
                   Preview,seq:13,cid:009ed34af0bea671c1bc2cab4e9a52f2932f89625fad01ecfa27967e9e1e2d97	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:14,cid:819beaabf2ab5742123998ed14ec1b8a6601aab545d4ce893119feca0bdb78a6	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:15,cid:82060ded7c33145ae7de702e7550c7641590f602f69b86c6f8771abf8b815413	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:24e815ca6fe5761ede36e7deca8327236309956d788d7280dbc8ede8ca0bf23b	{"ref":{"buf":"Uint8Array()"}}
                   Stream,seq:16,head,preskip=312,cid:e764f0a82e3724b0036454e89b506c9a91c2ec97222d73524872bc681b55b741	{"ref":{"buf":"Uint8Array()"}}
                   Stream,seq:17,cid:373f9ea548734080f87ea856e0bb0eb17f26bdb59094d60275c2a205a5af091c	{"ref":{"buf":"Uint8Array()"}}
                   Stream,seq:18,cid:43b21ffee85fe320e8d02272df5530cfe37b2c1cbccf82ce587cf0c763e682f1	{"ref":{"buf":"Uint8Array()"}}
@@ -269,7 +299,8 @@ Snap:H
             curs,wild:Cloud,randomic:draw_one
               curs,wild:Card,title:Dorian D
         browsed,title:Dorian D,id:02cfcb9c15affeaf,depth=3
-        pulled,chunks=38,parked=11,unparked=11
+        punched,seq,page_at=0
+        pulled,chunks=38,healed,parked=9,unparked=9
         req:buddy_hear,finished
         heard,seconds=76,segs=38,healthy=0,starved=280,dropped=7,lufs=-14.02
         Kept,pier:b317b9a776e39d30
@@ -277,7 +308,6 @@ Snap:H
             Cloud,page:1
               Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,path:DJ Oscillo - Dorian D.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443
                 Preview,seq:0	{"ref":{"buf":"Uint8Array()"}}
-                Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
                 Preview,seq:2	{"ref":{"buf":"Uint8Array()"}}
                 Preview,seq:3	{"ref":{"buf":"Uint8Array()"}}
                 Preview,seq:4	{"ref":{"buf":"Uint8Array()"}}
@@ -292,6 +322,7 @@ Snap:H
                 Preview,seq:13	{"ref":{"buf":"Uint8Array()"}}
                 Preview,seq:14	{"ref":{"buf":"Uint8Array()"}}
                 Preview,seq:15	{"ref":{"buf":"Uint8Array()"}}
+                Preview,seq:1	{"ref":{"buf":"Uint8Array()"}}
                 Stream,seq:16	{"ref":{"buf":"Uint8Array()"}}
                 Stream,seq:17	{"ref":{"buf":"Uint8Array()"}}
                 Stream,seq:18	{"ref":{"buf":"Uint8Array()"}}
@@ -317,4 +348,5 @@ Snap:H
         jammed,spins,likes,grabs,events=3,kept_id:02cfcb9c15affeaf
         revoked_stand,changed,quiet_wire
         see:the stream chunks did not exist until asked — boundary wants parked at the frontier and released as the transcode advanced
+        see:a chunk shed from the middle of a page was noticed and re-asked — the pull finished whole rather than freezing a few chunks short
         see:the browsed card fetched its own audio — the record the cursor named crossed whole and byte-faithful while the unbrowsed husk kept its promise unspent

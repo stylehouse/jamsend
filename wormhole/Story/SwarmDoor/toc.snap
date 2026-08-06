@@ -4,8 +4,7 @@ story:SwarmDoor
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.039
-      sample=0.061,at=1785836581
+    TimeTotal:beliefs,avg=0.036
       sample=0.052,at=1785837254
       sample=0.031,at=1785841489
       sample=0.038,at=1785853975
@@ -15,8 +14,8 @@ story:SwarmDoor
       sample=0.048,at=1785906241
       sample=0.016,at=1785906245
       sample=0.023,at=1785906250
-    TimeTotal:step,avg=0.008
-      sample=0.012,at=1785836581
+      sample=0.027,at=1785966444
+    TimeTotal:step,avg=0.007
       sample=0.01,at=1785837254
       sample=0.006,at=1785841489
       sample=0.008,at=1785853975
@@ -26,6 +25,7 @@ story:SwarmDoor
       sample=0.01,at=1785906241
       sample=0.003,at=1785906245
       sample=0.005,at=1785906250
+      sample=0.005,at=1785966444
   step,dige:8aeed028b37708e0
   step=2,dige:d094ca16c2b337bd
     Assertion:two-bare-stations-stand,sentence:two bare stations stand on the spine — a carrier each — and neither holds a Pier yet
