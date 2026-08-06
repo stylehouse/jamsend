@@ -1742,11 +1742,21 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
                     //      census is the expensive verb, and this is a repair, not a heartbeat.
                     //  PROPER FIX, owed: make the source's keep_memo durable (it is the Dexie ↔ .jamsend sync
                     //   item in miniature).  Until then this heals it in one round trip instead of never.
-                    if (+(pick.c.asks_out || 0) >= 3 && Date.now() - (keep.c.recensus_ts || 0) > 20000) {
+                    // THE SOURCE SAID SO (2026-08-06) — Repli_recv_missed stamps w.c.ra_missed[id] when the
+                    //  source answers a want with "I cannot resolve this id".  That is the exact fact the two
+                    //   gates below were invented to INFER: `asks_out >= 3` is twelve seconds of waiting to
+                    //    guess it, and the 20s throttle is there because guessing is expensive to be wrong
+                    //     about.  With the fact in hand both are noise, so a told miss re-censuses on the very
+                    //      next beat.  Consumed (delete) so one telling buys one census, never a loop; if the
+                    //       census does not fix it the source simply says it again and we are back on the
+                    //        ladder — which is the correct fallback, not a regression.
+                    let told = w.c.ra_missed && w.c.ra_missed[String(ref)]
+                    if (told) delete w.c.ra_missed[String(ref)]
+                    if (told || (+(pick.c.asks_out || 0) >= 3 && Date.now() - (keep.c.recensus_ts || 0) > 20000)) {
                         keep.c.recensus_ts = Date.now()
                         if (typeof this.Radio_trace === 'function') {
                             this.Radio_trace(null, { ev: 'reheal', id: String(ref).slice(0, 8),
-                                                     unanswered: +(pick.c.asks_out || 0) })
+                                                     unanswered: +(pick.c.asks_out || 0), told: told ? 1 : 0 })
                         }
                         console.log(`⇊⟲ ${pick.c.asks_out} unanswered materialise asks — re-censusing the source folder (its keep-id map is runtime-only and a reload wipes it)`)
                         await this.Heist_rummage_ask(w, route, me, at, seed)

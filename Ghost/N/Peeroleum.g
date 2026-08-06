@@ -430,6 +430,10 @@ Peeroleum_send(w, frame):
     //    retx sweep — would only be one more unbounded-%outbox hazard. Ephemeral = no emit, no per-send
     //     log; still sent + still dispatched (the sink still suspends its RTO for that offset).
     ephemeral = ephemeral || h.type === 'repli_parked'
+    // repli_missed (2026-08-06) rides the identical policy for the identical reason: it is the OTHER
+    //  response to a self-re-asking want ("I cannot resolve this id"), so the sink's own re-ask timer is
+    //   already the reliability layer.  Losing one costs a return to the old blind ladder, nothing more.
+    ephemeral = ephemeral || h.type === 'repli_missed'
     // ── FRAME RELIABILITY POLICY (the full classification; the `ephemeral = …` lines above ARE the gate) ──
     //  ONE law: a frame that OPENS A DOOR (a handshake) or carries PUSHED APP DATA (no re-ask behind it) is
     //   RELIABLE (books an %outbox/emit, culled on ack, retransmitted until acked); a frame that is GOSSIP /

@@ -10,14 +10,17 @@
 //    fight over Telegram's single-consumer getUpdates. Prefix every message with a name
 //     (--as=Ariel) so the human can tell the threads apart.
 //
-// FILES — all in $HOME, nothing in the repo, so no secret can ever be committed:
-//   ~/.jamsend_telegram         the bot token, one line   ← the only thing set up by hand
-//   ~/.jamsend_telegram.state   {chat_id, offset} JSON    ← written automatically
-//   ~/.jamsend_telegram.lock    the ask mutex             ← written automatically
+// FILES — all at the repo root, all matched by the `.env.*` gitignore rule (verified: line 18),
+//  so they persist across container rebuilds (unlike $HOME) and still can't be committed:
+//   .env.telegrambot         the bot token             ← the only thing set up by hand
+//   .env.telegrambot.state   {chat_id, offset} JSON    ← written automatically
+//   .env.telegrambot.lock    the ask mutex             ← written automatically
+//  The token file is read leniently: first non-empty, non-# line, an optional `KEY=` stripped —
+//   so a plain token, a commented file, or env-file style all work.
 //  (Override the token with the TELEGRAM_BOT_TOKEN env var if you'd rather not use the file.)
 //
 // ONE-TIME SETUP:
-//   1. Telegram → @BotFather → /newbot → put the token (one line) in ~/.jamsend_telegram.
+//   1. Telegram → @BotFather → /newbot → put the token (one line) in .env.telegrambot.
 //   2. Message the bot once (say "hi") so it has a chat to reply into.
 //   3. node scripts/telegram.mjs setup     # saves your chat id
 //      node scripts/telegram.mjs getme      # confirms the token
@@ -33,19 +36,21 @@
 // EXIT: ask → 0 got a reply, 3 timed out (or gave up waiting for the mutex). Others → 0 ok, 1 error.
 
 import { readFileSync, writeFileSync, unlinkSync } from 'node:fs'
-import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const HOME = process.env.HOME || homedir() || '/home/node'
-const F_TOKEN = join(HOME, '.jamsend_telegram')        // referenced by this filename; see header
-const F_STATE = join(HOME, '.jamsend_telegram.state')
-const F_LOCK  = join(HOME, '.jamsend_telegram.lock')
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+const F_TOKEN = join(ROOT, '.env.telegrambot')         // referenced by this filename; see header
+const F_STATE = join(ROOT, '.env.telegrambot.state')
+const F_LOCK  = join(ROOT, '.env.telegrambot.lock')
 
 const slurp = p => { try { return readFileSync(p, 'utf8') } catch { return '' } }
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 const now = () => Math.floor(Date.now() / 1000)
 
-const TOKEN = (process.env.TELEGRAM_BOT_TOKEN || slurp(F_TOKEN)).trim()
+const tokenLine = s => (s.split('\n').map(l => l.trim()).find(l => l && !l.startsWith('#')) || '')
+  .replace(/^[A-Za-z_]+=/, '')
+const TOKEN = (process.env.TELEGRAM_BOT_TOKEN || tokenLine(slurp(F_TOKEN))).trim()
 const redact = s => TOKEN ? String(s).split(TOKEN).join('***') : String(s)
 
 function needToken() {

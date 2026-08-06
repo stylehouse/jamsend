@@ -24,10 +24,11 @@ metadata:
      message with a Shakespeare name via `--as=` so the human tracks threads: **I am Ariel**; a
       second agent picks its own.
 
-**Files (all in $HOME, nothing in the repo — no secret can be committed):** token one-liner in
- `~/.jamsend_telegram` (referenced by that filename; `TELEGRAM_BOT_TOKEN` env overrides), chat_id +
-  cursor in `~/.jamsend_telegram.state`. NOTE: a repo-root `.env.telegrambot` is NOT gitignored by
-   any `/.*` rule (only `.env`/`.env.*` are) — that's why the token lives outside the repo.
+**Files (all at the REPO ROOT since 2026-08-06 — $HOME is ephemeral, it lost the token on a
+ container rebuild):** token in `.env.telegrambot` (raw token line; `TELEGRAM_BOT_TOKEN` env
+  overrides), chat_id + cursor in `.env.telegrambot.state`, mutex in `.env.telegrambot.lock`.
+   All three ARE gitignored — `.gitignore:18` `.env.*` covers them (an earlier note claimed
+    otherwise; that was wrong, verified with `git check-ignore`).
 
 **Etiquette (the whole point):** only `ask` genuinely SUBSTANTIAL things — taste, naming, priority,
  anything irreversible/outward-facing. Anything with an obvious default: DECIDE it and proceed

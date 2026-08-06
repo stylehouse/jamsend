@@ -530,6 +530,36 @@ Repli_recv_parked(w, frame):
     w.c.ra_parked = w.c.ra_parked || {}
     w.c.ra_parked[h.id + ':' + (+(h.from_idx || 0))] = Date.now()
 
+// Repli_tell_miss — the MISS TRAVELS (2026-08-06).  Repli_serve_miss logs and traces on the SOURCE, and
+//  its own comment concedes the shape of the problem: "if a sink stalls, look at the friend's console for
+//   this".  The sink was told nothing, so an unservable want is indistinguishable from a merely slow one,
+//    and the only repair was Heist's blind ladder — 3 unanswered asks at 4s apiece behind a 20s re-census
+//     throttle.  Measured live after a reload: `heist-noprogress asked:12 landed:1 of:8 secs:46`, then
+//      full-speed serving the instant the re-census landed.  Forty-five seconds of silence to carry one
+//       fact the source knew immediately.
+//  Exact twin of `repli_parked` above — same lane, same shape, opposite meaning.  PARKED says "found it,
+//   waiting on bytes, keep your RTO suspended"; MISSED says "I cannot resolve this id at all, re-census
+//    me".  They are the two halves of the only question a stalled sink has, and until now one half was
+//     answered and the other was not.
+//  Advisory and lossy BY DESIGN: dropping it costs nothing, the sink just falls back to the ladder it
+//   already has.  Throttling is the caller's — Repli_serve_miss's existing 5s-per-id gate.
+async Repli_tell_miss(w, pier, h):
+    let seq = this.Pier_next_seq(pier)
+    let body = new TextEncoder().encode('missed')
+    let bh = await this.Peeroleum_body_digest(body)
+    this.Peeroleum_send(w, { header: { type: 'repli_missed', from: h.to, to: h.from, id: h.id, stream: h.stream, from_idx: h.from_idx, seq: seq, body_hash: bh, body_len: body.length }, buffer: body })
+
+// Repli_recv_missed — the SINK hearing that the source cannot resolve this id.  Repli never imports
+//  Heist (every Book and the plain radio run with no Heist at all), so this does not reach for the repair
+//   itself — it drops a flag in the same `.c` neighbourhood as ra_parked, and Heist's pull beat reads it
+//    to skip straight past the ask-count and throttle gates that exist only to GUESS at what this frame
+//     states outright.  Guessing is what those gates were for; a fact retires them.
+Repli_recv_missed(w, frame):
+    let h = frame.header
+    if (h.id == null) return
+    w.c.ra_missed = w.c.ra_missed || {}
+    w.c.ra_missed[String(h.id)] = Date.now()
+
 // Repli_serve_parked — the transcoder advanced: every parked want whose page is NOW ready re-enters
 //  Repli_serve_want with its remembered addressing, and the spent %parked_want goes; the rest keep
 //   waiting.  Call after each Crate_transcode_release (the Book does; the app would hang it off the
@@ -582,6 +612,8 @@ Repli_serve_miss(w, h, why):
     for (const k of Object.keys(w.c.serve_miss_ts)) {
         if (nowms - w.c.serve_miss_ts[k] > 60000) delete w.c.serve_miss_ts[k]
     }
+    // returns 1 when this miss PASSED the throttle — Repli_serve_want gates the repli_missed frame on
+    //  it so the wire tell and the console line share one budget.
     w.c.serve_miss_ts[id] = nowms
     let from = h && h.from ? String(h.from).slice(0, 8) : '?'
     console.log(`◈✗ serve want id=${id.slice(0, 8)}@${+(h && h.from_idx || 0)} ← ${from} — ${why}`)
@@ -594,6 +626,7 @@ Repli_serve_miss(w, h, why):
         this.Radio_trace(null, { ev: 'serve-miss', id: id.slice(0, 8), off: +(h && h.from_idx || 0),
                                  from: from, why: String(why || '').slice(0, 40) })
     }
+    return 1
 
 // Repli_land_warn — the SINK-side attach probe (the human 2026-07-29 "downloader says 0/13 ... can you figure
 //  out why"): bytes arrive at the source's tx-meter rate but never STICK — a cid breach refuses them, or a page
@@ -680,7 +713,12 @@ async Repli_serve_want(w, pier, frame):
         rec = this.Heist_reheal_id(w, h.id)
         if (rec) this.Repli_serve_miss(w, h, 'serve lib swept — rebuilt husk from memo, re-materialising')
     }
-    if (!rec) { this.Repli_serve_miss(w, h, 'no record for id — materialise gone / wrong id-space'); return }
+    // TELL THE SINK (2026-08-06): only when the throttle let this one through, so the frame inherits the
+    //  same 5s-per-id budget as the log rather than adding a second, unbounded one.
+    if (!rec) {
+        if (this.Repli_serve_miss(w, h, 'no record for id — materialise gone / wrong id-space')) await this.Repli_tell_miss(w, pier, h)
+        return
+    }
     // last-wanted stamp (Evening 5 A2): the release-after-serve sweep frees a rec's bytes only once its wants
     //  have gone idle, so an actively-asking sink (serve OR park) keeps its bytes held.  .c-only, inert for opus.
     rec.c.want_ts = Date.now()
@@ -1079,6 +1117,7 @@ Repli_arm(w):
     this.Peeroleum_on(w, 'repli_lines', async (cw, pier, frame) => { await this.Repli_recv_lines(w, pier, frame); return true })
     this.Peeroleum_on(w, 'repli_page', (cw, pier, frame) => { this.Repli_recv_page(w, pier, frame); return true })
     this.Peeroleum_on(w, 'repli_parked', (cw, pier, frame) => { this.Repli_recv_parked(w, frame); return true })
+    this.Peeroleum_on(w, 'repli_missed', (cw, pier, frame) => { this.Repli_recv_missed(w, frame); return true })
 
 // Repli_sent_se — the D** progress mirror as a REAL Selection.process: one Se per library
 //  (library.c.sent_se), one %Sent_Tree per side (keyed pier:), a %Sent D per Record carrying

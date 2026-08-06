@@ -61,11 +61,20 @@ function marks(path) {
 	return out.sort((a, b) => a.t - b.t)
 }
 
+// T0 — the first RENDERED mark, so every line carries an absolute `@Nms` offset beside its delta.
+//  Why both: the `+Δms` is time since the previous SURVIVING mark, which is exactly right inside
+//   tracelog's own --heist/--life filters (deltas are computed after `keep`) and exactly WRONG the
+//    moment the output is piped through grep — the dropped lines silently widen every gap. That
+//     misread cost two false calls on 2026-08-06 ("advertise fires every 601ms", then a boast-floor
+//      suppression that could not be read either way). `@` is grep-proof: it is anchored to T0, not
+//       to the neighbour, so a filtered line still says when it happened.
+let T0 = null
 function fmt(e, prev) {
+	if (T0 == null) T0 = e.t
 	const d = prev == null ? 0 : e.t - prev
 	const extra = Object.keys(e).filter((k) => k !== 't' && k !== 'ev' && k !== 'id').map((k) => `${k}=${e[k]}`).join(' ')
 	const flag = d >= 2000 ? '  ⟵ SLOW' : d >= 500 ? '  ⟵ slow' : ''
-	return `  +${String(d).padStart(6)}ms  ${String(e.ev).padEnd(18)} ${e.id ? '[' + e.id + '] ' : ''}${extra}${flag}`
+	return `  @${String(e.t - T0).padStart(7)} +${String(d).padStart(6)}ms  ${String(e.ev).padEnd(18)} ${e.id ? '[' + e.id + '] ' : ''}${extra}${flag}`
 }
 
 if (LIST) {
@@ -97,7 +106,7 @@ if (!WATCH) {
 	const m = marks(path).filter(keep)
 	const tag = HEIST ? ' heist' : LIFE ? ' life' : ''
 	if (!m.length) { console.error(`(${path}: no${tag} marks yet)`); process.exit(1) }
-	console.log(`${path} — ${m.length} mark${m.length === 1 ? '' : 's'}${tag ? ` (${tag.trim()})` : ''}  (Δ = ms since previous mark):`)
+	console.log(`${path} — ${m.length} mark${m.length === 1 ? '' : 's'}${tag ? ` (${tag.trim()})` : ''}  (@ = ms since first shown mark — grep-safe; Δ = ms since previous SHOWN mark — NOT grep-safe):`)
 	let prev = null
 	for (const e of m) { console.log(fmt(e, prev)); prev = e.t }
 	process.exit(0)

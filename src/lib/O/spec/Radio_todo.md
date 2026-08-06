@@ -23,6 +23,140 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+**NEXT SESSION STARTS HERE (2026-08-06, end of day).** Two items, in this order.
+
+**(a) GET REAL RADIO TRACES — the owner's ask, and the tooling now mostly supports it.**
+ Two instrument bugs were found and fixed at close of play 2026-08-06; read both before trusting a
+  trace, because each produced a confident wrong diagnosis first.
+ · **`tracelog.mjs` has no `--runner` flag** and silently ignores unknown args, defaulting to the
+    newest dump BY MTIME. `tracelog.mjs --runner=f5da6599b8505881` therefore pulled nothing and
+     printed **58517's** ring (an idle grid runner, no piers) whose honest `starved why=nobody
+      homes=0 recs=0` I spent an evening attributing to Righto. Righto's own dump said
+       `18 why:"gathering"` throughout. The tool does not pull at all: the TAB dumps
+        `wormhole/_trace/<role>-<pub>-<boot>.jsonl` every ~5s through its own FSA share, and ONLY
+         once 🪪 Id hatch → **socklog** is armed on it. `--file` takes a SPACE, not `=`. Check the
+          filename in the header line against the runner you meant; `--list` names them. Over the
+           relay, `runner_ask world` is the op that reaches a live tab's ring.
+ · **Console `+Δms` was ring-relative and therefore lied under `grep`** (dropped lines silently widen
+    every gap — this is what produced a bogus "advertise fires every 601ms"). FIXED: `fmt()` now
+     prefixes an absolute `@Nms` anchored to the first shown mark, so a filtered line still says when
+      it happened. Deltas are computed after `keep`, so tracelog's OWN `--heist`/`--life` filters were
+       always honest; only downstream `grep` broke them.
+ With that, the first real measurement lands: Righto's dial→starve loop runs at a **flat 800ms**
+  cadence. What we still cannot see is the interesting part — WHY a radio with a live sealed pier
+   reads `gathering` (live peer, every record a husk). That is the trace to build next: the owner
+    wants "really good traces of the radio behaviour", and the honest gap is between `advertise
+     homes=1 stocks=1` (the census's view of MY OWN home) and `starved homes=0 recs=0` (the dial's
+      view of `w.o({MusuThem:1})`, the FRIENDS' shelves). **Those two `homes` count opposite sides
+       and must never be read as contradicting each other** — that near-miss cost an hour tonight.
+
+**(b) Then §3.x #33 — the collection wander samples branches, not tracks.** `Crate_nav_meander`
+ (`Crate.g:212`) does `prandle(dirs.length + (audio.length ? 1 : 0))`, i.e. a uniform pick over
+  CHILD DIRECTORIES with all of a directory's audio collapsed into ONE outcome. So a deep sparse
+   branch and a 200-track album are equally likely, and the owner's report stands: whole albums that
+    are ⅔ of the collection are never reached by pressing next. Weight the pick by subtree track
+     count. **CARE: `prandle` is the Book determinism source — changing the draw order moves every
+      fixture that wanders.** Re-record in the same commit or the Books go dark (that is exactly how
+       MusuRaChase/MusuRaStream went red for a month).
+
+**STATE OF THE TREE at handover.** ~224 uncommitted insertions across five ghosts (Swarm, Radio,
+ Repli, Peeroleum, Heist), all compiled, and now **live-verified read-only on Righto**: `1 pier,
+  1 mutually sealed` (half-seal healer holds), `advertise records=20→21→22 artists=14 cw=1 selfs=1
+   homes=1 stocks=1 told=1` (the boast re-fires on census change and the peer is told; `cw=1`
+    retires the "census_w is never set" misread, which was boot ordering), no `share-no` trace (the
+     share arms from `Stoker_ensure`, not the UI `$effect`). NOT verified: the 30s floor's
+      SUPPRESSION timing — needs the unfiltered measurement in (a). **This is a commit point.**
+ `MusuRaStream` fixtures are back at HEAD (owner ran the restore 21:33); `MusuRaChase`'s three
+  `toc.snap`s carry only `TimeSpool` samples, which any run leaves. **Re-record RaChase/RaStream
+   INSIDE the commit that carries the ghost changes** — fixture follows the code decision. The
+    completion-gated runner script is `scratchpad/book.sh` (polls `phase` to `done|failed|
+     ledger_timeout` AND gates on `run.book`, because `run --watch` returning is not completion and
+      a concurrent agent can own the runner).
+ Per the reviewing agent: the discovery findings + the design-questions checklist below belong in
+  **`Composition_todo.md`** (its scope note claims the not-the-transfer-loop failures); leave this
+   day's arc and the mechanism-local fixes (CPU, decoder corpse) here with a pointer. Not yet moved.
+
+**WHERE WE ARE, 2026-08-06 (written for a reviewing agent — read this first).**
+ The day started on CPU burn and ended on discovery. The arc, so the diff makes sense:
+ · **Morning — the downloader burned CPU and transfers crawled.** Named by a devtools profile, not by
+    guessing: `array_prototype2.includes` 83% total, `get_proxied_value` 80%. `.svelte.ts` compiles
+     through Svelte, which rewrites `.includes()`/`.indexOf()` into proxy-aware helpers that dispatch
+      per element — so a linear scan in `Stuff.svelte.ts` is linear × proxy dispatch. Fixed with a
+       `Set` in `o_query`, a `vmaps` Map index behind `TheX.v_index`, and three
+        materialise-for-a-presence-test bugs (`Ra_chunk_map` → `Repli_chunk_at`/`Ra_chunk_have`).
+         Step times fell ~7.7s → 2.5–4.5s and the human confirmed heisting felt fine.
+ · **Afternoon — with the bytes moving, the DISCOVERY layer turned out to be the real illness.** That
+    is the three-bug section below, and it is the load-bearing part of this entry.
+ · **Live rig**: Righto `f5da6599b8505881` + Lefto `96d0cf8852651a73`, `BigSoundland?I=<id>`, Invited to
+    each other. Read-only probes only (`runner_ask world`, `tracelog.mjs`) — never run a Book on them.
+     Everything below was found on that pair; no Book reproduces any of it, which is the point of §4.
+
+**THE BOOK GATE IS PARTLY BLIND — know this before trusting a green (2026-08-06).**
+ · **Green and trustworthy** on runner `58517b484a8e896d`: MusuHeist 22/22, RepliUpsert, RepliSplit,
+    RepliShadow, MusuStream, MusuResume, MusuRadio, SwarmShare, MusuStock, LakeTiles.
+ · **A runner can lie.** `a67a5d04a04fd334` settled EVERY Book all-red including `LakeTiles`, which
+    touches nothing under test, while `58517b` gave the same Book green in the same minute. Both answer
+     `ping` identically. **Run one control Book your change cannot affect before believing a red sweep.**
+ · **A Book with no recorded fixture mints one on the spot and reports green.** `Radiation` and a
+    mistyped `MusuRepli` both did — a vacuous 1/1. A `done:1 total:1` result gates nothing; check
+     `wormhole/Story/<Book>/` exists before counting it as evidence.
+ · **MusuRaStream / MusuRaChase were red for a month and nobody noticed.** Not a code fault: their
+    fixtures were last recorded 2026-07-08 and had missed three later, intended changes — the swarm
+     clock pin (`w.sc.now`, Radiation.g:78, commit 7935704a), seq becoming a STRING everywhere (so a
+      literal query never trips the `{k:1}` presence wildcard), and `repli_want` no longer booking an
+       inbox unemit (the documented want-bypass). Every one of those is already green in MusuBuddy,
+        MusuMag, MusuHeist and MusuBay — `grep -ho "unemit[=:]" wormhole/Story/<B>/0*.snap` dates any
+         fixture in one line. Re-recorded 2026-08-06.
+ · **Still unexplained: MusuMag sits at 0.7** (7/10) with an up-to-date fixture, so it is a real
+    failure and the one honest unknown in the set.
+ · **Attribute before you blame yourself.** A controlled revert of all five ghosts to HEAD reproduced
+    MusuRaStream's step-1 dige `9304f7107d9abdfb` byte-for-byte — proof the day's work was invisible to
+     it. Books are deterministic; this costs ten minutes and settles authorship absolutely.
+
+**THREE SILENT-FACT BUGS IN ONE AFTERNOON (2026-08-06) — and they are the same bug.**
+ All three were found on the live Righto|Lefto pair, all three are compiled, **none is yet verified
+  live** (the tabs were mid-reload; the Book sweep on `a67a` is the regression gate, not the proof).
+ 1. **The music boast had exactly ONE trigger.** `Swarm_gossip_music` was called only from
+     `Swarm_hear_hi`, on a non-reply `hi` — i.e. at standup, which is the one moment the census is
+      *guaranteed* wrong, because both things it counts stand LATER than the handshake (`radio_w` when
+       the dial first runs `Stoker_ensure`; `census_w` when `Swarm_share_up` arms). So a tab boasted
+        `records:0` and nothing ever recomputed it. **The tell was not the zero — it was that a tab up
+         for eight minutes held three `advertise` marks, all inside its first 40s.** Cure:
+          `Swarm_boast_floor`, the twin of the re-offer floor already sitting in `Swarm_share_beat`.
+ 2. **The live share armed from a UI `$effect`.** `Swarm_share_up`'s only caller was
+     `InvitePanel.svelte`'s effect, which polls on `H.version` and had to *happen* to run after
+      `Stoker_ensure` stamped `radio_w`. Lose that race and the tab arms no share loop — so it never
+       offers its stock AND never registers an rx for the friend's cast. It can neither send music nor
+        receive it while looking perfectly healthy: sealed, Music-granted, happily playing its own
+         local shelf. Cure: arm it in `Stoker_ensure`, at the instant the precondition becomes true,
+          Book-gated on `w.sc.w` (the share starts a wall-clock pump; `Swarmation.g:1000` forbids that
+           in a Book). Plus `Swarm_share_no` — the refusing verb now names which guard failed.
+ 3. **The serve MISS never travelled.** `Repli_serve_miss` logged on the SOURCE; its own comment
+     conceded it — *"if a sink stalls, look at the friend's console for this"*. The sink was told
+      nothing, so an unservable want looked exactly like a slow one, and the repair was Heist's blind
+       ladder: 3 unanswered asks at 4s behind a 20s throttle. Measured: `heist-noprogress asked:12
+        landed:1 of:8 secs:46`, then full-speed serving the moment the re-census landed. Cure:
+         `repli_missed`, the exact twin of `repli_parked` — same lane, same shape, opposite meaning.
+
+ **THE SHAPE, and the brief for any mega-do-up of this spine.** In every one of the three, *one side
+  already knew the fact* and there was no path for it to reach the side that needed it; the missing
+   path was then papered over by a repair that **inferred** the fact from timeouts. Note that the
+    half-seal entry below is a fourth instance of the same family — a repair keyed to the wrong
+     predicate — and the CLI's `world` could see in one line what the healer could not.
+ So the design questions worth a session, in order of how much they'd buy:
+  - **Which facts does one peer know that the other cannot?** Enumerate them. Every one is a candidate
+     silent-death bug. `parked` and `missed` are now both told; what else — revoked grant, swept lib,
+      full disk, a want past the frontier that will NEVER be reached?
+  - **Which repairs infer a fact instead of asking for it?** Each is a latency floor at best and a
+     permanent hole at worst. Grep for the shape: an `asks_out >= N` or a `Date.now() - ts > MS` gate
+      guarding a repair.
+  - **Which capabilities arm from a component rather than from the belief loop?** #2 was one; the
+     `$effect` latch trio in `InvitePanel.svelte` (`self`/`stood`/`shared`) is load-bearing p2p state
+      living in a UI panel. A req carries its own liveness and shows up in the snap — a `$state`
+       boolean in a component does neither.
+  - **Which change-triggered marks have no floor under them?** `offered_mark` has one and says why;
+     the boast had none. A mark that is wrong-but-stable is a silent permanent hole.
+
 **THE SEAL SELF-HEAL CANNOT SEE THE HALF-SEAL IT IS STANDING IN (2026-08-06) — live blocker.**
  A heist sat at *0 of 3 landed after 100 asks, 425s*, while Repli reported a cheerful 50KB/s both ways.
   `runner_ask world` named it in one line: `1 pier, 0 mutually sealed` →
@@ -40,8 +174,12 @@ Dated session diaries live in `history/Radio_buildlog.md` — this section stays
   for *completeness*. A repair keyed to one direction of an asymmetry will sail past the other direction
    forever. The predicate should be "do I hold BOTH grants?" — the same question `world` already asks to
     print `mutually sealed`, which is why the CLI could see in one line what the healer could not.
- NOT YET FIXED — the fix is a Swarm consent primitive and the human's call. Reproduce with
-  `runner_ask world --runner=<id>`; the tell is `0 mutually sealed` with a non-zero pier count.
+ **FIXED (2026-08-06) — this entry is kept for the lesson, not the bug.** `Swarm_reaccept_incomplete`
+  now tests WHOLENESS (`mineC && theirsC` ⇒ skip) and heals both directions: a missing grant of MY OWN
+   is re-minted **locally** (my signature, no wire, no security surface — the same mint `Swarm_accept`
+    does at seal), and a missing grant of THEIRS re-sends `pier_accept` reusing my already-signed atom
+     rather than re-minting one. Verify with `runner_ask world --runner=<id>`; the tell was
+      `0 mutually sealed` against a non-zero pier count.
 
 **THE PUMP WAS UNKILLABLE; THE DECODER WAS NOT (2026-08-06).**
  `📻⚠ Radio_pump threw … Cannot call 'decode' on a closed codec` every 400ms forever, radio stuck

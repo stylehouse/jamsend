@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '94f5592fb187ffd7~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '8757ebd54eff2f79~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -637,6 +637,26 @@ async Radio_dial(radio) {
     }
     let pool = this.Radio_dial_pool(w, radio)
     if (pool) return pool
+    // EXHAUSTION IS NOT STARVATION (2026-08-06).  The `own` ladder six lines up already concedes the
+    //  principle in its own comment — "a radio never goes quiet because the crate ran out" — and then
+    //   REPLAYS, counting the honesty in sc.replays.  The friend path had no such rung: once every
+    //    playable friend record had been heard this sitting, the pool went empty and the dial fell
+    //     straight through to Radio_reason, which wrote "gathering music from <them> — nothing has
+    //      arrived yet".  That note is simply FALSE in this state, and it is the exact line the human
+    //       read as the radio being broken.  Measured live: `starved recs=18 probe=4` — eighteen records
+    //        in the crate, four of them fully playable and already played, and the page saying nothing
+    //         had arrived.
+    //  A friend crate deepens continuously anyway (Ra_restock_beat on the share beat), so nothing needs
+    //   poking here the way Stoker_churn pokes the SELF shelf — that stoker does not fill friend crates
+    //    and calling it here would be aiming the repair at the wrong producer.  Just replay, and let the
+    //     count say so.  Radio_reason is then reached only when NOTHING is playable, which is the one
+    //      state its note actually describes.
+    let again = this.Radio_dial_pool(w, radio, 1)
+    if (again) {
+        radio.sc.replays = (+(radio.sc.replays || 0)) + 1
+        radio.bump()
+        return again
+    }
     this.Radio_reason(w, radio)
     return null
 
@@ -670,6 +690,52 @@ Radio_reason(w, radio) {
     if (radio.sc.note !== note) {
         radio.sc.note = note
         radio.bump()
+    }
+    // ELECTRODE (2026-08-06, the human: "can't reload one tab at a time and have radio turn up again",
+    //  "radio is buggered on the reloading tab too — nothing has arrived yet").  This note fires when a
+    //   peer is LIVE but every record reads as a husk, and until now it could not say which of two very
+    //    different things happened: the records rehydrated WITHOUT their bytes (a reload-persistence
+    //     bug), or the husk probe is wrong and the bytes are sitting right there (my own 2026-08-06
+    //      Ra_chunk_map → Repli_chunk_at swap, which must be ruled out rather than assumed innocent).
+    //  `chunks` counts chunk PARTICLES, `byted` counts those whose Repli_chunk_bytes is non-null, and
+    //   `probe` is what the husk gate actually returns.  chunks>0 && byted==0 ⇒ bytes lost on reload.
+    //    byted>0 && probe==0 ⇒ the probe is lying, and that one is MINE.  Only runs on the nothing-to-
+    //     play path, so it costs nothing when music is flowing.  `.c`-only.
+    if (typeof this.Radio_trace === 'function') {
+        try {
+            let homes = 0, recs = 0, chunks = 0, byted = 0, probe = 0, probe0 = 0, lowseq = ''
+            for (const home of w.o({ MusuThem: 1 })) {
+                if (!home.sc.pub) continue
+                homes = homes + 1
+                for (const rec of this.Ra_recs(this.Ra_home_them(w, String(home.sc.pub)))) {
+                    recs = recs + 1
+                    let zero = 0, lo = null
+                    for (const ch of rec.o({ seq: 1 })) {
+                        chunks = chunks + 1
+                        if (this.Repli_chunk_bytes(ch) != null) {
+                            byted = byted + 1
+                            // the NUMERIC reading of the same fact — Ra_chunk_map indexed by `+ch.sc.seq`,
+                            //  which is what the husk gate used before the 2026-08-06 swap.
+                            if (+ch.sc.seq === 0) zero = 1
+                            if (lo === null || +ch.sc.seq < lo) lo = +ch.sc.seq
+                        }
+                    }
+                    if (zero) probe0 = probe0 + 1
+                    if (lo !== null && lowseq.length < 40) lowseq = lowseq + (lowseq ? ',' : '') + String(lo)
+                    if (this.Repli_chunk_at(rec, 0) != null) probe = probe + 1
+                }
+            }
+            // probe vs probe0 (2026-08-06): the two readings of "does this record hold its opening page".
+            //  `probe` is the LITERAL query the gate now uses (rec.o({seq:'0'})); `probe0` is the NUMERIC
+            //   coercion the old Ra_chunk_map used (+ch.sc.seq === 0).  They are only equal if every seq
+            //    really does ride as the exact string '0'.  probe0 > probe ⇒ the swap is the bug and the
+            //     bytes are sitting right there.  probe == probe0 < recs ⇒ the records genuinely lack
+            //      their opening page and the fault is upstream, in what the offer/restock actually fills.
+            //  `lowseq` is the lowest held seq per record (first few) — it names WHICH page arrived first,
+            //   which is the difference between "nothing came" and "the wrong end came".
+            this.Radio_trace(radio, { ev: 'starved', why: liveName ? 'gathering' : (anyPier ? 'offline' : 'nobody'),
+                homes: homes, recs: recs, chunks: chunks, byted: byted, probe: probe, probe0: probe0, lowseq: lowseq })
+        } catch (er) {}
     }
 
 },
@@ -825,13 +891,16 @@ Radio_lineup_errors(w, lu, pools) {
 
 // Radio_dial_pool — an unheard friend-crate record whose preview has begun to land (map[0]
 //  present — a husk plays silence, so presence IS playability).  Random across every crate.
-Radio_dial_pool(w, radio) {
+// `all` (2026-08-06): ignore heard-this-sitting — the EXHAUSTION pass.  Without it the caller cannot
+//  tell "no friend music has landed" from "I have played all of it", and those want opposite answers
+//   (an honest note vs. a replay).  Same walk, one gate dropped, so the two readings can never drift.
+Radio_dial_pool(w, radio, all) {
     let cands = []
     for (const home of w.o({ MusuThem: 1 })) {
         if (!home.sc.pub) continue
         let shelf = this.Ra_home_them(w, String(home.sc.pub))
         for (const rec of this.Ra_recs(shelf)) {
-            if (radio.c.heard && radio.c.heard[rec.sc.id]) continue
+            if (!all && radio.c.heard && radio.c.heard[rec.sc.id]) continue
             // presence, not materialisation — the same per-landed-chunk burn as Radio_lineup_fill above.
             if (this.Repli_chunk_at(rec, 0) == null) continue
             cands.push(rec)
@@ -888,6 +957,28 @@ Stoker_ensure(w) {
     // the RADIO WORLD beacon (runtime .c on the top House): the live share (Swarm_share_up)
     //  needs the world where the stoker actually shelves — stock served out, mirrors minted in.
     this.top_House().c.radio_w = w
+    // ARM THE SHARE HERE (2026-08-06) — at the moment its precondition becomes true, rather than
+    //  leaving a UI component to poll for it.  The line above is the ONLY place radio_w is stamped,
+    //   and until now Swarm_share_up's only caller was InvitePanel.svelte's $effect, which re-asks on
+    //    H.version bumps and therefore had to HAPPEN to run after this line.  Lose that race and the
+    //     tab never arms: no share loop, so it never offers its own stock AND never registers an rx
+    //      for the friend's cast — it can neither send music nor receive it, while looking perfectly
+    //       healthy (sealed, Music-granted, happily playing its own local shelf).  Measured live
+    //        2026-08-06: Lefto sat at `advertise cw=0` and `starved homes=0 recs=0` for a whole
+    //         session against a mutual seal, and Righto — same build, same code — armed fine.  A race
+    //          you win most of the time is the worst kind: it reads as flakiness, not as a bug.
+    //  Retried on every dial (Radio_dial calls this) and idempotent — share_up latches, so the cost
+    //   after the first success is one property read.
+    //  BOOK-GATED by w.sc.w, the same prod test Radio_prod_seed uses six lines up, and for a sharper
+    //   reason: Swarm_share_up starts a wall-clock setTimeout pump, which Swarmation.g:1000 names as
+    //    a thing a Book must NEVER do.  A named Book run-world wears w.sc.w; only prod arms.
+    if (!w.sc.w && typeof this.Swarm_share_up === 'function') {
+        try {
+            let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
+            let sw = (ident && this.Swarm_station_world) ? this.Swarm_station_world() : null
+            if (sw && ident) this.Swarm_share_up(sw, ident)
+        } catch (er) {}
+    }
     return st
 
 },

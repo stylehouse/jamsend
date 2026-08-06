@@ -7,7 +7,11 @@ story:Heistation
     TimeTotal:beliefs,avg=0.002
       sample=0.002,at=1785367899
       sample=0.001,at=1785995730
+      sample=0.002,at=1786005364
+      sample=0.001,at=1786005462
     TimeTotal:step,avg=0.002
       sample=0.002,at=1785367899
       sample=0.001,at=1785995730
+      sample=0.002,at=1786005364
+      sample=0.001,at=1786005462
   step,dige:805e50cb4dd9cfaa

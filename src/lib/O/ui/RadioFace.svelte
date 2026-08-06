@@ -93,8 +93,10 @@
     {#if face.note}<div class="rf-note">{face.note}</div>{/if}
     <!-- the "why is it silent" line: a starved radio holds a loaded track but the next piece hasn't
          arrived over the wire, so the bar freezes.  Say so — the human asked that the page never go
-         quiet WITHOUT explaining itself.  It resumes itself the instant the piece lands (no user action). -->
-    {#if face.state === 'starved'}<div class="rf-note">the next piece hasn't arrived yet — holding the line, it'll resume itself</div>{/if}
+         quiet WITHOUT explaining itself.  It resumes itself the instant the piece lands (no user action).
+         WORDING (2026-08-06, the human): "off the tape", not "the next piece hasn't arrived yet" — the
+         old line described the MECHANISM to someone who only wanted to know the music stopped. -->
+    {#if face.state === 'starved'}<div class="rf-note">off the tape — holding the line, it'll resume itself</div>{/if}
     {#if face.of > 0}
         <div class="rf-bar"><div class="rf-fill" style="width:{Math.min(100, 100 * face.at / face.of)}%"></div></div>
         <div class="rf-time">{mmss(face.at)} / {mmss(face.of)}

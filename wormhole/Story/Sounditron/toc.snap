@@ -99,28 +99,28 @@ story:Sounditron
         lematch,Need
           means,spayer,re:Need:(.*),tol:any
   TimeSpool
-    TimeTotal:beliefs,avg=0.091
-      sample=0.063,at=1785993442
-      sample=0.129,at=1785993887
-      sample=0.097,at=1785994108
-      sample=0.09,at=1785994472
-      sample=0.125,at=1785994652
-      sample=0.088,at=1785995195
-      sample=0.047,at=1785997900
+    TimeTotal:beliefs,avg=0.086
       sample=0.073,at=1785999173
       sample=0.056,at=1785999801
       sample=0.141,at=1786000121
-    TimeTotal:step,avg=0.013
-      sample=0.009,at=1785993442
-      sample=0.018,at=1785993887
-      sample=0.014,at=1785994108
-      sample=0.013,at=1785994472
-      sample=0.018,at=1785994652
-      sample=0.013,at=1785995195
-      sample=0.007,at=1785997900
+      sample=0.071,at=1786001192
+      sample=0.142,at=1786001270
+      sample=0.093,at=1786002468
+      sample=0.063,at=1786002987
+      sample=0.053,at=1786004528
+      sample=0.06,at=1786008975
+      sample=0.109,at=1786009161
+    TimeTotal:step,avg=0.012
       sample=0.01,at=1785999173
       sample=0.008,at=1785999801
       sample=0.02,at=1786000121
+      sample=0.01,at=1786001192
+      sample=0.02,at=1786001270
+      sample=0.013,at=1786002468
+      sample=0.009,at=1786002987
+      sample=0.008,at=1786004528
+      sample=0.009,at=1786008975
+      sample=0.016,at=1786009161
   step,dige:de2ef2f8340767ce
   step=2,dige:ce660bf998e69495,desc:the machine stands
     Assertion:machine-stood,sentence:the machine stood — an addressable self emerged on the spine

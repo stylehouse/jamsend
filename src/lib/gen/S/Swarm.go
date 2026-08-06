@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '51d9087e12a63ea1~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '5560377b4cae869b~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -924,6 +924,7 @@ Swarm_note_era(w, route, sf, may_reset) {
         delete w.c.ra_wanted
         delete w.c.ra_want_ts
         delete w.c.ra_parked   // §5.3: a rebirth means the far side forgot every park too — nothing to suspend for
+        delete w.c.ra_missed   // ditto (2026-08-06): a told miss describes the PREVIOUS incarnation's id map
         // §5.5: every in-flight ask is gone with them, so nothing is ambiguous any more — the Karn marks
         //  and the backoff ladders must go with the wants they describe, else the first want after a
         //   rebirth is un-sampleable and waits out a ×8 rung for an ask that no longer exists.
@@ -1707,11 +1708,58 @@ Swarm_gossip_music(w, ident) {
     //     no route minted).  `records` is what we were boasting; a census of 0 means the shelf is the
     //      problem and neither gate matters.  This verb previously returned `told` to a caller that
     //       discarded it, so all three facts existed for one stack frame and were never once seen.
+    //  CENSUS BREAKDOWN (2026-08-06): live, BOTH tabs advertised `records:0` on every beat while one
+    //   of them was demonstrably serving a 474-chunk track to the other — so each was telling the
+    //    other "I have nothing" while the bytes moved fine.  A zero census has three distinct causes
+    //     that the single number cannot tell apart, so name them:
+    //      `cw`=0 ⇒ w.c.census_w was never pointed at the RADIO world, so we counted the swarm world,
+    //        which holds no %MusuSelf and can only ever answer 0 (the default in Swarm_music_census is
+    //         `w` itself — the BOOK behaviour, wrong for a live tab);
+    //      `selfs`>0 but `homes`=0 ⇒ a %MusuSelf exists but under a DIFFERENT pub than ident.prepub —
+    //        an identity mismatch, not an empty shelf;
+    //      `homes`>0 and `stocks`=0 ⇒ the home stands but the stoker has shelved no stock yet.
+    let cw_set = 0, homes = 0, selfs = 0, stocks = 0
     if (typeof this.Radio_trace === 'function') {
+        try {
+            let cw = w.c.census_w || w
+            cw_set = w.c.census_w ? 1 : 0
+            selfs = cw.o({ MusuSelf: 1 }).length
+            for (const home of cw.o({ MusuSelf: 1, pub: ident.sc.prepub })) {
+                homes = homes + 1
+                stocks = stocks + home.o({ stock: 1 }).length
+            }
+        } catch (er) {}
         try { this.Radio_trace(null, { ev: 'advertise', piers: piers.length, granted: granted, told: told,
-            records: +(counts.records || 0), artists: +(counts.artists || 0) }) } catch (er) {}
+            records: +(counts.records || 0), artists: +(counts.artists || 0),
+            cw: cw_set, selfs: selfs, homes: homes, stocks: stocks }) } catch (er) {}
     }
     return told
+
+},
+// Swarm_boast_floor — the boast's RE-SEND FLOOR, the twin of the re-offer floor in Swarm_share_beat.
+//  Until 2026-08-06 `Swarm_gossip_music` had exactly ONE trigger: hearing a non-reply `swarm_hi`
+//   (Swarm_hear_hi).  That fires at standup and on an era-kick — which is the one moment the census is
+//    GUARANTEED wrong, because both things it counts stand LATER than the handshake: the radio world
+//     (Stoker_ensure stamps top.c.radio_w when the dial first runs) and the share glue (Swarm_share_up
+//      stamps w.c.census_w).  So the boast said `records:0`, nothing ever recomputed it, and the peer's
+//       %IveGot read "they have nothing" for the whole session while bytes moved fine over the same
+//        seal.  The tell in the trace ring was not the zero — it was that only THREE `advertise` marks
+//         existed, all inside the first 40s, on a tab that had been up for eight minutes.
+//  Change-triggered, with a floor under it, for the same reason the re-offer has one: a mark that is
+//   wrong-but-stable is a silent permanent hole, and a floor turns any such hole into a bounded delay.
+//    The census itself is throttled separately (`boast_look_at`) because it walks the shelf — cheap at
+//     16 records, not something to run twice per 600ms beat at collection scale.
+Swarm_boast_floor(w, ident) {
+    let now = Date.now()
+    if (w.c.boast_look_at && (now - w.c.boast_look_at) < 5000) return
+    w.c.boast_look_at = now
+    let cn = this.Swarm_music_census(w, ident)
+    let mark = String(cn.records || 0) + ':' + String(cn.artists || 0)
+    let floor = +(w.c.swarm_boast_floor_ms || 30000)
+    if (w.c.boast_mark === mark && w.c.boast_at && (now - w.c.boast_at) <= floor) return
+    w.c.boast_mark = mark
+    w.c.boast_at = now
+    this.Swarm_gossip_music(w, ident)
 
 },
 // Swarm_ive_got — hear a boast: facts land ONLY under an already-sealed %Pier for the boaster.
@@ -1785,11 +1833,11 @@ Swarm_share_present(from) {
 //  mirror conventions, and start the pump.  Needs the radio world standing (top.c.radio_w —
 //   Stoker_ensure stamps it) for the shelves; returns false until it is, callers just re-ask.
 Swarm_share_up(w, ident) {
-    if (!w || !ident?.sc?.prepub) return false
+    if (!w || !ident?.sc?.prepub) return this.Swarm_share_no(w, 'no station world or no identity')
     if (w.c.share_up) return true
     let rw = this.top_House().c.radio_w
-    if (!rw) return false
-    if (typeof this.Repli_arm !== 'function') return false
+    if (!rw) return this.Swarm_share_no(w, 'radio world not standing yet')
+    if (typeof this.Repli_arm !== 'function') return this.Swarm_share_no(w, 'Repli verbs not deposited')
     this.Repli_arm(w)
     w.c.repli_mirror_pier = String(ident.sc.prepub)   // my addr — the pull's from-address (Ra_restock_beat)
     w.c.repli_mirror_by_from = 1                       // per-friend crates, keyed by the caster
@@ -1798,8 +1846,28 @@ Swarm_share_up(w, ident) {
     w.c.repli_allow = (peer) => this.Swarm_share_granted(peer)
     w.c.ra_source_live = (from) => this.Swarm_share_present(from)
     w.c.share_up = 1
+    if (typeof this.Radio_trace === 'function') {
+        try { this.Radio_trace(null, { ev: 'share-up' }) } catch (er) {}
+    }
     this.Swarm_share_loop(w, ident)
     return true
+
+},
+// Swarm_share_no — WHY the share did not arm, said once per distinct reason.  Callers re-ask
+//  constantly (every radio dial), so marking each refusal would be a flood; the reason CHANGING is
+//   the whole signal, and a reason that never changes is precisely the bug — a tab stuck forever on
+//    'radio world not standing yet' is a tab that will never share music, and until 2026-08-06 that
+//     state was completely mute.  It cost an hour of reading `cw:0` and guessing which of three
+//      places had failed, when the failing verb knew the answer and threw it away.
+//  Returns false so each guard above stays a one-liner.  `.c`-only, no bump.
+Swarm_share_no(w, why) {
+    if (w && w.c.share_no !== why) {
+        w.c.share_no = why
+        if (typeof this.Radio_trace === 'function') {
+            try { this.Radio_trace(null, { ev: 'share-no', why: why }) } catch (er) {}
+        }
+    }
+    return false
 
 },
 // the pump loop: ~600ms cadence, era-guarded (a re-up cancels the stale chain — the Radio
@@ -1903,6 +1971,7 @@ async Swarm_share_beat(w, ident) {
     if (!rw) return
     let me = String(ident.sc.prepub)
     let stock = this.Ra_home_self(rw, me)
+    this.Swarm_boast_floor(w, ident)
     for (const p of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
         if (!p.sc.pub) continue
         if (!this.Swarm_pier_live(p, 'Music')) continue
