@@ -2226,7 +2226,13 @@
         //   expected snap to forgive mid-run would perturb later steps' timings, EntropyArrest
         //    §10.1).  Instead it flags-and-continues and forgives in a post-run sweep.  boot_role
         //     rides on top_House (the same gate Auto's storyFinished bridge uses).
-        const is_runner = () => (H.top_House() as any).c.boot_role === 'runner'
+        //  `daemon` counts (2026-08-08, Daemon_todo §4a).  It is the same headless shape — more so,
+        //   if anything: nobody is there to resume it BY CONSTRUCTION, it is a box in a corner.  The
+        //    role split exists only so an always-up peer stops claiming the editor's `runner` relay
+        //     address; it says nothing about how a Run should behave, and reading it as if it did made
+        //      a daemon halt at the first value-noise mismatch — measured: 1/1 steps where a runner
+        //       does 7/7, with no error anywhere, just a Book that quietly stopped.
+        const is_runner = () => ['runner', 'daemon'].includes((H.top_House() as any).c.boot_role)
 
         // advance: called after snap_step completes and (for waitCyto path)
         // after the animation_done event has resumed the drive.

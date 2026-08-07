@@ -8,6 +8,152 @@ The one living doc for the Sounditron thread: /BigSoundland's resident Book that
 
 ## 0. What to get on with next
 
+### ★ LANDED (2026-08-08) — the beat exists, and the FIRST thing it caught is a real bug
+
+The plan below is **implemented and run live** (`Ghost/Story/Sounditron.g` @ `71478763b6fd7514`, three
+ runs on runner `a67a5d04a04fd334`).  Beat 7 is `the music runs`, the report moved to beat 8, the
+  sentence is declared as `music-runs`, `report-stands` is no longer a tautology.  What matters is not
+   the plumbing but what happened the first time the contract existed:
+
+**THE RADIO WILL NOT PLAY ITS OWN SHELF ON A SOLO RUNNER.**  Three runs, identical, 20.2s of a 20s
+ budget every time, and the why-line names it:
+
+    boot: the music to run — ms 20225 / budget 20000 — met 0
+      why: digging — pressed and hunting but the dial saw nothing playable
+           (stock=13 friend=0 own=13) — chunk 0 warm on nothing
+
+**⚠ THAT FIRST READING WAS WRONG — chased it, and the answer is POLICY, not machinery.**  A fourth run
+ with a sharper why-line says it plainly:
+
+    why: friend-exclusive by design — 16 own records stand but Radio_dial will not touch
+         them without radio.sc.own; no friend is online
+
+ `Radio_dial:858` is **SOURCE-EXCLUSIVE** — the human 2026-07-28: the tabs are *"meant to be listening
+  to each other's collections exclusively, unless they click to do so"* — so own stock is dialled ONLY
+   when the listener has flipped `radio.sc.own` (the RadioFace source switch).  A solo machine with a
+    full shelf parks in `digging` **behaving exactly as designed**, and `Radio_reason` writes the honest
+     `nobody online yet` note.  Nothing is broken.  The warm-window reading was a plausible guess that
+      fit the symptom and was not checked against the dial's own comment before being reported.
+
+**SO THE CONTRACT AS DECLARED CANNOT LATCH ON A SOLO MACHINE — a ruling is wanted.**  This is a design
+ question, not a bug, and it is the human's:
+ - **(a) leave it contracted.**  A session with no friend online played no music, and that IS a failed
+    session by jamsend's own lights.  Honest — but the runner can then never be green, so the Book stops
+     working as a regression gate in this container.
+ - **(b) undeclare it**, back to the opportunistic %sworn it was.  Keeps the runner usable; gives up
+    exactly the gate the human asked for.
+ - **(c) let the probe flip `radio.sc.own` for itself** — Sounditron is a diagnostic ("does sound run
+    HERE"), and proving decode → schedule → timeline locally is a different question from whether the
+     social layer is working (beat 5 and the Heist %Needs already cover that).  **Not done unilaterally:**
+      `Sounditron_listen` presses UN-MUTED and the resident Book's radio is what a BigSoundland actually
+       plays, so flipping `own` would make the page play your own records whenever no friend is around —
+        a direct reversal of the 2026-07-28 ruling, and audible.
+ My read is **(c)** with the flip scoped to a Book run only, leaving the resident page's policy alone —
+  but that seam needs proving before it is worth writing.
+
+**A REAL INCONSISTENCY DOES SIT UNDER THIS, whichever way the ruling goes.**  `Sounditron_listen`
+ decides to press on `friend || haveOwn`, but the dial honours own stock only under `radio.sc.own` — so
+  the Book presses a radio that structurally cannot play, and it lands in `digging` for ever.  Left
+   alone on purpose: pressing early is also what arms the radio to start the instant a friend track
+    lands (`Radio_nudge` gates hard on `digging`), so "fixing" the precondition would trade one real
+     behaviour for a tidier one.  Worth a decision, not a drive-by.
+ Note the shape of the win: nothing about the radio changed today.  The bug was there this morning,
+  visible in principle to anyone who watched a runner for 20 seconds, and **invisible to the Book**,
+   which went green through it — because the sentence was sworn but never *contracted*.  The gap the
+    human felt ("the Radio doesn't really start for a bit longer than that") was exactly this.
+
+**The rest of the boot is now fast and boring**, which is the other half of the report: stoker 1.5s /
+ relay 0ms / muse 54ms / peer 0ms / sound 1.5s — call it ~4s to the sound probe, then a 20s wall.
+
+**WHAT ELSE MOVED, and two things that need the human.**
+ - `Sounditron_music_running(w)` is the ONE predicate the wait and the sentence share (two copies of a
+    truth is how a Book starts lying about itself), and `Sounditron_music_why(w)` is its four-way
+     diagnosis.  `Sounditron_boot_mark`'s trace slice went 60 → 140 chars: the first run truncated the
+      why mid-word (`"— the serve s"`), which is a diagnosis field that cannot afford to be cut.
+ - `report-stands` now gates `Sounditron_report_filled(w, s)` — the report carries its own sum AND
+    every fact the world made available.  Each clause is conditional on its source, so a quiet machine
+     still passes honestly.  Paired with a one-shot TOP-UP in the witness (`played`/`connected`), which
+      is what makes it safe: without it, a peer arriving *during* the beat that summed it would leave a
+       GOOD outcome permanently unsworn.
+ - **Deviation from the plan, on purpose:** `s.sc.ttf` was asked for and is NOT snapped.  Wall clock in
+    `sc` churns the fixture on every run for ever (the same law `Sounditron_boot_mark` keeps `ms` on
+     `.c` for).  `s.sc.played` carries the fact; the number lives in the boot ledger, the trace ring,
+      and the existing `%log:'slow to sound'`.
+ - **A Book cannot grow a beat from the CLI.**  `story_total()` is `run.sc.total ?? The.o({step:1}).length`
+    and check mode stops dead at the first step with no recorded dige (`Story.svelte:2295`) — so the
+     first 8-beat run produced **seven** steps and silently dropped beat 8 on the floor.  The recorded
+      toc is the Book's length.  I grew it by hand (a `step=8` line + moving the `report-stands`
+       Assertion under it); the editor's own path is Resume-at-the-end, which extends `total` and flips
+        to `'new'` (`Story.svelte:3039`).  Worth knowing before planning any beat change.
+ - **⚠ THIS BOOK IS ALL-RED ON STEP DIGES AND WAS BEFORE I TOUCHED IT.**  Every step mismatched on the
+    very first run, including steps 1-6 which my change cannot reach — the wander work moved
+     `Ghost_M_Crate` / `Ghost_M_Radio` / `Ghost_M_Ra`, all of which this Book includes.  Worse, the
+      diges are **not stable run-to-run** here (step 3 was `bdb0af…` then `557724…`; step 7 `d8913e…`
+       then `bc4f42…`), so re-recording from this container would record noise.  **The step-dige gate on
+        Sounditron is currently holding nothing** — the contract is doing all the work.  A re-record
+         belongs on the human's machine, twice, per CLAUDE.md's re-run law.  Until then read this Book's
+          verdict as `assertions`, not `steps`.
+ - `BeatFace.svelte` TOTAL 7 → 8 with the new clause pair (`listening for the music to start` /
+    `the music ran`).  The `n === 6` / `n >= 6` witness guards were audited and are correct as-is —
+     `>= 6` still covers the new 7 and 8, and `=== 6` is the sound probe, which did not move.
+
+### ★ the plan as written (2026-08-08 — now implemented; kept for the reasoning)
+
+The human, after the boot fix took steps from 7.8s to ~0.48s: *"we get to the end of the Sounditron
+ test now but the Radio doesn't really start for a bit longer than that — that should be Assertioned
+  clearly (but vaguely as it's a random track each time)"*, and *"is 'sum and report' really what's
+   happening there?"*  Both instincts are right.  Three defects, one shape.
+
+**1. The sentence they want ALREADY EXISTS, is already vague, and is NOT CONTRACTED.**
+ `Sounditron_witness` swears
+ `'the music played — record chunks decoded onto the live timeline'`
+ whenever `radio.sc.Radio` is `playing|starved` and `radio.c.seq > 0`.  No track name, no counts —
+  **already exactly the "clear but vague" the human asked for**, and random-track-safe by
+   construction.  But this file's own header says it outright: *"The opportunistic %sworn (granted a
+    peer online sound flowing listening) are so far UNDECLARED — they want declaring"*.  Only four
+     sentences are contracted in the toc (`machine-stood` s2, `relay-answers` s3,
+      `possibilities-surveyed` s4, `report-stands` s7).  **So sound flowing is OBSERVED but never
+       GATED** — the Book goes green at step 7 whether or not a note ever played.  That is precisely
+        why the gap the human is describing has been invisible.  The work is a DECLARATION, not a new
+         assertion.
+
+**2. But do NOT just declare it on step 7 — it would red the Book honestly.**  At step 7 the music
+ genuinely has not started; that is the human's whole report.  The hosting step is the by-when, so
+  the Book has to grow a beat before the contract can be met.
+
+**3. `sum and report` IS premature, and `report-stands` is close to a tautology.**  `Sounditron_report`
+ mints `%Session` with `alive`/`possibilities`/`granted`/`connected` + the `%Tally` — i.e. it sums a
+  session in which the headline fact (did music run) is not yet available.  And `report-stands`
+   latches on `w.o({Session:1})[0]` merely EXISTING, so it gates *a row was minted*, not *the report
+    is true or complete*.  The human's "is that really what's happening there" is the right question
+     and the answer is no.
+
+**THE PLAN.**
+ - **Beat 7 → "the music runs".**  Arm `expecting(w, 'music_wait', 20, …)` + `Sounditron_await` on a
+    truth-fn `Sounditron_music_running(w)` = radio `playing|starved` && `seq > 0`.  Give it a REAL
+     why-fn — the failure modes want opposite fixes and are indistinguishable from outside: *no stock
+      at all* / *radio never pressed* / *stock but seq stuck* (decoder or serve side) / *AudioContext
+       never ticked*.  Graceful on timeout like every other wait here.
+ - **Beat 8 → "sum and report"** — the existing `Sounditron_report` moved down one, so the Session
+    sums a world where sound has (or provably has not) happened.  Carry `s.sc.played` and `s.sc.ttf`.
+ - **DECLARE** `the music played — record chunks decoded onto the live timeline` against the new beat
+    7 (`node scripts/runner_ask.mjs declare '<sentence>'`).
+ - **Strengthen `report-stands`** to mean the report is FILLED IN (gate on `Session` carrying its
+    summed facets), not that a row exists.
+
+**THE INSTRUMENT FOR "it could still be a little faster" IS ALREADY THERE.**  `w.c.ttf` is
+ time-to-first-chunk from the press, stamped once, and there is already a
+  `%log:'slow to sound — music took over two seconds to begin'` at `ttf > 2000`.  It is simply not in
+   the boot ledger.  Add a `Sounditron_boot_mark` for `music_wait` and the gap lands beside
+    `stoker_wait` / `relay` / `peer` / `sound_wait`, which is how the human will actually SEE the next
+     improvement land.  (The known remaining hold upstream is `fn:swarm_share_beat` — single beats of
+      5.2s and 7.9s on the beliefs mutex; see the boot TODO in `Radio_todo.md`.)
+
+**WHAT MOVES.**  Renumbering 7→8 re-records Sounditron's own fixtures (new `step=8`, changed `step=7`
+ desc) — deliberate, cheap, and a SINGLE-Book blast radius: no other Book hosts these sentences.
+  Audit on the way: `NAMES[n]` in the BeatFace HUD, and the `n === 6` / `n >= 6` guards in
+   `Sounditron_witness` (the `no live audio` log and the `Sounditron_listen` retry poll).
+
 ### ★★ LIVE SESSION HANDOFF (2026-07-28 daytime — human at the wheel, rapid feedback) — read FIRST
 
 **Nothing committed — all in the working tree.** Worked solo; ★claude 49dee91d is WEDGED (begun-wedge on

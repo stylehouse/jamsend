@@ -32,28 +32,36 @@ Candidates, in the order they actually unblock things:
 1. ~~**Boot like a client does** (§8.3)~~ — **DONE 2026-08-08.** `book`+`boot_role` are stamped, a
     bootless boot refuses with exit 4 instead of falling into Auto's dev library page, `ROLE` defaults
      OFF so a bare boot never mints, and `humdinger` comes off `boot_role`. (§9.6)
-2. **Give the daemon its own relay address** (§4) — **NOW THE TOP ITEM, and it is the owner's.**
-    Promoted from 3 because everything it gated is otherwise ready. Today the daemon would register as
-     `addr=runner`, the address every runner tab claims; `bind()` is additive and `deliverLocal` fans
-      out to every socket, so both claimants get every frame — the `channel DEAD — 20s silent` symptom.
-       Deliberately left alone overnight (§9.7 Phase 3): a bad `relay.ts` edit takes every runner down
-        with nobody awake. Smallest change that works: give the daemon's `%Peering` a name that is not
-         the bare role (`LiesLies.svelte:312`). **Do NOT** attempt §7.4's suffix/serial layer.
-3. **Arm the Swarm station** (§8.1) — the ONE call that gives the daemon invites: `Swarm_station_up`.
-    Nothing outside `InvitePanel.svelte` calls it, so no handler is armed and an inbound `pier_hello`
-     has nowhere to land. Blocked only on item 2 (`RELAY=0` deletes `WebSocket` and the verb guards on
-      it). **The ledger it needs is now waiting for it** — `Swarm_station_up` rehydrates piers, invites
-       and chain roots from the stash *before* `Swarm_arm`, and as of tonight that stash is actually
-        populated on a restored owner (§9.6, step 2). The daemon is the RESPONDER, never the joiner.
+2. ~~**Give the daemon its own relay address** (§4)~~ · ~~**Arm the Swarm station**~~ — **BOTH DONE
+    2026-08-08** (§4a + §9.6). The daemon dials `/relay?addr=<its own prepub>`, gets `hello_ok`, and
+     arms `Swarm_station_up` — verified on the real relay with the human's runner up throughout.
+      `relay.ts` binds any sane role name; only `editor|runner` steer the r2r bridge; dispatch stays
+       runner-only. **Next: §9.4's two-daemon harness** — the responder half is armed but no real
+        redemption has crossed it, and redemption is a UI gesture (`Swarm_redeem` ← `InvitePanel.join()`),
+         so proving it headlessly needs the test-only redeemer. That is the last piece of "invites
+          end-to-end". Listing bound roles in a UI remains the owner's stated "maybe one day".
+
+3. ~~**§9.4's two-daemon harness**~~ — **DONE 2026-08-08, and it passed: invites work end to end.**
+    A mints, B redeems over the real relay, A spends the serial and seals; both ends hold a durable
+     `%Pier`, and A still `remembers 1 friend(s), 1 invite(s)` after a restart. `MINT_INVITE=1` /
+      `IZ=<token>`, test-only. (§9.6) **So the whole §9 work order is met.** The next real gate is
+       item 7, the two-tab fingers-test — everything above is proven node-side only.
 4. ~~**Close the security holes** (§8.4)~~ — **DONE 2026-08-08.** `.jamsend` files at 0600 and dirs at
     0700 (incl. fixing already-existing files), `path.join(root, rel)` confined to root, status port
      bound to localhost, token required on `/stop` and `/c`. (§9.6)
-5. **The opus shim** (§2/§2.1): **ffmpeg behind the WebCodecs seam**, encode half only, with an
-    Ogg-page→packet demux as the single real piece of work. Note §8.2 — this is no longer only about
-     *stocking* a collection; the daemon cannot serve its OWN tracks past the preview window without
-      it. **Probably the biggest genuinely-open piece of work in this file now.**
-6. **Point it at real music** (§5.3) — a nav over `/music` so `Crate_nav_meander` has something to
-    dig through. Makes the rest testable against reality instead of synth tones.
+5. **The opus shim** (§2/§2.1/**§2.2**): **ffmpeg behind the WebCodecs seam**, encode half only, with
+    an Ogg-page→packet demux as the single real piece of work. Note §8.2 — this is no longer only
+     about *stocking* a collection; the daemon cannot serve its OWN tracks past the preview window
+      without it. **Now the biggest genuinely-open piece of work in this file**, and the only one that
+       was blocked on a decision rather than on effort.
+    **UNBLOCKED 2026-08-08 on both counts:** ffmpeg now ships in `jamserve/Dockerfile` (`apk add`, not
+     npm — so it never touches the shared `node_modules`), and the owner ruled that **LUFS levelling
+      is part of the encode** (§2.2), which also deletes the `needles`/Worker dependency instead of
+       making the shim emulate it. Read §2.2 before starting: it changes what the shim is *for*.
+6. ~~**Point it at real music** (§5.3)~~ — **DONE 2026-08-08.** `MUSIC=1` mounts this container's
+    `/music` (212 opus tracks) as a READ-ONLY third root named `music`, and `Crate_nav_meander` walks
+     it. Without it the daemon finds `testsounds` — 8 synth tones — which is the "proves plumbing,
+      means nothing" case this closes. (§9.6)
 7. **The two-tab fingers-test** (`Identity_persist_todo` §6.7) — the one gate no daemon run can stand
     in for, and it matters MORE now: gap 1 means a real tab writes its private key to a real share, and
      every proof tonight is on the node fs nav. A human with two tabs, ten minutes.
@@ -234,6 +242,56 @@ And it settles the owner's other note: **transcode-to-ogg stops being a third co
  becomes the *native* output — under ffmpeg, Ogg is what you get and raw packets are what you carve
   out of it, so the ogg path is the better-tested one here, not the shakier one.
 
+### 2.2 LOUDNESS IS PART OF THE ENCODE — ruled by the owner, 2026-08-08
+
+> *"I DO want the LUFS leveling done to the stream we ogg encode! so classical gets louder and we
+>  encode it well pronounced."*
+
+This is a **feature decision, not an implementation detail**, and it changes what the shim is for.
+ The daemon is not merely filling a codec hole; it is producing a **levelled** stream, so a quiet
+  classical record arrives at the same perceived loudness as everything else instead of being the
+   track everyone reaches for the dial on.
+
+**`ffmpeg -af loudnorm` is the whole answer** — EBU R128 normalisation, in the same pass that
+ produces the opus. `-af ebur128` measures without changing anything if you only want the number.
+
+**The good part: this DELETES a browser dependency rather than adding one.** `Ra_lufs`
+ (`Ra.g:199-216`) measures integrated LUFS with `@domchristie/needles` over decoded PCM through a Web
+  Worker (`/needles-worker.js`) — three browser things (Worker, AudioContext source, an npm package)
+   for one number. Under ffmpeg you do not emulate any of it: **loudnorm's two-pass mode reports the
+    measured `input_i` (integrated LUFS) as JSON on stderr *and* applies the correction**, so the
+     measurement and the fix come out of the pipeline you were already running.
+ The principle worth keeping, because it generalises to every other browser-shaped dependency here:
+  **put the seam at the QUESTION, not at the API.** "Reimplement `LoudnessMeter`" is a lot of work;
+   *"what is this file's integrated LUFS?"* is a flag. The gain decision downstream of it is
+    arithmetic on that number.
+
+**Where it goes in the chain** — filter first, encoder second, so §2.1's invariant survives:
+```
+source ──▶ decode ──▶ [loudnorm] ──▶ libopus ──▶ Ogg ──▶ demux to packets
+                       ▲ the new bit          ▲ §2.1's preskip is read here, unchanged:
+                                                loudnorm is a FILTER, it never touches OpusHead
+```
+
+Three things to get right, all cheap now and expensive later:
+- **Two-pass, not one.** Single-pass loudnorm is a dynamic/streaming approximation and will pump on
+   material with wide range — which is precisely the classical case this exists to serve. Measure
+    first, then apply with the measured values. You are stocking a file you already hold, so the
+     second pass costs nothing but time.
+- **A normalised stream is a DIFFERENT artifact from the source, and identity must not blur them.**
+   The enid is a sha256 **of the bytes** (`Crate_nav_meander`'s own note on why dedup costs a full
+    read), so a levelled encode does not and must not hash to the source file. Key identity off the
+     SOURCE; treat the levelled opus as a derived rendition. Getting this backwards would make the
+      same record look like two, which is exactly the "there's only one of anything" rule in
+       CLAUDE.md.
+- **Record the target, and record it once.** Pick one integrated target (−14 LUFS is the streaming
+   convention; the owner may want louder) and put it somewhere a reader can find, because a stock
+    levelled at one target and a stock levelled at another are not interchangeable and nothing in the
+     bytes says which is which.
+
+**Not needed for heist.** §2's split still holds at its strongest here: a heist ships the *original
+ bytes*, so it neither transcodes nor levels. Loudness belongs to the radio/stream path only.
+
 ---
 
 ## 3. The five traps, each of which cost real time
@@ -354,6 +412,49 @@ The fix is small but lives in shared files, so it was left alone: give the Peeri
   `prepubOf(pub)` → socket, so the precise layer exists; it's the coarse `?addr=` binding that
    collides), plus whatever `relay.ts` needs to route it. Do it with the human, when nobody else is
     on the cluster.
+
+### 4a. Measured 2026-08-08, and the fix above is NOT sufficient on its own
+
+Run on a PRIVATE dead origin (`RELAY=1 ORIGIN=http://127.0.0.1:9199`) so nothing could reach the real
+ cluster — the Peering is minted *before* `Socket_real` dials, so the claim is observable without ever
+  connecting. The daemon says it itself:
+
+```
+🔌 Lies channel up [runner] addr=runner → editor
+🛰 ws ERROR (relay down? wrong origin?)        ← the dead origin, by design
+```
+
+**THERE ARE TWO BINDINGS PER SOCKET, and §4's proposed change only moves one.**
+- `?addr=<peering name>` → `relay.ts:480` `bind(meta.addr, ws)`
+- `become role=<role>`   → `relay.ts:303` `bind(msg.role, ws)`, sent on EVERY (re)open by
+   `LiesLies` — so renaming the Peering leaves the daemon still joining the `runner` set.
+`locals` is `Map<addr, Set<ws>>`, `bind` is additive and `deliverLocal` fans out to the whole set.
+
+**Where the role actually comes from — one knob doing two jobs.** `Auto.svelte:757-762`:
+```js
+if (H.c.boot_role === 'runner' && !H.c.creduler_up) {
+    H.i({ A: 'Lies' }).i({ w: 'Lies', runner: 1, creduler: 1, … })
+```
+`runner:1` makes `Lies_role(w)` return `'runner'` (it reads `w?.sc?.runner`), which is what stands the
+ channel; `creduler:1` is what runs Books. **The daemon wants the second and not the first**, and
+  `boot_role='runner'` currently buys both. `Lies_channel_up` already returns early when the role is
+   neither editor nor runner (*"bare: no channel"*), so the smallest honest fix may be to stop claiming
+    the role rather than to route it — and that needs **no `relay.ts` change at all**.
+
+**AND THE INVITE PATH MAY NOT NEED ANY OF THIS.** `Swarm_station_up` stands its OWN `%Peering` named
+ the prepub *before* calling `Socket_real`, with a comment saying exactly why (*"BEFORE Socket_real,
+  which reads the first Peering's name as its ?addr="*). So the **Swarm station socket already dials
+   `?addr=<prepub>`** — correct and uncolliding. `addr=runner` is the **Lies control channel**, a
+    different world and a different socket. If the daemon arms the station without claiming the runner
+     role, invites work and nothing collides.
+
+**So the decision is not "how do we route a daemon-runner" but "is the daemon a runner at all?"**
+- **No** (recommended): it does not run Books for the editor, and §8.3's phantom-run footgun is exactly
+   what pretending otherwise causes. Cost: the editor cannot dispatch to it — which is the point.
+- **Yes**: then it needs a distinct addr *and* a distinct role, and `relay.ts:293` accepts only
+   `'editor'|'runner'` — a real relay change plus an editor-side listing/dispatch decision.
+Untested caveat on the "No" path: whether stripping `runner:1` while keeping `creduler:1` leaves Book
+ running intact is unverified — `Lies_is_runner` has other readers. One daemon run settles it.
 
 ---
 
@@ -599,8 +700,15 @@ So the shape to want is one bit each way on the peering, **sent rather than infe
 
 ## 5.3 `[OWED]` The rest
 
-- **`/music`.** `Crate.g:34` guards `showDirectoryPicker`, and Crate already reads *through the nav*
-   — so this is a nav to write, not a picker to fake. Until then the daemon has no collection to dig.
+- **`/music`. LANDED 2026-08-08 — see §9.6.** `Crate.g:34` guards `showDirectoryPicker`, and Crate
+   already reads *through the nav* — so this was a nav to write, not a picker to fake, and the nav is
+    written: `MUSIC=1` grafts `/music` in READ-ONLY as a third root named `music`, and
+     `Crate_nav_meander` walks it (212 tracks, verified through the app's own verb).
+   **It does not replace the `SHARE=` shape below, it complements it.** `SHARE=/music OVERLAY=repo` is
+    still the right single-purpose deployment; the mount is for the case that shape cannot express —
+     keeping the repo as `base` (the wormhole, GhostList and gen trees the daemon boots from) *and*
+      seeing a collection that lives somewhere else. A box that is only a jukebox wants `SHARE`; a box
+       that is also the machine wants the mount.
    **But the root itself is already configurable and already right**: `SHARE=<dir>` IS the FSA-root
     equivalent (owner: *"it has the concept of the FSA root though right? … I think that's fine how
      it is"*), `.jamsend` lives inside it exactly as it does inside a granted library, and every
@@ -795,7 +903,14 @@ Three things follow:
    `DAEMON_STATE` (two daemons silently clobber, last-writer-wins over the whole table), and
     **`allHouses`/`liveTtlilts` walk the entire tree ~4× per tick** with no incrementality, so
      per-tick cost rises monotonically with uptime.
-- **No shipping vehicle exists.** Grepped every `ty/*.service` and `docker-compose*.yml`: nothing
+- **No shipping vehicle exists.** — **PARTLY ANSWERED 2026-08-08: `jamserve`.** `jamserve/Dockerfile`
+   + `docker-compose.jamserve.yml` now exist (a separate file, so nothing in the running stack changes
+    until you `up` it). It carries ffmpeg from `apk`, shadows `/app/node_modules` with an anonymous
+     volume so it does **not** join the shared-libc trap, mounts the library read-write for
+      `.jamsend`, and keeps the identity in a named volume so it is the same peer across restarts.
+       **What is still owed is the BUILD** — it boots vite in middleware mode exactly as below, which
+        the `SECS`-recycle trick makes tolerable for a test rig and does not make right for a
+         deployment. The rest of this bullet stands:
    references `scripts/daemon`. The actual production stack runs Chromium under Xvfb/VNC — literally
     the browser-tab pattern this daemon exists to replace. There is no build target either; `run.mjs`
      boots vite in middleware mode every start (~12s of transform), so a crash-looping daemon
@@ -1157,9 +1272,243 @@ Append as you go: what landed, what was skipped and why, what you telegrammed ab
     `grafted-stashed`: *"a disk-grafted Pier is stash-worthy … so the reseeded friend survives the next
      warm reload"* — the very claim step 2 turns on).
  - `SwarmInvite` — **5/5, ok, 0 caveat.**   · `Swarmation` — **1/1, ok, 0 caveat.**
- Runner released afterwards. No fixture moved: the restash verbs write only the Dexie `stashed` rail,
-  and the `Auto` changes touch `.c` flags and files — no snapped C shape changed, so no Book fixture
-   needed re-recording.
+ Runner released afterwards.
+
+ **Correction to what I first wrote here ("no fixture moved") — the code moved none, the RUNS did.**
+  My edits change no snapped C shape (the restash verbs write only the Dexie `stashed` rail; the `Auto`
+   changes touch `.c` flags and files), so nothing needed re-recording. But *running* the four Books
+    rewrote their own snaps, and those are in the `Dae` commit:
+  - `<Book>/toc.snap` — **`TimeSpool` telemetry only**: a rolling `sample=…,at=…` window, oldest rolled
+     off, mine rolled on, `avg` recomputed. Noise, not signal.
+  - `<Book>/Credulation/toc.snap` — the `uses:Ghost_*,dige:…` record of **which ghost versions the run
+     ran against**. Most of that churn is **not mine**: `Ghost_M_Ra`, `Ghost_M_Radio`, `Ghost_M_Heist`,
+      `Ghost_M_Crate`, `Ghost_N_Peeroleum`, `Ghost_N_Tribunal` and others all moved because the
+       concurrent agent's edits to those files were live on the runner when I ran. So these records are
+        a snapshot of a tree that was **mid-edit by someone else**. The verdicts stand (green is green,
+         and it was the real runner), but do not read those diges as a settled baseline — re-run the
+          Books once that other work lands if you want a clean record.
+
+---
+
+#### RUN 1 continued — §0 item 6: the daemon can see real music.
+
+**`MUSIC=` mounts a collection READ-ONLY as `music/`** (`NodeWormholeNav.ts` `mounts`, wired in
+ `main.ts:270-283`). `MUSIC=1` means this container's `/music`; any other value is a path.
+
+**Why a third root rather than repointing `SHARE`.** `base` IS the repo — the wormhole fixtures, the
+ GhostList and the gen trees all hang off it, so a daemon that repointed `SHARE` at music would find
+  the collection and lose the machine it boots from. overlay/base is a **shadowing** pair (one
+   namespace, one wins); a mount is a **disjoint** namespace, which is the honest shape for "this other
+    tree is also visible here". Read-only is **enforced** (`writeRoot` throws on a mounted rel), not
+     merely intended: `/music` is the owner's own files and the daemon's safety story is that it does
+      not write outside its overlay.
+ Nothing on the ghost side needed teaching — the meander walks whatever `dir_at`/`expand` report, and
+  `Sounditron_muse` already probes `['testsounds','music','']`. The one thing that DID need doing:
+   mount names are injected into the **root** listing, or a bare `Crate_nav_meander(nav, '', …)` — the
+    path a real Radio takes — could never reach them.
+
+**On the checks, and why the daemon now says what it can see.** A private file count would have
+ answered *"is there music on disk?"*, which was never the question — the question is *"can the
+  machine's own discovery path FIND it?"*, and those differ for exactly the reasons the meander exists
+   (the no-enumeration law, dot-dir skips, dead-end climbs). An instrument that agrees with the thing
+    it measures by construction measures nothing ([[comments-assert-unmeasured-properties]]). So the
+     probe calls the **same verb the app calls**, once per boot, and says the answer:
+```
+🎵 collection reachable via music — meander picked 5: 00 - EBONY LAMB - SALT SAND SEA.opus · …
+```
+ - **Nav layer, direct unit check:** `music/` lists **212 files, all audio, 0 dirs**; the root listing
+    contains `music`; `read_range` returns real `OggS` magic with a 3 591 119-byte size (the seekable
+     read Radio needs, not a whole-file slurp); a write to `music/` is refused; `music/../../etc` is
+      refused (Agent B's confinement composes with the mount); the repo stays readable.
+ - **App layer:** the three env cases all behave — `MUSIC=1` → real tracks via `music`; **no `MUSIC` →
+    `testsounds`, "DJ Oscillo - Cosmic C.wav"**, i.e. the 8 synth tones, which is precisely the
+     measure-nothing state this closes; `MUSIC=/nope` → `⚠ MUSIC=/nope does not exist`, no mount.
+ - `tsc --noEmit` clean on the nav; the no-`MUSIC` run proves the default path is unchanged (`mounts`
+    defaults to `{}`, so every other caller — `Story_cli`, the spec harnesses — is byte-identical).
+
+**What this does NOT do.** It makes the collection *reachable*, not *served*. §8.2 still stands: the
+ daemon cannot carry a track past its preview window without the opus shim, because `Ra.g:1352/1657`
+  construct `OfflineAudioContext` unguarded. Those two lines are the next real work and I did not touch
+   them — `Ra.g` is the concurrent agent's file tonight.
+
+#### Where the night stopped, and why each remaining item is genuinely blocked rather than skipped
+
+I tried to keep going past item 6 and each road is closed by something that is not mine to decide:
+
+- **Item 5, the opus shim — blocked on a DEPENDENCY DECISION that is the owner's.** There is **no
+   `ffmpeg` and no `ffprobe`** on this container's PATH, and no opus/ogg/ffmpeg node module in
+    `node_modules`. The only two ways in are a system package or an npm dependency, and **`npm install`
+     is the one thing CLAUDE.md forbids outright** (the shared musl/glibc `node_modules` that took the
+      app down for hours on 2026-08-07). So the shim cannot be *started*, let alone finished, without a
+       call from you on how the binary arrives. Worth noting §8.2 already caught the related false
+        claim: `node-web-audio-api`, cited in §2 as *"provides both for real"*, is **not in
+         `package.json`** and does not resolve.
+- **Measuring the codec wall with the newly-mounted real music — blocked on ATTRIBUTION.** The obvious
+   move was to let the daemon stock real opus and watch precisely where it dies, turning §8.2 from a
+    read-from-code claim into a measured one. Stocking never fires on a plain `B=Sounditron` boot (it
+     needs the Radio path driven — [[share-arms-only-on-first-dial]]), and driving it with a Radio Book
+      tonight would run against `Ra.g`/`Radio.g`/`Crate.g` **while another agent has all three
+       mid-edit**. Any number I got would be unattributable, which is worse than no number
+        ([[controlled-revert-to-attribute-a-red-book]] is the standard this repo holds itself to). Do
+         this once their work lands — it is cheap and it is the right next measurement.
+- **Items 2 and 3 (relay address, arm the station)** — deliberately yours, §9.7 Phase 3.
+- **Item 7 (the two-tab fingers-test)** — needs a human and a browser.
+
+So the honest state at stop: everything reachable tonight without a decision from you, or without
+ touching another agent's live files, is done. The next three moves are all short, and all yours to
+  unblock: **the relay address**, **how ffmpeg arrives**, and **ten minutes with two tabs**.
+
+---
+
+#### RUN 1 continued — STEPS 3 AND 4 LANDED. The daemon is on the network under its own address, with invite handlers armed.
+
+The owner ruled at ~02:15: *"`accepts only editor|runner` sounds like it should fall, dispatching only
+ runners, listing everyone somewhere maybe one day, but we may leave that TODO"* — and gave the go.
+  The v1.0 framing they set: *"a way for a user to enjoy the app and set up this daemon to serve their
+   presence on the network, to be reliably there when Invite codes are finally found and redeemed."*
+
+**The result, on the REAL relay, with the human's runner up the whole time:**
+```
+🤝 Swarm station ARMED at 5691d4258dc79df6 — pier_hello handlers registered; invites can be answered
+🛰 ws OPEN ws://172.17.0.1:9091/relay?addr=5691d4258dc79df6 — flushing 0 buffered
+🛰 ws RECV control:hello_ok
+```
+Its own prepub as its address, signed hello accepted, handlers armed. No `addr=runner` anywhere.
+
+**The one thing that made this safe rather than catastrophic.** A `become` does two unrelated things:
+ `bind(role, ws)` (reachability — harmless for any name) and `setRole(role)` (which relay dials the
+  r2r bridge — **set-once, and it THROWS on conflict**). Relaxing the `editor|runner` `if` naively
+   would have let a daemon's become reach `setRole`, so whichever peer connected first would own the
+    bridge and **the loser's become — quite possibly a human's runner tab — would throw**. That is
+     exactly "a bad relay edit takes every runner down", reachable by relaxing one condition. So:
+      `relay.ts` now binds **any sane role name** (`BRIDGE_ROLES` / `SANE_ROLE`, `relay.ts:292-330`)
+       while only `editor|runner` steer the bridge. Dispatch stays runner-only for free — dispatch
+        addresses `to:'runner'`, which nothing else binds. Listing is left as the owner's TODO;
+         nothing enumerates `locals` for a UI.
+
+**Daemon side: `boot_role='daemon'` — a runner in every respect but the role claim.** `CHANNEL=1` opts
+ back into the old behaviour. Three call sites had conflated "runs Books" with "is the editor's
+  runner", and **only measurement found the third**:
+ 1. `Auto.svelte:771-777` — `creduler:1` (runs Books) split from `runner:1` (claims the relay role).
+ 2. `Auto.svelte:980-992` — a daemon spools the Creduler soul but **never reports a verdict**: nobody
+     dispatched this Book, so there is no dock awaiting one, and that is half of §4's observed
+      "phantom run in someone else's cluster view".
+ 3. `Story.svelte:2229` — **the one that bit.** `is_runner()` is what makes a headless run *lenient*
+     on a value-noise mismatch ("no one is there to resume it"). It read `boot_role === 'runner'`, so
+      a daemon halted at the first mismatch: **1/1 steps where a runner does 7/7 — no error, no
+       warning, just a Book that quietly stopped.** Nothing about the symptom pointed at a role check.
+        Widened to accept `daemon`; 7/7 restored. Provably a no-op for existing roles.
+
+**Verified after every edit, because this is the spine:** the live runner answered `ping` with
+ `channel:"up"` throughout; the editor round-tripped a `ghost-compile`; `SwarmInvite` **5/5** and
+  `SwarmDisk` **7/7**, both ok, 0 caveat; runner released. One transient stuck run (`phase:begun`,
+   `n:null`) appeared right after the `Story.svelte` edit — HMR landing mid-flight, not a breakage: a
+    `release` + re-run came back clean, so no reload was needed and no telegram sent.
+
+**What is now true, and what is still missing for "invites end-to-end".** The RESPONDER half is
+ built and armed: a redemption arriving at that address has handlers to land on, and tonight's ledger
+  graft means the `%Idzeug` serials are actually under the live `%Peering` for `Swarm_hello` to find.
+   What is untested is a real redemption, because **redemption is a UI gesture** — `Swarm_redeem` is
+    only ever called from `InvitePanel.join()`. §9.4's two-daemon harness (a test-only headless
+     redeemer, second `DAEMON_STATE`, second `PORT`) is the way to prove it without a human, and it is
+      the next piece of work. It is a smoke test, not a gate (§6).
+
+---
+
+#### RUN 1 continued — ✅ **INVITES END-TO-END. The work order's stated goal is met.**
+
+§9.0's goal was *"the daemon answers a redemption and mints a Grant."* It does. Two daemons, the real
+ relay, no human anywhere in the loop:
+
+```
+A: 🤝 Swarm station ARMED at 1aac537896332e6f — invites can be answered
+A: 🎟 invite minted by 1aac537896332e6f (serial 2941044c596f)
+B: 🤝 Swarm station ARMED at 1acfce74a5da4357
+B: 🎟 redeem ACCEPTED by 1aac537896332e6f — waiting for the seal…
+B: 🤝 SEALED with 1aac537896332e6f — the friendship stands, both ends
+```
+
+**Verified in the durable stores, not just the log** — this is the part that matters, because a
+ friendship that only exists in memory is the bug this whole file has been chasing:
+ - **A spent the serial**: `Swarm_izzes.1aac…{2941044c596f: {to:"Music", spent:1}}`. Single-use holds,
+    so a replay of that token now refuses. §8.1's security property, observed rather than asserted.
+ - **A holds a %Pier for B**, with grants. **B holds a %Pier for A**, with grants. Mutual and durable.
+ - **AND IT SURVIVES A RESTART.** Rebooting A on its existing state:
+    `🤝 … ARMED at 1aac537896332e6f · remembers 1 friend(s), 1 invite(s)` — same identity, friendship
+     rehydrated, spent invite still spent. That is tonight's ledger graft (step 2) doing the job it
+      was built for, at the far end of the chain that motivated it.
+
+**The harness** (`main.ts`, `invite_harness`) is **TEST-ONLY and says so at length**. `MINT_INVITE=1`
+ on A, `IZ=<token>` on B, different `DAEMON_STATE` dirs and `PORT`s. It exists because **redemption is
+  a UI gesture** — `Swarm_redeem` has exactly one caller in the tree, `InvitePanel.join()` — and the
+   owner ruled the daemon is the RESPONDER, never the joiner. A daemon that could redeem in production
+    would be the wrong thing built; a daemon that can redeem behind an explicit env knob is a rig.
+ **It is a smoke test, not a gate** (§6). It does not replace the two-tab fingers-test.
+
+**Also confirmed in passing:** Agent A's `DAEMON_STATE` lock works *including release* — two reboot
+ attempts correctly bounced with `exit 6` while A was genuinely live, and the lock file was gone after
+  A's clean exit (pid check + removal both good). I went looking for a permanent-wedge bug and there
+   isn't one.
+
+**What remains genuinely unproven:** the browser. Every proof here is node-side. §6.7's two-tab
+ fingers-test is still the gate for the FSA backend, and it matters more now, not less.
+
+---
+
+#### RUN 1 continued — **jamserve**: the container, and the one knob that makes the layout work.
+
+The owner named it (*"srv is a terrible name… let's call it jamserve — a user's personal internet
+ infrastructure, music piracy only for now"*) and gave the deployment shape that I would otherwise
+  have got wrong: ***"the user must have already set up via browser+FSA the /music/.jamsend etc"*** —
+   i.e. **the share IS the music folder**, and the account is already inside it.
+
+**Files added** (all additive; nothing in the running stack changes until it is `up`ed):
+ `jamserve/Dockerfile` · `docker-compose.jamserve.yml` · a `## jamserve` section in `README.md`.
+ **The separate compose file is the settled answer, by the owner's ruling** (*"it's a separate
+  environment to prod or dev"*) — I had briefly argued for folding it into `docker-compose.yml` under
+   `profiles:` and started doing so; that edit is reverted. Compose files are per-ENVIRONMENT here
+    (dev / staging / prod / a user's own box), and jamserve is a fourth, not a service of dev. The
+     duplicated `music-volume` anchor is the visible cost of that and is correct: dev's is `:ro`,
+      jamserve's must be read-write. **README.md is now the user-facing doc**; keep the two in step.
+ Start once:
+ `docker compose -f docker-compose.yml -f docker-compose.jamserve.yml up -d --build jamserve`.
+ No `--build` loop is needed — source is bind-mounted and `SECS=900` + `restart: always` relaunches
+  on freshly-edited code, which is also how a sibling session iterates on it without a docker socket.
+
+**Two lines in there are load-bearing, and both are CLAUDE.md's warnings made structural:**
+ - `- /app/node_modules` — an anonymous volume shadowing the bind mount. `app` (musl) and `claude`
+    (glibc) already share one `/app/node_modules` because `.:/app` mounts the host tree over whatever
+     each image built; jamserve is a **third** libc consumer and without this line makes it worse.
+ - **ffmpeg comes from `apk`, never npm.** `ffmpeg-static` ships a per-platform prebuilt as an
+    *optional dep* — precisely the 2026-08-07 failure — and `@ffmpeg/ffmpeg` is the browser wasm
+     build. The owner asked *"shall I npm i ffmpeg?"*; the answer is no, and this is why.
+
+**`LIBRARY=` — one knob, because three roots is otherwise genuinely confusing.** `LIBRARY=/music`
+ expands to `music` → the folder **read-only** and `.jamsend` → `<folder>/.jamsend` **read-write**.
+  So: the collection is never written to, the account lands where a browser session would look for
+   it, and machine scratch (Story snaps, gen writes) still goes to `OVERLAY` instead of littering
+    someone's music. That needed a writable-mount option in `NodeWormholeNav`, since overlay/base is a
+     *shadowing* pair and cannot express three roots with three different rules.
+
+**A real bug, found by testing rather than reasoning — and it was the dangerous kind.** The first
+ `LIBRARY=` run logged `🪪 account mirrored → .jamsend/account/<prepub>/toc.snap` and **wrote it to the
+  scratch volume instead of the library**. Cause: `Swarm_account_dir(root, prepub)` is
+   `(root||'') + '/.jamsend/…'` and every app caller passes `root=''`, so the rel that arrives has a
+    **leading slash**; splitting it naively made the first segment the empty string, no mount matched,
+     and it silently fell through to the overlay. *A green log for a wrong file* — the exact failure
+      mode this file keeps warning about. Fixed in `mountFor`/`writeAbs`; re-verified: account and
+       roster now land in `<library>/.jamsend/`, scratch has no `.jamsend`, the library holds only the
+        music plus `.jamsend`, and the collection is still found through the app's own meander.
+
+**§2.2 added — LOUDNESS IS PART OF THE ENCODE**, on the owner's ruling (*"I DO want the LUFS levelling
+ done to the stream we ogg encode! so classical gets louder"*). It is `ffmpeg -af loudnorm`, in the
+  same pass as the opus. The pleasing part: it **deletes** a browser dependency rather than adding
+   one — `Ra_lufs` currently measures LUFS with `@domchristie/needles` through a Web Worker, and
+    two-pass loudnorm reports the measured integrated LUFS *and* applies the correction. The general
+     principle, worth reusing on every other browser-shaped dependency here: **put the seam at the
+      QUESTION, not at the API.** Reimplementing `LoudnessMeter` is a lot of work; *"what is this
+       file's integrated LUFS?"* is a flag on a binary you already installed. §2.2 carries the three
+        traps (two-pass not one; a levelled encode must not hash as the source; record the target).
 
 **Heads-up for the morning, not my work:** a **concurrent agent is live in this repo** — `Ghost/M/Heist.g`,
  `Error_channel_todo.md`, `Heist_todo.md`, a new `wormhole/Story/ErrChannel/` and a spread of `Musu*`

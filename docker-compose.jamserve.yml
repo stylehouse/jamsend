@@ -1,0 +1,142 @@
+# docker-compose.jamserve.yml — jamserve: "a user's personal internet infrastructure,
+#  music piracy only for now" (the owner, 2026-08-08).
+#
+# The always-on personal box: runs scripts/daemon headless — holds the collection, answers
+#  heists, answers Invites, keeps one peer on the network whose uptime is not somebody's
+#   browser session. Closes the arc: "a Sounditron that can't be closed".
+#
+# A THIRD ENVIRONMENT, which is why it is its own file rather than a service in docker-compose.yml:
+#  dev is docker-compose.yml, staging/editor is staging/docker-compose.yml, prod is prod.sh, and this
+#   is the user's own box. Separate file ⇒ it never starts by accident. README.md documents it for
+#    users ("jamserve — your own always-on peer"); this header is the operator's copy.
+#
+# ════════════════════════════════════════════════════════════════════════════════════════
+#  START IT ONCE. THAT IS ALL.
+#
+#    docker compose -f docker-compose.yml -f docker-compose.jamserve.yml up -d --build jamserve
+#
+#  You do NOT need a loop and you do NOT need to re-run --build to pick up code changes:
+#   the source is bind-mounted, and JAMSERVE_SECS below makes the process exit on a timer so
+#    `restart: always` brings it straight back on the latest code. Rebuild only if the
+#     Dockerfile or package.json changes.
+#
+#  To watch:   docker compose -f docker-compose.yml -f docker-compose.jamserve.yml logs -f jamserve
+#  To stop:    docker compose -f docker-compose.yml -f docker-compose.jamserve.yml down jamserve
+# ════════════════════════════════════════════════════════════════════════════════════════
+#
+# Both files together only so jamserve joins the same compose project as `app`. It reaches the
+#  relay over the docker bridge that `app` already publishes to, so cross-project works too.
+#
+# ── IDENTITY ─────────────────────────────────────────────────────────────────────────────
+# Production: the daemon NEVER provisions (Daemon_todo §4.1). Grant your music folder in a
+#  browser, let it write <music>/.jamsend/account/<prepub>/toc.snap, then set JAMSERVE_ID to
+#   that prepub — jamserve RESUMES it and is the same peer forever. Booting with I= set and
+#    no account on disk EXITS 2 rather than inventing a stranger.
+# Unset (the default here): it mints its own identity under ROLE, so the box stands up and is
+#  testable before anyone has provisioned anything. Fine for a test rig, not the real shape.
+
+x-common-volumes:
+  # read-WRITE, unlike the :ro mount `app` and `claude` use — jamserve must write
+  #  <music>/.jamsend. LIBRARY= keeps that honest inside the nav: `music` read-only,
+  #   only `.jamsend` writable, so machine scratch never lands in your collection.
+  music-volume: &music-volume "${MUSIC_PATH:-/home/s/Music/71mix/}:/music"
+
+services:
+  jamserve:
+    build:
+      context: .
+      dockerfile: jamserve/Dockerfile
+    container_name: jamserve
+    working_dir: /app
+
+    volumes:
+      # THE MACHINE: the jamsend source it boots out of — wormhole/ fixtures, GhostList,
+      #  Ghost/*.g, src/lib/gen/*.go. A different tree from the collection, which is why
+      #   one mount was never enough.
+      - .:/app
+
+      # ⚠ THE LINE THAT MATTERS. Anonymous volume shadowing /app/node_modules so this
+      #  container keeps the musl tree its own image built, instead of inheriting the HOST's
+      #   through .:/app above. `app` (Alpine/musl) and `claude` (Debian/glibc) already share
+      #    one /app/node_modules and an install from either strands the other — that took the
+      #     app down for hours on 2026-08-07 (CLAUDE.md). jamserve is a THIRD libc consumer.
+      #      Without this line the failure is a native binary "not found" at boot.
+      - /app/node_modules
+
+      # THE COLLECTION + the account inside it.
+      - *music-volume
+
+      # Dexie state = the identity cache, so this volume is what makes jamserve the SAME peer
+      #  across restarts and rebuilds. Survivable to lose (it re-seeds off <music>/.jamsend),
+      #   but don't lose it casually.
+      - jamserve-state:/var/lib/jamserve
+
+    environment:
+      # a Book under the hood, exactly as /BigSoundland does it.
+      - B=Sounditron
+      # NOT a runner: boot_role=daemon runs Books but never claims the editor's `runner` relay
+      #  address. Two claimants of `runner` both receive every frame — the `channel DEAD — 20s
+      #   silent` of Daemon_todo §4. CHANNEL=1 opts back in; leave it off.
+      - CHANNEL=0
+      - RELAY=1
+      # the granted folder: music read-only, .jamsend read-write (§5.3, one knob).
+      - LIBRARY=/music
+      # resume a browser-provisioned identity if given; otherwise ROLE mints one so the box
+      #  is testable tonight. Set JAMSERVE_ID and this becomes the real shape.
+      - I=${JAMSERVE_ID:-}
+      - ROLE=${JAMSERVE_ROLE:-jamserve}
+      # machine scratch + state — NOT the music folder.
+      - DAEMON_STATE=/var/lib/jamserve/state
+      - OVERLAY=/var/lib/jamserve/scratch
+      # LOG lands on the BIND MOUNT on purpose, not in the named volume: it is the only way a
+      #  sibling container (claude, which has no docker socket) can read what jamserve did.
+      #  Gitignored.
+      - LOG=/app/jamserve/run.log
+      # exit on a timer so `restart: always` re-launches on freshly-edited source. This is what
+      #  removes the need for an `up --build` loop. Set JAMSERVE_SECS=0 for a real always-on
+      #   box that never voluntarily exits.
+      - SECS=${JAMSERVE_SECS:-900}
+      # `app`'s relay over the docker bridge it already publishes to. A RUNTIME dependency, not
+      #  just boot-time: Auto.svelte and Tyranny.svelte fetch /log?stream= during normal
+      #   operation and resolve it against ORIGIN (§8.5).
+      - ORIGIN=${JAMSERVE_ORIGIN:-http://172.17.0.1:9091}
+      - PORT=9099
+      # a fixed token so a sibling container can query /status and /c without scraping the log.
+      - STATUS_TOKEN=${JAMSERVE_TOKEN:-jamserve-local}
+      # bind the status endpoint to all interfaces INSIDE the container so the published port
+      #  below actually reaches it. It is still only published to the docker bridge, and /stop
+      #   and /c both require the token (Daemon_todo §8.4).
+      - HOST=0.0.0.0
+
+    ports:
+      # bridge-only, never the LAN — same discipline as `app`'s 172.17.0.1 publish. This is
+      #  what lets the claude container read /status while you sleep.
+      - "172.17.0.1:9099:9099"
+
+    restart: 'always'
+    init: true
+    tty: true
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+    deploy:
+      resources:
+        limits:
+          # roomier than `app`: this one decodes and re-encodes audio (ffmpeg) while holding a
+          #  radio's warm window. rec.c.pcm pinned ~92MB per record before the 2026-08-07 fix,
+          #   so the headroom is not theoretical.
+          cpus: '2.0'
+          memory: 3G
+          pids: 512
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    ulimits:
+      nofile: 4096
+
+volumes:
+  jamserve-state:

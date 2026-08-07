@@ -10,13 +10,16 @@
     //  Pointer stance: pointer-events:none (the glass stays pannable); no buttons here.
     let { n, H } = $props()
 
-    const TOTAL = 7
+    // 8 since 2026-08-08: a beat was inserted at 7 (the music runs) and the report moved to 8, because
+    //  the Book used to end BEFORE the thing it exists to prove — see Sounditron_todo §0.  These arrays
+    //   are 1-indexed with a leading '' and must stay the same length as the beats in Sounditron.g.
+    const TOTAL = 8
     // each boot beat in two voices — NOW: the living present clause; PAST: the terse thing it became.
     const NOW = ['', 'the glass is forming', 'the machine is standing up', 'waiting for the relay to answer',
         'looking over who we could reach', 'reaching out for a friend to come online',
-        'making sure sound runs here', 'summing it all up']
+        'making sure sound runs here', 'listening for the music to start', 'summing it all up']
     const PAST = ['', 'the glass formed', 'the machine stood up', 'the relay answered',
-        'the neighbourhood’s surveyed', 'reached out for a friend', 'sound runs here', 'summed up']
+        'the neighbourhood’s surveyed', 'reached out for a friend', 'sound runs here', 'the music ran', 'summed up']
 
     let tick = $state(0)
     $effect(() => {

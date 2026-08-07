@@ -223,17 +223,18 @@ async Crate_nav_meander(nav, base, want, skip):
     let GIVE_UP = 12
     let rel = ''
     let hops = 0
+    let TOP = this.top_House()
     // LEARNED WEIGHTS (live only, 2026-08-06 — §3.x #33): the uniform draw below samples BRANCHES,
     //  not TRACKS — a deep 200-track album and a sparse twig were equally likely, so whole albums
     //   that are ⅔ of the collection were never reached by pressing next (the owner's report).
     //    True subtree counts would need the full scan the no-enumeration law bans; instead LEARN
     //     lazily — every hop already expand()s one directory, so remember {audio, subs} per visited
-    //      path and weight future draws by what's known (unvisited → an album-ish prior).  Biased
+    //      path and weight future draws by what's known (unvisited → the learned PRIOR below).  Biased
     //       at first, honest over time, zero extra IO.  GATED to end-user pages (Lies%humdinger,
     //        the same predicate as Radio_prod_seed): a machine tab keeps the uniform draw so every
     //         Book's prandle sequence stays byte-identical — no re-records.
     let learn = null
-    if (this.top_House().c.humdinger) learn = this.top_House().c.meander_learn || (this.top_House().c.meander_learn = {})
+    if (TOP.c.humdinger) learn = TOP.c.meander_learn || (TOP.c.meander_learn = {})
     // 24 hops, not 12, ON A LIVE PAGE (2026-08-07): a hop is one cached directory listing, and the
     //  owner's crate needs five descents to stand in an album — `0 spawn/- folks/- west/<album>/` —
     //   so a 12-hop budget spent most of itself just getting down there.  The deep wander
@@ -244,8 +245,9 @@ async Crate_nav_meander(nav, base, want, skip):
     //     blocked on stock nondeterminism, so that bill is one we cannot currently pay.
     if (learn) GIVE_UP = 24
     // estimate a subtree's track count from the learned map alone (no IO): known audio here plus
-    //  the recursive estimate of known subdirs; unvisited → prior 8; a fully-learned musicless
-    //   branch floors at 1 so dead ends are nearly-never drawn but stay reachable (still learning).
+    //  the recursive estimate of known subdirs; unvisited → PRIOR (a flat 8 until 2026-08-08, now
+    //   learned — see below); a fully-learned musicless branch floors at 1 so dead ends are
+    //    nearly-never drawn but stay reachable (still learning).
     //  WEIGH WHAT IS STILL OPEN, NOT WHAT EXISTS (2026-08-07, the owner: "still stuck in a small pool
     //   of radiostock that wont roll over", and "somehow two of them only have one track each").  The
     //    first cut weighed `audio` — the TRUE count — so an album whose every track was already
@@ -267,24 +269,143 @@ async Crate_nav_meander(nav, base, want, skip):
     //       total — nearly never drawn, never unreachable.
     //  And past the depth cutoff, return what was LEARNED rather than the unvisited prior: pricing a
     //   known-barren deep folder as a fresh 8-track album is the same bug wearing a hat.  Only a
-    //    genuinely unvisited path gets the prior, which is the one place a guess is honest.
+    //    genuinely unvisited path gets the prior, which is the one place a guess is honest.  (The
+    //     cutoff itself is gone as of 2026-08-08 — see the memo note below — so this now only
+    //      describes the seatbelt at depth 40.)
+    //  THE PRIOR IS A MEASUREMENT NOW, NOT THE NUMBER 8 (2026-08-08, the owner: "it hangs around
+    //   testsounds/ far too much, all the legs confuse it... sizing the unknown expanse").  A flat
+    //    prior of 8 says every unexplored leg is an album, so a node with twenty barren legs beside
+    //     one real album priced the legs at 160 against the album's 12 — structure out-drawing music,
+    //      by construction, in EVERY collection whose directories are not albums.  The share the owner
+    //       actually has averages well under one track per directory, so 8 was a ~20× over-estimate of
+    //        each leg and the wander spent itself walking into rooms with nothing in them.
+    //  What to put there instead: the mean subtree size of a uniformly-random directory, which is an
+    //   IDENTITY we can accumulate for free — sum over nodes of (audio below it) = sum over files of
+    //    (depth of that file + 1) — so mean-subtree = a_bar · (d̄ + 1) where a_bar is audio-per-visited
+    //     -directory and d̄ the audio-weighted mean depth.  Three running counters (dirs / audio /
+    //      depth·audio), updated on the visit we were already paying for.  No IO, no scan.
+    //  SHRUNK toward 8 with 8 pseudo-observations so it starts VAGUE and SHARPENS: the first few
+    //   directories of a cold page must not be allowed to declare the whole collection empty (a share
+    //    whose first visit is a music-free root would otherwise price all exploration at ~0 and the
+    //     wander would never leave home).  By ~60 visited directories the measurement owns it.
+    //  AND IT IS FRACTIONAL, WHICH IS WHY THE WEIGHTS GAINED A SCALE.  prandle and the φ cursor both
+    //   quantise to integers, so a weight of 0.4 and a weight of 0.9 are the same weight — and the
+    //    learned prior of a share whose directories average half a track IS below 1.  Rounding it up
+    //     to 1 was the first cut and it measurably threw away most of the win: on the 7000-directory
+    //      shape, rounding gave 15% of the collection reached in 200 tours against 35% for a prior
+    //       carried at 1/64-track resolution, with dry tours 85.3% vs 29.2%.  So est() keeps REAL
+    //        track units and the integerising happens once, at the CDF, multiplied by SC.
+    //  SC = 64 measured against 8 and 1 on all five synthetic shapes: 1 → 15% / KL 0.883, 8 → 28% /
+    //   0.688, 64 → 35% / 0.716 on the broad shape, and INDISTINGUISHABLE from each other on the
+    //    owner's 4-deep library, a 9-deep one, a 30-track collection and the 200k flat crate (same
+    //     coverage, same tours-to-half, KL within 0.006).  64 costs nothing and buys the wide case.
+    //  FOLD A RESTORED CENSUS IN BEFORE PRICING ANYTHING (2026-08-08).  `meander_learn` is now
+    //   persisted and restored across reloads (Census.svelte + src/lib/O/census_codec.ts), so a live
+    //    page boots with thousands of entries it never visited — but `meander_stat` is NOT persisted
+    //     (it is three numbers, cheaper to rebuild than to version), so without this the statistic
+    //      would be empty beside a full map and PRIOR would sit at the vague 8 while the estimator
+    //       around it had real numbers for everything.  That is the worst of both: confident about
+    //        what is known, maximally wrong about what is not.
+    //  `seen` is the per-entry mark that says "already folded into the statistic".  It is DELIBERATELY
+    //   NOT PERSISTED (declared in census_codec.ts): a restored entry must arrive unfolded, or it
+    //    would never be counted at all and the statistic could never be rebuilt.  Absence is the
+    //     signal, which also makes this ORDER-INDEPENDENT — the restore lands asynchronously at boot
+    //      and this runs once per meander call, so whenever it lands the next call folds it in.  One
+    //       pass over the map per call, against 24 directory listings; unmeasurable beside the IO.
+    //  MEASURED on the 7000-directory shape, 5 PRNG seeds, second session on a restored census:
+    //   tracks held after 20 tours 3.2 (±2.0) → 22.4 (±3.4), and after the full 200 tours 112.0
+    //    (±22.4) → 128.4 (±14.2) — better AND less variable.  Neutral on the owner's 4-deep library,
+    //     the 9-deep one and the 30-track collection (all three saturate either way).  Capping the
+    //      restored map's confidence (folding only 64 or 256 of its directories) was tried and is
+    //       WORSE than folding all of it — 6.4 and 8.4 tracks at 20 tours — so the remembered census
+    //        deserves its full weight, not a discount.
+    //  GATED ON A DIRTY FLAG, NOT RUN ON EVERY CALL (2026-08-08).  A RESTORE is the only thing that
+    //   ever creates an unfolded entry — the live walk marks `seen` at visit time below — so this
+    //    pass has nothing to do on every call after the first, and it was paying a full O(map) scan
+    //     to discover that.  Measured against the raised restore budget: 0.30 ms at 2200 entries,
+    //      2.44 ms at 12000, 6.18 ms at 24000, and CENSUS_RESTORE_MAX is now CENSUS_STORE_MAX
+    //       (24000) — so the DO-NOTHING case had become the expensive one, on the main thread, for
+    //        the life of the page.  Census.svelte sets `meander_fold_due` when a restore installs
+    //         entries; this clears it.  The fold stays order-independent: the flag can land at any
+    //          time and the next meander call absorbs it.
+    if (learn && TOP.c.meander_fold_due) {
+        TOP.c.meander_fold_due = 0
+        let ST0 = TOP.c.meander_stat || (TOP.c.meander_stat = { dirs: 0, audio: 0, depth: 0 })
+        for (const ck of Object.keys(learn)) {
+            let ce = learn[ck]
+            if (!ce || ce.seen) continue
+            let cd = ck ? ck.split('/').length - 1 : 0
+            ST0.dirs = ST0.dirs + 1
+            ST0.audio = ST0.audio + (+ce.audio || 0)
+            ST0.depth = ST0.depth + (+ce.audio || 0) * cd
+            ce.seen = 1
+        }
+    }
+    let SC = 64
+    let PRIOR = 8
+    if (learn) {
+        let ST = TOP.c.meander_stat
+        if (ST && ST.dirs > 0) {
+            let a_bar = ST.audio / ST.dirs
+            let dbar = ST.audio > 0 ? (ST.depth / ST.audio) : 0
+            PRIOR = (8 * 8 + (a_bar * (dbar + 1)) * ST.dirs) / (8 + ST.dirs)
+        }
+        PRIOR = Math.max(1 / SC, PRIOR)
+    }
+    // estimate a subtree's track count from the learned map alone (no IO): known audio here plus
+    //  the recursive estimate of known subdirs; unvisited → the learned PRIOR above; a fully-learned
+    //   musicless branch floors at 1 so dead ends are nearly-never drawn but stay reachable.
+    //  MEMOISED PER HOP (2026-08-08).  est() was re-walked from scratch for EVERY branch of the
+    //   current directory on EVERY hop, so a node with K children re-descended the same shared
+    //    subtrees K times.  Measured on the 9-deep synthetic share: 448k est() calls for 1500 tours,
+    //     down to 119k with the memo — the same draw, a quarter of the work.  `emem`/`tmem` are reset
+    //      at the top of each hop because the hop's own visit REWRITES the map (open/audio/subs), so a
+    //       memo that outlived the hop would be quoting the world as it was before we looked at it.
+    //  …AND THE MEMO IS WHAT PAYS FOR THE DEPTH CUTOFF GOING AWAY.  The old bound was `depth > 6`,
+    //   which truncates exactly the deep branches this collection is made of — the owner's library is
+    //    five levels down before an album starts, and any share nested deeper had its richest legs
+    //     silently under-counted to their top six levels.  Measured on the 9-deep synthetic: the draw
+    //      distribution's KL-divergence from uniform was 1.567 with the cutoff and 0.022 without it
+    //       (the ideal-uniform floor at that sample size is 0.028 — i.e. it went from badly skewed to
+    //        indistinguishable from fair), and the top 1% of tracks took 17.5% of all draws vs 1.7%.
+    //  The 40 that replaces it is not a bound, it is a seatbelt: subs keys are strictly longer than
+    //   their parent's, so the learned map cannot contain a cycle and the recursion always terminates.
+    //    40 only fires on a corrupt map, and it deliberately does NOT memoise its truncated answer.
+    let emem = null
+    let tmem = null
     const est = (p, depth) => {
+        if (emem && emem[p] !== undefined) return emem[p]
         let e = learn[p]
-        if (!e) return 8
+        if (!e) return PRIOR
         let s = (e.open == null ? e.audio : e.open)
-        if (depth > 6) return s
+        if (depth > 40) return s
         for (const sp of e.subs) s = s + est(sp, depth + 1)
+        if (emem) emem[p] = s
         return s
     }
     // the same walk over what a subtree really HOLDS, ignoring what is currently shelved.  Only the
     //  spent-branch floor above needs it: how much we would regret writing this branch off.
     const est_true = (p, depth) => {
+        if (tmem && tmem[p] !== undefined) return tmem[p]
         let e = learn[p]
-        if (!e) return 8
+        if (!e) return PRIOR
         let s = +(e.audio || 0)
-        if (depth > 6) return s
+        if (depth > 40) return s
         for (const sp of e.subs) s = s + est_true(sp, depth + 1)
+        if (tmem) tmem[p] = s
         return s
+    }
+    // ONE branch's weight, by path — the drawable estimate, or the sqrt floor when it is spent, and
+    //  the ONE place real track units become an integer CDF weight (× SC, see the prior comment).
+    //   Lifted out of the weights map so the pile draw below can call it for the 300 children it
+    //    actually needs instead of all 7000.  The sqrt floor's own floor moves to 1/SC so a fully
+    //     barren but not-yet-dead branch still lands on weight 1 — rare, never unreachable — while
+    //      the spent-album ratio the floor exists for (sqrt of what is really down there) is
+    //       unchanged, since both sides of that comparison are scaled alike.
+    const wof = (p) => {
+        let o = est(p, 0)
+        let v = o > 0 ? o : Math.max(1 / SC, Math.sqrt(est_true(p, 0)))
+        return Math.max(1, Math.ceil(SC * v))
     }
     // A DEAD BRANCH IS NOT A BRANCH (2026-08-07).  The dead-end step-up added yesterday fixed the
     //  reset-to-root waste and immediately bought a worse bug: stepping up out of a barren leaf lands
@@ -364,6 +485,23 @@ async Crate_nav_meander(nav, base, want, skip):
         //  This is the same shape as every other bug tonight — the instrument (here, the map) not
         //   recording the case it was built for, so the failure reads as normal operation.
         let here = (base + (rel ? '/' + rel : '')).replace(/^\/+/, '')
+        // THE ROOT OF THE WHOLE-SHARE BASE WAS NEVER LEARNING (2026-08-08).  `here` strips leading
+        //  slashes; the child key did not.  For base==='' — one of Stoker_dig's three bases, the one
+        //   that walks the entire share — the root's `here` is '' and its children were recorded as
+        //    `'' + '/' + name` = `/name`, while those same children on their own visit record
+        //     themselves as `name`.  Two spellings of one directory, so at the root of base==='':
+        //      est() found no entry for ANY top-level branch and priced every one of them at the
+        //       unvisited prior, for ever; dead() took its `if (!e) return false` exit and could never
+        //        prune a barren top-level leg; and the map grew a permanent shadow set of `/name`
+        //         entries that nothing ever read.  The entire weighting was INERT at exactly the level
+        //          where "all the legs confuse it" is decided — every leg, equal, always.
+        //  Measured on the owner-shaped synthetic (a testsounds/ beside a 4-deep tree of albels):
+        //   distinct tracks reached in 4000 tours 93.3% → 100%, tours to half the collection 2147 →
+        //    1303, and the draw's KL-divergence from uniform 1.480 → 0.335 (the ideal-uniform floor at
+        //     that sample size is 0.371 — the sweep is BELOW iid, which is the low-discrepancy property
+        //      doing its job).  Dry tours 21.9% → 0.1%.  Same failure shape as the `[object Object]`
+        //       key above: a key that is in no map, failing silently in the safe direction.
+        const kid = (nm) => here ? here + '/' + nm : nm
         // EVERY DIRECTORY CARRIES ITS OWN SLOT CURSOR (2026-08-07, the owner: "some kind of balanced
         //  tree that grows to find every directory evenly, by magic... a Dip assigned tree of
         //   directories", "walk evenly into the unknown space").  Same shape as Dip_assign
@@ -375,8 +513,22 @@ async Crate_nav_meander(nav, base, want, skip):
         //    and dies with the page — a cursor that can never wear a track out, because it indexes
         //     BRANCHES at one directory, never tracks, and the track pick below stays a fresh draw.
         let node = learn ? learn[here] : null
-        if (learn && (Object.keys(learn).length < 4096 || node)) {
-            if (!node) node = learn[here] = {}
+        // THE CAP WAS BELOW THE COLLECTION (2026-08-08, the owner: "we should be able to remember
+        //  where 10000 tracks are by remembering how many are in each of 7000 directories").  4096
+        //   entries is smaller than the share this is FOR, and past it the failure was not graceful:
+        //    a new directory got no entry, so `node` stayed null, so the φ slot cursor — the whole
+        //     even-sweep property — silently fell back to a fresh prandle re-roll at every unlearned
+        //      node.  The sweep died exactly where the collection was biggest.  131072 entries is a
+        //       few MB of .c-only map and covers any share a browser tab can walk in a session.
+        //  And the size test is a COUNTER now, not `Object.keys(learn).length`: that allocated and
+        //   walked the whole key array on EVERY hop — an O(n) scan per hop whose only purpose was to
+        //    compare against a constant, and at 131072 it would have been the most expensive line in
+        //     the wander.  Seeded from the map on first use so a page that HMR'd across this change
+        //      (the map lives on .c and survives) counts what is already there rather than starting
+        //       at zero and over-filling.
+        if (learn && TOP.c.meander_learn_n == null) TOP.c.meander_learn_n = Object.keys(learn).length
+        if (learn && (TOP.c.meander_learn_n < 131072 || node)) {
+            if (!node) { node = learn[here] = {}; TOP.c.meander_learn_n = TOP.c.meander_learn_n + 1 }
             // `== null` covers BOTH the fresh node and a node minted by the previous build of this
             //  ghost — the map lives on .c and survives HMR, so a live page carries hundreds of
             //   entries that never had a cursor.  Without this they read `undefined + 1` = NaN, and
@@ -409,10 +561,29 @@ async Crate_nav_meander(nav, base, want, skip):
                 HD.c.meander_flapd = (+(HD.c.meander_flapd || 0)) + 1
                 HD.c.meander_flap_at = 'd ' + here + ' ' + node.subs.length + '->' + dirs.length
             }
+            // THE THREE COUNTERS THAT SIZE THE UNKNOWN EXPANSE.  This is the only place the collection
+            //  is ever looked at, so it is the only place its statistics can be gathered for free.
+            //   `dirs` counts directories VISITED (each once), `audio` the files in them, `depth` the
+            //    audio weighted by how far below the base it sits — together they give the PRIOR at the
+            //     top of this function.  Revisits ADJUST rather than re-add, so a listing that flaps
+            //      (see the electrode above) corrects the statistic instead of inflating it.
+            //  DEPTH IS COUNTED OFF THE KEY, NOT OFF `rel`, so that this and the restored-census fold
+            //   at the top of the function agree exactly.  They must: one statistic is pooled across
+            //    all three of Stoker_dig's bases, and the fold can only ever see keys.  Counting `rel`
+            //     here made base==='' entries a level shallower to the fold than to this line — the
+            //      two halves of one average disagreeing about what a level is.
+            let ST = TOP.c.meander_stat || (TOP.c.meander_stat = { dirs: 0, audio: 0, depth: 0 })
+            let d0 = here ? here.split('/').length - 1 : 0
+            if (node.seen) { ST.audio = ST.audio + (audio_all.length - node.audio); ST.depth = ST.depth + (audio_all.length - node.audio) * d0 }
+            if (!node.seen) { ST.dirs = ST.dirs + 1; ST.audio = ST.audio + audio_all.length; ST.depth = ST.depth + audio_all.length * d0; node.seen = 1 }
             node.audio = audio_all.length
             node.open = audio.length
-            node.subs = dirs.map(d => here + '/' + String(d.name))
+            node.subs = dirs.map(d => kid(String(d.name)))
         }
+        // the memo is per HOP: this hop's visit has just rewritten the map, so anything remembered
+        //  from the last hop would be quoting the world as it was before we looked.  Object.create
+        //   (null) rather than {} so a directory literally named `__proto__` cannot poison the memo.
+        if (learn) { emem = Object.create(null); tmem = Object.create(null) }
         // `subs` above stays the FULL listing — the map has to keep telling the truth about the shape,
         //  or deadness could never be computed at all.  Only the DRAW walks `live`.
         let live = dirs
@@ -422,7 +593,7 @@ async Crate_nav_meander(nav, base, want, skip):
         //     the prune was INERT from the moment it landed.  It fails in the safe direction — nothing is
         //      wrongly pruned — which is precisely why nothing threw and the numbers still improved: the
         //       slot cursor and the cold reload were doing that work alone.
-        if (learn) { let dm = {}; live = dirs.filter(d => !dead(here + '/' + String(d.name), dm)) }
+        if (learn) { let dm = {}; live = dirs.filter(d => !dead(kid(String(d.name)), dm)) }
         let branches = live.length + (audio.length ? 1 : 0)
         if (!branches) { rel = (learn && rel.indexOf('/') > -1) ? rel.slice(0, rel.lastIndexOf('/')) : ''; continue }
         let k
@@ -439,14 +610,24 @@ async Crate_nav_meander(nav, base, want, skip):
             //  prandle is Math.floor(random*n), so a FRACTIONAL total would collapse its remainder
             //   into the last bucket and silently bias the final branch — every weight here stays an
             //    integer, which is why it is ceil() and not the bare sqrt.
-            let weights = live.map(d => {
-                let p = here + '/' + String(d.name)
-                let o = est(p, 0)
-                return o > 0 ? o : Math.max(1, Math.ceil(Math.sqrt(est_true(p, 0))))
-            })
-            if (audio.length) weights.push(audio.length)
-            let total = 0
-            for (const x of weights) total = total + x
+            // PILES, ABOVE 300 CHILDREN (2026-08-08, the owner: "break those into piles of 300
+            //  directories and shuffle them, sizing the unknown expanse").  A flat CDF over K children
+            //   costs K est() walks EVERY hop just to choose one of them — measured 16.4M estimator
+            //    calls for 200 tours on a 7000-directory share, which is the whole cost of the wander.
+            //     Crate_pile_draw sweeps piles first and only prices the pile it lands in: 0.69M calls
+            //      for the same 200 tours (24× less, wall clock 3× less) and the draw fairer, not
+            //       merely cheaper — KL 1.187 → 0.883 against BASE's 1.561, coverage 8% → 15% at the
+            //        time piles landed, and 35% once the weight scale below went in.  Below 300
+            //         children nothing changes — every other shape measured (the owner's 4-deep
+            //          library, a 9-deep one, a 30-track collection, the 200k flat crate) never
+            //           reaches the threshold and draws exactly as before.
+            let piled = node && live.length > 300
+            if (piled) k = this.Crate_pile_draw(node, live, audio.length * SC, kid, wof, 300, PRIOR * SC)
+            if (!piled) {
+                let weights = live.map(d => wof(kid(String(d.name))))
+                if (audio.length) weights.push(audio.length * SC)
+                let total = 0
+                for (const x of weights) total = total + x
             // THE SWEEP, not a re-roll.  An iid draw is a coupon collector: to see all K branches of a
             //  node takes ~K·lnK visits and the tail is heavy, so the wander kept re-treading the fat
             //   branch it had just come back up from — 163 directories walked for 48 tracks, and
@@ -459,14 +640,15 @@ async Crate_nav_meander(nav, base, want, skip):
             //   sweep never falls into lockstep with a branch count, whatever the branch count is.
             //  The weights move under it as tracks shelve and whittle; that only perturbs the mapping,
             //   it cannot break the property, which is about successive positions in [0,1).
-            let r
-            if (node) {
-                node.n = node.n + 1
-                r = Math.floor(total * ((node.n * 0.6180339887498949) % 1))
-                if (r >= total) r = total - 1
-            } else r = this.prandle(total)
-            k = 0
-            while (k < weights.length - 1 && r >= weights[k]) { r = r - weights[k]; k = k + 1 }
+                let r
+                if (node) {
+                    node.n = node.n + 1
+                    r = Math.floor(total * ((node.n * 0.6180339887498949) % 1))
+                    if (r >= total) r = total - 1
+                } else r = this.prandle(total)
+                k = 0
+                while (k < weights.length - 1 && r >= weights[k]) { r = r - weights[k]; k = k + 1 }
+            }
         } else {
             k = this.prandle(branches)
         }
@@ -482,8 +664,74 @@ async Crate_nav_meander(nav, base, want, skip):
     // WHERE THE WALK DIED, NAMED.  `picks=0` says the tour found nothing; it never said whether the
     //  wander ran out of budget deep inside one album or thrashed near the root.  Those want opposite
     //   fixes, and guessing between them is how this week went.  Costs one .c string per give-up.
-    if (learn) this.top_House().c.meander_last = rel + ' h' + hops
+    if (learn) TOP.c.meander_last = rel + ' h' + hops
     return []
+
+// Crate_pile_draw — the TWO-LEVEL branch draw for a directory with more children than one CDF should
+//  carry.  Returns an index into `live`, or live.length to mean "the local audio pool won".
+//  WHY IT EXISTS (2026-08-08, the owner: "or break those into piles of 300 directories and shuffle
+//   them, sizing the unknown expanse").  The single-level draw prices EVERY child on EVERY hop — a
+//    7000-directory share paid 7000 recursive subtree estimates to make one choice, 16.4M of them
+//     across a 200-tour simulation, and that is the entire cost of the wander at that width.
+//  THE PILE SUM IS THE GRADUALLY-REFINED SIZE ESTIMATE.  Each pile keeps a CACHED total of its
+//   members' weights on the node (.c-only, dies with the page).  A pile never yet measured is priced
+//    at members × PRIOR (already scaled by the caller's SC) — the collection's own learned
+//     per-directory expectation, so an unmeasured
+//     pile is honestly vague rather than arbitrarily large.  Only the pile the cursor LANDS in is
+//      re-priced, so each visit sharpens one pile and the map converges on the real shape of the
+//       expanse without ever enumerating it.  Exactly the no-enumeration law, one level up.
+//  TWO CURSORS, AND THE SECOND ONE IS PER PILE.  Level one sweeps the piles, level two sweeps within
+//   the chosen pile, both by an irrational step so both stay low-discrepancy (the same Kronecker
+//    property the φ cursor buys at a single level — see the sweep comment in Crate_nav_meander).
+//     The constants are the 2-D plastic-number pair (R2), which is the standard 2-D Kronecker basis;
+//      φ is kept for the single-level draw so nothing below the threshold moves.
+//  A SHARED within-pile cursor was the first cut and it MEASURABLY LOST: one cursor advancing across
+//   different piles never sweeps any one of them, so the within-pile position is effectively a
+//    re-roll.  Collector coverage fell 22% → 12% on the 7000-directory shape at identical cost.
+//     Giving every pile its own cursor restored it to 22% — the same as the flat CDF — at 24× less
+//      work.  Cheap and equal, not cheap and worse; the difference is one array.
+Crate_pile_draw(node, live, apool, kid, wof, PILE, PRIOR):
+    let np = Math.ceil(live.length / PILE)
+    // rebuilt whenever the child count moves (a dead branch pruned, a new directory seen): the pile
+    //  boundaries are positional, so a changed listing invalidates every cached sum honestly.
+    if (!node.p || node.pk !== live.length) {
+        node.p = []
+        node.q = []
+        node.pk = live.length
+        let z = 0
+        while (z < np) { node.p.push(-1); node.q.push(this.prandle(9973)); z = z + 1 }
+    }
+    let tot = 0
+    let i = 0
+    while (i < np) {
+        let lo = i * PILE
+        let hi = Math.min(live.length, lo + PILE)
+        if (node.p[i] < 0) node.p[i] = (hi - lo) * Math.max(1, Math.round(PRIOR))
+        tot = tot + node.p[i]
+        i = i + 1
+    }
+    // the local audio pool competes at the PILE level, as one more bucket past the last pile
+    tot = tot + apool
+    node.n = node.n + 1
+    let r = Math.floor(tot * ((node.n * 0.7548776662466927) % 1))
+    if (r >= tot) r = tot - 1
+    let pi = 0
+    while (pi < np && r >= node.p[pi]) { r = r - node.p[pi]; pi = pi + 1 }
+    if (pi >= np) return live.length
+    // price THIS pile for real, and remember it — the one place the estimate gets refined
+    let lo = pi * PILE
+    let hi = Math.min(live.length, lo + PILE)
+    let w = []
+    let s = 0
+    let j = lo
+    while (j < hi) { let x = wof(kid(String(live[j].name))); w.push(x); s = s + x; j = j + 1 }
+    node.p[pi] = Math.max(1, s)
+    node.q[pi] = node.q[pi] + 1
+    let r2 = Math.floor(s * ((node.q[pi] * 0.5698402909980532) % 1))
+    if (r2 >= s) r2 = s - 1
+    let k = 0
+    while (k < w.length - 1 && r2 >= w[k]) { r2 = r2 - w[k]; k = k + 1 }
+    return lo + k
 
 // Crate_nav_payload — read ONE track's bytes through the nav, decode FROM THE START (OfflineAudioContext —
 //  no gesture), keep the first ~PREVIEW chunks, derive loudness + real tag metadata.  The nav twin of the old

@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '32db66f1cdb6b5f9~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '00e172a21cb2154d~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -518,8 +518,12 @@ Ra_stock_dir() {
 //    tracks, so even once the cull was reachable again it would have dropped nothing at all.  100
 //     is still better than twice the live shelf (Stoker_cull, 44), so the original reasoning —
 //      never evict something recently stood — survives the change intact.
+//  A LIVE KNOB, like every other bound in this file (`+(w.c.ra_lead || 24)`, `heist_park_ceiling`,
+//   `ra_pcm_idle` …).  It was the one tunable here with no override, so trying a different cap meant
+//    an edit, a compile and a reload — and this is a number the owner will want to move by feel
+//     against a real library.  `.c` only, so it costs nothing at encode and no fixture can see it.
 Ra_stock_cap() {
-    return 100
+    return +(this.top_House().c.ra_stock_cap || 100)
 
 },
 // Ra_stock_name — ONE file per record, <ts>-<pub>-<enid>.jamsend_radiostock, NOT one per chunk.

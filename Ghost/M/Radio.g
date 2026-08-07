@@ -1153,9 +1153,13 @@ Radio_nudge(w):
 //    when the radio does.  Display sc: stock (records standing) · fresh (unheard this sitting) ·
 //     dug (newly stocked this sitting) · stood (resurrected) · last (latest find) — bumped only
 //      when a number actually moves, so a mere glance never re-tessellates the glass.
-//  The dig order is music-first: 'testsounds' is a dev fixture crate, and a first-base-wins
-//   wander that starts there plays the same two test tracks forever — the real share leads,
-//    the root is the fallback, testsounds only when nothing else yields.
+//  STALE UNTIL 2026-08-08, and worth naming because it cost time: this said "the dig order is
+//   music-first … testsounds only when nothing else yields", describing a first-base-wins ladder
+//    that had ALREADY been replaced by a uniform rotation.  A comment describing a design two
+//     revisions dead reads exactly like a description of the live one.  The truth now: the ladder
+//      tries all three bases in rotated order and breaks only on a base that ADDED something, and
+//       on a live page the STARTING base is drawn in proportion to each base's decaying yield
+//        (Stoker_base_pick) — so nothing is music-first by name, it is yield-first by measurement.
 // Radio_prod_seed — PROD ONLY: fresh-seed the shuffle wander's PRNG (H.prng, read by
 //  Crate_nav_meander → this.prandle) at radio standup, so every real /BigSoundland boot
 //   shuffles differently.  The DIAL already rolls fresh per boot (w.c.prng via Ra_rand); H.prng
@@ -1718,6 +1722,13 @@ async Stoker_tour(w, shelf):
         flap: +(this.top_House().c.meander_flap || 0), flapd: +(this.top_House().c.meander_flapd || 0),
         flapat: this.top_House().c.meander_flap_at || '', died: this.top_House().c.meander_last || '',
         skip: Object.keys(skip).length, base: st.c.dig_base, picks: tpicks, got: tgot,
+        // THE LADDER, AUDITABLE.  `base` says which base this tour used; it never said whether that
+        //  was a reasonable place to have started.  `wgt` is the weight vector the draw actually saw
+        //   (music/''/testsounds, in ladder order) and `yield` the rate:dug behind it — so a tour that
+        //    keeps starting somewhere barren is visible as a WEIGHT that has not moved, rather than
+        //     inferred from a run of dry marks.  The whole point of Stoker_base_pick is that these
+        //      numbers drift; an instrument that cannot show them drifting cannot show it working.
+        wgt: st.c.dig_wgt || '', yield: ['music', '', 'testsounds'].map((b) => { let e = (this.top_House().c.dig_base_stat || {})[b]; return (b || '/') + ':' + (e ? (Math.round(e.rate * 100) / 100) + '/' + e.dug : '-') }).join(' '),
         hit: thit, dup: tdup, bad: tbad, rounds: rounds,
         barren: Object.keys(this.top_House().c.dig_barren || {}).length, err: st.c.dig_err || '' })
     return dropped

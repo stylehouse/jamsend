@@ -754,12 +754,27 @@
         //    actually fires).  The test's own inner Lies then sees count>1 and goes bare
         //     (Lies_role), leaving this one the sole runner.  Editor (?E=) needs none — its single
         //      inside-Story Lies is the editor.  One per instance.
-        if (H.c.boot_role === 'runner' && !H.c.creduler_up) {
+        // `daemon` is a runner in EVERY respect but one: it is not the editor's runner (2026-08-08,
+        //  Daemon_todo §4a, the owner's ruling that the relay's editor|runner restriction "should fall,
+        //   dispatching only runners").  boot_role='runner' used to buy two unrelated things at once —
+        //    `creduler:1`, which is what actually RUNS Books, and `runner:1`, which is what makes
+        //     Lies_role answer 'runner' and therefore what stands the editor↔runner control channel at
+        //      /relay?addr=runner.  An always-up box wants the first and must not have the second:
+        //       `bind()` is additive and `deliverLocal` fans out to the whole set, so a second claimant
+        //        of `runner` silently receives every frame meant for a human's tab (and sends run_phase
+        //         back — the phantom run in someone else's cluster view, §4/§8.3).
+        //  So a daemon boots the same Lies, minus the role claim.  It is still reachable — its %Peering
+        //   under w:Swarm is named its own prepub and Socket_real dials THAT (Swarm_station_up stands it
+        //    before dialling, deliberately) — which is the address invites are answered on anyway.
+        //  Being LISTED on the relay under a `daemon` role is a separate, later thing (the owner's
+        //   "maybe one day"); relay.ts now binds any sane role name for it, but nothing claims one yet.
+        const runnerish = H.c.boot_role === 'runner' || H.c.boot_role === 'daemon'
+        if (runnerish && !H.c.creduler_up) {
             H.c.creduler_up = true
             // humdinger:1 rides the snap when this runner is an end-user Big*land room (boot_qualand set
             //  H.c.humdinger for role sound) — Lies%humdinger, legible: it uses the full Lies stack but
             //   stays invisible to the editor's grid (no advertise/going-cold/ping-`from`; see Lies_humdinger).
-            H.i({ A: 'Lies' }).i({ w: 'Lies', runner: 1, creduler: 1, ...(H.c.humdinger ? { humdinger: 1 } : {}) })
+            H.i({ A: 'Lies' }).i({ w: 'Lies', ...(H.c.boot_role === 'runner' ? { runner: 1 } : {}), creduler: 1, ...(H.c.humdinger ? { humdinger: 1 } : {}) })
             // Raise the Creduler gate NOW — before the just-created Lies has had a tick to
             //  run Creduler_ensure.  Auto may tick ahead of the new Lies (it's not in this
             //   pass's attend list), and the first-boot story-start below would otherwise
@@ -962,12 +977,19 @@
             console.log(`📚 storyFinished: ${bname} [${mode}]`)
             w.i({storyFinished:1,Book:bname,mode})
             if (Li) H.auto_sync_story_stats(Li)   // book stats are library-only
-            if (H.c.boot_role === 'runner') {
+            if (H.c.boot_role === 'runner' || H.c.boot_role === 'daemon') {
                 H.Cred_spool(w, bname, mode as string)   // spool the Creduler soul
                 // …and report the real verdict back to the editor over the channel, for the dock
                 //  the last rungo fired on (the runner's Creduler Lies holds awaiting_verdict).
-                const liesW = H.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined
-                if (liesW) H.Lies_runner_verdict(liesW, bname)
+                //  A DAEMON SPOOLS BUT NEVER REPORTS (2026-08-08, §4a): nobody dispatched this Book,
+                //   so there is no dock awaiting a verdict, and a Book the daemon ran for its own
+                //    reasons must not surface in a human's editor as a run they did not start — that
+                //     is half of §4's observed "phantom run in someone else's cluster view".  It has
+                //      no channel to send on either, so this would be a no-op at best and a lie at worst.
+                if (H.c.boot_role === 'runner') {
+                    const liesW = H.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined
+                    if (liesW) H.Lies_runner_verdict(liesW, bname)
+                }
             }
             // < future: auto-advance to next book in Library order
         }

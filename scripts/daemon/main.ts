@@ -49,6 +49,10 @@
 //   SHARE=             repo/share root the wormhole nav reads (default cwd)
 //   OVERLAY=           where writes land (default /tmp/jamsend_daemon/fs).  SAFE BY DEFAULT:
 //                       the daemon does NOT write into the working tree.  OVERLAY=repo to opt in.
+//   MUSIC=             a real collection to graft in READ-ONLY as `music/` in the nav, so
+//                       Crate_nav_meander has something to dig through (Daemon_todo §5.3 / §0 item 6).
+//                        MUSIC=1 means this container's /music mount; any other value is a path.
+//                         Off by default — the daemon then sees only whatever music is in the share.
 //   RELAY=1            join the /relay websocket (OFF by default — read Daemon_todo §4 first)
 //   PORT=              status endpoint (default 9099).  curl localhost:9099/status
 //   HOST=              status endpoint bind address (default 127.0.0.1 — LOCALHOST ONLY).
@@ -257,7 +261,41 @@ const Daemonic             = (await import('./Daemonic.svelte')).default
 // Reads fall through overlay → repo; writes land in the overlay.  Deliberately the TEST nav: a
 //  daemon that scribbles toc.snaps into a working tree someone else is editing is a bad neighbour.
 //   A real deployment points SHARE at its own share and OVERLAY=repo.
-const nav = new NodeWormholeNav(ROOT, OVERLAY, false)
+//  MUSIC= grafts a real collection in as a READ-ONLY third root named `music` (NodeWormholeNav's
+//   `mounts`).  Without it the daemon's crate is whatever audio happens to sit in the share — which
+//    for a dev checkout is the 8-track `testsounds`, i.e. enough to prove plumbing and not enough to
+//     mean anything.  Not folded into SHARE because SHARE is the repo the daemon BOOTS from (the
+//      wormhole fixtures, the GhostList, the gen trees); repointing it at music would find the
+//       collection and lose the machine.  Read-only is enforced in the nav, not just intended.
+// LIBRARY= is the ONE knob for the real deployment: the folder the user granted in a browser over
+//  FSA, which is where their music lives AND where the browser already wrote
+//   `.jamsend/account/<prepub>/toc.snap` (the owner: *"the user must have already set up via
+//    browser+FSA the /music/.jamsend etc"*).  It expands into the two mounts that shape needs:
+//     `music`    → the library, READ-ONLY.  Nothing should ever write into someone's collection.
+//     `.jamsend` → the library's own `.jamsend`, READ-WRITE.  The account the daemon RESUMES from
+//                   lives there, and the mirror, radiostock and berth must land back in the same
+//                    place a browser session would find them — not in a scratch volume nobody reads.
+//  Everything else (Story snaps, gen writes, compile output) keeps landing in OVERLAY, so a jamserve
+//   run never litters the user's music folder with machine scratch.  That separation is the whole
+//    reason this is a mount rather than just pointing OVERLAY at the library.
+//  MUSIC= remains the simpler alias for a dev box: collection visible, no `.jamsend` writes.
+const LIBRARY = process.env.LIBRARY === '1' ? '/music' : (process.env.LIBRARY || '')
+const MUSIC = process.env.MUSIC === '1' ? '/music' : (process.env.MUSIC || '')
+const mounts: Record<string, string | { path: string; rw?: boolean }> = {}
+if (LIBRARY) {
+    if (!existsSync(LIBRARY)) say(`⚠ LIBRARY=${LIBRARY} does not exist — no collection and no account`)
+    else {
+        mounts.music = LIBRARY
+        mounts['.jamsend'] = { path: `${LIBRARY}/.jamsend`, rw: true }
+        if (!existsSync(`${LIBRARY}/.jamsend`)) {
+            say(`⚠ ${LIBRARY}/.jamsend is absent — provision this identity from a BROWSER first (§4.1: the daemon never provisions)`)
+        }
+    }
+} else if (MUSIC) {
+    if (!existsSync(MUSIC)) say(`⚠ MUSIC=${MUSIC} does not exist — the collection stays empty`)
+    else mounts.music = MUSIC
+}
+const nav = new NodeWormholeNav(ROOT, OVERLAY, false, mounts)
 
 // BOOT SHAPE — mirror boot_qualand (BigQualand.svelte.ts:47-71), not Auto's dev library page.
 //  Daemon_todo §8.3: a bare `node run.mjs` sets neither `book` nor `boot_role`, so Auto.svelte:565
@@ -267,10 +305,21 @@ const nav = new NodeWormholeNav(ROOT, OVERLAY, false)
 //      (`/BigSoundland` → `boot_qualand({book:'Sounditron', role:'sound'})`), never via a query
 //       param.  So: stamp the same shape here, and REFUSE to boot bootless rather than silently
 //        taking the library branch — exit 4, the next unused code after arrest_watch's 2/3.
+//  THE DAEMON IS NOT THE EDITOR'S RUNNER (2026-08-08, Daemon_todo §4a).  `boot_role='runner'` buys
+//   two unrelated things: `creduler:1` (what runs Books) and `runner:1` (what claims /relay?addr=
+//    runner and stands the editor↔runner control channel).  An always-up peer wants the first only —
+//     the relay's `bind()` is additive and `deliverLocal` fans out to the whole set, so a second
+//      claimant of `runner` quietly receives every frame meant for a human's tab.  `boot_role='daemon'`
+//       is a runner in every respect but that claim (Auto.svelte's `runnerish`).
+//  CHANNEL=1 opts back IN to the runner role, for the one case that wants it: driving this process
+//   from the editor like any other runner tab.  Know what it collides with before you set it — with a
+//    human's runner tab up, that is the `channel DEAD — 20s silent` of §4, on both of you.
+const CHANNEL = process.env.CHANNEL === '1'
+const RUNNER_ROLE = CHANNEL ? 'runner' : 'daemon'
 const boot: Record<string, any> = { toplevel: process.env.A || 'Auto' }
 if (process.env.E) { boot.book = process.env.E; boot.boot_role = 'editor' }
-else if (process.env.B) { boot.book = process.env.B; boot.boot_role = 'runner' }
-else if (process.env.I) { boot.boot_role = 'runner'; boot.on_grid = process.env.I }
+else if (process.env.B) { boot.book = process.env.B; boot.boot_role = RUNNER_ROLE }
+else if (process.env.I) { boot.boot_role = RUNNER_ROLE; boot.on_grid = process.env.I }
 
 if (!boot.boot_role) {
     say('☠ no boot shape given — set B=<Book> (runner), E=<Waft> (editor), or I=<prepub> (resume).')
@@ -304,7 +353,7 @@ if (ROLE) { boot.id_role = ROLE; boot.assume_identity = true }
 if (boot.boot_role) boot.humdinger = true
 
 let H: any = null
-say(`booting — relay=${RELAY ? "ON (RELAY=1)" : "off — set RELAY=1 to join, but read Daemon_todo §4 first"} origin=${ORIGIN} share=${ROOT} overlay=${OVERLAY} boot=${JSON.stringify(boot)}`)
+say(`booting — relay=${RELAY ? "ON (RELAY=1)" : "off — set RELAY=1 to join, but read Daemon_todo §4 first"} origin=${ORIGIN} share=${ROOT} overlay=${OVERLAY}${LIBRARY ? ` library=${LIBRARY} (music ro, .jamsend rw)` : mounts.music ? ` music=${mounts.music} (ro)` : ''} boot=${JSON.stringify(boot)}`)
 mount(Daemonic, { target: win.document.body, props: { boot, onhouse: (h: any) => { H = h } } })
 for (let i = 0; i < 100 && !H; i++) { flushSync(); await sleep(20) }
 if (!H) { say('☠ no House — the shell never constructed one'); await shutdown(1) }
@@ -564,6 +613,144 @@ const persist_account = async (): Promise<void> => {
     }
 }
 
+// ── what collection can I actually see? (Daemon_todo §5.3 / §0 item 6) ───────────────────────
+// A daemon whose job is "hold the collection" should say what it can reach, once, at boot — and it
+//  should say it by walking the SAME verb the app walks (`Crate_nav_meander`), not by counting files
+//   itself.  A private count would answer "is there music on disk?", which was never the question:
+//    the question is "can the machine's own discovery path FIND it?", and those differ for exactly
+//     the reasons the meander exists (the no-enumeration law, dot-dir skips, dead-end climbs).  An
+//      instrument that agrees with the thing it measures by construction measures nothing.
+//  Once per boot, non-fatal, and silent when there is nothing to say beyond the honest empty answer.
+let mused = false
+const muse_collection = async (): Promise<void> => {
+    if (mused) return
+    if (typeof (H as any).Crate_nav_meander !== 'function') return   // ghosts still mounting — retry
+    mused = true
+    try {
+        // The same base order Sounditron_muse uses, plus the mount name first when one is configured:
+        //  a dev checkout's `testsounds` is 8 tracks, and finding those instead of a real collection
+        //   is precisely the "proves plumbing, means nothing" outcome MUSIC= exists to end.
+        const bases = mounts.music ? ['music'] : ['testsounds', 'music', '']
+        for (const base of bases) {
+            const picks: string[] = (await (H as any).Crate_nav_meander(nav, base, 5)) || []
+            if (!picks.length) continue
+            const where = base || '(share root)'
+            say(`🎵 collection reachable via ${where} — meander picked ${picks.length}: ${picks.slice(0, 3).map(p => p.split('/').pop()).join(' · ')}`)
+            return
+        }
+        say(`🎵 no music the meander can reach${mounts.music ? ` under ${mounts.music}` : ' — set MUSIC=1 to mount /music'}`)
+    } catch (e: any) {
+        say(`🎵 collection probe failed — ${String(e?.message).slice(0, 90)}`)
+    }
+}
+
+// ── arm the Swarm station: the ONE call that lets this daemon ANSWER an invite ────────────────
+// Daemon_todo §8.1/§9.2 step 4.  "An identity exists" and "the station is armed" are two entirely
+//  disconnected facts, and the file conflated them for a while: `Swarm_station_world()` only does
+//   `A.oai({w:'Swarm'})` — an inert container.  `Swarm_station_up` is what calls `Swarm_arm(w)` to
+//    REGISTER the pier_hello/pier_accept handlers, dials Socket_real and hello-binds the key.  Until
+//     it runs, an inbound pier_hello addressed to this daemon has nowhere to land, and the redeemer
+//      sees a silence indistinguishable from a stranger.
+// Mirrors InvitePanel.svelte's $effect without Svelte reactivity: RETRY, never latch on the first
+//  attempt — the verb returns null while the transport ghosts are still depositing, so a latch would
+//   permanently disarm a daemon that merely booted a beat early.
+// It also rehydrates the stash BEFORE arming (Swarm.g:663-665 — piers, invites, chain roots), which
+//  is exactly why tonight's ledger graft had to land first: without `%Idzeug` records under the live
+//   %Peering, Swarm_hello's `o({ Idzeug: t.serial })[0]` misses and refuses('unknown') SILENTLY.
+// Needs RELAY=1: with RELAY=0 the daemon deletes the WebSocket global and Swarm_station_up guards on
+//  it (Swarm.g:669), so this would spin forever — say so once rather than look busy.
+let stood = false
+let station_note = ''
+const station_up = (): void => {
+    if (stood) return
+    if (!RELAY) {
+        if (station_note !== 'relay') { station_note = 'relay'; say('🤝 station not armed — RELAY=0, so invites cannot be answered (set RELAY=1)') }
+        return
+    }
+    if (typeof (H as any).Swarm_station_up !== 'function') return          // ghosts still depositing
+    const self = (H as any).Swarm_live_self?.()
+    if (!self) return                                                      // identity not concrete yet
+    const w = (H as any).Swarm_station_world?.()
+    if (!w) return
+    if ((H as any).Swarm_station_up(w, self)) {
+        stood = true
+        // Report what standup REHYDRATED, not just that it ran.  Swarm_station_up rebuilds piers,
+        //  invites and chain roots from the Dexie stash before arming, so these counts are the
+        //   daemon's memory of who it knows surviving a restart — the whole point of the ledger
+        //    graft (§9.6 step 2), and previously invisible: a daemon that forgot every friendship
+        //     looked exactly like one that had never had any.
+        const peering = (H as any).Swarm_peering?.(self)
+        const friends = peering?.o({ Pier: 1 })?.length ?? 0
+        const izzes = peering?.o({ Idzeug: 1 })?.length ?? 0
+        say(`🤝 Swarm station ARMED at ${self.sc?.prepub} — handlers registered; invites can be answered`
+            + ` · remembers ${friends} friend(s), ${izzes} invite(s)`)
+    }
+}
+
+// ── §9.4's two-daemon invite harness — TEST-ONLY, NOT the production shape ────────────────────
+// The responder half (station_up, above) is the real feature; this is the only way to EXERCISE it
+//  without a human, and it should read that way forever.  Why it has to exist: **redemption is a UI
+//   gesture** — `Swarm_redeem` is called from exactly one place in the tree, `InvitePanel.join()`,
+//    behind a click or a Svelte $effect.  So there is no headless redeemer, and the owner ruled the
+//     daemon is the RESPONDER and never the joiner (*"the ?Iz parsing would never happen on the
+//      Daemon, it would be minting Grants for the clients that come along with them"*).  A daemon
+//       that could redeem in production would be building the wrong thing; a daemon that can redeem
+//        under an explicit env knob is a test rig.  Hence two knobs, both off by default, and the
+//         redeem path never runs unless someone hands it a token.
+//   MINT_INVITE=1   daemon A: mint one %Idzeug once the station is armed and print its token.
+//   IZ=<token>      daemon B: redeem that token against A, over the real relay.
+// Run them with DIFFERENT DAEMON_STATE dirs and DIFFERENT PORTs (the state lock is per-dir).
+// This is a SMOKE TEST, NOT A GATE (§6) — it does not replace the two-tab fingers-test.
+const MINT_INVITE = process.env.MINT_INVITE === '1'
+const IZ = process.env.IZ || ''
+let minted = false
+let redeem_done = false
+const invite_harness = async (): Promise<void> => {
+    if (!stood) return                                   // handlers not armed yet — nothing to do
+    const self = (H as any).Swarm_live_self?.()
+    const w = (H as any).Swarm_station_world?.()
+    if (!self || !w) return
+
+    if (MINT_INVITE && !minted) {
+        minted = true
+        try {
+            const b = new Uint8Array(6)
+            ;(globalThis as any).crypto.getRandomValues(b)
+            const nonce = Array.from(b, (x: number) => x.toString(16).padStart(2, '0')).join('')
+            const iz = await (H as any).Swarm_mint_idzeug(null, self, { Music: 1 }, nonce)
+            say(`🎟 invite minted by ${self.sc?.prepub} (serial ${nonce}) — redeem from a second daemon with:`)
+            say(`   IZ='${iz}'`)
+        } catch (e: any) { minted = false; say(`🎟 mint failed — ${e?.message}`) }
+    }
+
+    if (IZ && !redeem_done) {
+        const t = (H as any).Swarm_token_parse?.(IZ)
+        if (!t?.prepub) { redeem_done = true; say('🎟 IZ did not parse — ask for a fresh token'); return }
+        // The signed hello must be BOUND at the relay before the redeem, or the inviter's reply has
+        //  nowhere to land — same ordering InvitePanel.join() keeps (dial, wait for OPEN, one beat,
+        //   then redeem).  Returning early here just retries on the next crank tick.
+        const port = (w.o({ transport: 1, type: 'websocket' })[0] as any)?.c?.port
+        if (port?.ws?.readyState !== 1) return
+        redeem_done = true
+        try {
+            ;(H as any).Swarm_station_pier(w, self, t.prepub)
+            await sleep(600)
+            const claim = await (H as any).Swarm_redeem(w, self, IZ)
+            if (!claim) { say(`🎟 REFUSED by ${t.prepub} — refused or unreachable (the rebuff rides the identity)`); return }
+            say(`🎟 redeem ACCEPTED by ${t.prepub} — waiting for the seal…`)
+            // "joined" means SEALED, not "hello sent": watch for the %Pier their pier_accept lands.
+            for (let i = 0; i < 24; i++) {
+                await sleep(500)
+                if ((H as any).Swarm_peering?.(self)?.o({ Pier: 1, pub: t.prepub })[0]) {
+                    say(`🤝 SEALED with ${t.prepub} — the friendship stands, both ends`)
+                    return
+                }
+            }
+            say('🎟 hello delivered but NO SEAL within 12s — the inviter heard us and did not finish')
+        } catch (e: any) { say(`🎟 redeem failed — ${e?.message}`) }
+    }
+}
+
 // ── the arrest is an EXIT, not a hatch (ruled 2026-08-07) ────────────────────────────────────
 // The owner: "it should exit with error if the given ?I hasn't been set up in the share by a
 //  browser client first."  Provisioning is BROWSER work — mint, Invites, grants, the usual
@@ -628,6 +815,9 @@ while (!stopping) {
     if (!WA.c.nav) { WA.c.nav = nav; say('w:Wormhole ← node nav') }
 
     await persist_account()
+    await muse_collection()
+    station_up()
+    await invite_harness()
     await arrest_watch()
 
     wrap_probe()

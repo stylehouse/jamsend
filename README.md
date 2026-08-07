@@ -16,6 +16,8 @@ modern music piracy in the browser
 
 **🚛downloads📦** Preserve directory structure, tend to move whole albums, and restart if interrupted.
 
+**🛰️jamserve🎛️** Your own always-on peer. The same app, headless in a container, holding your collection and answering heists and invites when your browser is closed. See *jamserve* under [setup](#jamserve--your-own-always-on-peer).
+
 # development
 
 Get this to your programmers! Make noise as Issues on github, especially grandiose new feature requests that introduce your creative mind.
@@ -150,6 +152,61 @@ cd ..; git clone jamsend prod-jamsend; cd prod-jamsend; ./prod.sh
 ```
 
 If your docker0 interface isnt 172.17.0.1 (so eg _leproxy_ can reverse to it), edit *docker-compose.yml* and related things until it works. You should then look at `docker compose ps` to see where it's listening, it may need to be on localhost. Getting it on the interweb is left a bit hard, just help this project until we make an app scripting language and the community can develop what you need.
+
+## jamserve — your own always-on peer
+
+*a user's personal internet infrastructure, music piracy only for now*
+
+A browser tab is a bad place to keep a peer: it closes, it sleeps, it forgets. **jamserve** is the same
+ jamsend app booted headless in its own container — it holds your collection, serves heists, and is
+  standing there when someone finally redeems an Invite you handed out weeks ago. It's the third
+   environment, alongside dev (*docker-compose.yml*) and prod (*prod.sh*), and it lives in its own
+    file so it never starts by accident.
+
+**First, provision an identity in a browser.** jamserve deliberately never invents one. Open the app,
+ grant it your music folder with the File System Access picker, and let it write
+  `<music>/.jamsend/account/<prepub>/toc.snap`. Then set `JAMSERVE_ID` to that prepub and jamserve
+   *resumes* that account — the same peer forever, across restarts and rebuilds. Boot with `I=` set and
+    no account on disk and it exits 2 rather than pretending to be a stranger. Leave `JAMSERVE_ID`
+     unset and it mints its own throwaway identity, which is fine for trying it out and not the real
+      shape.
+
+```bash
+# build and start it (add MUSIC_PATH=... if your collection isn't the default in docker-compose.yml)
+JAMSERVE_ID=<your prepub> \
+  docker compose -f docker-compose.yml -f docker-compose.jamserve.yml up -d --build jamserve
+
+# watch it
+docker compose -f docker-compose.yml -f docker-compose.jamserve.yml logs -f jamserve
+tail -f jamserve/run.log        # the same thing, on the bind mount
+
+# stop it
+docker compose -f docker-compose.yml -f docker-compose.jamserve.yml down jamserve
+```
+
+Start it **once**. You don't need an `up --build` loop to pick up code changes: the source is
+ bind-mounted, and `JAMSERVE_SECS` makes the process exit on a timer so `restart: always` brings it
+  straight back on freshly-edited source. Rebuild only when the Dockerfile or *package.json* moves.
+
+Knobs, all optional, all read from your environment or a *.env*:
+
+| | |
+|---|---|
+| `MUSIC_PATH` | your collection on the host. Mounted read-**write** here (unlike dev's `:ro`) because the account lives in `<music>/.jamsend`; the `LIBRARY=` knob keeps the write surface honest inside the app — `music` read-only, only `.jamsend` writable. |
+| `JAMSERVE_ID` | the prepub to resume. Unset ⇒ mints a throwaway. |
+| `JAMSERVE_ROLE` | relay address it binds (default `jamserve`). Not `runner` — two claimants of `runner` both receive every frame. |
+| `JAMSERVE_SECS` | seconds before a voluntary exit-and-restart (default 900). `0` for a box that never exits on its own. |
+| `JAMSERVE_ORIGIN` | where the relay is (default `http://172.17.0.1:9091`, ie the dev `app`). |
+| `JAMSERVE_TOKEN` | bearer for the status endpoint, published bridge-only on `172.17.0.1:9099`. |
+
+The container is Alpine with `ffmpeg` from `apk` — never npm; `/app/node_modules` is shared between a
+ musl and a glibc container already and a third installer strands the others (there's a whole warning
+  about this in *CLAUDE.md*). An anonymous volume shadows `node_modules` so jamserve keeps the musl
+   tree its own image built.
+
+Rough edges, honestly: the loudness-levelling transcode (EBU R128 via ffmpeg `loudnorm`, so classical
+ arrives as loud as everything else) is designed but not landed, and jamserve still boots vite in
+  middleware mode rather than a built bundle. See *src/lib/O/spec/Daemon_todo.md*.
 
 ## Licensing
 

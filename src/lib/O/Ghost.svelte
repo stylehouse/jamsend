@@ -46,6 +46,7 @@
     import Editron from "./Editron.svelte";
     import Educarium from "$lib/L/Educarium.svelte";   // BigWordland's Book recipe — Editron's sibling, living in L/
     import Thangs from "./Thangs.svelte";
+    import Census from "./Census.svelte";     // the wander's learned directory census, made durable (census_codec.ts)
 
     let { H } = $props()   // H = H:Mundo (the real House)
 
@@ -74,6 +75,11 @@
 <!-- Dexie↔particle persistence (dormant until a w:Thangs worker is created); it backs the cluster
      Identity layer, which now lives in Auto (the "automatically becoming who it is" concern) -->
 <Thangs {M} />
+<!-- the meander census: Crate_nav_meander's learned {audio, open, subs, z, n} per directory, saved to
+     its own Dexie table so a reload does not restart the wander at maximum bias.  Needs H as well as
+     M because it drives itself off a timer rather than a req.  INERT unless H.c.humdinger — the same
+     gate the weighting itself uses, so a driven world boots with an empty census and no fixture moves. -->
+<Census {M} {H} />
 <!-- < js weirdness: if you move this up below Matstyle, the elvis handlers receive $this as a first argument... -->
 <Lang      {M} />
 <Lies {M} />

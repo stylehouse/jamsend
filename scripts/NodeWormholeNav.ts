@@ -25,16 +25,94 @@ export class NodeWormholeNav {
     base: string       // the real repo root — read-only fallback
     overlay: string    // a /tmp sandbox — where writes land
     recording: boolean // ACCEPT: let wormhole/ fixture writes pass through to base
+    mounts: Record<string, string>   // name → absolute root (see below)
+    rw: Record<string, boolean>      // which of those are WRITABLE; the rest refuse writes
 
-    constructor(base: string, overlay: string, recording = false) {
+    // `mounts` — extra READ-ONLY roots grafted in under a name of their own, so the nav can show a
+    //  collection that does not live inside the repo (the container's `/music`, a NAS path, a mounted
+    //   drive).  The daemon's `MUSIC=` knob is the one caller; `{ music: '/music' }` makes the nav
+    //    answer `music/<file>` out of `/music/<file>` and list `music` among the root's directories.
+    //  WHY A THIRD LAYER rather than pointing `base` at the music: `base` is the repo — the wormhole
+    //   fixtures, the GhostList and the Ghost/gen trees all hang off it, so a daemon that repointed it
+    //    would find music and lose everything it boots from.  Overlay/base is a SHADOWING pair (same
+    //     namespace, one wins); a mount is a DISJOINT namespace, which is the honest shape for "this
+    //      other tree is also visible here".
+    //  READ-ONLY IS THE DEFAULT AND IS ENFORCED, not merely intended (`writeAbs` throws on a mounted
+    //   rel unless that mount is declared `rw`): the collection is the owner's own files, and the
+    //    daemon's whole safety story is that it does not write outside what it was handed.  A silent
+    //     write that lands somewhere else would be worse than a throw.
+    //  `Crate_nav_meander` needs no teaching: it walks whatever `dir_at`/`expand` report, and
+    //   `Sounditron_muse` already probes the bases `['testsounds', 'music', '']` in that order — so a
+    //    mount named `music` is found by the existing code with nothing on the ghost side to change.
+    //  A mount may be WRITABLE — `{ path, rw: true }` instead of a bare path string.  That exists for
+    //   exactly one shape, and it is the real deployment one: the user provisions their account from a
+    //    BROWSER over FSA, which puts `.jamsend/account/<prepub>/toc.snap` inside the folder they
+    //     granted — their music folder.  jamserve then has to write that same `.jamsend` (account
+    //      mirror, radiostock, berth) while still booting the machine out of the repo (wormhole/,
+    //       Ghost/, gen/) and still keeping its Story-snap scratch out of the user's music.  Three
+    //        roots, three different rules — which the overlay/base PAIR cannot express, and a mount
+    //         can: `.jamsend` → the share (rw), `music` → the share (ro), everything else → overlay.
+    constructor(base: string, overlay: string, recording = false, mounts: Record<string, string | { path: string; rw?: boolean }> = {}) {
         this.base = base
         this.overlay = overlay
         this.recording = recording
+        this.mounts = {}
+        this.rw = {}
+        for (const [name, m] of Object.entries(mounts)) {
+            this.mounts[name] = typeof m === 'string' ? m : m.path
+            if (typeof m !== 'string' && m.rw) this.rw[name] = true
+        }
     }
 
-    // fixture writes go to the real repo only while recording; everything else sandboxes
+    // mountFor — does `rel`'s FIRST segment name a mount?  Split on the first '/' only: the mount owns
+    //  its whole subtree, and the remainder is resolved (and confined) against the mount's own root, so
+    //   a `..` inside a mounted rel can no more escape `/music` than an ordinary rel can escape base.
+    //  STRIP LEADING SLASHES FIRST.  `Swarm_account_dir(root, prepub)` is `(root||'') + '/.jamsend/…'`
+    //   and every app caller passes root='', so the rel that actually arrives is `/.jamsend/account/…`
+    //    — leading slash and all.  Splitting that naively makes the first segment the EMPTY STRING, no
+    //     mount matches, and the account silently lands in the overlay instead of the user's library:
+    //      measured, not imagined — the daemon cheerfully reported `🪪 account mirrored` while writing
+    //       it to the scratch volume, which is the worst kind of pass (a green log for a wrong file).
+    //  `path.join` has always treated a leading-slash rel as relative to root (Agent B's `confine`
+    //   preserves that on purpose), so this is the same normalisation one step earlier.
+    private mountFor(rel: string): { root: string; sub: string } | null {
+        const clean = rel.replace(/^\/+/, '')
+        const i = clean.indexOf('/')
+        const head = i === -1 ? clean : clean.slice(0, i)
+        const root = this.mounts[head]
+        if (!root) return null
+        return { root, sub: i === -1 ? '' : clean.slice(i + 1) }
+    }
+
+    // readAbs — the absolute paths a read should TRY, in precedence order.  A mounted rel resolves to
+    //  exactly one candidate (its own root); everything else keeps the overlay-shadows-base pair the
+    //   rest of this file has always used.
+    private readAbs(rel: string): string[] {
+        const m = this.mountFor(rel)
+        if (m) return [this.confine(m.root, m.sub)]
+        return [this.confine(this.overlay, rel), this.confine(this.base, rel)]
+    }
+
+    // fixture writes go to the real repo only while recording; everything else sandboxes.
+    //  Mounted rels never reach here — `writeAbs` resolves those first (rw mount → its own root,
+    //   otherwise a throw).  This is only the ordinary overlay/recording rule.
     private writeRoot(rel: string): string {
         return this.recording && rel.startsWith('wormhole/') ? this.base : this.overlay
+    }
+
+    // writeAbs — where a write LANDS.  A mount declared `rw` writes into its own root (that is the
+    //  `.jamsend` case: the browser put the account there, so the daemon must update it in place);
+    //   any other mount refuses, loudly.  Everything else keeps the overlay/recording rule above.
+    private writeAbs(rel: string): string {
+        const m = this.mountFor(rel)
+        if (m) {
+            // same leading-slash normalisation as mountFor — otherwise the name lookup misses and a
+            //  writable mount reads as read-only (or worse, a read-only one as writable).
+            const name = rel.replace(/^\/+/, '').split('/')[0]
+            if (!this.rw[name]) throw new Error(`NodeWormholeNav: refusing write to the read-only mount "${name}" — rel="${rel}"`)
+            return this.confine(m.root, m.sub)
+        }
+        return this.confine(this.writeRoot(rel), rel)
     }
 
     // confine — every method below reaches disk ONLY through this (§8.4).  `path.join(root, rel)` alone
@@ -101,8 +179,7 @@ export class NodeWormholeNav {
 
     async read_file(dir_path: string, filename: string): Promise<string | null> {
         const rel = [dir_path, filename].filter(Boolean).join('/')
-        for (const root of [this.overlay, this.base]) {   // overlay shadows base
-            const p = this.confine(root, rel)
+        for (const p of this.readAbs(rel)) {   // overlay shadows base; a mount answers alone
             if (isFileAt(p)) return readFileSync(p, 'utf8')
         }
         return null
@@ -110,7 +187,7 @@ export class NodeWormholeNav {
 
     async write_file(dir_path: string, filename: string, content: string): Promise<void> {
         const rel = [dir_path, filename].filter(Boolean).join('/')
-        const abs = this.confine(this.writeRoot(rel), rel)
+        const abs = this.writeAbs(rel)
         this.mkdirSecure(path.dirname(abs))
         this.writeSecure(abs, content, false)
     }
@@ -118,8 +195,7 @@ export class NodeWormholeNav {
     // bin_read — read_file's binary twin: the raw bytes (no utf8 decode).  Overlay shadows base, same fall-through.
     async bin_read(dir_path: string, filename: string): Promise<ArrayBuffer | null> {
         const rel = [dir_path, filename].filter(Boolean).join('/')
-        for (const root of [this.overlay, this.base]) {   // overlay shadows base
-            const p = this.confine(root, rel)
+        for (const p of this.readAbs(rel)) {   // overlay shadows base; a mount answers alone
             if (isFileAt(p)) { const b = readFileSync(p); return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer }
         }
         return null
@@ -129,7 +205,7 @@ export class NodeWormholeNav {
     //  recording, same writeRoot rule).  Completes the contract so a headless boot can write binary (WAVs).
     async bin_write(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer): Promise<void> {
         const rel = [dir_path, filename].filter(Boolean).join('/')
-        const abs = this.confine(this.writeRoot(rel), rel)
+        const abs = this.writeAbs(rel)
         this.mkdirSecure(path.dirname(abs))
         this.writeSecure(abs, bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes), false)
     }
@@ -141,7 +217,7 @@ export class NodeWormholeNav {
     //     recording, everything else sandboxes into the overlay.
     async bin_append(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer): Promise<void> {
         const rel = [dir_path, filename].filter(Boolean).join('/')
-        const abs = this.confine(this.writeRoot(rel), rel)
+        const abs = this.writeAbs(rel)
         this.mkdirSecure(path.dirname(abs))
         this.writeSecure(abs, bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes), true)
     }
@@ -150,8 +226,7 @@ export class NodeWormholeNav {
     //  the whole file — a real fd read of just the window + the total size, matching the browser navs.
     async read_range(dir_path: string, filename: string, offset: number, len?: number): Promise<{ buffer: ArrayBuffer, size: number } | null> {
         const rel = [dir_path, filename].filter(Boolean).join('/')
-        for (const root of [this.overlay, this.base]) {   // overlay shadows base
-            const p = this.confine(root, rel)
+        for (const p of this.readAbs(rel)) {   // overlay shadows base; a mount answers alone
             if (!isFileAt(p)) continue
             const size = statSync(p).size
             const end = len == null ? size : Math.min(size, offset + len)
@@ -169,20 +244,27 @@ export class NodeWormholeNav {
     // returns a DirectoryListing-shaped object; .expand() merges base + overlay entries
     async dir(...parts: string[]): Promise<any | null> {
         const rel = parts.filter(Boolean).join('/')
-        const roots = [this.base, this.overlay]
-        if (!roots.some(r => isDirAt(this.confine(r, rel)))) return null
+        // A mounted rel lists from its own root ALONE — disjoint namespace, no shadowing (constructor).
+        const m = this.mountFor(rel)
+        const dirs = m ? [this.confine(m.root, m.sub)] : [this.base, this.overlay].map(r => this.confine(r, rel))
+        if (!dirs.some(isDirAt)) return null
         const nav = this
+        // At the ROOT listing, the mount names are directories that exist in the nav but on no single
+        //  disk root — so they must be injected or a blind wander from '' could never reach them.
+        //   (`Sounditron_muse` probes the base 'music' by name and would find it either way; a bare
+        //    `Crate_nav_meander(nav, '', …)` would not, and that is the path a real Radio takes.)
+        const extra = rel === '' ? Object.keys(this.mounts) : []
         return {
             name: parts[parts.length - 1] ?? '',
             directories: [] as { name: string }[],
             files: [] as { name: string }[],
             async expand() {
                 const seen = new Map<string, boolean>()   // name → isDir (overlay shadows base)
-                for (const root of roots) {
-                    const d = nav.confine(root, rel)
+                for (const d of dirs) {
                     if (!isDirAt(d)) continue
                     for (const ent of readdirSync(d, { withFileTypes: true })) seen.set(ent.name, ent.isDirectory())
                 }
+                for (const name of extra) if (isDirAt(nav.mounts[name])) seen.set(name, true)
                 this.directories = [...seen].filter(([, isd]) => isd).map(([name]) => ({ name }))
                 this.files       = [...seen].filter(([, isd]) => !isd).map(([name]) => ({ name }))
             },

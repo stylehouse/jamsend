@@ -53,7 +53,8 @@ async Sounditron_drive(w, req):
         if (n === 4) await this.Sounditron_possibilities(w)
         if (n === 5) await this.Sounditron_peer(w)
         if (n === 6) await this.Sounditron_sound(w)
-        if (n === 7) await this.Sounditron_report(w)
+        if (n === 7) await this.Sounditron_music(w)
+        if (n === 8) await this.Sounditron_report(w)
         // stamp the BEAT HUD (runtime — never snapped): BeatFace lights dot n and names it (NAMES[n]),
         //  and the wait we just armed (if any) parks its countdown on beat.c.wait via Sounditron_await.
         let bhud = w.o({ Beat: 1 })[0]
@@ -656,8 +657,77 @@ async Sounditron_probe(w, M):
     let timeout = new Promise(r => setTimeout(() => r({ ok: 0, why: 'probe timeout — no gesture yet' }), 5000))
     w.c.audio_probe = await Promise.race([M.Lies_audio_probe(), timeout])
 
-// beat 7 — THE REPORT: sum the session — alive seconds, the census, what connected — and the
-//  TALLY the panel shows, standing in the glass too.
+// beat 7 — THE MUSIC: WAIT FOR THE THING THIS BOOK EXISTS TO PROVE.  Until 2026-08-08 the Book ended
+//  at the report, and the report is minted from a world where the headline fact — did a note actually
+//   play — is not yet available: the boot fix took the steps to ~0.48s each and the radio simply does
+//    not start that fast (the human: "we get to the end of the Sounditron test now but the Radio
+//     doesn't really start for a bit longer than that").  The sentence itself already existed and was
+//      already the "clear but vague" wanted (no track name, no counts — a different random track every
+//       run and it still reads the same), but it was never CONTRACTED, so the Book went green whether
+//        or not a note ever played.  That is precisely why this gap was invisible.  This beat is the
+//         BY-WHEN: it holds the run open until the music runs, so declaring the sentence here gates on
+//          a truth the world has been given a fair chance to provide.
+//  20s: the ceiling is generous ON PURPOSE — it is a diagnosis budget, not a performance target.  The
+//   press cannot even be attempted before beat 6, a friend's first chunk has to cross the wire, and a
+//    timeout here is graceful like every other wait (nothing throws; the report still sums, and the
+//     UNMET sentence is what reds the run).  The cost of a too-tight ceiling is a red Book on a slow
+//      but working machine; the cost of a loose one is 20s on a machine that is genuinely broken —
+//       and that machine wants the why-line, which is exactly what it gets.
+async Sounditron_music(w):
+    i %desc:'the music runs'
+    this.expecting(w, 'music_wait', 20, async () => { await this.Sounditron_await(w, 20, () => this.Sounditron_music_running(w), 'the music to run', () => this.Sounditron_music_why(w)) })
+
+// the truth: the SAME condition the witness swears on, factored out so the wait and the sentence can
+//  never drift apart (two copies of one predicate is how a Book starts lying about itself).  `starved`
+//   counts — the pump ran dry AFTER feeding chunks, which is a supply problem, not a playback one.
+Sounditron_music_running(w):
+    let radio = w.o({ Radio: 1 })[0]
+    if (!radio) return 0
+    let s = radio.sc.Radio
+    if (s !== 'playing' && s !== 'starved') return 0
+    return (+(radio.c.seq || 0)) > 0 ? 1 : 0
+
+// the why — the load-bearing half (Sounditron_boot_mark).  Four ways this burns its ceiling, all
+//  identical from outside and all wanting OPPOSITE fixes: nothing to play at all (the share is dry or
+//   no friend previewed) · stock stands but the press never took (Radio_go awaits Sound_gat, which
+//    pends forever on a gestureless tab) · the radio is going but no chunk ever decoded (the serve side
+//     or the decoder) · anything else.  Naming which one is the entire point of waiting 20s to fail.
+Sounditron_music_why(w):
+    let M = this.top_House()
+    let radio = w.o({ Radio: 1 })[0]
+    if (!radio) return 'no radio stood in the world — nothing ever pressed play'
+    let s = String(radio.sc.Radio || 'off')
+    let seq = +(radio.c.seq || 0)
+    let friend = M.Radio_dial_pool ? M.Radio_dial_pool(w, radio) : null
+    let own = 0
+    if (M.Ra_recs && M.Ra_home_self && M.Radio_pub) own = M.Ra_recs(M.Ra_home_self(w, M.Radio_pub(w) || 'me')).length
+    if (!friend && !own) return 'nothing to play — no friend preview stood and my own shelf is empty'
+    let probe = w.c.audio_probe
+    if (s === 'off' || s === 'paused') {
+        if (probe && !probe.realtime) return 'stock stands but the AudioContext never ticked — the press is parked on a gesture'
+        return 'stock stands (friend=' + (friend ? 1 : 0) + ' own=' + own + ') but the radio is ' + s + ' — the press never took'
+    }
+    // DIGGING IS ITS OWN DIAGNOSIS and the first thing this wait ever caught (2026-08-08 — 20.2s of a
+    //  20s budget, three runs, with 13 own records standing).  It is NOT a stuck decoder and NOT a cold
+    //   warm-window: the press TOOK, the pump is running, and it is hunting.  On the runner the answer
+    //    turned out to be POLICY, not machinery — Radio_dial:858 is SOURCE-EXCLUSIVE (the human
+    //     2026-07-28: the tabs are "meant to be listening to each other's collections exclusively"), so
+    //      own stock is dialled ONLY when the listener has flipped `radio.sc.own`.  A solo machine with
+    //       a full shelf therefore parks in `digging` behaving exactly as designed.  That case gets its
+    //        OWN line, because "the dial refuses on purpose" and "the dial found nothing" want opposite
+    //         responses and a why-field that conflates them is worse than no why-field at all.
+    if (s === 'digging') {
+        let st = w.o({ Stoker: 1 })[0]
+        if (!friend && own && !radio.sc.own) return 'friend-exclusive by design — ' + own + ' own records stand but Radio_dial will not touch them without radio.sc.own; no friend is online'
+        return 'digging — pressed and hunting but the dial saw nothing playable (stock=' + (st?.sc?.stock ?? '?') + ' friend=' + (friend ? 1 : 0) + ' own=' + own + ') — chunk 0 warm on nothing'
+    }
+    if (seq === 0) return 'the radio is ' + s + ' but no chunk ever decoded — the serve side or the decoder is stuck'
+    return 'the radio is ' + s + ' at seq ' + seq + ' — unexpected: the truth-fn and this why disagree'
+
+// beat 8 — THE REPORT: sum the session — alive seconds, the census, what connected — and the
+//  TALLY the panel shows, standing in the glass too.  MOVED DOWN from 7 (2026-08-08): `sum and report`
+//   was premature by one beat, summing a session in which the headline fact was still pending.  It now
+//    sums a world where sound has happened, or provably has not.
 async Sounditron_report(w):
     i %desc:'sum and report'
     let s = w.oai({ Session: 1 })
@@ -667,6 +737,15 @@ async Sounditron_report(w):
     let granted = this.Sounditron_grants(w)
     if (granted.length) s.sc.granted = granted.length
     if (this.Sounditron_peer_live(w)) s.sc.connected = 1
+    // THE HEADLINE FACT, now available because beat 7 waited for it.  A snapped BOOLEAN rides as 1 or
+    //  ABSENT — never 0 — so a silent session is legible by the key's absence, and the report's own
+    //   completeness gate (Sounditron_witness's report-stands) can read `alive` as the fill marker
+    //    without `played` having to be present on a machine where nothing played.
+    if (this.Sounditron_music_running(w)) s.sc.played = 1
+    // NOT ttf.  The plan asked for `s.sc.ttf` beside it; time-to-first-chunk is WALL CLOCK, and a wall
+    //  clock in sc makes the fixture churn on every run forever (the same law Sounditron_boot_mark keeps
+    //   its `ms` on .c for).  The number is not lost: it lands in the boot ledger as `music_wait`, in
+    //    the Radio_trace ring, and past 2s it photographs itself as the %log below.
     let M = this.top_House()
     let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
     let sw = M.Swarm_station_world ? M.Swarm_station_world() : null
@@ -787,6 +866,21 @@ Sounditron_pulled(w):
     }
     return 0
 
+// Sounditron_report_filled — what `report-stands` now MEANS.  The old gate latched on the %Session row
+//  merely EXISTING, which is a tautology: beat 8 mints it unconditionally, so the sentence swore that a
+//   beat had run, not that the report was true or complete (the human 2026-08-08, on `sum and report`:
+//    "is that really what's happening there?" — no, it wasn't).  FILLED-IN means the report carries its
+//     own sum, and every fact the world DID make available was actually carried across.  Every clause is
+//      conditional on its source, so a quiet machine — no peers, no census, no music — still passes
+//       honestly; what can no longer pass is a report summed with its eyes shut.
+Sounditron_report_filled(w, s):
+    if (s.sc.alive == null) return 0
+    let census = w.o({ Census: 1 })[0]
+    if (census?.sc?.n != null && s.sc.possibilities == null) return 0
+    if (this.Sounditron_peer_live(w) && s.sc.connected == null) return 0
+    if (this.Sounditron_music_running(w) && s.sc.played == null) return 0
+    return 1
+
 // Sounditron_await — the wait INSIDE an expecting: poll a condition to the deadline, mint
 //  nothing (the witness does the seeing, in Atime).  The ttlilt riding the expecting req holds
 //   the snap; when the truth lands early we settle early.
@@ -806,7 +900,7 @@ Sounditron_boot_mark(w, label, secs, ms, met, why):
     let M = this.top_House()
     if (typeof M.Radio_trace === 'function') {
         try { M.Radio_trace(null, { ev: 'boot', wait: label, ms: ms, budget: secs * 1000,
-            met: met ? 1 : 0, why: String(why || '').slice(0, 60) }) } catch (er) {}
+            met: met ? 1 : 0, why: String(why || '').slice(0, 140) }) } catch (er) {}
     }
 
 // why_fn (optional) is called ONLY on timeout and returns a short diagnosis of the state that failed to
@@ -905,4 +999,12 @@ Sounditron_witness(w):
         this.story_swear(w, 'music from a friend played — their track streamed off their shelf over Repli', radio)
     }
     if (n != null && n >= 6 && w.c.ttf != null && w.c.ttf > 2000 && !(oa %log:'slow to sound — music took over two seconds to begin')) i %log:'slow to sound — music took over two seconds to begin'
-    if (w.o({ Session: 1 })[0]) this.story_swear(w, 'the session summed itself — a report stands ready to travel', w.o({ Session: 1 })[0])
+    // THE REPORT, TOPPED UP THEN GATED (2026-08-08).  Two changes, and the first is what makes the
+    //  second safe.  TOP-UP: beat 8 sums the world at one instant, but a peer can come online — or the
+    //   first chunk can land — during the very beat that summed them.  Each fact is one-shot (guarded by
+    //    its own absence), so this is a handful of writes over a run, and it removes a race in which a
+    //     GOOD outcome arriving late would leave the report permanently unsworn.
+    let sess = w.o({ Session: 1 })[0]
+    if (sess && !sess.sc.played && this.Sounditron_music_running(w)) sess.sc.played = 1
+    if (sess && !sess.sc.connected && this.Sounditron_peer_live(w)) sess.sc.connected = 1
+    if (sess && this.Sounditron_report_filled(w, sess)) this.story_swear(w, 'the session summed itself — a report stands ready to travel', sess)

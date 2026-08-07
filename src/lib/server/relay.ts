@@ -289,8 +289,28 @@ export function attachRelay(
 		else warnDrop('bridge→', to, kind, 'arrived over the r2r bridge but no local socket is bound')
 	}
 
+	// ADDRESSABLE roles vs BRIDGE roles (2026-08-08, Daemon_todo §4a — the owner's ruling: the
+	//  editor|runner restriction "should fall, dispatching only runners").  A `become` does TWO
+	//   unrelated things, and conflating them is what kept the door shut on a third kind of peer:
+	//    (1) bind(role, ws) — makes the socket REACHABLE at to:<role>.  Harmless for any name.
+	//    (2) setRole(role) — decides which relay dials the r2r bridge.  SET-ONCE, and it THROWS on a
+	//         conflicting reassignment.
+	//  So widening (1) is safe and widening (2) is NOT: if a daemon's `become` reached setRole, then
+	//   whichever peer connected first would win the relay's role, and the loser's become — quite
+	//    possibly a real runner tab's — would throw `relay role already '…'`.  That is the "a bad
+	//     relay edit takes every runner down" failure, reachable by simply relaxing the `if`.
+	//  Hence: bind ANY sane role name; let only editor|runner steer the bridge.  Dispatch stays
+	//   runner-only because dispatch addresses to:'runner', which no other role binds.
+	//  Listing every bound role somewhere is the owner's stated "maybe one day" — deliberately NOT
+	//   built here; nothing enumerates `locals` for a UI yet.
+	const BRIDGE_ROLES = new Set(['editor', 'runner'])
+	// A bound name reaches into the `locals` routing map, so keep it a plain short token rather than
+	//  whatever a peer felt like sending.  (Not a new exposure — `subscribe` already binds caller-
+	//   chosen channel names — but there is no reason to widen the shape while widening the policy.)
+	const SANE_ROLE = /^[A-Za-z0-9_:.-]{1,64}$/
+
 	function handleControl(ws: WebSocket, msg: any) {
-		if (msg.control === 'become' && (msg.role === 'editor' || msg.role === 'runner')) {
+		if (msg.control === 'become' && typeof msg.role === 'string' && SANE_ROLE.test(msg.role)) {
 			// Bind this socket under its ROLE addr so role-addressed frames actually reach it —
 			//  the editor↔runner ping/pong keepalive (and any to:'runner'/'editor' traffic) is
 			//   addressed by role, and without a binding every such frame DROPS at deliverLocal
@@ -303,8 +323,16 @@ export function attachRelay(
 			bind(msg.role, ws)
 			;((ws as any).roleBound ??= new Set<string>()).add(msg.role)
 			relayLog(`🎭 become ${msg.role} — bound addr=${msg.role} (locals: ${[...locals.keys()].join(',')})`)
+			// A NON-BRIDGE role (a daemon, and whatever comes after it) is now reachable at to:<role>
+			//  and stops there: it must never touch the set-once relay role, or the first such peer to
+			//   connect would lock the bridge and every later editor|runner become would throw.  Ack
+			//    with the role it asked for, and report the relay's own role as-is (possibly unset).
+			if (!BRIDGE_ROLES.has(msg.role)) {
+				ws.send(JSON.stringify({ control: 'role', role: msg.role, bridge: role ?? null }))
+				return
+			}
 			try {
-				setRole(msg.role)
+				setRole(msg.role as Role)
 				ws.send(JSON.stringify({ control: 'role', role }))
 			} catch (e) {
 				ws.send(JSON.stringify({ control: 'error', error: String((e as Error).message) }))
