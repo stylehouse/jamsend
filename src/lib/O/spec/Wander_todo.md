@@ -246,10 +246,52 @@ The census agent weighed `sc`-in-the-world, `H.stashed`, a new ghost, and Dexie.
   Sequence matters: **fix the door before moving the census through it** — otherwise the census inherits
    the rewrite and the Berth's advantages get blamed for the Berth's cost.
 
-**Not started, and not to be started unprompted** — this is a change to the persistence layer that
- Heist, the magazine and the newlyadded log all sit on. What is established is that the census's Dexie
-  codec is **provisional**, and that the objection to migrating it is a fixable property of `Berth_save`
-   rather than anything about the census.
+### 6.2 LANDED 2026-08-08 — the door, then the census through it
+
+**The door.** `Berth_append` / `Berth_fold` / `Berth_part_name` / `Berth_parts_max` in `Ghost/M/Heist.g`
+ (compile `3c460094a7d37475`). `Berth_open` folds parts in order, stopping at the first gap. `Berth_save`
+  is now also the **compaction** — a whole rewrite supersedes every part, so it unlinks them; forgetting
+   that would make the next open fold already-folded state back on top. `Berth_reset` learned about parts
+    for the same reason. A part's root carries `ident:<key>`, naming the sc fields that identify a
+     particle within its mainkey, so a later line **supersedes** an earlier one — which is what lets a
+      *mutation* ride the same log as an arrival.
+
+**`Heist_newlyadded_note` and `Heist_feel` now append one line instead of rewriting 43 KB.**
+ Verified on the live runner: **MusuBerth 7/7**, **MusuHeist 22/22 ok**, **MusuVend 11/11 caveat 0**,
+  and `git diff wormhole/Story/ | grep dige:` shows **no recorded step dige moved**. MusuHeist is the
+   real gate here, not a smoke test — `Heistation.g:634` asserts the cards read back at exactly
+    `uno===3 && duo===6` with their feelings intact and no word about the source, and :473–490 exercises
+     the `Heist_feel` mutation, which is precisely the supersede path.
+
+**What was deliberately NOT converted, and why it would have been wrong.** `Heist_keep_persist` looks
+ like the same shape and is not: a `%HeistSeed` *is* the thing that grows (its `%Pick` children), so
+  appending the entry rewrites the same bytes the whole-file save did. Converting it for symmetry would
+   have added risk to the heist-resume path for no measured gain. `Faves`/`HeistDefaults` are hundreds of
+    bytes. Newlyadded was the case; it is done.
+
+**The census now lives in a Berth Waft** — `<root>/.jamsend/berth/Census`, one `%Dirtally,of:<key>` per
+ directory, flat (the key carries the whole path, so the parent/child graph is implicit and needs no
+  nesting). A **stub** — a directory some parent's `subs` names but the wander has never stood in —
+   rides as `stub:1` with no stats and never becomes a `learn` entry; stubs are ~1000 of the 6721 measured
+    edges and they are the frontier the estimator prices, so dropping them would quietly shrink the
+     unknown expanse to only what we already walked. `subs` is **derived** from the keys on the way back,
+      never stored: a stored edge could contradict the key it points at and there would be no honest way
+       to resolve that.
+ Every **pure** function of `census_codec.ts` is kept — merge, evict, select, restore_into, the `z` cap,
+  live-observation-outranks-memory, the confidence read. Those were measured against 6721 real entries
+   and none of that reasoning was ever about storage. Only `census_encode`/`census_decode` and the Dexie
+    module fall out of use.
+ A save now writes **only the keys that moved**, compared field by field rather than by digest (a digest
+  that missed a field would silently stop persisting it). **Eviction is the one thing that still forces a
+   whole rewrite** — a removal has no line to append — and that is right: it fires only past
+    `CENSUS_STORE_MAX`, and `Berth_save` is the compaction anyway.
+
+**Still not run in a browser.** `svelte-check` is clean on the changed files and `/BigSoundland` SSRs 200
+ at ~297 KB, but that is the same gap §6 opened with, now covering the storage too. `Census_diag()` gained
+  `parts` and `moved`: parts climbing toward `Berth_parts_max` and resetting is a healthy compaction cycle;
+   parts pinned at 0 while `moved` keeps reporting work means appends are not landing.
+ `census_store.ts` (Dexie) is left in place ON PURPOSE rather than deleted — nothing has run in a tab yet,
+  and it is the fallback if the Berth path does not come up. Delete it once a real page has restored.
 
 ## 5. The shape that keeps recurring
 

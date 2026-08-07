@@ -904,7 +904,7 @@ Three things follow:
     **`allHouses`/`liveTtlilts` walk the entire tree ~4× per tick** with no incrementality, so
      per-tick cost rises monotonically with uptime.
 - **No shipping vehicle exists.** — **PARTLY ANSWERED 2026-08-08: `jamserve`.** `jamserve/Dockerfile`
-   + `docker-compose.jamserve.yml` now exist (a separate file, so nothing in the running stack changes
+   + a profiled `jamserve` service in `docker-compose.yml` now exist (profiled, so nothing in the running stack changes
     until you `up` it). It carries ffmpeg from `apk`, shadows `/app/node_modules` with an anonymous
      volume so it does **not** join the shared-libc trap, mounts the library read-write for
       `.jamsend`, and keeps the identity in a named volume so it is the same peer across restarts.
@@ -1463,15 +1463,19 @@ The owner named it (*"srv is a terrible name… let's call it jamserve — a use
    i.e. **the share IS the music folder**, and the account is already inside it.
 
 **Files added** (all additive; nothing in the running stack changes until it is `up`ed):
- `jamserve/Dockerfile` · `docker-compose.jamserve.yml` · a `## jamserve` section in `README.md`.
- **The separate compose file is the settled answer, by the owner's ruling** (*"it's a separate
-  environment to prod or dev"*) — I had briefly argued for folding it into `docker-compose.yml` under
-   `profiles:` and started doing so; that edit is reverted. Compose files are per-ENVIRONMENT here
-    (dev / staging / prod / a user's own box), and jamserve is a fourth, not a service of dev. The
-     duplicated `music-volume` anchor is the visible cost of that and is correct: dev's is `:ro`,
-      jamserve's must be read-write. **README.md is now the user-facing doc**; keep the two in step.
+ `jamserve/Dockerfile` · a `jamserve` service in `docker-compose.yml` · a `## jamserve` section in
+  `README.md` (the user-facing doc — keep it in step with the compose comments).
+ **This went back and forth, and the deciding evidence was operational, so record it and stop
+  re-litigating.** It first shipped as a separate `docker-compose.jamserve.yml`, on the reasoning that
+   compose files are per-ENVIRONMENT (dev / staging / prod / a user's own box) and jamserve is a
+    fourth. That reasoning is fine and it is still not what to do, because the cost lands on every
+     single command: two `-f` flags forever, and `docker compose logs jamserve` failing outright with
+      **"no such service"** — which is exactly how the owner hit it. `profiles: ["jamserve"]` buys the
+       one property the separate file was actually for (never starts by accident) and naming the
+        service auto-enables its profile, so the commands stay short. The duplicated `music-volume`
+         anchor stays, and is correct: dev's is `:ro`, jamserve's must be read-write.
  Start once:
- `docker compose -f docker-compose.yml -f docker-compose.jamserve.yml up -d --build jamserve`.
+ `docker compose up -d --build jamserve`.
  No `--build` loop is needed — source is bind-mounted and `SECS=900` + `restart: always` relaunches
   on freshly-edited code, which is also how a sibling session iterates on it without a docker socket.
 
@@ -1554,6 +1558,53 @@ The owner named it (*"srv is a terrible name… let's call it jamserve — a use
      it. Non-fatal throughout; no ffmpeg logs *"this box serves preview windows only"* and carries on.
  **Unverified as of writing** — it lands on jamserve's next `SECS=900` restart (bind-mounted source,
   no rebuild needed); check the log for the `🎬` line.
+
+**"It should probably complain about no identity if there isn't one" (the owner) — and the knob that
+ governs that is NOT the obvious one.** `ROLE` defaults off precisely so an unconfigured boot does not
+  provision (§4.1), so the compose file defaulting `ROLE=jamserve` had quietly re-enabled the thing the
+   ruling forbids. Fixing that alone is **not enough**, and the log proved it: with `ROLE` unset the box
+    still minted `7c0d0bfdb35e`, because `seed_identity` writes a keypair to `KEYFILE` whenever none is
+     there, independent of both `I=` and `ROLE` — and the keyfile adopt then WINS over `ROLE`, which is
+      why the knob doc says *"ROLE is inert unless KEYED=0"*. **`KEYED=0` is the actual gate**; it is
+       now the compose default, with `JAMSERVE_ROLE=<name>` as the explicit smoke-test throwaway.
+ New `nag_identity()` says so for as long as it is true — once loudly with the exact recipe
+  (`ls <music>/.jamsend/account/` → the dir names ARE the prepubs → `JAMSERVE_ID=`), then folded into
+   the `♥` line, for the same reason the wedge is: **unprovisioned looks exactly like provisioned from
+    outside**, so the heartbeat has to carry it or nobody finds out. Silent when correctly configured.
+
+**A THROWAWAY HANDS OUT ITS OWN WAY IN** (the owner's idea, and a much better use of that state than
+ complaining about it): *"perhaps the THROWAWAY IDENTITY could log an invite to it, to make everything
+  easy to test? then I can incognito-tab another Pier to listen to a bit of daemon-served music!"*.
+   `MINT_INVITE` now defaults on when `!process.env.I`, and prints a **URL** rather than a bare token —
+    `<origin>/BigSoundland?Iz=<token>`, because `?Iz=` on the page IS the redeem path a scanned invite
+     takes, so an incognito tab on that link becomes a sealed Pier that can listen. Not knowing
+      anybody is precisely the problem an invite solves; the least useful state this box has is now
+       its most testable one.
+ **Gated on `!I=`, and that gate is load-bearing.** A provisioned box is the owner; a daemon quietly
+  minting single-use invites to a real identity on every boot — *into a logfile* — hands out their
+   friendship unasked. Same condition as the nag, deliberately, so "complains that it is a throwaway"
+    and "is useful because it is one" can never drift apart.
+ The link is built from `INVITE_ORIGIN` (default `http://localhost:9091`) and **not** from `ORIGIN`:
+  ORIGIN is the docker-bridge address the *container* reaches the dev server by, and a host browser
+   opening that gets no secure context, so WebRTC refuses — which reads as a peering failure and is
+    not one.
+
+**§2.2's second half landed too — `level_to_ogg`, pass TWO.** Feeds `measure()`'s `measured_*` back in
+ with **`linear=true`** (without it loudnorm silently reverts to its DYNAMIC mode: one constant
+  whole-track gain is what `Ra_bake` means, and a dynamic pass is a different master that sounds
+   fine), pins **`-ar 48000`** (loudnorm resamples internally to 192kHz and leaves it there; libopus
+    would insert a resampler of its own choosing), and structurally verifies `OggS` + `OpusHead` in the
+     output before returning it — a truncated pipe or a silently-swapped codec otherwise reaches a
+      phone as a file that just does not play, the hardest failure to attribute later. Behind
+       `FFTEST=1`: measuring costs seconds, transcoding costs minutes, and this box restarts on a timer.
+
+**The security note the owner spotted, now in README.md where users will meet it.** The account snap
+ holds the ed25519 **private key in the clear** (`Swarm_account_save`'s landmine). jamsend's own three
+  invariants keep it safe — `.jamsend` never peer-readable, a share walk returns audio only, Repli
+   moves particles not files — but *those are jamsend's guarantees alone*. Point Syncthing/Resilio/
+    Dropbox/another p2p music app at the same collection and it replicates `.jamsend/` with the music,
+     and whoever receives it **is you**. Mitigation is an ignore pattern for dot-dirs, or not sharing a
+      collection jamsend lives in; there is no revoking a leaked identity, only minting a new one.
 
 **Heads-up for the morning, not my work:** a **concurrent agent is live in this repo** — `Ghost/M/Heist.g`,
  `Error_channel_todo.md`, `Heist_todo.md`, a new `wormhole/Story/ErrChannel/` and a spread of `Musu*`

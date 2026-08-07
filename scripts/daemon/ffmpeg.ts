@@ -113,3 +113,84 @@ export async function measure(abs: string, target_lufs: number, tp = -1.0):
 }
 
 const tail = (s: string, n = 200) => String(s || '').trim().split('\n').slice(-2).join(' | ').slice(-n)
+
+// ── the levelled encode ───────────────────────────────────────────────────────────────────────
+// run_binary — the twin of `run` for the case where stdout is AUDIO.  Kept separate rather than
+//  flagged, because the difference is not a flag: collecting bytes as a string corrupts them
+//   (String(buf) decodes UTF-8, and every invalid sequence becomes U+FFFD — silently, and only for
+//    some inputs).  A single `capture_stdout` boolean invites exactly that mistake.
+export function run_binary(args: string[], opts: { timeout_ms?: number } = {}):
+        Promise<{ code: number; out: Uint8Array; stderr: string }> {
+    const { timeout_ms = 600_000 } = opts     // a whole-track transcode, not a measurement
+    return new Promise((resolve, reject) => {
+        const p = spawn(FFMPEG, args, { stdio: ['ignore', 'pipe', 'pipe'] })
+        const chunks: Buffer[] = []
+        let stderr = ''
+        p.stdout.on('data', (d: Buffer) => { chunks.push(d) })
+        p.stderr.on('data', d => { stderr = (stderr.length > 262_144 ? stderr.slice(-131_072) : stderr) + String(d) })
+        const timer = setTimeout(() => { try { p.kill('SIGKILL') } catch {} }, timeout_ms)
+        p.on('error', e => { clearTimeout(timer); reject(e) })
+        p.on('close', code => { clearTimeout(timer); resolve({ code: code ?? -1, out: new Uint8Array(Buffer.concat(chunks)), stderr }) })
+    })
+}
+
+export type Levelled = {
+    bytes: Uint8Array
+    target_lufs: number       // trap 3: what it was aimed at, carried with the artifact
+    measured_lufs: number     // what the source was, before correction
+    gain_db: number           // the correction applied, for a human reading a log
+    bitrate: string
+}
+
+// level_to_ogg — PASS TWO: apply the correction measured by `measure()` and encode to a real
+//  RFC-7845 Ogg/Opus file, returned as bytes.  This is the headless twin of Orig_ogg_encode (which
+//   does Ra_lufs → Ra_gain_for → Ra_bake → WebCodecs → Orig_ogg_mux in the browser).
+//
+// Two flags in here are not stylistic, and both change the output if dropped:
+//
+//  · `linear=true` is what makes this the second pass of a TWO-pass normalisation rather than a
+//     second dynamic one.  With the measured_* values supplied AND linear enabled, loudnorm applies
+//      ONE constant gain across the whole file — which is what Ra_bake means by whole-track, and
+//       what keeps a continuation loudness-identical to the preview it follows.  Drop it and ffmpeg
+//        falls back to dynamic mode, which sounds fine and is a different master.
+//
+//  · `-ar 48000` because loudnorm resamples internally to 192 kHz and leaves it there.  libopus
+//     accepts only 48/24/16/12/8 kHz, so ffmpeg WILL insert a resampler on its own — but silently
+//      and of its choosing.  Opus is a 48 kHz codec; say so.
+export async function level_to_ogg(abs: string, target_lufs: number, m: Measured, bitrate = '128k'):
+        Promise<Levelled | { bytes: null; why: string }> {
+    const norm = [
+        `I=${target_lufs}`, `TP=-1.0`, `LRA=11`,
+        `measured_I=${m.input_i}`, `measured_TP=${m.input_tp}`,
+        `measured_LRA=${m.input_lra}`, `measured_thresh=${m.input_thresh}`,
+        `offset=${m.target_offset}`, `linear=true`,
+    ].join(':')
+    let r
+    try {
+        r = await run_binary([
+            '-hide_banner', '-nostats', '-i', abs,
+            '-af', `loudnorm=${norm}`,
+            '-ar', '48000', '-c:a', 'libopus', '-b:a', bitrate,
+            '-f', 'ogg', '-',
+        ])
+    } catch (e: any) {
+        return { bytes: null, why: `spawn failed: ${e?.message || e}` }
+    }
+    if (r.code !== 0) return { bytes: null, why: `ffmpeg exit ${r.code}: ${tail(r.stderr)}` }
+    if (!r.out.length) return { bytes: null, why: `produced no bytes: ${tail(r.stderr)}` }
+    // Structural check, cheap and worth it: an Ogg stream starts "OggS" and an Opus one carries
+    //  "OpusHead" in the first page's body.  A truncated pipe or a codec ffmpeg silently swapped
+    //   would otherwise reach a phone as a file that simply does not play — the failure that is
+    //    hardest to attribute later, because the bytes exist and the log was green.
+    const magic = (s: string, at: number) => Array.from(s).every((c, i) => r.out[at + i] === c.charCodeAt(0))
+    if (!magic('OggS', 0)) return { bytes: null, why: `not an Ogg stream (first 4 bytes ${Array.from(r.out.slice(0, 4)).join(',')})` }
+    if (!magic('OpusHead', 28)) return { bytes: null, why: `Ogg but no OpusHead at the usual offset — wrong codec?` }
+    const measured = Number(m.input_i)
+    return {
+        bytes: r.out,
+        target_lufs,
+        measured_lufs: +measured.toFixed(2),
+        gain_db: +(target_lufs - measured).toFixed(2),
+        bitrate,
+    }
+}

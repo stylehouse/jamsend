@@ -7,7 +7,9 @@ story:MusuRaStock
     TimeTotal:beliefs,avg=0.001
       sample=0.001,at=1786063803
       sample=0.001,at=1786111720
+      sample=0.001,at=1786117486
     TimeTotal:step,avg=0.001
       sample=0.001,at=1786063803
       sample=0.001,at=1786111720
+      sample=0.001,at=1786117486
   step,dige:caa06a2f917226aa

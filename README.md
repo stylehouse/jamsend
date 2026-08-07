@@ -159,29 +159,87 @@ If your docker0 interface isnt 172.17.0.1 (so eg _leproxy_ can reverse to it), e
 
 A browser tab is a bad place to keep a peer: it closes, it sleeps, it forgets. **jamserve** is the same
  jamsend app booted headless in its own container — it holds your collection, serves heists, and is
-  standing there when someone finally redeems an Invite you handed out weeks ago. It's the third
-   environment, alongside dev (*docker-compose.yml*) and prod (*prod.sh*), and it lives in its own
-    file so it never starts by accident.
+  standing there when someone finally redeems an Invite you handed out weeks ago. A third thing
+   alongside dev (`docker compose up`) and prod (*prod.sh*) — it shares their compose file but sits
+    behind a profile, so it only ever starts when you name it.
 
-**First, provision an identity in a browser.** jamserve deliberately never invents one. Open the app,
- grant it your music folder with the File System Access picker, and let it write
-  `<music>/.jamsend/account/<prepub>/toc.snap`. Then set `JAMSERVE_ID` to that prepub and jamserve
-   *resumes* that account — the same peer forever, across restarts and rebuilds. Boot with `I=` set and
-    no account on disk and it exits 2 rather than pretending to be a stranger. Leave `JAMSERVE_ID`
-     unset and it mints its own throwaway identity, which is fine for trying it out and not the real
-      shape.
+### your identity lives in your music folder
+
+This is the part to understand before anything else, because it explains both how to set jamserve up
+ and the one way you can get hurt.
+
+**Your music directory is also where you live.** Point the app at a collection and it makes a
+ `.jamsend/` beside your music, holding an `account/<prepub>/` per identity (plus `radiostock/`, a
+  bounded cache of pre-encoded audio, and `identities/`, a friendly-name roster). Mounting the folder
+   into jamserve therefore hands it both jobs at once: the music to serve, and the identity to serve
+    it *as*. That is deliberate — everyone uses the same folder-grant, so the `<prepub>` path segment
+     is what keeps two owners apart, and no per-device root is needed.
+
+**jamserve never invents an identity — you provision one in a browser.** Open the app, grant your
+ music folder with the File System Access picker, and let it write the account. Then:
+
+```bash
+ls <music>/.jamsend/account/         # the directory names ARE the prepubs
+JAMSERVE_ID=<that prepub> docker compose up -d jamserve
+```
+
+That prepub is your address on the wire — the same string the app shows beside your name in the
+ invite panel. `JAMSERVE_ID` becomes the app's own `?I=<prepub>` resume, so jamserve boots *as* you:
+  same peer, same friends, same invites, across restarts and rebuilds. Set it to a prepub with no
+   account on disk and it **exits 2** rather than pretending to be a stranger.
+
+Leave it unset and jamserve mints a throwaway instead, so you can try the box out before provisioning
+ anything. It will say so, loudly and repeatedly — a throwaway is nobody's friend, no one can invite
+  it, and its identity dies with the container.
+
+**A throwaway hands out its own way in**, which makes the whole thing testable in about a minute. Not
+ knowing anybody is exactly the problem an invite solves, so a throwaway box mints one unasked and
+  prints it:
+
+```
+🎟 INVITE — this box is a throwaway, so here is a single-use way in.
+   Open in an incognito tab (single use — one Pier, then it is spent):
+   http://localhost:9091/BigSoundland?Iz=<token>
+```
+
+Open that in a private window and you are a second peer, sealed to the daemon, listening to music it
+ serves. A **provisioned** box never does this — that identity is *you*, and quietly minting invites
+  to your real self into a logfile would be handing out your friendship without being asked.
+
+> ### ⚠ security — the account file holds your private key, in the clear
+>
+> `.jamsend/account/<prepub>/toc.snap` contains your **ed25519 private key, unencrypted**. Whoever
+>  holds that file *is you*: they can sign as you, answer your friends, and redeem your invites.
+>
+> Inside jamsend that is safe, and safe for reasons that are enforced rather than hoped for: `.jamsend`
+>  is never peer-readable, a share walk returns **audio files only** so a peer can never see this file,
+>   and replication moves data objects rather than raw files. There is no path by which jamsend itself
+>    ships it.
+>
+> **But those guarantees are jamsend's alone, and they do not extend to anything else you point at the
+>  same folder.** A second sync or sharing tool over your collection — Syncthing, Resilio, Dropbox,
+>   another p2p music app — will cheerfully replicate `.jamsend/` along with the music, and at that
+>    point your key is wherever that tool sends it. So either exclude dot-directories there (most such
+>     tools take ignore patterns — Syncthing's `.stignore` and friends), or don't share a collection
+>      jamsend is living in. If a key does get out, mint a new identity; there is no revoking one.
+>
+> Anything that changes what a share walk returns, or makes `.jamsend` peer-readable, has to revisit
+>  key-at-rest here. The landmine is documented in the code too, at `Swarm_account_save`.
+
+It is a service in *docker-compose.yml* like the others, but behind a **profile**, so a plain
+ `docker compose up` never starts it. Naming it turns its profile on for you, so the commands stay
+  short:
 
 ```bash
 # build and start it (add MUSIC_PATH=... if your collection isn't the default in docker-compose.yml)
-JAMSERVE_ID=<your prepub> \
-  docker compose -f docker-compose.yml -f docker-compose.jamserve.yml up -d --build jamserve
+JAMSERVE_ID=<your prepub> docker compose up -d --build jamserve
 
 # watch it
-docker compose -f docker-compose.yml -f docker-compose.jamserve.yml logs -f jamserve
+docker logs -f jamserve         # or: docker compose logs -f jamserve
 tail -f jamserve/run.log        # the same thing, on the bind mount
 
 # stop it
-docker compose -f docker-compose.yml -f docker-compose.jamserve.yml down jamserve
+docker compose stop jamserve
 ```
 
 It runs as **uid 1000**, so everything it writes into your music folder stays yours and the browser
@@ -197,9 +255,9 @@ It runs as **uid 1000**, so everything it writes into your music folder stays yo
  Drop them explicitly:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.jamserve.yml rm -sf jamserve
+docker compose rm -sf jamserve
 docker volume ls | grep jamserve-state && docker volume rm <project>_jamserve-state
-docker compose -f docker-compose.yml -f docker-compose.jamserve.yml up -d --renew-anon-volumes jamserve
+docker compose up -d --renew-anon-volumes jamserve
 ```
 
  `jamserve-state` is safe to drop — it is Dexie working state that re-seeds from `<music>/.jamsend`.

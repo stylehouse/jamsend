@@ -21,7 +21,10 @@
 #     CLAUDE.md's big warning is that `app` (Alpine/musl) and `claude` (Debian/glibc) share ONE
 #      /app/node_modules, because `volumes: - .:/app` mounts the host tree straight over whatever
 #       the image built.  jamserve is a THIRD libc consumer, so without the anonymous-volume
-#        shadow in docker-compose.jamserve.yml it would make that problem strictly worse.
+#        shadow on the `jamserve` service in docker-compose.yml it would make that problem worse.
+#     That shadow is STICKY, which is its own trap: `up` reuses the previous container's anonymous
+#      volume rather than repopulating from a new image, so neither this npm ci nor the chown below
+#       lands until you `up --renew-anon-volumes`.  It cost a crashloop on 2026-08-08.
 #     `npm ci` (not `npm install`) so the pinned tree is what lands — the 2026-08-07 outage had
 #      rollup drifting to 4.62.4 against a lockfile pinning 4.40.2, and that mismatch is what made
 #       every SSR request 500 with `__SVELTEKIT_PATHS_BASE__ is not defined`.

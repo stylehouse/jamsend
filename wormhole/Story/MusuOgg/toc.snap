@@ -4,31 +4,31 @@ story:MusuOgg
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.091
-      sample=0.151,at=1786079748
-      sample=0.063,at=1786080063
-      sample=0.082,at=1786081848
-      sample=0.093,at=1786085245
+    TimeTotal:beliefs,avg=0.087
       sample=0.08,at=1786086798
       sample=0.072,at=1786087613
       sample=0.075,at=1786089128
       sample=0.057,at=1786094699
       sample=0.153,at=1786101625
       sample=0.084,at=1786116913
+      sample=0.058,at=1786117702
+      sample=0.12,at=1786117878
+      sample=0.056,at=1786117909
+      sample=0.118,at=1786118048
     TimeTotal:step,avg=0.015
-      sample=0.025,at=1786079748
-      sample=0.011,at=1786080063
-      sample=0.014,at=1786081848
-      sample=0.016,at=1786085245
       sample=0.013,at=1786086798
       sample=0.012,at=1786087613
       sample=0.013,at=1786089128
       sample=0.009,at=1786094699
       sample=0.026,at=1786101625
       sample=0.014,at=1786116913
+      sample=0.01,at=1786117702
+      sample=0.02,at=1786117878
+      sample=0.009,at=1786117909
+      sample=0.02,at=1786118048
   step,dige:73e5978021a7c56a
-  step=2,dige:1ab9f4892ec79c13
-  step=3,dige:450d09283651672f
-  step=4,dige:863bcb5e818ee23b
-  step=5,dige:3461f1e03bed851f
-  step=6,dige:b1303b2ae91ff561
+  step=2,dige:80e65198720bfccb
+  step=3,dige:06ef34b127fcb222
+  step=4,dige:c921adfad8507e10
+  step=5,dige:4cca732f864e8939
+  step=6,dige:a3a4415fe52a0b53

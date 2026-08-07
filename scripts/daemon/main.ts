@@ -443,6 +443,34 @@ const identity_state = () => {
     return { count: ids.length, active: active ? String(active.sc.prepub ?? '').slice(0, 12) : null }
 }
 
+// nag_identity — SAY WHAT IS WRONG, FOR AS LONG AS IT IS WRONG (the owner, 2026-08-08: "it should
+//  probably complain about no identity if there isn't one").  Two states deserve a standing complaint,
+//   and neither announces itself otherwise — the box boots green, heartbeats happily, and is simply
+//    not the peer anyone can reach:
+//     · NO IDENTITY — nothing to be on the network.  Books still run; an invite cannot be answered.
+//     · A THROWAWAY — an identity minted here rather than provisioned in a browser (I= unset).  It
+//        works, and it is nobody's friend: no one holds a Pier to it, and it dies with the container.
+//  ONCE loudly at boot, then folded into the heartbeat, because the loud one scrolls away in minutes
+//   and the whole point is that this stays visible to someone reading `docker logs` an hour later.
+//   Silent in the configured case, so a correctly-provisioned box says nothing at all.
+let nagged = false
+const nag_identity = (): string => {
+    const id = identity_state()
+    const provisioned = !!process.env.I                // I=<prepub>, the production shape
+    if (id.active && provisioned) return ''
+    const one = !id.active
+        ? `⚠ NO IDENTITY — this box can run Books but cannot be a peer: no invite can be answered.`
+        : `⚠ THROWAWAY IDENTITY (${id.active}) — minted here, not provisioned. Nobody's friend: no one can invite it, and it dies with the container.`
+    if (!nagged) {
+        nagged = true
+        say(one)
+        say(`   To be a real peer: grant your music folder in a BROWSER, let it write the account, then`)
+        say(`   ls <music>/.jamsend/account/   — the directory names ARE the prepubs — and set`)
+        say(`   JAMSERVE_ID=<prepub> (which becomes I=). The daemon never provisions (§4.1).`)
+    }
+    return id.active ? ` ⚠throwaway` : ` ⚠no-identity`
+}
+
 // book_state — the same three numbers `runner_ask state` reports off a live tab (verdict + where
 //  the run is), read straight off the C tree.  A Story Run lives at H:Story/A:Story/w:Story, with
 //   the live session on w.c.This; each %Step carries ok|caveat|dige once it has been snapped.
@@ -639,7 +667,11 @@ const muse_collection = async (): Promise<void> => {
             const picks: string[] = (await (H as any).Crate_nav_meander(nav, base, 5)) || []
             if (!picks.length) continue
             const where = base || '(share root)'
-            mused_pick = picks[0]
+            // BASE-RELATIVE, so re-attach the base (Crate_nav_meander walks `base + '/' + rel` and
+            //  hands back the rel half — Crate.g calls it "a BASE-RELATIVE path … offered as a bare
+            //   key").  Stored raw, this named a file at the share root that does not exist, and the
+            //    ffmpeg probe correctly reported `no native path` for it.
+            mused_pick = base ? base + '/' + picks[0] : picks[0]
             say(`🎵 collection reachable via ${where} — meander picked ${picks.length}: ${picks.slice(0, 3).map(p => p.split('/').pop()).join(' · ')}`)
             return
         }
@@ -685,6 +717,19 @@ const ffmpeg_probe = async (): Promise<void> => {
         const gain = +(target - m.lufs).toFixed(2)
         say(`🎬 ffmpeg ${v} — measured ${mused_pick.split('/').pop()}: ${m.lufs} LUFS, tp ${m.measured.input_tp} dBTP`
             + ` → ${gain >= 0 ? '+' : ''}${gain} dB to reach ${target} (${secs}s)`)
+        // The ENCODE half is opt-in (FFTEST=1), because measuring a track costs seconds and
+        //  transcoding one costs minutes — on every restart, and this box restarts on a timer.
+        //   Measuring proves the binary can DECODE this collection, which is the fact that decides
+        //    whether the rest is even possible; the encode is the thing worth proving once, by hand.
+        if (process.env.FFTEST !== '1') return
+        const e0 = Date.now()
+        const lev = await ff.level_to_ogg(abs, target, m.measured)
+        const esecs = ((Date.now() - e0) / 1000).toFixed(1)
+        if ((lev as any).bytes === null) { say(`🎬 levelled encode FAILED — ${(lev as any).why}`); return }
+        const L = lev as any
+        say(`🎬 levelled encode OK — ${(L.bytes.length / 1048576).toFixed(2)}MB of Ogg/Opus @${L.bitrate},`
+            + ` ${L.gain_db >= 0 ? '+' : ''}${L.gain_db} dB applied to reach ${L.target_lufs} LUFS (${esecs}s).`
+            + ` Verified OggS + OpusHead.`)
     } catch (e: any) {
         say(`🎬 ffmpeg probe failed — ${String(e?.message).slice(0, 120)}`)
     }
@@ -747,7 +792,17 @@ const station_up = (): void => {
 //   IZ=<token>      daemon B: redeem that token against A, over the real relay.
 // Run them with DIFFERENT DAEMON_STATE dirs and DIFFERENT PORTs (the state lock is per-dir).
 // This is a SMOKE TEST, NOT A GATE (§6) — it does not replace the two-tab fingers-test.
-const MINT_INVITE = process.env.MINT_INVITE === '1'
+// A THROWAWAY MINTS AN INVITE, UNASKED (the owner, 2026-08-08: "perhaps the THROWAWAY IDENTITY could
+//  log an invite to it, to make everything easy to test? then I can incognito-tab another Pier to
+//   listen to a bit of daemon-served music!").  It costs nothing and it turns the least useful state
+//    this box has into the most testable one: an identity nobody knows is exactly an identity that
+//     needs to hand out a way to know it.
+//  ONLY on a throwaway.  A provisioned box (I=<prepub>) is YOU, and a daemon that quietly minted
+//   single-use invites to your real identity on every boot — into a logfile — would be handing out
+//    your friendship without asking.  The gate is `!process.env.I`, deliberately the same condition
+//     the nag uses, so "complains that it is a throwaway" and "is useful because it is one" can
+//      never disagree.
+const MINT_INVITE = process.env.MINT_INVITE === '1' || !process.env.I
 const IZ = process.env.IZ || ''
 let minted = false
 let redeem_done = false
@@ -764,8 +819,18 @@ const invite_harness = async (): Promise<void> => {
             ;(globalThis as any).crypto.getRandomValues(b)
             const nonce = Array.from(b, (x: number) => x.toString(16).padStart(2, '0')).join('')
             const iz = await (H as any).Swarm_mint_idzeug(null, self, { Music: 1 }, nonce)
-            say(`🎟 invite minted by ${self.sc?.prepub} (serial ${nonce}) — redeem from a second daemon with:`)
-            say(`   IZ='${iz}'`)
+            // A URL, not just a token.  `?Iz=` on the page IS the redeem path a scanned invite takes
+            //  (InvitePanel: a scan-landing auto-joins; a pasted link waits for a deliberate click),
+            //   so an incognito tab opened on this link becomes a Pier and can listen.
+            //  Printed against localhost rather than ORIGIN on purpose: ORIGIN is the docker-bridge
+            //   address this container reaches the dev server by, and pasting that into a browser on
+            //    the host gives a page with no secure context — WebRTC then refuses, which looks like
+            //     a peering failure and is not one.
+            const host = (process.env.INVITE_ORIGIN || 'http://localhost:9091').replace(/\/+$/, '')
+            say(`🎟 INVITE — this box is a throwaway, so here is a single-use way in.`)
+            say(`   Open in an incognito tab (single use — one Pier, then it is spent):`)
+            say(`   ${host}/BigSoundland?Iz=${iz}`)
+            say(`   (from another daemon instead:  IZ='${iz}' )`)
         } catch (e: any) { minted = false; say(`🎟 mint failed — ${e?.message}`) }
     }
 
@@ -886,6 +951,9 @@ while (!stopping) {
             //  bare reports a "wedge" whenever the heartbeat lands mid-think.  A wedge is a pass
             //   that STOPPED, and 2s is far past any healthy one.
             + (s.wedge && s.wedge.ms > 2000 ? `  ⚠ WEDGE ${Math.round(s.wedge.ms / 1000)}s by ${s.wedge.who}` : '')
+            // same reasoning as the wedge above: unprovisioned looks exactly like provisioned from
+            //  out here, so the heartbeat has to carry it or nobody finds out.  Empty when correct.
+            + nag_identity()
             + `  worlds=${s.houses.flatMap(h => h.worlds).join(' ')}`)
         if (s.wedge && s.wedge.ms > 2000) say(`   ↳ inside: ${probe_line()}`)
         if (s.book) say(`   ▸ Book ${s.book.Book} driving=${s.book.driving} phase=${s.book.phase} steps=${s.book.snapped}/${s.book.steps} ok=${s.book.ok} caveat=${s.book.caveat}`)

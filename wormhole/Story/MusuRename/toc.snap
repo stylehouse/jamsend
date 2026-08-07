@@ -5,7 +5,6 @@ story:MusuRename
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.025
-      sample=0.027,at=1785996349
       sample=0.047,at=1786079865
       sample=0.02,at=1786081860
       sample=0.018,at=1786082435
@@ -15,8 +14,8 @@ story:MusuRename
       sample=0.03,at=1786087598
       sample=0.02,at=1786091500
       sample=0.031,at=1786101680
+      sample=0.03,at=1786117465
     TimeTotal:step,avg=0.003
-      sample=0.003,at=1785996349
       sample=0.005,at=1786079865
       sample=0.002,at=1786081860
       sample=0.002,at=1786082435
@@ -26,6 +25,7 @@ story:MusuRename
       sample=0.003,at=1786087598
       sample=0.002,at=1786091500
       sample=0.003,at=1786101680
+      sample=0.003,at=1786117465
   step,dige:5b4e6da36eae7f35
   step=2,dige:60f3591a370b5f93
   step=3,dige:feeec136815cdce4

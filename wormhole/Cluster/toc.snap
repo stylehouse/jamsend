@@ -9,3 +9,5 @@ Waft:Cluster,equip:Cluster
   HostedIdentity:cdbe098c044e6806,role:editor
   HostedIdentity:a67a5d04a04fd334,role:runner
   HostedIdentity:58517b484a8e896d,role:runner
+  HostedIdentity:f5da6599b8505881,role:runner
+  HostedIdentity:96d0cf8852651a73,role:runner
