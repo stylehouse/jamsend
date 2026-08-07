@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '47f469ccf6cb4fc2~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '32db66f1cdb6b5f9~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -508,13 +508,18 @@ Ra_stock_dir() {
     return '.jamsend/radiostock'
 
 },
-// Ra_stock_cap — how many files THIS Peering keeps on disk before the oldest wear off (Ra_stock_gc).
+// Ra_stock_cap — how many files THIS Peering keeps on disk before the oldest wear off (Ra_stock_gc_cap).
 //  radiostock is a WORKING cache for the speedy run-around, not the archive — so it is bounded, like
 //   the shelf (Stoker_cull, 44 live) and the mag draws (Stoker_mag_draw, 8).  Generously above the
 //    shelf so nothing recently stood is ever evicted from disk before its shelf life ends; past it a
 //     dropped file is one re-dig from source, never a loss (Ra_stock_one is idempotent).  Tune here.
+//  256 → 100 (the human 2026-08-07: "cull them chronologically if >100?").  256 was not merely
+//   generous, it was ABOVE THE OBSERVED LEAK: the shelf had grown to 237 files / 116MB for 62
+//    tracks, so even once the cull was reachable again it would have dropped nothing at all.  100
+//     is still better than twice the live shelf (Stoker_cull, 44), so the original reasoning —
+//      never evict something recently stood — survives the change intact.
 Ra_stock_cap() {
-    return 256
+    return 100
 
 },
 // Ra_stock_name — ONE file per record, <ts>-<pub>-<enid>.jamsend_radiostock, NOT one per chunk.
@@ -608,15 +613,27 @@ async Ra_stock_find(nav, pub, enid) {
     return mine[0]
 
 },
-// Ra_stock_gc — the disk twin of Stoker_cull: keep only this pub's newest Ra_stock_cap() files, wear
-//  the oldest off (Ra_stock_ls is newest-first, so slice(cap) is the tail — the oldest by mint ts).
+// Ra_stock_gc_cap — the disk twin of Stoker_cull: keep only this pub's newest Ra_stock_cap() files,
+//  wear the oldest off (Ra_stock_ls is newest-first, so slice(cap) is the tail — the oldest by mint ts).
+// ⚠ RENAMED 2026-08-07, and the old name is why the disk grew unbounded.  This was called
+//  `Ra_stock_gc` — and so is a DIFFERENT function 850 lines below (the after-a-build path sweep,
+//   `Ra_stock_gc(nav, pub, enid, base, path)`).  Both survive into the compiled class body
+//    (gen/M/Ra.go:619 and :1504) and in a JS class body the LAST definition WINS, so this
+//     chronological cull was dead, unreachable code from the day the second one was written.
+//  Worse than dead: `Radio.g` called `Ra_stock_gc(nav, pub)` meaning THIS one and reached the other
+//   with `enid`/`base`/`path` all undefined — where `p.enid === undefined` is false for every real
+//    file and `card.path === undefined` never matches, so it dropped nothing while still paying a
+//     card-line peek PER FILE on every churn.  Measured cost: 237 files / 116MB for 62 tracks, with
+//      the todo recording "no disk-side cull exists" — there was one, it just could not be called.
+//  The lesson is the night's recurring one: a mechanism nobody can reach reads exactly like a
+//   mechanism nobody wrote, and the comment above it goes on claiming the job is done.
 //   Deliberately NO reference-tracing: we do NOT read the Mags to spare what's referred to, because a
 //    dropped byte-cache is one re-dig from source (Ra_stock_one idempotent) and a Mag %Card refers by
 //     id, never contains the bytes — so keeping-what's-referenced would be needless bookkeeping for a
 //      cache that regenerates.  Per-pub (Ra_stock_ls already filters), so a shared .jamsend never has
 //       one identity evict another's shelf.  Best-effort: Ra_stock_drop no-ops on a read-only proxy.
 //        Returns the count dropped.  Runs once per churn that landed (Radio.g), never per look.
-async Ra_stock_gc(nav, pub) {
+async Ra_stock_gc_cap(nav, pub) {
     let mine = await this.Ra_stock_ls(nav, pub)
     let cap = this.Ra_stock_cap()
     if (mine.length <= cap) return 0
@@ -1789,6 +1806,17 @@ async Ra_source_pcm(w, rec) {
 //    ACQUISITION, so no exit between decode and encoder-open can slip past it.  `ra_hot` keeps its own
 //     meaning untouched (the OPEN-ENCODE lead list) — this is a second, orthogonal list about bytes.
 //  All `.c`, no snap byte, no fixture or Book anywhere names these.
+// Ra_pcm_backoff — climb one rung of the failed-decode ladder: 1s, 2s, 4s … capped at 60s.  Traced ONCE
+//  per rung (not per attempt) so the ring shows a decode giving up gracefully rather than drowning in it —
+//   the mark is the fact the 1087-vs-2 count had to be inferred from.  Cleared on the first success.
+Ra_pcm_backoff(rec) {
+    let tries = +(rec.c.pcm_tries || 0) + 1
+    rec.c.pcm_tries = tries
+    let wait = Math.min(60000, 1000 * Math.pow(2, tries - 1))
+    rec.c.pcm_retry_at = Date.now() + wait
+    this.Radio_trace(null, { ev: 'pcm-backoff', id: String(rec.sc.id || '').slice(0, 8), tries: tries, wait: Math.round(wait / 1000), why: String(rec.c.pcm_dead || rec.c.pcm_why || 'no source').slice(0, 24) })
+
+},
 Ra_pcm_hold(rec) {
     let M = this.top_House ? this.top_House() : null
     if (!M || !rec) return
@@ -1906,14 +1934,30 @@ async Ra_transcode_ensure(w, rec) {
     //     awaited under the beat) and bow out this beat; a later pump finds rec.c.pcm ready and opens the
     //      encoder.  The pcm_pending latch stops a second beat re-firing the decode (the await-gap race).
     if (!rec.c.pcm) {
-        if (!rec.c.pcm_pending) {
+        // BACK OFF A DECODE THAT KEEPS FAILING (2026-08-07 — the measured storm).  `pcm_pending` is cleared
+        //  UNCONDITIONALLY when Ra_source_pcm settles, including when it returned null, so a record whose
+        //   decode can never succeed was re-kicked by the very next pump beat, forever, at the ~600ms
+        //    cadence.  Measured on Righto: **1087 `pcm-decode-start` marks against 2 `pcm-decode-done`** —
+        //     two records re-read and re-decoded ~1085 times while their wants sat `park-stall secs=480`.
+        //  That is the whole "burning CPU" complaint on the serve side, and it is invisible to every rate
+        //   reading: a hopeless serve looks exactly like a slow one unless you count starts against dones.
+        //  The retry is NOT dropped — a missing nav at boot is genuinely transient and a hard latch would
+        //   make that permanent (Ra_source_pcm's own header says so, and defers the policy). This is that
+        //    policy at its most conservative: exponential backoff, 1s doubling to a 60s ceiling, CLEARED on
+        //     the first success. A transient failure still heals in about a second; a hopeless one costs one
+        //      attempt a minute instead of a hundred. Nothing is given up on, it just stops shouting.
+        let now_try = Date.now()
+        if (!rec.c.pcm_pending && now_try >= +(rec.c.pcm_retry_at || 0)) {
             rec.c.pcm_pending = 1
             // the SOURCE-SIDE timeline the live diagnosis reads (the human 2026-07-28 "figure out the %Stream
             //  thing ... debug that remotely"): mark the decode kick-off so the `world` op's inter-event deltas
             //   show whether the "takes a minute" is the whole-file decode (start→done gap) or the pump cadence
             //    (done→first stream-chunk gap).  Cheap, always-on, additive — never touches the transcode logic.
             this.Radio_trace(null, { ev: 'pcm-decode-start', id: String(rec.sc.id || '').slice(0, 8) })
-            this.Ra_source_pcm(w, rec).then((p) => { rec.c.pcm_pending = 0 }).catch((er) => { rec.c.pcm_pending = 0; rec.c.pcm_why = '' + (er && er.message || er) })
+            // SETTLE THE BACKOFF WHERE THE ANSWER IS KNOWN.  A truthy `p` is a real decode: clear the ladder
+            //  so a record that recovers is instantly as responsive as one that never failed.  A null `p`
+            //   (or a throw) is a failure that would otherwise re-fire next beat — climb the ladder instead.
+            this.Ra_source_pcm(w, rec).then((p) => { rec.c.pcm_pending = 0; if (p) { rec.c.pcm_tries = 0; rec.c.pcm_retry_at = 0 } if (!p) this.Ra_pcm_backoff(rec) }).catch((er) => { rec.c.pcm_pending = 0; rec.c.pcm_why = '' + (er && er.message || er); this.Ra_pcm_backoff(rec) })
         }
         return null
     }

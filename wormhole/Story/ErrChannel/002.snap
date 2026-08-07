@@ -1,0 +1,12 @@
+Snap:H
+  H:ErrChannel,Run
+    A:ErrChannel
+      self,round=2	{"mung":["age"]}
+      w:ErrChannel
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+        Errlog
+          Err,sig:ayabzn,kind:error,where:proof,msg:a deliberate error — the channel must capture this and gate it red,n:2,count:1
+          Err,sig:196wta0,kind:warn,where:proof,msg:a deliberate warning — shown but it never fails the run,n:2,count:1

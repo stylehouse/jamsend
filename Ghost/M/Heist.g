@@ -1273,6 +1273,14 @@ async Heist_materialise_one(w, nav, me, ref, lofi):
     let had = this.Heist_has_body(rec) >= +(rec.sc.total || 0)
     if (+(rec.sc.total || 0) > 0 && had && (!!rec.sc.lofi) === (!!lofi)) return rec
     if (+(rec.sc.total || 0) > 0 && had) this.Heist_release_rec(rec)
+    // COUNT A RE-MATERIALISE THAT FOLLOWS A RELEASE (2026-08-07 — §4.2, `heist-release` four times for
+    //  ONE record, 28s/20s/14s/62s apart).  Reaching this line with `rec.c.released` set is the thrash
+    //   event itself, and it is expensive exactly here: everything below is a whole-file read (measured
+    //    `pcm-read bytes=66631692` — 65MB) plus a hash.  The release gate asserts "I have sent it all"
+    //     (`sent >= tot`, a HIGH-WATER frontier) where it means "they have GOT it all", so a sink still
+    //      missing pages re-asks, the source re-reads 65MB, ships, goes idle, and frees the very bytes it
+    //       is about to be asked for again.  The count is what lets the sweep notice it is in that loop.
+    if (rec.c.released) rec.c.remats = +(rec.c.remats || 0) + 1
     let parts = ((base ? base + '/' : '') + path).split('/').filter(Boolean)
     let filename = parts.pop()
     // native single-slice read (read_range), not bin_read's per-chunk iterate (the 64s-under-congestion read).
@@ -1600,7 +1608,20 @@ async Heist_keep_beat(w, ident):
                     //      reads total.  It stays as the "we have done our visible job" half of the gate, but it
                     //       cannot be the whole gate, so an outstanding PARK now vetoes the release outright.
                     let promised = parked_ids[String(rec.sc.id || '')]
-                    if (!promised && bod > 0 && tot > 0 && +(rec.c.sent || 0) >= tot && now - (rec.c.want_ts || 0) > RELEASE_IDLE) {
+                    // ESCALATING PATIENCE (2026-08-07 — §4.2).  A record that has already been released and
+                    //  then RE-MATERIALISED has told us, by evidence rather than by inference, that the last
+                    //   release was premature: the sink still wanted it. Freeing it again on the same 45s
+                    //    timer just buys another 65MB read. So each round of that loop DOUBLES this record's
+                    //     personal idle requirement — 45s, 90s, 180s … capped at 16× (~12 min).
+                    //  It stays a release, never a veto: memory is still bounded (and the byte-cap belt below
+                    //   is untouched and can still shed anything), so a record nobody wants goes quiet and
+                    //    falls off exactly as before. What dies is only the tight thrash loop, and it dies in
+                    //     proportion to the evidence that it IS one. The real cure is still a confirmed term —
+                    //      an ack-clock (`Backpressure_todo.md` §5.6) that lets the source know the sink is
+                    //       done rather than guessing from its own send frontier; this makes the guess cheap
+                    //        to be wrong about instead of pretending it is right.
+                    let idle_need = RELEASE_IDLE * Math.pow(2, Math.min(4, +(rec.c.remats || 0)))
+                    if (!promised && bod > 0 && tot > 0 && +(rec.c.sent || 0) >= tot && now - (rec.c.want_ts || 0) > idle_need) {
                         this.Heist_release_rec(rec)
                     } else if (bod > 0) {
                         rec.c.promised = promised ? 1 : 0
@@ -2446,10 +2467,27 @@ async Heist_defaults_rehydrate(nav, ident):
     if (!M || M.c.heist_defaults_rehydrated) return
     let st = M.stashed
     if (!st) return   // Dexie hasn't hydrated yet — try again next beat, guard not spent
-    M.c.heist_defaults_rehydrated = 1
-    if (st.Heist_defaults && Object.keys(st.Heist_defaults).length) return
+    // NOTHING TO RESTORE — Dexie already knows. That IS success, so the guard is honestly spent here.
+    if (st.Heist_defaults && Object.keys(st.Heist_defaults).length) { M.c.heist_defaults_rehydrated = 1; return }
+    // SPEND THE GUARD ON SUCCESS, NOT ON ATTEMPT (2026-08-07 — §7's rule, applied to the sibling it
+    //  missed).  This function already protected the `stashed` case beautifully and then walked into the
+    //   very same trap one line later: the guard was burnt BEFORE the Berth read, so a throwing
+    //    `Berth_open` — most obviously a null `nav`, because the FSA handle restore is async and a fresh
+    //     grant waits on a human click — returned through the catch with the one shot already gone. The
+    //      remembered default then never came back off disk for the whole House life, silently, which is
+    //       exactly the bug §7 describes for `Heist_keep_rehydrate` and exactly what that fix was for.
+    //  So: bow out without spending while the preconditions are merely absent, spend only once the shelf
+    //   has actually been READ, and count strikes on a throw so a genuinely broken Berth stops retrying
+    //    rather than latching on the first hiccup.
+    if (!nav) return   // FSA not restored yet — try again next beat, guard not spent
     let waft = null
-    try { waft = await this.Berth_open(nav, '', String(ident.sc.prepub), 'HeistDefaults') } catch (er) { return }
+    try { waft = await this.Berth_open(nav, '', String(ident.sc.prepub), 'HeistDefaults') }
+    catch (er) {
+        M.c.heist_defaults_tries = (M.c.heist_defaults_tries || 0) + 1
+        if (M.c.heist_defaults_tries >= 10) M.c.heist_defaults_rehydrated = 1
+        return
+    }
+    M.c.heist_defaults_rehydrated = 1
     let entry = waft.o({ Defaults: 1 })[0]
     if (!entry) return
     let patch = {}
@@ -2649,8 +2687,16 @@ Heist_keep_set_dirs(keep, v, auto):
 //            offset resume, ever: only "already fully there, verified" or "not there, pull it fresh."
 async Heist_resume_sync(w, nav, job, own_lib, mir, picks, mardir, keep):
     if (job.c.resume_synced) return
+    // ORDER MATTERS, AND IT WAS WRONG (2026-08-07 — §7's rule, third instance found by sweeping for the
+    //  shape).  The gate used to be spent on the line BELOW, before `nav` was so much as tested — and the
+    //   next line dereferences it. On the first beat after a reload `nav` is null (Crate_nav's FSA restore
+    //    is async; a fresh grant waits on a human click), so `nav.read_range` threw a TypeError with the
+    //     one shot already gone, the caller swallowed it into `keep.c.last_why`, and resume was dead for
+    //      the whole life of that job — silently, which is the entire subject of §7. Test the precondition
+    //       FIRST and spend the gate only once the work can actually be attempted; a nav that arrives late
+    //        (or is swapped for one that can stat) then still gets its turn, at a cost of one typeof per beat.
+    if (!nav || typeof nav.read_range !== 'function') return   // no cheap stat yet — skip, not guess, not spend
     job.c.resume_synced = 1
-    if (typeof nav.read_range !== 'function') return   // no cheap stat on this backend — skip, not guess
     let candidates = []
     for (const pick of picks) {
         if (pick.sc.landed) {

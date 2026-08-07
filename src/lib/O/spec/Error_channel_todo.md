@@ -12,15 +12,43 @@ This is the systemic fix for the whole silent-failure class the download-stall h
 
 ## 0. What to get on with next
 
-**BUILT 2026-07-29 (all compile-green, bundle-verified, svelte-check adds ZERO new errors, UNCOMMITTED).**
- The whole channel is in — see **## BUILT** below.  The ONE thing left needs a live runner ([[verify-via-live-runner]]):
-- **Record + declare the proof Book `ErrChannel`** (`Ghost/Story/Errchannelation.g`, compiled + in CREDULER_GHOSTS).
-   Hand-author/record its toc with `The/Opt/{expect_errors:1}`, run it on a live runner, `declare` its three
-    sworn sentences into `%Assertion` contracts, register it on the credence board ([[credence-board-desc-brandnew]]),
-     re-run to green ([[new-book-cli-record-recipe]]).  `git checkout` accidental re-records after verify.
-- **Live-watch that a REAL thrown belief step reddens a run** — the Book uses `Story_error` directly (deterministic);
-   a genuine belief-loop throw exercising the Housing:beliefs tap is worth one live confirmation.
-- Everything else is done and verified as far as anything can be without a runner.
+**BUILT 2026-07-29. PROVEN + RECORDED ON A LIVE RUNNER 2026-08-07 — the channel is now a standing gate.**
+
+**`ErrChannel` is green: 3/3 steps, 0 caveats, 3 declared assertions, 0 gaps.**
+ `wormhole/Story/ErrChannel/` now holds `toc.snap` + `001..003.snap`. What the recording actually proved,
+  read off the live snaps rather than inferred:
+- **Lazy-mint holds.** Step 1's snap contains *zero* `Errlog` lines — an untroubled run carries not one
+   channel byte, which is what makes this whole thing free for every other Book (no mass re-record).
+- **The capture works end-to-end, into the gated fixture.** Step 3 carries, under the Book's own run world:
+
+      Errlog
+        Err,sig:ayabzn,kind:error,where:proof,msg:a deliberate error — …,n:2,count:1
+        Err,sig:196wta0,kind:warn,where:proof,msg:a deliberate warning — …,n:2,count:1
+
+   `n:2` = captured at step 2 and drained at that step's snap seam (so the home-world correction below is
+    right — on the driver `w` this would have silently never snapped); `count:1` = the ring deduped.
+- **`expect_errors` does its job**: the deliberate error records into the fixture without latching the run
+   red, so the proof Book proves the channel while staying green.
+
+**Recipe notes for the next brand-new Book** (these cost an hour to rediscover):
+- A Book with **no toc runs exactly ONE step**, silently. The step count comes from the recorded toc, so a
+   new Book needs a **hand-authored `toc.snap` with one `step…,dige:lie` line per intended step** first
+    ([[new-book-cli-record-recipe]]) — `lie` is the "authored not yet recorded" placeholder, and steps
+     against it read `ok:0`, correctly.
+- `accept` only takes the steps that were **red**. A step that was already tolerated (`dige:lie` → `ok:1`
+   with `caveat:1`) is NOT recorded by it and stays un-gated forever. Pin such a step's dige by hand from
+    two agreeing runs, then re-run to verify — that is what turned step 1's caveat into a real gate here.
+- Credence-board registration needs **no** hand edit: the board derives from `CREDULER_GHOSTS` +
+   the recorded fixtures, and the run mints `Credulate/`+`Credulation/` itself.
+
+**Still owed (small):**
+- **Live-watch a REAL thrown belief step redden a run.** The Book drives `Story_error` directly, which is
+   deterministic and proves capture→snap→gate; it does NOT exercise the `Housing:beliefs` catch. One
+    genuine belief-loop throw is still worth seeing.
+- The full-suite triage below has NOT been run deliberately (the human de-prioritised suite runs
+   2026-08-07). **Partial evidence it will be quiet:** MusuStock 5/5, MusuRename 9/9 and MusuVend 11/11 all
+    ran green on 2026-08-07 with this channel live in the tree — so those four Books were swallowing
+     nothing. That is not the whole suite, but it is the opposite of alarming.
 
 **Expect on the FIRST full-suite live run: some Books may go red that were "passing" before.** That is the
  channel WORKING, not a regression — a belief-loop throw that was silently swallowed (`Housing.svelte.ts:996`

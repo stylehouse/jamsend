@@ -24,15 +24,26 @@
 //                        carries, daemon resumes).  Also rides on_grid, so an I= daemon is an idle
 //                         on-grid runner.  An arrest is an ERROR EXIT here, never a hang — see
 //                          arrest_watch below (exit 2 = no account in the share, exit 3 = seed bug).
-//   ROLE=<name>        identity name for a bare boot (default 'daemon'; ROLE=0 opts out) — resumes
-//                       or MINTS under that role via Clustation_ensure_default.  A dev convenience:
-//                        production uses I=, because a daemon never provisions (ruled 2026-08-07).
+//   E=/B=/I=           exactly one of these three is REQUIRED — a bare boot with none of them
+//                       refuses to start rather than falling into Auto's dev-only library page
+//                        (Daemon_todo §8.3).  exit 4 = no boot shape given.
+//   ROLE=<name>        identity name for a bare boot — OFF BY DEFAULT (ROLE=<name> opts in; ROLE=0
+//                       is accepted but redundant with the default).  Resumes or MINTS under that
+//                        role via Clustation_ensure_default.  A dev/smoke convenience only:
+//                         production uses I=, because a daemon never provisions (ruled 2026-08-07) —
+//                          defaulting this to a name used to MINT an identity on every unconfigured
+//                           boot, which is exactly the provisioning that ruling forbids.
 //   KEYFILE=<path>     keypair file (default /tmp/jamsend_daemon/idento.json) — the pre-Thangs
 //                       fallback.  NOTE: with KEYED on (the default) the keyfile adopt WINS over
 //                        ROLE= (Auto's adopt leg runs before ensure_default), so ROLE is inert
 //                         unless KEYED=0.  §4.1's proof runs were KEYED=0 for exactly this reason.
 //   ACCOUNT=0          don't mirror the active identity to .jamsend/account/ (default: mirror)
-//   DAEMON_STATE=      dexie-node's backing dir (default /tmp/jamsend_daemon/state)
+//   DAEMON_STATE=      dexie-node's backing dir (default /tmp/jamsend_daemon/state).  LOCKED
+//                       (Daemon_todo §8.5) — a second daemon over the SAME dir refuses to boot
+//                        (exit 6) rather than silently clobbering the first's writes.  A stale lock
+//                         from a crashed process (dead pid inside) recovers on its own.  Running two
+//                          daemons on purpose (§9.4) just needs two DIFFERENT DAEMON_STATE dirs
+//                           (and two different PORTs) — that was always fine and still is.
 //   ORIGIN=            what location.host becomes — the dev server Socket_real dials for /relay
 //                       (default http://172.17.0.1:9091, the host as seen from this container)
 //   SHARE=             repo/share root the wormhole nav reads (default cwd)
@@ -40,18 +51,43 @@
 //                       the daemon does NOT write into the working tree.  OVERLAY=repo to opt in.
 //   RELAY=1            join the /relay websocket (OFF by default — read Daemon_todo §4 first)
 //   PORT=              status endpoint (default 9099).  curl localhost:9099/status
+//   HOST=              status endpoint bind address (default 127.0.0.1 — LOCALHOST ONLY).
+//                       Daemon_todo §8.4: `server.listen(PORT, …)` used to omit a host, which binds
+//                        0.0.0.0 under node — `/stop` was an unauthenticated GET on every interface
+//                         and `/c?depth=N` dumped the whole .sc tree the same way.  HOST=0.0.0.0 is
+//                          an escape hatch for a deliberately-exposed deployment; know what you're
+//                           doing before setting it.
+//   STATUS_TOKEN=      the token /stop and /c require (as `?token=` or an `X-Daemon-Token` header).
+//                       Default: a random token minted at boot and logged ONCE (grep the log for
+//                        "🔑 status token", or read it back off stdout) — set STATUS_TOKEN=<val> to
+//                         pin a known one for scripting.  /status stays open (uptime/worlds/book
+//                          state, nothing secret — no key ever rides .sc, only .c).
 //   SECS=              exit after N seconds (0 = forever).  For scripted smoke runs.
-//   LOG=               log file (default /tmp/jamsend_daemon/daemon.log)
+//   LOG=               log file (default /tmp/jamsend_daemon/daemon.log), ROTATED at ~10MB
+//                       (daemon.log.1 keeps one prior generation — appendFileSync forever was
+//                        unbounded, Daemon_todo §8.5)
 //   QUIET=1            drop the app's own console noise, keep the daemon's own lines
+//
+// EXIT CODES — every one drains pending writes first (`shutdown()`, below):
+//   0 normal stop (SECS reached, SIGINT/SIGTERM, or /stop)      1 no House ever appeared
+//   2 I= arrest, CONFIG: no account for that prepub in the share (provision from a browser first)
+//   3 I= arrest, BUG: account is on disk but the seed still couldn't adopt it (Identity_persist_todo §6)
+//   4 no boot shape given (need B=/E=/I=)                       5 uncaughtException (node's own advice)
+//   6 DAEMON_STATE already held by another live daemon process
 import http from 'node:http'
 import path from 'node:path'
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import crypto from 'node:crypto'
+import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs'
 import { JSDOM } from 'jsdom'
 
 const ROOT     = process.env.SHARE   || process.cwd()
 const OVERLAY  = process.env.OVERLAY === 'repo' ? ROOT : (process.env.OVERLAY || '/tmp/jamsend_daemon/fs')
 const ORIGIN   = process.env.ORIGIN  || 'http://172.17.0.1:9091'
 const PORT     = Number(process.env.PORT || 9099)
+const HOST     = process.env.HOST || '127.0.0.1'
+// STATUS_TOKEN — see the KNOBS comment above.  Minted here (not lazily) so the boot log always has
+//  it, whether or not /stop or /c ever get hit.
+const STATUS_TOKEN = process.env.STATUS_TOKEN || crypto.randomBytes(16).toString('hex')
 const SECS     = Number(process.env.SECS || 0)
 const QUIET    = process.env.QUIET === '1'
 const t0       = Date.now()
@@ -59,12 +95,25 @@ const t0       = Date.now()
 // Log to a FILE as well as stdout, always.  A daemon's stdout is a pipe, and node block-buffers a
 //  piped stdout — kill the process and the last 64KB of the story dies with it, which is exactly
 //   the story you wanted (the first boot attempt here reported nothing but "Terminated").
+// ROTATED (Daemon_todo §8.5): `appendFileSync` forever, with a heartbeat every 10s plus the app's
+//  own console noise, is an unbounded file on a box nobody restarts.  One prior generation
+//   (daemon.log.1) is enough for "what happened right before this" without a log manager.
 const LOG = process.env.LOG || '/tmp/jamsend_daemon/daemon.log'
+const LOG_MAX_BYTES = 10 * 1024 * 1024
 mkdirSync(path.dirname(LOG), { recursive: true })
+let log_size = 0
+try { log_size = statSync(LOG).size } catch { /* no file yet */ }
 const say = (m: string) => {
     const line = `[daemon ${((Date.now() - t0) / 1000).toFixed(1)}s] ${m}\n`
     process.stdout.write(line)
-    try { appendFileSync(LOG, line) } catch {}
+    try {
+        if (log_size > LOG_MAX_BYTES) {
+            try { renameSync(LOG, `${LOG}.1`) } catch { /* best-effort — a failed rotate must not stop logging */ }
+            log_size = 0
+        }
+        appendFileSync(LOG, line)
+        log_size += Buffer.byteLength(line)
+    } catch { /* logging must never be why the daemon dies */ }
 }
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
@@ -140,10 +189,35 @@ if (!RELAY) {
     try { delete (win as any).WebSocket } catch {}
 }
 
+// ── shutdown — the ONE choke point every exit path funnels through ──────────────────────────
+// Daemon_todo §8.5: `process.exit()` used to be called directly at every exit site.  Two problems
+//  with that, both silent: (1) dexie-node's save() only ever SCHEDULES a write via queueMicrotask,
+//   and process.exit does not wait for a queued microtask — a write issued in the last tick (an
+//    identity mint, an account mirror) was dropped; (2) a second daemon sharing DAEMON_STATE was
+//     never released back to a crashed-and-restarted sibling.  `flush_all`/`unlock_state` are wired
+//      in once dexie-node has loaded (below); before that there is nothing buffered to lose or lock
+//       to release, so the no-op defaults are honest, not a gap.
+let flush_all: () => Promise<void> = async () => {}
+let unlock_state: () => void = () => {}
+const shutdown = async (code: number): Promise<never> => {
+    try { await flush_all() } catch (e: any) { say(`⚠ flush on shutdown failed — ${e?.message ?? e}`) }
+    try { unlock_state() } catch { /* best-effort */ }
+    process.exit(code)
+}
+
 // The machine is a perpetual reactive system with fire-and-forget elvises; a late rejection is
 //  normal weather, not a fault.  A daemon must never die of one.
 process.on('unhandledRejection', (e: any) => { if (!QUIET) say(`⚠ unhandledRejection: ${e?.message ?? e}\n${(e?.stack ?? '').split('\n').slice(1, 7).join('\n')}`) })
-process.on('uncaughtException',  (e: any) => say(`☠ uncaughtException: ${e?.stack ?? e}`))
+// uncaughtException USED to log and continue (Daemon_todo §8.5) — node explicitly warns against
+//  that: past this point the process is in an unknown state, and "log and continue" also means a
+//   crash-loop supervisor never fires, because the process never exits for it to notice.  Drain what
+//    we can (flush_all is synchronous fs underneath, so this is fast) and exit — exit 5, a new code,
+//     distinct from the arrest/boot-shape exits above.
+process.on('uncaughtException', (e: any) => {
+    say(`☠ uncaughtException: ${e?.stack ?? e}`)
+    say('   exiting rather than continuing in an unknown state (node\'s own guidance) — exit 5')
+    shutdown(5)
+})
 
 const app_log = console.log
 if (QUIET) console.log = () => {}
@@ -154,9 +228,26 @@ if (QUIET) console.log = () => {}
 //   daemon is about to wedge in DirectoryOpener with no indexedDB — the exact failure that ate an
 //    afternoon, and one that otherwise announces itself only as "the machine stopped thinking".
 {
-    const Dx: any = (await import('dexie')).Dexie
+    const dexie_mod: any = await import('dexie')
+    const Dx: any = dexie_mod.Dexie
     const shimmed = typeof (Dx?.prototype as any)?.save === 'function'
     say(`dexie: ${shimmed ? `dexie-node shim → ${process.env.DAEMON_STATE || '/tmp/jamsend_daemon/state'}` : '⚠ REAL dexie — the alias did not take, expect a wedge'}`)
+    if (shimmed) {
+        flush_all = dexie_mod.flush_all
+        // DAEMON_STATE lock (Daemon_todo §8.5) — two daemons pointed at the same DAEMON_STATE used
+        //  to silently clobber each other, last-writer-wins over the WHOLE table (each process holds
+        //   its own in-memory Map and periodically overwrites the shared JSON file, so whichever
+        //    saves last wins, wiping the other's rows).  §9.4 wants two daemons deliberately, each
+        //     with its own DAEMON_STATE dir — that stays fine, this only locks a SHARED dir.  A stale
+        //      lock (the pid inside is dead — a crash, not a clean stop) is recovered automatically
+        //       rather than wedging the next boot forever.
+        try {
+            unlock_state = dexie_mod.lock_state()
+        } catch (e: any) {
+            say(`☠ ${e?.message ?? e}  exit 6`)
+            process.exit(6)
+        }
+    }
 }
 
 const { mount, flushSync } = await import('svelte')
@@ -168,30 +259,55 @@ const Daemonic             = (await import('./Daemonic.svelte')).default
 //   A real deployment points SHARE at its own share and OVERLAY=repo.
 const nav = new NodeWormholeNav(ROOT, OVERLAY, false)
 
+// BOOT SHAPE — mirror boot_qualand (BigQualand.svelte.ts:47-71), not Auto's dev library page.
+//  Daemon_todo §8.3: a bare `node run.mjs` sets neither `book` nor `boot_role`, so Auto.svelte:565
+//   (`H.c.boot_role ? 'run' : 'library'`) falls into the disk-backed book-browser and activates
+//    whatever Book a human last left `active` in the shared wormhole/Present/toc.snap — a dev
+//     affordance no real client ever reaches.  Real clients stamp `book`+`boot_role` in CODE
+//      (`/BigSoundland` → `boot_qualand({book:'Sounditron', role:'sound'})`), never via a query
+//       param.  So: stamp the same shape here, and REFUSE to boot bootless rather than silently
+//        taking the library branch — exit 4, the next unused code after arrest_watch's 2/3.
 const boot: Record<string, any> = { toplevel: process.env.A || 'Auto' }
 if (process.env.E) { boot.book = process.env.E; boot.boot_role = 'editor' }
 else if (process.env.B) { boot.book = process.env.B; boot.boot_role = 'runner' }
 else if (process.env.I) { boot.boot_role = 'runner'; boot.on_grid = process.env.I }
 
-// ROLE — the daemon's identity name, and the whole of what makes this a BigSoundland rather than a
-//  bare runner.  /BigSoundland is `boot_qualand({book:'Sounditron', role:'sound'})`, which stamps
-//   id_role + assume_identity + humdinger (BigQualand.svelte:54-68); the daemon stamps the same three
-//    with its own role name.  Two consequences, both wanted:
+if (!boot.boot_role) {
+    say('☠ no boot shape given — set B=<Book> (runner), E=<Waft> (editor), or I=<prepub> (resume).')
+    say('   A bare `node run.mjs` would fall into Auto\'s dev-only library page (Daemon_todo §8.3), which no real client ever reaches.  exit 4')
+    await shutdown(4)
+}
+
+// ROLE — the daemon's identity NAME (a dev/smoke convenience — production uses I=, §4.1's ruling
+//  that "the daemon never provisions").  DEFAULT OFF: a bare `ROLE=` used to default to 'daemon',
+//   which MINTS an identity on every unconfigured boot — exactly the provisioning the owner ruled
+//    against.  ROLE=<name> opts in explicitly; ROLE=0 is now redundant with the default but still
+//     accepted so old invocations keep working.
+//  /BigSoundland is `boot_qualand({book:'Sounditron', role:'sound'})`, which stamps id_role +
+//   assume_identity + humdinger (BigQualand.svelte:54-68).  Two consequences, both wanted, when
+//    ROLE is given:
 //     · Auto's `Clustation_ensure_default` resumes-or-mints the identity stored in the identities
 //        Thang under this role — persisted by the dexie-node shim — so the daemon is the SAME peer
 //         across restarts through the app's own path.  `?I=` and the legacy keyfile adopt both still
-//          WIN if present (they run first); this only fills a bare boot's gap.  ROLE=0 opts out.
-//     · humdinger keeps it off the editor's runner grid, so nobody's Story run gets dispatched here.
+//          WIN if present (they run first); this only fills a bare boot's gap.
 //  NOTE the role is a STORAGE NAME, not a derivation: the key is a fresh random mint either way, so
 //   two daemons sharing a role name on different boxes are different peers, not impostors of one.
-const ROLE = process.env.ROLE === '0' ? '' : (process.env.ROLE || 'daemon')
-if (ROLE) { boot.id_role = ROLE; boot.assume_identity = true; boot.humdinger = true }
+const ROLE = process.env.ROLE === '0' ? '' : (process.env.ROLE || '')
+if (ROLE) { boot.id_role = ROLE; boot.assume_identity = true }
+
+// humdinger — derived from BOOT_ROLE, the way boot_qualand derives it from opts.role, NOT from the
+//  ROLE identity knob.  Bug this replaces (Daemon_todo §8.3): `ROLE=0 B=Sounditron` used to stamp
+//   boot_role='runner' but skip humdinger (it only rode inside the `if (ROLE)` block above) — so the
+//    editor enrolled the daemon off its 5s heartbeat and dispatched Story runs at it, a phantom-run
+//     footgun.  Any real boot_role (editor or runner) is an end-user-shaped process and must stay
+//      off that grid regardless of whether an identity role was also given.
+if (boot.boot_role) boot.humdinger = true
 
 let H: any = null
 say(`booting — relay=${RELAY ? "ON (RELAY=1)" : "off — set RELAY=1 to join, but read Daemon_todo §4 first"} origin=${ORIGIN} share=${ROOT} overlay=${OVERLAY} boot=${JSON.stringify(boot)}`)
 mount(Daemonic, { target: win.document.body, props: { boot, onhouse: (h: any) => { H = h } } })
 for (let i = 0; i < 100 && !H; i++) { flushSync(); await sleep(20) }
-if (!H) { say('☠ no House — the shell never constructed one'); process.exit(1) }
+if (!H) { say('☠ no House — the shell never constructed one'); await shutdown(1) }
 say(`H:Mundo up (started=${H.started})`)
 
 // ── 3. the crank ─────────────────────────────────────────────────────────────────────────────
@@ -372,20 +488,36 @@ const stats = () => {
 //   like any tab — the usual ways, unchanged.  But that channel is exactly what breaks first, and
 //    a diagnostic that shares a failure mode with its subject is worthless.  So this local HTTP
 //     port answers even when the relay is down, which is when you most want to ask.
+//  SECURED (Daemon_todo §8.4): bound to HOST (default 127.0.0.1, not the node default 0.0.0.0), and
+//   /stop + /c require STATUS_TOKEN — a curl one-liner still works:
+//     curl "http://localhost:9099/stop?token=$TOKEN"
+//     curl -H "X-Daemon-Token: $TOKEN" "http://localhost:9099/c?depth=3"
+//   /status stays open: uptime/worlds/book-state, nothing a key ever rides on (.c only).
+const token_ok = (req: any, url: URL) =>
+    url.searchParams.get('token') === STATUS_TOKEN
+    || req.headers['x-daemon-token'] === STATUS_TOKEN
+    || req.headers['authorization'] === `Bearer ${STATUS_TOKEN}`
 const server = http.createServer((req, res) => {
     const url = new URL(req.url || '/', 'http://x')
     res.setHeader('content-type', 'application/json')
     if (url.pathname === '/status') return res.end(JSON.stringify(stats(), null, 1))
     if (url.pathname === '/c') {
+        if (!token_ok(req, url)) { res.statusCode = 401; return res.end('{"error":"token required — ?token=<STATUS_TOKEN> or X-Daemon-Token header (logged once at boot)"}') }
         // the C tree at a bounded depth — the daemon's `snap`, without needing Story
         const depth = Number(url.searchParams.get('depth') || 3)
         const dump = (n: any, d = 0): any => d > depth ? '…' : { sc: { ...n.sc }, kids: (n.o?.({}) ?? []).map((k: any) => dump(k, d + 1)) }
         return res.end(JSON.stringify(dump(H), null, 1))
     }
-    if (url.pathname === '/stop') { stopping = true; return res.end('{"stopping":1}') }
-    res.statusCode = 404; res.end('{"paths":["/status","/c?depth=3","/stop"]}')
+    if (url.pathname === '/stop') {
+        if (!token_ok(req, url)) { res.statusCode = 401; return res.end('{"error":"token required — ?token=<STATUS_TOKEN> or X-Daemon-Token header (logged once at boot)"}') }
+        stopping = true; return res.end('{"stopping":1}')
+    }
+    res.statusCode = 404; res.end('{"paths":["/status","/c?depth=3 (token)","/stop (token)"]}')
 })
-server.listen(PORT, () => say(`status on http://localhost:${PORT}/status`))
+server.listen(PORT, HOST, () => {
+    say(`status on http://${HOST}:${PORT}/status`)
+    say(`🔑 status token (for /stop and /c): ${STATUS_TOKEN}`)
+})
 
 process.on('SIGINT',  () => { say('SIGINT — stopping'); stopping = true })
 process.on('SIGTERM', () => { say('SIGTERM — stopping'); stopping = true })
@@ -448,7 +580,7 @@ const persist_account = async (): Promise<void> => {
 //   identity_pending in Clustation_concrete, so a slow disk read must not race the exit.
 const ARREST_GRACE_MS = 10_000
 let arrested_at = 0
-const arrest_watch = () => {
+const arrest_watch = async () => {
     if (!process.env.I) return
     const top = (H.top_House?.() ?? H)
     if (!top?.c?.identity_pending) { arrested_at = 0; return }
@@ -459,11 +591,11 @@ const arrest_watch = () => {
     if (existsSync(path.join(OVERLAY, acct)) || existsSync(path.join(ROOT, acct))) {
         say(`☠ identity ARRESTED with the account ON DISK (${acct})${why}`)
         say(`   The boot-seed could not adopt it — a bug, not a config error: Identity_persist_todo.md §6 gaps 2/3 (Auto.svelte).  exit 3`)
-        process.exit(3)
+        await shutdown(3)
     }
     say(`☠ identity ARRESTED — no account for ${process.env.I} in the share (${acct} absent)${why}`)
     say(`   Provision it from a browser session first (mint + Invites there), then boot the daemon.  exit 2`)
-    process.exit(2)
+    await shutdown(2)
 }
 
 // ── 5. run ───────────────────────────────────────────────────────────────────────────────────
@@ -496,7 +628,7 @@ while (!stopping) {
     if (!WA.c.nav) { WA.c.nav = nav; say('w:Wormhole ← node nav') }
 
     await persist_account()
-    arrest_watch()
+    await arrest_watch()
 
     wrap_probe()
     flushSync()
@@ -527,7 +659,7 @@ while (!stopping) {
     await sleep(wait)
 }
 
-say('stopped')
+say('stopped — draining pending writes')
 console.log = app_log
 server.close()
-process.exit(0)
+await shutdown(0)

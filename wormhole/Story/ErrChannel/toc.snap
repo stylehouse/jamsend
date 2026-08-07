@@ -1,0 +1,27 @@
+story:ErrChannel
+  Styles
+  Plan
+  Opt
+    For
+    expect_errors
+  TimeSpool
+    TimeTotal:beliefs,avg=0.004
+      sample=0.004,at=1786107605
+      sample=0.004,at=1786107660
+      sample=0.004,at=1786107661
+      sample=0.004,at=1786107661
+      sample=0.004,at=1786107673
+      sample=0.003,at=1786107702
+    TimeTotal:step,avg=0.001
+      sample=0.001,at=1786107605
+      sample=0.001,at=1786107660
+      sample=0.001,at=1786107661
+      sample=0.001,at=1786107661
+      sample=0.001,at=1786107673
+      sample=0.001,at=1786107702
+  step,dige:1f04f2210781862b,desc:a clean step — nothing has been captured so the channel is not minted at all
+    Assertion:a-clean-step-shows,sentence:a clean step shows no error channel — lazy-minted so an untroubled run carries not one Errlog byte
+  step=2,dige:e9167bfcb05aa1c3,desc:push a deliberate error and a warning through the real Story_error door
+  step=3,dige:5d70930065e44f30,desc:read the settled channel — the Err rode into the fixture and names its origin
+    Assertion:the-error-channel-captured,sentence:the error channel captured a deliberate error and a warning — an Err rode into the fixture where a broken capture would have left a hole
+    Assertion:the-captured-error-names,sentence:the captured error names its origin and kind — a throw is a gating fact the run reddens on while a warning only shows

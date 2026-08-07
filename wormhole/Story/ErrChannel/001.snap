@@ -1,0 +1,7 @@
+Snap:H
+  H:ErrChannel,Run
+    A:ErrChannel
+      self,round	{"mung":["age"]}
+      w:ErrChannel
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

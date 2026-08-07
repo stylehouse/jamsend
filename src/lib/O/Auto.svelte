@@ -195,10 +195,27 @@
         //    is stamped as soon as a real attempt completes (nav present, found or not) — a second read
         //     could not answer differently. The nav-not-up branch deliberately does NOT stamp it: that is
         //      the one case where waiting genuinely changes the answer.
+        //   GHOST NOT DEPOSITED YET → return false, do NOT arrest (2026-08-08, Identity_persist_todo
+        //    §6.2). Swarm_boot_seed and Crate_nav are eatfunc'd by sibling ghosts via the Creduler, i.e.
+        //     ALWAYS later than the first boot pass — so a cold boot used to skip this whole block and
+        //      fall straight through to the arrest, every time, with a perfectly good account on disk.
+        //       It is the same retry-not-latch idiom as the thang_add mount guard at the top and the
+        //        nav-not-up branch just below, and it shares their SEED_WAIT_MS clock deliberately:
+        //         one budget for "the disk seed is not POSSIBLE yet", however many reasons stack up,
+        //          so a build where the ghost genuinely never lands still reaches the hatch instead of
+        //           hanging. Not stamped identity_seed_tried, for the nav branch's reason — waiting is
+        //            exactly what changes the answer. If the ghosts land AFTER the arrest the seed still
+        //             runs on the next pass and lifts it (Clustation_concrete clears the flag), so a
+        //              slow Creduler degrades to a late resume, never to a stuck one.
         const SEED_WAIT_MS = 5000
         const topH = ((H as any).top_House?.() ?? H) as House
-        if (typeof (H as any).Swarm_boot_seed === 'function' && typeof (H as any).Crate_nav === 'function'
-            && !(topH.c as any).identity_seed_tried) {
+        const seed_ghosts = typeof (H as any).Swarm_boot_seed === 'function'
+                         && typeof (H as any).Crate_nav === 'function'
+        if (!seed_ghosts && !(topH.c as any).identity_seed_tried) {
+            const t0 = (topH.c as any).identity_seed_since ??= Date.now()
+            if (Date.now() - t0 < SEED_WAIT_MS) return false
+        }
+        if (seed_ghosts && !(topH.c as any).identity_seed_tried) {
             const nav = (H as any).Crate_nav()
             if (!nav) {
                 // disk not up yet — hold the arrest open for a beat, then fall through to it.
@@ -217,9 +234,36 @@
                         const stored = { pub: keys.pub, key: keys.key, prepub: seed.prepub,
                                          born: seed.ident.sc.born, friendly: seed.ident.sc.friendly }
                         await (H as any).thang_add(wT, stored.prepub, stored)   // so the NEXT boot is a Dexie hit
-                        ;(H as any).Clustation_concrete(A, param, stored)
+                        const live = (H as any).Clustation_concrete(A, param, stored)
                         delete (topH.c as any).identity_seed_since
                         console.log(`🪪 Identity RESTORED from disk ${cluster_name(stored.prepub)} (${stored.prepub}) — .jamsend/account`)
+                        // THE SECOND-RELOAD TRAP (2026-08-08, Identity_persist_todo §5 audit item 3,
+                        //  §6.6). The line above restores the KEY and nothing else. The vault we just
+                        //   seeded also holds the whole ledger this account owns — its %Piers (friends),
+                        //    its %Idzeugs (the single-use invite serials its own door checks) and its
+                        //     %ChainRoots — and we are about to drop the vault on the floor. Today that
+                        //      merely looks like amnesia; it bites HARDER on reload #2, because by then
+                        //       the identity is in Dexie, the disk is never consulted again (§6.0, and
+                        //        that is correct), and the standup rehydrates a ledger from a stash
+                        //         nobody ever wrote. Friends vanish and the owner's own invites answer
+                        //          'unknown' — silently, on both counts.
+                        //  So mirror the vault's ledger into the stash HERE, at the one moment we hold
+                        //   both halves: concrete has just set active (the live-self guard inside every
+                        //    _stash verb needs that, hence the ordering — do not hoist this), and the
+                        //     vault is still in scope. We stash rather than graft particles on purpose:
+                        //      the standup rehydrate rail already rebuilds them from the stash, is
+                        //       idempotent, and is the path a warm reload proves every day — a
+                        //        hand-rolled second grafter would be a second thing to keep true.
+                        //  Non-fatal by construction: an identity restored WITHOUT its friends still
+                        //   boots and still signs, which is strictly better than an arrest, so a throw
+                        //    in here must never cost the key we just went to such lengths to recover.
+                        try {
+                            const got = (H as any).Swarm_restash_all?.(live, seed.ident)
+                            if (got && (got.piers || got.izzes || got.roots))
+                                console.log(`🪪 ledger restashed — ${got.piers} pier(s), ${got.izzes} invite(s), ${got.roots} chain root(s)`)
+                        } catch (er) {
+                            console.warn(`🪪 ledger restash failed (key is safe) — ${String(er).slice(0, 120)}`)
+                        }
                         return true
                     }
                     if (seed?.prepub && seed.prepub !== param)
@@ -291,6 +335,20 @@
             peering.sc.friendly = stored.friendly
         }
         ;(this as House).c.active_identity = ident
+        // LIFT THE ARREST HERE (2026-08-08, Identity_persist_todo §6.3). identity_pending used to be
+        //  cleared only by the two HUMAN gestures — Clustation_generate_for_pending and the IdHatch
+        //   paste — so a boot that found its key on disk concreted it and stayed held anyway: the gate
+        //    at the Auto caller (`if (top.c.identity_pending) return`) runs before everything downstream,
+        //     so w:Story never stood up with the key sitting right there in hand. Observed on the daemon:
+        //      an active identity, the account re-mirrored at 24s, and no Story across a full 60s run.
+        //  This is the single chokepoint EVERY resume path funnels through (?I= Dexie hit, disk seed,
+        //   legacy adopt, role default, mint) — which is the point. Clearing it anywhere else means the
+        //    next resume path someone adds re-opens the hole. Concreting a key IS the answer to the
+        //     arrest, whoever supplied it, so the flag has no business outliving this line. The two
+        //      manual clears (Clustation_generate_for_pending, Clustation_adopt) are now redundant
+        //       rather than wrong — left in place, they cost nothing and read as intent.
+        const topC = (((this as any).top_House?.() ?? this) as House).c as any
+        if (topC.identity_pending) { delete topC.identity_pending; delete topC.identity_pending_why }
         return ident
     },
 
@@ -332,7 +390,23 @@
     //    that reload would mint a STRANGER under the prepub tag — the friendship left on the old key.
     async Clustation_pin(this: House, H?: House): Promise<boolean> {
         H = (H ?? this) as House
-        const ident = (H as any).Clustation_active_identity?.(H) as TheC | undefined
+        // WRONG SHAPE, FIXED 2026-08-08: this used to ask Clustation_active_identity, which returns the
+        //  SIGNING KEY `{pub, key}` — a plain object with no `.c` — and then guarded on `ident.c.keys`.
+        //   That guard could never pass, so Clustation_pin has ALWAYS returned false at its first line
+        //    and has never pinned anything. Nothing caught it because the only caller (the door's
+        //     ?Iz→?I swap) treats a false as "not mounted yet, fine" — so the failure it exists to
+        //      prevent, minting a STRANGER under the prepub tag on the next reload, is exactly the
+        //       failure it has been silently allowing. A verb whose whole body is unreachable reads as
+        //        working code in every review; the tell was Identity_persist_todo §6.4 still being open
+        //         when a verb that closes it was sitting right here. Resolve the PARTICLE instead —
+        //          same two-step Clustation_active_identity itself uses (stamped ref, then the
+        //           %Identity,active flag so an HMR re-mix still resolves).
+        const top = ((H as any).top_House?.() ?? H) as House
+        let ident = (top.c as any)?.active_identity as TheC | undefined
+        if (!ident) {
+            const Ac = (top.o({ A: 'Clustation' }) as TheC[])[0]
+            ident = Ac && (Ac.o({ Identity: 1 }) as TheC[]).find(i => i.sc.active)
+        }
         // thang_put: a re-pin of an already-pinned prepub is a no-op update, not a clash — the
         //  add-throw here silently killed the ?Iz→?I address-bar swap downstream of a re-join.
         if (!ident?.c?.keys || typeof (H as any).thang_put !== 'function') return false
@@ -346,6 +420,82 @@
             ...(ident.sc.friendly ? { friendly: String(ident.sc.friendly) } : {}),
         })
         return true
+    },
+
+    // Clustation_mirror_account — THE WRITE SIDE (2026-08-08, Identity_persist_todo §6.1 "gap 1").
+    //  Auto.svelte used to claim, a few hundred lines up, that "Swarm_account_save has been writing the
+    //   whole account to .jamsend/account/<prepub>/toc.snap all along". It has not: every caller of
+    //    Swarm_persist in the tree was inside the SwarmDisk Book. So the read side wired 2026-08-04 has
+    //     been arresting next to an account dir that nothing ever created — the whole of "editor lost
+    //      its crypto again!?". Rung 2 was built at the model layer and simply had no app caller.
+    //  ORDERING IS THE WHOLE SAFETY ARGUMENT (§6.5): this goes LAST, after gaps 2+3, and never before.
+    //   Alone it makes things strictly WORSE — it creates the very file the broken read then arrests
+    //    on, turning an honest "no key stored" into "restored from disk and held forever". 2 and 3 are
+    //     in and proven above, so it is safe now and was not this morning.
+    //  Guards, each load-bearing and each the same one the READ carries, for the same reasons:
+    //   NO NAV → not an error, just not yet (FSA needs a gesture); we retry on a later tick.
+    //   REMOTE NAV → REFUSED. .jamsend is owner-local by law — the Wormhole will not serve a path with
+    //    a .jamsend segment over the wire, and awaiting an atime_async nav here would deadlock under
+    //     the beliefs mutex (Crate_nav's own caveat). Do not relax either half to "fix" a failing write.
+    //   NEVER PER TICK — the write is an enWaft of the whole account. Fire on a VERSION BUMP.
+    //  On the trigger, honestly: §6.1 asks for a `Waft:Account` bump, and no such Waft exists in the
+    //   live tree, so this watches the two shelves that actually move — the %Identity (a rename bumps
+    //    it; Clustation_friendly calls ident.bump()) and its %Peering (piers, grants and Idzeugs are
+    //     created under it, and creation bumps). That is a heuristic, not a proof: a mutation that
+    //      bumps NEITHER would not re-mirror until the next boot. It is strictly better than the
+    //       daemon's proven floor (once per identity per boot) and worth tightening if a case shows up.
+    //  §6.0 stands: this is write-through, ONE direction. It never reads disk back to compare — a
+    //   "is the disk still right?" check is exactly the round trip the owner refused.
+    async Clustation_mirror_account(this: House, H?: House): Promise<boolean> {
+        H = (H ?? this) as House
+        if (typeof (H as any).Swarm_persist !== 'function' || typeof (H as any).Crate_nav !== 'function') return false
+        const top = ((H as any).top_House?.() ?? H) as House
+        let ident = (top.c as any)?.active_identity as TheC | undefined
+        if (!ident) {
+            const Ac = (top.o({ A: 'Clustation' }) as TheC[])[0]
+            ident = Ac && (Ac.o({ Identity: 1 }) as TheC[]).find(i => i.sc.active)
+        }
+        if (!ident?.c?.keys?.key) return false
+        const nav = (H as any).Crate_nav()
+        if (!nav || (nav as any).atime_async) return false
+        // THE CANONICAL ADDRESS IS THE WRITE LOCK (§7.4f / §6.6). Landing the write side is what gives
+        //  the two-writers problem teeth: an always-up daemon and a tab that renames itself both mirror
+        //   `.jamsend/account/<prepub>/`, there is no merge, and divergence is last-write-wins — so one
+        //    of them loses silently, which for a spent invite is a security property, not a nicety.
+        //  The ruling needs no new mechanism: only the place holding the BARE `<prepub>` may write;
+        //   serial-numbered places (`<prepub>_1`, after a Steal Back) are readers. The token is an
+        //    address that already exists and that an arriving session wants anyway. Advisory by design —
+        //     every place here is the owner, so it is honoured by the code, not enforced against a
+        //      modified client. Fails SAFE: if Swarm_address isn't deposited we simply don't write,
+        //       which is exactly the behaviour that shipped before tonight.
+        //  NOTE what this does NOT cover — §7.4f's re-read at reinstate. A place that hands back the
+        //   canonical address and later takes it again will write from its own live tree, stale by
+        //    whatever the borrower changed. Still owed; do not read this guard as closing §6.6.
+        const addr = (H as any).Swarm_address?.(ident)
+        if (addr && addr !== ident.sc.prepub) {
+            if (!(top.c as any).account_mirror_muted) {
+                ;(top.c as any).account_mirror_muted = 1
+                console.log(`🪪 account mirror held — this place holds ${addr}, not the canonical ${ident.sc.prepub}; the bare-name holder owns the write.`)
+            }
+            return false
+        }
+        const peering = (ident.o({ Peering: 1 }) as TheC[])[0]
+        const mark = `${ident.sc.prepub}:${ident.version}:${peering?.version ?? 0}`
+        if ((top.c as any).account_mirror_mark === mark) return false
+        // STAMP BEFORE THE AWAIT, not after: the boot tick is async and re-enters, so a mark written
+        //  on the far side of the write would let a second pass start the same enWaft concurrently.
+        ;(top.c as any).account_mirror_mark = mark
+        try {
+            await (H as any).Swarm_persist(nav, '', ident)
+            console.log(`🪪 account mirrored → .jamsend/account/${ident.sc.prepub}/toc.snap`)
+            return true
+        } catch (er) {
+            // Clear the mark so a transient failure (a gesture-less FSA handle, a full disk) retries
+            //  on the next bump rather than latching this identity un-mirrored for the whole session.
+            delete (top.c as any).account_mirror_mark
+            console.warn(`🪪 account mirror failed — ${String(er).slice(0, 120)}`)
+            return false
+        }
     },
 
     // Clustation_adopt — take an EXTERNAL keypair (a pasted .env.cluster-<role> — IdHatch) and make
@@ -468,6 +618,23 @@
             await (H as any).thang_add(wT, role, stored)
         }
         ;(H as any).Clustation_concrete(A, role, stored!)
+        // FILE IT UNDER ITS PREPUB TOO (2026-08-08, Identity_persist_todo §6.4). The role home above is
+        //  the only one this path used to write, but Clustation_ensure_identity looks a ?I=<prepub> up
+        //   by TAG and requires `peeked.prepub === param` — so a role-filed identity was invisible to
+        //    its own prepub. It missed Dexie, fell to the disk seed, and therefore into gaps 1–3.
+        //  This is not an edge case, which is why §6.4 was promoted: a real client never sets ?I= or ?B=
+        //   (boot_qualand stamps book+role in code), so EVERY client is a role-filed identity and the
+        //    role path IS the app. Writing both homes makes a ?I=<prepub> boot of a role identity a
+        //     plain Dexie hit that never touches disk — §6.0's no-disk-read-on-a-healthy-boot satisfied
+        //      harder, not relaxed. Same both-homes precedent as Clustation_friendly.
+        //  Reusing Clustation_pin rather than a second thang_add: it is the same write, already proven
+        //   at the door (the ?Iz→?I address-bar swap), and it is a thang_PUT — so this also back-fills
+        //    the prepub home for role identities minted before tonight, on their next boot, instead of
+        //     throwing on a duplicate the way add would. Non-fatal: a failed pin costs discoverability
+        //      on the next boot, never this one's identity, so it must not gate the return.
+        try { await (H as any).Clustation_pin?.(H) } catch (er) {
+            console.warn(`🪪 pin of the ${role} identity failed — ?I=${stored!.prepub} will fall to the disk seed. ${String(er).slice(0, 90)}`)
+        }
         console.log(`🪪 Identity ${role} ${cluster_name(stored!.prepub)} (${stored!.prepub}) — page default`)
         return true
     },
@@ -650,6 +817,16 @@
         if ((H.c as any).assume_identity && !boot_param('I') && !H.c.identity_default) {
             if (await (H as any).Clustation_ensure_default(H)) H.c.identity_default = true
         }
+
+        // Mirror the account to .jamsend (Identity_persist_todo §6.1, "gap 1" — the write side that
+        //  nothing in the app ever called, which is why the read side kept arresting beside an account
+        //   dir that was never created).  HERE, after every identity path above has had its say, so we
+        //    mirror whoever actually ended up active — ?I=, legacy adopt or role default alike — and
+        //     after the identity_pending gate, so an ARRESTED boot never writes.  Self-throttling on a
+        //      version bump and self-guarding on the nav, so calling it every tick is the intended use:
+        //       it is a no-op until something about the account actually changes.  Not awaited for
+        //        correctness by anything below; a failed mirror costs durability, never this boot.
+        await (H as any).Clustation_mirror_account?.(H)
 
 
         // ── Library page region (book browser + disk-backed Library) ──────────

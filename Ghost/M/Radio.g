@@ -1321,11 +1321,25 @@ async Stoker_look(st, era):
         // consume the ask here too — an unconsumed churn with no disk would hold the loop
         //  out of its park forever (the headless boot's exact shape).
         st.c.churn_asked = 0
-        st.sc.note = 'no disk share — nothing to dig'
+        // "NOT YET" IS NOT "NEVER", AND HERE IT COSTS THE BOOT (2026-08-07).  A null `nav` on the first
+        //  looks after a reload is almost never "this tab has no share" — it is `Crate_nav`'s FSA handle
+        //   restore, which is async and lands in about a second. Parking a flat 20s on it meant the stoker
+        //    sat idle through the entire window in which the share actually arrived, so the first dig — and
+        //     therefore the first music — waited out a timer rather than an event. That is a straight,
+        //      unforced contribution to "boot is ~35s before any music can move".
+        //  So: probe fast while the answer is plausibly still coming (6 × 1s covers the restore with room),
+        //   and only then settle into the honest 20s park with the honest note. The note is deliberately
+        //    ABSENT during the fast window rather than reworded — an absent key is the project's own way of
+        //     saying nothing-to-report, it invents no new snapped string, and no fixture carries this note.
+        let waits = +(st.c.nonav_waits || 0) + 1
+        st.c.nonav_waits = waits
+        if (waits > 6) st.sc.note = 'no disk share — nothing to dig'
+        if (waits <= 6) delete st.sc.note
         this.Stoker_state(st, 'spent')
-        this.Stoker_soon(st, era, 20000)
+        this.Stoker_soon(st, era, waits > 6 ? 20000 : 1000)
         return
     }
+    st.c.nonav_waits = 0
     st.c.churn_asked = 0
     this.Stoker_state(st, 'churning')
     let had = {}
@@ -1350,7 +1364,11 @@ async Stoker_look(st, era):
     //  The shelf (Stoker_cull) bounds MEMORY; this bounds DISK — the two caps are independent, and a
     //   file dropped here is one re-dig from source, never a loss.  No sc telemetry: a gone-count is
     //    disk-history-dependent and would only be fixture noise (the whole reason radiostock leaks).
-    if (landed > 0 && nav) await this.Ra_stock_gc(nav, pub)
+    //  ⚠ `Ra_stock_gc_cap`, NOT `Ra_stock_gc` — this line said the latter and silently reached a
+    //   same-named function taking (nav, pub, enid, base, path), which shadows the cap cull in the
+    //    compiled class body.  It ran with three undefined args, matched nothing, dropped nothing,
+    //     and peeked every file's card line to do it.  See Ra_stock_gc_cap's header for the full tell.
+    if (landed > 0 && nav) await this.Ra_stock_gc_cap(nav, pub)
     if (landed > 0) {
         delete st.sc.note
         this.Stoker_state(st, 'watching')
@@ -1745,6 +1763,9 @@ Stoker_mag_draw(st, w, shelf, pub, had):
 //  The starting base ROTATES per dig (st.c.dig_i): a first-base-wins ladder STARVED testsounds
 //   entirely — while music/ yielded, the human's new flacs there could never appear.  Music
 //    still leads the cycle; a dry base falls through to the next in rotated order.
+//  ON A LIVE PAGE that rotation is now WEIGHTED by each base's decaying yield (Stoker_base_pick),
+//   because a uniform rotation gave a testsounds of eight files a third of every dig — see the
+//    measured note there.  A driven world keeps the plain `dig_i` rotation, byte for byte.
 // Stoker_barren — remember a source path that can never grow the shelf (a duplicate of audio we
 //  already hold, or a file that will not read|decode).  Fully qualified, because the same relative
 //   path under two bases is two different files.  On the House so it outlives a stoker rebuild,
@@ -1752,6 +1773,75 @@ Stoker_mag_draw(st, w, shelf, pub, had):
 Stoker_barren(base, p):
     let barren = this.top_House().c.dig_barren || (this.top_House().c.dig_barren = {})
     if (Object.keys(barren).length < 4096) barren[(base ? base + '/' : '') + p] = 1
+
+// Stoker_base_stat — WEIGHT THE BASE LADDER BY WHAT EACH BASE ACTUALLY GIVES (2026-08-08, the
+//  owner: "it hangs around testsounds/ far too much, all the legs confuse it").  The ladder above
+//   rotated `dig_i + 1` uniformly over three bases, so a `testsounds` of EIGHT FILES took a full
+//    THIRD of every dig's first attempt — the identical uniform-over-branches mistake that
+//     Crate_nav_meander's learned weights were built to cure, sitting one layer higher up and
+//      still uncured.  Sharper here than there, for two reasons: the bases OVERLAP ('' is the
+//       share root and already contains both the others, so testsounds was reachable on two
+//        starts in three), and a dig start is expensive — a dry base costs a whole 24-hop meander.
+//  So each base keeps a DECAYING YIELD and the start is drawn proportional to it.  The same
+//   two-quantity discipline the meander proved: `rate` is what a base is giving NOW — it decays,
+//    so a spent crate falls away — while `dug` is the honest lifetime total and only ever sets the
+//     FLOOR, sqrt-priced, so a base that once held hundreds stays cheaply reachable for when
+//      whittling re-opens it.  Nothing is ever written off, and nothing is written off BY NAME.
+//  Optimistic birth (rate 2) so an unprobed base is always tried early: writing a base off before
+//   ever seeing it is the whole failure mode in a small collection.
+//  MEASURED offline over four synthetic yield shapes before landing (scratchpad/ladder_sim.mjs),
+//   600 digs each.  On the owner's shape (music 4000 / root 600 / testsounds 8) testsounds' share
+//    of starts falls 33% -> 9% and its wasted attempts 200 -> 52, while it still lands all eight of
+//     its tracks.  On the INVERTED shape — the music really is in testsounds — its share rises
+//      33% -> 81%, which is the proof this follows the music instead of encoding a grudge.  With
+//       nothing anywhere the draw stays uniform, because no information must mean no bias.
+Stoker_base_stat(base):
+    let m = this.top_House().c.dig_base_stat || (this.top_House().c.dig_base_stat = {})
+    let e = m[base]
+    if (!e) e = m[base] = { rate: 2, dug: 0, tries: 0 }
+    return e
+
+// one dig attempt's verdict, folded in.  A DRY MEANDER COUNTS, and it is the strongest signal
+//  there is: a base whose every file is already held or learned barren returns NO PICKS AT ALL
+//   (Stoker_barren has marked them), which is exactly what testsounds does once its eight are
+//    shelved.  A version that learned only from bases which returned picks would leave the one
+//     base we most need to demote sitting at its birth weight for ever — the instrument failing
+//      to record the case it was built for, the same shape as every other bug in this file.
+Stoker_base_learn(base, landed):
+    let e = this.Stoker_base_stat(base)
+    e.tries = e.tries + 1
+    e.dug = e.dug + landed
+    e.rate = e.rate * 0.7 + landed * 0.3
+
+// Stoker_base_pick — the φ sweep over the weighted CDF: the same low-discrepancy step
+//  Crate_nav_meander's slot cursor uses, for the same reason.  An iid re-roll over three buckets
+//   is a coupon collector, so the ladder re-treads one base while another waits; a Kronecker step
+//    of 0.618 lands each successive start ~0.618 of the CDF from the last, so three roughly-equal
+//     bases are covered in three digs with no repeat and no gap, and a base worth three times
+//      another still gets three times the starts.
+//  `Math.round` (not ceil) on the live term deliberately: ceil would floor every positive rate at
+//   1 and the sqrt regret floor below could then never be reached, since an EMA decays toward zero
+//    asymptotically and never arrives.  Rounding lets a rate below 1/16 read as spent, which is
+//     the only way the floor can ever take over.
+Stoker_base_pick(st, bases):
+    let weights = []
+    let total = 0
+    for (const b of bases) {
+        let e = this.Stoker_base_stat(b)
+        let live = Math.round(e.rate * 8)
+        let floor = Math.max(1, Math.ceil(Math.sqrt(1 + e.dug)))
+        let wgt = live > 0 ? live : floor
+        weights.push(wgt)
+        total = total + wgt
+    }
+    if (st.c.base_n == null) st.c.base_n = this.prandle(9973)
+    st.c.base_n = st.c.base_n + 1
+    let r = Math.floor(total * ((st.c.base_n * 0.6180339887498949) % 1))
+    if (r >= total) r = total - 1
+    let k = 0
+    while (k < weights.length - 1 && r >= weights[k]) { r = r - weights[k]; k = k + 1 }
+    st.c.dig_wgt = weights.join('/')
+    return k
 
 async Stoker_dig(st, w, shelf, nav, skip):
     let before = this.Ra_recs(shelf).length
@@ -1795,13 +1885,22 @@ async Stoker_dig(st, w, shelf, nav, skip):
     let bases = ['music', '', 'testsounds']
     let start = (st.c.dig_i || 0) % bases.length
     st.c.dig_i = (st.c.dig_i || 0) + 1
+    // LIVE PAGES ONLY (`humdinger`), the same predicate the weighting, the hop budget and the skip
+    //  set already use — and for the same unmovable reason: the starting base decides which tracks
+    //   a dig stocks, so a driven world must keep the plain rotation or every stocking Book needs
+    //    re-recording.  MusuStock is exactly that Book, and that bill is one we cannot pay tonight.
+    if (this.top_House().c.humdinger) start = this.Stoker_base_pick(st, bases)
     let bi = 0
     while (bi < bases.length) {
         let base = bases[(start + bi) % bases.length]
         bi = bi + 1
+        // the shelf count across THIS BASE's attempt — `before` is the whole dig's, and the ladder
+        //  tries up to three bases, so crediting the dig's total to whichever base ran last would
+        //   teach the map the opposite of the truth on any dig that fell through.
+        let b4 = this.Ra_recs(shelf).length
         let picks = []
         try { picks = await this.Crate_nav_meander(nav, base, 2, skip) } catch (er) { picks = [] }
-        if (!picks.length) continue
+        if (!picks.length) { this.Stoker_base_learn(base, 0); continue }
         // THE ELECTRODE (2026-08-07): `landed` alone cannot tell "the wander returned nothing" from
         //  "the wander returned two tracks and neither would stock" — and those want opposite fixes.
         //   The tour's mark reads these, so a dry turn says WHICH kind of dry it was.  .c-only.
@@ -1870,6 +1969,7 @@ async Stoker_dig(st, w, shelf, nav, skip):
         //      dug 2 immediately (stock 17→19). The wander was fine; the ladder stopped one rung early.
         //  Break only on a base that actually ADDED something; otherwise fall through and try the next.
         //   Bounded by the same three-base loop, so a fully-stocked share still costs at most one pass.
+        this.Stoker_base_learn(base, this.Ra_recs(shelf).length - b4)
         if (this.Ra_recs(shelf).length > before) break
     }
     let after = this.Ra_recs(shelf).length

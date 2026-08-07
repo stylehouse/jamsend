@@ -1393,8 +1393,16 @@ Swarm_pier_entry(pier):
 //  convergence half of Swarm_piers_rehydrate: reconstruct each pier's entry and hand it to the
 //   (idempotent, live-self-guarded) Swarm_pier_stash, so a grafted friend is remembered exactly as a
 //    sealed one is.  Returns the count mirrored.
-Swarm_restash_piers(ident):
-    let peering = this.Swarm_peering(ident)
+//  `from` (2026-08-08) is the SOURCE to read the ledger out of, defaulting to `ident` itself.  It
+//   exists because Auto's disk-seed does NOT land the account in the live tree: it seeds into a
+//    DETACHED vault and harvests only the keypair, then Clustation_concrete mints a SEPARATE live
+//     %Identity under A:Clustation.  So the two are different objects, and the live-self guard inside
+//      every _stash verb (`live !== ident` → silent return) means "restash the vault" and "restash
+//       the live self" are each half-useless alone — the vault has the ledger but fails the guard, the
+//        live self passes the guard with an empty Peering.  Splitting read-from / stash-under is the
+//         whole fix; both must name the SAME prepub, which Swarm_restash_all checks.
+Swarm_restash_piers(ident, from):
+    let peering = this.Swarm_peering(from || ident)
     if (!peering) return 0
     let n = 0
     for (const pier of peering.o({ Pier: 1 })) {
@@ -1403,6 +1411,71 @@ Swarm_restash_piers(ident):
         n = n + 1
     }
     return n
+
+// Swarm_restash_izzes — the INVITE half, and the one that has teeth tonight.  A %Idzeug is the
+//  single-use serial the door checks: Swarm_hello does `o({ Idzeug: t.serial })[0]` under the LIVE
+//   %Peering and refuses('unknown') when it misses — SILENTLY, from the redeemer's side indistinguish-
+//    able from a stranger.  A restored owner whose ledger never reached the stash therefore denies its
+//     own invites, which is the 2026-07-18 two-tab seal failure wearing a different hat.
+//  The entry IS the sc map minus the mainkey: Swarm_iz_rehydrate reads `to`/`ttl`/`chain`/`spent`/
+//   `holder`/`blotter` by name and re-wears every OTHER key as a feature param (the door's presig
+//    regeneration reads the record, never a carried $n), so copying sc wholesale is not laziness —
+//     it is the only shape that survives a feature param nobody has invented yet.
+Swarm_restash_izzes(ident, from):
+    let peering = this.Swarm_peering(from || ident)
+    if (!peering) return 0
+    let n = 0
+    for (const iz of peering.o({ Idzeug: 1 })) {
+        let nonce = iz.sc.Idzeug
+        if (!nonce) continue
+        let c = {}
+        for (const k of Object.keys(iz.sc)) { if (k !== 'Idzeug') c[k] = iz.sc[k] }
+        this.Swarm_iz_stash(ident, nonce, c)
+        n = n + 1
+    }
+    return n
+
+// Swarm_restash_chainroots — the lineage third.  NOTE THE SHELF: a %ChainRoot hangs off the
+//  %Identity, not off the %Peering (Swarm_chainroots_rehydrate does `ident.oai({ ChainRoot: 1 ... })`)
+//   — the recipe in Identity_persist_todo §5/§6.6 says "the Peering's ChainRoots" and is simply wrong
+//    about the shelf; walking the Peering here would find nothing and report a confident zero.
+//  Without it a restored Carol forgets Alice's chain authority and denies Carol→Dave 'unknown_root'.
+Swarm_restash_chainroots(ident, from):
+    let src = from || ident
+    if (!src) return 0
+    let n = 0
+    for (const cr of src.o({ ChainRoot: 1 })) {
+        if (!cr.sc.pub) continue
+        this.Swarm_chainroot_stash(ident, cr.sc.pub)
+        n = n + 1
+    }
+    return n
+
+// Swarm_restash_all — the whole durable ledger of one identity, mirrored into the Dexie stash in one
+//  call: friendships, invites, lineage.  THE SECOND-RELOAD TRAP is what it exists for — reload #1
+//   seeds off disk and grafts a ledger into memory; reload #2 finds the identity in Dexie, therefore
+//    never touches disk (§6.0's "no disk read on a healthy boot", which is correct and stays), and
+//     rehydrates its friends from a stash that was never written.  Friends vanish, invites go
+//      'unknown', and nothing anywhere logs a fault.  Stash on the way IN and the boot after is a
+//       plain Dexie hit that happens to know everything.
+//  Guards, both load-bearing:
+//   LIVE SELF — every _stash verb refuses when `ident` is not the machine's active identity, so the
+//    caller must concrete FIRST and pass the live object.  A Book's puppets and a foreign tab must
+//     never write the House stash, and that guard is the thing stopping them; do not route around it.
+//   SAME PREPUB — reading from a vault means naming two objects, and naming two objects means someone
+//    will eventually pass the wrong one.  A mismatch here would file a STRANGER's friends and invites
+//     under our own prepub, which is worse than the bug being fixed: refuse it and say so.
+//  Returns the counts, so a caller can log what it actually adopted rather than that it tried.
+Swarm_restash_all(ident, from):
+    let src = from || ident
+    if (!ident || !src) return { piers: 0, izzes: 0, roots: 0 }
+    if (src !== ident && src.sc.prepub !== ident.sc.prepub) {
+        console.log('🪪 restash REFUSED — ' + String(src.sc.prepub) + ' is not ' + String(ident.sc.prepub))
+        return { piers: 0, izzes: 0, roots: 0 }
+    }
+    return { piers: this.Swarm_restash_piers(ident, src),
+             izzes: this.Swarm_restash_izzes(ident, src),
+             roots: this.Swarm_restash_chainroots(ident, src) }
 
 //#region suggestion — "you'd love this": durable, store-and-forward, async to their being online
 //  A %Suggest is a REFERRING particle (enid + display scalars + note — never a second %Record)

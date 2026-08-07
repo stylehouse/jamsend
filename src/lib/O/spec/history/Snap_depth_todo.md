@@ -1,3 +1,19 @@
+> **HISTORICAL — retired 2026-08-07.** The work landed: the one snap/world view that capped
+> (`LiesFunk.svelte`, `op === 'world'`) no longer passes `max_child_depth`, so the resident-world
+> snap encodes the full tree, and recorded fixtures were verified never to have been capped. The
+> human's ruling — *"they never agreed to a snap depth limit, REMOVE it"* — is satisfied; there is
+> no depth limit on snaps. Kept for the mechanism write-up below, not as live work.
+>
+> **Two loose ends went with it, both deliberately small:**
+> 1. The suggested full-suite confirm run was never done. It was only ever a belt-and-braces check
+>    that nothing silently leaned on the removed cap; the code reading was already conclusive, and
+>    the human de-prioritised suite runs on 2026-08-07 ("I don't really care too much about those
+>    old tests compared to polishing the overall thing").
+> 2. **An unresolved human ruling: `LangHold`'s `max_child_depth: 0`** is still in place. It is NOT
+>    a snap and NOT a doc preview — it is the origin-vs-working *equality* encode behind Lang
+>    push-state, and uncapping it WOULD change behaviour (spurious "dirty"). The standing
+>    recommendation is **keep it**. If that is ever revisited, this is the file that explains why.
+
 # Snap depth limit — the silent `max_child_depth` cut
 
 The alarm (the human, 2026-07-29): *"have we got an un-noticed depth limit to snap?

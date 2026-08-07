@@ -20,31 +20,43 @@ The daemon **boots, thinks, reads the wormhole, runs a Story Book to settle, and
 >     ever reaches (§8.3). §8 is the ledger; the sections below have been corrected in place where
 >      the correction is short and cross-referenced to §8 where it is not.
 
+> **UPDATED 2026-08-08 after the overnight run — items 1, 4 and most of the identity work are DONE.**
+>  The night's full log, with evidence, is **§9.6**; read that before this list. Landed: all four
+>   `Identity_persist_todo` §6 gaps (the identity chain now round-trips — Auto writes the account, a
+>    cleared browser resumes off it, and a role identity is findable by its own prepub), the daemon's
+>     boot shape + status-port + robustness hardening, and `.jamsend` at 0600 with path confinement.
+>      **Step 3 below is now the single blocker for invites**, exactly as §9.1's chain predicted.
+
 Candidates, in the order they actually unblock things:
 
-1. **Boot like a client does** (§8.3). The bare `node run.mjs` takes Auto's **library** branch — a
-    dev book-browser no real client reaches — and runs whatever Book a human last left `active` in
-     a shared `wormhole/Present/toc.snap`. Real clients never set `?I` or `?B`: `/BigSoundland` is
-      `boot_qualand({book:'Sounditron', role:'sound'})`, which stamps `book` + `boot_role` in code.
-       The daemon should do the same and refuse a bootless boot. Cheapest item here and it makes
-        every other measurement mean something.
-2. **Arm the Swarm station** (§8.1) — the ONE call that gives the daemon invites: `Swarm_station_up`.
-    Today nothing outside `InvitePanel.svelte` calls it, so no handler is armed and an inbound
-     `pier_hello` has nowhere to land. The daemon does not need to LAND invites (owner: *"the ?Iz
-      parsing would never happen on the Daemon, it would be minting Grants for the clients that come
-       along with them"*) — it needs to ANSWER them.
-3. **Give the daemon its own relay address** (§4). Today it would register as `addr=runner`, the
-    same address every runner tab claims. Until that's fixed `RELAY=1` is a foot-gun and the daemon
-     is offline-only — and item 2 cannot even be tested, because `RELAY=0` deletes `WebSocket` and
-      `Swarm_station_up` guards on it.
-4. **Close the security holes** (§8.4) — the account snap lands world-readable, and `/stop` is an
-    unauthenticated GET on all interfaces. Both are small; neither should ship.
+1. ~~**Boot like a client does** (§8.3)~~ — **DONE 2026-08-08.** `book`+`boot_role` are stamped, a
+    bootless boot refuses with exit 4 instead of falling into Auto's dev library page, `ROLE` defaults
+     OFF so a bare boot never mints, and `humdinger` comes off `boot_role`. (§9.6)
+2. **Give the daemon its own relay address** (§4) — **NOW THE TOP ITEM, and it is the owner's.**
+    Promoted from 3 because everything it gated is otherwise ready. Today the daemon would register as
+     `addr=runner`, the address every runner tab claims; `bind()` is additive and `deliverLocal` fans
+      out to every socket, so both claimants get every frame — the `channel DEAD — 20s silent` symptom.
+       Deliberately left alone overnight (§9.7 Phase 3): a bad `relay.ts` edit takes every runner down
+        with nobody awake. Smallest change that works: give the daemon's `%Peering` a name that is not
+         the bare role (`LiesLies.svelte:312`). **Do NOT** attempt §7.4's suffix/serial layer.
+3. **Arm the Swarm station** (§8.1) — the ONE call that gives the daemon invites: `Swarm_station_up`.
+    Nothing outside `InvitePanel.svelte` calls it, so no handler is armed and an inbound `pier_hello`
+     has nowhere to land. Blocked only on item 2 (`RELAY=0` deletes `WebSocket` and the verb guards on
+      it). **The ledger it needs is now waiting for it** — `Swarm_station_up` rehydrates piers, invites
+       and chain roots from the stash *before* `Swarm_arm`, and as of tonight that stash is actually
+        populated on a restored owner (§9.6, step 2). The daemon is the RESPONDER, never the joiner.
+4. ~~**Close the security holes** (§8.4)~~ — **DONE 2026-08-08.** `.jamsend` files at 0600 and dirs at
+    0700 (incl. fixing already-existing files), `path.join(root, rel)` confined to root, status port
+     bound to localhost, token required on `/stop` and `/c`. (§9.6)
 5. **The opus shim** (§2/§2.1): **ffmpeg behind the WebCodecs seam**, encode half only, with an
     Ogg-page→packet demux as the single real piece of work. Note §8.2 — this is no longer only about
      *stocking* a collection; the daemon cannot serve its OWN tracks past the preview window without
-      it.
+      it. **Probably the biggest genuinely-open piece of work in this file now.**
 6. **Point it at real music** (§5.3) — a nav over `/music` so `Crate_nav_meander` has something to
-    dig through. Makes 1–5 testable against reality instead of synth tones.
+    dig through. Makes the rest testable against reality instead of synth tones.
+7. **The two-tab fingers-test** (`Identity_persist_todo` §6.7) — the one gate no daemon run can stand
+    in for, and it matters MORE now: gap 1 means a real tab writes its private key to a real share, and
+     every proof tonight is on the node fs nav. A human with two tabs, ten minutes.
 
 **RULED 2026-08-07 (owner): the daemon never provisions.** Management — mint, Invites, grants —
  happens in browser sessions of the account; the share's `.jamsend/account/<prepub>/` is the
@@ -63,7 +75,13 @@ Candidates, in the order they actually unblock things:
   disk-seed falls through to an ARREST when the Swarm ghost hasn't deposited yet, and a *successful*
    seed never clears `identity_pending` — so a daemon that found its key on disk stayed held forever
     with the key in hand. Plus the finding under them: **nothing in the app ever writes the account
-     file the seed reads.** These three are one job, and it is the human's.
+     file the seed reads.**
+ **ALL THREE LANDED 2026-08-08** under §9.0's standing grant, along with gap 4 and a fourth bug found
+  while landing them: **`Clustation_pin` had never worked** — it read `Clustation_active_identity`
+   (which returns `{pub,key}`, no `.c`) and then guarded on `ident.c.keys`, so it returned false at its
+    first line, always, and the door's `?Iz`→`?I` swap has been silently not pinning. Evidence, the
+     before/after table and the three places the written recipe was wrong: **§9.6**. The identity chain
+      now round-trips on the node nav; the browser gate (§6.7's two-tab test) is still unrun.
 
 Storage is **not** on that list any more, and §5.1 says why: the Dexie → `.jamsend` mirror is already
  built twice over (identity, Heist) and is a *coverage* problem, not an architecture one — so the
@@ -942,3 +960,256 @@ Read [[comments-assert-unmeasured-properties]] first. Then:
 
 Append as you go: what landed, what was skipped and why, what you telegrammed about. The owner reads
  this before the diff. A blocker recorded with its evidence is worth more than a workaround.
+
+---
+
+#### RUN 1 — 2026-08-08, 01:00–01:1x. §9.2 steps 1–2 LANDED and proven; step 3 left for you, as §9.7 said.
+
+**The headline: the identity chain now survives a cleared browser AND the reload after it.** Baseline
+ exits 3 with the account sitting on disk; the fixed tree exits 0 with `w:Story` standing. Both halves
+  were attributed by controlled revert, not assumed.
+
+**Step 1 — Auto gaps 2+3. LANDED** (`src/lib/O/Auto.svelte`).
+ - Gap 2 (`Auto.svelte:198-218`): the disk-seed block's guard required `Swarm_boot_seed` + `Crate_nav`
+    to already be functions, and when they weren't it fell **through** to the arrest. Split the guard:
+     ghost-not-deposited now returns `false` (retry next pass) on the *same* `SEED_WAIT_MS` clock the
+      nav-not-up branch uses — one budget for "the seed is not possible yet", however many reasons stack.
+ - Gap 3 (`Auto.svelte:338-351`): `identity_pending` is now cleared in **`Clustation_concrete`**, the
+    chokepoint every resume path funnels through. The two manual clears are left in place, redundant.
+ - **Evidence — same account, same fixture, only the file swapped** (`I=b9341b748657d3b4 B=Sounditron`):
+
+   | | baseline (HEAD) | gaps 2+3 in |
+   |---|---|---|
+   | arrest | `🪪⚠ identity ARRESTED` | never fires |
+   | key off disk | restored anyway (late) | restored |
+   | houses | `Mundo` only — **no Story, ever** | `Mundo:1 Story Sounditron` |
+   | worlds | `…Clustation/Thangs` | `…Clustation/Thangs,Swarm Story/Story Vyto Sounditron` |
+   | exit | **3** (`☠ ARRESTED with the account ON DISK`) | **0** |
+
+   That baseline row IS `Identity_persist_todo` §6.3's recorded failure, reproduced exactly — including
+    the tell that the key *was* found and the boot stayed held anyway. Gap 2 kills the arrest line; gap 3
+     is what lets Story stand. Two edits, two distinguishable symptoms, one run each.
+
+**Step 2 — the ledger graft. LANDED** (`Ghost/S/Swarm.g:1392-1470`, compiled to `src/lib/gen/S/Swarm.go`
+ via `npm run ghost-compile`; your editor was live and took it, dige `6da9331c389492ee`).
+
+ **Three things in §9.2 step 2's recipe were wrong. Read these before you review the diff:**
+ 1. **`Swarm_restash_piers` already existed** (`Swarm.g:1396`, called from the graft at `:1377`). The
+     spec says "it does not exist — build it". A third of it was already there and already wired.
+ 2. **`%ChainRoot` hangs off the `%Identity`, not the `%Peering`** (`Swarm_chainroots_rehydrate` does
+     `ident.oai({ChainRoot:1,…})`). The recipe says "the Peering's ChainRoots" — walking the Peering
+      finds nothing and reports a confident zero. Exactly the [[comments-assert-unmeasured-properties]]
+       shape, in the spec rather than a comment.
+ 3. **The load-bearing one: the recipe cannot work as literally written.** It says "walk the seeded
+     vault's Peering … guard on `live_self`". Those two clauses contradict each other. Every `_stash`
+      verb guards `if (!live || live !== ident) return` — **object identity, not prepub** — and Auto
+       seeds into a *detached vault* while `Clustation_concrete` mints a **separate** live `%Identity`.
+        So the vault has the ledger and fails the guard; the live self passes the guard with an empty
+         Peering. That is why the existing `Swarm_restash_piers(ident)` at `:1377` has been silently
+          returning without stashing anything — it is handed the vault. The bug was already built.
+
+ **What I built instead:** split *read-from* and *stash-under*. `Swarm_restash_piers/_izzes/
+  _chainroots(ident, from)` read the ledger out of `from` (default `ident`) and stash it under `ident`
+   (the live self, so the guard is honoured, never routed around). `Swarm_restash_all(ident, from)`
+    does all three and **refuses a prepub mismatch** — reading from a vault means naming two objects,
+     and filing a stranger's friends under our own prepub would be worse than the bug being fixed.
+ **Stash, don't graft particles:** `Swarm_station_up` (`Swarm.g:663-665`) already rehydrates all three
+  shelves from the stash *before* `Swarm_arm`, so the proven, idempotent rail rebuilds the live
+   particles. A second hand-rolled grafter would just be a second thing to keep true.
+ Auto calls it at the one moment both halves are in scope (`Auto.svelte:240-266`) — after concrete has
+  set active, wrapped so a throw can never cost the key we just recovered.
+
+ - **Evidence.** Fixture account carrying 2 `%Idzeug` (one `spent`), 1 `%Pier`, 1 `%ChainRoot`:
+   ```
+   🪪 Identity RESTORED from disk dawn-sail (b9341b748657d3b4) — .jamsend/account
+   🪪 ledger restashed — 1 pier(s), 2 invite(s), 1 chain root(s)
+   ```
+   and in the Dexie state file afterwards — note `spent` survived, which is the single-use security
+    property §8.1 says a second writer can un-spend:
+   ```
+   Swarm_izzes:{b9341b748657d3b4:{nonce-alpha:{to:listen},nonce-beta:{to:listen,spent:"1"}}}
+   Swarm_piers:{b9341b748657d3b4:{cafe0011223344556677:{page:{prepub,pub,friendly:Testfriend}}}}
+   Swarm_roots:{b9341b748657d3b4:{beef00…:{prepub:beef001122334455}}}
+   ```
+ - **Reload #2 — the trap this exists for — is closed.** Booting again on the same state dir logs
+    `🪪 Identity active` (a plain Dexie hit, disk never consulted, §6.0 intact) and the stash still
+     carries all three shelves. Before tonight that is the boot where friends vanish.
+
+**What is NOT proven, honestly.** The ledger is in the **stash**; the live `%Idzeug` particles under the
+ live `%Peering` appear only when `Swarm_station_up` runs, which needs `RELAY=1`, which needs step 3.
+  So §9.2 step 2's own check (`curl /c?depth=6` showing `%Idzeug` rows) **cannot be run tonight** — not
+   a failure, just the dependency chain in §9.1 doing what it says. The seam is verified one layer down
+    instead, in the Dexie state file, which is where the durability actually lives.
+
+**Step 3 — the relay address: DELIBERATELY NOT TOUCHED**, per §9.7 Phase 3. `relay.ts` is untouched;
+ `git diff` will show it clean. Without it steps 4 and §9.4's two-daemon harness cannot run, so
+  **"invites end-to-end" did not finish** — expected, and §9.7 said so up front. Telegrammed.
+
+**§9.3, fanned out to two Sonnet agents split by file (Phase 1):**
+ - **Agent B — `scripts/NodeWormholeNav.ts`: DONE, and independently re-verified by me.** `.jamsend`
+    files now land `0600` (incl. an explicit `chmod` for the already-exists case, which `writeFileSync`'s
+     create-only `mode` misses), `.jamsend` dirs `0700`, and `path.join(root, rel)` is confined via a
+      `confine()` helper on every method. I checked the real files after a run: account snap `600`,
+       `.jamsend` dirs `700`, `wormhole/` untouched at `644`/`755`. **Worth reading their report's own
+        catch:** their first draft passed `mode` to a *recursive* `mkdirSync`, which stamps every
+         ancestor it creates — it over-tightened the OVERLAY root itself. They found it by testing
+          rather than by reading, which is the §9.5 discipline working.
+ - **Agent A — `scripts/daemon/main.ts` + `dexie-node.ts`:** still running at the time of writing;
+    result appended below when it lands.
+
+**One stale claim in §8.3 spotted in passing:** it says `ROLE` defaults to `'daemon'` at `main.ts:187`
+ so a bare boot mints. `main.ts:204` today reads `process.env.ROLE === '0' ? '' : (process.env.ROLE || '')`
+  — it already defaults to empty. §8.3's line numbers have drifted generally (it cites `:187/:188`; the
+   knobs are at `:204/:205`). Left for Agent A, whose file it is.
+
+---
+
+#### RUN 1 continued — gaps 4 and 1 also landed. **All four of `Identity_persist_todo` §6 are now in.**
+
+§9.1 says gaps 4 and 1 are off the critical chain — *"land them if there is time, after"*. Step 3 being
+ correctly parked freed that time, and §6.5's precondition for gap 1 (*"land it only once 2 and 3 are
+  in"*) was satisfied by the work above, so it was safe tonight in a way it was not this morning.
+
+**Gap 4 — a role-filed identity is invisible to its own `?I=`. LANDED** (`Auto.svelte:470-490`).
+ `Clustation_ensure_default` filed the identity under the ROLE tag only, while `ensure_identity` looks
+  up by TAG and demands `peeked.prepub === param` — so every client (which is to say, every real
+   client, since `boot_qualand` stamps role in code and nobody sets `?I=`) missed Dexie and fell into
+    gaps 1–3. It now also files under the prepub.
+
+ **The find that made this more than a one-liner: `Clustation_pin` has never worked.** §6.4 asks for a
+  both-homes write, and a verb that does exactly that was already sitting at `Auto.svelte:387` — so I
+   reused it, and it silently did nothing. Cause: it asked `Clustation_active_identity`, which returns
+    the **signing key** `{pub, key}` — a plain object with no `.c` — and then guarded
+     `if (!ident?.c?.keys) return false`. **The guard can never pass.** Every call has returned false at
+      the first line since it was written, and its only caller (the door's `?Iz`→`?I` address-bar swap)
+       reads a false as "Thangs not mounted yet, fine". So the failure the verb exists to prevent —
+        *"that reload would mint a STRANGER under the prepub tag — the friendship left on the old key"*,
+         its own comment — is precisely what it has been allowing. Fixed at `Auto.svelte:391-408` by
+          resolving the PARTICLE (the same two-step `active_identity` itself uses).
+  Worth noticing the shape: a verb whose entire body is unreachable reads as working code in every
+   review, and the diff that introduced it looked right. The tell available in hindsight was that §6.4
+    was still open while a verb that closes it sat in the same file. [[comments-assert-unmeasured-properties]]
+     again, one level up — not a false comment but a false *verb*.
+
+ - **Evidence.** Role mint, then the identities Thang holds BOTH homes (before the pin fix it held only
+    `daemon`, which is how the dead verb was caught):
+    `["identities","daemon"]` **and** `["identities","b803ff619bb51324"]`.
+   Then, with `.jamsend` **deleted from the share** so only Dexie can possibly answer:
+   `I=b803ff619bb51324` → `🪪 Identity active gilded-sail (b803ff619bb51324)`, exit 0. A plain Dexie
+    hit, zero disk reads — §6.0 satisfied harder, exactly as §6.4 predicts. Before the fix that boot
+     misses Dexie, falls to a disk seed with no disk, and arrests.
+
+**Gap 1 — the write side. LANDED LAST, as §6.5 requires** (`Clustation_mirror_account`,
+ `Auto.svelte:425-472`; called from the boot tick at `:806`).
+ Nothing in the app ever called `Swarm_persist` — every caller was inside the `SwarmDisk` Book — so the
+  read side wired 2026-08-04 has been arresting beside an account dir nothing ever created. That is the
+   whole of *"editor lost its crypto again!?"*.
+ Placed after every identity path has had its say (so it mirrors whoever actually ended up active) and
+  after the `identity_pending` gate (so an **arrested** boot never writes). Guards mirror the read's,
+   for the read's reasons: no nav → retry later, **remote nav → refused** (`.jamsend` never crosses the
+    wire, and an `atime_async` await under the beliefs mutex deadlocks), and never per tick.
+ **On the throttle, honestly:** §6.1 asks for a `Waft:Account` version bump and no such Waft exists in
+  the live tree, so it marks on `%Identity.version` + its `%Peering.version` — the two shelves that
+   actually move (a rename bumps the identity; piers/grants/Idzeugs are created under the Peering, and
+    creation bumps). That is a heuristic, not a proof: a mutation bumping neither waits for the next
+     boot. Strictly better than the daemon's proven floor of once-per-identity-per-boot; tighten it if
+      a case turns up. The mark is stamped BEFORE the await (the tick re-enters) and cleared on throw
+       (so a gesture-less FSA handle retries rather than latching the session un-mirrored).
+ - **Evidence.** With the daemon's own `persist_account` disabled (`ACCOUNT=0`), so only Auto's new
+    write side can create anything: `🪪 account mirrored → .jamsend/account/2c67daaf1f134b8a/toc.snap`
+     — **once** across 76+ ticks (the throttle holds), landing at **0600** (Agent B's mode fix
+      composing correctly). Then the round trip, which is the point of the whole file: wipe Dexie,
+       boot `I=2c67daaf1f134b8a` → `🪪 Identity RESTORED from disk moon-moray`, exit 0. **Auto writes
+        it; a cleared browser reads it back.** That loop has never closed before tonight.
+
+**The gate that is still unrun, and nothing here substitutes for it:** §6.7's two-tab fingers-test.
+ Everything above is proven on the **node fs nav** only. A browser is still the only proof of the FSA
+  backend, and gap 1 now means a real tab writes its private key to a real share — so that test matters
+   more after tonight than before it, not less. Please run it before this reaches players.
+
+**The advisory write lock came with gap 1, because gap 1 is what armed the hazard** (`Auto.svelte:437-452`,
+ §7.4f / §6.6). Two writers, one file, no merge, last-write-wins — and an un-spent invite is a security
+  property, not a nicety. Only the place holding the **bare `<prepub>`** mirrors; a serial-numbered place
+   holds off and says so once. Fails safe (no `Swarm_address` → no write, i.e. pre-tonight behaviour) and
+    verified not to over-refuse: the canonical holder still writes. **It does NOT close §6.6** — §7.4f's
+     *re-read at reinstate* is still owed, so a place that hands the address back and later retakes it
+      will write from its own stale tree.
+
+**§9.3 Agent A — `scripts/daemon/main.ts` + `dexie-node.ts`: DONE** (reported after the above landed).
+ Boot shape: `book`+`boot_role` stamped, bootless boot **refuses with exit 4** instead of falling into
+  Auto's dev library page, `ROLE` defaults OFF so a bare boot never mints, `humdinger` derived from
+   `boot_role` (the `ROLE=0 B=…` phantom-run footgun). Status port: binds `127.0.0.1`, token required on
+    `/stop` and `/c`, `/status` left open. Robustness: `flush()`/`flush_all()` drained on every exit path
+     via a new `shutdown(code)`, write failures now reject the awaited promise (deliberately not a
+      permanent poison), `uncaughtException` exits 5 so a supervisor can fire, log rotation at ~10MB, and
+       a pid-based `DAEMON_STATE` lock (second daemon exits 6; a stale lock from a dead pid self-recovers,
+        which keeps §9.4's deliberate two-daemon harness possible).
+ I re-verified the two that could bite: a bare `node scripts/daemon/run.mjs` refuses with the exit-4
+  message, and the whole four-gap chain above still runs green against the settled `main.ts`.
+
+**Type check:** `npx svelte-check` over `Auto.svelte` reports 20 findings, **none in any line I touched**
+ — all are the baseline `Property X does not exist on type 'House'` eatfunc noise CLAUDE.md describes,
+  at lines ≥847 (my edits end at 830).
+
+**THE REAL GATE, RUN: all three Swarm Books are GREEN on the live runner** (`58517b484a8e896d`), which
+ is what actually covers the `Swarm.g` edit — a daemon boot never would have.
+ - `SwarmDisk` — **7/7, ok, 0 caveat** (the unit proof of the disk→identity→signing lift, incl.
+    `grafted-stashed`: *"a disk-grafted Pier is stash-worthy … so the reseeded friend survives the next
+     warm reload"* — the very claim step 2 turns on).
+ - `SwarmInvite` — **5/5, ok, 0 caveat.**   · `Swarmation` — **1/1, ok, 0 caveat.**
+ Runner released afterwards. No fixture moved: the restash verbs write only the Dexie `stashed` rail,
+  and the `Auto` changes touch `.c` flags and files — no snapped C shape changed, so no Book fixture
+   needed re-recording.
+
+**Heads-up for the morning, not my work:** a **concurrent agent is live in this repo** — `Ghost/M/Heist.g`,
+ `Error_channel_todo.md`, `Heist_todo.md`, a new `wormhole/Story/ErrChannel/` and a spread of `Musu*`
+  snaps all appeared in `git status` during the night. Untouched by me; flagged only so the diff doesn't
+   read as one session's. ([[concurrent-agent-on-this-repo]])
+
+### 9.7 HOW TO RUN TONIGHT — read this first, then act
+
+Do these in order. The point of the shape is that the safe, mechanical work banks itself in parallel
+ while the main session does the part that needs judgement.
+
+**Phase 1 — fan out §9.3 to two Sonnet subagents, split BY FILE so they cannot collide.**
+ Launch both in one message so they run concurrently. Do NOT add a third: every remaining §9.3 item
+  lives in a file one of these two already owns, and two agents in one file is a merge conflict with
+   nobody awake to resolve it.
+
+ - **Agent A — `scripts/daemon/main.ts` + `scripts/daemon/dexie-node.ts`** (one agent owns both; the
+    shutdown drain spans them, so they cannot be split). Sequential within itself:
+    1. **Boot shape** (§8.3): stamp `book` + `boot_role` the way `boot_qualand` does
+        (`BigQualand.svelte.ts:47-71`); refuse to boot with neither; default `ROLE` to OFF so a bare
+         boot never mints; derive `humdinger` from **boot_role**, not the identity knob.
+    2. **Status port** (§8.4): bind localhost; require a token on `/stop` and `/c`.
+    3. **Robustness** (§8.5): drain pending `dexie-node` saves before `process.exit` (add a `flush()`
+        and await it); propagate write failures instead of `console.error`; make `uncaughtException`
+         exit so a supervisor can restart; rotate the log; lock `DAEMON_STATE` against a 2nd daemon.
+   *Check after each:* `B=Sounditron SECS=60 node scripts/daemon/run.mjs` still reaches
+    `♥` heartbeat with worlds standing, and `/status` still answers on the bound host.
+
+ - **Agent B — `scripts/NodeWormholeNav.ts`** (§8.4): write `.jamsend` paths at mode 0600 (the account
+    snap carries the plaintext key and currently lands at umask); confine `path.join(root, rel)` to
+     `root`. **Check the other callers first** — `Story_cli` uses this nav too, so confinement must not
+      break a legitimate relative read. Verify by running one Story Book through the daemon after.
+
+ Give both agents §9.5's trap list and CLAUDE.md's never-`npm install` rule. Tell them: **do not
+  commit**, leave everything in the working tree, and report what they changed with file:line.
+
+**Phase 2 — the main session does §9.2 steps 1 and 2 itself, on Opus.**
+ These edit `Auto.svelte` (shared ground, mode 664 — re-check the tell before each edit) and build
+  `Swarm_restash_all` from a prose spec. That is judgement work, not mechanical work; do not delegate
+   it. Step 1 then step 2, verifying step 1 before starting step 2 — the check is that an `I=<prepub>`
+    boot stops exiting 3 and stands `w:Story`.
+
+**Phase 3 — STOP before §9.2 step 3.** The relay-address change is the one item whose failure mode is
+ *everybody's* night: a bad `relay.ts` edit takes every runner down with nobody awake to notice, and
+  its success criterion is "the editor and the live runner both still answer", which is exactly the
+   check a tired session skips. **Leave it for the owner.** Telegram what is ready and why it waited.
+    Without step 3 the invite chain cannot complete — that is expected and is not a failure of the
+     night; §9.2's own dependency chain says so.
+
+**Realistic expectation, stated up front so nobody reports success they did not have:** a good night
+ lands §9.3 entire, plus §9.2 steps 1–2. "Invites end-to-end" needs step 3 AND the two-daemon harness
+  of §9.4, and will not finish. Log what actually happened in §9.6 — a blocker with evidence beats a
+   workaround.

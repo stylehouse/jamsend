@@ -285,6 +285,26 @@ Confirmed clean by the audit: the private key reaches ONLY the account snap (nev
 
 ## 6. Production-ready — the four gaps, in the order they must be landed (2026-08-07)
 
+> **ALL FOUR LANDED 2026-08-08** (overnight, under `Daemon_todo` §9's work order; full log and the
+>  before/after evidence table are in `Daemon_todo` §9.6). In §6.5's mandated order: **2+3** together
+>   (`Auto.svelte` — the ghost-deposit retry, and the arrest lifted in `Clustation_concrete`), then
+>    **4** (`Clustation_ensure_default` now pins under the prepub too), then **1** last
+>     (`Clustation_mirror_account`, the write side that never existed). Each was verified on the
+>      daemon against a real fs nav, and the round trip closes: Auto WRITES the account, a wiped
+>       Dexie RESTORES from it, exit 0 with `w:Story` standing where baseline exits 3.
+>
+> **Three things in this section were wrong, and cost real time — corrections are inline below:**
+> `Swarm_restash_piers` already existed (§6.6 and §5 audit item 3 both say build it); `%ChainRoot`
+>  hangs off the `%Identity`, not the `%Peering`; and the restash recipe contradicted itself about
+>   the live-self guard (§6.6). Plus one live bug found in passing: **`Clustation_pin` had never
+>    worked** — it asked `Clustation_active_identity` (which returns `{pub,key}`, no `.c`) and then
+>     guarded on `ident.c.keys`, so it returned false at its first line, always. The door's ?Iz→?I
+>      swap has been silently not pinning this whole time. Fixed with gap 4, since gap 4 needs it.
+>
+> **Still owed and NOT done:** §6.6's list (the two-writers problem has teeth now that gap 1 writes),
+>  and the two-tab fingers-test — §6.7's stated gate for the FSA backend — which no daemon run can
+>   stand in for. Everything below is proven on the node nav only.
+
 **Where this evidence came from.** A node daemon (`scripts/daemon/`, `Daemon_todo.md` §4.1) was booted
  on this exact identity path: the same three `boot_qualand` stamps `/BigSoundland` uses, headless, and
   **against a real filesystem nav** — the one thing `SwarmDisk` cannot do (it runs on the in-memory

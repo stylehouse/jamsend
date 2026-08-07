@@ -22,7 +22,50 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
   **A known, DEFERRED redness: 8 Books disagree with the code and that is the fixtures working.**
    `rec.sc.path` now carries the crate-root-relative path (`Ra.g`, build `4938d5f513f1067e`) — see the
     §0c entry below. 73 fixtures across **MusuBay, MusuBreach, MusuBuddy, MusuHeist, MusuMag, MusuOgg,
-     MusuReap, MusuSoft** still hold the old bare-filename form. Roll the re-record into any later
+     MusuReap, MusuSoft** still hold the old bare-filename form.
+   ⚠ **THE LIST IS MOSTLY WRONG. All eight were run on live runners 2026-08-08; here is what is true:**
+
+   | Book | measured | reading |
+   |---|---|---|
+   | MusuHeist | **22/22 green** | unaffected |
+   | MusuBay | **9/9 green** | unaffected |
+   | MusuBreach | **10/10 green** | unaffected |
+   | MusuSoft | **6/6 green** | unaffected |
+   | MusuOgg | red | **path-only, as claimed** — its five failing steps have ZERO non-`path:` diff lines |
+   | MusuMag | red 1/10 | **NOT path-only — see below** |
+   | MusuReap | red 1/4 | shape unverified |
+   | MusuBuddy | — | first attempt invalid (two jobs on one runner); re-run owed |
+
+   **So half the list is green and the re-record it asks for is largely unnecessary.** More important,
+    the two solid reds do NOT have the clean shape the entry promises:
+   - **`MusuMag` is a MIX.** Step 3 shows `req:unemit … body_len=751 → 784` with a different
+      `body_hash` — the `testsounds/` prefix leaking into **hashed and length fields**, not just into
+       `path:` lines. **That breaks the "assert only `path:` lines moved" test outright**: any Book that
+        hashes a payload containing a path will show the change as an opaque hash diff. Alongside that it
+         drifts `self,round=6 → 5` and loses `Preview,seq:*` chunks at step 2 — the same pacing
+          instability the Radiation family has ([[radiation-books-red-at-baseline]]).
+   - MusuMag's fixtures already carry `now=`, so unlike MusuRaStream its trouble is **not** the missing
+      clock pin that `Mag_todo` §0.2c blames. That entry needs correcting too.
+
+   **MusuMag's nondeterminism is now MEASURED, not suspected.** Two clean runs at one unchanged build:
+
+       steps 1-3   identical
+       step  4     f3a646d8248eefdb  vs  7bdd6a1b4f182440
+       …           every step 4-10 differs
+
+    So **MusuMag cannot be safely re-recorded** — whichever run is accepted, the next run contradicts it
+     from step 4 on. Exactly the Radiation-family verdict, reached the same way. (The two runs were on
+      two different runner tabs, which is if anything the stronger test: a fixture has to hold on any
+       runner, not just the one that recorded it.)
+   MusuBuddy is red 1/14 on a clean run, and its fixture also already carries `now=` — so like MusuMag
+    it is NOT the missing clock pin `Mag_todo` §0.2c blames. **That §0.2c entry wants correcting**: of
+     the four Books it names as needing the pin, MusuRaStream genuinely lacks it while MusuMag and
+      MusuBuddy already have it and are red for other reasons.
+
+   **Consequence: do not treat this as a bulk re-record.** Four Books need nothing; MusuOgg is the one
+    clean assertable case; MusuMag is proven unsafe to accept and MusuBuddy/MusuReap are unverified but
+     suspect. The bulk re-record this entry has been waiting on the human to authorise would, if run
+      today, have baked noise into at least one Book and touched four that did not need it. Roll the re-record into any later
       testing round — it does not rot, and deferring is if anything SAFER: the stale fixtures still hold
        the old truth, so if the human reads the path change and disagrees with it, the revert is trivial
         and nothing has been overwritten. Re-record once the belief is agreed, not before.
@@ -399,8 +442,28 @@ So the bound was really *"answer this peer about this ref three times per sessio
  and requires the fourth to be answered — the shape `MusuBuddy`'s deliberate shed punch uses for
   §3.1b of `Backpressure_todo.md`. `MusuHeist` has the two piers but never touches the rummage path.
 
-### 4.2 `heist-release` fired four times for one record — OPEN
- *(observed 2026-08-06, same run; not diagnosed, not fixed)*
+### 4.2 `heist-release` fired four times for one record — THRASH BOUNDED 2026-08-07
+ *(observed 2026-08-06; the loop is now self-damping, the root cause still stands)*
+
+**What landed (Heist.g `7cae4e10633c653c`).** The diagnosis below was right and needed no revision: the
+ bodies DO come back between releases, because a parked want re-materialises the file. Two lines make the
+  loop notice itself:
+- `Heist_materialise_one` stamps `rec.c.remats` when it re-materialises a rec that carries `rec.c.released`.
+   Reaching that line after a release IS the thrash event, and it is the expensive one — everything past it
+    is the 65MB whole-file read plus a hash.
+- the release sweep gives each record its OWN idle requirement, `RELEASE_IDLE * 2^min(4, remats)` — 45s,
+   90s, 180s … capped at 16× (~12 min). A record that has already been released and re-materialised has
+    proved *by evidence* that the previous release was premature, so it earns patience in proportion.
+It stays a release and never becomes a veto: memory is still bounded, the byte-cap belt is untouched and
+ can still shed anything, and a record nobody wants goes quiet and falls off exactly as before. What dies
+  is only the tight loop.
+
+**The root cause is UNCHANGED and still owed.** The gate asserts *"I have sent it all"* (`sent >= tot`, a
+ high-water frontier) where it means *"they have got it all"*. That guess is now cheap to be wrong about
+  rather than pretending to be right; the actual cure is a confirmed term — `Backpressure_todo.md` §5.6's
+   ack-clock. Do not consider this closed, consider it de-fanged.
+
+The original diagnosis, kept because it is the reasoning:
 
 The source's trace carried `heist-release [54fef1fc] of=255` **four times** for the one record,
  28s / 20s / 14s / 62s apart. `Heist_release_rec` returns early when the rec has no
@@ -497,6 +560,26 @@ A folder group of more than 5 tracks collapses by default (a real `<details>`).
 The general lesson: **a one-shot gate must be spent on success, not on attempt.** Anything gated
  `if (x) return; x = 1` at the top of an async boot-order-sensitive function has this bug latent.
 
+**SWEPT THE WHOLE TREE FOR THAT SHAPE, 2026-08-07 — and it had two more live instances, both here.**
+ The lesson above was written as folklore; it is mechanically searchable, so it got searched:
+
+    awk '/^async |^[A-Za-z_][A-Za-z0-9_]*\(/ {fn=$0}
+         /if *\(.*\.c\.[a-z_]+\) return/ && g=="" {match($0,/\.c\.[a-z_]+/); g=substr($0,RSTART+3,RLENGTH-3); gl=NR}
+         g!="" && NR<=gl+4 && $0 ~ ("\\.c\\." g " *= *1") {print FILENAME":"NR"  "fn; g=""}' Ghost/*/*.g
+
+ Nine hits across the tree. Seven are sync one-shots whose work cannot fail (`prng_seeded`,
+  `Stoker_wake`, `Stoker_preheat`, `stir_pending`, …) — the bug needs an **async** body that can fail
+   after the gate is burnt. The two that qualified were both in this file, and both are now fixed:
+- **`Heist_defaults_rehydrate`** — it guarded the Dexie-not-hydrated case beautifully and then burnt the
+   gate one line before an `await Berth_open` whose `catch` just returned. A null `nav` (the same async
+    FSA restore as above) killed the remembered-default disk fallback for the whole House life. Now: bow
+     out unspent while preconditions are absent, spend once the shelf is READ, count 10 strikes on a throw.
+- **`Heist_resume_sync`** — the worst placement of all, since resume IS the boot-order path §7 is about.
+   It spent the gate on line 2 and dereferenced `nav` on line 3, so a first-beat-after-reload null nav
+    threw a TypeError with the shot already gone, the caller swallowed it into `keep.c.last_why`, and
+     resume was dead for that job's life. Now the precondition is tested before the gate is spent.
+ Worth re-running that awk after any batch of new async boot code; it costs seconds.
+
 Berth entries write `pub` from 2026-08-05 and READ `pub || at`, so a heist already persisted under
  the old key still resumes.
 
@@ -550,9 +633,13 @@ Two real fixes landed after the human reported the downloader burning CPU and th
 
 - **O(N²) gone.** `Heist_land_stream` called `Ra_chunk_map(rec)[s]` per chunk — rebuilding the whole
    map for every chunk of every file. Now `Repli_chunk_bytes(ch)` off the chunk directly. Two
-    sibling probes in `Radio_play_id` went to `Repli_chunk_at(x, 0)` for the same reason. (Still
-     open elsewhere: `Radio.g:1299` has an `Ra_chunk_map(r)[0]` probe inside a loop over every
-      record in `Riffle_deal_shelf` — flagged for that thread, not touched here.)
+    sibling probes in `Radio_play_id` went to `Repli_chunk_at(x, 0)` for the same reason.
+   **The "still open elsewhere" note that stood here was STALE — re-checked 2026-08-07.** The
+    deal-shelf probe is already fixed: `Riffle_deal_shelf` (now `Radio.g:~2106`) reads
+     `Repli_chunk_at(r, 0)`, with the swap written up in its own comment. A tree-wide sweep of
+      `Ra_chunk_map` leaves one caller that looks loop-ish and is not — `Ra_term_decode_pulled`
+       (`Ra.g:~2118`) builds the map once per record for a real decode that genuinely needs the
+        bytes, which is the legitimate use. **No known O(N²) chunk-map probe remains in the tree.**
 - **Native hashing.** `Heist_hash` and the per-chunk cid gate use `sha256_hex_fast` (crypto.subtle)
    rather than the pure-JS noble path that was 51.8% of the frame. The FORMAT CONTRACT is
     byte-identical between the two — see `Hashly.ts`. There is no native STREAMING api, so the
