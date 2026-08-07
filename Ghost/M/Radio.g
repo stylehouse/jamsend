@@ -638,6 +638,7 @@ Radio_open(radio, rec):
     if (src && src !== me) {
         radio.sc.by = src
         radio.sc.by_name = this.Radio_friendly(w, src)   // the friendly to SHOW ("from Lefto"), not a hex pub
+        delete radio.sc.solo                             // a friend's track is playing — we are not alone any more
     } else {
         delete radio.sc.by
         delete radio.sc.by_name
@@ -887,6 +888,30 @@ async Radio_dial(radio):
         radio.sc.replays = (+(radio.sc.replays || 0)) + 1
         radio.bump()
         return again
+    }
+    // THE LAST RUNG — SILENCE IS NOT AN ANSWER (2026-08-08, the human: "it should kinda be a form of
+    //  failure — it's really not ideal that they don't find their friend online — but yeah just clearly
+    //   label playing your own music").  The 2026-07-28 ruling stands where it bites: friends FIRST, and
+    //    every friend rung above is tried before this one, so a reachable peer is always what you hear.
+    //     What changes is the bottom of the ladder.  A dry friend pool used to fall straight through to
+    //      Radio_reason and park, so a machine with a full shelf sat silent behind an accurate note —
+    //       and a diagnostic Book measuring "did music run" could never go green on a solo tab.  The
+    //        no-friend fact is not suppressed by playing: `solo` is exactly the label the human asked
+    //         for, and it is what the face and the report read to keep saying so WHILE the music runs.
+    let mine = this.Ra_dial_next(w, shelf, { skip_ids: radio.c.heard || {} })
+    if (!mine) {
+        this.Stoker_churn(stoker)
+        mine = this.Ra_dial_next(w, shelf, {})
+        if (mine) radio.sc.replays = (+(radio.sc.replays || 0)) + 1
+    }
+    if (mine) {
+        // `solo` and NOT sc.note: Radio_open deletes note the instant a track opens (:631), by design —
+        //  a standing note beside playing music would be stale within the second.  solo is the durable
+        //   half, cleared in Radio_open the moment a friend's track actually opens, so the face can say
+        //    "playing your own — nobody online" for exactly as long as that is true.
+        radio.sc.solo = 1
+        radio.bump()
+        return mine
     }
     this.Radio_reason(w, radio)
     return null

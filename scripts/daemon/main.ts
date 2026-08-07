@@ -622,6 +622,10 @@ const persist_account = async (): Promise<void> => {
 //      instrument that agrees with the thing it measures by construction measures nothing.
 //  Once per boot, non-fatal, and silent when there is nothing to say beyond the honest empty answer.
 let mused = false
+// the first thing the meander found, kept so the ffmpeg probe below can ask a REAL question of a REAL
+//  file from the owner's collection rather than of a synthesised tone. A probe that only ever sees
+//   audio we generated proves the spawn works and nothing about the library.
+let mused_pick: string | null = null
 const muse_collection = async (): Promise<void> => {
     if (mused) return
     if (typeof (H as any).Crate_nav_meander !== 'function') return   // ghosts still mounting — retry
@@ -635,12 +639,54 @@ const muse_collection = async (): Promise<void> => {
             const picks: string[] = (await (H as any).Crate_nav_meander(nav, base, 5)) || []
             if (!picks.length) continue
             const where = base || '(share root)'
+            mused_pick = picks[0]
             say(`🎵 collection reachable via ${where} — meander picked ${picks.length}: ${picks.slice(0, 3).map(p => p.split('/').pop()).join(' · ')}`)
             return
         }
         say(`🎵 no music the meander can reach${mounts.music ? ` under ${mounts.music}` : ' — set MUSIC=1 to mount /music'}`)
     } catch (e: any) {
         say(`🎵 collection probe failed — ${String(e?.message).slice(0, 90)}`)
+    }
+}
+
+// ── can this box do audio at all? (Daemon_todo §2.1/§2.2) ────────────────────────────────────
+// The daemon's headless gap is audio, not networking: `Ra_lufs` measures through a Web Worker and
+//  `Ra_encode_open` encodes through WebCodecs, so a daemon serves the pre-encoded preview window and
+//   cannot carry a track past it.  ffmpeg is the answer, and it lives in the image (jamserve/Dockerfile).
+// This probe reports the two facts that decide whether that answer is actually available HERE, once,
+//  at boot — because the alternative is discovering it mid-heist on someone else's request:
+//   (a) is there an ffmpeg to spawn, and (b) can it answer the real question, on a real file from
+//    THIS collection.  (b) is the one that matters: (a) passing while (b) fails is an ffmpeg built
+//     without the codec the library is actually in, which is invisible to a version string.
+//  Non-fatal throughout — a box with no ffmpeg is a degraded box, not a broken one, and it should
+//   say so plainly rather than boot green and disappoint a peer twenty minutes later.
+let ffmpeg_probed = false
+const ffmpeg_probe = async (): Promise<void> => {
+    if (ffmpeg_probed) return
+    // wait for the meander to have RUN (not to have found anything — an empty collection still
+    //  deserves the version line).  Latching before it does would report "no track to measure" on a
+    //   box whose library is fine, which is the wrong answer arriving early.
+    if (!mused) return
+    ffmpeg_probed = true
+    try {
+        const ff = await import('./ffmpeg.ts')
+        const v = await ff.have()
+        if (!v) { say(`🎬 no ffmpeg — this box serves preview windows only (§2.1)`); return }
+        if (!mused_pick || typeof (nav as any).native_path !== 'function') { say(`🎬 ffmpeg ${v}`); return }
+        const abs = (nav as any).native_path(mused_pick)
+        if (!abs) { say(`🎬 ffmpeg ${v} — no native path for ${mused_pick}`); return }
+        // the target is the WORLD's, never a constant in this file (trap 3 in ffmpeg.ts).  Fall back to
+        //  the same -14 Ra_target_lufs defaults to, only when the ghost is not mounted yet.
+        const target = typeof (H as any).Ra_target_lufs === 'function' ? (H as any).Ra_target_lufs(null) : -14
+        const t0 = Date.now()
+        const m = await ff.measure(abs, target)
+        const secs = ((Date.now() - t0) / 1000).toFixed(1)
+        if (m.measured === null) { say(`🎬 ffmpeg ${v} — measure failed on ${mused_pick.split('/').pop()}: ${m.why}`); return }
+        const gain = +(target - m.lufs).toFixed(2)
+        say(`🎬 ffmpeg ${v} — measured ${mused_pick.split('/').pop()}: ${m.lufs} LUFS, tp ${m.measured.input_tp} dBTP`
+            + ` → ${gain >= 0 ? '+' : ''}${gain} dB to reach ${target} (${secs}s)`)
+    } catch (e: any) {
+        say(`🎬 ffmpeg probe failed — ${String(e?.message).slice(0, 120)}`)
     }
 }
 
@@ -816,6 +862,7 @@ while (!stopping) {
 
     await persist_account()
     await muse_collection()
+    await ffmpeg_probe()          // after the meander, so it can ask about a real track from it
     station_up()
     await invite_harness()
     await arrest_watch()

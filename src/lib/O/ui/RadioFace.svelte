@@ -44,6 +44,11 @@
             by:     sc.by as string | undefined,
             byName: (sc.by_name as string) ?? '',
             own:    !!sc.own,   // the source switch: true = playing MY records, false = friends' (default)
+            // solo — the DIAL fell to its last rung: no friend was reachable so we are playing your own
+            //  shelf rather than sitting silent (Radio_dial, 2026-08-08).  Distinct from `own`, which is
+            //   the listener CHOOSING their own records; solo is the radio saying nobody else was there.
+            //    Cleared in Radio_open the moment a friend's track actually opens.
+            solo:   !!sc.solo,
             first:  ((sc.Radio ?? 'off') === 'off') && !sc.title && !+(sc.played ?? 0),
             stock,
             // the heist gesture's ✓ tell (the human 2026-07-28 "keep what you're hearing"): Radio_keep
@@ -92,6 +97,11 @@
          and whether ⇊ even makes sense.  A badge, not a footnote. -->
     {#if face.by}
         <div class="rf-src rf-src-remote">⚯ STREAMING from {face.byName || 'a friend'}</div>
+    {:else if face.solo && face.title && face.state !== 'off' && face.state !== 'digging'}
+        <!-- THE LABEL the human asked for (2026-08-08): playing your own is fine, being unclear about
+             WHY is not.  This is not the same message as the plain local badge below — that one means
+             "you chose your own records", this one means "nobody was online, so here's yours". -->
+        <div class="rf-src rf-src-local">♪ LOCAL — your own record · nobody online right now</div>
     {:else if face.title && face.state !== 'off' && face.state !== 'digging'}
         <div class="rf-src rf-src-local">♪ LOCAL — your own record</div>
     {/if}

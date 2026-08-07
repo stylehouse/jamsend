@@ -10,6 +10,13 @@
 
 x-common-volumes: &common-volumes
   music-volume: &music-volume "${MUSIC_PATH:-/home/s/Music/71mix/}:/music:ro"
+  # The same collection, read-WRITE — for `jamserve` alone (at the bottom, behind a profile).
+  #  `app` and `claude` only ever read it and must keep the :ro above; jamserve has to write
+  #   <music>/.jamsend, because that is where a browser session's FSA grant already put the
+  #    account it resumes from, and where its radiostock belongs. Its LIBRARY= knob keeps the
+  #     write surface honest INSIDE the nav (music read-only, only .jamsend writable), so this
+  #      is a permission, not a licence to scribble.
+  music-volume-rw: &music-volume-rw "${MUSIC_PATH:-/home/s/Music/71mix/}:/music"
 
 
 services:

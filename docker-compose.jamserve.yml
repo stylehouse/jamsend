@@ -48,6 +48,13 @@ services:
       dockerfile: jamserve/Dockerfile
     container_name: jamserve
     working_dir: /app
+    # uid 1000 — so everything it writes into YOUR music folder is YOURS, same as the `claude`
+    #  service. MEASURED the hard way on the first boot, 2026-08-08: as root it laid down
+    #   /music/.jamsend as root:root 700, which locks the browser (which holds the FSA grant and
+    #    runs as you) out of the very account it is supposed to provision and jamserve resume.
+    #  The image chowns /var/lib/jamserve and /app/node_modules to node so the named + anonymous
+    #   volumes inherit that; see jamserve/Dockerfile (3).
+    user: "1000:1000"
 
     volumes:
       # THE MACHINE: the jamsend source it boots out of — wormhole/ fixtures, GhostList,
@@ -55,6 +62,15 @@ services:
       #   one mount was never enough.
       - .:/app
 
+      # ⚠ AND IT IS STICKY. `up` REUSES the previous container's anonymous volume rather than
+      #  repopulating from the new image ("retrieving data from the previous containers" is compose's
+      #   own wording), so a rebuild alone does NOT re-lay this directory — including its OWNERSHIP.
+      #    That bit after the run-as-root fix above: the image chowns node_modules, the volume kept
+      #     the root-owned copy, and vite EACCESed writing .vite/deps minutes after a green boot.
+      #    Use `up --renew-anon-volumes` when the image's node_modules must actually win. The named
+      #     jamserve-state volume below is stickier still and needs an explicit `docker volume rm`.
+      #     NOT `down -v` — that takes the whole project's named volumes, claude-auth included.
+      #
       # ⚠ THE LINE THAT MATTERS. Anonymous volume shadowing /app/node_modules so this
       #  container keeps the musl tree its own image built, instead of inheriting the HOST's
       #   through .:/app above. `app` (Alpine/musl) and `claude` (Debian/glibc) already share

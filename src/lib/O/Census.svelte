@@ -16,13 +16,25 @@
     //   none: it is a cache with a floor and a ceiling, it must run on end-user pages only, and it
     //    must be reachable from outside Crate.g without a hook inside the walk.  A 5 s look (one
     //     O(entries) signature, ~1.5 ms) and a 30 s change-gated write is the whole cadence.
+    //  STORAGE IS A BERTH WAFT NOW (2026-08-08), not a bespoke Dexie blob.  The human, on the last
+    //   hand-rolled format: "it's got to be snap|enWaft… you can't just make up formats" — and the
+    //    census was a made-up format, with a five-key whitelist that fails SILENTLY when someone adds
+    //     a sixth field (it already did once).  A Waft declares what to OMIT instead of what to keep,
+    //      which fails safe in the other direction; it is Cyto-visible, editor-mountable and
+    //       Book-assertable; and it lives at <root>/.jamsend/berth/Census beside Newlyadded, so the
+    //        census now TRAVELS WITH THE MUSIC instead of dying with the browser profile.
+    //   What made this possible today is Berth_append (Heist.g): until this morning a Berth rewrote its
+    //    whole toc.snap on every change, so a ~7000-row census on a 30 s timer would have been strictly
+    //     worse than Dexie.  Parts changed the arithmetic — a save writes only what moved.
+    //   KEPT from census_codec.ts: every PURE function — the merge/evict/select/restore semantics, the
+    //    `z` cap, live-observation-outranks-memory, the confidence read.  Those were measured against
+    //     6721 real entries and none of that reasoning is about storage.  Only encode/decode/Dexie go.
     import { onMount, onDestroy } from 'svelte'
     import {
-        census_encode, census_decode, census_merge, census_evict, census_select,
+        census_merge, census_evict, census_select,
         census_restore_into, census_signature, census_confidence, census_day,
-        CENSUS_RESTORE_MAX, CENSUS_STORE_MAX, CENSUS_MAX_BYTES, type Census,
+        CENSUS_RESTORE_MAX, CENSUS_STORE_MAX, type Census, type CensusEntry,
     } from '$lib/O/census_codec'
-    import { census_read, census_write, census_drop } from '$lib/O/census_store'
 
     let { M, H } = $props()
 
@@ -32,6 +44,75 @@
     let timer: any = null
 
     const top = () => (H && H.top_House ? H.top_House() : H)
+    const nav = () => { try { return (H as any)?.Crate_nav?.() ?? null } catch { return null } }
+
+    // ── the Waft ⇄ map translation ───────────────────────────────────────────────────────────
+    // One `%Dirtally,of:<key>` per directory, FLAT — the key already carries the whole path, so the
+    //  parent/child graph is implicit in the strings and needs no nesting.  Two things earn their keep:
+    //   `of` is the identity Berth_append supersedes on (a re-learned directory replaces its earlier
+    //    line rather than duplicating), and a STUB — a directory some parent's `subs` names but the
+    //     wander has never stood in — rides as `stub:1` with no stats.  Stubs are ~1000 of 6721 edges
+    //      and they are the FRONTIER the estimator prices, so dropping them would quietly shrink the
+    //       unknown expanse to only what we already walked.  A stub never becomes a `learn` entry on
+    //        the way back: it exists only to be named in its parent's `subs`.
+    const CENSUS_WAFT = 'Census'
+
+    function waft_to_map(waft: any): Census {
+        const map: Census = {}
+        const stubs: string[] = []
+        for (const row of waft.o({ Dirtally: 1 }) as any[]) {
+            const key = String(row.sc.of ?? '')
+            if (row.sc.stub) { stubs.push(key); continue }
+            const audio = +(row.sc.audio ?? 0)
+            map[key] = {
+                audio,
+                open: row.sc.open == null ? audio : +row.sc.open,
+                z:    +(row.sc.z ?? 0),
+                n:    Math.round(+(row.sc.n ?? 0)),
+                subs: [],
+            } as CensusEntry
+        }
+        // subs from the keys themselves — every row, stub or not, is a child of its longest prefix.
+        //  Derived rather than stored: a stored edge could contradict the key it points at, and there
+        //   is no honest way to resolve that; a derived one cannot.
+        for (const key of Object.keys(map).concat(stubs)) {
+            const cut = key.lastIndexOf('/')
+            const parent = cut < 0 ? '' : key.slice(0, cut)
+            if (parent !== key && map[parent]) map[parent].subs.push(key)
+        }
+        return map
+    }
+
+    // rows_for — mint/refresh the %Dirtally particles for exactly the keys that moved, and hand them
+    //  back for one append.  Find-or-create on `of`, so a key already standing in the waft is updated
+    //   in place and the appended line supersedes its older self on the next open.
+    function rows_for(waft: any, map: Census, keys: string[]): any[] {
+        const out: any[] = []
+        const named = new Set<string>()
+        for (const key of keys) {
+            const e = map[key]
+            if (!e) continue
+            const row = waft.oai({ Dirtally: 1, of: key })
+            row.c.up = waft
+            delete row.sc.stub
+            row.sc.audio = String(e.audio ?? 0)
+            row.sc.open  = String(e.open ?? e.audio ?? 0)
+            row.sc.z     = String(e.z ?? 0)
+            row.sc.n     = String(Math.round(e.n ?? 0))
+            out.push(row)
+            for (const s of e.subs ?? []) named.add(s)
+        }
+        // any sub we just named that has no entry of its own is a frontier stub — write it as one, so
+        //  a reload can still see the edge.  Guarded on absence: a stub that later becomes real is
+        //   rewritten above (delete row.sc.stub), never left wearing both.
+        for (const s of named) {
+            if (map[s]) continue
+            const row = waft.oai({ Dirtally: 1, of: s })
+            row.c.up = waft
+            if (!row.sc.stub) { row.sc.stub = 1; out.push(row) }
+        }
+        return out
+    }
 
     // ── restore ──────────────────────────────────────────────────────────────────────────────
     //  GATED ON humdinger — the same predicate Crate_nav_meander gates its whole weighting on
@@ -42,14 +123,19 @@
         const Hh = top()
         if (!Hh || !Hh.c || !Hh.c.humdinger) return
         if (Hh.c.census_phase) return
+        // the disk comes up asynchronously (an FSA handle restore), so a null nav early in boot is
+        //  NORMAL, not an error.  Return WITHOUT claiming the phase and the 5 s tick tries again —
+        //   the same shape Heist_keep_rehydrate uses for exactly this reason.
+        const nv = nav()
+        if (!nv) return
         Hh.c.census_phase = 'restoring'
         try {
-            const row = await census_read()
-            const { map } = census_decode(row ? row.txt : '')
+            const waft = await (Hh as any).Berth_open(nv, '', '', CENSUS_WAFT)
+            Hh.c.census_waft = waft
+            const map = waft_to_map(waft)
             // the store is kept in memory as the ACCRETION BASE: every later save merges the live
             //  map onto it, so directories this session's budget could not carry are not lost.
             Hh.c.census_store = map
-            Hh.c.census_txt = row ? row.txt : ''
             const working = census_select(map, CENSUS_RESTORE_MAX)
             const live: Census = Hh.c.meander_learn || (Hh.c.meander_learn = {})
             const r = census_restore_into(live, working)
@@ -85,34 +171,44 @@
         const sig = census_signature(live)
         if (!force && sig === Hh.c.census_sig) return          // nothing has been learned since
         if (!force && Date.now() - (Hh.c.census_at || 0) < SAVE_MS) return
+        const nv = nav()
+        const waft = Hh.c.census_waft
+        if (!nv || !waft) return
         Hh.c.census_saving = true
         try {
-            // RE-READ FIRST.  Two end-user tabs on the same share both wander and both write here;
-            //  merging onto whatever is actually stored makes them additive instead of last-writer-
-            //   wins.  One extra IDB read per 30 s, and it is also how a save recovers if some other
-            //    hand replaced the row.
-            const row = await census_read()
-            let store: Census = Hh.c.census_store || {}
-            if (row && row.txt !== Hh.c.census_txt) store = census_decode(row.txt).map
             const day = census_day()
-            let ev = census_evict(census_merge(store, live, day), day)
-            let txt = census_encode(ev.map, day)
-            // the last bound: a hard byte ceiling, tightened by halving the entry cap.  Bounded loop,
-            //  never a `while (true)`.
-            let cap = CENSUS_STORE_MAX
-            for (let i = 0; i < 6 && txt.length > CENSUS_MAX_BYTES; i++) {
-                cap = Math.floor(cap / 2)
-                ev = census_evict(ev.map, day, cap)
-                txt = census_encode(ev.map, day)
+            const store: Census = Hh.c.census_store || {}
+            // WHICH KEYS ACTUALLY MOVED — the whole reason this is an append and not a rewrite.  A
+            //  wander touches a handful of directories in 30 s against a store of thousands, so the
+            //   delta is the honest unit of work.  Compared field by field rather than by a digest,
+            //    because a digest that missed a field would silently stop persisting it.
+            const moved: string[] = []
+            for (const k of Object.keys(live)) {
+                const a = live[k] as any, b = store[k] as any
+                if (!b || b.audio !== a.audio || b.open !== a.open || b.z !== a.z
+                    || Math.round(b.n ?? 0) !== Math.round(a.n ?? 0)
+                    || (b.subs?.length ?? 0) !== (a.subs?.length ?? 0)) moved.push(k)
             }
-            const n = Object.keys(ev.map).length
-            await census_write(txt, n)
+            const merged = census_merge(store, live, day)
+            const ev = census_evict(merged, day)
+            if (ev.dropped) {
+                // EVICTION CANNOT RIDE AN APPEND LOG — a removal has no line to write.  So eviction is
+                //  the one thing that forces a whole rewrite, which is exactly right: it is rare (past
+                //   CENSUS_STORE_MAX entries), and Berth_save is also the compaction that folds every
+                //    outstanding part away.  Rebuild the waft from the evicted map rather than trying
+                //     to reconcile removals in place.
+                for (const r of waft.o({ Dirtally: 1 }) as any[]) waft.drop(r)
+                rows_for(waft, ev.map, Object.keys(ev.map))
+                await (Hh as any).Berth_save(nv, waft)
+            } else if (moved.length) {
+                await (Hh as any).Berth_append(nv, waft, rows_for(waft, merged, moved), 'of')
+            }
             Hh.c.census_store = ev.map
-            Hh.c.census_txt = txt
             Hh.c.census_sig = sig
             Hh.c.census_at = Date.now()
-            Hh.c.census_bytes = txt.length
-            Hh.c.census_n = n
+            Hh.c.census_n = Object.keys(ev.map).length
+            Hh.c.census_moved = moved.length
+            Hh.c.census_parts = waft.c?.berth_parts ?? 0
             Hh.c.census_dropped = (Hh.c.census_dropped || 0) + ev.dropped
         } catch (e) {
             Hh.c.census_err = String((e as any)?.message || e)
@@ -140,19 +236,29 @@
                     phase: Hh.c.census_phase || 'off', humdinger: !!Hh.c.humdinger,
                     live: conf.total, restored: conf.restored, unconfirmed: conf.unconfirmed,
                     stored: Hh.c.census_n || (Hh.c.census_store ? Object.keys(Hh.c.census_store).length : 0),
-                    bytes: Hh.c.census_bytes || 0, dropped: Hh.c.census_dropped || 0,
+                    // `parts` is the new number worth watching: it is how many appends stand unfolded.
+                    //  Climbing to Berth_parts_max and resetting is healthy (that is a compaction);
+                    //   pinned at 0 while `moved` keeps reporting work means appends are not landing.
+                    parts: Hh.c.census_parts ?? 0, moved: Hh.c.census_moved ?? 0,
+                    dropped: Hh.c.census_dropped || 0,
                     saved_at: Hh.c.census_at || 0, err: Hh.c.census_err || '',
                 }
             },
             // Census_flush — save now (a UI seam, and what the hide handler does).
             async Census_flush() { await save(true) },
-            // Census_forget — drop the stored census.  The map on `.c` is left alone; this is the
-            //  "start the remembering again" button, not a live reset.
+            // Census_forget — drop the stored census: the whole Waft, toc AND parts (Berth_reset knows
+            //  about parts — a toc-only delete would leave the tail behind and the next open would
+            //   rebuild the census out of it).  The map on `.c` is left alone; this is the "start the
+            //    remembering again" button, not a live reset.
             async Census_forget() {
                 const Hh = (this as any).top_House()
-                try { await census_drop() } catch (e) { Hh.c.census_err = String((e as any)?.message || e) }
+                try {
+                    const nv = nav()
+                    if (nv) await (Hh as any).Berth_reset(nv, '', '', CENSUS_WAFT)
+                } catch (e) { Hh.c.census_err = String((e as any)?.message || e) }
                 Hh.c.census_store = {}
-                Hh.c.census_txt = ''
+                Hh.c.census_waft = null
+                Hh.c.census_phase = ''
             },
         })
         void restore()

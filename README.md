@@ -184,6 +184,28 @@ tail -f jamserve/run.log        # the same thing, on the bind mount
 docker compose -f docker-compose.yml -f docker-compose.jamserve.yml down jamserve
 ```
 
+It runs as **uid 1000**, so everything it writes into your music folder stays yours and the browser
+ can still read the account it shares. (It didn't, at first — as root it laid down `.jamsend` mode 700
+  owned by `root`, locking out the browser that provisioned it. If you have such a directory from an
+   early run, `sudo rm -rf <music>/.jamsend` before starting again; it holds nothing but a throwaway.)
+
+⚠ **If you are upgrading from a version that ran as root, a rebuild alone will not fix the volumes.**
+ Docker keeps both of jamserve's volumes across a rebuild — `up` reuses the previous container's
+  *anonymous* volume (`/app/node_modules`) instead of repopulating it from the new image, and the
+   *named* `jamserve-state` survives by design. So the new image's ownership never lands, and jamserve
+    fails as uid 1000 a few minutes after a green boot, when vite writes `node_modules/.vite/deps`.
+ Drop them explicitly:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.jamserve.yml rm -sf jamserve
+docker volume ls | grep jamserve-state && docker volume rm <project>_jamserve-state
+docker compose -f docker-compose.yml -f docker-compose.jamserve.yml up -d --renew-anon-volumes jamserve
+```
+
+ `jamserve-state` is safe to drop — it is Dexie working state that re-seeds from `<music>/.jamsend`.
+  **Do not reach for `docker compose down -v`** as a shortcut: `-v` removes the *project's* named
+   volumes, which includes `claude-auth` (the `claude` service's credentials and session history).
+
 Start it **once**. You don't need an `up --build` loop to pick up code changes: the source is
  bind-mounted, and `JAMSERVE_SECS` makes the process exit on a timer so `restart: always` brings it
   straight back on freshly-edited source. Rebuild only when the Dockerfile or *package.json* moves.
@@ -204,9 +226,15 @@ The container is Alpine with `ffmpeg` from `apk` — never npm; `/app/node_modul
   about this in *CLAUDE.md*). An anonymous volume shadows `node_modules` so jamserve keeps the musl
    tree its own image built.
 
-Rough edges, honestly: the loudness-levelling transcode (EBU R128 via ffmpeg `loudnorm`, so classical
- arrives as loud as everything else) is designed but not landed, and jamserve still boots vite in
-  middleware mode rather than a built bundle. See *src/lib/O/spec/Daemon_todo.md*.
+Rough edges, honestly. **Loudness levelling already works in the browser** — every track is measured
+ for integrated LUFS and gained to −14 LUFS (with a −1 dBFS peak ceiling) *before* the opus encode, so
+  classical arrives as loud as everything else and a kept `.ogg` sounds like the stream it came from.
+   jamserve can't do it *yet*: that path measures through a Web Worker and encodes through WebCodecs,
+    neither of which exists in node, which is what the ffmpeg in this image is for — one
+     `-af loudnorm` pass that both measures and corrects. Until that lands, jamserve serves the
+      preview window and not the continuation. It also still boots vite in middleware mode rather than
+       a built bundle, so it spends ~12s transforming on every start. See
+        *src/lib/O/spec/Daemon_todo.md*.
 
 ## Licensing
 

@@ -1500,6 +1500,36 @@ The owner named it (*"srv is a terrible name… let's call it jamserve — a use
        roster now land in `<library>/.jamsend/`, scratch has no `.jamsend`, the library holds only the
         music plus `.jamsend`, and the collection is still found through the app's own meander.
 
+**FIRST REAL BOOT, 2026-08-08 ~03:5x — the owner started it and it came up.** Log + `/status` agree:
+ dexie shim → the state volume · `w:Wormhole ← node nav` · `🪪 minted a daemon identity (fdddc007480f)`
+  · `🪪 account mirrored → .jamsend/account/fdddc007480f0b6c/toc.snap (resume with I=…)` ·
+   `🎵 collection reachable via music — meander picked 5` (real filenames off the owner's library) ·
+    `🤝 Swarm station ARMED — invites can be answered · remembers 0 friend(s), 0 invite(s)` · then a
+     steady `♥` with three Houses (Mundo, Story, Sounditron), 2601 ghosts, `wedge: null`, the
+      Sounditron Book driving. **So: the container, the node nav, the mount split, the identity mint,
+       the account mirror, the collection meander and the Swarm station all work outside a browser.**
+
+**And the boot immediately found a defect that no amount of reading would have — the ownership one.**
+ The container ran as **root**, so it laid down `/music/.jamsend` as `root:root` mode **700** *inside
+  the owner's own music folder*. That inverts the whole documented workflow: the browser holds the FSA
+   grant and runs as uid 1000, so it can no longer provision, read or repair the account it is supposed
+    to own — and neither can the human without `sudo`. Note the shape, which is the same one as the
+     leading-slash bug above: **every log line was green.** Fixed by `user: "1000:1000"` in the compose
+      file plus a `chown` of `/var/lib/jamserve` and `/app/node_modules` in the Dockerfile before
+       `USER node` — an empty named *or anonymous* volume inherits the ownership of the image directory
+        it covers, which is also why `node_modules` needs it (vite writes `.vite/deps` at first
+         transform, so root-owned would EACCES minutes after a clean boot, not at start).
+ **And the fix does not land on a plain rebuild, which is the second half of the trap.** Docker keeps
+  BOTH of jamserve's volumes across `up --build`: the *anonymous* one is reused from the previous
+   container rather than repopulated from the new image (compose's own words: *"retrieving data from
+    the previous containers"*), and the *named* `jamserve-state` survives by design. So the new
+     image's `chown` never applies and the failure reappears identically. Verifying the fix needs
+      `rm -sf` the container, `docker volume rm <project>_jamserve-state`, then
+       `up -d --renew-anon-volumes` — **never `down -v`**, which takes the project's named volumes
+        including `claude-auth` (the CLI's credentials and session history). Plus the
+         `sudo rm -rf <music>/.jamsend` of the root-owned account. Recorded in README.md and the
+          compose file so it is not re-discovered.
+
 **§2.2 added — LOUDNESS IS PART OF THE ENCODE**, on the owner's ruling (*"I DO want the LUFS levelling
  done to the stream we ogg encode! so classical gets louder"*). It is `ffmpeg -af loudnorm`, in the
   same pass as the opus. The pleasing part: it **deletes** a browser dependency rather than adding
@@ -1509,6 +1539,21 @@ The owner named it (*"srv is a terrible name… let's call it jamserve — a use
       QUESTION, not at the API.** Reimplementing `LoudnessMeter` is a lot of work; *"what is this
        file's integrated LUFS?"* is a flag on a binary you already installed. §2.2 carries the three
         traps (two-pass not one; a levelled encode must not hash as the source; record the target).
+
+**§2.1/§2.2's first stone laid, and it is a MEASUREMENT not a shim.** New `scripts/daemon/ffmpeg.ts`
+ exports the two *questions* rather than a WebCodecs emulation — `have()` (is there a binary) and
+  `measure(abs, target)` (pass one of two-pass loudnorm, returning ffmpeg's own `input_i`/`input_tp`
+   verbatim so pass two can hand them straight back). Its header carries the three traps in full. The
+    rel→real-path problem this needed is solved by one new **read-side-only** public method on
+     `NodeWormholeNav`, `native_path(rel)` — it goes through `readAbs`→`confine`, so it cannot name
+      anything outside a mount, and there is deliberately no write twin.
+ `main.ts` now probes at boot, **after** the meander so it asks a real question of a real track from
+  the owner's own library: `🎬 ffmpeg <v> — measured <track>: <x> LUFS, tp <y> dBTP → <±z> dB to reach
+   -14 (Ns)`. That second half is the load-bearing part — a version string passing while the measure
+    fails is an ffmpeg built without the codec the collection is actually in, and nothing else catches
+     it. Non-fatal throughout; no ffmpeg logs *"this box serves preview windows only"* and carries on.
+ **Unverified as of writing** — it lands on jamserve's next `SECS=900` restart (bind-mounted source,
+  no rebuild needed); check the log for the `🎬` line.
 
 **Heads-up for the morning, not my work:** a **concurrent agent is live in this repo** — `Ghost/M/Heist.g`,
  `Error_channel_todo.md`, `Heist_todo.md`, a new `wormhole/Story/ErrChannel/` and a spread of `Musu*`

@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'dca1d9570464ebbc~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '3c460094a7d37475~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -3036,7 +3036,10 @@ async Heist_newlyadded_note(nav, mardir, entry) {
     let dirpart = entry.split('/'); dirpart.pop()
     let dir = dirpart.join('/')
     if (dir) card.sc.dir = dir
-    await this.Berth_save(nav, waft)
+    // ONE LINE, NOT THE WHOLE SHELF (2026-08-08).  This was `Berth_save` — a 43 KB rewrite per landed
+    //  track, growing for ever.  `of` is the identity: one probation card per path, so a re-noted path
+    //   supersedes rather than duplicating.
+    await this.Berth_append(nav, waft, [card], 'of')
 
 },
 // Heist_newlyadded_list — every probation card, oldest arrival first (seq is stamped in mint order
@@ -3080,7 +3083,9 @@ async Heist_feel(w, nav, own_lib, mardir, entry, feeling) {
     if (!card) return
     card.sc.feeling = feeling
     if (feeling === 'drop') await this.Heist_scrub_one(nav, own_lib, mardir, entry)
-    await this.Berth_save(nav, waft)
+    // a MUTATION riding the same log: same `of`, so the fold replaces the earlier line rather than
+    //  leaving two cards for one path.  This is why append needed supersede and not just append.
+    await this.Berth_append(nav, waft, [card], 'of')
 
 },
 // Heist_scrub_one — TAKE ONE LANDED TRACK BACK OFF THE DISK: delete the file and retire its catalog card,
@@ -3153,9 +3158,62 @@ Berth_dir(root, prepub, name) {
     return root + '/.jamsend/berth/' + (prepub ? prepub + '/' : '') + name
 
 },
+// ── THE APPEND DOOR (2026-08-08) ────────────────────────────────────────────────────────────────
+// A Berth Waft is `toc.snap` PLUS numbered part files — `001.snap`, `002.snap`, … — exactly the shape
+//  a Story Waft already has on disk (`wormhole/Story/<Book>/` holds its parts beside its toc, served by
+//   Housing's read_snap/write_snap pair).  Nothing here is a new format: it is the wormhole's own Waft
+//    layout, applied one directory over.
+//  WHY.  `Berth_save` used to say "Whole-file replace — these documents are small" and they stopped being
+//   small.  Measured 2026-08-08: `.jamsend/berth/Newlyadded/toc.snap` was **43,395 bytes over 177
+//    %Probation cards** (~245 B a line — the paths are long), and `Heist_newlyadded_note` did a full read
+//     + parse + encode + 43 KB write PER LANDED TRACK.  An album of twelve rewrote it twelve times, and
+//      the cost per arrival grows with the collection for ever, because a probation card is never removed
+//       (a `drop` honestly keeps its card).  Quadratic in collection lifetime, on the disk actor,
+//        competing with the very downloads it is logging.  The human, plainly: "our whole file rewrites
+//         are getting us down a little."
+//  THE SHAPE.  Append writes only the delta.  Open reads the toc then folds the parts in order.  A whole
+//   rewrite still happens — it is just no longer per arrival, it is COMPACTION, and `Berth_save` is it.
+//  SUPERSEDE, NOT JUST APPEND.  A part's root carries `ident:<key>` (or `k1+k2`), naming the sc fields
+//   that identify a particle within its mainkey; on fold a later line REPLACES the earlier one with the
+//    same identity.  That is what lets a MUTATION ride the same log as an arrival — `Heist_feel` flipping
+//     a card's feeling to 'love' appends one line rather than rewriting the shelf.  No `ident` ⇒ a pure
+//      log where every line stands, which is the honest default for something that only ever grows.
+Berth_part_name(n) {
+    return String(n).padStart(3, '0') + '.snap'
+
+},
+// How many parts before an append compacts.  A zero-arg method because a `.g` file cannot hold a
+//  module-level const, and because this is the one number worth turning: too low and compaction is the
+//   cost we were trying to avoid; too high and every open pays a long read chain.  64 parts against a
+//    177-line toc is ~4 lines of read per line of base.
+Berth_parts_max() {
+    return 64
+
+},
+// Berth_fold — apply one part's children onto the base tree.  Identity comes off the PART's root, so a
+//  berth can change its mind about identity between parts and each part still folds by its own rule.
+Berth_fold(base, part) {
+    let ident = part.sc.ident ? String(part.sc.ident).split('+') : []
+    for (const row of part.o({})) {
+        if (ident.length) {
+            let mk = Object.keys(row.sc)[0]
+            let q = {}
+            q[mk] = row.sc[mk]
+            let ok = 1
+            for (const k of ident) {
+                if (row.sc[k] == null) { ok = 0; break }
+                q[k] = row.sc[k]
+            }
+            if (ok) { for (const old of base.o(q)) base.drop(old) }
+        }
+        base.i(row)
+        row.c.up = base
+    }
+
+},
 // Berth_open — deWaft the Waft's toc.snap into a live C tree, or MINT an empty %Waft when absent (a first
-//  open is not an error — the document is simply new).  The on-disk dir rides home on .c (runtime-only,
-//   never snaps) so Berth_save needs only the waft.  path is the logical Waft key the tree carries.
+//  open is not an error — the document is simply new), then fold every part on top.  The on-disk dir and
+//   the part count ride home on .c (runtime-only, never snap) so Berth_save/Berth_append need only the waft.
 async Berth_open(nav, root, prepub, name) {
     let dir = this.Berth_dir(root, prepub, name)
     let path = 'berth/' + (prepub ? prepub + '/' : '') + name
@@ -3170,26 +3228,78 @@ async Berth_open(nav, root, prepub, name) {
     }
     if (!waft) waft = new TheC({ c: {}, sc: { Waft: path } })
     waft.c.berth_dir = dir
+    waft.c.berth_parts = 0
+    // BOUNDED, and stopping at the first gap.  A missing NNN.snap ends the chain rather than skipping it:
+    //  parts are written in order and only ever removed all-at-once by a compaction, so a hole means the
+    //   tail is gone, and reading past it would resurrect state the compaction already folded in.
+    let n = 1
+    while (n <= this.Berth_parts_max()) {
+        let ptxt = null
+        try { ptxt = await nav.read_file(dir, this.Berth_part_name(n)) } catch (er) { ptxt = null }
+        if (!ptxt) break
+        let pdec = this.deWaft(ptxt, path)
+        if (pdec.Waft) this.Berth_fold(waft, pdec.Waft)
+        waft.c.berth_parts = n
+        n = n + 1
+    }
     return waft
 
 },
+// Berth_append — write ONLY these particles as the next part.  `rows` are live children of the waft (they
+//  are indexed into a throwaway part root purely to be encoded — `i()` is index-only, so the originals
+//   keep their place in the base tree).  Falls back to a whole save if the encode complains, because a
+//    part that will not decode is worse than the write we were avoiding.
+async Berth_append(nav, waft, rows, ident) {
+    if (!rows || !rows.length) return 0
+    let part = new TheC({ c: {}, sc: { Waft: String(waft.sc.Waft || 'berth') } })
+    if (ident) part.sc.ident = String(ident)
+    for (const row of rows) part.i(row)
+    let enc = await this.enWaft(part)
+    if (enc.errors && enc.errors.length) {
+        await this.Berth_save(nav, waft)
+        return 0
+    }
+    let n = (+(waft.c.berth_parts || 0)) + 1
+    await nav.write_file(waft.c.berth_dir, this.Berth_part_name(n), enc.snap)
+    waft.c.berth_parts = n
+    if (n >= this.Berth_parts_max()) await this.Berth_save(nav, waft)
+    return 1
+
+},
 // Berth_save — enWaft the live tree and write it whole to the Waft's toc.snap (write_file mkdirp's the dir,
-//  so a first save mints the berth home).  Whole-file replace — these documents are small.
+//  so a first save mints the berth home).  THIS IS ALSO THE COMPACTION: a whole rewrite supersedes every
+//   part, so the parts must go with it or the next open would fold already-folded state back on top.
+//    Unlinking is best-effort per part — a part that will not delete is re-folded harmlessly next open
+//     (the fold is idempotent under `ident`), whereas throwing here would leave a saved toc with a live
+//      tail and no way to tell.
 //   < crash-safe temp+rename is a later gear.
 async Berth_save(nav, waft) {
     let dir = waft.c.berth_dir
     let enc = await this.enWaft(waft)
     await nav.write_file(dir, 'toc.snap', enc.snap)
+    let n = +(waft.c.berth_parts || 0)
+    let i = 1
+    while (i <= n) {
+        try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i)) } catch (er) {}
+        i = i + 1
+    }
+    waft.c.berth_parts = 0
 
 },
-// Berth_reset — forget a Pier's Waft(s).  With a name, drop that ONE Waft's toc.snap; without, sweep the
-//  Pier's whole berth (Heist_sweep empties every toc.snap under it, keeping the dir skeleton — the
-//   dead-handle-safe reset).  A Book's start/end sweep of its marrauding root already does the coarse
-//    version for free; this is the fine-grained door.
+// Berth_reset — forget a Pier's Waft(s).  With a name, drop that ONE Waft's toc.snap AND its parts (a
+//  toc-only reset would leave the tail behind and the next open would rebuild the document out of it —
+//   the exact bug the parts introduce if reset is not taught about them); without, sweep the Pier's whole
+//    berth (Heist_sweep empties everything under it, keeping the dir skeleton — the dead-handle-safe
+//     reset).  A Book's start/end sweep of its marrauding root already does the coarse version for free.
 async Berth_reset(nav, root, prepub, name) {
     if (name) {
         let dir = this.Berth_dir(root, prepub, name)
         await this.Heist_unlink(nav, dir, 'toc.snap')
+        let i = 1
+        while (i <= this.Berth_parts_max()) {
+            try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i)) } catch (er) {}
+            i = i + 1
+        }
         return
     }
     await this.Heist_sweep(nav, root + '/.jamsend/berth/' + prepub)

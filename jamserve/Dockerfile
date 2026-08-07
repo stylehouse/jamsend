@@ -26,6 +26,15 @@
 #      rollup drifting to 4.62.4 against a lockfile pinning 4.40.2, and that mismatch is what made
 #       every SSR request 500 with `__SVELTEKIT_PATHS_BASE__ is not defined`.
 #
+# 3. It runs as uid 1000, not root.  MEASURED 2026-08-08, first boot: as root it wrote
+#     `/music/.jamsend` mode 700 owned by root:root — inside the USER'S OWN music folder.  That
+#      breaks the documented workflow in both directions: the browser (uid 1000, holding the FSA
+#       grant) can no longer provision or read the account, and neither can you without sudo.
+#      The dirs below must exist owned by node BEFORE the volumes attach, because an empty named
+#       volume (and an anonymous one) inherits the ownership of the image directory it covers —
+#        the same trick the `claude` service uses for /home/node/.claude in docker-compose.yml.
+#      node:22-alpine already ships `node` at uid 1000, so no user needs creating.
+#
 # TODO (Daemon_todo §5.3, "Packaging"): this still boots vite in middleware mode, ~12s of
 #  transform on every start, so a crash-looping jamserve recompiles from scratch each time.
 #   A real deployment wants a build — which would also mean no node_modules at runtime at all,
@@ -46,6 +55,13 @@ RUN npm ci
 # The source is bind-mounted at runtime; this copy is only so the image is self-contained
 #  enough to build and inspect without the mount.
 COPY . .
+
+# see (3) above.  node_modules is chowned because the anonymous volume inherits THIS ownership,
+#  and vite in middleware mode writes its pre-bundle cache to node_modules/.vite/deps — as uid
+#   1000 over a root-owned volume that is an EACCES at first transform, not at boot.
+RUN mkdir -p /var/lib/jamserve /home/node/.cache \
+    && chown -R node:node /var/lib/jamserve /home/node/.cache /app/node_modules
+USER node
 
 # Belt and braces: if someone ever drops the anonymous volume, fail loudly at boot rather than
 #  silently running on the host's glibc tree.  `ldd` on a native .node reports "not found" for

@@ -93,6 +93,20 @@ export class NodeWormholeNav {
         return [this.confine(this.overlay, rel), this.confine(this.base, rel)]
     }
 
+    // native_path — the one PUBLIC escape hatch from rel-space to a real filesystem path, for the
+    //  single case that genuinely needs it: handing a file to a NATIVE TOOL we spawn (ffmpeg, for
+    //   the loudness/transcode seam — Daemon_todo §2.1/§2.2).  Reading the bytes and piping them to
+    //    stdin would work for measurement and NOT for seeking, and a 30MB FLAC through a pipe to
+    //     learn one number is silly, so the honest thing is to admit the path exists.
+    //  READ SIDE ONLY, and deliberately so — it goes through `readAbs`, hence through `confine`, so
+    //   it cannot name anything outside a mount/overlay/base, and it returns null rather than a path
+    //    that isn't there.  There is no write twin: a native tool writes to a path WE choose under
+    //     the overlay, never to one the caller named.
+    native_path(rel: string): string | null {
+        for (const abs of this.readAbs(rel)) if (existsSync(abs)) return abs
+        return null
+    }
+
     // fixture writes go to the real repo only while recording; everything else sandboxes.
     //  Mounted rels never reach here — `writeAbs` resolves those first (rw mount → its own root,
     //   otherwise a throw).  This is only the ordinary overlay/recording rule.
