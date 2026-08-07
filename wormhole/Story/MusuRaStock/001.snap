@@ -1,0 +1,6 @@
+Snap:H
+  H:MusuRaStock,Run
+    A:MusuRaStock
+      self,round	{"mung":["age"]}
+      w:MusuRaStock
+        self,round	{"mung":["age"]}

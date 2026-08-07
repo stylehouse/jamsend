@@ -22,6 +22,8 @@ export const FACE_MAINKEYS: Record<string, string> = {
                           //  only ever appears when a run captured a throw; loud-when-broken, no snap byte to dress it
     Transfer: 'Transfer', // the live transfer HUD — a persistent dontSnap cell the wire feeds (top_House().c.xfer);
                           //  jiggling rx/tx bars + per-track pull/serve progress so bytes-in-flight are VISIBLE
+    Shuffle: 'Shuffle',   // the shuffle pool — a dontSnap cell showing WHAT THE DIAL CAN REACH vs what
+                          //  merely stands in the crate; the husk/dial-able gap is the "same 10 tracks" shape
     MusuSelf: 'Crate',    // my music home — the record collection, spread out to gaze across
     MusuThem: 'Crate',    // a friend's music as I hold it — same spread, worn with their name
 }

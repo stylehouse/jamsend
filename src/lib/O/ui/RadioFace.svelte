@@ -62,25 +62,22 @@
 <div class="rf" class:on={face.state === 'playing'}>
     <!-- transport on its OWN row: a long title can no longer occlude the next/★ buttons —
          the title lives below, on its own line, where it only ever occludes itself. -->
+    <!-- WEIGHTED BY WHAT YOU REACH FOR (the human 2026-08-07: "pause should be small, next big, star not
+         at all ... and heist big").  A phone player is thumbs, not a mixing desk: the two verbs that fire
+         constantly — SKIP and KEEP — get the area, pause gets a corner, and ★ is gone (favouriting is
+         beyond v1.0; Radio_mag_pop still stands in the ghost, it just spends no glass). -->
     <div class="rf-transport">
-        <button class="rf-btn" onclick={() => (H as any)?.Radio_toggle?.(n)}
+        <button class="rf-btn rf-small" onclick={() => (H as any)?.Radio_toggle?.(n)}
             title={face.state === 'playing' ? 'pause' : 'play'}>
             {face.state === 'playing' || face.state === 'digging' || face.state === 'starved' ? '⏸' : '▶'}
         </button>
-        <button class="rf-btn rf-skip" onclick={() => (H as any)?.Radio_skip?.(n)} title="next">⏭</button>
-        <!-- NO stop button and NO source switch here (the human 2026-07-28): the player never lets you
-             STOP or ESCAPE your friend's collection — choosing a different friend or your own crate lives
-             in the Tuner (👂 listening to), away from the player. -->
-        {#if face.title}
-            <button class="rf-btn rf-skip" onclick={() => (H as any)?.Radio_mag_pop?.(n?.c?.w, n?.c?.rec)}
-                title="pop this track into your Faves mag">★</button>
-        {/if}
+        <button class="rf-btn rf-skip rf-big" onclick={() => (H as any)?.Radio_skip?.(n)} title="next">⏭</button>
         <!-- the HEIST gesture (the human 2026-07-28 "keep what you're hearing"): only on a FRIEND'S track
              (face.by) — your own you already hold.  ONE CLICK: ⇊ mints a %Keep and that's it — no popup.
              It becomes a %Keep you OPEN and START (▶) from the keep panel — the original then downloads
              straight into music/<genre>/.  ✓ is the tell it's kept (n.c.kept, runtime). -->
         {#if face.by}
-            <button class="rf-btn rf-skip rf-keep" class:kept={face.keptThis}
+            <button class="rf-btn rf-skip rf-keep rf-big" class:kept={face.keptThis}
                 onclick={() => { (H as any)?.Radio_keep?.(n) }}
                 title={face.keptThis ? 'kept — open the keep and press ▶ to start the download' : "keep this — queues a download you start (▶) from the keep panel"}>{face.keptThis ? '✓' : '⇊'}</button>
         {/if}
@@ -89,7 +86,15 @@
     {#if face.artist}<div class="rf-artist">{face.artist}</div>{/if}
     <!-- provenance: whose Pier this track streams from, or that it's your OWN record — the human 2026-07-28
          wanted to always know the source, and for it to be clear when just playing your own music. -->
-    {#if face.by}<div class="rf-from">⚯ from {face.byName || 'a friend'}</div>{:else if face.title && face.state !== 'off' && face.state !== 'digging'}<div class="rf-from rf-own">♪ your own record</div>{/if}
+    <!-- REMOTE OR LOCAL, unmistakably (the human 2026-08-07: "the UI in the player should be clear its
+         remote, or local").  This used to be a whispered grey line; a listener needs to know at a glance
+         whether these bytes are crossing a wire — it governs whether a stall is their disk or the net,
+         and whether ⇊ even makes sense.  A badge, not a footnote. -->
+    {#if face.by}
+        <div class="rf-src rf-src-remote">⚯ STREAMING from {face.byName || 'a friend'}</div>
+    {:else if face.title && face.state !== 'off' && face.state !== 'digging'}
+        <div class="rf-src rf-src-local">♪ LOCAL — your own record</div>
+    {/if}
     {#if face.note}<div class="rf-note">{face.note}</div>{/if}
     <!-- the "why is it silent" line: a starved radio holds a loaded track but the next piece hasn't
          arrived over the wire, so the bar freezes.  Say so — the human asked that the page never go
@@ -137,6 +142,10 @@
         flex: none;
     }
     .rf-btn:hover { background: #d9a026; color: #04202a; }
+    /* thumb-weighted (see the transport comment): next + keep are the constant verbs, pause is a corner */
+    .rf-big   { font-size: 1.55em; padding: 0.30em 0.62em; flex: 1 1 auto; min-height: 2.1em; }
+    .rf-small { font-size: 0.9em;  padding: 0.18em 0.34em; flex: 0 0 auto; opacity: 0.8; }
+    .rf-small:hover { opacity: 1; }
     .rf-skip { width: 26px; height: 26px; font-size: 10px; }
     .rf-keep.kept { background: #2e6b3a; border-color: #57c777; color: #eafff0; }
     .rf-keep.kept:hover { background: #57c777; color: #04202a; }
@@ -145,6 +154,12 @@
     .rf-note { font-size: 9px; opacity: 0.6; font-style: italic; }
     .rf-from { font-size: 9px; opacity: 0.85; margin-top: 2px; color: #c9b6e8; }
     .rf-from.rf-own { opacity: 0.5; color: #b6c9a8; }
+    .rf-src {
+        display: inline-block; margin-top: 2px; padding: 1px 5px; border-radius: 3px;
+        font-size: 0.72em; letter-spacing: 0.04em; font-weight: 600;
+    }
+    .rf-src-remote { background: rgba(127, 200, 232, 0.16); color: #8fd0ee; border: 1px solid rgba(127, 200, 232, 0.4); }
+    .rf-src-local  { background: rgba(182, 201, 168, 0.13); color: #b6c9a8; border: 1px solid rgba(182, 201, 168, 0.32); }
     .rf-bar {
         margin-top: 6px;
         height: 3px;

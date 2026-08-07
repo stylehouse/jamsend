@@ -286,6 +286,38 @@ async Crate_nav_meander(nav, base, want, skip):
         for (const sp of e.subs) s = s + est_true(sp, depth + 1)
         return s
     }
+    // A DEAD BRANCH IS NOT A BRANCH (2026-08-07).  The dead-end step-up added yesterday fixed the
+    //  reset-to-root waste and immediately bought a worse bug: stepping up out of a barren leaf lands
+    //   on a parent whose ONLY branch is the leaf just abandoned, so the very next draw descends
+    //    straight back into it.  Traced in simulation on the owner's shape — `misc9/a/x DEAD -> up ->
+    //     misc9/a/x DEAD -> up` eleven times, twenty-two of twenty-four hops spent oscillating between
+    //      two directories — and it fired on 91% of digs.  That is the `picks=0 got=0` tour, exactly:
+    //       not a wander that failed to find music, a wander that never got to look.
+    //  So deadness has to PROPAGATE, not just be noticed one level at a time.  A directory is dead
+    //   when it is learned, holds no audio of its own, and every sub is dead.  Prune dead branches
+    //    from the draw entirely and a node whose branches are all dead becomes dead itself, which its
+    //     own parent then prunes — the barren corridor unwinds instead of trapping the walk.
+    //  Two things it deliberately is NOT: unknown space is never dead (no learn entry ⇒ false, so the
+    //   wander always keeps a way into what it has not seen), and a SPENT album is never dead — this
+    //    reads `audio`, the true count, never `open` — so whittling always brings it back and no track
+    //     is ever written off.  Only genuinely music-free structure is pruned, and that is permanent.
+    //  DEADNESS NEEDS A SECOND OPINION.  `known` (the summed audio of the whole learned map) was
+    //   observed ticking DOWN live — Righto 50→49, Lefto 46→45 — and it is a monotone quantity, so a
+    //    decrease can only mean a revisit saw FEWER files than the visit before: expand() hands back
+    //     a partial listing sometimes.  Pruning is permanent, so a single short read of a real album
+    //      would write it off for the life of the page — the one failure this must not have.  So a
+    //       directory has to look empty TWICE (`z`, consecutive audio-free visits) before it counts.
+    //        Costs one extra visit per barren leaf; buys back a whole album per bad read.
+    const dead = (p, memo) => {
+        if (memo[p] !== undefined) return memo[p]
+        let e = learn[p]
+        if (!e) return false
+        if (+(e.audio || 0) > 0) return (memo[p] = false)
+        if (+(e.z || 0) < 2) return (memo[p] = false)
+        memo[p] = true
+        for (const sp of e.subs) if (!dead(sp, memo)) return (memo[p] = false)
+        return true
+    }
     while (hops < GIVE_UP) {
         hops = hops + 1
         let dl = await nav.dir_at(rel ? (base + '/' + rel) : base)
@@ -332,8 +364,66 @@ async Crate_nav_meander(nav, base, want, skip):
         //  This is the same shape as every other bug tonight — the instrument (here, the map) not
         //   recording the case it was built for, so the failure reads as normal operation.
         let here = (base + (rel ? '/' + rel : '')).replace(/^\/+/, '')
-        if (learn && (Object.keys(learn).length < 4096 || learn[here])) learn[here] = { audio: audio_all.length, open: audio.length, subs: dirs.map(d => here + '/' + String(d.name)) }
-        let branches = dirs.length + (audio.length ? 1 : 0)
+        // EVERY DIRECTORY CARRIES ITS OWN SLOT CURSOR (2026-08-07, the owner: "some kind of balanced
+        //  tree that grows to find every directory evenly, by magic... a Dip assigned tree of
+        //   directories", "walk evenly into the unknown space").  Same shape as Dip_assign
+        //    (Hovercraft.svelte) claiming `parent.sc.i++` — a node hands out its next slot rather than
+        //     re-rolling — except the step is φ over the WEIGHTED CDF instead of +1 over the children,
+        //      so the sweep stays proportional to what each branch is worth and still visits them all.
+        //  `n` is the cursor, born at a random offset so two nodes are never in phase: the ROUGHNESS.
+        //   It lives on the .c-only learn map beside audio/open/subs, so it costs nothing at encode
+        //    and dies with the page — a cursor that can never wear a track out, because it indexes
+        //     BRANCHES at one directory, never tracks, and the track pick below stays a fresh draw.
+        let node = learn ? learn[here] : null
+        if (learn && (Object.keys(learn).length < 4096 || node)) {
+            if (!node) node = learn[here] = {}
+            // `== null` covers BOTH the fresh node and a node minted by the previous build of this
+            //  ghost — the map lives on .c and survives HMR, so a live page carries hundreds of
+            //   entries that never had a cursor.  Without this they read `undefined + 1` = NaN, and
+            //    since `NaN >= w` is false the CDF walk stops at k=0: every one of them would pick
+            //     its first branch, for ever.  A silent total-collapse of the draw, on the live pages
+            //      only, which is exactly where nothing would have thrown to tell us.
+            if (node.n == null) node.n = this.prandle(9973)
+            node.z = audio_all.length ? 0 : (+(node.z || 0) + 1)
+            // THE ONE ELECTRODE FOR "IS expand() TELLING THE TRUTH" (2026-08-07).  `known` — the summed
+            //  audio of the whole learned map — was seen ticking DOWN (Righto 50→49, Lefto 46→45), and
+            //   it is monotone by construction, so a decrease can only be a revisit seeing fewer files
+            //    than the visit before.  Everything downstream rests on the answer: if listings really
+            //     are partial then `known`, every weight derived from it, and the deadness rule are all
+            //      under-counting, and the "there is simply not much music in this share" reading is
+            //       wrong.  So measure it at the only place that can see it — the revisit itself —
+            //        rather than reasoning about it.  Counts DISAGREEMENTS and keeps the last one named;
+            //         `flap=0` over a long session is what says the listings are honest.
+            //  BOTH HALVES OF THE LISTING, because the dangerous one is the SUBDIRS.  A short audio
+            //   list only under-counts; a short DIRECTORY list is load-bearing for deadness — `subs`
+            //    would omit a music-bearing child, and `dead(parent)` only checks the subs it was told
+            //     about, so a parent whose real children were never seen can be pruned and take a whole
+            //      branch of the collection out of reach.  `d` counts that separately from `a`.
+            if (node.audio != null && node.audio !== audio_all.length) {
+                let HH = this.top_House()
+                HH.c.meander_flap = (+(HH.c.meander_flap || 0)) + 1
+                HH.c.meander_flap_at = 'a ' + here + ' ' + node.audio + '->' + audio_all.length
+            }
+            if (node.subs && node.subs.length !== dirs.length) {
+                let HD = this.top_House()
+                HD.c.meander_flapd = (+(HD.c.meander_flapd || 0)) + 1
+                HD.c.meander_flap_at = 'd ' + here + ' ' + node.subs.length + '->' + dirs.length
+            }
+            node.audio = audio_all.length
+            node.open = audio.length
+            node.subs = dirs.map(d => here + '/' + String(d.name))
+        }
+        // `subs` above stays the FULL listing — the map has to keep telling the truth about the shape,
+        //  or deadness could never be computed at all.  Only the DRAW walks `live`.
+        let live = dirs
+        //  `String(d.name)`, NOT `d` — a dirs element is a directory HANDLE, and every other line here
+        //   spells that out.  Interpolating the handle built the key `<here>/[object Object]`, which is
+        //    in no learn map ever, so `dead()` took its `if (!e) return false` exit every single time and
+        //     the prune was INERT from the moment it landed.  It fails in the safe direction — nothing is
+        //      wrongly pruned — which is precisely why nothing threw and the numbers still improved: the
+        //       slot cursor and the cold reload were doing that work alone.
+        if (learn) { let dm = {}; live = dirs.filter(d => !dead(here + '/' + String(d.name), dm)) }
+        let branches = live.length + (audio.length ? 1 : 0)
         if (!branches) { rel = (learn && rel.indexOf('/') > -1) ? rel.slice(0, rel.lastIndexOf('/')) : ''; continue }
         let k
         if (learn) {
@@ -349,7 +439,7 @@ async Crate_nav_meander(nav, base, want, skip):
             //  prandle is Math.floor(random*n), so a FRACTIONAL total would collapse its remainder
             //   into the last bucket and silently bias the final branch — every weight here stays an
             //    integer, which is why it is ceil() and not the bare sqrt.
-            let weights = dirs.map(d => {
+            let weights = live.map(d => {
                 let p = here + '/' + String(d.name)
                 let o = est(p, 0)
                 return o > 0 ? o : Math.max(1, Math.ceil(Math.sqrt(est_true(p, 0))))
@@ -357,21 +447,42 @@ async Crate_nav_meander(nav, base, want, skip):
             if (audio.length) weights.push(audio.length)
             let total = 0
             for (const x of weights) total = total + x
-            let r = this.prandle(total)
+            // THE SWEEP, not a re-roll.  An iid draw is a coupon collector: to see all K branches of a
+            //  node takes ~K·lnK visits and the tail is heavy, so the wander kept re-treading the fat
+            //   branch it had just come back up from — 163 directories walked for 48 tracks, and
+            //    `picks=0` tours with a collection still full of music.  Stepping the node's own cursor
+            //     by the golden ratio lands each visit ~0.618 of the CDF from the last, so K roughly
+            //      equal branches are covered in K visits with no repeat and no gap, and a branch worth
+            //       three times another still gets three times the slots.  Kronecker/low-discrepancy:
+            //        the discrepancy is O(log n / n) against iid's O(√n) — that is the whole trick.
+            //  φ (not ½, not any rational) because its continued fraction is all 1s: no period, so the
+            //   sweep never falls into lockstep with a branch count, whatever the branch count is.
+            //  The weights move under it as tracks shelve and whittle; that only perturbs the mapping,
+            //   it cannot break the property, which is about successive positions in [0,1).
+            let r
+            if (node) {
+                node.n = node.n + 1
+                r = Math.floor(total * ((node.n * 0.6180339887498949) % 1))
+                if (r >= total) r = total - 1
+            } else r = this.prandle(total)
             k = 0
             while (k < weights.length - 1 && r >= weights[k]) { r = r - weights[k]; k = k + 1 }
         } else {
             k = this.prandle(branches)
         }
-        if (audio.length && k === dirs.length) {
+        if (audio.length && k === live.length) {
             let picks = []
             let pool = [...audio]
             while (pool.length && picks.length < want) picks.push(pool.splice(this.prandle(pool.length), 1)[0])
             return picks.map(f => rel ? (rel + '/' + f.name) : f.name)
         }
-        let d = dirs[k]
+        let d = live[k]
         rel = rel ? (rel + '/' + d.name) : d.name
     }
+    // WHERE THE WALK DIED, NAMED.  `picks=0` says the tour found nothing; it never said whether the
+    //  wander ran out of budget deep inside one album or thrashed near the root.  Those want opposite
+    //   fixes, and guessing between them is how this week went.  Costs one .c string per give-up.
+    if (learn) this.top_House().c.meander_last = rel + ' h' + hops
     return []
 
 // Crate_nav_payload — read ONE track's bytes through the nav, decode FROM THE START (OfflineAudioContext —

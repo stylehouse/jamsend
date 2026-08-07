@@ -14,6 +14,14 @@
     $effect(() => { const iv = setInterval(() => { tick++ }, 500); return () => clearInterval(iv) })
 
     const safe = (s: string) => String(s || '').replace(/[^\w .&()-]+/g, '_').replace(/\s+/g, ' ').trim() || 'Unfiled'
+    // WHERE A HEIST ACTUALLY LANDS (the human 2026-08-07: it "says → music/Unfiled/ which is lies").
+    //  Both halves were invented here.  There is no `music/` root — Heist_rel_for builds a path relative
+    //   to the collection — and there is no `Unfiled` folder: Heist_filing_for returns '' for an unpinned
+    //    artist and the comment above it is explicit ("NO category prepend — the human 2026-07-29 'I don't
+    //     want anything prepended'"), so the source's own folders land at the root, unrenamed (the
+    //      2026-07-13 cp-landing ruling).  These mirror the ghost's own two helpers exactly.
+    const safeSeg = (s: string) => String(s || '').replace(/[\/\x00]/g, '-').replace(/^-(?= )/, '0')   // Heist_safe_seg
+    const catPath = (c: string) => String(c || '').split('/').map((p) => safeSeg(p.trim())).filter(Boolean).join('/')  // Heist_cat_path
 
     let face = $derived.by(() => {
         void H?.version
@@ -33,14 +41,16 @@
         const mir = (rw && at) ? A?.Ra_home_them?.(rw, at) : null
         const husks = (mir && A?.Heist_rummage_recs) ? A.Heist_rummage_recs(mir, seed) : []
         const picks = keep?.ob?.({ Pick: 1 }) ?? []
-        const genre = String(sc.genre || 'Unfiled')
+        const genre = String(sc.genre || '')
+        const dest = catPath(genre)
         return {
             state,
             title: String(sc.Haul || 'this track'),
             artist: String(sc.artist || ''),
             from: String(sc.from_name || 'a friend'),
             genre,
-            dest: 'music/' + safe(genre) + '/',
+            dest,
+            destLabel: dest ? dest + '/' : 'your collection',
             asks: +(sc.asks || 0),
             nTracks: husks.length,
             picked: picks.length,
@@ -79,9 +89,9 @@
         <!-- FOLDED: it started — a compact progress strip; the track chips carry the per-track ✓ -->
         <div class="kb-prog">
             {#if face.state === 'done'}
-                ✓ kept {face.landed_n} → {face.dest}
+                ✓ kept {face.landed_n} → {face.destLabel}
             {:else}
-                downloading {face.landed_n}/{face.total_n || face.picked || '?'} → {face.dest}
+                downloading {face.landed_n}/{face.total_n || face.picked || '?'} → {face.destLabel}
             {/if}
         </div>
         {#if face.state !== 'done'}
@@ -103,7 +113,7 @@
                 onblur={() => { catActive = false; commitCategory() }} />
             <datalist id="kb-cats">{#each CATEGORIES as g}<option value={g}></option>{/each}</datalist>
         </div>
-        <div class="kb-dest" title="where these land — the artist/album folders ride underneath">⤓ {face.dest}<span class="kb-dim"> …artist / album</span></div>
+        <div class="kb-dest" title="where these land — a heist is a copy, so their own folder names and filenames survive unchanged">⤓ {face.dest ? face.dest + '/' : ''}<span class="kb-dim">{face.dest ? ' …their folders' : 'your collection root · their folders kept'}</span></div>
         {#if face.described}
             <div class="kb-sel">
                 <span class="kb-dim">{face.picked} of {face.nTracks} — the whole folder, click a track to skip one</span>

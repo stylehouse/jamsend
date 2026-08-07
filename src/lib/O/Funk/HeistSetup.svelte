@@ -70,8 +70,13 @@
                 id: String(r.sc.id),
                 title: String(r.sc.title || '(untitled)'),
                 artist: String(r.sc.artist || 'Unknown'),
-                genre0: String(r.sc.genre || 'Unfiled'),
+                genre0: String(r.sc.genre || ''),
                 file,
+                // THE PATH IT ACTUALLY LANDS AT (Heist_cp_path): a heist is a copy, so the source's own
+                //  subdirs AND filename survive — showing only the basename claimed the album folders
+                //   get flattened away, which they don't.  Same '..'/'.' strip as the ghost's.
+                cp: path.split('/').filter((p: string) => p && p !== '.' && p !== '..').join('/')
+                    || (String(r.sc.id) + (r.sc.ext ? '.' + r.sc.ext : '')),
                 held: !!(ownlib && A?.Heist_held?.(ownlib, r.sc.artist, r.sc.title)),
                 landed: landedIds.has(String(r.sc.id)),
                 picked: pickedIds.has(String(r.sc.id)),
@@ -98,7 +103,9 @@
 
     // the distinct genres already in the folder + a few staples — a datalist so a genre is one keystroke.
     let genreOptions = $derived.by(() => {
-        const s = new Set<string>(['Unfiled', 'Ambient', 'Jazz', 'Electronic', 'Rock', 'Hip Hop', 'Folk', 'Classical'])
+        // no 'Unfiled' staple: picking it would create a folder literally called Unfiled.  Leaving the
+        //  field empty is the "file it nowhere, keep their folders" choice, which is also the default.
+        const s = new Set<string>(['Ambient', 'Jazz', 'Electronic', 'Rock', 'Hip Hop', 'Folk', 'Classical'])
         for (const r of (view?.rows ?? [])) if (r.genre0) s.add(r.genre0)
         for (const g of Object.values(genres)) if (g) s.add(g)
         return [...s]
@@ -133,7 +140,9 @@
         if (!v) return
         const choices = v.rows.map((r) => ({
             id: r.id, artist: r.artist, title: r.title,
-            genre: safe(genreFor(r.artist, r.genre0)) || 'Unfiled',
+            // '' when the human pinned nothing — NOT 'Unfiled', which would be committed as a real
+            //  category and land the tracks in a folder of that name (see Heist_keep_commit).
+            genre: safe(genreFor(r.artist, r.genre0)),
             keep: keepOf(r),
         }))
         A?.post_do?.(() => A?.Heist_keep_commit?.(rw(), v.keep, choices), { see: 'heist_commit' })
@@ -182,7 +191,10 @@
                                         <input type="checkbox" checked={keepOf(r)} onchange={() => toggleKeep(r)} />
                                         <span class="ttl">{r.title}</span>
                                         {#if r.held}<span class="badge held">✓ already in your crate</span>{/if}
-                                        <span class="dest">→ music/{safe(genreFor(g.artist, r.genre0)) || 'Unfiled'}/{r.file}</span>
+                                        <!-- no invented `music/` root and no `Unfiled` folder: an unpinned
+                                             artist prepends NOTHING (Heist_filing_for), and the source's
+                                             own relative path rides underneath unrenamed. -->
+                                        <span class="dest">→ {safe(genreFor(g.artist, r.genre0)) ? safe(genreFor(g.artist, r.genre0)) + '/' : ''}{r.cp}</span>
                                     </label>
                                 {/each}
                             </div>

@@ -22,6 +22,7 @@ import RiffleFace from './ui/RiffleFace.svelte'
 import RiffFace from './ui/RiffFace.svelte'
 import ZineFace from './ui/ZineFace.svelte'
 import LineupFace from './ui/LineupFace.svelte'
+import ShuffleFace from './ui/ShuffleFace.svelte'
 import CrateFace from './ui/CrateFace.svelte'
 import UptimeFace from './ui/UptimeFace.svelte'
 import BeatFace from './ui/BeatFace.svelte'
@@ -44,5 +45,6 @@ export const GLASS_KINDS: Record<string, any> = {
     Riff: RiffFace,       // one dealt card — a track (▶ tunes) or a folder (open descends)
     Zine: ZineFace,       // the pocket mag (Faves Berth) — its cards listed, ▶ auditions
     Lineup: LineupFace,   // the standing programme — up next (~20 deep), starve errors RED
+    Shuffle: ShuffleFace, // the shuffle POOL — one pip per record in reach, lit = the dial can pick it
     Crate: CrateFace,     // a Musu home — the records spread out on the bed, ▶ auditions
 }

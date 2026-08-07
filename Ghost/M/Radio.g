@@ -153,10 +153,35 @@ Radio_skip(radio):
     }
     radio.c.rec = null
     radio.c.end = 0
-    if (radio.c.aud) {
-        try { radio.c.aud.close() } catch (er) {}
+    // BLEND, DON'T CUT (the owner 2026-08-07: "it should be very effective at rapidly skipping tracks.
+    //  getting them to blend together a little even").  The old skip closed the voice on the spot, which
+    //   severs a graph mid-sample — a click, and on a fast run of skips a burst of them.  The outgoing
+    //    voice already has audio scheduled AHEAD of the playhead, so simply ramping its gain down while
+    //     the incoming voice ramps up gives a real overlap: press next on a primed track and the two
+    //      genuinely cross, which IS the blend.  When the next track is not primed and takes a moment to
+    //       arrive, the same ramp degrades to a clean fade instead of a click — the safe direction.
+    //  The old voice is closed on a timer, NOT left to the next skip, or a held-down next key would pile
+    //   up fading graphs; and any voice still fading when another skip lands is closed AT ONCE, so the
+    //    stack is bounded at one no matter how fast the dial is turned.  That bound is what makes rapid
+    //     skipping cheap rather than a slow accumulation of dead nodes.
+    //  LIVE PAGES ONLY (`humdinger`) — a timer and a gain ramp are wall-clock, and a driven world must
+    //   tear its voice down synchronously or every Book that skips would be racing a setTimeout.
+    let old = radio.c.aud
+    if (old && this.top_House().c.humdinger) {
+        let B = +(radio.sc.blend || 0.22)
+        if (radio.c.fading) { try { radio.c.fading.close() } catch (er) {} }
+        radio.c.fading = old
+        try { old.fade(0, B) } catch (er) {}
+        setTimeout(() => {
+            try { old.close() } catch (er) {}
+            if (radio.c.fading === old) radio.c.fading = null
+        }, Math.ceil(B * 1000) + 60)
+        radio.c.aud = radio.c.gat.new_audiolet()
+        try { radio.c.aud.fade_in(B) } catch (er) {}
+    } else {
+        if (old) { try { old.close() } catch (er) {} }
+        radio.c.aud = radio.c.gat.new_audiolet()
     }
-    radio.c.aud = radio.c.gat.new_audiolet()
     this.Radio_state(radio, 'playing')
     this.Radio_pump(radio, era)
 
@@ -568,7 +593,10 @@ Radio_open(radio, rec):
     } else {
         delete radio.sc.artist
     }
-    radio.sc.of = Math.round(+(rec.sc.seconds || 0))
+    // the OFFER's length, not the file's: a mid-track cut (Ra_preview_offset) means the playable thing
+    //  starts at pv_off, so a bar drawn against the whole file's duration could never reach its end.
+    //   pv_off absent ⇒ the old number exactly.
+    radio.sc.of = Math.round(Math.max(0, +(rec.sc.seconds || 0) - (+(rec.sc.pv_off || 0) * this.Ra_seg_secs())))
     radio.sc.at = Math.round(+(radio.c.at0 || 0))
     delete radio.sc.note
     // source attribution — the wire side of "· from X": a friend track names whose music this is,
@@ -1384,11 +1412,27 @@ async Stoker_tour(w, shelf):
     let rounds = 0
     let MAXR = filling ? +(w.c.tour_rounds || 4) : 1
     let dug = 0
+    // SUM THE ROUNDS, DON'T READ THE LAST ONE.  `st.c.dig_*` are per-CALL, and this loop breaks on the
+    //  first dry round — so the round the trace was reading is, by construction, always the one that
+    //   found nothing.  Every tour mark therefore printed `picks=0 got=0` no matter how well the tour
+    //    actually did, including marks reading `dug=1` two fields earlier: an instrument contradicting
+    //     itself in the same line, and it cost this session a wrong "the wander cannot reach the free
+    //      tracks" theory before the contradiction was noticed.  Seventh of the week, same shape.
+    let tpicks = 0
+    let tgot = 0
+    let thit = 0
+    let tdup = 0
+    let tbad = 0
     while (rounds < MAXR) {
         rounds = rounds + 1
         let got = 0
         try { got = await this.Stoker_dig(st, w, shelf, nav, skip) } catch (er) { got = 0 }
         dug = dug + got
+        tpicks = tpicks + (+(st.c.dig_picks || 0))
+        tgot = tgot + (+(st.c.dig_got || 0))
+        thit = thit + (+(st.c.dig_hit || 0))
+        tdup = tdup + (+(st.c.dig_dup || 0))
+        tbad = tbad + (+(st.c.dig_bad || 0))
         if (got < 1) break
         if (this.Ra_recs(shelf).length >= W) break
         // the shelf moved, so the skip set is stale — a round that re-offered what round one just
@@ -1427,8 +1471,26 @@ async Stoker_tour(w, shelf):
     //     quietly become a cap at wherever the shelf happened to be standing.  Requiring two in
     //      before one goes out guarantees net growth while the shelf is below the window, and the
     //       ordinary over-the-window whittle takes over once it gets there.
+    //  AND THE DRY TOUR IS THE ONE THAT MOST NEEDS THE ROLL (2026-08-07).  The paragraph above has
+    //   the saturated case exactly backwards, and both players sat in it: `dug=0 dropped=0 stock=34`
+    //    tour after tour, against a window of 40 — never full, so no over-the-window whittle, and
+    //     never digging, so no roll.  A deadlock, and it is the owner's sentence word for word: a
+    //      small pool that won't roll over.
+    //  The error was reading a dry wander as "there is nothing out there".  Usually it means the
+    //   opposite: the wander came up dry BECAUSE the shelf holds everything within reach, and the
+    //    skip set built from that shelf is what emptied the pool.  Supply is not absent, it is held.
+    //     Dropping a record un-barrens its path (just below) and hands it straight back to the
+    //      wander — so at saturation the whittle is not a loss of supply, it is the ONLY source of it.
+    //  Self-limiting, which is why it needs no rate of its own: drop one on a dry tour, and the next
+    //   tour finds exactly that one, digs 1, and `dug === 1` blocks the roll — so the shelf sits at
+    //    its ceiling and rotates one record every couple of tours instead of freezing. The strictly-
+    //     slower rule that the `dug > 1` guard exists to protect is untouched, because the case it
+    //      was measured on (`dug=1 dropped=1` pinning a growing shelf) still takes neither branch.
     let FLOOR = +(w.c.tour_floor_stock || 16)
-    if (over < 1 && dug > 1 && recs.length > FLOOR) over = +(w.c.tour_roll || 1)
+    if (over < 1 && recs.length > FLOOR) {
+        if (dug > 1) over = +(w.c.tour_roll || 1)
+        else if (dug < 1) over = +(w.c.tour_dry_roll || 1)
+    }
     let radio = w.o({ Radio: 1 })[0]
     let playing = radio ? radio.c.rec : null
     // NO PIER MAY BE ON THIS RECORD WHEN WE WHITTLE IT (the owner, 2026-08-07: "no Pier can be
@@ -1562,8 +1624,13 @@ async Stoker_tour(w, shelf):
     let top = Object.keys(ml).filter((k) => (+(ml[k].audio || 0)) > 0).sort((a, b) => (+(ml[b].audio || 0)) - (+(ml[a].audio || 0))).slice(0, 3)
     this.Radio_trace(null, { ev: 'tour', dug: dug, dropped: dropped, held: held, stock: this.Ra_recs(shelf).length,
         dirs: mdirs, known: mknown, open: mopen, top: top.map((k) => (k || '/') + ':' + ml[k].audio).join(' '),
-        skip: Object.keys(skip).length, base: st.c.dig_base, picks: +(st.c.dig_picks || 0), got: +(st.c.dig_got || 0),
-        hit: +(st.c.dig_hit || 0), dup: +(st.c.dig_dup || 0), bad: +(st.c.dig_bad || 0), rounds: rounds,
+        // `flap` answers the one question `known` ticking down asked: does a directory's file listing
+        //  DISAGREE with itself between visits?  Non-zero means expand() is partial and every count
+        //   here is a floor, not a total; zero over a long session means the share really is this small.
+        flap: +(this.top_House().c.meander_flap || 0), flapd: +(this.top_House().c.meander_flapd || 0),
+        flapat: this.top_House().c.meander_flap_at || '', died: this.top_House().c.meander_last || '',
+        skip: Object.keys(skip).length, base: st.c.dig_base, picks: tpicks, got: tgot,
+        hit: thit, dup: tdup, bad: tbad, rounds: rounds,
         barren: Object.keys(this.top_House().c.dig_barren || {}).length, err: st.c.dig_err || '' })
     return dropped
 

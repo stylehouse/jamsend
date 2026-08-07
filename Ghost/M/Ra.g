@@ -71,6 +71,39 @@ Ra_seg_secs():
 Ra_preview_secs():
     return 32
 
+// Ra_preview_offset — WHERE the free preview is cut FROM.  A shuffle that always opens at 0:00 plays
+//  every track's intro forever (the human 2026-08-07: the Mag:shuffle preview "is supposed to jump into
+//   the middle of a track, not start from the start") — a radio scan lands you in the SONG.  So the
+//    offer is the track from a point 30–70% in, to its end; the intro is simply never cut.
+//  DETERMINISTIC per track, off the enid — which IS the content hash, so the same file always cuts at
+//   the same place on every Pier and across every reboot.  That matters for more than tidiness: the
+//    cut point is baked into radiostock and into what a friend mirrors, so two peers disagreeing about
+//     it would hand the same id two different audio timelines.  A random roll could not be re-derived
+//      when a card is resurrected; a hash can.
+//  seq STAYS 0-BASED everywhere (the whole point of doing it here): seq i is source segment off+i, so
+//   the page grid, the want stride, the preview boundary and the %Stream seam are all untouched.  The
+//    offer's chunk count is total-off, and the continuation opens at (off+P) — the two other sites.
+//  Returns 0 when the track is too short to have any room, which is also what a driven world gets.
+Ra_preview_offset(enid, segs, P):
+    let room = segs - P
+    if (!(room > 0)) return 0
+    let lo = Math.ceil(segs * 0.3)
+    let hi = Math.floor(segs * 0.7)
+    if (hi > room) hi = room
+    if (lo > hi) lo = hi
+    if (lo < 0) lo = 0
+    // a stable 32-bit digest of the enid — not a hash of quality, just of REPEATABILITY
+    let h = 0
+    let s = '' + (enid || '')
+    let i = 0
+    while (i < s.length) { h = (((h * 31) + s.charCodeAt(i)) >>> 0); i = i + 1 }
+    let off = (hi > lo) ? (lo + (h % (hi - lo + 1))) : lo
+    // sit on the want-page grid (seg_secs 2 × PAGE 2) — cosmetic for seq, tidy for the sample math
+    off = off - (off % 2)
+    if (off < 0) off = 0
+    if (off > room) off = room - (room % 2)
+    return (off > 0) ? off : 0
+
 // Ra_bitrate — Opus bits per second.  128k is transparent-adjacent for stereo music; the tones the
 //  Book stocks are mono and simply spend less.
 Ra_bitrate():
@@ -1174,6 +1207,10 @@ Ra_record_from(lib, info, bufs):
     rec.sc.nch = +(info.nch || 1)
     rec.sc.preview = +info.segs
     rec.sc.total = +(info.total ?? info.segs)
+    // the CUT POINT rides the Record so the continuation encode and the span math can find it.  0 is
+    //  written as ABSENT (the snapped-boolean rule's cousin): a from-the-start cut — every driven world,
+    //   every short track — snaps exactly as it always did, so no fixture moves.
+    if (+(info.pv_off || 0) > 0) rec.sc.pv_off = +info.pv_off
     let bytes = 0
     if (info.sizes) {
         for (const sz of info.sizes) bytes = bytes + (+sz || 0)
@@ -1232,8 +1269,16 @@ async Ra_stock_one(w, lib, nav, src_base, path):
     //     stock must not resurrect a wrong boundary); one rebuild heals them. —
     let stand = await this.Ra_stock_standing(nav, pub, enid)
     if (stand && +(stand.info.preview_secs || 0) === this.Ra_preview_secs()) {
-        this.Ra_record_from(lib, stand.info, stand.bufs)
-        return { stood: 1, id: enid }
+        // AND cut at the CUT POINT this world wants (Ra_preview_offset).  Every card on the shelf today
+        //  was cut from 0:00 and carries no pv_off, so live they read as offset 0 against a wanted
+        //   mid-track offset and REBUILD themselves once — the same one-rebuild heal the preview_secs
+        //    check above does for a moved boundary.  segs comes back off the card (total + pv_off).
+        let ssegs = +(stand.info.total || 0) + +(stand.info.pv_off || 0)
+        let want_off = this.top_House().c.humdinger ? this.Ra_preview_offset(enid, ssegs, +(stand.info.segs || 0)) : 0
+        if (+(stand.info.pv_off || 0) === want_off) {
+            this.Ra_record_from(lib, stand.info, stand.bufs)
+            return { stood: 1, id: enid }
+        }
     }
     // — decode ONCE (OfflineAudioContext resamples to 48k, no user gesture needed) —
     let ctx = new OfflineAudioContext(1, 1, 48000)
@@ -1256,7 +1301,11 @@ async Ra_stock_one(w, lib, nav, src_base, path):
     let total = channels[0].length
     let segs = Math.ceil(total / SEG)
     let P = Math.min(segs, Math.ceil(this.Ra_preview_secs() / this.Ra_seg_secs()))
-    let end = Math.min(total, P * SEG)
+    // THE CUT POINT (Ra_preview_offset): live, the offer starts 30–70% into the track; driven, at 0 —
+    //  so every Book stocks the byte-identical card it always did and no fixture re-records.
+    let OFF = this.top_House().c.humdinger ? this.Ra_preview_offset(enid, segs, P) : 0
+    let start = OFF * SEG
+    let end = Math.min(total, start + P * SEG)
     // — measure loudness on the PREVIEW WINDOW ONLY, then BAKE that gain (the human 2026-07-28: "we cannot
     //    make people wait 20s").  The whole-track Ra_lufs render (an OfflineAudioContext over the ENTIRE
     //     track) was the dominant cold-stock cost — and it GATES the boot: Sounditron beat 2 holds until the
@@ -1265,7 +1314,7 @@ async Ra_stock_one(w, lib, nav, src_base, path):
     //        card.gain (Ra_source_pcm), so there is no seam volume jump.  Render shrinks whole-track → ~32s.
     //         Row-preserving (same records, same chunk count) — only the baked gain VALUE moves. —
     let pre = []
-    for (const c2 of channels) pre.push(c2.subarray(0, end))
+    for (const c2 of channels) pre.push(c2.subarray(start, end))
     let lufs = await this.Ra_lufs(pre, 48000)
     let gain = this.Ra_gain_for(w, lufs, this.Ra_peak(pre))
     this.Ra_bake(pre, gain.linear)
@@ -1273,7 +1322,7 @@ async Ra_stock_one(w, lib, nav, src_base, path):
     //    here: the continuation stays in the source until a listener's want parks for it —
     let st = this.Ra_encode_open(nch, this.Ra_bitrate())
     if (!st) return null
-    let at = 0
+    let at = start
     while (at < end) {
         let to = Math.min(end, at + SEG)
         this.Ra_encode_feed(st, channels, at, to)
@@ -1287,7 +1336,7 @@ async Ra_stock_one(w, lib, nav, src_base, path):
     // — build the card (Ra_pack fills its sizes[] from the chunks) and write the ONE .jam in a single
     //    shot.  segs = what THIS file holds (the preview); total = the whole track's chunk count —
     let meta = this.Crate_meta_from_path(path)
-    let info = { fmt: 'pkt', id: enid, path: path, base: src_base, col: 1, src_size: src_size, title: meta.title, artist: meta.artist, album: meta.album, seconds: +decoded.duration.toFixed(2), lufs: lufs, gain: gain.db, capped: gain.capped, segs: P, total: segs, preview_secs: this.Ra_preview_secs(), sr: 48000, br: this.Ra_bitrate(), seg_secs: this.Ra_seg_secs(), nch: nch, preskip: st.preskip, target: this.Ra_target_lufs(w) }
+    let info = { fmt: 'pkt', id: enid, path: path, base: src_base, col: 1, src_size: src_size, title: meta.title, artist: meta.artist, album: meta.album, seconds: +decoded.duration.toFixed(2), lufs: lufs, gain: gain.db, capped: gain.capped, segs: P, total: segs - OFF, pv_off: OFF, preview_secs: this.Ra_preview_secs(), sr: 48000, br: this.Ra_bitrate(), seg_secs: this.Ra_seg_secs(), nch: nch, preskip: st.preskip, target: this.Ra_target_lufs(w) }
     // — Seam A (rung 7): if this shelf owns a signing identity, stamp `by`+`sig` over the cids manifest
     //    onto the header before pack.  lib.c.signer is a keyed Idento a Book|app sets; absent → the header
     //     stays the byte-identical old shape so an unsigned stock (every current Book) is unchanged. —
@@ -1617,7 +1666,9 @@ async Ra_transcode_ensure(w, rec):
     }
     let st = this.Ra_encode_open(rec.c.pcm.length, +(rec.sc.br || this.Ra_bitrate()))
     if (!st) return null
-    rec.c.ra = { st: st, next: P, at: P * (this.Ra_seg_secs() * 48000), done: 0 }
+    // the continuation opens at source segment (pv_off + P) — seq P's audio.  With a from-the-start
+    //  cut (pv_off absent) this is the old P * SEG exactly.
+    rec.c.ra = { st: st, next: P, at: (+(rec.sc.pv_off || 0) + P) * (this.Ra_seg_secs() * 48000), done: 0 }
     // track the open transcode so Ra_transcode_pump runs its frontier AHEAD of demand (the lead pass) instead
     //  of the old break-even 2-chunks-only-when-a-want-is-currently-parked (~0.5 chunks/s = the consume rate).
     w.c.ra_hot = w.c.ra_hot || []
@@ -1843,7 +1894,10 @@ async Ra_term_decode_pulled(w, rec, limit):
     let nch = +(rec.sc.nch || 1)
     // nominal spans: SEG each; the track's LAST chunk carries the remainder (the encode's timeline
     //  padded a few hundred samples past it — the decoder's trim brings the play back to the card).
-    let secs = +(rec.sc.seconds || 0)
+    // sc.seconds is the WHOLE FILE's duration (what the UI names); the OFFER is the file from its cut
+    //  point on, so the last chunk's remainder must be measured against that, not against the file.
+    //   pv_off absent (a from-the-start cut) ⇒ the two are the same number and this is unchanged.
+    let secs = Math.max(0, +(rec.sc.seconds || 0) - (+(rec.sc.pv_off || 0) * this.Ra_seg_secs()))
     let lastn = (secs > 0 && total > 0) ? Math.max(1, Math.round(secs * sr) - (total - 1) * SEG) : SEG
     let per = []
     let s = 0
@@ -2134,6 +2188,35 @@ async Ra_pull_beat(w, rx, mine, theirs, rec):
 //          caps the wants sent per beat (default 4) so the fan-out shares the wire with the live
 //           listen instead of flooding it — the gentle ramp, worn at the catalog scale.
 //            Returns { warm, want, of } — previews whole, wants sent this beat, candidates considered.
+//  THE DIAL'S DOMAIN IS THIS WINDOW (the human 2026-08-07: "it keeps playing the same 10 tracks").
+//   Radio_dial_pool admits a record only once chunk 0 is PRESENT — a husk plays silence — so whatever
+//    this beat declines to warm is not merely slow to start, it is INVISIBLE to the shuffle.  Two
+//     defects compounded into that small pool, and they are fixed together because either alone still
+//      leaves it small:
+//       (a) NO RE-ASK.  Every want here was fired once ever, latched on the bare `ra_wanted` boolean.
+//            That is the exact shape Ra_pull_beat's own header calls out as the bug it fixed ("a want
+//             lost to a dropped|parked serve was NEVER re-asked, so that page became a permanent hole
+//              and the record wedged forever") — and this beat was cited there as the proven sibling
+//               for the BUDGET half while never receiving the RE-ASK half.  So one dropped want-reply
+//                froze a record as a husk for the whole session, permanently outside the dial.  Now it
+//                 wears the same measured ladder as Ra_pull_beat / Ra_mag_warm: Repli_rto with ×2
+//                  backoff (cap ×8), park-suspended, Karn-marked on retry.  Inert when wants land — the
+//                   Ra_page_hole gate means a page in hand is never re-wanted — so a clean Book beat
+//                    sends byte-identically what it sent before.
+//       (b) CONTIGUOUS WINDOW vs UNIFORM DIAL.  The candidates were the K catalog-successors of the
+//            playing record, but the dial picks UNIFORMLY at random across everything playable.  So the
+//             warm set only ever grew by the successors of records already played — a slowly-spreading
+//              contiguous clump — while `heard` retired its members one by one until the pool emptied
+//               and the caller fell through to the `all` replay.  That IS the reported symptom, and no
+//                amount of skipping escapes it: a skip advances the frontier by at most K.
+//            LIVE ONLY, half the window now steps a GOLDEN-RATIO cursor across the whole catalog (the
+//             same low-discrepancy trick the crate wander uses — φ's continued fraction is all 1s, so
+//              it never falls into lockstep with a catalog length).  Scattering is right rather than
+//               wasteful precisely BECAUSE the dial gate is chunk 0 alone: one landed page makes a
+//                record dial-able, and the live listen's own pull beat deepens whatever gets picked.
+//                 The other half stays LOCAL so the lineup's next card still starts instantly.
+//            Gated on humdinger, so a driven world keeps the pure rotation and every Book fixture
+//             stays byte-identical (the W4 precedent — a live-only draw change never re-records).
 async Ra_restock_beat(w, mirror, budget):
     let B = +(budget || 4)
     let K = this.Ra_keep_ahead(w)
@@ -2145,18 +2228,33 @@ async Ra_restock_beat(w, mirror, budget):
     let playing = this.Ra_playing_id(w)
     let PAGE = +(w.c.repli_page || 2)
     w.c.ra_wanted = w.c.ra_wanted || {}
+    w.c.ra_want_ts = w.c.ra_want_ts || {}
+    w.c.ra_retx = w.c.ra_retx || {}
+    w.c.ra_tries = w.c.ra_tries || {}
+    let nowms = Date.now()
+    let PARK_CEIL = +(w.c.heist_park_ceiling || 20000)
     let at = 0
     let i = 0
     while (i < recs.length) {
         if (recs[i].sc.id === playing) at = i + 1
         i = i + 1
     }
+    // the live-page predicate both halves of this beat's fix are gated on (spread + re-ask).
+    let LIVE = this.top_House().c.humdinger
+    // how many of the K slots are LOCAL (rotation); the rest spread.  All local in a driven world.
+    let LOC = LIVE ? Math.max(1, Math.floor(K / 2)) : K
     let warm = 0
     let want = 0
     let considered = 0
     let k = 0
     while (k < recs.length && considered < K) {
-        let rec = recs[(at + k) % recs.length]
+        let idx = (at + k) % recs.length
+        if (considered >= LOC) {
+            w.c.ra_spread_n = (+(w.c.ra_spread_n || 0)) + 1
+            idx = Math.floor(recs.length * ((w.c.ra_spread_n * 0.6180339887498949) % 1))
+            if (idx >= recs.length) idx = recs.length - 1
+        }
+        let rec = recs[idx]
         k = k + 1
         if (rec.sc.id === playing) continue
         if (w.c.ra_source_live && rec.c.from && !w.c.ra_source_live(rec.c.from)) continue
@@ -2173,10 +2271,38 @@ async Ra_restock_beat(w, mirror, budget):
             if (this.Ra_page_hole(map, off, PAGE, P)) {
                 whole = false
                 let key = rec.sc.id + ':' + off
-                if (want < B && !w.c.ra_wanted[key] && rec.c.rx && rec.c.from && w.c.repli_mirror_pier) {
-                    w.c.ra_wanted[key] = 1
-                    await this.Repli_want_next(w, rec.c.rx, w.c.repli_mirror_pier, rec.c.from, rec.sc.id, 'opus', off)
-                    want = want + 1
+                if (want < B && rec.c.rx && rec.c.from && w.c.repli_mirror_pier) {
+                    // the measured re-ask ladder, identical to Ra_pull_beat / Ra_mag_warm (see the
+                    //  header's (a)): a stamp means OUTSTANDING (the arrival seam clears it on landing),
+                    //   so "never asked" and "asked and answered" both read as 0 and ask freely, while a
+                    //    want that went missing waits one RTO — doubling per try, capped ×8 — and asks
+                    //     again.  A park says "not lost, stop spending" and suspends that up to PARK_CEIL.
+                    //  LIVE ONLY, and not merely to spare the fixtures: this ladder is driven by WALL CLOCK,
+                    //   so inside a Book whether a re-ask fires would depend on how fast the machine got to
+                    //    that step — a want sequence that flaps with load is worse than one that never
+                    //     re-asks.  A driven world keeps the deterministic fire-once latch; the wire it
+                    //      talks to is a Book's, and it does not drop.
+                    let go = false
+                    if (LIVE) {
+                        let asked_at = w.c.ra_want_ts[key] || 0
+                        let tries = w.c.ra_tries[key] || 0
+                        let parkedAt = w.c.ra_parked && w.c.ra_parked[key]
+                        let parked = parkedAt && (nowms - parkedAt < PARK_CEIL)
+                        let RTO = typeof this.Repli_rto === 'function' ? this.Repli_rto(rec) : 4000
+                        go = !parked && (nowms - asked_at >= RTO * Math.pow(2, Math.min(tries, 3)))
+                        if (go) {
+                            // KARN: a re-ask's reply cannot be attributed, so the arrival seam declines it.
+                            if (asked_at) { w.c.ra_retx[key] = 1; w.c.ra_tries[key] = tries + 1 }
+                            w.c.ra_want_ts[key] = nowms
+                        }
+                    } else {
+                        go = !w.c.ra_wanted[key]
+                    }
+                    if (go) {
+                        w.c.ra_wanted[key] = 1
+                        await this.Repli_want_next(w, rec.c.rx, w.c.repli_mirror_pier, rec.c.from, rec.sc.id, 'opus', off)
+                        want = want + 1
+                    }
                 }
             }
             off = off + PAGE

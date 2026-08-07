@@ -219,6 +219,18 @@ export class Audiolet {
         g.setValueAtTime(g.value, t)
         g.linearRampToValueAtTime(to, t + secs)
     }
+    // the other half of a crossfade: come UP from silence over `secs`.  Distinct from fade(1,secs),
+    //  which anchors on the CURRENT value — a brand-new voice sits at gain 1, so fading "to" 1 is a
+    //   no-op and the incoming track lands at full volume against the outgoing one.  This pins 0 at
+    //    `now` first, so the ramp genuinely starts from nothing.  Same tapped, pre-mute stage as
+    //     fade(), so a blend is measurable by the analyser rather than merely asserted.
+    fade_in(secs: number) {
+        let g = this.gainNode.gain
+        let t = this.gat.AC!.currentTime
+        g.cancelScheduledValues(t)
+        g.setValueAtTime(0, t)
+        g.linearRampToValueAtTime(1, t + secs)
+    }
     // < use this
     close() {
         this.closed = true

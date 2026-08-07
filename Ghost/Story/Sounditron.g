@@ -289,9 +289,30 @@ Sounditron_commission(w):
     // the DECK + UP-NEXT close while a heist is open (the human 2026-07-28 "I want to close up-next|riffle etc
     //  when Heists are open") — the Heist gets the room; they grapple back when the last keep leaves.
     if (!anyKeep) {
-        for (const q of [{ Riffle: 1 }, { Mag: 'Lineup' }]) {
+        // NO SWITCHER WHEN THERE IS NOTHING TO SWITCH BETWEEN (the human 2026-08-07: "have no
+        //  Pier|Crate switcher visible at all if there's only one Pier — keep it simple and straight
+        //   forward").  %Riffle IS the crate/friend picker — Riffle_homes deals `my crate` plus one chip
+        //    per sealed %MusuThem — so with a single Pier its whole reason to be on the glass is a choice
+        //     of one.  Count SEALED Piers off the peering (the same walk Riffle_homes names friends by);
+        //      two or more and the deck comes back on its own.  The deck still WORKS when hidden, exactly
+        //       as the stoker and zine do — this only decides whether it spends a cell.
+        let sident = this.top_House().Swarm_live_self ? this.top_House().Swarm_live_self() : null
+        let spiers = (sident && this.top_House().Swarm_peering) ? (this.top_House().Swarm_peering(sident)?.o({ Pier: 1 }) ?? []) : []
+        for (const q of (spiers.length > 1 ? [{ Riffle: 1 }, { Mag: 'Lineup' }] : [{ Mag: 'Lineup' }])) {
             let row = w.o(q)[0]
             if (row) organs.push(row)
+        }
+        // THE SHUFFLE POOL (the human 2026-08-07: "it keeps playing the same 10 tracks ... perhaps we can
+        //  get a visual on that. should be on the page, in Vyto!").  ShuffleFace draws the gap the numbers
+        //   hide: every %Record in reach as a pip, LIT only when chunk 0 has landed — because that, and not
+        //    the crate's size, is what Radio_dial_pool can actually pick from.  A wall of hollow pips beside
+        //     a small lit cluster IS the report, seen rather than inferred.
+        //  Minted like %Transfer: a persistent dontSnap cell on the RADIO world (krw), holding no state of
+        //   its own — the face reads live.  Rides with the deck, so an open heist still gets the room.
+        let shuf = krw && krw.oai ? krw.oai({ Shuffle: 1, dontSnap: 1 }) : null
+        if (shuf) {
+            if (shuf.c.up !== krw) shuf.c.up = krw
+            organs.push(shuf)
         }
     }
     // the DIAGNOSTICS toggle cell (always present) + the three it gates (Beat · Uptime · Door), grappled ONLY

@@ -31,8 +31,25 @@
         if (!x) return { active: false, rx: 0, tx: 0, spark: [] as number[], pulls: [] as any[], serves: [] as any[], freed: [] as any[] }
         const age = Date.now() - (x.ts || 0)
         const idle = age > 2500
-        const pulls = Object.values(x.pulls ?? {}).sort((a: any, b: any) => (b.ts || 0) - (a.ts || 0)).slice(0, 4)
-        const serves = Object.values(x.serves ?? {}).sort((a: any, b: any) => (b.ts || 0) - (a.ts || 0)).slice(0, 4)
+        // FINISHED IS NOT IN-FLIGHT (the human 2026-08-07: "the uploader says they're still uploading
+        //  tracks that are done now").  Repli_serve_chunks writes x.serves[id] on every advance and
+        //   never removes it, so a serve that reached n === total kept its ⇈ row at 100% forever and
+        //    read as work still going out — and, being among the four most recent, it CROWDED OUT rows
+        //     that really were moving.  Rows now carry `done`, sort behind live ones, and age out a few
+        //      seconds after finishing (long enough to SEE it land, short enough not to lie).  Same
+        //       treatment for pulls, which linger the same way.  Display-only: x.serves stays whole for
+        //        `runner_ask world` and the trace ring.
+        const nowms = Date.now()
+        const KEEP_DONE_MS = 6000
+        const STALE_MS = 60000
+        const dress = (m: any) => Object.values(m ?? {}).map((r: any) => {
+            const n = +(r.held ?? r.n ?? 0), t = +(r.total ?? 0)
+            return { ...r, done: !!r.done || (t > 0 && n >= t), age: nowms - (+r.ts || 0) }
+        }).filter((r: any) => r.age < STALE_MS && !(r.done && r.age > KEEP_DONE_MS))
+          .sort((a: any, b: any) => (a.done ? 1 : 0) - (b.done ? 1 : 0) || (+b.ts || 0) - (+a.ts || 0))
+          .slice(0, 4)
+        const pulls = dress(x.pulls)
+        const serves = dress(x.serves)
         const dropRecent = (Date.now() - (x.drop_ts || 0)) < 4000
         const breachRecent = (Date.now() - (x.breach_ts || 0)) < 4000
         return {
@@ -98,8 +115,8 @@
     {#if view.serves.length}
         <div class="tf-sec">
             {#each view.serves as s}
-                <div class="tf-row">
-                    <span class="tf-glyph tf-up">⇈</span>
+                <div class="tf-row" class:done={s.done}>
+                    <span class="tf-glyph tf-up">{s.done ? '✓' : '⇈'}</span>
                     <span class="tf-name">{s.title}</span>
                     <!-- ↻ = retransmits: the source re-sending pages it already sent. A row that only ever
                          shows ↻ climbing is repair, not progress — the shape of a sink stuck near the end. -->

@@ -176,7 +176,9 @@
             title: String(sc.Haul || 'this track'),
             artist: String(sc.artist || ''),
             from: String(sc.from_name || 'a friend'),
-            dest: 'music/' + safe(genre) + '/',
+            // the REAL dest-root (see HaulBarFace): no invented `music/` root, and no `Unfiled` folder —
+            //  an unpinned artist prepends NOTHING and the source's own folders land at the collection root.
+            dest: String(genre || '').split('/').map((p: string) => String(p || '').trim().replace(/[\/\x00]/g, '-').replace(/^-(?= )/, '0')).filter(Boolean).join('/'),
             asks: +(sc.asks || 0),
             catRaw, catSegs,
             dirsRaw, dirsSegs, dirsKnown, dirsAuto,
@@ -324,9 +326,9 @@
         <!-- FOLDED: it started — a compact progress strip, no browsing -->
         <div class="kf-prog">
             {#if face.state === 'done'}
-                ✓ kept {face.landed_n} → {face.dest}
+                ✓ kept {face.landed_n} → {face.dest ? face.dest + '/' : 'your collection'}
             {:else}
-                downloading {face.landed_n}/{face.total_n || '?'} tracks → {face.dest}
+                downloading {face.landed_n}/{face.total_n || '?'} tracks → {face.dest ? face.dest + '/' : 'your collection'}
             {/if}
         </div>
         {#if face.state !== 'done'}

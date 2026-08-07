@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'dc096412993aa4b1~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '8a8e0ae0255bfc7d~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -2585,7 +2585,12 @@ Heist_keep_commit(w, keep, choices) {
         pick.c.up = keep
         pick.sc.artist = c.artist || 'misc'
         if (c.title) pick.sc.title = c.title
-        pick.sc.genre = c.genre || 'Unfiled'
+        // NO 'Unfiled' SHIM (the human 2026-08-07, on the chooser saying `music/Unfiled/`).  This default
+        //  did not merely mislabel the destination, it CREATED it: an unpinned artist committed the literal
+        //   string 'Unfiled', Heist_filing_for then returned it as a real category, and Heist_rel_for
+        //    prepended a folder the 2026-07-29 ruling explicitly forbids ("I don't want anything prepended
+        //     there").  Absent when unpinned — the guarded shape every other genre write here already uses.
+        if (c.genre) pick.sc.genre = c.genre
         pick.bump()
         n = n + 1
     }

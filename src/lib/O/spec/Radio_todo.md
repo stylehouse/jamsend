@@ -23,6 +23,81 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+### 2026-08-07 — THE SHUFFLE POOL WAS NEVER THE CRATE (the "same 10 tracks" report)
+
+**The destination this serves:** hitting skip repeatedly should walk the whole collection, and the
+ tracks should blend. The owner: *"it keeps playing the same 10 tracks"* — with 62 tracks in reach.
+
+**The bomb, for whoever reads this next: `Radio_dial_pool` admits a record only once chunk 0 is
+ PRESENT.** A husk plays silence, so presence IS playability — which means *the warm window is the
+  dial's entire domain*. Anything the restock beat declines to warm is not slow to start, it is
+   INVISIBLE to the shuffle. Two defects compounded on that fact, both in `Ra_restock_beat`:
+
+1. **Wants were fired once, ever** — latched on the bare `ra_wanted` boolean, no retry timer. That is
+    the exact shape `Ra_pull_beat`'s own header names as the bug it fixed ("a want lost to a
+     dropped|parked serve was NEVER re-asked... the record wedged forever") — and this beat is cited
+      *there* as the proven sibling for the BUDGET half, while never receiving the RE-ASK half. One
+       dropped want-reply froze a record as a husk for the session, permanently outside the dial.
+2. **A contiguous window against a uniform dial** — candidates were the K catalog-successors of the
+    playing record, but the dial picks uniformly at random. So the warm set grew only by successors of
+     records already played (a slowly-spreading clump) while `heard` retired its members until the pool
+      emptied and the caller fell through to the `all` replay. No amount of skipping escapes it: a skip
+       advances the frontier by at most K.
+
+Fixed together — either alone still leaves the pool small. Half the window now steps a **golden-ratio
+ cursor across the whole catalog** (the crate wander's trick); scattering is right rather than wasteful
+  *because* the gate is chunk 0 alone — one landed page makes a record dial-able and the live pull
+   deepens whatever gets picked. Both halves gated on `humdinger`. The re-ask is gated **not merely to
+    spare fixtures**: it is wall-clock driven, so inside a Book whether it fires would depend on machine
+     speed — a want sequence that flaps with load is worse than one that never re-asks.
+
+**%PREVIEW-MIDDLE LANDED** (was parked in `Sounditron_todo.md` "not built blind — needs the human's
+ ear"; the owner asked for it directly). `Ra_preview_offset` cuts the offer 30–70% in, deterministic
+  off the **enid** — which is the content hash, so every Pier and every reboot agree; a random roll
+   could not be re-derived when a card resurrects, and two peers disagreeing would hand one id two
+    different timelines. `seq` stays 0-based (offer seq *i* = source segment `off+i`), so the page grid,
+     want stride and %Stream seam are untouched; the offer's chunk count is `total-off` and the
+      continuation opens at `off+P`. Three other sites follow it: `Ra_record_from` (stamps `pv_off`,
+       **absent when 0** so nothing snaps differently), `Ra_transcode_ensure`, `Ra_term_decode_pulled`'s
+        last-chunk remainder, and `Radio_open`'s `sc.of`. The resurrect gate now also requires the card's
+         cut point to match, so pre-existing stock rebuilds itself once.
+ **The seam is fine by construction** — it is an encode boundary, marked `head`, and both the Book
+  decoder and the live player reset the decoder there and drop that encode's preskip; both halves carry
+   the same baked gain. **What is UNVERIFIED is the track START**: the first preview chunk now opens
+    mid-waveform, so the encoder begins from silence at a non-zero sample. Needs an ear, not a Book.
+
+**Heist UI: `music/Unfiled/` was not only a lie, it was CREATING the folder.** `HeistSetup.commit()`
+ *and* `Heist_keep_commit` both defaulted the genre to the literal string `'Unfiled'`, which
+  `Heist_filing_for` then returned as a real category — landing a folder the 2026-07-29 ruling
+   explicitly forbids ("I don't want anything prepended"). Both now leave it absent. The `music/` prefix
+    was invented display (there is no such root), and the row showed only the basename, claiming the
+     album folders get flattened — they don't (`Heist_cp_path` preserves the source path). Also:
+      `Repli_serve_chunks` writes `x.serves[id]` on every advance and **never removes it**, so a finished
+       upload kept its ⇈ row at 100% forever *and*, being among the four most recent, crowded out rows
+        that were genuinely moving. Rows now carry `done`, sort behind live ones, and age out.
+
+**NEW CELL — `%Shuffle` / `ShuffleFace`** (the owner: *"perhaps we can get a visual on that. should be
+ on the page, in Vyto!"*). One pip per record in reach, lit only when the dial could pick it, filled by
+  preview-held fraction, dimmed once heard. The wall of hollow pips beside a small lit cluster IS the
+   report — seen instead of inferred. Rides with the deck (yields to an open heist).
+
+**BOOK STATE, attributed properly (the controlled revert, twice).** MusuStock 1.0, MusuRaTerm 1.0,
+ MusuHeist 1.0 (the ungated re-ask had cost it 0.95 — gating restored it). **MusuMag and MusuRaStream are
+  PRE-EXISTING RED, not this work**: with `Ra.g` reverted to HEAD they measure *identically* (MusuMag 0.1
+   vs 0.1, ×3 and ×2 runs; MusuRaStream never settles on either build). Both remain to be diagnosed.
+ **Trap worth keeping:** MusuMag read 0.7 before the radiostock wipe and 0.1 after, on BOTH builds — the
+  Books lean on standing stock, so a cache deletion mid-session will look exactly like a regression.
+   Always re-baseline after touching `.jamsend/radiostock/`.
+
+**radiostock had no disk-side GC.** 237 files / 116MB for 62 distinct tracks: the filename carries the
+ writing peer's pub, so every fresh browser identity re-wrote the whole crate (15 generations).
+  `RADIOSTOCK_CACHE_LIMIT` whittles only the in-memory record set — nothing ever culls the files except
+   the source-gone drop. Wiped at the owner's request (also required by the preview re-cut). **A real
+    disk-side cap is still owed.**
+
+**NEXT:** the owner's ear on (a) the mid-track track-START, (b) the blend; their eye on ShuffleFace;
+ then diagnose MusuMag/MusuRaStream, and cap radiostock on disk.
+
 **2026-08-07 — THE SMALL POOL THAT WOULDN'T ROLL OVER. THE ANSWER WAS THE WHITTLE, NOT THE MEANDER.**
 
 The owner: *"it should be easy to find every album in a 5 album collection like this but somehow two of
@@ -42,7 +117,10 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
      costs the big album nothing (shelf → [6,6,6,3,2], P(album ≤ 1 track) 52%/75% → 0%/0%).
 - **Landed: `Stoker_tour` retires the oldest record of whichever album is currently fattest** (`sc.album`,
    or the path's dirname when untagged). Max-min allocation done the cheap way.
-- **THE CRATE IS BIG AND DEEP — the "small collection" read was wrong.** The tour mark now carries
+- **THE CRATE IS BIG AND DEEP** — but see the ground-truth count later in this entry, which splits this
+   claim in two: the TREE is big and deep (528 directories, five levels, 82% of it `wormhole/`) while the
+    MUSIC really is small (62 files in 7 directories). So "the small collection read was wrong" is only
+     half right, and the half that matters for the wander is the tree. **The tour mark now carries**
    `dirs`/`known`/`open`/`top` off the meander's own learn map, and `top` named the tree:
     `0 spawn/- folks/- west/Calexico and Iron & Wine In the Reins:13`. Five levels down. A 12-hop budget
      that RESET TO THE ROOT on every dead end could barely reach an album at all. Now 24 hops, and a dead
@@ -64,22 +142,222 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
    momentarily-shelved 200-track album isn't priced like an empty folder. Best measured revisit latency of
     four floors tried (20.5 → 9.7 tours). Integer by construction — `prandle` is `floor(random*n)`, so a
      fractional weight would collapse its remainder into the last bucket and bias the final branch.
-- **NEXT SESSION, two live threads left open by the readings, both cheap to start on.**
-   (a) **`known` sometimes ticks DOWN** — Lefto 46 → 45, Righto 50 → 49 across consecutive tours. It
-    should be monotonic: learn entries are only added or refreshed, and `audio` is the true count. A
-     one-track dip on re-visit points at `dl.expand()` returning a PARTIAL file listing, which would
-      mean the wander intermittently under-counts a directory it is standing in — a real supply leak,
-       and one the weights would faithfully propagate. Confirm by logging `audio_all.length` for one
-        known-size album across repeat visits before theorising.
-   (b) **Lefto walks 163 directories for 48 tracks; Righto 128 for 49.** Empty dirs are now LEARNED
-    (`audio:0, open:0`) instead of holding the prior of 8, so they should de-weight themselves as they
-     are visited — but that is the simulation's prediction, not yet an observation. If Lefto's ratio
-      does not improve over a long session, the dead-end/step-up walk is favouring structure over music
-       and wants the `top` readout widened to name the directories being burned.
-- **Still open:** `open` fixes wasted hops, NOT coverage — the simulation is explicit that only the fair
-   whittle moves shelf composition. The coverage claim rests on the whittle change and wants more live
-    turns than it has had. And the visualise-the-scrolling-Mag idea is untouched (face work, unprovable
-     from the container — pixels or it didn't land).
+- **Thread (b) — "163 directories for 48 tracks" — RESOLVED, and it was the biggest thing here.**
+   The dead-end **step-up** added the same day (climb one level instead of resetting to the root) fixed
+    the four-wasted-descents problem and bought a far worse one: stepping up out of a barren leaf lands
+     on a parent whose ONLY branch is the leaf just abandoned, so the very next draw descends straight
+      back into it. Traced hop by hop in simulation — `misc9/a/x DEAD -> up -> misc9/a/x DEAD -> up`
+       eleven times, **22 of 24 hops oscillating between two directories, on 91% of digs**. That is what
+        `picks=0 got=0` always was: not a wander that failed to find music, a wander that never got to
+         look. Sixth instrument-was-the-bug of the week, and the only one that was a *dead loop*.
+   **Fix: deadness PROPAGATES.** A directory is dead when it is learned, holds no audio of its own, and
+    every sub is dead; dead branches are pruned from the draw, so a node whose branches are all dead
+     becomes dead itself and its parent prunes it — the corridor unwinds instead of trapping the walk.
+      Two deliberate non-properties: unknown space is never dead (no learn entry ⇒ false, so there is
+       always a way into what has not been seen), and a SPENT album is never dead (it reads `audio`, the
+        true count, never `open`), so whittling always brings it back and no track is written off.
+   Simulated on the owner's shape (201 dirs / 995 tracks / 130 albums, 400 digs × 40 seeds):
+    albums reached **26 → 122** of 130, tracks **70 → 487** of 995, empty digs **364 → 152** of 400,
+     dirs walked **83 → 193** of 201 — and hops **DOWN** 8926 → 6266, so it is cheaper as well.
+- **CORRECTION, FOUND IN A COLD RE-READ OF MY OWN DIFF: THE PRUNE WAS INERT ALL NIGHT.**
+   `live = dirs.filter(d => !dead(here + '/' + d, dm))` — but a `dirs` element is a directory HANDLE, and
+    every other line in the function spells `String(d.name)`. Interpolating the handle built the key
+     `<here>/[object Object]`, which is in no learn map ever, so `dead()` took its `if (!e) return false`
+      exit on every call and **nothing was pruned from the moment it landed**. It fails in the SAFE
+       direction — nothing wrongly written off — which is exactly why nothing threw and the numbers still
+        went up. Ninth of the week, and the first where the silent mechanism was my own new code.
+   **What this changes about the attribution, which matters more than the fix:**
+   · The SIMULATION was testing the intended algorithm correctly (its `dirs` are `Object.keys(...)`,
+      i.e. strings), so albums 20.5 → 110.4 on the repo shape stands — **as a prediction, still untested
+       live.**
+   · The LIVE results — 49 → 62 discovery, the 38–40 limit cycle, the shelf composition — are real but
+      were produced by the **φ slot cursor, the dry-tour roll, and the cold learn map after the reload**.
+       Not by deadness. Every sentence in this entry crediting the prune for a live number is wrong.
+   · The ping-pong trap traced in simulation is REAL and was **never actually fixed live**. Discovery
+      still reached 62/62 despite it, so on this tree it costs hops rather than coverage.
+   · Therefore expect a further improvement once the fixed build runs — but a MODEST one, see below.
+- **AND THE SIMULATION'S SHAPE WAS WRONG, WHICH INFLATED EVERY HEADLINE IN THIS ENTRY.** The synthetic
+   crate was built before the share had been counted: 995 tracks in 130 albums, against a reality of
+    **62 tracks in 7 directories**. Finding 130 needles is a different problem from finding 7, so the
+     "albums 20.5 → 110.4" and "26 → 122" figures **do not transfer to this owner's share**. Rebuilt the
+      harness to the counted shape (520 dirs, 62 tracks, albums 18/13/11/8/8/3/1, 408 dirs of
+       `wormhole/Ting/<date>/<time>`, `scratchpad/real2.mjs`) and re-measured what actually ships:
+   | metric | was-live (cursor only) | shipped (+prune+confirm) |
+   | music dirs reached | 7/7 | 7/7 |
+   | tracks found | 62/62 | 62/62 |
+   | **digs to complete discovery** | 120.7 | **110.1** (−9%) |
+   | **hops to complete discovery** | 2262 | **2010** (−11%) |
+   So on THIS share the prune is a ~10% speedup, not a transformation, and final coverage is unchanged —
+    which is precisely why the cursor-only build reached 62/62 live without it. The big numbers were real
+     for the shape they were measured on and that shape is not the owner's. **Count the crate BEFORE
+      choosing the harness shape; a simulation calibrated to an imagined input measures an imagined
+       system.** Second time in one sitting that the sim's shape, not its logic, was the thing that lied.
+- **Thread (a) — MEASURED, and the partial-listing hypothesis is REFUTED.** `flap` counts revisits where
+   a directory's audio count disagrees with the last visit, `flapd` the same for its subdir count (the
+    more dangerous half — a short directory listing omits a music-bearing child from `subs`, and deadness
+     only checks the subs it was told about, so a parent whose real children were never seen could be
+      pruned and take a branch out of reach). Both sat at **0** across many tours on both players.
+       So `known=49` is honest and the share really does hold ~49 tracks in 184 directories — low music
+        density, but the truth of it. The original one-off tick-down (50→49) stays UNEXPLAINED; it simply
+         does not recur under measurement, which is worth knowing but is not the same as solved.
+- **`picks=0 got=0` ON EVERY TOUR MARK WAS AN ARTEFACT, NOT A FINDING.** `st.c.dig_*` are per-CALL and
+   the round loop breaks on the first dry round — so the round the trace read was, by construction,
+    always the one that found nothing. Marks were printing `dug=1 ... picks=0 got=0`: an instrument
+     contradicting itself within a single line, for as long as the mark has existed. It cost this session
+      a wrong "the wander cannot reach the free tracks" theory, chased almost to a speculative fix, before
+       the contradiction was noticed. Now summed across rounds. **Seventh of the week, same shape** — and
+        the first one that was actively *arguing the opposite of the truth* rather than staying silent.
+   **Still not the whole truth, and worth knowing before trusting these fields.** `Stoker_dig` loops over
+    three bases (`['music', '', 'testsounds']`) and RE-ASSIGNS `dig_picks/got/hit/dup/bad` inside that
+     loop, so one call's counters describe only the LAST BASE it tried. Summing across rounds therefore
+      gives the last-base value of each round, not the true total — an undercount, in the same direction
+       as the bug it replaced. Left alone deliberately: making it exact means changing per-base semantics
+        that a nearby comment says are load-bearing ("the shelf count ACROSS THIS ONE CALL is the exact
+         test"), and that is not a change to make while the live pair is unreachable. **Read `dug` as the
+          authority for what a tour actually landed; treat `picks/got` as a lower bound.**
+- **Thread (a)'s insurance, kept anyway** — deadness still requires a second opinion.
+   Pruning is permanent, so a single short `expand()` on a real album would write it off for the life of
+    the page. Deadness therefore needs a second opinion: `z` counts consecutive audio-free visits and a
+     directory must look empty TWICE. Costs warm-up speed only (tracks by dig 50: 58 → 38) and converges
+      to the same ceiling (121 vs 122 albums). Still worth confirming (a) directly — log `audio_all.length`
+       for one known-size album across repeat visits — because if listings really are partial, `known`
+        and every weight derived from it are under-counting everywhere, not just here.
+- **EVERY DIRECTORY CARRIES ITS OWN SLOT CURSOR** (the owner: *"some kind of balanced tree that grows to
+   find every directory evenly, by magic... a Dip assigned tree of directories"*, *"walk evenly into the
+    unknown space"*, *"roughness"*). An iid draw is a coupon collector — seeing all K branches of a node
+     takes ~K·lnK visits with a heavy tail, so the wander kept re-treading the branch it had just come
+      back up from. The node now steps its OWN cursor by φ across the weighted CDF, the same shape as
+       `Dip_assign` claiming `parent.sc.i++` (Hovercraft.svelte) but proportional instead of round-robin:
+        successive visits land ~0.618 apart, so K roughly equal branches are covered in K visits with no
+         repeat and no gap, and a branch worth 3× another still gets 3× the slots. Discrepancy
+          O(log n / n) against iid's O(√n). φ specifically because its continued fraction is all 1s, so
+           the sweep can never fall into lockstep with a branch count. The cursor is born at a random
+            offset — the **roughness** — so no two nodes are in phase. Worth **+16 albums and +17 dirs**
+             on top of pruning. It is not one of the old wearing-out cursors and cannot become one: it
+              indexes BRANCHES at one directory, never tracks, the track pick stays a fresh draw, and it
+               lives on the `.c`-only learn map so it never encodes and dies with the page.
+   Sharp edge, found before it shipped: that map SURVIVES HMR, so a live page carries hundreds of entries
+    minted by the previous build with no cursor. `undefined + 1` is NaN, `NaN >= w` is false, and the CDF
+     walk then stops at k=0 — every one of those nodes would have picked its first branch for ever, on
+      the live pages only, with nothing thrown to say so. Hence `if (node.n == null)`, not `if (!node)`.
+- **THE DRY TOUR IS THE ONE THAT MOST NEEDS THE ROLL** — the deadlock behind the owner's actual sentence.
+   Yesterday's `dug > 1` guard reads a dry wander as "there is nothing out there". Usually it means the
+    opposite: the wander came up dry BECAUSE the shelf holds everything within reach, and the skip set
+     built from that shelf is what emptied the pool. Supply is not absent, it is *held*. Both players sat
+      in exactly this: `dug=0 dropped=0 stock=34` tour after tour against a window of 40 — never full so
+       no over-the-window whittle, never digging so no roll. Dropping un-barrens the path, so at
+        saturation the whittle is the ONLY source of supply. Now `dug < 1` rolls one as well, and it is
+         self-limiting without a rate of its own: drop one on a dry tour, the next tour finds exactly
+          that one, `dug === 1` blocks the roll — the shelf sits at its ceiling and rotates a record
+           every couple of tours instead of freezing. The measured case the `dug > 1` guard exists for
+            (`dug=1 dropped=1` pinning a growing shelf) still takes neither branch.
+   Live on both players within minutes: `dug=0 dropped=1 stock=33` → `dug=1 dropped=0 stock=34`, over and
+    over, with `barren` falling 8 → 1 as the drops un-barren paths and the re-digs then succeed.
+   **Settled into a stable limit cycle, the same one on both players independently:**
+    `40 → 39 → 38 → 39 → 40 → 39 → 38 → 39 → 40` — up to the window, down two on the whittle + dry roll,
+     straight back on the dig. It does NOT drift toward the floor, which was the one failure mode this
+      change could have had; and the shelf now reaches a FULL window of 40, against 23–34 before. Two
+       independent players converging on the identical cycle is the tell that it is a property of the
+        mechanism rather than a lucky sitting.
+- **THE DIAL BLENDS RATHER THAN CUTS** (the owner: *"it should be very effective at rapidly skipping
+   tracks. getting them to blend together a little even"*). `Radio_skip` used to `close()` the voice on
+    the spot, severing a graph mid-sample — a click, and a burst of them on a fast run of skips. The
+     outgoing voice already has audio scheduled AHEAD of the playhead, so ramping its gain down while the
+      incoming voice ramps up gives a real overlap: skip a primed track and the two genuinely cross.
+       Un-primed, the same ramp degrades to a clean fade instead of a click — the safe direction to fail.
+   `Audiolet.fade_in(secs)` is the new half; `fade(1, secs)` could NOT do it, because it anchors on the
+    CURRENT value and a fresh voice sits at gain 1 — the incoming track would land at full volume.
+   The outgoing voice is closed on a timer, and any voice still fading when another skip lands is closed
+    AT ONCE — the stack is bounded at one however fast the dial is turned, which is what keeps rapid
+     skipping cheap rather than an accumulation of dead graphs. Live pages only: a timer and a gain ramp
+      are wall-clock, and a driven world must tear its voice down synchronously or every Book that skips
+       would be racing a `setTimeout`. **Unverified from here** — a blend is pixels-and-ears, and neither
+        round-trips a fixture; `runner_shot` cannot hear. Wants the owner's ear on a fast run of skips.
+- **GROUND TRUTH OF THE SHARE, finally measured — the share is /app ITSELF.** The `died=` electrode (a
+   `.c` string naming where a give-up walk ended) came back `died=src/routes h24`,
+    `died=Ghost/test/Story/Lake h24`, `died=wormhole/Ting/2026-07-02/160434 h24` — the wander was
+     spending its whole 24-hop budget inside the source tree. So the crate is the repo working tree,
+      with the owner's music in `0 spawn/` inside it. Counted from the container:
+   | directories | 528 (435 of them under `wormhole/`) |
+   | directories holding audio | **7** |
+   | audio files | **62** |
+   Album sizes 18, 13, 11, 8, 8, **3**, **1**. **Part of the founding complaint was ground truth, not a
+    defect**: *"somehow two of them only have one track each"* — the last two directories are
+     `Charif Megarbane - Tayyara Warak (2022) [FLAC]` appearing TWICE, once with 3 tracks and once
+      holding a single file. That copy really does hold one track. Before theorising about a crate,
+       count it; the container can see this share even though it cannot see an FSA-picked one.
+   This also sizes the remaining work honestly: the wander must find 7 music directories among 528, and
+    `wormhole/` alone is 82% of the tree. Deadness collapses it bottom-up, but every barren leaf needs
+     two visits (the `z` confirmation), so convergence is on the order of ~1000 directory visits.
+- **A THEORY KILLED BY SIMULATION BEFORE IT WAS EVER TYPED INTO THE GHOST.** `est` prices an unvisited
+   directory at 8 and sums over subs, so a directory with 20 unexplored subdirs estimates 160 tracks and
+    out-weighs any real album ~12:1 — and source trees are the branchiest thing there is. That reads like
+     an obvious bomb. It is not: an EXPLORE arm (unvisited prior 0 plus a flat per-branch curiosity
+      bonus) measured WORSE on a repo-shaped share — 98.8 albums against 110.4. The per-descendant prior
+       is not a bug, it IS the exploration drive, and flattening it costs discovery. **Simulate first;
+        this is the second standing hypothesis this week that the data refused.**
+   The same run is the evidence for what DID land, on the shape that actually matters — a repo-shaped
+    share of 904 dirs with music buried beside a big source tree: albums reached **20.5 → 110.4** of 130,
+     tracks **54 → 358**, empty digs **372 → 217**, at lower hop cost.
+- **THE COVERAGE CLAIM IS NOW LIVE EVIDENCE, NOT SIMULATION.** Counted off Lefto's real shelf of Righto's
+   shared stock (33 records), against the disk truth above:
+   | testsounds 8/8 · Deadfly 8 of 11 · Calexico 7 of 13 · Resonating 5 of 8 · Marzipan 4 of 18 ·
+    Tayyara(arabia) 1 of 3 · Tayyara(dup) 0 of 1 |
+   **Every album is represented except the one-track duplicate**, and the distribution is the OPPOSITE of
+    proportional-to-size — the biggest album on disk (Marzipan, 18) holds the fewest (4) while the 8-track
+     testsounds holds all 8. That is the album-fair whittle doing precisely its job: it drops from the
+      currently-fattest album, so a big album cannot crowd out a small one. Nothing is stranded at one
+       track any more except the folder that genuinely contains one file.
+   Method note worth keeping: the world snap embeds records in TWO forms — plain snap text and, when a
+    title or directory holds a comma, escaped JSON. A `grep -oE 'path:[^,]*'` silently drops both classes
+     (truncates at the comma, misses the backslash-escaped ones) and undercounted by a third here, hiding
+      a whole album. `tr -d '\\'` first, then match to `,sr=`.
+- **COMPLETE DISCOVERY, MEASURED AGAINST DISK TRUTH.** Righto reached `known=62` — every audio file in
+   the share — from a COLD learn map in ~13 minutes: 27 → 40 → 43 → 44 → **62**. The old code plateaued
+    at 48–49 after hours and stopped there. That number is not a proxy or a ratio: the crate holds
+     exactly 62 files (counted above), so `known == 62` IS total coverage. This is the gate the whole
+      §0 entry was reaching for, and it is now a measurement rather than a simulation.
+   Lefto sat at 49 through the same window, and 62 − 49 = 13 = exactly the Calexico album — i.e. one
+    music directory its own wander had not yet entered (its SHELF holds 7 Calexico tracks, but those
+     arrived over the wire from Righto, not from its own walk). A testable prediction, not a worry:
+      `known` should step to 62 when it lands there, and its `dirs` was still climbing (111 → 131).
+   **Confirmed at 02:46** — Lefto went 49 → **62** in a single step, i.e. +13 exactly, the Calexico album,
+    the moment its wander entered that folder. So BOTH players reached complete discovery of the share
+     from cold maps, and the one player that lagged did so for the predicted reason rather than a second
+      cause. Stock settled at 39 against a window of 40 on both. Note Righto found all 62 having learned
+       FEWER directories than Lefto (119 vs 139): the win is not "walk more", it is "stop re-walking the
+        barren", which is exactly what deadness + the slot cursor were for.
+- **Still open — REVISED at the end of the sitting, because most of this bullet was overtaken.**
+   `open` fixing wasted hops but not coverage still holds, and the fair whittle is still the only thing
+    that moves shelf composition. But "the coverage claim wants more live turns than it has had" is no
+     longer true: both players reached 62/62 against counted disk truth, and the shelf distribution was
+      read off the live snap (biggest album fewest records). **Coverage is settled; do not re-litigate it.**
+   What is genuinely still open:
+   · **The visualise-the-scrolling-Mag idea** — untouched, and the owner said only *"perhaps"*. Face work,
+      unprovable from the container (pixels or it didn't land), so it wants a steer before it is started.
+   · **The blend wants an ear.** Proven ACTIVE rather than inert — it rides the same `humdinger` gate as
+      the learn map, which is demonstrably populated — and proven leak-free by construction, but whether
+       it SOUNDS like a blend is not a question this container can answer.
+   · **Sounditron 0.29 → 0.14 red**, caused by these changes and expected (it is resident on the live
+      tabs where the new meander runs); its re-record is still blocked on stock nondeterminism.
+   · **§0 is ~950 lines across five dated entries** and wants folding into §3.x/§9 — the doc's own rule,
+      and an editorial call for the owner rather than something to do unilaterally.
+   · **THE WARM WINDOW AND THE DIAL DISAGREE ABOUT WHAT MATTERS — an efficiency question, NOT a bug.**
+      `Ra_restock_beat` warms the next `Ra_keep_ahead` (4) records **in catalog order**, rotated to start
+       after the playing one; its comment assumes sequential play ("so the NEXT track starts instantly").
+        `Ra_dial_next` picks **uniformly at random** across the whole catalog. With ~33 records that is a
+         ~12% chance a dial turn lands on something already warm — so ~7 turns in 8 pull cold, and a
+          SKIP is a dial turn, which bears directly on the owner's "very effective at rapidly skipping".
+      **Measured before believing it, and it is not currently biting**: zero `starve`/`unstarve` marks on
+       either player's ring across a session with 140–194 skips, and `primed [id]` → `primed-open [id]`
+        shows the prime being spent on the fast path. A loopback pair pulls fast enough to hide it. On a
+         real wire it would not hide. Options if it ever surfaces: have the dial PREFER records whose
+          preview is whole (uses what was already paid for, but narrows variety toward the window), warm
+           a random sample instead of a sequential run (matches the dial's distribution, same hit rate),
+            or simply raise `keep_ahead`. **A design call for the owner — do not just change it.**
+      Read both functions before touching either; this subsystem punished three plausible readings in one
+       sitting (page clumping "breaks the shuffle" — the dial is random; "only 5 dial candidates" —
+        `preview` is PROMISED not landed, so husks are candidates; and the branchiness bomb).
 
 **2026-08-07 — "ONLY 3 TRACKS COME OVER". TWO BUGS, BOTH MEASURED, BOTH FIXED, BOTH LIVE-PROVEN.**
  The owner's report was exact and the two causes are independent — one at each end of the wire. Between
