@@ -26,6 +26,7 @@ import ShuffleFace from './ui/ShuffleFace.svelte'
 import CrateFace from './ui/CrateFace.svelte'
 import UptimeFace from './ui/UptimeFace.svelte'
 import BeatFace from './ui/BeatFace.svelte'
+import TreeFace from './ui/TreeFace.svelte'
 
 export const GLASS_KINDS: Record<string, any> = {
     Beat: BeatFace,       // the session HUD — beat N/7 + the live countdown for the wait we're in
@@ -47,4 +48,14 @@ export const GLASS_KINDS: Record<string, any> = {
     Lineup: LineupFace,   // the standing programme — up next (~20 deep), starve errors RED
     Shuffle: ShuffleFace, // the shuffle POOL — one pip per record in reach, lit = the dial can pick it
     Crate: CrateFace,     // a Musu home — the records spread out on the bed, ▶ auditions
+    // the FACELESS face: draws whatever particle it is handed — mainkey, scalars, children, recursively.
+    //  Every entry above knows what its thing MEANS and draws that; this one knows nothing and draws the
+    //   C data itself, so a part of the tree nobody has designed a face for is still legible in the glass.
+    Tree: TreeFace,
 }
+// HMR NOTE (2026-08-07): this file's only importer is Vytui.svelte, so it is hot-updatable ONLY while
+//  Vytui stays self-accepting.  Vytui carried a `<script module>` block (a two-line debug serial) and
+//   vite-plugin-svelte refuses HMR to any component with module-context state — which made Vytui a dead
+//    end and this file a full-page reload on every edit, killing the player tabs' AudioContext.  Measured
+//     both ways on the live pair: same one-line edit wiped the mirror crate before the fix, left it
+//      standing (31 records, own shelf still climbing) after.  Don't reintroduce a module block here.

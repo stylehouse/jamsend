@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '5794aab4b9fb3f77~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '9cfa5c6ce847f864~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -355,6 +355,21 @@ Sounditron_commission(w) {
             let row = w.o(q)[0]
             if (row) organs.push(row)
         }
+        // THE UNDERWORLD, LITERALLY (the human 2026-08-07: "showing a recursive tree of plain C** data in a
+        //  useful way ... a cell can kind of be a component or a rendering of the C data all labelled ... and
+        //   recurse C**", and the image that goes with it — "all the machinery leading up to the radio getting
+        //    on, then the radio swallows it all like a panel being placed over the top of all them guts").
+        //  TreeFace is the faceless face: it knows nothing about what it is handed and draws the particle —
+        //   mainkey, scalars, children, recursively.  So this ONE cell shows the guts of whatever world it
+        //    sits in, and keeps working when that shape changes, which no bespoke face does.
+        //  It hangs off `show_diag` deliberately: that branch is the one place a cell can be added with NO
+        //   fixture consequence (no Book turns show_diag on), and the guts are diagnostic matter anyway.
+        //  `tree_root` rides `.c` — a REF, which is exactly what `.c` is for and what `.sc` is fatal for —
+        //   and Vyto hands a face its source particle (row.c.source_n), so the hint survives into the render.
+        let tree = w.oai({ Tree: 1, dontSnap: 1 })
+        tree.c.up = w
+        tree.c.tree_root = krw || w
+        organs.push(tree)
     }
     // the ⇊ KEEP cells (the human 2026-07-28 "I DO want the Heist UI ... in a few Vyto cells ... it folds
     //  down when started"): every active %Haul grapples as its OWN cell — under the nested glass it goes BARE

@@ -313,6 +313,23 @@ async Repli_merge(mirrorTop, text):
             //   so pulled chunks land under the paged head itself, never a flat way-station twin.
             if (!found && pattern.Record && typeof this.Ra_rec_find === 'function') {
                 census = this.Ra_rec_find(parent, pattern)
+                // ESCALATE TO THE WHOLE CRATE (2026-08-07).  The census above searches only the
+                //  ARRIVING parent — the %Cloud this frame happens to name — so it answers "is this
+                //   record on this page?" when the ruling it enforces is "there is only one of
+                //    anything ON THIS SHELF" (Ra_rec_home, the landing-Mag ruling).  The sender's own
+                //     shelf CHURNS: the tour drops and re-stocks tracks, and Ra_mag_page always lands a
+                //      re-stocked one on the LAST page — so a track that crossed on page 1 crosses again
+                //       later on page 8, misses the page-local census, and mints a TWIN.  Measured live
+                //        on Righto 2026-08-07: 65 records over 53 distinct ids across 11 pages —
+                //         a14602e5 on pages 1 AND 8, dc8eac48 on 1 AND 9 — and the twins are exactly the
+                //          ids the source then answers `serve-miss ... materialise gone` for, forever,
+                //           because the sink re-asks a holding the source has long since re-paged.
+                //  mirrorTop is the crate root (Repli_mirror_lib's stock shelf), so this is the same
+                //   shelf-wide question Ra_rec_home asks locally — one door, one answer, both sides.
+                //  The found record STAYS WHERE IT SITS rather than moving to the named page: paging is
+                //   a listening ramp, not identity (Ra_recs walks Mag** regardless), and tearing a head
+                //    out from under its landed chunks to satisfy a page number would cost real bytes.
+                if (!census && mirrorTop && mirrorTop !== parent) census = this.Ra_rec_find(mirrorTop, pattern)
                 found = census
             }
             if (found) {
@@ -904,6 +921,13 @@ async Repli_recv_lines(w, pier, frame):
     if (born && typeof this.Radio_trace === 'function') {
         try { this.Radio_trace(null, { ev: 'mirror-merge', recs: born, of: String(frame.header.from || '').slice(0, 8) }) } catch (er) {}
     }
+    // ONE OF ANYTHING, ENFORCED (2026-08-07).  The census escalation in Repli_merge stops a twin being
+    //  BORN; this clears the ones a long-open tab is already holding — and only a birth can have made one,
+    //   so it runs on birth rather than every frame (a chunk frame touches records constantly).  Inert on a
+    //    clean crate: it walks the census, finds no repeated id, drops nothing, and marks nothing.  Optional
+    //     by typeof for the same reason as Heist_reheal_id above — Repli never imports Ra, and the Books that
+    //      run with no Ra at all must be unchanged.
+    if (born && typeof this.Ra_crate_dedupe === 'function') await this.Ra_crate_dedupe(w, lib)
     w.c.repli_tick = (w.c.repli_tick || 0) + 1
 
 // Repli_recv_page — B got a repli_page frame (bytes already sha256-verified by req_unemit): stash by bufferid

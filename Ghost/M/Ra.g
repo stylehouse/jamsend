@@ -823,6 +823,60 @@ async Ra_rec_drop(shelf, id):
     let parent = rec.c.up || shelf
     await parent.rm({ Record: 1, id: id })
     return 1
+// Ra_crate_dedupe — THE ONE-OF-ANYTHING SWEEP over a crate (2026-08-07).  The merge-side fix (Repli_merge's
+//  shelf-wide census) stops new twins being born, but a long-open tab already HOLDS them: measured on Righto,
+//   65 records over 53 distinct ids across 11 %Cloud pages, because a re-stocked track re-crossed on a later
+//    page and missed the old page-local census.  A twin is not cosmetic — it inflates every crate census the
+//     listener reads (61/638 on the human's tab), and the STALE half is what the dial then picks and re-asks
+//      forever, drawing `serve-miss ... materialise gone` from a source that re-paged it long ago.
+//  KEEPER = the copy holding the most chunk bytes (presence IS fill state), ties → census order, so the sweep
+//   can only ever discard the emptier duplicate.  The record the radio is PLAYING is protected outright: if a
+//    twin of the playing head would be dropped, the whole id is left for a later pass rather than pulling the
+//     rug from under a live decode.  Returns how many were dropped — 0 on a clean crate, which is every Book
+//      (they mint through Ra_rec_home, which was always shelf-wide), so this is inert where nothing is broken.
+async Ra_crate_dedupe(w, shelf):
+    if (!shelf) return 0
+    let recs = this.Ra_recs(shelf)
+    if (recs.length < 2) return 0
+    let radio = w ? w.o({ Radio: 1 })[0] : null
+    let live = radio && radio.c ? radio.c.rec : null
+    let by = {}
+    for (const rec of recs) {
+        let id = String(rec.sc.id || '')
+        if (!id) continue
+        by[id] = by[id] || []
+        by[id].push(rec)
+    }
+    let dropped = 0
+    for (const id of Object.keys(by)) {
+        let twins = by[id]
+        if (twins.length < 2) continue
+        let keep = twins[0]
+        let best = -1
+        for (const rec of twins) {
+            let held = 0
+            for (const s of this.Ra_chunk_have(rec)) if (s != null) held = held + 1
+            if (held > best) { best = held; keep = rec }
+        }
+        // never tear out the head a decode is reading from — leave the whole id for the next pass
+        let risky = false
+        for (const rec of twins) if (rec !== keep && rec === live) risky = true
+        if (risky) continue
+        for (const rec of twins) {
+            if (rec === keep) continue
+            // drop(n) NOT rm(pattern): rm locates by query, and with twins standing under one parent the
+            //  query cannot say WHICH — it could take the keeper.  drop names the node. (Ra_rec_drop's rm
+            //   is safe only because it runs where one-of-anything already holds; here it demonstrably does not.)
+            let parent = (rec.c && rec.c.up) || shelf
+            parent.drop(rec)
+            dropped = dropped + 1
+        }
+    }
+    if (dropped > 0 && typeof this.Radio_trace === 'function') {
+        try { this.Radio_trace(null, { ev: 'crate-dedupe', dropped: dropped, of: String(shelf.sc.pub || '').slice(0, 8) }) } catch (er) {}
+    }
+    return dropped
+
 // Ra_recs_deep — collect every %Record in a container's SUBTREE, holdings-first at each level so
 //  the census order is identical to the old fixed three-level walk (a level's direct %Record rows
 //   before any nested container's), then recurse every non-Record child.  A %Record is a leaf here

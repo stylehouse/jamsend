@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '9fbfe2764c7b5116~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '01058a3a00e8a529~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -62,8 +62,39 @@ Radio_ensure(w) {
 
 },
 Radio_state(radio, state) {
+    let was = radio.sc.Radio
     radio.sc.Radio = state
     radio.bump()
+    // GUARDED AT THE CALLSITE, not just inside: this is a COSMETIC proposal to the glass, and
+    //  Radio_state is the state machine every transition flows through.  A throw here — a missing
+    //   House, a Vyto that refuses — must never be able to stop the music.
+    if (was !== state) { try { this.Radio_focus_tell(radio, state) } catch (er) {} }
+
+},
+// Radio_focus_tell — THE PANEL OVER THE GUTS (the human 2026-08-07: "the underworld situation, all the
+//  machinery leading up to the radio getting on, then the radio swallows it all like a panel being placed
+//   over the top of all them guts").  Vyto has had the mechanism the whole time — Vyto_focus swells the
+//    focused cell by FOCUS_BOOST and compresses every sibling by FOCUS_SHRINK, ~88× in area — but nothing
+//     outside its own Book ever proposed anything, so the live glass only ever showed the even cut.
+//  The proposal is exactly the state machine the listener already feels.  DIGGING and OFF are the
+//   underworld: no focus, so the stoker, the transfer meter, the shuffle pool and the crate all hold
+//    their own ground and you can watch the machinery hunt for something to play.  PLAYING is the panel:
+//     focus the %Radio and every one of those cells compresses to a margin around it.  STARVED releases
+//      again on purpose — the music stopped and the guts are once more the interesting thing, which is
+//       the same judgement the starve note makes in words.
+//  A PROPOSAL, NOT A COMMAND (Vyto_focus's own word): the governor decides, and a world with no glass
+//   commissioned simply has no Vyto to hear it.  Live page only — a driven world must keep the even cut
+//    its fixtures recorded, and humdinger is the standing predicate for exactly that distinction.
+Radio_focus_tell(radio, state) {
+    let SH = this.top_House()
+    if (!SH || !SH.c.humdinger) return
+    let want = (state === 'playing') ? 'Radio' : null
+    if (SH.c.radio_focus === want) return
+    SH.c.radio_focus = want
+    try {
+        if (want) SH.i_elvisto('Vyto/Vyto', 'Vyto_focus', { on: want })
+        if (!want) SH.i_elvisto('Vyto/Vyto', 'Vyto_focus', { release: 1 })
+    } catch (er) {}
 
 },
 // commas cut snap lines; long titles cut cells.  Same sanitizer stance as Sounditron_clean.

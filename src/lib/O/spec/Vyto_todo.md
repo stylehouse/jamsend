@@ -53,6 +53,61 @@ The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it 
     itself, and VytoCell recorded GREEN ×2 beside a green VytoStaple regression.  Next
      moves:
 
+- **PHONE-FIRST + FULLSCREEN + THE FACELESS FACE — landed 2026-08-07** (the owner: *"I might leave you
+   allll afternoon redesigning, wildly, the interface... so that Vyto can be fullscreened and everything
+    within it gets pronounced with just the right focus"*, phone-first, one cell dominating).
+  - **The frame follows the stage's aspect.** It was a fixed `800×450` — 16:9 LANDSCAPE — and the SVG
+     holds that at `width:100%`, so on a portrait phone the whole glass collapsed to a letterbox strip.
+      A voronoi cut has no intrinsic orientation, so the fix is to cut against the shape you are
+       actually looking through. **Driven worlds are PINNED to 800×450**: a Book's layout must not
+        depend on the size of the window it runs in, or every Vyto fixture becomes a function of the
+         runner tab's geometry. Gated on `humdinger`; no fixture can move.
+  - **THE TRAP, if you touch this:** measuring `.stage` is CIRCULAR. It has no height of its own — the
+     SVG inside is `height:auto`, so the stage's height *is* the aspect you just set. Feeding that back
+      gives a fixed point at whatever it started as, i.e. it never leaves landscape and looks like the
+       code does nothing. Width comes from the stage (real, laid out by the page); height from the space
+        left on screen below its top edge. Fullscreen is the easy case — CSS sizes it `100vw/100vh`, so
+         its own box is honest there.
+  - **`⛶` fullscreens the stage**, and the ResizeObserver re-cuts the frame to whatever shape the screen
+     turns out to be — entering fullscreen on a portrait phone RESHAPES the cut, it does not zoom it.
+  - **`TreeFace` — the faceless face** (the owner: *"showing a recursive tree of plain C** data in a
+     useful way ... a cell can kind of be a component or a rendering of the C data all labelled ... and
+      recurse C**"*). Every other entry in `glass_kinds` knows what its thing MEANS and draws that; this
+       one knows nothing and draws the particle — mainkey, scalars, children, recursively. It is the face
+        for the parts of the tree nobody has designed a face for, and it keeps working when the shape
+         changes. **`sc` only** — it walks children via `o({})` and never follows `.c`, which holds the
+          House, the parent chain and every cycle in the graph; `.c` is COUNTED, never entered. Bounded
+           by construction (depth 3 / 12 kids) and it SAYS `… N more` when it truncates.
+  - Grappled under **`show_diag`** — the one branch where a cell can be added with zero fixture
+     consequence (no Book turns it on), and the guts are diagnostic matter anyway. `tree_root` rides
+      `.c` so the marker organ can stand for the world it sits in.
+  - **The focus taper is DRIVEN LIVE at last.** `Vyto_focus` has swollen one cell by `FOCUS_BOOST` and
+     compressed its siblings by `FOCUS_SHRINK` (~88× in area) since it was written, but nothing outside
+      `VytoWeb_focus`'s own Book ever proposed anything — so the live glass only ever showed the even
+       cut. `Radio_state` is the one chokepoint every transition flows through, and it now proposes:
+        DIGGING/OFF are the underworld (no focus — watch the machinery hunt), PLAYING is the panel
+         (*"the radio swallows it all like a panel being placed over the top of all them guts"*),
+          STARVED releases again on purpose. Live page only.
+  - `Vyto_focus` now also accepts **`on:<mainkey>`** and resolves the tok itself. A tok is an internal
+     mirror coordinate; a client outside Vyto has no way to know one, which is why only Vytonation —
+      which reads `Vyto_cells` first — could ever call this. `tok` still wins when given, so no
+       existing caller or fixture is touched.
+  - **STILL UNVERIFIED IN PIXELS**, and the gap named further down this section is why: `runner_shot`
+     is Cyto-only, and `--svg` wants `.vyto svg.viewport` on a tab with a Vyto world commissioned —
+      the runner tabs have none, so it reports "no populated glass svg". A Vyto screenshot path is
+       still owed and would have paid for itself twice today.
+- **HMR NO LONGER FULL-RELOADS THE GLASS (2026-08-07)** — the owner's *"try figure out why HMR causes
+   whole page reload sometimes"*. `Vytui.svelte` carried a `<script module>` block holding a two-line
+    debug serial, and vite-plugin-svelte refuses HMR to any component with module-context state (a
+     module binding cannot be hot-swapped without re-evaluating every importer). That made Vytui a
+      **dead end**, and `glass_kinds.ts` — whose only importer is Vytui — inherited it, so registering
+       one face full-reloaded both player tabs and cost an AudioContext tap each time. Serial moved to
+        `H.c.vytui_serial`. **Measured both ways on the live pair**: the identical one-line edit to
+         `glass_kinds.ts` wiped the mirror crate to `0 %MusuThem home(s)` before, and left `1 home / 31
+          records` standing (own shelf still climbing) after. Propagation stops at the nearest
+           *accepting* importer, not at the root — so when an edit reloads, walk the importers rather
+            than re-reading the file you edited. Nine components still carry module blocks:
+             `Thangs`, `Funk/{Storying,Relay,CreduFunk,Rundar,StoryTimes,Shelver}`, `ui/{DocRow,Waft}`.
 - **⛨ READ `## THE PIN` FIRST (2026-07-29, below)** — the display-correctness contract: why
    built ≠ spec'd (the flap-puddle autopsy) · the laws (pixels or it didn't land · proof-first
     Books · the claim ledger · read-the-shelf) · the pinned fact ledger · the ordered P0→P7

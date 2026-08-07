@@ -2392,6 +2392,57 @@ await M.eatfunc({
                     if (stW) {
                         try { world_snap = (await (H as any).enWaft(stW))?.snap ?? null } catch (e) { world_snap = `enWaft failed: ${String((e as any)?.message ?? e)}` }
                     }
+                    // THE RESIDENT WORLD, separately (2026-08-07).  The comment above has always claimed this
+                    //  op shows "Radio/Musu/MusuThem", but Lies_runner_story_w() returns the STORY world — on a
+                    //   tab that has run a Book you get its recorded step snaps and NOT one live particle.  The
+                    //    two coincide only on a virgin player tab, which is why it read as working.  The radio
+                    //     world is where the crates actually live, so encode it under its own key.
+                    const rw = (H.top_House().c as any).radio_w as TheC | undefined
+                    let resident_snap: string | null = null
+                    if (rw && rw !== stW) {
+                        try { resident_snap = (await (H as any).enWaft(rw))?.snap ?? null } catch (e) { resident_snap = `enWaft failed: ${String((e as any)?.message ?? e)}` }
+                    }
+                    // CRATE CENSUS — the shape question the 638/62 leak asks (the human 2026-08-07: "the set of
+                    //  them is at 61/638, dunno why it keeps accumulating on its own"), answered in ~20 numbers
+                    //   instead of a 165KB tree.  Counts the homes SEPARATELY from the shelves they resolve to:
+                    //    duplicate %MusuThem homes for one pub all resolve to the SAME shelf, so a reader that
+                    //     loops homes counts one crate many times.  `homes` > `pubs` IS that bug, stated.
+                    let crate_census: any = null
+                    if (rw) {
+                        const A = H as any
+                        const seen: Record<string, number> = {}
+                        const shelves: any[] = []
+                        for (const home of ((rw.o({ MusuThem: 1 }) as TheC[]) ?? [])) {
+                            const pub = String(home.sc?.pub ?? '')
+                            seen[pub] = (seen[pub] ?? 0) + 1
+                            // resolve WITHOUT Ra_home_them — that door is find-or-CREATE and a diagnostic must
+                            //  never mint.  The shelf is the home's own `stock` child.
+                            const shelf = (home.o({ stock: 1 }) as TheC[])[0]
+                            const recs = shelf ? (A.Ra_recs ? A.Ra_recs(shelf) : []) : []
+                            const mags = shelf ? (shelf.o({ Mag: 1 }) as TheC[]) : []
+                            let clouds = 0
+                            for (const m of mags) clouds += (m.o({ Cloud: 1 }) as TheC[]).length
+                            const ids = new Set(recs.map((r: TheC) => String(r.sc?.id ?? '')))
+                            shelves.push({
+                                pub: pub.slice(0, 8), dup_home: seen[pub],
+                                recs: recs.length, distinct_ids: ids.size,
+                                flat: shelf ? (shelf.o({ Record: 1 }) as TheC[]).length : 0,
+                                mags: mags.length, clouds,
+                            })
+                        }
+                        const selfs = ((rw.o({ MusuSelf: 1 }) as TheC[]) ?? []).map((home: TheC) => {
+                            const shelf = (home.o({ stock: 1 }) as TheC[])[0]
+                            const recs = shelf ? (A.Ra_recs ? A.Ra_recs(shelf) : []) : []
+                            return { pub: String(home.sc?.pub ?? '').slice(0, 8), recs: recs.length,
+                                     distinct_ids: new Set(recs.map((r: TheC) => String(r.sc?.id ?? ''))).size }
+                        })
+                        crate_census = {
+                            them_homes: Object.values(seen).reduce((a: number, b: number) => a + b, 0),
+                            them_pubs: Object.keys(seen).length,
+                            self_homes: selfs.length,
+                            shelves, selfs,
+                        }
+                    }
                     const supply_trace = ((H.top_House().c.supply_trace as any[]) ?? []).slice(-120)
                     // live TRANSFER telemetry (the human 2026-07-30 "more ways to track"): rates + active pulls/
                     //  serves + recent releases, the same object the %Transfer glass HUD reads.  A glance at the
@@ -2406,7 +2457,7 @@ await M.eatfunc({
                     // TEMPORARY checkpoint trace (H.diag) — the begun-wedge hunt, 2026-07-30.  .c-only,
                     //  never snapped; pinpoints exactly which link in resetStory→story_drive→do_step fired.
                     const diag_trace = ((H.top_House().c as any).diag_trace as string[]) ?? []
-                    result = { self: String((H as any).Lies_self?.(w)?.prepub ?? ident?.sc?.prepub ?? '').slice(0, 16), sealed_piers: piers.filter((p: any) => p.mutual).length, piers, supply_trace, xfer, err_ring, creduler, diag_trace, world_snap }
+                    result = { self: String((H as any).Lies_self?.(w)?.prepub ?? ident?.sc?.prepub ?? '').slice(0, 16), sealed_piers: piers.filter((p: any) => p.mutual).length, piers, supply_trace, xfer, err_ring, creduler, diag_trace, world_snap, resident_snap, crate_census }
                 } else if (op === 'run') {
                     // engage the runner for THIS client first (the don't-steal gate): refuse if another
                     //  client holds a live lease; else stamp our lease (GC'ing any prior client's runs) and

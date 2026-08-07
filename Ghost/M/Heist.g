@@ -2338,11 +2338,27 @@ Heist_keep_pick_toggle(keep, ref):
 //              so it's the one place the next heist's starting point needs to learn from.
 Heist_keep_set_genre(keep, v):
     keep.c.last_touch = Date.now()
-    let parts = ('' + (v || '')).split('/').map((p) => p.trim()).filter(Boolean)
-    let out = parts.map((p) => '0 ' + p.replace(/^(-|0) /, ''))
-    keep.sc.genre = out.join('/')
+    keep.sc.genre = this.Heist_genre_norm(v)
     keep.bump()
     this.Heist_defaults_set({ genre: keep.sc.genre })
+
+// Heist_genre_norm — THE category normaliser, extracted 2026-08-07 because the comment above was WRONG.
+//  It claimed Heist_keep_set_genre is "the one place a category gets set"; it is not — Heist_keep_commit
+//   sets `pick.sc.genre` straight from the Heist SETUP form, which never passed through here.  So a
+//    category typed into the setup landed raw: `chill/`, not `0 chill/` (the human 2026-08-07, "Heist
+//     setup isn't taking the '0 chill' form").  One verb, both doors, so the marker convention holds
+//      wherever a category is chosen.
+//  LEADING `spawn` IS DROPPED (the human's asked-for hack for this test rig): our test music all lives
+//   under `0 spawn`, so the source's own tag arrives as the setup's default category and every keep
+//    landed itself back under `0 spawn/`.  Marker-blind like Heist_spawn_swap — `spawn`, `- spawn` and
+//     `0 spawn` all match — and only at the FRONT, so a genuine `chill/spawn` nesting is untouched.
+//      This is the CATEGORY half; the SOURCE-PATH half is Heist_spawn_swap's `0 heisted-<from>-<to>`,
+//       which is a different question (don't land on top of the folder you copied from) and is unchanged.
+//  An empty category stays empty — no prepend, the [[heist no-prepend]] ruling.
+Heist_genre_norm(v):
+    let parts = ('' + (v || '')).split('/').map((p) => p.trim()).filter(Boolean)
+    while (parts.length && parts[0].replace(/^(-|0) /, '') === 'spawn') parts.shift()
+    return parts.map((p) => '0 ' + p.replace(/^(-|0) /, '')).join('/')
 
 // Heist_keep_set_dirs — the directories breadcrumb's edit (the human 2026-07-30): override the SHARED
 //  source-folder prefix a keep's tracks land under.  `auto` is HaulFace's own live-computed shared prefix

@@ -17,6 +17,42 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
 
 ## 0. Next move (read first)
 
+0. **"LOFI" — a `.ogg` haul for phones. DESIGNED, NOT BUILT (2026-08-07).** The human: *"the Heist form
+    could involve the transcoding to ogg for phones... that's a whole thing too — might be worth doing
+     for v1.0. it's a tickbox on the Heist setup... 'lofi'."* Deliberately not half-landed unattended:
+      this path writes into the human's real music collection, and it cannot be verified without one
+       attended haul. Here is everything the next sitting needs.
+
+   **The good news: the codec work is DONE and Book-proven.** `Orig_ogg_export` (Ghost/M/Orig.g) already
+    collects a Record's opus packets, muxes a real RFC-7845 Ogg/Opus stream (`Orig_ogg_mux`, with the
+     un-reflected CRC-32 in `Orig_crc_table`), writes it via `nav.bin_write` and mints
+      `%Blob,id:<rec id>,grade:ogg128` beside the Record. `Orig_ogg_parse` re-reads it structurally and
+       `MusuOgg` gates the lot. Nothing new needs writing at the codec layer.
+
+   **The seam: a lofi haul is a DIFFERENT PULL, not a post-step on the normal one.** A heist pulls the
+    ORIGINAL file's byte chunks out of `srcmir` and gates them on `rec.sc.body_hash` (`Heist_land_stream`).
+     The opus segments live on a *different* mirror — the radio's `%MusuThem` crate. So lofi should not
+      download the original at all: take the opus already streamed (or finish streaming it, far cheaper
+       than a FLAC), mux, and write `<rel with .ogg extension>`. That is the whole appeal — a phone-sized
+        haul that is mostly already on disk.
+
+   **⚠ THE BOMB, and it is one I planted today: `pv_off` collides with this head-on.** The %Preview offer
+    now starts **30–70% into the track** (`Ra_preview_offset`, so the shuffle game jumps into the middle
+     — Radio_todo §0). The mirror card carries `pv_off`, and its chunk 0 is therefore NOT the start of the
+      music. Muxing that crate's chunks straight through `Orig_ogg_export` would produce a file that
+       **begins mid-song**, silently, and land it in the collection looking correct. So lofi needs a way to
+        ask for the opus **from segment 0** — the source holds the full encode in its own stock, only the
+         OFFER is offset. Options, unranked: a `want` that names `from_idx:0` against the source's own
+          record rather than the offer's window; or a distinct "full" offer minted on demand. **Settle this
+           before writing any UI** — a tickbox wired to a path that truncates tracks is worse than no
+            tickbox.
+
+   **Wiring, once that is settled:** `HeistSetup.svelte` grows the checkbox → `keep.sc.lofi` (a snapped
+    boolean, so `1`-or-absent) → `Heist_keep_commit` carries it → `Heist_keep_pull` branches per pick.
+     Guard the failure: if the export reports `{gap:seq}` the track is not whole — leave the pick
+      un-landed and let the next beat re-ask, exactly as the byte path does. Never overwrite an original:
+       the `.ogg` name differs by extension, and `Heist_land`'s reentrancy guard keys on the full path.
+
 1. **The two-pier live test HAPPENED (2026-08-06) and it was worth it — read §4.1 first.** The human
     ran a real 8-track haul between two tabs. It wedged twice, at two different rungs, and both were
      real bugs invisible to every Book: an intra-page hole that was never re-asked

@@ -1,10 +1,3 @@
-<script module lang="ts">
-    // Vytui instance serial (module scope) — answers "is Vytui itself remounting?".  If ▣▣ climbs in
-    //  step with KeepFace's ◈◈ serial, the teardown is ABOVE Vytui (its parent / the UIs registry
-    //   re-mounting the whole glass); if ▣▣ stays at 1 while ◈◈ climbs, the churn is INSIDE Vytui.
-    let __vytui_serial = 0
-</script>
-
 <script lang="ts">
     // Vytui.svelte — the render side of the NEW glass (spec: Vyto_spec.md, unpreened;
     //  model side: Ghost/V/Vyto.g).  Tessellation-first cells as real DOM/SVG, faces as
@@ -29,7 +22,22 @@
     let { H } = $props()
 
     // LIFECYCLE BRACKET (2026-08-02): is the whole glass remounting, or just KeepFace inside it?
-    const __vy_id = ++__vytui_serial
+    //  The serial USED TO LIVE IN A `<script module>` BLOCK, and that one block cost the whole glass its
+    //   HMR (2026-08-07, the human's "why does HMR cause a whole page reload sometimes").  vite-plugin-
+    //    svelte refuses to make a component self-accepting once it has module-context state: a module
+    //     binding cannot be hot-swapped without re-evaluating every importer.  So Vytui was an HMR
+    //      DEAD END — and `glass_kinds.ts`, whose only importer is Vytui, inherited it, which is why
+    //       registering one face reloaded both player tabs and cost the human an AudioContext tap.
+    //  It counts two console lines.  Keeping it on the House (`.c`, runtime-only, never encoded) buys
+    //   back hot updates for every face in the glass and loses nothing the bracket was for.
+    //  Defensive: this is a DEBUG COUNTER, and a debug counter that throws would white-screen the whole
+    //   glass on mount — worse than any question it answers.  Optional-chained, defaulting to 0.
+    const __vy_id = (() => {
+        const hc = (H as any)?.c
+        if (!hc) return 0
+        hc.vytui_serial = (hc.vytui_serial ?? 0) + 1
+        return hc.vytui_serial
+    })()
     onMount(()   => console.log('▣▣ Vytui REAL mount',   __vy_id))
     onDestroy(() => console.log('▣▣ Vytui REAL destroy', __vy_id))
 
@@ -114,7 +122,44 @@
     //   60×/s and Svelte should not track every velocity nudge), and the template reads a paint
     //    snapshot published through the paint_tick counter (the idiomatic Svelte-5 "compute in a
     //     function that reads a tracked tick" pattern).  Nothing here writes the model.
-    const FRAME: Pt[] = [{ x: 0, y: 0 }, { x: 800, y: 0 }, { x: 800, y: 450 }, { x: 0, y: 450 }]
+    // PHONE-FIRST FRAME (the human 2026-08-07: "so that Vyto can be fullscreened and everything within
+    //  it gets pronounced with just the right focus", phone-first).  The frame was a fixed 800×450 — 16:9
+    //   LANDSCAPE — and the SVG holds that aspect at width:100%, so on a portrait phone the whole glass
+    //    collapsed into a letterbox strip across the middle of the screen with the cells squeezed inside
+    //     it.  A voronoi cut has no intrinsic orientation, so the fix is not to rescale it but to cut
+    //      against the shape you are actually looking through: the frame now FOLLOWS THE STAGE'S ASPECT.
+    //  DRIVEN WORLDS ARE PINNED to the old 800×450.  A Book's layout must not depend on the size of the
+    //   window it happens to run in — that would make every Vyto fixture a function of the runner tab's
+    //    geometry, which is the definition of a flaky gate.  So the aspect is read only on the live page
+    //     (humdinger), and every Book cuts the same rectangle it always did: no fixture can move.
+    const FRAME_LONG = 800, FRAME_SHORT = 450
+    let vw_w = $state(FRAME_LONG), vw_h = $state(FRAME_SHORT)
+    const frame_of = (): Pt[] => [{ x: 0, y: 0 }, { x: vw_w, y: 0 }, { x: vw_w, y: vw_h }, { x: 0, y: vw_h }]
+    // measure the stage and re-cut the frame when the shape of the hole changes.  Quantised to whole
+    //  viewBox units and ignored under a 2% wobble, so a scrollbar appearing or an address bar sliding
+    //   away cannot retrigger a full relayout on every frame.
+    function fit_frame(el: Element | null) {
+        if (!el || !(H as any)?.top_House?.()?.c?.humdinger) return
+        const r = el.getBoundingClientRect()
+        if (!(r.width > 0)) return
+        // MEASURE THE HOLE, NOT THE THING IN IT.  `.stage` has no height of its own — the SVG inside it
+        //  is width:100% height:auto, so the stage's height IS the aspect we just set. Measuring it
+        //   would feed the frame back into itself: a fixed point at whatever it started as, which on a
+        //    portrait phone means it never leaves landscape. So the WIDTH comes from the stage (that is
+        //     real, the page lays it out) and the HEIGHT from the space actually left on screen below
+        //      the stage's top edge. Fullscreen is the easy case — there the stage is sized 100vw/100vh
+        //       by CSS, so its own box is already independent and honest.
+        const full = typeof document !== 'undefined' && !!document.fullscreenElement
+        const availW = r.width
+        const availH = full ? r.height : Math.max(120, (window.innerHeight || 0) - r.top - 8)
+        if (!(availH > 0)) return
+        const portrait = availH > availW
+        const ratio = Math.min(1, Math.max(0.35, portrait ? availW / availH : availH / availW))
+        const long = FRAME_LONG, short = Math.max(200, Math.round(long * ratio))
+        const nw = portrait ? short : long, nh = portrait ? long : short
+        if (Math.abs(nw - vw_w) / vw_w < 0.02 && Math.abs(nh - vw_h) / vw_h < 0.02) return
+        vw_w = nw; vw_h = nh
+    }
     const EPS = 0.5           // settle displacement floor, px (calm.md §6)
     const DRIFT_EPS = 0.25    // settle wall-vertex drift floor, px/frame
     const SETTLE_FRAMES = 8   // consecutive calm frames before a settle strikes (~130ms @60fps)
@@ -400,7 +445,7 @@
                 }
             }
         }
-        layout(roots, FRAME, GAP, '')
+        layout(roots, frame_of(), GAP, '')
         // OMISSION DETECTOR (2026-08-02): the real remount mechanism is a Keep cell being OMITTED from
         //  `cells` (no spring → `layout` continues past it), so its key LEAVES the keyed {#each} and
         //   KeepFace is torn down; back next build → remount.  The GATE-FLIP probe sits AFTER the
@@ -626,7 +671,27 @@
     const stageEls = new Map<TheC, HTMLElement>()
     function reg_stage(el: HTMLElement, w: TheC) {
         stageEls.set(w, el)
-        return { destroy() { if (stageEls.get(w) === el) stageEls.delete(w) } }
+        // watch the SHAPE of the hole, not just its size — fit_frame re-cuts the frame when the stage
+        //  flips portrait/landscape (a phone rotating, or Vyto going fullscreen) and no-ops otherwise.
+        //   Measured once up front so the first paint is already the right shape.
+        fit_frame(el)
+        let ro: ResizeObserver | null = null
+        if (typeof ResizeObserver !== 'undefined') {
+            ro = new ResizeObserver(() => fit_frame(el))
+            ro.observe(el)
+        }
+        return { destroy() { ro?.disconnect(); if (stageEls.get(w) === el) stageEls.delete(w) } }
+    }
+    // fullscreen the stage (the human 2026-08-07: "so that Vyto can be fullscreened").  Toggles, and
+    //  leans on the ResizeObserver above to re-cut the frame to whatever shape the screen turns out to
+    //   be — so entering fullscreen on a portrait phone reshapes the cut, it does not just zoom it.
+    //  Best-effort by design: the API rejects when the gesture isn't trusted or the browser forbids it
+    //   (iOS Safari has no element fullscreen), and a refused fullscreen must not throw into the render.
+    async function go_fullscreen(el: Element | null) {
+        try {
+            if (document.fullscreenElement) { await document.exitFullscreen(); return }
+            await (el as any)?.requestFullscreen?.()
+        } catch (e) { console.log('◈ Vyto fullscreen refused —', String((e as any)?.message ?? e)) }
     }
     function stamp_need(w: TheC, row: TheC, area: number) {
         if (!(area > 0)) return
@@ -642,7 +707,7 @@
         if (!svg) return
         const srect = svg.getBoundingClientRect()
         if (!(srect.width > 0) || !(srect.height > 0)) return
-        const sx = 800 / srect.width, sy = 450 / srect.height
+        const sx = vw_w / srect.width, sy = vw_h / srect.height
         const byKey = new Map<string, PaintCell>()
         for (const c of paintMap.get(w) ?? []) byKey.set(c.key, c)
         for (const t of stage.querySelectorAll('text.ident')) {
@@ -827,7 +892,9 @@
         </div>
         {#if show_viewport(w)}
             <div class="stage" use:reg_stage={w} use:lifetell={{ H, what: 'stage', id: String((w.sc as any)?.w ?? '?') }}>
-                <svg class="viewport" viewBox="0 0 800 450" preserveAspectRatio="xMidYMid meet">
+                <button class="fs-btn" onclick={(e) => go_fullscreen(e.currentTarget.parentElement)}
+                        title="fullscreen the glass">⛶</button>
+                <svg class="viewport" viewBox="0 0 {vw_w} {vw_h}" preserveAspectRatio="xMidYMid meet">
                     {#each viewport_cells(w) as cell (cell.key)}
                         {@const g = cell_ground(cell)}
                         {#if cell.kind === 'poly'}
@@ -857,7 +924,7 @@
                             {@const Face = cell.face}
                             <div class="face-mold" class:lift={cell.lift} data-key={cell.key}
                                  use:lifetell={{ H, what: 'mold', id: cell.key }}
-                                 style="left:{(cell.bx / 800) * 100}%; top:{(cell.by / 450) * 100}%; width:{(cell.bw / 800) * 100}%; height:{(cell.bh / 450) * 100}%;"
+                                 style="left:{(cell.bx / vw_w) * 100}%; top:{(cell.by / vw_h) * 100}%; width:{(cell.bw / vw_w) * 100}%; height:{(cell.bh / vw_h) * 100}%;"
                                  onpointerenter={() => on_enter(w, cell.key, cell.tok)}
                                  onpointerleave={() => on_leave(w, cell.key, cell.tok)}>
                                 <div class="face-scroll">
@@ -921,12 +988,28 @@
     .tick.o       { background: #d0a94a; }
     .tick.blessed { background: #4ad07a; border-radius: 2px; }
 
-    /* the viewport — the fixed root scope, one cell per mirror row */
+    /* the viewport — the root scope, one cell per mirror row.  The frame follows the stage's aspect
+       (fit_frame), so this is free to be any shape; fullscreen is just the biggest such shape. */
     .stage { position: relative; margin-top: 6px; }
     .viewport {
         display: block; width: 100%; height: auto;
         background: #16161c; border: 1px solid #2a2a35; border-radius: 4px;
     }
+    /* FULLSCREEN — the stage becomes the whole screen and the glass fills it edge to edge.  height:100%
+       on the svg (not auto) is what lets a portrait phone use its whole height instead of letterboxing;
+       the frame has already been re-cut to that aspect, so nothing is stretched. */
+    .stage:fullscreen { margin: 0; width: 100vw; height: 100vh; background: #0d0d12; }
+    .stage:fullscreen .viewport { width: 100%; height: 100%; border: 0; border-radius: 0; }
+    .fs-btn {
+        position: absolute; right: 6px; top: 6px; z-index: 5;
+        width: 26px; height: 26px; line-height: 1; padding: 0;
+        border: 1px solid #4a4a6a; border-radius: 4px;
+        background: rgba(22, 22, 28, 0.72); color: #b8b8d8;
+        font-size: 13px; cursor: pointer;
+    }
+    .fs-btn:hover { background: #2a2a3e; color: #fff; }
+    /* a phone is thumbs: give the control a real target without growing it on the desktop */
+    @media (pointer: coarse) { .fs-btn { width: 38px; height: 38px; font-size: 17px; } }
     .cell {
         fill: #2a2a3e; stroke: #6a6ad0; stroke-width: 1.2;
         transition: fill 120ms ease;

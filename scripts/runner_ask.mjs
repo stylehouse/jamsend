@@ -352,7 +352,25 @@ else if (op === 'snap' && reply.result?.got_snap) {
 		for (const s of serves) console.log(`  ⇈ ${s.title} ${s.n}/${s.total} →${s.to}`)
 		for (const f of (x.freed ?? []).slice(0, 3)) console.log(`  ↯ freed ${f.title}`)
 	}
-	if (r.world_snap) { writeFileSync('/tmp/runner_world.snap', r.world_snap); console.error(`  world snap (depth 6) → /tmp/runner_world.snap  (${r.world_snap.length} bytes) — grep it for Radio/MusuThem`) }
+	// the CRATE CENSUS first — the shape of the mirror in a dozen numbers.  `homes > pubs` is a leak
+	//  stated outright: duplicate %MusuThem homes for one pub all resolve to ONE shelf, so every reader
+	//   that loops homes counts that crate once per duplicate.  `recs > distinct_ids` is the other leak
+	//    (the same track standing twice in the tree) — they are different bugs and look identical in a total.
+	if (r.crate_census) {
+		const c = r.crate_census
+		const dupHomes = c.them_homes > c.them_pubs
+		console.log(`\ncrates: ${c.them_homes} %MusuThem home(s) over ${c.them_pubs} pub(s)${dupHomes ? `  ⟵ DUPLICATE HOMES — one crate counted ${c.them_homes}×` : ``}, ${c.self_homes} %MusuSelf`)
+		for (const s of c.shelves) {
+			const dup = s.recs - s.distinct_ids
+			console.log(`  ⇄ ${s.pub}${s.dup_home > 1 ? ` #${s.dup_home}` : ``}  recs=${s.recs} distinct=${s.distinct_ids}${dup > 0 ? `  ⟵ ${dup} DUPLICATE record(s)` : ``}  flat=${s.flat} mags=${s.mags} clouds=${s.clouds}`)
+		}
+		for (const s of c.selfs) {
+			const dup = s.recs - s.distinct_ids
+			console.log(`  ⌂ ${s.pub}  recs=${s.recs} distinct=${s.distinct_ids}${dup > 0 ? `  ⟵ ${dup} DUPLICATE record(s)` : ``}`)
+		}
+	}
+	if (r.world_snap) { writeFileSync('/tmp/runner_world.snap', r.world_snap); console.error(`  story world snap → /tmp/runner_world.snap  (${r.world_snap.length} bytes)`) }
+	if (r.resident_snap) { writeFileSync('/tmp/runner_resident.snap', r.resident_snap); console.error(`  RESIDENT (radio) world snap → /tmp/runner_resident.snap  (${r.resident_snap.length} bytes) — grep it for Radio/MusuThem`) }
 } else if (reply.ok === false) {
 	// a refused/failed op — surface the runner's reason on stderr (busy lease, GC'd run, unknown Book…)
 	console.error(`✗ ${op}: ${reply.result?.error ?? 'failed'}`)

@@ -23,6 +23,52 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+### 2026-08-07 — ONE OF ANYTHING, ON THE WIRE TOO (the 61/638 report)
+
+**The destination this serves:** the numbers a listener reads off the glass have to be the truth. The
+ owner, on a long-open player tab: *"it's in 'all heard' and has been for ages, and the set of them …
+  is at 61/638, dunno why it keeps accumulating on its own"* — against a **62-track** crate.
+
+**The bomb: `Repli_merge` enforced one-of-anything only within the ARRIVING PARENT.** It located a
+ `%Record` under the `%Cloud` the frame happened to name, so it answered *"is this record on this
+  page?"* when the ruling it exists to enforce is *"there is only one of anything on this SHELF"*
+   (`Ra_rec_home`, the landing-Mag ruling). The sender's own shelf **churns** — the tour drops and
+    re-stocks tracks, and `Ra_mag_page` always lands a re-stocked one on the LAST page — so a track
+     that crossed on page 1 crosses again later on page 8, misses the page-local census, and mints a
+      **twin**. Measured live on Righto: **65 records over 53 distinct ids across 11 pages**, `a14602e5`
+       on pages 1 AND 8, `dc8eac48` on 1 AND 9.
+
+**The two symptoms were one bug.** The same trace showed `serve-miss … no record for id — materialise
+ gone` repeating forever for two ids, and **`ba8bb2c3` was one of the duplicated ones**: the sink was
+  re-asking a stale twin of a holding the source had long since re-paged, and the source could only
+   keep saying no. A phantom record is not cosmetic — it inflates every census the listener reads AND
+    it is what the dial then picks.
+
+Fixed at both ends. `Repli_merge` escalates the `%Record` census from the arriving parent to
+ **`mirrorTop`** — the crate root — so the wire asks the same shelf-wide question `Ra_rec_home` asks
+  locally: one door, one answer, both sides. The found record **stays where it sits** rather than
+   moving to the named page; paging is a listening ramp, not identity (`Ra_recs` walks `Mag**`
+    regardless), and tearing a head out from under its landed chunks to satisfy a page number would
+     cost real bytes. `Ra_crate_dedupe` then clears the twins a long-open tab is *already* holding,
+      keeper = the copy holding the most chunk bytes, and the record the radio is **playing** is
+       protected outright. It uses `drop(n)` not `rm(pattern)`: `rm` locates by query and with twins
+        standing under one parent the query cannot say which — it could take the keeper.
+
+Verified live on Righto, no reload: `recs=68 distinct=55` → **`recs=56 distinct=56`**, nothing lost.
+ `RepliUpsert` (7/7), `RepliSplit` (5/5) and `RepliShadow` (5/5) all green — and their own assertions
+  are the property that was strengthened (*"an identical resend located itself and changed nothing — no
+   twin was minted"*, *"the second pass located the standing mag and cloud spine"*).
+
+**Tooling that found it, and keeps it findable:** `runner_ask world` grew a **`crate_census`** —
+ `%MusuThem` homes, per-shelf `recs` vs `distinct_ids`, mags, clouds. It states the two leaks
+  *separately*: `homes > pubs` means one crate counted many times by any reader that loops homes;
+   `recs > distinct_ids` means the same track standing twice in the tree. They are different bugs and
+    look identical in a total. The same op's `world_snap` was ALSO a lie worth knowing about — its
+     comment claimed it encoded "the resident world so Radio/Musu/MusuThem show", but it encoded
+      `Lies_runner_story_w()`, the **Story** world; on a tab that has run a Book you got its recorded
+       step snaps and not one live particle. The two coincide only on a virgin player tab, which is why
+        it read as working for so long. `resident_snap` is now its own key.
+
 ### 2026-08-07 — THE SHUFFLE POOL WAS NEVER THE CRATE (the "same 10 tracks" report)
 
 **The destination this serves:** hitting skip repeatedly should walk the whole collection, and the

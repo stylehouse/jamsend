@@ -12,7 +12,7 @@ import { sig_of, group_edges, bucket_key_of, pull_step, budget_for, SIG_JOINS, F
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return '637287d93dd0cdd9~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return '32d1be9a0c2dac18~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -702,7 +702,18 @@ Vyto_hold(w, hold) {
 //       (collect → hold → choreograph → settle → moment, spec §4) rides this seam later;
 //        Voro_drift becomes a client of this organ — it proposes, it never touches layout.
 Vyto_focus(w, proposal) {
-    w.c.focus_tok = proposal?.tok ?? null
+    // NAME THE THING, NOT ITS TOKEN (2026-08-07).  A tok is an internal mirror coordinate — a client
+    //  outside Vyto (the radio deciding it should dominate once music is playing) has no way to know
+    //   one, and Vytonation only ever got its tok by reading Vyto_cells first.  So a proposal may name
+    //    an `on:<mainkey>` instead and the governor resolves it here, against the same live cells.
+    //  `tok` still wins when given, so every existing caller — and every recorded fixture — is untouched.
+    let tok = proposal?.tok ?? null
+    if (tok == null && proposal?.on && w.c.mirror) {
+        for (const r of w.c.mirror.o()) {
+            if (tok == null && !r.sc.departing && this.mainkey(r) === proposal.on) tok = r.c.tok
+        }
+    }
+    w.c.focus_tok = tok ?? null
     let organ = w.o({ Organ: 'Focus' })[0]
     if (organ && organ.sc.status !== 'live') {
         organ.sc.status = 'live'
