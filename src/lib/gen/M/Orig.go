@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Orig(): string { return '63f2dbf909bf7640~g1' },
+    Ghostmeta_Ghost_M_Orig(): string { return '162fa4340ccfca5f~g1' },
 
 // Orig.g — the %Original / grade-dispatch layer (Radio_spec §2.4).  Ra.g owns the streaming pipeline
 //  (raw length-prefixed opus packets, container DELETED from the wire); THIS ghost is where a real
@@ -292,6 +292,65 @@ async Orig_ogg_export(w, nav, rec, dir, name) {
     // pages count: 2 header pages + ceil(packets/50) audio pages — a stable structural fact.
     let apages = Math.ceil(got.packets.length / 50)
     return { blob: blob, path: path, bytes: bytes, pages: 2 + apages, packets: got.packets.length }
+
+},
+// Orig_ogg_from_source — RAW SOURCE FILE BYTES → a complete Ogg/Opus byte stream, from sample 0.
+//  THE PHONE PATH (the human 2026-08-07: "transcoding to ogg for people's phones will be important",
+//   as a "lofi" tickbox on the Heist setup).  A heist normally copies the ORIGINAL — a 30MB FLAC — which
+//    is the wrong artifact for a phone.  This produces the ~5MB ogg128 rendition INSTEAD, at the SOURCE,
+//     so the small thing is what crosses the wire rather than the big thing being shipped and shrunk.
+//
+//  WHY NOT REUSE THE RADIO'S OPUS.  The obvious idea is to mux the chunks the radio already streamed —
+//   they are already opus, already here.  They are also WRONG for a keep, for two independent reasons,
+//    and both are silent: (1) the offer now starts 30–70% into the track (Ra_preview_offset / `pv_off`),
+//     so its chunk 0 is not the start of the music and the file would begin mid-song; (2) only the
+//      preview window plus whatever was streamed exists at all — the head segments [0, pv_off) are never
+//       encoded by anyone. A file that begins in the middle of a song, landed in someone's collection
+//        looking perfectly normal, is exactly the kind of wrong this codebase's rulings exist to prevent.
+//  So: decode the SOURCE and encode from sample 0. One continuous encode, no seam, no offset.
+//
+//  Loudness is BAKED like the radio's (Ra_lufs → Ra_gain_for → Ra_bake) so a keep sounds the same as the
+//   stream it was kept from — the human's needles-regulating-loudness point. Whole-track measure is fine
+//    here: this runs on an explicit gesture, not in the boot path the preview window exists to protect.
+//  Returns { bytes, packets, seconds, nch } or null — null on any missing codec (an old browser has no
+//   AudioEncoder), never a throw, because the caller falls back to shipping the original.
+async Orig_ogg_from_source(w, raw, meta) {
+    if (typeof OfflineAudioContext === 'undefined' || typeof AudioEncoder === 'undefined') return null
+    let ctx = new OfflineAudioContext(1, 1, 48000)
+    let decoded = null
+    try {
+        // DECODE A COPY.  decodeAudioData DETACHES the ArrayBuffer it is handed (it takes ownership per
+        //  spec), and this function's whole contract is "return null and let the caller ship the original
+        //   instead" — a caller holding a detached buffer would then serve ZERO BYTES and hash them
+        //    happily. Ra_stock_one can pass `raw` directly because it never touches it again; we cannot.
+        decoded = await ctx.decodeAudioData(raw.slice(0))
+    } catch (er) {
+        return null
+    }
+    let nch = Math.min(2, decoded.numberOfChannels)
+    let channels = []
+    let ch = 0
+    while (ch < nch) {
+        channels.push(decoded.getChannelData(ch))
+        ch = ch + 1
+    }
+    if (!channels.length || !channels[0].length) return null
+    // bake the same target loudness the stream carries, so kept and streamed agree
+    let lufs = await this.Ra_lufs(channels, 48000)
+    let gain = this.Ra_gain_for(w, lufs, null)
+    if (gain && gain.linear !== 1) this.Ra_bake(channels, gain.linear)
+    let st = this.Ra_encode_open(nch, this.Ra_bitrate())
+    if (!st) return null
+    // feed in one pass from sample 0 — the whole point of this function
+    this.Ra_encode_feed(st, channels, 0, channels[0].length)
+    let ok = await this.Ra_encode_drain(st)
+    let packets = st.packets
+    let preskip = st.preskip
+    this.Ra_encode_close(st)
+    if (!ok || !packets.length) return null
+    let tags = this.Orig_opus_tags({ sc: meta || {} }, 'jamsend Orig ogg128')
+    let bytes = this.Orig_ogg_mux(packets, nch, preskip, 48000, tags)
+    return { bytes: bytes, packets: packets.length, seconds: channels[0].length / 48000, nch: nch }
 
 },
 // Orig_export_preskip — the preskip to bake into the exported OpusHead.  The chunk-particle model

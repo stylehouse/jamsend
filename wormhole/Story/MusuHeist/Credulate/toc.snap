@@ -12,10 +12,10 @@ Credulate,of_Book:MusuHeist
   GhostInclude:Ghost_M_Mesh,dige:286eb98843f6e7f9
   GhostInclude:Ghost_M_Ra,dige:35fb8c761b566f9b~g1
   GhostInclude:Ghost_M_Booth,dige:24e06889933090b3
-  GhostInclude:Ghost_M_Heist,dige:8a8e0ae0255bfc7d~g1
+  GhostInclude:Ghost_M_Heist,dige:db98db0789f984a4~g1
   GhostInclude:Ghost_M_Jam,dige:92834317758c2e6f~g1
-  GhostInclude:Ghost_M_Orig,dige:63f2dbf909bf7640~g1
-  GhostInclude:Ghost_M_Radio,dige:35fe08fe7b40f58b~g1
+  GhostInclude:Ghost_M_Orig,dige:162fa4340ccfca5f~g1
+  GhostInclude:Ghost_M_Radio,dige:01058a3a00e8a529~g1
   GhostInclude:Ghost_Story_Musuation,dige:0d2936b7422f55a8~g1
   GhostInclude:Ghost_Story_Radiation,dige:68c7f05fb8bb317d~g1
   GhostInclude:Ghost_Story_Heistation,dige:cfd17513c473f2ed~g1
@@ -27,8 +27,8 @@ Credulate,of_Book:MusuHeist
   GhostInclude:Ghost_V_Vyto,dige:32d1be9a0c2dac18~g1
   GhostInclude:Ghost_V_Vytonation,dige:4db58120ea3b7e4a~g1
   GhostInclude:Ghost_Story_Voronation,dige:a8a9737169608630~g1
-  GhostInclude:Ghost_Story_Sounditron,dige:5794aab4b9fb3f77~g1
-  last_ok,at=1786070164.633,ok_pct
+  GhostInclude:Ghost_Story_Sounditron,dige:9cfa5c6ce847f864~g1
+  last_ok,at=1786082422.504,ok_pct
     uses:Ghost_N_Peeroleum,dige:5614ae1e9d7cc699~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:bd3df5453fee18e8~g1
@@ -42,10 +42,10 @@ Credulate,of_Book:MusuHeist
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
     uses:Ghost_M_Ra,dige:35fb8c761b566f9b~g1
     uses:Ghost_M_Booth,dige:24e06889933090b3
-    uses:Ghost_M_Heist,dige:8a8e0ae0255bfc7d~g1
+    uses:Ghost_M_Heist,dige:db98db0789f984a4~g1
     uses:Ghost_M_Jam,dige:92834317758c2e6f~g1
-    uses:Ghost_M_Orig,dige:63f2dbf909bf7640~g1
-    uses:Ghost_M_Radio,dige:35fe08fe7b40f58b~g1
+    uses:Ghost_M_Orig,dige:162fa4340ccfca5f~g1
+    uses:Ghost_M_Radio,dige:01058a3a00e8a529~g1
     uses:Ghost_Story_Musuation,dige:0d2936b7422f55a8~g1
     uses:Ghost_Story_Radiation,dige:68c7f05fb8bb317d~g1
     uses:Ghost_Story_Heistation,dige:cfd17513c473f2ed~g1
@@ -57,4 +57,4 @@ Credulate,of_Book:MusuHeist
     uses:Ghost_V_Vyto,dige:32d1be9a0c2dac18~g1
     uses:Ghost_V_Vytonation,dige:4db58120ea3b7e4a~g1
     uses:Ghost_Story_Voronation,dige:a8a9737169608630~g1
-    uses:Ghost_Story_Sounditron,dige:5794aab4b9fb3f77~g1
+    uses:Ghost_Story_Sounditron,dige:9cfa5c6ce847f864~g1

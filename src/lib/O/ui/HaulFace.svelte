@@ -132,7 +132,15 @@
         const catSegs = catRaw.split('/').map(stripMark).filter(Boolean)
 
         // ── directories — the shared source prefix, or the human's override ─────────────────────────────
-        const dirsAuto = commonPrefix(husks.map((h: any) => dirOf(String(h.sc.path || ''))))
+        // THE CP, NOT THE RAW PATH (the human 2026-08-07: "it still isn't noticing the '0 spawn' and '0
+        //  folks' are sections").  A marker-prefixed leading folder is a SECTION — the same vocabulary the
+        //   category row above uses — so it belongs in `section`, not swallowed into `directories`.  Reading
+        //    the raw path put `0 spawn › - folks › - arabia` in the directories breadcrumb, which then ALSO
+        //     got prepended under whatever category you chose: the keep landed filed twice.  Heist_cp_path
+        //      is the one door that strips them (and the one the landing itself goes through), so ask it
+        //       rather than re-deriving the rule in the face.
+        const cpOf = (h: any) => (typeof A?.Heist_cp_path === 'function' ? String(A.Heist_cp_path(h) || '') : String(h?.sc?.path || ''))
+        const dirsAuto = commonPrefix(husks.map((h: any) => dirOf(cpOf(h))))
         const dirsRaw = (sc.dirs != null && sc.dirs !== '') ? String(sc.dirs) : dirsAuto
         const dirsSegs = dirsRaw.split('/').filter(Boolean)
         const artist = String(sc.artist || '')
@@ -153,7 +161,7 @@
         }
         const groups: Record<string, any[]> = {}
         for (const r of husks) {
-            const path = String(r.sc.path || '')
+            const path = cpOf(r)   // sections already off, so a group label never restates the section row
             const rem = remainderOf(dirOf(path))
             ;(groups[rem] = groups[rem] || []).push({
                 ref: String(r.sc.id),
@@ -180,6 +188,7 @@
             //  an unpinned artist prepends NOTHING and the source's own folders land at the collection root.
             dest: String(genre || '').split('/').map((p: string) => String(p || '').trim().replace(/[\/\x00]/g, '-').replace(/^-(?= )/, '0')).filter(Boolean).join('/'),
             asks: +(sc.asks || 0),
+            lofi: !!sc.lofi,
             catRaw, catSegs,
             dirsRaw, dirsSegs, dirsKnown, dirsAuto,
             flat, tree,
@@ -305,6 +314,10 @@
     }
 
     function start() { A?.post_do?.(() => { A?.Heist_keep_start?.(n) }, { see: 'keep start' }) }
+    // lofi — the phone answer.  Framed as what it does to the TRANSFER, not as a codec setting: the friend
+    //  transcodes and sends the small thing, which is the only reason to want it.  Settable while primed and
+    //   read by the want-ask at ▶ start, so it must sit here beside the other pre-start tweaks.
+    function toggleLofi() { A?.post_do?.(() => { A?.Heist_keep_set_lofi?.(n, !n?.sc?.lofi) }, { see: 'keep lofi' }) }
     function focus() { A?.post_do?.(() => { A?.Heist_keep_touch?.(n) }, { see: 'keep focus' }) }
 </script>
 
@@ -433,6 +446,13 @@
                 </span>
             </button>
         {/if}
+
+        <button class="kf-lofi" class:on={face.lofi} onclick={toggleLofi}
+                title="ask your friend to send a small .ogg instead of the original file">
+            <span class="kf-lofi-box">{face.lofi ? '☑' : '☐'}</span>
+            <span class="kf-lofi-lbl">lofi</span>
+            <span class="kf-lofi-why">{face.lofi ? 'they transcode → a small .ogg crosses, much faster' : 'the original files, exactly as they are'}</span>
+        </button>
 
         {#if face.nTracks}
             <div class="kf-tree">
@@ -572,6 +592,29 @@
     .kf-stair-path .seg.cat { color: #7fe8bf; }
     .kf-stair-path .seg.dirs { color: #c9a5e8; }
     .kf-stair-empty { color: #6b5a68; font-style: italic; }
+
+    /* lofi — sits with the two breadcrumb rows because it is the same kind of thing: a pre-start decision
+       about what lands.  Reads as one line off by default, so it never competes with section|directories. */
+    .kf-lofi {
+        pointer-events: auto;
+        cursor: pointer;
+        display: flex;
+        align-items: baseline;
+        gap: 5px;
+        width: 100%;
+        background: transparent;
+        border: none;
+        padding: 4px 0 0;
+        text-align: left;
+        font: inherit;
+        color: inherit;
+        opacity: 0.6;
+    }
+    .kf-lofi:hover, .kf-lofi.on { opacity: 1; }
+    .kf-lofi-box { font-size: 11px; color: #7fe8bf; flex: none; }
+    .kf-lofi-lbl { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; flex: none; }
+    .kf-lofi.on .kf-lofi-lbl { color: #7fe8bf; }
+    .kf-lofi-why { font-size: 9px; opacity: 0.6; flex: 1 1 auto; min-width: 0; white-space: normal; }
 
     /* chip + gap editing — small, inline, no restated summary alongside it (the rest-view breadcrumb
        above is hidden while this shows).  Gaps are DELIBERATELY tiny (a "+" you grow by typing into),

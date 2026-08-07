@@ -15,7 +15,17 @@ const APP = path.resolve('.')
 
 export default defineConfig({
     plugins: [svelte(), svelteTesting()],
-    resolve: { alias: { $lib: path.join(APP, 'src/lib') }, conditions: ['browser'] },
+    resolve: {
+        alias: {
+            $lib: path.join(APP, 'src/lib'),
+            // `dexie` → a file-backed key-value stand-in, for the daemon ONLY.  The app's own
+            //  `import { Dexie, liveQuery } from 'dexie'` resolves here in this process and stays
+            //   the real Dexie everywhere else — so persistence works headlessly, durably, and with
+            //    no npm install (which in this repo means no libc-drift risk).  See dexie-node.ts.
+            dexie: path.join(APP, 'scripts/daemon/dexie-node.ts'),
+        },
+        conditions: ['browser'],
+    },
     cacheDir: '/tmp/daemon_vite',
     server: { fs: { allow: [APP, '/tmp'] } },
 })

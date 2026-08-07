@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '8a8e0ae0255bfc7d~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'db98db0789f984a4~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -503,7 +503,11 @@ Heist_safe_seg(name) {
 Heist_cp_path(rec) {
     let parts = ('' + (rec.sc.path || '')).split('/').filter((p) => p && p !== '.' && p !== '..')
     if (!parts.length) return ('' + (rec.sc.id || 'track')) + (rec.sc.ext ? '.' + rec.sc.ext : '')
-    return parts.join('/')
+    // the SECTION strip rides HERE — the ONE door that turns a record into its source-relative path, so
+    //  the manifest, the setup preview and the landing all agree by construction rather than by three
+    //   copies of the same rule.  See Heist_sections_strip for why it is a strip and not the old swap,
+    //    and Heist_sections_of for the other half (the sections become the default category).
+    return this.Heist_sections_strip(parts.join('/'))
 
 },
 // Heist_rel_for — the landing path (relative to the marrauding dir) for one mirror|census card under one
@@ -1202,7 +1206,15 @@ async Heist_census_heads(w, lib, nav, walkdir, base, me, prefix, seedName, seed)
 //     SEED itself — Ra_stock_ls → card → base+path), materialised under a fresh keep-id carrying `re:<seed>`
 //      so the asker matches the arriving head back to its keep.  Idempotent: a re-ask over an already-full
 //       rec returns it without re-reading.  Returns the materialised %Record (total/body_hash stamped), or null.
-async Heist_materialise_one(w, nav, me, ref) {
+// `lofi` — serve the ogg128 RENDITION rather than the original file (the human 2026-08-07: "transcoding
+//  to ogg for people's phones will be important").  This is the ONLY seam it needs: everything below the
+//   transcode — per-chunk cids, body_hash, total, the wire, resume, the sink's read-back verification —
+//    is byte-agnostic, so swapping the bytes here buys the whole feature with no downstream change.
+//  The head is rewritten to DESCRIBE THE OGG (`path` re-extensioned, `ext:'ogg'`, its own body_hash), so
+//   the asker's ordinary landing writes `<name>.ogg` and verifies it against the right hash without
+//    knowing anything about grades.  A failed transcode (no AudioEncoder, an undecodable source) falls
+//     through to the ORIGINAL rather than failing the keep — the human still gets their music.
+async Heist_materialise_one(w, nav, me, ref, lofi) {
     if (!nav || !ref) return null
     let rec = null
     let base = null
@@ -1230,7 +1242,13 @@ async Heist_materialise_one(w, nav, me, ref) {
         rec.sc.title = pm.title
         rec.sc.artist = pm.artist
     }
-    if (+(rec.sc.total || 0) > 0 && this.Heist_has_body(rec) >= +(rec.sc.total || 0)) return rec
+    // IDEMPOTENCE, BUT MODE-AWARE (2026-08-07): a rec already materialised as the ORIGINAL must NOT
+    //  satisfy a lofi ask (nor the reverse) — the bytes, the body_hash and the path all differ, so
+    //   returning the standing one would serve the asker an artifact it did not ask for and then fail
+    //    its read-back hash. Different mode ⇒ fall through and re-materialise over it.
+    let had = this.Heist_has_body(rec) >= +(rec.sc.total || 0)
+    if (+(rec.sc.total || 0) > 0 && had && (!!rec.sc.lofi) === (!!lofi)) return rec
+    if (+(rec.sc.total || 0) > 0 && had) this.Heist_release_rec(rec)
     let parts = ((base ? base + '/' : '') + path).split('/').filter(Boolean)
     let filename = parts.pop()
     // native single-slice read (read_range), not bin_read's per-chunk iterate (the 64s-under-congestion read).
@@ -1250,6 +1268,27 @@ async Heist_materialise_one(w, nav, me, ref) {
     if (meta.genre) rec.sc.genre = meta.genre
     let dot = filename.lastIndexOf('.')
     if (dot >= 0) rec.sc.ext = filename.slice(dot + 1)
+    // THE LOFI SWAP — decode the source and re-encode from sample 0 (never the radio's chunks; see
+    //  Orig_ogg_from_source for why muxing those would silently produce a file starting mid-song).
+    if (lofi && typeof this.Orig_ogg_from_source === 'function') {
+        let og = null
+        try { og = await this.Orig_ogg_from_source(w, raw, meta) } catch (er) { og = null }
+        if (og && og.bytes && og.bytes.length) {
+            bytes = og.bytes
+            rec.sc.ext = 'ogg'
+            rec.sc.lofi = 1
+            // re-extension the PATH too: it is what Heist_cp_path lands under, so the asker writes
+            //  `<name>.ogg` beside nothing and never overwrites an original of the same stem.
+            rec.sc.path = ('' + path).replace(/\.[^./]*$/, '') + '.ogg'
+            if (og.seconds) rec.sc.seconds = +og.seconds.toFixed(2)
+            console.log(`⇊♪ lofi: ${filename} → ogg128 (${Math.round(bytes.length / 1024)}KB from ${Math.round(raw.byteLength / 1024)}KB)`)
+        } else {
+            console.log(`⇊⚠ lofi transcode failed for ${filename} — serving the original instead`)
+        }
+    }
+    // and the way BACK: a rec re-materialised as the ORIGINAL must shed the lofi head, or it would keep
+    //  claiming `.ogg` while carrying the source's bytes — the mode flip has to be symmetric.
+    if (!lofi && rec.sc.lofi) { delete rec.sc.lofi; rec.sc.path = path }
     let CH = this.Heist_chunk_bytes()
     let total = Math.ceil(bytes.length / CH)
     // NATIVE hashing (2026-07-29 perf: materialise was 51.8% of the frame in pure-JS noble sha256 — a ~5s
@@ -1406,7 +1445,11 @@ Heist_rummage_recs(mir, seed) {
 //  seed the asker is streaming, or a keep-id for a chosen folder sibling).  Absent = the folder-DESCRIBE ask
 //   (metadata heads).  A want ask and a describe ask are DISTINCT particles (different keys) so neither upserts
 //    onto the other at the mirror.
-async Heist_rummage_ask(w, tx, me, them, seed, want) {
+// `lofi` (optional, want-asks only): ask for the ogg128 RENDITION instead of the original file — the phone
+//  path (Orig_ogg_from_source).  It rides as a plain prop, NOT a loc key, so a lofi ask and a plain ask for
+//   the same ref are the SAME particle: a keep picks one mode at commit and never both, and making them two
+//    particles would leave a stale twin asking for the other artifact forever.
+async Heist_rummage_ask(w, tx, me, them, seed, want, lofi) {
     let bay = this.Ra_home_bay(w, me, them)
     let key = want ? { Rummage: 1, want: String(want), pier: them } : { Rummage: 1, seed: seed, pier: them }
     let ask = bay.o(key)[0]
@@ -1426,6 +1469,8 @@ async Heist_rummage_ask(w, tx, me, them, seed, want) {
     //  A plain incrementing string, so it stays a clean scalar; nothing queries by it, and no fixture
     //   in the tree carries a %Rummage, so this moves no snap.
     ask.sc.n = '' + (+(ask.sc.n || 0) + 1)
+    // 1-or-absent, never 0 (the snapped-boolean rule) — an absent key IS "give me the original".
+    if (lofi) ask.sc.lofi = 1
     ask.bump()
     return await this.Repli_offer(w, tx, me, them, ask)
 
@@ -1441,7 +1486,10 @@ async Heist_rummage_answer(w, tx, me, asker, rummageMirror, nav) {
     //  present, so the asker's Ra_pull_beat (which bails on total==0) can pull.  This is the ONLY read-side
     //   cost of a keep, bounded to the chosen tracks, and it rides a track boundary (the deferred pull).
     if (rummageMirror.sc.want) {
-        let rec = await this.Heist_materialise_one(w, nav, me, String(rummageMirror.sc.want))
+        // `lofi` — serve the ogg128 rendition instead of the original (the phone path).  The DECISION is
+        //  the asker's and the WORK is the source's, which is the whole point: the small artifact is what
+        //   crosses the wire, rather than shipping 30MB and shrinking it at the far end.
+        let rec = await this.Heist_materialise_one(w, nav, me, String(rummageMirror.sc.want), !!rummageMirror.sc.lofi)
         if (!rec) return 0
         return (await this.Repli_offer(w, tx, me, asker, rec)) ? 1 : 0
     }
@@ -1691,6 +1739,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
             }
         } else {
             this.Heist_keep_default_pick(keep, srcmir, seed)
+            this.Heist_keep_default_section(keep, srcmir, seed)
         }
         // WAIT FOR THE HUMAN'S ▶ START (the human 2026-07-29: "the setup form is skipped ... it went straight
         //  to 0/13 tracks" + "if you skip the track it ... turns immediately into downloading").  primed→pulling
@@ -1826,7 +1875,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
                         console.log(`⇊⟲ ${pick.c.asks_out} unanswered materialise asks — re-censusing the source folder (its keep-id map is runtime-only and a reload wipes it)`)
                         await this.Heist_rummage_ask(w, route, me, at, seed)
                     }
-                    await this.Heist_rummage_ask(w, route, me, at, seed, ref)
+                    await this.Heist_rummage_ask(w, route, me, at, seed, ref, !!keep.sc.lofi)
                 }
                 drove_any = 1                                // this pick IS in flight (awaiting the source's read)
                 inflight = INFLIGHT                          // a pending materialise closes the window (one read)
@@ -2088,6 +2137,35 @@ Heist_keep_default_pick(keep, srcmir, seed) {
         if (h.sc.title) pick.sc.title = h.sc.title
         if (h.sc.artist) pick.sc.artist = h.sc.artist
     }
+    keep.bump()
+
+},
+// Heist_keep_default_section — THE SECTION THE SOURCE ALREADY CHOSE, offered back as the default category
+//  (the human 2026-08-07: "it still isn't noticing the '0 spawn' and '0 folks' are sections").  Runs beside
+//   Heist_keep_default_pick, at the one moment the folder has just described itself and the form is about to
+//    be read by a human.  Only when the keep has NO category yet — a typed one, or one carried in off a
+//     Berth-resumed heist, always wins.
+//  The COMMON section run across the husks, not the first husk's: a rummage can span sibling folders, and
+//   filing the whole keep under a section only some of it lives in would be a lie.  Diverge at the first
+//    level and you get the shared ancestor; share nothing and you get '' (no prepend, [[heist no-prepend]]).
+//  The once-guard is on `.c`, deliberately: a keep whose husks carry no sections at all must not grow a new
+//   snapped key just to record that we looked (it would churn every recorded Book fixture for nothing).
+Heist_keep_default_section(keep, srcmir, seed) {
+    if (keep.sc.genre) return
+    if (keep.c.sectioned) return
+    let husks = srcmir ? this.Heist_rummage_recs(srcmir, String(seed)) : []
+    if (!husks.length) return
+    keep.c.sectioned = 1
+    let common = null
+    for (const h of husks) {
+        let segs = this.Heist_sections_of(h.sc.path).split('/').filter(Boolean)
+        if (common === null) { common = segs; continue }
+        let i = 0
+        while (i < common.length && i < segs.length && common[i] === segs[i]) i = i + 1
+        common = common.slice(0, i)
+    }
+    if (!common || !common.length) return
+    keep.sc.genre = common.join('/')
     keep.bump()
 
 },
@@ -2416,11 +2494,81 @@ Heist_keep_pick_toggle(keep, ref) {
 //              so it's the one place the next heist's starting point needs to learn from.
 Heist_keep_set_genre(keep, v) {
     keep.c.last_touch = Date.now()
-    let parts = ('' + (v || '')).split('/').map((p) => p.trim()).filter(Boolean)
-    let out = parts.map((p) => '0 ' + p.replace(/^(-|0) /, ''))
-    keep.sc.genre = out.join('/')
+    keep.sc.genre = this.Heist_genre_norm(v)
     keep.bump()
     this.Heist_defaults_set({ genre: keep.sc.genre })
+
+},
+// Heist_genre_norm — THE category normaliser, extracted 2026-08-07 because the comment above was WRONG.
+//  It claimed Heist_keep_set_genre is "the one place a category gets set"; it is not — Heist_keep_commit
+//   sets `pick.sc.genre` straight from the Heist SETUP form, which never passed through here.  So a
+//    category typed into the setup landed raw: `chill/`, not `0 chill/` (the human 2026-08-07, "Heist
+//     setup isn't taking the '0 chill' form").  One verb, both doors, so the marker convention holds
+//      wherever a category is chosen.
+//  LEADING `spawn` IS DROPPED (the human's asked-for hack for this test rig, 2026-08-07): our test
+//   music all lives under `0 spawn`, so the source's own tag arrives as the setup's default category and
+//    every keep re-filed itself back under `0 spawn/`.  Marker-blind (`spawn` | `- spawn` | `0 spawn`,
+//     matching Heist_spawn_swap's own test) and only at the FRONT, so a genuine `chill/spawn` nesting,
+//      or a category that merely contains the word, is untouched.
+//  An empty category stays empty — no prepend, the [[heist no-prepend]] ruling.
+Heist_genre_norm(v) {
+    let parts = ('' + (v || '')).split('/').map((p) => p.trim()).filter(Boolean)
+    while (parts.length && parts[0].replace(/^(-|0) /, '') === 'spawn') parts.shift()
+    return parts.map((p) => '0 ' + p.replace(/^(-|0) /, '')).join('/')
+
+},
+// ── SECTIONS ─────────────────────────────────────────────────────────────────────────────────────
+// A MARKER-PREFIXED FOLDER IS A SECTION, NOT A FOLDER (the human 2026-08-07: "it still isn't noticing
+//  the '0 spawn' and '0 folks' are sections").  The shelf on disk reads:
+//      0 spawn/- folks/- arabia/Charif Megarbane - Tayyara Warak (2022) [FLAC]/01. Tayyara Warak.mp3
+//      └── section ┴ section ┴ section ┴─ the artist|album structure the copy must preserve ──┘
+//   The `-`|`0 ` marker is exactly the category convention Heist_genre_norm stamps (see Heist_cat_path
+//    and Heist_keep_set_genre) — so the LEADING RUN of marked segments IS the source's own filing
+//     decision, expressed in the same vocabulary the heist uses for the destination.  It follows that:
+//      · the sections must come OFF the cp (a category is not part of a track's folder layout, and
+//         leaving them on double-files the keep: chosen-category/ PLUS the source's own sections);
+//      · they are the best DEFAULT category there is — better than the ID3 genre tag, because the
+//         person who shelved the music said it with their hands.  HeistSetup offers them as such.
+//  Marker-blind on read (`- folks` and `0 folks` both), always emitted in the new `0 ` form.
+//  Book-inert BY CONSTRUCTION, the same argument Heist_spawn_swap makes: no recorded fixture anywhere
+//   carries a marker-prefixed path segment (verified across wormhole/Story/**), so no draw sequence,
+//    manifest or landing in any Book moves.  It fires only on a real shelf that uses the convention.
+Heist_sections_is(seg) {
+    return /^(-|0) /.test('' + (seg || ''))
+
+},
+// Heist_sections_of — the leading section run of a source path, as a normalised category (`0 folks/0
+//  arabia`).  Never consumes the LAST segment: a path that is nothing but markers is a filename, and a
+//   heist that returned '' for the cp would land the track on top of its own category folder.
+Heist_sections_of(rel) {
+    let parts = ('' + (rel || '')).split('/').filter((p) => p && p !== '.' && p !== '..')
+    let out = []
+    while (parts.length > 1 && this.Heist_sections_is(parts[0])) out.push(parts.shift())
+    return this.Heist_genre_norm(out.join('/'))
+
+},
+// Heist_sections_strip — the same split, other half: the path with its leading sections removed, which
+//  is what a cp actually copies.  Was `Heist_spawn_strip` (literal `0 spawn` only) until the human
+//   pointed out that every marked folder is the same kind of thing.
+//  Stripping is SAFE for what Heist_spawn_swap existed to prevent: the swap's job is "never land back on
+//   top of the folder you copied from", and removing the segments lands the tracks under the CHOSEN
+//    category (or at the music root) instead — a different place, so no collision.  The swap still
+//     stands for a `spawn` that turns up deeper in a tree, where no section rule reaches it.
+Heist_sections_strip(rel) {
+    let parts = ('' + (rel || '')).split('/')
+    while (parts.length > 1 && this.Heist_sections_is(parts[0])) parts.shift()
+    return parts.join('/')
+
+},
+// Heist_keep_set_lofi — the ⇊ cell's `lofi` toggle: ask the SOURCE for the ogg128 rendition rather than
+//  the original file (the human 2026-08-07: "transcoding to ogg for people's phones will be important").
+//  Lives on the keep because it is a per-heist decision the want-ask reads (Heist_keep_step's
+//   Heist_rummage_ask(..., !!keep.sc.lofi)) — so it must be set BEFORE ▶ start, and it is inert after.
+//  Snapped as `1`-or-absent, never `0` — the project's scalar-boolean rule.
+Heist_keep_set_lofi(keep, on) {
+    keep.c.last_touch = Date.now()
+    if (on) { keep.sc.lofi = 1 } else { delete keep.sc.lofi }
+    keep.bump()
 
 },
 // Heist_keep_set_dirs — the directories breadcrumb's edit (the human 2026-07-30): override the SHARED
@@ -2575,7 +2723,7 @@ Heist_keep_filings(keep) {
 // Heist_keep_commit — the chooser's GO: record the human's ticked tracks as %Pick,id children (artist+title
 //  +chosen genre) and flip the keep to committing; the driver mints the job + pulls + lands.  Re-commit
 //   clears prior picks.  Returns the pick count (0 = nothing ticked, stays choosing).
-Heist_keep_commit(w, keep, choices) {
+Heist_keep_commit(w, keep, choices, lofi) {
     if (!keep) return false
     for (const p of keep.o({ Pick: 1 })) keep.drop(p)
     let n = 0
@@ -2590,11 +2738,21 @@ Heist_keep_commit(w, keep, choices) {
         //   string 'Unfiled', Heist_filing_for then returned it as a real category, and Heist_rel_for
         //    prepended a folder the 2026-07-29 ruling explicitly forbids ("I don't want anything prepended
         //     there").  Absent when unpinned — the guarded shape every other genre write here already uses.
-        if (c.genre) pick.sc.genre = c.genre
+        // THROUGH THE NORMALISER (2026-08-07): this is the SECOND door a category comes in by — the
+        //  Heist setup form — and it used to write the raw string, so `chill` landed as `chill/` while
+        //   the same word typed in the haul breadcrumb landed as `0 chill/`. One collection, two
+        //    conventions, decided by which panel you happened to use. Heist_genre_norm is now both.
+        //     (It also drops a leading `spawn`, so the test rig's own default stops re-filing keeps
+        //      back under `0 spawn/`.)  Still guarded: a normalised-to-empty category stamps nothing.
+        let g = this.Heist_genre_norm(c.genre)
+        if (g) pick.sc.genre = g
         pick.bump()
         n = n + 1
     }
     if (!n) return false
+    // LOFI — the setup's tickbox, remembered on the haul so every pick of this keep asks for the ogg128
+    //  rendition (Heist_rummage_ask → Heist_materialise_one).  1-or-absent, never 0.
+    if (lofi) { keep.sc.lofi = 1 } else { delete keep.sc.lofi }
     keep.sc.state = 'committing'
     keep.bump()
     return n

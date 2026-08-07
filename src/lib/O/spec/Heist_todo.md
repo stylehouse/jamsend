@@ -17,11 +17,32 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
 
 ## 0. Next move (read first)
 
-0. **"LOFI" — a `.ogg` haul for phones. DESIGNED, NOT BUILT (2026-08-07).** The human: *"the Heist form
-    could involve the transcoding to ogg for phones... that's a whole thing too — might be worth doing
-     for v1.0. it's a tickbox on the Heist setup... 'lofi'."* Deliberately not half-landed unattended:
-      this path writes into the human's real music collection, and it cannot be verified without one
-       attended haul. Here is everything the next sitting needs.
+0. **"LOFI" — a `.ogg` haul for phones. BUILT 2026-08-07, source-side, ONE ATTENDED HAUL STILL OWED.**
+    The human: *"transcoding to ogg for people's phones will be important."* What landed, and why in
+     this shape:
+    - **The bomb below was dissolved, not defused.** Nothing muxes the radio crate's chunks. The
+       SOURCE decodes its own file and encodes from **sample 0** (`Orig_ogg_from_source`, Orig.g:
+        decode a *copy* — `decodeAudioData` detaches — → `Ra_lufs`/`Ra_gain_for`/`Ra_bake`, the same
+         loudness the stream gets → `Ra_encode_*` → `Orig_ogg_mux`). `pv_off` never enters the path.
+    - **The swap rides inside `Heist_materialise_one`**, between "read the whole file" and "chunk it".
+       So per-chunk cids, `body_hash`, `total`, the wire, backpressure, resume and the sink's
+        read-back verification are all **byte-agnostic and unchanged** — the source hands back a head
+         whose `path`/`ext` already say `.ogg`, and the sink's landing needed no edit at all.
+    - The ask carries `lofi` as a **plain prop, not a loc key** (`Heist_rummage_ask`) — one keep picks
+       one mode, so a lofi and a plain ask for the same ref are the same particle. Idempotence is
+        mode-aware (`Heist_materialise_one` re-materialises when the held mode differs); a failed
+         transcode falls back to the original and says so on the console rather than serving nothing.
+    - **UI: both doors.** `HaulFace` (the ⇊ glass cell — this is the one the human actually uses) via
+       `Heist_keep_set_lofi`, and `HeistSetup.svelte` (the fullscreen Panel funk) via its checkbox and
+        `Heist_keep_commit`'s `lofi` arg. Both write the same `keep.sc.lofi`, which
+         `Heist_keep_step`'s want-ask reads — so the mode is settable right up to ▶ start and inert after.
+    - **The gap: `Orig_ogg_from_source` has no Book.** `MusuOgg` gates `Orig_ogg_export` (mux from
+       opus chunks), a *different* entry point. Green there says nothing about this path. It needs one
+        attended two-tab haul with the box ticked, and that is the only thing standing between this
+         and done.
+
+   The original design note follows, kept because the bomb it names is still live for anything that
+    ever *does* try to mux the radio crate:
 
    **The good news: the codec work is DONE and Book-proven.** `Orig_ogg_export` (Ghost/M/Orig.g) already
     collects a Record's opus packets, muxes a real RFC-7845 Ogg/Opus stream (`Orig_ogg_mux`, with the
@@ -47,11 +68,33 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
            before writing any UI** — a tickbox wired to a path that truncates tracks is worse than no
             tickbox.
 
-   **Wiring, once that is settled:** `HeistSetup.svelte` grows the checkbox → `keep.sc.lofi` (a snapped
-    boolean, so `1`-or-absent) → `Heist_keep_commit` carries it → `Heist_keep_pull` branches per pick.
-     Guard the failure: if the export reports `{gap:seq}` the track is not whole — leave the pick
-      un-landed and let the next beat re-ask, exactly as the byte path does. Never overwrite an original:
-       the `.ogg` name differs by extension, and `Heist_land`'s reentrancy guard keys on the full path.
+   *(The wiring sketched here — carry the flag to `Heist_keep_pull` and branch per pick — was NOT what
+    got built. Branching at the SINK would have meant a second landing path to keep correct; branching at
+     the SOURCE's materialise means there is only ever one.)*
+
+0b. **A MARKER-PREFIXED FOLDER IS A SECTION (2026-08-07).** The human: *"it still isn't noticing the '0
+     spawn' and '0 folks' are sections."* The shelf reads
+      `0 spawn/- folks/- arabia/<album>/<track>` — the leading run of `- `|`0 ` segments is the source's
+       own filing, said in exactly the vocabulary the heist uses for the destination. So:
+    - `Heist_sections_of(path)` → the leading run as a normalised category (`0 folks/0 arabia`);
+       `Heist_sections_strip` → the rest, which is what a cp copies. `Heist_cp_path` goes through the
+        strip, so manifest, preview and landing agree by construction. (Was `Heist_spawn_strip`,
+         literal `0 spawn` only.)
+    - `Heist_keep_default_section` stamps the **common** section run across the husks as the keep's
+       category when it has none — the section only *some* of a keep lives in would be a lie. Guard on
+        `.c`, so a keep with no sections grows no snapped key and no fixture moves.
+    - **`HaulFace`'s `directories` row now reads the CP, not the raw path.** That was the visible bug:
+       the sections got swallowed into `directories` and then *also* prepended under whatever category
+        you chose, so the keep landed filed twice.
+    - **HeistSetup stopped mirroring the ghost** and calls `Heist_cp_path` / `Heist_genre_norm` /
+       `Heist_sections_of` directly. The hand-copied re-implementations are what drifted the moment the
+        ghost learned about sections, and a destination preview that is wrong is worse than none.
+    - Book-inert by construction and verified: **no recorded fixture anywhere carries a marker-prefixed
+       path segment**. MusuHeist 22/22 · MusuRename 9/9 · MusuVend 11/11 · MusuOgg 6/6 · MusuStock 5/5
+        (control), and the only fixture churn across the batch is `TimeSpool` samples + `GhostInclude`
+         diges.
+    - Still true and still unread: `Heist_defaults_get()` has **no callers**. The remembered global
+       default category is written on every edit and never applied to a new keep.
 
 1. **The two-pier live test HAPPENED (2026-08-06) and it was worth it — read §4.1 first.** The human
     ran a real 8-track haul between two tabs. It wedged twice, at two different rungs, and both were

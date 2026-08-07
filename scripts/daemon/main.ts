@@ -70,31 +70,23 @@ for (const k of Object.getOwnPropertyNames(win)) {
 ;(globalThis as any).location = win.location
 ;(globalThis as any).navigator ??= win.navigator
 
-// indexedDB MUST BE REAL.  This is the first thing the daemon taught us, and it cost an afternoon:
-//  Story_cli.setup.ts gets away with a no-op stub (a request object whose onsuccess never fires)
-//   because a fixture Book never awaits Dexie.  A real boot does, immediately —
+// PERSISTENCE MUST ACTUALLY SETTLE — it is not optional, and this cost an afternoon to learn.
+//  Story_cli.setup.ts gets away with a no-op indexedDB stub (a request whose onsuccess never fires)
+//   because a fixture Book never awaits Dexie.  A real boot awaits it immediately:
 //    Housing.DirectoryOpener's very first act is `await fsh.start()` → restoreDirectoryHandle →
-//     `await db.Handle.get(key)`.  Against the stub that promise NEVER SETTLES, and it is being
-//      awaited inside the beliefs mutex, so the machine wedges on tick one holding the one lock
-//       every House drains under.  Symptom: `beliefs mutex held 26s by H:Mundo think`, worlds
-//        half-built, todo stuck at 2, and a process that looks perfectly healthy.
-//  fake-indexeddb is a real IDB implementation, so every Dexie await settles.  It is MEMORY-ONLY:
-//   identity and stash do not survive a restart yet — see Daemon_todo.md §3 for what durable needs.
-await import('fake-indexeddb/auto')
-// TWO GLOBALS, AND THEY DISAGREE — the trap that made this look fixed when it wasn't.
-//  fake-indexeddb/auto picks its target as `typeof window !== "undefined" ? window : … global`.
-//   We installed a jsdom `window` moments ago, so it lands on the WINDOW.  Dexie resolves its own
-//    global as `globalThis`.  So out of the box: window has IDB, globalThis doesn't, Dexie throws
-//     MissingAPIError — and the machine keeps running, because a Dexie that REJECTS unwedges the
-//      beliefs pass exactly like a Dexie that works.  The wedge clearing is therefore NOT proof
-//       that persistence works; only `dexie: indexedDB=true` below is.
-//  So copy window → globalThis (never the reverse, which silently clobbers the real ones with
-//   undefined — the first version of this loop did precisely that).
-for (const k of ['indexedDB', 'IDBKeyRange', 'IDBCursor', 'IDBCursorWithValue', 'IDBDatabase',
-                 'IDBFactory', 'IDBIndex', 'IDBObjectStore', 'IDBOpenDBRequest', 'IDBRequest',
-                 'IDBTransaction', 'IDBVersionChangeEvent']) {
-    if ((win as any)[k] !== undefined) (globalThis as any)[k] = (win as any)[k]
-}
+//     `await db.Handle.get(key)`.  Against the stub that promise NEVER SETTLES — and it is awaited
+//      inside the beliefs mutex, the one lock every House drains under.  Symptom: `beliefs mutex
+//       held 26s by H:Mundo think`, worlds half-built, todo stuck at 2, and a process that looks
+//        perfectly healthy.  A stub is worse than nothing: nothing fails loudly.
+//  The daemon's answer is NOT an indexedDB at all — daemon.vite.config.mjs aliases `dexie` to
+//   scripts/daemon/dexie-node.ts, a file-backed key-value store covering the ~20 calls the app
+//    really makes.  So: no npm install (no libc drift across the two containers that share
+//     /app/node_modules), and persistence that SURVIVES A RESTART, which memory-only
+//      fake-indexeddb would not have given.
+//  NOTE we deliberately leave `indexedDB` UNDEFINED.  Nothing needs it now, and one thing checks
+//   for it: Lies_stemdex (LiesFunk.svelte:1378) early-returns on `typeof indexedDB === 'undefined'`.
+//    Stemdex is the code EDITOR's search index (Lies+Lang), not the Jamsend app — so it opts itself
+//     out here, which is exactly what a daemon wants.  Defining indexedDB would switch it back on.
 ;(globalThis as any).requestAnimationFrame ||= (cb: any) => setTimeout(() => cb(Date.now()), 16)
 ;(globalThis as any).cancelAnimationFrame  ||= (id: any) => clearTimeout(id)
 
@@ -138,11 +130,14 @@ const app_log = console.log
 if (QUIET) console.log = () => {}
 
 // ── 2. the machine ───────────────────────────────────────────────────────────────────────────
-// Dexie snapshots the IDB globals into Dexie.dependencies at MODULE-EVAL time, so "did the shim
-//  land before dexie loaded" is a yes/no we should be able to see, not infer from a stray rejection.
+// WHICH dexie am I?  The alias is invisible at the call sites (they all just `import from 'dexie'`),
+//  so say it out loud at boot.  If this ever prints `real dexie`, the alias didn't take and the
+//   daemon is about to wedge in DirectoryOpener with no indexedDB — the exact failure that ate an
+//    afternoon, and one that otherwise announces itself only as "the machine stopped thinking".
 {
     const Dx: any = (await import('dexie')).Dexie
-    say(`dexie: indexedDB=${!!Dx?.dependencies?.indexedDB} IDBKeyRange=${!!Dx?.dependencies?.IDBKeyRange}`)
+    const shimmed = typeof (Dx?.prototype as any)?.save === 'function'
+    say(`dexie: ${shimmed ? `dexie-node shim → ${process.env.DAEMON_STATE || '/tmp/jamsend_daemon/state'}` : '⚠ REAL dexie — the alias did not take, expect a wedge'}`)
 }
 
 const { mount, flushSync } = await import('svelte')
@@ -158,6 +153,20 @@ const boot: Record<string, any> = { toplevel: process.env.A || 'Auto' }
 if (process.env.E) { boot.book = process.env.E; boot.boot_role = 'editor' }
 else if (process.env.B) { boot.book = process.env.B; boot.boot_role = 'runner' }
 else if (process.env.I) { boot.boot_role = 'runner'; boot.on_grid = process.env.I }
+
+// ROLE — the daemon's identity name, and the whole of what makes this a BigSoundland rather than a
+//  bare runner.  /BigSoundland is `boot_qualand({book:'Sounditron', role:'sound'})`, which stamps
+//   id_role + assume_identity + humdinger (BigQualand.svelte:54-68); the daemon stamps the same three
+//    with its own role name.  Two consequences, both wanted:
+//     · Auto's `Clustation_ensure_default` resumes-or-mints the identity stored in the identities
+//        Thang under this role — persisted by the dexie-node shim — so the daemon is the SAME peer
+//         across restarts through the app's own path.  `?I=` and the legacy keyfile adopt both still
+//          WIN if present (they run first); this only fills a bare boot's gap.  ROLE=0 opts out.
+//     · humdinger keeps it off the editor's runner grid, so nobody's Story run gets dispatched here.
+//  NOTE the role is a STORAGE NAME, not a derivation: the key is a fresh random mint either way, so
+//   two daemons sharing a role name on different boxes are different peers, not impostors of one.
+const ROLE = process.env.ROLE === '0' ? '' : (process.env.ROLE || 'daemon')
+if (ROLE) { boot.id_role = ROLE; boot.assume_identity = true; boot.humdinger = true }
 
 let H: any = null
 say(`booting — relay=${RELAY ? "ON (RELAY=1)" : "off — set RELAY=1 to join, but read Daemon_todo §4 first"} origin=${ORIGIN} share=${ROOT} overlay=${OVERLAY} boot=${JSON.stringify(boot)}`)
@@ -362,6 +371,48 @@ server.listen(PORT, () => say(`status on http://localhost:${PORT}/status`))
 process.on('SIGINT',  () => { say('SIGINT — stopping'); stopping = true })
 process.on('SIGTERM', () => { say('SIGTERM — stopping'); stopping = true })
 
+// ── the account mirror: the ONE call the app never makes ─────────────────────────────────────
+// `Swarm_persist(nav, root, ident)` writes the identity to its two durable homes — the keyed account
+//  at `.jamsend/account/<prepub>/toc.snap` (Swarm_account_save) and the pub-only recognition roster.
+//   Auto's boot-seed READS that file (Auto.svelte:176, "Swarm_account_save has been writing the whole
+//    account all along") — but **nothing in the app writes it.** grep the tree: every caller of
+//     Swarm_persist / Swarm_account_save / Swarm_roster_save is inside the SwarmDisk Book. The read
+//      side was wired 2026-08-04; the write side has no caller, so a browser with a cleared Dexie
+//       arrests next to an account dir that was never created. That is Identity_persist_todo's
+//        "editor lost its crypto again!?" with the cause in plain sight.
+//  The daemon calls it itself. Not as a fix for the app — that is shared ground — but because it is
+//   the only way to prove the seam end-to-end here, and because a daemon of all things must not keep
+//    its sole copy of its key in a cache. Once per identity per boot (a version-bump throttle is what
+//     the app wants; a daemon's identity does not churn). ACCOUNT=0 opts out.
+//  Cheap and worth saying: this makes `I=<prepub>` work headlessly. The account dir IS the resume —
+//   Swarm_boot_seed enumerates `.jamsend/account/*` and loads the wanted prepub, keys thawed. So the
+//    daemon's identity becomes portable: copy the dir to another box, boot with I=<prepub>, same peer.
+const ACCOUNT = process.env.ACCOUNT !== '0'
+const persisted = new Set<string>()
+// Say WHY it isn't mirroring, once per distinct reason.  A silent early-return here would read as
+//  "the mirror is fine" while the daemon's only key sat in a cache — the exact failure this exists to
+//   prevent, so the not-yet path has to be as legible as the done path.
+let last_block = ''
+const blocked = (why: string) => { if (why !== last_block) { last_block = why; say(`🪪… account mirror waiting — ${why}`) } }
+const persist_account = async (): Promise<void> => {
+    if (!ACCOUNT) return
+    if (typeof (H as any).Swarm_persist !== 'function') { blocked('Swarm_persist not deposited'); return }
+    const A = (H.o?.({ A: 'Clustation' }) ?? [])[0]
+    const ident = ((A?.o?.({ Identity: 1 }) ?? []) as any[]).find(i => i.sc.active)
+    if (!ident) { blocked('no active %Identity'); return }
+    if (!ident.c?.keys) { blocked(`%Identity ${ident.sc.prepub} has no .c.keys`); return }
+    if (!ident.sc.prepub) { blocked('active %Identity has no prepub'); return }
+    if (persisted.has(ident.sc.prepub)) return
+    persisted.add(ident.sc.prepub)
+    try {
+        await (H as any).Swarm_persist(nav, '', ident)
+        say(`🪪 account mirrored → .jamsend/account/${ident.sc.prepub}/toc.snap (resume with I=${ident.sc.prepub})`)
+    } catch (e: any) {
+        persisted.delete(ident.sc.prepub)
+        say(`⚠ account mirror failed: ${e?.message}`)
+    }
+}
+
 // ── 5. run ───────────────────────────────────────────────────────────────────────────────────
 let last_beat = 0
 while (!stopping) {
@@ -390,6 +441,8 @@ while (!stopping) {
     const WA = H.o({ A: 'Wormhole' })[0] || H.i({ A: 'Wormhole' })
     if (!WA.oa?.({ w: 'Wormhole' })) WA.i({ w: 'Wormhole' })
     if (!WA.c.nav) { WA.c.nav = nav; say('w:Wormhole ← node nav') }
+
+    await persist_account()
 
     wrap_probe()
     flushSync()

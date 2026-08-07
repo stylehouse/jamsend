@@ -31,9 +31,31 @@
     //  default (source genre) / "keep unless already held", so an untouched row still commits sensibly.
     let genres = $state<Record<string, string>>({})       // artist → chosen genre folder
     let keepFlags = $state<Record<string, boolean>>({})    // track id → keep?
+    // LOFI — take the ogg128 rendition instead of the original file (the human 2026-08-07: "transcoding
+    //  to ogg for people's phones will be important").  The SOURCE does the transcode, so what crosses the
+    //   wire is the ~5MB ogg rather than a 30MB FLAC — this is a transfer decision as much as a format one.
+    //  Off by default: the original is still the right answer for a desktop collection.
+    let lofi = $state(false)
 
     function rw() { return A?.top_House?.()?.c?.radio_w }
     function safe(s: string) { return String(s ?? '').replace(/[\/\x00]/g, '-') }
+    // CALL THE GHOST, don't mirror it.  These three were hand-copied re-implementations of
+    //  Heist_genre_norm / Heist_cp_path, and they drifted the moment the ghost learned about sections —
+    //   which is exactly the bug the human hit ("it still isn't noticing the '0 spawn' and '0 folks' are
+    //    sections"): the ghost knew, the form didn't, and the form is what you read before committing a
+    //     download into your collection.  A destination preview that is wrong is worse than none.
+    //  The local bodies survive ONLY as the pre-mix fallback (a world without Heist mixed on renders an
+    //   empty chooser anyway), and are deliberately one line each so the failure is visibly degraded
+    //    rather than silently different.
+    function normGenre(s: string): string {
+        if (typeof A?.Heist_genre_norm === 'function') return A.Heist_genre_norm(s)
+        return String(s ?? '').split('/').map((p) => p.trim()).filter(Boolean).map((p) => '0 ' + p.replace(/^(-|0) /, '')).join('/')
+    }
+    // the source's own filing, read off the leading marker-prefixed run of its path (`- folks/- arabia`).
+    function sectionsOf(path: string): string {
+        if (typeof A?.Heist_sections_of === 'function') return A.Heist_sections_of(path)
+        return ''
+    }
 
     let view = $derived.by(() => {
         void H?.version; void poll
@@ -70,12 +92,20 @@
                 id: String(r.sc.id),
                 title: String(r.sc.title || '(untitled)'),
                 artist: String(r.sc.artist || 'Unknown'),
-                genre0: String(r.sc.genre || ''),
+                // DEFAULT CATEGORY = the source's own SECTIONS, tag genre only as the fallback.  A
+                //  marker-prefixed folder is a filing decision someone made with their hands; the ID3
+                //   genre is a string a ripper guessed.  When the friend shelved it under `- folks/-
+                //    arabia`, that is the offer worth making back — and it lands the keep in the shape
+                //     the friend's shelf has, which is the whole point of copying a folder.
+                genre0: sectionsOf(path) || String(r.sc.genre || ''),
                 file,
                 // THE PATH IT ACTUALLY LANDS AT (Heist_cp_path): a heist is a copy, so the source's own
                 //  subdirs AND filename survive — showing only the basename claimed the album folders
                 //   get flattened away, which they don't.  Same '..'/'.' strip as the ghost's.
-                cp: path.split('/').filter((p: string) => p && p !== '.' && p !== '..').join('/')
+                // Heist_cp_path ITSELF (it is pure — reads path/id/ext off the rec and nothing else), so
+                //  the preview cannot drift from the landing.  The sections come off here too, since the
+                //   chooser offers them as the category above: leaving them on would double-file the keep.
+                cp: (typeof A?.Heist_cp_path === 'function' ? A.Heist_cp_path(r) : '')
                     || (String(r.sc.id) + (r.sc.ext ? '.' + r.sc.ext : '')),
                 held: !!(ownlib && A?.Heist_held?.(ownlib, r.sc.artist, r.sc.title)),
                 landed: landedIds.has(String(r.sc.id)),
@@ -145,7 +175,7 @@
             genre: safe(genreFor(r.artist, r.genre0)),
             keep: keepOf(r),
         }))
-        A?.post_do?.(() => A?.Heist_keep_commit?.(rw(), v.keep, choices), { see: 'heist_commit' })
+        A?.post_do?.(() => A?.Heist_keep_commit?.(rw(), v.keep, choices, lofi), { see: 'heist_commit' })
     }
     function cancel() {
         const v = view
@@ -194,13 +224,24 @@
                                         <!-- no invented `music/` root and no `Unfiled` folder: an unpinned
                                              artist prepends NOTHING (Heist_filing_for), and the source's
                                              own relative path rides underneath unrenamed. -->
-                                        <span class="dest">→ {safe(genreFor(g.artist, r.genre0)) ? safe(genreFor(g.artist, r.genre0)) + '/' : ''}{r.cp}</span>
+                                        <span class="dest">→ {normGenre(safe(genreFor(g.artist, r.genre0))) ? normGenre(safe(genreFor(g.artist, r.genre0))) + '/' : ''}{lofi ? r.cp.replace(/\.[^./]*$/, '') + '.ogg' : r.cp}</span>
                                     </label>
                                 {/each}
                             </div>
                         {/each}
                     </div>
                     <datalist id="hs-genres">{#each genreOptions as o}<option value={o}></option>{/each}</datalist>
+                    <!-- LOFI: the phone answer.  Framed as what it does to the TRANSFER, not as a codec
+                         setting — the friend transcodes and sends the small thing, which is the reason to
+                         want it at all.  The per-track `→ dest` lines above re-extension live so the
+                         consequence is visible before committing, not discovered on disk afterwards. -->
+                    <label class="lofi">
+                        <input type="checkbox" bind:checked={lofi} />
+                        <span><b>lofi</b> — take a smaller <code>.ogg</code> for phones</span>
+                        <span class="lofi-why">{lofi
+                            ? 'they transcode and send the small version — much faster, and the originals stay theirs'
+                            : 'off: copies the original files, exactly as they are'}</span>
+                    </label>
                     <div class="row">
                         <button class="go" disabled={tally.keep === 0} onclick={commit}>
                             Keep {tally.keep} {tally.keep === 1 ? 'track' : 'tracks'} into /music
@@ -255,6 +296,14 @@
     .bar { height: 5px; background: #1a2f38; border-radius: 3px; overflow: hidden; }
     .fill { height: 100%; background: #d9a026; transition: width 0.4s linear; }
     .done { color: #57c777; font-weight: 700; margin: 0; }
+    .lofi {
+        display: flex; align-items: baseline; gap: 0.45rem; flex-wrap: wrap;
+        margin-top: 0.5rem; padding: 0.35rem 0.5rem; border-radius: 4px;
+        background: rgba(127, 200, 232, 0.09); border: 1px solid rgba(127, 200, 232, 0.24);
+        font-size: 0.78rem; cursor: pointer;
+    }
+    .lofi code { font-size: 0.72rem; opacity: 0.85; }
+    .lofi-why { flex: 1 1 100%; font-size: 0.68rem; opacity: 0.6; padding-left: 1.35rem; }
     .row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.3rem; }
     .row .spacer { flex: 1 1 auto; }
     .row .note { font-size: 0.75rem; opacity: 0.6; }

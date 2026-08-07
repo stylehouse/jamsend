@@ -31,6 +31,20 @@
     const book       = boot?.book
     const boot_role  = boot?.boot_role
     const on_grid    = boot?.on_grid
+    // The BigQualand three (BigQualand.svelte:54-68).  /BigSoundland is
+    //  `boot_qualand({book:'Sounditron', role:'sound'})` and nothing else — so a daemon that stamps
+    //   these IS a BigSoundland, minus the room:
+    //    · id_role       — the identity this page always wears.  Auto's Clustation_ensure_default
+    //                       resumes-or-mints the identity stored under this role name, so the daemon
+    //                        is the same peer every restart off the app's OWN mechanism, no keyfile.
+    //    · assume_identity — opts into that ("this page always has an identity").
+    //    · humdinger     — an END-USER room: full Lies stack, invisible to the editor's grid (no
+    //                       advertise, no going-cold, no `from` on pings).  A daemon must have this
+    //                        or the editor enrols it off the 5s heartbeat and dispatches Book runs at
+    //                         it — someone else's Story landing on the box in the corner.
+    const id_role         = boot?.id_role
+    const assume_identity = boot?.assume_identity
+    const humdinger       = boot?.humdinger
 
     $effect(() => {
         const h = new House({ name: 'Mundo' })
@@ -38,6 +52,9 @@
         if (book) h.c.book = book
         if (boot_role) h.c.boot_role = boot_role
         if (on_grid) h.c.on_grid = on_grid
+        if (id_role) h.c.id_role = id_role
+        if (assume_identity) h.c.assume_identity = true
+        if (humdinger) h.c.humdinger = true
         H = h
         onhouse?.(h)
     })
