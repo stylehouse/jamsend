@@ -48,7 +48,8 @@
             //  shelf rather than sitting silent (Radio_dial, 2026-08-08).  Distinct from `own`, which is
             //   the listener CHOOSING their own records; solo is the radio saying nobody else was there.
             //    Cleared in Radio_open the moment a friend's track actually opens.
-            solo:   !!sc.solo,
+            solo:   (sc.solo as string) ?? '',
+            soloBy: (sc.solo_by as string) ?? '',
             first:  ((sc.Radio ?? 'off') === 'off') && !sc.title && !+(sc.played ?? 0),
             stock,
             // the heist gesture's ✓ tell (the human 2026-07-28 "keep what you're hearing"): Radio_keep
@@ -62,6 +63,14 @@
         return `${m}:${r < 10 ? '0' : ''}${r}`
     }
     const ICON: Record<string, string> = { off: '📻', digging: '⛏', playing: '♪', paused: '⏸', starved: '…' }
+    // the three ways to be playing your own music, which want three different sentences.  `gathering` is
+    //  the one that matters: a friend IS there and their bytes are in flight, so the honest line is a
+    //   promise, not a lament — and saying "nobody online" here is a flat lie the listener can disprove
+    //    by looking at their friends list.
+    const soloWhy = (f: { solo: string, soloBy: string }) =>
+        f.solo === 'gathering' ? `waiting on ${f.soloBy || 'a friend'}’s music` :
+        f.solo === 'offline'   ? 'your friends are offline' :
+                                 'nobody online yet'
 </script>
 
 <div class="rf" class:on={face.state === 'playing'}>
@@ -101,7 +110,7 @@
         <!-- THE LABEL the human asked for (2026-08-08): playing your own is fine, being unclear about
              WHY is not.  This is not the same message as the plain local badge below — that one means
              "you chose your own records", this one means "nobody was online, so here's yours". -->
-        <div class="rf-src rf-src-local">♪ LOCAL — your own record · nobody online right now</div>
+        <div class="rf-src rf-src-local">♪ LOCAL — your own record · {soloWhy(face)}</div>
     {:else if face.title && face.state !== 'off' && face.state !== 'digging'}
         <div class="rf-src rf-src-local">♪ LOCAL — your own record</div>
     {/if}
@@ -162,8 +171,6 @@
     .rf-title { font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
     .rf-artist { font-size: 10px; opacity: 0.8; }
     .rf-note { font-size: 9px; opacity: 0.6; font-style: italic; }
-    .rf-from { font-size: 9px; opacity: 0.85; margin-top: 2px; color: #c9b6e8; }
-    .rf-from.rf-own { opacity: 0.5; color: #b6c9a8; }
     .rf-src {
         display: inline-block; margin-top: 2px; padding: 1px 5px; border-radius: 3px;
         font-size: 0.72em; letter-spacing: 0.04em; font-weight: 600;

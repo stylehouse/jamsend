@@ -639,6 +639,7 @@ Radio_open(radio, rec):
         radio.sc.by = src
         radio.sc.by_name = this.Radio_friendly(w, src)   // the friendly to SHOW ("from Lefto"), not a hex pub
         delete radio.sc.solo                             // a friend's track is playing — we are not alone any more
+        delete radio.sc.solo_by
     } else {
         delete radio.sc.by
         delete radio.sc.by_name
@@ -907,9 +908,14 @@ async Radio_dial(radio):
     if (mine) {
         // `solo` and NOT sc.note: Radio_open deletes note the instant a track opens (:631), by design —
         //  a standing note beside playing music would be stale within the second.  solo is the durable
-        //   half, cleared in Radio_open the moment a friend's track actually opens, so the face can say
-        //    "playing your own — nobody online" for exactly as long as that is true.
-        radio.sc.solo = 1
+        //   half, cleared in Radio_open the moment a friend's track actually opens.
+        //  IT CARRIES THE REASON, not a bare 1 — `gathering` (a friend is live, their bytes are still
+        //   crossing) reads completely differently to `alone` (no Pier at all), and telling a listener
+        //    "nobody online" while their friend is mid-transfer is worse than saying nothing.
+        let why = this.Radio_alone_why(w)
+        radio.sc.solo = why.tag
+        if (why.name) radio.sc.solo_by = why.name
+        if (!why.name) delete radio.sc.solo_by
         radio.bump()
         return mine
     }
@@ -921,7 +927,13 @@ async Radio_dial(radio):
 //   Radio_open deletes note).  Three honest cases, in order of "closer to hearing music":
 //    a peer live but every track a husk ⇒ "gathering from <name>" (the bytes are owed);
 //     a peer known but offline ⇒ "friends are offline"; no Pier at all ⇒ "nobody online yet".
-Radio_reason(w, radio):
+// Radio_alone_why — WHY there is no friend music to play, as a tag, so the note and the solo label can
+//  never disagree.  Split out 2026-08-08: the last rung stamped a hardcoded "nobody online right now"
+//   while this function knew better, so a page GATHERING from a live friend was told nobody was there.
+//    The human saw exactly that ("these seem stuck on local music only… oh wait it came right") — the
+//     friend's chunks landed a moment later and the next dial picked them up, but for that window the
+//      page asserted the opposite of the truth.  Two copies of one judgement is how a face starts lying.
+Radio_alone_why(w):
     let M = this.top_House()
     let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
     let liveName = null
@@ -937,9 +949,15 @@ Radio_reason(w, radio):
             }
         }
     }
-    let note = liveName
-        ? ('gathering music from ' + liveName + ' — nothing has arrived yet')
-        : (anyPier
+    if (liveName) return { tag: 'gathering', name: liveName }
+    if (anyPier) return { tag: 'offline', name: '' }
+    return { tag: 'alone', name: '' }
+
+Radio_reason(w, radio):
+    let why = this.Radio_alone_why(w)
+    let note = why.tag === 'gathering'
+        ? ('gathering music from ' + why.name + ' — nothing has arrived yet')
+        : (why.tag === 'offline'
             ? 'your friends are offline — nobody online to play right now'
             : 'nobody online yet — connect a friend to hear their music')
     if (radio.sc.note !== note) {

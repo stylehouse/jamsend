@@ -194,3 +194,71 @@ export async function level_to_ogg(abs: string, target_lufs: number, m: Measured
         bitrate,
     }
 }
+
+// ── Ogg → raw opus packets ────────────────────────────────────────────────────────────────────
+// WHY A DEMUX AT ALL.  Ra does not store Ogg.  A chunk is "raw length-prefixed opus packets"
+//  (Ra_chunk_pack, u16 LE per packet), because chunks CONCATENATE — frames back to back IS the
+//   stream, which an Ogg container's paging would ruin.  ffmpeg's smallest honest unit of output is
+//    a container, so the container has to come back off.  `Ra_chunk_packets` is the read twin of the
+//     packing; this is the bridge from ffmpeg to the write side.
+//
+// THE FORMAT, in the two facts that matter (RFC 3533 §6, RFC 7845):
+//  · A page is "OggS", version, flags, granule(8), serial(4), seq(4), crc(4), n_segments(1), then
+//     n_segments lacing bytes, then the segment bodies.
+//  · A PACKET is the concatenation of consecutive segments up to and including the first whose
+//     lacing byte is < 255.  A 255 means "this packet continues"; a packet whose length is an exact
+//      multiple of 255 therefore ends with an explicit 0 segment.  Getting this wrong does not throw
+//       — it silently splices two packets into one, and the decoder produces noise at that seam.
+//  · The first two packets are headers, not audio: OpusHead (which carries preskip) and OpusTags.
+//     Shipping those as audio is the classic version of this bug.
+export type Demuxed = { packets: Uint8Array[]; preskip: number; channels: number; sample_rate: number }
+
+export function demux_ogg_opus(buf: Uint8Array): Demuxed | { packets: null; why: string } {
+    const packets: Uint8Array[] = []
+    let pending: Uint8Array[] = []
+    let preskip = 0, channels = 0, sample_rate = 48000
+    let head_seen = false, tags_seen = false
+    let i = 0
+    while (i + 27 <= buf.length) {
+        if (!(buf[i] === 0x4f && buf[i + 1] === 0x67 && buf[i + 2] === 0x67 && buf[i + 3] === 0x53))
+            return { packets: null, why: `lost page sync at byte ${i}` }
+        const nseg = buf[i + 26]
+        const lacing = i + 27
+        const body = lacing + nseg
+        if (body > buf.length) return { packets: null, why: `truncated page header at ${i}` }
+        let at = body
+        for (let s = 0; s < nseg; s++) {
+            const len = buf[lacing + s]
+            if (at + len > buf.length) return { packets: null, why: `truncated segment at ${at}` }
+            pending.push(buf.subarray(at, at + len))
+            at += len
+            // < 255 TERMINATES the packet — including a 0, which is how a length that is an exact
+            //  multiple of 255 says "that was the end".
+            if (len < 255) {
+                const total = pending.reduce((n, p) => n + p.length, 0)
+                const whole = new Uint8Array(total)
+                let o = 0
+                for (const p of pending) { whole.set(p, o); o += p.length }
+                pending = []
+                if (!head_seen) {
+                    // OpusHead: magic(8) ver(1) ch(1) preskip(2 LE) rate(4 LE) gain(2) map(1)
+                    if (whole.length < 19 || String.fromCharCode(...whole.subarray(0, 8)) !== 'OpusHead')
+                        return { packets: null, why: `first packet is not OpusHead` }
+                    channels = whole[9]
+                    preskip = whole[10] | (whole[11] << 8)
+                    sample_rate = whole[12] | (whole[13] << 8) | (whole[14] << 16) | (whole[15] << 24)
+                    head_seen = true
+                } else if (!tags_seen) {
+                    tags_seen = true          // OpusTags — metadata, never audio
+                } else {
+                    packets.push(whole)
+                }
+            }
+        }
+        i = at
+    }
+    if (!head_seen) return { packets: null, why: `no OpusHead found` }
+    if (pending.length) return { packets: null, why: `stream ends mid-packet (${pending.length} dangling segments)` }
+    if (!packets.length) return { packets: null, why: `headers only — no audio packets` }
+    return { packets, preskip, channels, sample_rate }
+}

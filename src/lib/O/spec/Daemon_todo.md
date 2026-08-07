@@ -1572,6 +1572,35 @@ The owner named it (*"srv is a terrible name… let's call it jamserve — a use
    the `♥` line, for the same reason the wedge is: **unprovisioned looks exactly like provisioned from
     outside**, so the heartbeat has to carry it or nobody finds out. Silent when correctly configured.
 
+**THE INVITE WORKED, END TO END, AND IT IS THE NIGHT'S BEST RESULT.** The owner opened the throwaway's
+ own printed link in an incognito tab. jamserve's log: `ws RECV pier_hello ← 47e9a9f5377a3169` ·
+  `ws SEND pier_accept` · `ws RECV pier_confirm` · `ws RECV ive_got`. Then it **survived two restarts**:
+   `🤝 Swarm station ARMED … remembers 1 friend(s), 2 invite(s)`. So a browser can befriend a headless
+    daemon over the real relay, and the friendship is durable through `<music>/.jamsend/account/`.
+ **What it cannot do is play anything**: `radiostock/` does not exist, because stocking runs through
+  `Ra_stock_one` → WebCodecs. The two tabs traded `ive_got` and the daemon's answer was *nothing* —
+   which is also why the owner reports "nothing in the Vyto glass". **That join is the remaining work**,
+    and `ffmpeg.ts` now has all three pieces for it (`measure` → `level_to_ogg` → `demux_ogg_opus`,
+     the last returning the raw length-prefixed packets `Ra_chunk_pack` actually stores). Nothing in
+      `Ra` calls them yet.
+ **A trap the invite URL walks into:** `/BigSoundland` is `boot_qualand({book:'Sounditron'})`, and a
+  Book sets `boot_role:'runner'` — so the incognito tab logged `🔌 Lies channel up [runner] addr=runner`
+   and became a SECOND claimant of the `runner` relay address. `bind()` is additive, so an open real
+    runner tab now shares every editor frame with it. Pre-existing (the player page and the runner are
+     the same page here), but the invite makes it easy to hit; close other runner tabs when testing.
+
+**I KILLED THE DAEMON TWICE WITH A READ-ONLY DIAGNOSTIC, and the second one is the instructive half.**
+ `/c?depth=8` reached a node `Timeout` (→ `TimersList` → circular) and `JSON.stringify` threw straight
+  out of the request handler; node makes that an uncaughtException and `arrest_watch` correctly exits 5.
+   A GET that stops the process is worse than anything it was looking for. I guarded `/c` — **and the
+    crash moved to `/status`**, which had been safe all night and became unsafe the moment a Pier
+     sealed, because `stats()` reports each House's `queued` and the Swarm's retransmit timers now sit
+      there. *Guarding the route was the wrong altitude; guard the SHAPE.* Every response now goes
+       through `safe_json` (a replacer that renders any non-plain constructor as `[Timeout]` and any
+        cycle as `[circular]`) and the whole handler is wrapped. Verified against a real `setTimeout`
+         and a real cycle. Note the separation: the CRASH was mine; whether a `Timeout` belongs in
+          `queued` is a different question and is not evidence of a bug on its own.
+
 **A THROWAWAY HANDS OUT ITS OWN WAY IN** (the owner's idea, and a much better use of that state than
  complaining about it): *"perhaps the THROWAWAY IDENTITY could log an invite to it, to make everything
   easy to test? then I can incognito-tab another Pier to listen to a bit of daemon-served music!"*.

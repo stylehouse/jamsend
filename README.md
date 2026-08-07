@@ -189,8 +189,12 @@ That prepub is your address on the wire — the same string the app shows beside
    account on disk and it **exits 2** rather than pretending to be a stranger.
 
 Leave it unset and jamserve mints a throwaway instead, so you can try the box out before provisioning
- anything. It will say so, loudly and repeatedly — a throwaway is nobody's friend, no one can invite
-  it, and its identity dies with the container.
+ anything. It will say so, loudly and repeatedly. Note what a throwaway actually is: **not** a
+  temporary thing that evaporates — it mirrors itself into `<music>/.jamsend/account/` like any other
+   identity and is resumed from there on the next boot, so it is the same peer each time. What makes
+    it a throwaway is that *you* did not mint it in a browser, so nobody holds a Pier to it and nobody
+     can be served by it — and that it has left an unencrypted private key in your music folder you
+      never asked for. Delete that directory to be rid of it.
 
 **A throwaway hands out its own way in**, which makes the whole thing testable in about a minute. Not
  knowing anybody is exactly the problem an invite solves, so a throwaway box mints one unasked and

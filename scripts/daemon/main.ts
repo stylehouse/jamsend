@@ -458,12 +458,32 @@ const nag_identity = (): string => {
     const id = identity_state()
     const provisioned = !!process.env.I                // I=<prepub>, the production shape
     if (id.active && provisioned) return ''
+    // NOT "it dies with the container" — that was written before it was watched, and it is false.
+    //  A throwaway MIRRORS itself to <music>/.jamsend/account/<prepub>/, and `Swarm_boot_seed` then
+    //   picks that sole account back up on the next boot with no I= at all.  Measured 2026-08-08:
+    //    the same prepub came back with KEYED=0, ROLE unset and I= unset.  So the complaint is not
+    //     that it is ephemeral — it is that it is SELF-MINTED (nobody knows it, so nobody can be
+    //      served by it) and that it has left an unencrypted private key in a music folder whose
+    //       owner never asked for one.
+    // COUNT the friends rather than asserting there are none.  "Nobody holds a Pier to it" was in
+    //  this string until an incognito tab redeemed the throwaway's own invite and sealed one —
+    //   measured 2026-08-08, and it survived a restart.  A throwaway is unprovisioned, not friendless;
+    //    saying the stronger thing made the log lie the moment the feature above started working.
+    const self = (H as any).Swarm_live_self?.()
+    const friends = (H as any).Swarm_peering?.(self)?.o({ Pier: 1 })?.length ?? 0
     const one = !id.active
         ? `⚠ NO IDENTITY — this box can run Books but cannot be a peer: no invite can be answered.`
-        : `⚠ THROWAWAY IDENTITY (${id.active}) — minted here, not provisioned. Nobody's friend: no one can invite it, and it dies with the container.`
-    if (!nagged) {
+        : `⚠ THROWAWAY IDENTITY (${id.active}) — self-minted, not provisioned from a browser`
+          + (friends ? `, though ${friends} peer(s) have sealed with it.` : `, and nobody has sealed with it yet.`)
+    // HOLD the loud block until the station is up, because the Swarm ledger (piers, invites) is
+    //  restashed as part of arming — nagging before that read "nobody has sealed with it yet" at
+    //   30.4s and `remembers 1 friend(s)` at 42.3s, twelve seconds and one contradiction apart.
+    //  The `|| uptime > 90` escape is for the state that never arms: with no identity at all the
+    //   station cannot come up, and that is exactly the case most deserving of the complaint.
+    if (!nagged && (stood || process.uptime() > 90)) {
         nagged = true
         say(one)
+        if (id.active) say(`   It PERSISTS: mirrored to <music>/.jamsend/account/${id.active}…/ and resumed from there, so it is the same peer each boot — and that is an unencrypted private key in your music folder you did not ask for. Delete that directory to be rid of it.`)
         say(`   To be a real peer: grant your music folder in a BROWSER, let it write the account, then`)
         say(`   ls <music>/.jamsend/account/   — the directory names ARE the prepubs — and set`)
         say(`   JAMSERVE_ID=<prepub> (which becomes I=). The daemon never provisions (§4.1).`)
@@ -574,22 +594,78 @@ const token_ok = (req: any, url: URL) =>
     url.searchParams.get('token') === STATUS_TOKEN
     || req.headers['x-daemon-token'] === STATUS_TOKEN
     || req.headers['authorization'] === `Bearer ${STATUS_TOKEN}`
+// safe_json — JSON.stringify that CANNOT throw on a live object graph.  Both of this server's
+//  interesting routes serialise state that is supposed to be scalar and occasionally is not, and a
+//   throw out of a node request handler is an uncaughtException, which arrest_watch turns into
+//    exit 5.  So a read-only diagnostic could kill the daemon, from a GET.
+//  Measured twice on 2026-08-08, and note WHERE it moved: first `/c` (a `Timeout` reached from the
+//   C tree), then — after an incognito tab sealed a Pier — `/status`, because `stats()` reports each
+//    House's `queued` and the Swarm's retransmit timers now live there.  `/status` had been safe all
+//     night and became unsafe when the world gained a peer.  Guarding one route was not enough;
+//      guarding the SHAPE is, so this is used for every response and the handler is wrapped too.
+const safe_json = (v: any) => {
+    const seen = new WeakSet()
+    return JSON.stringify(v, (_k, val) => {
+        if (val === null) return val
+        const t = typeof val
+        if (t === 'function') return '[function]'
+        if (t === 'bigint' || t === 'symbol') return `[${t}]`
+        if (t === 'object') {
+            if (seen.has(val)) return '[circular]'
+            seen.add(val)
+            // A node Timeout (and anything else with a class that is not Object/Array) is state we
+            //  never want to walk INTO — the point is to report that it is there, not to dump it.
+            const ctor = val.constructor?.name
+            if (ctor && ctor !== 'Object' && ctor !== 'Array') return `[${ctor}]`
+        }
+        return val
+    }, 1)
+}
 const server = http.createServer((req, res) => {
+  try {
     const url = new URL(req.url || '/', 'http://x')
     res.setHeader('content-type', 'application/json')
-    if (url.pathname === '/status') return res.end(JSON.stringify(stats(), null, 1))
+    if (url.pathname === '/status') return res.end(safe_json(stats()))
     if (url.pathname === '/c') {
         if (!token_ok(req, url)) { res.statusCode = 401; return res.end('{"error":"token required — ?token=<STATUS_TOKEN> or X-Daemon-Token header (logged once at boot)"}') }
-        // the C tree at a bounded depth — the daemon's `snap`, without needing Story
+        // the C tree at a bounded depth — the daemon's `snap`, without needing Story.
+        // ⚠ THIS ENDPOINT MUST NOT BE ABLE TO KILL THE DAEMON, and it could: on 2026-08-08 a
+        //  `/c?depth=8` threw `Converting circular structure to JSON` straight out of the request
+        //   handler, which node turns into an uncaughtException — arrest_watch then did the right
+        //    thing and exited 5.  A read-only diagnostic taking the process down is worse than the
+        //     bug it was looking for, and the trigger is a query parameter.
+        //  Cause: `.sc` is supposed to hold scalars only (CLAUDE.md: an object in sc is fatal at
+        //   encode time), so SOMETHING is stashing a live object in an sc — a real bug elsewhere.
+        //    This copies sc value-by-value and marks any non-scalar rather than trusting the law,
+        //     because a diagnostic that only works on healthy trees is no diagnostic at all.
         const depth = Number(url.searchParams.get('depth') || 3)
-        const dump = (n: any, d = 0): any => d > depth ? '…' : { sc: { ...n.sc }, kids: (n.o?.({}) ?? []).map((k: any) => dump(k, d + 1)) }
-        return res.end(JSON.stringify(dump(H), null, 1))
+        let nodes = 0
+        const NODE_CAP = 20_000
+        const scalars = (sc: any) => {
+            const out: any = {}
+            for (const k of Object.keys(sc ?? {})) {
+                const v = (sc as any)[k]
+                const t = typeof v
+                out[k] = (v === null || t === 'string' || t === 'number' || t === 'boolean') ? v : `[${t}]`
+            }
+            return out
+        }
+        const dump = (n: any, d = 0): any => {
+            if (d > depth) return '…'
+            if (++nodes > NODE_CAP) return '…capped'
+            return { sc: scalars(n.sc), kids: (n.o?.({}) ?? []).map((k: any) => dump(k, d + 1)) }
+        }
+        return res.end(safe_json(dump(H)))
     }
     if (url.pathname === '/stop') {
         if (!token_ok(req, url)) { res.statusCode = 401; return res.end('{"error":"token required — ?token=<STATUS_TOKEN> or X-Daemon-Token header (logged once at boot)"}') }
         stopping = true; return res.end('{"stopping":1}')
     }
     res.statusCode = 404; res.end('{"paths":["/status","/c?depth=3 (token)","/stop (token)"]}')
+  } catch (e: any) {
+    // The backstop.  Nothing this server does is worth the process, and everything above is a READ.
+    try { res.statusCode = 500; res.end(`{"error":${JSON.stringify(String(e?.message || e))}}`) } catch {}
+  }
 })
 server.listen(PORT, HOST, () => {
     say(`status on http://${HOST}:${PORT}/status`)
@@ -730,6 +806,20 @@ const ffmpeg_probe = async (): Promise<void> => {
         say(`🎬 levelled encode OK — ${(L.bytes.length / 1048576).toFixed(2)}MB of Ogg/Opus @${L.bitrate},`
             + ` ${L.gain_db >= 0 ? '+' : ''}${L.gain_db} dB applied to reach ${L.target_lufs} LUFS (${esecs}s).`
             + ` Verified OggS + OpusHead.`)
+        // The demux is the bridge to what Ra actually STORES (raw length-prefixed packets, not a
+        //  container), so prove it on these bytes rather than on a fixture.  Cross-check the packet
+        //   durations against the encode with the app's OWN parser (Ra_opus_samples reads each
+        //    packet's TOC byte) — agreement between two independent readings of the same bytes is
+        //     the only claim here worth making; a packet count alone would prove nothing about
+        //      whether the lacing was reassembled correctly.
+        const d = ff.demux_ogg_opus(L.bytes)
+        if ((d as any).packets === null) { say(`🎬 demux FAILED — ${(d as any).why}`); return }
+        const D = d as any
+        let samples = 0
+        if (typeof (H as any).Ra_opus_samples === 'function')
+            for (const p of D.packets) samples += (H as any).Ra_opus_samples(p) || 0
+        say(`🎬 demux OK — ${D.packets.length} opus packets, preskip ${D.preskip}, ${D.channels}ch @${D.sample_rate}`
+            + (samples ? `, ${(samples / 48000).toFixed(1)}s of audio by Ra_opus_samples` : ''))
     } catch (e: any) {
         say(`🎬 ffmpeg probe failed — ${String(e?.message).slice(0, 120)}`)
     }
@@ -815,10 +905,34 @@ const invite_harness = async (): Promise<void> => {
     if (MINT_INVITE && !minted) {
         minted = true
         try {
+            // REPRINT a standing unspent invite rather than minting another.  Two reasons, both
+            //  found by watching it: the ledger reached "3 invite(s)" after three restarts, and —
+            //   worse for a human — the printed link CHANGED every time, so a copied one went stale
+            //    on a timer.  A daemon that restarts every 900s must not hand out a new capability
+            //     each time it does.
+            //  The token itself cannot survive: `Swarm_mint_idzeug` parks it on `record.c.token`,
+            //   and `.c` is never encoded.  But every input to it IS durable — the nonce is the
+            //    Idzeug's own mainkey value, `n` is a plain join of `to` + params, and ed25519
+            //     signing is deterministic — so the same token recomputes exactly.
+            let iz: string | null = null
+            const peering0 = (H as any).Swarm_peering?.(self)
+            const standing = (peering0?.o({ Idzeug: 1 }) ?? []).filter((z: any) => !z.sc.spent)[0]
+            if (standing) {
+                const params: any = {}
+                for (const k of Object.keys(standing.sc)) {
+                    if (k === 'Idzeug' || k === 'to' || k === 'chain' || k === 'spent') continue
+                    params[k] = standing.sc[k]
+                }
+                const nonce0 = standing.sc.Idzeug
+                const n0 = (H as any).Swarm_token_n(standing.sc.to, params)
+                const presig0 = await (H as any).Swarm_presig(self.c.keys, self.sc.prepub, nonce0, n0)
+                iz = (H as any).Swarm_token(self.sc.prepub, nonce0, n0, presig0)
+                say(`🎟 reusing the standing unspent invite (serial ${nonce0}) — same link as last boot.`)
+            }
             const b = new Uint8Array(6)
             ;(globalThis as any).crypto.getRandomValues(b)
             const nonce = Array.from(b, (x: number) => x.toString(16).padStart(2, '0')).join('')
-            const iz = await (H as any).Swarm_mint_idzeug(null, self, { Music: 1 }, nonce)
+            if (!iz) iz = await (H as any).Swarm_mint_idzeug(null, self, { Music: 1 }, nonce)
             // A URL, not just a token.  `?Iz=` on the page IS the redeem path a scanned invite takes
             //  (InvitePanel: a scan-landing auto-joins; a pasted link waits for a deliberate click),
             //   so an incognito tab opened on this link becomes a Pier and can listen.

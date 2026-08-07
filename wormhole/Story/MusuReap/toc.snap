@@ -4,29 +4,29 @@ story:MusuReap
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.411
-      sample=0.327,at=1785838117
-      sample=0.263,at=1785838125
-      sample=0.311,at=1785838627
-      sample=0.216,at=1785838659
+    TimeTotal:beliefs,avg=0.842
       sample=0.166,at=1785838666
       sample=0.418,at=1785853967
       sample=0.237,at=1785855447
       sample=0.321,at=1785856203
       sample=0.347,at=1785996319
       sample=1.507,at=1786109110
-    TimeTotal:step,avg=0.103
-      sample=0.082,at=1785838117
-      sample=0.066,at=1785838125
-      sample=0.078,at=1785838627
-      sample=0.054,at=1785838659
+      sample=1.188,at=1786118670
+      sample=1.902,at=1786118964
+      sample=1.565,at=1786119181
+      sample=0.773,at=1786119203
+    TimeTotal:step,avg=0.21
       sample=0.041,at=1785838666
       sample=0.104,at=1785853967
       sample=0.059,at=1785855447
       sample=0.08,at=1785856203
       sample=0.087,at=1785996319
       sample=0.377,at=1786109110
+      sample=0.297,at=1786118670
+      sample=0.475,at=1786118964
+      sample=0.391,at=1786119181
+      sample=0.193,at=1786119203
   step,dige:e2f2e0a44d2e5c66
-  step=2,dige:4c3a73afa8dda468
-  step=3,dige:644be7399acd4d6c
-  step=4,dige:a95846fae26d6e55
+  step=2,dige:f7085263dce172be
+  step=3,dige:4f3f02c11eb5c3ba
+  step=4,dige:9800ae5dbef25f49

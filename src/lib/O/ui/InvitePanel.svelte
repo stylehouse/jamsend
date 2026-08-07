@@ -195,6 +195,20 @@
     let invite = $state<any>(null)       // the parsed token {prepub, serial, to, params} — the offer's face
     let iz_err = $state('')
     let joined = $state('')
+    // the join button has been spent — see join().  Separate from `joined` (the progress LINE) because
+    //  a failure writes a line AND wants the button back, so one string cannot say both.
+    let join_over = $state(false)
+    // …and the keyboard: once the name is in, the ONLY remaining act is join, so put the caret on it
+    //  and let Enter finish the door (the human 2026-08-08: "is it focused? so we can hit enter only").
+    //   Gated on `named` — while the name row is still up, the typing field owns the focus.  Fires once
+    //    (a plain let, deliberately NOT $state: re-running this effect must not re-steal focus).
+    let join_btn = $state<HTMLButtonElement | null>(null)
+    let join_focused = false
+    $effect(() => {
+        if (!join_btn || join_focused || !named) return
+        join_focused = true
+        join_btn.focus()
+    })
     $effect(() => {
         void H?.version
         if (!iz || invite || iz_err || typeof H?.Swarm_token_parse !== 'function') return
@@ -253,13 +267,20 @@
     //    "hello sent".
     async function join() {
         joined = ''
+        // the button SPENDS ITSELF (2026-08-08, the human: "the Join button doesn't vanish when we hit
+        //  it").  A disabled-but-present button reads as "still waiting for me" while the dial is
+        //   already in flight, and the listener taps it again.  join_over hides it the instant it
+        //    fires — and is put BACK on the failure returns below, because a vanished button with a
+        //     ⚠ beside it and no way to retry is worse than the double-tap it was fixing.
+        join_over = true
         const w = H.Swarm_station_world?.()
-        if (!w || !H.Swarm_station_up(w, self)) { joined = '⚠ the transport ghosts are still booting — try again in a moment'; return }
+        if (!w || !H.Swarm_station_up(w, self)) { joined = '⚠ the transport ghosts are still booting — try again in a moment'; join_over = false; return }
         H.Swarm_station_pier(w, self, invite.prepub)
         joined = '… dialing the inviter'
         const port = () => w.o({ transport: 1, type: 'websocket' })[0]?.c?.port
         if (!await wait_for(() => port()?.ws?.readyState === 1 || null, 8000)) {
             joined = '⚠ the relay did not answer — is the dev server reachable from this tab?'
+            join_over = false
             return
         }
         await sleep(400)   // one beat for the signed hello-bind to land at the relay
@@ -309,7 +330,9 @@
         if (!tok) { paste_err = 'paste an invite link (or its ?Iz token)'; return }
         const t = H?.Swarm_token_parse?.(tok)
         if (!t) { paste_err = 'that link’s invite did not parse — ask for a fresh one'; return }
-        iz = tok; invite = t; iz_err = ''; joined = ''; auto_fired = false
+        // a NEW pasted invite re-arms the door: without clearing join_over, a second link after a
+        //  spent first one lands on a panel with no join button at all.
+        iz = tok; invite = t; iz_err = ''; joined = ''; auto_fired = false; join_over = false; join_focused = false
     }
 </script>
 
@@ -318,10 +341,19 @@
 
 <!-- the name-ask: the first-time move, rendered wherever an unnamed self is about to act -->
 {#snippet namer(hint: string)}
+    <!-- STEP 1 OF A TWO-STEP DOOR, and it must LOOK like a step (2026-08-08, the human: "the 'that's
+         me' → 'join' needs to be much more pronounced for UX, prompting them to click them").  This is
+         the one moment a stranger becomes a friend, and both buttons were wearing `.ip-act` — the same
+         muted chip as every secondary control in the panel — so the single action the whole page exists
+         to invite was visually indistinguishable from "copy link".  `.ip-go` is the accent: bright,
+         larger hit area, and a slow breath so the eye lands on it without the page shouting. -->
     <span class="ip-row">
         <input class="ip-name" bind:value={name_draft} placeholder="your name"
             onkeydown={(e) => { if (e.key === 'Enter') name_save() }} />
-        <button class="ip-act" onclick={name_save}>that's me</button>
+        <!-- disabled until something is typed: the greyed button is what says "type first", far more
+             cheaply than an error message appearing after the click. -->
+        <button class="ip-go" class:ip-waiting={!name_draft.trim()}
+            disabled={!name_draft.trim()} onclick={name_save}>that's me →</button>
     </span>
     <span class="ip-note">{hint}</span>
     {#if name_err}<span class="ip-note">⚠ {name_err}</span>{/if}
@@ -343,7 +375,16 @@
                     {@render namer(`what do friends call you? ${invite.friendly || 'your friend'} will see this name${born_today ? ' — then you join by yourself' : ''}`)}
                 {/if}
                 {#if named || !born_today}
-                    <button class="ip-act" onclick={join}>join</button>
+                    <!-- STEP 2, the terminal act — the biggest thing on the panel, and it NAMES the
+                         person.  "join" alone is a verb with no object; "join Lefto" is the sentence
+                         the listener came here to complete.  Suppressed once a join is under way so
+                         the button cannot read as still-waiting while it dials. -->
+                    {#if !join_over}
+                        <button class="ip-go ip-go-join" bind:this={join_btn} onclick={join}>
+                            ⨝ join {invite.friendly || invite.prepub}
+                        </button>
+                        <span class="ip-note">one tap or ⏎ — they will see your name and you will hear their music</span>
+                    {/if}
                 {/if}
                 {#if joined}<span class="ip-note">{joined}</span>{/if}
             {:else}
@@ -459,6 +500,48 @@
         cursor: pointer; font-size: 0.78rem; padding: 0.15rem 0.6rem; border-radius: 5px;
     }
     .ip-act:hover { border-color: #77a; color: #fff; }
+
+    /* ── the two-step call to action ──────────────────────────────────────────────────────────
+       `.ip-go` is deliberately louder than `.ip-act`: filled rather than outlined, a full stop
+        larger, and a wide hit area, because on a phone this is a thumb target reached once.  The
+         breath animation is slow (2.6s) and low-amplitude — enough to catch the eye on a page the
+          user has just landed on cold, not enough to nag while they read.  It is the only moving
+           thing in the panel, so it does not compete with itself. */
+    .ip-go {
+        background: linear-gradient(180deg, #4a4ad2, #3a3aa8);
+        border: 1px solid #7b7bff; color: #fff; font-weight: 650;
+        cursor: pointer; font-size: 0.9rem; padding: 0.4rem 1rem; border-radius: 7px;
+        box-shadow: 0 0 0 0 rgba(123, 123, 255, 0.5);
+        animation: ip-breath 2.6s ease-in-out infinite;
+    }
+    .ip-go:hover { background: linear-gradient(180deg, #5b5bee, #4646bd); border-color: #a5a5ff; }
+    /* waiting = nothing typed yet.  Flat, still and unmistakably not-yet-clickable — the greyed
+        button teaches the order of operations without a word of instruction. */
+    .ip-go.ip-waiting, .ip-go:disabled {
+        background: #232338; border-color: #3a3a52; color: #6a6a80;
+        cursor: default; animation: none; box-shadow: none;
+    }
+    /* step 2 outranks step 1: it is the act itself, and by now the user has committed. */
+    .ip-go-join {
+        font-size: 1rem; padding: 0.5rem 1.2rem;
+        background: linear-gradient(180deg, #2ea36a, #1f7d50); border-color: #4fd897;
+    }
+    .ip-go-join:hover { background: linear-gradient(180deg, #37bd7c, #26905d); border-color: #7ff0b8; }
+    /* the join button is FOCUSED on arrival so ⏎ finishes the door — which is only useful if the
+        listener can SEE where the key will land.  :focus-visible (not :focus) so a mouse click does
+         not leave a ring behind it; the default UA outline is invisible on this gradient. */
+    .ip-go:focus-visible {
+        outline: 2px solid #eaffef; outline-offset: 3px;
+    }
+    @keyframes ip-breath {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(123, 123, 255, 0.45); }
+        50%      { box-shadow: 0 0 0 6px rgba(123, 123, 255, 0); }
+    }
+    /* a pulsing control is exactly what a motion-sensitive user asked not to be shown; the colour
+        and the size already carry the whole message, so drop only the movement. */
+    @media (prefers-reduced-motion: reduce) {
+        .ip-go { animation: none; }
+    }
     .ip-note { font-size: 0.72rem; color: #889; max-width: 22rem; }
     .ip-row { display: flex; gap: 0.4rem; }
     .ip-name {
