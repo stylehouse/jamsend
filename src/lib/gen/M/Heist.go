@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'db98db0789f984a4~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '999f10ffe9172ae5~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -356,9 +356,18 @@ Heist_job(w, at, filings, opts) {
     //   Heist_keep_set_dirs) — Heist_rel_for substitutes one for the other in each pick's landing path.
     //    Both or neither: a bare dirs with no frozen auto to diff against can't safely substitute anything.
     if (opts && opts.dirs && opts.dirs_auto != null) { job.sc.dirs = opts.dirs; job.sc.dirs_auto = opts.dirs_auto }
+    // UPSERT BY ARTIST, never append (the human 2026-08-07: "I said '0 heisted.../0 folk/0 yab/0 yob' yet
+    //  comes out just '0 heisted...'").  `genre` was part of the CREATE pattern, so a re-`Heist_job` after
+    //   the human edited the section minted a SECOND `filing` row for the same artist — and Heist_filing_for
+    //    returns `job.o({filing:1, artist})[0]`, the FIRST one, i.e. whatever the category happened to be
+    //     the first time the job was built.  Every later edit landed in the tree and was never read: the
+    //      keep filed under the stale value forever, silently, while the form showed the new one.  The
+    //       `dirs` override escaped this only because it is a scalar on the job that overwrites in place.
     for (const f of (filings || [])) {
-        let fl = job.i({ filing: 1, artist: f.artist, genre: f.genre })
+        let fl = job.oai({ filing: 1, artist: f.artist })
         fl.c.up = job
+        if (f.genre) fl.sc.genre = f.genre
+        else if (fl.sc.genre) delete fl.sc.genre
     }
     return job
 
@@ -507,7 +516,13 @@ Heist_cp_path(rec) {
     //  the manifest, the setup preview and the landing all agree by construction rather than by three
     //   copies of the same rule.  See Heist_sections_strip for why it is a strip and not the old swap,
     //    and Heist_sections_of for the other half (the sections become the default category).
-    return this.Heist_sections_strip(parts.join('/'))
+    let rel = this.Heist_sections_strip(parts.join('/'))
+    // A LOFI REC IS AN OGG, whatever its `path` remembers.  `lofi` IS the claim "these bytes are the
+    //  ogg128 rendition" — it is set on the same head, beside the same body_hash the sink verifies — so
+    //   deriving the container from it cannot disagree with the bytes, while a separately-rewritten path
+    //    demonstrably can (2026-08-07: one track of three landed as ogg bytes named `.mp3`).
+    if (rec.sc.lofi) rel = rel.replace(/\.[^./]*$/, '') + '.ogg'
+    return rel
 
 },
 // Heist_rel_for — the landing path (relative to the marrauding dir) for one mirror|census card under one
@@ -524,6 +539,23 @@ Heist_rel_for(job, rec) {
     //  under the music root with its SOURCE path intact — no 'misc'/'Unfiled' shim.  A pinned category prepends,
     //   and may NEST (0 chill/0 very chill) — Heist_cat_path splits + safe-segs each level.
     let root = this.Heist_cat_path(this.Heist_filing_for(job, rec.sc.artist))
+    // NOTHING PINNED ⇒ KEEP THE SOURCE'S OWN SHELF POSITION (2026-08-07).  Heist_cp_path strips the
+    //  leading section run, so without this the sections are simply DESTROYED and the album lands naked at
+    //   the music root — which is what the human saw on the first real sectioned haul.  [[heist no-prepend]]
+    //    says don't INVENT a folder ('misc'/'Unfiled'); it does not say throw away the one they had.
+    //  It belongs HERE, not only on the keep: this is the one door that decides where a file goes, so it
+    //   holds for a resumed heist, a keep minted before the UI learned about sections, or a Book with no UI
+    //    at all.  Heist_keep_default_section still stamps the keep — but as a courtesy to the human (so
+    //     HaulFace SHOWS the section and lets them edit it), never as the mechanism.
+    //  AN EDIT ANYWHERE ON THE JOB BEATS IT (the human 2026-08-07: "the original sections are still used
+    //   when I've changed them in Heist setup").  `root` empty is NOT the same as "nothing pinned":
+    //    Heist_filing_for keys on THIS RECORD's artist, and a census husk routinely carries an empty one
+    //     (Crate_meta_from_path found no ` - ` in the filename), so a keep the human had just re-filed
+    //      still fell through to the source's own sections for exactly those tracks. Ask the JOB instead —
+    //       if it pins a category for anybody, the human has spoken and the source's shelf is history.
+    if (!root && !job.o({ filing: 1 }).some((f) => f.sc.genre)) {
+        root = this.Heist_cat_path(this.Heist_sections_of(rec.sc.path))
+    }
     let cp = this.Heist_cp_path(rec)
     if (job.sc.dirs && job.sc.dirs_auto) {
         let auto = job.sc.dirs_auto
@@ -533,7 +565,15 @@ Heist_rel_for(job, rec) {
             cp = rest ? (over ? over + '/' + rest : rest) : over
         }
     }
-    return this.Heist_spawn_swap(job, (root ? root + '/' : '') + cp)
+    let rel = this.Heist_spawn_swap(job, (root ? root + '/' : '') + cp)
+    // THE TEST NAMESPACE, restored.  A haul out of a `spawn` section lands under `0 heisted-<from>-<to>`
+    //  — one folder per pair, above the section structure, so a test run is `rm -rf` on a single obvious
+    //   name instead of a hunt through the real collection.  The sections still read true underneath it.
+    if (this.Heist_sections_spawned(rec.sc.path)) {
+        let tag = this.Heist_spawn_tag(job)
+        if (tag && rel.split('/')[0] !== tag) rel = tag + '/' + rel
+    }
+    return rel
 
 },
 // Heist_spawn_swap — THE MANUAL-TESTING NAMESPACE, and deliberately NOT the Book one.  Two different
@@ -553,15 +593,39 @@ Heist_rel_for(job, rec) {
 //     Pubs cut to 8 hex: enough to tell a pair apart, short enough to stay a readable folder name.
 Heist_spawn_swap(job, rel) {
     if (('' + rel).indexOf('spawn') < 0) return rel
+    let tag = this.Heist_spawn_tag(job)
+    if (!tag) return rel
+    return ('' + rel).split('/').map((p) => (p.replace(/^(-|0) /, '') === 'spawn') ? tag : p).join('/')
+
+},
+// Heist_spawn_tag — the per-PAIR namespace name, '' when either pub is unknown (never write `undefined`
+//  into a filename).  Pubs cut to 8 hex: enough to tell a pair apart, short enough to stay readable.
+Heist_spawn_tag(job) {
     // `from` is the job's own `at` (the source Pier — the job IS the relationship); `to` is me.
     let from = '' + ((job && job.sc.at) || '')
     // typeof-guarded: Radio is a SIBLING ghost, so a world without it (a bare Book) must fall through
-    //  to the unchanged path rather than throw on an undefined method.
+    //  to '' rather than throw on an undefined method.
     let rw = this.top_House()?.c?.radio_w
     let to = (rw && typeof this.Radio_pub === 'function') ? this.Radio_pub(rw) : ''
-    if (!from || !to) return rel
-    let tag = '0 heisted-' + from.slice(0, 8) + '-' + to.slice(0, 8)
-    return ('' + rel).split('/').map((p) => (p.replace(/^(-|0) /, '') === 'spawn') ? tag : p).join('/')
+    if (!from || !to) return ''
+    return '0 heisted-' + from.slice(0, 8) + '-' + to.slice(0, 8)
+
+},
+// Heist_sections_spawned — did this source path come out of a `spawn` SECTION?  The section strip now
+//  eats the whole leading marker run, so a `0 spawn` never survives into the rel for Heist_spawn_swap to
+//   see — which quietly cost the human the one thing that made test landings safe to delete in bulk
+//    (2026-08-07: "downloading tracks from '0 spawn' no longer puts them in the test-looking
+//     easily-deletable category").  So ask the ORIGINAL path instead, before anything was stripped.
+//  Marker-blind, and only within the leading section run — a `spawn` deeper in a real tree is still
+//   Heist_spawn_swap's business, not a whole-heist namespace decision.
+Heist_sections_spawned(rel) {
+    let parts = ('' + (rel || '')).split('/').filter(Boolean)
+    let i = 0
+    while (i < parts.length - 1 && this.Heist_sections_is(parts[i])) {
+        if (parts[i].replace(/^(-|0) /, '') === 'spawn') return true
+        i = i + 1
+    }
+    return false
 
 },
 // Heist_cat_path — a category may NEST (the human 2026-07-29 "they go within each other, ie 0 chill/0 very
@@ -1185,6 +1249,25 @@ async Heist_census_heads(w, lib, nav, walkdir, base, me, prefix, seedName, seed)
         let pmeta = this.Crate_meta_from_path(path)
         let id = this.Heist_keep_id(me, base, path)
         let rec = this.Ra_rec_home(lib, id)
+        // ⚠ KNOWN DEFECT, ATTEMPTED FIX REVERTED (2026-08-07) — READ BEFORE TOUCHING.
+        //  Ra_rec_home is find-or-CREATE, so a re-census (the `reheal` path fires one whenever a want goes
+        //   unanswered; a second ⇊ on the same folder fires another) lands on an ALREADY-MATERIALISED rec
+        //    and stamps its head straight back down to a husk: path-derived title|artist over the tag-derived
+        //     ones, the ORIGINAL path|ext over a lofi rendition's, and `husk:1` beside a live body_hash.
+        //  Seen live: one track of three carrying `lofi` + the ogg's body_hash + `bytes` + an empty `artist`
+        //   + `path:….mp3` — the path-derived metadata is the fingerprint of THIS loop having re-run.
+        //  The obvious guard is `if (!rec.sc.body_hash) { …stamp… }`.  It was tried and reverted, and the
+        //   REASON GIVEN AT THE TIME WAS WRONG, so do not trust a retelling of it: MusuHeist came back
+        //    0.95 twice with the guard and 1 once without, which looked like attribution.  It is not —
+        //     step 2's `see:` on two collections standing divided is FLAKY on its own (three consecutive
+        //      greens later, on the guardless build, after one red).  It fires or does not depending on
+        //       whether the world settles at round 5 or 6.
+        //  So the guard is UNJUDGED, not refuted.  Re-testing it needs the flake dealt with first —
+        //   otherwise any verdict is noise — and that is the honest next step for this defect.
+        //  Meanwhile the landing is protected from the worst of it another way: Heist_cp_path derives the
+        //   `.ogg` extension from `lofi` rather than from this path, so a downgraded head still lands under
+        //    the right name.  What is NOT covered is a head downgraded BEFORE the transcode is asked for —
+        //     that serves the original bytes, which is the 46MB `.flac` seen live.
         rec.sc.title = pmeta.title
         rec.sc.artist = pmeta.artist
         rec.sc.path = path
@@ -1277,9 +1360,16 @@ async Heist_materialise_one(w, nav, me, ref, lofi) {
             bytes = og.bytes
             rec.sc.ext = 'ogg'
             rec.sc.lofi = 1
-            // re-extension the PATH too: it is what Heist_cp_path lands under, so the asker writes
-            //  `<name>.ogg` beside nothing and never overwrites an original of the same stem.
-            rec.sc.path = ('' + path).replace(/\.[^./]*$/, '') + '.ogg'
+            // `path` STAYS THE SOURCE'S REAL FILE.  It used to get re-extensioned to `.ogg` here, which
+            //  broke two ways at once (both seen live 2026-08-07, one track landing as ogg bytes under a
+            //   `.mp3` name):
+            //    · SELF-POISONING — this function reads `path = hit.sc.path` at the top and then reads
+            //       that off disk.  A second materialise of an already-lofi rec therefore looked for a
+            //        `<name>.ogg` that has never existed on the source's disk, and returned null.
+            //    · a rewritten path only reaches the sink if the head merge lands; a husk minted at census
+            //       time already held `.mp3`, so any route that skipped the re-merge left the two disagreeing.
+            //  So the `.ogg` NAME is now derived where it is used, from `lofi` itself (Heist_cp_path) —
+            //   one door, no second source of truth, and nothing to keep in sync.
             if (og.seconds) rec.sc.seconds = +og.seconds.toFixed(2)
             console.log(`⇊♪ lofi: ${filename} → ogg128 (${Math.round(bytes.length / 1024)}KB from ${Math.round(raw.byteLength / 1024)}KB)`)
         } else {
@@ -1287,8 +1377,9 @@ async Heist_materialise_one(w, nav, me, ref, lofi) {
         }
     }
     // and the way BACK: a rec re-materialised as the ORIGINAL must shed the lofi head, or it would keep
-    //  claiming `.ogg` while carrying the source's bytes — the mode flip has to be symmetric.
-    if (!lofi && rec.sc.lofi) { delete rec.sc.lofi; rec.sc.path = path }
+    //  claiming `.ogg` while carrying the source's bytes — the mode flip has to be symmetric.  Only the
+    //   flag now; `path` was never touched, so there is nothing to restore.
+    if (!lofi && rec.sc.lofi) delete rec.sc.lofi
     let CH = this.Heist_chunk_bytes()
     let total = Math.ceil(bytes.length / CH)
     // NATIVE hashing (2026-07-29 perf: materialise was 51.8% of the frame in pure-JS noble sha256 — a ~5s
@@ -2157,16 +2248,46 @@ Heist_keep_default_section(keep, srcmir, seed) {
     if (!husks.length) return
     keep.c.sectioned = 1
     let common = null
+    let spawned = false
     for (const h of husks) {
+        if (this.Heist_sections_spawned(h.sc.path)) spawned = true
         let segs = this.Heist_sections_of(h.sc.path).split('/').filter(Boolean)
+        // A HUSK WITH NO SECTIONS CANNOT CONSTRAIN THE OTHERS (the human 2026-08-07: "sections aren't being
+        //  prefixed at all, only the 0 heisted-… is").  A strict intersection let ONE section-less path —
+        //   a stray at the share root, a file whose folder wears no marker — collapse the whole run to
+        //    nothing, and the keep then filed under the bare test tag with the real sections thrown away.
+        //  Skip them: the question is "where do the sectioned tracks agree", not "does everyone have one".
+        if (!segs.length) continue
         if (common === null) { common = segs; continue }
         let i = 0
         while (i < common.length && i < segs.length && common[i] === segs[i]) i = i + 1
         common = common.slice(0, i)
     }
+    // THE TEST NAMESPACE, SHOWN NOT SNUCK (the human 2026-08-07: "the heisted-96d0cf88-f5da6599 is there
+    //  but it'd be more sane for me if I could see it, users won't").  Heist_rel_for prepends this at land
+    //   time either way, but a folder that appears on disk and nowhere in the form is exactly the "preview
+    //    names a folder that will never exist" complaint in reverse.  Putting it in the SECTION makes it one
+    //     thing: visible in HaulFace's section row, editable (delete it and the haul files normally), and
+    //      already covered by the preview.  Heist_rel_for's own prefix then no-ops — it checks first.
+    //  Users never see it: it fires only behind a section named `spawn`, which no real collection has.
+    if (spawned) {
+        let tag = this.Heist_keep_spawn_tag(keep)
+        if (tag) common = [tag].concat(common || [])
+    }
     if (!common || !common.length) return
     keep.sc.genre = common.join('/')
     keep.bump()
+
+},
+// Heist_keep_spawn_tag — the per-pair test namespace, from the KEEP (its `pub` is the source pier) rather
+//  than from a %Heist job, which does not exist yet while the setup form is still open.  Same string
+//   Heist_spawn_tag builds, so the two cannot name different folders.
+Heist_keep_spawn_tag(keep) {
+    let from = '' + ((keep && keep.sc.pub) || '')
+    let rw = this.top_House()?.c?.radio_w
+    let to = (rw && typeof this.Radio_pub === 'function') ? this.Radio_pub(rw) : ''
+    if (!from || !to) return ''
+    return '0 heisted-' + from.slice(0, 8) + '-' + to.slice(0, 8)
 
 },
 // Heist_keep_pick_all/_none/_seed — REMOVED (the human 2026-07-30 "let's not support single tracks... drop
@@ -2213,6 +2334,12 @@ async Heist_keep_persist(keep) {
     if (keep.sc.genre) entry.sc.genre = keep.sc.genre
     if (keep.sc.dirs) entry.sc.dirs = keep.sc.dirs
     if (keep.sc.dirs_auto) entry.sc.dirs_auto = keep.sc.dirs_auto
+    // `lofi` RIDES TOO (2026-08-07).  It is list-level intent in exactly the sense this function saves —
+    //  it decides what the resumed heist ASKS FOR — and it was missing, so a Sounditron page's ~10min
+    //   auto-reload silently resumed a lofi haul as full-size originals: the same tracks, the wrong
+    //    bytes, no error anywhere.  Sync both ways, since a keep can be re-persisted after an untick.
+    if (keep.sc.lofi) entry.sc.lofi = 1
+    else if (entry.sc.lofi) delete entry.sc.lofi
     // the picks themselves — REAL %Pick children of this %HeistSeed (the human 2026-07-30: a JSON blob in
     //  one scalar is exactly the complex-data-in-.sc shape this project doesn't allow; "unwrapped into
     //   Waft/HeistSeed/Pick" is the house shape everything else already uses).  `ref` is the live pick's
@@ -2329,6 +2456,7 @@ async Heist_keep_rehydrate(rw, me, nav, shop) {
         if (entry.sc.genre) keep.sc.genre = entry.sc.genre
         if (entry.sc.dirs) keep.sc.dirs = entry.sc.dirs
         if (entry.sc.dirs_auto) keep.sc.dirs_auto = entry.sc.dirs_auto
+        if (entry.sc.lofi) keep.sc.lofi = 1   // the resumed heist must ask for the SAME artifact it was asking for
         keep.sc.defaulted = 1
         for (const pe of persisted) {
             if (!pe.sc.ref) continue
@@ -2492,11 +2620,15 @@ Heist_keep_pick_toggle(keep, ref) {
 //            CLEARS it (no prepend — keep the source structure, [[heist no-prepend]]).  Also updates the
 //             GLOBAL remembered default (Heist_defaults_set) — this is the one place a category gets set,
 //              so it's the one place the next heist's starting point needs to learn from.
+//  NOT REMEMBERED ANY MORE (the human 2026-08-07: "the section is not definite like that though").  This
+//   used to feed Heist_defaults_set, and Radio_keep stamped that back onto every new keep — so one typed
+//    category became the silent default for every unrelated folder afterwards, and it BEAT the source's own
+//     sections (which are per-folder and correct by construction).  A section belongs to the music, not to
+//      you; lofi is the one that belongs to you, and it is the one that persists now.
 Heist_keep_set_genre(keep, v) {
     keep.c.last_touch = Date.now()
     keep.sc.genre = this.Heist_genre_norm(v)
     keep.bump()
-    this.Heist_defaults_set({ genre: keep.sc.genre })
 
 },
 // Heist_genre_norm — THE category normaliser, extracted 2026-08-07 because the comment above was WRONG.
@@ -2565,10 +2697,16 @@ Heist_sections_strip(rel) {
 //  Lives on the keep because it is a per-heist decision the want-ask reads (Heist_keep_step's
 //   Heist_rummage_ask(..., !!keep.sc.lofi)) — so it must be set BEFORE ▶ start, and it is inert after.
 //  Snapped as `1`-or-absent, never `0` — the project's scalar-boolean rule.
+//  DEFINITE|PERSISTENT (the human 2026-08-07: "LOFI should stay ticked, as a permanent how-to-Heist-things
+//   option. the section is not definite like that though").  lofi is a property of YOU — your phone, your
+//    disk, how you want music to arrive — so it is remembered globally and every later heist opens with it
+//     already set.  A section is a property of the MUSIC, different for every folder, so it is deliberately
+//      NOT remembered (see Heist_keep_set_genre, where that feed was removed).
 Heist_keep_set_lofi(keep, on) {
     keep.c.last_touch = Date.now()
     if (on) { keep.sc.lofi = 1 } else { delete keep.sc.lofi }
     keep.bump()
+    this.Heist_defaults_set({ lofi: on ? '1' : '' })
 
 },
 // Heist_keep_set_dirs — the directories breadcrumb's edit (the human 2026-07-30): override the SHARED

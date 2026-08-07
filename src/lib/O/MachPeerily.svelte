@@ -834,7 +834,7 @@
                             H.trace('De', `${side} keygen done`)
                             H.reqyoncile(req, { see: 'keygen done', Id })
                         })
-                    })
+                    }, { see: `keygen_${side}` })
                     H.demand_time_to_think(1555)
                 }
                 if (req.sc.Id) De.finish(req)

@@ -295,6 +295,24 @@ async Orig_ogg_export(w, nav, rec, dir, name):
 //   AudioEncoder), never a throw, because the caller falls back to shipping the original.
 async Orig_ogg_from_source(w, raw, meta):
     if (typeof OfflineAudioContext === 'undefined' || typeof AudioEncoder === 'undefined') return null
+    // ONE TRANSCODE AT A TIME, PER WORLD.  Each in-flight one holds a decoded AudioBuffer (~64MB for a
+    //  3-minute stereo track) plus its packets plus the muxed ogg, and the source answers materialise asks
+    //   from a loop that does not know about any of that — two sinks, or one re-ask arriving while the
+    //    first is still decoding, and the peaks ADD.  A promise chain on `.c` (never snapped) serialises
+    //     them without a req: the cost is latency on the second asker, which is exactly the right thing to
+    //      pay, and it is bounded because each link resolves whether the transcode worked or threw.
+    let prior = w.c.ogg_gate || null
+    let release = null
+    w.c.ogg_gate = new Promise((res) => { release = res })
+    if (prior) { try { await prior } catch (er) {} }
+    try {
+        return await this.Orig_ogg_encode(w, raw, meta)
+    } finally {
+        release()   // the next waiter proceeds; a settled promise left on .c is harmless and keeps the chain simple
+    }
+
+// Orig_ogg_encode — the transcode itself; Orig_ogg_from_source is the serialising door in front of it.
+async Orig_ogg_encode(w, raw, meta):
     let ctx = new OfflineAudioContext(1, 1, 48000)
     let decoded = null
     try {
@@ -325,11 +343,26 @@ async Orig_ogg_from_source(w, raw, meta):
     let ok = await this.Ra_encode_drain(st)
     let packets = st.packets
     let preskip = st.preskip
+    let samples = channels[0].length
     this.Ra_encode_close(st)
+    // DROP THE PCM BEFORE MUXING (the human 2026-08-07: "the uploading|transcoding peer has 5g memory
+    //  usage").  A decoded AudioBuffer is float32 at 48k — ~64MB for a 3-minute stereo track, an order of
+    //   magnitude BIGGER than the FLAC it came from — and the mux below allocates the whole ogg on top of
+    //    it.  Nothing after this line reads a sample, so let the two peaks not overlap: `samples` is
+    //     captured above, and clearing these references is what actually lets the buffer go, since this
+    //      function's locals stay reachable from its own frame for as long as the await chain runs.
+    channels.length = 0
+    channels = null
+    decoded = null
+    ctx = null
     if (!ok || !packets.length) return null
     let tags = this.Orig_opus_tags({ sc: meta || {} }, 'jamsend Orig ogg128')
     let bytes = this.Orig_ogg_mux(packets, nch, preskip, 48000, tags)
-    return { bytes: bytes, packets: packets.length, seconds: channels[0].length / 48000, nch: nch }
+    let n = packets.length
+    // and the packets, once muxed — they are a second full copy of the audio, in ~1000 small arrays.
+    packets.length = 0
+    st.packets = null
+    return { bytes: bytes, packets: n, seconds: samples / 48000, nch: nch }
 
 // Orig_export_preskip — the preskip to bake into the exported OpusHead.  The chunk-particle model
 //  carries preskip on each HEAD chunk (%Preview,seq:0 and the boundary %Stream head — TWO encodes, one

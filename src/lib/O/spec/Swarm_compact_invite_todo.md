@@ -209,6 +209,35 @@ The Books seal over the in-process mail-wire / `Lake_link` mock pair — the REA
 
 ---
 
+### 7d. Refusal messaging — the two tiers, and the one safe thing to add (2026-08-08)
+
+The owner: *"we need good messaging to clients about refuse situations."* The architecture is already
+ two-tier and the split is **correct** — do not flatten it:
+
+- **`refuse(why)` — PRE-proof.** `forged`, `not_ours`, `spoofed`, `unknown`. Rebuffs locally and sends
+   **nothing**. Deliberate (`Swarm_hello`'s own header): serials are guessable, so replying at all
+    *"only confirms us to a spammer"*, and an unproven hello must mint no route, stamp no `%Ud`, send
+     no reply.
+- **`deny(why)` — POST-proof.** `spent`, `held`. Rebuffs locally **and** sends `pier_reject`, which the
+   far side surfaces as `%rebuff` via `Swarm_rejected`. Proven by `SwarmWire` beat 5.
+
+So the channel exists and the silence is a security property, not an oversight. The gap is that a
+ **legitimate** client can land in the silent tier whenever the responder's ledger is missing — which
+  is exactly the daemon's state today (`Daemon_todo` §8.1: the boot-seed adopts the keypair only, so
+   every `%Idzeug` lookup misses and every honest redemption gets the spammer treatment, invisibly at
+    both ends).
+
+**The one safe addition: "I hold no invite ledger at all" is a different fact from "that serial is
+ unknown."** Disclosing it leaks nothing — an attacker learns it by trying any two serials — because
+  the anti-guess argument (§2) protects *guessable serials on a provisioned issuer*, which is not this
+   case. A responder whose %Peering holds **zero** `%Idzeug` records may therefore answer honestly
+    (`not_provisioned`) without weakening §2 or §4. That converts the worst daemon failure from
+     silence into a sentence, and it is the only tier change that is safe to make.
+
+Everything else about messaging is downstream of §9.3 rung 5 (`waits:`-style narration through
+ `Diag_trouble`) — *"sealing with Lefto — 1 of 2 grants"* — plus surfacing `%rebuff` in the glass at
+  all, which §3's error-surfacing TODO has owed since `Swarm_rebuff` was written.
+
 ## 8. Security coordination
 
 This touches the SwarmSpoof-hardened seal. The plan keeps the anti-spoof property and PROVES it by a
@@ -364,6 +393,43 @@ A side never stops on its own say-so — that is precisely today's failure mode,
 
 **Still genuinely open** (small, decide in the code): whether the `%Want` list needs ORDER for a future
  second kind. Unordered is enough for grants — leave it unordered until something demands otherwise.
+
+### 9.5 THE SPEND HAPPENS BEFORE THE SEAL — a burned ticket with no friendship (found 2026-08-08)
+
+This is the sharpest argument for rung 3 yet, and it is a **live bug today**, not an enhancement.
+
+`Swarm_hello` (`Swarm.g:989`) runs, in this order:
+
+```
+record.sc.spent = 1 ; Swarm_iz_stash(ident, serial, {spent:1})   ← the ticket dies HERE
+let mine  = await mint_grant(…)
+let pier  = this.Swarm_seal(w, ident, frame.page, null, mine)
+this.Swarm_deliver(w, ident, …, { kind: 'pier_accept', … })       ← the friendship starts HERE
+```
+
+Anything that interrupts between those two lines leaves the serial **spent and the pairing unmade** —
+ and the redeemer's natural response, re-scanning the QR, now lands on `deny('spent')`. So they are
+  **permanently locked out holding a dead ticket**, and the only cure is the issuer minting a fresh
+   invite. A tab closed mid-handshake already does this; so does a dropped socket between the spend
+    and the deliver, which §7c/§9.0 say is the failure class this whole section exists for.
+
+Note the asymmetry that makes it bite: the spend is a **durable local write** (`Swarm_iz_stash` →
+ the stash → Dexie → the account snap) while the seal's completion depends on the **wire**. We made
+  the irreversible half unconditional and the recoverable half best-effort — precisely backwards.
+
+**Rung 3 fixes it by construction**: with a `req:Seal` standing on the `%Pier`, the invite is not
+ *finished* until both grants are held, so a spend is no longer the point of no return — the req
+  keeps working and a re-presented token resumes the standing seal instead of hitting `deny('spent')`.
+   Until rung 3, the cheap mitigations are (a) `deny('spent')` should check whether a `%Pier` for that
+    redeemer actually sealed, and treat "spent by YOU, unsealed" as *resume*, not refuse; or (b) move
+     the spend after the deliver and accept a small double-redeem window. (a) is strictly better and
+      does not weaken §4 — the presig already proved they held our link.
+
+**This also gates the daemon's invite work** (`Daemon_todo` §8.1, `Identity_persist_todo` §7.4f): the
+ borrow design turns an interruption into a *scheduled* event — an overthrow mid-handshake sends the
+  redeemer's `pier_confirm` to a place that knows nothing about the seal — so "do not concede the
+   canonical address while a seal is open" is a hard requirement there, and it is only affordable
+    because a `req:Seal` is exactly the thing that can be asked *"is a seal open?"*.
 
 ### 9.4 Non-goals (the "not so much that we get confused" line)
 

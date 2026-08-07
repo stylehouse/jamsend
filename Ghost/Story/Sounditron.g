@@ -298,7 +298,12 @@ Sounditron_commission(w):
         //       as the stoker and zine do — this only decides whether it spends a cell.
         let sident = this.top_House().Swarm_live_self ? this.top_House().Swarm_live_self() : null
         let spiers = (sident && this.top_House().Swarm_peering) ? (this.top_House().Swarm_peering(sident)?.o({ Pier: 1 }) ?? []) : []
-        for (const q of (spiers.length > 1 ? [{ Riffle: 1 }, { Mag: 'Lineup' }] : [{ Mag: 'Lineup' }])) {
+        // THE `up next` CELL IS GONE (the human 2026-08-07: "lose the 'up next' cell, I don't care").
+        //  Only the GRAPPLE goes — %Mag:'Lineup' is the radio's standing programme and Radio_dial still
+        //   fills and reads it exactly as before; it just stops spending a cell, the same way the stoker
+        //    and the zine already work while hidden.  Put `{ Mag: 'Lineup' }` back in this list to
+        //     restore it.
+        for (const q of (spiers.length > 1 ? [{ Riffle: 1 }] : [])) {
             let row = w.o(q)[0]
             if (row) organs.push(row)
         }
@@ -461,7 +466,7 @@ async Sounditron_trickle_look(w, era):
             //    dose themselves UP.  When the last keep leaves the dose clears and the glass springs back.  The
             //     three diagnostics are hidden-by-default now, so they're not in this set.
             let dim = keptN ? '-0.62' : null
-            for (const q of [{ Tuner: 1 }, { Riffle: 1 }, { Mag: 'Lineup' }, { Heist: 1 }]) {
+            for (const q of [{ Tuner: 1 }, { Riffle: 1 }, { Heist: 1 }]) {   // Lineup is no longer grappled — nothing to dim
                 let org = w.o(q)[0]
                 if (!org) continue
                 if (dim) { if (org.sc.dose !== dim) { org.sc.dose = dim; org.bump() } }

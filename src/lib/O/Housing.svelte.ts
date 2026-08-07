@@ -32,6 +32,9 @@ V.req_legs = 0   // >0 lays req** as the walk's transient level (more-legs) in o
                  //      1 (and re-add a walk-vs-climb check) to resume that migration dimension.
 
 export const ANSWER_CALLS_TICK_MS = 50
+// ELECTRODE (2026-08-07) — only report a drain lag past this, so a healthy 4-50ms drain stays silent
+//  and the ring is not flooded.  Set to 0 to see every item.
+export const DRAIN_LAG_MS = 300
 export const AMBIENT_MAIN_TICK_MS = 200
 // see also reset_interval() 3600ms
 
@@ -823,9 +826,28 @@ export class House extends StorableHousing {
             : `${e.sc.elvis ?? '?'}${e.sc.Aw ? '/' + e.sc.Aw : ''}`
         // +N = queue depth after this push — the gallop detector's raw signal, measurable
         H.trace('todo', `${tag} +${H.todo.length + 1}`)
+        // ELECTRODE (2026-08-07) — DRAIN LAG.  A Sounditron step spends 7.2s of 7.8s between a
+        //  post_do and the posted fn starting, while the whole run's belief-mutex time is 77ms
+        //   (The/TimeSpool: beliefs avg=0.077, step avg=0.011).  So the time is not work, and
+        //    `to_step` 3801ms ±3 across two tabs and every step says it is a TIMER — the 3.6s
+        //     ambient reset_interval + the 200ms main() throttle.  That means the wakeup this
+        //      push depends on (todo_version $effect → answer_calls) is being lost.  WHERE it is
+        //       lost has four candidate answers with the same face, so stamp the push and
+        //        snapshot the three drain counters; the deltas at shift-time fork them cleanly.
+        //  `.c` only — never rides a snap, safe to leave in while we read it.
+        e.c.push_t     = Date.now()
+        e.c.push_calls = H._ac_calls        // answer_calls() entries — did the $effect fire at all?
+        e.c.push_gated = H._ac_gated        //   …of which bounced off the answer_calls_waiting throttle
+        e.c.push_tries = H._ac_tries        // _really_answer_calls() entries — did anything LOOK at the queue?
+        e.c.push_tag   = tag
         H.todo.push(e)
         H.todo_version++
     }
+
+    // ELECTRODE (2026-08-07) — see _push_todo.  Plain fields, no reactivity, monotonic.
+    _ac_calls = 0     // answer_calls() called (the $effect fired, or a retry/watchdog drove it)
+    _ac_gated = 0     // …and returned immediately because a drain was already in its gate window
+    _ac_tries = 0     // _really_answer_calls() actually ran and looked at the queue
 
     // -------------------------------------------------------------------------
     // post_do: push a fn-carrying elvis onto H.todo.
@@ -977,7 +999,9 @@ export class House extends StorableHousing {
     answer_calls_pending = false;
 
     answer_calls() {
+        this._ac_calls++                      // ELECTRODE — see _push_todo
         if (this.answer_calls_waiting) {
+            this._ac_gated++                  // ELECTRODE
             this.answer_calls_pending = true;
             return;
         }
@@ -1039,6 +1063,7 @@ export class House extends StorableHousing {
 
 
     async _really_answer_calls() {
+        this._ac_tries++                      // ELECTRODE — see _push_todo
         // WHY each bail stamps a reason: a standing todo that never shifts is the machine's worst
         //  failure mode (the whole tab processes nothing while looking alive), and every exit below
         //   used to be silent.  `.c` only — the popover reads it, nothing snaps it.
@@ -1072,6 +1097,34 @@ export class House extends StorableHousing {
         // an item actually moved — the ONE fact that says this House is alive.  A standing queue
         //  with a stale drain_at is the wedge; a standing queue with a fresh one is just a backlog.
         this.c.drain_at = Date.now()
+        // ELECTRODE (2026-08-07) — DRAIN LAG readout.  Read `why` BEFORE the delete below: it holds the
+        //  reason the LAST look bailed, which is the whole question when an item waited seconds.
+        //  HOW TO READ THE FORK (runner_ask world → `drain-lag` marks):
+        //    calls≈0                → the todo_version $effect never fired.  The wakeup is lost at the
+        //                              Svelte layer.  Fix: make post_do self-driving (answer_calls()
+        //                               after the push — the mutex branch already re-arms its own retry).
+        //    calls>0, tries≈0       → the $effect fired but every call bounced off answer_calls_waiting
+        //                              and the trailing re-bump never landed.  Fix is that throttle.
+        //    tries>0, why names the → gated by a mutex holder, and `why` names it.  Not a lost wakeup;
+        //     beliefs mutex             chase the holder instead.
+        //    tries>0, why empty,    → an ordinary backlog: the queue was busy with other items and each
+        //     depth>0                   item's own work is the cost.  Then it IS CPU, contra TimeSpool.
+        {
+            const push_t = e.c.push_t as number | undefined
+            const waited = push_t ? Date.now() - push_t : 0
+            if (waited > DRAIN_LAG_MS) {
+                try {
+                    const M = this.top_House() as any
+                    M.Radio_trace?.(null, {
+                        ev: 'drain-lag', H: this.name, tag: e.c.push_tag ?? '?', waited,
+                        calls: this._ac_calls - ((e.c.push_calls as number) ?? 0),
+                        gated: this._ac_gated - ((e.c.push_gated as number) ?? 0),
+                        tries: this._ac_tries - ((e.c.push_tries as number) ?? 0),
+                        depth: this.todo.length, why: (this.c.drain_why as string) ?? '',
+                    })
+                } catch (er) {}
+            }
+        }
         delete this.c.drain_why
         // we should come back to the rest of them
         this.todo_version++
@@ -1127,6 +1180,28 @@ export class House extends StorableHousing {
         // beliefs mutex released — safe to enter UItime now.
         // drive any Stuffing that was watching a %C mutated during that cycle.
         if (this.stuffing_registry.size) this.schedule_stuffing_check()
+        // COME BACK FOR THE REST — OUT OF BAND (2026-08-08).  The `this.todo_version++` above says
+        //  "we should come back to the rest of them", and measured on a resident Sounditron boot it
+        //   does not: that bump is a write to the $effect's OWN dependency from inside that effect's
+        //    synchronous call stack ($effect → answer_calls → _really_answer_calls, not awaited, and
+        //     the bump precedes the first await), so nothing gets rescheduled.  The `drain-lag`
+        //      electrode caught it clean, every step, with no contention to confuse it:
+        //        H=Story fn:story_snap waited=3600 calls=2 gated=0 tries=2 depth=1 why=
+        //      gated=0 acquits the answer_calls throttle; empty `why` acquits the mutex — NOTHING was
+        //       holding it.  Two looks in 3600ms against a 50ms gate that allows ~72.  With depth=1:
+        //        look #1 drained the item ahead and left this one standing, look #2 was the 3.6s
+        //         ambient heartbeat.  So the queue advanced ONE ITEM PER EXTERNAL WAKEUP, and a
+        //          Story step needs two (do_step, snap_step) ⇒ 7.2s of a 7.8s step, ~93% of boot.
+        //  Books never showed it because a Book run is a constant rain of external wakeups (elvises,
+        //   ponder_now off every disk settle) that keep poking the queue; a quiet resident boot has
+        //    nothing but the heartbeat.
+        //  THE SHAPE IS ALREADY PROVEN NEXT DOOR: the mutex-held branch re-drives with exactly this
+        //   setTimeout, and that path spins fine (contended marks show `tries` in the thousands).
+        //    Trust a timer, not a reactive self-bump, to come back for your own queue.
+        //  Terminates: only armed when items remain, each pass shifts one, and answer_calls is
+        //   throttle-safe against repeats.  The todo_version++ above stays — it is still the right
+        //    wakeup for a push that arrives from OUTSIDE an effect.
+        if (this.todo.length) setTimeout(() => this.answer_calls(), this._gallop_gate_ms())
     }
     
     // waits for the next moment outside Atime (aka UItime)

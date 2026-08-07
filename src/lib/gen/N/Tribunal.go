@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tribunal(): string { return 'bd3df5453fee18e8~g1' },
+    Ghostmeta_Ghost_N_Tribunal(): string { return '2a297dc2edd42bbc~g1' },
 
 
 // Tribunal — a peer connection's reputation, constantly on trial (spec §4.1, §11.2).
@@ -54,7 +54,7 @@ async Socket(peering) {
     // < the live port is an object on .c (a transport seam): a working shared-queue
     //    port, partner paired across the two sides by the wrangler (cf the mock carrier).
     let port = { type: 'websocket', partner: null,
-        send(frame) { H.post_do(async () => { await this.partner?.recv(frame) }) },
+        send(frame) { H.post_do(async () => { await this.partner?.recv(frame) }, { see: 'tribunal_ws_send' }) },
         recv(frame) { return H.Peeroleum_deliver(w, frame) } }
     peering.o({ transport: 1, type: 'websocket' })[0].c.port = port
 
@@ -215,7 +215,7 @@ async Socket_real(w) {
     //   packet.  Every inbound frame USED to ride its own H.post_do → H.todo, drained one-per-50ms under the
     //    beliefs mutex — the pile that death-spiralled the editor.  Fallback to the old per-frame post_do if
     //     the app half hasn't deposited Lies_deliver_soon yet (the boot window before LiesLies mounts).
-    let deliver_soon = (frame) => H.Lies_deliver_soon ? H.Lies_deliver_soon(w, frame) : H.post_do(async () => { await port.recv(frame) })
+    let deliver_soon = (frame) => H.Lies_deliver_soon ? H.Lies_deliver_soon(w, frame) : H.post_do(async () => { await port.recv(frame) }, { see: 'tribunal_deliver_frame' })
     let on_message = (ev) => {
         // A binary message is a buffer-carrying frame ([header JSON]\n[raw buffer]); decode it and batch it
         //  (a booked frame — Peeroleum_deliver books + inbox.do() under the mutex, which the batcher provides).

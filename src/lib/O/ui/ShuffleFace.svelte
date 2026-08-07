@@ -71,6 +71,11 @@
                     title: String(rec.sc?.title ?? id.slice(0, 6)),
                     artist: String(rec.sc?.artist ?? ''),
                     pct: P > 0 ? Math.round(held * 100 / P) : 0,
+                    // Ra_stage already decides this and stamps it on the head — husk | pulling | landing |
+                    //  parked | previewed | whole — so the face reads a fact rather than re-deriving one.
+                    //   `parked` is the interesting one: a want outstanding PAST the preview boundary, i.e.
+                    //    the %Stream proper rather than the free window.
+                    stage: String(rec.sc?.stage ?? ''),
                     open, done, was, playing: id === playingId,
                 }
             })
@@ -78,10 +83,28 @@
             //  lit run reads as "the window only ever moved one way" at a glance.
             return { name: s.name, pips }
         })
+        // WHAT THE ONE YOU ARE HEARING IS DOING (the human 2026-08-07: "indicate here when the playing now
+        //  one is asking-for | in the Stream after Preview").  The counts above are about the POOL; this is
+        //   the single track under the needle, and the two answer different questions — a full pool tells
+        //    you nothing about whether the thing playing is about to run dry.
+        let now: any = null
+        for (const g of groups) for (const p of g.pips) if (p.playing) now = p
+        const NOW: Record<string, string> = {
+            pulling:   'asking — nothing landed yet',
+            landing:   'asking — preview filling',
+            parked:    'in the Stream, past the preview',
+            previewed: 'preview whole — free window held',
+            whole:     'whole track held',
+            husk:      'husk — nothing asked for',
+        }
         return {
             groups, reach, dialable, warm, heardN,
             fresh: Math.max(0, dialable - heardN),
             replays: +(radio?.sc?.replays ?? 0),
+            now, nowSays: now ? (NOW[now.stage] ?? now.stage) : '',
+            // `parked` IS the after-preview seam — worth its own colour, since it is the state a starve
+            //  shows up in and the one the preview boundary was invented to make visible.
+            nowDeep: !!now && now.stage === 'parked',
         }
     })
 </script>
@@ -98,6 +121,13 @@
             {/if}
             <button class="sf-q" onclick={() => (helping = !helping)} title="how to read this">?</button>
         </div>
+
+        {#if view.now}
+            <div class="sf-now" class:deep={view.nowDeep} title="the track under the needle, and what it is waiting on">
+                <span class="sf-now-t">♪ {view.now.title}</span>
+                <span class="sf-now-s">{view.nowSays}</span>
+            </div>
+        {/if}
 
         {#if helping}
             <div class="sf-help">
@@ -172,7 +202,20 @@
     .sf-pip.playing { border-color: #fff; box-shadow: 0 0 4px rgba(255, 255, 255, 0.8); opacity: 1; }
     .sf-pip.playing .sf-fill { background: #fff; }
     .sf-foot { margin-top: 3px; font-size: 9px; opacity: 0.7; }
+    /* the now-playing line: one row, the title clipped rather than wrapping, so the cell keeps its height */
+    .sf-now {
+        display: flex; gap: 4px; align-items: baseline; margin-top: 2px;
+        font-size: 9px; line-height: 1.3; color: #cfe6dd;
+    }
+    .sf-now-t { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sf-now-s { flex: none; opacity: 0.7; }
+    .sf-now.deep .sf-now-s { color: #7fe8bf; opacity: 1; }
     .sf-q {
+        /* RE-ARM THE CLICKS (the human 2026-08-07: "the '?' button ... doesn't work").  Vytui's `.faces`
+           layer and every face root are pointer-events:none — the mold is a rectangle over the voronoi
+           cell and must not swallow the canvas — so an interactive control has to opt back IN, one by one.
+           This one had `cursor: pointer` and nothing else, so it LOOKED clickable and never was. */
+        pointer-events: auto;
         margin-left: auto; width: 13px; height: 13px; line-height: 1; padding: 0;
         border: 1px solid rgba(127, 232, 191, 0.45); border-radius: 50%;
         background: transparent; color: #7fe8bf; font-size: 9px; cursor: pointer; flex: none;

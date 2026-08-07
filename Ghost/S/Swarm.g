@@ -1826,7 +1826,7 @@ Swarm_share_loop(w, ident):
                 if (ms > 600 && typeof this.Radio_trace === 'function') {
                     try { this.Radio_trace(null, { ev: 'beat', ms: ms, skips: +(w.c.share_beat_skipped || 0) }) } catch (er) {}
                 }
-            })
+            }, { see: 'swarm_share_beat' })
         }
         setTimeout(tick, 600)
     }

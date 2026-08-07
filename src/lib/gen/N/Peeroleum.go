@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '5614ae1e9d7cc699~g1' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '18cb029750287c38~g1' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -359,8 +359,8 @@ async transport(A,w) {
             let to = frame && frame.header && frame.header.to
             // a to:@channel publish has no single partner — fan it into the in-process relay (Peeroleum_deliver's
             //  channel branch scans subscribed Peerings). One post_do keeps it in Atime, exactly like a 1:1 send.
-            if (to != null && String(to)[0] === '@') { H.post_do(async () => { await H.Peeroleum_deliver(w, frame) }); return }
-            H.post_do(async () => { await this.partner?.recv(frame) })
+            if (to != null && String(to)[0] === '@') { H.post_do(async () => { await H.Peeroleum_deliver(w, frame) }, { see: 'peeroleum_fan_channel' }); return }
+            H.post_do(async () => { await this.partner?.recv(frame) }, { see: 'peeroleum_send' })
         },
         recv(frame) { return H.Peeroleum_deliver(w, frame) },
     }

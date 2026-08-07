@@ -617,8 +617,8 @@ SwarmDoor_station(w, ident):
         type: 'mock', partner: null, reliable: true,
         send(frame) {
             let to = frame && frame.header && frame.header.to
-            if (to != null && String(to)[0] === '@') { H.post_do(async () => { await H.Peeroleum_deliver(w, frame) }); return }
-            H.post_do(async () => { await this.partner?.recv(frame) })
+            if (to != null && String(to)[0] === '@') { H.post_do(async () => { await H.Peeroleum_deliver(w, frame) }, { see: 'swarmation_fan_channel' }); return }
+            H.post_do(async () => { await this.partner?.recv(frame) }, { see: 'swarmation_send' })
         },
         recv(frame) { return H.Peeroleum_deliver(w, frame) },
     }

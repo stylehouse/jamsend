@@ -1254,7 +1254,21 @@ Ra_record_from(lib, info, bufs):
     //     peel-encode safely) so any %Record can anchor a later re-open of its source structure, not
     //      just heist-landed ones.
     if (info.col != null && info.col !== '') rec.sc.col = +info.col
-    if (info.path) rec.sc.path = info.path
+    // PATH IS CRATE-ROOT-RELATIVE, ALWAYS (the human 2026-08-07: "for a heist of the testsounds/ ... we
+    //  end up with no DIRECTORIES ... it should think they're in testsounds/ at least").  The card splits
+    //   the source location in two — `base` is what Ra_stock was pointed at, `path` is relative to THAT —
+    //    so the same file lands two different shapes depending on who stocked it: a Book calls
+    //     `Ra_stock(w, lib, nav, 'testsounds', n)` and records a bare `DJ Oscillo - Cosmic C.wav`, while a
+    //      live tour stocks from the crate root and records `testsounds/DJ Oscillo - Groove G.wav`.  Both
+    //       write into the SAME .jamsend/radiostock, so the live share carries both shapes of the same 8
+    //        tracks (measured: 6 flattened, 2 intact) and a heist got whichever it drew.
+    //  Everything downstream reads `rec.sc.path` and nothing carries `base`, so the directory was simply
+    //   GONE by the time Heist_cp_path / Heist_sections_of / HaulFace's commonPrefix asked — which reads
+    //    as "no directories" rather than as data loss.  Join it here, at the one door where a card becomes
+    //     a record, with the same idiom Ra_source_pcm (:735) and Ra_source_read (:1612) already use to
+    //      FIND the file — they always knew the real path; only the record didn't.
+    //  The card on disk is untouched (no re-stock, no radiostock migration): this is a read-side join.
+    if (info.path) rec.sc.path = (info.base ? info.base + '/' : '') + info.path
     rec.sc.sr = 48000
     rec.sc.br = +info.br
     rec.sc.seg_secs = +info.seg_secs
@@ -1657,10 +1671,102 @@ async Ra_source_pcm(w, rec):
     }
     this.Ra_bake(channels, Math.pow(10, (+card.gain || 0) / 20))
     rec.c.pcm = channels
+    // JOIN THE PCM REGISTRY AT ACQUISITION, not at encoder-open (2026-08-07 — the 11GB tab).  See
+    //  Ra_pcm_sweep for why this line and not `ra_hot` is what makes the bytes freeable.
+    this.Ra_pcm_hold(rec)
     // decode DONE — the mark whose delta from `pcm-decode-start` IS the whole-file decode cost (the prime
     //  suspect for "gets stuck trying to start a Stream").  `dec` = decodeAudioData alone; `secs` = track length.
     this.Radio_trace(null, { ev: 'pcm-decode-done', id: tid, dec: Date.now() - tdec, ms: Date.now() - t0, secs: +(decoded.duration || 0).toFixed(1), len: channels[0] ? channels[0].length : 0 })
     return channels
+
+// Ra_pcm_hold / Ra_pcm_bytes / Ra_pcm_sweep — the OWNER of the decoded whole-file PCM (2026-08-07).
+//  `rec.c.pcm` is ~92MB for a 240s stereo track (two Float32Arrays of the whole song), and it was
+//   acquired in ONE place (Ra_source_pcm, above) while only ever freed by a list the rec might never
+//    join.  A rec joined `w.c.ra_hot` in Ra_transcode_ensure only AFTER Ra_encode_open succeeded, so
+//     FOUR exits left a record holding its PCM with nothing on earth able to free it:
+//      1. the detached decode lands and nobody calls ensure again (the listener skipped, the want
+//          unparked, the track was dialed away) — pcm set, never on any list;
+//      2. Ra_encode_open returns null — same, one line before the push;
+//      3. Ra_transcode_advance's drain-failure sets ra.done and closes the encoder but does NOT null
+//          the pcm (its `final` sibling three lines below does), and the lead pass then `continue`s a
+//           done ra — dropping it off ra_hot without ever freeing;
+//      4. and the one the write-up missed, which is the DOMINANT one in a live tab: `ra_hot` is
+//          per-WORLD, and there are two.  Radio_supply_go drives ensure with the RADIO world
+//           (radio.c.w), Swarm_share_beat drives the pump with the STATION world — and the eviction
+//            belt lives inside Ra_transcode_pump, which in prod is only ever called with the station
+//             world.  So every locally-played track's PCM landed on a registry NOTHING sweeps, freed
+//              only if its encode ran to completion.  Skip a track mid-play and its 92MB is pinned for
+//               the life of the tab — which is exactly "climbs monotonically with uptime", and exactly
+//                what a listener does all day.
+//  A record needs ONE ensure EVER to acquire a stuck PCM, so these do not need to be rare to hurt.
+//  THE CURE IS AN OWNER, NOT A FOURTH PATCH: the registry is TAB-SINGULAR (the top House's `.c`, like
+//   c.radio_w and c.xfer), so it cannot be escaped by minting in the other world, and it is joined at
+//    ACQUISITION, so no exit between decode and encoder-open can slip past it.  `ra_hot` keeps its own
+//     meaning untouched (the OPEN-ENCODE lead list) — this is a second, orthogonal list about bytes.
+//  All `.c`, no snap byte, no fixture or Book anywhere names these.
+Ra_pcm_hold(rec):
+    let M = this.top_House ? this.top_House() : null
+    if (!M || !rec) return
+    M.c.ra_pcm = M.c.ra_pcm || []
+    rec.c.pcm_ts = Date.now()
+    if (!M.c.ra_pcm.includes(rec)) M.c.ra_pcm.push(rec)
+
+Ra_pcm_bytes(rec):
+    let p = rec && rec.c.pcm
+    if (!p || !p.length || !p[0]) return 0
+    return p.length * p[0].length * 4
+
+// the sweep: free the PCM of any registered record that (a) still holds it, (b) has no OPEN encode
+//  running off it, and (c) nothing has asked about for PCM_IDLE.  An open+un-done `ra` is an absolute
+//   veto — Ra_transcode_advance reads rec.c.pcm[0] every call, so freeing under a live encode would
+//    throw rather than save memory.  The idle clock is stamped by Ra_pcm_hold (acquisition) and by
+//     every Ra_transcode_ensure that FINDS a pcm, so "idle" honestly means "no pump has wanted this
+//      record for 30s", not "30s since it was decoded" — a track being served continuously is never
+//       swept no matter how long it plays.
+//  Then a total-bytes BELT, oldest-touched first, so even a pathological burst of decodes cannot
+//   climb past a bound (the structural half — the 11GB tab could not have happened with a belt).
+Ra_pcm_sweep():
+    let M = this.top_House ? this.top_House() : null
+    if (!M || !M.c.ra_pcm || !M.c.ra_pcm.length) return
+    let IDLE = +(M.c.ra_pcm_idle || 30000)
+    let CAP = +(M.c.ra_pcm_cap || 402653184)      // ~384MB — roughly 4 tracks decoded at once
+    let now = Date.now()
+    let live = []
+    let held = 0
+    for (const rec of M.c.ra_pcm) {
+        if (!rec || !rec.c.pcm) continue                       // already freed — drop off the registry
+        let ra = rec.c.ra
+        if (ra && !ra.done) { live.push(rec); held = held + this.Ra_pcm_bytes(rec); continue }
+        if (now - (rec.c.pcm_ts || 0) > IDLE) {
+            let mb = Math.round(this.Ra_pcm_bytes(rec) / 1048576)
+            if (ra) { try { this.Ra_encode_close(ra.st) } catch (er) {} }
+            rec.c.ra = null
+            rec.c.pcm = null
+            this.Radio_trace(null, { ev: 'pcm-free', id: String(rec.sc.id || '').slice(0, 8), mb: mb, why: 'idle' })
+            continue
+        }
+        live.push(rec)
+        held = held + this.Ra_pcm_bytes(rec)
+    }
+    // BELT: oldest-touched first, and an open encode is shed LAST (shedding it strands a listener
+    //  mid-track), but it is never vetoed outright — a belt that can be vetoed is not a belt.
+    if (held > CAP && live.length) {
+        live.sort((a, b) => ((a.c.ra && !a.c.ra.done) ? 1 : 0) - ((b.c.ra && !b.c.ra.done) ? 1 : 0) || (+(a.c.pcm_ts || 0)) - (+(b.c.pcm_ts || 0)))
+        let i = 0
+        while (held > CAP && i < live.length) {
+            let rec = live[i]
+            let mb = Math.round(this.Ra_pcm_bytes(rec) / 1048576)
+            held = held - this.Ra_pcm_bytes(rec)
+            if (rec.c.ra) { try { this.Ra_encode_close(rec.c.ra.st) } catch (er) {} }
+            rec.c.ra = null
+            rec.c.pcm = null
+            this.Radio_trace(null, { ev: 'pcm-free', id: String(rec.sc.id || '').slice(0, 8), mb: mb, why: 'cap' })
+            live[i] = null
+            i = i + 1
+        }
+        live = live.filter((r) => r)
+    }
+    M.c.ra_pcm = live
 
 // Ra_chunk_mint — one %Stream,seq chunk particle lands with its bytes (head+preskip on the FIRST —
 //  where the stream decoder opens).  A cut past the promised last seq (the flush spill when the tail
@@ -1696,6 +1802,10 @@ Ra_chunk_mint(rec, seq, buf, preskip):
 //  no continuation (total <= preview), no card, or NO SOURCE ⇒ no stream.  Opens the SECOND encode
 //   (its own head, its own preskip) at the boundary sample.
 async Ra_transcode_ensure(w, rec):
+    // TOUCH the PCM idle clock (Ra_pcm_sweep) before anything else, including the early return: "idle"
+    //  must mean "no pump has wanted this record", never "30s since it was decoded" — otherwise a long
+    //   track being served continuously would be swept out from under its own live encode.
+    if (rec.c.pcm) rec.c.pcm_ts = Date.now()
     if (rec.c.ra) return rec.c.ra
     let total = +(rec.sc.total || 0)
     let P = +(rec.sc.preview || 0)
@@ -1736,6 +1846,17 @@ async Ra_transcode_ensure(w, rec):
 async Ra_transcode_advance(w, rec):
     let ra = rec.c.ra
     if (!ra || ra.done) return 0
+    // A FREED PCM ENDS THE ENCODE HONESTLY, rather than throwing on `rec.c.pcm[0]` (2026-08-07).  The
+    //  sweep + belt (Ra_pcm_sweep) can now take the bytes out from under a record — it vetoes on an
+    //   open encode, so this should be unreachable via the sweep, but the belt is deliberately
+    //    un-vetoable and a caller can free too.  Mark done and close, so the next ensure re-decodes
+    //     from scratch instead of a caller seeing a TypeError out of the middle of the pump.
+    if (!rec.c.pcm || !rec.c.pcm[0]) {
+        ra.done = 1
+        try { this.Ra_encode_close(ra.st) } catch (er) {}
+        return 0
+    }
+    rec.c.pcm_ts = Date.now()
     let SEG = this.Ra_seg_secs() * 48000
     let len = rec.c.pcm[0].length
     let stride = +(w.c.repli_page || 2)
@@ -1752,6 +1873,12 @@ async Ra_transcode_advance(w, rec):
         if (!ok) {
             ra.done = 1
             this.Ra_encode_close(ra.st)
+            // FREE THE PCM HERE TOO (2026-08-07).  Its `final` sibling below does, this one did not —
+            //  and the lead pass `continue`s a done ra, dropping the rec off ra_hot without freeing.
+            //   A drain failure is the LEAST likely moment to get the bytes back later: the encode is
+            //    dead, so nothing will ever re-read them.  (The registry sweep would now catch this
+            //     anyway at 30s; freeing at the seam that knows is still the honest place.)
+            rec.c.pcm = null
             return made
         }
         let cut = this.Ra_chunk_cut(ra.st, final ? 1 : 0)
@@ -1780,6 +1907,12 @@ async Ra_transcode_advance(w, rec):
 //     pumps — the legacy single w.c.tx and each Repli_register_caster'd Pier, each against its OWN
 //      shelf (Repli_src_for), so a multi-source world's transcoders answer their own parked wants.
 async Ra_transcode_pump(w):
+    // FREE STUCK PCM FIRST (2026-08-07 — the 11GB tab).  The sweep is tab-singular, not world-scoped,
+    //  which is the whole point: this pump only ever runs on the STATION world in prod, while the
+    //   biggest producer of stuck PCM (Radio_supply_go's local playback drive) works in the RADIO
+    //    world.  Reading the registry off the top House is what lets one call cover both.  Cheap — a
+    //     walk over a list that is empty on an idle tab and ~2 long on a busy one.
+    this.Ra_pcm_sweep()
     let piers = []
     if (w.c.tx) piers.push(w.c.tx)
     for (const cp of (w.c.repli_casters || [])) {

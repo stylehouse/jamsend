@@ -17,6 +17,121 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
 
 ## 0. Next move (read first)
 
+00. **⇑ SESSION CLOSE 2026-08-07 — four live defects found, two fixed, and ONE THING BLOCKS A GREEN GATE.**
+
+  **A known, DEFERRED redness: 8 Books disagree with the code and that is the fixtures working.**
+   `rec.sc.path` now carries the crate-root-relative path (`Ra.g`, build `4938d5f513f1067e`) — see the
+    §0c entry below. 73 fixtures across **MusuBay, MusuBreach, MusuBuddy, MusuHeist, MusuMag, MusuOgg,
+     MusuReap, MusuSoft** still hold the old bare-filename form. Roll the re-record into any later
+      testing round — it does not rot, and deferring is if anything SAFER: the stale fixtures still hold
+       the old truth, so if the human reads the path change and disagrees with it, the revert is trivial
+        and nothing has been overwritten. Re-record once the belief is agreed, not before.
+   The only live cost is that a *new* regression inside those 8 Books would hide in this known redness.
+    Bounded, and now written down — which is what makes it safe to leave.
+   When it is done, the diff is *assertable rather than reviewable*: every changed line must gain
+    exactly the prefix `testsounds/` on a `path:` field and **nothing else may move**. Verified on
+     MusuOgg step 2:
+
+        - path:DJ Oscillo - Cosmic C.wav
+        + path:testsounds/DJ Oscillo - Cosmic C.wav
+
+  **Assert that shape over the whole diff rather than eyeballing it** — if any other field moves, the
+   change did more than it claims and the re-record is the wrong response.
+
+  **A SECOND STALE-FIXTURE FRONT, found while trying to gate the above: `MusuRaStream` is 0/40 red at
+   BASELINE.** Proven by controlled revert — my Ra.g hunks stripped, recompiled to `4938d5f513f1067e`
+    (the build hash §0c already records as current), re-run: still 0/40. So it is not the PCM work.
+   The tell is in step 1 and it is one key: the live snap carries `w:MusuRaStream,now=1751980010` and
+    the fixture carries a bare `w:MusuRaStream`. `Radiation.g:78` pins the swarm clock
+     (`w.sc.now = 1751980000 + 10*n`) — the value matches *exactly* at n=1 — and that pin has been in
+      since commit `7935704a` (**2026-08-05**), while the fixtures were last committed `7640a284`
+       (08-07). So the fixtures postdate the pin and still lack it, which means **they were not recorded
+        from a live runner** — the CLAUDE.md headless-boot trap, whose fixtures match themselves and go
+         all-red on the real runner. Downstream the divergence widens (the pinned clock feeds every
+          signature, `since` and grant — `Radiation.g:824` says so in words), so by step 2 the live run
+           is a whole round behind the fixture and missing the `%Record` + its `%Preview` chunks.
+   **Consequence for anyone reaching for a gate: MusuRaStream currently gates nothing**, and the same
+    doubt hangs over its Radiation.g siblings (`MusuRaChase`, `MusuRaStock`, `MusuRaTerm`, `MusuRaCast`).
+     Re-record from a LIVE runner before trusting any of them. ⚠ And note this Book is **not provably
+      deterministic run-to-run** — two runs at the same build agreed on steps 1–13 and diverged from 14
+       on. Until that is settled, *"diges differ"* is NOT sufficient to attribute blame on this Book;
+        the determinism check (same build, twice) has to come first. That check is itself the next move
+         here, and it is cheap.
+
+  **The live bug still open — "finding the folder…" forever.** Measured on Righto: 16 %Records in the
+   friend mirror, and **zero occurrences of `rummage` anywhere in the radio world** — no tag, and no
+    `%Rummage` ask particle at all. So the folder-describe round trip is never *sent*; the face is
+     honestly reporting `nTracks === 0`. **The trap that cost this session an hour: the DIRECTORIES row
+      renders from the persisted `keep.sc.dirs`, not from husks** (`dirsRaw` falls back to `sc.dirs`
+       first), so the cell looks like it is filling while nothing has arrived. Do not read that row as
+        evidence of husks. **The short read HAPPENED (2026-08-07) and the worlds MATCH** — with one
+         correction to the premise above: `Heist_rummage_ask` mints its bay in the **STATION world**
+          (`Heist_keep_step:1762` passes the beat's `w` = w:Swarm down; `Ra_home_bay(w,…)` homes there),
+           so "zero `rummage` in the radio world" is what a HEALTHY run looks like too — my asks live in
+            w:Swarm, only the described husks' `rummage:` tags land in the radio-world mirror. Mint vs
+             scan: `Radio_keep` mints `Ra_home_shop(n.c.w, Radio_pub)`; the beat scans
+              `Ra_home_shop(top_House().c.radio_w, ident.sc.prepub)` — same world (both stamped from the
+               dial's world, Radio.g:38/1148), same `me` (both off `Swarm_live_self`). So the discriminating
+                probe is now LIVE, not static, and it forks three ways on the stuck tab:
+                 · %Haul absent everywhere → the mint/drop is the bug (or `Radio_pub` fell to `'me'`);
+                 · %Haul present, `sc.asks` never climbs → `Heist_keep_step:1732`'s silent
+                    `if (!route) return` (no station `%Peering` named my prepub — streaming does NOT prove
+                     this, wants ride pre-registered `playing.c.rx`), or the beat dies pre-GO
+                      (`w.c.heist_beat_why` on the station world holds the throw);
+                 · `sc.asks` climbing → asks ARE sent; search the STATION world for `%Rummage` and chase
+                    the answer/mirror side (`w.c.repli_mirror_w`, Repli.g:860).
+                `sc.asks` snaps, so a plain world snap of the stuck tab answers the fork.
+
+  **Both of the below are now BUILT (2026-08-07 evening) — compiled, not yet live-verified.** Ra.g
+   `47f469ccf6cb4fc2`, Radio.g `081cb7f75201bca4`. What each turned out to be:
+   · the **11 GB tab** is `rec.c.pcm` — whole-file decoded PCM, ~92 MB per 240s track. The write-up
+     named three exits that never free it; there was a **FOURTH, and it is the dominant one in a live
+      tab**: `ra_hot` is **per-WORLD and there are two**. `Radio_supply_go` drives the encode with the
+       RADIO world (`radio.c.w`), `Swarm_share_beat` drives the pump with the STATION world — and the
+        eviction belt lives *inside* `Ra_transcode_pump`, which in prod is only ever called with the
+         station world. So every locally-played track's PCM landed on a registry **nothing sweeps**,
+          freed only if its encode ran to completion. Skip a track mid-play and its 92 MB is pinned for
+           the life of the tab. That is "climbs monotonically with uptime", and it is exactly what a
+            listener does all day.
+     **The cure is an owner, not a fourth patch.** `Ra_pcm_hold` / `Ra_pcm_sweep` / `Ra_pcm_bytes`
+      (Ra.g, beside `Ra_source_pcm`): the registry is **tab-singular** — the top House's `.c`, like
+       `c.radio_w` — so it cannot be escaped by minting in the other world, and it is joined at
+        **acquisition**, so no exit between decode and encoder-open can slip past it. The sweep frees on
+         idle (30s, `M.c.ra_pcm_idle`) with an open encode as an absolute veto, then a ~384MB belt
+          (`M.c.ra_pcm_cap`) oldest-touched-first that is deliberately **un-vetoable** — a belt that can
+           be vetoed is not a belt. `ra_hot` keeps its old meaning untouched (the open-encode lead list);
+            this is a second, orthogonal list about bytes. All `.c`; zero fixtures and zero Books name
+             any of it. New `pcm-free` trace mark (`why:idle|cap`, with MB) so a live tab can be *shown*
+              freeing rather than asked to prove a negative.
+   · the **"own tracks cut at 32s"** was `Radio_supply_go` (Radio.g) reading the FIRST `null` from
+      `Ra_transcode_ensure` as a verdict — capping the track at its preview and writing the note
+       *"source unreadable"* about a source it had not finished reading. It is **deterministic, not
+        flaky**: ensure returns null on its first call for any track whose PCM is not already decoded
+         (it kicks the decode off detached and bows out, by design since 2026-07-28). It only ever
+          *looked* intermittent because a track whose PCM was warm from an earlier play sailed through.
+       Now only a KNOWN death caps, and each has its own tell: `rec.c.pcm_dead` names the two silent
+        ones (no card / no nav), `rec.c.pcm_why` a decode that actually threw, and pcm-present-yet-still-
+         null means `Ra_encode_open` refused. Anything else is the decode still running, so it waits
+          (bounded `w.c.ra_decode_wait`, 60s, and the enclosing loop is era|rec-gated so a skip exits at
+           once). Capping at the bound now says *"too slow"*, not *"unreadable"* — at that point slow is
+            all we actually know. `MusuOgg`'s driver had the identical bug and cure (`Heistation.g`,
+             2026-08-05); this is the same fix at the live-playback seam.
+     **No Book drives `Radio_supply_go`** (its only caller is `Radio.g:354`, live playback), so this
+      half is Book-inert by construction and can ONLY be verified by ear: play an own track and hear it
+       pass 32s. That is the one thing owed on it.
+   · **boot is ~35s before any music can move** — see the new TODO at the tail of `Radio_todo.md`.
+
+  **The pattern worth carrying forward: "not yet" reported as "never".** Three instances in one day —
+   `Radio_supply_go` saying *source unreadable* when it means *still decoding*; the boast sending
+    `records:0` when it means *census not built*; and the skeleton animating *finding the folder…* for a
+     request that was never sent. Each writes down a false fact and moves on, and each self-heals only
+      by luck. When something reads as flaky-but-eventually-fine, look for this shape before timing.
+
+  **Still unjudged:** the `Heist_census_heads` `body_hash` guard (§ below). It was misattributed once
+   already and reverted. MusuHeist is now a *trustworthy* gate — the step-2 flake was a real race in
+    `Heistation.g` (census settled outside the belief loop; a wake is not a hold), fixed with a one-shot
+     ttlilt gate, 7 consecutive greens, no fixture footprint — so the guard can finally be tested.
+
 0. **"LOFI" — a `.ogg` haul for phones. BUILT 2026-08-07, source-side, ONE ATTENDED HAUL STILL OWED.**
     The human: *"transcoding to ogg for people's phones will be important."* What landed, and why in
      this shape:
@@ -93,8 +208,15 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
        path segment**. MusuHeist 22/22 · MusuRename 9/9 · MusuVend 11/11 · MusuOgg 6/6 · MusuStock 5/5
         (control), and the only fixture churn across the batch is `TimeSpool` samples + `GhostInclude`
          diges.
-    - Still true and still unread: `Heist_defaults_get()` has **no callers**. The remembered global
-       default category is written on every edit and never applied to a new keep.
+    - **The landing fallback is the load-bearing half** (added after the first real sectioned haul landed
+       naked at the music root): `Heist_rel_for` falls back to `Heist_sections_of(rec.sc.path)` whenever
+        no category is pinned. Stripping sections without that is not "not noticing" them — it is
+         *destroying* them. `Heist_keep_default_section` is now only the UI courtesy that lets HaulFace
+          show and edit the section; the landing no longer depends on it having run.
+    - `Heist_defaults_get()` IS read — from **`Radio_keep` (Radio.g)**, not from anywhere in Heist.g, which
+       is why a grep scoped to this file says "no callers". It stamps the remembered category onto a keep
+        at mint. Currently `''` on this machine, so it is inert here, but a keep minted with a remembered
+         category will (correctly) beat the source's sections.
 
 1. **The two-pier live test HAPPENED (2026-08-06) and it was worth it — read §4.1 first.** The human
     ran a real 8-track haul between two tabs. It wedged twice, at two different rungs, and both were

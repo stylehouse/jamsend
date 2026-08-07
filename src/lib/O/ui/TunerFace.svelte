@@ -46,16 +46,19 @@
 <div class="tf">
     {#if source.radio}
         <!-- the "👂 listening to" title is gone (the human 2026-08-06: "there's not much room"). It was
-             labelling two buttons that already say what they are — ⚯ friends / 💿 my crate — so it spent a
+             labelling two buttons that already say what they are — ⚯ friends / 💿 local music — so it spent a
              whole row to add nothing. Same rule as BeatFace's farewell: in scarce space, a caption that
              only restates its controls is furniture. -->
         <div class="tf-src">
             <button class="tf-srcbtn" class:on={!source.own}
                 onclick={() => pick_source(false)}
                 title="play your friends' collections">⚯ friends</button>
+            <!-- "local music", not "my crate" (the human 2026-08-07).  The pair reads as a place-vs-place
+                 choice now — friends' machines or this one — where "my crate" named a possession and left
+                 you to infer that possession was the thing on this disk. -->
             <button class="tf-srcbtn" class:on={source.own}
                 onclick={() => pick_source(true)}
-                title="play your own crate">💿 my crate</button>
+                title="play the music on this machine">💿 local music</button>
         </div>
     {/if}
     {#if crews.length}

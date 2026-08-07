@@ -184,8 +184,8 @@ Lake_peer(w, name, pub):
             let to = frame && frame.header && frame.header.to
             // a to:@channel publish fans into the in-process relay (Peeroleum_deliver scans subscribed Peerings),
             //  mirroring the spine's mock carrier — a topic has no single partner. 1:1 frames go to the partner.
-            if (to != null && String(to)[0] === '@') { H.post_do(async () => { await H.Peeroleum_deliver(w, frame) }); return }
-            H.post_do(async () => { await this.partner?.recv(frame) })
+            if (to != null && String(to)[0] === '@') { H.post_do(async () => { await H.Peeroleum_deliver(w, frame) }, { see: 'peregrination_fan_channel' }); return }
+            H.post_do(async () => { await this.partner?.recv(frame) }, { see: 'peregrination_send' })
         },
         recv(frame) { return H.Peeroleum_deliver(w, frame) },
     }

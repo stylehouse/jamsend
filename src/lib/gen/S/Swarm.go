@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '362a527757d98adf~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '5e3e16e89380dc85~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -1919,7 +1919,7 @@ async Swarm_share_loop(w, ident) {
                 if (ms > 600 && typeof this.Radio_trace === 'function') {
                     try { this.Radio_trace(null, { ev: 'beat', ms: ms, skips: +(w.c.share_beat_skipped || 0) }) } catch (er) {}
                 }
-            })
+            }, { see: 'swarm_share_beat' })
         }
         setTimeout(tick, 600)
     }

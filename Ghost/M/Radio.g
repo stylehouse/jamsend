@@ -710,6 +710,11 @@ async Radio_supply_go(radio, era, rec):
     if (rec.c.from) return
     this.Radio_trace(radio, { ev: 'supply-start', total: total, preview: P })
     let passes = 0
+    // how long a still-running decode is allowed to be "not yet" before the cap calls it too slow.
+    //  Generous on purpose: the measured whole-file decodes run seconds, and the cost of waiting is
+    //   only that the preview keeps playing, while the cost of capping early is a truncated track.
+    let WAIT_DECODE = +(w.c.ra_decode_wait || 60000)
+    let waited0 = 0
     while (radio.c.era === era && radio.c.rec === rec) {
         let m = this.Radio_map(rec)
         let missing = 0
@@ -727,12 +732,47 @@ async Radio_supply_go(radio, era, rec):
         try { ra = await this.Ra_transcode_ensure(w, rec) } catch (er) { ra = null }
         if (radio.c.era !== era || radio.c.rec !== rec) return
         if (!ra) {
-            this.Radio_trace(radio, { ev: 'transcode-fail' })
+            // "NOT YET" IS NOT "NEVER" (2026-08-07) — the third instance of the pattern named in
+            //  Heist_todo §0, and the origin of the recurring "own tracks cut at 32s".
+            //  Ra_transcode_ensure returns null on its FIRST call for any track whose source PCM is not
+            //   already decoded: it kicks the whole-file decode off DETACHED and bows out, expecting a
+            //    later pump to find rec.c.pcm ready (read its comment in Ra.g).  This branch took that
+            //     null as a VERDICT — capped the track at its 32s preview and wrote the note "source
+            //      unreadable" about a source it had not finished reading.  It is deterministic, not
+            //       flaky: the first play of any track hits it.  It only ever LOOKED intermittent
+            //        because a track whose PCM happened to be warm from an earlier play sailed through.
+            //  MusuOgg's driver had the identical bug and the identical cure (Heistation.g, found
+            //   2026-08-05): keep asking, and let a REAL death be the thing that caps.  There are
+            //    exactly three real deaths, and each has its own tell — `pcm_dead` names the two silent
+            //     ones (no card / no nav, stamped by Ra_source_pcm), `pcm_why` carries a decode that
+            //      actually threw, and pcm-present-yet-still-null means Ra_encode_open refused.  Anything
+            //       else is the decode still running, and the honest answer is to wait for it.
+            //  The wait is bounded and cannot outlive the track: the enclosing loop is era|rec-gated, so
+            //   a skip or a dial exits it at once.  Capping at the bound still tells the truth — it says
+            //    "too slow", not "unreadable", because at that point slow is all we actually know.
+            let dead = null
+            if (rec.c.pcm_dead === 'nav') dead = 'source unreadable — share not open'
+            else if (rec.c.pcm_dead) dead = 'source unreadable — not in the collection'
+            else if (rec.c.pcm_why) dead = 'source will not decode'
+            else if (rec.c.pcm && !rec.c.pcm_pending) dead = 'encoder would not open'
+            if (!dead) {
+                if (!waited0) {
+                    waited0 = Date.now()
+                    this.Radio_trace(radio, { ev: 'transcode-wait', pass: passes })
+                }
+                if (Date.now() - waited0 < WAIT_DECODE) {
+                    await new Promise((r) => setTimeout(r, 150))
+                    passes = passes + 1
+                    continue
+                }
+            }
+            this.Radio_trace(radio, { ev: 'transcode-fail', why: dead || 'decode never finished' })
             radio.c.cap = P
-            radio.sc.note = 'preview only — source unreadable'
+            radio.sc.note = 'preview only — ' + (dead || 'source too slow to decode')
             radio.bump()
             return
         }
+        waited0 = 0
         this.Radio_trace(radio, { ev: 'transcode-advance', pass: passes })
         try { await this.Ra_transcode_advance(w, rec) } catch (er) {
             // a transcode-advance throw used to VANISH here → the loop re-ensures + re-advances (throws again),
@@ -2260,10 +2300,16 @@ async Radio_keep(n):
     keep.c.last_touch = Date.now()
     keep.sc.from_name = this.Radio_friendly(w, friend)
     if (rec.sc.artist) keep.sc.artist = this.Radio_clean(rec.sc.artist)
-    // seed the category from the GLOBAL remembered default (Heist_defaults_get) — whatever the last heist
-    //  was filed under is where this one starts too, until the human edits it.
-    let defaultGenre = this.Heist_defaults_get ? this.Heist_defaults_get().genre : null
-    if (defaultGenre) keep.sc.genre = defaultGenre
+    // THE REMEMBERED SETUP, and it is `lofi` ONLY now (the human 2026-08-07: "LOFI should stay ticked, as
+    //  a permanent how-to-Heist-things option. the section is not definite like that though").
+    //  The CATEGORY used to be seeded here from the same store.  It is not any more: a section belongs to
+    //   the music (each folder has its own, and the source already said which — Heist_keep_default_section
+    //    reads it straight off the path), while lofi belongs to the LISTENER — their phone, their disk —
+    //     and is the same answer every time until they say otherwise.  Seeding the category was actively
+    //      harmful: one typed word became the silent default for every unrelated folder after it, and it
+    //       outranked the source's own sections, which are per-folder and right by construction.
+    let dflt = this.Heist_defaults_get ? this.Heist_defaults_get() : {}
+    if (dflt && dflt.lofi) keep.sc.lofi = 1
     keep.bump()
     n.bump()
     // POP THE CELL NOW (the human 2026-07-29 "the heist UI cell isn't popping up anymore ... the tick still

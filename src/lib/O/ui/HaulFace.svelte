@@ -57,8 +57,10 @@
     //    segments, N+1 gaps, each gap its own tiny input that inserts a new segment at exactly that
     //     position. catGaps/dirsGaps hold each gap's in-progress typing, resized to segs.length+1 whenever
     //      the segment count changes.
-    let catEditing = $state(false)
-    let dirsEditing = $state(false)
+    // the rows are always open now, so there is no editing flag — but `dirsKnown` walks the collection and
+    //  this derive re-runs on every H.version bump, so the suggestion list stays gated on FOCUS rather than
+    //   being computed forever just because the row is visible.
+    let dirsFocus = $state(false)
     let catGaps = $state<string[]>([''])
     let dirsGaps = $state<string[]>([''])
     let catFirstInput: HTMLInputElement | undefined = $state()
@@ -71,6 +73,22 @@
     //  regardless of what the live derive does underneath it.
     let dirsSegsFrozen = $state<string[]>([])
     let dirsAutoFrozen = $state('')
+    // ALWAYS-OPEN EDITING (the human 2026-08-07: "if we click on directories|sections we probably want to
+    //  create one. actually perhaps they're already open|editable-mode. we don't need the ticks then!").
+    //   Both breadcrumbs now stand in chip form permanently, so there is no open gesture and no ✓ to
+    //    forget — every gap is a live input and every chip is directly editable.  The freeze that openDirs
+    //     used to do on click still has to happen (dirsAuto moves while husks materialise — see above), so
+    //      it is done by the effect below instead: re-seed from the live derive until the human touches a
+    //       box, then never again.  `dirsTouched` is the whole difference between "following the source"
+    //        and "this is mine now"; without it a keystroke would be overwritten by the next husk to land.
+    let dirsTouched = $state(false)
+    $effect(() => {
+        const segs = face.dirsSegs
+        const auto = face.dirsAuto
+        if (dirsTouched) return
+        dirsSegsFrozen = segs.map(deshell)
+        dirsAutoFrozen = auto
+    })
 
     // sanitise a category into a filesystem-safe folder segment — still needed for the FOLDED progress
     //  strip's "→ dest" line (untouched by this pass; only the PRIMED preview line was the noise).
@@ -144,7 +162,7 @@
         const dirsRaw = (sc.dirs != null && sc.dirs !== '') ? String(sc.dirs) : dirsAuto
         const dirsSegs = dirsRaw.split('/').filter(Boolean)
         const artist = String(sc.artist || '')
-        const dirsKnown = (dirsEditing && own && A?.Heist_known_dirs) ? A.Heist_known_dirs(own, artist) : []
+        const dirsKnown = (dirsFocus && own && A?.Heist_known_dirs) ? A.Heist_known_dirs(own, artist) : []
 
         // ── the track tree — grouped by whatever's LEFT after the directories prefix, so a group never
         //     repeats what the breadcrumb above it already said ──────────────────────────────────────────
@@ -178,8 +196,19 @@
             tracks: groups[rem].sort((a: any, b: any) => a.file.localeCompare(b.file)),
         }))
 
+        // THE TRACK UNDER THE NEEDLE, for the running strip (the human 2026-08-07: "put the most recent
+        //  track downloading at the end").  Heist_land walks picks IN ORDER with at most `heist_inflight`
+        //   live, so the first un-landed pick IS the one moving; once they're all landed the last one is
+        //    what just finished.  Titles come from the husks by ref — if the mirror has been swept the map
+        //     is empty and this is simply blank, which is better than inventing a name.
+        const titleByRef = new Map(husks.map((h: any) => [String(h.sc.id), String(h.sc.title || fileOf(cpOf(h), String(h.sc.id)))]))
+        const ordered = picks.map((p: any) => ({ ref: String(p.sc.ref ?? p.sc.id), landed: !!p.sc.landed }))
+        const moving = ordered.find((p: any) => !p.landed) || [...ordered].reverse().find((p: any) => p.landed)
+        const nowTrack = moving ? (titleByRef.get(moving.ref) || '') : ''
+
         const genre = catRaw
         return {
+            nowTrack, nowDone: !!(moving && moving.landed),
             state,
             title: String(sc.Haul || 'this track'),
             artist: String(sc.artist || ''),
@@ -188,7 +217,8 @@
             //  an unpinned artist prepends NOTHING and the source's own folders land at the collection root.
             dest: String(genre || '').split('/').map((p: string) => String(p || '').trim().replace(/[\/\x00]/g, '-').replace(/^-(?= )/, '0')).filter(Boolean).join('/'),
             asks: +(sc.asks || 0),
-            lofi: !!sc.lofi,
+            // the wish wins until the model catches up, then it retires itself (see toggleLofi)
+            lofi: (lofiWish !== null && lofiWish !== !!sc.lofi) ? lofiWish : !!sc.lofi,
             catRaw, catSegs,
             dirsRaw, dirsSegs, dirsKnown, dirsAuto,
             flat, tree,
@@ -221,21 +251,10 @@
         if (dirsGaps.length !== want) dirsGaps = Array.from({ length: want }, (_, i) => dirsGaps[i] ?? '')
     })
 
-    async function openCat() {
-        catEditing = true
-        // nothing set yet — put the cursor straight in the field instead of making them click twice
-        //  (the human 2026-07-30: "an input field selected immediately when there's nothing yet").
-        if (!face.catSegs.length) {
-            await afterRender()
-            catFirstInput?.focus()
-        }
-    }
-    function openDirs() {
-        // the draft opens in the shell-safe form, so what you see in the boxes is what will be written
-        dirsSegsFrozen = face.dirsSegs.map(deshell)
-        dirsAutoFrozen = face.dirsAuto
-        dirsEditing = true
-    }
+    // openCat/openDirs are GONE (2026-08-07): the rows never close, so there is nothing to open.  The
+    //  auto-focus openCat did on an empty category is covered by the gap's own placeholder prompt, and the
+    //   freeze openDirs did is now the $effect above — it has to re-seed as husks land, which a one-shot
+    //    click handler could never do.
     function catInsertAt(i: number) {
         const v = (catGaps[i] || '').trim()
         if (!v) return
@@ -255,12 +274,14 @@
         const segs = dirsSegsFrozen.slice()
         segs.splice(i, 0, v)
         dirsGaps[i] = ''
+        dirsTouched = true
         dirsSegsFrozen = segs
         A?.post_do?.(() => { A?.Heist_keep_set_dirs?.(n, segs.join('/'), dirsAutoFrozen) }, { see: 'keep directories insert' })
     }
     function dirsRemoveAt(i: number) {
         const segs = dirsSegsFrozen.slice()
         segs.splice(i, 1)
+        dirsTouched = true
         dirsSegsFrozen = segs
         A?.post_do?.(() => { A?.Heist_keep_set_dirs?.(n, segs.join('/'), dirsAutoFrozen) }, { see: 'keep directories remove' })
     }
@@ -285,7 +306,6 @@
     function commitCat() {
         const segs = foldGaps(face.catSegs, catGaps)
         catGaps = ['']
-        catEditing = false
         A?.post_do?.(() => { A?.Heist_keep_set_genre?.(n, segs.join('/')) }, { see: 'keep category commit' })
     }
     function commitDirs() {
@@ -293,10 +313,13 @@
         //  shell-safe form (see deshell above).
         const segs = foldGaps(dirsSegsFrozen, dirsGaps).map(deshell)
         dirsGaps = ['']
+        dirsTouched = true
         dirsSegsFrozen = segs
-        dirsEditing = false
         A?.post_do?.(() => { A?.Heist_keep_set_dirs?.(n, segs.join('/'), dirsAutoFrozen) }, { see: 'keep directories commit' })
     }
+    // the rows never close now, so a commit is whatever ENDS an edit: ENTER in a box, or leaving it.  Blur
+    //  matters more than it used to — with no ✓ to press, tabbing away IS the gesture, and dropping what
+    //   was typed there would be the same silent loss the ✓ fix cured on 2026-08-05.
 
     function toggle(ref: string) {
         A?.post_do?.(() => { A?.Heist_keep_pick_toggle?.(n, ref) }, { see: 'keep pick' })
@@ -308,6 +331,20 @@
     //  blocks the belief loop while it sits open, and this button lives on a cell that is actively pulling.
     //   The armed state is deliberately per-cell local — it must never survive a re-render into a click.
     let scrubArmed = $state(false)
+    // ✕ ARMS TOO (the human 2026-08-07: "then the X (with a cancelation confirm thing)").  Same two-press
+    //  shape as 🗑 and for the same reason — never window.confirm, which blocks the belief loop while it
+    //   sits open.  Dropping a keep you spent a minute filing is not recoverable, so it gets the same
+    //    deliberate second press that deleting files does.
+    //  THE ARM LIVES IN DeleteX NOW, and holding a second one here made it a THREE-press button: DeleteX
+    //   is itself a two-press affordance (press 1 swells it to "delete?", press 2 fires `ondelete`), so
+    //    an outer `cancelArmed` that only *armed* on ondelete added a third press behind a differently-
+    //     worded button that appeared where the ✕ had been.  Two presses was the ask; one arm delivers it.
+    // the track list, folded behind the count chip.  The header carries `Haul:n` now, so the old
+    //  `<details> ×8 tracks` summary said the number twice and hid the one track you actually recognise.
+    let tracksOpen = $state(false)
+    // the lofi explainer — an inline popover, not a title= tooltip: a tooltip cannot be read on a phone,
+    //  which is the exact device lofi exists for.
+    let lofiWhy = $state(false)
     function scrub() {
         scrubArmed = false
         A?.post_do?.(() => { A?.Heist_keep_scrub?.(A?.top_House?.()?.c?.radio_w, n) }, { see: 'keep scrub' })
@@ -317,15 +354,39 @@
     // lofi — the phone answer.  Framed as what it does to the TRANSFER, not as a codec setting: the friend
     //  transcodes and sends the small thing, which is the only reason to want it.  Settable while primed and
     //   read by the want-ask at ▶ start, so it must sit here beside the other pre-start tweaks.
-    function toggleLofi() { A?.post_do?.(() => { A?.Heist_keep_set_lofi?.(n, !n?.sc?.lofi) }, { see: 'keep lofi' }) }
+    // OPTIMISTIC, AND ABSOLUTE (the human 2026-08-07: "clicking the LOFI tickbox can have no apparent
+    //  effect (not toggle it), then later the events catch up and it becomes unticked (clicked twice) when
+    //   we're hitting start. that's how it must have happened").  Two bugs in one line, both from deferral:
+    //    · NO FEEDBACK — post_do runs on the next belief pass, so the box sat unmoved and invited a second
+    //       click.  `wish` is the local truth until the model agrees, so the tick is instant.
+    //    · A TOGGLE READ LATE — `!n.sc.lofi` was evaluated when the deferred call RAN, not when you clicked,
+    //       so two queued clicks both read the same pre-state and the pair landed as one flip, or worse,
+    //        raced the ▶ start that followed.  Send the ABSOLUTE value instead: N clicks settle on the Nth
+    //         wish, whatever order the passes come in.
+    let lofiWish = $state<boolean | null>(null)
+    function toggleLofi() {
+        const want = !(lofiWish ?? !!n?.sc?.lofi)
+        lofiWish = want
+        A?.post_do?.(() => { A?.Heist_keep_set_lofi?.(n, want) }, { see: 'keep lofi' })
+    }
     function focus() { A?.post_do?.(() => { A?.Heist_keep_touch?.(n) }, { see: 'keep focus' }) }
 </script>
 
 <div class="kf" class:folded={face.folded || face.unfocused}>
+    <!-- THE HEAD IS THE PARTICLE (the human 2026-08-07: "better than opening the x8 tracks thing is to
+         heading it as a Heist:$n (or whatever key we use there)").  The key is `Haul` — this cell IS one
+         %Haul — so the head reads `Haul:8` and the count stops being a thing you open a disclosure to
+         learn.  The TRACK NAME moves down below the filing rows, where it sits beside "+n tracks": you
+         choose where it lands first, then confirm what it is. -->
     <div class="kf-head">
         <span class="kf-badge">{face.state === 'done' ? '✓' : '⇊'}</span>
-        <span class="kf-title" title={face.title}>{face.title}</span>
-        {#if face.artist}<span class="kf-artist">{face.artist}</span>{/if}
+        {#if face.folded || face.unfocused}
+            <!-- once it's running the name is what you're looking for, not the shape of the particle -->
+            <span class="kf-title" title={face.title}>{face.title}</span>
+            {#if face.artist}<span class="kf-artist">{face.artist}</span>{/if}
+        {:else}
+            <span class="kf-mk">Haul{#if face.nTracks}<span class="kf-mkv">:{face.nTracks}</span>{/if}</span>
+        {/if}
         <span class="kf-from">from {face.from}</span>
     </div>
 
@@ -337,11 +398,24 @@
         </button>
     {:else if face.folded}
         <!-- FOLDED: it started — a compact progress strip, no browsing -->
+        <!-- THE RUNNING STRIP (the human 2026-08-07: "can we redo the Heisting look... make the 5/13 bigger,
+             and include all the DIRECTORIES as well, but in different colours, and put the most recent track
+             downloading at the end. fun.").  It used to flatten the destination into one grey `dest` string,
+             which threw away the very distinction the primed view spends two rows teaching: SECTION is mine,
+             DIRECTORIES are theirs.  Same two colours here as up there (mint / lilac), so the place you filed
+             it to is legible at a glance while it runs — and the count leads, big, because that is the number
+             you actually came back to look at. -->
         <div class="kf-prog">
-            {#if face.state === 'done'}
-                ✓ kept {face.landed_n} → {face.dest ? face.dest + '/' : 'your collection'}
-            {:else}
-                downloading {face.landed_n}/{face.total_n || '?'} tracks → {face.dest ? face.dest + '/' : 'your collection'}
+            <span class="kf-count" class:done={face.state === 'done'}>
+                {face.landed_n}<span class="kf-count-of">/{face.total_n || '?'}</span>
+            </span>
+            <span class="kf-dest-bits">
+                {#each face.catSegs as seg}<span class="seg cat">{seg}</span><span class="sl">/</span>{/each}
+                {#each face.dirsSegs as seg}<span class="seg dirs">{deshell(seg)}</span><span class="sl">/</span>{/each}
+                {#if !face.catSegs.length && !face.dirsSegs.length}<span class="kf-dim">your collection</span>{/if}
+            </span>
+            {#if face.nowTrack}
+                <span class="kf-nowtrack" class:done={face.nowDone}>{face.nowTrack}</span>
             {/if}
         </div>
         {#if face.state !== 'done'}
@@ -380,102 +454,108 @@
         <!-- SECTION — mine, optional, nestable. click the breadcrumb to edit; editing = one chip per
              segment (its own × to remove) with a small "+" gap before/between/after every chip, each gap
              its own tiny input that inserts a new segment right there. -->
-        {#if catEditing}
-            <div class="kf-chips">
-                {#each face.catSegs as seg, i}
-                    <input class="kf-gap" placeholder="+" value={catGaps[i]}
-                        oninput={(e) => { catGaps[i] = (e.currentTarget as HTMLInputElement).value }}
-                        onkeydown={(e) => { if (e.key === 'Enter') catInsertAt(i) }} />
-                    <span class="kf-chip cat">{seg}<DeleteX ondelete={() => catRemoveAt(i)} title="remove this category level" /></span>
-                {/each}
-                <input class="kf-gap" placeholder="+" value={catGaps[face.catSegs.length]}
-                    bind:this={catFirstInput}
-                    oninput={(e) => { catGaps[face.catSegs.length] = (e.currentTarget as HTMLInputElement).value }}
-                    onkeydown={(e) => { if (e.key === 'Enter') catInsertAt(face.catSegs.length) }} />
-                <button class="kf-chips-done" onclick={commitCat} title="done — enters whatever's in the boxes">✓</button>
-            </div>
-        {:else}
-            <button class="kf-stair" onclick={openCat} title="click to edit">
-                <span class="kf-stair-lbl">section</span>
-                <span class="kf-stair-path">
-                    {#each face.catSegs as seg, i}
-                        <span class="bit">{#if i === 0}<span class="sl">/</span>{/if}<span class="seg cat">{seg}</span><span class="sl">/</span></span>
-                    {/each}
-                    {#if !face.catSegs.length}<span class="kf-stair-empty">none</span>{/if}
-                </span>
-            </button>
-        {/if}
+        <!-- THE LABEL RIDES IN THE FLOW (the human 2026-08-07: "the section|directories headings should be
+             inline with them all, that way we can get that first ' + ' button with something else").  It was
+             a fixed 60px column, which cost a whole column of width on a narrow cell AND forced a leading
+             gap-input nobody wanted.  Inline, the label is simply the first thing in the run, and the
+             hanging indent (.kf-row) keeps wrapped lines clear of it. -->
+        <div class="kf-row">
+            <span class="kf-stair-lbl">section</span>
+            <!-- THE LEADING GAP IS LOAD-BEARING (the human 2026-08-07: "the leading ' + ' button is gone!
+                 it should be there, to unshift a toplevel classification").  Going inline, I read "we can
+                 get that first ' + ' button with something else" as "drop it" — it meant the LABEL takes
+                 that spot in the reading order, not that the control goes away.  Without it there is no
+                 gesture at all for prepending a level above everything: every other gap inserts AFTER a
+                 chip, so the top of the hierarchy was the one position you could not reach. -->
+            {#if face.catSegs.length}
+                <input class="kf-gap" placeholder="+" value={catGaps[0]} title="add a section above these"
+                    oninput={(e) => { catGaps[0] = (e.currentTarget as HTMLInputElement).value }}
+                    onblur={commitCat}
+                    onkeydown={(e) => { if (e.key === 'Enter') catInsertAt(0) }} />
+            {/if}
+            {#each face.catSegs as seg, i}
+                <span class="kf-chip cat">{seg}<DeleteX ondelete={() => catRemoveAt(i)} title="remove this section level" /></span>
+                <input class="kf-gap" placeholder="+" value={catGaps[i + 1]}
+                    oninput={(e) => { catGaps[i + 1] = (e.currentTarget as HTMLInputElement).value }}
+                    onblur={commitCat}
+                    onkeydown={(e) => { if (e.key === 'Enter') catInsertAt(i + 1) }} />
+            {/each}
+            {#if !face.catSegs.length}
+                <input class="kf-gap wide" placeholder="name a section…"
+                    value={catGaps[0]} bind:this={catFirstInput}
+                    oninput={(e) => { catGaps[0] = (e.currentTarget as HTMLInputElement).value }}
+                    onblur={commitCat}
+                    onkeydown={(e) => { if (e.key === 'Enter') catInsertAt(0) }} />
+            {/if}
+        </div>
 
         <!-- DIRECTORIES — theirs: the shared source prefix, same chip+gap editing, different accent, never
              a box around the track list (that's what "spilled out" below is for). -->
-        {#if dirsEditing}
-            <div class="kf-chips">
-                {#each dirsSegsFrozen as seg, i}
-                    <input class="kf-gap dirs" placeholder="+" list="kf-dirs-known" value={dirsGaps[i]}
-                        oninput={(e) => { dirsGaps[i] = (e.currentTarget as HTMLInputElement).value }}
-                        onkeydown={(e) => { if (e.key === 'Enter') dirsInsertAt(i) }} />
-                    <!-- the chunk itself is EDITABLE (the human 2026-08-05) — a directory level is usually
-                         nearly right, so retyping it whole through remove+insert was the wrong gesture.  It
-                         edits the frozen draft; ENTER or ✓ commits the row. -->
-                    <span class="kf-chip dirs">
-                        <input class="kf-chipin" bind:value={dirsSegsFrozen[i]} size={Math.max(2, seg.length)}
-                            title="edit this directory level"
-                            onkeydown={(e) => { if (e.key === 'Enter') commitDirs() }} />
-                        <DeleteX ondelete={() => dirsRemoveAt(i)} title="remove this directory level" />
-                    </span>
-                {/each}
-                <input class="kf-gap dirs" placeholder="+" list="kf-dirs-known" value={dirsGaps[dirsSegsFrozen.length]}
-                    oninput={(e) => { dirsGaps[dirsSegsFrozen.length] = (e.currentTarget as HTMLInputElement).value }}
-                    onkeydown={(e) => { if (e.key === 'Enter') dirsInsertAt(dirsSegsFrozen.length) }} />
-                <button class="kf-chips-done" onclick={commitDirs} title="done — enters whatever's in the boxes">✓</button>
-            </div>
-            <datalist id="kf-dirs-known">
-                {#each face.dirsKnown as d}<option value={d}></option>{/each}
-            </datalist>
-        {:else}
-            <button class="kf-stair" onclick={openDirs} title="click to edit">
-                <span class="kf-stair-lbl">directories</span>
-                <span class="kf-stair-path">
-                    {#if face.dirsSegs.length}
-                        {#each face.dirsSegs as seg, i}
-                            <span class="bit dirs">{#if i === 0}<span class="sl">/</span>{/if}<span class="seg dirs">{deshell(seg)}</span><span class="sl">/</span></span>
-                        {/each}
-                    {:else}
-                        <span class="kf-stair-empty">…</span>
-                    {/if}
+        <div class="kf-row">
+            <span class="kf-stair-lbl">directories</span>
+            {#if dirsSegsFrozen.length}
+                <input class="kf-gap dirs" placeholder="+" list="kf-dirs-known" value={dirsGaps[0]}
+                    title="add a directory above these"
+                    onfocus={() => (dirsFocus = true)}
+                    oninput={(e) => { dirsGaps[0] = (e.currentTarget as HTMLInputElement).value }}
+                    onblur={commitDirs}
+                    onkeydown={(e) => { if (e.key === 'Enter') dirsInsertAt(0) }} />
+            {/if}
+            {#each dirsSegsFrozen as seg, i}
+                <!-- the chunk itself is EDITABLE (the human 2026-08-05) — a directory level is usually
+                     nearly right, so retyping it whole through remove+insert was the wrong gesture.  It
+                     edits the frozen draft; ENTER or leaving the box commits the row. -->
+                <span class="kf-chip dirs">
+                    <input class="kf-chipin" bind:value={dirsSegsFrozen[i]} size={Math.max(2, seg.length)}
+                        title="edit this directory level"
+                        onfocus={() => (dirsFocus = true)}
+                        oninput={() => (dirsTouched = true)}
+                        onblur={commitDirs}
+                        onkeydown={(e) => { if (e.key === 'Enter') commitDirs() }} />
+                    <DeleteX ondelete={() => dirsRemoveAt(i)} title="remove this directory level" />
                 </span>
-            </button>
-        {/if}
+                <input class="kf-gap dirs" placeholder="+" list="kf-dirs-known" value={dirsGaps[i + 1]}
+                    onfocus={() => (dirsFocus = true)}
+                    oninput={(e) => { dirsGaps[i + 1] = (e.currentTarget as HTMLInputElement).value }}
+                    onblur={commitDirs}
+                    onkeydown={(e) => { if (e.key === 'Enter') dirsInsertAt(i + 1) }} />
+            {/each}
+            {#if !dirsSegsFrozen.length}
+                <input class="kf-gap dirs wide" placeholder="no folders — add one?"
+                    list="kf-dirs-known" value={dirsGaps[0]}
+                    onfocus={() => (dirsFocus = true)}
+                    oninput={(e) => { dirsGaps[0] = (e.currentTarget as HTMLInputElement).value }}
+                    onblur={commitDirs}
+                    onkeydown={(e) => { if (e.key === 'Enter') dirsInsertAt(0) }} />
+            {/if}
+        </div>
+        <datalist id="kf-dirs-known">
+            {#each face.dirsKnown as d}<option value={d}></option>{/each}
+        </datalist>
 
-        <button class="kf-lofi" class:on={face.lofi} onclick={toggleLofi}
-                title="ask your friend to send a small .ogg instead of the original file">
-            <span class="kf-lofi-box">{face.lofi ? '☑' : '☐'}</span>
-            <span class="kf-lofi-lbl">lofi</span>
-            <span class="kf-lofi-why">{face.lofi ? 'they transcode → a small .ogg crosses, much faster' : 'the original files, exactly as they are'}</span>
-        </button>
+        <!-- WHAT IT IS, after WHERE IT GOES.  One line: the track you recognise, and the count of everything
+             riding with it.  "+n tracks" is a button because the picking UI still has to live somewhere —
+             it just no longer greets you with a disclosure triangle you must open to see a track name. -->
+        <div class="kf-what">
+            <span class="kf-wtitle" title={face.title}>{face.title}</span>
+            {#if face.artist}<span class="kf-wartist">{face.artist}</span>{/if}
+            {#if face.nTracks > 1}
+                <button class="kf-more" class:on={tracksOpen} onclick={() => (tracksOpen = !tracksOpen)}
+                        title={tracksOpen ? 'hide the other tracks' : 'choose which tracks to keep'}>
+                    +{face.nTracks - 1} track{face.nTracks - 1 === 1 ? '' : 's'}
+                </button>
+            {/if}
+        </div>
 
-        {#if face.nTracks}
+        {#if face.nTracks && tracksOpen}
             <div class="kf-tree">
-                {#if face.flat.length > 5}
-                    <details class="kf-group">
-                        <summary class="kf-dir"><span class="kf-car">▸</span> ×{face.flat.length} tracks</summary>
-                        {#each face.flat as t}
-                            <button class="kf-track" class:kept={t.kept} class:seed={t.seed} onclick={() => toggle(t.ref)}
-                                title={t.seed ? 'the track you\'re hearing' : (t.kept ? 'keeping — click to skip' : 'skipped — click to keep')}>
-                                <span class="kf-tick">{t.kept ? '✓' : '·'}</span>
-                                <span class="kf-tname">{t.title}{#if t.seed} ♪{/if}</span>
-                            </button>
-                        {/each}
-                    </details>
-                {:else if face.flat.length}
-                    {#each face.flat as t}
-                        <button class="kf-track" class:kept={t.kept} class:seed={t.seed} onclick={() => toggle(t.ref)}
-                            title={t.seed ? 'the track you\'re hearing' : (t.kept ? 'keeping — click to skip' : 'skipped — click to keep')}>
-                            <span class="kf-tick">{t.kept ? '✓' : '·'}</span>
-                            <span class="kf-tname">{t.title}{#if t.seed} ♪{/if}</span>
-                        </button>
-                    {/each}
-                {/if}
+                {#each face.flat as t}
+                    <button class="kf-track" class:kept={t.kept} class:seed={t.seed} onclick={() => toggle(t.ref)}
+                        title={t.seed ? 'the track you\'re hearing' : (t.kept ? 'keeping — click to skip' : 'skipped — click to keep')}>
+                        <span class="kf-tick">{t.kept ? '✓' : '·'}</span>
+                        <span class="kf-tname">{t.title}{#if t.seed} ♪{/if}</span>
+                    </button>
+                {/each}
                 {#each face.tree as grp}
                     {#if grp.tracks.length > 5}
                         <details class="kf-group">
@@ -500,21 +580,38 @@
                     {/if}
                 {/each}
             </div>
-        {:else}
-            <!-- SKELETON: the shell already stands (head · section · directories above); this is the guts
-                 still arriving. -->
-            <div class="kf-skel" aria-busy="true">
-                <div class="kf-note">
-                    {#if face.asks > 1}looking through the album… ({face.asks}){:else}finding the folder…{/if}
-                </div>
-                <div class="kf-shim"></div>
-                <div class="kf-shim"></div>
-                <div class="kf-shim short"></div>
+        {/if}
+        <!-- NO SKELETON (the human 2026-08-07: "is what is pointlessly hanging around in the Haul").  Three
+             shimmer bars and "finding the folder…" promised guts that are still coming — but the folder
+             answer is a single round trip that either lands or never does (measured 2026-08-07: zero
+             %Rummage asks in the world while it sat there "finding" forever), so the animation was a
+             progress indicator for something that was not in progress.  The head already says `Haul:n`,
+             which reads honestly as "no tracks known yet" when n is absent. -->
+        {#if lofiWhy}
+            <!-- the explainer the "?" opens.  Inline, not a title= tooltip: lofi exists FOR the phone, and a
+                 phone has no hover — an explanation you can only reach with a mouse is no explanation. -->
+            <div class="kf-why">
+                <strong>lofi</strong> asks your friend to re-encode each track as a small <strong>.ogg</strong>
+                (Opus, 128kbps) and send that instead of the original file. A typical album drops from a few
+                hundred MB to a few tens — much faster over the wire, and much kinder to a phone that hasn't
+                the room for lossless. The original stays on <em>their</em> disk untouched; you just receive
+                the smaller rendition. Leave it off when you want the exact files, bit for bit.
+                <button class="kf-why-x" onclick={() => (lofiWhy = false)} title="close">✕</button>
             </div>
         {/if}
         <div class="kf-foot">
             <button class="kf-start" onclick={start} title="start downloading these tracks into your collection">▶ start</button>
-            <span class="kf-dim">nothing downloads until you start</span>
+            <!-- lofi and its "?" are ONE unit (the human 2026-08-07: "the '?' should be closer to the
+                 LOFI") — the gap that separates groups in this footer must not fall between a control and
+                 its own explainer. -->
+            <span class="kf-lofi-grp">
+                <button class="kf-lofi" class:on={face.lofi} onclick={toggleLofi}
+                        title="ask your friend to send a small .ogg instead of the original file">
+                    <span class="kf-lofi-box">{face.lofi ? '☑' : '☐'}</span>
+                    <span class="kf-lofi-lbl">lofi</span>
+                </button>
+                <button class="kf-q" onclick={() => (lofiWhy = !lofiWhy)} title="what does lofi do?">?</button>
+            </span>
             <span class="kf-exits">
                 {#if face.landed_n}
                     {#if scrubArmed}
@@ -526,7 +623,12 @@
                             title="drop this AND delete what it already downloaded">🗑 undo</button>
                     {/if}
                 {/if}
-                <button class="kf-x" onclick={cancel} title="don't keep — drop this">✕</button>
+                <!-- the standard delete affordance (the human 2026-08-07: "the 'x' button should use the
+                     standard UI for doing that, like the path bits do") — micro/DeleteX, the same component
+                     every chip's × already is, so dropping a heist looks like dropping anything else.  The
+                     ARM stays (it is DeleteX's own two-press), and `big` gives this one the red orb: a
+                     chip is one typed word, a heist is a minute of filing, so its exit is findable. -->
+                <DeleteX big ondelete={cancel} title="don't keep — drop this heist" />
             </span>
         </div>
     {/if}
@@ -559,39 +661,10 @@
     .kf-queued:hover { color: #e0cfd8; opacity: 1; text-decoration: underline; text-decoration-color: #55414f; }
     .kf-dim { font-size: 9px; opacity: 0.55; }
 
-    /* section / directories — a calm, non-enclosing breadcrumb; slashes stay neutral so the eye reads
-       structure, segment names carry the colour.  A plain button, no border/background at rest — this must
-       NOT read as a box that could also hold the track list (that's the duplication the human flagged). */
-    .kf-stair {
-        pointer-events: auto;
-        cursor: pointer;
-        display: flex;
-        align-items: baseline;
-        flex-wrap: wrap;
-        gap: 2px 5px;
-        width: 100%;
-        background: transparent;
-        border: none;
-        padding: 3px 0 0;
-        text-align: left;
-        font: inherit;
-        color: inherit;
-    }
-    .kf-stair:hover .kf-stair-path .bit { text-decoration: underline; text-decoration-color: #66495a; }
+    /* the row LABEL is all that survives of the old read-only breadcrumb (.kf-stair* went with the
+       always-open rework — the chips ARE the display now, so a separate rendering of the same path was
+       two things to keep in agreement and one of them was always a click behind). */
     .kf-stair-lbl { font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.45; flex: none; }
-    /* wrap between path bits, never inside one — min-width:0 is the flexbox fix that lets this shrink
-       and wrap instead of overflowing its row (a flex item won't shrink below content size otherwise). */
-    .kf-stair-path { font-size: 10.5px; flex: 1 1 auto; min-width: 0; white-space: normal; }
-    .kf-stair-path .bit { display: inline-block; white-space: nowrap; }
-    /* DIRECTORIES break INSIDE a chunk (the human 2026-08-05: "word-breaky chunks").  Theirs are source
-       folder names — '2009 Resonating Earth (2009) [WEB, Album, NL, …]' — routinely wider than the whole
-       cell, so nowrap made one segment decide the cell's width.  Section names are the human's own short
-       words and keep the tidy never-break-a-name rule. */
-    .kf-stair-path .bit.dirs { white-space: normal; overflow-wrap: anywhere; }
-    .kf-stair-path .sl { color: #6b5a68; }
-    .kf-stair-path .seg.cat { color: #7fe8bf; }
-    .kf-stair-path .seg.dirs { color: #c9a5e8; }
-    .kf-stair-empty { color: #6b5a68; font-style: italic; }
 
     /* lofi — sits with the two breadcrumb rows because it is the same kind of thing: a pre-start decision
        about what lands.  Reads as one line off by default, so it never competes with section|directories. */
@@ -614,12 +687,13 @@
     .kf-lofi-box { font-size: 11px; color: #7fe8bf; flex: none; }
     .kf-lofi-lbl { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; flex: none; }
     .kf-lofi.on .kf-lofi-lbl { color: #7fe8bf; }
-    .kf-lofi-why { font-size: 9px; opacity: 0.6; flex: 1 1 auto; min-width: 0; white-space: normal; }
 
     /* chip + gap editing — small, inline, no restated summary alongside it (the rest-view breadcrumb
        above is hidden while this shows).  Gaps are DELIBERATELY tiny (a "+" you grow by typing into),
        not full-width boxes — the segments themselves carry the visual weight, not the empty slots. */
-    .kf-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; margin-top: 3px; pointer-events: auto; }
+    /* .kf-chips (the flex wrapper) is gone with the rows going inline — see .kf-row's hanging indent for
+       why flex had to go.  Its pointer-events:auto moved onto the chips and gaps themselves. */
+    .kf-chip, .kf-gap { pointer-events: auto; }
     .kf-gap {
         width: 16px;
         background: transparent;
@@ -651,10 +725,7 @@
     }
     .kf-chipin:hover { border-bottom-color: #52456a; }
     .kf-chipin:focus { outline: none; border-bottom-color: #c9a5e8; }
-    .kf-chips-done {
-        cursor: pointer; background: none; border: none; color: #57c777;
-        font-size: 11px; padding: 0 2px; line-height: 1;
-    }
+    /* .kf-chips-done went with the ✓ button — "we don't need the ticks then!" */
 
     .kf-tree { margin-top: 6px; display: flex; flex-direction: column; gap: 1px; }
     .kf-group { border-radius: 5px; }
@@ -684,17 +755,8 @@
     .kf-track.seed .kf-tname { color: #7fe8bf; }
     .kf-tick { width: 8px; color: #7fe8bf; }
     .kf-tname { max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .kf-note { font-size: 9px; opacity: 0.6; font-style: italic; margin-top: 3px; }
-    .kf-skel { margin-top: 3px; }
-    .kf-shim {
-        height: 8px; margin: 4px 0 0 10px; max-width: 180px;
-        border-radius: 4px;
-        background: linear-gradient(90deg, #2c1d27 0%, #3a2733 50%, #2c1d27 100%);
-        animation: kf-shim 1.4s ease-in-out infinite;
-    }
-    .kf-shim.short { max-width: 110px; }
-    .kf-shim:nth-child(3) { animation-delay: 0.2s; }
-    .kf-shim:nth-child(4) { animation-delay: 0.4s; }
+    /* .kf-skel / .kf-shim / .kf-note went with the skeleton — a shimmer is a promise that something is
+       coming, and this one was made on behalf of a round trip that had never been sent. */
     @keyframes kf-shim {
         0%, 100% { opacity: 0.35; }
         50%      { opacity: 0.8; }
@@ -729,4 +791,80 @@
     }
     .kf-scrub:hover { border-color: #d94f7a; color: #ffd7e2; }
     .kf-scrub.armed { background: #d94f7a; border-color: #d94f7a; color: #1a0810; font-weight: 600; }
+
+    /* ── the always-open filing rows (2026-08-07) ─────────────────────────────────────────────────── */
+    /* label and chips on ONE line, the label a fixed narrow column so section and directories align
+       vertically — they are a pair and read as a stack of two decisions, not two unrelated widgets. */
+    /* HANGING INDENT, and it is why these are BLOCKS rather than flex rows (the human 2026-08-07: "do that
+       thing so the non-first line (the wrapped lines) are indented, it's a css property... but each
+       section|directories|tracks is a block").  `text-indent: -N` pulls the FIRST line back to the margin
+       while `padding-left: N` holds every wrapped line in — so the label starts flush and the chips that
+       wrap below it line up in their own column.  Flex cannot do this at all: flex items don't participate
+       in inline layout, so there are no "wrapped lines" for an indent to act on.  Hence inline-block chips
+       in normal flow, and `text-indent: 0` on the children so none of them inherits the negative pull. */
+    .kf-row, .kf-what {
+        display: block; margin-top: 5px;
+        padding-left: 16px; text-indent: -16px;
+        line-height: 1.9;
+    }
+    .kf-row > *, .kf-what > * { text-indent: 0; }
+    .kf-row .kf-stair-lbl { margin-right: 5px; vertical-align: middle; }
+    .kf-row .kf-chip, .kf-row .kf-gap { vertical-align: middle; }
+    /* an empty row has no chips to hint what it's for, so its lone gap grows and carries the prompt */
+    .kf-gap.wide { width: auto; min-width: 108px; font-style: italic; }
+
+    /* the mainkey head — same vocabulary as TreeFace (mainkey bright, its value dimmer beside it) */
+    .kf-mk { color: #ffd869; font-weight: 700; font-size: 11px; letter-spacing: 0.02em; }
+    .kf-mkv { color: #d8b45a; font-weight: 400; }
+
+    /* WHAT IT IS — the track you recognise, under the two WHERE-IT-GOES rows (block + hanging indent above) */
+    .kf-what { margin-top: 7px; }
+    .kf-what > * { margin-right: 6px; }
+    .kf-wtitle { font-size: 12px; color: #f3e8ef; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+    .kf-wartist { font-size: 10px; color: #b89ab0; }
+    .kf-more {
+        pointer-events: auto;
+        background: rgba(201, 165, 232, 0.13); border: 1px solid rgba(201, 165, 232, 0.28);
+        border-radius: 999px; padding: 1px 7px; cursor: pointer;
+        color: #c9a5e8; font-size: 9.5px; font-family: inherit;
+    }
+    .kf-more:hover, .kf-more.on { background: rgba(201, 165, 232, 0.24); color: #e8d7f6; }
+
+    /* the lofi explainer — a real panel, because a phone cannot hover a tooltip */
+    /* lofi + "?" as one unit, so the footer's justify gap falls BETWEEN groups, never inside this one */
+    .kf-lofi-grp { display: inline-flex; align-items: center; gap: 3px; }
+    .kf-q {
+        pointer-events: auto;
+        background: none; border: 1px solid #66495a; border-radius: 999px;
+        width: 15px; height: 15px; padding: 0; flex: none; cursor: pointer;
+        color: #b89ab0; font-size: 9px; line-height: 1; font-family: inherit;
+    }
+    .kf-q:hover { border-color: #7fe8bf; color: #7fe8bf; }
+    .kf-why {
+        position: relative; margin-top: 7px; padding: 7px 20px 7px 8px;
+        background: rgba(127, 232, 191, 0.07); border: 1px solid rgba(127, 232, 191, 0.22);
+        border-radius: 4px; font-size: 9.5px; line-height: 1.5; color: #cfe8dd;
+    }
+    .kf-why strong { color: #7fe8bf; font-weight: 600; }
+    .kf-why-x {
+        pointer-events: auto; position: absolute; top: 3px; right: 4px;
+        background: none; border: 0; padding: 0; cursor: pointer; color: #6b8a7e; font-size: 9px;
+    }
+    .kf-why-x:hover { color: #7fe8bf; }
+
+    /* ── the running strip ────────────────────────────────────────────────────────────────────────── */
+    /* hanging indent again, so a long destination wraps clear of the big count instead of under it */
+    .kf-prog { display: block; padding-left: 18px; text-indent: -18px; line-height: 1.8; }
+    .kf-prog > * { text-indent: 0; vertical-align: baseline; }
+    .kf-count { font-size: 17px; font-weight: 700; color: #f3e8ef; margin-right: 7px; letter-spacing: -0.01em; }
+    .kf-count.done { color: #7fe8bf; }
+    .kf-count-of { font-size: 11px; font-weight: 400; color: #9a8a96; }
+    /* the SAME two colours the primed rows teach: mint = my section, lilac = their directories */
+    .kf-dest-bits .seg.cat { color: #7fe8bf; font-size: 11px; }
+    .kf-dest-bits .seg.dirs { color: #c9a5e8; font-size: 11px; overflow-wrap: anywhere; }
+    .kf-dest-bits .sl { color: #6b5a68; margin: 0 3px 0 1px; }
+    /* the track at the end — dimmer than the count, because it changes constantly and must not pull the eye
+       away from the number.  Goes mint when it's the one that just FINISHED rather than the one moving. */
+    .kf-nowtrack { font-size: 10px; color: #b89ab0; font-style: italic; overflow-wrap: anywhere; }
+    .kf-nowtrack.done { color: #8fcfb4; font-style: normal; }
 </style>

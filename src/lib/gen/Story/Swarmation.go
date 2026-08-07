@@ -10,7 +10,7 @@ import { mint_grant, verify_grant } from "$lib/O/Funk/Grant.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return 'e8214adec4c59ae8~g1' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return 'f4060302563099af~g1' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -674,8 +674,8 @@ async SwarmDoor_station(w, ident) {
         type: 'mock', partner: null, reliable: true,
         send(frame) {
             let to = frame && frame.header && frame.header.to
-            if (to != null && String(to)[0] === '@') { H.post_do(async () => { await H.Peeroleum_deliver(w, frame) }); return }
-            H.post_do(async () => { await this.partner?.recv(frame) })
+            if (to != null && String(to)[0] === '@') { H.post_do(async () => { await H.Peeroleum_deliver(w, frame) }, { see: 'swarmation_fan_channel' }); return }
+            H.post_do(async () => { await this.partner?.recv(frame) }, { see: 'swarmation_send' })
         },
         recv(frame) { return H.Peeroleum_deliver(w, frame) },
     }

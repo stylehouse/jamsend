@@ -1,6 +1,9 @@
 // jamsend daemon — the machine, booted like a tab, with no tab.
 //
-//   npx vite-node -c scripts/daemon/daemon.vite.config.mjs scripts/daemon/main.ts
+//   node scripts/daemon/run.mjs
+//
+//   (NOT the vite-node CLI — it defaults every module to the ssr transform and the machine never
+//    thinks; run.mjs uses vite-node's programmatic API with transformMode web.  Daemon_todo §3.1.)
 //
 // WHY THIS EXISTS.  Every long-running peer on this network is currently a browser tab a human
 //  has to keep open (the Sounditrons, the runners).  A tab can be closed, backgrounded, throttled,
@@ -15,14 +18,30 @@
 // KNOBS (env — boot_param() reads env under node exactly as it reads ?query in the browser):
 //   A=Auto             top-level world (default Auto — the Library/identity owner)
 //   B=<Book>           boot as a RUNNER with a Book (the ?B= path)
-//   I=<tag>            boot as an idle runner-on-the-grid, no Book (the ?I= path)
+//   E=<Waft>           boot as an EDITOR on a Waft (the ?E= path)
+//   I=<prepub>         RESUME a specific identity from the share's .jamsend/account/<prepub>/ —
+//                       the PRODUCTION shape (Identity_persist_todo §7: browser provisions, share
+//                        carries, daemon resumes).  Also rides on_grid, so an I= daemon is an idle
+//                         on-grid runner.  An arrest is an ERROR EXIT here, never a hang — see
+//                          arrest_watch below (exit 2 = no account in the share, exit 3 = seed bug).
+//   ROLE=<name>        identity name for a bare boot (default 'daemon'; ROLE=0 opts out) — resumes
+//                       or MINTS under that role via Clustation_ensure_default.  A dev convenience:
+//                        production uses I=, because a daemon never provisions (ruled 2026-08-07).
+//   KEYFILE=<path>     keypair file (default /tmp/jamsend_daemon/idento.json) — the pre-Thangs
+//                       fallback.  NOTE: with KEYED on (the default) the keyfile adopt WINS over
+//                        ROLE= (Auto's adopt leg runs before ensure_default), so ROLE is inert
+//                         unless KEYED=0.  §4.1's proof runs were KEYED=0 for exactly this reason.
+//   ACCOUNT=0          don't mirror the active identity to .jamsend/account/ (default: mirror)
+//   DAEMON_STATE=      dexie-node's backing dir (default /tmp/jamsend_daemon/state)
 //   ORIGIN=            what location.host becomes — the dev server Socket_real dials for /relay
 //                       (default http://172.17.0.1:9091, the host as seen from this container)
 //   SHARE=             repo/share root the wormhole nav reads (default cwd)
 //   OVERLAY=           where writes land (default /tmp/jamsend_daemon/fs).  SAFE BY DEFAULT:
 //                       the daemon does NOT write into the working tree.  OVERLAY=repo to opt in.
+//   RELAY=1            join the /relay websocket (OFF by default — read Daemon_todo §4 first)
 //   PORT=              status endpoint (default 9099).  curl localhost:9099/status
 //   SECS=              exit after N seconds (0 = forever).  For scripted smoke runs.
+//   LOG=               log file (default /tmp/jamsend_daemon/daemon.log)
 //   QUIET=1            drop the app's own console noise, keep the daemon's own lines
 import http from 'node:http'
 import path from 'node:path'
@@ -413,6 +432,40 @@ const persist_account = async (): Promise<void> => {
     }
 }
 
+// ── the arrest is an EXIT, not a hatch (ruled 2026-08-07) ────────────────────────────────────
+// The owner: "it should exit with error if the given ?I hasn't been set up in the share by a
+//  browser client first."  Provisioning is BROWSER work — mint, Invites, grants, the usual
+//   surfaces — and the share's .jamsend/account/<prepub>/ is the hand-off; a daemon only ever
+//    RESUMES (Identity_persist_todo §7).  On a tab the arrest is a popover a human answers; here
+//     it is a hang nobody reads, so turn it into a legible exit.  Two distinct failures, two exit
+//      codes, decided by a direct fs look at the account file (we are node; a diagnostic needs no
+//       nav):
+//        exit 2 — CONFIG: no account for this prepub in the share.  Provision from a browser first.
+//        exit 3 — BUG: the account IS on disk and the seed still could not adopt it.  Until
+//                 Identity_persist_todo §6 gaps 2/3 land in Auto.svelte this is the EXPECTED
+//                  outcome of every I= boot — the message names the doc so nobody re-diagnoses it.
+//  The grace period matters for the post-gap-3 world: a SUCCESSFUL seed will clear
+//   identity_pending in Clustation_concrete, so a slow disk read must not race the exit.
+const ARREST_GRACE_MS = 10_000
+let arrested_at = 0
+const arrest_watch = () => {
+    if (!process.env.I) return
+    const top = (H.top_House?.() ?? H)
+    if (!top?.c?.identity_pending) { arrested_at = 0; return }
+    if (!arrested_at) { arrested_at = Date.now(); return }
+    if (Date.now() - arrested_at < ARREST_GRACE_MS) return
+    const acct = `.jamsend/account/${process.env.I}/toc.snap`
+    const why  = top.c.identity_pending_why ? ` (${top.c.identity_pending_why})` : ''
+    if (existsSync(path.join(OVERLAY, acct)) || existsSync(path.join(ROOT, acct))) {
+        say(`☠ identity ARRESTED with the account ON DISK (${acct})${why}`)
+        say(`   The boot-seed could not adopt it — a bug, not a config error: Identity_persist_todo.md §6 gaps 2/3 (Auto.svelte).  exit 3`)
+        process.exit(3)
+    }
+    say(`☠ identity ARRESTED — no account for ${process.env.I} in the share (${acct} absent)${why}`)
+    say(`   Provision it from a browser session first (mint + Invites there), then boot the daemon.  exit 2`)
+    process.exit(2)
+}
+
 // ── 5. run ───────────────────────────────────────────────────────────────────────────────────
 let last_beat = 0
 while (!stopping) {
@@ -443,6 +496,7 @@ while (!stopping) {
     if (!WA.c.nav) { WA.c.nav = nav; say('w:Wormhole ← node nav') }
 
     await persist_account()
+    arrest_watch()
 
     wrap_probe()
     flushSync()

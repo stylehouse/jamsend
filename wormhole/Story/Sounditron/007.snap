@@ -1,15 +1,15 @@
 Snap:H
   H:Sounditron,Run
     A:Sounditron
-      self,round=24	{"mung":["age"]}
+      self,round=23	{"mung":["age"]}
       w:Sounditron
-        self,round=24	{"mung":["age"]}
+        self,round=23	{"mung":["age"]}
         req:wrangle,eternal,ok
-        Radio:digging,face:Radio,note:gathering music from Lefto — nothing has arrived yet
-        Stoker:watching,face:Stoker,crew:Radio,stood=16,stock=16,fresh=16,last:Deep A
+        Radio:playing,face:Radio,title:Query E,artist:Fourier Four,of=48,at=4,by:96d0cf8852651a73,by_name:Lefto,gaps
+        Stoker:watching,face:Stoker,crew:Radio,stood=24,stock=10,fresh=9,last:Solar Eclipse,dug=10,toured=10
         Tuner:glass,face:Tuner
         Riffle:shut,face:Riffle,crew:Riffle
-        Zine:Faves,face:Zine,crew:Radio,count:0
+        Zine:Faves,face:Zine,crew:Radio,count:2
         Door:open,face:Door
         Uptime,face:Uptime
         Beat,face:Beat
@@ -17,8 +17,9 @@ Snap:H
           shop,pub:f5da6599b8505881
           stock,pub:f5da6599b8505881	{"dontSnap":1}
         Transfer,dontSnap
+        Shuffle,dontSnap
         Diag,dontSnap
-        Mag:Lineup,face:Lineup,crew:Radio	{"dontSnap":1}
+        Mag:Lineup,face:Lineup,crew:Radio,up_next:1	{"dontSnap":1}
         Machine,self:f5da6599,friendly:Righto
         req:stoker_wait,finished
         req:witness,eternal,ok
@@ -29,10 +30,79 @@ Snap:H
         Heist:the one they played last night,posed,from:Lefto,crew:system
           Need:a sealed Music grant — the door open both ways,met
           Need:the friend online — bytes only flow live,met
-          Need:their shelf counted — records to want
-          Need:the original bytes over Repli — the pull itself
+          Need:their shelf counted — records to want,met
+          Need:the original bytes over Repli — the pull itself,met
         req:peer_wait,finished
         Audio,real,heard
         req:sound_wait,finished
-        Session,alive=41,possibilities=2,granted,connected
-        Tally,records:0,shelves:1
+        MusuThem,pub:96d0cf8852651a73
+          stock,pub:96d0cf8852651a73
+            Mag:shuffle,warm
+              Cloud,page:1
+              Cloud,page:2
+              Cloud,page:3
+              Cloud,page:4
+                Record,id:370d870166ffe45f,title:Query E,artist:Fourier Four,seconds=68,lufs=-8.2,gain=-5.8,real,col,path:testsounds/Fourier Four - Query E.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=24,pv_off=10,bytes=517443,stage:scheduled
+                  Preview,seq:0,head,preskip=312,cid:7944da110d212d901d53085bbda0ac081acf2af94725a95bb0fda30da58c7847	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:a0ef1cb0667ae8c5a0250cfc54a4194129856dc01eade202131d48e35154bbe6	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:8a9da16f82101ad4d8132571ae3b5de35c15fcff98f85e6ffe70466ad32c3aff	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:4af9ccfa6b2ab57633b7a0c2ded8336d8f1a6b595b799fedcd1a7c04a5eb1a01	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:4,cid:523409e0b0712b9a6011a717fff779ee75dd5500eddff6e98c65ce427c93d5b2	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:5,cid:c0bebaa054d638ac9d89819b012f99bb517745dc9c2a7ef8e0e0b4f0dc4f2875	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:6,cid:e5a066f5858ed886b1664abebab2e44cb9e02f2b49e6ba43253b137f2d00878e	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:7,cid:bcd8e92f690c03535b3e9ca9f733aefb59d3103815e6cd6bf8b4f9f873ded988	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:8,cid:42b887b4f024f9469ce7ed543e711d569dbeda658ab3a8ce61a6226cd3273dbb	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:9,cid:30781c9e4e4aa5154c661dfeb0488993907328fbd19848216f3ff18347fdb159	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:10,cid:c6422c890e51669788fb66da9d90c3ef57631b68417f0d070b31f713d85fb648	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:11,cid:3be3269fbb0d3511846a03b8abd3719fe84840299c4bb054472a88c7b512074e	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:12,cid:750cb6a2760788dcbb7160808681e1016178bbd30bfb938a0cc7e4356e381264	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:13,cid:f0d6709daf5756176890d36e11ae1bd12f1dfb6d5aeabcb6b2938f9ff14197d8	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:14,cid:b93860fd1b3a92decfda937f6190b9aa2eabc5457c4834743ccd29ce88ac224d	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:15,cid:2ffef3f3307bef0bd7b00ab49c63c4da6d99496701e08027daf354bd392d435c	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:16,head,preskip=312,cid:c79599feddf47901f445b287f396c3f05c87d2105aad2708bbcc96d9387ab2a3	{"ref":{"buf":"Uint8Array()"}}
+                  Stream,seq:17,cid:1268778e83e2e07d90be1c8a949ee5e740780f872d2e07695b5233f5d599c2b6	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:d8a28ada85f2e851,title:Deep A,artist:The Sines,seconds=72,lufs=-8.35,gain=-5.65,real,col,path:testsounds/The Sines - Deep A.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=20,pv_off=16,bytes=517443,stage:previewed
+                  Preview,seq:0,head,preskip=312,cid:89203d2ff8eb926e9c0249a2a43b467022553990a4cb42de52ba76c59ceaea09	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:afbb889beecc75703b2fff6d101267d76b1a14cc3dfc3a522e7e8620fb53e05f	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:4d51c31fd90af901aee2e8a2c5a6d41002550bccf6c2ddca4c95a9d85594139a	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:a10602c58cb24db71bf84197b6398680d2618bd5ef44077a6309976f4a66b4c8	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:4,cid:ea294887fd4d95b93311ddd596a7c627dfd5ca5988ab1de281ef5d905cbb1ce7	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:5,cid:431060be6bd6d96d9353826589c52a00a020848e702a0d504b0bca3765eb0e96	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:6,cid:944271b3947de990250311408d5600a7854ea18e1cc168dc9363726f9be22a50	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:7,cid:4f1a52deb622d48e9f8a6ed493f7b27233742eb95421e7a1c4eb6b889eb0f3e5	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:8,cid:f4776906c4d89308a25691c5c19d72b64704ab856b55040d520e0fd0be82e416	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:9,cid:e053488455938aeaa81275f0350c53cdfd989da7649a490c74fc1c750d8eb51e	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:10,cid:fe9e668bd230c829c421404b7328514538c694cd204639ca3ee4eb088a318ea8	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:11,cid:f03dbc9129a98f2cd1bcf7f5621c51e6dbc5133c57c112c773766ad123ada201	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:12,cid:d867f7efa685648654f82e5b50e9bbafc0109ba80fd38da7407e5195f5d2e695	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:13,cid:2656a4c3236e15b37e1888511439c7d3d7dfa9fc1f72ca4bfef214ce23c39082	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:14,cid:b313a40793ac24958cca5914ad6234344a42613b7e3626126bfcc2d61d107f60	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:15,cid:9bf7c71a9f5be881ab3e90007a1d1d860894744fd10caf5845662a2e87ce4bac	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:95f3c03e41e9c007,title:High A,artist:The Sines,seconds=80,lufs=-5.49,gain=-8.51,real,col,path:testsounds/The Sines - High A.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=24,pv_off=16,bytes=517443,stage:landing
+                  Preview,seq:0,head,preskip=312,cid:e5150c550547568a035d6e8dec205c1300613e2aa63ee2179d42fe9c28785345	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:51f434ffaaa33a7a3e8f61a826a67315370ba3de6e8616556ad13edcc669cb8a	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:241c5bdf9865f76807b93b05b1a48cfac9c9e04879a04fe43dcd53ee39f1c440	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:8413d21f5058123abf838d44aefe744cbd5b8375bb82732838c07d67f299c70b	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:4,cid:819b35fde303d4e823fb6be05fc1911e187fe0b2676da12bfe69b22c23250954	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:5,cid:2767be2c576b251b0f2d6574f5871584d11d614c0c327bee3b2d7f559c72cf01	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:6,cid:1c87801810f16ca24beba356193699c67fbcf5df01e596e3da80d23bc4e47e79	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:7,cid:eb6a11a5403bfe797143c1841ca22609dec3cd736007efab88961b502558422c	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:8,cid:c9a686e312dde2434c2e9640e3d23a6be12b34e47e083ef21744ca4d96a6c135	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:9,cid:99e0548e1f8761237a1e9e49265c03958fdf169b1ce583a8ac0aaff07e6d72e1	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:10,cid:d4c3e917e7e3cf11069824e862eb2562d53aff436fdac318d3d30805b5f04935	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:11,cid:8fdc5ffa03e65ba4064394fe7f34769581f7f884d456e7bd6f6b156fb58c291a	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:12,cid:6ad7426569f550b7fbe5ccab3adcb043864927453502edceb43da8b2f5e78c45	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:13,cid:5a3b400470ce6fdd664c7c3be9b47d8bce5d7f40a121368966155526340b4a48	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:a14602e5ca2e9bd0,title:Echo E,artist:Fourier Four,seconds=60,lufs=-6.6,gain=-7.4,real,col,path:testsounds/Fourier Four - Echo E.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=18,pv_off=12,bytes=517443,stage:husk
+                Record,id:902552d4a0b8b0c1,title:Middle A,artist:The Sines,seconds=64,lufs=-8.13,gain=-5.87,real,col,path:testsounds/The Sines - Middle A.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=18,pv_off=14,bytes=517443,stage:husk
+                Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,path:testsounds/DJ Oscillo - Cosmic C.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=25,pv_off=14,bytes=517443,stage:husk
+              Cloud,page:5
+                Record,id:cf95c97b08584b92,title:Groove G,artist:DJ Oscillo,seconds=66,lufs=-7.83,gain=-6.17,real,col,path:testsounds/DJ Oscillo - Groove G.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=21,pv_off=12,bytes=517443,stage:husk
+                Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,path:testsounds/DJ Oscillo - Dorian D.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=24,pv_off=14,bytes=517443,stage:husk
+                Record,id:22153acbea099624,title:17.Bala 3anouan,artist:,seconds=135.69,lufs=-11.05,gain=-2.95,real,col,path:0 spawn/- folks/- arabia/Charif Megarbane - Marzipan (Bouns Edition) (2023) [FLAC] {WEB}/17.Bala 3anouan.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=36,pv_off=32,bytes=517443,stage:husk
+                Record,id:dbff8652f6b79660,title:3.Pas de Dialogue,artist:,seconds=154,lufs=-10.21,gain=-3.79,real,col,path:0 spawn/- folks/- arabia/Charif Megarbane - Marzipan (Bouns Edition) (2023) [FLAC] {WEB}/3.Pas de Dialogue.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=45,pv_off=32,bytes=517443,stage:husk
+                {"Record":1,"id":"ab011f3df68c149e","title":"1-03 Hammer, Anvil and Stirrups","artist":"","seconds":267.88,"lufs":-12.48,"gain":-1.52,"real":1,"col":1,"path":"0 spawn/- folks/The Deadfly Ensemble/2012 - An Instructional Guide for Aspiring Arsonists/1-03 Hammer, Anvil and Stirrups.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":90,"pv_off":44,"bytes":517334,"stage":"husk"}
+                Record,id:cd59d343aa0222d7,title:1-05 Lizard Tree on Fire  a) Exposition b) Development,artist:,seconds=251.56,lufs=-16.4,gain=2.4,real,col,path:0 spawn/- folks/The Deadfly Ensemble/2012 - An Instructional Guide for Aspiring Arsonists/1-05 Lizard Tree on Fire  a) Exposition b) Development.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=40,pv_off=86,bytes=517263,stage:husk
+        Session,alive=40,possibilities=2,granted,connected
+        Tally,records:18,shelves:1
+        log:slow to sound — music took over two seconds to begin

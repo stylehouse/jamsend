@@ -107,17 +107,34 @@
     const stuck_loads = $derived.by(() => {
         void now
         const store = Lies?.o({ req: 'Store' })[0] as TheC | undefined
-        if (!store) return [] as { path: string, secs: number, why: string }[]
+        if (!store) return [] as { path: string, secs: number, failed: boolean, why: string }[]
         const t = Date.now()
         return (store.o({ Good: 1 }) as TheC[])
             .filter(g => g.c.content === undefined && t - Number(g.c.asked_at ?? t) > 5000)
-            .map(g => ({
-                path: g.sc.path as string,
-                secs: Math.round((t - Number(g.c.asked_at)) / 1000),
-                why:  g.c.last_error
-                    ? `last error: ${g.c.last_error} (×${g.c.error_count})`
-                    : 'no reply yet — transport? grant? editor nav?',
-            }))
+            .map(g => {
+                const secs = Math.round((t - Number(g.c.asked_at)) / 1000)
+                // "NOT YET" IS NOT "NEVER" (2026-08-07).  This alert fired at 5s saying **can't download**
+                //  about a read the machinery was actively REPAIRING: RemoteWormholeNav re-emits a silent
+                //   request every RETRY_MS=4s with a FRESH seq (precisely to climb past a stale reconnect
+                //    high-water — the reconnect-epoch collision a reload triggers) and only gives up at
+                //     REQ_TIMEOUT_MS=20s.  So 5s→20s is a fifteen-second window where the honest word is
+                //      "retrying", and the observed ending is usually "it got there in the end".  Crying
+                //       wolf there costs real trust: the one time it means it, it reads like the other times.
+                //  A read is only FAILED once an error actually came back, or once it has outlived the
+                //   nav's whole retry ladder.  Mirror those two constants rather than restating a number —
+                //    if they move in RemoteWormholeNav.svelte.ts, this comment is where to look.
+                const failed = !!g.c.last_error || secs >= 20
+                return {
+                    path: g.sc.path as string,
+                    secs,
+                    failed,
+                    why: g.c.last_error
+                        ? `last error: ${g.c.last_error} (×${g.c.error_count})`
+                        : failed
+                            ? 'no reply yet — transport? grant? editor nav?'
+                            : 're-asking every 4s with a fresh seq — a reloaded pier collides with the editor’s old high-water',
+                }
+            })
     })
 
     // ── role badge ────────────────────────────────────────────────────
@@ -324,11 +341,13 @@
          in a few seconds.  On a runner this IS the silent stall: the wormhole read isn't landing and the
          run is going nowhere.  Better a loud "can't download X" than a tab that just sits there. -->
     {#each stuck_loads as s (s.path)}
-        <div class="ls-stuck" role="alert"
-             title="a wormhole/disk read hasn't returned — the read machinery keeps retrying, but nothing is arriving">
-            <span class="ls-stuck-hd">⚠ can't download</span>
+        <div class="ls-stuck" class:ls-retrying={!s.failed} role={s.failed ? 'alert' : 'status'}
+             title={s.failed
+                ? "a wormhole/disk read outlived the nav's whole retry ladder — nothing is arriving"
+                : "a wormhole/disk read is slow and is being re-asked; it usually lands. Only a red one means it gave up"}>
+            <span class="ls-stuck-hd">{s.failed ? "⚠ can't download" : '⏳ still fetching'}</span>
             <code class="ls-stuck-path">{s.path}</code>
-            <span class="ls-stuck-age">stuck {s.secs}s</span>
+            <span class="ls-stuck-age">{s.failed ? 'stuck' : 'waiting'} {s.secs}s</span>
             <span class="ls-stuck-why">{s.why}</span>
         </div>
     {/each}
@@ -393,6 +412,11 @@
         display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
         color: #f2a0a0; background: #2a0d0d; border: 1px solid rgba(242, 160, 160, 0.5);
         box-shadow: 0 -2px 14px rgba(0,0,0,0.5);
+    }
+    /* the RETRYING tier — amber, not red, and deliberately quieter than the failure it might become.
+       Red is a promise that something is wrong; spend it only when the retry ladder has run out. */
+    .ls-retrying {
+        color: #e8c98a; background: #241d0c; border-color: rgba(232, 201, 138, 0.4);
     }
     .ls-stuck-hd   { font-weight: bold; }
     .ls-stuck-path { color: #f0c674; background: rgba(0,0,0,0.35); padding: 0.05rem 0.3rem; border-radius: 3px; }

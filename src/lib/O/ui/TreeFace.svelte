@@ -106,6 +106,8 @@
     .tf { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 9px; line-height: 1.45; color: #cdd6e0; }
     .tf-row { display: flex; align-items: baseline; gap: 3px; flex-wrap: wrap; white-space: nowrap; }
     .tf-tw {
+        /* re-arm: the glass face layer is pointer-events:none, so a control opts back in (see ShuffleFace) */
+        pointer-events: auto;
         background: none; border: 0; padding: 0; margin: 0; cursor: pointer;
         color: #7f9fc8; font-size: 9px; width: 8px; flex: none;
     }

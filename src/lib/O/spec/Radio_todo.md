@@ -2536,3 +2536,266 @@ So the order is: **settle the two views first, then ungate the rack into the dev
  first just moves clutter into the view that has no escape hatch. Related and already mapped:
   `UI_seams_todo.md` S1 (quiet the resident glass) is the same question asked of the Vyto cells, and its
    `?diag` gate proposal is a candidate shape for the end-user mode.
+
+## TODO — the dial should FLY (the human 2026-08-07)
+
+**"react to clicking Heist (and next-track too — push a TODO for making this fly around the available
+ tracks super pleasingly — it might even want to be on a separate thread)."**
+
+Two halves, and the first is the general lesson:
+
+- **Every glass control must move on the CLICK, not on the pass.** `post_do` defers the write to the next
+   belief pass, so a control shows nothing until then — and an unmoved control invites a second click,
+    which is exactly how the LOFI tickbox ended up unticking itself right as ▶ start was pressed
+     (HaulFace `toggleLofi`, fixed there with a local `wish` + an ABSOLUTE value rather than a toggle read
+      late). ⇊ Heist and next-track want the same treatment. Audit the rest of the glass for controls whose
+       only feedback is a model round-trip.
+- **Next-track should fly around the available tracks.** Not a cut — a visible traversal of the pool
+   (ShuffleFace already draws it as pips, lit = chunk 0 landed = dialable). The human's read is that it may
+    want its own thread, i.e. it must not share the belief loop's mutex: a traversal that stutters whenever
+     a pass runs long is worse than no animation. Worth checking whether the wave/grawave timing Cyto
+      already uses can carry it before reaching for a worker.
+
+Related, same session: `avoid loading half of the Record/Preview until we start playing it` — `Ra_keep_ahead`
+ (default 4) pre-pulls the FULL preview window of that many upcoming records, so the pool sits at ~50% held
+  before anything is chosen. Wanted: seed depth ≈ chunk 0 (enough to be dialable, which is all
+   `Radio_dial_pool` gates on), full preview only for the track under the needle. NOT attempted — it moves
+    MusuStock / MusuRadio / MusuReplica fixtures and wants a session with the whole suite in reach.
+
+## TODO — BOOT TAKES ~35s BEFORE ANY MUSIC CAN MOVE (measured 2026-08-07)
+
+The human: *"refreshing Righto after a while, it doesn't connect Radio for a while there... but then
+ eventually, 30s later or so, comes right"* + *"why does this boot take so long"*.  Their read was
+  "we're loading too much Record data before we get around to playing" — **measured false**, twice:
+   from `crate-born` to `first-sound` was **250ms**, and from `page-first` to `first-feed` **36ms**.
+    No byte transfer is involved in the delay at all.  Do NOT optimise the pull path for this symptom
+     (that is what the `Ra_keep_ahead` item above would have done — it addresses the 250ms).
+
+**The chain.**  `Swarm_share_up` (Swarm.g:1751) bails with `share-no {why:'radio world not standing
+ yet'}` until `top.c.radio_w` is stamped, and `Stoker_ensure` (Radio.g:1148) — reached only from
+  `Radio_dial` — is the sole place that stamps it.  So between the seal and the first dial the tab has
+   no share loop: it can neither offer its own stock nor register an rx for the friend's cast.  Sealed,
+    Music-granted, happily playing its own shelf, and completely deaf.
+
+Righto's boot ring (`wormhole/_trace/runner-f5da6599b8505881-1786093330013.jsonl`):
+
+     +5.0s   seal → station-up → share-no {radio world not standing yet}
+     +5.0s   advertise piers:1 granted:1 told:0 records:0 cw:0 selfs:0 homes:0 stocks:0
+     +20.6s  advertise ... records:0 cw:0        (still nothing, 15s later)
+     +24.3s  boast-heard {of:96d0cf88, records:0}   ← the friend says "I have nothing"
+     +35.0s  share-up
+     +35.2s  boast-heard {of:96d0cf88, records:8}   ← the truth, 11s after the lie
+     +40.9s  tour dug:8 stock:8 · advertise records:8 artists:3 cw:1 selfs:1 homes:1 stocks:1
+
+Lefto's ring is the mirror image (seal +20.5s, share-up +28.0s, true advertise +35.1s).
+
+**Two fixes, independent.**
+
+1. **ORDERING — arm the share on the radio WORLD, not the first dial.**  Nothing about
+    `Swarm_share_up` actually needs the dial to have spun; it needs the world the stoker shelves in.
+     BigSoundland already knows the resident world at boot (`boot_param('B') || 'Sounditron'`), so
+      `radio_w` can be stamped when that world stands.  Keep `Stoker_ensure`'s stamp as the idempotent
+       backstop — losing that race is the 2026-08-06 bug its comment describes, and this must not
+        re-open it.
+
+2. **TELL NO FALSE FACT — suppress the count, don't send a zero.**  For 30 seconds each peer
+    advertises `records:0` with `cw:0`, and `cw:0` means `census_w` was never pointed at the radio
+     world, so that zero is *known false at the point of sending*.  Righto wrote Lefto's "records:0"
+      down at +24.3s and only unlearned it because a later boast happened to land.  While `census_w`
+       is unset, `Swarm_gossip_music` should send **no count** rather than a zero — a peer that says
+        nothing is honest, a peer that says "0" is lying and the lie gets recorded.  Same "not yet
+         reported as never" shape as `Radio_supply_go` (Radio.g:727) reading the first null from
+          `Ra_transcode_ensure` as `'preview only — source unreadable'`; see Sounditron_todo.
+
+**3. THE STEP CLOCK — and it is a TIMER, not work (measured 2026-08-07, second pass).**  The
+ resident Sounditron world's steps pace the whole thing, and the marked work in a step is
+  `quiesce 0.25s` + `snap-cost 41ms` + `vyto-wait 60ms` ≈ **350ms of 7.8s**.  The gaps had no marks
+   of their own — but the two electrodes already planted (`advance`'s `resolve`/`to_step`, and
+    `quiesce`→`snap-cost`) bracket them exactly, and reading them settles it.  Per step, on
+     Righto (`...1786093330013`) and Lefto (`...1786095853919`), every step, both tabs:
+
+     advance→quiesce      0.25s     the drive itself: free
+     quiesce→snap-cost    3.64s     ← gap A
+     snap                 0.04s
+     vyto-wait            0.06s
+     vyto-wait→advance    3.80s     ← gap B   (to_step 3801 / 3800 / 3803, resolve 0)
+
+**`to_step` is 3801 ms ±3 on two independent machines across every step.  That is a timer.**  A
+ backlog jitters; a fixed constant is a clock.  The constant is `reset_interval()`'s ambient tick —
+  `interval || 3.6` at `Hovercraft.svelte:72` — plus `AMBIENT_MAIN_TICK_MS` (200), the `main()`
+   throttle.  3600 + 200 = 3800.  `resolve:0` clears the Runstepped callbacks outright, and the
+    fixed 200 ms in `schedule()` hides *inside* the interval rather than adding to it.
+
+**The shape.**  Both gaps are the same event: a `post_do` sitting in a todo that nothing drains.
+ `post_do` (`Housing.svelte.ts:834`) only pushes and bumps `todo_version`; the drain is the
+  `$effect` at `:561`.  A healthy drain is `ANSWER_CALLS_TICK_MS` 50 ms, or 4 ms galloping — three
+   orders off what we measure.  So the wakeup is being lost, and the item then waits for the ambient
+    heartbeat, which `_really_answer_calls` **re-arms inside the mutex on every drained item**
+     (`:1103`).  Lose the wakeup and you pay a *whole fresh* 3.6 s, every time.  Two `post_do`s per
+      Story step (`do_step`, `snap_step`) ⇒ 7.2 s of a 7.8 s step is the tab waiting for its own
+       heartbeat.  **~93% of the resident step clock is a lost wakeup, not work** — which is exactly
+        why every electrode aimed at work came back cheap.
+
+**The watchdog for this already exists and cannot fire here.**  `Story.svelte:2424` documents the
+ lost wakeup and re-drives the drain — but it re-drives `Run.answer_calls()` under a
+  `Run.todo.length` guard, while `story_drive` posts both phases with **`H.post_do`** (`H = this as
+   House`, the Story ghost's House — `Run` is a different House with its own todo).  Wrong queue,
+    and the guard therefore reads 0 forever.  It is also only reachable from inside `poll_step`,
+     which is not running during either gap.  Doubly inert, silently.
+
+**Why Books never showed it:** MusuReco steps at ~1.1 s on the same runner in the same minute.  So
+ the wakeup is NOT universally lost — something about the *resident* tab (live glass, live organs,
+  `trickle`, a contended top-House mutex) loses it.  Nailing that last inch is one cheap electrode,
+   not a theory: stamp the push time in `post_do` and compare it at drain against the `c.drain_at` /
+    `c.drain_tried_at` / `c.drain_why` that `_really_answer_calls` already writes.  It forks clean —
+     **`drain_tried_at` stale by ~3.6 s ⇒ the `$effect` never fired** (fix: make `post_do` self-
+      driving, `this.answer_calls()` after the push — re-entrancy-safe, since the mutex branch bails
+       and re-arms its own 50 ms retry); **`drain_tried_at` fresh with a `drain_why` ⇒ it fired and
+        was gated**, and `drain_why` names the holder.  Do not apply either fix before that fork is
+         read — they are different bugs with the same face.
+
+**IT IS NOT CPU, AND The/TimeSpool SAYS SO OUTRIGHT.**  Sounditron's own spool carries
+ `TimeTotal:beliefs,avg=0.077` and `TimeTotal:step,avg=0.011` — **77 ms of belief-mutex time summed
+  across every step of a whole run**, against a boot of ~60 s.  `collect_time_sample` sums
+   `sum_beliefs_time` over every step with a `Run_trace`, so that is the total thinking the machine
+    does.  There is no work to optimise and no "turbo mode" to switch on: 99.9 % of the boot is the
+     machine waiting for permission to run the next 11 ms.
+
+**ELECTRODE PLANTED 2026-08-07 — `drain-lag` (Housing.svelte.ts).**  `_push_todo` stamps `e.c.push_t`
+ plus a snapshot of three new monotonic counters, and the successful shift in `_really_answer_calls`
+  emits a `drain-lag` mark for any item that waited past `DRAIN_LAG_MS` (300).  `.c` only, so it
+   cannot reach a snap; the `world` printer is generic, so it renders with no CLI change.  The three
+    counters are the fork — `calls` (answer_calls entries: did the `$effect` fire at all?), `gated`
+     (…bounced off `answer_calls_waiting`), `tries` (`_really_answer_calls` entries: did anything
+      actually LOOK at the queue?), reported as deltas since the push.  Reading key is inline at the
+       emit site.
+
+**First live reading, and it refutes the leading hypothesis:**
+
+     drain-lag  H=Mundo tag=think waited=567 calls=6 gated=5 tries=1 depth=3
+                why=beliefs mutex held 0s by H:Mundo think
+
+ **The `$effect` is NOT lost — it fired 6 times.**  What is lost is the drain: *5 of 6 wakeups
+  bounced off the `answer_calls_waiting` throttle, and only ONE look at the queue happened in 567 ms*
+   — against a 50 ms gate that should have allowed ~11.  So the suspect moves from "the Svelte wakeup
+    never arrives" to **`answer_calls`'s own throttle swallowing its re-drives**, and `post_do`-goes-
+     self-driving would NOT have fixed it (a self-drive lands on the same throttle).  Good thing the
+      fork was read before the fix was applied.
+ Caveat, stated so nobody over-reads one sample: this is `H:Mundo` on a **compile-busy tab with 0
+  piers**, not a resident Sounditron boot.  It proves the electrode works and it rules one branch
+   out; it is not yet the boot measurement.  **Next: a Sounditron boot with the electrode live** —
+    read `calls`/`gated`/`tries` on the `fn:story_step` and `fn:story_snap` marks specifically.
+ (The edit lands in a `.svelte.ts`, which has no HMR boundary — every live tab full-reloads.  Here
+  that is convenient rather than costly: a fresh boot is exactly the thing being measured.)
+
+### THE READING, off Righto reloading (2026-08-08) — and it is TWO bugs, not one
+
+**A. The step clock: the queue is simply never looked at again.**  Every `H:Story` mark, every step:
+
+     H=Story tag=fn:story_snap waited=3600 calls=2 gated=0 tries=2 depth=1 why=
+     H=Story tag=fn:story_step waited=3600 calls=2 gated=0 tries=2 depth=1 why=
+     H=Story tag=fn:story_snap waited=3712 calls=2 gated=0 tries=2 depth=1 why=
+
+ `gated=0` acquits the `answer_calls_waiting` throttle.  Empty `why` acquits the mutex — nothing was
+  blocking.  `calls=2` in 3600 ms against a 50 ms gate that allows ~72.  **Two looks, neither
+   blocked, and the item still sat for a full ambient interval.**  With `depth=1` the picture is
+    exact: look #1 drained the item AHEAD of ours and left ours standing; look #2 was the 3.6 s
+     heartbeat.  Nothing in between.
+ So the failure is the "come back for the rest" self-restart at `Housing.svelte.ts:1129-1130` —
+  `// we should come back to the rest of them` / `this.todo_version++`.  It runs **synchronously
+   inside the `$effect`'s own call stack** (`$effect` → `answer_calls` → `_really_answer_calls`, not
+    awaited, and the bump precedes the first `await`), i.e. it is a write to the effect's own
+     dependency from inside that effect — and the measurement says it does not reschedule anything.
+      `gated=0` is the proof: had the effect re-run and bounced, `gated` would be ≥1.  It never ran.
+ **The queue therefore advances one item per EXTERNAL wakeup**, and on a quiet resident boot the
+  only reliable external wakeup is the 3.6 s tick.  Books escape it because a Book run is a constant
+   rain of external wakeups (elvises, `ponder_now` off every disk settle) that keep poking the queue.
+ **The fix is the shape already proven next door:** the mutex-held branch re-drives out-of-band
+  (`setTimeout(() => this.answer_calls(), gate)`) and *that* path spins fine — see the contended
+   Mundo marks below with `tries` in the thousands.  Do the same after a successful drain instead of
+    trusting the reactive self-bump.  Not applied yet.
+
+**B. AN 11-SECOND BELIEFS-MUTEX HOLD ON `H:Mundo` DURING BOOT — new, and not small:**
+
+     H=Mundo tag=fn:handle_inbound waited=10529 calls=3439 gated=1721 tries=1718 why=beliefs mutex held 11s by H:Mundo fn:?
+     H=Story tag=fn:story_step   waited=10698 calls=2222 gated=1110 tries=1112 why=beliefs mutex held 11s by H:Mundo fn:?
+     H=Sounditron tag=think      waited=10744 calls=380  gated=190  tries=190  why=beliefs mutex held 11s by H:Mundo fn:?
+
+ Three Houses, one holder, ~10.7 s each.  Note `tries` in the thousands here — the retry chain works
+  perfectly when something drives it, which is exactly what makes (A)'s `tries=2` damning.
+ **This is real work, and TimeSpool did NOT see it** — `collect_time_sample` sums
+  `sum_beliefs_time` over the *Story Run's* steps only, so an 11 s cycle on Mundo by a non-Story fn
+   is invisible to it.  Correct the "there is no work" claim above to: *no work in the steps*.
+ **Prime suspect, already instrumented:** `Swarm.g:1809`'s untagged `post_do` around
+  `Swarm_share_beat` — its own `beat` electrode logged **ms=5286, 2564, 1534** during exactly this
+   boot window.  `fn:?` is the tell that the `post_do` carries no `see`, so the drain cannot name it.
+    **DONE 2026-08-08 — every `post_do` in the tree now carries a `see`.**  Note for anyone auditing
+     this the way I first did: **grepping the `post_do(` line is wrong** — the `extra` sits on the
+      CLOSING line of a multi-line closure, so a line-grep reports a dozen false positives and hides
+       the real ones.  Paren-match from `post_do(` to its close and test the tail.  Doing that over
+        all 333 files of `src/ Ghost/ scripts/` found **10 genuinely untagged sites**, now tagged:
+         `Swarm.g` (`swarm_share_beat` — the suspect), `Tribunal.g` ×2, `Peeroleum.g` ×2,
+          `Peregrination.g` ×2, `Swarmation.g` ×2, `MachPeerily.svelte` (`keygen_<side>`).
+           Five `.g` ghost-compiled, 5/5 ✓.
+  **AND A TRAP WORTH THE TRIP: `src/lib/p2p/pinned_stable/{Peeroleum,Tribunal}.go`.**  A deliberately
+   FROZEN copy of the spine, still untagged and left that way on purpose.  `Lies_transport_up`
+    returns early on `role !== 'editor'`, so it is the **editor's bootstrap alone** — the editor
+     cannot ride the spine it is editing.  Consequences to hold on to: a `.g` edit to
+      Peeroleum/Tribunal **never reaches the editor's own channel** (promotion is a hand
+       `cp gen/N/ → p2p/pinned_stable/`), and conversely a player tab is unaffected by it.
+  **Why the tag did not appear immediately on Righto:** HMR swaps the module, not the live closure —
+   the transport `port` object was built at boot from the pre-tag code, so the running `send`/
+    `deliver_soon` are still the old ones.  **The holder names itself on the next reload**, not before.
+
+### FIXED AND MEASURED 2026-08-08 — the drain now comes back for its own queue
+
+One line at the tail of `_really_answer_calls`, after the mutex releases:
+
+    if (this.todo.length) setTimeout(() => this.answer_calls(), this._gallop_gate_ms())
+
+Before → after, both tabs, off the trace rings:
+
+     to_step               3801 ms  →  200-213 ms   (200 is schedule()'s OWN setTimeout;
+                                                      the queue latency is now ~0-13 ms)
+     quiesce→snap-cost     3.64 s   →  0.02-0.11 s  (what is left IS the snap: 19-86 ms)
+     step interval         7.8 s    →  ~0.48 s      (~16×)
+     share-up              +30 s    →  +7.9 / +8.4 s
+
+**The `~30 s sealed-but-deaf` window is now ~8 s.**  The `H:Story fn:story_step` / `fn:story_snap`
+ drain-lag marks stopped emitting entirely — they no longer clear the 300 ms floor.
+
+**WHAT REMAINS IS `swarm_share_beat`, AND IT NOW NAMES ITSELF** (the `see` tags landed):
+
+     H=Mundo tag=fn:handle_inbound waited=5238 … why=beliefs mutex held 5s by H:Mundo fn:swarm_share_beat
+     H=Story tag=think             waited=1750 … why=beliefs mutex held 5s by H:Mundo fn:swarm_share_beat
+
+ Its own `beat` electrode agrees: single beats of **5189 ms and 7935 ms**.  That is the one step in
+  each run that still costs 3.01 s / 2.04 s instead of 0.48 s — the whole residual.  `Swarm_share_beat`
+   holding the beliefs mutex for 5-8 s is now the top item on this TODO, and unlike everything above
+    it, it IS work: go read what the beat does per pass before assuming it is another wait.
+
+**Do not "fix" this by shortening the 3.6 s interval.**  That is the thermostat, not the fault, and
+ lowering it just makes a lost wakeup cheaper while leaving every other consumer of the ambient tick
+  paying a faster clock.  The wakeup is the bug.
+
+**Read the table right: the SNAP is 41 ms, not 3.64 s.**  `run.c.snap_t0` is stamped at the top of
+ `snap_step` and `snap-cost` is `Date.now() - snap_t0` at the end, so the encode|compare|store is the
+  `snap 0.04s` row.  The `quiesce→snap-cost 3.64s` row is the wait *before `snap_step` starts* — it
+   brackets the `post_do`, not the snap.  The only two things standing between the `quiesce` mark and
+    the `H.post_do(snap_step)` are `Run.c.on_step_ending` (MachPeerily:480 — clears an interval,
+     drops two particles, synchronous) and `Run.c.runtime = false`.  Both free.  This misreading is
+      worth guarding against because it points the fix at the encoder, which is innocent.
+
+**`waitVyto` REMOVED from Sounditron's toc (2026-08-07, the human's call).**  It was the only toc
+ carrying it, so this is scoped to the resident world and touches no other Book.  Be clear about
+  what it buys: **60 ms of a 7800 ms step**, i.e. not the boot fix.  The instinct behind it was
+   sound but one day stale — waitVyto genuinely WAS the villain until 2026-08-06, when the old
+    `painted >= stir` chase was found never to converge against the resident glass (which grapples
+     Stoker levels, Session counters and the Heist, all stirring every heartbeat) and every step
+      took the full `CEIL_MS` 8000 ms.  Latching `target` on the first poll took it to 60 ms.
+  **The reason to drop it anyway is structural, not arithmetic:** gating a world's step clock on a
+   glass that never stops stirring is wrong even when it is cheap, and keeping it leaves an
+    8 s-per-step cliff one regression away.  The follow-on the human named — *"some other process
+     animating Vyto sensibly over the long run"* — is the right shape: the resident glass should be
+      paced by its own clock (the wave/grawave timing Cyto already uses is the candidate), not by
+       whether a Story step is willing to advance.  Not built; filed here so it is not lost.

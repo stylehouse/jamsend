@@ -217,8 +217,37 @@ async MusuHeist_census(w):
         let b = await this.Heist_census(w, w.c.duo_lib, w.c.nav, 'testsounds', ['Fourier Four'])
         this.MusuHeist_note(w, { censused: 1, uno: a.built + a.stood, duo: b.built + b.stood })
         w.c.phase = 'seal'
+        // THE WITNESS PASS IS NOT FREE — hold for it.  (The step-2 flake, 2026-08-07: red-red-green-green-
+        //  green-red on builds that touched nothing here.)  Everything above ran OFF the belief loop inside
+        //   this ttlilt, so the instant expecting() settles, the ONLY thing that schedules the belief pass
+        //    which runs req:witness is e_reqyonciliation's feebly_ponder — a WAKE, and a THROTTLED one
+        //     (main_throttle, 200ms).  The reqyonciliation cycle itself is a TARGETED delivery: attend()
+        //      returns at _deliver_targeted, so it never runs self_timekeeping (no self,round bump) and
+        //       never reaches reqdo_sweep (no req pumped).  When Story's quiescence poll won that race the
+        //        step snapped one round early — self,round=5 instead of 6 — with the witness's last run
+        //         predating the census, so cok read empty libraries and the first %see never fired.
+        //  READ THE DIFF RIGHT: the round drift is the SYMPTOM, never the failure — story_matching spays
+        //   `\bround(?:=\d+)?\b` at tol:any, so its value is grafted away at compare.  What reddened the
+        //    step is the MISSING %see LINE: a line-count drift is structural, and entropy_forgive refuses
+        //     to graft one.  So the gate to hold is "has the witness looked yet", not "which round is it".
+        //  The fix is the Coding_guide's rule, not a looser claim: a wake is not a hold.  Hold for one real
+        //   pass, and the see fires the first pass its truth holds, exactly as a %see is meant to.
+        this.MusuHeist_hold_for_a_pass(w, 'census_seen')
     })
     w.doai({ req: 'witness', eternal: 1 })?.(async (req) => { this.MusuHeist_witness(w); req.sc.ok = 1 })
+
+// MusuHeist_hold_for_a_pass — hold the snap until ONE more belief pass has actually run.  Armed from inside
+//  an expecting() callback (off the loop), at the moment a truth has landed but nothing has LOOKED at it yet.
+//   The gate is a one-shot %req carrying a ttlilt (a ttlilt is the only hold Story's poll_step reads), and its
+//    do_fn can only run in a real belief pass — so the first time it is pumped it finishes and DROPS itself,
+//     retracting the hold (o_Story_req_ttlilt retracts a published copy on req%finished or req.c.drop).
+//      Dropping is what keeps it out of the snap, so a gate leaves no fixture footprint at all.  The 20s is a
+//       bound, never a wait: the woken pass arrives within the ~200ms ambient throttle.
+MusuHeist_hold_for_a_pass(w, name):
+    let gate = w.o({ req: name })[0]
+    if (gate && gate.sc.finished) return
+    w.doai({ req: name })?.((req) => { w.finish(req); w.drop(req) })
+    this.i_req_ttlilt(w.o({ req: name })[0], 20)
 
 // MusuHeist_plant_tagged — lay ONE mislabeled-but-tagged WAV into Duo's Fourier Four before the census
 //  walks the share.  The FILENAME lies (`Fourier Four - Bogus Name.wav` — a title that names no real

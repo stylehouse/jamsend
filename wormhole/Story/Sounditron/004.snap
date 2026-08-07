@@ -6,10 +6,10 @@ Snap:H
         self,round=13	{"mung":["age"]}
         req:wrangle,eternal,ok
         Radio:off,face:Radio
-        Stoker:idle,face:Stoker,crew:Radio,stood=16,stock=16,fresh=16,last:Deep A
+        Stoker:idle,face:Stoker,crew:Radio,stood=24,stock=24,fresh=24,last:High A,dug=8,toured=8
         Tuner:glass,face:Tuner
         Riffle:shut,face:Riffle,crew:Riffle
-        Zine:Faves,face:Zine,crew:Radio,count:0
+        Zine:Faves,face:Zine,crew:Radio,count:2
         Door:open,face:Door
         Uptime,face:Uptime
         Beat,face:Beat
@@ -17,6 +17,7 @@ Snap:H
           shop,pub:f5da6599b8505881
           stock,pub:f5da6599b8505881	{"dontSnap":1}
         Transfer,dontSnap
+        Shuffle,dontSnap
         Diag,dontSnap
         Mag:Lineup,face:Lineup,crew:Radio	{"dontSnap":1}
         Machine,self:f5da6599,friendly:Righto
