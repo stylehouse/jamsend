@@ -192,6 +192,308 @@ The model solves against a **hardcoded `[0,0,800,450]`** frame (`Vyto.g:814`) wh
 
 ## 0. What to get on with next
 
+### ⇢ THE DIRECTION, from the owner looking at the live glass (2026-08-09) — READ FIRST
+
+Four sentences, in the order they arrived, each one a correction to what was in front of them:
+
+1. *"they're still utterly on top of each other, not much info for how their Component is shaped?"*
+2. *"the zooming up to each thing as you click them doesn't help as the thing inside is just as small
+    and uncomplicated."*
+3. *"perhaps every bit of the Components we have right now has to be broken apart and expressed as a
+    Styled (to some basic degree) C\*\* thing as Vyto says them, with lots of smaller Components in it to
+     express each actual button. then we have the want of buttons, a bag of them, to structure... and it
+      should all look more terrific"*
+4. *"and MOVE it as well"*
+
+### ⇢ THE ADVERSARIAL REVIEW, and what it changed (2026-08-09, commissioned by the owner)
+
+An adversarial agent was set on the whole session's diff with the brief "argue this isn't right and needs
+ more structure". **Its central prediction was confirmed by the owner within minutes of being written**, so
+  its other findings are to be treated as live until disproved, not as opinion. The keepers:
+
+- **The area-vs-area fit test was meaningless, and the spill fallback re-created the original bug.**
+   `tight` compared `need_area` (an area) against the inscribed box's area, so a 200×40 face "fits" a
+    90×90 seat and is amputated in reality — and when the test DID fire it turned clipping OFF, i.e.
+     straight back to "utterly on top of each other". The owner, live: *"I can see all the component but
+      it's just by overlapping again. you're not actually measuring... ie overflow, and overlapping the
+       edge of the page etc."*  **FIXED** — see ENVELOPE below.
+- **A 0×0 mold spilled unclipped over the whole glass.** `inscribed_of` returns a zero box when the
+   centroid itself is outside the poly; `need > 0` then made `tight` true, so the face rendered at full
+    intrinsic size, unclipped, over its neighbours — worst exactly where the cell was most crushed.
+     **FIXED** by the same change (a zero box now yields the icon register, not a spill).
+- **`inscribed_of`'s convexity premise is NOT guaranteed** — `power_cells`' gap inset pulls each vertex
+   toward the vertex MEAN by a fixed distance, which is not convexity-preserving, and `FOCUS_SHRINK`'s
+    ~88× compression is exactly what drives vertices inside that distance. Corner-testing is only sound on
+     a convex poly. **OPEN — the top correctness item.** Fix by insetting along edge normals (a half-plane
+      clip, convex by construction) rather than radially.
+- **The watchdog no longer bounds continuous rAF** — a gliding camera resets `motionFrames` every frame,
+   so `MAX_MOTION_FRAMES` is unreachable. Mooted in practice by the camera's retirement, but the property
+    must be restored when the camera is unpicked.
+- **`{#each vines_of(...) as v (v.d)}` keys on a per-frame geometry string**, so every vine node is
+   destroyed and recreated per frame. **OPEN**, one-line fix (key on the edge, not its `d`).
+- **`seenAt` is pruned on spring removal**, which is precisely the documented Haul churn — so a churning
+   cell replays its 620ms arrival and arms an extra full repaint. **OPEN.**
+- **LAW B/C were not honoured**: no Book, no `%see` sentence, and no ledger row for the session's largest
+   changes (`inscribed_of`, the clip restoration, `--vyz`, `mold_seat`, the fx suite, `need_floor`).
+    **"The fleet stayed green" is disqualified by this session's own finding** — the 82%-coverage balloon
+     cut was fleet-green. Worse, the four Books that ran assert only that the new work is switched OFF on
+      a runner. *A gate proving your feature does not execute is not a proof of the feature.*
+- **`need_floor` was switched on for every live tab while `VytoNeed` has never once run green** (its
+   `toc.snap` is `dige:lie` throughout). That is the F3 failure mode, committed inside the document that
+    defines it. **OPEN — either record VytoNeed or turn the flag back off.**
+- **The structural charge, which stands:** ~2160 lines and ~22 concerns in one component, with eight pure
+   geometry functions (`inscribed_of`, `path_round`, `bbox_of`, `cut_sig`, `plug_curve`, `vine_curve`,
+    `aspect_fit`, `mold_seat`) living in a Svelte file where they cannot be unit-tested — **when
+     `vyto_geometry.ts` exists precisely to hold pure functions.** Moving them is mechanical and is the
+      honest answer to "the Books cannot witness shape": the convexity bug above is a five-line unit test,
+       not a character-grid squint. **This is the next structural move, ahead of any new feature.**
+- **And the sharpest one:** every ornament this session added — a better-fitting rectangle, a tilted
+   rectangle, a magnified rectangle, a rectangle that flies in, a rectangle drawn under the rectangle —
+    **takes "a face is a monolith that gets a rectangle" as its premise and invests in it**, which is the
+     exact premise §(3) asks to abolish. The doc's own first move (*"one face, decomposed behind a gate,
+      with a Book… pick the SIMPLEST face"*) was written and then skipped.
+
+**ENVELOPE — the third answer, and the one the owner named.** Spill and clip are both wrong because both
+ keep the component at natural size and argue about the excess. *"we need much better enveloping things
+  down when there's no room on the screen"* — so `measure_world` now stamps `need_w`/`need_h` (the natural
+   BOX, not just its area), and a face that does not fit its seat is **scaled down per-axis until it
+    does** (`--fit`, applied as a layout-divide + transform-scale so nothing reflows and nothing is cut).
+     Below a legibility floor the face is not drawn at all and the cell keeps only its edge label — so
+      *"things become icons when crushed down"* falls out as the bottom step of a continuum rather than a
+       special case. This also removes the spill/clip choice entirely.
+
+**STILL OWED FROM THE OWNER'S LATEST** (recorded, not yet built):
+ - *"we make it the most important thing, and everything sorts away from its moment"* / *"in the
+    spotlight"* — the Heist becomes the spotlight and the glass sorts away from it. This IS the emphasis
+     station, and note `%Spotlight,src` already exists in CLAUDE.md's notation.
+ - *"it's slow to respond to the Heist thing"* — `press_probe` is armed on HaulFace and wants one press
+    on a live tab plus `tracelog.mjs --watch`; `waited` vs `depth` forks it.
+ - *"we could actually put it all in one infoformat if html + Vyto C labels vtuffing"* — one info format
+    unifying the HTML face and the Vyto C labels, i.e. the under-layer and the component stop being two
+     rendering technologies. That is the same destination as §(3) and is the argument for doing the
+      decomposition rather than growing the under-layer further.
+
+**THE ORDER TO BUILD (5) IN, and why this order:** register first, then aspect, then emphasis.
+ The **register** (icon|compact|full) is what makes every other problem tractable — it removes
+  spill-vs-clip entirely, it makes "measure" easy (a face advises a size PER register instead of one
+   true size), and it is per-face additive so one face can adopt it while the rest stand. **Aspect**
+    second, because once a face advises per register it may as well advise w×h rather than an area.
+     **Emphasis** last, because it is the one that re-solves the model and therefore the one that can
+      move fixtures — and it wants the other two in place or a focused cell just gets a bigger box with
+       the same cut-off contents. Nothing here should touch a Book without a gate; the fleet stays the
+        regression bar and `scripts/vyto_see.mjs` stays the shape witness (the Books cannot see shape).
+
+> ⚠ **A COMMISSION FLAG DOES NOT REACH AN ALREADY-COMMISSIONED TAB — RELOAD IT.** `Sounditron_glass`
+>  latches `this.c.glass_done = 1` after the first successful dispatch and returns early ever after, so a
+>   newly-added `commission.sc.*` (today: `need_floor`) is only read by `Vyto_commission` on a tab that
+>    has not commissioned yet. `glass_done` rides `.c`, so a RELOAD clears it and the next tick
+>     re-commissions with the new flag; otherwise you wait for the trickle's re-commission, which only
+>      fires when the `%MusuThem` friend set GROWS. The tell is the exact symptom the owner reported
+>       minutes after the flag landed — *"the Components don't fit in these weird little things"*: the
+>        renderer had the new molds, the model still had `w.c.need_floor = 0`, so nothing grew the cells.
+>  **Any future commission flag has the same trap.**
+
+**(1) and (2) are ANSWERED** — see the section below: molds are inscribed inside their polygon (measured
+ on the owner's own capture: 5 overlapping pairs / 26.6% of mold area → **0 pairs**), the need floor is ON
+  for the live glass so a cell grows to what its component measures, faces are clipped again, and the
+   camera now magnifies face CONTENT via `--vyz` instead of just its box.
+
+**(3) IS THE REAL DESTINATION, and it reframes the whole face rail.** Today a face is a MONOLITH: one
+ Svelte component draws a whole organ in HTML, and Vyto only gets to choose the rectangle it sits in. That
+  is why the glass "doesn't say how the Component is shaped" — the C tree stops at the cell, and
+   everything interesting is opaque inside a box the model cannot see into. What is asked for is the
+    opposite: **decompose each face into C\*\* structure, one particle per meaningful part, right down to
+     the individual button — so Vyto lays the parts out, Matstyle styles them, and a "Component" becomes a
+      very small thing that draws ONE part.** The layout of a face stops being that face's private CSS and
+       becomes the same tessellation everything else gets.
+ **Most of the machinery already exists and is gated off.** This is not a new engine:
+ - `w.c.nested` + `Vyto_solve_scope` already tessellate a cell's children INSIDE it, to any depth
+    (VytoNest, VytoNestRest, green) — that IS "smaller Components in it";
+ - `Matstyle` already autovivifies a swatch per mainkey — that IS "Styled to some basic degree";
+ - `TreeFace` already draws an arbitrary particle generically — the fallback for parts nobody has
+    designed a face for yet;
+ - `KeepBar`/`Pick` faces are **registered and DORMANT** waiting for exactly this (ledger #11), and P7
+    "THE TENANT FLIP" is this flip;
+ - the blocker recorded for nested was CPU (`power_cells` O(M²) per scope per frame, no memo) — and the
+    **memo landed** (P1/`wallMemo`), plus the inscribed-box memo added today, so that objection wants
+     re-measuring rather than assuming.
+ **"the want of buttons, a bag of them, to structure"** is the open design question and the human's own
+  words for it: once every button is a particle, what governs which buttons a thing HAS, and how a bag of
+   them is arranged? That is `Cstructures_todo.md`'s territory (the structure catalogue + Dip_assign) and
+    should be answered there, not invented in the renderer.
+ **DO NOT start by rewriting HaulFace.** The honest first move is one face, decomposed behind a gate, with
+  a Book that proves the parts tessellate and the fleet still green — the same additive discipline every
+   station here has used. Pick the SIMPLEST face, not the one that hurts most.
+
+**(5) THE SIZING LAW, CORRECTED — three sentences that change the model, not the paint.**
+ *"so it's easier to measure, your boxes keep cutting off html. we used to advise on the aspect ratio of
+  things I think... it used to do a bunch of stuff aye... see Voro+Cyto for more inspiration"* ·
+   *"I think no zooming but only shifting emphasis, is the way to do it all"* ·
+    *"but the size of the cell does affect what's in it, so things become icons when crushed down"*
+
+ - **ASPECT MUST BE ADVISED, NOT JUST AREA — and this is why the boxes cut off HTML.** `need_area` is a
+    single scalar, so the floor can grow a cell to the right AREA and still hand a wide player a tall
+     narrow seat. A component has a natural SHAPE and must be able to say so. The prior art is exactly
+      where the owner points: Voro/Cytui advise shape, not just size (`mold_max_fit` `Cytui:3217` fits a
+       box into a polygon under an affine; the sizing doc's ⑤ already says "enlarged toward a **golden-
+        shapely envelope** when a whole truth won't fit", and `shapes.md` carries the envelope + 0.72).
+     **Owed:** stamp `need_w`/`need_h` (or need_area + need_aspect) beside `need_area` in Vytui's measure
+      pass, and have `Vyto_express`/`Vyto_solve` honour the aspect — a power diagram cannot be told a
+       shape directly, but the ENVELOPE the cell is grown toward can be, which is what Voro did.
+ - **NO ZOOMING — EMPHASIS INSTEAD.** *"I think no zooming but only shifting emphasis, is the way to do
+    it all."* This RETIRES the camera as the navigation answer (built 2026-08-09, ledger #15): flying the
+     viewport at a cell is the wrong verb. The right one is already built and already live —
+      `Vyto_focus` swells the attended cell by `FOCUS_BOOST` and compresses its siblings by
+       `FOCUS_SHRINK` (~88× in area), driven through `Radio_state`. **Clicking a cell should SHIFT
+        EMPHASIS (re-solve with that cell focused), not move a camera.** The whole glass then re-flows and
+         everything stays on screen — which is also the honest answer to the lens study's "the rest RING
+          the boundary, never panned off-screen" (processes.md §6). The camera code should be reduced to
+           whatever emphasis needs, not extended. *(`--vyz` magnification goes with it — with emphasis
+            the cell genuinely grows, so its component genuinely has more room and needs no scaling.)*
+ - **SIZE DRIVES DETAIL — "things become icons when crushed down".** The cell's size must decide WHAT its
+    component draws: crushed ⇒ an icon, roomy ⇒ the full UI, with steps in between. That is the same
+     register law the floor doc already states for text ("crest vs cells are REGISTERS of the same
+      sentence picked by zoom, never alternative modes" — processes.md ruling 1) applied to Components.
+       It also dissolves the clipping problem at the root: **you never put a big component in a small box
+        — you put a smaller component there.** Today the renderer's only lever is spill-vs-clip, which is
+         a choice between two bad outcomes; the real fix is that the face is handed its register.
+     **Owed:** a register the face rail can pass (`{ n, H, register }` — icon | compact | full, chosen
+      from the cell's box against the face's own advised sizes), and each face growing an icon form. The
+       generic fallback exists already: a cell too small for any face can draw its edge label alone.
+
+**(4) "and MOVE it as well"** — the parts must not merely tile, they must move: a part arriving, leaving
+ or changing should be SEEN doing it. The sprout/erupt/depart fx landed today are the vocabulary; what
+  (4) asks is that the DECOMPOSED parts inherit it, so a button appearing is a thing growing into place
+   rather than a repaint. Note the standing law this must respect: a settled glass parks and never
+    repaints, so part-motion has to ride the browser's clock (CSS/SMIL), never a rAF tick — and it must
+     stay off driven Books entirely.
+
+### ⇢ THE GLASS GOT A BODY (2026-08-09) — read this, then the handover below it
+
+**The ask, verbatim:** aspect ratios to flip through in a dropdown "to enforce some kind of min-height"
+ · "get some nice effects happening!" · *"Components won't be snapped by your picture-taker, but perhaps
+  a lot of it shall fit in the background, or there could always be some bare standard representation in
+   the background which is shadowed over by the UI bits shoved in there... and they should be really
+    properly shoved in there... it should be able to simulate a bit of spatial things... look like a fancy
+     videogame menu with things flying at you and erupting when people play it on their big TVs"* ·
+      *"things need to be navigable, lots of erupting sprouting branchy things, and biological feels"* ·
+       *"our buttons clicks need to be faster!"*
+
+**ALL RENDERER-SIDE. Not one line of `.g` was touched** — so no ghost-compile, no runner wedge, no
+ fixture could move by construction. `Vytui.svelte` + `HaulFace.svelte` only.
+
+**THE ONE THING THAT DETONATES IF YOU DON'T KNOW IT: `scripts/vyto_see.mjs` now exists, and the shape
+ work is NOT gated by the Books.** A fixture is a dige of the C tree; a cell's `d` string never reaches
+  one. So **wall shape is structurally invisible to every Book** — the first cut of the membranes left the
+   whole fleet GREEN while destroying the tessellation (balloons, eaten corners, neighbours no longer
+    sharing walls; measured coverage 82% where it must be ~99%). Rasterising the capture showed it in one
+     glance. *Chromium cannot launch in the claude container (no libglib), which is why that script does
+      its own rasterisation.* **Any future edit to cell geometry or wall shape must be looked at with it.**
+
+**What landed** (each independently revertible, in the order built):
+1. **`measure_world`'s px→viewBox scale** is now the exact `meet` scale (`min` of both ratios), not the
+    width ratio. A correctness fix that had to precede any viewport capping: the width ratio is only right
+     while the svg's element box shares the viewBox's aspect, and a letterboxed svg would have silently
+      UNDER-floored every face's `need_area` (grow-only, so it fails quiet).
+2. **The aspect pick** — `auto · 21:9 · 16:9 · 3:2 · 4:3 · 1:1 · 9:16`, a `<select>` beside `organs`
+    (whose title had been promising "layout controls to come"). A THIRD writer of the frame routed through
+     the SAME chokepoint (`fit_frame` → `publish_frame` → `Vyto_stir_soon`), so the model re-cuts and the
+      seed clamp catches strays. `auto` is today's measured path byte-for-byte. **Fullscreen beats the
+       pick** (there the stage's own box is honest). The picked ratio IS the min-height — the svg is
+        `width:100%; height:auto`, so 4:3 renders 0.75×width tall by construction.
+   **A trap caught before it shipped:** capping tall picks with `max-height` on the svg is WRONG — the
+    element box stays full width while the drawing letterboxes inside it, so the drawing is narrower and
+     centred while the molds are still positioned in percentages of the full box ⇒ **mold↔cell registration
+      tears, silently, only on tall picks.** Capped the WIDTH instead (`.depth { max-width: calc(82vh *
+       --fw / --fh) }`), so the element box always has the viewBox's aspect and no letterbox can occur.
+3. **The under-layer** — every FACED cell now also draws its bare self in SVG (`text.ident.under` +
+    up to two `sc` scalars), which is the answer to "the picture-taker can't snap Components". `--svg`
+     serialises `svg.viewport`; the faces are HTML in a SIBLING div, so **no capture has ever contained a
+      single face**, and a faced cell used to suppress its ident — which is why the first pixels ever taken
+       of a live glass were five mute polygons with ZERO labels. Now the faces shadow it on screen and the
+        capture still says what every organ is. **`.ident.under` naming is load-bearing**: the `--svg`
+         serializer only carries CSS whose selector matches `/\.cell|\.ident|\.viewport/`, so a fresh class
+          name would ship unstyled black serif into every capture. `data-ukey` not `data-key`, and
+           `measure_world` queries `text.ident:not(.under)` — a watermark must never set a need floor.
+4. **Membranes** (`path_round`) — bounded-radius corners, `CORNER_R = 13`, capped at 40% of the shorter
+    adjacent edge so a sliver degrades to nearly-straight instead of self-intersecting. Straight edge
+     middles survive, so **two neighbours still share a wall exactly**. Only the `d` string changes:
+      `bbox_of`, the drift judge, `cut_sig`, `power_cells` and every nested frame keep the raw polys.
+5. **The depth stage** — `.stage` holds the camera (`perspective: 1100px`), `.depth` is the body it looks
+    at (`preserve-3d`), and svg + faces sit inside it **as one body** so a tilt cannot tear the percentage
+     mold contract. `.fs-btn` stays outside (chrome must not tilt, and `go_fullscreen` reads
+      `parentElement`). `.depth` is `position: relative` so `.faces { inset: 0 }` resolves against it.
+6. **Mold seating** — off-centre cells angle inward (±6°) and hover pops the card 34px toward the camera,
+    appended to the style string that was already being rewritten every frame, rounded to 1dp so a calm
+     glass re-emits it byte-identical. **`z-index` stops ordering inside a `preserve-3d` context, so the
+      hover lift MOVED to `translateZ`** (z-index kept only for browsers that flatten).
+7. **Parallax** — a passive `pointermove` writes `--px/--py` on the stage; `.depth`'s transform reads them.
+    No `$state`, no rAF, no re-render: one style recalc and a composite. The 140ms transition is the
+     damping. Touch gets it free and it cannot fight scrolling (reads the pointer, never captures it).
+8. **fx: sprout · erupt · depart** — one-shot CSS animations, played by the browser's clock, because a
+    settled glass PARKS and a JS-driven effect would freeze exactly when the layout calms (the SMIL-ants
+     law). `seenAt` decides an arrival by FIRST-EVER SIGHTING OF A KEY, **not DOM presence** — this glass
+      has a documented keyed-remount churn and a presence test would replay the fly-in every time.
+       `animation-delay: fxi·55ms` staggers a batch, so a commission blooms outward. **Erupt is the focus
+        wire finally dressed**: `Vyto_focus`'s FOCUS_BOOST swell (proposed by `Radio_state` on PLAYING) is
+         already the eruption's body, springing; the class only adds the flash.
+   **A conflict caught while writing the CSS:** a running animation OUTRANKS inline style, so a keyframed
+    mold transform would hold the fly-in and then POP to `mold_seat`'s inline seat the instant it ended.
+     The mold's motion therefore rides its CHILD (`.face-scroll`), which composes instead of fighting.
+9. **The camera** — click a cell to fly to it, click again / Esc / ⤴ to walk out one level. Sprung on the
+    existing loop with the same `step_channel` and ω. **It contributes to the loop's `moving` verdict and
+     to nothing else** — never `disp`, `drift` or `settleCount` — because a glide must not delay
+      `Vyto_settle`, which the spool and Story's `waitVyto` read. **No zoom stack**: walking out recomputes
+       the parent rect from the standing paint, so the owner's *"must not run out of memory when someone
+        zooms in infinitely"* rider holds by construction (O(visible), one rect per world). Aspect-LOCKED
+         targets, because an off-aspect viewBox letterboxes and slides every mold off its cell. Cells are
+          real keyboard targets too (`role=button`, `tabindex`, Enter) — that is the honest answer to
+           "navigable", and it cleared the a11y warnings instead of suppressing them.
+10. **Vines** — the `%Flow` edges drawn at last, as roots under the cells, weight on `log2`. The solver has
+     been bunching by these since VytoBunch (proven by an A/B differential) and **never once drew them**.
+      No timer needed: edges change at stir, and a stir always ends in a paint.
+11. **Button latency** — instrumented, per §0.1's own law, plus the one no-regret fix.
+     **A FIND worth more than the probe:** every HaulFace handler is `A.post_do(fn)`, i.e. QUEUED onto
+      `H.todo` — and the `drain-lag` electrode next door (`Housing.svelte.ts:_push_todo`, 2026-08-07) had
+       already measured a posted fn waiting **3600ms with `gated=0` and an empty `why`** — nothing holding
+        the mutex, nothing throttled, the queue advancing ONE ITEM PER EXTERNAL WAKEUP because a reactive
+         self-bump cannot reschedule its own effect. **That is almost certainly the same mechanism as the
+          button complaint, and nobody had connected the two threads.** It was fixed 2026-08-08 with a
+           `setTimeout` re-drive, so the seconds-long case should be gone — but each item still waits a
+            gallop gate and **a click has no priority over whatever the resident glass already queued**.
+     `press_probe` stamps `waited` (press→work starts), `ran`, and **`depth` (queue depth at press)** into
+      the supply_trace ring, readable with `tracelog.mjs --watch`. **`waited` vs `depth` forks it cleanly: a
+       big wait at depth 0 is a wakeup problem, a big wait at depth>0 is a queueing problem, and they want
+        opposite fixes.** The no-regret half: `:active` feedback on every control, painted by the compositor
+         on pointerdown before any JS runs — half of "doesn't respond quickly enough" is genuinely "didn't
+          say it heard me", and that half is now fixed honestly without pretending the queue got faster.
+
+**VERIFIED.** Fleet on the live runner (`58517b48`), all `caveat:0`: **VytoCell 7/7 ×2 · VytoStaple 8/8 ·
+ MusuNeGrind 11/11 · VytoTandem 4/4.** Pixel-witnessed by `runner_shot --svg` + `vyto_see.mjs`:
+ - `viewBox="0 0 800 450"` on a Book world ⇒ **the aspect pick provably did not leak into a driven world**;
+ - `Q` segments on every cell ⇒ membranes real in shipped output; **coverage 98.8%** (the missing 1.2% is
+    the intended GAP 2.2 channel) ⇒ the cells still tile;
+ - fx classes, the dropdown and the parallax listener all ABSENT on a runner ⇒ the live-page gates hold.
+**One red was investigated and dismissed honestly, not waved away:** VytoCell step 6 (`pin one cell by
+ pointer then rearrange`) came back red once. A controlled revert to clean HEAD went green, my code then
+  went green ×2 on the same Book — so it is the KNOWN settle-timing flake this doc documents at length
+   ("any step gated on a settle/board/nest-wait is currently unreadable"), not a regression.
+
+**EYE-ONLY, and said so rather than claimed:** parallax, the seating tilt, the arrival/eruption/depart
+ animations, and the camera GLIDE. Motion and 3D transforms cannot round-trip an SVG capture. The camera's
+  *destination* is witnessable (a shot taken while engaged carries the zoomed viewBox) — that shot has NOT
+   been taken, because a Book runner never engages; it wants a live tab.
+
+**Next moves, in order.** (a) **Look at it on a real tab** — the whole point. The under-layer, the vines,
+ the plug and the ants can only be seen where there are faces and relations, i.e. a `/BigSoundland`
+  player tab (`runner_shot --runner=<their pub> --svg`), never a Book runner. (b) **Read the press probe**
+   — one press of ✕ on a live tab and `tracelog.mjs --watch` names the button culprit outright; the fork
+    is already written above. (c) The **gap list** §0.1 item 3 still asks for, untouched by this round.
+     (d) A **lone cell fills the entire frame** (VytoTandem, confirmed in pixels: 1 row → 100% coverage —
+      correct, but a poor use of the glass, and the owner noticed). Giving a one-cell world breathing room
+       is a MODEL change (`Vyto_solve`'s frame or radii) that would move fixtures, so it is flagged here
+        rather than taken.
+
 ### ⇢ HANDOVER INTO THE DO-UP (2026-08-08 late) — read this first
 
 **Destination.** §0.1 item 3: the Sounditron↔Vyto integration redone, "a bunch of fancy UI biologies",
@@ -569,6 +871,13 @@ The occasion: the human found the live glass an "unstructured flap-puddle — no
 | 9 | walls re-derived O(M²) per scope EVERY animating frame — no memo | `power_cells` `vyto_geometry.ts:39`; per-frame from `integrate_world` (`Vytui.svelte:332`; perf §1) | — | — → P1 |
 | 10 | no per-scope cell ceiling; fold crushes top only; `fold_ladder` PROVEN but UNWIRED | perf §4; `budget_for` = 12 legible at 800×450 (`vyto_foam.ts:88`); VytoFold contract stands | VytoFold | — → P4 |
 | 11 | nested is gated OFF at the wire | Sounditron sets `commission.sc.nested` only on `M.c.heist_nested` (perf §5); KeepBar/Pick faces registered DORMANT | — | P7 flips it |
+| 12 | a faced cell draws a BARE SVG representation under its face | `Vytui.svelte` `under_line` + the `{:else if}` ident block; `.ident.under` | fleet (byte-neutral: SVG never reaches a dige) | ✅ SVG: `class="ident under"` greppable in a capture — the first time any capture could say what a faced cell IS |
+| 13 | cell walls are rounded and STILL TILE | `Vytui.svelte` `path_round`, `CORNER_R = 13`, capped at 40% of the shorter adjacent edge | fleet green ×2 — **and the fleet CANNOT witness this**, see the pixel cell | ✅ `vyto_see.mjs`: **coverage 98.8%**, straight shared edges. First cut measured **82%** (balloons) with the fleet still GREEN — the defect a Book is structurally blind to |
+| 14 | the frame's aspect is a CHOICE on a live page, and pinned on a driven one | `Vytui.svelte` `ASPECTS`/`aspect_pick` → the `fit_frame` branch → `publish_frame` | VytoCell 7/7 ×2 · VytoStaple 8/8 · MusuNeGrind 11/11 | ✅ SVG of a Book world reads `viewBox="0 0 800 450"` ⇒ the pick provably cannot reach a fixture |
+| 15 | the glass is navigable — a cell can be flown to and walked out of | `Vytui.svelte` `cam_of`/`cam_engage`/`cam_out`/`cam_step`; viewBox + mold % read the camera | fleet (a driven world never leaves the reference pose) | ⬚ OWED: a shot taken WHILE ENGAGED carries the zoomed viewBox — needs a live tab, a Book runner never engages |
+| 16 | %Flow relations are drawn as vines | `Vytui.svelte` `vines_of`/`vine_curve`; `.vine` | — (no Vyto* Book declares relations; VytoBunch proves the SOLVER reads them) | ⬚ OWED: needs a world with relations — the live page, pending the gap list |
+| 17 | press → queued-work latency is measured, not guessed | `HaulFace.svelte` `press_probe` → supply_trace `ev:'press'` {waited, ran, depth} | — (an electrode, not a claim) | ⬚ OWED: one ✕ press on a live tab + `tracelog.mjs --watch`. `waited` vs `depth` forks wakeup-vs-queueing |
+| 18 | a press is ACKNOWLEDGED before its work runs | `HaulFace.svelte` `:active` on every control (compositor-painted on pointerdown) | — | ⬚ eye-only by nature — a paint that precedes JS cannot be captured by a JS-driven camera |
 
 ### The build plan — P0→P7, each Book named BEFORE its code (LAW B)
 

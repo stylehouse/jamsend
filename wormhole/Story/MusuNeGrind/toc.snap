@@ -4,8 +4,7 @@ story:MusuNeGrind
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=2.656
-      sample=2.666,at=1786175948
+    TimeTotal:beliefs,avg=2.658
       sample=2.616,at=1786176023
       sample=2.616,at=1786176031
       sample=2.562,at=1786176066
@@ -15,8 +14,8 @@ story:MusuNeGrind
       sample=2.755,at=1786183138
       sample=2.752,at=1786183764
       sample=2.81,at=1786184681
-    TimeTotal:step,avg=0.241
-      sample=0.242,at=1786175948
+      sample=2.685,at=1786191171
+    TimeTotal:step,avg=0.242
       sample=0.238,at=1786176023
       sample=0.238,at=1786176031
       sample=0.233,at=1786176066
@@ -26,6 +25,7 @@ story:MusuNeGrind
       sample=0.25,at=1786183138
       sample=0.25,at=1786183764
       sample=0.255,at=1786184681
+      sample=0.244,at=1786191171
   step,dige:56e10b230dce175f
   step=2,dige:b833e7dae625edea
   step=3,dige:c13ed919789bb934

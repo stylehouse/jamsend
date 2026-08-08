@@ -24,6 +24,42 @@
     let tick = $state(0)
     $effect(() => { const iv = setInterval(() => { tick++ }, 500); return () => clearInterval(iv) })
 
+    // ── THE PRESS ELECTRODE (Vyto_todo §0.1 item 1 — the human: "the heist setup 'X' button, and various
+    //  buttons really... do not respond quickly enough to clicking") ─────────────────────────────────
+    //  The doc's law on this is explicit — INSTRUMENT, do not guess between the four candidates — so this
+    //   measures rather than fixes.  What it measures is the only interval the user actually feels: from
+    //    the press to the posted work STARTING, and again to it FINISHING.
+    //  WHY THIS SHAPE.  Every handler here is `A.post_do(fn)`, i.e. the work is QUEUED onto H.todo and
+    //   drained by the belief loop — so a click's latency is queue latency, not handler cost.  There is a
+    //    known mechanism next door: the `drain-lag` electrode (Housing.svelte.ts `_push_todo`, 2026-08-07)
+    //     measured a posted fn waiting 3600ms with `gated=0` and an empty `why` — nothing holding the
+    //      mutex, nothing throttled, the queue simply advancing ONE ITEM PER EXTERNAL WAKEUP because a
+    //       reactive self-bump cannot reschedule its own effect.  That was fixed 2026-08-08 with a
+    //        setTimeout re-drive, so the seconds-long case should be gone — but each item still waits a
+    //         gallop gate, and a click has NO PRIORITY over whatever the resident glass already queued.
+    //          `waited` vs `depth` forks exactly that: a big `waited` at depth 0 is a wakeup problem, a
+    //           big `waited` at depth>0 is a queueing problem, and they want opposite fixes.
+    //  Rides the supply_trace ring (`.c` on the top House, capped, never a snap) so it is readable with
+    //   `scripts/tracelog.mjs --watch` instead of asking the human to copy a console.
+    function press_probe(label: string, work: () => void) {
+        const t0 = Date.now()
+        const M: any = A?.top_House?.()
+        const depth = M?.todo?.length ?? -1
+        A?.post_do?.(() => {
+            const began = Date.now()
+            try { work() } finally {
+                const done = Date.now()
+                if (M) {
+                    const log = (M.c.supply_trace ||= [])
+                    log.push({ t: t0, ev: 'press', id: label, waited: began - t0, ran: done - began, depth })
+                    if (log.length > 300) log.splice(0, log.length - 300)
+                }
+                // one console line too, so a human watching devtools sees it without the CLI
+                if (began - t0 > 120) console.log('▣ press', label, 'waited', began - t0, 'ms · ran', done - began, 'ms · queue depth at press', depth)
+            }
+        }, { see: 'press ' + label })
+    }
+
     // MOUNT/DESTROY TELL (Download_stall_handover.md Evening 7's "the bomb" — the directories editor
     //  snapping shut on a Story trickle): a top-level, no-dependency $effect runs its body once on mount
     //  and its cleanup once on destroy, so if this instance is being torn down and recreated under a
@@ -322,10 +358,10 @@
     //   was typed there would be the same silent loss the ✓ fix cured on 2026-08-05.
 
     function toggle(ref: string) {
-        A?.post_do?.(() => { A?.Heist_keep_pick_toggle?.(n, ref) }, { see: 'keep pick' })
+        press_probe('pick', () => { A?.Heist_keep_pick_toggle?.(n, ref) })
     }
     function cancel() {
-        A?.post_do?.(() => { A?.Heist_keep_cancel?.(A?.top_House?.()?.c?.radio_w, n) }, { see: 'keep cancel' })
+        press_probe('cancel', () => { A?.Heist_keep_cancel?.(A?.top_House?.()?.c?.radio_w, n) })
     }
     // SCRUB = cancel + delete what landed.  Two-press arm rather than a window.confirm: the confirm dialog
     //  blocks the belief loop while it sits open, and this button lives on a cell that is actively pulling.
@@ -347,10 +383,10 @@
     let lofiWhy = $state(false)
     function scrub() {
         scrubArmed = false
-        A?.post_do?.(() => { A?.Heist_keep_scrub?.(A?.top_House?.()?.c?.radio_w, n) }, { see: 'keep scrub' })
+        press_probe('scrub', () => { A?.Heist_keep_scrub?.(A?.top_House?.()?.c?.radio_w, n) })
     }
 
-    function start() { A?.post_do?.(() => { A?.Heist_keep_start?.(n) }, { see: 'keep start' }) }
+    function start() { press_probe('start', () => { A?.Heist_keep_start?.(n) }) }
     // lofi — the phone answer.  Framed as what it does to the TRANSFER, not as a codec setting: the friend
     //  transcodes and sends the small thing, which is the only reason to want it.  Settable while primed and
     //   read by the want-ask at ▶ start, so it must sit here beside the other pre-start tweaks.
@@ -367,9 +403,9 @@
     function toggleLofi() {
         const want = !(lofiWish ?? !!n?.sc?.lofi)
         lofiWish = want
-        A?.post_do?.(() => { A?.Heist_keep_set_lofi?.(n, want) }, { see: 'keep lofi' })
+        press_probe('lofi', () => { A?.Heist_keep_set_lofi?.(n, want) })
     }
-    function focus() { A?.post_do?.(() => { A?.Heist_keep_touch?.(n) }, { see: 'keep focus' }) }
+    function focus() { press_probe('focus', () => { A?.Heist_keep_touch?.(n) }) }
 </script>
 
 <div class="kf" class:folded={face.folded || face.unfocused}>
@@ -760,6 +796,23 @@
     @keyframes kf-shim {
         0%, 100% { opacity: 0.35; }
         50%      { opacity: 0.8; }
+    }
+    /* ── THE PRESS ACKNOWLEDGEMENT (the human 2026-08-08: "our buttons clicks need to be faster!") ──
+       The NO-REGRET half of the latency work, and the only half that is safe to do before the electrode
+       above has reported.  Every handler here QUEUES its work onto the belief loop, so the result of a
+       press cannot appear until the queue drains — but the ACKNOWLEDGEMENT of the press need not wait for
+       anything at all: `:active` is painted by the compositor on pointerdown, before a single line of our
+       JS runs.  Half of "doesn't respond quickly enough" is genuinely "didn't say it heard me", and this
+       fixes that half honestly and completely, without pretending the queued work got faster.
+       Applied to every interactive control in the face at once (`:active` on the shared selector list)
+       rather than button by button, so a control added later inherits it instead of feeling broken.
+       `transition: none` on the active state is deliberate: a transition would delay the very feedback
+       this exists to make instant. */
+    .kf-start:active, .kf-x:active, .kf-scrub:active, .kf-more:active,
+    .kf-lofi:active, .kf-q:active, .kf-track:active, .kf-queued:active, .kf-why-x:active {
+        transform: scale(0.94);
+        filter: brightness(1.45);
+        transition: none;
     }
     .kf-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
     .kf-start {

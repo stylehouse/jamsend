@@ -4,28 +4,28 @@ story:VytoCell
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.635
-      sample=1.028,at=1784682350
-      sample=0.923,at=1784682852
-      sample=0.968,at=1785030046
-      sample=1.29,at=1785095308
-      sample=0.997,at=1785123230
-      sample=1.026,at=1785131925
-      sample=0.025,at=1785997133
-      sample=0.025,at=1786077776
-      sample=0.039,at=1786154192
+    TimeTotal:beliefs,avg=0.046
       sample=0.027,at=1786183753
-    TimeTotal:step,avg=0.091
-      sample=0.147,at=1784682350
-      sample=0.132,at=1784682852
-      sample=0.138,at=1785030046
-      sample=0.184,at=1785095308
-      sample=0.142,at=1785123230
-      sample=0.147,at=1785131925
-      sample=0.004,at=1785997133
-      sample=0.004,at=1786077776
-      sample=0.006,at=1786154192
+      sample=0.051,at=1786190675
+      sample=0.038,at=1786190762
+      sample=0.058,at=1786190828
+      sample=0.025,at=1786190858
+      sample=0.03,at=1786191075
+      sample=0.047,at=1786192103
+      sample=0.085,at=1786192805
+      sample=0.061,at=1786193831
+      sample=0.033,at=1786194237
+    TimeTotal:step,avg=0.007
       sample=0.004,at=1786183753
+      sample=0.007,at=1786190675
+      sample=0.005,at=1786190762
+      sample=0.008,at=1786190828
+      sample=0.004,at=1786190858
+      sample=0.004,at=1786191075
+      sample=0.007,at=1786192103
+      sample=0.012,at=1786192805
+      sample=0.009,at=1786193831
+      sample=0.005,at=1786194237
   step,dige:7bb338130606d584
   step=2,dige:1902b2d06d07af4c,desc:seed three sibling cogs with distinct doses
   step=3,dige:13185f216eadbf34,desc:mint A:Vyto beside the run and commission it on the three cogs

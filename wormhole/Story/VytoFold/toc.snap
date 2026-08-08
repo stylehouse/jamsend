@@ -5,7 +5,6 @@ story:VytoFold
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.018
-      sample=0.011,at=1785094228
       sample=0.013,at=1785094327
       sample=0.053,at=1785094488
       sample=0.014,at=1785097654
@@ -15,8 +14,8 @@ story:VytoFold
       sample=0.017,at=1785098053
       sample=0.014,at=1785098093
       sample=0.013,at=1785123468
+      sample=0.015,at=1786189776
     TimeTotal:step,avg=0.003
-      sample=0.002,at=1785094228
       sample=0.002,at=1785094327
       sample=0.009,at=1785094488
       sample=0.002,at=1785097654
@@ -26,6 +25,7 @@ story:VytoFold
       sample=0.002,at=1785098053
       sample=0.002,at=1785098093
       sample=0.002,at=1785123468
+      sample=0.002,at=1786189776
   step,dige:b5d16e38357626bf
   step=2,dige:0db474df303ae9ca,desc:the screen budget scales with the glass area
     Assertion:budget-scales-with-glass,sentence:the screen budget grows with the glass — a wall four times the area introduces four times as many cells

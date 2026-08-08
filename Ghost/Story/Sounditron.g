@@ -379,6 +379,23 @@ Sounditron_commission(w):
     //        can only ride the whole commission — never nest ONLY the keep — which is the other reason to wait.
     let M = this.top_House ? this.top_House() : null
     if (anyKeep && M && M.c.heist_nested) commission.sc.nested = 1
+    // THE NEED FLOOR, ON (2026-08-09) — THE PIN's P2 tenancy, blessed by the owner after looking at the
+    //  live glass: "they're still utterly on top of each other, not much info for how their Component is
+    //   shaped?".  That sentence IS the need floor's job.  Until now cell size came from DOSE alone, so a
+    //    cell never heard what its component measured: a big face got a small seat and spilled over its
+    //     neighbours (measured on the owner's own capture — 5 overlapping mold pairs, 26.6% of all mold
+    //      area).  With this on, Vytui measures each face's natural box after a flush, stamps
+    //       `row.c.need_area`, and Vyto_express floors `env_area = max(dose algebra, need × 1.15)` — so a
+    //        cell GROWS to hold its widget and size finally states what the thing needs.
+    //  Renderer-side this pairs with the inscribed mold + the polygon clip: the floor removes the cause of
+    //   amputation (a starved cell), which is what made clipping safe to restore (ledger #4's "let them
+    //    overflow" choice, re-decided — THE PIN human call 2).
+    //  SAFE BY THE SAME GATE AS `nested`: it is a commission sc key, read once into `w.c.need_floor`
+    //   (Vyto.g:117), so it touches ONLY this live Sounditron glass.  Every Vyto* Book commissions its own
+    //    world without it and `Vyto_need_of` returns 0 there — a floor-free glass skips the whole pass, so
+    //     the fleet is byte-identical and no fixture can move.  Grow-only with a 2% dead-band, so no
+    //      wall-flutter; one-directional per pass, per the sizing doc §4.
+    commission.sc.need_floor = 1
     commission.c.Run = this
     SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
     return 1
