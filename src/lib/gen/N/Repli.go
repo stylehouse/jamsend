@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return '6cd40ab13560f9fa~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return '05730bdad9037d5b~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -598,7 +598,7 @@ async Repli_park_want(w, pier, h) {
     //        latch was right to keep the COUNTER and the trace one-shot (that is the flood it exists to
     //         prevent); it was wrong to gate the reply.  Throttled instead, well under PARK_CEIL so a
     //          suspension always gets refreshed before it lapses.
-    let PARK_REPLY_MS = +(w.c.repli_park_reply_ms || 2000)
+    let PARK_REPLY_MS = (w.c.repli_park_reply_ms == null ? 2000 : +w.c.repli_park_reply_ms)
     let nowp = Date.now()
     if (nowp - (p.c.told_at || 0) > PARK_REPLY_MS) {
         p.c.told_at = nowp

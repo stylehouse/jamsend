@@ -23,24 +23,60 @@ This doc exists because the failures below have **no other home**. Each subsyste
 
 ## 0. Next move (read first)
 
-### ⚠ STATE AT HANDOVER (2026-08-08 evening) — read this before you try to compile anything
+### ⚠ STATE AT HANDOVER (2026-08-08, ~19:30) — read before starting
 
-**1. `npm run ghost-compile` DOES NOT WORK RIGHT NOW, and it is not your edit.** The editor tab is
- **identity-arrested**: it booted as `cdbe098c044e6806`, that browser's IndexedDB is empty, and no
-  `.jamsend/account/cdbe098c044e6806/` exists — so there is no key, in the browser or on disk, and a
-   prepub cannot be turned back into one. Boot is HELD, the tab cannot sign, and every compile ticket
-    dies with `no response in 12s (editor not connected or half-open?)`. **The relay is fine** — a
-     `runner_ask runners` answers normally throughout, which is exactly what makes this misleading.
- - **Resolve:** in the tab's 🪪 hatch → *Generate a new identity* → *Set up cluster trust* (the second
-    one matters: compiles are signed and the relay checks the signer against `.env.cluster-pubs`).
- - **Work around it meanwhile — this is the load-bearing fact:** `scripts/LocalGen.spec.ts` is the
-    BROWSERLESS `.g`→`.go` compiler, using the real in-app translator and writing the real gen path.
-      GFILES="Ghost/M/Ra.g Ghost/M/Heist.g" node_modules/.bin/vitest run \
-        -c scripts/Story_cli.vitest.config.mjs scripts/LocalGen.spec.ts
-    `CHECK=1` in front makes it a parse gate that writes nothing. **Everything compiled after ~18:00 on
-     2026-08-08 went through this path**, so those `.go` files are correct but were never produced by
-      the canonical route and **no runner has HMR'd them**. Re-run the chain through the editor once
-       it is back and confirm the hashes match.
+**0. RESOLVED SINCE THE EARLIER BLOCK:** the editor was identity-arrested for ~90 minutes (booted as
+ `cdbe098c044e6806`, empty IndexedDB, no account snap on disk — key gone in both places). The human
+  minted a new identity `3390b005fa79972b` and set up cluster trust; `ghost-compile` works again and
+   the whole day's chain was recompiled through it. **Keep this in your pocket anyway:**
+ - the tell is `no response in 12s (editor not connected or half-open?)` **while `runner_ask runners`
+    answers normally** — the relay being fine is what makes it misleading;
+ - the fallback is `scripts/LocalGen.spec.ts`, a BROWSERLESS `.g`→`.go` compiler using the real in-app
+    translator and writing the real gen path:
+      GFILES="Ghost/M/Ra.g" node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/LocalGen.spec.ts
+    (`CHECK=1` in front = parse gate, writes nothing). It carried the whole evening.
+ - **Caveat worth knowing:** `Ghostmeta_*` is `sha256(<the .g source>)[:16]`, so a matching hash proves
+    the SOURCE is unchanged and says nothing about compiler agreement. `LocalGen` uses the same
+     `Lang_compile_dock`; that is the basis for trusting it, not the hashes.
+
+**1. `MusuNeGrind` RAN FOR THE FIRST TIME — and did its job on its first outing.** All 11 steps
+ executed, `error: null` throughout, no fault. All three breakages §3.11 predicted (`Repli_offer`
+  against a `%Mag:shuffle` root, `Repli_mirror_lib` under it, the injected nav's shape) worked first
+   try. Steps 1–7 gave **byte-identical diges across two runs** despite a real clock — it is
+    deterministic and therefore recordable. Every step reads `ok=0` only because the fixture still
+     carries lie diges; `caveat=0`, `untried=0`. **That red is correct.**
+ - **It caught a real bug in itself, via its own non-vacuity claim.** `w.c.ra_cull_floor_ms = 0` is a
+    NO-OP: `Ra.g:782` reads `+(w.c.ra_cull_floor_ms || 30000)` and `0` is falsy, so setting the floor
+     to zero *re-arms* the 30s throttle. Three scenes never ran, and claim #4 — the one §3.11 calls
+      "the one worth having built this for" — was a **false green over a sweep that never threw**.
+       Claim #5 caught it, which is exactly the job §3.11 assigns #5. Fixed in the Book (`= 1`), not
+        in `Ra.g` — a Book must not edit what it tests.
+ - **SECOND SIGHTING OF THE SAME FOOTGUN, and this is now a pattern worth hunting.** `SupplyGuards`
+    found the identical shape hours earlier in `Repli_missed_hot`'s `ra_missed_hold_ms`. **`|| DEFAULT`
+     is fine where 0 is meaningless (a count, a byte total) and a BUG wherever 0 is a legitimate
+      setting** — it makes the dial unsettable and untestable. Worth a sweep of every `w.c.* || N`.
+ - **Still between it and being a gate:** #2 and #6 fail on a Book bug, not a wire bug — the frame is
+    read inline in the same `do_fn` when it lands one beat later (MusuVend reads from its *witness*;
+     this should too). #4 passes but is still vacuous — its dige is identical before and after the
+      floor fix, so it cannot tell "threw and cleared the latch" from "was throttled out". And §3.11's
+       items 3–5 are untouched: the discriminator has **never been broken on purpose**, the fixture is
+        still lies, and it has not been run N times.
+
+**1b. `wormhole/Cluster/toc.snap` IS LOSING LIVE ROWS AND KEEPING DEAD ONES — a canonicity bug, not a
+ missing reaper.** Row counts across today's commits oscillate 11→9→11→12→11→8, so entries *do* fall
+  off. But the ones that vanished at 18:53 were `58517b`, `96d0cf88`, `a67a5d04`, `f5da6599` — **the
+   live, active tabs** — while six dead editors (`0de425ee`, `c505e99b`, `9194a273`, `69659296`,
+    `9b08d485`, `cdbe098c`) survived. That is backwards for a reaper and exactly right for
+     **last-write-wins overwrite by a second editor with a divergent view**.
+ - `Lies_runner_roster` is correctly gated `if (H.Lies_role(w) !== 'editor') return` — runners never
+    write it, only beacon — and timings ride off-snap (`.c.last_heard`) so the 15s beacon does not
+     churn the toc. That design is sound. **The gap is that nothing decides which editor is canonical.**
+ - Live cost: `49dee91d61a9de64` carries `favourite_client:claude` and has not existed for hours, so
+    subagents preferentially reach for a tab that is gone (one burned 8 minutes on it).
+ - **Do not "fix" this with a reaper** — more writers churning the same file is the disease, not the
+    cure. It is the human's own framing: *"a mature take on who can coordinate what data changes,
+     what's canonical"*. Same family as `.jamsend/account`'s last-write-wins mirror (`Auto.svelte`
+      ~:463 names it outright).
 
 **2. There is now a runner-free test layer, and it earned its keep on the first run.**
  `scripts/SupplyGuards.spec.ts` — mount a `.go` against a **stub House** (a `.go` is a Svelte component
@@ -57,10 +93,28 @@ This doc exists because the failures below have **no other home**. Each subsyste
    Vyto changes. **"Book-inert" means no regression, not covered.** Do not read the earlier green as
     covering these.
 
-**4. Runners:** `a67a5d04` was reloaded and did not come back. `58517b` times out. `65ae23ea` answers
- and is free **but is the human's Daemon-observation tab** — a Book run takes the world over, so ask
-  first. `49dee91d` (nominally claude's) is held by another client. **MusuNeGrind parses clean and is
-   written but has never been run** — that is `MusuNeGrind`'s step 1 and it needs a nominated runner.
+**4. Runners:** `a67a5d04` is ALIVE and is the one the human has authorised — use it. `49dee91d` is a
+ **dead registry row** (see 1b) that advertises itself as claude's favourite; do not chase it.
+  `65ae23ea` answers but is the human's Daemon-observation tab — a Book run takes the world over, so
+   ask first. `f5da6599` / `96d0cf88` are their live music tabs: **never**.
+
+**4b. THE `×2` ON EVERY `ws RECV` IS SOLVED — and it was never cosmetic.** A tab opens two relay
+ sockets (`?addr=<prepub>` from `Swarm_station_up`, `?addr=runner` from `LiesLies`) and **both send a
+  signed hello carrying the SAME active `%Identity` key**, so `handleHello` binds that prepub to two
+   different sockets. `locals` is a `Map<string, Set<WebSocket>>` and `bind` **appends**, so
+    `deliverLocal` fans every prepub-addressed frame to both. Refuted on the way, don't re-chase: a
+     socket entering by several doors lands in the Set once — a JS Set dedupes by identity.
+ - The phantom copy lands in `w:Lies`, where `Peeroleum_route`'s `peerings.length === 1` fallback
+    matches it **by luck**, books a `%req:unemit` nothing there can handle, draws no ack, and
+     `faulty_owed` drives a **per-frame O(inbox) `%faulty` rebuild** on an inbox growing to 2000.
+ - **Proof already in the human's logs:** `inbox backstop: pier editor holds 2050 unemits — dropped
+    oldest type=repli_lines`. There is no legitimate path for a MUSIC frame onto the Lies channel.
+ - Confirm in 30s: count `🪪 hello bound <prepub>` per tab boot **in the dev-server terminal**.
+ - The fix is authentication-vs-delivery in `relay.ts` — a hello must authenticate a socket without
+    adding it to that prepub's fan-out. ⚠ **`relay.ts` is another session's active file.** Hand it over.
+ - Bonus: the relay already prints `⚠ DROPPED bridge→ … that side's inbound is DEAD` when a tab goes
+    deaf with its socket up. **That is a ready-made tier-two supervisor signal nobody reads** — better
+     than the per-peer `seq` tracking `Supervisor_todo` §4 sketches, because it needs no new bookkeeping.
 
 **5. Owed to the human, none of it blocking:** what they wanted true about Vyto that isn't (the
  do-over cannot start without it); whether the 32s seam *sounds* right (proven to run, not to sound);

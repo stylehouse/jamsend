@@ -12,7 +12,7 @@ import { sig_of, group_edges, bucket_key_of, pull_step, budget_for, SIG_JOINS, F
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return '73dc22ea906addbe~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return 'da18967331bc34c1~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -383,6 +383,13 @@ Vyto_fold_scope(w, scope) {
     let all = scope.o()
     let members = all.filter(r => !r.sc.departing && r.sc.Vtuffing == null)
     for (const m of members) { if (m.c.folded) { m.c.folded = 0; m.c.T = null; m.bump_version() } }
+    // DELIBERATELY STILL 800×450, unlike Vyto_solve's frame (which now follows w.c.vw_frame — see
+    //  the note there).  This is a legibility BUDGET — how many cells fit before they read as specks —
+    //   and it is a function of the frame's AREA, which barely moves when the aspect does (800×450 =
+    //    360000 vs a portrait 446×800 = 356800, under 1%).  Making it follow the live frame would put
+    //     the fold/un-fold threshold on the tab's geometry for well under a percent of signal, and a
+    //      cell crossing that threshold CRUSHES or UNCRUSHES a whole group — a far bigger visual event
+    //       than the thing it would be tracking.  Not measured; reasoned from the arithmetic above.
     let budget = budget_for(800, 450)
     let groups = {}
     if (members.length > budget) {
@@ -868,8 +875,32 @@ Vyto_solve(w) {
     // a crushed member (Fold marked `.c.folded`) is off the cut — its group's crest cell stands for it.
     let members = w.c.mirror.o().filter(r => !r.sc.departing && !r.c.folded)
     if (!members.length) return
-    // the fixed root rectangle [0,0,800,450] — Vytui renders the same viewBox.
-    let frame = [{ x: 0, y: 0 }, { x: 800, y: 0 }, { x: 800, y: 450 }, { x: 0, y: 450 }]
+    // THE ROOT RECTANGLE — and it must be the one the RENDERER cuts against (Vyto_todo §0.2(d),
+    //  2026-08-08).  It was the hardcoded [0,0,800,450] while Vytui cut against vw_w × vw_h, which
+    //   follows the stage aspect: on a portrait phone fit_frame yields ~446×800, so this placed seeds
+    //    with x up to 800 into a 446-wide cut, and every seed outside it clipped to poly.length < 3 →
+    //     null → the renderer drew a 6px disc at an off-viewBox coordinate, i.e. nothing you can see.
+    //  `w.c.vw_frame` is stamped by Vytui's publish_frame, whose only caller (fit_frame) returns before
+    //   touching anything unless `top_House().c.humdinger`.  So a DRIVEN world is never stamped, `vf`
+    //    is null, and this whole block — the frame override AND the seed clamp below — is unreachable:
+    //     a Book cuts the same literal 800×450 it always did, and every recorded fixture stands to the
+    //      byte.  Not "equal by arithmetic", unreachable, which is the only guarantee worth having here.
+    let fw = 800
+    let fh = 450
+    let vf = w.c.vw_frame
+    if (vf) {
+        if (Number(vf.w) > 0) fw = Number(vf.w)
+        if (Number(vf.h) > 0) fh = Number(vf.h)
+        // CLAMP STANDING SEEDS INTO THE NEW FRAME.  Seeds persist on `.c.seed` across solves, and a
+        //  seed OUTSIDE the frame is a trap, not a transient: power_cells gives it a null poly, the
+        //   relax below skips a null poly (`if (!pinned[i] && polys[i])`), so nothing ever pulls it
+        //    back in — a phone rotating to portrait would strand every cell whose x exceeded the new
+        //     width, permanently.  With the default frame this loop is a no-op by construction (entries
+        //      come from Vyto_frame_at/Vyto_frame_nearest on the boundary, and every later position is
+        //       a convex combination of in-frame points), which is why it is safe to sit inside the gate.
+        for (const m of members) { if (m.c.seed) m.c.seed = { x: Math.min(fw, Math.max(0, m.c.seed.x)), y: Math.min(fh, Math.max(0, m.c.seed.y)) } }
+    }
+    let frame = [{ x: 0, y: 0 }, { x: fw, y: 0 }, { x: fw, y: fh }, { x: 0, y: fh }]
     // a newcomer (no prior seed) enters at the frame-boundary point nearest the mean of the
     //  existing seeds — the frame centre when it is the first member.  Deterministic by
     //   construction (never Math.random — solver law 4); prior seeds ride row.c.seed.
@@ -1023,6 +1054,10 @@ Vyto_solve_scope(w, parent, poly) {
     //     √(parent share of the frame): the r² wall differentials then shrink WITH the parent, so
     //      children contest a small cell as gently as tops contest the frame.  Relative order is
     //       untouched — express still speaks through env_area; this only fits the voice to the room.
+    //  The 800*450 denominator is the frame AREA, and it stays literal for the same reason the fold
+    //   budget above does: the area moves under 1% when the aspect does (a portrait 446×800 is 356800),
+    //    so tying it to w.c.vw_frame would buy a sub-percent correction at the price of one more thing
+    //     a nested layout depends on the tab's geometry for.  Reasoned from the arithmetic, not measured.
     let depth_k = w.c.depth_scale ? Math.sqrt(Math.abs(poly_area(poly)) / (800 * 450)) : 1
     let i = 0
     while (i < kids.length) {

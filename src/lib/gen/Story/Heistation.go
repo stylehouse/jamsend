@@ -10,7 +10,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return 'daa776785cbfd0d0~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return 'a9ea8cba20190c78~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -4672,9 +4672,17 @@ MusuNeGrind_stock(w, ids) {
 
 },
 // MusuNeGrind_setup — the two Piers over the loopback, the repli handlers, the origin stock shelf, and
-//  the janitor's hooks.  `ra_cull_floor_ms = 0` defeats the 30s self-throttle so each scene gets a fresh
+//  the janitor's hooks.  `ra_cull_floor_ms = 1` defeats the 30s self-throttle so each scene gets a fresh
 //   sweep; that throttle bounds how OFTEN the cull starts and says nothing about how long it holds the
 //    beat, which was the whole misreading behind §3.7.
+//  ⚠ IT MUST BE 1, NOT 0 (measured on the first-ever run, 2026-08-08).  `Ra_shuffle_cull` reads
+//   `+(w.c.ra_cull_floor_ms || 30000)` — and `0` is FALSY, so a floor of 0 does not mean "no throttle",
+//    it silently RE-ARMS the 30s one.  The first run set 0 and only the step-4 sweep ever ran: the
+//     singleflight, thrown and goner scenes were all throttled out, which made claim #4 (the latch
+//      clears on a throw) a FALSE GREEN over a sweep that never threw.  Claim #5 caught it — the shelf
+//       did not empty — which is exactly the job §3.11 says #5 exists to do.  The `||` in Ra.g is a
+//        real footgun on that seam (the daemon only ever stamps a truthy 1e15, so nothing else has hit
+//         it); left alone here because a Book must not edit what it tests.
 async MusuNeGrind_setup(w) {
     this.MusuNeGrind_note(w, { reached: 'step_2' })
     let link = await this.Lake_link(w, 'Origin', 'Follower')
@@ -4692,7 +4700,7 @@ async MusuNeGrind_setup(w) {
     this.Repli_register_caster(w, link[0], stock)
     w.c.grants = { Follower: 1 }
     w.c.repli_allow = (peer, at) => !!(w.c.grants && w.c.grants[peer])
-    w.c.ra_cull_floor_ms = 0
+    w.c.ra_cull_floor_ms = 1
     w.c.ra_nav = this.MusuNeGrind_nav(w, 'alive')
     this.MusuNeGrind_stock(w, ['g0', 'g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7'])
     w.c.set_up = 1

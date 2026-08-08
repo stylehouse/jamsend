@@ -384,16 +384,23 @@
     //   PaintCell per spring.  A null poly (crowded out) renders a small disc; a departing row is
     //    excluded from the cut and renders a shrinking disc.  The lifted (hovered) cell sorts last
     //     so it paints on top — re-asserted every build, so a keyed re-mint never loses the lift.
-    function build_cells(w: TheC): { cells: PaintCell[], curWalls: Map<string, Pt[]> } {
+    //  `walk` is the caller's tree_nodes() result, handed in so ONE walk serves a whole frame:
+    //   integrate_world needs `.all` (to key rows) and this needs `.roots`, and they were two
+    //    separate depth-first walks of the same tree back to back (Vyto_todo §0.2(c)2 — three per
+    //     frame with the probe on).  Nothing between the two mutates the tree: the integration loop
+    //      writes only spring scalars, and tree_nodes reads mirror rows, `.c.tok` and `.c.T`.
+    //       Optional, because paint_world/adopt call build_cells without one.
+    function build_cells(w: TheC, walk?: { roots: Node[], all: Node[] }): { cells: PaintCell[], curWalls: Map<string, Pt[]> } {
         const cells: PaintCell[] = []
         const curWalls = new Map<string, Pt[]>()
         const sp = springs.get(w)
         if (!sp) return { cells, curWalls }
-        const { roots } = tree_nodes(w)
+        const tn = walk ?? tree_nodes(w)
+        const roots = tn.roots
         const liftKey = lifted.get(w)
         // ── THE PROBES ARE OFF BY DEFAULT (2026-08-08) ──
         //  The GATE-FLIP probe and the OMISSION DETECTOR below both ran UNCONDITIONALLY, every build,
-        //   i.e. up to 60×/s: the detector alone does a THIRD full `tree_nodes(w)` walk plus a filter,
+        //   i.e. up to 60×/s: the detector alone did a THIRD full `tree_nodes(w)` walk plus a filter,
         //    two Set constructions and two diff loops, and the gate probe allocates a 6-field object
         //     and does six comparisons per Haul cell per frame. They are diagnostics; they found the
         //      remount mechanism they were written for, and that knowledge is worth keeping — so they
@@ -496,11 +503,12 @@
         //   KeepFace is torn down; back next build → remount.  The GATE-FLIP probe sits AFTER the
         //    `if(!s)continue` so it is blind to this.  Diff the emitted Keep-key SET vs last build and
         //     log ONLY the transitions — exactly one line per remount — with WHY (walk / spring / T).
-        //  GATED (2026-08-08) — see the PROBE note at the top of build_cells. The third `tree_nodes(w)`
-        //   walk below is the single most expensive diagnostic in this file and it ran every frame.
+        //  GATED (2026-08-08) — see the PROBE note at the top of build_cells.  It used to open with a
+        //   THIRD full `tree_nodes(w)` walk, every frame; it now reads the frame's one shared walk
+        //    (`tn`), so even switched on it costs a filter rather than a re-walk.
         if (PROBE) {
             const sp2 = springs.get(w)
-            const tnKeep = tree_nodes(w).all.filter(nn => nn.key.indexOf('Haul:') === 0)
+            const tnKeep = tn.all.filter(nn => nn.key.indexOf('Haul:') === 0)
             const emitted = new Set(cells.filter(c => c.key.indexOf('Haul:') === 0).map(c => c.key))
             const lastEmit = lastKeepEmit.get(w) ?? new Set<string>()
             for (const k of lastEmit) if (!emitted.has(k)) {
@@ -546,8 +554,12 @@
         const sp = springs.get(w)
         if (!sp || sp.size === 0) return false
         if (parked(w)) { jump_to_target(w); paint_world(w); return false }
+        // ONE TREE WALK PER FRAME (2026-08-08).  This walk and build_cells' were the same depth-first
+        //  walk of the same tree, run back to back with nothing between them that touches the tree —
+        //   the integration loop below writes spring scalars only.  Hand it down instead.
+        const tn = tree_nodes(w)
         const rowByKey = new Map<string, TheC>()
-        for (const n of tree_nodes(w).all) rowByKey.set(n.key, n.row)
+        for (const n of tn.all) rowByKey.set(n.key, n.row)
         const omega = 6 / grawave(w)
         for (const [key, s] of sp) {
             const row = rowByKey.get(key)
@@ -568,7 +580,7 @@
             step_channel(s, 'y', 'vy', T.y, kp, omega, dt)
             step_channel(s, 'r', 'vr', T.r, ks, omega, dt)
         }
-        const { cells, curWalls } = build_cells(w)
+        const { cells, curWalls } = build_cells(w, tn)
         paintMap.set(w, cells)
         // settle: max cell displacement (position and radius) and max derived-wall vertex drift.
         let disp = 0
@@ -742,10 +754,10 @@
         // watch the SHAPE of the hole, not just its size — fit_frame re-cuts the frame when the stage
         //  flips portrait/landscape (a phone rotating, or Vyto going fullscreen) and no-ops otherwise.
         //   Measured once up front so the first paint is already the right shape.
-        fit_frame(el)
+        fit_frame(el, w)
         let ro: ResizeObserver | null = null
         if (typeof ResizeObserver !== 'undefined') {
-            ro = new ResizeObserver(() => fit_frame(el))
+            ro = new ResizeObserver(() => fit_frame(el, w))
             ro.observe(el)
         }
         return { destroy() { ro?.disconnect(); if (stageEls.get(w) === el) stageEls.delete(w) } }
@@ -907,7 +919,38 @@
     //        runner, and plug_of/ants_of below return null there regardless of the tick.
     function live_page(): boolean { return !!(H as any)?.top_House?.()?.c?.humdinger }
     let plug_tick = $state(0)
-    const plug_timer = setInterval(() => { if (live_page()) plug_tick = plug_tick + 1 }, 500)
+    // THE TICK ONLY FIRES ON A CHANGE (2026-08-08, Vyto_todo §0.2(c) "standing cost even on a settled
+    //  glass").  This interval used to bump `plug_tick` — a `$state` — every 500ms on any live page,
+    //   whether or not a plug or an ant existed, so every reader of it re-ran at 2Hz on a settled,
+    //    silent glass, which is exactly the "burning CPU with nothing happening" complaint.
+    //  It must NOT be gated on "a plug exists": the interesting transition is precisely no-plug → plug,
+    //   and a gate like that could never see its own precondition arrive.  What the tick is actually
+    //    FOR is noticing `.c` facts change (`.c` bumps no version), so bump when those facts differ —
+    //     which is the same thing, minus the false alarms.
+    //  What this does NOT gate: cell GEOMETRY still reaches the plug through paint_tick — the template
+    //   calls `plug_of(w, viewport_cells(w))` and viewport_cells reads paint_tick — so a moving glass
+    //    redraws the cable every paint regardless of this timer.
+    //  `springs.keys()` rather than `vyto_worlds()` on purpose: vyto_worlds() carries the WORLDS PROBE
+    //   and the hold_list buffer, both of which have per-call state, and a timer must not perturb them.
+    let plug_sig_last = ''
+    function plug_sig(): string {
+        let s = ''
+        for (const w of springs.keys()) {
+            const radio: any = (w as any).o?.({ Radio: 1 })?.[0]
+            const rec: any = radio?.c?.rec
+            s += '|' + (radio ? String(radio.sc?.Radio ?? '') : '-')
+               + ':' + (rec ? String(rec.sc?.id ?? rec.sc?.path ?? '?') : '-')
+        }
+        const a = ants_now()
+        return s + (a ? '#' + a.begins.length + '@' + a.dur : '#-')
+    }
+    const plug_timer = setInterval(() => {
+        if (!live_page()) return
+        const sig = plug_sig()
+        if (sig === plug_sig_last) return
+        plug_sig_last = sig
+        plug_tick = plug_tick + 1
+    }, 500)
     onDestroy(() => clearInterval(plug_timer))
 
     // a slack curve, not a straight edge.  A straight line between two cells reads as a GRAPH
@@ -977,8 +1020,14 @@
     //  Entries are pruned by `Heist_keep_beat` on a `ts` cut, but a pull that simply STOPPED reporting
     //   can sit there between prunes, so age it out here too — 12s, the same threshold Ra.g calls a
     //    heist-stall.  Ants for a dead pull would be a lie told in motion, which is worse than no ants.
+    //  SPLIT IN TWO (2026-08-08): `ants_now` is the reading, `ants_of` is the reading plus the tick
+    //   subscription.  The plug_timer needs the facts WITHOUT subscribing to (or being ordered after)
+    //    the tick it is deciding whether to bump — `plug_sig` calls `ants_now`.  Same computation.
     function ants_of(): { begins: number[], dur: number } | null {
         void plug_tick
+        return ants_now()
+    }
+    function ants_now(): { begins: number[], dur: number } | null {
         const pulls: any = (H as any)?.top_House?.()?.c?.xfer?.pulls
         if (!pulls || typeof pulls !== 'object') return null
         const now = Date.now()

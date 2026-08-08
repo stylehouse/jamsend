@@ -3,6 +3,13 @@ story:MusuNeGrind
   Plan
   Opt
     For
+  TimeSpool
+    TimeTotal:beliefs,avg=1.464
+      sample=0.336,at=1786172386
+      sample=2.591,at=1786172699
+    TimeTotal:step,avg=0.134
+      sample=0.031,at=1786172386
+      sample=0.236,at=1786172699
   step,dige:0000000000000001
   step=2,dige:0000000000000002
   step=3,dige:0000000000000003

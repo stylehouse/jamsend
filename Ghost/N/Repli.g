@@ -565,7 +565,7 @@ async Repli_park_want(w, pier, h):
     //        latch was right to keep the COUNTER and the trace one-shot (that is the flood it exists to
     //         prevent); it was wrong to gate the reply.  Throttled instead, well under PARK_CEIL so a
     //          suspension always gets refreshed before it lapses.
-    let PARK_REPLY_MS = +(w.c.repli_park_reply_ms || 2000)
+    let PARK_REPLY_MS = (w.c.repli_park_reply_ms == null ? 2000 : +w.c.repli_park_reply_ms)
     let nowp = Date.now()
     if (nowp - (p.c.told_at || 0) > PARK_REPLY_MS) {
         p.c.told_at = nowp

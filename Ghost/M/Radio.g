@@ -730,7 +730,7 @@ async Radio_supply_go(radio, era, rec):
     // how long a still-running decode is allowed to be "not yet" before the cap calls it too slow.
     //  Generous on purpose: the measured whole-file decodes run seconds, and the cost of waiting is
     //   only that the preview keeps playing, while the cost of capping early is a truncated track.
-    let WAIT_DECODE = +(w.c.ra_decode_wait || 60000)
+    let WAIT_DECODE = (w.c.ra_decode_wait == null ? 60000 : +w.c.ra_decode_wait)
     let waited0 = 0
     while (radio.c.era === era && radio.c.rec === rec) {
         let m = this.Radio_map(rec)
@@ -1613,7 +1613,7 @@ async Stoker_tour(w, shelf):
     //    the cull dropping heard records the tour still counted as its window.
     let W = +(w.c.tour_window || 40)
     let filling = this.Ra_recs(shelf).length < W
-    let floor = +(filling ? (w.c.tour_fill_ms || 20000) : (w.c.tour_floor_ms || 90000))
+    let floor = +(filling ? (w.c.tour_fill_ms == null ? 20000 : +w.c.tour_fill_ms) : (w.c.tour_floor_ms == null ? 90000 : +w.c.tour_floor_ms))
     if (st.c.tour_at && (Date.now() - st.c.tour_at) < floor) return 0
     st.c.tour_at = Date.now()
     let nav = this.Crate_nav ? this.Crate_nav() : null
@@ -1741,7 +1741,7 @@ async Stoker_tour(w, shelf):
     //   without asking again, so a tight hold would whittle the very track they are mid-way through.
     //    If every record is held the wheel simply does not turn this time — the Mag grows a little
     //     and the next turn tries again.  That is the safe direction to fail in.
-    let hold = +(w.c.tour_hold_ms || 600000)
+    let hold = (w.c.tour_hold_ms == null ? 600000 : +w.c.tour_hold_ms)
     let nowms = Date.now()
     let held = 0
     let dropped = 0

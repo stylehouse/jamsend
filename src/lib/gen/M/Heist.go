@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '871eb05171b9c575~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'b4fa24b90305aea1~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -1862,7 +1862,7 @@ async Heist_keep_beat(w, ident) {
         //       moment the sink is allowed to ask again.  Derive it from the ceiling instead of restating the
         //        number, so the two can never drift back into agreement: a sink is owed its whole suspension
         //         PLUS a round trip to re-ask in before its bytes are fair game.
-        let PARK_CEIL = +(w.c.heist_park_ceiling || 20000)
+        let PARK_CEIL = (w.c.heist_park_ceiling == null ? 20000 : +w.c.heist_park_ceiling)
         let RELEASE_IDLE = +(w.c.heist_release_idle || (PARK_CEIL * 2 + 5000))
         let HOLD_CAP = +(w.c.heist_hold_cap || 268435456)   // ~256MB belt — never hit in serialized health (~2 tracks)
         let live = []

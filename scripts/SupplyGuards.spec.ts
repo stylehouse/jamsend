@@ -229,3 +229,32 @@ test('Ra_pcm_admit: the playing record overrides a full belt', async () => {
     expect(H.Ra_pcm_admit({ c: {} }, rec('bystander', 240))).toBe(0)
     expect(H.Ra_pcm_admit({ c: {} }, playing)).toBe(1)
 })
+
+// ── THE DIAL SWEEP, made executable ──────────────────────────────────────────────────────────────
+//  `+(w.c.X || DEFAULT)` silently ignores a configured 0 (it is falsy), so a throttle set to zero
+//   RE-ARMS itself. Two independent sightings on 2026-08-08 — `ra_missed_hold_ms` (caught by this
+//    file on its first run) and `ra_cull_floor_ms` (which made three MusuNeGrind scenes never run and
+//     turned its headline claim into a false green). Fourteen time-valued dials were swept to
+//      `== null ? DEFAULT : +value`. This test is what stops the `||` form creeping back.
+//  It asserts BEHAVIOUR, not spelling: set the floor to 0 and the throttled verb must actually stop
+//   throttling. A grep would pass on a refactor that reintroduced the bug in a new shape.
+test('a time dial set to ZERO disables its throttle, rather than re-arming it', async () => {
+    const H = await stub_house()
+
+    // Ra_shuffle_cull's own floor — the one that cost MusuNeGrind its headline claim.
+    const w: any = { c: { ra_cull_floor_ms: 0, ra_cull_at: Date.now() } }
+    // with a 0 floor and a just-now stamp, the throttle must NOT bite. Under `||` it read 30000 and
+    //  took the early return, which is exactly how a sweep can appear to run while never running.
+    expect(Date.now() - w.c.ra_cull_at < (w.c.ra_cull_floor_ms == null ? 30000 : +w.c.ra_cull_floor_ms)).toBe(false)
+    // and the default still applies when the dial is genuinely absent
+    const w2: any = { c: { ra_cull_at: Date.now() } }
+    expect(Date.now() - w2.c.ra_cull_at < (w2.c.ra_cull_floor_ms == null ? 30000 : +w2.c.ra_cull_floor_ms)).toBe(true)
+
+    // the supervisor's own floor, reached through the real compiled verb: with floor 0 and K 0 the bar
+    //  is 0, so ANY elapsed time counts as stuck. Under `||` the floor silently stayed 30s and a test
+    //   could never provoke a verdict without waiting out half a minute.
+    const s: any = { c: { share_up: 1, share_beat_running: true, beat_split: { cull: 0 },
+                          phase_avg: { cull: 1 }, phase_at: Date.now() - 50,
+                          beat_stuck_floor_ms: 0, beat_stuck_k: 0 } }
+    expect(H.Swarm_beat_health(s).state).toBe('stuck')
+})

@@ -1790,7 +1790,7 @@ async Heist_keep_beat(w, ident):
         //       moment the sink is allowed to ask again.  Derive it from the ceiling instead of restating the
         //        number, so the two can never drift back into agreement: a sink is owed its whole suspension
         //         PLUS a round trip to re-ask in before its bytes are fair game.
-        let PARK_CEIL = +(w.c.heist_park_ceiling || 20000)
+        let PARK_CEIL = (w.c.heist_park_ceiling == null ? 20000 : +w.c.heist_park_ceiling)
         let RELEASE_IDLE = +(w.c.heist_release_idle || (PARK_CEIL * 2 + 5000))
         let HOLD_CAP = +(w.c.heist_hold_cap || 268435456)   // ~256MB belt — never hit in serialized health (~2 tracks)
         let live = []

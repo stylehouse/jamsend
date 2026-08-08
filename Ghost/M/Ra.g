@@ -779,7 +779,20 @@ async Ra_source_alive(w, nav, rec):
 //    without a stat storm. Never culls without a nav — a closed share is not a missing track.
 async Ra_shuffle_cull(w, shelf):
     if (!shelf) return 0
-    let floor = +(w.c.ra_cull_floor_ms || 30000)
+    // ── `== null ?`, NOT `|| ` — A DIAL MUST BE SETTABLE TO ZERO (2026-08-08, swept across 14 dials) ──
+    //  `+(w.c.ra_cull_floor_ms || 30000)` silently ignores a configured **0** — it is falsy, so the
+    //   default wins and a floor of zero *re-arms* the very throttle it was meant to disable. That is
+    //    not theoretical: it made THREE of MusuNeGrind's scenes never run on its first outing, and left
+    //     its claim #4 — the one its design doc calls "the one worth having built this for" — a FALSE
+    //      GREEN over a sweep that never threw. The Book's own non-vacuity claim caught it.
+    //  Second sighting the same day: `Repli_missed_hot`'s `ra_missed_hold_ms`, found by
+    //   scripts/SupplyGuards.spec.ts on its first run. Two in one day makes it a class, so the sweep
+    //    covered every TIME-valued floor/hold/ceiling/wait: `|| DEFAULT` is fine wherever 0 is
+    //     meaningless (a count, a byte total) and a BUG wherever 0 is a legitimate SETTING — it makes
+    //      the dial both unsettable in production and untestable without sleeping out the real interval.
+    //  Deliberately NOT swept: count-valued dials (`ra_lead`, `repli_page`, `tour_floor_stock`) where a
+    //   zero would be nonsense rather than a disable. Check which kind you have before copying this.
+    let floor = (w.c.ra_cull_floor_ms == null ? 30000 : +w.c.ra_cull_floor_ms)
     if (w.c.ra_cull_at && (Date.now() - w.c.ra_cull_at) < floor) return 0
     w.c.ra_cull_at = Date.now()
     let mag = shelf.o({ Mag: 'shuffle' })[0]
@@ -1950,7 +1963,7 @@ Ra_pcm_bytes(rec):
 Ra_pcm_sweep():
     let M = this.top_House ? this.top_House() : null
     if (!M || !M.c.ra_pcm || !M.c.ra_pcm.length) return
-    let IDLE = +(M.c.ra_pcm_idle || 30000)
+    let IDLE = (M.c.ra_pcm_idle == null ? 30000 : +M.c.ra_pcm_idle)
     let CAP = +(M.c.ra_pcm_cap || 402653184)      // ~384MB — roughly 4 tracks decoded at once
     let now = Date.now()
     let live = []
@@ -2609,7 +2622,7 @@ async Ra_pull_beat(w, rx, mine, theirs, rec):
     //  the source has already said "not lost, stop spending" — but only up to a generous ceiling, so
     //   a park that never resolves (a dead transcoder) still falls back to the ordinary 4s re-ask
     //    instead of holding the hole open forever. Cleared wholesale on rebirth (Swarm_note_era).
-    let PARK_CEIL = +(w.c.heist_park_ceiling || 20000)
+    let PARK_CEIL = (w.c.heist_park_ceiling == null ? 20000 : +w.c.heist_park_ceiling)
     let nowms = Date.now()
     // §5.5 (Backpressure_todo.md): the re-ask timer is MEASURED, not guessed.  The flat 4s was a
     //  worst-case guess standing in for a number nobody took: on a local wire a page answers in tens of
@@ -2806,7 +2819,7 @@ async Ra_restock_beat(w, mirror, budget):
     w.c.ra_retx = w.c.ra_retx || {}
     w.c.ra_tries = w.c.ra_tries || {}
     let nowms = Date.now()
-    let PARK_CEIL = +(w.c.heist_park_ceiling || 20000)
+    let PARK_CEIL = (w.c.heist_park_ceiling == null ? 20000 : +w.c.heist_park_ceiling)
     let at = 0
     let i = 0
     while (i < recs.length) {

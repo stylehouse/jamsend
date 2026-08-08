@@ -1743,7 +1743,7 @@ Swarm_boast_floor(w, ident):
     w.c.boast_look_at = now
     let cn = this.Swarm_music_census(w, ident)
     let mark = String(cn.records || 0) + ':' + String(cn.artists || 0)
-    let floor = +(w.c.swarm_boast_floor_ms || 30000)
+    let floor = (w.c.swarm_boast_floor_ms == null ? 30000 : +w.c.swarm_boast_floor_ms)
     if (w.c.boast_mark === mark && w.c.boast_at && (now - w.c.boast_at) <= floor) return
     w.c.boast_mark = mark
     w.c.boast_at = now
@@ -1970,7 +1970,7 @@ Swarm_beat_health(w):
     // the phase we are WAITING ON is the one after the furthest completed one.
     let typical = +((w.c.phase_avg || {})[next] || 0)
     let K = +(w.c.beat_stuck_k || 20)
-    let floor_ms = +(w.c.beat_stuck_floor_ms || 30000)
+    let floor_ms = (w.c.beat_stuck_floor_ms == null ? 30000 : +w.c.beat_stuck_floor_ms)
     let bar = Math.max(floor_ms, typical * K)
     if (since > bar) return { state: 'stuck', phase: next, for_ms: since, why: `${next} has not completed in ${Math.round(since / 1000)}s (typical ${typical}ms)` }
     if (since > bar / 3) return { state: 'slow', phase: next, for_ms: since, why: `${next} running long (typical ${typical}ms)` }
@@ -2040,7 +2040,7 @@ Swarm_detached_health(w):
     for (const it of [{ k: 'cull', fly: w.c.cull_flying, bg: w.c.cull_bg_ms }, { k: 'tour', fly: w.c.tour_flying, bg: w.c.tour_bg_ms }]) {
         if (!it.fly) continue
         let since = Date.now() - (+(it.fly || Date.now()))
-        let bar = Math.max(+(w.c.detached_stuck_floor_ms || 180000), (+(it.bg || 0)) * 4)
+        let bar = Math.max((w.c.detached_stuck_floor_ms == null ? 180000 : +w.c.detached_stuck_floor_ms), (+(it.bg || 0)) * 4)
         if (since > bar) out.push({ state: 'stuck', phase: it.k + '(detached)', for_ms: since, why: `${it.k} has been flying ${Math.round(since / 1000)}s (last completed ${+(it.bg || 0)}ms)` })
     }
     return out
@@ -2253,7 +2253,7 @@ async Swarm_share_beat(w, ident):
         //      any such hole into a delay of at most one interval.  Cheap: husk fragments only (no
         //       bytes), and Repli_merge dedups the whole thing at the far side — a re-offer costs the
         //        wire one catalog fragment per friend per minute, and buys an unconditional guarantee.
-        let floor = +(w.c.swarm_offer_floor_ms || 60000)
+        let floor = (w.c.swarm_offer_floor_ms == null ? 60000 : +w.c.swarm_offer_floor_ms)
         let stale = !route.c.offered_at || (Date.now() - route.c.offered_at) > floor
         if (route.c.offered_mark !== mark || stale) {
             route.c.offered_mark = mark

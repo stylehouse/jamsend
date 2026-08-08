@@ -70,6 +70,16 @@
 
     let { M } = $props()
 
+    // matstyle_ground is a PURE FUNCTION OF A MAINKEY STRING, and Vytui calls it once per cell per
+    //  frame (`cell_ground`, Vytui.svelte) — so on a moving glass it was rebuilding 4 objects and
+    //   running 9 hex conversions per cell at rAF rate for an answer that cannot change (Vyto_todo
+    //    §0.2(c)5).  Memoise on the key.  The population of mainkeys is small and bounded by the
+    //     particle types on the graph, so this never needs eviction; and the value is FROZEN because
+    //      the cached triple is now shared by every caller, so a mutation would poison the cache
+    //       rather than affect one call site.  Instance-scoped (not a `<script module>` block —
+    //        a module script kills this component's HMR boundary).
+    const ground_memo = new Map<string, Readonly<{ bg: string, color: string, border: string }>>()
+
     onMount(async () => {
     await M.eatfunc({
 
@@ -393,13 +403,20 @@
         for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) % 360
         return h
     },
+    // memoised on `key` — see ground_memo at the top of this file for why (a per-cell-per-frame
+    //  caller) and for the frozen-value discipline.  The computation below is unchanged, so the
+    //   colour a key resolves to is byte-identical; only the number of times it is computed moves.
     matstyle_ground(key: string): { bg: string, color: string, border: string } {
+        const hit = ground_memo.get(key)
+        if (hit) return hit
         const h = this.matstyle_hue(key)
-        return {
+        const g = Object.freeze({
             bg:     this.hsl_to_hex(h, 34, 13),   // deep jewel ground
             color:  this.hsl_to_hex(h, 60, 78),   // light readable text
             border: this.hsl_to_hex(h, 46, 52),   // the wall accent
-        }
+        })
+        ground_memo.set(key, g)
+        return g
     },
 
     // Label format — new %meta:label,fmt:"%s",keys:"w" 
