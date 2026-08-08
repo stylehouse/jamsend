@@ -19,11 +19,13 @@
 //   node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/SupplyGuards.spec.ts
 import { test, expect } from 'vitest'
 import { mount } from 'svelte'
+import { readFileSync } from 'node:fs'
 import { TheC } from '../src/lib/data/Stuff.svelte'
 import Ra from '../src/lib/gen/M/Ra.go'
 import Swarm from '../src/lib/gen/S/Swarm.go'
 import Repli from '../src/lib/gen/N/Repli.go'
 import Heist from '../src/lib/gen/M/Heist.go'
+import Crate from '../src/lib/gen/M/Crate.go'
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
@@ -40,7 +42,7 @@ async function stub_house() {
         top_House() { return H },
         Radio_trace(_n: any, m: any) { H.traces.push(m) },
     }
-    for (const Ghost of [Ra, Swarm, Repli, Heist]) mount(Ghost, { target: document.body, props: { H } })
+    for (const Ghost of [Ra, Swarm, Repli, Heist, Crate]) mount(Ghost, { target: document.body, props: { H } })
     for (let i = 0; i < 80 && !(typeof H.Ra_pcm_admit === 'function' && typeof H.Heist_reheal_id === 'function'); i++) await sleep(25)
     return H
 }
@@ -257,4 +259,169 @@ test('a time dial set to ZERO disables its throttle, rather than re-arming it', 
                           phase_avg: { cull: 1 }, phase_at: Date.now() - 50,
                           beat_stuck_floor_ms: 0, beat_stuck_k: 0 } }
     expect(H.Swarm_beat_health(s).state).toBe('stuck')
+})
+
+// ── SWEEP B1: THE DIAL SWEEP WAS SCOPED TO *TIME* DIALS ──────────────────────────────────────────
+//  The 2026-08-08 pass swept fourteen dials to `== null ? DEFAULT : +value` and every one of them was
+//   a MILLISECOND value (`ra_cull_floor_ms`, `beat_stuck_floor_ms`, `swarm_offer_floor_ms`, …). The
+//    footgun is not about time. It is about any dial whose OFF POSITION IS ZERO, and the count- and
+//     byte-valued dials were never swept — eighteen reads across five ghosts still carry `|| N`.
+//  `ra_pcm_cap` is the one that bites hardest, for three compounding reasons:
+//   1. It is the dial §0.5 of Composition_todo owes the human — "size ra_pcm_cap under the container's
+//       memory limit". The one dial that must be settable is the one that cannot be set to 0.
+//   2. `0` is its most useful test setting: "admit nothing" is how you prove a refusal path at all.
+//   3. THIS FILE ALREADY WORKED AROUND IT. The tests above reach for `10 * 1048576` and
+//       `200 * 1048576` where `0` and a real cap would have been the honest harness — the previous
+//        session hit this wall and stepped around it without naming it.
+test.fails('ra_pcm_cap cannot be set to 0 — the belt has no off position', async () => {
+    const H = await stub_house()
+    H.c.ra_pcm_cap = 0                      // "admit nothing"; `+(M.c.ra_pcm_cap || 402653184)` reads 384MB
+    H.c.ra_pcm = []
+    const busy = rec('busy', 240)
+    busy.c.pcm_pending = 1
+    H.c.ra_pcm_fly = [busy]                 // in flight, so the lone-candidate floor cannot apply
+    // With a cap of 0 and 92MB already flying, NOTHING may be admitted. Under `||` the cap silently
+    //  reads 384MB, 92 + 92 fits, and the bystander sails through. This assertion is correct and
+    //   currently fails — `test.fails` keeps the suite green while the defect stays executable.
+    //    WHEN Ra.g:1913 BECOMES `== null ? 402653184 : +M.c.ra_pcm_cap`, THIS GOES RED: delete the
+    //     `.fails` and it becomes an ordinary guard. That flip is the whole point of the marker.
+    expect(H.Ra_pcm_admit({ c: {} }, rec('bystander', 240))).toBe(0)
+})
+
+// ── SWEEP B2: THE FRONTIER SWEEP IS CLEAN, AND THIS IS WHAT HOLDS IT UP ──────────────────────────
+//  §2's standing rule — "a high-water cursor may not answer a question about coverage" — asks for a
+//   deliberate sweep of the transfer spine. Done 2026-08-08; the result is NEGATIVE, and a negative
+//    result needs a guard more than a positive one does, because nothing else will notice it break.
+//  What was checked and why each is sound:
+//   · `held` is a genuine COUNT at every site (`if (map[s] != null) held = held + 1` — Ra.g:897,
+//      1084, 1122, 2502, 2600), so `held >= total` is a coverage question answered by a coverage read.
+//   · `Repli_page_ready`'s MAP branch WALKS the page (`while (s < end) if (!Repli_chunk_at) return
+//      false`) — §3.1b's fix, correctly generalised.
+//   · `Radio_start_seq`'s `have` IS a frontier — and it answers a FRONTIER question ("where may the
+//      pump start without crossing a hole"). A frontier answering a frontier is the rule satisfied,
+//       not violated. This is the counter-example that keeps the rule from becoming "never use a
+//        cursor", which would be wrong.
+//  The ONE cheap read left is `Repli_page_ready`'s OTHER branch (Repli.g:510-516), which answers with
+//   `chunks.length` and never inspects a single element. It is correct TODAY only because
+//    `Crate_transcode_release` grows the array by contiguous `push` from `chunks.length`, so it cannot
+//     have holes. That is an unstated, load-bearing, ONE-LINE-AWAY-FROM-FALSE invariant: the day
+//      anyone lands an out-of-order arrival with `chunks[i] = buf`, `.length` becomes a high-water
+//       frontier, every page reports ready, and we are back to §2's first row with a new spelling.
+//  So the test guards the PRODUCER's density rather than the consumer's read. If density ever breaks,
+//   this goes red and points straight at the reader that was trusting it.
+test('the chunks substrate is DENSE — the invariant Repli_page_ready silently rests on', async () => {
+    const H = await stub_house()
+    // A FAITHFUL record carries the PROMISE. `Crate_transcode_begin` stamps `sc.nchunks` (Crate.g:824)
+    //  BEFORE it ever creates `c.chunks` (:826), so there is no window where the array exists without
+    //   its promise — and that ordering is load-bearing, see the last assertion in this test.
+    const rc: any = new TheC({ c: {}, sc: { Record: 1, id: 'dense01', nchunks: 8 } })
+    rc.c.raw_chunks = [0, 1, 2, 3, 4, 5, 6, 7].map(i => new Float32Array([i]))
+
+    // release in two uneven bites, the way a real encoder's progress arrives
+    expect(H.Crate_transcode_release(rc, 3)).toBe(3)
+    expect(H.Crate_transcode_release(rc, 2)).toBe(5)
+
+    // DENSITY, stated three ways — any one of them failing invalidates the cheap read downstream.
+    const chunks = rc.c.chunks
+    expect(chunks.length).toBe(5)                                   // length IS the frontier
+    expect(Object.keys(chunks).length).toBe(5)                      // no sparse holes (a hole skips a key)
+    expect(chunks.some((c: any) => c == null)).toBe(false)          // and no undefined slots
+
+    // therefore the cheap read is honest: a page wholly inside the frontier is genuinely covered…
+    expect(H.Repli_page_ready(rc, 0, 2)).toBe(true)
+    // …and one that runs past it is correctly refused while the record is still incomplete.
+    expect(H.Repli_page_ready(rc, 4, 2)).toBe(false)
+
+    // the frontier stops at the promise, and `transcoded` stamps 1-or-absent, never 0 (a false
+    //  boolean does not snap cleanly — CLAUDE.md's rule, and the reason this is asserted here).
+    expect(H.Crate_transcode_release(rc, 99)).toBe(8)
+    expect(rc.sc.transcoded).toBe(1)
+    expect(H.Repli_page_ready(rc, 6, 2)).toBe(true)
+
+    // THE SECOND UNSTATED PRECONDITION, found by this test failing on its first run. The branch reads
+    //  `complete = chunks.length >= +(rec.sc.nchunks || 0)`, so a record with NO promise is vacuously
+    //   complete and every page inside the array reports ready — including one running off the end.
+    //    Nothing in the app reaches this (Crate.g:130, :773 and Sound.g:137 all stamp nchunks, and
+    //     :824 stamps it before :826 creates the array), which is exactly why it is worth pinning:
+    //      the safety here is an ORDERING in a different ghost, not anything the reader checks.
+    const nopromise: any = new TheC({ c: {}, sc: { Record: 1, id: 'nopromise' } })
+    nopromise.c.chunks = [new Float32Array([0]), new Float32Array([1])]
+    expect(H.Repli_page_ready(nopromise, 1, 8)).toBe(true)   // a 8-wide page over a 2-long array
+})
+
+// ── SWEEP B3: THE LEDGER OF DIALS THAT STILL CANNOT BE ZEROED ────────────────────────────────────
+//  A deliberate exception to this file's "assert behaviour, not spelling" rule, and the reason is
+//   that most of these dials are NOT reachable from a stub House — they live inside async beat verbs
+//    that want a world. A test that cannot be written is usually how a finding decays into prose, so
+//     this is the compromise: the ledger is executable and it can only be satisfied by shrinking.
+//  It is a LIST-DOES-NOT-GROW gate, not a correctness claim. It catches a new dial minted on `||`
+//   (the failure mode that produced two of these in one day) and it catches a fix, which should be
+//    celebrated by deleting the row. It does NOT catch a refactor that reintroduces the bug in a new
+//     shape — only a behavioural test does that, which is why B1 exists and why the entries here
+//      should migrate to behavioural tests as the verbs become reachable.
+//  Excluded ON PURPOSE: `repli_page` (14 reads). A page size of zero is not an off position, it is a
+//   nonsense value — `|| 2` is the correct idiom wherever 0 is meaningless. The rule is "0 is a
+//    legitimate SETTING", not "never use ||", and keeping this distinction sharp is what stops the
+//     next sweep from being a 200-site refactor that nobody can review.
+test('the zero-unsettable dial ledger does not grow', () => {
+    // name → how many live reads still spell it `|| DEFAULT`. Comment-only mentions are stripped.
+    const LEDGER: Record<string, number> = {
+        'Ghost/M/Ra.g:ra_pcm_cap':             3,   // 1913 admit · 1967 sweep · 2297 pump census
+        'Ghost/M/Ra.g:ra_lead':                1,   // 2374 — 0 = no read-ahead
+        'Ghost/M/Ra.g:ra_lead_cap':            1,   // 2375 — 0 = no advance calls this beat
+        'Ghost/M/Ra.g:heist_want_budget':      1,   // 2617 — 0 = ask for nothing
+        'Ghost/M/Heist.g:heist_hold_cap':      1,   // 1795 — 0 = hold nothing
+        'Ghost/M/Heist.g:heist_inflight':      2,   // 1926 chained · 2059 — see the note below
+        'Ghost/M/Heist.g:heist_inflight_total': 1,  // 1926 — a GLOBAL budget of 0 = pause all pulls
+        'Ghost/M/Heist.g:heist_overlap':       1,   // 2060 — 0 = no overlap, and §1 #2 is an overlap complaint
+        'Ghost/M/Heist.g:heist_breach_cooldown': 2, // 2067 · 3009 — 0 = no cooldown
+        'Ghost/M/Radio.g:tour_window':         1,   // 1614
+        'Ghost/M/Radio.g:tour_rounds':         1,   // 1646 — 0 = DON'T TOUR, and the tour is a §3.7 janitor
+        'Ghost/M/Radio.g:tour_floor_stock':    1,   // 1722 — 0 = no floor
+        'Ghost/M/Radio.g:tour_roll':           1,   // 1724
+        'Ghost/M/Radio.g:tour_dry_roll':       1,   // 1725
+        'Ghost/N/Tribunal.g:relay_bulk_high':  1,   // 120 — 0 = every bulk queues locally
+    }
+    const found: Record<string, number> = {}
+    for (const key of Object.keys(LEDGER)) {
+        const [file, dial] = key.split(':')
+        const src = readFileSync(new URL('../' + file, import.meta.url), 'utf8')
+            .split('\n').map(l => l.replace(/\/\/.*$/, '')).join('\n')   // strip comments, incl. trailing
+        // `\)?` catches the parenthesised spelling too — Ra.g:2297 is `+((AM && AM.c.ra_pcm_cap) ||
+        //  402653184)`, which the obvious regex misses. That near-miss is itself the argument in the
+        //   header: a grep ledger is only as good as the shapes it imagines, so it is a floor, not a gate.
+        const hits = src.match(new RegExp('\\.c\\.' + dial + '\\s*\\)?\\s*\\|\\|', 'g'))
+        if (hits) found[key] = hits.length
+    }
+    // The message is the finding: whichever way this moves, the doc's §0b trap list wants updating.
+    expect(found, 'a dial was minted on `|| N` or fixed — either way update this ledger and §0b')
+        .toEqual(LEDGER)
+})
+
+// ── SWEEP B4: THE SHARPEST SPECIMEN — A DESIGNED ZERO BESIDE AN UNSETTABLE ONE ───────────────────
+//  Heist.g:2059 is one line carrying both halves of the lesson:
+//     let INFLIGHT = (rw && rw.c.heist_budget != null) ? Math.max(0, +rw.c.heist_budget)
+//                                                      : +(w.c.heist_inflight || 1)
+//  The FIRST branch spells it correctly — `!= null` plus a `Math.max(0, …)` clamp — because zero is
+//   not merely legitimate there, it is LOAD-BEARING AND DESIGNED. The comment above it says so:
+//    "Spent down to zero, a later Haul is stepped with INFLIGHT 0 — the gate below is then closed on
+//     its first pick, so it still rehydrates, censuses, lands continuations and cancels, and simply
+//      starts no NEW pull." The whole global-budget fix for §1 #2 depends on 0 surviving the read.
+//  The SECOND branch, the direct-caller fallback on the same line, cannot express that value at all.
+//   And Heist.g:1926 chains two of them — `+(w.c.heist_inflight_total || w.c.heist_inflight || 1)` —
+//    so a global budget of 0 falls through BOTH and lands on 1. "Pause every pull" is unsayable.
+//  This is the argument that the `||` form is not a style preference: the same file, in the same
+//   expression, proves the author knew zero mattered and the idiom silently discarded it anyway.
+test('a spent budget of ZERO survives the read it was designed to survive', async () => {
+    await stub_house()
+    // the designed branch, transcribed from Heist.g:2059 — a spent-down budget stays spent
+    const budget_branch = (rw: any, w: any) =>
+        (rw && rw.c.heist_budget != null) ? Math.max(0, +rw.c.heist_budget) : +(w.c.heist_inflight || 1)
+    expect(budget_branch({ c: { heist_budget: 0 } }, { c: {} })).toBe(0)     // exhausted: start no new pull
+    expect(budget_branch({ c: { heist_budget: 3 } }, { c: {} })).toBe(3)
+    // …and the fallback branch on the SAME LINE, which cannot say zero at all
+    expect(budget_branch({ c: {} }, { c: { heist_inflight: 0 } })).toBe(1)   // asked for 0, got 1
+    // the chained form at Heist.g:1926 is worse: zero falls through two `||`s onto the constant
+    const global_branch = (w: any) => +(w.c.heist_inflight_total || w.c.heist_inflight || 1)
+    expect(global_branch({ c: { heist_inflight_total: 0, heist_inflight: 0 } })).toBe(1)
 })

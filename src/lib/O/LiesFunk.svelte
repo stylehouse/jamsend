@@ -405,8 +405,31 @@ await M.eatfunc({
     //       aggregate, the relay control:log ring-buffer, a navigable fixture) layers onto this.
     //   The Aim watcher Funkcions are runtime fixtures (dontSnap, rebuilt each boot); the Waft itself
     //    PERSISTS — Waft:Cluster /%HostedIdentity is the durable registry of who's claimed/been seen.
+    //
+    //   EDITOR ONLY, and that gate is the whole canonicity fix — not a reaper.  Opening the Waft is
+    //    what makes a tab a WRITER of wormhole/Cluster/toc.snap: the open registers a watch_c →
+    //     Lies_waft_save (Lies.svelte:808, LiesStore.svelte:336) which has NO role gate of its own,
+    //      so every tab that opened it rewrote the WHOLE toc from whatever it decoded at boot plus
+    //       its own Lies_cluster_claim_self.  Rows minted after its read were simply gone — which is
+    //        exactly the observed "live tabs vanish, dead editors survive" (2026-08-08: 58517b/96d0cf88/
+    //         a67a5d04/f5da6599 dropped while six dead editors stayed).  Last-write-wins between
+    //          divergent views, and it needed no second editor to happen.
+    //   Gating HERE gives one writer BY CONSTRUCTION — no read, no self-claim, no watch_c, no save.
+    //    Nothing is lost on a runner: its row is SUPPOSED to arrive at the editor by beacon
+    //     (Lies_advertise_recv → Lies_runner_roster, which mints the %HostedIdentity itself), so the
+    //      runner's own self-claim was redundant AND was precisely what made it a writer; the Cluster
+    //       copy of a wormhole grant is display-only and never read back (see Lies_wormhole_grant).
+    //   It is also the PRODUCTION shape, same edit: the Sounditrons are only ever after each other,
+    //    there is no editor among them, so single-control-point state belongs to the one editor and
+    //     Cluster falls out of the published app for free.
+    //   Every remaining Cluster READER is safe under this: LiesFunk :1867/:3391 sit inside
+    //    `if (H.Lies_is_editor(w))` branches, Lies_dispatch_target self-gates on role, Lies_rungo_target
+    //     falls back to the live %Runner roster when there is no Cluster, and Lies_favoured_runner has
+    //      no in-app caller (tests build their own Cluster).  Fixtures too: only Story/Editron carries
+    //       Cluster rows and its w:Lies is `editor`; Story/Engage mints its own (Machinery.svelte).
     Lies_aim_setup(w: TheC): void {
         const H = this as House
+        if (H.Lies_role(w) !== 'editor') return
         // Cluster is a FIRST-CLASS PERSISTED Waft — open it through the Good pipeline
         //  (LiesPersist loads wormhole/Cluster/toc.snap, or creates-from-nothing + registers
         //   its watch_c save), exactly like the GhostList|Keep.  Decoration (equip, the runtime
@@ -912,8 +935,14 @@ await M.eatfunc({
     //       faces read state straight off w|the roster — no singleton funk.  Setup runs once (guarded).
     Lies_aim(w: TheC): void {
         const H = this as any
-        if (!w.c.aim_setup) { w.c.aim_setup = true; void H.Lies_aim_setup(w) }
         const role = H.Lies_role(w)
+        // The setup latch WAITS FOR THE ROLE, it doesn't just guard a once.  Lies_role reads H.c.role
+        //  (stamped by Run_A_<Book>) or w.sc.editor|runner, and both can still be undefined on a
+        //   booting tab's first heartbeat — latching before the role lands would leave a real editor
+        //    with no Cluster for the life of the tab, which is worse than the bug being fixed.  A
+        //     non-editor never sets it and just re-reads two properties per heartbeat; a tab that
+        //      later BECOMES an editor opens it then, which is what we want.
+        if (role === 'editor' && !w.c.aim_setup) { w.c.aim_setup = true; void H.Lies_aim_setup(w) }
         const on = role === 'editor' || role === 'runner'
         const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
         const bag = H.Lies_lens_bag() as TheC
@@ -937,6 +966,11 @@ await M.eatfunc({
         //       forever while the socket pumps happily — the 2026-08-04 false badge.  A once-at-mint
         //        backlink is a latch, and every latch in this file has needed the same reconcile
         //         (Robustness_plan Organ 1: don't just trust the latch, re-derive it).
+        //   Since the Cluster open went editor-only, a RUNNER's Relay face has no funk cell — the
+        //    Funkcion:Relay lives in the Cluster it no longer opens.  Deliberate and inert: the face
+        //     paints from lens.c.w (channel_up|active_transport), and Relay.svelte reads funk.c.latest
+        //      NOWHERE (its caption was removed — see Relay.svelte:63).  The pumped relay_run watcher
+        //       simply stops running on runners; nothing consumed what it stamped.
         if (on) {
             const funk = cluster?.o({ Funkcion: 'Relay' })[0] as TheC | undefined
             const lens = (bag.o({ Lens: 'Brink', of_Funkcion: 'Relay' })[0] as TheC | undefined)

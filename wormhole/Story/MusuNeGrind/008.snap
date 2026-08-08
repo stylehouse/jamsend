@@ -19,7 +19,7 @@ Snap:H
           see:the janitor is single flight — a second kick while one sweep flies is refused rather than stacked on top of it
           kick:thrown,started,quick,flying
           kick:after_throw,started,quick,flying
-          thrown,latch_cleared,did_throw,restarted
+          thrown,expands,latch_cleared,did_throw,restarted
           see:the janitor flies instead of holding the beat — every kick returned at once while a demonstrably slow sweep ran on
           see:a janitor that throws still clears its latch — the next sweep starts instead of the tab retiring its janitor for good
           kick:goner,started,quick,flying

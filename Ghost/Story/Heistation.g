@@ -4263,12 +4263,22 @@ MusuLossy_id3_frame(id, text):
     return out
 
 // ══ MusuNeGrind — THE COMPOSITION INSTRUMENT (Composition_todo §3.9 / Backpressure_todo §0 item 00) ══
-//  ⚠ UNVERIFIED BY CONSTRUCTION (2026-08-08).  This Book was authored in a session that was forbidden to
-//   compile, to run a Book, or to touch a runner (the human was testing audio live and a ghost-compile
-//    HMRs into their tabs).  So NOTHING below has been executed: not the compile, not one step, not one
-//     %see.  It has no recorded fixture.  Treat every claim in this header as a DESIGN INTENT that has
-//      yet to meet a runner — the exact posture Composition_todo §2 exists to enforce
-//       ("the comment is not evidence"), applied to the file that is supposed to enforce it.
+//  ✓ VERIFIED BY MUTATION (2026-08-08, runner a67a5d04).  It was authored blind — the session that wrote
+//   it could not compile, run, or touch a runner — so this banner used to say UNVERIFIED BY CONSTRUCTION.
+//    It has since compiled, run green 11/11 with a recorded fixture, and, which is the part that matters,
+//     every one of its six claims has been BROKEN ON PURPOSE and watched go dark.  A claim never seen to
+//      fail is not known to be a claim (Composition_todo §3.11 step 3), and the exercise paid for itself
+//       immediately: claim #4 stayed GREEN over a sweep that never threw, and is only a gate now because
+//        a mutation found that out.  The mutations, each a scratch edit to THIS file, reverted after:
+//   #1+#2  hold the janitor kick until the sweep lands (the pre-fix `Swarm_share_beat` shape)
+//           ⇒ `quick` and `mid_flight` both fall.  These two claims ARE §3.7, and they are the reason
+//            this Book exists — breaking the fix reds the Book on exactly the defect it was built for.
+//   #3     await the cull between the two kicks of the singleflight scene ⇒ the twin STARTS, not refused.
+//   #4     run the thrown scene with the 'alive' nav ⇒ was green (theatre), now dark (see the scene).
+//   #5     run the goner scene with the 'alive' nav ⇒ `before=9,after=9`, nothing swept.
+//   #6     ask zero times ⇒ `asks=0`, no `told`.
+//  What that does NOT establish is anything about the PAYLOAD rung, and the "does not do yet" note near
+//   the bottom of this header still stands in full.
 //
 //  WHY IT EXISTS.  Every Musu* Book proves ONE mechanism in a QUIET world.  Every defect of 2026-08-06/08
 //   lived in COMPOSITION, and not one was reachable by any of them (the human: "all these Musu* tests
@@ -4303,7 +4313,9 @@ MusuLossy_id3_frame(id, text):
 //       on BOTH settle and throw, and its own comment says a latch left standing "would silently retire
 //        the cull for the life of the tab".  That sentence is an unmeasured runtime claim until this
 //         Book runs it: the 'throw' nav returns a dl with no `files`, and `dl.files.find` is the one line
-//          in `Ra_source_alive` outside a try.
+//          in `Ra_source_alive` outside a try.  The evidence is the nav's EXPAND COUNT (`expands=1`) and
+//           not a duration, because `Swarm_cull_done` stamps the same `cull_bg_ms` on both arms — see the
+//            scene, which is where that was found and by what.
 //   5. NON-VACUITY — the detached sweep really does its work: with a nav that says the source is gone,
 //       records are actually DROPPED by a cull nothing awaited, and `cull_bg` reports a real duration.
 //        Without this, "returned quickly" is satisfied by a janitor that does nothing at all.
@@ -4407,9 +4419,17 @@ async MusuNeGrind_drive(w, req):
 //              reject and exercise `Swarm_cull_done`'s catch arm.
 //  Note `pause` is reused as the dl's `expand` — it takes no arguments and returns a promise, which is
 //   exactly what `Ra_source_alive` calls it as.
+//  `w.c.jan_expands` COUNTS THE RECORDS THE SWEEP ACTUALLY REACHED, and it is the only hard evidence
+//   this Book has about how a sweep ENDED (2026-08-08, after mutation-testing claim #4).  Nothing in
+//    `Swarm_cull_done` records which arm it ran from — it stamps `cull_bg_ms` identically on settle and
+//     on throw — so no duration can tell a rejected sweep from a completed one, and claim #4 was
+//      demonstrably green over an 'alive' nav that never threw.  The count can: the throw fires inside
+//       the FIRST record, so a thrown sweep expands exactly ONCE, a completed one expands once per
+//        record on the shelf, and one that was throttled out expands ZERO times.  A count is a legal
+//         thing to snap (deterministic); a millisecond is not.
 MusuNeGrind_nav(w, mode):
     let ms = this.MusuNeGrind_jan_ms()
-    let pause = () => new Promise((res) => setTimeout(res, ms))
+    let pause = () => new Promise((res) => { w.c.jan_expands = +(w.c.jan_expands || 0) + 1; setTimeout(res, ms) })
     if (mode === 'gone') return { dir_at: async (p) => ({ expand: pause, files: [] }) }
     if (mode === 'throw') return { dir_at: async (p) => ({ expand: pause }) }
     return { dir_at: async (p) => ({ expand: pause, files: [{ name: 'held.opus' }] }) }
@@ -4566,20 +4586,31 @@ async MusuNeGrind_singleflight(w):
 //      RETIRED — a latch left standing would silently kill culling for the life of the tab, and the
 //       only way to see that is to start another one.
 async MusuNeGrind_thrown(w):
+    w.c.jan_expands = 0
     w.c.ra_nav = this.MusuNeGrind_nav(w, 'throw')
     this.MusuNeGrind_kick(w, 'thrown')
     let landed = await this.MusuNeGrind_await_cull(w, 8000)
-    let row = { thrown: 1 }
+    let row = { thrown: 1, expands: +(w.c.jan_expands || 0) }
     if (landed) row.latch_cleared = 1
-    // …AND THE SWEEP MUST ACTUALLY HAVE REACHED THE THROW (2026-08-08, after the first run).
-    //  `latch_cleared` alone cannot tell "the sweep ran, threw, and cleared its latch" from "the sweep
-    //   was throttled out, never started, and the latch was never set" — both leave `cull_flying` at 0,
-    //    and the first run PROVED the distinction is not academic: with `ra_cull_floor_ms` silently
-    //     re-armed by the `|| ` bug, step 7's dige was IDENTICAL before and after the fix. A claim whose
-    //      evidence does not change when the thing it tests stops happening is not a claim.
-    //  `cull_bg_ms` is stamped by `Swarm_cull_done` on BOTH arms, so a real throw carries the injected
-    //   per-record cost of at least one record's expand; a throttled early return carries ~0.
-    if (+(w.c.cull_bg_ms || 0) >= this.MusuNeGrind_jan_ms()) row.did_throw = 1
+    // …AND THE SWEEP MUST ACTUALLY HAVE REACHED THE THROW (2026-08-08, twice — and the second time by
+    //  MUTATION, which is the only way this kind of hole is ever found).
+    //  ROUND ONE: `latch_cleared` alone cannot tell "the sweep ran, threw, and cleared its latch" from
+    //   "the sweep was throttled out, never started, and the latch was never set" — both leave
+    //    `cull_flying` at 0, and the first run PROVED it: with `ra_cull_floor_ms` silently re-armed by
+    //     the `|| ` bug, step 7's dige was IDENTICAL before and after the fix. So `did_throw` was gated
+    //      on `cull_bg_ms >= jan_ms`, which does separate a sweep that RAN from one that never started.
+    //  ROUND TWO, AND IT IS THE INTERESTING ONE: that gate does NOT separate a sweep that THREW from one
+    //   that simply FINISHED. Measured by running this scene with the 'alive' nav — no throw anywhere in
+    //    the world — and claim #4 fired green anyway. `Swarm_cull_done` stamps `cull_bg_ms` identically
+    //     on the settle arm and the catch arm and records nothing about WHICH, so no duration can ever
+    //      carry this claim; a 9-record sweep is slower than a thrown one, but "slower" is the wrong
+    //       shape of evidence and would have been a timing test besides.
+    //  WHAT DOES CARRY IT: the injected nav counts its expands, and the throw fires inside the FIRST
+    //   record (`dl.files.find` is the one line in `Ra_source_alive` outside a try). So the sweep's
+    //    ending is legible as a COUNT — 0 = throttled out and never ran, 1 = entered and rejected at the
+    //     first record, 9 = walked the whole shelf and settled. Only 1 is a throw, and it is exact,
+    //      deterministic and snappable, which a millisecond is not.
+    if (+(w.c.jan_expands || 0) === 1) row.did_throw = 1
     w.c.ra_nav = this.MusuNeGrind_nav(w, 'alive')
     let again = this.MusuNeGrind_kick(w, 'after_throw')
     if (again === 1) row.restarted = 1
@@ -4620,7 +4651,9 @@ async MusuNeGrind_disclaim(w):
         await this.MusuNeGrind_pump(w)
         i = i + 1
     }
-    let row = { disclaim: id, asks: 3 }
+    // `asks: i`, not `asks: 3` — the loop bound is an authored constant and a constant in a snap is a
+    //  claim nobody measured. `i` is the number of wants that actually went out.
+    let row = { disclaim: id, asks: i }
     if (w.c.ra_missed && w.c.ra_missed[id]) row.told = 1
     this.MusuNeGrind_note(w, row)
 

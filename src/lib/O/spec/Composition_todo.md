@@ -55,12 +55,11 @@ This doc exists because the failures below have **no other home**. Each subsyste
     found the identical shape hours earlier in `Repli_missed_hot`'s `ra_missed_hold_ms`. **`|| DEFAULT`
      is fine where 0 is meaningless (a count, a byte total) and a BUG wherever 0 is a legitimate
       setting** — it makes the dial unsettable and untestable. Worth a sweep of every `w.c.* || N`.
- - **Still between it and being a gate:** #2 and #6 fail on a Book bug, not a wire bug — the frame is
-    read inline in the same `do_fn` when it lands one beat later (MusuVend reads from its *witness*;
-     this should too). #4 passes but is still vacuous — its dige is identical before and after the
-      floor fix, so it cannot tell "threw and cleared the latch" from "was throttled out". And §3.11's
-       items 3–5 are untouched: the discriminator has **never been broken on purpose**, the fixture is
-        still lies, and it has not been run N times.
+ - ~~**Still between it and being a gate:**~~ **CLOSED 2026-08-08 late — `MusuNeGrind` IS A GATE NOW,
+    and every one of its six claims has been broken on purpose and watched go dark.** The witness fix
+     for #2/#6, the fixture, the N runs and the mutation pass are all in; §3.11 carries the mutation
+      table and the one hole it found. Headline: **claim #4 was theatre and only a mutation showed it** —
+       it fired green over a sweep that never threw. It is a gate now, on different evidence.
 
 **1b. `wormhole/Cluster/toc.snap` IS LOSING LIVE ROWS AND KEEPING DEAD ONES — a canonicity bug, not a
  missing reaper.** Row counts across today's commits oscillate 11→9→11→12→11→8, so entries *do* fall
@@ -77,6 +76,90 @@ This doc exists because the failures below have **no other home**. Each subsyste
     cure. It is the human's own framing: *"a mature take on who can coordinate what data changes,
      what's canonical"*. Same family as `.jamsend/account`'s last-write-wins mirror (`Auto.svelte`
       ~:463 names it outright).
+ - **The writer set is bigger than "a second editor" — read 2026-08-08 evening, from source.** Three
+    gates that everyone assumes exist do not: `Lies_aim_setup` (`LiesFunk.svelte:408`) opens
+     `Waft:Cluster` with **no role gate and no humdinger gate**, off every heartbeat via `Lies_aim` ←
+      `Lies_heartbeat` (`LiesLies.svelte:1133`); `Lies_cluster_claim_self` (`LiesFunk.svelte:454`,
+       called at `:924`) stamps `HostedIdentity:<prepub>,role:…` for **any** tab; and `watch_c` →
+        `Lies_waft_save` (`Lies.svelte:808–810`, `LiesStore.svelte:336`) has **no role gate at all**
+         — only `takes`/`tentative` and the `nowriting` Opt short-circuit it. So every runner, and
+          every humdinger with a wormhole, rewrites the WHOLE toc on its own self-claim, from
+           whatever it decoded at boot plus itself. Rows minted after its read are simply gone —
+            which is exactly "live tabs vanish, dead editors survive", and needs no second editor.
+ - **A humdinger is NOT absent from the registry, only from the grid.** `Lies_humdinger` gates the
+    presence protocol alone — advertise (`LiesLies.svelte:1437`), going-cold (`:1541`), the `from` on
+     pings (`:1311`, `:1346`) — which is why the editor never mints it a `%Runner` row. A
+      `/BigSoundland` boots `boot_role:'runner'` (`BigQualand.svelte.ts:60`) and self-claims as
+       `role:runner`. `f5da6599` and `96d0cf88` in the current toc are that, not editor-minted rows.
+ - **Therefore the production shape and the canonicity fix are the same edit** (the human's framing:
+    *"those peers are only going to be after each other, there is no editor"* — the Sounditrons
+     externalise single-control-point state to the one editor). Gate `Lies_aim_setup`'s open on
+      `role === 'editor'`: no read, no self-claim, no `watch_c`, no save, **one writer by
+       construction**, and Cluster falls out of the published app for free. Nothing is lost — a
+        runner's row is *supposed* to arrive by beacon (`Lies_advertise_recv` → `Lies_runner_roster`),
+         so the self-claim is redundant for runners and is precisely what makes them writers;
+          `LiesFunk.svelte:480` already says the Cluster copy of a grant is display-only and never
+           read back. **Not a one-liner:** `LiesFunk.svelte:1867` and `:3391` read Cluster under
+            unknown gating — check those two first.
+ - **LANDED 2026-08-08 (fork D), source-verified, UNRUN.** `LiesFunk.svelte` only — `LiesLies.svelte`
+    needed nothing (`Lies_advertise_recv` was already editor-gated). Two hunks: the gate itself
+     (`Lies_aim_setup` returns unless `Lies_role(w) === 'editor'`), and **the latch had to move with
+      it** — `Lies_aim`'s `if (!w.c.aim_setup)` now reads `if (role === 'editor' && !w.c.aim_setup)`.
+       That second half is the part that isn't obvious and is the trap: `Lies_role` reads `H.c.role`
+        or `w.sc.editor|runner`, either of which can still be **undefined on a booting tab's first
+         heartbeat**, so a gate inside `Lies_aim_setup` alone would let the once-latch fire on the
+          undefined tick and leave a **real editor with no Cluster for the life of the tab** — a
+           worse bug than the one being fixed. Cost of the fix: two property reads per heartbeat on
+            non-editors, and the latch now also re-arms correctly if a tab ever becomes an editor.
+ - **The two flagged reads were already safe** — `:1867` and `:3391` both sit *inside*
+    `if (H.Lies_is_editor(w))` branches, so an editor-only Cluster doesn't starve them. The rest of
+     the reader set checked out too: `Lies_dispatch_target` self-gates on role, `Lies_rungo_target`
+      already falls back to the live `%Runner` roster when there is no Cluster, and
+       `Lies_favoured_runner` has **no in-app caller at all** (only `Machinery.svelte:683` and
+        `scripts/SendTo.spec.ts`, both of which mint their own Cluster).
+ - **Fixtures are safe, and this was worth checking rather than assuming.** Of 164 `w:Lies` rows
+    across `wormhole/Story/`, exactly **one** is `w:Lies,editor` — `Story/Editron`, and it is the only
+     fixture carrying real Cluster machinery (`Good …waft_path:Cluster`, `req:Waftica,waft:Cluster`,
+      `Waft:Cluster`). It keeps all of it. `Story/Engage`'s `Waft:Cluster,equip:Engage` is minted by
+       `Machinery.svelte:680`, not by `Lies_aim_setup`. No other fixture mentions Cluster in any form,
+        so no Book's dige moves.
+ - **One deliberate behaviour change on runners, and it is inert:** a runner's `Lens:Brink,Relay` now
+    has no `funk` cell, because `Funkcion:Relay` lived in the Cluster it no longer opens. Nothing
+     reads it — `Relay.svelte` takes `funk` as an optional prop and never touches `funk.c.latest`
+      (that caption was removed; see its own `:63`). The pumped `relay_run` watcher simply stops
+       running on runners. The face still paints from `lens.c.w`.
+ - **HALF-MEASURED NOW (2026-08-08 late, by fork A, who held the only runner).** D could not run this;
+    A could, and did — one **full runner reload** of `a67a5d04`, which is precisely the event that used
+     to make a runner rewrite the whole toc from its stale boot view, and which also guarantees the tab
+      is running the new code rather than an HMR patch of it. Result: `wormhole/Cluster/toc.snap`
+       **byte-identical across the reload** (`fb767323852203e6f6d2636f2ddd16b2`, mtime still 19:26:30 —
+        i.e. the last write predates the gate), and the runner came back and ran `MusuNeGrind` green
+         11/11 first try. **A runner is no longer a writer. That half is measured.**
+ - **The OTHER half is not, and the two failure modes look identical — say so out loud.** Nothing has
+    observed the editor *writing* since the gate. A frozen toc is what a correct fix looks like when no
+     row changed, AND what an over-gated one looks like if `Lies_role` never reads `'editor'` on the
+      editor (registry frozen for good). **Do not read "the toc stopped churning" as proof it works.**
+       The discriminator needs a genuine roster delta, which needs a **new** identity — a re-beacon from
+        a known runner correctly writes nothing, because timings ride off-snap on `.c.last_heard` by
+         design. So: **open any new tab as a runner and confirm the toc GAINS its row and loses none.**
+          That is a 30-second check for whoever has a browser, and it is the last thing owed on D.
+     - Trap that cost A a wrong inference, worth one line: **`runner_ask runners` reads
+        `wormhole/Cluster/toc.snap` off disk** (`clusterRunners()`), not the editor's live world. Its
+         output right now is just the 19:26 snapshot, so it cannot testify about the editor either way.
+ - **Verification status before that: type-check only.** One new svelte-check line, `LiesFunk.svelte:432` —
+    `Property 'Lies_role' does not exist on type 'House'` — which is the documented baseline class and
+     is byte-identical to the pre-existing one at `:463` (`Lies_cluster_claim_self` makes the same call
+      the same way). Nothing else in the file moved. **What has NOT happened: no tab has run this.**
+       The proof it works is a behavioural one nobody has taken — boot a runner and an editor, confirm
+        the runner's snap has no `Waft:Cluster` and its row still reaches the editor's registry by
+         beacon, then watch `wormhole/Cluster/toc.snap` across a few tab lifetimes and see live rows
+          stop disappearing. Until then this is source-verified, not measured.
+ - ⚠ **This edit HMRs.** `LiesFunk.svelte` is `.svelte`, so saving it pushes into every live tab
+    including fork A's runner — and a `.svelte` HMR is the one that wedges a Story drive without
+     announcing it (the drive never re-schedules). If a `MusuNeGrind` run straddled this save, **reload
+      the runner before believing its verdict**. This is fork D's cross-fork cost and §0b's "unlimited
+       tier" undersells it: D was sized as read-only-plus-unit-test, but D's whole job was an edit to a
+        `.svelte` file, which is not free the way a `scripts/*.spec.ts` is.
 
 **2. There is now a runner-free test layer, and it earned its keep on the first run.**
  `scripts/SupplyGuards.spec.ts` — mount a `.go` against a **stub House** (a `.go` is a Svelte component
@@ -121,6 +204,86 @@ This doc exists because the failures below have **no other home**. Each subsyste
   and the container's memory limit, so `ra_pcm_cap` can be sized under it instead of left at a default
    that could OOM the tab — the belt is now load-bearing in a way it was not this morning.
 
+**6. THE FOUR FORKS, WRANGLED (2026-08-08 ~20:20, by A — read this before the diff).** All four landed;
+ they are **not** equally proven, and the differences are the whole point of this block. Nothing is
+  staged; it is one working tree for the human to review.
+
+| fork | landed | proven by | still owed |
+|---|---|---|---|
+| **A** `MusuNeGrind` | `Heistation.g` + `.go` + fixture | **green ×5 + all six claims broken on purpose**; one was theatre until that pass | the disclaim `%see` (needs the scene routed through `Ra_restock_beat`) |
+| **B** the two sweeps | `SupplyGuards.spec.ts` | **15/15, 6s** — dial sweep *and* the frontier-name sweep, the latter a documented NEGATIVE result | nothing |
+| **C** the uncovered landings | `KeepMemoDurable.spec.ts` (**untracked — `git add` it or it is not in the commit**) | **8/8, 6s** — lofi across the seams, `keep_memo` durability, rehydrate, A3 rendition | `Ra_pcm_admit`'s floor went into **B's** file, not C's; covered once, not where §0c said |
+| **D** Cluster canonicity | `LiesFunk.svelte` | **half-measured** — a runner is provably no longer a writer; the editor has not been seen to write at all | one new runner tab, 30 seconds — see §0.1b |
+
+**Two cross-fork facts that only exist at the seam, which is exactly where nobody was looking:**
+- **A's runs straddled D's HMR save.** D's `LiesFunk.svelte` landed 19:51; A's first eight runs were
+   20:06+, and D's own warning says a `.svelte` HMR can wedge a Story drive without announcing it —
+    *"reload the runner before believing its verdict"*. A did reload and re-ran: **green 11/11 first
+     try on the fresh tab**, so every verdict above stands. Had that not been checked, A's whole
+      mutation table would have been reasoning about a possibly-wedged drive.
+- **The dead rows outlived the fix, and they still misroute people.** D stops the toc *churning*; it
+   removes nothing. `wormhole/Cluster/toc.snap` still carries six dead editors and
+    `49dee91d61a9de64,favourite_client:claude` — a runner that has not existed for hours and that
+     `runner_ask runners` prints **first, with a ★**. The next subagent to trust that list burns
+      minutes on a corpse (one already did). §0.1b rules out a reaper on purpose, so this is a
+       **disposal-policy question for the human**, not a bug for the next session to improvise on.
+
+---
+
+### 0b. Working in parallel — read this BEFORE launching a second session
+
+**Parallelism is free up to the compile, and serialises hard after it.** This is the single fact that
+ decides how many sessions can usefully run at once, and it is not visible from any one file.
+
+- **Unlimited:** read-only source work, and `scripts/SupplyGuards.spec.ts`-style unit tests. A `.go` is
+   a Svelte component that eatfuncs its verbs onto a House — **mount it against a stub House and the
+    real compiled verbs are callable directly.** No runner, no browser, ~7s. That is where eight
+     threads actually fit, and it is why §0.2's advice ("extend that file in preference to writing a
+      Book, wherever the thing under test is arithmetic rather than composition") is a throughput
+       argument as much as a coverage one.
+- **Effectively ONE at a time:** anything that compiles or runs a Book. A `.g` compile **HMRs into
+   every live tab, runners included**, so two sessions compiling while a third runs a Book will
+    corrupt that run. There is one reliably usable runner (`a67a5d04`); `49dee91d` is a dead registry
+     row that advertises itself as claude's favourite and will eat eight minutes (§0.1b).
+
+**Traps that cost real time on 2026-08-08, none of them inferable from the code:**
+- **A runner answering `ping` is not the same as its Story drive being wired.** A run fired the instant
+   ping returned came back as an accepted Book with **no Story world at all**. Give it ~30s after a
+    reload. (Distinct from the cold-runner false-red — that one runs and reds; this one has nothing to
+     run.)
+- **`npm run ghost-compile` dying with `no response in 12s` while `runner_ask runners` answers fine
+   means the EDITOR is identity-arrested, not that the relay is down** — the relay being healthy is
+    what makes it misleading. Fallback: `scripts/LocalGen.spec.ts` (§0.0), browserless, real translator.
+- **`Ghostmeta_*` is `sha256(<the .g source>)`**, so matching hashes prove the SOURCE is unchanged and
+   say **nothing** about compiler agreement. Trust `LocalGen` because it uses the same
+    `Lang_compile_dock`, not because the hashes line up.
+- **`+(w.c.X || N)` swallows a configured `0`.** Swept across 14 time dials on 2026-08-08; check any
+   new one. See §0.1 and §0.2 — two independent sightings in one day made this a pattern, not a bug.
+
+**Territory as of the 2026-08-08 handover:** `relay.ts` / `relay-test.ts` belong to the security
+ session — **do not touch, hand over rather than edit** (§0.4b's fix lives there). The handing-over
+  session held `Ra.g`, `Radio.g`, `Swarm.g`, `Repli.g`, `Heist.g`, `Heistation.g`, `Vytui.svelte`,
+   `Matstyle.svelte`, `scripts/` — **all at a clean stopping point, all compiled, nothing staged.**
+
+### 0c. Four forks, with disjoint file ownership
+
+Sized to 0b: one session holds the runner, the rest stay in the unlimited tier. Two sessions in one
+ file is worse than one session doing both jobs — the interaction belongs to neither.
+
+| fork | job | owns | where |
+|---|---|---|---|
+| **A** | ~~`MusuNeGrind` → a gate~~ **DONE** — witness reads, #4's vacuity killed (twice — the second hole was only visible by mutation), all six claims broken on purpose, fixture re-recorded, 6 green runs | the Book `.g` + its fixture + **runner `a67a5d04`, exclusively** | §3.11 mutation table |
+| **B** | ~~the two sweeps~~ — **BOTH DONE 2026-08-08, 15/15 green in 6s.** Frontier sweep is a clean negative (§2). Dial sweep found the earlier pass was scoped to **time** dials only: 18 count/byte reads across 5 ghosts still cannot be zeroed, ledgered executably | `scripts/SupplyGuards.spec.ts` | §2's standing rule, §0.2 |
+| **C** | ~~coverage for the landings no Book touches~~ — **LANDED 2026-08-08, 8 tests green** in `scripts/KeepMemoDurable.spec.ts`. Scoped to the seams B did NOT: the **durable `%Keepsake` mirror** (remember→flush→rehydrate across a restart, half-row refusal, session-precedence, cap-on-the-way-in, guarded stamps) and **Ra's A3 contract** (`Heist_materialise_one`'s `(!!lofi)` mode-aware early-out). SupplyGuards already covers the runtime `keep_memo` + `Ra_pcm_admit`'s floor, so those were NOT duplicated. | `scripts/KeepMemoDurable.spec.ts` (a **new** file, not B's) | §0.3 |
+| **D** | ~~Cluster canonicity + the production shape, one edit~~ — **LANDED; half-measured 2026-08-08 late by A on the shared runner.** A runner is provably no longer a writer (a full reload left the toc byte-identical); the editor has not been seen to write at all, and a frozen toc looks the same either way. One new runner tab settles it — §0.6, §0.1b | `LiesFunk.svelte` (`LiesLies.svelte` needed nothing) | §0.1b |
+
+**A is the only fork that may compile or run a Book.** B, C and D are read-only-plus-unit-test and may
+ run concurrently with each other and with A. If B/C/D need a compile, they queue behind A — say so in
+  the doc rather than compiling under it.
+
+**Not forkable, and why:** §0.4b (`relay.ts` is the security session's), and §4.1/§4.2 — both need live
+ tabs and would fight A for the runner.
+
 ---
 
 ### What landed 2026-08-08, so nobody re-finds it
@@ -161,13 +324,12 @@ This doc exists because the failures below have **no other home**. Each subsyste
        takes the other's stream"* — coming out the other way. A wedged tour is a tab that never offers
         and never transcodes while its relay looks perfectly healthy, which is exactly as it was
          reported.
-1. **Build `MusuNeGrind`** (§3). Everything else in here is a symptom; this is the instrument.
-    **The scaffold landed 2026-08-08 and is UNCOMPILED, UNRUN and UNRECORDED — see §3.11**, which
-     carries the design, the six invariants, the injection that stops it being a false green, and the
-      numbered "what remains" list. The session that wrote it was barred from compiling (the human was
-       testing audio live). **Nothing has been executed.** The next move on this item is §3.11's step
-        1, not more design — and its step 3, breaking claim #1 on purpose once, is the part that must
-         not be skipped.
+1. ~~**Build `MusuNeGrind`**~~ **DONE 2026-08-08 late — it is a gate.** Green 11/11 across six runs, the
+    fixture recorded, and all six claims broken on purpose and watched go dark (§3.11's mutation table).
+     One of them, #4, was theatre until that pass found it. **What it gates is the janitor/wire seam and
+      only that** — rung 2 (payload) and audio are still uncovered, so do not let a green here stand in
+       for them. The live next move on this item is the owed disclaim `%see`, which needs the scene
+        routed through `Ra_restock_beat` first; §3.11's "still owed" list has it.
 2. **Then the startup wait** (§4.1) — it taxes every iteration, including the ones spent fixing the
     rest of this list. Measure before touching: the era ladder is only ~15s worst case, so it is not
      the whole story and guessing at it has already cost one wrong diagnosis.
@@ -248,8 +410,30 @@ Each is individually reasonable, cheap, and correct *at the time it was written*
 **The standing rule:** a high-water cursor may not answer a question about coverage; a timer may not
  answer a question about consent; and an eviction bound may not answer a question about admission.
   The first two are greppable — a frontier name (`sent`, `have`, `held`, `frontier`, `last_asked`) on
-   the left of a comparison against a total or a threshold. Worth one deliberate sweep of the transfer
-    spine, which has **not** been done.
+   the left of a comparison against a total or a threshold.
+
+**That sweep has now been done (2026-08-08, fork B) and the transfer spine is CLEAN.** A negative
+ result, and it needs a guard more than a positive one would, because nothing else will notice it
+  break. What was checked:
+- `held` is a genuine **count** at every site (`if (map[s] != null) held = held + 1` — `Ra.g:897`,
+   `1084`, `1122`, `2502`, `2600`), so `held >= total` is a coverage question answered by a coverage
+    read. The `held` at `Ra.g:1914`/`1970` is a byte sum, also honest.
+- `Repli_page_ready`'s map branch **walks the page** (`while (s < end) if (!Repli_chunk_at) return
+   false`) — §3.1b's fix, correctly generalised.
+- `Radio_start_seq`'s `have` **is** a frontier, and it answers a **frontier** question ("where may the
+   pump start without crossing a hole"). A frontier answering a frontier is the rule satisfied, not
+    violated — the counter-example that stops this becoming "never use a cursor", which would be wrong.
+- The one cheap read left is `Repli_page_ready`'s **other** branch (`Repli.g:510-516`), which answers
+   with `chunks.length` and inspects no element. It is correct **only because**
+    `Crate_transcode_release` grows the array by contiguous `push`, so it cannot have holes — an
+     unstated, load-bearing, one-line-away-from-false invariant. `SupplyGuards.spec.ts` now guards the
+      **producer's density** rather than the consumer's read; the day someone lands an out-of-order
+       arrival as `chunks[i] = buf`, that goes red and points at the reader trusting it.
+- A second precondition fell out of the test failing on its first run: the same branch computes
+   `complete = chunks.length >= +(rec.sc.nchunks || 0)`, so a record with **no promise** is vacuously
+    complete and every page reports ready. Unreachable today only because `Crate_transcode_begin`
+     stamps `nchunks` (`:824`) *before* it creates the array (`:826`). The safety is an **ordering in
+      another ghost**, not anything the reader checks. Pinned.
 
 Twice the surrounding comment confidently asserted the true property ("every page has crossed at
  least once") while the code computed the cheap one. **The comment is not evidence.**
@@ -437,8 +621,8 @@ The underlying rate variation is still **§4.1's unexplained startup wait**, and
 Not a convenience — a **missing test level**. Every defect above lived in composition, and not one
  was reachable by any `Musu*` Book, because each of those runs one mechanism in a quiet world.
 
-Full design, invariants and traps: **§3.11 here** (the scaffold that landed, and what remains before it
- gates anything) and `Backpressure_todo` §0 item 00 (the payload stressors, rung 2). In short — two
+Full design, invariants, the mutation table and what is still owed: **§3.11 here** (it landed, ran
+ green and had every claim broken on purpose) and `Backpressure_todo` §0 item 00 (the payload stressors, rung 2). In short — two
   runners over the **real relay** (not a loopback mock, so reconnects, sheds and one-sided reloads stay
    in scope), bulky binary Repli while the radio plays and a mag replicates, asserting **invariants not
     a snap** (the fixture will be nondeterministic like MusuBuddy, so a 500-line diff cannot be the gate).
@@ -458,7 +642,7 @@ The load-bearing claim is **the beat never overruns its cadence for a run of tic
 | §3.8 | `ra_missed` had no reader on the music path | **CLOSED by §3.9 (2)**; one live free-standing finding remains (the Vyto tok) |
 | §3.9 | the goner-diff never ran live | **SOURCE-VERIFIED, items 1+2 SHIPPED**; item 3 is curiosity |
 | §3.10 | the transcode frontier can outrun the playhead — what remain are wedges | **SOURCE-VERIFIED**; item 1 open as an `Ra.g` handoff, item 2 superseded by §3.12 |
-| §3.11 | `MusuNeGrind` — the design and the landed scaffold | **UNVERIFIED BY CONSTRUCTION** — this is §0 item 1 |
+| §3.11 | `MusuNeGrind` — the design, and the gate it became | **GREEN + VERIFIED BY MUTATION**; §0 item 1 CLOSED. Gates the janitor/wire seam only |
 | §3.12 | the PCM belt livelocks — the 32s ceiling, the pinned CPU, the dropped frames | **MEASURED, FIXED**; one lead (`×2` on every RECV) explicitly not built on |
 
 ---
@@ -720,16 +904,15 @@ With the cull detached, the steady-state arithmetic is fine: the lead pass lays 
  reading of one log. The fuller log refuted that as the *dominant* one (§3.12). Item 1 is still a real
   defect; it was never the one the human was hitting.
 
-## 3.11 `MusuNeGrind` — the design, and the scaffold that landed (2026-08-08, **UNVERIFIED BY CONSTRUCTION**)
+## 3.11 `MusuNeGrind` — the design, and the gate it became (2026-08-08, **VERIFIED BY MUTATION**)
 
-> **Read this line before anything below it.** The Book source, its Credence row and its toc were written
->  in a session that was **forbidden to compile, to run a Book, or to touch a runner** — the human was
->   testing audio live and a ghost-compile HMRs into their tabs. So **nothing here has been executed**:
->    not the compile, not one step, not one `%see`, and the toc carries **lie diges**. Every sentence
->     below is a design intent that has not yet met a runner. That is exactly the posture §2 exists to
->      enforce — *the comment is not evidence* — applied, awkwardly and on purpose, to the file whose job
->       is to enforce it. **What remains** is at the bottom of this section; do that before citing this
->        Book as a gate for anything.
+> **Read this line before anything below it.** This section used to open with a warning that nothing in
+>  it had ever been executed. That is no longer true, and the replacement warning is more useful: **the
+>   Book is green, its fixture is recorded, and five of its six claims are gates — because each one was
+>    broken on purpose and watched go dark.** The sixth, #4, *fired green over a sweep that never threw*
+>     until a mutation exposed it. That is the whole argument of §2 arriving on schedule: **a green Book
+>      is not evidence about the code until you have seen its claims go red.** The mutation table below
+>       is now the load-bearing part of this section; the design notes are history.
 
 **Where it is.** `Ghost/Story/Heistation.g`, appended after `MusuDoor` — modelled line for line on
  `MusuVend`'s scaffold as §0 instructs. It went into an existing `.g` rather than a new one for one hard
@@ -779,7 +962,7 @@ Three nav modes, one per scene: **alive** (file present — slow and harmless), 
 | 1 | **the janitor flies instead of holding the beat** — every kick returned at once while a demonstrably slow sweep ran on | every `kick` row in the run: `started` ⇒ `quick`, ≥4 kicks, **and** `did_work` off `cull_bg_ms` | §3.7. Re-add the `await` in `Swarm_share_beat` ⇒ red |
 | 2 | **the wire kept moving under the janitor** — a fresh record crossed to the mirror while the sweep was still in flight | baseline crossing **and** `mid_flight` **and** `crossed` | the composition claim itself: housekeeping and traffic are no longer one clock (§1 #10) |
 | 3 | **the janitor is single flight** — a second kick while one flies is refused rather than stacked | `first_started` + `twin_refused` + `same_flight` (the start **stamp**, not merely a truthy latch) | the overlapping-writer shape — a heist double-writing a landed file, *"spastic as fuck"* |
-| 4 | **a janitor that throws still clears its latch** — the next sweep starts instead of the tab retiring its janitor for good | `latch_cleared` **and** `restarted` | §2.1's shape exactly: `Swarm_cull_done`'s catch arm is an **unmeasured claim in a comment** |
+| 4 | **a janitor that throws still clears its latch** — the next sweep starts instead of the tab retiring its janitor for good | `latch_cleared`, `restarted` **and `did_throw` off the nav's expand COUNT** (`expands=1`) — a duration cannot carry this, see the mutation table | §2.1's shape exactly: `Swarm_cull_done`'s catch arm is an **unmeasured claim in a comment** |
 | 5 | **the detached sweep still does its work** — records whose source went missing were dropped by a cull nothing awaited | `swept` (9 → 0) | **non-vacuity.** Without it, every row above is satisfied by a janitor that does nothing |
 | 6 | **the source told the sink it cannot resolve an id** — the miss travels | `ra_missed[id]` stamped | §3.8's *provable half* |
 
@@ -824,9 +1007,9 @@ The Book *drives* the disclaim scene and records `asks:3` beside `told:1` — so
   is **not** authored as a `%see`. When this was written, `ra_missed` had no reader on the music path,
    so asserting it would have authored a Book **red at birth**, and a red Book gates nothing (§2.3 is
     the whole argument).
- **That precondition has since changed:** §3.9 item 2 landed `Repli_missed_hot` at `Ra_mag_warm` and
-  `Ra_restock_beat`. So this `%see` is now *writable* — but write it only after the Book runs green
-   without it (step 5 below), so a new assertion and a first-ever compile are never the same red.
+ **That precondition has only half changed, and the earlier reading of it here was wrong.** §3.9 item 2
+  did land `Repli_missed_hot` — but at `Ra_mag_warm` and `Ra_restock_beat`, and this Book drives
+   neither, so the `%see` is *still* red at birth. See "What is still owed here" at the end of §3.11.
 
 ### What this Book explicitly does NOT cover
 
@@ -838,32 +1021,80 @@ The **payload** stressors named in `Backpressure_todo` §0 item 00 — punch a c
      Book covers them.** Nor does it cover §3.12's PCM belt — a decode livelock needs real audio bytes,
       which is a third rung again.
 
-### What remains before it gates anything
+### What it took to gate anything — steps 1–5, done 2026-08-08 late (runner `a67a5d04`)
 
-In order, all on a **live runner** (never `Story_cli_run.mjs` — a green there is a bubble):
+Steps 1–2 (compile, first run) landed earlier the same evening and are recorded in §0 item 1. Steps 3–5
+ are below. The result: **three consecutive `11/11, ok_pct=1, caveat=0, untried=0` runs on the final
+  code**, after two green baselines on the code as it stood at handover — and, worth its own sentence,
+   **`caveat=0` on every one of them.** For a Book with a real clock in it that is better than §3.11
+    predicted (it expected `MusuBuddy`-shaped jitter); nothing here is timing-flaky. The fixture is
+     `wormhole/Story/MusuNeGrind/{toc,001..011}.snap`, re-recorded through `runner_ask accept` (the only
+      sanctioned path) after the #4 fix moved steps 7–11.
 
-1. **Compile it.** `Ghost/Story/Heistation.g` — and note the compile HMRs into whatever tabs are live, so
-    do it when the human is not mid-audio-test. Fix whatever the compiler says; it has never been parsed.
-     The `.g` traps to expect: one-line callbacks only (the nav's arrow returns are already single-line),
-      and no line-leading `else`.
-2. **Run it and read the errors, not the verdict.** First run will almost certainly fault, not merely
-    differ. The likely suspects, in order: `Repli_offer` against a `%Mag:shuffle` root (proven with a
-     `%Mag:Musica` root in `MusuVend`, assumed here); `Repli_mirror_lib` finding the mirrored records
-      under that root; and the injected nav's shape matching what `Ra_source_alive` calls it as.
-3. **Tune the three numbers if the margins are wrong.** `MusuNeGrind_ceil()` 120ms, `jan_ms()` 80ms,
-    `work_floor()` 240ms — the awaited shape costs ~640ms against a 120ms ceiling, so the discriminator
-     is ~5×, but that is arithmetic, not a reading. **Verify the discriminator by breaking it on purpose
-      once**: re-`await` the cull in a scratch copy and confirm claim #1 goes red. An assertion never
-       seen to fail is not known to be an assertion.
-4. **Record the fixture.** `wormhole/Story/MusuNeGrind/toc.snap` currently carries **11 steps with lie
-    diges** (`0000000000000001`…). A Book's length **is** its recorded toc — adding a beat in the `.g`
-     silently does nothing — so if the step shape above changes, the toc must change with it. Record on a
-      live runner with a clean tree.
-5. **Run it several times.** This Book has a real clock in it by construction (`Coding_guide`: verify a
-    timing fix by re-running, and robustly green across N runs is the gate). Expect `MusuBuddy`-shaped
-     jitter; read `ok`/`ok_pct` and **never** the caveat count (§2.3).
-6. Only then does §0 item 1 close, and only then may anything in §4 be attributed by it. The disclaim
-    `%see` (above) is the first thing to add once it is green.
+**The three numbers were never touched.** `ceil()` 120ms / `jan_ms()` 80ms / `work_floor()` 240ms all
+ held first time on a loaded runner. Be careful how much that claim carries: the Book snaps **verdicts,
+  never durations** (deliberately — a millisecond in sc makes it unrecordable), so what is actually
+   measured is that every detached kick came in **under** 120ms and the awaited one came in **over** it.
+    The ~720ms figure for the awaited shape is arithmetic (9 records × `jan_ms`), not a reading. No
+     margin needed tuning, and the two sides never came close to touching.
+
+### The mutation table — which claims are gates, and the one that was theatre
+
+Step 3 says *"an assertion never seen to fail is not known to be an assertion"*, so **every** claim got
+ the treatment, not just #1. Each mutation is a scratch edit to the Book itself (never to what it tests),
+  compiled, run, reverted; a run is ~20s, so the whole pass cost four compiles and about ten minutes.
+   **Reproduce any row in two minutes** — that is the point of writing them down this precisely.
+
+| # | the mutation | what the snap said | verdict |
+|---|---|---|---|
+| 1 | hold the janitor kick until the sweep lands (`await MusuNeGrind_await_cull` inside `_kick`) — the pre-fix `Swarm_share_beat` shape | `kick:alive,started` — `quick` and `flying` both gone | **GATE** |
+| 2 | *(same mutation)* | `underload,crossed` — `mid_flight` gone | **GATE** |
+| 3 | await the cull between the two kicks of the singleflight scene | `kick:twin,started` — the twin ran; `singleflight,first_started` alone | **GATE** |
+| 4 | run the thrown scene with the **`alive`** nav — nothing throws anywhere | `thrown,latch_cleared,did_throw,restarted` — **claim fired green** | **THEATRE → now a GATE** |
+| 5 | run the goner scene with the `alive` nav | `goner,before=9,after=9` — nothing swept | **GATE** |
+| 6 | ask zero times in the disclaim scene | `disclaim:ghostofatrack,asks=0` — no `told` | **GATE** |
+
+**#1 and #2 fall together under one mutation, and that is correct, not sloppy.** They are the two halves
+ of §3.7: if the janitor is awaited it cannot fly *and* the wire cannot move under it. Breaking the fix
+  reds the Book on exactly the defect it was built for, and on nothing else — #3–#6 stayed green through
+   it. That is the discriminator working, demonstrated rather than argued.
+
+**#4 is the finding.** Its evidence was `cull_bg_ms >= jan_ms`, added hours earlier to stop it passing
+ over a sweep that had been *throttled out*. That gate is real but it separates the wrong pair: it tells
+  **ran** from **never started**, and says nothing about **threw** vs **finished**. `Swarm_cull_done`
+   stamps the identical `cull_bg_ms` on the settle arm and the catch arm and records nothing about which,
+    so **no duration can ever carry this claim** — the fix was not a better threshold, it was a different
+     kind of evidence. The injected nav now counts its `expand()`s (`w.c.jan_expands`, a **count**, which
+      is legal in a snap where a millisecond is not), and the sweep's ending is legible in the fixture:
+
+    expands=0  throttled out, never ran        expands=1  entered and rejected at the first record
+    expands=9  walked the whole shelf and settled
+
+ `did_throw` is now `expands === 1` and the row snaps `expands` beside it, so a reader sees the number.
+  Re-running the #4 mutation against the fix gives `thrown,expands=9,latch_cleared,restarted` — no
+   `did_throw`, claim dark. **The lesson generalises past this Book:** #4's first patch was written from
+    source-reading and looked exactly like a fix; it took a mutation, not a re-read, to find that it
+     discriminated the wrong pair. Two rounds of *"the comment is not evidence"* on the same six lines.
+
+Also fixed while in there: the disclaim row carried `asks: 3`, an **authored constant** — the loop bound
+ written into the snap as though it were a measurement. It is `asks: i` now, which is why the #6 mutation
+  can show `asks=0`. A constant in a fixture is a claim nobody made.
+
+### What is still owed here
+
+1. **The disclaim `%see` is still not writable, and §3.11 was half-wrong about why.** `Repli_missed_hot`
+    did land (§3.9 item 2) — but its call sites are `Ra_mag_warm` and `Ra_restock_beat` (`Ra.g:1033`,
+     `:1074`, `:2852`), and **this Book drives neither**; it calls `Repli_want_next` directly. So the
+      claim would still be red at birth, for a different reason than before: not "no reader exists" but
+       "no reader is on any path this Book walks". The move is to make the disclaim scene ask through
+        `Ra_restock_beat` and then write the `%see` — one scene, and §3.8's other half closes.
+     - Worth knowing, and it is a §2 tell: `Ra.g:1030` and `:1070` both say in comments that this path is
+        *"inert in every Book"* / *"a state no Book can reach"* because `ra_missed` is empty there.
+         **MusuNeGrind reaches it** — it stamps `ra_missed['ghostofatrack']` every run. The comments are
+          still true in effect (the reader isn't on a path it drives) and already false in their reason.
+2. **Rung 2 is untouched** — the payload stressors, unchanged from the list above.
+3. §0 item 1 is closed by this. Anything in §4 may now be attributed by this Book, within the limits of
+    what it actually covers (which is the janitor/wire seam, and nothing about audio or chunks).
 
 ---
 

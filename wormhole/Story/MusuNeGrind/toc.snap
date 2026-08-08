@@ -4,36 +4,36 @@ story:MusuNeGrind
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=2.582
-      sample=2.591,at=1786172699
-      sample=2.575,at=1786174411
-      sample=2.575,at=1786174561
-      sample=2.575,at=1786174565
-      sample=2.575,at=1786174565
-      sample=2.575,at=1786174578
-      sample=2.575,at=1786174579
-      sample=2.575,at=1786174579
-      sample=2.626,at=1786174593
-      sample=2.575,at=1786174605
-    TimeTotal:step,avg=0.235
-      sample=0.236,at=1786172699
-      sample=0.234,at=1786174411
-      sample=0.234,at=1786174561
-      sample=0.234,at=1786174565
-      sample=0.234,at=1786174565
-      sample=0.234,at=1786174578
-      sample=0.234,at=1786174579
-      sample=0.234,at=1786174579
-      sample=0.239,at=1786174593
-      sample=0.234,at=1786174605
+    TimeTotal:beliefs,avg=2.808
+      sample=3.961,at=1786175719
+      sample=2.592,at=1786175835
+      sample=3.285,at=1786175890
+      sample=2.666,at=1786175948
+      sample=2.616,at=1786176023
+      sample=2.616,at=1786176031
+      sample=2.562,at=1786176066
+      sample=2.581,at=1786176080
+      sample=2.621,at=1786176094
+      sample=2.584,at=1786176968
+    TimeTotal:step,avg=0.255
+      sample=0.36,at=1786175719
+      sample=0.236,at=1786175835
+      sample=0.299,at=1786175890
+      sample=0.242,at=1786175948
+      sample=0.238,at=1786176023
+      sample=0.238,at=1786176031
+      sample=0.233,at=1786176066
+      sample=0.235,at=1786176080
+      sample=0.238,at=1786176094
+      sample=0.235,at=1786176968
   step,dige:56e10b230dce175f
   step=2,dige:b833e7dae625edea
   step=3,dige:c13ed919789bb934
   step=4,dige:cd7ab0e4ebe69c54
   step=5,dige:a029a8a15551c263
   step=6,dige:4771590a11e3fc29
-  step=7,dige:c6ee23c212c235d4
-  step=8,dige:61f627ccb3332b34
-  step=9,dige:e1d412039d5dde72
-  step=10,dige:77f2aee0dff9d371
-  step=11,dige:58792bda762a3d2f
+  step=7,dige:3052b88702fc014e
+  step=8,dige:0861730af3cc32bf
+  step=9,dige:b0aafbcbaa66d7ae
+  step=10,dige:bd7c6a0dd1370042
+  step=11,dige:fa3355c5df98eebd

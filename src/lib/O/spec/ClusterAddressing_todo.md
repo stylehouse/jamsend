@@ -246,72 +246,22 @@ The findings, each with its production-ops **tell** so nobody misdiagnoses live:
     additive, `deliverLocal` fans out, so it received a COPY of every frame addressed to a
      hello-verified identity (swarm frames, music chunks, wormhole replies). Now refused shape-wise
       in `relay.ts` (`IDENTITY_SHAPED`, ≥16 pure hex — identities bind via signed hello alone);
-       three checks in `relay-test.ts` gate it. **THE TWIN DOOR IS STILL OPEN:** `?addr=<prepub>`
-        at connect time is the same unauthenticated additive bind, and it is load-bearing for the
-         pre-hello window (`Swarm_station_up` dials `?addr=<own prepub>`). Closing it needs §2's
-          precondition first (one-shot senders wait for `hello_ok`/role ack), else legitimate first
-           frames drop silently. Until then, `to:<prepub>` privacy is NOT enforced against a
-            pre-claiming eavesdropper.
+       three checks in `relay-test.ts` gate it. **There were THREE doors into the same additive
+        `locals` fan-out Set, not one:** `become <role>` (now refused if identity-shaped),
+         `subscribe <name>` (now refused unless `@`-prefixed — legit channels always are, so free),
+          and `?addr=<name>` at connect time. **Two shut; the third stays open by design:**
+           `?addr=<prepub>` is load-bearing for the pre-hello window (`Swarm_station_up` dials
+            `?addr=<own prepub>`). Closing it needs §2's precondition first (one-shot senders wait
+             for `hello_ok`/role ack), else legitimate first frames drop silently. Until then,
+              `to:<prepub>` privacy is NOT enforced against a pre-claiming eavesdropper.
 
-**Cluster_spec con
-
-## 6. `header.from` is not an address — the field the wire trusts and never verifies (2026-08-08)
-
-Surveyed the whole ping|pong / send / deliver path end to end (`Peeroleum.g`, `LiesLies.svelte`,
- `relay.ts`, `Swarm.g`). There are **four** distinct "who sent this" channels, and `header.from` — the
-  one that reads as authoritative — is the only one that is neither routed on nor verified.
-
-| field | set by | is it an address? | who reads it |
-|---|---|---|---|
-| `header.to` | sender | **yes — the ONLY routed field** (`relay.ts` `headerTo`→`deliverLocal`) | the relay |
-| `header.from` | `peering%name` (`Peeroleum_send_*`, `Peeroleum.g`) | **no** — on the Lies channel it is the local *role slot* (`'runner'`/`'editor'`) | `Peeroleum_route`'s Pier pick; console logs |
-| body `from` | patched in by hand | yes (prepub) | `Lies_pong` / `Lies_pong_recv` / `Lies_advertise` (`LiesLies.svelte`) |
-| `swarm.page.prepub` + `swarm.voucher.from` | Swarm | yes (prepub, **signed**) | `Swarm_deliver` (`Swarm.g:466`) — which **deliberately ignores `header.from`** |
-
-`Swarm.g:468` says it outright: *"the relay routes on header.to only and never checks header.from, so
- on a LIVE station any socket could forge a sealed friend's prepub."* That is why Swarm grew a **voucher**
-  instead of trusting the header. The Lies channel never got that memo — it grew a **second `from` in the
-   body** instead, three separate times (`ping`/`pong`/`advertise`), each with its own humdinger guard.
-
-**This conflicts with `Cluster_spec.md` §3.2a/§3.2b, and the SPEC is the stale one until this lands:**
-- §3.2a/§3.2b (the substrate paragraph): *"the relay binds **one socket per addr** — `become runner` is
-   a single slot, not a subscription … the relay never honoured that [fan-out]."* **Wrong.** `relay.ts`
-    `bind` accumulates into a **Set** and `deliverLocal` fans out to every socket in it (this doc's §2 and
-     §4.5 already state the corrected mechanism). The real 2026-07-05 starvation was `routeFromBrowser`'s
-      **local-first-else-bridge** short-circuit: one local runner satisfies the deliver and the frame is
-       never forwarded, so the bridge runner never sees it. Same fix, wrong stated reason.
-- §3.2 hello text: *"to:<pub> then routes to a VERIFIED identity, not a self-asserted string."* True of
-   the hello-bound socket — but `bind` is additive, so before §6's fix a `become <prepub>` bound a
-    SECOND, unauthenticated socket under the same addr and `deliverLocal` fanned a **copy** to it. "Routes
-     to a verified identity" was "…plus anyone who claimed the name." (Closed for the `become` door
-      below; the `?addr=<prepub>` door stays open by design — §2's precondition gates it.)
-
-### The findings (ranked by blast radius)
-
-1. **Acks from a runner never retire the emit they ack.** `Peeroleum_send_to` books the outbox emit on
-    the *promoted* Pier (`pub:<prepub>`, `Lies_runner_pier`). The runner's ack returns `from:'runner'`
-     (`me = pier.c.up%name`), so `Peeroleum_route` resolves it to the **role-slot** Pier (`pub:'runner'`)
-      and `Peeroleum_take_ack` searches THAT Pier's outbox. Every addressed `rungo`/`ghost_compile`/
-       `ghost_ledger`/`become_book` emit strands un-acked. Worse: a promoted Pier's `Pier_next_seq` starts
-        at 1, so `ack:1` can false-positive onto an unrelated role-Pier emit with seq 1. **Tell:** a
-         `%outbox` slowly filling with un-acked addressed emits is THIS, not a dead runner.
-2. **N runners share one inbox on the editor.** All runner frames carry `from:'runner'`, so they book
-    into the single role-slot Pier's inbox, whose dedup key is `(seq,type)` only (`Peeroleum_book_unemit`).
-     Two runners' `run_result` on the same seq → the second is treated as a **reused-seq collision**,
-      re-acked, never dispatched (`Peeroleum.g:722`). **Tell:** the log line *"reused-seq collision …
-       a reborn peer wants the epoch reset"* with two live runners up is THIS, not a reborn peer.
-3. **From-less ping → fan-out pong → false-live.** A ping with no body `from` (every humdinger room, and
-    an editor's own ping) fails `Lies_pong`'s `/^[0-9a-f]{16}$/` test → falls to `Peeroleum_send_consumer`
-     → `to:'runner'` → `deliverLocal` fans to **every** runner. `Lies_pong_recv` computes `rtt =
-      Date.now() - fr.t` with no check that `fr.t` was *our* ping, and stamps `last` — so one runner's
-       watchdog is kept green by another's heartbeat. A false-live, not a flap.
-4. **`become` bound any SANE_ROLE name, prepub shape included** (`relay.ts`, landed d991cad2, the same
-    day this door widened). An unauthenticated socket could `become <prepub>` and receive a copy of every
-     frame addressed to a verified identity. **FIXED in this pass** (the "Do now, no spine" item): an
-      identity-shaped role (`/^[0-9a-fA-F]{16,}$/`) is refused outright; identities bind via signed
-       `hello` alone. Covered by `relay-test.ts` ("become <prepub> refused", "shadow-subscriber got no
-        copy"). The `?addr=<prepub>` door is intentionally left — it is load-bearing for the pre-hello
-         window and needs §2's hello_ok precondition before it can close.
+**This conflicts with `Cluster_spec.md` §3.2a/§3.2b, and the SPEC is the stale one until this lands.**
+ §3.2a/§3.2b read *"the relay binds one socket per addr — `become runner` is a single slot, not a
+  subscription"*; wrong — `bind` accumulates into a **Set** and `deliverLocal` fans out to every socket
+   on the addr (§2, §4.5). And §3.2's *"to:<pub> routes to a VERIFIED identity"* was true only of the
+    hello-bound socket: `bind` being additive, a `become`/`subscribe`/`?addr=` claim bound a SECOND,
+     unauthenticated socket under the same addr and got a copy — "…plus anyone who claimed the name."
+      Two of those three doors are now shut (6.4); `?addr=` stays open by design.
 
 ### The fix (deferred — it intersects §4/§4.5, so it is the human's call, not a tidy-up)
 
