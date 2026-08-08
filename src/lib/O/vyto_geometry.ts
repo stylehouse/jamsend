@@ -59,6 +59,56 @@ export function power_cells(poly0: Pt[], pts: Pt[], radii: number[], gap: number
     })
 }
 
+// THE SLAB SEAT (the owner 2026-08-09: *"notice when the sides of the cell aren't square... pick the
+//  two parallelest sides that the box aligns between to consume the most space of the cell"* — and
+//   *"we used to jam things in sideways"*).  A voronoi cell is rarely axis-aligned, so an axis-aligned
+//    seat wastes it; but nearly every power cell has a pair of near-antiparallel walls (shared walls
+//     come in opposing pairs by construction).  Find the MOST antiparallel pair, weighted by how much
+//      wall they actually offer (long parallel walls beat a short accidental pair), and return the slab
+//       they bound: unit direction `u` ALONG the slab, centre of the cell's extent, thickness `t`
+//        across it and length `len` along it.  The caller lays the component's box along `u`, filling
+//         `t`, free to overrun `len` a little (overflow is allowed; hover top-mostity resolves it).
+//  Pure and renderer-agnostic: extents are computed over the WHOLE polygon projected on the slab axes,
+//   so even when the two chosen edges are not the exact support lines the slab still contains the cell.
+//  Returns null when no pair is parallel within `minPar` (a triangle-ish cell) — the caller falls back
+//   to the axis-aligned seat.
+export function slab_seat(poly: Pt[], minPar = 0.8): { ux: number, uy: number, cx: number, cy: number, t: number, len: number } | null {
+    const n = poly.length
+    if (n < 4) return null
+    // edge directions + lengths
+    const dirs: Pt[] = [], lens: number[] = []
+    for (let i = 0; i < n; i++) {
+        const a = poly[i], b = poly[(i + 1) % n]
+        const dx = b.x - a.x, dy = b.y - a.y, l = Math.hypot(dx, dy)
+        dirs.push(l > 0 ? { x: dx / l, y: dy / l } : { x: 1, y: 0 })
+        lens.push(l)
+    }
+    let best = -Infinity, bi = -1, bj = -1
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+        const par = -(dirs[i].x * dirs[j].x + dirs[i].y * dirs[j].y)   // 1 = perfectly antiparallel
+        if (par < minPar) continue
+        const score = (par - minPar) * (lens[i] + lens[j])
+        if (score > best) { best = score; bi = i; bj = j }
+    }
+    if (bi < 0) return null
+    // slab direction: edge i's direction averaged with edge j's REVERSED direction
+    let ux = dirs[bi].x - dirs[bj].x, uy = dirs[bi].y - dirs[bj].y
+    const ul = Math.hypot(ux, uy)
+    if (!(ul > 0)) return null
+    ux /= ul; uy /= ul
+    const nx = -uy, ny = ux
+    let minU = Infinity, maxU = -Infinity, minN = Infinity, maxN = -Infinity
+    for (const p of poly) {
+        const pu = p.x * ux + p.y * uy, pn = p.x * nx + p.y * ny
+        if (pu < minU) minU = pu
+        if (pu > maxU) maxU = pu
+        if (pn < minN) minN = pn
+        if (pn > maxN) maxN = pn
+    }
+    const mu = (minU + maxU) / 2, mn = (minN + maxN) / 2
+    return { ux, uy, cx: mu * ux + mn * nx, cy: mu * uy + mn * ny, t: maxN - minN, len: maxU - minU }
+}
+
 // shoelace signed area — Σ(pₖ × pₖ₊₁) / 2.  The sign follows winding; readers wanting
 //  magnitude take Math.abs.
 export function poly_area(poly: Pt[]): number {

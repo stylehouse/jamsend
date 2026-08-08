@@ -205,6 +205,41 @@ Four sentences, in the order they arrived, each one a correction to what was in 
       should all look more terrific"*
 4. *"and MOVE it as well"*
 
+### ⇢ THE SIDEWAYS SEAT + what the owner asked for next (2026-08-09, after "way better fitting! nice")
+
+The clip regime landed and the owner confirmed it.  Their next ruling, in one breath, is the queue:
+
+1. **Non-square cells: DONE this round.**  *"pick the two parallelest sides that the box aligns between
+    to consume the most space of the cell"* — `slab_seat` (vyto_geometry.ts, pure, node-tested: a 20°
+     slab hexagon recovers 20.0° exactly, a square gives 0°, a triangle gives null).  The mold lies
+      ALONG the slab (`PaintCell.mx/my/mw/mh/ang`, rotated in `mold_seat`, snapped level within 8°,
+       normalised so text never reads upside down), FILLS it across (SEAT_AIR = 3), and may overrun the
+        cell's ends by OVERHANG = 1.25 — overflow is sanctioned (*"we can have components overflowing
+         their cell"*) because hover top-mostity (the translateZ lift) resolves it.  No clip in this
+          regime; a cell with no near-parallel pair falls back to AABB + wall clip.  `bx..bh` stays the
+           cell AABB for the label rail — two boxes, two questions.
+2. **Crush must be obvious: DONE this round.**  Below the icon floor the cell wall goes dashed
+    (`.cell.crushed`) and a centred ⤢ says "folded, more inside".  (The demand side already exists —
+      `need_area` floors the solve — so crush-vs-demand is the solver arbitrating, as it should.)
+3. **16:9 is the default aspect pick now** (was 'auto'; 'auto' stays in the list).
+4. **NOT DONE — the wave labels.**  *"some chunky covering like a wave from the side of the cell,
+    labels, which fold away (like a wave toppling in reverse) when the cell is focused, so we can
+     behold entire something."*  Wants the emphasis station first (a "focused" cell must exist as
+      state before anything can fold away from it).
+5. **NOT DONE — the hierarchy breadcrumb** (*"where we are"*) — same dependency: it renders the
+    emphasis/navigation state, so build that state first (`%Spotlight,src` was the sketched shape;
+     "we make it the most important thing, and everything sorts away from its moment").
+6. **The standing question** — *"re-imagine the innards... is there much meaningful C** understanding
+    or functioning in Vyto?"* — answered honestly in session: the model side HAS real C** functioning
+     (Vyto_relate scribes %Flow from shared SIG_JOINS atoms; importance/dose sizes cells; Vtuffing
+      distillation exists) but the RENDERER only consumes weight, not meaning — vines know %Flow's `n`
+       and nothing else, and navigation/emphasis has no model-side particle at all.  That gap is
+        exactly items 4+5.
+
+(inscribed_of was deleted this round — dead since the clip regime, and it carried the adversary's A1
+  convexity bug.  The seat geometry now lives in vyto_geometry.ts where node can test it — A1/C1 both
+   closed by removal + relocation.)
+
 ### ⇢ THE ADVERSARIAL REVIEW, and what it changed (2026-08-09, commissioned by the owner)
 
 An adversarial agent was set on the whole session's diff with the brief "argue this isn't right and needs

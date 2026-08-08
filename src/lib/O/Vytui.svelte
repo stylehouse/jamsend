@@ -12,7 +12,7 @@
     //   H={house}), so a House with no w:Vyto renders nothing at all.
     import { TheC }   from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
-    import { power_cells, type Pt } from "$lib/O/vyto_geometry"
+    import { power_cells, slab_seat, type Pt } from "$lib/O/vyto_geometry"
     import { GLASS_KINDS } from "$lib/O/glass_kinds"
     import { FACE_MAINKEYS } from "$lib/O/glass_faces"
     import { lifetell } from "$lib/O/ui/micro/lifetell"   // DIAGNOSTIC — strip with the rest of the remount probes
@@ -159,7 +159,10 @@
         ['1:1',   800, 800],
         ['9:16',  450, 800],
     ]
-    let aspect_pick = $state('auto')
+    // 16:9 is the DEFAULT pick (the owner 2026-08-09) — the glass boots into the shape it was designed
+    //  in (800×450 is the model's literal solve frame) instead of whatever letterbox the page happens to
+    //   leave.  'auto' stays in the list as the opt-back-in for measuring the hole.
+    let aspect_pick = $state('16:9')
     const frame_of = (): Pt[] => [{ x: 0, y: 0 }, { x: vw_w, y: 0 }, { x: vw_w, y: vw_h }, { x: 0, y: vw_h }]
     // THE SOLVE FRAME AND THE CUT FRAME MUST BE THE SAME RECTANGLE (Vyto_todo §0.2(d), 2026-08-08).
     //  `Vyto_solve` cut against a hardcoded [0,0,800,450] while this renderer cuts against
@@ -267,6 +270,8 @@
     //      can no longer peg the main thread → freeze the tab → kill the peer heartbeat.
     const MAX_MOTION_FRAMES = 240
     const GAP = 2.2           // the breath between cells (shapes.md §0)
+    const SEAT_AIR = 3        // viewBox units of air between a slab-seated face and its two long walls
+    const OVERHANG = 1.25     // a slab seat may overrun the cell's ends by this factor of its length
 
     // kp/ks are the LAST INTEGRATED calm strengths for this spring's two channels (position, size),
     //  cached by integrate_world so the settle test can skip a PINNED channel without re-running
@@ -278,80 +283,23 @@
     //  keyed {#each} are all keyed by it, because a mirror tok is only LOCALLY unique (two byte-
     //   identical cousins share a tok).  depth/hasKids drive the nested look: a cell that is a scope
     //    (its children tile it) suppresses its OWN label + face and renders as a bare frame.
+    //  mx/my/mw/mh is the MOLD box (where the face sits — the slab seat when one is found, the AABB
+    //   otherwise) and ang its rotation; bx/by/bw/bh stays the cell's AABB, which is what the edge
+    //    label + guts rail hang off.  Two boxes because they answer different questions: "where is the
+    //     cell" vs "where does the component lie".
     type PaintCell = { tok: string, key: string, depth: number, hasKids: boolean,
                        ident: string, x: number, y: number, r: number,
                        kind: 'poly' | 'disc', d: string, departing: boolean, lift: boolean,
-                       bx: number, by: number, bw: number, bh: number, clip: string,
+                       bx: number, by: number, bw: number, bh: number,
+                       mx: number, my: number, mw: number, mh: number, ang: number, clip: string,
                        face: any | null, source: TheC | null, row: TheC,
                        fx: '' | 'arrive' | 'erupt', fxi: number, fit: number }
 
-    // ── THE MOLD BOX: INSCRIBED, NOT BOUNDING (2026-08-09) ─────────────────────────────────────────
-    //  The owner, looking at the live glass: *"they're still utterly on top of each other, not much info
-    //   for how their Component is shaped?"* — and the capture says exactly why.  A mold was placed at the
-    //    cell's AABB (`bbox_of`), and **voronoi bounding boxes overlap heavily** even though the cells
-    //     themselves tile perfectly: a slanted wall means each neighbour's box reaches well into the
-    //      other's territory.  Add the standing "let them overflow" choice (ledger #4) and the faces land
-    //       on top of one another — the radio player lying across the Diag cell, the Haul panel over
-    //        Transfer.  It also made the cell shape say NOTHING about its component, because the box a
-    //         component filled was never the cell.
-    //  So mold to the largest axis-aligned rectangle that FITS INSIDE the polygon.  Two convex cells are
-    //   disjoint, so their inscribed rectangles are disjoint too — **the overlap becomes impossible rather
-    //    than discouraged**, which is worth more than any z-ordering or pointer-events rule (both of which
-    //     this glass already tried).  Anchored at the centroid, holding the AABB's aspect, binary-searched
-    //      on scale: for a CONVEX polygon containing all four corners is containment, so the test is exact.
-    //  Power cells are convex by construction (an intersection of half-planes), which is what makes this
-    //   sound; a degenerate or non-convex input simply converges to something small and still inside.
-    //  MEMOISED ON THE POLY REFERENCE.  The wall memo hands back the SAME array when a scope's inputs have
-    //   not changed, so a settled glass re-derives nothing at all and a moving one pays ~14 cheap
-    //    iterations per cell — the same discipline that keeps the wall cut itself off a calm frame.
-    //  BOX AWARENESS (the owner 2026-08-09: *"it's not stretching the Components into the ENTIRE cell too
-    //   well. it needs some kind of box awareness that's evading us since ages"*).  The first cut of this
-    //    inscribed a rectangle with the CELL's aspect and then shrank the component into it — so nothing
-    //     in the chain ever asked what shape the COMPONENT wanted, and a wide player dropped into a tall
-    //      cell sat small in a box of the wrong proportions with air all round it.
-    //  So inscribe at the COMPONENT's aspect: the largest rectangle of ratio `want` that fits this cell.
-    //   Then the component fills its box exactly — one uniform scale, no letterboxing inside the seat, no
-    //    wasted cell.  `want` comes from the same measured natural box the floor runs on (`need_w/need_h`),
-    //     so the measurement finally drives the SHAPE of the seat and not merely its area.  Falls back to
-    //      the cell's own aspect before anything has been measured, which is the old behaviour exactly.
-    const inscribeMemo = new WeakMap<Pt[], { want: number, box: { bx: number, by: number, bw: number, bh: number } }>()
-    const INSCRIBE_INSET = 1.5      // viewBox units of air between a face and its own wall
-    function inscribed_of(poly: Pt[], want?: number): { bx: number, by: number, bw: number, bh: number } {
-        const bb0 = bbox_of(poly)
-        const aspect = want && want > 0 && isFinite(want) ? want : (bb0.bh > 0 ? bb0.bw / bb0.bh : 1)
-        const had = inscribeMemo.get(poly)
-        if (had && Math.abs(had.want - aspect) < 0.01) return had.box
-        // the search rectangle carries the WANTED ratio; only its scale is solved for
-        const bb = { bx: bb0.bx, by: bb0.by, bw: aspect >= 1 ? bb0.bw : bb0.bh * aspect,
-                                             bh: aspect >= 1 ? bb0.bw / aspect : bb0.bh }
-        let cx = 0, cy = 0
-        for (const p of poly) { cx += p.x; cy += p.y }
-        cx /= poly.length; cy /= poly.length
-        const inside = (x: number, y: number) => {
-            let hit = false
-            for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-                const a = poly[i], b = poly[j]
-                if ((a.y > y) !== (b.y > y) && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) hit = !hit
-            }
-            return hit
-        }
-        const fits = (t: number) => {
-            const hw = (bb.bw * t) / 2 + INSCRIBE_INSET, hh = (bb.bh * t) / 2 + INSCRIBE_INSET
-            return inside(cx - hw, cy - hh) && inside(cx + hw, cy - hh)
-                && inside(cx + hw, cy + hh) && inside(cx - hw, cy + hh)
-        }
-        // `hi` starts above 1 so a rectangle of the wanted ratio can grow to fill a cell that is BIGGER
-        //  than the natural box — otherwise the component could never stretch into the whole cell, which
-        //   is the complaint this is here to answer.  The bisection still only ever reports what fits.
-        let lo = 0, hi = 4
-        if (!fits(0)) { const z = { bx: cx, by: cy, bw: 0, bh: 0 }; inscribeMemo.set(poly, { want: aspect, box: z }); return z }
-        if (fits(hi)) lo = hi
-        else for (let i = 0; i < 16; i++) { const m = (lo + hi) / 2; if (fits(m)) lo = m; else hi = m }
-        const w = bb.bw * lo, h = bb.bh * lo
-        const box = { bx: cx - w / 2, by: cy - h / 2, bw: w, bh: h }
-        inscribeMemo.set(poly, { want: aspect, box })
-        return box
-    }
+    // (inscribed_of is GONE, 2026-08-09 — it was already unseated by the AABB+clip regime and it
+    //  carried the adversarial review's A1: the gap inset in power_cells pulls vertices toward the
+    //   vertex MEAN by a fixed distance, which is not convexity-preserving, so "convex by construction"
+    //    was not a property its containment test could actually lean on.  The seat questions it used to
+    //     answer now live in slab_seat (vyto_geometry.ts, pure, node-testable) and clip_of below.)
 
     // THE WALL AS A CLIP — the cell polygon expressed in PERCENTAGES of its own bounding box, which is
     //  exactly the space a CSS `clip-path: polygon()` resolves against.  So the mold can be handed the
@@ -431,14 +379,17 @@
     //        threaded through the hot path is how this file got to 2000 lines.
     //  The function stays as the one seam where a mold's own transform belongs, so the hover lift has
     //   somewhere to live — and `preserve-3d`'s z-index consequence stays documented at the CSS.
+    //  The rotation lives here too now: a slab seat lies along its cell's parallelest walls, so the mold
+    //   rotates about its own centre (CSS default origin) by cell.ang.  rotate is a Z-axis turn and
+    //    translateZ a Z-axis move, so the two compose without interacting; the percentage box maps to
+    //     viewBox space by ONE uniform scale (the element box always carries the viewBox's aspect —
+    //      the .depth width-cap contract), so a CSS rotation lands exactly where the viewBox rotation
+    //       would.  Degrees to 1dp: a calm glass re-emits a byte-identical string.
     function mold_seat(cell: PaintCell): string {
-        return cell.lift ? ' transform: translateZ(12px);' : ''
+        const rot = cell.ang ? ` rotate(${(cell.ang * 180 / Math.PI).toFixed(1)}deg)` : ''
+        const z = cell.lift ? ' translateZ(12px)' : ''
+        return rot || z ? ` transform:${rot}${z};` : ''
     }
-
-    // (clip_of removed: the "let them overflow" occlusion revert stopped reading cell.clip, so the
-    //  per-cell clip-path string is no longer computed — the coloured <path class="cell"> polygon is the
-    //   visible cell wall now.  The `clip` field stays on PaintCell as always-'' until the renderer refactor
-    //    sweeps it.)
 
     // per-cell colour from Matstyle (the human: "colour each of them somehow"): mainkey → a jewel
     //  ground via matstyle_ground (the Style subagent seeded the organs + a deterministic string-hash
@@ -987,7 +938,9 @@
                     const r = Math.max(0, s.r)
                     cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids: false, ident,
                                  x: s.x, y: s.y, r, kind: 'disc', d: '', departing: true, lift,
-                                 bx: s.x - r, by: s.y - r, bw: 2 * r, bh: 2 * r, clip: clipPoly, face, source, row, fx, fxi, fit })
+                                 bx: s.x - r, by: s.y - r, bw: 2 * r, bh: 2 * r,
+                                 mx: s.x - r, my: s.y - r, mw: 2 * r, mh: 2 * r, ang: 0,
+                                 clip: clipPoly, face, source, row, fx, fxi, fit })
                     continue
                 }
                 const poly = polyByKey.get(n.key)
@@ -1007,22 +960,54 @@
                     //         it is only safe now because the floor and the envelope scale both exist.
                     const bb = bbox_of(poly)
                     const hasKids = hasKids0
-                    if (!hasKids0 && face) clipPoly = clip_of(poly, bb)
-                    // one uniform scale to fill that seat.  Because the seat now carries the component's
-                    //  OWN ratio, both axes agree and the component fills its box edge to edge — it
-                    //   stretches UP into a roomy cell and envelopes DOWN into a crushed one, same rule.
-                    if (face && nw && nh && bb.bw > 0 && bb.bh > 0) {
-                        fit = Math.min(bb.bw / nw, bb.bh / nh)
-                        fit = Math.max(0.2, Math.min(6, +fit.toFixed(3)))
+                    // THE SIDEWAYS SEAT (the owner 2026-08-09: *"notice when the sides of the cell aren't
+                    //  square, and somehow... factor that in.  we used to jam things in sideways... pick
+                    //   the two parallelest sides that the box aligns between to consume the most space of
+                    //    the cell"*).  slab_seat finds the pair of near-antiparallel walls and the slab
+                    //     between them; the component lies ALONG the slab, FILLS it across, and may
+                    //      overrun the cell's slanted ends a little (OVERHANG) — overflow is sanctioned
+                    //       ("we can have components overflowing their cell") because hover top-mostity
+                    //        (the translateZ lift) puts the pointed-at one on top.  No clip in this
+                    //         regime: the whole component is beheld, which is the point of lying it flat.
+                    //  Angle discipline: normalised to (-90°, 90°] so text never reads upside down, and
+                    //   snapped level within 8° — a 3° tilt reads as a bug where a 25° tilt reads as a
+                    //    seat.  A cell with no parallel pair (or an unmeasured face) falls back to the
+                    //     axis-aligned AABB + wall clip, exactly the previous regime.
+                    let mx = bb.bx, my = bb.by, mw = bb.bw, mh = bb.bh, ang = 0
+                    if (!hasKids0 && face) {
+                        const seat = nw && nh ? slab_seat(poly) : null
+                        if (seat && nw && nh) {
+                            let sux = seat.ux, suy = seat.uy
+                            if (sux < 0) { sux = -sux; suy = -suy }          // (-90°, 90°]
+                            let th = Math.atan2(suy, sux)
+                            if (Math.abs(th) < 0.14) th = 0                  // snap level
+                            else if (Math.PI / 2 - Math.abs(th) < 0.14) th = Math.sign(th) * Math.PI / 2
+                            fit = Math.min((seat.t - SEAT_AIR) / nh, (seat.len * OVERHANG) / nw)
+                            fit = Math.max(0.2, Math.min(6, +fit.toFixed(3)))
+                            mw = nw * fit; mh = nh * fit
+                            mx = seat.cx - mw / 2; my = seat.cy - mh / 2
+                            ang = +th.toFixed(3)
+                        } else {
+                            clipPoly = clip_of(poly, bb)
+                            // one uniform scale to fill the AABB seat — stretches UP into a roomy cell
+                            //  and envelopes DOWN into a crushed one, same rule.
+                            if (nw && nh && bb.bw > 0 && bb.bh > 0) {
+                                fit = Math.min(bb.bw / nw, bb.bh / nh)
+                                fit = Math.max(0.2, Math.min(6, +fit.toFixed(3)))
+                            }
+                        }
                     }
                     cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids, ident,
                                  x: s.x, y: s.y, r: s.r, kind: 'poly', d: path_round(poly), departing: false, lift,
-                                 bx: bb.bx, by: bb.by, bw: bb.bw, bh: bb.bh, clip: clipPoly, face, source, row, fx, fxi, fit })
+                                 bx: bb.bx, by: bb.by, bw: bb.bw, bh: bb.bh,
+                                 mx, my, mw, mh, ang, clip: clipPoly, face, source, row, fx, fxi, fit })
                     if (hasKids) layout(n.kids, poly, 0, n.key)
                 } else {
                     cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids: false, ident,
                                  x: s.x, y: s.y, r: 6, kind: 'disc', d: '', departing: false, lift,
-                                 bx: s.x - 6, by: s.y - 6, bw: 12, bh: 12, clip: clipPoly, face, source, row, fx, fxi, fit })
+                                 bx: s.x - 6, by: s.y - 6, bw: 12, bh: 12,
+                                 mx: s.x - 6, my: s.y - 6, mw: 12, mh: 12, ang: 0,
+                                 clip: clipPoly, face, source, row, fx, fxi, fit })
                 }
             }
         }
@@ -1388,7 +1373,7 @@
         //  measuring them would floor a cell to the size of a label it draws BEHIND its real content.
         //   They also carry no `data-key`, so the byKey lookup below would already skip them; this is
         //    the explicit half of that, so the intent survives a future refactor of either side.
-        for (const t of stage.querySelectorAll('text.ident:not(.under)')) {
+        for (const t of stage.querySelectorAll('text.ident:not(.under):not(.crush)')) {
             const cell = byKey.get((t as Element).getAttribute('data-key') ?? '')
             if (!cell || cell.departing) continue
             try {
@@ -1850,6 +1835,7 @@
                         {#if cell.kind === 'poly'}
                             <path class="cell" class:departing={cell.departing} class:lift={cell.lift}
                                   class:faced={!!cell.face && !cell.hasKids} class:nested={cell.depth > 0} class:scope={cell.hasKids}
+                                  class:crushed={!!cell.face && !cell.hasKids && cell.fit <= 0.34}
                                   class:arrive={cell.fx === 'arrive'} class:erupt={cell.fx === 'erupt'} d={cell.d}
                                   style={(g ? `fill:${g.bg}; stroke:${g.border};` : '') + (cell.fx === 'arrive' ? ` animation-delay:${cell.fxi * 55}ms;` : '')}
                                   onpointerenter={() => on_enter(w, cell.key, cell.tok)}
@@ -1881,6 +1867,17 @@
                                       x={cell.bx + 1} y={gy + 12 + gi * 10}
                                       text-anchor="start" dominant-baseline="hanging">{g}</text>
                             {/each}
+                            <!-- THE CRUSH MUST BE OBVIOUS (the owner: "crush down to a simpler
+                                 representation until navigated into... and that needs to be obvious!").
+                                 Below the icon floor the face is not mounted at all, so without a mark
+                                 a crushed cell is indistinguishable from an empty one.  A dashed wall
+                                 (.cell.crushed) plus this centred glyph says "folded, more inside".
+                                 No data-key: the measure pass must never floor a cell to its own
+                                 crush mark. -->
+                            {#if cell.fit <= 0.34}
+                                <text class="ident crush" x={cell.x} y={cell.y}
+                                      text-anchor="middle" dominant-baseline="middle">⤢</text>
+                            {/if}
                         {/if}
                     {/each}
                     <!-- the plug + the ants, drawn LAST so they ride over the cells they connect.
@@ -1921,7 +1918,7 @@
                             <div class="face-mold" class:lift={cell.lift}
                                  class:arrive={cell.fx === 'arrive'} class:erupt={cell.fx === 'erupt'} data-key={cell.key}
                                  use:lifetell={{ H, what: 'mold', id: cell.key }}
-                                 style="left:{((cell.bx - cam.x) / cam.w) * 100}%; top:{((cell.by - cam.y) / cam.h) * 100}%; width:{(cell.bw / cam.w) * 100}%; height:{(cell.bh / cam.h) * 100}%; --fit:{cell.fit};{cell.clip ? ` clip-path:${cell.clip};` : ''}{mold_seat(cell)}"
+                                 style="left:{((cell.mx - cam.x) / cam.w) * 100}%; top:{((cell.my - cam.y) / cam.h) * 100}%; width:{(cell.mw / cam.w) * 100}%; height:{(cell.mh / cam.h) * 100}%; --fit:{cell.fit};{cell.clip ? ` clip-path:${cell.clip};` : ''}{mold_seat(cell)}"
                                  onpointerenter={() => on_enter(w, cell.key, cell.tok)}
                                  onpointerleave={() => on_leave(w, cell.key, cell.tok)}>
                                 <div class="face-scroll">
@@ -2056,6 +2053,8 @@
     .cell.lift { fill: #3a3a58; stroke: #a8a8f0; }
     /* a faced cell is a quiet frame — the mounted face draws the content over it */
     .cell.faced { fill: #17171f; stroke: #3d3d55; }
+    /* a crushed cell (face folded below the icon floor) must SAY so: dashed wall = "not empty, folded" */
+    .cell.crushed { stroke-dasharray: 5 3; }
     /* NESTED (depth>0): a child wall reads finer than its container so the tree is legible; a
        SCOPE cell (its children tile it) is a bare frame — transparent fill, faint outline — so the
        children carry the ink.  Both ADD onto the flat look; a flat glass never emits either class. */
@@ -2218,6 +2217,8 @@
     /* THE GUTS — the particle's own scalars, spilled down the same margin as quiet standing matter.
        Monospace so the k/v columns line up down the stack and the eye can scan them. */
     .ident.under.sub { font: 500 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace; fill: #7a7a9c; opacity: 0.42; }
+    /* the crushed-cell mark: "folded, more inside" — pairs with .cell.crushed's dashed wall */
+    .ident.crush { font-size: 15px; fill: #9a9ac8; opacity: 0.85; pointer-events: none; }
     .holds { margin-top: 6px; display: flex; flex-direction: column; gap: 1px; }
     .hold { display: flex; gap: 8px; align-items: baseline; color: #a8a8bc; }
     .hold.releasing { color: #77778c; font-style: italic; }
