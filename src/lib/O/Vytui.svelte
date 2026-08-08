@@ -820,6 +820,118 @@
     }
     function viewport_cells(w: TheC): PaintCell[] { void paint_tick; return paintMap.get(w) ?? [] }
 
+    // ── THE PLUG AND THE ANTS ─────────────────────────────────────────────────
+    //  The owner's ruling (Vyto_todo §0.0, 2026-08-06): *"we can see what the player is plugged into
+    //   in the Mag, tiny ants moving buffer into the Record there"* — and, load-bearing, that new
+    //    understanding must arrive as a RELATION DRAWN between things already on the glass and as
+    //     MOTION, never as another cell of text.  Both facts are already held and thrown away at the
+    //      face boundary: `radio.c.rec` is the plug, `H.top_House().c.xfer.pulls[]` is the flow.
+    //  SELF-TICKED, because both ride `.c` and `.c` never bumps a version — the §0.0 caution, and the
+    //   same 250ms–1s idiom RadioFace/TransferFace already use.  paint_tick alone is not enough: it
+    //    stops when the layout settles, and the plug must still notice the record CHANGING under a
+    //     calm glass (which is most of the time — a track lasts minutes, the cells settle in <1s).
+    //  LIVE PAGE ONLY, and this is not optional — it is the same law the focus taper obeys ("a driven
+    //   world must keep the even cut its fixtures recorded", Vyto_todo §0).  A driven Book must not have
+    //    a 500ms timer re-rendering its glass underneath it: quiescence and settle are what a Story step
+    //     waits on, and decoration that re-renders on its own clock is exactly the kind of thing that
+    //      makes a Book's timing — and therefore its diges — depend on the decoration.  `humdinger` is
+    //       the standing predicate for END-USER PAGE vs machine tab, so the tick simply never fires on a
+    //        runner, and plug_of/ants_of below return null there regardless of the tick.
+    function live_page(): boolean { return !!(H as any)?.top_House?.()?.c?.humdinger }
+    let plug_tick = $state(0)
+    const plug_timer = setInterval(() => { if (live_page()) plug_tick = plug_tick + 1 }, 500)
+    onDestroy(() => clearInterval(plug_timer))
+
+    // a slack curve, not a straight edge.  A straight line between two cells reads as a GRAPH
+    //  DIAGRAM, which is the dashboard instinct the ruling rejects; a sagging cable reads as a made
+    //   thing.  The control point is pushed perpendicular to the chord by a fraction of its length,
+    //    so a long plug sags more, like a real cable, and a short one stays taut.
+    function plug_curve(a: { x: number, y: number }, b: { x: number, y: number }): string {
+        const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2
+        const dx = b.x - a.x, dy = b.y - a.y
+        const len = Math.hypot(dx, dy) || 1
+        const sag = Math.min(46, len * 0.18)
+        return `M ${a.x.toFixed(2)} ${a.y.toFixed(2)} Q ${(mx - (dy / len) * sag).toFixed(2)} ${(my + (dx / len) * sag).toFixed(2)} ${b.x.toFixed(2)} ${b.y.toFixed(2)}`
+    }
+
+    //  The Record itself usually has NO cell of its own — it lives inside a Mag — so we walk up the
+    //   `.c.up` chain until we reach a particle the cut actually gave a cell to.  That walk is what
+    //    makes the plug land "in the Mag" rather than nowhere: the plug points at the container
+    //     holding what is playing, which is exactly what the ruling asks to be able to see.
+    function plug_of(w: TheC, cells: PaintCell[]): { d: string, hx: number, hy: number } | null {
+        void plug_tick
+        if (!live_page()) return null            // a driven Book draws no plug — see live_page()
+        const radio: any = (w as any).o?.({ Radio: 1 })?.[0]
+        if (!radio || radio.sc?.Radio === 'off') return null
+        const rec: any = radio.c?.rec
+        if (!rec) return null
+        const by_source = new Map<any, PaintCell>()
+        for (const c of cells) if (c.source) by_source.set(c.source, c)
+        const from = by_source.get(radio)
+        if (!from) return null
+        let hop: any = rec
+        for (let guard = 0; hop && guard < 12; guard++) {
+            const to = by_source.get(hop)
+            if (to && to !== from) return { d: plug_curve(from, to), hx: to.x, hy: to.y }
+            hop = hop.c?.up
+        }
+        //  FALLBACK — BY ID, NOT BY CONTAINMENT.  The walk above only lands if some ANCESTOR of the
+        //   record was given a cell, and often none was: the cut hands cells to FACES (Radio, Transfer,
+        //    Shuffle, Haul…), not to the shelves a %Record hangs under, so a purely structural walk can
+        //     run its whole guard and draw nothing.  But the glass is usually already showing the track
+        //      — as a REFERRING particle wearing its own mainkey and carrying the holding's id
+        //       (`Card,id:X` / `Haul,…` / `Spin,of:X`; CLAUDE.md's identity model).  That id IS the join,
+        //        so match on it.  This is the case that most often makes the plug visible at all.
+        const rid = rec?.sc?.id != null ? String(rec.sc.id) : null
+        if (rid) {
+            for (const c of cells) {
+                if (c === from || !c.source) continue
+                const s: any = c.source
+                if (String(s.sc?.id ?? '') === rid || String(s.sc?.of ?? '') === rid) {
+                    return { d: plug_curve(from, c), hx: c.x, hy: c.y }
+                }
+            }
+        }
+        return null
+    }
+
+    //  The ants are the transfer SEEN. `count` reads as volume and `dur` as rate — the pair of things
+    //   a single KB/s number says in one unreadable breath.  Null when nothing is actually moving, so
+    //    a quiet glass stays quiet: motion that never stops stops meaning anything.
+    //  Returns the ants' START OFFSETS, not a count: {#each} wants a real array (an array-LIKE
+    //   `{length:n}` is not iterable and does not reliably iterate), and the offsets are what the
+    //    markup actually needs anyway — one negative `begin` each, so the file is already mid-flight
+    //     at mount and the ants arrive as a stream instead of leaving the gate together.
+    //  `pulls` is an OBJECT KEYED BY id8, not an array — `Repli.g:718` initialises `pulls: {}` and
+    //   `Ra.g:2591` writes `x.pulls[id8] = {title, held, total, ts, done, goodput_kbps…}`.  Vyto_todo
+    //    §0.0 writes it `xfer.pulls[]`, which reads as an array and is what this got wrong first time:
+    //     an `Array.isArray` guard is false for `{}`, so the ants were silently dead in every case.
+    //  Entries are pruned by `Heist_keep_beat` on a `ts` cut, but a pull that simply STOPPED reporting
+    //   can sit there between prunes, so age it out here too — 12s, the same threshold Ra.g calls a
+    //    heist-stall.  Ants for a dead pull would be a lie told in motion, which is worse than no ants.
+    function ants_of(): { begins: number[], dur: number } | null {
+        void plug_tick
+        const pulls: any = (H as any)?.top_House?.()?.c?.xfer?.pulls
+        if (!pulls || typeof pulls !== 'object') return null
+        const now = Date.now()
+        let kbps = 0, live = 0
+        for (const k of Object.keys(pulls)) {
+            const p: any = pulls[k]
+            if (!p || p.done) continue
+            const held = +(p.held || 0), total = +(p.total || 0)
+            if (!(total > 0) || held >= total) continue
+            if (now - +(p.ts || 0) > 12000) continue
+            live++
+            kbps += (+(p.goodput_kbps) || 0)
+        }
+        if (!live) return null
+        const n = Math.max(3, Math.min(7, 2 + live))
+        const dur = kbps > 0 ? Math.max(0.9, Math.min(4.5, 900 / kbps)) : 3
+        const begins: number[] = []
+        for (let i = 0; i < n; i++) begins.push(+((i * dur) / n).toFixed(2))
+        return { begins, dur }
+    }
+
     function bar_on(w: TheC, name: string): boolean {
         for (const b of (w.ob({ Bar: 1 }) as TheC[])) if (b.sc.Bar === name) { void b.vers; return !!b.sc.on }
         return false
@@ -891,6 +1003,9 @@
             {/each}
         </div>
         {#if show_viewport(w)}
+            {@const plug = plug_of(w, viewport_cells(w))}
+            {@const ants = plug ? ants_of() : null}
+            {@const plug_id = 'vyplug-' + String((w.sc as any)?.w ?? 'w').replace(/[^A-Za-z0-9_-]/g, '')}
             <div class="stage" use:reg_stage={w} use:lifetell={{ H, what: 'stage', id: String((w.sc as any)?.w ?? '?') }}>
                 <button class="fs-btn" onclick={(e) => go_fullscreen(e.currentTarget.parentElement)}
                         title="fullscreen the glass">⛶</button>
@@ -913,6 +1028,29 @@
                             <text class="ident" data-key={cell.key} x={cell.x} y={cell.y} text-anchor="middle" dominant-baseline="middle">{cell.ident}</text>
                         {/if}
                     {/each}
+                    <!-- the plug + the ants, drawn LAST so they ride over the cells they connect.
+                         pointer-events:none throughout: this lane is something to see, never
+                         something to hit — the cells keep every interaction they had. -->
+                    {#if plug}
+                        <path class="plug" id={plug_id} d={plug.d}></path>
+                        <circle class="plug-end" cx={plug.hx} cy={plug.hy} r="3.4"></circle>
+                        {#if ants}
+                            {#each ants.begins as b (b)}
+                                <circle class="ant" r="1.8">
+                                    <!-- `path=` (SVG 1.1), NOT <mpath href>: mpath's SVG2 `href` form is the
+                                         shakier half of this markup and would need an id to resolve against.
+                                         Inlining the same d costs one duplicated string per ant and removes
+                                         the whole question.  It also will NOT restart the ants on a calm
+                                         glass — plug_curve rounds to 2dp, so a settled layout re-emits a
+                                         byte-identical d and Svelte never touches the attribute.
+                                         negative begin = already mid-flight, so they arrive as a STREAM
+                                         rather than all leaving the gate together. -->
+                                    <animateMotion dur="{ants.dur}s" repeatCount="indefinite" begin="-{b}s"
+                                                   calcMode="linear" path={plug.d}></animateMotion>
+                                </circle>
+                            {/each}
+                        {/if}
+                    {/if}
                 </svg>
                 <!-- the FACE overlay: an HTML layer molded to the SVG in viewBox percentages (the SVG
                      keeps its 800×450 aspect at width:100%, so a % box tracks its cell exactly — no
@@ -1025,6 +1163,22 @@
     .cell.nested { stroke-width: 0.7; }
     .cell.scope { fill: none; stroke: #4a4a66; }
     .cell.scope.lift { fill: none; stroke: #a8a8f0; }
+
+    /* THE PLUG — the radio↔Record relation, drawn (Vyto_todo §0.0).  Warm against the glass's cold
+       violets on purpose: this is the one live, human thing on a plate of machinery, and it should
+       read as a cable someone ran, not as another wall.  Unfilled, round-capped, and deliberately
+       thinner than a cell stroke so it never competes with the foam it crosses. */
+    .plug {
+        fill: none; stroke: #ffb86b; stroke-width: 1.1; stroke-linecap: round;
+        opacity: 0.55; pointer-events: none;
+    }
+    /* the socket end — a small bead where the cable meets the Mag, so the eye lands on WHICH cell
+       is plugged rather than tracing the curve to find out */
+    .plug-end { fill: #ffb86b; opacity: 0.8; pointer-events: none; }
+    /* THE ANTS — the transfer as travel.  Small and slightly hot, so a stream of them reads as
+       something being carried rather than as decoration; they exist only while bytes actually move
+       (ants_of returns null otherwise), which is what keeps the motion meaningful. */
+    .ant { fill: #ffe0a8; opacity: 0.9; pointer-events: none; }
 
     /* the FACE overlay — molded to cells in viewBox percentages, so it tracks the responsive SVG */
     .faces { position: absolute; inset: 0; pointer-events: none; }

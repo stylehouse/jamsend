@@ -35,7 +35,11 @@ That is a **design constraint, not a mood**, and it cuts against the default thi
  already computed and thrown away at the face boundary:
  - what the player is plugged into: `radio.c.rec` (the live %Record) — a `.c` ref, so a face can
     follow it to the Record and to the Mag holding it.
- - the ants: the per-Record transfer state the CLI already prints — `top_House().c.xfer.pulls[]`
+ - the ants: the per-Record transfer state the CLI already prints — `top_House().c.xfer.pulls`
+    (**an OBJECT keyed by id8, not an array** — `Repli.g:718` inits `pulls: {}`, `Ra.g:2591` writes
+     `pulls[id8] = {title, held, total, ts, done, goodput_kbps…}`.  The `[]` this line used to carry
+      cost a real bug: an `Array.isArray` guard is false for `{}`, so a first cut of the ants was
+       silently dead in every case.)
     (`held/total/goodput_kbps/asked/landed`), plus the crate-birth lane's `want-first` / `page-first`
      ring marks (2026-08-06), which are literally "a buffer arrived at this Record" events with an id.
  - the caution: all of it rides `.c`, which never bumps a version, so a face must self-tick
@@ -52,6 +56,44 @@ The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it 
    a real power cut into targets, Vytui springs cells toward them and strikes settle
     itself, and VytoCell recorded GREEN ×2 beside a green VytoStaple regression.  Next
      moves:
+
+- **THE PLUG + THE ANTS — written 2026-08-08, PIXELS UNVERIFIED** (the owner, heading out: *"think about
+   how Vyto is going to suddenly turn all nice and supple for to impress people (kids) that this is cutting
+    edge metaphysics underneath"*).  §0.0's two named things, built in `Vytui.svelte`:
+  - `plug_of(w, cells)` — from the `%Radio` cell to the cell holding `radio.c.rec`, walking `.c.up` until
+     it reaches a particle the cut gave a cell to (that walk is what makes it land *in the Mag*).
+      `plug_curve` sags perpendicular to the chord — a cable, not a graph edge, because a straight line
+       between two cells is the dashboard instinct §0.0 rejects.  Hidden when the radio is `off`.
+  - `ants_of()` — start offsets + duration off `H.top_House().c.xfer.pulls[]`; **count reads as volume,
+     duration as rate**.  Returns null when nothing is actually moving, so a quiet glass stays quiet:
+      motion that never stops stops meaning anything.
+  - **SMIL (`animateMotion` + `mpath`), not a rAF tick, and that is the load-bearing choice**: a settled
+     world PARKS and never repaints, so a JS-driven ant would freeze exactly when the layout calmed —
+      which is most of the time.  The browser's own clock keeps them walking for free.
+  - Self-ticked at 500ms (`plug_tick`) because both facts ride `.c`, which never bumps a version — the
+     §0.0 caution, same idiom as RadioFace/TransferFace.
+  - **`humdinger`-gated, and NOT optionally** — same law the focus taper obeys.  A driven Book must not
+     have a 500ms timer re-rendering its glass underneath it: quiescence and settle are what a Story step
+      waits on, so decoration running on its own clock is precisely how a Book's timing, and therefore its
+       diges, start depending on the decoration.  On a runner the tick never fires and `plug_of` returns
+        null before touching anything, so `ants_of` is never reached either.
+  - `animateMotion path=…` (SVG 1.1) rather than `<mpath href>` (SVG2, shakier support, needs an id to
+     resolve).  Costs one duplicated `d` per ant and removes the question.  It does NOT restart the ants
+      on a calm glass either: `plug_curve` rounds to 2dp, so a settled layout re-emits a byte-identical
+       `d` and Svelte never touches the attribute.  The `<path class="plug">` keeps its id purely so
+        `runner_shot --svg` output stays greppable.
+  - **Only FACED cells can be plug endpoints**, and that shapes the whole design: `cell.source` is set
+     from `row.c.source_n` inside `face_of`, which returns null when a row resolves no face — so a
+      faceless cell has `source: null` and is invisible to both the walk and the id-match.  The Radio is
+       faced, and the plausible targets (Crate / `Musu*` / Haul, per `FACE_MAINKEYS`) are faced too, so
+        the `.c.up` walk is the load-bearing path: it must reach the CRATE particle that contains the
+         record.  The id-match is only a bonus for a referring face like `Haul` wearing the same id — a
+          crate's own `sc.id` will never equal the record's, so it cannot be the primary route.
+  - **WHAT IS OWED: one look at it.**  THE PIN applies and has not been paid — `runner_shot --svg` found
+     no commissioned Vyto world (Book runners have none; the owner's live tabs were closed).  It needs a
+      BigSoundland tab with music playing and a friend transferring.  The thing to check first if it looks
+       wrong: whether the `.c.up` walk actually terminates on a celled ancestor rather than running out
+        its 12-hop guard and drawing nothing.  Assume nothing here is right until it has been seen.
 
 - **PHONE-FIRST + FULLSCREEN + THE FACELESS FACE — landed 2026-08-07** (the owner: *"I might leave you
    allll afternoon redesigning, wildly, the interface... so that Vyto can be fullscreened and everything

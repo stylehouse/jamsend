@@ -8,6 +8,13 @@ Companion to `Cluster_spec.md` (§3.2b boot→channel map, §3.3 Brink badges + 
 
 ## 0. What to get on with next
 
+- **NEW 2026-08-08 — two channels share one prepub, so every peer frame is delivered twice (§4.5).**
+   Traced to source: `Swarm_station_up` and `Lies_channel_up` each stand up a `Socket_real` on their own
+    world, and both bind the identity because both genuinely need `to:<prepub>`. Nothing is
+     malfunctioning — the dedup catches it and no state corrupts — but each duplicate costs a decode and
+      a spurious re-`ack` on the wire. **This is §4's parked question with a measured cost attached**, so
+       decide it there rather than patching §4.5. Do not "fix" it by deduping; the dedup already exists.
+
 - **`?addr=<role>` is SETTLED — leave it alone** (§2). It is not redundant with `become`; the
    difference is a reconnect race that drops one-shot role-addressed frames. §2 records the
     precondition if anyone revisits it.
@@ -111,7 +118,62 @@ The question to think through some other day: **collapse role addressing into id
   with authentication and without broadcast. What would be lost is the bootstrap case — a tab that must
    be reachable *before* it has an identity to prove. Whether that case is real is the crux.
 
-## 5. What this confusion has already cost (2026-08-06)
+## 4.5 TWO sockets, one identity — every inbound frame delivered twice (2026-08-08)
+
+**Evidence, from one live `/BigSoundland` console** (the owner's tab, wild-heron `f5da6599b8505881`):
+
+    🛰 ws OPEN ws://localhost:9091/relay?addr=f5da6599b8505881 — flushing 0 buffered
+    🛰 ws OPEN ws://localhost:9091/relay?addr=runner            — flushing 0 buffered
+    🛰 ws SEND control:become role=runner
+    🪪 ws SEND control:hello f5da6599b8505881
+    🛰 ws RECV control:hello_ok
+    🛰 ws RECV control:role role=runner
+    🛰 ws RECV control:hello_ok          ← TWO hello_ok, so BOTH sockets bound an identity
+
+and thereafter **every inbound frame logged twice**, interleaved rather than adjacent — two ordered
+streams, not a doubled log line:
+
+    ws RECV ive_got seq=10 · seq=10 · seq=12 · seq=14 · seq=12 · seq=14   (A:10,12,14 ⊕ B:10,12,14)
+
+**Mechanism, and §2 already states it:** `bind` accumulates into a **Set** and `deliverLocal` sends to
+*every* open socket on that address. §2 describes **one socket bound under two addresses** (role +
+identity) — which is correct and by design. What this tab has is **two sockets bound under the same
+identity**, so the Set holds two entries and each `to:<prepub>` frame is delivered to both.
+
+**What it does NOT cause — checked, so nobody re-chases it.** No corruption. On a reliable carrier
+`Peeroleum_deliver` asks `Peeroleum_served_before` *before* booking (`Peeroleum.g:720`), so the second
+copy is refused re-dispatch. The `reused-seq collision` warn that would reveal this is throttled to
+~1/s per (pier,type) — which is exactly why the console shows the doubling and never names it.
+
+**What it does cost:** per duplicated frame, a decode, a ledger lookup, and — because the collision path
+*must* re-ack to stand the sender's retry down — **a spurious `ack` back over the wire**. During a heist
+that is a steady stream of acks the peer did not need, on the same beat the radio is starving on (see
+`Composition_todo` §3.6). Small per frame; the frame rate is the problem.
+
+**WHY there are two — answered from source, not guessed.** `Socket_real` has exactly two callers, on
+two different worlds, and both are legitimate:
+
+| socket | stood up by | world | dials | binds |
+|---|---|---|---|---|
+| A | `Swarm_station_up` (`Swarm.g:673`) | `w:Swarm` | `?addr=<prepub>` | `<prepub>` via its own signed `hello` in the `on_open` hook (`Swarm.g:676+`) |
+| B | `Lies_channel_up` (`LiesLies.svelte:318`) | `w:Lies` | `?addr=runner` | `runner` via `become`, **and `<prepub>`** via a signed `hello` re-reading `Lies_cluster_idento` (§3.2b) |
+
+So this is **not** a double-standup and **not** a stale half-open socket — the `channel_up` guard is
+innocent. Two channels exist by design, and each independently binds the identity because each
+genuinely needs `to:<prepub>` traffic: A for peer frames, B because cluster addressing is *also* by
+prepub (§3.2b item 4 — engage `to:<prepub>`; `runner_ask --runner=<addr>` is exactly this).
+
+**The actual defect is one address space serving two channels.** Cluster identity and swarm identity are
+the same prepub, so the relay cannot tell a peer frame from a cluster frame by address — it routes both
+to both. Everything downstream is working correctly *given* that: the Set-valued `bind` fans out, and
+`Peeroleum_served_before` cleans up after it.
+
+**Which makes this §4's question with a cost attached.** §4 parks "collapse role addressing into identity
++ capability?" — this is the same seam from the other side: identity addressing alone is *ambiguous*
+while two channels share one prepub. Any resolution (a channel-qualified address like `<prepub>#lies`,
+or B dropping its identity bind and taking cluster traffic by role only) is a real routing change, so it
+is the human's call and not a tidy-up. **Do not "fix" it by deduping** — the dedup already exists; the
+duplicate delivery is the symptom, the shared address space is the thing.
 
 `needsFSA` in a `runner_ask run` reply is the **Book's declaration echoed back**, not a refusal —
  `LiesFunk.svelte` builds the reply from `ask.needsFSA` and sets `accepted:true` in the same object.

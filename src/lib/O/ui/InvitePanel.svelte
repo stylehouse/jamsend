@@ -225,6 +225,22 @@
         void H?.version
         return !!self?.sc?.born && self.sc.born === new Date().toISOString().slice(0, 10)
     })
+
+    // CAN THIS BROWSER SHARE AT ALL? (Onboard_todo §0 item 2, 2026-08-08.)  Sharing means opening a
+    //  local music folder, which is the File System Access API — so on Safari or Firefox the whole
+    //   MINT half of this panel is a door onto nothing, and until now it said so nowhere.  Someone
+    //    lands on BigSoundland in the wrong browser, gets the friendly welcome and an "invite a
+    //     friend" button, and only discovers the truth after a friend has scanned their QR.  That is
+    //      the worst possible moment to find out, and it wastes the friend's time too.
+    //  Read the SAME predicate the sharing layer reads (`Shares.svelte:22` →
+    //   `F.P.directory_compat_mode = !('showDirectoryPicker' in window)`) rather than a fresh
+    //    sniff, so the panel and the machine can never disagree about what this browser can do.
+    //  SET IN AN EFFECT, NOT AT INIT: /BigSoundland server-renders, and `window` on the server would
+    //   make the SSR pass and the hydration pass disagree about whether to draw the warning.  An
+    //    effect only ever runs client-side, so the first paint simply has no warning and it appears
+    //     on hydration — which is also the honest order, since the answer is a client fact.
+    let no_fsa = $state(false)
+    $effect(() => { no_fsa = typeof window !== 'undefined' && !('showDirectoryPicker' in window) })
     $effect(() => {
         // NAMED gates the auto-join: the newborn tells us who they are first, THEN the door
         //  handles the invite by itself — the one question a brand-new visitor must answer.
@@ -387,6 +403,13 @@
                     {/if}
                 {/if}
                 {#if joined}<span class="ip-note">{joined}</span>{/if}
+                <!-- the joiner's version, deliberately QUIETER and placed AFTER the join button: they
+                     came here to hear someone else's music, and that half is not what FSA gates.  It
+                     would be wrong to put a warning between them and the one act they arrived to do —
+                     but wrong too to let them find out only when their own sharing silently never works. -->
+                {#if no_fsa}
+                    <span class="ip-note ip-warn">⚠ sharing your own music back needs Chrome — this browser can’t open a music folder</span>
+                {/if}
             {:else}
                 <span class="ip-note">{iz_err}</span>
             {/if}
@@ -422,9 +445,22 @@
             {#if !named && !iz}
                 {@render namer('what do friends call you? the name rides your invites')}
             {/if}
+            <!-- said BEFORE the mint button, never after: the point is to stop someone minting a QR a
+                 friend will scan for nothing.  Stated as what is certain (no folder ⇒ no sharing) and
+                 NOT as a promise that listening still works — that is a separate claim nobody here has
+                 tested on a real Safari, and a welcome screen is the wrong place to guess. -->
+            {#if no_fsa}
+                <span class="ip-note ip-warn">⚠ this browser can’t open your music folder — to share your own music, open BigSoundland in Chrome</span>
+            {/if}
             {#if !url}
                 <button class="ip-act" onclick={mint} title="mint a single-use Music invite and show its QR">invite a friend</button>
-                {#if born_today && !friends.length && !iz}
+                <!-- NO `born_today` HERE (dropped 2026-08-08, Onboard_todo §0 item 1).  This note explains
+                     what the button DOES, and the moment that explanation is worth having is "you have no
+                     friends yet" — which is durable state.  `born_today` is a CLOCK bolted onto that, and
+                     it silently withheld the welcome from the person who most needs it: someone who minted
+                     an identity yesterday, never got a friend, and came back today.  Dropping it can only
+                     widen the note to people with zero friends, which is exactly its audience. -->
+                {#if !friends.length && !iz}
                     <span class="ip-note">✨ you are new here — this button makes a QR a friend scans, and their music reaches your radio</span>
                 {/if}
             {:else}
@@ -543,6 +579,10 @@
         .ip-go { animation: none; }
     }
     .ip-note { font-size: 0.72rem; color: #889; max-width: 22rem; }
+    /* the capability warning — warm amber, not alarm red.  Nothing has gone WRONG here and the
+       person has done nothing incorrect; they are simply in a browser that cannot do one half of
+       this.  Red would read as an error to be fixed on the spot and would sour a welcome screen. */
+    .ip-warn { color: #e0a45c; }
     .ip-row { display: flex; gap: 0.4rem; }
     .ip-name {
         background: #1a1a26; border: 1px solid #44446a; color: #dde;

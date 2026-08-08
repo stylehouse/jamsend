@@ -18,10 +18,36 @@ The one living doc for the first-run funnel (commissioned 2026-07-22). When a NE
 
 The recon (2026-07-22) found the funnel is ~80% already built as components — the job is to make the
  new-here flow UNIVERSAL (fire invite-or-not) and fold in open-share + the FSA/Chrome warning. Order:
-1. **(Vyto)** Make `InvitePanel`'s new-here flow (`namer` + "✨ you are new here") fire on a cold arrival,
-    not only on an `?Iz` invite landing — driven off a first-run state, not off invite-presence.
-2. **(Vyto)** Fold the open-share offer + "no sharing without FSA → use Chrome" warning into that same
-    bubble, reading the `compat_mode` capability flag.
+1. **LANDED 2026-08-08 — and the clock is gone.** The cold trigger already existed: `namer` renders on
+    `{#if !named && !iz}`, where `named` is backed by `self.sc.friendly` — durable, persisted, a real
+     first-run state, not a sniff. What was wrong was the welcome note beside the mint button, gated
+      `born_today && !friends.length && !iz`. `born_today` means "identity minted today", which is a
+       CLOCK, and it silently withheld the welcome from precisely the person who most needs it: someone
+        who minted an identity yesterday, never got a friend, and came back today. Now `!friends.length
+         && !iz` — the note explains what the button does, and the moment that explanation is worth
+          having is "you have no friends yet".
+   - Correcting an overstatement written earlier the same day: I claimed this also mis-fired at a
+      *returning* same-day visitor. It did not — `!friends.length` was always required too, and someone
+       with no friends is someone the note should reach whatever the date. Only one of the two failure
+        modes was real. The fix stands; the diagnosis was half wrong.
+   - Item 4's wire contract is therefore **not needed for this**, though it may still be worth having for
+      the open-share offer in item 2.
+2. **DONE 2026-08-08 — the FSA/Chrome warning.** `InvitePanel` had no capability warning at all: someone
+    landing in Safari or Firefox got the friendly welcome and an "invite a friend" button, and would only
+     discover sharing was impossible after a friend had scanned their QR. Now reads the SAME predicate the
+      sharing layer uses (`!('showDirectoryPicker' in window)`, per `Shares.svelte:22`) rather than a fresh
+       sniff, so panel and machine cannot disagree. Two placements, deliberately different in weight: on the
+        mint face it sits BEFORE the button (the point is to stop a QR being minted for nothing); on the
+         landing face it sits AFTER the join button and quieter (a joiner came to hear someone else's music,
+          which FSA does not gate — do not put a warning between them and the act they arrived for).
+   - Set in an `$effect`, not at init: `/BigSoundland` server-renders, and reading `window` at init would
+      make the SSR and hydration passes disagree about whether to draw it.
+   - **Copy states only what is certain** — no folder ⇒ no sharing. It does NOT promise that listening
+      still works; `Directory.svelte:37` suggests the share layer degrades rather than dies in
+       `compat_mode`, but nobody has run this on a real Safari, and a welcome screen is the wrong place
+        to guess. **If someone verifies listening works without FSA, the copy should say so** — that is a
+         much kinder message than the one there now.
+   - Still open from this item: the **open-share offer** itself was not folded in, only the warning.
 3. **(Vyto)** Reframe the `BootGate`/`FaceSucker` first-FSA prompt on BigSoundland so it reads as the
     same friendly bubble, not a bare hoister.
 4. **(me, if wanted)** The thin wire contract below — a first-run "needs-onboarding" state + a clean

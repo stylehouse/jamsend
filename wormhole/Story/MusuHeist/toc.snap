@@ -5,9 +5,7 @@ story:MusuHeist
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=7.359
-      sample=7.067,at=1786092834
-      sample=6.716,at=1786092863
+    TimeTotal:beliefs,avg=8.342
       sample=9.493,at=1786108680
       sample=5.312,at=1786108859
       sample=4.824,at=1786116655
@@ -16,9 +14,9 @@ story:MusuHeist
       sample=8.181,at=1786150448
       sample=8.589,at=1786150544
       sample=8.015,at=1786150583
-    TimeTotal:step,avg=0.334
-      sample=0.321,at=1786092834
-      sample=0.305,at=1786092863
+      sample=11.626,at=1786153350
+      sample=11.98,at=1786153395
+    TimeTotal:step,avg=0.379
       sample=0.432,at=1786108680
       sample=0.241,at=1786108859
       sample=0.219,at=1786116655
@@ -27,6 +25,8 @@ story:MusuHeist
       sample=0.372,at=1786150448
       sample=0.39,at=1786150544
       sample=0.364,at=1786150583
+      sample=0.528,at=1786153350
+      sample=0.545,at=1786153395
   step,dige:d2effa20514897c8
   step=2,dige:847d949aeba33ef8
   step=3,dige:13f7d5a94d5720be

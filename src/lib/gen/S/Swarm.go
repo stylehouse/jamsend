@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '6da9331c389492ee~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'a0541bd696b2133e~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -1972,7 +1972,13 @@ async Swarm_share_loop(w, ident) {
         if (era !== w.c.share_era || !w.c.share_up) return
         if (w.c.share_beat_running) {
             w.c.share_beat_skipped = (w.c.share_beat_skipped || 0) + 1
-            if (w.c.share_beat_skipped % 10 === 1) console.log(`⏳ Swarm_share_beat still running past 600ms — skipping this tick (×${w.c.share_beat_skipped} so far) instead of overlapping it`)
+            if (w.c.share_beat_skipped % 10 === 1) {
+                // carry the SPLIT into the skip line: this counter climbing is the symptom everyone
+                //  pastes, and until 2026-08-08 it named no cause.  cull/tour are disk+dig, peers is the
+                //   offer loop, keep is Heist_keep_beat — the whole heist driver, awaited inline.
+                let sp = w.c.beat_split || {}
+                console.log(`⏳ Swarm_share_beat still running past 600ms — skipping this tick (×${w.c.share_beat_skipped} so far) instead of overlapping it · last beat: cull=${+(sp.cull || 0)} tour=${+(sp.tour || 0)} peers=${+(sp.peers || 0)} keep=${+(sp.keep || 0)} (ms)`)
+            }
         } else {
             w.c.share_beat_running = true
             this.post_do(async () => {
@@ -1993,7 +1999,8 @@ async Swarm_share_loop(w, ident) {
                 //      heist's own `ready` mark for the source round trip).
                 let ms = Date.now() - t0
                 if (ms > 600 && typeof this.Radio_trace === 'function') {
-                    try { this.Radio_trace(null, { ev: 'beat', ms: ms, skips: +(w.c.share_beat_skipped || 0) }) } catch (er) {}
+                    let sp = w.c.beat_split || {}
+                    try { this.Radio_trace(null, { ev: 'beat', ms: ms, skips: +(w.c.share_beat_skipped || 0), cull: +(sp.cull || 0), tour: +(sp.tour || 0), peers: +(sp.peers || 0), keep: +(sp.keep || 0) }) } catch (er) {}
                 }
             }, { see: 'swarm_share_beat' })
         }
@@ -2062,13 +2069,27 @@ async Swarm_share_beat(w, ident) {
     //      of the friend loop: the Mag is the same for every friend, so checking it per friend
     //       would only repeat the work.  The drop shrinks the record count, which changes the
     //        offer `mark` below — so a cull re-offers by itself and the friend's mirror learns.
+    // THE BEAT SPLIT (2026-08-08) — where the 600ms actually goes.  The electrode in Swarm_share_loop
+    //  has reported a TOTAL `ms` since 2026-08-05, which proves the beat outran its cadence and says
+    //   nothing about which of its four phases did it — and the phases are wildly different animals: two
+    //    awaited disk/dig verbs, a per-friend offer loop, and `Heist_keep_beat`, which is the WHOLE heist
+    //     driver awaited inline (its own comment concedes "cheap when no keep stands", i.e. not cheap when
+    //      one does).  The 2026-08-08 console showed ×221 skipped ticks with no way to tell them apart.
+    //  Four numbers cost four Date.now() calls per beat and turn the next paste into an answer instead of
+    //   a suspicion.  Written to `.c` (runtime, never encoded) and read by the loop's electrode + skip log.
+    let tmark = Date.now()
+    w.c.beat_split = { cull: 0, tour: 0, peers: 0, keep: 0 }
     await this.Ra_shuffle_cull(rw, stock)
+    w.c.beat_split.cull = Date.now() - tmark
+    tmark = Date.now()
     // AND KEEP THE WINDOW MOVING (the owner's conveyor, 2026-08-07): spawn at the end, whittle off
     //  the top, so a friend tours the whole collection instead of its first rooms.  Here beside the
     //   cull for the same reason that one is here — the share beat is the live-only seam, so no
     //    Book can ever see a spontaneous dig — and BEFORE the offer below, so a turn of the wheel
     //     re-offers on the same beat it happens rather than waiting out the floor.
     await this.Stoker_tour(rw, stock)
+    w.c.beat_split.tour = Date.now() - tmark
+    tmark = Date.now()
     this.Swarm_boast_floor(w, ident)
     for (const p of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
         if (!p.sc.pub) continue
@@ -2172,9 +2193,12 @@ async Swarm_share_beat(w, ident) {
     //   tracks into the collection).  Cheap when no keep stands; the routes it needs were registered above.
     //   Guarded (the Ra_transcode_pump idiom) AND try-wrapped so a heist bug can NEVER break the radio
     //    share beat — the keep driver is additive follow-through, never a dependency of the share itself.
+    w.c.beat_split.peers = Date.now() - tmark
+    tmark = Date.now()
     if (typeof this.Heist_keep_beat === 'function') {
         try { await this.Heist_keep_beat(w, ident) } catch (er) { w.c.heist_beat_why = '' + (er && er.message || er) }
     }
+    w.c.beat_split.keep = Date.now() - tmark
 },
 //#endregion
 

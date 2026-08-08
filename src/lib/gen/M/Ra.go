@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '94e00168a03a6c35~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '29258fa754ceb9a3~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -2018,6 +2018,34 @@ async Ra_transcode_ensure(w, rec) {
     let total = +(rec.sc.total || 0)
     let P = +(rec.sc.preview || 0)
     if (!(total > P)) return null
+    // ── THE HEADLESS CONTINUATION (2026-08-08, Daemon_todo §10.5) ──────────────────────────────────
+    //  Everything below this fork is unreachable on a daemon: Ra_source_pcm returns null at its
+    //   OfflineAudioContext guard and Ra_encode_open has no AudioEncoder.  So a want for anything past
+    //    the 32s preview parked FOREVER — Ra_transcode_pump barking `park-stall off=16` every 10s for
+    //     the life of the process while the friend heard 32 seconds and then silence.  The asking side
+    //      could not tell that from a slow serve; nothing carried the fact that it was hopeless.
+    //  ONE PASS, NOT ONE PER CHUNK — and this is the whole reason the fork is here rather than deeper.
+    //   Ra_source_pcm's header refuses a per-window ffmpeg and is right to: a fresh process per 2s
+    //    chunk is a fresh ENCODER per chunk, hence a fresh convergence ramp at every boundary, audible
+    //     as a pulse every two seconds.  Ra_native_continuation encodes the ENTIRE remainder in one
+    //      continuous pass and cuts the packets on Ra_chunk_cut's own 2s grid, so the track carries
+    //       exactly ONE new encoder head and it sits at the preview seam — where the browser path
+    //        already opens a second encoder too, and where `hp` already ships that head's preskip.
+    //  DETACHED, never awaited under the beat, for the same reason the PCM kick below is detached: this
+    //   is an ffmpeg pass over minutes of audio, and awaiting it here would freeze Swarm_share_beat
+    //    under the beliefs mutex — starving the very pump that is waiting on its result.
+    //  It shares the PCM backoff ladder deliberately (`pcm_retry_at`, Ra_pcm_backoff).  A source that
+    //   can never encode is exactly the 1087-starts storm that ladder was written for, and giving the
+    //    native path its own counter would just reproduce the bug in a second place.
+    let nat = this.Ra_native()
+    if (nat) {
+        if (!rec.c.nat_pending && Date.now() >= +(rec.c.pcm_retry_at || 0)) {
+            rec.c.nat_pending = 1
+            this.Radio_trace(null, { ev: 'nat-cont-start', id: String(rec.sc.id || '').slice(0, 8), from: P })
+            this.Ra_native_continuation(w, rec, nat).then((r) => { rec.c.nat_pending = 0; if (!r) this.Ra_pcm_backoff(rec) }).catch((er) => { rec.c.nat_pending = 0; rec.c.pcm_why = '' + (er && er.message || er); this.Ra_pcm_backoff(rec) })
+        }
+        return null
+    }
     // NON-BLOCKING DECODE (2026-07-28, the residual "runs out at 32s"): Ra_source_pcm whole-file-decodes the
     //  original (bin_read + decodeAudioData + a per-sample bake).  AWAITED here it froze the share beat under
     //   the beliefs mutex for seconds at the preview→stream seam — starving THIS pump + inbound frame delivery
@@ -2064,6 +2092,59 @@ async Ra_transcode_ensure(w, rec) {
     return rec.c.ra
 
 },
+// Ra_native_continuation — the headless producer: ONE continuous ffmpeg pass over everything after
+//  the preview, cut on the same 2s grid, parked on `rec.c.ra` as a ready QUEUE that
+//   Ra_transcode_advance hands out across passes.  Returns that queue, or null.
+//
+// WHY A QUEUE RATHER THAN AN OPEN ENCODER.  The browser path streams because it must — WebCodecs is
+//  incremental and the PCM is already in memory.  Here the cheapest correct thing is the opposite:
+//   pay one process once, hold the RESULT.  A 4-minute remainder at this bitrate is ~3MB of opus
+//    against the ~92MB of Float32 PCM the browser path pins for the same track (Ra_pcm_sweep exists
+//     entirely because of that 92MB), so the queue is both simpler and thirty times smaller.  It is
+//      dropped the moment it drains, and native records never join the PCM registry at all — the
+//       sweep's `if (!rec.c.pcm) continue` skips them, which is why they are safe from its belt.
+//
+// NULL IS A REAL ANSWER — no card, no path, nothing left after the preview, or an ffmpeg that
+//  produced no packets.  The caller climbs the shared backoff ladder on it, so a source that can
+//   never encode costs one ffmpeg a minute instead of one per pump beat.
+async Ra_native_continuation(w, rec, nat) {
+    if (rec.c.ra) return rec.c.ra
+    let card = await this.Ra_card(w, rec)
+    if (!card || !card.path) return null
+    let P = +(rec.sc.preview || 0)
+    let total = +(rec.sc.total || 0)
+    if (!(total > P)) return null
+    let SEGS = this.Ra_seg_secs()
+    // the same boundary the browser path computes at :1968, in SECONDS rather than samples because
+    //  ffmpeg seeks in time — source segment (pv_off + P), i.e. the first chunk the preview does not
+    //   already hold.  With a from-the-start cut (pv_off absent) this is P * seg_secs exactly.
+    let from = (+(rec.sc.pv_off || 0) + P) * SEGS
+    let want = (total - P) * SEGS
+    // ask for one grid step MORE than the queue needs.  ffmpeg pads its final frame, and a window cut
+    //  exactly at the track end can come back a chunk short — which would strand the last two seconds
+    //   of every track behind a want that never lands.  The surplus is sliced off below.
+    let enc = await nat.encode(card.base, card.path, from, want + SEGS, +(card.gain || 0), +(rec.sc.nch || card.nch || 2), +(rec.sc.br || this.Ra_bitrate()))
+    if (!enc || !enc.packets || !enc.packets.length) return null
+    // THE SAME GRID, not a second implementation.  Ra_chunk_cut is pure packet arithmetic over an
+    //  st-shaped bag, so the native packets go through the identical cut the preview went through —
+    //   the property that keeps a daemon-served chunk indistinguishable from a browser-served one.
+    let nst = { packets: enc.packets, acc: [], accs: 0 }
+    let bufs = this.Ra_chunk_cut(nst, 1)
+    if (bufs.length > (total - P)) bufs = bufs.slice(0, total - P)
+    if (!bufs.length) return null
+    // the gain is the CARD's, not a fresh measurement — Ra_source_pcm bakes 10^(card.gain/20) for
+    //  exactly this reason, so the continuation cannot step in volume at the seam.  Native bakes it
+    //   inside the encode (a volume filter is the same linear multiply, and there is no PCM here to
+    //    multiply into), which is what Ra_stock_one already does for the preview.
+    rec.c.pcm_tries = 0
+    rec.c.pcm_retry_at = 0
+    rec.c.ra = { nat: 1, bufs: bufs, preskip: enc.preskip, next: P, at: 0, done: 0 }
+    w.c.ra_hot = w.c.ra_hot || []
+    if (!w.c.ra_hot.includes(rec)) w.c.ra_hot.push(rec)
+    this.Radio_trace(null, { ev: 'nat-cont-done', id: String(rec.sc.id || '').slice(0, 8), chunks: bufs.length, preskip: enc.preskip })
+    return rec.c.ra
+
+},
 // Ra_transcode_advance — ONE advance of the open stream encode: feed a page-stride of source PCM,
 //  drain the encoder (its real completion — the honest clock), cut the finished 2s chunks and mint
 //   them as %Stream,seq particles.  Called per pump while parked wants demand it; chunks come into
@@ -2071,6 +2152,36 @@ async Ra_transcode_ensure(w, rec) {
 async Ra_transcode_advance(w, rec) {
     let ra = rec.c.ra
     if (!ra || ra.done) return 0
+    // THE NATIVE QUEUE (2026-08-08): the remainder is already encoded and cut, so an advance here is a
+    //  hand-out rather than an encode.  It sits ABOVE the freed-PCM guard below on purpose — there is
+    //   no `rec.c.pcm` on this path at all, and that guard would read its absence as a buffer freed
+    //    from under a live encode and close the stream on its first pass.
+    //  Still paced by the same stride, and deliberately so: the park/serve economy above is built on
+    //   chunks coming into being ACROSS passes (you watch them land), and handing the whole track over
+    //    in one call would mint a hundred %Stream particles inside a single beat.
+    if (ra.nat) {
+        let stride = +(w.c.repli_page || 2)
+        let made = 0
+        while (made < stride && !ra.done) {
+            let buf = ra.bufs ? ra.bufs[ra.at] : null
+            if (!buf) {
+                ra.done = 1
+                ra.bufs = null
+                return made
+            }
+            let hp = (ra.next === +(rec.sc.preview || 0)) ? ra.preskip : null
+            if (ra.next === +(rec.sc.preview || 0)) this.Radio_trace(null, { ev: 'stream-first-chunk', id: String(rec.sc.id || '').slice(0, 8), seq: ra.next })
+            this.Ra_chunk_mint(rec, ra.next, buf, hp)
+            ra.at = ra.at + 1
+            ra.next = ra.next + 1
+            made = made + 1
+            if (ra.at >= ra.bufs.length) {
+                ra.done = 1
+                ra.bufs = null
+            }
+        }
+        return made
+    }
     // A FREED PCM ENDS THE ENCODE HONESTLY, rather than throwing on `rec.c.pcm[0]` (2026-08-07).  The
     //  sweep + belt (Ra_pcm_sweep) can now take the bytes out from under a record — it vetoes on an
     //   open encode, so this should be unreachable via the sweep, but the belt is deliberately

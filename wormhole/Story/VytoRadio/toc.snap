@@ -4,8 +4,7 @@ story:VytoRadio
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=1.338
-      sample=1.451,at=1784539879
+    TimeTotal:beliefs,avg=1.197
       sample=1.501,at=1784541204
       sample=1.287,at=1784664671
       sample=1.497,at=1784682681
@@ -15,8 +14,8 @@ story:VytoRadio
       sample=1.578,at=1785030510
       sample=1.51,at=1785123377
       sample=0.052,at=1785375655
-    TimeTotal:step,avg=0.267
-      sample=0.29,at=1784539879
+      sample=0.04,at=1786154220
+    TimeTotal:step,avg=0.239
       sample=0.3,at=1784541204
       sample=0.257,at=1784664671
       sample=0.299,at=1784682681
@@ -26,6 +25,7 @@ story:VytoRadio
       sample=0.316,at=1785030510
       sample=0.302,at=1785123377
       sample=0.01,at=1785375655
+      sample=0.008,at=1786154220
   step,dige:8a6bcbab9119d964
   step=2,dige:616a1100ed22c620,desc:seed the six-genus tuner flora and commission the glass
   step=3,dige:c759e0cc47cebfe5,desc:the doses drift — the tuner ages and the cells re-size and re-seat

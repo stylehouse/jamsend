@@ -26,6 +26,13 @@ This doc exists because the failures below have **no other home**. Each subsyste
     coordinated reloads, which is the tax that makes the whole loop grim.
 4. Then §4.3–§4.7 as the Grind Book surfaces them with evidence attached, rather than in the dark.
 
+**Free win available before any of the above (2026-08-08):** §3.6 states a testable chain — the
+ playhead's chunk asks share one serial beat with the whole heist driver, so a heist may be setting the
+  clock the music runs on. The instrument is already shipped and costs nothing to read: catch one
+   `⏳ Swarm_share_beat still running past 600ms` line during a heist with music playing and read its
+    `cull=/tour=/peers=/keep=` split. One paste either promotes §3.6 to measured or kills it. Do that
+     while doing something else; it needs no runner and no setup, only a live tab.
+
 **Do not** treat §1's fixed rows as closed history — read §2 first. The pattern is the deliverable.
 
 ---
@@ -335,6 +342,52 @@ itself, or a NaN, all three named as suspects at `Vytui.svelte:121`. `runner_sho
 render telemetry film strip (gate + wave/morph/settle ring) and is the right instrument. Find the cell
 whose `disp`/`drift` stays pinned. **Do not raise `MAX_MOTION_FRAMES` and do not lower it** — it is
 doing its job; the layout under it is not.
+
+## 3.6 The music's asks are queued behind the heist's work (2026-08-08, HYPOTHESIS — instrumented, NOT yet measured)
+
+**Status matters here and this document is the reason: the section above is MEASURED, this one is NOT.**
+What follows is a causal chain read out of the source and matched against one console paste. It is
+stated so it can be *killed*, and the instrument that kills or confirms it is already shipped.
+
+**The chain.** All four of these live in one serial `Swarm_share_beat`, in this order:
+
+| # | phase | what it is |
+|---|---|---|
+| 1 | `Ra_shuffle_cull` | disk-touching, self-throttled to 30s inside |
+| 2 | `Stoker_tour` | the collection conveyor — a dig |
+| 3 | the friend loop | offers, **and the "keep the wire ahead of the playhead" `Repli_want_next` asks for the PLAYING record** |
+| 4 | `Heist_keep_beat` | *the entire heist driver, awaited inline* — its own comment concedes "cheap when no keep stands" |
+
+`Swarm_share_loop` fires every 600ms but is **busy-guarded**: while a beat is still in flight the next
+tick is *skipped entirely*, not queued. So the beat's true period is however long phase 4 takes — and
+phase 3, the music's chunk asks, only runs once per beat. A heist therefore does not merely compete
+with playback for bandwidth; it **sets the clock the playhead's asks run on**.
+
+**What the 2026-08-08 console shows, and what it does not.** `×221` skipped ticks, and in the same
+paste the radio flapping `playing → starved → playing → starved` on one record (`of:90`) while Repli
+reported a healthy 300–500KB/s. A starve is `m.bytes[seq] == null` (`Radio.g:429`) — the needed chunk
+was never *asked for in time*, which is what a stretched phase-3 cadence would produce, and it is
+consistent with bytes flowing fast the whole while. **Consistent with is not evidence of.** Nothing
+here rules out the ordinary explanation that the wire is simply slower than the playhead.
+
+**The instrument (shipped 2026-08-08, `Swarm.g`).** The beat now records a four-way split on
+`w.c.beat_split` and prints it *in the skip line itself* — the line everyone already pastes:
+
+    ⏳ Swarm_share_beat still running past 600ms — skipping this tick (×N so far) … · last beat: cull=… tour=… peers=… keep=… (ms)
+
+**The test, and it is one paste.** Catch that line during a heist with music playing.
+- `keep` dominates ⇒ the chain above is real, and the fix is structural: the playhead's asks must not
+   share a serial beat with the heist driver (give phase 3 its own cadence, or bound phase 4's work per
+   beat). **Do not just raise the 600ms** — that lengthens the ask period, which is the defect.
+- `cull`/`tour` dominate ⇒ different problem entirely, a disk verb on the live path.
+- all four small but the total large ⇒ the cost is *between* the phases; suspect `post_do`/the metronome
+   in §3.5 and treat this section as refuted.
+
+**Why this is filed here and not in `Backpressure_todo.md`.** That doc names the shape already —
+*"every stage shares one 600ms beat"* — and routes a starved radio to this document. This is that
+sentence with a specific mechanism and a specific way to check it. It is also, note, the *fourth*
+instance of §2's pattern in the making: "cheap when no keep stands" is a comment asserting a runtime
+property nobody has measured. Measure it before believing either it or me.
 
 ## 4. Open, grouped by where the work is
 

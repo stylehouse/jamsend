@@ -37,10 +37,23 @@ The daemon **boots, thinks, reads the wormhole, runs a Story Book to settle, and
 >        records two traps worth more than the feature: a meter that clipped what it measured, and
 >         `Ra_stock_drop` silently inert on the node nav (so the shelf cap could never evict).
 
+> **UPDATED 2026-08-08, afternoon — the 32s ceiling is LIFTED and LOFI is Ogg Vorbis. §10.5 item 2,
+>  §10.8.** Both were the same shape as everything else in §10: a browser primitive missing headless,
+>   and nothing carrying the fact. `Ra_native_continuation` encodes the whole remainder past the
+>    preview in ONE ffmpeg pass and hands it out on the existing 2s grid, so a friend hears past 32
+>     seconds for the first time; the streaming-pipe design §10.5 had scoped turned out to be more
+>      machinery than the constraint needed (the constraint was *one encoder*, not *streaming*). LOFI
+>       was failing 100% because its own validator asserted `OpusHead` on bytes that were now Vorbis.
+>  **Neither is verified — there is no ffmpeg in the claude container and both land on the daemon's
+>   next 900s restart.** Read §10.5 item 2 and §10.8 for the tells to look for.
+
 Candidates, in the order they actually unblock things:
 
-0. **LISTEN to a daemon-served track** (§10.5) — the one claim no snap can carry. Open the incognito
-    Pier on the invite jamserve prints at boot and play something.
+0. **LISTEN to a daemon-served track** (§10.5) — the one claim no snap can carry, and it now has a
+    second half worth as much as the first: **listen ACROSS THE PREVIEW SEAM** (chunk 16, ~32s in).
+     The gain is the card's on both sides and the continuation ships its own preskip, so it should be
+      inaudible — but that is reasoning, not a measurement, and a step in volume or a click at 32s is
+       exactly what it would sound like if either is wrong.
 
 1. ~~**Boot like a client does** (§8.3)~~ — **DONE 2026-08-08.** `book`+`boot_role` are stamped, a
     bootless boot refuses with exit 4 instead of falling into Auto's dev library page, `ROLE` defaults
@@ -1825,13 +1838,37 @@ So the daemon dug the entire collection, learned every path barren, and reported
     page-stride per pump beat and cuts chunks off ONE long-lived encoder, because opening a new encoder
      per window means a new ~6.5ms convergence ramp — i.e. an audible seam — at every chunk boundary.
       That is the whole reason `Ra_stock_one` says "ONE continuous encode".
-  **The shape that would actually work:** one long-lived `ffmpeg -f f32le -i pipe:0 … -c:a libopus
-   -frame_duration 20 -flush_packets 1 -f ogg pipe:1`, PCM in on stdin, and a *streaming* Ogg page
-    demux over stdout so `Ra_encode_open/feed/drain/close` map onto it roughly 1:1. `drain` is the
-     fiddly one — it must block until stdout has yielded pages covering what was fed, which is why
-      `-flush_packets` is load-bearing. Budget real time and a live peer to test against; it cannot be
-       proven from a fixture. A pleasant side effect: headless would need no `rec.c.pcm` at all, which
-        sidesteps the 92MB-per-record pinning ([[pcm-pinned-on-records]]) entirely.
+  **✅ BUILT 2026-08-08 afternoon — and the streaming-pipe design above was NOT what it needed.**
+   That design (a long-lived `ffmpeg -f f32le -i pipe:0`, PCM on stdin, a streaming Ogg demux over
+    stdout so `Ra_encode_open/feed/drain/close` map 1:1) is sound and was the plan. It is also far more
+     machinery than the problem justifies, and it inherits the thing that made the browser path
+      expensive: it still wants `rec.c.pcm` on stdin. **The cheaper shape satisfies the same
+       constraint.** The constraint was never "stream it" — it was *one encoder for the whole
+        remainder, so there is only one convergence ramp and it lands at a seam the format already
+         has*. A single non-streaming pass gets that for free:
+```
+Ra_native_continuation(w, rec, nat)      # Ra.g, new
+    from  = (pv_off + P) * seg_secs      # the same boundary Ra_transcode_ensure computes, in SECONDS
+    enc   = nat.encode(base, path, from, rest + seg_secs, card.gain, nch, br)   # ONE ffmpeg pass
+    bufs  = Ra_chunk_cut({packets: enc.packets, acc: [], accs: 0}, 1)           # the SAME 2s grid
+    rec.c.ra = { nat:1, bufs, preskip: enc.preskip, next: P, at: 0, done: 0 }   # a ready QUEUE
+```
+   `Ra_transcode_advance` gained a `ra.nat` branch that hands out `stride` chunks per pass, so chunks
+    still come into being *across* passes and the park/serve economy above is untouched. The fork in
+     `Ra_transcode_ensure` is **detached** (never awaited under the beat — an ffmpeg pass over minutes
+      of audio would freeze `Swarm_share_beat` under the beliefs mutex, starving the pump waiting on
+       it) and shares the PCM backoff ladder, because a source that can never encode is exactly the
+        1087-starts storm that ladder was written for.
+  **The side effect the streaming design was chasing arrives anyway, larger.** A ~4-minute remainder is
+   **~3MB of opus held**, against the **~92MB of Float32 PCM** the browser path pins for the same track
+    — the entire reason `Ra_pcm_sweep` exists ([[pcm-pinned-on-records]]). Native records never join
+     the PCM registry (`Ra_pcm_sweep`'s `if (!rec.c.pcm) continue` skips them), and the queue is
+      dropped the instant it drains. Thirty times smaller *and* simpler, which is the tell that the
+       constraint had been mis-stated as a technique.
+  **Unproven where it matters: nobody has LISTENED across the seam.** The gain is the card's on both
+   sides (`Ra_source_pcm` bakes `10^(card.gain/20)` for exactly this reason) so it should not step in
+    volume, and the first continuation chunk ships its own `preskip` via `hp` as the browser path
+     does — but "should not" is item 1 of this list, not a measurement.
 3. **`Ra_stock_gc_cap` now actually evicts — and has not yet been seen to.** The cap is
     `Ra_stock_cap()` = **100 files per pub**; the shelf is at 20 and the conveyor adds ~4 per tour, so
      the eviction path could not be exercised tonight. It is the newly-live code with the sharpest
@@ -1996,3 +2033,42 @@ A sealed friend traded `ive_got` with the box every few seconds and the box held
 **Still not proven: a track pulled from this box and heard.** `serve.live` is `[]` — nothing has ASKED
  yet. That is now the whole remaining gap. Also newly reachable for the first time: the shelf is
   climbing toward `Ra_stock_cap()` = 100, so `Ra_stock_gc_cap` will finally evict. Watch it plateau.
+
+### 10.8 LOFI shipped originals for a day because its own validator was wrong (2026-08-08, afternoon)
+
+The human, testing on a 12-year-old phone: *"even though the originals are opus, I want them
+ transcoded again to ogg, as that's more compatible with players of the last 15 years"* — so the LOFI
+  rendition became **Ogg Vorbis**, not Opus. Vorbis has been universal since ~2005; Opus needs a
+   decoder from 2012 and, on hardware players, often later than that or never. **A rendition the
+    destination cannot open is not a rendition.**
+
+`level_to_ogg` grew a `codec: 'opus' | 'vorbis'` switch, `has_encoder('libvorbis')` guards the exec,
+ and `ra_native.ogg()` answers `Orig_ogg_from_source`'s fourth question the way the other three are
+  answered (§10.2). Then every single transcode failed:
+
+```
+⇊⚠ lofi transcode failed for 01 - … A Muey A Muey.opus — serving the original instead
+  ↳ lofi encode A Muey A Muey: Ogg but no OpusHead at the usual offset — wrong codec?
+```
+
+**ffmpeg had done its job perfectly every time.** The structural check at the bottom of `level_to_ogg`
+ asserted `OpusHead` at offset 28 *unconditionally* — so the moment the same function learned to emit
+  Vorbis, it began throwing away its own correct output and reporting it as a failure. Now
+   codec-aware: Opus writes `OpusHead` (RFC 7845 §5.1), Vorbis writes packet-type `0x01` then
+    `"vorbis"` (Vorbis I §4.2), both at 28 because an Ogg page header is 27 bytes plus one lacing byte
+     and an id header is a single segment.
+
+**The lesson, which is not "I forgot to update a check".** A validator that hardcodes *one* of the two
+ things its caller can now produce is a fault detector **for itself** — and it fails in the most
+  expensive possible direction, because the log is loud, specific, technically accurate, and points at
+   the encoder. The bark named a real property of the bytes and still sent everyone to the wrong
+    place. Sibling of [[comments-assert-unmeasured-properties]]: the assertion was true when written
+     and nothing re-checked it when the world moved.
+
+**Not a second gate, checked:** `Heist.g:1305` only tests that bytes came back, and `Heist.g:490`
+ already derives the `.ogg` name from `lofi` itself — which is the correct extension for Vorbis, where
+  it would have been mildly wrong for Opus. One fix, whole path.
+
+**Unverified:** no ffmpeg in the claude container, so this was fixed by reading and lands on the
+ daemon's next 900s restart. The tell that it worked is `⇊♪ lofi: … → ogg128` where the `⇊⚠` used to
+  be, and `failed=` in the heartbeat's ffmpeg counters going flat.

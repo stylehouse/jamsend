@@ -310,13 +310,21 @@ export async function level_to_ogg(abs: string, target_lufs: number, m: Measured
     }
     if (r.code !== 0) return { bytes: null, why: `ffmpeg exit ${r.code}: ${tail(r.stderr)}` }
     if (!r.out.length) return { bytes: null, why: `produced no bytes: ${tail(r.stderr)}` }
-    // Structural check, cheap and worth it: an Ogg stream starts "OggS" and an Opus one carries
-    //  "OpusHead" in the first page's body.  A truncated pipe or a codec ffmpeg silently swapped
-    //   would otherwise reach a phone as a file that simply does not play — the failure that is
-    //    hardest to attribute later, because the bytes exist and the log was green.
+    // Structural check, cheap and worth it: an Ogg stream starts "OggS", and its first page's body is
+    //  the codec's identification header — a truncated pipe or a codec ffmpeg silently swapped would
+    //   otherwise reach a phone as a file that simply does not play, the failure that is hardest to
+    //    attribute later because the bytes exist and the log was green.
+    //  THE CHECK MUST FOLLOW THE CODEC, and did not: it asserted OpusHead unconditionally, so the day
+    //   LOFI became Vorbis every encode SUCCEEDED and was then thrown away by its own gate, reported as
+    //    `lofi transcode failed … serving the original instead`.  A validator that hardcodes one of the
+    //     two things its caller can produce is a fault detector for itself.
+    //  Offset 28 for both: an Ogg page header is 27 bytes + one lacing byte per segment, and an id
+    //   header is a single segment, so the body starts at 28.  Opus writes "OpusHead" (RFC 7845 §5.1),
+    //    Vorbis writes packet-type 0x01 then "vorbis" (Vorbis I §4.2).
     const magic = (s: string, at: number) => Array.from(s).every((c, i) => r.out[at + i] === c.charCodeAt(0))
     if (!magic('OggS', 0)) return { bytes: null, why: `not an Ogg stream (first 4 bytes ${Array.from(r.out.slice(0, 4)).join(',')})` }
-    if (!magic('OpusHead', 28)) return { bytes: null, why: `Ogg but no OpusHead at the usual offset — wrong codec?` }
+    const id_ok = codec === 'vorbis' ? (r.out[28] === 1 && magic('vorbis', 29)) : magic('OpusHead', 28)
+    if (!id_ok) return { bytes: null, why: `Ogg but no ${codec === 'vorbis' ? 'vorbis id header' : 'OpusHead'} at the usual offset — wrong codec?` }
     const measured = Number(m.input_i)
     return {
         bytes: r.out,

@@ -3909,10 +3909,23 @@
         lift_id = id
         if (id) overlays.get(id)?.classList.add('vlift')
     }
+    // THE RECT IS CACHED, AND THAT IS THE WHOLE PERF FIX (2026-08-08).  The comment above is right
+    //  that the cross products are cheap and wrong that the handler therefore is: it also called
+    //   getBoundingClientRect() on EVERY mousemove, which forces synchronous layout — and vlift_apply
+    //    mutates classList immediately before, so each move was a write→read thrash against a DOM the
+    //     voronoi is concurrently animating.  That pairing is what the 2026-08-08 console shows as
+    //      `'mousemove' handler took 1380ms` sitting next to `Forced reflow … took 276ms`.
+    //  Re-read on paint (where lift_cells is refreshed anyway — same invalidation, same moment) and
+    //   otherwise at most ~4×/s.  Bounded staleness is the deliberate trade: if the wrap moves under
+    //    a scroll the hit-test can be off for a quarter second, and the cost of that is one hover
+    //     highlight briefly landing on the neighbouring cell — nothing reads it but the eye.
+    let lift_rect: DOMRect | null = null
+    let lift_rect_t = 0
     function vlift_move(e: MouseEvent) {
         if (!lift_cells.length || !wrap_el) return
-        const r = wrap_el.getBoundingClientRect()
-        const px = e.clientX - r.left, py = e.clientY - r.top
+        const now = performance.now()
+        if (!lift_rect || now - lift_rect_t > 250) { lift_rect = wrap_el.getBoundingClientRect(); lift_rect_t = now }
+        const px = e.clientX - lift_rect.left, py = e.clientY - lift_rect.top
         let hit: string | null = null
         for (const c of lift_cells) if (in_poly(px, py, c.poly)) { hit = c.id; break }
         vlift_apply(hit)
@@ -3937,6 +3950,7 @@
         // the hover z-lift reads these polygons on every mousemove — refresh per paint,
         //  and re-assert the lifted class (a re-minted overlay el loses it silently)
         lift_cells = L.cells.map(c => ({ id: c.id, poly: c.inset }))
+        lift_rect = null                        // the cells moved, so the cached wrap rect is suspect too
         if (lift_id) overlays.get(lift_id)?.classList.add('vlift')
         const crossings = new Map<string, { wall: number, t: number, m: {x:number,y:number}, color: string }[]>()
         const cell_by_id = new Map(L.cells.map(c => [c.id, c]))
