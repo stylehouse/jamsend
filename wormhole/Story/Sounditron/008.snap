@@ -1,9 +1,9 @@
 Snap:H
   H:Sounditron,Run
     A:Sounditron
-      self,round=13	{"mung":["age"]}
+      self,round=14	{"mung":["age"]}
       w:Sounditron
-        self,round=13	{"mung":["age"]}
+        self,round=14	{"mung":["age"]}
         req:wrangle,eternal,ok
         Radio:playing,face:Radio,solo:gathering,solo_by:Lefto,title:1-06 The Glorious Immolation of the Holy Order o,of=252,at=6,skip=112,gaps
         Stoker:idle,face:Stoker,crew:Radio,stood=3,stock,fresh
@@ -36,3 +36,5 @@ Snap:H
         req:sound_wait,finished
         Mag:Lineup,face:Lineup,crew:Radio	{"dontSnap":1}
         req:music_wait,finished
+        Session,alive=6,possibilities=2,granted,connected,played
+        Tally,records:0,shelves:1

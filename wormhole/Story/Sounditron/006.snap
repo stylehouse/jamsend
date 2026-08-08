@@ -1,12 +1,12 @@
 Snap:H
   H:Sounditron,Run
     A:Sounditron
-      self,round=21	{"mung":["age"]}
+      self,round=11	{"mung":["age"]}
       w:Sounditron
-        self,round=21	{"mung":["age"]}
+        self,round=11	{"mung":["age"]}
         req:wrangle,eternal,ok
-        Radio:digging,face:Radio,note:gathering music from Lefto — nothing has arrived yet
-        Stoker:watching,face:Stoker,crew:Radio,stood=24,stock=8,fresh=8,last:Solar Eclipse,dug=10,toured=10
+        Radio:playing,face:Radio,solo:gathering,solo_by:Lefto,title:1-06 The Glorious Immolation of the Holy Order o,of=252,at=5,skip=112,gaps
+        Stoker:idle,face:Stoker,crew:Radio,stood=3,stock,fresh
         Tuner:glass,face:Tuner
         Riffle:shut,face:Riffle,crew:Riffle
         Zine:Faves,face:Zine,crew:Radio,count:2
@@ -19,7 +19,6 @@ Snap:H
         Transfer,dontSnap
         Shuffle,dontSnap
         Diag,dontSnap
-        Mag:Lineup,face:Lineup,crew:Radio	{"dontSnap":1}
         Machine,self:f5da6599,friendly:Righto
         req:stoker_wait,finished
         req:witness,eternal,ok
@@ -30,26 +29,9 @@ Snap:H
         Heist:the one they played last night,posed,from:Lefto,crew:system
           Need:a sealed Music grant — the door open both ways,met
           Need:the friend online — bytes only flow live,met
-          Need:their shelf counted — records to want,met
+          Need:their shelf counted — records to want
           Need:the original bytes over Repli — the pull itself
         req:peer_wait,finished
         Audio,real,heard
         req:sound_wait,finished
-        MusuThem,pub:96d0cf8852651a73
-          stock,pub:96d0cf8852651a73
-            Mag:shuffle
-              Cloud,page:1
-              Cloud,page:2
-              Cloud,page:3
-              Cloud,page:4
-                Record,id:370d870166ffe45f,title:Query E,artist:Fourier Four,seconds=68,lufs=-8.2,gain=-5.8,real,col,path:testsounds/Fourier Four - Query E.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=24,pv_off=10,bytes=517443
-                Record,id:d8a28ada85f2e851,title:Deep A,artist:The Sines,seconds=72,lufs=-8.35,gain=-5.65,real,col,path:testsounds/The Sines - Deep A.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=20,pv_off=16,bytes=517443
-                Record,id:95f3c03e41e9c007,title:High A,artist:The Sines,seconds=80,lufs=-5.49,gain=-8.51,real,col,path:testsounds/The Sines - High A.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=24,pv_off=16,bytes=517443
-                Record,id:a14602e5ca2e9bd0,title:Echo E,artist:Fourier Four,seconds=60,lufs=-6.6,gain=-7.4,real,col,path:testsounds/Fourier Four - Echo E.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=18,pv_off=12,bytes=517443
-                Record,id:902552d4a0b8b0c1,title:Middle A,artist:The Sines,seconds=64,lufs=-8.13,gain=-5.87,real,col,path:testsounds/The Sines - Middle A.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=18,pv_off=14,bytes=517443
-                Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,path:testsounds/DJ Oscillo - Cosmic C.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=25,pv_off=14,bytes=517443
-              Cloud,page:5
-                Record,id:cf95c97b08584b92,title:Groove G,artist:DJ Oscillo,seconds=66,lufs=-7.83,gain=-6.17,real,col,path:testsounds/DJ Oscillo - Groove G.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=21,pv_off=12,bytes=517443
-                Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,path:testsounds/DJ Oscillo - Dorian D.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=24,pv_off=14,bytes=517443
-                Record,id:22153acbea099624,title:17.Bala 3anouan,artist:,seconds=135.69,lufs=-11.05,gain=-2.95,real,col,path:0 spawn/- folks/- arabia/Charif Megarbane - Marzipan (Bouns Edition) (2023) [FLAC] {WEB}/17.Bala 3anouan.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=36,pv_off=32,bytes=517443
-                Record,id:dbff8652f6b79660,title:3.Pas de Dialogue,artist:,seconds=154,lufs=-10.21,gain=-3.79,real,col,path:0 spawn/- folks/- arabia/Charif Megarbane - Marzipan (Bouns Edition) (2023) [FLAC] {WEB}/3.Pas de Dialogue.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=45,pv_off=32,bytes=517443
+        Mag:Lineup,face:Lineup,crew:Radio	{"dontSnap":1}

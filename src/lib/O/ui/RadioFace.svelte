@@ -38,6 +38,10 @@
             artist: sc.artist as string | undefined,
             at:     +(sc.at ?? 0),
             of:     +(sc.of ?? 0),
+            // the head the offer skipped past (Ra_preview_offset): a friend's track opens 30–70% in, and
+            //  until 2026-08-08 the clock silently pretended the track BEGAN there.  sc.skip is absent on
+            //   a from-the-start cut, so this stays 0 for local records and every Book.
+            skip:   +(sc.skip ?? 0),
             played: +(sc.played ?? 0),
             drops:  +(sc.drops ?? 0),
             note:   sc.note as string | undefined,
@@ -122,8 +126,18 @@
          old line described the MECHANISM to someone who only wanted to know the music stopped. -->
     {#if face.state === 'starved'}<div class="rf-note">off the tape — holding the line, it'll resume itself</div>{/if}
     {#if face.of > 0}
-        <div class="rf-bar"><div class="rf-fill" style="width:{Math.min(100, 100 * face.at / face.of)}%"></div></div>
-        <div class="rf-time">{mmss(face.at)} / {mmss(face.of)}
+        <!-- the skipped head rides the bar as a dim leading segment (the human 2026-08-08: "indicate the
+             portion the Record has skipped past").  Both widths are fractions of the FULL track
+             (skip + of), so the gold fill starts where the record actually did and the geometry tells
+             the same story as the clock line below.  skip=0 ⇒ the old bar exactly. -->
+        <div class="rf-bar">
+            {#if face.skip > 0}<div class="rf-skipped" style="width:{100 * face.skip / (face.skip + face.of)}%"></div>{/if}
+            <div class="rf-fill" style="width:{Math.min(100, 100 * face.at / face.of) * face.of / (face.skip + face.of)}%"></div>
+        </div>
+        <!-- "0:40 + 0:04 / 2:45" — skipped + heard / the whole track.  The middle number is the one that
+             moves; the outer two say what you missed and what the track really is. -->
+        <div class="rf-time">
+            {#if face.skip > 0}<span class="rf-skiptime">{mmss(face.skip)} +</span> {mmss(face.at)} / {mmss(face.skip + face.of)}{:else}{mmss(face.at)} / {mmss(face.of)}{/if}
             {#if face.played > 0}&nbsp;· {face.played} played{/if}
             {#if face.drops > 0}&nbsp;· {face.drops} drops{/if}</div>
     {:else if face.state === 'digging' && !face.note}
@@ -183,8 +197,11 @@
         background: #1a2f38;
         border-radius: 2px;
         overflow: hidden;
+        display: flex;           /* skipped-head segment + fill sit in a row, widths as % of the full track */
     }
-    .rf-fill { height: 100%; background: #d9a026; transition: width 0.4s linear; }
+    .rf-skipped { height: 100%; flex: none; background: #3a4a52; }
+    .rf-fill { height: 100%; flex: none; background: #d9a026; transition: width 0.4s linear; }
+    .rf-skiptime { opacity: 0.55; }
     .rf-time { font-size: 9px; opacity: 0.7; margin-top: 3px; }
     .on .rf-title { color: #ffd869; }
 </style>

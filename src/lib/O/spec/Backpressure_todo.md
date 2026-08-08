@@ -68,6 +68,11 @@ Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribu
        that single predicate**, not independent problems. Fixed by `Ra_page_hole`. The rule it
         leaves — *the unit of asking is a page, so the unit of needing must be a page* — governs
          anything §5.6 builds on this seam. Do not chase `Ra_source_pcm` on the old evidence.
+0c. **AND §3.1e (found + fixed 2026-08-08, live, the same family).** The PCM belt shed what the
+     transcode pump had admitted — 8 parked wants vs a 384MB cap = a decode livelock the backoff
+      ladder was structurally blind to (it brakes *failed* decodes; these all *succeeded*). The rule
+       it adds: **a belt without an admission bound upstream is a livelock generator for any working
+        set larger than the cap.** Check §3.1e before adding any new byte budget.
 0b. **THEN §3.1c (found + fixed 2026-08-06, same day, from a live report).** §3.1b was not the last
      of its family. The *source* freed a track's bytes while the sink was 17 chunks short, because
       `rec.c.sent >= total` is a **high-water frontier standing in for coverage** — §3.1b's exact
@@ -331,6 +336,44 @@ The in-flight window (`INFLIGHT` 2) opens a second slot once the active track is
       within 3s); *stalled* is the bench watchdog's job (45s → 60s off), not the overlap slot's. The
        `pulls` electrode gained a `why:'frozen'` cause so the two are distinguishable in the ring.
 
+### 3.1e The PCM belt shed what admission had promised — the cap-thrash livelock
+ *(FOUND + FIXED 2026-08-08, live: "failing to heist… big dysfunctional gaps between doing anything")*
+
+The sink saw `heist-noprogress` for 60–100s per track, then a 1–8s burst — the wire was fast, the
+ source just wasn't answering. The source's ring told the whole story in one window (136s): **28
+  `pcm-decode-start` of the same 8 records, 15 `pcm-free why=cap`, 28 `park-stall` barks, and TWO
+   heist serves.** `Ra_transcode_pump` ensured a transcode for *every* distinct parked-want id — no
+    admission bound — so 8 wants stood up ~700MB of whole-file PCM against `Ra_pcm_sweep`'s 384MB
+     belt. The belt shed open encodes oldest-first; the next pump pass found `rec.c.pcm` null and
+      re-kicked at full price (7–23s of decode each). And the 2026-08-07 backoff ladder never braked
+       it, **because the ladder arms on FAILED decodes and every one of these SUCCEEDED** — success
+        clears `pcm_tries`, so eviction manufactured an endless stream of successful decodes the only
+         existing brake was blind to. The tab spent whole minutes re-decoding audio it had just thrown
+          away; the serve got the scraps.
+
+This is §3.1c's rule wearing the PCM hat — **eviction may not break admission's promise** — plus the
+ eviction-fairness lesson: no re-tuning of the sweep can fix it, because demand exceeded the cap
+  *by construction*. Fixed with an admission gate in `Ra_transcode_pump`: a NEW whole-file decode is
+   only kicked while counted PCM stays under CAP/2 (an un-landed kick charged CAP/4 — the sweep's own
+    "~4 tracks" arithmetic; both derived from CAP, never twin constants). Deferred ids simply **stay
+     parked** — that is what a park is for — and admit as open transcodes finish and free at done.
+      A rec already holding pcm or an open `ra` passes freely, so nothing in flight starves. Verified
+       live: `capfree=0` in every ring sampled, decode-starts fell to zero, serves climbed 1→16, and
+        the stalled album landed completely within minutes of the HMR. The general rule for §5.6 and
+         anything else that adds a byte budget: **an eviction bound (a belt) and an admission bound
+          are two different organs, and a belt without admission upstream of it is a livelock
+           generator for any working set larger than the cap.**
+
+**The residual, measured the same evening and deliberately NOT retuned live:** the CAP/2 budget is
+ conservative enough that ONE long track streaming (394s ≈ 150MB of PCM) nearly fills it, so a new
+  stream want queued ~145s at `off=16` before admission (still 3–10× better than the 480–1438s the
+   thrash produced, but user-visible as a slow stream start). Two candidate cures, pick ONE with a
+    measurement in hand: (a) charge the REAL estimate instead of CAP/4 — `secs × 192000 × ch` if the
+     card carries a duration — and admit against CAP instead of CAP/2, accepting a rare belt-shed
+      when an estimate lies; or (b) mirror §3.1c properly: a standing `%parked_want` VETOES the belt
+       for that rec (the sweep's "a belt that can be vetoed is not a belt" then needs a second,
+        harder bound behind it). Do not do either mid-listen; re-measure the queue wait first.
+
 ### 3.2 The sink is blind to why a want went unanswered — a timeout is the weakest signal
 
 `Repli_park_want` (`Repli.g:476`) mints a source-local `%parked_want` and **replies nothing**.
@@ -388,6 +431,44 @@ The cure is the oldest one in networking — **class-based priority queueing** (
   signal the browser offers.
 
 ---
+
+### 3.4 Open-loop pacing on the LIVE window — closed 2026-08-08 (the owner's ladder), UNHEARD
+
+The intro names **open-loop pacing** as one of the canonical failure modes this doc exists to close.
+Here is where it lived, in the "keep the wire ahead of the playhead" leg of `Swarm_share_beat`:
+
+| knob | was | now |
+|---|---|---|
+| asks per beat | **flat 3** | 6 / 3 / 1 by banked lead (<8s / <16s / ≥16s) |
+| re-ask a missing live-window page | **flat 4000ms** | 1500ms when under 8s banked, else 4000ms |
+| a record becomes PLAYABLE at | **chunk 0 — two seconds** | 8s banked (`Radio_playable`, seconds not chunks, clamped to `total`) |
+
+**The design is the owner's, 2026-08-08**, and worth quoting because it names the principle better than
+the code does: *"the main cause is not prioritising the Records enough… prioritise the current track
+over the potential next track, unless we're >16s ahead."* The old shape had no notion of priority at
+all — **a track with thirty seconds banked spent exactly the same wire as one about to go silent.**
+
+`lead` is the count of **contiguous** chunks from the head. Contiguous matters: audio past a hole is
+not lead, it is audio after the gap, and counting it would report a comfortable buffer at the exact
+moment the playhead is about to hit silence.
+
+**One correction to the model, recorded so it is not re-derived.** The ">16s ahead" rung was conceived
+as yielding to the *next track's* prefetch. It does not: `Radio_prime` never asks over the wire, it only
+decodes chunks already held (`Radio.g:557` — `if (m.bytes[start] == null) return`). What the top rung
+actually yields to is `Heist_keep_beat` and the friend-offer loop sharing the same serial beat. Still
+worth having, for a different reason than intended — and see `Composition_todo` §3.6, which is the same
+convoy from the other end.
+
+**Status: compiled, gated, and HEARD BY NOBODY.** The 8s gate is `humdinger`-gated (it moves when a
+track becomes eligible, and every Book timing moves with it — the trap that turned MusuHeist red when
+`Radio_prime` first ran ungated); the budget/re-ask changes are in the share beat, which is live-only by
+construction. So no Book can regress and no Book can confirm it either. **This is a tuning change to the
+audio path validated only by reading.** Treat the next real listen as the test.
+
+**The instrument, when a gap does happen:** `w.c.lead_s` (off-snap) beside the `cull=/tour=/peers=/keep=`
+split now in the skip line. Low `lead_s` with beats running ⇒ starved of ASKS, and the ladder is wrong
+or too shy. `keep=` dominating ⇒ starved of BEATS, and §3.6 is the real fault — the ladder cannot help,
+because a budget of 6 spends nothing if the beat never runs.
 
 ## 4. The refactor: `%Haul` grows a req pile
 

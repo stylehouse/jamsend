@@ -39,6 +39,13 @@ wormhole/_trace/
 # dev-instance marker — flips Dev_instance.md's commit relaxation on; must never travel to the construction site
 .dev-instance
 /0 spawn
+# heist LANDING DIRECTORIES — real audio the app writes into the working tree at runtime.
+#  `/0 spawn` above was already ignored for exactly this reason; these two are its siblings and were
+#   not, so 128MB of music sat one `git add -A` from being committed (flagged by the daemon session,
+#    2026-08-08).  `0 gone/` is the cp-landing destination, `0 heisted-<src8>-<dst8>/` is one per
+#     heist pair, so the set GROWS with every new friend — hence the glob, not two literals.
+/0 gone
+/0 heisted-*
 
 # jamserve's runtime log — bind-mounted so sibling containers can read it
 jamserve/run.log

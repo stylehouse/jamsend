@@ -806,6 +806,12 @@ async Ra_shuffle_cull(w, shelf):
     }
     for (const g of goners) {
         await this.Ra_rec_drop(shelf, g.id)
+        // TELL THE MIRRORS (2026-08-08, §3.9): the second of the two live seams that silently retire a
+        //  record.  The tour whittle already ledgers here; without this a culled record stays listed on
+        //   every friend's mirror and is asked for forever.  Swarm_share_beat drains `retire_due` to
+        //    every registered caster as an op:delete — one ledger, one flush, two producers.
+        shelf.c.retire_due = shelf.c.retire_due || []
+        shelf.c.retire_due.push(String(g.id))
         this.Radio_trace(null, { ev: 'source-gone', id: g.id.slice(0, 8), why: g.why })
     }
     if (goners.length) this.Radio_trace(null, { ev: 'shuffle-cull', seen: seen, dropped: goners.length })
@@ -1007,6 +1013,11 @@ async Ra_mag_warm(w, mirror):
                 k = k + 1
                 if (!(+(rec.sc.total || 0) > 0)) continue
                 if (!rec.c.rx || !rec.c.from || !w.c.repli_mirror_pier) continue
+                // THE SOURCE ALREADY SAID NO (2026-08-08): skip an id it has disclaimed within the
+                //  backoff window rather than re-asking it on the RTO ladder forever.  Self-expiring,
+                //   so a re-stocked record is asked again within the minute.  Inert in every Book —
+                //    nothing disclaims an id there, so `ra_missed` is empty and this never fires.
+                if (typeof this.Repli_missed_hot === 'function' && this.Repli_missed_hot(w, rec.sc.id)) continue
                 // ASK FOR WHAT IS MISSING, NOT FOR WHAT THE TIMER FORGOT.  This loop used to lean on the
                 //  4s stamp ALONE as its memo, with no presence check at all — it re-asked page 0 on a
                 //   cadence until the mag happened to go warm, held down only by the timer being long.
@@ -1039,7 +1050,21 @@ async Ra_mag_warm(w, mirror):
         // warm the moment record zero holds its opening page (min(2, total) chunks in hand).  Pulled
         //  chunks land on the head itself (Repli_merge lands page fragments through the census — one
         //   true record, matching the origin), so the head is where the bytes stand.
+        // WARM OFF A RECORD THAT CAN ACTUALLY ARRIVE (2026-08-08).  This gate read `rows[0]` and only
+        //  `rows[0]`, so ONE unservable id in slot zero meant the mag NEVER went warm — and an un-warm
+        //   mag re-asks `@0` for the life of the tab.  That is the permanent `@0` storm in the human's
+        //    console, and it is a single-point-of-failure on a row nobody chose.
+        //  SURGICALLY NARROW: the fallback fires ONLY when row 0 has been disclaimed by its source, a
+        //   state no Book can reach (`ra_missed` is empty there), so every recorded fixture is
+        //    bit-identical.  A merely-slow row 0 still gates the mag exactly as before.
         let head0 = rows[0]
+        if (typeof this.Repli_missed_hot === 'function' && this.Repli_missed_hot(w, head0.sc.id)) {
+            for (const alt of rows) {
+                if (this.Repli_missed_hot(w, alt.sc.id)) continue
+                head0 = alt
+                break
+            }
+        }
         if (!mag.sc.warm && +(head0.sc.total || 0) > 0) {
             let map = this.Ra_chunk_have(head0)   // presence only — the warm test reads `map[s] != null`
             let need = Math.min(2, +(head0.sc.total || 0))
@@ -1828,6 +1853,86 @@ Ra_pcm_hold(rec):
     rec.c.pcm_ts = Date.now()
     if (!M.c.ra_pcm.includes(rec)) M.c.ra_pcm.push(rec)
 
+// ── ADMISSION CONTROL (2026-08-08) — the belt above is EVICTION, and eviction alone LIVELOCKS ──
+//  MEASURED on the human's tab: EIGHT records parked at from_idx=16, waiting 22s → 724s, **not one
+//   ever advancing**, while the wire moved 231KB/s and the CPU sat pinned. 8 × ~92MB = ~736MB against
+//    a 384MB cap. Each shed record's next ensure sees `!rec.c.pcm`, kicks a fresh whole-file decode,
+//     lands 92MB, busts the cap, and sheds another. Nothing ever survives long enough to encode two
+//      chunks. Every track dies at 0:32; the inbox then overruns its 2000 cap and DISCARDS
+//       `repli_lines`/`repli_page` — music bytes — because nothing can drain while the CPU decodes.
+//  WHY THE EXISTING BRAKES CANNOT CATCH IT: `Ra_pcm_backoff` only climbs on FAILURE, and every one of
+//   these decodes SUCCEEDS. A successful-then-shed decode re-kicks with no brake at all. And the belt
+//    is explicitly un-vetoable by design ("a belt that can be vetoed is not a belt") — correct as a
+//     memory bound, useless as a rate bound. You cannot fix a livelock by choosing what to evict; only
+//      by refusing to START work you cannot hold.
+//  THE RULE: admit if the estimate fits under the cap. If it does not, admit ONLY for the record the
+//   radio is actually PLAYING — one override, bounded by there being one playhead — so a listener is
+//    never starved by speculative demand, and everyone else WAITS rather than thrashes. A waiting want
+//     stays parked and is answered the moment an in-flight decode finishes and frees its bytes, so
+//      refusal costs latency, never progress: some record always completes, so the queue always drains.
+
+// Ra_pcm_est — what this record's PCM WILL cost, before we have it.  Float32 per sample per channel.
+//  An unknown duration assumes a big one on purpose: guessing "free" is how a belt gets overrun, and
+//   the cost of over-estimating is a short wait, while under-estimating is the livelock above.
+Ra_pcm_est(rec):
+    let secs = +(rec && rec.sc.seconds || 0)
+    let nch = Math.min(2, +(rec && rec.sc.nch || 2))
+    if (!(secs > 0)) return 100663296
+    return Math.round(secs * 48000 * (nch > 0 ? nch : 2) * 4)
+
+// Ra_pcm_playing — the record in somebody's EARS, read off the radio world (top.c.radio_w — tab
+//  singular, so this answers the same on the station world that drives the pump).  Null when nothing
+//   is playing, which correctly means "no override is owed to anyone".
+Ra_pcm_playing(M):
+    let rw = M && M.c.radio_w
+    if (!rw) return null
+    let radio = rw.o({ Radio: 1 })[0]
+    return (radio && radio.c.rec) || null
+
+// Ra_pcm_admit — may this record start a whole-file decode right now?  1 = yes, 0 = wait.
+//  Counts BOTH the bytes already held and the bytes already in flight: `pcm_pending` records have not
+//   called Ra_pcm_hold yet (that happens at acquisition), so a hold-only census would admit the whole
+//    thundering herd in one beat — the exact bug, one layer up.
+Ra_pcm_admit(w, rec):
+    let M = this.top_House ? this.top_House() : null
+    if (!M || !rec) return 1
+    M.c.ra_pcm_fly = M.c.ra_pcm_fly || []
+    let CAP = +(M.c.ra_pcm_cap || 402653184)
+    let held = 0
+    for (const r of (M.c.ra_pcm || [])) { if (r && r.c.pcm) held = held + this.Ra_pcm_bytes(r) }
+    let flight = 0
+    let fly = []
+    for (const r of M.c.ra_pcm_fly) { if (r && r.c.pcm_pending && r !== rec) { fly.push(r); flight = flight + this.Ra_pcm_est(r) } }
+    M.c.ra_pcm_fly = fly
+    let want = this.Ra_pcm_est(rec)
+    if (held + flight + want <= CAP) return this.Ra_pcm_fly_add(M, rec)
+    if (rec === this.Ra_pcm_playing(M)) return this.Ra_pcm_fly_add(M, rec)
+    // THE LONE-CANDIDATE FLOOR — an admission gate must never refuse the ONLY applicant.
+    //  `want` alone can exceed CAP for a long enough recording: at 48kHz stereo Float32 the estimate
+    //   passes 384MB somewhere past ~17.5 minutes, so a DJ set, an album side or a podcast would be
+    //    refused by the arithmetic above **forever**, with no backoff to eventually let it through —
+    //     and the playing-record override cannot rescue it (that returns null whenever `radio_w` is
+    //      unset, and a track nobody has dialled yet is never the playing one). That is a livelock of
+    //       exactly the kind this gate exists to prevent, reintroduced one layer up.
+    //  So: if nothing is held and nothing is in flight, ADMIT regardless of size. One over-cap decode
+    //   is strictly better than a track that can never play, the belt reclaims it the moment it goes
+    //    idle, and the herd is still bounded because this can only ever admit ONE at a time.
+    //  Found by an adversarial read, NOT by a run — no runner was free to test it. It is reasoning,
+    //   and the arithmetic is checkable, but nobody has yet watched a 20-minute track play.
+    if (held <= 0 && flight <= 0) return this.Ra_pcm_fly_add(M, rec)
+    // REFUSED — traced once per rung so a queue that is merely waiting cannot be mistaken for one that
+    //  is stuck (the distinction this whole page keeps paying for).  No backoff: this is not a failure.
+    let nowms = Date.now()
+    if (nowms - (+(rec.c.pcm_wait_ts || 0)) > 5000) {
+        rec.c.pcm_wait_ts = nowms
+        this.Radio_trace(null, { ev: 'pcm-wait', id: String(rec.sc.id || '').slice(0, 8), held: Math.round(held / 1048576), fly: Math.round(flight / 1048576), want: Math.round(want / 1048576), cap: Math.round(CAP / 1048576) })
+    }
+    return 0
+
+Ra_pcm_fly_add(M, rec):
+    if (!M.c.ra_pcm_fly.includes(rec)) M.c.ra_pcm_fly.push(rec)
+    return 1
+
 Ra_pcm_bytes(rec):
     let p = rec && rec.c.pcm
     if (!p || !p.length || !p[0]) return 0
@@ -1975,6 +2080,11 @@ async Ra_transcode_ensure(w, rec):
         //     the first success. A transient failure still heals in about a second; a hopeless one costs one
         //      attempt a minute instead of a hundred. Nothing is given up on, it just stops shouting.
         let now_try = Date.now()
+        // ADMISSION BEFORE THE KICK (2026-08-08, see Ra_pcm_admit): the belt below this line is a
+        //  memory bound, not a rate bound, and eviction alone livelocked every record at chunk 16.
+        //   Refusal is not failure — no backoff is climbed, the want stays parked, and this record is
+        //    admitted the moment an in-flight decode frees its bytes.  The PLAYING record overrides.
+        if (!rec.c.pcm_pending && now_try >= +(rec.c.pcm_retry_at || 0) && !this.Ra_pcm_admit(w, rec)) return null
         if (!rec.c.pcm_pending && now_try >= +(rec.c.pcm_retry_at || 0)) {
             rec.c.pcm_pending = 1
             // the SOURCE-SIDE timeline the live diagnosis reads (the human 2026-07-28 "figure out the %Stream
@@ -2156,6 +2266,26 @@ async Ra_transcode_pump(w):
     //    world.  Reading the registry off the top House is what lets one call cover both.  Cheap — a
     //     walk over a list that is empty on an idle tab and ~2 long on a busy one.
     this.Ra_pcm_sweep()
+    // ── ADMISSION UNDER THE BELT (2026-08-08): never kick a decode the sweep will immediately shed ──
+    //  Eight parked ids wanted ~700MB of whole-file PCM against the 384MB belt.  The sweep shed the
+    //   oldest open encodes; the next pass found `rec.c.pcm` null and re-kicked them at full price —
+    //    and the backoff ladder never braked it, because the ladder arms on FAILED decodes and every
+    //     one of these SUCCEEDED (success clears `pcm_tries`).  Measured on the live pair: 28
+    //      pcm-decode-starts of the same 8 records, 15 cap-sheds and 28 park-stall barks against TWO
+    //       heist serves in 136s, while the sink read `heist-noprogress` for 60-100s per track.
+    //  §3.1c's rule wearing the PCM hat: eviction may not break admission's promise, so admission must
+    //   stay under what the belt allows.  Budget = CAP/2 of counted bytes; an un-landed kick counts
+    //    CAP/4 (the sweep's own "~4 tracks" arithmetic) until its real bytes join the registry.  Both
+    //     derived from CAP, never twin constants — retune the belt and admission retunes with it.
+    //  A deferred id simply STAYS PARKED — that is what a park is for — and is admitted as open
+    //   transcodes finish (Ra_transcode_advance frees pcm at done).  Only the KICK is gated: a rec
+    //    already holding pcm or an open ra advances freely, so nothing in flight is ever starved.
+    let AM = this.top_House ? this.top_House() : null
+    let ADMIT_CAP = +((AM && AM.c.ra_pcm_cap) || 402653184)
+    let admit_spent = 0
+    for (const arec of ((AM && AM.c.ra_pcm) || [])) {
+        if (arec && arec.c.pcm) admit_spent = admit_spent + this.Ra_pcm_bytes(arec)
+    }
     let piers = []
     if (w.c.tx) piers.push(w.c.tx)
     for (const cp of (w.c.repli_casters || [])) {
@@ -2200,6 +2330,14 @@ async Ra_transcode_pump(w):
                     }
                 }
                 continue
+            }
+            // the admission gate (header above): a rec with no pcm and no open ra is a NEW whole-file
+            //  decode.  One already in flight is charged its estimate; a fresh one is only admitted
+            //   while the budget holds, and is charged the same estimate the moment it is.
+            if (!rec.c.pcm && !rec.c.ra) {
+                if (rec.c.pcm_pending || rec.c.nat_pending) { admit_spent = admit_spent + ADMIT_CAP / 4; continue }
+                if (admit_spent + ADMIT_CAP / 4 > ADMIT_CAP / 2) continue
+                admit_spent = admit_spent + ADMIT_CAP / 4
             }
             let ra = await this.Ra_transcode_ensure(w, rec)
             if (!ra) continue
@@ -2688,6 +2826,11 @@ async Ra_restock_beat(w, mirror, budget):
         k = k + 1
         if (rec.sc.id === playing) continue
         if (w.c.ra_source_live && rec.c.from && !w.c.ra_source_live(rec.c.from)) continue
+        // DISCLAIMED IDS DO NOT GET A SLOT (2026-08-08).  This is the widest crate walk in the app, so
+        //  it is where a stale mirror turns into a `repli_missed` storm — and worse, a disclaimed record
+        //   burned one of the K considered slots every pass, crowding out records that could actually
+        //    arrive.  Skipping BEFORE `considered` increments spends the budget on reachable music.
+        if (typeof this.Repli_missed_hot === 'function' && this.Repli_missed_hot(w, rec.sc.id)) continue
         let P = Math.min(+(rec.sc.preview || 0), +(rec.sc.total || 0))
         if (!(P > 0)) continue
         considered = considered + 1

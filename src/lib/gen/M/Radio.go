@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '7f4a5d8a37b2c3f7~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return 'a3a7863525517496~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -662,6 +662,18 @@ Radio_open(radio, rec) {
     //   pv_off absent ⇒ the old number exactly.
     radio.sc.of = Math.round(Math.max(0, +(rec.sc.seconds || 0) - (+(rec.sc.pv_off || 0) * this.Ra_seg_secs())))
     radio.sc.at = Math.round(+(radio.c.at0 || 0))
+    // ...AND SAY THE CUT OUT LOUD (the human 2026-08-08: "indicate the portion the Record has skipped
+    //  past ... 0:40 + 0:04 / 2:45").  `of` above already SUBTRACTS the skipped head, which keeps the
+    //   bar honest but silently — the face couldn't distinguish a 2:05 track from a 2:45 track cut at
+    //    0:40.  `skip` is that head in seconds, so the face can render skip + elapsed / full-length.
+    //     Absent-when-zero (a from-the-start cut stamps nothing), and DELETED on the else branch, not
+    //      set 0 — a stale skip surviving from the previous track would shift the next clock by a lie.
+    let skip = Math.round((+(rec.sc.pv_off || 0)) * this.Ra_seg_secs())
+    if (skip > 0) {
+        radio.sc.skip = skip
+    } else {
+        delete radio.sc.skip
+    }
     delete radio.sc.note
     // source attribution — the wire side of "· from X": a friend track names whose music this is,
     //  my own stock names no one.  play_by rides from the Lineup card (Radio_dial stashes it before
@@ -1162,7 +1174,7 @@ Radio_lineup_fill(w, radio) {
                 //     Radio_pump_tick → Radio_dial while the radio is 'digging', which is exactly the
                 //      state a listener sits in during a heist.  Tens of MB memcpy'd per chunk × ~250
                 //       chunks: the burn that starts with the heist and ends with it.
-                if (this.Repli_chunk_at(rec, 0) == null) continue
+                if (!this.Radio_playable(rec)) continue
                 frecs.push(rec)
             }
             if (frecs.length) pools.push({ key: hp, recs: frecs })
@@ -1235,6 +1247,43 @@ Radio_lineup_errors(w, lu, pools) {
 },
 //#endregion
 
+// Radio_playable — IS THERE ENOUGH OF THIS RECORD TO START? (2026-08-08, the owner: "perhaps we say
+//  having the first 8s of a Record is enough before we start playing it".)  The old test was chunk 0
+//   ALONE — two seconds — so a record became eligible the instant its first packet landed and the
+//    playhead then raced the wire from a standing start.  That is the gappiness at its source: we
+//     began almost empty and hoped.  Eight seconds banked is a real cushion for the same wire.
+//  ONE PAGE (4s), NOT THE 8s FIRST WRITTEN — and the reason is a contract, not a preference.  The
+//   §5 warm start (`Ra_mag_warm`, Ra.g:985) wants exactly "2 records × 2 chunks" and says outright
+//    that is "enough for playback to begin the moment they land".  An 8s gate silently overrides
+//     that: a warm-started record would hold 4s, fail this test, and sit ineligible until
+//      `Ra_restock_beat` deepened it — turning the warm start's instant-on into a wait.  Two
+//       subsystems disagreeing about "enough to begin" is worse than either number.
+//  So this gate is now the warm page: DOUBLE the old two-second bar, and exactly what the puller
+//   already promises to deliver.  Going to a true 8s means raising `Ra_mag_warm`'s depth in the same
+//    change — a coordinated edit across Ra.g and here, not a number tweaked on one side.
+//  SECONDS, NOT CHUNKS: seg_secs is per-record, so compute the count rather than hard-coding it.
+//   Clamped to `total` — a preview shorter than the gate must not become permanently unplayable,
+//    which would silently empty the pool on a collection of short tracks.
+//  END-USER PAGES ONLY.  This moves WHEN a track becomes eligible, and every downstream timing a
+//   Book records moves with it — exactly why Radio_prime is humdinger-gated, learned there when it
+//    turned MusuHeist red the first time it ran ungated.  A Book keeps the one-chunk gate.
+//  PRESENCE ONLY, never materialisation: Repli_chunk_at is the cheap probe (the 2026-08-06 burn was
+//   Ra_chunk_map COPYING every held chunk; a handful of presence probes is not that).
+Radio_playable(rec) {
+    if (this.Repli_chunk_at(rec, 0) == null) return 0
+    if (!this.top_House().c.humdinger) return 1
+    let seg_s = +(rec.sc.seg_secs || 2)
+    let total = +(rec.sc.total || 0)
+    let need = Math.ceil(4 / (seg_s > 0 ? seg_s : 2))
+    if (total > 0 && need > total) need = total
+    let k = 1
+    while (k < need) {
+        if (this.Repli_chunk_at(rec, k) == null) return 0
+        k = k + 1
+    }
+    return 1
+
+},
 // Radio_dial_pool — an unheard friend-crate record whose preview has begun to land (map[0]
 //  present — a husk plays silence, so presence IS playability).  Random across every crate.
 // `all` (2026-08-06): ignore heard-this-sitting — the EXHAUSTION pass.  Without it the caller cannot
@@ -1248,7 +1297,7 @@ Radio_dial_pool(w, radio, all) {
         for (const rec of this.Ra_recs(shelf)) {
             if (!all && radio.c.heard && radio.c.heard[rec.sc.id]) continue
             // presence, not materialisation — the same per-landed-chunk burn as Radio_lineup_fill above.
-            if (this.Repli_chunk_at(rec, 0) == null) continue
+            if (!this.Radio_playable(rec)) continue
             cands.push(rec)
         }
     }
@@ -1827,6 +1876,15 @@ async Stoker_tour(w, shelf) {
             }
         }
         await this.Ra_rec_drop(shelf, String(r.sc.id))
+        // TELL THE MIRRORS (2026-08-08, §3.9): this whittle is the biggest silent retirer in the
+        //  live app — every ~90s a HEALTHY tab drops a record its friends' mirrors still list, and
+        //   no delete ever crossed the wire (the goner-diff, Repli_sent_se, has callers only in
+        //    Books).  The stale mirror then asks for the dead id forever: the `serve want … no
+        //     record for id` storm, symmetric on both tabs.  Ledger the id here (runtime .c, never
+        //      snapped); the share beat flushes it to every registered caster via Repli_retire —
+        //       the wire's own withdrawal line, whose receive side already handles paged mirrors.
+        shelf.c.retire_due = shelf.c.retire_due || []
+        shelf.c.retire_due.push(String(r.sc.id))
         over = over - 1
         dropped = dropped + 1
     }

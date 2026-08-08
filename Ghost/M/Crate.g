@@ -921,19 +921,36 @@ async Crate_meta_from_tags(bytes, path):
         //  first as the FILING DEFAULT the heist chooser shows (the human accepts or re-files it, 2026-07-28
         //   "decide on a genre to keep|change we might file it under").  Absent → '' → the UI reads 'Unfiled'.
         tag = { artist: common.artist || '', album: common.album || '', title: common.title || '', genre: (common.genre && common.genre[0]) || '' }
+        // track + date (2026-08-08, the human: "no tracknumber or year tags coming in the .ogg we
+        //  make").  The daemon's ffmpeg rendition carries these for free (vorbis comments copy
+        //   through), so the browser rendition losing them was a silent asymmetry — the same track
+        //    heisted off two different peers landed with different tags.  music-metadata surfaces
+        //     track as {no, of} and the date as common.date (full string) over common.year (number);
+        //      stringified here because everything downstream of this return is sc-shaped scalars.
+        //  These keys ride the return CONDITIONALLY (absent, never ''): a caller stamping them
+        //   unguarded onto sc would otherwise brand the snap {"undef":[...]} — the mint-bug marker.
+        if (common.track && common.track.no) tag.track = '' + common.track.no
+        if (common.track && common.track.of) tag.trackof = '' + common.track.of
+        if (common.date || common.year) tag.date = '' + (common.date || common.year)
         if (md && md.format && typeof md.format.lossless === 'boolean') lossless = md.format.lossless
     } catch (er) {
         // a truncated|malformed|unrecognised file rejects here — NOT a crash: leave tag empty so all three
         //  fields fall back to the path, exactly as the old bounds-check-stops-the-walk did.
     }
     if (lossless == null) lossless = this.Crate_ext_lossless(path)
-    return {
+    let out = {
         artist: tag.artist || fallback.artist,
         album: tag.album || fallback.album,
         title: tag.title || fallback.title,
         genre: tag.genre,
         lossless: lossless,
     }
+    // no path fallback for these three — a filename's "01 - " is a guess, the tag is a statement,
+    //  and only statements ride (absent stays absent, the conditional-key rule above).
+    if (tag.track) out.track = tag.track
+    if (tag.trackof) out.trackof = tag.trackof
+    if (tag.date) out.date = tag.date
+    return out
 
 // Crate_ext_lossless — the FALLBACK quality guess when the codec parse gives nothing: is this path's
 //  extension a lossless container?  A crude last resort (an ext lies — a .m4a can be either), used only

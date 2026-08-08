@@ -157,6 +157,17 @@ Orig_opus_tags(rec, vendor):
     if (rec.sc.title) comments.push('TITLE=' + rec.sc.title)
     if (rec.sc.artist) comments.push('ARTIST=' + rec.sc.artist)
     if (rec.sc.album) comments.push('ALBUM=' + rec.sc.album)
+    // the rest of the catalog identity (2026-08-08).  The browser rendition wrote three tags while
+    //  the daemon's ffmpeg twin carried the source's whole comment block through — so which peer
+    //   served a track decided what its file remembered.  Crate_meta_from_tags now surfaces
+    //    track/trackof/date (conditionally — absent keys stay absent), and genre was extracted all
+    //     along but never written.  Standard vorbis-comment names: TRACKNUMBER/TRACKTOTAL/DATE/GENRE.
+    //  Existing %Records never carry these sc keys, so the export caller (:254) is byte-identical
+    //   until someone stamps them — no fixture moves.
+    if (rec.sc.track) comments.push('TRACKNUMBER=' + rec.sc.track)
+    if (rec.sc.trackof) comments.push('TRACKTOTAL=' + rec.sc.trackof)
+    if (rec.sc.date) comments.push('DATE=' + rec.sc.date)
+    if (rec.sc.genre) comments.push('GENRE=' + rec.sc.genre)
     let vb = this.Orig_str_bytes(vendor)
     // total length: magic + (4 + vendor) + 4 + sum(4 + comment)
     let total = magic.length + 4 + vb.length + 4

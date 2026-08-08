@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'a0541bd696b2133e~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '4ba90e192f2bf1df~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -1965,6 +1965,132 @@ Swarm_share_no(w, why) {
 //          .flac, sizes climbing then dropping non-monotonically.  `share_beat_running` skips firing a
 //           new beat while one is still in flight — the 600ms check keeps ticking so the very next free
 //            tick catches up immediately, no added latency once beats are fast again.
+// Swarm_cull_detached — kick the shuffle cull and BOW OUT.  The cull is a janitor whose cost is a
+//  per-record awaited disk expand, so its duration scales with the crate (539 dirs ⇒ tens of seconds)
+//   while everything the radio eats sits downstream of it in the beat.  Nothing in the beat reads its
+//    return, so the await bought us nothing and cost us the music.  Single-flight: `cull_flying` holds
+//     the start stamp, so a 30s sweep can never have a second copy started on top of it.
+//  It still REPORTS — `cull_bg_ms` is the last completed sweep's duration and rides the split as
+//   `cull_bg`.  Detaching a slow thing while also making it invisible would just move the mystery.
+Swarm_cull_detached(w, rw, stock) {
+    if (w.c.cull_flying) return 0
+    if (typeof this.Ra_shuffle_cull !== 'function') return 0
+    w.c.cull_flying = Date.now()
+    this.Ra_shuffle_cull(rw, stock).then(() => this.Swarm_cull_done(w)).catch(() => this.Swarm_cull_done(w))
+    return 1
+
+},
+// Swarm_cull_done — one line, two callers (settle and throw), so a cull that FAILS still clears the
+//  single-flight latch.  A latch left standing would silently retire the cull for the life of the tab.
+Swarm_cull_done(w) {
+    w.c.cull_bg_ms = Date.now() - (+(w.c.cull_flying || Date.now()))
+    w.c.cull_flying = 0
+
+},
+// Swarm_tour_detached / Swarm_tour_done — the cull's twin, for the collection conveyor.  Deliberately
+//  a SEPARATE pair rather than a shared generic: `Swarm_cull_detached`/`cull_bg_ms` are already named
+//   in MusuNeGrind's (unbuilt) assertions, and renaming them to save six lines would break a Book
+//    nobody has run yet — the worst kind of breakage to introduce, because it looks like it works.
+//  Same contract: single-flight on a start stamp, duration reported as `tour_bg`, latch cleared on
+//   BOTH settle and throw (a stuck latch would retire the conveyor for the life of the tab, and a
+//    collection that stops touring stops growing — silently, which is this page's whole failure mode).
+Swarm_tour_detached(w, rw, stock) {
+    if (w.c.tour_flying) return 0
+    if (typeof this.Stoker_tour !== 'function') return 0
+    w.c.tour_flying = Date.now()
+    this.Stoker_tour(rw, stock).then(() => this.Swarm_tour_done(w)).catch(() => this.Swarm_tour_done(w))
+    return 1
+
+},
+Swarm_tour_done(w) {
+    w.c.tour_bg_ms = Date.now() - (+(w.c.tour_flying || Date.now()))
+    w.c.tour_flying = 0
+
+},
+// ── Swarm_beat_health — STEP 1 OF THE SUPERVISOR (spec/Supervisor_todo.md §0) ──
+//  The human, after the third silent wedge found by pasting a console at me: "there has to be a
+//   supervisor built still, to discern all these moments when we should give up and reload."
+//  This is that, at its smallest honest size: a PURE READ over state that already exists, returning
+//   a verdict. No req, no UI, no action, no reload. Those are steps 2–4 and each wants its own proof.
+//
+//  THE ONE HARD PART is telling SLOW from STUCK, and elapsed time cannot do it: `Ra_shuffle_cull`
+//   legitimately runs 70s on a 543-directory crate, so at t=30s a healthy sweep and a permanent hang
+//    are identical. The distinguisher is MONOTONIC PROGRESS — did the furthest-reached phase advance
+//     since we last looked — which is why this reads a phase CURSOR and not a duration.
+//  AND THE THRESHOLD IS SELF-CALIBRATED, per phase. A constant is wrong by construction here: `keep`
+//   and `cull` differ by three orders of magnitude, so one number would either cry wolf at the cull or
+//    never fire for the rest. Each phase learns its own rolling median and is judged against ITS OWN
+//     typical cost. The medians live on `.c`, so a reload re-learns — correct for a supervisor (a
+//      fresh tab should not inherit a wedged tab's idea of normal), and noted so nobody "fixes" it
+//       into the snap later ([[learns-over-time-on-c-never-does]] is about caches that SHOULD persist;
+//        this is the opposite case).
+//
+//  Returns { state: 'ok'|'slow'|'stuck', phase, for_ms, why } — `phase` is always named, because a
+//   verdict that says only "something is wrong" spends the one thing this session proved valuable.
+
+// Swarm_beat_phase — the furthest phase this beat has completed, as a name.  The split is a PROGRESS
+//  BAR, not a cost table: fields are zeroed at the top of each beat and stamped only on completion, so
+//   the LAST NON-ZERO field is how far the beat got.  Reading it as costs is what hid the tour stall.
+Swarm_beat_phase(w) {
+    let sp = w.c.beat_split || {}
+    let order = ['cull', 'tour', 'flush', 'peers', 'keep']
+    let far = ''
+    for (const k of order) { if (+(sp[k] || 0) > 0) far = k }
+    return far
+
+},
+// Swarm_beat_note — call once per completed beat: fold each phase's cost into a rolling median-ish
+//  centre (an EWMA — a true median would need a window per phase and this is a watchdog, not a
+//   profiler) and stamp the phase cursor whenever it MOVES.  `phase_at` is the liveness clock.
+Swarm_beat_note(w) {
+    let sp = w.c.beat_split || {}
+    w.c.phase_avg = w.c.phase_avg || {}
+    for (const k of ['cull', 'tour', 'flush', 'peers', 'keep']) {
+        let v = +(sp[k] || 0)
+        if (v <= 0) continue
+        let prev = +(w.c.phase_avg[k] || 0)
+        w.c.phase_avg[k] = prev > 0 ? Math.round(prev * 0.8 + v * 0.2) : v
+    }
+    let far = this.Swarm_beat_phase(w)
+    if (far !== w.c.phase_far) {
+        w.c.phase_far = far
+        w.c.phase_at = Date.now()
+    }
+
+},
+Swarm_beat_health(w) {
+    if (!w || !w.c.share_up) return { state: 'ok', phase: '', for_ms: 0, why: 'share is down' }
+    let order = ['cull', 'tour', 'flush', 'peers', 'keep']
+    let far = this.Swarm_beat_phase(w)
+    let next = order[order.indexOf(far) + 1] || order[0]
+    let since = Date.now() - (+(w.c.phase_at || Date.now()))
+    // a beat that is not even in flight cannot be wedged — it is simply between beats.
+    if (!w.c.share_beat_running) return { state: 'ok', phase: next, for_ms: since, why: 'idle between beats' }
+    // the phase we are WAITING ON is the one after the furthest completed one.
+    let typical = +((w.c.phase_avg || {})[next] || 0)
+    let K = +(w.c.beat_stuck_k || 20)
+    let floor_ms = +(w.c.beat_stuck_floor_ms || 30000)
+    let bar = Math.max(floor_ms, typical * K)
+    if (since > bar) return { state: 'stuck', phase: next, for_ms: since, why: `${next} has not completed in ${Math.round(since / 1000)}s (typical ${typical}ms)` }
+    if (since > bar / 3) return { state: 'slow', phase: next, for_ms: since, why: `${next} running long (typical ${typical}ms)` }
+    return { state: 'ok', phase: next, for_ms: since, why: '' }
+
+},
+// Swarm_detached_health — §4b: the blind spot the detaches INTRODUCED.  A detached verb that never
+//  settles leaves `flying` set forever while the beat sails past it looking perfectly healthy, so the
+//   phase cursor above can report `ok` on a tab whose conveyor died. Judged the same way: against its
+//    own learned duration, never a constant.
+Swarm_detached_health(w) {
+    let out = []
+    for (const it of [{ k: 'cull', fly: w.c.cull_flying, bg: w.c.cull_bg_ms }, { k: 'tour', fly: w.c.tour_flying, bg: w.c.tour_bg_ms }]) {
+        if (!it.fly) continue
+        let since = Date.now() - (+(it.fly || Date.now()))
+        let bar = Math.max(+(w.c.detached_stuck_floor_ms || 180000), (+(it.bg || 0)) * 4)
+        if (since > bar) out.push({ state: 'stuck', phase: it.k + '(detached)', for_ms: since, why: `${it.k} has been flying ${Math.round(since / 1000)}s (last completed ${+(it.bg || 0)}ms)` })
+    }
+    return out
+
+},
 async Swarm_share_loop(w, ident) {
     w.c.share_era = (w.c.share_era || 0) + 1
     let era = w.c.share_era
@@ -1977,7 +2103,10 @@ async Swarm_share_loop(w, ident) {
                 //  pastes, and until 2026-08-08 it named no cause.  cull/tour are disk+dig, peers is the
                 //   offer loop, keep is Heist_keep_beat — the whole heist driver, awaited inline.
                 let sp = w.c.beat_split || {}
-                console.log(`⏳ Swarm_share_beat still running past 600ms — skipping this tick (×${w.c.share_beat_skipped} so far) instead of overlapping it · last beat: cull=${+(sp.cull || 0)} tour=${+(sp.tour || 0)} peers=${+(sp.peers || 0)} keep=${+(sp.keep || 0)} (ms)`)
+                // READ THIS AS A PROGRESS BAR, NOT A COST TABLE.  beat_split is zeroed at the top of
+                //  each beat and each phase stamped only on completion, so the LAST NON-ZERO field is
+                //   where the in-flight beat got to — an all-zero line means it never finished phase 1.
+                console.log(`⏳ Swarm_share_beat still running past 600ms — skipping this tick (×${w.c.share_beat_skipped} so far) — the last non-zero field below is how FAR the stuck beat got · cull=${+(sp.cull || 0)} tour=${+(sp.tour || 0)} flush=${+(sp.flush || 0)} peers=${+(sp.peers || 0)} (pump=${+(sp.pump || 0)} warm=${+(sp.warm || 0)}) keep=${+(sp.keep || 0)} · detached: cull_bg=${+(sp.cull_bg || 0)}${w.c.cull_flying ? '(flying)' : ''} tour_bg=${+(sp.tour_bg || 0)}${w.c.tour_flying ? '(flying)' : ''} · lead=${+(w.c.lead_s || 0)}s restock_held=${+(w.c.restock_held || 0)} (ms)`)
             }
         } else {
             w.c.share_beat_running = true
@@ -1991,6 +2120,12 @@ async Swarm_share_loop(w, ident) {
                 //    the whole heist, stops dead with no error anyone sees.  (Learned the hard way the same
                 //     day the electrode below was added.)  Instrumentation goes AFTER the reset, wrapped.
                 w.c.share_beat_running = false
+                // SUPERVISOR STEP 1 (Supervisor_todo §4a): fold this beat's phase costs into their
+                //  rolling centres and move the phase cursor.  AFTER the guard reset and wrapped, for
+                //   the same reason the electrode below is: a throw between the beat and the reset is a
+                //    permanent freeze, and a watchdog that can wedge the thing it watches is worse than
+                //     none.  Cheap — five numbers and a comparison, no allocation per beat.
+                try { this.Swarm_beat_note(w) } catch (er) {}
                 // ELECTRODE (2026-08-05) — BEAT HEALTH, and it is silent in health.  A beat that outruns the
                 //  600ms cadence makes the NEXT tick get skipped by the busy guard above, which is how a long
                 //   landing steals the very window the OVERLAP pre-ask needed.  `ms` is this beat, `skips` is
@@ -2000,7 +2135,7 @@ async Swarm_share_loop(w, ident) {
                 let ms = Date.now() - t0
                 if (ms > 600 && typeof this.Radio_trace === 'function') {
                     let sp = w.c.beat_split || {}
-                    try { this.Radio_trace(null, { ev: 'beat', ms: ms, skips: +(w.c.share_beat_skipped || 0), cull: +(sp.cull || 0), tour: +(sp.tour || 0), peers: +(sp.peers || 0), keep: +(sp.keep || 0) }) } catch (er) {}
+                    try { this.Radio_trace(null, { ev: 'beat', ms: ms, skips: +(w.c.share_beat_skipped || 0), cull: +(sp.cull || 0), tour: +(sp.tour || 0), peers: +(sp.peers || 0), pump: +(sp.pump || 0), warm: +(sp.warm || 0), keep: +(sp.keep || 0), cull_bg: +(sp.cull_bg || 0) }) } catch (er) {}
                 }
             }, { see: 'swarm_share_beat' })
         }
@@ -2078,8 +2213,27 @@ async Swarm_share_beat(w, ident) {
     //  Four numbers cost four Date.now() calls per beat and turn the next paste into an answer instead of
     //   a suspicion.  Written to `.c` (runtime, never encoded) and read by the loop's electrode + skip log.
     let tmark = Date.now()
-    w.c.beat_split = { cull: 0, tour: 0, peers: 0, keep: 0 }
-    await this.Ra_shuffle_cull(rw, stock)
+    w.c.beat_split = { cull: 0, tour: 0, flush: 0, peers: 0, keep: 0, cull_bg: +(w.c.cull_bg_ms || 0), tour_bg: +(w.c.tour_bg_ms || 0) }
+    // ── THE CULL FLIES DETACHED (2026-08-08) — the split's first verdict, and it was the cull ──
+    //  Measured on the human's tab: `cull=8475`, `cull=12327`, `cull=29671` with tour/peers/keep all 0.
+    //   So the ×221 skipped ticks were ONE phase, and not the one I suspected (I had written the heist
+    //    keep beat up as the likely culprit in Composition_todo §3.6 — the electrode refuted me).
+    //  WHY IT IS SO SLOW: `Ra_source_alive` is an awaited FSA directory expand PER RECORD, walked
+    //   serially over the whole shuffle Mag.  On a 539-directory crate that is hundreds of serial disk
+    //    round trips.  Its 30s throttle bounds how OFTEN it starts, not how long it holds the beat — and
+    //     at 29.7s it very nearly runs back-to-back with itself.
+    //  WHY THAT STARVES THE MUSIC: everything the radio eats is DOWNSTREAM of this await —
+    //   `Ra_transcode_pump` (the encoder frontier, so the 32s preview boundary never advances),
+    //    `Ra_mag_warm`, `Ra_restock_beat`, and the full-length lead pass.  A janitor sweep was holding
+    //     the supply chain hostage for up to half of every 60 seconds.  That is the starvation.
+    //  THE FIX IS THE CALL, NOT THE SWEEP: the cull is a JANITOR — nothing in this beat reads its
+    //   result, and its own comment already says "a cull re-offers by itself" because the drop changes
+    //    the offer mark on a LATER beat.  So it does not need to be awaited here; it needs to not be in
+    //     the way.  One in flight at a time (`cull_flying`), and its duration still gets reported, now as
+    //      `cull_bg` — detaching a slow thing must not also make it invisible.
+    //  Concurrency is the ordinary `o()` snapshot rule: the cull collects THEN drops, and every other
+    //   walker here iterates its own fresh `o()` array, so a detached drop cannot corrupt a live walk.
+    this.Swarm_cull_detached(w, rw, stock)
     w.c.beat_split.cull = Date.now() - tmark
     tmark = Date.now()
     // AND KEEP THE WINDOW MOVING (the owner's conveyor, 2026-08-07): spawn at the end, whittle off
@@ -2087,8 +2241,33 @@ async Swarm_share_beat(w, ident) {
     //   cull for the same reason that one is here — the share beat is the live-only seam, so no
     //    Book can ever see a spontaneous dig — and BEFORE the offer below, so a turn of the wheel
     //     re-offers on the same beat it happens rather than waiting out the floor.
-    await this.Stoker_tour(rw, stock)
+    // ── AND THE TOUR FLIES DETACHED TOO (2026-08-08, the SAME disease one organ along) ──
+    //  The reading that convicted the cull convicted this next, and the tell was every phase reading
+    //   ZERO while the beat overran ×241.  That is not "the beat is fast" — `beat_split` is zeroed at
+    //    the TOP of each beat and each phase is stamped only when it FINISHES, so an all-zero split
+    //     means the beat is wedged BEFORE the first stamp lands.  `cull=0` is now honest (the kick is
+    //      sync); the first thing after it that can hang is this tour.  Same signature was already in
+    //       the pre-detach paste (`cull=8475 tour=0 …`), so the tour stall PREDATES the retire flush
+    //        below — it was simply hidden behind a cull that hogged the beat first.
+    //  WHY IT IS SAFE TO DETACH: nothing in the beat reads a return value. The offer `mark` reads
+    //   `Stoker%toured` off the particle, so a turn of the wheel is picked up by whichever beat runs
+    //    after it lands — one beat later, which is exactly what the mark is for.
+    //  WHAT THIS UNBLOCKS: everything downstream — the offer loop, `Ra_transcode_pump` (and with it
+    //   the 32s ceiling), `Ra_mag_warm`, `Ra_restock_beat`, the lead pass. A wedged tour meant a tab
+    //    that never offered and never transcoded, which is precisely "neither is taking the other's
+    //     stream" with a healthy-looking relay.
+    this.Swarm_tour_detached(w, rw, stock)
     w.c.beat_split.tour = Date.now() - tmark
+    tmark = Date.now()
+    // …AND TELL THE MIRRORS WHAT THE WHEEL DROPPED (2026-08-08, §3.9): the tour ledgers every
+    //  whittled id on `stock.c.retire_due`; flush it to every registered caster as the wire's own
+    //   op:delete line (Repli_retire — built, Book-proven, and never called live until today).
+    //    Without this every drop leaves a stale mirror that asks for the dead id forever — the
+    //     symmetric `serve want … no record for id` storm.  TIMED SEPARATELY (`flush`) rather than
+    //     folded into `tour`: I added it minutes before this stall was read, and a mark that cannot
+    //      exonerate my own newest edit is worth nothing.
+    if (typeof this.Repli_retire_flush === 'function') await this.Repli_retire_flush(w, me, stock)
+    w.c.beat_split.flush = Date.now() - tmark
     tmark = Date.now()
     this.Swarm_boast_floor(w, ident)
     for (const p of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
@@ -2131,15 +2310,46 @@ async Swarm_share_beat(w, ident) {
         }
     }
     for (const peering of w.o({ Peering: 1 })) await peering.do()
+    // FINER GRAIN under `peers` (2026-08-08, hours after the split shipped): the four-way split
+    //  convicted the cull in one paste, but its `peers` bucket spans the offer loop, the Peering
+    //   drains, THE TRANSCODE PUMP, the warm/restock walk, and the lead pass — so it cannot say what
+    //    the pump itself costs, and the pump is the verb the 32s ceiling hangs off.  Two more marks
+    //     (`pump`, `warm`) cut that bucket into the pieces that matter; `peers` keeps its meaning as
+    //      "everything in this bucket", so old readings stay comparable.
+    w.c.beat_split.pump = 0
+    w.c.beat_split.warm = 0
+    let pmark = Date.now()
     if (typeof this.Ra_transcode_pump === 'function') await this.Ra_transcode_pump(w)
+    w.c.beat_split.pump = Date.now() - pmark
+    pmark = Date.now()
+    // ── THE TRACK IN YOUR EARS BEATS THE ONE THAT MIGHT BE NEXT (the human 2026-08-08: "are we just
+    //  prioritising stuff like crap?" — yes, we were, and their tab proved it) ──
+    //  MEASURED on the live tab: FIVE distinct records held parked wants at the caster simultaneously
+    //   (`waiting=` climbing past 30), four of them stalled at off=16 for 95–324s while exactly one
+    //    advanced. Only ONE of those five was in anybody's ears. `Ra_restock_beat` deepens previews
+    //     across the WHOLE mirror crate every beat, so the playhead's asks queue behind a pile of
+    //      speculative ones — and the source's pump, which spends a bounded budget per record per
+    //       beat, then spreads that budget across all five. Nobody was prioritising anything.
+    //  THE LADDER, in the owner's own words: "prioritise the current track over the potential next
+    //   track, unless we're >16s ahead". The lead pass already spends its ASK budget on that ladder;
+    //    this applies the same rule one level up, to whether the speculative traffic runs at all.
+    //  `warm` is deliberately NOT gated: it is chunk 0 of two records per mirror — the dial's whole
+    //   domain ([[dial-domain-is-the-warm-window]]), so starving it would leave the radio with
+    //    nothing to turn TO, which is a worse failure than a thin lead. Only the deep restock waits.
+    //  Reads the PREVIOUS beat's lead (the leg that computes it runs below, ~600ms later). Staleness
+    //   is the point of `lead_at`: no fresh stamp ⇒ nothing is playing ⇒ no gate, restock full speed.
+    let lead_fresh = w.c.lead_at && (Date.now() - w.c.lead_at) < 3000
+    let hungry = lead_fresh && +(w.c.lead_s || 0) < 16
+    w.c.restock_held = hungry ? (+(w.c.restock_held || 0)) + 1 : 0
     for (const home of rw.o({ MusuThem: 1 })) {
         if (!home.sc.pub) continue
         let shelf = this.Ra_home_them(rw, String(home.sc.pub))
         // the §5 warm start FIRST (2 records × their opening page — autostart-ready fast),
         //  then the restock deepens whole previews behind it.
         await this.Ra_mag_warm(w, shelf)
-        await this.Ra_restock_beat(w, shelf, 2)
+        if (!hungry) await this.Ra_restock_beat(w, shelf, 2)
     }
+    w.c.beat_split.warm = Date.now() - pmark
     // ── the FULL-LENGTH leg: the radio is playing a FRIEND's record — keep the wire ahead of
     //  the REAL playhead (never the Books' simulated cursor: Ra_term_stream_beat advances its
     //   own head, and a second playhead racing the AudioContext would lie).  Want the next
@@ -2161,9 +2371,33 @@ async Swarm_share_beat(w, ident) {
         w.c.ra_wanted = w.c.ra_wanted || {}
         w.c.ra_want_ts = w.c.ra_want_ts || {}
         let nowms = Date.now()
+        // THE LEAD LADDER (2026-08-08, the owner: "the main cause is not prioritising the Records
+        //  enough … prioritise the current track over the potential next track, unless we're >16s
+        //   ahead").  The ask budget was a FLAT 3 per beat whether the playhead had 30 seconds of
+        //    audio banked or two — which is the definition of not prioritising: a comfortable track
+        //     spent exactly the same wire as a starving one.  Count the CONTIGUOUS chunks held from
+        //      the head (a hole ends the lead — audio past a gap is not lead, it is after the gap)
+        //       and spend accordingly:
+        //        under 8s banked  → 6 asks, we are nearly dry and nothing else matters;
+        //        under 16s banked → 3 asks, the old constant, holding station;
+        //        16s or more      → 1 ask, just top the window up and leave the wire to everyone else.
+        //  That last rung IS the owner's "unless we're >16s ahead": a comfortable current track stops
+        //   hogging the beat, which is what leaves room for the next track's pages and the heist.
+        //  seg_s is per chunk (2s), so 4 chunks = 8s, 8 chunks = 16s — the ladder is in SECONDS, and
+        //   is written in chunks here only because the map is.
+        let lead = 0
+        while (map[head + lead] != null && lead < 64) { lead = lead + 1 }
+        let lead_s = lead * seg_s
+        let budget = 6
+        if (lead_s >= 16) { budget = 1 } else if (lead_s >= 8) { budget = 3 }
+        w.c.lead_s = lead_s        // off-snap, for the electrode + the Brink to read
+        // STAMPED, so a LATER beat can tell "the playhead is comfortable" from "nobody is playing".
+        //  A bare lead_s is indistinguishable between the two the moment the radio stops, and the
+        //   restock gate below would then throttle itself forever off a corpse reading.
+        w.c.lead_at = nowms
         let asked = 0
         let off = head - (head % PAGE)
-        while (off < total && off < head + 16 && asked < 3) {
+        while (off < total && off < head + 16 && asked < budget) {
             // PAGE-WIDE, not the stride-aligned chunk alone (Ra_page_hole, Ra.g).  A live-window page
             //  that lost ONE of its chunks to the relay's bulk-lane shed read as held here, so the
             //   playhead ran into a hole this loop had already decided was filled — and re-asked nothing.
@@ -2177,8 +2411,15 @@ async Swarm_share_beat(w, ident) {
                 //      page every 4s (bounded by asked<3/beat + the head+16 window), so a lost page
                 //       self-heals in a few seconds instead of dropping the audio.  ra_want_ts carries
                 //        the last-ask stamp beside the once-cursor; both clear on the same rebirth reset.
+                //  …AND THE RE-ASK INTERVAL RIDES THE LADDER TOO (2026-08-08).  A flat 4s was the last
+                //   constant in this loop, and it is the cruellest one when the playhead is nearly dry:
+                //    at seg_secs=2 it means a lost page costs FOUR SECONDS — two whole chunks of silence
+                //     — before anyone asks again, which is most of the 6s starve grace in Radio.g:439.
+                //      Under 8s banked, chase it every 1.5s; otherwise keep the 4s that was tuned for a
+                //       comfortable stream and which exists to stop a re-ask storm on a healthy wire.
+                let again_ms = lead_s < 8 ? 1500 : 4000
                 let last = w.c.ra_want_ts[key] || 0
-                if (nowms - last > 4000) {
+                if (nowms - last > again_ms) {
                     w.c.ra_want_ts[key] = nowms
                     w.c.ra_wanted[key] = 1
                     await this.Repli_want_next(w, playing.c.rx, me, String(playing.c.from), String(playing.sc.id), 'opus', off)

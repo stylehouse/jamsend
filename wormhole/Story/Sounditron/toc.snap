@@ -98,38 +98,38 @@ story:Sounditron
         lematch,Need
           means,spayer,re:Need:(.*),tol:any
   TimeSpool
-    TimeTotal:beliefs,avg=0.115
-      sample=0.108,at=1786153743
-      sample=0.141,at=1786153847
-      sample=0.111,at=1786153971
-      sample=0.109,at=1786154057
-      sample=0.072,at=1786154149
-      sample=0.11,at=1786154477
-      sample=0.087,at=1786158657
-      sample=0.088,at=1786159756
-      sample=0.126,at=1786160487
-      sample=0.199,at=1786160603
-    TimeTotal:step,avg=0.014
-      sample=0.013,at=1786153743
-      sample=0.018,at=1786153847
-      sample=0.014,at=1786153971
-      sample=0.014,at=1786154057
-      sample=0.009,at=1786154149
-      sample=0.014,at=1786154477
-      sample=0.011,at=1786158657
-      sample=0.011,at=1786159756
-      sample=0.016,at=1786160487
-      sample=0.025,at=1786160603
+    TimeTotal:beliefs,avg=0.19
+      sample=0.141,at=1786164860
+      sample=0.224,at=1786164887
+      sample=0.149,at=1786165031
+      sample=0.107,at=1786165132
+      sample=0.305,at=1786165740
+      sample=0.377,at=1786166146
+      sample=0.149,at=1786166771
+      sample=0.216,at=1786166826
+      sample=0.118,at=1786167870
+      sample=0.118,at=1786167991
+    TimeTotal:step,avg=0.024
+      sample=0.018,at=1786164860
+      sample=0.028,at=1786164887
+      sample=0.019,at=1786165031
+      sample=0.013,at=1786165132
+      sample=0.038,at=1786165740
+      sample=0.047,at=1786166146
+      sample=0.019,at=1786166771
+      sample=0.027,at=1786166826
+      sample=0.015,at=1786167870
+      sample=0.015,at=1786167991
   step,dige:c3620e932e4cada2
-  step=2,dige:9e1150037311e7d6,desc:the machine stands
+  step=2,dige:c777c265e7a31048,desc:the machine stands
     Assertion:machine-stood,sentence:the machine stood — an addressable self emerged on the spine
-  step=3,dige:f4d32d8271f8b6a7,desc:the relay answers
+  step=3,dige:0206d2c7e73a4a35,desc:the relay answers
     Assertion:relay-answers,sentence:the relay answers — the channel stood and frames can cross
-  step=4,dige:3ae9a455d8ebcd9a,desc:who could we reach
+  step=4,dige:3dd19f945b38e3c4,desc:who could we reach
     Assertion:possibilities-surveyed,sentence:the possibilities of peers were surveyed — every known address counted
-  step=5,dige:a70182284b758e78,desc:reach for a peer
-  step=6,dige:0c752de55d16b40e,desc:does sound run here
-  step=7,dige:7640ae5a9abdf56e,desc:the music runs
+  step=5,dige:ee763148a94e750c,desc:reach for a peer
+  step=6,dige:5131ce059dfc81ec,desc:does sound run here
+  step=7,dige:83346cfb0635efde,desc:the music runs
     Assertion:music-runs,sentence:the music played — record chunks decoded onto the live timeline
-  step=8,dige:197f9a711897d40b,desc:sum and report
+  step=8,dige:e7d06bc50d9e700b,desc:sum and report
     Assertion:report-stands,sentence:the session summed itself — a report stands ready to travel

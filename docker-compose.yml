@@ -287,9 +287,27 @@ services:
       # LOG lands on the BIND MOUNT on purpose: it is the only way a sibling container (claude, which
       #  has no docker socket) can read what jamserve did.  Gitignored.
       - LOG=/app/jamserve/run.log
-      # exit on a timer so `restart: always` re-launches on freshly-edited source — which is why no
-      #  `up --build` loop is needed to iterate.  JAMSERVE_SECS=0 for a box that never voluntarily exits.
-      - SECS=${JAMSERVE_SECS:-900}
+      # 0 = NEVER voluntarily exit (2026-08-08).  This defaulted to 900 so `restart: always` would
+      #  re-launch on freshly-edited source, which is why no `up --build` loop is needed to iterate.
+      #   That convenience cost more than it bought: a heist resumed by KEEP-ID, and the source resolves
+      #    keep-ids only out of `w.c.rummage_libs` / `w.c.keep_memo` — both runtime-only `.c` (Heist.g
+      #     :1893).  So every exit wiped this box's ability to answer for anything it had already
+      #      offered, and the asker re-asked dead ids forever while looking perfectly healthy
+      #       (`◈✗ serve want id=… — no record for id`).  A haul longer than 15 minutes could not
+      #        complete, by construction.
+      #  The iteration convenience is not lost — `/stop` does the same job on demand and is reachable
+      #   from the claude container: `curl "http://172.17.0.1:9099/stop?token=$STATUS_TOKEN"`, and
+      #    `restart: always` brings it back on the edited source.  Set JAMSERVE_SECS=900 to get the
+      #     timer back for a scripted smoke run.
+      - SECS=${JAMSERVE_SECS:-0}
+      # HEAP CAP, well under the 3G cgroup limit below (2026-08-08).  V8 sizes its default old-space
+      #  from the HOST's total memory, not the container's — so without this node happily grows past
+      #   the limit and the KERNEL kills it: SIGKILL, no drain, mid-write.  With it, node collects
+      #    harder first, and a heap it genuinely cannot fit throws a JS OOM the daemon can log and
+      #     exit cleanly on (draining pending writes) instead of vanishing.
+      #  2048 not 3072: the cgroup accounts node's external buffers AND every ffmpeg it spawns, which
+      #   are not in the JS heap at all.  The ~1G of headroom is for those, not slack.
+      - NODE_OPTIONS=${JAMSERVE_NODE_OPTIONS:---max-old-space-size=2048}
       # `app`'s relay over the docker bridge it already publishes to.  A RUNTIME dependency, not just
       #  boot-time: Auto.svelte and Tyranny.svelte fetch /log?stream= during normal operation and
       #   resolve it against ORIGIN (Daemon_todo §8.5).
@@ -330,6 +348,17 @@ services:
           # roomier than `app`: this one decodes and re-encodes audio while holding a radio's warm
           #  window.  rec.c.pcm pinned ~92MB per record before the 2026-08-07 fix, so the headroom
           #   is not theoretical.
+          # ⚠ AN OOM KILL IS SIGKILL, AND IT COSTS MORE HERE THAN IT LOOKS (2026-08-08).  `restart:
+          #  always` brings the box back, so this reads like a clean backstop — but the daemon's
+          #   heist keep-id map (`w.c.keep_memo`, Heist.g:1893) is runtime-only `.c`, so every death
+          #    strands whatever haul was in flight: the asker re-asks dead ids forever, looking
+          #     perfectly healthy while nothing lands.  That is the exact failure the 900s SECS timer
+          #      was causing until it was turned off today.  So this limit is a BACKSTOP against a
+          #       runaway, not a routine recycle — if it fires in normal use the answer is to find
+          #        what grew, not to raise the number.  NODE_OPTIONS above exists to make node throw
+          #         (and drain) before the kernel gets to SIGKILL it.
+          #  Measure before changing: /status now carries `mem` with a high-water `hi`, and the ♥
+          #   pulse prints `NNNMB/hi NNN`.  Nothing measured this when 3G was first written down.
           cpus: '2.0'
           memory: 3G
           pids: 512

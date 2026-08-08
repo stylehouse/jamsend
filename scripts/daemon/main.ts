@@ -623,6 +623,26 @@ const friendly_of = (pub8: string): string => {
     return pub8 || '?'
 }
 
+// mem_state — WHAT THIS BOX IS HOLDING, and the peak it has ever held.  Added 2026-08-08 because
+//  `docker-compose.yml` caps jamserve at 3G and NOTHING measured whether that number bore any
+//   relation to reality — it was set against the old `rec.c.pcm` pinning (~92MB per record) and has
+//    never been checked since that got an owner.  A limit nobody measures against is a coin flip:
+//     too low and the box dies mid-haul, too high and a leak runs for hours before anyone notices.
+//  `hi` is the high-water mark, and it is the one that matters.  RSS sampled every 10s tells you
+//   almost nothing about a process that allocates in bursts (a whole-remainder ffmpeg queue, a
+//    census, a landing) — the peak is what the cgroup killer actually reacts to, and it is invisible
+//     to any amount of staring at instantaneous readings.
+//  V8 heap is reported BESIDE rss on purpose.  They answer different questions: heap climbing with
+//   rss flat is a JS leak, rss climbing with heap flat is buffers|subprocess|external (which on this
+//    box means audio bytes, the likelier one).  A single number cannot tell those apart.
+let mem_hi = 0
+const mem_state = () => {
+    const m = process.memoryUsage()
+    const mb = (n: number) => Math.round(n / 1048576)
+    if (m.rss > mem_hi) mem_hi = m.rss
+    return { rss: mb(m.rss), hi: mb(mem_hi), heap: mb(m.heapUsed), heap_cap: mb(m.heapTotal), ext: mb(m.external) }
+}
+
 // serve_state — WHO THIS BOX IS ACTUALLY FEEDING, the one thing the log never said.  "A peer is
 //  connected" and "bytes are leaving for that peer" are different claims, and only the second one
 //   means the box is doing its job; all morning the first was true and the second was false, and
@@ -685,6 +705,7 @@ const stats = () => {
             worlds: (h.o?.({ A: 1 }) ?? []).map((A: any) => `${A.sc.A}/${(A.o?.({ w: 1 }) ?? []).map((w: any) => w.sc.w).join(',')}`),
         })),
         wedge: (H.top_House?.() as any)?.mutex_held?.('beliefs') ?? null,
+        mem: mem_state(),
         inside: probe_line(),
         book: book_state(),
         stock: stock_state(),
@@ -1318,6 +1339,11 @@ while (!stopping) {
             //  bare reports a "wedge" whenever the heartbeat lands mid-think.  A wedge is a pass
             //   that STOPPED, and 2s is far past any healthy one.
             + (s.wedge && s.wedge.ms > 2000 ? `  ⚠ WEDGE ${Math.round(s.wedge.ms / 1000)}s by ${s.wedge.who}` : '')
+            // ON THE PULSE, NOT IN THE CHANGE-GATE.  rss moves every single beat by construction, so
+            //  putting it in `sig_of` would wedge the gate permanently open — the exact bug the
+            //   `tour Ns ago` readout caused when this gate was first written.  It rides the ♥ line,
+            //    which prints unconditionally anyway, and contributes nothing to the signature.
+            + `  ${s.mem.rss}MB${s.mem.hi > s.mem.rss ? '/hi ' + s.mem.hi : ''}`
             // same reasoning as the wedge above: unprovisioned looks exactly like provisioned from
             //  out here, so the heartbeat has to carry it or nobody finds out.  Empty when correct.
             + nag_identity())

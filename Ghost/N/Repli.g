@@ -458,6 +458,34 @@ async Repli_retire(w, tx, from, to, id):
     let line = this.enL({ d: 0, stringies: { Record: 1, id: id }, objecties: { loc: ['Record', 'id'], op: 'delete' } })
     await this.Repli_send_lines(w, tx, from, to, line, { list: [] })
 
+// Repli_retire_flush — drain a shelf's goner ledger (`shelf.c.retire_due`, stamped where records are
+//  dropped — the tour whittle first, Radio.g) to EVERY registered caster.  This is the live wiring the
+//   goner-diff never had: Repli_retire existed and its receive side handles paged mirrors, but until
+//    2026-08-08 nothing in the live app ever called it — sources silently retired records and every
+//     friend's mirror went stale (§3.9, the symmetric `no record for id` storm).
+//  Drains BEFORE sending (a throw mid-flush loses that batch's tells rather than re-sending forever —
+//   the 60s re-offer floor cannot resurrect a deleted record, and a stale mirror is exactly what we
+//    already had, so the failure mode is bounded by the status quo).  One line per id per caster; the
+//     tour drops ~1 record/90s, so this is noise-level wire.
+async Repli_retire_flush(w, from, shelf):
+    let due = shelf && shelf.c && shelf.c.retire_due
+    if (!due || !due.length) return 0
+    shelf.c.retire_due = []
+    let piers = []
+    for (const p of (w.c.repli_casters || [])) piers.push(p)
+    if (w.c.tx && !piers.includes(w.c.tx)) piers.push(w.c.tx)
+    let sent = 0
+    for (const id of due) {
+        for (const pier of piers) {
+            let to = pier && pier.sc && pier.sc.pub
+            if (!to) continue
+            await this.Repli_retire(w, pier, from, String(to), String(id))
+            sent = sent + 1
+        }
+        this.Radio_trace(null, { ev: 'retired', id: String(id).slice(0, 8), piers: piers.length })
+    }
+    return sent
+
 // Repli_recommend — communicate about a Record WITH a word about it: the %Reco note is knowledge attached
 //  to the Record (the C** around a Record IS the knowledge graph), so the ONE offer fragment carries the
 //   thing and what's said about it together — record head + %Stream + %preview set + %Reco, all as lines.
@@ -587,6 +615,25 @@ Repli_recv_missed(w, frame):
     if (h.id == null) return
     w.c.ra_missed = w.c.ra_missed || {}
     w.c.ra_missed[String(h.id)] = Date.now()
+
+// Repli_missed_hot — "has the source recently told us, in as many words, that it does not have this?"
+//  Until 2026-08-08 `ra_missed` had exactly ONE reader (Heist's pull beat) and the MUSIC path had none,
+//   so every crate-walking want site re-asked a disclaimed id on its RTO ladder for the life of the tab.
+//    Measured on the human's console: ~600 `repli_missed` frames in two minutes, both directions.
+//  A BACKOFF, NEVER A BAN — a source can genuinely regain a record (a re-stock, a re-page, a rebirth),
+//   so the entry SELF-EXPIRES: past the window the key is deleted and the next ask goes through. That
+//    also keeps the map from growing without bound, which a permanent blacklist would not.
+//  Deliberately does not touch `pcm_retry_at` or any try counter: being told "I don't have it" is a
+//   FACT, not a failure, and conflating the two would make a recovered record pay a failure ladder.
+Repli_missed_hot(w, id):
+    let m = w.c.ra_missed
+    if (!m || id == null) return 0
+    let key = String(id)
+    let at = +(m[key] || 0)
+    if (!at) return 0
+    if (Date.now() - at < +(w.c.ra_missed_hold_ms || 60000)) return 1
+    delete m[key]
+    return 0
 
 // Repli_serve_parked — the transcoder advanced: every parked want whose page is NOW ready re-enters
 //  Repli_serve_want with its remembered addressing, and the spent %parked_want goes; the rest keep
