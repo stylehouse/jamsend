@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Orig(): string { return 'f0db152f424becc8~g1' },
+    Ghostmeta_Ghost_M_Orig(): string { return '406e671ce36779ac~g1' },
 
 // Orig.g — the %Original / grade-dispatch layer (Radio_spec §2.4).  Ra.g owns the streaming pipeline
 //  (raw length-prefixed opus packets, container DELETED from the wire); THIS ghost is where a real
@@ -315,6 +315,20 @@ async Orig_ogg_export(w, nav, rec, dir, name) {
 //  Returns { bytes, packets, seconds, nch } or null — null on any missing codec (an old browser has no
 //   AudioEncoder), never a throw, because the caller falls back to shipping the original.
 async Orig_ogg_from_source(w, raw, meta) {
+    // THE NATIVE FORK (2026-08-08).  Headless this used to return null on the very next line, and
+    //  Heist_materialise_one did exactly what its comment promises — shipped the ORIGINAL instead.  So
+    //   a daemon honoured the LOFI tick and sent 30MB FLACs anyway, saying so only on a stdout nobody
+    //    reads.  The daemon has ffmpeg; ask it the same question (Daemon_todo §2.1, the Ra_native seam).
+    //  AND IT ANSWERS IN VORBIS, not opus — the one place in this codebase where opus is wrong.  LOFI
+    //   exists for the destination's player, and a 12-year-old phone has no Opus-in-Ogg decoder while
+    //    Vorbis has been universal since ~2005.  The browser path below stays opus: WebCodecs has no
+    //     vorbis encoder, so a tab cannot make one, and a tab is not the thing feeding the phone.
+    let nat = (typeof this.Ra_native === 'function') ? this.Ra_native() : null
+    if (nat && typeof nat.ogg === 'function') {
+        let og = await nat.ogg(new Uint8Array(raw), (meta && meta.title) ? meta.title : 'source')
+        if (og && og.bytes && og.bytes.length) return { bytes: og.bytes, packets: null, seconds: og.seconds, nch: 0 }
+        return null
+    }
     if (typeof OfflineAudioContext === 'undefined' || typeof AudioEncoder === 'undefined') return null
     // ONE TRANSCODE AT A TIME, PER WORLD.  Each in-flight one holds a decoded AudioBuffer (~64MB for a
     //  3-minute stereo track) plus its packets plus the muxed ogg, and the source answers materialise asks

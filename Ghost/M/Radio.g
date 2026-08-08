@@ -18,7 +18,8 @@
 //  INSTANT-ON (2026-07-19): the dig is PRE-EMPTED wherever possible.  A commissioner may
 //   Stoker_preheat at boot (one churn while the radio is still off — the first ▶ finds stock
 //    STANDING); a landing NUDGES a digging radio awake mid-poll (Radio_nudge — never wait out
-//     the 3s look); and the dial turns ~2s BEFORE the frontier, so the next record's first
+//     the dig poll — 800ms, Radio_pump_tick's own tail call, NOT the "3s" this said until
+//      2026-08-08); and the dial turns ~2s BEFORE the frontier, so the next record's first
 //      chunks are decoded and laid AT the seam — gapless, the first bit already standing.
 //  THE MUTEX LAW (Sounditron's lesson, load-bearing): nothing here runs under beliefs().  Every
 //   loop is a detached setTimeout chain guarded by c.era — pause|skip|replay bump the era and the
@@ -41,10 +42,12 @@ Radio_ensure(w):
     if (!radio.c.heard) radio.c.heard = {}
     // WAKE ON A CROSS-PIER LANDING (the missing twin of the stoker's Radio_nudge): the local dig
     //  nudges a digging radio the moment a track stands (Stoker_look), but a friend's chunk crossing
-    //   the wire had NO such wake — it landed and the playhead waited out its 3s dig poll (the "why
-    //    isn't it audible in a second" gap).  Repli fires w.c.repli_on_land when an inbound chunk
-    //     fills; nudge on it, so a friend's first preview starts the instant it crosses.  Idempotent
-    //      (Radio_nudge no-ops unless the radio is 'digging'); re-registered per ensure is harmless.
+    //   the wire had NO such wake — it landed and the playhead waited out its dig poll (800ms; this
+    //    said "3s" until 2026-08-08) — the "why isn't it audible in a second" gap.  Repli fires
+    //     w.c.repli_on_land when an inbound chunk fills; nudge on it, so a friend's first preview
+    //      starts the instant it crosses.  Cheap and idempotent (a nudge only pumps when the radio
+    //       is 'digging', and only marks the lineup stale when it is 'playing' — see Radio_nudge);
+    //        re-registered per ensure is harmless.
     w.c.repli_on_land = (ww) => { try { this.Radio_nudge(ww) } catch (er) {} }
     return radio
 
@@ -842,6 +845,9 @@ async Radio_dial(radio):
         let hby = head.sc.by                        // the %Card wears the friend crate pub; the raw %Record does not
         lu.drop(head)
         lu.sc.up_next = String(lu.o({ Card: 1 }).length)   // #7: keep the printed count live at consume-time (was only set at fill)
+        // one re-balance token per consumed card — the throttle Radio_lineup_fill spends.  Minted
+        //  HERE because a consumed card is the honest definition of "a track has gone by".
+        lu.c.rebal_ok = 1
         lu.bump()
         if (hrec && heard[String(hrec.sc.id)]) continue    // already heard — drop the repeat, keep looking
         if (hrec) {
@@ -1053,6 +1059,32 @@ Radio_lineup_ensure(w):
 Radio_lineup_fill(w, radio):
     let lu = this.Radio_lineup_ensure(w)
     let AHEAD = 20
+    // SPEND THE STALE MARK (2026-08-08 — Radio_nudge sets it when stock lands while the radio plays).
+    //  Trim the TAIL back to KEEP so the very next fill round-robins the newcomer in within a track
+    //   or two, instead of at position 20.  The HEAD is never touched: what is playing and what is
+    //    next stay exactly as they were, so nothing the listener is hearing is disturbed.  Dropped
+    //     cards cost nothing — their records were never marked heard, so they fall back into the
+    //      pools and get re-drawn.  Iterated off a fresh o() snapshot, so the drops cannot corrupt it.
+    //  THROTTLED TO ONE RE-BALANCE PER TRACK, and this is the load-bearing half of the fix.  The
+    //   mark is set PER LANDED CHUNK, and Stoker_look nudges and then fills in the SAME pass — so
+    //    honouring every mark would run the expensive pool walk (Repli_chunk_at over every friend
+    //     record) on every look for the whole of a transfer, which is exactly the burn the
+    //      2026-08-06 note above exists to prevent.  Radio_dial hands out one token per card it
+    //       consumes; a re-balance spends it.  So the cost is bounded at one extra fill per track
+    //        played — and "within a track or two" was all the fix ever promised.
+    let KEEP = 3
+    if (lu.c.restale && lu.c.rebal_ok) {
+        lu.c.restale = 0
+        lu.c.rebal_ok = 0
+        let cards = lu.o({ Card: 1 })
+        let ci = KEEP
+        while (ci < cards.length) {
+            lu.drop(cards[ci])
+            ci = ci + 1
+        }
+        lu.sc.up_next = String(lu.o({ Card: 1 }).length)
+        lu.bump()
+    }
     if (lu.o({ Card: 1 }).length >= AHEAD) return lu
     let lined = {}
     for (const c2 of lu.o({ Card: 1 })) lined[c2.sc.id] = 1
@@ -1178,12 +1210,30 @@ Radio_dial_pool(w, radio, all):
     return cands[this.Ra_rand(w, cands.length)]
 
 // Radio_nudge — the stoker's landing announcement: stock JUST stood, and a digging radio must
-//  not wait out its 3s poll — pump NOW.  The fresh era cancels the pending timer chain (two
-//   chains on one era would double-pump forever); gated hard on 'digging' so a playing radio
-//    is never restarted and a paused|off one never woken.
+//  not wait out its 800ms dig poll (Radio_pump_tick's own tail call; this said "3s" until
+//   2026-08-08 — measured off the Radio_pump_soon callsites, not off the prose) — pump NOW.  The
+//    fresh era cancels the pending timer chain (two chains on one era would double-pump forever).
+//  The PUMP is still gated hard on 'digging': a playing radio is never restarted and a paused|off
+//   one is never woken.  What changed on 2026-08-08 is that 'playing' is no longer a plain no-op —
+//    it re-opens the LINEUP instead, which touches no timer and cuts no track.
 Radio_nudge(w):
     let radio = w.o({ Radio: 1 })[0]
-    if (!radio || radio.sc.Radio !== 'digging') return
+    if (!radio) return
+    // A PLAYING RADIO IS NOT DEAF (2026-08-08, the human: a friend who comes online mid-track stays
+    //  inaudible).  The pump must NOT be restarted — that would cut the track, and the hard 'digging'
+    //   gate above is right about that.  But the LINEUP must be reconsidered, and it never was:
+    //    Radio_lineup_fill returns instantly once the programme is 20 deep, and cards are APPENDED,
+    //     so a newcomer could not enter the programme at all until the listener had consumed 20
+    //      tracks.  Mark it stale instead; the next fill (every stoker look, every dial) spends the
+    //       mark.  O(1) here ON PURPOSE — this runs PER LANDED CHUNK, and the burn fixed on
+    //        2026-08-06 was exactly an expensive per-chunk walk reached from this same path.
+    //  o() not Radio_lineup_ensure: a nudge must never MINT a lineup, only notice one.
+    if (radio.sc.Radio === 'playing') {
+        let lu = w.o({ Mag: 'Lineup' })[0]
+        if (lu) lu.c.restale = 1
+        return
+    }
+    if (radio.sc.Radio !== 'digging') return
     let era = (radio.c.era || 0) + 1
     radio.c.era = era
     this.Radio_pump(radio, era)

@@ -1326,6 +1326,17 @@ Ra_record_from(lib, info, bufs):
     rec.bump()
     return rec
 
+// Ra_native — the headless audio provider, or null.  A daemon parks it on the top House's `.c` at
+//  boot (`scripts/daemon/ra_native.ts`); a browser never has one, so `Ra_native()` reads null there
+//   and every path below is byte-for-byte what it always was.  On `.c` and never `sc` because it is
+//    an object — an object value in sc is fatal at encode time — and because it is pure runtime
+//     apparatus that no snap should ever contain.
+//  It answers exactly three questions (probe | measure | encode); see Ra_stock_one's fork for what
+//   each replaces and why the seam is at the question rather than at the browser API.
+Ra_native():
+    let top = this.top_House()
+    return (top && top.c && top.c.ra_native) ? top.c.ra_native : null
+
 // Ra_stock_one — the whole pass for ONE track: standing & fresh? resurrect and stand aside.  Else
 //  read → digest → decode → measure the WHOLE track → bake the gain → ONE continuous opus encode over
 //   the PREVIEW window, cut into ~2s packet-framed chunks → pack the card + those chunks into the one
@@ -1369,25 +1380,51 @@ async Ra_stock_one(w, lib, nav, src_base, path):
             return { stood: 1, id: enid }
         }
     }
-    // — decode ONCE (OfflineAudioContext resamples to 48k, no user gesture needed) —
-    let ctx = new OfflineAudioContext(1, 1, 48000)
-    let decoded = null
-    try {
-        decoded = await ctx.decodeAudioData(raw)
-    } catch (er) {
-        return null
-    }
-    // — lift the channels (mono|stereo) out of the decoded buffer —
-    let nch = Math.min(2, decoded.numberOfChannels)
+    // — THE NATIVE FORK (Daemon_todo §2.1).  Exactly three steps in this function are browser
+    //    primitives, and nothing else here is: the decode (OfflineAudioContext), the loudness (the
+    //     needles worker) and the encode (WebCodecs).  Headless every one of them throws, so a daemon
+    //      dug the collection, threw on the first `new OfflineAudioContext`, learned the path BARREN
+    //       and reported a clean EMPTY shelf — green logs, blank glass at the friend.  A provider
+    //        parked on the House (`Ra_native`) answers those three QUESTIONS with ffmpeg instead.
+    //  Forking HERE rather than writing a second Ra_stock_one is the whole point: the window
+    //   arithmetic, Ra_gain_for's decision, Ra_chunk_cut's grid, the card, the vouch, the pack, the
+    //    GC and the %Record are all below this fork and shared — so a daemon-stocked card and a
+    //     browser-stocked card cannot drift apart, because only one place builds one. —
+    let nat = this.Ra_native()
+    let nch = 0
+    let total = 0
+    let seconds = 0
     let channels = []
-    let ch = 0
-    while (ch < nch) {
-        channels.push(decoded.getChannelData(ch))
-        ch = ch + 1
+    if (nat) {
+        let pr = await nat.probe(src_base, path)
+        if (!pr || !pr.seconds) return null
+        nch = Math.min(2, pr.channels || 1)
+        seconds = pr.seconds
+        // the browser's `total` is the DECODED length at 48k (OfflineAudioContext resamples on the way
+        //  in); native never materialises the samples, so duration × 48000 is that same number by
+        //   another road, and every window number below is computed from it identically.
+        total = Math.round(seconds * 48000)
+    } else {
+        // — decode ONCE (OfflineAudioContext resamples to 48k, no user gesture needed) —
+        let ctx = new OfflineAudioContext(1, 1, 48000)
+        let decoded = null
+        try {
+            decoded = await ctx.decodeAudioData(raw)
+        } catch (er) {
+            return null
+        }
+        // — lift the channels (mono|stereo) out of the decoded buffer —
+        nch = Math.min(2, decoded.numberOfChannels)
+        let ch = 0
+        while (ch < nch) {
+            channels.push(decoded.getChannelData(ch))
+            ch = ch + 1
+        }
+        seconds = decoded.duration
+        total = channels[0].length
     }
     // — the preview WINDOW first: how many 2s segments the 32s preview holds, and its sample end —
     let SEG = this.Ra_seg_secs() * 48000
-    let total = channels[0].length
     let segs = Math.ceil(total / SEG)
     let P = Math.min(segs, Math.ceil(this.Ra_preview_secs() / this.Ra_seg_secs()))
     // THE CUT POINT (Ra_preview_offset): live, the offer starts 30–70% into the track; driven, at 0 —
@@ -1402,30 +1439,61 @@ async Ra_stock_one(w, lib, nav, src_base, path):
     //       plays first, so measure ITS loudness; the %Stream continuation bakes with the SAME stored
     //        card.gain (Ra_source_pcm), so there is no seam volume jump.  Render shrinks whole-track → ~32s.
     //         Row-preserving (same records, same chunk count) — only the baked gain VALUE moves. —
+    // THE GAIN DECISION STAYS HERE on both sides of the fork: Ra_gain_for owns the target and the
+    //  ceiling, and a null measure gains nothing.  The native provider only REPORTS (its peak is a
+    //   true peak where Ra_peak is a sample maximum, so its cap engages a hair sooner — quieter,
+    //    never clipped, which is the safe direction and not a bug to "fix" later).
     let pre = []
-    for (const c2 of channels) pre.push(c2.subarray(start, end))
-    let lufs = await this.Ra_lufs(pre, 48000)
-    let gain = this.Ra_gain_for(w, lufs, this.Ra_peak(pre))
-    this.Ra_bake(pre, gain.linear)
+    let lufs = null
+    let peak = 0
+    if (nat) {
+        let meas = await nat.measure(src_base, path, start / 48000, (end - start) / 48000)
+        lufs = meas ? meas.lufs : null
+        peak = meas ? meas.peak : 0
+    } else {
+        for (const c2 of channels) pre.push(c2.subarray(start, end))
+        lufs = await this.Ra_lufs(pre, 48000)
+        peak = this.Ra_peak(pre)
+    }
+    let gain = this.Ra_gain_for(w, lufs, peak)
     // — ONE continuous encode over the preview window, cut at the 2s grid.  Only the preview encodes
     //    here: the continuation stays in the source until a listener's want parks for it —
-    let st = this.Ra_encode_open(nch, this.Ra_bitrate())
-    if (!st) return null
-    let at = start
-    while (at < end) {
-        let to = Math.min(end, at + SEG)
-        this.Ra_encode_feed(st, channels, at, to)
-        at = to
+    let bufs = null
+    let preskip = 312
+    if (nat) {
+        // native bakes the gain INSIDE the encode — a volume filter is the same linear multiply
+        //  Ra_bake is, and there is no PCM on this side to multiply into.
+        let enc = await nat.encode(src_base, path, start / 48000, (end - start) / 48000, gain.db, nch, this.Ra_bitrate())
+        if (!enc || !enc.packets.length) return null
+        preskip = enc.preskip
+        // Ra_chunk_cut is pure packet arithmetic over an st-shaped bag, so the native packets go
+        //  through the identical 2s grid rather than a second implementation that can drift.  ffmpeg
+        //   pads its final frame, so a window can yield ONE chunk more than the browser's exact feed
+        //    does; that extra is past the window and dropped rather than failing the whole track.
+        let nst = { packets: enc.packets, acc: [], accs: 0 }
+        bufs = this.Ra_chunk_cut(nst, 1)
+        if (bufs.length > P) bufs = bufs.slice(0, P)
+    } else {
+        this.Ra_bake(pre, gain.linear)
+        let st = this.Ra_encode_open(nch, this.Ra_bitrate())
+        if (!st) return null
+        let at = start
+        while (at < end) {
+            let to = Math.min(end, at + SEG)
+            this.Ra_encode_feed(st, channels, at, to)
+            at = to
+        }
+        let ok = await this.Ra_encode_drain(st)
+        this.Ra_encode_close(st)
+        if (!ok) return null
+        bufs = this.Ra_chunk_cut(st, 1)
+        preskip = st.preskip
     }
-    let ok = await this.Ra_encode_drain(st)
-    this.Ra_encode_close(st)
-    if (!ok) return null
-    let bufs = this.Ra_chunk_cut(st, 1)
     if (bufs.length !== P) return null
     // — build the card (Ra_pack fills its sizes[] from the chunks) and write the ONE .jam in a single
     //    shot.  segs = what THIS file holds (the preview); total = the whole track's chunk count —
     let meta = this.Crate_meta_from_path(path)
-    let info = { fmt: 'pkt', id: enid, path: path, base: src_base, col: 1, src_size: src_size, title: meta.title, artist: meta.artist, album: meta.album, seconds: +decoded.duration.toFixed(2), lufs: lufs, gain: gain.db, capped: gain.capped, segs: P, total: segs - OFF, pv_off: OFF, preview_secs: this.Ra_preview_secs(), sr: 48000, br: this.Ra_bitrate(), seg_secs: this.Ra_seg_secs(), nch: nch, preskip: st.preskip, target: this.Ra_target_lufs(w) }
+    let info = { fmt: 'pkt', id: enid, path: path, base: src_base, col: 1, src_size: src_size, title: meta.title, artist: meta.artist, album: meta.album, seconds: +seconds.toFixed(2), lufs: lufs, gain: gain.db, capped: gain.capped, segs: P, total: segs - OFF, pv_off: OFF, preview_secs: this.Ra_preview_secs(), sr: 48000, br: this.Ra_bitrate(), seg_secs: this.Ra_seg_secs(), nch: nch, preskip: preskip, target: this.Ra_target_lufs(w) }
     // — Seam A (rung 7): if this shelf owns a signing identity, stamp `by`+`sig` over the cids manifest
     //    onto the header before pack.  lib.c.signer is a keyed Idento a Book|app sets; absent → the header
     //     stays the byte-identical old shape so an unsigned stock (every current Book) is unchanged. —
@@ -1671,6 +1739,24 @@ async Ra_source_pcm(w, rec):
             await this.Ra_stock_drop(nav, rec.c.card_file)
             rec.c.card = null
             rec.c.card_file = null
+        }
+        return null
+    }
+    // A THIRD SILENT DEATH, headless (2026-08-08).  `new OfflineAudioContext` is not inside the try
+    //  below, so on a daemon it threw a ReferenceError straight out of this function.  The kick site
+    //   in Ra_transcode_ensure catches it, so nothing crashed — it climbed the backoff ladder to its
+    //    60s ceiling and re-threw the same stack once a minute, forever, with the ASKING peer seeing
+    //     only a want that never lands.  Exactly the shape the two deaths above are about: the fact
+    //      is known here and no path carries it.  So SAY it, once, by the same `pcm_dead` mechanism.
+    //  Ra_native's fork (Ra_stock_one) does NOT help here and must not be faked into helping: this
+    //   returns whole-file PCM for an INCREMENTAL WebCodecs encode, and a per-window ffmpeg re-encode
+    //    would open a new encoder — hence a new convergence ramp — at every chunk boundary.  The
+    //     honest headless answer today is "preview only" (§8.2), and the design for lifting it is in
+    //      Daemon_todo §10.5.
+    if (typeof OfflineAudioContext === 'undefined') {
+        if (rec.c.pcm_dead !== 'headless') {
+            rec.c.pcm_dead = 'headless'
+            this.Radio_trace(null, { ev: 'pcm-nosource', id: tid, why: 'headless — no OfflineAudioContext; preview only' })
         }
         return null
     }

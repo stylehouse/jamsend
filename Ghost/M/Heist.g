@@ -1911,7 +1911,19 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
                     //        ladder — which is the correct fallback, not a regression.
                     let told = w.c.ra_missed && w.c.ra_missed[String(ref)]
                     if (told) delete w.c.ra_missed[String(ref)]
-                    if (told || (+(pick.c.asks_out || 0) >= 3 && Date.now() - (keep.c.recensus_ts || 0) > 20000)) {
+                    //  …BUT A REPEATED TELLING IS NOT A FRESH FACT (2026-08-08).  `told` used to bypass the
+                    //   20s census throttle outright, and the claim above — "one telling buys one census,
+                    //    never a loop" — does not hold: the flag is re-stamped every time the source repeats
+                    //     itself (its own tell is throttled 5s/id), so an id the census CANNOT heal bought a
+                    //      fresh census every ~5s for as long as the pull lived.  That is the re-ask storm in
+                    //       the 2026-08-08 log — the same handful of ids marching @0 @4 @8 @12, each round
+                    //        paying for the expensive verb the throttle exists to ration.
+                    //  The throttle now covers both paths.  The FIRST telling still heals in one round trip
+                    //   (recensus_ts starts 0, so the window is already open) — only the repeats wait, which
+                    //    is all the 2026-08-06 note ever actually claimed.  We do NOT give up on the id:
+                    //     Heist_rummage_ask below still re-asks every beat, per "never give up" (line ~2087).
+                    //      What stops is the re-CENSUSING, not the re-asking.
+                    if ((told || +(pick.c.asks_out || 0) >= 3) && Date.now() - (keep.c.recensus_ts || 0) > 20000) {
                         keep.c.recensus_ts = Date.now()
                         if (typeof this.Radio_trace === 'function') {
                             this.Radio_trace(null, { ev: 'reheal', id: String(ref).slice(0, 8),

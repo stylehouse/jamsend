@@ -15,6 +15,26 @@
     //   (getBoundingClientRect → 0, canvas → absent) degrades to zeros rather than throwing;
     //    Cyto is the one to watch, which is why the daemon sets The/Opt useCyto=false the same
     //     way CredRunner does.
+    //
+    // THE FACELESS SET (2026-08-08).  "Degrades rather than throws" is not the same as "costs
+    //  nothing", and Vyto proved it.  Sounditron commissions the glass UNCONDITIONALLY (Sounditron.g
+    //   §THE GLASS — "the glass is just what Sounditron does"), the daemon boots B=Sounditron, and
+    //    jsdom reports `document.hidden === false` — so Vytui takes the VISIBLE-RESIDENT-TAB path:
+    //     the rAF loop (polyfilled to setTimeout 16ms in main.ts) spinning at 60fps, springs
+    //      integrating, power-cells re-cut, nine real-DOM faces diffed, all into a document with no
+    //       reader.  It never lands, because the daemon's grappled organs churn every heartbeat, so
+    //        the render watchdog fires its `▣⚠ forced settle after 240 frames` every four seconds
+    //         forever.  That warning is the watchdog WORKING; the bug is that the glass is running.
+    //  Skipping the mount is safe in a way skipping a gen'd .go UI would not be: Vytui is a
+    //   hand-written panel, and the methods come from Vyto.go being INCLUDED, not from Vytui
+    //    mounting — the loop's load-bearing job (above) is untouched.  What stops is renderer-only:
+    //     `Vyto_settle`/yore_n, and the measure pass that stamps `row.c.need_area` (Vyto_solve
+    //      already falls back when it is absent).  Nothing the daemon serves reads either.
+    //  What it does NOT stop is the ghost half — `Vyto_stir` still walks scan→fold→…→solve on every
+    //   grapple bump, because the commission still stands.  Turning THAT off means teaching
+    //    Sounditron the difference between Book / browser / prod-headless, which is the same third
+    //     state the share-beat gate wants (Daemon_todo §10.5 item 4) and is the owner's call.
+    //  FACELESS=<csv> overrides; FACELESS= (empty) mounts everything again, for comparing.
     import Ghost from '$lib/O/Ghost.svelte'
     import { House } from '$lib/O/Housing.svelte'
     import { keyser } from '$lib/data/Stuff.svelte'
@@ -46,6 +66,13 @@
     const assume_identity = boot?.assume_identity
     const humdinger       = boot?.humdinger
 
+    // the UIs this process registers but must never RUN (the header's FACELESS SET).  `faceless`
+    //  arrives as a csv so the knob is one env var; an absent key keeps the default, an EMPTY
+    //   string is a deliberate "mount everything" and must not fall back to it.
+    const faceless = new Set(
+        String(boot?.faceless ?? 'Vyto').split(',').map((s: string) => s.trim()).filter(Boolean))
+    const shown = (uiC: any) => !faceless.has(uiC?.sc?.UI)
+
     $effect(() => {
         const h = new House({ name: 'Mundo' })
         h.c.toplevel = toplevel
@@ -67,7 +94,7 @@
 {#if H}
     <Ghost {H} />
     {#each H.all_House as house (house.c.ip)}
-        {#each house.UIs.ob({ UI: 1 }) as uiC (keyser(uiC.sc))}
+        {#each house.UIs.ob({ UI: 1 }).filter(shown) as uiC (keyser(uiC.sc))}
             <svelte:component this={uiC.sc.component} H={house} />
         {/each}
     {/each}

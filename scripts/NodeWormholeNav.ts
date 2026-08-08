@@ -15,7 +15,7 @@
 //    read_file / write_file / bin_read / bin_write / bin_append / read_range / dir / dir_at — kept at PARITY with
 //     the browser WormholeNav / OpfsOverlayNav / RemoteWormholeNav so the harness is never a partial
 //      nav that a binary-writing Book trips over headlessly.
-import { readFileSync, writeFileSync, appendFileSync, mkdirSync, readdirSync, existsSync, statSync, openSync, readSync, closeSync, chmodSync } from 'node:fs'
+import { readFileSync, writeFileSync, appendFileSync, mkdirSync, readdirSync, existsSync, statSync, openSync, readSync, closeSync, chmodSync, unlinkSync } from 'node:fs'
 import path from 'node:path'
 
 const isDirAt = (p: string) => existsSync(p) && statSync(p).isDirectory()
@@ -281,6 +281,32 @@ export class NodeWormholeNav {
                 for (const name of extra) if (isDirAt(nav.mounts[name])) seen.set(name, true)
                 this.directories = [...seen].filter(([, isd]) => isd).map(([name]) => ({ name }))
                 this.files       = [...seen].filter(([, isd]) => !isd).map(([name]) => ({ name }))
+            },
+            // deleteEntry — the FSA DirectoryHandle method, at parity, because a whole class of the
+            //  app's housekeeping goes through it and silently did nothing here.
+            //
+            // WHAT WAS BROKEN.  `Ra_stock_drop` opens with `if (!dl || typeof dl.deleteEntry !==
+            //  'function') return` — a graceful no-op written for a READ-ONLY proxy.  The node nav had
+            //   no deleteEntry, so it took that branch every time, and everything built on it went
+            //    quietly inert on the daemon: `Ra_stock_gc` (supersede an older render of the same
+            //     path), `Ra_stock_gc_cap` (the per-pub disk cap — the ONLY thing that bounds shelf
+            //      growth) and `Ra_stock_cascade` (the era-forget). An always-on box whose cache cap
+            //       cannot evict is a box that fills the owner's music disk, slowly, reporting success.
+            //  Found because a /restock said "dropped 20" and twenty files sat there with their
+            //   original mtimes.  A no-op that ANSWERS is worse than one that refuses.
+            //
+            // THE RULES IT KEEPS.  Through `writeAbs`, so a read-only mount throws exactly as a write
+            //  would (deleting from the owner's music tree is a write in every sense that matters) and
+            //   `confine` still bounds the path.  Files only: `Ra_stock_drop`'s subject is a file, and
+            //    a recursive directory removal is not a capability this seam should quietly grow.
+            async deleteEntry(name: string) {
+                if (!name || name.includes('/') || name === '.' || name === '..')
+                    throw new Error(`NodeWormholeNav: deleteEntry takes a single entry name — got "${name}"`)
+                const abs = nav.writeAbs(rel ? rel + '/' + name : name)
+                if (!existsSync(abs)) return
+                if (statSync(abs).isDirectory())
+                    throw new Error(`NodeWormholeNav: refusing to deleteEntry a directory — "${name}"`)
+                unlinkSync(abs)
             },
         }
     }

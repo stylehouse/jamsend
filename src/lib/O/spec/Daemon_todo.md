@@ -27,7 +27,20 @@ The daemon **boots, thinks, reads the wormhole, runs a Story Book to settle, and
 >     boot shape + status-port + robustness hardening, and `.jamsend` at 0600 with path confinement.
 >      **Step 3 below is now the single blocker for invites**, exactly as §9.1's chain predicted.
 
+> **UPDATED 2026-08-08, small hours — jamserve now SERVES AUDIO. See §10.** The invite worked
+>  end-to-end (two Piers sealed, surviving restarts), and then the friend opened an **empty glass**,
+>   because `Ra_stock_one`'s decode/measure/encode are browser primitives and a headless dig learned
+>    every path barren while reporting a clean shelf of zero. `Ra_native()` forks those three steps to
+>     ffmpeg *inside* `Ra_stock_one`, so the card, the grid and the %Record stay one shared path. 16/16
+>      cards verified structurally off the owner's real collection. **What is NOT proven is that it
+>       sounds right — that is the two-minute listen, and it is the next thing to do.** §10 also
+>        records two traps worth more than the feature: a meter that clipped what it measured, and
+>         `Ra_stock_drop` silently inert on the node nav (so the shelf cap could never evict).
+
 Candidates, in the order they actually unblock things:
+
+0. **LISTEN to a daemon-served track** (§10.5) — the one claim no snap can carry. Open the incognito
+    Pier on the invite jamserve prints at boot and play something.
 
 1. ~~**Boot like a client does** (§8.3)~~ — **DONE 2026-08-08.** `book`+`boot_role` are stamped, a
     bootless boot refuses with exit 4 instead of falling into Auto's dev library page, `ROLE` defaults
@@ -1687,3 +1700,299 @@ Do these in order. The point of the shape is that the safe, mechanical work bank
  lands §9.3 entire, plus §9.2 steps 1–2. "Invites end-to-end" needs step 3 AND the two-daemon harness
   of §9.4, and will not finish. Log what actually happened in §9.6 — a blocker with evidence beats a
    workaround.
+
+
+---
+
+## 10. jamserve can serve audio now — the native stock fork (2026-08-08, small hours)
+
+**The arc.** Everything before this made jamserve a *durable peer*: it holds an identity, answers an
+ invite, seals a Pier and survives restarts. What it could not do was **have anything to play**. A
+  friend sealed with it and opened an empty Vyto glass. That is now closed: a live incognito Pier can
+   be served real tracks off the owner's collection, stocked by ffmpeg inside the daemon.
+
+### 10.1 What was actually wrong (and why nothing said so)
+
+`Ra_stock_one` is the whole of stocking, and **three of its steps are browser primitives**:
+ `OfflineAudioContext` (decode), the needles Web Worker (`Ra_lufs`), and WebCodecs `AudioEncoder`
+  (`Ra_encode_open`). Headless, the first of them throws. `Stoker_dig` catches per-pick
+   (`Radio.g:1988`), counts it as "could not read or decode", and — correctly, for its own model —
+    calls `Stoker_barren(base, p)` so the wander never costs a full file read for that path again.
+
+So the daemon dug the entire collection, learned every path barren, and reported **a clean shelf of
+ zero**. Every log line green. `radiostock/` simply did not exist. *Nothing anywhere said "I cannot do
+  audio"* — this is the shape [[comments-assert-unmeasured-properties]] keeps warning about, in its
+   silent form: not a false claim, an absent one.
+
+### 10.2 The seam: three questions, not three shims
+
+`scripts/daemon/ffmpeg.ts` already carried the principle — **put the seam at the question, not at the
+ API**. The fork applies it:
+
+| Ra asks | browser answers with | headless answers with |
+|---|---|---|
+| how long, how many channels? | `decodeAudioData` → AudioBuffer | `ffprobe` (banner-parse fallback) |
+| this window's loudness + peak? | needles worker + `Ra_peak` | `astats,loudnorm` in one pass |
+| that window, gained, as opus packets? | `Ra_bake` + WebCodecs | `volume` filter + `libopus` → demux |
+
+`Ra_native()` reads the provider off the top House's `.c` (`scripts/daemon/ra_native.ts`, installed by
+ `ra_native_arm()` before `station_up`). A browser has none, so **every browser path is byte-for-byte
+  what it was**.
+
+**The fork is INSIDE `Ra_stock_one`, not a second copy of it.** That was the design call worth making:
+ the window arithmetic, `Ra_gain_for`'s decision, `Ra_chunk_cut`'s 2s grid, the card, `Ra_vouch_header`,
+  `Ra_pack`, the GC and `Ra_record_from` all sit *below* the fork and are shared. A daemon-stocked card
+   and a browser-stocked card cannot drift, because only one place builds one. `Ra_chunk_cut` in
+    particular is pure packet arithmetic over an st-shaped bag, so native packets go through the
+     identical grid rather than a second implementation.
+
+### 10.3 Two traps found by measuring, both of the "plausible and wrong" kind
+
+**(a) `volumedetect` clips the thing it measures.** `Ra_gain_for` divides the ceiling by `Ra_peak` — the
+ **sample maximum**. loudnorm's `input_tp` is a 4× oversampled **true peak**, typically 0.3–1.5 dB
+  higher; at a −1 dBFS ceiling that caps constantly (6 of 8 real tracks on the first pass). The obvious
+   fix, `volumedetect` in front of loudnorm, is wrong: it accepts fixed-point formats only, so ffmpeg
+    inserts a float→s16 conversion that **clips everything above 0 dBFS**, and loudnorm downstream then
+     measures the clipped signal. The tell was small and unmistakable — the same track read
+      `tp 0.69 dBTP` bare and `tp 0.39 dBTP` with the meter in front. *A measuring instrument that
+       changes its subject.* `astats=measure_perchannel=none:measure_overall=Peak_level` declares float,
+        nothing is inserted, and `tp` returns to 0.69 — that equality is now the standing check, and the
+         boot line prints `pk … (astats)` vs `(true-peak)` so a silent fallback can never become
+          permanent.
+
+**(b) `Ra_stock_drop` was inert on the daemon — so the shelf could never be GC'd.** It opens with
+ `if (!dl || typeof dl.deleteEntry !== 'function') return`, a graceful no-op written for a read-only
+  proxy. `NodeWormholeNav`'s `dir()` had no `deleteEntry`, so it took that branch **every time**, and
+   everything built on it went quietly inert: `Ra_stock_gc` (supersede an older render of the same
+    path), **`Ra_stock_gc_cap` — the only thing bounding shelf growth** — and `Ra_stock_cascade`. An
+     always-on box whose cache cap cannot evict fills the owner's music disk, slowly, reporting success.
+  Found because `/restock` said "dropped 20" and twenty files sat there with their original mtimes.
+   `deleteEntry` now exists on the node nav (through `writeAbs`, so a read-only mount throws exactly as
+    a write would; files only), and `/restock` counts a **before/after listing** rather than its own
+     calls — a count of attempts cannot tell that lie. Generalisation worth keeping:
+      **a no-op that ANSWERS is worse than one that refuses.**
+
+ **⚠ THE BLAST RADIUS IS WIDER THAN RADIOSTOCK — the owner should know this before the next heist.**
+  `typeof dl.deleteEntry !== 'function'` is a guard **six** places use, and all six were inert on the
+   daemon: `Ra_stock_drop` + `Ra.g:1569` (stock housekeeping), `Heist.g:292` (drop one landed file),
+    `Heist.g:3006`/`3035` (`Heist_sweep` — recursive removal of a landing tree), and
+     `Heistation.g:3181`. So a jamserve doing phone-sync heists was never cleaning up after itself
+      either. **Adding `deleteEntry` turns all six ON at once**, `Heist_sweep`'s recursion included.
+       Two things bound it and both are load-bearing: every path still resolves through `writeAbs`, so
+        a read-only mount (`music`) **throws** rather than deletes; and `deleteEntry` refuses a
+         directory outright, so a sweep can only remove files it listed. Worth an eye on the first real
+          heist a jamserve runs — this is the one change tonight whose failure mode is *deletion*
+           rather than a missing feature.
+
+### 10.4 What is proven, and how
+
+- **16/16 cards verified structurally** — unpacked, packets walked by lacing, samples counted off each
+   TOC byte: 1601 opus packets = 32.02s across 16 chunks of exactly 2s, `preskip 312` (the same number
+    WebCodecs reports), mid-track cut landing at 62% of a 348s track. Script kept at
+     `scratchpad/verify_stock.mjs` — it also re-muxes the raw packets into a real Ogg, so where ffmpeg
+      exists (`FF=1`) it reports the **stocked** audio's own LUFS rather than the card's claim.
+- **Real music, not testsounds** — 8 real tracks from `/music` alongside the dev `testsounds`, stereo,
+   200–3100s sources, gains from −8.35 to +2.21 dB.
+- `probed=16 measured=16 encoded=16 failed=0`, on the heartbeat every 10s (`🎚 shelf=N rec …`).
+- **The BROWSER path is gated, because `Ra.g` HMR'd straight into the owner's live tabs.**
+   `MusuRaStock` — the direct Book over `Ra_stock_one` — runs **green, `caveat=0`**, meaning the
+    browser-stocked card's dige is byte-identical to its fixture. `MusuRaStream` is red, and it was red
+     before this work: step 1's *only* divergence is `w:MusuRaStream,now=1751980010`, which
+      `Radiation.g:78` (`w.sc.now = 1751980000 + 10*n`, the pinned swarm clock) writes and the fixture
+       predates; steps 20/40 then cascade off it as `self,round=46` vs `70`. Known baseline —
+        [[radiation-books-red-at-baseline]]. **Stated as strong evidence, not proof: no controlled
+         revert was run.** If someone wants the proof, revert `Ra.go`, recompile, rerun, compare diges.
+
+**Not yet proven: that it SOUNDS right.** The framing is verified and the loudness numbers are
+ self-consistent, but no ear has been on it. That is the owner's two-minute test — open the incognito
+  Pier and listen. If a track plays but sounds wrong (noise at a chunk seam, a volume jump), suspect the
+   `volume` filter's precision or the 20ms frame pinning, not the framing.
+
+### 10.5 Next
+
+1. **Listen.** The one thing a snap cannot carry.
+2. **The continuation past the preview — scoped, NOT started, and the obvious approach is wrong.**
+    Only the 32s window is stocked. Today a peer that asks past it gets nothing, and until tonight the
+     way it got nothing was ugly: `Ra_source_pcm`'s `new OfflineAudioContext` sits *outside* its try, so
+      headless it threw a ReferenceError; `Ra_transcode_ensure` kicks that decode **detached with a
+       `.catch`**, so nothing crashed — it climbed the backoff ladder to the 60s ceiling and re-threw
+        the same stack once a minute forever, while the asking peer saw only a want that never landed.
+         Now guarded: one `pcm-nosource … 'headless — no OfflineAudioContext; preview only'` trace and a
+          clean null, which is a path `Ra_transcode_ensure` already handles. **Same lesson as §10.1 —
+           the fact was known in that function and no path carried it.**
+  **The trap for whoever lifts this.** `encode_opus_window` looks like the answer and is not.
+   `Ra_source_pcm` returns whole-file PCM for an **incremental** encode: `Ra_transcode_advance` feeds a
+    page-stride per pump beat and cuts chunks off ONE long-lived encoder, because opening a new encoder
+     per window means a new ~6.5ms convergence ramp — i.e. an audible seam — at every chunk boundary.
+      That is the whole reason `Ra_stock_one` says "ONE continuous encode".
+  **The shape that would actually work:** one long-lived `ffmpeg -f f32le -i pipe:0 … -c:a libopus
+   -frame_duration 20 -flush_packets 1 -f ogg pipe:1`, PCM in on stdin, and a *streaming* Ogg page
+    demux over stdout so `Ra_encode_open/feed/drain/close` map onto it roughly 1:1. `drain` is the
+     fiddly one — it must block until stdout has yielded pages covering what was fed, which is why
+      `-flush_packets` is load-bearing. Budget real time and a live peer to test against; it cannot be
+       proven from a fixture. A pleasant side effect: headless would need no `rec.c.pcm` at all, which
+        sidesteps the 92MB-per-record pinning ([[pcm-pinned-on-records]]) entirely.
+3. **`Ra_stock_gc_cap` now actually evicts — and has not yet been seen to.** The cap is
+    `Ra_stock_cap()` = **100 files per pub**; the shelf is at 20 and the conveyor adds ~4 per tour, so
+     the eviction path could not be exercised tonight. It is the newly-live code with the sharpest
+      failure mode (it deletes), so the first time a box crosses 100 is worth a look: `ls
+       <music>/.jamsend/radiostock | wc -l` should plateau, not climb.
+4. **⚠ THE CONVEYOR NEVER TURNS ON THE DAEMON — found at 05:45, unfixed, and it caps the shelf.**
+    The shelf stocks once at boot and then sits flat forever. `/status` now carries the conveyor's own
+     `.c` electrodes (`Stoker_dig` sets them; `/c` only dumps `sc`, so nobody outside a browser could
+      read them), and they settle it in one number: **`tour_ago_s: null`** — `st.c.tour_at` is never
+       stamped, so **`Stoker_tour` has never been called**, on any boot. That is a different fault from
+        "it toured and found nothing", and it wants a different fix. Supporting reads: `Stoker` sits
+         `watching` → `idle`, `stood=20 stock=20 fresh=20`, `Radio: off ("no web audio here")`,
+          `picks=0 got=0 dup=0 bad=0` — every dig counter untouched, never incremented.
+  **THE CAUSE, confirmed — it is the Book gate.** `Stoker_tour`'s only prod caller is
+   `Swarm_share_beat` (`Swarm.g:1973`), and the beat's pump is started by `Swarm_share_up`, which
+    `Stoker_ensure` gates with `if (!w.sc.w && …)` — a named Book run-world wears `w.sc.w`, and the
+     gate exists so a Book never starts a wall-clock pump (Swarmation.g:1000, correctly). jamserve
+      boots `B=Sounditron`, so **the world holding its Stoker reads `{"w":"Sounditron"}`** — one `/c`
+       query, since `w` is an `sc` key. The gate is false, `Swarm_share_up` never arms, no beat, no
+        tour. The 16 cards that DID appear are the Book's own muse stocking once, not a conveyor
+         turning. (Ruled out on the way: the wrong-world Stoker miss — `stock_state`'s identical
+          `rw.o({Stoker:1})[0]` finds it — and a throwing beat, zero `⨳ SHARE BEAT THREW` in fifteen
+           boots. The earlier `ive_got` frames came from the station handlers answering a live peer,
+            which needs no beat.)
+  **⚠ CORRECTION (2026-08-08 midday) — the Book gate is only HALF of it, and a live tab proved it.**
+   The owner's incognito `/BigSoundland` tab is the SAME Book (`boot_qualand({book:'Sounditron'})`)
+    and its share beat runs fine — `⏳ Swarm_share_beat still running past 600ms (×101)` in its console.
+     If the Book gate were the whole cause, a tab would be just as dead. It isn't, because a tab arms
+      the beat by a SECOND path the daemon does not have: **`InvitePanel.svelte:55-57`, a UI
+       component's `$effect`** calling `Swarm_share_up` directly. The daemon mounts no room chrome, so
+        that path does not exist for it, and `Stoker_ensure`'s non-UI path (added 2026-08-06 precisely
+         because UI-only arming was a race — Radio.g calls it "the worst kind") is the Book-gated one.
+          **The daemon misses it twice.** Fixing only the gate is still the right move — it is the path
+           meant to be authoritative — but do not expect the tab to have been proving it all along.
+  **And note the shape**, because it is the second one found today: prod behaviour hanging off a
+   MOUNTED FACE. §10.6 is the same idea from the other end — a face mounting work nobody watches.
+   Ask of any pump: *does this arm because of what the machine IS, or because someone drew a panel?*
+  **THE FIX, and why I did NOT apply it overnight.** The gate wants a third state: Book / browser /
+   **prod-headless**. The minimal shape is a `.c` flag the daemon sets on the top House (beside
+    `c.radio_w` and `c.humdinger`) and `Stoker_ensure` honours — invisible to Books and browsers,
+     which never set it. But arming the share beat switches on `Ra_shuffle_cull` — *"check every
+      Record in the shuffle Mag still has its source, and delete the ones that don't"* — **on the same
+       night `deleteEntry` went live** (§10.3b). That is two newly-live deletion paths at once,
+        unverified, pointed at the owner's music folder. Not a call to make autonomously at 06:00.
+  **It is also a question, not just a bug:** should jamserve boot as a Book at all? The Book is a
+   vehicle for settling, and it is dragging its test-safety gates into production with it.
+  **Why it is not a regression:** the shelf was ZERO before tonight. This is a pre-existing gap the
+   native fork made visible by giving it something to be measured against.
+5. Unchanged from before: jamserve still boots vite in middleware mode (§5.3), and its Sounditron Book
+    remains a vehicle, not a gate.
+
+### 10.6 The glass was running on a box with no screen (2026-08-08, midday)
+
+**The symptom the owner saw**, once every four seconds, forever, in `docker compose logs jamserve`:
+
+    ▣⚠ Vyto watchdog: forced settle after 240 frames of unbroken motion — a cell never stopped
+     moving (disp/drift pinned). Landing anyway.  { w: TheC { … wall_cuts: 23516, stir_n: 13041 … } }
+
+**That warning is the watchdog WORKING.** Vytui counts unbroken motion frames and, past
+ `MAX_MOTION_FRAMES = 240`, force-lands the springs rather than let a render pathology peg a thread
+  (Vytui.svelte, the WATCHDOG comment — it is the fix for the freeze that used to stop a player's
+   beat and read as "the Sounditrons stop talking"). The bug it is reporting is not in the renderer.
+    **The bug is that the renderer is running at all.**
+
+**The chain, four links, each individually sensible:**
+
+1. `Daemonic.svelte` mounts every registered UI, on purpose — a Creduler acquire enrols each gen
+    `.go` as a `watched:UIs` Pantheate-include and an include only deposits its methods when
+     something MOUNTS it. Drop the loop and the whole spine silently never arrives. (Four UIs are
+      registered on this box: `Pantheate-include`, `Lies`, `Story`, `Vyto`.)
+2. `Sounditron.g` commissions the glass **unconditionally** — *"the glass is just what Sounditron
+    does"* — and jamserve boots `B=Sounditron`.
+3. **jsdom reports `document.hidden === false`.** Vytui has a hidden-tab path that jumps to target
+    and settles synchronously without animating; the daemon never takes it. It takes the
+     visible-resident-tab path: `requestAnimationFrame` — polyfilled in `main.ts` to
+      `setTimeout(…, 16)` — springs, power-cell re-cuts, nine real-DOM faces diffed, into a document
+       with no reader.
+4. It never lands, because the daemon's grappled organs (Stoker levels, Session counters) churn
+    every heartbeat, so the targets keep moving. 240 frames, forced settle, repeat. **23,516 wall
+     cuts in 894s**, each an O(M²) half-plane clip.
+
+**The fix, applied.** `Daemonic` now takes a FACELESS set — UIs this process registers but never
+ mounts — defaulting to `Vyto`, overridable with `FACELESS=<csv>` (and `FACELESS=` mounts everything
+  again, for comparing). Skipping *this* mount is safe in a way skipping a gen'd `.go` UI would not
+   be: Vytui is a hand-written panel and the Vyto methods come from `Vyto.go` being **included**, not
+    from Vytui mounting, so §1's load-bearing job is untouched. What stops is renderer-only —
+     `Vyto_settle`/`yore_n`, and the measure pass that stamps `row.c.need_area`, which `Vyto_solve`
+      already falls back without. Nothing the daemon serves reads either. `glass_done` latches on the
+       commission dispatch, not on a mount, so Sounditron's own retry logic is unaffected.
+
+**What it does NOT fix — the ghost half still turns.** The commission still stands, so every grapple
+ bump still runs `Vyto_stir` → scan → fold → gang → relate → express → solve: **13,041 stirs in
+  894s**, about 2.4 per crank tick. Turning that off means not commissioning the glass on a headless
+   box, which means teaching `Sounditron.g` — a file the players' real tabs share — the difference
+    between **Book / browser / prod-headless**. That is the *same third state* §10.5 item 4 wants for
+     the share-beat gate. Two independent faults, one missing distinction: worth fixing once, as one
+      idea, rather than twice as two patches. Owner's call.
+
+**How to check it, rather than believe it.** `/status` now carries a `vyto` block, and the split is
+ the point — `stir_n` is the ghost half, `wall_cuts` is the render half (bumped only inside Vytui's
+  `build_cells`). Faceless and correct reads **`wall_cuts: 0` with `stir_n` still climbing**. The
+   heartbeat prints a `▣ Vyto is RENDERING on a screenless box` line **only** when `wall_cuts > 0`,
+    so its appearance is the alarm and silence is the reading.
+
+**Measured, on the owner's box, across its own 900s restart** (2026-08-08 12:06 → 12:20). Instantaneous
+ crank rate, not the cumulative average `/status` prints — the cumulative one climbs all boot and would
+  flatter the change by itself:
+
+| | before (glass rendering) | after (faceless) |
+|---|---|---|
+| ticks/s, instantaneous | **6.53** (783 ticks / 120.2s, twice) | **7.44** (335 ticks / 45s, ×5) |
+| `wall_cuts` | 23,516 in 894s | **0**, flat over 4.5 minutes |
+| `stir_n` rate | 14.6/s average | 19.8/s |
+
+Confirmed a second way, at MATCHED uptime so the cumulative average is a fair comparison too: **7.16
+ ticks/s at 825s, against 6.43 at 866s before** (+11%) — and `wall_cuts` still **0** after a full 900s
+  cycle, so the renderer did not run once, not even at boot.
+
+**+14% crank throughput**, and the ghost half sped up too — the stirs were competing with the renderer
+ for the same thread. `commissioned: true` throughout: the glass still STANDS, which is right, because
+  the commission is Sounditron's business and this change is only about who mounts a face on it.
+
+**Note for whoever verifies next: `run.log` cannot show you the watchdog.** `say()` writes to the log
+ file; the app's own `console.log` goes straight to stdout, so the watchdog line appears in `docker
+  compose logs jamserve` and in NO boot of `run.log` — grepping the log for it returns 0 either way,
+   before and after, which is the most convincing wrong answer available. Use the `wall_cuts` electrode.
+
+**The transferable bit:** jsdom answers every "is anyone looking at this?" question with *yes*.
+ `document.hidden` is false, `visibilityState` is `visible`, and every browser-side optimisation that
+  hangs off them inverts on a daemon — the cheap path is taken in a tab and the expensive one on the
+   box that can least afford it. Grep `document.hidden` before trusting a headless CPU reading.
+
+### 10.7 The daemon could not RECEIVE either — one unarmed verb, both directions (2026-08-08, midday)
+
+A sealed friend traded `ive_got` with the box every few seconds and the box held **zero `%MusuThem`**.
+ Both sides looked healthy: `Pier` + `Peering` + `Friend` on the daemon, `seal at=7c0d0bfd grants=2` and
+  `advertise piers=1 granted=1 told=1` in the tab's own ring, `Repli rx 0p/0KB tx 2p/24KB` in its console.
+
+**`Swarm_share_up` is the rx registration, not just the tx.** It calls `Repli_arm` and sets
+ `repli_mirror_by_from` / `repli_mirror_w` — so unarmed, a friend's cast has nowhere to land.
+  Radio.g:1281 already says it: *"it never registers an rx for the friend's cast — it can neither send
+   music nor receive it, while looking perfectly healthy"*. That comment described this box exactly, and
+    §10.5 item 4 had filed the same root cause under "the shelf doesn't grow" — too small a claim.
+
+**Fixed in the daemon, not the ghosts.** `main.ts`'s `share_arm()` calls `Swarm_share_up` right after
+ the station arms — the same verb `InvitePanel.svelte:55-57` calls in a tab. No new gate for the
+  ghosts to learn; "this process is a daemon" is a fact out here, not a flag they must be taught. The
+   Book/browser/prod-headless third state is still the right fix and still owed — it is just no longer
+    in the way. **`Ra_shuffle_cull` is held off via its own throttle** (fresh `ra_cull_at` + absurd
+     `ra_cull_floor_ms`), so the beat runs without a deletion path going live the same day as
+      `deleteEntry`; `CULL=1` releases it. Nothing is patched out — the mechanism declines itself.
+
+**Measured, one boot:** `share true` at 38s · `them 1` at 70s · `tour` no longer `NEVER` (every
+ 10–20s, `picks=2 got=2`, alternating `base=music`/`testsounds`) · shelf **20 → 40** with
+  `probed=10 measured=10 encoded=10 failed=0` — ffmpeg transcoding real tracks live.
+
+**New in the log, and the distinction it draws:** `🎧 serving <friendly>(<pub8>) ← <title> n/total
+ (re×N) tx NKB/s`, read off `Repli_serve_want`'s own cursor (`top.c.xfer.serves`, Repli.g:817).
+  Deliberately not change-gated and absent when idle — *a peer is connected* and *bytes are leaving
+   for that peer* are different claims, and only the second means the box is doing its job.
+
+**Still not proven: a track pulled from this box and heard.** `serve.live` is `[]` — nothing has ASKED
+ yet. That is now the whole remaining gap. Also newly reachable for the first time: the shelf is
+  climbing toward `Ra_stock_cap()` = 100, so `Ra_stock_gc_cap` will finally evict. Watch it plateau.

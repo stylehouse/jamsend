@@ -321,6 +321,12 @@ if (process.env.E) { boot.book = process.env.E; boot.boot_role = 'editor' }
 else if (process.env.B) { boot.book = process.env.B; boot.boot_role = RUNNER_ROLE }
 else if (process.env.I) { boot.boot_role = RUNNER_ROLE; boot.on_grid = process.env.I }
 
+// FACELESS — the UIs this process registers but never mounts (Daemonic's FACELESS SET explains
+//  why Vyto is the default: the glass runs a 60fps render loop into a document with no reader, and
+//   trips its own watchdog every four seconds saying so).  `FACELESS=` mounts everything again —
+//    an empty string is a deliberate override, so read `!== undefined`, not `||`.
+if (process.env.FACELESS !== undefined) boot.faceless = process.env.FACELESS
+
 if (!boot.boot_role) {
     say('☠ no boot shape given — set B=<Book> (runner), E=<Waft> (editor), or I=<prepub> (resume).')
     say('   A bare `node run.mjs` would fall into Auto\'s dev-only library page (Daemon_todo §8.3), which no real client ever reaches.  exit 4')
@@ -556,6 +562,115 @@ const wrap_probe = () => {
 }
 wrap_probe()
 const probe_line = () => probe.stack.map(m => `${m.tag}(${((Date.now() - m.at) / 1000).toFixed(1)}s)`).join(' → ') || '(idle)'
+// stock_state — how much music this box can actually SERVE, which until tonight was a number nobody
+//  could see from outside.  `records` is the live shelf (%Record under this identity's own %Peering);
+//   `ff` is the native provider's running tally, and its `last_why` is the single most useful line
+//    when the shelf will not grow — it names the track and the reason instead of leaving a silence
+//     that reads identically to "the collection is empty".
+const stock_state = () => {
+    const out: any = { native: false, records: 0 }
+    try {
+        const top = (H as any).top_House?.() || H
+        const nat = top?.c?.ra_native
+        out.native = !!nat
+        if (nat) out.ff = nat.stats
+        const rw = top?.c?.radio_w
+        if (!rw) return out
+        const pub = (H as any).Radio_pub?.(rw)
+        if (!pub) return out
+        const shelf = (H as any).Ra_home_self?.(rw, pub)
+        out.records = shelf ? ((H as any).Ra_recs?.(shelf)?.length ?? 0) : 0
+        // THE NUMBER THAT PROVES A FRIENDSHIP IS DOING ANYTHING.  A friend's cast mints a per-friend
+        //  `%MusuThem` crate in the radio world (`Swarm_share_up`'s `repli_mirror_by_from` +
+        //   `repli_mirror_w`).  ZERO of them while sealed peers trade `ive_got` every few seconds is
+        //    the exact signature of an unarmed rx — the fault that hid all morning behind a box that
+        //     looked healthy from every other angle: sealed, granted, shelf stocked, no errors.
+        out.share = share_armed
+        out.them = rw.o?.({ MusuThem: 1 })?.length ?? 0
+        // THE CONVEYOR'S OWN ELECTRODES, which `Stoker_dig` already sets and nobody outside a browser
+        //  could read: they live on `.c`, and /c dumps `sc`.  Without them "the shelf stopped growing"
+        //   has at least three explanations wanting opposite fixes — the tour never ran; it ran and the
+        //    meander returned nothing; it ran, returned picks, and every pick was already standing
+        //     (`dig_got` up, `dig_dup` up, shelf flat) — and Radio.g's own comments record this file
+        //      relearning that lesson twice already.  Reading them costs nothing and guessing costs a
+        //       night.  `tour_ago_s` separates "not running" from "running and finding nothing", which
+        //        is the split none of the counters can make on their own.
+        const st = rw.o?.({ Stoker: 1 })?.[0]
+        if (st) out.dig = {
+            state: st.sc?.Stoker ?? '?',
+            tour_ago_s: st.c?.tour_at ? +((Date.now() - st.c.tour_at) / 1000).toFixed(1) : null,
+            base: st.c?.dig_base ?? null,
+            picks: st.c?.dig_picks ?? 0,
+            got: st.c?.dig_got ?? 0,
+            dup: st.c?.dig_dup ?? 0,
+            bad: st.c?.dig_bad ?? 0,
+            hit: st.c?.dig_hit ?? 0,
+            err: st.c?.dig_err || '',
+        }
+    } catch (e: any) { out.why = String(e?.message).slice(0, 80) }
+    return out
+}
+
+// friendly_of — a prepub-8 back to the name a human gave that friendship.  A log line that says
+//  `65ae23ea` makes the reader do a lookup; one that says `Vaga(65ae23ea)` does not.
+const friendly_of = (pub8: string): string => {
+    try {
+        const self = (H as any).Swarm_live_self?.()
+        const peering = self && (H as any).Swarm_peering?.(self)
+        for (const p of (peering?.o?.({ Pier: 1 }) ?? []))
+            if (String(p.sc?.pub || '').startsWith(pub8)) return `${p.sc.friendly || '?'}(${pub8})`
+    } catch {}
+    return pub8 || '?'
+}
+
+// serve_state — WHO THIS BOX IS ACTUALLY FEEDING, the one thing the log never said.  "A peer is
+//  connected" and "bytes are leaving for that peer" are different claims, and only the second one
+//   means the box is doing its job; all morning the first was true and the second was false, and
+//    nothing in the log could tell them apart.  Repli already keeps the answer: `Repli_serve_want`
+//     stamps a live serve cursor per record on the top House's `.c.xfer` (Repli.g:817) —
+//      `{title, n, total, to, ts, re}` — as pages go out.  That is the UPLOADER's own view.  `re` is
+//       the retransmit count, which is the tell that a sink is re-asking for pages it already got.
+const serve_state = () => {
+    try {
+        const x: any = (H as any).top_House?.()?.c?.xfer
+        if (!x) return null
+        const now = Date.now()
+        const live = Object.entries(x.serves || {})
+            .map(([id, s]: any) => ({ id, ...(s as object) }))
+            .filter((s: any) => now - (s.ts || 0) < 30_000)     // "in flight", not "ever served"
+            .sort((a: any, b: any) => (b.ts || 0) - (a.ts || 0))
+        return { live, rx_kbps: x.rx_kbps || 0, tx_kbps: x.tx_kbps || 0, drops: x.drops || 0, last_drop: x.last_drop || '' }
+    } catch { return null }
+}
+
+// vyto_state — the glass's own electrodes, and the one reading that settles whether the RENDERER is
+//  running on a box with no screen.  The split matters and no single number makes it:
+//   · stir_n     — the GHOST half (Vyto_stir → scan/fold/gang/relate/express/solve).  Still turns
+//                   with the glass faceless; it is the commission that drives it, not the render.
+//   · wall_cuts  — the RENDER half, bumped only inside Vytui's build_cells.  Flat ⇒ nothing is
+//                   cutting power cells, which is what "faceless" is supposed to mean.  A rising
+//                    wall_cuts on a daemon is the whole bug, visible in one number.
+//   · painted_stir/settled/yore_n — where the renderer got to, for when it IS wanted.
+//  Blank when no glass stands, which is itself the answer to "did the commission land".
+const vyto_state = () => {
+    try {
+        for (const h of allHouses(H))
+            for (const A of (h.o?.({ A: 'Vyto' }) ?? []))
+                for (const w of (A.o?.({ w: 'Vyto' }) ?? [])) {
+                    const c: any = w.c ?? {}
+                    return {
+                        commissioned: !!c.commission,
+                        stir_n: c.stir_n ?? 0,
+                        wall_cuts: c.wall_cuts ?? 0,
+                        painted_stir: c.vyto_painted_stir ?? 0,
+                        settled: c.settled ?? 0,
+                        yore_n: c.yore_n ?? 0,
+                    }
+                }
+    } catch (e: any) { return { why: String(e?.message).slice(0, 80) } }
+    return null
+}
+
 const stats = () => {
     const hs = allHouses(H)
     return {
@@ -572,6 +687,9 @@ const stats = () => {
         wedge: (H.top_House?.() as any)?.mutex_held?.('beliefs') ?? null,
         inside: probe_line(),
         book: book_state(),
+        stock: stock_state(),
+        serve: serve_state(),
+        vyto: vyto_state(),
         identity: identity_state(),
         ttlilts: liveTtlilts(H).count,
         ghosts: Object.keys(H).filter(k => typeof (H as any)[k] === 'function').length,
@@ -661,7 +779,38 @@ const server = http.createServer((req, res) => {
         if (!token_ok(req, url)) { res.statusCode = 401; return res.end('{"error":"token required — ?token=<STATUS_TOKEN> or X-Daemon-Token header (logged once at boot)"}') }
         stopping = true; return res.end('{"stopping":1}')
     }
-    res.statusCode = 404; res.end('{"paths":["/status","/c?depth=3 (token)","/stop (token)"]}')
+    // /restock — drop THIS identity's radiostock shelf so the next tour re-digs it.
+    //  WHY IT EXISTS: a stock card bakes decisions (the gain, the cut point, the preview window) that
+    //   come from constants and from HOW it was measured.  Change any of those and every standing
+    //    card keeps resurrecting the old answer forever, because `Ra_stock_standing` matches on the
+    //     enid — a content hash of the SOURCE, which did not move.  There was no way to say
+    //      "re-baseline" short of deleting files, and the shelf is not mine to delete from outside:
+    //       /music is read-only to every container but this one.
+    //  SAFE BY CONSTRUCTION, and worth saying why: `Ra_stock_ls` filters to this pub, so a daemon can
+    //   only ever wear off its OWN shelf — never a browser identity's sharing the same .jamsend.  And
+    //    a dropped card is one re-dig from the source, never a loss.
+    if (url.pathname === '/restock') {
+        if (!token_ok(req, url)) { res.statusCode = 401; return res.end('{"error":"token required — ?token=<STATUS_TOKEN> or X-Daemon-Token header (logged once at boot)"}') }
+        const top = (H as any).top_House?.() || H
+        const rw = top?.c?.radio_w
+        const pub = rw ? (H as any).Radio_pub?.(rw) : null
+        if (!pub) { res.statusCode = 409; return res.end('{"error":"no radio world / pub yet — the daemon is still coming up"}') }
+        ;(async () => {
+            // COUNT WHAT SURVIVED, not what was attempted.  The first cut of this counted calls to
+            //  Ra_stock_drop and reported "dropped 20" while twenty files sat on disk untouched —
+            //   that verb no-ops when the nav has no deleteEntry, which the node nav did not.  A
+            //    before/after listing cannot tell that lie, so that is what it reports.
+            const before = (await (H as any).Ra_stock_ls(nav, pub)).length
+            try {
+                for (const p of await (H as any).Ra_stock_ls(nav, pub)) await (H as any).Ra_stock_drop(nav, p.name)
+            } catch (e: any) { say(`🎚 restock sweep threw — ${String(e?.message).slice(0, 80)}`) }
+            const after = (await (H as any).Ra_stock_ls(nav, pub)).length
+            say(`🎚 restock — ${before - after} of ${before} card(s) gone for ${String(pub).slice(0, 12)}`
+                + (after ? `; ${after} REFUSED to drop (nav cannot delete?)` : '; the next tour re-digs them'))
+        })()
+        return res.end(`{"restocking":1,"pub":${JSON.stringify(pub)}}`)
+    }
+    res.statusCode = 404; res.end('{"paths":["/status","/c?depth=3 (token)","/stop (token)","/restock (token)"]}')
   } catch (e: any) {
     // The backstop.  Nothing this server does is worth the process, and everything above is a READ.
     try { res.statusCode = 500; res.end(`{"error":${JSON.stringify(String(e?.message || e))}}`) } catch {}
@@ -789,9 +938,14 @@ const ffmpeg_probe = async (): Promise<void> => {
         const t0 = Date.now()
         const m = await ff.measure(abs, target)
         const secs = ((Date.now() - t0) / 1000).toFixed(1)
-        if (m.measured === null) { say(`🎬 ffmpeg ${v} — measure failed on ${mused_pick.split('/').pop()}: ${m.why}`); return }
+        if (ff.failed(m)) { say(`🎬 ffmpeg ${v} — measure failed on ${mused_pick.split('/').pop()}: ${m.why}`); return }
         const gain = +(target - m.lufs).toFixed(2)
-        say(`🎬 ffmpeg ${v} — measured ${mused_pick.split('/').pop()}: ${m.lufs} LUFS, tp ${m.measured.input_tp} dBTP`
+        // BOTH peaks, on purpose.  `tp` is loudnorm's oversampled true peak; `pk` is astats' sample
+        //  maximum, and `pk` is the one Ra_gain_for uses because it is what Ra_peak means.  Printing
+        //   both is also the standing check that astats did not perturb the chain it rides in — the
+        //    volumedetect trap (see ffmpeg.ts) showed up as tp MOVING when a meter was added.
+        const pkdb = (20 * Math.log10(Math.max(1e-9, m.peak))).toFixed(2)
+        say(`🎬 ffmpeg ${v} — measured ${mused_pick.split('/').pop()}: ${m.lufs} LUFS, tp ${m.measured.input_tp} dBTP, pk ${pkdb} dBFS (${m.peak_from})`
             + ` → ${gain >= 0 ? '+' : ''}${gain} dB to reach ${target} (${secs}s)`)
         // The ENCODE half is opt-in (FFTEST=1), because measuring a track costs seconds and
         //  transcoding one costs minutes — on every restart, and this box restarts on a timer.
@@ -822,6 +976,34 @@ const ffmpeg_probe = async (): Promise<void> => {
             + (samples ? `, ${(samples / 48000).toFixed(1)}s of audio by Ra_opus_samples` : ''))
     } catch (e: any) {
         say(`🎬 ffmpeg probe failed — ${String(e?.message).slice(0, 120)}`)
+    }
+}
+
+// ── arm native stocking: the thing that makes this daemon have anything to serve ──────────────
+// THE GAP THIS CLOSES.  `Ra_stock_one` is the whole of stocking, and three of its steps are browser
+//  primitives (OfflineAudioContext, the needles worker, WebCodecs).  Headless it threw on the first
+//   of them, the stoker caught the throw, learned the path BARREN and moved on — so the daemon dug
+//    the entire collection, reported a clean shelf of zero, and a sealed friend opened an empty
+//     glass.  Nothing in any log said "I cannot do audio"; it said nothing at all.
+// `Ra_native()` reads this object off the top House and forks those three steps to ffmpeg.  Set it
+//  BEFORE the station comes up, so the first share beat's Stoker_tour already has it — arriving one
+//   beat late is not fatal (the tour repeats) but it is a wasted pass that learns paths barren.
+// Deliberately NOT gated on the meander finding anything: an empty collection still wants the
+//  provider armed, because the mounts can change under a running daemon and the alternative is a
+//   restart to pick up music that is already there.
+let ra_native_armed = false
+const ra_native_arm = async (): Promise<void> => {
+    if (ra_native_armed) return
+    if (!H || typeof (H as any).top_House !== 'function') return    // ghosts still mounting — retry
+    ra_native_armed = true
+    try {
+        const { make_ra_native } = await import('./ra_native.ts')
+        const provider = await make_ra_native(nav as any, say)
+        if (!provider) return
+        const top = (H as any).top_House() || H
+        top.c.ra_native = provider
+    } catch (e: any) {
+        say(`🎚 native stocking failed to arm — ${String(e?.message).slice(0, 120)}`)
     }
 }
 
@@ -865,6 +1047,55 @@ const station_up = (): void => {
         const izzes = peering?.o({ Idzeug: 1 })?.length ?? 0
         say(`🤝 Swarm station ARMED at ${self.sc?.prepub} — handlers registered; invites can be answered`
             + ` · remembers ${friends} friend(s), ${izzes} invite(s)`)
+    }
+}
+
+// ── the SHARE — armed the way a TAB arms it ───────────────────────────────────────────────────
+// THE BLOCKER, found 2026-08-08 with a friend sealed and nothing flowing.  A sealed peer exchanged
+//  `ive_got` with this box every few seconds and the box held ZERO `%MusuThem`.  The reason is that
+//   `Swarm_share_up` is not only "offer my stock": it calls `Repli_arm` and sets
+//    `repli_mirror_by_from`, so it is equally the **rx registration for a friend's cast**.  Unarmed,
+//     the census arrives and nothing consumes it.  Radio.g:1281 describes this box exactly — "it
+//      never registers an rx for the friend's cast — it can neither send music nor receive it, while
+//       looking perfectly healthy (sealed, Music-granted, happily playing its own local shelf)".
+//  TWO arming paths exist and the daemon had NEITHER:
+//   · `InvitePanel.svelte`'s $effect — a UI component, and the daemon mounts no room chrome.
+//   · `Stoker_ensure`, gated on `!w.sc.w` so a Book never starts a wall-clock pump (correct) — and
+//      jamserve boots `B=Sounditron`, so it wears that gate.
+//  Teaching the ghosts a third state (Book / browser / prod-headless) is still the right fix and is
+//   still owed (Daemon_todo §10.5 item 4).  This does not pre-empt it: it makes the daemon do what a
+//    tab does — call the same verb, from outside, where "this process is a daemon" is a plain fact
+//     rather than a flag the ghosts must learn.
+//
+// ⚠ THE CULL, HELD OFF DELIBERATELY.  Arming the share starts `Swarm_share_beat`, which calls
+//  `Ra_shuffle_cull` (Swarm.g:1967) — "check every Record in the shuffle Mag still has its source and
+//   DELETE the ones that don't" — on a box whose `deleteEntry` only became real this morning.  Two
+//    newly-live deletion paths at once, pointed at the owner's music folder, is not something to
+//     switch on while proving something else.  The hold uses the cull's OWN throttle rather than a
+//      new flag: a fresh `ra_cull_at` plus an absurd `ra_cull_floor_ms` means every call takes the
+//       early return it already has.  Nothing is patched out — the mechanism declines itself, and
+//        `CULL=1` releases it in one env var when someone wants to watch it work.
+const CULL = process.env.CULL === '1'
+let share_armed = false
+let share_note = ''
+const share_arm = (): void => {
+    if (share_armed || !stood) return                                      // station first — share needs its world
+    if (typeof (H as any).Swarm_share_up !== 'function') return            // ghosts still depositing
+    const self = (H as any).Swarm_live_self?.()
+    const w = (H as any).Swarm_station_world?.()
+    const rw = (H as any).top_House?.()?.c?.radio_w                        // stamped by Stoker_ensure
+    if (!self || !w || !rw) return
+    if (!CULL) { rw.c.ra_cull_at = Date.now(); rw.c.ra_cull_floor_ms = 1e15 }
+    if ((H as any).Swarm_share_up(w, self)) {
+        share_armed = true
+        say(`📻 share ARMED — Repli rx registered; a friend's cast now mints %MusuThem, and the share beat turns`
+            + (CULL ? '  ·  ⚠ CULL=1 — Ra_shuffle_cull is LIVE and deletes records whose source is gone'
+                    : '  ·  Ra_shuffle_cull held off (CULL=1 releases it)'))
+    } else if (share_note !== 'no') {
+        // Swarm_share_no says WHY, once per distinct reason, on the station world — a reason that
+        //  never changes is precisely the bug it was written to expose.  Don't re-say it every tick.
+        share_note = 'no'
+        say('📻 share did not arm yet — Swarm_share_no left the reason on the station world (retrying)')
     }
 }
 
@@ -1012,6 +1243,8 @@ const arrest_watch = async () => {
 
 // ── 5. run ───────────────────────────────────────────────────────────────────────────────────
 let last_beat = 0
+let last_full = 0        // when the heartbeat last printed its state lines in full
+let last_sig = ''        // their content last time, so an unchanged beat stays silent
 while (!stopping) {
     for (const h of allHouses(H)) if (!h.started) h.started = true
 
@@ -1042,7 +1275,9 @@ while (!stopping) {
     await persist_account()
     await muse_collection()
     await ffmpeg_probe()          // after the meander, so it can ask about a real track from it
+    await ra_native_arm()         // before station_up, so the first share beat's tour can stock
     station_up()
+    share_arm()                   // after the station: the share needs its world and identity concrete
     await invite_harness()
     await arrest_watch()
 
@@ -1057,6 +1292,24 @@ while (!stopping) {
     if (Date.now() - last_beat > 10_000) {
         last_beat = Date.now()
         const s = stats()
+        // THE HEARTBEAT IS A PULSE, NOT A REPORT (the human 2026-08-08: "repeatedly logging so much
+        //  crap is annoying, I can't see the tiny bits between them").  Three lines every ten seconds,
+        //   each of them usually IDENTICAL to the last, buries the one line anyone is actually waiting
+        //    for — a `pier_hello`, a want, a throw.  A log that scrolls its own furniture past the
+        //     event is worse than a quieter one, because it looks like it is telling you everything.
+        //  So the STATE lines print only when their content CHANGES, plus a full re-print every five
+        //   minutes so someone tailing in late still gets the picture without waiting for a change.
+        //    The ♥ pulse itself stays on every beat: it is the liveness signal, and it is one line.
+        //  THE GATE MUST BE BUILT FROM VALUES, NOT FROM THE RENDERED LINES (2026-08-08, second go).
+        //   The first cut hashed the finished strings, and one of them carries `tour 39.9s ago` — a
+        //    number that changes every single beat by construction.  So the signature changed every
+        //     beat, the gate never held, and the log looked exactly as noisy as before while the code
+        //      claimed to be quiet.  A change-detector fed its own clock detects nothing.  `sig` is
+        //       therefore assembled from the state that MEANS something, and elapsed-time readouts are
+        //        printed but never signed.
+        const worlds = s.houses.flatMap(h => h.worlds).join(' ')
+        const lines: string[] = []
+        const sig_of: any[] = [worlds]
         // The wedge belongs in the HEARTBEAT, not just in /status.  A wedged machine keeps ticking,
         //  keeps answering HTTP, and keeps looking alive — the same lie the tab tells (Housing's
         //   mutex() comment).  If the heartbeat doesn't say it, nobody finds out until they ask.
@@ -1067,10 +1320,56 @@ while (!stopping) {
             + (s.wedge && s.wedge.ms > 2000 ? `  ⚠ WEDGE ${Math.round(s.wedge.ms / 1000)}s by ${s.wedge.who}` : '')
             // same reasoning as the wedge above: unprovisioned looks exactly like provisioned from
             //  out here, so the heartbeat has to carry it or nobody finds out.  Empty when correct.
-            + nag_identity()
-            + `  worlds=${s.houses.flatMap(h => h.worlds).join(' ')}`)
+            + nag_identity())
         if (s.wedge && s.wedge.ms > 2000) say(`   ↳ inside: ${probe_line()}`)
-        if (s.book) say(`   ▸ Book ${s.book.Book} driving=${s.book.driving} phase=${s.book.phase} steps=${s.book.snapped}/${s.book.steps} ok=${s.book.ok} caveat=${s.book.caveat}`)
+        lines.push(`   ▸ worlds=${worlds}`)
+        if (s.book) {
+            lines.push(`   ▸ Book ${s.book.Book} driving=${s.book.driving} phase=${s.book.phase} steps=${s.book.snapped}/${s.book.steps} ok=${s.book.ok} caveat=${s.book.caveat}`)
+            sig_of.push(s.book.Book, s.book.driving, s.book.phase, s.book.snapped, s.book.steps, s.book.ok, s.book.caveat)
+        }
+        // The shelf, because "how much can this box serve" was the one number a sealed friend could
+        //  see and the owner could not.  Only once native stocking is armed — on a browser-shaped
+        //   boot the line would be noise.
+        if (s.stock.native) {
+            const f = s.stock.ff || {}
+            const d = s.stock.dig
+            lines.push(`   🎚 shelf=${s.stock.records} rec  them=${s.stock.them ?? 0} crate(s)  ffmpeg probed=${f.probed ?? 0} measured=${f.measured ?? 0} encoded=${f.encoded ?? 0} failed=${f.failed ?? 0}`
+                + (d ? `  ·  dig[${d.state}] tour ${d.tour_ago_s == null ? 'NEVER' : d.tour_ago_s + 's ago'}`
+                     + ` base=${d.base ?? '-'} picks=${d.picks} got=${d.got} dup=${d.dup} bad=${d.bad}${d.err ? ' err=' + d.err : ''}` : '')
+                + (f.last_why ? `  ↳ ${String(f.last_why).slice(0, 110)}` : ''))
+            // NOTE what is absent: `tour_ago_s`.  It is the most useful field on the line and the most
+            //  useless one to sign — it counts up on its own, so signing it means signing the clock.
+            //   `tour_at` crossing into a NEW tour shows up as picks/got/base changing, which are here.
+            sig_of.push(s.stock.records, s.stock.them, f.probed, f.measured, f.encoded, f.failed, f.last_why,
+                d && d.state, d && d.base, d && d.picks, d && d.got, d && d.dup, d && d.bad, d && d.err,
+                d ? (d.tour_ago_s == null) : null)     // NEVER→ever is a real transition; the seconds are not
+        }
+        // The glass, and ONLY when it is actually rendering.  A faceless box must never print this
+        //  line, so its APPEARANCE is the alarm — power cells being cut on a machine with no screen.
+        //   Silence here is the correct reading, which is why it isn't a permanent field.
+        const vy: any = s.vyto
+        if (vy && vy.wall_cuts > 0) {
+            lines.push(`   ▣ Vyto is RENDERING on a screenless box — stirs=${vy.stir_n} wall_cuts=${vy.wall_cuts}`
+                + ` painted@${vy.painted_stir}  (FACELESS=${boot.faceless ?? 'Vyto'})`)
+            sig_of.push('vyto-rendering')   // the FACT, not the counters — they climb every beat
+        }
+        // THE SERVE LINE — deliberately NOT change-gated with the furniture below, and deliberately
+        //  absent when idle.  A serve ADVANCING is the news, not repetition to be suppressed; and
+        //   silence here is a real reading — nobody is being fed — rather than a gap in the log.
+        //    Put another way: every other line answers "is this box alive", this one answers "is it
+        //     doing the thing it exists for".
+        const sv = s.serve
+        if (sv && sv.live.length) {
+            for (const g of sv.live.slice(0, 3))
+                say(`   🎧 serving ${friendly_of(String(g.to || ''))} ← ${String(g.title ?? g.id).slice(0, 46)}`
+                    + ` ${g.n}/${g.total}` + (g.re ? ` (re×${g.re})` : '') + `  tx ${sv.tx_kbps}KB/s`)
+            if (sv.live.length > 3) say(`   🎧 … and ${sv.live.length - 3} more record(s) in flight`)
+        }
+        const sig = JSON.stringify(sig_of)
+        if (sig !== last_sig || Date.now() - last_full > 300_000) {
+            last_sig = sig; last_full = Date.now()
+            for (const l of lines) say(l)
+        }
     }
     if (SECS && (Date.now() - t0) / 1000 > SECS) { say(`SECS=${SECS} reached`); break }
 

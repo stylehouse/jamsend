@@ -370,7 +370,18 @@ Repli_pack_chunks(chunks, from, end):
     return out
 
 // Repli_unpack_page — a page's bytes back to one Float32Array (aligned copy, byteOffset-safe).
+//  RAGGED PAGES RETURN null, THEY DO NOT THROW (2026-08-08).  A Float32Array view demands a byte
+//   length that is a multiple of 4, and a truncated|damaged page is not — so this threw straight out
+//    of the recv handler, which the wire layer reports as `unemit NOT acked … handler-threw — byte
+//     length of Float32Array should be a multiple of 4` and which STRANDS THE SENDER'S EMIT.  The
+//      sender's own comfort ("self-heals via the app-layer re-ask") is false in that state: the
+//       re-ask lands on the same ragged bytes and throws again, which is the re-ask storm in the
+//        2026-08-08 log.  A null here is honest — the caller treats it exactly like the cid breach
+//         below: refuse the bytes, leave the chunk UNFILLED, and let the want stand so the NEXT ask
+//          can actually succeed.  Never round the length down to a multiple of 4: that would decode
+//           a damaged page as if it were sound, and presence is fill state on this path.
 Repli_unpack_page(bytes):
+    if (bytes.length % 4 !== 0) return null
     let u8 = new Uint8Array(bytes.length)
     u8.set(bytes)
     return new Float32Array(u8.buffer)
@@ -1030,16 +1041,26 @@ Repli_attach_page(w, pier, id, bytes):
         mirror.bump()
     } else {
         let pcm = this.Repli_unpack_page(bytes)
-        mirror.c.pages = mirror.c.pages || []
-        mirror.c.pages.push(pcm)
+        if (pcm == null) {
+            // the Float32 twin of the cid breach above: a ragged page is damaged, so REFUSE it and
+            //  leave the chunk unfilled rather than pushing a half-sample onto the timeline.  got is
+            //   deliberately NOT ticked — the want must stay outstanding or the re-ask has nothing to
+            //    chase.  Loud, because a silent refusal here reads exactly like a slow wire.
+            mirror.c.breach = 'ragged'
+            this.Repli_land_warn(w, 'ragged-page', `ragged page seq=${mirror.sc.seq} bytes=${bytes.length} (not a multiple of 4) — bytes REFUSED, chunk unfilled → want stands for re-ask`)
+        } else {
+            mirror.c.pages = mirror.c.pages || []
+            mirror.c.pages.push(pcm)
+            mirror.sc.got = (+(mirror.sc.got || 0)) + 1
+            landed = 1
+        }
         mirror.c.await_buffer = null
-        mirror.sc.got = (+(mirror.sc.got || 0)) + 1
         mirror.bump()
-        landed = 1
     }
     // LANDING SIGNAL (generic; music-agnostic): a real chunk just filled.  A consumer that wants to
     //  react the instant bytes cross — the radio waking a digging playhead mid-poll, never waiting out
-    //   its 3s dig look — registers w.c.repli_on_land; unset, this costs nothing.  A breach (bytes
+    //   its dig poll (800ms; this said "3s" until 2026-08-08) — registers w.c.repli_on_land; unset,
+    //    this costs nothing.  A breach (bytes
     //    refused, chunk still UNFILLED) does NOT fire it: presence is fill state, so nothing plays.
     //  FIRE ON THE MIRROR WORLD: in the live share Repli_arm runs on the STATION world, but the mirror
     //   crates AND the radio (which registered the hook in Radio_ensure) live in w.c.repli_mirror_w —
