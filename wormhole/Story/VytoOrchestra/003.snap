@@ -1,0 +1,18 @@
+Snap:H
+  H:VytoOrchestra,Run
+    A:VytoOrchestra
+      self,round=4	{"mung":["age"]}
+      w:VytoOrchestra
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Band:main
+          Player:keys,of:main
+          Player:bass,of:main
+          Player:drums,of:main
+        Song:LowTide,artist:Yara
+        Song:Undertow,artist:Yara
+        Song:SaltAir,artist:Yara
+        Stray:moth
+        Stray:lint
+        req:stand_wait,finished
+        see:the orchestra stands foam-cut — a stuffed bag beside kin songs and loose strays all seated

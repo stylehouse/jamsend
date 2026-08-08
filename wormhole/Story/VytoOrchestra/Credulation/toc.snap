@@ -1,5 +1,5 @@
-Credulation,of_Book:Sounditron
-  run=0,at=1786197662.439,ok=0,ok_pct=0,mode:check
+Credulation,of_Book:VytoOrchestra
+  run=0,at=1786199322.437,ok,ok_pct,mode:new
     uses:Ghost_N_Peeroleum,dige:18cb029750287c38~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:2a297dc2edd42bbc~g1
@@ -25,7 +25,7 @@ Credulation,of_Book:Sounditron
     uses:Ghost_S_Swarm,dige:4fcd3d26879a0227~g1
     uses:Ghost_Story_Swarmation,dige:f4060302563099af~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
-    uses:Ghost_V_Vyto,dige:5849100f19e3eff6~g1
-    uses:Ghost_V_Vytonation,dige:4db58120ea3b7e4a~g1
+    uses:Ghost_V_Vyto,dige:5d2075c76b5da535~g1
+    uses:Ghost_V_Vytonation,dige:cd7a46d301e2210c~g1
     uses:Ghost_Story_Voronation,dige:a8a9737169608630~g1
-    uses:Ghost_Story_Sounditron,dige:449c6d871d9e1b2a~g1
+    uses:Ghost_Story_Sounditron,dige:504638877e31257c~g1

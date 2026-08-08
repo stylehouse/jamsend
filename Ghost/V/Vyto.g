@@ -115,6 +115,11 @@ e_Vyto_commission(A, w, e):
     //    need.  Importance still ranks ABOVE the floor.  Default off ⇒ the algebra alone — and the
     //     render skips the measure entirely — byte-identical.
     w.c.need_floor = req.sc.need_floor ? 1 : 0
+    // FOAM opt-in (Vyto_todo "THE ORCHESTRA OF SPHERES"): coverage earned by pressure — the render
+    //  cuts foam_cells (each cell = its own disc trimmed only where discs press) instead of carving
+    //   the whole frame.  Renderer-side law; the solve is unchanged for now (its seeds/radii feed
+    //    both cuts).  Default off ⇒ every existing commission keeps the byte-identical frame cut.
+    w.c.foam       = req.sc.foam ? 1 : 0
     // DEPTH-SCALE opt-in (Vyto_todo THE PIN P3): a nested scope's child radii scale by √(parent cell
     //  area / frame area) instead of staying frame-absolute — fixes crowd-out in a small parent cell
     //   (VytoDepth proves it).  Default off ⇒ Vyto_solve_scope's depth_k is 1 (no-op), so every

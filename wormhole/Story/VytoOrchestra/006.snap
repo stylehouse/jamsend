@@ -1,0 +1,24 @@
+Snap:H
+  H:VytoOrchestra,Run
+    A:VytoOrchestra
+      self,round=10	{"mung":["age"]}
+      w:VytoOrchestra
+        self,round=10	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Band:main
+          Player:keys,of:main
+          Player:bass,of:main
+          Player:drums,of:main
+        Song:LowTide,artist:Yara,mood:brine
+        Song:Undertow,artist:Yara,mood:brine
+        Song:SaltAir,artist:Yara
+        Stray:moth
+        Stray:lint
+        req:stand_wait,finished
+        req:weave_wait,finished
+        req:deepen_wait,finished
+        req:focus_wait,finished
+        see:the orchestra stands foam-cut — a stuffed bag beside kin songs and loose strays all seated
+        see:shared meaning wove flow among the songs and left the strays loose
+        see:a shared mood deepened one flow to two atoms while the rest held at one
+        see:the focused song swelled while the world sorted away from its moment

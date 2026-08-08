@@ -12,7 +12,7 @@ import { sig_of, group_edges, bucket_key_of, pull_step, budget_for, SIG_JOINS, F
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return '5849100f19e3eff6~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return '5d2075c76b5da535~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -129,6 +129,11 @@ e_Vyto_commission(A, w, e) {
     //    need.  Importance still ranks ABOVE the floor.  Default off ⇒ the algebra alone — and the
     //     render skips the measure entirely — byte-identical.
     w.c.need_floor = req.sc.need_floor ? 1 : 0
+    // FOAM opt-in (Vyto_todo "THE ORCHESTRA OF SPHERES"): coverage earned by pressure — the render
+    //  cuts foam_cells (each cell = its own disc trimmed only where discs press) instead of carving
+    //   the whole frame.  Renderer-side law; the solve is unchanged for now (its seeds/radii feed
+    //    both cuts).  Default off ⇒ every existing commission keeps the byte-identical frame cut.
+    w.c.foam       = req.sc.foam ? 1 : 0
     // DEPTH-SCALE opt-in (Vyto_todo THE PIN P3): a nested scope's child radii scale by √(parent cell
     //  area / frame area) instead of staying frame-absolute — fixes crowd-out in a small parent cell
     //   (VytoDepth proves it).  Default off ⇒ Vyto_solve_scope's depth_k is 1 (no-op), so every

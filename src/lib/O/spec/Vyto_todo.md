@@ -240,6 +240,122 @@ The clip regime landed and the owner confirmed it.  Their next ruling, in one br
   convexity bug.  The seat geometry now lives in vyto_geometry.ts where node can test it — A1/C1 both
    closed by removal + relocation.)
 
+### ⇢ THE SECOND RULING + THE POSE (2026-08-09, same evening — supersedes the sideways enthusiasm)
+
+The owner on the live sideways glass: *"ew not that much. very incoherent! forget sidewaysing, I just
+ meant the box-within-box reality of Component in cell aligned for space efficiency, without tilting
+  anything more than say 30degrees, or zooming more than so much."*  Done: a slab steeper than
+   MAX_TILT (30°) is NOT taken (falls back to AABB + clip — never clamped, a 30° box in a 70° slab
+    helps nobody), and fit is bounded 0.2..FIT_MAX (1.6) — envelope-down survives for the icon floor,
+     blow-up stops before a trivial widget dominates.  Also: **16:9 is the default aspect pick**.
+
+**THE POSE — the App↔Vyto seam, first slice landed (Sounditron.g `Sounditron_pose`, compiled
+ 449c6d871d9e1b2a):** *"make the toplevel model we push to it change what's included in it...
+  App<->Vyto... via how the model is posed right now... more things broken up into smaller parts.
+   the Transfer for example... very very well sculpted C** except where it really matters. all made
+    up properties, in another world of their own... with click handlers smuggled in."*
+- a dontSnap `%Pose,'wire'` bag on the radio world; one free-vocabulary `%Pull`/`%Serve` particle per
+   LIVE transfer (identity + 25%-bucketed pct in sc; per-packet numbers stay on M.c.xfer unbumped —
+    "except where it really matters" IS the sc|.c split), grappled FLAT beside the organs.
+- `%Float,'ballast'` — a particle that is only dose, pitching mass toward the wire pile while it is
+   busy ("devices just for floatation").
+- every part wears the made-up atom `lane:'wire'` so Vyto_relate weaves %Flow between them and
+   pull_step bunches the pile — **Cyto's mesh bagging re-had through meaning, not a compound node**
+    (the owner: "cyto's mesh bagging and piling up of bodies is pretty good... hybridising that is
+     what I'm aiming for").  Not going back to Cytoscape for layout.
+- `.c.press` smuggled per part; Vytui `cell_click` runs `source.c.press(source)` on any cell whose
+   source wears one (falls through to cam_engage otherwise).  v1 toggles `lit` — the protocol is the
+    deliverable, per-part verbs come with each subject posed.
+- the trickle re-poses on a pose FINGERPRINT (transfer set + pct quarter-crossings), never per packet.
+- **HUMDINGER-GATED**: no Book poses, fixtures stand to the byte.  UNVERIFIED against the live fleet
+   until the runner tab is reloaded (it runs an old Cytui — runner_shot refuses it).
+
+**Named, not built (the owner's queue):** the LOOSE LAYER (*"separate the loose nodes to another
+ layer"* — unrelated/small particles float off the mosaic, likely `sc.loose` → excluded from the cut,
+  drawn as drifting discs above/below); more subjects posed (the player embryo, Haul); wave-fold
+   labels + breadcrumb (still waiting on the emphasis station).
+
+### ⇢ THE ORCHESTRA OF SPHERES — pools of information (2026-08-09 late; the transfigured algorithm)
+
+The owner, in sequence, refusing every smaller reading: *"balls. shoving into your face. more balls
+ inside each of them, wires amongst them... no budget, figure this out really luxuriously. Stuffing
+  exploder generique"* → *"much more elegant and noble... spring these useful groovinesses from the
+   interface"* → *"perhaps an attractor model? everything spins (when morphing) like a galaxy"* →
+    *"nah the `orchestra of spheres` is the image for you"* → *"figure out what I mean... pools of
+     information..."*
+
+**The law (one sentence): every particle is a POOL — a disc with mass — and COVERAGE IS EARNED BY
+ PRESSURE, not granted by the frame.**  A wall exists only where two discs press (d < rᵢ+rⱼ); it sits
+  on the same radical axis power_cells already cuts (t = (d²+rᵢ²−rⱼ²)/2d).  A lone pool is round; a
+   kissing pair grows one flat wall; a packed pile tiles its interior into the mosaic while its rim
+    stays bulged and biological.  Mosaic, balls, and the loose layer are not three features — they
+     are three pressures of one thing, and the frame-carving cut (100% coverage unconditionally) is
+      what made three unrelated cells into three meaningless slabs.  Emptiness must mean uncrowded.
+
+**Every grooviness as a corollary, none as a feature:**
+- *balls inside balls* — recursion through membranes: a bag's skin is a ball in its parent's pile;
+   its interior is the frame for its stuffing's own pile.  Conservation through the membrane —
+    bag area = Σ stuffing areas / packing — replaces the grow-only `need_area` ratchet with physics
+     that also SHRINKS honestly.
+- *pools of information* — a pool has a SURFACE and a DEPTH.  Stuffing renders sunken: smaller,
+   dimmer, deeper.  Attention SURFACES it — the stuffing rises and becomes a real foam inside the
+    membrane.  The fold ladder's icon register becomes the deep end of one continuum (sink), not a
+     binary; "crushed things become icons" = fully sunk.
+- *stuffing exploder generique* — surfacing IS the exploder and it is generic because Scan already
+   mirrors ANY C** subtree; nothing is explodable by special case.
+- *shoving into your face* — presence = inflation, never perspective (the tilt ruling stands).  The
+   focused pool inflates (FOCUS_BOOST exists), everything else compresses (FOCUS_SHRINK) — *"we make
+    it the most important thing, and everything sorts away from its moment"* is force displacement,
+     watchable, not a re-layout.
+- *the breadcrumb* — free: an exploded pool sits INSIDE its parent's visible squeezed skin, which
+   sits inside its own — the margins ARE the breadcrumb.  No chrome.
+- *wires amongst them* — %Flow springs with rest length = kissing distance, so meaning literally
+   pulls pools into contact and contact makes walls: Cyto's mesh bagging as emergent piling, not a
+    declared compound.
+- *the loose layer* — the zero-pressure regime: no wires + negligible mass ⇒ never enters the
+   separation set; drifts an outer orbit, dim, behind.  A wire gaining weight REELS it in — you see
+    a fact join the pile.
+- *galaxy morphs* — relayout displacement resolved with a decaying tangential component about the
+   attractor: change turns, never teleports.  Renderer-side UItime only; parked Book worlds still
+    jump-land.
+- *the orchestra* — one shared slow breath (±~1.3% radius on a common phase); this is a music app
+   and the glass is an instrument in it (later: phase from the playing track).
+- *buttons faster* — press ⇒ instant renderer-local DENT + ripple (acknowledgment before answer),
+   masking post_do queue latency without touching it.
+
+**Proofs standing:** `foam_cells` + `pile_step` are IN vyto_geometry.ts (pure, node-tested: lone
+ ball area = πR² −0.8% poly error; pressed pair loses caps symmetrically; distant pair stays whole;
+  a piled 8 packs to 0.71 disc-area ratio — walls formed).  The living proof is the artifact
+   **“Orchestra of Spheres”** (claude.ai artifact `ccc08cd5…`, source scratchpad/orchestra.html):
+    jamsend's own organs as pools — depth, surfacing, wires, loose orbit, galaxy swirl, breath,
+     dent, and a *pose a transfer* button that runs the whole App→Vyto story in miniature.
+
+**THE CANONICAL DEMO BOOK — `VytoOrchestra`** (the owner: *"what is the canonical demo Book that we
+ shall use to express everything at once?"*).  None standing qualifies: every Vyto* Book proves ONE
+  mechanism in a quiet world (that is their virtue — keep them), and MusuNeGrind gates the music
+   composition, not the glass.  VytoOrchestra is the SHOWCASE gate: one commissioned world carrying
+    every regime at once — a bag with stuffing (balls in balls) · three rows sharing an atom (wires +
+     piling) · two loose rows (the zero-pressure drifters) · an arrival step (eruption) · a focus
+      step (boost|shrink) · a pose flip (inclusion follows the model) · a departure (escort + sweep).
+       %see sentences named before code (LAW B); fixtures recorded from the LIVE runner only; wall
+        SHAPE gated by `runner_shot --svg` + vyto_see, never by dige.  It also becomes the standing
+         `runner_shot --arm` subject, so every future capture has one address.
+  **AUTHORED 2026-08-09 (Vytonation.g @ cd7a46d301e2210c, Credence row added under What:Vyto): 8
+   beats — seed · stand (foam+nested via the new `foamy` arg on Vyto_commission_on) · weave (3 flow
+    edges, all Song-to-Song — no-incident-flow IS the loose predicate) · deepen (a shared mood lifts
+     one edge to n:2 live, no re-commission) · spotlight (focus swells ≥1.15× while a stray falls
+      ≤0.9×) · pose flip (Stray:lint out, Pull:Driftline in) · depart (escort sighted then gone from
+       the bag).  UNRECORDED — first fixtures must come from the owner's run-all on a FRESH tab
+        (the current runner is stale-HMR-wedged; recording there would bake bad fixtures).**
+
+**Migration (additive gates, LAW D):** commission key `foam:1` → `w.c.foam`; Vyto_solve swaps
+ centroidal-relax for pile_step + conservation radii under the gate; Vytui swaps power_cells(frame)
+  for foam_cells under the same gate; loose classification at Scan (no %Flow incident + dose<ε ⇒
+   row.c.loose).  Gate off ⇒ every existing Book byte-identical.  New Book `VytoFoam` names its %see
+    sentences FIRST (LAW B): loose classification · pressure computation · conservation through one
+     membrane · fold release past capacity.  Wall SHAPE still cannot reach a fixture — vyto_see
+      rasterisation is the geometry gate, as ever.
+
 ### ⇢ THE ADVERSARIAL REVIEW, and what it changed (2026-08-09, commissioned by the owner)
 
 An adversarial agent was set on the whole session's diff with the brief "argue this isn't right and needs

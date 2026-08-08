@@ -544,7 +544,7 @@ Vyto_plant(w, genus, dose):
 //  A 4th arg `priced` (optional, default plain) commissions the glass on the global type-scale
 //   (Vyto_sizing_todo §9 ④+⑤ — cell area is a share of the frame, not an absolute dose box); every
 //    existing caller passes three args → undefined → the byte-identical plain cut.
-Vyto_commission_on(w, cogs, fresh, priced, nested, folded, needful, depthscale):
+Vyto_commission_on(w, cogs, fresh, priced, nested, folded, needful, depthscale, foamy):
     let SH = this.VytoStaple_SH(w)
     if (!SH) return
     if (fresh) {
@@ -558,6 +558,7 @@ Vyto_commission_on(w, cogs, fresh, priced, nested, folded, needful, depthscale):
     if (folded) commission.sc.folded = 1
     if (needful) commission.sc.need_floor = 1
     if (depthscale) commission.sc.depth_scale = 1
+    if (foamy) commission.sc.foam = 1
     commission.c.Run = this
     SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
 
@@ -2457,4 +2458,214 @@ VytoCrush_witness(w):
     if (this.VytoCrush_plain_ready(w)) {
         this.story_swear(w, 'the crush is load-bearing — commissioned plain the same twenty cogs draw twenty cells and no crest is minted')
         if (!(oa %see:'the crush is load-bearing — commissioned plain the same twenty cogs draw twenty cells and no crest is minted')) i %see:'the crush is load-bearing — commissioned plain the same twenty cogs draw twenty cells and no crest is minted'
+    }
+
+// ══ VytoOrchestra — THE CANONICAL DEMO: every regime of the orchestra-of-spheres glass at once ═════
+//   (Vyto_todo "THE ORCHESTRA OF SPHERES" — the owner 2026-08-09: "what is the canonical demo Book
+//    that we shall use to express everything at once?").  One commissioned world carries the whole
+//     law: a stuffed bag (balls in balls) · three top songs sharing an atom (the weave that piles
+//      them — Relate weaves ROOT rows only, which is why the songs stand top-level) · two loose
+//       strays (no incident flow IS the loose predicate) · a live re-weave (a shared mood deepens an
+//        edge without a fresh commission) · a focus swell (attention as geometry) · a pose flip
+//         (inclusion follows the model) · a departure escort out of the bag.  FOAM-CUT + NESTED —
+//          the one Book that runs the glass the way the live Sounditron now stands, and the standing
+//           runner_shot subject: arm THIS Book for every capture.  Wall SHAPE stays gated by
+//            vyto_see rasterisation — a dige cannot hold a wall.  World VytoOrchestra.
+VytoOrchestra(A,w):
+    w oai %req:wrangle,eternal
+        await &VytoOrchestra_drive,w,req
+        req%ok = 1
+
+async VytoOrchestra_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 8
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoOrchestra_seed(w)
+        if (n === 3) this.VytoOrchestra_stand(w)
+        if (n === 4) this.VytoOrchestra_weave(w)
+        if (n === 5) this.VytoOrchestra_deepen(w)
+        if (n === 6) this.VytoOrchestra_spotlight(w)
+        if (n === 7) this.VytoOrchestra_pose(w)
+        if (n === 8) this.VytoOrchestra_depart(w)
+    }
+    this.VytoOrchestra_witness(w)
+
+// ── beat 2 — seed the orchestra: a stuffed bag beside kin songs and loose strays ──────────────────
+VytoOrchestra_seed(w):
+    i %desc:'seed the orchestra — a stuffed band beside three kin songs and two loose strays'
+    let band = w.i({ Band: 'main' })
+    band.i({ Player: 'keys', of: 'main' })
+    band.i({ Player: 'bass', of: 'main' })
+    band.i({ Player: 'drums', of: 'main' })
+    let s1 = w.i({ Song: 'LowTide', artist: 'Yara' })
+    let s2 = w.i({ Song: 'Undertow', artist: 'Yara' })
+    let s3 = w.i({ Song: 'SaltAir', artist: 'Yara' })
+    let x1 = w.i({ Stray: 'moth' })
+    let x2 = w.i({ Stray: 'lint' })
+    w.c.band = band
+    w.c.songs = [s1, s2, s3]
+    w.c.strays = [x1, x2]
+
+// ── beat 3 — stand the glass: FOAM + NESTED, every regime seated at once ──────────────────────────
+VytoOrchestra_stand(w):
+    i %desc:'commission the glass foam-cut and nested — six top cells with the band carrying three'
+    this.Vyto_commission_on(w, [w.c.band].concat(w.c.songs).concat(w.c.strays), 1, 0, 1, 0, 0, 0, 1)
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'stand_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoOrchestra_stand_ready(w)) })
+
+VytoOrchestra_stand_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.foam || !vw.c.nested) return 0
+    if (!this.Vyto_rest_poll(w, 6)) return 0
+    let band = this.VytoOrchestra_band(vw)
+    if (!band) return 0
+    if (band.o().filter(r => !r.sc.departing).length !== 3) return 0
+    w.c.saw_stand = 1
+    return 1
+
+// ── beat 4 — the weave: kin songs carry flow · strays carry none — the loose predicate ────────────
+VytoOrchestra_weave(w):
+    i %desc:'read the weave — flow among the kin songs and none touching the strays'
+    this.expecting(w, 'weave_wait', 12, async () => { await this.VytoStaple_await(w, 12, () => this.VytoOrchestra_weave_ready(w)) })
+
+VytoOrchestra_weave_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.relations) return 0
+    let edges = vw.c.relations.o({ Flow: 1 })
+    if (edges.length !== 3) return 0
+    for (const e of edges) {
+        if (String(e.sc.a).indexOf('Song:') !== 0) return 0
+        if (String(e.sc.b).indexOf('Song:') !== 0) return 0
+    }
+    w.c.saw_weave = 1
+    return 1
+
+// ── beat 5 — the live re-weave: a shared mood deepens one edge with no fresh commission ───────────
+VytoOrchestra_deepen(w):
+    i %desc:'give two songs a shared mood — the weave must deepen live'
+    w.c.songs[0].sc.mood = 'brine'
+    w.c.songs[0].bump()
+    w.c.songs[1].sc.mood = 'brine'
+    w.c.songs[1].bump()
+    this.expecting(w, 'deepen_wait', 12, async () => { await this.VytoStaple_await(w, 12, () => this.VytoOrchestra_deepen_ready(w)) })
+
+VytoOrchestra_deepen_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.relations) return 0
+    this.Vyto_stir(vw)
+    let deep = 0
+    let shallow = 0
+    for (const e of vw.c.relations.o({ Flow: 1 })) {
+        if (e.sc.n === '2') deep = deep + 1
+        if (e.sc.n === '1') shallow = shallow + 1
+    }
+    if (deep !== 1 || shallow !== 2) return 0
+    w.c.saw_deepen = 1
+    return 1
+
+// ── beat 6 — the spotlight: attention swells the focused cell and the world sorts away ────────────
+VytoOrchestra_spotlight(w):
+    i %desc:'focus one song — its cell must swell while a stray compresses'
+    let vw = this.VytoStaple_vw(w)
+    let pre = {}
+    if (vw) {
+        for (const r of this.Vyto_cells(vw)) {
+            if (r.c.tok === 'Song:LowTide' && r.c.T) pre.song = r.c.T.r
+            if (r.c.tok === 'Stray:moth' && r.c.T) pre.stray = r.c.T.r
+        }
+        this.Vyto_focus(vw, { tok: 'Song:LowTide' })
+    }
+    w.c.pre_r = pre
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'focus_wait', 14, async () => { await this.VytoStaple_await(w, 14, () => this.VytoOrchestra_focus_ready(w)) })
+
+VytoOrchestra_focus_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || vw.c.focus_tok !== 'Song:LowTide') return 0
+    if (!this.Vyto_rest_poll(w, 6)) return 0
+    let pre = w.c.pre_r || {}
+    if (!(pre.song > 0) || !(pre.stray > 0)) return 0
+    let song = 0
+    let stray = 0
+    for (const r of this.Vyto_cells(vw)) {
+        if (r.c.tok === 'Song:LowTide' && r.c.T) song = r.c.T.r
+        if (r.c.tok === 'Stray:moth' && r.c.T) stray = r.c.T.r
+    }
+    if (!(song >= pre.song * 1.15)) return 0
+    if (!(stray <= pre.stray * 0.9)) return 0
+    w.c.saw_focus = 1
+    return 1
+
+// ── beat 7 — the pose flip: the commission follows the model — a stray out and a pull in ──────────
+VytoOrchestra_pose(w):
+    i %desc:'re-pose the commission — drop a stray and admit a pull'
+    let pull = w.i({ Pull: 'Driftline', lane: 'wire' })
+    w.c.pull = pull
+    this.Vyto_commission_on(w, [w.c.band].concat(w.c.songs).concat([w.c.strays[0], pull]), 1, 0, 1, 0, 0, 0, 1)
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'pose_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoOrchestra_pose_ready(w)) })
+
+VytoOrchestra_pose_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.foam) return 0
+    if (!this.Vyto_rest_poll(w, 6)) return 0
+    if (!this.Vyto_has_tok(vw, 'Pull:Driftline')) return 0
+    if (this.Vyto_has_tok(vw, 'Stray:lint')) return 0
+    w.c.saw_pose = 1
+    return 1
+
+// ── beat 8 — the departure: a dropped player escorts out of its bag then vanishes ─────────────────
+VytoOrchestra_depart(w):
+    i %desc:'drop the drummer — the escort marks one stir then the row leaves the bag'
+    let drums = w.c.band.o({ Player: 'drums' })[0]
+    if (drums) w.c.band.drop(drums)
+    this.expecting(w, 'depart_wait', 14, async () => { await this.VytoStaple_await(w, 14, () => this.VytoOrchestra_depart_ready(w)) })
+
+// the escort lives one grace stir — stash the sighting each poll, then require sighting + absence.
+VytoOrchestra_depart_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    this.Vyto_stir(vw)
+    let band = this.VytoOrchestra_band(vw)
+    if (!band) return 0
+    let drums = band.o().find(r => r.sc.Player === 'drums')
+    if (drums && drums.sc.departing) w.c.saw_escort = 1
+    if (drums) return 0
+    if (!w.c.saw_escort) return 0
+    w.c.saw_depart = 1
+    return 1
+
+// ── readers ────────────────────────────────────────────────────────────────────────────────────────
+VytoOrchestra_band(vw):
+    if (!vw || !vw.c.mirror) return null
+    for (const r of vw.c.mirror.o()) { if (r.sc.Band === 'main') return r }
+    return null
+
+// ── the witness — story_swear + once-noticed %see · comma-free · apostrophe-free ───────────────────
+VytoOrchestra_witness(w):
+    if (w.c.saw_stand) {
+        this.story_swear(w, 'the orchestra stands foam-cut — a stuffed bag beside kin songs and loose strays all seated')
+        if (!(oa %see:'the orchestra stands foam-cut — a stuffed bag beside kin songs and loose strays all seated')) i %see:'the orchestra stands foam-cut — a stuffed bag beside kin songs and loose strays all seated'
+    }
+    if (w.c.saw_weave) {
+        this.story_swear(w, 'shared meaning wove flow among the songs and left the strays loose')
+        if (!(oa %see:'shared meaning wove flow among the songs and left the strays loose')) i %see:'shared meaning wove flow among the songs and left the strays loose'
+    }
+    if (w.c.saw_deepen) {
+        this.story_swear(w, 'a shared mood deepened one flow to two atoms while the rest held at one')
+        if (!(oa %see:'a shared mood deepened one flow to two atoms while the rest held at one')) i %see:'a shared mood deepened one flow to two atoms while the rest held at one'
+    }
+    if (w.c.saw_focus) {
+        this.story_swear(w, 'the focused song swelled while the world sorted away from its moment')
+        if (!(oa %see:'the focused song swelled while the world sorted away from its moment')) i %see:'the focused song swelled while the world sorted away from its moment'
+    }
+    if (w.c.saw_pose) {
+        this.story_swear(w, 'the commission followed the model — a stray left the glass and a pull entered it')
+        if (!(oa %see:'the commission followed the model — a stray left the glass and a pull entered it')) i %see:'the commission followed the model — a stray left the glass and a pull entered it'
+    }
+    if (w.c.saw_depart) {
+        this.story_swear(w, 'the dropped player left an escort for one stir then vanished from its bag')
+        if (!(oa %see:'the dropped player left an escort for one stir then vanished from its bag')) i %see:'the dropped player left an escort for one stir then vanished from its bag'
     }

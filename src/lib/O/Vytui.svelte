@@ -12,7 +12,7 @@
     //   H={house}), so a House with no w:Vyto renders nothing at all.
     import { TheC }   from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
-    import { power_cells, slab_seat, type Pt } from "$lib/O/vyto_geometry"
+    import { power_cells, foam_cells, slab_seat, poly_area, type Pt } from "$lib/O/vyto_geometry"
     import { GLASS_KINDS } from "$lib/O/glass_kinds"
     import { FACE_MAINKEYS } from "$lib/O/glass_faces"
     import { lifetell } from "$lib/O/ui/micro/lifetell"   // DIAGNOSTIC — strip with the rest of the remount probes
@@ -108,6 +108,21 @@
         if (b.sc.on) delete b.sc.on
         else b.sc.on = 1
         b.bump_version()
+    }
+
+    // THE SMUGGLED PRESS (the owner 2026-08-09: "with click handlers smuggled in, so anything can
+    //  basically be interacted with").  A posed particle carries `.c.press` (a ref — never encoded,
+    //   exactly what .c is for); a cell whose SOURCE wears one is a button, whatever its mainkey.
+    //    The handler is handed the source particle so a one-line .g handler can read and write it.
+    //  Falls through to cam_engage for every press-less cell, so nothing that worked changes.
+    function cell_click(w: TheC, cell: PaintCell) {
+        const src: any = (cell.row.c as any)?.source_n
+        const fn = src?.c?.press
+        if (typeof fn === 'function') {
+            try { fn(src) } catch (e) { console.warn('◈ Vyto press threw', cell.ident, e) }
+            return
+        }
+        cam_engage(w, cell)
     }
 
     function sentence(o: TheC): string {
@@ -272,6 +287,20 @@
     const GAP = 2.2           // the breath between cells (shapes.md §0)
     const SEAT_AIR = 3        // viewBox units of air between a slab-seated face and its two long walls
     const OVERHANG = 1.25     // a slab seat may overrun the cell's ends by this factor of its length
+    // ⛔ SIDEWAYS IS OUT (the owner 2026-08-09: "ew... very incoherent! forget sidewaysing, I just meant
+    //  the box-within-box reality of Component in cell aligned for space efficiency, without tilting
+    //   anything more than say 30degrees, or zooming more than so much").  A slab steeper than MAX_TILT
+    //    is NOT clamped to 30° (a 30° box in a 70° slab helps nobody) — it falls back to the axis-
+    //     aligned seat.  And the scale is bounded both ways: envelope-down survives (the icon floor
+    //      needs it) but blow-UP stops at FIT_MAX, because a trivial widget magnified 6× was half the
+    //       incoherence.
+    const MAX_TILT = Math.PI / 6   // 30°
+    const FIT_MAX = 1.6
+    // foam fill targets: what fraction of a scope's area the discs may claim before pressing.
+    //  Top cut leaves real margin (the rim curvature + the empty ground ARE information); a nested
+    //   bag packs near-full (a membrane holds what it holds).
+    const FOAM_FILL = 0.8
+    const FOAM_FILL_NESTED = 0.95
 
     // kp/ks are the LAST INTEGRATED calm strengths for this spring's two channels (position, size),
     //  cached by integrate_world so the settle test can skip a PINNED channel without re-running
@@ -854,16 +883,36 @@
                 if (!s || (n.row.sc as any).departing) continue
                 live.push(n); keys.push(n.key); seeds.push({ x: s.x, y: s.y }); radii.push(s.r)
             }
+            // THE FOAM REGIME (gated on w.c.foam — the ORCHESTRA OF SPHERES law, Vyto_todo):
+            //  coverage is earned by pressure.  The solve's radii are RELATIVE weights tuned for
+            //   frame-carving, so as literal discs they'd cover ~5% of the frame and never touch;
+            //    rescale them so their disc areas sum to FOAM_FILL of this scope's frame — enough
+            //     press for the pile's interior to wall into mosaic while the rim stays round and
+            //      the uncrowded margins stay EMPTY (emptiness finally means uncrowded).  A nested
+            //       scope packs tighter (its stuffing fills its membrane).  Gate off ⇒ the exact
+            //        standing cut, byte for byte.
+            const foam = !!(w.c as any).foam
+            let cutRadii = radii
+            if (foam && radii.length) {
+                const A = Math.abs(poly_area(framePoly))
+                const discs = radii.reduce((a, r) => a + Math.PI * r * r, 0)
+                const fill = scopeKey === '' ? FOAM_FILL : FOAM_FILL_NESTED
+                if (discs > 0 && A > 0) {
+                    const k = Math.sqrt((A * fill) / discs)
+                    cutRadii = radii.map(r => r * k)
+                }
+            }
             // the memo consult: unchanged inputs reuse the standing polys (same references — the drift
             //  judge shortcuts them to zero); changed inputs cut fresh and count one REAL cut.
             seenScopes.add(scopeKey)
-            const sig = cut_sig(framePoly, keys, seeds, radii, gap)
+            const sig = (foam ? 'F' : '') + cut_sig(framePoly, keys, seeds, cutRadii, gap)
             const had = wm.get(scopeKey)
             let polys: (Pt[] | null)[]
             if (had && had.sig === sig) {
                 polys = had.polys
             } else {
-                polys = power_cells(framePoly, seeds, radii, gap)
+                polys = foam ? foam_cells(seeds, cutRadii, gap, framePoly)
+                             : power_cells(framePoly, seeds, cutRadii, gap)
                 wm.set(scopeKey, { sig, polys })
                 ;(w.c as any).wall_cuts = (((w.c as any).wall_cuts as number) || 0) + 1
             }
@@ -960,30 +1009,32 @@
                     //         it is only safe now because the floor and the envelope scale both exist.
                     const bb = bbox_of(poly)
                     const hasKids = hasKids0
-                    // THE SIDEWAYS SEAT (the owner 2026-08-09: *"notice when the sides of the cell aren't
-                    //  square, and somehow... factor that in.  we used to jam things in sideways... pick
-                    //   the two parallelest sides that the box aligns between to consume the most space of
-                    //    the cell"*).  slab_seat finds the pair of near-antiparallel walls and the slab
-                    //     between them; the component lies ALONG the slab, FILLS it across, and may
-                    //      overrun the cell's slanted ends a little (OVERHANG) — overflow is sanctioned
-                    //       ("we can have components overflowing their cell") because hover top-mostity
-                    //        (the translateZ lift) puts the pointed-at one on top.  No clip in this
-                    //         regime: the whole component is beheld, which is the point of lying it flat.
-                    //  Angle discipline: normalised to (-90°, 90°] so text never reads upside down, and
-                    //   snapped level within 8° — a 3° tilt reads as a bug where a 25° tilt reads as a
-                    //    seat.  A cell with no parallel pair (or an unmeasured face) falls back to the
-                    //     axis-aligned AABB + wall clip, exactly the previous regime.
+                    // THE GENTLE SEAT (the owner 2026-08-09, second ruling: *"forget sidewaysing, I just
+                    //  meant the box-within-box reality of Component in cell aligned for space efficiency,
+                    //   without tilting anything more than say 30degrees, or zooming more than so much"*).
+                    //  slab_seat still finds the parallelest walls, but the seat is only TAKEN when its
+                    //   angle is ≤ MAX_TILT — a gently-slanted cell gets a gently-slanted component; a
+                    //    steep slab falls back to the axis-aligned AABB + wall clip.  Within a taken seat
+                    //     the component lies along the slab, fills it across (SEAT_AIR), may overrun the
+                    //      ends a little (OVERHANG — hover top-mostity resolves the overlap), and its
+                    //       scale is bounded BOTH ways (0.2 .. FIT_MAX): envelope-down survives for the
+                    //        icon floor, blow-up stops before a trivial widget dominates its cell.
+                    //  Angle discipline: normalised so text never reads upside down; snapped level
+                    //   within 8° — a 3° tilt reads as a bug where a 20° tilt reads as a seat.
                     let mx = bb.bx, my = bb.by, mw = bb.bw, mh = bb.bh, ang = 0
                     if (!hasKids0 && face) {
-                        const seat = nw && nh ? slab_seat(poly) : null
-                        if (seat && nw && nh) {
+                        let seat = nw && nh ? slab_seat(poly) : null
+                        let th = 0
+                        if (seat) {
                             let sux = seat.ux, suy = seat.uy
                             if (sux < 0) { sux = -sux; suy = -suy }          // (-90°, 90°]
-                            let th = Math.atan2(suy, sux)
+                            th = Math.atan2(suy, sux)
                             if (Math.abs(th) < 0.14) th = 0                  // snap level
-                            else if (Math.PI / 2 - Math.abs(th) < 0.14) th = Math.sign(th) * Math.PI / 2
+                            if (Math.abs(th) > MAX_TILT) seat = null         // too steep — not our seat
+                        }
+                        if (seat && nw && nh) {
                             fit = Math.min((seat.t - SEAT_AIR) / nh, (seat.len * OVERHANG) / nw)
-                            fit = Math.max(0.2, Math.min(6, +fit.toFixed(3)))
+                            fit = Math.max(0.2, Math.min(FIT_MAX, +fit.toFixed(3)))
                             mw = nw * fit; mh = nh * fit
                             mx = seat.cx - mw / 2; my = seat.cy - mh / 2
                             ang = +th.toFixed(3)
@@ -993,7 +1044,7 @@
                             //  and envelopes DOWN into a crushed one, same rule.
                             if (nw && nh && bb.bw > 0 && bb.bh > 0) {
                                 fit = Math.min(bb.bw / nw, bb.bh / nh)
-                                fit = Math.max(0.2, Math.min(6, +fit.toFixed(3)))
+                                fit = Math.max(0.2, Math.min(FIT_MAX, +fit.toFixed(3)))
                             }
                         }
                     }
@@ -1840,9 +1891,9 @@
                                   style={(g ? `fill:${g.bg}; stroke:${g.border};` : '') + (cell.fx === 'arrive' ? ` animation-delay:${cell.fxi * 55}ms;` : '')}
                                   onpointerenter={() => on_enter(w, cell.key, cell.tok)}
                                   onpointerleave={() => on_leave(w, cell.key, cell.tok)}
-                                  onclick={() => cam_engage(w, cell)}
+                                  onclick={() => cell_click(w, cell)}
                                   role="button" tabindex={0} aria-label={cell.ident}
-                                  onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cam_engage(w, cell) } }}></path>
+                                  onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cell_click(w, cell) } }}></path>
                         {:else}
                             <circle class="cell disc" class:departing={cell.departing} class:lift={cell.lift} class:nested={cell.depth > 0}
                                     class:arrive={cell.fx === 'arrive'} class:erupt={cell.fx === 'erupt'}

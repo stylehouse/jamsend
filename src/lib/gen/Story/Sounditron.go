@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '4e6a3e849cd64758~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '504638877e31257c~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -382,6 +382,13 @@ Sounditron_commission(w) {
     //   and tessellates into a HaulBar controls cell + one Pick chip per kept track.  They come + go with the
     //    gesture, so Sounditron_trickle_look re-commissions on the keep fingerprint.  Live under Ra_home_shop.
     for (const keep of keeps) organs.push(keep)
+    // THE POSE PARTS — the App↔Vyto seam (the human 2026-08-09: "make the toplevel model we push to it
+    //  change what's included in it... App<->Vyto... wrangling whatever its got to flush into the Vyto
+    //   display, via how the model is posed right now").  Sounditron_pose reads the app's live situation
+    //    and sculpts it as free-vocabulary particles; each part grapples FLAT as its own cell, so what
+    //     the glass shows follows what the app is DOING, not a fixed organ list.  Humdinger-gated inside,
+    //      so under every Book this loop adds nothing and the fixtures stand to the byte.
+    for (const p of this.Sounditron_pose(w)) organs.push(p)
     // a friend's shelf is NO LONGER its own cell.  Two friend Crates spread the ~10 organs so thin every
     //  jewel turned unreadably tiny (the human 2026-07-28: "lets not show us the two Crates because that's
     //   way too much info on the screen and everything gets tiny").  Friends stay REACHABLE through the
@@ -417,6 +424,12 @@ Sounditron_commission(w) {
     //     the fleet is byte-identical and no fixture can move.  Grow-only with a 2% dead-band, so no
     //      wall-flutter; one-directional per pass, per the sizing doc §4.
     commission.sc.need_floor = 1
+    // THE FOAM, ON for the live glass (the owner 2026-08-09, the ORCHESTRA OF SPHERES ruling —
+    //  "balls... more balls inside each of them... pools of information").  Same gate discipline as
+    //   nested|need_floor: a commission sc key read once into w.c.foam, so it touches ONLY this live
+    //    Sounditron glass; every Vyto* Book commissions without it and keeps the frame cut to the
+    //     byte.  Flip this line off to get the old carved glass back.
+    commission.sc.foam = 1
     commission.c.Run = this
     SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
     return 1
@@ -431,6 +444,92 @@ Sounditron_diag_toggle(w) {
         w.c.show_diag = 1
     }
     this.Sounditron_commission(w)
+
+},
+// THE POSE — the App↔Vyto wrangler (the human 2026-08-09: "lets rebuild afresh? what we've got seems
+//  quite trivial. I think I want more things broken up into smaller parts. the Transfer for example.
+//   this should just be very very well sculpted C** except where it really matters. all made up
+//    properties, in another world of their own... showing anything about anything... with click
+//     handlers smuggled in, so anything can basically be interacted with").
+//  The pose is a dontSnap %Pose bag on the radio world holding FREELY-INVENTED particles that SAY the
+//   app's current situation.  First subject: the wire — one %Pull / %Serve per live transfer (the
+//    Transfer HUD cell stays; these are its GUTS broken out into cells that come and go with the
+//     work), plus a %Float ballast: a device with no meaning at all, only dose, pitching mass toward
+//      the wire's bag while it is busy ("some devices just for floatation... pitching mass in the
+//       right direction").
+//  THE SCULPTED|LIVE SPLIT ("except where it really matters"): identity + coarse progress (pct in
+//   25% steps) ride sc — legible, mirrored, bunched; the per-packet numbers stay on M.c.xfer,
+//    unbumped, where TransferFace reads them.  A bump per packet would re-tessellate the glass —
+//     the exact churn the %Transfer cell was designed to avoid — so the pose only re-says what has
+//      CHANGED AS A SENTENCE, and the trickle's pose fingerprint decides when that is.
+//  THE BAG ATOM: every part shares the made-up atom lane:'wire', so Vyto_relate weaves %Flow edges
+//   between them and the solver's pull_step bunches them into one pile — Cyto's mesh bagging,
+//    re-had through meaning instead of a compound node.
+//  THE SMUGGLED PRESS: `.c.press` (a ref — exactly what .c is for, and it can never reach a snap).
+//   Vytui runs source.c.press(source) on cell click.  v1 toggles `lit` — the proof that ANY posed
+//    particle is interactive, not yet a meaningful verb per part.
+//  HUMDINGER-GATED: no Book ever poses; every fixture stands to the byte.  Returns the parts to
+//   grapple (flat), or [] — the %Pose bag itself never grapples.
+Sounditron_pose(w) {
+    let M = this.top_House()
+    if (!M || !M.c.humdinger) return []
+    let krw = M.c.radio_w || w
+    if (!krw || !krw.oai) return []
+    let pose = krw.oai({ Pose: 'wire', dontSnap: 1 })
+    pose.c.up = krw
+    let x = M.c.xfer
+    let nowms = Date.now()
+    let want = {}
+    for (const kind of ['pulls', 'serves']) {
+        let m = (x && x[kind]) || {}
+        for (const id of Object.keys(m)) {
+            let r = m[id]
+            let held = +(r.held ?? r.n ?? 0)
+            let total = +(r.total ?? 0)
+            let done = r.done || (total > 0 && held >= total)
+            let stale = nowms - (+r.ts || 0) > 60000
+            if (done || stale) continue
+            let mk = kind === 'pulls' ? 'Pull' : 'Serve'
+            let pct = total > 0 ? Math.floor(held * 4 / total) * 25 : 0
+            want[mk + '|' + id] = { mk: mk, id: id, title: String(r.title || id).slice(0, 18), pct: '' + pct }
+        }
+    }
+    // sweep: a part whose transfer finished or vanished leaves the pose (drop, never a dead row)
+    for (const p of pose.o()) {
+        let pmk = this.mainkey(p)
+        if (pmk === 'Float') continue
+        if (!want[pmk + '|' + p.sc.id]) pose.drop(p)
+    }
+    // mint|refresh: find by (mainkey presence + id) — the identity; title|pct are value channels
+    for (const key of Object.keys(want)) {
+        let d = want[key]
+        let q = { id: d.id }
+        q[d.mk] = 1
+        let p = pose.o(q)[0]
+        if (!p) {
+            let seed = { dontSnap: 1 }
+            seed[d.mk] = 1
+            seed.id = d.id
+            p = pose.i(seed)
+        }
+        let changed = 0
+        if (p.sc.title !== d.title) { p.sc.title = d.title; changed = 1 }
+        if (p.sc.pct !== d.pct) { p.sc.pct = d.pct; changed = 1 }
+        if (p.sc.lane !== 'wire') { p.sc.lane = 'wire'; changed = 1 }
+        p.c.press = (n) => ((n.sc.lit ? delete n.sc.lit : n.sc.lit = 1), n.bump())
+        if (changed) p.bump()
+    }
+    // the ballast float: dose grows with the pile it is making room for; gone when the wire is quiet
+    let parts = pose.o().filter(p => this.mainkey(p) !== 'Float')
+    let fl = pose.o({ Float: 1 })[0]
+    if (parts.length) {
+        if (!fl) fl = pose.i({ Float: 'ballast', dontSnap: 1 })
+        let dose = '' + Math.min(2, 0.5 + 0.4 * parts.length).toFixed(1)
+        if (fl.sc.dose !== dose) { fl.sc.dose = dose; fl.sc.lane = 'wire'; fl.bump() }
+        return pose.o()
+    }
+    if (fl) pose.drop(fl)
+    return []
 
 },
 // the TRICKLE — the live page's slow think (the human 2026-07-19: "that model may need to be
@@ -499,6 +598,29 @@ async Sounditron_trickle_look(w, era) {
         // fingerprint the GRAPPLE-SET-affecting facts ONLY (diagnostics open + keep count), NOT per-keep state:
         //  a keep's primed→pulling fold-down rides its own dose bump (re-express), never a full re-commission —
         //   the human's "diagnostics and heist-spawning seem slow" was partly re-commissioning on every tick.
+        // THE POSE FINGERPRINT — what's included follows the model (the human 2026-08-09).  Reads the
+        //  same M.c.xfer the pose station sculpts from, buckets pct to 25% steps, and re-commissions
+        //   (which re-poses) ONLY when the sentence changes: a pull starting, crossing a quarter, or
+        //    finishing is a re-tessellation worth paying; a packet is not.
+        let px = M.c.xfer
+        let pfp = ''
+        if (px) {
+            for (const kind of ['pulls', 'serves']) {
+                let pm = px[kind] || {}
+                for (const pid of Object.keys(pm)) {
+                    let pr = pm[pid]
+                    let pheld = +(pr.held ?? pr.n ?? 0)
+                    let ptotal = +(pr.total ?? 0)
+                    let pdone = pr.done || (ptotal > 0 && pheld >= ptotal)
+                    let pfresh = (Date.now() - (+pr.ts || 0)) <= 60000
+                    if (!pdone && pfresh) pfp = pfp + kind + pid + ':' + (ptotal > 0 ? Math.floor(pheld * 4 / ptotal) : 0) + ' '
+                }
+            }
+        }
+        if (w.c.pose_fp !== pfp) {
+            w.c.pose_fp = pfp
+            this.Sounditron_commission(w)
+        }
         let kfp = (w.c.show_diag ? 'D' : '') + keptN
         if (w.c.keep_fp !== kfp) {
             w.c.keep_fp = kfp
