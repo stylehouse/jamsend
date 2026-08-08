@@ -4,15 +4,29 @@ story:VytoOrchestra
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.055
+    TimeTotal:beliefs,avg=0.04
       sample=0.055,at=1786199322
-    TimeTotal:step,avg=0.007
+      sample=0.061,at=1786204536
+      sample=0.035,at=1786204661
+      sample=0.032,at=1786204864
+      sample=0.041,at=1786208432
+      sample=0.039,at=1786208649
+      sample=0.034,at=1786208707
+      sample=0.024,at=1786208739
+    TimeTotal:step,avg=0.005
       sample=0.007,at=1786199322
+      sample=0.008,at=1786204536
+      sample=0.004,at=1786204661
+      sample=0.004,at=1786204864
+      sample=0.005,at=1786208432
+      sample=0.005,at=1786208649
+      sample=0.004,at=1786208707
+      sample=0.003,at=1786208739
   step,dige:4d8d5b4a1abafbd1
   step=2,desc:seed the orchestra — a stuffed band beside three kin songs and two loose strays,dige:d516aa5f8f793f5e
   step=3,desc:commission the glass foam-cut and nested — six top cells with the band carrying three,dige:9d653dccb345c38e
   step=4,desc:read the weave — flow among the kin songs and none touching the strays,dige:273be0d36aabc6f8
   step=5,desc:give two songs a shared mood — the weave must deepen live,dige:8f4ac83722ee3aae
-  step=6,desc:focus one song — its cell must swell while a stray compresses,dige:fcfc2bc9fa471ba2
+  step=6,desc:focus one song — its cell must swell while an off-focus sibling compresses,dige:fcfc2bc9fa471ba2
   step=7,desc:re-pose the commission — drop a stray and admit a pull,dige:6e84329fdb0df98b
   step=8,desc:drop the drummer — the escort marks one stir then the row leaves the bag,dige:32ea0b3b607a0498

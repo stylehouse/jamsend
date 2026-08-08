@@ -19,7 +19,7 @@
 
 IMPORT()
     import Vytui from "$lib/O/Vytui.svelte"
-    import { power_cells, poly_centroid, poly_area } from "$lib/O/vyto_geometry"
+    import { power_cells, poly_centroid, poly_area, pile_step, foam_cells } from "$lib/O/vyto_geometry"
     import { sig_of, group_edges, bucket_key_of, pull_step, budget_for, SIG_JOINS, FOCUS_BOOST, FOCUS_SHRINK, AREA_BASE } from "$lib/O/vyto_foam"
 
 //#region the world — w:Vyto stands, plans, and waits for its commission
@@ -712,6 +712,49 @@ Vyto_focus(w, proposal):
 e_Vyto_focus(A, w, e):
     this.Vyto_focus(w, e?.sc)
 
+// Vyto_redraw — the RESHUFFLE verb (the owner 2026-08-09: "needs more redraw or keep running
+//  layout buttons like cyto had").  Forget every unpinned seat; the next stir re-enters the
+//   whole cast around the rim (the batch spread) and re-piles it — a fresh deal of the same
+//    hand.  redraw_n salts the entry phase so each press actually deals DIFFERENTLY (same
+//     press count ⇒ same deal: deterministic, solver law 4 — and redraw_n 0 leaves the entry
+//      arithmetic byte-identical, so every recorded fixture stands).
+Vyto_redraw(w):
+    if (!w.c.mirror) return
+    w.c.redraw_n = (w.c.redraw_n ?? 0) + 1
+    this.Vyto_redraw_walk(w, w.c.mirror)
+    this.Vyto_stir_soon(w)
+
+Vyto_redraw_walk(w, n):
+    for (const m of n.o()) {
+        if (m.c.seed && this.Vyto_calm_held(w, m, 'position') !== 0) m.c.seed = null
+        this.Vyto_redraw_walk(w, m)
+    }
+
+// Vyto_simmer_tick — one beat of KEEP-RUNNING LAYOUT (the second Cyto button).  A deterministic
+//  per-tick jitter (counter-hashed, never Math.random — solver law 4 per tick count) nudges every
+//   unpinned seat a few px, and the pile re-settles around the disturbance: the foam visibly keeps
+//    negotiating.  The renderer's simmer toggle calls this on an interval — live pages only, so a
+//     Book never sees it and no fixture can.
+Vyto_simmer_tick(w):
+    if (!w.c.mirror) return
+    w.c.simmer_n = (w.c.simmer_n ?? 0) + 1
+    this.Vyto_simmer_walk(w, w.c.mirror, w.c.simmer_n, 0)
+    this.Vyto_stir_soon(w)
+
+Vyto_simmer_walk(w, n, tick, base):
+    let i = base
+    for (const m of n.o()) {
+        if (m.c.seed && this.Vyto_calm_held(w, m, 'position') !== 0) {
+            let a = Math.sin(tick * 12.9898 + i * 78.233) * 43758.5453
+            a = a - Math.floor(a)
+            let b = Math.sin(tick * 39.425 + i * 11.135) * 24634.6345
+            b = b - Math.floor(b)
+            m.c.seed = { x: m.c.seed.x + (a - 0.5) * 14, y: m.c.seed.y + (b - 0.5) * 14 }
+        }
+        i = i + 1
+        this.Vyto_simmer_walk(w, m, tick, i * 31)
+    }
+
 // Vyto_relate — scribe: reads meaning and writes %Flow edges (same Artist, played-together,
 //  co-heisted).  A Relate edge is also an ATTRACTION the solver honors — the first link of
 //   the bunching chain (spec §6; the solver's spring read is the next milestone — the edges
@@ -837,6 +880,19 @@ Vyto_solve(w):
     // a crushed member (Fold marked `.c.folded`) is off the cut — its group's crest cell stands for it.
     let members = w.c.mirror.o().filter(r => !r.sc.departing && !r.c.folded)
     if (!members.length) return
+    // THE LOOSE LAYER (foam law — Vyto_todo "THE ORCHESTRA OF SPHERES"): a member wearing sc.loose
+    //  is EXPLICITLY loose (the poser owns the vocabulary — inference from zero-flow waits until the
+    //   live weave is rich enough not to misclassify an organ).  A loose member takes no seat in the
+    //    pile: it is partitioned out BEFORE the relax so it exerts no wall pressure and receives
+    //     none, and it is seated on the RIM below — a deterministic orbit (tok-hashed angle) that
+    //      ADVANCES ONLY WHEN THE WORLD STIRS, so the loose layer drifts with activity and holds
+    //       still with the fixture.  Foam-gated: a frame-cut world treats sc.loose as any other
+    //        scalar and every recorded Book stands to the byte.
+    let loosed = []
+    if (w.c.foam) {
+        loosed = members.filter(m => m.sc.loose)
+        members = members.filter(m => !m.sc.loose)
+    }
     // THE ROOT RECTANGLE — and it must be the one the RENDERER cuts against (Vyto_todo §0.2(d),
     //  2026-08-08).  It was the hardcoded [0,0,800,450] while Vytui cut against vw_w × vw_h, which
     //   follows the stage aspect: on a portrait phone fit_frame yields ~446×800, so this placed seeds
@@ -884,7 +940,10 @@ Vyto_solve(w):
         if (m.c.seed) continue
         let entry
         if (batch > 1) {
-            entry = this.Vyto_frame_at(frame, (placed + 0.5) / batch)
+            // + redraw salt: each Vyto_redraw press shifts the whole ring of entry points by an
+            //  irrational-ish phase, so a re-deal lands a genuinely different pile.  redraw_n
+            //   unset ⇒ phase 0 ⇒ the original arithmetic to the byte.
+            entry = this.Vyto_frame_at(frame, ((placed + 0.5) / batch + (w.c.redraw_n ?? 0) * 0.377) % 1)
         } else {
             entry = this.Vyto_frame_nearest(frame, this.Vyto_seed_mean(existing))
         }
@@ -911,6 +970,30 @@ Vyto_solve(w):
         if (w.c.focus_tok != null) mag = (m.c.tok === w.c.focus_tok) ? FOCUS_BOOST : FOCUS_SHRINK
         radii.push(Math.sqrt(a / Math.PI) * mag)
         pinned.push(this.Vyto_calm_held(w, m, 'position') === 0)
+    }
+    // THE BAG IS FINITE (fit law, 2026-08-09 — the owner: "mostly in a broken layout state").
+    //  Bodies keep their intrinsic sizes until the bag cannot hold them; then BAG PRESSURE
+    //   squeezes everyone ALIKE (one k on every radius — a similarity, so relative pricing is
+    //    untouched), and no single body may span the bag (a ball bigger than the frame IS the
+    //     frame, which expresses nothing).  Squeeze-only — k never exceeds 1 — so a sparse
+    //      world keeps its honest smallness: coverage stays EARNED by pressure, never granted
+    //       by the frame.  Both gates are overflow-gated: a world that already fits passes
+    //        through byte-identical, which is what keeps every green fixture green.
+    if (w.c.foam) {
+        let rcap = 0.44 * Math.min(fw, fh)
+        let ri = 0
+        while (ri < radii.length) {
+            if (radii[ri] > rcap) radii[ri] = rcap
+            ri = ri + 1
+        }
+        let total = 0
+        for (const r of radii) total = total + Math.PI * r * r
+        let hold = 0.62 * fw * fh
+        if (total > hold) {
+            let k = Math.sqrt(hold / total)
+            ri = 0
+            while (ri < radii.length) { radii[ri] = radii[ri] * k; ri = ri + 1 }
+        }
     }
     // the Relate attraction (Vyto_spec §6 — meaning becomes proximity becomes tessellation adjacency):
     //  read the %Flow edges the scribe wrote onto w.c.relations and build the per-seat neighbour list the
@@ -943,30 +1026,127 @@ Vyto_solve(w):
     //    (pull_step) so meaning bunches into adjacency; the centroidal pull counter-balances so the
     //     equilibrium is proximity not collapse.  K is small on purpose: convergence rides successive
     //      solves, so the relax is interruptible by construction.
-    let k = 0
-    while (k < 2) {
-        let polys = power_cells(frame, seeds, radii, 2.2)
-        let i = 0
-        while (i < seeds.length) {
-            if (!pinned[i] && polys[i]) {
-                let c = poly_centroid(polys[i])
-                seeds[i] = { x: seeds[i].x + 0.25 * (c.x - seeds[i].x), y: seeds[i].y + 0.25 * (c.y - seeds[i].y) }
+    // THE PILE (foam law — "coverage is earned by pressure, not granted by the frame").  Under the
+    //  foam gate the centroidal relax is OFF: a centroid pull is the frame dictating where bodies
+    //   sit, and the foam law says the bodies negotiate.  pile_step (vyto_geometry — pure, node-
+    //    proven in the foam studies) is gravity toward the bag's heart + wires toward kissing
+    //     distance + separation past the squeeze, iterated INSIDE this one solve to its fixed
+    //      point (bounded at 400, quit when the largest move falls under 0.05).  In-solve
+    //       convergence is the rest discipline: rest_poll stirs in a loop while waiting, so a
+    //        relax that leaves standing motion for the NEXT stir is a world that can never rest.
+    //  400 is MEASURED, not guessed (scratch probe, 2026-08-09): gravity 0.02/step is an
+    //   exponential approach, and the worst case probed — a lone ball crossing the whole frame —
+    //    lands under 0.05 in 256 steps; a 6-ball wired orchestra in 121.  A 40 cap looked fine
+    //     and NEVER rested in 3 of 4 configs — the next solve inherited standing motion forever.
+    //  Pins are restored after every step — pile_step is pin-blind on purpose, it stays pure.
+    //   Deterministic throughout (solver law 4): same members, same seeds, same pile.
+    if (w.c.foam) {
+        let centre = { x: fw / 2, y: fh / 2 }
+        let pk = 0
+        while (pk < 400) {
+            let next = pile_step(seeds, radii, centre, nbrs || [])
+            let moved = 0
+            let pi = 0
+            while (pi < seeds.length) {
+                if (pinned[pi]) next[pi] = seeds[pi]
+                let dd = Math.abs(next[pi].x - seeds[pi].x) + Math.abs(next[pi].y - seeds[pi].y)
+                if (dd > moved) moved = dd
+                pi = pi + 1
             }
-            i = i + 1
+            seeds = next
+            pk = pk + 1
+            if (moved < 0.05) pk = 999
         }
-        if (nbrs) seeds = pull_step(seeds, nbrs, pinned, 0.15)
-        k = k + 1
+        // THE CLOUD SITS IN THE SHOT (fit law, part two).  A settled pile can still poke past an
+        //  edge — a wired chain is long, gravity is gentle — so after rest, translate the pile's
+        //   bounding box the MINIMUM distance that brings it inside, then (only if it still cannot
+        //    fit) scale seeds AND radii about the bag's heart — one similarity transform, every
+        //     kiss preserved.  Overflow-gated: an in-frame pile passes byte-identical.  Skipped
+        //      whole when any seed is PINNED — a held position is an author's word, and a fit that
+        //       moves it is the frame overruling the author.
+        let anyPin = false
+        for (const p of pinned) { if (p) anyPin = true }
+        if (!anyPin && seeds.length) {
+            let minx = 1e9
+            let miny = 1e9
+            let maxx = -1e9
+            let maxy = -1e9
+            let si = 0
+            while (si < seeds.length) {
+                if (seeds[si].x - radii[si] < minx) minx = seeds[si].x - radii[si]
+                if (seeds[si].y - radii[si] < miny) miny = seeds[si].y - radii[si]
+                if (seeds[si].x + radii[si] > maxx) maxx = seeds[si].x + radii[si]
+                if (seeds[si].y + radii[si] > maxy) maxy = seeds[si].y + radii[si]
+                si = si + 1
+            }
+            let pad = 5
+            let dx = 0
+            let dy = 0
+            if (minx < pad) dx = pad - minx
+            if (maxx > fw - pad && dx === 0) dx = (fw - pad) - maxx
+            if (miny < pad) dy = pad - miny
+            if (maxy > fh - pad && dy === 0) dy = (fh - pad) - maxy
+            let sk = 1
+            let bw = maxx - minx
+            let bh = maxy - miny
+            if (bw > fw - 2 * pad) sk = (fw - 2 * pad) / bw
+            if (bh > fh - 2 * pad && (fh - 2 * pad) / bh < sk) sk = (fh - 2 * pad) / bh
+            if (sk < 1) {
+                // too big even shifted: shrink about the CLOUD's centre and land that centre on
+                //  the bag's heart — the scaled bbox then fits exactly, no residual overflow.
+                let ccx = (minx + maxx) / 2
+                let ccy = (miny + maxy) / 2
+                si = 0
+                while (si < seeds.length) {
+                    seeds[si] = { x: fw / 2 + (seeds[si].x - ccx) * sk, y: fh / 2 + (seeds[si].y - ccy) * sk }
+                    radii[si] = radii[si] * sk
+                    si = si + 1
+                }
+            }
+            if (sk >= 1 && (dx !== 0 || dy !== 0)) {
+                si = 0
+                while (si < seeds.length) {
+                    seeds[si] = { x: seeds[si].x + dx, y: seeds[si].y + dy }
+                    si = si + 1
+                }
+            }
+        }
+    }
+    if (!w.c.foam) {
+        let k = 0
+        while (k < 2) {
+            let polys = power_cells(frame, seeds, radii, 2.2)
+            let i = 0
+            while (i < seeds.length) {
+                if (!pinned[i] && polys[i]) {
+                    let c = poly_centroid(polys[i])
+                    seeds[i] = { x: seeds[i].x + 0.25 * (c.x - seeds[i].x), y: seeds[i].y + 0.25 * (c.y - seeds[i].y) }
+                }
+                i = i + 1
+            }
+            if (nbrs) seeds = pull_step(seeds, nbrs, pinned, 0.15)
+            k = k + 1
+        }
     }
     // final cut + area-centroid anchors → write targets.  Solver law 1: if the computed T
     //  equals the standing T (x, y AND r), leave the reference untouched so "no change grants
     //   no motion" is byte-visible.  A departing row's T is left alone (the renderer ramps it
     //    out) — those rows were filtered out of `members` above.
-    let finals = power_cells(frame, seeds, radii, 2.2)
+    // Under foam the final cut is the FOAM cut — each cell its own disc trimmed where discs press
+    //  (same law the renderer draws by), because the scope recursion below hands finals[p] to every
+    //   bag as its tessellation bound: a null finals under foam THREW on `finals[p]` and took every
+    //    stir down with it (the 2026-08-09 controlled-revert find: 1/7 %see with the pile, 7/7
+    //     without — the pile was innocent, the null was the killer).  The anchor stays the BALL
+    //      under foam: a centroid would tug every T off the body it stands for.
+    let finals = null
+    if (w.c.foam) finals = foam_cells(seeds, radii, 2.2, frame)
+    if (!w.c.foam) finals = power_cells(frame, seeds, radii, 2.2)
     let j = 0
     while (j < members.length) {
         let m = members[j]
         m.c.seed = { x: seeds[j].x, y: seeds[j].y }
-        let anchor = finals[j] ? poly_centroid(finals[j]) : seeds[j]
+        let anchor = seeds[j]
+        if (!w.c.foam && finals && finals[j]) anchor = poly_centroid(finals[j])
         let r = radii[j]
         let T = m.c.T
         // law 1 with a SETTLE TOLERANCE (shapes.md — "no change grants no motion"): a sub-EPS drift
@@ -982,6 +1162,35 @@ Vyto_solve(w):
             m.bump_version()
         }
         j = j + 1
+    }
+    // THE RIM SEATS — the loose layer's own ring, after the pile has its targets.  Angle is a hash
+    //  of the tok alone: STATIC by design — a stir-advanced spin was tried and cut, because
+    //   Vyto_rest_poll stirs in a loop while waiting for rest, so any per-stir motion means a
+    //    driven world can never rest (drift belongs to the RENDERER, later, where a Book never
+    //     looks).  The ellipse factor keeps a wide frame's ring inside the short axis.
+    //      EPS-tolerant like law 1, so a quiet loose row stands byte-still.
+    if (loosed.length) {
+        let ocx = fw / 2
+        let ocy = fh / 2
+        let orbR = Math.min(fw, fh) * 0.46
+        for (const m of loosed) {
+            let ts = String(m.c.tok || '')
+            let hsh = 0
+            let hi = 0
+            while (hi < ts.length) { hsh = (hsh * 31 + ts.charCodeAt(hi)) % 6283; hi = hi + 1 }
+            let ang = hsh / 1000
+            let la = Math.max(1, (m.c.env_area != null) ? m.c.env_area : AREA_BASE)
+            let lr = Math.sqrt(la / Math.PI) * 0.4
+            let lx = ocx + Math.cos(ang) * orbR * 1.35
+            let ly = ocy + Math.sin(ang) * orbR * 0.82
+            lx = Math.min(fw - lr, Math.max(lr, lx))
+            ly = Math.min(fh - lr, Math.max(lr, ly))
+            let LT = m.c.T
+            if (!LT || Math.abs(LT.x - lx) > 0.5 || Math.abs(LT.y - ly) > 0.5 || Math.abs(LT.r - lr) > 0.5) {
+                m.c.T = { x: lx, y: ly, r: lr }
+                m.bump_version()
+            }
+        }
     }
     // NESTED scopes (opt-in, Vyto_sizing_todo J4 · Nestcut proven in isolation): the root cut stands
     //  above — now each top cell BECOMES the frame for its own mirror children, recursing to any depth.

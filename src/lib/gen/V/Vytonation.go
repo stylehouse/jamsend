@@ -12,7 +12,7 @@ import { poly_area } from "$lib/O/vyto_geometry"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vytonation(): string { return 'cd7a46d301e2210c~g1' },
+    Ghostmeta_Ghost_V_Vytonation(): string { return '8570412733e9b913~g1' },
 
 // Vytonation.g — Vyto's demo Books (the Voronation.g sibling, one directory over in Ghost/V/).
 //  Where Voronation.g proves the CRUSH (the fold policy) on flora and libraries, Vytonation.g
@@ -2748,8 +2748,8 @@ VytoOrchestra_seed(w) {
     let s1 = w.i({ Song: 'LowTide', artist: 'Yara' })
     let s2 = w.i({ Song: 'Undertow', artist: 'Yara' })
     let s3 = w.i({ Song: 'SaltAir', artist: 'Yara' })
-    let x1 = w.i({ Stray: 'moth' })
-    let x2 = w.i({ Stray: 'lint' })
+    let x1 = w.i({ Stray: 'moth', loose: 1 })
+    let x2 = w.i({ Stray: 'lint', loose: 1 })
     w.c.band = band
     w.c.songs = [s1, s2, s3]
     w.c.strays = [x1, x2]
@@ -2770,7 +2770,17 @@ VytoOrchestra_stand_ready(w) {
     let band = this.VytoOrchestra_band(vw)
     if (!band) return 0
     if (band.o().filter(r => !r.sc.departing).length !== 3) return 0
+    // the rim law: a loose row's seat stands OFF the pile — far from the frame heart, by partition
+    let rim = 0
+    for (const r of this.Vyto_cells(vw)) {
+        if (!r.sc.loose || !r.c.T) continue
+        let dx = r.c.T.x - 400
+        let dy = r.c.T.y - 225
+        if (Math.sqrt(dx * dx + dy * dy) >= 150) rim = rim + 1
+    }
+    if (rim !== 2) return 0
     w.c.saw_stand = 1
+    w.c.saw_rim = 1
     return 1
 
 },
@@ -2820,12 +2830,13 @@ VytoOrchestra_deepen_ready(w) {
 },
 // ── beat 6 — the spotlight: attention swells the focused cell and the world sorts away ────────────
 async VytoOrchestra_spotlight(w) {
-    w.i({desc: 'focus one song — its cell must swell while a stray compresses'})
+    w.i({desc: 'focus one song — its cell must swell while an off-focus sibling compresses'})
     let vw = this.VytoStaple_vw(w)
     let pre = {}
     if (vw) {
         for (const r of this.Vyto_cells(vw)) {
             if (r.c.tok === 'Song:LowTide' && r.c.T) pre.song = r.c.T.r
+            if (r.c.tok === 'Song:Undertow' && r.c.T) pre.other = r.c.T.r
             if (r.c.tok === 'Stray:moth' && r.c.T) pre.stray = r.c.T.r
         }
         this.Vyto_focus(vw, { tok: 'Song:LowTide' })
@@ -2835,20 +2846,25 @@ async VytoOrchestra_spotlight(w) {
     this.expecting(w, 'focus_wait', 14, async () => { await this.VytoStaple_await(w, 14, () => this.VytoOrchestra_focus_ready(w)) })
 
 },
+// the shrink witness is a fellow SONG — a loose row is partitioned out of the taper entirely, so its
+//  rim seat holding still under focus is itself part of the law (asserted here as equality).
 VytoOrchestra_focus_ready(w) {
     let vw = this.VytoStaple_vw(w)
     if (!vw || vw.c.focus_tok !== 'Song:LowTide') return 0
     if (!this.Vyto_rest_poll(w, 6)) return 0
     let pre = w.c.pre_r || {}
-    if (!(pre.song > 0) || !(pre.stray > 0)) return 0
+    if (!(pre.song > 0) || !(pre.other > 0) || !(pre.stray > 0)) return 0
     let song = 0
+    let other = 0
     let stray = 0
     for (const r of this.Vyto_cells(vw)) {
         if (r.c.tok === 'Song:LowTide' && r.c.T) song = r.c.T.r
+        if (r.c.tok === 'Song:Undertow' && r.c.T) other = r.c.T.r
         if (r.c.tok === 'Stray:moth' && r.c.T) stray = r.c.T.r
     }
     if (!(song >= pre.song * 1.15)) return 0
-    if (!(stray <= pre.stray * 0.9)) return 0
+    if (!(other <= pre.other * 0.9)) return 0
+    if (Math.abs(stray - pre.stray) > 0.5) return 0
     w.c.saw_focus = 1
     return 1
 
@@ -2908,6 +2924,10 @@ VytoOrchestra_witness(w) {
     if (w.c.saw_stand) {
         this.story_swear(w, 'the orchestra stands foam-cut — a stuffed bag beside kin songs and loose strays all seated')
         if (!(w.oa({see: 'the orchestra stands foam-cut — a stuffed bag beside kin songs and loose strays all seated'}))) w.i({see: 'the orchestra stands foam-cut — a stuffed bag beside kin songs and loose strays all seated'})
+    }
+    if (w.c.saw_rim) {
+        this.story_swear(w, 'the strays ride the rim — a loose row takes no seat in the pile and feels no wall')
+        if (!(w.oa({see: 'the strays ride the rim — a loose row takes no seat in the pile and feels no wall'}))) w.i({see: 'the strays ride the rim — a loose row takes no seat in the pile and feels no wall'})
     }
     if (w.c.saw_weave) {
         this.story_swear(w, 'shared meaning wove flow among the songs and left the strays loose')

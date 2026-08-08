@@ -348,8 +348,110 @@ The owner, in sequence, refusing every smaller reading: *"balls. shoving into yo
        the bag).  UNRECORDED — first fixtures must come from the owner's run-all on a FRESH tab
         (the current runner is stale-HMR-wedged; recording there would bake bad fixtures).**
 
-**Migration (additive gates, LAW D):** commission key `foam:1` → `w.c.foam`; Vyto_solve swaps
- centroidal-relax for pile_step + conservation radii under the gate; Vytui swaps power_cells(frame)
+**LANDED 2026-08-09 late (all foam-gated, fleet byte-identical):**
+- **the loose layer, model-side** — `sc.loose` is EXPLICIT (the poser owns the vocabulary; zero-flow
+   inference waits until the live weave is rich enough not to misclassify an organ).  Vyto_solve
+    partitions loose rows out BEFORE the relax (no wall pressure given or felt) and seats them on a
+     static tok-hashed RIM ring.  A stir-advanced drift was tried and CUT: rest_poll stirs in a loop
+      while waiting for rest, so any per-stir motion means a driven world can never rest — drift is
+       a renderer concern and waits on a <g> wrapper (a CSS-revolved disc leaves its label behind).
+- **renderer loose regime** — loose rows take no seat in the cut, draw as dim rim discs
+   (`.cell.disc.loose`).
+- **the galaxy morph** — a spring whose TARGET leaps >40px gets one perpendicular position kick, so
+   the same critically-damped math carves a turning approach; one-shot per leap, parked worlds
+    never feel it.
+- **the breath** — CSS-only (`vy-breathe`, 3.4s, ±1.2%, `--bd` phase stagger), gated
+   foam+humdinger in the template so runners and Books never breathe; reduced-motion honored.
+- **the dent** — `.cell:active` scale animation: instant compositor acknowledgment of a press,
+   masking post_do queue latency without touching it.
+- **VytoOrchestra grew the rim claim** (strays wear loose:1; stand asserts both rim seats ≥150 from
+   the frame heart; spotlight's shrink witness is now a fellow SONG and the stray must hold
+    byte-still under focus — the taper partition asserted as equality).  Still UNRECORDED.
+
+**LANDED 2026-08-09 later still (all renderer-side, Vytui only — no .g change, no fixture can move):**
+- **THE A DIAL** (the owner: "cells could do with a handle... an A on one corner... drag up-down to
+   control the intensity|size of that cell").  An HTML handle layer (`.adials`, translateZ'd above
+    every mold) heads each leaf cell's hallway; vertical drag writes `sc.dose` on the SOURCE particle
+     (mirror writes would be overwritten by scan), one-decimal string, DELETED at zero, ~90ms
+      throttle, `Vyto_stir_soon` poke — the same knob Vyto_express already reads (env_area =
+       AREA_BASE·(1+dose)), so the foam re-negotiates around the human's thumb.  This is the chosen
+        cure for "it gets the wrong thing fullfaced sometimes": a handle, not a smarter guess.
+         Keyboard: focus + ArrowUp/Down in 0.2 steps (role=slider).
+- **THE HALLWAY** — a tapered corridor let into each leaf cell's top-left wall ("a hallway merged
+   into the cell wall that we walked into this world through"), fine-copper fill, two receding
+    rails; the GUTS moved off the free margin and now file down it, under the A.  Scenery only
+     (pointer-events none) — the A above is the touchable part.
+- **OCCLUSION ORDER + SPILL** — build_cells now sorts cells (depth asc, then area desc quantized,
+   then key): parents under children, BIG UNDER SMALL, one sort shared by SVG paint order and the
+    molds via a per-rank translateZ step in mold_seat (no `perspective` is set, so Z is stacking
+     only).  With that in place the wall policy flipped a third time: molds and face-scroll are
+      overflow:visible again and the polygon clip-path is gone — spill lands UNDER smaller, more
+       focused neighbours instead of on top of everything (clip solved overlap by amputation;
+        occlusion solves it by order).  History preserved in the .face-mold comment.
+- **CENTERED, CHROMELESS FACES** (the owner: "centering the Player things is going to make it look
+   better, and lose the border") — .face-scroll flex-centers its face (a flex item shrinks to
+    content, which also hands the measure pass honest intrinsic boxes); the mold's seat-ring
+     shadow + border-radius chrome dropped, lift glow kept.
+- **THE POOL DEPTH** ("pools of information") — nested stuffing rests SUNKEN (fill/stroke-opacity
+   ~0.5, labels ~0.22, faces dim+desaturate on .face-scroll, halls and A dials to a murmur) and
+    SURFACES over 260ms when anyone approaches its chain: hover on the bag, the cell, or deeper
+     stuffing, or a camera engaged into the chain (near_key — keys are '>'-paths, so chain
+      membership is a two-way prefix test, computed in build_cells beside lift).  Paint register
+       only: geometry, targets and fixtures never move.
+- **COPPER, THREE SCALES** (the owner: "use copperannodes.jpg at different scales for texture") —
+   `/i/copper_anodes.jpg` as userSpaceOnUse patterns: coarse 520 for the ground rect + scope-bag
+    floors (which also makes bag gaps clickable → engage the bag), fine 130 for the hallway,
+     ~90px CSS background for the A dial itself.  World-unit tiles, so the camera zooms the metal.
+      Pattern defs repeat per-svg ON PURPOSE — runner_shot --svg captures stay standalone.
+
+**LANDED 2026-08-10 (the pile solve — foam-gated, Vyto.g @ 978cf29f23032b1a):**
+- **Vyto_solve now PILES under foam**: the centroidal relax is off (a centroid pull is the frame
+   dictating; the foam law says bodies negotiate) and pile_step iterates INSIDE one solve to its
+    fixed point — cap 400 MEASURED, not guessed: a scratch probe showed the worst case (lone ball
+     crossing the frame at gravity 0.02/step) rests in 256 steps, a wired 6-orchestra in 121, and
+      a 40 cap looked fine while NEVER resting in 3 of 4 configs.  Pins restored each step
+       (pile_step stays pin-blind/pure).  Anchors under foam are the BALLS, not centroids.
+- **finals under foam are foam_cells**, because the scope recursion hands finals[p] to every bag
+   as its tessellation bound — the first cut set finals=null under foam and `finals[p]` THREW on
+    every stir.  Found by controlled revert (the Books-are-deterministic move): pile on → 1/7
+     %see; pile off → 7/7; the pile was innocent, the null was the killer.  With the fix: 7/7
+      %see WITH the pile live — VytoOrchestra's first full pass over real pile physics.
+- ⚠ **VytoOrchestra's recorded fixtures are STALE**: the run-all that recorded them ran a
+   pre-loose Vytonation (002.snap holds `Stray:moth` / `Stray:lint` with NO `loose` key), so
+    every step is red-at-baseline against today's Book no matter what the solve does — the
+     %see census is the live gate until the owner re-records with a fresh run-all (which will
+      also bake the pile world's snaps; positions never reach a dige, so only the see-rows and
+       model rows move).
+
+**LANDED 2026-08-10 (renderer round two — Vytui only, fixture-safe):**
+- **THE ORBIT** — loose discs ride a `<g class="orbit">` wrapper: the constellation revolves about
+   the frame heart (transform-box: view-box) over 8 minutes while an inner `.orbiter` counter-
+    rotates, so bodies drift and labels stay upright — the drift the rim seats waited for, CSS-only
+     and foam_breathes-gated (live page; Books and captures never see a body mid-drift).
+- **THE WAVE** — the chunky label covering, finally: a scalloped copper band along a faced cell's
+   top edge wearing the ident, starting right of the hallway head (the corridor runs in under it).
+    Engaging the cell FOLDS it away — scaleY about its own top edge with a gathering overshoot
+     ease, "a wave toppling in reverse".  Sunken cells wear it at pool ink.
+
+**SEEN 2026-08-10 (vyto_see over runner_shot --svg, post-VytoOrchestra world):** the pile is real
+ to the eye — a pressed bunch of bodies mid-frame with round outer rims and shared pressed walls,
+  **coverage 24.9%**: the foam earns its footprint instead of being granted the frame, which IS the
+   law in one number.  The nested players read at pool ink (`cell sunk nested` in the capture),
+    the loose stray rides off-pile.  Ops lesson recorded in auto-memory: a Book run accepted while
+     the runner tab is mid-full-reload (any Vytui edit) can step all beats with 0 %see and no
+      glass — rerun on a settled tab before believing a regression OR a controlled revert; both
+       of tonight's bisect verdicts were reload-race artifacts.
+
+**FLEET SWEEP 2026-08-10 (post-pile, live runner): 15/15 GREEN** — VytoBreathe · VytoBunch ·
+ VytoCell · VytoCrest · VytoFoam · VytoFold · VytoFreeze · VytoMitosis · VytoNest · VytoNestRest ·
+  VytoRadio · VytoSeek · VytoStaple · VytoTandem · VytoWeb, every recorded Book over
+   Vyto.g @ 978cf29f23032b1a.  The gate-off ⇒ byte-identical claim holds over the pile changes,
+    and VytoFoam (foam-gated, WITH fixtures) is the independent confirmation that a foam world's
+     recorded claims survive the pile.  (VytoOrchestra excluded — its fixtures are the stale
+      pre-loose recording, above.)
+
+**Migration (additive gates, LAW D):** commission key `foam:1` → `w.c.foam`; ~~Vyto_solve swaps
+ centroidal-relax for pile_step + conservation radii under the gate~~ (LANDED above); Vytui swaps power_cells(frame)
   for foam_cells under the same gate; loose classification at Scan (no %Flow incident + dose<ε ⇒
    row.c.loose).  Gate off ⇒ every existing Book byte-identical.  New Book `VytoFoam` names its %see
     sentences FIRST (LAW B): loose classification · pressure computation · conservation through one

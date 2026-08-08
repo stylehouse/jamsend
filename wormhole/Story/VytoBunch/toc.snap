@@ -4,8 +4,7 @@ story:VytoBunch
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.572
-      sample=0.77,at=1785096751
+    TimeTotal:beliefs,avg=0.497
       sample=0.77,at=1785096760
       sample=0.598,at=1785096779
       sample=0.611,at=1785096969
@@ -15,8 +14,8 @@ story:VytoBunch
       sample=0.732,at=1785110861
       sample=0.021,at=1785378078
       sample=0.025,at=1786189806
-    TimeTotal:step,avg=0.115
-      sample=0.154,at=1785096751
+      sample=0.018,at=1786210663
+    TimeTotal:step,avg=0.1
       sample=0.154,at=1785096760
       sample=0.12,at=1785096779
       sample=0.122,at=1785096969
@@ -26,6 +25,7 @@ story:VytoBunch
       sample=0.146,at=1785110861
       sample=0.004,at=1785378078
       sample=0.005,at=1786189806
+      sample=0.004,at=1786210663
   step,dige:8f35858fd314869e
   step=2,dige:bd158c2fffcde056,desc:seed four cogs — two oak kin split by the strangers pine and birch
   step=3,dige:24da78c12c842c32,desc:mint A:Vyto beside the run and commission it on the four cogs
