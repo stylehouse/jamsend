@@ -1367,6 +1367,8 @@ async Heist_materialise_one(w, nav, me, ref, lofi):
 //          it, which is the one fact that cannot be reconstructed from the id alone.
 //  So remember it.  A tiny bounded runtime memo (id → the sc a rec needs to be re-servable) costs a
 //   few hundred bytes per track and outlives any number of lib sweeps.  All .c — no snap byte.
+//  It outlives a lib sweep but NOT the page; the durable mirror that closes that gap is the section
+//   below (2026-08-08), and it too costs no snap byte.
 
 // Heist_keep_remember — memoise a materialised rec's rebuild recipe, keyed by its keep-id.  Bounded
 //  drop-oldest (insertion-ordered keys, the Repli_recv_page idiom) so a long-running station cannot
@@ -1377,8 +1379,25 @@ Heist_keep_remember(w, rec, base):
     memo[String(rec.sc.id)] = {
         base: String(base || ''), path: String(rec.sc.path),
         total: +(rec.sc.total || 0), body_hash: rec.sc.body_hash, bytes: +(rec.sc.bytes || 0),
+        ts: Date.now(),
+        // `lofi` IS PART OF THE RECIPE, not decoration (2026-08-08).  Without it a rehealed lofi track
+        //  re-materialises as the ORIGINAL: Ra's A3 re-materialise calls Heist_materialise_one with
+        //   `lofi` undefined, and that verb's own early-out at :1274 tests
+        //    `(!!rec.sc.lofi) === (!!lofi)` — so a mismatch re-reads the wrong file and the promised
+        //     body_hash can never be met. The want then parks forever against bytes that will never
+        //      match. Durability makes reheal fire MORE often, so this got more exposure the moment
+        //       the memo went to disk. Rides as 1-or-absent per the boolean rule.
+        lofi: rec.sc.lofi ? 1 : undefined,
         title: rec.sc.title, artist: rec.sc.artist, album: rec.sc.album, genre: rec.sc.genre, ext: rec.sc.ext,
     }
+    // MARK, DON'T WRITE.  This runs at the end of Heist_materialise_one, immediately after a whole-file
+    //  read + two hashes (measured 65MB / 5s for one track), and that path is the source's serving mutex —
+    //   putting a disk write on it would pay again exactly where this file has spent the most effort taking
+    //    cost out.  The beat picks the dirty ids up (Heist_keep_memo_beat) and appends them as one line.
+    //  Marking is unconditional even off a live page: it is one key in a `.c` object that nothing reads
+    //   unless the durable rail is on, so the Book seam stays a single gate in one place.
+    let dirty = (w.c.keep_memo_dirty = w.c.keep_memo_dirty || {})
+    dirty[String(rec.sc.id)] = 1
     let keys = Object.keys(memo)
     let CAP = +(w.c.keep_memo_cap || 2000)
     if (keys.length > CAP) { for (const k of keys.slice(0, keys.length - CAP)) delete memo[k] }
@@ -1407,6 +1426,9 @@ Heist_reheal_id(w, id):
     if (m.bytes) rec.sc.bytes = m.bytes
     // guarded stamps: an absent memo field must never write `undefined` into sc (the encoder brands
     //  the line {"undef":[...]} — a mint bug, not furniture).
+    // the rendition claim must survive the heal, or Ra's A3 re-materialise reads the original file
+    //  back over a lofi promise and the body_hash never matches (see Heist_keep_remember's note).
+    if (m.lofi) rec.sc.lofi = 1
     if (m.title) rec.sc.title = m.title
     if (m.artist) rec.sc.artist = m.artist
     if (m.album) rec.sc.album = m.album
@@ -1414,6 +1436,193 @@ Heist_reheal_id(w, id):
     if (m.ext) rec.sc.ext = m.ext
     rec.bump()
     return rec
+
+// ── THE DURABLE KEEP-MEMO (2026-08-08) ───────────────────────────────────────────────────────────
+//  Everything above this line lives in `.c`, and `.c` dies with the page.  A keep-id is
+//   sha256(pub+base+path) (Heist_keep_id) — one-way — so the (id → base+path) mapping is the ONE fact
+//    that cannot be recomputed from the id an asker sends.  Lose it and the source cannot answer a want
+//     it answered happily a minute ago: Repli_serve_want misses, the sink re-asks every 4s, and BOTH
+//      ends look perfectly healthy while nothing moves.  The re-census heal in Heist_keep_step ("⇊⟲ N
+//       unanswered materialise asks") is the MITIGATION, and its own comment has named this the fix
+//        owed since 2026-08-05.
+//  WHY IT MATTERS MORE NOW.  Two routes end the page and both end at this same missing map: the
+//   daemon's JAMSERVE_SECS restart timer (which made it a guaranteed ~15-minute bug, now set to 0 — a
+//    mitigation, not a fix) and a container OOM, which is about to become live as a memory limit is
+//     added.  Nothing else stands between a daemon death and a stranded haul.
+//  THE SHAPE.  Disk MIRRORS the runtime map, it does not replace it.  `w.c.keep_memo` stays the only
+//   thing Heist_reheal_id reads and stays SYNCHRONOUS — Repli_serve_want calls it inline, so it cannot
+//    await anything.  The mirror is read back into `.c` once at standup and appended to from the beat;
+//     nothing on the materialise path waits on IO (that path is already the 65MB read + hash this file
+//      spent a day shrinking).
+//  WHERE.  A Berth Waft under my OWN prepub — <root>/.jamsend/berth/<prepub>/KeepMemo/ — the same
+//   durable door Heist_keep_persist uses for a heist's intent, and durable in the sense that matters
+//    here: it is a file, so it survives the process, not just the tab.  Rows are `%Keepsake,id:<keep-id>`
+//     — a REFERRING particle that NAMES a keep-id and carries the rebuild recipe, never a second
+//      %Record impersonating the holding that %RummageLib carries.  Written through the APPEND door
+//       with ident:'id', so one materialise costs one line rather than a whole-file rewrite (the
+//        43,395 B measurement that door was built for) and a re-materialise supersedes its own earlier
+//         line when the parts fold.
+//  BOOKS CANNOT SEE IT.  No snapped key is added anywhere: the map, the dirty set and the open Waft all
+//   ride `.c`, and the rows hang off a detached Waft that is never a child of any world.  On top of
+//    that the whole rail is gated on `top_House().c.humdinger` — the end-user-page predicate
+//     Radio_prod_seed and Ra_shuffle_cull already use for exactly this distinction — so a driven world
+//      never opens the Waft, never writes a part, and behaves as it did before this existed.
+
+// Heist_keep_memo_cap — how many recipes the DISK memo keeps.  Deliberately SMALLER than the in-memory
+//  CAP (2000, Heist_keep_remember): the runtime map is heap that dies with the page, whereas this one is
+//   read whole at every standup and rewritten whole at every compaction, so its cost is paid over and
+//    over by a long-lived collection.
+//  SIZING — REASONING, NOT MEASUREMENT.  The only weighed berth line in this file is Newlyadded's
+//   43,395 B over 177 %Probation cards — ~245 B/line, and those are long paths (2026-08-08, the append
+//    door's own note).  A %Keepsake carries a path of the same kind plus a 64-char hash, so 400 rows is
+//     of order 100-150 KB of toc: the same order as the shelf that measurement came from.  I have NOT
+//      weighed a real %Keepsake line.
+//  400 is also far more than the working set it exists for — a haul is an album (~12 tracks), and the
+//   ids that go stale are exactly the ones nobody asks for again.  Prune is oldest-`ts` first.
+Heist_keep_memo_cap():
+    return 400
+
+// Heist_keep_memo_waft — open the KeepMemo Waft ONCE and hold it on `.c` for the world's life.  Berth_open
+//  is a toc read plus up to 64 part reads; that is a standup cost, not a per-beat one.  Holding it is also
+//   what makes the append door usable at all — Berth_append needs the part counter Berth_open leaves on
+//    `.c`.  Returns null while the preconditions are merely ABSENT (no nav yet: the FSA handle restore is
+//     async and a fresh grant waits on a human click), and the caller simply comes back next beat.  This
+//      must never latch: burning a one-shot gate against a null nav is the 2026-08-05 bug that killed
+//       Heist_keep_rehydrate for a whole page life, twice over.
+async Heist_keep_memo_waft(w, nav, me):
+    if (w.c.keep_memo_waft) return w.c.keep_memo_waft
+    if (!nav || !me) return null
+    let waft = await this.Berth_open(nav, '', String(me), 'KeepMemo')
+    if (!waft) return null
+    w.c.keep_memo_waft = waft
+    return waft
+
+// Heist_keep_memo_rehydrate — fold the disk mirror INTO the runtime map, once per world life.  A recipe
+//  already learned THIS session wins: it was written by an actual read of the actual file a moment ago,
+//   whereas a row on disk is a promise made by an earlier incarnation of this process.
+//  A row missing `path`/`total`/`body_hash` is REFUSED rather than half-loaded: Heist_reheal_id stamps
+//   all three onto the rebuilt husk, and a husk with a total but no body_hash never re-materialises (Ra's
+//    A3 gate reads `rec.sc.body_hash && total > 0`), which is a parked want that can never come back.
+//  A STALE recipe is self-limiting, and that is a code fact rather than a measurement: the husk only
+//   carries the promise, and Heist_materialise_one re-reads the file and OVERWRITES total/body_hash from
+//    the fresh bytes.  A moved or deleted file simply fails the read and returns null — the same miss the
+//     source gives today for an id it does not know, and the re-census heal still covers it.
+Heist_keep_memo_rehydrate(w, waft):
+    if (w.c.keep_memo_read) return 0
+    w.c.keep_memo_read = 1
+    let memo = (w.c.keep_memo = w.c.keep_memo || {})
+    let rows = waft.o({ Keepsake: 1 })
+    // oldest first, then keep the tail: the cap is enforced on the way IN as well as on the way out, so a
+    //  shelf that grew under an older, larger bound cannot flood the map on one read.
+    rows.sort((a, b) => (+(a.sc.ts || 0)) - (+(b.sc.ts || 0)))
+    let CAP = this.Heist_keep_memo_cap()
+    if (rows.length > CAP) rows = rows.slice(rows.length - CAP)
+    let n = 0
+    for (const row of rows) {
+        let id = String(row.sc.id || '')
+        if (!id || memo[id]) continue
+        if (!row.sc.path || !row.sc.body_hash || !(+(row.sc.total || 0) > 0)) continue
+        memo[id] = {
+            base: String(row.sc.base || ''), path: String(row.sc.path),
+            total: +row.sc.total, body_hash: String(row.sc.body_hash), bytes: +(row.sc.bytes || 0),
+            ts: +(row.sc.ts || 0),
+            // 1-or-absent on the way back too: `row.sc.lofi` is the string '1' when present, so coerce
+            //  rather than passing the raw scalar into a memo the rest of the code reads as a boolean.
+            lofi: row.sc.lofi ? 1 : undefined,
+            title: row.sc.title, artist: row.sc.artist, album: row.sc.album, genre: row.sc.genre, ext: row.sc.ext,
+        }
+        n = n + 1
+    }
+    if (n) console.log(`⇊⟲ ${n} keep recipe${n === 1 ? '' : 's'} read back from disk — a restarted source can answer the ids it already served`)
+    if (typeof this.Radio_trace === 'function') this.Radio_trace(null, { ev: 'keepmemo', why: 'read', on: rows.length, took: n })
+    return n
+
+// Heist_keep_memo_flush — write the recipes learned since the last pass as ONE appended part.  Dirty ids
+//  are cleared only once the write has actually landed, so a throwing disk retries next beat instead of
+//   silently dropping the recipe (the caller counts strikes and gives up after ten).
+//  PRUNE IS A COMPACTION, not an append: a part can supersede a line but cannot delete one, so once the
+//   shelf is over its bound the oldest go and the whole toc is rewritten.  That is the expensive verb, and
+//    it happens at most once per CAP arrivals rather than per arrival.
+async Heist_keep_memo_flush(w, waft, nav):
+    let dirty = w.c.keep_memo_dirty
+    if (!dirty) return 0
+    let ids = Object.keys(dirty)
+    if (!ids.length) return 0
+    let memo = w.c.keep_memo || {}
+    let rows = []
+    for (const id of ids) {
+        let m = memo[id]
+        // an id culled from the memo by its own cap between mark and flush has nothing left to write
+        if (!m || !m.path || !m.body_hash || !(+(m.total || 0) > 0)) { delete dirty[id]; continue }
+        let row = waft.oai({ Keepsake: 1, id: id })
+        row.c.up = waft
+        row.sc.path = String(m.path)
+        row.sc.total = +m.total
+        row.sc.body_hash = String(m.body_hash)
+        row.sc.ts = +(m.ts || Date.now())
+        // guarded stamps, all of them: an absent field must never write `undefined` into sc — the encoder
+        //  brands the line {"undef":[...]}, an honest marker of a sloppy mint.  `base` is legitimately ''
+        //   for a share-root file, and '' is what Heist_reheal_id reconstructs when the key is absent.
+        if (m.base) row.sc.base = String(m.base)
+        if (m.bytes) row.sc.bytes = +m.bytes
+        // the rendition claim, 1-or-absent (never `false`/`0` — a JS boolean does not snap cleanly).
+        //  Without this a restart heals a lofi keep back as its ORIGINAL and the body_hash can never
+        //   be met; see Heist_keep_remember. Durability is exactly what makes this reachable.
+        if (m.lofi) row.sc.lofi = 1
+        if (m.title) row.sc.title = String(m.title)
+        if (m.artist) row.sc.artist = String(m.artist)
+        if (m.album) row.sc.album = String(m.album)
+        if (m.genre) row.sc.genre = String(m.genre)
+        if (m.ext) row.sc.ext = String(m.ext)
+        rows.push(row)
+    }
+    if (!rows.length) return 0
+    let all = waft.o({ Keepsake: 1 })
+    let CAP = this.Heist_keep_memo_cap()
+    if (all.length > CAP) {
+        all.sort((a, b) => (+(a.sc.ts || 0)) - (+(b.sc.ts || 0)))
+        for (const old of all.slice(0, all.length - CAP)) waft.drop(old)
+        await this.Berth_save(nav, waft)
+    } else {
+        await this.Berth_append(nav, waft, rows, 'id')
+    }
+    for (const row of rows) delete dirty[String(row.sc.id)]
+    return rows.length
+
+// Heist_keep_memo_beat — the durable memo's whole per-beat duty, one call so there is one gate: stand the
+//  Waft up, read it back once, then append whatever was learned.  Called from Heist_keep_beat, which is
+//   awaited inline inside Swarm_share_beat's 600ms cadence — so the cost has to be near-nothing when
+//    nothing happened, and it is: an early return on an empty dirty set, no open after the first.  A write
+//     only happens on a beat that followed a materialise, i.e. at most once per track.  (Reasoning, not
+//      measurement — I have not timed it in the beat split.)
+//  LIVE PAGES ONLY.  See the section header: this is the seam that keeps every Book's fixtures untouched.
+//  TEN STRIKES.  A share that will not take a write (read-only grant, dead handle) must not churn the beat
+//   for the rest of the page life; the in-memory memo keeps working exactly as it did before, so giving up
+//    costs only the durability, never the session.
+async Heist_keep_memo_beat(w, nav, me):
+    let TOP = this.top_House ? this.top_House() : null
+    if (!TOP || !TOP.c.humdinger) return
+    if (!nav || !me || w.c.keep_memo_off) return
+    if (!w.c.keep_memo_waft && !w.c.keep_memo_dirty && !this.Heist_keep_memo_wanted(w)) return
+    try {
+        let waft = await this.Heist_keep_memo_waft(w, nav, me)
+        if (!waft) return
+        this.Heist_keep_memo_rehydrate(w, waft)
+        await this.Heist_keep_memo_flush(w, waft, nav)
+    } catch (er) {
+        w.c.keep_memo_strikes = +(w.c.keep_memo_strikes || 0) + 1
+        if (w.c.keep_memo_strikes >= 10) {
+            w.c.keep_memo_off = 1
+            console.log('⇊⚠ durable keep-memo off after 10 failed disk passes — reheal is runtime-only again until reload —', er)
+        }
+    }
+
+// Heist_keep_memo_wanted — is it worth standing the Waft up at all on THIS page?  Only a node that serves
+//  (a live share) or that has ever materialised anything has a use for the recipes; a page that has done
+//   neither would pay a standup read for a shelf it will never consult.  Deliberately generous — a source
+//    with a share up is the whole population this fix is for, and the read is once per world life.
+Heist_keep_memo_wanted(w):
+    return !!(w.c.share_up || w.c.rummage_libs)
 
 // Heist_rummage_folder — the SOURCE side resolves a heard track's SEED content-id → the folder it came from
 //  on MY OWN disk, and censuses that folder into husk-able %Records (the "what else is in this folder" the
@@ -1699,6 +1908,10 @@ async Heist_keep_beat(w, ident):
         if (rw.c.heist_rehydrate_tries >= 10) rw.c.heist_rehydrated = 1
     }
     try { await this.Heist_defaults_rehydrate(nav, ident) } catch (er) {}
+    // the SOURCE side's own reload recovery: read the durable keep-memo back once, and mirror out whatever
+    //  this beat's materialises learned.  Its own gate (humdinger, nav, strikes) is inside; it is put here,
+    //   beside the two rehydrates, because this is the one place per beat that already holds nav + me.
+    await this.Heist_keep_memo_beat(w, nav, me)
     // THE CAP IS GLOBAL, NOT PER-HAUL (the human 2026-08-06: "are there any complications like overlapping
     //  downloads we can switch off while sorting this out?" — and the honest answer was that turning the knob
     //   down did not turn the overlap off).  `heist_inflight` is enforced INSIDE Heist_keep_step, so it bounds
@@ -1894,13 +2107,20 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
                     //    SOURCE-side reload wipes the source's ability to answer, permanently: the asker's own
                     //     Berth resume works perfectly, re-asks every 4s forever, and nothing ever comes back.
                     //      Silent, and invisible without the trace (asked:9 landed:0 of:8).
+                    //  SINCE 2026-08-08 the keep_memo half of that is DURABLE (Heist_keep_memo_beat mirrors it
+                    //   to a Berth Waft and reads it back at standup), so a restarted source should resolve the
+                    //    id without any of this.  This heal STAYS, and not merely as belt-and-braces: it is the
+                    //     only cover for the cases the memo cannot reach — a page whose durable rail never
+                    //      stood (no nav grant, a read-only share, ten strikes), an id materialised before the
+                    //       mirror existed, and a source that genuinely never held the folder.
                     //  The heal: after 3 unanswered asks, re-send the DESCRIBE ask.  That re-runs the folder
                     //   census on the source, which re-registers the rummage lib — and because a keep-id is
                     //    DETERMINISTIC (sha256 of pub+base+path) the very same ids come back, so the standing
                     //     picks resolve again with no re-mapping and no re-choosing.  Throttled hard (20s): a
                     //      census is the expensive verb, and this is a repair, not a heartbeat.
-                    //  PROPER FIX, owed: make the source's keep_memo durable (it is the Dexie ↔ .jamsend sync
-                    //   item in miniature).  Until then this heals it in one round trip instead of never.
+                    //  PROPER FIX, LANDED 2026-08-08: the source's keep_memo is durable now — a Berth Waft of
+                    //   %Keepsake recipes under my own prepub (the durable keep-memo section, ~line 1418).  The
+                    //    line below still heals in one round trip when it is reached at all.
                     // THE SOURCE SAID SO (2026-08-06) — Repli_recv_missed stamps w.c.ra_missed[id] when the
                     //  source answers a want with "I cannot resolve this id".  That is the exact fact the two
                     //   gates below were invented to INFER: `asks_out >= 3` is twelve seconds of waiting to

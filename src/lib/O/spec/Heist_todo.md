@@ -146,6 +146,19 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
             this is a second, orthogonal list about bytes. All `.c`; zero fixtures and zero Books name
              any of it. New `pcm-free` trace mark (`why:idle|cap`, with MB) so a live tab can be *shown*
               freeing rather than asked to prove a negative.
+     ⚠ **CORRECTION 2026-08-08 — the owner + belt was HALF the cure, and on its own it livelocked.**
+      The belt is a **memory** bound; it is not a **rate** bound, and "un-vetoable" is exactly what made
+       that bite. With 8 parked wants standing up ~736MB against the 384MB cap, the sweep shed open
+        encodes, the next pump pass found `rec.c.pcm` null and re-kicked a full 92MB decode, forever —
+         and `Ra_pcm_backoff` never braked it, because that ladder arms on FAILED decodes and every one
+          of these SUCCEEDED. Measured: 28 decode-starts of the same 8 records against TWO heist serves
+           in 136s; every track dead at 0:32; the CPU pinned; the inbox over its 2000 cap DISCARDING
+            `repli_lines`. **The missing organ was admission** — a census gate in `Ra_transcode_pump`
+             plus `Ra_pcm_admit` at the decode kick. The rule: *an eviction bound and an admission bound
+              are two different organs, and a belt with no admission upstream of it is a livelock
+               generator for any working set larger than the cap.* Full write-up: `Backpressure_todo`
+                §3.1e and `Composition_todo` §3.12. Everything above about the *registry* (tab-singular,
+                 joined at acquisition) stands unchanged — it was the belt's sufficiency that was wrong.
    · the **"own tracks cut at 32s"** was `Radio_supply_go` (Radio.g) reading the FIRST `null` from
       `Ra_transcode_ensure` as a verdict — capping the track at its preview and writing the note
        *"source unreadable"* about a source it had not finished reading. It is **deterministic, not

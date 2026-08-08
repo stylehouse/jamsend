@@ -5,8 +5,7 @@ story:MusuMag
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=0.859
-      sample=0.602,at=1786069951
+    TimeTotal:beliefs,avg=0.836
       sample=0.57,at=1786070139
       sample=0.638,at=1786070192
       sample=1.835,at=1786109093
@@ -16,8 +15,8 @@ story:MusuMag
       sample=0.336,at=1786118150
       sample=1.195,at=1786119636
       sample=0.832,at=1786119670
-    TimeTotal:step,avg=0.086
-      sample=0.06,at=1786069951
+      sample=0.371,at=1786169163
+    TimeTotal:step,avg=0.084
       sample=0.057,at=1786070139
       sample=0.064,at=1786070192
       sample=0.184,at=1786109093
@@ -27,6 +26,7 @@ story:MusuMag
       sample=0.034,at=1786118150
       sample=0.119,at=1786119636
       sample=0.083,at=1786119670
+      sample=0.037,at=1786169163
   step,dige:315b6f6c2578cea2
   step=2,dige:de83953c8faf65b5
   step=3,dige:93859fda016d4f45

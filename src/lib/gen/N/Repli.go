@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return 'b85a7196c9b5fa38~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return '6cd40ab13560f9fa~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -668,7 +668,15 @@ Repli_missed_hot(w, id) {
     let key = String(id)
     let at = +(m[key] || 0)
     if (!at) return 0
-    if (Date.now() - at < +(w.c.ra_missed_hold_ms || 60000)) return 1
+    // `?? `, NOT `|| ` — THE DIAL MUST BE SETTABLE TO ZERO.  `+(w.c.x || 60000)` silently ignores a
+    //  configured 0 (it is falsy) and uses the default, so "no backoff at all" — the natural way to
+    //   disable this gate, and the only way to exercise its expiry in a test without sleeping a
+    //    minute — was unreachable. Caught by SupplyGuards.spec.ts on its FIRST run, which is a fair
+    //     advert for the layer: nobody would ever have noticed from a console.
+    //  The `|| DEFAULT` idiom is everywhere in this repo and is fine wherever 0 is meaningless (a
+    //   count, a byte total). It is a bug wherever 0 is a legitimate SETTING. Check which you have.
+    let hold = w.c.ra_missed_hold_ms == null ? 60000 : +w.c.ra_missed_hold_ms
+    if (Date.now() - at < hold) return 1
     delete m[key]
     return 0
 

@@ -308,8 +308,23 @@ export function attachRelay(
 	//  whatever a peer felt like sending.  (Not a new exposure — `subscribe` already binds caller-
 	//   chosen channel names — but there is no reason to widen the shape while widening the policy.)
 	const SANE_ROLE = /^[A-Za-z0-9_:.-]{1,64}$/
+	// …but an identity-SHAPED name is refused outright (2026-08-08, ClusterAddressing_todo §6).  A
+	//  prepub is 16 hex chars, a full pub 64; `bind` is additive and `deliverLocal` fans out to the
+	//   whole Set — so a `become <prepub>` would shadow-subscribe an UNAUTHENTICATED socket onto a
+	//    hello-verified identity's frames (a copy of everything addressed to them: swarm frames, music
+	//     chunks, wormhole replies).  Identity addresses are bound by signed `hello` ALONE; a role name
+	//      has no business being pure hex.  NB the `?addr=` query is the same door still open — it is
+	//       load-bearing for the pre-hello window (Swarm_station_up dials ?addr=<own prepub>), so
+	//        closing it needs the §2 precondition (wait for hello_ok) first; refusing it here would
+	//         drop legitimate first frames instead.
+	const IDENTITY_SHAPED = /^[0-9a-fA-F]{16,}$/
 
 	function handleControl(ws: WebSocket, msg: any) {
+		if (msg.control === 'become' && typeof msg.role === 'string' && IDENTITY_SHAPED.test(msg.role)) {
+			ws.send(JSON.stringify({ control: 'error', error: `become '${msg.role.slice(0, 12)}…' refused — identity-shaped; identities bind via signed hello only` }))
+			relayLog(`✗ become REFUSED (identity-shaped) '${msg.role.slice(0, 16)}' — a role name is never pure hex; signed hello is the identity bind`)
+			return
+		}
 		if (msg.control === 'become' && typeof msg.role === 'string' && SANE_ROLE.test(msg.role)) {
 			// Bind this socket under its ROLE addr so role-addressed frames actually reach it —
 			//  the editor↔runner ping/pong keepalive (and any to:'runner'/'editor' traffic) is
@@ -363,6 +378,19 @@ export function attachRelay(
 		//   socket so close unbinds every channel, not just meta.addr.
 		if (msg.control === 'subscribe' && typeof msg.channel === 'string') {
 			const ch = msg.channel
+			// A subscribe binds into the SAME `locals` Set an identity's hello-bind uses, and deliverLocal
+			//  fans out regardless of how a socket got bound — so an unqualified subscribe is the OTHER
+			//   shadow-subscribe door beside `become` (ClusterAddressing_todo §6, finding #3): `{subscribe,
+			//    channel:<victim-prepub>}` would splice an unauthenticated socket onto that identity's frames.
+			//     Legitimate channels are ALWAYS `@`-prefixed (the delivery path only treats to[0]==='@' as a
+			//      channel — Peeroleum_deliver, Peeroleum.g), so REQUIRE it: a non-`@` subscribe is either a
+			//       mistake or this attack, never a real listener. (The `?addr=<prepub>` door stays open — it
+			//        is load-bearing for the pre-hello station bind and needs the §2 hello_ok precondition.)
+			if (ch[0] !== '@' || !SANE_ROLE.test(ch.slice(1))) {
+				try { ws.send(JSON.stringify({ control: 'subscribe_error', channel: ch, reason: 'channel must be @-prefixed (identity addresses bind via signed hello, not subscribe)' })) } catch {}
+				relayLog(`✗ subscribe REFUSED '${ch.slice(0, 20)}' — not an @channel; identities never bind via subscribe`)
+				return
+			}
 			bind(ch, ws)
 			;((ws as any).subs ??= new Set<string>()).add(ch)
 			try { ws.send(JSON.stringify({ control: 'subscribed', channel: ch })) } catch {}

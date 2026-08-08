@@ -38,6 +38,30 @@ Nothing is built. Read §1 for why it must exist, then §3 — the substrate alr
 | `Swarm_share_beat` stuck in `Stoker_tour` | relay healthy, tabs sealed, **neither peer took the other's stream**; `×241` skipped ticks | the human said "they aren't sharing music" and pasted a console |
 | the Story drive, after a `.svelte` HMR | `run --watch` polls `phase:"begun"` forever; Story action buttons missing from the H header | the human noticed the missing buttons ([[svelte-hmr-wedges-a-book-drive]]) |
 | a runner tab | advertises, won't answer pings | the human hit F5 |
+| a runner's **run slot**, holding a `ghost_compile` | `running.book: "Ghost/M/Ra.g"`, `phase:"begun"`, forever — the runner looks BUSY, refuses every Book, and self-heals never | a subagent read the `.book` value and recognised a `.g` path where a Book name belongs |
+
+**⚠ THE RUN SLOT MUST NOT BE ABLE TO HOLD A COMPILE** (the human, 2026-08-08: *"`stuck in its run slot` ew, can we push a TODO about making that impossible or something?"*).
+
+> **NOT RADIOS' TO FIX** — the human, same sitting: *"the `run slot` problem is outside of Radios I
+>  guess."* Correct. `running.book` belongs to the Story/Lies runner machinery, not the supply path,
+>   and it is recorded here only because this doc is where wedges are catalogued and it would
+>    otherwise be lost. **Whoever owns the runner side should take it.** The diagnosis below is a
+>     handoff, not a plan of mine.
+
+This is not a
+ detection problem like the others — it is a **type error wearing a state machine**. `running.book`
+  holds either a Book name or a `.g` path, and only one of those can ever finish; a compile has no
+   steps, emits no `run_phase`, and so can never clear the slot it occupies. The fix is upstream of
+    any supervisor:
+- **Preferred: separate the slots.** A compile and a Book run are different jobs; they should not
+   contend for one field. A compile that cannot enter the run slot cannot wedge it.
+- **Failing that: make the slot self-clearing.** A `running` entry needs an owner and a deadline — if
+   the thing occupying it emits no progress within its own expected window, it is released. That is
+    §4a's monotonic-progress rule applied to the job slot instead of the beat.
+- **Cheap immediate guard, worth having regardless:** refuse to accept a `.g` path as a Book name at
+   the door. The value is structurally wrong and the code can see that without any timing.
+ Until then the tell is exactly what caught it here: a `.g` path in `running.book` is a compile in the
+  run slot, **not a stuck Book** — do not go looking for a Book bug.
 
 Every one was a **silent** stop inside a machine whose job is to keep moving, and in every case the
  detector was a person reading a log. That is the gap. The app already knows more than enough to have
@@ -95,11 +119,77 @@ That last line is the one that found the tour stall. `cull=0 tour=0 peers=0 keep
 
 ---
 
-## 4. The shape
+## 4. The shape — TWO TIERS, and the first draft of this doc got it wrong
 
-**A `%Watch` req, not a status string.** A req carries its own liveness, re-arms per pass, and is
- already the idiom every other long-lived condition here uses — [[req-is-where-state-belongs]]. A
-  scalar `wedged:1` would need someone to remember to clear it, which is the same class of bug.
+> **CORRECTION (2026-08-08), and it is the load-bearing one.** This section originally said *"a
+>  `%Watch` req, not a status string"*, reasoning from [[req-is-where-state-belongs]]. **That is
+>   wrong here.** A req runs in `reqy(w).do()` → the belief pass → **under the beliefs mutex**. So a
+>    req-based supervisor is *queued behind the very wedge it exists to detect*. The daemon session
+>     caught it and had the receipt already in hand:
+>
+>        "drain_why": "beliefs mutex held 8s by H:Mundo fn:swarm_share_beat"
+>        "queued": ["fn:handle_inbound", "think"]
+>
+> `think` **is** the belief pass. §4a's check was in that queue with it. This doc worried about a
+>  watchdog *causing* a wedge and never about one *being* wedged. The req idiom is right for state
+>   that must persist and be seen; it is wrong for the detector itself.
+
+**What makes escape possible:** a stuck `await` still lets timers fire — only a stuck `while(true)`
+ would not — and **every wedge in §1 is await-shaped**. `Swarm_share_loop` already demonstrates the
+  seam: its `setTimeout(tick, 600)` fires regardless of the mutex; only the `post_do` *inside* it
+   queues. So a plain timer that never calls `post_do`, never bumps, and never writes `sc` — reading
+    `.c` counters, which are plain JS objects needing no mutex — cannot be blocked by the machine it
+     watches. It would have caught all three of §1.
+
+### Tier 1 — in-tab, outside the belief loop. **LANDED 2026-08-08** (`Swarm.g`, `f0d81e693d075cd7`)
+
+`Swarm_watch_loop(w)` — a 2s era-guarded `setTimeout` chain started beside `Swarm_share_loop`, calling
+ `Swarm_watch_look` → `Swarm_beat_health` + `Swarm_detached_health`, stamping `w.c.watch` and logging
+  **on transition only** (a supervisor that reprints every 2s trains people to filter it out, which is
+   exactly what happened to the `⏳` skip line). Notice-only: no reload, no user-visible action.
+ **Names the organ**, because every finding of that session came from phase attribution:
+
+    👁 SoundSupervisor: tour has not completed in 94s (typical 400ms) — the beat has not advanced past this phase.
+
+**Resolution.** Tier 1 detects and stamps `.c`. If a verdict later needs to persist or be *seen*, a req
+ may carry it — but detection must never depend on that req running.
+
+### Tier 2 — the daemon, and this is the real "above". **NOT BUILT.**
+
+**§5's original external answer was also wrong**: it proposed a `runner_ask health` op so a session
+ could ask a tab "are you wedged, and where". But a tab wedged badly enough to matter **cannot answer
+  that either** — §1 row 3 is literally *"advertises, won't answer pings"*. An external tier that asks
+   inherits the failure it is meant to detect. **It has to watch without asking.**
+
+The daemon already receives exactly the signal §2 demands, with **zero cooperation from the wedged
+ tab**: every peer's frames carry a monotonic per-peer `seq`.
+
+    🛰 ws RECV ive_got seq=661 ← 65ae23ea1cdabd11
+    🛰 ws RECV ive_got seq=670 ← 65ae23ea1cdabd11
+
+**A socket that stays open while `seq` stops climbing is the §2 distinguisher.** Not `heard_at`, which
+ only measures the transport — "has that peer *advanced* since I last looked". A wedged Sounditron
+  keeps its websocket open; that is precisely why it looks healthy.
+
+It became suitable only on 2026-08-08: before that afternoon the daemon restarted every 15 minutes, so
+ it could not hold a judgement about anything longer-lived than that.
+
+**THE TRAP, if this goes to the daemon:** it must **not** live in the daemon's own belief loop — the
+ daemon's `Swarm_share_beat` is the thing that held the mutex for 8s. It belongs in the hand-cranked
+  loop in `scripts/daemon/main.ts`, which is plain node, already ticks every pass, and already runs
+   `stats()` and the heartbeat. A `peers_state()` beside `serve_state()`/`stock_state()` tracking
+    per-peer `seq` deltas: no ghost edit, no compile, and in the one process that is not the one being
+     watched.
+
+**The two tiers do not subsume each other, and that is the design point:**
+| tier | says | resolution | survives |
+|---|---|---|---|
+| in-tab `Swarm_watch_loop` | **the organ** — "wedged in `Stoker_tour` 94s (median 0.4s)" | high | only while the belief loop still turns |
+| daemon `peers_state()` | **the tab** — "65ae23ea: socket open, seq flat at 670 for 94s" | low | the belief loop stopping entirely |
+
+**This also softens §7 Q1.** The consent question only bites at the `act` rung. The daemon tier stops
+ at *notice and tell* — a log line, a `/status` field, a Telegram — without touching a player at all.
+  Most of the value of "discern", without deciding whether a surprise silence is acceptable.
 
 **4a. Beat progress.** Stamp `w.c.phase_at = {phase, at}` whenever the furthest-reached phase advances.
  Then the check is pure:

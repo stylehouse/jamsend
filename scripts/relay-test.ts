@@ -169,6 +169,19 @@ async function main() {
 	check('to:<pub> still reaches the real holder after a forged hello', carolGot21)
 	check('impostor never bound — to:<pub> does not reach it', evil.got.length === evilBefore)
 
+	// The OTHER door (ClusterAddressing_todo §6): `become <prepub>` would shadow-subscribe an
+	//  unauthenticated socket onto a verified identity (bind is additive; deliverLocal fans out).
+	//   Identity-shaped role names are refused outright — identities bind via signed hello alone.
+	const becomeCtrlBefore = evil.ctrl.length
+	evil.send({ control: 'become', role: carolAddr })
+	const becomeRefused = await until(() => evil.ctrl.slice(becomeCtrlBefore).some((m) => m.control === 'error' && /identity-shaped/.test(String(m.error))))
+	check('become <prepub> refused (identity-shaped role name)', becomeRefused)
+	const evilBefore22 = evil.got.length
+	alice.frame(carolAddr, 'dock_push', 22)
+	const carolGot22 = await until(() => carol.got.some((m) => m.header?.seq === 22 && m.header?.to === carolAddr))
+	check('to:<pub> still individuated after the refused become', carolGot22)
+	check('shadow-subscriber got no copy', evil.got.length === evilBefore22)
+
 	// ── individuation: to:<pub> is ONE runner, to:'runner' is ALL ─────────────────────────────────
 	//  The contract the "runs going to both runners" fix rests on.  Two runner sockets share the addr
 	//   'runner' (the broadcast bucket) AND each signed-hello-binds its OWN prepub (its individuated

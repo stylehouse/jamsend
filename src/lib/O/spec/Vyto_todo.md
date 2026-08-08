@@ -48,6 +48,132 @@ That is a **design constraint, not a mood**, and it cuts against the default thi
 Related: `Vyto_sizing_todo.md` (the type scale), `## THE PIN` below (display-correctness law —
  pixels or it didn't land, which this section makes harder and more necessary).
 
+## 0.1 THE DO-OVER, and the two complaints that name it (2026-08-08)
+
+The human, handing Vyto back for rework: *"a really spastic system with almost nothing I wanted true
+ about it"*, *"I don't want to melt people's phones if possible"*, and — the direction —
+  *"I also want to redo the Sounditron↔Vyto integration, there's a lot more in Vyto we're not using,
+   or at least I specified there was to be, I think we make our case for a bunch of fancy UI
+    biologies with it and see how it goes."*
+
+**Three separable pieces. Do not conflate them:**
+
+1. **BUTTON LATENCY — the concrete, reproducible complaint.** *"the heist setup 'X' button, and
+    various buttons really... do not respond quickly enough to clicking."* The heist setup UI is
+     **HaulFace** (the tell for which chooser is meant: "section"/"directories"). A click that feels
+      late is not a rendering-prettiness problem, it is the interface failing at its one job, and it
+       is the first thing a stranger notices. Worth measuring before theorising — candidates: the
+        click is queued behind the belief mutex; the handler waits on an await it need not; the glass
+         re-tessellates on the state change before the visual feedback lands; or a pointer-events
+          gate makes the first click a no-op. **Do not guess between those — instrument.**
+2. **PHONE COST — burning CPU with nothing happening.** `▣⚠ Vyto watchdog: forced settle after 240
+    frames of unbroken motion` appears in EVERY console the human has sent, on every tab: the layout
+     never reaches equilibrium, so the glass renders continuously. A standing battery drain
+      independent of the network. Ledger item #12 / `Composition_todo` §4.7.
+   **DIAGNOSED 2026-08-08 by source reading — not yet profiled, and not yet fixed. See §0.2.**
+3. **THE UNUSED CAPABILITY SURFACE** — the human believes they specified more than is wired. That is
+    a checkable claim, not a vague one, and it should be answered with a **gap list**
+     (specified-but-unused / specified-but-diverged / used-but-unspecified) *before* any redesign, so
+      the design conversation can ask "the spec says X, the code does Y, which did you mean?" rather
+       than "what do you want?".
+
+**What is NOT yet known and must not be invented:** what the human wanted true about Vyto that isn't.
+ They have not said. Items 1 and 2 are fixable without that answer; item 3's *redesign* is not.
+
+## 0.2 WHY THE GLASS NEVER SETTLES (2026-08-08, SOURCE-VERIFIED, not profiled)
+
+The rAF loop has exactly ONE exit — a settle (`Vytui.svelte:543-566`). `integrate_world` returns
+ `false` only on `cnt >= SETTLE_FRAMES || mf >= MAX_MOTION_FRAMES`. So "240 frames" means literally:
+  **four seconds at 60fps without ever getting 8 consecutive calm frames.**
+
+### (a) THE KNIFE-EDGE — the load-bearing one, and it is two constants that should not be equal
+
+| where | constant | what it decides |
+|---|---|---|
+| `Ghost/V/Vyto.g:928` | `EPS = 0.5` | rewrite the target `T` only if it moved MORE than this |
+| `src/lib/O/Vytui.svelte:163` | `EPS = 0.5` | a frame is calm only if displacement is LESS than this |
+
+**They are the same number, so every target rewrite is by construction ≥ the not-calm threshold.** It
+ guarantees at least one non-calm frame, resets `settleCount` to 0, and then costs a full spring
+  convergence (ω = 6/0.4 = 15 rad/s, `Vytui.svelte:502` — ~20–40 frames) before 8 calm frames can
+   accumulate again. **Any source that rewrites a target more often than ~every 0.5s pins the loop at
+    60fps indefinitely.** The watchdog fires at 4s, force-lands, and the next rewrite restarts it.
+ *The model's "did it move enough to matter" tolerance and the renderer's "is it still" floor are
+  different questions and must not share a number.* Fixing this is a decision, not a patch — it is why
+   it sits in §0.1 item 3's territory rather than the cheap list.
+
+### (b) THE ONE THAT PINS **LITERALLY** FOREVER — a pinned channel still counts toward `disp`
+
+`step_channel` (`Vytui.svelte:333-341`) does **not integrate position** when `k <= 0`. But `disp`
+ (`:519-523`) still measures `|s − T|` for that spring, with no exclusion for pinned channels. `k`
+  comes from `Vyto_calm_held` (`Vyto.g:564-577`), which returns 0 for any `%Hold` on that tok with
+   `pin:1` — placed by `Vyto_pointer_enter` (`Vyto.g:615-619`) on **every pointerenter**. The solver
+    pins the *seed* but writes `T` = the **area centroid of the pinned cell's polygon**
+     (`Vyto.g:918`), which moves whenever any neighbour does.
+ ⇒ **pointer resting on a cell + any model churn = `disp` ≥ EPS every frame, forever.**
+ Related, same verb: `Vyto_pointer_enter` uses `i()`, **not `oai()`** — every enter mints two NEW
+  `%Hold` rows for the same tok, retired only if the browser delivers `pointerleave`, which a keyed
+   re-mint of the `<path>` under the pointer can skip. Unbounded accumulation, and item (c)3 below
+    pays a query per hold per cell per frame for it.
+ Also: `Vyto_strength_now:584` has `base = pin ? 0 : (Number(damp) || 0)`, so a `%Hold` with **no
+  `pin` and no `damp`** silently returns 0 — a malformed row is a permanent pin.
+
+### (c) PER-FRAME COST, worst first (counts derived from source, NOT measured)
+
+1. **Face-mold style writes — the only layout/paint item, and the phone-killer.** `Vytui.svelte:1065`
+    rebuilds `style="left:X%; top:Y%; width:W%; height:H%"` for every faced cell **every frame**.
+     These are absolutely-positioned HTML boxes containing whole real components (RadioFace,
+      TransferFace, HaulFace…). Percentage width/height changes force **layout + paint of each face
+       subtree per frame** — not compositing. No `transform` is used anywhere. *This is the design,
+        so it is structural, and it is the item a phone actually pays for.*
+2. `tree_nodes(w)` runs **three times per frame per world** (`:501`, `:357`, `:455`) — the third is
+    the OMISSION DETECTOR diagnostic, which also does two `Set` builds and two diff loops, every frame.
+3. `Vyto_calm_held` × **2 per cell per frame** (`:509-510`), each a real `o({Hold:1})` query with
+    `Xify()` + array allocation — cost grows with the leaked holds from (b).
+4. `power_cells` O(N²) every moving frame (`vyto_geometry.ts:38-60`) — ~300 short-lived `Pt`
+    objects/frame at N=7.
+5. Per-cell garbage: `path_of` builds a fresh `d` string; `face_of`/`ident_of` each `Object.keys`;
+    `[...nodes].sort()` per scope; `matstyle_ground` builds 4 objects + 9 hex conversions **per cell
+     per frame** (`Matstyle.svelte:396-403`) despite being a pure function of a mainkey string.
+6. `plug_of` re-runs every frame while moving, rewriting the plug `d` **and the `path=` of every
+    `<animateMotion>` ant** — restarting SMIL per frame. *(Mine, added earlier today; the comment
+     claiming it is cheap is true only for a calm glass. Correcting my own work.)*
+
+**Standing cost even on a settled glass:** `plug_timer` at 2Hz unconditionally (`:842`, also mine),
+ plus every mounted face running its own interval (TransferFace 250ms, several at 500ms, many at
+  1000ms) — ~10–15 component re-renders/second with nothing happening.
+
+**RULED OUT, do not re-chase:** `measure_world`'s getBBox/offsetWidth layout thrash is **gated off**
+ on the live page (`Vytui.svelte:704`, `need_floor` set only from `Vytonation.g:559`). The old drift
+  hard-fail is gone. A NaN counts as calm and stops the loop, deliberately.
+
+### (d) A SEPARATE CORRECTNESS BUG found on the way — probably part of "spastic"
+
+The model solves against a **hardcoded `[0,0,800,450]`** frame (`Vyto.g:814`) while the renderer cuts
+ against `vw_w × vw_h`, which follows the stage aspect (`Vytui.svelte:135-162`). On a portrait phone
+  `fit_frame` gives ~446×800, so the model places seeds with x up to 800 into a 446-wide cut; seeds
+   outside clip to `poly.length < 3` → `null` → drawn as a 6px disc at an off-viewBox coordinate,
+    i.e. **invisible**. Nothing re-cuts the *solve* frame. Not a settle-pin — a plain bug, and a
+     candidate for "almost nothing I wanted true about it" on a phone.
+
+### (e) THE CHEAP LIST — localised, no design decision, do these first
+
+- Skip pinned channels when computing `disp` (or clamp `disp` where `k <= 0`) — kills (b) outright.
+- `Vyto_pointer_enter`: `oai()` not `i()` — stops unbounded `%Hold` accumulation.
+- Delete the OMISSION DETECTOR (`:449-463`) and GATE-FLIP probe (`:407-425`); hoist `tree_nodes` to one
+   walk per frame.
+- Cache `Vyto_calm_held` per frame; cache `matstyle_ground` by mainkey (pure function of a string).
+- Gate `plug_timer` on the plug existing / the loop being idle.
+
+### (f) WHAT IS NOT KNOWN — do not build on these
+
+- **Which** mechanism is actually firing in the human's tabs. The probes exist and are gated to
+   `Haul:` keys; their output is in the consoles being pasted, which the analysis did not have.
+- Whether Lloyd ∘ `pull_step` converges or orbits. Reasoned to converge; **not** asserted.
+- The real stir rate on a live tab — the input that decides whether the 0.5s budget is exceeded.
+   Needs a counter on `Vyto_stir`, not source reading.
+- **No profile was taken.** Every number in (c) is a count derived from code, not a measurement.
+
 ## 0. What to get on with next
 
 The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it a memory (Spool) ✓

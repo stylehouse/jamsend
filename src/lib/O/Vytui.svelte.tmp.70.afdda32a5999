@@ -742,10 +742,10 @@
         // watch the SHAPE of the hole, not just its size — fit_frame re-cuts the frame when the stage
         //  flips portrait/landscape (a phone rotating, or Vyto going fullscreen) and no-ops otherwise.
         //   Measured once up front so the first paint is already the right shape.
-        fit_frame(el)
+        fit_frame(el, w)
         let ro: ResizeObserver | null = null
         if (typeof ResizeObserver !== 'undefined') {
-            ro = new ResizeObserver(() => fit_frame(el))
+            ro = new ResizeObserver(() => fit_frame(el, w))
             ro.observe(el)
         }
         return { destroy() { ro?.disconnect(); if (stageEls.get(w) === el) stageEls.delete(w) } }

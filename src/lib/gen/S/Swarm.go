@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '4ba90e192f2bf1df~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'f0d81e693d075cd7~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -1933,6 +1933,9 @@ Swarm_share_up(w, ident) {
         try { this.Radio_trace(null, { ev: 'share-up' }) } catch (er) {}
     }
     this.Swarm_share_loop(w, ident)
+    // the SoundSupervisor rides alongside, on its own timer, deliberately NOT inside the beat it
+    //  watches (see Swarm_watch_loop's header — a req-based watchdog queues behind its own wedge).
+    this.Swarm_watch_loop(w)
     return true
 
 },
@@ -2080,6 +2083,63 @@ Swarm_beat_health(w) {
 //  settles leaves `flying` set forever while the beat sails past it looking perfectly healthy, so the
 //   phase cursor above can report `ok` on a tab whose conveyor died. Judged the same way: against its
 //    own learned duration, never a constant.
+// ── Swarm_watch_loop — TIER ONE OF THE SOUND SUPERVISOR, AND IT MUST NOT BE A REQ ──
+//  The design this replaces had the verdict carried by a `%Watch` req. That is wrong, and the daemon
+//   session caught it: a req runs in `reqy(w).do()`, which runs in the belief pass, which runs UNDER
+//    THE BELIEFS MUTEX. So a req-based watchdog is **queued behind the very wedge it exists to
+//     detect**. Their reading off the daemon says it outright:
+//        "drain_why": "beliefs mutex held 8s by H:Mundo fn:swarm_share_beat"
+//        "queued": ["fn:handle_inbound", "think"]
+//    `think` IS the belief pass. A supervisor in that queue reports nothing until the wedge clears,
+//     at which point there is nothing left to report. I had worried about a watchdog CAUSING a wedge
+//      and not about one BEING wedged.
+//  WHY A PLAIN TIMER ESCAPES IT: a stuck `await` still lets timers fire (only a stuck `while(true)`
+//   would not), and every wedge on the list is await-shaped — a detached verb that never settles, a
+//    drive that never schedules, a socket that never answers. `Swarm_share_loop`'s own
+//     `setTimeout(tick, 600)` demonstrates the seam: the TICK fires regardless of the mutex; only the
+//      `post_do` inside it queues. So this loop uses the same outer timer and **never calls post_do,
+//       never bumps, never writes sc** — it reads `.c` counters, which are plain JS objects needing no
+//        mutex, and writes its verdict back to `.c`. It cannot be blocked by, and cannot block, the
+//         machine it watches.
+//  TIER TWO IS NOT THIS AND CANNOT BE: a tab wedged badly enough to matter cannot answer a
+//   `runner_ask health` op either — "advertises, won't answer pings" is on the very list of wedges.
+//    The external tier has to watch WITHOUT ASKING (the daemon, tracking per-peer `seq` monotonicity
+//     over a socket that stays open), and it belongs in `scripts/daemon/main.ts`'s hand-cranked loop,
+//      NOT the daemon's own belief loop — which is the thing that held the mutex for 8s.
+//       See spec/Supervisor_todo.md §4/§6.
+//  NOTICE ONLY. It logs and stamps. No reload, no user-visible action, nothing that could surprise a
+//   listener — the consent question only bites at the `act` rung and this never reaches it.
+Swarm_watch_loop(w) {
+    w.c.watch_era = (w.c.watch_era || 0) + 1
+    let era = w.c.watch_era
+    const tick = () => {
+        if (era !== w.c.watch_era) return
+        try { this.Swarm_watch_look(w) } catch (er) {}
+        setTimeout(tick, 2000)
+    }
+    setTimeout(tick, 2000)
+
+},
+// Swarm_watch_look — one pass. Transition-triggered, never a repeating shout: a supervisor that
+//  reprints every 2s trains people to filter it out, which is how the ⏳ skip line became furniture.
+Swarm_watch_look(w) {
+    let v = this.Swarm_beat_health(w)
+    let bad = v.state === 'stuck' ? v : null
+    if (!bad) {
+        let d = this.Swarm_detached_health(w)
+        if (d.length) bad = d[0]
+    }
+    let now = bad ? (bad.phase + ':' + bad.state) : ''
+    w.c.watch = bad || v
+    if (now === (w.c.watch_said || '')) return
+    w.c.watch_said = now
+    if (!now) return
+    // NAME THE ORGAN. A verdict that says only "something is wrong" spends the one thing this whole
+    //  session proved valuable — every finding today came from phase attribution, not from knowing a
+    //   stall existed. The median is printed beside it so a reader can judge the judgement.
+    console.log(`👁 SoundSupervisor: ${bad.why} — the beat has not advanced past this phase. Reload clears it if it does not self-heal.`)
+
+},
 Swarm_detached_health(w) {
     let out = []
     for (const it of [{ k: 'cull', fly: w.c.cull_flying, bg: w.c.cull_bg_ms }, { k: 'tour', fly: w.c.tour_flying, bg: w.c.tour_bg_ms }]) {

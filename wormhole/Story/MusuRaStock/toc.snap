@@ -10,10 +10,12 @@ story:MusuRaStock
       sample=0.001,at=1786117486
       sample=0.001,at=1786121688
       sample=0.001,at=1786121976
+      sample=0.001,at=1786168851
     TimeTotal:step,avg=0.001
       sample=0.001,at=1786063803
       sample=0.001,at=1786111720
       sample=0.001,at=1786117486
       sample=0.001,at=1786121688
       sample=0.001,at=1786121976
+      sample=0.001,at=1786168851
   step,dige:caa06a2f917226aa

@@ -1,6 +1,7 @@
 # Composition — what breaks when it all runs at once
 
-*Opened 2026-08-06, from one evening of the human running the real thing and saying what was wrong.*
+*Opened 2026-08-06, from one evening of the human running the real thing and saying what was wrong.
+ Restructured 2026-08-08, when the closed findings had grown past what a fresh reader could act on.*
 
 This doc exists because the failures below have **no other home**. Each subsystem has a todo that
  owns its mechanism — `Backpressure_todo` the transfer control loop, `Radio_todo` the dial and the
@@ -11,61 +12,125 @@ This doc exists because the failures below have **no other home**. Each subsyste
  That needs a test level that does not exist yet (§3), a ledger of what actually goes wrong so we
   stop rediscovering it (§1), and a name for the mistake that keeps producing it (§2).
 
+**How to read the numbers.** §3.5–§3.12 keep their numbers **permanently**, including where the
+ finding has closed: §1's status column, §3.11's invariant table and `Supervisor_todo` all cite them,
+  and a renumber would silently break every one. A closed section is compressed here to its durable
+   lesson plus whatever part of it is still open; the full-length write-ups — every console paste,
+    every measurement, every "NOT established" — are verbatim in
+     **`spec/history/Composition_closed_2026-08.md`**.
+
 ---
 
 ## 0. Next move (read first)
 
-0. **FIRST, one reload: does the beat now walk past `tour=`?** (`Swarm.g`, `c399bb22e9593fb6`.) Two
-    janitors were found holding the live path hostage on 2026-08-08, in sequence, by the same
-     instrument — the cull (§3.7, up to **29.7s**) and then `Stoker_tour` behind it. **Both now fly
-      detached.** Everything that shares music is downstream of them: the offer loop,
-       `Ra_transcode_pump` (and with it the 32s ceiling), `Ra_mag_warm`, `Ra_restock_beat`, the lead
-        pass. A wedged tour is a tab that never offers and never transcodes while its relay looks
-         perfectly healthy — *"neither Sounditron takes the other's stream"*, exactly as reported.
-   - **READ THE SPLIT AS A PROGRESS BAR, NOT A COST TABLE.** `beat_split` is zeroed at the top of each
-      beat and each field stamped only on completion, so **the last non-zero field is how far the stuck
-       beat got**, and an all-zero line with a climbing `×N` means it never finished phase 1. Misreading
-        this cost hours; the log line now says it in words. This is the single most load-bearing
-         sentence in this document.
-   - Healthy now looks like: `cull=0 tour=0 flush=0 peers=<n>` with work in `pump`/`warm`, and the
-      detached pair reporting `cull_bg=<big>` / `tour_bg=<big>`. `×N` should stop climbing.
-   - **The detaches traded a visible stall for an invisible one**: a detached verb that never settles
-      leaves `flying` set forever and the beat sails past looking healthy. That is what
-       **`Supervisor_todo` §4b** exists to watch. Honest trade only once something watches the latch.
-   - **Then** §3.9 item 2 (the `ra_missed` backoff), parked so the retire wiring stays attributable.
+### ⚠ STATE AT HANDOVER (2026-08-08 evening) — read this before you try to compile anything
+
+**1. `npm run ghost-compile` DOES NOT WORK RIGHT NOW, and it is not your edit.** The editor tab is
+ **identity-arrested**: it booted as `cdbe098c044e6806`, that browser's IndexedDB is empty, and no
+  `.jamsend/account/cdbe098c044e6806/` exists — so there is no key, in the browser or on disk, and a
+   prepub cannot be turned back into one. Boot is HELD, the tab cannot sign, and every compile ticket
+    dies with `no response in 12s (editor not connected or half-open?)`. **The relay is fine** — a
+     `runner_ask runners` answers normally throughout, which is exactly what makes this misleading.
+ - **Resolve:** in the tab's 🪪 hatch → *Generate a new identity* → *Set up cluster trust* (the second
+    one matters: compiles are signed and the relay checks the signer against `.env.cluster-pubs`).
+ - **Work around it meanwhile — this is the load-bearing fact:** `scripts/LocalGen.spec.ts` is the
+    BROWSERLESS `.g`→`.go` compiler, using the real in-app translator and writing the real gen path.
+      GFILES="Ghost/M/Ra.g Ghost/M/Heist.g" node_modules/.bin/vitest run \
+        -c scripts/Story_cli.vitest.config.mjs scripts/LocalGen.spec.ts
+    `CHECK=1` in front makes it a parse gate that writes nothing. **Everything compiled after ~18:00 on
+     2026-08-08 went through this path**, so those `.go` files are correct but were never produced by
+      the canonical route and **no runner has HMR'd them**. Re-run the chain through the editor once
+       it is back and confirm the hashes match.
+
+**2. There is now a runner-free test layer, and it earned its keep on the first run.**
+ `scripts/SupplyGuards.spec.ts` — mount a `.go` against a **stub House** (a `.go` is a Svelte component
+  whose `onMount` eatfuncs its verbs onto H) and call the predicates directly. No runner, no browser,
+   no peer, ~7s. It caught a real bug immediately: `+(w.c.x || 60000)` silently ignores a configured
+    **0** (falsy), so the dial could not be turned off or tested without sleeping a minute. **The
+     `|| DEFAULT` idiom is everywhere in this repo — it is fine where 0 is meaningless and a bug where
+      0 is a legitimate setting.** Extend this file in preference to writing a Book, wherever the thing
+       under test is arithmetic rather than composition.
+
+**3. What is compiled but has NO Book coverage** (the Book gate ran *before* these landed): the `lofi`
+ recipe fix across four seams (`Heist_keep_remember` / `Heist_reheal_id` / the durable `%Keepsake` row /
+  `Ra.g`'s A3 call), the durable `keep_memo` itself, `Ra_pcm_admit`'s lone-candidate floor, and the
+   Vyto changes. **"Book-inert" means no regression, not covered.** Do not read the earlier green as
+    covering these.
+
+**4. Runners:** `a67a5d04` was reloaded and did not come back. `58517b` times out. `65ae23ea` answers
+ and is free **but is the human's Daemon-observation tab** — a Book run takes the world over, so ask
+  first. `49dee91d` (nominally claude's) is held by another client. **MusuNeGrind parses clean and is
+   written but has never been run** — that is `MusuNeGrind`'s step 1 and it needs a nominated runner.
+
+**5. Owed to the human, none of it blocking:** what they wanted true about Vyto that isn't (the
+ do-over cannot start without it); whether the 32s seam *sounds* right (proven to run, not to sound);
+  and the container's memory limit, so `ra_pcm_cap` can be sized under it instead of left at a default
+   that could OOM the tab — the belt is now load-bearing in a way it was not this morning.
+
+---
+
+### What landed 2026-08-08, so nobody re-finds it
+
+| what | where | § |
+|---|---|---|
+| the shuffle cull **flies detached** — it had been holding the share beat for up to **29671ms** | `Swarm_cull_detached`/`Swarm_cull_done`, `Swarm.g` `fc39dd10f0a0d3c1` | §3.7 |
+| **`Stoker_tour` flies detached too**, same contract (`tour_flying`, reported as `tour_bg`) | `Swarm_tour_detached`/`Swarm_tour_done`, `Swarm.g` | §3.7 |
+| the **goner-diff runs live at last** — tour whittle *and* cull both ledger to `stock.c.retire_due`, flushed each beat | `Repli_retire_flush` (`Repli.g`), call in `Swarm.g` | §3.9 (1) |
+| a **bounded backoff on told misses** — `ra_missed` finally has a reader on the music path | `Repli_missed_hot`, wired at `Ra_mag_warm` + `Ra_restock_beat` | §3.9 (2) |
+| **PCM admission control** — the belt on its own livelocked every track at 0:32 | census gate in `Ra_transcode_pump`, plus `Ra_pcm_admit` at the decode kick (`Ra.g`) | §3.12 |
+| **the restock gate** — deep speculative restock is held while the playhead has <16s banked | `w.c.lead_s` / `w.c.restock_held`, printed in the skip line (`Swarm.g`) | §3.12 |
+| **tier-one supervisor** — notice-only; watches the beat phase *and* the two detach latches | `Swarm_watch_loop` / `Swarm_beat_health` / `Swarm_detached_health`, `Swarm.g` | `Supervisor_todo` |
+
+**The method that produced most of that list, and it is the transferable part.** The four-way
+ `beat_split` instrument cost four `Date.now()` calls and settled in one console paste a question that
+  had been argued from source-reading for two days — killing §3.6's plausible story and naming §3.7's
+   real one. Keep the method, not the guesses.
+
+- **READ THE SPLIT AS A PROGRESS BAR, NOT A COST TABLE.** `beat_split` is zeroed at the top of each
+   beat and each field stamped only on completion, so **the last non-zero field is how far the stuck
+    beat got**, and an all-zero line with a climbing `×N` means it never finished phase 1. Misreading
+     this cost hours; the log line now says it in words. This is the single most load-bearing sentence
+      in this document.
+- Healthy now looks like: `cull=0 tour=0 flush=0 peers=<n>` with work in `pump`/`warm`, the detached
+   pair reporting `cull_bg=<big>` / `tour_bg=<big>`, and `×N` no longer climbing.
+- **The detaches traded a visible stall for an invisible one**: a detached verb that never settles
+   leaves `flying` set forever and the beat sails past looking healthy. `Swarm_detached_health` is now
+    the thing that watches that latch (`Supervisor_todo` owns it). **Whether it has ever been seen to
+     fire is that doc's business, not this one's** — do not read its existence as a verification.
+
+### The order to work in
+
+0. **One live pair, one reading — confirm the day's fixes on real tabs.** Everything above was
+    reasoned or measured *in pieces*; nothing has watched the whole chain run since. What to look for,
+     in one paste: the split walking past `cull=`/`tour=` into `pump=`/`warm=`; `×N` not climbing;
+      no `park-stall` line re-reporting the same id; and the human's own test — *"neither Sounditron
+       takes the other's stream"* — coming out the other way. A wedged tour is a tab that never offers
+        and never transcodes while its relay looks perfectly healthy, which is exactly as it was
+         reported.
 1. **Build `MusuNeGrind`** (§3). Everything else in here is a symptom; this is the instrument.
-    Design + the invariants it must assert are in `Backpressure_todo` §0 item 00. New `MusuNe*` Book
-     prefix (the human: *"far too much is ending up in Musu"*), registered in `Waft:Credence` under
-      `What:MusuNe`. Copy `MusuVend`'s scaffold, `Heistation.g:653`.
-    **SCAFFOLD LANDED 2026-08-08 — and it is UNCOMPILED, UNRUN and UNRECORDED. See §3.11**, which carries
-     the design, the six invariants, the injection that stops it being a false green, and the numbered
-      "what remains" list. The session that wrote it was barred from compiling (the human was testing
-       audio live). **Nothing has been executed.** Next move on this item is §3.11's step 1, not more
-        design — and its step 3, breaking claim #1 on purpose once, is the part that must not be skipped.
+    **The scaffold landed 2026-08-08 and is UNCOMPILED, UNRUN and UNRECORDED — see §3.11**, which
+     carries the design, the six invariants, the injection that stops it being a false green, and the
+      numbered "what remains" list. The session that wrote it was barred from compiling (the human was
+       testing audio live). **Nothing has been executed.** The next move on this item is §3.11's step
+        1, not more design — and its step 3, breaking claim #1 on purpose once, is the part that must
+         not be skipped.
 2. **Then the startup wait** (§4.1) — it taxes every iteration, including the ones spent fixing the
     rest of this list. Measure before touching: the era ladder is only ~15s worst case, so it is not
-     the whole story and guessing at it has already cost one wrong diagnosis tonight.
+     the whole story and guessing at it has already cost one wrong diagnosis.
 3. **Then one-sided reload** (§4.2). Until it works, every test of everything else costs two
     coordinated reloads, which is the tax that makes the whole loop grim.
-4. Then §4.3–§4.7 as the Grind Book surfaces them with evidence attached, rather than in the dark.
+4. Then §4.3–§4.8 as the Grind Book surfaces them with evidence attached, rather than in the dark.
 
-**Where this is all going — the arc as of 2026-08-08.** Today was one shape, three times: *a verb that
- nobody was watching held a live path hostage, and the only detector was a human reading a console.*
-  The cull, then the tour, then the Story drive. Each fix was small; finding each one cost a person.
-   So the destination has two halves and they are not the same work:
+**Where this is all going — the arc as of 2026-08-08.** The day was one shape, over and over: *a verb
+ that nobody was watching held a live path hostage, and the only detector was a human reading a
+  console.* The cull, then the tour, then the Story drive, then the PCM belt. Each fix was small;
+   finding each one cost a person. So the destination has two halves and they are not the same work:
  (a) **`MusuNeGrind`** (item 1) — catch this class **before** it ships, in a Book, automatically.
- (b) **`Supervisor_todo`** (NEW, opened today at the human's ask: *"there has to be a supervisor built
-  still, to discern all these moments when we should give up and reload"*) — catch it **after** it
-   ships, at runtime, in the tab, and say WHICH ORGAN. Its substrate is `beat_split`, which already
-    exists and is already sufficient; step 1 there is one pure function.
+ (b) **`Supervisor_todo`** (opened at the human's ask: *"there has to be a supervisor built still, to
+  discern all these moments when we should give up and reload"*) — catch it **after** it ships, at
+   runtime, in the tab, and say WHICH ORGAN.
  Both are the same bet from opposite ends: **make liveness legible.** Until then every stall costs a
   console paste, and that tax is what makes the whole loop grim.
-
-**That free win was taken the same day, and it killed the hypothesis (2026-08-08).** One paste of the
- `cull=/tour=/peers=/keep=` split answered it: `keep=0`, `tour=0`, `peers=0`, **`cull` up to 29671ms**.
-  §3.6's chain was the wrong phase; **§3.7** carries the measurement, the cause, and the fix. Keep the
-   method, not the guess — the instrument cost four `Date.now()` calls and settled in one console paste
-    a question that had been argued from source-reading for two days.
 
 **Do not** treat §1's fixed rows as closed history — read §2 first. The pattern is the deliverable.
 
@@ -82,25 +147,23 @@ Kept verbatim on purpose: the human's own words repeatedly turned out to name th
 | 2 | *"downloads overlap a bit much now"* | two causes: the overlap slot opened for a track *stuck* near the end rather than *finishing*; and `heist_inflight` was enforced **per %Haul**, so N Hauls gave N concurrent tracks whatever the knob said | **FIXED** (`INFLIGHT=1`, global budget, moving-gate) |
 | 3 | *"120/137 downloaded side, disappeared from the uploaded side, but hasn't started turning up on disk yet! not even as a chrswap"* | the source freed bytes it had promised. `rec.c.sent >= total` is a frontier not coverage; `PARK_CEIL` and `RELEASE_IDLE` were both 20000, so the quiet a park *instructs* read as the disinterest a release *requires* | **FIXED** (`Backpressure_todo` §3.1c) |
 | 4 | `◈ pull Cosmic Hweeldi 142/196 … 141 … 138 … 135 … 132` → `BENCHED 60s — frozen` | **`held` going DOWN.** `Heist_land` releases each chunk as it reaches disk; §5.4 moved the landing off the beat and never told the puller. So the sink re-asked, re-downloaded and re-hashed a file it was at that moment writing — and the bench watchdog, which wants `held` to climb, benched it for succeeding | **FIXED** — the largest single win of the evening |
-| 5 | *"I can't get past that 100% cpu usage, that is shit, and probably causing all these other problems"* | correct on both counts. One real find: `o_query`'s second-and-later key filter was **O(M²)** — `M = M.filter(…)` per rejected row — in the innermost query primitive, hit per frame by `inbox.oai({req:'unemit', seq, …})` | **PARTLY** — see §4.3 |
+| 5 | *"I can't get past that 100% cpu usage, that is shit, and probably causing all these other problems"* | correct on both counts. One real find: `o_query`'s second-and-later key filter was **O(M²)** — `M = M.filter(…)` per rejected row — in the innermost query primitive, hit per frame by `inbox.oai({req:'unemit', seq, …})` | **PARTLY** — see §4.3, and §3.12 found a second, larger consumer |
 | 6 | *"likes pausing in Peeroleum_deliver / Peeroleum_book_unemit"* | a stack sample says *where*, never *how much* or *why*, and the two candidate whys want opposite fixes | **INSTRUMENTED** — `deliver` electrode, silent unless ≥10% of wall clock or a ≥50ms block |
 | 7 | *"73 dropout(s) spliced — real gaps you would have heard"* | `Diag_trouble` reading `radio.sc.drops`: audible gaps the concealer spliced over. A **symptom readout**, not a cause — the audio callback missed its deadline because the thread was pinned | downstream of §4.3 |
 | 8 | *"targeted e:reqyonciliation landed nowhere — target reminted\|dropped"* | `Housing.svelte.ts:1339`. An `elvisto` aimed at a %req *by reference*, delivered at Atime; the target had been dropped by then. Returns cleanly, so a warn not a fault — but it means reqs are being dropped out from under in-flight continuations, which is what a churning heist does (`w.drop(landReq)`, the awaitbuf orphan sweep, the BUFCAP sweep) | **OPEN** (§4.5) |
 | 9 | `ws CLOSE code=1006` reconnect storm, *"but less than before"* | downstream of #4 and §3.1b — a pinned thread misses the relay's 15s reaper | improving; re-measure after #4 |
-| 10 | `⏳ Swarm_share_beat still running past 600ms — skipping this tick (×221 so far)` | the beat permanently overrunning while the wire moved only ~60KB/s of actual music | **OPEN** (§4.4) — and the reason this is the Grind Book's load-bearing assertion |
-| 11 | duplicate `ws RECV ive_got seq=321` ×4, `seq=323` ×4, ~4 fresh seqs/sec out | **NOT sender retransmits** — `ive_got` has been ephemeral on send since an earlier pass. Mis-diagnosed once tonight; see §4.6 for the two live leads | **OPEN** |
-| 12 | `▣⚠ Vyto watchdog: forced settle after 240 frames of unbroken motion` (repeatedly) | a cell never stops moving, so the glass never settles and renders continuously | **OPEN** (§4.7) — a standing CPU consumer independent of the wire |
+| 10 | `⏳ Swarm_share_beat still running past 600ms — skipping this tick (×221 so far)` | the beat permanently overrunning while the wire moved only ~60KB/s of actual music | **PARTLY** (§4.4) — §3.7 removed the two janitors that dominated it; the remainder is unmeasured, and it stays the Grind Book's load-bearing assertion |
+| 11 | duplicate `ws RECV ive_got seq=321` ×4, `seq=323` ×4, ~4 fresh seqs/sec out | **NOT sender retransmits** — `ive_got` has been ephemeral on send since an earlier pass. Mis-diagnosed once; see §4.6 for the two live leads, and §3.12's unresolved `×2` for a possible shared cause | **OPEN** |
+| 12 | `▣⚠ Vyto watchdog: forced settle after 240 frames of unbroken motion` (repeatedly) | a cell never stops moving, so the glass never settles and renders continuously | **OPEN** (§4.7) — cause found in §3.5, fix not shipped; a standing CPU consumer independent of the wire |
 | 13 | `🗂⚠ wormhole write … toc.snap overran 5000ms — retrying (attempt 2/4)` | disk write starved behind everything else | **OPEN** |
 | 14 | *"the startup time it takes to get around to trying the Heist again… way too slow! what the fuck are we waiting on?"* | unknown. The era-confirm ladder is ~15s worst case, so it is not the whole story | **OPEN** (§4.1) |
 | 15 | *"we're still not having just the runner reloading working at all — the two Pier have to hit reload at the same time and arrive with fresh states for each other"* | a reborn peer restarts its per-Pier seq at 1; the survivor's inbox still holds finished %unemit rows at those seqs, so its frames are re-acked and never dispatched until the era handshake resets the route | **OPEN** (§4.2) — known as `Cluster_spec` heading 8 |
 | 16 | *"☠ the radio is starved… I just feel that I do not care, it should just work out somehow"* | right instinct. A starve should dial what it *has*, not raise a badge | **OPEN** (§4.8) |
 | 17 | *"all these Musu\* tests really didn't prepare us too well for the clusterfuck of them all together"* | structurally correct, and the reason this doc exists | **→ §3** |
 | 18 | *"so it's pretty shit code I guess?"* / *"it has quite a few things to robusticise"* | see §2 — it is one repeated mistake, not diffuse quality | **→ §2** |
-
 | 19 | `deliver threw ReferenceError: pub is not defined at Peeroleum_bound_inbox` + *"good software is incapable of producing this kind of autistic bollocks"* | **`${pier%pub}` inside a template literal.** The `.g` compiler leaves `%` alone in a backtick string, so it emitted the JS `pier % pub` — modulo against an undeclared name — and threw. In a **log line**, on the branch that runs **only at the 2000-unemit cap** | **FIXED** — and see §2.1, it is the sharpest case in the doc |
-| 20 | `◈⚠ transcode STALLED — parked want id=… from_idx=16 waiting 1438s` ×3, climbing | 24 minutes parked, three ids, all at `from_idx=16`. Downstream of #19 (a source whose deliver throws cannot serve a park) but the identical `from_idx` on three unrelated tracks is its own smell — investigate after #19 has run clean. **Likely also §3.1e-shaped** (`Backpressure_todo`, 2026-08-08): >1 park at once could stand up more PCM than the belt allows and livelock the decode — re-check against a post-fix run before chasing anything else | **OPEN** |
-
-| 21 | *"failing to heist… really big dysfunctional gaps between doing anything about it… got to 3/8 without me seeing it do any"* (2026-08-08) | the PCM cap-thrash livelock: 8 parked wants stood up ~700MB of decode against the 384MB belt, the sweep shed open encodes, the pump re-kicked them (a SUCCESSFUL decode clears the backoff ladder, so nothing braked it) — 28 decode-starts of 8 records vs 2 heist serves in 136s. The sink's tell was `heist-noprogress` 60–100s/track then a 1–8s burst: the wire was never the problem | **FIXED** — `Backpressure_todo` §3.1e, admission gate in `Ra_transcode_pump` |
+| 20 | `◈⚠ transcode STALLED — parked want id=… from_idx=16 waiting 1438s` ×3, climbing | 24 minutes parked, three ids, all at `from_idx=16` | **FIXED** — this was §3.12's PCM livelock, not the deliver throw (#19) it was first filed downstream of. This row already called the identical `from_idx` across unrelated tracks "its own smell" and guessed §3.1e-shaped; it took two more days and a fuller log to act on it. Attribution rests on the post-fix live reading in `Backpressure_todo` §3.1e (decode-starts to zero, serves 1→16, the stalled album landing) |
+| 21 | *"failing to heist… really big dysfunctional gaps between doing anything about it… got to 3/8 without me seeing it do any"* (2026-08-08) | the PCM cap-thrash livelock: 8 parked wants stood up ~700MB of decode against the 384MB belt, the sweep shed open encodes, the pump re-kicked them (a SUCCESSFUL decode clears the backoff ladder, so nothing braked it) — 28 decode-starts of 8 records vs 2 heist serves in 136s. The sink's tell was `heist-noprogress` 60–100s/track then a 1–8s burst: the wire was never the problem | **FIXED** — `Backpressure_todo` §3.1e, admission gate in `Ra_transcode_pump`; §3.12 here |
 
 *Also open, found while reading rather than reported:* `MusuMag` is red at 0.7 with four unfired
  `%see` claims (mag/warm-start/park pipeline). **Pre-existing** — proved by controlled revert, identical
@@ -120,6 +183,8 @@ Every defect in §1 that was actually *fixed* is the same mistake:
 | within 24 of done | is this track *finishing*? | a wedged track propped the window open forever |
 | `rheld > bench_held` | is this track frozen? | a landing benched for succeeding |
 | `self.sc.pub` | what is my pubkey? | both ends accusing each other, forever |
+| a 30s throttle on a janitor | how long does it HOLD the beat? | 29.7s of a 600ms beat (§3.7) |
+| an eviction belt under a cap | may this work be STARTED? | every track dead at 0:32 (§3.12) |
 
 Each is individually reasonable, cheap, and correct *at the time it was written*. Each became wrong
  when something else changed underneath it — the relay learned to shed, the landing left the beat.
@@ -127,9 +192,10 @@ Each is individually reasonable, cheap, and correct *at the time it was written*
    than a code-review pass.
 
 **The standing rule:** a high-water cursor may not answer a question about coverage; a timer may not
- answer a question about consent. Both are greppable — a frontier name (`sent`, `have`, `held`,
-  `frontier`, `last_asked`) on the left of a comparison against a total or a threshold. Worth one
-   deliberate sweep of the transfer spine, which has **not** been done.
+ answer a question about consent; and an eviction bound may not answer a question about admission.
+  The first two are greppable — a frontier name (`sent`, `have`, `held`, `frontier`, `last_asked`) on
+   the left of a comparison against a total or a threshold. Worth one deliberate sweep of the transfer
+    spine, which has **not** been done.
 
 Twice the surrounding comment confidently asserted the true property ("every page has crossed at
  least once") while the code computed the cheap one. **The comment is not evidence.**
@@ -192,7 +258,7 @@ This generalises §2's table. There the cheap read stood in for the expensive tr
 
 The word *mostly* is too strong — the largest win of 2026-08-06 (#4, `held` going down) was pure
  transfer, as were #2 and #3. But strip that word and the claim is not only right, it is **measurable**.
-  `Radio_trace` call sites, by ghost:
+  `Radio_trace` call sites, by ghost, as of 2026-08-06:
 
 | ghost | marks |
 |---|---|
@@ -204,11 +270,11 @@ The word *mostly* is too strong — the largest win of 2026-08-06 (#4, `held` go
 | **`Swarm.g`** | **1** |
 
 Of the ~38 event kinds in the tree — `heist-*`, `transcode-*`, `pcm-*`, `serve-*`, `park-stall`,
- `land`, `pulls`, `starve`, `deliver` — **not one** reports a Pier going live or dark, an era change,
+ `land`, `pulls`, `starve`, `deliver` — **not one** reported a Pier going live or dark, an era change,
   an advertise, a grant, a seal, an invite redemption, a reconnect, or a rebirth. Swarm's single mark
-   is `beat`, which measures the *clock*, not discovery.
+   was `beat`, which measures the *clock*, not discovery.
 
-**The asymmetry shows up in §1's status column, which is the real evidence:**
+**The asymmetry showed up in §1's status column, which is the real evidence:**
 - transfer rows — #2 overlap, #3 released-while-promised, #4 held-going-down — **all FIXED**, each
    within a day of being reported;
 - discovery rows — #11 `ive_got` storm, #14 startup wait, #15 one-sided reload — **all still OPEN**;
@@ -225,11 +291,8 @@ And the corollary, which ties this to §2.1: the discovery layer is not merely u
     whole job is to help in trouble, untested, doing harm exactly when it mattered.
 
 **Why this reframes §3.** The missing level may be an **observability** level before it is a test level.
- Ten `Radio_trace` marks in `Swarm.g` — pier live/dark, era change, advertise, grant, seal, redeem,
-  reconnect, rebirth, route register, offer — cost an afternoon, need no second tab, no harness, no
-   coordination, and turn the four open discovery rows from "reproduce it live and stare" into "read
-    the ring". A Book proves a mechanism you already understand; a trace finds the one you do not.
-     Cheaper than `MusuNeGrind` and strictly prior to it.
+ A Book proves a mechanism you already understand; a trace finds the one you do not. Cheaper than
+  `MusuNeGrind` and strictly prior to it.
 
 **LANDED 2026-08-06 — `Swarm.g` 1 mark → 8** (`f8868a20f022e254`). Seven new electrodes, all `.c`-only
  (`Radio_trace` pushes to `M.c.supply_trace`, cap 1200), so no fixture byte moves:
@@ -256,7 +319,7 @@ And the corollary, which ties this to §2.1: the discovery layer is not merely u
      dirty is the one thing fixtures must never do.) Two consequences worth holding together:
 - §2.2's claim was **understated**. Discovery isn't just uninstrumented — its Books are hollow, which
    is why `MusuBuddy`/`MusuHeist` carry the whole burden of a layer they only touch incidentally.
-- it is a second, independent argument for **#23** (strip `self,round` via `omit_sc`): strip it and
+- it is a second, independent argument for stripping `self,round` via `omit_sc` (§2.3): strip it and
    these two fixtures are *empty files*, which states the truth out loud instead of dressing a hollow
     Book in a plausible-looking snap.
 
@@ -320,15 +383,29 @@ The underlying rate variation is still **§4.1's unexplained startup wait**, and
 Not a convenience — a **missing test level**. Every defect above lived in composition, and not one
  was reachable by any `Musu*` Book, because each of those runs one mechanism in a quiet world.
 
-Full design, invariants and traps: `Backpressure_todo` §0 item 00. In short — two runners over the
- **real relay** (not a loopback mock, so reconnects, sheds and one-sided reloads stay in scope),
-  bulky binary Repli while the radio plays and a mag replicates, asserting **invariants not a snap**
-   (the fixture will be nondeterministic like MusuBuddy, so a 500-line diff cannot be the gate).
+Full design, invariants and traps: **§3.11 here** (the scaffold that landed, and what remains before it
+ gates anything) and `Backpressure_todo` §0 item 00 (the payload stressors, rung 2). In short — two
+  runners over the **real relay** (not a loopback mock, so reconnects, sheds and one-sided reloads stay
+   in scope), bulky binary Repli while the radio plays and a mag replicates, asserting **invariants not
+    a snap** (the fixture will be nondeterministic like MusuBuddy, so a 500-line diff cannot be the gate).
 
 The load-bearing claim is **the beat never overruns its cadence for a run of ticks**. Everything else
  degrades *through* the beat, so that one assertion alone would have caught the landing race, the
   park/release livelock and the `ive_got` storm. `Swarm_share_beat` already counts it
    (`skipping this tick (×221 so far)`); nothing asserts on it.
+
+### 3.x at a glance
+
+| § | what | state |
+|---|---|---|
+| §3.5 | an anti-freeze watchdog is pacing the whole machine (the 3.8s `post_do`) | **MEASURED, cause found, fix NOT shipped** → §4.7 |
+| §3.6 | the music's asks queued behind the heist's work | **REFUTED** — kept on purpose as a worked example |
+| §3.7 | a janitor was holding the music hostage (the cull, then the tour) | **MEASURED, FIXED**; a daemon-side residue is still unattributed |
+| §3.8 | `ra_missed` had no reader on the music path | **CLOSED by §3.9 (2)**; one live free-standing finding remains (the Vyto tok) |
+| §3.9 | the goner-diff never ran live | **SOURCE-VERIFIED, items 1+2 SHIPPED**; item 3 is curiosity |
+| §3.10 | the transcode frontier can outrun the playhead — what remain are wedges | **SOURCE-VERIFIED**; item 1 open as an `Ra.g` handoff, item 2 superseded by §3.12 |
+| §3.11 | `MusuNeGrind` — the design and the landed scaffold | **UNVERIFIED BY CONSTRUCTION** — this is §0 item 1 |
+| §3.12 | the PCM belt livelocks — the 32s ceiling, the pinned CPU, the dropped frames | **MEASURED, FIXED**; one lead (`×2` on every RECV) explicitly not built on |
 
 ---
 
@@ -366,7 +443,7 @@ the 240-frame force-settle. **`post_do` is called twice per step** (once for `sn
    the one thing the 20-analyst competition could not account for). A glass in continuous rAF motion
    pegs the main thread in ~4s bursts — which is precisely the failure its own comment predicts, written
    by someone who believed the branch was unreachable.
-3. **Third instance today of the same pattern**, and it is now the most reliable thing in this document:
+3. **Third instance of the same pattern**, and it is now the most reliable thing in this document:
    `waitVyto`'s *"the chase still converges"*, `Swarm_gossip_music` computing three numbers and returning
    one, and now *"a healthy layout never trips it"*. Each is a **comment asserting a runtime property
    nobody measured**, each was false, each cost real time. §2's rule — *the comment is not evidence* —
@@ -379,21 +456,30 @@ render telemetry film strip (gate + wave/morph/settle ring) and is the right ins
 whose `disp`/`drift` stays pinned. **Do not raise `MAX_MOTION_FRAMES` and do not lower it** — it is
 doing its job; the layout under it is not.
 
+---
+
 ## 3.6 The music's asks are queued behind the heist's work (2026-08-08 — HYPOTHESIS **REFUTED BY ITS OWN INSTRUMENT**; see §3.7)
 
+> **This section is kept on purpose, as a worked example of a plausible story that was false.**
+>  **Do not cite §3.6 as a finding.**
+>
 > **VERDICT (2026-08-08, same day):** the split was read and **`keep` was 0**. The heist driver was
 >  never the cost. The beat was held by phase 1, `Ra_shuffle_cull` — see **§3.7**, which carries the
 >   measurement and the fix. The chain below is left standing because the *shape* of the argument was
 >    right (one serial beat sets the clock the playhead's asks run on) and only the named phase was
 >     wrong; that is exactly the failure mode `comments-assert-unmeasured-properties` warns about, and
->      it took one paste to catch. **Do not cite §3.6 as a finding.** It is a worked example of a
->       plausible story that was false.
+>      it took one paste to catch.
+>
+> **And it was closer than it was credited with being.** §3.12 later found that a heist pulling 11
+>  tracks *does* destroy the radio's supply — through the PCM belt, not through the beat. The instinct
+>   was sound; the mechanism was wrong; the refutation on the named mechanism was still correct. Both
+>    halves of that sentence matter.
 
-**Status matters here and this document is the reason: the section above is MEASURED, this one is NOT.**
-What follows is a causal chain read out of the source and matched against one console paste. It is
-stated so it can be *killed*, and the instrument that kills or confirms it is already shipped.
+**Status matters here and this document is the reason: §3.5 above is MEASURED, this one was NOT.**
+What follows was a causal chain read out of the source and matched against one console paste. It was
+stated so it could be *killed*, and the instrument that killed it was already shipped.
 
-**The chain.** All four of these live in one serial `Swarm_share_beat`, in this order:
+**The chain, as argued.** All four of these lived in one serial `Swarm_share_beat`, in this order:
 
 | # | phase | what it is |
 |---|---|---|
@@ -402,70 +488,59 @@ stated so it can be *killed*, and the instrument that kills or confirms it is al
 | 3 | the friend loop | offers, **and the "keep the wire ahead of the playhead" `Repli_want_next` asks for the PLAYING record** |
 | 4 | `Heist_keep_beat` | *the entire heist driver, awaited inline* — its own comment concedes "cheap when no keep stands" |
 
+*(Phases 1 and 2 no longer run inline — §3.7 detached both. Phases 3 and 4 still share the beat.)*
+
 `Swarm_share_loop` fires every 600ms but is **busy-guarded**: while a beat is still in flight the next
-tick is *skipped entirely*, not queued. So the beat's true period is however long phase 4 takes — and
-phase 3, the music's chunk asks, only runs once per beat. A heist therefore does not merely compete
-with playback for bandwidth; it **sets the clock the playhead's asks run on**.
+tick is *skipped entirely*, not queued. So the beat's true period is however long the slowest inline
+phase takes — and phase 3, the music's chunk asks, only runs once per beat. That much survives the
+refutation and is why §0 item 0 still asks for the split to be read.
 
-**What the 2026-08-08 console shows, and what it does not.** `×221` skipped ticks, and in the same
-paste the radio flapping `playing → starved → playing → starved` on one record (`of:90`) while Repli
-reported a healthy 300–500KB/s. A starve is `m.bytes[seq] == null` (`Radio.g:429`) — the needed chunk
-was never *asked for in time*, which is what a stretched phase-3 cadence would produce, and it is
-consistent with bytes flowing fast the whole while. **Consistent with is not evidence of.** Nothing
-here rules out the ordinary explanation that the wire is simply slower than the playhead.
-
-**The instrument (shipped 2026-08-08, `Swarm.g`).** The beat now records a four-way split on
-`w.c.beat_split` and prints it *in the skip line itself* — the line everyone already pastes:
-
-    ⏳ Swarm_share_beat still running past 600ms — skipping this tick (×N so far) … · last beat: cull=… tour=… peers=… keep=… (ms)
-
-**The test, and it is one paste.** Catch that line during a heist with music playing.
+**The test, and it was one paste.** Catch the skip line during a heist with music playing.
 - `keep` dominates ⇒ the chain above is real, and the fix is structural: the playhead's asks must not
    share a serial beat with the heist driver (give phase 3 its own cadence, or bound phase 4's work per
    beat). **Do not just raise the 600ms** — that lengthens the ask period, which is the defect.
-- `cull`/`tour` dominate ⇒ different problem entirely, a disk verb on the live path.
+- `cull`/`tour` dominate ⇒ different problem entirely, a disk verb on the live path. **← this one.**
 - all four small but the total large ⇒ the cost is *between* the phases; suspect `post_do`/the metronome
-   in §3.5 and treat this section as refuted.
+   in §3.5.
 
-**Why this is filed here and not in `Backpressure_todo.md`.** That doc names the shape already —
-*"every stage shares one 600ms beat"* — and routes a starved radio to this document. This is that
-sentence with a specific mechanism and a specific way to check it. It is also, note, the *fourth*
-instance of §2's pattern in the making: "cheap when no keep stands" is a comment asserting a runtime
-property nobody has measured. Measure it before believing either it or me.
+It was also, note, the *fourth* instance of §2's pattern in the making: "cheap when no keep stands" is a
+comment asserting a runtime property nobody has measured. Measure it before believing either it or me.
 
 *(That last sentence was the useful one. It was me who needed measuring. — §3.7)*
 
 ---
 
-## 3.7 A JANITOR WAS HOLDING THE MUSIC HOSTAGE (2026-08-08, MEASURED — cause found and fixed)
+## 3.7 A janitor was holding the music hostage (2026-08-08, MEASURED — cause found and fixed)
 
-**The reading**, off the human's live tab, three separate beats in one console paste:
+*Full write-up, all three console pastes and the daemon cross-check: `history/Composition_closed_2026-08.md`.*
+
+**The reading**, off the human's live tab, three separate beats in one paste:
 
     last beat: cull=8475  tour=0 peers=0 keep=0 (ms)
     last beat: cull=29671 tour=0 peers=0 keep=0 (ms)
     last beat: cull=12327 tour=0 peers=0 keep=0 (ms)
 
-Three phases at **zero**, one at up to **29.7 seconds**, against a 600ms cadence. `×221` skipped ticks
- in the same paste, and the radio reaching `Radio:starved|of:138`. The split did not narrow the field;
-  it collapsed it.
+Three phases at **zero**, one at up to **29.7 seconds**, against a 600ms cadence. The split did not
+ narrow the field; it collapsed it.
 
-**The cause.** `Ra_shuffle_cull` (`Ra.g:780`) calls `Ra_source_alive` **per record**, and that verb is
- an awaited FSA directory `expand()`. Serially, over the whole shuffle Mag, on a crate whose census is
-  **539 directories**. Its 30s throttle bounds how *often* it starts — it says nothing about how long it
-   *holds the beat*, and at 29.7s it very nearly ran back-to-back with itself.
+**The cause.** `Ra_shuffle_cull` calls `Ra_source_alive` **per record**, and that verb is an awaited FSA
+ directory `expand()`. Serially, over the whole shuffle Mag, on a crate whose census is **539
+  directories**. Its 30s throttle bounds how *often it starts* — it says nothing about how long it
+   *holds the beat*, and at 29.7s it very nearly ran back-to-back with itself. **That is the durable
+    lesson: a throttle is a frequency bound, never a duration bound**, and it now sits in §2's table.
 
-**Why that starves music specifically.** Everything the radio eats is downstream of that one `await` in
- `Swarm_share_beat`: `Ra_transcode_pump` (so the encoder frontier stops advancing — **this is the 32s
-  preview ceiling the human hit**), `Ra_mag_warm`, `Ra_restock_beat`, and the full-length lead pass. A
-   janitor sweep was holding the entire supply chain for up to half of every sixty seconds.
+**Why that starves music specifically.** Everything the radio eats is downstream of that one `await`:
+ `Ra_transcode_pump` (so the encoder frontier stops advancing), `Ra_mag_warm`, `Ra_restock_beat` and
+  the full-length lead pass. A janitor sweep was holding the entire supply chain for up to half of
+   every sixty seconds.
 
-**The fix (`Swarm.g`, compiled `fc39dd10f0a0d3c1`): the cull flies detached.** Nothing in the beat reads
- its return value, and its own comment already concedes "a cull re-offers by itself" — the drop changes
-  the offer mark on a *later* beat regardless. So the `await` bought nothing and cost the music.
-   `Swarm_cull_detached` kicks it single-flight (`cull_flying` holds the start stamp) and bows out;
-    `Swarm_cull_done` clears the latch on **both** settle and throw, because a latch left standing would
-     silently retire the cull for the life of the tab. Its duration still reports, as `cull_bg` in the
-      same skip line — *detaching a slow thing must not also make it invisible.*
+**The fix — both janitors now fly detached.** `Swarm_cull_detached`/`Swarm_cull_done` (`Swarm.g`,
+ `fc39dd10f0a0d3c1`) and its deliberate twin `Swarm_tour_detached`/`Swarm_tour_done` for `Stoker_tour`.
+  Nothing in the beat read either return value. Each is single-flight on a **start stamp**
+   (`cull_flying`/`tour_flying`), and the latch is cleared on **both settle and throw** — a latch left
+    standing would silently retire that janitor for the life of the tab. Durations still report, as
+     `cull_bg`/`tour_bg` in the same skip line: **detaching a slow thing must not also make it
+      invisible.**
 
 **Two environments, two different culprits — do not merge them.** The daemon agent measured a separate
  `beliefs mutex held 8s by fn:swarm_share_beat` on the **jamserve** box and correctly ruled the cull out
@@ -477,142 +552,119 @@ Three phases at **zero**, one at up to **29.7 seconds**, against a 600ms cadence
    Read `tour` off it from `main.ts` rather than monkey-patching verbs — the instrument is already there.
     (It will not show on the `/status` port, which dumps `sc`; `beat_split` lives on `.c`.)
 
-**What is NOT yet shown.** That the detach alone lifts the 32s ceiling. It removes a large, measured
- blocker of `Ra_transcode_pump`; whether the pump then keeps up is the next reading, not a conclusion.
+**What the detach did NOT do.** It did not on its own lift the 32s preview ceiling — that was §3.12's
+ PCM livelock, found later the same day. The detach removed a large, measured blocker of
+  `Ra_transcode_pump`; it was never the whole story, and the write-up at the time said so.
 
-## 3.8 `ra_missed` has exactly one reader, and it is not the music path (2026-08-08 — SOURCE-READ, deliberately NOT fixed yet)
+## 3.8 `ra_missed` had exactly one reader, and it was not the music path (2026-08-08 — CLOSED by §3.9 item 2)
 
-**Filed as a lead, not a finding.** §3.6 is one section above as a standing reminder of what happens
- when I ship a plausible story. This one is *structurally* verifiable (a grep), but its causal link to
-  the observed starvation is **not**, and I have not built on it.
+**The headline is now historical.** `Repli_missed_hot` is that reader, wired at `Ra_mag_warm` and
+ `Ra_restock_beat` — see §3.9 item 2. What is kept here is the part that outlives the fix.
 
-**What is verifiable right now.** When a source cannot resolve a wanted id it answers `repli_missed`;
- the sink's `Repli_recv_missed` (`Repli.g:585`) stamps `w.c.ra_missed[id] = Date.now()`. Grep the tree
-  and that stamp has exactly two consumers:
+**The disease this was a symptom of.** A source that cannot resolve a wanted id answers `repli_missed`;
+ the sink stamped `w.c.ra_missed[id]` and nothing on the music path ever read it, so a music want for a
+  disclaimed id was re-asked on the ladder interval (1.5s when dry, 4s otherwise) for the life of the
+   tab. **The failure was symmetric** — each tab asking the other for ids the other could not serve —
+    and *that symmetry was the tell*: it fits "both starving through one mechanism" far better than any
+     one-sided bug. §3.9 names the mechanism.
 
-| reader | file | what it does |
-|---|---|---|
-| the heist pull beat | `Heist.g:1912` | reads `told`, **deletes the entry**, re-censuses the source folder |
-| peer rebirth | `Swarm.g:874` | `delete w.c.ra_missed` — a told miss described the previous id map |
+**The retired one-question test, kept because the trap is live.** The test first proposed here compared
+ `Radio%of` against the missed ids. It was unrunnable: **`Radio%of` is a DURATION in seconds**
+ (`Radio.g:632` — *"the OFFER's length, not the file's"*), and `%Radio` carries no record id at all. The
+  lifetell label `Radio:starved|of:138` is Vyto's tok recipe (`Vyto.g:248-251`: mainkey + value +
+   whichever join keys exist in sc) picking up the track length. **A lifetell label is a rendering, not
+    a field** — do not read an id out of one.
 
-**Nothing on the radio/music path reads it.** So a music want for an id the source has explicitly
- disclaimed is re-asked on the ladder interval (1.5s when dry, 4s otherwise) for the life of the tab.
+**Still live, and free-standing: the tok re-keys the cell.** The tok includes the mainkey VALUE and
+ `of`, and Vytui's `{#each}` keys cells by tok — so every `playing↔starved` flip and every track change
+  **re-keys the Radio cell and destroys/remounts the mold**. The `life mount mold` churn in the console
+   is the tok recipe, not the wire. A fix would be dropping `of` from the join list at `Vyto.g:249`, but
+    that re-keys cells across every Vyto Book's fixtures — a recorded-fixture change, not a patch. **Not
+     done.**
 
-**What the 2026-08-08 console shows.** `serve want id=2f101e4b@0` and `id=e9c41e4f@0` missing on the
- human's tab all session, at `@0`, `@4`, `@8`; and the same tab *receiving* a steady stream of
-  `repli_missed` from its friend. **The failure is symmetric** — each tab is asking the other for ids
-   the other cannot serve. That is a much better fit for "both starving easily" than anything one-sided.
-
-**What is NOT established, and why I stopped.**
-- That the disclaimed ids are the ones the radio is *playing*. The misses carry 8-hex ids
-   (`2f101e4b`); the radio's `Radio:starved|of:138` carries a short ref. **I did not confirm they are
-    the same id space**, and assuming it is exactly the §3.6 mistake.
-- That these asks consume the lead pass's `budget`. The lead pass asks only for `playing.sc.id`, so a
-   dead id burns budget **only if the playing record is the dead one** — which is the unconfirmed point
-    above. Elsewhere the music asks from `Ra_restock_beat`/`Ra_mag_warm`, which live in `Ra.g`.
-- Why the source advertised an id it cannot serve at all. `Ra_crate_dedupe`'s own comment predicts
-   exactly this symptom from page twins, and the shuffle cull's comment says the "Se goner-diff tells
-    the friend their mirror copy is dead too" — **whether that diff is actually firing is unchecked.**
-
-**The one-question test — RETIRED (2026-08-08, same day): it was unrunnable as written.** A source read
- settled it: `Radio%of` is a DURATION in seconds (`Radio.g:632` — "the OFFER's length, not the file's"),
-  and `%Radio` carries no record id at all. The lifetell label `Radio:starved|of:138` is Vyto's tok
-   recipe (`Vyto.g:248-251`: mainkey + value + whichever join keys exist in sc) picking up the track
-    length. The comparison I proposed compared a duration against an id space. The rest of this section
-     stands — and the deeper answer arrived with it, in §3.9.
-
-**Two corrections to the bullets above, from the same read:**
-- A dead mirror id burns wants **whether or not it is playing** — `Ra_mag_warm` (`Ra.g:1032`, off:0 for
-   the first 2 records per Mag) and `Ra_restock_beat` (`Ra.g:2733`, every hole inside preview) walk the
-    whole mirror crate. Worse, `Ra_mag_warm` arms `mag.sc.warm` from `rows[0]` only (`Ra.g:1042-1055`):
-     **an unservable id in rows[0] means the mag NEVER goes warm and re-asks `@0` for the life of the
-      tab** — which matches the observed `@0` misses exactly.
-- Free-standing find from the same read: the tok includes the mainkey VALUE and `of`, and Vytui's
-   `{#each}` keys cells by tok — so every `playing↔starved` flip and every track change **re-keys the
-    Radio cell and destroys/remounts the mold**. The `life mount mold` churn in the console is the tok
-     recipe, not the wire. (Fix would be dropping `of` from the join list at `Vyto.g:249` — but that
-      re-keys cells across every Vyto Book's fixtures, so it is a recorded-fixture change, not a patch.)
-
-## 3.9 THE GONER-DIFF NEVER RUNS LIVE — sources silently retire records and no one tells the mirror (2026-08-08, SOURCE-VERIFIED)
+## 3.9 The goner-diff never ran live — sources silently retired records and no one told the mirror (2026-08-08, SOURCE-VERIFIED; items 1+2 SHIPPED)
 
 **This is the disease behind §3.8's symptom, and it explains the symmetry in one mechanism.**
 
-**The protocol has a delete half, and it is wired only in Books.** `Repli_sent_se` (`Repli.g:1228`)
- resolves goners and fires `repli_on_goner` → `Repli_retire` (`Repli.g:457`, one `op:delete` line).
-  **Every caller in the tree is `Ghost/Story/Musuation.g`.** Same for the heist-side
-   `Musica_stand`/`Musica_recast_offer` (`Heist.g:3504/3436` — callers only in `Heistation.g`). The live
-    offer path, `Ra_offer_stock` (`Ra.g:972`), is upsert-only — zero delete lines ever cross.
+**The protocol had a delete half, and it was wired only in Books.** `Repli_sent_se` (`Repli.g:1228`)
+ resolves goners and fires `repli_on_goner` → `Repli_retire` (`Repli.g:457`, one `op:delete` line), and
+  **every caller in the tree was `Ghost/Story/Musuation.g`.** Same for the heist-side
+   `Musica_stand`/`Musica_recast_offer` (callers only in `Heistation.g`). The live offer path,
+    `Ra_offer_stock`, is upsert-only — zero delete lines ever crossed.
 
-**Meanwhile three live mechanisms remove records from a source's shelf:**
-1. **`Stoker_tour`** — the conveyor, every ~90s on a HEALTHY tab (`Radio.g:1722-1725` rolls even under
-    the window), dropping via `Ra_rec_drop` at `Radio.g:1819`. Its only guard, `rec.c.want_ts`
-     freshness, protects an actively-pulling sink — not a mirror that merely lists the record.
-2. **`Ra_shuffle_cull`** (`Ra.g:808`) — source gone.
-3. **Page twins** (`Ra.g:847`, sink-side dedupe) — the stale half keeps being asked.
+**Meanwhile three live mechanisms remove records from a source's shelf:** `Stoker_tour` (the conveyor,
+ every ~90s on a HEALTHY tab, dropping via `Ra_rec_drop`; its only guard is `rec.c.want_ts` freshness,
+  which protects an actively-pulling sink, not a mirror that merely lists the record), `Ra_shuffle_cull`
+   (source gone), and page twins (sink-side dedupe, the stale half keeps being asked). So: both tabs
+    tour, both silently retire, both mirrors go stale, both answer `materialise gone` — **both starve,
+     one mechanism, no second bug needed.** And `Ra_shuffle_cull`'s own comment ("lets the ordinary Se
+      goner-diff tell the friend their mirror copy is dead too") asserted a mechanism that was not
+       running — §2's pattern, in a comment §3.7 had quoted approvingly.
 
-So: both tabs tour, both silently retire, both mirrors go stale, both answer `materialise gone` —
- **both starve, one mechanism, no second bug needed.** And `Ra_shuffle_cull`'s own comment ("lets the
-  ordinary Se goner-diff tell the friend their mirror copy is dead too", `Ra.g:773`) asserts a mechanism
-   that is not running — §2's pattern, again, in a comment I quoted approvingly in §3.7.
+**Ids are content-stable** (sha256 of source bytes), so reloads don't re-mint the id space — verified,
+ one less suspect.
 
-**Ids are content-stable** (sha256 of source bytes, `Ra.g:528-533`), so reloads don't re-mint the id
- space — verified, one less suspect.
+**1. SHIPPED — the retire seam is wired, on both retirers.** The tour whittle ledgers every dropped id
+ on `stock.c.retire_due` (`Radio.g`, `a3a7863525517496`); `Ra_shuffle_cull`'s goner loop pushes to the
+  same ledger (`Ra.g`, `194a5920df997267`); the share beat flushes it right after the tour via
+   `Repli_retire_flush` (`Repli.g`, `a09d8367c1d3755e`; call in `Swarm.g`, `9441de33ee8c87e9`) — one
+    `op:delete` line per id per registered caster, whose receive side already handled paged mirrors
+     (hardened long ago and never fed). Drain-before-send, so a mid-flush throw costs one batch of
+      tells, bounded by the status quo. Trace: `{ev:'retired', id, piers}`.
+ **The live tell to watch for:** the per-id `serve want … no record for id` storms should stop
+  RECURRING for newly-dropped ids. **Existing stale ids only heal when their record next drops or the
+   mirror is reborn** — so a first reading after this ships will still show old ones.
 
-**The fix, in dependency order:**
-1. **SHIPPED 2026-08-08 — the tour seam is wired.** The whittle ledgers every dropped id on
-    `stock.c.retire_due` (`Radio.g`, `a3a7863525517496`); the share beat flushes it right after the tour
-     via new `Repli_retire_flush` (`Repli.g`, `a09d8367c1d3755e`; call in `Swarm.g`, `9441de33ee8c87e9`)
-      — one op:delete line per id per registered caster, whose receive side already handles paged
-       mirrors (`Repli.g:296-303`, hardened long ago and never fed). Drain-before-send, so a mid-flush
-        throw costs one batch of tells, bounded by the status quo (a stale mirror is what we already
-         had). Trace: `{ev:'retired', id, piers}`. The live tell to watch for: the per-id
-          `serve want … no record for id` storms should stop RECURRING for newly-dropped ids —
-           existing stale ids only heal when their record next drops or the mirror is reborn.
-     **The cull seam landed too (2026-08-08, `Ra.g` `194a5920df997267`)** once ownership of `Ra.g`
-      passed over: `Ra_shuffle_cull`'s goner loop pushes to the same `retire_due` ledger, so both live
-       retirers — the tour whittle and the cull — share one ledger and one flush.
-2. **SHIPPED 2026-08-08 — the bounded backoff on told misses.** `Repli_missed_hot(w, id)`
-    (`Repli.g` `b85a7196c9b5fa38`) is the shared, **self-expiring** read: disclaimed within
-     `ra_missed_hold_ms` (60s) ⇒ skip; past it the key is deleted and the next ask goes through. A
-      backoff, never a ban — and self-expiry also stops the map growing unbounded, which a blacklist
-       would not. Wired at the two crate-walking sites, which is where a stale mirror becomes a storm:
-   - `Ra_mag_warm` — skips a disclaimed row rather than re-asking `@0` on the RTO ladder forever.
-   - `Ra_restock_beat` — skips **before** `considered` increments, so a dead id no longer burns one of
-      the K slots per pass and crowd out records that can actually arrive.
-   - **The `rows[0]` single point of failure is fixed too, surgically**: the warm gate falls through to
-      the next non-disclaimed row **only when row 0 has been disclaimed** — a state no Book can reach
-       (`ra_missed` is empty there), so every recorded fixture stays bit-identical. A merely-slow row 0
-        still gates the mag exactly as before.
-   - **Left alone on purpose:** the `Swarm.g` lead pass (the single playing record). Gating that would
-      silence a track rather than move past it; a disclaimed *playing* record wants the radio to skip
-       on, which is §4.8's job, not a want gate's.
-3. Not established: WHICH path retired `2f101e4b`/`e9c41e4f` (tour, cull, or twin — the serve-miss line
-    can't tell them apart; the `source-gone`/`shuffle-cull`/tour traces carry the id and a tracelog dump
-     would settle it). The fix above is right under all three, so this is curiosity, not a blocker.
+**2. SHIPPED — the bounded backoff on told misses.** `Repli_missed_hot(w, id)` (`Repli.g`
+ `b85a7196c9b5fa38`) is the shared, **self-expiring** read: disclaimed within `ra_missed_hold_ms` (60s)
+  ⇒ skip; past it the key is deleted and the next ask goes through. **A backoff, never a ban** — a
+   source can regain a record — and self-expiry also stops the map growing unbounded, which a blacklist
+    would not. Wired at the two crate-walking sites, which is where a stale mirror becomes a storm:
+- `Ra_mag_warm` — skips a disclaimed row rather than re-asking `@0` on the RTO ladder forever.
+- `Ra_restock_beat` — skips **before** `considered` increments, so a dead id no longer burns one of the
+   K slots per pass and crowds out records that can actually arrive.
+- **The `rows[0]` single point of failure is fixed too, surgically**: `Ra_mag_warm` armed `mag.sc.warm`
+   from `rows[0]` only, so an unservable id in row 0 meant the mag NEVER went warm and re-asked `@0`
+    for the life of the tab — which matched the observed `@0` misses exactly. The warm gate now falls
+     through to the next non-disclaimed row **only when row 0 has been disclaimed** — a state no Book
+      can reach (`ra_missed` is empty there), so every recorded fixture stays bit-identical. A
+       merely-slow row 0 still gates the mag exactly as before.
+- **Left alone on purpose:** the `Swarm.g` lead pass (the single playing record). Gating that would
+   silence a track rather than move past it; a disclaimed *playing* record wants the radio to skip on,
+    which is §4.8's job, not a want gate's.
+
+**3. Not established, and it is curiosity rather than a blocker:** WHICH path retired the two ids seen
+ in the console (tour, cull, or twin — the serve-miss line can't tell them apart; the
+  `source-gone`/`shuffle-cull`/tour traces carry the id and a tracelog dump would settle it). The fix
+   above is right under all three.
 
 ## 3.10 The transcode frontier CAN outrun the playhead — what remains are wedges, not rates (2026-08-08, SOURCE-VERIFIED)
 
 With the cull detached, the steady-state arithmetic is fine: the lead pass lays down up to 24s of audio
  per 600ms beat (~46× realtime at defaults; worst-case floor 4s/beat ≈ 6.7×). To starve on RATE the beat
-  period would have to exceed ~28s — exactly the shape §3.7 removed. What remains are four **wedges**,
-   each presenting identically as "parks at 32s forever":
+  period would have to exceed ~28s — exactly the shape §3.7 removed. What remained were **wedges**, each
+   presenting identically as "parks at 32s forever":
 
-1. **`ra.done` is sticky and unrecoverable** (`Ra.g:2116-2125`): a drain failure sets `ra.done=1`, nulls
-    `rec.c.pcm`, but leaves `rec.c.ra` standing — `Ra_transcode_ensure` then returns that dead handle
-     forever (`Ra.g:1926`), `Ra_transcode_advance` returns 0 (`Ra.g:2061`), and `Ra_pcm_sweep` skips the
-      record (`if (!rec.c.pcm) continue`, `Ra.g:1854`). A one-track permanent 32s ceiling. ⚠ `Ra.g` — a
-       handoff to the daemon agent, not our edit.
-2. **The `still.length > 4` eviction** (`Ra.g:2235`) and **the 384MB PCM belt** (`Ra.g:1871-1885`) both
-    free an OPEN encode; a re-ensure restarts at `next: P` — the frontier resets to the preview boundary
-     and re-grinds (inferred from code, not measured).
+1. **`ra.done` is sticky and unrecoverable** (`Ra.g:2116-2125` at the time of reading): a drain failure
+    sets `ra.done=1`, nulls `rec.c.pcm`, but leaves `rec.c.ra` standing — `Ra_transcode_ensure` then
+     returns that dead handle forever, `Ra_transcode_advance` returns 0, and `Ra_pcm_sweep` skips the
+      record (`if (!rec.c.pcm) continue`). A one-track permanent 32s ceiling. **STILL OPEN** ⚠ `Ra.g` —
+       a handoff to the daemon agent, not our edit.
+2. **The `still.length > 4` eviction and the 384MB PCM belt both free an OPEN encode**, so a re-ensure
+    restarts at the preview boundary and re-grinds. **This one was the real story — see §3.12**, which
+     measured it, named it a livelock rather than a re-grind, and fixed it.
 3. **The browser path hangs off one whole-file `decodeAudioData`** (`Ra_source_pcm`, five null exits,
-    each landing on a backoff that climbs to 60s) — every failure is silence to the asker.
+    each landing on a backoff that climbs to 60s) — every failure is silence to the asker. Open.
 4. A parked want is **never dropped** (verified: one mint site, one removal site, no expiry) — good, but
-    it means a wedged source parks a sink forever with no tell except the L3 `park-stall` bark.
+    it means a wedged source parks a sink forever with no tell except the L3 `park-stall` bark. Open.
 
-**Instrument shipped for the next paste** (`Swarm.g`, `ef702334e372daa7`): `beat_split.peers` lumped the
- pump/warm/lead in with the offer loop, so it could not price the one verb the ceiling hangs off. The
-  skip line now carries `(pump= warm=)` inside the peers bucket; `peers` keeps its old meaning.
+**Instrument shipped** (`Swarm.g`, `ef702334e372daa7`): `beat_split.peers` lumped the pump/warm/lead in
+ with the offer loop, so it could not price the one verb the ceiling hangs off. The skip line now
+  carries `(pump= warm=)` inside the peers bucket; `peers` keeps its old meaning.
+
+**A correction worth keeping.** Item 1 was called "the likely cause" of the 32s ceiling off a partial
+ reading of one log. The fuller log refuted that as the *dominant* one (§3.12). Item 1 is still a real
+  defect; it was never the one the human was hitting.
 
 ## 3.11 `MusuNeGrind` — the design, and the scaffold that landed (2026-08-08, **UNVERIFIED BY CONSTRUCTION**)
 
@@ -643,9 +695,10 @@ With the cull detached, the steady-state arithmetic is fine: the lead pass lays 
 That is the class, and it is the class §1 is made of. Re-read the ledger with it in hand: #4 (`held`
  going down — a landing that left the beat and never told the puller), #10 (the beat permanently
   overrunning), #13 (a disk write starved behind everything else), #12 (a watchdog that became the
-   metronome, §3.5) are all one shape — **something that was cheap when it was written became the clock
-    something else runs on.** No single-mechanism Book can see it, because the two things are never in
-     the same world at the same time. This Book puts them there.
+   metronome, §3.5), #21 (a belt that livelocked the decoder, §3.12) are all one shape — **something
+    that was cheap when it was written became the clock something else runs on.** No single-mechanism
+     Book can see it, because the two things are never in the same world at the same time. This Book
+      puts them there.
 
 ### The injection is the point — and it is what stops this being a false green
 
@@ -710,15 +763,16 @@ Two mechanics that are load-bearing and easy to get wrong:
    `MusuNeGrind_kick` and only its verdict (`quick`, a 1-or-absent flag) is snapped. One `ms:` in `sc`
     and this Book is permanently unrecordable.
 
-### §3.8 is a scene, deliberately not a claim
+### The disclaim scene is a scene, deliberately not a claim
 
 The Book *drives* the disclaim scene and records `asks:3` beside `told:1` — so the snap carries the
  number — but the claim that wants writing, *"the sink stopped asking for an id the source disclaimed"*,
-  is **not** authored as a `%see`. §3.8 records that `ra_missed` has no reader on the music path, so
-   asserting it today authors a Book that is **red at birth**, and a red Book gates nothing (§2.3 is the
-    whole argument: false reds are cheap to make and expensive to read). Add that `%see` in the same
-     change that lands the bounded backoff at the music call site, never before — and it must be a
-      **backoff, never a ban**: a source can regain a record.
+  is **not** authored as a `%see`. When this was written, `ra_missed` had no reader on the music path,
+   so asserting it would have authored a Book **red at birth**, and a red Book gates nothing (§2.3 is
+    the whole argument).
+ **That precondition has since changed:** §3.9 item 2 landed `Repli_missed_hot` at `Ra_mag_warm` and
+  `Ra_restock_beat`. So this `%see` is now *writable* — but write it only after the Book runs green
+   without it (step 5 below), so a new assertion and a first-ever compile are never the same red.
 
 ### What this Book explicitly does NOT cover
 
@@ -727,7 +781,8 @@ The **payload** stressors named in `Backpressure_todo` §0 item 00 — punch a c
   puller beats, `held` never decreasing — are **rung 2** and are not in this scaffold. They need
    `MusuReplica`'s chunk-minting shape wired into this world, and none of it can be written safely by a
     session that cannot compile. The beat harness here is what they will hang on. **Do not claim this
-     Book covers them.**
+     Book covers them.** Nor does it cover §3.12's PCM belt — a decode livelock needs real audio bytes,
+      which is a third rung again.
 
 ### What remains before it gates anything
 
@@ -753,40 +808,36 @@ In order, all on a **live runner** (never `Story_cli_run.mjs` — a green there 
 5. **Run it several times.** This Book has a real clock in it by construction (`Coding_guide`: verify a
     timing fix by re-running, and robustly green across N runs is the gate). Expect `MusuBuddy`-shaped
      jitter; read `ok`/`ok_pct` and **never** the caveat count (§2.3).
-6. Only then does §0 item 1 close, and only then may anything in §4 be attributed by it.
+6. Only then does §0 item 1 close, and only then may anything in §4 be attributed by it. The disclaim
+    `%see` (above) is the first thing to add once it is green.
 
 ---
 
-## 3.12 THE PCM BELT LIVELOCKS — and it is the 32s ceiling, the pinned CPU, and the dropped music frames, all at once (2026-08-08, MEASURED + SOURCE-CONFIRMED)
+## 3.12 The PCM belt livelocks — and it is the 32s ceiling, the pinned CPU, and the dropped music frames, all at once (2026-08-08, MEASURED + SOURCE-CONFIRMED — fixed)
 
-**The reading** (Righto, one paste, repeating every ~10s for twelve minutes):
+*Full write-up, the console paste and the four-symptom derivation: `history/Composition_closed_2026-08.md`.
+ The fix's own write-up is `Backpressure_todo` §3.1e.*
 
-    ◈⚠ transcode STALLED — parked want id=dc1bd424 from_idx=16 waiting 724s — the encoder frontier never reached it
-    …seven more, all from_idx=16, waiting 22s → 724s, none ever advancing…
-    🛰☠ inbox backstop: pier editor holds 2050 unemits (cap 2000) — dropped oldest seq=… type=repli_lines
-    ◈ Repli  rx 30p/635KB  tx 6p/127KB  231KB/s
+**The reading** (Righto, one paste, repeating every ~10s for twelve minutes): **eight records, every one
+ stalled at exactly `from_idx=16`, none ever advancing** — including one that twenty minutes earlier had
+  been watched climbing `off=16→18→20→22→24`. It advanced, then wedged. **So it was not a per-record
+   wedge (§3.10 item 1) — it was total.** Every record that crossed the preview boundary on that tab
+    died there.
 
-**EIGHT records, every one stalled at exactly `from_idx=16`, none ever advancing.** Including
- `b5045a8e`, which twenty minutes earlier I had watched climb `off=16→18→20→22→24`. It advanced, then
-  wedged. **So this is not a per-record wedge (§3.10 item 1) — it is total.** Every record that crosses
-   the preview boundary on this tab dies there. Correcting myself: I called §3.10's sticky-`ra.done`
-    the likely cause off a partial reading; the fuller log refutes that as the *dominant* one.
-
-**The mechanism, confirmed from source.** `Ra_pcm_sweep` (`Ra.g:1845`) runs a belt:
- `CAP = ra_pcm_cap || 402653184` — *"~384MB — roughly 4 tracks decoded at once"* — over `rec.c.pcm`,
-  the decoded whole-file PCM, which is **~92MB per record** ([[pcm-pinned-on-records]]).
+**The mechanism, confirmed from source.** `Ra_pcm_sweep` runs a belt: `CAP = ra_pcm_cap || 402653184`
+ — *"~384MB — roughly 4 tracks decoded at once"* — over `rec.c.pcm`, the decoded whole-file PCM, which
+  is **~92MB per record** ([[pcm-pinned-on-records]]).
 
     8 records wanting PCM  ×  ~92MB  =  ~736MB   against a 384MB cap
 
 The belt sheds oldest-touched first. An open encode is shed *last* but explicitly **never vetoed**
- (*"a belt that can be vetoed is not a belt"*, `Ra.g:1869`). So each shed record's next
-  `Ra_transcode_ensure` sees `!rec.c.pcm`, kicks a fresh whole-file decode, 92MB lands, the belt is
-   over cap again, and it sheds another. **Nothing ever survives long enough to encode two chunks.**
-    This is precisely [[a-belt-without-admission-livelocks]] — *the cap sheds successful decodes that
-     instantly re-kick, and `Ra_pcm_backoff` only brakes FAILURES, so a successful-then-shed decode
-      re-kicks with no brake at all.*
+ (*"a belt that can be vetoed is not a belt"*). So each shed record's next `Ra_transcode_ensure` saw
+  `!rec.c.pcm`, kicked a fresh whole-file decode, 92MB landed, the belt was over cap again, and it shed
+   another. **Nothing ever survived long enough to encode two chunks.** `Ra_pcm_backoff` only brakes
+    FAILURES, so a successful-then-shed decode re-kicked with no brake at all.
 
 **One cause, four symptoms** — which is why nothing else explained the whole log:
+
 | symptom | why |
 |---|---|
 | every track dies at 0:32 | chunk 16 is the first that needs PCM; none ever gets it |
@@ -794,29 +845,42 @@ The belt sheds oldest-touched first. An open encode is shed *last* but explicitl
 | `inbox backstop … dropped … repli_lines/repli_page` | **music data frames DISCARDED** — the CPU is too busy for unemits to drain, so the inbox hits its 2000 cap |
 | bytes flowing at 231KB/s the whole time | the wire was never the problem, which is why every rate reading looked innocent |
 
+**The durable rule, and it is now in §2's table.** You cannot fix a livelock by changing *what* you
+ shed, only by refusing to *start* work you cannot hold. **An eviction bound (a belt) and an admission
+  bound are two different organs, and a belt without admission upstream of it is a livelock generator
+   for any working set larger than the cap.** Check this before adding any new byte budget.
+
+**FIXED, in two places (`Ra.g`).** A census gate in `Ra_transcode_pump` (a NEW whole-file decode is only
+ kicked while counted PCM stays under CAP/2, an un-landed kick charged CAP/4; deferred ids simply **stay
+  parked**, which is what a park is for) — verified live, decode-starts fell to zero and serves climbed
+   1→16. And then `Ra_pcm_admit` at the decode kick itself: a real per-record estimate (`Ra_pcm_est`)
+    against the full CAP, counting bytes held **and** bytes in flight, with a **playing-record override**
+     and a **lone-candidate floor**. ⚠ `Ra_pcm_admit`'s own comment says the lone-candidate floor was
+      *"found by an adversarial read, NOT by a run — nobody has yet watched a 20-minute track play"*.
+       **That part is reasoning, not a measurement.** `Backpressure_todo` §3.1e is its home.
+
+**On the demand side (helps, does not cure):** the restock gate (§0) holds deep speculative
+ `Ra_restock_beat` traffic while the playhead has under 16s banked (`w.c.lead_s`, counted as
+  `restock_held` in the skip line). `Ra_mag_warm` is deliberately NOT gated — it is chunk 0 of two
+   records per mirror, the dial's whole domain ([[dial-domain-is-the-warm-window]]), and starving it
+    leaves the radio nothing to turn TO. Lowering demand lowers how many records compete for the belt;
+     it cannot fix a source whose belt is already thrashing.
+
 **§3.6 was closer than I credited it.** Its instinct — *"the music's asks are queued behind the heist's
- work"* — is right in **spirit**: a heist pulling 11 tracks demands 8+ records past the preview
-  boundary at once, and that demand is what overruns the belt. It named the wrong *mechanism* (the
-   share beat) and I refuted it on that basis, correctly, but the composition it pointed at is real.
-    **The heist's demand destroys the radio's supply, via the PCM belt, not via the beat.**
+ work"* — is right in **spirit**: a heist pulling 11 tracks demands 8+ records past the preview boundary
+  at once, and that demand is what overran the belt. It named the wrong *mechanism* (the share beat) and
+   the refutation on that mechanism was correct. **The heist's demand destroys the radio's supply, via
+    the PCM belt, not via the beat.**
 
-**The fix is ADMISSION CONTROL, and it is in `Ra.g` — a handoff, not our edit.** The belt is eviction,
- and [[window-shelf-fairness-lives-in-eviction]] applies in reverse here: you cannot fix a livelock by
-  changing *what* you shed, only by refusing to *start* work you cannot hold. Concretely: before
-   kicking `Ra_source_pcm`, check whether admitting ~92MB would exceed the cap; if it would, **do not
-    start** — leave the want parked and let an existing decode finish. Serialise rather than thrash.
-     Prefer the record the radio is PLAYING when choosing who gets admitted.
+**Not established, and do not build on it:** the `×2` on every `ws RECV` line in that console. Two
+ sockets legitimately exist per tab (`?addr=<prepub>` from `Swarm_station_up`, `?addr=runner` from
+  `LiesLies`), so two `control:hello_ok` are expected — but a `repli_missed` addressed to one prepub
+   appearing twice is not obviously explained by that, and `reused-seq collision` in the same log is the
+    tell of duplicate delivery. `runner_ask runners` reads the editor's registry, not the relay's live
+     bind table, so it cannot settle this. **Someone has to read the relay's binds.** Possibly the same
+      animal as §1 #11 / §4.6.
 
-**What we shipped on the demand side (helps, does not cure):** the restock gate (§0 item 0) stops the
- sink asking speculatively while its own playhead is under 16s banked, which lowers how many records
-  compete for the belt. It cannot fix a source whose belt is already thrashing on a heist's demand.
-
-**Not established:** the `×2` on every `ws RECV` line in that console. Two sockets legitimately exist
- per tab (`?addr=<prepub>` from `Swarm_station_up`, `?addr=runner` from `LiesLies`), so two
-  `control:hello_ok` are expected — but a `repli_missed` addressed to one prepub appearing twice is
-   not obviously explained by that, and `reused-seq collision` in the same log is the tell of
-    duplicate delivery. `runner_ask runners` reads the editor's registry, not the relay's live bind
-     table, so it cannot settle this. **Do not build on it until someone reads the relay's binds.**
+---
 
 ## 4. Open, grouped by where the work is
 
@@ -855,13 +919,16 @@ The belt sheds oldest-touched first. An open encode is shed *last* but explicitl
 **4.2 One-sided reload** (`Cluster_spec` heading 8, era-scoped seqs). The single change that would
  most improve the *iteration* loop rather than the product.
 
-**4.3 The CPU.** One real find landed (`o_query`, §1 #5 — reviewed and approved by the human).
- Whether that was the bulk is unknown; the `deliver` electrode will say, and it stays silent when
-  healthy so its own output cannot drown the 300-mark ring. **`Stuff`/`Housing` are the stable end —
-   changes there need evidence and an explicit look, not a plausible reading.**
+**4.3 The CPU.** Two real finds have landed — `o_query`'s O(M²) filter (§1 #5, reviewed and approved by
+ the human) and the PCM decode livelock (§3.12), which was the larger of the two by a wide margin.
+  Whether anything material remains is now unknown rather than assumed; the `deliver` electrode will
+   say, and it stays silent when healthy so its own output cannot drown the 300-mark ring. **`Stuff`/
+    `Housing` are the stable end — changes there need evidence and an explicit look, not a plausible
+     reading.**
 
-**4.4 The overrunning share beat.** Likely a composite of 4.3, 4.6 and 4.7 rather than its own bug —
- but it is the thing the Grind Book asserts on, so it gets measured either way.
+**4.4 The overrunning share beat.** §3.7 removed the two phases that dominated it in the one paste we
+ have. What the residual is has **not** been measured since — likely a composite of 4.3, 4.6 and 4.7.
+  It is the thing the Grind Book asserts on, so it gets measured either way.
 
 **4.5 Reqs dropped under in-flight continuations.** The `reqyonciliation` warn. Ask whether a
  continuation should hold its target alive, or whether the drop should cancel the continuation.
@@ -871,24 +938,32 @@ The belt sheds oldest-touched first. An open encode is shed *last* but explicitl
   *Tried and backed out 2026-08-06:* adding `ive_got` to `Peeroleum_deliver`'s receive-side bypass —
    `SwarmGot` went 0.33 while its three sibling Books stayed green, which is past the fixture drift
     that move alone explains. Note left at the site. Settle whether that Book asserts on the boast
-     being **booked** or being **delivered** before trying again.
+     being **booked** or being **delivered** before trying again. **See also §3.12's unresolved `×2`** —
+      a relay bind that delivers twice would explain both, and neither can be settled without reading
+       the relay's live bind table.
 
 **4.7 Vyto never settling.** A cell whose `disp`/`drift` stays pinned, so the watchdog force-settles
- every 240 frames and the glass renders continuously. Independent of the wire; belongs with the Vyto
-  docs but is listed here because it is a load-bearing share of the 100%.
+ every 240 frames and the glass renders continuously. Cause is §3.5; no fix has shipped. Independent of
+  the wire; belongs with the Vyto docs but is listed here because it is a load-bearing share of the 100%.
 
 **4.8 A starved radio should self-heal** — dial what it holds instead of raising a badge. *"It should
- just work out somehow"* is the correct specification.
+ just work out somehow"* is the correct specification. §3.9 item 2 deliberately left the lead pass
+  ungated for exactly this reason: a disclaimed *playing* record wants the radio to move on, which is
+   this item's job, not a want gate's.
 
 ---
 
 ## 5. Where things live
 
 - **`Backpressure_todo`** — the transfer control loop: the three clocks, the req refactor, the
-   measured RTO, §3.1b/c/d's defects, and `MusuNeGrind`'s design. Anything about *how the pull is
-    paced* goes there, not here.
+   measured RTO, §3.1b/c/d/e's defects, and `MusuNeGrind`'s payload rung. Anything about *how the pull
+    is paced* goes there, not here.
+- **`Supervisor_todo`** — the runtime half of §0's arc: noticing a wedge while it happens and naming
+   the organ. `beat_split` is the substrate both docs read.
 - **`Cluster_spec`** — relay, boot→channel map, the Brink ladder, the epoch handshake (§4.2).
 - **`Radio_todo`** — the dial, the glass, the Vyto cell trims (§4.8's home once specified).
+- **`history/Composition_closed_2026-08.md`** — the full-length write-ups of §3.7, §3.8, §3.9 and
+   §3.12, verbatim, with every console paste. Go there for the evidence behind a compressed lesson.
 - **here** — the symptom ledger, the pattern (§2), and anything that is nobody's mechanism because
    it is everybody's.
 

@@ -4,10 +4,12 @@ story:MusuRaTerm
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.003
+    TimeTotal:beliefs,avg=0.002
       sample=0.001,at=1786064133
       sample=0.004,at=1786070079
-    TimeTotal:step,avg=0.003
+      sample=0.001,at=1786169126
+    TimeTotal:step,avg=0.002
       sample=0.001,at=1786064133
       sample=0.004,at=1786070079
+      sample=0.001,at=1786169126
   step,dige:77f5c0dda91a23f3

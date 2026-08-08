@@ -10,7 +10,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return 'a4564c9c620be04c~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return 'daa776785cbfd0d0~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -4492,6 +4492,412 @@ MusuLossy_id3_frame(id, text) {
     out[10] = 0
     out.set(tb, 11)
     return out
+
+},
+// ══ MusuNeGrind — THE COMPOSITION INSTRUMENT (Composition_todo §3.9 / Backpressure_todo §0 item 00) ══
+//  ⚠ UNVERIFIED BY CONSTRUCTION (2026-08-08).  This Book was authored in a session that was forbidden to
+//   compile, to run a Book, or to touch a runner (the human was testing audio live and a ghost-compile
+//    HMRs into their tabs).  So NOTHING below has been executed: not the compile, not one step, not one
+//     %see.  It has no recorded fixture.  Treat every claim in this header as a DESIGN INTENT that has
+//      yet to meet a runner — the exact posture Composition_todo §2 exists to enforce
+//       ("the comment is not evidence"), applied to the file that is supposed to enforce it.
+//
+//  WHY IT EXISTS.  Every Musu* Book proves ONE mechanism in a QUIET world.  Every defect of 2026-08-06/08
+//   lived in COMPOSITION, and not one was reachable by any of them (the human: "all these Musu* tests
+//    really didn't prepare us too well for the clusterfuck of them all together").  This is the missing
+//     test LEVEL, not another scenario — the thing whose job is to notice that some subsystem's private
+//      housekeeping has quietly become the clock everything else runs on.
+//
+//  WHAT IT COMPOSES THAT NOTHING ELSE DOES: a JANITOR and a WIRE in the same beat.  MusuVend proves a
+//   magazine crosses; MusuHeist proves bytes land; nothing anywhere proves that a slow disk sweep does
+//    not STOP either of them.  That is precisely the defect measured on the human's tab on 2026-08-08
+//     (Composition_todo §3.7): `Ra_shuffle_cull` held `Swarm_share_beat` for up to 29671ms — three other
+//      phases at ZERO — starving `Ra_transcode_pump` and with it the whole supply chain.  The fix was to
+//       fly the cull detached (`Swarm_cull_detached`/`Swarm_cull_done`).  NOTHING TESTS THAT FIX.
+//
+//  THE INJECTION IS THE POINT (Backpressure_todo §0 item 00: "then INJECT the stressors deliberately").
+//   A toy in-memory crate is fast whether the cull is awaited or not, so a timing assertion over honest
+//    data is a guaranteed FALSE GREEN.  Instead the Book makes the janitor SLOW ON PURPOSE through a hook
+//     that already exists and is already used in production (`w.c.ra_nav`, the same seam
+//      `scripts/daemon/main.ts` reaches for with `ra_cull_floor_ms`): a fake nav whose `expand()` sleeps.
+//       `Ra_card` short-circuits on `rec.c.card`, so a stamped card costs no disk and the ONLY cost in
+//        the sweep is the injected one.  Re-add the `await` in `Swarm_share_beat` and this Book goes red
+//         on its load-bearing claim, which is the entire specification of its usefulness.
+//
+//  WHAT IT ASSERTS (the invariants, not a snap — the fixture will be timing-shaped like MusuBuddy):
+//   1. CADENCE (load-bearing) — every janitor kick returned inside the ceiling, over >= 4 kicks, while a
+//       demonstrably slow sweep ran on.  This is Backpressure §00's "the beat never overruns" reduced to
+//        the one phase that has actually been measured overrunning it.
+//   2. THE WIRE KEPT MOVING — a fresh record crossed to the mirror WHILE the sweep was still in flight.
+//       Composition, in one line: the housekeeping and the traffic are no longer the same clock.
+//   3. SINGLE FLIGHT — a second kick while one flies is refused, not stacked (`cull_flying`).
+//   4. THE LATCH CLEARS ON A THROW — the §2.1 shape: a safety net nothing tests.  `Swarm_cull_done` runs
+//       on BOTH settle and throw, and its own comment says a latch left standing "would silently retire
+//        the cull for the life of the tab".  That sentence is an unmeasured runtime claim until this
+//         Book runs it: the 'throw' nav returns a dl with no `files`, and `dl.files.find` is the one line
+//          in `Ra_source_alive` outside a try.
+//   5. NON-VACUITY — the detached sweep really does its work: with a nav that says the source is gone,
+//       records are actually DROPPED by a cull nothing awaited, and `cull_bg` reports a real duration.
+//        Without this, "returned quickly" is satisfied by a janitor that does nothing at all.
+//   6. THE MISS TRAVELS (§3.8, OBSERVATION ONLY) — the sink is told `repli_missed` for an id the source
+//       cannot resolve.  The claim that WANTS asserting — that the sink then stops asking — is OWED and
+//        deliberately NOT written as a %see: §3.8 records that `ra_missed` has no reader on the music
+//         path, so asserting it today would author a Book that is red at birth, and a red Book gates
+//          nothing.  The scene + its `asks` count are recorded so the fixture carries the number.
+//
+//  WHAT IT DOES NOT DO YET (rung 2, and it is deliberate).  The PAYLOAD stressors named in Backpressure
+//   §00 — punch a chunk out of the middle of a page (§3.1b), release a source rec while a want is parked
+//    on it (§3.1c), let a landing run while the puller beats (the landing race), `held` never decreasing
+//     — need MusuReplica's chunk-minting shape wired in, and none of it can be written safely by a
+//      session that cannot compile.  Rung 2 adds them to this same world; the beat harness here is what
+//       they hang on.  Do not claim this Book covers them.
+//
+//  IN-MEMORY + NO FSA: two Piers over the Lake_link loopback, no real audio, no Berth — so it runs on any
+//   runner.  It is NOT jitter-free: the injected sleeps put a real clock in the world, so expect a
+//    MusuBuddy-shaped fixture and read `ok`/`ok_pct`, never the caveat count (§2.3).
+//  CONVENTION (Musu*): no Run_A_ recipe — the world MUST be named MusuNeGrind (do_fn_for dispatches by
+//   w.sc.w) or the wrangle silently never fires.
+//  NAMING: the MusuNe* prefix is new and deliberate (the human: "far too much is ending up in Musu").
+//   Composition Books go under MusuNe*; registered on the Credence board as What:MusuNe.
+
+MusuNeGrind(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuNeGrind_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// ── the three numbers, in ONE place so a re-tune is one edit and no comment can drift from them ──
+// MusuNeGrind_ceil — how long a DETACHED kick may take to return.  `Swarm_cull_detached` only runs the
+//  synchronous prologue of `Ra_shuffle_cull` before its first await, so the honest value is sub-
+//   millisecond; 120ms is a deliberately fat margin against a loaded runner.  The awaited shape costs
+//    jan_ms × records (~640ms), so the two are five times apart — the discriminator is not marginal.
+MusuNeGrind_ceil() {
+    return 120
+
+},
+// MusuNeGrind_jan_ms — the injected per-record janitor cost.  Stands in for the awaited FSA directory
+//  expand that measured 29671ms over a 539-directory crate.
+MusuNeGrind_jan_ms() {
+    return 80
+
+},
+// MusuNeGrind_work_floor — the floor `cull_bg_ms` must clear for the sweep to count as having really
+//  worked.  Well under jan_ms × 8 and well over zero: this is the anti-vacuity gate, not a timing test.
+MusuNeGrind_work_floor() {
+    return 240
+
+},
+// MusuNeGrind_T / MusuNeGrind_note — the one %testing subtree; every observation hangs here, off the
+//  design tree.  c.up stamped so an upward walk from a marker reaches w.
+//  SNAP RULE for these rows, and it is load-bearing: a row may carry a VERDICT (a 1-or-absent flag, or a
+//   deterministic count) and NEVER a raw millisecond.  A wall-clock number in sc moves the dige every
+//    run and would make this Book permanently unrecordable.
+MusuNeGrind_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+MusuNeGrind_note(w, sc) {
+    let t = this.MusuNeGrind_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+// MusuNeGrind_drive — ONE scene per beat off step_n (req-local did_step, Musu family style); the witness
+//  runs EVERY pass so each %see fires the first pass its truth holds.  Skips cleanly with no transport
+//   and with no janitor verbs deposited, so a partial spine never reads as a red.
+async MusuNeGrind_drive(w, req) {
+    if (typeof this.Lake_link !== 'function' || typeof this.Peeroleum_send !== 'function') {
+        if (!this.MusuNeGrind_T(w).oa({ skipped: 'no_transport' })) this.MusuNeGrind_note(w, { skipped: 'no_transport' })
+        return
+    }
+    if (typeof this.Swarm_cull_detached !== 'function' || typeof this.Ra_shuffle_cull !== 'function') {
+        if (!this.MusuNeGrind_T(w).oa({ skipped: 'no_janitor' })) this.MusuNeGrind_note(w, { skipped: 'no_janitor' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuNeGrind_setup(w)
+        if (n === 3) await this.MusuNeGrind_load(w)
+        if (n === 4) await this.MusuNeGrind_janitor(w)
+        if (n === 5) await this.MusuNeGrind_settle(w)
+        if (n === 6) await this.MusuNeGrind_singleflight(w)
+        if (n === 7) await this.MusuNeGrind_thrown(w)
+        if (n === 8) await this.MusuNeGrind_goner(w)
+        if (n === 9) await this.MusuNeGrind_disclaim(w)
+        if (n === 10 || n === 11) await this.MusuNeGrind_pump(w)
+    }
+    this.MusuNeGrind_witness(w)
+    await this.Musu_float(w)
+
+},
+// MusuNeGrind_nav — THE INJECTED JANITOR.  `Ra_shuffle_cull` reads `w.c.ra_nav || this.Crate_nav()`, and
+//  `Ra_source_alive` spends its whole cost in `nav.dir_at(dir)` then `dl.expand()`.  So a nav whose
+//   expand sleeps IS a slow disk, with no FSA and no Ra.g edit.  Three modes, one per scene:
+//    'alive' — the file is there.  Slow and harmless: nothing is dropped, so the cull's cost is purely
+//              the injected one and a beat held by it is held by nothing else.
+//    'gone'  — the directory lists nothing, so every record reads 'gone' and is DROPPED.  This is the
+//              anti-vacuity mode: it proves the flying sweep does real work.
+//    'throw' — the dl carries no `files`, so `dl.files.find(...)` throws.  That line is the ONLY one in
+//              `Ra_source_alive` outside a try, which is why it is the available way to make the sweep
+//              reject and exercise `Swarm_cull_done`'s catch arm.
+//  Note `pause` is reused as the dl's `expand` — it takes no arguments and returns a promise, which is
+//   exactly what `Ra_source_alive` calls it as.
+MusuNeGrind_nav(w, mode) {
+    let ms = this.MusuNeGrind_jan_ms()
+    let pause = () => new Promise((res) => setTimeout(res, ms))
+    if (mode === 'gone') return { dir_at: async (p) => ({ expand: pause, files: [] }) }
+    if (mode === 'throw') return { dir_at: async (p) => ({ expand: pause }) }
+    return { dir_at: async (p) => ({ expand: pause, files: [{ name: 'held.opus' }] }) }
+
+},
+// MusuNeGrind_stock — lay ids into the origin shelf through the one owned-mint door (Ra_rec_home), so
+//  they land under %Mag:shuffle > %Cloud — which is the shape `Ra_shuffle_cull` actually walks.  Each
+//   record gets its CARD stamped on `.c` (never sc): `Ra_card` returns `rec.c.card` before touching a
+//    nav, so the card costs nothing and the sweep's entire cost is the injected expand.  Every record
+//     shares one directory and one filename, so the 'alive' nav answers 'ok' for all of them.
+MusuNeGrind_stock(w, ids) {
+    for (const id of ids) {
+        let rec = this.Ra_rec_home(w.c.stock, id)
+        rec.sc.artist = 'Grind'
+        rec.sc.title = 'Beat ' + id
+        rec.sc.path = 'grind/held.opus'
+        rec.c.card = { path: 'grind/held.opus' }
+    }
+    return ids
+
+},
+// MusuNeGrind_setup — the two Piers over the loopback, the repli handlers, the origin stock shelf, and
+//  the janitor's hooks.  `ra_cull_floor_ms = 0` defeats the 30s self-throttle so each scene gets a fresh
+//   sweep; that throttle bounds how OFTEN the cull starts and says nothing about how long it holds the
+//    beat, which was the whole misreading behind §3.7.
+async MusuNeGrind_setup(w) {
+    this.MusuNeGrind_note(w, { reached: 'step_2' })
+    let link = await this.Lake_link(w, 'Origin', 'Follower')
+    w.c.tx = link[0]
+    w.c.rx = link[1]
+    this.Peeroleum_arm_whittle(w)
+    link[1].i({ Ud: 1, pubkey: 'Origin' })
+    link[0].i({ Ud: 1, pubkey: 'Follower' })
+    this.Repli_arm(w)
+    w.c.repli_mirror_pier = 'Follower.mirror'
+    this.Repli_register_rx(w, link[1])
+    let stock = this.Ra_home_self(w, 'Origin')
+    w.c.stock = stock
+    w.c.repli_src = stock
+    this.Repli_register_caster(w, link[0], stock)
+    w.c.grants = { Follower: 1 }
+    w.c.repli_allow = (peer, at) => !!(w.c.grants && w.c.grants[peer])
+    w.c.ra_cull_floor_ms = 0
+    w.c.ra_nav = this.MusuNeGrind_nav(w, 'alive')
+    this.MusuNeGrind_stock(w, ['g0', 'g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7'])
+    w.c.set_up = 1
+
+},
+// MusuNeGrind_pump — drain BOTH inboxes twice: a want travels Follower→Origin and the answer travels
+//  back, so a single-sided pump would settle only half the exchange.
+async MusuNeGrind_pump(w) {
+    if (w.c.tx) await w.c.tx.do()
+    if (w.c.rx) await w.c.rx.do()
+    if (w.c.tx) await w.c.tx.do()
+    if (w.c.rx) await w.c.rx.do()
+
+},
+// MusuNeGrind_mirror_has — is this id in the follower's mirror?  Ra_rec_find walks the paged Mag model
+//  AND the flat mirror shape, so it answers for either.
+MusuNeGrind_mirror_has(w, id) {
+    let mir = this.Repli_mirror_lib(w)
+    if (!mir) return 0
+    return this.Ra_rec_find(mir, { Record: 1, id: id }) ? 1 : 0
+
+},
+// MusuNeGrind_load — the baseline traffic: offer the whole shuffle Mag as one husk and settle it.  This
+//  is the NON-VACUITY control for the janitor scene: if the wire cannot cross a record with no janitor
+//   running, "it crossed while the janitor flew" would prove nothing.
+async MusuNeGrind_load(w) {
+    await this.Repli_offer(w, w.c.tx, 'Origin', 'Follower', this.Ra_mag_shuffle(w.c.stock))
+    await this.MusuNeGrind_pump(w)
+    let row = { load: 'baseline', of: 8 }
+    if (this.MusuNeGrind_mirror_has(w, 'g0')) row.crossed = 1
+    this.MusuNeGrind_note(w, row)
+
+},
+// MusuNeGrind_kick — ONE janitor kick, measured.  Every scene goes through here so the cadence claim is
+//  an aggregate over every kick in the run rather than a per-scene opinion.  The elapsed ms is compared
+//   HERE and only its verdict is snapped — a raw duration in sc would move the dige every run.
+MusuNeGrind_kick(w, scene) {
+    let t0 = Date.now()
+    let r = this.Swarm_cull_detached(w, w, w.c.stock)
+    let ms = Date.now() - t0
+    let row = { kick: scene }
+    if (r === 1) row.started = 1
+    if (r === 0) row.refused = 1
+    if (ms <= this.MusuNeGrind_ceil()) row.quick = 1
+    if (w.c.cull_flying) row.flying = 1
+    this.MusuNeGrind_note(w, row)
+    return r
+
+},
+// MusuNeGrind_await_cull — a HOLD, not a wake (Coding_guide "Wake ≠ Hold").  The detached sweep is a
+//  bare promise nothing in the world is waiting on, so Story would happily quiesce and snap mid-flight
+//   and the fixture would record a coin toss.  Awaiting this from inside the wrangle's do_fn keeps the
+//    req unfinished for the duration, which is what actually holds the snap.  Bounded, and it returns
+//     whether the latch cleared so a hang reads as a verdict instead of a timeout.
+async MusuNeGrind_await_cull(w, ceil_ms) {
+    let t0 = Date.now()
+    while (w.c.cull_flying && (Date.now() - t0) < ceil_ms) {
+        await new Promise((res) => setTimeout(res, 20))
+    }
+    return w.c.cull_flying ? 0 : 1
+
+},
+// MusuNeGrind_janitor — THE SCENE.  Kick a slow sweep, then do ordinary wire work while it is still in
+//  flight: mint a fresh record, offer, settle it.  If the cull were awaited inside the beat again, the
+//   kick would not return quick and none of this could have happened during it.
+async MusuNeGrind_janitor(w) {
+    w.c.ra_nav = this.MusuNeGrind_nav(w, 'alive')
+    this.MusuNeGrind_kick(w, 'alive')
+    this.MusuNeGrind_stock(w, ['gx'])
+    await this.Repli_offer(w, w.c.tx, 'Origin', 'Follower', this.Ra_mag_shuffle(w.c.stock))
+    await this.MusuNeGrind_pump(w)
+    let row = { underload: 1 }
+    if (w.c.cull_flying) row.mid_flight = 1
+    if (this.MusuNeGrind_mirror_has(w, 'gx')) row.crossed = 1
+    this.MusuNeGrind_note(w, row)
+
+},
+// MusuNeGrind_settle — hold until the flying sweep lands, then read what it cost.  `did_work` is the
+//  anti-vacuity gate on the whole cadence claim: it says the sweep this beat returned instantly from
+//   was genuinely expensive.  `kept` says an 'alive' sweep dropped nothing, so the 9 records standing
+//    are the 8 stocked plus the one that crossed mid-flight.
+async MusuNeGrind_settle(w) {
+    let landed = await this.MusuNeGrind_await_cull(w, 8000)
+    let row = { settled: 'alive', recs: this.Ra_recs(w.c.stock).length }
+    if (landed) row.landed = 1
+    if (+(w.c.cull_bg_ms || 0) >= this.MusuNeGrind_work_floor()) row.did_work = 1
+    if (this.Ra_recs(w.c.stock).length === 9) row.kept = 1
+    this.MusuNeGrind_note(w, row)
+
+},
+// MusuNeGrind_singleflight — two kicks in one beat.  The second must be REFUSED, not stacked: overlapping
+//  sweeps over one shelf is the shape that had a heist double-writing a landed file ("spastic as fuck").
+//   `same_flight` reads the start stamp itself, so a second sweep that replaced the latch instead of
+//    bowing out cannot pass by merely leaving the latch truthy.
+async MusuNeGrind_singleflight(w) {
+    w.c.ra_nav = this.MusuNeGrind_nav(w, 'alive')
+    let a = this.MusuNeGrind_kick(w, 'first')
+    let stamp = w.c.cull_flying
+    let b = this.MusuNeGrind_kick(w, 'twin')
+    let row = { singleflight: 1 }
+    if (a === 1) row.first_started = 1
+    if (b === 0) row.twin_refused = 1
+    if (stamp && w.c.cull_flying === stamp) row.same_flight = 1
+    this.MusuNeGrind_note(w, row)
+    let landed = await this.MusuNeGrind_await_cull(w, 8000)
+    if (landed) this.MusuNeGrind_note(w, { sf_settled: 1 })
+
+},
+// MusuNeGrind_thrown — THE SAFETY NET NOTHING TESTS (§2.1's shape).  `Swarm_cull_done` is wired to both
+//  the settle and the throw arm precisely so a failed sweep cannot leave `cull_flying` standing — and
+//   that is an unmeasured claim in a comment until something makes the sweep throw.  A dl with no
+//    `files` does it: `dl.files.find(...)` is the one line in `Ra_source_alive` outside a try, so the
+//     TypeError rejects `Ra_shuffle_cull` and lands in the `.catch`.  Then prove the janitor is not
+//      RETIRED — a latch left standing would silently kill culling for the life of the tab, and the
+//       only way to see that is to start another one.
+async MusuNeGrind_thrown(w) {
+    w.c.ra_nav = this.MusuNeGrind_nav(w, 'throw')
+    this.MusuNeGrind_kick(w, 'thrown')
+    let landed = await this.MusuNeGrind_await_cull(w, 8000)
+    let row = { thrown: 1 }
+    if (landed) row.latch_cleared = 1
+    w.c.ra_nav = this.MusuNeGrind_nav(w, 'alive')
+    let again = this.MusuNeGrind_kick(w, 'after_throw')
+    if (again === 1) row.restarted = 1
+    await this.MusuNeGrind_await_cull(w, 8000)
+    this.MusuNeGrind_note(w, row)
+
+},
+// MusuNeGrind_goner — the anti-vacuity scene, and the one that makes "detached" mean something.  With a
+//  nav that lists nothing, every record reads 'gone' and the sweep DELETES it — so a cull nobody awaited
+//   still changed the shelf.  Runs last of the janitor scenes because it empties the stock.
+async MusuNeGrind_goner(w) {
+    let before = this.Ra_recs(w.c.stock).length
+    w.c.ra_nav = this.MusuNeGrind_nav(w, 'gone')
+    this.MusuNeGrind_kick(w, 'goner')
+    let landed = await this.MusuNeGrind_await_cull(w, 15000)
+    let after = this.Ra_recs(w.c.stock).length
+    let row = { goner: 1, before: before, after: after }
+    if (landed) row.landed = 1
+    if (before > 0 && after === 0) row.swept = 1
+    this.MusuNeGrind_note(w, row)
+
+},
+// MusuNeGrind_disclaim — §3.8, AS AN OBSERVATION.  Ask the source for an id it cannot resolve.
+//  `Repli_serve_want` misses, `Repli_serve_miss` logs it (throttled 5s per id) and `Repli_tell_miss`
+//   sends `repli_missed`; the sink's `Repli_recv_missed` stamps `w.c.ra_missed[id]`.  ALL of that is
+//    proven machinery — what §3.8 records is that NOTHING ON THE MUSIC PATH READS THAT STAMP, so a
+//     music want for a disclaimed id is re-asked on the ladder interval for the life of the tab.
+//  So this scene asserts only the half that HOLDS today (the miss travels) and records `asks` beside it.
+//   The claim that wants writing —
+//     'the sink stopped asking for an id the source disclaimed — a told miss backs the asker off'
+//    — is DELIBERATELY NOT a %see yet.  Authoring it now would make this Book red at birth, and a red
+//     Book gates nothing (§2.3).  Add it in the same change that lands the bounded backoff at the music
+//      call site, never before, and note that the fix must be a BACKOFF and never a ban: a source can
+//       regain a record.
+async MusuNeGrind_disclaim(w) {
+    let id = 'ghostofatrack'
+    let i = 0
+    while (i < 3) {
+        await this.Repli_want_next(w, w.c.rx, 'Follower', 'Origin', id, 'opus', 0)
+        await this.MusuNeGrind_pump(w)
+        i = i + 1
+    }
+    let row = { disclaim: id, asks: 3 }
+    if (w.c.ra_missed && w.c.ra_missed[id]) row.told = 1
+    this.MusuNeGrind_note(w, row)
+
+},
+// ── the witness — %see gated on TRUTH not beat number, once-noticed under %testing (no commas and no
+//  apostrophes — the peel parser splits on commas; em-dash for a pause). ──
+MusuNeGrind_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 4)) return
+    if (!w.c.set_up) return
+    let T = this.MusuNeGrind_T(w)
+    // #1 THE LOAD-BEARING ONE — the cadence claim, aggregated over every kick in the run.  Reads three
+    //  independent things so none of them can carry it alone: enough kicks happened, EVERY kick that
+    //   actually started returned inside the ceiling, and the sweep it returned from was genuinely slow
+    //    (`did_work` off `cull_bg_ms`).  Drop the third and a janitor that does nothing passes.
+    let kicks = T.o({ kick: 1 })
+    let started = kicks.filter((k) => k.sc.started)
+    let quick = started.filter((k) => k.sc.quick)
+    let worked = T.o({ settled: 'alive' })[0]
+    let cadence = started.length >= 4 && quick.length === started.length && worked && worked.sc.did_work
+    if (cadence && !T.oa({ see: 'the janitor flies instead of holding the beat — every kick returned at once while a demonstrably slow sweep ran on' })) this.MusuNeGrind_note(w, { see: 'the janitor flies instead of holding the beat — every kick returned at once while a demonstrably slow sweep ran on' })
+    // #2 COMPOSITION — the housekeeping and the traffic are no longer one clock.  Gated on the baseline
+    //  crossing too so this cannot read green on a wire that would have crossed nothing either way.
+    let base = T.o({ load: 'baseline' })[0]
+    let ul = T.o({ underload: 1 })[0]
+    let moved = base && base.sc.crossed && ul && ul.sc.mid_flight && ul.sc.crossed
+    if (moved && !T.oa({ see: 'the wire kept moving under the janitor — a fresh record crossed to the mirror while the sweep was still in flight' })) this.MusuNeGrind_note(w, { see: 'the wire kept moving under the janitor — a fresh record crossed to the mirror while the sweep was still in flight' })
+    // #3 SINGLE FLIGHT — a second kick is refused rather than stacked onto the first.
+    let sf = T.o({ singleflight: 1 })[0]
+    if (sf && sf.sc.first_started && sf.sc.twin_refused && sf.sc.same_flight && !T.oa({ see: 'the janitor is single flight — a second kick while one sweep flies is refused rather than stacked on top of it' })) this.MusuNeGrind_note(w, { see: 'the janitor is single flight — a second kick while one sweep flies is refused rather than stacked on top of it' })
+    // #4 THE LATCH CLEARS ON A THROW — the untested safety net.  Both halves: the latch cleared AND a
+    //  later kick could still start, because a retired janitor is the failure this exists to prevent.
+    let th = T.o({ thrown: 1 })[0]
+    if (th && th.sc.latch_cleared && th.sc.restarted && !T.oa({ see: 'a janitor that throws still clears its latch — the next sweep starts instead of the tab retiring its janitor for good' })) this.MusuNeGrind_note(w, { see: 'a janitor that throws still clears its latch — the next sweep starts instead of the tab retiring its janitor for good' })
+    // #5 NON-VACUITY — the detached sweep really works.  Without this every claim above is satisfiable
+    //  by a cull that returns instantly because it does nothing.
+    let gn = T.o({ goner: 1 })[0]
+    if (gn && gn.sc.landed && gn.sc.swept && !T.oa({ see: 'the detached sweep still does its work — records whose source went missing were dropped by a cull nothing awaited' })) this.MusuNeGrind_note(w, { see: 'the detached sweep still does its work — records whose source went missing were dropped by a cull nothing awaited' })
+    // #6 THE MISS TRAVELS — the half of §3.8 that holds today.  The other half is owed; see the scene.
+    let dc = T.o({ disclaim: 1 })[0]
+    if (dc && dc.sc.told && !T.oa({ see: 'the source told the sink it cannot resolve an id — the miss travels instead of leaving the asker to guess at silence' })) this.MusuNeGrind_note(w, { see: 'the source told the sink it cannot resolve an id — the miss travels instead of leaving the asker to guess at silence' })
 
 },
 

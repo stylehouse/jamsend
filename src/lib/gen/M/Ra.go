@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '74c2c3dd48bbaadc~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return 'a9d4e128a442f13a~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -2424,7 +2424,13 @@ async Ra_transcode_pump(w) {
                     rec.c.rematz = Date.now()
                     let hnav = this.Crate_nav ? this.Crate_nav() : null
                     if (hnav && this.Heist_materialise_one) {
-                        try { await this.Heist_materialise_one(w, hnav, String(w.c.repli_mirror_pier || ''), String(rec.sc.id)) } catch (er) {}
+                        // PASS THE RENDITION CLAIM (2026-08-08).  `lofi` was omitted here, so this
+                        //  arrived as `undefined` and Heist_materialise_one's early-out
+                        //   `(!!rec.sc.lofi) === (!!lofi)` read as a MISMATCH for any lofi rec — it then
+                        //    re-read the ORIGINAL file over a promise whose body_hash was the ogg's, so
+                        //     the hash could never match and the want parked forever against bytes that
+                        //      would never come. The rec in hand already knows what it is; ask for that.
+                        try { await this.Heist_materialise_one(w, hnav, String(w.c.repli_mirror_pier || ''), String(rec.sc.id), rec.sc.lofi ? 1 : 0) } catch (er) {}
                     }
                 }
                 continue

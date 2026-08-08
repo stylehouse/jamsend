@@ -2326,7 +2326,13 @@ async Ra_transcode_pump(w):
                     rec.c.rematz = Date.now()
                     let hnav = this.Crate_nav ? this.Crate_nav() : null
                     if (hnav && this.Heist_materialise_one) {
-                        try { await this.Heist_materialise_one(w, hnav, String(w.c.repli_mirror_pier || ''), String(rec.sc.id)) } catch (er) {}
+                        // PASS THE RENDITION CLAIM (2026-08-08).  `lofi` was omitted here, so this
+                        //  arrived as `undefined` and Heist_materialise_one's early-out
+                        //   `(!!rec.sc.lofi) === (!!lofi)` read as a MISMATCH for any lofi rec — it then
+                        //    re-read the ORIGINAL file over a promise whose body_hash was the ogg's, so
+                        //     the hash could never match and the want parked forever against bytes that
+                        //      would never come. The rec in hand already knows what it is; ask for that.
+                        try { await this.Heist_materialise_one(w, hnav, String(w.c.repli_mirror_pier || ''), String(rec.sc.id), rec.sc.lofi ? 1 : 0) } catch (er) {}
                     }
                 }
                 continue

@@ -1,10 +1,13 @@
 # Backpressure_todo.md — making the transfer a req-driven machine with a control loop
 
 The download works and is honest about its bytes. What it does not have is a **closed loop**:
- every knob in it is a constant, every stage shares one 600ms beat, and the signals that exist —
+ every knob in it is a constant, most stages share one 600ms beat, and the signals that exist —
   a live rate graph, drop messages, `ws.bufferedAmount` — are either consumed by no code at all
    or read on the path we don't use. This doc is the plan to fix that shape, not to re-tune the
     constants.
+*(2026-08-08: "most", not "every" — the two janitors, `Ra_shuffle_cull` and `Stoker_tour`, now fly
+ detached off the beat, `Composition_todo` §3.7. `Heist_keep_beat`, the flush and the friend-offer
+  loop still share it, which is what the rest of this doc is about.)*
 
 None of this is a new problem. It is flow control and congestion control, a literature forty
  years deep, and each section below names the standard result it is applying — because the failure
@@ -364,15 +367,33 @@ This is §3.1c's rule wearing the PCM hat — **eviction may not break admission
           are two different organs, and a belt without admission upstream of it is a livelock
            generator for any working set larger than the cap.**
 
-**The residual, measured the same evening and deliberately NOT retuned live:** the CAP/2 budget is
- conservative enough that ONE long track streaming (394s ≈ 150MB of PCM) nearly fills it, so a new
-  stream want queued ~145s at `off=16` before admission (still 3–10× better than the 480–1438s the
-   thrash produced, but user-visible as a slow stream start). Two candidate cures, pick ONE with a
-    measurement in hand: (a) charge the REAL estimate instead of CAP/4 — `secs × 192000 × ch` if the
-     card carries a duration — and admit against CAP instead of CAP/2, accepting a rare belt-shed
-      when an estimate lies; or (b) mirror §3.1c properly: a standing `%parked_want` VETOES the belt
-       for that rec (the sweep's "a belt that can be vetoed is not a belt" then needs a second,
-        harder bound behind it). Do not do either mid-listen; re-measure the queue wait first.
+**The residual, measured the same evening:** the CAP/2 budget is conservative enough that ONE long
+ track streaming (394s ≈ 150MB of PCM) nearly fills it, so a new stream want queued ~145s at `off=16`
+  before admission (still 3–10× better than the 480–1438s the thrash produced, but user-visible as a
+   slow stream start). Two candidate cures were named: (a) charge the REAL estimate instead of CAP/4
+    and admit against CAP instead of CAP/2, accepting a rare belt-shed when an estimate lies; or
+     (b) mirror §3.1c properly — a standing `%parked_want` VETOES the belt for that rec (the sweep's
+      "a belt that can be vetoed is not a belt" then needs a second, harder bound behind it).
+
+**Cure (a) has since landed, at a SECOND site — `Ra_pcm_admit` (2026-08-08, `Ra.g`).** The pump's
+ CAP/2 census above still stands and still gates which parked ids get a transcode ensured; `Ra_pcm_admit`
+  sits one layer lower, at the decode kick inside `Ra_transcode_ensure`, and answers the finer question
+   *"may this record start a whole-file decode right now?"*:
+- charges a real per-record estimate, `Ra_pcm_est` = `secs × 48000 × nch × 4` (an unknown duration
+   assumes a big one on purpose — over-estimating costs a wait, under-estimating is the livelock);
+- counts bytes already **held** *and* bytes already **in flight** (`pcm_pending` records have not called
+   `Ra_pcm_hold` yet, so a hold-only census would admit the whole thundering herd in one beat);
+- admits against the **full CAP**, with a **playing-record override** (`Ra_pcm_playing`, bounded by
+   there being one playhead) so a listener is never starved by speculative demand;
+- refusal is **not failure** — no backoff is climbed, the want stays parked, and one `pcm-wait` trace
+   per 5s per record keeps a merely-waiting queue distinguishable from a stuck one.
+
+⚠ **One part of it is reasoning, not measurement.** The **lone-candidate floor** — admit regardless of
+ size when nothing is held and nothing is in flight — exists because `want` alone passes 384MB somewhere
+  past ~17.5 minutes at 48kHz stereo Float32, so a DJ set or a podcast would otherwise be refused
+   *forever* with no backoff to let it through. Its own comment says it was *"found by an adversarial
+    read, NOT by a run — nobody has yet watched a 20-minute track play."* The arithmetic is checkable;
+     the behaviour is not yet observed. Cure (b) was not built and is not needed unless this proves thin.
 
 ### 3.2 The sink is blind to why a want went unanswered — a timeout is the weakest signal
 
@@ -456,8 +477,11 @@ moment the playhead is about to hit silence.
 as yielding to the *next track's* prefetch. It does not: `Radio_prime` never asks over the wire, it only
 decodes chunks already held (`Radio.g:557` — `if (m.bytes[start] == null) return`). What the top rung
 actually yields to is `Heist_keep_beat` and the friend-offer loop sharing the same serial beat. Still
-worth having, for a different reason than intended — and see `Composition_todo` §3.6, which is the same
-convoy from the other end.
+worth having, for a different reason than intended — and see `Composition_todo` §3.6, which argued the
+same convoy from the other end. ⚠ **§3.6's named mechanism was REFUTED by measurement the same day**
+(the beat was held by the cull, not by `keep`); it is kept there deliberately as a worked example. Its
+*instinct* was later half-vindicated by §3.12 — a heist really does destroy the radio's supply, through
+the PCM belt rather than through the beat. Cite §3.7 and §3.12, never §3.6.
 
 **Status: compiled, gated, and HEARD BY NOBODY.** The 8s gate is `humdinger`-gated (it moves when a
 track becomes eligible, and every Book timing moves with it — the trap that turned MusuHeist red when
@@ -467,8 +491,12 @@ audio path validated only by reading.** Treat the next real listen as the test.
 
 **The instrument, when a gap does happen:** `w.c.lead_s` (off-snap) beside the `cull=/tour=/peers=/keep=`
 split now in the skip line. Low `lead_s` with beats running ⇒ starved of ASKS, and the ladder is wrong
-or too shy. `keep=` dominating ⇒ starved of BEATS, and §3.6 is the real fault — the ladder cannot help,
-because a budget of 6 spends nothing if the beat never runs.
+or too shy. `keep=` dominating ⇒ starved of BEATS — the ladder cannot help, because a budget of 6
+spends nothing if the beat never runs.
+ **Read the split as a progress bar, not a cost table** (`Composition_todo` §0): it is zeroed at the top
+  of each beat and each field stamped only on completion, so the last non-zero field is how FAR the
+   stuck beat got. And since 2026-08-08 `cull=`/`tour=` measure only the cost of *kicking* a detached
+    janitor (≈0) — the real durations arrive as `cull_bg=`/`tour_bg=` in the same line.
 
 ## 4. The refactor: `%Haul` grows a req pile
 

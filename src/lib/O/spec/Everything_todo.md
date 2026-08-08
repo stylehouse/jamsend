@@ -349,6 +349,20 @@ Editor→runner channel (version handshake → acquire-then-poll is "THE next ed
  `active_transport` keystone reportedly still not live), dual-LE Sidetrack
   crossfade, and the Peeroleum spec items — all set aside here.
 
+**Cluster addressing — `header.from` is not an address (well beyond v1.0).** Surveyed the whole
+ ping|pong / send / deliver path 2026-08-08; the mess and its tells live in `ClusterAddressing_todo.md`
+  §6. Short version: four "who sent this" channels, and the authoritative-looking `header.from` is the
+   one field neither routed on nor verified — so runner acks mis-route to the role-slot Pier (dev emits
+    strand), N runners share one editor inbox (reused-seq false collisions), and a from-less ping fans
+     out to a false-live pong. The **production-facing** hole (an unauthenticated `become <prepub>`
+      shadow-subscribing a verified identity's frames) is **already fixed** in `relay.ts` +
+       `relay-test.ts`. The remaining fix — unify `header.from` onto the hello-bound prepub, delete the
+        three body-`from` patches — is **spine surgery** (`Peeroleum.g` recompile → `pinned_stable`
+         promotion → every wire Book re-baselines) and it lands dead-center in ClusterAddressing §4/§4.5's
+          unresolved address-model decision. So it waits for a dedicated addressing session, not a
+           go-live week. The end-user path (Swarm, `to:<prepub>` + signed voucher) never trusted
+            `header.from`, which is why this is deferrable.
+
 **`LiesWorkup.svelte` (shelved) — branch-awareness on top of the LE.** The most
  coherent way to read it: where LiesEnd gives one Understanding at one target,
   LiesWorkup gives that Understanding a *working branch* — touring the What**

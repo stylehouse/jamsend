@@ -615,8 +615,17 @@ Vyto_mirror_find_in(parent, tok):
 Vyto_pointer_enter(w, tok):
     if (!tok) return
     if (!w.c.calm) w.c.calm = new TheC({ c: {}, sc: { Calm: 1 } })
-    w.c.calm.i({ Hold: 1, scope: tok, position: 1, pin: 1, while: 'pointer', by: 'Calm' })
-    w.c.calm.i({ Hold: 1, scope: tok, size: 1, damp: 0.3, while: 'pointer', by: 'Calm' })
+    // `oai`, NOT `i` (2026-08-08).  `i()` MINTS UNCONDITIONALLY, so every pointerenter on the same
+    //  cell added two more identical %Hold rows.  They are retired only by `Vyto_pointer_leave`, which
+    //   depends on the browser delivering `pointerleave` — and a keyed re-mint of the <path> under the
+    //    pointer (exactly the churn this glass does constantly) can swallow that event. So the pile
+    //     grew without bound for the life of the tab, and every one of them was then re-read by
+    //      `Vyto_calm_held`, which runs a real o({Hold:1}) query per cell per channel per frame.
+    //  Find-or-create is the correct shape regardless: entering a cell you are already on is not a
+    //   second hold, it is the same hold. Duplicates never changed the VERDICT (any pin wins), so this
+    //    is a cost and a leak, not a behaviour change — the pin still lands on the first enter.
+    w.c.calm.oai({ Hold: 1, scope: tok, position: 1, pin: 1, while: 'pointer', by: 'Calm' })
+    w.c.calm.oai({ Hold: 1, scope: tok, size: 1, damp: 0.3, while: 'pointer', by: 'Calm' })
     w.c.pointer = tok
     // flip the Calm organ row live on first mint (the Scan/Express flip idiom — the board row
     //  is the organ's public face, stub until its body first fires).

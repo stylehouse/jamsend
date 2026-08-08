@@ -8,6 +8,14 @@ Companion to `Cluster_spec.md` (§3.2b boot→channel map, §3.3 Brink badges + 
 
 ## 0. What to get on with next
 
+- **NEW 2026-08-08 — `header.from` is not an address; the wire trusts it and never verifies it (§6).**
+   Four "who sent this" channels, and the authoritative-looking one is unrouted + unverified. Findings
+    ranked in §6: acks mis-route to the role-slot Pier (dev emits strand), N runners share one inbox
+     (reused-seq false collisions), from-less ping fans out to a false-live pong. The one
+      production-facing hole — `become <prepub>` shadow-subscribing a verified identity — is **FIXED**
+       this pass (`relay.ts`, `relay-test.ts`). The `header.from`→prepub unification is spine surgery
+        that intersects §4/§4.5's unresolved address-model question, so it is **deferred past v1.0**
+         (tracked from `Everything_todo`'s ClusterAddressing line). Read §6 before touching the wire.
 - **NEW 2026-08-08 — two channels share one prepub, so every peer frame is delivered twice (§4.5).**
    Traced to source: `Swarm_station_up` and `Lies_channel_up` each stand up a `Socket_real` on their own
     world, and both bind the identity because both genuinely need `to:<prepub>`. Nothing is
@@ -175,6 +183,8 @@ or B dropping its identity bind and taking cluster traffic by role only) is a re
 is the human's call and not a tidy-up. **Do not "fix" it by deduping** — the dedup already exists; the
 duplicate delivery is the symptom, the shared address space is the thing.
 
+## 5. The 2026-08-06 needsFSA mess — a refusal must be reportable
+
 `needsFSA` in a `runner_ask run` reply is the **Book's declaration echoed back**, not a refusal —
  `LiesFunk.svelte` builds the reply from `ask.needsFSA` and sets `accepted:true` in the same object.
   The CLI printed a warning for it unconditionally. Two independent readers concluded the runner lacked
@@ -192,3 +202,134 @@ Fixed by `Lies_book_refuse` (`.c`-only) → surfaced on the `state` reply as `re
   reportable at the moment it happens, in a place a client already reads. A gate that refuses into the
    void is worse than no gate, because the absence gets explained by whatever plausible thing is
     nearby.**
+
+## 6. The `header.from` survey (2026-08-08) — four findings, read from source
+
+Prompted by the human noticing `from:"runner"` on the wire beside a body-level `from:<prepub>`.
+ The short truth: **there are four "who sent this" channels, and `header.from` — the one that looks
+  authoritative — is the only one neither routed on nor verified.** `header.to` routes
+   (`relay.ts headerTo`); body `from` is patched in by hand three times (ping/pong/advertise,
+    `LiesLies.svelte:1315,1347,1482`, each with its own humdinger guard); the Swarm carries
+     `page.prepub` + a signed voucher and **deliberately ignores `header.from`** (`Swarm.g:468` says
+      why). `header.from` is just `peering%name` — on the Lies channel, the role string.
+ **Parked well beyond v1.0** (the human's call, 2026-08-08): the fix — make `header.from` the
+  hello-bound prepub, same namespace as `to`, retiring the three body-`from` patches — is §4's
+   collapse question wearing work clothes, and it lands inside §4.5's unresolved shared-prepub
+    ambiguity. Spine surgery (`Peeroleum.g` → gen → pinned_stable promotion + wire-Book fixture
+     churn), so NOT a pre-production tidy-up. Listed in `Everything_todo.md` §Parked.
+
+The findings, each with its production-ops **tell** so nobody misdiagnoses live:
+
+- **6.1 Acks from a runner never retire an ADDRESSED emit.** `Peeroleum_send_to` books the outbox
+   emit on the promoted Pier (`pub:<prepub>`, `Lies_runner_pier`), but the runner's ack comes back
+    `from:'runner'` (`Peeroleum.g req_unemit`, `me = pier.c.up%name`), so the editor's
+     `Peeroleum_route(…, 'to')` resolves the ROLE-slot Pier (`pub:'runner'`) and `Peeroleum_take_ack`
+      searches the wrong outbox. Every `rungo`/`ghost_compile`/`ghost_ledger`/addressed `become_book`
+       emit strands un-acked, accumulating toward the 2000 backstop. Bonus hazard: promoted Piers
+        allocate seq from 1 per promotion, so an `ack:1` can false-positive onto an unrelated
+         role-Pier emit with seq 1. **Tell:** a `%outbox` steadily filling with `sent`-never-`acked`
+          rungo/ghost_compile emits on a healthy channel is THIS, not a dead runner.
+- **6.2 N runners share ONE inbox on the editor.** Same mis-route: every runner's booked frame
+   carries `from:'runner'`, so all of them land in the single role-slot Pier's inbox, whose dedup
+    key is `(seq,type)` only (`Peeroleum_book_unemit`). Two runners whose seq counters collide (two
+     tabs reloaded together march in near-lockstep) → the second frame hits the reused-seq collision
+      path: re-acked, **never dispatched**. **Tell:** `reused-seq collision … a reborn peer wants the
+       epoch reset` with 2+ live runners and NO reload is THIS, not a reborn peer.
+- **6.3 The fan-out pong keeps the wrong runner alive.** A from-less ping (editor's own, or any
+   humdinger's) falls to `Peeroleum_send_consumer` → `to:'runner'` → `deliverLocal` fans to EVERY
+    bound runner. `Lies_pong_recv` computes `rtt = now - fr.t` and stamps `last` without checking
+     the echo was OUR ping — so runner B's 20s watchdog is kept green by runner A's heartbeat.
+      The 2026-07-05 flap was the starvation face of role addressing; this is the **false-live**
+       face. **Tell:** a runner whose `%channel_peer` reads fresh while its own sends strand.
+- **6.4 `become <prepub>` shadow-subscribes a verified identity — FIXED 2026-08-08.** The §4a
+   widening (`SANE_ROLE`) let an unauthenticated socket `become <any 16-hex prepub>`: `bind` is
+    additive, `deliverLocal` fans out, so it received a COPY of every frame addressed to a
+     hello-verified identity (swarm frames, music chunks, wormhole replies). Now refused shape-wise
+      in `relay.ts` (`IDENTITY_SHAPED`, ≥16 pure hex — identities bind via signed hello alone);
+       three checks in `relay-test.ts` gate it. **THE TWIN DOOR IS STILL OPEN:** `?addr=<prepub>`
+        at connect time is the same unauthenticated additive bind, and it is load-bearing for the
+         pre-hello window (`Swarm_station_up` dials `?addr=<own prepub>`). Closing it needs §2's
+          precondition first (one-shot senders wait for `hello_ok`/role ack), else legitimate first
+           frames drop silently. Until then, `to:<prepub>` privacy is NOT enforced against a
+            pre-claiming eavesdropper.
+
+**Cluster_spec con
+
+## 6. `header.from` is not an address — the field the wire trusts and never verifies (2026-08-08)
+
+Surveyed the whole ping|pong / send / deliver path end to end (`Peeroleum.g`, `LiesLies.svelte`,
+ `relay.ts`, `Swarm.g`). There are **four** distinct "who sent this" channels, and `header.from` — the
+  one that reads as authoritative — is the only one that is neither routed on nor verified.
+
+| field | set by | is it an address? | who reads it |
+|---|---|---|---|
+| `header.to` | sender | **yes — the ONLY routed field** (`relay.ts` `headerTo`→`deliverLocal`) | the relay |
+| `header.from` | `peering%name` (`Peeroleum_send_*`, `Peeroleum.g`) | **no** — on the Lies channel it is the local *role slot* (`'runner'`/`'editor'`) | `Peeroleum_route`'s Pier pick; console logs |
+| body `from` | patched in by hand | yes (prepub) | `Lies_pong` / `Lies_pong_recv` / `Lies_advertise` (`LiesLies.svelte`) |
+| `swarm.page.prepub` + `swarm.voucher.from` | Swarm | yes (prepub, **signed**) | `Swarm_deliver` (`Swarm.g:466`) — which **deliberately ignores `header.from`** |
+
+`Swarm.g:468` says it outright: *"the relay routes on header.to only and never checks header.from, so
+ on a LIVE station any socket could forge a sealed friend's prepub."* That is why Swarm grew a **voucher**
+  instead of trusting the header. The Lies channel never got that memo — it grew a **second `from` in the
+   body** instead, three separate times (`ping`/`pong`/`advertise`), each with its own humdinger guard.
+
+**This conflicts with `Cluster_spec.md` §3.2a/§3.2b, and the SPEC is the stale one until this lands:**
+- §3.2a/§3.2b (the substrate paragraph): *"the relay binds **one socket per addr** — `become runner` is
+   a single slot, not a subscription … the relay never honoured that [fan-out]."* **Wrong.** `relay.ts`
+    `bind` accumulates into a **Set** and `deliverLocal` fans out to every socket in it (this doc's §2 and
+     §4.5 already state the corrected mechanism). The real 2026-07-05 starvation was `routeFromBrowser`'s
+      **local-first-else-bridge** short-circuit: one local runner satisfies the deliver and the frame is
+       never forwarded, so the bridge runner never sees it. Same fix, wrong stated reason.
+- §3.2 hello text: *"to:<pub> then routes to a VERIFIED identity, not a self-asserted string."* True of
+   the hello-bound socket — but `bind` is additive, so before §6's fix a `become <prepub>` bound a
+    SECOND, unauthenticated socket under the same addr and `deliverLocal` fanned a **copy** to it. "Routes
+     to a verified identity" was "…plus anyone who claimed the name." (Closed for the `become` door
+      below; the `?addr=<prepub>` door stays open by design — §2's precondition gates it.)
+
+### The findings (ranked by blast radius)
+
+1. **Acks from a runner never retire the emit they ack.** `Peeroleum_send_to` books the outbox emit on
+    the *promoted* Pier (`pub:<prepub>`, `Lies_runner_pier`). The runner's ack returns `from:'runner'`
+     (`me = pier.c.up%name`), so `Peeroleum_route` resolves it to the **role-slot** Pier (`pub:'runner'`)
+      and `Peeroleum_take_ack` searches THAT Pier's outbox. Every addressed `rungo`/`ghost_compile`/
+       `ghost_ledger`/`become_book` emit strands un-acked. Worse: a promoted Pier's `Pier_next_seq` starts
+        at 1, so `ack:1` can false-positive onto an unrelated role-Pier emit with seq 1. **Tell:** a
+         `%outbox` slowly filling with un-acked addressed emits is THIS, not a dead runner.
+2. **N runners share one inbox on the editor.** All runner frames carry `from:'runner'`, so they book
+    into the single role-slot Pier's inbox, whose dedup key is `(seq,type)` only (`Peeroleum_book_unemit`).
+     Two runners' `run_result` on the same seq → the second is treated as a **reused-seq collision**,
+      re-acked, never dispatched (`Peeroleum.g:722`). **Tell:** the log line *"reused-seq collision …
+       a reborn peer wants the epoch reset"* with two live runners up is THIS, not a reborn peer.
+3. **From-less ping → fan-out pong → false-live.** A ping with no body `from` (every humdinger room, and
+    an editor's own ping) fails `Lies_pong`'s `/^[0-9a-f]{16}$/` test → falls to `Peeroleum_send_consumer`
+     → `to:'runner'` → `deliverLocal` fans to **every** runner. `Lies_pong_recv` computes `rtt =
+      Date.now() - fr.t` with no check that `fr.t` was *our* ping, and stamps `last` — so one runner's
+       watchdog is kept green by another's heartbeat. A false-live, not a flap.
+4. **`become` bound any SANE_ROLE name, prepub shape included** (`relay.ts`, landed d991cad2, the same
+    day this door widened). An unauthenticated socket could `become <prepub>` and receive a copy of every
+     frame addressed to a verified identity. **FIXED in this pass** (the "Do now, no spine" item): an
+      identity-shaped role (`/^[0-9a-fA-F]{16,}$/`) is refused outright; identities bind via signed
+       `hello` alone. Covered by `relay-test.ts` ("become <prepub> refused", "shadow-subscriber got no
+        copy"). The `?addr=<prepub>` door is intentionally left — it is load-bearing for the pre-hello
+         window and needs §2's hello_ok precondition before it can close.
+
+### The fix (deferred — it intersects §4/§4.5, so it is the human's call, not a tidy-up)
+
+Make `header.from` carry the **hello-bound prepub** on every frame (same namespace as `to`) and delete
+ the three body-`from` patches (ping/pong/advertise). That makes `Peeroleum_route`'s Pier pick correct
+  per-runner and closes findings 1–3 at once. Two things to settle first:
+- **First-contact Pier promotion** for an unknown prepub on the RECEIVE side — transport-level only, so
+   roster enrollment stays advertise's job and the humdinger leak does not reopen.
+- **It is spine surgery.** `Peeroleum.g` → ghost-compile → `gen/N/` → hand-copy to `p2p/pinned_stable/`,
+   and every wire Book's fixtures re-baseline. This is exactly the pre-production networking churn to
+    avoid on a go-live week — and it lands dead-center in §4.5's shared-prepub-address ambiguity, which
+     §4 already parks as an unresolved routing decision. Decide the address model there FIRST; unifying
+      `header.from` before that risks baking in the ambiguity.
+
+**Why this is safe to defer past v1.0.** The production/end-user path is the **Swarm** channel, which
+ routes `to:<prepub>` and carries its own signed identity precisely because it never trusted
+  `header.from`. Findings 1–3 bite the **editor↔runner dev cluster** (stranded dev emits, shared-inbox
+   collisions with 2+ runners) — operational friction, not user-facing. The one genuinely
+    production-facing hole was #4 (unauthenticated eavesdrop on a verified identity), and that is fixed
+     now. So: mess recorded here with its tells, #4 closed in `relay.ts`, the rest deferred to the
+      addressing-model session.
