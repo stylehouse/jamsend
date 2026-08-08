@@ -1559,6 +1559,25 @@ Stoker_cull(st, shelf, radio):
         if (over < 1) break
         if (r === playing) continue
         if (!heard[r.sc.id]) continue
+        // THE THIRD RETIRE SEAM, wired like the other two (2026-08-08, §3.9/§3.13).  This drop used to
+        //  be bare — no retire_due, no barren-clear, no trace — so a cull past the 44-cap retired
+        //   records every friend's mirror still listed, silently.  It could NOT have caused the
+        //    measured storm (heron sat at stock=8, far under the cap), which is exactly why it was
+        //     easy to leave latent: the seam only bites on a tab that actually fills its shelf.
+        //  Same three moves as Stoker_tour's whittle: un-barren the path (the wheel must be able to
+        //   find the track again), ledger the id (the share beat flushes it as op:delete to every
+        //    registered caster), and mark the summary.
+        if (r.sc.path) {
+            let bar = this.top_House().c.dig_barren
+            let want = String(r.sc.path)
+            if (bar) {
+                for (const k of Object.keys(bar)) {
+                    if (k === want || k.endsWith('/' + want)) delete bar[k]
+                }
+            }
+        }
+        shelf.c.retire_due = shelf.c.retire_due || []
+        shelf.c.retire_due.push(String(r.sc.id))
         shelf.drop(r)
         over = over - 1
         worn = worn + 1
@@ -1566,6 +1585,7 @@ Stoker_cull(st, shelf, radio):
     if (worn > 0) {
         st.sc.worn = (+(st.sc.worn || 0)) + worn
         st.bump()
+        if (typeof this.Radio_trace === 'function') this.Radio_trace(null, { ev: 'stoker-cull', worn: worn, stock: recs.length - worn })
     }
 
 // Stoker_tour — THE CONVEYOR.  The owner, 2026-08-07: "Mag:shuffle seems to have an end, but it can

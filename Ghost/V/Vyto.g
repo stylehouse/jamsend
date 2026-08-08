@@ -588,7 +588,13 @@ Vyto_calm_held(w, cell, channel):
 //   eases base → 1 along a cubic ease-out over ease_ms, and when the tail completes (u ≥ 1) the
 //    row RETIRES (dropped from w.c.calm — the .o() snapshot makes the mid-walk drop safe).
 Vyto_strength_now(w, h, now):
-    let base = h.sc.pin ? 0 : (Number(h.sc.damp) || 0)
+    // A MALFORMED ROW MUST NOT BE A PERMANENT PIN (Vyto_todo §0.2(b), 2026-08-08).  This read was
+    //  `Number(h.sc.damp) || 0`, so a %Hold with neither `pin` nor `damp` — or a garbage damp —
+    //   silently returned 0, the strongest hold there is, forever.  Absent|NaN now reads FREE (1):
+    //    the honest default for a row that never said what it wants.  A CONFIGURED damp:0 still
+    //     holds fully — `== null` distinguishes absent from zero, which `||` cannot.
+    let d = Number(h.sc.damp)
+    let base = h.sc.pin ? 0 : (h.sc.damp == null || !isFinite(d) ? 1 : d)
     if (h.sc.released_at == null) return base
     let ease = Number(h.sc.ease_ms) || 1
     let u = (now - Number(h.sc.released_at)) / ease

@@ -177,6 +177,42 @@
         //         untouched.  The stance is legibly snapped as Lies%humdinger on w:Lies at mint.
         Lies_humdinger(_w?: TheC): boolean { return !!(this as House).top_House().c.humdinger },
 
+        // Lies_player_seen — may this end-user room be SEEN on the grid?  (2026-08-08, the owner: "we just
+        //  need to avoid shooting other Books at them, because they aren't free to borrow test runners like
+        //   the runners are.")
+        //  The humdinger gate above conflated TWO things — being VISIBLE (presence, addressability) and
+        //   being DISPATCHABLE (eligible to receive Book runs) — and gated both by suppressing presence,
+        //    because presence is what enrolls.  The cost was total blindness: a Sounditron cannot be pinged,
+        //     dumped, poked or reloaded, so every question about the live pair had to go through the human,
+        //      and the one experiment that matters (reproduce a one-sided reload, watch the reheal fire)
+        //       could not be run at all.
+        //  SPLIT THEM, and split them by ROLE VALUE rather than a flag on role:runner.  That is the whole
+        //   safety argument: EVERY consumer of the registry filters `role === 'runner'` — dispatch
+        //    (Lies_dispatch_target's dirPubs :563, Lies_rungo_target :1725), the Brink counts
+        //     (LiesFunk :1902/:3426), this file's own roster projection (:1605), and scripts/runner_ask.mjs
+        //      itself — so `role:'player'` is excluded from all of them BY CONSTRUCTION, with no edit to any.
+        //       A boolean flag would have needed every one of those sites found and patched, and the leak
+        //        history says there are always more sites than you think (this gate is FOUR: advertise,
+        //         going_cold, and the `from` suppressions on ping + pong).  It is also the repo's own data
+        //          model: a player is not a runner-with-a-flag, it is a different kind of thing, so it wears
+        //           a different value.
+        //  NON-PRODUCTION ONLY.  Gated on the diagnostic arm that already exists — the same one
+        //   Lies_dump_socklog uses to decide whether to write traces (the 🪪 toggle's persistent
+        //    localStorage arm, or a ?socklog / ?watch boot).  An ordinary end-user's music page is never
+        //     armed, so it stays exactly as invisible as it is today: this widens the diagnostic
+        //      population, never the public one.
+        //  TWO LOCKS, and they answer different questions.  `production` is the DEPLOYMENT stance (stamped
+        //   fail-closed in BigQualand: dev build AND not a prod host) — in production a room speaks to its
+        //    peers over the relay and takes no part in any Cluster, full stop, and no localStorage key a
+        //     user could acquire can change that.  The diagnostic arm is then the per-tab opt-in WITHIN a
+        //      dev build, so an ordinary dev tab is still invisible until someone deliberately arms it.
+        Lies_player_seen(w?: TheC): boolean {
+            const H = this as House
+            if (!H.Lies_humdinger(w)) return false
+            if (H.top_House().c.production) return false
+            try { return socklog_armed() || sockcap_count() > 0 } catch { return false }
+        },
+
         // Lies_channel_live — v1 send-readiness: the channel stood up and a transport
         //  carrier is wired.  Stands in for Peeroleum_peer_ready while this consumer is
         //   trust-everything (Lies_channel_up stamps Ud, drives no handshake): we address
@@ -1434,7 +1470,11 @@
             // an end-user Big*land room is machine-role runner but must NOT enter the editor's dispatch
             //  pool — one beacon enrolls it durably (Lies_runner_roster names every sender role:runner),
             //   then Story runs land on someone's music page.  Lies_humdinger is the whole gate.
-            if (H.Lies_humdinger(w)) return
+            //  …UNLESS it is a diagnostic-armed room (Lies_player_seen, 2026-08-08): then it DOES beacon,
+            //   carrying `player:1`, and the roster stamps `role:'player'` — visible + addressable, and
+            //    excluded from every dispatch query by that role VALUE rather than by silence. The dispatch
+            //     harm the original gate prevents is preserved exactly; only the blindness is lifted.
+            if (H.Lies_humdinger(w) && !H.Lies_player_seen(w)) return
             if (!H.Lies_channel_live(w)) return
             // WHO we advertise AS must be the prepub the relay HELLO bound us under — else the editor
             //  addresses to:<pub> nobody is bound to and the relay drops it.  Lies_self resolves that exact
@@ -1479,7 +1519,13 @@
             //    16-hex string.  prepub = prepubOf(pub) so they never disagree; an OLD editor ignores the
             //     extra key (grants the prepub as before — feature-detected, fully back-compatible).
             const full_pub = H.Lies_cluster_idento(w)?.pub
-            ;(H as any).Peeroleum_send_consumer(w, 'advertise', { from: self.prepub, ...(full_pub ? { pub: full_pub } : {}), ready: 1, ...facets })
+            // `player:1` rides BESIDE the facets, not inside RUNNER_FACETS, deliberately: it is a durable
+            //  fact about WHAT THIS TAB IS, not a live facet that can flip — so it must not enter the
+            //   throttle sig (a sig key that never changes is dead weight) and must not be clearable by a
+            //    going-cold beacon's facet-omission (which would silently promote a player to runner and
+            //     put a music page back in the dispatch pool — the exact leak).  Same shape as `pub`.
+            const player = H.Lies_player_seen(w) ? 1 : 0
+            ;(H as any).Peeroleum_send_consumer(w, 'advertise', { from: self.prepub, ...(full_pub ? { pub: full_pub } : {}), ready: 1, ...(player ? { player: 1 } : {}), ...facets })
         },
         // Lies_ac_nudge — the Sound Brink calls this the instant a gesture unlocks (or an init settles)
         //  the AudioContext, so the runner re-advertises ac:1 to the editor NOW rather than waiting for
@@ -1537,8 +1583,10 @@
         Lies_going_cold(w: TheC) {
             const H = this as House
             if (H.Lies_role(w) !== 'runner') return
-            // never advertised (humdinger room) ⇒ no cold beacon either — nothing to clear
-            if (H.Lies_humdinger(w)) return
+            // never advertised (humdinger room) ⇒ no cold beacon either — nothing to clear.  A
+            //  diagnostic-armed player DID advertise, so it must be able to go cold too, or its row
+            //   would read live for 45s after the tab closes.
+            if (H.Lies_humdinger(w) && !H.Lies_player_seen(w)) return
             if (!H.Lies_channel_live(w)) return
             const self = (H as any).Lies_self?.(w) as { prepub: string } | undefined
             if (!self?.prepub) return
@@ -1568,6 +1616,7 @@
             const b: Record<string, any> = { last_heard: Date.now() }
             for (const f of RUNNER_FACETS) b[f.k] = f.kind === 'text' ? (fr?.[f.k] ? String(fr[f.k]) : '') : !!fr?.[f.k]
             if (fr?.pub) b.pub = String(fr.pub)   // the runner's FULL pub (Organ 4 part 3) — prepubOf(pub) === from
+            if (fr?.player) b.player = 1          // a diagnostic-armed end-user room: seen, never dispatched
             beacons[from] = b
             // no snap mutation, no bump here — the in-think projection owns the snapped tree.
         },
@@ -1594,7 +1643,18 @@
             //  The beacon carries no authority over favourite_client — left untouched (registry-only).
             for (const pub of Object.keys(beacons)) {
                 const hi = cluster.oai({ HostedIdentity: pub }) as TheC
-                if (hi.sc.role !== 'runner') { hi.sc.role = 'runner'; changed = true }
+                // A PLAYER IS NOT A RUNNER (2026-08-08).  `player:1` on the beacon means a diagnostic-armed
+                //  end-user room: it must be SEEN (addressable for ping/dump/poke) but must NEVER be
+                //   dispatched a Book — the owner: "they aren't free to borrow test runners like the runners
+                //    are."  Every dispatch query filters `role === 'runner'`, so this role VALUE is the whole
+                //     exclusion, enforced at the one place a role is ever stamped.
+                //  The transition is one-way on purpose: a row that has been a player STAYS a player even if
+                //   a later beacon arrives without the flag (a going-cold beacon omits facets, and a
+                //    disarmed tab stops beaconing entirely rather than beaconing as a runner).  Promoting a
+                //     music page back into the dispatch pool is the exact leak this whole gate exists to
+                //      prevent, so it may not happen by omission.
+                const want_role = (beacons[pub]?.player || hi.sc.role === 'player') ? 'player' : 'runner'
+                if (hi.sc.role !== want_role) { hi.sc.role = want_role; changed = true }
                 // Record the runner's FULL pub (Organ 4 part 3) beside its prepub key, so a grant we mint
                 //  for it carries a verifiable `for` (prepubOf(pub) === the HostedIdentity key).  Durable
                 //   identity fact, not a live facet — set once, never cleared on silence.

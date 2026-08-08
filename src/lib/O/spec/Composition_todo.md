@@ -294,6 +294,7 @@ Sized to 0b: one session holds the runner, the rest stay in the unlimited tier. 
 | **`Stoker_tour` flies detached too**, same contract (`tour_flying`, reported as `tour_bg`) | `Swarm_tour_detached`/`Swarm_tour_done`, `Swarm.g` | §3.7 |
 | the **goner-diff runs live at last** — tour whittle *and* cull both ledger to `stock.c.retire_due`, flushed each beat | `Repli_retire_flush` (`Repli.g`), call in `Swarm.g` | §3.9 (1) |
 | a **bounded backoff on told misses** — `ra_missed` finally has a reader on the music path | `Repli_missed_hot`, wired at `Ra_mag_warm` + `Ra_restock_beat` | §3.9 (2) |
+| the **serve path reheals from disk** — a want for an un-standing id resurrects its radiostock card (own-pub, then cross-pub) and serves the same want | `Ra_reheal_id` + `Ra_stock_open` (`Ra.g`), hook in `Repli_serve_want` (`Repli.g`) | §3.13 |
 | **PCM admission control** — the belt on its own livelocked every track at 0:32 | census gate in `Ra_transcode_pump`, plus `Ra_pcm_admit` at the decode kick (`Ra.g`) | §3.12 |
 | **the restock gate** — deep speculative restock is held while the playhead has <16s banked | `w.c.lead_s` / `w.c.restock_held`, printed in the skip line (`Swarm.g`) | §3.12 |
 | **tier-one supervisor** — notice-only; watches the beat phase *and* the two detach latches | `Swarm_watch_loop` / `Swarm_beat_health` / `Swarm_detached_health`, `Swarm.g` | `Supervisor_todo` |
@@ -644,6 +645,7 @@ The load-bearing claim is **the beat never overruns its cadence for a run of tic
 | §3.10 | the transcode frontier can outrun the playhead — what remain are wedges | **SOURCE-VERIFIED**; item 1 open as an `Ra.g` handoff, item 2 superseded by §3.12 |
 | §3.11 | `MusuNeGrind` — the design, and the gate it became | **GREEN + VERIFIED BY MUTATION**; §0 item 1 CLOSED. Gates the janitor/wire seam only |
 | §3.12 | the PCM belt livelocks — the 32s ceiling, the pinned CPU, the dropped frames | **MEASURED, FIXED**; one lead (`×2` on every RECV) explicitly not built on |
+| §3.13 | the serve path never looked at disk — 98% of the miss storm was servable | **MEASURED, SHIPPED** (`Ra_reheal_id`); live verification pending |
 
 ---
 
@@ -852,6 +854,9 @@ Three phases at **zero**, one at up to **29.7 seconds**, against a 600ms cadence
  **The live tell to watch for:** the per-id `serve want … no record for id` storms should stop
   RECURRING for newly-dropped ids. **Existing stale ids only heal when their record next drops or the
    mirror is reborn** — so a first reading after this ships will still show old ones.
+ **Requantified 2026-08-08 (§3.13): retirement explains ~2% of the observed miss storm** (1 of 61
+  distinct ids genuinely gone; the rest were on disk and unservable only because the serve path never
+   looked). This seam is still right — it is just not the storm's body.
 
 **2. SHIPPED — the bounded backoff on told misses.** `Repli_missed_hot(w, id)` (`Repli.g`
  `b85a7196c9b5fa38`) is the shared, **self-expiring** read: disclaimed within `ra_missed_hold_ms` (60s)
@@ -1157,6 +1162,14 @@ The belt sheds oldest-touched first. An open encode is shed *last* but explicitl
    the refutation on that mechanism was correct. **The heist's demand destroys the radio's supply, via
     the PCM belt, not via the beat.**
 
+**The `drain-lag` corpus is this section's fossil record (read 2026-08-08 late).** 5515 marks across
+ the trace corpus — the most common event overall — but the decode forks the electrode was built for
+  never fire: `calls==0` (lost wakeup) **zero**, `tries==0` (throttle bounce) **zero**. 66% are
+   `why:EMPTY` = ordinary CPU backlog, the rest multi-second beliefs-mutex holds (`think`, p90 15s) —
+    i.e. the belt thrash above, seen from the todo queue. **Today's post-fix boots are clean**: heron's
+     20:17 boot has 0 drain-lag in 300 marks (old boots: 150–340 each). Leave the electrode in; do not
+      chase drain-lag as its own animal.
+
 **Not established, and do not build on it:** the `×2` on every `ws RECV` line in that console. Two
  sockets legitimately exist per tab (`?addr=<prepub>` from `Swarm_station_up`, `?addr=runner` from
   `LiesLies`), so two `control:hello_ok` are expected — but a `repli_missed` addressed to one prepub
@@ -1166,6 +1179,135 @@ The belt sheds oldest-touched first. An open encode is shed *last* but explicitl
       animal as §1 #11 / §4.6.
 
 ---
+
+## 3.13 The serve path never looked at disk — 98% of the miss storm was content the source still had (2026-08-08, MEASURED + SHIPPED)
+
+**The quantified root cause of the two-Sounditron starvation, and the reframe of §3.9's share of it.**
+
+Cross-checking **every distinct `serve want … no record for id` id** on heron (the source) against its
+ own `.jamsend/radiostock/`: **61 distinct missed ids — 50 standing on disk under heron's own pub, 10
+  standing under another pub only, 1 genuinely not on disk at all.** So retirement (§3.9's territory)
+   accounted for ~2% of the storm; the other 98% was **content the source still held, asked for by a
+    mirror that was simply right.** Heron's Stoker read `stock=8` against **99** stock files on disk.
+
+**Two mechanisms make a reload lose most of the shelf:**
+- `Repli_find_record` searches the rummage libs and the serve lib **in memory only**; its one recovery
+   hook was `Heist_reheal_id` (a runtime memo — also memory). Nothing on the serve path ever consulted
+    `radiostock/`, while `Ra_stock_standing`'s own comment says *"Truth lives ON DISK (a fresh boot has
+     no particles)"*.
+- The Stoker's boot resurrect (`Stoker_look`, `Radio.g`) stands only the **newest 24 files, once**
+   (`st.c.resurrected` latch, `k < 24` cap) — so a shelf of 99 comes back as ≤24, and the friend's
+    mirror still lists everything offered before the reload ([[one-sided-reload-breaks-serving]]).
+
+**SHIPPED — demand-driven resurrect on the serve path.** `Repli_serve_want` gains a second
+ optional-by-typeof hook right after the Heist one: `Ra_reheal_id(w, lib, id)` (`Ra.g`). The id **is**
+  the enid (content hash), so the disk lookup is exact: own-pub first via `Ra_stock_standing`, then a
+   **cross-pub reach** (same enid ⇒ byte-identical source content; newest first; the card's own `id`
+    claim cross-checked) — recovering 60 of the 61. The validation half of `Ra_stock_standing` is
+     split out as `Ra_stock_open(nav, hit)` so both probes share the exact checks (fmt bump, size
+      promise, seg count, Seam A signature). `Ra_record_from` mints into the serve lib, so the SAME
+       want serves. Throttled one attempt per id per 30s (`w.c.reheal_ts`, stamped before the disk
+        work), so a genuinely-gone id costs one dir listing per half-minute, not one per 4s re-ask.
+         Books unchanged (no nav ⇒ null). Trace: `{ev:'serve-reheal', id, segs}`.
+ **Deliberately NO preview-window check**, unlike the Stoker's resurrect: the Stoker can rebuild from
+  source, the serve path's alternative is a starved sink — and per-chunk cids refuse a mis-cut resume
+   at the sink anyway.
+
+**⚠ THE TRAP THIS FIX WALKED INTO FIRST, because the next serve-path reader will walk into it too.**
+ The first cut called `Ra_stock_standing` for the own-pub probe — the obvious reuse, and it is
+  **write-side**: `Ra_stock_standing` → `Ra_stock_find` → `Ra_stock_drop` GC's older twins as a side
+   effect (`Ra.g:574`). Right for the mint path that owns the shelf; **wrong on a serve, where it made
+    a REMOTE PEER'S want delete files off our disk.** Caught the same evening by chasing an unrelated
+     `serve-miss` mark. The reheal now does its OWN listing — one `dir_at`+`expand`, partitioned
+      own-pub-then-foreign, `Ra_stock_open` (read-only) per candidate — which is also one listing
+       instead of two. **Rule the next reader should inherit: nothing reachable from a peer's frame may
+        mutate `.jamsend/`.** Worth noting the shape — the dangerous call looked like a pure probe, and
+         its name says "standing", not "collect".
+
+**Verification status: compile-gated (LocalGen CHECK), import-gated (`scripts/RehealSmoke.spec.ts` —
+ mounts the written `.go`s and asserts the seam deposits + the Book-safety contract), and regression
+  green on a live runner booted onto the new code (MusuNeGrind 11/11 `caveat:0`, VytoStaple 8/8,
+   VytoCell 7/7). **Not yet proven to fire** — that needs a real starved pair. The live tell:
+    `serve-reheal` marks in a source's trace, and a one-sided reload no longer flatlining the pair. A
+     monitor is watching the trace corpus and the Cluster toc as of this landing.
+
+**Also seen:** 393 stock files for 139 distinct enids (~2.8× duplication — the per-pub filename means
+ each identity re-stocks the same content); filed, not fixed. `Stoker_cull`'s bare drop (no ledger, no
+  barren-clear, no trace — latent: it could NOT have fired on heron at `stock=8` against its 44
+   threshold, which is what refuted the first hypothesis) is **FIXED same evening**: the cull is now
+    the third retire seam, wired exactly like the tour whittle (un-barren the path, push
+     `retire_due`, `{ev:'stoker-cull'}` summary mark).
+
+## 3.14 The players are visible now — `role:'player'`, and the production stance that bounds it (2026-08-08)
+
+**The problem it solves is diagnostic blindness, and it was costing a session a night.** A Sounditron
+ is a `humdinger` room, and `Lies_humdinger` suppressed its presence at **four** sites — `Lies_advertise`,
+  `Lies_going_cold`, and the `from` on both `Lies_ping` and `Lies_pong` (that many because it has LEAKED
+   once: a comment names "the exact leak that put someone's /BigSoundland into the editor's dispatch
+    pool"). Net effect: no `%HostedIdentity` row, so `runner_ask` could not ping, dump, poke or reload
+     the only two tabs that reproduce the bugs — every question had to go through the human, and the one
+      experiment that matters (reload one side, watch the reheal fire) could not be run at all.
+
+**The gate conflated VISIBLE with DISPATCHABLE and enforced both by silence.** The owner's constraint
+ is only the second one: *"we just need to avoid shooting other Books at them, because they aren't free
+  to borrow test runners like the runners are."*
+
+**So they split — by ROLE VALUE, not a flag.** A diagnostic-armed room now beacons with `player:1` and
+ the roster stamps `role:'player'`. That choice is the whole safety argument: **every** consumer of the
+  registry already filters `role === 'runner'` — `Lies_dispatch_target`'s `dirPubs` (`:563`),
+   `Lies_rungo_target` (`:1725`), the Brink counts (`LiesFunk:1902`/`:3426`), the roster's own second
+    loop (`:1605`), and `scripts/runner_ask.mjs:77` — so a player is excluded from all of them **by
+     construction, with no edit to any of them**. A boolean flag would have needed every site found and
+      patched, and the leak history says there are always more sites than you think. It is also the
+       repo's own data model: a player is not a runner-with-a-flag, it is a different kind of thing.
+ The role transition is **one-way**: a row that has been a player stays one even if a later beacon omits
+  the flag, because a going-cold beacon omits facets and promoting a music page back into the pool by
+   omission is exactly the leak.
+
+**`H.c.production` — the deployment stance, stamped in `BigQualand` beside `humdinger`.** The owner:
+ *"in production we want no participation in any Cluster beyond sending to their peers via relay."*
+  **Fail-closed**: non-production only when `import.meta.env.DEV` **and** not a known prod host
+   (`jamsend.*`/`voula*`, mirroring `Trust.svelte`'s `P.PROD`). Every other combination reads
+    production. The asymmetry is deliberate — a false "dev" puts an end-user's music page into a
+     stranger's cluster; a false "production" means a developer notices their diagnostics are off. Two
+      locks, different questions: `production` is the deployment stance no user-acquirable localStorage
+       key can override; the diagnostic arm (🪪 / `?socklog` / `?watch`) is the per-tab opt-in *within*
+        a dev build. **`H.c.production` is now the hook for the rest of that ruling** — the other Cluster
+         participations (grants, ghost_compile, rungo) should consult it too; only presence does today.
+
+**Live state at time of writing, stated exactly.** The beacon change shipped before the fold that
+ classifies it, and HMR carried it into the live tabs — so both Sounditrons enrolled once as
+  `role:runner` (toc written 22:35:46) and the rows still read that way, because **no editor tab was
+   alive to re-fold**. That is not a dispatch window: `Lies_dispatch_target` requires `live(r)`
+    (`last_heard` inside 45s), `last_heard` is stamped only from a beacon into the editor's `%Runner`
+     roster, and a fresh editor rebuilds that roster from scratch — so a directory row with no beacon is
+      never a candidate. And within a single fold pass the beacons loop (which flips the role) runs
+       *before* the `role === 'runner'` filter that mints `%Runner` rows — and the roster's own cleanup
+        (`for (const r of w.o({Runner:1})) if (!known.has(...)) w.drop(r)`, where `known` is populated
+         ONLY inside that filtered loop) **actively drops** a flipped row's `%Runner` in the same pass,
+          rather than leaving it to go stale. Four independent layers, verified by reading each.
+ **They heal to `role:player` on the first fold by any live editor — which needs a human to open one.**
+  Confirmed no editor was alive: zero `editor-`prefixed dumps in `_socklog`/`_trace` (every one is
+   `runner-`), and the toc unwritten for 8min while runners beaconed continuously. Re-check the rows
+    after the next editor session.
+ **The transient that caused it cannot recur**: the advertise gate and the `player:1` marker live in
+  the same file, so a build either doesn't advertise while humdinger (old) or advertises WITH the flag
+   (new). Only a mid-edit HMR could produce the gap, and only once.
+
+**THE CLI HALF LANDED AND IS PROVEN BOTH WAYS (same evening).** `runner_ask.mjs` gained
+ `--player=<id>`: explicit only — no bare form, no latest-fallback, refuses alongside `--runner=` —
+  because picking someone's music tab by accident is the exact mistake the role split exists to
+   prevent. An allow-list refuses `run`/`accept`/`release`/`declare` and names them; `reload` IS
+    permitted on purpose, being the one mutating verb with real diagnostic value (reproduce a one-sided
+     reload) at the cost of a moment of the human's music. **Verified live**: `ping --player=f5da6599`
+      answered from heron (`self:"f5da6599b8505881"` — the first time a Sounditron has ever been
+       addressed from this container), `dump --player=` forced a 236-mark trace on demand, and
+        `run --player=` refused. The blindness is over: the tabs that reproduce the bugs are now
+         self-serve for ping / probe / world / dump / poke / reload.
+
+**Still owed:** mutation-test the EDITOR-side exclusion ([[mutation-test-every-claim]]) — aim a Book at
+ a `player` row from the editor UI and SEE it refuse. The CLI refusal is proven; the editor's rests on
+  a grep for `role === 'runner'` being exhaustive, which is an argument, not a red test.
 
 ## 4. Open, grouped by where the work is
 

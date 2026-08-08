@@ -65,6 +65,23 @@ export function boot_qualand(opts: QualandOpts): Qualand {
         //    enroll it as a runner off the 5s heartbeat and Story runs would land on someone's music page).
         //     Derived from role here so no call site can forget it; the guards live in Lies_humdinger.
         if (opts.role === 'word' || opts.role === 'sound') (h.c as any).humdinger = true
+        // H.c.production — THE DEPLOYMENT STANCE, stamped once beside humdinger so every ghost can read it
+        //  (a .g cannot see import.meta, and location is not a thing a model layer should be sniffing).
+        //   The owner, 2026-08-08: "in production we want no participation in any Cluster beyond sending to
+        //    their peers via relay."  So this is the flag that says: music over the relay, and nothing else —
+        //     no presence beacon, no roster row, no grant, no dispatch, no compile.
+        //  FAIL CLOSED, and that is the whole design: a tab is non-production ONLY when it is a DEV BUILD
+        //   AND not on a known production host.  Every other combination — a production build anywhere, a
+        //    dev build served from jamsend.*, an unrecognised host on a prod bundle — reads production.  The
+        //     cost of a false "dev" is an end-user's music page joining a stranger's cluster; the cost of a
+        //      false "production" is that a developer has to notice their diagnostics are off.  Those are not
+        //       the same size, so the doubt goes to production.
+        //  Host list mirrors `src/lib/ghost/Trust.svelte`'s P.PROD — the existing idiom, kept in step.
+        {
+            const prod_host = typeof location !== 'undefined'
+                && (location.host.startsWith('jamsend.') || location.host.startsWith('voula'))
+            ;(h.c as any).production = !(import.meta.env.DEV && !prod_host)
+        }
         ;(h.c as any).assume_identity = true
         H = h
         setTimeout(() => { houses = [H] }, 1)

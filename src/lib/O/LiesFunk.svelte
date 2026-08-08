@@ -2711,8 +2711,19 @@ await M.eatfunc({
                         }
                         const wpx = Math.round(el.clientWidth || el.getBoundingClientRect().width)
                         const hpx = Math.round(el.clientHeight || el.getBoundingClientRect().height)
+                        // KEEP THE SOURCE viewBox (2026-08-08).  This synthesised `0 0 wpx hpx` from the
+                        //  element's CSS PIXEL size, which is not its coordinate space: Vyto's glass draws
+                        //   in model units (an 800-long frame) into an svg laid out at whatever width the
+                        //    page gives it, so a 713px-wide render of an 800-unit cut came out with every
+                        //     path apparently overflowing by ~12% and the bottom row cut off. The CONTENT
+                        //      was always right; the wrapper lied about the space it lives in — and since
+                        //       `--svg` is the ONLY pixel-verification path Vyto has (THE PIN: "pixels or
+                        //        it didn't land"), the instrument was quietly failing the one job it exists
+                        //         for. Take the real attribute; fall back to pixels only when there is none
+                        //          (Cyto's overlay sets no viewBox, so that path is unchanged).
+                        const vb = el.getAttribute('viewBox') || `0 0 ${wpx} ${hpx}`
                         const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="${el.getAttribute('class') ?? ''}"`
-                            + ` width="${wpx}" height="${hpx}" viewBox="0 0 ${wpx} ${hpx}"`
+                            + ` width="${wpx}" height="${hpx}" viewBox="${vb}"`
                             + ` style="background:#070707;font-family:ui-monospace,monospace;font-size:11px">`
                             + `<style>${css}</style>${el.innerHTML}</svg>`
                         const cr = (H.top_House().c as any).cy_render

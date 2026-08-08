@@ -190,7 +190,20 @@
         vw_w = nw; vw_h = nh
         publish_frame(w)
     }
-    const EPS = 0.5           // settle displacement floor, px (calm.md §6)
+    // THE KNIFE-EDGE, resolved (Vyto_todo §0.2(a), decided 2026-08-08).  This floor and the model's
+    //  rewrite tolerance (`EPS = 0.5`, Vyto.g Solve law 1) were THE SAME NUMBER, so every target
+    //   rewrite was by construction ≥ the not-calm threshold: one sub-pixel solve wriggle bought a
+    //    full spring convergence (~20-40 frames) before calm could re-accumulate, and any source
+    //     stirring faster than ~0.5s pinned the rAF loop at 60fps until the 240-frame watchdog.
+    //  They are different questions — "did it move enough to matter" (model) vs "is it still"
+    //   (renderer) — so they get different numbers with a real gap: the calm floor sits 2.5× the
+    //    rewrite tolerance, so a lone rewrite at the model's threshold lands INSIDE calm and the
+    //     streak survives it.  Sustained real motion (> this floor) animates exactly as before.
+    //  Pixel truth is NOT loosened: an ordinary settle now LANDS the springs (jump_to_target at the
+    //   strike, the same landing parked/hidden/watchdog already trust), so the glass rests byte-exact
+    //    on the model within one frame of striking — the floor only decides when to stop easing, never
+    //     where the cells end up.  Renderer-only; driven Books are parked and never enter this path.
+    const CALM_EPS = 1.25     // settle displacement floor, px — MUST stay > the model's rewrite EPS
     const DRIFT_EPS = 0.25    // settle wall-vertex drift floor, px/frame
     const SETTLE_FRAMES = 8   // consecutive calm frames before a settle strikes (~130ms @60fps)
     // ANTI-FREEZE WATCHDOG (2026-07-29): a hard ceiling on CONTINUOUS rAF motion.  No matter what
@@ -618,9 +631,9 @@
         }
         prevWalls.set(w, curWalls)
         // negated so a NON-finite disp/drift (a NaN that slipped past the radius clamp) counts as CALM and
-        //  STOPS the loop, instead of `NaN < EPS === false` pinning requestAnimationFrame at 60fps forever
+        //  STOPS the loop, instead of `NaN < CALM_EPS === false` pinning requestAnimationFrame at 60fps forever
         //   (a dead-silent CPU burn that eventually OOM-kills the tab).  Finite frames behave identically.
-        const calm_frame = !(disp >= EPS) && !(drift >= DRIFT_EPS)
+        const calm_frame = !(disp >= CALM_EPS) && !(drift >= DRIFT_EPS)
         let cnt = (settleCount.get(w) ?? 0)
         cnt = calm_frame ? cnt + 1 : 0
         settleCount.set(w, cnt)
@@ -633,8 +646,12 @@
             if (mf >= MAX_MOTION_FRAMES && cnt < SETTLE_FRAMES) {
                 if (typeof console !== 'undefined') console.log('▣⚠ Vyto watchdog: forced settle after', mf,
                     'frames of unbroken motion — a cell never stopped moving (disp/drift pinned). Landing anyway.', { w })
-                jump_to_target(w); paint_world(w)
             }
+            // EVERY settle lands (2026-08-08, half of the CALM_EPS decision above): the ordinary strike
+            //  used to leave springs wherever the calm streak caught them (≤EPS off), which was fine at
+            //   0.5px and would not be at 1.25 — so land exactly, always, and the widened floor costs
+            //    zero pixel truth.  One ≤CALM_EPS snap in one frame, imperceptible.
+            jump_to_target(w); paint_world(w)
             motionFrames.set(w, 0)
             if (!(settledState.get(w) ?? false)) {
                 settledState.set(w, true)
@@ -699,7 +716,7 @@
                     // a newcomer springs from x,y AT target with r 0 — the radius ramp IS the entrance.
                     sp.set(n.key, { x: T.x, y: T.y, r: 0, vx: 0, vy: 0, vr: 0 })
                     moved = true
-                } else if (Math.hypot(s.x - T.x, s.y - T.y) > EPS || Math.abs(s.r - T.r) > EPS) {
+                } else if (Math.hypot(s.x - T.x, s.y - T.y) > CALM_EPS || Math.abs(s.r - T.r) > CALM_EPS) {
                     moved = true
                 }
             }

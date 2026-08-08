@@ -74,15 +74,32 @@ function clusterRunners() {
 		const pub = parts[0].slice('HostedIdentity:'.length)
 		const props = {}
 		for (const p of parts.slice(1)) { const i = p.indexOf(':'); if (i > 0) props[p.slice(0, i)] = p.slice(i + 1) }
+		// role:'player' is a diagnostic-armed END-USER room (a Sounditron — someone's actual music page).
+		//  It is deliberately NOT a runner: it must never receive a dispatched Book, so it is excluded
+		//   here by default exactly as it is excluded from the editor's allocator.  But it IS addressable,
+		//    which is the whole point of giving it a row — ping/state/dump/poke/reload on the only tabs
+		//     that reproduce the live bugs.  Opt in per-call with an explicit --player=<id>; there is no
+		//      "latest player" convenience and no bare --player, because picking someone's music tab by
+		//       accident is precisely the mistake this shape exists to prevent.
 		if (props.role === 'runner') out.push({ pub, favourite_client: props.favourite_client })
+		if (props.role === 'player') players.push({ pub })
 	}
 	return out
 }
+const players = []
 // resolve --runner <id> (exact prepub ▸ prefix) to a prepub; no id ⇒ the LATEST runner in the directory.
 function resolveRunner(id) {
 	const rs = clusterRunners()
 	if (!id) return rs[rs.length - 1]?.pub
 	return (rs.find(r => r.pub === id) ?? rs.find(r => r.pub.startsWith(id)))?.pub
+}
+// resolve --player <id> — EXPLICIT ONLY (no bare form, no latest-fallback): an id must be given and must
+//  match a role:'player' row.  Never falls back to a runner, so a typo fails loudly instead of quietly
+//   aiming at the wrong tab.
+function resolvePlayer(id) {
+	clusterRunners()                       // populates `players` as a side effect of the one parse
+	if (!id) return undefined
+	return (players.find(p => p.pub === id) ?? players.find(p => p.pub.startsWith(id)))?.pub
 }
 // bookNeedsAC — read the Credence board (wormhole/Credence/toc.snap) for a Book's Storying cell, flat-line
 //  parsed like clusterRunners: `Funkcion:Storying,of_Book:<book>,…,needAC:1`.  So the CLI passes needAC for
@@ -121,6 +138,7 @@ const flags = new Set(argv.filter(a => a.startsWith('--') && !a.startsWith('--ru
 const uidTok = argv.find(a => a.startsWith('@'))             // @uid → target a HELD run's frozen pins
 const uid    = uidTok ? uidTok.slice(1) : undefined
 const runnerSel = (argv.find(a => a.startsWith('--runner=')) ?? '').split('=')[1]   // --runner=<prepub|prefix>
+const playerSel = (argv.find(a => a.startsWith('--player=')) ?? '').split('=')[1]   // --player=<prepub|prefix> — a Sounditron
 const pos   = argv.filter(a => !a.startsWith('-') && !a.startsWith('@'))
 const op    = pos[0]
 const arg   = pos[1]
@@ -134,6 +152,7 @@ if (op === 'runners') {
 	const rs = clusterRunners()
 	if (!rs.length) { console.error('no runners in wormhole/Cluster/toc.snap (none advertised yet, or the editor never wrote it)'); process.exit(1) }
 	for (const r of rs) console.log(`${r.pub}${r.favourite_client ? `  ★${r.favourite_client.slice(0, 8)}` : ''}`)
+	for (const p of players) console.log(`${p.pub}  ♪player (someone's music page — --player= to address)`)
 	process.exit(0)
 }
 // TARGET — who to address.  --runner=<id> courts ONE runner by prepub (insist, no failover); else 'runner'
@@ -143,6 +162,19 @@ let TARGET = 'runner'
 if (runnerSel !== undefined) {
 	const pub = resolveRunner(runnerSel)
 	if (!pub) { console.error(`✗ --runner=${runnerSel || '(latest)'}: no matching runner in wormhole/Cluster/toc.snap — try \`runners\``); process.exit(2) }
+	TARGET = pub
+}
+// --player=<id> — address a Sounditron (role:'player').  READ-ONLY VERBS ONLY, refused loudly otherwise:
+//  a player is someone's actual music page, and `run` would put a Book on it (the whole thing the role
+//   split exists to prevent) while accept/release/declare are run-lifecycle verbs that presuppose one.
+//    `reload` IS allowed — it is the one mutating verb with a real diagnostic purpose (reproduce a
+//     one-sided reload) and it costs the human a moment of music, not a hijacked tab.
+if (playerSel !== undefined) {
+	if (runnerSel !== undefined) { console.error('✗ pass --runner= or --player=, not both'); process.exit(2) }
+	const PLAYER_OPS = ['ping', 'probe', 'world', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'reload', 'snap', 'steps', 'assertions']
+	if (!PLAYER_OPS.includes(op)) { console.error(`✗ '${op}' is not allowed on a --player (someone's music page). Allowed: ${PLAYER_OPS.join(' ')}`); process.exit(2) }
+	const pub = resolvePlayer(playerSel)
+	if (!pub) { console.error(`✗ --player=${playerSel || '(none given)'}: no matching role:'player' row in wormhole/Cluster/toc.snap — try \`runners\``); process.exit(2) }
 	TARGET = pub
 }
 if (op === 'run' && !arg)  { console.error('run needs a Book: node scripts/runner_ask.mjs run <Book>'); process.exit(2) }

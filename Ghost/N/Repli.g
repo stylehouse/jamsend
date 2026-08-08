@@ -796,6 +796,19 @@ async Repli_serve_want(w, pier, frame):
         rec = this.Heist_reheal_id(w, h.id)
         if (rec) this.Repli_serve_miss(w, h, 'serve lib swept — rebuilt husk from memo, re-materialising')
     }
+    // SHELF-RELOAD HEAL (2026-08-08): the OTHER way a miss happens, and by count the dominant one —
+    //  the source tab reloaded, its Stoker re-stood only the newest few cards, and the friend's
+    //   mirror still lists everything offered before the reload, so the pair starves against a full
+    //    disk.  Measured on one starved pair: 61 distinct missed ids, 50 standing under the server's
+    //     own pub, 10 under another pub, 1 genuinely gone — a 98%-resurrectable storm this path
+    //      answered `no record for id` to.  Ask Ra to stand the card back up (Ra_reheal_id:
+    //       radiostock → Ra_record_from, throttled per id) and serve from the rehealed record on
+    //        THIS same want.  Optional-by-typeof like Heist_reheal_id above: Repli never imports Ra,
+    //         and a world with no Ra (or no nav — every Book) is unchanged.
+    if (!rec && typeof this.Ra_reheal_id === 'function') {
+        try { rec = await this.Ra_reheal_id(w, lib, h.id) } catch (er) { rec = null }
+        if (rec) this.Repli_serve_miss(w, h, 'shelf reloaded — rehealed from radiostock, serving')
+    }
     // TELL THE SINK (2026-08-06): only when the throttle let this one through, so the frame inherits the
     //  same 5s-per-id budget as the log rather than adding a second, unbounded one.
     if (!rec) {

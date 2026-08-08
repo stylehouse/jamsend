@@ -102,6 +102,18 @@ The rAF loop has exactly ONE exit — a settle (`Vytui.svelte:543-566`). `integr
   different questions and must not share a number.* Fixing this is a decision, not a patch — it is why
    it sits in §0.1 item 3's territory rather than the cheap list.
 
+**RESOLVED 2026-08-08 late (renderer-side, zero fixture risk).** The decision taken: the calm floor
+ moved, the model's tolerance did not. `Vytui.svelte` now has `CALM_EPS = 1.25` (2.5× the model's
+  `EPS = 0.5`, used at the calm test AND `adopt`'s wake test), so a lone rewrite at the model's
+   threshold lands *inside* calm and the streak survives it — sub-floor solve wriggle can no longer
+    buy a full spring convergence. **Pixel truth is not loosened: every settle now lands** —
+     `jump_to_target` at the ordinary strike (previously only watchdog/parked/hidden), so the glass
+      rests byte-exact on the model within one frame of striking; the floor only decides when to stop
+       easing, never where cells end up. Accumulation-safe: the wake test compares spring to *current*
+        target, so successive sub-floor rewrites that add up past the floor still wake the loop.
+         Renderer-only — driven Books are parked and never enter the path. **Unmeasured live**: the
+          tell to look for in a console is the `▣⚠ forced settle after 240 frames` line going extinct.
+
 ### (b) THE ONE THAT PINS **LITERALLY** FOREVER — a pinned channel still counts toward `disp`
 
 `step_channel` (`Vytui.svelte:333-341`) does **not integrate position** when `k <= 0`. But `disp`
@@ -117,6 +129,10 @@ The rAF loop has exactly ONE exit — a settle (`Vytui.svelte:543-566`). `integr
     pays a query per hold per cell per frame for it.
  Also: `Vyto_strength_now:584` has `base = pin ? 0 : (Number(damp) || 0)`, so a `%Hold` with **no
   `pin` and no `damp`** silently returns 0 — a malformed row is a permanent pin.
+  **FIXED 2026-08-08 late**: absent|NaN damp now reads FREE (1); a configured `damp:0` still holds
+   fully (`== null`, not `||`). No mint site produces the malformed shape (both `Vyto_pointer_enter`
+    rows carry pin or damp; no Book mints a bare hold), so no fixture can move — contract pinned by
+     `scripts/RehealSmoke.spec.ts`.
 
 ### (c) PER-FRAME COST, worst first (counts derived from source, NOT measured)
 
@@ -175,6 +191,61 @@ The model solves against a **hardcoded `[0,0,800,450]`** frame (`Vyto.g:814`) wh
 - **No profile was taken.** Every number in (c) is a count derived from code, not a measurement.
 
 ## 0. What to get on with next
+
+### ⇢ HANDOVER INTO THE DO-UP (2026-08-08 late) — read this first
+
+**Destination.** §0.1 item 3: the Sounditron↔Vyto integration redone, "a bunch of fancy UI biologies",
+ under §0.0's ruling (relations and motion, never another box of text). Items 1 (button latency) and 2
+  (phone cost) are separable and item 2 is now largely paid.
+
+**What detonates if you don't know it.**
+
+1. **`?VY` IS RETIRED** (`Sounditron.g:229`, 2026-07-27) — "the glass is just what Sounditron is now."
+    Every `/BigSoundland` tab has a commissioned Vyto world. Anything in this doc telling you to open
+     `?VY=1` is stale; I acted on it today and was corrected by the owner.
+2. **THE PIXEL PATH WAS BROKEN, AND THAT IS PART OF WHY NOTHING HERE HAS EVER BEEN VERIFIED.**
+    `runner_shot --svg` synthesised `viewBox="0 0 <cssPixelWidth> <cssPixelHeight>"`, discarding the
+     element's real viewBox. Vyto draws in MODEL units (an 800-long frame) into an svg laid out at
+      whatever width the page gives it, so every capture came out with paths apparently overflowing by
+       ~12% and the bottom row clipped. **Fixed** (`LiesFunk.svelte`, the `op === 'svg'` handler: take
+        `el.getAttribute('viewBox')`, fall back to pixels only when absent — Cyto's overlay has none, so
+         that path is unchanged). I nearly filed the artifact as a Vyto bug; check your instrument.
+3. **YOU CAN NOW ADDRESS THE OWNER'S MUSIC TABS.** They are `role:'player'` in the Cluster registry
+    (see `Composition_todo` §3.14) and `runner_ask --player=<id>` reaches them: `ping`, `probe`, `world`,
+     `dump`, `poke`, `reload`, and `runner_shot --runner=<their pub> --svg` for the glass. `run` is
+      refused by an allow-list — never put a Book on someone's music. This is brand new; before tonight
+       Vyto could not be looked at on any tab that had one.
+4. **A DRIVEN WORLD IS PARKED AND DOES NOT ANIMATE** (`Vytui.parked()`): a Story run jump-lands springs
+    and strikes no settle, so Book fixtures cannot see renderer timing. That is deliberate and is why
+     display work cannot be gated by the Vyto* Books alone — hence THE PIN.
+
+**The first pixels ever taken of a live glass** (heron, 2026-08-08, `--svg`): frame **800×280**, five
+ cells, **all `faced`**, **zero labels**, **no plug, no ants**. Three things to chase from that:
+ - the aspect is **exactly 0.35**, which is the hard clamp floor in `fit_frame`
+    (`Math.max(0.35, …)`) — the live glass is pinned at the flattest shape the code allows, i.e. the
+     letterbox-strip complaint, and it is asking to be flatter still. Is the floor right, or is the
+      height measurement (`window.innerHeight - r.top - 8`) starving it?
+ - **five** cells on a page §0.0's rail describes as nine organs. Which are missing, and why?
+ - the plug and the ants render nothing here. Expected-if-quiet (the plug hides when the radio is off;
+    `ants_of` returns null when nothing moves) but **unproven either way** — take a capture with music
+     playing and a transfer running before believing either.
+
+**Next move, in order.** (a) The **gap list** §0.1 item 3 asks for — specified-but-unused /
+ specified-but-diverged / used-but-unspecified — so the design conversation is "the spec says X, the
+  code does Y, which did you mean?" rather than "what do you want?". **Do this before any redesign**;
+   the doc is explicit that what the owner wanted true and isn't *has not been said and must not be
+    invented*. (b) Chase the **Vyto↔Story timeline split** — the owner (2026-08-08): *"it's funny how
+     Vyto is integrated into the Story, we have partially split their timelines and there's probably
+      some more lore about how it's to be hanging around."* The spool / `yore_n` / `waitVyto` /
+       parked-run gate are the visible half; **find the lore before redesigning around it.** (c) Button
+        latency (HaulFace) — instrument, do not guess between the four candidates in §0.1.
+
+**Landed tonight, do not redo:** the §0.2(a) knife-edge (`CALM_EPS = 1.25` vs the model's `0.5`, every
+ settle now lands via `jump_to_target`), the §0.2(b) malformed-`%Hold` permanent pin, and the whole of
+  §0.2(e) — **the cheap list is exhausted**; every item was either already done or is now. What remains
+   is design, not patches. Regression green after those: VytoStaple 8/8, VytoCell 7/7, MusuNeGrind 11/11.
+
+
 
 The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it a memory (Spool) ✓
  → give it a body (the first cell) ✓ → hand it the abdomen (the Radio world as first

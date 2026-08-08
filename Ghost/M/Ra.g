@@ -1264,6 +1264,13 @@ async Ra_verify(pubhex, id, cids, sig):
 async Ra_stock_standing(nav, pub, enid):
     let hit = await this.Ra_stock_find(nav, pub, enid)
     if (!hit) return null
+    return await this.Ra_stock_open(nav, hit)
+
+// Ra_stock_open — the validation half of Ra_stock_standing, split out (2026-08-08) so the serve
+//  reheal (Ra_reheal_id) can open a NAMED card — including a foreign pub's — through the exact same
+//   checks: parse, fmt bump, size promise, seg count, and the Seam A signature rule.  Behaviour of
+//    Ra_stock_standing is byte-identical: find, then open.
+async Ra_stock_open(nav, hit):
     let raw = null
     try {
         raw = await nav.bin_read(this.Ra_stock_dir(), hit.name)
@@ -1285,6 +1292,64 @@ async Ra_stock_standing(nav, pub, enid):
     //      A header with NO `by` passes untouched (an unsigned jam is the graceful old shape). —
     if (info.by && !(await this.Ra_verify(info.by, info.id, info.cids, info.sig))) return null
     return { info: info, bufs: un.bufs, name: hit.name }
+
+// Ra_reheal_id — DEMAND-DRIVEN resurrect for the serve path (2026-08-08): a want arrived for an id
+//  the lib no longer stands, but whose card is very likely ON DISK.  The tab reloaded; the Stoker's
+//   boot resurrect stood only the newest 24 cards, once (Stoker_look's st.c.resurrected latch); the
+//    friend's mirror still lists everything offered BEFORE the reload — so the pair starves against
+//     a full shelf.  Measured across one starved pair (2026-08-08): 61 distinct serve-miss ids, 50
+//      standing on disk under the server's own pub, 10 under another pub, 1 genuinely gone.
+//  The id IS the enid (the content hash — Ra_record_from stamps Record.id from it), so the file
+//   lookup is exact.  A FOREIGN pub's card for the same enid names byte-identical source content, so
+//    when our own pub has no standing card we take anyone's (newest first, id cross-checked against
+//     the card's own claim) rather than starve the friend.  NO preview-window check here, unlike the
+//      Stoker's resurrect: the Stoker refuses an old-window card because it can rebuild from source,
+//       but the serve path's alternative is a starved sink — and a mis-cut chunk cannot corrupt a
+//        resuming pull anyway (per-chunk cids refuse it at the sink; a fresh pull negotiates against
+//         the card's own total).  Books: no nav ⇒ null, byte-identical behaviour.
+//  Cost bound: one attempt per id per 30s (w.c.reheal_ts, stamped BEFORE the disk work so a slow
+//   read also latches out re-entry) — a genuinely-gone id costs one dir listing per half-minute,
+//    not one per 4s re-ask.  Off-snap throttle, so nothing here moves a fixture until a card stands.
+async Ra_reheal_id(w, lib, id):
+    if (!lib || !id) return null
+    let nav = w.c.ra_nav || (this.Crate_nav ? this.Crate_nav() : null)
+    if (!nav) return null
+    let m = w.c.reheal_ts = w.c.reheal_ts || {}
+    let nowms = Date.now()
+    if (nowms - (m[id] || 0) < 30000) return null
+    m[id] = nowms
+    let pub = (typeof this.Radio_pub === 'function' && this.Radio_pub(w)) || 'me'
+    // STRICTLY READ-ONLY, and that is why this does its own listing instead of calling
+    //  Ra_stock_standing (2026-08-08, caught same evening).  Ra_stock_standing → Ra_stock_find
+    //   GC-DROPS older twins as a side effect — which is right for the mint path that owns the shelf,
+    //    and wrong here: this runs on the SERVE path, so it would make a REMOTE PEER'S want delete
+    //     files off our disk.  A friend asking for a track must never be able to mutate our share.
+    //  One listing serves both reaches: own pub first (the ordinary case), then any other pub for the
+    //   same enid — safe because the enid IS the content hash, so a foreign card for it names
+    //    byte-identical source content.  Newest first within each reach; the card's own `id` claim is
+    //     cross-checked against the name so a mislabelled file cannot smuggle in different content.
+    let dl = await nav.dir_at(this.Ra_stock_dir())
+    if (!dl) return null
+    await dl.expand()
+    let mine = []
+    let theirs = []
+    for (const f of dl.files) {
+        let p = this.Ra_stock_parse(f.name)
+        if (!p || p.enid !== id) continue
+        // (no line-leading `else` — the .g dialect mangles it into unparseable JS)
+        if (p.pub === pub) { mine.push(p) } else { theirs.push(p) }
+    }
+    mine.sort((x, y) => y.ts - x.ts)
+    theirs.sort((x, y) => y.ts - x.ts)
+    let stand = null
+    for (const card of mine.concat(theirs)) {
+        let got = await this.Ra_stock_open(nav, card)
+        if (got && got.info.id === id) { stand = got; break }
+    }
+    if (!stand) return null
+    let rec = this.Ra_record_from(lib, stand.info, stand.bufs)
+    if (typeof this.Radio_trace === 'function') this.Radio_trace(null, { ev: 'serve-reheal', id: String(id).slice(0, 8), segs: +(stand.info.segs || 0) })
+    return rec
 
 // Ra_record_from — mint|refresh the %Record + its %Preview,seq CHUNK PARTICLES from a stock card —
 //  the ONE minting spot whether the card came from a fresh build or a standing .jam.  The head
