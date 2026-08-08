@@ -1,0 +1,7 @@
+Snap:H
+  H:MusuNeGrind,Run
+    A:MusuNeGrind
+      self,round	{"mung":["age"]}
+      w:MusuNeGrind
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

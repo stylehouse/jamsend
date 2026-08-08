@@ -1,0 +1,30 @@
+Snap:H
+  H:MusuNeGrind,Run
+    A:MusuNeGrind
+      self,round=2	{"mung":["age"]}
+      w:MusuNeGrind
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+        Peering,name:Origin,req=2,ok
+          Pier,pub:Follower,req=2,ok
+            Ud,pubkey:Follower
+          active_transport,type:mock,open
+        Peering,name:Follower,req=3,ok
+          Pier,pub:Origin,req=2,ok
+            Ud,pubkey:Origin
+          active_transport,type:mock,open
+        MusuSelf,pub:Origin
+          stock,pub:Origin
+            Mag:shuffle
+              Cloud,page:1
+                Record,id:g0,artist:Grind,title:Beat g0,path:grind/held.opus
+                Record,id:g1,artist:Grind,title:Beat g1,path:grind/held.opus
+                Record,id:g2,artist:Grind,title:Beat g2,path:grind/held.opus
+                Record,id:g3,artist:Grind,title:Beat g3,path:grind/held.opus
+                Record,id:g4,artist:Grind,title:Beat g4,path:grind/held.opus
+                Record,id:g5,artist:Grind,title:Beat g5,path:grind/held.opus
+              Cloud,page:2
+                Record,id:g6,artist:Grind,title:Beat g6,path:grind/held.opus
+                Record,id:g7,artist:Grind,title:Beat g7,path:grind/held.opus

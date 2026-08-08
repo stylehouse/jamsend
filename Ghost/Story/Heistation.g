@@ -4571,6 +4571,15 @@ async MusuNeGrind_thrown(w):
     let landed = await this.MusuNeGrind_await_cull(w, 8000)
     let row = { thrown: 1 }
     if (landed) row.latch_cleared = 1
+    // …AND THE SWEEP MUST ACTUALLY HAVE REACHED THE THROW (2026-08-08, after the first run).
+    //  `latch_cleared` alone cannot tell "the sweep ran, threw, and cleared its latch" from "the sweep
+    //   was throttled out, never started, and the latch was never set" — both leave `cull_flying` at 0,
+    //    and the first run PROVED the distinction is not academic: with `ra_cull_floor_ms` silently
+    //     re-armed by the `|| ` bug, step 7's dige was IDENTICAL before and after the fix. A claim whose
+    //      evidence does not change when the thing it tests stops happening is not a claim.
+    //  `cull_bg_ms` is stamped by `Swarm_cull_done` on BOTH arms, so a real throw carries the injected
+    //   per-record cost of at least one record's expand; a throttled early return carries ~0.
+    if (+(w.c.cull_bg_ms || 0) >= this.MusuNeGrind_jan_ms()) row.did_throw = 1
     w.c.ra_nav = this.MusuNeGrind_nav(w, 'alive')
     let again = this.MusuNeGrind_kick(w, 'after_throw')
     if (again === 1) row.restarted = 1
@@ -4622,6 +4631,23 @@ MusuNeGrind_witness(w):
     if (!(n >= 4)) return
     if (!w.c.set_up) return
     let T = this.MusuNeGrind_T(w)
+    // ── LATE READS (2026-08-08, after the first-ever run) — an EFFECT lands a beat after its FRAME ──
+    //  The first run had claims #2 and #6 dark while the world plainly satisfied them. The scenes were
+    //   reading their own effect INLINE, in the same `do_fn` that sent the frame: after
+    //    `MusuNeGrind_pump` the frame is settled but still a `req:unemit,done,finished` in the
+    //     Follower's inbox — the mirror does not carry it until the NEXT belief pass. Measured: the
+    //      `%MusuThem` the step-3 scene looked for appears at step 4.
+    //  `MusuVend` never hit this because it offers in one beat and reads the crossing from its WITNESS,
+    //   which runs the following beat. This does the same thing, non-destructively: the scene still
+    //    records what it ATTEMPTED, and the witness — which runs every beat from 4 on — fills in the
+    //     arrival whenever it actually arrives. A flag once set is never unset, so a late read cannot
+    //      un-notice something. This is a defect in the BOOK's reading, not in what it tests.
+    let late_base = T.o({ load: 'baseline' })[0]
+    if (late_base && !late_base.sc.crossed && this.MusuNeGrind_mirror_has(w, 'g0')) late_base.sc.crossed = 1
+    let late_ul = T.o({ underload: 1 })[0]
+    if (late_ul && !late_ul.sc.crossed && this.MusuNeGrind_mirror_has(w, 'gx')) late_ul.sc.crossed = 1
+    let late_dc = T.o({ disclaim: 1 })[0]
+    if (late_dc && !late_dc.sc.told && w.c.ra_missed && w.c.ra_missed[String(late_dc.sc.disclaim)]) late_dc.sc.told = 1
     // #1 THE LOAD-BEARING ONE — the cadence claim, aggregated over every kick in the run.  Reads three
     //  independent things so none of them can carry it alone: enough kicks happened, EVERY kick that
     //   actually started returned inside the ceiling, and the sweep it returned from was genuinely slow
@@ -4644,7 +4670,9 @@ MusuNeGrind_witness(w):
     // #4 THE LATCH CLEARS ON A THROW — the untested safety net.  Both halves: the latch cleared AND a
     //  later kick could still start, because a retired janitor is the failure this exists to prevent.
     let th = T.o({ thrown: 1 })[0]
-    if (th && th.sc.latch_cleared && th.sc.restarted && !T.oa({ see: 'a janitor that throws still clears its latch — the next sweep starts instead of the tab retiring its janitor for good' })) this.MusuNeGrind_note(w, { see: 'a janitor that throws still clears its latch — the next sweep starts instead of the tab retiring its janitor for good' })
+    //  `did_throw` added 2026-08-08: without it this row could not distinguish a sweep that threw from
+    //   one that was throttled out and never ran — and the first run showed both produce the same dige.
+    if (th && th.sc.latch_cleared && th.sc.restarted && th.sc.did_throw && !T.oa({ see: 'a janitor that throws still clears its latch — the next sweep starts instead of the tab retiring its janitor for good' })) this.MusuNeGrind_note(w, { see: 'a janitor that throws still clears its latch — the next sweep starts instead of the tab retiring its janitor for good' })
     // #5 NON-VACUITY — the detached sweep really works.  Without this every claim above is satisfiable
     //  by a cull that returns instantly because it does nothing.
     let gn = T.o({ goner: 1 })[0]

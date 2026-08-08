@@ -1,0 +1,61 @@
+Snap:H
+  H:MusuNeGrind,Run
+    A:MusuNeGrind
+      self,round=14	{"mung":["age"]}
+      w:MusuNeGrind
+        self,round=14	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          load:baseline,of=8,crossed
+          kick:alive,started,quick,flying
+          underload,mid_flight,crossed
+          see:the wire kept moving under the janitor — a fresh record crossed to the mirror while the sweep was still in flight
+          settled:alive,recs=9,landed,did_work,kept
+          kick:first,started,quick,flying
+          kick:twin,refused,quick,flying
+          singleflight,first_started,twin_refused,same_flight
+          sf_settled
+          see:the janitor is single flight — a second kick while one sweep flies is refused rather than stacked on top of it
+          kick:thrown,started,quick,flying
+          kick:after_throw,started,quick,flying
+          thrown,latch_cleared,did_throw,restarted
+          see:the janitor flies instead of holding the beat — every kick returned at once while a demonstrably slow sweep ran on
+          see:a janitor that throws still clears its latch — the next sweep starts instead of the tab retiring its janitor for good
+          kick:goner,started,quick,flying
+          goner,before=9,after=0,landed,swept
+          see:the detached sweep still does its work — records whose source went missing were dropped by a cull nothing awaited
+          disclaim:ghostofatrack,asks=3,told
+          see:the source told the sink it cannot resolve an id — the miss travels instead of leaving the asker to guess at silence
+        Peering,name:Origin,req=2,ok
+          Pier,pub:Follower,req=2,ok
+            Ud,pubkey:Follower
+          active_transport,type:mock,open
+        Peering,name:Follower,req=3,ok
+          Pier,pub:Origin,req=2,ok
+            Ud,pubkey:Origin
+            inbox
+              recent
+                unemit:1,type:repli_lines,seq:1,body_len:819
+                unemit:2,type:repli_lines,seq:2,body_len:908
+                unemit:3,type:repli_missed,seq:3,body_len:6
+          active_transport,type:mock,open
+        MusuSelf,pub:Origin
+          stock,pub:Origin
+            Mag:shuffle
+              Cloud,page:1
+              Cloud,page:2
+        MusuThem,pub:Follower.mirror
+          stock,pub:Follower.mirror
+            Mag:shuffle
+              Cloud,page:1
+                Record,id:g0,artist:Grind,title:Beat g0,path:grind/held.opus
+                Record,id:g1,artist:Grind,title:Beat g1,path:grind/held.opus
+                Record,id:g2,artist:Grind,title:Beat g2,path:grind/held.opus
+                Record,id:g3,artist:Grind,title:Beat g3,path:grind/held.opus
+                Record,id:g4,artist:Grind,title:Beat g4,path:grind/held.opus
+                Record,id:g5,artist:Grind,title:Beat g5,path:grind/held.opus
+              Cloud,page:2
+                Record,id:g6,artist:Grind,title:Beat g6,path:grind/held.opus
+                Record,id:g7,artist:Grind,title:Beat g7,path:grind/held.opus
+                Record,id:gx,artist:Grind,title:Beat gx,path:grind/held.opus
