@@ -4,9 +4,7 @@ story:VytoWeb
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.946
-      sample=2.014,at=1785075029
-      sample=1.51,at=1785075423
+    TimeTotal:beliefs,avg=0.598
       sample=1.355,at=1785075504
       sample=1.716,at=1785095171
       sample=1.385,at=1785097089
@@ -15,9 +13,9 @@ story:VytoWeb
       sample=0.026,at=1785997145
       sample=0.032,at=1786189761
       sample=0.035,at=1786211314
-    TimeTotal:step,avg=0.158
-      sample=0.336,at=1785075029
-      sample=0.252,at=1785075423
+      sample=0.025,at=1786218547
+      sample=0.02,at=1786232627
+    TimeTotal:step,avg=0.1
       sample=0.226,at=1785075504
       sample=0.286,at=1785095171
       sample=0.231,at=1785097089
@@ -26,6 +24,8 @@ story:VytoWeb
       sample=0.004,at=1785997145
       sample=0.005,at=1786189761
       sample=0.006,at=1786211314
+      sample=0.004,at=1786218547
+      sample=0.003,at=1786232627
   step,dige:ac5dbb28904a4b06
   step=2,dige:15c959aa0f0f1e87,desc:seed eight sibling cogs — four brass four iron and unique teeth
   step=3,dige:3f6e42110cf9f73c,desc:mint A:Vyto beside the run and commission it on the eight cogs

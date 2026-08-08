@@ -4,8 +4,7 @@ story:VytoBreathe
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.672
-      sample=0.996,at=1785121880
+    TimeTotal:beliefs,avg=0.575
       sample=0.996,at=1785121886
       sample=0.996,at=1785121892
       sample=0.996,at=1785121898
@@ -15,8 +14,8 @@ story:VytoBreathe
       sample=0.03,at=1785375704
       sample=0.036,at=1786189833
       sample=0.016,at=1786210659
-    TimeTotal:step,avg=0.134
-      sample=0.199,at=1785121880
+      sample=0.028,at=1786232639
+    TimeTotal:step,avg=0.115
       sample=0.199,at=1785121886
       sample=0.199,at=1785121892
       sample=0.199,at=1785121898
@@ -26,6 +25,7 @@ story:VytoBreathe
       sample=0.006,at=1785375704
       sample=0.007,at=1786189833
       sample=0.003,at=1786210659
+      sample=0.006,at=1786232639
   step,dige:08c079fb057ec915
   step=2,dige:336786be1da5bd2f,desc:seed four cogs — three oak kin sharing a genus and a lone pine all at the same dose
   step=3,dige:ad26071a007f0094,desc:commission the glass priced on the four cogs and stir to rest

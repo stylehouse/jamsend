@@ -1517,3 +1517,176 @@ Filed by the wire-side agent (licensed by the human) as the parity work that gat
     Voro glass rides ATOP the base regardless of Cyto|Vyto.  When a Book commissions Vyto its Voro
      overlay must not render — the migration drops the overlay, not just swaps the base.  (Wire
       side will confirm the suspicion at cutover; flagging it so Vyto owns the per-Book off-switch.)
+
+## LANDED 2026-08-09 morning session — the fit law, the wall carve, the foamereo
+
+The owner's morning brief (screenshot + "mostly in a broken layout state... nothing is fun to
+ interact with... looks like whoever arranged it was on fire... work til 11am on random creative
+  Vyto GETTING IT"), answered:
+
+**The fit law (model, Vyto.g solve).** Three overflow-gated moves under foam — a world that
+ already fits passes byte-identical, which is what keeps green fixtures green:
+ - single-ball cap: r ≤ 0.44·min(fw,fh) — no body may span the bag;
+ - bag pressure: Σπr² > 0.62·fw·fh ⇒ one k on every radius (a similarity — relative pricing
+    untouched);
+ - the cloud sits in the shot: post-pile, min-translate the pile bbox inside the frame; if it
+    still can't fit, shrink about the cloud centre onto the bag heart.  Skipped whole when any
+     seed is pinned (a held position is the author's word).
+
+**THE DEAD A-DRAG was arithmetic, not wiring.**  env_area = max(AREA_BASE·(1+dose), need)
+ let the need floor dominate the dial on every faced cell (a measured player box ≈ 17×
+  AREA_BASE — a dose sweep moved nothing the eye could see).  Now dose MULTIPLIES the floored
+   base: env_area = max(AREA_BASE, need)·(1+dose), all three regimes (plain, priced, nested).
+    Byte-identical wherever need is unmeasured or the row doseless — every recorded fixture
+     combination.
+
+**The wall carve (renderer, foam cells with faces).**  The ball's upper arc (205°→335°) is a
+ masonry band; the ident rides it as a textPath — the label is drawn IN the cell wall and can
+  never detach from its body.  The A GATE stands at the 205° mark, rotated out along the wall
+   normal: a drawn vector in the wall (the owner's ask), and it IS the dose handle — drag
+    sweeps, wheel trims, arrows step, with a live dosetip readout while dragging.  The corridor
+     of guts now starts at the gate (it used to hang at the bbox corner, which a circle never
+      reaches — the "detached furniture" look).  Waveband labels lose the copper grain (plain
+       band — "the copper annodes in the plain label part is invalid") and remain the regime
+        for non-foam worlds.
+
+**The foam seat (renderer).**  A faced foam cell seats its component on the ball's own
+ inscribed rectangle (diagonal 2(r−3), the face's aspect) — centred by construction, wall
+  never crossed, no clip.  Fixes "things aren't positioned in the cells properly".
+
+**The bitsy player (RadioFace).**  Was a left-aligned text column — the worst shape for a
+ round room.  Now every piece is its own object (title pill, artist pill, stat chips) and the
+  progress bar is a RING around the skip button.  All states preserved (skip-head arc, solo
+   lines, starved line, first-run teaching line).
+
+**The layout hands (chrome).**  ⟳ redraw = Vyto_redraw: every unpinned seat forgets, re-enters
+ round the rim salted by redraw_n (each press a genuinely different deal; salt 0 ⇒ original
+  arithmetic).  ∿ simmer = Vyto_simmer_tick on a 900ms renderer interval: deterministic
+   counter-hashed jitter the pile re-settles around — the foam visibly keeps negotiating.
+    Live pages only; Books never see either.
+
+**THE FOAMEREO (the composer's deck — the owner: "are much of these differences available to
+ the composer of future machines like this? we'd like to have a lot of options on the
+  foamereo").**  One scalar sc key on the world: `foamereo:"wave,seal,copperless"` — set it at
+   commission like any other line and the glass dresses accordingly.  The deck so far:
+   - `wave` — labels ride the scalloped waveband instead of the wall carve
+   - `seal` — the A is the round HTML thumb-seal instead of the wall gate
+   - `copperless` — no ground grain          - `nohall` — no corridor of guts
+   - `simmer` — layout keeps negotiating from first mount (live pages only)
+   Model-side knobs a composer already had: `dose` per row (the A writes it), `foam`, `priced`,
+    `nested`, `need_floor`, pins via %Hold, `grawave_duration`, focus via e_Vyto_focus.
+   Growing this deck is cheap by design: any render fork reads `fo(w, 'key')` and defaults to
+    the current look when unset.
+
+⚠ VytoOrchestra fixtures remain stale (pre-loose) — red at fixture level until the human
+ re-records (Credence ⇶ run all); the %see census is the live gate meanwhile (7/7 after the
+  fit law + carve landed).
+
+**Round two, same morning (after the first verify):**
+- **The late furniture pass.**  Carved names + A gates now paint AFTER every cell, gates last
+   of all ("on top of the A labels") — a big neighbour later in the occlusion order can no
+    longer bury another cell's name or its handle.
+- **THE BALL-GRAB.**  Drag a foam cell and the pile renegotiates around your thumb (renderer
+   writes the mirror row's seed + w.c.drag_tok per ~70ms and pokes the stir; the solve pins a
+    grabbed body — `pinned ∥ drag_tok`); release and gravity rolls it back into the press.
+     6px threshold keeps clicks as clicks (drag_ate_click).  Live pages only; no Book sets
+      drag_tok, no fixture can feel it.  This is the "fun to interact with" heart: the toy IS
+       the physics.
+- **`plump` joins the foamereo** — the one place the frame may GRANT coverage, because the
+   composer asked: sparse worlds inflate toward 0.45 fill (capped ×3).  Off by default; the
+    foam law stands.
+- **The seal seats on the wall** — foam worlds place the fallback HTML seal at the 205° wall
+   mark (the bbox corner is off the disc — the detached-hall lesson, applied twice).
+- **Ops note:** a scripted reload→run→release→run sweep false-redded 2 of 4 Books; each was
+   green re-run alone on a settled tab.  Sweep reds are accusations, not verdicts (memory:
+    svelte-hmr-wedges-a-book-drive, third signature).
+
+**Round three (the owner, mid-morning): "cells need a navigation|attention currency! and
+ perhaps we do want Cytoscape under this somehow? the layout needs to be able to change with
+  interaction."**
+
+- **THE ATTENTION CURRENCY landed.**  `Vyto_attend(w, tok, amt)`: attention is EARNED by
+   navigation (a hover pays 0.08, a press 0.3 — Vytui throttles per tok) and SELF-TAXING
+    (attending one body decays every other ×0.96), so the total stays roughly conserved — a
+     currency, not a counter.  heat rides `.c` (runtime, never snapped); express spends it as
+      ·(1 + 0.8·heat) on env_area in all three regimes, so the pile renegotiates around the
+       reader's own trail; renderer shows a warm halo above heat 0.25 that fades as the tax
+        bites.  Books never navigate ⇒ heat 0 ⇒ fixtures byte-identical (15/15 fleet green
+         with the currency compiled in).
+- **On Cytoscape under the foam: no library — a socket.**  The moult exists to escape the
+   node-and-edge substrate, and what Cyto actually had that mattered is now native and
+    better-fitted: drag = the BALL-GRAB (pile renegotiates around the thumb), keep-running-
+     layout = SIMMER, re-layout = REDRAW (salted deals), attention-driven layout = the
+      currency above.  If a Cytoscape-grade force engine (fcose/cola) is ever wanted, its
+       plug-point already exists and is exactly one function wide: `pile_step(seeds, radii,
+        centre, nbrs)` — seeds in, seeds out, deterministic, with the walls/faces/gates all
+         staying ours.  Swap the engine, keep the glass.  That is the honest "Cytoscape under
+          this somehow": under the SOLVE, never under the DOM.
+
+- `still` joins the foamereo: a composer declines the interactive-layout hands wholesale —
+   no attention currency, no ball-grab, no simmer — for glasses that should hold a pose
+    (dashboards, exhibits).  Redraw stays (an explicit press is always the human's word).
+- SEEN (runner captures): VytoRadio's power-diagram world green + rendering clean through the
+   label restructure (98% coverage, hall guts carrying doses); VytoOrchestra 7/7 %see with the
+    currency compiled; agates paint in the late furniture pass.  The carve/bitsy/grab need the
+     LIVE tab's faced foam cells — the owner's eyes are the remaining instrument.
+
+## ⇢ ROUND: THE CUT IS THE WALL (2026-08-09, two owner reports)
+
+Both reports were the same mistake wearing two coats: **the code kept treating the BALL as
+ the cell.** The pile solves balls; the power cut then takes the ball away wherever a
+  neighbour presses and leaves it long wherever nothing does. Anything struck at radius `r`
+   is therefore right only on a free ball and wrong on every pressed one.
+
+- **"the `A $Shuffle:5` label curves should actually fit onto the side of the cell — they are
+   inset a little bit."**  The band was a literal `A r r 0 0 1` arc at radius `r`, so on every
+    side that nothing pressed it floated *inside* the wall by exactly the amount the cut had
+     grown outward.  Now `wall_pt(cell, deg)` **ray-casts from the seed onto the polygon**
+      (`ray_hit`, nearest positive edge crossing) and pulls in by the band's own half-stroke,
+       and `arc_d` samples 205°→335° every 6.5° into a smooth quadratic spline through those
+        hits.  The masonry bends with a lobed cell instead of ignoring it; `arc_pt` (the A gate
+         seat, the label anchor) rides the same function, so the gate stands ON the wall.
+     Fallback is the old circle whenever there is no poly (discs, departing) — unchanged.
+- **"there's a cell (friends|local-music) that's been squished way too far down but its
+   component overlay thing is there still."**  That is TunerFace, and it is THE FOAM SEAT's
+    bug — mine, from yesterday.  The seat inscribed the face in the ball (`diag = 2(r-3)`) and
+     never looked at the poly, so a cell pressed from both sides kept its radius while its
+      polygon collapsed to a sliver, and the ball-sized mold stayed sitting over a wall no
+       longer under it.  Fixed by letting the ball **propose** and the cut **dispose**:
+        `fit = min(diag/hyp, bb.bw/nw, bb.bh/nh)`, seat clamped inside the bbox.  A no-op on a
+         free ball (bbox ≈ 2r), the whole answer on a pressed one — and it re-arms the ICON
+          REGISTER, because a genuinely crushed cell now reports a crushed `fit`, falls under
+           the 0.34 floor, and becomes an icon instead of wearing a widget it has no room for.
+
+**The law to carry forward: never measure a foam cell by its radius.**  `s.r` is what the
+ cell ASKED for; `polyByKey.get(key)` is what it GOT.  Every seat, band, gate and anchor must
+  read the second.  Grep for `cell.r` before adding furniture — each surviving use is a claim
+   that nothing presses there, and most such claims are false.
+
+### Fleet state after the cut-is-the-wall round (2026-08-09, live runner)
+
+- **GREEN, recorded fixtures (15):** VytoCell VytoCrest VytoFold VytoFreeze VytoMitosis VytoNest
+   VytoNestRest VytoSeek VytoStaple VytoTandem VytoWeb VytoBreathe VytoBunch VytoRadio VytoFoam.
+- **VytoOrchestra:** fixture red (stale, recorded pre-`loose`) but **%see 7/7 sworn, 0 gaps** — the
+   live gate holds. Still wants a human `Credence ⇶ run all` to re-record.
+- **FOUR HOLLOW BOOKS — they have never been green and cannot be: `VytoCrush`, `VytoDepth`,
+   `VytoMemo`, `VytoNeed` carry `dige:lie` on EVERY step, and have done since the commit that
+    first introduced each toc.snap (`0658111d` / `d1909d68`).**  An unrecorded Book gates nothing;
+     these four have been sitting in the fleet looking like coverage.  VytoCrush additionally
+      declares three `%see` sentences that never swear (`board-folded`, `crushed`, `crest-counts`)
+       — so even its live gate is failing.  Same family as [[swarm-books-are-hollow]].  Next move:
+        record the four (human `Credence ⇶ run all`), then find out why VytoCrush's crush claims
+         do not hold — the Book says twenty cogs must fold to three crest cells and they do not.
+
+**Ops tell, re-confirmed the expensive way:** the first sweep after the edit went red on the first
+ three Books in a row.  Nothing was wrong with the change — a `.svelte` edit HMRs into the runner
+  and wedges its Story drive.  `node scripts/runner_ask.mjs reload`, then the same Book alone came
+   back green 7/7.  **Reload the runner as the first step of any post-`.svelte` sweep**, and never
+    read a red before that reload as evidence.
+
+**Hazard left standing (not a regression, but newly reachable):** the icon register only measures a
+ face that is MOUNTED, and the cut-bound `fit` will drop cells under the 0.34 floor far more often
+  than the ball-bound one did.  A cell that is BORN crushed therefore never mounts, never measures,
+   never earns its need floor, and stays an icon forever — a latch.  Once a cell has been measured
+    at any point the floor is grow-only and protects it, so this only bites the born-crushed case.
+     If it shows up, the fix is to measure once off-screen rather than to lower the floor.

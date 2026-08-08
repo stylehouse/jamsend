@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '504638877e31257c~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '03df020b18f4d1d6~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -288,7 +288,14 @@ Sounditron_commission(w) {
     //   chips), and the flow organ's constraint/Lead/filing children would draw as stray cells; besides, the
     //    %Haul cells ARE the heist UI then.  The ⇊-to-keep gesture lives on RadioFace (always up), so nothing
     //     is lost.  With no keep it grapples exactly as before (Sounditron fixtures byte-identical).
-    for (const q of [{ Radio: 1 }, { Tuner: 1 }]) {
+    // %Door JOINS THE ALWAYS-ON SET (2026-08-09, the owner: fullscreen Vyto "with Invite management
+    //  in there").  It was grappled only under `show_diag` — which made WHO AM I · WHO'S WITH ME ·
+    //   HOW ANYONE ELSE GETS HERE a diagnostic, while the actual front door lived in a strip ABOVE
+    //    the glass.  That arrangement is what stopped the glass from being the whole app: you could
+    //     fullscreen it and lose the one control a new listener needs.  DoorFace now carries the
+    //      invite arc itself (InvitePanel `inglass`), so this cell IS the front door and belongs
+    //       beside the music, not behind a debug toggle.
+    for (const q of [{ Radio: 1 }, { Tuner: 1 }, { Door: 1 }]) {
         let row = w.o(q)[0]
         if (row) organs.push(row)
     }
@@ -349,18 +356,13 @@ Sounditron_commission(w) {
     let diag = w.oai({ Diag: 1, dontSnap: 1 })
     organs.push(diag)
     // TRIMMED to Door alone (the human's §0.9 ruling, 2026-08-06: "space is the scarce resource on
-    //  the glass").  %Beat carried the "waiting for a peer to come online" line — a cell that is
-    //   usually IDLE, spending permanent space on an occasional message; %Uptime's time-alive
-    //    reading has MOVED into the Piers list inside DoorFace, where it belongs (it is networky,
-    //     and it now reads beside the friends' own here/fading/away rungs as one liveness picture).
-    //  Both rows still STAND in the world — the witness's story_swear reads them, and BeatFace is
-    //   still registered in glass_kinds — they are simply no longer cells.  Fixtures are unmoved:
-    //    this whole branch is behind `show_diag`, which no Book turns on.
+    //  the glass") — and then EMPTIED (2026-08-09): %Door has moved UP into the always-on set,
+    //   because it is the front door and a front door behind a debug toggle is not one.  %Beat and
+    //    %Uptime remain rows in the world without cells (the witness's story_swear reads them,
+    //     BeatFace stays registered in glass_kinds); %Uptime's time-alive reading lives inside
+    //      DoorFace beside the friends' own here/fading/away rungs, as one liveness picture.
+    //  What is left under the toggle is the underworld tree alone.
     if (w.c.show_diag) {
-        for (const q of [{ Door: 1 }]) {
-            let row = w.o(q)[0]
-            if (row) organs.push(row)
-        }
         // THE UNDERWORLD, LITERALLY (the human 2026-08-07: "showing a recursive tree of plain C** data in a
         //  useful way ... a cell can kind of be a component or a rendering of the C data all labelled ... and
         //   recurse C**", and the image that goes with it — "all the machinery leading up to the radio getting

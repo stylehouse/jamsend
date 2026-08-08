@@ -1,5 +1,16 @@
 story:VytoNeed
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.02
+      sample=0.02,at=1786232400
+      sample=0.019,at=1786232422
+    TimeTotal:step,avg=0.005
+      sample=0.005,at=1786232400
+      sample=0.005,at=1786232422
   step,dige:lie
-  step=2,dige:lie
-  step=3,dige:lie
-  step=4,dige:lie
+  step=2,dige:lie,desc:seed three doseless cogs — one wearing a preposterously long name
+  step=3,dige:lie,desc:commission the glass need-floored — the measured label must lift its cell
+  step=4,dige:lie,desc:re-commission plain — the same fat label keeps the bare dose box

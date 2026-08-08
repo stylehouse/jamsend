@@ -12,10 +12,40 @@
     //       BigSoundlands become for each other).
     //  The mint→URL→parse→seal→spent arc is PROVEN by Book SwarmInvite (green, deterministic);
     //   this panel is only the eyes and buttons over those verbs.
+    //  IN-GLASS (2026-08-09): the same panel is now ALSO the invite half of DoorFace, seated in a
+    //   Vyto cell rather than a strip above the page (the owner: fullscreen Vyto, "with Invite
+    //    management in there").  `inglass` is a DISPLAY mode, never a second implementation — the
+    //     mint→URL→parse→seal→spent arc Book SwarmInvite proves stays one code path.  It (a) drops
+    //      the panel's box chrome so the cell wall is the only frame, (b) suppresses the two blocks
+    //       DoorFace already carries — the identity title and the friends list — so the cell does not
+    //        say everything twice, and (c) PORTALS the fullscreen QR (see `portal` below).
+    //  The strip mount stays on the non-glass views on purpose: a scanned ?Iz must be joinable BEFORE
+    //   any glass commissions, and the boot-diagnostic page is where that person lands.
     import InviteQR from "$lib/O/ui/micro/InviteQR.svelte"
     import { boot_param } from "$lib/boot"
 
-    let { H }: { H: any } = $props()
+    let { H, inglass = false }: { H: any, inglass?: boolean } = $props()
+
+    // PORTAL — the fullscreen QR must escape the cell.  `.ip-overlay` is `position: fixed`, and a
+    //  fixed element is positioned against the VIEWPORT only while no ancestor carries a transform;
+    //   Vyto's molds are seated with translateZ (occlusion order), which makes the nearest
+    //    transformed ancestor the containing block instead — so in-glass the "fill screen" QR would
+    //     be trapped inside the Door cell, scaled by its --fit, and clipped.  Re-home the node to the
+    //      document (or to the fullscreen element, which is the only subtree that paints while
+    //       fullscreen is on) and it is viewport-sized again wherever it was declared.
+    function portal(el: HTMLElement) {
+        const home = () => (document.fullscreenElement ?? document.body) as HTMLElement
+        let at: HTMLElement | null = null
+        const move = () => { const t = home(); if (t !== at) { at = t; t.appendChild(el) } }
+        move()
+        document.addEventListener('fullscreenchange', move)
+        return {
+            destroy() {
+                document.removeEventListener('fullscreenchange', move)
+                el.remove()
+            },
+        }
+    }
 
     // the live self resolves once the Creduler deposits Swarm.g's verbs AND Auto stands the
     //  identity — both bump H.version.  LATCHED plain $state, not a $derived (reactivity_docs):
@@ -45,18 +75,11 @@
         if (w && H.Swarm_station_up(w, self)) stood = true
     })
 
-    // ── SHARE — the standing music session (what a friendship is FOR): once the station is up
-    //  AND the radio world stands (Stoker_ensure stamps it), arm the live Repli glue — my stock
-    //   serves every Music-granted friend, their casts fill per-friend %MusuThem crates.
-    //    Retries on version bumps until the radio world appears.
-    let shared = $state(false)
-    $effect(() => {
-        void H?.version
-        if (!stood || shared || !self || typeof H?.Swarm_share_up !== 'function') return
-        const w = H.Swarm_station_world?.()
-        if (w && H.Swarm_share_up(w, self)) shared = true
-    })
-
+    // ── SHARE and the new-seal BOAST have MOVED to SwarmStandup.svelte (2026-08-09).  They are
+    //  standup, not display, and this panel is now sometimes a FACE — mounted only while the Door
+    //   cell is roomy enough to draw one.  Anything whose absence breaks the wire must not hang off
+    //    that.  The station effect above stays here as well because it is idempotent and this
+    //     panel's auto-join gate reads `stood` directly.
     // ── REBUFFS — the door's recent denials, legible (%rebuff under the identity) ─────────────
     let rebuffs = $derived.by(() => {
         void H?.version
@@ -85,22 +108,6 @@
         } catch { return null }
     })
     const ivegot = (p: any) => p.o({ IveGot: 1, by: 'records' })[0]?.sc?.count
-    // boast on every NEW seal (both faces run this — the joiner's seal lands async after join,
-    //  the inviter's inside Swarm_hello). Zeros send too: an empty shelf is an honest boast, and
-    //   it proves the live wire today. Growth-only, so a hearing (version bump) never re-boasts.
-    // gossiped is a MONOTONIC high-water: a mid-Atime read can catch transacting state and
-    //  flicker friends 1→0→1 — resetting the mark on shrink turned every flicker into a fresh
-    //   boast (the 2026-07-18 ive_got storm, seq 300+).  Never lower it.
-    let gossiped = 0
-    $effect(() => {
-        const n = friends.length
-        if (n <= gossiped) return
-        gossiped = n
-        try {
-            const w = H.Swarm_station_world?.()
-            if (w && typeof H?.Swarm_gossip_music === 'function') H.Swarm_gossip_music(w, self)
-        } catch {}
-    })
 
     const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
     async function wait_for<T>(fn: () => T | null | undefined, ms: number): Promise<T | null> {
@@ -374,7 +381,7 @@
     <span class="ip-note">{hint}</span>
     {#if name_err}<span class="ip-note">⚠ {name_err}</span>{/if}
 {/snippet}
-<div class="ip">
+<div class="ip" class:inglass>
     {#if relic}
         <!-- the old garden's invite: recognized, named, and honestly un-honourable (rung 1) -->
         <div class="ip-land">
@@ -417,11 +424,15 @@
     {/if}
     {#if self}
         <div class="ip-mint">
+            <!-- IN-GLASS the identity line is DoorFace's own title (name · prepub · ✎ · ✨), so this
+                 one stands down rather than saying it a second time three pixels away. -->
+            {#if !inglass}
             <span class="ip-title">
                 ⨳ <b>{self.sc.friendly || self.sc.nick || self.sc.prepub}</b>
                 <span class="ip-pub" title="your address (prepub) — this is who you are on the wire">{String(self.sc.prepub ?? '').slice(0, 8)}</span>
                 {#if !renaming}<button class="ip-pen" onclick={rename_open} title="change your name — friends see this">✎</button>{/if}
             </span>
+            {/if}
             {#if renaming}
                 <span class="ip-row">
                     <input class="ip-name" bind:value={name_draft} placeholder="your name"
@@ -492,9 +503,11 @@
     {:else}
         <span class="ip-note">⏳ identity…</span>
     {/if}
-    {#if friends.length}
+    {#if friends.length && !inglass}
         <!-- the sealed friendships — each a %Pier under our page, its Music grant the proof;
-             the ♪ count is their last boast (%IveGot), the tally the sum of every counted shelf -->
+             the ♪ count is their last boast (%IveGot), the tally the sum of every counted shelf.
+             IN-GLASS this is DoorFace's friends list — which says strictly more (the pulse rung,
+              the half-seal warning, suggestions) — so the panel yields it rather than competing. -->
         <div class="ip-friends">
             {#if tally && tally.piers > 0}
                 <span class="ip-tally">♪ {tally.records} records reachable · {tally.piers} {tally.piers === 1 ? 'shelf' : 'shelves'} counted</span>
@@ -513,7 +526,7 @@
          the QR fills the screen, so a stopPropagation on it left only a sliver of escapable margin
          ("too hard to get out of", the human) — plus the ✕ and Escape (the svelte:window rides
          the template top, as it must). -->
-    <div class="ip-overlay" onclick={() => big = false}>
+    <div class="ip-overlay" use:portal onclick={() => big = false}>
         <button class="ip-big-x" onclick={() => big = false} title="close (Esc or click anywhere)">✕</button>
         <div class="ip-big">
             <InviteQR {url} size={big_size} pad={Math.max(20, Math.floor(big_size / 24))} bg="#ffffff" bare caption="" />
@@ -529,6 +542,15 @@
         background: #14141c; border: 1px solid #2a2a38; color: #bbc;
         font-size: 0.8rem;
     }
+    /* IN-GLASS — the cell wall is the frame, so the panel drops its own box entirely and stacks in
+       one column (the strip's inline-flex row was a shape for a wide page, not for a cell).  Nothing
+        else changes: same controls, same code path, one voice less shouting. */
+    .ip.inglass {
+        display: flex; flex-direction: column; align-items: flex-start; gap: 0.4rem;
+        padding: 0; background: none; border: none; color: inherit;
+    }
+    .ip.inglass .ip-note { max-width: 15rem; }
+    .ip.inglass .ip-name { width: 9rem; }
     .ip-mint, .ip-land { display: flex; flex-direction: column; align-items: flex-start; gap: 0.35rem; }
     .ip-title { white-space: nowrap; }
     .ip-act {

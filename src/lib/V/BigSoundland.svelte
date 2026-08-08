@@ -31,6 +31,7 @@
     import Actions    from "$lib/O/ui/Actions.svelte"
     import Lens       from "$lib/O/ui/Lens.svelte"
     import InvitePanel from "$lib/O/ui/InvitePanel.svelte"
+    import SwarmStandup from "$lib/O/ui/SwarmStandup.svelte"
     import { boot_param } from "$lib/boot"
     import { boot_qualand } from "$lib/O/BigQualand.svelte"
 
@@ -143,6 +144,15 @@
     //    the run controls / Brink / anything the run mounted.  A workspace choice, so it lives in
     //     the stash (reactive $state on the House, like BigWordland's) and survives a reload.
     let sprawl = $derived(!!H?.stashed?.BigSoundland_sprawl)
+    // ── THE GLASS IS THE APP (2026-08-09, the owner: "shake out the UI outside of Vyto, ie
+    //  fullscreen the latter, with Invite management in there") ────────────────────────────────
+    // When the glass is up, the page has NO chrome: no title, no book name, no badge, no strip.
+    //  Everything the header used to say is either inside the glass now (identity + invites are
+    //   DoorFace's cell) or is developer information that was being shown to every listener.
+    //  The chrome does NOT go away, it goes CONDITIONAL: the sprawl and the boot-diagnostic rooms
+    //   keep every bit of it, because those are the rooms you enter when something is wrong and
+    //    they are worth nothing without their labels.  `.scape-peek` (and ? ) are the way back.
+    let glass_full = $derived(!!cyto && !sprawl)
     function toggle_sprawl() {
         if (!H?.stashed) return
         if (H.stashed.BigSoundland_sprawl) delete H.stashed.BigSoundland_sprawl
@@ -206,6 +216,10 @@
         const t = e.target as HTMLElement | null
         const tag = t?.tagName
         if (t?.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+        // ? — the way back to the gutsy sprawl once the glass has eaten the page.  Same guard as
+        //  the radio keys above (never steal a typed key), and it works from either side, so a
+        //   chromeless glass is never a room with no door.
+        if (e.key === '?') { e.preventDefault(); toggle_sprawl(); return }
         if (e.key !== ' ' && e.key !== 'Enter') return
         const A: any = H
         const n = radio_of(A)
@@ -222,7 +236,18 @@
 
 <BootGate {H} who="the piracy-scape" audio_fullscreen={true} proactive={true} />
 
-<main class="mound">
+<main class="mound" class:full={glass_full}>
+    {#if glass_full}
+        <!-- THE PEEK — all that survives of the header on the resident glass.  Nearly invisible at
+             rest (the glass must be able to be the only thing on the screen), full strength on hover
+              or keyboard focus.  Top-LEFT deliberately: Vyto's own ⛶ rides the top-right. -->
+        <nav class="scape-peek">
+            <span class="scape-glass-badge" class:vy={cyto?.ui.sc.UI === 'Vyto'}
+                  title="the glass mounted below (its House: {cyto?.house?.name}) · {book}">{cyto?.ui.sc.UI === 'Vyto' ? '◇ VYTO' : '◈ CYTO'}</span>
+            <button class="scape-sprawl-btn" onclick={toggle_sprawl}
+                    title="sprawl (or press ?) — the way out of the glass: every House’s UIs down one page">▦</button>
+        </nav>
+    {:else}
     <header class="scape-top">
         <span class="scape-name" title="BigSoundland — the music scape: Voronoi stained glass graphs of music (the /BigSoundland route)">◈ BigSoundland</span>
         <span class="scape-book">{book}</span>
@@ -260,11 +285,16 @@
                     : 'sprawl — the way out of the glass: dump every House’s UIs down one page'}
                 onclick={toggle_sprawl}>▦</button>
     </header>
+    {/if}
 
-    <!-- the strip — chunky panels of varying heights atop the scape (Swarm_spec §10.1: the Invite
-         front door lives here; siblings join beside it as the interface grows). In flow, not
-         sticky — it scrolls away with the page rather than taxing the glass. -->
-    {#if H}
+    <!-- the strip — the Invite front door (Swarm_spec §10.1), on the NON-GLASS rooms only.
+         It has moved into the glass as DoorFace's invite door (2026-08-09), but it must stay
+          here too, and this is not duplication for its own sake: someone who opens a scanned
+           ?Iz link lands on this page BEFORE any world has commissioned a glass, and the boot
+            diagnostic is the room they are standing in.  If the only join button lived in a
+             cell, the entire invite funnel would depend on a successful boot — exactly the
+              thing an invite is most likely to be arriving in the middle of. -->
+    {#if H && !glass_full}
         <div class="scape-strip">
             <InvitePanel {H} />
         </div>
@@ -354,6 +384,11 @@
        boot: no shim mount ⇒ no transport ⇒ "relay down, not trying" ⇒ no Story. -->
 {#if H}
     <div class="spine-shims" aria-hidden="true">
+        <!-- the swarm standup: self → station → share → boast.  Rides here for the SAME reason the
+             spine shims do — it renders nothing, and its absence is invisible until a friend's scan
+              times out.  It used to be carried by the strip's InvitePanel, which stopped being
+               unconditional the moment invite management moved into a cell. -->
+        <SwarmStandup {H} />
         {#each spine_shims as { house, ui } (keyser(ui.sc))}
             <svelte:component this={ui.sc.component} H={house} />
         {/each}
@@ -383,6 +418,22 @@
     /* the spine shims mount here but never paint — they exist only for their onMount (method deposit).
        display:none still mounts them + fires onMount; it just spares any stray markup a layout. */
     .spine-shims { display: none; }
+
+    /* THE RESIDENT GLASS — the page IS the glass: exactly the viewport, nothing above it, nothing
+       to scroll.  (The other rooms keep .mound's min-height:100vh and document scrolling.) */
+    .mound.full { height: 100vh; min-height: 0; overflow: hidden; }
+
+    /* the peek — the header, reduced to what a listener could ever need from it, and hidden until
+       looked for.  Barely-there at rest so the glass owns the screen; a hover or a tab-focus brings
+        it up.  Fixed, above the glass, and it never takes pointer events it isn't using. */
+    .scape-peek {
+        position: fixed; top: 0.5rem; left: 0.6rem; z-index: 70;
+        display: flex; align-items: center; gap: 0.4rem;
+        opacity: 0.14; transition: opacity 0.18s;
+    }
+    .scape-peek:hover, .scape-peek:focus-within { opacity: 1; }
+    /* a user who has asked for less motion has also asked not to have things fade at them */
+    @media (prefers-reduced-motion: reduce) { .scape-peek { transition: none; } }
     /* the top bar — STICKY so it stays put while the sprawl scrolls the document beneath it
        (the glass/diag modes fit the viewport, so nothing scrolls there and sticky is inert) */
     .scape-top {

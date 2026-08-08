@@ -12,7 +12,7 @@ import { sig_of, group_edges, bucket_key_of, pull_step, budget_for, SIG_JOINS, F
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return 'bde7009c23105d83~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return '8e84be7f11629b3d~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -788,6 +788,32 @@ Vyto_simmer_tick(w) {
     this.Vyto_stir_soon(w)
 
 },
+// Vyto_attend — the NAVIGATION|ATTENTION CURRENCY (the owner 2026-08-09: "cells need a
+//  navigation|attention currency!").  Attention is EARNED by navigation — a hover pays a
+//   little, a press pays more — and SELF-TAXING: attending one body decays every other,
+//    so the total stays roughly conserved (a currency, not a counter) and the glass
+//     re-centres on where the hands have actually been.  heat rides `.c` (runtime, never
+//      snapped); express spends it as an env_area multiplier (1 + HEAT·0.8), so hot cells
+//       swell and the pile renegotiates around the reader's own trail.  A Book never
+//        navigates ⇒ heat stays 0 ⇒ every fixture byte-identical (the additive-gate law).
+Vyto_attend(w, tok, amount) {
+    if (!w.c.mirror) return
+    let amt = Number(amount) || 0.25
+    this.Vyto_attend_walk(w, w.c.mirror, tok, amt)
+    this.Vyto_stir_soon(w)
+
+},
+Vyto_attend_walk(w, n, tok, amt) {
+    for (const m of n.o()) {
+        if (m.c.tok === tok) m.c.heat = Math.min(1, (m.c.heat ?? 0) + amt * (1 - (m.c.heat ?? 0)))
+        if (m.c.tok !== tok && m.c.heat) {
+            m.c.heat = m.c.heat * 0.96
+            if (m.c.heat < 0.02) m.c.heat = 0
+        }
+        this.Vyto_attend_walk(w, m, tok, amt)
+    }
+
+},
 Vyto_simmer_walk(w, n, tick, base) {
     let i = base
     for (const m of n.o()) {
@@ -886,10 +912,19 @@ Vyto_express(w) {
         //   per row (pricing×nesting is a later compose; keep the first nest tenancy one-variable).
         this.Vyto_express_rows(w, rows)
     } else if (w.c.priced) {
-        for (const row of rows) { row.c.imp = this.Vyto_importance(w, row); row.c.env_area = Math.max(1, AREA_BASE * row.c.imp, this.Vyto_need_of(w, row)) }
+        // DOSE MULTIPLIES THE FLOORED BASE (2026-08-09, the dead-A-drag find): the old form
+        //  max(AREA_BASE·imp, need) let the need floor DOMINATE the dial on every faced cell —
+        //   a measured player box is ~17× AREA_BASE, so a dose sweep moved nothing the eye
+        //    could see and "the A drag gesture does nothing".  Pricing the floored base keeps
+        //     the floor (a widget still never crushes below its box unpriced) AND keeps the
+        //      knob live at every size.  Byte-identical wherever need is unmeasured or the
+        //       row is doseless/unlifted — which is every recorded fixture combination.
+        for (const row of rows) { row.c.imp = this.Vyto_importance(w, row); row.c.env_area = Math.max(1, Math.max(AREA_BASE, this.Vyto_need_of(w, row)) * row.c.imp * (1 + 0.8 * (row.c.heat ?? 0))) }
     } else {
-        // AREA_BASE·(1 + dose) — the PLAIN regime base (see vyto_foam AREA_BASE).
-        for (const row of rows) { row.c.env_area = Math.max(1, AREA_BASE * (1 + (Number(row.sc.dose) || 0)), this.Vyto_need_of(w, row)) }
+        // max(AREA_BASE, need)·(1 + dose)·(1 + 0.8·heat) — the PLAIN regime base (vyto_foam
+        //  AREA_BASE), need-floored FIRST so the dial stays live on faced cells (the dead-A-drag
+        //   find above), then the attention currency spends on top (heat 0 ⇒ byte-identical).
+        for (const row of rows) { row.c.env_area = Math.max(1, Math.max(AREA_BASE, this.Vyto_need_of(w, row)) * (1 + (Number(row.sc.dose) || 0)) * (1 + 0.8 * (row.c.heat ?? 0))) }
     }
     let organ = w.o({ Organ: 'Express' })[0]
     if (organ && organ.sc.status !== 'live') {
@@ -904,7 +939,7 @@ Vyto_express(w) {
 Vyto_express_rows(w, rows) {
     for (const row of rows) {
         if (row.sc.departing) continue
-        row.c.env_area = Math.max(1, AREA_BASE * (1 + (Number(row.sc.dose) || 0)), this.Vyto_need_of(w, row))
+        row.c.env_area = Math.max(1, Math.max(AREA_BASE, this.Vyto_need_of(w, row)) * (1 + (Number(row.sc.dose) || 0)) * (1 + 0.8 * (row.c.heat ?? 0)))
         let kids = row.o()
         if (kids.length) this.Vyto_express_rows(w, kids)
     }
@@ -1022,7 +1057,10 @@ Vyto_solve(w) {
         let mag = 1
         if (w.c.focus_tok != null) mag = (m.c.tok === w.c.focus_tok) ? FOCUS_BOOST : FOCUS_SHRINK
         radii.push(Math.sqrt(a / Math.PI) * mag)
-        pinned.push(this.Vyto_calm_held(w, m, 'position') === 0)
+        // a GRABBED body is pinned for exactly as long as the hand holds it (w.c.drag_tok —
+        //  Vytui's cell drag): the pile renegotiates around the thumb, and release lets
+        //   gravity roll it back into the press.  Runtime-only, never set by a Book.
+        pinned.push(this.Vyto_calm_held(w, m, 'position') === 0 || (w.c.drag_tok != null && m.c.tok === w.c.drag_tok))
     }
     // THE BAG IS FINITE (fit law, 2026-08-09 — the owner: "mostly in a broken layout state").
     //  Bodies keep their intrinsic sizes until the bag cannot hold them; then BAG PRESSURE
@@ -1046,6 +1084,14 @@ Vyto_solve(w) {
             let k = Math.sqrt(hold / total)
             ri = 0
             while (ri < radii.length) { radii[ri] = radii[ri] * k; ri = ri + 1 }
+        }
+        // PLUMP — the one place the frame may GRANT coverage, and only because the composer
+        //  asked (foamereo token `plump`): a sparse world inflates toward 0.45 fill, capped at
+        //   ×3 so a lone dot never becomes the bag.  Off by default — the foam law stands.
+        if (String(w.sc.foamereo ?? '').includes('plump') && total > 0 && total < 0.45 * fw * fh) {
+            let pk2 = Math.min(3, Math.sqrt((0.45 * fw * fh) / total))
+            ri = 0
+            while (ri < radii.length) { radii[ri] = radii[ri] * pk2; ri = ri + 1 }
         }
     }
     // the Relate attraction (Vyto_spec §6 — meaning becomes proximity becomes tessellation adjacency):

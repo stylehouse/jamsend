@@ -116,6 +116,9 @@
     //    The handler is handed the source particle so a one-line .g handler can read and write it.
     //  Falls through to cam_engage for every press-less cell, so nothing that worked changes.
     function cell_click(w: TheC, cell: PaintCell) {
+        // a click that ends a live drag is the HAND OPENING, not a press
+        if (drag_ate_click) { drag_ate_click = false; return }
+        attend(w, cell.tok, 0.3)   // a press is real attention — the currency's big coin
         const src: any = (cell.row.c as any)?.source_n
         const fn = src?.c?.press
         if (typeof fn === 'function') {
@@ -211,13 +214,57 @@
         return !!(w.c as any).foam && cell.kind === 'poly' && cell.r > 24 && !fo(w, 'wave')
     }
     const RAD = Math.PI / 180
+    // THE BAND RIDES THE REAL WALL (2026-08-09, the owner: *"the `A $Shuffle:5` label curves should
+    //  actually fit onto the side of the cell — they are inset a little bit"*).  A ball's radius is
+    //   NOT its wall: the pile solves radii, then the power cut takes them away wherever a neighbour
+    //    presses and leaves them long wherever nothing does, so an arc struck at `r` sits inside the
+    //     wall on every free side — which is exactly the "inset a little bit" that was visible.  So
+    //      cast a ray from the seed at each sampled degree and land on the POLYGON boundary, pulled
+    //       in by the band's own half-stroke so the masonry lies IN the wall rather than across it.
+    //  `wall_pt` falls back to the circle when there is no poly (disc cells, departing cells) — the
+    //   old behaviour, unchanged, so nothing that lacked a wall changes byte.
+    const BAND_IN = 8               // half the band stroke: the band's spine, not its outer lip
+    function ray_hit(poly: Pt[], cx: number, cy: number, ux: number, uy: number): number {
+        // nearest positive t where centre + t·u crosses an edge; 0 if the ray escapes (seed outside)
+        let best = 0
+        for (let i = 0; i < poly.length; i++) {
+            const p = poly[i], q = poly[(i + 1) % poly.length]
+            const ex = q.x - p.x, ey = q.y - p.y
+            const den = ux * ey - uy * ex
+            if (Math.abs(den) < 1e-9) continue
+            const wx = p.x - cx, wy = p.y - cy
+            const t = (wx * ey - wy * ex) / den           // along the ray
+            const s2 = (wx * uy - wy * ux) / den          // along the edge, must be in [0,1]
+            if (t > 0 && s2 >= 0 && s2 <= 1 && (best === 0 || t < best)) best = t
+        }
+        return best
+    }
+    function wall_pt(cell: PaintCell, deg: number, inset = BAND_IN): { x: number, y: number } {
+        const ux = Math.cos(deg * RAD), uy = Math.sin(deg * RAD)
+        const poly = cell.poly
+        let t = poly && poly.length > 2 ? ray_hit(poly, cell.x, cell.y, ux, uy) : 0
+        if (!(t > 0)) t = cell.r                          // no wall to find: the ball is the wall
+        t = Math.max(t * 0.35, t - inset)                 // never collapse a thin lobe onto the seed
+        return { x: cell.x + t * ux, y: cell.y + t * uy }
+    }
     function arc_pt(cell: PaintCell, deg: number): { x: number, y: number } {
-        return { x: cell.x + cell.r * Math.cos(deg * RAD), y: cell.y + cell.r * Math.sin(deg * RAD) }
+        return wall_pt(cell, deg)
     }
     function arc_d(cell: PaintCell): string {
-        const a = arc_pt(cell, 205), b = arc_pt(cell, 335)
-        const r = cell.r.toFixed(1)
-        return `M ${a.x.toFixed(1)} ${a.y.toFixed(1)} A ${r} ${r} 0 0 1 ${b.x.toFixed(1)} ${b.y.toFixed(1)}`
+        // 205°→335° over the top, sampled every 6.5° and drawn as a smooth spline through the wall
+        //  hits, so the band bends with a lobed cell instead of ignoring it.
+        const pts: { x: number, y: number }[] = []
+        for (let deg = 205; deg <= 335.01; deg += 6.5) pts.push(wall_pt(cell, deg))
+        if (pts.length < 2) return ''
+        const f = (v: number) => v.toFixed(1)
+        let d = `M ${f(pts[0].x)} ${f(pts[0].y)}`
+        for (let i = 1; i < pts.length - 1; i++) {
+            const m = { x: (pts[i].x + pts[i + 1].x) / 2, y: (pts[i].y + pts[i + 1].y) / 2 }
+            d += ` Q ${f(pts[i].x)} ${f(pts[i].y)} ${f(m.x)} ${f(m.y)}`
+        }
+        const last = pts[pts.length - 1]
+        d += ` L ${f(last.x)} ${f(last.y)}`
+        return d
     }
     function arc_id(w: TheC, cell: PaintCell): string {
         return 'vyarc-' + String((w.sc as any)?.w ?? 'w').replace(/[^A-Za-z0-9_-]/g, '')
@@ -235,10 +282,58 @@
     function simmer_toggle(w: TheC) {
         const t = simmering.get(w)
         if (t) { clearInterval(t); simmering.delete(w) }
-        else if (live_page()) simmering.set(w, setInterval(() => (H as any).Vyto_simmer_tick?.(w), 900))
+        else if (live_page() && !fo(w, 'still')) simmering.set(w, setInterval(() => (H as any).Vyto_simmer_tick?.(w), 900))
         simmer_flip++
     }
     onDestroy(() => { for (const t of simmering.values()) clearInterval(t) })
+
+    // ── GRAB A BALL (the fun law, 2026-08-09: "nothing is fun to interact with").  Drag a
+    //  foam cell and the pile renegotiates around your thumb: the drag writes the mirror row's
+    //   seed (solver state) and w.c.drag_tok (the solve pins a grabbed body while the hand
+    //    holds it), poking a stir per ~70ms; release clears the pin and gravity rolls the ball
+    //     back into the press — the toy IS the physics.  A real drag only begins past 6px, so
+    //      clicks stay clicks (drag_ate_click eats the click that follows a live drag).
+    //       Live pages only; a Book never sets drag_tok, so no fixture can feel this. ──
+    let dragging: { w: TheC, cell: PaintCell, x0: number, y0: number, live: boolean, lastT: number } | null = null
+    let drag_ate_click = false
+    function cell_grab(e: PointerEvent, w: TheC, cell: PaintCell) {
+        if (!live_page() || fo(w, 'still') || cell.hasKids || cell.departing) return   // grab balls, not bags
+        dragging = { w, cell, x0: e.clientX, y0: e.clientY, live: false, lastT: 0 }
+        ;(e.currentTarget as Element).setPointerCapture?.(e.pointerId)
+    }
+    function cell_drag(e: PointerEvent) {
+        if (!dragging) return
+        if (!dragging.live && Math.hypot(e.clientX - dragging.x0, e.clientY - dragging.y0) < 6) return
+        dragging.live = true
+        const now = performance.now()
+        if (now - dragging.lastT < 70) return
+        dragging.lastT = now
+        drag_write(e)
+    }
+    function drag_write(e: PointerEvent) {
+        if (!dragging) return
+        const { w, cell } = dragging
+        const stage = stageEls.get(w); if (!stage) return
+        const svg = stage.querySelector('svg.viewport') as SVGSVGElement | null; if (!svg) return
+        const bb = svg.getBoundingClientRect()
+        if (!(bb.width > 0) || !(bb.height > 0)) return
+        const c = cam_view(w)
+        const px = c.x + ((e.clientX - bb.left) / bb.width) * c.w
+        const py = c.y + ((e.clientY - bb.top) / bb.height) * c.h
+        ;(cell.row.c as any).seed = { x: px, y: py }
+        ;(w.c as any).drag_tok = cell.tok
+        ;(H as any).Vyto_stir_soon?.(w)
+    }
+    function cell_release(e: PointerEvent) {
+        if (!dragging) return
+        if (dragging.live) {
+            drag_write(e)
+            ;(dragging.w.c as any).drag_tok = null
+            ;(H as any).Vyto_stir_soon?.(dragging.w)
+            drag_ate_click = true
+        }
+        dragging = null
+    }
 
     function sentence(o: TheC): string {
         const bits = [`reads ${o.sc.reads}`]
@@ -439,7 +534,7 @@
                        mx: number, my: number, mw: number, mh: number, ang: number, clip: string,
                        face: any | null, source: TheC | null, row: TheC,
                        fx: '' | 'arrive' | 'erupt', fxi: number, fit: number, loose?: boolean,
-                       zi?: number, sunk?: boolean }
+                       zi?: number, sunk?: boolean, poly?: Pt[] }
 
     // (inscribed_of is GONE, 2026-08-09 — it was already unseated by the AABB+clip regime and it
     //  carried the adversarial review's A1: the gap inset in power_cells pulls vertices toward the
@@ -1063,7 +1158,11 @@
                 const row = n.row
                 const ident = ident_of(row, w, n.tok)
                 const lift = liftKey === n.key
+                // heat holds a body SURFACED after the pointer moves on — the attention trail
+                //  stays lit and sinks only as the currency taxes away (heat 0 in every Book,
+                //   so driven worlds read exactly as before).
                 const sunk = n.depth > 0 && !near_key(liftKey, n.key) && !near_key(engKey, n.key)
+                          && !(((row.c as any).heat ?? 0) > 0.25)
                 const f = face_of(row)
                 const face = f ? f.comp : null
                 const source = f ? f.source : null
@@ -1167,9 +1266,27 @@
                         //       spill the owner asked to keep.
                         const diag = 2 * Math.max(4, s.r - 3)
                         const hyp = Math.hypot(nw, nh)
-                        fit = Math.max(0.2, Math.min(FIT_MAX, +(diag / hyp).toFixed(3)))
+                        // THE CUT IS THE WALL, NOT THE BALL (2026-08-09, the owner: *"there's a cell
+                        //  (friends|local-music) that's been squished way too far down but its component
+                        //   overlay thing is there still"*).  A seat inscribed in the BALL is only the
+                        //    seat when nothing presses: the power cut takes the ball away wherever a
+                        //     neighbour leans in, so a cell squeezed from both sides keeps radius `r`
+                        //      while its polygon collapses to a sliver — and a ball-sized mold then sits
+                        //       there at full size over a wall that is no longer under it.  That is the
+                        //        reported bug exactly.  So the ball proposes and THE CUT DISPOSES: bound
+                        //         the same inscribed seat by the polygon's own extent as well, which is a
+                        //          no-op on a free ball (bbox ≈ 2r) and the whole answer on a pressed one.
+                        //  It also re-arms the icon register — a genuinely crushed cell now reports a
+                        //   crushed `fit`, drops below the 0.34 floor, and becomes an icon instead of
+                        //    wearing a widget it has no room for.
+                        fit = Math.min(diag / hyp, bb.bw / nw, bb.bh / nh)
+                        fit = Math.max(0.2, Math.min(FIT_MAX, +fit.toFixed(3)))
                         mw = nw * fit; mh = nh * fit
                         mx = s.x - mw / 2; my = s.y - mh / 2
+                        // the seed of a lobed cell can sit well off its own bbox centre; keep the seat
+                        //  inside the cut it was just measured against.
+                        if (mw <= bb.bw) mx = Math.max(bb.bx, Math.min(bb.bx + bb.bw - mw, mx))
+                        if (mh <= bb.bh) my = Math.max(bb.by, Math.min(bb.by + bb.bh - mh, my))
                     } else if (!hasKids0 && face) {
                         let seat = nw && nh ? slab_seat(poly) : null
                         let th = 0
@@ -1199,7 +1316,7 @@
                     cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids, ident,
                                  x: s.x, y: s.y, r: s.r, kind: 'poly', d: path_round(poly), departing: false, lift,
                                  bx: bb.bx, by: bb.by, bw: bb.bw, bh: bb.bh,
-                                 mx, my, mw, mh, ang, clip: clipPoly, face, source, row, fx, fxi, fit, sunk })
+                                 mx, my, mw, mh, ang, clip: clipPoly, face, source, row, fx, fxi, fit, sunk, poly })
                     if (hasKids) layout(n.kids, poly, 0, n.key)
                 } else {
                     // no poly: a crowded-out seed draws its 6px marker; a LOOSE row draws at its
@@ -1534,6 +1651,9 @@
     const stageEls = new Map<TheC, HTMLElement>()
     function reg_stage(el: HTMLElement, w: TheC) {
         stageEls.set(w, el)
+        // a composer who pulled `simmer` on the foamereo wants the layout negotiating from first
+        //  sight — same toggle the ∿ button flips, so pressing it still turns it off.
+        if (fo(w, 'simmer') && live_page() && !simmering.has(w)) simmer_toggle(w)
         // watch the SHAPE of the hole, not just its size — fit_frame re-cuts the frame when the stage
         //  flips portrait/landscape (a phone rotating, or Vyto going fullscreen) and no-ops otherwise.
         //   Measured once up front so the first paint is already the right shape.
@@ -1994,9 +2114,22 @@
     //   the release ease plays out.  The MODEL hold is keyed by a mirror tok (Calm's %Hold scope),
     //    which is only LOCALLY unique — so fire it for TOP cells only (key===tok); a nested cell lifts
     //     VISUALLY (local `lifted`) but places no tok-scoped hold that would over-pin a same-tok cousin.
+    // the ATTENTION CURRENCY's earn side (model: Vyto_attend — self-taxing heat, spent by
+    //  express as size).  A hover pays a little, a press pays more; throttled per tok so a
+    //   jittering pointer at a wall doesn't storm the stir.  Live pages only — a Book never
+    //    navigates, so no fixture can feel heat.
+    const lastAttend = new Map<string, number>()
+    function attend(w: TheC, tok: string, amt: number) {
+        if (!live_page() || fo(w, 'still')) return
+        const now = performance.now()
+        if (now - (lastAttend.get(tok) ?? 0) < 400) return
+        lastAttend.set(tok, now)
+        ;(H as any).Vyto_attend?.(w, tok, amt)
+    }
     function on_enter(w: TheC, key: string, tok: string) {
         lifted.set(w, key)
         if (key === tok) (H as any).Vyto_pointer_enter?.(w, tok)
+        attend(w, tok, 0.08)
         kick(w); paint_tick++
     }
     function on_leave(w: TheC, key: string, tok: string) {
@@ -2062,6 +2195,16 @@
             <div class="stage" use:reg_stage={w} use:lifetell={{ H, what: 'stage', id: String((w.sc as any)?.w ?? '?') }}>
                 <button class="fs-btn" onclick={(e) => go_fullscreen(e.currentTarget.parentElement)}
                         title="fullscreen the glass">⛶</button>
+                <!-- the LAYOUT HANDS (the owner: "needs more redraw or keep running layout buttons
+                     like cyto had").  ⟳ deals the pile fresh (Vyto_redraw — every unpinned seat
+                     forgets, re-enters round the rim, re-piles, salted per press).  ∿ keeps the
+                     layout negotiating (Vyto_simmer_tick on an interval) until pressed again. -->
+                <button class="fs-btn re-btn" onclick={() => (H as any).Vyto_redraw?.(w)}
+                        title="redraw — deal the pile fresh">⟳</button>
+                {#if live_page()}
+                    <button class="fs-btn sim-btn" class:simmering={simmer_on(w)} onclick={() => simmer_toggle(w)}
+                            title="keep running layout — the foam keeps negotiating">∿</button>
+                {/if}
                 <!-- the way OUT, shown only while there is somewhere to come out of.  Clicking the
                      engaged cell again does the same thing, but a visible affordance is what makes the
                      navigation discoverable to someone who has not been told it exists. -->
@@ -2097,7 +2240,9 @@
                             <image href="/i/copper_anodes.jpg" width="130" height="130" preserveAspectRatio="xMidYMid slice"></image>
                         </pattern>
                     </defs>
-                    <rect class="ground-tex" x={cam.x} y={cam.y} width={cam.w} height={cam.h} fill="url(#vy-cop-coarse)"></rect>
+                    {#if !fo(w, 'copperless')}
+                        <rect class="ground-tex" x={cam.x} y={cam.y} width={cam.w} height={cam.h} fill="url(#vy-cop-coarse)"></rect>
+                    {/if}
                     <!-- THE VINES, FIRST: the %Flow relations the solver already bunches by, drawn as
                          roots UNDER the cells they tie together.  Nothing when nothing relates. -->
                     {#each vines_of(w, viewport_cells(w)) as v (v.d)}
@@ -2105,16 +2250,23 @@
                     {/each}
                     {#each viewport_cells(w) as cell, ci (cell.key)}
                         {@const g = cell_ground(cell)}
+                        {@const cdv = Number((cell.row.sc as any)?.dose) || 0}
                         {#if cell.kind === 'poly'}
+                            <!-- a DOSED wall is a PRESSED wall: stroke weight rides the dose, so the
+                                 A-drag answers under the thumb before the solve even lands. -->
                             <path class="cell" class:departing={cell.departing} class:lift={cell.lift} class:sunk={cell.sunk}
                                   class:faced={!!cell.face && !cell.hasKids} class:nested={cell.depth > 0} class:scope={cell.hasKids}
                                   class:crushed={!!cell.face && !cell.hasKids && cell.fit <= 0.34}
                                   class:breathe={cell.fx === '' && foam_breathes(w)}
+                                  class:hot={((cell.row.c as any).heat ?? 0) > 0.25}
                                   class:arrive={cell.fx === 'arrive'} class:erupt={cell.fx === 'erupt'} d={cell.d}
-                                  style={(g ? `fill:${g.bg}; stroke:${g.border};` : '') + (cell.fx === 'arrive' ? ` animation-delay:${cell.fxi * 55}ms;` : ` --bd:-${ci * 430}ms;`)}
+                                  style={(g ? `fill:${g.bg}; stroke:${g.border};` : '') + (cdv > 0 ? ` stroke-width:${(1.2 + Math.min(3, cdv) * 0.55).toFixed(2)};` : '') + (cell.fx === 'arrive' ? ` animation-delay:${cell.fxi * 55}ms;` : ` --bd:-${ci * 430}ms;`)}
                                   onpointerenter={() => on_enter(w, cell.key, cell.tok)}
                                   onpointerleave={() => on_leave(w, cell.key, cell.tok)}
+                                  onpointerdown={(e) => cell_grab(e, w, cell)}
+                                  onpointermove={cell_drag} onpointerup={cell_release} onpointercancel={cell_release}
                                   onclick={() => cell_click(w, cell)}
+                                  onfocus={() => attend(w, cell.tok, 0.08)}
                                   role="button" tabindex={0} aria-label={cell.ident}
                                   onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cell_click(w, cell) } }}></path>
                         {:else}
@@ -2158,12 +2310,18 @@
                                  reverse: scaleY about its own top edge) when the cell is engaged.
                                  The scalloped band starts right of the hallway head, so the
                                  corridor reads as running in UNDER the wave. -->
-                            {@const wd = wave_d(cell)}
-                            <g class="wave" class:folded={engaged_key(w) === cell.key} class:sunk={cell.sunk}>
-                                {#if wd}<path class="waveband" d={wd}></path>{/if}
-                                <text class="ident under lab" data-ukey={cell.key} x={cell.bx + 20} y={cell.by + 3}
-                                      text-anchor="start" dominant-baseline="hanging">{cell.ident}</text>
-                            </g>
+                            {#if wall_carve(w, cell)}
+                                <!-- carved cells wear their name + A in the LATE FURNITURE PASS below
+                                     (after every cell has painted), so no neighbour can bury them —
+                                     "on top of the A labels".  Nothing to draw here. -->
+                            {:else}
+                                {@const wd = wave_d(cell)}
+                                <g class="wave" class:folded={engaged_key(w) === cell.key} class:sunk={cell.sunk}>
+                                    {#if wd}<path class="waveband" d={wd}></path>{/if}
+                                    <text class="ident under lab" data-ukey={cell.key} x={cell.bx + 20} y={cell.by + 3}
+                                          text-anchor="start" dominant-baseline="hanging">{cell.ident}</text>
+                                </g>
+                            {/if}
                             <!-- THE CRUSH MUST BE OBVIOUS (the owner: "crush down to a simpler
                                  representation until navigated into... and that needs to be obvious!").
                                  Below the icon floor the face is not mounted at all, so without a mark
@@ -2185,18 +2343,75 @@
                              metal as the ground, worked smaller.  pointer-events none throughout:
                              the corridor is something to SEE — the A that heads it lives in the
                              HTML top layer (.adials), where a spilling face cannot bury it. -->
-                        {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && cell.bw > 30 && cell.bh > 40}
+                        {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && cell.bw > 30 && cell.bh > 40 && !fo(w, 'nohall')}
+                            <!-- ANCHOR THE CORRIDOR TO THE WALL, NOT THE BBOX.  A foam cell's bbox
+                                 corner is off the disc entirely (a circle never reaches its own
+                                 corner), which is why the corridor read as detached furniture.  On a
+                                 carved cell it now starts at the gate point (the 205° wall mark, just
+                                 under the A) and runs inward; bbox worlds keep the old corner. -->
+                            {@const hx = wall_carve(w, cell) ? arc_pt(cell, 205).x + 2 : cell.bx}
+                            {@const hy = wall_carve(w, cell) ? arc_pt(cell, 205).y + 10 : cell.by}
                             {@const hguts = under_guts(cell.row, Math.max(0, Math.min(7, Math.floor((cell.bh - 34) / 10))))}
                             {@const hh = Math.min(cell.bh - 6, 27 + hguts.length * 10)}
                             <g class="hall" class:sunk={cell.sunk}>
-                                <path class="hallway" d="M {cell.bx - 0.6},{cell.by + 2} L {cell.bx + 16},{cell.by + 6.5} L {cell.bx + 16},{cell.by + hh - 4.5} L {cell.bx - 0.6},{cell.by + hh} Z"></path>
-                                <path class="hall-rail" d="M {cell.bx},{cell.by + 2 + hh * 0.33} L {cell.bx + 16},{cell.by + 5 + hh * 0.33} M {cell.bx},{cell.by + hh * 0.67} L {cell.bx + 16},{cell.by + hh * 0.67 - 3}"></path>
+                                <path class="hallway" d="M {hx - 0.6},{hy + 2} L {hx + 16},{hy + 6.5} L {hx + 16},{hy + hh - 4.5} L {hx - 0.6},{hy + hh} Z"></path>
+                                <path class="hall-rail" d="M {hx},{hy + 2 + hh * 0.33} L {hx + 16},{hy + 5 + hh * 0.33} M {hx},{hy + hh * 0.67} L {hx + 16},{hy + hh * 0.67 - 3}"></path>
                                 {#each hguts as g, gi (g)}
                                     <text class="ident under sub" data-ukey={cell.key}
-                                          x={cell.bx + 2} y={cell.by + 25 + gi * 10}
+                                          x={hx + 2} y={hy + 25 + gi * 10}
                                           text-anchor="start" dominant-baseline="hanging">{g}</text>
                                 {/each}
                             </g>
+                        {/if}
+                    {/each}
+                    <!-- THE LATE FURNITURE PASS — carved names + A gates paint AFTER every cell
+                         ("on top of the A labels"), so a big neighbour drawn later in the occlusion
+                         order can never bury another cell's name or its handle.  Gates last of all:
+                         the working part rides highest. -->
+                    {#each viewport_cells(w) as cell (cell.key)}
+                        {#if cell.face && !cell.hasKids && !cell.departing && wall_carve(w, cell)}
+                            <!-- THE NAME IN THE WALL — the ball's upper arc doubles as a masonry
+                                 band and the ident rides it as a textPath, so the label is drawn
+                                 IN the cell wall (the owner: "drawing them properly in the cell
+                                 wall") and can never detach from its body the way the old edge
+                                 tab did when a cell pressed the frame. -->
+                            <g class="wallwork" class:sunk={cell.sunk}>
+                                <path id={arc_id(w, cell)} class="wallband" d={arc_d(cell)}></path>
+                                <text class="wallname" data-ukey={cell.key}>
+                                    <textPath href="#{arc_id(w, cell)}" startOffset="50%">{cell.ident}</textPath>
+                                </text>
+                            </g>
+                        {/if}
+                    {/each}
+                    {#each viewport_cells(w) as cell (cell.key)}
+                        {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && wall_carve(w, cell) && !fo(w, 'seal')}
+                            <!-- THE A GATE (the owner: "the A I'm thinking of is built in to the vector
+                                 graphic in the wall").  A drawn vector standing ON the wall ring at the
+                                 205° mark — the head of the corridor — rotated so it leans out along the
+                                 wall normal: carved into the masonry, not stuck on top of it.  It IS the
+                                 dose handle: drag up-down sweeps, wheel trims, arrows step; the fat
+                                 transparent pad is the real hit target.  stopPropagation throughout so a
+                                 grab never doubles as a cell click. -->
+                            {@const gp = arc_pt(cell, 205)}
+                            {@const gdv = Number((dose_src(cell)?.sc as any)?.dose) || 0}
+                            {@const gg = cell_ground(cell)}
+                            <g class="agate" class:sunk={cell.sunk} class:doped={gdv > 0}
+                               style={gg?.border ? `color:${gg.border};` : ''}
+                               transform="translate({gp.x.toFixed(1)},{gp.y.toFixed(1)}) rotate(-65)"
+                               role="slider" tabindex="0" aria-label={`intensity of ${cell.ident}`}
+                               aria-valuenow={gdv} aria-valuemin={0} aria-valuemax={9}
+                               onpointerdown={(e) => dose_down(e, w, cell)}
+                               onpointermove={dose_move} onpointerup={dose_up} onpointercancel={dose_up}
+                               onkeydown={(e) => dose_key(e, w, cell)}
+                               onwheel={(e) => dose_wheel(e, w, cell)}
+                               onclick={(e) => e.stopPropagation()}>
+                                <circle class="agate-pad" r="12"></circle>
+                                <path class="agate-legs" d="M -5.2,6 L 0,-6.6 L 5.2,6"></path>
+                                <path class="agate-bar" d="M -3,1.6 L 3,1.6"></path>
+                            </g>
+                            {#if dosing && dosing.src === dose_src(cell)}
+                                <text class="dosetip" x={gp.x + 15} y={gp.y - 9}>dose {gdv.toFixed(1)}</text>
+                            {/if}
                         {/if}
                     {/each}
                     <!-- the plug + the ants, drawn LAST so they ride over the cells they connect.
@@ -2261,12 +2476,19 @@
                      so no viewBox math is ever needed mid-gesture. -->
                 <div class="adials">
                     {#each viewport_cells(w) as cell (cell.key)}
-                        {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && cell.bw > 18 && cell.bh > 24}
+                        <!-- the SEAL is now the fallback hand: worlds that can't carve (no ball law)
+                             and composers who pulled `seal` on the foamereo get the round HTML thumb;
+                             carved worlds wear the A gate in the wall instead. -->
+                        {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && cell.bw > 18 && cell.bh > 24 && (!wall_carve(w, cell) || fo(w, 'seal'))}
                             {@const dv = Number((dose_src(cell)?.sc as any)?.dose) || 0}
+                            <!-- on a foam ball the bbox corner is off the disc (a circle never reaches
+                                 its corner — the detached-hall lesson): seat the seal at the 205° wall
+                                 mark instead, where the gate would stand. -->
+                            {@const sp = (w.c as any).foam && cell.r > 24 ? arc_pt(cell, 205) : { x: cell.bx + 8, y: cell.by + 14.5 }}
                             <div class="dosea" class:doped={dv > 0} class:sunk={cell.sunk} role="slider" tabindex="0"
                                  aria-label={`intensity of ${cell.ident}`}
                                  aria-valuenow={dv} aria-valuemin={0} aria-valuemax={9}
-                                 style="left:{((cell.bx + 8 - cam.x) / cam.w) * 100}%; top:{((cell.by + 14.5 - cam.y) / cam.h) * 100}%;"
+                                 style="left:{((sp.x - cam.x) / cam.w) * 100}%; top:{((sp.y - cam.y) / cam.h) * 100}%;"
                                  onpointerdown={(e) => dose_down(e, w, cell)}
                                  onpointermove={dose_move} onpointerup={dose_up} onpointercancel={dose_up}
                                  onkeydown={(e) => dose_key(e, w, cell)}>
@@ -2377,9 +2599,13 @@
         font-size: 13px; cursor: pointer;
     }
     .fs-btn:hover { background: #2a2a3e; color: #fff; }
-    /* the walk-out chip sits beside ⛶ (which is at right:6px), so the two read as one control cluster */
-    .out-btn { right: 38px; }
-    @media (pointer: coarse) { .out-btn { right: 52px; } }
+    /* the layout hands file left of ⛶ (right:6px) as one control cluster: ⟳ redraw, ∿ simmer */
+    .re-btn { right: 38px; }
+    .sim-btn { right: 70px; }
+    .sim-btn.simmering { color: #ffd479; border-color: #b89a4a; background: #2c2618; }
+    /* the walk-out chip files further along the same rail */
+    .out-btn { right: 102px; }
+    @media (pointer: coarse) { .re-btn { right: 52px; } .sim-btn { right: 98px; } .out-btn { right: 144px; } }
     /* an engaged-able cell should say so under the cursor — the one hint that the glass is navigable.
        The cells are also real keyboard targets (role=button + tabindex): tab to a cell, Enter to fly to
        it, Esc to come back out.  ~5-9 cells on the live glass, so this is a usable tab order rather than
@@ -2397,6 +2623,9 @@
     /* THE POOL DEPTH — sunken stuffing (nested, unapproached) rests at low ink; approaching its
        chain surfaces it (build_cells' near_key).  The 260ms rise IS the surfacing gesture. */
     .cell.sunk { fill-opacity: 0.5; stroke-opacity: 0.4; }
+    /* the attention currency's visible trail: a HOT body (heat > 0.25 — recently navigated)
+       carries a faint warm halo that fades as the currency taxes away. */
+    .cell.hot { filter: drop-shadow(0 0 7px rgba(255, 216, 121, 0.33)); }
     .cell.disc { fill: #33334a; }
     .cell.departing { opacity: 0.35; }
     .cell.lift { fill: #3a3a58; stroke: #a8a8f0; }
@@ -2594,7 +2823,44 @@
             transition: transform 460ms cubic-bezier(0.6, -0.25, 0.3, 1), opacity 380ms ease; }
     .wave.folded { transform: scaleY(0.04); opacity: 0; }
     .wave.sunk { opacity: 0.25; }
-    .waveband { fill: url(#vy-cop-fine); fill-opacity: 0.3; stroke: #6a6ad0; stroke-width: 0.5; stroke-opacity: 0.28; }
+    /* plain band — the copper grain read as grunge at label scale (the owner: "the copper annodes
+       in the plain label part is invalid"); the metal stays on the ground, the hall and the seal,
+       where it is worked at its own scale. */
+    .waveband { fill: #16162a; fill-opacity: 0.55; stroke: #6a6ad0; stroke-width: 0.5; stroke-opacity: 0.28; }
+
+    /* THE WALL CARVE — masonry band on the ball's upper arc, the name set along it, the A gate at
+       its head.  Band and name are scenery (pointer-events none); the gate is the working part. */
+    .wallwork { pointer-events: none; transition: opacity 260ms ease; }
+    .wallwork.sunk { opacity: 0.3; }
+    .wallband { fill: none; stroke: rgba(13, 13, 24, 0.55); stroke-width: 15; stroke-linecap: round; }
+    .wallname {
+        font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em;
+        fill: #dcdcf2; dominant-baseline: middle;
+        paint-order: stroke; stroke: rgba(10, 10, 18, 0.5); stroke-width: 2.5px;
+        user-select: none;
+    }
+    .agate { cursor: ns-resize; touch-action: none; transition: opacity 260ms ease; outline: none; }
+    .agate.sunk { opacity: 0.25; }
+    .agate-pad { fill: transparent; }   /* the fat hit target — transparent still hit-tests, none would not */
+    /* the A is CARVED FROM THE SAME MASONRY: currentColor rides the cell's own wall colour
+       (stamped inline off cell_ground), falling back to chrome on unstyled worlds. */
+    .agate { color: #e8e8f6; }
+    .agate-legs, .agate-bar {
+        fill: none; stroke: currentColor; stroke-width: 2.4;
+        stroke-linecap: round; stroke-linejoin: round;
+        transition: stroke 120ms ease, filter 120ms ease;
+    }
+    .agate-bar { stroke-width: 2; }
+    .agate:hover .agate-legs, .agate:hover .agate-bar,
+    .agate:focus-visible .agate-legs, .agate:focus-visible .agate-bar {
+        stroke: #fff; filter: drop-shadow(0 0 4px rgba(200, 200, 255, 0.75));
+    }
+    .agate.doped .agate-legs, .agate.doped .agate-bar { stroke: #eecd85; }
+    .dosetip {
+        font-size: 10.5px; font-weight: 600; fill: #ffe9b0;
+        paint-order: stroke; stroke: rgba(10, 10, 18, 0.85); stroke-width: 3px;
+        pointer-events: none; user-select: none;
+    }
     .wave .lab { fill: #dcdcf0; opacity: 0.8; }
     /* THE ORBIT — the loose constellation revolves about the frame heart (view-box origin), each
        member counter-rotating so its label stays upright while its body drifts.  Glacial on

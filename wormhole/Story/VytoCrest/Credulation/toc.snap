@@ -1,5 +1,5 @@
 Credulation,of_Book:VytoCrest
-  run=0,at=1786210680.686,ok,ok_pct,mode:check
+  run=0,at=1786232196.672,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:18cb029750287c38~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:2a297dc2edd42bbc~g1
@@ -25,7 +25,7 @@ Credulation,of_Book:VytoCrest
     uses:Ghost_S_Swarm,dige:4fcd3d26879a0227~g1
     uses:Ghost_Story_Swarmation,dige:f4060302563099af~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
-    uses:Ghost_V_Vyto,dige:978cf29f23032b1a~g1
+    uses:Ghost_V_Vyto,dige:8e84be7f11629b3d~g1
     uses:Ghost_V_Vytonation,dige:8570412733e9b913~g1
     uses:Ghost_Story_Voronation,dige:a8a9737169608630~g1
-    uses:Ghost_Story_Sounditron,dige:504638877e31257c~g1
+    uses:Ghost_Story_Sounditron,dige:03df020b18f4d1d6~g1

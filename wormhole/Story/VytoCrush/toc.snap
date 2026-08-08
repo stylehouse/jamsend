@@ -4,14 +4,22 @@ story:VytoCrush
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.448
+    TimeTotal:beliefs,avg=0.215
       sample=1.303,at=1785133406
       sample=0.018,at=1785379372
       sample=0.023,at=1786189870
-    TimeTotal:step,avg=0.112
+      sample=0.024,at=1786232001
+      sample=0.101,at=1786232034
+      sample=0.027,at=1786232226
+      sample=0.011,at=1786232262
+    TimeTotal:step,avg=0.054
       sample=0.326,at=1785133406
       sample=0.004,at=1785379372
       sample=0.006,at=1786189870
+      sample=0.006,at=1786232001
+      sample=0.025,at=1786232034
+      sample=0.007,at=1786232226
+      sample=0.003,at=1786232262
   step,dige:lie
   step=2,dige:lie,desc:seed twenty cogs across three genera — eight oak seven pine five birch
   step=3,dige:lie,desc:commission the glass folded on the twenty cogs — the crowd crushes to its crests

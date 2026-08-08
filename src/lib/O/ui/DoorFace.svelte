@@ -1,5 +1,6 @@
 <script lang="ts">
     import { lifewatch } from './micro/lifetell'   // DIAGNOSTIC — strip with the rest of the remount probes
+    import InvitePanel from './InvitePanel.svelte'
     // DoorFace — WHO AM I and WHO'S WITH ME, floating in the glass: the identity + front-door
     //  arc as the prioritised, for-the-user's-eyes face (the human's ?Iz ask, 2026-07-19).
     //   Mounted by Cytui on the %Door particle (glass_kinds.ts).  Everything here reads LIVE
@@ -156,6 +157,27 @@
             if (radio && rec) (H as any)?.Radio_tune?.(radio, rec)
         } catch {}
     }
+
+    // ── INVITE MANAGEMENT, IN THE GLASS (2026-08-09, the owner: fullscreen Vyto "with Invite
+    //  management in there").  This cell was already WHO AM I and WHO'S WITH ME; the one missing
+    //   verb was HOW ANYONE ELSE GETS HERE, and it was parked in a strip above the page — so the
+    //    glass could never be the whole app.  InvitePanel comes in whole, in its `inglass` dress:
+    //     one implementation, the one Book SwarmInvite proves, not a second copy of the arc.
+    //  FOLDED BY DEFAULT.  Cells are the scarce resource, and at rest this cell's job is the
+    //   friends list; the QR only matters in the minute you are actually inviting someone.  Opening
+    //    it grows the face, which grows the cell's measured need — the sizing machinery does the
+    //     rest, so the room is taken only while it is wanted.
+    let inviting = $state(false)
+    // …except when the door is ALREADY the moment: a scanned invite is in flight, or nobody has
+    //  ever arrived.  One-shot latch (a plain let, never $state — re-running must not re-open a
+    //   panel the user has just closed), so this opens the panel once and then leaves it alone.
+    let auto_opened = false
+    $effect(() => {
+        if (auto_opened) return
+        if (!face.door?.landed && !(face.prepub && !face.friends.length)) return
+        auto_opened = true
+        inviting = true
+    })
 </script>
 
 <div class="df">
@@ -220,7 +242,18 @@
         {/if}
     {/each}
     {#if !face.friends.length && !face.door?.landed}
-        <div class="df-note">{face.newborn ? 'you are new here — the invite QR below is how a friend joins you' : 'no friends yet — mint an invite QR in the panel'}</div>
+        <div class="df-note">{face.newborn ? 'you are new here — the invite QR below is how a friend joins you' : 'no friends yet — the invite QR below is how one arrives'}</div>
+    {/if}
+
+    <!-- the door's own verb, at the bottom of the list it grows: invite someone into it -->
+    {#if face.prepub}
+        <button class="df-open" onclick={() => inviting = !inviting}
+            title={inviting ? 'fold the invite door away' : 'invite a friend — mint a QR they scan, or paste an invite you were sent'}>
+            {inviting ? '▾ invite door' : '▸ invite a friend'}
+        </button>
+    {/if}
+    {#if inviting}
+        <div class="df-panel"><InvitePanel {H} inglass /></div>
     {/if}
 </div>
 
@@ -242,6 +275,18 @@
         50%      { filter: drop-shadow(0 0 10px rgba(196, 130, 224, 0.75)); }
     }
     .df-title { font-size: 12px; font-weight: 700; color: #d9a9ef; }
+    /* the invite door — a quiet disclosure at the foot of the friends list, not a call to action
+       competing with them.  It only shouts (via InvitePanel's own `.ip-go`) once it is open and
+        there is actually a stranger to greet. */
+    .df-open {
+        pointer-events: auto; cursor: pointer;
+        background: none; border: none; color: #b48fc9;
+        font-family: inherit; font-size: 10px; padding: 3px 0 0; text-align: left;
+    }
+    .df-open:hover { color: #fff; }
+    /* the panel takes pointer events back — `.df` is pointer-events:none so the cell beneath stays
+       draggable/clickable, and every interactive descendant has to opt back in. */
+    .df-panel { pointer-events: auto; margin-top: 4px; max-width: 260px; }
     .df-edit {
         pointer-events: auto;
         cursor: pointer;

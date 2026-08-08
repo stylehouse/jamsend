@@ -1,5 +1,5 @@
-Credulation,of_Book:VytoCrush
-  run=0,at=1786232227.256,ok=0,ok_pct=0,mode:check
+Credulation,of_Book:VytoDepth
+  run=0,at=1786232273.75,ok=0,ok_pct=0,mode:check
     uses:Ghost_N_Peeroleum,dige:18cb029750287c38~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:2a297dc2edd42bbc~g1
@@ -29,7 +29,7 @@ Credulation,of_Book:VytoCrush
     uses:Ghost_V_Vytonation,dige:8570412733e9b913~g1
     uses:Ghost_Story_Voronation,dige:a8a9737169608630~g1
     uses:Ghost_Story_Sounditron,dige:03df020b18f4d1d6~g1
-  run,at=1786232263.485,ok=0,ok_pct=0,mode:check
+  run,at=1786232290.174,ok=0,ok_pct=0,mode:check
     uses:Ghost_N_Peeroleum,dige:18cb029750287c38~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:2a297dc2edd42bbc~g1

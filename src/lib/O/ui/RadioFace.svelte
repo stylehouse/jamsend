@@ -75,92 +75,105 @@
         f.solo === 'gathering' ? `waiting on ${f.soloBy || 'a friend'}’s music` :
         f.solo === 'offline'   ? 'your friends are offline' :
                                  'nobody online yet'
+    // the progress RING (the bitsy player, 2026-08-09): arc length for a fraction of the
+    //  r=26 circle.  The ring replaces the bar — a round cell wants round furniture.
+    const RING_C = 2 * Math.PI * 26
+    const ringlen = (frac: number) => (Math.max(0, Math.min(1, frac)) * RING_C).toFixed(1)
 </script>
 
 <div class="rf" class:on={face.state === 'playing'}>
-    <!-- transport on its OWN row: a long title can no longer occlude the next/★ buttons —
-         the title lives below, on its own line, where it only ever occludes itself. -->
+    <!-- THE BITSY PLAYER (the owner 2026-08-09: "pop the player visual for something more
+         individual bitsy and layoutable").  The old face was a left-aligned text column — the
+         worst shape for a round room.  Now every piece is its OWN small object: the title a
+         pill, the artist a pill, each stat a chip — and the transport is a round cluster with
+         the PROGRESS RING around the skip button (a round cell wants round furniture; the bar
+         is retired).  Composed centre-out, so the foam seat's inscribed box fills gracefully. -->
+    <div class="rf-title chip">{ICON[face.state] ?? '📻'} {face.title ?? 'the radio'}</div>
+    {#if face.artist}<div class="rf-artist chip">{face.artist}</div>{/if}
     <!-- WEIGHTED BY WHAT YOU REACH FOR (the human 2026-08-07: "pause should be small, next big, star not
-         at all ... and heist big").  A phone player is thumbs, not a mixing desk: the two verbs that fire
-         constantly — SKIP and KEEP — get the area, pause gets a corner, and ★ is gone (favouriting is
-         beyond v1.0; Radio_mag_pop still stands in the ghost, it just spends no glass). -->
+         at all ... and heist big").  SKIP is the heart of the cluster wearing the ring; pause is a small
+         satellite left, KEEP a satellite right (friend tracks only — your own you already hold; ⇊ mints
+         a %Keep, ✓ is the tell it took, n.c.kept runtime). -->
     <div class="rf-transport">
         <button class="rf-btn rf-small" onclick={() => (H as any)?.Radio_toggle?.(n)}
             title={face.state === 'playing' ? 'pause' : 'play'}>
             {face.state === 'playing' || face.state === 'digging' || face.state === 'starved' ? '⏸' : '▶'}
         </button>
-        <button class="rf-btn rf-skip rf-big" onclick={() => (H as any)?.Radio_skip?.(n)} title="next">⏭</button>
-        <!-- the HEIST gesture (the human 2026-07-28 "keep what you're hearing"): only on a FRIEND'S track
-             (face.by) — your own you already hold.  ONE CLICK: ⇊ mints a %Keep and that's it — no popup.
-             It becomes a %Keep you OPEN and START (▶) from the keep panel — the original then downloads
-             straight into music/<genre>/.  ✓ is the tell it's kept (n.c.kept, runtime). -->
+        <div class="rf-hub">
+            {#if face.of > 0}
+                <!-- the ring tells the same story the bar did: a dim leading arc for the skipped
+                     head (Ra_preview_offset), gold for what's been heard, all fractions of the
+                     FULL track (skip + of).  Starts at 12 o'clock (the -90° rotation). -->
+                <svg class="rf-ring" viewBox="0 0 60 60" aria-hidden="true">
+                    <circle class="rf-ring-track" cx="30" cy="30" r="26"></circle>
+                    {#if face.skip > 0}
+                        <circle class="rf-ring-skip" cx="30" cy="30" r="26"
+                                style="stroke-dasharray:{ringlen(face.skip / (face.skip + face.of))} {RING_C};"></circle>
+                    {/if}
+                    <circle class="rf-ring-fill" cx="30" cy="30" r="26"
+                            style="stroke-dasharray:{ringlen(Math.min(1, face.at / face.of) * face.of / (face.skip + face.of))} {RING_C}; stroke-dashoffset:-{ringlen(face.skip / (face.skip + face.of))};"></circle>
+                </svg>
+            {/if}
+            <button class="rf-btn rf-heart" onclick={() => (H as any)?.Radio_skip?.(n)} title="next">⏭</button>
+        </div>
         {#if face.by}
-            <button class="rf-btn rf-skip rf-keep rf-big" class:kept={face.keptThis}
+            <button class="rf-btn rf-keep" class:kept={face.keptThis}
                 onclick={() => { (H as any)?.Radio_keep?.(n) }}
                 title={face.keptThis ? 'kept — open the keep and press ▶ to start the download' : "keep this — queues a download you start (▶) from the keep panel"}>{face.keptThis ? '✓' : '⇊'}</button>
         {/if}
     </div>
-    <div class="rf-title">{ICON[face.state] ?? '📻'} {face.title ?? 'the radio'}</div>
-    {#if face.artist}<div class="rf-artist">{face.artist}</div>{/if}
-    <!-- provenance: whose Pier this track streams from, or that it's your OWN record — the human 2026-07-28
-         wanted to always know the source, and for it to be clear when just playing your own music. -->
-    <!-- REMOTE OR LOCAL, unmistakably (the human 2026-08-07: "the UI in the player should be clear its
-         remote, or local").  This used to be a whispered grey line; a listener needs to know at a glance
-         whether these bytes are crossing a wire — it governs whether a stall is their disk or the net,
-         and whether ⇊ even makes sense.  A badge, not a footnote. -->
+    <!-- provenance badge, unmistakably (the human 2026-08-07: "the UI in the player should be clear its
+         remote, or local") — its own object like everything else here. -->
     {#if face.by}
-        <div class="rf-src rf-src-remote">⚯ STREAMING from {face.byName || 'a friend'}</div>
+        <div class="rf-src rf-src-remote">⚯ from {face.byName || 'a friend'}</div>
     {:else if face.solo && face.title && face.state !== 'off' && face.state !== 'digging'}
-        <!-- THE LABEL the human asked for (2026-08-08): playing your own is fine, being unclear about
-             WHY is not.  This is not the same message as the plain local badge below — that one means
-             "you chose your own records", this one means "nobody was online, so here's yours". -->
-        <div class="rf-src rf-src-local">♪ LOCAL — your own record · {soloWhy(face)}</div>
+        <div class="rf-src rf-src-local">♪ LOCAL · {soloWhy(face)}</div>
     {:else if face.title && face.state !== 'off' && face.state !== 'digging'}
         <div class="rf-src rf-src-local">♪ LOCAL — your own record</div>
     {/if}
     {#if face.note}<div class="rf-note">{face.note}</div>{/if}
-    <!-- the "why is it silent" line: a starved radio holds a loaded track but the next piece hasn't
-         arrived over the wire, so the bar freezes.  Say so — the human asked that the page never go
-         quiet WITHOUT explaining itself.  It resumes itself the instant the piece lands (no user action).
-         WORDING (2026-08-06, the human): "off the tape", not "the next piece hasn't arrived yet" — the
-         old line described the MECHANISM to someone who only wanted to know the music stopped. -->
     {#if face.state === 'starved'}<div class="rf-note">off the tape — holding the line, it'll resume itself</div>{/if}
-    {#if face.of > 0}
-        <!-- the skipped head rides the bar as a dim leading segment (the human 2026-08-08: "indicate the
-             portion the Record has skipped past").  Both widths are fractions of the FULL track
-             (skip + of), so the gold fill starts where the record actually did and the geometry tells
-             the same story as the clock line below.  skip=0 ⇒ the old bar exactly. -->
-        <div class="rf-bar">
-            {#if face.skip > 0}<div class="rf-skipped" style="width:{100 * face.skip / (face.skip + face.of)}%"></div>{/if}
-            <div class="rf-fill" style="width:{Math.min(100, 100 * face.at / face.of) * face.of / (face.skip + face.of)}%"></div>
-        </div>
-        <!-- "0:40 + 0:04 / 2:45" — skipped + heard / the whole track.  The middle number is the one that
-             moves; the outer two say what you missed and what the track really is. -->
-        <div class="rf-time">
-            {#if face.skip > 0}<span class="rf-skiptime">{mmss(face.skip)} +</span> {mmss(face.at)} / {mmss(face.skip + face.of)}{:else}{mmss(face.at)} / {mmss(face.of)}{/if}
-            {#if face.played > 0}&nbsp;· {face.played} played{/if}
-            {#if face.drops > 0}&nbsp;· {face.drops} drops{/if}</div>
-    {:else if face.state === 'digging' && !face.note}
-        <div class="rf-time">{face.own ? 'digging your crates…' : 'looking for a friend to play…'}</div>
-    {:else if face.first}
-        <div class="rf-time">{face.pool > 0 ? `▶ plays your friends' music — ${face.pool} ${face.pool === 1 ? 'track' : 'tracks'} ready` : face.stock > 0 ? '▶ waiting for a friend — your own crate is in the Tuner' : '▶ waiting for a friend to come online'}</div>
-    {/if}
-    {#if face.pool > 0 && !face.first && !face.own}
-        <div class="rf-time">⚯ {face.pool} friend {face.pool === 1 ? 'track rides' : 'tracks ride'} the dial</div>
-    {/if}
+    <!-- the small facts, each its own chip: the moving clock, then played · drops · the pool -->
+    <div class="rf-chips">
+        {#if face.of > 0}
+            <span class="rf-chip rf-clock">
+                {#if face.skip > 0}<span class="rf-skiptime">{mmss(face.skip)} +</span> {mmss(face.at)} / {mmss(face.skip + face.of)}{:else}{mmss(face.at)} / {mmss(face.of)}{/if}
+            </span>
+            {#if face.played > 0}<span class="rf-chip">{face.played} played</span>{/if}
+            {#if face.drops > 0}<span class="rf-chip">{face.drops} drops</span>{/if}
+        {:else if face.state === 'digging' && !face.note}
+            <span class="rf-chip">{face.own ? 'digging your crates…' : 'looking for a friend to play…'}</span>
+        {:else if face.first}
+            <span class="rf-chip">{face.pool > 0 ? `▶ plays your friends' music — ${face.pool} ${face.pool === 1 ? 'track' : 'tracks'} ready` : face.stock > 0 ? '▶ waiting for a friend — your own crate is in the Tuner' : '▶ waiting for a friend to come online'}</span>
+        {/if}
+        {#if face.pool > 0 && !face.first && !face.own}
+            <span class="rf-chip">⚯ {face.pool} on the dial</span>
+        {/if}
+    </div>
 </div>
 
 <style>
+    /* THE BITSY LAYOUT — a centred column of individual objects, sized for a round room. */
     .rf {
         pointer-events: none;
         width: max-content;
-        max-width: 300px;
-        padding: 8px 12px;
+        max-width: 240px;
+        padding: 6px 8px;
         font-family: ui-rounded, 'Trebuchet MS', sans-serif;
         color: #e8dcc0;
-        text-align: left;
+        text-align: center;
+        display: flex; flex-direction: column; align-items: center; gap: 3px;
     }
-    .rf-transport { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+    /* every piece is its own small object */
+    .chip {
+        background: rgba(16, 28, 36, 0.78);
+        border: 1px solid rgba(217, 160, 38, 0.28);
+        border-radius: 999px;
+        padding: 2px 10px;
+    }
+    .rf-title { font-size: 12px; font-weight: 700; overflow-wrap: anywhere; max-width: 100%; }
+    .rf-artist { font-size: 10px; opacity: 0.85; padding: 1px 8px; }
+    .rf-transport { display: flex; align-items: center; gap: 10px; margin: 3px 0 1px; }
     .rf-btn {
         pointer-events: auto;
         cursor: pointer;
@@ -175,33 +188,33 @@
         flex: none;
     }
     .rf-btn:hover { background: #d9a026; color: #04202a; }
-    /* thumb-weighted (see the transport comment): next + keep are the constant verbs, pause is a corner */
-    .rf-big   { font-size: 1.55em; padding: 0.30em 0.62em; flex: 1 1 auto; min-height: 2.1em; }
-    .rf-small { font-size: 0.9em;  padding: 0.18em 0.34em; flex: 0 0 auto; opacity: 0.8; }
+    /* the hub: the constant verb wears the progress ring */
+    .rf-hub { position: relative; width: 56px; height: 56px; flex: none; }
+    .rf-heart { position: absolute; inset: 8px; width: 40px; height: 40px; font-size: 17px; }
+    .rf-ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); pointer-events: none; }
+    .rf-ring-track { fill: none; stroke: #1a2f38; stroke-width: 3.4; }
+    .rf-ring-skip  { fill: none; stroke: #3a4a52; stroke-width: 3.4; stroke-linecap: butt; }
+    .rf-ring-fill  { fill: none; stroke: #d9a026; stroke-width: 3.4; stroke-linecap: round;
+                     transition: stroke-dasharray 0.4s linear; }
+    .rf-small { width: 24px; height: 24px; font-size: 10px; opacity: 0.8; }
     .rf-small:hover { opacity: 1; }
-    .rf-skip { width: 26px; height: 26px; font-size: 10px; }
+    .rf-keep { width: 30px; height: 30px; font-size: 12px; }
     .rf-keep.kept { background: #2e6b3a; border-color: #57c777; color: #eafff0; }
     .rf-keep.kept:hover { background: #57c777; color: #04202a; }
-    .rf-title { font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
-    .rf-artist { font-size: 10px; opacity: 0.8; }
     .rf-note { font-size: 9px; opacity: 0.6; font-style: italic; }
     .rf-src {
-        display: inline-block; margin-top: 2px; padding: 1px 5px; border-radius: 3px;
+        display: inline-block; padding: 1px 7px; border-radius: 999px;
         font-size: 0.72em; letter-spacing: 0.04em; font-weight: 600;
     }
     .rf-src-remote { background: rgba(127, 200, 232, 0.16); color: #8fd0ee; border: 1px solid rgba(127, 200, 232, 0.4); }
     .rf-src-local  { background: rgba(182, 201, 168, 0.13); color: #b6c9a8; border: 1px solid rgba(182, 201, 168, 0.32); }
-    .rf-bar {
-        margin-top: 6px;
-        height: 3px;
-        background: #1a2f38;
-        border-radius: 2px;
-        overflow: hidden;
-        display: flex;           /* skipped-head segment + fill sit in a row, widths as % of the full track */
+    /* the small facts file in a wrapping row of chips, each its own object */
+    .rf-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; max-width: 100%; }
+    .rf-chip {
+        font-size: 9px; opacity: 0.85; white-space: nowrap;
+        background: rgba(16, 28, 36, 0.6); border: 1px solid rgba(217, 160, 38, 0.16);
+        border-radius: 999px; padding: 1px 7px;
     }
-    .rf-skipped { height: 100%; flex: none; background: #3a4a52; }
-    .rf-fill { height: 100%; flex: none; background: #d9a026; transition: width 0.4s linear; }
     .rf-skiptime { opacity: 0.55; }
-    .rf-time { font-size: 9px; opacity: 0.7; margin-top: 3px; }
     .on .rf-title { color: #ffd869; }
 </style>

@@ -50,6 +50,28 @@ The recon (2026-07-22) found the funnel is ~80% already built as components — 
    - Still open from this item: the **open-share offer** itself was not folded in, only the warning.
 3. **(Vyto)** Reframe the `BootGate`/`FaceSucker` first-FSA prompt on BigSoundland so it reads as the
     same friendly bubble, not a bare hoister.
+   - **LANDED 2026-08-09 — the funnel moved INTO the glass** (the owner: "shake out the UI outside of
+      Vyto, ie fullscreen the latter, with Invite management in there").  `%Door` left the `show_diag`
+       branch and joined Sounditron's always-on organ set, DoorFace grew a folded **invite door**
+        hosting `InvitePanel` in a new `inglass` dress (one implementation — the arc Book SwarmInvite
+         proves — with the identity title and friends list suppressed because DoorFace already says
+          both), and BigSoundland's resident glass view lost its header and strip entirely.  The
+           sprawl and boot-diagnostic rooms keep every scrap of chrome; `▦` and the `?` key are the
+            way back.
+   - **The trap this had to solve, worth knowing before moving any other panel into a cell:** a face
+      mounts only while its cell is roomy enough to draw one, so anything load-bearing that hangs off
+       a panel's `$effect`s becomes conditional on the tessellation.  InvitePanel's effects were
+        standing the swarm STATION and arming the SHARE.  Left where they were, a crushed Door cell
+         would have meant nobody could dial you — with every local reading healthy and the only tell
+          a friend's scan timing out.  They now live in `ui/SwarmStandup.svelte`, mounted hidden
+           beside the spine shims under BigSoundland's own doctrine ("outside the view switch so the
+            view choice can't starve the boot").
+   - The strip mount **stays** on the non-glass rooms, deliberately: someone opening a scanned `?Iz`
+      lands there *before* any world has commissioned a glass.  A join button that only exists inside
+       a cell would make the whole invite funnel depend on a successful boot — precisely the thing an
+        invite is most likely to arrive in the middle of.
+   - Item 3 proper (the FSA bubble) is **still open**; this changed where the door lives, not how the
+      first FSA prompt reads.
 4. **(me, if wanted)** The thin wire contract below — a first-run "needs-onboarding" state + a clean
     capability read — so the bubble renders STATE instead of sniffing conditions inline.
 

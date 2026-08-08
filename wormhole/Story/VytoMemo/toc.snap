@@ -1,5 +1,16 @@
 story:VytoMemo
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.014
+      sample=0.016,at=1786232336
+      sample=0.011,at=1786232368
+    TimeTotal:step,avg=0.004
+      sample=0.004,at=1786232336
+      sample=0.003,at=1786232368
   step,dige:lie
-  step=2,dige:lie
-  step=3,dige:lie
-  step=4,dige:lie
+  step=2,dige:lie,desc:seed a two-level rig — three cogs under the root and two grandchildren under the first
+  step=3,dige:lie,desc:commission the glass nested on the rig and stir to rest
+  step=4,dige:lie,desc:hold the settled glass under forced repaints — the wall counter must stand still
