@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '458ac9b396c8e173~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '5e3581f3684bedb6~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -3255,6 +3255,19 @@ async Heist_keep_cancel(w, keep) {
     //   here, so the forget below still reads `keep.sc.seed` exactly as it did.  And the forget is keyed
     //    on that seed in the Berth, not on the %Heist standing — dropping first cannot orphan it.
     shop.rm({ Heist: 1, seed: keep.sc.seed })
+    // THE GLASS REACTS ON THE GESTURE, NOT ON THE POLL (the owner 2026-08-09: "make the cell layout
+    //  react to that being clicked more immediately").  The rm above changes the keep set, but the
+    //   only thing watching the keep set was the trickle's ≤2.5s poll — so a confirmed cancel dropped
+    //    the particle instantly and then the WHOLE layout (the staged monster, the dimmed organs, the
+    //     missing Radio) sat frozen for up to 2.5s.  The mint direction fixed exactly this years-in-
+    //      app-time ago with Radio_pop_glass ("the heist cell isn't popping up anymore"); this is the
+    //       leaving direction's twin, through the same stashed-run handle — the resident run House
+    //        owns the commission binding, a cross-ghost `this.` call could not get the right `this`.
+    //  fp-gated inside, so the trickle's next pass sees no change; headless/Book context has no
+    //   resident run and falls back to the poll, exactly like Radio_pop_glass.
+    let M = this.top_House ? this.top_House() : null
+    let run = M ? M.c.sounditron_run : null
+    if (run && typeof run.Sounditron_keeps_look === 'function') { try { run.Sounditron_keeps_look(w) } catch (er) {} }
     try { await this.Heist_keep_forget(keep) } catch (er) {}
 
 },

@@ -24,7 +24,7 @@ const HEAT_BUY = 3.5
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return 'ee62282dacce505a~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return 'f0504124cd6bd28b~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -883,6 +883,39 @@ Vyto_attend_walk(w, n, tok, amt) {
         }
         this.Vyto_attend_walk(w, m, tok, amt)
     }
+
+},
+// Vyto_release — BACK TO TOP (the owner 2026-08-09: *"or at least have some back-to-top thing"*, said
+//  in the same breath as *"it's too much of a crush, we should be able to click back into it to share
+//   the focus across more things"*).  Every emphasis verb the glass has is one-way: attend BUYS heat,
+//    focus STANDS a tok, stage DEALS the frame — and each is undone only by attending something else,
+//     which is not a release, it is a different bias.  The tax is capped at 0.6 per press precisely so
+//      one press cannot wipe the board, which is right for a press and wrong for "start again": there
+//       was no gesture in the glass that meant SHARE IT OUT AGAIN.  This is it, and it is one verb
+//        rather than three controls because a reader who wants out wants out of all of it.
+//  Heat, focus_tok and stage_tok all ride `.c` (runtime, never snapped) and all three are absent in a
+//   driven world, so this is byte-invisible to every fixture — a Book that never navigates has nothing
+//    here to release.
+Vyto_release(w) {
+    if (!w.c.mirror) return
+    let cur = w.c.stage_tok
+    delete w.c.stage_tok
+    w.c.focus_tok = null
+    this.Vyto_release_walk(w, w.c.mirror)
+    // the staged body was just COMMANDED back into the crowd — its hover pin must not freeze the
+    //  shrink it was ordered into (the Vyto_calm_yield law, same as Vyto_stage's own two yields).
+    this.Vyto_calm_yield(w, cur)
+    this.Vyto_stir_soon(w)
+
+},
+Vyto_release_walk(w, n) {
+    for (const m of n.o()) { if (m.c.heat) { m.c.heat = 0; this.Vyto_calm_yield(w, m.c.tok) } }
+    for (const m of n.o()) { this.Vyto_release_walk(w, m) }
+
+},
+// e_Vyto_release — the door, for a client elsewhere (the e_Vyto_focus idiom).
+e_Vyto_release(A, w, e) {
+    this.Vyto_release(w)
 
 },
 // Vyto_even_toggle — flip the EQUAL POSE (see Vyto_express).  Runtime .c, one flip, one stir.

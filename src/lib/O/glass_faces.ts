@@ -26,6 +26,10 @@ export const FACE_MAINKEYS: Record<string, string> = {
     Diag: 'Diag',         // the diagnostics toggle cell (imposed by mainkey)
     Errlog: 'Errlog',     // the Story error channel (spec/Error_channel_todo.md) — lazy-minted, so this cell
                           //  only ever appears when a run captured a throw; loud-when-broken, no snap byte to dress it
+    Supervisor: 'Supervisor', // THE ONE SANITY CELL — the %Supervisor summary row on w:Supervisor (which lives on
+                          //  MUNDO, not the run: it must outlive the House it reports on).  Quiet when healthy —
+                          //   one dim line — and speaks up only when a registered watch reads wrong, unmet, or
+                          //    blind.  It replaces the rank of idle HUDs, and it never names what it watches.
     Transfer: 'Transfer', // the live transfer HUD — a persistent dontSnap cell the wire feeds (top_House().c.xfer);
                           //  jiggling rx/tx bars + per-track pull/serve progress so bytes-in-flight are VISIBLE
     Shuffle: 'Shuffle',   // the shuffle pool — a dontSnap cell showing WHAT THE DIAL CAN REACH vs what

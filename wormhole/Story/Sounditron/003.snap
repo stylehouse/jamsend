@@ -6,7 +6,7 @@ Snap:H
         self,round=5	{"mung":["age"]}
         req:wrangle,eternal,ok
         Radio:off,face:Radio
-        Stoker:idle,face:Stoker,crew:Radio,stood,stock,fresh
+        Stoker:idle,face:Stoker,crew:Radio,stood=2,stock,fresh
         Tuner:glass,face:Tuner
         Riffle:shut,face:Riffle,crew:Riffle
         Zine:Faves,face:Zine,crew:Radio,count:2
@@ -19,6 +19,7 @@ Snap:H
         Transfer,dontSnap
         Shuffle,dontSnap
         Diag,dontSnap
+        Pose:wire,dontSnap
         Machine,self:f5da6599,friendly:Righto
         req:stoker_wait,finished
         req:witness,eternal,ok

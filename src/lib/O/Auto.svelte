@@ -784,6 +784,19 @@
             console.log('🧪 Creduler up — runner Lies outside Story')
         }
 
+        // ── w:Supervisor — THE WATCHER, standing on Mundo beside the Creduler Lies ────────────────
+        //   Deliberately HERE and not in the Run House: the failure a supervisor most needs to
+        //    report is the one that kills the House it lives in.  auto_teardown_story (below) drops
+        //     H:Story and leaves Mundo standing, so a supervisor inside the run could never say
+        //      "the run died" — it would die with it.  Standing it beside the Creduler also means a
+        //       DAEMON (no Book, no glass) gets one, which is the point of the registration slope:
+        //        Supervisor never reaches for anything, so it works wherever it is stood.
+        //   Guarded on the method, not on a flag: Supervisor_up is a ghost method, so it does not
+        //    exist until the Creduler has loaded the spine (several beats after boot).  Auto ticks
+        //     until it does, and Supervisor_up is idempotent, so the world simply appears the first
+        //      tick the ghost is live and nothing has to sequence it.
+        if ((H as any).Supervisor_up) (H as any).Supervisor_up(H)
+
         // ── audio keep-awake (both roles) ─────────────────────────────────────
         //   Keep the tab flagged "playing media" so the browser spares it the background throttle/discard
         //    that wedges the relay (the "went quiet" failure class).  Was runner-only; the editor is a

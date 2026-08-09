@@ -17,6 +17,7 @@ import PickFace from './ui/PickFace.svelte'
 import DiagFace from './ui/DiagFace.svelte'
 import ErrlogFace from './ui/ErrlogFace.svelte'
 import TransferFace from './ui/TransferFace.svelte'
+import SupervisorFace from './ui/SupervisorFace.svelte'
 import DoorFace from './ui/DoorFace.svelte'
 import RiffleFace from './ui/RiffleFace.svelte'
 import RiffFace from './ui/RiffFace.svelte'
@@ -40,6 +41,7 @@ export const GLASS_KINDS: Record<string, any> = {
     Pick: PickFace,       // one kept track chip in a nested keep — ✓/♪/⇊, click un-keeps
     Diag: DiagFace,       // the diagnostics toggle — reveals/hides beat·uptime·door; grabs attention when open
     Errlog: ErrlogFace,   // the Story error channel — calm ✓ green empty, RED w/ count+latest lines when a throw landed
+    Supervisor: SupervisorFace, // the ONE sanity cell — quiet when healthy, loud with the worst thing when not
     Transfer: TransferFace,// the LIVE transfer HUD — jiggling rx/tx bars + per-track pull/serve progress + freed
     Door: DoorFace,       // who am I + who's with me — identity, landings, pulse liveness
     Riffle: RiffleFace,   // rifle a collection — the deck: crates, folders, deal/sweep

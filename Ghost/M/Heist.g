@@ -3155,6 +3155,19 @@ async Heist_keep_cancel(w, keep):
     //   here, so the forget below still reads `keep.sc.seed` exactly as it did.  And the forget is keyed
     //    on that seed in the Berth, not on the %Heist standing — dropping first cannot orphan it.
     shop.rm({ Heist: 1, seed: keep.sc.seed })
+    // THE GLASS REACTS ON THE GESTURE, NOT ON THE POLL (the owner 2026-08-09: "make the cell layout
+    //  react to that being clicked more immediately").  The rm above changes the keep set, but the
+    //   only thing watching the keep set was the trickle's ≤2.5s poll — so a confirmed cancel dropped
+    //    the particle instantly and then the WHOLE layout (the staged monster, the dimmed organs, the
+    //     missing Radio) sat frozen for up to 2.5s.  The mint direction fixed exactly this years-in-
+    //      app-time ago with Radio_pop_glass ("the heist cell isn't popping up anymore"); this is the
+    //       leaving direction's twin, through the same stashed-run handle — the resident run House
+    //        owns the commission binding, a cross-ghost `this.` call could not get the right `this`.
+    //  fp-gated inside, so the trickle's next pass sees no change; headless/Book context has no
+    //   resident run and falls back to the poll, exactly like Radio_pop_glass.
+    let M = this.top_House ? this.top_House() : null
+    let run = M ? M.c.sounditron_run : null
+    if (run && typeof run.Sounditron_keeps_look === 'function') { try { run.Sounditron_keeps_look(w) } catch (er) {} }
     try { await this.Heist_keep_forget(keep) } catch (er) {}
 
 // Heist_keep_scrub — CANCEL AND UNDO: drop the heist AND take back every track it already landed, so the

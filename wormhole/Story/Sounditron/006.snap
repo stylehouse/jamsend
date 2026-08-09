@@ -5,8 +5,8 @@ Snap:H
       w:Sounditron
         self,round=11	{"mung":["age"]}
         req:wrangle,eternal,ok
-        Radio:playing,face:Radio,solo:gathering,solo_by:Lefto,title:1-06 The Glorious Immolation of the Holy Order o,of=252,at=5,skip=112,gaps
-        Stoker:idle,face:Stoker,crew:Radio,stood=3,stock,fresh
+        Radio:playing,face:Radio,solo:gathering,solo_by:Lefto,title:Echo E,artist:Fourier Four,of=36,at=6,skip=24,gaps
+        Stoker:idle,face:Stoker,crew:Radio,last:High A,stood=4,stock=2,fresh=2,dug=7
         Tuner:glass,face:Tuner
         Riffle:shut,face:Riffle,crew:Riffle
         Zine:Faves,face:Zine,crew:Radio,count:2
@@ -19,6 +19,7 @@ Snap:H
         Transfer,dontSnap
         Shuffle,dontSnap
         Diag,dontSnap
+        Pose:wire,dontSnap
         Machine,self:f5da6599,friendly:Righto
         req:stoker_wait,finished
         req:witness,eternal,ok
@@ -26,11 +27,6 @@ Snap:H
         req:relay_wait,finished
         req:muse_wait,finished
         Census,n=2
-        Heist:the one they played last night,posed,from:Lefto,crew:system
-          Need:a sealed Music grant — the door open both ways,met
-          Need:the friend online — bytes only flow live,met
-          Need:their shelf counted — records to want
-          Need:the original bytes over Repli — the pull itself
         req:peer_wait,finished
         Audio,real,heard
         req:sound_wait,finished

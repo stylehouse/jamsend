@@ -6,10 +6,10 @@ Snap:H
         self,round	{"mung":["age"]}
         req:wrangle,eternal,ok
         Radio:off,face:Radio
-        Stoker:idle,face:Stoker,crew:Radio,stood=15,stock,fresh
+        Stoker:idle,face:Stoker,crew:Radio
         Tuner:glass,face:Tuner
         Riffle:shut,face:Riffle,crew:Riffle
-        Zine:Faves,face:Zine,crew:Radio,count:2
+        Zine:Faves,face:Zine,crew:Radio
         Door:open,face:Door
         Uptime,face:Uptime
         Beat,face:Beat
@@ -19,3 +19,4 @@ Snap:H
         Transfer,dontSnap
         Shuffle,dontSnap
         Diag,dontSnap
+        Pose:wire,dontSnap

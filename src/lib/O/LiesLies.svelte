@@ -87,6 +87,8 @@
         'Ghost/Story/Voronation.g',
 
         'Ghost/Story/Sounditron.g',     // the Sounditron — the real-environment diagnostic Book /BigSoundland runs (Opt/wild; assertions are the verdict)
+
+        'Ghost/O/Supervisor.g',         // THE WATCHER — w:Supervisor on Mundo: a roster of watches other processes REGISTER (it never names what it watches), read every pass, quiet while they all read ok
     ]
 
     // ── RUNNER_FACETS — a runner's advertised self-state, as ONE ordered list ──────────────────────

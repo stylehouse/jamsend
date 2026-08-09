@@ -7,7 +7,65 @@
 
 ## 0. Get on with next
 
+### ⇑ IT STANDS — 2026-08-09, later the same day
+
+`w:Supervisor` is **built, live, and witnessed**. `Ghost/O/Supervisor.g` (new ghost, new `Ghost/O/`
+ shelf, in `CREDULER_GHOSTS`), the world stood on **Mundo** by `Auto.svelte` beside the Creduler
+  Lies, a `%Supervisor` summary row faced by `SupervisorFace.svelte`, grappled onto the glass by
+   `Sounditron_glass`. The fake posed heist is **deleted** and its four honest readings are the first
+    four registered watches.
+
+**The generalisation the owner asked for, and the law that makes it work:** *"processes can host
+ things for it to watch."* Supervisor **never names what it watches** — there is no list of
+  subsystems in that file and there must never be one, or it becomes the posed heist again. Every
+   watch ARRIVES via `Supervisor_watch(w, key, sentence, kind, fn, subject)`. The probe rides as a
+    METHOD NAME, resolved off the House at read time, so it snaps, greps, and survives a ghost
+     reload; an unresolvable name reads `unknown`, never a throw.
+
+**Slope of ownership — settled.** Supervisor knows nothing about Vyto; Vyto knows nothing about
+ Supervisor; the COMMISSIONER knows both (`e_Vyto_commission` already takes `client_w`/`grapples`
+  off the req, so this was granted, not built). Consequence that matters: Supervisor works with **no
+   glass at all** — a watcher that needs the UI up cannot report that the UI is down, the exact trap
+    `Radio_sound` sits in.
+
+**Two kinds of watch**, because both were asked for in one breath: `milestone` latches `met:1` and
+ goes quiet forever (an invite answered); `standing` never latches and may go wrong again (there is
+  sound, the peer is up). The old posed Needs latched all four alike — so a friend who went offline
+   read `met` permanently. That bug is gone by construction.
+
+**Proof, not a green file.** Every call into the Supervisor is guarded, so one that never stood up
+ and one that works perfectly look identical from outside ([[a-quiet-file-proves-nothing]]). So the
+  Book witnesses it: `%see:'the supervisor stood — a roster of registered watches is being read'`,
+   gated on `Sounditron_supervisor_reading(w)` — a count of watches carrying an actual **verdict**,
+    which only `Supervisor_read` stamps. Non-zero proves the whole chain: ghost loaded → world stood
+     on Mundo → worker ticked → roster walked → probes resolved by name and answered. It swore at
+      **step 2**, from a roster the PREVIOUS run registered at beat 5 — the first observed proof that
+       the roster outlives the run, which is the whole reason it lives on Mundo.
+
+**Where it is red.** Sounditron now runs 5/8 green (1–5, on spayers). Steps 6–8 are red **by
+ construction**, not by this change: two identical back-to-back runs re-dige every step, because
+  6–8 snapshot whichever track the radio happens to be playing. Do not chase them with `accept`.
+
+**Next moves, in order.**
+1. **Provoke the sensors.** Still four sensors with no reader and no proof (table below). Registering
+    `Swarm_beat_health` / `Vyto_normal` / `Radio_sound` as watches is now a one-line call each — and
+     THEN each must be seen to go red. That is the work; the roster just made it cheap.
+2. **The reload BUTTON** (constraint 3). Deliberately not built: a cure is a req, and half a cure is
+    worse than none. It hangs off the watch that diagnosed the fault.
+3. **The Invite narrator** — the owner wants to be *talked through* the invite arc. That is a
+    different organ from a watcher (it has opinions about what you should do next); a `milestone`
+     roster is its substrate, not its implementation.
+4. **Its own pop-up glass.** `A:Vyto` is one-per-House, so Supervisor-on-Mundo + app-glass-on-Run
+    already means two staple points and two coexisting glasses, no new machinery. Unverified — check
+     which House the live BigSoundland glass staples to before relying on it.
+
+**Still owed by the owner:** `%Caper` vs `%Pull` (they said *"I don't get it"*; unchanged, four Books
+ to re-record if it moves).
+
+---
+
 ### ⇑ HANDOVER 2026-08-09 — the destination, the bomb, and the next move
+*(kept: this is the reasoning that produced the build above, and the sensor table is still live)*
 
 **Destination.** ONE sanity cell on the glass that is silent when the app is healthy and speaks up
  when it is not, with a reload BUTTON and no auto-anything. The owner has asked for it three times in

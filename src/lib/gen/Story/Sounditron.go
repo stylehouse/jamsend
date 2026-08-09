@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '1b07a4b27f2a9482~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return 'ba62d3bd070cd9d8~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -320,9 +320,21 @@ Sounditron_commission(w) {
     //    telemetry", it is "stop spending a permanent cell on it".  The row and TransferFace both stay
     //     minted and current — what is wanted instead is ONE sanity cell that speaks up when something
     //      is actually wrong, rather than a rank of idle HUDs each saying nothing at full volume.
-    //  That cell does not exist yet and is the open item; until it does, this is simply quieter.
+    //  THAT CELL NOW EXISTS (2026-08-09) — %Supervisor, pushed just below.  This paragraph is kept
+    //   because it is the reasoning that produced it, not a stale TODO.
     let xfer = krw && krw.oai ? krw.oai({ Transfer: 1, dontSnap: 1 }) : null
     if (xfer && xfer.c.up !== krw) xfer.c.up = krw
+    // THE SANITY CELL — ALWAYS ON, and the answer to the open item the paragraph above left standing.
+    //  It is the one cell allowed to be permanent because it is the one cell that stays QUIET: with
+    //   nothing wrong it draws a single dim line, so it costs no attention at rest and is the first
+    //    thing you see the moment something breaks.  That is exactly the trade the idle HUDs failed.
+    //  It comes from ANOTHER HOUSE — w:Supervisor stands on Mundo, this glass is commissioned from the
+    //   Run House — and that is fine and deliberate: a grapple is a `.c` ref, so the cross-House reach
+    //    costs nothing, and the supervisor OUTLIVES this run rather than dying with the thing it
+    //     reports on.  A missing Supervisor is simply no cell (a bare Book may have none).
+    let supw = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
+    let suprow = supw ? supw.o({ Supervisor: 1 })[0] : null
+    if (suprow) organs.push(suprow)
     if (!anyKeep) {
         let h = w.o({ Caper: 1 })[0]
         // FLAT: the flow organ's constraint / Lead / filing / supervision rows are WORKINGS, not
@@ -863,14 +875,6 @@ async Sounditron_trickle_look(w, era) {
         // (a friend arriving no longer mints its own cell — the glass is the fixed organ set now — so
         //  there's no growth re-commission here; the fp-bump above already refreshes the friend liveness
         //   the Radio/Riffle faces read.)
-        // the ⇊ KEEP cells DO come + go: re-commission when the keep set (or a state, for the fold-down /
-        //  the leave-on-done) changes, so a fresh keep appears as a cell and a dropped|done one falls away.
-        let kme = this.Radio_pub ? this.Radio_pub(w) : null
-        let kshop = kme ? this.Ra_home_shop(w, kme) : null
-        let keptN = kshop ? kshop.o({ Heist: 1 }).length : 0
-        // fingerprint the GRAPPLE-SET-affecting facts ONLY (diagnostics open + keep count), NOT per-keep state:
-        //  a keep's primed→pulling fold-down rides its own dose bump (re-express), never a full re-commission —
-        //   the human's "diagnostics and heist-spawning seem slow" was partly re-commissioning on every tick.
         // THE POSE FINGERPRINT — what's included follows the model (the human 2026-08-09).  Reads the
         //  same M.c.xfer the pose station sculpts from, buckets pct to 25% steps, and re-commissions
         //   (which re-poses) ONLY when the sentence changes: a pull starting, crossing a quarter, or
@@ -894,25 +898,46 @@ async Sounditron_trickle_look(w, era) {
             w.c.pose_fp = pfp
             this.Sounditron_commission(w)
         }
-        let kfp = (w.c.show_diag ? 'D' : '') + keptN
-        if (w.c.keep_fp !== kfp) {
-            w.c.keep_fp = kfp
-            // ATTENTION (the human 2026-07-28 "diminish all the other UI cells when we open the Heist, except
-            //  the nowplaying bit"): a live %Heist grabs the room — the always-on SECONDARY organs shrink via a
-            //   negative dose (Vyto env_area), Radio (now-playing) + the Diag toggle stay full, the Keep cells
-            //    dose themselves UP.  When the last keep leaves the dose clears and the glass springs back.  The
-            //     three diagnostics are hidden-by-default now, so they're not in this set.
-            let dim = keptN ? '-0.62' : null
-            for (const q of [{ Tuner: 1 }, { Riffle: 1 }, { Caper: 1 }]) {   // Lineup is no longer grappled — nothing to dim
-                let org = w.o(q)[0]
-                if (!org) continue
-                if (dim) { if (org.sc.dose !== dim) { org.sc.dose = dim; org.bump() } }
-                else if (org.sc.dose) { delete org.sc.dose; org.bump() }
-            }
-            this.Sounditron_commission(w)
-        }
+        this.Sounditron_keeps_look(w)
     }
     setTimeout(() => { this.Sounditron_trickle_look(w, era) }, 2500)
+
+},
+// Sounditron_keeps_look — the KEEP-SET REACTION, one verb.  The ⇊ KEEP cells come + go: when the keep
+//  set (or the diagnostics toggle) changes, re-dim the secondary organs and re-commission, so a fresh
+//   keep appears as a cell and a dropped|done one falls away — WITH the room re-shared.
+//  Fingerprints the GRAPPLE-SET-affecting facts ONLY (diagnostics open + keep count), NOT per-keep
+//   state: a keep's primed→pulling fold-down rides its own dose bump (re-express), never a full
+//    re-commission — the human's "diagnostics and heist-spawning seem slow" was partly
+//     re-commissioning on every tick.
+//  CALLED FROM TWO PLACES, and that duality is the point (the owner 2026-08-09: *"the cancel Heist
+//   button, make the cell layout react to that being clicked more immediately"*): the trickle's
+//    ≤2.5s poll, and Heist_keep_cancel at the gesture itself.  The MINT direction got its now-path
+//     long ago (Radio_pop_glass — "the heist cell isn't popping up anymore"); leaving never had the
+//      twin, so a confirmed cancel dropped the particle instantly and then the whole glass — the
+//       staged monster included — sat unchanged for up to 2.5s.  fp-gated, so the poll pass after a
+//        gesture-driven call sees no change and does nothing: calling it twice costs one compare.
+Sounditron_keeps_look(w) {
+    let kme = this.Radio_pub ? this.Radio_pub(w) : null
+    let kshop = kme ? this.Ra_home_shop(w, kme) : null
+    let keptN = kshop ? kshop.o({ Heist: 1 }).length : 0
+    let kfp = (w.c.show_diag ? 'D' : '') + keptN
+    if (w.c.keep_fp !== kfp) {
+        w.c.keep_fp = kfp
+        // ATTENTION (the human 2026-07-28 "diminish all the other UI cells when we open the Heist, except
+        //  the nowplaying bit"): a live %Heist grabs the room — the always-on SECONDARY organs shrink via a
+        //   negative dose (Vyto env_area), Radio (now-playing) + the Diag toggle stay full, the Keep cells
+        //    dose themselves UP.  When the last keep leaves the dose clears and the glass springs back.  The
+        //     three diagnostics are hidden-by-default now, so they're not in this set.
+        let dim = keptN ? '-0.62' : null
+        for (const q of [{ Tuner: 1 }, { Riffle: 1 }, { Caper: 1 }]) {   // Lineup is no longer grappled — nothing to dim
+            let org = w.o(q)[0]
+            if (!org) continue
+            if (dim) { if (org.sc.dose !== dim) { org.sc.dose = dim; org.bump() } }
+            else if (org.sc.dose) { delete org.sc.dose; org.bump() }
+        }
+        this.Sounditron_commission(w)
+    }
 
 },
 // beat 3 — THE RELAY: hold the step open up to 10s for the channel to stand.
@@ -967,7 +992,7 @@ async Sounditron_possibilities(w) {
 //  HEIST nugget stands here — reaching for a peer IS what a heist waits on.
 async Sounditron_peer(w) {
     w.i({desc: 'reach for a peer'})
-    this.Sounditron_heist(w)
+    this.Sounditron_supervise(w)
     // RELIABILITY (2026-07-28, root-caused): a peer that IS online kept reading offline, so this wait
     //  burned its full ceiling and the friend features never fired ("doesn't keep working reliably").
     //   The cause was an ordering bug between two live constants — the ambient self-heal that re-greets a
@@ -1270,39 +1295,76 @@ async Sounditron_muse(w) {
     }
 
 },
-// what the heist NEEDS to complete — posed:1 until a real %Caper stands on this machine: the
-//  SHAPE of the real thing (%Caper,of:… with %Need children whose met: the witness keeps
-//   honest), so the face can be tuned on sight before the machinery arrives here.
-Sounditron_heist(w) {
-    if (w.o({ Caper: 1 })[0]) return
-    let f = w.o({ Friend: 1 })[0]
-    let from = f ? f.sc.Friend : 'a friend to be'
-    let h = w.oai({ Caper: 'the one they played last night', posed: 1 })
-    h.sc.from = from
-    h.sc.crew = 'system'
-    h.oai({ Need: 'a sealed Music grant — the door open both ways' }).c.up = h
-    h.oai({ Need: 'the friend online — bytes only flow live' }).c.up = h
-    h.oai({ Need: 'their shelf counted — records to want' }).c.up = h
-    h.oai({ Need: 'the original bytes over Repli — the pull itself' }).c.up = h
+// THE POSED HEIST IS GONE (2026-08-09, the owner: *"where does this `the one they played last
+//  night` come from? is that debug crap?"* — then *"it's time to delete the fake"*).  It was: a
+//   %Caper the Book minted itself, headlined with an invented album nobody had played, carrying
+//    four %Need rows.  It stood behind a retirement guard (`if a real %Caper exists, return`) that
+//     could never fire on a player tab, so the fake was permanent UI announcing a fiction.
+//  BUT THE FOUR NEEDS WERE HONEST — real readings of the real world, kept current every pass.  So
+//   the headline died and the readings were promoted: each is now a WATCH registered with
+//    w:Supervisor, which is the general shape the fake was a hand-carved imitation of.  Sounditron
+//     no longer owns a display; it owns four claims about itself and hands them over.
+// Sounditron_supervise — register this Book's readings on the standing Supervisor.  Idempotent per
+//  key, so it re-registers every pass without minting duplicates: that is what keeps the roster
+//   current across a world that comes and goes without anyone tracking registration state.
+//  A missing Supervisor is a NO-OP, never a throw — a daemon, a bare Book, or a tab whose spine has
+//   not finished loading legitimately has none, and a watcher that breaks its host is worse than
+//    no watcher.
+Sounditron_supervise(w) {
+    let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
+    if (!sup) return
+    // MILESTONE vs STANDING is load-bearing here, not decoration.  Three of these COMPLETE and
+    //  should then shut up forever; "the friend online" is a live condition that may go wrong again
+    //   the moment they close a tab, so it must never latch.  The old posed needs latched all four
+    //    alike — which meant a friend who went offline still read met, permanently.
+    this.Supervisor_watch(sup, 'sound.grant',  'a sealed Music grant stands — the door open both ways', 'milestone', 'Sounditron_probe_grant',  w)
+    this.Supervisor_watch(sup, 'sound.live',   'a friend is online — bytes only flow live',             'standing',  'Sounditron_probe_live',   w)
+    this.Supervisor_watch(sup, 'sound.shelf',  'a friend has counted their shelf — records to want',    'milestone', 'Sounditron_probe_shelf',  w)
+    this.Supervisor_watch(sup, 'sound.pulled', 'original bytes crossed over Repli — the pull landed',   'milestone', 'Sounditron_probe_pulled', w)
 
 },
-// the witness keeps the posed needs HONEST each pass: met:1 rides a Need the world satisfies.
-Sounditron_heist_met(w) {
-    let h = w.o({ Caper: 1 })[0]
-    if (!h) return
+// ── the four probes.  Each is a pure READ of `w` (the Sounditron world, handed over as the watch's
+//     subject) returning {verdict,note}.  None of them may mutate: Supervisor calls them on a tick
+//      it does not own, from a House that may be mid-anything.
+// Sounditron_supervisor_reading — how many registered watches carry an actual READING.  Not "does
+//  the world exist" and not "is the roster non-empty": either could be true while nothing ever ran.
+//   A verdict is stamped only by Supervisor_read, so a non-zero count here proves the whole chain —
+//    the ghost loaded, the world stood on Mundo, its worker ticked, the roster was walked, and the
+//     probes resolved BY NAME back into this file and answered.
+Sounditron_supervisor_reading(w) {
+    let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
+    if (!sup) return 0
+    return sup.o({ Watch: 1 }).filter(x => x.sc.verdict).length
+
+},
+// Sounditron_probe_grant — is the door open both ways?  A friend's %Music grant is the seal.
+Sounditron_probe_grant(w, sup) {
     let f = w.o({ Friend: 1 })[0]
-    for (const need of h.o({ Need: 1 })) {
-        let text = String(need.sc.Need)
-        let met = 0
-        if (text.indexOf('grant') >= 0 && f?.sc?.music) met = 1
-        if (text.indexOf('online') >= 0 && this.Sounditron_peer_live(w)) met = 1
-        if (text.indexOf('counted') >= 0 && f && Number(f.sc.records) > 0) met = 1
-        // the pull ITSELF: real bytes crossed — a friend's record holds its first playable chunk
-        //  (presence IS fill state; a husk is all metadata, no bytes).  This was the never-checked
-        //   Need — the heist's whole point, now honest.
-        if (text.indexOf('pull') >= 0 && this.Sounditron_pulled(w)) met = 1
-        if (met && !need.sc.met) need.sc.met = 1
-    }
+    if (!f) return { verdict: 'wrong', note: 'no friend yet' }
+    if (!f.sc.music) return { verdict: 'wrong', note: 'no Music grant from ' + f.sc.Friend }
+    return { verdict: 'ok' }
+
+},
+// Sounditron_probe_live — is anyone actually reachable RIGHT NOW?  Standing, so it reads afresh
+//  every pass and is free to go wrong again the moment they close the tab.
+Sounditron_probe_live(w, sup) {
+    if (this.Sounditron_peer_live(w)) return { verdict: 'ok' }
+    return { verdict: 'wrong', note: 'no peer answering' }
+
+},
+// Sounditron_probe_shelf — has a friend told us what they have?  Nothing can be wanted until a
+//  shelf has been counted.
+Sounditron_probe_shelf(w, sup) {
+    let f = w.o({ Friend: 1 }).find(x => Number(x.sc.records) > 0)
+    if (f) return { verdict: 'ok', note: f.sc.Friend + ' · ' + f.sc.records + ' records' }
+    return { verdict: 'wrong', note: 'no shelf counted' }
+
+},
+// Sounditron_probe_pulled — did real bytes cross?  The one Need that went unchecked for weeks under
+//  the posed heist, and the whole point of the exercise.
+Sounditron_probe_pulled(w, sup) {
+    if (this.Sounditron_pulled(w)) return { verdict: 'ok' }
+    return { verdict: 'wrong', note: 'no friend record holds its first chunk' }
 
 },
 // Sounditron_pulled — did real bytes actually cross?  Any friend record whose first chunk stands
@@ -1409,7 +1471,6 @@ Sounditron_witness(w) {
         }
     }
     if (n != null && n >= 4 && w.c.muse_why && !(w.oa({log: 'the collection did not stir'}))) { w.i({ log: 'the collection did not stir', why: this.Sounditron_clean(w.c.muse_why) }) }
-    this.Sounditron_heist_met(w)
     let foundRow = w.o({ Found: 1 })[0]
     if (foundRow) this.story_swear(w, 'the collection stirred — real tracks wandered into the glass', foundRow)
     let countedFriend = w.o({ Friend: 1 }).find(f => Number(f.sc.records) > 0)
@@ -1418,6 +1479,15 @@ Sounditron_witness(w) {
     if (this.Sounditron_channel_live(w)) this.story_swear(w, 'the relay answers — the channel stood and frames can cross', w.o({ Relay: 1 })[0])
     if (n != null && n === 3 && !this.Sounditron_channel_live(w) && !(w.oa({log: 'relay down — never dialed or the socket died'}))) w.i({log: 'relay down — never dialed or the socket died'})
     if (w.o({ Census: 1 })[0]) this.story_swear(w, 'the possibilities of peers were surveyed — every known address counted', w.o({ Census: 1 })[0])
+    // THE SUPERVISOR IS WITNESSED, and it has to be.  Every call into it is guarded (`Supervisor_w`
+    //  returns null on a tab with no watcher, and every caller no-ops) — which means a Supervisor
+    //   that never stood up and one that works perfectly look IDENTICAL from outside.  A quiet
+    //    file proves nothing; so this sentence is the electrode.  Remove Auto's standup line and it
+    //     goes red, which is the mutation test the four landed-but-never-fired sensors never had.
+    //  NO SUBJECT, deliberately (the `granted` precedent above): the roster lives on Mundo and its
+    //   verdicts move whenever a friend comes or goes, so microsnapping it here would churn this
+    //    fixture on every run forever.  The sentence is the whole testimony.
+    if (this.Sounditron_supervisor_reading(w)) this.story_swear(w, 'the supervisor stood — a roster of registered watches is being read')
     // granted: NO subject on purpose — the %Grant pair is sealed key material in storage; a
     //  microsnap of it would ship crypto in the report.  The sentence is the whole testimony.
     if (this.Sounditron_grants(w).length) this.story_swear(w, 'granted — a sealed friendship holds Music grants in storage')

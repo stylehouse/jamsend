@@ -596,11 +596,28 @@
         return (e.clientX - bb.left) / bb.width < STAGE_BAND
     }
     function staged_tok(w: TheC): string | null { void paint_tick; return ((w.c as any).stage_tok ?? null) }
+    // IS THERE ANYTHING TO COME BACK FROM?  Every emphasis verb the glass has is one-way — attend buys
+    //  heat, focus stands a tok, stage deals the frame — and none of them has an undo that means "share
+    //   it out again" (attending something else is a different bias, not a release).  `Vyto_release` is
+    //    that verb; this is the predicate that decides whether to offer it, so the control exists exactly
+    //     as long as there is something for it to do.  Read off the paint — heat already rides `row.c`
+    //      and the cells are already in hand — so offering it costs no extra walk of the model.
+    function emphasised(w: TheC): boolean {
+        void paint_tick
+        if ((w.c as any).stage_tok || (w.c as any).focus_tok) return true
+        for (const c of viewport_cells(w)) if ((((c.row.c as any).heat) ?? 0) > 0.02) return true
+        return false
+    }
     // rows the cut could not seat: a disc cell that is not LOOSE (loose is a choice, unseated is not).
-    function unseated(w: TheC): number {
-        let n = 0
-        for (const c of viewport_cells(w)) { if (c.kind === 'disc' && !c.loose) n++ }
-        return n
+    // ⚠ AND NOT DEPARTING.  A cell on its way out is emitted `kind: 'disc'` too (it has no wall left to
+    //  cut), so the old count reported every leaving cell as a row the cut REFUSED — an accusation about
+    //   crowding raised by an animation finishing normally.  The number the owner read as "3 not seated"
+    //    could be three cells politely leaving.  A report has to be able to name its rows or it cannot be
+    //     checked, which is the other half of this: it now returns the cells, not a tally.
+    function unseated_cells(w: TheC): PaintCell[] {
+        const out: PaintCell[] = []
+        for (const c of viewport_cells(w)) { if (c.kind === 'disc' && !c.loose && !c.departing) out.push(c) }
+        return out
     }
 
     // ── THE CLUTTER KNOB ──────────────────────────────────────────────────────────────────────
@@ -817,6 +834,12 @@
     const MAX_MOTION_FRAMES = 240
     const GAP = 2.2           // the breath between cells (shapes.md §0)
     const SEAT_AIR = 3        // viewBox units of air between a slab-seated face and its two long walls
+    // EVERY LIVE ROW GETS A SEAT (the owner 2026-08-09, on the corner note reading "3 not seated":
+    //  *"I think that's what I want to never happen, certainly not to Radio"*).  The smallest cell the
+    //   cut is allowed to leave a neighbour, in viewBox units of depth along the pressing axis — the
+    //    guarantee the foam has to honour before it may honour anything else.  See the seat floor in
+    //     `layout` for why it is expressible as a cap on the AGGRESSOR rather than a floor on the victim.
+    const SEAT_MIN = 10
     const OVERHANG = 1.25     // a slab seat may overrun the cell's ends by this factor of its length
     // ⛔ SIDEWAYS IS OUT (the owner 2026-08-09: "ew... very incoherent! forget sidewaysing, I just meant
     //  the box-within-box reality of Component in cell aligned for space efficiency, without tilting
@@ -910,6 +933,60 @@
             if (p.y > maxy) maxy = p.y
         }
         return { bx: minx, by: miny, bw: Math.max(0, maxx - minx), bh: Math.max(0, maxy - miny) }
+    }
+
+    // ── THE SEAT FLOOR — NO ROW MAY BE SWALLOWED WHOLE ────────────────────────────────────────────
+    //  (the owner 2026-08-09, reading "3 not seated" in the corner: *"I think that's what I want to
+    //   never happen, certainly not to Radio ... it's too much of a crush, we should be able to click
+    //    back into it to share the focus across more things"*.)
+    //  A foam cell is its own ball, trimmed by a wall wherever a neighbour's ball presses.  When a
+    //   neighbour grows big enough to CONTAIN this one, that wall lands behind this seed and the clip
+    //    empties the polygon: `foam_cells` returns null and the row leaves the paint entirely.  That is
+    //     not a crush, it is ABSENCE — no wall, no face, no label, and (the part that makes it
+    //      unrecoverable rather than merely small) NO CLICK TARGET, because the press handler lives on
+    //       the <path> a null-poly cell never gets.  You cannot attend your way back into a cell that
+    //        isn't there, so the crush ladder used to bottom out in a trapdoor.
+    //  The swallow is pure geometry — j eats i exactly when `r_j ≥ d + r_i` — so it can be FORBIDDEN in
+    //   closed form rather than detected afterwards.  Solving "leave i at least SEAT_MIN of cap depth
+    //    along the pressing axis" for r_j gives the cap below.  THE AGGRESSOR IS WHAT GIVES WAY, which is
+    //     the owner's own reading of the fault: emphasis is bounded by the survival of the least, so no
+    //      focus boost, stage deal or dose can buy one cell more room than the glass actually has.
+    //  It never shrinks a body below its victim (`min(cr[i], cr[j])`), so a pair where j is the SMALLER
+    //   one is untouched — the guard only ever takes room off whoever was taking too much.
+    //  `victims`/`mult` are THE REPAIR PASS's handle (see the call site).  Pairwise closes 98.5% of the
+    //   swallows on a 19k-cell fuzz but not all: a cell can also be killed by the ACCUMULATION of several
+    //    neighbours, each of which individually left it a legal seat, and no pairwise form can see that.
+    //     Raising the demand for the rows that actually died — and re-cutting — takes it to zero.
+    //  BYTE-NEUTRAL WHERE NOTHING IS SWALLOWED: the cap only lowers a radius that was about to empty a
+    //   neighbour, and the floor only raises one too thin to cut at all, so a healthy scope's arithmetic
+    //    is untouched.  RENDERER-SIDE ONLY: Vyto.g runs its own foam_cells for the model and is
+    //     deliberately not touched here, so this cannot move a single recorded fixture.
+    function seat_floor(seeds: Pt[], radii: number[], gap: number,
+                        victims: Set<number> | null, mult: number): number[] {
+        const cr = radii.slice()
+        // a ball thinner than the breath between cells has no cell to cut — the OTHER null branch in
+        //  foam_cells (`R = r - gap/2 <= 0`), and the one a zero-dose row falls down.
+        const MIN_BALL = gap / 2 + 3
+        for (let i = 0; i < cr.length; i++) if (cr[i] < MIN_BALL) cr[i] = MIN_BALL
+        // three sweeps: capping an aggressor can in principle expose it to a third ball.  A FIXED sweep
+        //  count, not a while-loop — the cut must stay deterministic (solver law 4).
+        for (let pass = 0; pass < 3; pass++) {
+            let moved = false
+            for (let i = 0; i < cr.length; i++) {
+                const want = SEAT_MIN * (victims?.has(i) ? mult : 1)
+                for (let j = 0; j < cr.length; j++) {
+                    if (i === j) continue
+                    const d = Math.hypot(seeds[j].x - seeds[i].x, seeds[j].y - seeds[i].y)
+                    if (d < 0.5) continue
+                    const reach = d + cr[i]
+                    const roomy = Math.sqrt(Math.max(0, reach * reach - 2 * d * (gap + want)))
+                    const cap = Math.max(roomy, Math.min(cr[i], cr[j]))
+                    if (cr[j] > cap) { cr[j] = cap; moved = true }
+                }
+            }
+            if (!moved) break
+        }
+        return cr
     }
 
     // the memo key for one scope's cut — order-preserving (keys ride beside their coordinates), so a
@@ -1474,18 +1551,60 @@
             //      the uncrowded margins stay EMPTY (emptiness finally means uncrowded).  A nested
             //       scope packs tighter (its stuffing fills its membrane).  Gate off ⇒ the exact
             //        standing cut, byte for byte.
+            // THE STAGED BODY IS OUTSIDE THE FILL ECONOMY (the owner 2026-08-09: *"when the Heist is
+            //  focused|happening|staged, the other cells are a bit squished up in a wad, I can only see
+            //   Door and it's 4x too small to play with"*).  The model already learned this — Vyto.g's
+            //    bag-pressure gate leaves the staged body "out of the pressure TOTAL as well, so its
+            //     size does not squeeze the small cells it is supposed to be sitting beside" — but THIS
+            //      normalisation never got the same exemption, and it is the one that actually grants
+            //       room: it grows every scope's discs until they sum to FOAM_FILL of the frame, which
+            //        is what normally lets four cells share the whole room generously.  A staged monster
+            //         (0.62·min(fw,fh) ⇒ its disc alone ≈ 85% of an 800×450 budget) included in that sum
+            //          IS the budget, so the others stayed at their raw solved radii — down ~4× in area
+            //           from their unstaged selves.  The wad.
+            //  So: the monster keeps its screen-stated radius untouched (it is a claim about the SCREEN,
+            //   stage_lay's law), and everyone else is normalised to fill FOAM_FILL of the room the
+            //    monster actually leaves IN-FRAME — measured with the same foam_cells primitive that
+            //     will cut it, so "the room it leaves" and "the room it takes" cannot disagree.
+            //  Floored at 0.15·A so a monster that swallows the whole frame still leaves the others a
+            //   sliver-economy rather than zero.  No stage ⇒ sI −1 ⇒ the exact standing arithmetic,
+            //    byte for byte — and no Book ever stages, so every fixture stands.
+            //  The effective stage is EITHER the human's drag (w.c.stage_tok) OR the model's standing
+            //   want (`source_n.c.stage_want`, how a heist asks — Vyto_stage_tok resolves it at solve
+            //    time and never writes it back, so reading stage_tok alone misses the heist case).
             let cutRadii = radii
             if (foam && radii.length) {
                 const A = Math.abs(poly_area(framePoly))
-                const discs = radii.reduce((a, r) => a + Math.PI * r * r, 0)
                 const fill = scopeKey === '' ? FOAM_FILL : FOAM_FILL_NESTED
+                const stok = (w.c as any).stage_tok ?? null
+                let sI = -1
+                // two passes, drag first — the SAME precedence Vyto_stage_tok resolves with, so the
+                //  body this exempts is always the body stage_lay actually placed.  One flat loop
+                //   would exempt whichever row it met first when a drag overrides a standing want.
+                if (stok != null) for (let i = 0; i < live.length; i++) if (live[i].tok === stok) { sI = i; break }
+                if (sI < 0) for (let i = 0; i < live.length; i++) if ((live[i].row.c as any)?.source_n?.c?.stage_want) { sI = i; break }
+                const discs = radii.reduce((a, r, i) => i === sI ? a : a + Math.PI * r * r, 0)
                 if (discs > 0 && A > 0) {
-                    const k = Math.sqrt((A * fill) / discs)
-                    cutRadii = radii.map(r => r * k)
+                    let room = A
+                    if (sI >= 0) {
+                        const mp = foam_cells([seeds[sI]], [radii[sI]], 0, framePoly)[0]
+                        room = Math.max(A * 0.15, A - (mp ? Math.abs(poly_area(mp)) : Math.PI * radii[sI] * radii[sI]))
+                    }
+                    const k = Math.sqrt((room * fill) / discs)
+                    cutRadii = radii.map((r, i) => i === sI ? r : r * k)
                 }
             }
+            // THE SEAT FLOOR — every live row is owed a cell, so the radii the cut actually receives are
+            //  the asked-for ones with every swallow forbidden.  The law, the geometry and the owner's
+            //   ruling behind it are stated once above `seat_floor`; this is only where it is applied.
+            //  `askRadii` is kept because the REPAIR PASS below re-derives from the ASK, never from an
+            //   already-floored array — escalating on top of a previous escalation compounds.
+            const askRadii = cutRadii
+            if (foam && askRadii.length) cutRadii = seat_floor(seeds, askRadii, gap, null, 1)
             // the memo consult: unchanged inputs reuse the standing polys (same references — the drift
             //  judge shortcuts them to zero); changed inputs cut fresh and count one REAL cut.
+            //  Keyed on the PRE-repair sig, which is correct rather than a shortcut: the repair is a
+            //   deterministic function of the same inputs, so a sig hit implies the same repair.
             seenScopes.add(scopeKey)
             const sig = (foam ? 'F' : '') + cut_sig(framePoly, keys, seeds, cutRadii, gap)
             const had = wm.get(scopeKey)
@@ -1495,8 +1614,25 @@
             } else {
                 polys = foam ? foam_cells(seeds, cutRadii, gap, framePoly)
                              : power_cells(framePoly, seeds, cutRadii, gap)
-                wm.set(scopeKey, { sig, polys })
                 ;(w.c as any).wall_cuts = (((w.c as any).wall_cuts as number) || 0) + 1
+                // THE REPAIR PASS — the accumulation case the pairwise floor cannot see: a row killed by
+                //  several neighbours that each, on their own, left it a legal seat.  Ask again, harder,
+                //   for exactly the rows that actually died, and re-cut.  Measured on a 19,458-cell fuzz
+                //    against this same `foam_cells`: the floor alone takes 3159 swallowed rows to 48, and
+                //     this takes those 48 to ZERO, for about one extra cut in 1.6% of scopes.  Bounded at
+                //      three tries so a pathological scope cannot spin, and it lives inside the memo MISS,
+                //       so a settled glass never pays for it at all.
+                if (foam) {
+                    for (let tryn = 1; tryn <= 3; tryn++) {
+                        const victims = new Set<number>()
+                        for (let i = 0; i < polys.length; i++) if (!polys[i]) victims.add(i)
+                        if (!victims.size) break
+                        cutRadii = seat_floor(seeds, askRadii, gap, victims, 1 + tryn * 1.6)
+                        polys = foam_cells(seeds, cutRadii, gap, framePoly)
+                        ;(w.c as any).wall_cuts = (((w.c as any).wall_cuts as number) || 0) + 1
+                    }
+                }
+                wm.set(scopeKey, { sig, polys })
             }
             const polyByKey = new Map<string, Pt[] | null>()
             // keyed off `keys`, NOT `live[i].key` — the self seat's Node IS the parent, so its own
@@ -2685,12 +2821,27 @@
                         <span>{staged_tok(w) ? 'drop to swap · drop the staged one to clear' : 'drop here to stage'}</span>
                     </div>
                 {/if}
-                <!-- the one report the deleted markers owed: N rows the cut could not seat.  Said once,
+                <!-- the one report the deleted markers owed: the rows the cut could not seat.  Said once,
                      in a corner, where it costs nobody their pixels — rather than N times, on top of
-                     whatever won the room.  Absent when everything got a seat, which is most of the
-                     time and is exactly the state that deserves no chrome at all. -->
-                {#if unseated(w) > 0}
-                    <div class="unseated" title="rows the cut could not seat — no room for them at this size">{unseated(w)} not seated</div>
+                     whatever won the room.  Absent when everything got a seat, which since the SEAT FLOOR
+                     landed is very nearly always, and is exactly the state that deserves no chrome at all.
+                     WHAT IS LEFT HERE IS A WAY BACK IN, not a tally (the owner 2026-08-09: *"we should be
+                     able to click back into it ... and have some other cells we can switch on"*).  A bare
+                     count names no defendant: you cannot check it, and you certainly cannot act on it.
+                     Each missing row is now its own chip that says WHO, and pressing it pays the crushed
+                     price out of the attention currency — the same coin a press on a crushed cell spends —
+                     so the thing you named takes room off everyone else and seats itself.  That is the
+                     recovery the null-poly trapdoor removed: a row with no cell had no click target at
+                     all, so the only cells you could rescue were the ones that did not need rescuing. -->
+                {#if unseated_cells(w).length > 0}
+                    {@const missing = unseated_cells(w)}
+                    <div class="unseated" title="rows the cut could not seat — press one to give it the room">
+                        <span class="unseated-lede">not seated</span>
+                        {#each missing as u (u.key)}
+                            <button class="unseat-chip" onclick={() => attend(w, u.tok, 0.85)}
+                                    title={`seat ${u.ident} — takes the room off everyone else`}>{u.ident}</button>
+                        {/each}
+                    </div>
                 {/if}
                 <!-- THE AWAIT RING (the owner 2026-08-09: "look a bit more spinnery before the data
                      comes in").  An empty glass used to be a blank plate — indistinguishable from a
@@ -2720,6 +2871,17 @@
                     {#if staged_tok(w)}
                         <button class="fs-btn unstage-btn" onclick={() => (H as any).Vyto_stage?.(w, staged_tok(w))}
                                 title="off the stage — back to the ordinary pile">⤫</button>
+                    {/if}
+                    <!-- BACK TO TOP (the owner 2026-08-09: *"or at least have some back-to-top thing"*).
+                         Deliberately NOT a second unstage: ⤫ above is the precise verb (this one cell,
+                         off the stage, trail intact) and this is the general one — every emphasis
+                         dropped at once, which is what someone who has pressed their way into a corner
+                         actually wants.  They overlap only when the stage is the sole thing standing,
+                         and there the two agree.  Shows only while something stands, so the rail is
+                         unchanged for a reader who has not navigated at all. -->
+                    {#if emphasised(w)}
+                        <button class="fs-btn release-btn" onclick={() => (H as any).Vyto_release?.(w)}
+                                title="share it out again — drop every emphasis and let the pile settle even">⇱</button>
                     {/if}
                 {/if}
                 {#if live_page() && toys_on(w)}
@@ -3214,11 +3376,14 @@
     /* the escape sits at the head of the rail beside ⋯ — it is not a toy, and it must be findable
        without opening anything, because the stage it undoes covers most of the screen. */
     .unstage-btn { right: 300px; color: #9fd0ff; border-color: #4a6a8a; }
+    /* back-to-top rides at the head of the rail, past the escape: it is the most general way out and
+       the one that should still be findable when everything else on the rail is hidden. */
+    .release-btn { right: 332px; color: #9fe6c8; border-color: #4a8a72; }
     @media (pointer: coarse) {
         .toy-btn { right: 52px; } .sim-btn { right: 98px; }
         .even-btn { right: 144px; } .vie-btn { right: 190px; } .bare-btn { right: 236px; }
         .junk-btn { right: 282px; } .re-btn { right: 328px; } .out-btn { right: 374px; }
-        .unstage-btn { right: 420px; }
+        .unstage-btn { right: 420px; } .release-btn { right: 466px; }
     }
     /* an engaged-able cell should say so under the cursor — the one hint that the glass is navigable.
        The cells are also real keyboard targets (role=button + tabindex): tab to a cell, Enter to fly to
@@ -3275,11 +3440,25 @@
     .cell.selfseat { stroke: none; fill: #14141c; }
     .cell.selfseat.pressy { stroke: none; }
     .cell.selfseat:hover { fill: #1a1a26; }
+    /* the corner note.  pointer-events NONE on the strip and AUTO on the chips: the note must not eat
+       presses meant for the cells it overlaps, but the one thing in it you can act on has to be live. */
     .unseated {
         position: absolute; left: 8px; bottom: 6px; z-index: 5; pointer-events: none;
+        display: flex; flex-wrap: wrap; align-items: center; gap: 4px; max-width: 70%;
         font: 9px/1 ui-monospace, monospace; letter-spacing: 0.09em; text-transform: uppercase;
         color: rgba(190, 190, 220, 0.5);
     }
+    .unseated-lede { opacity: 0.75; }
+    .unseat-chip {
+        pointer-events: auto; cursor: pointer;
+        font: inherit; letter-spacing: inherit; text-transform: none;
+        color: rgba(214, 214, 240, 0.85);
+        background: rgba(20, 20, 30, 0.72);
+        border: 1px solid rgba(140, 140, 180, 0.45);
+        border-radius: 8px; padding: 2px 7px;
+        max-width: 15ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .unseat-chip:hover { color: #fff; background: rgba(52, 52, 74, 0.9); border-color: rgba(190, 190, 235, 0.8); }
     .stageband {
         position: absolute; left: 0; top: 0; bottom: 0; z-index: 6; pointer-events: none;
         border-right: 1px dashed rgba(159, 208, 255, 0.55);

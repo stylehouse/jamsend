@@ -192,14 +192,89 @@ The model solves against a **hardcoded `[0,0,800,450]`** frame (`Vyto.g:814`) wh
 
 ## 0. What to get on with next
 
-### ⇢ PARKED — the owner's ruling (2026-08-09 evening): no Vyto work until the Supervisor watches it
+### ⇢ THE SEAT FLOOR — every live row is owed a cell (2026-08-09 late, LANDED)
+
+*"what does `3 not seated` mean? I think that's what I want to never happen, certainly not to Radio.
+ it's too much of a crush, we should be able to click back into it to share the focus across more
+  things huh? or at least have some back-to-top thing, and have some other cells we can switch on."*
+
+**What "not seated" was.** `foam_cells` returns **null** for a seed it cannot cut, and `unseated()`
+ counted those. A null-poly row is not crushed, it is **ABSENT** — no wall, no face, no label, and
+  (the part that made it a trapdoor rather than a small cell) **no click target**, because the press
+   handler lives on the `<path>` a null cell never gets. The crush ladder — full → enveloped → pearl —
+    had nothing under the pearl but a hole you could not attend your way out of. The 6px marker that
+     used to sit there was rightly deleted (it floated over whatever DID win the room), but deleting
+      the marker left the ABSENCE, and a corner tally that named no defendant.
+
+**Three ways a row got nulled**, all now closed except the third:
+ 1. `r − gap/2 ≤ 0` — a ball too thin to cut at all. Floored.
+ 2. **A neighbour swallowed it whole** — exactly `r_j ≥ d + r_i`, at which point j's wall lands
+     *behind* i's own seed and the clip empties the polygon. This is the one that eats a focused
+      cell's neighbours, so it is the geometric form of *"it's too much of a crush"*.
+ 3. The frame clipped it away — a seed outside the frame. **Still open**, and now the only way a row
+     can go unseated; the corner note is what will report it.
+
+**The law that landed** (`seat_floor`, Vytui — RENDERER-SIDE ONLY; Vyto.g runs its own `foam_cells`
+ for the model and was deliberately not touched, so **no fixture can move**):
+
+> **The aggressor is what gives way.** Solving "leave i at least `SEAT_MIN` of cap depth" for `r_j`
+>  gives a closed-form cap on the *bigger* body. Emphasis is therefore bounded by the survival of the
+>   least: no focus boost, stage deal or dose can buy one cell more room than the glass has.
+
+Never shrinks a body below its victim, and only ever lowers a radius that was about to empty a
+ neighbour — so a healthy scope's arithmetic is byte-unchanged. Pairwise closes **98.5%**; the residue
+  is rows killed by the *accumulation* of several neighbours that each individually left a legal seat,
+   which no pairwise form can see, so a **repair pass** re-asks harder for exactly the rows that died
+    and re-cuts. Measured against the real `foam_cells` on a 19,458-cell fuzz: **3159 → 48 → 0**, for
+     ~1 extra cut in 1.6% of scopes, inside the memo miss only.
+
+**Two navigation gaps closed with it:**
+- **The corner note is now the way back in.** It names each missing row as a chip; pressing one pays
+   the crushed price out of the attention currency. A bare count could not be checked and could not be
+    acted on — *"have some other cells we can switch on"* starts here.
+- **`Vyto_release` — back to top** (Vyto.g, compiled `f0504124cd6bd28b`; ⇱ on the rail, shown only
+   while something stands). Every emphasis verb was one-way: attend BUYS heat, focus STANDS a tok,
+    stage DEALS the frame, and the tax is capped at 0.6 per press *precisely so one press cannot wipe
+     the board* — right for a press, wrong for "start again". There was no gesture meaning **share it
+      out again**. One verb, not three controls, because a reader who wants out wants out of all of it.
+
+**Also fixed: the count was lying.** A departing cell is emitted `kind:'disc'` too, so every cell
+ politely leaving was reported as a row the cut REFUSED. "3 not seated" may well have been three cells
+  on their way out.
+
+**Still open here:** the frame-clip case (3 above); and whether `SEAT_MIN = 10` is the right smallest
+ cell — it is the first empirical constant in this law and it was chosen, not measured.
+
+### ⇢ THE STAGED BODY IS OUTSIDE THE FILL ECONOMY (2026-08-09 later still, LANDED)
+
+*"when the Heist is focused|happening|staged, the other cells are a bit squished up in a wad, I can
+ only see Door and it's 4x too small to play with"* — and the ×4 is arithmetic, not impression.
+  The renderer's FOAM_FILL normalisation grows every scope's discs until they sum to 0.8·A — that is
+   what normally lets four cells share the whole frame generously. A staged monster (0.62·min(fw,fh);
+    its disc alone ≈ 85% of an 800×450 budget) included in that sum IS the budget, so the others
+     stayed at their raw solved radii: r ≈ 60 instead of the ≈ 115 they'd enjoy unstaged — ×3.7 down
+      in area. **Vyto.g's bag-pressure gate already exempts the staged body from its pressure total
+       ("so its size does not squeeze the small cells it is supposed to be sitting beside") — the
+        renderer normalisation never got the same exemption.** Now it has: the monster keeps its
+         screen-stated radius, and the others are normalised to fill 0.8 of the room it actually
+          leaves IN-FRAME (measured with the same `foam_cells` primitive that will cut it).
+  **Trap recorded for the next reader:** the effective stage is `w.c.stage_tok` (drag) **or**
+   `source_n.c.stage_want` (the model's ask — how a heist stages itself, `Sounditron.g:414`);
+    `Vyto_stage_tok` resolves the want at solve time and never writes it back, so any renderer
+     feature keyed on `stage_tok` alone silently misses every heist. Drag outranks want, same
+      precedence as the resolver. No stage ⇒ byte-identical arithmetic; no Book stages ⇒ no fixture
+       moves.
+
+### ⇠ the park this supersedes (2026-08-09 evening)
 
 *"supposing we should avoid Vyto until the Supervisor is ready to notice it being spastic and
- intervene"* — the glass rests as-is; the next Vyto session should be the one that WIRES the
-  Supervisor's normalcy watch (Supervisor_todo §9, another agent's file as of tonight), not one that
-   adds glass behaviour. First seed already lives in the ghost: `Vyto_normal` (Vyto.g, called from
-    `Vyto_settle`, gated on `w.c.vw_frame` so Books never see it) checks grapple-presence + on-screen
-     visibility, cures with capped pokes, and says `⚕ Vyto normal:` rows when a cure fails.
+ intervene"* — recorded, then **lifted the same night** by the two glass complaints above; the owner
+  went straight back into Vyto. It stands as a preference, not a gate: prefer Supervisor-watch work
+   when there is a choice, but a named glass fault outranks it. The watch is still owed —
+    Supervisor_todo §9 (another agent's file as of tonight). First seed already lives in the ghost:
+     `Vyto_normal` (Vyto.g, called from `Vyto_settle`, gated on `w.c.vw_frame` so Books never see it)
+      checks grapple-presence + on-screen visibility, cures with capped pokes, and says
+       `⚕ Vyto normal:` rows when a cure fails.
 
 What LANDED this session (Vyto.g compiled `0da6631fb9a5e0fc`; VytoCell/Foam/Nest/Staple/Fold/Bunch all
  green 0-caveat on a live runner — noting Books are C-tree diges and cannot see the renderer changes):
@@ -211,8 +286,9 @@ What LANDED this session (Vyto.g compiled `0da6631fb9a5e0fc`; VytoCell/Foam/Nest
        call the yield or it inherits the freeze (memory: your-own-pointer-pins-the-cell-you-commanded).
 - **The pearl** (Vytui crush block): a crushed FACED cell keeps a small round body instead of a naked
    floating label — the `<-> Door:2.open` consistency violation ("everything should be a cell or a
-    sub-cell or a label"). Rows the cut refuses entirely still get only the corner count — "they
-     should just be very small cells" is a foam-law change, still open, needs the owner.
+    sub-cell or a label"). Rows the cut refuses entirely still got only the corner count — "they
+     should just be very small cells" was a foam-law change awaiting the owner. **Ruled and landed
+      later the same night: see THE SEAT FLOOR above.**
 - **The await ring** (Vytui): an empty live glass spins a quiet ring instead of a blank plate
    ("look a bit more spinnery before the data comes in").
 - **Heist width**: `.kf` max-width 300→440 (folded 220→280) — the CSS cap WAS the price ceiling,

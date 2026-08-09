@@ -770,9 +770,12 @@ The human's cut, verbatim: *"put other UI nuggets in Voro, keep changing what's 
       Re-rolls every run — on the 600s rig the glass changes each cycle.
 - **%Friend** — the sealed contacts: friendly name as the mainkey value, pub8/music-grant/records
    boast as facets.  (The runner identity has none; the human's tabs will show each other.)
-- **%Caper,posed:1** — "the one they played last night" with four %Need children (grant / online /
-   boast / the Repli pull), `met:1` kept honest by the witness each pass.  The SHAPE of the real
-    heist face, tunable on sight before the machinery arrives here.
+- ~~**%Caper,posed:1**~~ — **DELETED 2026-08-09** (the owner: *"is that debug crap?"* → *"it's time
+   to delete the fake"*).  It was "the one they played last night" with four %Need children, and its
+    retirement guard could never fire on a player tab, so the fiction was permanent UI.  The four
+     Needs WERE honest and were promoted, not dropped: they are now registered watches on
+      `w:Supervisor` (`Sounditron_supervise`, four `Sounditron_probe_*` reads), and the glass carries
+       **%Supervisor** — the one sanity cell — in its place.  See `Supervisor_todo.md` §0.
 - **%Tally** (records reachable · shelves counted), **%Machine,friendly**, richer %Session.
 - The %seen choir crushes behind a husk (MANY+homogeneous — the grammar working as designed).
    The glass rail is toc `useCyto+dontSnapCyto+useVoroCyto` (pure-H snaps); `Sounditron_glass`

@@ -19,6 +19,7 @@ Snap:H
         Transfer,dontSnap
         Shuffle,dontSnap
         Diag,dontSnap
+        Pose:wire,dontSnap
         Machine,self:f5da6599,friendly:Righto
         req:stoker_wait,finished
         req:witness,eternal,ok
