@@ -154,6 +154,10 @@
     }
     // commonPrefix — the shared leading path segments across every husk's folder (Fourier Four/Tagged
     //  Truth), stopping at the first divergence (CD1 vs CD2 stays OUT — that's the track tree's job).
+    // the listing's two number dressers — sizes as the unit people budget in, lengths as m:ss.
+    const fmtB = (b: number) => b >= 1e9 ? (b / 1e9).toFixed(1) + ' GB' : b >= 1e6 ? (b / 1e6).toFixed(1) + ' MB' : b >= 1024 ? Math.round(b / 1024) + ' KB' : Math.round(b) + ' B'
+    const fmtT = (s: number) => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0')
+
     function commonPrefix(dirs: string[]): string {
         const lists = dirs.filter((d) => d).map((d) => d.split('/').filter(Boolean))
         if (!lists.length) return ''
@@ -207,16 +211,26 @@
         const artist = String(sc.artist || '')
         const dirsKnown = (dirsFocus && own && A?.Heist_known_dirs) ? A.Heist_known_dirs(own, artist) : []
 
-        // ── NO TRACK LIST ─────────────────────────────────────────────────────────────────────────────
-        // The grouped track tree and the "+ all n tracks" tickbox are GONE (the owner 2026-08-09: *"that
-        //  new 'all 8 tracks' selector was stupid.  I don't think we're going to let you know what tracks
-        //   are coming... it's too much interface"*).  A keep takes the whole folder — that is what
-        //    Heist_keep_default_pick has always done — so a list existed only to let you take LESS of it,
-        //     which is a choice this app has decided not to offer.  The count still rides in the head
-        //      (`Heist:n`) and the running strip still counts landings; neither names a track.
-        //  Nothing under here reads the husks per-track any more except `titleByRef` below, which names
-        //   the ONE track under the needle for the running strip — a report of what is happening, not a
-        //    menu of what could.
+        // ── THE COST LINE — totals, never a file list ────────────────────────────────────────────────
+        // The SELECTOR died this morning (*"that new 'all 8 tracks' selector was stupid"*), the per-file
+        //  LISTING died the same evening (*"don't list the files though, that's ugly"*).  What stands is
+        //   the owner's exact shape: one line `N tracks · ~length · size`, then `has $artist - $title`,
+        //    then `start · lofi? · ✕`.  The husks still price that line: the census stat-stamps `bytes`
+        //     per husk (zero reads), the SEED husk carries real `seconds` off its stock card, and the
+        //      owner's rule (*"assume they're all one format|bitrate"*) extrapolates the total length
+        //       from that one known sibling — secs-per-byte × every sibling's bytes.  Estimates wear `~`.
+        //  And the LOFI total (*"use that to estimate the total filesize of the LOFI option when that's
+        //   checked"*): 128kbps ogg ≈ 16000 bytes/s × the total seconds, shown in place of the raw total
+        //    while ☑ lofi stands.
+        const anchor = husks.find((h: any) => +(h.sc.seconds || 0) > 0 && +(h.sc.bytes || 0) > 0)
+        const spb = anchor ? (+anchor.sc.seconds / +anchor.sc.bytes) : 0
+        let totBytes = 0
+        let totSecs = 0
+        for (const h of husks) {
+            const bytes = +(h.sc.bytes || 0)
+            totBytes += bytes
+            totSecs += +(h.sc.seconds || 0) > 0 ? +h.sc.seconds : (spb && bytes ? bytes * spb : 0)
+        }
 
         // THE TRACK UNDER THE NEEDLE, for the running strip (the human 2026-08-07: "put the most recent
         //  track downloading at the end").  Heist_land walks picks IN ORDER with at most `heist_inflight`
@@ -244,6 +258,7 @@
             catRaw, catSegs,
             dirsRaw, dirsSegs, dirsKnown, dirsAuto,
             nTracks: husks.length,
+            totBytes, totSecs,
             picked: pickedRefs.size,
             landed_n: +(sc.landed_n || 0),
             total_n: +(sc.total_n || 0),
@@ -550,20 +565,24 @@
             {#each face.dirsKnown as d}<option value={d}></option>{/each}
         </datalist>
 
-        <!-- WHAT IT IS, after WHERE IT GOES.  One line, and only one: the track you recognise.  The
-             "+n tracks" disclosure and the list behind it are gone (the NO TRACK LIST note above) —
-             a keep takes the whole folder, so there is nothing here to choose.  The count lives in
-             the head as `Heist:n`, which says how much is coming without naming any of it. -->
+        <!-- THE COST LINE then THE RECOGNISER, the owner's exact shape (2026-08-09: "we need to say
+             '8 tracks ......' THEN `has $artist - $title` on the next line, then `start,lofi?,x`").
+             No file list ("that's ugly") — one line of totals, priced by the extrapolation in the
+             derive.  BEFORE THE FOLDER LANDS, THE SPINNER ("it also needs a spinner on that as
+             well") — honest now, unlike the banned 2026-08-07 skeleton: the ask is real, counted
+             (`sc.asks`) and re-healed on silence. -->
+        {#if !face.nTracks}
+            <div class="kf-sum kf-wait"><span class="kf-spin"></span> asking {face.from} for the folder…</div>
+        {:else}
+            <div class="kf-sum">
+                <!-- ☑ lofi flips the size and that is the whole story (the owner: "change the
+                     quantity, don't explain it") — no suffix, no tooltip. -->
+                {face.nTracks} track{face.nTracks === 1 ? '' : 's'}{#if face.totSecs}&nbsp;· ~{fmtT(face.totSecs)}{/if}{#if face.lofi && face.totSecs}&nbsp;· ~{fmtB(face.totSecs * 16000)}{:else if face.totBytes}&nbsp;· {fmtB(face.totBytes)}{/if}
+            </div>
+        {/if}
         <div class="kf-what">
-            <span class="kf-wtitle" title={face.title}>{face.title}</span>
-            {#if face.artist}<span class="kf-wartist">{face.artist}</span>{/if}
+            has <span class="kf-wartist">{face.artist || 'someone'}</span> - <span class="kf-wtitle" title={face.title}>{face.title}</span>
         </div>
-        <!-- NO SKELETON (the human 2026-08-07: "is what is pointlessly hanging around in the Heist").  Three
-             shimmer bars and "finding the folder…" promised guts that are still coming — but the folder
-             answer is a single round trip that either lands or never does (measured 2026-08-07: zero
-             %Rummage asks in the world while it sat there "finding" forever), so the animation was a
-             progress indicator for something that was not in progress.  The head already says `Heist:n`,
-             which reads honestly as "no tracks known yet" when n is absent. -->
         {#if lofiWhy}
             <!-- the explainer the "?" opens.  Inline, not a title= tooltip: lofi exists FOR the phone, and a
                  phone has no hover — an explanation you can only reach with a mouse is no explanation. -->
@@ -794,6 +813,17 @@
     /* WHAT IT IS — the track you recognise, under the two WHERE-IT-GOES rows (block + hanging indent above) */
     .kf-what { margin-top: 7px; }
     .kf-what > * { margin-right: 6px; }
+    /* the cost line — one quiet line of totals, numbers steady so the lofi flip reads as the
+       number changing rather than the line re-setting */
+    .kf-sum { margin-top: 6px; font-size: 10px; color: #d8cbe8; font-variant-numeric: tabular-nums; }
+    /* the wait — a small honest ring beside the sentence, gone the moment the first husk lands */
+    .kf-wait { display: flex; align-items: center; gap: 6px; opacity: 0.8; font-style: italic; }
+    .kf-spin {
+        width: 10px; height: 10px; border-radius: 50%; flex: none;
+        border: 1.5px solid rgba(200, 170, 230, 0.25); border-top-color: rgba(220, 190, 250, 0.85);
+        animation: kf-spin 0.9s linear infinite;
+    }
+    @keyframes kf-spin { to { transform: rotate(360deg) } }
     .kf-wtitle { font-size: 12px; color: #f3e8ef; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
     .kf-wartist { font-size: 10px; color: #b89ab0; }
 

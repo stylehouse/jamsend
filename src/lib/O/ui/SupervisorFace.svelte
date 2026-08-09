@@ -65,9 +65,21 @@
 </div>
 
 <style>
+    /* THE NATURAL BOX IS THE ASK.  The glass runs with the NEED FLOOR on (Sounditron's commission),
+       so Vytui measures this element's natural box after a flush and Vyto_express floors the cell at
+       need × 1.15 — which means a face that measures small GETS a small cell no matter what else it
+       does.  The first cut of this face was compact-at-all-times and came out a speck beside %Now.
+       So the two states ask for genuinely different room, and the size difference IS the signal:
+       calm asks for a readable minimum, loud asks for enough to actually read the failures in. */
     .sup { display: flex; flex-direction: column; gap: .25em; width: 100%; height: 100%;
            padding: .35em .5em; box-sizing: border-box; overflow: hidden;
+           min-width: 11em; min-height: 3em;
            font-size: .8em; line-height: 1.25; color: #e8e4dc; }
+    /* MEASURED, NOT REASONED: at 24em/8em this cell came out 401×134 — the biggest mold on the glass,
+       against the music's 74×99.  The floor had buried the dial (the need floor sets env_area
+       directly, so a min-width IS a size demand and it outranks any dose).  15em/5em puts loud at
+       roughly 2× the music, which is what "rivals" meant. */
+    .sup:not(.calm) { min-width: 15em; min-height: 5em; font-size: .9em; }
     .sup.calm { color: #8d8a84; }
     .head { display: flex; align-items: baseline; gap: .4em; }
     .say { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

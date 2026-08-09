@@ -9,7 +9,7 @@ import { parseBuffer } from "music-metadata"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Crate(): string { return '8ca7385d422b7437~g1' },
+    Ghostmeta_Ghost_M_Crate(): string { return 'd4e872efe19561aa~g1' },
 
 // Crate.g — rifling through a music collection.  A modern port of the old Directory.svelte tree-walk +
 //  Agency.svelte's meander() random-walk, redesigned for THIS platform: raw File System Access API (no
@@ -198,7 +198,18 @@ Crate_nav() {
 // Crate_nav_paths — walk `base` breadth-first, collecting every audio file's path RELATIVE to base
 //  (nested "Artist/Album/NN Title.ext" or flat "Artist - Title.ext").  Sorted for a deterministic pool
 //   (the backends don't all order their entries).  This IS the track list, discovered rather than declared.
+//  Now a projection of Crate_nav_ls — ONE walk implementation, two shapes out.
 async Crate_nav_paths(nav, base) {
+    return (await this.Crate_nav_ls(nav, base)).map((e) => e.path)
+
+},
+// Crate_nav_ls — the same walk WITH the size the listing already knows (the owner 2026-08-09:
+//  "can we tell them how big the files are?").  The FSA expand() calls entry.getFile() per entry
+//   anyway, so FileListing.size is ALREADY PAID FOR — Crate_nav_paths was simply discarding it.
+//    This is a stat, not a read: the zero-file-reads census law stands.  `bytes` is null when the
+//     backend doesn't know (RemoteWormholeNav's dir() maps bare names) — callers must guard, never
+//      stamp a null into sc (the undef-marker law).
+async Crate_nav_ls(nav, base) {
     let out = []
     let queue = ['']
     let guard = 0
@@ -209,7 +220,7 @@ async Crate_nav_paths(nav, base) {
         if (!dl) continue
         await dl.expand()
         for (const f of dl.files) {
-            if (this.Crate_is_audio(this.Crate_ext(f.name))) out.push(rel ? (rel + '/' + f.name) : f.name)
+            if (this.Crate_is_audio(this.Crate_ext(f.name))) out.push({ path: rel ? (rel + '/' + f.name) : f.name, bytes: f.size != null ? +f.size : null })
         }
         for (const d of dl.directories) {
             // NEVER descend a dot-dir (.jamsend holds owner-private account snaps carrying the identity
@@ -222,7 +233,7 @@ async Crate_nav_paths(nav, base) {
             queue.push(rel ? (rel + '/' + nm) : nm)
         }
     }
-    out.sort()
+    out.sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0)
     return out
 
 },

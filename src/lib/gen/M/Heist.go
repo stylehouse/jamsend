@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '5e3581f3684bedb6~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '55fd854162290581~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -1253,9 +1253,16 @@ Heist_register_serve_lib(w, lib) {
 //   whole albums, with the artist folder hierarchy above them" / "the folder name is just '.'").  keep-id and the
 //    materialise read both compose off (base + this base-relative path), so display, id, and disk all agree.
 async Heist_census_heads(w, lib, nav, walkdir, base, me, prefix, seedName, seed) {
-    let paths = await this.Crate_nav_paths(nav, walkdir)
+    // Crate_nav_ls, not _paths (2026-08-09, the owner: "can we tell them how big the files are? and
+    //  how long maybe") — the walk already stat'd every file, so each husk now carries `bytes`.  The
+    //   asker's face extrapolates LENGTHS from these under the owner's stated assumption ("assume
+    //    they're all one format|bitrate"), anchored on the one sibling that knows both bytes and
+    //     seconds — the seed (stamped below in Heist_rummage_folder, off its stock card).  Still
+    //      metadata-only: a stat is not a read, no hash, no bytes cross until chosen.
+    let entries = await this.Crate_nav_ls(nav, walkdir)
     let built = 0
-    for (const rel of paths) {
+    for (const ent of entries) {
+        let rel = ent.path
         let path = prefix ? (prefix + '/' + rel) : rel
         let pmeta = this.Crate_meta_from_path(path)
         let id = this.Heist_keep_id(me, base, path)
@@ -1282,6 +1289,9 @@ async Heist_census_heads(w, lib, nav, walkdir, base, me, prefix, seedName, seed)
         rec.sc.title = pmeta.title
         rec.sc.artist = pmeta.artist
         rec.sc.path = path
+        // guarded, never stamped null (the undef-marker law): a backend that can't stat leaves the
+        //  key absent and the face simply shows no size for that row.
+        if (ent.bytes != null && ent.bytes > 0) rec.sc.bytes = ent.bytes
         let dot = path.lastIndexOf('.')
         if (dot >= 0) rec.sc.ext = path.slice(dot + 1)
         rec.sc.husk = 1
@@ -1735,10 +1745,15 @@ async Heist_rummage_folder(w, nav, me, seed) {
     //    recs.  MULTI-VALUED (comma-joined): two ⇊-keeps of tracks in the SAME folder both tag the shared
     //     records, so neither clobbers the other's scoping (the review's finding).  A sha256 id never has a
     //      comma, so split(',') is unambiguous.
+    // AND THE SEED HUSK LEARNS ITS SECONDS, from the stock card the source already holds (the encode
+    //  info's `seconds`) — the ONE sibling the asker then knows both bytes and length for, which is the
+    //   anchor of the face's length extrapolation (the owner: "extrapolate from filesizes a length based
+    //    on the one sibling we know filesize and length for").
     for (const rec of this.Ra_recs(lib)) {
         let cur = rec.sc.rummage ? String(rec.sc.rummage).split(',') : []
         if (!cur.includes(seed)) cur.push(seed)
         rec.sc.rummage = cur.join(',')
+        if (rec.sc.re === String(seed) && !rec.sc.seconds && card.seconds) rec.sc.seconds = +(+card.seconds).toFixed(2)
         rec.bump()
     }
     // REGISTER this census as a serve source so the source can hand the asker the ORIGINAL bytes it promised

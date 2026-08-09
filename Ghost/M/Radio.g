@@ -956,6 +956,21 @@ async Radio_dial(radio):
     //       and a diagnostic Book measuring "did music run" could never go green on a solo tab.  The
     //        no-friend fact is not suppressed by playing: `solo` is exactly the label the human asked
     //         for, and it is what the face and the report read to keep saying so WHILE the music runs.
+    // HOLD WHILE WE ARE STILL EXPECTING SOMEBODY (the owner 2026-08-09: *"give up on the other Pier
+    //  only if none are online in 5s or so"*).  Falling to your own shelf the instant the friend pool
+    //   reads dry is what made a page "stuck on local music only" a second before the friend's chunks
+    //    landed.  So if an invite armed an expectation and its five seconds have not run out, say so
+    //     and dial nothing — the next beat re-asks, and once the clock expires this falls through to
+    //      the local rung exactly as before.
+    //  UNARMED IS UNCHANGED, and that is the safety: Supervisor_hoping answers 0 when no expectation
+    //   exists (no invite in flight, no Supervisor at all, a Book), so every existing path keeps its
+    //    behaviour to the byte.  Only the seconds right after an invite behave differently.
+    let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
+    if (sup && this.Supervisor_hoping(sup, 'swarm.arrival')) {
+        let waitnote = 'waiting for someone to answer your invite'
+        if (radio.sc.note !== waitnote) { radio.sc.note = waitnote; radio.bump() }
+        return null
+    }
     let mine = this.Ra_dial_next(w, shelf, { skip_ids: radio.c.heard || {} })
     if (!mine) {
         this.Stoker_churn(stoker)
@@ -1007,6 +1022,16 @@ Radio_alone_why(w):
         }
     }
     if (liveName) return { tag: 'gathering', name: liveName }
+    // WE INVITED SOMEBODY AND NOBODY CAME — a different fact from "your friends are offline", and the
+    //  only one of these tags that names something the listener just DID.  Checked after `gathering`
+    //   (someone live always wins) and before the stored-pier cases, because an expired invite
+    //    explains the silence better than a contact list does.  This is the narrow repair to this
+    //     function's real flaw: `anyPier` treats any stored %Pier as an expectation, when the thing
+    //      that actually creates one is an invite.
+    if (this.Supervisor_w) {
+        let sup = this.Supervisor_w(this.top_House())
+        if (sup && this.Supervisor_given_up(sup, 'swarm.arrival')) return { tag: 'gaveup', name: '' }
+    }
     if (anyPier) return { tag: 'offline', name: '' }
     return { tag: 'alone', name: '' }
 
@@ -1014,9 +1039,11 @@ Radio_reason(w, radio):
     let why = this.Radio_alone_why(w)
     let note = why.tag === 'gathering'
         ? ('gathering music from ' + why.name + ' — nothing has arrived yet')
-        : (why.tag === 'offline'
-            ? 'your friends are offline — nobody online to play right now'
-            : 'nobody online yet — connect a friend to hear their music')
+        : (why.tag === 'gaveup'
+            ? 'nobody answered your invite — playing your own music'
+            : (why.tag === 'offline'
+                ? 'your friends are offline — nobody online to play right now'
+                : 'nobody online yet — connect a friend to hear their music'))
     if (radio.sc.note !== note) {
         radio.sc.note = note
         radio.bump()

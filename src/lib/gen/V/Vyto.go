@@ -24,7 +24,7 @@ const HEAT_BUY = 3.5
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return 'f0504124cd6bd28b~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return '2e7f0da5278a87f7~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -106,6 +106,11 @@ Vyto_board(w) {
 e_Vyto_commission(A, w, e) {
     let req = e?.sc.req
     if (!req) return w.i({ error: 'Vyto_commission: !req' })
+    // ELECTRODE (2026-08-09, the cancel-latency hunt) — the twin of keeps-look's mark: the elvisto
+    //  has CROSSED the queue and the commission is being taken.  Δ(keeps-look → vyto-commission)
+    //   attributes the wait to the elvisto hop or acquits it.  .c-only, capped, never snaps.
+    let TM = this.top_House ? this.top_House() : null
+    if (TM && TM.Radio_trace) TM.Radio_trace(null, { ev: 'vyto-commission' })
     if (!w.c.plan_done) this.Vyto_plan(w)
     // v1 refusal — loud, so a mis-ported client learns at the seam, not from silence
     if (req.sc.supports_takeTurns || req.sc.wants_wave_done || req.sc.wants_animation_done) {
@@ -173,6 +178,17 @@ e_Vyto_commission(A, w, e) {
     this.Vyto_grapples(w, req)
     this.Vyto_watch(w)
     w.i({ see: `📡 commissioned by ${w.c.client_w?.sc.w ?? '?'} — ${w.c.grapples.length} grapple(s)` })
+    // A COMMISSION IS A CHANGE — STIR ON IT (2026-08-09, the cancel-latency hunt: "it's ridiculous
+    //  how the drop takes so long").  This verb re-derived the grapples and re-armed the watches and
+    //   then returned WITHOUT stirring, so the glass only reacted when some grapple happened to bump.
+    //  For a cancel that is the worst possible deal: the rm'd keep can never bump again, and during a
+    //   heist the chatty organs (Radio, Tuner, Riffle, Caper) are OUT of the grapple set by design —
+    //    so the scan that would notice the dead keep waited on an incidental bump of whatever was
+    //     left, measured on the live tab at seconds apart.  Two scans to drop (the departing grace)
+    //      × sparse bumps ≈ the observed 12s, with the electrodes above acquitting every queue hop
+    //       (keeps-look → vyto-commission = 92ms).  The commission itself IS news about what the
+    //        glass shows; it stirs, coalesced like every other bump.
+    this.Vyto_stir_soon(w)
 
 },
 // Vyto_grapples — derive the watch set.  watch_c(Scannable) was aimed one joint too high:
@@ -387,6 +403,13 @@ Vyto_scan_sweep(w, parentMirror, gen) {
             //  and its own hover pin would hold the corpse in place through the whole grace scan.
             this.Vyto_calm_yield(w, row.c.tok)
             row.bump_version()
+            // THE DROP MUST NOT WAIT FOR A STRANGER'S COUGH (2026-08-09, the cancel-latency hunt).
+            //  Marking departing is scan #1; the actual drop is scan #2 — and scan #2 used to ride
+            //   whatever grapple happened to bump next, unbounded on a quiet glass.  On the LIVE page
+            //    the departing row books its own second scan one escort-beat out (450ms ≈ grawave),
+            //     so the corpse leaves on schedule.  vw_frame-gated: a Book hand-cranks its stirs
+            //      (vyto-books-hand-crank-the-pipeline) and must keep its recorded two-crank rhythm.
+            if (w.c.vw_frame) setTimeout(() => this.clear(() => this.Vyto_stir_soon(w)), 450)
         }
     }
 

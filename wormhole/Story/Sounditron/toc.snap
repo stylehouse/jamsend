@@ -98,38 +98,44 @@ story:Sounditron
         lematch,Need
           means,spayer,re:Need:(.*),tol:any
   TimeSpool
-    TimeTotal:beliefs,avg=0.124
-      sample=0.096,at=1786267493
-      sample=0.154,at=1786267514
-      sample=0.082,at=1786267549
-      sample=0.146,at=1786267647
-      sample=0.146,at=1786267713
-      sample=0.118,at=1786267738
-      sample=0.089,at=1786267794
-      sample=0.112,at=1786267946
-      sample=0.143,at=1786268013
-      sample=0.154,at=1786270973
-    TimeTotal:step,avg=0.015
-      sample=0.012,at=1786267493
-      sample=0.019,at=1786267514
-      sample=0.01,at=1786267549
-      sample=0.018,at=1786267647
-      sample=0.018,at=1786267713
-      sample=0.015,at=1786267738
-      sample=0.011,at=1786267794
-      sample=0.014,at=1786267946
-      sample=0.018,at=1786268013
-      sample=0.019,at=1786270973
+    TimeTotal:beliefs,avg=0.171
+      sample=0.155,at=1786272693
+      sample=0.163,at=1786272873
+      sample=0.365,at=1786272982
+      sample=0.13,at=1786273006
+      sample=0.125,at=1786273084
+      sample=0.17,at=1786273987
+      sample=0.149,at=1786274702
+      sample=0.053,at=1786274936
+      sample=0.162,at=1786275185
+      sample=0.237,at=1786277149
+    TimeTotal:step,avg=0.021
+      sample=0.019,at=1786272693
+      sample=0.02,at=1786272873
+      sample=0.046,at=1786272982
+      sample=0.016,at=1786273006
+      sample=0.016,at=1786273084
+      sample=0.021,at=1786273987
+      sample=0.019,at=1786274702
+      sample=0.007,at=1786274936
+      sample=0.02,at=1786275185
+      sample=0.03,at=1786277149
   step,dige:7b49494b56c4ab61
   step=2,dige:59b784f9ea897300,desc:the machine stands
     Assertion:machine-stood,sentence:the machine stood — an addressable self emerged on the spine
     Assertion:the-supervisor-stood,sentence:the supervisor stood — a roster of registered watches is being read
+    Assertion:granted,sentence:granted — a sealed friendship holds Music grants in storage
+    Assertion:a-peer-stood-reachable,sentence:a peer stood reachable — a channel opened beyond ourselves
+    Assertion:a-friend-counted-their,sentence:a friend counted their shelf — records stand reachable
   step=3,dige:258391d216bb5d68,desc:the relay answers
     Assertion:relay-answers,sentence:the relay answers — the channel stood and frames can cross
   step=4,dige:cb2974f10daf9c8f,desc:who could we reach
     Assertion:possibilities-surveyed,sentence:the possibilities of peers were surveyed — every known address counted
+    Assertion:the-collection-stirred,sentence:the collection stirred — real tracks wandered into the glass
   step=5,dige:6826abf0ec14873f,desc:reach for a peer
   step=6,dige:13fc978ec3ee9150,desc:does sound run here
+    Assertion:the-sound-system-answered,sentence:the sound system answered — a real AudioContext ran here
+    Assertion:music-from-a-friend,sentence:music from a friend played — their track streamed off their shelf over Repli
   step=7,dige:af6053b467353f47,desc:the music runs
     Assertion:music-runs,sentence:the music played — record chunks decoded onto the live timeline
   step=8,dige:1bccd4d2c9214963,desc:sum and report

@@ -27,6 +27,18 @@
 
     let armed = $state(false)
     let timer: ReturnType<typeof setTimeout> | undefined
+    // FIRED — the button admits it has been pressed (the owner 2026-08-09: *"can we get it to disable
+    //  once clicked so the user at least gets some feedback that the button has undertaken
+    //   something"*).  The confirmed press hands off to machinery whose visible result may lag (a
+    //    drop that must ride a commission + a think cycle), and until now the button just sat there
+    //     looking pressable — so the natural read was "it didn't take" and the natural move was to
+    //      press again, into a handler that had already run.  Once fired it DISABLES and says
+    //       "<verb>…" in place, dimmed: the press is acknowledged on the spot, whatever the glass
+    //        does next.  Normally the cell departs and unmounts this whole component; the 15s
+    //         re-enable is only the honesty valve for the abnormal case — if nothing consumed the
+    //          cell by then, something is wrong and the user deserves a button back, not a corpse.
+    let fired = $state(false)
+    let fired_t: ReturnType<typeof setTimeout> | undefined
     // THE BUTTON DISARMED ITSELF (the owner 2026-08-09: *"none of the path bit X buttons do anything,
     //  in the Heist"* … *"even the X delete? one for the whole Heist"*).  Arming CHANGES THIS BUTTON'S
     //   OWN SIZE — `×` (a 22px circle in the `big` form) swells into a `delete?` pill, wider and
@@ -46,7 +58,13 @@
         disarm()
     }
     function click() {
-        if (armed) { disarm(); ondelete() }
+        if (fired) return
+        if (armed) {
+            disarm()
+            fired = true
+            fired_t = setTimeout(() => { fired = false }, 15000)
+            ondelete()
+        }
         else { armed = true; armedAt = performance.now(); timer = setTimeout(disarm, 2200) }
     }
 </script>
@@ -57,11 +75,14 @@
      pill comes OUT OF FLOW: a ghost of the unarmed glyph holds the original footprint, and the pill
      is positioned over it.  Nothing outside this component moves when it arms, which makes the
      second press land exactly where the first one did — the only place a human will look for it. -->
-<span class="mx-wrap" class:mx-wrap-armed={armed}>
-    {#if armed}<span class="mx-ghost" class:mx-big={big} aria-hidden="true">{glyph}</span>{/if}
-    <button class="mx-del" class:mx-armed={armed} class:mx-big={big}
-            title={armed ? `click again to ${verb}` : title}
-            onclick={click} onmouseleave={leave}>{armed ? confirm : glyph}</button>
+<!-- FIRED rides the same out-of-flow rig as ARMED (ghost holds the footprint, pill floats over it):
+     the acknowledgement must not reflow the row any more than the arm was allowed to. -->
+<span class="mx-wrap" class:mx-wrap-armed={armed || fired}>
+    {#if armed || fired}<span class="mx-ghost" class:mx-big={big} aria-hidden="true">{glyph}</span>{/if}
+    <button class="mx-del" class:mx-armed={armed} class:mx-fired={fired} class:mx-big={big}
+            disabled={fired}
+            title={fired ? `${verb} underway` : armed ? `click again to ${verb}` : title}
+            onclick={click} onmouseleave={leave}>{fired ? `${verb}…` : armed ? confirm : glyph}</button>
 </span>
 
 <style>
@@ -98,6 +119,15 @@
         font-size: 0.7rem; padding: 0.05rem 0.3rem;
     }
     .mx-armed:hover { color: #fff; background: #7a1a1a; }
+    /* fired — pressed, acknowledged, working.  The pill's shape survives (same padding family as
+       armed) but everything urgent about it drains out: dim, quiet, no pointer, no hover invite. */
+    .mx-fired, .mx-big.mx-fired {
+        color: #c9b2b6; background: #3a2226;
+        font-size: 0.7rem; padding: 0.05rem 0.3rem;
+        opacity: 0.6; cursor: default;
+    }
+    .mx-big.mx-fired { width: auto; height: auto; border-radius: 9px; padding: 0.12rem 0.4rem; font-size: 0.72rem; box-shadow: none; }
+    .mx-fired:hover { color: #c9b2b6; background: #3a2226; }
 
     /* the ORB — a filled red disc you can find without hunting.  Sized in a fixed square with a 50%
        radius so it stays a true circle whatever glyph it carries; inline-flex centres that glyph

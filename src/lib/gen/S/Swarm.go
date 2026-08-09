@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '6a28a14bcd96ddfc~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '10a0e44d30dfda09~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -346,7 +346,46 @@ Swarm_live_self() {
 //   scanning phone lands on the SAME app); a Book pins it. The URL is the whole invite.
 async Swarm_invite_url(w, ident, feature, nonce, base) {
     let iz = await this.Swarm_mint_idzeug(w, ident, feature, nonce)
+    this.Swarm_expect_arrival(w)
     return base + '?Iz=' + encodeURIComponent(iz)
+
+},
+// Swarm_expect_arrival — AN INVITE MEANS "COME HERE", so minting one is the moment we start
+//  expecting somebody (the owner 2026-08-09: *"the cases when we'd expect a Pier are just right
+//   after an Invite… when it is essentially just saying 'come here', in a QR code"*).  That includes
+//    an invite to a Pier+Grant we ALREADY hold — you can keep your invite as a link for yourself and
+//     it stops minting Grants, but it is still "come here", so it still arms the expectation.
+//  This is the registration law working in the right direction: Swarm owns invites, so Swarm hands
+//   the watch over — Supervisor never learns what an invite is, and this whole block is a no-op on a
+//    tab with no Supervisor (a bare Book, a daemon mid-boot).
+//  FIVE SECONDS, the owner's number.  Long enough for a scan to land, short enough that nobody sits
+//   in silence wondering; after it, whoever asks is told plainly that we gave up.
+//  ARMED AT `Swarm_invite_url`, NOT AT `Swarm_mint_idzeug`, and that distinction is the whole point:
+//   the URL door is the LIVE one ("here is a QR, scan it now"), while the BLOTTER mints its 126
+//    serials straight off Swarm_mint_idzeug for a sheet to be printed and handed out next week.  A
+//     printed sheet is not "come here", and arming there would hold the radio for five seconds every
+//      time somebody prepared one.  If a refactor ever routes the blotter through this door, it must
+//       NOT inherit the expectation — that is a behaviour change, not a tidy-up.
+Swarm_expect_arrival(w) {
+    let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
+    if (!sup) return
+    this.Supervisor_expect(sup, 'swarm.arrival', 'someone answered the invite — a pier came online', 'Swarm_probe_arrival', null, 5)
+
+},
+// Swarm_probe_arrival — is ANY pier of ours live on Music right now?  Deliberately not
+//  `Radio_alone_why`: that one answers "who is around" (any stored %Pier counts), and a contact from
+//   weeks ago is not somebody arriving.  This answers the only question an invite asks — did anyone
+//    turn up — and it is a pure read, called from a tick it does not own.
+Swarm_probe_arrival(subject, sup) {
+    let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (!ident) return { verdict: 'unknown', note: 'no identity yet' }
+    let me = String(ident.sc.prepub || '')
+    for (const p of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+        if (!p.sc.pub) continue
+        if (me && String(p.sc.pub) === me) continue
+        if (this.Swarm_pier_live && this.Swarm_pier_live(p, 'Music')) return { verdict: 'ok', note: p.sc.friendly ? String(p.sc.friendly) : '' }
+    }
+    return { verdict: 'wrong', note: 'nobody has come online' }
 
 },
 // Swarm_iz_of_url — the boot handler's core, isolated pure: pull the ?Iz= token back out of a

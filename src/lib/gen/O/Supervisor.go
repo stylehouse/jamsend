@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_O_Supervisor(): string { return '88fe0b0d3e1d1d7f~g1' },
+    Ghostmeta_Ghost_O_Supervisor(): string { return 'a27b33145ca8e4b2~g1' },
 
 // Supervisor.g — THE WATCHER.  One world holding a ROSTER of watches that other processes hand it.
 //  It reads every watch each pass, folds ONE verdict, and stays QUIET while they all read ok.
@@ -116,6 +116,70 @@ Supervisor_watch(w, key, sentence, kind, fn, subject) {
 Supervisor_unwatch(w, key) {
     if (!w) return
     for (const watch of w.o({ Watch: key })) w.drop(watch)
+
+},
+// Supervisor_expect — arm an EXPECTATION: a standing watch that is allowed `secs` to come true before
+//  we give up on it.  This is the primitive the doc's title is about ("knowing when to give up"), and
+//   it is what turns a reading into a decision.
+//  EXPECTATION IS EVENT-DRIVEN, NEVER AMBIENT (the owner 2026-08-09).  We do not sit around hoping a
+//   peer might appear; we expect one *because something just happened* — an invite was minted, which
+//    is a QR that means "come here".  So the arming lives at the event, and a tab with no invite in
+//     flight has no expectation and behaves exactly as it always did.  This is also the flaw in
+//      asking `Radio_alone_why` to decide it: that function answers "who is around", and a stored
+//       %Pier from weeks ago is not an expectation that anyone is coming.
+//  RE-ARMING IS THE POINT: calling this again restarts the clock (a second invite means we are
+//   hoping again).  A watch that has been given up on is re-armed the same way, so nothing has to
+//    reason about whether the previous hope already expired.
+Supervisor_expect(w, key, sentence, fn, subject, secs) {
+    if (!w) return null
+    let watch = this.Supervisor_watch(w, key, sentence, 'standing', fn, subject)
+    if (!watch) return null
+    // `wait` is the CONFIGURED patience and snaps (legible, stable, a number that never churns).
+    //  The deadline is a WALL CLOCK and rides `.c` only — a timestamp in sc makes every fixture
+    //   downstream churn on every run forever (the law Sounditron keeps its `ttf` on `.c` for).
+    watch.sc.wait = '' + secs
+    watch.c.deadline = Date.now() + secs * 1000
+    watch.sc.patience = 'waiting'
+    return watch
+
+},
+// Supervisor_hoping — are we still within an expectation's patience?  THE DECISION READS THE
+//  DEADLINE, not `sc.patience`: the grade is only refreshed on the Supervisor's own tick, so a
+//   caller asking between ticks would get a stale answer and give up late.  The sc grade is for the
+//    snap and the face; the clock is for the ruling.
+//  Answers 0 for a watch that never existed — no expectation means nothing to wait for, which is the
+//   correct default and keeps every un-armed caller on its original behaviour.
+Supervisor_hoping(w, key) {
+    if (!w) return 0
+    let watch = w.o({ Watch: key })[0]
+    if (!watch || !watch.c.deadline) return 0
+    if (watch.sc.verdict === 'ok') return 0
+    return Date.now() < watch.c.deadline ? 1 : 0
+
+},
+// Supervisor_given_up — the other side of the same clock, for a caller that wants to SAY so.
+Supervisor_given_up(w, key) {
+    if (!w) return 0
+    let watch = w.o({ Watch: key })[0]
+    if (!watch || !watch.c.deadline) return 0
+    if (watch.sc.verdict === 'ok') return 0
+    return Date.now() >= watch.c.deadline ? 1 : 0
+
+},
+// Supervisor_patience — regrade one watch's hope against the clock.  Called from the read pass so the
+//  snap and the face stay current; the rulings above never wait for it.
+//  An expectation that comes TRUE disarms itself — deadline cleared, grade gone — so the row falls
+//   quiet and a later re-arm starts from nothing rather than from a stale clock.
+Supervisor_patience(watch) {
+    if (!watch.sc.wait) return
+    if (watch.sc.verdict === 'ok') {
+        watch.c.deadline = null
+        if (watch.sc.patience) delete watch.sc.patience
+        return
+    }
+    if (!watch.c.deadline) return
+    let grade = Date.now() < watch.c.deadline ? 'waiting' : 'given-up'
+    if (watch.sc.patience !== grade) watch.sc.patience = grade
 },
 //#endregion
 
@@ -143,6 +207,7 @@ Supervisor_read(w) {
         //  there must land HERE as a reading, not as a broken House pass.
         try { got = probe.call(this, watch.c.subject, w) } catch (er) { got = { verdict: 'unknown', note: this.Supervisor_clean(er) } }
         this.Supervisor_stamp(watch, this.Supervisor_verdict(got), this.Supervisor_note(got))
+        this.Supervisor_patience(watch)
     }
 
 },
@@ -202,6 +267,11 @@ Supervisor_speaking(w) {
     for (const watch of w.o({ Watch: 1 })) {
         if (watch.sc.kind === 'milestone' && watch.sc.met) continue
         if (watch.sc.verdict === 'ok') continue
+        // STILL HOPING IS NOT YET A FAULT.  An armed expectation inside its patience is the normal
+        //  middle of an arc someone just started — the invite QR is on screen and we are counting to
+        //   five.  Speaking here would make the cell shout during the exact seconds the thing is
+        //    working, which is the HUD failure wearing a new hat.  It speaks when we GIVE UP.
+        if (watch.sc.patience === 'waiting') continue
         out.push(watch)
     }
     return out.sort((a, b) => this.Supervisor_rank(a) - this.Supervisor_rank(b))

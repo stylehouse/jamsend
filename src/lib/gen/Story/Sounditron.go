@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return 'ba62d3bd070cd9d8~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '5bdfdc08297afbe9~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -128,6 +128,14 @@ async Sounditron_machine(w) {
     let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
     if (ident?.sc?.friendly) m.sc.friendly = this.Sounditron_clean(ident.sc.friendly)
     if (!self && !(w.oa({log: 'no identity yet — the tab has no addressable self'}))) w.i({log: 'no identity yet — the tab has no addressable self'})
+    // REGISTER BEFORE THE GLASS, AND IN THE FIRST BEAT.  Both halves are load-bearing:
+    //  • FIRST BEAT, because the swear's step must not depend on tab history.  This started in beat 5,
+    //     and the roster lives on MUNDO and outlives the run — so a warm tab swore at step 2 off the
+    //      PREVIOUS run's registration while a freshly reloaded one could not swear before step 8.  A
+    //       declared assertion pins its step, so that drift is a guaranteed red half the time.
+    //  • BEFORE Sounditron_glass, because the glass pushes the %Supervisor summary row as an organ and
+    //     can only push a row that already exists.
+    this.Sounditron_supervise(w)
     this.Sounditron_glass(w)
     // hold the step only until the shelf holds ENOUGH TO START — one playable track — NOT until the whole
     //  batch is provisioned (the human 2026-07-28 "make it fast", the heart-of-hearts cut).  THE OLD BUG
@@ -335,6 +343,25 @@ Sounditron_commission(w) {
     let supw = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
     let suprow = supw ? supw.o({ Supervisor: 1 })[0] : null
     if (suprow) organs.push(suprow)
+    // ITS SIZE IS ITS VOLUME — quiet when healthy made SPATIAL, not just textual.  A calm supervisor
+    //  takes a small readable seat; a loud one grows until it rivals the music (%Now is dose 1.6, and
+    //   when something is actually broken the sanity cell SHOULD win that argument).
+    //  THE DOSE IS SET HERE, NOT IN Supervisor.g, and that is the slope holding: `sc.dose` is a claim
+    //   on a GLASS, and the watcher must stay glass-blind or it can no longer report that the glass is
+    //    down.  Sounditron is the commissioner — it already doses its own organs this exact way in
+    //     Sounditron_keeps_look — so pricing a cell is its job, not the watcher's.
+    //  Dose is a STRING (a bare number would wildcard in a query) and only written on CHANGE with a
+    //   bump, the standing idiom — an unconditional write would re-express the glass every pass.
+    if (suprow) {
+        let loud = Number(suprow.sc.loud || 0)
+        // first-guess constants, meant to be tuned ON SIGHT rather than reasoned about — the same
+        //  status as every other layout number in this file.
+        // MEASURED, then cut back: 1.8 on top of the loud face's need floor made this cell 8× the
+        //  music's area.  The floor already carries most of the loud/calm difference, so the dose is
+        //   the trim, not the lever.
+        let sdose = loud > 1 ? '1.2' : (loud ? '0.9' : (suprow.sc.watches === '0' ? '0.6' : '0.3'))
+        if (suprow.sc.dose !== sdose) { suprow.sc.dose = sdose; suprow.bump() }
+    }
     if (!anyKeep) {
         let h = w.o({ Caper: 1 })[0]
         // FLAT: the flow organ's constraint / Lead / filing / supervision rows are WORKINGS, not
@@ -937,6 +964,25 @@ Sounditron_keeps_look(w) {
             else if (org.sc.dose) { delete org.sc.dose; org.bump() }
         }
         this.Sounditron_commission(w)
+        // AND WAKE THE LOOP (the owner 2026-08-09: after the gesture-path landed, *"still ... it
+        //  doesn't roll the cell animation|awareness ... for 12s or so"*).  The commission above ENDS
+        //   in an i_elvisto to Vyto_commission — deferred, drained by the belief loop — so minting it
+        //    is not the same as it running: on a quiet tab nothing nudges the loop and the commission
+        //     sits in the queue for the idle think cadence, which is the 12s.  The exact lesson
+        //      Radio_downdown already recorded for the MINT direction ("a quiesced belief loop won't
+        //       flush them to UItime ... feebly_ponder turns 'sometime' into 'next cycle'"); porting
+        //        its pop without its wake was porting half the fix.  Inside the fp gate, so a quiet
+        //         poll pass never pokes the loop — only a real keep-set change does.  Runtime-gated
+        //          no-op in any headless context, 200ms-throttled, same as every other caller.
+        this.feebly_ponder()
+        // ELECTRODE (2026-08-09, the cancel-latency hunt — "it's ridiculous how the drop takes so
+        //  long").  Stamps WHEN the keep reaction fired; its twin in e_Vyto_commission stamps when
+        //   the elvisto crossed the queue.  The Δ between the two marks is the whole question — the
+        //    Mundo drain-lag marks put the generic queue at ~0.5s, so if THIS Δ is seconds the loss
+        //     is the elvisto hop, and if it is small the suspect moves inside Vyto.  .c-only via
+        //      Radio_trace, capped, never snaps.  Pull it once the number is understood.
+        let TM = this.top_House ? this.top_House() : null
+        if (TM && TM.Radio_trace) TM.Radio_trace(null, { ev: 'keeps-look', kfp: kfp })
     }
 
 },
@@ -992,7 +1038,6 @@ async Sounditron_possibilities(w) {
 //  HEIST nugget stands here — reaching for a peer IS what a heist waits on.
 async Sounditron_peer(w) {
     w.i({desc: 'reach for a peer'})
-    this.Sounditron_supervise(w)
     // RELIABILITY (2026-07-28, root-caused): a peer that IS online kept reading offline, so this wait
     //  burned its full ceiling and the friend features never fired ("doesn't keep working reliably").
     //   The cause was an ordering bug between two live constants — the ambient self-heal that re-greets a
@@ -1321,6 +1366,15 @@ Sounditron_supervise(w) {
     this.Supervisor_watch(sup, 'sound.live',   'a friend is online — bytes only flow live',             'standing',  'Sounditron_probe_live',   w)
     this.Supervisor_watch(sup, 'sound.shelf',  'a friend has counted their shelf — records to want',    'milestone', 'Sounditron_probe_shelf',  w)
     this.Supervisor_watch(sup, 'sound.pulled', 'original bytes crossed over Repli — the pull landed',   'milestone', 'Sounditron_probe_pulled', w)
+    // AND COMPLETE THE PASS HERE, rather than waiting for w:Supervisor's own tick on Mundo.  Registering
+    //  and being READ are different events, and the gap between them is a wall clock: the roster would
+    //   sit verdict-less until Mundo next ticked, so the step at which the witness could first swear
+    //    drifted with the cadence.  Both are pure reads and both are idempotent, so running them now
+    //     costs one extra pass over four rows and makes the swear land in THIS beat, every time.
+    //  Supervisor_say also mints the summary row, which is what the glass push immediately after this
+    //   needs to exist.
+    this.Supervisor_read(sup)
+    this.Supervisor_say(sup)
 
 },
 // ── the four probes.  Each is a pure READ of `w` (the Sounditron world, handed over as the watch's

@@ -133,21 +133,21 @@
     {/if}
     {#if face.note}<div class="rf-note">{face.note}</div>{/if}
     {#if face.state === 'starved'}<div class="rf-note">off the tape — holding the line, it'll resume itself</div>{/if}
-    <!-- the small facts, each its own chip: the moving clock, then played · drops · the pool -->
+    <!-- the small facts, each its own chip: the moving clock, then drops.  "N played" and
+         "⚯ N on the dial" are GONE (the owner 2026-08-09: *"remove the '9 played' and '24 on the
+          dial' from the %Radio cell, I don't care"*) — bookkeeping the listener never asked for.
+         `face.played`/`face.pool` stay computed: `first` still forks on played, and the first-time
+         chip still says how many tracks are ready — that one is an INVITATION, not a ledger. -->
     <div class="rf-chips">
         {#if face.of > 0}
             <span class="rf-chip rf-clock">
                 {#if face.skip > 0}<span class="rf-skiptime">{mmss(face.skip)} +</span> {mmss(face.at)} / {mmss(face.skip + face.of)}{:else}{mmss(face.at)} / {mmss(face.of)}{/if}
             </span>
-            {#if face.played > 0}<span class="rf-chip">{face.played} played</span>{/if}
             {#if face.drops > 0}<span class="rf-chip">{face.drops} drops</span>{/if}
         {:else if face.state === 'digging' && !face.note}
             <span class="rf-chip">{face.own ? 'digging your crates…' : 'looking for a friend to play…'}</span>
         {:else if face.first}
             <span class="rf-chip">{face.pool > 0 ? `▶ plays your friends' music — ${face.pool} ${face.pool === 1 ? 'track' : 'tracks'} ready` : face.stock > 0 ? '▶ waiting for a friend — your own crate is in the Tuner' : '▶ waiting for a friend to come online'}</span>
-        {/if}
-        {#if face.pool > 0 && !face.first && !face.own}
-            <span class="rf-chip">⚯ {face.pool} on the dial</span>
         {/if}
     </div>
 </div>

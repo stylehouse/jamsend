@@ -168,6 +168,9 @@
     //    it grows the face, which grows the cell's measured need — the sizing machinery does the
     //     rest, so the room is taken only while it is wanted.
     let inviting = $state(false)
+    // the pier-list cap ("yay many") — five rows before the +N more toggle takes over.
+    const PIERS_SHOWN = 5
+    let piers_all = $state(false)
     // …except when the door is ALREADY the moment: a scanned invite is in flight, or nobody has
     //  ever arrived.  One-shot latch (a plain let, never $state — re-running must not re-open a
     //   panel the user has just closed), so this opens the panel once and then leaves it alone.
@@ -215,16 +218,20 @@
             {#if face.up.fresh}<span class="df-tag">fresh reload</span>{/if}
         </div>
     {/if}
-    {#each face.friends as f}
+    <!-- A PIER ROW IS THE LIGHT AND THE NAME, in that order (the owner 2026-08-09: *"other Piers
+         should just say their name and the online light, the online first"*).  Everything the row
+         used to SAY — ♪ granted, N records, the half-seal warning — moves into the dot's title and
+         colour: the facts stay reachable under the hood, they just stop being furniture.  A
+         half-sealed pier wears the amber dot; hover says why.  The ♪→ suggest stays: it is a verb,
+         not a saying.  And the list is CAPPED (*"the list shouldn't be more than yay many long"*) —
+         five rows, then one dim toggle for the rest. -->
+    {#each (piers_all ? face.friends : face.friends.slice(0, PIERS_SHOWN)) as f}
         <div class="df-friend">
-            <span class="df-dot" class:here={f.rung === 'here'} class:fading={f.rung === 'fading'}
-                title={f.ago == null ? `${f.name} — not heard this session (their tab is closed or away)` : `${f.name} — heard ${f.ago}s ago (their station's pulse heartbeat)`}>●</span>
+            <span class="df-dot" class:here={f.rung === 'here'} class:fading={f.rung === 'fading'} class:half={f.seal === 1}
+                title={(f.ago == null ? `${f.name} — not heard this session (their tab is closed or away)` : `${f.name} — heard ${f.ago}s ago`)
+                    + (f.music ? ' · ♪ granted' : '') + (f.records != null ? ` · ${f.records} records` : '')
+                    + (f.seal === 1 ? ` · ⚠ sealing 1 of 2 — ${f.seal_missing}; should heal itself, say so if it sits` : '')}>●</span>
             <span class="df-name">{f.name}</span>
-            {#if f.music}<span class="df-tag">♪ granted</span>{/if}
-            {#if f.seal === 1}
-                <span class="df-half" title="half-sealed — {f.seal_missing}. Asks leave but answers die on the doorstep, so this link looks merely slow. It should heal itself; if it sits here, say so.">⚠ sealing — 1 of 2</span>
-            {/if}
-            {#if f.records != null}<span class="df-tag dim">{f.records} records</span>{/if}
             {#if f.can_suggest}
                 <button class="df-edit" onclick={() => suggest(f.pub)}
                     title="suggest the playing track to {f.name} — lands even if they're away">♪→</button>
@@ -241,15 +248,22 @@
             </div>
         {/if}
     {/each}
+    {#if face.friends.length > PIERS_SHOWN}
+        <button class="df-more" onclick={() => piers_all = !piers_all}
+            title={piers_all ? 'fold the list back to the first few' : 'show every pier'}>
+            {piers_all ? '▾ fewer' : `+ ${face.friends.length - PIERS_SHOWN} more`}
+        </button>
+    {/if}
     {#if !face.friends.length && !face.door?.landed}
         <div class="df-note">{face.newborn ? 'you are new here — the invite QR below is how a friend joins you' : 'no friends yet — the invite QR below is how one arrives'}</div>
     {/if}
 
-    <!-- the door's own verb, at the bottom of the list it grows: invite someone into it -->
+    <!-- the door's own verb, at the bottom of the list it grows.  Just "Invite…" (the owner
+         2026-08-09) — the ellipsis is the whole promise: press it and the rest appears. -->
     {#if face.prepub}
         <button class="df-open" onclick={() => inviting = !inviting}
             title={inviting ? 'fold the invite door away' : 'invite a friend — mint a QR they scan, or paste an invite you were sent'}>
-            {inviting ? '▾ invite door' : '▸ invite a friend'}
+            {inviting ? '▾ Invite…' : 'Invite…'}
         </button>
     {/if}
     {#if inviting}
@@ -333,13 +347,16 @@
     .df-dot { color: #5a4a5f; font-size: 10px; }
     .df-dot.here { color: #7fe8bf; text-shadow: 0 0 4px #7fe8bf; }
     .df-dot.fading { color: #d8b86a; }
-    .df-tag { font-size: 8px; color: #b48fc9; }
-    /* the half-seal warning: amber and slightly alive, because a silently-half-working link is the
-       one state that looks fine and isn't — it has to catch the eye without shouting */
-    .df-half {
-        font-size: 8px; color: #f0c060; border: 1px solid rgba(240, 192, 96, 0.35);
-        border-radius: 3px; padding: 0 3px; animation: df-halfpulse 2.4s ease-in-out infinite;
-    }
+    /* the half-seal state now lives ON the dot (the row says only light + name): amber and slightly
+       alive, because a silently-half-working link is the one state that looks fine and isn't. */
+    .df-dot.half { color: #f0c060; animation: df-halfpulse 2.4s ease-in-out infinite; }
     @keyframes df-halfpulse { 0%, 100% { opacity: 0.6 } 50% { opacity: 1 } }
+    .df-tag { font-size: 8px; color: #b48fc9; }
     .df-tag.dim { opacity: 0.6; }
+    /* the +N more toggle — the cap's release valve, styled to whisper */
+    .df-more {
+        pointer-events: auto; cursor: pointer; background: none; border: none;
+        font-size: 8px; color: #8a7a94; text-align: left; padding: 0;
+    }
+    .df-more:hover { color: #cbb8d8; }
 </style>

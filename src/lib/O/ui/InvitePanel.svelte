@@ -566,7 +566,12 @@
             {/if}
             <!-- SWITCH IDENTITY — which self this tab is, and the others this machine holds.  A
                  switch RELOADS as ?I=<prepub> (fork = ?I=new): the way to run two Piers on one
-                 machine, since a role-default page shares one identity across every tab. -->
+                 machine, since a role-default page shares one identity across every tab.
+                 NOT IN THE GLASS (the owner 2026-08-09: *"it shouldn't list the Identities on this
+                  tab or offer '+ new identity', leave that under the hood"*) — identity juggling is
+                   a tester's move, not a listener's; the ?I= machinery stays, only this dress hides
+                    the chips.  The strip-above-the-glass form keeps them. -->
+            {#if !inglass}
             <span class="ip-row ip-ids">
                 {#each roster.filter(r => !r.active) as r}
                     <button class="ip-idchip" onclick={() => go_identity(r.prepub)}
@@ -575,6 +580,7 @@
                 <button class="ip-idchip fork" onclick={() => go_identity('new')}
                     title="fork a fresh identity — this tab becomes a brand-new Pier (?I=new)">＋ new identity</button>
             </span>
+            {/if}
             {#if !named && !iz}
                 {@render namer('what do friends call you? the name rides your invites')}
             {/if}
