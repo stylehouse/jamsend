@@ -140,6 +140,37 @@ if (svg) {
     const svgout = out.endsWith('.png') ? '/tmp/runner_shot.svg' : out
     writeFileSync(svgout, r.svg)
     console.log(`🩻 ${svgout} — ${(r.svg.length / 1024).toFixed(0)}KB · ${r.w}×${r.h} · ${r.paths} paths ${r.labels} labels${r.groups != null ? ` · ${r.groups} vsub-groups (state ${r.state_vsubs})` : ''}${r.svgs > 1 ? ` · ${r.svgs} svgs` : ''}${r.cands ? ` · cands [${r.cands.join(' ')}]` : ''}`)
+    // THE MOLD MAP — Vyto's faces are HTML over the svg, so they never appeared in this capture and
+    //  "the overlays are puddled while the cells are spread" was unreadable from here.  Now every mold
+    //   rides the svg as a dashed box, and the overlap tally says how bad the puddle is in one number.
+    // THE ROOM READOUT — "is the glass using the bag it was given?"  The owner's report ("a 16:9 space
+    //  with one big orb in the middle, with gaps on either side of it") was a geometric fact nobody could
+    //   read off this capture without hand-parsing paths, so read it here: the cloud's extent against the
+    //    viewBox, per axis.  A cloud filling under ~70% of an axis is the gap being described.
+    {
+        const vb = (r.svg.match(/viewBox="([^"]+)"/) ?? [])[1]?.trim().split(/[\s,]+/).map(Number)
+        const cells = [...r.svg.matchAll(/class="cell([^"]*)"\s+d="([^"]+)"/g)]
+        if (vb?.length === 4 && cells.length) {
+            let mnx = Infinity, mny = Infinity, mxx = -Infinity, mxy = -Infinity
+            let crushed = 0
+            for (const [, cls, d] of cells) {
+                if (/\bcrushed\b/.test(cls)) crushed++
+                const n = d.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? []
+                for (let k = 0; k + 1 < n.length; k += 2) {
+                    if (n[k] < mnx) mnx = n[k]; if (n[k] > mxx) mxx = n[k]
+                    if (n[k + 1] < mny) mny = n[k + 1]; if (n[k + 1] > mxy) mxy = n[k + 1]
+                }
+            }
+            const fx = ((mxx - mnx) / vb[2] * 100).toFixed(0), fy = ((mxy - mny) / vb[3] * 100).toFixed(0)
+            console.log(`▦ frame ${vb[2]}×${vb[3]} · cloud ${mnx.toFixed(0)},${mny.toFixed(0)} → ${mxx.toFixed(0)},${mxy.toFixed(0)}`
+                + ` · uses ${fx}% × ${fy}% of the bag · ${cells.length} cells (${crushed} crushed)`
+                + `${r.foamereo != null ? ` · foamereo "${r.foamereo}"` : ''}`)
+        }
+    }
+    if (Array.isArray(r.molds)) {
+        console.log(`▣ molds: ${r.molds.length} · overlapping pairs: ${r.overlaps}`)
+        for (const m of r.molds) console.log(`    ${String(m.key).padEnd(28)} ${String(m.x).padStart(7)},${String(m.y).padStart(7)}  ${m.w}×${m.h}`)
+    }
     process.exit(0)
 }
 if (!r.png) { console.error(`✗ shot: runner returned no png (${JSON.stringify(r)})`); process.exit(1) }

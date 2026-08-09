@@ -2722,16 +2722,65 @@ await M.eatfunc({
                         //         for. Take the real attribute; fall back to pixels only when there is none
                         //          (Cyto's overlay sets no viewBox, so that path is unchanged).
                         const vb = el.getAttribute('viewBox') || `0 0 ${wpx} ${hpx}`
+                        // ── THE MOLD MAP (2026-08-09, the owner: *"take some snaps of the runner and perhaps
+                        //  highlight where the element is so you can see it yourself from the svg snap thing…
+                        //   I can see a puddle of our html overlays (a Component per cell?) sitting over the
+                        //    top of each other, even though the cells are kinda spread out"*).
+                        //  Vyto's faces are HTML molds absolutely positioned OVER the svg — a different layer
+                        //   entirely, which `el.innerHTML` cannot carry.  So the one instrument that exists for
+                        //    seeing this glass was structurally blind to the exact fault being reported: cells
+                        //     spread, overlays puddled.  Measure every `.face-mold` in CLIENT px, project it
+                        //      back through the svg's own `meet` transform into viewBox units, and composite it
+                        //       as a dashed box + key.  Inline styles, no class dependency, so the capture
+                        //        still stands alone.  Also count OVERLAPPING PAIRS — the puddle as a number a
+                        //         headless caller can watch, not just a picture it has to eyeball.
+                        //  Additive: a glass with no molds emits no `moldmap` group and is byte-identical.
+                        const srect = el.getBoundingClientRect()
+                        const vbn = vb.trim().split(/[\s,]+/).map(Number)
+                        const molds: { key: string, x: number, y: number, w: number, h: number }[] = []
+                        let overlaps = 0
+                        let moldg = ''
+                        if (vbn.length === 4 && srect.width > 0 && srect.height > 0) {
+                            const kk = Math.min(srect.width / vbn[2], srect.height / vbn[3])
+                            const ox = srect.left + (srect.width - vbn[2] * kk) / 2
+                            const oy = srect.top + (srect.height - vbn[3] * kk) / 2
+                            const toVB = (cx: number, cy: number) => ({ x: vbn[0] + (cx - ox) / kk, y: vbn[1] + (cy - oy) / kk })
+                            const stage = el.closest('.vyto') ?? el.parentElement
+                            for (const m of Array.from(stage?.querySelectorAll('.face-mold') ?? [])) {
+                                const rr = (m as HTMLElement).getBoundingClientRect()
+                                if (!(rr.width > 0) || !(rr.height > 0)) continue
+                                const a = toVB(rr.left, rr.top), b = toVB(rr.right, rr.bottom)
+                                molds.push({ key: (m as Element).getAttribute('data-key') ?? '?',
+                                             x: +a.x.toFixed(1), y: +a.y.toFixed(1),
+                                             w: +(b.x - a.x).toFixed(1), h: +(b.y - a.y).toFixed(1) })
+                            }
+                            for (let i = 0; i < molds.length; i++) for (let j = i + 1; j < molds.length; j++) {
+                                const A = molds[i], B = molds[j]
+                                if (A.x < B.x + B.w && B.x < A.x + A.w && A.y < B.y + B.h && B.y < A.y + A.h) overlaps++
+                            }
+                            if (molds.length) {
+                                const hot = (i: number) => `hsl(${(i * 47) % 360} 90% 62%)`
+                                moldg = `<g class="moldmap" fill="none">`
+                                    + molds.map((m, i) =>
+                                        `<rect x="${m.x}" y="${m.y}" width="${m.w}" height="${m.h}"`
+                                        + ` stroke="${hot(i)}" stroke-width="1.5" stroke-dasharray="5 3" fill="${hot(i)}" fill-opacity="0.07"/>`
+                                        + `<text x="${(m.x + 3).toFixed(1)}" y="${(m.y + 11).toFixed(1)}" fill="${hot(i)}"`
+                                        + ` font-size="9" font-family="ui-monospace,monospace">${
+                                            String(m.key).replace(/[<>&]/g, '')}</text>`).join('')
+                                    + `</g>`
+                            }
+                        }
                         const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="${el.getAttribute('class') ?? ''}"`
                             + ` width="${wpx}" height="${hpx}" viewBox="${vb}"`
                             + ` style="background:#070707;font-family:ui-monospace,monospace;font-size:11px">`
-                            + `<style>${css}</style>${el.innerHTML}</svg>`
+                            + `<style>${css}</style>${el.innerHTML}${moldg}</svg>`
                         const cr = (H.top_House().c as any).cy_render
                         result = { svg, w: wpx, h: hpx,
                             paths: el.querySelectorAll('path').length, labels: el.querySelectorAll('text').length,
                             groups: el.querySelectorAll('.cytui-subgraph').length,     // vsub <g> in THIS svg's DOM
                             state_vsubs: cr?.vsubs ?? null,                            // the render's own vsubs count
-                            svgs: cands.length,
+                            svgs: cands.length, molds, overlaps,
+                            foamereo: el.getAttribute('data-foamereo') ?? null,   // the composer's deck, so a capture can tell "declined" from "never arrived"
                             cands: cands.map(c => `${c.childElementCount}c/${c.querySelectorAll('text').length}t`) }
                     }
                 } else if (op === 'face') {

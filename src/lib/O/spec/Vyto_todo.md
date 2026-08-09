@@ -1690,3 +1690,115 @@ Both reports were the same mistake wearing two coats: **the code kept treating t
    never earns its need floor, and stays an icon forever — a latch.  Once a cell has been measured
     at any point the floor is grow-only and protects it, so this only bites the born-crushed case.
      If it shows up, the fix is to measure once off-screen rather than to lower the floor.
+
+## ⇢ ROUND: EYES FIRST (2026-08-09, the second owner brief)
+
+The brief named five things. Four landed; one is the instrument that made the rest possible, and it
+ should have existed a long time ago.
+
+### 0. The instrument was blind to the fault being reported
+
+The owner: *"take some snaps of the runner and perhaps highlight where the element is so you can see
+ it yourself from the svg snap thing… I can see a puddle of our html overlays (a Component per cell?)
+  sitting over the top of each other, even though the cells are kinda spread out."*
+
+`--svg` serialised `el.innerHTML` of the glass **svg**. Vyto's faces are **HTML molds positioned over
+ that svg** — a different layer entirely. So the one instrument this glass has could not carry the
+  exact fault class being reported, and never could have. Now the `svg` op measures every `.face-mold`
+   in client px, projects it back through the svg's own `meet` transform into viewBox units, and
+    composites it as a dashed box + key, plus an **overlap-pair tally** so the puddle is a number.
+     `runner_shot` also prints a **room readout** — cloud extent vs viewBox per axis, cell count,
+      crushed count, and the world's `foamereo` (read off a new `data-foamereo` on the viewport).
+
+That last field earns its keep immediately: the first post-change capture said `foamereo ""`, which is
+ how you tell *"the composer declined"* from *"the commission never reached this world"*. Without it
+  the room law looked broken when it had simply not arrived.
+
+**First capture, live player tab (800×450 frame):** 3 molds, **all exactly 12×12**, all within 60px of
+ each other; 3 poly cells, all `faced crushed`; cloud x 229→571 of 800. The whole report, in one shot.
+
+### 1. The puddle: no cell means no room
+
+A crowded-out seed gets no polygon and falls back to a 6px marker — but it kept the incoming `fit` of
+ 1, so it **mounted its face** into a 12×12 mold, and every crowded-out row's mold landed in the same
+  few pixels near the bag's heart. That is the puddle, whole. A row the cut could not seat has earned
+   no surface: `fit: 0` on the marker branch, and the icon register draws its mark and its edge label
+    and nothing else. (`loose` rows are exempt — off the pile by choice, at a real solved radius.)
+
+### 2. THE ROOM LAW — `foamereo:'room'`
+
+The owner: *"there's a 16:9 space with one big orb in the middle, with gaps on either side of it — it
+ should be slightly more aware of the space it can use — cytoscape was good at this."*
+
+The fit law was only its **shrinking half**. Nothing ever grew, and nothing anywhere read the frame's
+ **aspect** — so the pile packs an isotropic blob and a 16:9 bag gets a round cloud with two dead
+  thirds. Two moves, neither touching pricing:
+
+1. **SPREAD** — positions scale about the cloud's centre onto the bag's heart, **anisotropically**
+    (`gx`, `gy` separately). Positions only; balls stay round; a spread ≥1 cannot create an overlap the
+     pile had already resolved — it only opens the presses that were crushing every cell.
+2. **GROW** — radii then rise isotropically toward the asked fill, bounded by the *same* `rcap` and
+    pressure hold the shrinking half enforces, so the two halves can never fight.
+
+Verified against the real measured cloud (transcribed, `scratchpad/roomcheck.mjs`):
+ **52%×69% → 84%×98% of the bag, fill 26% → 51%, no ball escaping the frame.**
+
+This is the one place the frame GRANTS coverage instead of pressure earning it, so it is **opt-in and
+ says so**: `foamereo:'room'` or `room:<fill>` (default 0.55). Unset ⇒ skipped entirely, every recorded
+  fixture stands to the byte. Set on the live glass via `commission.sc.foamereo` (Sounditron.g), the
+   same gate discipline as `nested|need_floor|foam`. `Vyto_fo(w, key)` is the model-side reader, the
+    twin of Vytui's `fo` — a real parser, so tokens can carry values and `room` never matches `roomy`.
+
+### 3. The A is a droplet tail, not a glyph
+
+The owner: *"the A thing is actually supposed to be a little outward-pointing spike in the cell wall,
+ like a droplet tail… composite it onto the cell somewhere sensible, like a sharp corner, and the only
+  mark it is besides the shape of the cell near it is that triangle inside the space of the A, where
+   its shape can be manipulated from."*
+
+**That is why every previous attempt fought it.** It was being drawn as an A — three strokes standing
+ on the wall ring at a fixed 205° — so it was always furniture stuck onto a body it was never part of.
+  It is not drawn as an A at all now. A tail is **grown out of the cell's own sharpest outward corner**
+   and filled with the cell's own ground, so the silhouette grows the spike; the only added mark is the
+    **counter**, a triangular hole punched inside it (one path, `fill-rule evenodd` — a real hole, not
+     a second fill faking one). Two legs splaying from an apex around a triangular void *is* an A;
+      nobody has to draw one. The counter is the handle the dose drags from.
+
+Two things the captures caught that reasoning would not have:
+- **The base must come from the LENGTH, not the edges.** Backing off along the two polygon edges looked
+   principled and produced a **needle** — 7.5px wide over 33px long, counter ~3px, invisible and
+    ungrabbable. A corner's edges can be any length at all. Isoceles about the outward ray with
+     half-width a fixed fraction of the length fixes the aspect wherever it grows from. Now 25.3 × 35.0
+      with a 9.4px grip, on every eligible cell.
+- **A gate that silently yields nothing is worse than a blunt choice.** Filtering corners by adjacent
+   edge length (≥9px) returned null on a carved, spilling, perfectly eligible cell, because a power
+    cell's gap inset leaves plenty of short edges. Falls back to the vertex furthest from the seed.
+
+### 4. The details spill from the label
+
+The owner: *"the way Radio cell has title,artist,of,at,skip etc in the background looks odd and messy —
+ perhaps that label on the side of it should be the canonical thing, and spill the further details out
+  of there."* They stacked as a boxed hall in the middle of the cell, **under the component** — a
+   second competing surface behind the living one, which is why it read as mess rather than
+    information. Now one line along a concentric arc just inside the name: the wall band is canonical
+     and everything else is visibly its continuation, **cut to the arc's own length** — the wall
+      decides how much detail there is room for, and a small cell simply says less
+       (`lane wire` · `artist Yara · mood brine` · `artist Yara · …`, live).
+ The hall is retired on carved cells only; uncarved worlds have no band to spill onto and keep it.
+
+**A trap worth keeping:** the spill first lived inside the face-gated `wallwork` block, which silently
+ deleted every *faceless* carved cell's detail. The capture caught it as labels dropping **14 → 7 with
+  nothing put back** — which is precisely the class of thing no fixture can see and no reasoning
+   flagged. It rides its own carve-gated pass now.
+
+### Still open from this brief
+
+- **"a shitton more controls… but also some kind of explanation, so each control can have a language
+   and mean something to someone."** Untouched — and it is the one that wants the owner's shape before
+    code. The foamereo deck is the beginning of that vocabulary (`wave seal copperless nohall simmer
+     plump still room`), but a deck of tokens is not yet a *language*: nothing states what a token
+      means, what it costs, or what it composes with. The obvious next fibre is to make the deck
+       self-describing — each token a particle carrying its own sentence — so the board can render the
+        controls AND their explanation from one place rather than two.
+- The room law is live-gated but **unseen by human eyes** — it needs the owner's tab to re-commission.
+- `VytoCrush`'s three unsworn `%see` claims (see the hollow-Books note above) are still unexplained.

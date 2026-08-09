@@ -12,7 +12,7 @@ import { sig_of, group_edges, bucket_key_of, pull_step, budget_for, SIG_JOINS, F
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return '8e84be7f11629b3d~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return 'e3c50b4170a59cef~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -139,6 +139,14 @@ e_Vyto_commission(A, w, e) {
     //   (VytoDepth proves it).  Default off ⇒ Vyto_solve_scope's depth_k is 1 (no-op), so every
     //    EXISTING nested Book (VytoNestRest predates P3) keeps its byte-identical recorded geometry.
     w.c.depth_scale = req.sc.depth_scale ? 1 : 0
+    // FOAMEREO — the composer's deck (`foamereo:'room,seal,copperless'`), carried from the commission
+    //  onto the world's OWN sc so the model (Vyto_fo) and the render (Vytui's fo) read one key from one
+    //   place.  It rides sc rather than .c on purpose: a composer's declaration is worth SEEING in a
+    //    snap, and it is the one piece of the glass a Book may legitimately state about itself.
+    //  GUARDED — an unset commission writes NOTHING.  Assigning `req.sc.foamereo` unconditionally would
+    //   stamp `undefined` into sc and the encoder would faithfully brand the line `{"undef":["foamereo"]}`,
+    //    which is a mint bug, not furniture.  So every existing world stays byte-identical.
+    if (req.sc.foamereo) w.sc.foamereo = req.sc.foamereo
     // the commissioning client supplies the Run House on the req's `.c` (a ref — never sc); the
     //  Spool reads it to snap the RUN world into each moment's payload (spool.md §2).
     w.c.Run        = e?.c?.Run ?? req.c?.Run ?? null
@@ -957,6 +965,24 @@ Vyto_need_of(w, row) {
     return need * 1.15
 
 },
+// Vyto_fo — THE FOAMEREO READER, model side (the twin of Vytui's `fo`).  One scalar sc key holds a
+//  comma deck of composer tokens: `foamereo:'wave,seal,room:0.55'`.  Returns null when the token is
+//   absent (so every gate reading it is byte-invisible on an unset world — the additive-gate law),
+//    '1' for a bare token, and the value string for a `key:value` one.  Kept as a verb rather than
+//     an inline `includes()` because the inline form cannot carry a value and cannot tell `room`
+//      from `roomy`, and the deck is going to keep growing — the owner asked for "a lot of options
+//       on the foamereo", which only stays workable if reading one is a single honest call.
+Vyto_fo(w, key) {
+    let s = String(w.sc.foamereo ?? '')
+    if (!s) return null
+    for (const raw of s.split(',')) {
+        let t = raw.trim()
+        if (t === key) return '1'
+        if (t.startsWith(key + ':')) return t.slice(key.length + 1)
+    }
+    return null
+
+},
 // Vyto_solve — the cut.  For now ONE root scope (the scope milestone comes later): a fixed
 //  frame, the `cell` solver of shapes.md §3 — seed-and-relax over the proven power diagram.
 //   NO board Organ row is struck here: the cut is the root scope's own cell solve, and organ
@@ -1207,6 +1233,66 @@ Vyto_solve(w) {
                 while (si < seeds.length) {
                     seeds[si] = { x: seeds[si].x + dx, y: seeds[si].y + dy }
                     si = si + 1
+                }
+            }
+            // ── THE ROOM LAW (2026-08-09, the owner: *"there's a 16:9 space with one big orb in the
+            //  middle with gaps on either side of it — it should be slightly more aware of the space it
+            //   can use — cytoscape was good at this"*).  The fit law above is only its shrinking half:
+            //    nothing here ever GREW, and nothing anywhere read the frame's ASPECT.  So the pile
+            //     packs an isotropic blob, and a 16:9 bag gets a round cloud with two dead thirds — the
+            //      live capture measured exactly that (cloud x 229→571 of 800, every faced cell crushed).
+            //  Two moves, both about the room and neither about the pricing:
+            //   1. SPREAD — positions scale about the cloud's centre onto the bag's heart, ANISOTROPICALLY
+            //      (gx and gy separately), so a wide bag pulls the cloud wide.  Positions only; balls stay
+            //      round, relative pricing untouched, and a spread ≥1 can never create an overlap the pile
+            //      had already resolved — it only opens the presses that were crushing every cell.
+            //   2. GROW — radii then rise isotropically toward the asked fill, bounded by the SAME rcap
+            //      and pressure hold the shrinking half enforces, so the two halves can never fight.
+            //  This is the one place the frame GRANTS coverage instead of pressure earning it, so it is
+            //   OPT-IN and says so: `foamereo:'room'` (or `room:<fill>`, default 0.55).  Unset ⇒ this
+            //    whole block is skipped and every recorded fixture stands to the byte.  `lean` is not
+            //     needed as an opt-out — absence IS the opt-out.
+            let room = this.Vyto_fo(w, 'room')
+            if (room != null) {
+                let want = Number(room) > 0 ? Number(room) : 0.55
+                let rminx = 1e9
+                let rminy = 1e9
+                let rmaxx = -1e9
+                let rmaxy = -1e9
+                si = 0
+                while (si < seeds.length) {
+                    if (seeds[si].x - radii[si] < rminx) rminx = seeds[si].x - radii[si]
+                    if (seeds[si].y - radii[si] < rminy) rminy = seeds[si].y - radii[si]
+                    if (seeds[si].x + radii[si] > rmaxx) rmaxx = seeds[si].x + radii[si]
+                    if (seeds[si].y + radii[si] > rmaxy) rmaxy = seeds[si].y + radii[si]
+                    si = si + 1
+                }
+                let rbw = rmaxx - rminx
+                let rbh = rmaxy - rminy
+                let gx = 1
+                let gy = 1
+                if (rbw > 1) gx = Math.max(1, Math.min(2.5, (fw - 2 * pad) / rbw))
+                if (rbh > 1) gy = Math.max(1, Math.min(2.5, (fh - 2 * pad) / rbh))
+                if (gx > 1.001 || gy > 1.001) {
+                    let rcx = (rminx + rmaxx) / 2
+                    let rcy = (rminy + rmaxy) / 2
+                    si = 0
+                    while (si < seeds.length) {
+                        seeds[si] = { x: fw / 2 + (seeds[si].x - rcx) * gx, y: fh / 2 + (seeds[si].y - rcy) * gy }
+                        si = si + 1
+                    }
+                }
+                let rtotal = 0
+                for (const r of radii) rtotal = rtotal + Math.PI * r * r
+                let rwant = want * fw * fh
+                if (rtotal > 0 && rtotal < rwant) {
+                    let rcap2 = 0.44 * Math.min(fw, fh)
+                    let g = Math.min(Math.min(gx, gy), Math.sqrt(rwant / rtotal))
+                    si = 0
+                    while (si < radii.length) {
+                        radii[si] = Math.min(rcap2, radii[si] * g)
+                        si = si + 1
+                    }
                 }
             }
         }

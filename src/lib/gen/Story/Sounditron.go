@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '03df020b18f4d1d6~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '0d4c7aafbda7f8cb~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -432,6 +432,16 @@ Sounditron_commission(w) {
     //    Sounditron glass; every Vyto* Book commissions without it and keeps the frame cut to the
     //     byte.  Flip this line off to get the old carved glass back.
     commission.sc.foam = 1
+    // THE ROOM LAW, ON for the live glass (the owner 2026-08-09: "there's a 16:9 space with one big orb
+    //  in the middle with gaps on either side of it — it should be slightly more aware of the space it
+    //   can use — cytoscape was good at this").  Measured on the owner's own tab: the cloud spanned
+    //    x 229→571 of an 800-wide frame, so both outer thirds were dead, and every faced cell came back
+    //     `crushed`.  `room` spreads the settled pile anisotropically into the bag's aspect and then
+    //      grows radii toward the asked fill (Vyto.g, THE ROOM LAW).
+    //  SAME GATE DISCIPLINE as nested|need_floor|foam: a commission sc key, so it touches ONLY this live
+    //   Sounditron glass.  Every Vyto* Book commissions without a foamereo, `Vyto_fo` returns null there,
+    //    and the whole block is skipped — the fleet stays byte-identical and no fixture can move.
+    commission.sc.foamereo = 'room'
     commission.c.Run = this
     SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
     return 1

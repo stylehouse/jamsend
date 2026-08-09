@@ -266,6 +266,103 @@
         d += ` L ${f(last.x)} ${f(last.y)}`
         return d
     }
+    // ── THE DROPLET TAIL (2026-08-09, the owner: *"the A thing is actually supposed to be a little
+    //  outward-pointing spike in the cell wall, like a droplet tail… you have to composite it onto the
+    //   cell somewhere sensible, like a sharp corner, and the only mark it is besides the shape of the
+    //    cell near it is that triangle inside the space of the A, where its shape can be manipulated
+    //     from"*).  The old gate was a GLYPH — three little strokes standing on the wall ring at a fixed
+    //      205°, which is why it read as furniture stuck on the cell and why it "had a very hard time"
+    //       every previous attempt: it was never part of the body it belonged to.
+    //  So it is not drawn as an A at all.  A tail is grown OUT of the cell's own sharpest outward corner
+    //   and filled with the cell's own ground, so the silhouette itself grows the spike — and the only
+    //    added mark is the COUNTER, the triangular hole punched inside it.  Two legs splaying from an
+    //     apex around a triangular counter IS an A; nobody has to draw one.  One path, `fill-rule
+    //      evenodd`, outer subpath then inner: the hole is real, not a second fill faking it.
+    //  The counter is the working part — the handle the dose is dragged from — which is exactly the
+    //   owner's "where its shape can be manipulated from".
+    function spike_of(cell: PaintCell): { d: string, hx: number, hy: number, hr: number } | null {
+        const poly = cell.poly
+        if (!poly || poly.length < 3 || !(cell.r > 24)) return null
+        const n = poly.length
+        let bi = -1, best = -Infinity
+        let fi = -1, far = -Infinity
+        for (let i = 0; i < n; i++) {
+            const v = poly[i], p = poly[(i - 1 + n) % n], q = poly[(i + 1) % n]
+            const ux = v.x - p.x, uy = v.y - p.y, vx = q.x - v.x, vy = q.y - v.y
+            const lu = Math.hypot(ux, uy), lv = Math.hypot(vx, vy)
+            const out = Math.hypot(v.x - cell.x, v.y - cell.y) / Math.max(1, cell.r)
+            if (out > far) { far = out; fi = i }               // the fallback promontory
+            if (lu < 4 || lv < 4) continue                     // a nub is not a corner
+            // turn: +1 doubles back to a needle, -1 runs straight through.  Bias toward corners far
+            //  from the seed, so the tail leaves from a genuine promontory rather than a dent.
+            const turn = -((ux / lu) * (vx / lv) + (uy / lu) * (vy / lv))
+            const score = turn * 0.65 + out * 0.35
+            if (score > best) { best = score; bi = i }
+        }
+        // EVERY CELL GETS A TAIL.  The first cut of this filtered corners by adjacent-edge length (≥9px)
+        //  and returned null when none passed — and the live capture came back with a carved, spilling,
+        //   perfectly eligible cell and no tail at all, because a power cell's gap inset leaves plenty of
+        //    short edges.  A gate that silently yields nothing is worse than a blunt choice: fall back to
+        //     the vertex furthest from the seed, which is the promontory the scorer was reaching for.
+        if (bi < 0) bi = fi
+        if (bi < 0) return null
+        const v = poly[bi], p = poly[(bi - 1 + n) % n], q = poly[(bi + 1) % n]
+        // outward along the seed→corner ray: the seed is inside its own cell, so this always points out
+        const ox = v.x - cell.x, oy = v.y - cell.y, lo = Math.hypot(ox, oy) || 1
+        const ux = ox / lo, uy = oy / lo
+        const len = Math.max(11, Math.min(30, 0.3 * lo))
+        // THE BASE IS SET BY THE LENGTH, NOT BY THE EDGES.  Backing off along the two polygon edges
+        //  looked principled and produced a NEEDLE — the first live capture came back 7.5px wide over
+        //   33px long, because a corner's edges can be any length at all, and a counter scaled inside
+        //    that was ~3px: invisible, and far too small to be the handle it is supposed to be.  So the
+        //     triangle is built from the spike itself — isoceles about the outward ray, half-width a
+        //      fixed fraction of the length — which fixes its aspect no matter what corner it grew from.
+        //  The base sits slightly INSIDE the wall so the tail merges into the body instead of balancing
+        //   on the vertex.
+        const halfw = Math.max(6, Math.min(17, 0.42 * len))
+        const sink = halfw * 0.4
+        const a = { x: v.x - (-uy) * halfw - ux * sink, y: v.y - ux * halfw - uy * sink }
+        const b = { x: v.x + (-uy) * halfw - ux * sink, y: v.y + ux * halfw - uy * sink }
+        const apex = { x: v.x + ux * len, y: v.y + uy * len }
+        void p; void q
+        // the counter — the same triangle shrunk about its own centroid and nudged toward the apex, so
+        //  the hole sits high in the tail where an A's counter sits.  Its centre is the drag handle.
+        const gx = (a.x + b.x + apex.x) / 3, gy = (a.y + b.y + apex.y) / 3
+        const k = 0.46, lean = 0.22
+        const cxp = gx + (apex.x - gx) * lean, cyp = gy + (apex.y - gy) * lean
+        const inner = [a, apex, b].map(pt => ({ x: cxp + (pt.x - gx) * k, y: cyp + (pt.y - gy) * k }))
+        const f = (t: number) => t.toFixed(1)
+        const d = `M ${f(a.x)},${f(a.y)} L ${f(apex.x)},${f(apex.y)} L ${f(b.x)},${f(b.y)} Z`
+                + ` M ${f(inner[0].x)},${f(inner[0].y)} L ${f(inner[1].x)},${f(inner[1].y)} L ${f(inner[2].x)},${f(inner[2].y)} Z`
+        // the grip is generous where the counter is not — a 5px hole is still a 9px+ target
+        const hr = Math.max(9, halfw * 0.75)
+        return { d, hx: cxp, hy: cyp, hr }
+    }
+    // the spill arc — a second band inside the name's, carrying the row's own scalars as one line.
+    //  Its length is the wall's, so how much detail a cell states is decided by how much wall it has;
+    //   under ~9 characters' worth there is nothing worth saying and it returns null.
+    function spill_of(cell: PaintCell): { d: string, text: string } | null {
+        const inset = 21
+        const pts: { x: number, y: number }[] = []
+        for (let deg = 208; deg <= 332.01; deg += 6.5) pts.push(wall_pt(cell, deg, BAND_IN + inset))
+        if (pts.length < 3) return null
+        let len = 0
+        for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y)
+        const room = Math.floor(len / 4.6)               // ~4.6px per glyph at 9px monospace-ish
+        if (room < 9) return null
+        const guts = under_guts(cell.row, 7)
+        if (!guts.length) return null
+        let text = guts.join(' · ')
+        if (text.length > room) text = text.slice(0, Math.max(1, room - 1)) + '…'
+        const f = (v: number) => v.toFixed(1)
+        let d = `M ${f(pts[0].x)} ${f(pts[0].y)}`
+        for (let i = 1; i < pts.length - 1; i++) {
+            const m = { x: (pts[i].x + pts[i + 1].x) / 2, y: (pts[i].y + pts[i + 1].y) / 2 }
+            d += ` Q ${f(pts[i].x)} ${f(pts[i].y)} ${f(m.x)} ${f(m.y)}`
+        }
+        d += ` L ${f(pts[pts.length - 1].x)} ${f(pts[pts.length - 1].y)}`
+        return { d, text }
+    }
     function arc_id(w: TheC, cell: PaintCell): string {
         return 'vyarc-' + String((w.sc as any)?.w ?? 'w').replace(/[^A-Za-z0-9_-]/g, '')
              + '-' + cell.key.replace(/[^A-Za-z0-9_-]/g, '-')
@@ -1323,11 +1420,23 @@
                     //  solved rim radius on the loose layer — dim, off the pile, drifting with stirs.
                     const isLoose = foam && !!(row.sc as any).loose
                     const lr = isLoose ? Math.max(6, s.r) : 6
+                    // NO CELL MEANS NO ROOM (2026-08-09, the owner: *"I can see a puddle of our html
+                    //  overlays (a Component per cell?) sitting over the top of each other, even though
+                    //   the cells are kinda spread out"*).  A crowded-out seed gets no polygon and falls
+                    //    back to a 6px marker — but it kept the incoming `fit` of 1, so it MOUNTED ITS
+                    //     FACE into a 12×12 mold, and every crowded-out row's mold landed in the same
+                    //      few pixels near the bag's heart.  That is the puddle, and the mold map found
+                    //       it in one shot: three molds, all exactly 12×12, all within 60px.  A row the
+                    //        cut could not seat has earned no surface, so hand it fit 0 — the icon
+                    //         register then draws its marker and its edge label and nothing else.
+                    //  LOOSE rows are exempt: they are off the pile BY CHOICE and draw at a real solved
+                    //   radius, so they keep whatever fit they were priced at.
                     cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids: false, ident,
                                  x: s.x, y: s.y, r: lr, kind: 'disc', d: '', departing: false, lift,
                                  bx: s.x - lr, by: s.y - lr, bw: 2 * lr, bh: 2 * lr,
                                  mx: s.x - lr, my: s.y - lr, mw: 2 * lr, mh: 2 * lr, ang: 0,
-                                 clip: clipPoly, face, source, row, fx, fxi, fit, loose: isLoose, sunk })
+                                 clip: clipPoly, face, source, row, fx, fxi,
+                                 fit: isLoose ? fit : 0, loose: isLoose, sunk })
                 }
             }
         }
@@ -2222,7 +2331,12 @@
                      `.depth` — chrome must not tilt, and go_fullscreen reads `parentElement` expecting
                      `.stage`, which this keeps true. -->
                 <div class="depth" style="--fw:{vw_w}; --fh:{vw_h}; ">
-                <svg class="viewport" viewBox="{cam.x} {cam.y} {cam.w} {cam.h}" preserveAspectRatio="xMidYMid meet">
+                <!-- the composer's deck, ON THE ELEMENT (2026-08-09): the only instrument this glass has
+                     is the `--svg` capture, and it could not tell a world that declined the room law from
+                     one whose commission never reached it — which is exactly the question a capture gets
+                     asked first.  Empty string when unset, so it costs a world nothing to have none. -->
+                <svg class="viewport" data-foamereo={String((w.sc as any)?.foamereo ?? '')}
+                     viewBox="{cam.x} {cam.y} {cam.w} {cam.h}" preserveAspectRatio="xMidYMid meet">
                     <!-- COPPER (the owner 2026-08-09: "you could use copperannodes.jpg at different
                          scales for texture perhaps").  userSpaceOnUse, so the grain lives in WORLD
                          units — flying the camera into a cell zooms the metal with it, which is what
@@ -2343,7 +2457,12 @@
                              metal as the ground, worked smaller.  pointer-events none throughout:
                              the corridor is something to SEE — the A that heads it lives in the
                              HTML top layer (.adials), where a spilling face cannot bury it. -->
-                        {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && cell.bw > 30 && cell.bh > 40 && !fo(w, 'nohall')}
+                        <!-- ONE PLACE FOR THE DETAIL, NOT TWO.  A carved cell now spills its scalars along
+                             the wall beside its name, so the boxed hall would be the same facts a second
+                             time, stacked behind the component — the "odd and messy" background the owner
+                             named.  Uncarved worlds (no foam, or `wave`) have no band to spill onto and
+                             keep the hall, which is the only surface they have. -->
+                        {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && cell.bw > 30 && cell.bh > 40 && !fo(w, 'nohall') && !wall_carve(w, cell)}
                             <!-- ANCHOR THE CORRIDOR TO THE WALL, NOT THE BBOX.  A foam cell's bbox
                                  corner is off the disc entirely (a circle never reaches its own
                                  corner), which is why the corridor read as detached furniture.  On a
@@ -2380,7 +2499,36 @@
                                 <text class="wallname" data-ukey={cell.key}>
                                     <textPath href="#{arc_id(w, cell)}" startOffset="50%">{cell.ident}</textPath>
                                 </text>
+                                <!-- THE DETAILS SPILL FROM THE LABEL (2026-08-09, the owner: *"the way
+                                     Radio cell has title,artist,of,at,skip etc in the background looks odd
+                                     and messy — perhaps that label on the side of it should be the
+                                     canonical thing, and spill the further details out of there"*).  They
+                                     used to stack as a boxed hall in the middle of the cell, UNDER the
+                                     component — a second, competing surface behind the living one, which
+                                     is why it read as mess rather than as information.  Now they run as
+                                     one line along a concentric arc just inside the name, so the wall band
+                                     is the canonical label and everything else is visibly a continuation
+                                     of it.  Joined with a middot and cut to the arc's own length: the
+                                     wall decides how much detail there is room for, and a small cell
+                                     simply says less. -->
                             </g>
+                        {/if}
+                    {/each}
+                    <!-- the spill rides its OWN pass, gated on the CARVE and not on the face: it replaces
+                         the boxed hall, and the hall never needed a face either.  Nested inside the
+                         wallwork block it silently deleted every faceless carved cell's detail — the
+                         capture caught it as labels dropping 14 → 7 with nothing put back. -->
+                    {#each viewport_cells(w) as cell (cell.key)}
+                        {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && wall_carve(w, cell) && !fo(w, 'nohall')}
+                            {@const sp = spill_of(cell)}
+                            {#if sp}
+                                <g class="wallwork" class:sunk={cell.sunk}>
+                                    <path id="{arc_id(w, cell)}-s" class="wallspill-arc" d={sp.d}></path>
+                                    <text class="wallspill" data-ukey={cell.key}>
+                                        <textPath href="#{arc_id(w, cell)}-s" startOffset="50%">{sp.text}</textPath>
+                                    </text>
+                                </g>
+                            {/if}
                         {/if}
                     {/each}
                     {#each viewport_cells(w) as cell (cell.key)}
@@ -2392,25 +2540,29 @@
                                  dose handle: drag up-down sweeps, wheel trims, arrows step; the fat
                                  transparent pad is the real hit target.  stopPropagation throughout so a
                                  grab never doubles as a cell click. -->
-                            {@const gp = arc_pt(cell, 205)}
-                            {@const gdv = Number((dose_src(cell)?.sc as any)?.dose) || 0}
-                            {@const gg = cell_ground(cell)}
-                            <g class="agate" class:sunk={cell.sunk} class:doped={gdv > 0}
-                               style={gg?.border ? `color:${gg.border};` : ''}
-                               transform="translate({gp.x.toFixed(1)},{gp.y.toFixed(1)}) rotate(-65)"
-                               role="slider" tabindex="0" aria-label={`intensity of ${cell.ident}`}
-                               aria-valuenow={gdv} aria-valuemin={0} aria-valuemax={9}
-                               onpointerdown={(e) => dose_down(e, w, cell)}
-                               onpointermove={dose_move} onpointerup={dose_up} onpointercancel={dose_up}
-                               onkeydown={(e) => dose_key(e, w, cell)}
-                               onwheel={(e) => dose_wheel(e, w, cell)}
-                               onclick={(e) => e.stopPropagation()}>
-                                <circle class="agate-pad" r="12"></circle>
-                                <path class="agate-legs" d="M -5.2,6 L 0,-6.6 L 5.2,6"></path>
-                                <path class="agate-bar" d="M -3,1.6 L 3,1.6"></path>
-                            </g>
-                            {#if dosing && dosing.src === dose_src(cell)}
-                                <text class="dosetip" x={gp.x + 15} y={gp.y - 9}>dose {gdv.toFixed(1)}</text>
+                            {@const spike = spike_of(cell)}
+                            {#if spike}
+                                {@const gdv = Number((dose_src(cell)?.sc as any)?.dose) || 0}
+                                {@const gg = cell_ground(cell)}
+                                <g class="agate" class:sunk={cell.sunk} class:doped={gdv > 0}
+                                   style={gg ? `color:${gg.border};--tail:${gg.bg};` : ''}
+                                   role="slider" tabindex="0" aria-label={`intensity of ${cell.ident}`}
+                                   aria-valuenow={gdv} aria-valuemin={0} aria-valuemax={9}
+                                   onpointerdown={(e) => dose_down(e, w, cell)}
+                                   onpointermove={dose_move} onpointerup={dose_up} onpointercancel={dose_up}
+                                   onkeydown={(e) => dose_key(e, w, cell)}
+                                   onwheel={(e) => dose_wheel(e, w, cell)}
+                                   onclick={(e) => e.stopPropagation()}>
+                                    <!-- the tail IS the cell: same ground, same wall stroke, one path with
+                                         the counter punched out of it by fill-rule evenodd. -->
+                                    <path class="agate-tail" d={spike.d} fill-rule="evenodd"></path>
+                                    <!-- the counter is the working part; the pad is its (invisible) grip -->
+                                    <circle class="agate-pad" cx={spike.hx.toFixed(1)} cy={spike.hy.toFixed(1)}
+                                            r={spike.hr.toFixed(1)}></circle>
+                                </g>
+                                {#if dosing && dosing.src === dose_src(cell)}
+                                    <text class="dosetip" x={spike.hx + spike.hr + 4} y={spike.hy - 6}>dose {gdv.toFixed(1)}</text>
+                                {/if}
                             {/if}
                         {/if}
                     {/each}
@@ -2833,6 +2985,15 @@
     .wallwork { pointer-events: none; transition: opacity 260ms ease; }
     .wallwork.sunk { opacity: 0.3; }
     .wallband { fill: none; stroke: rgba(13, 13, 24, 0.55); stroke-width: 15; stroke-linecap: round; }
+    /* the spill: a murmur beside the name, never competing with it — the name is the canonical label
+       and these are its continuation, so they sit smaller, dimmer and unbanded (no masonry of their
+       own; they ride the cell's own body). */
+    .wallspill-arc { fill: none; stroke: none; }
+    .wallspill {
+        fill: #9a9ab8; font: 9px/1 ui-monospace, monospace; letter-spacing: 0.06em;
+        paint-order: stroke; stroke: rgba(10, 10, 18, 0.7); stroke-width: 2.5px;
+        pointer-events: none; user-select: none;
+    }
     .wallname {
         font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em;
         fill: #dcdcf2; dominant-baseline: middle;
@@ -2845,17 +3006,20 @@
     /* the A is CARVED FROM THE SAME MASONRY: currentColor rides the cell's own wall colour
        (stamped inline off cell_ground), falling back to chrome on unstyled worlds. */
     .agate { color: #e8e8f6; }
-    .agate-legs, .agate-bar {
-        fill: none; stroke: currentColor; stroke-width: 2.4;
-        stroke-linecap: round; stroke-linejoin: round;
-        transition: stroke 120ms ease, filter 120ms ease;
+    /* THE TAIL, NOT A GLYPH — it wears the cell's own ground (--tail, stamped inline off cell_ground)
+       and the cell's own wall stroke, so the silhouette reads as ONE body that grew a spike.  The
+       counter is a real hole (fill-rule evenodd on the same path), which is the whole trick: two legs
+       around a triangular void reads as an A without an A ever being drawn. */
+    .agate-tail {
+        fill: var(--tail, #1b1b2c); stroke: currentColor; stroke-width: 1.4;
+        stroke-linejoin: round;
+        transition: fill 140ms ease, stroke 120ms ease, filter 120ms ease;
     }
-    .agate-bar { stroke-width: 2; }
-    .agate:hover .agate-legs, .agate:hover .agate-bar,
-    .agate:focus-visible .agate-legs, .agate:focus-visible .agate-bar {
-        stroke: #fff; filter: drop-shadow(0 0 4px rgba(200, 200, 255, 0.75));
+    .agate:hover .agate-tail, .agate:focus-visible .agate-tail {
+        stroke: #fff; filter: drop-shadow(0 0 5px rgba(200, 200, 255, 0.7));
     }
-    .agate.doped .agate-legs, .agate.doped .agate-bar { stroke: #eecd85; }
+    /* a dosed tail warms: the counter is where the value lives, so the body around it carries the heat */
+    .agate.doped .agate-tail { stroke: #eecd85; stroke-width: 1.9; }
     .dosetip {
         font-size: 10.5px; font-weight: 600; fill: #ffe9b0;
         paint-order: stroke; stroke: rgba(10, 10, 18, 0.85); stroke-width: 3px;
