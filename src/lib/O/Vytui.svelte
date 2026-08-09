@@ -118,7 +118,14 @@
     function cell_click(w: TheC, cell: PaintCell) {
         // a click that ends a live drag is the HAND OPENING, not a press
         if (drag_ate_click) { drag_ate_click = false; return }
-        attend(w, cell.tok, 0.3)   // a press is real attention — the currency's big coin
+        // A PRESS IS REAL ATTENTION — the currency's big coin.  A press on a CRUSHED cell is bigger
+        //  still: the ⤢ it wears is an offer to open it (the owner: *"that we can click to make that
+        //   cell become a normal cell right?"*), and 0.3 of a purse cannot pay that even now that a
+        //    full purse buys ×4.5 area.  So the offer sets its own price — one press, actually open.
+        //  It is also self-taxing on everyone else in proportion (Vyto_attend_walk), so opening this
+        //   one visibly closes the room for the others rather than inflating the whole glass.
+        const crushed = !!cell.face && !cell.hasKids && cell.fit <= 0.34
+        attend(w, cell.tok, crushed ? 0.85 : 0.3)
         const src: any = (cell.row.c as any)?.source_n
         // `.c.press` is the name; `.c.onclick` is the name people reach for (the owner did — "some of
         //  them have click handlers magically (C.c.onclick?)"), and a handler that silently does not
@@ -263,11 +270,34 @@
     function arc_pt(cell: PaintCell, deg: number): { x: number, y: number } {
         return wall_pt(cell, deg)
     }
-    function arc_d(cell: PaintCell): string {
-        // 205°→335° over the top, sampled every 6.5° and drawn as a smooth spline through the wall
-        //  hits, so the band bends with a lobed cell instead of ignoring it.
+    // ── FURNITURE FOLLOWS THE VISIBLE WALL (2026-08-09, the owner: *"we just regressed our ability to
+    //  label and A-tip the cells properly"*).  Both pieces of furniture sit on a FIXED side of the
+    //   cell — the label over the top (bearings 205°→335°), the tail out to the left (198°…250°) —
+    //    which was correct for as long as every cell sat inside the frame.  The stage broke that
+    //     assumption on purpose: the primary is pinned left and sized past the frame, so its top and
+    //      its left flank are both OUTSIDE the viewport, and its name and tail were being drawn where
+    //       nobody can see them.
+    //  So a cell that overflows puts its furniture on the side facing back INTO the view.  A cell that
+    //   fits keeps its default bearings exactly, which is every cell in every Book — this cannot move
+    //    a fixture, and it costs a bbox test per furnished cell.
+    //  The rule is about the VIEW, not about the stage: any future law that pushes a cell off an edge
+    //   inherits the fix instead of re-discovering it.
+    function furn_dir(w: TheC, cx: number, cy: number, cr: number, dflt: number): number {
+        const c: any = cam_view(w)
+        if (!c) return dflt
+        const fits = cx - cr >= c.x && cx + cr <= c.x + c.w && cy - cr >= c.y && cy + cr <= c.y + c.h
+        if (fits) return dflt
+        const ex = (c.x + c.w / 2) - cx, ey = (c.y + c.h / 2) - cy
+        if (!(Math.hypot(ex, ey) > 1)) return dflt          // dead centre and still overflowing: no better side
+        return ((Math.atan2(ey, ex) / RAD) + 360) % 360
+    }
+    function arc_d(w: TheC, cell: PaintCell): string {
+        // a 130° window, by default 205°→335° (over the top), sampled every 6.5° and drawn as a smooth
+        //  spline through the wall hits, so the band bends with a lobed cell instead of ignoring it.
+        //   An overflowing cell rotates the whole window to face back into the view.
+        const mid = furn_dir(w, cell.x, cell.y, cell.r, 270)
         const pts: { x: number, y: number }[] = []
-        for (let deg = 205; deg <= 335.01; deg += 6.5) pts.push(wall_pt(cell, deg))
+        for (let deg = mid - 65; deg <= mid + 65.01; deg += 6.5) pts.push(wall_pt(cell, deg))
         if (pts.length < 2) return ''
         const f = (v: number) => v.toFixed(1)
         let d = `M ${f(pts[0].x)} ${f(pts[0].y)}`
@@ -566,6 +596,12 @@
         return (e.clientX - bb.left) / bb.width < STAGE_BAND
     }
     function staged_tok(w: TheC): string | null { void paint_tick; return ((w.c as any).stage_tok ?? null) }
+    // rows the cut could not seat: a disc cell that is not LOOSE (loose is a choice, unseated is not).
+    function unseated(w: TheC): number {
+        let n = 0
+        for (const c of viewport_cells(w)) { if (c.kind === 'disc' && !c.loose) n++ }
+        return n
+    }
 
     // ── THE CLUTTER KNOB ──────────────────────────────────────────────────────────────────────
     //  The junk queue is minted by the COMMISSIONER (Sounditron_junk), not by the glass — the glass
@@ -1688,7 +1724,12 @@
                     //     re-emits the identical placement and a Book cannot flake on it.
                     let sp: ReturnType<typeof spike_of> = null
                     if (!hasKids0 && foam && !fo(w, 'wave') && !fo(w, 'seal')) {
-                        for (const want of [198, 214, 182, 232, 164, 250, 146]) {
+                        // the sweep is RELATIVE to the visible flank, for the same reason the label
+                        //  band is (see furn_dir): a cell pushed off an edge was growing its tail into
+                        //   the part of itself nobody can see.  Fits ⇒ 198° ⇒ the original list exactly.
+                        const tdir = furn_dir(w, s.x, s.y, s.r, 198)
+                        for (const off of [0, 16, -16, 34, -34, 52, -52]) {
+                            const want = ((tdir + off) % 360 + 360) % 360
                             const cand = spike_of(poly, s.x, s.y, s.r, want)
                             if (!cand) continue
                             sp = cand
@@ -2644,6 +2685,21 @@
                         <span>{staged_tok(w) ? 'drop to swap · drop the staged one to clear' : 'drop here to stage'}</span>
                     </div>
                 {/if}
+                <!-- the one report the deleted markers owed: N rows the cut could not seat.  Said once,
+                     in a corner, where it costs nobody their pixels — rather than N times, on top of
+                     whatever won the room.  Absent when everything got a seat, which is most of the
+                     time and is exactly the state that deserves no chrome at all. -->
+                {#if unseated(w) > 0}
+                    <div class="unseated" title="rows the cut could not seat — no room for them at this size">{unseated(w)} not seated</div>
+                {/if}
+                <!-- THE AWAIT RING (the owner 2026-08-09: "look a bit more spinnery before the data
+                     comes in").  An empty glass used to be a blank plate — indistinguishable from a
+                     broken one, for up to ~30s while the share arms.  While there is NOTHING to cut,
+                     a slow ring says "alive, waiting".  Gone the instant the first cell lands; live
+                     tabs only, so no Book or capture ever contains it. -->
+                {#if live_page() && !parked(w) && viewport_cells(w).length === 0}
+                    <div class="await-spin" title="waiting for the world to arrive"></div>
+                {/if}
                 <button class="fs-btn" onclick={(e) => go_fullscreen(e.currentTarget.parentElement)}
                         title="fullscreen the glass">⛶</button>
                 <!-- THE TOYBOX (the owner 2026-08-09: *"we have to put most of this junk behind some
@@ -2655,6 +2711,16 @@
                 {#if live_page()}
                     <button class="fs-btn toy-btn" class:posing={toys_on(w)} onclick={() => toys_toggle(w)}
                             title={toys_on(w) ? 'hide the layout toys' : 'layout toys'}>⋯</button>
+                    <!-- THE WAY OFF THE STAGE (the owner: *"that should be escapable via some
+                         button"*).  A staged cell is huge and runs off the frame, so the gesture that
+                         made it — drag it back — is the one gesture that is now awkward: there is
+                         nowhere to grab and nowhere to drop it.  A stage you can enter and not leave
+                         is a trap, so the escape is plain, outside the toybox, and shows only while
+                         there is something to escape from. -->
+                    {#if staged_tok(w)}
+                        <button class="fs-btn unstage-btn" onclick={() => (H as any).Vyto_stage?.(w, staged_tok(w))}
+                                title="off the stage — back to the ordinary pile">⤫</button>
+                    {/if}
                 {/if}
                 {#if live_page() && toys_on(w)}
                     <button class="fs-btn sim-btn" class:simmering={simmer_on(w)} onclick={() => simmer_toggle(w)}
@@ -2772,15 +2838,21 @@
                                     </g>
                                 </g>
                             {:else}
-                                <circle class="cell disc" class:departing={cell.departing} class:lift={cell.lift} class:nested={cell.depth > 0}
-                                        class:sunk={cell.sunk}
-                                        class:arrive={cell.fx === 'arrive'} class:erupt={cell.fx === 'erupt'}
-                                        cx={cell.x} cy={cell.y} r={cell.r}
-                                        onpointerenter={() => on_enter(w, cell.key, cell.tok)}
-                                        onpointerleave={() => on_leave(w, cell.key, cell.tok)}></circle>
+                                <!-- THE CROWDED-OUT MARKER IS GONE (the owner 2026-08-09: *"I don't like
+                                     how we have these things: <circle class='cell disc' r='6'> and how
+                                     they hang around over the top of other things"*).  A seed the cut
+                                     could not seat has no polygon; it used to fall back to a 6px dot
+                                     dropped at its seed — which is wherever the solve last had it,
+                                     i.e. ON TOP of whatever DID win that room.  It carries no face
+                                     (fit 0 since the puddle fix) and no wall, so the dot's entire
+                                     content was "something is here that has nowhere to be", stated by
+                                     occluding the things that do have somewhere to be.
+                                     That fact is worth ONE report, not N floating dots, so it is
+                                     counted into the corner note below instead.  Nothing is hidden —
+                                     it is said once, in a place that costs nobody their pixels. -->
                             {/if}
                         {/if}
-                        {#if !cell.face && !cell.hasKids && !cell.loose}
+                        {#if !cell.face && !cell.hasKids && !cell.loose && cell.kind !== 'disc'}
                             <text class="ident" class:sunk={cell.sunk} data-key={cell.key} x={cell.x} y={cell.y} text-anchor="middle" dominant-baseline="middle">{cell.ident}</text>
                         {:else if cell.face && !cell.hasKids && !cell.departing}
                             <!-- THE LABEL, ALONG ONE SIDE (the owner: "along one side of the cell, looking
@@ -2813,6 +2885,15 @@
                                  No data-key: the measure pass must never floor a cell to its own
                                  crush mark. -->
                             {#if cell.fit <= 0.34}
+                                <!-- THE PEARL (the owner 2026-08-09: "everything should be a cell or a
+                                     sub-cell or a label ... we need consistency" — a crushed Door had
+                                     shrunk to a sliver, leaving ⤢ + ident floating with no visible
+                                     body, i.e. exactly the floating junk the disc markers were).  A
+                                     crushed cell keeps a small round BODY: same wall/ground family as
+                                     every other cell, glyph inside it.  pointer-events none — the
+                                     cell's own path underneath takes the press. -->
+                                <circle class="cell pearl" cx={cell.x} cy={cell.y}
+                                        r={Math.min(16, Math.max(9, cell.r * 0.4))}></circle>
                                 <text class="ident crush" x={cell.x} y={cell.y}
                                       text-anchor="middle" dominant-baseline="middle">⤢</text>
                             {/if}
@@ -2864,7 +2945,7 @@
                                  wall") and can never detach from its body the way the old edge
                                  tab did when a cell pressed the frame. -->
                             <g class="wallwork" class:sunk={cell.sunk}>
-                                <path id={arc_id(w, cell)} class="wallband" d={arc_d(cell)}></path>
+                                <path id={arc_id(w, cell)} class="wallband" d={arc_d(w, cell)}></path>
                                 <text class="wallname" data-ukey={cell.key}>
                                     <textPath href="#{arc_id(w, cell)}" startOffset="50%">{cell.ident}</textPath>
                                 </text>
@@ -3130,10 +3211,14 @@
        of, toybox open or shut, so a human who flew into a cell is never stranded.  It therefore sits
        at the head of the rail (right of ⋯), where it does not move as toys come and go. */
     .out-btn { right: 268px; }
+    /* the escape sits at the head of the rail beside ⋯ — it is not a toy, and it must be findable
+       without opening anything, because the stage it undoes covers most of the screen. */
+    .unstage-btn { right: 300px; color: #9fd0ff; border-color: #4a6a8a; }
     @media (pointer: coarse) {
         .toy-btn { right: 52px; } .sim-btn { right: 98px; }
         .even-btn { right: 144px; } .vie-btn { right: 190px; } .bare-btn { right: 236px; }
         .junk-btn { right: 282px; } .re-btn { right: 328px; } .out-btn { right: 374px; }
+        .unstage-btn { right: 420px; }
     }
     /* an engaged-able cell should say so under the cursor — the one hint that the glass is navigable.
        The cells are also real keyboard targets (role=button + tabindex): tab to a cell, Enter to fly to
@@ -3162,6 +3247,17 @@
     .cell.faced { fill: #17171f; stroke: #3d3d55; }
     /* a crushed cell (face folded below the icon floor) must SAY so: dashed wall = "not empty, folded" */
     .cell.crushed { stroke-dasharray: 5 3; }
+    /* the PEARL — a crushed cell's guaranteed small body: solid wall (the dash belongs to the outer
+       poly), the ordinary cell ground, so the ⤢ always sits IN something instead of floating */
+    .cell.pearl { fill: #23233a; stroke-dasharray: none; pointer-events: none; }
+    /* the AWAIT RING — an empty live glass spins slowly instead of sitting blank */
+    .await-spin {
+        position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px;
+        border-radius: 50%; border: 2px solid rgba(159, 208, 255, 0.14);
+        border-top-color: rgba(159, 208, 255, 0.65);
+        animation: vyto-await 1.6s linear infinite; pointer-events: none; z-index: 4;
+    }
+    @keyframes vyto-await { to { transform: rotate(360deg); } }
     /* A PRESSABLE CELL IS A BUTTON — the one thing the tree could not say about itself.  A warm wall
        and a lift on hover; the affordance is the WALL because in a C** interface the wall is all a
        cell has that is reliably its own (the inside belongs to whatever is stated there). */
@@ -3179,6 +3275,11 @@
     .cell.selfseat { stroke: none; fill: #14141c; }
     .cell.selfseat.pressy { stroke: none; }
     .cell.selfseat:hover { fill: #1a1a26; }
+    .unseated {
+        position: absolute; left: 8px; bottom: 6px; z-index: 5; pointer-events: none;
+        font: 9px/1 ui-monospace, monospace; letter-spacing: 0.09em; text-transform: uppercase;
+        color: rgba(190, 190, 220, 0.5);
+    }
     .stageband {
         position: absolute; left: 0; top: 0; bottom: 0; z-index: 6; pointer-events: none;
         border-right: 1px dashed rgba(159, 208, 255, 0.55);

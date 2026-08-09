@@ -12,7 +12,7 @@ Credulate,of_Book:VytoFold
   GhostInclude:Ghost_M_Mesh,dige:286eb98843f6e7f9
   GhostInclude:Ghost_M_Ra,dige:2e0501218ecb15db~g1
   GhostInclude:Ghost_M_Booth,dige:24e06889933090b3
-  GhostInclude:Ghost_M_Heist,dige:13d5b065170f1f6c~g1
+  GhostInclude:Ghost_M_Heist,dige:8471929bd8613337~g1
   GhostInclude:Ghost_M_Jam,dige:92834317758c2e6f~g1
   GhostInclude:Ghost_M_Orig,dige:a8cd03dd83707cd5~g1
   GhostInclude:Ghost_M_Radio,dige:305a3b5e680c104c~g1
@@ -24,11 +24,11 @@ Credulate,of_Book:VytoFold
   GhostInclude:Ghost_S_Swarm,dige:4fcd3d26879a0227~g1
   GhostInclude:Ghost_Story_Swarmation,dige:f4060302563099af~g1
   GhostInclude:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
-  GhostInclude:Ghost_V_Vyto,dige:c40f2a46d6036411~g1
+  GhostInclude:Ghost_V_Vyto,dige:0da6631fb9a5e0fc~g1
   GhostInclude:Ghost_V_Vytonation,dige:4b115424532783d7~g1
   GhostInclude:Ghost_Story_Voronation,dige:a8a9737169608630~g1
-  GhostInclude:Ghost_Story_Sounditron,dige:50737f13a6da0a0c~g1
-  last_ok,at=1786251102.397,ok_pct
+  GhostInclude:Ghost_Story_Sounditron,dige:f9b2c4b10e333c84~g1
+  last_ok,at=1786258843.562,ok_pct
     uses:Ghost_N_Peeroleum,dige:18cb029750287c38~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:2a297dc2edd42bbc~g1
@@ -42,7 +42,7 @@ Credulate,of_Book:VytoFold
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
     uses:Ghost_M_Ra,dige:2e0501218ecb15db~g1
     uses:Ghost_M_Booth,dige:24e06889933090b3
-    uses:Ghost_M_Heist,dige:13d5b065170f1f6c~g1
+    uses:Ghost_M_Heist,dige:8471929bd8613337~g1
     uses:Ghost_M_Jam,dige:92834317758c2e6f~g1
     uses:Ghost_M_Orig,dige:a8cd03dd83707cd5~g1
     uses:Ghost_M_Radio,dige:305a3b5e680c104c~g1
@@ -54,7 +54,7 @@ Credulate,of_Book:VytoFold
     uses:Ghost_S_Swarm,dige:4fcd3d26879a0227~g1
     uses:Ghost_Story_Swarmation,dige:f4060302563099af~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
-    uses:Ghost_V_Vyto,dige:c40f2a46d6036411~g1
+    uses:Ghost_V_Vyto,dige:0da6631fb9a5e0fc~g1
     uses:Ghost_V_Vytonation,dige:4b115424532783d7~g1
     uses:Ghost_Story_Voronation,dige:a8a9737169608630~g1
-    uses:Ghost_Story_Sounditron,dige:50737f13a6da0a0c~g1
+    uses:Ghost_Story_Sounditron,dige:f9b2c4b10e333c84~g1

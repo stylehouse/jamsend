@@ -29,6 +29,9 @@ Nothing is built. Read §1 for why it must exist, then §3 — the substrate alr
 **Do not start at step 4.** A reload button that fires on a bad guess is worse than no supervisor: it
  destroys the evidence of the bug it mis-diagnosed, and it trains everyone to reload reflexively.
 
+**§9 landed 2026-08-09** — the first NORMALCY customer: `Vyto_normal` checks presence + visibility at
+ every settle and pokes the layout. A different species from the wedge-watching above — read §9.
+
 **READ §8 FIRST (added 2026-08-09).** The owner answered §7 Q1: consent splits by **who is in front of
  the tab**. A *runner* is categorically non-recoverable (a Book is one linear journey; a healed wedge
   produces green steps over a world that took a detour) and so is the right first customer for the
@@ -321,3 +324,67 @@ This makes the **runner the right first customer for the `act` rung**, and it in
 3. Surface `w.c.watch` in the glass (§5, the Brink/DiagFace badge) and through `runner_ask`, so the
     verdict is legible before anything acts on it.
 4. **Only then** the runner-only `act` rung, with the "say so durably first" rule above.
+
+---
+
+## 9. Keep Vyto NORMAL — the glass is a visible player (2026-08-09, first customer LANDED)
+
+> The owner, same day: *"this might be a good time to think about how the Supervisor_todo is going
+>  to be able to help Vyto objectively over time. certainly if there's no %Radio:4"* … *"pop into
+>   Supervisor whatever we need to do to keep Vyto normal, which is a visible player"* … *"it seems
+>    like a SUpervisory list of things to see happened, but also like a phase of development
+>     reporting what it got done."*
+
+Everything above watches for STUCK — a machine that stopped moving. Vyto adds the second species of
+ abnormal, and it is the one a **visible player** suffers most: the machine is running perfectly and
+  the RESULT is wrong. The Radio cell off the side of the screen. A grappled %Radio with no cell at
+   all ("it's vanished again"). A crushed Door reduced to a floating glyph. No wedge, no mutex, every
+    verb returning — and a user looking at a broken player. Liveness checks can never catch this;
+     only **normalcy claims** can: objective statements about what the glass must LOOK like, checked
+      against the model, with a cure attached.
+
+### 9.1 What landed — `Vyto_normal(w)` (Vyto.g, rides `Vyto_settle`)
+
+Runs at every settle — the world just stopped moving, so "is anything missing or off screen" is a
+ fair question there and only there (mid-flight it is noise). Two claims, each with its cure:
+
+- **PRESENCE** — every grapple the commission holds has a live (non-departing) mirror row. Missing ⇒
+   one `see` row naming the mainkey (`⚕ Vyto normal: grappled %Radio has no cell — poking a rescan`)
+    + one stir. ONCE per offence — the grapple watch re-stirs by itself when the organ actually
+     changes, and a poke per settle would stir→settle→stir forever (the §6 anti-goal, applied to
+      ourselves). The latch clears when the organ returns, so a second vanishing is said again.
+- **VISIBILITY** — every unstaged, unfolded, unloose body's centre inside the frame. Off ⇒ drop its
+   seed and stir (the newcomer law re-enters it at the rim and the relax pulls it into the pile).
+    At most 2 pokes per cell, then ONE see row (`sits off screen and two pokes did not cure it`).
+     The STAGED cell is exempt — off the edges is its whole job.
+
+Gated on `w.c.vw_frame`, which only a humdinger tab ever stamps — a driven Book world is
+ unreachable by construction, so every recorded fixture stands to the byte.
+
+**Note the deliberate §4 exception:** Vyto_normal lives INSIDE the belief loop (it rides the settle,
+ which rides a `clear()`), where §4 forbade the wedge-detector to live. That is correct here because
+  it watches the LAYOUT, not the loop — if the belief loop wedges, the glass never settles and this
+   never runs, and that pathology belongs to tier 1/2, which already exist for it. A normalcy claim
+    only makes sense over a world that is still turning.
+
+### 9.2 The arc — the normalcy ROSTER, and the owner's "phase of development" reading
+
+The owner saw two things in one shape, and both are right:
+
+- **"a Supervisory list of things to see happened"** — the claims should accumulate the way a Book's
+   `%see` assertions do: each new invariant the glass earns (organs present · bodies on screen ·
+    nothing renders un-bodied — "everything should be a cell or a sub-cell or a label. we need
+     consistency" · a faced cell is never priced below its measured box · the staged cell alone may
+      overflow) becomes one more line the settle checks forever. The roster IS the definition of
+       "normal", and it only ever grows.
+- **"a phase of development reporting what it got done"** — the `⚕` see rows double as a ledger: a
+   session's normalcy violations are its work-list, and a quiet settle is the report that the phase
+    landed. Future rung: surface the roster + its current verdicts in the glass itself (one sanity
+     cell — the owner has already asked for "some overall sanity checking thing" while hiding the
+      rest of the chrome), and through `runner_ask`, so a session reads the glass's own opinion of
+       itself instead of asking a human what it looks like.
+
+Known holes the roster does not cover yet: crowd-out (a row the cut refused a seat — render-side
+ fact, model-blind; Vytui counts it in the corner note and the pearl gives crushed cells a body, but
+  no claim FAILS on it), and the pre-%Radio boot race (the glass can commission before the organ
+   exists — said now, but the honest fix is Radio_todo §0 2026-08-09's boot cells).

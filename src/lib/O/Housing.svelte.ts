@@ -853,9 +853,25 @@ export class House extends StorableHousing {
     // post_do: push a fn-carrying elvis onto H.todo.
     // Does NOT call beliefs()
     // -------------------------------------------------------------------------
-    post_do(fn: () => Promise<void>, extra: Partial<TheUniversal> = {}) {
+    // `urgent` — A HUMAN PRESS IS NOT AMBIENT WORK (the owner 2026-08-09: *"can we get the big X to
+    //  fire faster... it sits there for 10s? and then when I click the cell it suddenly vanishes"*).
+    //  That is the `calls≈0` fork the DRAIN LAG electrode below already names: post_do only PUSHES,
+    //   and the drain depends on the `todo_version` $effect firing.  When the glass is quiet nothing
+    //    pokes it, so the work sits — and the next unrelated interaction (clicking a cell) drains it,
+    //     which is exactly what "then it suddenly vanishes" is.  The electrode's own prescription is
+    //      "make post_do self-driving (answer_calls() after the push)".
+    //  OPT-IN rather than always, deliberately: post_do is the app's general work queue and making
+    //   every push drive the loop changes drain timing everywhere, including under Books.  A button a
+    //    human is looking at is the one case where waiting for ambient is indefensible, so that is the
+    //     only case that opts in.
+    //  Through a microtask, not a direct call: post_do is itself called from inside drains and from
+    //   Svelte update stacks, and a synchronous drain re-entered from either is a much worse bug than
+    //    the latency it would fix.  answer_calls is already re-entry-guarded (answer_calls_waiting →
+    //     pending), so the worst case here is a coalesce, and a microtask still lands before paint.
+    post_do(fn: () => Promise<void>, extra: Partial<TheUniversal> = {}, urgent = false) {
         const e = new TheC({ c: {}, sc: { fn, ...extra } })
         this._push_todo(e)
+        if (urgent) queueMicrotask(() => { try { this.answer_calls() } catch (er) {} })
     }
 
     // diag — TEMPORARY checkpoint trace for the begun-wedge hunt (2026-07-30).  Lives entirely on

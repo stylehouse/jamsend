@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '13d5b065170f1f6c~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '8471929bd8613337~g1' },
 
 // Heist.g — the HEIST engine: %Heist,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -2895,6 +2895,38 @@ Heist_keep_pick_toggle(keep, ref) {
     if (hit && hit.sc.title) pick.sc.title = hit.sc.title
     if (hit && hit.sc.artist) pick.sc.artist = hit.sc.artist
     keep.bump()
+
+},
+// Heist_keep_pick_all — TAKE THE LOT, or put it back (the owner 2026-08-09: *"we can have another
+//  tickbox labelled '+ all 8 tracks' (it is under the track title+artist)"*).  Keeping a whole album
+//   is the common case and it was N presses through a list you had to open first — the list is for
+//    CHOOSING, and "all of it" is not a choice that needs one.
+//  ONE verb rather than the face looping Heist_keep_pick_toggle: N toggles is N queued writes, N
+//   bumps and N re-renders of the cell they are mutating, and it half-applies if anything interrupts.
+//  `refs` comes from the face (it holds the described husks); `on` 1 picks every missing ref, 0 drops
+//   every pick EXCEPT the seed — unkeeping the track you are listening to is never what "none" means.
+Heist_keep_pick_all(keep, refs, on) {
+    keep.c.last_touch = Date.now()
+    let seed = keep.sc.seed != null ? String(keep.sc.seed) : null
+    let changed = 0
+    if (!on) {
+        for (const p of keep.o({ Pick: 1 })) {
+            let pr = String(p.sc.ref ?? p.sc.id)
+            if (seed != null && pr === seed) continue
+            keep.drop(p)
+            changed = 1
+        }
+    }
+    if (on) {
+        for (const ref of (refs || [])) {
+            let r = String(ref)
+            if (keep.o({ Pick: 1, ref: r })[0]) continue
+            this.Heist_keep_pick_toggle(keep, r)
+            changed = 1
+        }
+    }
+    if (changed) keep.bump()
+    return changed
 
 },
 // Heist_keep_set_genre — the cell's CATEGORY tweak (one top folder for the whole keep; Heist_keep_filings

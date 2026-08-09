@@ -23,6 +23,29 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+### 2026-08-09 — THE BOOT POLICY, in the owner's words (design only — nothing implemented)
+
+Dropped mid-session while working the Vyto glass; recorded here because it is RADIO policy, not
+ glass policy. Three connected rulings about what a fresh tab should PLAY:
+
+1. **"we should switch to a friends stream when they come online, perhaps even play nothing until
+    it's determined no peer is online, so we can start playing new music."** — presence-first: the
+     friend's stream outranks local shuffle, and the boot may hold silence briefly rather than
+      commit to old music it will immediately abandon.
+2. **"it should start with %oldMusic and %newMusic,pending and you can throw attention light into
+    either direction... but %oldMusic is what's already here so it could actually be faster... to
+     jump into without networking."** — the boot choice as TWO CELLS in the glass, decided by the
+      attention currency (heat), not by a setting: %oldMusic (local radiostock — playable with zero
+       networking, so it can be INSTANT) vs %newMusic,pending (waits on peers/share arming ~30s).
+        The user throws light at the one they want; absent a throw, presence decides (ruling 1).
+3. **"perhaps it starts before there's a %Radio"** — the glass can commission before the Radio organ
+    exists. That race is now at least SAID (Vyto_normal's presence check, Supervisor_todo §9) but
+     the honest fix is boot-order: the two boot cells above could BE the pre-%Radio state — the
+      glass is never organ-less, it opens on the choice itself.
+
+Next move when this is picked up: mint %oldMusic/%newMusic as real particles the Sounditron
+ commissions at boot, wire heat-throw to the dial, and let ruling 1 auto-resolve the pending cell.
+
 ### 2026-08-07 — ONE OF ANYTHING, ON THE WIRE TOO (the 61/638 report)
 
 **The destination this serves:** the numbers a listener reads off the glass have to be the truth. The

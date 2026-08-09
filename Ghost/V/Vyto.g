@@ -22,6 +22,18 @@ IMPORT()
     import { power_cells, poly_centroid, poly_area, pile_step, foam_cells } from "$lib/O/vyto_geometry"
     import { sig_of, group_edges, bucket_key_of, pull_step, budget_for, SIG_JOINS, FOCUS_BOOST, FOCUS_SHRINK, AREA_BASE } from "$lib/O/vyto_foam"
 
+    // HEAT_BUY — what a full purse of attention actually BUYS, as a multiplier on env_area.
+    //  The owner, 2026-08-09, of a crushed cell's ⤢: *"that we can click to make that cell become a
+    //   normal cell right?  where's the attention sharing algorithm?  how do we balance things in the
+    //    user's face?"*  The algorithm was there and honest — heat is earned by attending, self-taxed
+    //     on everyone else, spent here as size — but at 0.8 its ENTIRE range was ×1.8 area, i.e. ×1.34
+    //      radius.  A crushed cell (fit ≤ 0.34) cannot climb out of that on a full purse, so the ⤢ was
+    //       promising something the currency could not pay, and attention read as decorative.
+    //  A currency that can only nudge the order is not a currency.  At 3.5 a full purse is ×4.5 area
+    //   (×2.1 radius), which can genuinely re-rank a pile — which is the point of spending anything.
+    //  Heat is 0 in every Book (no fixture attends), so this is byte-invisible to all of them.
+    const HEAT_BUY = 3.5
+
 //#region the world — w:Vyto stands, plans, and waits for its commission
 // Vyto — the w:Vyto worker.  Mirrors Cyto()'s shape so a client commissions either glass
 //  the same way; but where Cyto idles under takeTurns, Vyto NEVER takes turns — its drive
@@ -348,6 +360,9 @@ Vyto_scan_sweep(w, parentMirror, gen):
             parentMirror.drop(row)
         } else {
             row.sc.departing = 1
+            // a departing cell is usually one the user just CLOSED — the pointer is still on it,
+            //  and its own hover pin would hold the corpse in place through the whole grace scan.
+            this.Vyto_calm_yield(w, row.c.tok)
             row.bump_version()
         }
     }
@@ -698,6 +713,28 @@ Vyto_pointer_leave(w, tok):
     }
     if (w.c.pointer === tok) w.c.pointer = null
 
+// Vyto_calm_yield — a COMMANDED cell yields its pointer holds (2026-08-09, the owner: the staged
+//  cell "pops into its final location" seconds late, and the close was little better).  The pin
+//   exists so the world cannot squirm under a RESTING pointer — but a stage, an un-stage and a
+//    departure are the user moving the cell themselves, and after a drag-release or a button
+//     press the pointer is parked exactly on the commanded cell, so its own pin froze the very
+//      motion just ordered until the mouse happened to wander off.  Release the holds NOW on a
+//       short tail (continuous by the same §4 arithmetic as pointer_leave), and DO NOT touch
+//        w.c.pointer — the pointer fact stays true, only its claim of stillness yields.  No new
+//         pointerenter re-pins meanwhile: the pointer never crosses a boundary while the same
+//          cell grows or shrinks beneath it.
+Vyto_calm_yield(w, tok):
+    if (!w.c.calm || tok == null) return
+    let now = Date.now()
+    for (const h of w.c.calm.o({ Hold: 1 })) {
+        if (h.sc.while !== 'pointer') continue
+        if (h.sc.scope !== tok) continue
+        if (h.sc.released_at != null) continue
+        h.sc.released_at = now
+        h.sc.ease_ms = 150
+        h.bump_version()
+    }
+
 // Vyto_hold — place a %Hold directly: a declared, composable claim of stillness under Calm's
 //  home (the same detached tree the pointer holds ride, so the board's `holds` toggle paints
 //   every claim uniformly).  Kept as the generic placer the shift/seek holds will grow into.
@@ -785,8 +822,14 @@ Vyto_attend(w, tok, amount):
 Vyto_attend_walk(w, n, tok, amt):
     for (const m of n.o()) {
         if (m.c.tok === tok) m.c.heat = Math.min(1, (m.c.heat ?? 0) + amt * (1 - (m.c.heat ?? 0)))
+        // THE TAX IS PROPORTIONAL TO THE GRANT (2026-08-09) — *"how do we balance things in the
+        //  user's face?"*  A flat ×0.96 meant a big grant and a glance cost the rest of the glass the
+        //   same, so attention was not really SHARED: it was minted.  Taxing by the size of the grant
+        //    makes it close to zero-sum — a deliberate press visibly cools everything else, a small
+        //     brush barely does — which is what makes the pile rebalance rather than just inflate.
+        //  Capped at 0.6 so one press can never wipe the board; recovery should still take a press.
         if (m.c.tok !== tok && m.c.heat) {
-            m.c.heat = m.c.heat * 0.96
+            m.c.heat = m.c.heat * (1 - Math.min(0.6, amt * 0.7))
             if (m.c.heat < 0.02) m.c.heat = 0
         }
         this.Vyto_attend_walk(w, m, tok, amt)
@@ -830,6 +873,10 @@ Vyto_stage(w, tok):
     let cur = w.c.stage_tok
     delete w.c.stage_tok
     if (tok != null && tok !== cur) w.c.stage_tok = tok
+    // both the newly staged cell and the one leaving the stage were just COMMANDED — their hover
+    //  pins must not freeze the growth/shrink they were ordered into (Vyto_calm_yield's note).
+    this.Vyto_calm_yield(w, cur)
+    this.Vyto_calm_yield(w, tok)
     this.Vyto_stir_soon(w)
 
 // Vyto_stage_lay — DEAL the frame instead of solving it.  The staged body takes the left band's
@@ -854,33 +901,37 @@ Vyto_stage_tok(w, members):
     }
     return null
 
-Vyto_stage_lay(w, members, seeds, pinned, fw, fh, stok):
+// Vyto_stage_lay — PLACE THE PRIMARY, TOUCH NOTHING ELSE (the owner 2026-08-09: *"we should keep the
+//  cells clustered as they always were but just insist on the primary one being huge, off the edges
+//   of the screen, on the left, the others small"*).
+//  The first version DEALT the whole frame — primary left, everyone else pinned down a right-hand
+//   column.  That threw away the one thing this glass actually has: bodies that cluster by
+//    negotiation.  A dealt grid is just a list with extra steps, and it looked like one.
+//  So the stage is now only a PRICE (Vyto_express: huge vs small) and a PLACE (this: the primary
+//   pinned left of centre).  Every other seed is left completely alone — unpinned, piling as it
+//    always did, now around a big neighbour instead of among equals.
+//  Returns the primary's index so the caller can exempt it from the fit law: a staged cell is the
+//   thing being LOOKED AT, not a thing being fitted, and it is allowed to run off the frame.
+Vyto_stage_lay(w, members, seeds, radii, pinned, fw, fh, stok):
     let si = -1
-    let rest = []
     let i = 0
     while (i < members.length) {
         if (members[i].c.tok === stok) si = i
-        if (members[i].c.tok !== stok) rest.push(i)
         i = i + 1
     }
-    if (si < 0) return 0
-    let sx = fw * 0.31
+    if (si < 0) return -1
+    let sx = fw * 0.26
     let sy = fh * 0.5
     seeds[si] = { x: sx, y: sy }
     pinned[si] = true
     members[si].c.seed = { x: sx, y: sy }
-    let n = rest.length
-    let k = 0
-    while (k < n) {
-        // centres of n equal bands down the right column, so the file is even however many there are
-        let y = fh * (0.04 + 0.92 * ((k + 0.5) / n))
-        let x = fw * (k % 2 === 0 ? 0.755 : 0.885)
-        seeds[rest[k]] = { x: x, y: y }
-        pinned[rest[k]] = true
-        members[rest[k]].c.seed = { x: x, y: y }
-        k = k + 1
-    }
-    return 1
+    // sized FROM THE FRAME, not from the pricing algebra.  "Huge, off the edges" is a statement about
+    //  the screen, so it is answered in screen terms — 0.62·min(fw,fh) is comfortably past the 0.44
+    //   cap it is exempt from, which is what makes it run off rather than sit inside.  Expressing it
+    //    as a multiple of AREA_BASE instead would make "does it overflow" depend on a constant tuned
+    //     for something else entirely, and it would stop being true the moment that constant moved.
+    radii[si] = 0.62 * Math.min(fw, fh)
+    return si
 
 Vyto_simmer_walk(w, n, tick, base):
     let i = base
@@ -984,12 +1035,12 @@ Vyto_express(w):
         //     the floor (a widget still never crushes below its box unpriced) AND keeps the
         //      knob live at every size.  Byte-identical wherever need is unmeasured or the
         //       row is doseless/unlifted — which is every recorded fixture combination.
-        for (const row of rows) { row.c.imp = this.Vyto_importance(w, row); row.c.env_area = Math.max(1, Math.max(AREA_BASE, this.Vyto_need_of(w, row)) * row.c.imp * (1 + 0.8 * (row.c.heat ?? 0))) }
+        for (const row of rows) { row.c.imp = this.Vyto_importance(w, row); row.c.env_area = Math.max(1, Math.max(AREA_BASE, this.Vyto_need_of(w, row)) * row.c.imp * (1 + HEAT_BUY * (row.c.heat ?? 0))) }
     } else {
         // max(AREA_BASE, need)·(1 + dose)·(1 + 0.8·heat) — the PLAIN regime base (vyto_foam
         //  AREA_BASE), need-floored FIRST so the dial stays live on faced cells (the dead-A-drag
         //   find above), then the attention currency spends on top (heat 0 ⇒ byte-identical).
-        for (const row of rows) { row.c.env_area = Math.max(1, Math.max(AREA_BASE, this.Vyto_need_of(w, row)) * (1 + (Number(row.sc.dose) || 0)) * (1 + 0.8 * (row.c.heat ?? 0))) }
+        for (const row of rows) { row.c.env_area = Math.max(1, Math.max(AREA_BASE, this.Vyto_need_of(w, row)) * (1 + (Number(row.sc.dose) || 0)) * (1 + HEAT_BUY * (row.c.heat ?? 0))) }
     }
     // THE EQUAL POSE (2026-08-09, the owner: *"we need some simulation of them competing for
     //  attention… or engaging some pose where they are all fairly equal"*).  Flatten every price to the
@@ -1002,15 +1053,21 @@ Vyto_express(w):
     if (w.c.even) {
         for (const row of rows) row.c.env_area = AREA_BASE
     }
-    // THE STAGE'S PRICE.  Placement alone would not do it: the power cut is a weighted bisector, so a
-    //  left-seated body with a right-column body's radius still only wins a left-column-sized cell.
-    //   The stage has to be BOUGHT as well as placed — one big price, one small price, nothing in
-    //    between, so the frame reads as "this thing, and the things you could put here instead".
-    //  Last in the chain like the equal pose, and gated the same way (runtime `.c`, no Book sets it).
-    let stok = this.Vyto_stage_tok(w, rows)
-    if (stok != null) {
-        for (const row of rows) row.c.env_area = (row.c.tok === stok) ? AREA_BASE * 16 : AREA_BASE * 0.8
-    }
+    // THE STAGE PRICES NOTHING (2026-08-09).  It used to overwrite every NON-staged row's env_area,
+    //  and that one line quietly destroyed three separate mechanisms, each found on its own:
+    //   1. the NEED FLOOR — faced cells priced below their measured box and crushed to icons
+    //      (*"the Heist,posed,from cell seems to have only a 3em wide box"*);
+    //   2. the FURNITURE FLOOR — AREA_BASE*0.7 is r = 23.1, and the renderer drops a cell's wall
+    //      label and its A-tip below r = 24, so every other cell lost its name and its tail
+    //      (*"we just regressed our ability to label and A-tip the cells properly"*);
+    //   3. the ATTENTION CURRENCY — the (1 + 0.8·heat) term lives in the regime lines above, so a
+    //      flat overwrite meant attending a cell under a stage did nothing (*"where's the attention
+    //      sharing algorithm?"*).  Heat was still earned and still taxed; it just stopped being SPENT.
+    //  Three findings, one cause, and that is the lesson worth keeping: a price is not a number, it is
+    //   the PRODUCT of every rule with a claim on this cell, and replacing it discards all of them.
+    //  The primary is sized from the FRAME in Vyto_stage_lay — a claim about the screen, answered in
+    //   screen terms — so the contrast needs nobody else shrunk.  Every other cell keeps its ordinary
+    //    price, and need, dose and attention all still work while a stage stands.
     let organ = w.o({ Organ: 'Express' })[0]
     if (organ && organ.sc.status !== 'live') {
         organ.sc.status = 'live'
@@ -1023,7 +1080,7 @@ Vyto_express(w):
 Vyto_express_rows(w, rows):
     for (const row of rows) {
         if (row.sc.departing) continue
-        row.c.env_area = Math.max(1, Math.max(AREA_BASE, this.Vyto_need_of(w, row)) * (1 + (Number(row.sc.dose) || 0)) * (1 + 0.8 * (row.c.heat ?? 0)))
+        row.c.env_area = Math.max(1, Math.max(AREA_BASE, this.Vyto_need_of(w, row)) * (1 + (Number(row.sc.dose) || 0)) * (1 + HEAT_BUY * (row.c.heat ?? 0)))
         let kids = row.o()
         if (kids.length) this.Vyto_express_rows(w, kids)
     }
@@ -1172,7 +1229,8 @@ Vyto_solve(w):
     //    has nothing to rescue, and letting them re-fit a dealt layout is how a stage would drift.
     //  Runtime `.c.stage_tok`, never sc, never set by a Book: byte-invisible to every fixture.
     let stok = this.Vyto_stage_tok(w, members)
-    if (stok != null) this.Vyto_stage_lay(w, members, seeds, pinned, fw, fh, stok)
+    let sidx = -1
+    if (stok != null) sidx = this.Vyto_stage_lay(w, members, seeds, radii, pinned, fw, fh, stok)
     // THE BAG IS FINITE (fit law, 2026-08-09 — the owner: "mostly in a broken layout state").
     //  Bodies keep their intrinsic sizes until the bag cannot hold them; then BAG PRESSURE
     //   squeezes everyone ALIKE (one k on every radius — a similarity, so relative pricing is
@@ -1182,19 +1240,32 @@ Vyto_solve(w):
     //       by the frame.  Both gates are overflow-gated: a world that already fits passes
     //        through byte-identical, which is what keeps every green fixture green.
     if (w.c.foam) {
+        // THE STAGED BODY IS EXEMPT FROM BOTH GATES.  "No single body may span the bag" is the right
+        //  law for a negotiated pile and the wrong one for a chosen primary — the whole request is
+        //   *"huge, off the edges of the screen"*, and a cap whose entire job is to prevent that
+        //    cannot also be applied to it.  It is left out of the pressure TOTAL as well, so its size
+        //     does not squeeze the small cells it is supposed to be sitting beside.
+        //  Exactly one body can ever be exempt, and only while a human or the model has named it.
         let rcap = 0.44 * Math.min(fw, fh)
         let ri = 0
         while (ri < radii.length) {
-            if (radii[ri] > rcap) radii[ri] = rcap
+            if (radii[ri] > rcap && ri !== sidx) radii[ri] = rcap
             ri = ri + 1
         }
         let total = 0
-        for (const r of radii) total = total + Math.PI * r * r
+        ri = 0
+        while (ri < radii.length) {
+            if (ri !== sidx) total = total + Math.PI * radii[ri] * radii[ri]
+            ri = ri + 1
+        }
         let hold = 0.62 * fw * fh
         if (total > hold) {
             let k = Math.sqrt(hold / total)
             ri = 0
-            while (ri < radii.length) { radii[ri] = radii[ri] * k; ri = ri + 1 }
+            while (ri < radii.length) {
+                if (ri !== sidx) radii[ri] = radii[ri] * k
+                ri = ri + 1
+            }
         }
         // PLUMP — the one place the frame may GRANT coverage, and only because the composer
         //  asked (foamereo token `plump`): a sparse world inflates toward 0.45 fill, capped at
@@ -1627,6 +1698,9 @@ Vyto_seg_nearest(a, b, p):
 //     an absent key, never `undefined` (an undef marker in a snap is a mint bug, not furniture).
 async Vyto_settle(w):
     w.c.settled = (w.c.settled ?? 0) + 1
+    // the NORMALCY reading rides the settle: the world just stopped moving, so NOW is when
+    //  "is anything missing or off screen" is a fair question (mid-flight it is noise).
+    this.Vyto_normal(w)
     let run = w.c.Run?.c?.run
     let step_n = (run && run.c.driving && run.c.step_n != null) ? run.c.step_n : null
     if (step_n == null) {
@@ -1634,6 +1708,65 @@ async Vyto_settle(w):
     } else {
         await this.Vyto_spool_capture(w, { step_n: step_n })
     }
+
+// Vyto_normal — SUPERVISORY reading (Supervisor_todo §9, the owner 2026-08-09: "pop into
+//  Supervisor whatever we need to do to keep Vyto normal, which is a visible player").  The glass
+//   is a UI a person is looking at, so at every settle it asks the two objective questions a
+//    person would — and pokes the layout rather than waiting for a human to notice:
+//  1. PRESENCE — every grapple the commission was given still has a live cell.  A %Radio the
+//      commissioner handed over that has no mirror row is a scan fault or a race (the glass can
+//       commission before the organ exists) — say so once and stir, so the next scan re-mints it.
+//  2. VISIBILITY — every body is at least half on screen.  Off-frame is a LAYOUT fault, never a
+//      fact about the data ("things go missing somehow" — nobody sent the Radio off the side, the
+//       solve did).  Cure: drop the seed and stir — the newcomer law re-enters it at the rim and
+//        the relax pulls it into the pile.  At most 2 pokes per cell per offence, then ONE see row
+//         naming it instead of poking forever — a supervisor that livelocks the layout is worse
+//          than none (the §6 anti-goal, applied to ourselves).
+//  GATED ON w.c.vw_frame: only Vytui's publish_frame stamps it, and only on a humdinger tab — a
+//   DRIVEN world is never stamped, so this whole verb is unreachable for Books and every recorded
+//    fixture stands to the byte.  The staged cell is exempt from visibility — off the edges is
+//     its whole job.
+Vyto_normal(w):
+    let vf = w.c.vw_frame
+    if (!vf || !w.c.mirror) return
+    let fw = Number(vf.w) > 0 ? Number(vf.w) : 800
+    let fh = Number(vf.h) > 0 ? Number(vf.h) : 450
+    let poked = 0
+    // 1. presence — each grapple wants a live (non-departing) top-level row
+    for (const g of w.c.grapples ?? []) {
+        let found = 0
+        for (const r of w.c.mirror.o()) { if (r.c.source_n === g && !r.sc.departing) found = 1 }
+        let mk = this.mainkey(g) ?? '?'
+        if (found) { if (w.c.normal_said) delete w.c.normal_said[mk]; continue }
+        if (!w.c.normal_said) w.c.normal_said = {}
+        if (!w.c.normal_said[mk]) {
+            w.c.normal_said[mk] = 1
+            w.i({ see: `⚕ Vyto normal: grappled %${mk} has no cell — poking a rescan` })
+            // poke ONCE per offence, on first sight — the grapple watch re-stirs by itself the
+            //  moment the organ actually changes, and a poke per settle would stir→settle→stir
+            //   forever on an organ that stays missing (the livelock this verb must never be).
+            poked = 1
+        }
+    }
+    // 2. visibility — every unstaged body's centre in frame; off-frame ⇒ re-seed at the rim
+    let stok = w.c.stage_tok
+    for (const m of w.c.mirror.o()) {
+        if (m.sc.departing || m.c.folded || m.sc.loose) continue
+        if (m.c.tok === stok) continue
+        let t = m.c.T
+        if (!t) continue
+        let out = t.x < 0 || t.x > fw || t.y < 0 || t.y > fh
+        if (!out) { if (m.c.normal_pokes) m.c.normal_pokes = 0; continue }
+        let n = (m.c.normal_pokes ?? 0) + 1
+        m.c.normal_pokes = n
+        if (n > 2) {
+            if (n === 3) w.i({ see: `⚕ Vyto normal: ${m.c.tok} sits off screen and two pokes did not cure it` })
+            continue
+        }
+        delete m.c.seed
+        poked = 1
+    }
+    if (poked) this.Vyto_stir_soon(w)
 
 // Vyto_spool_capture — chronicler Spool: reads settles and writes moments.  TWO CLOCKS:
 //  every capture gets monotonic yore_n; step captures ALSO carry step_n (the quantize-lock

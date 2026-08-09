@@ -278,6 +278,17 @@ const STICKY_PATH = '/tmp/runner_ask.target'
 const eng    = (a) => a.result?.engagement
 const isMine = (a) => eng(a)?.client === CLIENT && eng(a)?.status === 'active' && !eng(a)?.stale
 const isFree = (a) => { const e = eng(a); return !e || e.status !== 'active' || e.stale || e.client === CLIENT }
+// A PLAYER IS NOT A RUNNER, WHATEVER ANSWERED (the owner 2026-08-09: *"can you fix that script to not
+//  ask role=player to run tests for you"*).  The court addresses the ROLE `runner` and then trusts
+//   whoever acks — but relay `bind()` is ADDITIVE fan-out (one per-addr Set, any claimant
+//    shadow-subscribes), so a tab that is really someone's music page can answer a runner broadcast.
+//     `--player=` was built to keep those tabs read-only and it does its job; this is the OTHER door,
+//      the one nobody passes a flag to, and it was wide open.
+//  The ack already carries the answer — `ping` returns `{role}` — so this is not a new fact to plumb,
+//   only one that was never read.  Filter on it, and DO NOT fall back to a player when no runner
+//    answers: silence is the correct outcome there.  Putting a Book on a listener's page is not a
+//     degraded success, it is the failure the whole role split exists to prevent.
+const isRunner = (a) => a.result?.role === 'runner'
 if (TARGET === 'runner') {
 	// 1. STICKY — the prepub the last invocation used (/tmp stash).  Pinged DIRECTLY: the role broadcast
 	//    reaches whichever single socket the relay favours, so it can NOT be trusted to find a *specific*
@@ -286,12 +297,20 @@ if (TARGET === 'runner') {
 	try { sticky = readFileSync(STICKY_PATH, 'utf8').trim() || null } catch { /* no stash yet */ }
 	if (sticky) {
 		const a = await sendAsk(ws, { op: 'ping', client: CLIENT }, sticky, 4000)
-		if (a.control === 'runner_ack' && (op !== 'run' || isFree(a))) TARGET = sticky
+		// role-checked too: a stale stash can name a tab that has since been re-booted as a player.
+		if (a.control === 'runner_ack' && isRunner(a) && (op !== 'run' || isFree(a))) TARGET = sticky
 	}
 	// 2. no (usable) sticky — broadcast-court: one role ping, gather the acks, pick
 	//     our-lease ▸ (run) free ▸ first.
 	if (TARGET === 'runner') {
-		const acks = await collectAcks(ws, { op: 'ping', client: CLIENT })
+		const allAcks = await collectAcks(ws, { op: 'ping', client: CLIENT })
+		const acks = allAcks.filter(isRunner)
+		const shooed = allAcks.length - acks.length
+		if (shooed > 0) console.error(`⇢ ignoring ${shooed} non-runner tab${shooed === 1 ? '' : 's'} that answered the runner broadcast (role≠runner — someone's music page)`)
+		if (!acks.length && allAcks.length) {
+			console.error(`✗ no role:'runner' tab answered — only ${allAcks.length} player/other tab${allAcks.length === 1 ? '' : 's'} did.  Boot a runner (?B=<Book>); refusing to put a Book on a listener's page.`)
+			process.exit(3)
+		}
 		const pick = acks.find(isMine) ?? (op === 'run' ? (acks.find(isFree) ?? acks[0]) : acks[0])
 		if (pick?.result?.self) {
 			TARGET = pick.result.self

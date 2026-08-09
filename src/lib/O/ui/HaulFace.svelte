@@ -57,7 +57,10 @@
                 // one console line too, so a human watching devtools sees it without the CLI
                 if (began - t0 > 120) console.log('▣ press', label, 'waited', began - t0, 'ms · ran', done - began, 'ms · queue depth at press', depth)
             }
-        }, { see: 'press ' + label })
+        // URGENT — every press in this face drives the queue itself.  press_probe exists BECAUSE this
+        //  latency was already suspected; it measured the wait and then waited anyway.  The `waited`
+        //   number it logs is the one the owner saw as "it sits there for 10s".
+        }, { see: 'press ' + label }, true)
     }
 
     // MOUNT/DESTROY TELL (Download_stall_handover.md Evening 7's "the bomb" — the directories editor
@@ -204,37 +207,16 @@
         const artist = String(sc.artist || '')
         const dirsKnown = (dirsFocus && own && A?.Heist_known_dirs) ? A.Heist_known_dirs(own, artist) : []
 
-        // ── the track tree — grouped by whatever's LEFT after the directories prefix, so a group never
-        //     repeats what the breadcrumb above it already said ──────────────────────────────────────────
-        // the prefix match is MARKER-BLIND (2026-08-05): '- chill', '0 chill' and 'chill' are one directory
-        //  as far as "has this level already been said above?" goes.  An exact-string compare failed at the
-        //   FIRST segment whenever the breadcrumb and the source disagreed about the marker, so nothing
-        //    stripped and every group label restated the whole path the directories row had just shown.
-        const prefixParts = dirsRaw.split('/').filter(Boolean).map(stripMark)
-        function remainderOf(dir: string): string {
-            const parts = dir.split('/').filter(Boolean)
-            let i = 0
-            while (i < prefixParts.length && stripMark(parts[i]) === prefixParts[i]) i++
-            return parts.slice(i).join('/')
-        }
-        const groups: Record<string, any[]> = {}
-        for (const r of husks) {
-            const path = cpOf(r)   // sections already off, so a group label never restates the section row
-            const rem = remainderOf(dirOf(path))
-            ;(groups[rem] = groups[rem] || []).push({
-                ref: String(r.sc.id),
-                title: String(r.sc.title || fileOf(path, String(r.sc.id))),
-                file: fileOf(path, String(r.sc.title || r.sc.id)),
-                artist: String(r.sc.artist || ''),
-                kept: pickedRefs.has(String(r.sc.id)),
-                seed: String(r.sc.re || '') === seed,
-            })
-        }
-        const flat = (groups[''] || []).sort((a: any, b: any) => a.file.localeCompare(b.file))
-        const tree = Object.keys(groups).filter((k) => k !== '').sort().map((rem) => ({
-            label: rem.split('/').filter(Boolean).map(deshell).join(' › '),
-            tracks: groups[rem].sort((a: any, b: any) => a.file.localeCompare(b.file)),
-        }))
+        // ── NO TRACK LIST ─────────────────────────────────────────────────────────────────────────────
+        // The grouped track tree and the "+ all n tracks" tickbox are GONE (the owner 2026-08-09: *"that
+        //  new 'all 8 tracks' selector was stupid.  I don't think we're going to let you know what tracks
+        //   are coming... it's too much interface"*).  A keep takes the whole folder — that is what
+        //    Heist_keep_default_pick has always done — so a list existed only to let you take LESS of it,
+        //     which is a choice this app has decided not to offer.  The count still rides in the head
+        //      (`Haul:n`) and the running strip still counts landings; neither names a track.
+        //  Nothing under here reads the husks per-track any more except `titleByRef` below, which names
+        //   the ONE track under the needle for the running strip — a report of what is happening, not a
+        //    menu of what could.
 
         // THE TRACK UNDER THE NEEDLE, for the running strip (the human 2026-08-07: "put the most recent
         //  track downloading at the end").  Heist_land walks picks IN ORDER with at most `heist_inflight`
@@ -261,7 +243,6 @@
             lofi: (lofiWish !== null && lofiWish !== !!sc.lofi) ? lofiWish : !!sc.lofi,
             catRaw, catSegs,
             dirsRaw, dirsSegs, dirsKnown, dirsAuto,
-            flat, tree,
             nTracks: husks.length,
             picked: pickedRefs.size,
             landed_n: +(sc.landed_n || 0),
@@ -301,12 +282,12 @@
         const segs = face.catSegs.slice()
         segs.splice(i, 0, v)
         catGaps[i] = ''
-        A?.post_do?.(() => { A?.Heist_keep_set_genre?.(n, segs.join('/')) }, { see: 'keep category insert' })
+        A?.post_do?.(() => { A?.Heist_keep_set_genre?.(n, segs.join('/')) }, { see: 'keep category insert' }, true)
     }
     function catRemoveAt(i: number) {
         const segs = face.catSegs.slice()
         segs.splice(i, 1)
-        A?.post_do?.(() => { A?.Heist_keep_set_genre?.(n, segs.join('/')) }, { see: 'keep category remove' })
+        A?.post_do?.(() => { A?.Heist_keep_set_genre?.(n, segs.join('/')) }, { see: 'keep category remove' }, true)
     }
     function dirsInsertAt(i: number) {
         const v = (dirsGaps[i] || '').trim()
@@ -316,14 +297,14 @@
         dirsGaps[i] = ''
         dirsTouched = true
         dirsSegsFrozen = segs
-        A?.post_do?.(() => { A?.Heist_keep_set_dirs?.(n, segs.join('/'), dirsAutoFrozen) }, { see: 'keep directories insert' })
+        A?.post_do?.(() => { A?.Heist_keep_set_dirs?.(n, segs.join('/'), dirsAutoFrozen) }, { see: 'keep directories insert' }, true)
     }
     function dirsRemoveAt(i: number) {
         const segs = dirsSegsFrozen.slice()
         segs.splice(i, 1)
         dirsTouched = true
         dirsSegsFrozen = segs
-        A?.post_do?.(() => { A?.Heist_keep_set_dirs?.(n, segs.join('/'), dirsAutoFrozen) }, { see: 'keep directories remove' })
+        A?.post_do?.(() => { A?.Heist_keep_set_dirs?.(n, segs.join('/'), dirsAutoFrozen) }, { see: 'keep directories remove' }, true)
     }
 
     // ── committing an edit ────────────────────────────────────────────────────────────────────────
@@ -346,7 +327,7 @@
     function commitCat() {
         const segs = foldGaps(face.catSegs, catGaps)
         catGaps = ['']
-        A?.post_do?.(() => { A?.Heist_keep_set_genre?.(n, segs.join('/')) }, { see: 'keep category commit' })
+        A?.post_do?.(() => { A?.Heist_keep_set_genre?.(n, segs.join('/')) }, { see: 'keep category commit' }, true)
     }
     function commitDirs() {
         // deshell on the way OUT: whatever the human left in the boxes, what gets written is the
@@ -355,15 +336,14 @@
         dirsGaps = ['']
         dirsTouched = true
         dirsSegsFrozen = segs
-        A?.post_do?.(() => { A?.Heist_keep_set_dirs?.(n, segs.join('/'), dirsAutoFrozen) }, { see: 'keep directories commit' })
+        A?.post_do?.(() => { A?.Heist_keep_set_dirs?.(n, segs.join('/'), dirsAutoFrozen) }, { see: 'keep directories commit' }, true)
     }
     // the rows never close now, so a commit is whatever ENDS an edit: ENTER in a box, or leaving it.  Blur
     //  matters more than it used to — with no ✓ to press, tabbing away IS the gesture, and dropping what
     //   was typed there would be the same silent loss the ✓ fix cured on 2026-08-05.
 
-    function toggle(ref: string) {
-        press_probe('pick', () => { A?.Heist_keep_pick_toggle?.(n, ref) })
-    }
+    // (`toggle` / `allPicked` / `pickAll` deleted with the track list — see the NO TRACK LIST note above.
+    //  Heist_keep_pick_toggle and Heist_keep_pick_all still stand as verbs; nothing in the UI calls them.)
     function cancel() {
         press_probe('cancel', () => { A?.Heist_keep_cancel?.(A?.top_House?.()?.c?.radio_w, n) })
     }
@@ -379,9 +359,6 @@
     //   is itself a two-press affordance (press 1 swells it to "delete?", press 2 fires `ondelete`), so
     //    an outer `cancelArmed` that only *armed* on ondelete added a third press behind a differently-
     //     worded button that appeared where the ✕ had been.  Two presses was the ask; one arm delivers it.
-    // the track list, folded behind the count chip.  The header carries `Haul:n` now, so the old
-    //  `<details> ×8 tracks` summary said the number twice and hid the one track you actually recognise.
-    let tracksOpen = $state(false)
     // the lofi explainer — an inline popover, not a title= tooltip: a tooltip cannot be read on a phone,
     //  which is the exact device lofi exists for.
     let lofiWhy = $state(false)
@@ -573,54 +550,14 @@
             {#each face.dirsKnown as d}<option value={d}></option>{/each}
         </datalist>
 
-        <!-- WHAT IT IS, after WHERE IT GOES.  One line: the track you recognise, and the count of everything
-             riding with it.  "+n tracks" is a button because the picking UI still has to live somewhere —
-             it just no longer greets you with a disclosure triangle you must open to see a track name. -->
+        <!-- WHAT IT IS, after WHERE IT GOES.  One line, and only one: the track you recognise.  The
+             "+n tracks" disclosure and the list behind it are gone (the NO TRACK LIST note above) —
+             a keep takes the whole folder, so there is nothing here to choose.  The count lives in
+             the head as `Haul:n`, which says how much is coming without naming any of it. -->
         <div class="kf-what">
             <span class="kf-wtitle" title={face.title}>{face.title}</span>
             {#if face.artist}<span class="kf-wartist">{face.artist}</span>{/if}
-            {#if face.nTracks > 1}
-                <button class="kf-more" class:on={tracksOpen} onclick={() => (tracksOpen = !tracksOpen)}
-                        title={tracksOpen ? 'hide the other tracks' : 'choose which tracks to keep'}>
-                    +{face.nTracks - 1} track{face.nTracks - 1 === 1 ? '' : 's'}
-                </button>
-            {/if}
         </div>
-
-        {#if face.nTracks && tracksOpen}
-            <div class="kf-tree">
-                {#each face.flat as t}
-                    <button class="kf-track" class:kept={t.kept} class:seed={t.seed} onclick={() => toggle(t.ref)}
-                        title={t.seed ? 'the track you\'re hearing' : (t.kept ? 'keeping — click to skip' : 'skipped — click to keep')}>
-                        <span class="kf-tick">{t.kept ? '✓' : '·'}</span>
-                        <span class="kf-tname">{t.title}{#if t.seed} ♪{/if}</span>
-                    </button>
-                {/each}
-                {#each face.tree as grp}
-                    {#if grp.tracks.length > 5}
-                        <details class="kf-group">
-                            <summary class="kf-dir"><span class="kf-car">▸</span> 📁 {grp.label} <span class="kf-cnt">{grp.tracks.length} tracks</span></summary>
-                            {#each grp.tracks as t}
-                                <button class="kf-track" class:kept={t.kept} class:seed={t.seed} onclick={() => toggle(t.ref)}
-                                    title={t.seed ? 'the track you\'re hearing' : (t.kept ? 'keeping — click to skip' : 'skipped — click to keep')}>
-                                    <span class="kf-tick">{t.kept ? '✓' : '·'}</span>
-                                    <span class="kf-tname">{t.title}{#if t.seed} ♪{/if}</span>
-                                </button>
-                            {/each}
-                        </details>
-                    {:else}
-                        <div class="kf-dir-flat">📁 {grp.label} <span class="kf-cnt">{grp.tracks.length}</span></div>
-                        {#each grp.tracks as t}
-                            <button class="kf-track" class:kept={t.kept} class:seed={t.seed} onclick={() => toggle(t.ref)}
-                                title={t.seed ? 'the track you\'re hearing' : (t.kept ? 'keeping — click to skip' : 'skipped — click to keep')}>
-                                <span class="kf-tick">{t.kept ? '✓' : '·'}</span>
-                                <span class="kf-tname">{t.title}{#if t.seed} ♪{/if}</span>
-                            </button>
-                        {/each}
-                    {/if}
-                {/each}
-            </div>
-        {/if}
         <!-- NO SKELETON (the human 2026-08-07: "is what is pointlessly hanging around in the Haul").  Three
              shimmer bars and "finding the folder…" promised guts that are still coming — but the folder
              answer is a single round trip that either lands or never does (measured 2026-08-07: zero
@@ -676,17 +613,21 @@
     .kf {
         pointer-events: none;
         width: max-content;
-        max-width: 300px;
+        /* 300px was "not a full-width box" discipline, but the measure pass stamps the NATURAL box,
+           so this cap IS the ceiling on how wide the Heist cell can ever price itself — and 300 was
+           the "glass is still too narrow" the owner kept seeing (2026-08-09).  The chips wrap at
+           whatever this allows; wider means fewer awkward wraps, and the need floor follows. */
+        max-width: 440px;
         padding: 7px 11px;
         font-family: ui-rounded, 'Trebuchet MS', sans-serif;
         color: #e0cfd8;
         text-align: left;
     }
-    .kf.folded { max-width: 220px; opacity: 0.92; }
+    .kf.folded { max-width: 280px; opacity: 0.92; }
     .kf-head { display: flex; align-items: baseline; gap: 6px; }
     .kf-badge { font-size: 12px; color: #7fe8bf; }
-    .kf-title { font-size: 12px; font-weight: 700; color: #e8a9c0; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .kf-artist { font-size: 9px; opacity: 0.7; color: #cfc0d8; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .kf-title { font-size: 12px; font-weight: 700; color: #e8a9c0; max-width: 290px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .kf-artist { font-size: 9px; opacity: 0.7; color: #cfc0d8; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .kf-from { font-size: 9px; opacity: 0.6; }
     .kf-prog { font-size: 10px; opacity: 0.85; color: #7fe8bf; margin-top: 3px; }
     .kf-queued {
@@ -763,34 +704,9 @@
     .kf-chipin:focus { outline: none; border-bottom-color: #c9a5e8; }
     /* .kf-chips-done went with the ✓ button — "we don't need the ticks then!" */
 
-    .kf-tree { margin-top: 6px; display: flex; flex-direction: column; gap: 1px; }
-    .kf-group { border-radius: 5px; }
-    .kf-dir, .kf-dir-flat { font-size: 9px; opacity: 0.7; margin-top: 3px; color: #cfc0d8; display: flex; align-items: center; gap: 5px; cursor: default; }
-    summary.kf-dir { pointer-events: auto; cursor: pointer; list-style: none; }
-    summary.kf-dir::-webkit-details-marker { display: none; }
-    .kf-car { font-size: 8px; opacity: 0.6; }
-    details[open] > summary.kf-dir .kf-car { transform: rotate(90deg); display: inline-block; }
-    .kf-cnt { margin-left: auto; opacity: 0.6; font-size: 8.5px; }
-    .kf-track {
-        pointer-events: auto;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        width: 100%;
-        background: transparent;
-        border: none;
-        color: inherit;
-        font: inherit;
-        font-size: 10px;
-        padding: 1px 2px 1px 10px;
-        text-align: left;
-        opacity: 0.55;
-    }
-    .kf-track.kept { opacity: 1; }
-    .kf-track.seed .kf-tname { color: #7fe8bf; }
-    .kf-tick { width: 8px; color: #7fe8bf; }
-    .kf-tname { max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* .kf-tree / .kf-group / .kf-dir / .kf-car / .kf-cnt / .kf-track / .kf-tick / .kf-tname / .kf-all /
+       .kf-more all went with the track list + the take-the-lot tick (see NO TRACK LIST in the script):
+       a keep takes the whole folder, so there is nothing to browse and nothing to choose. */
     /* .kf-skel / .kf-shim / .kf-note went with the skeleton — a shimmer is a promise that something is
        coming, and this one was made on behalf of a round trip that had never been sent. */
     @keyframes kf-shim {
@@ -808,8 +724,8 @@
        rather than button by button, so a control added later inherits it instead of feeling broken.
        `transition: none` on the active state is deliberate: a transition would delay the very feedback
        this exists to make instant. */
-    .kf-start:active, .kf-x:active, .kf-scrub:active, .kf-more:active,
-    .kf-lofi:active, .kf-q:active, .kf-track:active, .kf-queued:active, .kf-why-x:active {
+    .kf-start:active, .kf-x:active, .kf-scrub:active,
+    .kf-lofi:active, .kf-q:active, .kf-queued:active, .kf-why-x:active {
         transform: scale(0.94);
         filter: brightness(1.45);
         transition: none;
@@ -875,13 +791,6 @@
     .kf-what > * { margin-right: 6px; }
     .kf-wtitle { font-size: 12px; color: #f3e8ef; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
     .kf-wartist { font-size: 10px; color: #b89ab0; }
-    .kf-more {
-        pointer-events: auto;
-        background: rgba(201, 165, 232, 0.13); border: 1px solid rgba(201, 165, 232, 0.28);
-        border-radius: 999px; padding: 1px 7px; cursor: pointer;
-        color: #c9a5e8; font-size: 9.5px; font-family: inherit;
-    }
-    .kf-more:hover, .kf-more.on { background: rgba(201, 165, 232, 0.24); color: #e8d7f6; }
 
     /* the lofi explainer — a real panel, because a phone cannot hover a tooltip */
     /* lofi + "?" as one unit, so the footer's justify gap falls BETWEEN groups, never inside this one */

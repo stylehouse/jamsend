@@ -17,19 +17,56 @@
 
     let armed = $state(false)
     let timer: ReturnType<typeof setTimeout> | undefined
-
+    // THE BUTTON DISARMED ITSELF (the owner 2026-08-09: *"none of the path bit X buttons do anything,
+    //  in the Haul"* … *"even the X delete? one for the whole Heist"*).  Arming CHANGES THIS BUTTON'S
+    //   OWN SIZE — `×` (a 22px circle in the `big` form) swells into a `delete?` pill, wider and
+    //    shorter — and these sit in a wrapping row of path chips.  So the act of arming reflows the
+    //     row, the button moves out from under the stationary pointer, `mouseleave` fires, and it
+    //      disarms.  The next click re-arms instead of confirming, forever: a control that looks
+    //       perfectly alive (you SEE `delete?`) and can never fire.  Both reported buttons are this.
+    //  The mouse-off disarm is belt-and-braces — the 2.2s timer is the actual re-guard — so it only
+    //   has to stop believing a leave it caused itself.  A short grace does that without giving up
+    //    "move away and it re-guards": a human moving off deliberately takes far longer than 400ms,
+    //     and the self-inflicted leave arrives in the same frame as the arm.
+    let armedAt = 0
+    const SELF_LEAVE_GRACE = 400
     function disarm() { armed = false; if (timer) { clearTimeout(timer); timer = undefined } }
+    function leave() {
+        if (armed && performance.now() - armedAt < SELF_LEAVE_GRACE) return
+        disarm()
+    }
     function click() {
         if (armed) { disarm(); ondelete() }
-        else { armed = true; timer = setTimeout(disarm, 2200) }
+        else { armed = true; armedAt = performance.now(); timer = setTimeout(disarm, 2200) }
     }
 </script>
 
-<button class="mx-del" class:mx-armed={armed} class:mx-big={big}
-        title={armed ? 'click again to delete' : title}
-        onclick={click} onmouseleave={disarm}>{armed ? 'delete?' : glyph}</button>
+<!-- ARMING MUST NOT MOVE ANYTHING (see the note above).  The grace stops the button believing the
+     leave it caused, but if the row had already re-wrapped the second click would land on empty
+     space instead — the button would be armed somewhere the pointer no longer is.  So the armed
+     pill comes OUT OF FLOW: a ghost of the unarmed glyph holds the original footprint, and the pill
+     is positioned over it.  Nothing outside this component moves when it arms, which makes the
+     second press land exactly where the first one did — the only place a human will look for it. -->
+<span class="mx-wrap" class:mx-wrap-armed={armed}>
+    {#if armed}<span class="mx-ghost" class:mx-big={big} aria-hidden="true">{glyph}</span>{/if}
+    <button class="mx-del" class:mx-armed={armed} class:mx-big={big}
+            title={armed ? 'click again to delete' : title}
+            onclick={click} onmouseleave={leave}>{armed ? 'delete?' : glyph}</button>
+</span>
 
 <style>
+    /* the wrap reserves the UNARMED footprint and anchors the armed pill over it.  inline-flex so it
+       sits in the chip row exactly where the bare button used to. */
+    .mx-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+    /* the ghost is the unarmed glyph, invisible, holding the space the pill vacated.  It carries the
+       same size classes so `big`'s 22px disc reserves 22px and the small × reserves a small ×. */
+    .mx-ghost { visibility: hidden; pointer-events: none; font-size: 0.82rem; padding: 0 0.15rem; }
+    .mx-ghost.mx-big { display: inline-flex; width: 22px; height: 22px; padding: 0; font-size: 1rem; }
+    /* armed: centred on the footprint, above its neighbours, never wrapping mid-word */
+    .mx-wrap-armed .mx-del {
+        position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+        z-index: 3; white-space: nowrap;
+    }
     .mx-del {
         /* RE-ARM POINTER EVENTS (2026-08-07 — "the cancel heist ✕ is unclickable").  A voronoi glass
            cell's bbox overlaps its neighbours, so every face root in the glass sets

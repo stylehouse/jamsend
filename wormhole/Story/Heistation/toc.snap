@@ -10,10 +10,12 @@ story:Heistation
       sample=0.002,at=1786005364
       sample=0.001,at=1786005462
       sample=0.001,at=1786246613
+      sample=0.001,at=1786255577
     TimeTotal:step,avg=0.001
       sample=0.002,at=1785367899
       sample=0.001,at=1785995730
       sample=0.002,at=1786005364
       sample=0.001,at=1786005462
       sample=0.001,at=1786246613
+      sample=0.001,at=1786255577
   step,dige:805e50cb4dd9cfaa

@@ -4,28 +4,28 @@ story:VytoStaple
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.049
-      sample=0.039,at=1786191146
-      sample=0.045,at=1786192111
-      sample=0.077,at=1786193842
-      sample=0.046,at=1786217528
+    TimeTotal:beliefs,avg=0.05
       sample=0.048,at=1786232601
       sample=0.03,at=1786238666
       sample=0.069,at=1786239633
       sample=0.035,at=1786240861
       sample=0.044,at=1786246153
       sample=0.053,at=1786251111
+      sample=0.041,at=1786252253
+      sample=0.075,at=1786255574
+      sample=0.061,at=1786256912
+      sample=0.047,at=1786258834
     TimeTotal:step,avg=0.006
-      sample=0.005,at=1786191146
-      sample=0.006,at=1786192111
-      sample=0.01,at=1786193842
-      sample=0.006,at=1786217528
       sample=0.006,at=1786232601
       sample=0.004,at=1786238666
       sample=0.009,at=1786239633
       sample=0.004,at=1786240861
       sample=0.005,at=1786246153
       sample=0.007,at=1786251111
+      sample=0.005,at=1786252253
+      sample=0.009,at=1786255574
+      sample=0.008,at=1786256912
+      sample=0.006,at=1786258834
   step,dige:48bdcbda351601e4
   step=2,dige:2654181158ba67f5,desc:seed a gearbox — a Rig root over a join-keyed Cog family
   step=3,dige:5de20f404562b9ea,desc:mint A:Vyto beside the run and commission it on the gearbox

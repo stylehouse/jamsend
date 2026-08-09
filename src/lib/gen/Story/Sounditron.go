@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return 'd79cc8f7bdd53650~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return 'f9b2c4b10e333c84~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -772,16 +772,25 @@ Sounditron_junk(w) {
         job.c.press = (n) => ((n.sc.lit ? delete n.sc.lit : n.sc.lit = 1), n.bump())
         let k = 0
         while (k < kids) {
-            let cut = job.oai({ Cut: 'c' + k, dontSnap: 1 })
+            // NAMED BY WHAT IT IS (the owner: *"these %Cut that can appear in great number, I have
+            //  no idea what they are"*).  `Cut:c0` was a made-up mainkey with a made-up index for
+            //   a value — it told a reader nothing, and a cell whose IDENT is meaningless is worse
+            //    than no cell at all, because it takes room to say nothing.  A fabricated particle
+            //     has to state itself as plainly as a real one, so the mainkey is %Track and its
+            //      VALUE is the track name the ident already draws.
+            let cut = job.oai({ Track: cuts[(i + k) % cuts.length], dontSnap: 1 })
             cut.c.up = job
-            let c2 = this.Sounditron_plain_say(cut, 'title', cuts[(i + k) % cuts.length])
-            c2 = c2 + this.Sounditron_plain_say(cut, 'held', '' + (((i + k) % 4) * 25))
+            let c2 = this.Sounditron_plain_say(cut, 'held', '' + (((i + k) % 4) * 25))
             cut.c.press = (n) => ((n.sc.lit ? delete n.sc.lit : n.sc.lit = 1), n.bump())
             if (c2) cut.bump()
             k = k + 1
         }
-        // sweep subcells the knob no longer asks for, so turning it down actually removes them
-        for (const old of job.o({ Cut: 1 })) { if (Number(String(old.sc.Cut).slice(1)) >= kids) job.drop(old) }
+        // sweep subcells the knob no longer asks for, so turning it down actually removes them —
+        //  by COUNT, not by name: the names come from a rotating list, so a shrunk queue
+        //  is whatever is left over beyond `kids`, in order.
+        let have = job.o({ Track: 1 })
+        let d = kids
+        while (d < have.length) { job.drop(have[d]); d = d + 1 }
         if (changed) job.bump()
         out.push(job)
         i = i + 1
