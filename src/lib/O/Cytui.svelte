@@ -3326,7 +3326,7 @@
         if (tunnel_on) tube_project(seeds, W, HH)   // 🕳 one remap, everything downstream follows
 
         // ── the rack, SHELVED ─────────────────────────────────────────────────
-        //  hauled non-cell equipment (Piers, reqs, Opt…) into a label-sorted
+        //  heisted non-cell equipment (Piers, reqs, Opt…) into a label-sorted
         //  column at the right edge, shrinking the tessellation to [0, CW].
         //  Shelved: the scape reads better with the oddballs simply seated
         //  where fcose put them, under the veil among the cells.  Kept behind

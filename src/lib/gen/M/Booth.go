@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Booth(): string { return '24e06889933090b3' },
+    Ghostmeta_Ghost_M_Booth(): string { return '29a57d8fed02b58e~g1' },
 
 // Booth.g — the BOOTH: where taste decisions are made (Radio_todo §11).  Standing opinion-facts
 //  on a COLLECTION, pointed at music through the tune handle, consulted by the machine's doors
@@ -22,7 +22,7 @@
 //
 //  THE BAN (§11.2): %Ban,tune:… (one track) | %Ban,artist:… (the whole artist) — the grain is
 //   visible by which key rides the line, never a kind: enum.  Minted at the listener's drop
-//    (Heist_feel → Booth_ban) or by hand; lives on the collection so it survives every %Heist
+//    (Heist_feel → Booth_ban) or by hand; lives on the collection so it survives every %Caper
 //     flatten; stands until Booth_lift.  NEVER swept by any GC — a ban that silently vanished
 //      would re-download the very track it refused (the %UnGrant negative-fact rule).
 //

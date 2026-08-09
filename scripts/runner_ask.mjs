@@ -147,12 +147,57 @@ if (!op || !OPS.includes(op)) {
 	console.error('usage: node scripts/runner_ask.mjs <ping|probe|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|poke <verb>> [@uid] [--runner=<id>] [--watch]')
 	process.exit(2)
 }
-// `runners` — list the Waft:Cluster registry (no relay needed); a discovery aid for --runner=<id>.
+// `runners` — list the Waft:Cluster registry, PROVED (2026-08-09, the owner chasing a dead ★claude row:
+//  "--runner=49dee91d61a9de64 is long gone, are we not culling old hosts from Cluster?").  The registry
+//   is durable BY DESIGN — Lies_runner_roster's GC (LiesLies.svelte ~1713) reaps only ANONYMOUS silent
+//    rows after LIVE_MS; a FAVOURITED runner is remembered forever ("that relationship is the whole
+//     reason to remember it durably"), so this list can and will hold the long-dead, and nothing in the
+//      snap says which.  So prove it here: one read-only role-broadcast ping, mark who answered.  Relay
+//       down ⇒ the plain cold listing, labelled as such (the old behaviour, minus the false confidence).
+//  Self-contained on purpose: the shared ws/collectAcks machinery is declared BELOW this early-exit
+//   branch (TDZ), and a listing must not court, stash a sticky, or touch anyone's lease — the ping here
+//    carries no `client`, so Lies_engage_touch sees only the ephemeral addr.
 if (op === 'runners') {
 	const rs = clusterRunners()
 	if (!rs.length) { console.error('no runners in wormhole/Cluster/toc.snap (none advertised yet, or the editor never wrote it)'); process.exit(1) }
-	for (const r of rs) console.log(`${r.pub}${r.favourite_client ? `  ★${r.favourite_client.slice(0, 8)}` : ''}`)
-	for (const p of players) console.log(`${p.pub}  ♪player (someone's music page — --player= to address)`)
+	let alive = null   // null ⇒ relay unreachable (liveness unknown); else the Set of prepubs that acked
+	try {
+		const url  = (process.env.RUNNER_URL || 'http://172.17.0.1:9091').replace(/^http/, 'ws').replace(/\/$/, '') + '/relay'
+		const addr = `runcli-${Date.now()}-ls`
+		const w2   = new WebSocket(`${url}?addr=${encodeURIComponent(addr)}`)
+		const up   = await new Promise((res) => { const t = setTimeout(() => res(false), 3000); w2.on('open', () => { clearTimeout(t); res(true) }); w2.on('error', () => { clearTimeout(t); res(false) }) })
+		if (up) {
+			// ADDRESSED pings, one per registry row, in parallel — NOT a role broadcast: the court's own
+			//  comment has the receipt ("the role broadcast reaches whichever single socket the relay
+			//   favours, so it can NOT be trusted to find a *specific* runner"), and the first cut of this
+			//    probe proved it — a runner that had just run a whole sweep listed ✗ on one call and ✓ on
+			//     the next.  A census must ask each row by name.
+			const got = new Set()
+			const pingOne = (pub) => new Promise((res) => {
+				const corr = `ra-ls-${Date.now()}-${pub.slice(0, 6)}`
+				const onMsg = (d) => {
+					let m; try { m = JSON.parse(String(d)) } catch { return }
+					if (m.corr !== corr) return
+					if (m.control === 'runner_ack') got.add(pub)
+					w2.off('message', onMsg); clearTimeout(t); res()
+				}
+				const t = setTimeout(() => { w2.off('message', onMsg); res() }, 4000)
+				w2.on('message', onMsg)
+				w2.send(JSON.stringify({ header: { type: 'runner_ask', from: addr, to: pub, seq: Date.now(), corr }, ask: { op: 'ping' }, corr }))
+			})
+			await Promise.all([...rs.map(r => pingOne(r.pub)), ...players.map(p => pingOne(p.pub))])
+			alive = got
+			w2.close()
+		}
+	} catch { /* relay unreachable — cold listing below */ }
+	const mark = (pub) => alive == null ? '' : (alive.has(pub) ? '  ✓ live' : '  ✗ not answering')
+	for (const r of rs) console.log(`${r.pub}${r.favourite_client ? `  ★${r.favourite_client.slice(0, 8)}` : ''}${mark(r.pub)}`)
+	for (const p of players) console.log(`${p.pub}  ♪player (someone's music page — --player= to address)${alive != null && alive.has(p.pub) ? '  ✓ live' : ''}`)
+	if (alive == null) console.error('⚠ relay unreachable — cold registry listing, liveness unknown')
+	else {
+		const dead = rs.filter(r => !alive.has(r.pub))
+		if (dead.length) console.error(`⇢ ${dead.length} registry row(s) not answering — a FAVOURITED row is never auto-culled (Lies_runner_roster keeps it durably); un-favour it and the 45s GC takes it on the next roster pass`)
+	}
 	process.exit(0)
 }
 // TARGET — who to address.  --runner=<id> courts ONE runner by prepub (insist, no failover); else 'runner'

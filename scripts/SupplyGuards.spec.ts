@@ -404,7 +404,7 @@ test('the zero-unsettable dial ledger does not grow', () => {
 //                                                      : +(w.c.heist_inflight || 1)
 //  The FIRST branch spells it correctly — `!= null` plus a `Math.max(0, …)` clamp — because zero is
 //   not merely legitimate there, it is LOAD-BEARING AND DESIGNED. The comment above it says so:
-//    "Spent down to zero, a later Haul is stepped with INFLIGHT 0 — the gate below is then closed on
+//    "Spent down to zero, a later Heist is stepped with INFLIGHT 0 — the gate below is then closed on
 //     its first pick, so it still rehydrates, censuses, lands continuations and cancels, and simply
 //      starts no NEW pull." The whole global-budget fix for §1 #2 depends on 0 surviving the read.
 //  The SECOND branch, the direct-caller fallback on the same line, cannot express that value at all.

@@ -1,9 +1,9 @@
 Snap:H
   H:MusuHeist,Run
     A:MusuHeist
-      self,round=9	{"mung":["age"]}
+      self,round=10	{"mung":["age"]}
       w:MusuHeist,now=1752000040
-        self,round=9	{"mung":["age"]}
+        self,round=10	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -127,7 +127,7 @@ Snap:H
                   Original,seq:2,cid:e0d1807fa53044f48021912f357290b98042bcff9711a9cdb268833f96e87cf5	{"ref":{"buf":"Uint8Array()"}}
                   Original,seq:3,cid:73ea2950a7a0a6020cf94ee01142e43ac40287d007e7acad945210a362cd2acd	{"ref":{"buf":"Uint8Array()"}}
           shop,pub:4e09f34f5a6ab900
-            Heist,at:be0dab3303037ad2,disbelieve_directories
+            Caper,at:be0dab3303037ad2,disbelieve_directories
               filing,artist:Fourier Four,genre:4t-mathrock
           radiostocking,pub:4e09f34f5a6ab900
         MusuSelf,pub:be0dab3303037ad2

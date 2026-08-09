@@ -238,14 +238,14 @@ The engines below are all proven by recorded golden fixtures. But the human's co
      `Ra_rec_home` at `:520`**), and the soft wish arc (`Heist_wish:604` → `Heist_ask:635`
       → `Heist_match:648` → `Heist_condense:683`). Proven: `MusuHeist`, `MusuSoft`,
        `MusuBay`, `MusuBreach`.
-- **Current UI:** the only `%Heist` a live user sees is the **posed** one
+- **Current UI:** the only `%Caper` a live user sees is the **posed** one
    (`Sounditron.g:407-417`, `posed:1`) — a static illustration, explicitly labelled "the
     SHAPE of the real thing so the face can be tuned before the machinery arrives here."
      `HeistFace.svelte`'s **"take" button renders only for a *soft* heist**
       (`:58-60`, `soft = sc.wish && !sc.at`, `:32`) — and the posed node has no `wish`, so
        **no button shows**. It is inert.
 - **Gap — HALF-STALE, corrected 2026-08-05 (full zombie audit that day):** the claim "No
-   live code mints a real `%Heist`" is now **wrong for the HARD path** — the ⇊ Keep flow
+   live code mints a real `%Caper`" is now **wrong for the HARD path** — the ⇊ Keep flow
     landed 2026-07-28/30: `RadioFace.svelte:84` → `Radio_keep` (`Radio.g:1477`) →
      `Heist_keep_start` → `Swarm_share_beat` pumps `Heist_keep_beat` (`Swarm.g:1742`) →
       `Heist_job` (`Heist.g:1417`), ids-first the whole way (`at` = the friend's pub and

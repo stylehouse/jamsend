@@ -17,7 +17,7 @@ Read this first; it overrides anything below it that disagrees, and several thin
 - **`%Grasp` is DROPPED — remove every mention.** It was the wishlist-persist/resume coinage
    (Radio_spec §5A rung 6, re-coined 2026-07-17 from `Ray,self/Mag:marauding`) — "the chosen handful
     of remote tracks|directories". It has **zero occurrences in code**; it existed only in prose.
-     A want is a `%Heist`. Resume, when it comes, resumes a Heist.
+     A want is a `%Caper`. Resume, when it comes, resumes a Heist.
 - **`%Cloud` STAYS, and is documented by its lineage: `Mag : Waft :: Cloud : What`.** The Mag was
    *based on the idea of the Waft* — that is the whole derivation, and it should be stated that way
     rather than re-explained from scratch. A Waft is one identifiable document holding `%What`
@@ -35,7 +35,7 @@ Read this first; it overrides anything below it that disagrees, and several thin
    retired (see the strikethrough note there). `%Mag:shuffle` is **the stuff we play to the other
     Pier**. `faves` was the only one that read as real, and it is incoherent anyway: a fave lives in
      *someone else's* collection, so it is a pointer, not a holding. **v1.0 keeps it simple — if you
-      want a thing, you make a `%Heist` for it.** Favouriting is not in v1.0.
+      want a thing, you make a `%Caper` for it.** Favouriting is not in v1.0.
 - **`%Crate` (the particle tree) is DROPPED; `Crate.g`'s VERBS survive and want a truer home.**
    The `%Crate > %dir > %blob` tree is a second, parallel model of "a collection" that no caller
     outside `Crate.g` ever reads (verified 2026-08-05: zero external mints or queries). It is where
@@ -397,7 +397,7 @@ POST-1.0 DESTINATION: **declare identity per-mainkey in the protocol rule set, b
 | **`%Spin`** | `Spin,of,title,at` | **`[Spin]`** | ❌ |
 | **`%Like`** | `Like,of,title,at` | **`[Like]`** | ❌ |
 | **`%Grab`** | `Grab,of,title,at` | **`[Grab]`** | ❌ |
-| **`%Heist`** | `Heist,wish,hid` | **`[Heist]`** | ❌ |
+| **`%Caper`** | `Heist,wish,hid` | **`[Heist]`** | ❌ |
 | **`%Heistlet`** | `Heistlet,of,pier` | **`[Heistlet]`** | ❌ |
 | **`%Jam`** | `Jam,with` | **`[Jam]`** | ❌ |
 | **`%Reco`** | `Reco,by,note` | **`[Reco]`** | ❌ minted `{Reco,by}` — one per recommender |
@@ -405,7 +405,7 @@ POST-1.0 DESTINATION: **declare identity per-mainkey in the protocol rule set, b
 | **`%stock`** | `stock,pub` | **`[stock]`** | ❌ (harmless — one per home) |
 
 Read the failing column and the rule falls out on its own: **`of:` is this codebase's documented
- many:1 join key (CLAUDE.md: *"a `%Spin,of:X` / `%Like,of:X` / `%Heist,of:X` — a Jam ledger, many
+ many:1 join key (CLAUDE.md: *"a `%Spin,of:X` / `%Like,of:X` / `%Caper,of:X` — a Jam ledger, many
   events per track"*) and it is NOT on `Repli_loc_keys`' allow-list.** Neither is `with`, `by`,
    `key`, `wish`, `page`, `pub`. The list is `id|name|seq|pier|kind`, which happens to cover the
     *holdings* — the things Ra mints — and covers **none of the referring particles**. So the wire
@@ -692,10 +692,10 @@ REJECTED, and worth recording so it is not re-proposed: forgiving the values wit
  blessed and is the human's to change):
 - `Radio_spec.md:116-123` — the `%Grasp` definition and the "not music-specific / abuse-report"
    paragraph. Dropped wholesale.
-- `Radio_spec.md:158` — the `shop/ %Heist,of:<grasp>` tree. The `of:<grasp>` pointer has nothing to
+- `Radio_spec.md:158` — the `shop/ %Caper,of:<grasp>` tree. The `of:<grasp>` pointer has nothing to
    point at; a Heist stands alone.
 - `Radio_spec.md:255-257` — "the GC root set is exactly the Mags|Grasps". Now: the Mags.
-- `Radio_spec.md:472-477` — §5A rung 6 "Marauding". Retire the rung or re-found it on `%Heist`.
+- `Radio_spec.md:472-477` — §5A rung 6 "Marauding". Retire the rung or re-found it on `%Caper`.
 - `Radio_spec.md:131-133` — `%Cloud` "with `randomic` present is machine-drawn … omit `randomic` and
    the cloud is curated". The distinction goes with the key.
 - `Mag_design.md` — repeats the Mags/Grasps GC-root line (:73) and the `Stoker_mag_draw`
@@ -812,7 +812,7 @@ The owner's challenge, same day the table landed: *"one way replication without 
      and every manual find-or-create (`Jam_event`'s `o(q)[0] else i(q)`, `Heist_rummage_ask`) has
       a find pattern exactly equal to its table row. The only divergers are `i()` create-only mints
        that mixed props into the creation bag — `Cloud,randomic` ×3 sites and `Renamed`
-        (both ALREADY hand-stamped `.c.repli_loc`), plus `%Heist` whose `hid` joins identity
+        (both ALREADY hand-stamped `.c.repli_loc`), plus `%Caper` whose `hid` joins identity
          POST-mint (`Heist.g:280,740` — needs a ruling, Q2 below). Decisive bonus: **the %Stream
           polysemy (§0.2b) does not exist per-mint** — the chunk mint (`Ra.g:1446`) and the counter
            mint (`Crate.g:337`) each state their own correct pattern, so per-PARTICLE identity has
@@ -856,7 +856,7 @@ The owner's challenge, same day the table landed: *"one way replication without 
 
 **Migration, staged so wire bytes never change until the ruled re-record:** Stage 1 (~zero
  fixture cost): the `_foc` stamp + ~6 touches, rewrite `Repli_loc_for`, delete the table + warn;
-  per-line loc stays byte-identical (verify %Spin/%Grab and %Heist,hid live before deleting);
+  per-line loc stays byte-identical (verify %Spin/%Grab and %Caper,hid live before deleting);
    gate = the existing 23 green. Stage 2 (post-1.0, rides §0.1 item 5's insert-default move):
     omit `loc` for immutables; measured cost **16 Books / 218 fixture snaps** re-record once —
      consider folding into the `Mag,pub` re-record (21 Books/~250 snaps) so the suite reddens
@@ -886,7 +886,7 @@ The owner's challenge, same day the table landed: *"one way replication without 
 **Rulings only the human can make:** (0, NEW) rule the Seem design in as the destination?
  (1) is "the pattern I was found by" a C-level fact (one
  line in `_foc`, TheC core — the floor) or a Repli-only oai variant (re-opens forgetting)?
-  (2) is `hid` part of %Heist's wire identity; can two Heists share a `wish`? (3) Stage 2
+  (2) is `hid` part of %Caper's wire identity; can two Heists share a `wish`? (3) Stage 2
    scheduling — with item 5's move, or folded into `Mag,pub`'s re-record? (4) rule the invariant
     "a mutating crossing shape never un-sets a key over the wire", or design the clear op now?
      (5) `op:front` ruled in? (6) should the explicit-stamp path presence-filter like the table
@@ -1033,7 +1033,7 @@ Every Mag carries a **cursor** — a playhead: which Card is current (playing / 
    the head, top up the tail) describe ONE meandering Mag with Clouds falling off the front and
     joining the back. `faves` is incoherent as a holding — a fave lives in someone else's collection,
      so it is a pointer — and v1.0 does not have favouriting: **if you want a thing, you make a
-      `%Heist`.** `culture` was the keep-8 draw trace, which is just the GC acting on shuffle.
+      `%Caper`.** `culture` was the keep-8 draw trace, which is just the GC acting on shuffle.
    What SURVIVES from this section is the cursor itself (above) and §3b's `%Dogear` (below) —
     positions are real; kinds were not.
 
@@ -1147,7 +1147,7 @@ Every Mag wears `%from:<prepub>`: curation is authored and the author rides with
 - **Friend Mags never berth.** They arrive as husks, live in the runtime tree while the awareness
    lasts (a high-security time), and are SHAVED OFF rather than hoarded. Reconnect re-explodes them
     cheaply (§4.1), so persisting them buys nothing but liability.
-- **What persists is the ACTIVATED product of the awareness**: the `%Heist` — its set of track
+- **What persists is the ACTIVATED product of the awareness**: the `%Caper` — its set of track
    titles, the folder structure it wants to save into, and that Heist's state — plus whatever bytes
     a grant actually let me pull. Acting IS the consent moment; the Heist is its durable record.
 - **Listening history is the same class of data** (§8): what I heard OF whom. Keep it OBLIQUE —

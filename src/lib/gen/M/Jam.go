@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Jam(): string { return '92834317758c2e6f~g1' },
+    Ghostmeta_Ghost_M_Jam(): string { return '8ec971adc53abeb1~g1' },
 
 // Jam.g — the JAM LEDGER: a session's history, legible on the snap (the human 2026-07-14, reading
 //  MusuBuddy: "I should be able to glance through this snap and see what they played to each other, what
@@ -26,7 +26,7 @@
 //    `of:<record-id>` (the join to the %Record holding / %Card listing — many events may name one track, so
 //     `of:` not a mainkey-value id).  `title` rides along so the snap reads without chasing the id; `at` is a
 //      per-session ordinal (jam.c.seq, runtime) so the ledger sorts chronologically no matter the child order.
-//   `%Grab` is the heist-a-copy event; the mainkey `%Heist` is RESERVED for the operation (%Heist,at:<pier> in
+//   `%Grab` is the heist-a-copy event; the mainkey `%Caper` is RESERVED for the operation (%Caper,at:<pier> in
 //    Heist.g), so the ledger fact wears the distinct `%Grab` — one meaning per mainkey.
 //
 //  WHY UNDER THE LISTENER'S SHELF, not the wire: a Jam is the LISTENER's private record of what a session gave

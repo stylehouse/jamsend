@@ -121,7 +121,7 @@
         if (req.sc.useVoroCyto) (w.c.Scannable as TheC).c.crush_wanted = 1
         // useFaces gates BELIEVING %face (worn sc.face AND the FACE_MAINKEYS imposition) —
         //  the supports_constraints pattern: a commissioner opts its glass into a scan
-        //   behaviour.  Ungated, any Book with a %Heist would sprout a face cell.
+        //   behaviour.  Ungated, any Book with a %Caper would sprout a face cell.
         w.c.use_faces          = !!req.sc.useFaces
         w.c.Styles             = req.sc.Styles as TheC | null
         w.c.client_w           = req.sc.client_w as TheC | undefined
@@ -736,7 +736,7 @@
     // ── the faces rail: kind + crew resolution ───────────────────────────
     // a face is WORN (sc.face — the particle asked) or IMPOSED by the viewer (FACE_MAINKEYS,
     //  glass_faces.ts — the world stays Voro-blind: no snap changes because the glass chose
-    //   to dress a %Heist).  Either way the kind names the component in glass_kinds.ts.
+    //   to dress a %Caper).  Either way the kind names the component in glass_kinds.ts.
     //  BELIEVED only when the commission said useFaces (→ w.c.use_faces) — the
     //   supports_constraints pattern, so a stray sc.face in a non-radio Book stays a row.
     cyto_face_kind(w: TheC, n: TheC): string | null {

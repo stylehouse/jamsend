@@ -26,7 +26,7 @@
 
     if Lies is where workers show up waiting to be put on assignments,
      the Cortex is the foreman —
-      not doing the hauling,
+      not doing the heisting,
        but watching the dock and saying who goes where when what arrives.
     `
 

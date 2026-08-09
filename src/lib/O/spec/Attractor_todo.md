@@ -40,7 +40,7 @@ The ▦ layer of Cytui as a competition ground: rival FACES draw the same live g
  - **Believing %face is COMMISSION-GATED.**  `useFaces: 1` on the Cyto commission (the
     `supports_constraints` pattern — a commissioner opts its glass into a scan behaviour) →
      `w.c.use_faces` → `cyto_face_kind(w, n)` returns null ungated, for WORN sc.face and the
-      FACE_MAINKEYS imposition alike.  A stray %Heist in a non-radio Book stays a row.
+      FACE_MAINKEYS imposition alike.  A stray %Caper in a non-radio Book stays a row.
        Sounditron's commission already carries the flag (the human pre-wired it); the flag
         also rides every wave c-side (`wave.c.use_faces`) so Cytui gates by the same rule.
  - **ztuffing hosts components** (`sub_faces_sync`, Cytui): a faced MEMBER of a fold|gang

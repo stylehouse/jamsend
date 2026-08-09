@@ -16,7 +16,7 @@ None of this is a new problem. It is flow control and congestion control, a lite
     substrate, not inventing them.
 
 Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribunal` / `Swarm`.
- The feature-level Haul story lives in `Heist_todo.md`; the Repli protocol's own shape and its
+ The feature-level Heist story lives in `Heist_todo.md`; the Repli protocol's own shape and its
   2026-08-05 audit is `Repli_design.md`; the 2026-07-29→30 wedge archaeology is
    `Download_stall_handover.md`. None are superseded by this; this is the layer under all three.
 
@@ -90,7 +90,7 @@ Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribu
       coverage. That single shape has now produced three distinct bugs in two days.
 1. **DONE (2026-08-06): §5.1, §5.3, §5.4's narrow cut, and §5.2's attribution half.** Egress
     lanes carry bulk behind control with confessed shedding; a park signals the sink; the
-     landing left the beat via `expecting()`; `Ra_pull_beat` samples per-haul goodput into the
+     landing left the beat via `expecting()`; `Ra_pull_beat` samples per-heist goodput into the
       HUD (`rec.c.gp`). Each section carries its own landed-note — read those before re-planning.
 2. **DONE (2026-08-06): §5.5.** The arrival seam MEASURES: `Repli_land_rtt` samples the path at the
     moment a page completes, Jacobson/Karels keeps `srtt`/`rttvar`/`rto` on the source Pier, and both
@@ -121,7 +121,7 @@ Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribu
   starves control frames behind bulk.
 
 *(Facts below re-verified against the working tree the evening of 2026-08-05, after the `%Keep`→
- `%Haul` rename and the day's Repli/Peeroleum landings. §6 records what landed; the defects in §3
+ `%Heist` rename and the day's Repli/Peeroleum landings. §6 records what landed; the defects in §3
   all still stand. §9 is the fresh-reader trap list.)*
 
 ---
@@ -168,7 +168,7 @@ One download crosses three scheduling disciplines that do not know about each ot
 | stage | discipline | clock |
 |---|---|---|
 | Peeroleum inbox | serial `%req:unemit` drain (`inbox.do()`) | frame arrival |
-| Heist | `%Haul` `state` string, polled | the 600ms beat |
+| Heist | `%Heist` `state` string, polled | the 600ms beat |
 | Repli park/unpark | event-driven demand (`%parked_want`) | producer frontier |
 
 They all funnel onto one thread and mostly onto that one beat. **The beat is a barrier, not a
@@ -498,7 +498,7 @@ spends nothing if the beat never runs.
    stuck beat got. And since 2026-08-08 `cull=`/`tour=` measure only the cost of *kicking* a detached
     janitor (≈0) — the real durations arrive as `cull_bg=`/`tour_bg=` in the same line.
 
-## 4. The refactor: `%Haul` grows a req pile
+## 4. The refactor: `%Heist` grows a req pile
 
 ### 4.1 The idioms we are copying
 
@@ -539,8 +539,8 @@ That second one is the whole refactor in a sentence: **make ask and land sibling
 ### 4.2 The proposed shape
 
 ```
-%Haul,seed,pub
-  req:Haul          maz high, eternal      the pump — replaces the Heist_keep_step call
+%Heist,seed,pub
+  req:Heist          maz high, eternal      the pump — replaces the Heist_keep_step call
     req:Census                             the describe/rummage ask (own RTO, own hold)
     req:Ask,id                             one per record in flight — issues wants, never blocks
     req:Land,id                            one per landing — holds the writer, never awaited inline
@@ -551,7 +551,7 @@ That second one is the whole refactor in a sentence: **make ask and land sibling
  longer stops the asker.
 
 **Who pumps it:** the existing share beat, unchanged as the ambient tick (§7.1) —
- `Heist_keep_beat` thins to `keep.do()` per haul (plus its source-side housekeeping), and the
+ `Heist_keep_beat` thins to `keep.do()` per heist (plus its source-side housekeeping), and the
   work moves from `Heist_keep_step`'s state-string dispatch into the req do_fns. No new timer, no
    new loop; the beat stops being the *worker* and stays the *clock*.
 
@@ -679,18 +679,18 @@ The aggregate wire rate is already measured and visible: `Repli_meter` (`Repli.g
   drop and breach messages — and the `%Transfer` HUD draws it: up/down, graph, KB, dropped-frame
    messages below. **The sensor exists. Two things are missing:**
 
-- **Goodput attribution.** The graph is wire throughput; nothing measures per-haul *goodput*
+- **Goodput attribution.** The graph is wire throughput; nothing measures per-heist *goodput*
    (bytes landed ÷ time) or the efficiency ratio between them. Duplicate asks, re-serves and
     breach-refused pages are invisible as waste — the graph goes *up* while the transfer gets
      *worse*. Marks already exist at both ends (`Ra_pull_beat`'s pulls, `Repli_serve_want`'s
-      serves); the missing piece is landed-bytes per haul over time, and wants-issued vs
+      serves); the missing piece is landed-bytes per heist over time, and wants-issued vs
        pages-landed per beat.
 - **A consumer.** No code reads any rate. Every knob in §1 is open-loop — constants tuned for
    one operating point, with a human watching the graph as the feedback path. §5.5 and §5.6 are
     the consumers; this stage is the prerequisite that makes them judgeable rather than vibes.
 
 *Prove:* all runtime `.c`, no snap byte — so no fixture moves and no Book gates it. The proof is
- the HUD showing a per-haul goodput number beside the wire rate, and `runner_ask.mjs world`
+ the HUD showing a per-heist goodput number beside the wire rate, and `runner_ask.mjs world`
   carrying the same fields; sanity-check that goodput ≤ wire rate always, and that a deliberate
    re-ask storm (drop a source mid-pull) opens a visible gap between them.
 
@@ -748,17 +748,17 @@ Ephemeral is the *correct* class here, not merely the safe one, and the FRAME RE
     park.
 
 ### 5.4 The req refactor (§4)
-`%Haul` grows `req:Haul` with `req:Census` / `req:Ask,id` / `req:Land,id` siblings. Landing leaves
+`%Heist` grows `req:Heist` with `req:Census` / `req:Ask,id` / `req:Land,id` siblings. Landing leaves
  the beat. Watch §4.4.
 
-*Prove:* the one stage that moves snaps — `%Haul` grows req children, so `Heistation` and
+*Prove:* the one stage that moves snaps — `%Heist` grows req children, so `Heistation` and
  `Sounditron` re-record from a live runner (§8). Use the claim-set diff gate (`Repli_design.md
   §9.6`): fixture bytes may move freely, but refuse the accept if any `witnessed:`/`see:` claim
    changes. The live proof of the actual point — landing no longer blocks asking — is the
     `ev:'beat'` electrode: during a big track's land, `skips` must stay ~0 and the *other*
      in-flight track's pulls must keep advancing, where today the beat logs `ms:30000+` stalls.
 
-**LANDED 2026-08-06 — narrower than the §4.2 shape, on purpose.** The full `req:Haul`/`req:Census`/
+**LANDED 2026-08-06 — narrower than the §4.2 shape, on purpose.** The full `req:Heist`/`req:Census`/
  `req:Ask,id` ceremony is NOT built. What shipped is the one thing actually measured broken
   (§3.1) — `Heist_keep_step`'s `state:'pulling'` branch no longer `await`s `Heist_land` inline —
    using `this.expecting(w, name, secs, async_fn)` (`Hovercraft.svelte`), the SAME "issue, return,
@@ -766,7 +766,7 @@ Ephemeral is the *correct* class here, not merely the safe one, and the FRAME RE
      `Musu_gen_testsounds`, every `rachase_*`/`buddy_*` Book stage) rather than hand-rolling a new
       `req:Land,id` shape. It IS a req underneath (`w.oai({req:name})`, ttlilt-held, finishing via
        `reqyoncile` — Coding_guide's hold-not-wake rule, honoured for free) — just not one wearing
-        the `%Haul` parent §4.2 sketched. The ask/census side (`pick.c.ask_ts` throttling,
+        the `%Heist` parent §4.2 sketched. The ask/census side (`pick.c.ask_ts` throttling,
          `Ra_pull_beat`) was already non-blocking and untouched. **Reasoning for the narrower cut:**
           the reviewer's own framing of "§5.4" was "moving landed/persist/writer_drop out of the
            inline await" — that IS this change; the full particle ceremony is a bigger, riskier
@@ -791,9 +791,9 @@ Ephemeral is the *correct* class here, not merely the safe one, and the FRAME RE
         network-stall bench would have been a false positive waiting to happen.
 - **A liveness guard I added beyond what was asked, because the restructuring itself opens the
    hazard**: `Heist_land` running off-beat can now outlive a user's ✕ (`Heist_keep_cancel` rm's the
-    `%Haul` and `Heist_keep_forget` wipes the Berth entry). `Heist_keep_persist`'s Berth write is
+    `%Heist` and `Heist_keep_forget` wipes the Berth entry). `Heist_keep_persist`'s Berth write is
      `oai` — find-or-create — so an unguarded stale continuation would have **resurrected the very
-      entry the cancel just deleted**. The fix: re-check `shop.o({Haul:1, seed:...})[0] === keep`
+      entry the cancel just deleted**. The fix: re-check `shop.o({Heist:1, seed:...})[0] === keep`
        immediately before persisting; skip if the keep is no longer the live one. The file itself is
         left on disk either way (harmless extra, the same tolerant stance `Heist_held`'s dedup
          already takes). **No fixture exercises `Heist_keep_cancel`** — this is reasoned, not
@@ -924,7 +924,7 @@ Replace the fixed 4s with the Jacobson/Karels estimator: EWMA `srtt`/`rttvar`,
 Replace the constant `B` with a byte window under **AIMD** — additive increase on timely arrival,
  multiplicative decrease (halve) on RTO, floor ~2 pages — the Chiu-Jain result being that AIMD is
   the increase/decrease pair that converges to fair and efficient sharing, which starts to matter
-   the day two hauls share one uplink. And clock issuance on **arrival** as well as the beat:
+   the day two heists share one uplink. And clock issuance on **arrival** as well as the beat:
     self-clocking, the ack-clock that lets a transfer run at wire speed between beats instead of
      at `window ÷ 600ms`. This is where "push against the limit slightly all the time" actually
       lives. (A rate-based alternative — pace directly off §5.2's measured delivery rate,
@@ -1150,7 +1150,7 @@ These were open when the doc was written. They are now decided; a reviewer shoul
  Ship v1.0. §5.1's bulk queue is a single FIFO; do not pre-build round-robin. (When a second
   concurrent peer transfer becomes real, the retrofit is local to the bulk lane.)
 
-**7.5 `%Haul` stops carrying transport state in `state`. RULED — the req pile owns it.**
+**7.5 `%Heist` stops carrying transport state in `state`. RULED — the req pile owns it.**
  `state` keeps only what the human is looking at (`choosing`/`primed` — UI form-state); the
   transport half (`pulling`/`done`) moves onto the reqs, which is the better place for it.
    The general principle the human states, worth carrying past this doc: **`req` can take the
@@ -1158,25 +1158,25 @@ These were open when the doc was written. They are now decided; a reviewer shoul
      particle**, because a req carries its own liveness (`needs_work`), its own hold, and its own
       pump, where a string carries only an assertion that something once set it.
 
- *Where exactly the form-state lives (the human, 2026-08-05, later): **on the `%Haul` itself,
+ *Where exactly the form-state lives (the human, 2026-08-05, later): **on the `%Heist` itself,
   where it already is** — `state:choosing|primed` stays on the intent particle, because that is
-   the particle HaulFace dresses (mainkey-imposed, `glass_faces.ts`) and the split criterion is
+   the particle HeistFace dresses (mainkey-imposed, `glass_faces.ts`) and the split criterion is
     **presentability**: what the human looks at and acts on rides the data the face reads;
-     "req is the less user-presentable side of things." Not on the `%Heist` job — it does not
-      exist during choosing and is pure transport — and not on the `%HaulBar` (`dontSnap`;
+     "req is the less user-presentable side of things." Not on the `%Caper` job — it does not
+      exist during choosing and is pure transport — and not on the `%HeistBar` (`dontSnap`;
        form-state should snap). One edge for §5.4 to mind: the done-✓ lingers ~8s on the face
         today off `state:'done'`. Once transport state is req-shaped, that linger still needs
-         something face-readable — a brief `done:1` stamp on the `%Haul` (snapped-boolean rules:
-          `1` or absent, and the haul drops itself soon after) keeps the face honest without
+         something face-readable — a brief `done:1` stamp on the `%Heist` (snapped-boolean rules:
+          `1` or absent, and the heist drops itself soon after) keeps the face honest without
            resurrecting the string.*
 
 ---
 
 ## 8. Fixture cost
 
-§5.4 changes what a `%Haul` looks like in a snap, so `Heistation` and `Sounditron` need live
+§5.4 changes what a `%Heist` looks like in a snap, so `Heistation` and `Sounditron` need live
  re-records — **from a live runner** (`scripts/runner_ask.mjs`), never `Story_cli_run.mjs`.
-  Sequencing note, updated: the `%Keep`→`%Haul` swap has **landed** (2026-08-05) and its fixtures
+  Sequencing note, updated: the `%Keep`→`%Heist` swap has **landed** (2026-08-05) and its fixtures
    are already re-recorded, as has the big Repli/Peeroleum re-record sweep (`Repli_design.md
     §9.6`, 21 Books green). The remaining churn to sequence against is the `%pub`→`fullpub`
      rename (`Heist_todo.md §0.2`), which walks the same Cluster/identity fixtures — land §5.4's

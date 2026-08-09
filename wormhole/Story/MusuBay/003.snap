@@ -1,9 +1,9 @@
 Snap:H
   H:MusuBay,Run
     A:MusuBay
-      self,round=7	{"mung":["age"]}
+      self,round=6	{"mung":["age"]}
       w:MusuBay
-        self,round=7	{"mung":["age"]}
+        self,round=6	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -16,7 +16,7 @@ Snap:H
           Pier,pub:Seeker,req=2,ok
             Ud,pubkey:Seeker
             inbox
-              req:unemit,seq=2,type:repli_lines,body_hash:939ba3fdb158b0066238c8aa55cee336e83fed1e6218394bb7ee96e791308ffa,body_len=63,done,to:repli_lines,finished
+              req:unemit,seq=2,type:repli_lines,body_hash:3803d6b93f10636956675e9f058704af2efb7bf87b498ef09c9a8315d4eabdf7,body_len=63,done,to:repli_lines,finished
           active_transport,type:mock,open
         Peering,name:Seeker,req=3,ok
           Pier,pub:Origin1,req=2,ok
@@ -35,7 +35,7 @@ Snap:H
           Pier,pub:Seeker,req=2,ok
             Ud,pubkey:Seeker
             inbox
-              req:unemit,seq=2,type:repli_lines,body_hash:939ba3fdb158b0066238c8aa55cee336e83fed1e6218394bb7ee96e791308ffa,body_len=63,done,to:repli_lines,finished
+              req:unemit,seq=2,type:repli_lines,body_hash:3803d6b93f10636956675e9f058704af2efb7bf87b498ef09c9a8315d4eabdf7,body_len=63,done,to:repli_lines,finished
           active_transport,type:mock,open
         MusuSelf,pub:Origin1
           stock,pub:Origin1
@@ -104,10 +104,10 @@ Snap:H
                 Card,id:d8a28ada85f2e851,artist:The Sines,title:Deep A,path:The Sines - Deep A.wav,body_hash:d8a28ada85f2e85151b446112e4d97db3bc6cc24c5ef335b2593be0d95df6b28
                 Card,id:95f3c03e41e9c007,artist:The Sines,title:High A,path:The Sines - High A.wav,body_hash:95f3c03e41e9c0070da6e6a35d5901ac37a8e0e18025e75c3ad8862326f97ef4
                 Card,id:902552d4a0b8b0c1,artist:The Sines,title:Middle A,path:The Sines - Middle A.wav,body_hash:902552d4a0b8b0c19cc6e6331097145ccc9be1d31b90ee9bc3691730c85043b8
-            Heist,wish:cosmic sine,hid:wish1
+            Caper,wish:cosmic sine,hid:wish1
         MusuSelf,pub:Seeker
           shop,pub:Seeker
-            Heist,wish:cosmic sine,hid:wish1
+            Caper,wish:cosmic sine,hid:wish1
               Lead,pier:Origin1,id:d71294dbbcd7b726,tune:DJ Oscillo — Cosmic C
               Lead,pier:Origin2,id:d8a28ada85f2e851,tune:The Sines — Deep A
               Lead,pier:Origin2,id:95f3c03e41e9c007,tune:The Sines — High A

@@ -1,4 +1,4 @@
-# Heist_todo.md — hauling music off a friend
+# Heist_todo.md — heisting music off a friend
 
 You hear a track on a friend's radio, you press ⇊, and the original file lands in your collection
  under a folder you chose. That is the whole feature. This doc states how it works now, straight —
@@ -6,12 +6,28 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
    reasoning (the census rewrite, the `music/` teardown, the seven-bug adversarial review, the
     %Stream starve) rather than for anything current.
 
-**Vocabulary changed 2026-08-05.** The intent particle was `%Keep`; the human ruled it "too weak a
- word". It is **`%Haul`** now, and its pier field is **`pub:`**, not `at:`. `%Heist` could not take
-  the name — it is already the JOB particle a haul condenses into, and two shapes under one mainkey
-   is the tell CLAUDE.md warns about. The arrangement the human named — `Haul,pub / Heist` — is
-    therefore just what the tree already looks like. Method names are still `Heist_keep_*`: a
-     cosmetic follow-on, cross-file, not worth a churn on its own.
+**Vocabulary settled 2026-08-09, after three goes.** The intent particle — one nab of one album — was
+ `%Keep`; the human ruled it "too weak a word" (2026-08-05). It became `%Haul`, but only because
+  `%Heist` was already taken by the JOB particle a keep condenses into, and two shapes under one
+   mainkey is the tell CLAUDE.md warns about. `%Haul` was always a consolation and the wrong SCALE —
+    a haul is the whole take, not one album (the owner: *"I actually intended for the Heist to be
+     each nab of an album, and the Haul to be the larger collective"*).
+
+Fixed by moving the blocker rather than the blocked:
+
+| particle | is | was |
+|---|---|---|
+| **`%Heist`** | ONE NAB OF ONE ALBUM — the ⇊ keep, pier field `pub:` | `%Haul` (and `%Keep` before that) |
+| **`%Caper`** | the OPERATION — soft `wish:` hardening into hard `at:`, plus the posed flow organ | `%Heist` |
+| **`%Haul`** | *free* — reserved for the larger collective, the What Heisted ledger | — |
+
+`Heist_soft()` is why the operation is ONE name and not two: soft (`wish`, no `at`) and hard (`at`
+ stamped) are the same particle in two phases, never two kinds. Method names stay `Heist_keep_*` —
+  and they now MATCH the particle they drive, which they never did while it was called `%Haul`.
+   `Heist_job`/`Heist_wish` still mint what is now a `%Caper`; renaming ~50 methods and their elvisto
+    call sites is a churn with no reader benefit, so it was left. **The ledger is not built yet** —
+     `Heist_flatten` still deletes a finished operation, so nothing accumulates into `%Haul`. That is
+      the next move, and it is what "a list of What Heisted" means.
 
 ---
 
@@ -116,8 +132,8 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
               `Ra_home_shop(top_House().c.radio_w, ident.sc.prepub)` — same world (both stamped from the
                dial's world, Radio.g:38/1148), same `me` (both off `Swarm_live_self`). So the discriminating
                 probe is now LIVE, not static, and it forks three ways on the stuck tab:
-                 · %Haul absent everywhere → the mint/drop is the bug (or `Radio_pub` fell to `'me'`);
-                 · %Haul present, `sc.asks` never climbs → `Heist_keep_step:1732`'s silent
+                 · %Heist absent everywhere → the mint/drop is the bug (or `Radio_pub` fell to `'me'`);
+                 · %Heist present, `sc.asks` never climbs → `Heist_keep_step:1732`'s silent
                     `if (!route) return` (no station `%Peering` named my prepub — streaming does NOT prove
                      this, wants ride pre-registered `playing.c.rx`), or the beat dies pre-GO
                       (`w.c.heist_beat_why` on the station world holds the throw);
@@ -188,7 +204,7 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
     `Heistation.g` (census settled outside the belief loop; a wake is not a hold), fixed with a one-shot
      ttlilt gate, 7 consecutive greens, no fixture footprint — so the guard can finally be tested.
 
-0. **"LOFI" — a `.ogg` haul for phones. BUILT 2026-08-07, source-side, ONE ATTENDED HAUL STILL OWED.**
+0. **"LOFI" — a `.ogg` heist for phones. BUILT 2026-08-07, source-side, ONE ATTENDED HAUL STILL OWED.**
     The human: *"transcoding to ogg for people's phones will be important."* What landed, and why in
      this shape:
     - **The bomb below was dissolved, not defused.** Nothing muxes the radio crate's chunks. The
@@ -203,13 +219,13 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
        one mode, so a lofi and a plain ask for the same ref are the same particle. Idempotence is
         mode-aware (`Heist_materialise_one` re-materialises when the held mode differs); a failed
          transcode falls back to the original and says so on the console rather than serving nothing.
-    - **UI: both doors.** `HaulFace` (the ⇊ glass cell — this is the one the human actually uses) via
+    - **UI: both doors.** `HeistFace` (the ⇊ glass cell — this is the one the human actually uses) via
        `Heist_keep_set_lofi`, and `HeistSetup.svelte` (the fullscreen Panel funk) via its checkbox and
         `Heist_keep_commit`'s `lofi` arg. Both write the same `keep.sc.lofi`, which
          `Heist_keep_step`'s want-ask reads — so the mode is settable right up to ▶ start and inert after.
     - **The gap: `Orig_ogg_from_source` has no Book.** `MusuOgg` gates `Orig_ogg_export` (mux from
        opus chunks), a *different* entry point. Green there says nothing about this path. It needs one
-        attended two-tab haul with the box ticked, and that is the only thing standing between this
+        attended two-tab heist with the box ticked, and that is the only thing standing between this
          and done.
 
    The original design note follows, kept because the bomb it names is still live for anything that
@@ -221,12 +237,12 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
       `%Blob,id:<rec id>,grade:ogg128` beside the Record. `Orig_ogg_parse` re-reads it structurally and
        `MusuOgg` gates the lot. Nothing new needs writing at the codec layer.
 
-   **The seam: a lofi haul is a DIFFERENT PULL, not a post-step on the normal one.** A heist pulls the
+   **The seam: a lofi heist is a DIFFERENT PULL, not a post-step on the normal one.** A heist pulls the
     ORIGINAL file's byte chunks out of `srcmir` and gates them on `rec.sc.body_hash` (`Heist_land_stream`).
      The opus segments live on a *different* mirror — the radio's `%MusuThem` crate. So lofi should not
       download the original at all: take the opus already streamed (or finish streaming it, far cheaper
        than a FLAC), mux, and write `<rel with .ogg extension>`. That is the whole appeal — a phone-sized
-        haul that is mostly already on disk.
+        heist that is mostly already on disk.
 
    **⚠ THE BOMB, and it is one I planted today: `pv_off` collides with this head-on.** The %Preview offer
     now starts **30–70% into the track** (`Ra_preview_offset`, so the shuffle game jumps into the middle
@@ -254,7 +270,7 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
     - `Heist_keep_default_section` stamps the **common** section run across the husks as the keep's
        category when it has none — the section only *some* of a keep lives in would be a lie. Guard on
         `.c`, so a keep with no sections grows no snapped key and no fixture moves.
-    - **`HaulFace`'s `directories` row now reads the CP, not the raw path.** That was the visible bug:
+    - **`HeistFace`'s `directories` row now reads the CP, not the raw path.** That was the visible bug:
        the sections got swallowed into `directories` and then *also* prepended under whatever category
         you chose, so the keep landed filed twice.
     - **HeistSetup stopped mirroring the ghost** and calls `Heist_cp_path` / `Heist_genre_norm` /
@@ -264,10 +280,10 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
        path segment**. MusuHeist 22/22 · MusuRename 9/9 · MusuVend 11/11 · MusuOgg 6/6 · MusuStock 5/5
         (control), and the only fixture churn across the batch is `TimeSpool` samples + `GhostInclude`
          diges.
-    - **The landing fallback is the load-bearing half** (added after the first real sectioned haul landed
+    - **The landing fallback is the load-bearing half** (added after the first real sectioned heist landed
        naked at the music root): `Heist_rel_for` falls back to `Heist_sections_of(rec.sc.path)` whenever
         no category is pinned. Stripping sections without that is not "not noticing" them — it is
-         *destroying* them. `Heist_keep_default_section` is now only the UI courtesy that lets HaulFace
+         *destroying* them. `Heist_keep_default_section` is now only the UI courtesy that lets HeistFace
           show and edit the section; the landing no longer depends on it having run.
     - `Heist_defaults_get()` IS read — from **`Radio_keep` (Radio.g)**, not from anywhere in Heist.g, which
        is why a grep scoped to this file says "no callers". It stamps the remembered category onto a keep
@@ -275,14 +291,14 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
          category will (correctly) beat the source's sections.
 
 1. **The two-pier live test HAPPENED (2026-08-06) and it was worth it — read §4.1 first.** The human
-    ran a real 8-track haul between two tabs. It wedged twice, at two different rungs, and both were
+    ran a real 8-track heist between two tabs. It wedged twice, at two different rungs, and both were
      real bugs invisible to every Book: an intra-page hole that was never re-asked
-      (`Backpressure_todo.md` §3.1b, fixed — the haul went from frozen at 254/255 to landing the
+      (`Backpressure_todo.md` §3.1b, fixed — the heist went from frozen at 254/255 to landing the
        track) and then the source going **permanently deaf after three answers** (§4.1, fixed). What
         this says about the shape of the coverage: **no Book anywhere mentions `rummage`**, so the
-         whole materialise-ask protocol is untested, and both bugs needed a real multi-track haul
-          against a real peer to appear at all. The 2026-08-05 batch (the `%Haul` rename, §7's resume
-           fix, §5's `- `→`0 ` land rule, §6's four HaulFace fixes) rode along in that run without
+         whole materialise-ask protocol is untested, and both bugs needed a real multi-track heist
+          against a real peer to appear at all. The 2026-08-05 batch (the `%Heist` rename, §7's resume
+           fix, §5's `- `→`0 ` land rule, §6's four HeistFace fixes) rode along in that run without
             surfacing anything, but none of them was checked *individually* — treat them as exercised,
              not as verified.
    **Next on this thread:** the regression gate §4.1 says is owed, and the repeated
@@ -307,14 +323,14 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
 2. **`%pub` standardisation, part 2.** `%pub` means a pier's prepub — true everywhere except four
     identity carriers that put a FULL key under `pub`: the roster `%Identity` row (`Swarm.g:1946`),
      `%Peering` (`Swarm.g:1171`), `%HostedIdentity` and `%Runner` (`LiesLies.svelte:1593/1607`).
-      Those want `fullpub`. Deliberately NOT in the same batch as the haul rename: it lands in the
+      Those want `fullpub`. Deliberately NOT in the same batch as the heist rename: it lands in the
        grant-verification path (`prepubOf(pub) === the HostedIdentity key`) and churns the Cluster
         fixtures, so a red there would have two suspects. Reads must fall back to `pub` for
          migration; the WIRE `page.pub` should stay as-is (renaming it breaks an older peer).
 3. **The inter-track rest** (§4) — the pre-ask is supposed to hide the source's materialise behind
     the tail of the current track, and observably doesn't always. The `ev:'pulls'` electrode was
-     added to show `cap` vs `drove` per haul; it needs a run with the trace armed (§9).
-4. **A general `Dexie/$somewhere ↔ .jamsend/$somewhere` sync.** Haul persistence (§7) is one bespoke
+     added to show `cap` vs `drove` per heist; it needs a run with the trace armed (§9).
+4. **A general `Dexie/$somewhere ↔ .jamsend/$somewhere` sync.** Heist persistence (§7) is one bespoke
     pipe; identity has its own bespoke half (`Identity_persist_todo.md` steps 3-4, `Swarm_spec.md
      §171`, both `[want]`). The human's read: these want to be ONE named-store-each-side mechanism.
       Not started, likely the next drift.
@@ -327,7 +343,7 @@ You hear a track on a friend's radio, you press ⇊, and the original file lands
 ## 1. The arc — ⇊ to bytes on disk
 
 `RadioFace.svelte:84` → `Radio_keep` (`Radio.g:1477`) mints
- `%Haul:<title>,seed:<content-id>,pub:<their prepub>,state:'primed'` under my own loading zone
+ `%Heist:<title>,seed:<content-id>,pub:<their prepub>,state:'primed'` under my own loading zone
   (`Ra_home_shop`). Idempotent: a second press on the same seed no-ops. Own tracks are already held,
    so ⇊ only shows on a friend's track.
 
@@ -340,24 +356,24 @@ The states:
 - **wanted / asking** — legacy entry points, route into the same branch as primed.
 - **pulling** — the seed stopped playing. Fold down (dose deleted), then materialise + pull + land
    every `%Pick` through the window in §4.
-- **done** — the ✓ lingers ~8s, the Berth entry is forgotten immediately, then the haul drops
-   itself. A finished haul is scaffolding, not ledger.
+- **done** — the ✓ lingers ~8s, the Berth entry is forgotten immediately, then the heist drops
+   itself. A finished heist is scaffolding, not ledger.
 - **choosing / committing** — the dormant `HeistSetup.svelte` chooser path. See the landmine in §4.
 
 ## 2. The particles
 
-    %Haul:<title>,seed:<content-id>,pub:<their prepub>,state:…   the standing intent, under Ra_home_shop
-      %HaulBar,dontSnap                                          the controls cell (HaulBarFace)
+    %Heist:<title>,seed:<content-id>,pub:<their prepub>,state:…   the standing intent, under Ra_home_shop
+      %HeistBar,dontSnap                                          the controls cell (HeistBarFace)
       %Pick,ref:<id>[,artist,title,genre,landed]                 one track, one chip
-      %Heist,at:<their prepub>                                   the JOB — filing decision + landing
+      %Caper,at:<their prepub>                                   the JOB — filing decision + landing
     %Rummage                                                     an ask, in the mirror of whoever asked
     %Record,husk:1,rummage:<seed>                                a described folder track, not yet materialised
 
-`%Haul` is imposed a face by mainkey (`glass_faces.ts`), so no snap ever changes because the glass
- chose to dress it. Under the nested glass a `%Haul` goes BARE and tessellates into its `%HaulBar`
+`%Heist` is imposed a face by mainkey (`glass_faces.ts`), so no snap ever changes because the glass
+ chose to dress it. Under the nested glass a `%Heist` goes BARE and tessellates into its `%HeistBar`
   plus one `%Pick` chip per track.
 
-A **haul-id** (`Heist_keep_id(me, base, path)`, sha256 of pub+path) is deliberately DISTINCT from the
+A **heist-id** (`Heist_keep_id(me, base, path)`, sha256 of pub+path) is deliberately DISTINCT from the
  streaming content-id, so a materialised original can never upsert onto the seed's opus record.
 
 ## 3. The pump — there is no req pile
@@ -368,7 +384,7 @@ The heist is **not** driven by the req machine. No ttlilt, no maz level, no todo
    overlapped (added 2026-07-30 after two concurrent steps double-wrote a landing).
 
 Each tick: `post_do` → `Swarm_share_beat` → `Heist_keep_beat` (`Swarm.g:1742`, typeof-guarded and
- try-wrapped so a heist bug cannot break the radio share) → `Heist_keep_step` per haul.
+ try-wrapped so a heist bug cannot break the radio share) → `Heist_keep_step` per heist.
 
 **600ms is the heartbeat of the whole feature.** Every state transition costs at least one tick, and
  a beat that overruns costs more than one.
@@ -433,12 +449,12 @@ So the bound was really *"answer this peer about this ref three times per sessio
  `heist-noprogress asked=124 landed=1 of=8 secs=267`. Source trace over the identical window:
   **nothing** — no `heist-serve`, no census, no answer of any kind. One track had completed; the
    other seven could never start, because a pending materialise shuts the window (§4 above), so the
-    whole 8-track haul was held by one deaf ref.
+    whole 8-track heist was held by one deaf ref.
 
 **Why nothing caught it.** Grep the tree: **no Book anywhere mentions `rummage`.** The entire
  describe-folder / materialise-one-file protocol — the path by which every real multi-track heist
   gets its tracks — has *zero* fixture coverage. It only manifests past the third ask, i.e. only on
-   a real multi-track haul against a real peer, which is exactly what no Book does.
+   a real multi-track heist against a real peer, which is exactly what no Book does.
 
 **The fix.** The asker now stamps a monotonic attempt number, `ask.sc.n`, and the source re-arms its
  ≤3 budget when that number moves (`ask.c.answered_epi`). The ≤3 / ≥5s throttle still holds *within*
@@ -501,10 +517,10 @@ Check it against the two fixes above before chasing it — with intra-page holes
 
 **Paths.** A heist is a **cp**: the source's own filename and folder layout survive unchanged — tags
  catalog and display a track but never rename the file. `Heist_rel_for` picks the dest-root from the
-  filing decision and the source's relative path rides underneath. If the haul carries a frozen
+  filing decision and the source's relative path rides underneath. If the heist carries a frozen
    `dirs`/`dirs_auto` pair, `dirs_auto` → `dirs` is substituted at the FRONT of the cp path **only
     when that record's own leading segments still match** — never a blind rename, so a multi-disc
-     haul's CD1/CD2 divergence below the shared prefix survives.
+     heist's CD1/CD2 divergence below the shared prefix survives.
 
 **Segment safety** (`Heist_safe_seg`, directory levels only — `Heist_cp_path` does not come through
  it, per the cp ruling): `/` and NUL become `-`; everything else — spaces, punctuation, unicode,
@@ -521,7 +537,7 @@ There is no `music/` prefix and no per-job root. Landing is the true FSA root, u
 
 ## 6. The face
 
-`HaulFace.svelte` (was `KeepFace.svelte`). Two separate, never-merged, never-enclosing hierarchies:
+`HeistFace.svelte` (was `KeepFace.svelte`). Two separate, never-merged, never-enclosing hierarchies:
 
 - **section** — mine. The category. Stamps its marker automatically, never typed.
 - **directories** — theirs. The shared source-folder prefix across the described tracks. Wired into
@@ -539,8 +555,8 @@ At rest each is a calm `/segment/segment/` breadcrumb. Click to edit: a row of c
 `Heist_known_categories` / `Heist_known_dirs` scan the library's own `%Record.sc.path` to feed each
  breadcrumb's datalist, so a near-duplicate folder is a visible choice rather than an accident.
 
-Global remembered defaults (`Heist_defaults_get/_set/_rehydrate`): the category a haul is set to
- becomes the next haul's default, dual-homed in `H.stashed` (Dexie) and a `HeistDefaults` Berth
+Global remembered defaults (`Heist_defaults_get/_set/_rehydrate`): the category a heist is set to
+ becomes the next heist's default, dual-homed in `H.stashed` (Dexie) and a `HeistDefaults` Berth
   Waft. `directories` deliberately does not feed this — it is source-specific and means nothing for
    a different friend's structure.
 
@@ -557,7 +573,7 @@ A folder group of more than 5 tracks collapses by default (a real `<details>`).
 
 `Heist_keep_persist` writes `%HeistSeed,seed:` with real `%Pick` CHILDREN into the Berth at
  `.jamsend/berth/<prepub>/Heists`. `Heist_keep_rehydrate` replays them on boot straight into
-  `pulling` (the human already confirmed the haul, before whatever reloaded), then
+  `pulling` (the human already confirmed the heist, before whatever reloaded), then
    `Heist_resume_sync` does the honest work of finding what is already correctly on disk. Resume is
     at the LIST level, never inside a file.
 
@@ -623,7 +639,7 @@ Until 2026-08-05 the marauding header claimed the app passed a real run uid. It 
 ## 9. Verifying
 
 Books, always on a LIVE runner (`scripts/runner_ask.mjs`), never `Story_cli_run.mjs`: **MusuHeist**
- is the end-to-end haul, **Sounditron** the resident-session picture, **MusuLossy** the sweep. The
+ is the end-to-end heist, **Sounditron** the resident-session picture, **MusuLossy** the sweep. The
   snap-fixture diff is the gate; when a run goes red, diff the actual mismatch with
    `story_repl.mjs diff` rather than stopping at "red" — the last two reds were both pure fixture
     staleness.

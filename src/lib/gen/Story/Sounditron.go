@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return 'f9b2c4b10e333c84~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '1b07a4b27f2a9482~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -281,12 +281,12 @@ Sounditron_commission(w) {
     let krw = this.top_House().c.radio_w || w
     let kme = this.Radio_pub ? this.Radio_pub(krw) : null
     let kshop = kme ? this.Ra_home_shop(krw, kme) : null
-    let keeps = kshop ? kshop.o({ Haul: 1 }) : []
+    let keeps = kshop ? kshop.o({ Heist: 1 }) : []
     let anyKeep = keeps.length > 0
-    // ALWAYS-ON: the music itself + the dial.  The %Heist FLOW organ (HeistFace) grapples ONLY when no keep
-    //  is open — under the NESTED glass a keep turns on (each %Haul tessellates into its HaulBar + track
+    // ALWAYS-ON: the music itself + the dial.  The %Caper FLOW organ (HeistFace) grapples ONLY when no keep
+    //  is open — under the NESTED glass a keep turns on (each %Heist tessellates into its HeistBar + track
     //   chips), and the flow organ's constraint/Lead/filing children would draw as stray cells; besides, the
-    //    %Haul cells ARE the heist UI then.  The ⇊-to-keep gesture lives on RadioFace (always up), so nothing
+    //    %Heist cells ARE the heist UI then.  The ⇊-to-keep gesture lives on RadioFace (always up), so nothing
     //     is lost.  With no keep it grapples exactly as before (Sounditron fixtures byte-identical).
     // %Door JOINS THE ALWAYS-ON SET (2026-08-09, the owner: fullscreen Vyto "with Invite management
     //  in there").  It was grappled only under `show_diag` — which made WHO AM I · WHO'S WITH ME ·
@@ -324,11 +324,11 @@ Sounditron_commission(w) {
     let xfer = krw && krw.oai ? krw.oai({ Transfer: 1, dontSnap: 1 }) : null
     if (xfer && xfer.c.up !== krw) xfer.c.up = krw
     if (!anyKeep) {
-        let h = w.o({ Heist: 1 })[0]
+        let h = w.o({ Caper: 1 })[0]
         // FLAT: the flow organ's constraint / Lead / filing / supervision rows are WORKINGS, not
         //  contents (the owner: "has some Supervisor facts, I don't want to show most users that").
         //   They only became visible when the glass learned to nest.  `.c` so a real persisted
-        //    %Heist can carry it without touching its snap.
+        //    %Caper can carry it without touching its snap.
         if (h) h.c.flat = 1
         if (h) organs.push(h)
     }
@@ -408,10 +408,10 @@ Sounditron_commission(w) {
         organs.push(tree)
     }
     // the ⇊ KEEP cells (the human 2026-07-28 "I DO want the Heist UI ... in a few Vyto cells ... it folds
-    //  down when started"): every active %Haul grapples as its OWN cell — under the nested glass it goes BARE
-    //   and tessellates into a HaulBar controls cell + one Pick chip per kept track.  They come + go with the
+    //  down when started"): every active %Heist grapples as its OWN cell — under the nested glass it goes BARE
+    //   and tessellates into a HeistBar controls cell + one Pick chip per kept track.  They come + go with the
     //    gesture, so Sounditron_trickle_look re-commissions on the keep fingerprint.  Live under Ra_home_shop.
-    // A LIVE KEEP TAKES THE FOCUS ZONE (the owner 2026-08-09: *"We need to make sure Haul gets into
+    // A LIVE KEEP TAKES THE FOCUS ZONE (the owner 2026-08-09: *"We need to make sure Heist gets into
     //  the focus zone, so our UI can have enough room"*).  A heist is the one thing on this glass
     //   with real form to fill in — choosers, a track list, a phase — and it was being handed the
     //    same seat as a status pip.  `.c.stage_want` is a request, not a command: Vyto_stage_tok
@@ -467,13 +467,13 @@ Sounditron_commission(w) {
     //   can only ride the whole commission), so it goes on exactly when the junk is standing and
     //    comes off with it; the perf ceiling that parked it is the thing being measured here.
     if (w.c.junk) commission.sc.nested = 1
-    // NESTED glass while a keep is open — each %Haul cell would descend into its HaulBar + track chips.  GATED
+    // NESTED glass while a keep is open — each %Heist cell would descend into its HeistBar + track chips.  GATED
     //  OFF by default (the human 2026-07-29 "branchy Vyto seems to burn CPU then crash"): the renderer's
     //   power_cells is O(M²) per scope recomputed EVERY rAF frame with no memo, and a whole-album keep (12-20
     //    picks) is far over the ~12-cell budget → CPU pegged → OOM.  So a keep renders FLAT (the working
-    //     HaulFace) until the Vyto owner lands the renderer fixes (memoize + relative child sizing + settle-
+    //     HeistFace) until the Vyto owner lands the renderer fixes (memoize + relative child sizing + settle-
     //      drift guard + per-scope ceiling — see Vyto_perf handoff).  Flip M.c.heist_nested to try nested once
-    //       those land.  The HaulBar/Pick faces stay registered + dormant, ready.  w.c.nested is GLOBAL so it
+    //       those land.  The HeistBar/Pick faces stay registered + dormant, ready.  w.c.nested is GLOBAL so it
     //        can only ride the whole commission — never nest ONLY the keep — which is the other reason to wait.
     let M = this.top_House ? this.top_House() : null
     if (anyKeep && M && M.c.heist_nested) commission.sc.nested = 1
@@ -711,14 +711,14 @@ Sounditron_plain_next(w, bag, krw) {
 Sounditron_plain_heist(w, bag, krw) {
     let keeps = this.Sounditron_plain_keeps_of(krw)
     if (keeps.length) return []
-    let h = w.o({ Heist: 1 })[0]
+    let h = w.o({ Caper: 1 })[0]
     if (!h) return []
     return [h]
 
 },
-// KEEPS — setup → going → gone.  The %Haul rows are already the phase machine (`sc.state`:
+// KEEPS — setup → going → gone.  The %Heist rows are already the phase machine (`sc.state`:
 //  primed · wanted · asking · …), so this module does not model anything: it hands the live rows
-//   over as cells.  This is the ONE place the plain glass still leans on a face (HaulFace carries
+//   over as cells.  This is the ONE place the plain glass still leans on a face (HeistFace carries
 //    the section/directory choosers, which are real form and have no C** form yet) — and it is the
 //     honest test case for whether pure C** can carry a UI, so it is left standing on purpose.
 Sounditron_plain_keeps(w, bag, krw) {
@@ -802,7 +802,7 @@ Sounditron_junk(w) {
 Sounditron_plain_keeps_of(krw) {
     let kme = this.Radio_pub ? this.Radio_pub(krw) : null
     let kshop = kme ? this.Ra_home_shop(krw, kme) : null
-    return kshop ? kshop.o({ Haul: 1 }) : []
+    return kshop ? kshop.o({ Heist: 1 }) : []
 
 },
 // the TRICKLE — the live page's slow think (the human 2026-07-19: "that model may need to be
@@ -817,7 +817,7 @@ Sounditron_trickle(w) {
     let M = this.top_House()
     let era = (M.c.trickle_era || 0) + 1
     M.c.trickle_era = era
-    // stash THIS run-House handle on the top House so a gesture that mints a %Haul (Radio_pop_glass) can
+    // stash THIS run-House handle on the top House so a gesture that mints a %Heist (Radio_pop_glass) can
     //  re-commission the glass NOW with the correct `this` binding — the resident cell mounts on the gesture
     //   instead of waiting for the next trickle (the human 2026-07-29 "the heist UI cell isn't popping up").
     M.c.sounditron_run = this
@@ -867,7 +867,7 @@ async Sounditron_trickle_look(w, era) {
         //  the leave-on-done) changes, so a fresh keep appears as a cell and a dropped|done one falls away.
         let kme = this.Radio_pub ? this.Radio_pub(w) : null
         let kshop = kme ? this.Ra_home_shop(w, kme) : null
-        let keptN = kshop ? kshop.o({ Haul: 1 }).length : 0
+        let keptN = kshop ? kshop.o({ Heist: 1 }).length : 0
         // fingerprint the GRAPPLE-SET-affecting facts ONLY (diagnostics open + keep count), NOT per-keep state:
         //  a keep's primed→pulling fold-down rides its own dose bump (re-express), never a full re-commission —
         //   the human's "diagnostics and heist-spawning seem slow" was partly re-commissioning on every tick.
@@ -898,12 +898,12 @@ async Sounditron_trickle_look(w, era) {
         if (w.c.keep_fp !== kfp) {
             w.c.keep_fp = kfp
             // ATTENTION (the human 2026-07-28 "diminish all the other UI cells when we open the Heist, except
-            //  the nowplaying bit"): a live %Haul grabs the room — the always-on SECONDARY organs shrink via a
+            //  the nowplaying bit"): a live %Heist grabs the room — the always-on SECONDARY organs shrink via a
             //   negative dose (Vyto env_area), Radio (now-playing) + the Diag toggle stay full, the Keep cells
             //    dose themselves UP.  When the last keep leaves the dose clears and the glass springs back.  The
             //     three diagnostics are hidden-by-default now, so they're not in this set.
             let dim = keptN ? '-0.62' : null
-            for (const q of [{ Tuner: 1 }, { Riffle: 1 }, { Heist: 1 }]) {   // Lineup is no longer grappled — nothing to dim
+            for (const q of [{ Tuner: 1 }, { Riffle: 1 }, { Caper: 1 }]) {   // Lineup is no longer grappled — nothing to dim
                 let org = w.o(q)[0]
                 if (!org) continue
                 if (dim) { if (org.sc.dose !== dim) { org.sc.dose = dim; org.bump() } }
@@ -1270,14 +1270,14 @@ async Sounditron_muse(w) {
     }
 
 },
-// what the heist NEEDS to complete — posed:1 until a real %Heist stands on this machine: the
-//  SHAPE of the real thing (%Heist,of:… with %Need children whose met: the witness keeps
+// what the heist NEEDS to complete — posed:1 until a real %Caper stands on this machine: the
+//  SHAPE of the real thing (%Caper,of:… with %Need children whose met: the witness keeps
 //   honest), so the face can be tuned on sight before the machinery arrives here.
 Sounditron_heist(w) {
-    if (w.o({ Heist: 1 })[0]) return
+    if (w.o({ Caper: 1 })[0]) return
     let f = w.o({ Friend: 1 })[0]
     let from = f ? f.sc.Friend : 'a friend to be'
-    let h = w.oai({ Heist: 'the one they played last night', posed: 1 })
+    let h = w.oai({ Caper: 'the one they played last night', posed: 1 })
     h.sc.from = from
     h.sc.crew = 'system'
     h.oai({ Need: 'a sealed Music grant — the door open both ways' }).c.up = h
@@ -1288,7 +1288,7 @@ Sounditron_heist(w) {
 },
 // the witness keeps the posed needs HONEST each pass: met:1 rides a Need the world satisfies.
 Sounditron_heist_met(w) {
-    let h = w.o({ Heist: 1 })[0]
+    let h = w.o({ Caper: 1 })[0]
     if (!h) return
     let f = w.o({ Friend: 1 })[0]
     for (const need of h.o({ Need: 1 })) {

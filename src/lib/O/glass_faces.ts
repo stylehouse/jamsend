@@ -4,18 +4,24 @@
 //    the map of which mainkeys the glass imposes a face on stays importable everywhere.
 //  A face by sc.face is WORN (the particle asked for it); a face by mainkey is IMPOSED
 //   by the viewer — the world stays Voro-blind (no snap ever changes because the glass
-//    chose to dress a %Heist).  glass_kinds.ts maps the KIND to its component for Cytui.
+//    chose to dress a %Caper).  glass_kinds.ts maps the KIND to its component for Cytui.
 export const FACE_MAINKEYS: Record<string, string> = {
-    Heist: 'Heist',       // the Pirating flow — posed needs | soft wish → %Leads → choose
-    // %Haul,pub:<their prepub> — the ⇊ keep-what-you're-hearing cell (imposed by mainkey; no %Haul wears
-    //  sc.face).  Was %Keep until 2026-08-05 (the human: "%Keep is too weak a word"); %Heist could not take
-    //   the name because it is already the JOB particle this haul condenses into, and two shapes under one
-    //    mainkey is the tell.  The arrangement the human named is the resulting tree: Haul,pub / Heist.
-    Haul: 'Haul',
-    // the NESTED haul (the human 2026-07-28 "one for the hierarchy, one for the list of tracks"): under the
-    //  nested glass a %Haul goes BARE (a scope suppresses its own face) and tessellates into its %HaulBar
-    //   controls cell + one %Pick chip per kept track.  A flat (non-nested) %Haul still wears Haul above.
-    HaulBar: 'HaulBar',   // the haul's controls cell — genre · dest · all|none · ▶ start · ✕ · progress
+    Caper: 'Caper',       // the OPERATION — posed needs | soft wish → %Leads → choose → the built pull
+    // %Heist,pub:<their prepub> — ONE NAB OF AN ALBUM, the ⇊ keep-what-you're-hearing cell (imposed by
+    //  mainkey; no %Heist wears sc.face).  THE NAME TOOK THREE GOES.  %Keep until 2026-08-05 (the human:
+    //   "%Keep is too weak a word") → %Haul, because %Heist was already taken by the JOB particle and two
+    //    shapes under one mainkey is the tell.  %Haul was always a consolation: a haul is the whole take,
+    //     so it was the wrong SCALE for one album (the owner 2026-08-09: *"I actually intended for the
+    //      Heist to be each nab of an album, and the Haul to be the larger collective"*).  Fixed by moving
+    //       the blocker instead of the blocked: the operation is %Caper now, so the nab finally gets the
+    //        name it was always meant to have — and the name matches the verbs (Heist_keep_*) that have
+    //         driven it all along.  %Haul is now FREE, reserved for the larger collective: the What
+    //          Heisted ledger a finished %Heist graduates into rather than being flattened away.
+    Heist: 'Heist',
+    // the NESTED heist (the human 2026-07-28 "one for the hierarchy, one for the list of tracks"): under the
+    //  nested glass a %Heist goes BARE (a scope suppresses its own face) and tessellates into its %HeistBar
+    //   controls cell + one %Pick chip per kept track.  A flat (non-nested) %Heist still wears Heist above.
+    HeistBar: 'HeistBar',   // the heist's controls cell — genre · dest · all|none · ▶ start · ✕ · progress
     Pick: 'Pick',         // one kept track in the nested keep — ✓/♪/⇊, click un-keeps
     Diag: 'Diag',         // the diagnostics toggle cell (imposed by mainkey)
     Errlog: 'Errlog',     // the Story error channel (spec/Error_channel_todo.md) — lazy-minted, so this cell

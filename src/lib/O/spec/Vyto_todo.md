@@ -60,7 +60,7 @@ The human, handing Vyto back for rework: *"a really spastic system with almost n
 
 1. **BUTTON LATENCY — the concrete, reproducible complaint.** *"the heist setup 'X' button, and
     various buttons really... do not respond quickly enough to clicking."* The heist setup UI is
-     **HaulFace** (the tell for which chooser is meant: "section"/"directories"). A click that feels
+     **HeistFace** (the tell for which chooser is meant: "section"/"directories"). A click that feels
       late is not a rendering-prettiness problem, it is the interface failing at its one job, and it
        is the first thing a stranger notices. Worth measuring before theorising — candidates: the
         click is queued behind the belief mutex; the handler waits on an await it need not; the glass
@@ -139,7 +139,7 @@ The rAF loop has exactly ONE exit — a settle (`Vytui.svelte:543-566`). `integr
 1. **Face-mold style writes — the only layout/paint item, and the phone-killer.** `Vytui.svelte:1065`
     rebuilds `style="left:X%; top:Y%; width:W%; height:H%"` for every faced cell **every frame**.
      These are absolutely-positioned HTML boxes containing whole real components (RadioFace,
-      TransferFace, HaulFace…). Percentage width/height changes force **layout + paint of each face
+      TransferFace, HeistFace…). Percentage width/height changes force **layout + paint of each face
        subtree per frame** — not compositing. No `transform` is used anywhere. *This is the design,
         so it is structural, and it is the item a phone actually pays for.*
 2. `tree_nodes(w)` runs **three times per frame per world** (`:501`, `:357`, `:455`) — the third is
@@ -184,13 +184,43 @@ The model solves against a **hardcoded `[0,0,800,450]`** frame (`Vyto.g:814`) wh
 ### (f) WHAT IS NOT KNOWN — do not build on these
 
 - **Which** mechanism is actually firing in the human's tabs. The probes exist and are gated to
-   `Haul:` keys; their output is in the consoles being pasted, which the analysis did not have.
+   `Heist:` keys; their output is in the consoles being pasted, which the analysis did not have.
 - Whether Lloyd ∘ `pull_step` converges or orbits. Reasoned to converge; **not** asserted.
 - The real stir rate on a live tab — the input that decides whether the 0.5s budget is exceeded.
    Needs a counter on `Vyto_stir`, not source reading.
 - **No profile was taken.** Every number in (c) is a count derived from code, not a measurement.
 
 ## 0. What to get on with next
+
+### ⇢ PARKED — the owner's ruling (2026-08-09 evening): no Vyto work until the Supervisor watches it
+
+*"supposing we should avoid Vyto until the Supervisor is ready to notice it being spastic and
+ intervene"* — the glass rests as-is; the next Vyto session should be the one that WIRES the
+  Supervisor's normalcy watch (Supervisor_todo §9, another agent's file as of tonight), not one that
+   adds glass behaviour. First seed already lives in the ghost: `Vyto_normal` (Vyto.g, called from
+    `Vyto_settle`, gated on `w.c.vw_frame` so Books never see it) checks grapple-presence + on-screen
+     visibility, cures with capped pokes, and says `⚕ Vyto normal:` rows when a cure fails.
+
+What LANDED this session (Vyto.g compiled `0da6631fb9a5e0fc`; VytoCell/Foam/Nest/Staple/Fold/Bunch all
+ green 0-caveat on a live runner — noting Books are C-tree diges and cannot see the renderer changes):
+- **The pin freeze is dead.** The multi-second "pop into place" after stage/close was the hover pin:
+   a commanding gesture ENDS with the pointer parked on the commanded cell, no pointerleave ever
+    fires, so `while:'pointer'` holds froze the ordered motion until the mouse wandered.
+     `Vyto_calm_yield(w, tok)` (150ms ease tail) now releases the holds at stage, un-stage, and
+      departure-mark. LAW: any NEW gesture verb that resizes/moves the cell under the pointer must
+       call the yield or it inherits the freeze (memory: your-own-pointer-pins-the-cell-you-commanded).
+- **The pearl** (Vytui crush block): a crushed FACED cell keeps a small round body instead of a naked
+   floating label — the `<-> Door:2.open` consistency violation ("everything should be a cell or a
+    sub-cell or a label"). Rows the cut refuses entirely still get only the corner count — "they
+     should just be very small cells" is a foam-law change, still open, needs the owner.
+- **The await ring** (Vytui): an empty live glass spins a quiet ring instead of a blank plate
+   ("look a bit more spinnery before the data comes in").
+- **Heist width**: `.kf` max-width 300→440 (folded 220→280) — the CSS cap WAS the price ceiling,
+   because the measure pass stamps the natural box. Landed in HaulFace.svelte, which a concurrent
+    rename sweep has since made **HeistFace.svelte** (HaulBarFace→HeistBarFace, CaperFace new).
+Sibling threads filed elsewhere: the boot policy (%oldMusic/%newMusic cells, friend-stream switch,
+ pre-%Radio boot) is RADIO policy → Radio_todo §0 2026-08-09; the normalcy roster/"phase report" arc
+  → Supervisor_todo §9.
 
 ### ⇢ THE DIRECTION, from the owner looking at the live glass (2026-08-09) — READ FIRST
 
@@ -272,7 +302,7 @@ The owner on the live sideways glass: *"ew not that much. very incoherent! forge
 
 **Named, not built (the owner's queue):** the LOOSE LAYER (*"separate the loose nodes to another
  layer"* — unrelated/small particles float off the mosaic, likely `sc.loose` → excluded from the cut,
-  drawn as drifting discs above/below); more subjects posed (the player embryo, Haul); wave-fold
+  drawn as drifting discs above/below); more subjects posed (the player embryo, Heist); wave-fold
    labels + breadcrumb (still waiting on the emphasis station).
 
 ### ⇢ THE ORCHESTRA OF SPHERES — pools of information (2026-08-09 late; the transfigured algorithm)
@@ -484,7 +514,7 @@ An adversarial agent was set on the whole session's diff with the brief "argue t
     must be restored when the camera is unpicked.
 - **`{#each vines_of(...) as v (v.d)}` keys on a per-frame geometry string**, so every vine node is
    destroyed and recreated per frame. **OPEN**, one-line fix (key on the edge, not its `d`).
-- **`seenAt` is pruned on spring removal**, which is precisely the documented Haul churn — so a churning
+- **`seenAt` is pruned on spring removal**, which is precisely the documented Heist churn — so a churning
    cell replays its 620ms arrival and arms an extra full repaint. **OPEN.**
 - **LAW B/C were not honoured**: no Book, no `%see` sentence, and no ledger row for the session's largest
    changes (`inscribed_of`, the clip restoration, `--vyz`, `mold_seat`, the fx suite, `need_floor`).
@@ -519,7 +549,7 @@ An adversarial agent was set on the whole session's diff with the brief "argue t
  - *"we make it the most important thing, and everything sorts away from its moment"* / *"in the
     spotlight"* — the Heist becomes the spotlight and the glass sorts away from it. This IS the emphasis
      station, and note `%Spotlight,src` already exists in CLAUDE.md's notation.
- - *"it's slow to respond to the Heist thing"* — `press_probe` is armed on HaulFace and wants one press
+ - *"it's slow to respond to the Heist thing"* — `press_probe` is armed on HeistFace and wants one press
     on a live tab plus `tracelog.mjs --watch`; `waited` vs `depth` forks it.
  - *"we could actually put it all in one infoformat if html + Vyto C labels vtuffing"* — one info format
     unifying the HTML face and the Vyto C labels, i.e. the under-layer and the component stop being two
@@ -574,7 +604,7 @@ An adversarial agent was set on the whole session's diff with the brief "argue t
   words for it: once every button is a particle, what governs which buttons a thing HAS, and how a bag of
    them is arranged? That is `Cstructures_todo.md`'s territory (the structure catalogue + Dip_assign) and
     should be answered there, not invented in the renderer.
- **DO NOT start by rewriting HaulFace.** The honest first move is one face, decomposed behind a gate, with
+ **DO NOT start by rewriting HeistFace.** The honest first move is one face, decomposed behind a gate, with
   a Book that proves the parts tessellate and the fleet still green — the same additive discipline every
    station here has used. Pick the SIMPLEST face, not the one that hurts most.
 
@@ -633,7 +663,7 @@ An adversarial agent was set on the whole session's diff with the brief "argue t
        *"our buttons clicks need to be faster!"*
 
 **ALL RENDERER-SIDE. Not one line of `.g` was touched** — so no ghost-compile, no runner wedge, no
- fixture could move by construction. `Vytui.svelte` + `HaulFace.svelte` only.
+ fixture could move by construction. `Vytui.svelte` + `HeistFace.svelte` only.
 
 **THE ONE THING THAT DETONATES IF YOU DON'T KNOW IT: `scripts/vyto_see.mjs` now exists, and the shape
  work is NOT gated by the Books.** A fixture is a dige of the C tree; a cell's `d` string never reaches
@@ -706,7 +736,7 @@ An adversarial agent was set on the whole session's diff with the brief "argue t
      been bunching by these since VytoBunch (proven by an A/B differential) and **never once drew them**.
       No timer needed: edges change at stir, and a stir always ends in a paint.
 11. **Button latency** — instrumented, per §0.1's own law, plus the one no-regret fix.
-     **A FIND worth more than the probe:** every HaulFace handler is `A.post_do(fn)`, i.e. QUEUED onto
+     **A FIND worth more than the probe:** every HeistFace handler is `A.post_do(fn)`, i.e. QUEUED onto
       `H.todo` — and the `drain-lag` electrode next door (`Housing.svelte.ts:_push_todo`, 2026-08-07) had
        already measured a posted fn waiting **3600ms with `gated=0` and an empty `why`** — nothing holding
         the mutex, nothing throttled, the queue advancing ONE ITEM PER EXTERNAL WAKEUP because a reactive
@@ -793,7 +823,7 @@ An adversarial agent was set on the whole session's diff with the brief "argue t
      Vyto is integrated into the Story, we have partially split their timelines and there's probably
       some more lore about how it's to be hanging around."* The spool / `yore_n` / `waitVyto` /
        parked-run gate are the visible half; **find the lore before redesigning around it.** (c) Button
-        latency (HaulFace) — instrument, do not guess between the four candidates in §0.1.
+        latency (HeistFace) — instrument, do not guess between the four candidates in §0.1.
 
 **Landed tonight, do not redo:** the §0.2(a) knife-edge (`CALM_EPS = 1.25` vs the model's `0.5`, every
  settle now lands via `jump_to_target`), the §0.2(b) malformed-`%Hold` permanent pin, and the whole of
@@ -837,9 +867,9 @@ The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it 
   - **Only FACED cells can be plug endpoints**, and that shapes the whole design: `cell.source` is set
      from `row.c.source_n` inside `face_of`, which returns null when a row resolves no face — so a
       faceless cell has `source: null` and is invisible to both the walk and the id-match.  The Radio is
-       faced, and the plausible targets (Crate / `Musu*` / Haul, per `FACE_MAINKEYS`) are faced too, so
+       faced, and the plausible targets (Crate / `Musu*` / Heist, per `FACE_MAINKEYS`) are faced too, so
         the `.c.up` walk is the load-bearing path: it must reach the CRATE particle that contains the
-         record.  The id-match is only a bonus for a referring face like `Haul` wearing the same id — a
+         record.  The id-match is only a bonus for a referring face like `Heist` wearing the same id — a
           crate's own `sc.id` will never equal the record's, so it cannot be the primary route.
   - **WHAT IS OWED: one look at it.**  THE PIN applies and has not been paid — `runner_shot --svg` found
      no commissioned Vyto world (Book runners have none; the owner's live tabs were closed).  It needs a
@@ -1129,8 +1159,8 @@ The occasion: the human found the live glass an "unstructured flap-puddle — no
 | 14 | the frame's aspect is a CHOICE on a live page, and pinned on a driven one | `Vytui.svelte` `ASPECTS`/`aspect_pick` → the `fit_frame` branch → `publish_frame` | VytoCell 7/7 ×2 · VytoStaple 8/8 · MusuNeGrind 11/11 | ✅ SVG of a Book world reads `viewBox="0 0 800 450"` ⇒ the pick provably cannot reach a fixture |
 | 15 | the glass is navigable — a cell can be flown to and walked out of | `Vytui.svelte` `cam_of`/`cam_engage`/`cam_out`/`cam_step`; viewBox + mold % read the camera | fleet (a driven world never leaves the reference pose) | ⬚ OWED: a shot taken WHILE ENGAGED carries the zoomed viewBox — needs a live tab, a Book runner never engages |
 | 16 | %Flow relations are drawn as vines | `Vytui.svelte` `vines_of`/`vine_curve`; `.vine` | — (no Vyto* Book declares relations; VytoBunch proves the SOLVER reads them) | ⬚ OWED: needs a world with relations — the live page, pending the gap list |
-| 17 | press → queued-work latency is measured, not guessed | `HaulFace.svelte` `press_probe` → supply_trace `ev:'press'` {waited, ran, depth} | — (an electrode, not a claim) | ⬚ OWED: one ✕ press on a live tab + `tracelog.mjs --watch`. `waited` vs `depth` forks wakeup-vs-queueing |
-| 18 | a press is ACKNOWLEDGED before its work runs | `HaulFace.svelte` `:active` on every control (compositor-painted on pointerdown) | — | ⬚ eye-only by nature — a paint that precedes JS cannot be captured by a JS-driven camera |
+| 17 | press → queued-work latency is measured, not guessed | `HeistFace.svelte` `press_probe` → supply_trace `ev:'press'` {waited, ran, depth} | — (an electrode, not a claim) | ⬚ OWED: one ✕ press on a live tab + `tracelog.mjs --watch`. `waited` vs `depth` forks wakeup-vs-queueing |
+| 18 | a press is ACKNOWLEDGED before its work runs | `HeistFace.svelte` `:active` on every control (compositor-painted on pointerdown) | — | ⬚ eye-only by nature — a paint that precedes JS cannot be captured by a JS-driven camera |
 
 ### The build plan — P0→P7, each Book named BEFORE its code (LAW B)
 

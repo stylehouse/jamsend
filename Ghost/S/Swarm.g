@@ -2775,7 +2775,7 @@ Diag_trouble(w):
     //     stuck and I don't know why", and the one the human should never have to read a console for.
     try {
         let shop = this.Ra_home_shop(w, this.Radio_pub(w) || 'me')
-        for (const keep of (shop ? shop.o({ Haul: 1 }) : [])) {
+        for (const keep of (shop ? shop.o({ Heist: 1 }) : [])) {
             let asks = +(keep.sc.asks || 0)
             if (asks < 3) continue
             let picks = keep.o({ Pick: 1 })

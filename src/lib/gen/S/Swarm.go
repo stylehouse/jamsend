@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '4fcd3d26879a0227~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '6a28a14bcd96ddfc~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -2908,7 +2908,7 @@ Diag_trouble(w) {
     //     stuck and I don't know why", and the one the human should never have to read a console for.
     try {
         let shop = this.Ra_home_shop(w, this.Radio_pub(w) || 'me')
-        for (const keep of (shop ? shop.o({ Haul: 1 }) : [])) {
+        for (const keep of (shop ? shop.o({ Heist: 1 }) : [])) {
             let asks = +(keep.sc.asks || 0)
             if (asks < 3) continue
             let picks = keep.o({ Pick: 1 })

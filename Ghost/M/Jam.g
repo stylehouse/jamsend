@@ -14,7 +14,7 @@
 //    `of:<record-id>` (the join to the %Record holding / %Card listing — many events may name one track, so
 //     `of:` not a mainkey-value id).  `title` rides along so the snap reads without chasing the id; `at` is a
 //      per-session ordinal (jam.c.seq, runtime) so the ledger sorts chronologically no matter the child order.
-//   `%Grab` is the heist-a-copy event; the mainkey `%Heist` is RESERVED for the operation (%Heist,at:<pier> in
+//   `%Grab` is the heist-a-copy event; the mainkey `%Caper` is RESERVED for the operation (%Caper,at:<pier> in
 //    Heist.g), so the ledger fact wears the distinct `%Grab` — one meaning per mainkey.
 //
 //  WHY UNDER THE LISTENER'S SHELF, not the wire: a Jam is the LISTENER's private record of what a session gave

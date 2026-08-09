@@ -10,7 +10,7 @@
 //
 //  THE BAN (§11.2): %Ban,tune:… (one track) | %Ban,artist:… (the whole artist) — the grain is
 //   visible by which key rides the line, never a kind: enum.  Minted at the listener's drop
-//    (Heist_feel → Booth_ban) or by hand; lives on the collection so it survives every %Heist
+//    (Heist_feel → Booth_ban) or by hand; lives on the collection so it survives every %Caper
 //     flatten; stands until Booth_lift.  NEVER swept by any GC — a ban that silently vanished
 //      would re-download the very track it refused (the %UnGrant negative-fact rule).
 //

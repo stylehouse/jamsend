@@ -845,20 +845,24 @@ When the app needs to act on the **host** — restart a crashed Chrome profile, 
      and dispatch-routing mirror the needAC pattern; both the cap read in dispatch and the `runner_ask`
       fail-fast path are OWED. See `needsFSA-dispatch-gate` memory.
 
-**The liveness architecture still owed** (the address+role work fixed routing but kept the beacon as the
- heartbeat): promote **per-runner ping/pong** to the liveness *source* (stamp `%Runner.last_heard`/rtt from
-  pong) and **demote `advertise`** to a pure directory+job-state announce; attribute `from:<pub>` on
-   `run_phase`/`run_result` so the editor can **demux** which tab needs AC (today `w.c.run_phase` is a single
-    slot → the Brink says "*a* runner needs AC", not which); and carry a per-Pier inseq-reload baseline across
-     all N Piers. Plus the **activation ladder** (talking <15s ▸ lagging <45s ▸ silent ▸ offline, replacing the
-      flat 45s window) and a **Pier-culling reaper** that reaps a dead `%Runner` presence + its transport/Pier
-       (silent > 5min, `promoted_at` guarding a mid-ring probe) while KEEPING the durable `%HostedIdentity`.
-        These want ONE shared `Lies_liveness(w)` verdict feeding rack + reaper + `runner_ask` (SLUGGISH ~9s,
-         DEAD ~20s, roster LIVE ~45s, Pier cull ~5min), resetting the death-clock on any `run_phase`/`Storyrun`
-          progress — which also kills the `--watch` 8s false-RED bug (it bailed below SLUGGISH). Net fatal =
-           20s of no-answer AND no progress. (Tab sleepiness is the twin problem: a muted keepalive
-            AudioContext + Page-Lifecycle resume→re-ping / freeze→"going cold" advertise; installed-PWA for a
-             real fleet — see the warmth memory.)
+**The liveness architecture — mostly LANDED** (this block said "still owed" until 2026-08-09; that went
+ stale and cost a session re-deriving it). The ONE shared verdict exists: `src/lib/O/runner_liveness.mjs`
+  (deliberately plain `.mjs` so the ghost AND the node CLI import the SAME numbers) exports `liveness()`
+   plus SLUGGISH 9s / DEAD 20s / roster-LIVE 45s / PIER_CULL 5min; rack badge, roster, Pier reaper and
+    `runner_ask` all read it. `last_heard` stamps off ANY inbound frame (half-open proof), fresh run
+     progress OUTRANKS silence (net fatal = 20s of no-answer AND no progress — which also killed the
+      `--watch` 8s false-RED bail), and the reaper (LiesLies `Lies_runner_roster`) reaps a silent
+       transport/Pier while KEEPING the durable `%HostedIdentity`. Two behaviours that look like bugs but
+        are BY DESIGN: a `favourite_client` row is NEVER roster-GC'd (the durable relationship is the
+         point), so a dead favourite squats in the registry until un-favoured — and `runner_ask runners`
+          therefore census-pings every registry row BY ADDRESS and prints ✓/✗ (the role broadcast reaches
+           whichever single socket the relay favours; never trust it for a census). Still owed from the
+            old list: `from:<pub>` on `run_phase`/`run_result` (`w.c.run_phase` is still a single slot →
+             the Brink says "*a* runner needs AC", not which — LiesFunk says so at the stamp site), the
+              per-Pier inseq-reload baseline, and demoting `advertise` to a pure directory announce.
+               (Tab sleepiness is the twin problem: a muted keepalive AudioContext + Page-Lifecycle
+                resume→re-ping / freeze→"going cold" advertise; installed-PWA for a real fleet — see the
+                 warmth memory.)
 
 **The dispatch allocator** (§3.5 lease in its dispatch hat): `Lies_dispatch_target` picks the latest trusted
  not-busy runner by tier (mine ▸ unclaimed ▸ another's favourite; a freshly-`sent` ☎ counts as busy) and

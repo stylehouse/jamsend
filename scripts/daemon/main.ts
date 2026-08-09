@@ -627,7 +627,7 @@ const friendly_of = (pub8: string): string => {
 //  `docker-compose.yml` caps jamserve at 3G and NOTHING measured whether that number bore any
 //   relation to reality — it was set against the old `rec.c.pcm` pinning (~92MB per record) and has
 //    never been checked since that got an owner.  A limit nobody measures against is a coin flip:
-//     too low and the box dies mid-haul, too high and a leak runs for hours before anyone notices.
+//     too low and the box dies mid-heist, too high and a leak runs for hours before anyone notices.
 //  `hi` is the high-water mark, and it is the one that matters.  RSS sampled every 10s tells you
 //   almost nothing about a process that allocates in bursts (a whole-remainder ffmpeg queue, a
 //    census, a landing) — the peak is what the cgroup killer actually reacts to, and it is invisible

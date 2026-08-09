@@ -50,6 +50,6 @@ Snap:H
         MusuSelf,pub:breach.own
           stock,pub:breach.own
           shop,pub:breach.own
-            Heist,at:breachpier,disbelieve_directories
+            Caper,at:breachpier,disbelieve_directories
               filing,artist:The Sines,genre:breachtest
               filing,artist:DJ Oscillo,genre:breachtest

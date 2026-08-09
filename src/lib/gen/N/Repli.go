@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return '5b00bbc6949b88a9~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return 'f631efaebe163a75~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -140,8 +140,8 @@ Repli_identity_keys(mainkey) {
         Cloud: ['page', 'randomic'],
         // ── the referring particles: what a peer SAYS.  `of` is the many:1 pointer. ──
         Spin: ['of'], Like: ['of'], Grab: ['of'], Jam: ['with'],
-        Heistlet: ['of', 'pier'], Rummage: ['want', 'seed', 'pier'],
-        Heist: ['at', 'wish', 'hid'], Renamed: ['key', 'from'],
+        Caperlet: ['of', 'pier'], Rummage: ['want', 'seed', 'pier'],
+        Caper: ['at', 'wish', 'hid'], Renamed: ['key', 'from'],
         // %Reco is keyed by WHO recommended — `rec.oai({Reco:1, by})` (this file, Repli_reco_*).
         //  Read it off the mint, not off the Books: two Books do `rec.o({Reco:1})[0]`, which reads
         //   like a 1:1 and is only "the first one".  Inferring ['Reco'] from that would have shipped

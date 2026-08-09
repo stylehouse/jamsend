@@ -291,7 +291,7 @@
             Machine:           () => { S('background-color','#1c2430'); S('color','#b0c4dc')
                                        S('shape','round-rectangle'); S('width',30)
                                        S('border-color','#6f8ab0'); S('border-width',1) },
-            Heist:             () => { S('background-color','#2e1420'); S('color','#f0a8c4')
+            Caper:             () => { S('background-color','#2e1420'); S('color','#f0a8c4')
                                        S('shape','round-rectangle'); S('width',30)
                                        S('border-color','#d94f7a'); S('border-width',1) },
             Uptime:            () => { S('background-color','#142a18'); S('color','#9ce6b0')
@@ -384,7 +384,7 @@
     //          the golden-angle MATSTYLE_PALETTE fallback in matstyle_get_or_create — existing
     //           non-organ swatches are byte-identical.
     // the known Sounditron organs get HAND-PLACED hues, well-separated around the wheel and aligned
-    //  to the Cyto seeds above (Radio amber · Stoker teal · Door violet · Heist pink) so the two views
+    //  to the Cyto seeds above (Radio amber · Stoker teal · Door violet · Caper pink) so the two views
     //   agree.  The raw string-hash CLUSTERED them (Tuner 346 / Beat 350 / Stoker 2 all one red; Door
     //    and MusuThem hashed to the SAME 134 green) — the human's "colour each of them somehow" only
     //     half-met.  This table is consulted ONLY for these exact mainkeys; every other key (a record
@@ -392,7 +392,7 @@
     matstyle_organ_hue(key: string): number | null {
         const H: Record<string, number> = {
             MusuThem: 5, Zine: 22, Radio: 40, Mag: 95, Uptime: 128, Stoker: 165,
-            Tuner: 192, Beat: 210, Machine: 240, Riffle: 262, Door: 288, Heist: 332,
+            Tuner: 192, Beat: 210, Machine: 240, Riffle: 262, Door: 288, Caper: 332,
         }
         return H[key] ?? null
     },

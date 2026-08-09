@@ -10,7 +10,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return 'cb1eebe56cc00784~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return '319fd12ab7541232~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -22,7 +22,7 @@ import { Idento } from "$lib/Y.svelte.ts"
 //
 // DESIGN vs ON-THE-DESIGN (the owner's cut).  Everything the heist actually IS lives on `w` as first-
 //  class C: Accounts, Peerings, Piers, Grants, the Idzeug seal, the Libraries + %Record/%Body chunks,
-//   the %Heist jobs + their %filing decisions, the quarantine mirror.  Everything the TEST observes
+//   the %Caper jobs + their %filing decisions, the quarantine mirror.  Everything the TEST observes
 //    ABOUT that — reached breadcrumbs, censused/sealed counts, the per-job heisted node with its
 //     on_disk monitoring + byte-faithful verdict, the newlyadded shape read, the deny verdict, the
 //      flatten check, and the %see assertions — hangs under ONE `w/%testing` subtree (MusuHeist_T).
@@ -341,7 +341,7 @@ MusuHeist_bundle(w, nick) {
         filings: [{ artist: 'The Sines', genre: pfx + '-chillwave' }, { artist: 'DJ Oscillo', genre: pfx + '-bangers' }] }
 
 },
-// a job begins: the %Heist minted with its filings pinned (DESIGN, on w), the quarantine shelf keyed for
+// a job begins: the %Caper minted with its filings pinned (DESIGN, on w), the quarantine shelf keyed for
 //  THIS direction.  A prior job still standing is a timing breach worth reading — note it in %testing.
 async MusuHeist_job(w, nick) {
     this.MusuHeist_note(w, { reached: 'job_' + nick })
@@ -518,15 +518,15 @@ async MusuHeist_deny(w) {
     this.MusuHeist_note(w, row)
 
 },
-// nothing attributes: the scaffolding is gone (no %Heist stands, both quarantine shelves empty) and what
+// nothing attributes: the scaffolding is gone (no %Caper stands, both quarantine shelves empty) and what
 //  remains — collections + newlyadded — never says who gave what.  The verdict observation to %testing.
 async MusuHeist_flat_check(w) {
     this.MusuHeist_note(w, { reached: 'flat' })
-    // the jobs home in each asker's shop shelf now (§2.4) — no %Heist floats on w — so count across BOTH
+    // the jobs home in each asker's shop shelf now (§2.4) — no %Caper floats on w — so count across BOTH
     //  askers' shops (plus w for the compat leg, so a stray on the floor still reads as a leak).
     let shop_a = this.Ra_home_shop(w, w.c.uno_pre)
     let shop_b = this.Ra_home_shop(w, w.c.duo_pre)
-    let heists = w.o({ Heist: 1 }).length + shop_a.o({ Heist: 1 }).length + shop_b.o({ Heist: 1 }).length
+    let heists = w.o({ Caper: 1 }).length + shop_a.o({ Caper: 1 }).length + shop_b.o({ Caper: 1 }).length
     let mir_a = w.o({ MusuThem: 1, pub: w.c.uno_pre + '.heist' })[0]?.o({ stock: 1 })[0]
     let mir_b = w.o({ MusuThem: 1, pub: w.c.duo_pre + '.heist' })[0]?.o({ stock: 1 })[0]
     let quarantined = (mir_a ? mir_a.o({ Record: 1 }).length : 0) + (mir_b ? mir_b.o({ Record: 1 }).length : 0)
@@ -613,7 +613,7 @@ MusuHeist_witness(w) {
     // the job stands with its filings pinned while nothing has landed yet — merge decided at creation.
     //  it lives in the asker's shop shelf now (§2.4), not on w — the first standing job is uno's (asker uno_pre),
     //   but look across both askers' shops so a duo-first ordering still finds the standing job.
-    let stand = this.Ra_home_shop(w, w.c.uno_pre).o({ Heist: 1 })[0] || this.Ra_home_shop(w, w.c.duo_pre).o({ Heist: 1 })[0]
+    let stand = this.Ra_home_shop(w, w.c.uno_pre).o({ Caper: 1 })[0] || this.Ra_home_shop(w, w.c.duo_pre).o({ Caper: 1 })[0]
     if (stand && stand.o({ filing: 1 }).length >= 1 && !T.o({ heisted: 1 }).length && !T.oa({ see: 'a heist job stands pointed at the pier — its filing decisions pinned before any byte crossed' })) this.MusuHeist_note(w, { see: 'a heist job stands pointed at the pier — its filing decisions pinned before any byte crossed' })
     let ha = T.o({ heisted: 'uno' })[0]
     // job A landed: original bytes straight into the collection — the DISK re-read re-hashes to the source
@@ -705,7 +705,7 @@ MusuHeist_witness(w) {
     let no_attribution = 1
     for (const r of this.Ra_recs(uno_lib)) { if (r.sc.source || r.sc.from || r.oa({ from: 1 })) no_attribution = 0 }
     for (const r of this.Ra_recs(duo_lib)) { if (r.sc.source || r.sc.from || r.oa({ from: 1 })) no_attribution = 0 }
-    if (T.oa({ flattened: 1 }) && !w.o({ Heist: 1 }).length && no_attribution && !T.oa({ see: 'the scaffolding flattened away — no heist stands and nothing attributes who gave what' })) this.MusuHeist_note(w, { see: 'the scaffolding flattened away — no heist stands and nothing attributes who gave what' })
+    if (T.oa({ flattened: 1 }) && !w.o({ Caper: 1 }).length && no_attribution && !T.oa({ see: 'the scaffolding flattened away — no heist stands and nothing attributes who gave what' })) this.MusuHeist_note(w, { see: 'the scaffolding flattened away — no heist stands and nothing attributes who gave what' })
 
 },
 // ══ MusuVend — M2: two-Pier MAGAZINE replication, grant-gated (Radio_todo §12.4 M-rung) ══════════════
@@ -3600,8 +3600,8 @@ MusuReap_witness(w) {
     if (sm && sm.sc.shelf_clear && !T.oa({ see: 'the run leaves the shared shelf clean — every radiostock file this Book minted under its own pub is swept so no warm cache litters the next Book' })) this.MusuReap_note(w, { see: 'the run leaves the shared shelf clean — every radiostock file this Book minted under its own pub is swept so no warm cache litters the next Book' })
 
 },
-// ══ MusuSoft — the SOFT %Heist: the search that hardens into a pull (Radio_spec §2.4 / §5A rung 4) ═══════
-//  A hard %Heist,at:<pier> is a manifest of known ids at a known peer.  The human's 2026-07-17 ruling turns
+// ══ MusuSoft — the SOFT %Caper: the search that hardens into a pull (Radio_spec §2.4 / §5A rung 4) ═══════
+//  A hard %Caper,at:<pier> is a manifest of known ids at a known peer.  The human's 2026-07-17 ruling turns
 //   that inside out: a heist BEGINS as barely more than a wish — no ids, only meaning — and CONDENSES by
 //    stages (wish → ask → %Lead → choose → the built pull).  This Book proves the LITERAL-match rung of that
 //     front: a wish sentence matched against card title|artist|genre|album (the Stemdex/%Seem by-meaning rung
@@ -3857,7 +3857,7 @@ MusuSoft_witness(w) {
         for (const card of this.Musica_cards(omag)) { if (!this.MusuVend_card(vmag, card.sc.id)) mag_ok = 0 }
     }
     if (mag_ok && !T.oa({ see: 'the origin catalog crossed the granted wire — the seeker mirrors all three cards of the published magazine before any wish' })) this.MusuSoft_note(w, { see: 'the origin catalog crossed the granted wire — the seeker mirrors all three cards of the published magazine before any wish' })
-    // #2 a wish begins SOFT — a %Heist carrying a wish sentence and no ids: barely more than meaning.  Gated on
+    // #2 a wish begins SOFT — a %Caper carrying a wish sentence and no ids: barely more than meaning.  Gated on
     //  the mint marker so it fires at step 3 (before condense stamps `at` — %see latches once-noticed there).
     let wa = w.c.wish_a
     let wished_a = T.o({ wished: 'a' })[0]
@@ -3875,13 +3875,13 @@ MusuSoft_witness(w) {
     if (pm && hardened && pm.sc.landed_whole && pm.sc.only_wanted && pm.sc.decoys_unspent && !T.oa({ see: 'choosing the lead hardened the wish and pulled exactly that one card whole into the seeker stock while the two unchosen cards stayed unspent husks — a pull is per-card never a broadcast' })) this.MusuSoft_note(w, { see: 'choosing the lead hardened the wish and pulled exactly that one card whole into the seeker stock while the two unchosen cards stayed unspent husks — a pull is per-card never a broadcast' })
 
 },
-// ══ MusuBay — the per-Pier BAY + the %Heistlet travelling ask (Radio_spec §2.4) ═════════════════════════
+// ══ MusuBay — the per-Pier BAY + the %Caperlet travelling ask (Radio_spec §2.4) ═════════════════════════
 //  MusuSoft proved a wish CONDENSES against a Lead the caller already trusts.  But a Lead only says a peer's
 //   CATALOG matched — before committing a pull, the ask itself can TRAVEL to that peer to confirm which ids
 //    they can serve NOW.  The shop's per-Pier sub-part — the loading `bay,pub:<them>` (Ra_home_bay) — is the
-//     Repli-able corner where that travelling ask lives: a %Heistlet,of:<hid>,pier: minted in F's bay is
+//     Repli-able corner where that travelling ask lives: a %Caperlet,of:<hid>,pier: minted in F's bay is
 //      Repli'd OVER to F ("have you got these?"), F stamps have|held marks on it IN PLACE, and the annotated
-//       ask replicates BACK and is ADOPTED onto MY original.  The Heistlet is the heist manifest AND rung 7's
+//       ask replicates BACK and is ADOPTED onto MY original.  The Caperlet is the heist manifest AND rung 7's
 //        inventory beacon worn as one culture shape.  The scenes, on a MusuSoft-style loopback DOUBLED (two
 //         origin Piers, each on its own granted wire, both granting the reverse leg too):
 //          2  TWO origins census DISTINCT real testsound tracks + publish Mags over granted wires.
@@ -3893,7 +3893,7 @@ MusuSoft_witness(w) {
 //          5  Heist_let_ask crosses the granted wire (SEND — a frame settles between beats, so the answer waits).
 //          6  the settled ask is answered IN PLACE — Heist_let_answer stamps have:1 on the standing id and
 //              NOTHING on the unknown one (silence is honest) — then the annotated copy Repli's BACK.
-//          7  the return leg lands → Heist_let_adopt stamps MY original bay Heistlet (have on the real id —
+//          7  the return leg lands → Heist_let_adopt stamps MY original bay Caperlet (have on the real id —
 //              nothing on the fake — the negative control proven on MY own shelf).
 //          8  condense + pull the HAD card via the untouched machinery (Heist_condense → Heist_beat) → only
 //              that card's bytes spend (the decoys stay unspent husks — the MusuSoft economy discriminator).
@@ -3950,7 +3950,7 @@ async MusuBay_drive(w, req) {
         if (n === 8) await this.MusuBay_pull(w, nav)
         if (n === 9) await this.MusuBay_sweep(w, nav)
     }
-    // pump BOTH receive ports every pass so the mag offers + the Heistlet ask/return-leg settle over the mock
+    // pump BOTH receive ports every pass so the mag offers + the Caperlet ask/return-leg settle over the mock
     //  wire (belt-and-braces — Lake_link is reliable:true so Peeroleum_deliver drains inline in post_do).
     for (const port of (w.c.rx_ports || [])) { await port.do() }
     this.MusuBay_witness(w)
@@ -3958,7 +3958,7 @@ async MusuBay_drive(w, req) {
 
 },
 // MusuBay_setup — stand up TWO wires, Seeker⇄Origin1 and Seeker⇄Origin2, each port registered BOTH ways (a
-//  caster of its own census AND a receiving port — the MusuHeist two-way idiom, needed because the Heistlet
+//  caster of its own census AND a receiving port — the MusuHeist two-way idiom, needed because the Caperlet
 //   crosses Seeker→Origin and the annotated copy crosses back Origin→Seeker).  Both origins census DISTINCT
 //    real testsound tracks off the shared disk (Heist_census — %Body bufs + real title/artist), fold a %Mag,
 //     and offer it over its granted wire.  The grant is a Book-owned toggle ON for both directions.
@@ -3988,7 +3988,7 @@ async MusuBay_setup(w, nav) {
     w.c.tx2.i({ Ud: 1, pubkey: 'Seeker' })
     this.Repli_arm(w)
     // the seeker's mirror shelf (where origin offers land) + BOTH receive ports.  The origin-side ports are ALSO
-    //  registered rx so the Heistlet ask lands there; the seeker ports rx the annotated return leg.  All four
+    //  registered rx so the Caperlet ask lands there; the seeker ports rx the annotated return leg.  All four
     //   pump each pass.
     w.c.repli_mirror_pier = 'Origin1'
     this.Repli_register_rx(w, w.c.sx1)
@@ -4007,16 +4007,16 @@ async MusuBay_setup(w, nav) {
     this.Repli_register_caster(w, w.c.tx2, origin2_lib)
     await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-MusuBay')
     // the grant: ON for both directions (Seeker↔Origin1, Seeker↔Origin2).  Repli_allowed asks (peer=to, at=from)
-    //  at every leg — a Heistlet Seeker→Origin1 asks grant(Origin1, Seeker); the return leg asks grant(Seeker,
+    //  at every leg — a Caperlet Seeker→Origin1 asks grant(Origin1, Seeker); the return leg asks grant(Seeker,
     //   Origin1).  Both open so both legs cross.
     w.c.grants = { Seeker: 1, Origin1: 1, Origin2: 1 }
     w.c.repli_allow = (peer, at) => !!(w.c.grants && w.c.grants[peer])
     await this.expecting(w, 'bay_census', 90, async () => {
         let c1 = await this.Heist_census(w, origin1_lib, nav, 'testsounds', ['DJ Oscillo'])
         let c2 = await this.Heist_census(w, origin2_lib, nav, 'testsounds', ['The Sines'])
-        // pin the CHOSEN card (Origin1's Cosmic C) so wish, Lead, Heistlet + discriminator all agree; and the
+        // pin the CHOSEN card (Origin1's Cosmic C) so wish, Lead, Caperlet + discriminator all agree; and the
         //  two Origin1 decoys so the witness reads them staying unspent.  A fabricated id the far side LACKS is
-        //   the negative control the Heistlet asks about beside the real one.
+        //   the negative control the Caperlet asks about beside the real one.
         let recs1 = this.Ra_recs(origin1_lib)
         let cosmic = recs1.find((r) => r.sc.title === 'Cosmic C')
         if (cosmic) w.c.want_id = cosmic.sc.id
@@ -4055,7 +4055,7 @@ async MusuBay_setup(w, nav) {
 async MusuBay_fanout(w) {
     this.MusuBay_note(w, { reached: 'step_3' })
     if (!w.c.set_up) return
-    // the wish homes in the SEEKER's shop shelf (Ra_home_shop, §2.4); it carries a pinned hid the Heistlet
+    // the wish homes in the SEEKER's shop shelf (Ra_home_shop, §2.4); it carries a pinned hid the Caperlet
     //  refers back to (the many:1 `of` law).  Two words — `cosmic` hits Origin1's Cosmic C, `sine` hits
     //   Origin2's Sines titles.
     let wish = this.Heist_wish(w, this.Ra_home_shop(w, 'Seeker'), 'cosmic sine', [], { hid: 'wish1' })
@@ -4073,15 +4073,15 @@ async MusuBay_fanout(w) {
     let from2 = 0
     for (const ld of leads) { if (ld.sc.pier === 'Origin1') from1 = 1; if (ld.sc.pier === 'Origin2') from2 = 1 }
     if (from1 && from2) m.sc.both_piers = 1
-    // pin the Origin1 Lead (the one we'll mint a Heistlet for — the chosen source that HAS Cosmic C).
+    // pin the Origin1 Lead (the one we'll mint a Caperlet for — the chosen source that HAS Cosmic C).
     let chosen = leads.find((ld) => ld.sc.pier === 'Origin1' && ld.sc.id === w.c.want_id)
     if (chosen) w.c.chose_lead = chosen
 
 },
 // MusuBay_mint — CHOOSING the Origin1 Lead mints the travelling ask in Origin1's bay: Heist_let_mint stamps a
-//  %Heistlet,of:wish1,pier:Origin1 under Ra_home_bay(w, Seeker, Origin1) — the per-Pier corner of MY loading
+//  %Caperlet,of:wish1,pier:Origin1 under Ra_home_bay(w, Seeker, Origin1) — the per-Pier corner of MY loading
 //   zone — with TWO ask ids: the REAL want (Cosmic C — Origin1 HAS it) and a FABRICATED id (Origin1 LACKS it)
-//    — the negative control.  The Heistlet stands in MY shop's bay, ids scalar-only so they cross a husk.
+//    — the negative control.  The Caperlet stands in MY shop's bay, ids scalar-only so they cross a husk.
 async MusuBay_mint(w) {
     this.MusuBay_note(w, { reached: 'step_4' })
     if (!w.c.set_up || !w.c.chose_lead) return
@@ -4090,14 +4090,14 @@ async MusuBay_mint(w) {
     let letc = this.Heist_let_mint(w, w.c.wish, w.c.chose_lead, bay, [w.c.want_id, w.c.fake_id])
     w.c.let = letc
     let m = this.MusuBay_note(w, { minted: 1, asks: letc.o({ ask: 1 }).length })
-    // the Heistlet stands in Seeker's shop > bay,pub:Origin1 — locate it back through the home path to prove it.
+    // the Caperlet stands in Seeker's shop > bay,pub:Origin1 — locate it back through the home path to prove it.
     let shop = this.Ra_home_shop(w, 'Seeker')
     let bcheck = shop.o({ bay: 1, pub: 'Origin1' })[0]
-    let stood = bcheck ? bcheck.o({ Heistlet: 1, of: 'wish1', pier: 'Origin1' })[0] : null
+    let stood = bcheck ? bcheck.o({ Caperlet: 1, of: 'wish1', pier: 'Origin1' })[0] : null
     if (stood && stood.o({ ask: 1 }).length === 2) m.sc.bay_stood = 1
 
 },
-// MusuBay_ask — the Heistlet TRAVELS: Heist_let_ask crosses it Seeker→Origin1 over the granted wire (a
+// MusuBay_ask — the Caperlet TRAVELS: Heist_let_ask crosses it Seeker→Origin1 over the granted wire (a
 //  chunkless husk — the ask children are scalar-only, so the whole manifest rides one frame).  SEND ONLY: a
 //   frame settles over post_do BETWEEN beats (an offer sent at beat K merges at the mirror by K+1), so the
 //    far side cannot answer in the SAME step that sends — the answer waits for step 6, by when the ask has
@@ -4112,14 +4112,14 @@ async MusuBay_ask(w) {
 },
 // MusuBay_answer — the FAR SIDE answers the settled ask IN PLACE, then Repli's the annotated copy BACK.  By
 //  step 6 the ask frame has merged into the mirror (Repli_mirror_lib — where Origin1's offers land), so find
-//   MY Heistlet's mirror copy there and let Origin1 answer it against its OWN census stock: have:1 on the
+//   MY Caperlet's mirror copy there and let Origin1 answer it against its OWN census stock: have:1 on the
 //    standing want, NOTHING on the fabricated id it lacks (silence is honest).  Then cross the annotated copy
 //     back over the reverse wire (Origin1→Seeker — the grant's reverse leg is open) so step 7 adopts it.
 async MusuBay_answer(w) {
     this.MusuBay_note(w, { reached: 'step_6' })
     if (!w.c.let) return
     let mir = this.Repli_mirror_lib(w)
-    let letMirror = mir ? mir.o({ Heistlet: 1, of: 'wish1', pier: 'Origin1' })[0] : null
+    let letMirror = mir ? mir.o({ Caperlet: 1, of: 'wish1', pier: 'Origin1' })[0] : null
     w.c.let_mirror = letMirror
     let m = this.MusuBay_note(w, { answered: 1 })
     if (!letMirror) return
@@ -4137,7 +4137,7 @@ async MusuBay_answer(w) {
 
 },
 // MusuBay_adopt — the RETURN LEG lands: by step 7 the annotated copy has settled in MY per-Pier RX mirror, so
-//  Heist_let_adopt copies the have|held marks from the mirror copy onto MY ORIGINAL bay Heistlet.  The mirror
+//  Heist_let_adopt copies the have|held marks from the mirror copy onto MY ORIGINAL bay Caperlet.  The mirror
 //   was a landing zone — adoption is the explicit seam onto what I own.  The negative control lands on MY OWN
 //    shelf: have on the real id, nothing on the fake.
 async MusuBay_adopt(w) {
@@ -4196,7 +4196,7 @@ async MusuBay_sweep(w, nav) {
 
 },
 // MusuBay_witness — the SIX %see truths, gated on live %testing markers + live particle reads (the actual
-//  Leads under the wish, the actual Heistlet in the bay, the actual marks, the landed %Record), never a beat
+//  Leads under the wish, the actual Caperlet in the bay, the actual marks, the landed %Record), never a beat
 //   number — each fires the first pass its fact holds and latches once-noticed.  NO COMMAS in a sentence (the
 //    peel parser splits on them — em-dashes instead).
 MusuBay_witness(w) {

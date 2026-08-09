@@ -1211,16 +1211,16 @@
         return { roots, all }
     }
 
-    // THE IDENT — `Haul:10.Yara`, not `Haul:1` (the owner 2026-08-09: *"we had some way of saying the
-    //  'Haul:10.Yara' or whatever it is (it should be more serial id?)"*).
-    //  A mainkey's VALUE is often just the presence marker `1` (`{Transfer:1}`, `{Diag:1}`, `{Haul:1}` on
+    // THE IDENT — `Heist:10.Yara`, not `Heist:1` (the owner 2026-08-09: *"we had some way of saying the
+    //  'Heist:10.Yara' or whatever it is (it should be more serial id?)"*).
+    //  A mainkey's VALUE is often just the presence marker `1` (`{Transfer:1}`, `{Diag:1}`, `{Heist:1}` on
     //   a fresh keep), so `mk:value` said nothing about WHICH one you were looking at — and several of
     //    these are many-per-glass.  Three parts now, each dropped when it has nothing to say:
     //     · the MAINKEY — what the thing IS (CLAUDE.md: the mainkey is the type tag);
     //     · a SERIAL — a small stable number per identity, so two of the same kind are tellable apart at
     //        a glance and stay tellable across repaints (assigned first-seen, held on the tok);
-    //     · a NAME — the mainkey's own value when it carries one (a %Haul wears its TITLE: `Heist.g`
-    //        mints `{ Haul: entry.sc.title, seed, pub, state }`), else the shortest identifying scalar
+    //     · a NAME — the mainkey's own value when it carries one (a %Heist wears its TITLE: `Heist.g`
+    //        mints `{ Heist: entry.sc.title, seed, pub, state }`), else the shortest identifying scalar
     //         to hand (`id`/`seed`/`of`, trimmed — an id8 is plenty to disambiguate on a glass).
     //  The serial is per-WORLD and lives on `.c` — it is a way of SAYING the thing, not a fact about it,
     //   so it must never reach a snap.
@@ -1399,7 +1399,7 @@
         //  The GATE-FLIP probe and the OMISSION DETECTOR below both ran UNCONDITIONALLY, every build,
         //   i.e. up to 60×/s: the detector alone did a THIRD full `tree_nodes(w)` walk plus a filter,
         //    two Set constructions and two diff loops, and the gate probe allocates a 6-field object
-        //     and does six comparisons per Haul cell per frame. They are diagnostics; they found the
+        //     and does six comparisons per Heist cell per frame. They are diagnostics; they found the
         //      remount mechanism they were written for, and that knowledge is worth keeping — so they
         //       are GATED, not deleted. `H.top_House().c.vyto_probe = 1` in a console turns them back
         //        on for one session. Kept because the human's complaint is battery, not features:
@@ -1556,7 +1556,7 @@
                         if (er != null && now_fx - er < ERUPT_MS) { fx = 'erupt'; fx_left = Math.max(fx_left, ERUPT_MS - (now_fx - er)) }
                     }
                 }
-                if (PROBE && String(ident).indexOf('Haul:') === 0) {
+                if (PROBE && String(ident).indexOf('Heist:') === 0) {
                     // capture EVERY structural-gate input, keyed by the stable ident so a KEY flip is
                     //  itself caught (prev survives a tok change).  faceNull|face|source feed the inner
                     //   {#if cell.face}; departing|hasKids feed its other two clauses; key feeds the each.
@@ -1817,8 +1817,8 @@
         //    (`tn`), so even switched on it costs a filter rather than a re-walk.
         if (PROBE) {
             const sp2 = springs.get(w)
-            const tnKeep = tn.all.filter(nn => nn.key.indexOf('Haul:') === 0)
-            const emitted = new Set(cells.filter(c => c.key.indexOf('Haul:') === 0).map(c => c.key))
+            const tnKeep = tn.all.filter(nn => nn.key.indexOf('Heist:') === 0)
+            const emitted = new Set(cells.filter(c => c.key.indexOf('Heist:') === 0).map(c => c.key))
             const lastEmit = lastKeepEmit.get(w) ?? new Set<string>()
             for (const k of lastEmit) if (!emitted.has(k)) {
                 const node = tnKeep.find(nn => nn.key === k)
@@ -2039,18 +2039,18 @@
             //   Vyto.g log never re-mints/drops it), yet the Face keeps remounting once per trickle —
             //    so the churn must be HERE, in whether this row gets a spring each adopt() pass. Gated
             //     to Keep rows only.
-            const sawHaul = new Set<string>()
+            const sawHeist = new Set<string>()
             for (const n of tree_nodes(w).all) {
-                if (n.key.indexOf('Haul:') === 0) sawHaul.add(n.key)
+                if (n.key.indexOf('Heist:') === 0) sawHeist.add(n.key)
                 const T = target_of(n.row)
                 if (!T) {
-                    if (n.key.indexOf('Haul:') === 0) console.log('◈ Vyto adopt: row.c.T MISSING for', n.key)
+                    if (n.key.indexOf('Heist:') === 0) console.log('◈ Vyto adopt: row.c.T MISSING for', n.key)
                     continue
                 }
                 present.add(n.key)
                 let s = sp.get(n.key)
                 if (!s) {
-                    if (n.key.indexOf('Haul:') === 0) console.log('◈ Vyto adopt: NEW spring (entrance ramp) for', n.key, 'T=', JSON.stringify(T))
+                    if (n.key.indexOf('Heist:') === 0) console.log('◈ Vyto adopt: NEW spring (entrance ramp) for', n.key, 'T=', JSON.stringify(T))
                     // a newcomer springs from x,y AT target with r 0 — the radius ramp IS the entrance.
                     sp.set(n.key, { x: T.x, y: T.y, r: 0, vx: 0, vy: 0, vr: 0 })
                     moved = true
@@ -2059,11 +2059,11 @@
                 }
             }
             for (const key of [...sp.keys()]) {
-                if (key.indexOf('Haul:') === 0 && !sawHaul.has(key)) console.log('◈ Vyto adopt: row ABSENT from tree_nodes().all for', key, '(not just T-less — gone from the walk entirely)')
+                if (key.indexOf('Heist:') === 0 && !sawHeist.has(key)) console.log('◈ Vyto adopt: row ABSENT from tree_nodes().all for', key, '(not just T-less — gone from the walk entirely)')
             }
             let removed = false
             for (const key of [...sp.keys()]) if (!present.has(key)) {
-                if (key.indexOf('Haul:') === 0) console.log('◈ Vyto adopt: spring REMOVED for', key)
+                if (key.indexOf('Heist:') === 0) console.log('◈ Vyto adopt: spring REMOVED for', key)
                 sp.delete(key); removed = true
                 // prune the arrival ledger with the spring: a key that genuinely leaves must be able to
                 //  SPROUT again when it comes back, and the ledger must not grow without bound.
@@ -2456,10 +2456,10 @@
         }
         //  FALLBACK — BY ID, NOT BY CONTAINMENT.  The walk above only lands if some ANCESTOR of the
         //   record was given a cell, and often none was: the cut hands cells to FACES (Radio, Transfer,
-        //    Shuffle, Haul…), not to the shelves a %Record hangs under, so a purely structural walk can
+        //    Shuffle, Heist…), not to the shelves a %Record hangs under, so a purely structural walk can
         //     run its whole guard and draw nothing.  But the glass is usually already showing the track
         //      — as a REFERRING particle wearing its own mainkey and carrying the holding's id
-        //       (`Card,id:X` / `Haul,…` / `Spin,of:X`; CLAUDE.md's identity model).  That id IS the join,
+        //       (`Card,id:X` / `Heist,…` / `Spin,of:X`; CLAUDE.md's identity model).  That id IS the join,
         //        so match on it.  This is the case that most often makes the plug visible at all.
         const rid = rec?.sc?.id != null ? String(rec.sc.id) : null
         if (rid) {
@@ -3549,7 +3549,7 @@
     .ident.under { fill: #8f8fb4; opacity: 0.5; font-weight: 600; }
     /* THE EDGE LABEL — the cell's name filed along its top side, in the margin the inscribed mold opened
        between the wall and the face.  Slightly brighter and tighter than the guts: it is the one thing
-       that says WHICH of several same-kind cells this is (`Haul:10.Yara`), so it should read first. */
+       that says WHICH of several same-kind cells this is (`Heist:10.Yara`), so it should read first. */
     .ident.under.lab { font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; fill: #a8a8cc; opacity: 0.62; letter-spacing: 0.2px; }
     /* THE GUTS — the particle's own scalars, spilled down the same margin as quiet standing matter.
        Monospace so the k/v columns line up down the stack and the eye can scan them. */

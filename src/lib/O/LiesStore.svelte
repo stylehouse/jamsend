@@ -811,7 +811,7 @@
                 sr.sc.text      = text
                 sr.sc.dige      = dige
                 // theirs rides off-snap: the diff UI reads it without a second read,
-                //  and a snap reload re-fetches it from disk rather than hauling a
+                //  and a snap reload re-fetches it from disk rather than heisting a
                 //   whole file through the snap (mine, on sc.text, can't be re-derived
                 //    so it must persist; disk_text always can).
                 sr.c.disk_text  = disk_text

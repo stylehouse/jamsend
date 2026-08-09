@@ -23,6 +23,85 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.
 
+### 2026-08-09 — "IT WON'T STREAM FROM LEFTO" IS EXHAUSTION, NOT ABSENCE (diagnosed on the live pair)
+
+The owner, on the tab at `?I=f5da6599b8505881`: *"observe why it won't stream from Lefto, Lefto can
+ stream from Righto."* **The wire is fine.** The pier is MUTUAL and sealed both ways, the mirror is
+  fully previewed, and the tab was serving Lefto at `xfer 0↓ / 11↑ KB/s` the whole time it "couldn't
+   stream". Nothing is broken between the tabs. The friend POOL is empty, and the reason is an
+    id-collision the heard-set cannot see.
+
+**The chain, each link checked against the live snap or the source:**
+1. The tab has already diagnosed itself — the snap carries `error,of:96d0cf8852651a73,say:no music
+    coming across from Lefto`, minted by `Radio_lineup_errors` (Radio.g:1212) when a live granted
+     pier contributes NO pool.
+2. `Radio_lineup_fill` (1110) builds those pools, filtering friend records by
+    `radio.c.heard[rec.sc.id]` (1163).
+3. **`radio.c.heard` is keyed by the BARE record id, with no owner** (`Radio_heard_add`, 723).
+4. Both tabs are on the same box reading the same files, so their ids are the same ids. Measured
+    from the live snap: **16 of 16** of this tab's own record ids also appear in its 24-record mirror
+     of Lefto — a total overlap, not a partial one.
+5. So **playing your own copy of a track marks the friend's copy heard.** Your own listening drains
+    the friend pool.
+6. The eviction that would re-admit them is `Radio_heard_cap()` = 100 (718) — but the entire
+    universe here is 24 distinct ids, so the roll-over **can never fire**. The pool stays empty for
+     the life of the tab.
+7. Corroboration in the same snap: `Mag:Lineup,up_next:9` against `AHEAD = 20` — the fill cannot
+    reach its target. The queue is draining and cannot refill.
+8. `radio.sc.own` is absent, so the lineup is in SOURCE-EXCLUSIVE friends mode (the 2026-07-28
+    ruling, 1145). There is no fallback to your own shelf: pool-empty is silence, not a switch.
+
+**THE ASYMMETRY IS NOT REAL — BOTH TABS HAVE IT, and Lefto is the WORSE one.** Checked Lefto's own
+ world in the same session, and it carries the mirror-image row: `error,of:f5da6599b8505881,say:no
+  music coming across from Righto`. The numbers:
+
+| | Righto `f5da6599` | Lefto `96d0cf88` |
+|---|---|---|
+| lineup `up_next` | 9 | **0** |
+| Stoker `fresh` / `stock` | 9 / 16 | **0** / 16 |
+| xfer | 0↓ / 11↑ | 19↓ / 0↑ |
+| mirror of the friend | 24 recs, `flat=8` | 16 recs, `flat=0` |
+
+Lefto has heard **everything it owns** (`fresh=0`) and has **nothing queued** (`up_next=0`). It looks
+ healthy only because it happens to be mid-track on a Righto record it is still pulling (hence 19↓);
+  when that track ends there is no next card. Righto looks broken only because its current track is
+   one it already holds in full, so nothing needs to arrive (hence 0↓). **The download difference is
+    a per-track accident, not a capability difference.** The owner's read — "Lefto can stream from
+     Righto" — is what a working radio and an empty queue look like from outside.
+
+The whole universe is **16 tracks that BOTH tabs already own** (16/16 id overlap), so "the friend's
+ collection" is identical to your own. Hearing your 16 heards theirs. There is no round two.
+
+**The message is a misattribution, and the fix for that already exists elsewhere in this file.**
+ `Radio_dial_pool` (1284) carries an `all` flag for exactly this distinction, and its comment says
+  why: *"the caller cannot tell 'no friend music has landed' from 'I have played all of it', and
+   those want opposite answers (an honest note vs. a replay)."* `Radio_lineup_errors` never got that
+    fix, so it blames the friend for a shelf the listener finished.
+
+**Not the cause, but seen while looking:** the mirror holds 24 Lefto records while Lefto boasts 16
+ (`boast-heard of=96d0cf88 records=16`) — 8 rows in the mirror that Lefto no longer offers. Related
+  to [[one-sided-reload-breaks-serving]]; harmless here, worth its own look.
+
+**The candidate fixes — owner's call, NOT applied** (and Radio.g had a concurrent editor at the time,
+ mtime moving mid-session, so nothing was touched):
+- **(a) Exhaustion → replay**, matching the `Radio_dial_pool(all)` idiom the codebase already chose:
+   when a friend's heard-filtered pool is empty but their unfiltered pool is not, clear those ids
+    from `heard` and say "round two" rather than minting an error. Fixes the message and the silence
+     in one move.
+- **(b) Own the heard key** (`hp + ':' + id`) — cheap, but it means hearing the same track twice,
+   once as yours and once as theirs, which may be worse than the disease.
+- **(c) Scale the cap to the collection** rather than a flat 100 — the flat number is only ever
+   correct for a library much larger than the room.
+(a) is the recommendation: it is the distinction the code already knows it needs.
+
+### 2026-08-09 — "jump to the friend's stream when it comes available" (owner, same session)
+
+Restated tighter than the boot-policy ruling below and worth keeping in its own words: *"we need to
+ jump to the Friend's stream when it comes available."* This is ruling 1 below with the emphasis
+  moved from BOOT to ANY MOMENT — a friend coming online mid-session should pull the radio over, not
+   only decide what a fresh tab opens on. Note it interacts with the exhaustion bug above: today a
+    friend "becoming available" contributes nothing if their records are already in `heard`.
+
 ### 2026-08-09 — THE BOOT POLICY, in the owner's words (design only — nothing implemented)
 
 Dropped mid-session while working the Vyto glass; recorded here because it is RADIO policy, not
@@ -538,7 +617,7 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
       press passes straight through, else ⎵ would skip a track per word while renaming a friend.
  · **⏎ takes the ALBUM, and that is the settled model, not a shortcut.** `Heist_keep_pick_all/_none/
     _seed` were REMOVED 2026-07-30 ("let's not support single tracks... we are doing that already") —
-     a %Haul seeds on ONE record id and `Heist_keep_default_pick` keeps the whole folder it describes.
+     a %Heist seeds on ONE record id and `Heist_keep_default_pick` keeps the whole folder it describes.
       `Radio_heist_now` mints the keep **primed, not pulling**: the beat rummages and default-picks,
        the human still presses ▶. A key you can hit by accident must not start writing files into a
         collection. Idempotent per record — the seed IS the identity.
@@ -1046,7 +1125,7 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
     UNDRESSED cell-holder under 'system' (`cyto_crew`, Cyto.svelte) — the model VoroCyto gets
      is the user's, not the machinery's.  CrateFace spreads `%MusuSelf|%MusuThem` records as
       little cards (▶ auditions); gang mirrors label by member mainkey, never 'gang_of'; the
-       Sounditron probe %Heist wears `crew:system`.
+       Sounditron probe %Caper wears `crew:system`.
  - **Draw-Mags**: `Stoker_mag_draw` — every landing churn mints a `%Cloud` of `%Card`s on the
     `radiostocking/%Mag` (spec §2.3 — the culture trace; stock stays FLAT by the §2.4 ruling,
      Mags REFER).  Stoker floors raised for the 20-ahead: resurrect 24 · dig floor 8 · churn
@@ -1264,7 +1343,7 @@ One line per submachine; read the indent as containment. `<` (down the left marg
       the heist  -- point a job at a Pier and pull its music into your library; MAY be klepto. rung 1 built.
         census                 -- a DIRECTORY CURSOR walks the Pier's filesystem into %Records; rolling, not a fixed set.
           %Body,seq            -- born HERE: the ORIGINAL file bytes, chunked whole -- the heist's byte-faithful payload.
-        the job                -- %Heist,at:<pier> + optional match (absent = klepto = everything); filings pinned as DATA.
+        the job                -- %Caper,at:<pier> + optional match (absent = klepto = everything); filings pinned as DATA.
         the pull               -- paged at heist rate; each offer dedup-checked at the door by catalog identity.
           < bandwidth control  -- a real throttle on the pull rate (uncapped today).
           < progress           -- a per-record download bar that renders as pages land.
@@ -1275,11 +1354,11 @@ One line per submachine; read the indent as containment. `<` (down the left marg
           < repointable mid-heist  -- re-anchor the hierarchy, checksums still pass.
         probation              -- .jamsend/newlyadded logs each arrival; love graduates, drop = deny = delete.
           ✓ remembered-denials tombstone  -- %Tombstone on drop; refused at the door (live-gate owed, §0).
-        flatten                -- the %Heist + mirror delete; nothing attributes who gave what afterward.
+        flatten                -- the %Caper + mirror delete; nothing attributes who gave what afterward.
         < cohort / cafe (rungs 2-3)  -- one page-stream to N kleptos, then a LAN broadcast tree.
 
       the app surface  -- where a person drives it.
-        < create-a-heist       -- a gesture that points a %Heist at a Pier (today ONLY the test Book mints one).
+        < create-a-heist       -- a gesture that points a %Caper at a Pier (today ONLY the test Book mints one).
         < progress + bandwidth HUD  -- the download bar and the rate dial, on screen.
         < boxy floats          -- each thing a vaguely-boxy Cyto node you float; fullscreen or open the larger ones.
         < heist bloom          -- census + pull rendered as cytonodes ERUPTING into place (the heist as a flower?).
@@ -1834,10 +1913,10 @@ Rung 1 (loopback) is BUILT and live-gate-pending: `Ghost/M/Heist.g` (the pure en
      notice it.
 - **Probation + deny.** `.jamsend/.../newlyadded` logs `<seq> <feeling> <entry>`, never a source; `love`
    graduates in place, `drop` = deny = delete the file off disk + retire the card.
-- **Flatten-off.** The `%Heist` (+ its `%filing` decisions) and the quarantine mirror delete; collections +
+- **Flatten-off.** The `%Caper` (+ its `%filing` decisions) and the quarantine mirror delete; collections +
    `newlyadded` remain and neither says who gave what.
 - **Design/test split.** The machine is first-class on `w` (Peerings/Piers/Grants/Idzeug/Libraries/%Record/
-   %Body/%Heist/mirror); every test observation hangs under `w/%testing` (the `heisted:<nick>` node with its
+   %Body/%Caper/mirror); every test observation hangs under `w/%testing` (the `heisted:<nick>` node with its
     `on_disk` monitoring, `census`/`sealed`/`newlyadded_shape`/`denied`/`flattened`, the 10 `%see`). Snap reads
      as machine-left, opinion-right.
 - **Determinism + hygiene.** The engine stamps NO test markers on the world (a transient FSA hiccup no longer
@@ -2003,7 +2082,7 @@ Every opinion-fact points at music the SAME way: a **`tune:`** scalar holding th
  of a track or an artist — "is it like a hated tracks?" — exactly that, the real broadcast
   do-not-play ledger (the BBC banned records; so do we). Minted when the listener DROPS a
    probation track (`Heist_feel` calls `Booth_ban`), or by hand at either grain. Lives on the
-    collection — an opinion belongs to the collection, not to any job, so it survives every %Heist
+    collection — an opinion belongs to the collection, not to any job, so it survives every %Caper
      flatten. **A ban stands until you lift it by hand (`Booth_lift`); nothing sweeps it** — not a
       flatten, not any cleanup — because a ban that silently vanished would re-download the very
        track it refused (the machine-side rule is the %UnGrant one: never GC a negative fact —
@@ -2508,7 +2587,7 @@ Nothing built is thrown away; each existing gear has a §12 home waiting:
  - `Heist_manifest` → **RESPONDING, follower side**: the want evaluated against one's own
     collection (it already reads (job, mir, own_lib)); it grows into the reading a browsing
      follower sees BEFORE wanting — look-before-commit becomes the reader's verdict column.
- - `%Heist,at:` job scaffolding → the WANT-BUNDLE: short-lived, cursor-pointed into the magazine
+ - `%Caper,at:` job scaffolding → the WANT-BUNDLE: short-lived, cursor-pointed into the magazine
     (C1/C3); "exists for as little time as possible" already matches the stimulus shape.
  - `Heist_beat` / `Heist_land` (streaming, body_hash + breach, filing, the verdict rows) →
     **UNCHANGED**: the serving legs the door drives (D1) and the landing side the wanter keeps;
@@ -2530,7 +2609,7 @@ Nothing built is thrown away; each existing gear has a §12 home waiting:
 ## 13. The toplevel — /BigSoundland, where it all comes together
 
 The one place every spring above surfaces as a page a human actually touches: `src/lib/V/BigSoundland.svelte`
- (the scape) + the glass under it (Vytui, `%Haul`/`%Radio`/`%Stoker`/… faces) + the InvitePanel strip. Every
+ (the scape) + the glass under it (Vytui, `%Heist`/`%Radio`/`%Stoker`/… faces) + the InvitePanel strip. Every
   other section here builds an organ; this is the body they get worn on. Items land here when they are about
    the **assembly** — what a person sees when the parts are all present — rather than about one engine.
 
@@ -2570,7 +2649,7 @@ Two halves, and the first is the general lesson:
 - **Every glass control must move on the CLICK, not on the pass.** `post_do` defers the write to the next
    belief pass, so a control shows nothing until then — and an unmoved control invites a second click,
     which is exactly how the LOFI tickbox ended up unticking itself right as ▶ start was pressed
-     (HaulFace `toggleLofi`, fixed there with a local `wish` + an ABSOLUTE value rather than a toggle read
+     (HeistFace `toggleLofi`, fixed there with a local `wish` + an ABSOLUTE value rather than a toggle read
       late). ⇊ Heist and next-track want the same treatment. Audit the rest of the glass for controls whose
        only feedback is a model round-trip.
 - **Next-track should fly around the available tracks.** Not a cut — a visible traversal of the pool

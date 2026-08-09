@@ -8,17 +8,27 @@
     //    because this same component is every path chip's × and those must stay the quiet standard
     //     affordance the human asked for; a heist is a minute of filing, so ITS exit gets to be found
     //      at a glance.  One prop, two sizes, no second component to keep in step.
-    let { ondelete, title = 'delete', glyph = '×', big = false }: {
+    //   `confirm` — WHAT THE ARMED PILL SAYS (the owner 2026-08-09: "should take a param for the confirm
+    //    language, here we would have cancel, which everyone's familiar with").  The armed state is a
+    //     promise about what the second press does, and for the heist ✕ that is not deleting anything —
+    //      it drops an intent and keeps every file already landed.  Saying `delete?` there was a lie in
+    //       the one place a lie costs most: the moment someone decides whether to press again.  Default
+    //        stays `delete?` so every existing chip × is untouched.
+    let { ondelete, title = 'delete', glyph = '×', big = false, confirm = 'delete?' }: {
         ondelete: () => void
         title?:   string
         glyph?:   string
         big?:     boolean
+        confirm?: string
     } = $props()
+    // the hover title says the same word the pill does — one string to pass, not two to keep in step.
+    //  Trailing '?' is the pill's questioning form, not part of the verb: "cancel?" → "click again to cancel".
+    const verb = $derived(confirm.replace(/\?+$/, ''))
 
     let armed = $state(false)
     let timer: ReturnType<typeof setTimeout> | undefined
     // THE BUTTON DISARMED ITSELF (the owner 2026-08-09: *"none of the path bit X buttons do anything,
-    //  in the Haul"* … *"even the X delete? one for the whole Heist"*).  Arming CHANGES THIS BUTTON'S
+    //  in the Heist"* … *"even the X delete? one for the whole Heist"*).  Arming CHANGES THIS BUTTON'S
     //   OWN SIZE — `×` (a 22px circle in the `big` form) swells into a `delete?` pill, wider and
     //    shorter — and these sit in a wrapping row of path chips.  So the act of arming reflows the
     //     row, the button moves out from under the stationary pointer, `mouseleave` fires, and it
@@ -50,8 +60,8 @@
 <span class="mx-wrap" class:mx-wrap-armed={armed}>
     {#if armed}<span class="mx-ghost" class:mx-big={big} aria-hidden="true">{glyph}</span>{/if}
     <button class="mx-del" class:mx-armed={armed} class:mx-big={big}
-            title={armed ? 'click again to delete' : title}
-            onclick={click} onmouseleave={leave}>{armed ? 'delete?' : glyph}</button>
+            title={armed ? `click again to ${verb}` : title}
+            onclick={click} onmouseleave={leave}>{armed ? confirm : glyph}</button>
 </span>
 
 <style>
@@ -70,7 +80,7 @@
     .mx-del {
         /* RE-ARM POINTER EVENTS (2026-08-07 — "the cancel heist ✕ is unclickable").  A voronoi glass
            cell's bbox overlaps its neighbours, so every face root in the glass sets
-           `pointer-events: none` and each control re-arms it — HaulFace calls that its hard contract
+           `pointer-events: none` and each control re-arms it — HeistFace calls that its hard contract
            and states it in a comment.  A face can only re-arm its OWN markup, though: Svelte scopes
            styles, so `.kf-x { pointer-events: auto }` cannot reach inside this component, and dropping
            a DeleteX into such a face produced a button that renders perfectly and cannot be clicked.

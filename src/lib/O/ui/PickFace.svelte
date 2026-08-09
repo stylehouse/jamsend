@@ -1,15 +1,15 @@
 <script lang="ts">
-    // PickFace — ONE kept track in a NESTED %Haul cell (the human 2026-07-28 "nodulate down the folder
+    // PickFace — ONE kept track in a NESTED %Heist cell (the human 2026-07-28 "nodulate down the folder
     //  hierarchy ... one for the hierarchy one for the list of tracks").  A %Pick is a track the keep will
     //   pull; under the nested glass a keep goes BARE and each of its picks draws as its own chip beside the
-    //    %HaulBar controls cell.  Click un-keeps it (drops the pick → the chip escorts out of the scope).  A
+    //    %HeistBar controls cell.  Click un-keeps it (drops the pick → the chip escorts out of the scope).  A
     //     landed pick wears ✓; the track you're hearing (the keep's seed) wears ♪.  Props { n, H } — n is the
-    //      LIVE %Pick particle; n.c.up is its %Haul (stamped by Heist_keep_default_pick / _toggle).
+    //      LIVE %Pick particle; n.c.up is its %Heist (stamped by Heist_keep_default_pick / _toggle).
     let { n, H } = $props()
     const A = H as any
 
     // the pull lands the record off the beat (pick.sc.landed flips on a tick), which a bare H.version derive
-    //  can miss between bumps — poll a slow clock beside it (the HaulFace/UptimeFace idiom).
+    //  can miss between bumps — poll a slow clock beside it (the HeistFace/UptimeFace idiom).
     let tick = $state(0)
     $effect(() => { const iv = setInterval(() => { tick++ }, 500); return () => clearInterval(iv) })
 
@@ -44,7 +44,7 @@
 </button>
 
 <style>
-    /* the whole chip is the un-keep button (HaulFace's .kf-track precedent); pointer-events:auto re-arms
+    /* the whole chip is the un-keep button (HeistFace's .kf-track precedent); pointer-events:auto re-arms
        only its own max-content footprint, so overlapping neighbour cells still hover through. */
     .pk {
         pointer-events: auto;

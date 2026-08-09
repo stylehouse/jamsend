@@ -24,7 +24,7 @@ const HEAT_BUY = 3.5
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return '0da6631fb9a5e0fc~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return 'ee62282dacce505a~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -310,7 +310,7 @@ Vyto_scan_walk(w, n, parentMirror, depth, gen) {
         //   FOUND every later scan by the same tok. Repeated minting for the same title means the tok
         //    (or the row itself) isn't surviving between scans — the actual remount mechanism, not
         //     component-local state. Gated to Keep only — every other mainkey stays silent.
-        if (mk === 'Haul') console.log('◈ Vyto mirror MINT (no existing row matched)', tok, 'gen', gen)
+        if (mk === 'Heist') console.log('◈ Vyto mirror MINT (no existing row matched)', tok, 'gen', gen)
         let seed = {}
         seed[mk] = nmk
         row = parentMirror.i(seed)
@@ -355,7 +355,7 @@ Vyto_scan_walk(w, n, parentMirror, depth, gen) {
     //      they became cells only because the glass learned to descend.
     //  So the COMMISSIONER decides, not the renderer: a source wearing `.c.flat` is mirrored as
     //   itself and its children are not walked.  It rides `.c` (a runtime mark, never encoded, so
-    //    it can sit on a real persisted particle like %Heist without touching its snap), and a
+    //    it can sit on a real persisted particle like %Caper without touching its snap), and a
     //     source that does not wear it walks exactly as before — so no fixture can move.
     //  This is the right seam for it: what a thing shows is a property of the thing, not a rule the
     //   display invents per mainkey.
@@ -376,7 +376,7 @@ Vyto_scan_sweep(w, parentMirror, gen) {
         if (row.c.seen_at === gen) continue
         // DIAGNOSTIC twin of the MINT log above — a Keep row missed this scan (its source wasn't
         //  re-walked): first miss marks departing, second miss (still departing) actually drops it.
-        if (String(row.c.tok || '').indexOf('Haul:') === 0) {
+        if (String(row.c.tok || '').indexOf('Heist:') === 0) {
             console.log(row.sc.departing ? '◈ Vyto mirror DROP (missed 2nd scan)' : '◈ Vyto mirror DEPART (missed this scan)', row.c.tok, 'gen', gen)
         }
         if (row.sc.departing) {
@@ -941,7 +941,7 @@ Vyto_stage(w, tok) {
 //  Writes back to m.c.seed as well as the local array so the placement PERSISTS: un-stage later
 //   and the pile resumes from where the deal left it rather than teleporting from stale seeds.
 // Vyto_stage_tok — THE EFFECTIVE STAGE.  The human's drag always wins; failing that, the MODEL may
-//  ask, by marking a source `.c.stage_want` (the owner 2026-08-09: *"We need to make sure Haul gets
+//  ask, by marking a source `.c.stage_want` (the owner 2026-08-09: *"We need to make sure Heist gets
 //   into the focus zone, so our UI can have enough room"*).  A heist opening is the app saying "this
 //    is what you are doing now", and it should not need a drag to get the room it needs.
 //  Read through `source_n`, so the WANT lives on the real particle the commissioner owns rather than

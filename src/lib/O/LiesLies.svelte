@@ -68,7 +68,7 @@
         'Ghost/M/Mesh.g',               // the sync that sees itself — replicas/edges, cheapest-route, multicast stretch (8+9)
         'Ghost/M/Ra.g',                 // the PIPELINE spine — rastock: needles LUFS → baked gain → ONE opus encode cut into %Preview,seq chunk particles + demand-driven stream transcode
         'Ghost/M/Booth.g',              // the Booth — taste as standing facts: the tune: handle + the %Ban do-not-play list the heist door consults (Radio_todo §11)
-        'Ghost/M/Heist.g',              // the heist engine — %Heist,at:<pier> moves ORIGINAL file bytes over Repli straight into the collection (newlyadded probation, catalog-identity dedup)
+        'Ghost/M/Heist.g',              // the heist engine — %Caper,at:<pier> moves ORIGINAL file bytes over Repli straight into the collection (newlyadded probation, catalog-identity dedup)
         'Ghost/M/Jam.g',                // the jam ledger — %Jam,with:<dj> session of ordered %Spin/%Like/%Grab facts + a keeper copy into the listener's own shelf (the glanceable session history)
         'Ghost/M/Orig.g',               // the %Original / grade-dispatch layer — the ogg128 export writes a real RFC-7845 Ogg/Opus container BACK (phone-sync ships .ogg) + its structural reader
         'Ghost/M/Radio.g',              // the RADIO — continuous listening: dial → stream-decode → AudioContext timeline → auto-advance; the %Radio face the glass mounts RadioFace on

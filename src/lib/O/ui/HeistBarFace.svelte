@@ -1,15 +1,15 @@
 <script lang="ts">
-    // HaulBarFace — the CONTROLS cell of a nested %Haul (the human 2026-07-28 "one for the hierarchy, one for
-    //  the list of tracks").  Under the nested glass the %Haul parent goes BARE (Vytui suppresses a scope's own
-    //   face), so the chrome HaulFace used to carry — the title/from header, the filing genre, the destination
+    // HeistBarFace — the CONTROLS cell of a nested %Heist (the human 2026-07-28 "one for the hierarchy, one for
+    //  the list of tracks").  Under the nested glass the %Heist parent goes BARE (Vytui suppresses a scope's own
+    //   face), so the chrome HeistFace used to carry — the title/from header, the filing genre, the destination
     //    path, select all|none, ▶ start, ✕ cancel, and the fold-down progress strip — lives HERE, in a
-    //     %HaulBar,dontSnap child minted beside the %Pick track chips.  Props { n, H } — n is the LIVE %HaulBar;
-    //      n.c.up is its %Haul (stamped in Heist_keep_step).  It reads + drives the KEEP, never itself.
+    //     %HeistBar,dontSnap child minted beside the %Pick track chips.  Props { n, H } — n is the LIVE %HeistBar;
+    //      n.c.up is its %Heist (stamped in Heist_keep_step).  It reads + drives the KEEP, never itself.
     let { n, H } = $props()
     const A = H as any
 
     // the describe round-trip + the pull both land off the beat; a bare H.version derive can miss between
-    //  bumps — poll a slow clock beside it (the HaulFace idiom this splits off from).
+    //  bumps — poll a slow clock beside it (the HeistFace idiom this splits off from).
     let tick = $state(0)
     $effect(() => { const iv = setInterval(() => { tick++ }, 500); return () => clearInterval(iv) })
 
@@ -26,9 +26,9 @@
     let face = $derived.by(() => {
         void H?.version
         void tick
-        void n?.vers                    // the %HaulBar's own bumps
+        void n?.vers                    // the %HeistBar's own bumps
         const keep = n?.c?.up
-        // SKELETON-FIRST reactivity (see HaulFace): read the KEEP's vers so every keep.bump() (state,
+        // SKELETON-FIRST reactivity (see HeistFace): read the KEEP's vers so every keep.bump() (state,
         //  asks, dose, landed_n) repaints at the beat not the 500ms poll, and query picks with .ob() so a
         //   freshly-minted %Pick trickles the sel row in-place.  Husks ride the mirror, so H.version + tick
         //    stay the honest catch for the describe landing.
@@ -45,7 +45,7 @@
         const dest = catPath(genre)
         return {
             state,
-            title: String(sc.Haul || 'this track'),
+            title: String(sc.Heist || 'this track'),
             artist: String(sc.artist || ''),
             from: String(sc.from_name || 'a friend'),
             genre,
@@ -68,7 +68,7 @@
 
     const CATEGORIES = ['Ambient', 'Jazz', 'Electronic', 'Rock', 'Hip Hop', 'Folk', 'Classical']
     const keep = () => n?.c?.up
-    // local-state category edit — see HaulFace: don't drive value= from the per-trickle derive (snaps shut).
+    // local-state category edit — see HeistFace: don't drive value= from the per-trickle derive (snaps shut).
     let catDraft = $state('')
     let catActive = $state(false)
     $effect(() => { if (!catActive) catDraft = face.genre })
@@ -140,7 +140,7 @@
 
 <style>
     /* the voronoi cell bbox overlaps its neighbours, so the ROOT must not eat pointer events; each
-       control re-arms pointer-events (the HaulFace hard contract this splits off from). */
+       control re-arms pointer-events (the HeistFace hard contract this splits off from). */
     .kb {
         pointer-events: none;
         width: max-content;

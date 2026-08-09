@@ -223,9 +223,9 @@ Radio_skip(radio):
 //   you are already listening to.
 //  IT TAKES THE ALBUM, not the track, and that is not a shortcut — it is this app's settled model.
 //   Heist_keep_pick_all/_none/_seed were REMOVED on 2026-07-30 ("let's not support single tracks...
-//    we are doing that already"): a %Haul seeds on ONE record id and Heist_keep_default_pick keeps
+//    we are doing that already"): a %Heist seeds on ONE record id and Heist_keep_default_pick keeps
 //     the whole folder it describes.  So seeding on the playing record IS "heist this album", and
-//      fine-grained exclusion stays where it already lives (Heist_keep_pick_toggle in HaulFace).
+//      fine-grained exclusion stays where it already lives (Heist_keep_pick_toggle in HeistFace).
 //  PRIMED, NOT PULLING.  It mints the keep and lets the ordinary beat rummage + default-pick; the
 //   human still presses ▶ (Heist_keep_start — "heist should have a start button").  A keypress that
 //    silently began writing files into their collection would be the wrong amount of automation for
@@ -245,13 +245,13 @@ Radio_heist_now(radio):
     let me = this.Radio_pub(w) || 'me'
     let shop = this.Ra_home_shop(w, me)
     let seed = String(rec.sc.id)
-    let keep = shop.o({ Haul: 1, seed: seed })[0]
+    let keep = shop.o({ Heist: 1, seed: seed })[0]
     if (!keep) {
         // `pub` is WHOSE collection this is being taken from — the source breadcrumb the radio already
         //  resolved for its "· from X" line.  Empty for my own stock, which is the honest value: a
         //   heist of my own record has nobody to ask.
         let src = rec.c.play_by || rec.sc.from || this.Ra_pub_of(rec) || ''
-        keep = shop.i({ Haul: this.Radio_clean(rec.sc.album || rec.sc.title || 'heist'), seed: seed,
+        keep = shop.i({ Heist: this.Radio_clean(rec.sc.album || rec.sc.title || 'heist'), seed: seed,
             pub: (src && src !== me) ? String(src) : '', state: 'primed' })
         keep.c.up = shop
     }
@@ -260,6 +260,45 @@ Radio_heist_now(radio):
     radio.bump()
     this.Radio_trace(radio, { ev: 'heist-now', id: seed.slice(0, 8), album: rec.sc.album ? 1 : 0 })
     return keep
+
+// Radio_sound — the PURE READ (Supervisor_todo §10.1): is the radio ACTUALLY making noise?  No cure, no
+//  state change, no skip.  §0's ladder forbids acting before a reading has been seen to fire, and
+//   Swarm_beat_health set the precedent — a watchdog that can wedge the thing it watches is worse than none.
+//  SILENCE IS A SYMPTOM WITH THREE CAUSES and only one of them is skippable, so the first read is
+//   AC.state, NEVER the rms:
+//    'deaf'    — AC suspended: no user gesture yet.  The cure is a tap-to-unmute gate.  A skip here would
+//                 burn the entire queue, because every track is silent for the same reason.
+//    'starved' — the radio already KNOWS it has no bytes and owns the answer (starved_at → 6s grace →
+//                 splice, in the pump).  Never fight a machine already saying the true thing.
+//    'dry'     — playing, AC running, and no signal.  THIS is the one Radio_skip answers.
+//  THE ANALYSER IS PER-AUDIOLET and a skip REPLACES radio.c.aud wholesale (Radio_skip → new_audiolet), so
+//   tap() is called on every read rather than once at setup: it is idempotent per Audiolet (returns the
+//    existing analyser) and therefore re-arms itself for free after every skip.  It is a pure sink branch
+//     off gainNode — UPSTREAM of the gainNode2 that mute() zeroes — so this reads the real signal on a
+//      MUTED runner, which is what makes it the first normalcy claim a Book can witness (Audio.svelte.ts
+//       keeps that property true on purpose and says so).
+//  INSTANTANEOUS BY DESIGN: one 2048-sample frame is ~43ms at 48k, so a single 'dry' means nothing — an
+//   inter-track gap or a quiet passage reads dry and is perfectly healthy.  Accumulating N consecutive
+//    'dry' reads before believing it is the CALLER's job; this verb only ever reports the instant.
+Radio_sound(radio):
+    let state = radio ? String(radio.sc.Radio || 'off') : 'off'
+    let gat = radio ? radio.c.gat : null
+    let AC = gat ? gat.AC : null
+    let aud = radio ? radio.c.aud : null
+    if (!AC || !aud) return { verdict: 'quiet', rms: 0, ac: 'none', state: state }
+    let ac = String(AC.state || '')
+    if (ac !== 'running') return { verdict: 'deaf', rms: 0, ac: ac, state: state }
+    if (state === 'starved') return { verdict: 'starved', rms: 0, ac: ac, state: state }
+    if (state !== 'playing') return { verdict: 'quiet', rms: 0, ac: ac, state: state }
+    let buf = null
+    try { buf = aud.sample() } catch (er) { buf = null }
+    if (!buf || !buf.length) return { verdict: 'quiet', rms: 0, ac: ac, state: state }
+    let sum = 0
+    for (const v of buf) sum += v * v
+    let rms = Math.sqrt(sum / buf.length)
+    // ~-66 dBFS.  Digital silence is exactly 0 and a 16-bit LSB is ~3e-5, so this sits well above the
+    //  noise floor of a real decode while staying far below any music anyone would call audible.
+    return { verdict: rms > 0.0005 ? 'sound' : 'dry', rms: rms, ac: ac, state: state }
 //#endregion
 
 //#region media — the lockscreen now-playing card (ported from the old Radios.svelte ghost).
@@ -2551,12 +2590,12 @@ async Radio_mag_pop(w, rec):
     return true
 
 // Radio_keep — the HEIST gesture (the human 2026-07-28 "keep what you're hearing... keeping it grabs
-//  the whole folder it came from"): capture the currently-playing FRIEND track as a durable %Haul intent
-//   in MY loading zone (Ra_home_shop).  The %Haul is the SEED the chooser inflates (Heist_rummage_ask →
-//    the source describes the folder it came from) and the driver condenses into a real %Heist job
+//  the whole folder it came from"): capture the currently-playing FRIEND track as a durable %Heist intent
+//   in MY loading zone (Ra_home_shop).  The %Heist is the SEED the chooser inflates (Heist_rummage_ask →
+//    the source describes the folder it came from) and the driver condenses into a real %Caper job
 //     (Heist_keep_go → Heist_beat → Heist_land).  Own tracks are already held, so the ⇊ button only shows
 //      on a friend track (radio.sc.by set) — this guards on n.sc.by too.  Minting the intent is SAFE +
-//       ADDITIVE (a new %Haul mainkey, no hot-path touch); the pull+land completes where the wire is live.
+//       ADDITIVE (a new %Heist mainkey, no hot-path touch); the pull+land completes where the wire is live.
 //        Idempotent: a second press on the same seed no-ops (a keep already stands).  n.c.kept mirrors the
 //         seed for the face's ✓ (runtime .c, never snapped — the "did my click land" tell).
 async Radio_keep(n):
@@ -2570,12 +2609,12 @@ async Radio_keep(n):
     let shop = this.Ra_home_shop(w, me)
     n.c.kept = n.c.kept || {}
     n.c.kept[seed] = 1
-    if (shop.o({ Haul: 1, seed: seed })[0]) { n.bump(); this.Radio_pop_glass(); this.feebly_ponder(); return true }
-    let keep = shop.i({ Haul: this.Radio_clean(rec.sc.title || 'this'), seed: seed, pub: String(friend), state: 'primed' })
+    if (shop.o({ Heist: 1, seed: seed })[0]) { n.bump(); this.Radio_pop_glass(); this.feebly_ponder(); return true }
+    let keep = shop.i({ Heist: this.Radio_clean(rec.sc.title || 'this'), seed: seed, pub: String(friend), state: 'primed' })
     keep.c.up = shop
     // FOCUS (the human 2026-07-30 — "how do the Heists fold down if we seem disinterested... they should
     //  group... one big list"): last_touch marks which keep is the one you're actually engaging with right
-    //   now. Heist_keep_step reads it against every sibling %Haul — only the most-recently-touched one gets
+    //   now. Heist_keep_step reads it against every sibling %Heist — only the most-recently-touched one gets
     //    the space-favouring dose; every other primed keep folds to a compact row, so racking up several
     //     albums while tearing through a friend's collection reads as one list, not N cells fighting for room.
     keep.c.last_touch = Date.now()
@@ -2595,18 +2634,18 @@ async Radio_keep(n):
     n.bump()
     // POP THE CELL NOW (the human 2026-07-29 "the heist UI cell isn't popping up anymore ... the tick still
     //  appears"): the glass ONLY re-commissions on the Sounditron trickle (a 2.5s loop, and AFTER an awaited
-    //   friend-refresh) — so a fresh %Haul's HaulFace cell turned up sluggishly, or not at all under load.  A
+    //   friend-refresh) — so a fresh %Heist's HeistFace cell turned up sluggishly, or not at all under load.  A
     //    keep is minted on THIS gesture, so re-commission the glass on THIS gesture too (below), not the next
     //     trickle.
     this.Radio_pop_glass()
     // WAKE the loop now (the human 2026-07-29 "downdown click doesn't always turn into tick immediately"): the ✓
-    //  stamp + the %Haul are minted synchronously, but a quiesced belief loop won't flush them to UItime — nor
+    //  stamp + the %Heist are minted synchronously, but a quiesced belief loop won't flush them to UItime — nor
     //   pump Heist_keep_beat to carry the Keep into Vyto — until something nudges it.  feebly_ponder is Runtime-
     //    gated (no-op off-think) so it is safe + cheap; it turns "sometime" into "next cycle".
     this.feebly_ponder()
     return true
 
-// Radio_pop_glass — re-commission the Sounditron glass NOW so a just-minted %Haul's cell mounts on the gesture
+// Radio_pop_glass — re-commission the Sounditron glass NOW so a just-minted %Heist's cell mounts on the gesture
 //  (bug: the cell "isn't popping up anymore").  Reaches the resident RUN House by the handle Sounditron_trickle
 //   stashes on the top House (c.sounditron_run), and calls its Sounditron_commission with the radio world — the
 //    CORRECT `this` binding (the run's `.up` is where A:Vyto sits) that a cross-ghost `this.` call couldn't get.

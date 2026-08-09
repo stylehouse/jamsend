@@ -7,6 +7,74 @@
 
 ## 0. Get on with next
 
+### ⇑ HANDOVER 2026-08-09 — the destination, the bomb, and the next move
+
+**Destination.** ONE sanity cell on the glass that is silent when the app is healthy and speaks up
+ when it is not, with a reload BUTTON and no auto-anything. The owner has asked for it three times in
+  different words (`Sounditron.g:296` — *"ONE sanity cell that speaks up when something is actually
+   wrong, rather than a rank of idle HUDs each saying nothing at full volume"*; §8's consent split;
+    §9's normalcy roster). It does not exist. Everything else in this doc is substrate for it.
+
+**THE BOMB — three sensors are built and NOT ONE HAS EVER BEEN SEEN TO FIRE.**
+
+| species | sensor | landed | fired? |
+|---|---|---|---|
+| STUCK — a machine that stopped | `Swarm_beat_health(w)` (`Swarm.g`) | 08-08 | **never** |
+| WRONG-LOOKING — running, bad result | `Vyto_normal(w)` (`Vyto.g`, §9) | 08-09 | **never** |
+| SILENT — no sound coming out | `Radio_sound(radio)` (`Radio.g`, §10.1) | 08-09 | **never** |
+
+Plus a fourth that is finished and **has no reader at all**: `Swarm_watch_loop` (`Swarm.g:2009`) —
+ a plain `setTimeout` sensor, correctly OUTSIDE the belief loop, stamping `w.c.watch` every 2s.
+  Nothing anywhere reads `w.c.watch`.
+
+So the honest state is: **four sensors, zero readers, zero proof.** Do not add a fifth. A green
+ sensor gates nothing until it has been seen to go red ([[mutation-test-every-claim]]) — one claim
+  in this repo was already found to be pure theatre that way. Provoking each of the three on purpose
+   IS the work, not a follow-up to it.
+
+**Next move — delete the fake and build the cell in its place; they are the same move.**
+
+`Sounditron_heist(w)` (`Sounditron.g:1227`) mints a POSED cell — `%Caper:'the one they played last
+ night', posed:1, from:'a friend to be'` — design scaffolding from before the machinery existed. Its
+  guard (`if (w.o({Caper:1})[0]) return`) was meant to retire it once a real Caper stood, but **no
+   live path ever mints one** (every `Heist_wish` caller is in `Heistation.g`, i.e. Books), so on a
+    player tab it is permanent, and `Sounditron.g:306` puts it on the glass whenever there are no
+     keeps — a fresh tab. The owner 2026-08-09: *"it's time to delete the fake"*.
+
+**Salvage before deleting.** `Sounditron_heist_met` (`:1240`) keeps four of its `%Need` rows HONEST
+ every pass — `met:1` only rides a Need the world actually satisfies:
+
+  · a sealed Music grant · the friend online · their shelf counted · real bytes crossed
+   (`Sounditron_pulled`, `:1258` — first chunk present on any friend record)
+
+Those are live readings, not decoration. They answer **"can this tab receive music?"** — a readiness
+ ladder. The three sensors above answer **"is this tab working right now?"**. The sanity cell is one
+  place where all seven stand. Delete the fake headline, keep the readings.
+
+**Four constraints the build must honour** (each is a lesson already paid for):
+1. **Quiet when healthy** — one calm ✓, expanding only on a real fault. The reason the old HUDs were
+    taken off the glass was that they were loud and said nothing.
+2. **Sensor outside the belief loop, verdict inside.** §4's ruling. A watchdog under the beliefs mutex
+    queues behind the wedge it exists to detect. `Swarm_watch_loop` already has this right.
+3. **A reload BUTTON, never a reload** (§6 anti-goal; the owner: *"may suggest reload — but doesn't
+    actually, yet"*). A reload on a bad guess destroys the evidence of the bug it misdiagnosed.
+4. **The verdict belongs in a req** ([[req-is-where-state-belongs]]) — but only the verdict. The req is
+    right for the response and wrong for the sensor.
+
+**One open question for the owner, unanswered:** the owner's sketch was a `w:Supervisor` world beside
+ `w:Story`, gated on a Book opt. A world is the honest home if the roster is going to grow; a single
+  `%Supervisor` cell on `w` is a tenth of the work and is visible today. Recommendation: build the
+   cell, promote it to a world when the roster earns it. **Not decided — ask.**
+
+**Vocabulary note (2026-08-09).** `%Haul` → `%Heist` (one nab of one album), old `%Heist` → `%Caper`
+ (the pull operation; `%Heistlet` → `%Caperlet`). See `Heist_todo.md`. The owner does not like
+  "Caper" (*"what the heck is a Caper? I don't get it"*) — `%Pull` was offered as the plainer name and
+   is **not yet decided**. If it changes, the cost is re-recording MusuHeist · MusuBay · MusuSoft ·
+    MusuBreach, which is mechanical and now well-rehearsed (diff every red step, filter the spayed
+     `round=`, then `runner_ask accept`).
+
+---
+
 Nothing is built. Read §1 for why it must exist, then §3 — the substrate already landed today and is
  sitting unused, so step 1 is cheap:
 
@@ -31,6 +99,19 @@ Nothing is built. Read §1 for why it must exist, then §3 — the substrate alr
 
 **§9 landed 2026-08-09** — the first NORMALCY customer: `Vyto_normal` checks presence + visibility at
  every settle and pokes the layout. A different species from the wedge-watching above — read §9.
+
+**§10 added 2026-08-09** — three threads from the owner, in ascending cost:
+ - **Sound (§10.1) — the READ LANDED, `Radio_sound(radio)`.** The analyser rig already existed and was
+    built to read correctly through a mute; the live radio simply never tapped it. Now it does, as a
+     pure read with no cure attached. **Nobody has seen it fire** — provoking a dry timeline on
+      purpose is the next move, and it must happen before any skip is wired to it.
+ - **Assertions (§10.2)** — the roster can only assert over the SNAP, so claim the CURE
+    (`%see:'…went dry and skipped…'`), never the RMS. Audio is the first roster member a Book can
+     witness at all, because it is not `vw_frame`-gated the way `Vyto_normal` is.
+ - **Traffickers (§10.3)** — the liveness half is free and mostly a re-read of `c.xfer`. The history
+    half is **blocked on an owner ruling** about whether the provenance ban is privacy or
+     convenience, and that same ruling gates the What Heisted ledger in `Heist_todo.md`. Ask it as
+      one question; do not decide it by building.
 
 **READ §8 FIRST (added 2026-08-09).** The owner answered §7 Q1: consent splits by **who is in front of
  the tab**. A *runner* is categorically non-recoverable (a Book is one linear journey; a healed wedge
@@ -388,3 +469,130 @@ Known holes the roster does not cover yet: crowd-out (a row the cut refused a se
  fact, model-blind; Vytui counts it in the corner note and the pearl gives crushed cells a body, but
   no claim FAILS on it), and the pre-%Radio boot race (the glass can commission before the organ
    exists — said now, but the honest fix is Radio_todo §0 2026-08-09's boot cells).
+
+---
+
+## 10. Three threads the owner handed over (2026-08-09) — sound, assertions, traffickers
+
+> *"it'd be interested in Assertions, and really maturing the representation of peers joining and
+>  being traffickers of stuff to you. also the Radio should be making sound! that's another thing we
+>   can measure to see if it's overall working, and skipping to next track is usually what to do
+>    about it."*
+
+Three rungs of very different cost. One is nearly built, one is a wording problem, one is a **ruling
+ the owner has to make** and cannot be coded around.
+
+### 10.1 The radio must be MAKING SOUND — the third species of abnormal
+
+§9 named two species: STUCK (a machine that stopped) and WRONG-LOOKING (a machine running perfectly
+ with a broken result). Audio is the third and the most honest of all, because it is the actual
+  product: **the app either makes noise or it does not, and nothing else is a proxy for it.**
+
+**The meter already exists and already works muted.** `Audiolet.tap()`
+ (`src/lib/p2p/ftp/Audio.svelte.ts:161`) hangs an AnalyserNode off `gainNode`, which sits UPSTREAM of
+  the `gainNode2` that `mute()` zeroes. That is deliberate and the file says so at `:175` — *"the
+   analyser taps gainNode (upstream), so zeroing gainNode would silence the tap and a muted
+    measurement would read 0 — every analyser-based witness would break."* `sample()` returns real
+     time-domain PCM. **So a muted runner can witness sound.** The rig was built for exactly this.
+
+Its users were `Sound.g:254` (the synthetic stream rig) and `Musuation.g:1212/2395/2398` (Books). The
+ live radio never tapped at all.
+
+**The plumbing is already proven on a real runner.** `runner_ask probe` → `Lies_audio_probe()`
+ (`LiesFunk.svelte:2403`) is a capability one-shot that plays a tone and reads the analyser back;
+  on a live runner 2026-08-09 it returned `{state:'running', realtime:1, rms:0.709, heard:1,
+   sampleRate:48000}`. That is not the radio — it is a test tone — but it settles the question of
+    whether an analyser reading survives the trip out to a runner tab and back. It does. So
+     `Radio_sound` is reading through a path already known to work, and a `runner_ask` verb exposing
+      it is a small follow-on rather than new plumbing.
+
+**LANDED 2026-08-09 — `Radio_sound(radio)`** (`Radio.g`, end of the controls region,
+ `e0753311c0537b18`). A **pure read**, exactly the shape `Swarm_beat_health` set: returns
+  `{verdict:'sound'|'dry'|'deaf'|'starved'|'quiet', rms, ac, state}` and changes nothing. No cure, no
+   skip — §0's ladder forbids acting before a reading has been seen to fire.
+
+Two things it gets right that a naive version would not:
+
+- **The analyser is PER-AUDIOLET, and a skip replaces `radio.c.aud` wholesale** (`Radio_skip` →
+   `new_audiolet()`, `Radio.g:212`). So `tap()` is called on every read rather than once at setup —
+    it is idempotent per Audiolet, so it re-arms itself for free after every skip. Tapping once at
+     startup would silently read a dead analyser from the first skip onward.
+- **It is instantaneous by design.** One 2048-sample frame is ~43ms at 48k, so a single `dry` means
+   nothing — an inter-track gap or a quiet passage reads dry and is perfectly healthy. Accumulating N
+    consecutive `dry` reads before believing it is the CALLER's job, and that caller does not exist
+     yet. **Nobody has seen this fire** — same standing as `Swarm_beat_health` at §0 step 1, and it
+      earns trust the same way: provoke a dry timeline on purpose ([[mutation-test-every-claim]]).
+
+**Then the design, which is all in telling two silences apart:**
+
+| what is wrong | how it reads | the cure | if you get it wrong |
+|---|---|---|---|
+| **dry timeline** — `sc.Radio === 'playing'`, AC running, RMS ≈ 0 across N settles | the machine believes it is playing and no sound is being made | `Radio_skip(radio)` (`Radio.g:176` — blends, does not cut). The owner's *"skipping to next track is usually what to do about it"* | — |
+| **AC never resumed** — no user gesture, `AC.state === 'suspended'` | RMS ≈ 0 for a completely different reason | a tap-to-unmute gate. **Never a skip** | skipping loops forever — every track is silent, so the supervisor burns the whole queue |
+| **starved** — `sc.Radio === 'starved'` | no bytes to play | **none — do not fire.** `Radio.g:434-459` already owns this: it states itself starved, grants 6s grace, splices | you fight a machine that is already saying the true thing |
+
+So the claim's first read is `AC.state`, not the RMS. Silence is not a diagnosis; it is a symptom with
+ three causes and only one of them is skippable. §6's anti-goal applies at full force here — a skip
+  fired on a bad guess destroys the evidence of the bug it mis-diagnosed.
+
+### 10.2 Assertions — and the wall the roster hits
+
+§9.2 wants the roster to grow the way a Book's `%see` claims do. There is a wall in the way, and it
+ is worth stating before someone spends a day on it.
+
+**A `%see` assertion is a claim over the SNAP.** `radio.sc.Radio` snaps. `radio.c.end`,
+ `AC.currentTime` and an analyser RMS **do not** — `.c` is never encoded, by the law at the top of
+  CLAUDE.md. So *"the radio is making sound"* cannot be asserted directly. Two honest routes:
+
+1. **Land the reading as `sc`** — the supervisor stamps a COARSE, quantised verdict (`sc.sound =
+    'yes'|'dry'`), never a float. A raw RMS would churn the dige every run and no spayer can rescue
+     it: [[spayers-cannot-stabilise-a-dige]] — forgiveness is compare-time, only encode-time munging
+      changes the hash.
+2. **Assert the CURE, not the reading** — `%see:'the radio went dry and skipped to the next track'`.
+    An event, once-noticed, no number in it at all.
+
+**(2) is the better one** and it is how the rest of the Books already work. It also fails safe: if
+ the detector never fires, the sentence never appears, and an absent `%see` is a visible hole rather
+  than a green lie.
+
+Two properties worth noticing:
+
+- **Audio is the first normalcy claim a Book can witness at all.** `Vyto_normal` is gated on
+   `w.c.vw_frame`, which only a humdinger tab stamps — a driven Book world is unreachable by
+    construction (§9). Audio is the opposite: a Book runner has a real, muted AudioContext, so it can
+     genuinely hear. The roster gets a testable member for the first time.
+- **[[mutation-test-every-claim]] applies before any of this is believed.** A green claim gates
+   nothing until it has been SEEN to go red — so provoking a dry timeline on purpose is part of
+    building it, not a follow-up.
+
+### 10.3 Peers as traffickers — one rung is free, one is a ruling
+
+Split this in two before touching it, because the halves cost wildly different amounts.
+
+**Liveness — free.** Who is here now, are they moving bytes, when did they last speak. All `.c`, no
+ snap byte, no Book affected. `top_House().c.xfer` already carries the numbers: Sounditron keeps the
+  `%Transfer` row and `TransferFace` minted and current, and merely took the cell off the glass
+   (*"stop spending a permanent cell on it"*, `Sounditron.g:296`). A trafficker view is a re-read of
+    data that is already being collected — and it is a much better use of that row than an idle HUD.
+
+**History — collides, and needs the owner.** *"they gave me these 12 tracks"* is **provenance**, and
+ provenance is forbidden by standing law: `Heist.g:12` — *"PROVENANCE IS NOT PERSISTED — dedup is by
+  CATALOG identity (artist+title), never by source; the newlyadded log never names where music came
+   from"*. It is not just a comment: it is **enforced** (`Heistation.g:459`) and **asserted in a
+    recorded fixture** (`Heistation.g:635`, `%see:'newlyadded logs each arrival with a fresh feeling
+     — and never a word about the source'`). Persisting a trafficker's history turns MusuHeist red
+      on purpose.
+
+So the question is narrow, and it is the owner's alone:
+
+> **Is the ban on provenance a privacy property, or an implementation convenience?**
+
+- **Privacy** ⇒ the trafficker view can only ever show LIVE traffic. No ledger, ever. `Heistation.g`
+   stands as written and this rung is finished the day 10.3's liveness half lands.
+- **Convenience** ⇒ `Heistation.g:635` gets rewritten, and sources become nameable.
+
+**And that is the same question as the What Heisted ledger** (`Heist_todo.md` — a finished `%Caper`
+ graduating into `%Haul` instead of being flattened away). Both features are blocked on one ruling.
+  Answer it once and two things unblock; answer it wrong and a privacy property is quietly deleted by
+   a feature nobody framed as a privacy decision. **Do not infer it from the fact that a ledger would
+    be useful.**

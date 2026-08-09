@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '2e0501218ecb15db~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '6c16593989e26d97~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -703,7 +703,7 @@ Ra_home_them(w, pub) {
     return this.Ra_home_shelf(w, w.oai({ MusuThem: 1, pub: pub }), pub, 'stock')
 },
 // Ra_home_shop — the LOADING ZONE shelf beside stock/ (Radio_spec §2.4): what is mid-transfer in either
-//  direction, and ONLY while in motion — a %Heist (my active pull) lives here, not on the world floor.
+//  direction, and ONLY while in motion — a %Caper (my active pull) lives here, not on the world floor.
 //   The shop is the ASKER's: a heist is MY operation, so it homes under MY %MusuSelf,pub home (the same
 //    home Ra_home_self returns the stock shelf of).  Returns the `shop` child, carrying pub like stock does.
 Ra_home_shop(w, pub) {
@@ -711,7 +711,7 @@ Ra_home_shop(w, pub) {
 },
 // Ra_home_bay — the PER-PIER sub-part of the loading zone (Radio_spec §2.4): a `bay,pub:<them>` corner UNDER
 //  the shop shelf, the Repli-able piece of MY loading zone for one relationship.  MY asks OF them live here
-//   (the %Heistlet,of:<hid> travelling manifest I mint + Repli over to them — "have you got these?"), and
+//   (the %Caperlet,of:<hid> travelling manifest I mint + Repli over to them — "have you got these?"), and
 //    THEIR asks of me land here too (the serving side's %parked_want already homes per-Pier — the bay is its
 //     culture-side roof).  `me` is MY key (whose shop this is); `them` is the friend keyed by `pub`.  Lowercase
 //      `bay` mainkey like the sibling shelves; c.up stamped so a mint under it snaps + an upward walk reaches w.
@@ -1466,7 +1466,7 @@ Ra_record_from(lib, info, bufs) {
     //       write into the SAME .jamsend/radiostock, so the live share carries both shapes of the same 8
     //        tracks (measured: 6 flattened, 2 intact) and a heist got whichever it drew.
     //  Everything downstream reads `rec.sc.path` and nothing carries `base`, so the directory was simply
-    //   GONE by the time Heist_cp_path / Heist_sections_of / HaulFace's commonPrefix asked — which reads
+    //   GONE by the time Heist_cp_path / Heist_sections_of / HeistFace's commonPrefix asked — which reads
     //    as "no directories" rather than as data loss.  Join it here, at the one door where a card becomes
     //     a record, with the same idiom Ra_source_pcm (:735) and Ra_source_read (:1612) already use to
     //      FIND the file — they always knew the real path; only the record didn't.
@@ -2873,7 +2873,7 @@ async Ra_pull_beat(w, rx, mine, theirs, rec) {
     let title = rec.sc.title || rec.sc.id
     let id8 = String(rec.sc.id || '').slice(0, 8)
     rec.c.pull_ts = rec.c.pull_ts || nowms
-    // GOODPUT (Backpressure_todo.md §5.2): bytes actually landed for THIS haul vs wire throughput —
+    // GOODPUT (Backpressure_todo.md §5.2): bytes actually landed for THIS heist vs wire throughput —
     //  the wire-rate graph (Repli_meter) goes up on a duplicate ask, a re-serve, or a breach-refused
     //   page; this doesn't. Sampled every ~1.5s like Repli_meter, INDEPENDENT of the held-changed gate
     //    below, so a re-ask storm with zero landing still shows: wire rate climbing, goodput flat —

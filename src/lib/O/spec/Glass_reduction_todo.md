@@ -8,8 +8,8 @@ Four things. Everything else is off.
 |---|---|---|
 | `%Now` | `artist`, `title` | — |
 | `%Next` | `Next:1` | skip |
-| `%Heist` | `Heist:1` | open setup |
-| `%Heist,phase:` | `setup` → `going` → `gone` | the flow |
+| `%Caper` | `Heist:1` | open setup |
+| `%Caper,phase:` | `setup` → `going` → `gone` | the flow |
 
 Already off (2026-08-09): `%Diag`, `%Tuner`, `%Transfer`. Rows still minted and faces still
 registered — only the grapple removed, one line each to restore. The Heist already gets the room:
@@ -54,7 +54,7 @@ invisible to them); `runner_shot --svg` for the room readout and mold map. Not o
 
 1. Does `%Now` get a position/duration reading, or is that a fifth thing?
 2. Is "next" the only transport, or do pause/back survive?
-3. Does Heist **setup** stay a component (it's HaulFace today), or is it the C\*\* test case?
+3. Does Heist **setup** stay a component (it's HeistFace today), or is it the C\*\* test case?
 4. Does `%Door` stay? It's the last survivor of the old always-on set, and you separately want the
    Invite ball-of-rooms in here — which is a scope of cells, so the protocol already has it.
 

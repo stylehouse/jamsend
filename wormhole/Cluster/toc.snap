@@ -2,7 +2,6 @@ Waft:Cluster,equip:Cluster
   Funkcion:Relay,dontSnap
   HostedIdentity:0de425eeaead0220,role:editor
   HostedIdentity:c505e99b42347856,role:editor
-  HostedIdentity:49dee91d61a9de64,role:runner,pub:49dee91d61a9de6450a81a67283b564962bb7bff19153b828aedebe6938b5e69,favourite_client:claude
   HostedIdentity:9194a27335f1f6e7,role:editor
   HostedIdentity:69659296c8883a10,role:editor
   HostedIdentity:9b08d48527494652,role:editor
@@ -10,5 +9,5 @@ Waft:Cluster,equip:Cluster
   HostedIdentity:3390b005fa79972b,role:editor
   HostedIdentity:96d0cf8852651a73,role:player,pub:96d0cf8852651a739f2b8f604354dcea0f625fff73b119ecb80f92ee514620f0
   HostedIdentity:f5da6599b8505881,role:player,pub:f5da6599b850588119dea85ea0a099ab4fa7a19cbecee6fdded35198fb397e3b
-  HostedIdentity:a67a5d04a04fd334,role:runner,pub:a67a5d04a04fd3342cf3ab7eb480c98d29d04580a8b26f79e2e2333de8249ed1
-  HostedIdentity:58517b484a8e896d,role:runner,pub:58517b484a8e896d22ca45ec8447b5011e7ba9605b40055afca75404082d2def
+  HostedIdentity:58517b484a8e896d,role:runner,pub:58517b484a8e896d22ca45ec8447b5011e7ba9605b40055afca75404082d2def,favourite_client:claude
+  HostedIdentity:a67a5d04a04fd334,role:runner

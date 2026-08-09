@@ -34,7 +34,7 @@ Snap:H
             inbox
               recent
                 unemit:1,type:repli_lines,seq:1,body_len:677
-              req:unemit,seq,type:repli_lines,body_hash:527f39778689bbc5c54e0c5f3ca35ba627e8ed335a4b886c214e1fcd3a01ef89,body_len=162,done,to:repli_lines,finished
+              req:unemit,seq,type:repli_lines,body_hash:2349479c3f178cee61004a52e1220f368f78de96e73e2bc2b90ddcd9af5b8eb4,body_len=162,done,to:repli_lines,finished
           active_transport,type:mock,open
           Pier,pub:Origin2,req=3,ok
             Ud,pubkey:Origin2
@@ -116,18 +116,18 @@ Snap:H
                 Card,id:d8a28ada85f2e851,artist:The Sines,title:Deep A,path:The Sines - Deep A.wav,body_hash:d8a28ada85f2e85151b446112e4d97db3bc6cc24c5ef335b2593be0d95df6b28
                 Card,id:95f3c03e41e9c007,artist:The Sines,title:High A,path:The Sines - High A.wav,body_hash:95f3c03e41e9c0070da6e6a35d5901ac37a8e0e18025e75c3ad8862326f97ef4
                 Card,id:902552d4a0b8b0c1,artist:The Sines,title:Middle A,path:The Sines - Middle A.wav,body_hash:902552d4a0b8b0c19cc6e6331097145ccc9be1d31b90ee9bc3691730c85043b8
-            Heist,wish:cosmic sine,hid:wish1
-            Heistlet,of:wish1,pier:Origin1
+            Caper,wish:cosmic sine,hid:wish1
+            Caperlet,of:wish1,pier:Origin1
               ask,id:d71294dbbcd7b726,have
               ask,id:deadbeefdeadbeef
         MusuSelf,pub:Seeker
           shop,pub:Seeker
-            Heist,wish:cosmic sine,hid:wish1
+            Caper,wish:cosmic sine,hid:wish1
               Lead,pier:Origin1,id:d71294dbbcd7b726,tune:DJ Oscillo — Cosmic C
               Lead,pier:Origin2,id:d8a28ada85f2e851,tune:The Sines — Deep A
               Lead,pier:Origin2,id:95f3c03e41e9c007,tune:The Sines — High A
               Lead,pier:Origin2,id:902552d4a0b8b0c1,tune:The Sines — Middle A
             bay,pub:Origin1
-              Heistlet,of:wish1,pier:Origin1
+              Caperlet,of:wish1,pier:Origin1
                 ask,id:d71294dbbcd7b726
                 ask,id:deadbeefdeadbeef

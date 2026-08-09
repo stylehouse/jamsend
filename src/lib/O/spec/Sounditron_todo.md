@@ -411,7 +411,7 @@ DONE so far this session:
    `Ghost/M/Heist.g` (1357 lines) has the full arc — census→job→offer→vouch→beat→**land**, plus the soft
     wish→ask→match→leads→condense arc — ALL of it real, byte-faithful, but driven ONLY by the test Book
      `Heistation.g`. The live app's ONLY reachable Heist call is `HeistFace`'s "take"→`Heist_condense`
-      (stamps `at`/`chose`, never kicks a pull). Sounditron's `%Heist` is a decorative mock; its 4th Need
+      (stamps `at`/`chose`, never kicks a pull). Sounditron's `%Caper` is a decorative mock; its 4th Need
        "the pull itself" latches on ORDINARY STREAMING (`Sounditron_pulled` = any friend chunk-0 present),
         not a real grab. **The reality:** the PULL-to-memory (Repli whole-record `Ra_pull_beat` over the
          relay) already works and ≈ what streaming does; the LAND (keep-a-copy to disk = the point of Heist,
@@ -770,7 +770,7 @@ The human's cut, verbatim: *"put other UI nuggets in Voro, keep changing what's 
       Re-rolls every run — on the 600s rig the glass changes each cycle.
 - **%Friend** — the sealed contacts: friendly name as the mainkey value, pub8/music-grant/records
    boast as facets.  (The runner identity has none; the human's tabs will show each other.)
-- **%Heist,posed:1** — "the one they played last night" with four %Need children (grant / online /
+- **%Caper,posed:1** — "the one they played last night" with four %Need children (grant / online /
    boast / the Repli pull), `met:1` kept honest by the witness each pass.  The SHAPE of the real
     heist face, tunable on sight before the machinery arrives here.
 - **%Tally** (records reachable · shelves counted), **%Machine,friendly**, richer %Session.
@@ -808,7 +808,7 @@ The human: "we want to send a UI component into Voro|Cyto for laying out, much l
 - **IMPOSED faces (2026-07-18 late):** a face can also arrive BY MAINKEY — `FACE_MAINKEYS` in
    **`glass_faces.ts`** (the component-free half; Cyto imports THIS, never glass_kinds.ts, so the
     headless spine never drags .svelte components).  Imposition is viewer-side: no sc changes, no
-     snap changes, sealed Books stay Voro-blind.  First imposed: `%Heist` → HeistFace (posed
+     snap changes, sealed Books stay Voro-blind.  First imposed: `%Caper` → HeistFace (posed
       needs | soft wish→Leads→take).  Resolution = `cyto_face_kind(n)` (worn sc.face wins).
 - **CREWS + the %Tuner (2026-07-18 late — the make-space dial):** every cell-holder tessellates
    under a CREW — `cyto_crew(n)`: explicit `sc.crew` || face kind || stuffed mainkey.  cyto_scan

@@ -53,7 +53,7 @@ Snap:H
         MusuSelf,pub:breach.own
           stock,pub:breach.own
           shop,pub:breach.own
-            Heist,at:breachpier,disbelieve_directories
+            Caper,at:breachpier,disbelieve_directories
               filing,artist:The Sines,genre:breachtest
               filing,artist:DJ Oscillo,genre:breachtest
         MusuThem,pub:breach.wire.honest.mirror
@@ -80,7 +80,7 @@ Snap:H
         MusuSelf,pub:breach.wire.honest.own
           stock,pub:breach.wire.honest.own
           shop,pub:breach.wire.honest.own
-            Heist,at:breachwirehonest,disbelieve_directories
+            Caper,at:breachwirehonest,disbelieve_directories
               filing,artist:The Sines,genre:breachtest
         MusuThem,pub:breach.wire.forged.mirror
           stock,pub:breach.wire.forged.mirror
@@ -107,5 +107,5 @@ Snap:H
         MusuSelf,pub:breach.wire.forged.own
           stock,pub:breach.wire.forged.own
           shop,pub:breach.wire.forged.own
-            Heist,at:breachwireforged,disbelieve_directories
+            Caper,at:breachwireforged,disbelieve_directories
               filing,artist:DJ Oscillo,genre:breachtest

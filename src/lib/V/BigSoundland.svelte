@@ -226,7 +226,7 @@
         if (!n) return
         e.preventDefault()
         // through post_do like every other UI verb, so the write rides the House mutex rather than
-        //  racing the pump — the same discipline HaulFace/RadioFace already use.
+        //  racing the pump — the same discipline HeistFace/RadioFace already use.
         if (e.key === ' ') A?.post_do?.(() => { A?.Radio_skip?.(n) }, { see: 'radio skip (space)' })
         else A?.post_do?.(() => { A?.Radio_heist_now?.(n) }, { see: 'radio heist (enter)' })
     }
