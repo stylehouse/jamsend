@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return 'c905d4f87c095839~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return 'd79cc8f7bdd53650~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -325,6 +325,11 @@ Sounditron_commission(w) {
     if (xfer && xfer.c.up !== krw) xfer.c.up = krw
     if (!anyKeep) {
         let h = w.o({ Heist: 1 })[0]
+        // FLAT: the flow organ's constraint / Lead / filing / supervision rows are WORKINGS, not
+        //  contents (the owner: "has some Supervisor facts, I don't want to show most users that").
+        //   They only became visible when the glass learned to nest.  `.c` so a real persisted
+        //    %Heist can carry it without touching its snap.
+        if (h) h.c.flat = 1
         if (h) organs.push(h)
     }
     // the DECK + UP-NEXT close while a heist is open (the human 2026-07-28 "I want to close up-next|riffle etc
@@ -406,7 +411,20 @@ Sounditron_commission(w) {
     //  down when started"): every active %Haul grapples as its OWN cell — under the nested glass it goes BARE
     //   and tessellates into a HaulBar controls cell + one Pick chip per kept track.  They come + go with the
     //    gesture, so Sounditron_trickle_look re-commissions on the keep fingerprint.  Live under Ra_home_shop.
-    for (const keep of keeps) organs.push(keep)
+    // A LIVE KEEP TAKES THE FOCUS ZONE (the owner 2026-08-09: *"We need to make sure Haul gets into
+    //  the focus zone, so our UI can have enough room"*).  A heist is the one thing on this glass
+    //   with real form to fill in — choosers, a track list, a phase — and it was being handed the
+    //    same seat as a status pip.  `.c.stage_want` is a request, not a command: Vyto_stage_tok
+    //     reads it only when the human has not staged something themselves, so a drag still wins.
+    //  Only the FIRST keep asks; two keeps both demanding the stage would just flap between them,
+    //   and the second one is exactly the case the human should resolve by dragging.
+    let wanted = 0
+    for (const keep of keeps) {
+        if (!wanted) keep.c.stage_want = 1
+        if (wanted && keep.c.stage_want) delete keep.c.stage_want
+        wanted = 1
+        organs.push(keep)
+    }
     // THE POSE PARTS — the App↔Vyto seam (the human 2026-08-09: "make the toplevel model we push to it
     //  change what's included in it... App<->Vyto... wrangling whatever its got to flush into the Vyto
     //   display, via how the model is posed right now").  Sounditron_pose reads the app's live situation
@@ -419,9 +437,36 @@ Sounditron_commission(w) {
     //   way too much info on the screen and everything gets tiny").  Friends stay REACHABLE through the
     //    Radio + Riffle faces — their pools read %MusuThem directly, off the glass — so the tessellation
     //     keeps the FIXED organ set and each cell stays a legible size no matter how many friends arrive.
+    // ── THE PLAIN GLASS TAKES THE PAGE ──────────────────────────────────────────────────────
+    //  Everything above still RUNS: every row is minted, every face stays registered, the witness
+    //   reads exactly what it read before.  Only the GRAPPLE LIST is replaced — the same move this
+    //    file already makes for the stoker, the zine, up-next, Diag, Tuner and Transfer, and the
+    //     reason a live page can change its whole shape without a single fixture moving.
+    //  Humdinger-only, so no Book ever sees it.  `w.c.fullfat` puts the old glass back for a
+    //   side-by-side without a rebuild — which is the only honest way to judge a replacement.
+    let MH = this.top_House()
+    if (MH && MH.c.humdinger && w.c.plain) organs = this.Sounditron_plain(w)
+    // THE FABRICATED QUEUE (the owner 2026-08-09: *"I'm actually wanting to represent a big queue of
+    //  Heists as such, the space getting cluttered.  how about you fabricate some extra data to just
+    //   see how various other junks in the model looks, with no html"* — and *"but definitely
+    //    subcells!  I want subcells!"*).  APPENDED, not swapped: the real organs keep their faces
+    //     (*"the other cells should have their html back I guess"*) and the junk arrives beside them
+    //      as pure C**, so one glass shows both treatments at once and they can be judged together.
+    //  This is the only honest way to find out what a crowded glass does — the live app has 2 to 4
+    //   cells, which is why every layout law so far was tuned against a case that is not the case.
+    for (const j of this.Sounditron_junk(w)) organs.push(j)
     if (!organs.length) return 0
     if (!SH.o({ A: 'Vyto' }).length) SH.i({ A: 'Vyto' }).i({ w: 'Vyto' })
     let commission = new TheC({ c: {}, sc: { Scannable: organs[0], client_w: w, grapples: organs } })
+    // tell the glass it is plain, so it draws the TYPOGRAPHIC surface rather than waiting for faces
+    //  that are never coming.  Carried like foamereo (commission → w.sc), so a capture can see which
+    //   glass it is looking at and "plain but drawn as if faced" cannot happen silently.
+    if (MH && MH.c.humdinger && w.c.plain) commission.sc.plain = 1
+    // SUBCELLS.  A junk queue is a TREE — a heist holding its tracks — and the whole point of
+    //  fabricating one is to see the nested renderer under real crowding.  `nested` is global (it
+    //   can only ride the whole commission), so it goes on exactly when the junk is standing and
+    //    comes off with it; the perf ceiling that parked it is the thing being measured here.
+    if (w.c.junk) commission.sc.nested = 1
     // NESTED glass while a keep is open — each %Haul cell would descend into its HaulBar + track chips.  GATED
     //  OFF by default (the human 2026-07-29 "branchy Vyto seems to burn CPU then crash"): the renderer's
     //   power_cells is O(M²) per scope recomputed EVERY rAF frame with no memo, and a whole-album keep (12-20
@@ -565,6 +610,190 @@ Sounditron_pose(w) {
     }
     if (fl) pose.drop(fl)
     return []
+
+},
+// ── THE PLAIN GLASS ──────────────────────────────────────────────────────────────────────────
+//  The owner, 2026-08-09, after looking at the live page: *"this is kind of nice how it is, but it
+//   has lots of glitch zone, I don't think it's what I want to give users"* — and the scope, in
+//    their own words: *"we just need some kind of artist+title somewhere, a next button, and heist
+//     button, and the Heist setup|going|gone UI"*.  Preceded by *"perhaps we should abandon having
+//      Components at all, and just mae C** all the way down, with click handlers and styles somehow
+//       imposed"*.  This is that glass: four particles, no faces, every verb a `.c.press`.
+//
+//  WHY THE GLITCH ZONE GOES.  Nearly every hard layout bug of 2026-08-08/09 lived in the SEAM
+//   between the power cut and the mounted components — the mold puddle, the crush, the need floor,
+//    the seat, the measure ratchet, the growth loop.  None of them were in either half alone.  A
+//     glass with no components has no seam, so it cannot have that class of bug at all.
+//
+//  MODULAR (the owner: *"perhaps we can make them modular?"*).  The set is a LIST OF NAMES, not a
+//   procedure: `w.c.plain_mods` overrides it at runtime, and each name resolves to one small verb
+//    returning particles.  Adding a part is a verb plus a name; removing one is deleting a name.
+//     No module knows about any other, and none of them may assume it is present.
+//
+//  HUMDINGER-GATED at the caller, exactly like the pose: no Book ever takes this branch, so all
+//   the recorded Sounditron fixtures stand to the byte and the full glass is one flag away
+//    (`w.c.fullfat`) for comparing the two side by side.
+Sounditron_plain(w) {
+    let M = this.top_House()
+    let krw = (M && M.c.radio_w) || w
+    if (!krw || !krw.oai) return []
+    let bag = krw.oai({ Plain: 'ui', dontSnap: 1 })
+    bag.c.up = krw
+    let mods = w.c.plain_mods || ['now', 'next', 'heist', 'keeps']
+    let organs = []
+    for (const name of mods) {
+        for (const p of this.Sounditron_plain_part(w, bag, krw, name)) organs.push(p)
+    }
+    return organs
+
+},
+// the module registry — one place that knows the names, so a reader can see the whole glass at once
+Sounditron_plain_part(w, bag, krw, name) {
+    if (name === 'now') return this.Sounditron_plain_now(w, bag, krw)
+    if (name === 'next') return this.Sounditron_plain_next(w, bag, krw)
+    if (name === 'heist') return this.Sounditron_plain_heist(w, bag, krw)
+    if (name === 'keeps') return this.Sounditron_plain_keeps(w, bag, krw)
+    return []
+
+},
+// say — set a scalar, or DROP the key when there is nothing to say.  CLAUDE.md's law: never stamp a
+//  maybe-undefined sc value (the encoder brands it `{"undef":[…]}` and that is a mint bug, not
+//   furniture).  Every module states through this, so no module can get it wrong on its own.
+//    Returns 1 when something actually changed, so a caller bumps only on real news.
+Sounditron_plain_say(n, key, val) {
+    let v = (val == null || val === '') ? null : String(val)
+    if (v == null && n.sc[key] == null) return 0
+    if (v != null && n.sc[key] === v) return 0
+    if (v == null) delete n.sc[key]
+    if (v != null) n.sc[key] = v
+    return 1
+
+},
+// NOW — artist + title, and the transport that belongs to them.  Press toggles play/pause: the
+//  thing you are looking at is the thing you press, which is the whole argument for C** as an
+//   interface.  `state` rides as a scalar so the cell can STATE what it is doing without a face.
+Sounditron_plain_now(w, bag, krw) {
+    let radio = w.o({ Radio: 1 })[0]
+    if (!radio) return []
+    let now = bag.oai({ Now: 1, dontSnap: 1 })
+    now.c.up = bag
+    let changed = 0
+    changed = changed + this.Sounditron_plain_say(now, 'artist', radio.sc.artist)
+    changed = changed + this.Sounditron_plain_say(now, 'title', radio.sc.title)
+    changed = changed + this.Sounditron_plain_say(now, 'state', radio.sc.Radio || 'off')
+    // the press wants the RADIO, not the %Now cell — the handler is handed its own source particle,
+    //  so the radio rides on `.c` (a ref, which is what `.c` is for and what `.sc` is fatal for).
+    now.c.radio = radio
+    now.c.press = (n) => this.Radio_toggle(n.c.radio)
+    // NOW IS THE BIG ONE.  A doseless glass would price these four alike and the human would have to
+    //  stage the music by hand every session; the dose says what the app is FOR before anyone drags.
+    changed = changed + this.Sounditron_plain_say(now, 'dose', '1.6')
+    if (changed) now.bump()
+    return [now]
+
+},
+// NEXT — one verb, one cell.  No pause and no back: the owner asked for "a next button", and a
+//  transport nobody asked for is exactly the kind of cell that spends a seat and earns nothing
+//   (the %Diag/%Tuner lesson).  Pause already lives on %Now's press.
+Sounditron_plain_next(w, bag, krw) {
+    let radio = w.o({ Radio: 1 })[0]
+    if (!radio) return []
+    let nx = bag.oai({ Next: 1, dontSnap: 1 })
+    nx.c.up = bag
+    nx.c.radio = radio
+    nx.c.press = (n) => this.Radio_skip(n.c.radio)
+    return [nx]
+
+},
+// HEIST — the button that starts one.  It grapples only when NO keep is open, because once a keep
+//  is up the keeps ARE the heist UI (the owner: "when we go to Heist something, the Radio and
+//   everything else should fold right down"), and a second way in beside them is just clutter.
+Sounditron_plain_heist(w, bag, krw) {
+    let keeps = this.Sounditron_plain_keeps_of(krw)
+    if (keeps.length) return []
+    let h = w.o({ Heist: 1 })[0]
+    if (!h) return []
+    return [h]
+
+},
+// KEEPS — setup → going → gone.  The %Haul rows are already the phase machine (`sc.state`:
+//  primed · wanted · asking · …), so this module does not model anything: it hands the live rows
+//   over as cells.  This is the ONE place the plain glass still leans on a face (HaulFace carries
+//    the section/directory choosers, which are real form and have no C** form yet) — and it is the
+//     honest test case for whether pure C** can carry a UI, so it is left standing on purpose.
+Sounditron_plain_keeps(w, bag, krw) {
+    return this.Sounditron_plain_keeps_of(krw)
+
+},
+// ── THE FABRICATED JUNK QUEUE ────────────────────────────────────────────────────────────────
+//  The owner: *"I'm actually wanting to represent a big queue of Heists as such, the space getting
+//   cluttered.  how about you fabricate some extra data to just see how various other junks in the
+//    model looks, with no html"* + *"but definitely subcells!  I want subcells!"*
+//
+//  WHY FABRICATE.  Every layout law in this repo — the fit law, the room law, the need floor, the
+//   seat, the stage — was tuned against the live glass, which has two to four cells in it.  A law
+//    tuned on four bodies says nothing about forty, and "the space getting cluttered" is precisely
+//     the regime nobody has ever looked at.  Real heists cannot be summoned on demand; fabricated
+//      ones can, and they cost nothing to throw away.
+//
+//  NO HTML, ON PURPOSE.  These wear made-up mainkeys (%Job, %Cut) with no entry in the face
+//   registry, so nothing mounts on them and they render as pure C** — ident, wall spill, the cut
+//    itself.  Beside the faced organs, one glass now shows both treatments at once.
+//
+//  DETERMINISTIC.  Titles come from a fixed word list indexed by position — never Math.random, so
+//   the same knob gives the same queue and two captures are comparable.  Off unless `w.c.junk` is
+//    set (the ⧉ button, or by hand); humdinger-gated as well, so no Book can ever see one.
+Sounditron_junk(w) {
+    let M = this.top_House()
+    if (!M || !M.c.humdinger) return []
+    if (!w.c.junk) return []
+    let krw = (M && M.c.radio_w) || w
+    if (!krw || !krw.oai) return []
+    let bag = krw.oai({ Junk: 'queue', dontSnap: 1 })
+    bag.c.up = krw
+    let nj = Math.max(1, Math.min(24, Number(w.c.junk) || 6))
+    let kids = Math.max(0, Math.min(8, Number(w.c.junk_kids ?? 3)))
+    let acts = ['Bellwether', 'Nine Mast', 'Corrugate', 'Slow Vessel', 'Hark', 'Pale Ordinance', 'Muskeg', 'Tarn', 'Rivet Choir', 'Undersong', 'Fathom Lane', 'Gantry']
+    let cuts = ['opening', 'the long field', 'salt', 'reprise', 'nightwork', 'tally', 'undertow', 'closing']
+    let phases = ['setup', 'going', 'going', 'gone']
+    let out = []
+    let i = 0
+    while (i < nj) {
+        let job = bag.oai({ Job: 'q' + i, dontSnap: 1 })
+        job.c.up = bag
+        let changed = 0
+        changed = changed + this.Sounditron_plain_say(job, 'artist', acts[i % acts.length])
+        changed = changed + this.Sounditron_plain_say(job, 'phase', phases[i % phases.length])
+        changed = changed + this.Sounditron_plain_say(job, 'tracks', '' + kids)
+        // a spread of doses so the queue is not a wall of identical bodies — the cut has something
+        //  to actually express, which is what makes a crowded frame readable or not
+        let dv = ((i % 5) * 4) / 10
+        changed = changed + this.Sounditron_plain_say(job, 'dose', String(dv))
+        job.c.press = (n) => ((n.sc.lit ? delete n.sc.lit : n.sc.lit = 1), n.bump())
+        let k = 0
+        while (k < kids) {
+            let cut = job.oai({ Cut: 'c' + k, dontSnap: 1 })
+            cut.c.up = job
+            let c2 = this.Sounditron_plain_say(cut, 'title', cuts[(i + k) % cuts.length])
+            c2 = c2 + this.Sounditron_plain_say(cut, 'held', '' + (((i + k) % 4) * 25))
+            cut.c.press = (n) => ((n.sc.lit ? delete n.sc.lit : n.sc.lit = 1), n.bump())
+            if (c2) cut.bump()
+            k = k + 1
+        }
+        // sweep subcells the knob no longer asks for, so turning it down actually removes them
+        for (const old of job.o({ Cut: 1 })) { if (Number(String(old.sc.Cut).slice(1)) >= kids) job.drop(old) }
+        if (changed) job.bump()
+        out.push(job)
+        i = i + 1
+    }
+    for (const old of bag.o({ Job: 1 })) { if (Number(String(old.sc.Job).slice(1)) >= nj) bag.drop(old) }
+    return out
+
+},
+Sounditron_plain_keeps_of(krw) {
+    let kme = this.Radio_pub ? this.Radio_pub(krw) : null
+    let kshop = kme ? this.Ra_home_shop(krw, kme) : null
+    return kshop ? kshop.o({ Haul: 1 }) : []
 
 },
 // the TRICKLE — the live page's slow think (the human 2026-07-19: "that model may need to be

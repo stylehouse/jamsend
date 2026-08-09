@@ -131,6 +131,16 @@
         cam_engage(w, cell)
     }
 
+    // A BUTTON HAS TO LOOK LIKE ONE.  Until this, a cell wearing `.c.press` was pixel-identical to a
+    //  cell that merely STATES something — which is the single reason "C** all the way down" could
+    //   not carry an interface: the tree was already interactive, nobody could tell which parts.
+    //    One predicate, read live off `.c` (never stamped on PaintCell), so a handler that arrives
+    //     mid-session lights its cell on the next paint without a rebuild.
+    function pressy(cell: PaintCell): boolean {
+        const src: any = (cell.row.c as any)?.source_n
+        return typeof (src?.c?.press ?? src?.c?.onclick) === 'function'
+    }
+
     // THE A (the owner 2026-08-09: "cells could do with a handle... an A on one corner of it
     //  somewhere, which can drag up-down to control the intensity|size of that cell").  dose is
     //   ALREADY the pressure law's loudness input (Vyto_express: env_area = AREA_BASE·(1+dose)),
@@ -458,6 +468,11 @@
     //   Books are additionally locked out below, so no fixture can move whatever a human left toggled.
     const bare = new Set<TheC>()
     let bare_flip = $state(0)
+    // BARE STAYS A CHOICE, NEVER A CONSEQUENCE (the owner 2026-08-09: *"twas looking pretty good
+    //  until you switched on bare. back that out"*).  A plain commission briefly forced this true so
+    //   faceless particles would draw their own set; the cost was that it took the faces off cells
+    //    that HAVE them and want them.  A faceless cell already states itself (ident + wall spill) —
+    //     that is enough, and it costs the faced cells nothing.  ▢ is the only thing that sets it.
     function bare_on(w: TheC): boolean { void bare_flip; return bare.has(w) }
     function bare_toggle(w: TheC) {
         if (bare.has(w)) bare.delete(w)
@@ -516,6 +531,7 @@
         if (!dragging) return
         if (!dragging.live && Math.hypot(e.clientX - dragging.x0, e.clientY - dragging.y0) < 6) return
         dragging.live = true
+        if (!drag_live) drag_live = 1
         const now = performance.now()
         if (now - dragging.lastT < 70) return
         dragging.lastT = now
@@ -535,15 +551,73 @@
         ;(w.c as any).drag_tok = cell.tok
         ;(H as any).Vyto_stir_soon?.(w)
     }
+    // ── THE STAGE BAND (the owner 2026-08-09: "perhaps whatever's on the left of the screen becomes
+    //  larger, and you drag cells over there to become the big ones... whatever was there falls out
+    //   of the way").  The left 40% of the viewport is a DROP TARGET, not a region the solve happens
+    //    to fill: release a dragged cell in it and Vyto_stage deals the frame around that cell.
+    //  Drop the staged cell there again to clear — one gesture, on and off, no second control.
+    const STAGE_BAND = 0.4
+    let drag_live = $state(0)          // 1 while a real drag is in flight — lights the band
+    function in_stage_band(w: TheC, e: PointerEvent): boolean {
+        const stage = stageEls.get(w); if (!stage) return false
+        const svg = stage.querySelector('svg.viewport') as SVGSVGElement | null; if (!svg) return false
+        const bb = svg.getBoundingClientRect()
+        if (!(bb.width > 0)) return false
+        return (e.clientX - bb.left) / bb.width < STAGE_BAND
+    }
+    function staged_tok(w: TheC): string | null { void paint_tick; return ((w.c as any).stage_tok ?? null) }
+
+    // ── THE CLUTTER KNOB ──────────────────────────────────────────────────────────────────────
+    //  The junk queue is minted by the COMMISSIONER (Sounditron_junk), not by the glass — the glass
+    //   must never invent particles, that is the whole seam.  So the knob writes to the client
+    //    world the commission came from and lets the next trickle re-commission; the count is one
+    //     scalar the fabricator reads, which is why the button can be this small.
+    // THE TOYBOX LATCH — per-tab, runtime, never snapped.  Everything on the rail except ⋯ and the
+    //  walk-out chip hangs off it: those controls are how I look at the glass, not how anyone uses it.
+    const toys = new Set<TheC>()
+    let toys_flip = $state(0)
+    function toys_on(w: TheC): boolean { void toys_flip; return toys.has(w) }
+    function toys_toggle(w: TheC) {
+        if (toys.has(w)) toys.delete(w)
+        else toys.add(w)
+        toys_flip++
+    }
+    let junk_flip = $state(0)
+    function junk_world(w: TheC): any { return (w.c as any)?.commission?.sc?.client_w ?? null }
+    function junk_n(w: TheC): number { void junk_flip; void paint_tick; return Number(junk_world(w)?.c?.junk) || 0 }
+    function junk_cycle(w: TheC) {
+        const cw = junk_world(w); if (!cw) return
+        const now = Number(cw.c.junk) || 0
+        // off → 6 → 12 → 24 → off.  A boolean would answer "does it cope"; a ladder answers "where
+        //  does it stop coping", which is the only version of that question worth asking.
+        const next = now === 0 ? 6 : (now === 6 ? 12 : (now === 12 ? 24 : 0))
+        if (next === 0) delete cw.c.junk
+        if (next !== 0) cw.c.junk = next
+        junk_flip++
+        // RE-COMMISSION THROUGH THE STASHED RUN, not through H.  Sounditron's verbs are bound to its
+        //  own run-House; the top House stashes that binding as `c.sounditron_run` precisely so a
+        //   gesture can re-commission with the correct `this` (the same trick the ⇊ keep gesture
+        //    uses).  Calling it off H would find nothing and the knob would look dead until the next
+        //     trickle happened to come round — which is indistinguishable from a broken button.
+        const run: any = (H as any)?.top_House?.()?.c?.sounditron_run ?? (H as any)?.c?.sounditron_run
+        run?.Sounditron_commission?.(cw)
+        ;(H as any).Vyto_stir_soon?.(w)
+    }
     function cell_release(e: PointerEvent) {
         if (!dragging) return
         if (dragging.live) {
+            const { w, cell } = dragging
             drag_write(e)
-            ;(dragging.w.c as any).drag_tok = null
-            ;(H as any).Vyto_stir_soon?.(dragging.w)
+            ;(w.c as any).drag_tok = null
+            // ORDER MATTERS: clear drag_tok first (it pins the body for the hand), then stage, then
+            //  one stir.  Staging before the clear would leave the cell pinned twice and the stage
+            //   deal fighting the thumb pin for the same seed.
+            if (in_stage_band(w, e)) (H as any).Vyto_stage?.(w, cell.tok)
+            ;(H as any).Vyto_stir_soon?.(w)
             drag_ate_click = true
         }
         dragging = null
+        drag_live = 0
     }
 
     function sentence(o: TheC): string {
@@ -746,6 +820,9 @@
                        face: any | null, source: TheC | null, row: TheC,
                        fx: '' | 'arrive' | 'erupt', fxi: number, fit: number, loose?: boolean,
                        zi?: number, sunk?: boolean, poly?: Pt[],
+                       // the SELF SEAT: this cell is a scope's own face taking a seat among its
+                       //  children.  It is drawn to belong to its parent, not to sit beside it.
+                       selfseat?: boolean,
                        spike?: { poly: Pt[], apex: Pt } | null }
 
     // (inscribed_of is GONE, 2026-08-09 — it was already unseated by the AABB+clip regime and it
@@ -1312,7 +1389,18 @@
         //   paint on top), then recurse into each cell — a child scope's frame IS its parent's cell poly,
         //    tiled with gap 0 (a scope FILLS its parent; the visual GAP is a top-cut property only).  Parent-
         //     before-child emit order = SVG paint order, so children sit above their container.
-        const layout = (nodes: Node[], framePoly: Pt[], gap: number, scopeKey: string): void => {
+        // THE SELF SEAT (the owner 2026-08-09: *"the Component needs a subcell to exist in next to the
+        //  other subcells, though it should be graphically implying it's not separate to the cell
+        //   itself"*).  Until now a scope SUPPRESSED its own face entirely — its children tiled its
+        //    interior and the parent's component simply had nowhere to be, so nesting cost you the
+        //     thing the cell was for.  Now the parent enters its OWN child tessellation as one more
+        //      body: it competes for room on the same terms as its children (which is the only way
+        //       the room is honestly divided) and takes a real polygon among them.
+        //  What makes it read as "not separate" is the DRAWING, not the geometry — the self cell
+        //   wears the parent's fill and no wall of its own, so it reads as the parent showing
+        //    through its own stuffing rather than as a sibling of its children.
+        const SELF_KEY = '»self'
+        const layout = (nodes: Node[], framePoly: Pt[], gap: number, scopeKey: string, selfOf?: Node): void => {
             const foam = !!(w.c as any).foam
             const live: Node[] = []
             const seeds: Pt[] = []
@@ -1325,6 +1413,22 @@
                 //  receives none.  It still gets a PaintCell below (the disc branch), on its own layer.
                 if (foam && (n.row.sc as any).loose) continue
                 live.push(n); keys.push(n.key); seeds.push({ x: s.x, y: s.y }); radii.push(s.r)
+            }
+            // the parent joins its children's cut as one more body.  Its seed is its OWN solved
+            //  position — it is already inside its own polygon by construction, so no placement is
+            //   invented — and its weight is the mean child radius, i.e. "an equal share among your
+            //    stuffing".  A bigger claim would starve the children the nesting exists to show; a
+            //     smaller one would crush the component the seat exists to hold.
+            let selfSeed: Pt | null = null
+            const selfFace = selfOf ? (bare_on(w) ? null : face_of(selfOf.row)) : null
+            if (selfOf && selfFace && live.length) {
+                const ps = sp.get(selfOf.key)
+                if (ps) {
+                    const mean = radii.reduce((a, r) => a + r, 0) / radii.length
+                    selfSeed = { x: ps.x, y: ps.y }
+                    live.push(selfOf); keys.push(selfOf.key + SELF_KEY)
+                    seeds.push(selfSeed); radii.push(mean)
+                }
             }
             // THE FOAM REGIME (gated on w.c.foam — the ORCHESTRA OF SPHERES law, Vyto_todo):
             //  coverage is earned by pressure.  The solve's radii are RELATIVE weights tuned for
@@ -1359,9 +1463,12 @@
                 ;(w.c as any).wall_cuts = (((w.c as any).wall_cuts as number) || 0) + 1
             }
             const polyByKey = new Map<string, Pt[] | null>()
+            // keyed off `keys`, NOT `live[i].key` — the self seat's Node IS the parent, so its own
+            //  key would overwrite the parent's entry and the scope would inherit its child's wall.
+            //   `keys` carries the synthetic »self suffix and is the only correct index here.
             for (let i = 0; i < live.length; i++) {
-                polyByKey.set(live[i].key, polys[i])
-                if (polys[i]) curWalls.set(live[i].key, polys[i] as Pt[])
+                polyByKey.set(keys[i], polys[i])
+                if (polys[i]) curWalls.set(keys[i], polys[i] as Pt[])
             }
             // emit order: lifted sibling last (its subtree follows, so it all paints on top).
             const order = [...nodes].sort((a, b) => (a.key === liftKey ? 1 : 0) - (b.key === liftKey ? 1 : 0))
@@ -1513,10 +1620,34 @@
                         //  It also re-arms the icon register — a genuinely crushed cell now reports a
                         //   crushed `fit`, drops below the 0.34 floor, and becomes an icon instead of
                         //    wearing a widget it has no room for.
+                        // ── AND THE CENTRE DISPOSES TOO (the owner 2026-08-09: *"the Component fitting
+                        //  wants to be a bit larger... its 0.7 but wants 0.92"*).  The rays above are
+                        //   cast from the SEED, and a power cell's seed is not its middle — a body
+                        //    leaned on from one side keeps its seed where it was while its polygon
+                        //     grows away from it.  Every ray then answers about the SHORT side, and the
+                        //      component is sized by the cell's worst direction from an arbitrary
+                        //       point.  That is the missing third, not a bound that is set too low:
+                        //        the cut already disposed of the ball's SIZE, it has to dispose of its
+                        //         CENTRE as well.
+                        //  So measure again from the polygon's centroid and keep whichever centre wins.
+                        //   Two candidates, not a search — a real max-inscribed solve is not worth a
+                        //    per-frame cost here, and the centroid is where the room actually is.
+                        let cx2 = 0, cy2 = 0
+                        for (const p of poly) { cx2 += p.x; cy2 += p.y }
+                        cx2 /= poly.length; cy2 /= poly.length
+                        let byray2 = Infinity
+                        for (const [qx, qy] of [[1,1],[1,-1],[-1,1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]]) {
+                            const ex = (nw / 2) * qx, ey = (nh / 2) * qy
+                            const L = Math.hypot(ex, ey); if (!(L > 0)) continue
+                            const t = ray_hit(poly, cx2, cy2, ex / L, ey / L)
+                            if (t > 0) byray2 = Math.min(byray2, Math.max(0, t - 2) / L)
+                        }
+                        let seatx = s.x, seaty = s.y
+                        if (Number.isFinite(byray2) && !(byray2 <= byray)) { byray = byray2; seatx = cx2; seaty = cy2 }
                         fit = Number.isFinite(byray) ? byray : Math.min(diag / hyp, bb.bw / nw, bb.bh / nh)
                         fit = Math.max(0.2, Math.min(FIT_MAX, +fit.toFixed(3)))
                         mw = nw * fit; mh = nh * fit
-                        mx = s.x - mw / 2; my = s.y - mh / 2
+                        mx = seatx - mw / 2; my = seaty - mh / 2
                         // the seed of a lobed cell can sit well off its own bbox centre; keep the seat
                         //  inside the cut it was just measured against.
                         if (mw <= bb.bw) mx = Math.max(bb.bx, Math.min(bb.bx + bb.bw - mw, mx))
@@ -1570,7 +1701,7 @@
                                  x: s.x, y: s.y, r: s.r, kind: 'poly', d: path_round(sp ? sp.poly : poly), departing: false, lift,
                                  bx: bb.bx, by: bb.by, bw: bb.bw, bh: bb.bh,
                                  mx, my, mw, mh, ang, clip: clipPoly, face, source, row, fx, fxi, fit, sunk, poly })
-                    if (hasKids) layout(n.kids, poly, 0, n.key)
+                    if (hasKids) layout(n.kids, poly, 0, n.key, n)
                 } else {
                     // no poly: a crowded-out seed draws its 6px marker; a LOOSE row draws at its
                     //  solved rim radius on the loose layer — dim, off the pile, drifting with stirs.
@@ -1593,6 +1724,44 @@
                                  mx: s.x - lr, my: s.y - lr, mw: 2 * lr, mh: 2 * lr, ang: 0,
                                  clip: clipPoly, face, source, row, fx, fxi,
                                  fit: isLoose ? fit : 0, loose: isLoose, sunk })
+                }
+            }
+            // ── the SELF SEAT's own cell, emitted last so it paints over its children's walls (the
+            //  seam it shares with them is the thing that should not read as a border).  It carries
+            //   the PARENT's face, source and row — pressing it is pressing the parent, which is what
+            //    "not separate to the cell itself" has to mean for the pointer as well as the eye.
+            if (selfOf && selfFace && selfSeed) {
+                const spoly = polyByKey.get(selfOf.key + SELF_KEY)
+                const ps = sp.get(selfOf.key)
+                if (spoly && ps) {
+                    const sbb = bbox_of(spoly)
+                    // SEATED BY RAYS, exactly like a leaf: cast at the measured box's own corners and
+                    //  take the tightest hit, so the component sizes to the room it actually WON
+                    //   rather than to the box it wished for.  Unmeasured (need_w/h absent until the
+                    //    first flush) falls back to the bbox, which is the same fallback leaves use.
+                    const snw = (selfOf.row.c as any).need_w as number | undefined
+                    const snh = (selfOf.row.c as any).need_h as number | undefined
+                    let sfit = 1
+                    if (snw && snh) {
+                        let byray = Infinity
+                        for (const [qx, qy] of [[1,1],[1,-1],[-1,1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]]) {
+                            const ex = (snw / 2) * qx, ey = (snh / 2) * qy
+                            const L = Math.hypot(ex, ey); if (!(L > 0)) continue
+                            const t = ray_hit(spoly, selfSeed.x, selfSeed.y, ex / L, ey / L)
+                            if (t > 0) byray = Math.min(byray, Math.max(0, t - 2) / L)
+                        }
+                        sfit = Number.isFinite(byray) ? byray : Math.min(sbb.bw / snw, sbb.bh / snh)
+                    }
+                    sfit = +Math.max(0.2, Math.min(FIT_MAX, sfit)).toFixed(3)
+                    cells.push({ tok: selfOf.tok, key: selfOf.key + SELF_KEY, depth: selfOf.depth + 1,
+                                 hasKids: false, ident: '', x: selfSeed.x, y: selfSeed.y,
+                                 r: Math.max(6, Math.min(sbb.bw, sbb.bh) / 2), kind: 'poly',
+                                 d: path_round(spoly), departing: false, lift: false,
+                                 bx: sbb.bx, by: sbb.by, bw: sbb.bw, bh: sbb.bh,
+                                 mx: sbb.bx, my: sbb.by, mw: sbb.bw, mh: sbb.bh, ang: 0,
+                                 clip: clip_of(spoly, sbb), face: selfFace.comp, source: selfFace.source,
+                                 row: selfOf.row, fx: '', fxi: 0, fit: sfit, sunk: false,
+                                 poly: spoly, selfseat: true })
                 }
             }
         }
@@ -2466,15 +2635,28 @@
             {@const plug_id = 'vyplug-' + String((w.sc as any)?.w ?? 'w').replace(/[^A-Za-z0-9_-]/g, '')}
             {@const cam = cam_view(w)}
             <div class="stage" use:reg_stage={w} use:lifetell={{ H, what: 'stage', id: String((w.sc as any)?.w ?? '?') }}>
+                <!-- THE STAGE BAND, shown only while a drag is live.  A drop target you cannot see is
+                     not a target, and one you can always see is furniture — so it exists exactly as
+                     long as the gesture that can use it.  pointer-events:none, so it never eats the
+                     drop it is advertising. -->
+                {#if drag_live}
+                    <div class="stageband" style="width:{(STAGE_BAND * 100).toFixed(0)}%">
+                        <span>{staged_tok(w) ? 'drop to swap · drop the staged one to clear' : 'drop here to stage'}</span>
+                    </div>
+                {/if}
                 <button class="fs-btn" onclick={(e) => go_fullscreen(e.currentTarget.parentElement)}
                         title="fullscreen the glass">⛶</button>
-                <!-- the LAYOUT HANDS (the owner: "needs more redraw or keep running layout buttons
-                     like cyto had").  ⟳ deals the pile fresh (Vyto_redraw — every unpinned seat
-                     forgets, re-enters round the rim, re-piles, salted per press).  ∿ keeps the
-                     layout negotiating (Vyto_simmer_tick on an interval) until pressed again. -->
-                <button class="fs-btn re-btn" onclick={() => (H as any).Vyto_redraw?.(w)}
-                        title="redraw — deal the pile fresh">⟳</button>
+                <!-- THE TOYBOX (the owner 2026-08-09: *"we have to put most of this junk behind some
+                     kind of hidden button ... that lets you play with more buttons"*).  Seven
+                     always-on controls is a workbench, not an interface — and every one of them is a
+                     thing I added to look at the glass with, not a thing a listener needs.  So one
+                     nearly-invisible ⋯ opens the lot and nothing else shows by default.  Per-tab
+                     runtime state: a Book never opens it, so no fixture can move on it. -->
                 {#if live_page()}
+                    <button class="fs-btn toy-btn" class:posing={toys_on(w)} onclick={() => toys_toggle(w)}
+                            title={toys_on(w) ? 'hide the layout toys' : 'layout toys'}>⋯</button>
+                {/if}
+                {#if live_page() && toys_on(w)}
                     <button class="fs-btn sim-btn" class:simmering={simmer_on(w)} onclick={() => simmer_toggle(w)}
                             title="keep running layout — the foam keeps negotiating">∿</button>
                     <!-- BARE — the glass with no Components at all: just the cellular tree of what is
@@ -2488,6 +2670,16 @@
                     <button class="fs-btn bare-btn" class:baring={bare_on(w)} onclick={() => bare_toggle(w)}
                             title={bare_on(w) ? 'components off — cells only (click to bring them back)'
                                               : 'try it bare — no Components, just the cellular tree'}>▢</button>
+                    <!-- THE CLUTTER KNOB — fabricate a queue of faceless heist jobs, each holding its
+                         cuts as SUBCELLS, so the crowded regime can actually be looked at.  Cycles
+                         off → 6 → 12 → 24 → off; the real organs keep their faces throughout. -->
+                    <button class="fs-btn junk-btn" class:posing={junk_n(w) > 0} onclick={() => junk_cycle(w)}
+                            title="fabricate a cluttered heist queue (faceless, with subcells) — off · 6 · 12 · 24">⧉{junk_n(w) || ''}</button>
+                    <!-- the LAYOUT HANDS (the owner: "needs more redraw or keep running layout buttons
+                         like cyto had").  ⟳ deals the pile fresh (Vyto_redraw — every unpinned seat
+                         forgets, re-enters round the rim, re-piles, salted per press). -->
+                    <button class="fs-btn re-btn" onclick={() => (H as any).Vyto_redraw?.(w)}
+                            title="redraw — deal the pile fresh">⟳</button>
                 {/if}
                 <!-- the way OUT, shown only while there is somewhere to come out of.  Clicking the
                      engaged cell again does the same thing, but a visible affordance is what makes the
@@ -2548,6 +2740,8 @@
                                   class:crushed={!!cell.face && !cell.hasKids && cell.fit <= 0.34}
                                   class:breathe={cell.fx === '' && foam_breathes(w)}
                                   class:hot={((cell.row.c as any).heat ?? 0) > 0.25}
+                                  class:pressy={pressy(cell)} class:staged={cell.tok === staged_tok(w)}
+                                  class:selfseat={cell.selfseat}
                                   class:arrive={cell.fx === 'arrive'} class:erupt={cell.fx === 'erupt'} d={cell.d}
                                   style={(g ? `fill:${g.bg}; stroke:${g.border};` : '') + (cdv > 0 ? ` stroke-width:${(1.2 + Math.min(3, cdv) * 0.55).toFixed(2)};` : '') + (cell.fx === 'arrive' ? ` animation-delay:${cell.fxi * 55}ms;` : ` --bd:-${ci * 430}ms;`)}
                                   onpointerenter={() => on_enter(w, cell.key, cell.tok)}
@@ -2917,21 +3111,29 @@
         font-size: 13px; cursor: pointer;
     }
     .fs-btn:hover { background: #2a2a3e; color: #fff; }
-    /* the layout hands file left of ⛶ (right:6px) as one control cluster: ⟳ redraw, ∿ simmer */
-    .re-btn { right: 38px; }
+    /* THE RAIL, left of ⛶ (right:6px).  ⋯ is the only always-on member and it is deliberately faint:
+       a listener should be able to look straight past it, and anyone hunting for controls finds it
+       on the first hover.  Everything after it exists only while the toybox is open. */
+    .toy-btn { right: 38px; opacity: 0.28; }
+    .toy-btn:hover, .toy-btn.posing { opacity: 1; }
+    .toy-btn.posing { color: #c3b0ff; border-color: #6a5ad0; background: #201c34; }
     .sim-btn { right: 70px; }
     .sim-btn.simmering { color: #ffd479; border-color: #b89a4a; background: #2c2618; }
     .even-btn { right: 102px; }
     .vie-btn  { right: 134px; }
     .bare-btn { right: 166px; }
-    .even-btn.posing, .vie-btn.posing { color: #c3b0ff; border-color: #6a5ad0; background: #201c34; }
+    .junk-btn { right: 198px; min-width: 28px; }
+    .re-btn   { right: 236px; }
+    .even-btn.posing, .vie-btn.posing, .junk-btn.posing { color: #c3b0ff; border-color: #6a5ad0; background: #201c34; }
     .bare-btn.baring { color: #9fe6c8; border-color: #4a8a72; background: #16241f; }
-    /* the walk-out chip files further along the same rail */
-    .out-btn { right: 198px; }
+    /* the walk-out chip is NAVIGATION, not a toy — it shows whenever there is somewhere to come out
+       of, toybox open or shut, so a human who flew into a cell is never stranded.  It therefore sits
+       at the head of the rail (right of ⋯), where it does not move as toys come and go. */
+    .out-btn { right: 268px; }
     @media (pointer: coarse) {
-        .re-btn { right: 52px; } .sim-btn { right: 98px; }
+        .toy-btn { right: 52px; } .sim-btn { right: 98px; }
         .even-btn { right: 144px; } .vie-btn { right: 190px; } .bare-btn { right: 236px; }
-        .out-btn { right: 282px; }
+        .junk-btn { right: 282px; } .re-btn { right: 328px; } .out-btn { right: 374px; }
     }
     /* an engaged-able cell should say so under the cursor — the one hint that the glass is navigable.
        The cells are also real keyboard targets (role=button + tabindex): tab to a cell, Enter to fly to
@@ -2960,6 +3162,33 @@
     .cell.faced { fill: #17171f; stroke: #3d3d55; }
     /* a crushed cell (face folded below the icon floor) must SAY so: dashed wall = "not empty, folded" */
     .cell.crushed { stroke-dasharray: 5 3; }
+    /* A PRESSABLE CELL IS A BUTTON — the one thing the tree could not say about itself.  A warm wall
+       and a lift on hover; the affordance is the WALL because in a C** interface the wall is all a
+       cell has that is reliably its own (the inside belongs to whatever is stated there). */
+    .cell.pressy { stroke: #e0a04c; stroke-width: 1.9; }
+    .cell.pressy:hover { stroke: #ffc978; filter: drop-shadow(0 0 6px rgba(224, 160, 76, 0.4)); }
+    .cell.pressy:active { fill: #3a3040; }
+    /* THE STAGED CELL — the one the human put on the left.  It needs no decoration to be found (it
+       is half the screen); the mark is for the OTHERS' benefit — it says the deal is deliberate. */
+    .cell.staged { stroke: #9fd0ff; stroke-width: 2.2; }
+    /* THE SELF SEAT reads as the PARENT SHOWING THROUGH its own stuffing, never as a sibling of it.
+       Geometrically it is one more body in the children's cut — it had to be, or the room would not
+       be honestly divided — so everything that says "separate thing" has to come off: no wall of its
+       own, and the scope's own quiet ground rather than a child's.  What is left is a shaped opening
+       in the tiling, which is exactly what a parent still visible among its children looks like. */
+    .cell.selfseat { stroke: none; fill: #14141c; }
+    .cell.selfseat.pressy { stroke: none; }
+    .cell.selfseat:hover { fill: #1a1a26; }
+    .stageband {
+        position: absolute; left: 0; top: 0; bottom: 0; z-index: 6; pointer-events: none;
+        border-right: 1px dashed rgba(159, 208, 255, 0.55);
+        background: linear-gradient(90deg, rgba(159, 208, 255, 0.13), rgba(159, 208, 255, 0.03));
+        display: flex; align-items: flex-end; justify-content: center; padding-bottom: 10px;
+    }
+    .stageband span {
+        font: 10px/1 ui-monospace, monospace; letter-spacing: 0.1em; text-transform: uppercase;
+        color: rgba(200, 226, 255, 0.8); background: rgba(10, 12, 20, 0.6); padding: 4px 8px; border-radius: 3px;
+    }
     /* THE LOOSE LAYER — drifters off the pile: dim, small, owing no wall.  Rim seats are static
        (tok-hashed) — a stir-clock drift was cut because rest_poll stirs in a loop; renderer-side
        drift waits on a <g> wrapper so a disc and its label revolve together. */

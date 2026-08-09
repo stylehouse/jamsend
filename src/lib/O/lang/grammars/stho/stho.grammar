@@ -8,7 +8,11 @@ Line { lineItem* newline }
 
 @precedence { callparen @left, ioverb @left }
 
-@external tokens pathSep from "./io_tokens" { PathSep, PathComma, PathColon, CaptureDot, CaptureDollar, CaptureColon, CaptureName, FlowSep, PathVal }
+// PuddleSigil rides the external tokenizer too: "%" is both the peel sigil and host-JS
+//  modulo, and only a peek decides which (tight against its key = peel, anything else =
+//   arithmetic, falls through to Punct).  A @tokens rule cannot look ahead, so `i % 5`
+//    used to open a peel of `i`.  See io_tokens' PERCENT branch.
+@external tokens pathSep from "./io_tokens" { PathSep, PathComma, PathColon, CaptureDot, CaptureDollar, CaptureColon, CaptureName, FlowSep, PathVal, PuddleSigil }
 
 lineItem {
   Comment | LineComment |
@@ -73,7 +77,8 @@ MethodLike { Name !callparen LParen }
   RBrack { "]" }
   Comma { "," }
   Colon { ":" }
-  PuddleSigil { "%" }
+  // PuddleSigil ("%") is external now (see @external tokens above) — "%" stays in Punct
+  //  below, and that is what an arithmetic "%" tokenises as.
   Sigil { "@" | "$" }
   Punct { ( "=" | "<" | ">" | "!" | "+" | "-" | "*" | "/" | "%" | "&" | "|" | "?" | "~" | "^" | ")" | "{" | "}" | "." | ";" )+ }
 
@@ -81,6 +86,6 @@ MethodLike { Name !callparen LParen }
     LineComment, Regex,
     ElseIfKeyword, ElseKeyword, ControlKeyword, Sunpitness, IOness, IOness2,
     Number, Name, StringVal, TemplateVal, Comment,
-    AmpCallTok, AmpAmp, LParen, LBrack, RBrack, Comma, Colon, PuddleSigil, Sigil, Punct
+    AmpCallTok, AmpAmp, LParen, LBrack, RBrack, Comma, Colon, Sigil, Punct
   }
 }

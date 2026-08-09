@@ -28,6 +28,13 @@ The front-door QR invite is 428 chars today (`sign` 128 hex + `by` 64 hex = the 
   half it hit. §9 is the half-design for the general cure (the human: *"remember the Invite until both
    parties have agreed they have fully processed it"*). **Rung 1 is shippable today and needs no wire.**
 
+**RULED OUT, 2026-08-09 — no chains: an Invite works ONCE, back to its origin (§10).** The owner
+ closed the "creator tracks the latest redeemer, new redeemers get granted by them" thread. Adopting
+  it cost nothing: `chain:1` is minted in exactly one place in the repo (Book SwarmChain), never by a
+   live door. The §6.3a machinery stays as proven-but-unwired capability. **The blotter sheet is the
+    sanctioned way to hand out many invites** and it got its first face the same day (full-screen QR →
+     `blotter` → 126 QR codes on an A4 JPEG), so "many people, one act" no longer needs a chain.
+
 **The change is TWO coupled moves** (one enables the other):
 1. **Defer the reciprocal grant** (2-frame → 3-frame seal). Because the compact token no longer carries
     the issuer's full pub, the invitee can't mint its reciprocal at redeem — it defers to after
@@ -433,9 +440,75 @@ Note the asymmetry that makes it bite: the spend is a **durable local write** (`
 
 ### 9.4 Non-goals (the "not so much that we get confused" line)
 
-No Tyrant / third-party officiation (§6 already ruled that out — it ran ~90% red). No capability
+No **chains** — see §10, the owner's ruling of 2026-08-09. No Tyrant / third-party officiation (§6
+ already ruled that out — it ran ~90% red). No capability
  *negotiation* language — the `%Want` list is declarative, each side states what it must hold, and there
   is no bargaining. No expiry, and no backoff ladder either — presence is the throttle (§9.2). No new
    frame kinds except `seal_confirm`. And nothing here weakens §4's invariants: re-drives reuse
     already-signed atoms, `Swarm_page_bound` still gates every entry, and a re-expressed **SwarmSpoof
      staying green is the gate** on any of it (§8).
+
+---
+
+## 10. RULED OUT — an Invite works ONCE, back to its origin. No chains. (owner, 2026-08-09)
+
+> *"the Invite that the creator tracks the latest redeemer of, has new redeemers get granted to
+>  them… I think we'll just leave this, having Invites work once only to the origin, not creating
+>   chains as the Invite is passed around… seems risky."*
+
+**The ruling.** Every invite this app hands out is a **single-use serial redeemed against its
+ issuer**. A link that is passed around does not accumulate admissions and does not move its
+  authority to whoever holds it last. `chain:1` is not to be minted by any live door.
+
+**The good news: adopting it costs nothing.** A survey of every `Swarm_mint_idzeug` call site
+ (2026-08-09) found the fifth `chain` argument passed in exactly ONE place in the whole repo —
+  `Ghost/Story/Swarmation.g:1263`, inside Book **SwarmChain**. No UI mints a chain:
+   `InvitePanel.mint()` → `Swarm_invite_url` → plain serial; the blotter sheet (§6.2, and now with a
+    face — see below) mints plain serials *by construction*. So the live door has always been
+     origin-only, and this ruling **confirms the built behaviour rather than changing it**. Nothing to
+      remove, nothing to re-record, no Book goes red.
+
+**What stays, and why it is not a contradiction.** §6.3a's ReInvite machinery
+ (`Swarm_mint_reinvite` / `Swarm_verify_reinvite` / the honour→seal split / `%ChainRoot`) stays in
+  `Swarm.g` with Book SwarmChain green. It is **proven, unwired capability** — the honour→seal split
+   is also the template the compact seal's 3-frame deferral was built from (§3), so deleting it would
+    cost more than leaving it. The rule is about the **door**, not the drawer: nothing user-facing may
+     mint one without the owner reopening this.
+
+**The risk the owner named, stated plainly** so it does not have to be re-derived: a chain moves the
+ admission with the ticket. Whoever holds the tip can admit the next person, and the issuer's consent
+  is spent once, at the root, for an unbounded set of strangers they never see. The invariants in §4
+   are all about *who may walk through this door once*; none of them bounds *how far the key travels*.
+    Single-use-to-origin keeps consent and admission in the same act, which is the property that makes
+     the whole §2 anti-guess argument worth having.
+
+**If it is ever reopened**, the questions to answer first are: what bounds the depth; how a root
+ revokes a subtree after the fact (nothing does today); and whether a tip that grants can also be held
+  responsible for it. None has an answer here, which is the honest reason to leave it.
+
+**Adjacent, and landed the same day: the blotter got its face.** The *other* way to hand out many
+ invites — a printed sheet of tear-off one-time tickets, each its own serial (§6.2,
+  `Swarm_mint_blotter`, Book SwarmBlotter green ×2) — had been sitting in `Swarm.g` with no button on
+   it since it landed. It now hangs off the full-screen QR in `InvitePanel.svelte` as a `blotter`
+    button: **126 QR codes on white and nothing else**, composited to an A4 JPEG at 300dpi.
+ **The layout is the old garden's numbers verbatim** (`src/lib/p2p/ui/ShareButton.svelte`
+  `createComposite()`: `margin 400`, `PADDING 130`, `OVERLAP_PERCENT -0.18`, the `ceil(sqrt(n·0.77))-1`
+   grid → 9×14 cells at 174.3px). They were **hand-tuned until 126 fell exactly onto the page**, they
+    are not a derivation, and there is nothing to improve in them. A first pass at this replaced them
+     with a "cleaner" formula and added a header, cut lines, per-cell captions and a 12/42/126 size
+      chooser; the owner threw all of it out — *"I had the blotter sheet rendering exactly perfectly,
+       no other details than the QR codes… just a grid of QR codes."* **126 is THE count and the sheet
+        carries no furniture.** Recorded here because it is the kind of thing a later session
+         re-derives and re-breaks.
+ **And it stores NO GRAY PIXELS** (the owner, same day, with a zoomed capture of the module edges:
+  *"be ideal if we could not store any gray pixels"*). A QR is a 1-bit image and every intermediate
+   gray in one is damage. qrious is innocent — measured at cell=174 it emits 849 integer-aligned
+    `fillRect`s, 4px a module, two colours, alpha 1. The gray came from three lossy steps downstream,
+     **all three of which the prototype had too**: `svelte-qrcode` returns `toDataURL('image/jpeg')`;
+      the compositor scaled a 175px source into a 174.3px box (bilinear — that is the 2px ramp on
+       every edge); and the page was encoded JPEG again. So the sheet now drives **qrious directly**
+        onto an offscreen canvas per cell, blits it canvas→canvas at integer size and position (1:1,
+         no resample), and encodes **PNG**. Do not "shrink the file" by going back to JPEG. **That sheet is the answer to "many people, one act" —
+       and it is chain-free**, which is exactly why it, not the chain, is the one with a face.
+ The honest limit, said in the copy: the handshake is **online-scan both ways** (§6.3), so a printed
+  ticket is a way to *hand out* an invite, not a way to be absent when it is used.

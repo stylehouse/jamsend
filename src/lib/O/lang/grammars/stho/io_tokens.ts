@@ -18,6 +18,14 @@
 //     dot (a leading "$var" stays an ordinary Sigil flowing in).
 //   - CaptureName    the let-name, claimed only straight after a CaptureDollar,
 //     so it never collides with a bare Name lineItem.
+//
+// PuddleSigil ("%") rides here for the same reason: it is the PEEL sigil, and host
+// JS spells modulo with the same character.  A grammar @tokens rule cannot look
+// ahead, so `i % 5` used to tokenise as IOness + PuddleSigil and the line became a
+// peel of `i` — a hard "PeelItem: no PeelKey" when the next atom wasn't a Name, and
+// (worse) a SILENT `w.i({n:1})` when it was (`let a = i % n`).  Here we can peek, so
+// the sigil is claimed only in peel position; everything else falls through to Punct
+// and stays arithmetic.  See the PERCENT branch below for the exact rule.
 import { ExternalTokenizer, type Stack, type InputStream } from "@lezer/lr"
 
 const SLASH = 47, COMMA = 44, COLON = 58, DOT = 46, DOLLAR = 36, USCORE = 95
@@ -36,7 +44,7 @@ const isStart = (c: number) =>
 export function makePathSep(terms: {
     PathSep: number, PathComma: number, PathColon: number,
     CaptureDot: number, CaptureDollar: number, CaptureColon: number, CaptureName: number,
-    FlowSep: number, PathVal: number,
+    FlowSep: number, PathVal: number, PuddleSigil: number,
 }): ExternalTokenizer {
     const SEP: Record<number, number> = {
         [SLASH]: terms.PathSep, [COMMA]: terms.PathComma, [COLON]: terms.PathColon,
@@ -47,6 +55,28 @@ export function makePathSep(terms: {
         if (isStart(input.next) && stack.canShift(terms.CaptureName)) {
             do { input.advance() } while (isWord(input.next))
             input.acceptToken(terms.CaptureName)
+            return
+        }
+        // "%" PuddleSigil — the peel sigil, claimed ONLY in peel position, which is
+        // exactly: TIGHT against its key and not glued to the end of an operand.
+        //   peel     →  i %see:'…'   %desc:'…'   f(o %Foo, b)   i hut/%toot:3
+        //   NOT peel →  i % 5   i % n   (i % 5) * 4   arr[i % arr.length]   x % y
+        //   NOT peel →  n%such  (that tight-after-a-word form is the sc accessor,
+        //                       folded n%such → n.sc.such by Lang_sc_in_text)
+        // Two peeks decide it, and both are needed:
+        //   after  must be an identifier start — a space|digit|"(" after the "%"
+        //          means arithmetic (this is what `i % 5` and `i % n` trip on).
+        //   before must NOT close an operand (word char, ")", "]", quote) — that
+        //          form is either the sc accessor or host-JS modulo, never a peel.
+        // Refusing here simply leaves the "%" to the main tokenizer's Punct, so the
+        // line reads as ordinary JS and passes through as raw.
+        if (input.next === PERCENT) {
+            if (!stack.canShift(terms.PuddleSigil)) return
+            if (!isStart(input.peek(1))) return
+            const b = input.peek(-1)
+            if (isWord(b) || b === RP || b === RB || b === SQUOTE || b === DQUOTE || b === BTICK) return
+            input.advance()
+            input.acceptToken(terms.PuddleSigil)
             return
         }
         // "..." FlowSep — the r/rm pattern→replacement separator.  Only emitted

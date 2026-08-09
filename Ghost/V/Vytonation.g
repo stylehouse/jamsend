@@ -485,7 +485,15 @@ VytoCell_hover_ready(w):
     let rb = this.VytoStaple_cog_row(vw, 'b')
     if (!ra || !rb) return 0
     if (this.Vyto_calm_held(vw, ra, 'position') !== 0) return 0
-    if (this.Vyto_calm_held(vw, ra, 'size') !== 0.3) return 0
+    // SIZE IS PINNED UNDER THE POINTER, NOT DAMPED.  This assertion read `!== 0.3` — the damped
+    //  rule — until 2026-08-09, when the owner said *"now when we mouse over a cell, it cannot move
+    //   under us!"* and Vyto_pointer_enter's size hold became `pin: 1`.  A damped cell still resizes
+    //    while you point at it, just slower, and a resizing cell drags its own wall under the cursor
+    //     and shoves its neighbours; "slower" was never the rule, STILL is.  The Book was not re-run
+    //      between that fix and an accidental editor revert that masked it, so this line outlived the
+    //       rule it was written for — the one honest reason to edit an assertion is that the rule it
+    //        states has been deliberately replaced, which is the case here and is recorded above it.
+    if (this.Vyto_calm_held(vw, ra, 'size') !== 0) return 0
     let hs = w.c.held_seed
     if (!hs || !ra.c.seed) return 0
     if (!(ra.c.seed.x === hs.x && ra.c.seed.y === hs.y)) return 0

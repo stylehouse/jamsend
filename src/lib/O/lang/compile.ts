@@ -1506,6 +1506,33 @@ export const LANG_COMPILE = {
         return { sc_src, exactly_src, receiver_hint, captures }
     },
 
+    // The one message a peel-key mistake gets.  It quotes what the AUTHOR wrote (a source
+    //  window from the offending "%" — the node's own span is truncated by error recovery,
+    //   so the raw text is the honest quote) and says what the sigil MEANS — never the
+    //    parse-node names.  Lang_compile_collect stamps the line number and the whole source
+    //     line on top, so the finished error reads:
+    //      line 2: '%' with no key, at "%o hut" — '%' is the PEEL SIGIL in this dialect …
+    //       i %o hut
+    //  doc is either the real Text (whole-doc path) or collect's per-line slice shim, which
+    //   has no .length — hence the guarded clamp.
+    Lang_peel_sigil_error(item: SyntaxNode, state: EditorState): string {
+        const doc: any = state.doc
+        const win = (from: number) => {
+            const end = typeof doc.length === 'number' ? Math.min(from + 24, doc.length) : from + 24
+            return String(doc.sliceString(from, end)).split('\n')[0].trim()
+        }
+        const sigil = item.getChild('PuddleSigil')
+        if (!sigil)
+            return `peel item with no key, at "${win(item.from)}" — a leg of an IO path is `
+                 + `key[:value] (i hut/toot:3); nothing at that spot reads as a key name.`
+        return `'%' with no key, at "${win(sigil.from)}" — `
+             + `'%' is the PEEL SIGIL in this dialect (i %see:'…', %desc:'…'), not JS modulo. `
+             + `It must sit TIGHT against a plain key name, and a reserved head (an IO verb `
+             + `o|oa|i|r|rm|oai…, or if|else|S) cannot be that name. `
+             + `If you meant arithmetic, leave a space after the '%' (a % b) — a loose '%' is `
+             + `modulo and never a peel.`
+    },
+
     // One PeelItem → {sc_part, exactly_for?, capture?} plus probe flags.
     //   name        →  name: 1          (wildcard, no exactly)
     //   $name       →  name             (ES6 shorthand; or receiver_hint when probe + no value)
@@ -1526,10 +1553,16 @@ export const LANG_COMPILE = {
         const isPuddle = !!item.getChild('PuddleSigil')
         const keyNode = item.getChild('PeelKey')
         const valNode = item.getChild('PeelVal')
-        if (!keyNode) throw new Error('PeelItem: no PeelKey')
+        // No key.  Since the "%" sigil went whitespace-aware (io_tokens' PERCENT branch)
+        //  an arithmetic "%" can no longer land here — a loose "% 5" / "% n" is Punct and
+        //   the line passes through as JS.  So this IS an authoring error now, and it says
+        //    so in the author's vocabulary: the offending atom, and what "%" means here.
+        //     Never re-word it back into internal node names ("PeelItem: no PeelKey" named
+        //      the machinery and pointed at a line that looked like ordinary arithmetic).
+        if (!keyNode) throw new Error(this.Lang_peel_sigil_error(item, state))
 
         const keyNameNode = keyNode.getChild('Name')
-        if (!keyNameNode) throw new Error('PeelKey: no Name')
+        if (!keyNameNode) throw new Error(this.Lang_peel_sigil_error(item, state))
         const name = doc.sliceString(keyNameNode.from, keyNameNode.to)
 
         // leading sigil only ($name = receiver hint | shorthand value-in); a

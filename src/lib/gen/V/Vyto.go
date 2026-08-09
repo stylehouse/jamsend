@@ -12,7 +12,7 @@ import { sig_of, group_edges, bucket_key_of, pull_step, budget_for, SIG_JOINS, F
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return 'cf96720a9c487afb~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return 'c40f2a46d6036411~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -147,6 +147,10 @@ e_Vyto_commission(A, w, e) {
     //   stamp `undefined` into sc and the encoder would faithfully brand the line `{"undef":["foamereo"]}`,
     //    which is a mint bug, not furniture.  So every existing world stays byte-identical.
     if (req.sc.foamereo) w.sc.foamereo = req.sc.foamereo
+    // PLAIN — the commissioner is handing over particles with no faces behind them, so the glass
+    //  should draw the C** itself (bare's typographic set) instead of leaving quiet frames waiting
+    //   for components that will never mount.  Same carry as foamereo: a capture can read it.
+    if (req.sc.plain) w.sc.plain = req.sc.plain
     // the commissioning client supplies the Run House on the req's `.c` (a ref — never sc); the
     //  Spool reads it to snap the RUN world into each moment's payload (spool.md §2).
     w.c.Run        = e?.c?.Run ?? req.c?.Run ?? null
@@ -331,8 +335,19 @@ Vyto_scan_walk(w, n, parentMirror, depth, gen) {
     //  delete of an sc key is query+snap safe, and this row never reaches a real snap anyway).
     if (row.sc.departing) { delete row.sc.departing; changed = 1 }
     if (changed) row.bump_version()
-    // subtree walk — a depth cap guards against a pathological cycle in a many-placed tree.
-    if (depth < 40) {
+    // A FLAT GRAPPLE KEEPS ITS GUTS (the owner 2026-08-09: *"there's this `Heist:9.the one they
+    //  play...` thing which is odd, has some Supervisor facts, I don't want to show most users
+    //   that"*).  Nesting turns every child of every grapple into a visible subcell, and some
+    //    grapples carry WORKINGS rather than contents — the heist flow organ's constraint/Lead/
+    //     filing rows, supervision facts, and the like.  Those were never meant to be looked at;
+    //      they became cells only because the glass learned to descend.
+    //  So the COMMISSIONER decides, not the renderer: a source wearing `.c.flat` is mirrored as
+    //   itself and its children are not walked.  It rides `.c` (a runtime mark, never encoded, so
+    //    it can sit on a real persisted particle like %Heist without touching its snap), and a
+    //     source that does not wear it walks exactly as before — so no fixture can move.
+    //  This is the right seam for it: what a thing shows is a property of the thing, not a rule the
+    //   display invents per mainkey.
+    if (depth < 40 && !n.c.flat) {
         for (const c of n.o()) this.Vyto_scan_walk(w, c, row, depth + 1, gen)
     }
 
@@ -858,6 +873,70 @@ Vyto_compete_walk(n, toks) {
     }
 
 },
+// ── THE STAGE ────────────────────────────────────────────────────────────────────────────────
+//  Vyto_stage — name the one cell that gets the room, or clear the stage.  Dropping the cell that
+//   is ALREADY staged un-stages it, so the same gesture is on and off and there is no second
+//    control to find.  A tok that no longer exists simply lays out as no stage (stage_lay returns
+//     0 and every other law runs as before), so a departing staged cell cannot strand the glass.
+Vyto_stage(w, tok) {
+    let cur = w.c.stage_tok
+    delete w.c.stage_tok
+    if (tok != null && tok !== cur) w.c.stage_tok = tok
+    this.Vyto_stir_soon(w)
+
+},
+// Vyto_stage_lay — DEAL the frame instead of solving it.  The staged body takes the left band's
+//  heart; everyone else files down a right-hand column, alternating two x's so a long name has
+//   somewhere to go and neighbours do not share a wall dead-on.  Every seed is pinned, so the
+//    relax moves nothing and the same stage lays out identically every frame — which is the whole
+//     point: a dealt layout cannot flap, and flapping is what "it's fond of re-laying-out" was.
+//  Writes back to m.c.seed as well as the local array so the placement PERSISTS: un-stage later
+//   and the pile resumes from where the deal left it rather than teleporting from stale seeds.
+// Vyto_stage_tok — THE EFFECTIVE STAGE.  The human's drag always wins; failing that, the MODEL may
+//  ask, by marking a source `.c.stage_want` (the owner 2026-08-09: *"We need to make sure Haul gets
+//   into the focus zone, so our UI can have enough room"*).  A heist opening is the app saying "this
+//    is what you are doing now", and it should not need a drag to get the room it needs.
+//  Read through `source_n`, so the WANT lives on the real particle the commissioner owns rather than
+//   on a mirror row the glass rebuilds — the mirror is a copy and must never be the place a decision
+//    is stored.  Nothing wants the stage ⇒ null ⇒ every stage law is skipped, byte-invisibly.
+Vyto_stage_tok(w, members) {
+    if (w.c.stage_tok != null) return w.c.stage_tok
+    for (const m of members) {
+        let src = m.c.source_n
+        if (src && src.c && src.c.stage_want) return m.c.tok
+    }
+    return null
+
+},
+Vyto_stage_lay(w, members, seeds, pinned, fw, fh, stok) {
+    let si = -1
+    let rest = []
+    let i = 0
+    while (i < members.length) {
+        if (members[i].c.tok === stok) si = i
+        if (members[i].c.tok !== stok) rest.push(i)
+        i = i + 1
+    }
+    if (si < 0) return 0
+    let sx = fw * 0.31
+    let sy = fh * 0.5
+    seeds[si] = { x: sx, y: sy }
+    pinned[si] = true
+    members[si].c.seed = { x: sx, y: sy }
+    let n = rest.length
+    let k = 0
+    while (k < n) {
+        // centres of n equal bands down the right column, so the file is even however many there are
+        let y = fh * (0.04 + 0.92 * ((k + 0.5) / n))
+        let x = fw * (k % 2 === 0 ? 0.755 : 0.885)
+        seeds[rest[k]] = { x: x, y: y }
+        pinned[rest[k]] = true
+        members[rest[k]].c.seed = { x: x, y: y }
+        k = k + 1
+    }
+    return 1
+
+},
 Vyto_simmer_walk(w, n, tick, base) {
     let i = base
     for (const m of n.o()) {
@@ -980,6 +1059,15 @@ Vyto_express(w) {
     //   see it (a Book never sets it).
     if (w.c.even) {
         for (const row of rows) row.c.env_area = AREA_BASE
+    }
+    // THE STAGE'S PRICE.  Placement alone would not do it: the power cut is a weighted bisector, so a
+    //  left-seated body with a right-column body's radius still only wins a left-column-sized cell.
+    //   The stage has to be BOUGHT as well as placed — one big price, one small price, nothing in
+    //    between, so the frame reads as "this thing, and the things you could put here instead".
+    //  Last in the chain like the equal pose, and gated the same way (runtime `.c`, no Book sets it).
+    let stok = this.Vyto_stage_tok(w, rows)
+    if (stok != null) {
+        for (const row of rows) row.c.env_area = (row.c.tok === stok) ? AREA_BASE * 16 : AREA_BASE * 0.8
     }
     let organ = w.o({ Organ: 'Express' })[0]
     if (organ && organ.sc.status !== 'live') {
@@ -1135,6 +1223,18 @@ Vyto_solve(w) {
         //   gravity roll it back into the press.  Runtime-only, never set by a Book.
         pinned.push(this.Vyto_calm_held(w, m, 'position') === 0 || (w.c.drag_tok != null && m.c.tok === w.c.drag_tok))
     }
+    // THE STAGE (the owner 2026-08-09: *"perhaps whatever's on the left of the screen becomes larger,
+    //  and you drag cells over there to become the big ones... whatever was there falls out of the
+    //   way"*).  Every layout law before this one is a NEGOTIATION — pressure, dose, need, heat, the
+    //    room spread — and negotiations are exactly what "lots of glitch zone" is made of: nobody
+    //     placed the two huge cells, nobody sent the Radio off the side, the solve did.  The stage is
+    //      the opposite kind of law: the human names ONE cell and the frame is DEALT, not solved.
+    //  Every seed is pinned while a stage stands, so `anyPin` is true and the fit + room laws step
+    //   aside — deliberately.  They exist to rescue a solve that placed itself badly; a dealt frame
+    //    has nothing to rescue, and letting them re-fit a dealt layout is how a stage would drift.
+    //  Runtime `.c.stage_tok`, never sc, never set by a Book: byte-invisible to every fixture.
+    let stok = this.Vyto_stage_tok(w, members)
+    if (stok != null) this.Vyto_stage_lay(w, members, seeds, pinned, fw, fh, stok)
     // THE BAG IS FINITE (fit law, 2026-08-09 — the owner: "mostly in a broken layout state").
     //  Bodies keep their intrinsic sizes until the bag cannot hold them; then BAG PRESSURE
     //   squeezes everyone ALIKE (one k on every radius — a similarity, so relative pricing is

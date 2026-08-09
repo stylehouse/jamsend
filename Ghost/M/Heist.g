@@ -328,7 +328,16 @@ Heist_job(w, at, filings, opts):
     //  dirs_auto is the auto-detected shared prefix AT THE MOMENT they edited it (frozen — see
     //   Heist_keep_set_dirs) — Heist_rel_for substitutes one for the other in each pick's landing path.
     //    Both or neither: a bare dirs with no frozen auto to diff against can't safely substitute anything.
-    if (opts && opts.dirs && opts.dirs_auto != null) { job.sc.dirs = opts.dirs; job.sc.dirs_auto = opts.dirs_auto }
+    // `dirs_none` rides beside `dirs` the whole way (see Heist_keep_set_dirs): an explicit "land
+    //  these under NO shared prefix" is a decision and has to survive onto the job, or the landing
+    //   path silently reverts to the auto-detected chain the human just deleted.
+    if (opts && (opts.dirs || opts.dirs_none) && opts.dirs_auto != null) {
+        if (opts.dirs) job.sc.dirs = opts.dirs
+        if (!opts.dirs && job.sc.dirs != null) delete job.sc.dirs
+        if (opts.dirs_none) job.sc.dirs_none = 1
+        if (!opts.dirs_none && job.sc.dirs_none != null) delete job.sc.dirs_none
+        job.sc.dirs_auto = opts.dirs_auto
+    }
     // UPSERT BY ARTIST, never append (the human 2026-08-07: "I said '0 heisted.../0 folk/0 yab/0 yob' yet
     //  comes out just '0 heisted...'").  `genre` was part of the CREATE pattern, so a re-`Heist_job` after
     //   the human edited the section minted a SECOND `filing` row for the same artist — and Heist_filing_for
@@ -522,11 +531,13 @@ Heist_rel_for(job, rec):
         root = this.Heist_cat_path(this.Heist_sections_of(rec.sc.path))
     }
     let cp = this.Heist_cp_path(rec)
-    if (job.sc.dirs && job.sc.dirs_auto) {
+    if ((job.sc.dirs || job.sc.dirs_none) && job.sc.dirs_auto) {
         let auto = job.sc.dirs_auto
         if (cp === auto || cp.indexOf(auto + '/') === 0) {
             let rest = cp.slice(auto.length).replace(/^\//, '')
-            let over = this.Heist_cat_path(job.sc.dirs)
+            // dirs_none ⇒ the override is the EMPTY chain: the auto prefix is stripped and nothing
+            //  replaces it, which is what "delete the last directory level" has to mean at land time.
+            let over = this.Heist_cat_path(job.sc.dirs || '')
             cp = rest ? (over ? over + '/' + rest : rest) : over
         }
     }
@@ -2014,7 +2025,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
         let picks = keep.o({ Pick: 1 })
         let own = this.Ra_home_self(rw, me)
         let job = keep.c.job || shop.o({ Heist: 1, at: keep.sc.pub })[0]
-        if (!job) job = this.Heist_job(w, keep.sc.pub, this.Heist_keep_filings(keep), { home: shop, dirs: keep.sc.dirs, dirs_auto: keep.sc.dirs_auto })
+        if (!job) job = this.Heist_job(w, keep.sc.pub, this.Heist_keep_filings(keep), { home: shop, dirs: keep.sc.dirs, dirs_none: keep.sc.dirs_none, dirs_auto: keep.sc.dirs_auto })
         keep.c.job = job
         // RESUME (the human 2026-07-30 — the Sounditron pages auto-reload every ~10min, no persisted
         //  %Haul/%Pick state yet survives that, so every reload used to mean pulling every track again
@@ -2514,6 +2525,9 @@ async Heist_keep_persist(keep):
     if (keep.sc.artist) entry.sc.artist = keep.sc.artist
     if (keep.sc.genre) entry.sc.genre = keep.sc.genre
     if (keep.sc.dirs) entry.sc.dirs = keep.sc.dirs
+    // the DELETED-to-nothing decision has to survive the memo too, or a rehydrated keep silently
+    //  re-adopts the auto prefix the human removed (see Heist_keep_set_dirs).
+    if (keep.sc.dirs_none) entry.sc.dirs_none = keep.sc.dirs_none
     if (keep.sc.dirs_auto) entry.sc.dirs_auto = keep.sc.dirs_auto
     // `lofi` RIDES TOO (2026-08-07).  It is list-level intent in exactly the sense this function saves —
     //  it decides what the resumed heist ASKS FOR — and it was missing, so a Sounditron page's ~10min
@@ -2634,6 +2648,7 @@ async Heist_keep_rehydrate(rw, me, nav, shop):
         if (entry.sc.artist) keep.sc.artist = entry.sc.artist
         if (entry.sc.genre) keep.sc.genre = entry.sc.genre
         if (entry.sc.dirs) keep.sc.dirs = entry.sc.dirs
+        if (entry.sc.dirs_none) keep.sc.dirs_none = entry.sc.dirs_none
         if (entry.sc.dirs_auto) keep.sc.dirs_auto = entry.sc.dirs_auto
         if (entry.sc.lofi) keep.sc.lofi = 1   // the resumed heist must ask for the SAME artifact it was asking for
         keep.sc.defaulted = 1
@@ -2899,9 +2914,21 @@ Heist_keep_set_lofi(keep, on):
 //      category, this does NOT feed the global default: a directory chain is source-specific ("Fourier
 //       Four/Tagged Truth" means nothing as a default for the next friend's totally different folder), so
 //        each keep only remembers its own.
+// DELETING THE LAST LEVEL MEANS NO LEVELS (the owner 2026-08-09: *"I can't delete the Heist's
+//  DIRECTORIES, 'testsounds'"*).  This wrote `dirs = ''` for an emptied breadcrumb, and every reader
+//   in the chain tests `dirs` for TRUTH — HaulFace fell back to its live-computed auto prefix, the
+//    job never carried the override, and the deleted level reappeared on the next paint.  It is the
+//     `|| N` shape exactly: a setting whose off-position is empty cannot be turned off.
+//  So "none" gets its OWN mark, 1-or-absent like every other flag here, and `dirs` goes back to
+//   meaning what its truthiness says: absent = nothing chosen, present = this chain, `dirs_none` =
+//    chosen to be nothing.  An empty string is never stored again.
 Heist_keep_set_dirs(keep, v, auto):
     keep.c.last_touch = Date.now()
-    keep.sc.dirs = ('' + (v || '')).split('/').map((p) => p.trim()).filter(Boolean).join('/')
+    let clean = ('' + (v || '')).split('/').map((p) => p.trim()).filter(Boolean).join('/')
+    if (clean) keep.sc.dirs = clean
+    if (!clean && keep.sc.dirs != null) delete keep.sc.dirs
+    if (clean && keep.sc.dirs_none != null) delete keep.sc.dirs_none
+    if (!clean) keep.sc.dirs_none = 1
     if (auto) keep.sc.dirs_auto = auto
     keep.bump()
 
@@ -2995,7 +3022,7 @@ async Heist_keep_pull(w, rw, ident, me, nav, keep, shop, srcmir, route):
     // FIND-or-create the job (the review's reload finding): keep.c.job is runtime-only, so after a reload
     //  with state:'committing' persisted a bare create would mint a SECOND %Heist beside the orphaned first.
     let job = keep.c.job || shop.o({ Heist: 1, at: keep.sc.pub })[0]
-    if (!job) job = this.Heist_job(w, keep.sc.pub, this.Heist_keep_filings(keep), { home: shop, dirs: keep.sc.dirs, dirs_auto: keep.sc.dirs_auto })
+    if (!job) job = this.Heist_job(w, keep.sc.pub, this.Heist_keep_filings(keep), { home: shop, dirs: keep.sc.dirs, dirs_none: keep.sc.dirs_none, dirs_auto: keep.sc.dirs_auto })
     keep.c.job = job
     let own = this.Ra_home_self(rw, me)
     await this.Heist_resume_sync(w, nav, job, own, srcmir, picks, this.Heist_mardir(w), keep)

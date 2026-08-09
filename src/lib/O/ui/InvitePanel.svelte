@@ -139,6 +139,128 @@
         } catch (e) { err = String(e) }
     }
 
+    // ── BLOTTER — the printed SHEET, and it is A GRID OF QR CODES AND NOTHING ELSE ────────────
+    //  Swarm_spec §6.2's second invite kind, finally given the face `Swarm_mint_blotter` (+ `%Blotter`,
+    //   Book SwarmBlotter green ×2) has been waiting for since it landed.
+    //  ⚠ THE LAYOUT IS THE OLD GARDEN'S, VERBATIM — `p2p/ui/ShareButton.svelte` `createComposite()`,
+    //   whose numbers (`margin 400`, `PADDING 130`, `OVERLAP_PERCENT -0.18`, the `ceil(sqrt(n·0.77))-1`
+    //    grid) were TUNED BY HAND until 126 cells fell exactly onto the page.  They are not a
+    //     derivation and there is nothing to improve here: a "cleaner" formula, a header, cut lines,
+    //      per-cell captions, a size chooser — all of that was tried on 2026-08-09 and thrown out by
+    //       the owner, who had already got this rendering perfectly and did not ask for furniture.
+    //        **The sheet draws QR codes on white. Nothing else goes on it.**  126 is THE count.
+    //  NOT A CHAIN (§6.3a): a blotter mints plain single-use serials, never `chain:1` — the two
+    //   invite kinds part at the mint, and this one stays "works once, back to the origin".
+    //  ⚠ AND IT STORES NO GRAY PIXELS (2026-08-09, the owner, with a zoomed capture of the module
+    //   edges: *"be ideal if we could not store any gray pixels"*).  A QR is a 1-bit image; every
+    //    intermediate gray in it is damage.  qrious is innocent — its canvas renderer fills integer
+    //     `fillRect`s, so what it draws is pure.  THREE lossy steps sat downstream of it, and the
+    //      prototype had all three too:
+    //       1. `svelte-qrcode` returns `toDataURL('image/jpeg')` — a LOSSY encode of a crisp bitmap
+    //           before the compositor ever sees it.  So we do not use it here: qrious is driven
+    //            directly onto an offscreen canvas per cell.
+    //       2. `drawImage` into a FRACTIONAL box (a 175px source into 174.3px) resamples bilinearly,
+    //           which is the 2px ramp on every module edge in that capture.  Cells are now drawn
+    //            canvas→canvas at an INTEGER size and integer position, i.e. a straight pixel copy.
+    //       3. `toBlob('image/jpeg')` re-softens the lot.  It is PNG now — lossless.  (Nobody has
+    //           weighed the two files; do not assume which is bigger.)
+    //      Rounding the cell to a whole pixel moves the hand-tuned layout by ≤0.3px per cell, which
+    //       is why it is allowed; nothing else about the geometry changes.
+    const SHEET_N   = 126                  // the count the hand-tuned layout was fitted to
+    let sheet_on    = $state(false)        // is the sheet face open
+    let sheet_busy  = $state(false)
+    let sheet_err   = $state('')
+    let sheet_png   = $state<string | null>(null)
+    let sheet_era   = 0                    // bumped by every mint AND every close — a plain let, not
+                                           //  $state: it gates an in-flight promise, never a render
+
+    // the old garden's numbers, moved not rewritten.  `rows` genuinely is one less than the row count
+    //  used to draw (the -1s leave slack); that is part of what makes 126 fit, so it stays.
+    function sheet_layout(n: number) {
+        const MARGIN = 400, OVERLAP = -0.18, PAD = 130
+        const W = 2480 - MARGIN, H4 = 3508 - MARGIN
+        const cols = Math.max(1, Math.ceil(Math.sqrt(n * 0.77)) - 1)
+        const rows = Math.max(1, Math.ceil(n / cols) - 1)
+        const ec = cols * (1 - OVERLAP) + OVERLAP
+        const er = rows * (1 - OVERLAP) + OVERLAP
+        const qr = Math.min((W - 2 * PAD) / ec, (H4 - 2 * PAD) / er)
+        return { W, H4, PAD, cols, qr, gap: qr * OVERLAP }
+    }
+
+    // BUSY FROM THE FIRST CLICK, and the face does not change until there is a sheet to show: 126
+    //  serials is 126 signatures plus 126 QR generations, which is seconds, and a button that stays
+    //   live through that gets pressed again — a second click would mint a whole second sheet's worth
+    //    of ledger.  So `sheet_busy` gates the button (and its own re-entry), the button wears a
+    //     spinner while it runs, and `sheet_on` only flips once the composite exists.
+    async function mint_sheet() {
+        if (sheet_busy) return
+        sheet_err = ''; sheet_busy = true
+        const era = ++sheet_era
+        if (sheet_png) { URL.revokeObjectURL(sheet_png); sheet_png = null }
+        try {
+            const w = H.Swarm_station_world?.()
+            if (w && typeof H.Swarm_station_up === 'function' && H.Swarm_station_up(w, self)) stood = true
+            // the tag names the SHEET; its serials are <tag>-1..<tag>-126 and each spends through the
+            //  very same single-use door as the one-off QR above.  Random tag, not a counter: two
+            //   sheets minted in one session must not collide on a serial.
+            const tag = 'sheet' + Array.from(crypto.getRandomValues(new Uint8Array(3)), b => b.toString(16).padStart(2, '0')).join('')
+            const base = location.origin + location.pathname
+            const izzes = await H.Swarm_mint_blotter(w ?? null, self, { Music: 1 }, SHEET_N, tag)
+            // closed mid-mint: drop out rather than leave the button disabled forever (the serials
+            //  themselves are minted and remain perfectly good in the ledger).
+            if (era !== sheet_era) return
+            await compose_sheet((izzes as string[]).map(iz => base + '?Iz=' + encodeURIComponent(iz)), era)
+        } catch (e) { sheet_err = String(e) }
+        if (era === sheet_era) sheet_busy = false
+    }
+
+    async function compose_sheet(urls: string[], era: number) {
+        // dynamic import: qrious touches `document`, and /BigSoundland server-renders.
+        //  NOTE it is currently only a TRANSITIVE dep (svelte-qrcode → qrious 4.0.2, hoisted), so
+        //   this resolves but is undeclared.  Declaring it is one line in package.json + a lockfile
+        //    touch, which is not a thing to do casually here (see CLAUDE.md on the shared
+        //     node_modules) — flagged rather than done.
+        const QRious = (await import('qrious')).default as any
+        const L = sheet_layout(urls.length)
+        const cell = Math.round(L.qr)          // WHOLE pixels — see the header: this is the fix
+        const step = L.qr - L.gap
+        const cv = document.createElement('canvas')
+        cv.width = L.W; cv.height = L.H4
+        const ctx = cv.getContext('2d')
+        if (!ctx) { sheet_err = 'this browser gave no 2d canvas'; return }
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, L.W, L.H4)
+        // one reusable canvas: qrious resets and repaints it per value, and we copy it out each time
+        const one = document.createElement('canvas')
+        for (let i = 0; i < urls.length; i++) {
+            // `padding` left unset on purpose so qrious CENTRES the code in its cell (given a padding
+            //  it pins to the top-left corner instead).  MEASURED at cell=174: a 41-module code at
+            //   4px a module = 164px, leaving 5px (1.25 modules) inside the cell — but the layout's
+            //    negative overlap sets the cells 205.7px apart, so adjacent codes are 41.7px ≈ 10
+            //     modules of white apart.  Well over the 4 the spec wants, and the reason the cells
+            //      can be packed this tight at all.
+            new QRious({ element: one, value: urls[i], size: cell, level: 'M',
+                         background: '#ffffff', foreground: '#000000' })
+            ctx.drawImage(one, Math.round(L.PAD + (i % L.cols) * step),
+                               Math.round(L.PAD + Math.floor(i / L.cols) * step))   // 1:1, no resample
+            // 126 QRs in one go locks the tab up; yield often enough that the spinner and any
+            //  belief-loop timer still get a turn
+            if (i % 12 === 11) await new Promise(r => setTimeout(r))
+            if (era !== sheet_era) return
+        }
+        const blob = await new Promise<Blob | null>(r => cv.toBlob(r, 'image/png'))   // LOSSLESS
+        if (era !== sheet_era) return
+        if (blob) { sheet_png = URL.createObjectURL(blob); sheet_on = true }
+        else sheet_err = 'the sheet did not render to an image'
+    }
+
+    function sheet_close() {
+        sheet_era++
+        if (sheet_png) { URL.revokeObjectURL(sheet_png); sheet_png = null }
+        sheet_on = false; sheet_err = ''; sheet_busy = false
+    }
+    // the object URL must not outlive the panel
+    $effect(() => () => { if (sheet_png) URL.revokeObjectURL(sheet_png) })
+
     // ── LAND legacy (#-fragment relic — Swarm_spec §6.2 rung 1) ───────────────────────────────
     //  Parse-only: the old ledger and key live in the old garden's Dexie until the rung-2
     //   migrator, so the door is HONEST — it names the inviter and says the link cannot verify
@@ -360,7 +482,7 @@
 </script>
 
 <!-- Escape closes the big QR face (top-level — svelte:window may not sit inside a block) -->
-<svelte:window onkeydown={(e) => { if (big && e.key === 'Escape') big = false }} />
+<svelte:window onkeydown={(e) => { if (big && e.key === 'Escape') { sheet_close(); big = false } }} />
 
 <!-- the name-ask: the first-time move, rendered wherever an unnamed self is about to act -->
 {#snippet namer(hint: string)}
@@ -526,12 +648,31 @@
          the QR fills the screen, so a stopPropagation on it left only a sliver of escapable margin
          ("too hard to get out of", the human) — plus the ✕ and Escape (the svelte:window rides
          the template top, as it must). -->
-    <div class="ip-overlay" use:portal onclick={() => big = false}>
-        <button class="ip-big-x" onclick={() => big = false} title="close (Esc or click anywhere)">✕</button>
-        <div class="ip-big">
-            <InviteQR {url} size={big_size} pad={Math.max(20, Math.floor(big_size / 24))} bg="#ffffff" bare caption="" />
-            <span class="ip-big-cap">scan to join — single-use, dies after its first scan · click anywhere to close</span>
-        </div>
+    <div class="ip-overlay" use:portal onclick={() => { sheet_close(); big = false }}>
+        <button class="ip-big-x" onclick={() => { sheet_close(); big = false }} title="close (Esc or click anywhere)">✕</button>
+        {#if sheet_on}
+            <!-- SHEET mode — a card, so the download link is clickable.  The "any click closes" rule
+                 above is for the full-bleed QR (there was nothing but a sliver of margin to escape
+                 by); here the backdrop still closes and the card does not. -->
+            <div class="ip-sheet" onclick={(e) => e.stopPropagation()}>
+                <img class="ip-sheet-img" src={sheet_png} alt="a printable sheet of invite QR codes" />
+                <a class="ip-sheet-go" href={sheet_png} download="qr-blotter.png">⬇ download A4 · 210×297mm @ 300dpi</a>
+            </div>
+        {:else}
+            <div class="ip-big">
+                <InviteQR {url} size={big_size} pad={Math.max(20, Math.floor(big_size / 24))} bg="#ffffff" bare caption="" />
+                <span class="ip-big-cap">scan to join — single-use, dies after its first scan · click anywhere to close</span>
+                <!-- the other invite kind (Swarm_spec §6.2): a printable page of one-time tickets.
+                     stopPropagation only on this one button — the QR above still closes on any click. -->
+                <span class="ip-big-row" onclick={(e) => e.stopPropagation()}>
+                    <button class="ip-sheet-chip" disabled={sheet_busy} onclick={mint_sheet}
+                        title="mint {SHEET_N} one-time invites as one printable A4 page">
+                        {#if sheet_busy}<span class="ip-spin" aria-label="minting"></span>{:else}blotter{/if}
+                    </button>
+                </span>
+                {#if sheet_err}<span class="ip-big-cap">⚠ {sheet_err}</span>{/if}
+            </div>
+        {/if}
     </div>
 {/if}
 
@@ -650,4 +791,44 @@
     /* the blend: the QR's white becomes the backdrop's tan exactly; its ink stays ink */
     .ip-big :global(img) { mix-blend-mode: multiply; display: block; }
     .ip-big-cap { font-size: 0.85rem; color: #4a300f; letter-spacing: 0.02em; }
+    .ip-big-row { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; justify-content: center; cursor: default; }
+
+    /* ── the blotter sheet ── a paper-white card on the same warm overlay: what you are looking at
+       IS a page, so it should read as one rather than as more app chrome. */
+    .ip-sheet {
+        display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+        max-width: min(92vw, 46rem); max-height: 88vh; cursor: default;
+    }
+    .ip-sheet-img {
+        max-width: 100%; max-height: 62vh; width: auto;
+        background: #fff; border: 1px solid #b99; box-shadow: 0 8px 26px rgba(60,30,0,0.28);
+        /* the preview is a heavy downscale of a 1-bit page; let it drop pixels rather than blur
+           them, so what you see on screen is the same kind of image as the one you download */
+        image-rendering: pixelated;
+    }
+    /* the spinner — a `transform` animation on purpose: minting 126 serials is a burst of signing
+       work on the main thread, and rotation is one of the few things a browser can keep animating
+       off it.  A spinner that freezes exactly when the work starts is worse than none. */
+    .ip-spin {
+        display: inline-block; width: 0.85em; height: 0.85em; vertical-align: -0.1em;
+        border: 2px solid rgba(74,48,15,0.3); border-top-color: #4a300f; border-radius: 50%;
+        animation: ip-spin 0.7s linear infinite;
+    }
+    @keyframes ip-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+        .ip-spin { animation-duration: 2.4s; }
+    }
+    .ip-sheet-go {
+        background: #4a300f; color: #f3e3bd; text-decoration: none;
+        padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.9rem;
+    }
+    .ip-sheet-go:hover { background: #2d1c06; }
+    .ip-sheet-chip {
+        background: rgba(255,255,255,0.5); border: 1px solid #a8763f; color: #4a300f;
+        cursor: pointer; font-size: 0.78rem; padding: 0.15rem 0.6rem; border-radius: 5px;
+        /* fixed width so swapping the label for the spinner does not make the button jump */
+        min-width: 4.6rem; min-height: 1.55rem;
+    }
+    .ip-sheet-chip:hover:not(:disabled) { background: #fff; }
+    .ip-sheet-chip:disabled { opacity: 0.45; cursor: default; }
 </style>

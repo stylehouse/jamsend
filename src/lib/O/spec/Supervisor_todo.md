@@ -29,6 +29,12 @@ Nothing is built. Read §1 for why it must exist, then §3 — the substrate alr
 **Do not start at step 4.** A reload button that fires on a bad guess is worse than no supervisor: it
  destroys the evidence of the bug it mis-diagnosed, and it trains everyone to reload reflexively.
 
+**READ §8 FIRST (added 2026-08-09).** The owner answered §7 Q1: consent splits by **who is in front of
+ the tab**. A *runner* is categorically non-recoverable (a Book is one linear journey; a healed wedge
+  produces green steps over a world that took a detour) and so is the right first customer for the
+   `act` rung; a *player* tab gets notice→badge→offer and never a surprise reload. §8 re-aims this
+    list without replacing it.
+
 ---
 
 ## 1. Why — three wedges in one day, all found by a human pasting a console
@@ -257,3 +263,61 @@ Two consumers, same req:
 3. **Should a wedge be loud in the snap?** A `%Watch` verdict that snaps would make wedges visible to
     Books — which is either exactly right (MusuNeGrind could assert on it) or fixture churn. My lean:
      the *verdict* snaps, the timings do not (a raw `ms` in `sc` makes a Book unrecordable).
+
+---
+
+## 8. WHO decides, and the answer the owner handed us: it depends on who is watching (2026-08-09)
+
+> *"the Supervisor, who decides Sounditron has failed and to reload the page to try again (or are
+>  things recoverable? Story isn't, it wants to read one linear journey straight in there with
+>   everything working immediately|normally)"*
+
+That parenthesis is the answer to **§7 Q1** (*"where does consent sit?"*), which had been sitting open
+ because it was being asked as one question. It is two, and they split on **who is in front of the
+  tab**:
+
+| the tab | recoverable? | who consents | the act |
+|---|---|---|---|
+| a **runner** (`?B=<Book>`) | **no, and never was** | nobody — no human is watching | reload, unasked |
+| a **player** / Sounditron | often | the listener | notice → badge → **offer** (§6), never a surprise |
+
+**Why a runner is categorically non-recoverable, in the owner's own terms.** A Book is *one linear
+ journey read straight through, with everything working normally*. Its verdict is a `dige` chain over
+  a world that quiesced a particular way (`a-books-length-is-its-recorded-toc`,
+   `a-caveat-green-is-a-fixture-mismatch`). So a runner that wedged and then *healed* is **worse than
+    one that stayed wedged**: it produces a run whose steps are green but whose world took a detour,
+     and every fixture downstream of the stall is a lie about a journey nobody made. There is no
+      "resume" for a Book — there is a fresh boot or there is nothing. Every §1 runner wedge was in
+       fact cured by exactly one act, a human hitting F5.
+
+This makes the **runner the right first customer for the `act` rung**, and it inverts the order §6
+ implies. §6 says `act` is the last thing to build because a wrong reload destroys evidence and trains
+  reflexive reloading — both true **of a player**. Of a runner, neither is: the evidence a wedged
+   runner holds is worth less than the run it is failing to produce, and there is no one there to
+    train. So:
+
+- **A wedged runner may reload itself**, and the two guards §6 asks for are already available:
+   `running.book` says whether a Book is mid-flight, and the run is deterministic, so re-running it
+    from the top costs only time.
+- **The one thing it must do first is SAY SO** — stamp the verdict where `runner_ask` can read it
+   *after* the reload (the tab that reloads forgets; the session driving it must not). Otherwise a
+    self-reloading runner is a runner that silently retries, which is how a real bug becomes a flaky
+     Book. See `controlled-revert-to-attribute-a-red-book`.
+- **A player tab never auto-reloads on this rung.** A surprise reload is a surprise silence, and
+   §5's badge — the organ named — is most of the value without spending anyone's music.
+
+**But note the trap this walks into, and §4's correction is the receipt.** The obvious place to hang
+ "is this runner wedged" is the Story drive itself (§4c), and the Story drive is *in* the belief loop —
+  the very thing that stops. A runner supervisor has to ride the same escape hatch tier 1 uses: a plain
+   `setTimeout` reading `.c` counters, outside `post_do`, outside the mutex. `Swarm_watch_loop` already
+    is that loop; §4c's drive check wants to be a second reading inside it, not a new machine.
+
+**Order this suggests** (it does not replace §0, it aims it):
+1. §0 step 1's outstanding debt is still first: **nobody has seen tier 1 fire.** Provoke it or replay
+    the `Stoker_tour` wedge from the fixtures. An unfired watchdog is a claim, not a supervisor —
+     `mutation-test-every-claim`.
+2. Add **§4c (the drive)** to `Swarm_watch_look`'s reading, since the runner is now the first customer
+    and the drive is what wedges on it.
+3. Surface `w.c.watch` in the glass (§5, the Brink/DiagFace badge) and through `runner_ask`, so the
+    verdict is legible before anything acts on it.
+4. **Only then** the runner-only `act` rung, with the "say so durably first" rule above.

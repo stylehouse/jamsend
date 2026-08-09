@@ -195,7 +195,11 @@
         //       rather than re-deriving the rule in the face.
         const cpOf = (h: any) => (typeof A?.Heist_cp_path === 'function' ? String(A.Heist_cp_path(h) || '') : String(h?.sc?.path || ''))
         const dirsAuto = commonPrefix(husks.map((h: any) => dirOf(cpOf(h))))
-        const dirsRaw = (sc.dirs != null && sc.dirs !== '') ? String(sc.dirs) : dirsAuto
+        // `dirs_none` = the human deleted every level and MEANT it (the owner 2026-08-09: "I can't
+        //  delete the Heist's DIRECTORIES, 'testsounds'").  Without it, an emptied breadcrumb fell
+        //   through to the live-computed `dirsAuto` and the deleted level reappeared on the next
+        //    paint — the delete looked broken because the fallback was indistinguishable from unset.
+        const dirsRaw = sc.dirs_none ? '' : ((sc.dirs != null && sc.dirs !== '') ? String(sc.dirs) : dirsAuto)
         const dirsSegs = dirsRaw.split('/').filter(Boolean)
         const artist = String(sc.artist || '')
         const dirsKnown = (dirsFocus && own && A?.Heist_known_dirs) ? A.Heist_known_dirs(own, artist) : []
@@ -627,11 +631,7 @@
             <!-- the explainer the "?" opens.  Inline, not a title= tooltip: lofi exists FOR the phone, and a
                  phone has no hover — an explanation you can only reach with a mouse is no explanation. -->
             <div class="kf-why">
-                <strong>lofi</strong> asks your friend to re-encode each track as a small <strong>.ogg</strong>
-                (Opus, 128kbps) and send that instead of the original file. A typical album drops from a few
-                hundred MB to a few tens — much faster over the wire, and much kinder to a phone that hasn't
-                the room for lossless. The original stays on <em>their</em> disk untouched; you just receive
-                the smaller rendition. Leave it off when you want the exact files, bit for bit.
+                <strong>lofi</strong> transcodes to 128k ogg, to fit more on small devices.
                 <button class="kf-why-x" onclick={() => (lofiWhy = false)} title="close">✕</button>
             </div>
         {/if}
