@@ -1996,6 +1996,20 @@ Swarm_beat_note(w):
         w.c.phase_at = Date.now()
     }
 
+// Swarm_probe_beat — the SUPERVISOR'S read of the beat, and the reason Swarm_beat_health finally has
+//  a reader.  It landed 2026-08-08 and had never once been consulted by anything; a sensor with no
+//   reader gates nothing, and this repo has already caught one claim that was pure theatre.
+//  `slow` is deliberately NOT wrong: the health verb grades it at a third of the stuck bar, which is
+//   a warning about a machine that is still working.  Calling that a fault would make the sanity cell
+//    shout at every busy moment and teach the owner to ignore it — the exact failure the idle HUDs
+//     died of.  Only `stuck` is wrong.
+Swarm_probe_beat(w, sup):
+    if (!w) return { verdict: 'unknown', note: 'no swarm world' }
+    let h = this.Swarm_beat_health(w)
+    if (!h) return { verdict: 'unknown', note: 'no reading' }
+    if (h.state === 'stuck') return { verdict: 'wrong', note: String(h.why || 'the share beat is stuck') }
+    return { verdict: 'ok', note: h.state === 'slow' ? String(h.why || 'running long') : '' }
+
 Swarm_beat_health(w):
     if (!w || !w.c.share_up) return { state: 'ok', phase: '', for_ms: 0, why: 'share is down' }
     let order = ['cull', 'tour', 'flush', 'peers', 'keep']
@@ -2064,6 +2078,12 @@ Swarm_watch_look(w):
     }
     let now = bad ? (bad.phase + ':' + bad.state) : ''
     w.c.watch = bad || v
+    // AND HAND IT TO THE SUPERVISOR.  `w.c.watch` has been stamped here every 2s since 2026-08-08 with
+    //  NOTHING ANYWHERE READING IT — the console.log below is the only consumer, and it talks to a
+    //   console nobody has open.  Registering is idempotent, so doing it from inside the loop keeps
+    //    the watch alive across a Supervisor that stood up after this loop did.
+    let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
+    if (sup) this.Supervisor_watch(sup, 'swarm.beat', 'the share beat is advancing — the conveyor turns', 'standing', 'Swarm_probe_beat', w)
     if (now === (w.c.watch_said || '')) return
     w.c.watch_said = now
     if (!now) return

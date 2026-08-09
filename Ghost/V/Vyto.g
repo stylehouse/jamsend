@@ -171,10 +171,18 @@ e_Vyto_commission(A, w, e):
     //   heist the chatty organs (Radio, Tuner, Riffle, Caper) are OUT of the grapple set by design —
     //    so the scan that would notice the dead keep waited on an incidental bump of whatever was
     //     left, measured on the live tab at seconds apart.  Two scans to drop (the departing grace)
-    //      × sparse bumps ≈ the observed 12s, with the electrodes above acquitting every queue hop
+    //      × sparse bumps ≈ the observed 12s, with the electrodes acquitting every queue hop
     //       (keeps-look → vyto-commission = 92ms).  The commission itself IS news about what the
     //        glass shows; it stirs, coalesced like every other bump.
-    this.Vyto_stir_soon(w)
+    //  ⚠ vw_frame-GATED, AND THAT IS THE CONTRACT, not a convenience.  Ungated this went straight
+    //   red on VytoCell step 3 — *"mint A:Vyto beside the run and commission it on the three cogs"* —
+    //    because the deferred stir lands INSIDE the step that commissions (a Story step waits for
+    //     quiescence), so work the fixture records at step 4 moved into step 3.  That is the standing
+    //      division of labour showing itself: a Book HAND-CRANKS the pipeline (it calls Vyto_stir
+    //       directly, and proves the STATIONS), while the DRIVE — what decides when to stir on a live
+    //        page — is exactly what a Book must not have an opinion about.  Gating here keeps the
+    //         live fix whole and every recorded rhythm untouched.
+    if (w.c.vw_frame) this.Vyto_stir_soon(w)
 
 // Vyto_grapples — derive the watch set.  watch_c(Scannable) was aimed one joint too high:
 //  the state that FEEDS the Scannable lives in bits of gear (stokers, lineups, piers,
@@ -1143,11 +1151,38 @@ Vyto_express_rows(w, rows):
 //   face child by the Cytui offset trick) — and returns need·1.15 (breathing room past the tight
 //    box).  Zero when the floor is unarmed or nothing measured, so the Math.max above is
 //     byte-invisible to every floor-free world (the additive-gate law).
+// THE FLOOR HAS TO BE STATED IN THE UNIT THE RENDERER SPENDS (2026-08-10, the owner: *"making sure
+//  the Faces are big enough.  they keep being 50% what they should be, after being the right size
+//   initially"*).  The 50% is arithmetic, not impression, and the aspect ratio is the whole of it:
+//  · this floor was AREA — `env_area ≥ nw·nh·1.15` — and area has no opinion about shape;
+//  · the renderer sizes a face PER AXIS off the cell's bounding box: `fit = min(bbw/nw, bbh/nh)`;
+//  · a foam cell is round, so its bbox is SQUARE (2r each way) whatever the face's shape is.
+//  Put together, for a face of aspect 3:1 — which is what a player or a heist face actually is —
+//   r = √(1.15·3nh²/π) = 1.05nh, so fit = 2.1nh/3nh = 0.70, and 0.70² = 49% OF THE AREA ASKED FOR.
+//    A square face lands fit > 1 and is fine, which is exactly why this read as "some faces" rather
+//     than a constant being wrong.  And it only appears AFTER the first measure because an unmeasured
+//      cell has no need_w/need_h and falls back to fit 1 — "the right size initially".
+//  So ask for the radius the LONG SIDE needs, not the area the two sides multiply to.  The long axis
+//   is allowed the same OVERHANG the renderer's slab seat already grants (1.25), because a face may
+//    legitimately overrun its cell's ends — quoting a diameter that ignores that would buy room the
+//     renderer was never going to charge for.  Headroom stays 1.15, unchanged, and the old area form
+//      remains a LOWER bound so no cell that is comfortable today gets smaller.
+//  Byte-invisible without a measured box: `need_w`/`need_h` are stamped by the render's measure pass
+//   for FACES only (an ident label stamps area alone), and only on a need_floor world — so every
+//    label, every floor-free glass and every Book that does not commission the floor reads the exact
+//     number it read before.
 Vyto_need_of(w, row):
     if (!w.c.need_floor) return 0
     let need = Number(row.c.need_area)
     if (!need || !(need > 0)) return 0
-    return need * 1.15
+    let flat = need * 1.15
+    let nw = Number(row.c.need_w)
+    let nh = Number(row.c.need_h)
+    if (!(nw > 0) || !(nh > 0)) return flat
+    // the diameter the long side needs, the short side taken as-is; π/4·d² is that circle's area.
+    let d = Math.max(nw / 1.25, nh)
+    let round = 0.7853981634 * d * d * 1.15
+    return Math.max(flat, round)
 
 // Vyto_fo — THE FOAMEREO READER, model side (the twin of Vytui's `fo`).  One scalar sc key holds a
 //  comma deck of composer tokens: `foamereo:'wave,seal,room:0.55'`.  Returns null when the token is

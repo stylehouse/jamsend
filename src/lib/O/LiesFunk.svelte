@@ -2737,7 +2737,8 @@ await M.eatfunc({
                         //  Additive: a glass with no molds emits no `moldmap` group and is byte-identical.
                         const srect = el.getBoundingClientRect()
                         const vbn = vb.trim().split(/[\s,]+/).map(Number)
-                        const molds: { key: string, x: number, y: number, w: number, h: number }[] = []
+                        const molds: { key: string, x: number, y: number, w: number, h: number,
+                                       fit: number, nw: number, nh: number }[] = []
                         let overlaps = 0
                         let moldg = ''
                         if (vbn.length === 4 && srect.width > 0 && srect.height > 0) {
@@ -2750,9 +2751,21 @@ await M.eatfunc({
                                 const rr = (m as HTMLElement).getBoundingClientRect()
                                 if (!(rr.width > 0) || !(rr.height > 0)) continue
                                 const a = toVB(rr.left, rr.top), b = toVB(rr.right, rr.bottom)
+                                // CARRY `fit` (2026-08-10).  The map reported a mold's SIZE, which cannot
+                                //  answer the only question anyone asks of it — *is this face full size?*
+                                //   159×249 reads identically whether the face got everything it asked for
+                                //    or 70% of it, so a capture could show the aspect-ratio starve (a 3:1
+                                //     face seated at fit 0.70, i.e. 49% of its area) and look perfectly
+                                //      healthy.  The renderer already writes `--fit` onto every mold, so
+                                //       this is a free read of a number that was in the DOM all along.
+                                //  Reported as `fit` plus the NATURAL box it implies (size ÷ fit), so the
+                                //   map states both what the face wanted and what it was given.
+                                const fitv = +((m as HTMLElement).style.getPropertyValue('--fit') || 1) || 1
+                                const mw = +(b.x - a.x).toFixed(1), mh = +(b.y - a.y).toFixed(1)
                                 molds.push({ key: (m as Element).getAttribute('data-key') ?? '?',
                                              x: +a.x.toFixed(1), y: +a.y.toFixed(1),
-                                             w: +(b.x - a.x).toFixed(1), h: +(b.y - a.y).toFixed(1) })
+                                             w: mw, h: mh, fit: +fitv.toFixed(3),
+                                             nw: +(mw / fitv).toFixed(1), nh: +(mh / fitv).toFixed(1) })
                             }
                             for (let i = 0; i < molds.length; i++) for (let j = i + 1; j < molds.length; j++) {
                                 const A = molds[i], B = molds[j]

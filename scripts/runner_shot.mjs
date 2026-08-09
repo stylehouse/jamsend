@@ -169,7 +169,18 @@ if (svg) {
     }
     if (Array.isArray(r.molds)) {
         console.log(`▣ molds: ${r.molds.length} · overlapping pairs: ${r.overlaps}`)
-        for (const m of r.molds) console.log(`    ${String(m.key).padEnd(28)} ${String(m.x).padStart(7)},${String(m.y).padStart(7)}  ${m.w}×${m.h}`)
+        // `fit` is the whole point of this map (2026-08-10): a mold's SIZE cannot say whether the face
+        //  got what it asked for.  Print it beside the natural box, and flag anything under 0.95 —
+        //   `fit` is an area penalty squared, so 0.70 is a face at 49%, which is what an aspect-ratio
+        //    starve looks like and is invisible in the size column.  Older tabs send no fit; say so
+        //     rather than printing a confident 1.000 nobody measured.
+        for (const m of r.molds) {
+            const size = `${m.w}×${m.h}`
+            if (m.fit == null) { console.log(`    ${String(m.key).padEnd(28)} ${String(m.x).padStart(7)},${String(m.y).padStart(7)}  ${size}   (fit: old tab)`); continue }
+            const pct = Math.round(m.fit * m.fit * 100)
+            const mark = m.fit < 0.95 ? `  ⟵ ${pct}% of its natural area` : ''
+            console.log(`    ${String(m.key).padEnd(28)} ${String(m.x).padStart(7)},${String(m.y).padStart(7)}  ${size.padEnd(14)} fit ${m.fit.toFixed(3)} of ${m.nw}×${m.nh}${mark}`)
+        }
     }
     process.exit(0)
 }

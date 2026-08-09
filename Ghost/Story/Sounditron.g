@@ -1316,6 +1316,11 @@ Sounditron_supervise(w):
     this.Supervisor_watch(sup, 'sound.live',   'a friend is online — bytes only flow live',             'standing',  'Sounditron_probe_live',   w)
     this.Supervisor_watch(sup, 'sound.shelf',  'a friend has counted their shelf — records to want',    'milestone', 'Sounditron_probe_shelf',  w)
     this.Supervisor_watch(sup, 'sound.pulled', 'original bytes crossed over Repli — the pull landed',   'milestone', 'Sounditron_probe_pulled', w)
+    // THE TWO HEALTH WATCHES — "is this tab working right now", beside the four readiness milestones
+    //  above ("can this tab receive music").  Both wrap sensors that landed with NO READER AT ALL and
+    //   had therefore never been seen to fire; a sensor nothing consults gates nothing.
+    this.Supervisor_watch(sup, 'sound.glass',  'the glass is drawing every organ it was handed',       'standing',  'Sounditron_probe_glass',  w)
+    this.Supervisor_watch(sup, 'sound.audible','sound is actually coming out — the analyser hears it',  'standing',  'Sounditron_probe_sound',  w)
     // AND COMPLETE THE PASS HERE, rather than waiting for w:Supervisor's own tick on Mundo.  Registering
     //  and being READ are different events, and the gap between them is a wall clock: the roster would
     //   sit verdict-less until Mundo next ticked, so the step at which the witness could first swear
@@ -1338,6 +1343,98 @@ Sounditron_supervisor_reading(w):
     let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
     if (!sup) return 0
     return sup.o({ Watch: 1 }).filter(x => x.sc.verdict).length
+
+// Sounditron_supervisor_blind — how many registered watches could NOT find their probe.  This is the
+//  guard against the roster's one silent failure mode: a probe is named by STRING, and a name that
+//   resolves to nothing stamps `unknown` instead of throwing.  So a typo'd or renamed probe leaves a
+//    watch that looks registered, reports nothing forever, and is indistinguishable from a healthy
+//     one at a glance — the same shape as the four sensors that sat here for days with no reader.
+//  Counting them is cheap and the claim built on it is permanent: it goes red the moment anybody
+//   adds a watch pointing at a method that does not exist, or renames a probe out from under one.
+//  Returns the KEYS, not a count: a count tells you something is broken and a key tells you what,
+//   and the difference is the whole lesson of this session's phase-attribution findings.
+Sounditron_supervisor_blind(w):
+    let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
+    if (!sup) return []
+    return sup.o({ Watch: 1 }).filter(x => String(x.sc.note || '').indexOf('no probe named') === 0).map(x => String(x.sc.Watch))
+
+// Sounditron_probe_glass — is the glass we commissioned actually DRAWING what we handed it?
+//  THE COMMISSIONER ASKS, NOT THE GLASS.  It would be natural to put this in Vyto beside
+//   `Vyto_normal`, and it is wrong there twice over: a subsystem reporting on itself is the weakest
+//    possible witness, and the question "are MY organs on screen" is a claim about a commission,
+//     which is ours.  Vyto keeps its own corrective pass; this reads what that pass concluded.
+//  IT DOES NOT CALL Vyto_normal.  That verb POKES — re-seeds cells and stirs — and a probe may not
+//   mutate the thing it watches from a tick it does not own.  So this reads the findings it leaves
+//    behind (`normal_said`: grappled mainkeys currently without a cell).
+//  Quiet where nothing has been judged: Vyto_normal is gated on `vw_frame`, stamped only by a
+//   humdinger tab's publish_frame.  No frame means no judgement — and a permanent `unknown` would be
+//    a blind spot that never clears, which is worse than saying nothing.
+//  IT MUST NOT ASSUME A VANTAGE.  A probe runs inside the SUPERVISOR's read pass, so `this` is the
+//   House the Supervisor lives on (Mundo) — not the House the Book runs on.  Copying
+//    `Sounditron_glass`'s `this.up ?? this.top_House()` is therefore wrong here, and so is the
+//     obvious correction of climbing from the subject: `A:Vyto` appears in NEITHER place reliably
+//      (the Run House snap carries `A:Sounditron` and no `A:Vyto`, so the glass is not there; and
+//       whether it lands on Mundo depends on what `this.up` resolved to at commission time).
+//  So it LOOKS IN BOTH and says which, rather than asserting a topology it cannot see.  When a probe
+//   and its subject live in different Houses, "where is it" is a question to answer at read time,
+//    not a fact to hardcode — the owner's own words for this area: *"it's kind of a mess that"*.
+//  The owner saw the first cut as "? the glass is drawing every o…" — the probe worked perfectly and
+//   answered about the wrong House, which is the most expensive kind of correct.
+Sounditron_probe_glass(w, sup):
+    let vw = null
+    let where = ''
+    // WALK EVERY HOUSE, which is what BigSoundland's own vyto_trace does — and it is authoritative
+    //  because it is the code that actually finds the live glass for the badge.  Two earlier cuts
+    //   guessed a fixed home (Mundo, then the Run House) and both were wrong; the Run House snap
+    //    carries `A:Sounditron` and no `A:Vyto`, and Mundo did not have it either.  There is no fixed
+    //     home to hardcode, so stop trying to name one.
+    for (const H of this.Sounditron_houses()) {
+        if (vw) continue
+        let a = H.o ? H.o({ A: 'Vyto' })[0] : null
+        let got = a ? a.o({ w: 'Vyto' })[0] : null
+        if (got) { vw = got; where = String(H.name || '?') }
+    }
+    // NAME WHERE IT LOOKED.  The owner spent two rounds staring at a bare "?" — a verdict that says
+    //  only "I could not find it" costs a person the whole diagnosis, which is this doc's §5 in one
+    //   line: attribution before action.
+    if (!vw) return { verdict: 'unknown', note: 'no A:Vyto in any of ' + this.Sounditron_houses().length + ' House(s)' }
+    if (!vw.c.vw_frame) return { verdict: 'ok', note: where + ' — no frame published yet' }
+    let missing = Object.keys(vw.c.normal_said || {})
+    if (!missing.length) return { verdict: 'ok', note: where }
+    return { verdict: 'wrong', note: where + ': ' + missing.length + ' organ(s) with no cell — ' + missing.slice(0, 3).join(' ') }
+
+// Sounditron_houses — Mundo plus every House standing under it.  The glass has no fixed home (see
+//  above), so anything hunting for it must walk, exactly as BigSoundland's vyto_trace does.
+Sounditron_houses():
+    let M = this.top_House ? this.top_House() : null
+    if (!M) return []
+    return [M].concat(M.o({ H: 1 }) ?? [])
+
+// Sounditron_probe_sound — IS ANY SOUND ACTUALLY COMING OUT.  Radio_sound landed 2026-08-09 and had
+//  never been called by anything; this is its first reader.  It grades three silences that need
+//   different cures and must not be flattened together:
+//   `deaf`    — the AudioContext is not running (a gesture is owed).  WRONG, and the most fixable.
+//   `starved` — the pipeline is dry.  WRONG.
+//   `dry`     — playing, but the analyser reads silence.  WRONG, and the subtlest: everything claims
+//                to work and the room is quiet.
+//   `quiet`   — nothing is meant to be playing.  OK — silence with nobody asking for sound is not a
+//                fault, and calling it one would make this row shout on every idle tab.
+//  NOT QUITE PURE, said plainly rather than papered over: Radio_sound reaches `aud.sample()`, which
+//   lazily creates an AnalyserNode the first time per Audiolet (Radio_skip replaces `radio.c.aud`
+//    wholesale, so that is once per track).  It is idempotent and taps upstream of the mute, but it
+//     is a graph touch, and a reader deserves to know that before trusting the "probes never mutate"
+//      rule absolutely.
+Sounditron_probe_sound(w, sup):
+    let radio = w.o({ Radio: 1 })[0]
+    if (!radio) return { verdict: 'unknown', note: 'no radio' }
+    if (!this.Radio_sound) return { verdict: 'unknown', note: 'Radio_sound not loaded' }
+    let s = this.Radio_sound(radio)
+    if (!s) return { verdict: 'unknown', note: 'no reading' }
+    if (s.verdict === 'sound') return { verdict: 'ok' }
+    if (s.verdict === 'quiet') return { verdict: 'ok', note: 'nothing playing' }
+    if (s.verdict === 'deaf') return { verdict: 'wrong', note: 'the AudioContext is ' + String(s.ac || '?') + ' — a gesture is owed' }
+    if (s.verdict === 'starved') return { verdict: 'wrong', note: 'the radio is starved — nothing to decode' }
+    return { verdict: 'wrong', note: 'playing but silent — analyser reads ' + String(s.rms) }
 
 // Sounditron_probe_grant — is the door open both ways?  A friend's %Music grant is the seal.
 Sounditron_probe_grant(w, sup):
@@ -1482,6 +1579,15 @@ Sounditron_witness(w):
     //   verdicts move whenever a friend comes or goes, so microsnapping it here would churn this
     //    fixture on every run forever.  The sentence is the whole testimony.
     if (this.Sounditron_supervisor_reading(w)) this.story_swear(w, 'the supervisor stood — a roster of registered watches is being read')
+    // AND THAT NONE OF THEM IS BLIND.  A probe is resolved by NAME, so a rename or a typo produces a
+    //  watch that reads `unknown` forever and looks exactly like a working one.  This sentence is the
+    //   electrode for that: it holds only while every registered watch found its method.
+    let blind = this.Sounditron_supervisor_blind(w)
+    if (this.Sounditron_supervisor_reading(w) && !blind.length) this.story_swear(w, 'every registered watch found its probe — no blind spots in the roster')
+    // AND NAME IT WHEN IT IS NOT.  A %log row only exists when something is actually wrong, so a
+    //  healthy fixture never carries it and never churns — while a broken roster says WHICH watch,
+    //   which is the difference between "something is off" and a fix.
+    if (blind.length && !(oa %log:'a registered watch has no probe')) { w.i({ log: 'a registered watch has no probe', why: blind.join(' ') }) }
     // granted: NO subject on purpose — the %Grant pair is sealed key material in storage; a
     //  microsnap of it would ship crypto in the report.  The sentence is the whole testimony.
     if (this.Sounditron_grants(w).length) this.story_swear(w, 'granted — a sealed friendship holds Music grants in storage')

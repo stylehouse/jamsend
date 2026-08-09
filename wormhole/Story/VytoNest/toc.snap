@@ -4,9 +4,7 @@ story:VytoNest
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.03
-      sample=0.025,at=1786239598
-      sample=0.021,at=1786240823
+    TimeTotal:beliefs,avg=0.031
       sample=0.018,at=1786246133
       sample=0.071,at=1786250290
       sample=0.048,at=1786251093
@@ -15,9 +13,9 @@ story:VytoNest
       sample=0.04,at=1786256903
       sample=0.014,at=1786258826
       sample=0.015,at=1786258899
+      sample=0.017,at=1786278514
+      sample=0.035,at=1786278979
     TimeTotal:step,avg=0.008
-      sample=0.006,at=1786239598
-      sample=0.005,at=1786240823
       sample=0.004,at=1786246133
       sample=0.018,at=1786250290
       sample=0.012,at=1786251093
@@ -26,6 +24,8 @@ story:VytoNest
       sample=0.01,at=1786256903
       sample=0.004,at=1786258826
       sample=0.004,at=1786258899
+      sample=0.004,at=1786278514
+      sample=0.009,at=1786278979
   step,dige:e2bcbcf86a715aef
   step=2,dige:33549025ecf958fd,desc:seed a two-level rig — three cogs under the root and two grandchildren under the first
   step=3,dige:e0b2fe8b02f58844,desc:commission the glass nested on the rig and stir to rest

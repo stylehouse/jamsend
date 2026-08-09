@@ -265,6 +265,79 @@ Never shrinks a body below its victim, and only ever lowers a radius that was ab
       precedence as the resolver. No stage ⇒ byte-identical arithmetic; no Book stages ⇒ no fixture
        moves.
 
+### ⇢ THE NEED FLOOR WAS STATED IN THE WRONG UNIT — faces at 49% (2026-08-10, LANDED)
+
+*"making sure the Faces are big enough. they keep being 50% what they should be, after being the right
+ size initially"* — and the 50% is arithmetic, with **aspect ratio** the whole of it:
+
+- `Vyto_need_of` floored the cell's **AREA**: `env_area ≥ nw·nh·1.15`. Area has no opinion about shape.
+- The renderer sizes a face **PER AXIS** off the cell's bounding box: `fit = min(bbw/nw, bbh/nh)`.
+- A foam cell is round, so its bbox is **square** — `2r` each way — whatever shape the face is.
+
+For a 3:1 face (what a player or heist face actually is): `r = √(1.15·3nh²/π) = 1.05nh`, so
+ `fit = 2.1nh / 3nh = 0.70`, and **0.70² = 49% of the area asked for**. A square face lands `fit > 1`
+  and is fine — which is exactly why this read as "some faces" rather than a constant being wrong. And
+   it only appears AFTER the first measure because an unmeasured cell has no `need_w`/`need_h` and falls
+    back to `fit = 1`: *"the right size initially"*.
+
+**The fix:** ask for the radius the LONG SIDE needs, not the area the two sides multiply to —
+ `d = max(nw/1.25, nh)`, floor `= (π/4)·d²·1.15`. The `1.25` is the renderer's own `OVERHANG` (a slab
+  seat may legitimately overrun a cell's ends, so quoting a diameter that ignores it would buy room the
+   renderer never charges for). The old area form stays a LOWER bound, so nothing comfortable today
+    shrinks. Byte-invisible without a measured box: `need_w`/`need_h` are stamped for FACES only, on a
+     `need_floor` world only — every label, every floor-free glass and every Book reads what it read.
+  **SEEN, on the live glass** (`runner_shot --svg`, read-only against the player — no poke, no reload):
+
+      ▦ frame 800×450 · 4 cells (0 crushed) · molds 4 · overlapping pairs 0
+        Radio:playing|of:44   243.1×209.1   fit 1.281 of 189.8×163.2
+        Shuffle:1              63.8×220.6   fit 1.415 of  45.1×155.9
+        Supervisor:watching   222.8×111.2   fit 1.426 of 156.2× 78.0
+        Door:open             137.4× 71.6   fit 0.971 of 141.5× 73.7
+
+  Every face at or above its natural box; nothing starved, nothing crushed, nothing overlapping.
+   *Honest limit:* no before-capture exists at the same instrument (the `fit` column landed with this
+    fix), so this confirms the END state, not the delta. The 49% is derivation, not measurement.
+
+  **AND THE INSTRUMENT NOW CARRIES `fit`** (LiesFunk mold map + `runner_shot`). It used to report a
+   mold's SIZE only — which cannot answer the one question anyone asks of it, *is this face full
+    size?* `159×249` reads identically whether the face got everything or 70% of it, so a capture
+     could show this very starve and look healthy. The renderer already wrote `--fit` on every mold;
+      it was a free read of a number that was in the DOM all along. Now prints `fit` + the natural box
+       + a `⟵ N% of its natural area` flag under 0.95. Another entry for the standing pattern:
+        [[the-instrument-was-blind-to-the-molds]], [[runner-shot-svg-lied-about-viewbox]].
+  ⚠ That edit is `.svelte`, so it HMR'd into the players and the glass went briefly unshootable
+   ("no populated glass svg") before recovering unaided — the known hazard, worth waiting out rather
+    than reacting to.
+
+### ⇢ THE FLEET, RE-RUN — and what tonight's changes actually moved (2026-08-10)
+
+Verified on the live runner (`58517b484a8e896d`), never `Story_cli_run.mjs`:
+
+| | |
+|---|---|
+| **green 0-caveat** | VytoCell 7/7 · VytoFoam 4/4 · VytoNest 4/4 · VytoStaple 8/8 · VytoFold 8/8 · VytoBunch 5/5 · VytoNestRest 3/3 · VytoRadio 5/5 · VytoBreathe 5/5 · VytoCrest 4/4 · VytoFreeze 3/3 · VytoMitosis 6/6 · VytoSeek 4/4 · VytoTandem 4/4 · VytoWeb 6/6 · Heistation 1/1 · MusuRaStock 1/1 |
+| **green** | MusuHeist 22/22 (caveat 10 — **noise, not a signal**: Backpressure_todo records 1/21/1 on identical code) |
+| **red at BASELINE, not ours** | VytoOrchestra 0.13 · Sounditron 0.0 |
+
+**ONE REAL FIXTURE MOVE, found and closed.** `e_Vyto_commission`'s new stir (the cancel-latency fix)
+ went straight red on **VytoCell step 3 — "mint A:Vyto beside the run and commission it on the three
+  cogs"**: the deferred stir lands INSIDE the step that commissions, because a Story step waits for
+   quiescence, so work the fixture records at step 4 moved into step 3. It is now `vw_frame`-gated, and
+    that gate is **the contract, not a convenience** — a Book HAND-CRANKS the pipeline and proves the
+     STATIONS, while the DRIVE (when to stir on a live page) is precisely what a Book must have no
+      opinion about. Same reasoning already gates the departing rescan.
+
+**VytoOrchestra is red at baseline and it is not subtle.** Committed source seeds
+ `w.i({ Stray:'moth', loose:1 })` and asserts *"the strays ride the rim — a loose row takes no seat in
+  the pile"*; committed `002.snap` records `Stray:moth` with **no** `loose`. Someone landed the
+   loose-stray feature and never re-recorded. Step 2 is `VytoOrchestra_seed` — pure `w.i({…})` literals,
+    zero Vyto involvement — which is the cheap tell: **find the earliest failing step and ask what it
+     touches** before reaching for a controlled revert. Deliberately NOT re-recorded: the evidence says
+      the source is intended, but blessing someone else's half-landed work is the owner's call.
+  *Method worth keeping:* `runner_ask snap <n>` diffed against `wormhole/Story/<Book>/00N.snap` names the
+   differing rows in one shot, at zero risk — unlike a revert-recompile, which HMRs a reverted ghost into
+    the human's live tabs. (Caveat steps hold no `got_snap`, so that trick only works on a red one.)
+
 ### ⇠ the park this supersedes (2026-08-09 evening)
 
 *"supposing we should avoid Vyto until the Supervisor is ready to notice it being spastic and

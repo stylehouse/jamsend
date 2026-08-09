@@ -4,9 +4,7 @@ story:VytoFoam
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.051
-      sample=0.019,at=1786238739
-      sample=0.034,at=1786239709
+    TimeTotal:beliefs,avg=0.054
       sample=0.024,at=1786240938
       sample=0.064,at=1786246196
       sample=0.116,at=1786251118
@@ -15,9 +13,9 @@ story:VytoFoam
       sample=0.072,at=1786256897
       sample=0.034,at=1786258820
       sample=0.015,at=1786258894
-    TimeTotal:step,avg=0.013
-      sample=0.005,at=1786238739
-      sample=0.009,at=1786239709
+      sample=0.04,at=1786278508
+      sample=0.039,at=1786278974
+    TimeTotal:step,avg=0.014
       sample=0.006,at=1786240938
       sample=0.016,at=1786246196
       sample=0.029,at=1786251118
@@ -26,6 +24,8 @@ story:VytoFoam
       sample=0.018,at=1786256897
       sample=0.009,at=1786258820
       sample=0.004,at=1786258894
+      sample=0.01,at=1786278508
+      sample=0.01,at=1786278974
   step,dige:63b67c83fb410e76
   step=2,dige:971e45a97c9fbc62
   step=3,dige:e78455ef51a4f9b9

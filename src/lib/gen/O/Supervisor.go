@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_O_Supervisor(): string { return 'a27b33145ca8e4b2~g1' },
+    Ghostmeta_Ghost_O_Supervisor(): string { return '3b279eb7babbbeb7~g1' },
 
 // Supervisor.g — THE WATCHER.  One world holding a ROSTER of watches that other processes hand it.
 //  It reads every watch each pass, folds ONE verdict, and stays QUIET while they all read ok.
@@ -58,12 +58,19 @@ Supervisor(A, w) {
     if (!w.c.plan_done) this.Supervisor_plan(w)
     this.Supervisor_read(w)
     this.Supervisor_say(w)
+    // THE WATCHER MUST BE THE MOST ROBUST THING HERE.  Reporting is the only part of this file that
+    //  reaches outside the process, so it is the only part that can fail in ways nothing here
+    //   anticipated — and a supervisor taken down by its own telemetry would remove the one thing
+    //    that could have told you about it.  Sending already guards its own fetch and encode; this is
+    //     the belt to that braces, and it costs one try block per tick.
+    try { this.Supervisor_log_tick(w) } catch (er) { w.oai({ Logging: 1 }).sc.trouble = this.Supervisor_clean(er) }
 
 },
 // Supervisor_plan — stand the furniture.  ONE summary row, minted before any watch exists so the
 //  vocabulary is visible in a snap from the first tick (the Vyto_board precedent).
 Supervisor_plan(w) {
     w.oai({ Supervisor: 'watching' })
+    this.Supervisor_log_plan(w)
     w.c.plan_done = 1
 
 },
@@ -330,6 +337,204 @@ Supervisor_quiet(row, n) {
     if (!n) delete row.sc.loud
 
 },
+//#region the report that travels — POST to /log, and the give-up ladder for a door that says no
+// WHY THIS LIVES IN THE SUPERVISOR.  Sending is an ACT, and everywhere else this file is a watcher.
+//  It belongs here anyway because the hard half is not the POST, it is knowing WHEN TO STOP: a 404
+//   means stop forever, a 403 means stop and say why, a 500 means back off and try again.  That is
+//    exactly §6's give-up ladder, and this file is the one that owns a clock and a patience.
+//
+// WHAT IT MAY NOT CARRY — read this before widening the payload.  §10.3 leaves ONE question to the
+//  owner: *is the ban on provenance a privacy property or an implementation convenience?*  Until that
+//   is answered, a report that named a friend, a pub, a track or a path would be ANSWERING IT — a
+//    privacy decision arriving disguised as a telemetry feature, which §10.3 explicitly warns
+//     against.  So the payload is COUNTS AND VERDICTS ONLY.  Widening it is not a tidy-up; it is the
+//      owner's ruling, and `Heistation.g:635` is the fixture that goes red when it is made.
+//
+// IDENTITY: per-BOOT only.  Enough to group one session's reports together, gone on reload — no
+//  identifier follows a person across sessions, so aggregating never becomes tracking by accident.
+//
+// IT RIDES THE RAIL THAT ALREADY EXISTS.  `/log` is NOT part of this app: it is leproxy's
+//  handle_path in front of the perl tyrant-logger (docker-compose.prod.yml), PROD ONLY, and
+//   `Cred_report_wild` (Auto.svelte) has been posting Book outcomes to it for a while.  So this
+//    reporter matches that contract exactly rather than inventing a second one:
+//      · newline-joined JSON LINES, not a JSON object — the batch format the perl logger expects
+//      · `?stream=<name>-<self8>` — its own stream, so health never muddles Book outcomes
+//      · SKIPPED ON LOCALHOST, because there is no /log there and a dev tab would 404-spam
+//   An earlier draft of this shipped a `+server.ts` at `/log` and a JSON-object body.  Both were
+//    wrong: the route SHADOWED a real service (harmless while leproxy peels the path first, a
+//     telemetry-stealing bug the day it does not), and the body was a format nothing there parses.
+//      Two copies of one judgement is how a face starts lying — the same law that keeps
+//       `Radio_alone_why` single.
+Supervisor_log_plan(w) {
+    // one decision, in one place, legible in the snap.  The owner asked for a cadence and did not
+    //  name one ("once some time has been decided"), so: 300s, first report 30s after boot.  Both are
+    //   sc so the choice is visible and changeable without reading code.
+    let cfg = w.oai({ Logging: 1 })
+    cfg.c.up = w
+    if (!cfg.sc.every) cfg.sc.every = '300'
+    if (!cfg.sc.first) cfg.sc.first = '30'
+    if (!cfg.sc.stream) cfg.sc.stream = 'Health'
+    return cfg
+
+},
+// Supervisor_log_where — the URL, or null when there is nowhere to post.  Localhost is not a
+//  failure and must not be treated as one: `Cred_report_wild` takes the same exit for the same
+//   reason, and a dev tab that quietly does not report is the correct dev posture.
+Supervisor_log_where(w, cfg) {
+    let host = (typeof location !== 'undefined') ? String(location.hostname || '') : ''
+    if (!host || host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]') return null
+    let M = this.top_House()
+    let self8 = String(M.Clustation_self ? (M.Clustation_self()?.prepub ?? 'anon') : 'anon').slice(0, 8)
+    return '/log?stream=' + String(cfg.sc.stream || 'Health') + '-' + self8
+
+},
+// Supervisor_log_tick — the cadence, driven off the world's ordinary pass rather than a timer.  §4
+//  says a SENSOR must sit outside the belief loop; this is not a sensor, it is a scheduled errand,
+//   and being late by a tick on a 300-second interval costs nothing.  The FETCH itself is what must
+//    never block the loop, and it does not — it is fired detached below and settles onto `.c`.
+Supervisor_log_tick(w) {
+    let cfg = w.o({ Logging: 1 })[0]
+    if (!cfg || cfg.sc.dormant) return
+    // PLAYER TABS ONLY.  A Book or a bare runner reporting would put a network call inside a fixture
+    //  run, and a diagnostic is supposed to observe this machine, not the test harness on it.
+    if (!this.top_House().c.humdinger) return
+    if (w.c.log_flying) return
+    let now = Date.now()
+    let due = w.c.log_next || (now + Number(cfg.sc.first || 30) * 1000)
+    w.c.log_next = due
+    if (now < due) return
+    w.c.log_next = now + Number(cfg.sc.every || 300) * 1000
+    this.Supervisor_log_send(w, cfg)
+
+},
+// Supervisor_log_send — fire and DO NOT AWAIT.  An awaited fetch inside a House pass would hold the
+//  mutex for as long as a stranger's server felt like taking, which is the wedge this whole doc is
+//   about.  The one-line settle callbacks are also the .g dialect's rule, and they suit: every
+//    outcome lands in a named method that can be read on its own.
+Supervisor_log_send(w, cfg) {
+    if (typeof fetch !== 'function') return
+    let url = this.Supervisor_log_where(w, cfg)
+    if (!url) return this.Supervisor_log_dormant(w, cfg, 'no /log on this host — prod only')
+    w.c.log_flying = 1
+    let body = ''
+    // NEWLINE-JOINED JSON LINES, no content-type header — exactly what Cred_report_wild sends and
+    //  what the perl logger reads.  One line per report; the batch shape is the rail's, not ours.
+    try { body = this.Supervisor_log_lines(w, cfg).map(l => JSON.stringify(l)).join('\n') } catch (er) { body = '' }
+    if (!body) { w.c.log_flying = 0; return }
+    try { fetch(url, { method: 'POST', body: body }).then(r => this.Supervisor_log_landed(w, cfg, r.status)).catch(er => this.Supervisor_log_lost(w, cfg, er)) } catch (er) { this.Supervisor_log_lost(w, cfg, er) }
+
+},
+// Supervisor_log_landed — THE LADDER, and the whole point of the exercise: a door is allowed to say
+//  no, and each no means something different.
+//   2xx  — it took it.  Clear the backoff, say when.
+//   404  — there is no door.  STOP FOREVER (this boot) and go quiet: an app with no /log route is
+//           the DEFAULT state of this repo, and a permanent complaint about it would be noise in the
+//            one cell that exists to not be noise.  Drops its own watch on the way out.
+//   401|403 — there is a door and we are not allowed through.  STOP, but SAY so: unlike 404 this is
+//              a misconfiguration somebody can fix, so it is worth a line.
+//   429|5xx — the door is there and unhappy.  Back off and try again; this is the only retrying case.
+//   other — treated as retryable, because guessing that an unknown status is fatal would silently
+//            stop reporting on a server we simply do not understand yet.
+Supervisor_log_landed(w, cfg, status) {
+    w.c.log_flying = 0
+    let s = Number(status || 0)
+    cfg.sc.last = '' + s
+    if (s >= 200 && s < 300) {
+        cfg.sc.sent = '' + (Number(cfg.sc.sent || 0) + 1)
+        delete cfg.sc.trouble
+        w.c.log_backoff = 0
+        return this.Supervisor_log_watch(w, cfg)
+    }
+    if (s === 404) return this.Supervisor_log_dormant(w, cfg, 'no /log endpoint here')
+    if (s === 401 || s === 403) {
+        cfg.sc.trouble = 'refused ' + s
+        this.Supervisor_log_watch(w, cfg)
+        return this.Supervisor_log_dormant(w, cfg, 'the log endpoint refused us — ' + s)
+    }
+    cfg.sc.trouble = 'http ' + s
+    this.Supervisor_log_backoff(w, cfg)
+    this.Supervisor_log_watch(w, cfg)
+
+},
+// Supervisor_log_lost — no status at all: DNS, offline, CORS, a dropped socket.  Indistinguishable
+//  from a 5xx as far as we can act, so it takes the same rung — back off, keep trying.
+Supervisor_log_lost(w, cfg, er) {
+    w.c.log_flying = 0
+    cfg.sc.trouble = this.Supervisor_clean(er)
+    this.Supervisor_log_backoff(w, cfg)
+    this.Supervisor_log_watch(w, cfg)
+
+},
+// Supervisor_log_backoff — double the wait each failure, capped at an hour.  The cap matters more
+//  than the curve: an uncapped exponential quietly becomes "never again" and looks identical to
+//   working.
+Supervisor_log_backoff(w, cfg) {
+    let n = (w.c.log_backoff || 0) + 1
+    w.c.log_backoff = n
+    let wait = Math.min(3600, Number(cfg.sc.every || 300) * Math.pow(2, n - 1))
+    w.c.log_next = Date.now() + wait * 1000
+    cfg.sc.retry_in = '' + Math.round(wait)
+
+},
+// Supervisor_log_dormant — stand the reporter down for this boot.  `dormant` snaps (you can see WHY
+//  nothing is being sent), and the watch is dropped so a door that does not exist stops occupying a
+//   line in the sanity cell.  A reload re-arms everything — deliberately, since the endpoint may have
+//    appeared in the meantime and nothing here should have a long memory about it.
+Supervisor_log_dormant(w, cfg, why) {
+    cfg.sc.dormant = why
+    delete cfg.sc.retry_in
+    this.Supervisor_unwatch(w, 'report.travel')
+
+},
+// Supervisor_log_watch — the reporting is itself SUPERVISED, which is the tidy part: whether our own
+//  telemetry is getting through is exactly the kind of quiet failure this cell exists to surface.
+//   Registered only once there is something to say — a reporter that has never failed does not need
+//    a row, and a dormant one has had its row dropped.
+Supervisor_log_watch(w, cfg) {
+    if (cfg.sc.dormant) return
+    this.Supervisor_watch(w, 'report.travel', 'the session report reached the log endpoint', 'standing', 'Supervisor_probe_log', cfg)
+
+},
+// Supervisor_probe_log — pure read of the reporter's own state.  Never sends.
+Supervisor_probe_log(cfg, w) {
+    if (!cfg) return { verdict: 'unknown', note: 'no logging config' }
+    if (cfg.sc.dormant) return { verdict: 'ok', note: String(cfg.sc.dormant) }
+    if (cfg.sc.trouble) return { verdict: 'wrong', note: String(cfg.sc.trouble) + (cfg.sc.retry_in ? ' — retrying in ' + cfg.sc.retry_in + 's' : '') }
+    if (Number(cfg.sc.sent || 0) > 0) return { verdict: 'ok', note: cfg.sc.sent + ' sent' }
+    return { verdict: 'unknown', note: 'nothing sent yet' }
+
+},
+// Supervisor_log_lines — COUNTS AND VERDICTS ONLY.  Every field here is a number, a verdict word,
+//  or a sentence this codebase wrote about itself.  Nothing a person typed, nothing a person is
+//   called, nothing they own.  Read the region header before adding a field.
+//  ONE `health` line always, plus a `watch` line PER UNHEALTHY WATCH — the Cred_report_wild shape,
+//   where the summary always travels (a census needs its denominator) and the detail only rides when
+//    something is wrong.  A healthy tab therefore costs one short line every five minutes.
+Supervisor_log_lines(w, cfg) {
+    let row = w.o({ Supervisor: 1 })[0]
+    let all = w.o({ Watch: 1 })
+    let loud = this.Supervisor_speaking(w)
+    let lines = [{ kind: 'health', boot: this.Supervisor_boot_id(w), at: Date.now(), watches: all.length, loud: loud.length, ok: loud.length ? 0 : 1 }]
+    for (const x of loud) {
+        // the SENTENCE travels — every one is a string literal in this repo, written by us about our
+        //  own machine.  The `note` does NOT: notes carry friendly names and counts of a person's
+        //   shelf, which is the §10.3 line this must not cross on its own authority.
+        lines.push({ kind: 'watch', boot: this.Supervisor_boot_id(w), key: String(x.sc.Watch), verdict: String(x.sc.verdict || ''), wkind: String(x.sc.kind || ''), patience: String(x.sc.patience || ''), claim: String(x.sc.sentence || '') })
+    }
+    return lines
+
+},
+// Supervisor_boot_id — groups one session's reports and NOTHING more.  Held on `.c`, so a reload
+//  forgets it.  NOTE the deliberate difference from Cred_report_wild, which streams under a
+//   truncated prepub (`Startup-<self8>`): the STREAM name here carries that same self8 because the
+//    rail is keyed that way, but nothing INSIDE a line does.  So the payload itself stays
+//     unattributable, and widening it is still the owner's §10.3 call rather than a side effect.
+Supervisor_boot_id(w) {
+    if (!w.c.boot_id) w.c.boot_id = 'b' + Math.floor(Math.random() * 1e9).toString(36)
+    return w.c.boot_id
+},
+//#endregion
+
 // Supervisor_seen — every sentence currently holding, for a Book to assert as %see.  This is the
 //  join the whole design turns on: the SAME sentence gates a fixture and lights the glass, so a
 //   claim that never goes red in a Book is a watch that would never have lit either.  Four sensors

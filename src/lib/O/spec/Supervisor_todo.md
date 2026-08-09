@@ -7,6 +7,101 @@
 
 ## 0. Get on with next
 
+### ⇑ OVERNIGHT 2026-08-10 — patience, the give-up, and the report that travels
+
+**THE BOMB IS DEFUSED.** The three sensors that had landed with no reader now have one, and the
+ roster is *proved* to have no blind spots:
+
+| sensor | reader | probe |
+|---|---|---|
+| `Swarm_beat_health` (08-08) | `swarm.beat` | `Swarm_probe_beat` — `slow` is deliberately NOT wrong |
+| `Vyto_normal` (08-09) | `sound.glass` | `Sounditron_probe_glass` — reads its findings, never calls it |
+| `Radio_sound` (08-09) | `sound.audible` | `Sounditron_probe_sound` — grades three silences apart |
+
+`Vyto_normal` is **not a probe** and must never be registered as one: it POKES (re-seeds cells,
+ stirs). The watch reads `normal_said`, the findings it leaves behind. And the probe lives in
+  **Sounditron, not Vyto** — the commissioner asks whether its commission is honoured; a subsystem
+   reporting on itself is the weakest possible witness.
+
+**The blind-spot gate, and why it had to exist.** A probe is resolved by NAME, so a typo or a rename
+ leaves a watch that reads `unknown` forever and is indistinguishable from a healthy one. Declared and
+  green: `%see:'every registered watch found its probe — no blind spots in the roster'`, plus a `%log`
+   row naming the offending keys when it fails (only present when broken, so a healthy fixture never
+    churns).
+
+**PATIENCE — the primitive this doc's title was always about.** `Supervisor_expect(...secs)` arms an
+ expectation; `Supervisor_hoping` / `Supervisor_given_up` rule on it. Two details are load-bearing:
+  the deadline rides `.c` (a wall clock in `sc` churns every downstream fixture forever) while only
+   the GRADE snaps; and **the rulings read the deadline, not the grade**, because the grade only
+    refreshes on the Supervisor's tick and a caller asking between ticks would give up late.
+ A watch still inside its patience is **not loud** — shouting during the seconds a thing is working
+  is the HUD failure in a new hat.
+
+**EXPECTATION IS EVENT-DRIVEN, NEVER AMBIENT** (the owner: *"the cases when we'd expect a Pier are
+ just right after an Invite… essentially just saying 'come here', in a QR code"*). Armed at
+  `Swarm_invite_url` — including a re-invite to a Pier+Grant already held. **Not** at
+   `Swarm_mint_idzeug`: the blotter mints 126 serials there for a sheet to be printed, which is not
+    "come here", and arming there would stall the radio 5s every time somebody prepared one.
+ Radio holds for those 5s and then falls through exactly as before. `Supervisor_hoping` answers 0
+  when nothing is armed, so every existing path is byte-identical — only the seconds after an invite
+   differ.
+
+**`Radio_alone_why` — the owner's "looks like bad code" was right, and the reason is precise:** it
+ answers *"who is around"* when the question that matters is *"who did we just invite"*. `anyPier`
+  treats any stored %Pier as an expectation, so it says "your friends are offline" about a contact
+   from weeks ago. Repaired narrowly with a `gaveup` tag ahead of the stored-pier cases.
+
+**THE REPORT THAT TRAVELS — and `/log` IS NOT OURS.** It is **leproxy's `handle_path` in front of the
+ perl `tyrant-logger`** (`docker-compose.prod.yml:61`, commented out in dev), and
+  **`Cred_report_wild`** (`Auto.svelte:1242`) has been posting Book outcomes to it all along. So the
+   contract was already set and this reporter matches it rather than inventing a second one:
+    newline-joined **JSON lines** (not a JSON object), `?stream=<name>-<self8>`, and **skipped on
+     localhost** — a dev tab would only 404-spam, which is why `Cred_report_wild` takes the same exit.
+ **A first draft got this wrong and it is worth recording why.** It shipped a `src/routes/log/+server.ts`
+  and posted a JSON object. Both were mistakes: the route **shadowed a real service** (harmless while
+   leproxy peels the path first — a telemetry-stealing bug the day it does not), and the body was a
+    format nothing at the other end parses. The dev 404 that seemed to prove the endpoint "off" was
+     really just proof that `/log` does not live in this app at all. **Route deleted.**
+ What is genuinely new is the **ladder**, which the existing rail does not have — it only `.catch`es
+  and warns: `2xx` ok · `404` dormant, silently · `401|403` stop and SAY so · `429|5xx` back off,
+   capped at an hour · unknown status retryable.
+ Lines: one `health` line ALWAYS (a census needs its denominator) plus one `watch` line per unhealthy
+  watch. A healthy tab costs one short line every five minutes.
+
+**PAYLOAD: COUNTS AND VERDICTS ONLY, and this is a §10.3 matter, not a style choice.** A report that
+ named a friend, a pub, a track or a path would be *answering* the owner's unruled question about
+  whether the provenance ban is privacy or convenience — a privacy decision arriving disguised as a
+   telemetry feature, which §10.3 explicitly warns against. Sentences travel (every one is a string
+    literal in this repo); `note` does not (notes carry friendly names and shelf counts). Identity is
+     **per-boot only**, held on `.c`, so it never follows a person across sessions.
+
+**Verified / not verified — read this before trusting any of it.**
+- ✓ Roster blind-free; both supervisor assertions green at step 2 on a cold runner, no throws.
+- ✗ **NO rung of the log ladder has ever been exercised for real.** `/log` is prod-only, so every dev
+   tab takes the localhost exit and the reporter goes dormant without sending. The ladder is
+    unproven code until it runs somewhere with leproxy in front. Treat it as such.
+- ✗ **The 5s invite hold has never been seen to fire.** `poke` exposes only
+   `Radio_toggle|Radio_skip|Radio_source_toggle|Sounditron_diag_toggle`, so an invite cannot be minted
+    from the CLI. Ten-second manual test: hit the invite QR — the radio should read *"waiting for
+     someone to answer your invite"* for 5s, then *"nobody answered your invite — playing your own
+      music"*.
+- ✗ **Sounditron was not re-run on `f5da6599` after the last changes** — that tab is a `♪player` and
+   `run` is refused on players (see below). Last real run there was 5/8 before the log/watch work.
+
+**THE TRAP THAT COST AN HOUR, recorded here because it will recur.** `runner_ask` with no address
+ targets the relay's `runner` role, and that binding is additive fan-out — a *different tab* started
+  answering mid-session, turning Sounditron all-red in a way that looked exactly like a regression in
+   `Radio.g`. Worse: `--player=<pub>` addresses the right tab but **cannot run a Book** (`run`,
+    `release`, `accept` are refused), while `state`/`steps`/`assertions` still answer *from that tab's
+     last real run* — so a refused run followed by `steps` returns a plausible, stale, entirely
+      convincing result. **Never send `run` output to /dev/null.**
+
+**Owed by the owner, unchanged:** `%Caper` vs `%Pull`; the §10.3 provenance ruling (which also gates
+ the What Heisted ledger); and whether `music-from-a-friend` should stay declared when it can only
+  hold while a friend is actively streaming.
+
+---
+
 ### ⇑ IT STANDS — 2026-08-09, later the same day
 
 `w:Supervisor` is **built, live, and witnessed**. `Ghost/O/Supervisor.g` (new ghost, new `Ghost/O/`
