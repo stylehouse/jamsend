@@ -651,7 +651,11 @@ Vyto_pointer_enter(w, tok):
     //   second hold, it is the same hold. Duplicates never changed the VERDICT (any pin wins), so this
     //    is a cost and a leak, not a behaviour change — the pin still lands on the first enter.
     w.c.calm.oai({ Hold: 1, scope: tok, position: 1, pin: 1, while: 'pointer', by: 'Calm' })
-    w.c.calm.oai({ Hold: 1, scope: tok, size: 1, damp: 0.3, while: 'pointer', by: 'Calm' })
+    // SIZE IS PINNED UNDER THE POINTER, NOT DAMPED (2026-08-09, the owner: "when we mouse over a cell,
+    //  it cannot move under us!").  `damp: 0.3` still let the cell resize while pointed at, just more
+    //   slowly — and a cell that resizes moves its own wall under the cursor and shoves its neighbours.
+    //    "Slower" is not the rule; the rule is STILL.  Position was already pinned; size now matches.
+    w.c.calm.oai({ Hold: 1, scope: tok, size: 1, pin: 1, while: 'pointer', by: 'Calm' })
     w.c.pointer = tok
     // flip the Calm organ row live on first mint (the Scan/Express flip idiom — the board row
     //  is the organ's public face, stub until its body first fires).
@@ -773,6 +777,35 @@ Vyto_attend_walk(w, n, tok, amt):
         this.Vyto_attend_walk(w, m, tok, amt)
     }
 
+// Vyto_even_toggle — flip the EQUAL POSE (see Vyto_express).  Runtime .c, one flip, one stir.
+Vyto_even_toggle(w):
+    let on = w.c.even ? 1 : 0
+    delete w.c.even
+    if (!on) w.c.even = 1
+    this.Vyto_stir_soon(w)
+
+// Vyto_compete_tick — THE COMPETITION (the owner: *"we need some simulation of them competing for
+//  attention"*).  The attention currency already has everything this needs: heat is earned by being
+//   attended, it is SELF-TAXING (every other body cools 4% per grant), and express spends it as size.
+//    So a competition is not new machinery — it is just nobody being the reader.  Each tick hands the
+//     coin to the next body in turn, everyone else pays the tax, and the foam visibly fights it out.
+//  Deterministic (a counter, not a clock, and never Math.random) so a held pose repeats exactly; the
+//   renderer runs it on an interval and only on a live page, so no Book can ever see a tick.
+Vyto_compete_tick(w):
+    if (!w.c.mirror) return
+    let toks = []
+    this.Vyto_compete_walk(w.c.mirror, toks)
+    if (!toks.length) return
+    let n = Number(w.c.compete_n ?? 0)
+    this.Vyto_attend(w, toks[n % toks.length], 0.5)
+    w.c.compete_n = n + 1
+
+Vyto_compete_walk(n, toks):
+    for (const m of n.o()) {
+        if (m.c.tok) toks.push(m.c.tok)
+        this.Vyto_compete_walk(m, toks)
+    }
+
 Vyto_simmer_walk(w, n, tick, base):
     let i = base
     for (const m of n.o()) {
@@ -881,6 +914,17 @@ Vyto_express(w):
         //  AREA_BASE), need-floored FIRST so the dial stays live on faced cells (the dead-A-drag
         //   find above), then the attention currency spends on top (heat 0 ⇒ byte-identical).
         for (const row of rows) { row.c.env_area = Math.max(1, Math.max(AREA_BASE, this.Vyto_need_of(w, row)) * (1 + (Number(row.sc.dose) || 0)) * (1 + 0.8 * (row.c.heat ?? 0))) }
+    }
+    // THE EQUAL POSE (2026-08-09, the owner: *"we need some simulation of them competing for
+    //  attention… or engaging some pose where they are all fairly equal"*).  Flatten every price to the
+    //   same base, so the cut states the STRUCTURE alone — how many things there are, how they
+    //    neighbour, what the tessellation actually looks like — with dose, importance, need and heat
+    //     all silent.  Pricing is what makes a glass legible and it is also what hides its shape; this
+    //      is the switch between the two.
+    //  Runtime `.c` and last in the chain, so it overrides every regime uniformly and no fixture can
+    //   see it (a Book never sets it).
+    if (w.c.even) {
+        for (const row of rows) row.c.env_area = AREA_BASE
     }
     let organ = w.o({ Organ: 'Express' })[0]
     if (organ && organ.sc.status !== 'live') {
@@ -1226,18 +1270,18 @@ Vyto_solve(w):
                         si = si + 1
                     }
                 }
-                let rtotal = 0
-                for (const r of radii) rtotal = rtotal + Math.PI * r * r
-                let rwant = want * fw * fh
-                if (rtotal > 0 && rtotal < rwant) {
-                    let rcap2 = 0.44 * Math.min(fw, fh)
-                    let g = Math.min(Math.min(gx, gy), Math.sqrt(rwant / rtotal))
-                    si = 0
-                    while (si < radii.length) {
-                        radii[si] = Math.min(rcap2, radii[si] * g)
-                        si = si + 1
-                    }
-                }
+                // THE GROW HALF IS GONE (2026-08-09, off the owner's screenshot).  Spreading positions
+                //  uses the room; growing RADII to hit a fill target does not — it inflates every cell
+                //   past the content it holds, so the component ends up small in a vast blob (the seat
+                //    is capped by FIT_MAX, so a bigger cell just buys more margin, which is the exact
+                //     complaint "about half of it is margin" arriving from the other side).  It also
+                //      broke containment outright: the cloud-into-shot fit runs BEFORE this, so radii
+                //       grown afterwards pushed cells straight off the frame — visible in the capture as
+                //        blobs cropped by the viewport top and bottom.
+                //  So the room law is now SPREAD ONLY.  Cells stay the size their content asked for and
+                //   are distributed across the bag instead of huddling in the middle, which is the whole
+                //    of what was wanted: use the screen, do not inflate the furniture.
+                void want
             }
         }
     }

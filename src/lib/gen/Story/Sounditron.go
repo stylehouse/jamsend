@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '0d4c7aafbda7f8cb~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return 'c905d4f87c095839~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -295,7 +295,15 @@ Sounditron_commission(w) {
     //     fullscreen it and lose the one control a new listener needs.  DoorFace now carries the
     //      invite arc itself (InvitePanel `inglass`), so this cell IS the front door and belongs
     //       beside the music, not behind a debug toggle.
-    for (const q of [{ Radio: 1 }, { Tuner: 1 }, { Door: 1 }]) {
+    // %Tuner is OFF the glass (2026-08-09, with Diag — "the Diag|Tuner and these tiny not-there
+    //  things").  %Radio and %Door stay: the music and the front door are the two things the glass
+    //   exists to be.
+    // AND THE HEIST GETS THE ROOM (the owner: *"when we go to Heist something, the Radio and everything
+    //  else should fold right down and we mostly deal with the Heist until it is done"*).  The deck and
+    //   up-next already folded on `anyKeep`; the Radio did not, so a heist opened into a glass still
+    //    dominated by the player.  Now the whole standing set folds and the heist has the bag to
+    //     itself until the last keep leaves — at which point everything grapples straight back.
+    for (const q of anyKeep ? [{ Door: 1 }] : [{ Radio: 1 }, { Door: 1 }]) {
         let row = w.o(q)[0]
         if (row) organs.push(row)
     }
@@ -306,11 +314,15 @@ Sounditron_commission(w) {
     //     (TransferFace shows "idle · no transfer"), so it costs no attention when the wire is quiet and
     //      lights up the moment a pull or serve starts. oai here too, not just in Heist_keep_beat, so the
     //       cell exists even before the first heist beat has run.
+    // THE TRANSFER HUD IS OFF THE GLASS TOO (2026-08-09, the owner: *"I think I want to hide most of
+    //  the interface we have so far. transfer and etc. I just don't care.  but I do care about having
+    //   some overall sanity checking thing going on"*).  Note the second half: this is not "delete the
+    //    telemetry", it is "stop spending a permanent cell on it".  The row and TransferFace both stay
+    //     minted and current — what is wanted instead is ONE sanity cell that speaks up when something
+    //      is actually wrong, rather than a rank of idle HUDs each saying nothing at full volume.
+    //  That cell does not exist yet and is the open item; until it does, this is simply quieter.
     let xfer = krw && krw.oai ? krw.oai({ Transfer: 1, dontSnap: 1 }) : null
-    if (xfer) {
-        if (xfer.c.up !== krw) xfer.c.up = krw
-        organs.push(xfer)
-    }
+    if (xfer && xfer.c.up !== krw) xfer.c.up = krw
     if (!anyKeep) {
         let h = w.o({ Heist: 1 })[0]
         if (h) organs.push(h)
@@ -353,8 +365,19 @@ Sounditron_commission(w) {
     //  when the user has opened diagnostics (w.c.show_diag) — the human 2026-07-28 "three diagnostic-flavoured
     //   cells ... under a diagnostics cell you have to open to see them".  Flat for now (Option 3); a true
     //    nested "diagnostics cell CONTAINING the three" waits on the Vyto agent's nested renderer.
+    // THE TINY NOT-THERE THINGS ARE OFF THE GLASS (2026-08-09, the owner: *"these little expandy
+    //  buttons for Diag|Tuner|etc don't work, are bollocks"* / *"we'll just not give it the Diag|Tuner
+    //   and these tiny not-there things"* / *"I think I want to hide most of the interface we have so
+    //    far. transfer and etc. I just don't care"*).
+    //  These were cells because they were rows, not because anyone wanted to look at them.  Each one
+    //   costs a seat in the cut, gets priced, gets crowded out, and then puddles as a 12×12 marker —
+    //    which is most of what the last two rounds of layout bugs were actually made of.  The scarce
+    //     resource on the glass is space, and a control nobody uses spends it every frame.
+    //  The rows STAY (the world is unchanged, the witness still reads them, the faces stay registered);
+    //   only the GRAPPLE goes, so they are no longer handed to Vyto as cells.  Put back by pushing
+    //    them onto `organs` again — one line each, nothing else to undo.
     let diag = w.oai({ Diag: 1, dontSnap: 1 })
-    organs.push(diag)
+    void diag
     // TRIMMED to Door alone (the human's §0.9 ruling, 2026-08-06: "space is the scarce resource on
     //  the glass") — and then EMPTIED (2026-08-09): %Door has moved UP into the always-on set,
     //   because it is the front door and a front door behind a debug toggle is not one.  %Beat and

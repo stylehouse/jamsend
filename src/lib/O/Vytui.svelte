@@ -120,7 +120,10 @@
         if (drag_ate_click) { drag_ate_click = false; return }
         attend(w, cell.tok, 0.3)   // a press is real attention — the currency's big coin
         const src: any = (cell.row.c as any)?.source_n
-        const fn = src?.c?.press
+        // `.c.press` is the name; `.c.onclick` is the name people reach for (the owner did — "some of
+        //  them have click handlers magically (C.c.onclick?)"), and a handler that silently does not
+        //   fire because it was spelled the DOM way is a bad half hour for whoever wrote it.  Both work.
+        const fn = src?.c?.press ?? src?.c?.onclick
         if (typeof fn === 'function') {
             try { fn(src) } catch (e) { console.warn('◈ Vyto press threw', cell.ident, e) }
             return
@@ -280,31 +283,37 @@
     //      evenodd`, outer subpath then inner: the hole is real, not a second fill faking it.
     //  The counter is the working part — the handle the dose is dragged from — which is exactly the
     //   owner's "where its shape can be manipulated from".
-    function spike_of(cell: PaintCell): { d: string, hx: number, hy: number, hr: number } | null {
-        const poly = cell.poly
-        if (!poly || poly.length < 3 || !(cell.r > 24)) return null
+    function spike_of(poly: Pt[] | undefined, cx: number, cy: number, cr: number, want: number):
+            { poly: Pt[], apex: Pt } | null {
+        if (!poly || poly.length < 3 || !(cr > 24)) return null
+        const cell = { x: cx, y: cy, r: cr }
         const n = poly.length
+        // ── WHERE THE TAIL GOES (2026-08-09, the owner: *"the A-tips should avoid being on top of each
+        //  other somehow… perhaps the A-tip is always to the left of the cell-wall label"*).
+        //  Both halves of that are one rule.  "Sharpest corner" was a LOCAL choice — every cell picked
+        //   independently, so two neighbours facing each other across a seam both grew a tail into the
+        //    same gap and the tips collided.  A tail placed by ANGLE is placeable by agreement instead:
+        //     the wall band runs 205°→335°, so "left of the label" is the approach to 205°, and that is
+        //      the wanted angle.  When it is taken, the next candidate angle is tried — which is how the
+        //       tips stop landing on each other without anyone needing to know about anyone else.
+        //  So the corner is chosen as the one nearest the wanted bearing (still preferring a genuine
+        //   promontory over a dent), and the CALLER sweeps the candidate bearings.
+        const wrap = (d: number) => ((d % 360) + 360) % 360
         let bi = -1, best = -Infinity
-        let fi = -1, far = -Infinity
         for (let i = 0; i < n; i++) {
             const v = poly[i], p = poly[(i - 1 + n) % n], q = poly[(i + 1) % n]
             const ux = v.x - p.x, uy = v.y - p.y, vx = q.x - v.x, vy = q.y - v.y
             const lu = Math.hypot(ux, uy), lv = Math.hypot(vx, vy)
             const out = Math.hypot(v.x - cell.x, v.y - cell.y) / Math.max(1, cell.r)
-            if (out > far) { far = out; fi = i }               // the fallback promontory
-            if (lu < 4 || lv < 4) continue                     // a nub is not a corner
-            // turn: +1 doubles back to a needle, -1 runs straight through.  Bias toward corners far
-            //  from the seed, so the tail leaves from a genuine promontory rather than a dent.
-            const turn = -((ux / lu) * (vx / lv) + (uy / lu) * (vy / lv))
-            const score = turn * 0.65 + out * 0.35
+            const deg = wrap(Math.atan2(v.y - cell.y, v.x - cell.x) / RAD)
+            let off = Math.abs(wrap(deg - want) > 180 ? 360 - wrap(deg - want) : wrap(deg - want))
+            const near = 1 - Math.min(1, off / 90)             // 1 on the bearing, 0 a quarter-turn away
+            const turn = lu > 4 && lv > 4
+                       ? -((ux / lu) * (vx / lv) + (uy / lu) * (vy / lv)) : 0
+            // bearing dominates (it is the rule the owner asked for); sharpness and reach only break ties
+            const score = near * 1.0 + turn * 0.25 + out * 0.25
             if (score > best) { best = score; bi = i }
         }
-        // EVERY CELL GETS A TAIL.  The first cut of this filtered corners by adjacent-edge length (≥9px)
-        //  and returned null when none passed — and the live capture came back with a carved, spilling,
-        //   perfectly eligible cell and no tail at all, because a power cell's gap inset leaves plenty of
-        //    short edges.  A gate that silently yields nothing is worse than a blunt choice: fall back to
-        //     the vertex furthest from the seed, which is the promontory the scorer was reaching for.
-        if (bi < 0) bi = fi
         if (bi < 0) return null
         const v = poly[bi], p = poly[(bi - 1 + n) % n], q = poly[(bi + 1) % n]
         // outward along the seed→corner ray: the seed is inside its own cell, so this always points out
@@ -327,16 +336,33 @@
         void p; void q
         // the counter — the same triangle shrunk about its own centroid and nudged toward the apex, so
         //  the hole sits high in the tail where an A's counter sits.  Its centre is the drag handle.
-        const gx = (a.x + b.x + apex.x) / 3, gy = (a.y + b.y + apex.y) / 3
-        const k = 0.46, lean = 0.22
-        const cxp = gx + (apex.x - gx) * lean, cyp = gy + (apex.y - gy) * lean
-        const inner = [a, apex, b].map(pt => ({ x: cxp + (pt.x - gx) * k, y: cyp + (pt.y - gy) * k }))
-        const f = (t: number) => t.toFixed(1)
-        const d = `M ${f(a.x)},${f(a.y)} L ${f(apex.x)},${f(apex.y)} L ${f(b.x)},${f(b.y)} Z`
-                + ` M ${f(inner[0].x)},${f(inner[0].y)} L ${f(inner[1].x)},${f(inner[1].y)} L ${f(inner[2].x)},${f(inner[2].y)} Z`
-        // the grip is generous where the counter is not — a 5px hole is still a 9px+ target
-        const hr = Math.max(9, halfw * 0.75)
-        return { d, hx: cxp, hy: cyp, hr }
+        // SPLICED INTO THE WALL, not laid over it (2026-08-09, the owner: *"can you seamlessly do the
+        //  A-tip as part of the cell? it's just like a teardrop except with a bar across it there"*).
+        //  The previous cut drew the tail as its own <path> in the cell's colours — which looks seamless
+        //   only while the two agree about fill, stroke, opacity, hover, sink and paint order, and they
+        //    never agree for long.  So the tail is not drawn at all now: its three points are SPLICED
+        //     INTO THE POLYGON in place of the corner they grew from, and the cell path is built from
+        //      that.  One outline, one stroke, one fill — the wall simply has a teardrop on it, and
+        //       every state the cell can be in carries the tail for free because it IS the cell.
+        //  What is left to draw is the owner's other half: the BAR across it.  Teardrop + bar = the A,
+        //   and the bar is the handle.
+        // THE CUTE BLOB (2026-08-09, the owner: *"these actual triangle A-tips look terrible, I like the
+        //  cute blob-tail looking ones I got excited about before"* / *"lets just make them do nothing,
+        //   just for cuteness"* / *"software isn't cute enough"*).
+        //  The blobs were the SPLICED construction and nobody realised that at the time, including me:
+        //   spliced points go through `path_round` with everything else, so the tip comes out as a soft
+        //    rounded bump growing off the wall.  Drawn as its own path it is a hard-edged triangle
+        //     sitting next to the cell, which is the thing that looks terrible.  Same three points —
+        //      the difference is entirely whether the outline owns them.
+        //  So: splice, no separate path, no counter, no bar, nothing to click.  A cell simply has a
+        //   soft tail on one side, and the shape cannot occlude anything because it IS the shape.
+        //  Extra rounding room: the base is widened and the tip pulled in a little, because
+        //   `path_round` caps its radius at 0.4 of the shortest adjoining edge — a long thin spike
+        //    rounds barely at all, and a stubby one rounds into an actual blob.
+        const wide = { x: a.x + (a.x - b.x) * 0.16, y: a.y + (a.y - b.y) * 0.16 }
+        const wideb = { x: b.x + (b.x - a.x) * 0.16, y: b.y + (b.y - a.y) * 0.16 }
+        const tip = { x: v.x + ux * len * 0.8, y: v.y + uy * len * 0.8 }
+        return { poly: poly.slice(0, bi).concat([wide, tip, wideb], poly.slice(bi + 1)), apex: tip }
     }
     // the spill arc — a second band inside the name's, carrying the row's own scalars as one line.
     //  Its length is the wall's, so how much detail a cell states is decided by how much wall it has;
@@ -363,6 +389,50 @@
         d += ` L ${f(pts[pts.length - 1].x)} ${f(pts[pts.length - 1].y)}`
         return { d, text }
     }
+    // ── THE BARE SETTING (2026-08-09, the owner: *"Bare mode should just mean no Component, should
+    //  still look all fancy… Bare only as in no illusions about data representation, just stating the
+    //   C** like a snap, but with good composition, like a good piece of typographic art"*).
+    //  The first cut of bare was an ABSENCE — drop the face and let whatever was left show through.
+    //   That is not what was asked for.  Bare is a SURFACE: the particle stated plainly, and set
+    //    properly.  A snap's own hierarchy is the typographic hierarchy — the mainkey IS the title
+    //     (it is what the thing IS), its value is the subject, and the remaining scalars are the
+    //      supporting matter — so the setting does not have to invent a structure, only honour the
+    //       one the data already has.
+    //  Three registers, one measure: title at the top of the block, an oversized value beneath it,
+    //   then key/value pairs where the KEY is small, spaced and quiet and the VALUE carries the ink.
+    //    Everything is centred on the seat and scaled by one factor, so composition survives any cell
+    //     size — and below the point where the supporting matter would be illegible it is simply
+    //      dropped, title first out, rather than shrunk into grey mush.
+    function bare_set(cell: PaintCell): { title: string, value: string, rows: [string, string][], k: number } | null {
+        const sc: any = cell.row?.sc; if (!sc) return null
+        const keys = Object.keys(sc); if (!keys.length) return null
+        const mk = keys[0]
+        const val = sc[mk] == null || sc[mk] === 1 ? '' : String(sc[mk])
+        const rows: [string, string][] = []
+        for (let i = 1; i < keys.length; i++) {
+            const k = keys[i]
+            if (GUT_SKIP.has(k)) continue
+            const v = sc[k]
+            if (v == null || typeof v === 'object') continue
+            let s = String(v); if (s.length > 20) s = s.slice(0, 19) + '…'
+            rows.push([k, s])
+        }
+        // one scale for the whole block, from the room the wall actually gives (ray-measured, like the
+        //  component seat) — so bare and faced cells are composed against the same geometry.
+        const want_w = 150, want_h = 46 + rows.length * 15
+        let byray = Infinity
+        for (const [qx, qy] of [[1, 1], [1, -1], [-1, 1], [-1, -1], [1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const ex = (want_w / 2) * qx, ey = (want_h / 2) * qy
+            const L = Math.hypot(ex, ey); if (!(L > 0)) continue
+            const t = ray_hit(cell.poly ?? [], cell.x, cell.y, ex / L, ey / L)
+            if (t > 0) byray = Math.min(byray, Math.max(0, t - 4) / L)
+        }
+        let k = Number.isFinite(byray) ? byray : 1
+        k = Math.max(0.34, Math.min(1.6, k))
+        // drop supporting matter rather than shrink it past reading
+        const room = Math.max(0, Math.floor((k * want_h - 46 * k) / (15 * k)))
+        return { title: mk, value: val, rows: rows.slice(0, Math.max(0, Math.min(rows.length, room))), k }
+    }
     function arc_id(w: TheC, cell: PaintCell): string {
         return 'vyarc-' + String((w.sc as any)?.w ?? 'w').replace(/[^A-Za-z0-9_-]/g, '')
              + '-' + cell.key.replace(/[^A-Za-z0-9_-]/g, '-')
@@ -373,6 +443,47 @@
     //   (Vyto_simmer_tick — deterministic, counter-hashed) and the pile re-settles around the
     //    disturbance, so the foam visibly keeps negotiating.  Renderer interval, live pages
     //     only, torn down with the stage — a Book never simmers and no fixture can. ──
+    // ── BARE MODE — THE GLASS WITHOUT COMPONENTS (2026-08-09, the owner: *"I think I want to have a
+    //  tab I can click to try a no-Components version of this interface.  I just want cellular trees of
+    //   the information in the thing right now, and some of them have click handlers magically… it's
+    //    like building yet another web-framework thing within a thing within a thing"*).
+    //  The last sentence is the reason this is worth having as a SWITCH rather than an argument.  Every
+    //   face is a Svelte component with its own layout, its own measure, its own idea of how big it
+    //    wants to be — a second framework living inside the cut, and most of the hard bugs of the last
+    //     two days (the puddle, the crush, the need floor, the seat) came from the seam between the two
+    //      rather than from either side.  Bare mode simply removes that seam: no molds mount, no faces
+    //       measure, no `need_area` is stamped, and what is left is the thing itself — the cut, the
+    //        names, the details spilled along the wall, and whatever a particle chose to make clickable.
+    //  Per TAB, never snapped: a view preference is not world state, and a Book must never see it.
+    //   Books are additionally locked out below, so no fixture can move whatever a human left toggled.
+    const bare = new Set<TheC>()
+    let bare_flip = $state(0)
+    function bare_on(w: TheC): boolean { void bare_flip; return bare.has(w) }
+    function bare_toggle(w: TheC) {
+        if (bare.has(w)) bare.delete(w)
+        else bare.add(w)
+        bare_flip++
+        ;(H as any).Vyto_stir_soon?.(w)
+    }
+    // ── THE TWO POSES (2026-08-09, the owner: *"we need some simulation of them competing for
+    //  attention… or engaging some pose where they are all fairly equal"*).
+    //  ≡ EVEN flattens every price to one base, so the cut states its STRUCTURE alone — pricing is what
+    //   makes a glass legible and also what hides its shape, and this is the switch between the two.
+    //  ⚔ COMPETE hands the attention coin round the ring on a tick.  It needed no new machinery: heat
+    //   is already earned by being attended, already self-taxing (everyone else cools 4% per grant),
+    //    and already spent by express as size — a competition is simply nobody being the reader.
+    //  Both live-page only, both torn down with the stage, so no Book can see either.
+    const competing = new Map<TheC, ReturnType<typeof setInterval>>()
+    let pose_flip = $state(0)
+    function compete_on(w: TheC): boolean { void pose_flip; return competing.has(w) }
+    function even_on(w: TheC): boolean { void pose_flip; return !!(w.c as any).even }
+    function compete_toggle(w: TheC) {
+        const t = competing.get(w)
+        if (t) { clearInterval(t); competing.delete(w) }
+        else if (live_page() && !fo(w, 'still')) competing.set(w, setInterval(() => (H as any).Vyto_compete_tick?.(w), 700))
+        pose_flip++
+    }
+    function even_toggle(w: TheC) { (H as any).Vyto_even_toggle?.(w); pose_flip++ }
     const simmering = new Map<TheC, ReturnType<typeof setInterval>>()
     let simmer_flip = $state(0)     // the ∿ button reads this to light up
     function simmer_on(w: TheC): boolean { void simmer_flip; return simmering.has(w) }
@@ -382,7 +493,10 @@
         else if (live_page() && !fo(w, 'still')) simmering.set(w, setInterval(() => (H as any).Vyto_simmer_tick?.(w), 900))
         simmer_flip++
     }
-    onDestroy(() => { for (const t of simmering.values()) clearInterval(t) })
+    onDestroy(() => {
+        for (const t of simmering.values()) clearInterval(t)
+        for (const t of competing.values()) clearInterval(t)
+    })
 
     // ── GRAB A BALL (the fun law, 2026-08-09: "nothing is fun to interact with").  Drag a
     //  foam cell and the pile renegotiates around your thumb: the drag writes the mirror row's
@@ -631,7 +745,8 @@
                        mx: number, my: number, mw: number, mh: number, ang: number, clip: string,
                        face: any | null, source: TheC | null, row: TheC,
                        fx: '' | 'arrive' | 'erupt', fxi: number, fit: number, loose?: boolean,
-                       zi?: number, sunk?: boolean, poly?: Pt[] }
+                       zi?: number, sunk?: boolean, poly?: Pt[],
+                       spike?: { poly: Pt[], apex: Pt } | null }
 
     // (inscribed_of is GONE, 2026-08-09 — it was already unseated by the AABB+clip regime and it
     //  carried the adversarial review's A1: the gap inset in power_cells pulls vertices toward the
@@ -1150,6 +1265,7 @@
     //       Optional, because paint_world/adopt call build_cells without one.
     function build_cells(w: TheC, walk?: { roots: Node[], all: Node[] }): { cells: PaintCell[], curWalls: Map<string, Pt[]> } {
         const cells: PaintCell[] = []
+        const tails: Pt[] = []      // tips placed this build — the bearing sweep steers around them
         const curWalls = new Map<string, Pt[]>()
         const sp = springs.get(w)
         if (!sp) return { cells, curWalls }
@@ -1260,7 +1376,9 @@
                 //   so driven worlds read exactly as before).
                 const sunk = n.depth > 0 && !near_key(liftKey, n.key) && !near_key(engKey, n.key)
                           && !(((row.c as any).heat ?? 0) > 0.25)
-                const f = face_of(row)
+                // BARE: the face is dropped at the source, so nothing downstream — mold, measure, seat,
+                //  need floor, icon register — has anything to do.  One gate, not six opt-outs.
+                const f = bare_on(w) ? null : face_of(row)
                 const face = f ? f.comp : null
                 const source = f ? f.source : null
                 // the cell's fx for this build: a first sighting SPROUTS (and the index staggers the
@@ -1363,6 +1481,25 @@
                         //       spill the owner asked to keep.
                         const diag = 2 * Math.max(4, s.r - 3)
                         const hyp = Math.hypot(nw, nh)
+                        // ── THE SEAT BY RAYS (2026-08-09, the owner: *"I'd like you to try to get
+                        //  Component to fit into the cell better"*).  Three answers have been tried and
+                        //   each measured the WRONG SHAPE: the ball ignores the cut, the bbox is a box
+                        //    around a polygon (so it promises room the wall does not have), and the two
+                        //     together are just the smaller of two wrong numbers.  The right question is
+                        //      "how big can a rectangle OF THIS FACE'S ASPECT be, centred on the seed,
+                        //       before it touches the wall" — and `ray_hit` already answers it exactly.
+                        //  Cast to the eight points of the face's own outline (four corners, four edge
+                        //   midpoints); each says how far the wall is in that direction; the binding one
+                        //    is the seat.  Strictly ≥ the ball answer on a free cell and strictly better
+                        //     on a pressed one, because it measures the room in the direction the
+                        //      component actually needs it. -->
+                        let byray = Infinity
+                        for (const [qx, qy] of [[1, 1], [1, -1], [-1, 1], [-1, -1], [1, 0], [-1, 0], [0, 1], [0, -1]]) {
+                            const ex = (nw / 2) * qx, ey = (nh / 2) * qy
+                            const L = Math.hypot(ex, ey); if (!(L > 0)) continue
+                            const t = ray_hit(poly, s.x, s.y, ex / L, ey / L)
+                            if (t > 0) byray = Math.min(byray, Math.max(0, t - 2) / L)
+                        }
                         // THE CUT IS THE WALL, NOT THE BALL (2026-08-09, the owner: *"there's a cell
                         //  (friends|local-music) that's been squished way too far down but its component
                         //   overlay thing is there still"*).  A seat inscribed in the BALL is only the
@@ -1376,7 +1513,7 @@
                         //  It also re-arms the icon register — a genuinely crushed cell now reports a
                         //   crushed `fit`, drops below the 0.34 floor, and becomes an icon instead of
                         //    wearing a widget it has no room for.
-                        fit = Math.min(diag / hyp, bb.bw / nw, bb.bh / nh)
+                        fit = Number.isFinite(byray) ? byray : Math.min(diag / hyp, bb.bw / nw, bb.bh / nh)
                         fit = Math.max(0.2, Math.min(FIT_MAX, +fit.toFixed(3)))
                         mw = nw * fit; mh = nh * fit
                         mx = s.x - mw / 2; my = s.y - mh / 2
@@ -1410,8 +1547,27 @@
                             }
                         }
                     }
-                    cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids, ident,
-                                 x: s.x, y: s.y, r: s.r, kind: 'poly', d: path_round(poly), departing: false, lift,
+                    // the tail is SPLICED into the outline (that is what makes it a soft blob rather
+                    //  than a hard triangle — path_round owns the points).  The seat and bbox stay
+                    //   measured on the ORIGINAL wall: the tail is a mark on the body, not room in it.
+                    // THE BEARING SWEEP.  205° is the left end of the wall band, so the wanted tail
+                    //  bearing is the approach to it; each further candidate steps away in alternating
+                    //   directions.  Greedy in emit order against the tips already placed this build —
+                    //    no neighbour lookup, no second pass, and deterministic, so a settled glass
+                    //     re-emits the identical placement and a Book cannot flake on it.
+                    let sp: ReturnType<typeof spike_of> = null
+                    if (!hasKids0 && foam && !fo(w, 'wave') && !fo(w, 'seal')) {
+                        for (const want of [198, 214, 182, 232, 164, 250, 146]) {
+                            const cand = spike_of(poly, s.x, s.y, s.r, want)
+                            if (!cand) continue
+                            sp = cand
+                            const clash = tails.some(t => Math.hypot(t.x - cand.apex.x, t.y - cand.apex.y) < 26)
+                            if (!clash) break
+                        }
+                        if (sp) tails.push(sp.apex)
+                    }
+                    cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids, ident, spike: sp,
+                                 x: s.x, y: s.y, r: s.r, kind: 'poly', d: path_round(sp ? sp.poly : poly), departing: false, lift,
                                  bx: bb.bx, by: bb.by, bw: bb.bw, bh: bb.bh,
                                  mx, my, mw, mh, ang, clip: clipPoly, face, source, row, fx, fxi, fit, sunk, poly })
                     if (hasKids) layout(n.kids, poly, 0, n.key)
@@ -2235,15 +2391,23 @@
         lastAttend.set(tok, now)
         ;(H as any).Vyto_attend?.(w, tok, amt)
     }
+    // ── NOTHING MOVES UNDER THE POINTER (2026-08-09, the owner: *"when we mouse over a cell, it cannot
+    //  move under us!"*).  Two separate faults, both mine, both making the cell move on hover:
+    //   1. The hold was placed only `if (key === tok)`.  A key carries depth, a tok does not, so that
+    //      test is true for top-level cells and FALSE for every nested one — most of the glass was
+    //      never pinned on hover at all.  The verb takes any tok; the guard was the whole bug.
+    //   2. Hover granted HEAT (0.08), and express spends heat as SIZE.  So pointing at a cell made it
+    //      grow, which moved it, which moved its neighbours — the exact opposite of the rule, added by
+    //      me while building the attention currency.  Heat is now earned by PRESSING only: a click is
+    //      a choice, and a choice may rearrange the world; passing the mouse over something is not.
     function on_enter(w: TheC, key: string, tok: string) {
         lifted.set(w, key)
-        if (key === tok) (H as any).Vyto_pointer_enter?.(w, tok)
-        attend(w, tok, 0.08)
+        ;(H as any).Vyto_pointer_enter?.(w, tok)
         kick(w); paint_tick++
     }
     function on_leave(w: TheC, key: string, tok: string) {
         if (lifted.get(w) === key) lifted.delete(w)
-        if (key === tok) (H as any).Vyto_pointer_leave?.(w, tok)
+        ;(H as any).Vyto_pointer_leave?.(w, tok)
         kick(w); paint_tick++
     }
 </script>
@@ -2313,6 +2477,17 @@
                 {#if live_page()}
                     <button class="fs-btn sim-btn" class:simmering={simmer_on(w)} onclick={() => simmer_toggle(w)}
                             title="keep running layout — the foam keeps negotiating">∿</button>
+                    <!-- BARE — the glass with no Components at all: just the cellular tree of what is
+                         actually in there, its names, its details along the wall, and whatever a
+                         particle made clickable.  Live pages only: a Book must never see a view
+                         preference, so no fixture can move on whatever a human left toggled. -->
+                    <button class="fs-btn even-btn" class:posing={even_on(w)} onclick={() => even_toggle(w)}
+                            title="equal pose — every cell priced the same, so the structure shows">≡</button>
+                    <button class="fs-btn vie-btn" class:posing={compete_on(w)} onclick={() => compete_toggle(w)}
+                            title="compete for attention — the coin goes round and the foam fights it out">⚔</button>
+                    <button class="fs-btn bare-btn" class:baring={bare_on(w)} onclick={() => bare_toggle(w)}
+                            title={bare_on(w) ? 'components off — cells only (click to bring them back)'
+                                              : 'try it bare — no Components, just the cellular tree'}>▢</button>
                 {/if}
                 <!-- the way OUT, shown only while there is somewhere to come out of.  Clicking the
                      engaged cell again does the same thing, but a visible affordance is what makes the
@@ -2518,6 +2693,27 @@
                          the boxed hall, and the hall never needed a face either.  Nested inside the
                          wallwork block it silently deleted every faceless carved cell's detail — the
                          capture caught it as labels dropping 14 → 7 with nothing put back. -->
+                    <!-- BARE: the particle, set. -->
+                    {#if bare_on(w)}
+                        {#each viewport_cells(w) as cell (cell.key)}
+                            {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && cell.r > 20}
+                                {@const bs = bare_set(cell)}
+                                {#if bs}
+                                    <g class="bareset" class:sunk={cell.sunk} data-ukey={cell.key}
+                                       transform="translate({cell.x.toFixed(1)},{cell.y.toFixed(1)}) scale({bs.k.toFixed(3)})">
+                                        <text class="bare-title" x="0" y={-14 - bs.rows.length * 7.5}>{bs.title}</text>
+                                        {#if bs.value}
+                                            <text class="bare-value" x="0" y={2 - bs.rows.length * 7.5}>{bs.value}</text>
+                                        {/if}
+                                        {#each bs.rows as [rk, rv], ri (rk)}
+                                            <text class="bare-key" x="-4" y={20 - bs.rows.length * 7.5 + ri * 15}>{rk}</text>
+                                            <text class="bare-val" x="4" y={20 - bs.rows.length * 7.5 + ri * 15}>{rv}</text>
+                                        {/each}
+                                    </g>
+                                {/if}
+                            {/if}
+                        {/each}
+                    {/if}
                     {#each viewport_cells(w) as cell (cell.key)}
                         {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && wall_carve(w, cell) && !fo(w, 'nohall')}
                             {@const sp = spill_of(cell)}
@@ -2531,41 +2727,11 @@
                             {/if}
                         {/if}
                     {/each}
-                    {#each viewport_cells(w) as cell (cell.key)}
-                        {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && wall_carve(w, cell) && !fo(w, 'seal')}
-                            <!-- THE A GATE (the owner: "the A I'm thinking of is built in to the vector
-                                 graphic in the wall").  A drawn vector standing ON the wall ring at the
-                                 205° mark — the head of the corridor — rotated so it leans out along the
-                                 wall normal: carved into the masonry, not stuck on top of it.  It IS the
-                                 dose handle: drag up-down sweeps, wheel trims, arrows step; the fat
-                                 transparent pad is the real hit target.  stopPropagation throughout so a
-                                 grab never doubles as a cell click. -->
-                            {@const spike = spike_of(cell)}
-                            {#if spike}
-                                {@const gdv = Number((dose_src(cell)?.sc as any)?.dose) || 0}
-                                {@const gg = cell_ground(cell)}
-                                <g class="agate" class:sunk={cell.sunk} class:doped={gdv > 0}
-                                   style={gg ? `color:${gg.border};--tail:${gg.bg};` : ''}
-                                   role="slider" tabindex="0" aria-label={`intensity of ${cell.ident}`}
-                                   aria-valuenow={gdv} aria-valuemin={0} aria-valuemax={9}
-                                   onpointerdown={(e) => dose_down(e, w, cell)}
-                                   onpointermove={dose_move} onpointerup={dose_up} onpointercancel={dose_up}
-                                   onkeydown={(e) => dose_key(e, w, cell)}
-                                   onwheel={(e) => dose_wheel(e, w, cell)}
-                                   onclick={(e) => e.stopPropagation()}>
-                                    <!-- the tail IS the cell: same ground, same wall stroke, one path with
-                                         the counter punched out of it by fill-rule evenodd. -->
-                                    <path class="agate-tail" d={spike.d} fill-rule="evenodd"></path>
-                                    <!-- the counter is the working part; the pad is its (invisible) grip -->
-                                    <circle class="agate-pad" cx={spike.hx.toFixed(1)} cy={spike.hy.toFixed(1)}
-                                            r={spike.hr.toFixed(1)}></circle>
-                                </g>
-                                {#if dosing && dosing.src === dose_src(cell)}
-                                    <text class="dosetip" x={spike.hx + spike.hr + 4} y={spike.hy - 6}>dose {gdv.toFixed(1)}</text>
-                                {/if}
-                            {/if}
-                        {/if}
-                    {/each}
+                    <!-- (THE TAIL used to be drawn here as its own path.  It is not drawn at all now —
+                         it lives in the cell's own outline, spliced in by build_cells, which is what
+                         makes it a soft blob instead of a hard triangle and what makes it incapable of
+                         occluding anything.  A whole pass, a slider role, four pointer handlers, a
+                         wheel handler and a hit pad all went away with it.) -->
                     <!-- the plug + the ants, drawn LAST so they ride over the cells they connect.
                          pointer-events:none throughout: this lane is something to see, never
                          something to hit — the cells keep every interaction they had. -->
@@ -2755,9 +2921,18 @@
     .re-btn { right: 38px; }
     .sim-btn { right: 70px; }
     .sim-btn.simmering { color: #ffd479; border-color: #b89a4a; background: #2c2618; }
+    .even-btn { right: 102px; }
+    .vie-btn  { right: 134px; }
+    .bare-btn { right: 166px; }
+    .even-btn.posing, .vie-btn.posing { color: #c3b0ff; border-color: #6a5ad0; background: #201c34; }
+    .bare-btn.baring { color: #9fe6c8; border-color: #4a8a72; background: #16241f; }
     /* the walk-out chip files further along the same rail */
-    .out-btn { right: 102px; }
-    @media (pointer: coarse) { .re-btn { right: 52px; } .sim-btn { right: 98px; } .out-btn { right: 144px; } }
+    .out-btn { right: 198px; }
+    @media (pointer: coarse) {
+        .re-btn { right: 52px; } .sim-btn { right: 98px; }
+        .even-btn { right: 144px; } .vie-btn { right: 190px; } .bare-btn { right: 236px; }
+        .out-btn { right: 282px; }
+    }
     /* an engaged-able cell should say so under the cursor — the one hint that the glass is navigable.
        The cells are also real keyboard targets (role=button + tabindex): tab to a cell, Enter to fly to
        it, Esc to come back out.  ~5-9 cells on the live glass, so this is a usable tab order rather than
@@ -2988,6 +3163,29 @@
     /* the spill: a murmur beside the name, never competing with it — the name is the canonical label
        and these are its continuation, so they sit smaller, dimmer and unbanded (no masonry of their
        own; they ride the cell's own body). */
+    /* THE BARE SETTING — three registers on one measure.  The mainkey is the title because it is what
+       the thing IS; its value is the subject and carries the size; the supporting scalars are set as a
+       key/value pair with the key quiet, spaced and right-ranged and the value holding the ink.  This
+       is the whole of "no illusions about data representation": nothing here is a widget pretending to
+       be a thing — it is the particle, stated, and set well. */
+    .bareset { pointer-events: none; user-select: none; transition: opacity 260ms ease; }
+    .bareset.sunk { opacity: 0.3; }
+    .bare-title {
+        fill: #8f8fb4; font: 600 9px/1 ui-monospace, monospace;
+        letter-spacing: 0.22em; text-transform: uppercase; text-anchor: middle;
+    }
+    .bare-value {
+        fill: #f2f2fa; font: 300 19px/1 ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: -0.01em; text-anchor: middle;
+        paint-order: stroke; stroke: rgba(10, 10, 18, 0.6); stroke-width: 3px;
+    }
+    .bare-key {
+        fill: #6f6f8c; font: 500 8.5px/1 ui-monospace, monospace;
+        letter-spacing: 0.14em; text-anchor: end;
+    }
+    .bare-val {
+        fill: #c9c9e2; font: 400 10.5px/1 ui-monospace, monospace; text-anchor: start;
+    }
     .wallspill-arc { fill: none; stroke: none; }
     .wallspill {
         fill: #9a9ab8; font: 9px/1 ui-monospace, monospace; letter-spacing: 0.06em;
@@ -3000,31 +3198,11 @@
         paint-order: stroke; stroke: rgba(10, 10, 18, 0.5); stroke-width: 2.5px;
         user-select: none;
     }
-    .agate { cursor: ns-resize; touch-action: none; transition: opacity 260ms ease; outline: none; }
-    .agate.sunk { opacity: 0.25; }
-    .agate-pad { fill: transparent; }   /* the fat hit target — transparent still hit-tests, none would not */
-    /* the A is CARVED FROM THE SAME MASONRY: currentColor rides the cell's own wall colour
-       (stamped inline off cell_ground), falling back to chrome on unstyled worlds. */
-    .agate { color: #e8e8f6; }
-    /* THE TAIL, NOT A GLYPH — it wears the cell's own ground (--tail, stamped inline off cell_ground)
-       and the cell's own wall stroke, so the silhouette reads as ONE body that grew a spike.  The
-       counter is a real hole (fill-rule evenodd on the same path), which is the whole trick: two legs
-       around a triangular void reads as an A without an A ever being drawn. */
-    .agate-tail {
-        fill: var(--tail, #1b1b2c); stroke: currentColor; stroke-width: 1.4;
-        stroke-linejoin: round;
-        transition: fill 140ms ease, stroke 120ms ease, filter 120ms ease;
-    }
-    .agate:hover .agate-tail, .agate:focus-visible .agate-tail {
-        stroke: #fff; filter: drop-shadow(0 0 5px rgba(200, 200, 255, 0.7));
-    }
-    /* a dosed tail warms: the counter is where the value lives, so the body around it carries the heat */
-    .agate.doped .agate-tail { stroke: #eecd85; stroke-width: 1.9; }
-    .dosetip {
-        font-size: 10.5px; font-weight: 600; fill: #ffe9b0;
-        paint-order: stroke; stroke: rgba(10, 10, 18, 0.85); stroke-width: 3px;
-        pointer-events: none; user-select: none;
-    }
+    /* (the .agate rules are GONE.  The tail has no styling of its own any more — it is part of the
+       cell path, so it wears the cell's fill, stroke, hover, sink and occlusion rank by construction.
+       That is the whole reason the blob looks right where the standalone triangle did not: a mark that
+       shares an outline cannot drift out of agreement with the thing it belongs to.) */
+    /* (.dosetip went with the tail's drag — there is no dose gesture on the glass any more.) */
     .wave .lab { fill: #dcdcf0; opacity: 0.8; }
     /* THE ORBIT — the loose constellation revolves about the frame heart (view-box origin), each
        member counter-rotating so its label stays upright while its body drifts.  Glacial on

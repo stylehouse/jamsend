@@ -1802,3 +1802,207 @@ The owner: *"the way Radio cell has title,artist,of,at,skip etc in the backgroun
         controls AND their explanation from one place rather than two.
 - The room law is live-gated but **unseen by human eyes** — it needs the owner's tab to re-commission.
 - `VytoCrush`'s three unsworn `%see` claims (see the hollow-Books note above) are still unexplained.
+
+## ⇢ ROUND: THE TEARDROP IS THE CELL, AND A GLASS WITH NO COMPONENTS (2026-08-09)
+
+### The A-tip, spliced in
+
+The owner: *"can you seamlessly do the A-tip as part of the cell? it's just like a teardrop except with
+ a bar across it there."*
+
+The previous cut drew the tail as its own `<path>` wearing the cell's colours. That is seamless only
+ while the two agree about fill, stroke, opacity, hover, sink and paint order — and they never agree
+  for long. So the tail is **not drawn at all now**: its three points are **spliced into the polygon**
+   in place of the corner they grew from, and the cell path is built from that. One outline, one
+    stroke, one fill; every state the cell can be in carries the tail for free, because it IS the cell.
+ What is left to draw is the owner's other half — the **bar across it**. Teardrop + bar = the A, and
+  the bar is the handle. Live: 6 tails, bars 12.1 / 5.7 long, **zero leftover tail paths**, and the
+   cloud extent grew 576 → 594 because the outline genuinely reaches further now.
+ The seat and the bbox stay measured on the ORIGINAL wall: the tail is a mark on the body, not more
+  room in it.
+
+### BARE MODE — the glass with no Components (the ▢ button)
+
+The owner: *"I think I want to have a tab I can click to try a no-Components version of this
+ interface. I just want cellular trees of the information in the thing right now, and some of them
+  have click handlers magically (C.c.onclick?)… it's like building yet another web-framework thing
+   within a thing within a thing."*
+
+**That last sentence is the argument for it being a switch.** Every face is a Svelte component with
+ its own layout, its own measure, its own idea of how big it wants to be — a second framework living
+  inside the cut. Most of the hard bugs of the last two days (the puddle, the crush, the need floor,
+   the seat, the ratchet) came from the SEAM between the two, not from either side. Bare mode removes
+    the seam: the face is dropped at the source (`face_of` is not even called), so no mold mounts, no
+     face measures, no `need_area` is stamped, and no re-solve is kicked by a measurement — which is
+      also the honest answer to *"it's fond of re-laying-out"*. What is left is the thing itself: the
+       cut, the names, the details spilled along the wall, and whatever a particle made clickable.
+
+One gate, not six opt-outs. Per TAB and never snapped — a view preference is not world state — and
+ live-pages-only, so no Book can see it and no fixture can move on whatever a human left toggled.
+
+**Click handlers already exist and are called `.c.press`** (a ref on the source particle; the handler
+ is handed the particle, so a one-line `.g` handler can read and write it). `.c.onclick` is now
+  accepted as an alias, because that is the name the owner reached for and a handler that silently
+   never fires because it was spelled the DOM way is a bad half hour for whoever wrote it.
+
+### Margin: 0.55 fill IS half margin
+
+The owner: *"about half of it is margin."* That was the number's honest reading, not a bug — the room
+ law's default fill was 0.55. Raised to **0.72**. Foam cells are trimmed to their own discs so the
+  interstices are margin by construction, and a packing of equal circles tops out near 0.9; 0.72 is a
+   firm press that still leaves discs legible as discs. `room:<fill>` overrides either way.
+
+### The thread worth pulling next
+
+"a thing within a thing within a thing" is the real finding here, and bare mode is only the experiment
+ that isolates it. The question it sets up: **how much of what the faces do could the cut do itself?**
+  A cell already has a name, a detail line, a dose handle, a click, an occlusion rank and a camera. A
+   RadioFace is a title, an artist, a progress ring and three buttons — most of which are cell-shaped
+    facts, not component-shaped ones. If bare mode reads well, the move is not "delete the faces" but
+     "grow the cell's own vocabulary until a face is the exception rather than the rule" — which is
+      the same shape as the foamereo deck needing to become a language.
+
+## ⇢ ROUND: POSES, PLACEMENT, AND BARE AS A SURFACE (2026-08-09)
+
+### ⚠ The conserved aesthetic is a real gap, and it is not fixed
+
+The owner: *"should still look all fancy like the artifacts we iterated a whole bunch of Vyto
+ aesthetics with (which seems to be all gone now… we haven't conserved what we were going for leading
+  up to this)."*
+
+**Nothing in this repo records the visual direction.** There are laws (the foam law, the fit law, the
+ room law, the carve), there are mechanisms, there are fixtures — and there is no statement of what
+  the glass is supposed to LOOK like. So every round re-derives the aesthetic from whatever the last
+   sentence of feedback was, and drift is guaranteed. The artifacts that held it were iterated
+    elsewhere and are not here. This is the one item on this list that no amount of code fixes: it
+     wants a `Vyto_look` doc (or a set of reference captures committed under `spec/`) that a session
+      can be held against. **Flagged, not solved — it needs the owner's eye to say what to conserve.**
+
+### Bare is a SURFACE, not an absence
+
+First cut of bare dropped the face and let whatever remained show through — which is not what was
+ asked. *"Bare only as in no illusions about data representation, just stating the C** like a snap,
+  but with good composition, like a good piece of typographic art."*  So bare now SETS the particle:
+
+- the **mainkey is the title** (it is what the thing IS) — small, uppercase, wide-tracked, quiet
+- its **value is the subject** — 19px light sans, the only thing carrying real size
+- the remaining scalars are **key/value pairs**: key small, spaced, right-ranged and dim; value in
+   mono holding the ink
+
+A snap's own hierarchy IS the typographic hierarchy, so the setting invents no structure — it honours
+ the one the data already has. One scale for the whole block, taken from the room the wall actually
+  gives (ray-measured, the same geometry as the component seat), and below the point where supporting
+   matter would be illegible it is DROPPED rather than shrunk into grey mush.
+
+### The seat, by rays
+
+*"I'd like you to try to get Component to fit into the cell better."*  Three answers had been tried
+ and each measured the wrong shape: the ball ignores the cut, the bbox is a box around a polygon (so
+  it promises room the wall does not have), and the two together are just the smaller of two wrong
+   numbers. The right question is *"how big can a rectangle of THIS FACE'S ASPECT be, centred on the
+    seed, before it touches the wall"* — and `ray_hit` already answered it. Cast to the eight points of
+     the face's own outline (four corners, four edge midpoints); the binding one is the seat. Strictly
+      ≥ the ball answer on a free cell, strictly better on a pressed one.
+
+### Where the tail goes — one rule for two complaints
+
+*"the A-tips should avoid being on top of each other somehow… perhaps the A-tip is always to the left
+ of the cell-wall label."*  Both halves are the same rule. "Sharpest corner" was a LOCAL choice: every
+  cell picked independently, so two neighbours facing each other across a seam grew tails into the
+   same gap. A tail placed by BEARING is placeable by agreement — the band runs 205°→335°, so "left of
+    the label" is the approach to 205°, and when that bearing is taken the next candidate is tried
+     (198 · 214 · 182 · 232 · 164 · 250 · 146). Greedy in emit order against the tips already placed
+      this build: no neighbour lookup, no second pass, deterministic. **Live: 6 tips, closest pair
+       40.9px** against a 26px clash threshold.
+
+### The bar is the readout
+
+*"adjusting their dose with them is quite slow to give the visual feedback."*  It was: the only
+ feedback was the cell resizing, which is stir → solve → spring. The bar now slides base→apex with the
+  dose, computed in the template off the LIVE value rather than baked at build time, so it moves on the
+   same frame as the write. Low on the tail is quiet, high is loud.
+
+### The two poses
+
+*"we need some simulation of them competing for attention… or engaging some pose where they are all
+ fairly equal."*
+
+- **≡ EVEN** flattens every price to one base (`w.c.even`, last in the express chain so it overrides
+   every regime uniformly). Pricing is what makes a glass legible and also what hides its shape; this
+    is the switch between the two.
+- **⚔ COMPETE** hands the attention coin round the ring on a 700ms tick. It needed **no new
+   machinery**: heat is already earned by being attended, already self-taxing (everyone else cools 4%
+    per grant), already spent by express as size. A competition is simply nobody being the reader.
+     Deterministic (a counter, never a clock), live-page only, torn down with the stage.
+
+### Still open
+
+- **Hierarchy / blobs within blobs** — *"how about more hierarchy? we could split the Radio glass into
+   several pieces… I want to see it do blobs within blobs."*  `nested` already exists and works
+    (VytoNest, VytoNestRest are green on it); what is missing is the DECOMPOSITION — deciding that a
+     Radio is a scope containing a now-playing, a queue, a controls cluster. That is a composition
+      call on the Sounditron side, not a Vyto capability gap, and it wants the owner's shape.
+- The conserved-aesthetic doc, above.
+- The foamereo deck becoming a language.
+
+## ⇢ THE SPLIT (2026-08-09, the owner's own framing — read this before picking up the next thing)
+
+> *"is this job splitting into multiple jobs? a Vyto protocol clarification and an application model
+>  dumper that suits that Vyto protocol?"*
+
+Yes, and naming it explains most of the thrash of the last two days.
+
+**Job 1 — THE VYTO PROTOCOL.** What a cell IS and what it can state and be worked by: its name in the
+ wall, its detail spill, its tail, its click (`.c.press` / `.c.onclick`), its occlusion rank, its
+  camera, the poses, the foamereo deck. Stateable with no reference to any application. This is where
+   the laws live (foam · fit · room · carve · seat-by-rays) and where a Book can gate it.
+
+**Job 2 — THE APPLICATION MODEL DUMPER.** What the Sounditron chooses to HAND Vyto: which particles
+ become cells, at what hierarchy, what folds when a Heist opens, what is hidden, what a ball of rooms
+  looks like. This is `Sounditron_commission`'s `organs` list and nothing else.
+
+**Almost everything the owner asked for this session is job 2, and was being attempted in job 1.**
+ "Split the Radio glass into pieces", "hide transfer", "Heist folds everything down", "Invite is a
+  ball of rooms", "not the Diag|Tuner tiny not-there things" — none of those are renderer capabilities.
+   The renderer's job is only *"put stuff on the screen without occluding uselessly"* (the owner's own
+    reduction, and it is the right one). **Bare mode is the seam between the two** — it is exactly what
+     the dumper's output looks like with no application components in the way, which is why it is worth
+      keeping as a switch rather than a debug flag.
+
+### Landed this round (job 2)
+
+- `%Diag`, `%Tuner` and `%Transfer` **no longer grapple as cells**. The rows stay minted, the faces
+   stay registered, the witness still reads them — only the grapple goes, one line each to restore.
+    They were cells because they were rows, not because anyone wanted to look at them, and each one
+     cost a seat, got priced, got crowded out, and puddled as a 12×12 marker. That is what most of the
+      last two rounds of "layout bugs" were actually made of.
+- **The Heist gets the room.** The deck and up-next already folded on `anyKeep`; the Radio did not, so
+   a heist opened into a glass still dominated by the player. Now the standing set folds to `%Door`
+    alone until the last keep leaves.
+
+### Landed this round (job 1)
+
+- **The tail is a blob again, and it does nothing.** The cute blobs and the terrible triangles were the
+   SAME THREE POINTS — the difference is entirely whether the cell's outline owns them. Spliced, they
+    go through `path_round` with everything else and come out as a soft bump; drawn as their own path
+     they are a hard-edged triangle sitting next to the cell. Nobody realised that at the time,
+      including me. So: spliced, no counter, no bar, no handlers, no hit pad, no CSS of its own — it
+       wears the cell's fill, stroke, hover, sink and occlusion rank by construction, and **a mark that
+        shares an outline cannot drift out of agreement with the thing it belongs to.**
+- A whole render pass, a slider role, four pointer handlers, a wheel handler and a hit pad went away
+   with it. The dose gesture is gone from the glass; if a handle is wanted again it should be its own
+    thing rather than a shape doing two jobs.
+
+### Open, in the owner's words
+
+- *"push a more eloquent model! refactor the model we push to Vyto, make it more dynamic and
+   button-having."* — job 2, and the main thread now. Cells should carry their own affordances
+    (`.c.press` exists and is the hook) rather than every interaction living in a bespoke face.
+- *"the Invite thing needs to be in here somehow. it's just a ball of rooms we open and close, some
+   ganged."* — job 2. A room is a cell; ganged rooms are a scope; open/closed is the camera. The
+    protocol already has all three, so this is a dumping decision, not a feature.
+- *"some overall sanity checking thing going on"* — ONE cell that speaks when something is wrong,
+   replacing the rank of idle HUDs that each said nothing at full volume. Not built.
+- *"more hierarchy… blobs within blobs"* — `nested` works (VytoNest/VytoNestRest green); the missing
+   piece is deciding the decomposition. Job 2.
+- **The conserved aesthetic** (from the previous round) is still unrecorded and still drifting.
