@@ -124,7 +124,15 @@ Presence_fresh(w, ms):
 //  FALSE requires that the last answer actually COVERED this pub (p.c.known).  Absence of a %Seen is
 //   only evidence when we asked: otherwise a pub the roster gained after the last round — or one this
 //    world never enquired about at all — would read as positively offline and be suppressed.
+//  THE REPLAYING GATE, and it is the reason Seam D was withdrawn once already (Presence_todo §0).
+//   Presence is wall-clock-varying in BOTH directions — the answer and its 30s freshness edge — and
+//    the Supervisor probes read the LIVE tab's identity even while a Book replays, so one presence
+//     read inside a snapped value made SwarmShare step 3 flap 2 runs in 4.  While a Book steps in
+//      this tab every reader gets `null`, i.e. exactly the behaviour it had before presence existed.
+//   Gated HERE rather than in Presence_here so the whole family (worth_sending, offline, the Swarm's
+//    pulse suppression) goes inert together — one chokepoint is checkable; five are a matter of luck.
 Presence_live(w, pub):
+    if (typeof this.Story_replaying === 'function' && this.Story_replaying()) return null
     if (!this.Presence_fresh(w)) return null
     let p = w.o({ Presence: 1 })[0]
     if (!p) return null

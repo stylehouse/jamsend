@@ -19,6 +19,65 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 
 ## 0. Latest handover — fold into the sections below as it's absorbed
 
+### 2026-08-11 — THE RADIO STOPS BEFORE IT STARTS, AND A SKIP ALWAYS FIXES IT
+
+**The night's actual headline, seen three times on live tabs and still not explained.** A booted
+ Sounditron sits with a full friend pool standing — `radio.remote ✓ 8 playable of 8 from Lefto`,
+  `radio.fresh ✓ 8 fresh of 8` — and **nothing plays**. One press of next-track starts it instantly,
+   every time. The owner, the second time: *"all I had to do in there was hit next-track to get it to
+    play, of course… so, watch out for that opportunity, and take it."*
+
+**What is NOT the cause** (each read, not guessed):
+- *A dead pump.* `Radio_pump_soon` reschedules 800ms on a null dial, and `Radio_pump` reschedules **on
+   throw** as well (:375-380, written for exactly this fear). A chain that died would have to die in a
+    way both of those miss.
+- *An empty pool.* The census said 8 playable at the moment of the stall.
+- *Exhaustion.* The `all` replay rung (:944) sits above the local rung; all-heard replays.
+- *A false `'playing'` state.* Real, fixed today (below) — but this recurred AFTER that fix, with the
+   AudioContext already running. So it is a second, separate stall.
+
+**The live suspect, UNPROVEN: background-tab timer throttling.** `Radio_pump_soon` is a bare
+ `setTimeout` (:367-368) and there is **no `visibilitychange` or `document.hidden` handling anywhere in
+  Radio.g or Sound.g**. Chrome throttles background-tab timers hard, which would produce precisely this
+   — a tab that boots unfocused never gets its next look, and ANY interaction revives it. It also fits
+    "a skip always works", since a skip re-enters the pump synchronously off a real gesture. Related:
+     [[jsdom-says-someone-is-looking]] (headless `document.hidden` is false, so Books can never catch
+      this). **Next move: stamp the pump's wake times and compare a focused boot with a backgrounded
+       one.** One measurement decides it.
+
+**Meanwhile the recovery is taken, not suggested** (`Sounditron.g`, the `arrive.playing` patience
+ block). At the give-up seam, if no record is open and the census says something is playable, the
+  registrar calls `Radio_skip` itself, once, and says *"nothing had started — nudged the dial for
+   you"*. Guards: once per episode (`c.skipped`), only with `!rad.c.rec` so it can never cut audible
+    music, only with a genuinely playable pool, and only at a moment already conceded. **It is a
+     RECOVERY, not a fix — when the cause is found it should be deleted, not extended.**
+
+⚠ **Instrument trap paid for while writing it:** the guard was nearly `!probe.rms`, which would have
+ been **dead forever**. `Lies_audio_probe` builds its own `osc → analyser → gain(0) → destination`, so
+  `rms` says whether the AudioContext can process audio — ~0.705 on every healthy tab, playing or not.
+   `radio.c.rec` is the real "is music coming out". [[audio-probe-rms-is-its-own-tone]]
+
+### 2026-08-11 — A STATE WORD SET BEFORE IT WAS EARNED (fixed, and proven booting through `digging`)
+
+`Radio_go` wrote `Radio_state(radio,'playing')` **above** `await Sound_gat()`, whose AC resume needs a
+ user gesture — so a gestureless tab sat in `'playing'` with no device, no record and a suspended
+  context. Measured: `probe {"state":"suspended","rms":0}` under `poke Radio_skip →
+   {"was":"playing","now":"playing","title":null}`. Three readers trusted the word:
+    `Radio_toggle` (:116) called `Radio_pause` — **the play button paused**; `Radio_nudge`'s pump gate
+     refused to restart; and `Sounditron_music_why`'s gesture branch was gated on `off|paused`, making
+      the one correct diagnosis unreachable in the state it describes. Every instrument read calm
+       (`loud:0 amiss:0`) over a dead page. Four fixes: park in `'digging'` until the device is real;
+        `Radio_toggle` presses play when there is no `c.gat` (and that press IS the gesture the resume
+         waits on, so the button that looked broken is the one that cures it); `music_why` tests the AC
+          before the state word; and the give-up advice goes live + carries a `remedy` word.
+ **Proven live**: `Radio:digging,face:Radio` (bare) → `Radio:playing,title:High A,by_name:Lefto`.
+  [[a-state-word-set-before-it-is-earned]]
+
+**Still owed here:** the `Radio_toggle` guard and the widened `music_why` gate can only fire in the
+ deadlock the first fix now prevents — so exercising them means reproducing it deliberately. A fix
+  nobody has seen work gates nothing ([[mutation-test-every-claim]]).
+
+
 A rolling brief: the newest work sits here first, then gets baked into its home section
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 Dated session diaries live in `history/Radio_buildlog.md` — this section stays a BRIEF, not a log.

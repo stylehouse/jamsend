@@ -103,7 +103,10 @@
          pill, the artist a pill, each stat a chip — and the transport is a round cluster with
          the PROGRESS RING around the skip button (a round cell wants round furniture; the bar
          is retired).  Composed centre-out, so the foam seat's inscribed box fills gracefully. -->
-    <div class="rf-title chip">{ICON[face.state] ?? '📻'} {face.title ?? 'the radio'}</div>
+    <!-- no glyph on the title (the owner 2026-08-11): the state already reads off the transport
+         button (⏸/▶) and the ring, so a ♪ in front of the track name was furniture competing with
+         the one thing the pill is for.  ICON is kept — the bud pose and any future chip may want it. -->
+    <div class="rf-title chip">{face.title ?? 'the radio'}</div>
     {#if face.artist}<div class="rf-artist chip">{face.artist}</div>{/if}
     <!-- WEIGHTED BY WHAT YOU REACH FOR (the human 2026-08-07: "pause should be small, next big, star not
          at all ... and heist big").  SKIP is the heart of the cluster wearing the ring; pause is a small
@@ -155,9 +158,15 @@
          chip still says how many tracks are ready — that one is an INVITATION, not a ledger. -->
     <div class="rf-chips">
         {#if face.of > 0}
+            <!-- THE CLOCK IS HIDDEN (the owner 2026-08-11, quoting what it rendered: "0:00 + 0:00 /
+                 1:00").  Numbers-as-time is the least round thing in a round room, and the ring
+                 already says how far through we are.  Commented, not deleted — `mmss`, `face.at`,
+                 `face.skip` and `.rf-clock`/`.rf-skiptime` all stay, so putting it back is
+                 uncommenting this one span.
             <span class="rf-chip rf-clock">
                 {#if face.skip > 0}<span class="rf-skiptime">{mmss(face.skip)} +</span> {mmss(face.at)} / {mmss(face.skip + face.of)}{:else}{mmss(face.at)} / {mmss(face.of)}{/if}
             </span>
+            -->
             {#if face.drops > 0}<span class="rf-chip">{face.drops} drops</span>{/if}
         {:else if face.state === 'digging' && !face.note}
             <span class="rf-chip">{face.own ? 'digging your crates…' : 'looking for a friend to play…'}</span>
@@ -236,6 +245,8 @@
         background: rgba(16, 28, 36, 0.6); border: 1px solid rgba(217, 160, 38, 0.16);
         border-radius: 999px; padding: 1px 7px;
     }
-    .rf-skiptime { opacity: 0.55; }
+    /* pairs with the hidden clock chip above — uncomment both together, or svelte-check
+       correctly calls this an unused selector.
+    .rf-skiptime { opacity: 0.55; } */
     .on .rf-title { color: #ffd869; }
 </style>

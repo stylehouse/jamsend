@@ -170,10 +170,13 @@
     //   verb was HOW ANYONE ELSE GETS HERE, and it was parked in a strip above the page — so the
     //    glass could never be the whole app.  InvitePanel comes in whole, in its `inglass` dress:
     //     one implementation, the one Book SwarmInvite proves, not a second copy of the arc.
-    //  FOLDED BY DEFAULT.  Cells are the scarce resource, and at rest this cell's job is the
-    //   friends list; the QR only matters in the minute you are actually inviting someone.  Opening
-    //    it grows the face, which grows the cell's measured need — the sizing machinery does the
-    //     rest, so the room is taken only while it is wanted.
+    //  ALWAYS OPEN (2026-08-11 — this said "FOLDED BY DEFAULT", on the argument that cells are the
+    //   scarce resource and the QR only matters in the minute you are inviting someone).  The
+    //    scarcity is real and the conclusion was still wrong: the fold hid the cell's own reason for
+    //     existing behind a control, and the room it saved was room this cell did not need saving.
+    //      Drawing the panel grows the face, which grows the cell's measured need, and the sizing
+    //       machinery gives it the space — which is the same mechanism the fold was leaning on,
+    //        just without a click in front of it.
     // ── THE POSE (2026-08-10, the owner: *"there are cell positions|poses: Stretched (when Heist is
     //  forming), Big, Small.  Small has only name, maybe the door icon, that's nice"*).  The
     //   commissioner stamps `.c.pose` on the source particle — `big` for the belly, `small` for a
@@ -182,33 +185,18 @@
     //      cells gets exactly today's face.
     let pose = $derived.by(() => { void H?.version; void tick; return String(n?.c?.pose ?? 'big') })
     let small = $derived(pose === 'small')
-    // ── THE INVITE PANEL'S OPEN STATE LIVES ON THE PARTICLE (2026-08-10, the owner: *"that Door cell
-    //  has an onunmain handler that shuts the Invite panel"*).  It was component-local `$state`,
-    //   which nothing outside the component could reach — so the model could not put the panel away
-    //    when the Door stopped being the subject, and the Door came back as a bud with its QR still
-    //     unfolded.  `.c` (never encoded, so no fixture can record whether a QR was open) plus an
-    //      explicit `bump()` on every write, because `.c` bumps no version by itself.
-    let inviting = $derived.by(() => { void H?.version; void tick; void n?.version; return !!n?.c?.inviting })
-    function invite_set(v: boolean) {
-        if (!n) return
-        if (v) n.c.inviting = 1
-        else delete n.c.inviting
-        n.bump?.()
-    }
+    // THE INVITE PANEL'S OPEN STATE IS GONE (2026-08-11) — `c.inviting`, `invite_set()` and the
+    //  auto-open latch all went with the fold.  Worth its headstone because the flag was carefully
+    //   built: it lived on the PARTICLE rather than in component `$state` precisely so the model
+    //    could put the panel away (`Sounditron.g`'s `onunmain`) when the Door stopped being the
+    //     subject and came back as a bud with its QR still unfolded.  That problem is now solved one
+    //      level up — a bud renders the `small` branch and never reaches the panel at all — so the
+    //       mechanism has nothing left to protect.
+    //  ⚠ `Sounditron.g:278` still deletes `s.c.inviting` in that `onunmain`; it is now a write to a
+    //   key nobody reads. Harmless, but it should go on the next compile of that ghost.
     // the pier-list cap ("yay many") — five rows before the +N more toggle takes over.
     const PIERS_SHOWN = 5
     let piers_all = $state(false)
-    // …except when the door is ALREADY the moment: a scanned invite is in flight, or nobody has
-    //  ever arrived.  One-shot latch (a plain let, never $state — re-running must not re-open a
-    //   panel the user has just closed), so this opens the panel once and then leaves it alone.
-    let auto_opened = false
-    $effect(() => {
-        if (auto_opened) return
-        if (small) return                 // a bud never unfolds itself — it has no room to
-        if (!face.door?.landed && !(face.prepub && !face.friends.length)) return
-        auto_opened = true
-        invite_set(true)
-    })
 </script>
 
 <!-- SMALL IS THE WHOLE FACE, not a folded version of it (*"Small has only name, maybe the door icon,
@@ -228,16 +216,17 @@
     </div>
     <!-- INVITE SITS ABOVE THE PIER LIST (the owner 2026-08-10) — it was at the bottom, under a list
          that grows, so the one verb a newcomer needs was the one thing that walked off the cell as
-         friends arrived.  The panel is otherwise untouched: same InvitePanel, same `inglass` dress,
-         same fold-by-default (cells are the scarce resource; the QR only matters in the minute you
-         are actually inviting someone). -->
+         friends arrived.
+         NO FOLD AT ALL ANY MORE (the owner 2026-08-11: *"we don't need a `<details>` like situation
+          anymore, just have the invite button and hole"*).  This went through the whole argument in
+           one sitting and landed past it: first the shut state had no affordance, then a rotating ▸
+            marker was the fix, then — correctly — the fold itself was the thing to delete.  The Door
+             cell IS the invite door; there was never anything behind the disclosure except the reason
+              the cell exists, so every version of the toggle was chrome guarding an empty secret.
+         The panel's own two controls (`invite a friend`, and the paste field) are the buttons and the
+          hole; nothing needs to be opened to reach them.  A bud is unaffected — the `small` branch
+           above returns 🚪 and never reaches this. -->
     {#if face.prepub}
-        <button class="df-open" onclick={() => invite_set(!inviting)}
-            title={inviting ? 'fold the invite door away' : 'invite a friend — mint a QR they scan, or paste an invite you were sent'}>
-            {inviting ? '▾ Invite…' : 'Invite…'}
-        </button>
-    {/if}
-    {#if inviting}
         <div class="df-panel"><InvitePanel {H} inglass /></div>
     {/if}
     {#if naming}
@@ -342,12 +331,9 @@
     /* the invite door — a quiet disclosure at the foot of the friends list, not a call to action
        competing with them.  It only shouts (via InvitePanel's own `.ip-go`) once it is open and
         there is actually a stranger to greet. */
-    .df-open {
-        pointer-events: auto; cursor: pointer;
-        background: none; border: none; color: #b48fc9;
-        font-family: inherit; font-size: 10px; padding: 3px 0 0; text-align: left;
-    }
-    .df-open:hover { color: #fff; }
+    /* (`.df-open` and `.df-tri` went with the fold, 2026-08-11 — the disclosure chip and its rotating
+        ▸ existed for about twenty minutes between "you wouldn't know that did anything" and "we don't
+         need a <details> like situation anymore". The panel is simply always here now.) */
     /* the panel takes pointer events back — `.df` is pointer-events:none so the cell beneath stays
        draggable/clickable, and every interactive descendant has to opt back in. */
     .df-panel { pointer-events: auto; margin-top: 4px; max-width: 260px; }

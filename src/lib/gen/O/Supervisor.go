@@ -13,7 +13,7 @@ import SupervisorPanel from "$lib/O/ui/SupervisorPanel.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_O_Supervisor(): string { return '95a749d295d4c4d5~g1' },
+    Ghostmeta_Ghost_O_Supervisor(): string { return 'b3f93b0067cad15e~g1' },
 
 // Supervisor.g — THE WATCHER.  One world holding a ROSTER of watches that other processes hand it.
 //  It reads every watch each pass, folds ONE verdict, and stays QUIET while they all read ok.
@@ -1076,6 +1076,13 @@ Supervisor_line(watch) {
         orphan: watch.sc.orphan ? 1 : 0,
         gaveup: (!waiting && watch.sc.patience === 'given-up' && watch.sc.verdict !== 'ok') ? 1 : 0,
         advice: String(watch.sc.advice || ''),
+        // `remedy` — the KIND of way out, one word, set by the registrar beside `advice` (2026-08-11).
+        //  A give-up screen has to choose a CONTROL, and the only alternatives were to draw the same
+        //   blunt one for every failure or to parse the advice sentence for keywords — the second
+        //    opinion §10.3 forbids.  So the registrar, which already knows why it gave up, names the
+        //     remedy: 'gesture' ⇒ any tap cures it, so offer a start button (pressing it IS the cure)
+        //      rather than a reload, which throws the session away to achieve the same tap.
+        remedy: String(watch.sc.remedy || ''),
         arrival: watch.sc.arrival ? 1 : 0,
         key: String(watch.sc.Watch || ''),
         sentence: String(watch.sc.sentence || ''),

@@ -1221,14 +1221,16 @@ Radio_alone_why(w):
             if (!p.sc.pub) continue
             if (me && String(p.sc.pub) === me) continue   // skip the self-pier — "gathering from Righto" on Righto is the same self-mirror bug
             anyPier = 1
-            // GRANT ≠ PRESENCE, and conflating them is why this can still say "gathering from X" about
+            // GRANT ≠ PRESENCE, and conflating them is why this used to say "gathering from X" about
             //  somebody who is not running the app: Swarm_pier_live is a GRANT check — "is this a
-            //   friend at all".  The fix is one line here (`if (M.Presence_offline(p.sc.pub)) continue`,
-            //    Presence.g) and it is NOT applied yet, deliberately — see Presence_todo §0.  Measured
-            //     2026-08-10: adding it to the sibling Supervisor probes made SwarmShare's step 3 flap
-            //      between two diges (2 of 4 runs) where it is 4/4 stable without, because presence is
-            //       wall-clock-varying (the answer AND its 30s freshness) and these readers run against
-            //        the LIVE identity even inside a Story.  Needs an "a Story is replaying" guard first.
+            //   friend at all", not "is this a friend who is HERE".  The relay knows the difference,
+            //    so ask it (Presence.g), and skip a friend it has positively placed elsewhere.
+            //  Only a FRESH POSITIVE offline skips: unknown, stale, unasked and every Book keep the
+            //   old grant-only behaviour, so this can subtract a wrong sentence and never add one.
+            //  Withdrawn once (2026-08-10) for flaking SwarmShare — these readers run against the LIVE
+            //   identity even inside a Story, and presence is wall-clock-varying.  Re-applied 2026-08-11
+            //    on top of Story_replaying(), the tab-wide gate inside Presence_live.
+            if (M.Presence_offline && M.Presence_offline(p.sc.pub)) continue
             if (M.Swarm_pier_live && M.Swarm_pier_live(p, 'Music')) {
                 liveName = p.sc.friendly ? String(p.sc.friendly) : String(p.sc.pub).slice(0, 8)
             }

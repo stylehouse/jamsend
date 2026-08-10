@@ -15,7 +15,7 @@
     import { power_cells, foam_cells, slab_seat, poly_area, type Pt } from "$lib/O/vyto_geometry"
     import { deal_rows, seat_on_deal, deal_fits, deal_badness, box_poly,
              type Deal, type SeatRow } from "$lib/O/vyto_seat"
-    import { focus_polys, fill_rect, type FocusRole } from "$lib/O/vyto_focus"
+    import { focus_polys, fill_body, BELLY_SWELL, type FocusRole } from "$lib/O/vyto_focus"
     import { gauge_box, gauge_pose, GAUGE_MS } from "$lib/O/vyto_gauge"
     import { GLASS_KINDS } from "$lib/O/glass_kinds"
     import { FACE_MAINKEYS } from "$lib/O/glass_faces"
@@ -833,7 +833,13 @@
             bellyI = best < 0 ? 0 : best
         }
         const roles: FocusRole[] = keys.map((_, i) => (i === bellyI ? 'belly' : 'bud'))
-        return focus_polys(frame, keys, roles, gap)
+        // A STRETCHED BELLY IS SWELLED PAST THE PLATE (the owner 2026-08-11: *"the cell going off the
+        //  screen top left and bottom … so we can use half the screen efficiently"*).  Gated on the
+        //   same pose that chose the stretch seat, so the player's belly — which is sized from a face
+        //    that HAS a natural shape — is untouched: only the thing with no shape of its own takes
+        //     the whole room.
+        const bellyPose = String((live[bellyI]?.row.c as any)?.source_n?.c?.pose ?? '')
+        return focus_polys(frame, keys, roles, gap, bellyPose === 'stretched' ? BELLY_SWELL : 1)
     }
 
     const OVERHANG = 1.25     // a slab seat may overrun the cell's ends by this factor of its length
@@ -1158,12 +1164,16 @@
     //  This is the "don't make the relayouts an annoyance" half: the OTHER half is that the face's
     //   layout width is a CONSTANT (`STRETCH_COL`), so no amount of resizing reflows its content —
     //    only the scale it is drawn at changes, which is a composite, not a layout.
-    function fill_rect_memo(row: TheC, poly: Pt[], cx: number, cy: number,
-                            bb: { bx: number, by: number, bw: number, bh: number }): { w: number, h: number } {
+    //  The body is keyed by its own bbox AND the plate's, because a swelled belly is cut by the plate
+    //   — the same body in a different frame is a different room.
+    function fill_body_memo(row: TheC, poly: Pt[], frame: { x: number, y: number, w: number, h: number },
+                            bb: { bx: number, by: number, bw: number, bh: number },
+                           ): { x: number, y: number, w: number, h: number } {
         const c = row.c as any
         const k = `${Math.round(bb.bx)},${Math.round(bb.by)},${Math.round(bb.bw)},${Math.round(bb.bh)},${poly.length}`
+              + `|${Math.round(frame.x)},${Math.round(frame.y)},${Math.round(frame.w)},${Math.round(frame.h)}`
         if (c.fillrect_k === k && c.fillrect) return c.fillrect
-        const r = fill_rect(poly, cx, cy)
+        const r = fill_body(poly, frame)
         c.fillrect_k = k; c.fillrect = r
         return r
     }
@@ -2190,8 +2200,15 @@
                     //      it.  The regime's law one step on: not just the size assigned, the aspect too.
                     //  This runs after everything above ON PURPOSE: whatever the natural-box seat
                     //   concluded is simply not the question being answered here.
+                    //  …AND THE BODY IS NOW BIGGER THAN THE ROOM (2026-08-11).  A swelled belly runs off
+                    //   three edges of the plate, so the question changes shape: the rectangle must be
+                    //    inscribed in the VISIBLE body — the wall where there is one, the viewport edge
+                    //     where the wall has left — and centred where that cut region actually has room,
+                    //      not on the polygon's centroid, which a cut can throw anywhere.  `fill_body`
+                    //       answers both (clip + centre sweep) and hands back the centre it chose.
                     if (focusR && stretchPose) {
-                        const fr = fill_rect_memo(row, poly, ax, ay, bb)
+                        const fbb = bbox_of(framePoly)
+                        const fr = fill_body_memo(row, poly, { x: fbb.bx, y: fbb.by, w: fbb.bw, h: fbb.bh }, bb)
                         if (fr.w > 8 && fr.h > 8) {
                             // …AND 130% OF IT (the owner, looking at the working stretch: *"Heist wants
                             //  font-size:130% — the rest of it"*).  NOT a font rule: the faces hardcode
@@ -2213,12 +2230,26 @@
                             if (sh > 0) z = Math.min(z, fr.h / sh)
                             fit = +Math.max(STRETCH_ZOOM_MIN, Math.min(BELLY_FIT_MAX, z)).toFixed(2)
                             ;(row.c as any).stretch_rect = fr        // what the measure pass searches against
-                            mx = ax - mw / 2; my = ay - mh / 2
+                            mx = fr.x - mw / 2; my = fr.y - mh / 2
                         }
+                    }
+                    // ── FURNITURE READS THE VISIBLE BODY ───────────────────────────────────────────
+                    //  `bb` is the cell's TRUE extent and every seat above wants it that way, but the
+                    //   wave band, the ident and the camera fit are all struck off bx/by — and a
+                    //    swelled belly's true bbox starts a couple of hundred units off the plate, so
+                    //     those would hang the name where the viewport has already cut it away.  The
+                    //      record therefore carries the INTERSECTION with the plate: the part of this
+                    //       cell a reader can actually see, which is the only part furniture belongs on.
+                    let vx = bb.bx, vy = bb.by, vw = bb.bw, vh = bb.bh
+                    if (focusR) {
+                        const f = bbox_of(framePoly)
+                        const x0 = Math.max(vx, f.bx), y0 = Math.max(vy, f.by)
+                        const x1 = Math.min(vx + vw, f.bx + f.bw), y1 = Math.min(vy + vh, f.by + f.bh)
+                        if (x1 > x0 && y1 > y0) { vx = x0; vy = y0; vw = x1 - x0; vh = y1 - y0 }
                     }
                     cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids, ident, spike: sp,
                                  x: ax, y: ay, r: s.r, kind: 'poly', d: path_round(sp ? sp.poly : poly), departing: false, lift,
-                                 bx: bb.bx, by: bb.by, bw: bb.bw, bh: bb.bh,
+                                 bx: vx, by: vy, bw: vw, bh: vh,
                                  mx, my, mw, mh, ang, clip: clipPoly, face, source, row, fx, fxi, fit, sunk, poly,
                                  room: Math.abs(poly_area(poly)) })
                     if (hasKids) layout(n.kids, poly, 0, n.key, n)

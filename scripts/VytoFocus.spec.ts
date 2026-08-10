@@ -6,7 +6,8 @@
 // Run: node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/VytoFocus.spec.ts
 
 import { describe, test, expect } from 'vitest'
-import { focus_polys, fill_rect, type Pt, type Frame, type FocusRole } from '../src/lib/O/vyto_focus'
+import { focus_polys, fill_rect, fill_body, clip_frame, BELLY_SWELL,
+         type Pt, type Frame, type FocusRole } from '../src/lib/O/vyto_focus'
 
 const F: Frame = { x: 0, y: 0, w: 900, h: 520 }
 
@@ -157,5 +158,97 @@ describe('the stretch — fill_rect', () => {
     test('a degenerate body yields nothing rather than a lie', () => {
         expect(fill_rect([], 0, 0)).toEqual({ w: 0, h: 0 })
         expect(fill_rect([{ x: 0, y: 0 }, { x: 1, y: 1 }], 0, 0)).toEqual({ w: 0, h: 0 })
+    })
+})
+
+// THE SWELL — *"the cell going off the screen top left and bottom … so we can use half the screen
+//  efficiently"*.  Two claims, and they are in tension, which is why both are gated: the BODY must
+//   leave the plate on three named sides, and the COMPONENT must not leave it at all.
+describe('the swell — a belly bigger than its plate', () => {
+    const ks = ['Heist!0', 'Door!1']
+    const rs: FocusRole[] = ['belly', 'bud']
+    const plain = () => focus_polys(F, ks, rs, 8)
+    const swelled = () => focus_polys(F, ks, rs, 8, BELLY_SWELL)
+
+    test('SWELL 1 IS THE IDENTITY — an unswelled belly is what it always was', () => {
+        expect(JSON.stringify(focus_polys(F, ks, rs, 8, 1))).toBe(JSON.stringify(plain()))
+    })
+
+    test('IT LEAVES THE PLATE ON THREE SIDES — top, left and bottom, and only those', () => {
+        const b = swelled()[0]
+        expect(Math.min(...b.map(p => p.x))).toBeLessThan(F.x)                 // off the left
+        expect(Math.min(...b.map(p => p.y))).toBeLessThan(F.y)                 // off the top
+        expect(Math.max(...b.map(p => p.y))).toBeGreaterThan(F.y + F.h)        // off the bottom
+        // …and NOT off the right: that rim is the buds' margin, and the swell pivots on it.
+        const plainRight = Math.max(...plain()[0].map(p => p.x))
+        expect(Math.max(...b.map(p => p.x))).toBeCloseTo(plainRight, 6)
+    })
+
+    test('THE BUDS ARE UNDISTURBED — still on the plate, still off the belly, never on it', () => {
+        for (let n = 2; n <= 5; n++) {
+            const keys = Array.from({ length: n }, (_, i) => `k${i}`)
+            const roles: FocusRole[] = keys.map((_, i) => (i === 0 ? 'belly' : 'bud'))
+            const polys = focus_polys(F, keys, roles, 8, BELLY_SWELL)
+            for (let i = 1; i < polys.length; i++) {
+                let mx = 0, my = 0, touching = 0
+                for (const p of polys[i]) { mx += p.x; my += p.y }
+                mx /= polys[i].length; my /= polys[i].length
+                for (const pt of polys[i]) if (inside(pt, polys[0])) touching++
+                expect(inside({ x: mx, y: my }, polys[0]), `bud ${i} of ${n} sits ON the belly`).toBe(false)
+                expect(touching, `bud ${i} of ${n} floats free of the belly`).toBeGreaterThan(0)
+                for (const pt of polys[i]) {
+                    expect(pt.x).toBeGreaterThanOrEqual(F.x - 0.5)
+                    expect(pt.x).toBeLessThanOrEqual(F.x + F.w + 0.5)
+                    expect(pt.y).toBeGreaterThanOrEqual(F.y - 0.5)
+                    expect(pt.y).toBeLessThanOrEqual(F.y + F.h + 0.5)
+                }
+            }
+        }
+    })
+
+    test('THE PLATE CUTS IT — clip_frame keeps the visible part and nothing outside', () => {
+        const cut = clip_frame(swelled()[0], F)
+        expect(cut.length).toBeGreaterThan(3)
+        for (const p of cut) {
+            expect(p.x).toBeGreaterThanOrEqual(F.x - 1e-6)
+            expect(p.x).toBeLessThanOrEqual(F.x + F.w + 1e-6)
+            expect(p.y).toBeGreaterThanOrEqual(F.y - 1e-6)
+            expect(p.y).toBeLessThanOrEqual(F.y + F.h + 1e-6)
+        }
+        // a body already inside its plate comes back unchanged in extent
+        const inb = clip_frame(plain()[0], F)
+        expect(area(inb)).toBeCloseTo(area(plain()[0]), 3)
+    })
+
+    test('THE COMPONENT NEVER LEAVES THE SCREEN — the seat is inside the plate, corners and all', () => {
+        const r = fill_body(swelled()[0], F)
+        for (const [sx, sy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+            const cx = r.x + (sx * r.w) / 2, cy = r.y + (sy * r.h) / 2
+            expect(cx).toBeGreaterThanOrEqual(F.x - 0.5)
+            expect(cx).toBeLessThanOrEqual(F.x + F.w + 0.5)
+            expect(cy).toBeGreaterThanOrEqual(F.y - 0.5)
+            expect(cy).toBeLessThanOrEqual(F.y + F.h + 0.5)
+        }
+    })
+
+    // THE POINT OF THE WHOLE CHANGE.  *"use half the screen efficiently"* — an inscribed belly's seat
+    //  measured well under half the plate (round body, square plate, and the corners are the loss); a
+    //   bled one must beat it decisively or the swell bought nothing but a bigger drawing.
+    test('IT USES THE SCREEN — the bled seat takes over half the plate, and far more than the inscribed one', () => {
+        const before = fill_body(plain()[0], F)
+        const after = fill_body(swelled()[0], F)
+        expect(after.w * after.h).toBeGreaterThan(F.w * F.h * 0.5)
+        expect(after.w * after.h).toBeGreaterThan(before.w * before.h * 1.4)
+    })
+
+    test('IT IS A PURE FUNCTION — same plate, byte-same seat', () => {
+        const b = swelled()
+        expect(JSON.stringify(fill_body(b[0], F))).toBe(JSON.stringify(fill_body(b[0], F)))
+    })
+
+    test('a body that misses its plate yields nothing rather than a lie', () => {
+        const away: Frame = { x: 5000, y: 5000, w: 100, h: 100 }
+        expect(fill_body(swelled()[0], away)).toEqual({ x: 0, y: 0, w: 0, h: 0 })
+        expect(clip_frame(swelled()[0], away)).toEqual([])
     })
 })

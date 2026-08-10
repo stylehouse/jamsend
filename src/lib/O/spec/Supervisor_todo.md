@@ -12,10 +12,19 @@
 >   render (`swarm.station` *"you are online — friends can reach you"*, `swarm.arrival` *"Lefto"*, 11
 >    watches vs 9), the boot waterfall draws, and **`Radio_crossover` fired TWICE on two independent
 >     boots** — `crossover playable=2 of=Lefto`, solo ◐ → cut-in → solo ·. Details in Radio_todo §0.
->  **WHAT IS STILL OWED, and it is now the real §0:** (1) the **false-`'playing'` deadlock** — the entry
->   below; a tab can sit unrecoverable while every probe reads calm, and it is what made an advice
->    sentence unfollowable. (2) The **`Radio_source_toggle` solo fix** (Radio_todo §0) and its RED half.
->     (3) **(a)/(b) from the frozen-roster entry** — the Auto stamp, still one electrode short.
+>  **WHAT IS STILL OWED, and it is now the real §0:** (1) **WHY DOES A SKIP ALWAYS FIX IT** — three
+>   times on live tabs, a full friend pool standing and nothing playing, cured instantly by next-track.
+>    The pump reschedules on both a null dial AND a throw, so it is not a dead chain. Live suspect:
+>     `Radio_pump_soon` is a bare `setTimeout` with **no visibility handling anywhere in Radio.g**, and
+>      a backgrounded tab has its timers throttled. One measurement decides it — stamp the pump's wake
+>       times, boot focused vs backgrounded. A recovery (auto-skip at the give-up seam) is now taken so
+>        nobody has to press it, but it is scaffolding over an unknown cause and should be DELETED when
+>         the cause lands, not grown. Radio_todo §0. (2) The **`Radio_source_toggle` solo fix** and its
+>          RED half. (3) **(a)/(b) from the frozen-roster entry** — the Auto stamp, one electrode short.
+>  **A give-up is a promise that the advice is now true**, and it was broken twice tonight in opposite
+>   directions: once saying "pick something to hear" when nothing pressable would start it, once giving
+>    up at all when a skip would have worked. Both are the same failure — a hardcoded sentence outliving
+>     the state it was written for. The advice is live now, and carries a `remedy` word.
 >  **Read `read_ago` in the header before believing any row** — a frozen roster shows its last verdicts
 >   and they are usually green. That is what this whole session started as. Corroborated tonight from
 >    the other side: across two HMR re-stands the rosters stayed at 0.3–0.9s while `arrived` correctly

@@ -61,7 +61,11 @@ import { readFileSync, writeFileSync } from 'node:fs'
 //  so the CLI can no longer drift to a worse death criterion than the layer it's questioning.
 import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs'
 
-const OPS = ['ping', 'probe', 'world', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke']
+// `retain` was implemented runner-side (LiesFunk's op:'retain' → the Story world's keep_snaps) but
+//  never listed here, so the CLI refused the one op that makes a MIDDLE step inspectable: without it
+//   `snap 3` of a 9-step Book returns got_snap:null, trimmed 5 steps behind, and a flapping early step
+//    cannot be diffed at all.  `retain on` sticks on w:Story.c across runs.
+const OPS = ['ping', 'probe', 'world', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -257,6 +261,7 @@ if (op === 'snap' || op === 'trace') ask.n = Number(arg)
 if (op === 'declare') ask.sentence = arg   // the explorer button's CLI twin (e_story_declare)
 if (op === 'socklog') { ask.on = arg === 'off' ? 0 : 1; if (flags.has('--reload')) ask.reload = 1 }   // arm the tab's trace dump remotely (was: 🪪 hatch only)
 if (op === 'poke') ask.verb = arg          // allowlisted UI verb (runner-side allowlist is the authority)
+if (op === 'retain') ask.on = arg === 'off' ? false : true   // keep every step's got_snap, not just the last 5
 if (uid) ask.uid = uid
 
 const HTTP       = process.env.RUNNER_URL || 'http://172.17.0.1:9091'

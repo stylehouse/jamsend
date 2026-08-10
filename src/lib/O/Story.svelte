@@ -2111,6 +2111,28 @@
         this.story_drive(sub.Run, w, run)
     },
 
+    // ── Story_replaying — "is a Book stepping in this tab RIGHT NOW?" ───────────
+    //  The tab-wide twin of Vytui's `parked(w)`, and it exists for the same reason: anything
+    //   wall-clock-varying that a snap can reach must go inert while a Book replays, or the
+    //    fixture flakes.  Vytui could ask per-world (`w.c.Run.c.run.c.driving`) because the
+    //     renderer only ever touches its own world.  A LIVE reader cannot: the Supervisor probes
+    //      and `Radio_alone_why` read `Swarm_live_self()` — the real tab's identity — from inside
+    //       a replaying Book, so the question is about the TAB, not the caller's world.
+    //  `run.c.driving` is the flag (story_drive owns it: true while stepping, false on pause,
+    //   termination and teardown).  run particles hang at H:Story › A: › w: › run — the walk must
+    //    go through the actor level, exactly as auto_teardown_story's does.
+    //  Cheap by construction: a handful of particles, and `false` after one `o()` when no Story
+    //   world is up at all, which is every music tab that never ran a Book.
+    Story_replaying(): boolean {
+        const S = (this.top_House() as House).o({ H: 'Story' })[0] as TheC | undefined
+        if (!S) return false
+        for (const A of S.o({ A: 1 }) as TheC[])
+            for (const w2 of A.o({ w: 1 }) as TheC[])
+                for (const run of w2.o({ run: 1 }) as TheC[])
+                    if (run.c?.driving) return true
+        return false
+    },
+
     // ── post-run forgive sweep (EntropyArrest §10) ──────────────────────────────
     //  A value-noise mismatch (a dige diff whose only changes fall in acknowledged-noise
     //   spans) isn't a real failure — but proving that needs the expected snap loaded, which

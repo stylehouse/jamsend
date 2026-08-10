@@ -414,7 +414,11 @@ Swarm_dial_piers(subject, sup):
         let theirs_ok = has(them)
         if (mine_ok && theirs_ok) sealed = sealed + 1
         if (mine_ok !== theirs_ok) half = half + 1
-        if (this.Swarm_pier_live && this.Swarm_pier_live(p, 'Music')) { live = live + 1; names.push(p.sc.friendly ? String(p.sc.friendly) : them.slice(0, 8)) }
+        // "online" here means ONLINE, not "granted" — the relay's answer subtracts from the grant
+        //  check (Presence.g).  Deliberately gating only the LIVE tally: sealed|half are facts about
+        //   the friendship and must not move because somebody closed their laptop.
+        let here = !this.Presence_offline || !this.Presence_offline(them)
+        if (here && this.Swarm_pier_live && this.Swarm_pier_live(p, 'Music')) { live = live + 1; names.push(p.sc.friendly ? String(p.sc.friendly) : them.slice(0, 8)) }
     }
     if (!sealed && !half) return { state: 'no', reading: 'nobody' }
     let parts = []
@@ -452,6 +456,9 @@ Swarm_probe_arrival(subject, sup):
     for (const p of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
         if (!p.sc.pub) continue
         if (me && String(p.sc.pub) === me) continue
+        // somebody ARRIVING is the whole question here, so a grant from weeks ago is the weakest
+        //  possible evidence for it — drop a pier the relay says is not on it (Presence.g).
+        if (this.Presence_offline && this.Presence_offline(String(p.sc.pub))) continue
         if (this.Swarm_pier_live && this.Swarm_pier_live(p, 'Music')) return { verdict: 'ok', note: p.sc.friendly ? String(p.sc.friendly) : '' }
     }
     return { verdict: 'wrong', note: 'nobody has come online' }

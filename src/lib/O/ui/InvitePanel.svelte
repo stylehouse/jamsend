@@ -469,6 +469,18 @@
         if (m) return decodeURIComponent(m[1])
         return s   // assume a bare token
     }
+    // the QUIET twin of paste_load, run on every keystroke: identical accept path, but it never
+    //  writes an error and never clears one the loud path put there.  Silence is the whole contract —
+    //   every prefix of a valid link fails to parse, so a chatty version would flash a complaint at
+    //    someone who is simply still pasting.  Once a token parses there is nothing left to confirm.
+    function paste_try() {
+        if (invite) return                      // an offer is already on screen; don't fight it
+        const tok = iz_from(paste)
+        if (!tok) return
+        const t = H?.Swarm_token_parse?.(tok)
+        if (!t) return
+        iz = tok; invite = t; iz_err = ''; joined = ''; auto_fired = false; join_over = false; join_focused = false
+    }
     function paste_load() {
         paste_err = ''
         const tok = iz_from(paste)
@@ -630,10 +642,18 @@
                  role-default.  Hidden when we OPENED from a scan (the landing face already has it)
                  or an offer is already on screen. -->
             {#if !landed_url && !invite}
+                <!-- JUST THE FIELD (the owner 2026-08-11: *"the 'paste an invite link' is just the
+                     field, no need for accept?"*).  Right — pasting a link IS the act; a second click
+                     to confirm what you just pasted is a step that only exists because the field
+                     could not tell whether you were done.  It can: `paste_try` parses on input and
+                     acts only when a REAL token appears, so a valid paste lands the offer instantly
+                     and a half-typed one says nothing.  ⏎ still runs the loud version, which is what
+                     surfaces "that link's invite did not parse" — the one thing a silent field must
+                     never do on its own, since every prefix of a good link is a bad link. -->
                 <span class="ip-row">
-                    <input class="ip-name" bind:value={paste} placeholder="paste an invite link"
+                    <input class="ip-name wide" bind:value={paste} placeholder="paste an invite link"
+                        oninput={paste_try}
                         onkeydown={(e) => { if (e.key === 'Enter') paste_load() }} />
-                    <button class="ip-act" onclick={paste_load} title="accept an invite as this identity — not a fresh one">accept</button>
                 </span>
                 {#if paste_err}<span class="ip-note">⚠ {paste_err}</span>{/if}
             {/if}
@@ -782,6 +802,8 @@
         border-radius: 5px; font-size: 0.78rem; padding: 0.15rem 0.5rem; width: 11rem;
     }
     .ip-name:focus { border-color: #77a; outline: none; }
+    /* the paste field has no button beside it any more, so it takes the whole row */
+    .ip-name.wide { width: 100%; min-width: 11rem; }
     .ip-pub { font-size: 0.66rem; color: #778; font-family: monospace; margin-left: 0.35rem; }
     .ip-pen {
         background: none; border: none; color: #889; cursor: pointer;

@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '8c5c79e188b9fa3b~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '978c827e5655ba50~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -1504,6 +1504,33 @@ Sounditron_music_running(w) {
 //   no friend previewed) · stock stands but the press never took (Radio_go awaits Sound_gat, which
 //    pends forever on a gestureless tab) · the radio is going but no chunk ever decoded (the serve side
 //     or the decoder) · anything else.  Naming which one is the entire point of waiting 20s to fail.
+// Sounditron_press_play — THE GESTURE REMEDY, as one verb the arrival screen can call with nothing
+//  in its hands (2026-08-11).  Pairs with `remedy:'gesture'`: the Butler draws a start button, and
+//   the button's own click is the user gesture the AudioContext resume has been parked on, so
+//    pressing it satisfies the block AND presses play in the same act.
+//  ZERO-ARG ON PURPOSE.  A registered UI face is handed only `H` — it has no world, and a face that
+//   goes hunting through Houses for one is doing the model's job with none of the model's knowledge
+//    (the Butler's `sup_w()` finds the SUPERVISOR's world, which is not where the Radio lives, and
+//     that mismatch is exactly the kind of thing that reports success while poking a stray).  So the
+//      commissioner — which stood this world and already answers `Sounditron_music_why` about it —
+//       resolves it here, once, where being wrong is visible.
+//  Radio_toggle rather than Radio_go: the toggle now presses play whenever there is no device
+//   (Radio.g), which is precisely this state, and routing through it keeps ONE definition of what
+//    the play control means instead of a second entry point that could drift from it.
+Sounditron_press_play() { const H = this;
+    let M = this.top_House()
+    for (const h of M.o({ H: 'Sounditron' })) {
+        for (const w of h.o({ w: 'Sounditron' })) {
+            let radio = w.o({ Radio: 1 })[0]
+            if (radio) {
+                M.Radio_toggle(radio)
+                return 1
+            }
+        }
+    }
+    return 0
+
+},
 Sounditron_music_why(w) {
     let M = this.top_House()
     let radio = w.o({ Radio: 1 })[0]
@@ -1740,7 +1767,81 @@ Sounditron_supervise(w) {
         //  THE ADVICE IS OURS TO WRITE for the same reason the patience is: it names what a listener can
         //   do instead, and only the commissioner knows what this page even offers.  It stays true on the
         //    tab that has no music AND on the tab whose music simply never started.
-        this.Supervisor_patient(sup, 'arrive.playing', 90, 'nothing has started playing on its own — carry on in and pick something to hear')
+        //  …AND THE ADVICE GOES LIVE ONCE THE CLOCK IS NEARLY UP (2026-08-11).  Watched happen: the
+        //   boot mark recorded `why=stock stands but the AudioContext never ticked — the press is
+        //    parked on a gesture` — the RIGHT answer, computed and logged — and then the give-up
+        //     rendered this hardcoded sentence instead, so the screen offered a page reload when what
+        //      the machine needed was ANY tap.  The owner exited the Butler, hit next track, and it
+        //       played.  **We knew, and we said something else.**  A give-up is a promise that the
+        //        advice is now true; a fixed string cannot keep that promise across four different
+        //         failures (§2), and `Sounditron_music_why` exists precisely to tell them apart.
+        //  COST-BOUNDED ON PURPOSE: `music_why` calls `Radio_dial_pool`, which walks every crate, and
+        //   this function re-runs EVERY BEAT — so the walk is spent only inside the last 5s before the
+        //    deadline, which is the only window where the answer is about to be shown to anybody.
+        //     `Supervisor_patient` refreshes `advice` on every call (:481), so the late re-arm lands
+        //      without restarting the clock.
+        //  `remedy` rides beside it as a one-word REMEDY KIND, not a sentence: the arrival screen must
+        //   choose a control, and parsing English to pick a button is the second opinion this file
+        //    keeps refusing to grow.  'gesture' means a tap — any tap — is the whole cure.
+        let pw = this.Supervisor_patient(sup, 'arrive.playing', 90, 'nothing has started playing on its own — carry on in and pick something to hear')
+        if (pw && pw.c.deadline && Date.now() > pw.c.deadline - 5000) {
+            let probe = w.c.audio_probe
+            if (probe && probe.ok && !probe.realtime) {
+                if (pw.sc.remedy !== 'gesture') { pw.sc.remedy = 'gesture'; pw.bump() }
+                this.Supervisor_patient(sup, 'arrive.playing', 90, 'your browser is waiting for a tap before it will make sound — press start and the music begins')
+            }
+            if (!probe || !probe.ok || probe.realtime) {
+                if (pw.sc.remedy) { delete pw.sc.remedy; pw.bump() }
+                // TAKE THE OPPORTUNITY (the owner 2026-08-11, for the SECOND time in one night: *"all I
+                //  had to do in there was hit next-track to get it to play, of course… so, watch out for
+                //   that opportunity, and take it"*).  Twice observed: nothing playing, a full friend
+                //    pool standing (`radio.remote ✓ 8 playable of 8`), and one press of next starts it
+                //     instantly.  If a skip is what a person would do, and we can see the same thing
+                //      they can see, then asking them to do it is just making them our hands.
+                // ⚠ THIS IS A RECOVERY, NOT A FIX, and it must not be read as one.  I do not know why
+                //  the pump does not get there by itself: it reschedules every 800ms on a null dial AND
+                //   reschedules on throw, so "the chain died" does not survive reading it.  The live
+                //    suspect is that `Radio_pump_soon` is a bare `setTimeout` with no visibility
+                //     awareness anywhere in Radio.g, and a backgrounded tab has its timers throttled to
+                //      a crawl — which would produce exactly this and would be cured by any interaction.
+                //       UNPROVEN.  When the cause is found this block should go, not grow.
+                // THE GUARDS ARE WHAT MAKE IT SAFE, and each one answers "when would this be wrong?":
+                //  ONCE per episode (`c.skipped`, runtime-only) — a retry loop that cuts tracks is the
+                //   2026-08-07 bug this whole area is shaped around; NEVER over sound (`probe.rms`) —
+                //    if something is audible then nothing is stuck and a skip would be vandalism; only
+                //     with something ACTUALLY PLAYABLE to land on, so we never skip into silence; and
+                //      only here, at the give-up seam, which is already the moment we had conceded.
+                //  It runs BEFORE the advice is written, so a skip that works means the listener never
+                //   sees a give-up at all — the best outcome is that this text is never read.
+                //  NO EARLY `return` — this function registers more below, and bailing out of the whole
+                //   supervise beat to skip one advice line would silently stop maintaining everything
+                //    after it.  A flag says "the advice is handled", which is all we actually mean.
+                let M = this.top_House()
+                let rad = w.o({ Radio: 1 })[0]
+                let unstuck = 0
+                //  ⚠ THE GUARD IS `!rad.c.rec`, AND NOT THE PROBE'S `rms`.  Wrote `!probe.rms` first,
+                //   which would have been a dead guard forever: `Lies_audio_probe` builds its OWN
+                //    oscillator → analyser → gain(0) → destination, so `rms` reports whether the
+                //     AudioContext can process audio at all, NOT whether music is coming out.  It reads
+                //      ~0.705 on every healthy tab whether or not anything is playing.  An open record
+                //       (`c.rec`) is the actual fact, and it is also the exact thing a skip would
+                //        interrupt — so testing it is both the honest reading and the real safety.
+                if (rad && !rad.c.skipped && !rad.c.rec) {
+                    let census = M.Radio_pool_census ? M.Radio_pool_census(w, rad) : null
+                    if (census && census.playable) {
+                        rad.c.skipped = 1
+                        unstuck = 1
+                        if (M.Radio_trace) M.Radio_trace(rad, { ev: 'unstick', playable: census.playable })
+                        M.Radio_skip(rad)
+                        this.Supervisor_patient(sup, 'arrive.playing', 90, 'nothing had started — nudged the dial for you')
+                    }
+                }
+                if (!unstuck) {
+                    let why = this.Sounditron_music_why(w)
+                    if (why) this.Supervisor_patient(sup, 'arrive.playing', 90, why)
+                }
+            }
+        }
     }
     // AND COMPLETE THE PASS HERE, rather than waiting for w:Supervisor's own tick on Mundo.  Registering
     //  and being READ are different events, and the gap between them is a wall clock: the roster would

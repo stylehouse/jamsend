@@ -209,11 +209,60 @@ The owner, naming the arc honestly: *"Vyto had a lot of constraints and study go
 - the belly/bud layout (`vyto_focus.ts`) and the belly ladder;
 - `BELLY_FIT_MAX`, the small-pose 0.8–1 clamp, the stretch seat + its `.face-scroll.stretch` CSS
    and its measure skip;
+- the swell (`BELLY_SWELL`, `clip_frame`, `fill_body`) — doubly gated: `focus_polys` takes swell 1
+   by default and the call site only passes `BELLY_SWELL` for a belly the commission posed
+    `stretched`, so the player's belly and every non-focus glass are untouched;
 - posed cells never crushing (`posed_cell`), the pose release in the gauge;
 - the guts spill suppressed, and the label cut to the bare mainkey (*"just say the mainkey in the
    label"*) — scoped at the CALL SITE, so `ident_of`'s three-part identity (mainkey : serial . name,
     which exists so four %Heists in one foam are tellable apart) is untouched for every other glass;
 - `DoorFace`/`RadioFace` icon renders (pose-gated inside the faces themselves).
+
+### ⇢ THE SWELL — the belly is now BIGGER THAN THE PLATE (2026-08-11, LANDED, live-unverified)
+
+*"lets make the Heist one even bigger though, the cell going off the screen top left and bottom, and
+ the Component can nest squarely in the square up there, so we can use half the screen efficiently
+  like that.  it's nice having a potato with a purple gem floating in a dark wiry room, for a
+   character."*
+
+**The ceiling this hits is geometric, not a constant.**  A body inscribed in the plate is round and
+ the plate is square, so the corners are pure loss — measured on the real 771×800 glass, the maxed
+  inscribed rectangle in an inscribed belly is **30.5% of the plate** and no tuning of radii, aspects
+   or air moves that much.  The answer is to stop inscribing: grow the belly PAST the plate and let
+    the viewport cut it.  The visible body is then a rounded slab with the screen's own straight
+     edges, and a rectangle takes nearly all of it — **48.1%**, a 1.6× jump, same plate, same face.
+
+- `focus_polys(frame, keys, roles, gap, swell)` — `swell` defaults to 1, so an unswelled belly is
+   byte-identical to what it always was (gated: *SWELL 1 IS THE IDENTITY*).  `BELLY_SWELL = 1.6`.
+- **Only the right rim is pinned**, because that is where the buds live: the swell goes left, up and
+   down — exactly the three edges the owner named.  And it pins the **wobbled** rim, not the radius:
+    a vertex sits at `cx + rx·w(t)·cos t`, so the overshoot scales with `rx` and pinning `cx+rx`
+     would still creep the real edge outward.  The overshoot factor is scale-free, so one reading of
+      it places the swelled rim exactly where the plain one was (gated to 6dp).
+- **Buds are now placed off the wall by a RAY**, not off the radius — the radius answer ignored the
+   wobble (the "sliver" of overlap was whatever the harmonics left) and would be wrong outright once
+    swelled, because the slot is a height on the PLATE while the ellipse it must meet is a bigger
+     one.  Both halves of the overlap law still gate, now at every swell and every bud count.
+- **The component must NOT bleed.**  `fill_body(poly, frame)` clips the body to the plate
+   (`clip_frame`, Sutherland–Hodgman — legal because the CLIP is the convex one) and then sweeps the
+    CENTRE too, a 3×3 lattice over the visible bbox: a cut body is no longer centred on anything, so
+     `fill_rect`'s single-centre question stops being the right one.  It returns the centre it chose
+      and the stretch seat sits on THAT, not on the polygon's centroid.
+- **Furniture reads the visible body.**  `bb` stays the true extent (the seats want it), but the
+   cell record now carries its INTERSECTION with the plate — the wave band, the ident and the camera
+    fit are all struck off `bx/by`, and a swelled belly's true bbox starts ~290 units off-screen,
+     i.e. a name drawn where the viewport already cut it away.
+
+**The dial, with numbers, if the owner wants more or less potato** (measured, 771×800 plate):
+ swell 1 → 30.5% · 1.3 → 43.1% · **1.6 → 48.1%** · 2.0 → 53.8% · 2.5 → 59.1% · 3.0 → 60.0%.
+ It flattens after ~2.5 and the cost is the character: the bigger the swell the flatter the visible
+  wall, until the potato reads as a straight vertical edge.  1.6 keeps a ~120-unit bulge across the
+   frame's height — still visibly a body.  **This is one constant (`BELLY_SWELL`) and nothing else.**
+
+**Unverified live**: both player tabs were unreachable (no ping, dev server healthy — they were
+ closed, not broken) when this landed, and a stretched belly needs a real keep open to see.  The
+  numbers above are from the pure geometry; what is unmeasured is what the column search settles on
+   once the rectangle is 418×709 instead of 410×492 — expect a narrower column and more zoom.
 
 ### ⇢ THE PLAYER WAS RESPAWNING EVERY TRACK — a cell's identity was its state (2026-08-10, LANDED)
 

@@ -169,6 +169,35 @@ test('Presence: a real relay answers `who`, and the ghost absorbs it three-value
     expect(await until(() => H.Presence_here(justSealed.addr) === true), 'and the next round finds them online').toBe(true)
     justSealed.ws.close()
 
+    // ── THE REPLAYING GATE: presence goes inert while a Book steps ───────────────────────────────
+    //  Not hypothetical — this was measured. Wiring Presence_offline into Swarm_probe_arrival +
+    //   Swarm_dial_piers made SwarmShare's step 3 flap between two diges in 2 runs of 4 (2026-08-10),
+    //    because those probes read the LIVE tab's identity even while a Book replays, and presence is
+    //     wall-clock-varying in both the answer and its 30s freshness edge. Story_replaying()
+    //      (Story.svelte) is the tab-wide tell, and Presence_live is the one chokepoint it gates.
+    //  The tree is the real shape the predicate walks: H:Story › A: › w: › run, with run.c.driving
+    //   the flag story_drive owns — the same walk auto_teardown_story does.
+    expect(typeof H.Story_replaying, 'the Story ghost supplies the predicate').toBe('function')
+    expect(H.Story_replaying(), 'no Book is stepping in this process').toBe(false)
+    expect(H.Presence_here(A.addr), 'so presence answers normally').toBe(true)
+    const SH = H.top_House().i({ H: 'Story' }); SH.c.up = H.top_House()
+    const SA = SH.i({ A: 'Presencing' }); SA.c.up = SH
+    const Sw = SA.i({ w: 'Presencing' }); Sw.c.up = SA
+    const srun = Sw.i({ run: 1 }); srun.c.up = Sw
+    expect(H.Story_replaying(), 'a Story world that is NOT driving is not a replay').toBe(false)
+    expect(H.Presence_here(A.addr), 'and an idle run leaves presence alone').toBe(true)
+    srun.c.driving = true
+    expect(H.Story_replaying(), 'driving ⇒ a Book is stepping in this tab').toBe(true)
+    // EVERY reader, not just the global sugar — gating the one chokepoint is what makes that checkable
+    expect(H.Presence_here(A.addr), 'the global reader goes UNKNOWN').toBe(null)
+    expect(H.Presence_live(w, A.addr), 'and so does the world-in-hand reader').toBe(null)
+    expect(H.Presence_offline(gone), 'so nothing a Book snaps can be suppressed by presence').toBe(false)
+    expect(H.Presence_worth_sending(w, gone), 'and the send gate reverts to pre-presence behaviour').toBe(true)
+    srun.c.driving = false
+    expect(H.Presence_here(A.addr), 'and it all lifts the moment the run stops driving').toBe(true)
+    H.top_House().drop(SH)
+    expect(H.Story_replaying(), 'a torn-down Story world is not a replay either').toBe(false)
+
     // ── staleness degrades to UNKNOWN, never to offline ──────────────────────────────────────────
     //  Read with a tiny window to simulate an answer that has aged out, without waiting 30s.
     expect(H.Presence_fresh(w, 1), 'a 1ms window makes the answer stale').toBe(false)

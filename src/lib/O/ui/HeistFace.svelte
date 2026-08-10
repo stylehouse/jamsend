@@ -102,7 +102,6 @@
     let dirsFocus = $state(false)
     let catGaps = $state<string[]>([''])
     let dirsGaps = $state<string[]>([''])
-    let catFirstInput: HTMLInputElement | undefined = $state()
     // directories' segment list is FROZEN at open time (openDirs), unlike category's: catSegs echoes a
     //  persisted scalar (sc.genre) so it never moves under the user, but dirsSegs falls back to the LIVE
     //  commonPrefix over still-materialising husks whenever sc.dirs is unset — editing off that moving
@@ -499,12 +498,16 @@
                  that spot in the reading order, not that the control goes away.  Without it there is no
                  gesture at all for prepending a level above everything: every other gap inserts AFTER a
                  chip, so the top of the hierarchy was the one position you could not reach. -->
-            {#if face.catSegs.length}
-                <input class="kf-gap" placeholder="+" value={catGaps[0]} title="add a section above these"
-                    oninput={(e) => { catGaps[0] = (e.currentTarget as HTMLInputElement).value }}
-                    onblur={commitCat}
-                    onkeydown={(e) => { if (e.key === 'Enter') catInsertAt(0) }} />
-            {/if}
+            <!-- …AND IT IS THE EMPTY STATE TOO (the owner 2026-08-11: *"turn the section|directories when
+                 empty input boxes into just the same '+' input box as goes between and either side of any
+                 path bit"*).  There used to be a second, wider input with its own prose placeholder
+                 ("name a section…") for the no-chips case — a different-looking control for what is the
+                 SAME act, prepending a level, and it taught a gesture that then vanished the moment you
+                 used it once.  One control, always drawn, at the position that always exists. -->
+            <input class="kf-gap" placeholder="+" value={catGaps[0]} title="add a section above these"
+                oninput={(e) => { catGaps[0] = (e.currentTarget as HTMLInputElement).value }}
+                onblur={commitCat}
+                onkeydown={(e) => { if (e.key === 'Enter') catInsertAt(0) }} />
             {#each face.catSegs as seg, i}
                 <span class="kf-chip cat">{seg}<DeleteX ondelete={() => catRemoveAt(i)} title="remove this section level" /></span>
                 <input class="kf-gap" placeholder="+" value={catGaps[i + 1]}
@@ -512,27 +515,22 @@
                     onblur={commitCat}
                     onkeydown={(e) => { if (e.key === 'Enter') catInsertAt(i + 1) }} />
             {/each}
-            {#if !face.catSegs.length}
-                <input class="kf-gap wide" placeholder="name a section…"
-                    value={catGaps[0]} bind:this={catFirstInput}
-                    oninput={(e) => { catGaps[0] = (e.currentTarget as HTMLInputElement).value }}
-                    onblur={commitCat}
-                    onkeydown={(e) => { if (e.key === 'Enter') catInsertAt(0) }} />
-            {/if}
         </div>
 
         <!-- DIRECTORIES — theirs: the shared source prefix, same chip+gap editing, different accent, never
              a box around the track list (that's what "spilled out" below is for). -->
         <div class="kf-row">
             <span class="kf-stair-lbl">directories</span>
-            {#if dirsSegsFrozen.length}
-                <input class="kf-gap dirs" placeholder="+" list="kf-dirs-known" value={dirsGaps[0]}
-                    title="add a directory above these"
-                    onfocus={() => (dirsFocus = true)}
-                    oninput={(e) => { dirsGaps[0] = (e.currentTarget as HTMLInputElement).value }}
-                    onblur={commitDirs}
-                    onkeydown={(e) => { if (e.key === 'Enter') dirsInsertAt(0) }} />
-            {/if}
+            <!-- unconditional, and the empty state with it — see the section row above.  The prose
+                 placeholder this replaces ("no folders — add one?") was also the only row on this face
+                 that ASKED A QUESTION about a perfectly ordinary state; a keep with no directory prefix
+                 is not a problem to be answered, it is a keep with no directory prefix. -->
+            <input class="kf-gap dirs" placeholder="+" list="kf-dirs-known" value={dirsGaps[0]}
+                title="add a directory above these"
+                onfocus={() => (dirsFocus = true)}
+                oninput={(e) => { dirsGaps[0] = (e.currentTarget as HTMLInputElement).value }}
+                onblur={commitDirs}
+                onkeydown={(e) => { if (e.key === 'Enter') dirsInsertAt(0) }} />
             {#each dirsSegsFrozen as seg, i}
                 <!-- the chunk itself is EDITABLE (the human 2026-08-05) — a directory level is usually
                      nearly right, so retyping it whole through remove+insert was the wrong gesture.  It
@@ -552,14 +550,6 @@
                     onblur={commitDirs}
                     onkeydown={(e) => { if (e.key === 'Enter') dirsInsertAt(i + 1) }} />
             {/each}
-            {#if !dirsSegsFrozen.length}
-                <input class="kf-gap dirs wide" placeholder="no folders — add one?"
-                    list="kf-dirs-known" value={dirsGaps[0]}
-                    onfocus={() => (dirsFocus = true)}
-                    oninput={(e) => { dirsGaps[0] = (e.currentTarget as HTMLInputElement).value }}
-                    onblur={commitDirs}
-                    onkeydown={(e) => { if (e.key === 'Enter') dirsInsertAt(0) }} />
-            {/if}
         </div>
         <datalist id="kf-dirs-known">
             {#each face.dirsKnown as d}<option value={d}></option>{/each}
@@ -807,7 +797,8 @@
     .kf-row .kf-stair-lbl { margin-right: 5px; vertical-align: middle; }
     .kf-row .kf-chip, .kf-row .kf-gap { vertical-align: middle; }
     /* an empty row has no chips to hint what it's for, so its lone gap grows and carries the prompt */
-    .kf-gap.wide { width: auto; min-width: 108px; font-style: italic; }
+    /* (`.kf-gap.wide` went with the two prose empty-state inputs, 2026-08-11 — the wider italic box
+        was the only thing making "no chips yet" look like a different control from "add one here". */
 
     /* the mainkey head — same vocabulary as TreeFace (mainkey bright, its value dimmer beside it) */
     .kf-mk { color: #ffd869; font-weight: 700; font-size: 11px; letter-spacing: 0.02em; }

@@ -16,7 +16,31 @@ Companion to `Cluster_spec.md` (the blessed statement) and `ClusterAddressing_to
       the way Tribunal does), so **if those three lines in `Tribunal.g` regress, every test still
        passes** — the evidence is the live log, not the suite. Re-check with `runner_ask socklog on
         --player=<id>` + `dump` after touching them.
-- **Seam D was ATTEMPTED and WITHDRAWN 2026-08-10 — read this before re-trying it.** Wiring
+- **Seam D is APPLIED (2026-08-11), gated by `Story_replaying()`.** All three readers now subtract a
+   positively-offline friend: `Radio_alone_why`, `Swarm_probe_arrival`, `Swarm_dial_piers` (the last
+    gates only its LIVE tally — sealed|half are facts about the friendship and must not move because
+     somebody shut their laptop). The gate is `Story.svelte`'s `Story_replaying()`, the tab-wide twin
+      of Vytui's per-world `parked(w)`: it walks `H:Story › A: › w: › run` for a `run.c.driving`, the
+       same walk `auto_teardown_story` does. It is consumed in **one** place — the top of
+        `Presence_live` — so the whole family (here/offline/worth_sending) goes inert together; five
+         gates would be a matter of luck, one is checkable. Mutation-tested BOTH ways in
+          `Presence.spec.ts`: forced false ⇒ the "driving ⇒ a Book is stepping" claim goes red; forced
+           true ⇒ the very first "A is online" claim goes red. So neither half is decoration.
+- **⚠ THE BOOKS CANNOT GATE ANY OF THIS, and that is the important finding.** Both runners hold
+   **0 piers** (`runner_ask world`, checked before AND during a run). Every Seam D line sits inside a
+    `for (… of o({Pier:1}))` loop, so on a runner they are unreachable code. A green SwarmShare is
+     therefore *not* evidence that Seam D is safe — it is evidence that it never ran. The unit spec is
+      the only real gate; treat a Book here as a smoke test for the rest of the tree.
+   This also re-reads yesterday's measurement correctly: that run was against **f5da, a PLAYER tab
+    with real friends**, which is why Seam D was live enough there to flap a fixture at all. Runners
+     are friendless; players have the friends and cannot run Books. To gate Seam D end-to-end,
+      somebody has to seal a friendship into a runner first.
+- **SwarmShare step 3 flaps at baseline on the runner** — `bbe0028f6b0a49b0` vs `40e72d4fc12dbc89`,
+   twice in ~9 runs on 2026-08-11 with Seam D provably unreachable (0 piers). Together with the step 7
+    flap seen on 2026-08-10, that is two different steps of this Book flapping at a low rate for
+     reasons that have nothing to do with presence. **Do not attribute a SwarmShare step-3 diff to
+      your edit on one run.**
+- **Seam D's earlier withdrawal (2026-08-10) — kept because the mechanism is the durable lesson.** Wiring
    `Presence_offline` into `Swarm_probe_arrival` + `Swarm_dial_piers` made **SwarmShare step 3 flap
     between two diges in 2 of 4 runs**, where it is stable in 8 of 8 without. Attribution was by
      controlled revert, *and note the trap*: the first revert was one run per side and gave a
@@ -27,22 +51,21 @@ Companion to `Cluster_spec.md` (the blessed statement) and `ClusterAddressing_to
      harmless. **Presence is wall-clock-varying** — both the answer and its 30s freshness edge — and
       during a ~40s Book the tab's answer can age out mid-run. So the probe's reading, which a Book
        snaps, became time-dependent. *Nothing a Story snaps may read live presence.*
-   **What it needs first:** an "a Story is replaying" predicate to gate `Presence_here` on. There
-    isn't one — `top_House().c.book` is the BOOT param (`?B=`), not "a Book is running now", so it is
-     the wrong tell. Find or add the real one, gate `Presence_here` to return null under it, and Seam
-      D becomes inert in Books and shippable. The one-line change is written out in the comment left
-       at the site in `Radio_alone_why`.
-   **Also learned:** SwarmShare is not perfectly deterministic at baseline either — step 7 flapped
-    once in ~8 runs with presence entirely removed. Low-rate, different step; do not let it mask a
-     real regression, and do not treat a single matching run as proof of anything.
+   **What it needed:** an "a Story is replaying" predicate. `top_House().c.book` is NOT it — that is
+    the BOOT param (`?B=`), not "a Book is running now". The real tell was already in the tree, one
+     scope too narrow: Vytui's `parked(w)`, which parks the renderer for this exact reason. Widening
+      it from per-world to per-tab is `Story_replaying()`, and that is what Seam D now stands on.
+   **Read the 2-of-4 measurement with its environment attached:** it was taken on a PLAYER tab that
+    has real friends. It was a true reading of a real hazard — but a runner could never have produced
+     it, which is why the bullet above matters more than this one.
 
-- **Seam D is not wired: the three readers that fake presence with a grant check.** `Radio_alone_why`
-   (`Radio.g:1110`), `Swarm_probe_arrival` (`Swarm.g:444`) and `Swarm_dial_piers` (`Swarm.g:406`) all
-    call `Swarm_pier_live`, which is a **grant** check — "is a friend at all", not "is here". So the
-     radio's "your friends are offline" is today derived from roster membership. `Radio_alone_why`'s
-      own header confesses it. These are where presence turns into a true SENTENCE for the listener,
-       and they are the highest-value remaining wiring. NB another agent was writing those very
-        sentences (`watch.sc.advice`) on 2026-08-10 — coordinate rather than collide.
+- **Where presence turns into a SENTENCE — the payoff, now live.** `Radio_alone_why` no longer says
+   "gathering from X" about somebody who is not running the app: `Swarm_pier_live` answers "is this a
+    friend at all" (a GRANT), and the relay answers "is this friend HERE". Both are needed and only
+     the second was missing. Same subtraction in `Swarm_probe_arrival` ("did anyone turn up" — a grant
+      from weeks ago is the weakest possible evidence for it) and in `Swarm_dial_piers`' live tally.
+   Another agent was writing those very sentences (`watch.sc.advice`) on 2026-08-10 — the seams are
+    one line each and sit beside their work rather than through it, but coordinate before widening.
 - **The five freshness windows should collapse onto one answer.** `heard_at` is read at 20s
    (`Swarm_share_present`), 20s (`Swarm_share_beat:2403`), 30s (`Radio_lineup_errors:1351`), 12s (the
     UI dot, `Sounditron.g:1272`) and 15s (`Swarm_pulse_all`'s re-greet). Five numbers for one idea.

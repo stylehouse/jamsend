@@ -185,6 +185,9 @@
         //   music" the owner asked for, and the reason it is not written here is that this file has no
         //    business knowing that friends, invites or local music exist.
         const advice = lines.filter((l: any) => l.gaveup && l.advice).map((l: any) => l.advice)
+        // the REMEDY KIND of whatever gave up — the registrar's word, never our reading of its
+        //  sentence.  Only 'gesture' has a meaning here today; anything else falls to the reload.
+        const remedy = lines.filter((l: any) => l.gaveup && l.remedy).map((l: any) => l.remedy)[0] || ''
         // THE NOTICE RING — what actually HAPPENED, newest last (the order it happened in, which is
         //  the order a log reads in). This is the log half of "log-looking": the arc says what must
         //   become true, the ring says what turned. Entirely `.c`, so it costs the snap nothing.
@@ -193,6 +196,7 @@
             waiting,
             unfinished,
             advice,
+            remedy,
             arrived: (w && H?.Supervisor_arrived) ? H.Supervisor_arrived(w) : 'none',
             since: mounted_at ? Date.now() - mounted_at : 0,
             holding: !!unfinished.length,
@@ -442,7 +446,23 @@
                          audio device, where every control the listener can reach does the wrong
                          thing. Placed under the advice because the advice is what makes it make
                          sense; a reload button above the reason is just a scary button. -->
-                    {#if offer_reload}
+                    <!-- A TAP IS THE CURE, SO OFFER A TAP (2026-08-11). Watched live: the model gave
+                         up with `why=… the press is parked on a gesture` — exactly right — and this
+                         card offered a page RELOAD, which would have worked only by accident, via the
+                         click that dismisses it. The owner instead left the Butler and hit next track
+                         and the music started. So when the registrar says `remedy:'gesture'`, draw the
+                         button whose PRESS IS THE REMEDY: the click satisfies the AudioContext resume
+                         that everything is parked on, and `Radio_toggle` (which no longer pauses a
+                         radio with no device) turns it on in the same gesture. Self-curing, and it
+                         keeps the session instead of throwing it away to achieve the same tap.
+                         WE DO NOT DECIDE THIS — `remedy` is the registrar's word. A face reading the
+                         advice SENTENCE for keywords would be the second opinion this file refuses. -->
+                    {#if offer_reload && view.remedy === 'gesture'}
+                        <button class="reload" transition:fade={{ duration: 240 }}
+                                onclick={() => H?.Sounditron_press_play?.()}>
+                            ▶ start the music
+                        </button>
+                    {:else if offer_reload}
                         <button class="reload" onclick={() => location.reload()}
                                 transition:fade={{ duration: 240 }}>
                             reload the page ↻
