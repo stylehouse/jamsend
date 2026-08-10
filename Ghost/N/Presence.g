@@ -67,9 +67,16 @@ Presence_ask(w, addrs):
     let list = (addrs || []).map(a => String(a)).filter(a => a)
     if (!list.length) return 0
     let p = this.Presence_c(w)
+    let corr = 'p' + ((p.c.corr = (p.c.corr || 0) + 1))
     p.c.asked_at = Date.now()
     p.c.asked_n = list.length
-    port.who(list, 'p' + ((p.c.corr = (p.c.corr || 0) + 1)))
+    // REMEMBER WHAT WE ASKED.  An answer only speaks about the addrs it was asked about, and without
+    //  this the absence of a %Seen was read as "offline" for EVERY pub in the world — so a friend
+    //   sealed between rounds, or any pub this world simply never enquired about, was positively
+    //    suppressed. `.c` because it is transient transport bookkeeping, not part of the answer.
+    p.c.asked_list = list
+    p.c.asked_corr = corr
+    port.who(list, corr)
     return list.length
 
 // Presence_take(w, frame) — absorb the relay's answer.  REPLACES the %Seen set wholesale: presence
@@ -90,6 +97,13 @@ Presence_take(w, frame):
     for (const a of online) want[a] = 1
     for (const seen of p.o({ Seen: 1 })) { if (!want[String(seen.sc.pub)]) p.drop(seen) }
     for (const a of online) p.oai({ Seen: 1, pub: a })
+    // WHAT THIS ANSWER COVERS — the addrs it was asked about (matched by corr, so a late reply to a
+    //  superseded ask cannot claim coverage it does not have), plus anything it reported online.
+    //   Outside that set the honest answer is null, not false.
+    let known = {}
+    if (!frame.corr || frame.corr === p.c.asked_corr) { for (const a of (p.c.asked_list || [])) known[String(a)] = 1 }
+    for (const a of online) known[a] = 1
+    p.c.known = known
     p.c.answered_at = Date.now()
     p.c.answered_n = online.length
     p.bump()
@@ -107,11 +121,16 @@ Presence_fresh(w, ms):
 //  a caller must be able to tell "the relay says they are not there" from "nobody has asked".
 //   Read it explicitly — `if (Presence_live(w,x) === false)` — because a bare falsy test collapses
 //    the two and reintroduces the boot-time starvation this shape exists to prevent.
+//  FALSE requires that the last answer actually COVERED this pub (p.c.known).  Absence of a %Seen is
+//   only evidence when we asked: otherwise a pub the roster gained after the last round — or one this
+//    world never enquired about at all — would read as positively offline and be suppressed.
 Presence_live(w, pub):
     if (!this.Presence_fresh(w)) return null
     let p = w.o({ Presence: 1 })[0]
     if (!p) return null
-    return !!p.o({ Seen: 1, pub: String(pub) })[0]
+    let k = String(pub)
+    if (!(p.c.known && p.c.known[k])) return null
+    return !!p.o({ Seen: 1, pub: k })[0]
 
 // Presence_here(pub) — Presence_live WITHOUT needing the station world in hand.  The readers that
 //  most want presence (the radio's note, an arrival probe, a door face) run on other worlds and only

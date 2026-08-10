@@ -192,6 +192,82 @@ The model solves against a **hardcoded `[0,0,800,450]`** frame (`Vyto.g:814`) wh
 
 ## 0. What to get on with next
 
+### ⇢ THE GAUGE — why a demoted cell wore ⤢ forever (2026-08-10 late, LANDED; READ THIS ONE FIRST)
+
+Four complaints in one breath, and **three of the four were the same fault wearing different
+ clothes**: *"Door once demoted to small cell again becomes just that damn ⤢ icon, which is now
+  glitch zone I want banished"* / *"the Door is tiny! its box is a good height but far too narrow"* /
+   *"the %Radio is sitting in the middle, nowhere near big enough"* / *"never make the Component too
+    small!"* — and then the owner named the cure himself, before I had found the cause: *"gotta gauge
+     that size... sensibly... over time... check again 200ms after any layout, or something."*
+
+**THE BOMB — a grow-only measurement is a RATCHET WITH NO RELEASE.**  `stamp_box` stamped every
+ face's natural box `Math.max(old, new)`.  So:
+
+1. as the belly, DoorFace measures its whole self — piers, QR, invite — call it 300×400;
+2. demoted to a bud it renders one glyph, but the remembered box still says 300×400;
+3. the fit therefore falls under the renderer's `0.34` icon floor, and **the face unmounts**;
+4. **an unmounted face is never measured again** — the measure pass walks `.face-mold` elements.
+
+A one-way latch: crushed *because it used to be big*, with no path back to learning that it isn't.
+ The ⤢ was never the bug, it was the ratchet's only visible symptom — which is why it read as a
+  "glitch zone".  Note the shape, it generalises: **any grow-only cache over a value that can
+   legitimately fall is a latch, and it will look like a rendering bug.**  Related and already in
+    memory: `a-"learns-over-time"-cache-on-.c-never-does`.
+
+**The cure, in two halves, because one is not enough.**
+- **`vyto_gauge.ts`** (new, pure, gated) — growing is believed at once (overflow is a fault you can
+   see now); a smaller reading OPENS A WINDOW and lands only if it is still true `GAUGE_MS` (200ms)
+    later.  Asymmetric on purpose: the two directions have different costs so they get different
+     evidence bars.  A face mid-mount/mid-font-load measures small for a frame or two, and believing
+      that would pull the seat out from under a component about to need it.
+- **the pose release** — the window cannot save a *crushed* cell, because a crushed cell has no
+   mounted face for a window to ever open on.  A pose change is the commissioner declaring "this
+    face is now a different thing", so it is exactly the moment the remembered box stops being about
+     anything: drop it outright.  Unposed worlds (every regime but focus) record the pose once and
+      delete nothing, ever — the additive-gate law, cost included.
+- **the re-check timer is not optional.**  `paint_tick` only bumps when geometry MOVES, so a settled
+   glass would never look a second time — *the same "no second look" that made the ratchet
+    permanent*.  That is the owner's 200ms, and it is why the window can close at all.
+
+**`scripts/VytoGauge.spec.ts` (10 gates), mutation-tested**: restoring grow-only turns 4 of them red,
+ including `THE RATCHET IS BROKEN`.  The decision was extracted from the component *in order to* be
+  gated — the old rule was untestable, which is most of why it survived a session in plain sight.
+
+**The other two faults, both real and both separate:**
+- **the belly was pinned at `FIT_MAX 1.6`.**  `--fit` is a real `transform: scale()`, and the foam-era
+   ceiling exists to stop a trivial widget dominating its cell — but under focus **dominating the
+    cell is the entire point**.  Measured: Radio 170×169 natural drew a 272×271 mold inside an 800px
+     body.  Now `BELLY_FIT_MAX 4.5` and the ray seat decides: **436×464 at fit 2.743**, ~2.6× the area.
+      Not `Infinity` — the face is laid out at `100%/fit` and scaled back, so an unbounded blow-up
+       hands a component a sub-pixel box to reflow inside.
+- **`.df-small { height: 100% }` was a measurement feedback loop.**  The measure pass reads that
+   element's offset box as the face's NATURAL size, so its height WAS the mold's own height while its
+    width came from the text — an aspect that is not a fact about anything.  *"a good height but far
+     too narrow"* is that sentence exactly.  **A face must hand the measurer an intrinsic box on both
+      axes.**  Any `height:100%`/`width:100%` on a face's outermost element is this bug (the
+       box-stretched skip in `measure_world` catches the width case only).
+- **a bud is never envelope-shrunk** — its face is already an icon and has no fat to give, so a
+   `small` pose draws between 0.8× and 1×, and an icon overhanging its bud by a few px is the right
+    trade for an icon you can see.
+
+**Also landed:** the two empty `%Sat` cells are gone (*"we have two %Sat cells that are nothing? ...
+ we can simply leave out the %Sat if we don't have anything else useful to put there"*) — they were
+  a ring-step and a home button, i.e. a second way to do what the Door/Player buds already do,
+   drawn as two blank cells.  The `%Sat` substrate stays (Vytui draws the role, `focus_step`/
+    `focus_home` remain pokable): an OK/CANCEL is one `oai` + a press when an asker needs one.
+ Small poses now render as ONE GLYPH — DoorFace 🚪, RadioFace ▶/▷ (state-carrying) — each an early
+  return, so a bud does not mount the transport, the friends walk, the QR or the 1s clock.
+
+**Verified live on both players** (`96d0cf88…`, `f5da6599…`), byte-identical readouts:
+ `2 cells (0 crushed) · 0 with no room · molds: 2 · overlapping pairs: 0`,
+  `Radio 436.6×464.8 fit 2.743`, `Door 44.7×37.2 fit 1.000` (square, its own glyph, both axes honest).
+
+**Next moves here:** the bud is at fit 1.0, i.e. exactly its glyph — if it wants to be bigger that is
+ a `font-size` in the face, not a layout change.  And the `stretched` pose is still thin (the owner:
+  *"then what is the other one, not sure"*): a cell asks via `.c.pose_want`, so when the Heist knows
+   what forming means it is one line.
+
 ### ⇢ THE FOCUS — the belly pivot (2026-08-10, LANDED ON THE LIVE GLASS; supersedes the seat as the live UI)
 
 The owner, pivoting off both older regimes in one afternoon: *"it keeps making eg Shuffle larger

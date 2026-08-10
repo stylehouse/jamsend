@@ -414,9 +414,6 @@ Swarm_dial_piers(subject, sup):
         let theirs_ok = has(them)
         if (mine_ok && theirs_ok) sealed = sealed + 1
         if (mine_ok !== theirs_ok) half = half + 1
-        // `live` is printed to a human as "N online (names)", so it had better mean online — it was a
-        //  grant count.  Presence subtracts; unknown leaves the old reading intact.
-        if (this.Presence_offline && this.Presence_offline(them)) continue
         if (this.Swarm_pier_live && this.Swarm_pier_live(p, 'Music')) { live = live + 1; names.push(p.sc.friendly ? String(p.sc.friendly) : them.slice(0, 8)) }
     }
     if (!sealed && !half) return { state: 'no', reading: 'nobody' }
@@ -455,10 +452,6 @@ Swarm_probe_arrival(subject, sup):
     for (const p of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
         if (!p.sc.pub) continue
         if (me && String(p.sc.pub) === me) continue
-        // "did anyone TURN UP" is a presence question, and it was being answered with a grant check —
-        //  so an old contact list satisfied an invite nobody answered.  A peer the relay says has no
-        //   socket cannot have arrived; unknown presence falls back to the grant, as before.
-        if (this.Presence_offline && this.Presence_offline(p.sc.pub)) continue
         if (this.Swarm_pier_live && this.Swarm_pier_live(p, 'Music')) return { verdict: 'ok', note: p.sc.friendly ? String(p.sc.friendly) : '' }
     }
     return { verdict: 'wrong', note: 'nobody has come online' }

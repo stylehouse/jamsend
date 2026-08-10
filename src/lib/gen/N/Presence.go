@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Presence(): string { return 'cb0ce559e17e906d~g1' },
+    Ghostmeta_Ghost_N_Presence(): string { return '133b444145557f2e~g1' },
 
 // Presence — WHO IS ONLINE, asked once instead of guessed a hundred times.
 //  The relay already holds the only authoritative answer: `locals`, its addr→sockets map, kept
@@ -60,6 +60,10 @@ Presence_c(w) {
 //   once the channel is up; re-arming is free.
 Presence_arm(w) {
     const H = this
+    // stash the presence world on the top House so readers ELSEWHERE (the radio's note, the door
+    //  face, a Supervisor probe) can reach the answer without being handed the station world —
+    //   see Presence_here.  Set before the early-return so a re-arm re-points it after a restand.
+    this.top_House().c.presence_w = w
     if (w.c.presence_armed) return true
     w.c.on_who = (frame) => H.Presence_take(w, frame)
     w.c.presence_armed = 1
@@ -78,9 +82,16 @@ Presence_ask(w, addrs) {
     let list = (addrs || []).map(a => String(a)).filter(a => a)
     if (!list.length) return 0
     let p = this.Presence_c(w)
+    let corr = 'p' + ((p.c.corr = (p.c.corr || 0) + 1))
     p.c.asked_at = Date.now()
     p.c.asked_n = list.length
-    port.who(list, 'p' + ((p.c.corr = (p.c.corr || 0) + 1)))
+    // REMEMBER WHAT WE ASKED.  An answer only speaks about the addrs it was asked about, and without
+    //  this the absence of a %Seen was read as "offline" for EVERY pub in the world — so a friend
+    //   sealed between rounds, or any pub this world simply never enquired about, was positively
+    //    suppressed. `.c` because it is transient transport bookkeeping, not part of the answer.
+    p.c.asked_list = list
+    p.c.asked_corr = corr
+    port.who(list, corr)
     return list.length
 
 },
@@ -102,6 +113,13 @@ Presence_take(w, frame) {
     for (const a of online) want[a] = 1
     for (const seen of p.o({ Seen: 1 })) { if (!want[String(seen.sc.pub)]) p.drop(seen) }
     for (const a of online) p.oai({ Seen: 1, pub: a })
+    // WHAT THIS ANSWER COVERS — the addrs it was asked about (matched by corr, so a late reply to a
+    //  superseded ask cannot claim coverage it does not have), plus anything it reported online.
+    //   Outside that set the honest answer is null, not false.
+    let known = {}
+    if (!frame.corr || frame.corr === p.c.asked_corr) { for (const a of (p.c.asked_list || [])) known[String(a)] = 1 }
+    for (const a of online) known[a] = 1
+    p.c.known = known
     p.c.answered_at = Date.now()
     p.c.answered_n = online.length
     p.bump()
@@ -121,11 +139,35 @@ Presence_fresh(w, ms) {
 //  a caller must be able to tell "the relay says they are not there" from "nobody has asked".
 //   Read it explicitly — `if (Presence_live(w,x) === false)` — because a bare falsy test collapses
 //    the two and reintroduces the boot-time starvation this shape exists to prevent.
+//  FALSE requires that the last answer actually COVERED this pub (p.c.known).  Absence of a %Seen is
+//   only evidence when we asked: otherwise a pub the roster gained after the last round — or one this
+//    world never enquired about at all — would read as positively offline and be suppressed.
 Presence_live(w, pub) {
     if (!this.Presence_fresh(w)) return null
     let p = w.o({ Presence: 1 })[0]
     if (!p) return null
-    return !!p.o({ Seen: 1, pub: String(pub) })[0]
+    let k = String(pub)
+    if (!(p.c.known && p.c.known[k])) return null
+    return !!p.o({ Seen: 1, pub: k })[0]
+
+},
+// Presence_here(pub) — Presence_live WITHOUT needing the station world in hand.  The readers that
+//  most want presence (the radio's note, an arrival probe, a door face) run on other worlds and only
+//   know a friend's pub, so making them find the Swarm station world first would put transport
+//    plumbing into every caller.  Same three values, same rule: null means DON'T KNOW — including
+//     "presence was never armed on this machine", which is the case in every Book.
+Presence_here(pub) {
+    let w = this.top_House().c.presence_w
+    if (!w) return null
+    return this.Presence_live(w, pub)
+
+},
+// Presence_offline(pub) — the ONE test a caller should use to suppress something: has the relay
+//  positively told us this peer is not there?  Sugar for `=== false`, and it exists because the bare
+//   falsy read (`!Presence_here(x)`) collapses unknown into offline, which is precisely the mistake
+//    the three-valued answer is for.  Naming it makes the safe form the short form.
+Presence_offline(pub) {
+    return this.Presence_here(pub) === false
 
 },
 // Presence_online(w) — the online prepubs as a plain list (the roster view, for a face or a census).

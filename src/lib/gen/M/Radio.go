@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '9ebddbfedb402428~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '620c94c7e9dc14ca~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -1242,6 +1242,14 @@ Radio_alone_why(w) {
             if (!p.sc.pub) continue
             if (me && String(p.sc.pub) === me) continue   // skip the self-pier — "gathering from Righto" on Righto is the same self-mirror bug
             anyPier = 1
+            // GRANT ≠ PRESENCE, and conflating them is why this can still say "gathering from X" about
+            //  somebody who is not running the app: Swarm_pier_live is a GRANT check — "is this a
+            //   friend at all".  The fix is one line here (`if (M.Presence_offline(p.sc.pub)) continue`,
+            //    Presence.g) and it is NOT applied yet, deliberately — see Presence_todo §0.  Measured
+            //     2026-08-10: adding it to the sibling Supervisor probes made SwarmShare's step 3 flap
+            //      between two diges (2 of 4 runs) where it is 4/4 stable without, because presence is
+            //       wall-clock-varying (the answer AND its 30s freshness) and these readers run against
+            //        the LIVE identity even inside a Story.  Needs an "a Story is replaying" guard first.
             if (M.Swarm_pier_live && M.Swarm_pier_live(p, 'Music')) {
                 liveName = p.sc.friendly ? String(p.sc.friendly) : String(p.sc.pub).slice(0, 8)
             }

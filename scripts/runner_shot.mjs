@@ -186,7 +186,7 @@ if (svg) {
             // the FOCUS regime outranks the seat and the foam both — say which regime is actually
             //  drawing, off the foamereo the tab itself declared (2026-08-10, the belly pivot).
             else if (String(r.foamereo ?? '').split(',').indexOf('focus') >= 0)
-                console.log('▤ focus ON (belly regime — one big blob, purple sats; assigned, still)')
+                console.log('▤ focus ON (belly regime — one big blob + icon buds; assigned, still)')
             else console.log('▤ seat  off (foam regime)')
         }
     }

@@ -159,6 +159,15 @@ test('Presence: a real relay answers `who`, and the ghost absorbs it three-value
     expect(H.Presence_offline(gone), 'Presence_offline is true only for a positive offline').toBe(true)
     expect(H.Presence_offline(A.addr), 'never for someone online').toBe(false)
     expect(H.Presence_offline('neverheardofthem'), 'and never for an addr we did not ask about').toBe(false)
+    // THE PRODUCTION CASE this protects: a friend sealed BETWEEN rounds is not in the last answer, so
+    //  absence-of-%Seen would read as "offline" and suppress every frame to them — a brand-new
+    //   friendship that silently never starts. They must read UNKNOWN until a round actually asks.
+    const justSealed = await peer(relayPort, await mint())
+    expect(H.Presence_here(justSealed.addr), 'a friend who arrived after the last ask is UNKNOWN').toBe(null)
+    expect(H.Presence_offline(justSealed.addr), 'so nothing suppresses them').toBe(false)
+    H.Presence_ask(w, [A.addr, justSealed.addr])
+    expect(await until(() => H.Presence_here(justSealed.addr) === true), 'and the next round finds them online').toBe(true)
+    justSealed.ws.close()
 
     // ── staleness degrades to UNKNOWN, never to offline ──────────────────────────────────────────
     //  Read with a tiny window to simulate an answer that has aged out, without waiting 30s.

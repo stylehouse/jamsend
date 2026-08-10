@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '38b10ef80d9e3e6f~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '5de0e46b340a845d~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -542,11 +542,16 @@ Sounditron_commission(w) {
     //     unchanged.  HUMDINGER-ONLY (the `plain` gate exactly), so no Book ever sees it and every
     //      fixture stands to the byte.
     //  WHO IS THE BELLY: an open keep, always — *"STAGING for Heist is important, sometimes is a
-    //   bunch of info in there"* — else whatever `w.c.focused` names (the tuck satellite steps it),
-    //    else the Door.  The satellites are %Sat rows: purple buds off the belly (Vytui draws the
-    //     roles), each a smuggled press — the tuck steps the ring (the hidden button that "can go
-    //      to other cells like the 'dial can reach' thing"), home walks back to the Door.  A future
-    //       OK/CANCEL is one more %Sat with a press — the substrate is the point.
+    //   bunch of info in there"* — else whatever `w.c.focused` names, else the Player, else the Door.
+    //  NO EMPTY SATELLITES (the owner 2026-08-10: *"we have two %Sat cells that are nothing? ... we
+    //   can simply leave out the %Sat if we don't have anything else useful to put there"*).  There
+    //    were two: a tuck that stepped a ring and a home that walked back.  Both were REACHABLE
+    //     THINGS TO PRESS rather than things to SEE — and the Door and the Player already press each
+    //      other, so the ring was a second way to do what the buds do, drawn as two blank cells.  A
+    //       cell has to be worth its room; an empty one is furniture.
+    //  The %Sat substrate STAYS (Vytui still draws the role, `Sounditron_focus_step/home` are still
+    //   there for a poke): when an asker needs an OK/CANCEL, it is one `oai` + a press.  What is gone
+    //    is minting them with nothing to say.
     if (MH && MH.c.humdinger) {
         w.c.focus_commissioned = 1     // the trickle's boot-latch repair checks this — see trickle_look
         // ── THE BELLY LADDER (the owner 2026-08-10: *"it's looking at Door first though... should be
@@ -622,14 +627,10 @@ Sounditron_commission(w) {
             try { was.c.onunmain(was) } catch (er) {}
         }
         w.c.belly = fmain
-        let tuck = w.oai({ Sat: 'next', dontSnap: 1 })
-        tuck.c.up = w
-        tuck.c.press = (s) => this.Sounditron_focus_step(w)
-        focusOrgans.push(tuck)
-        let home = w.oai({ Sat: 'home', dontSnap: 1 })
-        home.c.up = w
-        home.c.press = (s) => this.Sounditron_focus_home(w)
-        focusOrgans.push(home)
+        // …and CULL the ones already standing.  These are `dontSnap` runtime rows, so no fixture
+        //  moves — but a live tab that has been up since before this edit holds them, and a cell
+        //   nobody mints any more is not a cell that leaves on its own.
+        for (const sat of w.o({ Sat: 1 })) w.drop(sat)
         if (focusOrgans.length) organs = focusOrgans
     }
     if (!organs.length) return 0

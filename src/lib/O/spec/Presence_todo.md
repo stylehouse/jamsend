@@ -16,6 +16,26 @@ Companion to `Cluster_spec.md` (the blessed statement) and `ClusterAddressing_to
       the way Tribunal does), so **if those three lines in `Tribunal.g` regress, every test still
        passes** — the evidence is the live log, not the suite. Re-check with `runner_ask socklog on
         --player=<id>` + `dump` after touching them.
+- **Seam D was ATTEMPTED and WITHDRAWN 2026-08-10 — read this before re-trying it.** Wiring
+   `Presence_offline` into `Swarm_probe_arrival` + `Swarm_dial_piers` made **SwarmShare step 3 flap
+    between two diges in 2 of 4 runs**, where it is stable in 8 of 8 without. Attribution was by
+     controlled revert, *and note the trap*: the first revert was one run per side and gave a
+      confident, WRONG answer — only re-running several times per side showed the flap. (Coding_guide
+       says exactly this; I did it wrong first.)
+   **Mechanism — the durable lesson.** Those probes read `Swarm_live_self()`, i.e. the LIVE tab's
+    identity and real piers, *even while a Story is replaying*. Grants are stable, so that was
+     harmless. **Presence is wall-clock-varying** — both the answer and its 30s freshness edge — and
+      during a ~40s Book the tab's answer can age out mid-run. So the probe's reading, which a Book
+       snaps, became time-dependent. *Nothing a Story snaps may read live presence.*
+   **What it needs first:** an "a Story is replaying" predicate to gate `Presence_here` on. There
+    isn't one — `top_House().c.book` is the BOOT param (`?B=`), not "a Book is running now", so it is
+     the wrong tell. Find or add the real one, gate `Presence_here` to return null under it, and Seam
+      D becomes inert in Books and shippable. The one-line change is written out in the comment left
+       at the site in `Radio_alone_why`.
+   **Also learned:** SwarmShare is not perfectly deterministic at baseline either — step 7 flapped
+    once in ~8 runs with presence entirely removed. Low-rate, different step; do not let it mask a
+     real regression, and do not treat a single matching run as proof of anything.
+
 - **Seam D is not wired: the three readers that fake presence with a grant check.** `Radio_alone_why`
    (`Radio.g:1110`), `Swarm_probe_arrival` (`Swarm.g:444`) and `Swarm_dial_piers` (`Swarm.g:406`) all
     call `Swarm_pier_live`, which is a **grant** check — "is a friend at all", not "is here". So the

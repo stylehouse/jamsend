@@ -16,6 +16,7 @@
     import { deal_rows, seat_on_deal, deal_fits, deal_badness, box_poly,
              type Deal, type SeatRow } from "$lib/O/vyto_seat"
     import { focus_polys, type FocusRole } from "$lib/O/vyto_focus"
+    import { gauge_box, gauge_pose, GAUGE_MS } from "$lib/O/vyto_gauge"
     import { GLASS_KINDS } from "$lib/O/glass_kinds"
     import { FACE_MAINKEYS } from "$lib/O/glass_faces"
     import { lifetell } from "$lib/O/ui/micro/lifetell"   // DIAGNOSTIC — strip with the rest of the remount probes
@@ -2568,46 +2569,25 @@
     //   settled glass would otherwise never look a second time, which is the same "no second look"
     //    that made the ratchet permanent.  Render-side only: `need_w/need_h` never poke the model
     //     (that is `stamp_need`'s job, still grow-only), so no fixture can move under this.
-    const GAUGE_MS = 200
+    //  The decision itself lives in `vyto_gauge.ts` — pure, and therefore gated (VytoGauge.spec).
+    //   Here is only what a decision cannot be: the clock, the re-check timer, and the relayout.
+    //  THE TIMER IS NOT OPTIONAL.  `paint_tick` only bumps when geometry MOVES, so a settled glass
+    //   would never look a second time — the same "no second look" that made the ratchet permanent.
+    //    That is the owner's *"check again 200ms after any layout"*, and it is why the window can
+    //     close at all.
     const gauge_timers = new Map<TheC, any>()
     function gauge_again(w: TheC) {
         if (typeof setTimeout === 'undefined' || gauge_timers.has(w)) return
         gauge_timers.set(w, setTimeout(() => { gauge_timers.delete(w); measure_world(w) }, GAUGE_MS + 20))
     }
     function stamp_box(w: TheC, row: TheC, nw: number, nh: number) {
-        if (!(nw > 0) || !(nh > 0)) return
-        const c = row.c as any
-        const cw = c.need_w as number | undefined
-        const ch = c.need_h as number | undefined
-        if (cw == null || ch == null) { c.need_w = nw; c.need_h = nh; return }
-        if (nw > cw * 1.02 || nh > ch * 1.02) {
-            c.need_w = Math.max(cw, nw); c.need_h = Math.max(ch, nh); c.gauge_at = 0
-            return
-        }
-        if (nw > cw * 0.94 && nh > ch * 0.94) { c.gauge_at = 0; return }
-        const t = Date.now()
-        if (!c.gauge_at) { c.gauge_at = t; c.gauge_w = nw; c.gauge_h = nh; gauge_again(w); return }
-        // keep the LARGEST reading seen inside the window — the window is there to be sure the face
-        //  has finished becoming what it is, not to catch it at its smallest frame.
-        c.gauge_w = Math.max(c.gauge_w ?? nw, nw); c.gauge_h = Math.max(c.gauge_h ?? nh, nh)
-        if (t - c.gauge_at < GAUGE_MS) { gauge_again(w); return }
-        c.need_w = c.gauge_w; c.need_h = c.gauge_h; c.gauge_at = 0
-        react_soon()   // the box moved with nothing else moving; nothing else would re-lay it out
+        const v = gauge_box(row.c as any, nw, nh, Date.now())
+        if (v === 'watching') gauge_again(w)
+        // the box fell with nothing else moving — nothing else would re-lay it out.
+        else if (v === 'fell') react_soon()
     }
-    // A POSE CHANGE DROPS THE GAUGE OUTRIGHT.  The window above cures a box that is merely stale;
-    //  it cannot cure a CRUSHED one, because a crushed cell has no mounted face for the measure pass
-    //   to find — the latch closes before the gauge can open.  A pose change is the declaration
-    //    "this face is now a different thing", so it is exactly the moment the remembered box stops
-    //     being about anything: drop it and let the next paint gauge the cell it actually is.
-    //  Unposed worlds (every regime but focus) set the marker once and never delete anything.
     function regauge_pose(row: TheC) {
-        const c = row.c as any
-        const pose = String(((row.c as any).source_n)?.c?.pose ?? '')
-        if (c.gauge_pose === pose) return
-        if (c.gauge_pose == null) { c.gauge_pose = pose; if (!pose) return }
-        c.gauge_pose = pose
-        delete c.need_w; delete c.need_h; delete c.need_area
-        delete c.gauge_w; delete c.gauge_h; delete c.gauge_at
+        gauge_pose(row.c as any, String((((row.c as any).source_n) as any)?.c?.pose ?? ''))
     }
     function measure_world(w: TheC) {
         if (!(w.c as any).need_floor) return
