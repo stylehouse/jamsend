@@ -7,6 +7,209 @@
 
 ## 0. Get on with next
 
+### ⇑ 2026-08-10 (afternoon) — DIALS, THE RADIO'S AIM, AND THE TREE CELL
+
+**`Radio_dial_pool` was one flat bag.** Every `%MusuThem` shelf walked, every record that passes
+ `Radio_playable` and isn't in `radio.c.heard` thrown into one array, uniform random pick. So a second
+  friend arriving **silently diluted the first mid-session** — you were listening *with somebody*, and
+   then with no event and no notice you were listening with a crowd. A defensible shuffle and an
+    indefensible social act.
+ **The aim** (`radio.sc.aim` / `aim_by`) locks on the first friend we actually **play**, not the first
+  %Pier that exists — playing somebody's record is when a session with them starts; a sealed contact
+   from weeks ago isn't. It **re-aims only when the aimed friend yields nothing this dial**, so a
+    friend going offline hands the radio on rather than stranding it and nobody has to clear it. The
+     fallback pool is exactly the old behaviour, so this can only narrow a choice that was already
+      arbitrary. `rec.c.from_pub` carries which shelf a record came off — `.c`, since a pub in the
+       record's own sc would be a second particle impersonating the holding.
+
+**DIALS — the overall states, as particles.** The owner: *"I want it to contain the overall states
+ like 'we have Pier', 'have remote music' — it needs some more reliable dials to read."*
+ These facts already existed, **and that is the defect**: "we have Pier" was computed inside
+  `DoorFace.svelte`, "we have remote music" was scattered across a deletion in `Radio_open`, a `by`
+   key on some Cards, and a name lookup. Derived in a face, used once, thrown away at the face
+    boundary. A number in a `$derived` cannot be snapped, asserted by a Book, bumped for another face,
+     or compared between two tabs. A particle buys all four.
+ `%Dial` is a sibling of `%Watch`, not a variant: a watch answers *is this ok* in three words and
+  exists to go loud; a dial answers *what is the state* and exists to be read when all is well.
+  **The five rules, each already paid for here** — in `Supervisor.g`'s dial region with its receipts:
+   ① a dial may not mutate (`Ra_stock_standing` deleted files two calls down) · ② `unknown` is
+    first-class, never folded into no (the FSA guards no-opped and answered) · ③ a composite shows its
+     parts, never an AND — hence `state:'part'` exists so a face **cannot** round a half-seal ·
+      ④ if it matters it rides `sc` (`pier.c.heard_at` never snaps and resets on reload) · ⑤ a
+       monotone number is not coverage.
+
+| dial | owner | reading |
+|---|---|---|
+| `swarm.piers` | Swarm | `2 sealed · 1 sealing · 1 online (Righto)` — rule ③, the half-seal that cost a live evening |
+| `radio.remote` | Radio | the owner's ladder, three rungs never collapsed |
+| `radio.solo` | Radio | `radio.sc.solo` was a **deletion nobody could watch**; now a reading |
+| `radio.fresh` | Radio | `round again — 0 fresh of 14 · replay 3` — rule ⑤ made concrete |
+
+**"Remote music" is a LADDER, and collapsing it is the trap** (*"remote exists, has heard of music,
+ and then has music ready to play"*). Three rungs, three different things to do about it: no friend →
+  `no`; a friend with nothing counted → `part`; **records known but none warm → `part`** ← the rung a
+   boolean answers *yes* to; playable → `yes` with the count that would actually be drawn.
+ `Radio_pool_census` is the one honest counter, and it exists because counting friend `%Cards` says
+  yes while the radio has nothing to play: a record is only reachable if **chunk 0 is in the warm
+   window**, and `radio.c.heard` is keyed by **bare id**, so your own listening drains the friend pool
+    and two tabs on one box share ids.
+
+**THE SUPERVISOR AS A PURE C TREE — done, and it cost one grapple.** Nothing was built: the roster is
+ already pure scalars, `TreeFace` (GLASS_KINDS `Tree`) already draws any particle recursively, and
+  Matstyle auto-swatches new mainkeys. `Sounditron_commission` now pushes a second `%Tree` organ with
+   `c.tree_root = supw`, under `show_diag` — **the one branch where a cell costs no fixture**.
+ The case for it is a measurement, not taste: `SupervisorFace` rendered at fit **0.552** and **0.782**
+  on two live tabs — 30% and 61% of its natural box — because a bespoke HTML face *has* a natural size
+   it must win from the layout and usually doesn't. A C tree has no natural box; it fills its cell,
+    and the face-size fight ends by construction.
+ **Alongside, not instead.** Cell, panel and tree all stand. Next: `runner_shot --svg` both tabs with
+  `show_diag` on and compare molds / fit / crushed counts. **If the tree reads better in the capture,
+   delete the bespoke faces and take the rest of the tree the same way.**
+
+**Verified:** the blind-spot gate now covers **dials as well as watches** (one line in
+ `Sounditron_supervisor_blind`) and went **green on `58517b48` with all four dials registered** — so
+  every dial probe resolves by name on a live runner. No thrown errors, 8/8 steps. `music-from-a-
+   friend` remains ABSENT and every step's dige mismatched; **fixtures not re-recorded**.
+ **Not verified:** no dial *reading* has been seen by an eye, and per the brief none of them is
+  mutation-tested — a green dial gates nothing until it has been seen to go red on purpose. That is
+   the next honest job, and a `%see` per dial is how it gets paid for.
+
+### ⇑ 2026-08-10 (midday) — "is all this being architected nice?" — no, and here is the fix
+
+**It was starting to be spaghetti, and the shape of it is worth naming.** Three faces had each grown
+ their **own copy of one judgement**: the panel had its own `rank`/`mark`/`tone`, the Butler its own
+  filters, the model its own again. Three opinions about which row is worst and what glyph it wears,
+   drifting one edit at a time. Radio.g already carries the sentence for this disease — *"two copies
+    of one judgement is how a face starts lying"* — written after a page told a listener the opposite
+     of the truth for exactly this reason.
+
+**The rule now: the MODEL judges, the FACES render.** `Supervisor_lines(w)` returns every row already
+ ordered, marked and toned. A face chooses **what to show** (the cell takes one row, the Butler the
+  arc, the panel everything) and **how it looks**. It does not decide what a row means. *If a face
+   needs to know something, the fix is a field on `Supervisor_line`, not a second opinion over there.*
+
+**SEVERITY ORDER ≠ ARC ORDER** (the owner: *"the list of goals it has is badly ordered — the first one
+ comes last, could do with more structure"*). The cell has room for one line, so it wants the worst
+  thing (`Supervisor_speaking`). A **list** is the story of a machine coming up, so it wants the arc,
+   done rows and all (`Supervisor_lines`). Sorting a list by severity is what put the finished first
+    step at the bottom. Structure comes from a **`stage`** the *registrar* declares —
+     `Supervisor_stage('self'|'door'|'share'|'friend'|'sound'|'story')`, gaps of ten, **unplaced sorts
+      last** so a watch whose owner never said where it belongs can't wedge into someone else's arc.
+
+**ONE ARRIVAL, NOT TWO GATES** (*"a from-page-load FaceSucker that says 'starting up', then it
+ vanishes but then another FaceSucker comes for 'one tap to open the music'… the second needs keeping
+  out of happening by the first"*). The mechanics moved to **`boot_gate.svelte.ts`** — one
+   implementation of the permission tap, including the load-bearing rule that the FSA picker and the
+    AC resume must each be **initiated inside the click's gesture**. BootGate stands down while
+     `H.c.butler_up`. The Butler shows **one big orange `open share`** button while a permission is
+      pending, and that hold is the **one thing not capped**: a permission is not progress news, and
+       timing out of it would just hand the screen back to BootGate — two gates in the other order.
+
+**"SUPERVISOR SHOULD NOTICE ANY INTERESTING THING HAPPEN"** — `Supervisor_notice` + a 12-deep ring,
+ and it is general rather than a list of call sites because **`Supervisor_stamp` notices every watch
+  that CHANGES ITS MIND**. Nothing opts in; the healthy majority that reads the same thing forever
+   says nothing, ever. A first read is a registration, not an event, so it is silent.
+ The ring lives **entirely on `.c`** — a new row per interesting event, each carrying a wall clock, is
+  the churniest thing there could be in `sc`, and it would rewrite every downstream fixture forever.
+   Notices are for a human watching a live machine. *If a Book ever needs to gate on an event, the
+    answer is a `%see` assertion at the moment it happens — that is what assertions ARE.*
+ A notice is genuinely a **third kind**, not a watch in a hat: a watch is a standing question we
+  re-ask and can answer wrongly then rightly; a notice is a moment, true forever, answering nothing.
+   Modelling "a friend just arrived" as a watch is how you get the posed heist back.
+
+**THE CELL NOW NARRATES THE WAIT** (*"it should be talking about a Pier coming online while we're
+ waiting for it"*). Quiet-when-healthy was reading too broadly: a watch inside its patience is not a
+  fault — it stays out of `loud`, so the cell doesn't swell or redden — but it is the most interesting
+   thing on the machine at that moment. Order is now **faults → the wait → all-well**. **No countdown
+    in `say`**: a number that changes every second is a key that churns every fixture forever; the
+     sentence is stable for the whole wait and a face reads `left` off `Supervisor_lines` and polls.
+
+**STILL OPEN — RADIO INTENTION.** The owner: *"it plays radio with the first Pier to connect anyway.
+ but then subsequent Piers that connect, we don't aim the Radio at. perhaps there's more Radio backend
+  modelling to do about intention like that."* **Not built.** Today the friend pool draws from every
+   sealed pier, so a second arrival silently joins the lineup. The shape this wants is an **aim** —
+    the pub the radio locked onto, set once at first live pier, with the pool preferring it and
+     falling back only when it goes dry or offline. That is a real change to `Radio_dial_pool` and
+      deserves its own pass rather than being smuggled in beside a UI change.
+
+**⚠ THE DEFAULT `runner` ADDRESS MOVED MID-SESSION.** The 11:52 Sounditron run landed on
+ `58517b48…`; the 12:29 run landed on **`96d0cf88…`** — the music tab the owner had just loaded (the
+  snap's `MusuSelf,pub:` is the tell, and `runner_ask ping` confirms `self`). So **those two runs are
+   not comparable** and the second one's better assertion count proves nothing about the edits. Both
+    were released. Address a specific tab with `--runner=` when a comparison is the point.
+
+### ⇑ 2026-08-10 (morning) — THREE SURFACES, TWO REACTIVITY BUGS, AND THE BOOT WAIT
+
+**The owner killed a peer (Lefto) to produce the case, and it produced three findings.**
+
+**1. `sc` IS NOT REACTIVE. Only `version` is.** `TheC.sc` is a plain object; `X.serial_i` is the
+ `$state`. So `Supervisor_stamp` and `Supervisor_say` — which wrote `sc` every tick and bumped
+  nothing — were invisible to every face: **the model read the world each tick and showed you a
+   photograph of its first one.** Radio.g's `radio.sc.note = note; radio.bump()` is the standing
+    idiom and it is not decoration. Both writers now funnel through one place (`Supervisor_stamp`,
+     `Supervisor_summary`) and **bump only on change** — an unconditional bump would put the whole
+      roster into every consumer's churn forever.
+ *The general shape*: if a face is stale and the model looks right, check for the bump before you
+  check anything else. Related: `spec/` has no doc on this and probably should.
+
+**2. A face gets `H` AND NOTHING ELSE.** BigSoundland mounts registered UIs as
+ `<svelte:component this={ui.sc.component} H={house} />`. `SupervisorPanel` asked for an `n` prop
+  that is never passed, so `n.c.up` was undefined and it printed **"nothing registered — nothing is
+   watched"** over a full roster. It now resolves the world the way `Supervisor_w` does (top House →
+    `A:Supervisor` → `w:Supervisor`) and distinguishes **"no world"** from **"empty roster"** — two
+     diagnoses pointing at opposite halves of the machine, and conflating them cost a round.
+
+**3. THE THREE SURFACES** (the owner: *"the one in the cell must be very simple and small and have
+ anything we want in the UX, the UIs:Supervisor can have all the rest of the guts of it, for devs"*):
+
+| surface | who for | rule |
+|---|---|---|
+| `SupervisorFace` (Vyto cell) | the listener | tiny, and **silent while well** |
+| `Butler` (FaceSucker) | the listener | the only one that seizes the screen, **at boot, once** |
+| `SupervisorPanel` (`UIs:'Supervisor'`) | devs | everything: probe NAMES, latches, patience, log ladder |
+
+**THE BUTLER — the loading screen, and the three ways out.** A gate over the whole app is a promise
+ that it will lift, so: nothing left waiting (the normal exit), a **12s cap**, or the *carry on* tap
+  — and once lifted it **latches down for the tab**. That latch is the important part: minting an
+   invite mid-session arms an expectation too, and a fullscreen gate dropping over somebody's music
+    because they showed a friend a QR code would be the worst bug in that file. It knows the
+     Supervisor and nothing else — no subsystem is named in it, so a watch registered tomorrow
+      appears on the loading screen tomorrow with no edit there. Altitude **55, under BootGate's 77**:
+       a permission the listener must grant outranks news about work in progress. Never over a Book.
+
+**THE BOOT WAIT — the owner's actual ask** (*"this is that start-playing-our-own-music situation…
+ which happens anyway, I actually want it to WAIT, and start playing local music when peer given up
+  on"*). A **second event** now arms the same 5s expectation: `Swarm_expect_friends`, at the bottom
+   of `Swarm_station_up`. Still event-driven, not the ambient hoping §the-expect-header warns off —
+    the event is *this boot*, it fires once per standup (inside the `station_up` guard, so it cannot
+     restart its own clock forever), and **no piers ⇒ no hope** (five seconds of silence bought with
+      nothing). Each arming stamps `sc.because`, because the give-up sentence depends on it:
+       *"nobody answered your invite"* is a lie on a tab that never minted one, and that lie was in
+        the radio's mouth on every friendless boot.
+
+**TWO NEW WATCHES, both registered from idempotent verbs that are re-entered until they take** — the
+ pattern worth copying, because registering *after* success latches a milestone met on its first read
+  and it never says anything:
+- `swarm.station` (milestone, `Swarm_watch_station` at the TOP of `Swarm_station_up`) — *"this
+   machine is on the relay — friends can reach you"*. The highest-level task there is; a tab that
+    never gets it looks like a slow start rather than a dead relay.
+- `radio.shelf` (**standing**, `Radio_watch_shelf` in `Stoker_ensure`) — *"there is music in your
+   share — records to play"* (the owner: *"we also need to notice when there's no music at all in
+    their share"*). Standing and **not** a milestone on purpose: a share is opened, closed and
+     re-opened, and a milestone would latch on the first record ever seen and go quiet — the posed-
+      heist failure in miniature. Three answers, not two: *no shelf yet* (`unknown`, still booting)
+       is not *empty share* (`wrong`).
+ Both probes read with `o()[0]` and never `Ra_home_self`/`Swarm_station_world`, which are `oai`
+  chains that would **mint the thing they were asked about** on every tick — the "a probe that
+   collects" trap the file header names.
+
+**WHAT IS UNPROVEN.** The Butler has never been seen (no browser here). The 5s hold has still never
+ fired end-to-end. `Sounditron` on the runner went all-red **with the peer deliberately killed** —
+  `the-supervisor-stood` and `every-registered-watch-found` both went **green** (so the roster and
+   both new probes resolve), and the three ABSENT assertions are all peer-dependent (`granted`,
+    `a-friend-counted-their`, `music-from-a-friend`). **Fixtures were NOT re-recorded**: a Book that
+     measures a two-peer story must not have a one-peer world baked into its gate.
+
 ### ⇑ OVERNIGHT 2026-08-10 — patience, the give-up, and the report that travels
 
 **THE BOMB IS DEFUSED.** The three sensors that had landed with no reader now have one, and the
@@ -95,6 +298,26 @@
     `release`, `accept` are refused), while `state`/`steps`/`assertions` still answer *from that tab's
      last real run* — so a refused run followed by `steps` returns a plausible, stale, entirely
       convincing result. **Never send `run` output to /dev/null.**
+
+**TWO INSTRUMENTS, NOT TWO SIZES OF ONE** (the owner: *"it needs a UI outside of the Vyto as well, as
+ that one is very very minimalist"*). `SupervisorFace` (the glass cell) answers *"is anything wrong"*
+  at a glance and **must stay silent when the answer is no** — that silence is the entire reason it
+   replaced the idle HUDs, so it can never also be the place you go to READ the roster.
+    `SupervisorPanel` shows **everything, including the healthy rows**, because when nothing is wrong
+     the interesting content is precisely the list of what was checked. Registered as `UI:'Supervisor'`
+      by `Supervisor_plan` using the `Vyto_plan` idiom, so BigSoundland mounts it through the UI
+       surface it already has — no change over there. Reach it with **▦** (or `?`).
+
+**THE `?` BUG — three cuts, and the lesson is the third one.** `Sounditron_probe_glass` reported
+ `unknown` forever. A probe runs inside the *Supervisor's* read pass, so `this` is Mundo, not the
+  Book's House. Cut 1 copied `Sounditron_glass`'s `this.up ?? this.top_House()`; cut 2 "fixed" it by
+   climbing from the subject to the Run House — but that House's snap carries `A:Sounditron` and **no
+    `A:Vyto`**, so cut 2 would have turned a visible `?` into a confident wrong answer.
+ **There is no fixed home to hardcode.** BigSoundland's own `vyto_trace` walks EVERY House, and it is
+  authoritative because it is the code that finds the live glass for the badge. The probe now walks
+   too (`Sounditron_houses` = Mundo + every `H:` under it) **and names where it looked** — "no A:Vyto
+    in any of N House(s)", or the House it found. A verdict that says only "I could not find it" costs
+     a person the whole diagnosis; that is §5 in one line.
 
 **Owed by the owner, unchanged:** `%Caper` vs `%Pull`; the §10.3 provenance ruling (which also gates
  the What Heisted ledger); and whether `music-from-a-friend` should stay declared when it can only

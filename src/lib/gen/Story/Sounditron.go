@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return 'a3aa2938a5bbc145~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '1282f4435041752e~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -445,6 +445,24 @@ Sounditron_commission(w) {
         tree.c.up = w
         tree.c.tree_root = krw || w
         organs.push(tree)
+        // THE SUPERVISOR AS A PURE C TREE — the same faceless face, pointed at w:Supervisor (the owner
+        //  2026-08-10, the case for it: the bespoke SupervisorFace rendered at fit 0.552 and 0.782 on two
+        //   live tabs — 30% and 61% of its natural box — because a bespoke HTML face HAS a natural size it
+        //    must win from the layout and usually doesn't.  A C tree has no natural box at all; it fills
+        //     whatever cell it gets, and the face-size fight ends by construction).
+        //  NOTHING NEW WAS BUILT FOR THIS, which is the point: the roster is already pure scalars (%Watch
+        //   and now %Dial, sentence|verdict|state|reading, no objects in sc), TreeFace already draws any
+        //    particle recursively, and Matstyle auto-swatches any new mainkey.  The one line that was
+        //     missing is this grapple.
+        //  ALONGSIDE, NOT INSTEAD (the owner: *"Drop nothing yet; leave SupervisorPanel mounted"*).  Both
+        //   the cell and this tree stand, so `runner_shot --svg` can compare molds/fit/crushed counts
+        //    between them.  If the tree reads better in the capture, the bespoke faces go.
+        //  Under `show_diag` for the same reason as its sibling: the one branch where a cell costs no
+        //   fixture, since no Book turns it on.
+        let suptree = w.oai({ Tree: 'Supervisor', dontSnap: 1 })
+        suptree.c.up = w
+        suptree.c.tree_root = supw || w
+        if (supw) organs.push(suptree)
     }
     // the ⇊ KEEP cells (the human 2026-07-28 "I DO want the Heist UI ... in a few Vyto cells ... it folds
     //  down when started"): every active %Heist grapples as its OWN cell — under the nested glass it goes BARE
@@ -1405,10 +1423,16 @@ Sounditron_supervisor_reading(w) {
 //   adds a watch pointing at a method that does not exist, or renames a probe out from under one.
 //  Returns the KEYS, not a count: a count tells you something is broken and a key tells you what,
 //   and the difference is the whole lesson of this session's phase-attribution findings.
+//  DIALS ARE COVERED TOO (2026-08-10).  They resolve their probe by NAME through the same door and
+//   fail the same silent way — a typo leaves a dial reading `unknown` forever, indistinguishable at a
+//    glance from an honest "I could not look".  Extending the existing gate is one line and closes
+//     the hole the day the dials were added, rather than the day somebody notices.
 Sounditron_supervisor_blind(w) {
     let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
     if (!sup) return []
-    return sup.o({ Watch: 1 }).filter(x => String(x.sc.note || '').indexOf('no probe named') === 0).map(x => String(x.sc.Watch))
+    let ws = sup.o({ Watch: 1 }).filter(x => String(x.sc.note || '').indexOf('no probe named') === 0).map(x => String(x.sc.Watch))
+    let ds = sup.o({ Dial: 1 }).filter(x => String(x.sc.reading || '').indexOf('no probe named') === 0).map(x => String(x.sc.Dial))
+    return ws.concat(ds)
 
 },
 // Sounditron_probe_glass — is the glass we commissioned actually DRAWING what we handed it?
@@ -1435,14 +1459,34 @@ Sounditron_supervisor_blind(w) {
 //   answered about the wrong House, which is the most expensive kind of correct.
 Sounditron_probe_glass(w, sup) { const H = this;
     let vw = null
-    for (const H of [w?.c?.up?.c?.up, this.top_House ? this.top_House() : null]) {
-        if (!vw && H && H.o) vw = H.o({ A: 'Vyto' })[0]?.o({ w: 'Vyto' })[0] ?? null
+    let where = ''
+    // WALK EVERY HOUSE, which is what BigSoundland's own vyto_trace does — and it is authoritative
+    //  because it is the code that actually finds the live glass for the badge.  Two earlier cuts
+    //   guessed a fixed home (Mundo, then the Run House) and both were wrong; the Run House snap
+    //    carries `A:Sounditron` and no `A:Vyto`, and Mundo did not have it either.  There is no fixed
+    //     home to hardcode, so stop trying to name one.
+    for (const H of this.Sounditron_houses()) {
+        if (vw) continue
+        let a = H.o ? H.o({ A: 'Vyto' })[0] : null
+        let got = a ? a.o({ w: 'Vyto' })[0] : null
+        if (got) { vw = got; where = String(H.name || '?') }
     }
-    if (!vw) return { verdict: 'unknown', note: 'no glass commissioned in the run House or Mundo' }
-    if (!vw.c.vw_frame) return { verdict: 'ok', note: 'no frame published — nothing judged' }
+    // NAME WHERE IT LOOKED.  The owner spent two rounds staring at a bare "?" — a verdict that says
+    //  only "I could not find it" costs a person the whole diagnosis, which is this doc's §5 in one
+    //   line: attribution before action.
+    if (!vw) return { verdict: 'unknown', note: 'no A:Vyto in any of ' + this.Sounditron_houses().length + ' House(s)' }
+    if (!vw.c.vw_frame) return { verdict: 'ok', note: where + ' — no frame published yet' }
     let missing = Object.keys(vw.c.normal_said || {})
-    if (!missing.length) return { verdict: 'ok' }
-    return { verdict: 'wrong', note: missing.length + ' grappled organ(s) with no cell — ' + missing.slice(0, 3).join(' ') }
+    if (!missing.length) return { verdict: 'ok', note: where }
+    return { verdict: 'wrong', note: where + ': ' + missing.length + ' organ(s) with no cell — ' + missing.slice(0, 3).join(' ') }
+
+},
+// Sounditron_houses — Mundo plus every House standing under it.  The glass has no fixed home (see
+//  above), so anything hunting for it must walk, exactly as BigSoundland's vyto_trace does.
+Sounditron_houses() { const H = this;
+    let M = this.top_House ? this.top_House() : null
+    if (!M) return []
+    return [M].concat(M.o({ H: 1 }) ?? [])
 
 },
 // Sounditron_probe_sound — IS ANY SOUND ACTUALLY COMING OUT.  Radio_sound landed 2026-08-09 and had

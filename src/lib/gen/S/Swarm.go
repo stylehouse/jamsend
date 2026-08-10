@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '8421a4abf0d875ef~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '389070031548575e~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -369,7 +369,106 @@ async Swarm_invite_url(w, ident, feature, nonce, base) {
 Swarm_expect_arrival(w) {
     let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
     if (!sup) return
-    this.Supervisor_expect(sup, 'swarm.arrival', 'someone answered the invite — a pier came online', 'Swarm_probe_arrival', null, 5)
+    let watch = this.Supervisor_expect(sup, 'swarm.arrival', 'someone answered the invite — a pier came online', 'Swarm_probe_arrival', null, 5, this.Supervisor_stage('friend'))
+    // WHY we are hoping, carried for whoever has to explain the give-up.  Without it the radio's
+    //  bottom rung says "nobody answered your invite" on a boot where no invite was ever minted.
+    if (watch) { watch.sc.because = 'invite'; watch.bump() }
+
+},
+// Swarm_expect_friends — THE OTHER EVENT THAT MAKES US EXPECT SOMEBODY: our own standup, on a machine
+//  that already has friends (the owner 2026-08-10, having killed Lefto to produce the case: *"this is
+//   that start-playing-our-own-music situation… which happens anyway, I actually want it to WAIT, and
+//    start playing local music when peer given up on"*).
+//  This is still event-driven, not the ambient hoping §the-expect-header warns off: the event is THIS
+//   BOOT, it fires once per standup, and it is bounded by the same five seconds.  What it is not is
+//    "any stored %Pier means somebody might turn up one day" — that is the reading Radio_alone_why's
+//     `anyPier` makes, and it is why that function could never be the one to decide this.
+//  ARMED HERE, at the bottom of Swarm_station_up, because that is the first moment the answer is even
+//   knowable: the three rehydrates at the top of that verb are what put the %Piers back, so anywhere
+//    earlier we would be asking whether we have friends before we had loaded them.  It is also inside
+//     the `station_up` guard, so it arms ONCE — an expectation that re-armed on every reconnect would
+//      restart its own clock forever and never give up, which is the failure mode of a patience.
+//  NO PIERS, NO HOPE: a machine that has never met anybody is not waiting for anyone, and holding its
+//   radio for five seconds would be five seconds of silence bought with nothing.
+Swarm_expect_friends(w, ident) {
+    let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
+    if (!sup) return
+    let me = String(ident?.sc?.prepub || '')
+    let piers = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).filter(p => p.sc.pub && String(p.sc.pub) !== me)
+    if (!piers.length) return
+    let watch = this.Supervisor_expect(sup, 'swarm.arrival', 'a friend came online — somebody to play radio with', 'Swarm_probe_arrival', null, 5, this.Supervisor_stage('friend'))
+    if (watch) { watch.sc.because = 'friends'; watch.bump() }
+
+},
+// Swarm_watch_station — the one HIGH-LEVEL task this layer owns: are we on the relay at all?  A
+//  milestone, because it completes: the door opens once per boot and then stays open (a reconnect is
+//   the socket's own business and never re-closes this).  It is the sentence a listener should see on
+//    a loading screen — everything else this app does is downstream of it, and a tab that never gets
+//     it will sit forever looking like a slow start rather than a dead relay.
+Swarm_watch_station(w) {
+    let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
+    if (!sup) return
+    this.Supervisor_watch(sup, 'swarm.station', 'this machine is on the relay — friends can reach you', 'milestone', 'Swarm_probe_station', null, this.Supervisor_stage('door'))
+    this.Supervisor_dial(sup, 'swarm.piers', 'friends', 'Swarm_dial_piers', null, this.Supervisor_stage('friend'))
+
+},
+// Swarm_dial_piers — WE HAVE PIER, with its parts.  This reading was computed inside DoorFace and
+//  thrown away at the face boundary, which is why nothing else on the machine could see it and no
+//   Book could assert it.
+//  THE HALF-SEAL IS THE WHOLE REASON THIS DIAL EXISTS (rule 3).  A whole %Pier holds BOTH grants —
+//   ours to them and theirs to us.  When only one landed the link SILENTLY half-works: asks leave,
+//    answers die on the doorstep, and both ends read as merely slow.  That cost a live evening, and
+//     `runner_ask world` could see it in one line while the glass could not.  So: "2 sealed · 1
+//      sealing", never one boolean.
+//  PREFIX MATCH on `by`, copied from DoorFace's own note: the grant mint form-matches whichever the
+//   beacon carried, so `by` rides as a prepub here and a full pub elsewhere.  A prefix compare is
+//    true for both and cannot false-positive across two different keys.
+//  A PURE READ — o() only, nothing minted, nothing written (rule 1).
+Swarm_dial_piers(subject, sup) {
+    let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (!ident) return { state: 'unknown', reading: 'no identity yet' }
+    let me = String(ident.sc.prepub || '')
+    let sealed = 0
+    let half = 0
+    let live = 0
+    let names = []
+    for (const p of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+        if (!p.sc.pub) continue
+        let them = String(p.sc.pub)
+        if (me && them === me) continue
+        let grants = p.o({ Grant: 1 })
+        let has = who => !!who && grants.some(g => String(g.sc.by || '').startsWith(who) || who.startsWith(String(g.sc.by || '')))
+        let mine_ok = has(me)
+        let theirs_ok = has(them)
+        if (mine_ok && theirs_ok) sealed = sealed + 1
+        if (mine_ok !== theirs_ok) half = half + 1
+        if (this.Swarm_pier_live && this.Swarm_pier_live(p, 'Music')) { live = live + 1; names.push(p.sc.friendly ? String(p.sc.friendly) : them.slice(0, 8)) }
+    }
+    if (!sealed && !half) return { state: 'no', reading: 'nobody' }
+    let parts = []
+    if (sealed) parts.push(sealed + ' sealed')
+    if (half) parts.push(half + ' sealing')
+    if (live) parts.push(live + ' online (' + names.join(' + ') + ')')
+    if (!live) parts.push('none online')
+    let reading = parts.join(' · ')
+    if (half && !sealed) return { state: 'part', reading: reading }
+    if (!live) return { state: 'part', reading: reading }
+    return { state: 'yes', reading: reading }
+
+},
+// Swarm_probe_station — a pure read of the standup's own latch.  Reports the STAGE it is stuck at
+//  rather than a bare no: "no identity yet" and "not on the relay yet" are two different mornings.
+// NOT `Swarm_station_world()`, which is an `oai` and would MINT the world it was asked about — the
+//  Ra_stock_standing trap the Supervisor header names ("a probe that collects"), and it would fire on
+//   every tick of a world this file does not own.  `o()[0]` reads; that is the whole difference.
+Swarm_probe_station(subject, sup) {
+    let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (!ident) return { verdict: 'wrong', note: 'no identity yet' }
+    let A = this.top_House().o({ A: 'Clustation' })[0]
+    let w = A ? A.o({ w: 'Swarm' })[0] : null
+    if (!w) return { verdict: 'wrong', note: 'no station world yet' }
+    if (!w.c.station_up) return { verdict: 'wrong', note: 'not on the relay yet' }
+    return { verdict: 'ok', note: '' }
 
 },
 // Swarm_probe_arrival — is ANY pier of ours live on Music right now?  Deliberately not
@@ -747,6 +846,12 @@ Swarm_station_world() {
 //    ghosts haven't deposited (the boot window) — the caller just asks again.
 async Swarm_station_up(w, ident) {
     if (!w || !ident?.c?.keys) return null
+    // REGISTER THE DOOR AS A MILESTONE, at the top and on every retry — SwarmStandup re-enters this
+    //  verb on each H bump until it takes, so registering here means the watch exists WHILE we are
+    //   still trying, which is the only time it says anything.  Registering after standup would latch
+    //    it met on its first read and the Butler would never once have a task to show.  Idempotent by
+    //     key (oai merges), so the retries cost a lookup.
+    this.Swarm_watch_station(w)
     if (!w.c.iz_rehydrated && this.top_House().stashed) { w.c.iz_rehydrated = 1; this.Swarm_iz_rehydrate(w, ident) }
     if (!w.c.piers_rehydrated && this.top_House().stashed) { w.c.piers_rehydrated = 1; this.Swarm_piers_rehydrate(w, ident) }
     if (!w.c.roots_rehydrated && this.top_House().stashed) { w.c.roots_rehydrated = 1; this.Swarm_chainroots_rehydrate(w, ident) }
@@ -798,6 +903,10 @@ async Swarm_station_up(w, ident) {
     //    ever confirm it.  One assignment closes that.  LIVE-ONLY: the Books stamp station_up by hand
     //     rather than through this verb, so no fixture sees an era it did not see before.
     this.Swarm_era(w)
+    // we are up and we have friends — start the five seconds (Swarm_expect_friends' header).  After
+    //  Swarm_era so a failure here cannot cost the era, before the routes so the clock starts at the
+    //   standup rather than after the greeting round trip we are timing.
+    this.Swarm_expect_friends(w, ident)
     let routed = this.Swarm_station_routes(w, ident)
     // ELECTRODE (2026-08-06) — STANDUP, the t=0 every other discovery mark is relative to.  Without
     //  it a trace file opens mid-story and you cannot tell a peer that never appeared from one that
@@ -2190,7 +2299,7 @@ Swarm_watch_look(w) {
     //   console nobody has open.  Registering is idempotent, so doing it from inside the loop keeps
     //    the watch alive across a Supervisor that stood up after this loop did.
     let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
-    if (sup) this.Supervisor_watch(sup, 'swarm.beat', 'the share beat is advancing — the conveyor turns', 'standing', 'Swarm_probe_beat', w)
+    if (sup) this.Supervisor_watch(sup, 'swarm.beat', 'the share beat is advancing — the conveyor turns', 'standing', 'Swarm_probe_beat', w, this.Supervisor_stage('share'))
     if (now === (w.c.watch_said || '')) return
     w.c.watch_said = now
     if (!now) return

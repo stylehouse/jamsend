@@ -989,6 +989,79 @@
         return cr
     }
 
+    // ── THE FRAME SEAT — NO ROW MAY BE DRAWN OFF-FRAME ────────────────────────────────────────────
+    //  The seat floor's sibling, and the OTHER half of the owner's ruling ("I think that's what I want
+    //   to never happen, certainly not to Radio"): a row can be missing from the glass without ever
+    //    being swallowed by a neighbour.  If its seed sits outside the frame, the frame clip in
+    //     `foam_cells` does NOT empty it — the cut is written to keep the SEED's side of every wall
+    //      (so a frame handed either winding still works), so an outside seed keeps the OUTSIDE
+    //       halfplane and the cell comes back whole, full size, drawn entirely beyond the viewBox.
+    //  That is worse than a null and it reads identically: no wall on screen, no face, no label, and
+    //   no reachable click target — the same trapdoor, minus the corner note that would have counted
+    //    it.  Measured on a 26k-cell fuzz: 6.8% of cells when 15% of seeds are out of the rect, and
+    //     12.6% in a NESTED scope, where the frame is the parent's own polygon and a child only has to
+    //      drift past its parent's wall.  It is never partial — the clip keeps one side of a wall, so a
+    //       cell is wholly in or wholly out (0 cells landed between 2% and 50% in-frame).
+    //  ⚠ THIS IS THE PHENOMENON THE MODEL ALREADY NAMES: Vyto_normal §2 VISIBILITY, *"off-frame is a
+    //   LAYOUT fault, never a fact about the data — 'things go missing somehow', nobody sent the Radio
+    //    off the side, the solve did"*.  Its cure is to poke the solve and re-seed at the rim, which is
+    //     right and stays — but it is a MODEL cure on a MODEL target, and it leaves the cell invisible
+    //      in the meantime (and forever, if two pokes don't take).  This is the render-side belt to that
+    //       braces: the seat is honest about where the row is *drawn* while the solve fixes where it
+    //        *belongs*.  A seed is pulled to `want` inside each wall it broke — three passes so a corner
+    //         (two walls at once) converges, then the frame's centroid as the last resort for a frame
+    //          too small to inset into.
+    //  Re-seats the DRAWN seed only — `seeds` holds copies made at the top of layout, never the springs,
+    //   so the body keeps flying and simply slides along the rim instead of vanishing off it.
+    //  BYTE-NEUTRAL WHERE NOTHING IS OFF-FRAME (the seat_floor discipline): a seed inside every wall is
+    //   not touched at all, so a healthy scope's arithmetic is identical — 0 seeds moved across 25,830
+    //    in-frame cells, same p05/median/p95 cell area to the unit.  RENDERER-SIDE ONLY, so it cannot
+    //     move a recorded fixture.  The cells that WERE off-frame cost the rest about 2% of median area
+    //      when they come back — the correct price, and the reason it is stated here rather than hidden.
+    //  ASSUMES A CONVEX FRAME, which is exactly what the cut already assumes: the root frame is the
+    //   viewport rect, and every nested frame is a parent's own cell — a polygonised disc trimmed by
+    //    halfplanes, convex by construction.  A concave frame would make "inside every wall" stricter
+    //     than "inside the polygon" and pull seeds further in than they need; it would not let one out.
+    function frame_seat(seeds: Pt[], frame: Pt[], want: number): number {
+        if (!frame || frame.length < 3 || !seeds.length) return 0
+        type Wall = { ax: number, ay: number, nx: number, ny: number }
+        // the frame's own winding decides which normal points OUT — the one thing the cut deliberately
+        //  refuses to assume, and the reason it leans on the seed instead.  Here we must know.
+        let sa = 0, cx = 0, cy = 0
+        for (let i = 0; i < frame.length; i++) {
+            const p = frame[i], q = frame[(i + 1) % frame.length]
+            sa += p.x * q.y - q.x * p.y
+            cx += p.x; cy += p.y
+        }
+        const ccw = sa > 0
+        cx /= frame.length; cy /= frame.length
+        const walls: Wall[] = frame.map((a, k) => {
+            const b = frame[(k + 1) % frame.length]
+            const ex = b.x - a.x, ey = b.y - a.y, el = Math.hypot(ex, ey) || 1
+            return { ax: a.x, ay: a.y, nx: ccw ? ey / el : -ey / el, ny: ccw ? -ex / el : ex / el }
+        })
+        const depth = (x: number, y: number, e: Wall) => (x - e.ax) * e.nx + (y - e.ay) * e.ny
+        let seated = 0
+        for (const s of seeds) {
+            let out = false
+            for (const e of walls) if (depth(s.x, s.y, e) > 0) { out = true; break }
+            if (!out) continue
+            let x = s.x, y = s.y
+            for (let pass = 0; pass < 3; pass++) {
+                let shifted = false
+                for (const e of walls) {
+                    const dd = depth(x, y, e)
+                    if (dd > -want) { const k = dd + want; x -= e.nx * k; y -= e.ny * k; shifted = true }
+                }
+                if (!shifted) break
+            }
+            for (const e of walls) if (depth(x, y, e) > 0) { x = cx; y = cy; break }
+            s.x = x; s.y = y
+            seated++
+        }
+        return seated
+    }
+
     // the memo key for one scope's cut — order-preserving (keys ride beside their coordinates), so a
     //  hit guarantees polys[i] belongs to live[i].  Quantum 0.01px: a sub-centipixel wriggle reuses
     //   the standing walls (visually identical; the spring disp still judges settle off the raw floats).
@@ -1543,6 +1616,12 @@
                     seeds.push(selfSeed); radii.push(mean)
                 }
             }
+            // THE FRAME SEAT — applied before anything reads a seed, because the stage's room
+            //  measurement below cuts a real cell at `seeds[sI]` and would otherwise be measuring the
+            //   room left by a body that isn't on screen.  Law and evidence above `frame_seat`.
+            //  Counted on `.c` (never encoded) so `--why` can show the glass catching its own rows.
+            const seated = frame_seat(seeds, framePoly, SEAT_MIN)
+            if (seated) (w.c as any).frame_seats = (((w.c as any).frame_seats as number) || 0) + seated
             // THE FOAM REGIME (gated on w.c.foam — the ORCHESTRA OF SPHERES law, Vyto_todo):
             //  coverage is earned by pressure.  The solve's radii are RELATIVE weights tuned for
             //   frame-carving, so as literal discs they'd cover ~5% of the frame and never touch;
@@ -1619,11 +1698,15 @@
                 //  several neighbours that each, on their own, left it a legal seat.  Ask again, harder,
                 //   for exactly the rows that actually died, and re-cut.  Measured on a 19,458-cell fuzz
                 //    against this same `foam_cells`: the floor alone takes 3159 swallowed rows to 48, and
-                //     this takes those 48 to ZERO, for about one extra cut in 1.6% of scopes.  Bounded at
-                //      three tries so a pathological scope cannot spin, and it lives inside the memo MISS,
-                //       so a settled glass never pays for it at all.
+                //     this takes those 48 to ZERO, for about one extra cut in 1.6% of scopes.  It lives
+                //      inside the memo MISS, so a settled glass never pays for it at all.
+                //  Bounded at SIX tries so a pathological scope cannot spin.  Three was enough for the
+                //   full-frame fuzz above but not for a NESTED scope, where the frame is a small parent
+                //    polygon and the escalation has less room to work with: 6 rows in 17,523 still died
+                //     at three tries and none at six.  The bound costs nothing where it isn't needed —
+                //      the loop breaks the moment there are no victims, which is every healthy scope.
                 if (foam) {
-                    for (let tryn = 1; tryn <= 3; tryn++) {
+                    for (let tryn = 1; tryn <= 6; tryn++) {
                         const victims = new Set<number>()
                         for (let i = 0; i < polys.length; i++) if (!polys[i]) victims.add(i)
                         if (!victims.size) break

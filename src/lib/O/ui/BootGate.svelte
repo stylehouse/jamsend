@@ -5,91 +5,44 @@
     //   DirectoryOpener raises H.c.disk_gated until a real share opens, and we seize the
     //    screen until the user opens one.  A gat (SoundSystem voice) that can't auto-start
     //     fires AudioContext_wanted — that event IS the "audio was actually attempted"
-    //      signal, so a tab that never plays never grows an audio gate.  The FSA picker and
-    //       the AC resume must each be INITIATED inside the click's user gesture, so
-    //        open_share kicks both off synchronously and awaits after.
-    //  disk_gated / pending_gats live on plain .c|arrays (not $state) — a slow poll samples
-    //   them; ample for a one-time gate dismiss, free of House-reactivity guesswork.
+    //      signal, so a tab that never plays never grows an audio gate.
     //  audio_fullscreen: a dev boot normally leaves the PURE-audio beg to the Brink's Sound
     //   face (MiniBrink) — pass true when the host hides the Brink (BigWordland hides Lies,
     //    and the Brink lives inside Liesui), so this gate stays the reachable beg.
     //  who: the gate's addressee in the copy — defaults to the boot role (Editor|Runner).
+    //
+    //  THE MECHANICS MOVED OUT (2026-08-10) to `boot_gate.svelte.ts`, because the Butler now asks
+    //   the same permission with a different face.  Everything load-bearing — the poll, the
+    //    AudioContext_wanted listener, and above all the rule that the FSA picker and the AC resume
+    //     must each be INITIATED inside the click's gesture — lives there once.  This file is now
+    //      only the standalone way of asking.
+    //  AND IT STANDS DOWN FOR THE BUTLER: `H.c.butler_up` means a fullscreen loading screen is
+    //   already on the glass carrying this same button, and two gates in a row is a bad arrival
+    //    (the owner: *"the second one of those FaceSuckers needs keeping out of happening by the
+    //     first"*).  Read through the poll, so it needs no reactivity of its own.
     import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte"
+    import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     import { onMount } from "svelte"
     import type { House } from "$lib/O/Housing.svelte"
 
     let { H, who, audio_fullscreen = false, proactive = false }: {
         H: House | null, who?: string, audio_fullscreen?: boolean, proactive?: boolean } = $props()
 
-    let disk_poll = $state(0)
-    let ac_poll   = $state(0)
-    let pending_gats: any[] = []
-    onMount(() => {
-        const iv = setInterval(() => {
-            disk_poll++
-            // proactive (the music toplevels): don't wait for a hard audio demand — a page whose
-            //  whole point is sound wants its ONE tap up front, so the gate stands until the AC
-            //   is granted.  The gat is created cold here (keep_awake_gat never starts audio);
-            //    the tap wakes it inside the gesture.
-            if (proactive) {
-                if (!H?.c?.musu_gat) { try { (H as any)?.keep_awake_gat?.() } catch {} }
-                const g = H?.c?.musu_gat
-                if (g && !g.AC_ready && !pending_gats.includes(g)) { pending_gats.push(g); ac_poll++ }
-            }
-        }, 400)
-        const on_want = (e: any) => {
-            const g = e?.detail?.gat
-            if (g && !g.AC_ready && !pending_gats.includes(g)) { pending_gats.push(g); ac_poll++ }
-        }
-        window.addEventListener('AudioContext_wanted', on_want)
-        return () => { clearInterval(iv); window.removeEventListener('AudioContext_wanted', on_want) }
-    })
-    let disk_gated   = $derived.by(() => { disk_poll; return !!H?.c.disk_gated })
-    // event-driven only: shows when a hard audio DEMAND fired AudioContext_wanted and the
-    //  gat is still cold.  No proactive nag.
-    let ac_wanted    = $derived.by(() => { disk_poll; ac_poll; return pending_gats.some(g => !g?.AC_ready) })
+    const gate = boot_gate(H, { proactive })
+    onMount(gate.start)
+
+    let disk_gated   = $derived(gate.disk_gated)
+    let ac_wanted    = $derived(gate.ac_wanted)
+    let butler_up    = $derived.by(() => { gate.poll; return !!(H as any)?.c?.butler_up })
     let ac_via_brink = $derived(!audio_fullscreen
         && (H?.c.boot_role === 'editor' || H?.c.boot_role === 'runner'))
     let role_label   = $derived(who ?? (H?.c.boot_role === 'editor' ? 'Editor' : 'Runner'))
-    let share_error   = $state('')
-    let opening_share = $state(false)
-
-    // Bring a blocked gat to life: init() a fresh context, or AC_OK() a suspended one.
-    async function wake_gat(g: any): Promise<boolean> {
-        try {
-            if (!g) return false
-            if (!g.AC) { await g.init?.(); return !!g.AC_ready }
-            return !!(await g.AC_OK?.())
-        } catch { return false }
-    }
-    // ONE affordance for both permissions; reuses DirectoryOpener's own open_dir action so
-    //  the disk path can't drift from the data layer's wiring.
-    async function open_share() {
-        share_error = ''
-        opening_share = true
-        const wakes = pending_gats.map(wake_gat)          // AC resume|init — within the gesture
-        let disk_p: Promise<any> | null = null
-        if (disk_gated) {
-            const act = H?.o({ watched: 'actions' })[0]?.o({ action: 1, role: 'open_dir' })[0]
-            if (!act?.sc.fn) { share_error = 'wormhole not ready yet — a moment'; opening_share = false; return }
-            disk_p = act.sc.fn()                          // requestDirectoryAccess() — same gesture
-        }
-        // the full keep-awake pin rides the same gesture (resume + silent source + re-advertise) —
-        //  harmless when the AC is already up, exactly right when this tap is the grant.
-        try { (H as any)?.keep_awake_acquire?.() } catch {}
-        try {
-            await Promise.all(wakes)
-            if (disk_p) await disk_p
-        } catch (e) { share_error = String(e) }
-        finally {
-            pending_gats = pending_gats.filter(g => !g?.AC_ready)
-            ac_poll++
-            opening_share = false
-        }
-    }
+    let share_error   = $derived(gate.error)
+    let opening_share = $derived(gate.opening)
+    const open_share = gate.open_share
 </script>
 
-{#if disk_gated || (ac_wanted && !ac_via_brink)}
+{#if !butler_up && (disk_gated || (ac_wanted && !ac_via_brink))}
     <FaceSucker altitude={77} fullscreen={true}>
         {#snippet content()}
             <!-- ONE standard gate, no situation talk (the human 2026-07-19: it's either needFSA

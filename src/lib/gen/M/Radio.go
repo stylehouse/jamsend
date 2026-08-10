@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return 'c192f95603d74f05~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return 'c213a8425bfa8a14~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -1003,11 +1003,19 @@ async Radio_dial(radio) {
     //     and dial nothing — the next beat re-asks, and once the clock expires this falls through to
     //      the local rung exactly as before.
     //  UNARMED IS UNCHANGED, and that is the safety: Supervisor_hoping answers 0 when no expectation
-    //   exists (no invite in flight, no Supervisor at all, a Book), so every existing path keeps its
-    //    behaviour to the byte.  Only the seconds right after an invite behave differently.
+    //   exists (no Supervisor at all, a Book, a machine with no friends and no invite in flight), so
+    //    every existing path keeps its behaviour to the byte.
+    //  TWO EVENTS ARM IT NOW (2026-08-10): minting an invite, and our own standup on a machine that
+    //   already has friends — the owner killed a peer to show that the second case was the common one
+    //    and went unwaited-for ("that start-playing-our-own-music situation… I actually want it to
+    //     wait").  Both are bounded by the same five seconds and both fall through to the local rung
+    //      when the clock runs out, so the worst case this can cost a solo listener is five seconds.
     let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
     if (sup && this.Supervisor_hoping(sup, 'swarm.arrival')) {
-        let waitnote = 'waiting for someone to answer your invite'
+        // same two events, same distinction as the give-up below: say which one we are waiting on.
+        let waitnote = this.Supervisor_because(sup, 'swarm.arrival') === 'invite'
+            ? 'waiting for someone to answer your invite'
+            : 'looking for your friends'
         if (radio.sc.note !== waitnote) { radio.sc.note = waitnote; radio.bump() }
         return null
     }
@@ -1033,6 +1041,95 @@ async Radio_dial(radio) {
     }
     this.Radio_reason(w, radio)
     return null
+
+},
+// Radio_watch_shelf — register the empty-share watch.  STANDING, not a milestone, and the choice
+//  matters: a share is opened, closed and re-opened, and a folder that empties after being full is
+//   exactly the case worth shouting about.  A milestone would latch met the first time one record
+//    was ever seen and then never speak again — the posed-heist failure in miniature.
+Radio_watch_shelf(w) {
+    let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
+    if (!sup) return
+    this.Supervisor_watch(sup, 'radio.shelf', 'there is music in your share — records to play', 'standing', 'Radio_probe_shelf', w, this.Supervisor_stage('share'))
+
+},
+// Radio_probe_shelf — how many records the listener's OWN shelf holds.  A pure read: `o()[0]`
+//  throughout, never Ra_home_self, which is an `oai` chain that would MINT the shelf it was asked
+//   about on every Supervisor tick (the "a probe that collects" trap the Supervisor header names).
+//  THREE ANSWERS, not two, because "I cannot see a shelf" and "I can see it and it is empty" send a
+//   listener to different places — the first is a boot that has not got there yet, the second is a
+//    share with no music in it, which is the thing the owner asked to notice.
+Radio_probe_shelf(w, sup) {
+    if (!w) return { verdict: 'unknown', note: 'no radio world' }
+    let pub = this.Radio_pub(w) || 'me'
+    let home = w.o({ MusuSelf: 1, pub: pub })[0]
+    let shelf = home ? home.o({ stock: 1, pub: pub })[0] : null
+    if (!shelf) return { verdict: 'unknown', note: 'no shelf yet — still starting up' }
+    let recs = this.Ra_recs(shelf)
+    if (!recs.length) return { verdict: 'wrong', note: 'no music in your share — open a folder with some in it' }
+    return { verdict: 'ok', note: recs.length + ' records' }
+
+},
+// Radio_dials — register the radio's OVERALL STATES.  Registered from Stoker_ensure alongside the
+//  shelf watch, for the same reason: idempotent and re-entered, so they stand from the first dial.
+Radio_dials(w) {
+    let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
+    if (!sup) return
+    this.Supervisor_dial(sup, 'radio.remote', 'remote music', 'Radio_dial_remote', w, this.Supervisor_stage('friend'))
+    this.Supervisor_dial(sup, 'radio.solo', 'listening alone', 'Radio_dial_solo', w, this.Supervisor_stage('friend'))
+    this.Supervisor_dial(sup, 'radio.fresh', 'fresh music', 'Radio_dial_fresh', w, this.Supervisor_stage('sound'))
+
+},
+// Radio_dial_remote — THE LADDER THE OWNER DESCRIBED, in three rungs that must never be collapsed:
+//  *"remote exists, has heard of music, and then has music ready to play"*.  Each rung is a genuinely
+//   different situation with a different thing to do about it, and a boolean "have remote music"
+//    would answer yes to all three and no to the one that matters.
+//   no friend at all           → `no`,   and say so
+//   a friend, no records known → `part`, we are still learning what they have
+//   records known, none warm   → `part`, the bytes are owed — this is the one that used to read yes
+//   playable records           → `yes`,  with the count that would ACTUALLY be drawn
+//  Rule 3: the reading shows its parts throughout, never an AND.
+Radio_dial_remote(w, sup) {
+    if (!w) return { state: 'unknown', reading: 'no radio world' }
+    let radio = w.o({ Radio: 1 })[0]
+    let c = this.Radio_pool_census(w, radio)
+    let who = c.names.length ? c.names.join(' + ') : ''
+    if (!c.friends) return { state: 'no', reading: 'nobody' }
+    if (!c.known) return { state: 'part', reading: who + ' — nothing counted yet' }
+    if (!c.playable) return { state: 'part', reading: who + ' — knows of ' + c.known + ' · none ready' }
+    return { state: 'yes', reading: c.playable + ' playable of ' + c.known + ' from ' + c.friends + ' (' + who + ')' }
+
+},
+// Radio_dial_solo — are we listening alone?  `radio.sc.solo` is already the real fact, carrying its
+//  own reason tag (gathering|offline|alone|gaveup), but it is DELETED the moment a friend's track
+//   opens — an absence nobody can watch, snap or assert.  As a dial it becomes all three.
+//  Reads the radio's own tag rather than recomputing it: two copies of one judgement is how a face
+//   starts lying, and this file already carries that scar.
+Radio_dial_solo(w, sup) {
+    if (!w) return { state: 'unknown', reading: 'no radio world' }
+    let radio = w.o({ Radio: 1 })[0]
+    if (!radio) return { state: 'unknown', reading: 'no radio' }
+    if (radio.sc.Radio !== 'playing') return { state: 'unknown', reading: 'not playing' }
+    if (!radio.sc.solo) return { state: 'no', reading: radio.sc.aim_by ? ('with ' + radio.sc.aim_by) : 'with a friend' }
+    let why = String(radio.sc.solo)
+    let by = radio.sc.solo_by ? (' — ' + radio.sc.solo_by) : ''
+    return { state: 'yes', reading: 'your own music (' + why + ')' + by }
+
+},
+// Radio_dial_fresh — HAVE WE STARTED GOING ROUND AGAIN (the owner: *"there's a state of running out of
+//  fresh music and going around what you've already heard"*).  Rule 5 in the flesh: `replays` is a
+//   monotone count and on its own reads as healthy activity, so the reading pairs it with how much is
+//    actually left — "0 fresh of 14 · round 3" is a state, "3 replays" is a number that only climbs.
+//  Counts the FRIEND pool, because that is where exhaustion is a social fact rather than a shelf size;
+//   the own-shelf ladder replays by design and says so in `replays` already.
+Radio_dial_fresh(w, sup) {
+    if (!w) return { state: 'unknown', reading: 'no radio world' }
+    let radio = w.o({ Radio: 1 })[0]
+    let c = this.Radio_pool_census(w, radio)
+    let round = +(radio?.sc?.replays || 0)
+    if (!c.playable) return { state: 'unknown', reading: 'nothing playable to be fresh' }
+    if (c.fresh) return { state: 'yes', reading: c.fresh + ' fresh of ' + c.playable }
+    return { state: 'no', reading: 'round again — 0 fresh of ' + c.playable + (round ? ' · replay ' + round : '') }
 
 },
 // Radio_reason — friend-exclusive and nothing playable: say WHY, plainly, on radio.sc.note
@@ -1071,7 +1168,12 @@ Radio_alone_why(w) {
     //      that actually creates one is an invite.
     if (this.Supervisor_w) {
         let sup = this.Supervisor_w(this.top_House())
-        if (sup && this.Supervisor_given_up(sup, 'swarm.arrival')) return { tag: 'gaveup', name: '' }
+        // `because` is the arming event, carried by whoever armed it — an invite ("come here", and
+        //  nobody came) or our own standup on a machine with friends ("they're just not up").  Two
+        //   very different sentences to a listener, and guessing between them is how the note starts
+        //    lying: the owner killed a peer to make exactly this case, and the honest line there is
+        //     that the friend is offline, not that an invite went unanswered.
+        if (sup && this.Supervisor_given_up(sup, 'swarm.arrival')) return { tag: 'gaveup', name: '', because: this.Supervisor_because(sup, 'swarm.arrival') }
     }
     if (anyPier) return { tag: 'offline', name: '' }
     return { tag: 'alone', name: '' }
@@ -1082,7 +1184,9 @@ Radio_reason(w, radio) {
     let note = why.tag === 'gathering'
         ? ('gathering music from ' + why.name + ' — nothing has arrived yet')
         : (why.tag === 'gaveup'
-            ? 'nobody answered your invite — playing your own music'
+            ? (why.because === 'invite'
+                ? 'nobody answered your invite — playing your own music'
+                : 'your friends did not come online — playing your own music')
             : (why.tag === 'offline'
                 ? 'your friends are offline — nobody online to play right now'
                 : 'nobody online yet — connect a friend to hear their music'))
@@ -1356,20 +1460,90 @@ Radio_playable(rec) {
 // `all` (2026-08-06): ignore heard-this-sitting — the EXHAUSTION pass.  Without it the caller cannot
 //  tell "no friend music has landed" from "I have played all of it", and those want opposite answers
 //   (an honest note vs. a replay).  Same walk, one gate dropped, so the two readings can never drift.
+// AIM — WHO WE ARE LISTENING WITH (the owner 2026-08-10: *"it plays radio with the first Pier to
+//  connect anyway. but then subsequent Piers that connect, we don't aim the Radio at"*).
+//  Until now this was one flat bag: every friend's records in a single uniform draw, so a second
+//   friend arriving silently diluted the first mid-session — you were listening WITH somebody and
+//    then, with no event and no notice, you were listening with a crowd.  That is a defensible
+//     shuffle and an indefensible social act.
+//  The aim LOCKS on the first friend we actually play, not on the first %Pier that exists: playing
+//   somebody's record is the moment a session with them starts, and a sealed contact from weeks ago
+//    is not.  It RE-AIMS only when the aimed friend yields nothing this dial — so a friend going
+//     offline hands the radio on rather than stranding it, and nobody has to remember to clear it.
+//  Falling back is never a downgrade: the fallback pool is exactly the old behaviour, so this can
+//   only ever narrow a choice that had already been made arbitrarily.
 Radio_dial_pool(w, radio, all) {
     let cands = []
+    let aimed = []
+    let aim = String(radio.sc.aim || '')
     for (const home of w.o({ MusuThem: 1 })) {
         if (!home.sc.pub) continue
-        let shelf = this.Ra_home_them(w, String(home.sc.pub))
+        let pub = String(home.sc.pub)
+        let shelf = this.Ra_home_them(w, pub)
         for (const rec of this.Ra_recs(shelf)) {
             if (!all && radio.c.heard && radio.c.heard[rec.sc.id]) continue
             // presence, not materialisation — the same per-landed-chunk burn as Radio_lineup_fill above.
             if (!this.Radio_playable(rec)) continue
             cands.push(rec)
+            if (aim && pub === aim) aimed.push(rec)
+            if (!rec.c.from_pub) rec.c.from_pub = pub
         }
     }
-    if (!cands.length) return null
-    return cands[this.Ra_rand(w, cands.length)]
+    let pool = aimed.length ? aimed : cands
+    if (!pool.length) return null
+    let pick = pool[this.Ra_rand(w, pool.length)]
+    this.Radio_aim_at(w, radio, pick)
+    return pick
+
+},
+// Radio_aim_at — lock (or re-lock) the aim onto whoever this pick belongs to.  Only ever called with
+//  a record we are about to play, which is what keeps "aim" meaning *who we are listening with*
+//   rather than *who exists*.  `from_pub` rides `.c` — it is a runtime backlink to the shelf we found
+//    the record on, and a pub in the record's own sc would be a second particle impersonating the
+//     holding.
+Radio_aim_at(w, radio, rec) {
+    let pub = String(rec?.c?.from_pub || '')
+    if (!pub || radio.sc.aim === pub) return
+    radio.sc.aim = pub
+    let name = this.Radio_friendly ? this.Radio_friendly(w, pub) : ''
+    if (name) radio.sc.aim_by = name
+    if (!name) delete radio.sc.aim_by
+    radio.bump()
+
+},
+// Radio_pool_census — ONE honest count of the friend pool, for the dial and for anyone else who asks.
+//  This exists because the alternative — counting friend %Cards — is the trap: it says yes while the
+//   radio has nothing to play.  Two things make a known record unplayable, and both are load-bearing:
+//    a record is only reachable if chunk 0 is in the warm window (else the shuffle cannot see it at
+//     all), which is what Radio_playable actually tests; and `radio.c.heard` is keyed by BARE id, so
+//      your own listening drains the friend pool and two tabs on one box share ids.
+//  So this counts three different things and never conflates them — the owner's own ladder:
+//   `friends` (a remote exists) · `known` (it has heard of music) · `playable` (music ready to play).
+//    Plus `fresh`, which is `playable` minus what this sitting has already heard, because "running out
+//     of fresh music and going around what you've already heard" is a state worth naming.
+//  A PURE READ: `o()[0]`-style throughout, no minting, nothing written.
+Radio_pool_census(w, radio) {
+    let friends = 0
+    let known = 0
+    let playable = 0
+    let fresh = 0
+    let names = []
+    for (const home of w.o({ MusuThem: 1 })) {
+        if (!home.sc.pub) continue
+        let pub = String(home.sc.pub)
+        friends = friends + 1
+        let shelf = home.o({ stock: 1, pub: pub })[0]
+        let recs = shelf ? this.Ra_recs(shelf) : []
+        known = known + recs.length
+        for (const rec of recs) {
+            if (!this.Radio_playable(rec)) continue
+            playable = playable + 1
+            if (!(radio && radio.c.heard && radio.c.heard[rec.sc.id])) fresh = fresh + 1
+        }
+        let nm = this.Radio_friendly ? this.Radio_friendly(w, pub) : ''
+        names.push(nm || pub.slice(0, 8))
+    }
+    return { friends: friends, known: known, playable: playable, fresh: fresh, names: names }
 
 },
 // Radio_nudge — the stoker's landing announcement: stock JUST stood, and a digging radio must
@@ -1439,6 +1613,14 @@ Radio_prod_seed(w) { const H = this;
 },
 Stoker_ensure(w) {
     this.Radio_prod_seed(w)
+    // NOTICE AN EMPTY SHARE (the owner 2026-08-10: *"we also need to notice when there's no music at
+    //  all in their share"*).  Registered HERE for the same reason `swarm.station` registers inside
+    //   Swarm_station_up: this verb is idempotent and re-entered on every dial, so the watch stands
+    //    from the first dial onward without needing a home of its own, and re-registering costs a
+    //     lookup.  Radio owns the shelf, so Radio hands the watch over — the Supervisor never learns
+    //      what a share is.
+    this.Radio_watch_shelf(w)
+    this.Radio_dials(w)
     let st = w.o({ Stoker: 1 })[0]
     if (!st) {
         st = w.i({ Stoker: 'idle', face: 'Stoker', crew: 'Radio' })

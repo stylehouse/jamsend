@@ -3,12 +3,17 @@
     import { TheC } from "$lib/data/Stuff.svelte"
     import { onMount } from "svelte"
 
+// the ONLY import this file has, and the only one it should ever grow: a face.  Everything else
+//  the Supervisor touches arrives through registration — importing a subsystem here would be the
+//   first step back toward the hand-written headline this replaced.
+import SupervisorPanel from "$lib/O/ui/SupervisorPanel.svelte"
+
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_O_Supervisor(): string { return '3b279eb7babbbeb7~g1' },
+    Ghostmeta_Ghost_O_Supervisor(): string { return '19b24938945a89db~g1' },
 
 // Supervisor.g — THE WATCHER.  One world holding a ROSTER of watches that other processes hand it.
 //  It reads every watch each pass, folds ONE verdict, and stays QUIET while they all read ok.
@@ -57,6 +62,7 @@
 Supervisor(A, w) {
     if (!w.c.plan_done) this.Supervisor_plan(w)
     this.Supervisor_read(w)
+    this.Supervisor_read_dials(w)
     this.Supervisor_say(w)
     // THE WATCHER MUST BE THE MOST ROBUST THING HERE.  Reporting is the only part of this file that
     //  reaches outside the process, so it is the only part that can fail in ways nothing here
@@ -69,7 +75,15 @@ Supervisor(A, w) {
 // Supervisor_plan — stand the furniture.  ONE summary row, minted before any watch exists so the
 //  vocabulary is visible in a snap from the first tick (the Vyto_board precedent).
 Supervisor_plan(w) {
-    w.oai({ Supervisor: 'watching' })
+    let row = w.oai({ Supervisor: 'watching' })
+    row.c.up = w
+    // REGISTER THE PANEL, the Vyto_plan idiom exactly (`uis.oai({UI:'Vyto'},{component: Vytui})`).
+    //  The glass cell and this panel are different instruments, not two sizes of one: the cell must
+    //   stay silent when nothing is wrong, so it can never also be the place you go to READ the
+    //    roster.  Registering here means BigSoundland mounts it through the UI surface it already
+    //     has, with no change over there.
+    let uis = this.oai_enroll(this, { watched: 'UIs' })
+    uis.oai({ UI: 'Supervisor' }, { component: SupervisorPanel })
     this.Supervisor_log_plan(w)
     w.c.plan_done = 1
 
@@ -107,17 +121,194 @@ Supervisor_w(H) {
 //                greps, and it survives the ghost being reloaded under a live world.
 //  `subject`  — the C the probe reads, on `.c` (a ref — never sc; an object in sc is fatal at
 //                encode).  May be null for a probe that reads the House itself.
-Supervisor_watch(w, key, sentence, kind, fn, subject) {
+//  `stage`    — WHERE IN THE ARC this sits (the owner 2026-08-10: *"the list of goals it has is badly
+//                ordered — the first one comes last, could do with more structure as well"*).  A small
+//                 number, declared by the REGISTRAR, because only the registering process knows what
+//                  its claim depends on; the Supervisor sorts by it and never interprets it.  The
+//                   named rungs are in Supervisor_stage — use them, don't invent numbers.
+//                Omitted ⇒ UNPLACED, which sorts to the END rather than the middle: a watch whose
+//                 owner never said where it belongs must not silently wedge itself into the middle of
+//                  somebody else's arc.
+//  SEVERITY ORDER AND ARC ORDER ARE DIFFERENT ORDERS, and this is the distinction the faces kept
+//   getting wrong.  The CELL has room for one line, so it wants the worst thing (Supervisor_speaking).
+//    A LIST is a story of how the machine comes up, so it wants the arc, done rows and all
+//     (Supervisor_lines).  Sorting a list by severity is what put the finished first step at the
+//      bottom of the loading screen.
+Supervisor_watch(w, key, sentence, kind, fn, subject, stage) {
     if (!w) return null
     let watch = w.oai({ Watch: key })
     watch.sc.sentence = sentence
     watch.sc.kind = (kind === 'milestone') ? 'milestone' : 'standing'
     watch.sc.fn = fn
+    if (stage) watch.sc.stage = '' + stage
+    // REGISTRATION INDEX, on `.c` — the tiebreak inside a stage, so two watches on the same rung keep
+    //  the order their owners registered them in rather than shuffling with the child store.  Runtime
+    //   only: it is a render detail and has no business in a snap.
+    if (!watch.c.i) { w.c.wn = (w.c.wn || 0) + 1; watch.c.i = w.c.wn }
     watch.c.subject = subject ?? null
     if (watch.c.up !== w) watch.c.up = w
     return watch
 
 },
+// Supervisor_stage — the named rungs of the arc, so a registrar picks a WORD and the numbers stay the
+//  Supervisor's business.  Gaps of ten on purpose: a process that needs to sit between two of these
+//   can, without anybody renumbering.  This list is the ONE place this file comes close to naming
+//    subsystems, and it does not — these are stages of any machine coming up, and a process that
+//     doesn't fit picks the nearest or passes nothing.
+Supervisor_stage(name) {
+    if (name === 'self')   return 10      // who am I — an identity exists
+    if (name === 'door')   return 20      // can anyone reach me — the relay, the transport
+    if (name === 'share')  return 30      // have I got anything — music on the shelf
+    if (name === 'friend') return 40      // is anyone there — a pier, a grant, a live peer
+    if (name === 'sound')  return 50      // is it working — noise actually coming out
+    if (name === 'story')  return 60      // the machine watching itself
+    return 0
+
+},
+// Supervisor_notice — SOMETHING HAPPENED (the owner 2026-08-10: *"Supervisor should notice any
+//  interesting thing happen"*).  The third kind of thing this file holds, and it is genuinely a third
+//   kind, not a watch wearing a hat:
+//    a WATCH is a standing question we re-ask every tick and can answer wrongly and then rightly;
+//    a NOTICE is a moment that occurred, which is true forever and answers no question at all.
+//   Trying to model "a friend just arrived" as a watch is what produces the posed heist: a latched
+//    claim about a past event, re-read forever by a probe that cannot see the past.
+//
+// IT LIVES ENTIRELY ON `.c`, and that is a decision worth defending rather than a shortcut.  A notice
+//  ring is by nature the churniest thing in the tree — a new row every time anything interesting
+//   happens, each one carrying a wall clock — and in `sc` it would rewrite every downstream fixture
+//    on every run forever.  Notices are for a human watching a live machine, which is exactly the
+//     audience `.c` serves.  If a Book ever needs to gate on an event, the answer is a `%see`
+//      assertion at the moment it happens, not a snapped ring: that is what assertions ARE.
+//
+// CAPPED, and dropped from the front: an unbounded ring on a long-lived tab is a leak with a nice
+//  name.  Twelve is what a face can show without scrolling.
+Supervisor_notice(w, sentence) {
+    if (!w || !sentence) return
+    w.c.notices = w.c.notices || []
+    // ONE IN A ROW ONLY: a caller on a per-tick seam that keeps noticing the same thing would fill
+    //  the ring with one sentence and push out everything that actually happened.  A repeat that is
+    //   genuinely a second occurrence bumps `n` instead, which is more informative anyway.
+    let last = w.c.notices[w.c.notices.length - 1]
+    if (last && last.sentence === sentence) { last.n = (last.n || 1) + 1; last.at = Date.now(); return }
+    w.c.notices.push({ sentence: sentence, at: Date.now(), n: 1 })
+    while (w.c.notices.length > 12) w.c.notices.shift()
+
+},
+// Supervisor_noticed — the ring, newest LAST (the order it happened in, which is the order it reads
+//  in).  A face that wants newest-first reverses a copy; the model does not hold two orders.
+Supervisor_noticed(w) {
+    if (!w) return []
+    return w.c.notices || []
+
+},
+//#region dials — the OVERALL STATES, as particles
+// A DIAL IS NOT A WATCH, and the difference is what it is for.  A watch answers *is this ok* in three
+//  words and exists to go loud.  A dial answers *what is the state* — "2 sealed · 1 sealing", "14
+//   playable from 2 friends" — and exists to be READ, including when everything is fine.
+//
+// WHY THEY HAVE TO BE PARTICLES (the owner 2026-08-10: *"I want it to contain the overall states like
+//  'we have Pier', 'have remote music' — it needs some more reliable dials to read"*).  These facts
+//   already existed — and that is precisely the defect.  "We have Pier" was computed inside
+//    DoorFace.svelte; "we have remote music" was scattered across a deletion in Radio_open, a `by` key
+//     on some Cards, and a name lookup.  Derived inside a face, used once, thrown away at the face
+//      boundary.  A number computed in a `$derived` cannot be snapped, cannot be asserted by a Book,
+//       cannot bump a version for another face, and cannot be compared between two tabs.  Making it a
+//        particle buys all four at once, and that is the whole change.
+//
+// THE FIVE RULES, each already paid for in this repo — a dial that breaks one is worse than no dial:
+//  1. A DIAL MAY NOT MUTATE.  Ra_stock_standing looked like a probe and deleted files two calls down.
+//      Check the call tree, not the intent.
+//  2. "NO" AND "DON'T KNOW" ARE DIFFERENT READINGS.  The FSA capability guards no-opped and answered,
+//      disabling six subsystems while every readout stayed calm.  A dial that cannot say `unknown`
+//       reports a broken sensor as good news.  Hence `state:'unknown'` is first-class, never folded.
+//  3. A COMPOSITE TRUTH SHOWS ITS PARTS, NEVER AN AND.  The half-seal cost a live evening: a whole
+//      %Pier holds BOTH grants, and collapsing that to one boolean made both ends read "merely slow".
+//       Say "sealing — 1 of 2".  `state:'part'` exists so a face can show partial without inventing it.
+//  4. IF IT MATTERS IT RIDES sc.  `pier.c.heard_at` is `.c`: it never snaps, so no Book can witness
+//      it, and it resets on reload, so any "learns over time" reading of it never does.
+//  5. A MONOTONE NUMBER IS NOT COVERAGE.  A high-water cursor read as healthy progress with three
+//      transfer stalls under it.  Prefer "N of M, oldest stuck 4m" to a count that only climbs.
+//
+// Supervisor_dial — register one.  Same door as Supervisor_watch and the same law: the process that
+//  owns the fact hands the dial over, and the Supervisor never learns what a Pier is.
+Supervisor_dial(w, key, label, fn, subject, stage) {
+    if (!w) return null
+    let dial = w.oai({ Dial: key })
+    dial.sc.label = label
+    dial.sc.fn = fn
+    if (stage) dial.sc.stage = '' + stage
+    if (!dial.c.i) { w.c.dn = (w.c.dn || 0) + 1; dial.c.i = w.c.dn }
+    dial.c.subject = subject ?? null
+    if (dial.c.up !== w) dial.c.up = w
+    return dial
+
+},
+// Supervisor_read_dials — one pass.  Same resolve-by-name, same tolerance of a missing probe (the
+//  ghost that owns it may simply not be loaded yet), same never-throw-into-the-boot rule as the watch
+//   pass.  A dial has NO latch: every reading is fresh, because a state that stuck would be the exact
+//    lie rule 2 is about.
+Supervisor_read_dials(w) {
+    for (const dial of w.o({ Dial: 1 })) {
+        let fn = dial.sc.fn
+        let probe = (fn && this[fn]) ? this[fn] : null
+        if (!probe) { this.Supervisor_dial_stamp(dial, 'unknown', 'no probe named ' + (fn || '?')); continue }
+        let got = null
+        try { got = probe.call(this, dial.c.subject, w) } catch (er) { got = { state: 'unknown', reading: this.Supervisor_clean(er) } }
+        this.Supervisor_dial_stamp(dial, this.Supervisor_dial_state(got), this.Supervisor_dial_reading(got))
+    }
+
+},
+// Supervisor_dial_state — normalise to the four words.  `part` is not a convenience: it is rule 3
+//  made unfakeable, so a face showing a half-seal cannot round it to yes or no.
+Supervisor_dial_state(got) {
+    let s = (got && typeof got === 'object') ? got.state : got
+    if (s === 'yes' || s === 'no' || s === 'part' || s === 'unknown') return s
+    return 'unknown'
+
+},
+Supervisor_dial_reading(got) {
+    if (got && typeof got === 'object' && got.reading) return String(got.reading)
+    return ''
+
+},
+// Supervisor_dial_stamp — write it, bump only on change (the sc-is-not-reactive law), and NOTICE a
+//  state that turns.  A dial changing state is the definition of an interesting thing happening —
+//   "we have a Pier now" is exactly the sentence the owner wanted the Supervisor to notice.
+Supervisor_dial_stamp(dial, state, reading) {
+    let was = dial.sc.state
+    let moved = 0
+    if (dial.sc.state !== state) { dial.sc.state = state; moved = 1 }
+    if (reading && dial.sc.reading !== reading) { dial.sc.reading = reading; moved = 1 }
+    if (!reading && dial.sc.reading !== undefined) { delete dial.sc.reading; moved = 1 }
+    if (moved) dial.bump()
+    if (was && was !== state && dial.c.up) this.Supervisor_notice(dial.c.up, this.Supervisor_dial_mark(state) + ' ' + dial.sc.label + ' — ' + (reading || state))
+
+},
+Supervisor_dial_mark(state) {
+    if (state === 'yes') return '✓'
+    if (state === 'part') return '◐'
+    if (state === 'unknown') return '?'
+    return '·'
+
+},
+// Supervisor_dials — the readings, in arc order, for any face.  Same contract as Supervisor_lines:
+//  the model decides the order and the glyph, the face renders.
+Supervisor_dials(w) {
+    if (!w) return []
+    let rows = w.o({ Dial: 1 }).map(d => ({
+        key: String(d.sc.Dial || ''),
+        label: String(d.sc.label || ''),
+        reading: String(d.sc.reading || ''),
+        state: String(d.sc.state || 'unknown'),
+        mark: this.Supervisor_dial_mark(String(d.sc.state || 'unknown')),
+        stage: d.sc.stage ? +d.sc.stage : 999,
+        i: d.c.i || 0,
+        fn: String(d.sc.fn || ''),
+    }))
+    return rows.sort((a, b) => (a.stage - b.stage) || (a.i - b.i))
+},
+//#endregion
+
 // Supervisor_unwatch — a process standing down drops its own watch.  Transient scaffolding does not
 //  belong in a snap once it has served: leave behind only the watches whose state is worth SEEING.
 Supervisor_unwatch(w, key) {
@@ -137,9 +328,9 @@ Supervisor_unwatch(w, key) {
 //  RE-ARMING IS THE POINT: calling this again restarts the clock (a second invite means we are
 //   hoping again).  A watch that has been given up on is re-armed the same way, so nothing has to
 //    reason about whether the previous hope already expired.
-Supervisor_expect(w, key, sentence, fn, subject, secs) {
+Supervisor_expect(w, key, sentence, fn, subject, secs, stage) {
     if (!w) return null
-    let watch = this.Supervisor_watch(w, key, sentence, 'standing', fn, subject)
+    let watch = this.Supervisor_watch(w, key, sentence, 'standing', fn, subject, stage)
     if (!watch) return null
     // `wait` is the CONFIGURED patience and snaps (legible, stable, a number that never churns).
     //  The deadline is a WALL CLOCK and rides `.c` only — a timestamp in sc makes every fixture
@@ -181,12 +372,41 @@ Supervisor_patience(watch) {
     if (!watch.sc.wait) return
     if (watch.sc.verdict === 'ok') {
         watch.c.deadline = null
-        if (watch.sc.patience) delete watch.sc.patience
+        if (watch.sc.patience) { delete watch.sc.patience; watch.bump() }
         return
     }
     if (!watch.c.deadline) return
     let grade = Date.now() < watch.c.deadline ? 'waiting' : 'given-up'
-    if (watch.sc.patience !== grade) watch.sc.patience = grade
+    if (watch.sc.patience !== grade) { watch.sc.patience = grade; watch.bump() }
+
+},
+// Supervisor_because — WHY we are expecting this, as the arming caller stamped it.  A give-up needs a
+//  reason or the sentence it produces is a guess: "nobody answered your invite" is a lie on a tab that
+//   never minted one, and that exact lie was in the radio's mouth for every boot on a machine whose
+//    friend simply wasn't up (the owner killed Lefto to show me).  The Supervisor doesn't interpret
+//     it — it carries it, like the sentence.
+Supervisor_because(w, key) {
+    if (!w) return ''
+    return String(w.o({ Watch: key })[0]?.sc?.because || '')
+
+},
+// Supervisor_waiting — every expectation still inside its patience, soonest deadline first.  A READ,
+//  for whoever wants to SHOW the waiting rather than decide on it (the Butler's whole content).
+//  Reads the clock, not `sc.patience`, for the same reason Supervisor_hoping does: the grade only
+//   moves on our own tick and a face polls faster than that.
+Supervisor_waiting(w) {
+    if (!w) return []
+    let now = Date.now()
+    let out = w.o({ Watch: 1 }).filter(x => x.c.deadline && x.sc.verdict !== 'ok' && now < x.c.deadline)
+    return out.sort((a, b) => a.c.deadline - b.c.deadline)
+
+},
+// Supervisor_outstanding — milestones not yet met: the work still to happen, in registration order.
+//  NOT the same list as Supervisor_speaking (which is worst-first and drops anything still hoping):
+//   this one is the checklist, and a checklist wants its own order and its done rows kept.
+Supervisor_outstanding(w) {
+    if (!w) return []
+    return w.o({ Watch: 1 }).filter(x => x.sc.kind === 'milestone' && !x.sc.met)
 },
 //#endregion
 
@@ -242,13 +462,43 @@ Supervisor_note(got) {
 //  an empty note DROPS its key rather than writing '' — an absent key reads as "nothing to say" in
 //   every snap, which is exactly true.  (Radio.g's `delete radio.sc.note` is the standing idiom for
 //    this; C.replace() is an async transaction over CHILDREN, not a key-delete.)
+// A WRITE TO sc IS INVISIBLE UNTIL SOMETHING BUMPS (2026-08-10, the owner: *"that sounds like
+//  reactivity problems"* — it was, twice over).  `sc` is a PLAIN object on TheC; only `version`
+//   (X.serial_i) is $state.  So every face reading watch.sc.verdict saw the value it had the pass the
+//    row was CREATED and never moved again — a supervisor that reads the world every tick and shows
+//     you a photograph of its first one.  Radio.g's `radio.sc.note = note; radio.bump()` is the
+//      standing idiom and it is not decoration.
+//  BUMP ONLY ON CHANGE, though: this runs per watch per tick, and an unconditional bump would put the
+//   whole roster in every reactive consumer's dependency churn forever — the version line is how the
+//    graph decides what is worth redrawing, and a supervisor that costs more than it watches has
+//     failed differently.  Silence when nothing moved is the same discipline as Supervisor_speaking.
 Supervisor_stamp(watch, verdict, note) {
-    watch.sc.verdict = verdict
-    if (note) watch.sc.note = note
-    if (!note) delete watch.sc.note
+    let was = watch.sc.verdict
+    let moved = 0
+    if (watch.sc.verdict !== verdict) { watch.sc.verdict = verdict; moved = 1 }
+    if (note && watch.sc.note !== note) { watch.sc.note = note; moved = 1 }
+    if (!note && watch.sc.note !== undefined) { delete watch.sc.note; moved = 1 }
     // the latch: a milestone that has ONCE read ok is met forever.  Standing watches never latch —
     //  they are re-read every pass and are free to go wrong again, which is the whole distinction.
-    if (verdict === 'ok' && watch.sc.kind === 'milestone' && !watch.sc.met) watch.sc.met = 1
+    if (verdict === 'ok' && watch.sc.kind === 'milestone' && !watch.sc.met) { watch.sc.met = 1; moved = 1 }
+    if (moved) watch.bump()
+    // NOTICE THE TURN, not the state.  This is where "notice any interesting thing happen" gets to be
+    //  general instead of a list of call sites somebody has to remember to add to: every registered
+    //   watch that CHANGES ITS MIND is interesting, by construction, and nothing has to opt in.  A
+    //    watch that reads the same thing forever — the healthy majority — says nothing, ever.
+    //  `was` is the verdict before this pass; an undefined `was` is the FIRST read of a fresh watch,
+    //   which is a registration and not an event, so it is silent.
+    if (was && was !== verdict) this.Supervisor_turned(watch, verdict)
+
+},
+// Supervisor_turned — phrase one change of mind.  The sentence is the watch's own claim, so the ring
+//  reads as a story of the machine rather than as a log: "✓ this machine is on the relay …" then
+//   "✗ there is music in your share …".  The mark carries which way it turned.
+Supervisor_turned(watch, verdict) {
+    let w = watch.c.up
+    if (!w) return
+    let mark = (verdict === 'ok') ? '✓' : (verdict === 'unknown' ? '?' : '✗')
+    this.Supervisor_notice(w, mark + ' ' + watch.sc.sentence)
 
 },
 // Supervisor_clean — an error down to one short scalar line.  No newlines (they break a snap line),
@@ -301,40 +551,115 @@ Supervisor_say(w) {
     let row = w.o({ Supervisor: 1 })[0] || w.i({ Supervisor: 'watching' })
     let all = w.o({ Watch: 1 })
     let loud = this.Supervisor_speaking(w)
-    row.sc.watches = '' + all.length
     // the ordered list rides `.c` — refs, never encoded, so the roster costs the snap nothing beyond
     //  the rows themselves.  A face reads THIS rather than re-deriving the order, so the model stays
-    //   the one authority on what is worth saying and in what order.  Reactivity comes free: say|loud
-    //    are sc writes, so the version bump a face reacts off happens on the same pass.
+    //   the one authority on what is worth saying and in what order.  A `.c` write is invisible to
+    //    reactivity by construction, which is fine — the sc writes below are what move the version,
+    //     and they move on exactly the passes this list is worth re-reading.
     row.c.speaking = loud
-    if (!all.length) {
-        row.sc.say = 'nothing is registered — nothing is watched'
-        return this.Supervisor_quiet(row, 0)
-    }
-    if (!loud.length) {
-        row.sc.say = `all ${all.length} well`
-        return this.Supervisor_quiet(row, 0)
-    }
-    let first = loud[0]
-    let note = first.sc.note ? ' — ' + first.sc.note : ''
-    row.sc.say = this.Supervisor_mark(first) + ' ' + first.sc.sentence + note
-    this.Supervisor_quiet(row, loud.length)
+    row.c.lines = this.Supervisor_lines(w)
+    // WHAT WE ARE WAITING FOR IS WORTH SAYING (the owner 2026-08-10: *"it should be talking about a
+    //  Pier coming online while we're waiting for it"*).  The quiet-when-healthy rule was reading too
+    //   broadly: a watch inside its patience is not a FAULT — it stays out of `loud`, so the cell
+    //    doesn't swell or redden — but it is the single most interesting thing happening on the
+    //     machine at that moment, and going silent through it left the listener watching nothing
+    //      happen.  So: faults first, then the wait, then all-well.
+    //  NO COUNTDOWN IN `say`.  A number that changes every second is a key that churns every
+    //   downstream fixture forever (the law the deadline rides `.c` for).  The sentence is stable for
+    //    the whole wait; a face wanting the seconds reads `left` off Supervisor_lines and polls.
+    let waits = this.Supervisor_waiting(w)
+    let say = 'nothing is registered — nothing is watched'
+    if (all.length && !loud.length) say = 'all ' + all.length + ' well'
+    if (waits.length && !loud.length) say = '⋯ ' + waits[0].sc.sentence
+    if (loud.length) say = this.Supervisor_mark(loud[0]) + ' ' + loud[0].sc.sentence + (loud[0].sc.note ? ' — ' + loud[0].sc.note : '')
+    this.Supervisor_summary(row, say, '' + all.length, loud.length)
 
 },
-// Supervisor_mark — the one glyph in front of the sentence.  ✗ it is broken · ○ it has not happened
-//  yet · ? nobody could look.
+// Supervisor_summary — the ONE writer of the summary row, so the bump is in one place and cannot be
+//  forgotten by the next branch somebody adds.  Same change-only discipline as Supervisor_stamp: this
+//   runs every tick, and the summary is the most-watched row in the tree.
+Supervisor_summary(row, say, watches, loud) {
+    let moved = 0
+    if (row.sc.say !== say) { row.sc.say = say; moved = 1 }
+    if (row.sc.watches !== watches) { row.sc.watches = watches; moved = 1 }
+    if (loud && row.sc.loud !== '' + loud) { row.sc.loud = '' + loud; moved = 1 }
+    if (!loud && row.sc.loud !== undefined) { delete row.sc.loud; moved = 1 }
+    if (moved) row.bump()
+
+},
+// Supervisor_mark — the one glyph in front of the sentence.  ✓ it holds · ⋯ we are still hoping ·
+//  ✗ it is broken · ○ it has not happened yet · ? nobody could look.
 Supervisor_mark(watch) {
+    if (watch.sc.met || watch.sc.verdict === 'ok') return '✓'
+    if (this.Supervisor_watch_waiting(watch)) return '⋯'
     if (watch.sc.verdict === 'wrong' && watch.sc.kind === 'milestone') return '○'
     if (watch.sc.verdict === 'wrong') return '✗'
     if (watch.sc.verdict === 'unknown') return '?'
     return '○'
 
 },
-// Supervisor_quiet — carry the loud count as 1-or-absent-style scalar state.  `loud` absent means
-//  nothing to say, which is the healthy shape and the one a snap should show most of the time.
-Supervisor_quiet(row, n) {
-    if (n) row.sc.loud = '' + n
-    if (!n) delete row.sc.loud
+// Supervisor_tone — the mood of a row, as a WORD, so a face styles it without re-deciding it.  Five
+//  words, one per mark, and a face that wants a sixth colour is a face that has started judging.
+Supervisor_tone(watch) {
+    if (watch.sc.met || watch.sc.verdict === 'ok') return 'good'
+    if (this.Supervisor_watch_waiting(watch)) return 'waiting'
+    if (watch.sc.verdict === 'wrong' && watch.sc.kind === 'milestone') return 'todo'
+    if (watch.sc.verdict === 'wrong') return 'bad'
+    return 'blind'
+
+},
+// Supervisor_watch_waiting — is THIS watch still inside its patience?  Off the clock, not off the
+//  grade, for the reason Supervisor_hoping gives: the grade only moves on our tick and a face polls
+//   faster than we do.
+Supervisor_watch_waiting(watch) {
+    if (!watch.c.deadline) return 0
+    if (watch.sc.verdict === 'ok') return 0
+    return Date.now() < watch.c.deadline ? 1 : 0
+
+},
+// Supervisor_lines — THE ONE READING EVERY FACE RENDERS, in ARC order (stage, then registration).
+//
+// WHY THIS EXISTS, and it is the answer to *"is all this being architected nice? I imagine it could
+//  all end up light spaghetti"* (the owner, 2026-08-10) — yes, it was starting to.  Three faces had
+//   each grown their OWN copy of this judgement: the panel had its own rank|mark|tone, the Butler its
+//    own filters, the model its own again.  Three opinions about which row is worst and what glyph it
+//     wears, drifting apart one edit at a time.  Radio.g already carries the sentence for this exact
+//      disease — *"two copies of one judgement is how a face starts lying"* — and it was written after
+//       a page told a listener the opposite of the truth for the same reason.
+// So: the MODEL judges, the FACES render.  A face may choose what to SHOW (the cell takes one row,
+//  the Butler takes the unfinished ones, the panel takes everything) and how it LOOKS.  It may not
+//   decide what a row means.  Anything a face needs to know is a field here — and if it isn't, the
+//    fix is a field here, not a second opinion over there.
+// Everything on `.c`: this is a per-render read of live state, it holds refs, and it must cost the
+//  snap nothing.
+Supervisor_lines(w) {
+    if (!w) return []
+    let rows = w.o({ Watch: 1 }).map(x => this.Supervisor_line(x))
+    return rows.sort((a, b) => (a.stage - b.stage) || (a.i - b.i))
+
+},
+// Supervisor_line — one watch, flattened into everything any face could want from it.  `left` is the
+//  live countdown and is deliberately computed HERE rather than snapped: a per-second number in sc
+//   would churn every downstream fixture forever, which is the same law the deadline rides `.c` for.
+Supervisor_line(watch) {
+    let waiting = this.Supervisor_watch_waiting(watch)
+    return {
+        key: String(watch.sc.Watch || ''),
+        sentence: String(watch.sc.sentence || ''),
+        note: String(watch.sc.note || ''),
+        mark: this.Supervisor_mark(watch),
+        tone: this.Supervisor_tone(watch),
+        // UNPLACED SORTS LAST (999), not middle — see Supervisor_watch's `stage` note.
+        stage: watch.sc.stage ? +watch.sc.stage : 999,
+        i: watch.c.i || 0,
+        kind: String(watch.sc.kind || ''),
+        met: watch.sc.met ? 1 : 0,
+        done: (watch.sc.met || watch.sc.verdict === 'ok') ? 1 : 0,
+        waiting: waiting,
+        left: waiting ? Math.max(0, Math.ceil((watch.c.deadline - Date.now()) / 1000)) : 0,
+        because: String(watch.sc.because || ''),
+        fn: String(watch.sc.fn || ''),
+    }
 
 },
 //#region the report that travels — POST to /log, and the give-up ladder for a door that says no

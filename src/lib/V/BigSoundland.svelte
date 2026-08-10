@@ -28,6 +28,7 @@
     import Ghost      from "$lib/O/Ghost.svelte"
     import { keyser } from "$lib/data/Stuff.svelte"
     import BootGate   from "$lib/O/ui/BootGate.svelte"
+    import Butler     from "$lib/O/ui/Butler.svelte"
     import Actions    from "$lib/O/ui/Actions.svelte"
     import Lens       from "$lib/O/ui/Lens.svelte"
     import InvitePanel from "$lib/O/ui/InvitePanel.svelte"
@@ -235,6 +236,12 @@
 <svelte:window onkeydown={radio_key} />
 
 <BootGate {H} who="the piracy-scape" audio_fullscreen={true} proactive={true} />
+<!-- the Butler: the Supervisor's loading screen, altitude 55 — UNDER BootGate, because a permission
+     the listener has to grant outranks news about work in progress.  It lifts on its own (nothing
+      left to wait for, a 12s cap, or the carry-on tap) and latches down for the tab, so it can never
+       reappear over somebody's music.  Mounted beside BootGate rather than inside the view switch for
+        the spine_shims reason: a persisted `sprawl` must not be able to starve it. -->
+<Butler {H} />
 
 <main class="mound" class:full={glass_full}>
     {#if glass_full}

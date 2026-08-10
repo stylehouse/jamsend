@@ -211,8 +211,8 @@ The model solves against a **hardcoded `[0,0,800,450]`** frame (`Vyto.g:814`) wh
  2. **A neighbour swallowed it whole** — exactly `r_j ≥ d + r_i`, at which point j's wall lands
      *behind* i's own seed and the clip empties the polygon. This is the one that eats a focused
       cell's neighbours, so it is the geometric form of *"it's too much of a crush"*.
- 3. The frame clipped it away — a seed outside the frame. **Still open**, and now the only way a row
-     can go unseated; the corner note is what will report it.
+ 3. The frame clipped it away — a seed outside the frame. **This was wrong, and the correction is
+     worse than the bug I predicted: the frame clip nulls NOTHING.** See THE FRAME SEAT below.
 
 **The law that landed** (`seat_floor`, Vytui — RENDERER-SIDE ONLY; Vyto.g runs its own `foam_cells`
  for the model and was deliberately not touched, so **no fixture can move**):
@@ -242,8 +242,64 @@ Never shrinks a body below its victim, and only ever lowers a radius that was ab
  politely leaving was reported as a row the cut REFUSED. "3 not seated" may well have been three cells
   on their way out.
 
-**Still open here:** the frame-clip case (3 above); and whether `SEAT_MIN = 10` is the right smallest
- cell — it is the first empirical constant in this law and it was chosen, not measured.
+**Still open here:** whether `SEAT_MIN = 10` is the right smallest cell — it is the first empirical
+ constant in this law and it was chosen, not measured. (The frame-clip case is closed; see below.)
+
+### ⇢ THE FRAME SEAT — a row can be missing without ever being crushed (2026-08-10, LANDED)
+
+Picking up the one thing the entry above left open, expecting to close a third null branch. **The
+ measurement said the branch does not exist, and that the real fault was hiding behind it.**
+
+**The frame clip nulls nothing.** `foam_cells` cuts its frame with the seed's own side of each wall —
+ `dir = side > 0 ? -n : n`, written so a frame handed either winding still works. So a seed OUTSIDE
+  the frame does not lose its cell; it keeps the *outside* halfplane, and the cell comes back **whole,
+   full size, drawn entirely beyond the viewBox.** On screen that is indistinguishable from a null —
+    no wall, no face, no label, no reachable click target — except that it is *worse*, because the
+     corner note never counted it. `unseated()` was tallying the honest failure and blind to the silent
+      one. **A fuzz that only samples seeds inside the frame cannot see this**, which is exactly what
+       the 19,458-cell fuzz behind the seat floor did, and why it read a clean zero.
+
+Re-measured with seeds allowed out of frame (verbatim transliteration of the shipped `foam_cells`):
+
+| regime | cells | swallowed | frame-nulled | **drawn off-frame** |
+|---|---|---|---|---|
+| seeds all inside the rect | 25,830 | 0 | 0 | 0 |
+| 15% of seeds out of the rect | 26,266 | 0 | **0** | **1,762 (6.7%)** |
+| nested scope, children drifting past the parent's wall | 17,523 | 6 | **0** | **2,200 (12.6%)** |
+
+It is never partial — the clip keeps one side of a wall, so a cell is wholly in or wholly out (zero
+ cells landed between 2% and 50% in-frame). And the **nested** case is the common one: there the frame
+  is the parent's own cell polygon, so a child only has to drift past its parent to disappear.
+
+**This is the phenomenon the model already named.** `Vyto_normal` §2 VISIBILITY: *"off-frame is a
+ LAYOUT fault, never a fact about the data — 'things go missing somehow', nobody sent the Radio off
+  the side, the solve did."* Its cure — poke the solve, re-seed at the rim — is right and stays. But it
+   is a MODEL cure watching a MODEL target (`m.c.T`) against the ROOT rect, while the renderer cuts
+    from SPRINGS against whatever frame the scope has. So it cannot see a spring in flight, cannot see
+     a nested frame at all, and leaves the cell invisible for the two pokes it is allowed — or forever.
+
+**The law that landed** (`frame_seat`, Vytui — renderer-side only, same guarantee as the seat floor,
+ so no fixture can move): *a seed outside its frame is pulled to `SEAT_MIN` inside every wall it broke*
+  — three passes so a corner converges, the frame's centroid as the last resort for a frame too small
+   to inset into. It re-seats the **drawn** seed only (`seeds` holds copies, never the springs), so the
+    body keeps flying and slides along the rim instead of vanishing off it. Result: **1,762 → 0** and
+     **2,200 → 0**.
+
+**What it costs, stated rather than hidden.** Byte-neutral where nothing is off-frame — 0 of 25,830
+ in-frame seeds moved, identical p05/median/p95 cell area. Where rows DO come back, they take room
+  from the others: median cell area −2%, and a few more cells under 20 area (15→28 of 26k). That is
+   the correct price for a row being present at all.
+
+**Also raised: the repair pass 3 → 6 tries.** Three was enough for the full-frame fuzz but not for a
+ nested scope, where the frame is small and the escalation has less room: 6 rows in 17,523 still died
+  at three tries, none at six, and the size distribution barely moves (p95 11,338 → 11,276). It costs
+   nothing where it isn't needed — the loop breaks the moment there are no victims.
+
+**Not yet seen on the live glass.** Both music tabs came back "no populated glass svg" after the edit
+ (the source is fine — all three components fetch 200 with real transformed output from :9091, so this
+  is tab state, not a compile break). The claim rests on the fuzz plus the byte-neutrality result;
+   what a reload should confirm is the *absence* of change on a healthy glass, since the fix only fires
+    on a fault. `w.c.frame_seats` counts firings (`.c`, never encoded) for exactly that check.
 
 ### ⇢ THE STAGED BODY IS OUTSIDE THE FILL ECONOMY (2026-08-09 later still, LANDED)
 
