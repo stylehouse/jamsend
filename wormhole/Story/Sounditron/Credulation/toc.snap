@@ -1,5 +1,5 @@
 Credulation,of_Book:Sounditron
-  run=0,at=1786322780.317,ok=0,ok_pct=0.63,mode:check
+  run=0,at=1786325522.317,ok=0,ok_pct=0.63,mode:check
     uses:Ghost_N_Peeroleum,dige:18cb029750287c38~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:2a297dc2edd42bbc~g1
@@ -29,4 +29,4 @@ Credulation,of_Book:Sounditron
     uses:Ghost_V_Vytonation,dige:4b115424532783d7~g1
     uses:Ghost_Story_Voronation,dige:a8a9737169608630~g1
     uses:Ghost_Story_Sounditron,dige:1282f4435041752e~g1
-    uses:Ghost_O_Supervisor,dige:19b24938945a89db~g1
+    uses:Ghost_O_Supervisor,dige:72dceef8703b044f~g1

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return 'c213a8425bfa8a14~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '887c9fd4701fc1f4~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -1047,10 +1047,29 @@ async Radio_dial(radio) {
 //  matters: a share is opened, closed and re-opened, and a folder that empties after being full is
 //   exactly the case worth shouting about.  A milestone would latch met the first time one record
 //    was ever seen and then never speak again — the posed-heist failure in miniature.
+//  DON'T FLASH RED ON A BOOT-EMPTY SHELF (the owner 2026-08-10, watching it happen live on Righto:
+//   *"'there is no music in your share' was going off like a problem, then goes green. it should
+//    stay unsolved until green, or get given up on properly"*).  Every shelf starts empty and the
+//     stoker fills it within seconds — reading that instant as a FAULT is the HUD-flapping failure
+//      this whole file exists to avoid, just with a shorter fuse than the invite/friend cases.
+//  So: on a fresh empty read, arm the SAME patience primitive `swarm.arrival` uses (15s — Sounditron's
+//   own `stoker_wait` budget, not a new number) instead of stamping wrong immediately.  While waiting
+//    the watch is REGISTERED but not LOUD (Supervisor_speaking skips `patience:'waiting'`), so it is
+//     genuinely quiet, not just visually suppressed.  Only past 15s does it speak — properly given up
+//      on, per the ask, rather than a bare boolean flicker.
+//  ARMED ONCE PER EMPTY EPISODE: `!watch.c.deadline` is true only right after Supervisor_patience has
+//   cleared it (which happens the moment a read comes back ok), so a healthy tab never re-arms and a
+//    share that empties again LATER (the folder unmounted, the disk emptied) gets a fresh grace
+//     window rather than either re-flashing instantly or — worse — silently staying green forever on
+//      a stale clock.  The probe call here is a PURE READ (Radio_probe_shelf mutates nothing); only
+//       this registering function, never the probe itself, is allowed to arm.
 Radio_watch_shelf(w) {
     let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
     if (!sup) return
-    this.Supervisor_watch(sup, 'radio.shelf', 'there is music in your share — records to play', 'standing', 'Radio_probe_shelf', w, this.Supervisor_stage('share'))
+    let watch = this.Supervisor_watch(sup, 'radio.shelf', 'there is music in your share — records to play', 'standing', 'Radio_probe_shelf', w, this.Supervisor_stage('share'))
+    if (watch && !watch.c.deadline && this.Radio_probe_shelf(w, sup)?.verdict === 'wrong') {
+        this.Supervisor_expect(sup, 'radio.shelf', watch.sc.sentence, 'Radio_probe_shelf', w, 15, this.Supervisor_stage('share'))
+    }
 
 },
 // Radio_probe_shelf — how many records the listener's OWN shelf holds.  A pure read: `o()[0]`

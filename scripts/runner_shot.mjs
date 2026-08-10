@@ -164,6 +164,13 @@ if (svg) {
             const fx = ((mxx - mnx) / vb[2] * 100).toFixed(0), fy = ((mxy - mny) / vb[3] * 100).toFixed(0)
             console.log(`▦ frame ${vb[2]}×${vb[3]} · cloud ${mnx.toFixed(0)},${mny.toFixed(0)} → ${mxx.toFixed(0)},${mxy.toFixed(0)}`
                 + ` · uses ${fx}% × ${fy}% of the bag · ${cells.length} cells (${crushed} crushed)`
+                // rows that got NO cell — crowded out by the cut, or under the vanish floor.  They are
+                //  chips in the corner note on screen, and that note is HTML, so this line is the only
+                //   place a capture can learn they exist.  A SILENT ZERO AND A TAB THAT CANNOT ANSWER
+                //    LOOK THE SAME, which is the whole a-no-op-that-answers failure — so say which, the
+                //     way the fit column does.  (The attribute is read off the live element; the rebuilt
+                //      svg does not carry it, so grepping the file will never find it.)
+                + `${r.noroom == null ? ' · (no-room: old tab)' : r.noroom ? ` · ${r.noroom} with no room` : ' · 0 with no room'}`
                 + `${r.foamereo != null ? ` · foamereo "${r.foamereo}"` : ''}`)
         }
     }

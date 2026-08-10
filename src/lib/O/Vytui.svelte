@@ -230,8 +230,34 @@
     //   top), set the name along it as a textPath, and stand the A at the 205° end — the gate
     //    this world was walked into through, nose out along the wall normal.  Non-foam worlds
     //     (no ball law) keep the waveband, as does any composer who pulled `wave`. ──
+    //  THE CARVE IS DECIDED BY THE ROOM, NOT THE BALL (2026-08-10, the owner: *"some of the cell labels
+    //   are not in the wall style"*).  The gate was `cell.r > 24` — the radius the PILE asked for, before
+    //    the power cut took it away wherever a neighbour pressed.  So it answered the wrong question in
+    //     both directions: a fat little cell (r 20, a near-round 1200px² of wall) was refused the carve
+    //      and fell back to the wave band, while a sliver (r 60, 400px² of shard) kept the full masonry
+    //       treatment on a wall that could not hold it.  `never-measure-a-foam-cell-by-its-radius`, again,
+    //        in the furniture this time rather than in the tally.
+    //  CARVE_ROOM is the area at which the 130° band can hold a few characters (r_eq ≈ 17 ⇒ ~38px of
+    //   arc).  It is deliberately LOOSER than the old radius gate for a round cell (π·24² = 1810) and
+    //    tighter for a shard, which is the whole correction.  Fuzzed at 1500 first and the number was
+    //     WRONG in the direction that matters: on a 5,398-cell calm fuzz it took the carve from 94% to
+    //      82%, i.e. it answered "some labels are not in the wall style" by making more of them not be.
+    //  WHAT THE DEMOTED CELLS FELL BACK TO IS THE REAL BUG.  `wave_d` is drawn off the cell's BBOX top
+    //   edge — and a foam cell never reaches its own bbox corner (the same fact that made the corridor
+    //    read as detached furniture, 2026-08-09).  So every uncarved foam cell's label is a band and a
+    //     tab hanging in space ABOVE the body, worst of all on a shard, whose bbox is large and empty.
+    //      That is the "not in the wall style" the owner can see, and demoting cells into it is exactly
+    //       backwards.  So in a world that CAN carve, the wave band is not a fallback at all: a cell too
+    //        small to hold the masonry states its name in the middle of its own body instead, and one
+    //         too small even for that is not drawn (the vanish floor).  Everything stays ON the cell.
+    const CARVE_ROOM = 900
+    function room_of(cell: PaintCell): number { return cell.room ?? 0 }
+    // the WORLD can carve (it has the ball law and the composer didn't pull `wave`); whether a given
+    //  cell does is a question about that cell's room.  Split because the fallback differs: a carveable
+    //   world falls back to the body, a non-carveable one has no wall law and keeps the wave.
+    function carveable(w: TheC): boolean { return !!(w.c as any).foam && !fo(w, 'wave') }
     function wall_carve(w: TheC, cell: PaintCell): boolean {
-        return !!(w.c as any).foam && cell.kind === 'poly' && cell.r > 24 && !fo(w, 'wave')
+        return carveable(w) && cell.kind === 'poly' && room_of(cell) >= CARVE_ROOM
     }
     const RAD = Math.PI / 180
     // THE BAND RIDES THE REAL WALL (2026-08-09, the owner: *"the `A $Shuffle:5` label curves should
@@ -840,6 +866,7 @@
     //    guarantee the foam has to honour before it may honour anything else.  See the seat floor in
     //     `layout` for why it is expressible as a cap on the AGGRESSOR rather than a floor on the victim.
     const SEAT_MIN = 10
+    const VANISH_ROOM = 380   // the floor a cell must clear to be drawn at all — law at its use site
     const OVERHANG = 1.25     // a slab seat may overrun the cell's ends by this factor of its length
     // ⛔ SIDEWAYS IS OUT (the owner 2026-08-09: "ew... very incoherent! forget sidewaysing, I just meant
     //  the box-within-box reality of Component in cell aligned for space efficiency, without tilting
@@ -879,6 +906,12 @@
                        face: any | null, source: TheC | null, row: TheC,
                        fx: '' | 'arrive' | 'erupt', fxi: number, fit: number, loose?: boolean,
                        zi?: number, sunk?: boolean, poly?: Pt[],
+                       // ROOM — the polygon's own area.  Every furniture gate used to ask `r` or the
+                       //  bbox, and neither is the cell: `r` is the ball the pile ASKED for before the
+                       //   power cut took it away, and a diagonal sliver has a big bbox holding almost
+                       //    nothing.  This is what the cell actually got, and it is what decides what
+                       //     the cell can afford to say.  Absent on disc cells (they have no wall).
+                       room?: number,
                        // the SELF SEAT: this cell is a scope's own face taking a seat among its
                        //  children.  It is drawn to belong to its parent, not to sit beside it.
                        selfseat?: boolean,
@@ -1715,6 +1748,62 @@
                         ;(w.c as any).wall_cuts = (((w.c as any).wall_cuts as number) || 0) + 1
                     }
                 }
+                // ── THE VANISH FLOOR — a cell too small to say anything is worse than no cell ──────────
+                //  (2026-08-10, the owner: *"it's often glitch-zone-tiny-bitsing cells with no clear way
+                //   to bring them back out of nowhere. perhaps if they're too small we simply vanish
+                //    them?"*)  The seat floor above answers "every live row is OWED a cell" and it now
+                //     delivers one in very nearly every case — but a cell is not a seat.  Under about a
+                //      word's worth of wall, what arrives is a shard that carries no face (fit is long
+                //       gone), no carve, no hall and no A dial: it has already lost every part except the
+                //        wall itself, one threshold at a time, and the LAST thing it lost was its handle —
+                //         so the control that would grow it back is gated on it being big enough not to
+                //          need growing.  That is the trap the owner is naming, and it is the same shape
+                //           as the null-poly trapdoor: the one you want to recover is the one you cannot
+                //            press.
+                //  So below VANISH_ROOM the cell is not drawn at all.  This is NOT hiding, and the
+                //   distinction is the whole design:
+                //    · the row still exists, and takes the EXACT exit an unseated row takes — a null poly,
+                //       fit 0, and its own chip in the corner note, whose press already pays attention
+                //        currency to seat it.  A way back in, not a tally, and no new UI to build.
+                //    · its room is GIVEN BACK.  One re-cut without the doomed seeds, so the neighbours
+                //       close over the shard instead of leaving a hole where it was.  Removing a body can
+                //        only remove clips, so every survivor grows or stays — the pass is monotone and
+                //         cannot cascade, which is why one iteration is the whole of it.
+                //  380px² ≈ a 20×19 box: under one legible character at the 14px ident floor.  It is the
+                //   conservative landing on purpose — it removes only what was already unreadable — and it
+                //    is one constant to raise once we have looked at a glass with the count in it.
+                //  Inside the memo MISS, like the repair: a settled glass never re-runs it.
+                //  ⚠ AND IT MUST NOT EAT THE ENTRANCE.  `adopt` springs a newcomer in with **`r: 0` —
+                //   "the radius ramp IS the entrance"** — so EVERY cell is born under this floor and
+                //    passes up through it.  Vanishing during that ramp deletes a cell for its own
+                //     arrival: measured on the live glass as a transient `1 with no room` that settled
+                //      back to 0, i.e. a flicker at every world change.  The floor is a judgement about
+                //       what the CUT left a cell, not about a cell that has not finished growing, so a
+                //        row inside its ARRIVE window is exempt.  A key absent from `seen` is brand new
+                //         (the emit loop stamps it below, after this), which is the most arriving a row
+                //          can be — hence `born == null` counts as arriving rather than as ancient.
+                if (foam) {
+                    const doomed = new Set<number>()
+                    for (let i = 0; i < polys.length; i++) {
+                        const p = polys[i]
+                        if (!p || Math.abs(poly_area(p)) >= VANISH_ROOM) continue
+                        const born = seen?.get(keys[i])
+                        if (seen && (born == null || now_fx - born < ARRIVE_MS)) continue
+                        doomed.add(i)
+                    }
+                    if (doomed.size && doomed.size < polys.length) {
+                        const keep: number[] = []
+                        for (let i = 0; i < polys.length; i++) if (!doomed.has(i)) keep.push(i)
+                        const again = foam_cells(keep.map(i => seeds[i]), keep.map(i => cutRadii[i]), gap, framePoly)
+                        ;(w.c as any).wall_cuts = (((w.c as any).wall_cuts as number) || 0) + 1
+                        // a survivor that comes back null keeps the wall it already had — the re-cut is
+                        //  an improvement pass, never a way to lose a cell that had one.
+                        const out: (Pt[] | null)[] = polys.map((p, i) => doomed.has(i) ? null : p)
+                        for (let k = 0; k < keep.length; k++) if (again[k]) out[keep[k]] = again[k]
+                        polys = out
+                        ;(w.c as any).vanished = (((w.c as any).vanished as number) || 0) + doomed.size
+                    }
+                }
                 wm.set(scopeKey, { sig, polys })
             }
             const polyByKey = new Map<string, Pt[] | null>()
@@ -1960,7 +2049,8 @@
                     cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids, ident, spike: sp,
                                  x: s.x, y: s.y, r: s.r, kind: 'poly', d: path_round(sp ? sp.poly : poly), departing: false, lift,
                                  bx: bb.bx, by: bb.by, bw: bb.bw, bh: bb.bh,
-                                 mx, my, mw, mh, ang, clip: clipPoly, face, source, row, fx, fxi, fit, sunk, poly })
+                                 mx, my, mw, mh, ang, clip: clipPoly, face, source, row, fx, fxi, fit, sunk, poly,
+                                 room: Math.abs(poly_area(poly)) })
                     if (hasKids) layout(n.kids, poly, 0, n.key, n)
                 } else {
                     // no poly: a crowded-out seed draws its 6px marker; a LOOSE row draws at its
@@ -2014,14 +2104,21 @@
                     }
                     sfit = +Math.max(0.2, Math.min(FIT_MAX, sfit)).toFixed(3)
                     cells.push({ tok: selfOf.tok, key: selfOf.key + SELF_KEY, depth: selfOf.depth + 1,
-                                 hasKids: false, ident: '', x: selfSeed.x, y: selfSeed.y,
+                                 // A SCOPE IS THE ONE THING ON THE GLASS WITH NO NAME.  `hasKids`
+                                 //  suppresses a scope's own label (its children tile it, so there is
+                                 //   nowhere to put one), and the self seat — the scope's own body among
+                                 //    its children — carried `ident: ''`, so the name fell off the world
+                                 //     entirely.  It already wears the parent's face, source and row;
+                                 //      wearing the parent's NAME is the same sentence finished.
+                                 hasKids: false, ident: ident_of(selfOf.row, w, selfOf.tok),
+                                 x: selfSeed.x, y: selfSeed.y,
                                  r: Math.max(6, Math.min(sbb.bw, sbb.bh) / 2), kind: 'poly',
                                  d: path_round(spoly), departing: false, lift: false,
                                  bx: sbb.bx, by: sbb.by, bw: sbb.bw, bh: sbb.bh,
                                  mx: sbb.bx, my: sbb.by, mw: sbb.bw, mh: sbb.bh, ang: 0,
                                  clip: clip_of(spoly, sbb), face: selfFace.comp, source: selfFace.source,
                                  row: selfOf.row, fx: '', fxi: 0, fit: sfit, sunk: false,
-                                 poly: spoly, selfseat: true })
+                                 poly: spoly, room: Math.abs(poly_area(spoly)), selfseat: true })
                 }
             }
         }
@@ -2918,8 +3015,13 @@
                      all, so the only cells you could rescue were the ones that did not need rescuing. -->
                 {#if unseated_cells(w).length > 0}
                     {@const missing = unseated_cells(w)}
-                    <div class="unseated" title="rows the cut could not seat — press one to give it the room">
-                        <span class="unseated-lede">not seated</span>
+                    <!-- TWO WAYS TO HAVE NO CELL, ONE WAY BACK.  A row lands here either because the cut
+                         could not seat it at all, or because the VANISH FLOOR took a shard away and gave
+                         the room to its neighbours.  They are the same fact to a reader — "this is here
+                         and you cannot see it" — and the same press fixes both, so they share the note
+                         rather than each growing chrome of their own. -->
+                    <div class="unseated" title="rows with no cell — too crowded to seat, or too small to draw. press one to give it the room">
+                        <span class="unseated-lede">no room</span>
                         {#each missing as u (u.key)}
                             <button class="unseat-chip" onclick={() => attend(w, u.tok, 0.85)}
                                     title={`seat ${u.ident} — takes the room off everyone else`}>{u.ident}</button>
@@ -3013,7 +3115,11 @@
                      is the `--svg` capture, and it could not tell a world that declined the room law from
                      one whose commission never reached it — which is exactly the question a capture gets
                      asked first.  Empty string when unset, so it costs a world nothing to have none. -->
+                <!-- NO SILENT CAPS.  The corner note is HTML and never reaches a capture, so the rows
+                     that have no cell — crowded out, or under the vanish floor — would be invisible to
+                     exactly the instrument we use to judge the glass.  Ride the count out on the svg. -->
                 <svg class="viewport" data-foamereo={String((w.sc as any)?.foamereo ?? '')}
+                     data-noroom={unseated_cells(w).length}
                      viewBox="{cam.x} {cam.y} {cam.w} {cam.h}" preserveAspectRatio="xMidYMid meet">
                     <!-- COPPER (the owner 2026-08-09: "you could use copperannodes.jpg at different
                          scales for texture perhaps").  userSpaceOnUse, so the grain lives in WORLD
@@ -3097,7 +3203,13 @@
                                      it is said once, in a place that costs nobody their pixels. -->
                             {/if}
                         {/if}
-                        {#if !cell.face && !cell.hasKids && !cell.loose && cell.kind !== 'disc'}
+                        <!-- a CARVED cell wears its name in the wall (late pass below) whether or not it
+                             has a face, so it does not also get one in the middle.  Below the carve it
+                             keeps the centred ident — which is also what restores its need floor: the
+                             measure pass stamps a cell's need off THIS text, grow-only, so a faceless
+                             cell that shrinks out of the carve is measured against its own name again
+                             and pushed back up.  The fallback is the floor; nothing had to be added. -->
+                        {#if !cell.face && !cell.hasKids && !cell.loose && cell.kind !== 'disc' && !wall_carve(w, cell)}
                             <text class="ident" class:sunk={cell.sunk} data-key={cell.key} x={cell.x} y={cell.y} text-anchor="middle" dominant-baseline="middle">{cell.ident}</text>
                         {:else if cell.face && !cell.hasKids && !cell.departing}
                             <!-- THE LABEL, ALONG ONE SIDE (the owner: "along one side of the cell, looking
@@ -3114,6 +3226,16 @@
                                 <!-- carved cells wear their name + A in the LATE FURNITURE PASS below
                                      (after every cell has painted), so no neighbour can bury them —
                                      "on top of the A labels".  Nothing to draw here. -->
+                            {:else if carveable(w) && cell.kind === 'poly'}
+                                <!-- TOO SMALL TO CARVE, STILL ITS OWN BODY.  Not the wave band: that is
+                                     struck along the BBOX top edge, which on a ball is off the cell
+                                     entirely, so it would hang the name in the air above a cell too
+                                     small to have put it there.  The name goes in the middle of the
+                                     body — and carries `data-key`, so the measure pass floors this
+                                     cell to its own name, grows it, and it carves on the next pass.
+                                     The demotion is self-repairing, not a resting state. -->
+                                <text class="ident" class:sunk={cell.sunk} data-key={cell.key} x={cell.x} y={cell.y}
+                                      text-anchor="middle" dominant-baseline="middle">{cell.ident}</text>
                             {:else}
                                 {@const wd = wave_d(cell)}
                                 <g class="wave" class:folded={engaged_key(w) === cell.key} class:sunk={cell.sunk}>
@@ -3157,14 +3279,23 @@
                              time, stacked behind the component — the "odd and messy" background the owner
                              named.  Uncarved worlds (no foam, or `wave`) have no band to spill onto and
                              keep the hall, which is the only surface they have. -->
-                        {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && cell.bw > 30 && cell.bh > 40 && !fo(w, 'nohall') && !wall_carve(w, cell)}
+                        <!-- ...and NOT in a carveable world at all (2026-08-10).  The hall is anchored on
+                             the bbox corner, which a ball never reaches, so on any foam cell it is the
+                             same floating furniture the wave band is.  Carved cells already spill along
+                             the wall; small ones now say their name on the body and nothing else.  This
+                             corridor belongs to the worlds with no wall law, where a cell's polygon does
+                             reach its own corner. -->
+                        {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && cell.bw > 30 && cell.bh > 40 && !fo(w, 'nohall') && !carveable(w)}
                             <!-- ANCHOR THE CORRIDOR TO THE WALL, NOT THE BBOX.  A foam cell's bbox
                                  corner is off the disc entirely (a circle never reaches its own
                                  corner), which is why the corridor read as detached furniture.  On a
                                  carved cell it now starts at the gate point (the 205° wall mark, just
                                  under the A) and runs inward; bbox worlds keep the old corner. -->
-                            {@const hx = wall_carve(w, cell) ? arc_pt(cell, 205).x + 2 : cell.bx}
-                            {@const hy = wall_carve(w, cell) ? arc_pt(cell, 205).y + 10 : cell.by}
+                            <!-- the gate-point branch that used to live here is gone with the carve: this
+                                 block is now unreachable from a carveable world, so the corner IS the
+                                 anchor and the ternary was a lie about which worlds get here. -->
+                            {@const hx = cell.bx}
+                            {@const hy = cell.by}
                             {@const hguts = under_guts(cell.row, Math.max(0, Math.min(7, Math.floor((cell.bh - 34) / 10))))}
                             {@const hh = Math.min(cell.bh - 6, 27 + hguts.length * 10)}
                             <g class="hall" class:sunk={cell.sunk}>
@@ -3183,7 +3314,14 @@
                          order can never bury another cell's name or its handle.  Gates last of all:
                          the working part rides highest. -->
                     {#each viewport_cells(w) as cell (cell.key)}
-                        {#if cell.face && !cell.hasKids && !cell.departing && wall_carve(w, cell)}
+                        <!-- NOT GATED ON THE FACE (2026-08-10).  The SPILL beside this name was un-nested
+                             from this block on 2026-08-09 precisely because the face gate was silently
+                             deleting every faceless carved cell's detail — but the NAME was left behind
+                             the same gate, so a faceless cell ended up with its guts curved along the
+                             wall and its name floating in the middle in a different typeface.  Two
+                             styles, one cell.  The wall is the label surface; whatever has a wall
+                             wears its name in it. -->
+                        {#if !cell.hasKids && !cell.departing && wall_carve(w, cell)}
                             <!-- THE NAME IN THE WALL — the ball's upper arc doubles as a masonry
                                  band and the ident rides it as a textPath, so the label is drawn
                                  IN the cell wall (the owner: "drawing them properly in the cell
@@ -3322,7 +3460,10 @@
                             <!-- on a foam ball the bbox corner is off the disc (a circle never reaches
                                  its corner — the detached-hall lesson): seat the seal at the 205° wall
                                  mark instead, where the gate would stand. -->
-                            {@const sp = (w.c as any).foam && cell.r > 24 ? arc_pt(cell, 205) : { x: cell.bx + 8, y: cell.by + 14.5 }}
+                            <!-- `arc_pt` ray-hits the POLYGON, so it lands on the wall of any foam cell,
+                                 carved or not — the bbox corner is only the right seat where the cell
+                                 actually reaches it, which is the non-ball worlds. -->
+                            {@const sp = carveable(w) ? arc_pt(cell, 205) : { x: cell.bx + 8, y: cell.by + 14.5 }}
                             <div class="dosea" class:doped={dv > 0} class:sunk={cell.sunk} role="slider" tabindex="0"
                                  aria-label={`intensity of ${cell.ident}`}
                                  aria-valuenow={dv} aria-valuemin={0} aria-valuemax={9}

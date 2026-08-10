@@ -2794,6 +2794,7 @@ await M.eatfunc({
                             state_vsubs: cr?.vsubs ?? null,                            // the render's own vsubs count
                             svgs: cands.length, molds, overlaps,
                             foamereo: el.getAttribute('data-foamereo') ?? null,   // the composer's deck, so a capture can tell "declined" from "never arrived"
+                            noroom: el.hasAttribute('data-noroom') ? Number(el.getAttribute('data-noroom')) : null,  // rows with no cell; null on a tab predating it
                             cands: cands.map(c => `${c.childElementCount}c/${c.querySelectorAll('text').length}t`) }
                     }
                 } else if (op === 'face') {

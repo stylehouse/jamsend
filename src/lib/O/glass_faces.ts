@@ -36,6 +36,14 @@ export const FACE_MAINKEYS: Record<string, string> = {
                           //  merely stands in the crate; the husk/dial-able gap is the "same 10 tracks" shape
     MusuSelf: 'Crate',    // my music home — the record collection, spread out to gaze across
     MusuThem: 'Crate',    // a friend's music as I hold it — same spread, worn with their name
+    // Tree: THE FACELESS FACE (the human 2026-08-07 "a cell can kind of be a component or a
+    //  rendering of the C data all labelled ... and recurse C**") — MISSING from this map since it
+    //   was built, which means it has never actually rendered.  `cyto_face_kind` (Cyto.svelte) falls
+    //    through to null for any mainkey absent here with no sc.face worn, and Sounditron_commission's
+    //     two %Tree mints (the underworld tree, and 2026-08-10's Supervisor tree) neither set sc.face.
+    //      Found via runner_shot --svg while checking the Supervisor-as-pure-C-tree case: the capture
+    //       showed 4 molds where 6 were minted, and neither missing one was ever a Tree.
+    Tree: 'Tree',
 }
 
 // CREW_MAINKEYS — the viewer's CREW imposition (the /system/ subcellularity, the human

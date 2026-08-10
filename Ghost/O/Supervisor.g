@@ -258,7 +258,12 @@ Supervisor_dial_stamp(dial, state, reading):
     if (reading && dial.sc.reading !== reading) { dial.sc.reading = reading; moved = 1 }
     if (!reading && dial.sc.reading !== undefined) { delete dial.sc.reading; moved = 1 }
     if (moved) dial.bump()
-    if (was && was !== state && dial.c.up) this.Supervisor_notice(dial.c.up, this.Supervisor_dial_mark(state) + ' ' + dial.sc.label + ' — ' + (reading || state))
+    if (was && was !== state && dial.c.up) {
+        let mark = this.Supervisor_dial_mark(state)
+        let line = mark + ' ' + dial.sc.label + ' — ' + (reading || state)
+        this.Supervisor_notice(dial.c.up, line)
+        this.Supervisor_supply_trace(mark, dial.sc.Dial, line)
+    }
 
 Supervisor_dial_mark(state):
     if (state === 'yes') return '✓'
@@ -460,7 +465,23 @@ Supervisor_turned(watch, verdict):
     let w = watch.c.up
     if (!w) return
     let mark = (verdict === 'ok') ? '✓' : (verdict === 'unknown' ? '?' : '✗')
-    this.Supervisor_notice(w, mark + ' ' + watch.sc.sentence)
+    let line = mark + ' ' + watch.sc.sentence
+    this.Supervisor_notice(w, line)
+    this.Supervisor_supply_trace(mark, watch.sc.Watch, line)
+
+// Supervisor_supply_trace — ALSO land every turn on the SUPPLY PIPELINE ring (the owner 2026-08-10:
+//  *"please add Supervisor state changes to the trace"*), which `runner_ask world` already renders as
+//   a delta timeline — dial → open → supply-start → … → first-sound.  A watch flipping mid-gap is
+//    exactly the fact that timeline is missing: today it shows the pipe run dry with no visible cause,
+//     and "swarm.station went ✗" or "radio.shelf went ✓" sitting in the SAME feed at the SAME
+//      millisecond is what turns a mystery gap into an attributed one.
+//  Radio.g owns this ring (Radio_trace, top-House `.c.supply_trace`) and the Supervisor must stay
+//   blind to what Radio is — so this is the standing cross-ghost idiom every other caller already
+//    uses (Repli.g, Swarm.g): `typeof this.Radio_trace === 'function'`, silently absent on a world
+//     with no Radio loaded (a bare Book, a daemon), never a throw.
+Supervisor_supply_trace(mark, key, sentence):
+    if (typeof this.Radio_trace !== 'function') return
+    try { this.Radio_trace(null, { ev: 'supervisor', mark: mark, key: String(key || ''), say: this.Radio_clean ? this.Radio_clean(sentence) : sentence }) } catch (er) {}
 
 // Supervisor_clean — an error down to one short scalar line.  No newlines (they break a snap line),
 //  no object (fatal in sc).
@@ -672,19 +693,57 @@ Supervisor_log_tick(w):
     // PLAYER TABS ONLY.  A Book or a bare runner reporting would put a network call inside a fixture
     //  run, and a diagnostic is supposed to observe this machine, not the test harness on it.
     if (!this.top_House().c.humdinger) return
+    // THE HAPPY SPOOL runs on its own cadence, independent of whether a report is due — it is
+    //  history, not an errand, and it must keep accumulating between sends the same way TimeSpool
+    //   keeps accumulating between Story runs (the owner 2026-08-10: *"track whether Supervisor has
+    //    ever been happy, and perhaps how often, with a TimeSpool like we do"*).
+    this.Supervisor_happy_sample(w)
     if (w.c.log_flying) return
     let now = Date.now()
     let due = w.c.log_next || (now + Number(cfg.sc.first || 30) * 1000)
     w.c.log_next = due
+    // A SECOND, EVENT-TRIGGERED REPORT (the owner: *"we might want another once they start having a
+    //  good time 30s later"*) — the first-boot line answers "did it come up", this one answers "did
+    //   it STAY up long enough to be worth having come up at all".  Armed the moment `loud` first
+    //    empties (Supervisor_happy_sample stamps `w.c.happy_since`), fires ONCE, 30s after — long
+    //     enough that a flicker back to unhappy at second 31 does not read as a lie.  Bypasses the
+    //      ordinary `due` clock entirely: it is keyed to an EVENT, not the wall-clock cadence, the
+    //       same distinction Supervisor_expect draws for `swarm.arrival`.
+    if (w.c.happy_since && !w.c.happy_reported && (now - w.c.happy_since) >= 30000) {
+        w.c.happy_reported = 1
+        if (!w.c.log_flying) this.Supervisor_log_send(w, cfg, 'happy')
+    }
     if (now < due) return
     w.c.log_next = now + Number(cfg.sc.every || 300) * 1000
-    this.Supervisor_log_send(w, cfg)
+    this.Supervisor_log_send(w, cfg, 'health')
+
+// Supervisor_happy_sample — one 0-or-1 sample of "is everything well right now", spooled the exact
+//  TimeSpool way (spool_time_sample: append, whittle to 10, recompute avg) so `avg` reads as a
+//  genuine FRACTION — "happy 8 of the last 10 looks" — not a single point-in-time snapshot, which is
+//   all the health line otherwise carries.  Lives on the Supervisor world itself (not a Story's
+//    The/TimeSpool, which does not exist on a bare app tab) so it works everywhere this file does.
+//  THROTTLED to ~30s between samples — frequent enough that 10 samples span a real session (~5min),
+//   infrequent enough that it costs nothing on the hot pass and never fills its own window in
+//    seconds the way sampling every tick would.
+Supervisor_happy_sample(w):
+    let now = Date.now()
+    if (w.c.happy_next && now < w.c.happy_next) return
+    w.c.happy_next = now + 30000
+    let happy = this.Supervisor_speaking(w).length ? 0 : 1
+    // `happy_since` marks the START of the CURRENT unbroken well streak — cleared the instant a
+    //  sample reads unhappy, so a flap resets the 30s clock above rather than firing on a streak
+    //   that only lasted a moment.  `happy_reported` rides alongside it for the same reason.
+    if (happy && !w.c.happy_since) w.c.happy_since = now
+    if (!happy) { w.c.happy_since = null; w.c.happy_reported = 0 }
+    let spool = w.oai({ TimeSpool: 1 })
+    let tt = spool.o({ TimeTotal: 'happy' })[0] || spool.i({ TimeTotal: 'happy', avg: 0 })
+    if (this.spool_time_sample) this.spool_time_sample(tt, happy)
 
 // Supervisor_log_send — fire and DO NOT AWAIT.  An awaited fetch inside a House pass would hold the
 //  mutex for as long as a stranger's server felt like taking, which is the wedge this whole doc is
 //   about.  The one-line settle callbacks are also the .g dialect's rule, and they suit: every
 //    outcome lands in a named method that can be read on its own.
-Supervisor_log_send(w, cfg):
+Supervisor_log_send(w, cfg, why):
     if (typeof fetch !== 'function') return
     let url = this.Supervisor_log_where(w, cfg)
     if (!url) return this.Supervisor_log_dormant(w, cfg, 'no /log on this host — prod only')
@@ -692,7 +751,7 @@ Supervisor_log_send(w, cfg):
     let body = ''
     // NEWLINE-JOINED JSON LINES, no content-type header — exactly what Cred_report_wild sends and
     //  what the perl logger reads.  One line per report; the batch shape is the rail's, not ours.
-    try { body = this.Supervisor_log_lines(w, cfg).map(l => JSON.stringify(l)).join('\n') } catch (er) { body = '' }
+    try { body = this.Supervisor_log_lines(w, cfg, why).map(l => JSON.stringify(l)).join('\n') } catch (er) { body = '' }
     if (!body) { w.c.log_flying = 0; return }
     try { fetch(url, { method: 'POST', body: body }).then(r => this.Supervisor_log_landed(w, cfg, r.status)).catch(er => this.Supervisor_log_lost(w, cfg, er)) } catch (er) { this.Supervisor_log_lost(w, cfg, er) }
 
@@ -776,11 +835,17 @@ Supervisor_probe_log(cfg, w):
 //  ONE `health` line always, plus a `watch` line PER UNHEALTHY WATCH — the Cred_report_wild shape,
 //   where the summary always travels (a census needs its denominator) and the detail only rides when
 //    something is wrong.  A healthy tab therefore costs one short line every five minutes.
-Supervisor_log_lines(w, cfg):
+//  `why` distinguishes the ordinary cadence report from the one-shot "stayed well 30s" report —
+//   still `kind:'health'` (a consumer counting health lines must not have to know a second kind
+//    exists), just carrying `why` so the two are tellable apart without inventing a schema.
+//  `happy` rides here too: the TimeSpool fraction, so every report — cadence or event — carries the
+//   session's whole happy history, not only this instant's verdict.
+Supervisor_log_lines(w, cfg, why):
     let row = w.o({ Supervisor: 1 })[0]
     let all = w.o({ Watch: 1 })
     let loud = this.Supervisor_speaking(w)
-    let lines = [{ kind: 'health', boot: this.Supervisor_boot_id(w), at: Date.now(), watches: all.length, loud: loud.length, ok: loud.length ? 0 : 1 }]
+    let tt = w.o({ TimeSpool: 1 })[0]?.o({ TimeTotal: 'happy' })[0]
+    let lines = [{ kind: 'health', why: why || 'cadence', boot: this.Supervisor_boot_id(w), at: Date.now(), watches: all.length, loud: loud.length, ok: loud.length ? 0 : 1, happy_avg: tt ? Number(tt.sc.avg || 0) : null, happy_n: tt ? tt.o({ sample: 1 }).length : 0 }]
     for (const x of loud) {
         // the SENTENCE travels — every one is a string literal in this repo, written by us about our
         //  own machine.  The `note` does NOT: notes carry friendly names and counts of a person's

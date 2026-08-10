@@ -192,6 +192,86 @@ The model solves against a **hardcoded `[0,0,800,450]`** frame (`Vyto.g:814`) wh
 
 ## 0. What to get on with next
 
+### ⇢ THE ROOM IS THE MEASURE — the wave band was floating furniture (2026-08-10, LANDED)
+
+*"some of the cell labels are not in the wall style … and perhaps you could do some creative thought
+ about how to improve it — it's often glitch-zone-tiny-bitsing cells with no clear way to bring them
+  back out of nowhere. perhaps if they're too small we simply vanish them?"*
+
+**Three faults, one cause: every furniture gate asked the wrong question.** `wall_carve` asked
+ `cell.r > 24`, the hall asked `bw > 30 && bh > 40`, the A seal asked `bw > 18 && bh > 24`. **`r` is the
+  ball the pile ASKED for**, before the power cut took it away wherever a neighbour pressed; a bbox is
+   a box a shard rattles around in. Neither is the cell. (`never-measure-a-foam-cell-by-its-radius`,
+    again — the tally learned it in July, the furniture never did.) So `PaintCell` now carries
+     **`room`**, the polygon's own area, and the gates read that.
+
+**What the demoted cells fell back to is the actual "not in the wall style".** `wave_d` strikes its
+ band along the **bbox top edge** — and a ball never reaches its own bbox corner. That is the same fact
+  that made the corridor read as detached furniture on 2026-08-09, and it was still live in the label:
+   every uncarved foam cell wore its name on a band hanging **in the air above its body**, worst on a
+    shard whose bbox is large and empty. So in a world that can carve, **the wave band is no longer a
+     fallback at all** — it belongs to the worlds with no ball law, which are the only ones whose cells
+      reach their own corners. The hall went the same way, for the same reason.
+
+**The ladder now, in one number:**
+
+| room | what the cell says |
+|---|---|
+| ≥ `CARVE_ROOM` 900 | name carved in the wall + spill along it |
+| 380 … 900 | name centred on its own body — `data-key`, so the measure pass floors the cell to its own name, grows it, and it carves next pass. **The demotion repairs itself; it is not a resting state.** |
+| < `VANISH_ROOM` 380 | **not drawn.** One re-cut without it, so its neighbours close over the shard; the row takes the exact exit an unseated row takes — null poly, fit 0, its own chip in the corner note. |
+
+**Two more gates that were wrong in the same direction, both fixed:** the wall NAME pass was gated on
+ `cell.face` while the SPILL beside it was not (the spill was un-nested from that block on 2026-08-09
+  *precisely because* the face gate was silently deleting faceless cells' detail — the name was left
+   behind it). So a faceless carved cell wore its guts curved along the wall and its name floating in
+    the middle in a different typeface. **Two styles, one cell.** And the **self seat carried
+     `ident: ''`** — a scope suppresses its own label because its children tile it, so the scope's name
+      had fallen off the world entirely. It already wears the parent's face, source and row; it wears
+       the parent's name now too.
+
+**Why vanishing is the right answer and not hiding.** A shrinking cell loses its parts one at a time at
+ five unrelated thresholds, and **the last thing it loses is its handle** — so the control that would
+  grow it back is gated on it being big enough not to need growing. That is the trap the owner named,
+   and it is the same shape as the null-poly trapdoor: *the one you want to recover is the one you
+    cannot press.* The vanish floor pairs deletion with **the recovery that already exists** — the
+     corner note's chips, whose press pays attention currency to seat the row. No new UI. The note's
+      lede is now **"no room"**, because two different causes land there and they are the same fact to
+       a reader.
+
+**Measured** (transliterated `foam_cells` + `seat_floor` + the new floors, 5,398 → 81,000 cells over
+ 900 scopes per regime). Labels **hanging off the body: 5.8% / 35.5% / 50.2% / 74.2% → 0** across calm /
+  busy / heavy / brutal. The carve count itself is roughly flat (84.7% vs 94.2% calm, **29.3% vs 25.8%
+   brutal**) but its **composition** flips the right way: 1,739–1,914 shards lose masonry they had no
+    wall for, 1,902–4,617 fat little cells gain masonry they were refused. First cut of `CARVE_ROOM` was
+     1500 and it was **wrong in the direction that matters** (94%→82% carved): the fuzz caught it, not
+      review.
+
+**⚠ THE VANISH FLOOR ALMOST ATE THE ENTRANCE, and the live instrument is what caught it.** `adopt`
+ springs a newcomer in with **`r: 0` — "the radius ramp IS the entrance"** — so *every* cell is born
+  under the floor and climbs up through it. The first landing therefore deleted cells for the crime of
+   arriving: the capture read **`1 with no room` on a 4-cell glass, settling back to 0 four seconds
+    later**, i.e. a flicker at every world change. Fixed by exempting a row inside its ARRIVE window
+     (`born == null` counts as arriving — the emit loop stamps `seen` *after* the cut, so absent is the
+      most newly-born a key can be). **The floor is a judgement about what the cut LEFT a cell, never
+       about a cell that has not finished growing.** Note the two obvious guards that do NOT work: a
+        ball-area test (`πr² ≥ floor`) exempts exactly the genuinely tiny-dosed cells this exists to
+         remove, since `seat_floor`'s `MIN_BALL` is 4.1 ⇒ 53px²; and "only vanish on a settled glass"
+          is a no-op, because the cut is memoised on its sig and a settled glass never re-cuts.
+
+**⚠ The vanish rate is NOT yet measured on a real glass.** The fuzz seeds uniformly at random, which
+ clusters far worse than `pile_step`'s relaxation, so its 9%–59% is an **upper bound under adversarial
+  seeding**, not a prediction. The live number now rides out on the capture — `data-noroom` on the
+   viewport svg → `runner_shot --svg` prints `· N with no room` — because the corner note is HTML and a
+    capture could never see it. **Look at that number on a busy glass before trusting 380.** It is one
+     constant, and it is the one to move.
+
+**Not yet answered:** a cell between 380 and 900 shows a centred ident *over* its face if it still
+ mounts one (fit > 0.34 at ~30px across is possible but was not observed). And `CARVE_ROOM` 900 gives
+  ~38px of arc ≈ 5 characters at `.wallname`'s 11.5px — a long ident truncates hard. Truncation on the
+   body beats overflow off it, but a **short name for a small cell** (the ident, not the whole
+    `Heist:10.Yara`) would be better than either.
+
 ### ⇢ THE SEAT FLOOR — every live row is owed a cell (2026-08-09 late, LANDED)
 
 *"what does `3 not seated` mean? I think that's what I want to never happen, certainly not to Radio.

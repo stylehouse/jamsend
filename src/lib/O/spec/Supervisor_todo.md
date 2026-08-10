@@ -7,6 +7,117 @@
 
 ## 0. Get on with next
 
+### ⇑ HANDOVER 2026-08-10 (night) — the destination, the bombs, and the next moves
+
+**THE DESTINATION.** Supervisor went from "a summary row nobody reads" to a real three-part
+ instrument in one day: a **registration-only roster** (watches + dials, never a hardcoded list of
+  subsystems), a **model-judges-faces-render** split (`Supervisor_lines`/`Supervisor_dials` are the
+   one authority on order/mark/tone; three faces — the quiet Vyto cell, the arriving-listener
+    `Butler`, the everything `SupervisorPanel` — render it, never re-decide it), a **notice ring +
+     supply-trace hook** (any watch/dial that CHANGES ITS MIND shows up on `runner_ask world`'s
+      timeline for free), and a **TimeSpool-style happy fraction** riding every `/log` report. Read
+       today's dated sections below for the receipts; this entry is where to start, not where to dig.
+
+**BOMB #1 — WATCHES OUTLIVE THE BOOK THAT REGISTERED THEM, and nothing tells them apart.**
+ `w:Supervisor` stands on Mundo, above `H:Story`, on purpose (§ the header: a Supervisor inside the
+  House it reports on cannot say "the run died"). But `auto_teardown_story` (`Auto.svelte:1096`)
+   only drops `H:Story` — it never touches Supervisor's roster. So on a tab that runs Book A then
+    Book B, **B inherits every watch A ever registered**, stale, forever, with no owner left to
+     refresh or clear them. Caught live tonight: the owner ran Sounditron then VytoNest on the same
+      runner and VytoNest's Butler showed Sounditron's `swarm.arrival`/`sound.*` watches as unfinished
+       noise. **Not a uniform bug** — `swarm.station`/`swarm.piers` (registered from `Swarm_station_up`,
+        not from any Book) are correctly machine-level and SHOULD persist across a Book switch; the
+         Sounditron/Radio watches are Book-specific and should not. **Proposed, not built**: an
+          `eternal` flag on `Supervisor_watch`/`Supervisor_dial` (machine-level callers pass it), plus
+           a `Supervisor_teardown(H)` hook called from `auto_teardown_story` that drops every
+            non-eternal watch/dial. Needs the owner's sign-off before touching `Auto.svelte` — this is
+             a persistence-semantics call, not a bug fix with one right answer.
+
+**BOMB #2 — the beliefs mutex is held 2–3s by `fn:handle_inbound` right when a track starts.**
+ Found for free reading the supply-trace: `drain-lag` marks show `Vyto_focus`, `swarm_share_beat` and
+  more all gated for ~2.7–3s in the same window `Radio_open` fires. Traced as far as: it's the
+   COALESCED inbound-frame batch drain (`Tribunal.g`'s `Lies_deliver_soon`, deliberately built to
+    replace a worse per-frame post_do death-spiral), not the PCM read (which is fire-and-forget, not
+     awaited under the mutex). **Not yet known**: whether a 2-3s batch is the accepted cost of that
+      design or a regression worth chasing. This is plausibly WHY `music-from-a-friend` goes red on a
+       20s Book budget — the mutex stall eats straight into it. The owner's own read on that assertion
+        tonight: *"that's just the canonical did it get done in time thing… no big deal… another
+         improvable metric"* — so this is a metric to chase, not a fire to put out.
+
+**BOMB #3 — the Tree cell (`show_diag`'s pure-C-tree instrument) had never rendered, ever, since
+ 2026-08-07** — `Tree` was missing from `FACE_MAINKEYS` (fixed, `glass_faces.ts`). Re-shot after the
+  fix and it proved the REAL open question: six diag organs compete for one glass and three vanish
+   entirely ("1 with no room"). **Undecided**: pick ONE tree cell at a time (toggle between
+    underworld/Supervisor rather than minting both), or accept `show_diag` as a deliberately crowded
+     dev trade. Both cells are diag-gated so this costs nothing live today.
+
+**THE NEXT MOVES, in the order they're likely cheapest:**
+1. **Ship the shelf-grace fix** (just built, compiled, unverified live) — `radio.shelf` no longer
+    flashes red on a boot-empty shelf; it arms the same 15s patience `swarm.arrival` uses and only
+     speaks if still empty past it. Watch for it live next time a tab boots cold.
+2. **Decide BOMB #1** and build the `eternal`/`Supervisor_teardown` split if the owner wants it —
+    small, mechanical, but needs the persistence-semantics call first.
+3. **Mutation-test at least one watch and one dial** — still true from every earlier note today: *"a
+    green dial gates nothing until it has been seen to go red on purpose."* None of the ten
+     watches/dials built today has been forced wrong and watched recover. Do it on a runner nobody
+      else is using — tonight's `steps`/`release` mix-up (turned out to be the owner's own VytoNest
+       run landing on the same runner, not a stranger) is the standing hazard: always check `run.book`
+        matches before trusting or releasing anything.
+4. **Chase BOMB #2** properly, or decide it's accepted cost — either answer moves `music-from-a-friend`
+    from "flaky" to "understood."
+5. **Decide BOMB #3** — one tree cell or accept the crowd.
+6. **Never verified by a human eye**: the fancy `Butler` pass (aurora/glass-card/glint — type-checks
+    clean, never seen live), the happy-spool's actual `/log` line shape (dev can never exercise
+     `/log` — prod only), and the notice ring's on-screen appearance in `SupervisorPanel`.
+
+**Untouched from earlier in the day, still real**: the runner/player role mess (Cluster_spec §3.2b
+ territory), and the §10.3 provenance ruling the owner still owes (gates the What Heisted ledger too).
+
+### ⇑ 2026-08-10 (evening) — THE TRACE, THE TREE CELL'S BUG, AND WHAT IT COST
+
+**Supervisor is in the trace.** Every watch/dial turn now also lands on `M.c.supply_trace`
+ (`Supervisor_supply_trace`, guarded `typeof this.Radio_trace === 'function'` — the same cross-ghost
+  idiom Repli.g and Swarm.g already use, silent on a world with no Radio). Verified live on `f5da`:
+   `radio.shelf → ✓` right after a fresh boot's stoker filled the shelf, then `sound.audible → ✗ → ✓`
+    and `radio.solo → ✓ "your own music (gathering)"` four ms apart at the exact moment `Radio_open`
+     cut over — **a live instance of the race this session's Supervisor work exists to catch**: this
+      boot had a mutually-sealed pier but dialed before Righto's chunks landed, and the reading is
+       correctly `gathering`, not a bare "alone".
+
+**THE TREE CELL HAS NEVER RENDERED — since 2026-08-07, not since today.** Chasing the owner's ask to
+ compare the Supervisor-as-pure-C-tree against the bespoke faces (`runner_shot --svg` with `show_diag`
+  on), the capture showed **4 molds where 6 were minted** and neither Tree was one of them. Root
+   cause: `cyto_face_kind` (`Cyto.svelte:746`) resolves a face by `sc.face` (worn) or `FACE_MAINKEYS`
+    (imposed) — and **`Tree` was never added to `FACE_MAINKEYS`**, nor does either `%Tree` mint set
+     `sc.face`. So the ORIGINAL underworld tree (`show_diag`'s "the machinery leading up to the radio")
+      has been dark this entire time; nobody had looked at a capture of it before. Fixed — one entry
+       added to `glass_faces.ts`. **Not yet re-verified after the fix settled** (see below).
+
+**RE-SHOT AFTER THE FIX, AND IT PROVED RULE 5 THE HARD WAY.** With the registration in place: `Tree:1`
+ appeared at **fit 0.407** (17% of its natural area, crushed), `Supervisor:watching` at **0.937**
+  (88%, no complaint), `Radio:playing` pushed down to **0.581** — and **the Supervisor tree, Door and
+   Shuffle molds vanished entirely** ("5 cells (2 crushed) · 1 with no room"). Six organs competing for
+    a fixed glass is exactly the 2026-07-28 friend-Crate ruling in miniature: *"two more cells made
+     every jewel unreadably tiny."* **This is not a small tuning nit — it's the answer to the
+      comparison the owner asked for**, and the answer is nuanced: the pure-tree instrument is legible
+       when it has room and disappears when it doesn't, which the bespoke faces mostly don't do (they
+        shrink, they don't vanish). Both are diag-gated so it costs nothing today, but "alongside, not
+         instead" cannot be the end state — a decision is owed: pick ONE tree cell at a time (toggle
+          between underworld/Supervisor rather than minting both), or accept that `show_diag` is a
+           trade a developer makes deliberately and never meant to look tidy.
+
+**STILL UNPROVEN, still true from the midday note:** no dial reading has been seen by an eye that
+ wasn't a runner_shot capture; **no dial or watch is mutation-tested**. That is still the next honest
+  job, and it now has a channel to prove it in — a forced-wrong probe should show up on the SAME
+   `world` trace timeline within one Supervisor tick.
+
+**A LIVE PERFORMANCE FINDING, unrelated to Supervisor, surfaced for free by reading the same trace:**
+ `Radio_open`/`Vyto_focus` firing holds the **beliefs mutex for 1–3s**, and everything else queues
+  behind it — `drain-lag` marks show `fn:handle_inbound` waiting 2744ms with 49 gated calls,
+   `Vyto_focus/Vyto/Vyto` waiting 2730ms across 349 tries, `fn:swarm_share_beat` waiting 2464ms — all
+    inside the same ~3s window, right when the track actually starts playing. This is plausibly the
+     "not go quite perfectly" the owner named. Not yet traced to a cause.
+
 ### ⇑ 2026-08-10 (afternoon) — DIALS, THE RADIO'S AIM, AND THE TREE CELL
 
 **`Radio_dial_pool` was one flat bag.** Every `%MusuThem` shelf walked, every record that passes
